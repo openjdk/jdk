@@ -148,7 +148,7 @@ public class Check {
         sunApiHandler = new MandatoryWarningHandler(log, verboseSunApi,
                 enforceMandatoryWarnings, "sunapi", null);
 
-        deferredLintHandler = DeferredLintHandler.immediateHandler;
+        deferredLintHandler = DeferredLintHandler.instance(context);
     }
 
     /** Switch: generics enabled?
@@ -215,20 +215,6 @@ public class Check {
     Lint setLint(Lint newLint) {
         Lint prev = lint;
         lint = newLint;
-        return prev;
-    }
-
-    /*  This idiom should be used only in cases when it is needed to set the lint
-     *  of an environment that has been created in a phase previous to annotations
-     *  processing.
-     */
-    Lint getLint() {
-        return lint;
-    }
-
-    DeferredLintHandler setDeferredLintHandler(DeferredLintHandler newDeferredLintHandler) {
-        DeferredLintHandler prev = deferredLintHandler;
-        deferredLintHandler = newDeferredLintHandler;
         return prev;
     }
 
@@ -582,14 +568,19 @@ public class Check {
     /** Check for redundant casts (i.e. where source type is a subtype of target type)
      * The problem should only be reported for non-292 cast
      */
-    public void checkRedundantCast(Env<AttrContext> env, JCTypeCast tree) {
-        if (!tree.type.isErroneous() &&
-                (env.info.lint == null || env.info.lint.isEnabled(Lint.LintCategory.CAST))
+    public void checkRedundantCast(Env<AttrContext> env, final JCTypeCast tree) {
+        if (!tree.type.isErroneous()
                 && types.isSameType(tree.expr.type, tree.clazz.type)
                 && !(ignoreAnnotatedCasts && TreeInfo.containsTypeAnnotation(tree.clazz))
                 && !is292targetTypeCast(tree)) {
-            log.warning(Lint.LintCategory.CAST,
-                    tree.pos(), "redundant.cast", tree.expr.type);
+            deferredLintHandler.report(new DeferredLintHandler.LintLogger() {
+                @Override
+                public void report() {
+                    if (lint.isEnabled(Lint.LintCategory.CAST))
+                        log.warning(Lint.LintCategory.CAST,
+                                tree.pos(), "redundant.cast", tree.expr.type);
+                }
+            });
         }
     }
     //where
@@ -1050,6 +1041,7 @@ public class Check {
     long checkFlags(DiagnosticPosition pos, long flags, Symbol sym, JCTree tree) {
         long mask;
         long implicit = 0;
+
         switch (sym.kind) {
         case VAR:
             if (sym.owner.kind != TYP)
@@ -1070,7 +1062,10 @@ public class Check {
                 } else
                     mask = ConstructorFlags;
             }  else if ((sym.owner.flags_field & INTERFACE) != 0) {
-                if ((flags & (DEFAULT | STATIC)) != 0) {
+                if ((sym.owner.flags_field & ANNOTATION) != 0) {
+                    mask = AnnotationTypeElementMask;
+                    implicit = PUBLIC | ABSTRACT;
+                } else if ((flags & (DEFAULT | STATIC)) != 0) {
                     mask = InterfaceMethodMask;
                     implicit = PUBLIC;
                     if ((flags & DEFAULT) != 0) {
@@ -1079,8 +1074,7 @@ public class Check {
                 } else {
                     mask = implicit = InterfaceMethodFlags;
                 }
-            }
-            else {
+            } else {
                 mask = MethodFlags;
             }
             // Imply STRICTFP if owner has STRICTFP set.
@@ -2368,7 +2362,10 @@ public class Check {
         //for each method m1 that is overridden (directly or indirectly)
         //by method 'sym' in 'site'...
         for (Symbol m1 : types.membersClosure(site, false).getElementsByName(sym.name, cf)) {
-            if (!sym.overrides(m1, site.tsym, types, false)) continue;
+             if (!sym.overrides(m1, site.tsym, types, false)) {
+                 checkPotentiallyAmbiguousOverloads(pos, site, sym, (MethodSymbol)m1);
+                 continue;
+             }
              //...check each method m2 that is a member of 'site'
              for (Symbol m2 : types.membersClosure(site, false).getElementsByName(sym.name, cf)) {
                 if (m2 == m1) continue;
@@ -2406,14 +2403,17 @@ public class Check {
         for (Symbol s : types.membersClosure(site, true).getElementsByName(sym.name, cf)) {
             //if (i) the signature of 'sym' is not a subsignature of m1 (seen as
             //a member of 'site') and (ii) 'sym' has the same erasure as m1, issue an error
-            if (!types.isSubSignature(sym.type, types.memberType(site, s), allowStrictMethodClashCheck) &&
-                    types.hasSameArgs(s.erasure(types), sym.erasure(types))) {
-                log.error(pos,
-                        "name.clash.same.erasure.no.hide",
-                        sym, sym.location(),
-                        s, s.location());
-                return;
-             }
+            if (!types.isSubSignature(sym.type, types.memberType(site, s), allowStrictMethodClashCheck)) {
+                if (types.hasSameArgs(s.erasure(types), sym.erasure(types))) {
+                    log.error(pos,
+                            "name.clash.same.erasure.no.hide",
+                            sym, sym.location(),
+                            s, s.location());
+                    return;
+                } else {
+                    checkPotentiallyAmbiguousOverloads(pos, site, sym, (MethodSymbol)s);
+                }
+            }
          }
      }
 
@@ -2495,6 +2495,62 @@ public class Check {
                      !s.isConstructor();
          }
      }
+
+    /**
+      * Report warnings for potentially ambiguous method declarations. Two declarations
+      * are potentially ambiguous if they feature two unrelated functional interface
+      * in same argument position (in which case, a call site passing an implicit
+      * lambda would be ambiguous).
+      */
+    void checkPotentiallyAmbiguousOverloads(DiagnosticPosition pos, Type site,
+            MethodSymbol msym1, MethodSymbol msym2) {
+        if (msym1 != msym2 &&
+                allowDefaultMethods &&
+                lint.isEnabled(LintCategory.OVERLOADS) &&
+                (msym1.flags() & POTENTIALLY_AMBIGUOUS) == 0 &&
+                (msym2.flags() & POTENTIALLY_AMBIGUOUS) == 0) {
+            Type mt1 = types.memberType(site, msym1);
+            Type mt2 = types.memberType(site, msym2);
+            //if both generic methods, adjust type variables
+            if (mt1.hasTag(FORALL) && mt2.hasTag(FORALL) &&
+                    types.hasSameBounds((ForAll)mt1, (ForAll)mt2)) {
+                mt2 = types.subst(mt2, ((ForAll)mt2).tvars, ((ForAll)mt1).tvars);
+            }
+            //expand varargs methods if needed
+            int maxLength = Math.max(mt1.getParameterTypes().length(), mt2.getParameterTypes().length());
+            List<Type> args1 = rs.adjustArgs(mt1.getParameterTypes(), msym1, maxLength, true);
+            List<Type> args2 = rs.adjustArgs(mt2.getParameterTypes(), msym2, maxLength, true);
+            //if arities don't match, exit
+            if (args1.length() != args2.length()) return;
+            boolean potentiallyAmbiguous = false;
+            while (args1.nonEmpty() && args2.nonEmpty()) {
+                Type s = args1.head;
+                Type t = args2.head;
+                if (!types.isSubtype(t, s) && !types.isSubtype(s, t)) {
+                    if (types.isFunctionalInterface(s) && types.isFunctionalInterface(t) &&
+                            types.findDescriptorType(s).getParameterTypes().length() > 0 &&
+                            types.findDescriptorType(s).getParameterTypes().length() ==
+                            types.findDescriptorType(t).getParameterTypes().length()) {
+                        potentiallyAmbiguous = true;
+                    } else {
+                        break;
+                    }
+                }
+                args1 = args1.tail;
+                args2 = args2.tail;
+            }
+            if (potentiallyAmbiguous) {
+                //we found two incompatible functional interfaces with same arity
+                //this means a call site passing an implicit lambda would be ambigiuous
+                msym1.flags_field |= POTENTIALLY_AMBIGUOUS;
+                msym2.flags_field |= POTENTIALLY_AMBIGUOUS;
+                log.warning(LintCategory.OVERLOADS, pos, "potentially.ambiguous.overload",
+                            msym1, msym1.location(),
+                            msym2, msym2.location());
+                return;
+            }
+        }
+    }
 
     /** Report a conflict between a user symbol and a synthetic symbol.
      */
@@ -3275,7 +3331,9 @@ public class Check {
                     (e.sym.flags() & CLASH) == 0 &&
                     sym.kind == e.sym.kind &&
                     sym.name != names.error &&
-                    (sym.kind != MTH || types.hasSameArgs(types.erasure(sym.type), types.erasure(e.sym.type)))) {
+                    (sym.kind != MTH ||
+                     types.hasSameArgs(sym.type, e.sym.type) ||
+                     types.hasSameArgs(types.erasure(sym.type), types.erasure(e.sym.type)))) {
                 if ((sym.flags() & VARARGS) != (e.sym.flags() & VARARGS)) {
                     varargsDuplicateError(pos, sym, e.sym);
                     return true;

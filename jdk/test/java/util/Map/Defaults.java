@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8010122 8004518
+ * @bug 8010122 8004518 8024331
  * @summary Test Map default methods
  * @author Mike Duigou
  * @run testng Defaults
@@ -288,6 +288,21 @@ public class Defaults {
         assertSame(map.get(EXTRA_KEY), EXTRA_VALUE);
     }
 
+    @Test(expectedExceptions = {NullPointerException.class})
+    public void testComputeIfAbsentNPEHashMap() {
+        Object value = new HashMap().computeIfAbsent(KEYS[1], null);
+    }
+
+    @Test(expectedExceptions = {NullPointerException.class})
+    public void testComputeIfAbsentNPEHashtable() {
+        Object value = new Hashtable().computeIfAbsent(KEYS[1], null);
+    }
+
+    @Test(expectedExceptions = {NullPointerException.class})
+    public void testComputeIfAbsentNPETreeMap() {
+        Object value = new TreeMap().computeIfAbsent(KEYS[1], null);
+    }
+
     @Test(dataProvider = "Map<IntegerEnum,String> rw=true keys=withNull values=withNull")
     public void testComputeIfPresentNulls(String description, Map<IntegerEnum, String> map) {
         assertTrue(map.containsKey(null), description + ": null key absent");
@@ -326,6 +341,21 @@ public class Defaults {
         }), null);
         assertFalse(map.containsKey(EXTRA_KEY));
         assertSame(map.get(EXTRA_KEY), null);
+    }
+
+    @Test(expectedExceptions = {NullPointerException.class})
+    public void testComputeIfPresentNPEHashMap() {
+        Object value = new HashMap().computeIfPresent(KEYS[1], null);
+    }
+
+    @Test(expectedExceptions = {NullPointerException.class})
+    public void testComputeIfPresentNPEHashtable() {
+        Object value = new Hashtable().computeIfPresent(KEYS[1], null);
+    }
+
+    @Test(expectedExceptions = {NullPointerException.class})
+    public void testComputeIfPresentNPETreeMap() {
+        Object value = new TreeMap().computeIfPresent(KEYS[1], null);
     }
 
     @Test(dataProvider = "Map<IntegerEnum,String> rw=true keys=withNull values=withNull")
@@ -414,6 +444,20 @@ public class Defaults {
         assertSame(map.get(EXTRA_KEY), EXTRA_VALUE);
     }
 
+    @Test(expectedExceptions = {NullPointerException.class})
+    public void testComputeNPEHashMap() {
+        Object value = new HashMap().compute(KEYS[1], null);
+    }
+
+    @Test(expectedExceptions = {NullPointerException.class})
+    public void testComputeNPEHashtable() {
+        Object value = new Hashtable().compute(KEYS[1], null);
+    }
+
+    @Test(expectedExceptions = {NullPointerException.class})
+    public void testComputeNPETreeMap() {
+        Object value = new TreeMap().compute(KEYS[1], null);
+    }
 
     @Test(dataProvider = "Map<IntegerEnum,String> rw=true keys=withNull values=withNull")
     public void testMergeNulls(String description, Map<IntegerEnum, String> map) {
@@ -454,6 +498,21 @@ public class Defaults {
         }), EXTRA_VALUE);
         assertTrue(map.containsKey(EXTRA_KEY));
         assertSame(map.get(EXTRA_KEY), EXTRA_VALUE);
+    }
+
+    @Test(expectedExceptions = {NullPointerException.class})
+    public void testMergeNPEHashMap() {
+        Object value = new HashMap().merge(KEYS[1], VALUES[1], null);
+    }
+
+    @Test(expectedExceptions = {NullPointerException.class})
+    public void testMergeNPEHashtable() {
+        Object value = new Hashtable().merge(KEYS[1], VALUES[1], null);
+    }
+
+    @Test(expectedExceptions = {NullPointerException.class})
+    public void testMergeNPETreeMap() {
+        Object value = new TreeMap().merge(KEYS[1], VALUES[1], null);
     }
 
     enum IntegerEnum {

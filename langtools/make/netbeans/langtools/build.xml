@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
- Copyright (c) 2007, 2010, Oracle and/or its affiliates. All rights reserved.
+ Copyright (c) 2007, 2013, Oracle and/or its affiliates. All rights reserved.
 
  Redistribution and use in source and binary forms, with or without
  modification, are permitted provided that the following conditions
@@ -55,10 +55,18 @@
         description="Build one or all langtools tools"
         />
 
+    <condition property="bootstrap" value="bootstrap-" else="">
+        <isset property="langtools.tool.bootstrap"/>
+    </condition>
+
+    <condition property="bcp" value="${build.bootstrap.dir}/classes" else="${build.classes.dir}">
+        <isset property="langtools.tool.bootstrap"/>
+    </condition>
+
     <target name="-build-tool" if="langtools.tool.name">
-        <echo level="info" message="Building ${langtools.tool.name}"/>
+        <echo level="info" message="Building ${bootstrap}${langtools.tool.name}"/>
         <echo level="verbose" message="(Unset langtools.tool.name to build all tools)"/>
-        <antcall target="build-${langtools.tool.name}"/>
+        <antcall target="build-${bootstrap}${langtools.tool.name}"/>
     </target>
 
     <target name="-build-all" unless="langtools.tool.name">
@@ -89,8 +97,9 @@
 
     <target name="run" depends="-check-target.java.home,build,-def-run,-get-tool-and-args"
             description="run tool">
-        <echo level="info" message="Run ${langtools.tool.name} with args ${langtools.tool.args}"/>
-        <run mainclass="com.sun.tools.${langtools.tool.name}.Main" args="${langtools.tool.args}"/>
+        <echo level="info" message="${bcp}"/>
+        <echo level="info" message="Run ${bootstrap}${langtools.tool.name} with args ${langtools.tool.args}"/>
+        <run bcp="${bcp}" mainclass="com.sun.tools.${langtools.tool.name}.Main" args="${langtools.tool.args}"/>
     </target>
 
     <!-- Run a selected class. (action: run.single;  shift-F6) -->
@@ -136,9 +145,9 @@
     <!-- Debug tool in NetBeans. -->
 
     <target name="debug" depends="-check-target.java.home,-def-run,-def-start-debugger,-get-tool-and-args,build" if="netbeans.home">
-        <echo level="info" message="Debug ${langtools.tool.name} with args ${langtools.tool.args}"/>
+        <echo level="info" message="Debug ${boostrap}${langtools.tool.name} with args ${langtools.tool.args}"/>
         <start-debugger/>
-        <run mainclass="com.sun.tools.${langtools.tool.name}.Main" args="${langtools.tool.args}" jpda.jvmargs="${jpda.jvmargs}"/>
+        <run bcp="${bcp}" mainclass="com.sun.tools.${langtools.tool.name}.Main" args="${langtools.tool.args}" jpda.jvmargs="${jpda.jvmargs}"/>
     </target>
 
     <!-- Debug a selected class . -->
@@ -207,6 +216,7 @@
     <target name="-get-tool-if-set" depends="-def-select-tool">
         <select-tool
             toolproperty="langtools.tool.name"
+            bootstrapproperty="langtools.tool.bootstrap"
             propertyfile="${langtools.properties}"
             askIfUnset="false"
             />
@@ -216,6 +226,7 @@
         <select-tool
             toolproperty="langtools.tool.name"
             argsproperty="langtools.tool.args"
+            bootstrapproperty="langtools.tool.bootstrap"
             propertyfile="${langtools.properties}"
             askIfUnset="true"
             />
@@ -226,10 +237,12 @@
         <macrodef name="run">
             <attribute name="mainclass"/>
             <attribute name="args" default=""/>
+            <attribute name="bcp" default="${build.classes.dir}"/>
             <attribute name="jpda.jvmargs" default=""/>
+
             <sequential>
                 <java fork="true" jvm="${target.java}" classname="@{mainclass}">
-                    <jvmarg line="-Xbootclasspath/p:${build.classes.dir}"/>
+                    <jvmarg line="-Xbootclasspath/p:${bcp}"/>
                     <jvmarg line="@{jpda.jvmargs}"/>
                     <arg line="@{args}"/>
                 </java>

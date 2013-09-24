@@ -24,6 +24,7 @@
  */
 
 package com.sun.tools.javac.jvm;
+
 import java.util.*;
 
 import com.sun.tools.javac.util.*;
@@ -95,9 +96,13 @@ public class Gen extends JCTree.Visitor {
         return instance;
     }
 
-    /* Constant pool, reset by genClass.
+    /** Constant pool, reset by genClass.
      */
     private Pool pool;
+
+    /** LVTRanges info.
+     */
+    private LVTRanges lvtRanges;
 
     protected Gen(Context context) {
         context.put(genKey, this);
@@ -128,6 +133,9 @@ public class Gen extends JCTree.Visitor {
             options.isUnset(G_CUSTOM)
             ? options.isSet(G)
             : options.isSet(G_CUSTOM, "vars");
+        if (varDebugInfo) {
+            lvtRanges = LVTRanges.instance(context);
+        }
         genCrt = options.isSet(XJCOV);
         debugCode = options.isSet("debugcode");
         allowInvokedynamic = target.hasInvokedynamic() || options.isSet("invokedynamic");
@@ -423,7 +431,7 @@ public class Gen extends JCTree.Visitor {
      */
     void endFinalizerGap(Env<GenContext> env) {
         if (env.info.gaps != null && env.info.gaps.length() % 2 == 1)
-            env.info.gaps.append(code.curPc());
+            env.info.gaps.append(code.curCP());
     }
 
     /** Mark end of all gaps in catch-all ranges for finalizers of environments
@@ -743,10 +751,10 @@ public class Gen extends JCTree.Visitor {
             genStat(tree, env);
             return;
         }
-        int startpc = code.curPc();
+        int startpc = code.curCP();
         genStat(tree, env);
         if (tree.hasTag(Tag.BLOCK)) crtFlags |= CRT_BLOCK;
-        code.crt.put(tree, crtFlags, startpc, code.curPc());
+        code.crt.put(tree, crtFlags, startpc, code.curCP());
     }
 
     /** Derived visitor method: generate code for a statement.
@@ -781,9 +789,9 @@ public class Gen extends JCTree.Visitor {
         if (trees.length() == 1) {        // mark one statement with the flags
             genStat(trees.head, env, crtFlags | CRT_STATEMENT);
         } else {
-            int startpc = code.curPc();
+            int startpc = code.curCP();
             genStats(trees, env);
-            code.crt.put(trees, crtFlags, startpc, code.curPc());
+            code.crt.put(trees, crtFlags, startpc, code.curCP());
         }
     }
 
@@ -806,9 +814,9 @@ public class Gen extends JCTree.Visitor {
      */
     public CondItem genCond(JCTree tree, int crtFlags) {
         if (!genCrt) return genCond(tree, false);
-        int startpc = code.curPc();
+        int startpc = code.curCP();
         CondItem item = genCond(tree, (crtFlags & CRT_FLOW_CONTROLLER) != 0);
-        code.crt.put(tree, crtFlags, startpc, code.curPc());
+        code.crt.put(tree, crtFlags, startpc, code.curCP());
         return item;
     }
 
@@ -971,7 +979,6 @@ public class Gen extends JCTree.Visitor {
         // definition.
         Env<GenContext> localEnv = env.dup(tree);
         localEnv.enclMethod = tree;
-
         // The expected type of every return statement in this method
         // is the method's return type.
         this.pt = tree.sym.erasure(types).getReturnType();
@@ -1045,7 +1052,7 @@ public class Gen extends JCTree.Visitor {
                     code.crt.put(tree.body,
                                  CRT_BLOCK,
                                  startpcCrt,
-                                 code.curPc());
+                                 code.curCP());
 
                 code.endScopes(0);
 
@@ -1087,10 +1094,12 @@ public class Gen extends JCTree.Visitor {
                                                : null,
                                         syms,
                                         types,
-                                        pool);
+                                        pool,
+                                        varDebugInfo ? lvtRanges : null);
             items = new Items(pool, code, syms, types);
-            if (code.debugCode)
+            if (code.debugCode) {
                 System.err.println(meth + " for body " + tree);
+            }
 
             // If method is not static, create a new local variable address
             // for `this'.
@@ -1111,7 +1120,7 @@ public class Gen extends JCTree.Visitor {
             }
 
             // Get ready to generate code for method body.
-            int startpcCrt = genCrt ? code.curPc() : 0;
+            int startpcCrt = genCrt ? code.curCP() : 0;
             code.entryPoint();
 
             // Suppress initial stackmap
@@ -1189,14 +1198,30 @@ public class Gen extends JCTree.Visitor {
                 Chain loopDone = c.jumpFalse();
                 code.resolve(c.trueJumps);
                 genStat(body, loopEnv, CRT_STATEMENT | CRT_FLOW_TARGET);
+                if (varDebugInfo) {
+                    checkLoopLocalVarRangeEnding(loop, body,
+                            LoopLocalVarRangeEndingPoint.BEFORE_STEPS);
+                }
                 code.resolve(loopEnv.info.cont);
                 genStats(step, loopEnv);
+                if (varDebugInfo) {
+                    checkLoopLocalVarRangeEnding(loop, body,
+                            LoopLocalVarRangeEndingPoint.AFTER_STEPS);
+                }
                 code.resolve(code.branch(goto_), startpc);
                 code.resolve(loopDone);
             } else {
                 genStat(body, loopEnv, CRT_STATEMENT | CRT_FLOW_TARGET);
+                if (varDebugInfo) {
+                    checkLoopLocalVarRangeEnding(loop, body,
+                            LoopLocalVarRangeEndingPoint.BEFORE_STEPS);
+                }
                 code.resolve(loopEnv.info.cont);
                 genStats(step, loopEnv);
+                if (varDebugInfo) {
+                    checkLoopLocalVarRangeEnding(loop, body,
+                            LoopLocalVarRangeEndingPoint.AFTER_STEPS);
+                }
                 CondItem c;
                 if (cond != null) {
                     code.statBegin(cond.pos);
@@ -1208,6 +1233,44 @@ public class Gen extends JCTree.Visitor {
                 code.resolve(c.falseJumps);
             }
             code.resolve(loopEnv.info.exit);
+        }
+
+        private enum LoopLocalVarRangeEndingPoint {
+            BEFORE_STEPS,
+            AFTER_STEPS,
+        }
+
+        /**
+         *  Checks whether we have reached an alive range ending point for local
+         *  variables after a loop.
+         *
+         *  Local variables alive range ending point for loops varies depending
+         *  on the loop type. The range can be closed before or after the code
+         *  for the steps sentences has been generated.
+         *
+         *  - While loops has no steps so in that case the range is closed just
+         *  after the body of the loop.
+         *
+         *  - For-like loops may have steps so as long as the steps sentences
+         *  can possibly contain non-synthetic local variables, the alive range
+         *  for local variables must be closed after the steps in this case.
+        */
+        private void checkLoopLocalVarRangeEnding(JCTree loop, JCTree body,
+                LoopLocalVarRangeEndingPoint endingPoint) {
+            if (varDebugInfo && lvtRanges.containsKey(code.meth, body)) {
+                switch (endingPoint) {
+                    case BEFORE_STEPS:
+                        if (!loop.hasTag(FORLOOP)) {
+                            code.closeAliveRanges(body);
+                        }
+                        break;
+                    case AFTER_STEPS:
+                        if (loop.hasTag(FORLOOP)) {
+                            code.closeAliveRanges(body);
+                        }
+                        break;
+                }
+            }
         }
 
     public void visitForeachLoop(JCEnhancedForLoop tree) {
@@ -1223,7 +1286,7 @@ public class Gen extends JCTree.Visitor {
     public void visitSwitch(JCSwitch tree) {
         int limit = code.nextreg;
         Assert.check(!tree.selector.type.hasTag(CLASS));
-        int startpcCrt = genCrt ? code.curPc() : 0;
+        int startpcCrt = genCrt ? code.curCP() : 0;
         Item sel = genExpr(tree.selector, syms.intType);
         List<JCCase> cases = tree.cases;
         if (cases.isEmpty()) {
@@ -1231,13 +1294,13 @@ public class Gen extends JCTree.Visitor {
             sel.load().drop();
             if (genCrt)
                 code.crt.put(TreeInfo.skipParens(tree.selector),
-                             CRT_FLOW_CONTROLLER, startpcCrt, code.curPc());
+                             CRT_FLOW_CONTROLLER, startpcCrt, code.curCP());
         } else {
             // We are seeing a nonempty switch.
             sel.load();
             if (genCrt)
                 code.crt.put(TreeInfo.skipParens(tree.selector),
-                             CRT_FLOW_CONTROLLER, startpcCrt, code.curPc());
+                             CRT_FLOW_CONTROLLER, startpcCrt, code.curCP());
             Env<GenContext> switchEnv = env.dup(tree, new GenContext());
             switchEnv.info.isSwitch = true;
 
@@ -1278,10 +1341,10 @@ public class Gen extends JCTree.Visitor {
                 ?
                 tableswitch : lookupswitch;
 
-            int startpc = code.curPc();    // the position of the selector operation
+            int startpc = code.curCP();    // the position of the selector operation
             code.emitop0(opcode);
             code.align(4);
-            int tableBase = code.curPc();  // the start of the jump table
+            int tableBase = code.curCP();  // the start of the jump table
             int[] offsets = null;          // a table of offsets for a lookupswitch
             code.emit4(-1);                // leave space for default offset
             if (opcode == tableswitch) {
@@ -1323,6 +1386,9 @@ public class Gen extends JCTree.Visitor {
 
                 // Generate code for the statements in this case.
                 genStats(c.stats, switchEnv, CRT_FLOW_TARGET);
+                if (varDebugInfo && lvtRanges.containsKey(code.meth, c.stats.last())) {
+                    code.closeAliveRanges(c.stats.last());
+                }
             }
 
             // Resolve all breaks.
@@ -1402,7 +1468,7 @@ public class Gen extends JCTree.Visitor {
             void gen() {
                 genLast();
                 Assert.check(syncEnv.info.gaps.length() % 2 == 0);
-                syncEnv.info.gaps.append(code.curPc());
+                syncEnv.info.gaps.append(code.curCP());
             }
             void genLast() {
                 if (code.isAlive()) {
@@ -1441,10 +1507,10 @@ public class Gen extends JCTree.Visitor {
                                       jsrState);
                     }
                     Assert.check(tryEnv.info.gaps.length() % 2 == 0);
-                    tryEnv.info.gaps.append(code.curPc());
+                    tryEnv.info.gaps.append(code.curCP());
                 } else {
                     Assert.check(tryEnv.info.gaps.length() % 2 == 0);
-                    tryEnv.info.gaps.append(code.curPc());
+                    tryEnv.info.gaps.append(code.curCP());
                     genLast();
                 }
             }
@@ -1467,10 +1533,10 @@ public class Gen extends JCTree.Visitor {
          */
         void genTry(JCTree body, List<JCCatch> catchers, Env<GenContext> env) {
             int limit = code.nextreg;
-            int startpc = code.curPc();
+            int startpc = code.curCP();
             Code.State stateTry = code.state.dup();
             genStat(body, env, CRT_BLOCK);
-            int endpc = code.curPc();
+            int endpc = code.curCP();
             boolean hasFinalizer =
                 env.info.finalize != null &&
                 env.info.finalize.hasFinalizer();
@@ -1478,82 +1544,77 @@ public class Gen extends JCTree.Visitor {
             code.statBegin(TreeInfo.endPos(body));
             genFinalizer(env);
             code.statBegin(TreeInfo.endPos(env.tree));
-            Chain exitChain;
-            if (startpc != endpc) {
-                exitChain = code.branch(goto_);
-            } else {
-                exitChain = code.branch(dontgoto);
+            Chain exitChain = code.branch(goto_);
+            if (varDebugInfo && lvtRanges.containsKey(code.meth, body)) {
+                code.closeAliveRanges(body);
             }
             endFinalizerGap(env);
-            if (startpc != endpc) {
-                for (List<JCCatch> l = catchers; l.nonEmpty(); l = l.tail) {
-                    // start off with exception on stack
-                    code.entryPoint(stateTry, l.head.param.sym.type);
-                    genCatch(l.head, env, startpc, endpc, gaps);
-                    genFinalizer(env);
-                    if (hasFinalizer || l.tail.nonEmpty()) {
-                        code.statBegin(TreeInfo.endPos(env.tree));
-                        exitChain = Code.mergeChains(exitChain,
-                                                     code.branch(goto_));
-                    }
-                    endFinalizerGap(env);
+            if (startpc != endpc) for (List<JCCatch> l = catchers; l.nonEmpty(); l = l.tail) {
+                // start off with exception on stack
+                code.entryPoint(stateTry, l.head.param.sym.type);
+                genCatch(l.head, env, startpc, endpc, gaps);
+                genFinalizer(env);
+                if (hasFinalizer || l.tail.nonEmpty()) {
+                    code.statBegin(TreeInfo.endPos(env.tree));
+                    exitChain = Code.mergeChains(exitChain,
+                                                 code.branch(goto_));
                 }
+                endFinalizerGap(env);
+            }
+            if (hasFinalizer) {
+                // Create a new register segement to avoid allocating
+                // the same variables in finalizers and other statements.
+                code.newRegSegment();
 
-                if (hasFinalizer) {
-                    // Create a new register segement to avoid allocating
-                    // the same variables in finalizers and other statements.
-                    code.newRegSegment();
+                // Add a catch-all clause.
 
-                    // Add a catch-all clause.
+                // start off with exception on stack
+                int catchallpc = code.entryPoint(stateTry, syms.throwableType);
 
-                    // start off with exception on stack
-                    int catchallpc = code.entryPoint(stateTry, syms.throwableType);
+                // Register all exception ranges for catch all clause.
+                // The range of the catch all clause is from the beginning
+                // of the try or synchronized block until the present
+                // code pointer excluding all gaps in the current
+                // environment's GenContext.
+                int startseg = startpc;
+                while (env.info.gaps.nonEmpty()) {
+                    int endseg = env.info.gaps.next().intValue();
+                    registerCatch(body.pos(), startseg, endseg,
+                                  catchallpc, 0);
+                    startseg = env.info.gaps.next().intValue();
+                }
+                code.statBegin(TreeInfo.finalizerPos(env.tree));
+                code.markStatBegin();
 
-                    // Register all exception ranges for catch all clause.
-                    // The range of the catch all clause is from the beginning
-                    // of the try or synchronized block until the present
-                    // code pointer excluding all gaps in the current
-                    // environment's GenContext.
-                    int startseg = startpc;
-                    while (env.info.gaps.nonEmpty()) {
-                        int endseg = env.info.gaps.next().intValue();
-                        registerCatch(body.pos(), startseg, endseg,
-                                      catchallpc, 0);
-                        startseg = env.info.gaps.next().intValue();
-                    }
+                Item excVar = makeTemp(syms.throwableType);
+                excVar.store();
+                genFinalizer(env);
+                excVar.load();
+                registerCatch(body.pos(), startseg,
+                              env.info.gaps.next().intValue(),
+                              catchallpc, 0);
+                code.emitop0(athrow);
+                code.markDead();
+
+                // If there are jsr's to this finalizer, ...
+                if (env.info.cont != null) {
+                    // Resolve all jsr's.
+                    code.resolve(env.info.cont);
+
+                    // Mark statement line number
                     code.statBegin(TreeInfo.finalizerPos(env.tree));
                     code.markStatBegin();
 
-                    Item excVar = makeTemp(syms.throwableType);
-                    excVar.store();
-                    genFinalizer(env);
-                    excVar.load();
-                    registerCatch(body.pos(), startseg,
-                                  env.info.gaps.next().intValue(),
-                                  catchallpc, 0);
-                    code.emitop0(athrow);
+                    // Save return address.
+                    LocalItem retVar = makeTemp(syms.throwableType);
+                    retVar.store();
+
+                    // Generate finalizer code.
+                    env.info.finalize.genLast();
+
+                    // Return.
+                    code.emitop1w(ret, retVar.reg);
                     code.markDead();
-
-                    // If there are jsr's to this finalizer, ...
-                    if (env.info.cont != null) {
-                        // Resolve all jsr's.
-                        code.resolve(env.info.cont);
-
-                        // Mark statement line number
-                        code.statBegin(TreeInfo.finalizerPos(env.tree));
-                        code.markStatBegin();
-
-                        // Save return address.
-                        LocalItem retVar = makeTemp(syms.throwableType);
-                        retVar.store();
-
-                        // Generate finalizer code.
-                        env.info.finalize.genLast();
-
-                        // Return.
-                        code.emitop1w(ret, retVar.reg);
-                        code.markDead();
-                    }
                 }
             }
             // Resolve all breaks.
@@ -1581,7 +1642,7 @@ public class Gen extends JCTree.Visitor {
                         int catchType = makeRef(tree.pos(), subCatch.type);
                         int end = gaps.head.intValue();
                         registerCatch(tree.pos(),
-                                      startpc,  end, code.curPc(),
+                                      startpc,  end, code.curCP(),
                                       catchType);
                         if (subCatch.type.isAnnotated()) {
                             // All compounds share the same position, simply update the
@@ -1597,7 +1658,7 @@ public class Gen extends JCTree.Visitor {
                     for (JCExpression subCatch : subClauses) {
                         int catchType = makeRef(tree.pos(), subCatch.type);
                         registerCatch(tree.pos(),
-                                      startpc, endpc, code.curPc(),
+                                      startpc, endpc, code.curCP(),
                                       catchType);
                         if (subCatch.type.isAnnotated()) {
                             // All compounds share the same position, simply update the
@@ -1740,11 +1801,19 @@ public class Gen extends JCTree.Visitor {
             code.resolve(c.trueJumps);
             genStat(tree.thenpart, env, CRT_STATEMENT | CRT_FLOW_TARGET);
             thenExit = code.branch(goto_);
+            if (varDebugInfo && lvtRanges.containsKey(code.meth, tree.thenpart)) {
+                code.closeAliveRanges(tree.thenpart,
+                        thenExit != null && tree.elsepart == null ? thenExit.pc : code.cp);
+            }
         }
         if (elseChain != null) {
             code.resolve(elseChain);
-            if (tree.elsepart != null)
+            if (tree.elsepart != null) {
                 genStat(tree.elsepart, env,CRT_STATEMENT | CRT_FLOW_TARGET);
+                if (varDebugInfo && lvtRanges.containsKey(code.meth, tree.elsepart)) {
+                    code.closeAliveRanges(tree.elsepart);
+                }
+            }
         }
         code.resolve(thenExit);
         code.endScopes(limit);
@@ -1838,20 +1907,20 @@ public class Gen extends JCTree.Visitor {
         Chain elseChain = c.jumpFalse();
         if (!c.isFalse()) {
             code.resolve(c.trueJumps);
-            int startpc = genCrt ? code.curPc() : 0;
+            int startpc = genCrt ? code.curCP() : 0;
             genExpr(tree.truepart, pt).load();
             code.state.forceStackTop(tree.type);
             if (genCrt) code.crt.put(tree.truepart, CRT_FLOW_TARGET,
-                                     startpc, code.curPc());
+                                     startpc, code.curCP());
             thenExit = code.branch(goto_);
         }
         if (elseChain != null) {
             code.resolve(elseChain);
-            int startpc = genCrt ? code.curPc() : 0;
+            int startpc = genCrt ? code.curCP() : 0;
             genExpr(tree.falsepart, pt).load();
             code.state.forceStackTop(tree.type);
             if (genCrt) code.crt.put(tree.falsepart, CRT_FLOW_TARGET,
-                                     startpc, code.curPc());
+                                     startpc, code.curCP());
         }
         code.resolve(thenExit);
         result = items.makeStackItem(pt);
@@ -2431,6 +2500,19 @@ public class Gen extends JCTree.Visitor {
                 new Env<GenContext>(cdef, new GenContext());
             localEnv.toplevel = env.toplevel;
             localEnv.enclClass = cdef;
+
+            /*  We must not analyze synthetic methods
+             */
+            if (varDebugInfo && (cdef.sym.flags() & SYNTHETIC) == 0) {
+                try {
+                    LVTAssignAnalyzer lvtAssignAnalyzer = LVTAssignAnalyzer.make(
+                            lvtRanges, syms, names);
+                    lvtAssignAnalyzer.analyzeTree(localEnv);
+                } catch (Throwable e) {
+                    throw e;
+                }
+            }
+
             for (List<JCTree> l = cdef.defs; l.nonEmpty(); l = l.tail) {
                 genDef(l.head, localEnv);
             }
@@ -2515,4 +2597,311 @@ public class Gen extends JCTree.Visitor {
             cont = Code.mergeChains(c, cont);
         }
     }
+
+    static class LVTAssignAnalyzer
+        extends Flow.AbstractAssignAnalyzer<LVTAssignAnalyzer.LVTAssignPendingExit> {
+
+        final LVTBits lvtInits;
+        final LVTRanges lvtRanges;
+
+        /*  This class is anchored to a context dependent tree. The tree can
+         *  vary inside the same instruction for example in the switch instruction
+         *  the same FlowBits instance can be anchored to the whole tree, or
+         *  to a given case. The aim is to always anchor the bits to the tree
+         *  capable of closing a DA range.
+         */
+        static class LVTBits extends Bits {
+
+            enum BitsOpKind {
+                INIT,
+                CLEAR,
+                INCL_BIT,
+                EXCL_BIT,
+                ASSIGN,
+                AND_SET,
+                OR_SET,
+                DIFF_SET,
+                XOR_SET,
+                INCL_RANGE,
+                EXCL_RANGE,
+            }
+
+            JCTree currentTree;
+            LVTAssignAnalyzer analyzer;
+            private int[] oldBits = null;
+            BitsState stateBeforeOp;
+
+            LVTBits() {
+                super(false);
+            }
+
+            LVTBits(int[] bits, BitsState initState) {
+                super(bits, initState);
+            }
+
+            @Override
+            public void clear() {
+                generalOp(null, -1, BitsOpKind.CLEAR);
+            }
+
+            @Override
+            protected void internalReset() {
+                super.internalReset();
+                oldBits = null;
+            }
+
+            @Override
+            public Bits assign(Bits someBits) {
+                // bits can be null
+                oldBits = bits;
+                stateBeforeOp = currentState;
+                super.assign(someBits);
+                changed();
+                return this;
+            }
+
+            @Override
+            public void excludeFrom(int start) {
+                generalOp(null, start, BitsOpKind.EXCL_RANGE);
+            }
+
+            @Override
+            public void excl(int x) {
+                Assert.check(x >= 0);
+                generalOp(null, x, BitsOpKind.EXCL_BIT);
+            }
+
+            @Override
+            public Bits andSet(Bits xs) {
+               return generalOp(xs, -1, BitsOpKind.AND_SET);
+            }
+
+            @Override
+            public Bits orSet(Bits xs) {
+                return generalOp(xs, -1, BitsOpKind.OR_SET);
+            }
+
+            @Override
+            public Bits diffSet(Bits xs) {
+                return generalOp(xs, -1, BitsOpKind.DIFF_SET);
+            }
+
+            @Override
+            public Bits xorSet(Bits xs) {
+                return generalOp(xs, -1, BitsOpKind.XOR_SET);
+            }
+
+            private Bits generalOp(Bits xs, int i, BitsOpKind opKind) {
+                Assert.check(currentState != BitsState.UNKNOWN);
+                oldBits = dupBits();
+                stateBeforeOp = currentState;
+                switch (opKind) {
+                    case AND_SET:
+                        super.andSet(xs);
+                        break;
+                    case OR_SET:
+                        super.orSet(xs);
+                        break;
+                    case XOR_SET:
+                        super.xorSet(xs);
+                        break;
+                    case DIFF_SET:
+                        super.diffSet(xs);
+                        break;
+                    case CLEAR:
+                        super.clear();
+                        break;
+                    case EXCL_BIT:
+                        super.excl(i);
+                        break;
+                    case EXCL_RANGE:
+                        super.excludeFrom(i);
+                        break;
+                }
+                changed();
+                return this;
+            }
+
+            /*  The tree we need to anchor the bits instance to.
+             */
+            LVTBits at(JCTree tree) {
+                this.currentTree = tree;
+                return this;
+            }
+
+            /*  If the instance should be changed but the tree is not a closing
+             *  tree then a reset is needed or the former tree can mistakingly be
+             *  used.
+             */
+            LVTBits resetTree() {
+                this.currentTree = null;
+                return this;
+            }
+
+            /** This method will be called after any operation that causes a change to
+             *  the bits. Subclasses can thus override it in order to extract information
+             *  from the changes produced to the bits by the given operation.
+             */
+            public void changed() {
+                if (currentTree != null &&
+                        stateBeforeOp != BitsState.UNKNOWN &&
+                        trackTree(currentTree)) {
+                    List<VarSymbol> locals =
+                            analyzer.lvtRanges
+                            .getVars(analyzer.currentMethod, currentTree);
+                    locals = locals != null ?
+                            locals : List.<VarSymbol>nil();
+                    for (JCVariableDecl vardecl : analyzer.vardecls) {
+                        //once the first is null, the rest will be so.
+                        if (vardecl == null) {
+                            break;
+                        }
+                        if (trackVar(vardecl.sym) && bitChanged(vardecl.sym.adr)) {
+                            locals = locals.prepend(vardecl.sym);
+                        }
+                    }
+                    if (!locals.isEmpty()) {
+                        analyzer.lvtRanges.setEntry(analyzer.currentMethod,
+                                currentTree, locals);
+                    }
+                }
+            }
+
+            boolean bitChanged(int x) {
+                boolean isMemberOfBits = isMember(x);
+                int[] tmp = bits;
+                bits = oldBits;
+                boolean isMemberOfOldBits = isMember(x);
+                bits = tmp;
+                return (!isMemberOfBits && isMemberOfOldBits);
+            }
+
+            boolean trackVar(VarSymbol var) {
+                return (var.owner.kind == MTH &&
+                        (var.flags() & (PARAMETER | HASINIT)) == 0 &&
+                        analyzer.trackable(var));
+            }
+
+            boolean trackTree(JCTree tree) {
+                switch (tree.getTag()) {
+                    // of course a method closes the alive range of a local variable.
+                    case METHODDEF:
+                    // for while loops we want only the body
+                    case WHILELOOP:
+                        return false;
+                }
+                return true;
+            }
+
+        }
+
+        public class LVTAssignPendingExit extends Flow.AssignAnalyzer.AssignPendingExit {
+
+            LVTAssignPendingExit(JCTree tree, final Bits inits, final Bits uninits) {
+                super(tree, inits, uninits);
+            }
+
+            @Override
+            public void resolveJump(JCTree tree) {
+                lvtInits.at(tree);
+                super.resolveJump(tree);
+            }
+        }
+
+        private LVTAssignAnalyzer(LVTRanges lvtRanges, Symtab syms, Names names) {
+            super(new LVTBits(), syms, names);
+            lvtInits = (LVTBits)inits;
+            this.lvtRanges = lvtRanges;
+        }
+
+        public static LVTAssignAnalyzer make(LVTRanges lvtRanges, Symtab syms, Names names) {
+            LVTAssignAnalyzer result = new LVTAssignAnalyzer(lvtRanges, syms, names);
+            result.lvtInits.analyzer = result;
+            return result;
+        }
+
+        @Override
+        protected void markDead(JCTree tree) {
+            lvtInits.at(tree).inclRange(returnadr, nextadr);
+            super.markDead(tree);
+        }
+
+        @Override
+        protected void merge(JCTree tree) {
+            lvtInits.at(tree);
+            super.merge(tree);
+        }
+
+        boolean isSyntheticOrMandated(Symbol sym) {
+            return (sym.flags() & (SYNTHETIC | MANDATED)) != 0;
+        }
+
+        @Override
+        protected boolean trackable(VarSymbol sym) {
+            if (isSyntheticOrMandated(sym)) {
+                //fast check to avoid tracking synthetic or mandated variables
+                return false;
+            }
+            return super.trackable(sym);
+        }
+
+        @Override
+        protected void initParam(JCVariableDecl def) {
+            if (!isSyntheticOrMandated(def.sym)) {
+                super.initParam(def);
+            }
+        }
+
+        @Override
+        protected void assignToInits(JCTree tree, Bits bits) {
+            lvtInits.at(tree);
+            lvtInits.assign(bits);
+        }
+
+        @Override
+        protected void andSetInits(JCTree tree, Bits bits) {
+            lvtInits.at(tree);
+            lvtInits.andSet(bits);
+        }
+
+        @Override
+        protected void orSetInits(JCTree tree, Bits bits) {
+            lvtInits.at(tree);
+            lvtInits.orSet(bits);
+        }
+
+        @Override
+        protected void exclVarFromInits(JCTree tree, int adr) {
+            lvtInits.at(tree);
+            lvtInits.excl(adr);
+        }
+
+        @Override
+        protected LVTAssignPendingExit createNewPendingExit(JCTree tree, Bits inits, Bits uninits) {
+            return new LVTAssignPendingExit(tree, inits, uninits);
+        }
+
+        MethodSymbol currentMethod;
+
+        @Override
+        public void visitMethodDef(JCMethodDecl tree) {
+            if ((tree.sym.flags() & (SYNTHETIC | GENERATEDCONSTR)) != 0) {
+                return;
+            }
+            if (tree.name.equals(names.clinit)) {
+                return;
+            }
+            boolean enumClass = (tree.sym.owner.flags() & ENUM) != 0;
+            if (enumClass &&
+                    (tree.name.equals(names.valueOf) ||
+                    tree.name.equals(names.values) ||
+                    tree.name.equals(names.init))) {
+                return;
+            }
+            currentMethod = tree.sym;
+            super.visitMethodDef(tree);
+        }
+
+    }
+
 }

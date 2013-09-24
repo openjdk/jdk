@@ -1,5 +1,5 @@
-/*
- * @test /nodynamiccopyright/
+/* @test /nodynamiccopyright/
+ * @bug 7192246
  * @summary check that default overrides are properly type-checked
  * @compile/fail/ref=Neg10.out -Werror -Xlint:unchecked -XDrawDiagnostics Neg10.java
  */
