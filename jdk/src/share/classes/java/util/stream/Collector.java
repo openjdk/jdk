@@ -26,6 +26,7 @@ package java.util.stream;
 
 import java.util.Collections;
 import java.util.EnumSet;
+import java.util.Objects;
 import java.util.Set;
 import java.util.function.BiConsumer;
 import java.util.function.BinaryOperator;
@@ -33,71 +34,74 @@ import java.util.function.Function;
 import java.util.function.Supplier;
 
 /**
- * A <a href="package-summary.html#Reduction">reduction operation</a> that
- * folds input elements into a mutable result container, optionally transforming
+ * A <a href="package-summary.html#Reduction">mutable reduction operation</a> that
+ * accumulates input elements into a mutable result container, optionally transforming
  * the accumulated result into a final representation after all input elements
- * have been processed.
+ * have been processed.  Reduction operations can be performed either sequentially
+ * or in parallel.
  *
  * <p>Examples of mutable reduction operations include:
  * accumulating elements into a {@code Collection}; concatenating
  * strings using a {@code StringBuilder}; computing summary information about
  * elements such as sum, min, max, or average; computing "pivot table" summaries
- * such as "maximum valued transaction by seller", etc.  Reduction operations
- * can be performed either sequentially or in parallel.
- *
- * <p>The following are examples of using the predefined {@code Collector}
- * implementations in {@link Collectors} with the {@code Stream} API to perform
- * mutable reduction tasks:
- * <pre>{@code
- *     // Accumulate names into a List
- *     List<String> list = people.stream().map(Person::getName).collect(Collectors.toList());
- *
- *     // Accumulate names into a TreeSet
- *     Set<String> list = people.stream().map(Person::getName).collect(Collectors.toCollection(TreeSet::new));
- *
- *     // Convert elements to strings and concatenate them, separated by commas
- *     String joined = things.stream()
- *                           .map(Object::toString)
- *                           .collect(Collectors.joining(", "));
- *
- *     // Find highest-paid employee
- *     Employee highestPaid = employees.stream()
- *                                     .collect(Collectors.maxBy(Comparators.comparing(Employee::getSalary)))
- *                                     .get();
- *
- *     // Group employees by department
- *     Map<Department, List<Employee>> byDept
- *         = employees.stream()
- *                    .collect(Collectors.groupingBy(Employee::getDepartment));
- *
- *     // Find highest-paid employee by department
- *     Map<Department, Optional<Employee>> highestPaidByDept
- *         = employees.stream()
- *                    .collect(Collectors.groupingBy(Employee::getDepartment,
- *                                                   Collectors.maxBy(Comparators.comparing(Employee::getSalary))));
- *
- *     // Partition students into passing and failing
- *     Map<Boolean, List<Student>> passingFailing =
- *         students.stream()
- *                 .collect(Collectors.partitioningBy(s -> s.getGrade() >= PASS_THRESHOLD));
- *
- * }</pre>
+ * such as "maximum valued transaction by seller", etc.  The class {@link Collectors}
+ * provides implementations of many common mutable reductions.
  *
  * <p>A {@code Collector} is specified by four functions that work together to
  * accumulate entries into a mutable result container, and optionally perform
- * a final transform on the result.  They are: creation of a new result container,
- * incorporating a new data element into a result container, combining two
- * result containers into one, and performing a final transform on the container.
- * The combiner function is used during parallel operations, where
- * subsets of the input are accumulated into separate result
- * containers, and then the subresults merged into a combined result.  The
- * combiner function may merge one set of subresults into the other and return
- * that, or it may return a new object to describe the combined results.
+ * a final transform on the result.  They are: <ul>
+ *     <li>creation of a new result container ({@link #supplier()})</li>
+ *     <li>incorporating a new data element into a result container ({@link #accumulator()})</li>
+ *     <li>combining two result containers into one ({@link #combiner()})</li>
+ *     <li>performing an optional final transform on the container ({@link #finisher()})</li>
+ * </ul>
  *
  * <p>Collectors also have a set of characteristics, such as
- * {@link Characteristics#CONCURRENT}.  These characteristics provide
- * hints that can be used by a reduction implementation to provide better
- * performance.
+ * {@link Characteristics#CONCURRENT}, that provide hints that can be used by a
+ * reduction implementation to provide better performance.
+ *
+ * <p>A sequential implementation of a reduction using a collector would
+ * create a single result container using the supplier function, and invoke the
+ * accumulator function once for each input element.  A parallel implementation
+ * would partition the input, create a result container for each partition,
+ * accumulate the contents of each partition into a subresult for that partition,
+ * and then use the combiner function to merge the subresults into a combined
+ * result.
+ *
+ * <p>To ensure that sequential and parallel executions produce equivalent
+ * results, the collector functions must satisfy an <em>identity</em> and an
+ * <a href="package-summary.html#Associativity">associativity</a> constraints.
+ *
+ * <p>The identity constraint says that for any partially accumulated result,
+ * combining it with an empty result container must produce an equivalent
+ * result.  That is, for a partially accumulated result {@code a} that is the
+ * result of any series of accumulator and combiner invocations, {@code a} must
+ * be equivalent to {@code combiner.apply(a, supplier.get())}.
+ *
+ * <p>The associativity constraint says that splitting the computation must
+ * produce an equivalent result.  That is, for any input elements {@code t1}
+ * and {@code t2}, the results {@code r1} and {@code r2} in the computation
+ * below must be equivalent:
+ * <pre>{@code
+ *     A a1 = supplier.get();
+ *     accumulator.accept(a1, t1);
+ *     accumulator.accept(a1, t2);
+ *     R r1 = finisher.apply(a1);  // result without splitting
+ *
+ *     A a2 = supplier.get();
+ *     accumulator.accept(a2, t1);
+ *     A a3 = supplier.get();
+ *     accumulator.accept(a3, t2);
+ *     R r2 = finisher.apply(combiner.apply(a2, a3));  // result with splitting
+ * } </pre>
+ *
+ * <p>For collectors that do not have the {@code UNORDERED} characteristic,
+ * two accumulated results {@code a1} and {@code a2} are equivalent if
+ * {@code finisher.apply(a1).equals(finisher.apply(a2))}.  For unordered
+ * collectors, equivalence is relaxed to allow for non-equality related to
+ * differences in order.  (For example, an unordered collector that accumulated
+ * elements to a {@code List} would consider two lists equivalent if they
+ * contained the same elements, ignoring order.)
  *
  * <p>Libraries that implement reduction based on {@code Collector}, such as
  * {@link Stream#collect(Collector)}, must adhere to the following constraints:
@@ -132,6 +136,20 @@ import java.util.function.Supplier;
  *     originating data is unordered.</li>
  * </ul>
  *
+ * <p>In addition to the predefined implementations in {@link Collectors}, the
+ * static factory methods {@link #of(Supplier, BiConsumer, BinaryOperator, Characteristics...)}
+ * can be used to construct collectors.  For example, you could create a collector
+ * that accumulates widgets into a {@code TreeSet} with:
+ *
+ * <pre>{@code
+ *     Collector<Widget, ?, TreeSet<Widget>> intoSet =
+ *         Collector.of(TreeSet::new, TreeSet::add,
+ *                      (left, right) -> { left.addAll(right); return left; });
+ * }</pre>
+ *
+ * (This behavior is also implemented by the predefined collector
+ * {@link Collectors#toCollection(Supplier)}).
+ *
  * @apiNote
  * Performing a reduction operation with a {@code Collector} should produce a
  * result equivalent to:
@@ -144,27 +162,35 @@ import java.util.function.Supplier;
  *
  * <p>However, the library is free to partition the input, perform the reduction
  * on the partitions, and then use the combiner function to combine the partial
- * results to achieve a parallel reduction.  Depending on the specific reduction
+ * results to achieve a parallel reduction.  (Depending on the specific reduction
  * operation, this may perform better or worse, depending on the relative cost
- * of the accumulator and combiner functions.
+ * of the accumulator and combiner functions.)
  *
- * <p>An example of an operation that can be easily modeled by {@code Collector}
- * is accumulating elements into a {@code TreeSet}. In this case, the {@code
- * resultSupplier()} function is {@code () -> new Treeset<T>()}, the
- * {@code accumulator} function is
- * {@code (set, element) -> set.add(element) }, and the combiner
- * function is {@code (left, right) -> { left.addAll(right); return left; }}.
- * (This behavior is implemented by
- * {@code Collectors.toCollection(TreeSet::new)}).
+ * <p>Collectors are designed to be <em>composed</em>; many of the methods
+ * in {@link Collectors} are functions that take a collector and produce
+ * a new collector.  For example, given the following collector that computes
+ * the sum of the salaries of a stream of employees:
  *
- * TODO Associativity and commutativity
+ * <pre>{@code
+ *     Collector<Employee, ?, Integer> summingSalaries
+ *         = Collectors.summingInt(Employee::getSalary))
+ * }</pre>
+ *
+ * If we wanted to create a collector to tabulate the sum of salaries by
+ * department, we could reuse the "sum of salaries" logic using
+ * {@link Collectors#groupingBy(Function, Collector)}:
+ *
+ * <pre>{@code
+ *     Collector<Employee, ?, Map<Department, Integer>> summingSalariesByDept
+ *         = Collectors.groupingBy(Employee::getDepartment, summingSalaries);
+ * }</pre>
  *
  * @see Stream#collect(Collector)
  * @see Collectors
  *
  * @param <T> the type of input elements to the reduction operation
  * @param <A> the mutable accumulation type of the reduction operation (often
- *           hidden as an implementation detail)
+ *            hidden as an implementation detail)
  * @param <R> the result type of the reduction operation
  * @since 1.8
  */
@@ -177,25 +203,25 @@ public interface Collector<T, A, R> {
     Supplier<A> supplier();
 
     /**
-     * A function that folds a new value into a mutable result container.
+     * A function that folds a value into a mutable result container.
      *
-     * @return a function which folds a new value into a mutable result container
+     * @return a function which folds a value into a mutable result container
      */
     BiConsumer<A, T> accumulator();
 
     /**
      * A function that accepts two partial results and merges them.  The
      * combiner function may fold state from one argument into the other and
-     * return that, or may return a new result object.
+     * return that, or may return a new result container.
      *
-     * @return a function which combines two partial results into a cumulative
+     * @return a function which combines two partial results into a combined
      * result
      */
     BinaryOperator<A> combiner();
 
     /**
      * Perform the final transformation from the intermediate accumulation type
-     * {@code A} to the final result representation {@code R}.
+     * {@code A} to the final result type {@code R}.
      *
      * <p>If the characteristic {@code IDENTITY_TRANSFORM} is
      * set, this function may be presumed to be an identity transform with an
@@ -228,12 +254,17 @@ public interface Collector<T, A, R> {
      * @param <T> The type of input elements for the new collector
      * @param <R> The type of intermediate accumulation result, and final result,
      *           for the new collector
+     * @throws NullPointerException if any argument is null
      * @return the new {@code Collector}
      */
     public static<T, R> Collector<T, R, R> of(Supplier<R> supplier,
                                               BiConsumer<R, T> accumulator,
                                               BinaryOperator<R> combiner,
                                               Characteristics... characteristics) {
+        Objects.requireNonNull(supplier);
+        Objects.requireNonNull(accumulator);
+        Objects.requireNonNull(combiner);
+        Objects.requireNonNull(characteristics);
         Set<Characteristics> cs = (characteristics.length == 0)
                                   ? Collectors.CH_ID
                                   : Collections.unmodifiableSet(EnumSet.of(Collector.Characteristics.IDENTITY_FINISH,
@@ -254,6 +285,7 @@ public interface Collector<T, A, R> {
      * @param <T> The type of input elements for the new collector
      * @param <A> The intermediate accumulation type of the new collector
      * @param <R> The final result type of the new collector
+     * @throws NullPointerException if any argument is null
      * @return the new {@code Collector}
      */
     public static<T, A, R> Collector<T, A, R> of(Supplier<A> supplier,
@@ -261,6 +293,11 @@ public interface Collector<T, A, R> {
                                                  BinaryOperator<A> combiner,
                                                  Function<A, R> finisher,
                                                  Characteristics... characteristics) {
+        Objects.requireNonNull(supplier);
+        Objects.requireNonNull(accumulator);
+        Objects.requireNonNull(combiner);
+        Objects.requireNonNull(finisher);
+        Objects.requireNonNull(characteristics);
         Set<Characteristics> cs = Collectors.CH_NOID;
         if (characteristics.length > 0) {
             cs = EnumSet.noneOf(Characteristics.class);
@@ -288,8 +325,9 @@ public interface Collector<T, A, R> {
         CONCURRENT,
 
         /**
-         * Indicates that the result container has no intrinsic order, such as
-         * a {@link Set}.
+         * Indicates that the collection operation does not commit to preserving
+         * the encounter order of input elements.  (This might be true if the
+         * result container has no intrinsic order, such as a {@link Set}.)
          */
         UNORDERED,
 

@@ -805,6 +805,10 @@ public interface Map<K,V> {
      *     return false;
      * }</pre>
      *
+     * The default implementation does not throw NullPointerException
+     * for maps that do not support null values if oldValue is null unless
+     * newValue is also null.
+     *
      * @param key key with which the specified value is associated
      * @param oldValue value expected to be associated with the specified key
      * @param newValue value to be associated with the specified key
@@ -814,8 +818,11 @@ public interface Map<K,V> {
      *         (<a href="Collection.html#optional-restrictions">optional</a>)
      * @throws ClassCastException if the class of a specified key or value
      *         prevents it from being stored in this map
-     * @throws NullPointerException if a specified key or value is null,
+     * @throws NullPointerException if a specified key or newValue is null,
      *         and this map does not permit null keys or values
+     * @throws NullPointerException if oldValue is null and this map does not
+     *         permit null values
+     *         (<a href="Collection.html#optional-restrictions">optional</a>)
      * @throws IllegalArgumentException if some property of a specified key
      *         or value prevents it from being stored in this map
      * @since 1.8

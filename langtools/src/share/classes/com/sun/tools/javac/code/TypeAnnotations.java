@@ -233,7 +233,7 @@ public class TypeAnnotations {
          * When traversing the AST we keep the "frames" of visited
          * trees in order to determine the position of annotations.
          */
-        private ListBuffer<JCTree> frames = ListBuffer.lb();
+        private ListBuffer<JCTree> frames = new ListBuffer<>();
 
         protected void push(JCTree t) { frames = frames.prepend(t); }
         protected JCTree pop() { return frames.next(); }
@@ -381,7 +381,7 @@ public class TypeAnnotations {
                 }
                 JCArrayTypeTree arTree = arrayTypeTree(typetree);
 
-                ListBuffer<TypePathEntry> depth = ListBuffer.lb();
+                ListBuffer<TypePathEntry> depth = new ListBuffer<>();
                 depth = depth.append(TypePathEntry.ARRAY);
                 while (arType.elemtype.hasTag(TypeTag.ARRAY)) {
                     if (arType.elemtype.isAnnotated()) {
@@ -473,7 +473,7 @@ public class TypeAnnotations {
                 // the correct nesting.
 
                 // The genericLocation for the annotation.
-                ListBuffer<TypePathEntry> depth = ListBuffer.lb();
+                ListBuffer<TypePathEntry> depth = new ListBuffer<>();
 
                 Type topTy = enclTy;
                 while (enclEl != null &&
@@ -793,7 +793,7 @@ public class TypeAnnotations {
                 }
 
                 case ARRAY_TYPE: {
-                    ListBuffer<TypePathEntry> index = ListBuffer.lb();
+                    ListBuffer<TypePathEntry> index = new ListBuffer<>();
                     index = index.append(TypePathEntry.ARRAY);
                     List<JCTree> newPath = path.tail;
                     while (true) {
@@ -956,7 +956,7 @@ public class TypeAnnotations {
         private static void locateNestedTypes(Type type, TypeAnnotationPosition p) {
             // The number of "steps" to get from the full type to the
             // left-most outer type.
-            ListBuffer<TypePathEntry> depth = ListBuffer.lb();
+            ListBuffer<TypePathEntry> depth = new ListBuffer<>();
 
             Type encl = type.getEnclosingType();
             while (encl != null &&
@@ -1226,7 +1226,7 @@ public class TypeAnnotations {
         public void visitNewArray(JCNewArray tree) {
             findPosition(tree, tree, tree.annotations);
             int dimAnnosCount = tree.dimAnnotations.size();
-            ListBuffer<TypePathEntry> depth = ListBuffer.lb();
+            ListBuffer<TypePathEntry> depth = new ListBuffer<>();
 
             // handle annotations associated with dimensions
             for (int i = 0; i < dimAnnosCount; ++i) {

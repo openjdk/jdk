@@ -28,8 +28,6 @@
  * @run
  */
 
-load("nashorn:mozilla_compat.js");
-
 // function to force same callsites
 function check(obj) {
     print(obj.func());

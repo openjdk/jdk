@@ -317,7 +317,7 @@ import static java.lang.invoke.MethodHandles.Lookup.IMPL_LOOKUP;
         private MethodHandle cache;
 
         AsVarargsCollector(MethodHandle target, MethodType type, Class<?> arrayType) {
-            super(type, reinvokerForm(type));
+            super(type, reinvokerForm(target));
             this.target = target;
             this.arrayType = arrayType;
             this.cache = target.asCollector(arrayType, 0);
@@ -778,16 +778,27 @@ import static java.lang.invoke.MethodHandles.Lookup.IMPL_LOOKUP;
     }
     static <T extends Throwable> Empty throwException(T t) throws T { throw t; }
 
-    static MethodHandle FAKE_METHOD_HANDLE_INVOKE;
-    static
-    MethodHandle fakeMethodHandleInvoke(MemberName method) {
-        MethodType type = method.getInvocationType();
-        assert(type.equals(MethodType.methodType(Object.class, Object[].class)));
-        MethodHandle mh = FAKE_METHOD_HANDLE_INVOKE;
+    static MethodHandle[] FAKE_METHOD_HANDLE_INVOKE = new MethodHandle[2];
+    static MethodHandle fakeMethodHandleInvoke(MemberName method) {
+        int idx;
+        assert(method.isMethodHandleInvoke());
+        switch (method.getName()) {
+        case "invoke":       idx = 0; break;
+        case "invokeExact":  idx = 1; break;
+        default:             throw new InternalError(method.getName());
+        }
+        MethodHandle mh = FAKE_METHOD_HANDLE_INVOKE[idx];
         if (mh != null)  return mh;
-        mh = throwException(type.insertParameterTypes(0, UnsupportedOperationException.class));
+        MethodType type = MethodType.methodType(Object.class, UnsupportedOperationException.class,
+                                                MethodHandle.class, Object[].class);
+        mh = throwException(type);
         mh = mh.bindTo(new UnsupportedOperationException("cannot reflectively invoke MethodHandle"));
-        FAKE_METHOD_HANDLE_INVOKE = mh;
+        if (!method.getInvocationType().equals(mh.type()))
+            throw new InternalError(method.toString());
+        mh = mh.withInternalMemberName(method);
+        mh = mh.asVarargsCollector(Object[].class);
+        assert(method.isVarargs());
+        FAKE_METHOD_HANDLE_INVOKE[idx] = mh;
         return mh;
     }
 
@@ -821,7 +832,7 @@ import static java.lang.invoke.MethodHandles.Lookup.IMPL_LOOKUP;
             MethodHandle vamh = prepareForInvoker(mh);
             // Cache the result of makeInjectedInvoker once per argument class.
             MethodHandle bccInvoker = CV_makeInjectedInvoker.get(hostClass);
-            return restoreToType(bccInvoker.bindTo(vamh), mh.type());
+            return restoreToType(bccInvoker.bindTo(vamh), mh.type(), mh.internalMemberName());
         }
 
         private static MethodHandle makeInjectedInvoker(Class<?> hostClass) {
@@ -876,8 +887,11 @@ import static java.lang.invoke.MethodHandles.Lookup.IMPL_LOOKUP;
         }
 
         // Undo the adapter effect of prepareForInvoker:
-        private static MethodHandle restoreToType(MethodHandle vamh, MethodType type) {
-            return vamh.asCollector(Object[].class, type.parameterCount()).asType(type);
+        private static MethodHandle restoreToType(MethodHandle vamh, MethodType type, MemberName member) {
+            MethodHandle mh = vamh.asCollector(Object[].class, type.parameterCount());
+            mh = mh.asType(type);
+            mh = mh.withInternalMemberName(member);
+            return mh;
         }
 
         private static final MethodHandle MH_checkCallerClass;
@@ -939,4 +953,41 @@ import static java.lang.invoke.MethodHandles.Lookup.IMPL_LOOKUP;
             }
         }
     }
+
+
+    /** This subclass allows a wrapped method handle to be re-associated with an arbitrary member name. */
+    static class WrappedMember extends MethodHandle {
+        private final MethodHandle target;
+        private final MemberName member;
+
+        private WrappedMember(MethodHandle target, MethodType type, MemberName member) {
+            super(type, reinvokerForm(target));
+            this.target = target;
+            this.member = member;
+        }
+
+        @Override
+        MethodHandle reinvokerTarget() {
+            return target;
+        }
+        @Override
+        MemberName internalMemberName() {
+            return member;
+        }
+        @Override
+        boolean isInvokeSpecial() {
+            return target.isInvokeSpecial();
+        }
+        @Override
+        MethodHandle viewAsType(MethodType newType) {
+            return new WrappedMember(target, newType, member);
+        }
+    }
+
+    static MethodHandle makeWrappedMember(MethodHandle target, MemberName member) {
+        if (member.equals(target.internalMemberName()))
+            return target;
+        return new WrappedMember(target, target.type(), member);
+    }
+
 }
