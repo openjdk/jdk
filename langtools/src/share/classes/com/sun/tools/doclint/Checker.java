@@ -730,6 +730,10 @@ public class Checker extends DocTreePathScanner<Void, Void> {
 
     @Override
     public Void visitReference(ReferenceTree tree, Void ignore) {
+        String sig = tree.getSignature();
+        if (sig.contains("<") || sig.contains(">"))
+            env.messages.error(REFERENCE, tree, "dc.type.arg.not.allowed");
+
         Element e = env.trees.getElement(getCurrentPath());
         if (e == null)
             env.messages.error(REFERENCE, tree, "dc.ref.not.found");
