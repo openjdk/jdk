@@ -93,7 +93,7 @@ public class Checker extends DocTreePathScanner<Void, Void> {
 
     Set<Element> foundParams = new HashSet<>();
     Set<TypeMirror> foundThrows = new HashSet<>();
-    Map<JavaFileObject, Set<String>> foundAnchors = new HashMap<>();
+    Map<Element, Set<String>> foundAnchors = new HashMap<>();
     boolean foundInheritDoc = false;
     boolean foundReturn = false;
 
@@ -576,11 +576,28 @@ public class Checker extends DocTreePathScanner<Void, Void> {
     }
 
     private boolean checkAnchor(String name) {
-        JavaFileObject fo = env.currPath.getCompilationUnit().getSourceFile();
-        Set<String> set = foundAnchors.get(fo);
+        Element e = getEnclosingPackageOrClass(env.currElement);
+        if (e == null)
+            return true;
+        Set<String> set = foundAnchors.get(e);
         if (set == null)
-            foundAnchors.put(fo, set = new HashSet<>());
+            foundAnchors.put(e, set = new HashSet<>());
         return set.add(name);
+    }
+
+    private Element getEnclosingPackageOrClass(Element e) {
+        while (e != null) {
+            switch (e.getKind()) {
+                case CLASS:
+                case ENUM:
+                case INTERFACE:
+                case PACKAGE:
+                    return e;
+                default:
+                    e = e.getEnclosingElement();
+            }
+        }
+        return e;
     }
 
     // http://www.w3.org/TR/html401/types.html#type-name
