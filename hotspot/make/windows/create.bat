@@ -82,6 +82,7 @@ for /F %%i in ('sh %HotSpotWorkSpace%/make/windows/get_msc_ver.sh') do set %%i
 
 echo **************************************************************
 set ProjectFile=%HotSpotBuildSpace%\jvm.vcproj
+echo MSC_VER = "%MSC_VER%" 
 if "%MSC_VER%" == "1200" (
 set ProjectFile=%HotSpotBuildSpace%\jvm.dsp
 echo Will generate VC6 project {unsupported}
@@ -96,7 +97,13 @@ if "%MSC_VER%" == "1600" (
 echo Will generate VC10 {Visual Studio 2010}
 set ProjectFile=%HotSpotBuildSpace%\jvm.vcxproj
 ) else (
+if "%MSC_VER%" == "1700" (
+echo Will generate VC10 {compatible with Visual Studio 2012}
+echo After opening in VS 2012, click "Update" when prompted.
+set ProjectFile=%HotSpotBuildSpace%\jvm.vcxproj
+) else (
 echo Will generate VC7 project {Visual Studio 2003 .NET}
+)
 )
 )
 )

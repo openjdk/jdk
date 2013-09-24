@@ -203,6 +203,15 @@ AC_DEFUN([BASIC_REMOVE_SYMBOLIC_LINKS],
     fi
 ])
 
+# Register a --with argument but mark it as deprecated
+# $1: The name of the with argument to deprecate, not including --with-
+AC_DEFUN([BASIC_DEPRECATED_ARG_WITH],
+[
+  AC_ARG_WITH($1, [AS_HELP_STRING([--with-$1],
+      [Deprecated. Option is kept for backwards compatibility and is ignored])],
+      [AC_MSG_WARN([Option --with-$1 is deprecated and will be ignored.])])
+])
+
 AC_DEFUN_ONCE([BASIC_INIT],
 [
 # Save the original command line. This is passed to us by the wrapper configure script.

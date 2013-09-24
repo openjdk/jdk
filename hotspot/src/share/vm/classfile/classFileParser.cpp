@@ -28,7 +28,6 @@
 #include "classfile/classLoaderData.hpp"
 #include "classfile/classLoaderData.inline.hpp"
 #include "classfile/defaultMethods.hpp"
-#include "classfile/genericSignatures.hpp"
 #include "classfile/javaClasses.hpp"
 #include "classfile/symbolTable.hpp"
 #include "classfile/systemDictionary.hpp"
@@ -1775,6 +1774,10 @@ ClassFileParser::AnnotationCollector::annotation_index(ClassLoaderData* loader_d
     if (_location != _in_method)  break;  // only allow for methods
     if (!privileged)              break;  // only allow in privileged code
     return _method_LambdaForm_Hidden;
+  case vmSymbols::VM_SYMBOL_ENUM_NAME(sun_invoke_Stable_signature):
+    if (_location != _in_field)   break;  // only allow for fields
+    if (!privileged)              break;  // only allow in privileged code
+    return _field_Stable;
   case vmSymbols::VM_SYMBOL_ENUM_NAME(sun_misc_Contended_signature):
     if (_location != _in_field && _location != _in_class)          break;  // only allow for fields and classes
     if (!EnableContended || (RestrictContended && !privileged))    break;  // honor privileges
@@ -1787,6 +1790,8 @@ ClassFileParser::AnnotationCollector::annotation_index(ClassLoaderData* loader_d
 void ClassFileParser::FieldAnnotationCollector::apply_to(FieldInfo* f) {
   if (is_contended())
     f->set_contended_group(contended_group());
+  if (is_stable())
+    f->set_stable(true);
 }
 
 ClassFileParser::FieldAnnotationCollector::~FieldAnnotationCollector() {
@@ -3039,35 +3044,6 @@ AnnotationArray* ClassFileParser::assemble_annotations(u1* runtime_visible_annot
   return annotations;
 }
 
-
-#ifdef ASSERT
-static void parseAndPrintGenericSignatures(
-    instanceKlassHandle this_klass, TRAPS) {
-  assert(ParseAllGenericSignatures == true, "Shouldn't call otherwise");
-  ResourceMark rm;
-
-  if (this_klass->generic_signature() != NULL) {
-    using namespace generic;
-    ClassDescriptor* spec = ClassDescriptor::parse_generic_signature(this_klass(), CHECK);
-
-    tty->print_cr("Parsing %s", this_klass->generic_signature()->as_C_string());
-    spec->print_on(tty);
-
-    for (int i = 0; i < this_klass->methods()->length(); ++i) {
-      Method* m = this_klass->methods()->at(i);
-      MethodDescriptor* method_spec = MethodDescriptor::parse_generic_signature(m, spec);
-      Symbol* sig = m->generic_signature();
-      if (sig == NULL) {
-        sig = m->signature();
-      }
-      tty->print_cr("Parsing %s", sig->as_C_string());
-      method_spec->print_on(tty);
-    }
-  }
-}
-#endif // def ASSERT
-
-
 instanceKlassHandle ClassFileParser::parse_super_class(int super_class_index,
                                                        TRAPS) {
   instanceKlassHandle super_klass;
@@ -4059,12 +4035,6 @@ instanceKlassHandle ClassFileParser::parseClassFile(Symbol* name,
     // Allocate mirror and initialize static fields
     java_lang_Class::create_mirror(this_klass, protection_domain, CHECK_(nullHandle));
 
-
-#ifdef ASSERT
-    if (ParseAllGenericSignatures) {
-      parseAndPrintGenericSignatures(this_klass, CHECK_(nullHandle));
-    }
-#endif
 
     // Generate any default methods - default methods are interface methods
     // that have a default implementation.  This is new with Lambda project.

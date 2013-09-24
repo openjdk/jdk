@@ -166,6 +166,13 @@ demo/jvmti/hprof/MonitorTest.java                               generic-all
 # 8021186
 jdk/lambda/vm/DefaultMethodsTest.java                           generic-all 
 
+# 8024423 - JVMTI: GetLoadedClasses doesn't enumerate anonymous classes 
+demo/jvmti/hprof/HeapAllTest.java                               generic-all
+demo/jvmti/hprof/HeapBinaryFormatTest.java                      generic-all
+demo/jvmti/hprof/HeapDumpTest.java                              generic-all
+demo/jvmti/hprof/OptionsTest.java                               generic-all
+demo/jvmti/hprof/StackMapTableTest.java                         generic-all
+
 ############################################################################
 
 # jdk_net

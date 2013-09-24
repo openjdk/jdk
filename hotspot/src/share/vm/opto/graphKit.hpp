@@ -695,6 +695,10 @@ class GraphKit : public Phase {
   void write_barrier_post(Node *store, Node* obj,
                           Node* adr,  uint adr_idx, Node* val, bool use_precise);
 
+  // Allow reordering of pre-barrier with oop store and/or post-barrier.
+  // Used for load_store operations which loads old value.
+  bool can_move_pre_barrier() const;
+
   // G1 pre/post barriers
   void g1_write_barrier_pre(bool do_load,
                             Node* obj,
@@ -832,6 +836,9 @@ class GraphKit : public Phase {
   // Insert a loop predicate into the graph
   void add_predicate(int nargs = 0);
   void add_predicate_impl(Deoptimization::DeoptReason reason, int nargs);
+
+  // Produce new array node of stable type
+  Node* cast_array_to_stable(Node* ary, const TypeAryPtr* ary_type);
 };
 
 // Helper class to support building of control flow branches. Upon
