@@ -144,7 +144,7 @@ public:
   void set_os_lib(void* os_lib)             { _os_lib = os_lib; }
   AgentLibrary* next() const                { return _next; }
   bool is_static_lib() const                { return _is_static_lib; }
-  void set_static_lib(bool static_lib)      { _is_static_lib = static_lib; }
+  void set_static_lib(bool is_static_lib)   { _is_static_lib = is_static_lib; }
   bool valid()                              { return (_state == agent_valid); }
   void set_valid()                          { _state = agent_valid; }
   void set_invalid()                        { _state = agent_invalid; }

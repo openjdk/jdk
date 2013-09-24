@@ -179,6 +179,8 @@ class Universe: AllStatic {
   // The particular choice of collected heap.
   static CollectedHeap* _collectedHeap;
 
+  static intptr_t _non_oop_bits;
+
   // For UseCompressedOops.
   static struct NarrowPtrStruct _narrow_oop;
   // For UseCompressedClassPointers.
