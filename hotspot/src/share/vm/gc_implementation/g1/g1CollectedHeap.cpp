@@ -125,10 +125,8 @@ class ClearLoggedCardTableEntryClosure: public CardTableEntryClosure {
   int _histo[256];
 public:
   ClearLoggedCardTableEntryClosure() :
-    _calls(0)
+    _calls(0), _g1h(G1CollectedHeap::heap()), _ctbs(_g1h->g1_barrier_set())
   {
-    _g1h = G1CollectedHeap::heap();
-    _ctbs = (CardTableModRefBS*)_g1h->barrier_set();
     for (int i = 0; i < 256; i++) _histo[i] = 0;
   }
   bool do_card_ptr(jbyte* card_ptr, int worker_i) {
@@ -158,11 +156,8 @@ class RedirtyLoggedCardTableEntryClosure: public CardTableEntryClosure {
   CardTableModRefBS* _ctbs;
 public:
   RedirtyLoggedCardTableEntryClosure() :
-    _calls(0)
-  {
-    _g1h = G1CollectedHeap::heap();
-    _ctbs = (CardTableModRefBS*)_g1h->barrier_set();
-  }
+    _calls(0), _g1h(G1CollectedHeap::heap()), _ctbs(_g1h->g1_barrier_set()) {}
+
   bool do_card_ptr(jbyte* card_ptr, int worker_i) {
     if (_g1h->is_in_reserved(_ctbs->addr_for(card_ptr))) {
       _calls++;
@@ -478,7 +473,7 @@ bool G1CollectedHeap::is_scavengable(const void* p) {
 
 void G1CollectedHeap::check_ct_logs_at_safepoint() {
   DirtyCardQueueSet& dcqs = JavaThread::dirty_card_queue_set();
-  CardTableModRefBS* ct_bs = (CardTableModRefBS*)barrier_set();
+  CardTableModRefBS* ct_bs = g1_barrier_set();
 
   // Count the dirty cards at the start.
   CountNonCleanMemRegionClosure count1(this);
@@ -1205,7 +1200,7 @@ public:
 };
 
 void G1CollectedHeap::clear_rsets_post_compaction() {
-  PostMCRemSetClearClosure rs_clear(this, mr_bs());
+  PostMCRemSetClearClosure rs_clear(this, g1_barrier_set());
   heap_region_iterate(&rs_clear);
 }
 
@@ -2045,20 +2040,13 @@ jint G1CollectedHeap::initialize() {
   // Create the gen rem set (and barrier set) for the entire reserved region.
   _rem_set = collector_policy()->create_rem_set(_reserved, 2);
   set_barrier_set(rem_set()->bs());
-  if (barrier_set()->is_a(BarrierSet::ModRef)) {
-    _mr_bs = (ModRefBarrierSet*)_barrier_set;
-  } else {
-    vm_exit_during_initialization("G1 requires a mod ref bs.");
+  if (!barrier_set()->is_a(BarrierSet::G1SATBCTLogging)) {
+    vm_exit_during_initialization("G1 requires a G1SATBLoggingCardTableModRefBS");
     return JNI_ENOMEM;
   }
 
   // Also create a G1 rem set.
-  if (mr_bs()->is_a(BarrierSet::CardTableModRef)) {
-    _g1_rem_set = new G1RemSet(this, (CardTableModRefBS*)mr_bs());
-  } else {
-    vm_exit_during_initialization("G1 requires a cardtable mod ref bs.");
-    return JNI_ENOMEM;
-  }
+  _g1_rem_set = new G1RemSet(this, g1_barrier_set());
 
   // Carve out the G1 part of the heap.
 
@@ -4555,7 +4543,7 @@ G1ParScanThreadState::G1ParScanThreadState(G1CollectedHeap* g1h, uint queue_num)
   : _g1h(g1h),
     _refs(g1h->task_queue(queue_num)),
     _dcq(&g1h->dirty_card_queue_set()),
-    _ct_bs((CardTableModRefBS*)_g1h->barrier_set()),
+    _ct_bs(g1h->g1_barrier_set()),
     _g1_rem(g1h->g1_rem_set()),
     _hash_seed(17), _queue_num(queue_num),
     _term_attempts(0),
@@ -5984,11 +5972,11 @@ void G1CollectedHeap::update_sets_after_freeing_regions(size_t pre_used,
 }
 
 class G1ParCleanupCTTask : public AbstractGangTask {
-  CardTableModRefBS* _ct_bs;
+  G1SATBCardTableModRefBS* _ct_bs;
   G1CollectedHeap* _g1h;
   HeapRegion* volatile _su_head;
 public:
-  G1ParCleanupCTTask(CardTableModRefBS* ct_bs,
+  G1ParCleanupCTTask(G1SATBCardTableModRefBS* ct_bs,
                      G1CollectedHeap* g1h) :
     AbstractGangTask("G1 Par Cleanup CT Task"),
     _ct_bs(ct_bs), _g1h(g1h) { }
@@ -6011,9 +5999,9 @@ public:
 #ifndef PRODUCT
 class G1VerifyCardTableCleanup: public HeapRegionClosure {
   G1CollectedHeap* _g1h;
-  CardTableModRefBS* _ct_bs;
+  G1SATBCardTableModRefBS* _ct_bs;
 public:
-  G1VerifyCardTableCleanup(G1CollectedHeap* g1h, CardTableModRefBS* ct_bs)
+  G1VerifyCardTableCleanup(G1CollectedHeap* g1h, G1SATBCardTableModRefBS* ct_bs)
     : _g1h(g1h), _ct_bs(ct_bs) { }
   virtual bool doHeapRegion(HeapRegion* r) {
     if (r->is_survivor()) {
@@ -6027,7 +6015,7 @@ public:
 
 void G1CollectedHeap::verify_not_dirty_region(HeapRegion* hr) {
   // All of the region should be clean.
-  CardTableModRefBS* ct_bs = (CardTableModRefBS*)barrier_set();
+  G1SATBCardTableModRefBS* ct_bs = g1_barrier_set();
   MemRegion mr(hr->bottom(), hr->end());
   ct_bs->verify_not_dirty_region(mr);
 }
@@ -6040,13 +6028,13 @@ void G1CollectedHeap::verify_dirty_region(HeapRegion* hr) {
   // not dirty that area (one less thing to have to do while holding
   // a lock). So we can only verify that [bottom(),pre_dummy_top()]
   // is dirty.
-  CardTableModRefBS* ct_bs = (CardTableModRefBS*) barrier_set();
+  G1SATBCardTableModRefBS* ct_bs = g1_barrier_set();
   MemRegion mr(hr->bottom(), hr->pre_dummy_top());
   ct_bs->verify_dirty_region(mr);
 }
 
 void G1CollectedHeap::verify_dirty_young_list(HeapRegion* head) {
-  CardTableModRefBS* ct_bs = (CardTableModRefBS*) barrier_set();
+  G1SATBCardTableModRefBS* ct_bs = g1_barrier_set();
   for (HeapRegion* hr = head; hr != NULL; hr = hr->get_next_young_region()) {
     verify_dirty_region(hr);
   }
@@ -6058,7 +6046,7 @@ void G1CollectedHeap::verify_dirty_young_regions() {
 #endif
 
 void G1CollectedHeap::cleanUpCardTable() {
-  CardTableModRefBS* ct_bs = (CardTableModRefBS*) (barrier_set());
+  G1SATBCardTableModRefBS* ct_bs = g1_barrier_set();
   double start = os::elapsedTime();
 
   {
