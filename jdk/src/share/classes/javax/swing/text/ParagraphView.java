@@ -409,8 +409,8 @@ public class ParagraphView extends FlowView implements TabExpander {
      *
      * @param x the X reference position
      * @param tabOffset the position within the text stream
-     *   that the tab occurred at >= 0
-     * @return the trailing end of the tab expansion >= 0
+     *   that the tab occurred at &gt;= 0
+     * @return the trailing end of the tab expansion &gt;= 0
      * @see TabSet
      * @see TabStop
      * @see LabelView
@@ -489,9 +489,9 @@ public class ParagraphView extends FlowView implements TabExpander {
      * the <code>TabableView</code> interface,
      * the <code>preferredSpan</code> will be used.
      *
-     * @param startOffset the starting document offset >= 0
-     * @param endOffset the ending document offset >= startOffset
-     * @return the size >= 0
+     * @param startOffset the starting document offset &gt;= 0
+     * @param endOffset the ending document offset &gt;= startOffset
+     * @return the size &gt;= 0
      */
     protected float getPartialSize(int startOffset, int endOffset) {
         float size = 0.0f;
@@ -529,7 +529,7 @@ public class ParagraphView extends FlowView implements TabExpander {
      * there are no characters found, -1 will be returned.
      *
      * @param string the string of characters
-     * @param start where to start in the model >= 0
+     * @param start where to start in the model &gt;= 0
      * @return the document offset, or -1 if no characters found
      */
     protected int findOffsetToCharactersInString(char[] string,
@@ -642,7 +642,7 @@ public class ParagraphView extends FlowView implements TabExpander {
      * @param axis may be either <code>View.X_AXIS</code>
      *  or <code>View.Y_AXIS</code>
      * @param len specifies where a potential break is desired
-     *  along the given axis >= 0
+     *  along the given axis &gt;= 0
      * @param a the current allocation of the view
      * @return the fragment of the view that represents the
      *  given span, if the view can be broken; if the view
@@ -675,7 +675,7 @@ public class ParagraphView extends FlowView implements TabExpander {
      *
      * @param axis may be either <code>View.X_AXIS</code>
      *  or <code>View.Y_AXIS</code>
-     * @param len specifies where a potential break is desired >= 0
+     * @param len specifies where a potential break is desired &gt;= 0
      * @return a value indicating the attractiveness of breaking here;
      *  either <code>GoodBreakWeight</code> or <code>BadBreakWeight</code>
      * @see View#getBreakWeight
@@ -1141,7 +1141,7 @@ public class ParagraphView extends FlowView implements TabExpander {
          * Fetches the child view index representing the given position in
          * the model.
          *
-         * @param pos the position >= 0
+         * @param pos the position &gt;= 0
          * @return  index of the view representing the given position, or
          *   -1 if no view represents that position
          */

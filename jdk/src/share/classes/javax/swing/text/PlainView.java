@@ -66,10 +66,10 @@ public class PlainView extends View implements TabExpander {
      * <code>drawSelectedText</code> so that the way selected and
      * unselected text are rendered can be customized.
      *
-     * @param lineIndex the line to draw >= 0
+     * @param lineIndex the line to draw &gt;= 0
      * @param g the <code>Graphics</code> context
-     * @param x the starting X position >= 0
-     * @param y the starting Y position >= 0
+     * @param x the starting X position &gt;= 0
+     * @param y the starting Y position &gt;= 0
      * @see #drawUnselectedText
      * @see #drawSelectedText
      */
@@ -138,11 +138,11 @@ public class PlainView extends View implements TabExpander {
      * text.  Uses the foreground or disabled color to render the text.
      *
      * @param g the graphics context
-     * @param x the starting X coordinate >= 0
-     * @param y the starting Y coordinate >= 0
-     * @param p0 the beginning position in the model >= 0
-     * @param p1 the ending position in the model >= 0
-     * @return the X location of the end of the range >= 0
+     * @param x the starting X coordinate &gt;= 0
+     * @param y the starting Y coordinate &gt;= 0
+     * @param p0 the beginning position in the model &gt;= 0
+     * @param p1 the ending position in the model &gt;= 0
+     * @return the X location of the end of the range &gt;= 0
      * @exception BadLocationException if the range is invalid
      */
     protected int drawUnselectedText(Graphics g, int x, int y,
@@ -163,10 +163,10 @@ public class PlainView extends View implements TabExpander {
      * the selected background.
      *
      * @param g the graphics context
-     * @param x the starting X coordinate >= 0
-     * @param y the starting Y coordinate >= 0
-     * @param p0 the beginning position in the model >= 0
-     * @param p1 the ending position in the model >= 0
+     * @param x the starting X coordinate &gt;= 0
+     * @param y the starting Y coordinate &gt;= 0
+     * @param p0 the beginning position in the model &gt;= 0
+     * @param p1 the ending position in the model &gt;= 0
      * @return the location of the end of the range
      * @exception BadLocationException if the range is invalid
      */
@@ -218,7 +218,7 @@ public class PlainView extends View implements TabExpander {
      * axis.
      *
      * @param axis may be either View.X_AXIS or View.Y_AXIS
-     * @return   the span the view would like to be rendered into >= 0.
+     * @return   the span the view would like to be rendered into &gt;= 0.
      *           Typically the view is told to render into the span
      *           that is returned, although there is no guarantee.
      *           The parent may choose to resize or break the view.
@@ -332,7 +332,7 @@ public class PlainView extends View implements TabExpander {
      * Provides a mapping from the document model coordinate space
      * to the coordinate space of the view mapped to it.
      *
-     * @param pos the position to convert >= 0
+     * @param pos the position to convert &gt;= 0
      * @param a the allocated region to render into
      * @return the bounding box of the given position
      * @exception BadLocationException  if the given position does not
@@ -369,11 +369,11 @@ public class PlainView extends View implements TabExpander {
      * Provides a mapping from the view coordinate space to the logical
      * coordinate space of the model.
      *
-     * @param fx the X coordinate >= 0
-     * @param fy the Y coordinate >= 0
+     * @param fx the X coordinate &gt;= 0
+     * @param fy the Y coordinate &gt;= 0
      * @param a the allocated region to render into
      * @return the location within the model that best represents the
-     *  given point in the view >= 0
+     *  given point in the view &gt;= 0
      * @see View#viewToModel
      */
     public int viewToModel(float fx, float fy, Shape a, Position.Bias[] bias) {
@@ -482,8 +482,8 @@ public class PlainView extends View implements TabExpander {
      * layout of the view along the given axis, if it
      * has any layout duties.
      *
-     * @param width the width >= 0
-     * @param height the height >= 0
+     * @param width the width &gt;= 0
+     * @param height the height &gt;= 0
      */
     public void setSize(float width, float height) {
         super.setSize(width, height);
@@ -497,10 +497,10 @@ public class PlainView extends View implements TabExpander {
      * This implementation does not support things like centering so it
      * ignores the tabOffset argument.
      *
-     * @param x the current position >= 0
+     * @param x the current position &gt;= 0
      * @param tabOffset the position within the text stream
-     *   that the tab occurred at >= 0.
-     * @return the tab stop, measured in points >= 0
+     *   that the tab occurred at &gt;= 0.
+     * @return the tab stop, measured in points &gt;= 0
      */
     public float nextTabStop(float x, int tabOffset) {
         if (tabSize == 0) {
