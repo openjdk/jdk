@@ -44,6 +44,7 @@ import javax.lang.model.element.Element;
 import javax.lang.model.element.ElementKind;
 import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.element.Name;
+import javax.lang.model.element.VariableElement;
 import javax.lang.model.type.TypeKind;
 import javax.lang.model.type.TypeMirror;
 import javax.tools.Diagnostic.Kind;
@@ -822,8 +823,31 @@ public class Checker extends DocTreePathScanner<Void, Void> {
 
     @Override
     public Void visitValue(ValueTree tree, Void ignore) {
+        ReferenceTree ref = tree.getReference();
+        if (ref == null || ref.getSignature().isEmpty()) {
+            if (!isConstant(env.currElement))
+                env.messages.error(REFERENCE, tree, "dc.value.not.allowed.here");
+        } else {
+            Element e = env.trees.getElement(new DocTreePath(getCurrentPath(), ref));
+            if (!isConstant(e))
+                env.messages.error(REFERENCE, tree, "dc.value.not.a.constant");
+        }
+
         markEnclosingTag(Flag.HAS_INLINE_TAG);
         return super.visitValue(tree, ignore);
+    }
+
+    private boolean isConstant(Element e) {
+        if (e == null)
+            return false;
+
+        switch (e.getKind()) {
+            case FIELD:
+                Object value = ((VariableElement) e).getConstantValue();
+                return (value != null); // can't distinguish "not a constant" from "constant is null"
+            default:
+                return false;
+        }
     }
 
     @Override
