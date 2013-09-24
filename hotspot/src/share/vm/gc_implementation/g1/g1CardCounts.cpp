@@ -65,9 +65,7 @@ void G1CardCounts::initialize() {
     // threshold limit is no more than this.
     guarantee(G1ConcRSHotCardLimit <= max_jubyte, "sanity");
 
-    ModRefBarrierSet* bs = _g1h->mr_bs();
-    guarantee(bs->is_a(BarrierSet::CardTableModRef), "Precondition");
-    _ct_bs = (CardTableModRefBS*)bs;
+    _ct_bs = _g1h->g1_barrier_set();
     _ct_bot = _ct_bs->byte_for_const(_g1h->reserved_region().start());
 
     // Allocate/Reserve the counts table

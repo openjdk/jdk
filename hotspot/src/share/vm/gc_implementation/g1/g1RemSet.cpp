@@ -109,7 +109,7 @@ class ScanRSClosure : public HeapRegionClosure {
   CodeBlobToOopClosure* _code_root_cl;
 
   G1BlockOffsetSharedArray* _bot_shared;
-  CardTableModRefBS *_ct_bs;
+  G1SATBCardTableModRefBS *_ct_bs;
 
   double _strong_code_root_scan_time_sec;
   int    _worker_i;
@@ -130,7 +130,7 @@ public:
   {
     _g1h = G1CollectedHeap::heap();
     _bot_shared = _g1h->bot_shared();
-    _ct_bs = (CardTableModRefBS*) (_g1h->barrier_set());
+    _ct_bs = _g1h->g1_barrier_set();
     _block_size = MAX2<int>(G1RSetScanBlockSize, 1);
   }
 
@@ -505,12 +505,7 @@ public:
   ScrubRSClosure(BitMap* region_bm, BitMap* card_bm) :
     _g1h(G1CollectedHeap::heap()),
     _region_bm(region_bm), _card_bm(card_bm),
-    _ctbs(NULL)
-  {
-    ModRefBarrierSet* bs = _g1h->mr_bs();
-    guarantee(bs->is_a(BarrierSet::CardTableModRef), "Precondition");
-    _ctbs = (CardTableModRefBS*)bs;
-  }
+    _ctbs(_g1h->g1_barrier_set()) {}
 
   bool doHeapRegion(HeapRegion* r) {
     if (!r->continuesHumongous()) {
