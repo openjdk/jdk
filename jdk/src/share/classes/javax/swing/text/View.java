@@ -72,12 +72,12 @@ A view has the following responsibilities:
                      alt="The above text describes this graphic.">
     <p>The minimum set of methods for layout are:
     <ul>
-    <li><a href="#getMinimumSpan(int)">getMinimumSpan</a>
-    <li><a href="#getPreferredSpan(int)">getPreferredSpan</a>
-    <li><a href="#getMaximumSpan(int)">getMaximumSpan</a>
-    <li><a href="#getAlignment(int)">getAlignment</a>
-    <li><a href="#preferenceChanged(javax.swing.text.View, boolean, boolean)">preferenceChanged</a>
-    <li><a href="#setSize(float, float)">setSize</a>
+    <li>{@link #getMinimumSpan(int) getMinimumSpan}
+    <li>{@link #getPreferredSpan(int) getPreferredSpan}
+    <li>{@link #getMaximumSpan(int) getMaximumSpan}
+    <li>{@link #getAlignment(int) getAlignment}
+    <li>{@link #preferenceChanged(javax.swing.text.View, boolean, boolean) preferenceChanged}
+    <li>{@link #setSize(float, float) setSize}
     </ul>
 
   <p>The <code>setSize</code> method should be prepared to be called a number of times
@@ -142,7 +142,7 @@ A view has the following responsibilities:
     </ul>
     <p>The methods for rendering are:
     <ul>
-    <li><a href="#paint(java.awt.Graphics, java.awt.Shape)">paint</a>
+    <li>{@link #paint(java.awt.Graphics, java.awt.Shape) paint}
     </ul>
     <p>
 
@@ -153,12 +153,12 @@ A view has the following responsibilities:
     to perform translation to properly locate spatial representation of the model.
     The methods for doing this are:
     <ul>
-    <li><a href="#modelToView(int, javax.swing.text.Position.Bias, int, javax.swing.text.Position.Bias, java.awt.Shape)">modelToView</a>
-    <li><a href="#viewToModel(float, float, java.awt.Shape, javax.swing.text.Position.Bias[])">viewToModel</a>
-    <li><a href="#getDocument()">getDocument</a>
-    <li><a href="#getElement()">getElement</a>
-    <li><a href="#getStartOffset()">getStartOffset</a>
-    <li><a href="#getEndOffset()">getEndOffset</a>
+    <li>{@link #modelToView(int, javax.swing.text.Position.Bias, int, javax.swing.text.Position.Bias, java.awt.Shape) modelToView}
+    <li>{@link #viewToModel(float, float, java.awt.Shape, javax.swing.text.Position.Bias[]) viewToModel}
+    <li>{@link #getDocument() getDocument}
+    <li>{@link #getElement() getElement}
+    <li>{@link #getStartOffset() getStartOffset}
+    <li>{@link #getEndOffset() getEndOffset}
     </ul>
     <p>The layout must be valid prior to attempting to make the translation.
     The translation is not valid, and must not be attempted while changes
