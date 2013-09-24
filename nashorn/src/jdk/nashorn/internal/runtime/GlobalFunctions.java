@@ -90,6 +90,7 @@ public final class GlobalFunctions {
     public static double parseInt(final Object self, final Object string, final Object rad) {
         final String str    = JSType.trimLeft(JSType.toString(string));
         final int    length = str.length();
+        int          radix  = JSType.toInt32(rad);
 
         // empty string is not valid
         if (length == 0) {
@@ -113,7 +114,6 @@ public final class GlobalFunctions {
         }
 
         boolean stripPrefix = true;
-        int     radix = JSType.toInt32(rad);
 
         if (radix != 0) {
             if (radix < 2 || radix > 36) {
