@@ -168,6 +168,7 @@ public final class IdentNode extends Expression implements PropertyKey, TypeOver
      *     return 3;
      *   }
      * }
+     * </pre>
      *
      * @return true if can have callsite type
      */

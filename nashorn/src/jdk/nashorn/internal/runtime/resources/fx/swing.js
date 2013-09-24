@@ -23,7 +23,8 @@
  * questions.
  */
 
-JFXPanel        = Java.type("javafx.embed.swing.JFXPanel");
-JFXPanelBuilder = Java.type("javafx.embed.swing.JFXPanelBuilder");
-SwingFXUtils    = Java.type("javafx.embed.swing.SwingFXUtils");
-SwingNode       = Java.type("javafx.embed.swing.SwingNode");
+if (!this.JFX_BASE_CLASSES) {
+    load("fx:base.js")
+}
+
+LOAD_FX_CLASSES(JFX_SWING_CLASSES);

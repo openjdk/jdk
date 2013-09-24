@@ -47,7 +47,6 @@ public:
     static jmethodID setDevmodeID;
     static jmethodID getDevnamesID;
     static jmethodID setDevnamesID;
-
     static jmethodID getWin32MediaID;
     static jmethodID setWin32MediaID;
     static jmethodID getWin32MediaTrayID;
@@ -73,6 +72,7 @@ public:
     static jmethodID setNativeAttID;
     static jmethodID setRangeCopiesID;
     static jmethodID setResID;
+    static jmethodID setJobAttributesID;
 
     static void initIDs(JNIEnv *env, jclass cls);
     static BOOL FindPrinter(jstring printerName, LPBYTE pPrinterEnum,

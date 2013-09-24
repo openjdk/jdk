@@ -57,6 +57,12 @@ public class TestGetGlobal {
     }
 
     public static void main(String... args) {
+        final String manager = System.getProperty("java.util.logging.manager", null);
+
+        final String description = "TestGetGlobal"
+            + (System.getSecurityManager() == null ? " " :
+               " -Djava.security.manager ")
+            + (manager == null ? "" : "-Djava.util.logging.manager=" + manager);
 
         Logger.global.info(messages[0]); // at this point LogManager is not
              // initialized yet, so this message should not appear.
@@ -67,7 +73,9 @@ public class TestGetGlobal {
 
         final List<String> expected = Arrays.asList(Arrays.copyOfRange(messages, 1, messages.length));
         if (!testgetglobal.HandlerImpl.received.equals(expected)) {
-            throw new Error("Unexpected message list: "+testgetglobal.HandlerImpl.received+" vs "+ expected);
+            System.err.println("Test case failed: " + description);
+            throw new Error("Unexpected message list: "+testgetglobal.HandlerImpl.received+" vs "+ expected
+                            + "\n\t"+description);
         }
     }
 }

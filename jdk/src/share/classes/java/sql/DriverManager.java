@@ -326,6 +326,7 @@ public class DriverManager {
      * @param driver the new JDBC Driver that is to be registered with the
      *               {@code DriverManager}
      * @exception SQLException if a database access error occurs
+     * @exception NullPointerException if {@code driver} is null
      */
     public static synchronized void registerDriver(java.sql.Driver driver)
         throws SQLException {
@@ -345,6 +346,7 @@ public class DriverManager {
      * @param da     the {@code DriverAction} implementation to be used when
      *               {@code DriverManager#deregisterDriver} is called
      * @exception SQLException if a database access error occurs
+     * @exception NullPointerException if {@code driver} is null
      */
     public static synchronized void registerDriver(java.sql.Driver driver,
             DriverAction da)

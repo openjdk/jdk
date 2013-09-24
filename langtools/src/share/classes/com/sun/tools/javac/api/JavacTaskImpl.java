@@ -472,7 +472,7 @@ public class JavacTaskImpl extends BasicJavacTask {
             for (TypeElement item: classes)
                 set.add(item);
 
-            ListBuffer<Env<AttrContext>> defer = ListBuffer.<Env<AttrContext>>lb();
+            ListBuffer<Env<AttrContext>> defer = new ListBuffer<>();
             while (list.peek() != null) {
                 Env<AttrContext> env = list.remove();
                 ClassSymbol csym = env.enclClass.sym;

@@ -82,7 +82,6 @@ public class SocketHandler extends StreamHandler {
     private Socket sock;
     private String host;
     private int port;
-    private String portProperty;
 
     // Private method to configure a SocketHandler from LogManager
     // properties and/or default values as specified in the class
@@ -177,6 +176,7 @@ public class SocketHandler extends StreamHandler {
      * @exception  SecurityException  if a security manager exists and if
      *             the caller does not have <tt>LoggingPermission("control")</tt>.
      */
+    @Override
     public synchronized void close() throws SecurityException {
         super.close();
         if (sock != null) {
@@ -195,6 +195,7 @@ public class SocketHandler extends StreamHandler {
      * @param  record  description of the log event. A null record is
      *                 silently ignored and is not published
      */
+    @Override
     public synchronized void publish(LogRecord record) {
         if (!isLoggable(record)) {
             return;

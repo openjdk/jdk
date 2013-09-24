@@ -95,7 +95,7 @@ public class Pos05 {
                 throw new Error("Code attribute for test() method not found");
             }
             Exception_data firstExceptionTable = null;
-            for (int i = 0 ; i < ea.exception_table_langth; i++) {
+            for (int i = 0 ; i < ea.exception_table_length; i++) {
                 if (firstExceptionTable == null) {
                     firstExceptionTable = ea.exception_table[i];
                 }
