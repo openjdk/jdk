@@ -285,7 +285,7 @@ public class JViewport extends JComponent implements Accessible
 
 
     /**
-     * Returns the L&F object that renders this component.
+     * Returns the L&amp;F object that renders this component.
      *
      * @return a <code>ViewportUI</code> object
      * @since 1.3
@@ -296,9 +296,9 @@ public class JViewport extends JComponent implements Accessible
 
 
     /**
-     * Sets the L&F object that renders this component.
+     * Sets the L&amp;F object that renders this component.
      *
-     * @param ui  the <code>ViewportUI</code> L&F object
+     * @param ui  the <code>ViewportUI</code> L&amp;F object
      * @see UIDefaults#getUI
      * @beaninfo
      *        bound: true
@@ -323,7 +323,7 @@ public class JViewport extends JComponent implements Accessible
 
 
     /**
-     * Returns a string that specifies the name of the L&F class
+     * Returns a string that specifies the name of the L&amp;F class
      * that renders this component.
      *
      * @return the string "ViewportUI"

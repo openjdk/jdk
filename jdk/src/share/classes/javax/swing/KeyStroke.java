@@ -284,11 +284,11 @@ public class KeyStroke extends AWTKeyStroke {
      * If typed, pressed or released is not specified, pressed is assumed. Here
      * are some examples:
      * <pre>
-     *     "INSERT" => getKeyStroke(KeyEvent.VK_INSERT, 0);
-     *     "control DELETE" => getKeyStroke(KeyEvent.VK_DELETE, InputEvent.CTRL_MASK);
-     *     "alt shift X" => getKeyStroke(KeyEvent.VK_X, InputEvent.ALT_MASK | InputEvent.SHIFT_MASK);
-     *     "alt shift released X" => getKeyStroke(KeyEvent.VK_X, InputEvent.ALT_MASK | InputEvent.SHIFT_MASK, true);
-     *     "typed a" => getKeyStroke('a');
+     *     "INSERT" =&gt; getKeyStroke(KeyEvent.VK_INSERT, 0);
+     *     "control DELETE" =&gt; getKeyStroke(KeyEvent.VK_DELETE, InputEvent.CTRL_MASK);
+     *     "alt shift X" =&gt; getKeyStroke(KeyEvent.VK_X, InputEvent.ALT_MASK | InputEvent.SHIFT_MASK);
+     *     "alt shift released X" =&gt; getKeyStroke(KeyEvent.VK_X, InputEvent.ALT_MASK | InputEvent.SHIFT_MASK, true);
+     *     "typed a" =&gt; getKeyStroke('a');
      * </pre>
      *
      * In order to maintain backward-compatibility, specifying a null String,
