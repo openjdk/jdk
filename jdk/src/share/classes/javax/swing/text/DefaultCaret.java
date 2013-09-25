@@ -962,8 +962,8 @@ public class DefaultCaret extends Rectangle implements Caret, FocusListener, Mou
         // focus lost notification can come in later after the
         // caret has been deinstalled, in which case the component
         // will be null.
+        active = e;
         if (component != null) {
-            active = e;
             TextUI mapper = component.getUI();
             if (visible != e) {
                 visible = e;
