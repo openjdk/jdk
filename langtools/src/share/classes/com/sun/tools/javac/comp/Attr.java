@@ -93,6 +93,7 @@ public class Attr extends JCTree.Visitor {
     final Types types;
     final JCDiagnostic.Factory diags;
     final Annotate annotate;
+    final TypeAnnotations typeAnnotations;
     final DeferredLintHandler deferredLintHandler;
 
     public static Attr instance(Context context) {
@@ -121,6 +122,7 @@ public class Attr extends JCTree.Visitor {
         types = Types.instance(context);
         diags = JCDiagnostic.Factory.instance(context);
         annotate = Annotate.instance(context);
+        typeAnnotations = TypeAnnotations.instance(context);
         deferredLintHandler = DeferredLintHandler.instance(context);
 
         Options options = Options.instance(context);
@@ -2228,7 +2230,7 @@ public class Attr extends JCTree.Visitor {
         // empty annotations, if only declaration annotations were given.
         // This method will raise an error for such a type.
         for (JCAnnotation ai : annotations) {
-            if (TypeAnnotations.annotationType(syms, names, ai.attribute, sym) == TypeAnnotations.AnnotationType.DECLARATION) {
+            if (typeAnnotations.annotationType(ai.attribute, sym) == TypeAnnotations.AnnotationType.DECLARATION) {
                 log.error(ai.pos(), "annotation.type.not.applicable");
             }
         }
@@ -4339,7 +4341,7 @@ public class Attr extends JCTree.Visitor {
         }
         if (allowTypeAnnos) {
             // Correctly organize the postions of the type annotations
-            TypeAnnotations.organizeTypeAnnotationsBodies(this.syms, this.names, this.log, tree);
+            typeAnnotations.organizeTypeAnnotationsBodies(tree);
 
             // Check type annotations applicability rules
             validateTypeAnnotations(tree);
