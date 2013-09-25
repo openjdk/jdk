@@ -46,7 +46,7 @@ import sun.awt.shell.ShellFolder;
 import sun.swing.*;
 
 /**
- * Metal L&F implementation of a FileChooser.
+ * Metal L&amp;F implementation of a FileChooser.
  *
  * @author Jeff Dinkins
  */

@@ -43,7 +43,7 @@ import sun.swing.DefaultLookup;
 import sun.swing.UIAction;
 
 /**
- * A Basic L&F implementation of TabbedPaneUI.
+ * A Basic L&amp;F implementation of TabbedPaneUI.
  *
  * @author Amy Fowler
  * @author Philip Milne
@@ -669,7 +669,7 @@ public class BasicTabbedPaneUI extends TabbedPaneUI implements SwingConstants {
      *
      * @param tab index of tab to get baseline for
      * @exception IndexOutOfBoundsException if index is out of range
-     *            (index < 0 || index >= tab count)
+     *            (index &lt; 0 || index &gt;= tab count)
      * @return baseline or a value &lt; 0 indicating there is no reasonable
      *                  baseline
      * @since 1.6

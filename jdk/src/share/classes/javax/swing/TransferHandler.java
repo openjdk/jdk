@@ -502,7 +502,7 @@ public class TransferHandler implements Serializable {
          * the action with the source drop actions, and then compare the result
          * against the original action. For example:
          * <pre>
-         * boolean copySupported = (COPY & getSourceDropActions()) == COPY;
+         * boolean copySupported = (COPY &amp; getSourceDropActions()) == COPY;
          * </pre>
          * <p>
          * This method is only for use with drag and drop transfers.
