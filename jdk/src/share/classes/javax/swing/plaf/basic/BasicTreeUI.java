@@ -49,7 +49,7 @@ import sun.swing.DefaultLookup;
 import sun.swing.UIAction;
 
 /**
- * The basic L&F for a hierarchical data structure.
+ * The basic L&amp;F for a hierarchical data structure.
  * <p>
  *
  * @author Scott Violet
