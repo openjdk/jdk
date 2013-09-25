@@ -883,7 +883,7 @@ public final class NativeRegExp extends ScriptObject {
      * @return last index property as int
      */
     public int getLastIndex() {
-        return JSType.toInt32(lastIndex);
+        return JSType.toInteger(lastIndex);
     }
 
     /**
