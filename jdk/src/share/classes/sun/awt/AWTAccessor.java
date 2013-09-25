@@ -252,6 +252,14 @@ public final class AWTAccessor {
          * Validates the container unconditionally.
          */
         void validateUnconditionally(Container cont);
+
+        /**
+         *
+         * Access to the private version of findComponentAt method which has
+         * a controllable behavior. Setting 'ignoreEnabled' to 'false'
+         * bypasses disabled Components during the search.
+         */
+        Component findComponentAt(Container cont, int x, int y, boolean ignoreEnabled);
     }
 
     /*
