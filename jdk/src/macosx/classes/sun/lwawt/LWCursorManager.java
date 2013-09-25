@@ -106,8 +106,9 @@ public abstract class LWCursorManager {
             c = peer.getTarget();
             if (c instanceof Container) {
                 final Point p = peer.getLocationOnScreen();
-                c = ((Container) c).findComponentAt(cursorPos.x - p.x,
-                                                    cursorPos.y - p.y);
+                c = AWTAccessor.getContainerAccessor().findComponentAt(
+                    (Container) c, cursorPos.x - p.x, cursorPos.y - p.y, false);
+
             }
             while (c != null) {
                 final Object p = AWTAccessor.getComponentAccessor().getPeer(c);
