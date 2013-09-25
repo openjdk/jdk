@@ -211,7 +211,7 @@ loop:
             switch (ch) {
             case '.':
                 // dot allowed only once
-                if (dotSeen) {
+                if (exponentOffset != -1 || dotSeen) {
                     break loop;
                 }
                 dotSeen = true;
