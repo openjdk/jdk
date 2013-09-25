@@ -5047,6 +5047,9 @@ void TestReservedSpace_test();
 void TestReserveMemorySpecial_test();
 void TestVirtualSpace_test();
 void MetaspaceAux_test();
+#if INCLUDE_ALL_GCS
+void TestG1BiasedArray_test();
+#endif
 
 void execute_internal_vm_tests() {
   if (ExecuteInternalVMTests) {
@@ -5066,6 +5069,7 @@ void execute_internal_vm_tests() {
     run_unit_test(VMStructs::test());
 #endif
 #if INCLUDE_ALL_GCS
+    run_unit_test(TestG1BiasedArray_test());
     run_unit_test(HeapRegionRemSet::test_prt());
 #endif
     tty->print_cr("All internal VM tests passed");
