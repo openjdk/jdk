@@ -1095,7 +1095,7 @@ bool VirtualSpaceList::grow_vs(size_t vs_word_size) {
   }
   // Reserve the space
   size_t vs_byte_size = vs_word_size * BytesPerWord;
-  assert(vs_byte_size % os::vm_page_size() == 0, "Not aligned");
+  assert(vs_byte_size % os::vm_allocation_granularity() == 0, "Not aligned");
 
   // Allocate the meta virtual space and initialize it.
   VirtualSpaceNode* new_entry = new VirtualSpaceNode(vs_byte_size);
@@ -1167,12 +1167,14 @@ Metachunk* VirtualSpaceList::get_new_chunk(size_t word_size,
       // being used for CompressedHeaders, don't allocate a new virtualspace.
       if (can_grow() && MetaspaceGC::should_expand(this, word_size)) {
         // Get another virtual space.
-          size_t grow_vs_words =
-            MAX2((size_t)VirtualSpaceSize, aligned_expand_vs_by_words);
+        size_t allocation_aligned_expand_words =
+            align_size_up(aligned_expand_vs_by_words, os::vm_allocation_granularity() / BytesPerWord);
+        size_t grow_vs_words =
+            MAX2((size_t)VirtualSpaceSize, allocation_aligned_expand_words);
         if (grow_vs(grow_vs_words)) {
           // Got it.  It's on the list now.  Get a chunk from it.
           assert(current_virtual_space()->expanded_words() == 0,
-              "New virtuals space nodes should not have expanded");
+              "New virtual space nodes should not have expanded");
 
           size_t grow_chunks_by_words_aligned = align_size_up(grow_chunks_by_words,
                                                               page_size_words);
@@ -3357,7 +3359,7 @@ void Metaspace::dump(outputStream* const out) const {
 
 #ifndef PRODUCT
 
-class MetaspaceAuxTest : AllStatic {
+class TestMetaspaceAuxTest : AllStatic {
  public:
   static void test_reserved() {
     size_t reserved = MetaspaceAux::reserved_bytes();
@@ -3397,14 +3399,25 @@ class MetaspaceAuxTest : AllStatic {
     }
   }
 
+  static void test_virtual_space_list_large_chunk() {
+    VirtualSpaceList* vs_list = new VirtualSpaceList(os::vm_allocation_granularity());
+    MutexLockerEx cl(SpaceManager::expand_lock(), Mutex::_no_safepoint_check_flag);
+    // A size larger than VirtualSpaceSize (256k) and add one page to make it _not_ be
+    // vm_allocation_granularity aligned on Windows.
+    size_t large_size = (size_t)(2*256*K + (os::vm_page_size()/BytesPerWord));
+    large_size += (os::vm_page_size()/BytesPerWord);
+    vs_list->get_new_chunk(large_size, large_size, 0);
+  }
+
   static void test() {
     test_reserved();
     test_committed();
+    test_virtual_space_list_large_chunk();
   }
 };
 
-void MetaspaceAux_test() {
-  MetaspaceAuxTest::test();
+void TestMetaspaceAux_test() {
+  TestMetaspaceAuxTest::test();
 }
 
 #endif
