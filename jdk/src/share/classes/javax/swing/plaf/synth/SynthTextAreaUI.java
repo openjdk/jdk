@@ -66,7 +66,7 @@ public class SynthTextAreaUI extends BasicTextAreaUI implements SynthUI {
     }
 
     /**
-     * @inheritDoc
+     * {@inheritDoc}
      */
     @Override
     protected void installDefaults() {
@@ -77,7 +77,7 @@ public class SynthTextAreaUI extends BasicTextAreaUI implements SynthUI {
     }
 
     /**
-     * @inheritDoc
+     * {@inheritDoc}
      */
     @Override
     protected void uninstallDefaults() {
@@ -110,7 +110,7 @@ public class SynthTextAreaUI extends BasicTextAreaUI implements SynthUI {
     }
 
     /**
-     * @inheritDoc
+     * {@inheritDoc}
      */
     @Override
     public SynthContext getContext(JComponent c) {
@@ -157,7 +157,7 @@ public class SynthTextAreaUI extends BasicTextAreaUI implements SynthUI {
     }
 
     /**
-     * @inheritDoc
+     * {@inheritDoc}
      *
      * Overridden to do nothing.
      */
@@ -167,7 +167,7 @@ public class SynthTextAreaUI extends BasicTextAreaUI implements SynthUI {
     }
 
     /**
-     * @inheritDoc
+     * {@inheritDoc}
      */
     @Override
     public void paintBorder(SynthContext context, Graphics g, int x,
