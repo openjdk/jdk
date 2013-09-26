@@ -9065,7 +9065,7 @@ bool CMSCollector::take_from_overflow_list(size_t num, CMSMarkStack* stack) {
   return !stack->isEmpty();
 }
 
-#define BUSY  (oop(0x1aff1aff))
+#define BUSY  (cast_to_oop<intptr_t>(0x1aff1aff))
 // (MT-safe) Get a prefix of at most "num" from the list.
 // The overflow list is chained through the mark word of
 // each object in the list. We fetch the entire list,
@@ -9098,7 +9098,7 @@ bool CMSCollector::par_take_from_overflow_list(size_t num,
     return false;
   }
   // Grab the entire list; we'll put back a suffix
-  oop prefix = (oop)Atomic::xchg_ptr(BUSY, &_overflow_list);
+  oop prefix = cast_to_oop(Atomic::xchg_ptr(BUSY, &_overflow_list));
   Thread* tid = Thread::current();
   // Before "no_of_gc_threads" was introduced CMSOverflowSpinCount was
   // set to ParallelGCThreads.
@@ -9113,7 +9113,7 @@ bool CMSCollector::par_take_from_overflow_list(size_t num,
       return false;
     } else if (_overflow_list != BUSY) {
       // Try and grab the prefix
-      prefix = (oop)Atomic::xchg_ptr(BUSY, &_overflow_list);
+      prefix = cast_to_oop(Atomic::xchg_ptr(BUSY, &_overflow_list));
     }
   }
   // If the list was found to be empty, or we spun long

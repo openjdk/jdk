@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -341,7 +341,7 @@ const class TypePtr *MachNode::adr_type() const {
       return TypePtr::BOTTOM;
     }
     // %%% make offset be intptr_t
-    assert(!Universe::heap()->is_in_reserved((oop)offset), "must be a raw ptr");
+    assert(!Universe::heap()->is_in_reserved(cast_to_oop(offset)), "must be a raw ptr");
     return TypeRawPtr::BOTTOM;
   }
 

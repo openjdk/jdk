@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -45,7 +45,7 @@ MemoryPool::MemoryPool(const char* name,
   _name = name;
   _initial_size = init_size;
   _max_size = max_size;
-  _memory_pool_obj = NULL;
+  (void)const_cast<instanceOop&>(_memory_pool_obj = NULL);
   _available_for_allocation = true;
   _num_managers = 0;
   _type = type;

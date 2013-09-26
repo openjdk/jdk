@@ -1918,7 +1918,7 @@ void ConstantPool::print_on(outputStream* st) const {
     st->print_cr(" - holder: " INTPTR_FORMAT, pool_holder());
   }
   st->print_cr(" - cache: " INTPTR_FORMAT, cache());
-  st->print_cr(" - resolved_references: " INTPTR_FORMAT, resolved_references());
+  st->print_cr(" - resolved_references: " INTPTR_FORMAT, (void *)resolved_references());
   st->print_cr(" - reference_map: " INTPTR_FORMAT, reference_map());
 
   for (int index = 1; index < length(); index++) {      // Index 0 is unused
