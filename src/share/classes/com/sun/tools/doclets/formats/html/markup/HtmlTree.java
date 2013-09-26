@@ -167,7 +167,7 @@ public class HtmlTree extends Content {
     /**
      * A set of ASCII URI characters to be left unencoded.
      */
-    public static BitSet NONENCODING_CHARS = new BitSet(256);
+    public static final BitSet NONENCODING_CHARS = new BitSet(256);
 
     static {
         // alphabetic characters
