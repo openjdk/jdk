@@ -5046,7 +5046,10 @@ _JNI_IMPORT_OR_EXPORT_ jint JNICALL JNI_GetDefaultJavaVMInitArgs(void *args_) {
 void TestReservedSpace_test();
 void TestReserveMemorySpecial_test();
 void TestVirtualSpace_test();
-void MetaspaceAux_test();
+void TestMetaspaceAux_test();
+#if INCLUDE_ALL_GCS
+void TestG1BiasedArray_test();
+#endif
 
 void execute_internal_vm_tests() {
   if (ExecuteInternalVMTests) {
@@ -5054,7 +5057,7 @@ void execute_internal_vm_tests() {
     run_unit_test(TestReservedSpace_test());
     run_unit_test(TestReserveMemorySpecial_test());
     run_unit_test(TestVirtualSpace_test());
-    run_unit_test(MetaspaceAux_test());
+    run_unit_test(TestMetaspaceAux_test());
     run_unit_test(GlobalDefinitions::test_globals());
     run_unit_test(GCTimerAllTest::all());
     run_unit_test(arrayOopDesc::test_max_array_length());
@@ -5066,6 +5069,7 @@ void execute_internal_vm_tests() {
     run_unit_test(VMStructs::test());
 #endif
 #if INCLUDE_ALL_GCS
+    run_unit_test(TestG1BiasedArray_test());
     run_unit_test(HeapRegionRemSet::test_prt());
 #endif
     tty->print_cr("All internal VM tests passed");
