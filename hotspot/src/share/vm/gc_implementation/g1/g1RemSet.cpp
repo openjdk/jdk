@@ -731,12 +731,12 @@ bool G1RemSet::refine_card(jbyte* card_ptr, int worker_i,
   return has_refs_into_cset;
 }
 
-void G1RemSet::print_periodic_summary_info() {
+void G1RemSet::print_periodic_summary_info(const char* header) {
   G1RemSetSummary current;
   current.initialize(this, n_workers());
 
   _prev_period_summary.subtract_from(&current);
-  print_summary_info(&_prev_period_summary);
+  print_summary_info(&_prev_period_summary, header);
 
   _prev_period_summary.set(&current);
 }
