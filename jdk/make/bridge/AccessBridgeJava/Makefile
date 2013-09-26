@@ -61,7 +61,6 @@ CLASSDESTDIR = $(TEMPDIR)/classes
 #
 # Rules
 #
-CLASSDESTDIR = $(TEMPDIR)/classes
 
 FILES_class = $(FILES_java:%.java=$(CLASSDESTDIR)/%.class)
 
