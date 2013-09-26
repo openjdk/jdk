@@ -1246,7 +1246,7 @@ public class DefaultKeyboardFocusManager extends KeyboardFocusManager {
      * any) should be cancelled.
      *
      * @param after the timestamp specified in the call to
-     *        <code>enqueueKeyEvents</code>, or any value < 0
+     *        <code>enqueueKeyEvents</code>, or any value &lt; 0
      * @param untilFocused the Component specified in the call to
      *        <code>enqueueKeyEvents</code>
      * @see #enqueueKeyEvents
