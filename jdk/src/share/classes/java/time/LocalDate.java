@@ -356,7 +356,8 @@ public final class LocalDate
         Objects.requireNonNull(temporal, "temporal");
         LocalDate date = temporal.query(TemporalQuery.localDate());
         if (date == null) {
-            throw new DateTimeException("Unable to obtain LocalDate from TemporalAccessor: " + temporal.getClass());
+            throw new DateTimeException("Unable to obtain LocalDate from TemporalAccessor: " +
+                    temporal + " of type " + temporal.getClass().getName());
         }
         return date;
     }

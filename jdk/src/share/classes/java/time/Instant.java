@@ -366,9 +366,14 @@ public final class Instant
             return (Instant) temporal;
         }
         Objects.requireNonNull(temporal, "temporal");
-        long instantSecs = temporal.getLong(INSTANT_SECONDS);
-        int nanoOfSecond = temporal.get(NANO_OF_SECOND);
-        return Instant.ofEpochSecond(instantSecs, nanoOfSecond);
+        try {
+            long instantSecs = temporal.getLong(INSTANT_SECONDS);
+            int nanoOfSecond = temporal.get(NANO_OF_SECOND);
+            return Instant.ofEpochSecond(instantSecs, nanoOfSecond);
+        } catch (DateTimeException ex) {
+            throw new DateTimeException("Unable to obtain Instant from TemporalAccessor: " +
+                    temporal + " of type " + temporal.getClass().getName());
+        }
     }
 
     //-----------------------------------------------------------------------
