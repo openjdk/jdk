@@ -697,8 +697,13 @@ public final class NativeRegExp extends ScriptObject {
                 appendReplacement(matcher, string, replacement, sb);
             }
 
-            // ECMA 15.5.4.10 String.prototype.match(regexp)
             thisIndex = matcher.end();
+            if (thisIndex == string.length() && matcher.start() == matcher.end()) {
+                // Avoid getting empty match at end of string twice
+                break;
+            }
+
+            // ECMA 15.5.4.10 String.prototype.match(regexp)
             if (thisIndex == previousLastIndex) {
                 setLastIndex(thisIndex + 1);
                 previousLastIndex = thisIndex + 1;
