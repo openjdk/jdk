@@ -588,11 +588,23 @@ final class Parsed implements TemporalAccessor {
     //-----------------------------------------------------------------------
     @Override
     public String toString() {
-        String str = fieldValues.toString() + "," + chrono + "," + zone;
-        if (date != null || time != null) {
-            str += " resolved to " + date + "," + time;
+        StringBuilder buf = new StringBuilder(64);
+        buf.append(fieldValues).append(',').append(chrono);
+        if (zone != null) {
+            buf.append(',').append(zone);
         }
-        return str;
+        if (date != null || time != null) {
+            buf.append(" resolved to ");
+            if (date != null) {
+                buf.append(date);
+                if (time != null) {
+                    buf.append('T').append(time);
+                }
+            } else {
+                buf.append(time);
+            }
+        }
+        return buf.toString();
     }
 
 }

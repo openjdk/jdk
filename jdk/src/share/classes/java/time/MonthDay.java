@@ -266,7 +266,8 @@ public final class MonthDay
             }
             return of(temporal.get(MONTH_OF_YEAR), temporal.get(DAY_OF_MONTH));
         } catch (DateTimeException ex) {
-            throw new DateTimeException("Unable to obtain MonthDay from TemporalAccessor: " + temporal.getClass(), ex);
+            throw new DateTimeException("Unable to obtain MonthDay from TemporalAccessor: " +
+                    temporal + " of type " + temporal.getClass().getName(), ex);
         }
     }
 

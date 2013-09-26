@@ -553,7 +553,8 @@ public final class ZonedDateTime
                 return of(ldt, zone);
             }
         } catch (DateTimeException ex) {
-            throw new DateTimeException("Unable to create ZonedDateTime from TemporalAccessor: " + temporal.getClass(), ex);
+            throw new DateTimeException("Unable to obtain ZonedDateTime from TemporalAccessor: " +
+                    temporal + " of type " + temporal.getClass().getName(), ex);
         }
     }
 
