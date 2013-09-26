@@ -191,21 +191,19 @@ public final class NativeRegExp extends ScriptObject {
     public static NativeRegExp newRegExp(final Object regexp, final Object flags) {
         String  patternString = "";
         String  flagString    = "";
-        boolean flagsDefined  = false;
-
-        if (flags != UNDEFINED) {
-            flagsDefined = true;
-            flagString = JSType.toString(flags);
-        }
 
         if (regexp != UNDEFINED) {
             if (regexp instanceof NativeRegExp) {
-                if (!flagsDefined) {
-                    return (NativeRegExp)regexp; // 15.10.3.1 - undefined flags and regexp as
+                if (flags != UNDEFINED) {
+                    throw typeError("regex.cant.supply.flags");
                 }
-                throw typeError("regex.cant.supply.flags");
+                return (NativeRegExp)regexp; // 15.10.3.1 - undefined flags and regexp as
             }
             patternString = JSType.toString(regexp);
+        }
+
+        if (flags != UNDEFINED) {
+            flagString = JSType.toString(flags);
         }
 
         return new NativeRegExp(patternString, flagString);
