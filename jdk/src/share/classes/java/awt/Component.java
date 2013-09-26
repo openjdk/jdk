@@ -2026,7 +2026,7 @@ public abstract class Component implements ImageObserver, MenuContainer,
      * @return an instance of <code>Point</code> representing
      *          the top-left corner of the component's bounds in the
      *          coordinate space of the screen
-     * @throws <code>IllegalComponentStateException</code> if the
+     * @throws IllegalComponentStateException if the
      *          component is not showing on the screen
      * @see #setLocation
      * @see #getLocation
