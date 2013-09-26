@@ -226,6 +226,10 @@ ifeq ($(OPENJDK_TARGET_OS), windows)
 			$(AB_SRC_DIR)/64bit/AccessBridgeLoader.java
 		$(install-file)
 
+         $(AB_GENSRC_DIR)/64bit/com/sun/java/accessibility/AccessBridge.java: \
+			$(AB_SRC_DIR)/AccessBridge.java
+		$(install-file)
+
          GENSRC_MISC += $(AB_GENSRC_DIR)/64bit/com/sun/java/accessibility/AccessBridgeLoader.java \
 			$(AB_GENSRC_DIR)/64bit/com/sun/java/accessibility/AccessBridge.java
 
