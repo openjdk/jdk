@@ -134,15 +134,13 @@ public class VM {
      private String type;
      private String name;
      private Address addr;
-     private String kind;
-     private int origin;
+     private int flags;
 
-     private Flag(String type, String name, Address addr, String kind, int origin) {
+     private Flag(String type, String name, Address addr, int flags) {
         this.type = type;
         this.name = name;
         this.addr = addr;
-        this.kind = kind;
-        this.origin = origin;
+        this.flags = flags;
      }
 
      public String getType() {
@@ -157,12 +155,8 @@ public class VM {
         return addr;
      }
 
-     public String getKind() {
-        return kind;
-     }
-
      public int getOrigin() {
-        return origin;
+        return flags & 0xF;  // XXX can we get the mask bits from somewhere?
      }
 
      public boolean isBool() {
@@ -173,8 +167,7 @@ public class VM {
         if (Assert.ASSERTS_ENABLED) {
            Assert.that(isBool(), "not a bool flag!");
         }
-        return addr.getCIntegerAt(0, boolType.getSize(), boolType.isUnsigned())
-               != 0;
+        return addr.getCIntegerAt(0, boolType.getSize(), boolType.isUnsigned()) != 0;
      }
 
      public boolean isIntx() {
@@ -843,11 +836,10 @@ public class VM {
 
     Address flagAddr = flagType.getAddressField("flags").getValue();
 
-    AddressField typeFld = flagType.getAddressField("type");
-    AddressField nameFld = flagType.getAddressField("name");
-    AddressField addrFld = flagType.getAddressField("addr");
-    AddressField kindFld = flagType.getAddressField("kind");
-    CIntField originFld = new CIntField(flagType.getCIntegerField("origin"), 0);
+    AddressField typeFld = flagType.getAddressField("_type");
+    AddressField nameFld = flagType.getAddressField("_name");
+    AddressField addrFld = flagType.getAddressField("_addr");
+    CIntField flagsFld = new CIntField(flagType.getCIntegerField("_flags"), 0);
 
     long flagSize = flagType.getSize(); // sizeof(Flag)
 
@@ -856,9 +848,8 @@ public class VM {
       String type = CStringUtilities.getString(typeFld.getValue(flagAddr));
       String name = CStringUtilities.getString(nameFld.getValue(flagAddr));
       Address addr = addrFld.getValue(flagAddr);
-      String kind = CStringUtilities.getString(kindFld.getValue(flagAddr));
-      int origin = (int)originFld.getValue(flagAddr);
-      commandLineFlags[f] = new Flag(type, name, addr, kind, origin);
+      int flags = (int)flagsFld.getValue(flagAddr);
+      commandLineFlags[f] = new Flag(type, name, addr, flags);
       flagAddr = flagAddr.addOffsetTo(flagSize);
     }
 

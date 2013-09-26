@@ -202,7 +202,7 @@ bool ClassLoadingService::set_verbose(bool verbose) {
   MutexLocker m(Management_lock);
 
   // verbose will be set to the previous value
-  bool succeed = CommandLineFlags::boolAtPut((char*)"TraceClassLoading", &verbose, MANAGEMENT);
+  bool succeed = CommandLineFlags::boolAtPut((char*)"TraceClassLoading", &verbose, Flag::MANAGEMENT);
   assert(succeed, "Setting TraceClassLoading flag fails");
   reset_trace_class_unloading();
 
@@ -213,7 +213,7 @@ bool ClassLoadingService::set_verbose(bool verbose) {
 void ClassLoadingService::reset_trace_class_unloading() {
   assert(Management_lock->owned_by_self(), "Must own the Management_lock");
   bool value = MemoryService::get_verbose() || ClassLoadingService::get_verbose();
-  bool succeed = CommandLineFlags::boolAtPut((char*)"TraceClassUnloading", &value, MANAGEMENT);
+  bool succeed = CommandLineFlags::boolAtPut((char*)"TraceClassUnloading", &value, Flag::MANAGEMENT);
   assert(succeed, "Setting TraceClassUnLoading flag fails");
 }
 
