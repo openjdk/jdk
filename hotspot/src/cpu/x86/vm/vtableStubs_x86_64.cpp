@@ -49,6 +49,11 @@ extern "C" void bad_compiled_vtable_index(JavaThread* thread,
 VtableStub* VtableStubs::create_vtable_stub(int vtable_index) {
   const int amd64_code_length = VtableStub::pd_code_size_limit(true);
   VtableStub* s = new(amd64_code_length) VtableStub(true, vtable_index);
+  // Can be NULL if there is no free space in the code cache.
+  if (s == NULL) {
+    return NULL;
+  }
+
   ResourceMark rm;
   CodeBuffer cb(s->entry_point(), amd64_code_length);
   MacroAssembler* masm = new MacroAssembler(&cb);
@@ -126,6 +131,11 @@ VtableStub* VtableStubs::create_itable_stub(int itable_index) {
   // returned by pd_code_size_limit!
   const int amd64_code_length = VtableStub::pd_code_size_limit(false);
   VtableStub* s = new(amd64_code_length) VtableStub(false, itable_index);
+  // Can be NULL if there is no free space in the code cache.
+  if (s == NULL) {
+    return NULL;
+  }
+
   ResourceMark rm;
   CodeBuffer cb(s->entry_point(), amd64_code_length);
   MacroAssembler* masm = new MacroAssembler(&cb);
