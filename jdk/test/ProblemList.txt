@@ -322,6 +322,18 @@ tools/pack200/Pack200Test.java                                  solaris-all, mac
 # 8007410
 tools/launcher/FXLauncherTest.java                              linux-all
 
+# 8025427
+sun/tools/jstat/jstatLineCounts1.sh                                 generic-all
+sun/tools/jstat/jstatLineCounts2.sh                                 generic-all
+sun/tools/jstat/jstatLineCounts3.sh                                 generic-all
+sun/tools/jstat/jstatTimeStamp1.sh                                  generic-all
+sun/tools/jstat/jstatGcCauseOutput1.sh                              generic-all
+sun/tools/jstat/jstatLineCounts4.sh                                 generic-all
+sun/tools/jstatd/jstatdDefaults.sh                                  generic-all
+sun/tools/jstatd/jstatdExternalRegistry.sh                          generic-all
+sun/tools/jstatd/jstatdPort.sh                                      generic-all
+sun/tools/jstatd/jstatdServerName.sh                                generic-all
+
 ############################################################################
 
 # jdk_jdi
