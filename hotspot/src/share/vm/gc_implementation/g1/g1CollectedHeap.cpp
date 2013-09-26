@@ -4615,7 +4615,7 @@ bool G1ParScanThreadState::verify_ref(narrowOop* ref) const {
   assert(!has_partial_array_mask(ref), err_msg("ref=" PTR_FORMAT, ref));
   oop p = oopDesc::load_decode_heap_oop(ref);
   assert(_g1h->is_in_g1_reserved(p),
-         err_msg("ref=" PTR_FORMAT " p=" PTR_FORMAT, ref, intptr_t(p)));
+         err_msg("ref=" PTR_FORMAT " p=" PTR_FORMAT, ref, (void *)p));
   return true;
 }
 
@@ -4625,11 +4625,11 @@ bool G1ParScanThreadState::verify_ref(oop* ref) const {
     // Must be in the collection set--it's already been copied.
     oop p = clear_partial_array_mask(ref);
     assert(_g1h->obj_in_cs(p),
-           err_msg("ref=" PTR_FORMAT " p=" PTR_FORMAT, ref, intptr_t(p)));
+           err_msg("ref=" PTR_FORMAT " p=" PTR_FORMAT, ref, (void *)p));
   } else {
     oop p = oopDesc::load_decode_heap_oop(ref);
     assert(_g1h->is_in_g1_reserved(p),
-           err_msg("ref=" PTR_FORMAT " p=" PTR_FORMAT, ref, intptr_t(p)));
+           err_msg("ref=" PTR_FORMAT " p=" PTR_FORMAT, ref, (void *)p));
   }
   return true;
 }

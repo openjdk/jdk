@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -475,7 +475,7 @@ void trace_method_handle_stub(const char* adaptername,
   const char* mh_reg_name = has_mh ? "rcx_mh" : "rcx";
   tty->print_cr("MH %s %s="PTR_FORMAT" sp="PTR_FORMAT,
                 adaptername, mh_reg_name,
-                mh, entry_sp);
+                (void *)mh, entry_sp);
 
   if (Verbose) {
     tty->print_cr("Registers:");

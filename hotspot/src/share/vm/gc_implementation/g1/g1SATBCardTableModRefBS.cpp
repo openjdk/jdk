@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -95,7 +95,7 @@ void
 G1SATBCardTableLoggingModRefBS::write_ref_field_static(void* field,
                                                        oop new_val) {
   uintptr_t field_uint = (uintptr_t)field;
-  uintptr_t new_val_uint = (uintptr_t)new_val;
+  uintptr_t new_val_uint = cast_from_oop<uintptr_t>(new_val);
   uintptr_t comb = field_uint ^ new_val_uint;
   comb = comb >> HeapRegion::LogOfHRGrainBytes;
   if (comb == 0) return;

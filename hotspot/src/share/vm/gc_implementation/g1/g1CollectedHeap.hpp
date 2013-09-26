@@ -703,7 +703,7 @@ public:
     if (_g1_committed.contains((HeapWord*) obj)) {
       // no need to subtract the bottom of the heap from obj,
       // _in_cset_fast_test is biased
-      uintx index = (uintx) obj >> HeapRegion::LogOfHRGrainBytes;
+      uintx index = cast_from_oop<uintx>(obj) >> HeapRegion::LogOfHRGrainBytes;
       bool ret = _in_cset_fast_test[index];
       // let's make sure the result is consistent with what the slower
       // test returns

@@ -1019,7 +1019,7 @@ JRT_ENTRY(void, Runtime1::patch_code(JavaThread* thread, Runtime1::StubID stub_i
               n_copy->set_data((intx) (load_klass()));
             } else {
               assert(mirror() != NULL, "klass not set");
-              n_copy->set_data((intx) (mirror()));
+              n_copy->set_data(cast_from_oop<intx>(mirror()));
             }
 
             if (TracePatching) {
@@ -1031,7 +1031,7 @@ JRT_ENTRY(void, Runtime1::patch_code(JavaThread* thread, Runtime1::StubID stub_i
           assert(n_copy->data() == 0 ||
                  n_copy->data() == (intptr_t)Universe::non_oop_word(),
                  "illegal init value");
-          n_copy->set_data((intx) (appendix()));
+          n_copy->set_data(cast_from_oop<intx>(appendix()));
 
           if (TracePatching) {
             Disassembler::decode(copy_buff, copy_buff + *byte_count, tty);

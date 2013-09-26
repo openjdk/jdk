@@ -764,7 +764,7 @@ BasicType frame::interpreter_frame_result(oop* oop_result, jvalue* value_result)
 #ifdef CC_INTERP
         *oop_result = istate->_oop_temp;
 #else
-        oop obj = (oop) at(interpreter_frame_oop_temp_offset);
+        oop obj = cast_to_oop(at(interpreter_frame_oop_temp_offset));
         assert(obj == NULL || Universe::heap()->is_in(obj), "sanity check");
         *oop_result = obj;
 #endif // CC_INTERP
@@ -788,7 +788,7 @@ BasicType frame::interpreter_frame_result(oop* oop_result, jvalue* value_result)
     switch(type) {
       case T_OBJECT:
       case T_ARRAY: {
-        oop obj = (oop)*tos_addr;
+        oop obj = cast_to_oop(*tos_addr);
         assert(obj == NULL || Universe::heap()->is_in(obj), "sanity check");
         *oop_result = obj;
         break;
