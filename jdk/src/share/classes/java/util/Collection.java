@@ -379,8 +379,8 @@ public interface Collection<E> extends Iterable<E> {
 
     /**
      * Removes all of the elements of this collection that satisfy the given
-     * predicate.  Errors or runtime exceptions thrown by the predicate are
-     * relayed to the caller.
+     * predicate.  Errors or runtime exceptions thrown during iteration or by
+     * the predicate are relayed to the caller.
      *
      * @implSpec
      * The default implementation traverses all elements of the collection using
@@ -393,9 +393,10 @@ public interface Collection<E> extends Iterable<E> {
      *        removed
      * @return {@code true} if any elements were removed
      * @throws NullPointerException if the specified filter is null
-     * @throws UnsupportedOperationException if the {@code remove}
-     *         method is not supported by this collection's
-     *         {@link #iterator}
+     * @throws UnsupportedOperationException if elements cannot be removed
+     *         from this collection.  Implementations may throw this exception if a
+     *         matching element cannot be removed or if, in general, removal is not
+     *         supported.
      * @since 1.8
      */
     default boolean removeIf(Predicate<? super E> filter) {
