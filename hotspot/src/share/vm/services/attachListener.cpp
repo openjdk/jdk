@@ -470,7 +470,17 @@ void AttachListener::init() {
                        vmSymbols::threadgroup_string_void_signature(),
                        thread_group,
                        string,
-                       CHECK);
+                       THREAD);
+
+  if (HAS_PENDING_EXCEPTION) {
+    tty->print_cr("Exception in VM (AttachListener::init) : ");
+    java_lang_Throwable::print(PENDING_EXCEPTION, tty);
+    tty->cr();
+
+    CLEAR_PENDING_EXCEPTION;
+
+    return;
+  }
 
   KlassHandle group(THREAD, SystemDictionary::ThreadGroup_klass());
   JavaCalls::call_special(&result,
@@ -479,7 +489,17 @@ void AttachListener::init() {
                         vmSymbols::add_method_name(),
                         vmSymbols::thread_void_signature(),
                         thread_oop,             // ARG 1
-                        CHECK);
+                        THREAD);
+
+  if (HAS_PENDING_EXCEPTION) {
+    tty->print_cr("Exception in VM (AttachListener::init) : ");
+    java_lang_Throwable::print(PENDING_EXCEPTION, tty);
+    tty->cr();
+
+    CLEAR_PENDING_EXCEPTION;
+
+    return;
+  }
 
   { MutexLocker mu(Threads_lock);
     JavaThread* listener_thread = new JavaThread(&attach_listener_thread_entry);
