@@ -126,10 +126,7 @@
                             },
                             "value": {
                                 "type": "FunctionExpression",
-                                "id": {
-                                    "type": "Identifier",
-                                    "name": "get x"
-                                },
+                                "id": null,
                                 "params": [],
                                 "defaults": [],
                                 "rest": null,
@@ -157,10 +154,7 @@
                             },
                             "value": {
                                 "type": "FunctionExpression",
-                                "id": {
-                                    "type": "Identifier",
-                                    "name": "get y"
-                                },
+                                "id": null,
                                 "params": [],
                                 "defaults": [],
                                 "rest": null,

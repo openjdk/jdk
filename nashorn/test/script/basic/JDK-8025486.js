@@ -22,38 +22,34 @@
  */
 
 /**
- * JDK-8008305: ScriptEngine.eval should offer the ability to provide a codebase *
+ * JDK-8025486: RegExp constructor arguments are not evaluated in right order
+ *
  * @test
  * @run
  */
 
-var URLReader = Java.type("jdk.nashorn.api.scripting.URLReader");
-var File = Java.type("java.io.File");
-var FileReader = Java.type("java.io.FileReader");
-var ScriptEngineManager = Java.type("javax.script.ScriptEngineManager");
-var SecurityException = Java.type("java.lang.SecurityException");
-
-var m = new ScriptEngineManager();
-var e = m.getEngineByName("nashorn");
-
-
-// subtest script file
-var scriptFile = new File(__DIR__ + "JDK-8008305_subtest.js");
-
-// evaluate the subtest via a URLReader
-var res = e.eval(new URLReader(scriptFile.toURI().toURL()));
-
-// subtest should execute with AllPermission and so return absolute path
-if (! res.equals(new File(".").getAbsolutePath())) {
-    fail("eval result is not equal to expected value");
-}
-
-// try same subtest without URLReader and so it runs with null code source
-try {
-    e.eval(new FileReader(scriptFile));
-    fail("Expected SecurityException from script!");
-} catch (e) {
-    if (! (e instanceof SecurityException)) {
-        fail("Expected SecurityException, but got " + e);
+new RegExp({
+    toString: function() {
+        print("source");
+        return "a";
     }
+}, {
+    toString: function() {
+        print("flags");
+        return "g";
+    }
+});
+
+try {
+    new RegExp(/asdf/, {
+        toString: function() {
+            fail("toString should not be called");
+        }
+    });
+    fail("expected TypeError");
+} catch (e) {
+    if (!(e instanceof TypeError)) {
+        fail("expected TypeError");
+    }
+    print(e);
 }
