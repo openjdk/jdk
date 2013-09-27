@@ -842,7 +842,7 @@ typedef BinaryTreeDictionary<Metablock, FreeList> MetablockTreeDictionary;
   nonstatic_field(nmethod,             _osr_link,                                     nmethod*)                              \
   nonstatic_field(nmethod,             _scavenge_root_link,                           nmethod*)                              \
   nonstatic_field(nmethod,             _scavenge_root_state,                          jbyte)                                 \
-  nonstatic_field(nmethod,             _state,                                        unsigned char)                         \
+  nonstatic_field(nmethod,             _state,                                        volatile unsigned char)                \
   nonstatic_field(nmethod,             _exception_offset,                             int)                                   \
   nonstatic_field(nmethod,             _deoptimize_offset,                            int)                                   \
   nonstatic_field(nmethod,             _deoptimize_mh_offset,                         int)                                   \
@@ -1360,6 +1360,7 @@ typedef BinaryTreeDictionary<Metablock, FreeList> MetablockTreeDictionary;
   declare_integer_type(long)                                              \
   declare_integer_type(char)                                              \
   declare_unsigned_integer_type(unsigned char)                            \
+  declare_unsigned_integer_type(volatile unsigned char)                   \
   declare_unsigned_integer_type(u_char)                                   \
   declare_unsigned_integer_type(unsigned int)                             \
   declare_unsigned_integer_type(uint)                                     \
@@ -1382,6 +1383,7 @@ typedef BinaryTreeDictionary<Metablock, FreeList> MetablockTreeDictionary;
   declare_toplevel_type(char**)                                           \
   declare_toplevel_type(u_char*)                                          \
   declare_toplevel_type(unsigned char*)                                   \
+  declare_toplevel_type(volatile unsigned char*)                          \
                                                                           \
   /*******************************************************************/   \
   /* Types which it will be handy to have available over in the SA   */   \

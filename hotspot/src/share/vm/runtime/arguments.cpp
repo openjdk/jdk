@@ -1130,6 +1130,9 @@ void Arguments::set_tiered_flags() {
     Tier3InvokeNotifyFreqLog = 0;
     Tier4InvocationThreshold = 0;
   }
+  if (FLAG_IS_DEFAULT(NmethodSweepFraction)) {
+    FLAG_SET_DEFAULT(NmethodSweepFraction, 1 + ReservedCodeCacheSize / (16 * M));
+  }
 }
 
 #if INCLUDE_ALL_GCS
@@ -2333,6 +2336,10 @@ bool Arguments::check_vm_args_consistency() {
                 (2*G)/M);
     status = false;
   }
+
+  status &= verify_interval(NmethodSweepFraction, 1, ReservedCodeCacheSize/K, "NmethodSweepFraction");
+  status &= verify_interval(NmethodSweepActivity, 0, 2000, "NmethodSweepActivity");
+
   return status;
 }
 
