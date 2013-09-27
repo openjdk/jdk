@@ -103,7 +103,7 @@ public abstract class Printer implements Type.Visitor<String, Locale>, Symbol.Vi
      * @return localized string representation
      */
     public String visitTypes(List<Type> ts, Locale locale) {
-        ListBuffer<String> sbuf = ListBuffer.lb();
+        ListBuffer<String> sbuf = new ListBuffer<>();
         for (Type t : ts) {
             sbuf.append(visit(t, locale));
         }
@@ -118,7 +118,7 @@ public abstract class Printer implements Type.Visitor<String, Locale>, Symbol.Vi
      * @return localized string representation
      */
     public String visitSymbols(List<Symbol> ts, Locale locale) {
-        ListBuffer<String> sbuf = ListBuffer.lb();
+        ListBuffer<String> sbuf = new ListBuffer<>();
         for (Symbol t : ts) {
             sbuf.append(visit(t, locale));
         }

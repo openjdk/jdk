@@ -100,7 +100,7 @@ public class NoDeadCodeGenerationOnTrySmtTest {
                 if (method.getName(classFile.constant_pool).equals(methodToFind)) {
                     numberOfmethodsFound++;
                     Code_attribute code = (Code_attribute) method.attributes.get("Code");
-                    Assert.check(code.exception_table_langth == expectedExceptionTable.length,
+                    Assert.check(code.exception_table_length == expectedExceptionTable.length,
                             "The ExceptionTable found has a length different to the expected one");
                     int i = 0;
                     for (Exception_data entry: code.exception_table) {
