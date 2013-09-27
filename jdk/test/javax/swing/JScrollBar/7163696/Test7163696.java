@@ -59,7 +59,8 @@ public class Test7163696 implements Runnable {
             UIManager.setLookAndFeel(info.getClassName());
 
             SwingUtilities.invokeAndWait(this);
-            toolkit.realSync(500); // after creation
+            toolkit.realSync(); // after creation
+            Thread.sleep(1000);
 
             Point point = this.bar.getLocation();
             SwingUtilities.convertPointToScreen(point, this.bar);
@@ -69,7 +70,8 @@ public class Test7163696 implements Runnable {
             robot.mousePress(InputEvent.BUTTON1_MASK);
             robot.mouseRelease(InputEvent.BUTTON1_MASK);
 
-            toolkit.realSync(500); // before validation
+            toolkit.realSync(); // before validation
+            Thread.sleep(1000);
             SwingUtilities.invokeAndWait(this);
 
             if (this.bar != null) {

@@ -304,7 +304,7 @@ public class TypeAnnotationPosition {
      * @param list The bytecode representation of the type path.
      */
     public static List<TypePathEntry> getTypePathFromBinary(java.util.List<Integer> list) {
-        ListBuffer<TypePathEntry> loc = ListBuffer.lb();
+        ListBuffer<TypePathEntry> loc = new ListBuffer<>();
         Iterator<Integer> iter = list.iterator();
         while (iter.hasNext()) {
             Integer fst = iter.next();
@@ -316,7 +316,7 @@ public class TypeAnnotationPosition {
     }
 
     public static List<Integer> getBinaryFromTypePath(java.util.List<TypePathEntry> locs) {
-        ListBuffer<Integer> loc = ListBuffer.lb();
+        ListBuffer<Integer> loc = new ListBuffer<>();
         for (TypePathEntry tpe : locs) {
             loc = loc.append(tpe.tag.tag);
             loc = loc.append(tpe.arg);

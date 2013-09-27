@@ -713,7 +713,7 @@ public class Flow {
             ListBuffer<PendingExit> prevPending = pendingExits;
             boolean prevAlive = alive;
             try {
-                pendingExits = ListBuffer.lb();
+                pendingExits = new ListBuffer<>();
                 alive = true;
                 scanStat(tree.body);
                 tree.canCompleteNormally = alive;
@@ -1265,7 +1265,7 @@ public class Flow {
             List<Type> prevThrown = thrown;
             ListBuffer<FlowPendingExit> prevPending = pendingExits;
             try {
-                pendingExits = ListBuffer.lb();
+                pendingExits = new ListBuffer<>();
                 caught = tree.getDescriptorType(types).getThrownTypes();
                 thrown = List.nil();
                 scan(tree.body);
@@ -1338,7 +1338,7 @@ public class Flow {
             ListBuffer<FlowPendingExit> prevPending = pendingExits;
             inLambda = true;
             try {
-                pendingExits = ListBuffer.lb();
+                pendingExits = new ListBuffer<>();
                 caught = List.of(syms.throwableType);
                 thrown = List.nil();
                 scan(tree.body);
@@ -2030,7 +2030,7 @@ public class Flow {
         void reportWarning(Lint.LintCategory lc, DiagnosticPosition pos, String key, Object ... args) {}
 
         public void visitTry(JCTry tree) {
-            ListBuffer<JCVariableDecl> resourceVarDecls = ListBuffer.lb();
+            ListBuffer<JCVariableDecl> resourceVarDecls = new ListBuffer<>();
             final Bits uninitsTryPrev = new Bits(uninitsTry);
             ListBuffer<P> prevPendingExits = pendingExits;
             pendingExits = new ListBuffer<>();

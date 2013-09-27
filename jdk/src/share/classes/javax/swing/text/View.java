@@ -72,12 +72,12 @@ A view has the following responsibilities:
                      alt="The above text describes this graphic.">
     <p>The minimum set of methods for layout are:
     <ul>
-    <li><a href="#getMinimumSpan(int)">getMinimumSpan</a>
-    <li><a href="#getPreferredSpan(int)">getPreferredSpan</a>
-    <li><a href="#getMaximumSpan(int)">getMaximumSpan</a>
-    <li><a href="#getAlignment(int)">getAlignment</a>
-    <li><a href="#preferenceChanged(javax.swing.text.View, boolean, boolean)">preferenceChanged</a>
-    <li><a href="#setSize(float, float)">setSize</a>
+    <li>{@link #getMinimumSpan(int) getMinimumSpan}
+    <li>{@link #getPreferredSpan(int) getPreferredSpan}
+    <li>{@link #getMaximumSpan(int) getMaximumSpan}
+    <li>{@link #getAlignment(int) getAlignment}
+    <li>{@link #preferenceChanged(javax.swing.text.View, boolean, boolean) preferenceChanged}
+    <li>{@link #setSize(float, float) setSize}
     </ul>
 
   <p>The <code>setSize</code> method should be prepared to be called a number of times
@@ -142,7 +142,7 @@ A view has the following responsibilities:
     </ul>
     <p>The methods for rendering are:
     <ul>
-    <li><a href="#paint(java.awt.Graphics, java.awt.Shape)">paint</a>
+    <li>{@link #paint(java.awt.Graphics, java.awt.Shape) paint}
     </ul>
     <p>
 
@@ -153,12 +153,12 @@ A view has the following responsibilities:
     to perform translation to properly locate spatial representation of the model.
     The methods for doing this are:
     <ul>
-    <li><a href="#modelToView(int, javax.swing.text.Position.Bias, int, javax.swing.text.Position.Bias, java.awt.Shape)">modelToView</a>
-    <li><a href="#viewToModel(float, float, java.awt.Shape, javax.swing.text.Position.Bias[])">viewToModel</a>
-    <li><a href="#getDocument()">getDocument</a>
-    <li><a href="#getElement()">getElement</a>
-    <li><a href="#getStartOffset()">getStartOffset</a>
-    <li><a href="#getEndOffset()">getEndOffset</a>
+    <li>{@link #modelToView(int, javax.swing.text.Position.Bias, int, javax.swing.text.Position.Bias, java.awt.Shape) modelToView}
+    <li>{@link #viewToModel(float, float, java.awt.Shape, javax.swing.text.Position.Bias[]) viewToModel}
+    <li>{@link #getDocument() getDocument}
+    <li>{@link #getElement() getElement}
+    <li>{@link #getStartOffset() getStartOffset}
+    <li>{@link #getEndOffset() getEndOffset}
     </ul>
     <p>The layout must be valid prior to attempting to make the translation.
     The translation is not valid, and must not be attempted while changes
@@ -1137,32 +1137,9 @@ public abstract class View implements SwingConstants {
      */
     protected void forwardUpdate(DocumentEvent.ElementChange ec,
                                       DocumentEvent e, Shape a, ViewFactory f) {
-        Element elem = getElement();
-        int pos = e.getOffset();
-        int index0 = getViewIndex(pos, Position.Bias.Forward);
-        if (index0 == -1 && e.getType() == DocumentEvent.EventType.REMOVE &&
-            pos >= getEndOffset()) {
-            // Event beyond our offsets. We may have represented this, that is
-            // the remove may have removed one of our child Elements that
-            // represented this, so, we should foward to last element.
-            index0 = getViewCount() - 1;
-        }
-        int index1 = index0;
-        View v = (index0 >= 0) ? getView(index0) : null;
-        if (v != null) {
-            if ((v.getStartOffset() == pos) && (pos > 0)) {
-                // If v is at a boundary, forward the event to the previous
-                // view too.
-                index0 = Math.max(index0 - 1, 0);
-            }
-        }
-        if (e.getType() != DocumentEvent.EventType.REMOVE) {
-            index1 = getViewIndex(pos + e.getLength(), Position.Bias.Forward);
-            if (index1 < 0) {
-                index1 = getViewCount() - 1;
-            }
-        }
-        int hole0 = index1 + 1;
+        calculateUpdateIndexes(e);
+
+        int hole0 = lastUpdateIndex + 1;
         int hole1 = hole0;
         Element[] addedElems = (ec != null) ? ec.getChildrenAdded() : null;
         if ((addedElems != null) && (addedElems.length > 0)) {
@@ -1173,17 +1150,48 @@ public abstract class View implements SwingConstants {
         // forward to any view not in the forwarding hole
         // formed by added elements (i.e. they will be updated
         // by initialization.
-        index0 = Math.max(index0, 0);
-        index1 = Math.max((getViewCount() - 1), 0);
-        for (int i = index0; i <= index1; i++) {
+        for (int i = firstUpdateIndex; i <= lastUpdateIndex; i++) {
             if (! ((i >= hole0) && (i <= hole1))) {
-                v = getView(i);
+                View v = getView(i);
                 if (v != null) {
                     Shape childAlloc = getChildAllocation(i, a);
                     forwardUpdateToView(v, e, childAlloc, f);
                 }
             }
         }
+    }
+
+    /**
+     * Calculates the first and the last indexes of the child views
+     * that need to be notified of the change to the model.
+     * @param e the change information from the associated document
+     */
+    void calculateUpdateIndexes(DocumentEvent e) {
+        int pos = e.getOffset();
+        firstUpdateIndex = getViewIndex(pos, Position.Bias.Forward);
+        if (firstUpdateIndex == -1 && e.getType() == DocumentEvent.EventType.REMOVE &&
+            pos >= getEndOffset()) {
+            // Event beyond our offsets. We may have represented this, that is
+            // the remove may have removed one of our child Elements that
+            // represented this, so, we should forward to last element.
+            firstUpdateIndex = getViewCount() - 1;
+        }
+        lastUpdateIndex = firstUpdateIndex;
+        View v = (firstUpdateIndex >= 0) ? getView(firstUpdateIndex) : null;
+        if (v != null) {
+            if ((v.getStartOffset() == pos) && (pos > 0)) {
+                // If v is at a boundary, forward the event to the previous
+                // view too.
+                firstUpdateIndex = Math.max(firstUpdateIndex - 1, 0);
+            }
+        }
+        if (e.getType() != DocumentEvent.EventType.REMOVE) {
+            lastUpdateIndex = getViewIndex(pos + e.getLength(), Position.Bias.Forward);
+            if (lastUpdateIndex < 0) {
+                lastUpdateIndex = getViewCount() - 1;
+            }
+        }
+        firstUpdateIndex = Math.max(firstUpdateIndex, 0);
     }
 
     /**
@@ -1344,5 +1352,15 @@ public abstract class View implements SwingConstants {
 
     private View parent;
     private Element elem;
+
+    /**
+     * The index of the first child view to be notified.
+     */
+    int firstUpdateIndex;
+
+    /**
+     * The index of the last child view to be notified.
+     */
+    int lastUpdateIndex;
 
 };

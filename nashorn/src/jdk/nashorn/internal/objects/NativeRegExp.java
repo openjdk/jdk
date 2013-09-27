@@ -191,21 +191,19 @@ public final class NativeRegExp extends ScriptObject {
     public static NativeRegExp newRegExp(final Object regexp, final Object flags) {
         String  patternString = "";
         String  flagString    = "";
-        boolean flagsDefined  = false;
-
-        if (flags != UNDEFINED) {
-            flagsDefined = true;
-            flagString = JSType.toString(flags);
-        }
 
         if (regexp != UNDEFINED) {
             if (regexp instanceof NativeRegExp) {
-                if (!flagsDefined) {
-                    return (NativeRegExp)regexp; // 15.10.3.1 - undefined flags and regexp as
+                if (flags != UNDEFINED) {
+                    throw typeError("regex.cant.supply.flags");
                 }
-                throw typeError("regex.cant.supply.flags");
+                return (NativeRegExp)regexp; // 15.10.3.1 - undefined flags and regexp as
             }
             patternString = JSType.toString(regexp);
+        }
+
+        if (flags != UNDEFINED) {
+            flagString = JSType.toString(flags);
         }
 
         return new NativeRegExp(patternString, flagString);
@@ -697,8 +695,13 @@ public final class NativeRegExp extends ScriptObject {
                 appendReplacement(matcher, string, replacement, sb);
             }
 
-            // ECMA 15.5.4.10 String.prototype.match(regexp)
             thisIndex = matcher.end();
+            if (thisIndex == string.length() && matcher.start() == matcher.end()) {
+                // Avoid getting empty match at end of string twice
+                break;
+            }
+
+            // ECMA 15.5.4.10 String.prototype.match(regexp)
             if (thisIndex == previousLastIndex) {
                 setLastIndex(thisIndex + 1);
                 previousLastIndex = thisIndex + 1;
@@ -883,7 +886,7 @@ public final class NativeRegExp extends ScriptObject {
      * @return last index property as int
      */
     public int getLastIndex() {
-        return JSType.toInt32(lastIndex);
+        return JSType.toInteger(lastIndex);
     }
 
     /**
