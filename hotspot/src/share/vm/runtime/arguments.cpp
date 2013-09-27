@@ -1100,6 +1100,7 @@ void Arguments::set_mode_flags(Mode mode) {
   }
 }
 
+#if defined(COMPILER2) || defined(_LP64) || !INCLUDE_CDS
 // Conflict: required to use shared spaces (-Xshare:on), but
 // incompatible command line options were chosen.
 
@@ -1112,6 +1113,7 @@ static void no_shared_spaces() {
     FLAG_SET_DEFAULT(UseSharedSpaces, false);
   }
 }
+#endif
 
 void Arguments::set_tiered_flags() {
   // With tiered, set default policy to AdvancedThresholdPolicy, which is 3.
@@ -1523,16 +1525,18 @@ void Arguments::set_ergonomics_flags() {
         FLAG_SET_ERGO(bool, UseParallelGC, true);
       }
     }
-    // Shared spaces work fine with other GCs but causes bytecode rewriting
-    // to be disabled, which hurts interpreter performance and decreases
-    // server performance.   On server class machines, keep the default
-    // off unless it is asked for.  Future work: either add bytecode rewriting
-    // at link time, or rewrite bytecodes in non-shared methods.
-    if (!DumpSharedSpaces && !RequireSharedSpaces &&
-        (FLAG_IS_DEFAULT(UseSharedSpaces) || !UseSharedSpaces)) {
-      no_shared_spaces();
-    }
   }
+#ifdef COMPILER2
+  // Shared spaces work fine with other GCs but causes bytecode rewriting
+  // to be disabled, which hurts interpreter performance and decreases
+  // server performance.  When -server is specified, keep the default off
+  // unless it is asked for.  Future work: either add bytecode rewriting
+  // at link time, or rewrite bytecodes in non-shared methods.
+  if (!DumpSharedSpaces && !RequireSharedSpaces &&
+      (FLAG_IS_DEFAULT(UseSharedSpaces) || !UseSharedSpaces)) {
+    no_shared_spaces();
+  }
+#endif
 
   set_conservative_max_heap_alignment();
 
@@ -2444,21 +2448,6 @@ jint Arguments::parse_vm_init_args(const JavaVMInitArgs* args) {
   result = parse_each_vm_init_arg(args, &scp, &scp_assembly_required, Flag::COMMAND_LINE);
   if (result != JNI_OK) {
     return result;
-  }
-
-  if (AggressiveOpts) {
-    // Insert alt-rt.jar between user-specified bootclasspath
-    // prefix and the default bootclasspath.  os::set_boot_path()
-    // uses meta_index_dir as the default bootclasspath directory.
-    const char* altclasses_jar = "alt-rt.jar";
-    size_t altclasses_path_len = strlen(get_meta_index_dir()) + 1 +
-                                 strlen(altclasses_jar);
-    char* altclasses_path = NEW_C_HEAP_ARRAY(char, altclasses_path_len, mtInternal);
-    strcpy(altclasses_path, get_meta_index_dir());
-    strcat(altclasses_path, altclasses_jar);
-    scp.add_suffix_to_prefix(altclasses_path);
-    scp_assembly_required = true;
-    FREE_C_HEAP_ARRAY(char, altclasses_path, mtInternal);
   }
 
   // Parse _JAVA_OPTIONS environment variable (if present) (mimics classic VM)
