@@ -23,10 +23,11 @@
 
 /**
  * @test
+ * @bug 8016846 8024341
  * @summary Unit tests for wrapping classes should delegate to default methods
  * @library ../stream/bootlib
  * @build java.util.stream.OpTestCase
- * @run testng/othervm PatternTest
+ * @run testng/othervm PatternStreamTest
  */
 
 import org.testng.annotations.DataProvider;
@@ -42,7 +43,7 @@ import java.util.stream.Stream;
 import java.util.stream.TestData;
 
 @Test
-public class PatternTest extends OpTestCase {
+public class PatternStreamTest extends OpTestCase {
 
     @DataProvider(name = "Stream<String>")
     public static Object[][] makeStreamTestData() {
@@ -131,6 +132,38 @@ public class PatternTest extends OpTestCase {
         expected.add("with");
         expected.add("different");
         expected.add("separators");
+
+
+        description = "Repeated separators within and at end";
+        input = "boo:and:foo";
+        pattern = Pattern.compile("o");
+        expected = new ArrayList<>();
+        expected.add("b");
+        expected.add("");
+        expected.add(":and:f");
+
+
+        description = "Many repeated separators within and at end";
+        input = "booooo:and:fooooo";
+        pattern = Pattern.compile("o");
+        expected = new ArrayList<>();
+        expected.add("b");
+        expected.add("");
+        expected.add("");
+        expected.add("");
+        expected.add("");
+        expected.add(":and:f");
+
+        description = "Many repeated separators before last match";
+        input = "fooooo:";
+        pattern = Pattern.compile("o");
+        expected = new ArrayList<>();
+        expected.add("f");
+        expected.add("");
+        expected.add("");
+        expected.add("");
+        expected.add("");
+        expected.add(":");
 
         data.add(new Object[] {description, input, pattern, expected});
         return data.toArray(new Object[0][]);
