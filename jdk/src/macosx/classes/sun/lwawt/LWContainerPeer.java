@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,32 +41,25 @@ import java.util.List;
 import javax.swing.JComponent;
 
 abstract class LWContainerPeer<T extends Container, D extends JComponent>
-    extends LWCanvasPeer<T, D>
-    implements ContainerPeer
-{
-    // List of child peers sorted by z-order from bottom-most
-    // to top-most
-    private List<LWComponentPeer> childPeers =
-        new LinkedList<LWComponentPeer>();
+        extends LWCanvasPeer<T, D> implements ContainerPeer {
 
-    LWContainerPeer(T target, PlatformComponent platformComponent) {
+    /**
+     * List of child peers sorted by z-order from bottom-most to top-most.
+     */
+    private final List<LWComponentPeer<?, ?>> childPeers = new LinkedList<>();
+
+    LWContainerPeer(final T target, final PlatformComponent platformComponent) {
         super(target, platformComponent);
     }
 
-    void addChildPeer(LWComponentPeer child) {
+    final void addChildPeer(final LWComponentPeer<?, ?> child) {
         synchronized (getPeerTreeLock()) {
-            addChildPeer(child, childPeers.size());
+            childPeers.add(childPeers.size(), child);
+            // TODO: repaint
         }
     }
 
-    void addChildPeer(LWComponentPeer child, int index) {
-        synchronized (getPeerTreeLock()) {
-            childPeers.add(index, child);
-        }
-        // TODO: repaint
-    }
-
-    void removeChildPeer(LWComponentPeer child) {
+    final void removeChildPeer(final LWComponentPeer<?, ?> child) {
         synchronized (getPeerTreeLock()) {
             childPeers.remove(child);
         }
@@ -74,7 +67,8 @@ abstract class LWContainerPeer<T extends Container, D extends JComponent>
     }
 
     // Used by LWComponentPeer.setZOrder()
-    void setChildPeerZOrder(LWComponentPeer peer, LWComponentPeer above) {
+    final void setChildPeerZOrder(final LWComponentPeer<?, ?> peer,
+                                  final LWComponentPeer<?, ?> above) {
         synchronized (getPeerTreeLock()) {
             childPeers.remove(peer);
             int index = (above != null) ? childPeers.indexOf(above) : childPeers.size();
@@ -98,25 +92,27 @@ abstract class LWContainerPeer<T extends Container, D extends JComponent>
     }
 
     @Override
-    public void beginValidate() {
-        // TODO: it seems that begin/endValidate() is only useful
-        // for heavyweight windows, when a batch movement for
-        // child windows  occurs. That's why no-op
-    }
-    @Override
-    public void endValidate() {
+    public final void beginValidate() {
         // TODO: it seems that begin/endValidate() is only useful
         // for heavyweight windows, when a batch movement for
         // child windows  occurs. That's why no-op
     }
 
     @Override
-    public void beginLayout() {
+    public final void endValidate() {
+        // TODO: it seems that begin/endValidate() is only useful
+        // for heavyweight windows, when a batch movement for
+        // child windows  occurs. That's why no-op
+    }
+
+    @Override
+    public final void beginLayout() {
         // Skip all painting till endLayout()
         setLayouting(true);
     }
+
     @Override
-    public void endLayout() {
+    public final void endLayout() {
         setLayouting(false);
 
         // Post an empty event to flush all the pending target paints
@@ -125,18 +121,19 @@ abstract class LWContainerPeer<T extends Container, D extends JComponent>
 
     // ---- PEER NOTIFICATIONS ---- //
 
-    /*
+    /**
      * Returns a copy of the childPeer collection.
      */
-    protected List<LWComponentPeer> getChildren() {
+    @SuppressWarnings("unchecked")
+    final List<LWComponentPeer<?, ?>> getChildren() {
         synchronized (getPeerTreeLock()) {
-            Object copy = ((LinkedList)childPeers).clone();
-            return (List<LWComponentPeer>)copy;
+            Object copy = ((LinkedList<?>) childPeers).clone();
+            return (List<LWComponentPeer<?, ?>>) copy;
         }
     }
 
     @Override
-    public final Region getVisibleRegion() {
+    final Region getVisibleRegion() {
         return cutChildren(super.getVisibleRegion(), null);
     }
 
@@ -144,9 +141,9 @@ abstract class LWContainerPeer<T extends Container, D extends JComponent>
      * Removes bounds of children above specific child from the region. If above
      * is null removes all bounds of children.
      */
-    protected final Region cutChildren(Region r, final LWComponentPeer above) {
+    final Region cutChildren(Region r, final LWComponentPeer<?, ?> above) {
         boolean aboveFound = above == null;
-        for (final LWComponentPeer child : getChildren()) {
+        for (final LWComponentPeer<?, ?> child : getChildren()) {
             if (!aboveFound && child == above) {
                 aboveFound = true;
                 continue;
@@ -170,8 +167,8 @@ abstract class LWContainerPeer<T extends Container, D extends JComponent>
      * specified relative to the peer's parent.
      */
     @Override
-    public final LWComponentPeer findPeerAt(int x, int y) {
-        LWComponentPeer peer = super.findPeerAt(x, y);
+    final LWComponentPeer<?, ?> findPeerAt(int x, int y) {
+        LWComponentPeer<?, ?> peer = super.findPeerAt(x, y);
         final Rectangle r = getBounds();
         // Translate to this container's coordinates to pass to children
         x -= r.x;
@@ -179,7 +176,7 @@ abstract class LWContainerPeer<T extends Container, D extends JComponent>
         if (peer != null && getContentSize().contains(x, y)) {
             synchronized (getPeerTreeLock()) {
                 for (int i = childPeers.size() - 1; i >= 0; --i) {
-                    LWComponentPeer p = childPeers.get(i).findPeerAt(x, y);
+                    LWComponentPeer<?, ?> p = childPeers.get(i).findPeerAt(x, y);
                     if (p != null) {
                         peer = p;
                         break;
@@ -195,7 +192,7 @@ abstract class LWContainerPeer<T extends Container, D extends JComponent>
     * peers should be repainted
     */
     @Override
-    public final void repaintPeer(final Rectangle r) {
+    final void repaintPeer(final Rectangle r) {
         final Rectangle toPaint = getSize().intersection(r);
         if (!isShowing() || toPaint.isEmpty()) {
             return;
@@ -208,13 +205,13 @@ abstract class LWContainerPeer<T extends Container, D extends JComponent>
         repaintChildren(toPaint);
     }
 
-    /*
-    * Paints all the child peers in the straight z-order, so the
-    * bottom-most ones are painted first.
-    */
+    /**
+     * Paints all the child peers in the straight z-order, so the
+     * bottom-most ones are painted first.
+     */
     private void repaintChildren(final Rectangle r) {
         final Rectangle content = getContentSize();
-        for (final LWComponentPeer child : getChildren()) {
+        for (final LWComponentPeer<?, ?> child : getChildren()) {
             final Rectangle childBounds = child.getBounds();
             Rectangle toPaint = r.intersection(childBounds);
             toPaint = toPaint.intersection(content);
@@ -223,21 +220,21 @@ abstract class LWContainerPeer<T extends Container, D extends JComponent>
         }
     }
 
-    protected Rectangle getContentSize() {
+    Rectangle getContentSize() {
         return getSize();
     }
 
     @Override
     public void setEnabled(final boolean e) {
         super.setEnabled(e);
-        for (final LWComponentPeer child : getChildren()) {
+        for (final LWComponentPeer<?, ?> child : getChildren()) {
             child.setEnabled(e && child.getTarget().isEnabled());
         }
     }
 
     @Override
     public void setBackground(final Color c) {
-        for (final LWComponentPeer child : getChildren()) {
+        for (final LWComponentPeer<?, ?> child : getChildren()) {
             if (!child.getTarget().isBackgroundSet()) {
                 child.setBackground(c);
             }
@@ -247,7 +244,7 @@ abstract class LWContainerPeer<T extends Container, D extends JComponent>
 
     @Override
     public void setForeground(final Color c) {
-        for (final LWComponentPeer child : getChildren()) {
+        for (final LWComponentPeer<?, ?> child : getChildren()) {
             if (!child.getTarget().isForegroundSet()) {
                 child.setForeground(c);
             }
@@ -257,7 +254,7 @@ abstract class LWContainerPeer<T extends Container, D extends JComponent>
 
     @Override
     public void setFont(final Font f) {
-        for (final LWComponentPeer child : getChildren()) {
+        for (final LWComponentPeer<?, ?> child : getChildren()) {
             if (!child.getTarget().isFontSet()) {
                 child.setFont(f);
             }

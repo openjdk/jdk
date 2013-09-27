@@ -46,7 +46,7 @@ import javax.swing.plaf.*;
 
 
 /**
- * A default L&F implementation of MenuBarUI.  This implementation
+ * A default L&amp;F implementation of MenuBarUI.  This implementation
  * is a "combined" view/controller.
  *
  * @author Georges Saab

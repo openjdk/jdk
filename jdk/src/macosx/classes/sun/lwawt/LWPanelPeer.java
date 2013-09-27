@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,6 +31,10 @@ import java.awt.peer.PanelPeer;
 
 import javax.swing.JPanel;
 
+/**
+ * Lightweight implementation of {@link PanelPeer}. Delegates most of the work
+ * to the {@link JPanel}.
+ */
 final class LWPanelPeer extends LWContainerPeer<Panel, JPanel>
         implements PanelPeer {
 
@@ -39,7 +43,7 @@ final class LWPanelPeer extends LWContainerPeer<Panel, JPanel>
     }
 
     @Override
-    public JPanel createDelegate() {
+    JPanel createDelegate() {
         return new JPanel();
     }
 }

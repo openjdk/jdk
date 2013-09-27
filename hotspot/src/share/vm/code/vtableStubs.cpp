@@ -46,12 +46,9 @@ address VtableStub::_chunk             = NULL;
 address VtableStub::_chunk_end         = NULL;
 VMReg   VtableStub::_receiver_location = VMRegImpl::Bad();
 
-static int num_vtable_chunks = 0;
-
 
 void* VtableStub::operator new(size_t size, int code_size) throw() {
   assert(size == sizeof(VtableStub), "mismatched size");
-  num_vtable_chunks++;
   // compute real VtableStub size (rounded to nearest word)
   const int real_size = round_to(code_size + sizeof(VtableStub), wordSize);
   // malloc them in chunks to minimize header overhead
@@ -60,7 +57,7 @@ void* VtableStub::operator new(size_t size, int code_size) throw() {
     const int bytes = chunk_factor * real_size + pd_code_alignment();
     BufferBlob* blob = BufferBlob::create("vtable chunks", bytes);
     if (blob == NULL) {
-      vm_exit_out_of_memory(bytes, OOM_MALLOC_ERROR, "CodeCache: no room for vtable chunks");
+      return NULL;
     }
     _chunk = blob->content_begin();
     _chunk_end = _chunk + bytes;
@@ -121,6 +118,12 @@ address VtableStubs::find_stub(bool is_vtable_stub, int vtable_index) {
     } else {
       s = create_itable_stub(vtable_index);
     }
+
+    // Creation of vtable or itable can fail if there is not enough free space in the code cache.
+    if (s == NULL) {
+      return NULL;
+    }
+
     enter(is_vtable_stub, vtable_index, s);
     if (PrintAdapterHandlers) {
       tty->print_cr("Decoding VtableStub %s[%d]@%d",
