@@ -654,7 +654,7 @@ Compile::Compile( ciEnv* ci_env, C2Compiler* compiler, ciMethod* target, int osr
                   _inlining_progress(false),
                   _inlining_incrementally(false),
                   _print_inlining_list(NULL),
-                  _print_inlining(0) {
+                  _print_inlining_idx(0) {
   C = this;
 
   CompileWrapper cw(this);
@@ -679,6 +679,8 @@ Compile::Compile( ciEnv* ci_env, C2Compiler* compiler, ciMethod* target, int osr
   set_print_assembly(print_opto_assembly);
   set_parsed_irreducible_loop(false);
 #endif
+  set_print_inlining(PrintInlining || method()->has_option("PrintInlining") NOT_PRODUCT( || PrintOptoInlining));
+  set_print_intrinsics(PrintIntrinsics || method()->has_option("PrintIntrinsics"));
 
   if (ProfileTraps) {
     // Make sure the method being compiled gets its own MDO,
@@ -710,7 +712,7 @@ Compile::Compile( ciEnv* ci_env, C2Compiler* compiler, ciMethod* target, int osr
   PhaseGVN gvn(node_arena(), estimated_size);
   set_initial_gvn(&gvn);
 
-  if (PrintInlining  || PrintIntrinsics NOT_PRODUCT( || PrintOptoInlining)) {
+  if (print_inlining() || print_intrinsics()) {
     _print_inlining_list = new (comp_arena())GrowableArray<PrintInliningBuffer>(comp_arena(), 1, 1, PrintInliningBuffer());
   }
   { // Scope for timing the parser
@@ -937,7 +939,7 @@ Compile::Compile( ciEnv* ci_env,
     _inlining_progress(false),
     _inlining_incrementally(false),
     _print_inlining_list(NULL),
-    _print_inlining(0) {
+    _print_inlining_idx(0) {
   C = this;
 
 #ifndef PRODUCT
@@ -2646,7 +2648,7 @@ void Compile::final_graph_reshaping_impl( Node *n, Final_Reshape_Counts &frc) {
             addp->in(AddPNode::Base) == n->in(AddPNode::Base),
             "Base pointers must match" );
 #ifdef _LP64
-    if ((UseCompressedOops || UseCompressedKlassPointers) &&
+    if ((UseCompressedOops || UseCompressedClassPointers) &&
         addp->Opcode() == Op_ConP &&
         addp == n->in(AddPNode::Base) &&
         n->in(AddPNode::Offset)->is_Con()) {
@@ -3033,7 +3035,7 @@ void Compile::final_graph_reshaping_walk( Node_Stack &nstack, Node *root, Final_
 
   // Skip next transformation if compressed oops are not used.
   if ((UseCompressedOops && !Matcher::gen_narrow_oop_implicit_null_checks()) ||
-      (!UseCompressedOops && !UseCompressedKlassPointers))
+      (!UseCompressedOops && !UseCompressedClassPointers))
     return;
 
   // Go over safepoints nodes to skip DecodeN/DecodeNKlass nodes for debug edges.
@@ -3611,7 +3613,7 @@ void Compile::ConstantTable::fill_jump_table(CodeBuffer& cb, MachConstantNode* n
 }
 
 void Compile::dump_inlining() {
-  if (PrintInlining || PrintIntrinsics NOT_PRODUCT( || PrintOptoInlining)) {
+  if (print_inlining() || print_intrinsics()) {
     // Print inlining message for candidates that we couldn't inline
     // for lack of space or non constant receiver
     for (int i = 0; i < _late_inlines.length(); i++) {
@@ -3635,7 +3637,7 @@ void Compile::dump_inlining() {
       }
     }
     for (int i = 0; i < _print_inlining_list->length(); i++) {
-      tty->print(_print_inlining_list->at(i).ss()->as_string());
+      tty->print(_print_inlining_list->adr_at(i)->ss()->as_string());
     }
   }
 }

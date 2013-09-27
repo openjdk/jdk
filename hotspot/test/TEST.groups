@@ -62,7 +62,7 @@ jdk = \
 #
 needs_jdk = \
   gc/TestG1ZeroPGCTJcmdThreadPrint.java \
-  gc/metaspace/ClassMetaspaceSizeInJmapHeap.java \
+  gc/metaspace/CompressedClassSpaceSizeInJmapHeap.java \
   gc/metaspace/TestMetaspacePerfCounters.java \
   runtime/6819213/TestBootNativeLibraryPath.java \
   runtime/6878713/Test6878713.sh \

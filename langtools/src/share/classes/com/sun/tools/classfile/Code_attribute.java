@@ -61,9 +61,9 @@ public class Code_attribute extends Attribute {
         code_length = cr.readInt();
         code = new byte[code_length];
         cr.readFully(code);
-        exception_table_langth = cr.readUnsignedShort();
-        exception_table = new Exception_data[exception_table_langth];
-        for (int i = 0; i < exception_table_langth; i++)
+        exception_table_length = cr.readUnsignedShort();
+        exception_table = new Exception_data[exception_table_length];
+        for (int i = 0; i < exception_table_length; i++)
             exception_table[i] = new Exception_data(cr);
         attributes = new Attributes(cr);
     }
@@ -139,7 +139,7 @@ public class Code_attribute extends Attribute {
     public final int max_locals;
     public final int code_length;
     public final byte[] code;
-    public final int exception_table_langth;
+    public final int exception_table_length;
     public final Exception_data[] exception_table;
     public final Attributes attributes;
 

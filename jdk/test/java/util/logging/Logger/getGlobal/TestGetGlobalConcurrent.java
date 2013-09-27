@@ -30,18 +30,18 @@ import java.util.logging.Logger;
  * @bug 7184195 8021003
  * @summary Test that the global logger can log with no configuration when accessed from multiple threads.
  * @build TestGetGlobalConcurrent testgetglobal.HandlerImpl testgetglobal.LogManagerImpl1 testgetglobal.LogManagerImpl2 testgetglobal.LogManagerImpl3 testgetglobal.BadLogManagerImpl testgetglobal.DummyLogManagerImpl
- * @run main/othervm/timeout=10 TestGetGlobalConcurrent
- * @run main/othervm/timeout=10/policy=policy -Djava.security.manager TestGetGlobalConcurrent
- * @run main/othervm/timeout=10 -Djava.util.logging.manager=testgetglobal.LogManagerImpl1 TestGetGlobalConcurrent
- * @run main/othervm/timeout=10/policy=policy -Djava.security.manager -Djava.util.logging.manager=testgetglobal.LogManagerImpl1 TestGetGlobalConcurrent
- * @run main/othervm/timeout=10 -Djava.util.logging.manager=testgetglobal.LogManagerImpl2 TestGetGlobalConcurrent
- * @run main/othervm/timeout=10/policy=policy -Djava.security.manager -Djava.util.logging.manager=testgetglobal.LogManagerImpl2 TestGetGlobalConcurrent
- * @run main/othervm/timeout=10 -Djava.util.logging.manager=testgetglobal.LogManagerImpl3 TestGetGlobalConcurrent
- * @run main/othervm/timeout=10/policy=policy -Djava.security.manager -Djava.util.logging.manager=testgetglobal.LogManagerImpl3 TestGetGlobalConcurrent
- * @run main/othervm/timeout=10 -Djava.util.logging.manager=testgetglobal.BadLogManagerImpl TestGetGlobalConcurrent
- * @run main/othervm/timeout=10/policy=policy -Djava.security.manager -Djava.util.logging.manager=testgetglobal.BadLogManagerImpl TestGetGlobalConcurrent
- * @run main/othervm/timeout=10 -Djava.util.logging.manager=testgetglobal.DummyLogManagerImpl TestGetGlobalConcurrent
- * @run main/othervm/timeout=10/policy=policy -Djava.security.manager -Djava.util.logging.manager=testgetglobal.DummyLogManagerImpl TestGetGlobalConcurrent
+ * @run main/othervm TestGetGlobalConcurrent
+ * @run main/othervm/policy=policy -Djava.security.manager TestGetGlobalConcurrent
+ * @run main/othervm -Djava.util.logging.manager=testgetglobal.LogManagerImpl1 TestGetGlobalConcurrent
+ * @run main/othervm/policy=policy -Djava.security.manager -Djava.util.logging.manager=testgetglobal.LogManagerImpl1 TestGetGlobalConcurrent
+ * @run main/othervm -Djava.util.logging.manager=testgetglobal.LogManagerImpl2 TestGetGlobalConcurrent
+ * @run main/othervm/policy=policy -Djava.security.manager -Djava.util.logging.manager=testgetglobal.LogManagerImpl2 TestGetGlobalConcurrent
+ * @run main/othervm -Djava.util.logging.manager=testgetglobal.LogManagerImpl3 TestGetGlobalConcurrent
+ * @run main/othervm/policy=policy -Djava.security.manager -Djava.util.logging.manager=testgetglobal.LogManagerImpl3 TestGetGlobalConcurrent
+ * @run main/othervm -Djava.util.logging.manager=testgetglobal.BadLogManagerImpl TestGetGlobalConcurrent
+ * @run main/othervm/policy=policy -Djava.security.manager -Djava.util.logging.manager=testgetglobal.BadLogManagerImpl TestGetGlobalConcurrent
+ * @run main/othervm -Djava.util.logging.manager=testgetglobal.DummyLogManagerImpl TestGetGlobalConcurrent
+ * @run main/othervm/policy=policy -Djava.security.manager -Djava.util.logging.manager=testgetglobal.DummyLogManagerImpl TestGetGlobalConcurrent
  * @author danielfuchs
  */
 public class TestGetGlobalConcurrent {

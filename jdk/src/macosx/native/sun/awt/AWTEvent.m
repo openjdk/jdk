@@ -759,7 +759,7 @@ JNF_COCOA_EXIT(env);
  */
 JNIEXPORT jint JNICALL
 Java_sun_lwawt_macosx_event_NSEvent_nsToJavaChar
-(JNIEnv *env, jclass cls, char nsChar, jint modifierFlags)
+(JNIEnv *env, jclass cls, jchar nsChar, jint modifierFlags)
 {
     jchar javaChar = 0;
 

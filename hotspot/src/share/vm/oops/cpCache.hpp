@@ -219,15 +219,29 @@ class ConstantPoolCacheEntry VALUE_OBJ_CLASS_SPEC {
     Klass*          root_klass                   // needed by the GC to dirty the klass
   );
 
-  void set_method(                               // sets entry to resolved method entry
+ private:
+  void set_direct_or_vtable_call(
     Bytecodes::Code invoke_code,                 // the bytecode used for invoking the method
     methodHandle    method,                      // the method/prototype if any (NULL, otherwise)
     int             vtable_index                 // the vtable index if any, else negative
   );
 
-  void set_interface_call(
-    methodHandle method,                         // Resolved method
-    int index                                    // Method index into interface
+ public:
+  void set_direct_call(                          // sets entry to exact concrete method entry
+    Bytecodes::Code invoke_code,                 // the bytecode used for invoking the method
+    methodHandle    method                       // the method to call
+  );
+
+  void set_vtable_call(                          // sets entry to vtable index
+    Bytecodes::Code invoke_code,                 // the bytecode used for invoking the method
+    methodHandle    method,                      // resolved method which declares the vtable index
+    int             vtable_index                 // the vtable index
+  );
+
+  void set_itable_call(
+    Bytecodes::Code invoke_code,                 // the bytecode used; must be invokeinterface
+    methodHandle method,                         // the resolved interface method
+    int itable_index                             // index into itable for the method
   );
 
   void set_method_handle(

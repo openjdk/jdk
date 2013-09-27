@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -75,7 +75,6 @@ ciField::ciField(ciInstanceKlass* klass, int index): _known_to_link_with_put(NUL
 
   assert(klass->get_instanceKlass()->is_linked(), "must be linked before using its constan-pool");
 
-  _cp_index = index;
   constantPoolHandle cpool(thread, klass->get_instanceKlass()->constants());
 
   // Get the field's name, signature, and type.
@@ -116,7 +115,7 @@ ciField::ciField(ciInstanceKlass* klass, int index): _known_to_link_with_put(NUL
   // The declared holder of this field may not have been loaded.
   // Bail out with partial field information.
   if (!holder_is_accessible) {
-    // _cp_index and _type have already been set.
+    // _type has already been set.
     // The default values for _flags and _constant_value will suffice.
     // We need values for _holder, _offset,  and _is_constant,
     _holder = declared_holder;
@@ -145,8 +144,6 @@ ciField::ciField(ciInstanceKlass* klass, int index): _known_to_link_with_put(NUL
 
 ciField::ciField(fieldDescriptor *fd): _known_to_link_with_put(NULL), _known_to_link_with_get(NULL) {
   ASSERT_IN_VM;
-
-  _cp_index = -1;
 
   // Get the field's name, signature, and type.
   ciEnv* env = CURRENT_ENV;
@@ -351,12 +348,11 @@ bool ciField::will_link(ciInstanceKlass* accessing_klass,
     }
   }
 
-  FieldAccessInfo result;
-  constantPoolHandle c_pool(THREAD,
-                         accessing_klass->get_instanceKlass()->constants());
-  LinkResolver::resolve_field(result, c_pool, _cp_index,
-                              Bytecodes::java_code(bc),
-                              true, false, KILL_COMPILE_ON_FATAL_(false));
+  fieldDescriptor result;
+  LinkResolver::resolve_field(result, _holder->get_instanceKlass(),
+                              _name->get_symbol(), _signature->get_symbol(),
+                              accessing_klass->get_Klass(), bc, true, false,
+                              KILL_COMPILE_ON_FATAL_(false));
 
   // update the hit-cache, unless there is a problem with memory scoping:
   if (accessing_klass->is_shared() || !is_shared()) {
