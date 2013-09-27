@@ -23,13 +23,15 @@
 
 /**
  * @test
- * @bug 4806786
+ * @bug 4806786 8023113
  * @summary jar -C doesn't ignore multiple // in path
  */
 
 import java.io.*;
+import java.nio.file.*;
 import java.util.*;
 import java.util.jar.*;
+import java.util.stream.Stream;
 import sun.tools.jar.Main;
 
 public class ChangeDir {
@@ -37,13 +39,16 @@ public class ChangeDir {
     private final static String fileName = "hello.txt";
 
     /** Remove dirs & files needed for test. */
-    private static void cleanup(File dir) throws Throwable {
-        if (dir != null && dir.exists()) {
-            for (File ff : dir.listFiles()) {
-                check(ff.delete());
+    private static void cleanup(Path dir) {
+        try {
+            if (Files.isDirectory(dir)) {
+                try (Stream<Path> s = Files.list(dir)) {
+                    s.forEach( p -> cleanup(p));
+                }
             }
-            check(dir.delete());
-            check(new File(jarName).delete());
+            Files.delete(dir);
+        } catch (IOException x) {
+            fail(x.toString());
         }
     }
 
@@ -62,19 +67,16 @@ public class ChangeDir {
     }
 
     static void doTest(String sep) throws Throwable {
-        File testDir = null;
-        JarFile jf = null;
+        Path topDir = Files.createTempDirectory("delete");
         try {
+            Files.deleteIfExists(Paths.get(jarName));
+
             // Create a subdirectory "a/b"
-            File f = File.createTempFile("delete", ".me");
-            String dirName = f.getParent();
-            testDir = new File(dirName + sep + "a" + sep + "b");
-            cleanup(testDir);
-            check(testDir.mkdirs());
+            Path testDir = Files.createDirectories(topDir.resolve("a").resolve("b"));
 
             // Create file in that subdirectory
-            File testFile = new File(testDir, fileName);
-            check(testFile.createNewFile());
+            Path testFile = testDir.resolve(fileName);
+            Files.createFile(testFile);
 
             // Create a jar file from that subdirectory, but with a // in the
             // path  name.
@@ -82,33 +84,32 @@ public class ChangeDir {
             argList.add("cf");
             argList.add(jarName);
             argList.add("-C");
-            argList.add(dirName + sep + "a" + sep + sep + "b"); // Note double 'sep' is intentional
+            argList.add(topDir.toString() + sep + "a" + sep + sep + "b"); // Note double 'sep' is intentional
             argList.add(fileName);
-            String jarArgs[] = new String[argList.size()];
-            jarArgs = argList.toArray(jarArgs);
 
             Main jarTool = new Main(System.out, System.err, "jar");
-            if (!jarTool.run(jarArgs)) {
+            if (!jarTool.run(argList.toArray(new String[argList.size()]))) {
                 fail("Could not create jar file.");
             }
 
             // Check that the entry for hello.txt does *not* have a pathname.
-            jf = new JarFile(jarName);
-            for (Enumeration<JarEntry> i = jf.entries(); i.hasMoreElements();) {
-                JarEntry je = i.nextElement();
-                String name = je.getName();
-                if (name.indexOf(fileName) != -1) {
-                    if (name.indexOf(fileName) != 0) {
-                        fail(String.format(
-                                 "Expected '%s' but got '%s'%n", fileName, name));
+            try (JarFile jf = new JarFile(jarName)) {
+                for (Enumeration<JarEntry> i = jf.entries(); i.hasMoreElements();) {
+                    JarEntry je = i.nextElement();
+                    String name = je.getName();
+                    if (name.indexOf(fileName) != -1) {
+                        if (name.indexOf(fileName) != 0) {
+                            fail(String.format(
+                                     "Expected '%s' but got '%s'%n", fileName, name));
+                        } else {
+                            pass();
+                        }
                     }
                 }
             }
         } finally {
-            if (jf != null) {
-                jf.close();
-            }
-            cleanup(testDir);
+            cleanup(topDir);
+            Files.deleteIfExists(Paths.get(jarName));
         }
     }
 
