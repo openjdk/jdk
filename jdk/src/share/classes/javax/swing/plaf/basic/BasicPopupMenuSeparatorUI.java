@@ -34,7 +34,7 @@ import java.awt.Rectangle;
 import javax.swing.plaf.ComponentUI;
 
 /**
- * A Basic L&F implementation of PopupMenuSeparatorUI.  This implementation
+ * A Basic L&amp;F implementation of PopupMenuSeparatorUI.  This implementation
  * is a "combined" view/controller.
  *
  * @author Jeff Shapiro

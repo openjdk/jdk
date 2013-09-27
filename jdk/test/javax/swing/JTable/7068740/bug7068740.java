@@ -37,6 +37,7 @@ import javax.swing.table.DefaultTableModel;
 import java.awt.*;
 import java.awt.event.KeyEvent;
 import java.lang.reflect.InvocationTargetException;
+import java.util.concurrent.atomic.AtomicInteger;
 
 public class bug7068740 extends JFrame {
 
@@ -66,6 +67,7 @@ public class bug7068740 extends JFrame {
         };
 
         table = new JTable(model);
+        table.setRowSelectionInterval(0, 0);
         LayerUI<JComponent> layerUI = new LayerUI<>();
         JLayer<JComponent> layer = new JLayer<>(table, layerUI);
         JScrollPane scrollPane = new JScrollPane(layer);
@@ -78,7 +80,7 @@ public class bug7068740 extends JFrame {
         try {
             if (robot == null) {
                 robot = new Robot();
-                robot.setAutoDelay(20);
+                robot.setAutoDelay(50);
             }
 
             if (toolkit == null) {
@@ -104,24 +106,37 @@ public class bug7068740 extends JFrame {
         }
     }
 
-    private static void doTest() {
+    private static int getSelectedRow() throws Exception {
+        final AtomicInteger row = new AtomicInteger(-1);
+        SwingUtilities.invokeAndWait(new Runnable() {
+            @Override
+            public void run() {
+                row.set(table.getSelectedRow());
+            }
+        });
+        return row.intValue();
+    }
+
+    private static void doTest() throws Exception {
         toolkit.realSync();
-        table.setRowSelectionInterval(0, 0);
 
         robot.keyPress(KeyEvent.VK_PAGE_DOWN);
+        robot.keyRelease(KeyEvent.VK_PAGE_DOWN);
         toolkit.realSync();
-        if (table.getSelectedRow() != 19) {
+
+        if (getSelectedRow() != 19) {
             throw new RuntimeException("Test failed");
         }
 
         robot.keyPress(KeyEvent.VK_PAGE_UP);
+        robot.keyRelease(KeyEvent.VK_PAGE_UP);
         toolkit.realSync();
-        if (table.getSelectedRow() != 0) {
+        if (getSelectedRow() != 0) {
             throw new RuntimeException("Test failed");
         }
     }
 
-    public static void main(String[] args) {
+    public static void main(String[] args) throws Exception {
         try {
             UIManager.setLookAndFeel(new MetalLookAndFeel());
             setUp();
