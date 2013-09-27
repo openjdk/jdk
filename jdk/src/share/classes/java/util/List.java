@@ -396,11 +396,13 @@ public interface List<E> extends Collection<E> {
      * replacing the first element.
      *
      * @param operator the operator to apply to each element
-     * @throws UnsupportedOperationException if the {@code set}
-     *         operation is not supported by this list
+     * @throws UnsupportedOperationException if this list is unmodifiable.
+     *         Implementations may throw this exception if an element
+     *         cannot be replaced or if, in general, modification is not
+     *         supported
      * @throws NullPointerException if the specified operator is null or
-     *         if the element is replaced with a null value and this list
-     *         does not permit null elements
+     *         if the operator result is a null value and this list does
+     *         not permit null elements
      *         (<a href="Collection.html#optional-restrictions">optional</a>)
      * @since 1.8
      */
@@ -685,4 +687,3 @@ public interface List<E> extends Collection<E> {
         return Spliterators.spliterator(this, Spliterator.ORDERED);
     }
 }
-
