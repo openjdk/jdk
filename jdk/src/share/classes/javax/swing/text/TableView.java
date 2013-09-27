@@ -542,7 +542,7 @@ public abstract class TableView extends BoxView {
      * view the children do not necessarily have a one to one mapping
      * with the child elements.
      *
-     * @param pos  the search position >= 0
+     * @param pos  the search position &gt;= 0
      * @param a  the allocation to the table on entry, and the
      *   allocation of the view containing the position on exit
      * @return  the view representing the given position, or
@@ -755,7 +755,7 @@ public abstract class TableView extends BoxView {
          * view the children do not necessarily have a one to one mapping
          * with the child elements.
          *
-         * @param pos  the search position >= 0
+         * @param pos  the search position &gt;= 0
          * @param a  the allocation to the table on entry, and the
          *   allocation of the view containing the position on exit
          * @return  the view representing the given position, or
@@ -833,8 +833,8 @@ public abstract class TableView extends BoxView {
         /**
          * Sets the grid location.
          *
-         * @param row the row >= 0
-         * @param col the column >= 0
+         * @param row the row &gt;= 0
+         * @param col the column &gt;= 0
          */
         public void setGridLocation(int row, int col) {
             this.row = row;
@@ -871,8 +871,8 @@ public abstract class TableView extends BoxView {
         /**
          * Sets the grid location.
          *
-         * @param row the row >= 0
-         * @param col the column >= 0
+         * @param row the row &gt;= 0
+         * @param col the column &gt;= 0
          */
         public void setGridLocation(int row, int col);
 

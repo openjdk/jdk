@@ -103,8 +103,8 @@ public class GraphUtils {
      * directed graph in linear time. Works on TarjanNode.
      */
     public static <D, N extends TarjanNode<D>> List<? extends List<? extends N>> tarjan(Iterable<? extends N> nodes) {
-        ListBuffer<List<N>> cycles = ListBuffer.lb();
-        ListBuffer<N> stack = ListBuffer.lb();
+        ListBuffer<List<N>> cycles = new ListBuffer<>();
+        ListBuffer<N> stack = new ListBuffer<>();
         int index = 0;
         for (N node: nodes) {
             if (node.index == -1) {
@@ -132,7 +132,7 @@ public class GraphUtils {
         }
         if (v.lowlink == v.index) {
             N n;
-            ListBuffer<N> cycle = ListBuffer.lb();
+            ListBuffer<N> cycle = new ListBuffer<>();
             do {
                 n = stack.remove();
                 n.active = false;

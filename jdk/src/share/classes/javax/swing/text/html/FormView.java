@@ -380,7 +380,7 @@ public class FormView extends ComponentView implements ActionListener {
      * axis of interest.
      *
      * @param axis may be either View.X_AXIS or View.Y_AXIS
-     * @return   the span the view would like to be rendered into >= 0.
+     * @return   the span the view would like to be rendered into &gt;= 0.
      *           Typically the view is told to render into the span
      *           that is returned, although there is no guarantee.
      *           The parent may choose to resize or break the view.

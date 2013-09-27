@@ -66,6 +66,9 @@ public abstract class Certificate implements java.io.Serializable {
     // the certificate type
     private final String type;
 
+    /** Cache the hash code for the certiticate */
+    private int hash = -1; // Default to -1
+
     /**
      * Creates a certificate of the specified type.
      *
@@ -123,16 +126,16 @@ public abstract class Certificate implements java.io.Serializable {
      * @return the hashcode value.
      */
     public int hashCode() {
-        int retval = 0;
-        try {
-            byte[] certData = X509CertImpl.getEncodedInternal(this);
-            for (int i = 1; i < certData.length; i++) {
-                 retval += certData[i] * i;
+        int h = hash;
+        if (h == -1) {
+            try {
+                h = Arrays.hashCode(X509CertImpl.getEncodedInternal(this));
+            } catch (CertificateException e) {
+                h = 0;
             }
-            return retval;
-        } catch (CertificateException e) {
-            return retval;
+            hash = h;
         }
+        return h;
     }
 
     /**

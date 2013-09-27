@@ -71,7 +71,7 @@ public interface AttributeSet {
      * This interface is the type signature that is expected
      * to be present on any attribute key that contributes to
      * character level presentation.  This would be any attribute
-     * that applies to a so-called <term>run</term> of
+     * that applies to a so-called <i>run</i> of
      * style.
      */
     public interface CharacterAttribute {

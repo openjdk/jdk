@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 4496290 4985072 7006178 7068595
+ * @bug 4496290 4985072 7006178 7068595 8016328
  * @summary A simple test to determine if -use works.
  * @author jamieh
  * @library ../lib/
@@ -60,7 +60,7 @@ public class TestUseOption extends JavadocTester {
                  "UsedInC</a> in <a href=\"../package-summary.html\">&lt;Unnamed&gt;</a>"
         },
         {BUG_ID + "-3" + FS + "package-use.html", "<td class=\"colOne\">" +
-                 "<a href=\"class-use/UsedInC.html#&lt;Unnamed&gt;\">UsedInC</a>&nbsp;</td>"
+                 "<a href=\"class-use/UsedInC.html#%3CUnnamed%3E\">UsedInC</a>&nbsp;</td>"
         }
     };
 

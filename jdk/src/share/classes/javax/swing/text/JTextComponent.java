@@ -1562,8 +1562,10 @@ public abstract class JTextComponent extends JComponent implements Scrollable, A
     /**
      * Sets the key accelerator that will cause the receiving text
      * component to get the focus.  The accelerator will be the
-     * key combination of the <em>alt</em> key and the character
-     * given (converted to upper case).  By default, there is no focus
+     * key combination of the platform-specific modifier key and
+     * the character given (converted to upper case).  For example,
+     * the ALT key is used as a modifier on Windows and the CTRL+ALT
+     * combination is used on Mac.  By default, there is no focus
      * accelerator key.  Any previous key accelerator setting will be
      * superseded.  A '\0' key setting will be registered, and has the
      * effect of turning off the focus accelerator.  When the new key

@@ -180,7 +180,7 @@ public class SpinnerNumberModel extends AbstractSpinnerModel implements Serializ
      * If <code>minimum</code> is <code>null</code>,
      * then there is no lower bound.  No bounds checking is done here;
      * the new <code>minimum</code> value may invalidate the
-     * <code>(minimum &lt;= value &lt= maximum)</code>
+     * <code>(minimum &lt;= value &lt;= maximum)</code>
      * invariant enforced by the constructors.  This is to simplify updating
      * the model, naturally one should ensure that the invariant is true
      * before calling the <code>getNextValue</code>,
@@ -196,7 +196,7 @@ public class SpinnerNumberModel extends AbstractSpinnerModel implements Serializ
      * MyDate extends Date {  // Date already implements Comparable
      *     public int compareTo(Long o) {
      *         long t = getTime();
-     *         return (t < o.longValue() ? -1 : (t == o.longValue() ? 0 : 1));
+     *         return (t &lt; o.longValue() ? -1 : (t == o.longValue() ? 0 : 1));
      *     }
      * }
      * </pre>
@@ -235,7 +235,7 @@ public class SpinnerNumberModel extends AbstractSpinnerModel implements Serializ
      * If <code>maximum</code> is <code>null</code>, then there
      * is no upper bound.  No bounds checking is done here; the new
      * <code>maximum</code> value may invalidate the
-     * <code>(minimum <= value < maximum)</code>
+     * <code>(minimum &lt;= value &lt; maximum)</code>
      * invariant enforced by the constructors.  This is to simplify updating
      * the model, naturally one should ensure that the invariant is true
      * before calling the <code>next</code>, <code>previous</code>,
