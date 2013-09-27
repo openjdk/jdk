@@ -176,6 +176,7 @@
 #include "opto/loopnode.hpp"
 #include "opto/machnode.hpp"
 #include "opto/matcher.hpp"
+#include "opto/mathexactnode.hpp"
 #include "opto/mulnode.hpp"
 #include "opto/phaseX.hpp"
 #include "opto/parse.hpp"
@@ -1927,6 +1928,9 @@ typedef BinaryTreeDictionary<Metablock, FreeList> MetablockTreeDictionary;
   declare_c2_type(CmpF3Node, CmpFNode)                                    \
   declare_c2_type(CmpDNode, CmpNode)                                      \
   declare_c2_type(CmpD3Node, CmpDNode)                                    \
+  declare_c2_type(MathExactNode, MultiNode)                               \
+  declare_c2_type(AddExactINode, MathExactNode)                           \
+  declare_c2_type(FlagsProjNode, ProjNode)                                \
   declare_c2_type(BoolNode, Node)                                         \
   declare_c2_type(AbsNode, Node)                                          \
   declare_c2_type(AbsINode, AbsNode)                                      \

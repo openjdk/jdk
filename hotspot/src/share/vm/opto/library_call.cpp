@@ -32,6 +32,7 @@
 #include "opto/callGenerator.hpp"
 #include "opto/cfgnode.hpp"
 #include "opto/idealKit.hpp"
+#include "opto/mathexactnode.hpp"
 #include "opto/mulnode.hpp"
 #include "opto/parse.hpp"
 #include "opto/runtime.hpp"
@@ -199,6 +200,8 @@ class LibraryCallKit : public GraphKit {
   bool inline_math_native(vmIntrinsics::ID id);
   bool inline_trig(vmIntrinsics::ID id);
   bool inline_math(vmIntrinsics::ID id);
+  bool inline_math_mathExact(Node* math);
+  bool inline_math_addExact();
   bool inline_exp();
   bool inline_pow();
   void finish_pow_exp(Node* result, Node* x, Node* y, const TypeFunc* call_type, address funcAddr, const char* funcName);
@@ -498,6 +501,15 @@ CallGenerator* Compile::make_vm_intrinsic(ciMethod* m, bool is_virtual) {
     if (!UseCRC32Intrinsics) return NULL;
     break;
 
+  case vmIntrinsics::_addExact:
+    if (!Matcher::match_rule_supported(Op_AddExactI)) {
+      return NULL;
+    }
+    if (!UseMathExactIntrinsics) {
+      return NULL;
+    }
+    break;
+
  default:
     assert(id <= vmIntrinsics::LAST_COMPILER_INLINE, "caller responsibility");
     assert(id != vmIntrinsics::_Object_init && id != vmIntrinsics::_invoke, "enum out of order?");
@@ -667,6 +679,8 @@ bool LibraryCallKit::try_to_inline() {
 
   case vmIntrinsics::_min:
   case vmIntrinsics::_max:                      return inline_min_max(intrinsic_id());
+
+  case vmIntrinsics::_addExact:                 return inline_math_addExact();
 
   case vmIntrinsics::_arraycopy:                return inline_arraycopy();
 
@@ -1908,6 +1922,45 @@ static bool is_simple_name(Node* n) {
 //----------------------------inline_min_max-----------------------------------
 bool LibraryCallKit::inline_min_max(vmIntrinsics::ID id) {
   set_result(generate_min_max(id, argument(0), argument(1)));
+  return true;
+}
+
+bool LibraryCallKit::inline_math_mathExact(Node* math) {
+  Node* result = _gvn.transform( new(C) ProjNode(math, MathExactNode::result_proj_node));
+  Node* flags = _gvn.transform( new(C) FlagsProjNode(math, MathExactNode::flags_proj_node));
+
+  Node* bol = _gvn.transform( new (C) BoolNode(flags, BoolTest::overflow) );
+  IfNode* check = create_and_map_if(control(), bol, PROB_UNLIKELY_MAG(3), COUNT_UNKNOWN);
+  Node* fast_path = _gvn.transform( new (C) IfFalseNode(check));
+  Node* slow_path = _gvn.transform( new (C) IfTrueNode(check) );
+
+  {
+    PreserveJVMState pjvms(this);
+    PreserveReexecuteState preexecs(this);
+    jvms()->set_should_reexecute(true);
+
+    set_control(slow_path);
+    set_i_o(i_o());
+
+    uncommon_trap(Deoptimization::Reason_intrinsic,
+                  Deoptimization::Action_none);
+  }
+
+  set_control(fast_path);
+  set_result(result);
+  return true;
+}
+
+bool LibraryCallKit::inline_math_addExact() {
+  Node* arg1 = argument(0);
+  Node* arg2 = argument(1);
+
+  Node* add = _gvn.transform( new(C) AddExactINode(NULL, arg1, arg2) );
+  if (add->Opcode() == Op_AddExactI) {
+    return inline_math_mathExact(add);
+  } else {
+    set_result(add);
+  }
   return true;
 }
 

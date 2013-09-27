@@ -263,16 +263,16 @@ public:
 // We pick the values as 3 bits; the low order 2 bits we compare against the
 // condition codes, the high bit flips the sense of the result.
 struct BoolTest VALUE_OBJ_CLASS_SPEC {
-  enum mask { eq = 0, ne = 4, le = 5, ge = 7, lt = 3, gt = 1, illegal = 8 };
+  enum mask { eq = 0, ne = 4, le = 5, ge = 7, lt = 3, gt = 1, overflow = 2, no_overflow = 6, illegal = 8 };
   mask _test;
   BoolTest( mask btm ) : _test(btm) {}
   const Type *cc2logical( const Type *CC ) const;
   // Commute the test.  I use a small table lookup.  The table is created as
   // a simple char array where each element is the ASCII version of a 'mask'
   // enum from above.
-  mask commute( ) const { return mask("038147858"[_test]-'0'); }
+  mask commute( ) const { return mask("032147658"[_test]-'0'); }
   mask negate( ) const { return mask(_test^4); }
-  bool is_canonical( ) const { return (_test == BoolTest::ne || _test == BoolTest::lt || _test == BoolTest::le); }
+  bool is_canonical( ) const { return (_test == BoolTest::ne || _test == BoolTest::lt || _test == BoolTest::le || _test == BoolTest::overflow); }
 #ifndef PRODUCT
   void dump_on(outputStream *st) const;
 #endif
