@@ -22,38 +22,26 @@
  */
 
 /**
- * JDK-8008305: ScriptEngine.eval should offer the ability to provide a codebase *
+ * JDK-8025149: JSON.stringify does not handle 'space' argument as per the spec.
+ *
  * @test
  * @run
  */
 
-var URLReader = Java.type("jdk.nashorn.api.scripting.URLReader");
-var File = Java.type("java.io.File");
-var FileReader = Java.type("java.io.FileReader");
-var ScriptEngineManager = Java.type("javax.script.ScriptEngineManager");
-var SecurityException = Java.type("java.lang.SecurityException");
+print(JSON.stringify({ foo : 23, bar: { x : 22} }, undefined ,new Number(Infinity)));
 
-var m = new ScriptEngineManager();
-var e = m.getEngineByName("nashorn");
+print(JSON.stringify({ foo : 23, bar: { x : 22} }, undefined ,new Number(-Infinity)));
 
-
-// subtest script file
-var scriptFile = new File(__DIR__ + "JDK-8008305_subtest.js");
-
-// evaluate the subtest via a URLReader
-var res = e.eval(new URLReader(scriptFile.toURI().toURL()));
-
-// subtest should execute with AllPermission and so return absolute path
-if (! res.equals(new File(".").getAbsolutePath())) {
-    fail("eval result is not equal to expected value");
+try {
+    JSON.stringify({},[],
+    (n = new Number(0), n.valueOf = function() { throw ("inside n.valueOf") }, n));
+} catch (e) {
+    print(e);
 }
 
-// try same subtest without URLReader and so it runs with null code source
 try {
-    e.eval(new FileReader(scriptFile));
-    fail("Expected SecurityException from script!");
+    JSON.stringify({},[],
+    (s = new String(""), s.toString = function() { throw ("inside s.toString") }, s));
 } catch (e) {
-    if (! (e instanceof SecurityException)) {
-        fail("Expected SecurityException, but got " + e);
-    }
+    print(e);
 }
