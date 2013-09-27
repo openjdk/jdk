@@ -28,6 +28,7 @@ package com.sun.tools.doclets.formats.html.markup;
 import java.io.IOException;
 import java.io.Writer;
 import java.util.*;
+import java.nio.charset.*;
 
 import com.sun.tools.doclets.internal.toolkit.Content;
 import com.sun.tools.doclets.internal.toolkit.util.*;
@@ -164,6 +165,46 @@ public class HtmlTree extends Content {
     }
 
     /**
+     * A set of ASCII URI characters to be left unencoded.
+     */
+    public static final BitSet NONENCODING_CHARS = new BitSet(256);
+
+    static {
+        // alphabetic characters
+        for (int i = 'a'; i <= 'z'; i++) {
+            NONENCODING_CHARS.set(i);
+        }
+        for (int i = 'A'; i <= 'Z'; i++) {
+            NONENCODING_CHARS.set(i);
+        }
+        // numeric characters
+        for (int i = '0'; i <= '9'; i++) {
+            NONENCODING_CHARS.set(i);
+        }
+        // Reserved characters as per RFC 3986. These are set of delimiting characters.
+        String noEnc = ":/?#[]@!$&'()*+,;=";
+        // Unreserved characters as per RFC 3986 which should not be percent encoded.
+        noEnc += "-._~";
+        for (int i = 0; i < noEnc.length(); i++) {
+            NONENCODING_CHARS.set(noEnc.charAt(i));
+        }
+    }
+
+    private static String encodeURL(String url) {
+        byte[] urlBytes = url.getBytes(Charset.forName("UTF-8"));
+        StringBuilder sb = new StringBuilder();
+        for (int i = 0; i < urlBytes.length; i++) {
+            int c = urlBytes[i];
+            if (NONENCODING_CHARS.get(c & 0xFF)) {
+                sb.append((char) c);
+            } else {
+                sb.append(String.format("%%%02X", c & 0xFF));
+            }
+        }
+        return sb.toString();
+    }
+
+    /**
      * Generates an HTML anchor tag.
      *
      * @param ref reference url for the anchor tag
@@ -172,7 +213,7 @@ public class HtmlTree extends Content {
      */
     public static HtmlTree A(String ref, Content body) {
         HtmlTree htmltree = new HtmlTree(HtmlTag.A, nullCheck(body));
-        htmltree.addAttr(HtmlAttr.HREF, ref);
+        htmltree.addAttr(HtmlAttr.HREF, encodeURL(ref));
         return htmltree;
     }
 

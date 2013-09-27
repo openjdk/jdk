@@ -277,7 +277,7 @@ public class Infer {
       * Infer cyclic inference variables as described in 15.12.2.8.
       */
     private void instantiateAsUninferredVars(List<Type> vars, InferenceContext inferenceContext) {
-        ListBuffer<Type> todo = ListBuffer.lb();
+        ListBuffer<Type> todo = new ListBuffer<>();
         //step 1 - create fresh tvars
         for (Type t : vars) {
             UndetVar uv = (UndetVar)inferenceContext.asFree(t);
@@ -1832,7 +1832,7 @@ public class Infer {
         }
 
         private List<Type> filterVars(Filter<UndetVar> fu) {
-            ListBuffer<Type> res = ListBuffer.lb();
+            ListBuffer<Type> res = new ListBuffer<>();
             for (Type t : undetvars) {
                 UndetVar uv = (UndetVar)t;
                 if (fu.accepts(uv)) {
@@ -1860,7 +1860,7 @@ public class Infer {
          * Returns a list of free variables in a given type
          */
         final List<Type> freeVarsIn(Type t) {
-            ListBuffer<Type> buf = ListBuffer.lb();
+            ListBuffer<Type> buf = new ListBuffer<>();
             for (Type iv : inferenceVars()) {
                 if (t.contains(iv)) {
                     buf.add(iv);
@@ -1870,11 +1870,11 @@ public class Infer {
         }
 
         final List<Type> freeVarsIn(List<Type> ts) {
-            ListBuffer<Type> buf = ListBuffer.lb();
+            ListBuffer<Type> buf = new ListBuffer<>();
             for (Type t : ts) {
                 buf.appendList(freeVarsIn(t));
             }
-            ListBuffer<Type> buf2 = ListBuffer.lb();
+            ListBuffer<Type> buf2 = new ListBuffer<>();
             for (Type t : buf) {
                 if (!buf2.contains(t)) {
                     buf2.add(t);
@@ -1893,7 +1893,7 @@ public class Infer {
         }
 
         final List<Type> asFree(List<Type> ts) {
-            ListBuffer<Type> buf = ListBuffer.lb();
+            ListBuffer<Type> buf = new ListBuffer<>();
             for (Type t : ts) {
                 buf.append(asFree(t));
             }
@@ -1901,7 +1901,7 @@ public class Infer {
         }
 
         List<Type> instTypes() {
-            ListBuffer<Type> buf = ListBuffer.lb();
+            ListBuffer<Type> buf = new ListBuffer<>();
             for (Type t : undetvars) {
                 UndetVar uv = (UndetVar)t;
                 buf.append(uv.inst != null ? uv.inst : uv.qtype);
@@ -1919,7 +1919,7 @@ public class Infer {
         }
 
         List<Type> asInstTypes(List<Type> ts) {
-            ListBuffer<Type> buf = ListBuffer.lb();
+            ListBuffer<Type> buf = new ListBuffer<>();
             for (Type t : ts) {
                 buf.append(asInstType(t));
             }
@@ -1967,7 +1967,7 @@ public class Infer {
          * Save the state of this inference context
          */
         List<Type> save() {
-            ListBuffer<Type> buf = ListBuffer.lb();
+            ListBuffer<Type> buf = new ListBuffer<>();
             for (Type t : undetvars) {
                 UndetVar uv = (UndetVar)t;
                 UndetVar uv2 = new UndetVar((TypeVar)uv.qtype, types);

@@ -216,7 +216,7 @@ public class JColorChooser extends JComponent implements Accessible {
     }
 
     /**
-     * Returns the L&F object that renders this component.
+     * Returns the L&amp;F object that renders this component.
      *
      * @return the <code>ColorChooserUI</code> object that renders
      *          this component
@@ -226,9 +226,9 @@ public class JColorChooser extends JComponent implements Accessible {
     }
 
     /**
-     * Sets the L&F object that renders this component.
+     * Sets the L&amp;F object that renders this component.
      *
-     * @param ui  the <code>ColorChooserUI</code> L&F object
+     * @param ui  the <code>ColorChooserUI</code> L&amp;F object
      * @see UIDefaults#getUI
      *
      * @beaninfo
@@ -241,7 +241,7 @@ public class JColorChooser extends JComponent implements Accessible {
     }
 
     /**
-     * Notification from the <code>UIManager</code> that the L&F has changed.
+     * Notification from the <code>UIManager</code> that the L&amp;F has changed.
      * Replaces the current UI object with the latest version from the
      * <code>UIManager</code>.
      *
@@ -252,7 +252,7 @@ public class JColorChooser extends JComponent implements Accessible {
     }
 
     /**
-     * Returns the name of the L&F class that renders this component.
+     * Returns the name of the L&amp;F class that renders this component.
      *
      * @return the string "ColorChooserUI"
      * @see JComponent#getUIClassID

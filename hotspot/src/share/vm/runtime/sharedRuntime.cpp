@@ -1506,8 +1506,11 @@ methodHandle SharedRuntime::handle_ic_miss_helper(JavaThread *thread, TRAPS) {
                                                 info, CHECK_(methodHandle()));
         inline_cache->set_to_monomorphic(info);
       } else if (!inline_cache->is_megamorphic() && !inline_cache->is_clean()) {
-        // Change to megamorphic
-        inline_cache->set_to_megamorphic(&call_info, bc, CHECK_(methodHandle()));
+        // Potential change to megamorphic
+        bool successful = inline_cache->set_to_megamorphic(&call_info, bc, CHECK_(methodHandle()));
+        if (!successful) {
+          inline_cache->set_to_clean();
+        }
       } else {
         // Either clean or megamorphic
       }
