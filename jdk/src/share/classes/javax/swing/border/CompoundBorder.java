@@ -37,11 +37,11 @@ import java.beans.ConstructorProperties;
  * For example, this class may be used to add blank margin space
  * to a component with an existing decorative border:
  * <p>
- * <code><pre>
+ * <pre>
  *    Border border = comp.getBorder();
  *    Border margin = new EmptyBorder(10,10,10,10);
  *    comp.setBorder(new CompoundBorder(border, margin));
- * </pre></code>
+ * </pre>
  * <p>
  * <strong>Warning:</strong>
  * Serialized objects of this class will not be compatible with

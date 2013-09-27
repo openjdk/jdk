@@ -101,14 +101,14 @@ public class TreeModelEvent extends EventObject {
      * of initial-positions, you then need to convert the Vector of <code>Integer</code>
      * objects to an array of <code>int</code> to create the event.
      * <p>
-     * <b>Notes:</b><ul>
+     * <b>Notes:</b><ul style="list-style-type:none">
      * <li>Like the <code>insertNodeInto</code> method in the
      *    <code>DefaultTreeModel</code> class, <code>insertElementAt</code>
      *    appends to the <code>Vector</code> when the index matches the size
      *    of the vector. So you can use <code>insertElementAt(Integer, 0)</code>
-     *    even when the vector is empty.
-     * <ul>To create a node changed event for the root node, specify the parent
-     *     and the child indices as <code>null</code>.
+     *    even when the vector is empty.</li>
+     * <li>To create a node changed event for the root node, specify the parent
+     *     and the child indices as <code>null</code>.</li>
      * </ul>
      *
      * @param source the Object responsible for generating the event (typically
