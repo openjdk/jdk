@@ -56,7 +56,7 @@ public abstract class CaretEvent extends EventObject {
     /**
      * Fetches the location of the caret.
      *
-     * @return the dot >= 0
+     * @return the dot &gt;= 0
      */
     public abstract int getDot();
 
@@ -65,7 +65,7 @@ public abstract class CaretEvent extends EventObject {
      * selection.  If there is no selection, this
      * will be the same as dot.
      *
-     * @return the mark >= 0
+     * @return the mark &gt;= 0
      */
     public abstract int getMark();
 }

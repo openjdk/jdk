@@ -150,7 +150,7 @@ public class DefaultTableCellRenderer extends JLabel
 
     /**
      * Notification from the <code>UIManager</code> that the look and feel
-     * [L&F] has changed.
+     * [L&amp;F] has changed.
      * Replaces the current UI object with the latest version from the
      * <code>UIManager</code>.
      *

@@ -418,15 +418,14 @@ public class DefaultTableModel extends AbstractTableModel implements Serializabl
      *
      *  <pre>
      *  Examples of moves:
-     *  <p>
+     *
      *  1. moveRow(1,3,5);
      *          a|B|C|D|e|f|g|h|i|j|k   - before
      *          a|e|f|g|h|B|C|D|i|j|k   - after
-     *  <p>
+     *
      *  2. moveRow(6,7,1);
      *          a|b|c|d|e|f|G|H|i|j|k   - before
      *          a|G|H|b|c|d|e|f|i|j|k   - after
-     *  <p>
      *  </pre>
      *
      * @param   start       the starting row index to be moved

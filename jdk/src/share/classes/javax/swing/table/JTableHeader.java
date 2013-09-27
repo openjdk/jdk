@@ -437,7 +437,7 @@ public class JTableHeader extends JComponent implements TableColumnModelListener
 //
 
     /**
-     * Returns the look and feel (L&F) object that renders this component.
+     * Returns the look and feel (L&amp;F) object that renders this component.
      *
      * @return the <code>TableHeaderUI</code> object that renders this component
      */
@@ -446,9 +446,9 @@ public class JTableHeader extends JComponent implements TableColumnModelListener
     }
 
     /**
-     * Sets the look and feel (L&F) object that renders this component.
+     * Sets the look and feel (L&amp;F) object that renders this component.
      *
-     * @param ui  the <code>TableHeaderUI</code> L&F object
+     * @param ui  the <code>TableHeaderUI</code> L&amp;F object
      * @see UIDefaults#getUI
      */
     public void setUI(TableHeaderUI ui){
@@ -460,7 +460,7 @@ public class JTableHeader extends JComponent implements TableColumnModelListener
 
     /**
      * Notification from the <code>UIManager</code> that the look and feel
-     * (L&F) has changed.
+     * (L&amp;F) has changed.
      * Replaces the current UI object with the latest version from the
      * <code>UIManager</code>.
      *
@@ -478,7 +478,7 @@ public class JTableHeader extends JComponent implements TableColumnModelListener
 
     /**
      * Returns the suffix used to construct the name of the look and feel
-     * (L&F) class used to render this component.
+     * (L&amp;F) class used to render this component.
      * @return the string "TableHeaderUI"
      *
      * @return "TableHeaderUI"
