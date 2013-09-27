@@ -107,14 +107,14 @@ PROFILE_2_JRE_BIN_FILES := \
     rmid$(EXE_SUFFIX) \
     rmiregistry$(EXE_SUFFIX)
 
-PROFILE_2_JRE_LIB_FILES := 
+PROFILE_2_JRE_LIB_FILES :=
 
-PROFILE_2_JRE_OTHER_FILES := 
+PROFILE_2_JRE_OTHER_FILES :=
 
-PROFILE_2_JRE_JAR_FILES := 
+PROFILE_2_JRE_JAR_FILES :=
 
 
-PROFILE_3_JRE_BIN_FILES := 
+PROFILE_3_JRE_BIN_FILES :=
 
 PROFILE_3_JRE_LIB_FILES := \
     $(OPENJDK_TARGET_CPU_LEGACY_LIB)/$(LIBRARY_PREFIX)hprof$(SHARED_LIBRARY_SUFFIX) \
@@ -138,7 +138,7 @@ PROFILE_3_JRE_LIB_FILES := \
     management/management.properties \
     management/snmp.acl.template
 
-PROFILE_3_JRE_OTHER_FILES := 
+PROFILE_3_JRE_OTHER_FILES :=
 
 PROFILE_3_JRE_JAR_FILES := \
     management-agent.jar
@@ -171,7 +171,6 @@ FULL_JRE_LIB_FILES := \
     $(OPENJDK_TARGET_CPU_LEGACY_LIB)/$(LIBRARY_PREFIX)splashscreen$(SHARED_LIBRARY_SUFFIX) \
     $(OPENJDK_TARGET_CPU_LEGACY_LIB)/$(LIBRARY_PREFIX)t2k$(SHARED_LIBRARY_SUFFIX) \
     $(OPENJDK_TARGET_CPU_LEGACY_LIB)/$(LIBRARY_PREFIX)unpack$(SHARED_LIBRARY_SUFFIX) \
-    alt-rt.jar \
     charsets.jar \
     cmm/CIEXYZ.pf \
     cmm/GRAY.pf \
@@ -248,7 +247,6 @@ FULL_JRE_OTHER_FILES := \
     man/man1/unpack200.1
 
 FULL_JRE_JAR_FILES := \
-    alt-rt.jar \
     charsets.jar \
     ext/cldrdata.jar \
     ext/dnsns.jar \
