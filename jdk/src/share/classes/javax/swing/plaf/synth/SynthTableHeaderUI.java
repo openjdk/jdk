@@ -35,7 +35,7 @@ import javax.swing.table.*;
 import sun.swing.table.*;
 
 /**
- * Provides the Synth L&F UI delegate for
+ * Provides the Synth L&amp;F UI delegate for
  * {@link javax.swing.table.JTableHeader}.
  *
  * @author Alan Chung
@@ -64,7 +64,7 @@ public class SynthTableHeaderUI extends BasicTableHeaderUI
     }
 
     /**
-     * @inheritDoc
+     * {@inheritDoc}
      */
     @Override
     protected void installDefaults() {
@@ -89,7 +89,7 @@ public class SynthTableHeaderUI extends BasicTableHeaderUI
     }
 
     /**
-     * @inheritDoc
+     * {@inheritDoc}
      */
     @Override
     protected void installListeners() {
@@ -98,7 +98,7 @@ public class SynthTableHeaderUI extends BasicTableHeaderUI
     }
 
     /**
-     * @inheritDoc
+     * {@inheritDoc}
      */
     @Override
     protected void uninstallDefaults() {
@@ -114,7 +114,7 @@ public class SynthTableHeaderUI extends BasicTableHeaderUI
     }
 
     /**
-     * @inheritDoc
+     * {@inheritDoc}
      */
     @Override
     protected void uninstallListeners() {
@@ -174,7 +174,7 @@ public class SynthTableHeaderUI extends BasicTableHeaderUI
     }
 
     /**
-     * @inheritDoc
+     * {@inheritDoc}
      */
     @Override
     public void paintBorder(SynthContext context, Graphics g, int x,
@@ -185,7 +185,7 @@ public class SynthTableHeaderUI extends BasicTableHeaderUI
 // SynthUI
 //
     /**
-     * @inheritDoc
+     * {@inheritDoc}
      */
     @Override
     public SynthContext getContext(JComponent c) {
@@ -198,7 +198,7 @@ public class SynthTableHeaderUI extends BasicTableHeaderUI
     }
 
     /**
-     * @inheritDoc
+     * {@inheritDoc}
      */
     @Override
     protected void rolloverColumnUpdated(int oldColumn, int newColumn) {
@@ -207,7 +207,7 @@ public class SynthTableHeaderUI extends BasicTableHeaderUI
     }
 
     /**
-     * @inheritDoc
+     * {@inheritDoc}
      */
     @Override
     public void propertyChange(PropertyChangeEvent evt) {

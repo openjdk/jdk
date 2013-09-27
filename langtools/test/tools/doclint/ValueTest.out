@@ -1,0 +1,22 @@
+ValueTest.java:39: error: {@value} not allowed here
+    /** invalid class C: {@value} */
+                         ^
+ValueTest.java:42: error: {@value} not allowed here
+    /** invalid enum E: {@value} */
+                        ^
+ValueTest.java:44: error: {@value} not allowed here
+        /** invalid enum constant E1: {@value} */
+                                      ^
+ValueTest.java:48: error: {@value} not allowed here
+    /** invalid field 1: {@value} */
+                         ^
+ValueTest.java:51: error: {@value} not allowed here
+    /** invalid field 2: {@value} */
+                         ^
+ValueTest.java:62: error: value does not refer to a constant
+    /** invalid method: {@value Object#toString} */
+                        ^
+ValueTest.java:65: error: value does not refer to a constant
+    /** invalid enum constant: {@value Thread.State#NEW} */
+                               ^
+7 errors

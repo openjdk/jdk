@@ -314,6 +314,11 @@ static void signal_thread_entry(JavaThread* thread, TRAPS) {
   }
 }
 
+void os::init_before_ergo() {
+  // We need to initialize large page support here because ergonomics takes some
+  // decisions depending on large page support and the calculated large page size.
+  large_page_init();
+}
 
 void os::signal_init() {
   if (!ReduceSignalUsage) {

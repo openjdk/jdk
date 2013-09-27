@@ -265,12 +265,12 @@ public class Frame extends Window implements MenuContainer {
      *
      * <p>Note that the correct test for frame being fully maximized is
      * <pre>
-     *     (state & Frame.MAXIMIZED_BOTH) == Frame.MAXIMIZED_BOTH
+     *     (state &amp; Frame.MAXIMIZED_BOTH) == Frame.MAXIMIZED_BOTH
      * </pre>
      *
      * <p>To test is frame is maximized in <em>some</em> direction use
      * <pre>
-     *     (state & Frame.MAXIMIZED_BOTH) != 0
+     *     (state &amp; Frame.MAXIMIZED_BOTH) != 0
      * </pre>
      *
      * @see #setExtendedState(int)

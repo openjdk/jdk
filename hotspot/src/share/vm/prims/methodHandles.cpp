@@ -127,25 +127,37 @@ Handle MethodHandles::new_MemberName(TRAPS) {
 }
 
 oop MethodHandles::init_MemberName(Handle mname, Handle target) {
+  // This method is used from java.lang.invoke.MemberName constructors.
+  // It fills in the new MemberName from a java.lang.reflect.Member.
   Thread* thread = Thread::current();
   oop target_oop = target();
   Klass* target_klass = target_oop->klass();
   if (target_klass == SystemDictionary::reflect_Field_klass()) {
     oop clazz = java_lang_reflect_Field::clazz(target_oop); // fd.field_holder()
     int slot  = java_lang_reflect_Field::slot(target_oop);  // fd.index()
-    int mods  = java_lang_reflect_Field::modifiers(target_oop);
-    oop type  = java_lang_reflect_Field::type(target_oop);
-    oop name  = java_lang_reflect_Field::name(target_oop);
     KlassHandle k(thread, java_lang_Class::as_Klass(clazz));
-    intptr_t offset = InstanceKlass::cast(k())->field_offset(slot);
-    return init_field_MemberName(mname, k, accessFlags_from(mods), type, name, offset);
+    if (!k.is_null() && k->oop_is_instance()) {
+      fieldDescriptor fd(InstanceKlass::cast(k()), slot);
+      oop mname2 = init_field_MemberName(mname, fd);
+      if (mname2 != NULL) {
+        // Since we have the reified name and type handy, add them to the result.
+        if (java_lang_invoke_MemberName::name(mname2) == NULL)
+          java_lang_invoke_MemberName::set_name(mname2, java_lang_reflect_Field::name(target_oop));
+        if (java_lang_invoke_MemberName::type(mname2) == NULL)
+          java_lang_invoke_MemberName::set_type(mname2, java_lang_reflect_Field::type(target_oop));
+      }
+      return mname2;
+    }
   } else if (target_klass == SystemDictionary::reflect_Method_klass()) {
     oop clazz  = java_lang_reflect_Method::clazz(target_oop);
     int slot   = java_lang_reflect_Method::slot(target_oop);
     KlassHandle k(thread, java_lang_Class::as_Klass(clazz));
     if (!k.is_null() && k->oop_is_instance()) {
       Method* m = InstanceKlass::cast(k())->method_with_idnum(slot);
-      return init_method_MemberName(mname, m, true, k);
+      if (m == NULL || is_signature_polymorphic(m->intrinsic_id()))
+        return NULL;            // do not resolve unless there is a concrete signature
+      CallInfo info(m, k());
+      return init_method_MemberName(mname, info);
     }
   } else if (target_klass == SystemDictionary::reflect_Constructor_klass()) {
     oop clazz  = java_lang_reflect_Constructor::clazz(target_oop);
@@ -153,65 +165,50 @@ oop MethodHandles::init_MemberName(Handle mname, Handle target) {
     KlassHandle k(thread, java_lang_Class::as_Klass(clazz));
     if (!k.is_null() && k->oop_is_instance()) {
       Method* m = InstanceKlass::cast(k())->method_with_idnum(slot);
-      return init_method_MemberName(mname, m, false, k);
-    }
-  } else if (target_klass == SystemDictionary::MemberName_klass()) {
-    // Note: This only works if the MemberName has already been resolved.
-    oop clazz        = java_lang_invoke_MemberName::clazz(target_oop);
-    int flags        = java_lang_invoke_MemberName::flags(target_oop);
-    Metadata* vmtarget=java_lang_invoke_MemberName::vmtarget(target_oop);
-    intptr_t vmindex = java_lang_invoke_MemberName::vmindex(target_oop);
-    KlassHandle k(thread, java_lang_Class::as_Klass(clazz));
-    int ref_kind     = (flags >> REFERENCE_KIND_SHIFT) & REFERENCE_KIND_MASK;
-    if (vmtarget == NULL)  return NULL;  // not resolved
-    if ((flags & IS_FIELD) != 0) {
-      assert(vmtarget->is_klass(), "field vmtarget is Klass*");
-      int basic_mods = (ref_kind_is_static(ref_kind) ? JVM_ACC_STATIC : 0);
-      // FIXME:  how does k (receiver_limit) contribute?
-      KlassHandle k_vmtarget(thread, (Klass*)vmtarget);
-      return init_field_MemberName(mname, k_vmtarget, accessFlags_from(basic_mods), NULL, NULL, vmindex);
-    } else if ((flags & (IS_METHOD | IS_CONSTRUCTOR)) != 0) {
-      assert(vmtarget->is_method(), "method or constructor vmtarget is Method*");
-      return init_method_MemberName(mname, (Method*)vmtarget, ref_kind_does_dispatch(ref_kind), k);
-    } else {
-      return NULL;
+      if (m == NULL)  return NULL;
+      CallInfo info(m, k());
+      return init_method_MemberName(mname, info);
     }
   }
   return NULL;
 }
 
-oop MethodHandles::init_method_MemberName(Handle mname, Method* m, bool do_dispatch,
-                                          KlassHandle receiver_limit_h) {
-  Klass* receiver_limit = receiver_limit_h();
-  AccessFlags mods = m->access_flags();
-  int flags = (jushort)( mods.as_short() & JVM_RECOGNIZED_METHOD_MODIFIERS );
-  int vmindex = Method::nonvirtual_vtable_index; // implies never any dispatch
-  Klass* mklass = m->method_holder();
-  if (receiver_limit == NULL)
-    receiver_limit = mklass;
-  if (m->is_initializer()) {
-    flags |= IS_CONSTRUCTOR | (JVM_REF_invokeSpecial << REFERENCE_KIND_SHIFT);
-  } else if (mods.is_static()) {
-    flags |= IS_METHOD | (JVM_REF_invokeStatic << REFERENCE_KIND_SHIFT);
-  } else if (receiver_limit != mklass &&
-             !receiver_limit->is_subtype_of(mklass)) {
-    return NULL;  // bad receiver limit
-  } else if (do_dispatch && receiver_limit->is_interface() &&
-             mklass->is_interface()) {
+oop MethodHandles::init_method_MemberName(Handle mname, CallInfo& info) {
+  assert(info.resolved_appendix().is_null(), "only normal methods here");
+  KlassHandle receiver_limit = info.resolved_klass();
+  methodHandle m = info.resolved_method();
+  int flags = (jushort)( m->access_flags().as_short() & JVM_RECOGNIZED_METHOD_MODIFIERS );
+  int vmindex = Method::invalid_vtable_index;
+
+  switch (info.call_kind()) {
+  case CallInfo::itable_call:
+    vmindex = info.itable_index();
+    // More importantly, the itable index only works with the method holder.
+    receiver_limit = m->method_holder();
+    assert(receiver_limit->verify_itable_index(vmindex), "");
     flags |= IS_METHOD | (JVM_REF_invokeInterface << REFERENCE_KIND_SHIFT);
-    receiver_limit = mklass;  // ignore passed-in limit; interfaces are interconvertible
-    vmindex = klassItable::compute_itable_index(m);
-  } else if (do_dispatch && mklass != receiver_limit && mklass->is_interface()) {
+    break;
+
+  case CallInfo::vtable_call:
+    vmindex = info.vtable_index();
     flags |= IS_METHOD | (JVM_REF_invokeVirtual << REFERENCE_KIND_SHIFT);
-    // it is a miranda method, so m->vtable_index is not what we want
-    ResourceMark rm;
-    klassVtable* vt = InstanceKlass::cast(receiver_limit)->vtable();
-    vmindex = vt->index_of_miranda(m->name(), m->signature());
-  } else if (!do_dispatch || m->can_be_statically_bound()) {
-    flags |= IS_METHOD | (JVM_REF_invokeSpecial << REFERENCE_KIND_SHIFT);
-  } else {
-    flags |= IS_METHOD | (JVM_REF_invokeVirtual << REFERENCE_KIND_SHIFT);
-    vmindex = m->vtable_index();
+    assert(receiver_limit->is_subtype_of(m->method_holder()), "virtual call must be type-safe");
+    break;
+
+  case CallInfo::direct_call:
+    vmindex = Method::nonvirtual_vtable_index;
+    if (m->is_static()) {
+      flags |= IS_METHOD      | (JVM_REF_invokeStatic  << REFERENCE_KIND_SHIFT);
+    } else if (m->is_initializer()) {
+      flags |= IS_CONSTRUCTOR | (JVM_REF_invokeSpecial << REFERENCE_KIND_SHIFT);
+      assert(receiver_limit == m->method_holder(), "constructor call must be exactly typed");
+    } else {
+      flags |= IS_METHOD      | (JVM_REF_invokeSpecial << REFERENCE_KIND_SHIFT);
+      assert(receiver_limit->is_subtype_of(m->method_holder()), "special call must be type-safe");
+    }
+    break;
+
+  default:  assert(false, "bad CallInfo");  return NULL;
   }
 
   // @CallerSensitive annotation detected
@@ -221,7 +218,7 @@ oop MethodHandles::init_method_MemberName(Handle mname, Method* m, bool do_dispa
 
   oop mname_oop = mname();
   java_lang_invoke_MemberName::set_flags(   mname_oop, flags);
-  java_lang_invoke_MemberName::set_vmtarget(mname_oop, m);
+  java_lang_invoke_MemberName::set_vmtarget(mname_oop, m());
   java_lang_invoke_MemberName::set_vmindex( mname_oop, vmindex);   // vtable/itable index
   java_lang_invoke_MemberName::set_clazz(   mname_oop, receiver_limit->java_mirror());
   // Note:  name and type can be lazily computed by resolve_MemberName,
@@ -237,59 +234,19 @@ oop MethodHandles::init_method_MemberName(Handle mname, Method* m, bool do_dispa
   return mname();
 }
 
-Handle MethodHandles::init_method_MemberName(Handle mname, CallInfo& info, TRAPS) {
-  Handle empty;
-  if (info.resolved_appendix().not_null()) {
-    // The resolved MemberName must not be accompanied by an appendix argument,
-    // since there is no way to bind this value into the MemberName.
-    // Caller is responsible to prevent this from happening.
-    THROW_MSG_(vmSymbols::java_lang_InternalError(), "appendix", empty);
-  }
-  methodHandle m = info.resolved_method();
-  KlassHandle defc = info.resolved_klass();
-  int vmindex = Method::invalid_vtable_index;
-  if (defc->is_interface() && m->method_holder()->is_interface()) {
-    // static interface methods do not reference vtable or itable
-    if (m->is_static()) {
-      vmindex = Method::nonvirtual_vtable_index;
-    }
-    // interface methods invoked via invokespecial also
-    // do not reference vtable or itable.
-    int ref_kind = ((java_lang_invoke_MemberName::flags(mname()) >>
-                     REFERENCE_KIND_SHIFT) & REFERENCE_KIND_MASK);
-    if (ref_kind == JVM_REF_invokeSpecial) {
-      vmindex = Method::nonvirtual_vtable_index;
-    }
-    // If neither m is static nor ref_kind is invokespecial,
-    // set it to itable index.
-    if (vmindex == Method::invalid_vtable_index) {
-      // LinkResolver does not report itable indexes!  (fix this?)
-      vmindex = klassItable::compute_itable_index(m());
-    }
-  } else if (m->can_be_statically_bound()) {
-    // LinkResolver reports vtable index even for final methods!
-    vmindex = Method::nonvirtual_vtable_index;
-  } else {
-    vmindex = info.vtable_index();
-  }
-  oop res = init_method_MemberName(mname, m(), (vmindex >= 0), defc());
-  assert(res == NULL || (java_lang_invoke_MemberName::vmindex(res) == vmindex), "");
-  return Handle(THREAD, res);
-}
-
-oop MethodHandles::init_field_MemberName(Handle mname, KlassHandle field_holder,
-                                         AccessFlags mods, oop type, oop name,
-                                         intptr_t offset, bool is_setter) {
-  int flags = (jushort)( mods.as_short() & JVM_RECOGNIZED_FIELD_MODIFIERS );
-  flags |= IS_FIELD | ((mods.is_static() ? JVM_REF_getStatic : JVM_REF_getField) << REFERENCE_KIND_SHIFT);
+oop MethodHandles::init_field_MemberName(Handle mname, fieldDescriptor& fd, bool is_setter) {
+  int flags = (jushort)( fd.access_flags().as_short() & JVM_RECOGNIZED_FIELD_MODIFIERS );
+  flags |= IS_FIELD | ((fd.is_static() ? JVM_REF_getStatic : JVM_REF_getField) << REFERENCE_KIND_SHIFT);
   if (is_setter)  flags += ((JVM_REF_putField - JVM_REF_getField) << REFERENCE_KIND_SHIFT);
-  Metadata* vmtarget = field_holder();
-  int vmindex  = offset;  // determines the field uniquely when combined with static bit
+  Metadata* vmtarget = fd.field_holder();
+  int vmindex        = fd.offset();  // determines the field uniquely when combined with static bit
   oop mname_oop = mname();
   java_lang_invoke_MemberName::set_flags(mname_oop,    flags);
   java_lang_invoke_MemberName::set_vmtarget(mname_oop, vmtarget);
   java_lang_invoke_MemberName::set_vmindex(mname_oop,  vmindex);
-  java_lang_invoke_MemberName::set_clazz(mname_oop,    field_holder->java_mirror());
+  java_lang_invoke_MemberName::set_clazz(mname_oop,    fd.field_holder()->java_mirror());
+  oop type = field_signature_type_or_null(fd.signature());
+  oop name = field_name_or_null(fd.name());
   if (name != NULL)
     java_lang_invoke_MemberName::set_name(mname_oop,   name);
   if (type != NULL)
@@ -304,19 +261,6 @@ oop MethodHandles::init_field_MemberName(Handle mname, KlassHandle field_holder,
   // TO DO: maybe intern mname_oop
   return mname();
 }
-
-Handle MethodHandles::init_field_MemberName(Handle mname, FieldAccessInfo& info, TRAPS) {
-  return Handle();
-#if 0 // FIXME
-  KlassHandle field_holder = info.klass();
-  intptr_t    field_offset = info.field_offset();
-  return init_field_MemberName(mname_oop, field_holder(),
-                               info.access_flags(),
-                               type, name,
-                               field_offset, false /*is_setter*/);
-#endif
-}
-
 
 // JVM 2.9 Special Methods:
 // A method is signature polymorphic if and only if all of the following conditions hold :
@@ -573,12 +517,12 @@ static oop object_java_mirror() {
   return SystemDictionary::Object_klass()->java_mirror();
 }
 
-static oop field_name_or_null(Symbol* s) {
+oop MethodHandles::field_name_or_null(Symbol* s) {
   if (s == NULL)  return NULL;
   return StringTable::lookup(s);
 }
 
-static oop field_signature_type_or_null(Symbol* s) {
+oop MethodHandles::field_signature_type_or_null(Symbol* s) {
   if (s == NULL)  return NULL;
   BasicType bt = FieldType::basic_type(s);
   if (is_java_primitive(bt)) {
@@ -701,7 +645,14 @@ Handle MethodHandles::resolve_MemberName(Handle mname, TRAPS) {
           return empty;
         }
       }
-      return init_method_MemberName(mname, result, THREAD);
+      if (result.resolved_appendix().not_null()) {
+        // The resolved MemberName must not be accompanied by an appendix argument,
+        // since there is no way to bind this value into the MemberName.
+        // Caller is responsible to prevent this from happening.
+        THROW_MSG_(vmSymbols::java_lang_InternalError(), "appendix", empty);
+      }
+      oop mname2 = init_method_MemberName(mname, result);
+      return Handle(THREAD, mname2);
     }
   case IS_CONSTRUCTOR:
     {
@@ -719,22 +670,21 @@ Handle MethodHandles::resolve_MemberName(Handle mname, TRAPS) {
         }
       }
       assert(result.is_statically_bound(), "");
-      return init_method_MemberName(mname, result, THREAD);
+      oop mname2 = init_method_MemberName(mname, result);
+      return Handle(THREAD, mname2);
     }
   case IS_FIELD:
     {
-      // This is taken from LinkResolver::resolve_field, sans access checks.
-      fieldDescriptor fd; // find_field initializes fd if found
-      KlassHandle sel_klass(THREAD, InstanceKlass::cast(defc())->find_field(name, type, &fd));
-      // check if field exists; i.e., if a klass containing the field def has been selected
-      if (sel_klass.is_null())  return empty;  // should not happen
-      oop type = field_signature_type_or_null(fd.signature());
-      oop name = field_name_or_null(fd.name());
-      bool is_setter = (ref_kind_is_valid(ref_kind) && ref_kind_is_setter(ref_kind));
-      mname = Handle(THREAD,
-                     init_field_MemberName(mname, sel_klass,
-                                           fd.access_flags(), type, name, fd.offset(), is_setter));
-      return mname;
+      fieldDescriptor result; // find_field initializes fd if found
+      {
+        assert(!HAS_PENDING_EXCEPTION, "");
+        LinkResolver::resolve_field(result, defc, name, type, KlassHandle(), Bytecodes::_nop, false, false, THREAD);
+        if (HAS_PENDING_EXCEPTION) {
+          return empty;
+        }
+      }
+      oop mname2 = init_field_MemberName(mname, result, ref_kind_is_setter(ref_kind));
+      return Handle(THREAD, mname2);
     }
   default:
     THROW_MSG_(vmSymbols::java_lang_InternalError(), "unrecognized MemberName format", empty);
@@ -793,7 +743,6 @@ void MethodHandles::expand_MemberName(Handle mname, int suppress, TRAPS) {
     }
   case IS_FIELD:
     {
-      // This is taken from LinkResolver::resolve_field, sans access checks.
       assert(vmtarget->is_klass(), "field vmtarget is Klass*");
       if (!((Klass*) vmtarget)->oop_is_instance())  break;
       instanceKlassHandle defc(THREAD, (Klass*) vmtarget);
@@ -872,11 +821,7 @@ int MethodHandles::find_MemberNames(KlassHandle k,
         Handle result(thread, results->obj_at(rfill++));
         if (!java_lang_invoke_MemberName::is_instance(result()))
           return -99;  // caller bug!
-        oop type = field_signature_type_or_null(st.signature());
-        oop name = field_name_or_null(st.name());
-        oop saved = MethodHandles::init_field_MemberName(result, st.klass(),
-                                                         st.access_flags(), type, name,
-                                                         st.offset());
+        oop saved = MethodHandles::init_field_MemberName(result, st.field_descriptor());
         if (saved != result())
           results->obj_at_put(rfill-1, saved);  // show saved instance to user
       } else if (++overflow >= overflow_limit) {
@@ -926,7 +871,8 @@ int MethodHandles::find_MemberNames(KlassHandle k,
         Handle result(thread, results->obj_at(rfill++));
         if (!java_lang_invoke_MemberName::is_instance(result()))
           return -99;  // caller bug!
-        oop saved = MethodHandles::init_method_MemberName(result, m, true, NULL);
+        CallInfo info(m);
+        oop saved = MethodHandles::init_method_MemberName(result, info);
         if (saved != result())
           results->obj_at_put(rfill-1, saved);  // show saved instance to user
       } else if (++overflow >= overflow_limit) {
@@ -1227,7 +1173,8 @@ JVM_ENTRY(jobject, MHN_getMemberVMInfo(JNIEnv *env, jobject igcls, jobject mname
     x = ((Klass*) vmtarget)->java_mirror();
   } else if (vmtarget->is_method()) {
     Handle mname2 = MethodHandles::new_MemberName(CHECK_NULL);
-    x = MethodHandles::init_method_MemberName(mname2, (Method*)vmtarget, false, NULL);
+    CallInfo info((Method*)vmtarget);
+    x = MethodHandles::init_method_MemberName(mname2, info);
   }
   result->obj_at_put(1, x);
   return JNIHandles::make_local(env, result());

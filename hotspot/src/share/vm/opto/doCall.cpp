@@ -41,9 +41,9 @@
 #include "runtime/sharedRuntime.hpp"
 
 void trace_type_profile(Compile* C, ciMethod *method, int depth, int bci, ciMethod *prof_method, ciKlass *prof_klass, int site_count, int receiver_count) {
-  if (TraceTypeProfile || PrintInlining NOT_PRODUCT(|| PrintOptoInlining)) {
+  if (TraceTypeProfile || C->print_inlining()) {
     outputStream* out = tty;
-    if (!PrintInlining) {
+    if (!C->print_inlining()) {
       if (NOT_PRODUCT(!PrintOpto &&) !PrintCompilation) {
         method->print_short_name();
         tty->cr();

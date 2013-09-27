@@ -286,7 +286,10 @@ int ciMethod::itable_index() {
   check_is_loaded();
   assert(holder()->is_linked(), "must be linked");
   VM_ENTRY_MARK;
-  return klassItable::compute_itable_index(get_Method());
+  Method* m = get_Method();
+  if (!m->has_itable_index())
+    return Method::nonvirtual_vtable_index;
+  return m->itable_index();
 }
 #endif // SHARK
 
@@ -1137,6 +1140,10 @@ bool ciMethod::is_klass_loaded(int refinfo_index, bool must_be_resolved) const {
 // ------------------------------------------------------------------
 // ciMethod::check_call
 bool ciMethod::check_call(int refinfo_index, bool is_static) const {
+  // This method is used only in C2 from InlineTree::ok_to_inline,
+  // and is only used under -Xcomp or -XX:CompileTheWorld.
+  // It appears to fail when applied to an invokeinterface call site.
+  // FIXME: Remove this method and resolve_method_statically; refactor to use the other LinkResolver entry points.
   VM_ENTRY_MARK;
   {
     EXCEPTION_MARK;

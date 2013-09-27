@@ -333,6 +333,8 @@ Thread::~Thread() {
   // Reclaim the objectmonitors from the omFreeList of the moribund thread.
   ObjectSynchronizer::omFlush (this) ;
 
+  EVENT_THREAD_DESTRUCT(this);
+
   // stack_base can be NULL if the thread is never started or exited before
   // record_stack_base_and_size called. Although, we would like to ensure
   // that all started threads do call record_stack_base_and_size(), there is
@@ -3328,6 +3330,11 @@ jint Threads::create_vm(JavaVMInitArgs* args, bool* canTryAgain) {
   // Parse arguments
   jint parse_result = Arguments::parse(args);
   if (parse_result != JNI_OK) return parse_result;
+
+  os::init_before_ergo();
+
+  jint ergo_result = Arguments::apply_ergo();
+  if (ergo_result != JNI_OK) return ergo_result;
 
   if (PauseAtStartup) {
     os::pause();

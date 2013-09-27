@@ -200,25 +200,41 @@ ifeq ($(OPENJDK_TARGET_OS), windows)
     AB_SRC_DIR := $(JDK_TOPDIR)/src/closed/windows/classes/com/sun/java/accessibility
 
     ifeq ($(OPENJDK_TARGET_CPU_BITS), 32)
+         $(AB_GENSRC_DIR)/32bit/com/sun/java/accessibility/AccessBridgeLoader.java: \
+			$(AB_SRC_DIR)/32bit/AccessBridgeLoader.java
+		$(install-file)
+
          $(AB_GENSRC_DIR)/32bit/com/sun/java/accessibility/AccessBridge.java: \
-			$(AB_SRC_DIR)/32bit/AccessBridge.java
+			$(AB_SRC_DIR)/AccessBridge.java
+		$(install-file)
+
+         $(AB_GENSRC_DIR)/legacy/com/sun/java/accessibility/AccessBridgeLoader.java: \
+			$(AB_SRC_DIR)/legacy/AccessBridgeLoader.java
 		$(install-file)
 
          $(AB_GENSRC_DIR)/legacy/com/sun/java/accessibility/AccessBridge.java: \
-			$(AB_SRC_DIR)/legacy/AccessBridge.java
+			$(AB_SRC_DIR)/AccessBridge.java
 		$(install-file)
 
-        GENSRC_MISC += $(AB_GENSRC_DIR)/32bit/com/sun/java/accessibility/AccessBridge.java \
-		       $(AB_GENSRC_DIR)/legacy/com/sun/java/accessibility/AccessBridge.java
+        GENSRC_MISC += $(AB_GENSRC_DIR)/32bit/com/sun/java/accessibility/AccessBridgeLoader.java \
+		       $(AB_GENSRC_DIR)/legacy/com/sun/java/accessibility/AccessBridgeLoader.java \
+			   $(AB_GENSRC_DIR)/32bit/com/sun/java/accessibility/AccessBridge.java \
+			   $(AB_GENSRC_DIR)/legacy/com/sun/java/accessibility/AccessBridge.java
 
     else
-         $(AB_GENSRC_DIR)/64bit/com/sun/java/accessibility/AccessBridge.java: \
-			$(AB_SRC_DIR)/64bit/AccessBridge.java
+         $(AB_GENSRC_DIR)/64bit/com/sun/java/accessibility/AccessBridgeLoader.java: \
+			$(AB_SRC_DIR)/64bit/AccessBridgeLoader.java
 		$(install-file)
 
-         GENSRC_MISC += $(AB_GENSRC_DIR)/64bit/com/sun/java/accessibility/AccessBridge.java
+         $(AB_GENSRC_DIR)/64bit/com/sun/java/accessibility/AccessBridge.java: \
+			$(AB_SRC_DIR)/AccessBridge.java
+		$(install-file)
+
+         GENSRC_MISC += $(AB_GENSRC_DIR)/64bit/com/sun/java/accessibility/AccessBridgeLoader.java \
+			$(AB_GENSRC_DIR)/64bit/com/sun/java/accessibility/AccessBridge.java
 
     endif
+
 endif
 endif
 
