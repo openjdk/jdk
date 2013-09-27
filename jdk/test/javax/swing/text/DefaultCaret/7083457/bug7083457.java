@@ -1,12 +1,10 @@
 /*
- * Copyright (c) 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.  Oracle designates this
- * particular file as subject to the "Classpath" exception as provided
- * by Oracle in the LICENSE file that accompanied this code.
+ * published by the Free Software Foundation.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -23,23 +21,26 @@
  * questions.
  */
 
-package sun.lwawt.macosx;
+import javax.swing.text.DefaultCaret;
 
-import java.awt.Window;
-import sun.lwawt.LWMouseInfoPeer;
-import sun.lwawt.LWWindowPeer;
+/**
+ * @test
+ * @bug 7083457
+ * @author Alexander Scherbatiy
+ * @summary  Incomplete specification for javax/swing/text/DefaultCaret.html#setVisible(boolean)
+ * @run main bug7083457
+ */
+public class bug7083457 {
 
-public class CMouseInfoPeer extends LWMouseInfoPeer
-{
-    //If a new window is to appear under the cursor,
-    //we get wrong window.
-    //This is a workaround for macosx.
-    @Override
-    public boolean isWindowUnderMouse(Window w) {
-        if (w == null) {
-            return false;
+    public static void main(String[] args) {
+        DefaultCaret caret = new DefaultCaret();
+
+        for (int i = 0; i < 10; i++) {
+            boolean active = (i % 2 == 0);
+            caret.setVisible(active);
+            if (caret.isActive() != active) {
+                throw new RuntimeException("caret.isActive() does not equal: " + active);
+            }
         }
-
-        return ((LWWindowPeer)w.getPeer()).getPlatformWindow().isUnderMouse();
     }
 }

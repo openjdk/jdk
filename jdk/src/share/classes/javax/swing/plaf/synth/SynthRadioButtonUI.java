@@ -30,7 +30,7 @@ import javax.swing.*;
 import javax.swing.plaf.*;
 
 /**
- * Provides the Synth L&F UI delegate for
+ * Provides the Synth L&amp;F UI delegate for
  * {@link javax.swing.JRadioButton}.
  *
  * @author Jeff Dinkins
@@ -52,7 +52,7 @@ public class SynthRadioButtonUI extends SynthToggleButtonUI {
     }
 
     /**
-     * @inheritDoc
+     * {@inheritDoc}
      */
     @Override
     protected String getPropertyPrefix() {
@@ -75,7 +75,7 @@ public class SynthRadioButtonUI extends SynthToggleButtonUI {
     }
 
     /**
-     * @inheritDoc
+     * {@inheritDoc}
      */
     @Override
     public void paintBorder(SynthContext context, Graphics g, int x,

@@ -1,12 +1,10 @@
 /*
- * Copyright (c) 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.  Oracle designates this
- * particular file as subject to the "Classpath" exception as provided
- * by Oracle in the LICENSE file that accompanied this code.
+ * published by the Free Software Foundation.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -23,12 +21,30 @@
  * questions.
  */
 
-package sun.lwawt;
-
 /*
- * Every time the TextField (or TextArea) change selection, every other text components
- * must immediately clear their selections.
+ * @test
+ * @bug 7129133
+ * @summary [macosx] Accelerators are displayed as Meta instead of the Command symbol
+ * @author leonid.romanov@oracle.com
+ * @run main bug7129133
  */
-interface SelectionClearListener {
-   void clearSelection();
+
+import java.awt.*;
+
+public class bug7129133 {
+    public static void main(String[] args) throws Exception {
+        if (sun.awt.OSInfo.getOSType() != sun.awt.OSInfo.OSType.MACOSX) {
+            System.out.println("This test is for MacOS only. Automatically passed on other platforms.");
+            return;
+        }
+
+        Toolkit.getDefaultToolkit();
+
+        String cmdSymbol = "\u2318";
+        String val = Toolkit.getProperty("AWT.meta", "Meta");
+
+        if (!val.equals(cmdSymbol)) {
+           throw new Exception("Wrong property value for AWT.meta. Expected: " + cmdSymbol + ", actual: " + val);
+        }
+    }
 }
