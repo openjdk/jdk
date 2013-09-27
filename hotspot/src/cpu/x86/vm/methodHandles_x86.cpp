@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -114,6 +114,11 @@ void MethodHandles::verify_ref_kind(MacroAssembler* _masm, int ref_kind, Registe
 void MethodHandles::jump_from_method_handle(MacroAssembler* _masm, Register method, Register temp,
                                             bool for_compiler_entry) {
   assert(method == rbx, "interpreter calling convention");
+
+   Label L_no_such_method;
+   __ testptr(rbx, rbx);
+   __ jcc(Assembler::zero, L_no_such_method);
+
   __ verify_method_ptr(method);
 
   if (!for_compiler_entry && JvmtiExport::can_post_interpreter_events()) {
@@ -138,6 +143,9 @@ void MethodHandles::jump_from_method_handle(MacroAssembler* _masm, Register meth
   const ByteSize entry_offset = for_compiler_entry ? Method::from_compiled_offset() :
                                                      Method::from_interpreted_offset();
   __ jmp(Address(method, entry_offset));
+
+  __ bind(L_no_such_method);
+  __ jump(RuntimeAddress(StubRoutines::throw_AbstractMethodError_entry()));
 }
 
 void MethodHandles::jump_to_lambda_form(MacroAssembler* _masm,
