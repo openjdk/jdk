@@ -96,7 +96,6 @@ import javax.print.attribute.standard.PrinterName;
 import javax.print.attribute.standard.JobMediaSheetsSupported;
 import javax.print.attribute.standard.PageRanges;
 import javax.print.attribute.Size2DSyntax;
-import javax.print.StreamPrintService;
 
 import sun.awt.Win32FontManager;
 
@@ -440,7 +439,7 @@ public class WPrinterJob extends RasterPrinterJob implements DisposerTarget {
             throw new HeadlessException();
         }
 
-        if (getPrintService() instanceof StreamPrintService) {
+        if (!(getPrintService() instanceof Win32PrintService)) {
             return super.pageDialog(page);
         }
 
@@ -586,7 +585,7 @@ public class WPrinterJob extends RasterPrinterJob implements DisposerTarget {
             attributes = new HashPrintRequestAttributeSet();
         }
 
-        if (getPrintService() instanceof StreamPrintService) {
+        if (!(getPrintService() instanceof Win32PrintService)) {
             return super.printDialog(attributes);
         }
 
@@ -611,7 +610,7 @@ public class WPrinterJob extends RasterPrinterJob implements DisposerTarget {
     public void setPrintService(PrintService service)
         throws PrinterException {
         super.setPrintService(service);
-        if (service instanceof StreamPrintService) {
+        if (!(service instanceof Win32PrintService)) {
             return;
         }
         driverDoesMultipleCopies = false;
@@ -648,7 +647,7 @@ public class WPrinterJob extends RasterPrinterJob implements DisposerTarget {
             }
 
             myService = PrintServiceLookup.lookupDefaultPrintService();
-            if (myService != null) {
+            if (myService instanceof Win32PrintService) {
                 try {
                     setNativePrintServiceIfNeeded(myService.getName());
                 } catch (Exception e) {
