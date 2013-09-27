@@ -140,7 +140,7 @@ public abstract class AbstractBuilder {
             configuration.root.printError("Unknown element: " + component);
             throw new DocletAbortException(e);
         } catch (InvocationTargetException e) {
-            e.getCause().printStackTrace();
+            throw new DocletAbortException(e.getCause());
         } catch (Exception e) {
             e.printStackTrace();
             configuration.root.printError("Exception " +
