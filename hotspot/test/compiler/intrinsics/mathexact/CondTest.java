@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -19,31 +19,41 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
+ */
+
+/*
+ * @test
+ * @bug 8024924
+ * @summary Test non constant addExact
+ * @compile CondTest.java Verify.java
+ * @run main CondTest
  *
  */
 
-#include "precompiled.hpp"
-#include "opto/addnode.hpp"
-#include "opto/callnode.hpp"
-#include "opto/cfgnode.hpp"
-#include "opto/connode.hpp"
-#include "opto/divnode.hpp"
-#include "opto/locknode.hpp"
-#include "opto/loopnode.hpp"
-#include "opto/machnode.hpp"
-#include "opto/memnode.hpp"
-#include "opto/mathexactnode.hpp"
-#include "opto/mulnode.hpp"
-#include "opto/multnode.hpp"
-#include "opto/node.hpp"
-#include "opto/rootnode.hpp"
-#include "opto/subnode.hpp"
-#include "opto/vectornode.hpp"
+import java.lang.ArithmeticException;
 
-// ----------------------------------------------------------------------------
-// Build a table of virtual functions to map from Nodes to dense integer
-// opcode names.
-int Node::Opcode() const { return Op_Node; }
-#define macro(x) int x##Node::Opcode() const { return Op_##x; }
-#include "classes.hpp"
-#undef macro
+public class CondTest {
+  public static int result = 0;
+
+  public static void main(String[] args) {
+    for (int i = 0; i < 50000; ++i) {
+      runTest();
+    }
+  }
+
+  public static void runTest() {
+    int i = 7;
+    while (java.lang.Math.addExact(i, result) < 89361) {
+        if ((java.lang.Math.addExact(i, i) & 1) == 1) {
+            i += 3;
+        } else if ((i & 5) == 4) {
+            i += 7;
+        } else if ((i & 0xf) == 6) {
+            i += 2;
+        } else {
+            i += 1;
+        }
+        result += 2;
+    }
+  }
+}
