@@ -194,29 +194,49 @@ define_pd_global(uint64_t,MaxRAM,                    1ULL*G);
 typedef const char* ccstr;
 typedef const char* ccstrlist;   // represents string arguments which accumulate
 
-enum FlagValueOrigin {
-  DEFAULT          = 0,
-  COMMAND_LINE     = 1,
-  ENVIRON_VAR      = 2,
-  CONFIG_FILE      = 3,
-  MANAGEMENT       = 4,
-  ERGONOMIC        = 5,
-  ATTACH_ON_DEMAND = 6,
-  INTERNAL         = 99
-};
-
 struct Flag {
-  const char *type;
-  const char *name;
-  void*       addr;
+  enum Flags {
+    // value origin
+    DEFAULT          = 0,
+    COMMAND_LINE     = 1,
+    ENVIRON_VAR      = 2,
+    CONFIG_FILE      = 3,
+    MANAGEMENT       = 4,
+    ERGONOMIC        = 5,
+    ATTACH_ON_DEMAND = 6,
+    INTERNAL         = 7,
 
-  NOT_PRODUCT(const char *doc;)
+    LAST_VALUE_ORIGIN = INTERNAL,
+    VALUE_ORIGIN_BITS = 4,
+    VALUE_ORIGIN_MASK = right_n_bits(VALUE_ORIGIN_BITS),
 
-  const char *kind;
-  FlagValueOrigin origin;
+    // flag kind
+    KIND_PRODUCT            = 1 << 4,
+    KIND_MANAGEABLE         = 1 << 5,
+    KIND_DIAGNOSTIC         = 1 << 6,
+    KIND_EXPERIMENTAL       = 1 << 7,
+    KIND_NOT_PRODUCT        = 1 << 8,
+    KIND_DEVELOP            = 1 << 9,
+    KIND_PLATFORM_DEPENDENT = 1 << 10,
+    KIND_READ_WRITE         = 1 << 11,
+    KIND_C1                 = 1 << 12,
+    KIND_C2                 = 1 << 13,
+    KIND_ARCH               = 1 << 14,
+    KIND_SHARK              = 1 << 15,
+    KIND_LP64_PRODUCT       = 1 << 16,
+    KIND_COMMERCIAL         = 1 << 17,
+
+    KIND_MASK = ~VALUE_ORIGIN_MASK
+  };
+
+  const char* _type;
+  const char* _name;
+  void* _addr;
+  NOT_PRODUCT(const char* _doc;)
+  Flags _flags;
 
   // points to all Flags static array
-  static Flag *flags;
+  static Flag* flags;
 
   // number of flags
   static size_t numFlags;
@@ -224,30 +244,50 @@ struct Flag {
   static Flag* find_flag(const char* name, size_t length, bool allow_locked = false);
   static Flag* fuzzy_match(const char* name, size_t length, bool allow_locked = false);
 
-  bool is_bool() const        { return strcmp(type, "bool") == 0; }
-  bool get_bool() const       { return *((bool*) addr); }
-  void set_bool(bool value)   { *((bool*) addr) = value; }
+  void check_writable();
 
-  bool is_intx()  const       { return strcmp(type, "intx")  == 0; }
-  intx get_intx() const       { return *((intx*) addr); }
-  void set_intx(intx value)   { *((intx*) addr) = value; }
+  bool is_bool() const;
+  bool get_bool() const;
+  void set_bool(bool value);
 
-  bool is_uintx() const       { return strcmp(type, "uintx") == 0; }
-  uintx get_uintx() const     { return *((uintx*) addr); }
-  void set_uintx(uintx value) { *((uintx*) addr) = value; }
+  bool is_intx() const;
+  intx get_intx() const;
+  void set_intx(intx value);
 
-  bool is_uint64_t() const          { return strcmp(type, "uint64_t") == 0; }
-  uint64_t get_uint64_t() const     { return *((uint64_t*) addr); }
-  void set_uint64_t(uint64_t value) { *((uint64_t*) addr) = value; }
+  bool is_uintx() const;
+  uintx get_uintx() const;
+  void set_uintx(uintx value);
 
-  bool is_double() const        { return strcmp(type, "double") == 0; }
-  double get_double() const     { return *((double*) addr); }
-  void set_double(double value) { *((double*) addr) = value; }
+  bool is_uint64_t() const;
+  uint64_t get_uint64_t() const;
+  void set_uint64_t(uint64_t value);
 
-  bool is_ccstr() const          { return strcmp(type, "ccstr") == 0 || strcmp(type, "ccstrlist") == 0; }
-  bool ccstr_accumulates() const { return strcmp(type, "ccstrlist") == 0; }
-  ccstr get_ccstr() const     { return *((ccstr*) addr); }
-  void set_ccstr(ccstr value) { *((ccstr*) addr) = value; }
+  bool is_double() const;
+  double get_double() const;
+  void set_double(double value);
+
+  bool is_ccstr() const;
+  bool ccstr_accumulates() const;
+  ccstr get_ccstr() const;
+  void set_ccstr(ccstr value);
+
+  Flags get_origin();
+  void set_origin(Flags origin);
+
+  bool is_default();
+  bool is_ergonomic();
+  bool is_command_line();
+
+  bool is_product() const;
+  bool is_manageable() const;
+  bool is_diagnostic() const;
+  bool is_experimental() const;
+  bool is_notproduct() const;
+  bool is_develop() const;
+  bool is_read_write() const;
+  bool is_commercial() const;
+
+  bool is_constant_in_binary() const;
 
   bool is_unlocker() const;
   bool is_unlocked() const;
@@ -263,6 +303,7 @@ struct Flag {
   void get_locked_message_ext(char*, int) const;
 
   void print_on(outputStream* st, bool withComments = false );
+  void print_kind(outputStream* st);
   void print_as_flag(outputStream* st);
 };
 
@@ -310,33 +351,33 @@ class CommandLineFlags {
  public:
   static bool boolAt(char* name, size_t len, bool* value);
   static bool boolAt(char* name, bool* value)      { return boolAt(name, strlen(name), value); }
-  static bool boolAtPut(char* name, size_t len, bool* value, FlagValueOrigin origin);
-  static bool boolAtPut(char* name, bool* value, FlagValueOrigin origin)   { return boolAtPut(name, strlen(name), value, origin); }
+  static bool boolAtPut(char* name, size_t len, bool* value, Flag::Flags origin);
+  static bool boolAtPut(char* name, bool* value, Flag::Flags origin)   { return boolAtPut(name, strlen(name), value, origin); }
 
   static bool intxAt(char* name, size_t len, intx* value);
   static bool intxAt(char* name, intx* value)      { return intxAt(name, strlen(name), value); }
-  static bool intxAtPut(char* name, size_t len, intx* value, FlagValueOrigin origin);
-  static bool intxAtPut(char* name, intx* value, FlagValueOrigin origin)   { return intxAtPut(name, strlen(name), value, origin); }
+  static bool intxAtPut(char* name, size_t len, intx* value, Flag::Flags origin);
+  static bool intxAtPut(char* name, intx* value, Flag::Flags origin)   { return intxAtPut(name, strlen(name), value, origin); }
 
   static bool uintxAt(char* name, size_t len, uintx* value);
   static bool uintxAt(char* name, uintx* value)    { return uintxAt(name, strlen(name), value); }
-  static bool uintxAtPut(char* name, size_t len, uintx* value, FlagValueOrigin origin);
-  static bool uintxAtPut(char* name, uintx* value, FlagValueOrigin origin) { return uintxAtPut(name, strlen(name), value, origin); }
+  static bool uintxAtPut(char* name, size_t len, uintx* value, Flag::Flags origin);
+  static bool uintxAtPut(char* name, uintx* value, Flag::Flags origin) { return uintxAtPut(name, strlen(name), value, origin); }
 
   static bool uint64_tAt(char* name, size_t len, uint64_t* value);
   static bool uint64_tAt(char* name, uint64_t* value) { return uint64_tAt(name, strlen(name), value); }
-  static bool uint64_tAtPut(char* name, size_t len, uint64_t* value, FlagValueOrigin origin);
-  static bool uint64_tAtPut(char* name, uint64_t* value, FlagValueOrigin origin) { return uint64_tAtPut(name, strlen(name), value, origin); }
+  static bool uint64_tAtPut(char* name, size_t len, uint64_t* value, Flag::Flags origin);
+  static bool uint64_tAtPut(char* name, uint64_t* value, Flag::Flags origin) { return uint64_tAtPut(name, strlen(name), value, origin); }
 
   static bool doubleAt(char* name, size_t len, double* value);
   static bool doubleAt(char* name, double* value)    { return doubleAt(name, strlen(name), value); }
-  static bool doubleAtPut(char* name, size_t len, double* value, FlagValueOrigin origin);
-  static bool doubleAtPut(char* name, double* value, FlagValueOrigin origin) { return doubleAtPut(name, strlen(name), value, origin); }
+  static bool doubleAtPut(char* name, size_t len, double* value, Flag::Flags origin);
+  static bool doubleAtPut(char* name, double* value, Flag::Flags origin) { return doubleAtPut(name, strlen(name), value, origin); }
 
   static bool ccstrAt(char* name, size_t len, ccstr* value);
   static bool ccstrAt(char* name, ccstr* value)    { return ccstrAt(name, strlen(name), value); }
-  static bool ccstrAtPut(char* name, size_t len, ccstr* value, FlagValueOrigin origin);
-  static bool ccstrAtPut(char* name, ccstr* value, FlagValueOrigin origin) { return ccstrAtPut(name, strlen(name), value, origin); }
+  static bool ccstrAtPut(char* name, size_t len, ccstr* value, Flag::Flags origin);
+  static bool ccstrAtPut(char* name, ccstr* value, Flag::Flags origin) { return ccstrAtPut(name, strlen(name), value, origin); }
 
   // Returns false if name is not a command line flag.
   static bool wasSetOnCmdline(const char* name, bool* value);
@@ -3730,20 +3771,20 @@ class CommandLineFlags {
  */
 
 // Interface macros
-#define DECLARE_PRODUCT_FLAG(type, name, value, doc)    extern "C" type name;
-#define DECLARE_PD_PRODUCT_FLAG(type, name, doc)        extern "C" type name;
-#define DECLARE_DIAGNOSTIC_FLAG(type, name, value, doc) extern "C" type name;
+#define DECLARE_PRODUCT_FLAG(type, name, value, doc)      extern "C" type name;
+#define DECLARE_PD_PRODUCT_FLAG(type, name, doc)          extern "C" type name;
+#define DECLARE_DIAGNOSTIC_FLAG(type, name, value, doc)   extern "C" type name;
 #define DECLARE_EXPERIMENTAL_FLAG(type, name, value, doc) extern "C" type name;
-#define DECLARE_MANAGEABLE_FLAG(type, name, value, doc) extern "C" type name;
-#define DECLARE_PRODUCT_RW_FLAG(type, name, value, doc) extern "C" type name;
+#define DECLARE_MANAGEABLE_FLAG(type, name, value, doc)   extern "C" type name;
+#define DECLARE_PRODUCT_RW_FLAG(type, name, value, doc)   extern "C" type name;
 #ifdef PRODUCT
-#define DECLARE_DEVELOPER_FLAG(type, name, value, doc)  const type name = value;
-#define DECLARE_PD_DEVELOPER_FLAG(type, name, doc)      const type name = pd_##name;
-#define DECLARE_NOTPRODUCT_FLAG(type, name, value, doc)
+#define DECLARE_DEVELOPER_FLAG(type, name, value, doc)    extern "C" type CONST_##name; const type name = value;
+#define DECLARE_PD_DEVELOPER_FLAG(type, name, doc)        extern "C" type CONST_##name; const type name = pd_##name;
+#define DECLARE_NOTPRODUCT_FLAG(type, name, value, doc)   extern "C" type CONST_##name;
 #else
-#define DECLARE_DEVELOPER_FLAG(type, name, value, doc)  extern "C" type name;
-#define DECLARE_PD_DEVELOPER_FLAG(type, name, doc)      extern "C" type name;
-#define DECLARE_NOTPRODUCT_FLAG(type, name, value, doc)  extern "C" type name;
+#define DECLARE_DEVELOPER_FLAG(type, name, value, doc)    extern "C" type name;
+#define DECLARE_PD_DEVELOPER_FLAG(type, name, doc)        extern "C" type name;
+#define DECLARE_NOTPRODUCT_FLAG(type, name, value, doc)   extern "C" type name;
 #endif
 // Special LP64 flags, product only needed for now.
 #ifdef _LP64
@@ -3753,23 +3794,23 @@ class CommandLineFlags {
 #endif // _LP64
 
 // Implementation macros
-#define MATERIALIZE_PRODUCT_FLAG(type, name, value, doc)   type name = value;
-#define MATERIALIZE_PD_PRODUCT_FLAG(type, name, doc)       type name = pd_##name;
-#define MATERIALIZE_DIAGNOSTIC_FLAG(type, name, value, doc) type name = value;
+#define MATERIALIZE_PRODUCT_FLAG(type, name, value, doc)      type name = value;
+#define MATERIALIZE_PD_PRODUCT_FLAG(type, name, doc)          type name = pd_##name;
+#define MATERIALIZE_DIAGNOSTIC_FLAG(type, name, value, doc)   type name = value;
 #define MATERIALIZE_EXPERIMENTAL_FLAG(type, name, value, doc) type name = value;
-#define MATERIALIZE_MANAGEABLE_FLAG(type, name, value, doc) type name = value;
-#define MATERIALIZE_PRODUCT_RW_FLAG(type, name, value, doc) type name = value;
+#define MATERIALIZE_MANAGEABLE_FLAG(type, name, value, doc)   type name = value;
+#define MATERIALIZE_PRODUCT_RW_FLAG(type, name, value, doc)   type name = value;
 #ifdef PRODUCT
-#define MATERIALIZE_DEVELOPER_FLAG(type, name, value, doc) /* flag name is constant */
-#define MATERIALIZE_PD_DEVELOPER_FLAG(type, name, doc)     /* flag name is constant */
-#define MATERIALIZE_NOTPRODUCT_FLAG(type, name, value, doc)
+#define MATERIALIZE_DEVELOPER_FLAG(type, name, value, doc)    type CONST_##name = value;
+#define MATERIALIZE_PD_DEVELOPER_FLAG(type, name, doc)        type CONST_##name = pd_##name;
+#define MATERIALIZE_NOTPRODUCT_FLAG(type, name, value, doc)   type CONST_##name = value;
 #else
-#define MATERIALIZE_DEVELOPER_FLAG(type, name, value, doc) type name = value;
-#define MATERIALIZE_PD_DEVELOPER_FLAG(type, name, doc)     type name = pd_##name;
-#define MATERIALIZE_NOTPRODUCT_FLAG(type, name, value, doc) type name = value;
+#define MATERIALIZE_DEVELOPER_FLAG(type, name, value, doc)    type name = value;
+#define MATERIALIZE_PD_DEVELOPER_FLAG(type, name, doc)        type name = pd_##name;
+#define MATERIALIZE_NOTPRODUCT_FLAG(type, name, value, doc)   type name = value;
 #endif
 #ifdef _LP64
-#define MATERIALIZE_LP64_PRODUCT_FLAG(type, name, value, doc)   type name = value;
+#define MATERIALIZE_LP64_PRODUCT_FLAG(type, name, value, doc) type name = value;
 #else
 #define MATERIALIZE_LP64_PRODUCT_FLAG(type, name, value, doc) /* flag is constant */
 #endif // _LP64
