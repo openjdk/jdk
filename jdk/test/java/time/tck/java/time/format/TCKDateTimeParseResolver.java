@@ -927,8 +927,7 @@ public class TCKDateTimeParseResolver {
             }
             @Override
             public TemporalAccessor resolve(
-                    Map<TemporalField, Long> fieldValues, Chronology chronology,
-                    ZoneId zone, ResolverStyle resolverStyle) {
+                    Map<TemporalField, Long> fieldValues, TemporalAccessor partialTemporal, ResolverStyle resolverStyle) {
                 return LocalTime.MIDNIGHT.plusNanos(fieldValues.remove(this));
             }
         };
@@ -979,8 +978,7 @@ public class TCKDateTimeParseResolver {
             }
             @Override
             public TemporalAccessor resolve(
-                    Map<TemporalField, Long> fieldValues, Chronology chronology,
-                    ZoneId zone, ResolverStyle resolverStyle) {
+                    Map<TemporalField, Long> fieldValues, TemporalAccessor partialTemporal, ResolverStyle resolverStyle) {
                 fieldValues.remove(this);
                 return LocalDateTime.of(2010, 6, 30, 12, 30);
             }
@@ -1032,8 +1030,7 @@ public class TCKDateTimeParseResolver {
             }
             @Override
             public TemporalAccessor resolve(
-                    Map<TemporalField, Long> fieldValues, Chronology chronology,
-                    ZoneId zone, ResolverStyle resolverStyle) {
+                    Map<TemporalField, Long> fieldValues, TemporalAccessor partialTemporal, ResolverStyle resolverStyle) {
                 return ThaiBuddhistChronology.INSTANCE.dateNow();
             }
         };
@@ -1082,8 +1079,7 @@ public class TCKDateTimeParseResolver {
             }
             @Override
             public TemporalAccessor resolve(
-                    Map<TemporalField, Long> fieldValues, Chronology chronology,
-                    ZoneId zone, ResolverStyle resolverStyle) {
+                    Map<TemporalField, Long> fieldValues, TemporalAccessor partialTemporal, ResolverStyle resolverStyle) {
                 return ZonedDateTime.of(2010, 6, 30, 12, 30, 0, 0, ZoneId.of("Europe/Paris"));
             }
         };
