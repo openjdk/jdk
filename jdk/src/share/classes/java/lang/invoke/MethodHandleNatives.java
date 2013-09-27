@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -440,11 +440,31 @@ class MethodHandleNatives {
             Lookup lookup = IMPL_LOOKUP.in(callerClass);
             assert(refKindIsValid(refKind));
             return lookup.linkMethodHandleConstant((byte) refKind, defc, name, type);
+        } catch (IllegalAccessException ex) {
+            Error err = new IllegalAccessError(ex.getMessage());
+            throw initCauseFrom(err, ex);
+        } catch (NoSuchMethodException ex) {
+            Error err = new NoSuchMethodError(ex.getMessage());
+            throw initCauseFrom(err, ex);
+        } catch (NoSuchFieldException ex) {
+            Error err = new NoSuchFieldError(ex.getMessage());
+            throw initCauseFrom(err, ex);
         } catch (ReflectiveOperationException ex) {
             Error err = new IncompatibleClassChangeError();
-            err.initCause(ex);
-            throw err;
+            throw initCauseFrom(err, ex);
         }
+    }
+
+    /**
+     * Use best possible cause for err.initCause(), substituting the
+     * cause for err itself if the cause has the same (or better) type.
+     */
+    static private Error initCauseFrom(Error err, Exception ex) {
+        Throwable th = ex.getCause();
+        if (err.getClass().isInstance(th))
+           return (Error) th;
+        err.initCause(th == null ? ex : th);
+        return err;
     }
 
     /**
