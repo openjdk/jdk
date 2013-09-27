@@ -70,13 +70,13 @@ import java.util.Objects;
  * @author jrose
  */
 /*non-public*/ final class MemberName implements Member, Cloneable {
-    private Class<?>   clazz;       // class in which the method is defined
-    private String     name;        // may be null if not yet materialized
-    private Object     type;        // may be null if not yet materialized
-    private int        flags;       // modifier bits; see reflect.Modifier
+    private Class<?> clazz;       // class in which the method is defined
+    private String   name;        // may be null if not yet materialized
+    private Object   type;        // may be null if not yet materialized
+    private int      flags;       // modifier bits; see reflect.Modifier
     //@Injected JVM_Method* vmtarget;
     //@Injected int         vmindex;
-    private Object     resolution;  // if null, this guy is resolved
+    private Object   resolution;  // if null, this guy is resolved
 
     /** Return the declaring class of this member.
      *  In the case of a bare name and type, the declaring class will be null.
@@ -98,7 +98,9 @@ import java.util.Objects;
     public String getName() {
         if (name == null) {
             expandFromVM();
-            if (name == null)  return null;
+            if (name == null) {
+                return null;
+            }
         }
         return name;
     }
@@ -119,28 +121,39 @@ import java.util.Objects;
     public MethodType getMethodType() {
         if (type == null) {
             expandFromVM();
-            if (type == null)  return null;
+            if (type == null) {
+                return null;
+            }
         }
-        if (!isInvocable())
+        if (!isInvocable()) {
             throw newIllegalArgumentException("not invocable, no method type");
-        if (type instanceof MethodType) {
-            return (MethodType) type;
         }
-        if (type instanceof String) {
-            String sig = (String) type;
-            MethodType res = MethodType.fromMethodDescriptorString(sig, getClassLoader());
-            this.type = res;
-            return res;
+
+        {
+            // Get a snapshot of type which doesn't get changed by racing threads.
+            final Object type = this.type;
+            if (type instanceof MethodType) {
+                return (MethodType) type;
+            }
         }
-        if (type instanceof Object[]) {
-            Object[] typeInfo = (Object[]) type;
-            Class<?>[] ptypes = (Class<?>[]) typeInfo[1];
-            Class<?> rtype = (Class<?>) typeInfo[0];
-            MethodType res = MethodType.methodType(rtype, ptypes);
-            this.type = res;
-            return res;
+
+        // type is not a MethodType yet.  Convert it thread-safely.
+        synchronized (this) {
+            if (type instanceof String) {
+                String sig = (String) type;
+                MethodType res = MethodType.fromMethodDescriptorString(sig, getClassLoader());
+                type = res;
+            } else if (type instanceof Object[]) {
+                Object[] typeInfo = (Object[]) type;
+                Class<?>[] ptypes = (Class<?>[]) typeInfo[1];
+                Class<?> rtype = (Class<?>) typeInfo[0];
+                MethodType res = MethodType.methodType(rtype, ptypes);
+                type = res;
+            }
+            // Make sure type is a MethodType for racing threads.
+            assert type instanceof MethodType : "bad method type " + type;
         }
-        throw new InternalError("bad method type "+type);
+        return (MethodType) type;
     }
 
     /** Return the actual type under which this method or constructor must be invoked.
@@ -173,21 +186,34 @@ import java.util.Objects;
     public Class<?> getFieldType() {
         if (type == null) {
             expandFromVM();
-            if (type == null)  return null;
+            if (type == null) {
+                return null;
+            }
         }
-        if (isInvocable())
+        if (isInvocable()) {
             throw newIllegalArgumentException("not a field or nested class, no simple type");
-        if (type instanceof Class<?>) {
-            return (Class<?>) type;
         }
-        if (type instanceof String) {
-            String sig = (String) type;
-            MethodType mtype = MethodType.fromMethodDescriptorString("()"+sig, getClassLoader());
-            Class<?> res = mtype.returnType();
-            this.type = res;
-            return res;
+
+        {
+            // Get a snapshot of type which doesn't get changed by racing threads.
+            final Object type = this.type;
+            if (type instanceof Class<?>) {
+                return (Class<?>) type;
+            }
         }
-        throw new InternalError("bad field type "+type);
+
+        // type is not a Class yet.  Convert it thread-safely.
+        synchronized (this) {
+            if (type instanceof String) {
+                String sig = (String) type;
+                MethodType mtype = MethodType.fromMethodDescriptorString("()"+sig, getClassLoader());
+                Class<?> res = mtype.returnType();
+                type = res;
+            }
+            // Make sure type is a Class for racing threads.
+            assert type instanceof Class<?> : "bad field type " + type;
+        }
+        return (Class<?>) type;
     }
 
     /** Utility method to produce either the method type or field type of this member. */
@@ -201,10 +227,10 @@ import java.util.Objects;
     public String getSignature() {
         if (type == null) {
             expandFromVM();
-            if (type == null)  return null;
+            if (type == null) {
+                return null;
+            }
         }
-        if (type instanceof String)
-            return (String) type;
         if (isInvocable())
             return BytecodeDescriptor.unparse(getMethodType());
         else
@@ -463,10 +489,17 @@ import java.util.Objects;
         //assert(referenceKindIsConsistent());  // do this after resolution
     }
 
+    /**
+     * Calls down to the VM to fill in the fields.  This method is
+     * synchronized to avoid racing calls.
+     */
     private void expandFromVM() {
-        if (!isResolved())  return;
-        if (type instanceof Object[])
-            type = null;  // don't saddle JVM w/ typeInfo
+        if (type != null) {
+            return;
+        }
+        if (!isResolved()) {
+            return;
+        }
         MethodHandleNatives.expand(this);
     }
 
