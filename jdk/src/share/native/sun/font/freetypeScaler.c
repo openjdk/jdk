@@ -902,13 +902,13 @@ Java_sun_font_FreetypeFontScaler_getLayoutTableCacheNative(
  */
 JNIEXPORT void JNICALL
 Java_sun_font_FreetypeFontScaler_disposeNativeScaler(
-        JNIEnv *env, jobject scaler, jlong pScaler) {
+        JNIEnv *env, jobject scaler, jobject font2D, jlong pScaler) {
     FTScalerInfo* scalerInfo = (FTScalerInfo *) jlong_to_ptr(pScaler);
 
     /* Freetype functions *may* cause callback to java
        that can use cached values. Make sure our cache is up to date.
        NB: scaler context is not important at this point, can use NULL. */
-    int errCode = setupFTContext(env, scaler, scalerInfo, NULL);
+    int errCode = setupFTContext(env, font2D, scalerInfo, NULL);
     if (errCode) {
         return;
     }
@@ -957,7 +957,8 @@ Java_sun_font_FreetypeFontScaler_getMissingGlyphCodeNative(
  */
 JNIEXPORT jint JNICALL
 Java_sun_font_FreetypeFontScaler_getGlyphCodeNative(
-        JNIEnv *env, jobject scaler, jlong pScaler, jchar charCode) {
+        JNIEnv *env, jobject scaler,
+        jobject font2D, jlong pScaler, jchar charCode) {
 
     FTScalerInfo* scalerInfo = (FTScalerInfo *) jlong_to_ptr(pScaler);
     int errCode;
@@ -970,7 +971,7 @@ Java_sun_font_FreetypeFontScaler_getGlyphCodeNative(
     /* Freetype functions *may* cause callback to java
        that can use cached values. Make sure our cache is up to date.
        Scaler context is not important here, can use NULL. */
-    errCode = setupFTContext(env, scaler, scalerInfo, NULL);
+    errCode = setupFTContext(env, font2D, scalerInfo, NULL);
     if (errCode) {
         return 0;
     }
