@@ -2868,6 +2868,10 @@ class CommandLineFlags {
   product(intx, NmethodSweepCheckInterval, 5,                               \
           "Compilers wake up every n seconds to possibly sweep nmethods")   \
                                                                             \
+  product(intx, NmethodSweepActivity, 10,                                   \
+          "Removes cold nmethods from code cache if > 0. Higher values "    \
+          "result in more aggressive sweeping")                             \
+                                                                            \
   notproduct(bool, LogSweeper, false,                                       \
             "Keep a ring buffer of sweeper activity")                       \
                                                                             \
@@ -3238,15 +3242,6 @@ class CommandLineFlags {
                                                                             \
   product(bool, UseCodeCacheFlushing, true,                                 \
           "Attempt to clean the code cache before shutting off compiler")   \
-                                                                            \
-  product(intx,  MinCodeCacheFlushingInterval, 30,                          \
-          "Min number of seconds between code cache cleaning sessions")     \
-                                                                            \
-  product(uintx,  CodeCacheFlushingMinimumFreeSpace, 1500*K,                \
-          "When less than X space left, start code cache cleaning")         \
-                                                                            \
-  product(uintx, CodeCacheFlushingFraction, 2,                              \
-          "Fraction of the code cache that is flushed when full")           \
                                                                             \
   /* interpreter debugging */                                               \
   develop(intx, BinarySwitchThreshold, 5,                                   \
