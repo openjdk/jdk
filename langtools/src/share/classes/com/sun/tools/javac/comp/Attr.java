@@ -4058,8 +4058,7 @@ public class Attr extends JCTree.Visitor {
     }
 
     public void visitAnnotation(JCAnnotation tree) {
-        log.error(tree.pos(), "annotation.not.valid.for.type", pt());
-        result = tree.type = syms.errType;
+        Assert.error("should be handled in Annotate");
     }
 
     public void visitAnnotatedType(JCAnnotatedType tree) {
