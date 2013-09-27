@@ -262,7 +262,7 @@ final class Parsed implements TemporalAccessor {
             while (changedCount < 50) {
                 for (Map.Entry<TemporalField, Long> entry : fieldValues.entrySet()) {
                     TemporalField targetField = entry.getKey();
-                    TemporalAccessor resolvedObject = targetField.resolve(fieldValues, chrono, zone, resolverStyle);
+                    TemporalAccessor resolvedObject = targetField.resolve(fieldValues, this, resolverStyle);
                     if (resolvedObject != null) {
                         if (resolvedObject instanceof ChronoZonedDateTime) {
                             ChronoZonedDateTime czdt = (ChronoZonedDateTime) resolvedObject;
