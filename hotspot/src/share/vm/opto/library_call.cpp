@@ -47,19 +47,22 @@ class LibraryIntrinsic : public InlineCallGenerator {
  private:
   bool             _is_virtual;
   bool             _is_predicted;
+  bool             _does_virtual_dispatch;
   vmIntrinsics::ID _intrinsic_id;
 
  public:
-  LibraryIntrinsic(ciMethod* m, bool is_virtual, bool is_predicted, vmIntrinsics::ID id)
+  LibraryIntrinsic(ciMethod* m, bool is_virtual, bool is_predicted, bool does_virtual_dispatch, vmIntrinsics::ID id)
     : InlineCallGenerator(m),
       _is_virtual(is_virtual),
       _is_predicted(is_predicted),
+      _does_virtual_dispatch(does_virtual_dispatch),
       _intrinsic_id(id)
   {
   }
   virtual bool is_intrinsic() const { return true; }
   virtual bool is_virtual()   const { return _is_virtual; }
   virtual bool is_predicted()   const { return _is_predicted; }
+  virtual bool does_virtual_dispatch()   const { return _does_virtual_dispatch; }
   virtual JVMState* generate(JVMState* jvms);
   virtual Node* generate_predicate(JVMState* jvms);
   vmIntrinsics::ID intrinsic_id() const { return _intrinsic_id; }
@@ -355,6 +358,7 @@ CallGenerator* Compile::make_vm_intrinsic(ciMethod* m, bool is_virtual) {
   }
 
   bool is_predicted = false;
+  bool does_virtual_dispatch = false;
 
   switch (id) {
   case vmIntrinsics::_compareTo:
@@ -381,8 +385,10 @@ CallGenerator* Compile::make_vm_intrinsic(ciMethod* m, bool is_virtual) {
     break;
   case vmIntrinsics::_hashCode:
     if (!InlineObjectHash)  return NULL;
+    does_virtual_dispatch = true;
     break;
   case vmIntrinsics::_clone:
+    does_virtual_dispatch = true;
   case vmIntrinsics::_copyOf:
   case vmIntrinsics::_copyOfRange:
     if (!InlineObjectCopy)  return NULL;
@@ -541,7 +547,7 @@ CallGenerator* Compile::make_vm_intrinsic(ciMethod* m, bool is_virtual) {
     if (!InlineUnsafeOps)  return NULL;
   }
 
-  return new LibraryIntrinsic(m, is_virtual, is_predicted, (vmIntrinsics::ID) id);
+  return new LibraryIntrinsic(m, is_virtual, is_predicted, does_virtual_dispatch, (vmIntrinsics::ID) id);
 }
 
 //----------------------register_library_intrinsics-----------------------
