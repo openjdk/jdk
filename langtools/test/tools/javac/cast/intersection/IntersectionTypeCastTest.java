@@ -237,7 +237,7 @@ public class IntersectionTypeCastTest
     }
 
     static List<CastInfo> allCastInfo() {
-        ListBuffer<CastInfo> buf = ListBuffer.lb();
+        ListBuffer<CastInfo> buf = new ListBuffer<>();
         for (CastKind kind : CastKind.values()) {
             for (ClassKind clazz : ClassKind.values()) {
                 if (kind == CastKind.INTERFACE && clazz != ClassKind.OBJECT) {

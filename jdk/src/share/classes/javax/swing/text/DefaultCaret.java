@@ -962,8 +962,8 @@ public class DefaultCaret extends Rectangle implements Caret, FocusListener, Mou
         // focus lost notification can come in later after the
         // caret has been deinstalled, in which case the component
         // will be null.
+        active = e;
         if (component != null) {
-            active = e;
             TextUI mapper = component.getUI();
             if (visible != e) {
                 visible = e;
@@ -1211,12 +1211,9 @@ public class DefaultCaret extends Rectangle implements Caret, FocusListener, Mou
 
     boolean isPositionLTR(int position, Position.Bias bias) {
         Document doc = component.getDocument();
-        if(doc instanceof AbstractDocument ) {
-            if(bias == Position.Bias.Backward && --position < 0)
-                position = 0;
-            return ((AbstractDocument)doc).isLeftToRight(position, position);
-        }
-        return true;
+        if(bias == Position.Bias.Backward && --position < 0)
+            position = 0;
+        return AbstractDocument.isLeftToRight(doc, position, position);
     }
 
     Position.Bias guessBiasForOffset(int offset, Position.Bias lastBias,

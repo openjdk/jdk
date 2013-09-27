@@ -51,7 +51,7 @@ public interface Position {
     /**
      * Fetches the current offset within the document.
      *
-     * @return the offset >= 0
+     * @return the offset &gt;= 0
      */
     public int getOffset();
 
