@@ -357,7 +357,7 @@ public abstract class RowFilter<M,I> {
          *
          * @param index the index of the value to get
          * @return value at the specified index
-         * @throws <code>IndexOutOfBoundsException</code> if index &lt; 0 or
+         * @throws IndexOutOfBoundsException if index &lt; 0 or
          *         &gt;= getValueCount
          */
         public abstract Object getValue(int index);
@@ -376,7 +376,7 @@ public abstract class RowFilter<M,I> {
          *
          * @param index the index of the value to get
          * @return {@code non-null} string at the specified index
-         * @throws <code>IndexOutOfBoundsException</code> if index &lt; 0 ||
+         * @throws IndexOutOfBoundsException if index &lt; 0 ||
          *         &gt;= getValueCount
          */
         public String getStringValue(int index) {

@@ -37,7 +37,7 @@ import javax.swing.*;
 import javax.swing.plaf.*;
 
 /**
- * A Java L&F implementation of SliderUI.
+ * A Java L&amp;F implementation of SliderUI.
  * <p>
  * <strong>Warning:</strong>
  * Serialized objects of this class will not be compatible with

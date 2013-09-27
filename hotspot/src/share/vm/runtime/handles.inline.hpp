@@ -79,6 +79,7 @@ inline name##Handle::name##Handle(const name##Handle &h) {             \
     } else {                                                           \
       _thread = Thread::current();                                     \
     }                                                                  \
+    assert (_thread->is_in_stack((address)this), "not on stack?");     \
     _thread->metadata_handles()->push((Metadata*)_value);              \
   } else {                                                             \
     _thread = NULL;                                                    \
@@ -95,6 +96,7 @@ inline name##Handle& name##Handle::operator=(const name##Handle &s) {  \
     } else {                                                           \
       _thread = Thread::current();                                     \
     }                                                                  \
+    assert (_thread->is_in_stack((address)this), "not on stack?");     \
     _thread->metadata_handles()->push((Metadata*)_value);              \
   } else {                                                             \
     _thread = NULL;                                                    \
