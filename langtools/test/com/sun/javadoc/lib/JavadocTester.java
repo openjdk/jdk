@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -57,6 +57,7 @@ public abstract class JavadocTester {
     protected static final String SRC_DIR = System.getProperty("test.src", ".");
     protected static final String JAVA_VERSION = System.getProperty("java.version");
     protected static final String[][] NO_TEST = new String[][] {};
+    protected static final String[] NO_FILE_TEST = new String[] {};
 
     /**
      * Use this as the file name in the test array when you want to search
@@ -166,6 +167,26 @@ public abstract class JavadocTester {
     }
 
     /**
+     * Execute the tests.
+     *
+     * @param tester               the tester to execute
+     * @param args                 the arguments to pass to Javadoc
+     * @param testArray            the array of tests
+     * @param negatedTestArray     the array of negated tests
+     * @param fileTestArray        the array of file tests
+     * @param negatedFileTestArray the array of negated file tests
+     * @return                     the return code for the execution of Javadoc
+     */
+    public static int run(JavadocTester tester, String[] args,
+            String[][] testArray, String[][] negatedTestArray, String[] fileTestArray,
+            String[] negatedFileTestArray) {
+        int returnCode = tester.runJavadoc(args);
+        tester.runTestsOnHTML(testArray, negatedTestArray);
+        tester.runTestsOnFile(fileTestArray, negatedFileTestArray);
+        return returnCode;
+    }
+
+    /**
      * Execute Javadoc using the default doclet.
      *
      * @param args  the arguments to pass to Javadoc
@@ -244,6 +265,19 @@ public abstract class JavadocTester {
     }
 
     /**
+     * Run array of tests on the generated files.
+     * This method accepts a fileTestArray for testing if a file is generated
+     * and a negatedFileTestArray for testing if a file is not found.
+     *
+     * @param testArray         the array of file tests
+     * @param negatedTestArray  the array of negated file tests
+     */
+    public void runTestsOnFile(String[] fileTestArray, String[] negatedFileTestArray) {
+        runTestsOnFile(fileTestArray, false);
+        runTestsOnFile(negatedFileTestArray, true);
+    }
+
+    /**
      * Run the array of tests on the resulting HTML.
      *
      * @param testArray the array of tests
@@ -265,9 +299,11 @@ public abstract class JavadocTester {
                 fileString = readFileToString(testArray[i][0]);
             } catch (Error e) {
                 if (isNegated) {
-                  numTestsPassed += 1;
-                  System.out.println("Passed\n not found:\n"
-                    + stringToFind + " in non-existent " + testArray[i][0] + "\n");
+                  System.out.println( "FAILED" + "\n"
+                                    + "for bug " + getBugId()
+                                    + " (" + getBugName() + ") "
+                                    + "due to "
+                                    + e + "\n");
                   continue;
                 }
                 throw e;
@@ -286,6 +322,39 @@ public abstract class JavadocTester {
                                     + "when searching for:" + "\n"
                                     + stringToFind
                                     + " in " + testArray[i][0] + "\n");
+            }
+        }
+    }
+
+    /**
+     * Run the array of file tests on the generated files.
+     *
+     * @param testArray the array of file tests
+     * @param isNegated true if test is negated; false otherwise
+     */
+    private void runTestsOnFile(String[] testArray, boolean isNegated) {
+        String fileName;
+        String failedString;
+        String passedString;
+        for (int i = 0; i < testArray.length; i++) {
+            numTestsRun++;
+            fileName = testArray[i];
+            failedString = "FAILED" + "\n"
+                    + "for bug " + getBugId() + " (" + getBugName() + ") "
+                    + "file (" + fileName + ") found" + "\n";
+            passedString = "Passed" + "\n" +
+                        "file (" + fileName + ") not found" + "\n";
+            System.out.print("Running subtest #" + numTestsRun + "... ");
+            try {
+                File file = new File(fileName);
+                if ((file.exists() && !isNegated) || (!file.exists() && isNegated)) {
+                    numTestsPassed += 1;
+                    System.out.println(passedString);
+                } else {
+                    System.out.println(failedString);
+                }
+            } catch (Error e) {
+                System.err.println(e);
             }
         }
     }

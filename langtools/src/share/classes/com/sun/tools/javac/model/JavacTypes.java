@@ -116,11 +116,7 @@ public class JavacTypes implements javax.lang.model.util.Types {
 
     public List<Type> directSupertypes(TypeMirror t) {
         validateTypeNotIn(t, EXEC_OR_PKG);
-        Type type = (Type) t;
-        Type sup = types.supertype(type);
-        return (sup == Type.noType || sup == type || sup == null)
-              ? types.interfaces(type)
-              : types.interfaces(type).prepend(sup);
+        return types.directSupertypes((Type) t);
     }
 
     public TypeMirror erasure(TypeMirror t) {
