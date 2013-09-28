@@ -3734,6 +3734,8 @@ Node* LibraryCallKit::generate_virtual_guard(Node* obj_klass,
                                              RegionNode* slow_region) {
   ciMethod* method = callee();
   int vtable_index = method->vtable_index();
+  assert(vtable_index >= 0 || vtable_index == Method::nonvirtual_vtable_index,
+         err_msg_res("bad index %d", vtable_index));
   // Get the Method* out of the appropriate vtable entry.
   int entry_offset  = (InstanceKlass::vtable_start_offset() +
                      vtable_index*vtableEntry::size()) * wordSize +
@@ -3784,6 +3786,8 @@ LibraryCallKit::generate_method_call(vmIntrinsics::ID method_id, bool is_virtual
       // so the vtable index is fixed.
       // No need to use the linkResolver to get it.
        vtable_index = method->vtable_index();
+       assert(vtable_index >= 0 || vtable_index == Method::nonvirtual_vtable_index,
+              err_msg_res("bad index %d", vtable_index));
     }
     slow_call = new(C) CallDynamicJavaNode(tf,
                           SharedRuntime::get_resolve_virtual_call_stub(),
@@ -4204,7 +4208,7 @@ void LibraryCallKit::copy_to_clone(Node* obj, Node* alloc_obj, Node* obj_size, b
   // 12 - 64-bit VM, compressed klass
   // 16 - 64-bit VM, normal klass
   if (base_off % BytesPerLong != 0) {
-    assert(UseCompressedKlassPointers, "");
+    assert(UseCompressedClassPointers, "");
     if (is_array) {
       // Exclude length to copy by 8 bytes words.
       base_off += sizeof(int);
