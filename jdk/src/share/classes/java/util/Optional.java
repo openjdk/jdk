@@ -85,6 +85,7 @@ public final class Optional<T> {
      * Constructs an instance with the value present.
      *
      * @param value the non-null value to be present
+     * @throws NullPointerException if value is null
      */
     private Optional(T value) {
         this.value = Objects.requireNonNull(value);
@@ -96,6 +97,7 @@ public final class Optional<T> {
      * @param <T> the class of the value
      * @param value the value to be present, which must be non-null
      * @return an {@code Optional} with the value present
+     * @throws NullPointerException if value is null
      */
     public static <T> Optional<T> of(T value) {
         return new Optional<>(value);
