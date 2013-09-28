@@ -172,5 +172,22 @@ public class OutputAnalyzerTest {
     } catch (RuntimeException e) {
         // expected
     }
+
+    {
+      String aaaa = "aaaa";
+      String result = output.firstMatch(aaaa);
+      if (!aaaa.equals(result)) {
+        throw new Exception("firstMatch(String) faild to match. Expected: " + aaaa + " got: " + result);
+      }
+    }
+
+    {
+      String aa = "aa";
+      String aa_grouped_aa = aa + "(" + aa + ")";
+      String result = output.firstMatch(aa_grouped_aa, 1);
+      if (!aa.equals(result)) {
+        throw new Exception("firstMatch(String, int) failed to match. Expected: " + aa + " got: " + result);
+      }
+    }
   }
 }

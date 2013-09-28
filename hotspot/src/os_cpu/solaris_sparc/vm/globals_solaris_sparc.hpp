@@ -35,7 +35,9 @@ define_pd_global(intx, CompilerThreadStackSize,  0);
 
 // Used on 64 bit platforms for UseCompressedOops base address
 #ifdef _LP64
-define_pd_global(uintx, HeapBaseMinAddress,      CONST64(4)*G);
+// use 6G as default base address because by default the OS maps the application
+// to 4G on Solaris-Sparc. This leaves at least 2G for the native heap.
+define_pd_global(uintx, HeapBaseMinAddress,      CONST64(6)*G);
 #else
 define_pd_global(uintx, HeapBaseMinAddress,      2*G);
 #endif
