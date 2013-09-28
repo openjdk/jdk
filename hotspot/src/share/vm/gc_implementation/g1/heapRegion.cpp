@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -148,6 +148,10 @@ void HeapRegionDCTOC::walk_mem_region_with_cl(MemRegion mr,
 // The automatic region size calculation will try to have around this
 // many regions in the heap (based on the min heap size).
 #define TARGET_REGION_NUMBER          2048
+
+size_t HeapRegion::max_region_size() {
+  return (size_t)MAX_REGION_SIZE;
+}
 
 void HeapRegion::setup_heap_region_size(size_t initial_heap_size, size_t max_heap_size) {
   uintx region_size = G1HeapRegionSize;
