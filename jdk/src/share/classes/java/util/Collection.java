@@ -104,6 +104,13 @@ import java.util.stream.StreamSupport;
  * the specified behavior of underlying {@link Object} methods wherever the
  * implementor deems it appropriate.
  *
+ * <p>Some collection operations which perform recursive traversal of the
+ * collection may fail with an exception for self-referential instances where
+ * the collection directly or indirectly contains itself. This includes the
+ * {@code clone()}, {@code equals()}, {@code hashCode()} and {@code toString()}
+ * methods. Implementations may optionally handle the self-referential scenario,
+ * however most current implementations do not do so.
+ *
  * <p>This interface is a member of the
  * <a href="{@docRoot}/../technotes/guides/collections/index.html">
  * Java Collections Framework</a>.
