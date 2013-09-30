@@ -2436,7 +2436,7 @@ loop:
         // name is null, generate anonymous name
         boolean isAnonymous = false;
         if (name == null) {
-            final String tmpName = "_L" + source.getLine(Token.descPosition(token));
+            final String tmpName = "_L" + functionLine;
             name = new IdentNode(functionToken, Token.descPosition(functionToken), tmpName);
             isAnonymous = true;
         }

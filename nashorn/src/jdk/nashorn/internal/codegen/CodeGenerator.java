@@ -1956,7 +1956,7 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
 
         final Expression expression = throwNode.getExpression();
         final int        position   = throwNode.position();
-        final int        line       = source.getLine(position);
+        final int        line       = throwNode.getLineNumber();
         final int        column     = source.getColumn(position);
 
         load(expression);
