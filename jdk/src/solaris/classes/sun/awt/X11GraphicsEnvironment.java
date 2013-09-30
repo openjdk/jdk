@@ -25,8 +25,8 @@
 
 package sun.awt;
 
+import java.awt.AWTError;
 import java.awt.GraphicsDevice;
-
 import java.awt.Point;
 import java.awt.Rectangle;
 import java.io.BufferedReader;
