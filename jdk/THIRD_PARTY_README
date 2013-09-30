@@ -6,7 +6,7 @@ Framework v4.0, which is included with JRE 8, and JDK 8.
 
 --- begin of LICENSE ---
 
-Copyright (c) 2000-2011 France T�l�com
+Copyright (c) 2000-2011 France Telecom
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
@@ -741,7 +741,7 @@ Linux and Solaris.
 
 --- begin of LICENSE ---
 
-Copyright ¬© 2001,2003 Keith Packard
+Copyright ¬¨¬© 2001,2003 Keith Packard
 
 Permission to use, copy, modify, distribute, and sell this software and its
 documentation for any purpose is hereby granted without fee, provided that the
@@ -1955,16 +1955,16 @@ v1.9, which is included with JRE 7, JDK 7, and OpenJDK 7.
 Unicode Terms of Use
 
 For the general privacy policy governing access to this site, see the Unicode
-Privacy Policy. For trademark usage, see the Unicode® Consortium Name and
+Privacy Policy. For trademark usage, see the Unicode¬Æ Consortium Name and
 Trademark Usage Policy.
 
 A. Unicode Copyright.
-   1. Copyright © 1991-2011 Unicode, Inc. All rights reserved.
+   1. Copyright ¬© 1991-2011 Unicode, Inc. All rights reserved.
 
    2. Certain documents and files on this website contain a legend indicating
       that "Modification is permitted." Any person is hereby authorized,
       without fee, to modify such documents and files to create derivative
-      works conforming to the Unicode® Standard, subject to Terms and
+      works conforming to the Unicode¬Æ Standard, subject to Terms and
       Conditions herein.
 
     3. Any person is hereby authorized, without fee, to view, use, reproduce,
@@ -2030,14 +2030,14 @@ D. Waiver of Damages. In no event shall Unicode or its licensors be liable for
 
 E.Trademarks & Logos.
    1. The Unicode Word Mark and the Unicode Logo are trademarks of Unicode,
-      Inc.  “The Unicode Consortium” and “Unicode, Inc.” are trade names of
+      Inc.  ‚ÄúThe Unicode Consortium‚Äù and ‚ÄúUnicode, Inc.‚Äù are trade names of
       Unicode, Inc.  Use of the information and materials found on this
-      website indicates your acknowledgement of Unicode, Inc.’s exclusive
+      website indicates your acknowledgement of Unicode, Inc.‚Äôs exclusive
       worldwide rights in the Unicode Word Mark, the Unicode Logo, and the
       Unicode trade names.
 
-   2. The Unicode Consortium Name and Trademark Usage Policy (“Trademark
-      Policy”) are incorporated herein by reference and you agree to abide by
+   2. The Unicode Consortium Name and Trademark Usage Policy (‚ÄúTrademark
+      Policy‚Äù) are incorporated herein by reference and you agree to abide by
       the provisions of the Trademark Policy, which may be changed from time
       to time in the sole discretion of Unicode, Inc.
 
@@ -2060,12 +2060,12 @@ Miscellaneous.
 
    2. Modification by Unicode.  Unicode shall have the right to modify this
       Agreement at any time by posting it to this site. The user may not
-      assign any part of this Agreement without Unicode’s prior written
+      assign any part of this Agreement without Unicode‚Äôs prior written
       consent.
 
    3. Taxes. The user agrees to pay any taxes arising from access to this
       website or use of the information herein, except for those based on
-      Unicode’s net income.
+      Unicode‚Äôs net income.
 
    4. Severability.  If any provision of this Agreement is declared invalid or
       unenforceable, the remaining provisions of this Agreement shall remain
@@ -2094,7 +2094,7 @@ SOFTWARE.
 
 COPYRIGHT AND PERMISSION NOTICE
 
-Copyright © 1991-2011 Unicode, Inc. All rights reserved. Distributed under the
+Copyright ¬© 1991-2011 Unicode, Inc. All rights reserved. Distributed under the
 Terms of Use in http://www.unicode.org/copyright.html.
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
