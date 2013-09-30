@@ -91,6 +91,11 @@ public final class Context {
      */
     public static final String NASHORN_JAVA_REFLECTION = "nashorn.JavaReflection";
 
+    // nashorn load psuedo URL prefixes
+    private static final String LOAD_CLASSPATH = "classpath:";
+    private static final String LOAD_FX = "fx:";
+    private static final String LOAD_NASHORN = "nashorn:";
+
     /* Force DebuggerSupport to be loaded. */
     static {
         DebuggerSupport.FORCELOAD = true;
@@ -501,21 +506,26 @@ public final class Context {
         // or a ScriptObject that has "name" and "source" (string valued) properties.
         if (src instanceof String) {
             final String srcStr = (String)src;
-            final File file = new File(srcStr);
-            if (srcStr.indexOf(':') != -1) {
-                if ((source = loadInternal(srcStr, "nashorn:", "resources/")) == null &&
-                    (source = loadInternal(srcStr, "fx:", "resources/fx/")) == null) {
-                    URL url;
-                    try {
-                        //check for malformed url. if malformed, it may still be a valid file
-                        url = new URL(srcStr);
-                    } catch (final MalformedURLException e) {
-                        url = file.toURI().toURL();
+            if (srcStr.startsWith(LOAD_CLASSPATH)) {
+                URL url = getResourceURL(srcStr.substring(LOAD_CLASSPATH.length()));
+                source = (url != null)? new Source(url.toString(), url) : null;
+            } else {
+                final File file = new File(srcStr);
+                if (srcStr.indexOf(':') != -1) {
+                    if ((source = loadInternal(srcStr, LOAD_NASHORN, "resources/")) == null &&
+                        (source = loadInternal(srcStr, LOAD_FX, "resources/fx/")) == null) {
+                        URL url;
+                        try {
+                            //check for malformed url. if malformed, it may still be a valid file
+                            url = new URL(srcStr);
+                        } catch (final MalformedURLException e) {
+                            url = file.toURI().toURL();
+                        }
+                        source = new Source(url.toString(), url);
                     }
-                    source = new Source(url.toString(), url);
+                } else if (file.isFile()) {
+                    source = new Source(srcStr, file);
                 }
-            } else if (file.isFile()) {
-                source = new Source(srcStr, file);
             }
         } else if (src instanceof File && ((File)src).isFile()) {
             final File file = (File)src;
@@ -801,6 +811,18 @@ public final class Context {
         }
 
         return Context.getContextTrusted();
+    }
+
+    private URL getResourceURL(final String resName) throws IOException {
+        // try the classPathLoader if we have and then
+        // try the appLoader if non-null.
+        if (classPathLoader != null) {
+            return classPathLoader.getResource(resName);
+        } else if (appLoader != null) {
+            return appLoader.getResource(resName);
+        }
+
+        return null;
     }
 
     private Object evaluateSource(final Source source, final ScriptObject scope, final ScriptObject thiz) {
