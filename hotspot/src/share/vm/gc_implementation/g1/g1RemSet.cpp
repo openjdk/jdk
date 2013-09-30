@@ -83,7 +83,9 @@ G1RemSet::G1RemSet(G1CollectedHeap* g1, CardTableModRefBS* ct_bs)
   for (uint i = 0; i < n_workers(); i++) {
     _cset_rs_update_cl[i] = NULL;
   }
-  _prev_period_summary.initialize(this, n_workers());
+  if (G1SummarizeRSetStats) {
+    _prev_period_summary.initialize(this);
+  }
 }
 
 G1RemSet::~G1RemSet() {
@@ -728,7 +730,7 @@ bool G1RemSet::refine_card(jbyte* card_ptr, int worker_i,
 
 void G1RemSet::print_periodic_summary_info(const char* header) {
   G1RemSetSummary current;
-  current.initialize(this, n_workers());
+  current.initialize(this);
 
   _prev_period_summary.subtract_from(&current);
   print_summary_info(&_prev_period_summary, header);
@@ -738,7 +740,7 @@ void G1RemSet::print_periodic_summary_info(const char* header) {
 
 void G1RemSet::print_summary_info() {
   G1RemSetSummary current;
-  current.initialize(this, n_workers());
+  current.initialize(this);
 
   print_summary_info(&current, " Cumulative RS summary");
 }

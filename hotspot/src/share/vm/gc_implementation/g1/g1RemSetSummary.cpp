@@ -77,12 +77,12 @@ double G1RemSetSummary::rs_thread_vtime(uint thread) const {
   return _rs_threads_vtimes[thread];
 }
 
-void G1RemSetSummary::initialize(G1RemSet* remset, uint num_workers) {
+void G1RemSetSummary::initialize(G1RemSet* remset) {
   assert(_rs_threads_vtimes == NULL, "just checking");
   assert(remset != NULL, "just checking");
 
   _remset = remset;
-  _num_vtimes = num_workers;
+  _num_vtimes = ConcurrentG1Refine::thread_num();
   _rs_threads_vtimes = NEW_C_HEAP_ARRAY(double, _num_vtimes, mtGC);
   memset(_rs_threads_vtimes, 0, sizeof(double) * _num_vtimes);
 
