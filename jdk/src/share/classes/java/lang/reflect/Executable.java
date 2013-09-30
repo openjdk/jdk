@@ -51,7 +51,6 @@ public abstract class Executable extends AccessibleObject
      * Accessor method to allow code sharing
      */
     abstract byte[] getAnnotationBytes();
-    abstract byte[] getTypeAnnotationBytes();
 
     /**
      * Does the Executable have generic information.
@@ -352,6 +351,12 @@ public abstract class Executable extends AccessibleObject
     private transient volatile Parameter[] parameters;
 
     private native Parameter[] getParameters0();
+    private native byte[] getTypeAnnotationBytes0();
+
+    // Needed by reflectaccess
+    byte[] getTypeAnnotationBytes() {
+        return getTypeAnnotationBytes0();
+    }
 
     /**
      * Returns an array of {@code Class} objects that represent the
@@ -541,7 +546,7 @@ public abstract class Executable extends AccessibleObject
      * @since 1.8
      */
     AnnotatedType getAnnotatedReturnType0(Type returnType) {
-        return TypeAnnotationParser.buildAnnotatedType(getTypeAnnotationBytes(),
+        return TypeAnnotationParser.buildAnnotatedType(getTypeAnnotationBytes0(),
                 sun.misc.SharedSecrets.getJavaLangAccess().
                         getConstantPool(getDeclaringClass()),
                 this,
@@ -574,7 +579,7 @@ public abstract class Executable extends AccessibleObject
     public AnnotatedType getAnnotatedReceiverType() {
         if (Modifier.isStatic(this.getModifiers()))
             return null;
-        return TypeAnnotationParser.buildAnnotatedType(getTypeAnnotationBytes(),
+        return TypeAnnotationParser.buildAnnotatedType(getTypeAnnotationBytes0(),
                 sun.misc.SharedSecrets.getJavaLangAccess().
                         getConstantPool(getDeclaringClass()),
                 this,
@@ -600,7 +605,7 @@ public abstract class Executable extends AccessibleObject
      * @since 1.8
      */
     public AnnotatedType[] getAnnotatedParameterTypes() {
-        return TypeAnnotationParser.buildAnnotatedTypes(getTypeAnnotationBytes(),
+        return TypeAnnotationParser.buildAnnotatedTypes(getTypeAnnotationBytes0(),
                 sun.misc.SharedSecrets.getJavaLangAccess().
                         getConstantPool(getDeclaringClass()),
                 this,
@@ -626,7 +631,7 @@ public abstract class Executable extends AccessibleObject
      * @since 1.8
      */
     public AnnotatedType[] getAnnotatedExceptionTypes() {
-        return TypeAnnotationParser.buildAnnotatedTypes(getTypeAnnotationBytes(),
+        return TypeAnnotationParser.buildAnnotatedTypes(getTypeAnnotationBytes0(),
                 sun.misc.SharedSecrets.getJavaLangAccess().
                         getConstantPool(getDeclaringClass()),
                 this,
