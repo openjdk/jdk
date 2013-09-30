@@ -3414,16 +3414,20 @@ public final class Class<T> implements java.io.Serializable,
     transient ClassValue.ClassValueMap classValueMap;
 
     /**
-     * Returns an AnnotatedType object that represents the use of a type to specify
-     * the superclass of the entity represented by this Class. (The <em>use</em> of type
-     * Foo to specify the superclass in '... extends Foo' is distinct from the
-     * <em>declaration</em> of type Foo.)
+     * Returns an {@code AnnotatedType} object that represents the use of a
+     * type to specify the superclass of the entity represented by this {@code
+     * Class} object. (The <em>use</em> of type Foo to specify the superclass
+     * in '...  extends Foo' is distinct from the <em>declaration</em> of type
+     * Foo.)
      *
-     * If this Class represents a class type whose declaration does not explicitly
-     * indicate an annotated superclass, the return value is null.
+     * <p> If this {@code Class} object represents a type whose declaration
+     * does not explicitly indicate an annotated superclass, then the return
+     * value is an {@code AnnotatedType} object representing an element with no
+     * annotations.
      *
-     * If this Class represents either the Object class, an interface type, an
-     * array type, a primitive type, or void, the return value is null.
+     * <p> If this {@code Class} represents either the {@code Object} class, an
+     * interface type, an array type, a primitive type, or void, the return
+     * value is {@code null}.
      *
      * @return an object representing the superclass
      * @since 1.8
@@ -3441,29 +3445,32 @@ public final class Class<T> implements java.io.Serializable,
     }
 
     /**
-     * Returns an array of AnnotatedType objects that represent the use of types to
-     * specify superinterfaces of the entity represented by this Class. (The <em>use</em>
-     * of type Foo to specify a superinterface in '... implements Foo' is
-     * distinct from the <em>declaration</em> of type Foo.)
+     * Returns an array of {@code AnnotatedType} objects that represent the use
+     * of types to specify superinterfaces of the entity represented by this
+     * {@code Class} object. (The <em>use</em> of type Foo to specify a
+     * superinterface in '... implements Foo' is distinct from the
+     * <em>declaration</em> of type Foo.)
      *
-     * If this Class represents a class, the return value is an array
-     * containing objects representing the uses of interface types to specify
-     * interfaces implemented by the class. The order of the objects in the
-     * array corresponds to the order of the interface types used in the
-     * 'implements' clause of the declaration of this Class.
-     *
-     * If this Class represents an interface, the return value is an array
-     * containing objects representing the uses of interface types to specify
-     * interfaces directly extended by the interface. The order of the objects in
+     * <p> If this {@code Class} object represents a class, the return value is
+     * an array containing objects representing the uses of interface types to
+     * specify interfaces implemented by the class. The order of the objects in
      * the array corresponds to the order of the interface types used in the
-     * 'extends' clause of the declaration of this Class.
+     * 'implements' clause of the declaration of this {@code Class} object.
      *
-     * If this Class represents a class or interface whose declaration does not
-     * explicitly indicate any annotated superinterfaces, the return value is an
+     * <p> If this {@code Class} object represents an interface, the return
+     * value is an array containing objects representing the uses of interface
+     * types to specify interfaces directly extended by the interface. The
+     * order of the objects in the array corresponds to the order of the
+     * interface types used in the 'extends' clause of the declaration of this
+     * {@code Class} object.
+     *
+     * <p> If this {@code Class} object represents a class or interface whose
+     * declaration does not explicitly indicate any annotated superinterfaces,
+     * the return value is an array of length 0.
+     *
+     * <p> If this {@code Class} object represents either the {@code Object}
+     * class, an array type, a primitive type, or void, the return value is an
      * array of length 0.
-     *
-     * If this Class represents either the Object class, an array type, a
-     * primitive type, or void, the return value is an array of length 0.
      *
      * @return an array representing the superinterfaces
      * @since 1.8

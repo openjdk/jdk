@@ -23,71 +23,53 @@
 
 /*
  * @test
- * @bug 8022343 8007072
- * @summary Test Class.getAnnotatedSuperclass() returns null/non-null
- *          AnnotatedType as specified
+ * @bug 8022324
+ * @summary Test Class.getAnnotatedInterfaces() returns 0-length array as
+ *          specified.
  */
 
 import java.lang.reflect.AnnotatedType;
 import java.util.Arrays;
 
-public class GetAnnotatedSuperclass {
-    private static final Class<?>[] nullTestData = {
-        Object.class,
-        If.class,
-        Object[].class,
-        void.class,
-        int.class,
-    };
-
-    private static final Class<?>[] nonNullTestData = {
-        Class.class,
-        GetAnnotatedSuperclass.class,
-        (new If() {}).getClass(),
+public class GetAnnotatedInterfaces {
+    private static final Class<?>[] testData = {
+        GetAnnotatedInterfaces.class,
         (new Clz() {}).getClass(),
         (new Object() {}).getClass(),
+        Object[].class,
+        Object[][].class,
+        Object[][][].class,
+        Object.class,
+        void.class,
+        int.class,
     };
 
     private static int failed = 0;
     private static int tests = 0;
 
     public static void main(String[] args) throws Exception {
-        testReturnsNull();
-        testReturnsEmptyAT();
+        testReturnsZeroLengthArray();
 
         if (failed != 0)
             throw new RuntimeException("Test failed, check log for details");
-        if (tests != 10)
+        if (tests != 9)
             throw new RuntimeException("Not all cases ran, failing");
     }
 
-    private static void testReturnsNull() {
-        for (Class<?> toTest : nullTestData) {
+    private static void testReturnsZeroLengthArray() {
+        for (Class<?> toTest : testData) {
             tests++;
 
-            Object res = toTest.getAnnotatedSuperclass();
-
-            if (res != null) {
-                failed++;
-                System.out.println(toTest + ".getAnnotatedSuperclass() returns: "
-                        + res + ", should be null");
-            }
-        }
-    }
-
-    private static void testReturnsEmptyAT() {
-        for (Class<?> toTest : nonNullTestData) {
-            tests++;
-
-            AnnotatedType res = toTest.getAnnotatedSuperclass();
+            AnnotatedType[] res = toTest.getAnnotatedInterfaces();
 
             if (res == null) {
                 failed++;
-                System.out.println(toTest + ".getAnnotatedSuperclass() returns 'null' should  be non-null");
-            } else if (res.getAnnotations().length != 0) {
+                System.out.println(toTest + ".class.getAnnotatedInterface() returns" +
+                        "'null' should zero length array");
+            } else if (res.length != 0) {
                 failed++;
-                System.out.println(toTest + ".getAnnotatedSuperclass() returns: "
-                        + Arrays.asList(res.getAnnotations()) + ", should be an empty AnnotatedType");
+                System.out.println(toTest + ".class.getAnnotatedInterfaces() returns: "
+                        + Arrays.asList(res) + ", should be a zero length array of AnnotatedType");
             }
         }
     }
