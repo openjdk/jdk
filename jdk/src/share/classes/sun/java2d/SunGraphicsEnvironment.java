@@ -25,6 +25,7 @@
 
 package sun.java2d;
 
+import java.awt.AWTError;
 import java.awt.Color;
 import java.awt.Font;
 import java.awt.Graphics2D;
