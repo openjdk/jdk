@@ -1772,7 +1772,6 @@ void G1CollectedHeap::update_committed_space(HeapWord* old_end,
 }
 
 bool G1CollectedHeap::expand(size_t expand_bytes) {
-  size_t old_mem_size = _g1_storage.committed_size();
   size_t aligned_expand_bytes = ReservedSpace::page_align_size_up(expand_bytes);
   aligned_expand_bytes = align_size_up(aligned_expand_bytes,
                                        HeapRegion::GrainBytes);
@@ -1781,6 +1780,13 @@ bool G1CollectedHeap::expand(size_t expand_bytes) {
                 ergo_format_byte("requested expansion amount")
                 ergo_format_byte("attempted expansion amount"),
                 expand_bytes, aligned_expand_bytes);
+
+  if (_g1_storage.uncommitted_size() == 0) {
+    ergo_verbose0(ErgoHeapSizing,
+                      "did not expand the heap",
+                      ergo_format_reason("heap already fully expanded"));
+    return false;
+  }
 
   // First commit the memory.
   HeapWord* old_end = (HeapWord*) _g1_storage.high();
@@ -1840,7 +1846,6 @@ bool G1CollectedHeap::expand(size_t expand_bytes) {
 }
 
 void G1CollectedHeap::shrink_helper(size_t shrink_bytes) {
-  size_t old_mem_size = _g1_storage.committed_size();
   size_t aligned_shrink_bytes =
     ReservedSpace::page_align_size_down(shrink_bytes);
   aligned_shrink_bytes = align_size_down(aligned_shrink_bytes,
