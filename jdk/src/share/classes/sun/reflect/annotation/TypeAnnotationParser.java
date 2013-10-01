@@ -128,14 +128,18 @@ public class TypeAnnotationParser {
         for (int i = 0; i < size; i++) {
             @SuppressWarnings("unchecked")
             ArrayList<TypeAnnotation> list = l[i];
+            TypeAnnotation[] typeAnnotations;
             if (list != null) {
-                TypeAnnotation[] typeAnnotations = list.toArray(new TypeAnnotation[0]);
-                result[i] = AnnotatedTypeFactory.buildAnnotatedType(types[i],
-                                                                    LocationInfo.BASE_LOCATION,
-                                                                    typeAnnotations,
-                                                                    typeAnnotations,
-                                                                    decl);
+                typeAnnotations = list.toArray(new TypeAnnotation[list.size()]);
+            } else {
+                typeAnnotations = EMPTY_TYPE_ANNOTATION_ARRAY;
             }
+            result[i] = AnnotatedTypeFactory.buildAnnotatedType(types[i],
+                                                                LocationInfo.BASE_LOCATION,
+                                                                typeAnnotations,
+                                                                typeAnnotations,
+                                                                decl);
+
         }
         return result;
     }
