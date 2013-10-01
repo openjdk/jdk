@@ -221,7 +221,7 @@ public class SpinnerDateModel extends AbstractSpinnerModel implements Serializab
      * MyStartDate implements Comparable {
      *     long t = 12345;
      *     public int compareTo(Date d) {
-     *            return (t < d.getTime() ? -1 : (t == d.getTime() ? 0 : 1));
+     *            return (t &lt; d.getTime() ? -1 : (t == d.getTime() ? 0 : 1));
      *     }
      *     public int compareTo(Object o) {
      *            return compareTo((Date)o);
@@ -435,7 +435,7 @@ public class SpinnerDateModel extends AbstractSpinnerModel implements Serializab
      * If <code>value</code> is <code>null</code>,
      * an <code>IllegalArgumentException</code> is thrown.  No bounds
      * checking is done here:
-     * the new value may invalidate the <code>(start &lt= value &lt end)</code>
+     * the new value may invalidate the <code>(start &lt;= value &lt; end)</code>
      * invariant enforced by the constructors.  Naturally, one should ensure
      * that the <code>(start &lt;= value &lt;= maximum)</code> invariant is true
      * before calling the <code>nextValue</code>, <code>previousValue</code>,

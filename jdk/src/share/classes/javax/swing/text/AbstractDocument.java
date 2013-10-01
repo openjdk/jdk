@@ -934,16 +934,18 @@ public abstract class AbstractDocument implements Document, Serializable {
      * Returns true if the text in the range <code>p0</code> to
      * <code>p1</code> is left to right.
      */
-    boolean isLeftToRight(int p0, int p1) {
-        if(!getProperty(I18NProperty).equals(Boolean.TRUE)) {
-            return true;
-        }
-        Element bidiRoot = getBidiRootElement();
-        int index = bidiRoot.getElementIndex(p0);
-        Element bidiElem = bidiRoot.getElement(index);
-        if(bidiElem.getEndOffset() >= p1) {
-            AttributeSet bidiAttrs = bidiElem.getAttributes();
-            return ((StyleConstants.getBidiLevel(bidiAttrs) % 2) == 0);
+    static boolean isLeftToRight(Document doc, int p0, int p1) {
+        if (Boolean.TRUE.equals(doc.getProperty(I18NProperty))) {
+            if (doc instanceof AbstractDocument) {
+                AbstractDocument adoc = (AbstractDocument) doc;
+                Element bidiRoot = adoc.getBidiRootElement();
+                int index = bidiRoot.getElementIndex(p0);
+                Element bidiElem = bidiRoot.getElement(index);
+                if (bidiElem.getEndOffset() >= p1) {
+                    AttributeSet bidiAttrs = bidiElem.getAttributes();
+                    return ((StyleConstants.getBidiLevel(bidiAttrs) % 2) == 0);
+                }
+            }
         }
         return true;
     }

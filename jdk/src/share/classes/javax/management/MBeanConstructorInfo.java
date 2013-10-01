@@ -191,10 +191,10 @@ public class MBeanConstructorInfo extends MBeanFeatureInfo implements Cloneable 
         if (!(o instanceof MBeanConstructorInfo))
             return false;
         MBeanConstructorInfo p = (MBeanConstructorInfo) o;
-        return (p.getName().equals(getName()) &&
-                p.getDescription().equals(getDescription()) &&
+        return (Objects.equals(p.getName(), getName()) &&
+                Objects.equals(p.getDescription(), getDescription()) &&
                 Arrays.equals(p.fastGetSignature(), fastGetSignature()) &&
-                p.getDescriptor().equals(getDescriptor()));
+                Objects.equals(p.getDescriptor(), getDescriptor()));
     }
 
     /* Unlike attributes and operations, it's quite likely we'll have

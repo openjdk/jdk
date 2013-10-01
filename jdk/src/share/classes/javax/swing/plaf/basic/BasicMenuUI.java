@@ -39,7 +39,7 @@ import java.util.ArrayList;
 
 
 /**
- * A default L&F implementation of MenuUI.  This implementation
+ * A default L&amp;F implementation of MenuUI.  This implementation
  * is a "combined" view/controller.
  *
  * @author Georges Saab

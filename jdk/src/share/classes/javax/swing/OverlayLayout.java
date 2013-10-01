@@ -190,7 +190,7 @@ public class OverlayLayout implements LayoutManager2,Serializable {
      * Returns the alignment along the x axis for the container.
      *
      * @param target the container
-     * @return the alignment >= 0.0f && <= 1.0f
+     * @return the alignment &gt;= 0.0f &amp;&amp; &lt;= 1.0f
      */
     public float getLayoutAlignmentX(Container target) {
         checkContainer(target);
@@ -202,7 +202,7 @@ public class OverlayLayout implements LayoutManager2,Serializable {
      * Returns the alignment along the y axis for the container.
      *
      * @param target the container
-     * @return the alignment >= 0.0f && <= 1.0f
+     * @return the alignment &gt;= 0.0f &amp;&amp; &lt;= 1.0f
      */
     public float getLayoutAlignmentY(Container target) {
         checkContainer(target);

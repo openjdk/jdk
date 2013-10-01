@@ -106,7 +106,7 @@ HS_DTRACE_PROBE_DECL5(hotspot, class__initialization__end,
       len = name->utf8_length();                                 \
     }                                                            \
     HS_DTRACE_PROBE4(hotspot, class__initialization__##type,     \
-      data, len, (clss)->class_loader(), thread_type);           \
+      data, len, SOLARIS_ONLY((void *))(clss)->class_loader(), thread_type);           \
   }
 
 #define DTRACE_CLASSINIT_PROBE_WAIT(type, clss, thread_type, wait) \
@@ -119,7 +119,7 @@ HS_DTRACE_PROBE_DECL5(hotspot, class__initialization__end,
       len = name->utf8_length();                                 \
     }                                                            \
     HS_DTRACE_PROBE5(hotspot, class__initialization__##type,     \
-      data, len, (clss)->class_loader(), thread_type, wait);     \
+      data, len, SOLARIS_ONLY((void *))(clss)->class_loader(), thread_type, wait);     \
   }
 #else /* USDT2 */
 
@@ -2303,7 +2303,7 @@ void InstanceKlass::set_source_debug_extension(char* array, int length) {
 }
 
 address InstanceKlass::static_field_addr(int offset) {
-  return (address)(offset + InstanceMirrorKlass::offset_of_static_fields() + (intptr_t)java_mirror());
+  return (address)(offset + InstanceMirrorKlass::offset_of_static_fields() + cast_from_oop<intptr_t>(java_mirror()));
 }
 
 

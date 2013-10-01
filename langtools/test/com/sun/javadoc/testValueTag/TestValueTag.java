@@ -23,13 +23,12 @@
 
 /*
  * @test
- * @bug      4764045
+ * @bug      4764045 8004825
  * @summary  This test ensures that the value tag works in all
  * use cases. The explainations for each test case are written below.
  * @author   jamieh
  * @library  ../lib/
- * @build    JavadocTester
- * @build    TestValueTag
+ * @build    JavadocTester TestValueTag
  * @run main TestValueTag
  */
 
@@ -41,8 +40,14 @@ public class TestValueTag extends JavadocTester {
     //Javadoc arguments.
     private static final String[] ARGS =
         new String[] {
-            "-Xdoclint:none",
             "-d", BUG_ID, "-sourcepath", SRC_DIR, "-tag",
+            "todo", "pkg1", "pkg2"
+        };
+
+    private static final String[] ARGS1 =
+        new String[] {
+            "-Xdoclint:none",
+            "-d", BUG_ID + "-1", "-sourcepath", SRC_DIR, "-tag",
             "todo", "pkg1", "pkg2"
         };
 
@@ -91,16 +96,58 @@ public class TestValueTag extends JavadocTester {
         {BUG_ID + FS + "pkg1" + FS + "CustomTagUsage.html",
             "<dt><span class=\"strong\">Todo:</span></dt>" + NL +
                 "<dd>the value of this constant is 55.</dd>"},
+        //Test @value errors printed dues to invalid use or when used with
+        //non-constant or with bad references.
+        {ERROR_OUTPUT,"error: value does not refer to a constant" + NL +
+            "     * Result:  {@value TEST_12_ERROR}"
+        },
+        {ERROR_OUTPUT,"error: {@value} not allowed here" + NL +
+            "     * Result:  {@value}"
+        },
+        {ERROR_OUTPUT,"error: value does not refer to a constant" + NL +
+            "     * Result:  {@value NULL}"
+        },
+        {ERROR_OUTPUT,"error: {@value} not allowed here" + NL +
+            "     * Invalid (null): {@value}"
+        },
+        {ERROR_OUTPUT,"error: {@value} not allowed here" + NL +
+            "     * Invalid (non-constant field): {@value}"
+        },
+        {ERROR_OUTPUT,"error: value does not refer to a constant" + NL +
+            "     * Here is a bad value reference: {@value UnknownClass#unknownConstant}"
+        },
+        {ERROR_OUTPUT,"error: reference not found" + NL +
+            "     * Here is a bad value reference: {@value UnknownClass#unknownConstant}"
+        },
+        {ERROR_OUTPUT,"error: {@value} not allowed here" + NL +
+            "     * @todo the value of this constant is {@value}"
+        }
+    };
+    private static final String[][] TEST1 = {
         //Test @value warning printed when used with non-constant.
         {WARNING_OUTPUT,"warning - @value tag (which references nonConstant) " +
+            "can only be used in constants."
+        },
+        {WARNING_OUTPUT,"warning - @value tag (which references NULL) " +
+            "can only be used in constants."
+        },
+        {WARNING_OUTPUT,"warning - @value tag (which references TEST_12_ERROR) " +
             "can only be used in constants."
         },
         //Test warning printed for bad reference.
         {WARNING_OUTPUT,"warning - UnknownClass#unknownConstant (referenced by " +
             "@value tag) is an unknown reference."
         },
+        //Test warning printed for invalid use of @value.
+        {WARNING_OUTPUT,"warning - @value tag cannot be used here."
+        }
     };
-    private static final String[][] NEGATED_TEST = NO_TEST;
+    private static final String[][] NEGATED_TEST = {
+        //Base case:  using @value on a constant.
+        {BUG_ID + FS + "pkg1" + FS + "Class1.html",
+            "Result:  <a href=\"../pkg1/Class1.html#TEST_12_ERROR\">\"Test 12 " +
+            "generates an error message\"</a>"},
+    };
 
     /**
      * The entry point of the test.
@@ -109,7 +156,16 @@ public class TestValueTag extends JavadocTester {
     public static void main(String[] args) {
         TestValueTag tester = new TestValueTag();
         run(tester, ARGS, TEST, NEGATED_TEST);
+        checkForException(tester);
+        run(tester, ARGS1, TEST1, NO_TEST);
+        checkForException(tester);
         tester.printSummary();
+    }
+
+    public static void checkForException(TestValueTag tester) {
+        if (tester.getErrorOutput().contains("DocletAbortException")) {
+            throw new AssertionError("javadoc threw DocletAbortException");
+        }
     }
 
     /**
