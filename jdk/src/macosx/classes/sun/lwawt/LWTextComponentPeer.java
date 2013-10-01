@@ -71,13 +71,14 @@ abstract class LWTextComponentPeer<T extends TextComponent, D extends JComponent
         }
         setEditable(getTarget().isEditable());
         setText(getTarget().getText());
+        setCaretPosition(getTarget().getCaretPosition());
         getTarget().addInputMethodListener(this);
         final int start = getTarget().getSelectionStart();
         final int end = getTarget().getSelectionEnd();
         if (end > start) {
+            // Should be called after setText() and setCaretPosition()
             select(start, end);
         }
-        setCaretPosition(getTarget().getCaretPosition());
         firstChangeSkipped = true;
     }
 
