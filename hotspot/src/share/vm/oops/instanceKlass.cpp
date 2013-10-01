@@ -1419,6 +1419,8 @@ Method* InstanceKlass::uncached_lookup_method(Symbol* name, Symbol* signature) c
 }
 
 // lookup a method in all the interfaces that this class implements
+// Do NOT return private or static methods, new in JDK8 which are not externally visible
+// They should only be found in the initial InterfaceMethodRef
 Method* InstanceKlass::lookup_method_in_all_interfaces(Symbol* name,
                                                          Symbol* signature) const {
   Array<Klass*>* all_ifs = transitive_interfaces();
@@ -1427,7 +1429,7 @@ Method* InstanceKlass::lookup_method_in_all_interfaces(Symbol* name,
   for (int i = 0; i < num_ifs; i++) {
     ik = InstanceKlass::cast(all_ifs->at(i));
     Method* m = ik->lookup_method(name, signature);
-    if (m != NULL) {
+    if (m != NULL && m->is_public() && !m->is_static()) {
       return m;
     }
   }

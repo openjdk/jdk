@@ -1,5 +1,4 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -573,6 +572,16 @@ void LinkResolver::resolve_interface_method(methodHandle& resolved_method,
   }
 
   if (check_access) {
+    // JDK8 adds non-public interface methods, and accessability check requirement
+    assert(current_klass.not_null() , "current_klass should not be null");
+
+    // check if method can be accessed by the referring class
+    check_method_accessability(current_klass,
+                               resolved_klass,
+                               KlassHandle(THREAD, resolved_method->method_holder()),
+                               resolved_method,
+                               CHECK);
+
     HandleMark hm(THREAD);
     Handle loader (THREAD, InstanceKlass::cast(current_klass())->class_loader());
     Handle class_loader (THREAD, resolved_method->method_holder()->class_loader());
@@ -603,6 +612,20 @@ void LinkResolver::resolve_interface_method(methodHandle& resolved_method,
         THROW_MSG(vmSymbols::java_lang_LinkageError(), buf);
       }
     }
+  }
+
+  if (TraceItables && Verbose) {
+    ResourceMark rm(THREAD);
+    tty->print("invokeinterface resolved method: caller-class:%s, compile-time-class:%s, method:%s, method_holder:%s, access_flags: ",
+                   (current_klass.is_null() ? "<NULL>" : current_klass->internal_name()),
+                   (resolved_klass.is_null() ? "<NULL>" : resolved_klass->internal_name()),
+                   Method::name_and_sig_as_C_string(resolved_klass(),
+                                                    resolved_method->name(),
+                                                    resolved_method->signature()),
+                   resolved_method->method_holder()->internal_name()
+                  );
+    resolved_method->access_flags().print_on(tty);
+    tty->cr();
   }
 }
 
@@ -795,26 +818,12 @@ void LinkResolver::linktime_resolve_special_method(methodHandle& resolved_method
                                                    Symbol* method_name, Symbol* method_signature,
                                                    KlassHandle current_klass, bool check_access, TRAPS) {
 
-  if (resolved_klass->is_interface() && current_klass() != NULL) {
-    // If the target class is a direct interface, treat this as a "super"
-    // default call.
-    //
-    // If the current method is an overpass that happens to call a direct
-    // super-interface's method, then we'll end up rerunning the default method
-    // analysis even though we don't need to, but that's ok since it will end
-    // up with the same answer.
-    InstanceKlass* ik = InstanceKlass::cast(current_klass());
-    Array<Klass*>* interfaces = ik->local_interfaces();
-    int num_interfaces = interfaces->length();
-    for (int index = 0; index < num_interfaces; index++) {
-      if (interfaces->at(index) == resolved_klass()) {
-        Method* method = DefaultMethods::find_super_default(current_klass(),
-            resolved_klass(), method_name, method_signature, CHECK);
-        resolved_method = methodHandle(THREAD, method);
-        return;
-      }
-    }
-  }
+  // Invokespecial is called for multiple special reasons:
+  // <init>
+  // local private method invocation, for classes and interfaces
+  // superclass.method, which can also resolve to a default method
+  // and the selected method is recalculated relative to the direct superclass
+  // superinterface.method, which explicitly does not check shadowing
 
   resolve_method(resolved_method, resolved_klass, method_name, method_signature, current_klass, check_access, CHECK);
 
@@ -844,6 +853,26 @@ void LinkResolver::linktime_resolve_special_method(methodHandle& resolved_method
                                                          resolved_method->signature()));
     THROW_MSG(vmSymbols::java_lang_IncompatibleClassChangeError(), buf);
   }
+  if (TraceItables && Verbose) {
+    ResourceMark rm(THREAD);
+    tty->print("invokespecial resolved method: caller-class:%s, compile-time-class:%s, method:%s, method_holder:%s, access_flags: ",
+                (current_klass.is_null() ? "<NULL>" : current_klass->internal_name()),
+                (resolved_klass.is_null() ? "<NULL>" : resolved_klass->internal_name()),
+                Method::name_and_sig_as_C_string(resolved_klass(),
+                                                 resolved_method->name(),
+                                                 resolved_method->signature()),
+                resolved_method->method_holder()->internal_name()
+               );
+    resolved_method->access_flags().print_on(tty);
+    if (resolved_method->method_holder()->is_interface() &&
+        !resolved_method->is_abstract()) {
+      tty->print("default");
+    }
+    if (resolved_method->is_overpass()) {
+      tty->print("overpass");
+    }
+    tty->cr();
+  }
 }
 
 // throws runtime exceptions
@@ -851,23 +880,24 @@ void LinkResolver::runtime_resolve_special_method(CallInfo& result, methodHandle
                                                   KlassHandle current_klass, bool check_access, TRAPS) {
 
   // resolved method is selected method unless we have an old-style lookup
+  // for a superclass method
+  // Invokespecial for a superinterface, resolved method is selected method,
+  // no checks for shadowing
   methodHandle sel_method(THREAD, resolved_method());
 
   // check if this is an old-style super call and do a new lookup if so
   { KlassHandle method_klass  = KlassHandle(THREAD,
                                             resolved_method->method_holder());
 
-    const bool direct_calling_default_method =
-      resolved_klass() != NULL && resolved_method() != NULL &&
-      resolved_klass->is_interface() && !resolved_method->is_abstract();
-
-    if (!direct_calling_default_method &&
-        check_access &&
+    if (check_access &&
         // a) check if ACC_SUPER flag is set for the current class
         (current_klass->is_super() || !AllowNonVirtualCalls) &&
-        // b) check if the method class is a superclass of the current class (superclass relation is not reflexive!)
-        current_klass->is_subtype_of(method_klass()) &&
-        current_klass() != method_klass() &&
+        // b) check if the class of the resolved_klass is a superclass
+        // (not supertype in order to exclude interface classes) of the current class.
+        // This check is not performed for super.invoke for interface methods
+        // in super interfaces.
+        current_klass->is_subclass_of(resolved_klass()) &&
+        current_klass() != resolved_klass() &&
         // c) check if the method is not <init>
         resolved_method->name() != vmSymbols::object_initializer_name()) {
       // Lookup super method
@@ -905,6 +935,23 @@ void LinkResolver::runtime_resolve_special_method(CallInfo& result, methodHandle
                                                       sel_method->signature()));
   }
 
+  if (TraceItables && Verbose) {
+    ResourceMark rm(THREAD);
+    tty->print("invokespecial selected method: resolved-class:%s, method:%s, method_holder:%s, access_flags: ",
+                 (resolved_klass.is_null() ? "<NULL>" : resolved_klass->internal_name()),
+                 Method::name_and_sig_as_C_string(resolved_klass(),
+                                                  sel_method->name(),
+                                                  sel_method->signature()),
+                 sel_method->method_holder()->internal_name()
+                );
+    sel_method->access_flags().print_on(tty);
+    if (sel_method->method_holder()->is_interface() &&
+        !sel_method->is_abstract()) {
+      tty->print("default");
+    }
+    tty->cr();
+  }
+
   // setup result
   result.set_static(resolved_klass, sel_method, CHECK);
 }
@@ -927,6 +974,18 @@ void LinkResolver::linktime_resolve_virtual_method(methodHandle &resolved_method
   assert(resolved_method->name() != vmSymbols::object_initializer_name(), "should have been checked in verifier");
   assert(resolved_method->name() != vmSymbols::class_initializer_name (), "should have been checked in verifier");
 
+  // check if private interface method
+  if (resolved_klass->is_interface() && resolved_method->is_private()) {
+    ResourceMark rm(THREAD);
+    char buf[200];
+    jio_snprintf(buf, sizeof(buf), "private interface method requires invokespecial, not invokevirtual: method %s, caller-class:%s",
+                 Method::name_and_sig_as_C_string(resolved_klass(),
+                                                  resolved_method->name(),
+                                                  resolved_method->signature()),
+                   (current_klass.is_null() ? "<NULL>" : current_klass->internal_name()));
+    THROW_MSG(vmSymbols::java_lang_IncompatibleClassChangeError(), buf);
+  }
+
   // check if not static
   if (resolved_method->is_static()) {
     ResourceMark rm(THREAD);
@@ -936,6 +995,27 @@ void LinkResolver::linktime_resolve_virtual_method(methodHandle &resolved_method
                                                                                                              resolved_method->signature()));
     THROW_MSG(vmSymbols::java_lang_IncompatibleClassChangeError(), buf);
   }
+
+ if (PrintVtables && Verbose) {
+   ResourceMark rm(THREAD);
+   tty->print("invokevirtual resolved method: caller-class:%s, compile-time-class:%s, method:%s, method_holder:%s, access_flags: ",
+                  (current_klass.is_null() ? "<NULL>" : current_klass->internal_name()),
+                  (resolved_klass.is_null() ? "<NULL>" : resolved_klass->internal_name()),
+                  Method::name_and_sig_as_C_string(resolved_klass(),
+                                                   resolved_method->name(),
+                                                   resolved_method->signature()),
+                  resolved_method->method_holder()->internal_name()
+                 );
+   resolved_method->access_flags().print_on(tty);
+   if (resolved_method->method_holder()->is_interface() &&
+       !resolved_method->is_abstract()) {
+     tty->print("default");
+   }
+   if (resolved_method->is_overpass()) {
+     tty->print("overpass");
+   }
+   tty->cr();
+ }
 }
 
 // throws runtime exceptions
@@ -1012,6 +1092,27 @@ void LinkResolver::runtime_resolve_virtual_method(CallInfo& result,
                                                       selected_method->signature()));
   }
 
+  if (PrintVtables && Verbose) {
+    ResourceMark rm(THREAD);
+    tty->print("invokevirtual selected method: receiver-class:%s, resolved-class:%s, method:%s, method_holder:%s, vtable_index:%d, access_flags: ",
+                   (recv_klass.is_null() ? "<NULL>" : recv_klass->internal_name()),
+                   (resolved_klass.is_null() ? "<NULL>" : resolved_klass->internal_name()),
+                   Method::name_and_sig_as_C_string(resolved_klass(),
+                                                    resolved_method->name(),
+                                                    resolved_method->signature()),
+                   selected_method->method_holder()->internal_name(),
+                   vtable_index
+                  );
+    selected_method->access_flags().print_on(tty);
+    if (selected_method->method_holder()->is_interface() &&
+        !selected_method->is_abstract()) {
+      tty->print("default");
+    }
+    if (resolved_method->is_overpass()) {
+      tty->print("overpass");
+    }
+    tty->cr();
+  }
   // setup result
   result.set_virtual(resolved_klass, recv_klass, resolved_method, selected_method, vtable_index, CHECK);
 }
@@ -1040,6 +1141,17 @@ void LinkResolver::runtime_resolve_interface_method(CallInfo& result, methodHand
   // check if receiver exists
   if (check_null_and_abstract && recv.is_null()) {
     THROW(vmSymbols::java_lang_NullPointerException());
+  }
+
+  // check if private interface method
+  if (resolved_klass->is_interface() && resolved_method->is_private()) {
+    ResourceMark rm(THREAD);
+    char buf[200];
+    jio_snprintf(buf, sizeof(buf), "private interface method requires invokespecial, not invokeinterface: method %s",
+                 Method::name_and_sig_as_C_string(resolved_klass(),
+                                                  resolved_method->name(),
+                                                  resolved_method->signature()));
+    THROW_MSG(vmSymbols::java_lang_IncompatibleClassChangeError(), buf);
   }
 
   // check if receiver klass implements the resolved interface
@@ -1071,28 +1183,15 @@ void LinkResolver::runtime_resolve_interface_method(CallInfo& result, methodHand
                                                       resolved_method->signature()));
   }
   // check access
-  if (sel_method->method_holder()->is_interface()) {
-    // Method holder is an interface. Throw Illegal Access Error if sel_method
-    // is neither public nor private.
-    if (!(sel_method->is_public() || sel_method->is_private())) {
-      ResourceMark rm(THREAD);
-      THROW_MSG(vmSymbols::java_lang_IllegalAccessError(),
-                Method::name_and_sig_as_C_string(recv_klass(),
-                                                 sel_method->name(),
-                                                 sel_method->signature()));
-    }
+  // Throw Illegal Access Error if sel_method is not public.
+  if (!sel_method->is_public()) {
+    ResourceMark rm(THREAD);
+    THROW_MSG(vmSymbols::java_lang_IllegalAccessError(),
+              Method::name_and_sig_as_C_string(recv_klass(),
+                                               sel_method->name(),
+                                               sel_method->signature()));
   }
-  else {
-    // Method holder is a class. Throw Illegal Access Error if sel_method
-    // is not public.
-    if (!sel_method->is_public()) {
-      ResourceMark rm(THREAD);
-      THROW_MSG(vmSymbols::java_lang_IllegalAccessError(),
-                Method::name_and_sig_as_C_string(recv_klass(),
-                                                 sel_method->name(),
-                                                 sel_method->signature()));
-    }
-  }
+
   // check if abstract
   if (check_null_and_abstract && sel_method->is_abstract()) {
     ResourceMark rm(THREAD);
@@ -1109,6 +1208,27 @@ void LinkResolver::runtime_resolve_interface_method(CallInfo& result, methodHand
     return;
   }
   int itable_index = resolved_method()->itable_index();
+
+  if (TraceItables && Verbose) {
+    ResourceMark rm(THREAD);
+    tty->print("invokeinterface selected method: receiver-class:%s, resolved-class:%s, method:%s, method_holder:%s, access_flags: ",
+                   (recv_klass.is_null() ? "<NULL>" : recv_klass->internal_name()),
+                   (resolved_klass.is_null() ? "<NULL>" : resolved_klass->internal_name()),
+                   Method::name_and_sig_as_C_string(resolved_klass(),
+                                                    resolved_method->name(),
+                                                    resolved_method->signature()),
+                   sel_method->method_holder()->internal_name()
+                  );
+    sel_method->access_flags().print_on(tty);
+    if (sel_method->method_holder()->is_interface() &&
+        !sel_method->is_abstract()) {
+      tty->print("default");
+    }
+    if (resolved_method->is_overpass()) {
+      tty->print("overpass");
+    }
+    tty->cr();
+  }
   result.set_interface(resolved_klass, recv_klass, resolved_method, sel_method, itable_index, CHECK);
 }
 
