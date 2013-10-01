@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -57,46 +57,41 @@ import sun.util.logging.PlatformLogger;
 import sun.awt.CausedFocusEvent;
 import sun.awt.AWTAccessor;
 
-public class XTextFieldPeer extends XComponentPeer implements TextFieldPeer {
+final class XTextFieldPeer extends XComponentPeer implements TextFieldPeer {
     private static final PlatformLogger log = PlatformLogger.getLogger("sun.awt.X11.XTextField");
 
-    String text;
-    XAWTTextField xtext;
+    private String text;
+    private final XAWTTextField xtext;
+    private final boolean firstChangeSkipped;
 
-    boolean firstChangeSkipped;
-
-    public XTextFieldPeer(TextField target) {
+    XTextFieldPeer(TextField target) {
         super(target);
-        int start, end;
-        firstChangeSkipped = false;
         text = target.getText();
         xtext = new XAWTTextField(text,this, target.getParent());
         xtext.getDocument().addDocumentListener(xtext);
         xtext.setCursor(target.getCursor());
         XToolkit.specialPeerMap.put(xtext,this);
 
-        TextField txt = (TextField) target;
         initTextField();
-        setText(txt.getText());
-        if (txt.echoCharIsSet()) {
-            setEchoChar(txt.getEchoChar());
+        setText(target.getText());
+        if (target.echoCharIsSet()) {
+            setEchoChar(target.getEchoChar());
         }
         else setEchoChar((char)0);
 
-        start = txt.getSelectionStart();
-        end = txt.getSelectionEnd();
-
-        if (end > start) {
-            select(start, end);
-        }
+        int start = target.getSelectionStart();
+        int end = target.getSelectionEnd();
         // Fix for 5100200
         // Restoring Motif behaviour
         // Since the end position of the selected text can be greater then the length of the text,
         // so we should set caret to max position of the text
-        int caretPosition = Math.min(end, text.length());
-        setCaretPosition(caretPosition);
+        setCaretPosition(Math.min(end, text.length()));
+        if (end > start) {
+            // Should be called after setText() and setCaretPosition()
+            select(start, end);
+        }
 
-        setEditable(txt.isEditable());
+        setEditable(target.isEditable());
 
         // After this line we should not change the component's text
         firstChangeSkipped = true;
@@ -219,7 +214,7 @@ public class XTextFieldPeer extends XComponentPeer implements TextFieldPeer {
         repaint();
     }
 
-    protected boolean setXAWTTextField(String txt) {
+    private boolean setXAWTTextField(String txt) {
         text = txt;
         if (xtext != null)  {
             // JTextField.setText() posts two different events (remove & insert).

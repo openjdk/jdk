@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -64,16 +64,14 @@ import sun.awt.AWTAccessor;
 import sun.awt.SunToolkit;
 
 
-class XTextAreaPeer extends XComponentPeer implements TextAreaPeer {
-    boolean editable;
+final class XTextAreaPeer extends XComponentPeer implements TextAreaPeer {
 
-    AWTTextPane textPane;
-    AWTTextArea jtext;
+    private final AWTTextPane textPane;
+    private final AWTTextArea jtext;
+    private final boolean firstChangeSkipped;
 
-    boolean firstChangeSkipped;
-
-    private final JavaMouseEventHandler javaMouseEventHandler
-        = new JavaMouseEventHandler( this );
+    private final JavaMouseEventHandler javaMouseEventHandler =
+            new JavaMouseEventHandler(this);
 
     /* FIXME  */
 
@@ -98,7 +96,7 @@ class XTextAreaPeer extends XComponentPeer implements TextAreaPeer {
      * Create a Text area.
      */
     XTextAreaPeer(TextArea target) {
-        super( target  );
+        super(target);
 
         // some initializations require that target be set even
         // though init(target) has not been called
@@ -106,8 +104,7 @@ class XTextAreaPeer extends XComponentPeer implements TextAreaPeer {
 
         //ComponentAccessor.enableEvents(target,AWTEvent.MOUSE_WHEEL_EVENT_MASK);
 
-        firstChangeSkipped = false;
-        String text = ((TextArea)target).getText();
+        String text = target.getText();
         jtext = new AWTTextArea(text, this);
         jtext.setWrapStyleWord(true);
         jtext.getDocument().addDocumentListener(jtext);
@@ -143,25 +140,22 @@ class XTextAreaPeer extends XComponentPeer implements TextAreaPeer {
 
         setFont(font);
 
+        // set the text of this object to the text of its target
+        setTextImpl(target.getText());  //?? should this be setText
+
         int start = target.getSelectionStart();
         int end = target.getSelectionEnd();
-
-        if (end > start) {
-            select(start, end);
-        }
         // Fix for 5100200
         // Restoring Motif behaviour
         // Since the end position of the selected text can be greater then the length of the text,
         // so we should set caret to max position of the text
-        int caretPosition = Math.min(end, text.length());
-        setCaretPosition(caretPosition);
-
+        setCaretPosition(Math.min(end, text.length()));
+        if (end > start) {
+            // Should be called after setText() and setCaretPosition()
+            select(start, end);
+        }
         setEditable(target.isEditable());
-
         setScrollBarVisibility();
-        // set the text of this object to the text of its target
-        setTextImpl(target.getText());  //?? should this be setText
-
         // After this line we should not change the component's text
         firstChangeSkipped = true;
     }
@@ -408,7 +402,6 @@ class XTextAreaPeer extends XComponentPeer implements TextAreaPeer {
      * @see java.awt.peer.TextComponentPeer
      */
     public void setEditable(boolean editable) {
-        this.editable = editable;
         if (jtext != null) jtext.setEditable(editable);
         repaintText();
     }
@@ -461,7 +454,7 @@ class XTextAreaPeer extends XComponentPeer implements TextAreaPeer {
         repaintText();
     }
 
-    protected boolean setTextImpl(String txt) {
+    private void setTextImpl(String txt) {
         if (jtext != null) {
             // JTextArea.setText() posts two different events (remove & insert).
             // Since we make no differences between text events,
@@ -474,7 +467,6 @@ class XTextAreaPeer extends XComponentPeer implements TextAreaPeer {
             }
             jtext.getDocument().addDocumentListener(jtext);
         }
-        return true;
     }
 
     /**
