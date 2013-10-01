@@ -706,6 +706,37 @@ public class Check {
         return t;
     }
 
+    // Analog of checkClassType that calls checkClassOrArrayType instead
+    Type checkClassOrArrayType(DiagnosticPosition pos,
+                               Type t, boolean noBounds) {
+        t = checkClassOrArrayType(pos, t);
+        if (noBounds && t.isParameterized()) {
+            List<Type> args = t.getTypeArguments();
+            while (args.nonEmpty()) {
+                if (args.head.hasTag(WILDCARD))
+                    return typeTagError(pos,
+                                        diags.fragment("type.req.exact"),
+                                        args.head);
+                args = args.tail;
+            }
+        }
+        return t;
+    }
+
+    /** Check that type is a reifiable class, interface or array type.
+     *  @param pos           Position to be used for error reporting.
+     *  @param t             The type to be checked.
+     */
+    Type checkReifiableReferenceType(DiagnosticPosition pos, Type t) {
+        t = checkClassOrArrayType(pos, t);
+        if (!t.isErroneous() && !types.isReifiable(t)) {
+            log.error(pos, "illegal.generic.type.for.instof");
+            return types.createErrorType(t);
+        } else {
+            return t;
+        }
+    }
+
     /** Check that type is a reference type, i.e. a class, interface or array type
      *  or a type variable.
      *  @param pos           Position to be used for error reporting.
@@ -2210,6 +2241,9 @@ public class Check {
             seen = seen.prepend(tv);
             for (Type b : types.getBounds(tv))
                 checkNonCyclic1(pos, b, seen);
+        } else if (t.hasTag(ARRAY)) {
+            final ArrayType at = (ArrayType)t.unannotatedType();
+            checkNonCyclic1(pos, at.elemtype, seen);
         }
     }
 
