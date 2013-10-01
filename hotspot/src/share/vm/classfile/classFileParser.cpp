@@ -2545,7 +2545,9 @@ Array<Method*>* ClassFileParser::parse_methods(bool is_interface,
       if (method->is_final()) {
         *has_final_method = true;
       }
-      if (is_interface && !method->is_abstract() && !method->is_static()) {
+      if (is_interface && !(*has_default_methods)
+        && !method->is_abstract() && !method->is_static()
+        && !method->is_private()) {
         // default method
         *has_default_methods = true;
       }
