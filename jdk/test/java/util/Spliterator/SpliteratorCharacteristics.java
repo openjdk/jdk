@@ -23,7 +23,7 @@
 
 /**
  * @test
- * @bug 8020156 8020009 8022326 8012913 8024405
+ * @bug 8020156 8020009 8022326 8012913 8024405 8024408
  * @run testng SpliteratorCharacteristics
  */
 
@@ -46,6 +46,7 @@ import java.util.Spliterator;
 import java.util.Spliterators;
 import java.util.TreeMap;
 import java.util.TreeSet;
+import java.util.WeakHashMap;
 import java.util.concurrent.ConcurrentSkipListMap;
 import java.util.concurrent.ConcurrentSkipListSet;
 import java.util.function.Supplier;
@@ -183,6 +184,11 @@ public class SpliteratorCharacteristics {
     public void testHashMap() {
         assertMapCharacteristics(new HashMap<>(),
                                  Spliterator.SIZED | Spliterator.DISTINCT);
+    }
+
+    public void testWeakHashMap() {
+        assertMapCharacteristics(new WeakHashMap<>(),
+                                 Spliterator.DISTINCT);
     }
 
     public void testHashSet() {
