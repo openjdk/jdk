@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,8 +30,6 @@
  * @author Joseph D. Darcy, ksrini
  */
 import java.io.File;
-import java.util.HashMap;
-import java.util.Map;
 
 public class ChangeDataModel extends TestHelper {
     private static final File TestJar      = new File("test" + JAR_FILE_EXT);
@@ -54,48 +52,14 @@ public class ChangeDataModel extends TestHelper {
             throw new Error("unsupported data model");
         }
 
-        // test dual mode systems
-        if (isDualMode) {
-            // albeit dual mode we may not have the 64 bit components present
-            if (dualModePresent()) {
-                // 32-bit -> 64-bit
-                checkExecCount(javaCmd, "-d64");
-                // 64-bit -> 32-bit
-                checkExecCount(java64Cmd, "-d32");
-
-                checkAcceptance(javaCmd, "-d64");
-                checkAcceptance(java64Cmd, "-d32");
-            } else {
-                System.out.println("Warning: no 64-bit components found;" +
-                    " only one data model tested.");
-            }
+        // Negative tests: ensure that non-dual mode systems reject the
+        // complementary (other) data model
+        if (is32Bit) {
+            checkRejection(javaCmd, "-d64");
+        } else if (is64Bit) {
+            checkRejection(javaCmd, "-d32");
         } else {
-            // Negative tests: ensure that non-dual mode systems reject the
-            // complementary (other) data model
-            if (is32Bit) {
-                checkRejection(javaCmd, "-d64");
-            } else if (is64Bit) {
-                checkRejection(javaCmd, "-d32");
-            } else {
-                throw new Error("unsupported data model");
-            }
-        }
-    }
-
-    static void checkExecCount(String cmd, String dmodel) {
-        Map<String, String> envMap = new HashMap<>();
-        envMap.put(JLDEBUG_KEY, "true");
-        TestResult tr = doExec(envMap, javaCmd, "-d64",
-                "-jar", TestJar.getAbsolutePath());
-        int count = 0;
-        for (String x : tr.testOutput) {
-            if (x.contains(EXPECTED_MARKER)) {
-                count++;
-                if (count > 1) {
-                    System.out.println(tr);
-                    throw new RuntimeException("Maximum exec count of 1 execeeded");
-                }
-            }
+            throw new Error("unsupported data model");
         }
     }
 
