@@ -64,19 +64,21 @@ void CollectorPolicy::initialize_flags() {
     vm_exit_during_initialization("Incompatible initial and maximum heap sizes specified");
   }
 
-  if (!is_size_aligned(MaxMetaspaceSize, max_alignment())) {
-    FLAG_SET_ERGO(uintx, MaxMetaspaceSize,
-        restricted_align_down(MaxMetaspaceSize, max_alignment()));
-  }
+  // Do not use FLAG_SET_ERGO to update MaxMetaspaceSize, since this will
+  // override if MaxMetaspaceSize was set on the command line or not.
+  // This information is needed later to conform to the specification of the
+  // java.lang.management.MemoryUsage API.
+  //
+  // Ideally, we would be able to set the default value of MaxMetaspaceSize in
+  // globals.hpp to the aligned value, but this is not possible, since the
+  // alignment depends on other flags being parsed.
+  MaxMetaspaceSize = restricted_align_down(MaxMetaspaceSize, max_alignment());
 
   if (MetaspaceSize > MaxMetaspaceSize) {
-    FLAG_SET_ERGO(uintx, MetaspaceSize, MaxMetaspaceSize);
+    MetaspaceSize = MaxMetaspaceSize;
   }
 
-  if (!is_size_aligned(MetaspaceSize, min_alignment())) {
-    FLAG_SET_ERGO(uintx, MetaspaceSize,
-        restricted_align_down(MetaspaceSize, min_alignment()));
-  }
+  MetaspaceSize = restricted_align_down(MetaspaceSize, min_alignment());
 
   assert(MetaspaceSize <= MaxMetaspaceSize, "Must be");
 
