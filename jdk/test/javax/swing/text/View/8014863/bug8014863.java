@@ -24,6 +24,7 @@
 /*
  * @test
  * @bug 8014863
+ * @bug 8024395
  * @summary  Tests the calculation of the line breaks when a text is inserted
  * @author Dmitry Markov
  * @library ../../../regtesthelpers
@@ -34,91 +35,107 @@
 import sun.awt.SunToolkit;
 
 import javax.swing.*;
+import javax.swing.text.GlyphView;
+import javax.swing.text.View;
 import javax.swing.text.html.HTMLEditorKit;
 import java.awt.*;
 import java.awt.event.KeyEvent;
+import java.lang.reflect.Field;
+import java.util.ArrayList;
+import java.util.Arrays;
 
 public class bug8014863 {
 
     private static JEditorPane editorPane;
+    private static JFrame frame;
     private static Robot robot;
     private static SunToolkit toolkit;
+
+    private static String text1 = "<p>one two qqqq <em>this is a test sentence</em> qqqq <em>pp</em> qqqq <em>pp</em> " +
+            "qqqq <em>pp</em> qqqq <em>pp</em> qqqq <em>pp</em> qqqq <em>pp</em> qqqq <em>pp</em> qqqq <em>pp</em> qqqq</p>";
+    private static String text2 = "<p>qqqq <em>this is a test sentence</em> qqqq <em>pp</em> qqqq <em>pp</em> " +
+            "qqqq <em>pp</em> qqqq <em>pp</em> qqqq <em>pp</em> qqqq <em>pp</em> qqqq <em>pp</em> qqqq <em>pp</em> qqqq</p>";
+
+    private static ArrayList<GlyphView> glyphViews;
 
     public static void main(String[] args) throws Exception {
         toolkit = (SunToolkit) Toolkit.getDefaultToolkit();
         robot = new Robot();
+        robot.setAutoDelay(50);
+        glyphViews = new ArrayList<GlyphView>();
 
-        createAndShowGUI();
+        createAndShowGUI(text1);
+
+        toolkit.realSync();
+
+        SwingUtilities.invokeAndWait(new Runnable() {
+            public void run() {
+                retrieveGlyphViews(editorPane.getUI().getRootView(editorPane));
+            }
+        });
+        GlyphView [] arr1 = glyphViews.toArray(new GlyphView[glyphViews.size()]);
+
+        frame.dispose();
+        glyphViews.clear();
+
+        createAndShowGUI(text2);
 
         toolkit.realSync();
 
         Util.hitKeys(robot, KeyEvent.VK_HOME);
+        toolkit.realSync();
+
         Util.hitKeys(robot, KeyEvent.VK_O);
-
-        toolkit.realSync();
-
-        if (3 != getNumberOfTextLines()) {
-            throw new RuntimeException("The number of texts lines does not meet the expectation");
-        }
-
         Util.hitKeys(robot, KeyEvent.VK_N);
-
-        toolkit.realSync();
-
-        if (3 != getNumberOfTextLines()) {
-            throw new RuntimeException("The number of texts lines does not meet the expectation");
-        }
-
         Util.hitKeys(robot, KeyEvent.VK_E);
         Util.hitKeys(robot, KeyEvent.VK_SPACE);
         Util.hitKeys(robot, KeyEvent.VK_T);
         Util.hitKeys(robot, KeyEvent.VK_W);
+        Util.hitKeys(robot, KeyEvent.VK_O);
+        Util.hitKeys(robot, KeyEvent.VK_SPACE);
 
         toolkit.realSync();
 
-        if (3 != getNumberOfTextLines()) {
-            throw new RuntimeException("The number of texts lines does not meet the expectation");
+        SwingUtilities.invokeAndWait(new Runnable() {
+            public void run() {
+                retrieveGlyphViews(editorPane.getUI().getRootView(editorPane));
+            }
+        });
+        GlyphView [] arr2 = glyphViews.toArray(new GlyphView[glyphViews.size()]);
+
+        if (arr1.length != arr2.length) {
+            throw new RuntimeException("Test Failed!");
+        }
+
+        for (int i=0; i<arr1.length; i++) {
+            GlyphView v1 = arr1[i];
+            GlyphView v2 = arr2[i];
+            Field field = GlyphView.class.getDeclaredField("breakSpots");
+            field.setAccessible(true);
+            int[] breakSpots1 = (int[])field.get(v1);
+            int[] breakSpots2 = (int[])field.get(v2);
+            if (!Arrays.equals(breakSpots1,breakSpots2)) {
+                throw new RuntimeException("Test Failed!");
+            }
+        }
+
+        frame.dispose();
+    }
+
+    private static void retrieveGlyphViews(View root) {
+        for (int i=0; i<= root.getViewCount()-1; i++) {
+            View view = root.getView(i);
+            if (view instanceof GlyphView && view.isVisible()) {
+                if (!glyphViews.contains(view)) {
+                    glyphViews.add((GlyphView)view);
+                }
+            } else {
+                retrieveGlyphViews(view);
+            }
         }
     }
 
-    private static int getNumberOfTextLines() throws Exception {
-        int numberOfLines = 0;
-        int caretPosition = getCaretPosition();
-        int current = 1;
-        int previous;
-
-        setCaretPosition(current);
-        do {
-            previous = current;
-            Util.hitKeys(robot, KeyEvent.VK_DOWN);
-            toolkit.realSync();
-            current = getCaretPosition();
-            numberOfLines++;
-        } while (current != previous);
-
-        setCaretPosition(caretPosition);
-        return numberOfLines;
-    }
-
-    private static int getCaretPosition() throws Exception {
-        final int[] result = new int[1];
-        SwingUtilities.invokeAndWait(new Runnable() {
-            public void run() {
-                result[0] = editorPane.getCaretPosition();
-            }
-        });
-        return result[0];
-    }
-
-    private static void setCaretPosition(final int position) throws Exception {
-        SwingUtilities.invokeAndWait(new Runnable() {
-            public void run() {
-                editorPane.setCaretPosition(position);
-            }
-        });
-    }
-
-    private static void createAndShowGUI() throws Exception {
+    private static void createAndShowGUI(String text) throws Exception {
         SwingUtilities.invokeAndWait(new Runnable() {
             public void run() {
                 try {
@@ -126,22 +143,17 @@ public class bug8014863 {
                 } catch (Exception ex) {
                     throw new RuntimeException(ex);
                 }
-                JFrame frame = new JFrame();
+                frame = new JFrame();
                 frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 
                 editorPane = new JEditorPane();
                 HTMLEditorKit editorKit = new HTMLEditorKit();
                 editorPane.setEditorKit(editorKit);
-                editorPane.setText("<p>qqqq <em>pp</em> qqqq <em>pp</em> " +
-                        "qqqq <em>pp</em> qqqq <em>pp</em> qqqq <em>pp</em> qqqq <em>pp" +
-                        "</em> qqqq <em>pp</em> qqqq <em>pp</em> qqqq <em>pp</em> qqqq</p>");
+                editorPane.setText(text);
                 editorPane.setCaretPosition(1);
-                // An actual font size depends on OS and might be differnet on various OSs.
-                // It is necessary to calculate the width to meet the expected number of lines.
-                int width = SwingUtilities.computeStringWidth(editorPane.getFontMetrics(editorPane.getFont()),
-                        "qqqq pp qqqq pp qqqq pp qqqqqqqq");
+
                 frame.add(editorPane);
-                frame.setSize(width, 200);
+                frame.setSize(200, 200);
                 frame.setVisible(true);
             }
         });

@@ -71,6 +71,20 @@ public class AnnotationTypeRequiredMemberWriterImpl extends AbstractMemberWriter
     /**
      * {@inheritDoc}
      */
+    public Content getMemberTreeHeader() {
+        return writer.getMemberTreeHeader();
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    public void addAnnotationDetailsMarker(Content memberDetails) {
+        memberDetails.addContent(HtmlConstants.START_OF_ANNOTATION_TYPE_DETAILS);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
     public void addAnnotationDetailsTreeHeader(ClassDoc classDoc,
             Content memberDetailsTree) {
         if (!writer.printedAnnotationHeading) {

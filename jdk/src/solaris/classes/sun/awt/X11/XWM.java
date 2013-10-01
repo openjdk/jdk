@@ -592,7 +592,7 @@ final class XWM
     }
 
     static boolean isMutter() {
-        return isNetWMName("Mutter");
+        return isNetWMName("Mutter") || isNetWMName("GNOME Shell");
     }
 
     static boolean isNonReparentingWM() {

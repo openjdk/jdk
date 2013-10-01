@@ -2069,8 +2069,10 @@ jint G1CollectedHeap::initialize() {
   _g1_storage.initialize(g1_rs, 0);
   _g1_committed = MemRegion((HeapWord*)_g1_storage.low(), (size_t) 0);
   _hrs.initialize((HeapWord*) _g1_reserved.start(),
-                  (HeapWord*) _g1_reserved.end(),
-                  _expansion_regions);
+                  (HeapWord*) _g1_reserved.end());
+  assert(_hrs.max_length() == _expansion_regions,
+         err_msg("max length: %u expansion regions: %u",
+                 _hrs.max_length(), _expansion_regions));
 
   // Do later initialization work for concurrent refinement.
   _cg1r->init();
@@ -4615,7 +4617,7 @@ bool G1ParScanThreadState::verify_ref(narrowOop* ref) const {
   assert(!has_partial_array_mask(ref), err_msg("ref=" PTR_FORMAT, ref));
   oop p = oopDesc::load_decode_heap_oop(ref);
   assert(_g1h->is_in_g1_reserved(p),
-         err_msg("ref=" PTR_FORMAT " p=" PTR_FORMAT, ref, intptr_t(p)));
+         err_msg("ref=" PTR_FORMAT " p=" PTR_FORMAT, ref, (void *)p));
   return true;
 }
 
@@ -4625,11 +4627,11 @@ bool G1ParScanThreadState::verify_ref(oop* ref) const {
     // Must be in the collection set--it's already been copied.
     oop p = clear_partial_array_mask(ref);
     assert(_g1h->obj_in_cs(p),
-           err_msg("ref=" PTR_FORMAT " p=" PTR_FORMAT, ref, intptr_t(p)));
+           err_msg("ref=" PTR_FORMAT " p=" PTR_FORMAT, ref, (void *)p));
   } else {
     oop p = oopDesc::load_decode_heap_oop(ref);
     assert(_g1h->is_in_g1_reserved(p),
-           err_msg("ref=" PTR_FORMAT " p=" PTR_FORMAT, ref, intptr_t(p)));
+           err_msg("ref=" PTR_FORMAT " p=" PTR_FORMAT, ref, (void *)p));
   }
   return true;
 }

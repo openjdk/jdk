@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -45,6 +45,16 @@ public class Class1 {
     public static final String TEST_11_PASSES = "Test 11 passes";
 
     /**
+     * Invalid (non-constant field): {@value}
+     */
+    public static String TEST_12_ERROR = "Test 12 generates an error message";
+
+    /**
+     * Invalid (null): {@value}
+     */
+    public static final String NULL = null;
+
+    /**
      * Result:  {@value TEST_3_PASSES}
      */
     public int field;
@@ -58,6 +68,21 @@ public class Class1 {
      * Result:  {@value TEST_5_PASSES}
      */
     public void method() {}
+
+    /**
+     * Result:  {@value TEST_12_ERROR}
+     */
+    public void invalidValueTag1() {}
+
+    /**
+     * Result:  {@value}
+     */
+    public void invalidValueTag2() {}
+
+    /**
+     * Result:  {@value NULL}
+     */
+    public void testNullConstant() {}
 
     /**
      * Result:  {@value pkg1.Class1#TEST_6_PASSES}

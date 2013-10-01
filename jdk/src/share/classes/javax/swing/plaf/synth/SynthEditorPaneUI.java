@@ -33,7 +33,7 @@ import javax.swing.plaf.basic.BasicEditorPaneUI;
 import java.beans.PropertyChangeEvent;
 
 /**
- * Provides the Synth L&F UI delegate for
+ * Provides the Synth L&amp;F UI delegate for
  * {@link javax.swing.JEditorPane}.
  *
  * @author  Shannon Hickey
@@ -58,7 +58,7 @@ public class SynthEditorPaneUI extends BasicEditorPaneUI implements SynthUI {
     }
 
     /**
-     * @inheritDoc
+     * {@inheritDoc}
      */
     @Override
     protected void installDefaults() {
@@ -74,7 +74,7 @@ public class SynthEditorPaneUI extends BasicEditorPaneUI implements SynthUI {
     }
 
     /**
-     * @inheritDoc
+     * {@inheritDoc}
      */
     @Override
     protected void uninstallDefaults() {
@@ -131,7 +131,7 @@ public class SynthEditorPaneUI extends BasicEditorPaneUI implements SynthUI {
     }
 
     /**
-     * @inheritDoc
+     * {@inheritDoc}
      */
     @Override
     public SynthContext getContext(JComponent c) {
@@ -181,7 +181,7 @@ public class SynthEditorPaneUI extends BasicEditorPaneUI implements SynthUI {
     }
 
     /**
-     * @inheritDoc
+     * {@inheritDoc}
      */
     @Override
     protected void paintBackground(Graphics g) {
@@ -194,7 +194,7 @@ public class SynthEditorPaneUI extends BasicEditorPaneUI implements SynthUI {
     }
 
     /**
-     * @inheritDoc
+     * {@inheritDoc}
      */
     @Override
     public void paintBorder(SynthContext context, Graphics g, int x,

@@ -563,7 +563,7 @@ void DumpWriter::write_u8(u8 x) {
 }
 
 void DumpWriter::write_objectID(oop o) {
-  address a = (address)((uintptr_t)o);
+  address a = (address)o;
 #ifdef _LP64
   write_u8((u8)a);
 #else

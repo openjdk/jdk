@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -711,7 +711,7 @@ void AwtTrayIcon::SetToolTip(LPCTSTR tooltip)
         _tcsncpy(m_nid.szTip, tooltip, TRAY_ICON_TOOLTIP_MAX_SIZE);
         m_nid.szTip[TRAY_ICON_TOOLTIP_MAX_SIZE - 1] = '\0';
     } else {
-        _tcscpy(m_nid.szTip, tooltip);
+        _tcscpy_s(m_nid.szTip, TRAY_ICON_TOOLTIP_MAX_SIZE, tooltip);
     }
 
     SendTrayMessage(NIM_MODIFY);
@@ -817,7 +817,7 @@ void AwtTrayIcon::DisplayMessage(LPCTSTR caption, LPCTSTR text, LPCTSTR msgType)
         m_nid.szInfoTitle[TRAY_ICON_BALLOON_TITLE_MAX_SIZE - 1] = '\0';
 
     } else {
-        _tcscpy(m_nid.szInfoTitle, caption);
+        _tcscpy_s(m_nid.szInfoTitle, TRAY_ICON_BALLOON_TITLE_MAX_SIZE, caption);
     }
 
     if (text[0] == '\0') {
@@ -830,7 +830,7 @@ void AwtTrayIcon::DisplayMessage(LPCTSTR caption, LPCTSTR text, LPCTSTR msgType)
         m_nid.szInfo[TRAY_ICON_BALLOON_INFO_MAX_SIZE - 1] = '\0';
 
     } else {
-        _tcscpy(m_nid.szInfo, text);
+        _tcscpy_s(m_nid.szInfo, TRAY_ICON_BALLOON_INFO_MAX_SIZE, text);
     }
 
     SendTrayMessage(NIM_MODIFY);

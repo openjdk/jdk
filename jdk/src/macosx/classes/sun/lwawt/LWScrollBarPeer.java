@@ -34,10 +34,14 @@ import java.awt.peer.ScrollbarPeer;
 
 import javax.swing.JScrollBar;
 
+/**
+ * Lightweight implementation of {@link ScrollbarPeer}. Delegates most of the
+ * work to the {@link JScrollBar}.
+ */
 final class LWScrollBarPeer extends LWComponentPeer<Scrollbar, JScrollBar>
         implements ScrollbarPeer, AdjustmentListener {
 
-    //JScrollBar fires two changes with firePropertyChange (one for old value
+    // JScrollBar fires two changes with firePropertyChange (one for old value
     // and one for new one.
     // We save the last value and don't fire event if not changed.
     private int currentValue;
@@ -48,7 +52,7 @@ final class LWScrollBarPeer extends LWComponentPeer<Scrollbar, JScrollBar>
     }
 
     @Override
-    protected JScrollBar createDelegate() {
+    JScrollBar createDelegate() {
         return new JScrollBar();
     }
 

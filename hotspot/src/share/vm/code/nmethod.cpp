@@ -1965,7 +1965,7 @@ public:
     if (!_detected_scavenge_root)  _print_nm->print_on(tty, "new scavenge root");
     tty->print_cr(""PTR_FORMAT"[offset=%d] detected scavengable oop "PTR_FORMAT" (found at "PTR_FORMAT")",
                   _print_nm, (int)((intptr_t)p - (intptr_t)_print_nm),
-                  (intptr_t)(*p), (intptr_t)p);
+                  (void *)(*p), (intptr_t)p);
     (*p)->print();
   }
 #endif //PRODUCT
@@ -2345,7 +2345,7 @@ public:
       _ok = false;
     }
     tty->print_cr("*** non-oop "PTR_FORMAT" found at "PTR_FORMAT" (offset %d)",
-                  (intptr_t)(*p), (intptr_t)p, (int)((intptr_t)p - (intptr_t)_nm));
+                  (void *)(*p), (intptr_t)p, (int)((intptr_t)p - (intptr_t)_nm));
   }
   virtual void do_oop(narrowOop* p) { ShouldNotReachHere(); }
 };
@@ -2466,7 +2466,7 @@ public:
       _ok = false;
     }
     tty->print_cr("*** scavengable oop "PTR_FORMAT" found at "PTR_FORMAT" (offset %d)",
-                  (intptr_t)(*p), (intptr_t)p, (int)((intptr_t)p - (intptr_t)_nm));
+                  (void *)(*p), (intptr_t)p, (int)((intptr_t)p - (intptr_t)_nm));
     (*p)->print();
   }
   virtual void do_oop(narrowOop* p) { ShouldNotReachHere(); }

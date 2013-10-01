@@ -40,7 +40,7 @@ import javax.swing.text.View;
 
 
 /**
- * Standard tool tip L&F.
+ * Standard tool tip L&amp;F.
  * <p>
  *
  * @author Dave Moore
