@@ -120,7 +120,14 @@ public class StrongSecureRandom {
 
     private static void testStrongInstance(boolean expected) throws Exception {
 
-        boolean result = (SecureRandom.getStrongSecureRandom() != null);
+        boolean result;
+
+        try {
+            SecureRandom.getInstanceStrong();
+            result = true;
+        } catch (NoSuchAlgorithmException e) {
+            result = false;
+        }
 
         if (expected != result) {
             throw new Exception("Received: " + result);
