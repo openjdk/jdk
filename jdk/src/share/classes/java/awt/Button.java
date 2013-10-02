@@ -40,7 +40,7 @@ import javax.accessibility.*;
  * under the Solaris operating system:
  * <p>
  * <img src="doc-files/Button-1.gif" alt="The following context describes the graphic"
- * ALIGN=center HSPACE=10 VSPACE=7>
+ * style="float:center; margin: 7px 10px;">
  * <p>
  * The first view shows the button as it appears normally.
  * The second view shows the button

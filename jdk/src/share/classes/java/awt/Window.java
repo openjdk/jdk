@@ -85,7 +85,7 @@ import sun.util.logging.PlatformLogger;
  * <p>
  * <img src="doc-files/MultiScreen.gif"
  * alt="Diagram shows virtual device containing 4 physical screens. Primary physical screen shows coords (0,0), other screen shows (-80,-100)."
- * ALIGN=center HSPACE=10 VSPACE=7>
+ * style="float:center; margin: 7px 10px;">
  * <p>
  * In such an environment, when calling {@code setLocation},
  * you must pass a virtual coordinate to this method.  Similarly,

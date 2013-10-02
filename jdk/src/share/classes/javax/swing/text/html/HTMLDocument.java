@@ -195,14 +195,14 @@ import static sun.swing.SwingUtilities2.IMPLIED_CR;
  *     <th><code>setOuterHTML</code></th>
  *   </tr>
  *   <tr valign="top">
- *     <td nowrap="nowrap">
+ *     <td style="white-space:nowrap">
  *       <div style="background-color: silver;">
  *         <p>Paragraph 1</p>
  *         <p>Paragraph 2</p>
  *       </div>
  *     </td>
  * <!--insertAfterStart-->
- *     <td nowrap="nowrap">
+ *     <td style="white-space:nowrap">
  *       <div style="background-color: silver;">
  *         <ul style="color: red;">
  *           <li>List Item</li>
@@ -212,7 +212,7 @@ import static sun.swing.SwingUtilities2.IMPLIED_CR;
  *       </div>
  *     </td>
  * <!--insertBeforeEnd-->
- *     <td nowrap="nowrap">
+ *     <td style="white-space:nowrap">
  *       <div style="background-color: silver;">
  *         <p>Paragraph 1</p>
  *         <p>Paragraph 2</p>
@@ -222,7 +222,7 @@ import static sun.swing.SwingUtilities2.IMPLIED_CR;
  *       </div>
  *     </td>
  * <!--insertBeforeStart-->
- *     <td nowrap="nowrap">
+ *     <td style="white-space:nowrap">
  *       <ul style="color: red;">
  *         <li>List Item</li>
  *       </ul>
@@ -232,7 +232,7 @@ import static sun.swing.SwingUtilities2.IMPLIED_CR;
  *       </div>
  *     </td>
  * <!--insertAfterEnd-->
- *     <td nowrap="nowrap">
+ *     <td style="white-space:nowrap">
  *       <div style="background-color: silver;">
  *         <p>Paragraph 1</p>
  *         <p>Paragraph 2</p>
@@ -242,7 +242,7 @@ import static sun.swing.SwingUtilities2.IMPLIED_CR;
  *       </ul>
  *     </td>
  * <!--setInnerHTML-->
- *     <td nowrap="nowrap">
+ *     <td style="white-space:nowrap">
  *       <div style="background-color: silver;">
  *         <ul style="color: red;">
  *           <li>List Item</li>
@@ -250,7 +250,7 @@ import static sun.swing.SwingUtilities2.IMPLIED_CR;
  *       </div>
  *     </td>
  * <!--setOuterHTML-->
- *     <td nowrap="nowrap">
+ *     <td style="white-space:nowrap">
  *       <ul style="color: red;">
  *         <li>List Item</li>
  *       </ul>

@@ -82,7 +82,7 @@ public abstract class Line2D implements Shape, Cloneable {
         public float y2;
 
         /**
-         * Constructs and initializes a Line with coordinates (0, 0) -> (0, 0).
+         * Constructs and initializes a Line with coordinates (0, 0) &rarr; (0, 0).
          * @since 1.2
          */
         public Float() {
@@ -249,7 +249,7 @@ public abstract class Line2D implements Shape, Cloneable {
         public double y2;
 
         /**
-         * Constructs and initializes a Line with coordinates (0, 0) -> (0, 0).
+         * Constructs and initializes a Line with coordinates (0, 0) &rarr; (0, 0).
          * @since 1.2
          */
         public Double() {
@@ -623,7 +623,7 @@ public abstract class Line2D implements Shape, Cloneable {
      *           specified line segment
      * @param y2 the Y coordinate of the end point of the
      *           specified line segment
-     * @return <true> if this line segment and the specified line segment
+     * @return {@code <true>} if this line segment and the specified line segment
      *                  intersect each other; <code>false</code> otherwise.
      * @since 1.2
      */

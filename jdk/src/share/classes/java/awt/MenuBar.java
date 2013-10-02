@@ -45,7 +45,7 @@ import javax.accessibility.*;
  * <img src="doc-files/MenuBar-1.gif"
  * alt="Diagram of MenuBar containing 2 menus: Examples and Options.
  * Examples menu is expanded showing items: Basic, Simple, Check, and More Examples."
- * ALIGN=center HSPACE=10 VSPACE=7>
+ * style="float:center; margin: 7px 10px;">
  * <p>
  * A menu bar handles keyboard shortcuts for menu items, passing them
  * along to its child menus.

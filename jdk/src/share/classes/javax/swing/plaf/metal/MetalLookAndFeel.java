@@ -293,8 +293,8 @@ public class MetalLookAndFeel extends BasicLookAndFeel
      * <table border="1" cellpadding="1" cellspacing="0"
      *         summary="Metal's system color mapping">
      *  <tr valign="top"  align="left">
-     *    <th bgcolor="#CCCCFF" align="left">Key
-     *    <th bgcolor="#CCCCFF" align="left">Value
+     *    <th style="background-color:#CCCCFF" align="left">Key
+     *    <th style="background-color:#CCCCFF" align="left">Value
      *  <tr valign="top"  align="left">
      *    <td>"desktop"
      *    <td>{@code theme.getDesktopColor()}

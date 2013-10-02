@@ -65,8 +65,8 @@ import javax.print.attribute.DocAttributeSet;
  * representation object "consumes" the print data as the caller obtains the
  * print data, such as a print data representation object which is a stream.
  * Once the Print Job has called {@link #getPrintData()
- * <CODE>getPrintData()</CODE>} and obtained the stream, any further calls to
- * {@link #getPrintData() <CODE>getPrintData()</CODE>} will return the same
+ * getPrintData()} and obtained the stream, any further calls to
+ * {@link #getPrintData() getPrintData()} will return the same
  * stream object upon which reading may already be in progress, <I>not</I> a new
  * stream object that will re-read the print data from the beginning. Specifying
  * a doc object to behave this way simplifies the implementation of doc objects,
@@ -83,7 +83,7 @@ import javax.print.attribute.DocAttributeSet;
  * object is constructed. In this case the doc object might provide a "lazy"
  * implementation that generates the print data representation object (and/or
  * the print data) only when the Print Job calls for it (when the Print Job
- * calls the {@link #getPrintData() <CODE>getPrintData()</CODE>} method).
+ * calls the {@link #getPrintData() getPrintData()} method).
  * <P>
  * There is no restriction on the number of client threads that may be
  * simultaneously accessing the same doc. Therefore, all implementations of

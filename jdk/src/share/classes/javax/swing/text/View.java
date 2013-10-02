@@ -68,7 +68,7 @@ A view has the following responsibilities:
     implementation, the minimum span will be &lt;= the preferred span which in turn
     will be &lt;= the maximum span.
     </p>
-    <p align=center><img src="doc-files/View-flexibility.jpg"
+    <p style="text-align:center"><img src="doc-files/View-flexibility.jpg"
                      alt="The above text describes this graphic.">
     <p>The minimum set of methods for layout are:
     <ul>
@@ -95,7 +95,7 @@ A view has the following responsibilities:
     This allows parent View implementations to cache the child requirements if
     desired.  The calling sequence looks something like the following:
     </p>
-    <p align=center>
+    <p style="text-align:center">
       <img src="doc-files/View-layout.jpg"
        alt="Sample calling sequence between parent view and child view:
        setSize, getMinimum, getPreferred, getMaximum, getAlignment, setSize">

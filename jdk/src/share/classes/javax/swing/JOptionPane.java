@@ -108,16 +108,16 @@ import static javax.swing.ClientPropertyKey.PopupFactory_FORCE_HEAVYWEIGHT_POPUP
  * the caller until the user's interaction is complete.
  * <p>
  *
- * <table cellspacing=6 cellpadding=4 border=0 align=right summary="layout">
+ * <table cellspacing=6 cellpadding=4 border=0 style="float:right" summary="layout">
  * <tr>
- *  <td bgcolor=#FFe0d0 rowspan=2>icon</td>
- *  <td bgcolor=#FFe0d0>message</td>
+ *  <td style="background-color:#FFe0d0" rowspan=2>icon</td>
+ *  <td style="background-color:#FFe0d0">message</td>
  * </tr>
  * <tr>
- *  <td bgcolor=#FFe0d0>input value</td>
+ *  <td style="background-color:#FFe0d0">input value</td>
  * </tr>
  * <tr>
- *   <td bgcolor=#FFe0d0 colspan=2>option buttons</td>
+ *   <td style="background-color:#FFe0d0" colspan=2>option buttons</td>
  * </tr>
  * </table>
  *
@@ -127,7 +127,7 @@ import static javax.swing.ClientPropertyKey.PopupFactory_FORCE_HEAVYWEIGHT_POPUP
  * ultimately responsible for the final result.  In particular, the
  * look-and-feels will adjust the layout to accommodate the option pane's
  * <code>ComponentOrientation</code> property.
- * <br clear=all>
+ * <br style="clear:all">
  * <p>
  * <b>Parameters:</b><br>
  * The parameters to these methods follow consistent patterns:

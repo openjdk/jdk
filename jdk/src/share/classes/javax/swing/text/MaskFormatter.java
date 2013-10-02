@@ -40,7 +40,7 @@ import javax.swing.*;
  * <table border=1 summary="Valid characters and their descriptions">
  * <tr>
  *    <th>Character&nbsp;</th>
- *    <th><p align="left">Description</p></th>
+ *    <th><p style="text-align:left">Description</p></th>
  * </tr>
  * <tr>
  *    <td>#</td>
