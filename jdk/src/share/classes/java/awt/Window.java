@@ -226,6 +226,7 @@ public class Window extends Container implements Accessible {
     boolean     syncLWRequests = false;
     transient boolean beforeFirstShow = true;
     private transient boolean disposing = false;
+    transient WindowDisposerRecord disposerRecord = null;
 
     static final int OPENED = 0x01;
 
@@ -437,18 +438,28 @@ public class Window extends Container implements Accessible {
 
     transient Object anchor = new Object();
     static class WindowDisposerRecord implements sun.java2d.DisposerRecord {
-        final WeakReference<Window> owner;
+        WeakReference<Window> owner;
         final WeakReference<Window> weakThis;
         final WeakReference<AppContext> context;
+
         WindowDisposerRecord(AppContext context, Window victim) {
-            owner = new WeakReference<Window>(victim.getOwner());
             weakThis = victim.weakThis;
             this.context = new WeakReference<AppContext>(context);
         }
+
+        public void updateOwner() {
+            Window victim = weakThis.get();
+            owner = (victim == null)
+                    ? null
+                    : new WeakReference<Window>(victim.getOwner());
+        }
+
         public void dispose() {
-            Window parent = owner.get();
-            if (parent != null) {
-                parent.removeOwnedWindow(weakThis);
+            if (owner != null) {
+                Window parent = owner.get();
+                if (parent != null) {
+                    parent.removeOwnedWindow(weakThis);
+                }
             }
             AppContext ac = context.get();
             if (null != ac) {
@@ -502,6 +513,8 @@ public class Window extends Container implements Accessible {
         }
 
         modalExclusionType = Dialog.ModalExclusionType.NO_EXCLUDE;
+        disposerRecord = new WindowDisposerRecord(appContext, this);
+        sun.java2d.Disposer.addRecord(anchor, disposerRecord);
 
         SunToolkit.checkAndSetPolicy(this);
     }
@@ -619,9 +632,8 @@ public class Window extends Container implements Accessible {
             owner.addOwnedWindow(weakThis);
         }
 
-        // Fix for 6758673: this call is moved here from init(gc), because
         // WindowDisposerRecord requires a proper value of parent field.
-        Disposer.addRecord(anchor, new WindowDisposerRecord(appContext, this));
+        disposerRecord.updateOwner();
     }
 
     /**
@@ -2774,6 +2786,7 @@ public class Window extends Container implements Accessible {
     void connectOwnedWindow(Window child) {
         child.parent = this;
         addOwnedWindow(child.weakThis);
+        child.disposerRecord.updateOwner();
     }
 
     private void addToWindowList() {
@@ -2936,7 +2949,8 @@ public class Window extends Container implements Accessible {
         weakThis = new WeakReference<>(this);
 
         anchor = new Object();
-        sun.java2d.Disposer.addRecord(anchor, new WindowDisposerRecord(appContext, this));
+        disposerRecord = new WindowDisposerRecord(appContext, this);
+        sun.java2d.Disposer.addRecord(anchor, disposerRecord);
 
         addToWindowList();
         initGC(null);
