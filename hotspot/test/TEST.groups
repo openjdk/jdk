@@ -65,7 +65,6 @@ needs_jdk = \
   gc/metaspace/CompressedClassSpaceSizeInJmapHeap.java \
   gc/metaspace/TestMetaspacePerfCounters.java \
   runtime/6819213/TestBootNativeLibraryPath.java \
-  runtime/6878713/Test6878713.sh \
   runtime/6925573/SortMethodsTest.java \
   runtime/7107135/Test7107135.sh \
   runtime/7158988/FieldMonitor.java \
