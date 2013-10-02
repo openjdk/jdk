@@ -38,7 +38,7 @@ default:: $(BUILD_PCH_FILE) $(AOUT) checkAndBuildSA
 !include ../local.make
 !include compile.make
 
-CXX_FLAGS=$(CXX_FLAGS) $(FASTDEBUG_OPT_OPTION) /D "CHECK_UNHANDLED_OOPS"
+CXX_FLAGS=$(CXX_FLAGS) $(FASTDEBUG_OPT_OPTION)
 
 !include $(WorkSpace)/make/windows/makefiles/vm.make
 !include local.make
