@@ -1150,8 +1150,11 @@ public class LWWindowPeer
             return false;
         }
 
-        Window currentActive = KeyboardFocusManager.
-            getCurrentKeyboardFocusManager().getActiveWindow();
+        AppContext targetAppContext = AWTAccessor.getComponentAccessor().getAppContext(getTarget());
+        KeyboardFocusManager kfm = AWTAccessor.getKeyboardFocusManagerAccessor()
+                .getCurrentKeyboardFocusManager(targetAppContext);
+        Window currentActive = kfm.getActiveWindow();
+
 
         Window opposite = LWKeyboardFocusManagerPeer.getInstance().
             getCurrentFocusedWindow();
