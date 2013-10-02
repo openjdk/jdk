@@ -23,13 +23,8 @@
  * questions.
  */
 
-package com.apple.laf;
+package com.apple.eawt;
 
-import javax.swing.*;
-import javax.swing.plaf.UIResource;
-
-class AquaComboBoxRenderer extends AquaComboBoxRendererInternal implements UIResource {
-    public AquaComboBoxRenderer(final JComboBox comboBox) {
-        super(comboBox);
-    }
+interface _OpenAppHandler {
+    void handleOpenApp();
 }
