@@ -44,12 +44,12 @@ import javax.accessibility.*;
  * <a href="http://java.sun.com/docs/books/tutorial/uiswing/components/layeredpane.html">How to Use a Layered Pane</a>,
  * a section in <em>The Java Tutorial</em>.
  * <P>
- * <TABLE ALIGN="RIGHT" BORDER="0" SUMMARY="layout">
+ * <TABLE STYLE="FLOAT:RIGHT" BORDER="0" SUMMARY="layout">
  * <TR>
  *   <TD ALIGN="CENTER">
- *     <P ALIGN="CENTER"><IMG SRC="doc-files/JLayeredPane-1.gif"
+ *     <P STYLE="TEXT-ALIGN:CENTER"><IMG SRC="doc-files/JLayeredPane-1.gif"
  *     alt="The following text describes this image."
- *     WIDTH="269" HEIGHT="264" ALIGN="BOTTOM" BORDER="0">
+ *     WIDTH="269" HEIGHT="264" STYLE="FLOAT:BOTTOM; BORDER=0">
  *   </TD>
  * </TR>
  * </TABLE>

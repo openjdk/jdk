@@ -46,7 +46,7 @@ import javax.swing.event.*;
  * used are the location between two characters.  As the diagram
  * below shows, a location in a text document can be referred to
  * as a position, or an offset. This position is zero-based.
- * <p align=center><img src="doc-files/Document-coord.gif"
+ * <p style="text-align:center"><img src="doc-files/Document-coord.gif"
  * alt="The following text describes this graphic.">
  * <p>
  * In the example, if the content of a document is the
@@ -69,7 +69,7 @@ import javax.swing.event.*;
  * Exactly what structure is modeled is up to a particular Document
  * implementation.  It might be as simple as no structure (i.e. a
  * simple text field), or it might be something like diagram below.
- * <p align=center><img src="doc-files/Document-structure.gif"
+ * <p style="text-align:center"><img src="doc-files/Document-structure.gif"
  * alt="Diagram shows Book->Chapter->Paragraph">
  * <p>
  * The unit of structure (i.e. a node of the tree) is referred to
@@ -122,7 +122,7 @@ import javax.swing.event.*;
  * generated since that edit is actually the source of the change
  * rather than a mutation to the <code>Document</code> made through its
  * api.
- * <p align=center><img src="doc-files/Document-notification.gif"
+ * <p style="text-align:center"><img src="doc-files/Document-notification.gif"
  * alt="The preceeding text describes this graphic.">
  * <p>
  * Referring to the above diagram, suppose that the component shown
@@ -267,7 +267,7 @@ public interface Document {
      * For a removal, the end of the removal range is collapsed
      * down to the start of the range, and any marks in the removal
      * range are collapsed down to the start of the range.
-     * <p align=center><img src="doc-files/Document-remove.gif"
+     * <p style="text-align:center"><img src="doc-files/Document-remove.gif"
      *  alt="Diagram shows removal of 'quick' from 'The quick brown fox.'">
      * <p>
      * If the Document structure changed as result of the removal,
@@ -300,7 +300,7 @@ public interface Document {
      * insertUpdate method on the DocumentListener.
      * The offset and length of the generated DocumentEvent
      * will indicate what change was actually made to the Document.
-     * <p align=center><img src="doc-files/Document-insert.gif"
+     * <p style="text-align:center"><img src="doc-files/Document-insert.gif"
      *  alt="Diagram shows insertion of 'quick' in 'The quick brown fox'">
      * <p>
      * If the Document structure changed as result of the insertion,

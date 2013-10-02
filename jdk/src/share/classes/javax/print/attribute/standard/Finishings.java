@@ -42,16 +42,16 @@ import javax.print.attribute.PrintJobAttribute;
  * Standard Finishings values are:
  * <TABLE BORDER=0 CELLPADDING=0 CELLSPACING=0 WIDTH=100% SUMMARY="layout">
  * <TR>
- * <TD WIDTH=10%>
+ * <TD STYLE="WIDTH:10%">
  * &nbsp;
  * </TD>
- * <TD WIDTH=27%>
+ * <TD STYLE="WIDTH:27%">
  * {@link #NONE NONE}
  * </TD>
- * <TD WIDTH=27%>
+ * <TD STYLE="WIDTH:27%">
  * {@link #STAPLE STAPLE}
  * </TD>
- * <TD WIDTH=36%>
+ * <TD STYLE="WIDTH:36%">
  * {@link #EDGE_STITCH EDGE_STITCH}
  * </TD>
  * </TR>
@@ -78,70 +78,70 @@ import javax.print.attribute.PrintJobAttribute;
  * corner or an edge as if the document were a portrait document:
  * <TABLE BORDER=0 CELLPADDING=0 CELLSPACING=0 WIDTH=100% SUMMARY="layout">
  * <TR>
- * <TD WIDTH=10%>
+ * <TD STYLE="WIDTH:10%">
  * &nbsp;
  * </TD>
- * <TD WIDTH=27%>
+ * <TD STYLE="WIDTH:27%">
  * {@link #STAPLE_TOP_LEFT STAPLE_TOP_LEFT}
  * </TD>
- * <TD WIDTH=27%>
+ * <TD STYLE="WIDTH:27%">
  * {@link #EDGE_STITCH_LEFT EDGE_STITCH_LEFT}
  * </TD>
- * <TD WIDTH=27%>
+ * <TD STYLE="WIDTH:27%">
  * {@link #STAPLE_DUAL_LEFT STAPLE_DUAL_LEFT}
  * </TD>
- * <TD WIDTH=9%>
+ * <TD STYLE="WIDTH:9%">
  * &nbsp;
  * </TD>
  * </TR>
  * <TR>
- * <TD WIDTH=10%>
+ * <TD STYLE="WIDTH:10%">
  * &nbsp;
  * </TD>
- * <TD WIDTH=27%>
+ * <TD STYLE="WIDTH:27%">
  * {@link #STAPLE_BOTTOM_LEFT STAPLE_BOTTOM_LEFT}
  * </TD>
- * <TD WIDTH=27%>
+ * <TD STYLE="WIDTH:27%">
  * {@link #EDGE_STITCH_TOP EDGE_STITCH_TOP}
  * </TD>
- * <TD WIDTH=27%>
+ * <TD STYLE="WIDTH:27%">
  * {@link #STAPLE_DUAL_TOP STAPLE_DUAL_TOP}
  * </TD>
- * <TD WIDTH=9%>
+ * <TD STYLE="WIDTH:9%">
  * &nbsp;
  * </TD>
  * </TR>
  * <TR>
- * <TD WIDTH=10%>
+ * <TD STYLE="WIDTH:10%">
  * &nbsp;
  * </TD>
- * <TD WIDTH=27%>
+ * <TD STYLE="WIDTH:27%">
  * {@link #STAPLE_TOP_RIGHT STAPLE_TOP_RIGHT}
  * </TD>
- * <TD WIDTH=27%>
+ * <TD STYLE="WIDTH:27%">
  * {@link #EDGE_STITCH_RIGHT EDGE_STITCH_RIGHT}
  * </TD>
- * <TD WIDTH=27%>
+ * <TD STYLE="WIDTH:27%">
  * {@link #STAPLE_DUAL_RIGHT STAPLE_DUAL_RIGHT}
  * </TD>
- * <TD WIDTH=9%>
+ * <TD STYLE="WIDTH:9%">
  * &nbsp;
  * </TD>
  * </TR>
  * <TR>
- * <TD WIDTH=10%>
+ * <TD STYLE="WIDTH:10%">
  * &nbsp;
  * </TD>
- * <TD WIDTH=27%>
+ * <TD STYLE="WIDTH:27%">
  * {@link #STAPLE_BOTTOM_RIGHT STAPLE_BOTTOM_RIGHT}
  * </TD>
- * <TD WIDTH=27%>
+ * <TD STYLE="WIDTH:27%">
  * {@link #EDGE_STITCH_BOTTOM EDGE_STITCH_BOTTOM}
  * </TD>
- * <TD WIDTH=27%>
+ * <TD STYLE="WIDTH:27%">
  * {@link #STAPLE_DUAL_BOTTOM STAPLE_DUAL_BOTTOM}
  * </TD>
- * <TD WIDTH=9%>
+ * <TD STYLE="WIDTH:9%">
  * &nbsp;
  * </TD>
  * </TR>

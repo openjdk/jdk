@@ -56,7 +56,7 @@ import javax.print.attribute.PrintRequestAttribute;
  * any specified finishings.
  * <code>PrintService</code> provides the method to query the supported
  * values of an attribute in a suitable context :
- * See  {@link javax.print.PrintService#getSupportedAttributeValues(Class,DocFlavor, AttributeSet) <code>PrintService.getSupportedAttributeValues()</code>}
+ * See  {@link javax.print.PrintService#getSupportedAttributeValues(Class,DocFlavor, AttributeSet) PrintService.getSupportedAttributeValues()}
  * <p>
  * The rectangular printable area is defined thus:
  * The (x,y) origin is positioned at the top-left of the paper in portrait
@@ -153,8 +153,8 @@ public final class MediaPrintableArea
      * Get the printable area as an array of 4 values in the order
      * x, y, w, h. The values returned are in the given units.
      * @param  units
-     *     Unit conversion factor, e.g. {@link #INCH <CODE>INCH</CODE>} or
-     *     {@link #MM <CODE>MM</CODE>}.
+     *     Unit conversion factor, e.g. {@link #INCH INCH} or
+     *     {@link #MM MM}.
      *
      * @return printable area as array of x, y, w, h in the specified units.
      *
@@ -170,8 +170,8 @@ public final class MediaPrintableArea
      * Get the x location of the origin of the printable area in the
      * specified units.
      * @param  units
-     *     Unit conversion factor, e.g. {@link #INCH <CODE>INCH</CODE>} or
-     *     {@link #MM <CODE>MM</CODE>}.
+     *     Unit conversion factor, e.g. {@link #INCH INCH} or
+     *     {@link #MM MM}.
      *
      * @return  x location of the origin of the printable area in the
      * specified units.
@@ -187,8 +187,8 @@ public final class MediaPrintableArea
      * Get the y location of the origin of the printable area in the
      * specified units.
      * @param  units
-     *     Unit conversion factor, e.g. {@link #INCH <CODE>INCH</CODE>} or
-     *     {@link #MM <CODE>MM</CODE>}.
+     *     Unit conversion factor, e.g. {@link #INCH INCH} or
+     *     {@link #MM MM}.
      *
      * @return  y location of the origin of the printable area in the
      * specified units.
@@ -203,8 +203,8 @@ public final class MediaPrintableArea
     /**
      * Get the width of the printable area in the specified units.
      * @param  units
-     *     Unit conversion factor, e.g. {@link #INCH <CODE>INCH</CODE>} or
-     *     {@link #MM <CODE>MM</CODE>}.
+     *     Unit conversion factor, e.g. {@link #INCH INCH} or
+     *     {@link #MM MM}.
      *
      * @return  width of the printable area in the specified units.
      *
@@ -218,8 +218,8 @@ public final class MediaPrintableArea
     /**
      * Get the height of the printable area in the specified units.
      * @param  units
-     *     Unit conversion factor, e.g. {@link #INCH <CODE>INCH</CODE>} or
-     *     {@link #MM <CODE>MM</CODE>}.
+     *     Unit conversion factor, e.g. {@link #INCH INCH} or
+     *     {@link #MM MM}.
      *
      * @return  height of the printable area in the specified units.
      *
@@ -292,8 +292,8 @@ public final class MediaPrintableArea
      * given units.
      *
      * @param  units
-     *     Unit conversion factor, e.g. {@link #INCH <CODE>INCH</CODE>} or
-     *     {@link #MM <CODE>MM</CODE>}.
+     *     Unit conversion factor, e.g. {@link #INCH INCH} or
+     *     {@link #MM MM}.
      * @param  unitsName
      *     Units name string, e.g. <CODE>"in"</CODE> or <CODE>"mm"</CODE>. If
      *     null, no units name is appended to the result.
