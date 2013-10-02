@@ -100,6 +100,7 @@
 # include <stdint.h>
 # include <inttypes.h>
 # include <sys/ioctl.h>
+# include <sys/syscall.h>
 
 #if defined(__FreeBSD__) || defined(__NetBSD__)
 # include <elf.h>
@@ -152,6 +153,7 @@ sigset_t SR_sigset;
 // utility functions
 
 static int SR_initialize();
+static void unpackTime(timespec* absTime, bool isAbsolute, jlong time);
 
 julong os::available_memory() {
   return Bsd::available_memory();
@@ -247,7 +249,17 @@ void os::Bsd::initialize_system_info() {
    * since it returns a 64 bit value)
    */
   mib[0] = CTL_HW;
+
+#if defined (HW_MEMSIZE) // Apple
   mib[1] = HW_MEMSIZE;
+#elif defined(HW_PHYSMEM) // Most of BSD
+  mib[1] = HW_PHYSMEM;
+#elif defined(HW_REALMEM) // Old FreeBSD
+  mib[1] = HW_REALMEM;
+#else
+  #error No ways to get physmem
+#endif
+
   len = sizeof(mem_val);
   if (sysctl(mib, 2, &mem_val, &len, NULL, 0) != -1) {
        assert(len == sizeof(mem_val), "unexpected data size");
@@ -1904,7 +1916,7 @@ class Semaphore : public StackObj {
     bool timedwait(unsigned int sec, int nsec);
   private:
     jlong currenttime() const;
-    semaphore_t _semaphore;
+    os_semaphore_t _semaphore;
 };
 
 Semaphore::Semaphore() : _semaphore(0) {
@@ -1972,7 +1984,7 @@ bool Semaphore::trywait() {
 
 bool Semaphore::timedwait(unsigned int sec, int nsec) {
   struct timespec ts;
-  jlong endtime = unpackTime(&ts, false, (sec * NANOSECS_PER_SEC) + nsec);
+  unpackTime(&ts, false, (sec * NANOSECS_PER_SEC) + nsec);
 
   while (1) {
     int result = sem_timedwait(&_semaphore, &ts);
