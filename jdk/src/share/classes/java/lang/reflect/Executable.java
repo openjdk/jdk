@@ -286,12 +286,14 @@ public abstract class Executable extends AccessibleObject
      * this object.  Returns an array of length 0 if the executable
      * has no parameters.
      *
-     * The parameters of the underlying executable do not necessarily
+     * <p>The parameters of the underlying executable do not necessarily
      * have unique names, or names that are legal identifiers in the
      * Java programming language (JLS 3.8).
      *
+     * @throws MalformedParametersException if the class file contains
+     * a MethodParameters attribute that is improperly formatted.
      * @return an array of {@code Parameter} objects representing all
-     * the parameters to the executable this object represents
+     * the parameters to the executable this object represents.
      */
     public Parameter[] getParameters() {
         // TODO: This may eventually need to be guarded by security
@@ -315,6 +317,30 @@ public abstract class Executable extends AccessibleObject
         return out;
     }
 
+    private void verifyParameters(final Parameter[] parameters) {
+        final int mask = Modifier.FINAL | Modifier.SYNTHETIC | Modifier.MANDATED;
+
+        if (getParameterTypes().length != parameters.length)
+            throw new MalformedParametersException("Wrong number of parameters in MethodParameters attribute");
+
+        for (Parameter parameter : parameters) {
+            final String name = parameter.getRealName();
+            final int mods = parameter.getModifiers();
+
+            if (name != null) {
+                if (name.isEmpty() || name.indexOf('.') != -1 ||
+                    name.indexOf(';') != -1 || name.indexOf('[') != -1 ||
+                    name.indexOf('/') != -1) {
+                    throw new MalformedParametersException("Invalid parameter name \"" + name + "\"");
+                }
+            }
+
+            if (mods != (mods & mask)) {
+                throw new MalformedParametersException("Invalid parameter modifiers");
+            }
+        }
+    }
+
     private Parameter[] privateGetParameters() {
         // Use tmp to avoid multiple writes to a volatile.
         Parameter[] tmp = parameters;
@@ -322,7 +348,12 @@ public abstract class Executable extends AccessibleObject
         if (tmp == null) {
 
             // Otherwise, go to the JVM to get them
-            tmp = getParameters0();
+            try {
+                tmp = getParameters0();
+            } catch(IllegalArgumentException e) {
+                // Rethrow ClassFormatErrors
+                throw new MalformedParametersException("Invalid constant pool index");
+            }
 
             // If we get back nothing, then synthesize parameters
             if (tmp == null) {
@@ -330,6 +361,7 @@ public abstract class Executable extends AccessibleObject
                 tmp = synthesizeAllParams();
             } else {
                 hasRealParameterData = true;
+                verifyParameters(tmp);
             }
 
             parameters = tmp;
