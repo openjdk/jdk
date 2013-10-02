@@ -393,8 +393,12 @@ public class LWWindowPeer
     @Override
     public void setModalBlocked(Dialog blocker, boolean blocked) {
         synchronized (getPeerTreeLock()) {
-            this.blocker = !blocked ? null :
-            (LWWindowPeer) AWTAccessor.getComponentAccessor().getPeer(blocker);
+            ComponentPeer peer =  AWTAccessor.getComponentAccessor().getPeer(blocker);
+            if (blocked && (peer instanceof LWWindowPeer)) {
+                this.blocker = (LWWindowPeer) peer;
+            } else {
+                this.blocker = null;
+            }
         }
 
         platformWindow.setModalBlocked(blocked);
