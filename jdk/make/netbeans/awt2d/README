@@ -39,7 +39,6 @@ Here are the steps:
       (on Windows):
         #>env | grep ALT
         ALT_JDK_IMPORT_PATH=c:/devtools/java/jdk1.7.0
-        ALT_DXSDK_PATH=c:/devtools/DirectX/DXSDK_Dec06
         ALT_BOOTDIR=c:/DevTools/java/jdk1.6.0
 
       If your build is a FASTDEBUG build, don't forget
@@ -50,7 +49,6 @@ Here are the steps:
       accordingly:
         make.options=\
             ALT_JDK_IMPORT_PATH=c:/devtools/java/jdk1.7.0 \
-            ALT_DXSDK_PATH=c:/devtools/DirectX/DXSDK_Dec06 \
             ALT_BOOTDIR=c:/DevTools/java/jdk1.6.0 \
             FASTDEBUG=true
         make=c:/devtools/cygwin/bin/make
@@ -175,7 +173,6 @@ Notes on using CND (C/C++ pack) with this project and NetBeans.
   ../../build/windows-i586/tmp/sun/sun.awt/splashscreen/CClassHeaders;
   ../../build/windows-i586/tmp/sun/sun.font/fontmanager/CClassHeaders;
   ../../build/windows-i586/tmp/sun/sun.font/t2k/CClassHeaders;
-  C:/DevTools/DirectX/DXSDK_Dec06/Include;
   C:/devtools/VS2003/SDK/v1.1/include;
   C:/devtools/VS2003/VC7/ATLMFC/INCLUDE;
   C:/devtools/VS2003/VC7/INCLUDE;
@@ -188,7 +185,7 @@ Notes on using CND (C/C++ pack) with this project and NetBeans.
   Note that most paths are relative to the native project directory - 
   this helps if you decide to relocate the workspace later. The ones that 
   aren't relative are paths to external include directories, like those 
-  of the Platform SDK, DirectX SDK.
+  of the Platform SDK.
   On Unix platforms these may be directories like /usr/include.
 
   The parser must know some defines to correctly parse the source files,

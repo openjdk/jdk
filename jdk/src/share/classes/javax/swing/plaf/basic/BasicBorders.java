@@ -38,7 +38,7 @@ import java.awt.Color;
 import java.awt.Graphics;
 
 /**
- * Factory object that can vend Borders appropriate for the basic L & F.
+ * Factory object that can vend Borders appropriate for the basic L &amp; F.
  * @author Georges Saab
  * @author Amy Fowler
  */

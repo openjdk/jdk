@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2012, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2013, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -189,6 +189,26 @@ $(foreach f,$(filter $(OVERLAY_FILTER),$(JDK_BIN_LIST)),\
     $(eval $(call AddFileToCopy,$(JDK_OUTPUTDIR),$(JDK_OVERLAY_IMAGE_DIR),$f,JDK_BIN_TARGETS)))
 $(foreach f,$(filter $(OVERLAY_FILTER),$(JDKJRE_BIN_LIST)),\
     $(eval $(call AddFileToCopy,$(JDK_OUTPUTDIR),$(JDK_OVERLAY_IMAGE_DIR)/jre,$f,JDKJRE_BIN_TARGETS)))
+
+ifeq ($(OPENJDK_TARGET_OS)-$(OPENJDK_TARGET_CPU_BITS),solaris-64)
+  define AddIsadirLink
+    # Param 1 - src file
+    # Param 2 - variable to add targets to
+
+    $1_LINK := $$(dir $1)$(OPENJDK_TARGET_CPU_ISADIR)/$$(notdir $1)
+
+    $$($1_LINK):
+	$(ECHO) $(LOG_INFO) Creating link $$(patsubst $(OUTPUT_ROOT)/%,%,$$@)
+	$(MKDIR) -p $$(@D)
+	$(LN) -s ../$$(@F) $$@
+
+    $2 += $$($1_LINK)
+  endef
+
+  $(foreach f,$(JRE_BIN_TARGETS),$(eval $(call AddIsadirLink,$f,JRE_BIN_ISADIR_LINK_TARGETS)))
+  $(foreach f,$(JDK_BIN_TARGETS),$(eval $(call AddIsadirLink,$f,JDK_BIN_ISADIR_LINK_TARGETS)))
+  $(foreach f,$(JDKJRE_BIN_TARGETS),$(eval $(call AddIsadirLink,$f,JDKJRE_BIN_ISADIR_LINK_TARGETS)))
+endif
 
 ################################################################################
 # /lib dir
@@ -735,7 +755,8 @@ endif
 
 jre-image: $(JRE_BIN_TARGETS) $(JRE_LIB_TARGETS) $(JRE_IMAGE_DIR)/lib/applet \
 	$(JRE_IMAGE_DIR)/lib/meta-index $(JRE_IMAGE_DIR)/lib/ext/meta-index \
-	$(JRE_MAN_PAGE_LIST) $(JRE_DOC_TARGETS) $(JRE_INFO_FILE) $(JRE_STRIP_LIST)
+	$(JRE_MAN_PAGE_LIST) $(JRE_DOC_TARGETS) $(JRE_INFO_FILE) $(JRE_STRIP_LIST) \
+	$(JRE_BIN_ISADIR_LINK_TARGETS)
 
 jdk-image: $(JDK_BIN_TARGETS) $(JDKJRE_BIN_TARGETS) \
 	$(JDK_LIB_TARGETS) $(JDKJRE_LIB_TARGETS) \
@@ -746,7 +767,8 @@ jdk-image: $(JDK_BIN_TARGETS) $(JDKJRE_BIN_TARGETS) \
 	$(JDK_DB_TARGETS) $(JDK_INCLUDE_TARGETS) \
 	$(JDKJRE_DOC_TARGETS) $(JDK_DOC_TARGETS) \
 	$(JDK_INFO_FILE) $(JDKJRE_STRIP_LIST) $(JDK_BIN_STRIP_LIST) \
-        $(JDK_IMAGE_DIR)/src.zip
+        $(JDK_IMAGE_DIR)/src.zip \
+	$(JDK_BIN_ISADIR_LINK_TARGETS) $(JDKJRE_BIN_ISADIR_LINK_TARGETS)
 
 jre-overlay-image: $(JRE_OVERLAY_BIN_TARGETS) $(JRE_OVERLAY_LIB_TARGETS) \
 	 $(JRE_OVERLAY_INFO_FILE) $(JRE_OVERLAY_STRIP_LIST)

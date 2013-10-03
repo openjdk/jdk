@@ -417,8 +417,12 @@ public class ExceptionEvents extends TestScaffold {
         request = eventRequestManager().createExceptionRequest(exceptionClass,
                                                                caught, uncaught);
         request.addClassExclusionFilter("java.*");
+        request.addClassExclusionFilter("javax.*");
         request.addClassExclusionFilter("sun.*");
         request.addClassExclusionFilter("com.sun.*");
+        request.addClassExclusionFilter("com.oracle.*");
+        request.addClassExclusionFilter("oracle.*");
+        request.addClassExclusionFilter("jdk.internal.*");
         request.setSuspendPolicy(suspendPolicy);
         request.enable();
 

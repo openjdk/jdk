@@ -320,14 +320,18 @@ import java.util.Objects;
 
     /** Utility method to query if this member is a method handle invocation (invoke or invokeExact). */
     public boolean isMethodHandleInvoke() {
-        final int bits = Modifier.NATIVE | Modifier.FINAL;
+        final int bits = MH_INVOKE_MODS;
         final int negs = Modifier.STATIC;
         if (testFlags(bits | negs, bits) &&
             clazz == MethodHandle.class) {
-            return name.equals("invoke") || name.equals("invokeExact");
+            return isMethodHandleInvokeName(name);
         }
         return false;
     }
+    public static boolean isMethodHandleInvokeName(String name) {
+        return name.equals("invoke") || name.equals("invokeExact");
+    }
+    private static final int MH_INVOKE_MODS = Modifier.NATIVE | Modifier.FINAL | Modifier.PUBLIC;
 
     /** Utility method to query the modifier flags of this member. */
     public boolean isStatic() {
@@ -482,12 +486,27 @@ import java.util.Objects;
         m.getClass();  // NPE check
         // fill in vmtarget, vmindex while we have m in hand:
         MethodHandleNatives.init(this, m);
+        if (clazz == null) {  // MHN.init failed
+            if (m.getDeclaringClass() == MethodHandle.class &&
+                isMethodHandleInvokeName(m.getName())) {
+                // The JVM did not reify this signature-polymorphic instance.
+                // Need a special case here.
+                // See comments on MethodHandleNatives.linkMethod.
+                MethodType type = MethodType.methodType(m.getReturnType(), m.getParameterTypes());
+                int flags = flagsMods(IS_METHOD, m.getModifiers(), REF_invokeVirtual);
+                init(MethodHandle.class, m.getName(), type, flags);
+                if (isMethodHandleInvoke())
+                    return;
+            }
+            throw new LinkageError(m.toString());
+        }
         assert(isResolved() && this.clazz != null);
         this.name = m.getName();
         if (this.type == null)
             this.type = new Object[] { m.getReturnType(), m.getParameterTypes() };
         if (wantSpecial) {
-            assert(!isAbstract()) : this;
+            if (isAbstract())
+                throw new AbstractMethodError(this.toString());
             if (getReferenceKind() == REF_invokeVirtual)
                 changeReferenceKind(REF_invokeSpecial, REF_invokeVirtual);
             else if (getReferenceKind() == REF_invokeInterface)
@@ -560,6 +579,22 @@ import java.util.Objects;
         init(type.getDeclaringClass(), type.getSimpleName(), type,
                 flagsMods(IS_TYPE, type.getModifiers(), REF_NONE));
         initResolved(true);
+    }
+
+    /**
+     * Create a name for a signature-polymorphic invoker.
+     * This is a placeholder for a signature-polymorphic instance
+     * (of MH.invokeExact, etc.) that the JVM does not reify.
+     * See comments on {@link MethodHandleNatives#linkMethod}.
+     */
+    static MemberName makeMethodHandleInvoke(String name, MethodType type) {
+        return makeMethodHandleInvoke(name, type, MH_INVOKE_MODS | SYNTHETIC);
+    }
+    static MemberName makeMethodHandleInvoke(String name, MethodType type, int mods) {
+        MemberName mem = new MemberName(MethodHandle.class, name, type, REF_invokeVirtual);
+        mem.flags |= mods;  // it's not resolved, but add these modifiers anyway
+        assert(mem.isMethodHandleInvoke()) : mem;
+        return mem;
     }
 
     // bare-bones constructor; the JVM will fill it in

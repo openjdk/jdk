@@ -26,8 +26,6 @@
 package java.lang.invoke;
 
 import java.lang.reflect.*;
-import java.security.AccessController;
-import java.security.PrivilegedAction;
 import java.util.List;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -54,6 +52,7 @@ import sun.security.util.SecurityConstants;
  * </ul>
  * <p>
  * @author John Rose, JSR 292 EG
+ * @since 1.7
  */
 public class MethodHandles {
 
@@ -95,6 +94,38 @@ public class MethodHandles {
     public static Lookup publicLookup() {
         return Lookup.PUBLIC_LOOKUP;
     }
+
+    /**
+     * Performs an unchecked "crack" of a direct method handle.
+     * The result is as if the user had obtained a lookup object capable enough
+     * to crack the target method handle, called
+     * {@link java.lang.invoke.MethodHandles.Lookup#revealDirect Lookup.revealDirect}
+     * on the target to obtain its symbolic reference, and then called
+     * {@link java.lang.invoke.MethodHandleInfo#reflectAs MethodHandleInfo.reflectAs}
+     * to resolve the symbolic reference to a member.
+     * <p>
+     * If there is a security manager, its {@code checkPermission} method
+     * is called with a {@code ReflectPermission("suppressAccessChecks")} permission.
+     * @param <T> the desired type of the result, either {@link Member} or a subtype
+     * @param target a direct method handle to crack into symbolic reference components
+     * @param expected a class object representing the desired result type {@code T}
+     * @return a reference to the method, constructor, or field object
+     * @exception SecurityException if the caller is not privileged to call {@code setAccessible}
+     * @exception NullPointerException if either argument is {@code null}
+     * @exception IllegalArgumentException if the target is not a direct method handle
+     * @exception ClassCastException if the member is not of the expected type
+     * @since 1.8
+     */
+    public static <T extends Member> T
+    reflectAs(Class<T> expected, MethodHandle target) {
+        SecurityManager smgr = System.getSecurityManager();
+        if (smgr != null)  smgr.checkPermission(ACCESS_PERMISSION);
+        Lookup lookup = Lookup.IMPL_LOOKUP;  // use maximally privileged lookup
+        return lookup.revealDirect(target).reflectAs(expected, lookup);
+    }
+    // Copied from AccessibleObject, as used by Method.setAccessible, etc.:
+    static final private java.security.Permission ACCESS_PERMISSION =
+        new ReflectPermission("suppressAccessChecks");
 
     /**
      * A <em>lookup object</em> is a factory for creating method handles,
@@ -656,6 +687,7 @@ public class MethodHandles {
                 return invoker(type);
             if ("invokeExact".equals(name))
                 return exactInvoker(type);
+            assert(!MemberName.isMethodHandleInvokeName(name));
             return null;
         }
 
@@ -901,6 +933,10 @@ return mh1;
          * @throws NullPointerException if the argument is null
          */
         public MethodHandle unreflect(Method m) throws IllegalAccessException {
+            if (m.getDeclaringClass() == MethodHandle.class) {
+                MethodHandle mh = unreflectForMH(m);
+                if (mh != null)  return mh;
+            }
             MemberName method = new MemberName(m);
             byte refKind = method.getReferenceKind();
             if (refKind == REF_invokeSpecial)
@@ -908,6 +944,12 @@ return mh1;
             assert(method.isMethod());
             Lookup lookup = m.isAccessible() ? IMPL_LOOKUP : this;
             return lookup.getDirectMethod(refKind, method.getDeclaringClass(), method, findBoundCallerClass(method));
+        }
+        private MethodHandle unreflectForMH(Method m) {
+            // these names require special lookups because they throw UnsupportedOperationException
+            if (MemberName.isMethodHandleInvokeName(m.getName()))
+                return MethodHandleImpl.fakeMethodHandleInvoke(new MemberName(m));
+            return null;
         }
 
         /**
@@ -1011,6 +1053,46 @@ return mh1;
          */
         public MethodHandle unreflectSetter(Field f) throws IllegalAccessException {
             return unreflectField(f, true);
+        }
+
+        /**
+         * Cracks a direct method handle created by this lookup object or a similar one.
+         * Security and access checks are performed to ensure that this lookup object
+         * is capable of reproducing the target method handle.
+         * This means that the cracking may fail if target is a direct method handle
+         * but was created by an unrelated lookup object.
+         * @param target a direct method handle to crack into symbolic reference components
+         * @return a symbolic reference which can be used to reconstruct this method handle from this lookup object
+         * @exception SecurityException if a security manager is present and it
+         *                              <a href="MethodHandles.Lookup.html#secmgr">refuses access</a>
+         * @throws IllegalArgumentException if the target is not a direct method handle or if access checking fails
+         * @exception NullPointerException if the target is {@code null}
+         * @since 1.8
+         */
+        public MethodHandleInfo revealDirect(MethodHandle target) {
+            MemberName member = target.internalMemberName();
+            if (member == null || (!member.isResolved() && !member.isMethodHandleInvoke()))
+                throw newIllegalArgumentException("not a direct method handle");
+            Class<?> defc = member.getDeclaringClass();
+            byte refKind = member.getReferenceKind();
+            assert(MethodHandleNatives.refKindIsValid(refKind));
+            if (refKind == REF_invokeSpecial && !target.isInvokeSpecial())
+                // Devirtualized method invocation is usually formally virtual.
+                // To avoid creating extra MemberName objects for this common case,
+                // we encode this extra degree of freedom using MH.isInvokeSpecial.
+                refKind = REF_invokeVirtual;
+            if (refKind == REF_invokeVirtual && defc.isInterface())
+                // Symbolic reference is through interface but resolves to Object method (toString, etc.)
+                refKind = REF_invokeInterface;
+            // Check SM permissions and member access before cracking.
+            try {
+                checkSecurityManager(defc, member);
+                checkAccess(refKind, defc, member);
+            } catch (IllegalAccessException ex) {
+                throw new IllegalArgumentException(ex);
+            }
+            // Produce the handle to the results.
+            return new InfoFromMemberName(this, member, refKind);
         }
 
         /// Helper methods, all package-private.
@@ -1210,12 +1292,12 @@ return mh1;
         private MethodHandle getDirectMethodCommon(byte refKind, Class<?> refc, MemberName method,
                                                    boolean doRestrict, Class<?> callerClass) throws IllegalAccessException {
             checkMethod(refKind, refc, method);
-            if (method.isMethodHandleInvoke())
-                return fakeMethodHandleInvoke(method);
+            assert(!method.isMethodHandleInvoke());
 
             Class<?> refcAsSuper;
             if (refKind == REF_invokeSpecial &&
                 refc != lookupClass() &&
+                !refc.isInterface() &&
                 refc != (refcAsSuper = lookupClass().getSuperclass()) &&
                 refc.isAssignableFrom(lookupClass())) {
                 assert(!method.getName().equals("<init>"));  // not this code path
@@ -1242,9 +1324,6 @@ return mh1;
             if (doRestrict)
                 mh = restrictReceiver(method, mh, lookupClass());
             return mh;
-        }
-        private MethodHandle fakeMethodHandleInvoke(MemberName method) {
-            return throwException(method.getReturnType(), UnsupportedOperationException.class);
         }
         private MethodHandle maybeBindCaller(MemberName method, MethodHandle mh,
                                              Class<?> callerClass)

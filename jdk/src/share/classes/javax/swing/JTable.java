@@ -1946,7 +1946,7 @@ public class JTable extends JComponent implements TableModelListener, Scrollable
      * Sets the table's selection mode to allow only single selections, a single
      * contiguous interval, or multiple intervals.
      * <P>
-     * <bold>Note:</bold>
+     * <b>Note:</b>
      * <code>JTable</code> provides all the methods for handling
      * column and row selection.  When setting states,
      * such as <code>setSelectionMode</code>, it not only
@@ -2062,7 +2062,7 @@ public class JTable extends JComponent implements TableModelListener, Scrollable
 
     /**
      * Returns true if both row and column selection models are enabled.
-     * Equivalent to <code>getRowSelectionAllowed() &&
+     * Equivalent to <code>getRowSelectionAllowed() &amp;&amp;
      * getColumnSelectionAllowed()</code>.
      *
      * @return true if both row and column selection models are enabled
@@ -3035,7 +3035,7 @@ public class JTable extends JComponent implements TableModelListener, Scrollable
      * adjusted.
      * </ul>
      * <p>
-     * <bold>Note:</bold> When a <code>JTable</code> makes adjustments
+     * <b>Note:</b> When a <code>JTable</code> makes adjustments
      *   to the widths of the columns it respects their minimum and
      *   maximum values absolutely.  It is therefore possible that,
      *   even after this method is called, the total width of the columns
@@ -3087,14 +3087,14 @@ public class JTable extends JComponent implements TableModelListener, Scrollable
      * </pre>
      * where each individual delta[i] is calculated according to:
      * <p>
-     * If (DELTA < 0) we are in shrink mode where:
+     * If (DELTA &lt; 0) we are in shrink mode where:
      * <p>
      * <PRE>
      *                        DELTA
      *          delta[i] = ------------ * (pref[i] - min[i])
      *                     (PREF - MIN)
      * </PRE>
-     * If (DELTA > 0) we are in expand mode where:
+     * If (DELTA &gt; 0) we are in expand mode where:
      * <p>
      * <PRE>
      *                        DELTA
@@ -3369,7 +3369,7 @@ public class JTable extends JComponent implements TableModelListener, Scrollable
      * method in order to allow the renderer's tips to be used
      * if it has text set.
      * <p>
-     * <bold>Note:</bold> For <code>JTable</code> to properly display
+     * <b>Note:</b> For <code>JTable</code> to properly display
      * tooltips of its renderers
      * <code>JTable</code> must be a registered component with the
      * <code>ToolTipManager</code>.
@@ -3581,7 +3581,7 @@ public class JTable extends JComponent implements TableModelListener, Scrollable
 //
 
     /**
-     * Returns the L&F object that renders this component.
+     * Returns the L&amp;F object that renders this component.
      *
      * @return the <code>TableUI</code> object that renders this component
      */
@@ -3590,9 +3590,9 @@ public class JTable extends JComponent implements TableModelListener, Scrollable
     }
 
     /**
-     * Sets the L&F object that renders this component and repaints.
+     * Sets the L&amp;F object that renders this component and repaints.
      *
-     * @param ui  the TableUI L&F object
+     * @param ui  the TableUI L&amp;F object
      * @see UIDefaults#getUI
      * @beaninfo
      *        bound: true
@@ -3608,7 +3608,7 @@ public class JTable extends JComponent implements TableModelListener, Scrollable
     }
 
     /**
-     * Notification from the <code>UIManager</code> that the L&F has changed.
+     * Notification from the <code>UIManager</code> that the L&amp;F has changed.
      * Replaces the current UI object with the latest version from the
      * <code>UIManager</code>.
      *
@@ -3648,7 +3648,7 @@ public class JTable extends JComponent implements TableModelListener, Scrollable
     }
 
     /**
-     * Returns the suffix used to construct the name of the L&F class used to
+     * Returns the suffix used to construct the name of the L&amp;F class used to
      * render this component.
      *
      * @return the string "TableUI"

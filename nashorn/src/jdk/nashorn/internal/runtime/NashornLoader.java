@@ -38,10 +38,7 @@ import java.security.SecureClassLoader;
 import jdk.nashorn.tools.Shell;
 
 /**
- * Superclass for Nashorn class loader classes. This stores Context
- * instance as an instance field. The current context can be
- * efficiently accessed from a given Class via it's ClassLoader.
- *
+ * Superclass for Nashorn class loader classes.
  */
 abstract class NashornLoader extends SecureClassLoader {
     private static final String OBJECTS_PKG        = "jdk.nashorn.internal.objects";
@@ -69,27 +66,8 @@ abstract class NashornLoader extends SecureClassLoader {
         };
     }
 
-    private final Context context;
-
-    final Context getContext() {
-        return context;
-    }
-
-    NashornLoader(final ClassLoader parent, final Context context) {
+    NashornLoader(final ClassLoader parent) {
         super(parent);
-        this.context = context;
-    }
-
-
-    /**
-     * Called by subclass after package access check is done
-     * @param name name of the class to be loaded
-     * @param resolve whether the class should be resolved or not
-     * @return Class object
-     * @throws ClassNotFoundException if class cannot be loaded
-     */
-    protected final Class<?> loadClassTrusted(final String name, final boolean resolve) throws ClassNotFoundException {
-        return super.loadClass(name, resolve);
     }
 
     protected static void checkPackageAccess(final String name) {
@@ -120,10 +98,6 @@ abstract class NashornLoader extends SecureClassLoader {
             permCollection.add(perm);
         }
         return permCollection;
-    }
-
-    static boolean isStructureClass(final String fullName) {
-        return fullName.startsWith(SCRIPTS_PKG);
     }
 
     /**
