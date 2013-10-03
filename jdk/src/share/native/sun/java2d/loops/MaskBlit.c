@@ -60,8 +60,11 @@ Java_sun_java2d_loops_MaskBlit_MaskBlit
     }
 
     srcOps = SurfaceData_GetOps(env, srcData);
+    if (srcOps == 0) {
+        return;
+    }
     dstOps = SurfaceData_GetOps(env, dstData);
-    if (srcOps == 0 || dstOps == 0) {
+    if (dstOps == 0) {
         return;
     }
 
@@ -96,6 +99,13 @@ Java_sun_java2d_loops_MaskBlit_MaskBlit
                 (maskArray
                  ? (*env)->GetPrimitiveArrayCritical(env, maskArray, 0)
                  : 0);
+            if (maskArray != NULL && pMask == NULL) {
+                SurfaceData_InvokeRelease(env, dstOps, &dstInfo);
+                SurfaceData_InvokeRelease(env, srcOps, &srcInfo);
+                SurfaceData_InvokeUnlock(env, dstOps, &dstInfo);
+                SurfaceData_InvokeUnlock(env, srcOps, &srcInfo);
+                return;
+            }
             jint savesx = srcInfo.bounds.x1;
             jint savedx = dstInfo.bounds.x1;
             Region_StartIteration(env, &clipInfo);
