@@ -224,7 +224,6 @@ public:
 
 class MetaspacePool : public MemoryPool {
   size_t calculate_max_size() const;
-  size_t capacity_in_bytes() const;
  public:
   MetaspacePool();
   MemoryUsage get_memory_usage();
@@ -232,7 +231,6 @@ class MetaspacePool : public MemoryPool {
 };
 
 class CompressedKlassSpacePool : public MemoryPool {
-  size_t capacity_in_bytes() const;
  public:
   CompressedKlassSpacePool();
   MemoryUsage get_memory_usage();

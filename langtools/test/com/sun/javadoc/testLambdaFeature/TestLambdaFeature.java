@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug      8004893
+ * @bug      8004893 8022738
  * @summary  Make sure that the lambda feature changes work fine in
  *           javadoc.
  * @author   bpatel
@@ -35,11 +35,15 @@
 public class TestLambdaFeature extends JavadocTester {
 
     //Test information.
-    private static final String BUG_ID = "8004893";
+    private static final String BUG_ID = "8004893-8022738";
 
     //Javadoc arguments.
     private static final String[] ARGS = new String[] {
-        "-d", BUG_ID, "-sourcepath", SRC_DIR, "pkg"
+        "-d", BUG_ID, "-sourcepath", SRC_DIR, "pkg", "pkg1"
+    };
+
+    private static final String[] ARGS_1 = new String[] {
+        "-d", BUG_ID + "-2", "-sourcepath", SRC_DIR, "-source", "1.5", "pkg1"
     };
 
     //Input for string search tests.
@@ -63,6 +67,11 @@ public class TestLambdaFeature extends JavadocTester {
             "<dl>" + NL + "<dt>Functional Interface:</dt>" + NL +
             "<dd>This is a functional interface and can therefore be used as " +
             "the assignment target for a lambda expression or method " +
+            "reference.</dd>" + NL + "</dl>"},
+        {BUG_ID + FS + "pkg1" + FS + "FuncInf.html",
+            "<dl>" + NL + "<dt>Functional Interface:</dt>" + NL +
+            "<dd>This is a functional interface and can therefore be used as " +
+            "the assignment target for a lambda expression or method " +
             "reference.</dd>" + NL + "</dl>"}
     };
     private static final String[][] NEGATED_TEST = {
@@ -75,6 +84,10 @@ public class TestLambdaFeature extends JavadocTester {
         {BUG_ID + FS + "pkg" + FS + "B.html",
             "<dl>" + NL + "<dt>Functional Interface:</dt>"}
     };
+    private static final String[][] NEGATED_TEST_1 = {
+        {BUG_ID + "-2" + FS + "pkg1" + FS + "FuncInf.html",
+            "<dl>" + NL + "<dt>Functional Interface:</dt>"}
+    };
 
     /**
      * The entry point of the test.
@@ -83,6 +96,7 @@ public class TestLambdaFeature extends JavadocTester {
     public static void main(String[] args) {
         TestLambdaFeature tester = new TestLambdaFeature();
         run(tester, ARGS, TEST, NEGATED_TEST);
+        run(tester, ARGS_1, NO_TEST, NEGATED_TEST_1);
         tester.printSummary();
     }
 

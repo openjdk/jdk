@@ -27,7 +27,7 @@
 # Documentation is available via 'webrev -h'.
 #
 
-WEBREV_UPDATED=24.0-hg+jbs
+WEBREV_UPDATED=24.1-hg+openjdk.java.net
 
 HTML='<?xml version="1.0"?>
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
@@ -230,7 +230,7 @@ strip_unchanged()
 #   $ sdiff_to_html old/usr/src/tools/scripts/webrev.sh \
 #         new/usr/src/tools/scripts/webrev.sh \
 #         webrev.sh usr/src/tools/scripts \
-#         '<a href="https://jbs.oracle.com/bugs/browse/JDK-1234567">
+#         '<a href="https://bugs.openjdk.java.net/browse/JDK-1234567">
 #          JDK-1234567</a> my bugid' > <file>.html
 #
 # framed_sdiff() is then called which creates $2.frames.html
@@ -1476,7 +1476,7 @@ function treestatus
     # The first and last are simple addition while the middle one
     # is a move/rename or a copy.  We can't distinguish from a rename vs a copy
     # without also getting the status of removed files.  The middle case above
-    # is a rename if File4 is also shown a being removed.  If File4 is not a 
+    # is a rename if File4 is also shown a being removed.  If File4 is not a
     # removed file, then the middle case is a copy from File4 to subdir/File4
     # FIXME - we're not distinguishing copy from rename
     $HGCMD -aC | $FILTER | while read LINE; do
@@ -1644,7 +1644,7 @@ function flist_from_mercurial
         # The first and last are simple addition while the middle one
         # is a move/rename or a copy.  We can't distinguish from a rename vs a copy
         # without also getting the status of removed files.  The middle case above
-        # is a rename if File4 is also shown a being removed.  If File4 is not a 
+        # is a rename if File4 is also shown a being removed.  If File4 is not a
         # removed file, then the middle case is a copy from File4 to subdir/File4
         # FIXME - we're not distinguishing copy from rename
 
@@ -2529,7 +2529,7 @@ print "      Output to: $WDIR"
 #    Bug IDs will be replaced by a URL.  Order of precedence
 #    is: default location, $WEBREV_BUGURL, the -O flag.
 #
-BUGURL='https://jbs.oracle.com/bugs/browse/'
+BUGURL='https://bugs.openjdk.java.net/browse/'
 [[ -n $WEBREV_BUGURL ]] && BUGURL="$WEBREV_BUGURL"
 if [[ -n "$Oflag" ]]; then
     CRID=`echo $CRID | sed -e 's/JDK-//'`
@@ -2704,11 +2704,11 @@ do
         rm -f $WDIR/$DIR/$F.html
 
 	its_a_jar=
-	if expr $F : '.*\.jar' >/dev/null; then
+	if expr $F : '.*\.jar' \| $F : '.*\.zip' >/dev/null; then
 	    its_a_jar=1
-	    # It's a JAR file, let's do it differntly
+	    # It's a JAR or ZIP file, let's do it differently
 	    if [[ -z $JAR ]]; then
-		print "No access to jar, so can't produce diffs for jar files"
+		print "No access to jar, so can't produce diffs for jar or zip files"
 	    else
 		if [ -f $ofile ]; then
 		    $JAR -tvf $ofile >"$ofile".lst
@@ -3056,7 +3056,7 @@ if [[ -n $CRID ]]; then
     for id in $CRID
     do
         if [[ -z "$Oflag" ]]; then
-            #add "JDK-" to raw bug id for jbs links.
+            #add "JDK-" to raw bug id for openjdk.java.net links.
             id=`echo ${id} | sed 's/^\([0-9]\{5,\}\)$/JDK-\1/'`
         fi
         print "<tr><th>Bug id:</th><td>"

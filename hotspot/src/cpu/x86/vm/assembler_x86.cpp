@@ -4769,7 +4769,7 @@ void Assembler::adcq(Register dst, Address src) {
 }
 
 void Assembler::adcq(Register dst, Register src) {
-  (int) prefixq_and_encode(dst->encoding(), src->encoding());
+  (void) prefixq_and_encode(dst->encoding(), src->encoding());
   emit_arith(0x13, 0xC0, dst, src);
 }
 
@@ -4824,7 +4824,7 @@ void Assembler::andq(Register dst, Address src) {
 }
 
 void Assembler::andq(Register dst, Register src) {
-  (int) prefixq_and_encode(dst->encoding(), src->encoding());
+  (void) prefixq_and_encode(dst->encoding(), src->encoding());
   emit_arith(0x23, 0xC0, dst, src);
 }
 

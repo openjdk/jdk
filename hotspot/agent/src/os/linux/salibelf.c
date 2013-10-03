@@ -25,6 +25,7 @@
 #include "salibelf.h"
 #include <stdlib.h>
 #include <unistd.h>
+#include <string.h>
 
 extern void print_debug(const char*,...);
 

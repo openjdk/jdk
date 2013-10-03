@@ -602,7 +602,7 @@ oop Universe::gen_out_of_memory_error(oop default_err) {
   }
 }
 
-static intptr_t non_oop_bits = 0;
+intptr_t Universe::_non_oop_bits = 0;
 
 void* Universe::non_oop_word() {
   // Neither the high bits nor the low bits of this value is allowed
@@ -616,11 +616,11 @@ void* Universe::non_oop_word() {
   // Using the OS-supplied non-memory-address word (usually 0 or -1)
   // will take care of the high bits, however many there are.
 
-  if (non_oop_bits == 0) {
-    non_oop_bits = (intptr_t)os::non_memory_address_word() | 1;
+  if (_non_oop_bits == 0) {
+    _non_oop_bits = (intptr_t)os::non_memory_address_word() | 1;
   }
 
-  return (void*)non_oop_bits;
+  return (void*)_non_oop_bits;
 }
 
 jint universe_init() {
@@ -872,13 +872,16 @@ jint Universe::initialize_heap() {
 
 // Reserve the Java heap, which is now the same for all GCs.
 ReservedSpace Universe::reserve_heap(size_t heap_size, size_t alignment) {
+  assert(alignment <= Arguments::conservative_max_heap_alignment(),
+      err_msg("actual alignment "SIZE_FORMAT" must be within maximum heap alignment "SIZE_FORMAT,
+          alignment, Arguments::conservative_max_heap_alignment()));
   size_t total_reserved = align_size_up(heap_size, alignment);
   assert(!UseCompressedOops || (total_reserved <= (OopEncodingHeapMax - os::vm_page_size())),
       "heap size is too big for compressed oops");
 
   bool use_large_pages = UseLargePages && is_size_aligned(alignment, os::large_page_size());
   assert(!UseLargePages
-      || UseParallelOldGC
+      || UseParallelGC
       || use_large_pages, "Wrong alignment to use large pages");
 
   char* addr = Universe::preferred_heap_base(total_reserved, alignment, Universe::UnscaledNarrowOop);
@@ -1028,7 +1031,7 @@ bool universe_post_init() {
 
     msg = java_lang_String::create_from_str("Metadata space", CHECK_false);
     java_lang_Throwable::set_message(Universe::_out_of_memory_error_metaspace, msg());
-    msg = java_lang_String::create_from_str("Class Metadata space", CHECK_false);
+    msg = java_lang_String::create_from_str("Compressed class space", CHECK_false);
     java_lang_Throwable::set_message(Universe::_out_of_memory_error_class_metaspace, msg());
 
     msg = java_lang_String::create_from_str("Requested array size exceeds VM limit", CHECK_false);

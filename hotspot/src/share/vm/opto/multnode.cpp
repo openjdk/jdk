@@ -25,6 +25,7 @@
 #include "precompiled.hpp"
 #include "opto/callnode.hpp"
 #include "opto/matcher.hpp"
+#include "opto/mathexactnode.hpp"
 #include "opto/multnode.hpp"
 #include "opto/opcodes.hpp"
 #include "opto/phaseX.hpp"
@@ -46,14 +47,20 @@ ProjNode* MultiNode::proj_out(uint which_proj) const {
   assert(Opcode() != Op_If || outcnt() == 2, "bad if #1");
   for( DUIterator_Fast imax, i = fast_outs(imax); i < imax; i++ ) {
     Node *p = fast_out(i);
-    if( !p->is_Proj() ) {
+    if (p->is_Proj()) {
+      ProjNode *proj = p->as_Proj();
+      if (proj->_con == which_proj) {
+        assert(Opcode() != Op_If || proj->Opcode() == (which_proj?Op_IfTrue:Op_IfFalse), "bad if #2");
+        return proj;
+      }
+    } else if (p->is_FlagsProj()) {
+      FlagsProjNode *proj = p->as_FlagsProj();
+      if (proj->_con == which_proj) {
+        return proj;
+      }
+    } else {
       assert(p == this && this->is_Start(), "else must be proj");
       continue;
-    }
-    ProjNode *proj = p->as_Proj();
-    if( proj->_con == which_proj ) {
-      assert(Opcode() != Op_If || proj->Opcode() == (which_proj?Op_IfTrue:Op_IfFalse), "bad if #2");
-      return proj;
     }
   }
   return NULL;

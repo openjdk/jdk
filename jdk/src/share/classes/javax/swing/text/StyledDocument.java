@@ -76,8 +76,8 @@ public interface StyledDocument extends Document {
      * giving an Attributes argument that has no attributes defined
      * and setting replace to true.
      *
-     * @param offset the start of the change >= 0
-     * @param length the length of the change >= 0
+     * @param offset the start of the change &gt;= 0
+     * @param length the length of the change &gt;= 0
      * @param s    the non-null attributes to change to.  Any attributes
      *  defined will be applied to the text for the given range.
      * @param replace indicates whether or not the previous
@@ -91,8 +91,8 @@ public interface StyledDocument extends Document {
     /**
      * Sets paragraph attributes.
      *
-     * @param offset the start of the change >= 0
-     * @param length the length of the change >= 0
+     * @param offset the start of the change &gt;= 0
+     * @param length the length of the change &gt;= 0
      * @param s    the non-null attributes to change to.  Any attributes
      *  defined will be applied to the text for the given range.
      * @param replace indicates whether or not the previous
@@ -111,7 +111,7 @@ public interface StyledDocument extends Document {
      * in turn may resolve through some hierarchy completely
      * independent of the element hierarchy in the document.
      *
-     * @param pos the starting position >= 0
+     * @param pos the starting position &gt;= 0
      * @param s the style to set
      */
     public void setLogicalStyle(int pos, Style s);
@@ -119,7 +119,7 @@ public interface StyledDocument extends Document {
     /**
      * Gets a logical style for a given position in a paragraph.
      *
-     * @param p the position >= 0
+     * @param p the position &gt;= 0
      * @return the style
      */
     public Style getLogicalStyle(int p);
@@ -128,7 +128,7 @@ public interface StyledDocument extends Document {
      * Gets the element that represents the paragraph that
      * encloses the given offset within the document.
      *
-     * @param pos the offset >= 0
+     * @param pos the offset &gt;= 0
      * @return the element
      */
     public Element getParagraphElement(int pos);
@@ -137,7 +137,7 @@ public interface StyledDocument extends Document {
      * Gets the element that represents the character that
      * is at the given offset within the document.
      *
-     * @param pos the offset >= 0
+     * @param pos the offset &gt;= 0
      * @return the element
      */
     public Element getCharacterElement(int pos);

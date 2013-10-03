@@ -285,7 +285,12 @@ public class XRCompositeManager {
         if (xorEnabled) {
             con.GCRectangles(dst.getXid(), dst.getGC(), rects);
         } else {
-            con.renderRectangles(dst.getPicture(), compRule, solidColor, rects);
+            if (rects.getSize() == 1) {
+                con.renderRectangle(dst.getPicture(), compRule, solidColor,
+                        rects.getX(0), rects.getY(0), rects.getWidth(0), rects.getHeight(0));
+            } else {
+                con.renderRectangles(dst.getPicture(), compRule, solidColor, rects);
+            }
         }
     }
 
@@ -295,10 +300,10 @@ public class XRCompositeManager {
                 sy, 0, 0, dx, dy, w, h);
     }
 
-    public void compositeText(int dst, int glyphSet, int maskFormat,
-            GrowableEltArray elts) {
-        con.XRenderCompositeText(compRule, src.picture, dst, maskFormat, 0, 0,
-                0, 0, glyphSet, elts);
+    public void compositeText(XRSurfaceData dst, int sx, int sy,
+            int glyphSet, int maskFormat, GrowableEltArray elts) {
+        con.XRenderCompositeText(compRule, src.picture, dst.picture,
+                maskFormat, sx, sy, 0, 0, glyphSet, elts);
     }
 
     public XRColor getMaskColor() {

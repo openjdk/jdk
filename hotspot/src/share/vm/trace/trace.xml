@@ -313,13 +313,6 @@ Declares a structure type that can be used in other events.
       <value type="UINT" field="zombifiedCount" label="Methods Zombified"/>
     </event>
 
-    <event id="CleanCodeCache" path="vm/code_sweeper/clean" label="Clean Code Cache"
-             description="Clean code cache from oldest methods"
-             has_thread="true" is_requestable="false" is_constant="false">
-      <value type="UINT" field="disconnectedCount" label="Methods Disconnected"/>
-      <value type="UINT" field="madeNonEntrantCount" label="Methods Made Non-Entrant"/>
-    </event>
-
     <!-- Code cache events -->
 
     <event id="CodeCacheFull" path="vm/code_cache/full" label="Code Cache Full"

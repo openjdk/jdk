@@ -1765,7 +1765,14 @@ search:
             Reader reader = new InputStreamReader(is, unicode);
 
             theObject = constructFlavoredObject(reader, flavor, Reader.class);
-
+            // Target data is a byte array
+        } else if (byteArrayClass.equals(flavor.getRepresentationClass())) {
+            if(isFlavorCharsetTextType(flavor) && isTextFormat(format)) {
+                theObject = translateBytesToString(inputStreamToByteArray(str), format, localeTransferable)
+                        .getBytes(DataTransferer.getTextCharset(flavor));
+            } else {
+                theObject = inputStreamToByteArray(str);
+            }
             // Target data is an RMI object
         } else if (flavor.isRepresentationClassRemote()) {
 

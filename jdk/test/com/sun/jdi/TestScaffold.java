@@ -746,8 +746,12 @@ abstract public class TestScaffold extends TargetAdapter {
                   requestManager.createStepRequest(thread, gran, depth);
 
         sr.addClassExclusionFilter("java.*");
+        sr.addClassExclusionFilter("javax.*");
         sr.addClassExclusionFilter("sun.*");
         sr.addClassExclusionFilter("com.sun.*");
+        sr.addClassExclusionFilter("com.oracle.*");
+        sr.addClassExclusionFilter("oracle.*");
+        sr.addClassExclusionFilter("jdk.internal.*");
         sr.addCountFilter(1);
         sr.enable();
         StepEvent retEvent = (StepEvent)waitForRequestedEvent(sr);
@@ -829,7 +833,8 @@ abstract public class TestScaffold extends TargetAdapter {
 
         Method method = findMethod(rt, methodName, methodSignature);
         if (method == null) {
-            throw new IllegalArgumentException("Bad method name/signature");
+            throw new IllegalArgumentException("Bad method name/signature: "
+                    + clsName + "." + methodName + ":" + methodSignature);
         }
 
         return resumeTo(method.location());

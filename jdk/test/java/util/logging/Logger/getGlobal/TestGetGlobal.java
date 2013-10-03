@@ -29,18 +29,18 @@ import java.util.logging.Logger;
  * @bug 7184195
  * @summary checks that java.util.logging.Logger.getGlobal().info() logs without configuration
  * @build TestGetGlobal testgetglobal.HandlerImpl testgetglobal.LogManagerImpl1 testgetglobal.LogManagerImpl2 testgetglobal.LogManagerImpl3 testgetglobal.BadLogManagerImpl testgetglobal.DummyLogManagerImpl
- * @run main/othervm/timeout=10 TestGetGlobal
- * @run main/othervm/timeout=10/policy=policy -Djava.security.manager TestGetGlobal
- * @run main/othervm/timeout=10 -Djava.util.logging.manager=testgetglobal.LogManagerImpl1 TestGetGlobal
- * @run main/othervm/timeout=10/policy=policy -Djava.security.manager -Djava.util.logging.manager=testgetglobal.LogManagerImpl1 TestGetGlobal
- * @run main/othervm/timeout=10 -Djava.util.logging.manager=testgetglobal.LogManagerImpl2 TestGetGlobal
- * @run main/othervm/timeout=10/policy=policy -Djava.security.manager -Djava.util.logging.manager=testgetglobal.LogManagerImpl2 TestGetGlobal
- * @run main/othervm/timeout=10 -Djava.util.logging.manager=testgetglobal.LogManagerImpl3 TestGetGlobal
- * @run main/othervm/timeout=10/policy=policy -Djava.security.manager -Djava.util.logging.manager=testgetglobal.LogManagerImpl3 TestGetGlobal
- * @run main/othervm/timeout=10 -Djava.util.logging.manager=testgetglobal.BadLogManagerImpl TestGetGlobal
- * @run main/othervm/timeout=10/policy=policy -Djava.security.manager -Djava.util.logging.manager=testgetglobal.BadLogManagerImpl TestGetGlobal
- * @run main/othervm/timeout=10 -Djava.util.logging.manager=testgetglobal.DummyLogManagerImpl TestGetGlobal
- * @run main/othervm/timeout=10/policy=policy -Djava.security.manager -Djava.util.logging.manager=testgetglobal.DummyLogManagerImpl TestGetGlobal
+ * @run main/othervm TestGetGlobal
+ * @run main/othervm/policy=policy -Djava.security.manager TestGetGlobal
+ * @run main/othervm -Djava.util.logging.manager=testgetglobal.LogManagerImpl1 TestGetGlobal
+ * @run main/othervm/policy=policy -Djava.security.manager -Djava.util.logging.manager=testgetglobal.LogManagerImpl1 TestGetGlobal
+ * @run main/othervm -Djava.util.logging.manager=testgetglobal.LogManagerImpl2 TestGetGlobal
+ * @run main/othervm/policy=policy -Djava.security.manager -Djava.util.logging.manager=testgetglobal.LogManagerImpl2 TestGetGlobal
+ * @run main/othervm -Djava.util.logging.manager=testgetglobal.LogManagerImpl3 TestGetGlobal
+ * @run main/othervm/policy=policy -Djava.security.manager -Djava.util.logging.manager=testgetglobal.LogManagerImpl3 TestGetGlobal
+ * @run main/othervm -Djava.util.logging.manager=testgetglobal.BadLogManagerImpl TestGetGlobal
+ * @run main/othervm/policy=policy -Djava.security.manager -Djava.util.logging.manager=testgetglobal.BadLogManagerImpl TestGetGlobal
+ * @run main/othervm -Djava.util.logging.manager=testgetglobal.DummyLogManagerImpl TestGetGlobal
+ * @run main/othervm/policy=policy -Djava.security.manager -Djava.util.logging.manager=testgetglobal.DummyLogManagerImpl TestGetGlobal
  * @author danielfuchs
  */
 public class TestGetGlobal {
@@ -57,6 +57,12 @@ public class TestGetGlobal {
     }
 
     public static void main(String... args) {
+        final String manager = System.getProperty("java.util.logging.manager", null);
+
+        final String description = "TestGetGlobal"
+            + (System.getSecurityManager() == null ? " " :
+               " -Djava.security.manager ")
+            + (manager == null ? "" : "-Djava.util.logging.manager=" + manager);
 
         Logger.global.info(messages[0]); // at this point LogManager is not
              // initialized yet, so this message should not appear.
@@ -67,7 +73,9 @@ public class TestGetGlobal {
 
         final List<String> expected = Arrays.asList(Arrays.copyOfRange(messages, 1, messages.length));
         if (!testgetglobal.HandlerImpl.received.equals(expected)) {
-            throw new Error("Unexpected message list: "+testgetglobal.HandlerImpl.received+" vs "+ expected);
+            System.err.println("Test case failed: " + description);
+            throw new Error("Unexpected message list: "+testgetglobal.HandlerImpl.received+" vs "+ expected
+                            + "\n\t"+description);
         }
     }
 }
