@@ -316,7 +316,7 @@ BUILD_HEADLESS="BUILD_HEADLESS:=true"
 
 if test "x$SUPPORT_HEADFUL" = xyes; then
     # We are building both headful and headless.
-    headful_msg="inlude support for both headful and headless"
+    headful_msg="include support for both headful and headless"
 fi
 
 if test "x$SUPPORT_HEADFUL" = xno; then

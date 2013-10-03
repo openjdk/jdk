@@ -3818,7 +3818,7 @@ fi
 #CUSTOM_AUTOCONF_INCLUDE
 
 # Do not change or remove the following line, it is needed for consistency checks:
-DATE_WHEN_GENERATED=1379504921
+DATE_WHEN_GENERATED=1380792206
 
 ###############################################################################
 #
@@ -10935,7 +10935,7 @@ BUILD_HEADLESS="BUILD_HEADLESS:=true"
 
 if test "x$SUPPORT_HEADFUL" = xyes; then
     # We are building both headful and headless.
-    headful_msg="inlude support for both headful and headless"
+    headful_msg="include support for both headful and headless"
 fi
 
 if test "x$SUPPORT_HEADFUL" = xno; then
