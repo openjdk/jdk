@@ -21,11 +21,16 @@
  * questions.
  */
 
+//
+// SunJSSE does not support dynamic system properties, no way to re-use
+// system properties in samevm/agentvm mode.
+//
+
 /*
  * @test
  * @bug 4980882
  * @summary SSLEngine should enforce setUseClientMode
- *
+ * @run main/othervm EngineEnforceUseClientMode
  * @author Brad R. Wetmore
  */
 

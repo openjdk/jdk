@@ -463,7 +463,7 @@ public class DataFlavor implements Externalizable, Cloneable {
 
     /**
      * Constructs a <code>DataFlavor</code> from a <code>mimeType</code> string.
-     * The string can specify a "class=<fully specified Java class name>"
+     * The string can specify a "class=&lt;fully specified Java class name&gt;"
      * parameter to create a <code>DataFlavor</code> with the desired
      * representation class. If the string does not contain "class=" parameter,
      * <code>java.io.InputStream</code> is used as default.

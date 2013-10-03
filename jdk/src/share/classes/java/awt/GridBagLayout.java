@@ -120,9 +120,9 @@ import java.util.Arrays;
  * Orientation relative values are interpreted relative to the container's
  * <code>ComponentOrientation</code> property while absolute values
  * are not.  Baseline relative values are calculated relative to the
- * baseline.  Valid values are:</dd>
+ * baseline.  Valid values are:
  * <p>
- * <center><table BORDER=0 COLS=3 WIDTH=800
+ * <center><table BORDER=0 WIDTH=800
  *        SUMMARY="absolute, relative and baseline values as described above">
  * <tr>
  * <th><P ALIGN="LEFT">Absolute Values</th>
@@ -131,6 +131,7 @@ import java.util.Arrays;
  * </tr>
  * <tr>
  * <td>
+ * <ul style="list-style-type:none">
  * <li><code>GridBagConstraints.NORTH</code></li>
  * <li><code>GridBagConstraints.SOUTH</code></li>
  * <li><code>GridBagConstraints.WEST</code></li>
@@ -140,8 +141,10 @@ import java.util.Arrays;
  * <li><code>GridBagConstraints.SOUTHWEST</code></li>
  * <li><code>GridBagConstraints.SOUTHEAST</code></li>
  * <li><code>GridBagConstraints.CENTER</code> (the default)</li>
+ * </ul>
  * </td>
  * <td>
+ * <ul style="list-style-type:none">
  * <li><code>GridBagConstraints.PAGE_START</code></li>
  * <li><code>GridBagConstraints.PAGE_END</code></li>
  * <li><code>GridBagConstraints.LINE_START</code></li>
@@ -150,8 +153,10 @@ import java.util.Arrays;
  * <li><code>GridBagConstraints.FIRST_LINE_END</code></li>
  * <li><code>GridBagConstraints.LAST_LINE_START</code></li>
  * <li><code>GridBagConstraints.LAST_LINE_END</code></li>
+ * </ul>
  * </td>
  * <td>
+ * <ul style="list-style-type:none">
  * <li><code>GridBagConstraints.BASELINE</code></li>
  * <li><code>GridBagConstraints.BASELINE_LEADING</code></li>
  * <li><code>GridBagConstraints.BASELINE_TRAILING</code></li>
@@ -161,9 +166,10 @@ import java.util.Arrays;
  * <li><code>GridBagConstraints.BELOW_BASELINE</code></li>
  * <li><code>GridBagConstraints.BELOW_BASELINE_LEADING</code></li>
  * <li><code>GridBagConstraints.BELOW_BASELINE_TRAILING</code></li>
+ * </ul>
  * </td>
  * </tr>
- * </table></center><p>
+ * </table></center>
  * <dt>{@link GridBagConstraints#weightx},
  * {@link GridBagConstraints#weighty}
  * <dd>Used to determine how to distribute space, which is
@@ -246,7 +252,7 @@ import java.util.Arrays;
  * left-to-right container and Figure 3 shows the layout for a horizontal,
  * right-to-left container.
  * <p>
- * <center><table COLS=2 WIDTH=600 summary="layout">
+ * <center><table WIDTH=600 summary="layout">
  * <tr ALIGN=CENTER>
  * <td>
  * <img src="doc-files/GridBagLayout-1.gif" alt="The preceeding text describes this graphic (Figure 1)." ALIGN=center HSPACE=10 VSPACE=7>
@@ -349,7 +355,7 @@ import java.util.Arrays;
  * </pre></blockquote><hr>
  * <p>
  * @author Doug Stein
- * @author Bill Spitzak (orignial NeWS & OLIT implementation)
+ * @author Bill Spitzak (orignial NeWS &amp; OLIT implementation)
  * @see       java.awt.GridBagConstraints
  * @see       java.awt.GridBagLayoutInfo
  * @see       java.awt.ComponentOrientation

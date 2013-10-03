@@ -64,6 +64,7 @@ import static java.time.temporal.ChronoField.YEAR;
 import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
+import java.io.InvalidObjectException;
 import java.io.Serializable;
 import java.time.Clock;
 import java.time.DateTimeException;
@@ -106,7 +107,7 @@ public final class ThaiBuddhistDate
     /**
      * The underlying date.
      */
-    private final LocalDate isoDate;
+    private final transient LocalDate isoDate;
 
     //-----------------------------------------------------------------------
     /**
@@ -448,6 +449,28 @@ public final class ThaiBuddhistDate
     }
 
     //-----------------------------------------------------------------------
+    /**
+     * Defend against malicious streams.
+     * @return never
+     * @throws InvalidObjectException always
+     */
+    private Object readResolve() throws InvalidObjectException {
+        throw new InvalidObjectException("Deserialization via serialization delegate");
+    }
+
+    /**
+     * Writes the object using a
+     * <a href="../../../serialized-form.html#java.time.chrono.Ser">dedicated serialized form</a>.
+     * @serialData
+     * <pre>
+     *  out.writeByte(10);                // identifies a ThaiBuddhistDate
+     *  out.writeInt(get(YEAR));
+     *  out.writeByte(get(MONTH_OF_YEAR));
+     *  out.writeByte(get(DAY_OF_MONTH));
+     * </pre>
+     *
+     * @return the instance of {@code Ser}, not null
+     */
     private Object writeReplace() {
         return new Ser(Ser.THAIBUDDHIST_DATE_TYPE, this);
     }

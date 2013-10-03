@@ -359,9 +359,9 @@ public class JSplitPane extends JComponent implements Accessible
 
 
     /**
-     * Sets the L&F object that renders this component.
+     * Sets the L&amp;F object that renders this component.
      *
-     * @param ui  the <code>SplitPaneUI</code> L&F object
+     * @param ui  the <code>SplitPaneUI</code> L&amp;F object
      * @see UIDefaults#getUI
      * @beaninfo
      *        bound: true
@@ -384,7 +384,7 @@ public class JSplitPane extends JComponent implements Accessible
      * @return the <code>SplitPaneUI</code> object that renders this component
      * @beaninfo
      *       expert: true
-     *  description: The L&F object that renders this component.
+     *  description: The L&amp;F object that renders this component.
      */
     public SplitPaneUI getUI() {
         return (SplitPaneUI)ui;
@@ -392,7 +392,7 @@ public class JSplitPane extends JComponent implements Accessible
 
 
     /**
-     * Notification from the <code>UIManager</code> that the L&F has changed.
+     * Notification from the <code>UIManager</code> that the L&amp;F has changed.
      * Replaces the current UI object with the latest version from the
      * <code>UIManager</code>.
      *
@@ -405,14 +405,14 @@ public class JSplitPane extends JComponent implements Accessible
 
 
     /**
-     * Returns the name of the L&F class that renders this component.
+     * Returns the name of the L&amp;F class that renders this component.
      *
      * @return the string "SplitPaneUI"
      * @see JComponent#getUIClassID
      * @see UIDefaults#getUI
      * @beaninfo
      *       expert: true
-     *  description: A string that specifies the name of the L&F class.
+     *  description: A string that specifies the name of the L&amp;F class.
      */
     public String getUIClassID() {
         return uiClassID;
@@ -714,7 +714,7 @@ public class JSplitPane extends JComponent implements Accessible
      * extra space.
      *
      * @param value as described above
-     * @exception IllegalArgumentException if <code>value</code> is < 0 or > 1
+     * @exception IllegalArgumentException if <code>value</code> is &lt; 0 or &gt; 1
      * @since 1.3
      * @beaninfo
      *        bound: true
@@ -769,8 +769,8 @@ public class JSplitPane extends JComponent implements Accessible
      * @param proportionalLocation  a double-precision floating point value
      *        that specifies a percentage, from zero (top/left) to 1.0
      *        (bottom/right)
-     * @exception IllegalArgumentException if the specified location is < 0
-     *            or > 1.0
+     * @exception IllegalArgumentException if the specified location is &lt; 0
+     *            or &gt; 1.0
      * @beaninfo
      *  description: The location of the divider.
      */
@@ -845,7 +845,7 @@ public class JSplitPane extends JComponent implements Accessible
      *          location (typically a pixel count); or -1 if the UI is
      *          <code>null</code>
      * @beaninfo
-     *  description: The minimum location of the divider from the L&F.
+     *  description: The minimum location of the divider from the L&amp;F.
      */
     public int getMinimumDividerLocation() {
         SplitPaneUI         ui = getUI();

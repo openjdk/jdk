@@ -42,6 +42,7 @@ public class TranslucentWindow {
         GraphicsDevice gd = ge.getDefaultScreenDevice();
 
         Frame f = new Frame("Test frame");
+        f.setUndecorated(true);
         f.setBounds(100, 100, 320, 240);
 
         // First, check it can be made fullscreen window without any effects applied

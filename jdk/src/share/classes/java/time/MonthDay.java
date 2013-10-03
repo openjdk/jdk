@@ -68,7 +68,7 @@ import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
 import java.io.InvalidObjectException;
-import java.io.ObjectStreamException;
+import java.io.InvalidObjectException;
 import java.io.Serializable;
 import java.time.chrono.Chronology;
 import java.time.chrono.IsoChronology;
@@ -744,9 +744,10 @@ public final class MonthDay
     //-----------------------------------------------------------------------
     /**
      * Writes the object using a
-     * <a href="../../../serialized-form.html#java.time.temporal.Ser">dedicated serialized form</a>.
+     * <a href="../../serialized-form.html#java.time.Ser">dedicated serialized form</a>.
+     * @serialData
      * <pre>
-     *  out.writeByte(13);  // identifies this as a MonthDay
+     *  out.writeByte(13);  // identifies a MonthDay
      *  out.writeByte(month);
      *  out.writeByte(day);
      * </pre>
@@ -762,7 +763,7 @@ public final class MonthDay
      * @return never
      * @throws InvalidObjectException always
      */
-    private Object readResolve() throws ObjectStreamException {
+    private Object readResolve() throws InvalidObjectException {
         throw new InvalidObjectException("Deserialization via serialization delegate");
     }
 

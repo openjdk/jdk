@@ -114,7 +114,7 @@ public abstract class DragGestureRecognizer implements Serializable {
      * @param dgl the <code>DragGestureRecognizer</code>
      * to notify when a drag gesture is detected
      * <P>
-     * @throws <code>IllegalArgumentException</code>
+     * @throws IllegalArgumentException
      * if ds is <code>null</code>.
      */
 
@@ -157,7 +157,7 @@ public abstract class DragGestureRecognizer implements Serializable {
      * @param sa the set (logical OR) of the <code>DnDConstants</code>
      * that this Drag and Drop operation will support
      * <P>
-     * @throws <code>IllegalArgumentException</code>
+     * @throws IllegalArgumentException
      * if ds is <code>null</code>.
      */
 
@@ -185,7 +185,7 @@ public abstract class DragGestureRecognizer implements Serializable {
      * the <code>DragGestureRecognizer</code>
      * is not associated with any <code>Component</code>.
      * <P>
-     * @throws <code>IllegalArgumentException</code>
+     * @throws IllegalArgumentException
      * if ds is <code>null</code>.
      */
 
@@ -202,7 +202,7 @@ public abstract class DragGestureRecognizer implements Serializable {
      * <code>DragGestureRecognizer</code> will
      * use to process the Drag and Drop operation
      * <P>
-     * @throws <code>IllegalArgumentException</code>
+     * @throws IllegalArgumentException
      * if ds is <code>null</code>.
      */
 
@@ -332,7 +332,7 @@ public abstract class DragGestureRecognizer implements Serializable {
      * @param dgl the <code>DragGestureListener</code> to unregister
      * from this <code>DragGestureRecognizer</code>
      * <P>
-     * @throws <code>IllegalArgumentException</code> if
+     * @throws IllegalArgumentException if
      * dgl is not (equal to) the currently registered <code>DragGestureListener</code>.
      */
 

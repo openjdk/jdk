@@ -43,9 +43,9 @@ then
   exit 0
 fi
 
-gcc_cmd=`which gcc`
-if [ "x$gcc_cmd" == "x" ]; then
-    echo "WARNING: gcc not found. Cannot execute test." 2>&1
+gcc_cmd=`which g++`
+if [ "x$gcc_cmd" = "x" ]; then
+    echo "WARNING: g++ not found. Cannot execute test." 2>&1
     exit 0;
 fi
 

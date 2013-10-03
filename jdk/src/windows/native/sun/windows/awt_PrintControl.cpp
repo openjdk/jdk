@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -81,6 +81,7 @@ jmethodID AwtPrintControl::setToPageID;
 jmethodID AwtPrintControl::setNativeAttID;
 jmethodID AwtPrintControl::setRangeCopiesID;
 jmethodID AwtPrintControl::setResID;
+jmethodID AwtPrintControl::setJobAttributesID;
 
 
 BOOL AwtPrintControl::IsSupportedLevel(HANDLE hPrinter, DWORD dwLevel) {
@@ -297,6 +298,10 @@ void AwtPrintControl::initIDs(JNIEnv *env, jclass cls)
     AwtPrintControl::setPrinterID =
       env->GetMethodID(cls, "setPrinterNameAttrib", "(Ljava/lang/String;)V");
 
+    AwtPrintControl::setJobAttributesID =
+        env->GetMethodID(cls, "setJobAttributes",
+        "(Ljavax/print/attribute/PrintRequestAttributeSet;IISSSSSSS)V");
+
     DASSERT(AwtPrintControl::driverDoesMultipleCopiesID != NULL);
     DASSERT(AwtPrintControl::getPrintDCID != NULL);
     DASSERT(AwtPrintControl::setPrintDCID != NULL);
@@ -327,6 +332,7 @@ void AwtPrintControl::initIDs(JNIEnv *env, jclass cls)
     DASSERT(AwtPrintControl::getSidesID != NULL);
     DASSERT(AwtPrintControl::getSelectID != NULL);
     DASSERT(AwtPrintControl::getPrintToFileEnabledID != NULL);
+    DASSERT(AwtPrintControl::setJobAttributesID != NULL);
 
 
     CATCH_BAD_ALLOC;
@@ -422,17 +428,17 @@ BOOL AwtPrintControl::CreateDevModeAndDevNames(PRINTDLG *ppd,
         devnames->wOutputOffset =
             static_cast<WORD>(sizeof(DEVNAMES)/sizeof(TCHAR) + lenDriverName + lenPrinterName);
         if (info2->pDriverName != NULL) {
-            _tcscpy(lpcDevnames + devnames->wDriverOffset, info2->pDriverName);
+            _tcscpy_s(lpcDevnames + devnames->wDriverOffset, devnameSize - devnames->wDriverOffset, info2->pDriverName);
         } else {
             *(lpcDevnames + devnames->wDriverOffset) = _T('\0');
         }
         if (pPrinterName != NULL) {
-            _tcscpy(lpcDevnames + devnames->wDeviceOffset, pPrinterName);
+            _tcscpy_s(lpcDevnames + devnames->wDeviceOffset, devnameSize - devnames->wDeviceOffset, pPrinterName);
         } else {
             *(lpcDevnames + devnames->wDeviceOffset) = _T('\0');
         }
         if (info2->pPortName != NULL) {
-            _tcscpy(lpcDevnames + devnames->wOutputOffset, info2->pPortName);
+            _tcscpy_s(lpcDevnames + devnames->wOutputOffset, devnameSize - devnames->wOutputOffset, info2->pPortName);
         } else {
             *(lpcDevnames + devnames->wOutputOffset) = _T('\0');
         }

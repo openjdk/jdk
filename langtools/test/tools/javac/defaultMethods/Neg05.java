@@ -1,5 +1,5 @@
-/*
- * @test /nodynamiccopyright/
+/* @test /nodynamiccopyright/
+ * @bug 7192246
  * @summary check that abstract methods are compatible with inherited defaults
  * @compile/fail/ref=Neg05.out -XDrawDiagnostics Neg05.java
  */

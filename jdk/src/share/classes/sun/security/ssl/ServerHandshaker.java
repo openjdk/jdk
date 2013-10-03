@@ -932,8 +932,18 @@ final class ServerHandshaker extends Handshaker {
      * the cipherSuite and keyExchange variables.
      */
     private void chooseCipherSuite(ClientHello mesg) throws IOException {
-        for (CipherSuite suite : mesg.getCipherSuites().collection()) {
-            if (isNegotiable(suite) == false) {
+        CipherSuiteList prefered;
+        CipherSuiteList proposed;
+        if (preferLocalCipherSuites) {
+            prefered = getActiveCipherSuites();
+            proposed = mesg.getCipherSuites();
+        } else {
+            prefered = mesg.getCipherSuites();
+            proposed = getActiveCipherSuites();
+        }
+
+        for (CipherSuite suite : prefered.collection()) {
+            if (isNegotiable(proposed, suite) == false) {
                 continue;
             }
 
@@ -948,8 +958,7 @@ final class ServerHandshaker extends Handshaker {
             }
             return;
         }
-        fatalSE(Alerts.alert_handshake_failure,
-                    "no cipher suites in common");
+        fatalSE(Alerts.alert_handshake_failure, "no cipher suites in common");
     }
 
     /**

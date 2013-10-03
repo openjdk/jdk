@@ -190,39 +190,6 @@ public class WeakHashMap<K,V>
      */
     int modCount;
 
-    private static class Holder {
-        static final boolean USE_HASHSEED;
-
-        static {
-            String hashSeedProp = java.security.AccessController.doPrivileged(
-                    new sun.security.action.GetPropertyAction(
-                        "jdk.map.useRandomSeed"));
-            boolean localBool = (null != hashSeedProp)
-                    ? Boolean.parseBoolean(hashSeedProp) : false;
-            USE_HASHSEED = localBool;
-        }
-    }
-
-    /**
-     * A randomizing value associated with this instance that is applied to
-     * hash code of keys to make hash collisions harder to find.
-     *
-     * Non-final so it can be set lazily, but be sure not to set more than once.
-     */
-    transient int hashSeed;
-
-    /**
-     * Initialize the hashing mask value.
-     */
-    final void initHashSeed() {
-        if (sun.misc.VM.isBooted() && Holder.USE_HASHSEED) {
-            // Do not set hashSeed more than once!
-            // assert hashSeed == 0;
-            int seed = ThreadLocalRandom.current().nextInt();
-            hashSeed = (seed != 0) ? seed : 1;
-        }
-    }
-
     @SuppressWarnings("unchecked")
     private Entry<K,V>[] newTable(int n) {
         return (Entry<K,V>[]) new Entry<?,?>[n];
@@ -253,7 +220,6 @@ public class WeakHashMap<K,V>
         table = newTable(capacity);
         this.loadFactor = loadFactor;
         threshold = (int)(capacity * loadFactor);
-        initHashSeed();
     }
 
     /**
@@ -329,7 +295,7 @@ public class WeakHashMap<K,V>
      * in lower bits.
      */
     final int hash(Object k) {
-        int h = hashSeed ^ k.hashCode();
+        int h = k.hashCode();
 
         // This function ensures that hashCodes that differ only by
         // constant multiples at each bit position have a bounded
@@ -783,8 +749,7 @@ public class WeakHashMap<K,V>
         public int hashCode() {
             K k = getKey();
             V v = getValue();
-            return ((k==null ? 0 : k.hashCode()) ^
-                    (v==null ? 0 : v.hashCode()));
+            return Objects.hashCode(k) ^ Objects.hashCode(v);
         }
 
         public String toString() {

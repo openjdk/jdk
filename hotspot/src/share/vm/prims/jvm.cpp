@@ -1824,7 +1824,7 @@ JVM_ENTRY(jobjectArray, JVM_GetClassDeclaredFields(JNIEnv *env, jclass ofClass, 
     }
 
     if (!publicOnly || fs.access_flags().is_public()) {
-      fd.initialize(k(), fs.index());
+      fd.reinitialize(k(), fs.index());
       oop field = Reflection::new_field(&fd, UseNewReflection, CHECK_NULL);
       result->obj_at_put(out_idx, field);
       ++out_idx;
@@ -1835,16 +1835,27 @@ JVM_ENTRY(jobjectArray, JVM_GetClassDeclaredFields(JNIEnv *env, jclass ofClass, 
 }
 JVM_END
 
-JVM_ENTRY(jobjectArray, JVM_GetClassDeclaredMethods(JNIEnv *env, jclass ofClass, jboolean publicOnly))
-{
-  JVMWrapper("JVM_GetClassDeclaredMethods");
+static bool select_method(methodHandle method, bool want_constructor) {
+  if (want_constructor) {
+    return (method->is_initializer() && !method->is_static());
+  } else {
+    return  (!method->is_initializer() && !method->is_overpass());
+  }
+}
+
+static jobjectArray get_class_declared_methods_helper(
+                                  JNIEnv *env,
+                                  jclass ofClass, jboolean publicOnly,
+                                  bool want_constructor,
+                                  Klass* klass, TRAPS) {
+
   JvmtiVMObjectAllocEventCollector oam;
 
   // Exclude primitive types and array types
   if (java_lang_Class::is_primitive(JNIHandles::resolve_non_null(ofClass))
       || java_lang_Class::as_Klass(JNIHandles::resolve_non_null(ofClass))->oop_is_array()) {
     // Return empty array
-    oop res = oopFactory::new_objArray(SystemDictionary::reflect_Method_klass(), 0, CHECK_NULL);
+    oop res = oopFactory::new_objArray(klass, 0, CHECK_NULL);
     return (jobjectArray) JNIHandles::make_local(env, res);
   }
 
@@ -1855,87 +1866,67 @@ JVM_ENTRY(jobjectArray, JVM_GetClassDeclaredMethods(JNIEnv *env, jclass ofClass,
 
   Array<Method*>* methods = k->methods();
   int methods_length = methods->length();
+
+  // Save original method_idnum in case of redefinition, which can change
+  // the idnum of obsolete methods.  The new method will have the same idnum
+  // but if we refresh the methods array, the counts will be wrong.
+  ResourceMark rm(THREAD);
+  GrowableArray<int>* idnums = new GrowableArray<int>(methods_length);
   int num_methods = 0;
 
-  int i;
-  for (i = 0; i < methods_length; i++) {
+  for (int i = 0; i < methods_length; i++) {
     methodHandle method(THREAD, methods->at(i));
-    if (!method->is_initializer() && !method->is_overpass()) {
+    if (select_method(method, want_constructor)) {
       if (!publicOnly || method->is_public()) {
+        idnums->push(method->method_idnum());
         ++num_methods;
       }
     }
   }
 
   // Allocate result
-  objArrayOop r = oopFactory::new_objArray(SystemDictionary::reflect_Method_klass(), num_methods, CHECK_NULL);
+  objArrayOop r = oopFactory::new_objArray(klass, num_methods, CHECK_NULL);
   objArrayHandle result (THREAD, r);
 
-  int out_idx = 0;
-  for (i = 0; i < methods_length; i++) {
-    methodHandle method(THREAD, methods->at(i));
-    if (!method->is_initializer() && !method->is_overpass()) {
-      if (!publicOnly || method->is_public()) {
-        oop m = Reflection::new_method(method, UseNewReflection, false, CHECK_NULL);
-        result->obj_at_put(out_idx, m);
-        ++out_idx;
+  // Now just put the methods that we selected above, but go by their idnum
+  // in case of redefinition.  The methods can be redefined at any safepoint,
+  // so above when allocating the oop array and below when creating reflect
+  // objects.
+  for (int i = 0; i < num_methods; i++) {
+    methodHandle method(THREAD, k->method_with_idnum(idnums->at(i)));
+    if (method.is_null()) {
+      // Method may have been deleted and seems this API can handle null
+      // Otherwise should probably put a method that throws NSME
+      result->obj_at_put(i, NULL);
+    } else {
+      oop m;
+      if (want_constructor) {
+        m = Reflection::new_constructor(method, CHECK_NULL);
+      } else {
+        m = Reflection::new_method(method, UseNewReflection, false, CHECK_NULL);
       }
+      result->obj_at_put(i, m);
     }
   }
-  assert(out_idx == num_methods, "just checking");
+
   return (jobjectArray) JNIHandles::make_local(env, result());
+}
+
+JVM_ENTRY(jobjectArray, JVM_GetClassDeclaredMethods(JNIEnv *env, jclass ofClass, jboolean publicOnly))
+{
+  JVMWrapper("JVM_GetClassDeclaredMethods");
+  return get_class_declared_methods_helper(env, ofClass, publicOnly,
+                                           /*want_constructor*/ false,
+                                           SystemDictionary::reflect_Method_klass(), THREAD);
 }
 JVM_END
 
 JVM_ENTRY(jobjectArray, JVM_GetClassDeclaredConstructors(JNIEnv *env, jclass ofClass, jboolean publicOnly))
 {
   JVMWrapper("JVM_GetClassDeclaredConstructors");
-  JvmtiVMObjectAllocEventCollector oam;
-
-  // Exclude primitive types and array types
-  if (java_lang_Class::is_primitive(JNIHandles::resolve_non_null(ofClass))
-      || java_lang_Class::as_Klass(JNIHandles::resolve_non_null(ofClass))->oop_is_array()) {
-    // Return empty array
-    oop res = oopFactory::new_objArray(SystemDictionary::reflect_Constructor_klass(), 0 , CHECK_NULL);
-    return (jobjectArray) JNIHandles::make_local(env, res);
-  }
-
-  instanceKlassHandle k(THREAD, java_lang_Class::as_Klass(JNIHandles::resolve_non_null(ofClass)));
-
-  // Ensure class is linked
-  k->link_class(CHECK_NULL);
-
-  Array<Method*>* methods = k->methods();
-  int methods_length = methods->length();
-  int num_constructors = 0;
-
-  int i;
-  for (i = 0; i < methods_length; i++) {
-    methodHandle method(THREAD, methods->at(i));
-    if (method->is_initializer() && !method->is_static()) {
-      if (!publicOnly || method->is_public()) {
-        ++num_constructors;
-      }
-    }
-  }
-
-  // Allocate result
-  objArrayOop r = oopFactory::new_objArray(SystemDictionary::reflect_Constructor_klass(), num_constructors, CHECK_NULL);
-  objArrayHandle result(THREAD, r);
-
-  int out_idx = 0;
-  for (i = 0; i < methods_length; i++) {
-    methodHandle method(THREAD, methods->at(i));
-    if (method->is_initializer() && !method->is_static()) {
-      if (!publicOnly || method->is_public()) {
-        oop m = Reflection::new_constructor(method, CHECK_NULL);
-        result->obj_at_put(out_idx, m);
-        ++out_idx;
-      }
-    }
-  }
-  assert(out_idx == num_constructors, "just checking");
-  return (jobjectArray) JNIHandles::make_local(env, result());
+  return get_class_declared_methods_helper(env, ofClass, publicOnly,
+                                           /*want_constructor*/ true,
+                                           SystemDictionary::reflect_Constructor_klass(), THREAD);
 }
 JVM_END
 

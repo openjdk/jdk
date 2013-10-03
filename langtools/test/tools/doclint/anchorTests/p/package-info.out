@@ -1,0 +1,4 @@
+package-info.java:12: error: anchor already defined: here
+ * <a name=here>here again</a>
+      ^
+1 error

@@ -562,7 +562,6 @@ OTHER_INCLUDES += -I$(CLASSHDRDIR)/../../java/jvm \
 	-I$(OBJDIR) \
 	-I$(SHARE_SRC)/native/common \
 	-I$(WINAWT_native) \
-	-I$(DXSDK_INCLUDE_PATH) \
 	-I$(SHARE_SRC)/native/sun/awt/image/cvutils \
 	-I$(SHARE_SRC)/native/sun/awt/image \
 	-I$(SHARE_SRC)/native/sun/java2d/loops \
