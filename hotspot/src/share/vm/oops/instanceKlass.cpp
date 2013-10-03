@@ -456,14 +456,14 @@ objArrayOop InstanceKlass::signers() const {
   return java_lang_Class::signers(java_mirror());
 }
 
-volatile oop InstanceKlass::init_lock() const {
+oop InstanceKlass::init_lock() const {
   // return the init lock from the mirror
   return java_lang_Class::init_lock(java_mirror());
 }
 
 void InstanceKlass::eager_initialize_impl(instanceKlassHandle this_oop) {
   EXCEPTION_MARK;
-  volatile oop init_lock = this_oop->init_lock();
+  oop init_lock = this_oop->init_lock();
   ObjectLocker ol(init_lock, THREAD);
 
   // abort if someone beat us to the initialization
@@ -608,7 +608,7 @@ bool InstanceKlass::link_class_impl(
 
   // verification & rewriting
   {
-    volatile oop init_lock = this_oop->init_lock();
+    oop init_lock = this_oop->init_lock();
     ObjectLocker ol(init_lock, THREAD);
     // rewritten will have been set if loader constraint error found
     // on an earlier link attempt
@@ -731,7 +731,7 @@ void InstanceKlass::initialize_impl(instanceKlassHandle this_oop, TRAPS) {
   // refer to the JVM book page 47 for description of steps
   // Step 1
   {
-    volatile oop init_lock = this_oop->init_lock();
+    oop init_lock = this_oop->init_lock();
     ObjectLocker ol(init_lock, THREAD);
 
     Thread *self = THREAD; // it's passed the current thread
@@ -879,7 +879,7 @@ void InstanceKlass::set_initialization_state_and_notify(ClassState state, TRAPS)
 }
 
 void InstanceKlass::set_initialization_state_and_notify_impl(instanceKlassHandle this_oop, ClassState state, TRAPS) {
-  volatile oop init_lock = this_oop->init_lock();
+  oop init_lock = this_oop->init_lock();
   ObjectLocker ol(init_lock, THREAD);
   this_oop->set_init_state(state);
   ol.notify_all(CHECK);
