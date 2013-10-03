@@ -57,70 +57,65 @@
  * NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-package tck.java.time.serial;
+package tck.java.time.zone.serial;
 
-import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
-import tck.java.time.AbstractTCKTest;
 
+import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
-import java.io.DataOutputStream;
-import java.time.LocalDateTime;
-import java.time.OffsetDateTime;
-import java.time.ZoneOffset;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
+import java.time.ZoneId;
+import java.time.zone.ZoneRules;
+
+import static org.testng.Assert.assertEquals;
 
 /**
- * Test OffsetDateTime.
+ * Test serialization of ZoneRules.
  */
 @Test
-public class TCKOffsetDateTime extends AbstractTCKTest {
+public class TCKZoneRulesSerialization {
 
-    private static final ZoneOffset OFFSET_PONE = ZoneOffset.ofHours(1);
-    private OffsetDateTime TEST_2008_6_30_11_30_59_000000500;
-
-    @BeforeMethod
-    public void setUp() {
-        TEST_2008_6_30_11_30_59_000000500 = OffsetDateTime.of(2008, 6, 30, 11, 30, 59, 500, OFFSET_PONE);
+    public void test_serialization_loaded() throws Exception {
+        assertSerialization(europeLondon());
+        assertSerialization(europeParis());
+        assertSerialization(americaNewYork());
     }
 
-    //-----------------------------------------------------------------------
-
-
-    //-----------------------------------------------------------------------
-    @Test
-    public void test_serialization() throws Exception {
-        assertSerializable(TEST_2008_6_30_11_30_59_000000500);
-        assertSerializable(OffsetDateTime.MIN);
-        assertSerializable(OffsetDateTime.MAX);
-    }
-
-    @Test
-    public void test_serialization_format() throws Exception {
+    private void assertSerialization(ZoneRules test) throws Exception {
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        try (DataOutputStream dos = new DataOutputStream(baos) ) {
-            dos.writeByte(10);       // java.time.Ser.OFFSET_DATE_TIME_TYPE
-        }
+        ObjectOutputStream out = new ObjectOutputStream(baos);
+        out.writeObject(test);
+        baos.close();
         byte[] bytes = baos.toByteArray();
-        ByteArrayOutputStream baosDateTime = new ByteArrayOutputStream();
-        try (DataOutputStream dos = new DataOutputStream(baosDateTime) ) {
-            dos.writeByte(5);
-            dos.writeInt(2012);
-            dos.writeByte(9);
-            dos.writeByte(16);
-            dos.writeByte(22);
-            dos.writeByte(17);
-            dos.writeByte(59);
-            dos.writeInt(464_000_000);
-        }
-        byte[] bytesDateTime = baosDateTime.toByteArray();
-        ByteArrayOutputStream baosOffset = new ByteArrayOutputStream();
-        try (DataOutputStream dos = new DataOutputStream(baosOffset) ) {
-            dos.writeByte(8);
-            dos.writeByte(4);  // quarter hours stored: 3600 / 900
-        }
-        byte[] bytesOffset = baosOffset.toByteArray();
-        LocalDateTime ldt = LocalDateTime.of(2012, 9, 16, 22, 17, 59, 464_000_000);
-        assertSerializedBySer(OffsetDateTime.of(ldt, ZoneOffset.ofHours(1)), bytes, bytesDateTime, bytesOffset);
+
+        ByteArrayInputStream bais = new ByteArrayInputStream(bytes);
+        ObjectInputStream in = new ObjectInputStream(bais);
+        ZoneRules result = (ZoneRules) in.readObject();
+
+        assertEquals(result, test);
+    }
+
+    //-----------------------------------------------------------------------
+    // Europe/London
+    //-----------------------------------------------------------------------
+    private ZoneRules europeLondon() {
+        return ZoneId.of("Europe/London").getRules();
+    }
+
+
+    //-----------------------------------------------------------------------
+    // Europe/Paris
+    //-----------------------------------------------------------------------
+    private ZoneRules europeParis() {
+        return ZoneId.of("Europe/Paris").getRules();
+    }
+
+    //-----------------------------------------------------------------------
+    // America/New_York
+    //-----------------------------------------------------------------------
+    private ZoneRules americaNewYork() {
+        return ZoneId.of("America/New_York").getRules();
     }
 
 

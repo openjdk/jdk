@@ -4,9 +4,7 @@
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.  Oracle designates this
- * particular file as subject to the "Classpath" exception as provided
- * by Oracle in the LICENSE file that accompanied this code.
+ * published by the Free Software Foundation.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -24,6 +22,11 @@
  */
 
 /*
+ * This file is available under and governed by the GNU General Public
+ * License version 2 only, as published by the Free Software Foundation.
+ * However, the following notice accompanied the original version of this
+ * file:
+ *
  * Copyright (c) 2008-2012, Stephen Colebourne & Michael Nascimento Santos
  *
  * All rights reserved.
@@ -54,41 +57,25 @@
  * NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-package tck.java.time.temporal.serial;
+package tck.java.time.serial;
 
-import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 import tck.java.time.AbstractTCKTest;
 
-import java.io.IOException;
-import java.time.DayOfWeek;
-import java.time.temporal.WeekFields;
+import java.time.Period;
 
 /**
- * Test WeekFields.
+ * Test serialization of Period.
  */
 @Test
-public class TCKWeekFields extends AbstractTCKTest {
+public class TCKPeriodSerialization extends AbstractTCKTest {
 
     //-----------------------------------------------------------------------
-    @Test(dataProvider="weekFields")
-    public void test_serializable_singleton(DayOfWeek firstDayOfWeek, int minDays) throws IOException, ClassNotFoundException {
-        WeekFields weekDef = WeekFields.of(firstDayOfWeek, minDays);
-        assertSerializableSame(weekDef);  // spec state singleton
+    @Test
+    public void test_serialization() throws Exception {
+        assertSerializable(Period.ZERO);
+        assertSerializable(Period.ofDays(1));
+        assertSerializable(Period.of(1, 2, 3));
     }
-
-    //-----------------------------------------------------------------------
-    @DataProvider(name="weekFields")
-    Object[][] data_weekFields() {
-        Object[][] objects = new Object[49][];
-        int i = 0;
-        for (DayOfWeek firstDayOfWeek : DayOfWeek.values()) {
-            for (int minDays = 1; minDays <= 7; minDays++) {
-                objects[i++] = new Object[] {firstDayOfWeek, minDays};
-            }
-        }
-        return objects;
-    }
-
 
 }

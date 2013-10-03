@@ -1,4 +1,5 @@
 /*
+ * Copyright (c) 2012, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +27,7 @@
  * However, the following notice accompanied the original version of this
  * file:
  *
- * Copyright (c) 2011-2012, Stephen Colebourne & Michael Nascimento Santos
+ * Copyright (c) 2010-2012, Stephen Colebourne & Michael Nascimento Santos
  *
  * All rights reserved.
  *
@@ -56,29 +57,57 @@
  * NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-package tck.java.time.chrono;
+package tck.java.time.zone.serial;
 
-import static org.testng.Assert.assertEquals;
+import static java.time.temporal.ChronoUnit.HOURS;
 
-import java.time.LocalDate;
-import java.time.chrono.ChronoLocalDate;
-import java.time.chrono.Chronology;
-
+import java.time.Duration;
 import org.testng.annotations.Test;
+import tck.java.time.AbstractTCKTest;
+
+import java.time.LocalDateTime;
+import java.time.Year;
+import java.time.ZoneOffset;
+import java.time.zone.ZoneOffsetTransition;
 
 /**
- * Tests that a custom Chronology is available via the ServiceLoader.
- * The CopticChronology is configured via META-INF/services/java.time.chrono.Chronology.
+ * Test serialization of ZoneOffsetTransition.
  */
 @Test
-public class TCKTestServiceLoader {
+public class TCKZoneOffsetTransitionSerialization extends AbstractTCKTest {
 
-     @Test
-     public void test_TestServiceLoader() {
-        Chronology chrono = Chronology.of("Coptic");
-        ChronoLocalDate copticDate = chrono.date(1729, 4, 27);
-        LocalDate ld = LocalDate.from(copticDate);
-        assertEquals(ld, LocalDate.of(2013, 1, 5), "CopticDate does not match LocalDate");
+    private static final ZoneOffset OFFSET_0200 = ZoneOffset.ofHours(2);
+    private static final ZoneOffset OFFSET_0300 = ZoneOffset.ofHours(3);
+
+    //-----------------------------------------------------------------------
+    @Test
+    public void test_serialization_unusual1() throws Exception {
+        LocalDateTime ldt = LocalDateTime.of(Year.MAX_VALUE, 12, 31, 1, 31, 53);
+        ZoneOffsetTransition test = ZoneOffsetTransition.of(ldt, ZoneOffset.of("+02:04:56"), ZoneOffset.of("-10:02:34"));
+        assertSerializable(test);
+    }
+
+    @Test
+    public void test_serialization_unusual2() throws Exception {
+        LocalDateTime ldt = LocalDateTime.of(Year.MIN_VALUE, 1, 1, 12, 1, 3);
+        ZoneOffsetTransition test = ZoneOffsetTransition.of(ldt, ZoneOffset.of("+02:04:56"), ZoneOffset.of("+10:02:34"));
+        assertSerializable(test);
+    }
+
+    @Test
+    public void test_serialization_gap() throws Exception {
+        LocalDateTime before = LocalDateTime.of(2010, 3, 31, 1, 0);
+        LocalDateTime after = LocalDateTime.of(2010, 3, 31, 2, 0);
+        ZoneOffsetTransition test = ZoneOffsetTransition.of(before, OFFSET_0200, OFFSET_0300);
+        assertSerializable(test);
+    }
+
+    @Test
+    public void test_serialization_overlap() throws Exception {
+        LocalDateTime before = LocalDateTime.of(2010, 10, 31, 1, 0);
+        LocalDateTime after = LocalDateTime.of(2010, 10, 31, 0, 0);
+        ZoneOffsetTransition test = ZoneOffsetTransition.of(before, OFFSET_0300, OFFSET_0200);
+        assertSerializable(test);
     }
 
 }

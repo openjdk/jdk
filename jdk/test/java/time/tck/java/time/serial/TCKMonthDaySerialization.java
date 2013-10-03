@@ -59,36 +59,44 @@
  */
 package tck.java.time.serial;
 
+import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 import tck.java.time.AbstractTCKTest;
 
 import java.io.ByteArrayOutputStream;
 import java.io.DataOutputStream;
-import java.time.Year;
+import java.io.IOException;
+import java.time.MonthDay;
 
 /**
- * Test Year.
+ * Test MonthDay serialization.
  */
 @Test
-public class TCKYear extends AbstractTCKTest {
+public class TCKMonthDaySerialization extends AbstractTCKTest {
+
+    private MonthDay TEST_07_15;
+
+    @BeforeMethod
+    public void setUp() {
+        TEST_07_15 = MonthDay.of(7, 15);
+    }
 
     //-----------------------------------------------------------------------
     @Test
-    public void test_serialization() throws Exception {
-        assertSerializable(Year.of(2));
-        assertSerializable(Year.of(0));
-        assertSerializable(Year.of(-2));
+    public void test_serialization() throws ClassNotFoundException, IOException {
+        assertSerializable(TEST_07_15);
     }
 
     @Test
     public void test_serialization_format() throws Exception {
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         try (DataOutputStream dos = new DataOutputStream(baos) ) {
-            dos.writeByte(11);       // java.time.temporal.Ser.YEAR_TYPE
-            dos.writeInt(2012);
+            dos.writeByte(13);       // java.time.temporal.Ser.MONTH_DAY_TYPE
+            dos.writeByte(9);
+            dos.writeByte(16);
         }
         byte[] bytes = baos.toByteArray();
-        assertSerializedBySer(Year.of(2012), bytes);
+        assertSerializedBySer(MonthDay.of(9, 16), bytes);
     }
 
 }

@@ -27,7 +27,7 @@
  * However, the following notice accompanied the original version of this
  * file:
  *
- * Copyright (c) 2010-2012, Stephen Colebourne & Michael Nascimento Santos
+ * Copyright (c) 2007-2012, Stephen Colebourne & Michael Nascimento Santos
  *
  * All rights reserved.
  *
@@ -57,58 +57,57 @@
  * NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-package tck.java.time.zone.serial;
+package tck.java.time.serial;
 
-import static org.testng.Assert.assertEquals;
-
-import java.time.DayOfWeek;
-import java.time.LocalDateTime;
-import java.time.LocalTime;
-import java.time.Month;
-import java.time.ZoneOffset;
-import java.time.zone.ZoneOffsetTransitionRule;
-import java.time.zone.ZoneOffsetTransitionRule.TimeDefinition;
+import static org.testng.Assert.assertTrue;
 
 import org.testng.annotations.Test;
 import tck.java.time.AbstractTCKTest;
 
+import java.io.ByteArrayOutputStream;
+import java.io.DataOutputStream;
+import java.io.Serializable;
+import java.time.Duration;
+
 /**
- * Test ZoneOffsetTransitionRule.
+ * Test Duration serialization.
  */
 @Test
-public class TCKZoneOffsetTransitionRule extends AbstractTCKTest {
+public class TCKDurationSerialization extends AbstractTCKTest {
 
-    private static final LocalTime TIME_0100 = LocalTime.of(1, 0);
-    private static final ZoneOffset OFFSET_0200 = ZoneOffset.ofHours(2);
-    private static final ZoneOffset OFFSET_0300 = ZoneOffset.ofHours(3);
-
-
-
+    //-----------------------------------------------------------------------
     @Test
-    public void test_serialization_unusualOffsets() throws Exception {
-        ZoneOffsetTransitionRule test = ZoneOffsetTransitionRule.of(
-                Month.MARCH, 20, null, TIME_0100, false, TimeDefinition.STANDARD,
-                ZoneOffset.ofHoursMinutesSeconds(-12, -20, -50),
-                ZoneOffset.ofHoursMinutesSeconds(-4, -10, -34),
-                ZoneOffset.ofHours(-18));
-        assertSerializable(test);
+    public void test_interfaces() {
+        assertTrue(Serializable.class.isAssignableFrom(Duration.class));
+        assertTrue(Comparable.class.isAssignableFrom(Duration.class));
+    }
+
+    //-----------------------------------------------------------------------
+    @Test
+    public void test_serialization() throws Exception {
+        assertSerializable(Duration.ofHours(5));
+        assertSerializable(Duration.ofHours(0));
+        assertSerializable(Duration.ofHours(-5));
     }
 
     @Test
-    public void test_serialization_endOfDay() throws Exception {
-        ZoneOffsetTransitionRule test = ZoneOffsetTransitionRule.of(
-                Month.MARCH, 20, DayOfWeek.FRIDAY, LocalTime.MIDNIGHT, true, TimeDefinition.UTC,
-                OFFSET_0200, OFFSET_0200, OFFSET_0300);
-        assertSerializable(test);
+    public void test_serialization_format() throws Exception {
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        try (DataOutputStream dos = new DataOutputStream(baos) ) {
+            dos.writeByte(1);
+            dos.writeLong(654321);
+            dos.writeInt(123456789);
+        }
+        byte[] bytes = baos.toByteArray();
+        assertSerializedBySer(Duration.ofSeconds(654321, 123456789), bytes);
     }
 
+    //-----------------------------------------------------------------------
+    // serialization
+    //-----------------------------------------------------------------------
     @Test
-    public void test_serialization_unusualTime() throws Exception {
-        ZoneOffsetTransitionRule test = ZoneOffsetTransitionRule.of(
-                Month.MARCH, 20, DayOfWeek.WEDNESDAY, LocalTime.of(13, 34, 56), false, TimeDefinition.STANDARD,
-                OFFSET_0200, OFFSET_0200, OFFSET_0300);
-        assertSerializable(test);
+    public void test_deserializationSingleton() throws Exception {
+        assertSerializableSame(Duration.ZERO);
     }
-
 
 }

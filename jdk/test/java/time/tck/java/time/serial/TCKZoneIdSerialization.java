@@ -73,10 +73,10 @@ import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.fail;
 
 /**
- * Test ZoneId.
+ * Test serialization of ZoneId.
  */
 @Test
-public class TCKZoneId extends AbstractTCKTest {
+public class TCKZoneIdSerialization extends AbstractTCKTest {
 
     //-----------------------------------------------------------------------
     @Test

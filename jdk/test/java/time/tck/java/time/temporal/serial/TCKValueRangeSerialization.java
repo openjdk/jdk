@@ -27,7 +27,7 @@
  * However, the following notice accompanied the original version of this
  * file:
  *
- * Copyright (c) 2007-2012, Stephen Colebourne & Michael Nascimento Santos
+ * Copyright (c) 2009-2012, Stephen Colebourne & Michael Nascimento Santos
  *
  * All rights reserved.
  *
@@ -57,51 +57,64 @@
  * NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-package tck.java.time.serial;
+package tck.java.time.temporal.serial;
 
-import org.testng.annotations.BeforeMethod;
-import org.testng.annotations.Test;
-import tck.java.time.AbstractTCKTest;
+import static org.testng.Assert.assertEquals;
 
 import java.io.ByteArrayOutputStream;
-import java.io.DataOutputStream;
-import java.time.LocalDate;
+import java.io.IOException;
+import java.io.ObjectOutputStream;
+import java.time.temporal.ValueRange;
+
+import org.testng.annotations.Test;
+
+import tck.java.time.AbstractTCKTest;
 
 /**
- * Test LocalDate.
+ * Test serialization of ValueRange.
  */
 @Test
-public class TCKLocalDate extends AbstractTCKTest {
-
-    private LocalDate TEST_2007_07_15;
-
-    @BeforeMethod
-    public void setUp() {
-        TEST_2007_07_15 = LocalDate.of(2007, 7, 15);
-    }
-
+public class TCKValueRangeSerialization extends AbstractTCKTest {
 
     //-----------------------------------------------------------------------
-    @Test
+    // Serialization
+    //-----------------------------------------------------------------------
     public void test_serialization() throws Exception {
-        assertSerializable(TEST_2007_07_15);
-        assertSerializable(LocalDate.MIN);
-        assertSerializable(LocalDate.MAX);
+        ValueRange range = ValueRange.of(1, 2, 3, 4);
+        assertSerializable(range);
     }
 
-    @Test
-    public void test_serialization_format() throws Exception {
-        ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        try (DataOutputStream dos = new DataOutputStream(baos) ) {
-            dos.writeByte(3);
-            dos.writeInt(2012);
-            dos.writeByte(9);
-            dos.writeByte(16);
+
+    /**
+     * Verify Serialized bytes of a ValueRange.
+     * @throws IOException if thrown during serialization is an unexpected test tailure
+     */
+    public void test_valueRangeSerialized() throws IOException {
+        byte[] expected = {
+            (byte)172, (byte)237,   0,   5, 115, 114,   0,  29, 106,  97, /* \u00ac \u00ed \u0000 \u0005 s r \u0000 \u001d j a */
+            118,  97,  46, 116, 105, 109, 101,  46, 116, 101, /* v a . t i m e . t e */
+            109, 112, 111, 114,  97, 108,  46,  86,  97, 108, /* m p o r a l . V a l */
+            117, 101,  82,  97, 110, 103, 101, (byte)154, 113, (byte)169, /* u e R a n g e \u009a q \u00a9 */
+             86, (byte)242, (byte)205,  90, (byte)184,   2,   0,   4,  74,   0, /* V \u00f2 \u00cd Z \u00b8 \u0002 \u0000 \u0004 J \u0000 */
+             10, 109,  97, 120,  76,  97, 114, 103, 101, 115, /*  m a x L a r g e s */
+            116,  74,   0,  11, 109,  97, 120,  83, 109,  97, /* t J \u0000 \u000b m a x S m a */
+            108, 108, 101, 115, 116,  74,   0,  10, 109, 105,/* l l e s t J \u0000 m i */
+            110,  76,  97, 114, 103, 101, 115, 116,  74,   0, /* n L a r g e s t J \u0000 */
+             11, 109, 105, 110,  83, 109,  97, 108, 108, 101, /* \u000b m i n S m a l l e */
+            115, 116, 120, 112,   0,   0,   0,   0,   0,   0, /* s t x p \u0000 \u0000 \u0000 \u0000 \u0000 \u0000 */
+              0,  40,   0,   0,   0,   0,   0,   0,   0,  30, /* \u0000 ( \u0000 \u0000 \u0000 \u0000 \u0000 \u0000 \u0000 \u001e */
+              0,   0,   0,   0,   0,   0,   0,  20,   0,   0, /* \u0000 \u0000 \u0000 \u0000 \u0000 \u0000 \u0000 \u0014 \u0000 \u0000 */
+              0,   0,   0,   0,   0,  10,                     /* \u0000 \u0000 \u0000 \u0000 \u0000 */
+        };
+
+        ValueRange range = ValueRange.of(10, 20, 30, 40);
+        try (ByteArrayOutputStream baos = new ByteArrayOutputStream();
+            ObjectOutputStream oos = new ObjectOutputStream(baos) ) {
+            oos.writeObject(range);
+
+            byte[] actual = baos.toByteArray();
+            assertEquals(actual, expected, "Serialized bytes incorrect");
         }
-        byte[] bytes = baos.toByteArray();
-        assertSerializedBySer(LocalDate.of(2012, 9, 16), bytes);
     }
-
-    //-----------------------------------------------------------------------
 
 }

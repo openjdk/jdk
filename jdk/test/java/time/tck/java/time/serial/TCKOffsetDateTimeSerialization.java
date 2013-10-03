@@ -65,42 +65,60 @@ import tck.java.time.AbstractTCKTest;
 
 import java.io.ByteArrayOutputStream;
 import java.io.DataOutputStream;
-import java.io.IOException;
-import java.time.YearMonth;
+import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
+import java.time.ZoneOffset;
 
 /**
- * Test YearMonth.
+ * Test OffsetDateTime serialization.
  */
 @Test
-public class TCKYearMonth extends AbstractTCKTest {
+public class TCKOffsetDateTimeSerialization extends AbstractTCKTest {
 
-    private YearMonth TEST_2008_06;
+    private static final ZoneOffset OFFSET_PONE = ZoneOffset.ofHours(1);
+    private OffsetDateTime TEST_2008_6_30_11_30_59_000000500;
 
     @BeforeMethod
     public void setUp() {
-        TEST_2008_06 = YearMonth.of(2008, 6);
+        TEST_2008_6_30_11_30_59_000000500 = OffsetDateTime.of(2008, 6, 30, 11, 30, 59, 500, OFFSET_PONE);
     }
-
 
     //-----------------------------------------------------------------------
     @Test
-    public void test_serialization() throws IOException, ClassNotFoundException {
-        assertSerializable(TEST_2008_06);
+    public void test_serialization() throws Exception {
+        assertSerializable(TEST_2008_6_30_11_30_59_000000500);
+        assertSerializable(OffsetDateTime.MIN);
+        assertSerializable(OffsetDateTime.MAX);
     }
 
     @Test
     public void test_serialization_format() throws Exception {
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         try (DataOutputStream dos = new DataOutputStream(baos) ) {
-            dos.writeByte(12);       // java.time.temporal.Ser.YEAR_MONTH_TYPE
-            dos.writeInt(2012);
-            dos.writeByte(9);
+            dos.writeByte(10);       // java.time.Ser.OFFSET_DATE_TIME_TYPE
         }
         byte[] bytes = baos.toByteArray();
-        assertSerializedBySer(YearMonth.of(2012, 9), bytes);
+        ByteArrayOutputStream baosDateTime = new ByteArrayOutputStream();
+        try (DataOutputStream dos = new DataOutputStream(baosDateTime) ) {
+            dos.writeByte(5);
+            dos.writeInt(2012);
+            dos.writeByte(9);
+            dos.writeByte(16);
+            dos.writeByte(22);
+            dos.writeByte(17);
+            dos.writeByte(59);
+            dos.writeInt(464_000_000);
+        }
+        byte[] bytesDateTime = baosDateTime.toByteArray();
+        ByteArrayOutputStream baosOffset = new ByteArrayOutputStream();
+        try (DataOutputStream dos = new DataOutputStream(baosOffset) ) {
+            dos.writeByte(8);
+            dos.writeByte(4);  // quarter hours stored: 3600 / 900
+        }
+        byte[] bytesOffset = baosOffset.toByteArray();
+        LocalDateTime ldt = LocalDateTime.of(2012, 9, 16, 22, 17, 59, 464_000_000);
+        assertSerializedBySer(OffsetDateTime.of(ldt, ZoneOffset.ofHours(1)), bytes, bytesDateTime, bytesOffset);
     }
-
-    //-----------------------------------------------------------------------
 
 
 }

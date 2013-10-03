@@ -4,7 +4,9 @@
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.
+ * published by the Free Software Foundation.  Oracle designates this
+ * particular file as subject to the "Classpath" exception as provided
+ * by Oracle in the LICENSE file that accompanied this code.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -22,11 +24,6 @@
  */
 
 /*
- * This file is available under and governed by the GNU General Public
- * License version 2 only, as published by the Free Software Foundation.
- * However, the following notice accompanied the original version of this
- * file:
- *
  * Copyright (c) 2008-2012, Stephen Colebourne & Michael Nascimento Santos
  *
  * All rights reserved.
@@ -57,65 +54,40 @@
  * NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-package tck.java.time.serial;
+package tck.java.time.temporal.serial;
 
-import org.testng.annotations.BeforeMethod;
+import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 import tck.java.time.AbstractTCKTest;
 
-import java.io.ByteArrayOutputStream;
-import java.io.DataOutputStream;
-import java.time.OffsetTime;
-import java.time.ZoneOffset;
+import java.io.IOException;
+import java.time.DayOfWeek;
+import java.time.temporal.WeekFields;
 
 /**
- * Test OffsetTime.
+ * Test serialization of WeekFields.
  */
 @Test
-public class TCKOffsetTime extends AbstractTCKTest {
-
-    private static final ZoneOffset OFFSET_PONE = ZoneOffset.ofHours(1);
-    private OffsetTime TEST_11_30_59_500_PONE;
-
-    @BeforeMethod
-    public void setUp() {
-        TEST_11_30_59_500_PONE = OffsetTime.of(11, 30, 59, 500, OFFSET_PONE);
-    }
-
-
+public class TCKWeekFieldsSerialization extends AbstractTCKTest {
 
     //-----------------------------------------------------------------------
-    @Test
-    public void test_serialization() throws Exception {
-        assertSerializable(TEST_11_30_59_500_PONE);
-        assertSerializable(OffsetTime.MIN);
-        assertSerializable(OffsetTime.MAX);
+    @Test(dataProvider="weekFields")
+    public void test_serializable_singleton(DayOfWeek firstDayOfWeek, int minDays) throws IOException, ClassNotFoundException {
+        WeekFields weekDef = WeekFields.of(firstDayOfWeek, minDays);
+        assertSerializableSame(weekDef);  // spec state singleton
     }
 
-    @Test
-    public void test_serialization_format() throws Exception {
-        ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        try (DataOutputStream dos = new DataOutputStream(baos) ) {
-            dos.writeByte(9);       // java.time.Ser.OFFSET_TIME_TYPE
+    //-----------------------------------------------------------------------
+    @DataProvider(name="weekFields")
+    Object[][] data_weekFields() {
+        Object[][] objects = new Object[49][];
+        int i = 0;
+        for (DayOfWeek firstDayOfWeek : DayOfWeek.values()) {
+            for (int minDays = 1; minDays <= 7; minDays++) {
+                objects[i++] = new Object[] {firstDayOfWeek, minDays};
+            }
         }
-        byte[] bytes = baos.toByteArray();
-        ByteArrayOutputStream baosTime = new ByteArrayOutputStream();
-        try (DataOutputStream dos = new DataOutputStream(baosTime) ) {
-            dos.writeByte(4);
-            dos.writeByte(22);
-            dos.writeByte(17);
-            dos.writeByte(59);
-            dos.writeInt(464_000_000);
-        }
-        byte[] bytesTime = baosTime.toByteArray();
-        ByteArrayOutputStream baosOffset = new ByteArrayOutputStream();
-        try (DataOutputStream dos = new DataOutputStream(baosOffset) ) {
-            dos.writeByte(8);
-            dos.writeByte(4);  // quarter hours stored: 3600 / 900
-        }
-        byte[] bytesOffset = baosOffset.toByteArray();
-        assertSerializedBySer(OffsetTime.of(22, 17, 59, 464_000_000, ZoneOffset.ofHours(1)), bytes,
-                bytesTime, bytesOffset);
+        return objects;
     }
 
 

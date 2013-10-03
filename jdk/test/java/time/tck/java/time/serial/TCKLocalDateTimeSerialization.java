@@ -59,49 +59,44 @@
  */
 package tck.java.time.serial;
 
-import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 import tck.java.time.AbstractTCKTest;
 
 import java.io.ByteArrayOutputStream;
 import java.io.DataOutputStream;
-import java.io.IOException;
-import java.time.MonthDay;
+import java.time.LocalDateTime;
 
 /**
- * Test MonthDay.
+ * Test serialization of LocalDateTime.
  */
 @Test
-public class TCKMonthDay extends AbstractTCKTest {
+public class TCKLocalDateTimeSerialization extends AbstractTCKTest {
 
-    private MonthDay TEST_07_15;
-
-    @BeforeMethod
-    public void setUp() {
-        TEST_07_15 = MonthDay.of(7, 15);
-    }
-
-
+    private LocalDateTime TEST_2007_07_15_12_30_40_987654321 = LocalDateTime.of(2007, 7, 15, 12, 30, 40, 987654321);
 
     //-----------------------------------------------------------------------
     @Test
-    public void test_serialization() throws ClassNotFoundException, IOException {
-        assertSerializable(TEST_07_15);
+    public void test_serialization() throws Exception {
+        assertSerializable(TEST_2007_07_15_12_30_40_987654321);
+        assertSerializable(LocalDateTime.MIN);
+        assertSerializable(LocalDateTime.MAX);
     }
 
     @Test
     public void test_serialization_format() throws Exception {
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         try (DataOutputStream dos = new DataOutputStream(baos) ) {
-            dos.writeByte(13);       // java.time.temporal.Ser.MONTH_DAY_TYPE
+            dos.writeByte(5);
+            dos.writeInt(2012);
             dos.writeByte(9);
             dos.writeByte(16);
+            dos.writeByte(22);
+            dos.writeByte(17);
+            dos.writeByte(59);
+            dos.writeInt(459_000_000);
         }
         byte[] bytes = baos.toByteArray();
-        assertSerializedBySer(MonthDay.of(9, 16), bytes);
+        assertSerializedBySer(LocalDateTime.of(2012, 9, 16, 22, 17, 59, 459_000_000), bytes);
     }
-
-    //-----------------------------------------------------------------------
-
 
 }

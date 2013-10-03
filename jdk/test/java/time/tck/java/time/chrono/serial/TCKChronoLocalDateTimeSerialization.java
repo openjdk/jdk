@@ -4,7 +4,9 @@
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.
+ * published by the Free Software Foundation.  Oracle designates this
+ * particular file as subject to the "Classpath" exception as provided
+ * by Oracle in the LICENSE file that accompanied this code.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -22,12 +24,7 @@
  */
 
 /*
- * This file is available under and governed by the GNU General Public
- * License version 2 only, as published by the Free Software Foundation.
- * However, the following notice accompanied the original version of this
- * file:
- *
- * Copyright (c) 2010-2012, Stephen Colebourne & Michael Nascimento Santos
+ * Copyright (c) 2008-2012, Stephen Colebourne & Michael Nascimento Santos
  *
  * All rights reserved.
  *
@@ -57,35 +54,50 @@
  * NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-package tck.java.time.zone.serial;
+package tck.java.time.chrono.serial;
 
+import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
+
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.chrono.ChronoLocalDateTime;
+import java.time.chrono.Chronology;
+import java.time.chrono.HijrahChronology;
+import java.time.chrono.IsoChronology;
+import java.time.chrono.JapaneseChronology;
+import java.time.chrono.MinguoChronology;
+import java.time.chrono.ThaiBuddhistChronology;
+
 import tck.java.time.AbstractTCKTest;
 
-import java.time.LocalDateTime;
-import java.time.Year;
-import java.time.ZoneOffset;
-import java.time.zone.ZoneOffsetTransition;
-
 /**
- * Test ZoneOffsetTransition.
+ * Test serialization of ChronoLocalDateTime for all built-in chronologies.
  */
 @Test
-public class TCKZoneOffsetTransition extends AbstractTCKTest {
+public class TCKChronoLocalDateTimeSerialization extends AbstractTCKTest {
 
     //-----------------------------------------------------------------------
-    @Test
-    public void test_serialization_unusual1() throws Exception {
-        LocalDateTime ldt = LocalDateTime.of(Year.MAX_VALUE, 12, 31, 1, 31, 53);
-        ZoneOffsetTransition test = ZoneOffsetTransition.of(ldt, ZoneOffset.of("+02:04:56"), ZoneOffset.of("-10:02:34"));
-        assertSerializable(test);
+    // regular data factory for available calendars
+    //-----------------------------------------------------------------------
+    @DataProvider(name = "calendars")
+    Chronology[][] data_of_calendars() {
+        return new Chronology[][]{
+                    {HijrahChronology.INSTANCE},
+                    {IsoChronology.INSTANCE},
+                    {JapaneseChronology.INSTANCE},
+                    {MinguoChronology.INSTANCE},
+                    {ThaiBuddhistChronology.INSTANCE}};
     }
 
-    @Test
-    public void test_serialization_unusual2() throws Exception {
-        LocalDateTime ldt = LocalDateTime.of(Year.MIN_VALUE, 1, 1, 12, 1, 3);
-        ZoneOffsetTransition test = ZoneOffsetTransition.of(ldt, ZoneOffset.of("+02:04:56"), ZoneOffset.of("+10:02:34"));
-        assertSerializable(test);
+    //-----------------------------------------------------------------------
+    // Test Serialization of ChronoLocalDateTime
+    //-----------------------------------------------------------------------
+    @Test(dataProvider="calendars")
+    public void test_ChronoLocalDateTimeSerialization(Chronology chrono) throws Exception {
+        LocalDateTime ref = LocalDate.of(2013, 1, 5).atTime(12, 1, 2, 3);
+        ChronoLocalDateTime<?> original = chrono.date(ref).atTime(ref.toLocalTime());
+        assertSerializable(original);
     }
 
 }

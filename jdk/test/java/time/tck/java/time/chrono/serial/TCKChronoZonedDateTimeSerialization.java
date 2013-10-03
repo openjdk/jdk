@@ -1,9 +1,12 @@
 /*
+ * Copyright (c) 2012, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.
+ * published by the Free Software Foundation.  Oracle designates this
+ * particular file as subject to the "Classpath" exception as provided
+ * by Oracle in the LICENSE file that accompanied this code.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -21,12 +24,7 @@
  */
 
 /*
- * This file is available under and governed by the GNU General Public
- * License version 2 only, as published by the Free Software Foundation.
- * However, the following notice accompanied the original version of this
- * file:
- *
- * Copyright (c) 2011-2012, Stephen Colebourne & Michael Nascimento Santos
+ * Copyright (c) 2008-2012, Stephen Colebourne & Michael Nascimento Santos
  *
  * All rights reserved.
  *
@@ -56,29 +54,50 @@
  * NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-package tck.java.time.chrono;
-
-import static org.testng.Assert.assertEquals;
+package tck.java.time.chrono.serial;
 
 import java.time.LocalDate;
-import java.time.chrono.ChronoLocalDate;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
+import java.time.chrono.ChronoZonedDateTime;
 import java.time.chrono.Chronology;
-
+import java.time.chrono.HijrahChronology;
+import java.time.chrono.IsoChronology;
+import java.time.chrono.JapaneseChronology;
+import java.time.chrono.MinguoChronology;
+import java.time.chrono.ThaiBuddhistChronology;
+import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
+import tck.java.time.AbstractTCKTest;
 
 /**
- * Tests that a custom Chronology is available via the ServiceLoader.
- * The CopticChronology is configured via META-INF/services/java.time.chrono.Chronology.
+ * Test assertions that must be true for all built-in chronologies.
  */
 @Test
-public class TCKTestServiceLoader {
+public class TCKChronoZonedDateTimeSerialization extends AbstractTCKTest {
 
-     @Test
-     public void test_TestServiceLoader() {
-        Chronology chrono = Chronology.of("Coptic");
-        ChronoLocalDate copticDate = chrono.date(1729, 4, 27);
-        LocalDate ld = LocalDate.from(copticDate);
-        assertEquals(ld, LocalDate.of(2013, 1, 5), "CopticDate does not match LocalDate");
+    //-----------------------------------------------------------------------
+    // regular data factory for names and descriptions of available calendars
+    //-----------------------------------------------------------------------
+    @DataProvider(name = "calendars")
+    Chronology[][] data_of_calendars() {
+        return new Chronology[][]{
+                    {HijrahChronology.INSTANCE},
+                    {IsoChronology.INSTANCE},
+                    {JapaneseChronology.INSTANCE},
+                    {MinguoChronology.INSTANCE},
+                    {ThaiBuddhistChronology.INSTANCE},
+        };
+    }
+
+    //-----------------------------------------------------------------------
+    // Test Serialization of ISO via chrono API
+    //-----------------------------------------------------------------------
+    @Test( dataProvider="calendars")
+    public void test_ChronoZonedDateTimeSerialization(Chronology chrono) throws Exception {
+        ZonedDateTime ref = LocalDate.of(2013, 1, 5).atTime(12, 1, 2, 3).atZone(ZoneId.of("GMT+01:23"));
+        ChronoZonedDateTime<?> original = chrono.date(ref).atTime(ref.toLocalTime()).atZone(ref.getZone());
+        assertSerializable(original);
     }
 
 }

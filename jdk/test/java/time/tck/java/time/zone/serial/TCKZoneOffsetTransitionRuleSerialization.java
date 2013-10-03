@@ -59,59 +59,78 @@
  */
 package tck.java.time.zone.serial;
 
-import org.testng.annotations.DataProvider;
-import org.testng.annotations.Test;
-
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
+import java.time.DayOfWeek;
+import java.time.LocalTime;
+import java.time.Month;
 import java.time.ZoneOffset;
-import java.time.zone.ZoneRules;
+import java.time.zone.ZoneOffsetTransitionRule;
+import java.time.zone.ZoneOffsetTransitionRule.TimeDefinition;
 
-import static org.testng.Assert.assertEquals;
+import org.testng.annotations.Test;
+import tck.java.time.AbstractTCKTest;
 
 /**
- * Test ZoneRules for fixed offset time-zones.
+ * Test ZoneOffsetTransitionRule serialization.
  */
 @Test
-public class TCKFixedZoneRules {
+public class TCKZoneOffsetTransitionRuleSerialization extends AbstractTCKTest {
 
-    private static final ZoneOffset OFFSET_PONE = ZoneOffset.ofHours(1);
-    private static final ZoneOffset OFFSET_PTWO = ZoneOffset.ofHours(2);
-    private static final ZoneOffset OFFSET_M18 = ZoneOffset.ofHours(-18);
+    private static final LocalTime TIME_0100 = LocalTime.of(1, 0);
+    private static final ZoneOffset OFFSET_0200 = ZoneOffset.ofHours(2);
+    private static final ZoneOffset OFFSET_0300 = ZoneOffset.ofHours(3);
 
-    private ZoneRules make(ZoneOffset offset) {
-        return offset.getRules();
-    }
-
-    @DataProvider(name="rules")
-    Object[][] data_rules() {
-        return new Object[][] {
-            {make(OFFSET_PONE), OFFSET_PONE},
-            {make(OFFSET_PTWO), OFFSET_PTWO},
-            {make(OFFSET_M18), OFFSET_M18},
-        };
-    }
 
     //-----------------------------------------------------------------------
-    // Basics
+    // Test serialization
     //-----------------------------------------------------------------------
-    @Test(dataProvider="rules")
-    public void test_serialization(ZoneRules test, ZoneOffset expectedOffset) throws Exception {
-        ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        ObjectOutputStream out = new ObjectOutputStream(baos);
-        out.writeObject(test);
-        baos.close();
-        byte[] bytes = baos.toByteArray();
-
-        ByteArrayInputStream bais = new ByteArrayInputStream(bytes);
-        ObjectInputStream in = new ObjectInputStream(bais);
-        ZoneRules result = (ZoneRules) in.readObject();
-
-        assertEquals(result, test);
-        assertEquals(result.getClass(), test.getClass());
+    @Test
+    public void test_serialization_unusualOffsets() throws Exception {
+        ZoneOffsetTransitionRule test = ZoneOffsetTransitionRule.of(
+                Month.MARCH, 20, null, TIME_0100, false, TimeDefinition.STANDARD,
+                ZoneOffset.ofHoursMinutesSeconds(-12, -20, -50),
+                ZoneOffset.ofHoursMinutesSeconds(-4, -10, -34),
+                ZoneOffset.ofHours(-18));
+        assertSerializable(test);
     }
 
+    @Test
+    public void test_serialization_endOfDay() throws Exception {
+        ZoneOffsetTransitionRule test = ZoneOffsetTransitionRule.of(
+                Month.MARCH, 20, DayOfWeek.FRIDAY, LocalTime.MIDNIGHT, true, TimeDefinition.UTC,
+                OFFSET_0200, OFFSET_0200, OFFSET_0300);
+        assertSerializable(test);
+    }
+
+    @Test
+    public void test_serialization_unusualTime() throws Exception {
+        ZoneOffsetTransitionRule test = ZoneOffsetTransitionRule.of(
+                Month.MARCH, 20, DayOfWeek.WEDNESDAY, LocalTime.of(13, 34, 56), false, TimeDefinition.STANDARD,
+                OFFSET_0200, OFFSET_0200, OFFSET_0300);
+        assertSerializable(test);
+    }
+
+    @Test
+    public void test_serialization_floatingWeek() throws Exception {
+        ZoneOffsetTransitionRule test = ZoneOffsetTransitionRule.of(
+                Month.MARCH, 20, DayOfWeek.SUNDAY, TIME_0100, false, TimeDefinition.WALL,
+                OFFSET_0200, OFFSET_0200, OFFSET_0300);
+        assertSerializable(test);
+    }
+
+    @Test
+    public void test_serialization_floatingWeekBackwards() throws Exception {
+        ZoneOffsetTransitionRule test = ZoneOffsetTransitionRule.of(
+                Month.MARCH, -1, DayOfWeek.SUNDAY, TIME_0100, false, TimeDefinition.WALL,
+                OFFSET_0200, OFFSET_0200, OFFSET_0300);
+        assertSerializable(test);
+    }
+
+    @Test
+    public void test_serialization_fixedDate() throws Exception {
+        ZoneOffsetTransitionRule test = ZoneOffsetTransitionRule.of(
+                Month.MARCH, 20, null, TIME_0100, false, TimeDefinition.WALL,
+                OFFSET_0200, OFFSET_0200, OFFSET_0300);
+        assertSerializable(test);
+    }
 
 }

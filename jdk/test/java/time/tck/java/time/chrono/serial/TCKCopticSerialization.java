@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,7 +27,7 @@
  * However, the following notice accompanied the original version of this
  * file:
  *
- * Copyright (c) 2007-2012, Stephen Colebourne & Michael Nascimento Santos
+ * Copyright (c) 2011-2012, Stephen Colebourne & Michael Nascimento Santos
  *
  * All rights reserved.
  *
@@ -57,89 +57,26 @@
  * NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-package tck.java.time.serial;
+package tck.java.time.chrono.serial;
 
-import org.testng.annotations.BeforeMethod;
+import java.io.IOException;
+import java.time.chrono.ChronoLocalDate;
+import java.time.chrono.Chronology;
+
 import org.testng.annotations.Test;
 import tck.java.time.AbstractTCKTest;
 
-import java.io.ByteArrayOutputStream;
-import java.io.DataOutputStream;
-import java.time.LocalTime;
-
 /**
- * Test LocalTime.
+ * Tests the serialization of ChronoLocalDate using a CopticDate.
  */
 @Test
-public class TCKLocalTime extends AbstractTCKTest {
-
-
-    private LocalTime TEST_12_30_40_987654321;
-
-
-    @BeforeMethod
-    public void setUp() {
-        TEST_12_30_40_987654321 = LocalTime.of(12, 30, 40, 987654321);
-    }
-
-
-    //-----------------------------------------------------------------------
-    @Test
-    public void test_serialization() throws Exception {
-        assertSerializable(TEST_12_30_40_987654321);
-        assertSerializable(LocalTime.MIN);
-        assertSerializable(LocalTime.MAX);
-    }
+public class TCKCopticSerialization extends AbstractTCKTest {
 
     @Test
-    public void test_serialization_format_h() throws Exception {
-        ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        try (DataOutputStream dos = new DataOutputStream(baos) ) {
-            dos.writeByte(4);
-            dos.writeByte(-1 - 22);
-        }
-        byte[] bytes = baos.toByteArray();
-        assertSerializedBySer(LocalTime.of(22, 0), bytes);
+    public void test_eraSerialization() throws IOException, ClassNotFoundException {
+        Chronology chrono = Chronology.of("Coptic");
+        ChronoLocalDate copticDate = chrono.date(1729, 4, 27);
+        assertSerializable(copticDate);
     }
-
-    @Test
-    public void test_serialization_format_hm() throws Exception {
-        ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        try (DataOutputStream dos = new DataOutputStream(baos) ) {
-            dos.writeByte(4);
-            dos.writeByte(22);
-            dos.writeByte(-1 - 17);
-        }
-        byte[] bytes = baos.toByteArray();
-        assertSerializedBySer(LocalTime.of(22, 17), bytes);
-    }
-
-    @Test
-    public void test_serialization_format_hms() throws Exception {
-        ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        try (DataOutputStream dos = new DataOutputStream(baos) ) {
-            dos.writeByte(4);
-            dos.writeByte(22);
-            dos.writeByte(17);
-            dos.writeByte(-1 - 59);
-        }
-        byte[] bytes = baos.toByteArray();
-        assertSerializedBySer(LocalTime.of(22, 17, 59), bytes);
-    }
-
-    @Test
-    public void test_serialization_format_hmsn() throws Exception {
-        ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        try (DataOutputStream dos = new DataOutputStream(baos) ) {
-            dos.writeByte(4);
-            dos.writeByte(22);
-            dos.writeByte(17);
-            dos.writeByte(59);
-            dos.writeInt(459_000_000);
-        }
-        byte[] bytes = baos.toByteArray();
-        assertSerializedBySer(LocalTime.of(22, 17, 59, 459_000_000), bytes);
-    }
-
 
 }
