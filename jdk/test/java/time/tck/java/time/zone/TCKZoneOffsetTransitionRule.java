@@ -173,7 +173,6 @@ public class TCKZoneOffsetTransitionRule extends AbstractTCKTest {
         assertEquals(test.getStandardOffset(), OFFSET_0200);
         assertEquals(test.getOffsetBefore(), OFFSET_0200);
         assertEquals(test.getOffsetAfter(), OFFSET_0300);
-        assertSerializable(test);
     }
 
     @Test
@@ -190,7 +189,6 @@ public class TCKZoneOffsetTransitionRule extends AbstractTCKTest {
         assertEquals(test.getStandardOffset(), OFFSET_0200);
         assertEquals(test.getOffsetBefore(), OFFSET_0200);
         assertEquals(test.getOffsetAfter(), OFFSET_0300);
-        assertSerializable(test);
     }
 
     @Test
@@ -207,7 +205,6 @@ public class TCKZoneOffsetTransitionRule extends AbstractTCKTest {
         assertEquals(test.getStandardOffset(), OFFSET_0200);
         assertEquals(test.getOffsetBefore(), OFFSET_0200);
         assertEquals(test.getOffsetAfter(), OFFSET_0300);
-        assertSerializable(test);
     }
 
 

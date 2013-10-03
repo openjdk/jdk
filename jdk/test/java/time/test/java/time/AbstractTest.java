@@ -63,11 +63,6 @@ import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertSame;
 import static org.testng.Assert.assertTrue;
 
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
@@ -85,27 +80,6 @@ public abstract class AbstractTest {
             return false;
         }
         return true;
-    }
-
-    protected static void assertSerializable(Object o) throws IOException, ClassNotFoundException {
-        Object deserialisedObject = writeThenRead(o);
-        assertEquals(deserialisedObject, o);
-    }
-
-    protected static void assertSerializableAndSame(Object o) throws IOException, ClassNotFoundException {
-        Object deserialisedObject = writeThenRead(o);
-        assertSame(deserialisedObject, o);
-    }
-
-    private static Object writeThenRead(Object o) throws IOException, ClassNotFoundException {
-        ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        try (ObjectOutputStream oos = new ObjectOutputStream(baos) ) {
-            oos.writeObject(o);
-        }
-
-        try (ObjectInputStream ois = new ObjectInputStream(new ByteArrayInputStream(baos.toByteArray()))) {
-            return ois.readObject();
-        }
     }
 
     protected static void assertImmutable(Class<?> cls) {

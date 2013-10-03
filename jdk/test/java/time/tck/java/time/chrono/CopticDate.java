@@ -354,4 +354,27 @@ public final class CopticDate
                 .append(dom < 10 ? "-0" : "-").append(dom);
         return buf.toString();
     }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (this == obj) {
+            return true;
+        }
+        if (obj instanceof CopticDate) {
+            CopticDate cd = (CopticDate)obj;
+            if (this.prolepticYear == cd.prolepticYear &&
+                    this.month == cd.month &&
+                    this.day == cd.day) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    @Override
+    public int hashCode() {
+        long epDay = toEpochDay();
+        return getChronology().hashCode() ^ ((int) (epDay ^ (epDay >>> 32)));
+    }
+
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,7 +24,7 @@
  */
 
 /*
- * Copyright (c) 2013, Stephen Colebourne & Michael Nascimento Santos
+ * Copyright (c) 2008-2012, Stephen Colebourne & Michael Nascimento Santos
  *
  * All rights reserved.
  *
@@ -56,59 +56,109 @@
  */
 package tck.java.time.chrono.serial;
 
+import static java.time.temporal.ChronoField.DAY_OF_MONTH;
+import static java.time.temporal.ChronoField.MONTH_OF_YEAR;
+import static java.time.temporal.ChronoField.YEAR;
+
 import java.io.ByteArrayOutputStream;
 import java.io.DataOutputStream;
-
-import java.time.chrono.Chronology;
+import java.io.ObjectStreamConstants;
+import java.time.chrono.ChronoLocalDate;
 import java.time.chrono.HijrahChronology;
-import java.time.chrono.IsoChronology;
-import java.time.chrono.JapaneseChronology;
-import java.time.chrono.MinguoChronology;
-import java.time.chrono.ThaiBuddhistChronology;
+import java.time.chrono.HijrahDate;
+import java.time.chrono.JapaneseDate;
+import java.time.chrono.JapaneseEra;
+import java.time.chrono.MinguoDate;
+import java.time.chrono.ThaiBuddhistDate;
 
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 
+
+
 import tck.java.time.AbstractTCKTest;
 
+/**
+ * Test serialization of built-in chronologies.
+ */
 @Test
-public class TCKChronologySerialization extends AbstractTCKTest {
+public class TCKChronoLocalDateSerialization extends AbstractTCKTest {
 
     static final int CHRONO_TYPE = 1;            // java.time.chrono.Ser.CHRONO_TYPE
+    static final int JAPANESE_DATE_TYPE = 4;     // java.time.chrono.Ser.JAPANESE_DATE_TYPE
+    static final int HIJRAH_DATE_TYPE = 6;       // java.time.chrono.Ser.HIJRAH_DATE_TYPE
+    static final int MINGUO_DATE_TYPE = 7;       // java.time.chrono.Ser.MINGUO_DATE_TYPE
+    static final int THAIBUDDHIST_DATE_TYPE = 8; // java.time.chrono.Ser.THAIBUDDHIST_DATE_TYPE
 
     //-----------------------------------------------------------------------
-    // Regular data factory for available calendars
+    // Regular data factory for names and descriptions of available calendars
     //-----------------------------------------------------------------------
     @DataProvider(name = "calendars")
-    Chronology[][] data_of_calendars() {
-        return new Chronology[][]{
-                    {HijrahChronology.INSTANCE},
-                    {IsoChronology.INSTANCE},
-                    {JapaneseChronology.INSTANCE},
-                    {MinguoChronology.INSTANCE},
-                    {ThaiBuddhistChronology.INSTANCE}};
+    Object[][] data_of_calendars() {
+        return new Object[][]{
+            {JapaneseDate.of(JapaneseEra.HEISEI, 25, 01, 05), JAPANESE_DATE_TYPE},
+            {MinguoDate.of(102, 01, 05),                      MINGUO_DATE_TYPE},
+            {ThaiBuddhistDate.of(2556, 01, 05),               THAIBUDDHIST_DATE_TYPE},
+        };
     }
+
 
     //-----------------------------------------------------------------------
     // Test Serialization of Calendars
     //-----------------------------------------------------------------------
-    @Test(dataProvider="calendars")
-    public void test_chronoSerialization(Chronology chrono) throws Exception {
-        assertSerializable(chrono);
+    @Test( dataProvider="calendars")
+    public void test_ChronoSerialization(ChronoLocalDate date, int dateType) throws Exception {
+        assertSerializable(date);
     }
 
     //-----------------------------------------------------------------------
     // Test that serialization produces exact sequence of bytes
     //-----------------------------------------------------------------------
     @Test(dataProvider="calendars")
-    private void test_serializationBytes(Chronology chrono) throws Exception {
+    private void test_serialization_format(ChronoLocalDate date, int dateType) throws Exception {
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         try (DataOutputStream dos = new DataOutputStream(baos) ) {
-            dos.writeByte(CHRONO_TYPE);
-            dos.writeUTF(chrono.getId());
+            dos.writeByte(dateType);
+            dos.writeInt(date.get(YEAR));
+            dos.writeByte(date.get(MONTH_OF_YEAR));
+            dos.writeByte(date.get(DAY_OF_MONTH));
         }
         byte[] bytes = baos.toByteArray();
-        assertSerializedBySer(chrono, bytes);
+        assertSerializedBySer(date, bytes);
     }
 
+    //-----------------------------------------------------------------------
+    // Test HijrajDate serialization is a type, Chronology, year, month, day
+    //-----------------------------------------------------------------------
+    @Test()
+    public void test_hijrahSerialization_format() throws Exception {
+        HijrahChronology chrono = HijrahChronology.INSTANCE;
+        HijrahDate date = HijrahDate.of(1433, 10, 29);
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+
+        // Expect the type of the HijrahDate in the stream
+        byte[] hijrahDateBytes = new byte[] {HIJRAH_DATE_TYPE};
+
+        // Literal reference to Hijrah-Umalqura Chronology
+        byte[] hijrahChronoBytes = new byte[] {
+            115, 113, 0, 126, 0, 0,                        /* p w \u0001 \u0006 s q \u0000 ~ \u0000 \u0000 */
+            119, 18, 1, 0, 15, 72, 105, 106, 114, 97,      /* w \u0012 \u0001 \u0000 \u000f H i j r a */
+            104, 45, 117, 109, 97, 108, 113, 117, 114, 97, /* h - u m a l q u r a */
+            120,                                           /*  \u001d x */
+        };
+
+        // Build the sequence that represents the data in the stream
+        baos = new ByteArrayOutputStream();
+        try (DataOutputStream dos = new DataOutputStream(baos) ) {
+            dos.writeByte(ObjectStreamConstants.TC_BLOCKDATA);
+            dos.writeByte(6);   // 6 bytes follow
+            dos.writeInt(date.get(YEAR));
+            dos.writeByte(date.get(MONTH_OF_YEAR));
+            dos.writeByte(date.get(DAY_OF_MONTH));
+            dos.writeByte(ObjectStreamConstants.TC_ENDBLOCKDATA);
+        }
+        byte[] dateBytes = baos.toByteArray();
+
+        assertSerializedBySer(date, hijrahDateBytes, hijrahChronoBytes, dateBytes);
+    }
 }

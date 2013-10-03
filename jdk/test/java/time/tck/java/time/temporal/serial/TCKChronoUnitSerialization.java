@@ -4,7 +4,9 @@
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.
+ * published by the Free Software Foundation.  Oracle designates this
+ * particular file as subject to the "Classpath" exception as provided
+ * by Oracle in the LICENSE file that accompanied this code.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -22,11 +24,6 @@
  */
 
 /*
- * This file is available under and governed by the GNU General Public
- * License version 2 only, as published by the Free Software Foundation.
- * However, the following notice accompanied the original version of this
- * file:
- *
  * Copyright (c) 2008-2012, Stephen Colebourne & Michael Nascimento Santos
  *
  * All rights reserved.
@@ -57,26 +54,69 @@
  * NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-package tck.java.time.serial;
+package tck.java.time.temporal.serial;
 
+import static java.time.temporal.ChronoUnit.CENTURIES;
+import static java.time.temporal.ChronoUnit.DAYS;
+import static java.time.temporal.ChronoUnit.DECADES;
+import static java.time.temporal.ChronoUnit.ERAS;
+import static java.time.temporal.ChronoUnit.FOREVER;
+import static java.time.temporal.ChronoUnit.HALF_DAYS;
+import static java.time.temporal.ChronoUnit.HOURS;
+import static java.time.temporal.ChronoUnit.MICROS;
+import static java.time.temporal.ChronoUnit.MILLENNIA;
+import static java.time.temporal.ChronoUnit.MILLIS;
+import static java.time.temporal.ChronoUnit.MINUTES;
+import static java.time.temporal.ChronoUnit.MONTHS;
+import static java.time.temporal.ChronoUnit.NANOS;
+import static java.time.temporal.ChronoUnit.SECONDS;
+import static java.time.temporal.ChronoUnit.WEEKS;
+import static java.time.temporal.ChronoUnit.YEARS;
+
+import java.io.IOException;
+import java.time.temporal.ChronoUnit;
+
+import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
+
 import tck.java.time.AbstractTCKTest;
 
-import java.time.Period;
-
 /**
- * Test Period.
+ * Test.
  */
 @Test
-public class TCKPeriod extends AbstractTCKTest {
+public class TCKChronoUnitSerialization extends AbstractTCKTest {
 
     //-----------------------------------------------------------------------
-    @Test
-    public void test_serialization() throws Exception {
-        assertSerializable(Period.ZERO);
-        assertSerializable(Period.ofDays(1));
-        assertSerializable(Period.of(1, 2, 3));
+    // ChronoUnits
+    //-----------------------------------------------------------------------
+    @DataProvider(name="chronoUnit")
+    Object[][] data_chronoUnit() {
+        return new Object[][] {
+                {FOREVER},
+                {ERAS},
+                {MILLENNIA},
+                {CENTURIES},
+                {DECADES},
+                {YEARS},
+                {MONTHS},
+                {WEEKS},
+                {DAYS},
+
+                {HALF_DAYS},
+                {HOURS},
+                {MINUTES},
+                {SECONDS},
+                {MICROS},
+                {MILLIS},
+                {NANOS},
+
+        };
     }
 
+    @Test(dataProvider = "chronoUnit")
+    public void test_unitType(ChronoUnit unit) throws IOException, ClassNotFoundException {
+        assertSerializableSame(unit);
+    }
 
 }

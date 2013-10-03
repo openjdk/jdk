@@ -1,4 +1,5 @@
 /*
+ * Copyright (c) 2012, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +27,7 @@
  * However, the following notice accompanied the original version of this
  * file:
  *
- * Copyright (c) 2011-2012, Stephen Colebourne & Michael Nascimento Santos
+ * Copyright (c) 2008-2012 Stephen Colebourne & Michael Nascimento Santos
  *
  * All rights reserved.
  *
@@ -56,29 +57,58 @@
  * NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-package tck.java.time.chrono;
+package tck.java.time.serial;
 
-import static org.testng.Assert.assertEquals;
 
-import java.time.LocalDate;
-import java.time.chrono.ChronoLocalDate;
-import java.time.chrono.Chronology;
+import java.io.IOException;
+import java.time.Clock;
+import java.time.Duration;
+import java.time.Instant;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.time.ZoneOffset;
+import java.time.ZonedDateTime;
 
 import org.testng.annotations.Test;
 
+import tck.java.time.AbstractTCKTest;
+
 /**
- * Tests that a custom Chronology is available via the ServiceLoader.
- * The CopticChronology is configured via META-INF/services/java.time.chrono.Chronology.
+ * Test system and offset clocks serialization.
  */
 @Test
-public class TCKTestServiceLoader {
+public class TCKClockSerialization extends AbstractTCKTest {
 
-     @Test
-     public void test_TestServiceLoader() {
-        Chronology chrono = Chronology.of("Coptic");
-        ChronoLocalDate copticDate = chrono.date(1729, 4, 27);
-        LocalDate ld = LocalDate.from(copticDate);
-        assertEquals(ld, LocalDate.of(2013, 1, 5), "CopticDate does not match LocalDate");
+    private static final ZoneId MOSCOW = ZoneId.of("Europe/Moscow");
+    private static final ZoneId PARIS = ZoneId.of("Europe/Paris");
+
+    private static final Duration AMOUNT = Duration.ofSeconds(2);
+    private static final ZonedDateTime ZDT = LocalDateTime.of(2008, 6, 30, 11, 30, 10, 500).atZone(ZoneOffset.ofHours(2));
+    private static final Instant INSTANT = ZDT.toInstant();
+
+    //-----------------------------------------------------------------------
+    public void test_systemClockSerializable() throws IOException, ClassNotFoundException {
+        assertSerializable(Clock.systemUTC());
+        assertSerializable(Clock.systemDefaultZone());
+        assertSerializable(Clock.system(PARIS));
+    }
+
+    //-----------------------------------------------------------------------
+    public void test_offsetClockSerializable() throws IOException, ClassNotFoundException {
+        assertSerializable(Clock.offset(Clock.system(PARIS), AMOUNT));
+    }
+
+    //-----------------------------------------------------------------------
+    public void test_tickClockSerializable() throws IOException, ClassNotFoundException {
+        assertSerializable(Clock.tickSeconds(PARIS));
+        assertSerializable(Clock.tickMinutes(MOSCOW));
+        assertSerializable(Clock.tick(Clock.fixed(INSTANT, PARIS), AMOUNT));
+    }
+
+    //-----------------------------------------------------------------------
+    public void test_fixedClockSerializable() throws IOException, ClassNotFoundException {
+        assertSerializable(Clock.fixed(INSTANT, ZoneOffset.UTC));
+        assertSerializable(Clock.fixed(INSTANT, PARIS));
     }
 
 }

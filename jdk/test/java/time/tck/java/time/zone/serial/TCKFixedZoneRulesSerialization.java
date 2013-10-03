@@ -27,7 +27,7 @@
  * However, the following notice accompanied the original version of this
  * file:
  *
- * Copyright (c) 2007-2012, Stephen Colebourne & Michael Nascimento Santos
+ * Copyright (c) 2010-2012, Stephen Colebourne & Michael Nascimento Santos
  *
  * All rights reserved.
  *
@@ -57,38 +57,60 @@
  * NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-package tck.java.time.serial;
+package tck.java.time.zone.serial;
 
-import org.testng.annotations.BeforeMethod;
+import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
-import tck.java.time.AbstractTCKTest;
 
+import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
-import java.io.DataOutputStream;
-import java.time.Instant;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
+import java.time.ZoneOffset;
+import java.time.zone.ZoneRules;
+
+import static org.testng.Assert.assertEquals;
 
 /**
- * Test Instant.
+ * Test serialization of ZoneRules for fixed offset time-zones.
  */
 @Test
-public class TCKInstant extends AbstractTCKTest {
+public class TCKFixedZoneRulesSerialization {
 
-    //-----------------------------------------------------------------------
-    @Test
-    public void test_serialization() throws Exception {
-        assertSerializable(Instant.ofEpochMilli(134l));
+    private static final ZoneOffset OFFSET_PONE = ZoneOffset.ofHours(1);
+    private static final ZoneOffset OFFSET_PTWO = ZoneOffset.ofHours(2);
+    private static final ZoneOffset OFFSET_M18 = ZoneOffset.ofHours(-18);
+
+    private ZoneRules make(ZoneOffset offset) {
+        return offset.getRules();
     }
 
-    @Test
-    public void test_serialization_format() throws Exception {
+    @DataProvider(name="rules")
+    Object[][] data_rules() {
+        return new Object[][] {
+            {make(OFFSET_PONE), OFFSET_PONE},
+            {make(OFFSET_PTWO), OFFSET_PTWO},
+            {make(OFFSET_M18), OFFSET_M18},
+        };
+    }
+
+    //-----------------------------------------------------------------------
+    // Basics
+    //-----------------------------------------------------------------------
+    @Test(dataProvider="rules")
+    public void test_serialization(ZoneRules test, ZoneOffset expectedOffset) throws Exception {
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        try (DataOutputStream dos = new DataOutputStream(baos) ) {
-            dos.writeByte(2);
-            dos.writeLong(654321);
-            dos.writeInt(123456789);
-        }
+        ObjectOutputStream out = new ObjectOutputStream(baos);
+        out.writeObject(test);
+        baos.close();
         byte[] bytes = baos.toByteArray();
-        assertSerializedBySer(Instant.ofEpochSecond(654321, 123456789), bytes);
+
+        ByteArrayInputStream bais = new ByteArrayInputStream(bytes);
+        ObjectInputStream in = new ObjectInputStream(bais);
+        ZoneRules result = (ZoneRules) in.readObject();
+
+        assertEquals(result, test);
+        assertEquals(result.getClass(), test.getClass());
     }
 
 

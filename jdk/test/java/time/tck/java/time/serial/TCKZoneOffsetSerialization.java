@@ -4,9 +4,7 @@
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.  Oracle designates this
- * particular file as subject to the "Classpath" exception as provided
- * by Oracle in the LICENSE file that accompanied this code.
+ * published by the Free Software Foundation.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -24,6 +22,11 @@
  */
 
 /*
+ * This file is available under and governed by the GNU General Public
+ * License version 2 only, as published by the Free Software Foundation.
+ * However, the following notice accompanied the original version of this
+ * file:
+ *
  * Copyright (c) 2008-2012, Stephen Colebourne & Michael Nascimento Santos
  *
  * All rights reserved.
@@ -54,58 +57,62 @@
  * NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-package tck.java.time.chrono.serial;
+package tck.java.time.serial;
 
-import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
+import tck.java.time.AbstractTCKTest;
 
-import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
-import java.time.LocalDate;
-import java.time.chrono.*;
-
-import static org.testng.Assert.assertEquals;
+import java.io.DataOutputStream;
+import java.time.ZoneOffset;
 
 /**
- * Test assertions that must be true for all built-in chronologies.
+ * Test serialization of ZoneOffset.
  */
 @Test
-public class TCKChronoLocalDate {
+public class TCKZoneOffsetSerialization extends AbstractTCKTest {
+
+
 
     //-----------------------------------------------------------------------
-    // regular data factory for names and descriptions of available calendars
-    //-----------------------------------------------------------------------
-    @DataProvider(name = "calendars")
-    Chronology[][] data_of_calendars() {
-        return new Chronology[][]{
-                    {HijrahChronology.INSTANCE},
-                    {IsoChronology.INSTANCE},
-                    {JapaneseChronology.INSTANCE},
-                    {MinguoChronology.INSTANCE},
-                    {ThaiBuddhistChronology.INSTANCE}};
+    @Test
+    public void test_serialization() throws Exception {
+        assertSerializable(ZoneOffset.of("+01:30"));
     }
 
-
-    //-----------------------------------------------------------------------
-    // Test Serialization of Calendars
-    //-----------------------------------------------------------------------
-    @Test( dataProvider="calendars")
-    public void test_ChronoSerialization(Chronology chrono) throws Exception {
-        LocalDate ref = LocalDate.of(2013, 1, 5);
-        ChronoLocalDate orginal = chrono.date(ref);
+    @Test
+    public void test_serialization_format_quarterPositive() throws Exception {
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        ObjectOutputStream out = new ObjectOutputStream(baos);
-        out.writeObject(orginal);
-        out.close();
-        ByteArrayInputStream bais = new ByteArrayInputStream(baos.toByteArray());
-        ObjectInputStream in = new ObjectInputStream(bais);
-        @SuppressWarnings("unchecked")
-        ChronoLocalDate ser = (ChronoLocalDate) in.readObject();
-        assertEquals(ser, orginal, "deserialized date is wrong");
+        try (DataOutputStream dos = new DataOutputStream(baos) ) {
+            dos.writeByte(8);
+            dos.writeByte(6);  // stored as quarter hours
+        }
+        byte[] bytes = baos.toByteArray();
+        assertSerializedBySer(ZoneOffset.ofHoursMinutes(1, 30), bytes);
     }
 
-    //-----------------------------------------------------------------------
+    @Test
+    public void test_serialization_format_quarterNegative() throws Exception {
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        try (DataOutputStream dos = new DataOutputStream(baos) ) {
+            dos.writeByte(8);
+            dos.writeByte(-10);  // stored as quarter hours
+        }
+        byte[] bytes = baos.toByteArray();
+        assertSerializedBySer(ZoneOffset.ofHoursMinutes(-2, -30), bytes);
+    }
+
+    @Test
+    public void test_serialization_format_full() throws Exception {
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        try (DataOutputStream dos = new DataOutputStream(baos) ) {
+            dos.writeByte(8);
+            dos.writeByte(127);
+            dos.writeInt(53265);
+        }
+        byte[] bytes = baos.toByteArray();
+        assertSerializedBySer(ZoneOffset.ofTotalSeconds(53265), bytes);
+    }
+
 
 }

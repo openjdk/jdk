@@ -59,46 +59,45 @@
  */
 package tck.java.time.serial;
 
+import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 import tck.java.time.AbstractTCKTest;
 
 import java.io.ByteArrayOutputStream;
 import java.io.DataOutputStream;
-import java.time.LocalDateTime;
+import java.io.IOException;
+import java.time.YearMonth;
 
 /**
- * Test LocalDateTime.
+ * Test serialization of YearMonth.
  */
 @Test
-public class TCKLocalDateTime extends AbstractTCKTest {
+public class TCKYearMonthSerialization extends AbstractTCKTest {
 
-    private LocalDateTime TEST_2007_07_15_12_30_40_987654321 = LocalDateTime.of(2007, 7, 15, 12, 30, 40, 987654321);
+    private YearMonth TEST_2008_06;
+
+    @BeforeMethod
+    public void setUp() {
+        TEST_2008_06 = YearMonth.of(2008, 6);
+    }
+
 
     //-----------------------------------------------------------------------
     @Test
-    public void test_serialization() throws Exception {
-        assertSerializable(TEST_2007_07_15_12_30_40_987654321);
-        assertSerializable(LocalDateTime.MIN);
-        assertSerializable(LocalDateTime.MAX);
+    public void test_serialization() throws IOException, ClassNotFoundException {
+        assertSerializable(TEST_2008_06);
     }
 
     @Test
     public void test_serialization_format() throws Exception {
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         try (DataOutputStream dos = new DataOutputStream(baos) ) {
-            dos.writeByte(5);
+            dos.writeByte(12);       // java.time.temporal.Ser.YEAR_MONTH_TYPE
             dos.writeInt(2012);
             dos.writeByte(9);
-            dos.writeByte(16);
-            dos.writeByte(22);
-            dos.writeByte(17);
-            dos.writeByte(59);
-            dos.writeInt(459_000_000);
         }
         byte[] bytes = baos.toByteArray();
-        assertSerializedBySer(LocalDateTime.of(2012, 9, 16, 22, 17, 59, 459_000_000), bytes);
+        assertSerializedBySer(YearMonth.of(2012, 9), bytes);
     }
-
-
 
 }

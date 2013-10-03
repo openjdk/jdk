@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,7 +27,7 @@
  * However, the following notice accompanied the original version of this
  * file:
  *
- * Copyright (c) 2008-2012, Stephen Colebourne & Michael Nascimento Santos
+ * Copyright (c) 2011-2012, Stephen Colebourne & Michael Nascimento Santos
  *
  * All rights reserved.
  *
@@ -57,87 +57,79 @@
  * NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-package tck.java.time.serial;
+package tck.java.time.chrono.serial;
 
-import org.testng.annotations.BeforeMethod;
-import org.testng.annotations.Test;
-import tck.java.time.AbstractTCKTest;
+
+import static java.time.temporal.ChronoField.DAY_OF_MONTH;
+import static java.time.temporal.ChronoField.MONTH_OF_YEAR;
+import static java.time.temporal.ChronoField.YEAR;
 
 import java.io.ByteArrayOutputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
-import java.time.LocalDateTime;
-import java.time.ZoneId;
-import java.time.ZoneOffset;
-import java.time.ZonedDateTime;
+import java.time.chrono.ChronoLocalDate;
+import java.time.chrono.Era;
+import java.time.chrono.HijrahEra;
+import java.time.chrono.IsoEra;
+import java.time.chrono.JapaneseEra;
+import java.time.chrono.MinguoEra;
+import java.time.chrono.ThaiBuddhistEra;
+
+import org.testng.annotations.DataProvider;
+import org.testng.annotations.Test;
+
+import tck.java.time.AbstractTCKTest;
 
 /**
- * Test ZonedDateTime.
+ * Tests the built-in Eras are serializable.
+ * Note that the serialized form of IsoEra, MinguoEra, ThaiBuddhistEra,
+ * and HijrahEra are defined and provided by Enum.
+ * The serialized form of these types are not tested, only that they are
+ * serializable.
  */
 @Test
-public class TCKZonedDateTime extends AbstractTCKTest {
+public class TCKEraSerialization extends AbstractTCKTest {
 
-    private static final ZoneOffset OFFSET_0100 = ZoneOffset.ofHours(1);
-    private static final ZoneId ZONE_0100 = OFFSET_0100;
-    private static final ZoneId ZONE_PARIS = ZoneId.of("Europe/Paris");
-    private LocalDateTime TEST_LOCAL_2008_06_30_11_30_59_500;
-    private ZonedDateTime TEST_DATE_TIME;
-
-
-    @BeforeMethod
-    public void setUp() {
-        TEST_LOCAL_2008_06_30_11_30_59_500 = LocalDateTime.of(2008, 6, 30, 11, 30, 59, 500);
-        TEST_DATE_TIME = ZonedDateTime.of(TEST_LOCAL_2008_06_30_11_30_59_500, ZONE_0100);
-    }
+    static final int JAPANESE_ERA_TYPE = 5;     // java.time.chrono.Ser.JAPANESE_ERA
 
 
     //-----------------------------------------------------------------------
-    @Test
-    public void test_serialization() throws ClassNotFoundException, IOException {
-        assertSerializable(TEST_DATE_TIME);
+    // Regular data factory for the available Eras
+    //-----------------------------------------------------------------------
+    @DataProvider(name = "Eras")
+    Era[][] data_of_calendars() {
+        return new Era[][] {
+                    {HijrahEra.AH},
+                    {IsoEra.BCE},
+                    {IsoEra.CE},
+                    {MinguoEra.BEFORE_ROC},
+                    {MinguoEra.ROC},
+                    {ThaiBuddhistEra.BEFORE_BE},
+                    {ThaiBuddhistEra.BE},
+        };
     }
 
+    @Test(dataProvider="Eras")
+    public void test_eraSerialization(Era era) throws IOException, ClassNotFoundException {
+        assertSerializableSame(era);
+    }
+
+    //-----------------------------------------------------------------------
+    // Test JapaneseEra serialization produces exact sequence of bytes
+    //-----------------------------------------------------------------------
     @Test
-    public void test_serialization_format_zoneId() throws Exception {
-        ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        try (DataOutputStream dos = new DataOutputStream(baos) ) {
-            dos.writeByte(6);
-            dos.writeInt(2012); // date
-            dos.writeByte(9);
-            dos.writeByte(16);
-            dos.writeByte(22);  // time
-            dos.writeByte(17);
-            dos.writeByte(59);
-            dos.writeInt(470_000_000);
-            dos.writeByte(4);  // offset
-            dos.writeByte(7);  // zoneId
-            dos.writeUTF("Europe/London");
+    private void test_JapaneseErasSerialization() throws Exception {
+        for (JapaneseEra era : JapaneseEra.values()) {
+            assertSerializableSame(era);
+
+            ByteArrayOutputStream baos = new ByteArrayOutputStream();
+            try (DataOutputStream dos = new DataOutputStream(baos) ) {
+                dos.writeByte(JAPANESE_ERA_TYPE);
+                dos.writeByte(era.getValue());
+            }
+            byte[] bytes = baos.toByteArray();
+            assertSerializedBySer(era, bytes);
         }
-        byte[] bytes = baos.toByteArray();
-        ZonedDateTime zdt = LocalDateTime.of(2012, 9, 16, 22, 17, 59, 470_000_000).atZone(ZoneId.of("Europe/London"));
-        assertSerializedBySer(zdt, bytes);
     }
-
-    @Test
-    public void test_serialization_format_zoneOffset() throws Exception {
-        ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        try (DataOutputStream dos = new DataOutputStream(baos) ) {
-            dos.writeByte(6);
-            dos.writeInt(2012); // date
-            dos.writeByte(9);
-            dos.writeByte(16);
-            dos.writeByte(22);  // time
-            dos.writeByte(17);
-            dos.writeByte(59);
-            dos.writeInt(470_000_000);
-            dos.writeByte(4);  // offset
-            dos.writeByte(8);  // zoneId
-            dos.writeByte(4);
-        }
-        byte[] bytes = baos.toByteArray();
-        ZonedDateTime zdt = LocalDateTime.of(2012, 9, 16, 22, 17, 59, 470_000_000).atZone(ZoneOffset.ofHours(1));
-        assertSerializedBySer(zdt, bytes);
-    }
-
 
 }

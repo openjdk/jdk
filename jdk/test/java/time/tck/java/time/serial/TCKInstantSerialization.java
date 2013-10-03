@@ -27,7 +27,7 @@
  * However, the following notice accompanied the original version of this
  * file:
  *
- * Copyright (c) 2008-2012, Stephen Colebourne & Michael Nascimento Santos
+ * Copyright (c) 2007-2012, Stephen Colebourne & Michael Nascimento Santos
  *
  * All rights reserved.
  *
@@ -59,59 +59,36 @@
  */
 package tck.java.time.serial;
 
+import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 import tck.java.time.AbstractTCKTest;
 
 import java.io.ByteArrayOutputStream;
 import java.io.DataOutputStream;
-import java.time.ZoneOffset;
+import java.time.Instant;
 
 /**
- * Test ZoneOffset.
+ * Test Instant serialization.
  */
 @Test
-public class TCKZoneOffset extends AbstractTCKTest {
-
-
+public class TCKInstantSerialization extends AbstractTCKTest {
 
     //-----------------------------------------------------------------------
     @Test
     public void test_serialization() throws Exception {
-        assertSerializable(ZoneOffset.of("+01:30"));
+        assertSerializable(Instant.ofEpochMilli(134l));
     }
 
     @Test
-    public void test_serialization_format_quarterPositive() throws Exception {
+    public void test_serialization_format() throws Exception {
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         try (DataOutputStream dos = new DataOutputStream(baos) ) {
-            dos.writeByte(8);
-            dos.writeByte(6);  // stored as quarter hours
+            dos.writeByte(2);
+            dos.writeLong(654321);
+            dos.writeInt(123456789);
         }
         byte[] bytes = baos.toByteArray();
-        assertSerializedBySer(ZoneOffset.ofHoursMinutes(1, 30), bytes);
-    }
-
-    @Test
-    public void test_serialization_format_quarterNegative() throws Exception {
-        ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        try (DataOutputStream dos = new DataOutputStream(baos) ) {
-            dos.writeByte(8);
-            dos.writeByte(-10);  // stored as quarter hours
-        }
-        byte[] bytes = baos.toByteArray();
-        assertSerializedBySer(ZoneOffset.ofHoursMinutes(-2, -30), bytes);
-    }
-
-    @Test
-    public void test_serialization_format_full() throws Exception {
-        ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        try (DataOutputStream dos = new DataOutputStream(baos) ) {
-            dos.writeByte(8);
-            dos.writeByte(127);
-            dos.writeInt(53265);
-        }
-        byte[] bytes = baos.toByteArray();
-        assertSerializedBySer(ZoneOffset.ofTotalSeconds(53265), bytes);
+        assertSerializedBySer(Instant.ofEpochSecond(654321, 123456789), bytes);
     }
 
 

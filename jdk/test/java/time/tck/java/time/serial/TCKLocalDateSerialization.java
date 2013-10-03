@@ -1,4 +1,5 @@
 /*
+ * Copyright (c) 2012, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +27,7 @@
  * However, the following notice accompanied the original version of this
  * file:
  *
- * Copyright (c) 2011-2012, Stephen Colebourne & Michael Nascimento Santos
+ * Copyright (c) 2007-2012, Stephen Colebourne & Michael Nascimento Santos
  *
  * All rights reserved.
  *
@@ -56,29 +57,49 @@
  * NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-package tck.java.time.chrono;
+package tck.java.time.serial;
 
-import static org.testng.Assert.assertEquals;
-
-import java.time.LocalDate;
-import java.time.chrono.ChronoLocalDate;
-import java.time.chrono.Chronology;
-
+import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
+import tck.java.time.AbstractTCKTest;
+
+import java.io.ByteArrayOutputStream;
+import java.io.DataOutputStream;
+import java.time.LocalDate;
 
 /**
- * Tests that a custom Chronology is available via the ServiceLoader.
- * The CopticChronology is configured via META-INF/services/java.time.chrono.Chronology.
+ * Test LocalDate serialization.
  */
 @Test
-public class TCKTestServiceLoader {
+public class TCKLocalDateSerialization extends AbstractTCKTest {
 
-     @Test
-     public void test_TestServiceLoader() {
-        Chronology chrono = Chronology.of("Coptic");
-        ChronoLocalDate copticDate = chrono.date(1729, 4, 27);
-        LocalDate ld = LocalDate.from(copticDate);
-        assertEquals(ld, LocalDate.of(2013, 1, 5), "CopticDate does not match LocalDate");
+    private LocalDate TEST_2007_07_15;
+
+    @BeforeMethod
+    public void setUp() {
+        TEST_2007_07_15 = LocalDate.of(2007, 7, 15);
+    }
+
+
+    //-----------------------------------------------------------------------
+    @Test
+    public void test_serialization() throws Exception {
+        assertSerializable(TEST_2007_07_15);
+        assertSerializable(LocalDate.MIN);
+        assertSerializable(LocalDate.MAX);
+    }
+
+    @Test
+    public void test_serialization_format() throws Exception {
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        try (DataOutputStream dos = new DataOutputStream(baos) ) {
+            dos.writeByte(3);
+            dos.writeInt(2012);
+            dos.writeByte(9);
+            dos.writeByte(16);
+        }
+        byte[] bytes = baos.toByteArray();
+        assertSerializedBySer(LocalDate.of(2012, 9, 16), bytes);
     }
 
 }

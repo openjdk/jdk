@@ -127,7 +127,6 @@ public class TCKZoneOffsetTransition extends AbstractTCKTest {
         assertEquals(test.getOffsetBefore(), OFFSET_0200);
         assertEquals(test.getOffsetAfter(), OFFSET_0300);
         assertEquals(test.getDuration(), Duration.of(1, HOURS));
-        assertSerializable(test);
     }
 
     @Test
@@ -143,7 +142,6 @@ public class TCKZoneOffsetTransition extends AbstractTCKTest {
         assertEquals(test.getOffsetBefore(), OFFSET_0300);
         assertEquals(test.getOffsetAfter(), OFFSET_0200);
         assertEquals(test.getDuration(), Duration.of(-1, HOURS));
-        assertSerializable(test);
     }
 
 

@@ -1,4 +1,5 @@
 /*
+ * Copyright (c) 2012, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +27,7 @@
  * However, the following notice accompanied the original version of this
  * file:
  *
- * Copyright (c) 2011-2012, Stephen Colebourne & Michael Nascimento Santos
+ * Copyright (c) 2008-2012, Stephen Colebourne & Michael Nascimento Santos
  *
  * All rights reserved.
  *
@@ -56,29 +57,66 @@
  * NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-package tck.java.time.chrono;
+package tck.java.time.serial;
 
-import static org.testng.Assert.assertEquals;
-
-import java.time.LocalDate;
-import java.time.chrono.ChronoLocalDate;
-import java.time.chrono.Chronology;
-
+import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
+import tck.java.time.AbstractTCKTest;
+
+import java.io.ByteArrayOutputStream;
+import java.io.DataOutputStream;
+import java.time.OffsetTime;
+import java.time.ZoneOffset;
 
 /**
- * Tests that a custom Chronology is available via the ServiceLoader.
- * The CopticChronology is configured via META-INF/services/java.time.chrono.Chronology.
+ * Test OffsetTime serialization.
  */
 @Test
-public class TCKTestServiceLoader {
+public class TCKOffsetTimeSerialization extends AbstractTCKTest {
 
-     @Test
-     public void test_TestServiceLoader() {
-        Chronology chrono = Chronology.of("Coptic");
-        ChronoLocalDate copticDate = chrono.date(1729, 4, 27);
-        LocalDate ld = LocalDate.from(copticDate);
-        assertEquals(ld, LocalDate.of(2013, 1, 5), "CopticDate does not match LocalDate");
+    private static final ZoneOffset OFFSET_PONE = ZoneOffset.ofHours(1);
+    private OffsetTime TEST_11_30_59_500_PONE;
+
+    @BeforeMethod
+    public void setUp() {
+        TEST_11_30_59_500_PONE = OffsetTime.of(11, 30, 59, 500, OFFSET_PONE);
     }
+
+
+
+    //-----------------------------------------------------------------------
+    @Test
+    public void test_serialization() throws Exception {
+        assertSerializable(TEST_11_30_59_500_PONE);
+        assertSerializable(OffsetTime.MIN);
+        assertSerializable(OffsetTime.MAX);
+    }
+
+    @Test
+    public void test_serialization_format() throws Exception {
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        try (DataOutputStream dos = new DataOutputStream(baos) ) {
+            dos.writeByte(9);       // java.time.Ser.OFFSET_TIME_TYPE
+        }
+        byte[] bytes = baos.toByteArray();
+        ByteArrayOutputStream baosTime = new ByteArrayOutputStream();
+        try (DataOutputStream dos = new DataOutputStream(baosTime) ) {
+            dos.writeByte(4);
+            dos.writeByte(22);
+            dos.writeByte(17);
+            dos.writeByte(59);
+            dos.writeInt(464_000_000);
+        }
+        byte[] bytesTime = baosTime.toByteArray();
+        ByteArrayOutputStream baosOffset = new ByteArrayOutputStream();
+        try (DataOutputStream dos = new DataOutputStream(baosOffset) ) {
+            dos.writeByte(8);
+            dos.writeByte(4);  // quarter hours stored: 3600 / 900
+        }
+        byte[] bytesOffset = baosOffset.toByteArray();
+        assertSerializedBySer(OffsetTime.of(22, 17, 59, 464_000_000, ZoneOffset.ofHours(1)), bytes,
+                bytesTime, bytesOffset);
+    }
+
 
 }

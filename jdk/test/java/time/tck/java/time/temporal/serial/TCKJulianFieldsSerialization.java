@@ -57,66 +57,38 @@
  * NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-package tck.java.time.zone.serial;
+package tck.java.time.temporal.serial;
 
+import java.io.IOException;
+import java.time.temporal.JulianFields;
+import java.time.temporal.TemporalField;
+
+import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
-import java.time.ZoneId;
-import java.time.zone.ZoneRules;
-
-import static org.testng.Assert.assertEquals;
+import tck.java.time.AbstractTCKTest;
 
 /**
- * Test ZoneRules.
+ * Test serialization of JulianFields
  */
 @Test
-public class TCKZoneRules {
-
-    public void test_serialization_loaded() throws Exception {
-        assertSerialization(europeLondon());
-        assertSerialization(europeParis());
-        assertSerialization(americaNewYork());
-    }
-
-    private void assertSerialization(ZoneRules test) throws Exception {
-        ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        ObjectOutputStream out = new ObjectOutputStream(baos);
-        out.writeObject(test);
-        baos.close();
-        byte[] bytes = baos.toByteArray();
-
-        ByteArrayInputStream bais = new ByteArrayInputStream(bytes);
-        ObjectInputStream in = new ObjectInputStream(bais);
-        ZoneRules result = (ZoneRules) in.readObject();
-
-        assertEquals(result, test);
-    }
+public class TCKJulianFieldsSerialization extends AbstractTCKTest {
 
     //-----------------------------------------------------------------------
-    // Europe/London
-    //-----------------------------------------------------------------------
-    private ZoneRules europeLondon() {
-        return ZoneId.of("Europe/London").getRules();
+    @DataProvider(name="julian_fields")
+    Object[][] julian_samples() {
+        return new Object[][] {
+            {JulianFields.JULIAN_DAY},
+            {JulianFields.MODIFIED_JULIAN_DAY},
+            {JulianFields.RATA_DIE},
+        };
     }
 
 
     //-----------------------------------------------------------------------
-    // Europe/Paris
-    //-----------------------------------------------------------------------
-    private ZoneRules europeParis() {
-        return ZoneId.of("Europe/Paris").getRules();
+    @Test(dataProvider="julian_fields")
+    public void test_serializable(TemporalField field) throws IOException, ClassNotFoundException {
+        assertSerializable(field);
     }
-
-    //-----------------------------------------------------------------------
-    // America/New_York
-    //-----------------------------------------------------------------------
-    private ZoneRules americaNewYork() {
-        return ZoneId.of("America/New_York").getRules();
-    }
-
 
 }
