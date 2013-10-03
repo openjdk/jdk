@@ -326,8 +326,11 @@ Java_sun_java2d_loops_TransformHelper_Transform
     }
 
     srcOps = SurfaceData_GetOps(env, srcData);
+    if (srcOps == 0) {
+        return;
+    }
     dstOps = SurfaceData_GetOps(env, dstData);
-    if (srcOps == 0 || dstOps == 0) {
+    if (dstOps == 0) {
         return;
     }
 
@@ -411,7 +414,7 @@ Java_sun_java2d_loops_TransformHelper_Transform
     }
 
     if (pEdges == NULL) {
-        if (numedges > 0) {
+        if (!(*env)->ExceptionCheck(env) && numedges > 0) {
             JNU_ThrowInternalError(env, "Unable to allocate edge list");
         }
         SurfaceData_InvokeUnlock(env, dstOps, &dstInfo);
