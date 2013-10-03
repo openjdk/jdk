@@ -1,5 +1,5 @@
-/*
- * @test /nodynamiccopyright/
+/* @test /nodynamiccopyright/
+ * @bug 7192246
  * @summary check that default method must have most specific return type
  * @compile/fail/ref=Neg04.out -XDrawDiagnostics Neg04.java
  */

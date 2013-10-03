@@ -25,5 +25,13 @@
 /**
  * This is an {@underline underline}.
  * @todo Finish this class.
+ * @check Check this.
  */
-public class C {}
+public class C {
+
+    /**
+     * @todo Tag in Method.
+     */
+    public void mtd() {
+    }
+}
