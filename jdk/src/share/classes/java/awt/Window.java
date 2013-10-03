@@ -1034,7 +1034,9 @@ public class Window extends Container implements Accessible {
             closeSplashScreen();
             Dialog.checkShouldBeBlocked(this);
             super.show();
-            locationByPlatform = false;
+            synchronized (getTreeLock()) {
+                this.locationByPlatform = false;
+            }
             for (int i = 0; i < ownedWindowList.size(); i++) {
                 Window child = ownedWindowList.elementAt(i).get();
                 if ((child != null) && child.showWithParent) {
@@ -1107,6 +1109,9 @@ public class Window extends Container implements Accessible {
             modalBlocker.unblockWindow(this);
         }
         super.hide();
+        synchronized (getTreeLock()) {
+            this.locationByPlatform = false;
+        }
     }
 
     final void clearMostRecentFocusOwnerOnHide() {
