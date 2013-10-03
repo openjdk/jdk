@@ -66,6 +66,8 @@
 
     <echo message="run.test.jvmargs=${run.test.jvmargs}"/>
     <echo message="run.test.jvmargs.octane=${run.test.jvmargs.octane}"/>
+    <echo message="run.test.xms=${run.test.xms}"/>
+    <echo message="run.test.xmx=${run.test.xmx}"/>
 
   </target>
 
@@ -230,6 +232,10 @@
         <compilerarg value="-Xlint:deprecation"/>
     </javac>
 
+    <copy todir="${build.test.classes.dir}/META-INF/services">
+       <fileset dir="${test.src.dir}/META-INF/services/"/>
+    </copy>
+
     <!-- tests that check nashorn internals and internal API -->
     <jar jarfile="${nashorn.internal.tests.jar}">
       <fileset dir="${build.test.classes.dir}" excludes="**/api/**"/>
@@ -238,6 +244,7 @@
     <!-- tests that check nashorn script engine (jsr-223) API -->
     <jar jarfile="${nashorn.api.tests.jar}">
       <fileset dir="${build.test.classes.dir}" includes="**/api/**"/>
+      <fileset dir="${build.test.classes.dir}" includes="**/META-INF/**"/>
     </jar>
 
   </target>
@@ -258,6 +265,13 @@ grant codeBase "file:/${basedir}/test/script/trusted/*" {
 };
 
 grant codeBase "file:/${basedir}/test/script/basic/*" {
+    permission java.io.FilePermission "${basedir}/test/script/-", "read";
+    permission java.io.FilePermission "$${user.dir}", "read";
+    permission java.util.PropertyPermission "user.dir", "read";
+    permission java.util.PropertyPermission "nashorn.test.*", "read";
+};
+
+grant codeBase "file:/${basedir}/test/script/basic/parser/*" {
     permission java.io.FilePermission "${basedir}/test/script/-", "read";
     permission java.io.FilePermission "$${user.dir}", "read";
     permission java.util.PropertyPermission "user.dir", "read";
@@ -308,7 +322,7 @@ grant codeBase "file:/${basedir}/test/script/basic/classloader.js" {
     <testng outputdir="${build.test.results.dir}" classfilesetref="test.classes"
        verbose="${testng.verbose}" haltonfailure="true" useDefaultListeners="false" listeners="${testng.listeners}" workingDir="${basedir}">
       <jvmarg line="${ext.class.path}"/>
-      <jvmarg line="${run.test.jvmargs} ${run.test.jvmsecurityargs}"/>
+      <jvmarg line="${run.test.jvmargs} -Xmx${run.test.xmx} ${run.test.jvmsecurityargs}"/>
       <propertyset>
         <propertyref prefix="test-sys-prop."/>
         <mapper from="test-sys-prop.*" to="*" type="glob"/>
@@ -324,7 +338,7 @@ grant codeBase "file:/${basedir}/test/script/basic/classloader.js" {
       <!-- use just build.test.classes.dir to avoid referring to TestNG -->
       <java classname="${parallel.test.runner}" dir="${basedir}" classpath="${build.test.classes.dir}" failonerror="true" fork="true">
       <jvmarg line="${ext.class.path}"/>
-      <jvmarg line="${run.test.jvmargs} ${run.test.jvmsecurityargs}"/>
+      <jvmarg line="${run.test.jvmargs} -Xmx${run.test.xmx} ${run.test.jvmsecurityargs}"/>
       <syspropertyset>
           <propertyref prefix="test-sys-prop."/>
           <mapper type="glob" from="test-sys-prop.*" to="*"/>
@@ -340,7 +354,7 @@ grant codeBase "file:/${basedir}/test/script/basic/classloader.js" {
     <testng outputdir="${build.test.results.dir}" classfilesetref="test.classes"
        verbose="${testng.verbose}" haltonfailure="true" useDefaultListeners="false" listeners="${testng.listeners}" workingDir="${basedir}">
       <jvmarg line="${ext.class.path}"/>
-      <jvmarg line="${run.test.jvmargs} ${run.test.jvmsecurityargs}"/>
+      <jvmarg line="${run.test.jvmargs} -Xmx${run.test.xmx} ${run.test.jvmsecurityargs}"/>
       <propertyset>
         <propertyref prefix="test262-test-sys-prop."/>
         <mapper from="test262-test-sys-prop.*" to="*" type="glob"/>
@@ -357,7 +371,7 @@ grant codeBase "file:/${basedir}/test/script/basic/classloader.js" {
     <!-- use just build.test.classes.dir to avoid referring to TestNG -->
     <java classname="${parallel.test.runner}" dir="${basedir}" fork="true">
       <jvmarg line="${ext.class.path}"/>
-      <jvmarg line="${run.test.jvmargs} ${run.test.jvmsecurityargs}"/>
+      <jvmarg line="${run.test.jvmargs} -Xmx${run.test.xmx} ${run.test.jvmsecurityargs}"/>
       <classpath>
           <pathelement path="${run.test.classpath}"/>
       </classpath>
@@ -375,7 +389,7 @@ grant codeBase "file:/${basedir}/test/script/basic/classloader.js" {
       description="Run the shell with a sample script">
     <java classname="${nashorn.shell.tool}" fork="true" dir="samples">
         <jvmarg line="${ext.class.path}"/>
-        <jvmarg line="${run.test.jvmargs}"/>
+        <jvmarg line="${run.test.jvmargs} -Xmx${run.test.xmx}"/>
         <arg value="-dump-on-error"/>
         <arg value="test.js"/>
     </java>
@@ -385,7 +399,7 @@ grant codeBase "file:/${basedir}/test/script/basic/classloader.js" {
       description="Debug the shell with a sample script">
     <java classname="${nashorn.shell.tool}" fork="true" dir="samples">
         <jvmarg line="${ext.class.path}"/>
-        <jvmarg line="${run.test.jvmargs}"/>
+        <jvmarg line="${run.test.jvmargs} -Xmx${run.test.xmx}"/>
         <arg value="--print-code"/>
         <arg value="--verify-code"/>
         <arg value="--print-symbols"/>

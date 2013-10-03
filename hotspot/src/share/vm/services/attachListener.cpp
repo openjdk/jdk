@@ -245,7 +245,7 @@ static jint set_bool_flag(const char* name, AttachOperation* op, outputStream* o
     }
     value = (tmp != 0);
   }
-  bool res = CommandLineFlags::boolAtPut((char*)name, &value, ATTACH_ON_DEMAND);
+  bool res = CommandLineFlags::boolAtPut((char*)name, &value, Flag::ATTACH_ON_DEMAND);
   if (! res) {
     out->print_cr("setting flag %s failed", name);
   }
@@ -263,7 +263,7 @@ static jint set_intx_flag(const char* name, AttachOperation* op, outputStream* o
       return JNI_ERR;
     }
   }
-  bool res = CommandLineFlags::intxAtPut((char*)name, &value, ATTACH_ON_DEMAND);
+  bool res = CommandLineFlags::intxAtPut((char*)name, &value, Flag::ATTACH_ON_DEMAND);
   if (! res) {
     out->print_cr("setting flag %s failed", name);
   }
@@ -282,7 +282,7 @@ static jint set_uintx_flag(const char* name, AttachOperation* op, outputStream* 
       return JNI_ERR;
     }
   }
-  bool res = CommandLineFlags::uintxAtPut((char*)name, &value, ATTACH_ON_DEMAND);
+  bool res = CommandLineFlags::uintxAtPut((char*)name, &value, Flag::ATTACH_ON_DEMAND);
   if (! res) {
     out->print_cr("setting flag %s failed", name);
   }
@@ -301,7 +301,7 @@ static jint set_uint64_t_flag(const char* name, AttachOperation* op, outputStrea
       return JNI_ERR;
     }
   }
-  bool res = CommandLineFlags::uint64_tAtPut((char*)name, &value, ATTACH_ON_DEMAND);
+  bool res = CommandLineFlags::uint64_tAtPut((char*)name, &value, Flag::ATTACH_ON_DEMAND);
   if (! res) {
     out->print_cr("setting flag %s failed", name);
   }
@@ -316,7 +316,7 @@ static jint set_ccstr_flag(const char* name, AttachOperation* op, outputStream* 
     out->print_cr("flag value must be a string");
     return JNI_ERR;
   }
-  bool res = CommandLineFlags::ccstrAtPut((char*)name, &value, ATTACH_ON_DEMAND);
+  bool res = CommandLineFlags::ccstrAtPut((char*)name, &value, Flag::ATTACH_ON_DEMAND);
   if (res) {
     FREE_C_HEAP_ARRAY(char, value, mtInternal);
   } else {
@@ -470,7 +470,17 @@ void AttachListener::init() {
                        vmSymbols::threadgroup_string_void_signature(),
                        thread_group,
                        string,
-                       CHECK);
+                       THREAD);
+
+  if (HAS_PENDING_EXCEPTION) {
+    tty->print_cr("Exception in VM (AttachListener::init) : ");
+    java_lang_Throwable::print(PENDING_EXCEPTION, tty);
+    tty->cr();
+
+    CLEAR_PENDING_EXCEPTION;
+
+    return;
+  }
 
   KlassHandle group(THREAD, SystemDictionary::ThreadGroup_klass());
   JavaCalls::call_special(&result,
@@ -479,7 +489,17 @@ void AttachListener::init() {
                         vmSymbols::add_method_name(),
                         vmSymbols::thread_void_signature(),
                         thread_oop,             // ARG 1
-                        CHECK);
+                        THREAD);
+
+  if (HAS_PENDING_EXCEPTION) {
+    tty->print_cr("Exception in VM (AttachListener::init) : ");
+    java_lang_Throwable::print(PENDING_EXCEPTION, tty);
+    tty->cr();
+
+    CLEAR_PENDING_EXCEPTION;
+
+    return;
+  }
 
   { MutexLocker mu(Threads_lock);
     JavaThread* listener_thread = new JavaThread(&attach_listener_thread_entry);

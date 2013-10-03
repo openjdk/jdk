@@ -31,7 +31,7 @@ import javax.swing.JComponent;
 import javax.swing.plaf.ComponentUI;
 
 /**
- * Provides the Synth L&F UI delegate for
+ * Provides the Synth L&amp;F UI delegate for
  * {@link javax.swing.JToggleButton}.
  *
  * @author Jeff Dinkins
@@ -53,7 +53,7 @@ public class SynthToggleButtonUI extends SynthButtonUI {
     }
 
     /**
-     * @inheritDoc
+     * {@inheritDoc}
      */
     @Override
     protected String getPropertyPrefix() {
@@ -70,7 +70,7 @@ public class SynthToggleButtonUI extends SynthButtonUI {
     }
 
     /**
-     * @inheritDoc
+     * {@inheritDoc}
      */
     @Override
     public void paintBorder(SynthContext context, Graphics g, int x,

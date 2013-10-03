@@ -372,6 +372,10 @@ public:
   // Mapping from CI type system to compiler type:
   static const Type* get_typeflow_type(ciType* type);
 
+  static const Type* make_from_constant(ciConstant constant,
+                                        bool require_constant = false,
+                                        bool is_autobox_cache = false);
+
 private:
   // support arrays
   static const BasicType _basic_type[];
@@ -580,6 +584,7 @@ public:
   static const TypeTuple *START_I2C;
   static const TypeTuple *INT_PAIR;
   static const TypeTuple *LONG_PAIR;
+  static const TypeTuple *INT_CC_PAIR;
 #ifndef PRODUCT
   virtual void dump2( Dict &d, uint, outputStream *st  ) const; // Specialized per-Type dumping
 #endif
@@ -588,8 +593,8 @@ public:
 //------------------------------TypeAry----------------------------------------
 // Class of Array Types
 class TypeAry : public Type {
-  TypeAry( const Type *elem, const TypeInt *size) : Type(Array),
-    _elem(elem), _size(size) {}
+  TypeAry(const Type* elem, const TypeInt* size, bool stable) : Type(Array),
+      _elem(elem), _size(size), _stable(stable) {}
 public:
   virtual bool eq( const Type *t ) const;
   virtual int  hash() const;             // Type specific hashing
@@ -599,10 +604,11 @@ public:
 private:
   const Type *_elem;            // Element type of array
   const TypeInt *_size;         // Elements in array
+  const bool _stable;           // Are elements @Stable?
   friend class TypeAryPtr;
 
 public:
-  static const TypeAry *make(  const Type *elem, const TypeInt *size);
+  static const TypeAry* make(const Type* elem, const TypeInt* size, bool stable = false);
 
   virtual const Type *xmeet( const Type *t ) const;
   virtual const Type *xdual() const;    // Compute dual right now.
@@ -988,6 +994,7 @@ public:
   const TypeAry* ary() const  { return _ary; }
   const Type*    elem() const { return _ary->_elem; }
   const TypeInt* size() const { return _ary->_size; }
+  bool      is_stable() const { return _ary->_stable; }
 
   bool is_autobox_cache() const { return _is_autobox_cache; }
 
@@ -1010,6 +1017,9 @@ public:
 
   virtual const Type *xmeet( const Type *t ) const;
   virtual const Type *xdual() const;    // Compute dual right now.
+
+  const TypeAryPtr* cast_to_stable(bool stable, int stable_dimension = 1) const;
+  int stable_dimension() const;
 
   // Convenience common pre-built types.
   static const TypeAryPtr *RANGE;

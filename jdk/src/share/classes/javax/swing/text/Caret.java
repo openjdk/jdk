@@ -149,7 +149,7 @@ public interface Caret {
      * and how fast the caret blinks, commonly used as one
      * way to attract attention to the caret.
      *
-     * @param rate  the delay in milliseconds >= 0.  If this is
+     * @param rate  the delay in milliseconds &gt;=0.  If this is
      *  zero the caret will not blink.
      */
     public void setBlinkRate(int rate);
@@ -159,7 +159,7 @@ public interface Caret {
      * and how fast the caret blinks, commonly used as one
      * way to attract attention to the caret.
      *
-     * @return the delay in milliseconds >= 0.  If this is
+     * @return the delay in milliseconds &gt;=0.  If this is
      *  zero the caret will not blink.
      */
     public int getBlinkRate();
@@ -167,7 +167,7 @@ public interface Caret {
     /**
      * Fetches the current position of the caret.
      *
-     * @return the position >= 0
+     * @return the position &gt;=0
      */
     public int getDot();
 
@@ -176,7 +176,7 @@ public interface Caret {
      * is a selection, the mark will not be the same as
      * the dot.
      *
-     * @return the position >= 0
+     * @return the position &gt;=0
      */
     public int getMark();
 
@@ -197,7 +197,7 @@ public interface Caret {
      * leaving behind the mark.  This is useful for
      * making selections.
      *
-     * @param dot  the new position to move the caret to >= 0
+     * @param dot  the new position to move the caret to &gt;=0
      */
     public void moveDot(int dot);
 

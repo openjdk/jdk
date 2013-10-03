@@ -509,6 +509,7 @@ static native String XSetLocaleModifiers(String modifier_list);
     static native long XkbGetUpdatedMap(long display, long which, long xkb);
     static native void XkbFreeKeyboard(long xkb, long which, boolean free_all);
     static native boolean XkbTranslateKeyCode(long xkb, int keycode, long mods, long mods_rtrn, long keysym_rtrn);
+    static native void XkbSetDetectableAutoRepeat(long display, boolean detectable);
 
 
     static native void XConvertCase(long keysym,

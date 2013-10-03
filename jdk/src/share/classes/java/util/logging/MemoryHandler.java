@@ -88,7 +88,7 @@ package java.util.logging;
 
 public class MemoryHandler extends Handler {
     private final static int DEFAULT_SIZE = 1000;
-    private Level pushLevel;
+    private volatile Level pushLevel;
     private int size;
     private Handler target;
     private LogRecord buffer[];
@@ -188,6 +188,7 @@ public class MemoryHandler extends Handler {
      * @param  record  description of the log event. A null record is
      *                 silently ignored and is not published
      */
+    @Override
     public synchronized void publish(LogRecord record) {
         if (!isLoggable(record)) {
             return;
@@ -227,6 +228,7 @@ public class MemoryHandler extends Handler {
      * Note that the current contents of the <tt>MemoryHandler</tt>
      * buffer are <b>not</b> written out.  That requires a "push".
      */
+    @Override
     public void flush() {
         target.flush();
     }
@@ -238,6 +240,7 @@ public class MemoryHandler extends Handler {
      * @exception  SecurityException  if a security manager exists and if
      *             the caller does not have <tt>LoggingPermission("control")</tt>.
      */
+    @Override
     public void close() throws SecurityException {
         target.close();
         setLevel(Level.OFF);
@@ -252,11 +255,10 @@ public class MemoryHandler extends Handler {
      * @exception  SecurityException  if a security manager exists and if
      *             the caller does not have <tt>LoggingPermission("control")</tt>.
      */
-    public void setPushLevel(Level newLevel) throws SecurityException {
+    public synchronized void setPushLevel(Level newLevel) throws SecurityException {
         if (newLevel == null) {
             throw new NullPointerException();
         }
-        LogManager manager = LogManager.getLogManager();
         checkPermission();
         pushLevel = newLevel;
     }
@@ -266,7 +268,7 @@ public class MemoryHandler extends Handler {
      *
      * @return the value of the <tt>pushLevel</tt>
      */
-    public synchronized Level getPushLevel() {
+    public Level getPushLevel() {
         return pushLevel;
     }
 
@@ -283,6 +285,7 @@ public class MemoryHandler extends Handler {
      * @return true if the <tt>LogRecord</tt> would be logged.
      *
      */
+    @Override
     public boolean isLoggable(LogRecord record) {
         return super.isLoggable(record);
     }

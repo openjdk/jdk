@@ -189,6 +189,38 @@ const Type* Type::get_typeflow_type(ciType* type) {
 }
 
 
+//-----------------------make_from_constant------------------------------------
+const Type* Type::make_from_constant(ciConstant constant,
+                                     bool require_constant, bool is_autobox_cache) {
+  switch (constant.basic_type()) {
+  case T_BOOLEAN:  return TypeInt::make(constant.as_boolean());
+  case T_CHAR:     return TypeInt::make(constant.as_char());
+  case T_BYTE:     return TypeInt::make(constant.as_byte());
+  case T_SHORT:    return TypeInt::make(constant.as_short());
+  case T_INT:      return TypeInt::make(constant.as_int());
+  case T_LONG:     return TypeLong::make(constant.as_long());
+  case T_FLOAT:    return TypeF::make(constant.as_float());
+  case T_DOUBLE:   return TypeD::make(constant.as_double());
+  case T_ARRAY:
+  case T_OBJECT:
+    {
+      // cases:
+      //   can_be_constant    = (oop not scavengable || ScavengeRootsInCode != 0)
+      //   should_be_constant = (oop not scavengable || ScavengeRootsInCode >= 2)
+      // An oop is not scavengable if it is in the perm gen.
+      ciObject* oop_constant = constant.as_object();
+      if (oop_constant->is_null_object()) {
+        return Type::get_zero_type(T_OBJECT);
+      } else if (require_constant || oop_constant->should_be_constant()) {
+        return TypeOopPtr::make_from_constant(oop_constant, require_constant, is_autobox_cache);
+      }
+    }
+  }
+  // Fall through to failure
+  return NULL;
+}
+
+
 //------------------------------make-------------------------------------------
 // Create a simple Type, with default empty symbol sets.  Then hashcons it
 // and look for an existing copy in the type dictionary.
@@ -397,6 +429,11 @@ void Type::Initialize_shared(Compile* current) {
   longpair[0] = TypeLong::LONG;
   longpair[1] = TypeLong::LONG;
   TypeTuple::LONG_PAIR = TypeTuple::make(2, longpair);
+
+  const Type **intccpair = TypeTuple::fields(2);
+  intccpair[0] = TypeInt::INT;
+  intccpair[1] = TypeInt::CC;
+  TypeTuple::INT_CC_PAIR = TypeTuple::make(2, intccpair);
 
   _const_basic_type[T_NARROWOOP]   = TypeNarrowOop::BOTTOM;
   _const_basic_type[T_NARROWKLASS] = Type::BOTTOM;
@@ -1614,6 +1651,7 @@ const TypeTuple *TypeTuple::STORECONDITIONAL;
 const TypeTuple *TypeTuple::START_I2C;
 const TypeTuple *TypeTuple::INT_PAIR;
 const TypeTuple *TypeTuple::LONG_PAIR;
+const TypeTuple *TypeTuple::INT_CC_PAIR;
 
 
 //------------------------------make-------------------------------------------
@@ -1824,12 +1862,12 @@ inline const TypeInt* normalize_array_size(const TypeInt* size) {
 }
 
 //------------------------------make-------------------------------------------
-const TypeAry *TypeAry::make( const Type *elem, const TypeInt *size) {
+const TypeAry* TypeAry::make(const Type* elem, const TypeInt* size, bool stable) {
   if (UseCompressedOops && elem->isa_oopptr()) {
     elem = elem->make_narrowoop();
   }
   size = normalize_array_size(size);
-  return (TypeAry*)(new TypeAry(elem,size))->hashcons();
+  return (TypeAry*)(new TypeAry(elem,size,stable))->hashcons();
 }
 
 //------------------------------meet-------------------------------------------
@@ -1850,7 +1888,8 @@ const Type *TypeAry::xmeet( const Type *t ) const {
   case Array: {                 // Meeting 2 arrays?
     const TypeAry *a = t->is_ary();
     return TypeAry::make(_elem->meet(a->_elem),
-                         _size->xmeet(a->_size)->is_int());
+                         _size->xmeet(a->_size)->is_int(),
+                         _stable & a->_stable);
   }
   case Top:
     break;
@@ -1863,7 +1902,7 @@ const Type *TypeAry::xmeet( const Type *t ) const {
 const Type *TypeAry::xdual() const {
   const TypeInt* size_dual = _size->dual()->is_int();
   size_dual = normalize_array_size(size_dual);
-  return new TypeAry( _elem->dual(), size_dual);
+  return new TypeAry(_elem->dual(), size_dual, !_stable);
 }
 
 //------------------------------eq---------------------------------------------
@@ -1871,13 +1910,14 @@ const Type *TypeAry::xdual() const {
 bool TypeAry::eq( const Type *t ) const {
   const TypeAry *a = (const TypeAry*)t;
   return _elem == a->_elem &&
+    _stable == a->_stable &&
     _size == a->_size;
 }
 
 //------------------------------hash-------------------------------------------
 // Type-specific hashing function.
 int TypeAry::hash(void) const {
-  return (intptr_t)_elem + (intptr_t)_size;
+  return (intptr_t)_elem + (intptr_t)_size + (_stable ? 43 : 0);
 }
 
 //----------------------interface_vs_oop---------------------------------------
@@ -1894,6 +1934,7 @@ bool TypeAry::interface_vs_oop(const Type *t) const {
 //------------------------------dump2------------------------------------------
 #ifndef PRODUCT
 void TypeAry::dump2( Dict &d, uint depth, outputStream *st ) const {
+  if (_stable)  st->print("stable:");
   _elem->dump2(d, depth, st);
   st->print("[");
   _size->dump2(d, depth, st);
@@ -2381,7 +2422,7 @@ TypeOopPtr::TypeOopPtr( TYPES t, PTR ptr, ciKlass* k, bool xk, ciObject* o, int 
 #ifdef _LP64
   if (_offset != 0) {
     if (_offset == oopDesc::klass_offset_in_bytes()) {
-      _is_ptr_to_narrowklass = UseCompressedKlassPointers;
+      _is_ptr_to_narrowklass = UseCompressedClassPointers;
     } else if (klass() == NULL) {
       // Array with unknown body type
       assert(this->isa_aryptr(), "only arrays without klass");
@@ -3457,10 +3498,38 @@ const TypeAryPtr* TypeAryPtr::cast_to_size(const TypeInt* new_size) const {
   assert(new_size != NULL, "");
   new_size = narrow_size_type(new_size);
   if (new_size == size())  return this;
-  const TypeAry* new_ary = TypeAry::make(elem(), new_size);
+  const TypeAry* new_ary = TypeAry::make(elem(), new_size, is_stable());
   return make(ptr(), const_oop(), new_ary, klass(), klass_is_exact(), _offset, _instance_id);
 }
 
+
+//------------------------------cast_to_stable---------------------------------
+const TypeAryPtr* TypeAryPtr::cast_to_stable(bool stable, int stable_dimension) const {
+  if (stable_dimension <= 0 || (stable_dimension == 1 && stable == this->is_stable()))
+    return this;
+
+  const Type* elem = this->elem();
+  const TypePtr* elem_ptr = elem->make_ptr();
+
+  if (stable_dimension > 1 && elem_ptr != NULL && elem_ptr->isa_aryptr()) {
+    // If this is widened from a narrow oop, TypeAry::make will re-narrow it.
+    elem = elem_ptr = elem_ptr->is_aryptr()->cast_to_stable(stable, stable_dimension - 1);
+  }
+
+  const TypeAry* new_ary = TypeAry::make(elem, size(), stable);
+
+  return make(ptr(), const_oop(), new_ary, klass(), klass_is_exact(), _offset, _instance_id);
+}
+
+//-----------------------------stable_dimension--------------------------------
+int TypeAryPtr::stable_dimension() const {
+  if (!is_stable())  return 0;
+  int dim = 1;
+  const TypePtr* elem_ptr = elem()->make_ptr();
+  if (elem_ptr != NULL && elem_ptr->isa_aryptr())
+    dim += elem_ptr->is_aryptr()->stable_dimension();
+  return dim;
+}
 
 //------------------------------eq---------------------------------------------
 // Structural equality check for Type representations
@@ -3570,7 +3639,7 @@ const Type *TypeAryPtr::xmeet( const Type *t ) const {
         // Something like byte[int+] meets char[int+].
         // This must fall to bottom, not (int[-128..65535])[int+].
         instance_id = InstanceBot;
-        tary = TypeAry::make(Type::BOTTOM, tary->_size);
+        tary = TypeAry::make(Type::BOTTOM, tary->_size, tary->_stable);
       }
     } else // Non integral arrays.
     // Must fall to bottom if exact klasses in upper lattice
@@ -3584,7 +3653,7 @@ const Type *TypeAryPtr::xmeet( const Type *t ) const {
          (tap ->_klass_is_exact && !tap->klass()->is_subtype_of(klass())) ||
          // 'this' is exact and super or unrelated:
          (this->_klass_is_exact && !klass()->is_subtype_of(tap->klass())))) {
-      tary = TypeAry::make(Type::BOTTOM, tary->_size);
+      tary = TypeAry::make(Type::BOTTOM, tary->_size, tary->_stable);
       return make( NotNull, NULL, tary, lazy_klass, false, off, InstanceBot );
     }
 

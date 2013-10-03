@@ -654,7 +654,7 @@ Compile::Compile( ciEnv* ci_env, C2Compiler* compiler, ciMethod* target, int osr
                   _inlining_progress(false),
                   _inlining_incrementally(false),
                   _print_inlining_list(NULL),
-                  _print_inlining(0) {
+                  _print_inlining_idx(0) {
   C = this;
 
   CompileWrapper cw(this);
@@ -679,6 +679,8 @@ Compile::Compile( ciEnv* ci_env, C2Compiler* compiler, ciMethod* target, int osr
   set_print_assembly(print_opto_assembly);
   set_parsed_irreducible_loop(false);
 #endif
+  set_print_inlining(PrintInlining || method()->has_option("PrintInlining") NOT_PRODUCT( || PrintOptoInlining));
+  set_print_intrinsics(PrintIntrinsics || method()->has_option("PrintIntrinsics"));
 
   if (ProfileTraps) {
     // Make sure the method being compiled gets its own MDO,
@@ -710,7 +712,7 @@ Compile::Compile( ciEnv* ci_env, C2Compiler* compiler, ciMethod* target, int osr
   PhaseGVN gvn(node_arena(), estimated_size);
   set_initial_gvn(&gvn);
 
-  if (PrintInlining  || PrintIntrinsics NOT_PRODUCT( || PrintOptoInlining)) {
+  if (print_inlining() || print_intrinsics()) {
     _print_inlining_list = new (comp_arena())GrowableArray<PrintInliningBuffer>(comp_arena(), 1, 1, PrintInliningBuffer());
   }
   { // Scope for timing the parser
@@ -937,7 +939,7 @@ Compile::Compile( ciEnv* ci_env,
     _inlining_progress(false),
     _inlining_incrementally(false),
     _print_inlining_list(NULL),
-    _print_inlining(0) {
+    _print_inlining_idx(0) {
   C = this;
 
 #ifndef PRODUCT
@@ -1297,6 +1299,10 @@ const TypePtr *Compile::flatten_alias_type( const TypePtr *tj ) const {
 
   // Array pointers need some flattening
   const TypeAryPtr *ta = tj->isa_aryptr();
+  if (ta && ta->is_stable()) {
+    // Erase stability property for alias analysis.
+    tj = ta = ta->cast_to_stable(false);
+  }
   if( ta && is_known_inst ) {
     if ( offset != Type::OffsetBot &&
          offset > arrayOopDesc::length_offset_in_bytes() ) {
@@ -1497,6 +1503,7 @@ void Compile::AliasType::Init(int i, const TypePtr* at) {
   _index = i;
   _adr_type = at;
   _field = NULL;
+  _element = NULL;
   _is_rewritable = true; // default
   const TypeOopPtr *atoop = (at != NULL) ? at->isa_oopptr() : NULL;
   if (atoop != NULL && atoop->is_known_instance()) {
@@ -1615,6 +1622,16 @@ Compile::AliasType* Compile::find_alias_type(const TypePtr* adr_type, bool no_cr
           && flat->is_instptr()->klass() == env()->Class_klass())
         alias_type(idx)->set_rewritable(false);
     }
+    if (flat->isa_aryptr()) {
+#ifdef ASSERT
+      const int header_size_min  = arrayOopDesc::base_offset_in_bytes(T_BYTE);
+      // (T_BYTE has the weakest alignment and size restrictions...)
+      assert(flat->offset() < header_size_min, "array body reference must be OffsetBot");
+#endif
+      if (flat->offset() == TypePtr::OffsetBot) {
+        alias_type(idx)->set_element(flat->is_aryptr()->elem());
+      }
+    }
     if (flat->isa_klassptr()) {
       if (flat->offset() == in_bytes(Klass::super_check_offset_offset()))
         alias_type(idx)->set_rewritable(false);
@@ -1677,7 +1694,7 @@ Compile::AliasType* Compile::alias_type(ciField* field) {
   else
     t = TypeOopPtr::make_from_klass_raw(field->holder());
   AliasType* atp = alias_type(t->add_offset(field->offset_in_bytes()), field);
-  assert(field->is_final() == !atp->is_rewritable(), "must get the rewritable bits correct");
+  assert((field->is_final() || field->is_stable()) == !atp->is_rewritable(), "must get the rewritable bits correct");
   return atp;
 }
 
@@ -2631,7 +2648,7 @@ void Compile::final_graph_reshaping_impl( Node *n, Final_Reshape_Counts &frc) {
             addp->in(AddPNode::Base) == n->in(AddPNode::Base),
             "Base pointers must match" );
 #ifdef _LP64
-    if ((UseCompressedOops || UseCompressedKlassPointers) &&
+    if ((UseCompressedOops || UseCompressedClassPointers) &&
         addp->Opcode() == Op_ConP &&
         addp == n->in(AddPNode::Base) &&
         n->in(AddPNode::Offset)->is_Con()) {
@@ -3018,7 +3035,7 @@ void Compile::final_graph_reshaping_walk( Node_Stack &nstack, Node *root, Final_
 
   // Skip next transformation if compressed oops are not used.
   if ((UseCompressedOops && !Matcher::gen_narrow_oop_implicit_null_checks()) ||
-      (!UseCompressedOops && !UseCompressedKlassPointers))
+      (!UseCompressedOops && !UseCompressedClassPointers))
     return;
 
   // Go over safepoints nodes to skip DecodeN/DecodeNKlass nodes for debug edges.
@@ -3596,7 +3613,7 @@ void Compile::ConstantTable::fill_jump_table(CodeBuffer& cb, MachConstantNode* n
 }
 
 void Compile::dump_inlining() {
-  if (PrintInlining || PrintIntrinsics NOT_PRODUCT( || PrintOptoInlining)) {
+  if (print_inlining() || print_intrinsics()) {
     // Print inlining message for candidates that we couldn't inline
     // for lack of space or non constant receiver
     for (int i = 0; i < _late_inlines.length(); i++) {
@@ -3620,7 +3637,7 @@ void Compile::dump_inlining() {
       }
     }
     for (int i = 0; i < _print_inlining_list->length(); i++) {
-      tty->print(_print_inlining_list->at(i).ss()->as_string());
+      tty->print(_print_inlining_list->adr_at(i)->ss()->as_string());
     }
   }
 }

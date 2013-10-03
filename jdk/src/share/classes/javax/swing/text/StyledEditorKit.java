@@ -689,7 +689,7 @@ public class StyledEditorKit extends DefaultEditorKit {
          * Creates a new AlignmentAction.
          *
          * @param nm the action name
-         * @param a the alignment >= 0
+         * @param a the alignment &gt;= 0
          */
         public AlignmentAction(String nm, int a) {
             super(nm);

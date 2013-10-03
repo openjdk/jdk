@@ -80,7 +80,7 @@ ifeq ($(SPEC),)
     HOSTCC  = $(CC)
   endif
 
-  AS   = $(CC) -c -x assembler-with-cpp
+  AS   = $(CC) -c 
 endif
 
 
@@ -247,7 +247,7 @@ endif
 
 ifeq ($(USE_CLANG), true)
   # However we need to clean the code up before we can unrestrictedly enable this option with Clang
-  WARNINGS_ARE_ERRORS += -Wno-unused-value -Wno-logical-op-parentheses -Wno-parentheses-equality -Wno-parentheses
+  WARNINGS_ARE_ERRORS += -Wno-logical-op-parentheses -Wno-parentheses-equality -Wno-parentheses
   WARNINGS_ARE_ERRORS += -Wno-switch -Wno-tautological-compare
 # Not yet supported by clang in Xcode 4.6.2
 #  WARNINGS_ARE_ERRORS += -Wno-tautological-constant-out-of-range-compare
@@ -262,7 +262,7 @@ ifeq "$(shell expr \( $(CC_VER_MAJOR) \> 4 \) \| \( \( $(CC_VER_MAJOR) = 4 \) \&
   # conversions which might affect the values. Only enable it in earlier versions.
   WARNING_FLAGS = -Wunused-function
   ifeq ($(USE_CLANG),)
-    WARNINGS_FLAGS += -Wconversion
+    WARNING_FLAGS += -Wconversion
   endif
 endif
 
@@ -346,6 +346,13 @@ ifeq ($(OS_VENDOR), Darwin)
             -mmacosx-version-min=$(MACOSX_VERSION_MIN)
   LDFLAGS += -mmacosx-version-min=$(MACOSX_VERSION_MIN)
 endif
+
+
+#------------------------------------------------------------------------
+# Assembler flags
+
+# Enforce prerpocessing of .s files
+ASFLAGS += -x assembler-with-cpp
 
 #------------------------------------------------------------------------
 # Linker flags

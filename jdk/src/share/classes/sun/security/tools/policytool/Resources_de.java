@@ -57,7 +57,7 @@ public class Resources_de extends java.util.ListResourceBundle {
         {"Retain", "Beibehalten"},
 
         {"Warning.File.name.may.include.escaped.backslash.characters.It.is.not.necessary.to.escape.backslash.characters.the.tool.escapes",
-            "Warnung: M\u00F6glicherweise enth\u00E4lt der Dateiname Escape-Zeichen mit Backslash. Es ist nicht notwendig, Backslash-Zeichen zu escapen (das Tool f\u00FChrt dies automatisch beim Schreiben des Policy-Contents in den persistenten Speicher aus).\n\nKlicken Sie auf \"Beibehalten\", um den eingegebenen Namen beizubehalten oder auf \"Bearbeiten\", um den Namen zu bearbeiten."},
+            "Warnung: M\u00F6glicherweise enth\u00E4lt der Dateiname Escapezeichen mit Backslash. Es ist nicht notwendig, Backslash-Zeichen zu escapen (das Tool f\u00FChrt dies automatisch beim Schreiben des Policy-Contents in den persistenten Speicher aus).\n\nKlicken Sie auf \"Beibehalten\", um den eingegebenen Namen beizubehalten oder auf \"Bearbeiten\", um den Namen zu bearbeiten."},
 
         {"Add.Public.Key.Alias", "Public Key-Alias hinzuf\u00FCgen"},
         {"Remove.Public.Key.Alias", "Public Key-Alias entfernen"},
@@ -134,6 +134,9 @@ public class Resources_de extends java.util.ListResourceBundle {
         {"policy.type", "Policy-Typ"},
         {"property.name", "Eigenschaftsname"},
         {"provider.name", "Providername"},
+        {"url", "URL"},
+        {"method.list", "Methodenliste"},
+        {"request.headers.list", "Headerliste anfordern"},
         {"Principal.List", "Principal-Liste"},
         {"Permission.List", "Berechtigungsliste"},
         {"Code.Base", "Codebase"},

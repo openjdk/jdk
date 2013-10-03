@@ -28,9 +28,8 @@
 SUNWprivate_1.1 {
 	global:
         Java_sun_java2d_cmm_lcms_LCMS_loadProfileNative;
-        Java_sun_java2d_cmm_lcms_LCMS_freeProfileNative;
-        Java_sun_java2d_cmm_lcms_LCMS_getProfileSize;
-        Java_sun_java2d_cmm_lcms_LCMS_getProfileData;
+        Java_sun_java2d_cmm_lcms_LCMS_getProfileSizeNative;
+        Java_sun_java2d_cmm_lcms_LCMS_getProfileDataNative;
         Java_sun_java2d_cmm_lcms_LCMS_getTagNative;
         Java_sun_java2d_cmm_lcms_LCMS_setTagDataNative;
         Java_sun_java2d_cmm_lcms_LCMS_colorConvert;
