@@ -863,26 +863,13 @@ SRC_ZIP_INCLUDES = \
 	com/sun/java_cup		\
 	com/sun/javadoc			\
 	com/sun/java/swing		\
-	com/sun/jlex	        	\
 	com/sun/jmx			\
 	com/sun/naming			\
 	com/sun/org/apache		\
 	com/sun/security/auth		\
 	com/sun/security/jgss		\
 	com/sun/source			\
-	java/applet			\
-	java/awt			\
-	java/beans			\
-	java/io				\
-	java/lang			\
-	java/math			\
-	java/net			\
-	java/nio			\
-	java/rmi			\
-	java/security			\
-	java/sql			\
-	java/text			\
-	java/util			\
+	java				\
 	javax/accessibility		\
 	javax/annotation		\
 	javax/imageio			\
@@ -902,7 +889,7 @@ SRC_ZIP_INCLUDES = \
 	org/omg				\
 	org/w3c/dom			\
 	org/xml/sax			\
-	sunw
+        #
 
 SRC_ZIP_SRCS = $(JDK_TOPDIR)/src/share/classes $(JDK_TOPDIR)/src/$(OPENJDK_TARGET_OS_API_DIR)/classes
 SRC_ZIP_SRCS += $(JDK_OUTPUTDIR)/gensrc
