@@ -971,14 +971,16 @@ public class BasicComboBoxUI extends ComboBoxUI {
                     // cells, if not, this needs to loop through all.
                     value = comboBox.getModel().getElementAt(0);
                 }
-                if (value == null) {
-                    value = " ";
-                } else if (value instanceof String && "".equals(value)) {
-                    value = " ";
-                }
                 Component component = renderer.
                         getListCellRendererComponent(listBox, value, -1,
                                                      false, false);
+                if (component instanceof JLabel) {
+                    JLabel label = (JLabel) component;
+                    String text = label.getText();
+                    if ((text == null) || text.isEmpty()) {
+                        label.setText(" ");
+                    }
+                }
                 if (component instanceof JComponent) {
                     component.setFont(comboBox.getFont());
                 }

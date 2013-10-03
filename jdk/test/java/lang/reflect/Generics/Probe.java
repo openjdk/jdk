@@ -50,9 +50,9 @@ import static java.util.Arrays.*;
           "java.util.HashMap$EntryIterator",
           "java.util.HashMap$KeyIterator",
           "java.util.HashMap$ValueIterator",
-          "java.util.LinkedHashMap$EntryIterator",
-          "java.util.LinkedHashMap$KeyIterator",
-          "java.util.LinkedHashMap$ValueIterator"})
+          "java.util.LinkedHashMap$LinkedEntryIterator",
+          "java.util.LinkedHashMap$LinkedKeyIterator",
+          "java.util.LinkedHashMap$LinkedValueIterator"})
 public class Probe {
     public static void main (String... args) throws Throwable {
         Classes classesAnnotation = (Probe.class).getAnnotation(Classes.class);

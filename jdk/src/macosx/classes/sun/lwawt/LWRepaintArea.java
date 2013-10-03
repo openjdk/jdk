@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,39 +26,38 @@
 
 package sun.lwawt;
 
-import sun.awt.RepaintArea;
-
 import java.awt.Component;
 import java.awt.Graphics;
 
+import sun.awt.AWTAccessor;
+import sun.awt.RepaintArea;
+
 /**
+ * Emulates appearance of heavyweight components before call of the user code.
+ *
  * @author Sergey Bylokhov
  */
 final class LWRepaintArea extends RepaintArea {
 
     @Override
     protected void updateComponent(final Component comp, final Graphics g) {
+        // We shouldn't paint native component as a result of UPDATE events,
+        // just flush onscreen back-buffer.
         if (comp != null) {
             super.updateComponent(comp, g);
-            flushBuffers((LWComponentPeer) comp.getPeer());
+            LWComponentPeer.flushOnscreenGraphics();
         }
     }
 
     @Override
     protected void paintComponent(final Component comp, final Graphics g) {
         if (comp != null) {
-            final LWComponentPeer peer = (LWComponentPeer) comp.getPeer();
+            Object peer = AWTAccessor.getComponentAccessor().getPeer(comp);
             if (peer != null) {
-                peer.paintPeer(g);
+                ((LWComponentPeer<?, ?>) peer).paintPeer(g);
             }
             super.paintComponent(comp, g);
-            flushBuffers(peer);
-        }
-    }
-
-    private static void flushBuffers(final LWComponentPeer peer) {
-        if (peer != null) {
-            peer.flushOnscreenGraphics();
+            LWComponentPeer.flushOnscreenGraphics();
         }
     }
 }

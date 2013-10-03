@@ -29,6 +29,7 @@ import com.sun.jmx.mbeanserver.Introspector;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Constructor;
 import java.util.Arrays;
+import java.util.Objects;
 
 /**
  * Describes a constructor exposed by an MBean.  Instances of this
@@ -190,10 +191,10 @@ public class MBeanConstructorInfo extends MBeanFeatureInfo implements Cloneable 
         if (!(o instanceof MBeanConstructorInfo))
             return false;
         MBeanConstructorInfo p = (MBeanConstructorInfo) o;
-        return (p.getName().equals(getName()) &&
-                p.getDescription().equals(getDescription()) &&
+        return (Objects.equals(p.getName(), getName()) &&
+                Objects.equals(p.getDescription(), getDescription()) &&
                 Arrays.equals(p.fastGetSignature(), fastGetSignature()) &&
-                p.getDescriptor().equals(getDescriptor()));
+                Objects.equals(p.getDescriptor(), getDescriptor()));
     }
 
     /* Unlike attributes and operations, it's quite likely we'll have
@@ -203,11 +204,7 @@ public class MBeanConstructorInfo extends MBeanFeatureInfo implements Cloneable 
        quite long and yet the same between constructors.  Likewise for
        the descriptor.  */
     public int hashCode() {
-        int hash = getName().hashCode();
-        MBeanParameterInfo[] sig = fastGetSignature();
-        for (int i = 0; i < sig.length; i++)
-            hash ^= sig[i].hashCode();
-        return hash;
+        return Objects.hash(getName()) ^ Arrays.hashCode(fastGetSignature());
     }
 
     private static MBeanParameterInfo[] constructorSignature(Constructor<?> cn) {

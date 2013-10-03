@@ -80,7 +80,6 @@
 #    ALT_BOOTDIR
 #    Windows Only:
 #      ALT_UNIXCOMMAND_PATH
-#      ALT_DXSDK_PATH
 #      ALT_MSVCRNN_DLL_PATH
 #
 #############################################################################

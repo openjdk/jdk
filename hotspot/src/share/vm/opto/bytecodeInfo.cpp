@@ -123,7 +123,7 @@ bool InlineTree::should_inline(ciMethod* callee_method, ciMethod* caller_method,
   // Allows targeted inlining
   if(callee_method->should_inline()) {
     *wci_result = *(WarmCallInfo::always_hot());
-    if (PrintInlining && Verbose) {
+    if (C->print_inlining() && Verbose) {
       CompileTask::print_inline_indent(inline_level());
       tty->print_cr("Inlined method is hot: ");
     }
@@ -137,7 +137,7 @@ bool InlineTree::should_inline(ciMethod* callee_method, ciMethod* caller_method,
   if(callee_method->interpreter_throwout_count() > InlineThrowCount &&
      size < InlineThrowMaxSize ) {
     wci_result->set_profit(wci_result->profit() * 100);
-    if (PrintInlining && Verbose) {
+    if (C->print_inlining() && Verbose) {
       CompileTask::print_inline_indent(inline_level());
       tty->print_cr("Inlined method with many throws (throws=%d):", callee_method->interpreter_throwout_count());
     }
@@ -491,7 +491,7 @@ void InlineTree::print_inlining(ciMethod* callee_method, int caller_bci,
       C->log()->inline_fail(inline_msg);
     }
   }
-  if (PrintInlining) {
+  if (C->print_inlining()) {
     C->print_inlining(callee_method, inline_level(), caller_bci, inline_msg);
     if (callee_method == NULL) tty->print(" callee not monotonic or profiled");
     if (Verbose && callee_method) {
@@ -540,7 +540,7 @@ WarmCallInfo* InlineTree::ok_to_inline(ciMethod* callee_method, JVMState* jvms, 
 
 #ifndef PRODUCT
   if (UseOldInlining && InlineWarmCalls
-      && (PrintOpto || PrintOptoInlining || PrintInlining)) {
+      && (PrintOpto || C->print_inlining())) {
     bool cold = wci.is_cold();
     bool hot  = !cold && wci.is_hot();
     bool old_cold = !success;
@@ -617,7 +617,7 @@ InlineTree *InlineTree::build_inline_tree_for_callee( ciMethod* callee_method, J
              callee_method->is_compiled_lambda_form()) {
       max_inline_level_adjust += 1;  // don't count method handle calls from java.lang.invoke implem
     }
-    if (max_inline_level_adjust != 0 && PrintInlining && (Verbose || WizardMode)) {
+    if (max_inline_level_adjust != 0 && C->print_inlining() && (Verbose || WizardMode)) {
       CompileTask::print_inline_indent(inline_level());
       tty->print_cr(" \\-> discounting inline depth");
     }

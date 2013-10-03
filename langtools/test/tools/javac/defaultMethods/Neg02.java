@@ -1,5 +1,5 @@
-/*
- * @test /nodynamiccopyright/
+/* @test /nodynamiccopyright/
+ * @bug 7192246
  * @summary check that ill-formed MI hierarchies do not compile
  * @compile/fail/ref=Neg02.out -XDrawDiagnostics Neg02.java
  */

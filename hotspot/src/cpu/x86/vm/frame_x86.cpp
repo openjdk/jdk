@@ -639,7 +639,7 @@ BasicType frame::interpreter_frame_result(oop* oop_result, jvalue* value_result)
 #ifdef CC_INTERP
         obj = istate->_oop_temp;
 #else
-        obj = (oop) at(interpreter_frame_oop_temp_offset);
+        obj = cast_to_oop(at(interpreter_frame_oop_temp_offset));
 #endif // CC_INTERP
       } else {
         oop* obj_p = (oop*)tos_addr;

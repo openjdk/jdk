@@ -58,12 +58,12 @@ import sun.misc.MessageUtils;
  * space should be used here, but I am using &amp;nbsp to force the space to
  * be displayed):
  * <p>
- * '&lt;b>blah&nbsp;&lt;i>&nbsp;&lt;strike>&nbsp;foo' which can be treated as:
- * '&lt;b>blah&nbsp;&lt;i>&lt;strike>foo'
+ * '&lt;b&gt;blah&nbsp;&lt;i&gt;&nbsp;&lt;strike&gt;&nbsp;foo' which can be treated as:
+ * '&lt;b&gt;blah&nbsp;&lt;i&gt;&lt;strike&gt;foo'
  * <p>as well as:
- * '&lt;p>&lt;a href="xx">&nbsp;&lt;em>Using&lt;/em>&lt;/a>&lt;/p>'
+ * '&lt;p&gt;&lt;a href="xx"&gt;&nbsp;&lt;em&gt;Using&lt;/em&gt;&lt;/a&gt;&lt;/p&gt;'
  * which appears to be treated as:
- * '&lt;p>&lt;a href="xx">&lt;em>Using&lt;/em>&lt;/a>&lt;/p>'
+ * '&lt;p&gt;&lt;a href="xx"&gt;&lt;em&gt;Using&lt;/em&gt;&lt;/a&gt;&lt;/p&gt;'
  * <p>
  * If <code>strict</code> is false, when a tag that breaks flow,
  * (<code>TagElement.breaksFlows</code>) or trailing whitespace is

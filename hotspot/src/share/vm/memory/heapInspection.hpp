@@ -150,11 +150,11 @@ public:
   HEAP_INSPECTION_COLUMNS_DO(DECLARE_KLASS_SIZE_STATS_FIELD)
 
   static int count(oop x) {
-    return (HeapWordSize * ((x) ? (x)->size() : 0));
+    return (HeapWordSize * (((x) != NULL) ? (x)->size() : 0));
   }
 
   static int count_array(objArrayOop x) {
-    return (HeapWordSize * ((x) ? (x)->size() : 0));
+    return (HeapWordSize * (((x) != NULL) ? (x)->size() : 0));
   }
 
   template <class T> static int count(T* x) {

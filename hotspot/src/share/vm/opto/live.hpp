@@ -40,27 +40,7 @@ class IndexSet;
 //------------------------------LRG_List---------------------------------------
 // Map Node indices to Live RanGe indices.
 // Array lookup in the optimized case.
-class LRG_List : public ResourceObj {
-  friend class VMStructs;
-  uint _cnt, _max;
-  uint* _lidxs;
-  ReallocMark _nesting;         // assertion check for reallocations
-public:
-  LRG_List( uint max );
-
-  uint lookup( uint nidx ) const {
-    return _lidxs[nidx];
-  }
-  uint operator[] (uint nidx) const { return lookup(nidx); }
-
-  void map( uint nidx, uint lidx ) {
-    assert( nidx < _cnt, "oob" );
-    _lidxs[nidx] = lidx;
-  }
-  void extend( uint nidx, uint lidx );
-
-  uint Size() const { return _cnt; }
-};
+typedef GrowableArray<uint> LRG_List;
 
 //------------------------------PhaseLive--------------------------------------
 // Compute live-in/live-out

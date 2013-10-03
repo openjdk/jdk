@@ -86,7 +86,7 @@ import sun.swing.UIClientPropertyKey;
  * <ul>
  * <li>The base class for both standard and custom components
  *     that use the Swing architecture.
- * <li>A "pluggable look and feel" (L&F) that can be specified by the
+ * <li>A "pluggable look and feel" (L&amp;F) that can be specified by the
  *     programmer or (optionally) selected by the user at runtime.
  *     The look and feel for each component is provided by a
  *     <em>UI delegate</em> -- an object that descends from
@@ -4523,7 +4523,7 @@ public abstract class JComponent extends Container implements Serializable,
      * @param propertyName  the name of the property that was listened on
      * @param oldValue  the old value of the property
      * @param newValue  the new value of the property
-     * @exception PropertyVetoException when the attempt to set the
+     * @exception java.beans.PropertyVetoException when the attempt to set the
      *          property is vetoed by the component
      */
     protected void fireVetoableChange(String propertyName, Object oldValue, Object newValue)

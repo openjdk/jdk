@@ -3189,9 +3189,12 @@ char* os::reserve_memory_special(size_t bytes, size_t alignment, char* addr, boo
     return p_buf;
 
   } else {
+    if (TracePageSizes && Verbose) {
+       tty->print_cr("Reserving large pages in a single large chunk.");
+    }
     // normal policy just allocate it all at once
     DWORD flag = MEM_RESERVE | MEM_COMMIT | MEM_LARGE_PAGES;
-    char * res = (char *)VirtualAlloc(NULL, bytes, flag, prot);
+    char * res = (char *)VirtualAlloc(addr, bytes, flag, prot);
     if (res != NULL) {
       address pc = CALLER_PC;
       MemTracker::record_virtual_memory_reserve_and_commit((address)res, bytes, mtNone, pc);
@@ -3916,8 +3919,6 @@ jint os::init_2(void) {
       tty->print("[Memory Serialize  Page address: " INTPTR_FORMAT "]\n", (intptr_t)mem_serialize_page);
 #endif
   }
-
-  os::large_page_init();
 
   // Setup Windows Exceptions
 
@@ -5429,7 +5430,7 @@ char* os::build_agent_function_name(const char *sym_name, const char *lib_name,
       if ((start = strrchr(lib_name, *os::file_separator())) != NULL) {
         lib_name = ++start;
       } else {
-        // Need to check for C:
+        // Need to check for drive prefix
         if ((start = strchr(lib_name, ':')) != NULL) {
           lib_name = ++start;
         }
@@ -5714,7 +5715,66 @@ BOOL os::Advapi32Dll::AdvapiAvailable() {
 #endif
 
 #ifndef PRODUCT
+
+// test the code path in reserve_memory_special() that tries to allocate memory in a single
+// contiguous memory block at a particular address.
+// The test first tries to find a good approximate address to allocate at by using the same
+// method to allocate some memory at any address. The test then tries to allocate memory in
+// the vicinity (not directly after it to avoid possible by-chance use of that location)
+// This is of course only some dodgy assumption, there is no guarantee that the vicinity of
+// the previously allocated memory is available for allocation. The only actual failure
+// that is reported is when the test tries to allocate at a particular location but gets a
+// different valid one. A NULL return value at this point is not considered an error but may
+// be legitimate.
+// If -XX:+VerboseInternalVMTests is enabled, print some explanatory messages.
 void TestReserveMemorySpecial_test() {
-  // No tests available for this platform
+  if (!UseLargePages) {
+    if (VerboseInternalVMTests) {
+      gclog_or_tty->print("Skipping test because large pages are disabled");
+    }
+    return;
+  }
+  // save current value of globals
+  bool old_use_large_pages_individual_allocation = UseLargePagesIndividualAllocation;
+  bool old_use_numa_interleaving = UseNUMAInterleaving;
+
+  // set globals to make sure we hit the correct code path
+  UseLargePagesIndividualAllocation = UseNUMAInterleaving = false;
+
+  // do an allocation at an address selected by the OS to get a good one.
+  const size_t large_allocation_size = os::large_page_size() * 4;
+  char* result = os::reserve_memory_special(large_allocation_size, os::large_page_size(), NULL, false);
+  if (result == NULL) {
+    if (VerboseInternalVMTests) {
+      gclog_or_tty->print("Failed to allocate control block with size "SIZE_FORMAT". Skipping remainder of test.",
+        large_allocation_size);
+    }
+  } else {
+    os::release_memory_special(result, large_allocation_size);
+
+    // allocate another page within the recently allocated memory area which seems to be a good location. At least
+    // we managed to get it once.
+    const size_t expected_allocation_size = os::large_page_size();
+    char* expected_location = result + os::large_page_size();
+    char* actual_location = os::reserve_memory_special(expected_allocation_size, os::large_page_size(), expected_location, false);
+    if (actual_location == NULL) {
+      if (VerboseInternalVMTests) {
+        gclog_or_tty->print("Failed to allocate any memory at "PTR_FORMAT" size "SIZE_FORMAT". Skipping remainder of test.",
+          expected_location, large_allocation_size);
+      }
+    } else {
+      // release memory
+      os::release_memory_special(actual_location, expected_allocation_size);
+      // only now check, after releasing any memory to avoid any leaks.
+      assert(actual_location == expected_location,
+        err_msg("Failed to allocate memory at requested location "PTR_FORMAT" of size "SIZE_FORMAT", is "PTR_FORMAT" instead",
+          expected_location, expected_allocation_size, actual_location));
+    }
+  }
+
+  // restore globals
+  UseLargePagesIndividualAllocation = old_use_large_pages_individual_allocation;
+  UseNUMAInterleaving = old_use_numa_interleaving;
 }
-#endif
+#endif // PRODUCT
+
