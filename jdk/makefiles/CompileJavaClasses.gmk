@@ -271,11 +271,6 @@ ifeq ($(OPENJDK_TARGET_OS),macosx)
                $(JDK_TOPDIR)/src/solaris/classes/sun/util/locale/provider/HostLocaleProviderAdapterImpl.java \
                $(JDK_TOPDIR)/src/solaris/classes/sun/nio/fs/GnomeFileTypeDetector.java
 
-     # JObjC.jar contains 1.5 byte-code...so skip it here :-(
-     # MACOSX_SRC_DIRS += $(JDK_TOPDIR)/src/macosx/native/jobjc/src
-     # EXCLUDES+= tests/java/com/apple/jobjc
-
-     EXCLUDES+= com/apple/jobjc
 endif
 
 # The exception handling of swing beaninfo
@@ -327,44 +322,6 @@ $(JDK_OUTPUTDIR)/classes/META-INF/services/com.sun.tools.xjc.Plugin:
 
 ##########################################################################################
 
-ifeq ($(OPENJDK_TARGET_OS),macosx)
-#
-# JObjC.jar is compiled with BOOT_JAVAC which (may) not support the "-h" flag.
-#   so we first compile classes with BOOT_JAVAC and then with JDK_JAVAC :-(
-#
-$(eval $(call SetupJavaCompiler,GENERATE_15BYTECODE,\
-     JAVAC:=$(JAVAC),\
-     FLAGS:=-source 1.5 -target 1.5 -g -bootclasspath $(BOOT_RTJAR) -cp $(JDK_OUTPUTDIR)/../langtools/dist/lib/classes.jar $(DISABLE_WARNINGS),\
-     SERVER_DIR:=$(SJAVAC_SERVER_DIR),\
-     SERVER_JVM:=$(SJAVAC_SERVER_JAVA)))
-
-$(eval $(call SetupJavaCompilation,BUILD_JOBJC,\
-		SETUP:=GENERATE_15BYTECODE,\
-		DISABLE_SJAVAC:=true,\
-		SRC:=$(JDK_TOPDIR)/src/macosx/native/jobjc/src/core/java \
-		     $(JDK_TOPDIR)/src/macosx/native/jobjc/src/runtime-additions/java \
-		     $(JDK_OUTPUTDIR)/gensrc_jobjc/src, \
-		INCLUDES := com/apple/jobjc,\
-                EXCLUDES := tests/java/com/apple/jobjc,\
-		BIN:=$(JDK_OUTPUTDIR)/jobjc_classes,\
-		JAR:=$(JDK_OUTPUTDIR)/lib/JObjC.jar, \
-		JARINDEX := true))
-
-$(BUILD_JOBJC) : $(BUILD_JDK)
-
-$(eval $(call SetupJavaCompilation,BUILD_JOBJC_HEADERS,\
-		SETUP:=GENERATE_JDKBYTECODE,\
-		SRC:=$(JDK_TOPDIR)/src/macosx/native/jobjc/src/core/java \
-		     $(JDK_TOPDIR)/src/macosx/native/jobjc/src/runtime-additions/java \
-		     $(JDK_OUTPUTDIR)/gensrc_jobjc/src, \
-		INCLUDES := com/apple/jobjc,\
-                EXCLUDES := tests/java/com/apple/jobjc,\
-		BIN:=$(JDK_OUTPUTDIR)/jobjc_classes_headers,\
-		HEADERS:=$(JDK_OUTPUTDIR)/gensrc_headers_jobjc))
-
-$(BUILD_JOBJC_HEADERS) : $(BUILD_JDK)
-
-endif
 
 ##########################################################################################
 
@@ -403,7 +360,7 @@ endif
 
 ##########################################################################################
 
-all: $(BUILD_JDK) $(BUILD_ALTCLASSES) $(BUILD_JOBJC) $(BUILD_JOBJC_HEADERS) $(COPY_EXTRA) \
+all: $(BUILD_JDK) $(BUILD_ALTCLASSES) $(COPY_EXTRA) \
 	$(JDK_OUTPUTDIR)/classes/META-INF/services/com.sun.tools.xjc.Plugin \
 	$(BUILD_ACCESSBRIDGE_32) $(BUILD_ACCESSBRIDGE_64) \
 	$(BUILD_ACCESSBRIDGE_LEGACY)

@@ -35,6 +35,8 @@ import java.io.FileInputStream;
 import java.io.InputStream;
 import java.io.IOException;
 import java.io.FileNotFoundException;
+import java.security.AccessController;
+import java.security.PrivilegedAction;
 
 import javax.naming.*;
 
@@ -348,7 +350,17 @@ public class SyncFactory {
                 /*
                  * Dependent on application
                  */
-                String strRowsetProperties = System.getProperty("rowset.properties");
+                String strRowsetProperties;
+                try {
+                    strRowsetProperties = AccessController.doPrivileged(new PrivilegedAction<String>() {
+                        public String run() {
+                            return System.getProperty("rowset.properties");
+                        }
+                    }, null, new PropertyPermission("rowset.properties","read"));
+                } catch (Exception ex) {
+                    strRowsetProperties = null;
+                }
+
                 if (strRowsetProperties != null) {
                     // Load user's implementation of SyncProvider
                     // here. -Drowset.properties=/abc/def/pqr.txt
@@ -393,7 +405,16 @@ public class SyncFactory {
              * load additional properties from -D command line
              */
             properties.clear();
-            String providerImpls = System.getProperty(ROWSET_SYNC_PROVIDER);
+            String providerImpls;
+            try {
+                providerImpls = AccessController.doPrivileged(new PrivilegedAction<String>() {
+                    public String run() {
+                        return System.getProperty(ROWSET_SYNC_PROVIDER);
+                    }
+                }, null, new PropertyPermission(ROWSET_SYNC_PROVIDER,"read"));
+            } catch (Exception ex) {
+                providerImpls = null;
+            }
 
             if (providerImpls != null) {
                 int i = 0;
