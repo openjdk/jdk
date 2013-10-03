@@ -74,6 +74,9 @@ public abstract class CompilerWhiteBoxTest {
     protected static final int THRESHOLD;
     /** count of invocation to triger OSR compilation */
     protected static final long BACKEDGE_THRESHOLD;
+    /** Value of {@code java.vm.info} (interpreted|mixed|comp mode) */
+    protected static final String MODE
+            = System.getProperty("java.vm.info");
 
     static {
         if (TIERED_COMPILATION) {
@@ -202,7 +205,7 @@ public abstract class CompilerWhiteBoxTest {
         if (WHITE_BOX.getMethodCompilationLevel(method, true) != 0) {
             throw new RuntimeException(method + " osr_comp_level must be == 0");
         }
-    }
+   }
 
     /**
      * Checks, that {@linkplain #method} is compiled.

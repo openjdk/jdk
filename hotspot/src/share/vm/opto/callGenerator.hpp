@@ -65,6 +65,8 @@ class CallGenerator : public ResourceObj {
   virtual bool      is_predicted() const        { return false; }
   // is_trap: Does not return to the caller.  (E.g., uncommon trap.)
   virtual bool      is_trap() const             { return false; }
+  // does_virtual_dispatch: Should try inlining as normal method first.
+  virtual bool      does_virtual_dispatch() const     { return false; }
 
   // is_late_inline: supports conversion of call into an inline
   virtual bool      is_late_inline() const      { return false; }
