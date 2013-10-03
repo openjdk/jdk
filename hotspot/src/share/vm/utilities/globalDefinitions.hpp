@@ -967,9 +967,9 @@ const int      badCodeHeapFreeVal = 0xDD;                   // value used to zap
 // (These must be implemented as #defines because C++ compilers are
 // not obligated to inline non-integral constants!)
 #define       badAddress        ((address)::badAddressVal)
-#define       badOop            ((oop)::badOopVal)
+#define       badOop            (cast_to_oop(::badOopVal))
 #define       badHeapWord       (::badHeapWordVal)
-#define       badJNIHandle      ((oop)::badJNIHandleVal)
+#define       badJNIHandle      (cast_to_oop(::badJNIHandleVal))
 
 // Default TaskQueue size is 16K (32-bit) or 128K (64-bit)
 #define TASKQUEUE_SIZE (NOT_LP64(1<<14) LP64_ONLY(1<<17))

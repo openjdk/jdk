@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -196,7 +196,7 @@ public class IntersectionTargetTypeTest {
     }
 
     static List<CastInfo> allCastInfo() {
-        ListBuffer<CastInfo> buf = ListBuffer.lb();
+        ListBuffer<CastInfo> buf = new ListBuffer<>();
         for (CastKind kind : CastKind.values()) {
             for (TypeKind b1 : TypeKind.values()) {
                 if (kind.nbounds == 1) {

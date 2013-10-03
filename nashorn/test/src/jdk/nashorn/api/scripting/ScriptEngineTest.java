@@ -37,10 +37,12 @@ import java.lang.reflect.Method;
 import java.util.concurrent.Callable;
 import javax.script.Compilable;
 import javax.script.CompiledScript;
+import javax.script.ScriptContext;
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineFactory;
 import javax.script.ScriptEngineManager;
 import javax.script.ScriptException;
+import javax.script.SimpleScriptContext;
 import org.testng.annotations.Test;
 
 /**
@@ -228,6 +230,17 @@ public class ScriptEngineTest {
             se.printStackTrace();
             fail(se.getMessage());
         }
+    }
+
+    @Test
+    public void compileAndEvalInDiffContextTest() throws ScriptException {
+        final ScriptEngineManager m = new ScriptEngineManager();
+        final ScriptEngine engine = m.getEngineByName("js");
+        final Compilable compilable = (Compilable) engine;
+        final CompiledScript compiledScript = compilable.compile("foo");
+        final ScriptContext ctxt = new SimpleScriptContext();
+        ctxt.setAttribute("foo", "hello", ScriptContext.ENGINE_SCOPE);
+        assertEquals(compiledScript.eval(ctxt), "hello");
     }
 
     @Test

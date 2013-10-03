@@ -27,6 +27,8 @@
 #include <string.h>
 #include <signal.h>
 #include <errno.h>
+#include <sys/types.h>
+#include <sys/wait.h>
 #include <sys/ptrace.h>
 #include "libproc_impl.h"
 

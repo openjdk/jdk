@@ -81,7 +81,7 @@ public class DeferredLintHandler {
         } else {
             ListBuffer<LintLogger> loggers = loggersQueue.get(currentPos);
             if (loggers == null) {
-                loggersQueue.put(currentPos, loggers = ListBuffer.<LintLogger>lb());
+                loggersQueue.put(currentPos, loggers = new ListBuffer<>());
             }
             loggers.append(logger);
         }

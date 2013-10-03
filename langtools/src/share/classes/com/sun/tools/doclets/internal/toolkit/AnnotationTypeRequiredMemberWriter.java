@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -43,6 +43,20 @@ import com.sun.javadoc.*;
  */
 
 public interface AnnotationTypeRequiredMemberWriter {
+
+    /**
+     * Add the annotation type member tree header.
+     *
+     * @return content tree for the member tree header
+     */
+    public Content getMemberTreeHeader();
+
+    /**
+     * Add the annotation type details marker.
+     *
+     * @param memberDetails the content tree representing details marker
+     */
+    public void addAnnotationDetailsMarker(Content memberDetails);
 
     /**
      * Add the annotation type details tree header.

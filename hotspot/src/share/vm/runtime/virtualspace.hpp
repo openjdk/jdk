@@ -183,11 +183,16 @@ class VirtualSpace VALUE_OBJ_CLASS_SPEC {
   // Destruction
   ~VirtualSpace();
 
-  // Testers (all sizes are byte sizes)
-  size_t committed_size()   const;
-  size_t reserved_size()    const;
+  // Reserved memory
+  size_t reserved_size() const;
+  // Actually committed OS memory
+  size_t actual_committed_size() const;
+  // Memory used/expanded in this virtual space
+  size_t committed_size() const;
+  // Memory left to use/expand in this virtual space
   size_t uncommitted_size() const;
-  bool   contains(const void* p)  const;
+
+  bool   contains(const void* p) const;
 
   // Operations
   // returns true on success, false otherwise
@@ -198,7 +203,8 @@ class VirtualSpace VALUE_OBJ_CLASS_SPEC {
   void check_for_contiguity() PRODUCT_RETURN;
 
   // Debugging
-  void print() PRODUCT_RETURN;
+  void print_on(outputStream* out) PRODUCT_RETURN;
+  void print();
 };
 
 #endif // SHARE_VM_RUNTIME_VIRTUALSPACE_HPP

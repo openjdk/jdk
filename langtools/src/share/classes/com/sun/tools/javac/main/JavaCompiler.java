@@ -67,7 +67,6 @@ import com.sun.tools.javac.util.Log.WriterKind;
 import static com.sun.tools.javac.code.TypeTag.CLASS;
 import static com.sun.tools.javac.main.Option.*;
 import static com.sun.tools.javac.util.JCDiagnostic.DiagnosticFlag.*;
-import static com.sun.tools.javac.util.ListBuffer.lb;
 
 
 /** This class could be the main entry point for GJC when GJC is used as a
@@ -586,7 +585,7 @@ public class JavaCompiler {
     }
 
     protected final <T> Queue<T> stopIfError(CompileState cs, Queue<T> queue) {
-        return shouldStop(cs) ? ListBuffer.<T>lb() : queue;
+        return shouldStop(cs) ? new ListBuffer<T>() : queue;
     }
 
     protected final <T> List<T> stopIfError(CompileState cs, List<T> list) {
@@ -952,7 +951,7 @@ public class JavaCompiler {
            return List.nil();
 
         //parse all files
-        ListBuffer<JCCompilationUnit> trees = lb();
+        ListBuffer<JCCompilationUnit> trees = new ListBuffer<>();
         Set<JavaFileObject> filesSoFar = new HashSet<JavaFileObject>();
         for (JavaFileObject fileObject : fileObjects) {
             if (!filesSoFar.contains(fileObject)) {
@@ -1002,7 +1001,7 @@ public class JavaCompiler {
         // then remember the classes declared in
         // the original compilation units listed on the command line.
         if (needRootClasses || sourceOutput || stubOutput) {
-            ListBuffer<JCClassDecl> cdefs = lb();
+            ListBuffer<JCClassDecl> cdefs = new ListBuffer<>();
             for (JCCompilationUnit unit : roots) {
                 for (List<JCTree> defs = unit.defs;
                      defs.nonEmpty();
@@ -1226,7 +1225,7 @@ public class JavaCompiler {
      * @returns a list of environments for attributd classes.
      */
     public Queue<Env<AttrContext>> attribute(Queue<Env<AttrContext>> envs) {
-        ListBuffer<Env<AttrContext>> results = lb();
+        ListBuffer<Env<AttrContext>> results = new ListBuffer<>();
         while (!envs.isEmpty())
             results.append(attribute(envs.remove()));
         return stopIfError(CompileState.ATTR, results);
@@ -1291,7 +1290,7 @@ public class JavaCompiler {
      * @returns the list of attributed parse trees
      */
     public Queue<Env<AttrContext>> flow(Queue<Env<AttrContext>> envs) {
-        ListBuffer<Env<AttrContext>> results = lb();
+        ListBuffer<Env<AttrContext>> results = new ListBuffer<>();
         for (Env<AttrContext> env: envs) {
             flow(env, results);
         }
@@ -1302,7 +1301,7 @@ public class JavaCompiler {
      * Perform dataflow checks on an attributed parse tree.
      */
     public Queue<Env<AttrContext>> flow(Env<AttrContext> env) {
-        ListBuffer<Env<AttrContext>> results = lb();
+        ListBuffer<Env<AttrContext>> results = new ListBuffer<>();
         flow(env, results);
         return stopIfError(CompileState.FLOW, results);
     }
@@ -1356,7 +1355,7 @@ public class JavaCompiler {
      * @returns a list containing the classes to be generated
      */
     public Queue<Pair<Env<AttrContext>, JCClassDecl>> desugar(Queue<Env<AttrContext>> envs) {
-        ListBuffer<Pair<Env<AttrContext>, JCClassDecl>> results = lb();
+        ListBuffer<Pair<Env<AttrContext>, JCClassDecl>> results = new ListBuffer<>();
         for (Env<AttrContext> env: envs)
             desugar(env, results);
         return stopIfError(CompileState.FLOW, results);
@@ -1605,7 +1604,7 @@ public class JavaCompiler {
                 }
                 @Override
                 public void visitClassDef(JCClassDecl tree) {
-                    ListBuffer<JCTree> newdefs = lb();
+                    ListBuffer<JCTree> newdefs = new ListBuffer<>();
                     for (List<JCTree> it = tree.defs; it.tail != null; it = it.tail) {
                         JCTree t = it.head;
                         switch (t.getTag()) {

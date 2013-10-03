@@ -26,6 +26,7 @@
 package javax.management;
 
 import java.util.Arrays;
+import java.util.Objects;
 
 /**
  * <p>The <CODE>MBeanNotificationInfo</CODE> class is used to describe the
@@ -191,9 +192,9 @@ public class MBeanNotificationInfo extends MBeanFeatureInfo implements Cloneable
         if (!(o instanceof MBeanNotificationInfo))
             return false;
         MBeanNotificationInfo p = (MBeanNotificationInfo) o;
-        return (p.getName().equals(getName()) &&
-                p.getDescription().equals(getDescription()) &&
-                p.getDescriptor().equals(getDescriptor()) &&
+        return (Objects.equals(p.getName(), getName()) &&
+                Objects.equals(p.getDescription(), getDescription()) &&
+                Objects.equals(p.getDescriptor(), getDescriptor()) &&
                 Arrays.equals(p.fastGetNotifTypes(), fastGetNotifTypes()));
     }
 

@@ -213,8 +213,8 @@ public class TypeHarness {
 
     /** compute a type substitution on 't' given a list of type mappings */
     public Type subst(Type t, Mapping... maps) {
-        ListBuffer<Type> from = ListBuffer.lb();
-        ListBuffer<Type> to = ListBuffer.lb();
+        ListBuffer<Type> from = new ListBuffer<>();
+        ListBuffer<Type> to = new ListBuffer<>();
         for (Mapping tm : maps) {
             from.append(tm.from);
             to.append(tm.to);
