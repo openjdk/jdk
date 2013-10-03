@@ -995,7 +995,7 @@ public:
   // Must be one per class and it has to be a VM internal object so java code
   // cannot lock it (like the mirror).
   // It has to be an object not a Mutex because it's held through java calls.
-  volatile oop init_lock() const;
+  oop init_lock() const;
 private:
 
   // Static methods that are used to implement member methods where an exposed this pointer
