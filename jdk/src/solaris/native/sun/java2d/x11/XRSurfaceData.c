@@ -88,7 +88,13 @@ Java_sun_java2d_xr_XRSurfaceData_initIDs(JNIEnv *env, jclass xsd)
   J2dTraceLn(J2D_TRACE_INFO, "in XRSurfaceData_initIDs");
 
   pictID = (*env)->GetFieldID(env, xsd, "picture", "I");
+  if (pictID == NULL) {
+      return;
+  }
   xidID = (*env)->GetFieldID(env, xsd, "xid", "I");
+  if (xidID == NULL) {
+      return;
+  }
 
   XShared_initIDs(env, JNI_FALSE);
 #endif /* !HEADLESS */
