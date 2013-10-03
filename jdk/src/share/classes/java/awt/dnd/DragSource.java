@@ -676,7 +676,7 @@ public class DragSource implements Serializable {
      *          <code><em>Foo</em>Listener</code>s on this
      *          <code>DragSource</code>, or an empty array if no such listeners
      *          have been added
-     * @exception <code>ClassCastException</code> if <code>listenerType</code>
+     * @exception ClassCastException if <code>listenerType</code>
      *          doesn't specify a class or interface that implements
      *          <code>java.util.EventListener</code>
      *

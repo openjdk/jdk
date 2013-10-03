@@ -130,6 +130,18 @@ public interface WriterFactory {
             throws Exception;
 
     /**
+     * Return the annotation type field writer for a given annotation type.
+     *
+     * @param annotationTypeWriter the writer for the annotation type
+     *        being documented.
+     * @return the member writer for the given annotation type.  Return null if
+     *         this writer is not supported by the doclet.
+     */
+    public abstract AnnotationTypeFieldWriter
+            getAnnotationTypeFieldWriter(
+        AnnotationTypeWriter annotationTypeWriter) throws Exception;
+
+    /**
      * Return the annotation type optional member writer for a given annotation
      * type.
      *

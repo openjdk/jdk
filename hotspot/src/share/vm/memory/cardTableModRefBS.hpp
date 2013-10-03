@@ -339,33 +339,9 @@ public:
     _byte_map[card_index] = dirty_card_val();
   }
 
-  bool is_card_claimed(size_t card_index) {
-    jbyte val = _byte_map[card_index];
-    return (val & (clean_card_mask_val() | claimed_card_val())) == claimed_card_val();
-  }
-
-  void set_card_claimed(size_t card_index) {
-      jbyte val = _byte_map[card_index];
-      if (val == clean_card_val()) {
-        val = (jbyte)claimed_card_val();
-      } else {
-        val |= (jbyte)claimed_card_val();
-      }
-      _byte_map[card_index] = val;
-  }
-
-  bool claim_card(size_t card_index);
-
   bool is_card_clean(size_t card_index) {
     return _byte_map[card_index] == clean_card_val();
   }
-
-  bool is_card_deferred(size_t card_index) {
-    jbyte val = _byte_map[card_index];
-    return (val & (clean_card_mask_val() | deferred_card_val())) == deferred_card_val();
-  }
-
-  bool mark_card_deferred(size_t card_index);
 
   // Card marking array base (adjusted for heap low boundary)
   // This would be the 0th element of _byte_map, if the heap started at 0x0.

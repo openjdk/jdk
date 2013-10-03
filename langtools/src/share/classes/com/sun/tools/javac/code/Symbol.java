@@ -614,7 +614,7 @@ public abstract class Symbol implements Element {
     }
 
     public List<TypeVariableSymbol> getTypeParameters() {
-        ListBuffer<TypeVariableSymbol> l = ListBuffer.lb();
+        ListBuffer<TypeVariableSymbol> l = new ListBuffer<>();
         for (Type t : type.getTypeArguments()) {
             Assert.check(t.tsym.getKind() == ElementKind.TYPE_PARAMETER);
             l.append((TypeVariableSymbol)t.tsym);

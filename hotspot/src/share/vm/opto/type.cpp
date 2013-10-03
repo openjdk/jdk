@@ -430,6 +430,11 @@ void Type::Initialize_shared(Compile* current) {
   longpair[1] = TypeLong::LONG;
   TypeTuple::LONG_PAIR = TypeTuple::make(2, longpair);
 
+  const Type **intccpair = TypeTuple::fields(2);
+  intccpair[0] = TypeInt::INT;
+  intccpair[1] = TypeInt::CC;
+  TypeTuple::INT_CC_PAIR = TypeTuple::make(2, intccpair);
+
   _const_basic_type[T_NARROWOOP]   = TypeNarrowOop::BOTTOM;
   _const_basic_type[T_NARROWKLASS] = Type::BOTTOM;
   _const_basic_type[T_BOOLEAN]     = TypeInt::BOOL;
@@ -1646,6 +1651,7 @@ const TypeTuple *TypeTuple::STORECONDITIONAL;
 const TypeTuple *TypeTuple::START_I2C;
 const TypeTuple *TypeTuple::INT_PAIR;
 const TypeTuple *TypeTuple::LONG_PAIR;
+const TypeTuple *TypeTuple::INT_CC_PAIR;
 
 
 //------------------------------make-------------------------------------------
@@ -2416,7 +2422,7 @@ TypeOopPtr::TypeOopPtr( TYPES t, PTR ptr, ciKlass* k, bool xk, ciObject* o, int 
 #ifdef _LP64
   if (_offset != 0) {
     if (_offset == oopDesc::klass_offset_in_bytes()) {
-      _is_ptr_to_narrowklass = UseCompressedKlassPointers;
+      _is_ptr_to_narrowklass = UseCompressedClassPointers;
     } else if (klass() == NULL) {
       // Array with unknown body type
       assert(this->isa_aryptr(), "only arrays without klass");

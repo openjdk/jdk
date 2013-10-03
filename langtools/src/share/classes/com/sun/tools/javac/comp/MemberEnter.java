@@ -79,6 +79,7 @@ public class MemberEnter extends JCTree.Visitor implements Completer {
     private final ClassReader reader;
     private final Todo todo;
     private final Annotate annotate;
+    private final TypeAnnotations typeAnnotations;
     private final Types types;
     private final JCDiagnostic.Factory diags;
     private final Source source;
@@ -105,6 +106,7 @@ public class MemberEnter extends JCTree.Visitor implements Completer {
         reader = ClassReader.instance(context);
         todo = Todo.instance(context);
         annotate = Annotate.instance(context);
+        typeAnnotations = TypeAnnotations.instance(context);
         types = Types.instance(context);
         diags = JCDiagnostic.Factory.instance(context);
         source = Source.instance(context);
@@ -1164,7 +1166,7 @@ public class MemberEnter extends JCTree.Visitor implements Completer {
             }
         }
         if (allowTypeAnnos) {
-            TypeAnnotations.organizeTypeAnnotationsSignatures(syms, names, log, env, tree, annotate);
+            typeAnnotations.organizeTypeAnnotationsSignatures(env, tree);
         }
     }
 

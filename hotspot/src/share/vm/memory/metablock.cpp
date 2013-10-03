@@ -50,13 +50,6 @@
 // Chunks, change Chunks so that they can be allocated out of a VirtualSpace.
 size_t Metablock::_min_block_byte_size = sizeof(Metablock);
 
-#ifdef ASSERT
-size_t Metablock::_overhead =
-  Chunk::aligned_overhead_size(sizeof(Metablock)) / BytesPerWord;
-#else
-size_t Metablock::_overhead = 0;
-#endif
-
 // New blocks returned by the Metaspace are zero initialized.
 // We should fix the constructors to not assume this instead.
 Metablock* Metablock::initialize(MetaWord* p, size_t word_size) {

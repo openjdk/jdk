@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -577,7 +577,7 @@ oop SharedRuntime::retrieve_receiver( Symbol* sig, frame caller ) {
   assert(caller.is_interpreted_frame(), "");
   int args_size = ArgumentSizeComputer(sig).size() + 1;
   assert(args_size <= caller.interpreter_frame_expression_stack_size(), "receiver must be on interpreter stack");
-  oop result = (oop) *caller.interpreter_frame_tos_at(args_size - 1);
+  oop result = cast_to_oop(*caller.interpreter_frame_tos_at(args_size - 1));
   assert(Universe::heap()->is_in(result) && result->is_oop(), "receiver must be an oop");
   return result;
 }
@@ -1506,8 +1506,11 @@ methodHandle SharedRuntime::handle_ic_miss_helper(JavaThread *thread, TRAPS) {
                                                 info, CHECK_(methodHandle()));
         inline_cache->set_to_monomorphic(info);
       } else if (!inline_cache->is_megamorphic() && !inline_cache->is_clean()) {
-        // Change to megamorphic
-        inline_cache->set_to_megamorphic(&call_info, bc, CHECK_(methodHandle()));
+        // Potential change to megamorphic
+        bool successful = inline_cache->set_to_megamorphic(&call_info, bc, CHECK_(methodHandle()));
+        if (!successful) {
+          inline_cache->set_to_clean();
+        }
       } else {
         // Either clean or megamorphic
       }
@@ -2872,7 +2875,7 @@ JRT_LEAF(intptr_t*, SharedRuntime::OSR_migration_begin( JavaThread *thread) )
         ObjectSynchronizer::inflate_helper(kptr2->obj());
       // Now the displaced header is free to move
       buf[i++] = (intptr_t)lock->displaced_header();
-      buf[i++] = (intptr_t)kptr2->obj();
+      buf[i++] = cast_from_oop<intptr_t>(kptr2->obj());
     }
   }
   assert( i - max_locals == active_monitor_count*2, "found the expected number of monitors" );

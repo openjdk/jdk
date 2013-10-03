@@ -223,11 +223,20 @@ public class AnnotationTypeBuilder extends AbstractBuilder {
         Content memberDetailsTree = writer.getMemberTreeHeader();
         buildChildren(node, memberDetailsTree);
         if (memberDetailsTree.isValid()) {
-            Content memberDetails = writer.getMemberTreeHeader();
-            writer.addAnnotationDetailsMarker(memberDetails);
-            memberDetails.addContent(writer.getMemberTree(memberDetailsTree));
-            annotationContentTree.addContent(writer.getMemberDetailsTree(memberDetails));
+            annotationContentTree.addContent(writer.getMemberDetailsTree(memberDetailsTree));
         }
+    }
+
+    /**
+     * Build the annotation type field documentation.
+     *
+     * @param node the XML element that specifies which components to document
+     * @param memberDetailsTree the content tree to which the documentation will be added
+     */
+    public void buildAnnotationTypeFieldDetails(XMLNode node, Content memberDetailsTree)
+            throws Exception {
+        configuration.getBuilderFactory().
+                getAnnotationTypeFieldsBuilder(writer).buildChildren(node, memberDetailsTree);
     }
 
     /**

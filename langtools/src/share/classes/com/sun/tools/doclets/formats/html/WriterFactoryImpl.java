@@ -107,6 +107,16 @@ public class WriterFactoryImpl implements WriterFactory {
     /**
      * {@inheritDoc}
      */
+    public AnnotationTypeFieldWriter
+            getAnnotationTypeFieldWriter(AnnotationTypeWriter annotationTypeWriter) throws Exception {
+        return new AnnotationTypeFieldWriterImpl(
+            (SubWriterHolderWriter) annotationTypeWriter,
+            annotationTypeWriter.getAnnotationTypeDoc());
+    }
+
+    /**
+     * {@inheritDoc}
+     */
     public AnnotationTypeOptionalMemberWriter
             getAnnotationTypeOptionalMemberWriter(
         AnnotationTypeWriter annotationTypeWriter) throws Exception {
@@ -202,6 +212,9 @@ public class WriterFactoryImpl implements WriterFactory {
         AnnotationTypeWriter annotationTypeWriter, int memberType)
     throws Exception {
         switch (memberType) {
+            case VisibleMemberMap.ANNOTATION_TYPE_FIELDS:
+                return (AnnotationTypeFieldWriterImpl)
+                    getAnnotationTypeFieldWriter(annotationTypeWriter);
             case VisibleMemberMap.ANNOTATION_TYPE_MEMBER_OPTIONAL:
                 return (AnnotationTypeOptionalMemberWriterImpl)
                     getAnnotationTypeOptionalMemberWriter(annotationTypeWriter);

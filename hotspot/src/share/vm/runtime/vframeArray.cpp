@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -111,7 +111,7 @@ void vframeArrayElement::fill_in(compiledVFrame* vf) {
       case T_OBJECT:
         assert(!value->obj_is_scalar_replaced(), "object should be reallocated already");
         // preserve object type
-        _locals->add( new StackValue((intptr_t) (value->get_obj()()), T_OBJECT ));
+        _locals->add( new StackValue(cast_from_oop<intptr_t>((value->get_obj()())), T_OBJECT ));
         break;
       case T_CONFLICT:
         // A dead local.  Will be initialized to null/zero.
@@ -136,7 +136,7 @@ void vframeArrayElement::fill_in(compiledVFrame* vf) {
       case T_OBJECT:
         assert(!value->obj_is_scalar_replaced(), "object should be reallocated already");
         // preserve object type
-        _expressions->add( new StackValue((intptr_t) (value->get_obj()()), T_OBJECT ));
+        _expressions->add( new StackValue(cast_from_oop<intptr_t>((value->get_obj()())), T_OBJECT ));
         break;
       case T_CONFLICT:
         // A dead stack element.  Will be initialized to null/zero.
