@@ -793,7 +793,7 @@ void DefaultMethods::generate_default_methods(
 
 
 
-#ifndef PRODUCT
+#ifdef ASSERT
 // Return true is broad type is a covariant return of narrow type
 static bool covariant_return_type(BasicType narrow, BasicType broad) {
   if (narrow == broad) {
@@ -804,7 +804,7 @@ static bool covariant_return_type(BasicType narrow, BasicType broad) {
   }
   return false;
 }
-#endif // ndef PRODUCT
+#endif
 
 static int assemble_redirect(
     BytecodeConstantPool* cp, BytecodeBuffer* buffer,
@@ -1095,4 +1095,3 @@ static void merge_in_new_methods(InstanceKlass* klass,
     MetadataFactory::free_array(cld, original_ordering);
   }
 }
-

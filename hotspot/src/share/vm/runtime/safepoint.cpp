@@ -519,8 +519,8 @@ void SafepointSynchronize::do_cleanup_tasks() {
   }
 
   {
-    TraceTime t4("sweeping nmethods", TraceSafepointCleanupTime);
-    NMethodSweeper::scan_stacks();
+    TraceTime t4("mark nmethods", TraceSafepointCleanupTime);
+    NMethodSweeper::mark_active_nmethods();
   }
 
   if (SymbolTable::needs_rehashing()) {

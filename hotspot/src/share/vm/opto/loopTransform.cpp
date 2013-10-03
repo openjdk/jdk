@@ -776,6 +776,9 @@ bool IdealLoopTree::policy_range_check( PhaseIdealLoop *phase ) const {
         continue; // not RC
 
       Node *cmp = bol->in(1);
+      if (cmp->is_FlagsProj()) {
+        continue;
+      }
 
       Node *rc_exp = cmp->in(1);
       Node *limit = cmp->in(2);

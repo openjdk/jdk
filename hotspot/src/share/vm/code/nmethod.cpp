@@ -462,7 +462,6 @@ void nmethod::init_defaults() {
   _state                      = alive;
   _marked_for_reclamation     = 0;
   _has_flushed_dependencies   = 0;
-  _speculatively_disconnected = 0;
   _has_unsafe_access          = 0;
   _has_method_handle_invokes  = 0;
   _lazy_critical_native       = 0;
@@ -481,7 +480,6 @@ void nmethod::init_defaults() {
   _osr_link                = NULL;
   _scavenge_root_link      = NULL;
   _scavenge_root_state     = 0;
-  _saved_nmethod_link      = NULL;
   _compiler                = NULL;
 
 #ifdef HAVE_DTRACE_H
@@ -686,6 +684,7 @@ nmethod::nmethod(
     _osr_entry_point         = NULL;
     _exception_cache         = NULL;
     _pc_desc_cache.reset_to(NULL);
+    _hotness_counter         = NMethodSweeper::hotness_counter_reset_val();
 
     code_buffer->copy_values_to(this);
     if (ScavengeRootsInCode && detect_scavenge_root_oops()) {
@@ -770,6 +769,7 @@ nmethod::nmethod(
     _osr_entry_point         = NULL;
     _exception_cache         = NULL;
     _pc_desc_cache.reset_to(NULL);
+    _hotness_counter         = NMethodSweeper::hotness_counter_reset_val();
 
     code_buffer->copy_values_to(this);
     debug_only(verify_scavenge_root_oops());
@@ -842,6 +842,7 @@ nmethod::nmethod(
     _comp_level              = comp_level;
     _compiler                = compiler;
     _orig_pc_offset          = orig_pc_offset;
+    _hotness_counter         = NMethodSweeper::hotness_counter_reset_val();
 
     // Section offsets
     _consts_offset           = content_offset()      + code_buffer->total_offset_of(code_buffer->consts());
@@ -1176,7 +1177,7 @@ void nmethod::cleanup_inline_caches() {
 
 // This is a private interface with the sweeper.
 void nmethod::mark_as_seen_on_stack() {
-  assert(is_not_entrant(), "must be a non-entrant method");
+  assert(is_alive(), "Must be an alive method");
   // Set the traversal mark to ensure that the sweeper does 2
   // cleaning passes before moving to zombie.
   set_stack_traversal_mark(NMethodSweeper::traversal_count());
@@ -1261,7 +1262,7 @@ void nmethod::make_unloaded(BoolObjectClosure* is_alive, oop cause) {
 
   set_osr_link(NULL);
   //set_scavenge_root_link(NULL); // done by prune_scavenge_root_nmethods
-  NMethodSweeper::notify(this);
+  NMethodSweeper::notify();
 }
 
 void nmethod::invalidate_osr_method() {
@@ -1351,6 +1352,15 @@ bool nmethod::make_not_entrant_or_zombie(unsigned int state) {
       nmethod_needs_unregister = true;
     }
 
+    // Must happen before state change. Otherwise we have a race condition in
+    // nmethod::can_not_entrant_be_converted(). I.e., a method can immediately
+    // transition its state from 'not_entrant' to 'zombie' without having to wait
+    // for stack scanning.
+    if (state == not_entrant) {
+      mark_as_seen_on_stack();
+      OrderAccess::storestore();
+    }
+
     // Change state
     _state = state;
 
@@ -1369,11 +1379,6 @@ bool nmethod::make_not_entrant_or_zombie(unsigned int state) {
       HandleMark hm;
       method()->clear_code();
     }
-
-    if (state == not_entrant) {
-      mark_as_seen_on_stack();
-    }
-
   } // leave critical region under Patching_lock
 
   // When the nmethod becomes zombie it is no longer alive so the
@@ -1416,7 +1421,7 @@ bool nmethod::make_not_entrant_or_zombie(unsigned int state) {
   }
 
   // Make sweeper aware that there is a zombie method that needs to be removed
-  NMethodSweeper::notify(this);
+  NMethodSweeper::notify();
 
   return true;
 }
@@ -1449,10 +1454,6 @@ void nmethod::flush() {
 
   if (on_scavenge_root_list()) {
     CodeCache::drop_scavenge_root_nmethod(this);
-  }
-
-  if (is_speculatively_disconnected()) {
-    CodeCache::remove_saved_code(this);
   }
 
 #ifdef SHARK
