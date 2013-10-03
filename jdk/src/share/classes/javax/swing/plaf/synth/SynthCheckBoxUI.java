@@ -31,7 +31,7 @@ import javax.swing.plaf.ComponentUI;
 
 
 /**
- * Provides the Synth L&F UI delegate for
+ * Provides the Synth L&amp;F UI delegate for
  * {@link javax.swing.JCheckBox}.
  *
  * @author Jeff Dinkins
@@ -53,7 +53,7 @@ public class SynthCheckBoxUI extends SynthRadioButtonUI {
     }
 
     /**
-     * @inheritDoc
+     * {@inheritDoc}
      */
     @Override
     protected String getPropertyPrefix() {
@@ -67,7 +67,7 @@ public class SynthCheckBoxUI extends SynthRadioButtonUI {
     }
 
     /**
-     * @inheritDoc
+     * {@inheritDoc}
      */
     @Override
     public void paintBorder(SynthContext context, Graphics g, int x,

@@ -930,9 +930,10 @@ imageio_fill_input_buffer(j_decompress_ptr cinfo)
      * Now fill a complete buffer, or as much of one as the stream
      * will give us if we are near the end.
      */
+    RELEASE_ARRAYS(env, data, src->next_input_byte);
+
     GET_IO_REF(input);
 
-    RELEASE_ARRAYS(env, data, src->next_input_byte);
     ret = (*env)->CallIntMethod(env,
                                 input,
                                 JPEGImageReader_readInputDataID,
@@ -1017,9 +1018,11 @@ imageio_fill_suspended_buffer(j_decompress_ptr cinfo)
         memcpy(sb->buf, src->next_input_byte, offset);
     }
 
-    GET_IO_REF(input);
 
     RELEASE_ARRAYS(env, data, src->next_input_byte);
+
+    GET_IO_REF(input);
+
     buflen = sb->bufferLength - offset;
     if (buflen <= 0) {
         if (!GET_ARRAYS(env, data, &(src->next_input_byte))) {
@@ -1121,9 +1124,10 @@ imageio_skip_input_data(j_decompress_ptr cinfo, long num_bytes)
         return;
     }
 
+    RELEASE_ARRAYS(env, data, src->next_input_byte);
+
     GET_IO_REF(input);
 
-    RELEASE_ARRAYS(env, data, src->next_input_byte);
     ret = (*env)->CallLongMethod(env,
                                  input,
                                  JPEGImageReader_skipInputBytesID,
@@ -2306,9 +2310,9 @@ imageio_empty_output_buffer (j_compress_ptr cinfo)
     JNIEnv *env = (JNIEnv *)JNU_GetEnv(jvm, JNI_VERSION_1_2);
     jobject output = NULL;
 
-    GET_IO_REF(output);
-
     RELEASE_ARRAYS(env, data, (const JOCTET *)(dest->next_output_byte));
+
+    GET_IO_REF(output);
 
     (*env)->CallVoidMethod(env,
                            output,
@@ -2348,9 +2352,9 @@ imageio_term_destination (j_compress_ptr cinfo)
     if (datacount != 0) {
         jobject output = NULL;
 
-        GET_IO_REF(output);
-
         RELEASE_ARRAYS(env, data, (const JOCTET *)(dest->next_output_byte));
+
+        GET_IO_REF(output);
 
         (*env)->CallVoidMethod(env,
                                output,

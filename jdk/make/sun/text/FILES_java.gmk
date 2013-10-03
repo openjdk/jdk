@@ -96,16 +96,6 @@ FILES_java = \
                 sun/text/resources/el/FormatData_el.java \
                 sun/text/resources/el/FormatData_el_CY.java \
                 sun/text/resources/el/FormatData_el_GR.java \
-                sun/text/resources/en/FormatData_en_AU.java \
-                sun/text/resources/en/FormatData_en_CA.java \
-                sun/text/resources/en/FormatData_en_GB.java \
-                sun/text/resources/en/FormatData_en_IE.java \
-                sun/text/resources/en/FormatData_en_IN.java \
-                sun/text/resources/en/FormatData_en_MT.java \
-                sun/text/resources/en/FormatData_en_NZ.java \
-                sun/text/resources/en/FormatData_en_PH.java \
-                sun/text/resources/en/FormatData_en_SG.java \
-                sun/text/resources/en/FormatData_en_ZA.java \
                 sun/text/resources/es/FormatData_es.java \
                 sun/text/resources/es/FormatData_es_BO.java \
                 sun/text/resources/es/FormatData_es_AR.java \
@@ -214,9 +204,6 @@ FILES_java = \
                 sun/util/resources/zh/CurrencyNames_zh_SG.java \
                 sun/util/resources/zh/LocaleNames_zh_HK.java \
                 sun/util/resources/de/TimeZoneNames_de.java \
-                sun/util/resources/en/TimeZoneNames_en_CA.java \
-                sun/util/resources/en/TimeZoneNames_en_GB.java \
-                sun/util/resources/en/TimeZoneNames_en_IE.java \
                 sun/util/resources/es/TimeZoneNames_es.java \
                 sun/util/resources/fr/TimeZoneNames_fr.java \
                 sun/util/resources/hi/TimeZoneNames_hi.java \
@@ -237,8 +224,6 @@ FILES_java = \
                 sun/text/resources/da/JavaTimeSupplementary_da.java \
                 sun/text/resources/de/JavaTimeSupplementary_de.java \
                 sun/text/resources/el/JavaTimeSupplementary_el.java \
-                sun/text/resources/en/JavaTimeSupplementary_en_GB.java \
-                sun/text/resources/en/JavaTimeSupplementary_en_SG.java \
                 sun/text/resources/es/JavaTimeSupplementary_es.java \
                 sun/text/resources/et/JavaTimeSupplementary_et.java \
                 sun/text/resources/fi/JavaTimeSupplementary_fi.java \

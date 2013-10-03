@@ -80,39 +80,6 @@ LOCALEDATA_INCLUDE_LOCALES := ar be bg ca cs da de el es et fi fr ga hi hr hu in
 LOCALEDATA_INCLUDES := $(addprefix sun/text/resources/,$(LOCALEDATA_INCLUDE_LOCALES)) \
 		       $(addprefix sun/util/resources/,$(LOCALEDATA_INCLUDE_LOCALES))
 
-# For non-US English locale data
-
-LOCALEDATA_INCLUDES += \
-                sun/text/resources/en/FormatData_en_AU.class \
-                sun/text/resources/en/FormatData_en_CA.class \
-                sun/text/resources/en/FormatData_en_GB.class \
-                sun/text/resources/en/FormatData_en_IE.class \
-                sun/text/resources/en/FormatData_en_IN.class \
-                sun/text/resources/en/FormatData_en_MT.class \
-                sun/text/resources/en/FormatData_en_NZ.class \
-                sun/text/resources/en/FormatData_en_PH.class \
-                sun/text/resources/en/FormatData_en_SG.class \
-                sun/text/resources/en/FormatData_en_ZA.class \
-                sun/util/resources/en/CalendarData_en_GB.class \
-                sun/util/resources/en/CalendarData_en_IE.class \
-                sun/util/resources/en/CalendarData_en_MT.class \
-                sun/util/resources/en/CurrencyNames_en_AU.class \
-                sun/util/resources/en/CurrencyNames_en_CA.class \
-                sun/util/resources/en/CurrencyNames_en_GB.class \
-                sun/util/resources/en/CurrencyNames_en_IE.class \
-                sun/util/resources/en/CurrencyNames_en_IN.class \
-                sun/util/resources/en/CurrencyNames_en_MT.class \
-                sun/util/resources/en/CurrencyNames_en_NZ.class \
-                sun/util/resources/en/CurrencyNames_en_PH.class \
-                sun/util/resources/en/CurrencyNames_en_SG.class \
-                sun/util/resources/en/CurrencyNames_en_ZA.class \
-                sun/util/resources/en/LocaleNames_en_MT.class \
-                sun/util/resources/en/LocaleNames_en_PH.class \
-                sun/util/resources/en/LocaleNames_en_SG.class \
-                sun/util/resources/en/TimeZoneNames_en_CA.class \
-                sun/util/resources/en/TimeZoneNames_en_GB.class \
-                sun/util/resources/en/TimeZoneNames_en_IE.class
-
 $(eval $(call SetupArchive,BUILD_LOCALEDATA_JAR,,\
 		SRCS:=$(JDK_OUTPUTDIR)/classes,\
 		SUFFIXES:=.class _dict _th,\
@@ -896,26 +863,13 @@ SRC_ZIP_INCLUDES = \
 	com/sun/java_cup		\
 	com/sun/javadoc			\
 	com/sun/java/swing		\
-	com/sun/jlex	        	\
 	com/sun/jmx			\
 	com/sun/naming			\
 	com/sun/org/apache		\
 	com/sun/security/auth		\
 	com/sun/security/jgss		\
 	com/sun/source			\
-	java/applet			\
-	java/awt			\
-	java/beans			\
-	java/io				\
-	java/lang			\
-	java/math			\
-	java/net			\
-	java/nio			\
-	java/rmi			\
-	java/security			\
-	java/sql			\
-	java/text			\
-	java/util			\
+	java				\
 	javax/accessibility		\
 	javax/annotation		\
 	javax/imageio			\
@@ -935,7 +889,7 @@ SRC_ZIP_INCLUDES = \
 	org/omg				\
 	org/w3c/dom			\
 	org/xml/sax			\
-	sunw
+        #
 
 SRC_ZIP_SRCS = $(JDK_TOPDIR)/src/share/classes $(JDK_TOPDIR)/src/$(OPENJDK_TARGET_OS_API_DIR)/classes
 SRC_ZIP_SRCS += $(JDK_OUTPUTDIR)/gensrc
@@ -986,13 +940,13 @@ ifeq ($(OPENJDK_TARGET_OS), windows)
 
     ifeq ($(OPENJDK_TARGET_CPU_BITS), 32)
         $(eval $(call SetupArchive,BUILD_ACCESSBRIDGE_32_JAR,,\
-		SRCS:=$(JDK_OUTPUTDIR)/classes_ab/32bit $(JDK_OUTPUTDIR)/classes,\
+		SRCS:=$(JDK_OUTPUTDIR)/classes_ab/32bit,\
 		INCLUDES:=com/sun/java/accessibility,\
 		JAR:=$(IMAGES_OUTPUTDIR)/lib/ext/access-bridge-32.jar,\
 		SKIP_METAINF:=true))
 
         $(eval $(call SetupArchive,BUILD_ACCESSBRIDGE_LEGACY_JAR,,\
-		SRCS:=$(JDK_OUTPUTDIR)/classes_ab/legacy $(JDK_OUTPUTDIR)/classes,\
+		SRCS:=$(JDK_OUTPUTDIR)/classes_ab/legacy,\
 		INCLUDES:=com/sun/java/accessibility,\
 		JAR:=$(IMAGES_OUTPUTDIR)/lib/ext/access-bridge.jar,\
 		SKIP_METAINF:=true))
@@ -1001,9 +955,8 @@ ifeq ($(OPENJDK_TARGET_OS), windows)
 		$(IMAGES_OUTPUTDIR)/lib/ext/access-bridge.jar
     else
         $(eval $(call SetupArchive,BUILD_ACCESSBRIDGE_64_JAR,,\
-		SRCS:=$(JDK_OUTPUTDIR)/classes_ab/64bit $(JDK_OUTPUTDIR)/classes,\
+		SRCS:=$(JDK_OUTPUTDIR)/classes_ab/64bit,\
 		INCLUDES:=com/sun/java/accessibility,\
-		EXCLUDES:=com/sun/java/accessibility/util/java,\
 		JAR:=$(IMAGES_OUTPUTDIR)/lib/ext/access-bridge-64.jar,\
 		SKIP_METAINF:=true))
 

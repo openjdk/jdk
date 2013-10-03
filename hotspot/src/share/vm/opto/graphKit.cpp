@@ -3825,8 +3825,13 @@ Node* GraphKit::load_String_value(Node* ctrl, Node* str) {
                                                    TypeAry::make(TypeInt::CHAR,TypeInt::POS),
                                                    ciTypeArrayKlass::make(T_CHAR), true, 0);
   int value_field_idx = C->get_alias_index(value_field_type);
-  return make_load(ctrl, basic_plus_adr(str, str, value_offset),
-                   value_type, T_OBJECT, value_field_idx);
+  Node* load = make_load(ctrl, basic_plus_adr(str, str, value_offset),
+                         value_type, T_OBJECT, value_field_idx);
+  // String.value field is known to be @Stable.
+  if (UseImplicitStableValues) {
+    load = cast_array_to_stable(load, value_type);
+  }
+  return load;
 }
 
 void GraphKit::store_String_offset(Node* ctrl, Node* str, Node* value) {
@@ -3844,12 +3849,9 @@ void GraphKit::store_String_value(Node* ctrl, Node* str, Node* value) {
   const TypeInstPtr* string_type = TypeInstPtr::make(TypePtr::NotNull, C->env()->String_klass(),
                                                      false, NULL, 0);
   const TypePtr* value_field_type = string_type->add_offset(value_offset);
-  const TypeAryPtr*  value_type = TypeAryPtr::make(TypePtr::NotNull,
-                                                   TypeAry::make(TypeInt::CHAR,TypeInt::POS),
-                                                   ciTypeArrayKlass::make(T_CHAR), true, 0);
-  int value_field_idx = C->get_alias_index(value_field_type);
-  store_to_memory(ctrl, basic_plus_adr(str, value_offset),
-                  value, T_OBJECT, value_field_idx);
+
+  store_oop_to_object(ctrl, str,  basic_plus_adr(str, value_offset), value_field_type,
+      value, TypeAryPtr::CHARS, T_OBJECT);
 }
 
 void GraphKit::store_String_length(Node* ctrl, Node* str, Node* value) {
@@ -3860,4 +3862,10 @@ void GraphKit::store_String_length(Node* ctrl, Node* str, Node* value) {
   int count_field_idx = C->get_alias_index(count_field_type);
   store_to_memory(ctrl, basic_plus_adr(str, count_offset),
                   value, T_INT, count_field_idx);
+}
+
+Node* GraphKit::cast_array_to_stable(Node* ary, const TypeAryPtr* ary_type) {
+  // Reify the property as a CastPP node in Ideal graph to comply with monotonicity
+  // assumption of CCP analysis.
+  return _gvn.transform(new(C) CastPPNode(ary, ary_type->cast_to_stable(true)));
 }

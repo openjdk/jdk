@@ -808,13 +808,13 @@ public class DefaultKeyboardFocusManager extends KeyboardFocusManager {
             }
         }
         boolean stopPostProcessing = false;
-        java.util.List processors = getKeyEventPostProcessors();
+        java.util.List<KeyEventPostProcessor> processors = getKeyEventPostProcessors();
         if (processors != null) {
-            for (java.util.Iterator iter = processors.iterator();
+            for (java.util.Iterator<KeyEventPostProcessor> iter = processors.iterator();
                  !stopPostProcessing && iter.hasNext(); )
             {
-                stopPostProcessing = (((KeyEventPostProcessor)(iter.next())).
-                            postProcessKeyEvent(e));
+                stopPostProcessing = iter.next().
+                            postProcessKeyEvent(e);
             }
         }
         if (!stopPostProcessing) {
@@ -1059,12 +1059,12 @@ public class DefaultKeyboardFocusManager extends KeyboardFocusManager {
             return true;
         }
 
-        java.util.List dispatchers = getKeyEventDispatchers();
+        java.util.List<KeyEventDispatcher> dispatchers = getKeyEventDispatchers();
         if (dispatchers != null) {
-            for (java.util.Iterator iter = dispatchers.iterator();
+            for (java.util.Iterator<KeyEventDispatcher> iter = dispatchers.iterator();
                  iter.hasNext(); )
              {
-                 if (((KeyEventDispatcher)(iter.next())).
+                 if (iter.next().
                      dispatchKeyEvent(ke))
                  {
                      return true;
@@ -1131,7 +1131,7 @@ public class DefaultKeyboardFocusManager extends KeyboardFocusManager {
                 oppStroke = AWTKeyStroke.getAWTKeyStroke(stroke.getKeyCode(),
                                                  stroke.getModifiers(),
                                                  !stroke.isOnKeyRelease());
-            Set toTest;
+            Set<AWTKeyStroke> toTest;
             boolean contains, containsOpp;
 
             toTest = focusedComponent.getFocusTraversalKeys(
@@ -1246,7 +1246,7 @@ public class DefaultKeyboardFocusManager extends KeyboardFocusManager {
      * any) should be cancelled.
      *
      * @param after the timestamp specified in the call to
-     *        <code>enqueueKeyEvents</code>, or any value < 0
+     *        <code>enqueueKeyEvents</code>, or any value &lt; 0
      * @param untilFocused the Component specified in the call to
      *        <code>enqueueKeyEvents</code>
      * @see #enqueueKeyEvents

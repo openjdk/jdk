@@ -1,6 +1,6 @@
 /**
  * @test /nodynamiccopyright/
- * @bug 6747671
+ * @bug 6747671 8022567
  * @summary -Xlint:rawtypes
  * @compile/ref=T6747671.out -XDrawDiagnostics -Xlint:rawtypes T6747671.java
  */
@@ -32,4 +32,11 @@ class T6747671<E> {
         A a2 = new A() {};//raw warning (2)
         a2.new Z() {};//raw warning
     }
+
+    @TA B @TA[] arr = new @TA B @TA [0];//JDK-8022567: raw warning (2)
+    Class<B[]> classes1;//no warning
+    Class<B>[] classes2;//no warning
+
+    @java.lang.annotation.Target(java.lang.annotation.ElementType.TYPE_USE)
+    @interface TA { }
 }

@@ -76,7 +76,7 @@ import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
 import java.io.InvalidObjectException;
-import java.io.ObjectStreamException;
+import java.io.InvalidObjectException;
 import java.io.Serializable;
 import java.time.chrono.ChronoLocalDateTime;
 import java.time.format.DateTimeFormatter;
@@ -1953,8 +1953,9 @@ public final class LocalDateTime
     /**
      * Writes the object using a
      * <a href="../../serialized-form.html#java.time.Ser">dedicated serialized form</a>.
+     * @serialData
      * <pre>
-     *  out.writeByte(5);  // identifies this as a LocalDateTime
+     *  out.writeByte(5);  // identifies a LocalDateTime
      *  // the <a href="../../serialized-form.html#java.time.LocalDate">date</a> excluding the one byte header
      *  // the <a href="../../serialized-form.html#java.time.LocalTime">time</a> excluding the one byte header
      * </pre>
@@ -1970,7 +1971,7 @@ public final class LocalDateTime
      * @return never
      * @throws InvalidObjectException always
      */
-    private Object readResolve() throws ObjectStreamException {
+    private Object readResolve() throws InvalidObjectException {
         throw new InvalidObjectException("Deserialization via serialization delegate");
     }
 

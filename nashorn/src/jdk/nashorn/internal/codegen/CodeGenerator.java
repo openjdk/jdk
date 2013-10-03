@@ -852,7 +852,6 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
         final Label  loopLabel = new Label("loop");
 
         final Expression init = forNode.getInit();
-        assert init instanceof IdentNode;
 
         load(modify);
         assert modify.getType().isObject();
@@ -1361,6 +1360,7 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
         final List<Expression> values  = new ArrayList<>();
 
         boolean hasGettersSetters = false;
+        Expression protoNode = null;
 
         for (PropertyNode propertyNode: elements) {
             final Expression   value        = propertyNode.getValue();
@@ -1369,6 +1369,9 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
 
             if (value == null) {
                 hasGettersSetters = true;
+            } else if (key.equals(ScriptObject.PROTO_PROPERTY_NAME)) {
+                protoNode = value;
+                continue;
             }
 
             keys.add(key);
@@ -1410,8 +1413,13 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
         }
 
         method.dup();
-        globalObjectPrototype();
-        method.invoke(ScriptObject.SET_PROTO);
+        if (protoNode != null) {
+            load(protoNode);
+            method.invoke(ScriptObject.SET_PROTO_CHECK);
+        } else {
+            globalObjectPrototype();
+            method.invoke(ScriptObject.SET_PROTO);
+        }
 
         if (hasGettersSetters) {
             for (final PropertyNode propertyNode : elements) {
@@ -2166,8 +2174,9 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
             method.invoke(ScriptRuntime.OPEN_WITH);
             method.storeCompilerConstant(SCOPE);
         } else {
-            // We just loaded the expression for its side effect; discard it
-            method.pop();
+            // We just loaded the expression for its side effect and to check
+            // for null or undefined value.
+            globalCheckObjectCoercible();
         }
 
 
@@ -3247,6 +3256,10 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
 
     private MethodEmitter globalIsEval() {
         return method.invokestatic(GLOBAL_OBJECT, "isEval", methodDescriptor(boolean.class, Object.class));
+    }
+
+    private MethodEmitter globalCheckObjectCoercible() {
+        return method.invokestatic(GLOBAL_OBJECT, "checkObjectCoercible", methodDescriptor(void.class, Object.class));
     }
 
     private MethodEmitter globalDirectEval() {

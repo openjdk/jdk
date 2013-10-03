@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,6 +33,10 @@ import java.awt.peer.ButtonPeer;
 
 import javax.swing.JButton;
 
+/**
+ * Lightweight implementation of {@link ButtonPeer}. Delegates most of the work
+ * to the {@link JButton}.
+ */
 final class LWButtonPeer extends LWComponentPeer<Button, JButton>
         implements ButtonPeer, ActionListener {
 
@@ -42,7 +46,7 @@ final class LWButtonPeer extends LWComponentPeer<Button, JButton>
     }
 
     @Override
-    protected JButton createDelegate() {
+    JButton createDelegate() {
         return new JButtonDelegate();
     }
 
@@ -74,6 +78,7 @@ final class LWButtonPeer extends LWComponentPeer<Button, JButton>
         return true;
     }
 
+    @SuppressWarnings("serial")// Safe: outer class is non-serializable.
     private final class JButtonDelegate extends JButton {
 
         // Empty non private constructor was added because access to this

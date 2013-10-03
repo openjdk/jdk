@@ -448,16 +448,22 @@ class Method : public Metadata {
   enum VtableIndexFlag {
     // Valid vtable indexes are non-negative (>= 0).
     // These few negative values are used as sentinels.
-    highest_unused_vtable_index_value = -5,
+    itable_index_max        = -10, // first itable index, growing downward
+    pending_itable_index    = -9,  // itable index will be assigned
     invalid_vtable_index    = -4,  // distinct from any valid vtable index
     garbage_vtable_index    = -3,  // not yet linked; no vtable layout yet
     nonvirtual_vtable_index = -2   // there is no need for vtable dispatch
     // 6330203 Note:  Do not use -1, which was overloaded with many meanings.
   };
   DEBUG_ONLY(bool valid_vtable_index() const     { return _vtable_index >= nonvirtual_vtable_index; })
-  int  vtable_index() const                      { assert(valid_vtable_index(), "");
-                                                   return _vtable_index; }
+  bool has_vtable_index() const                  { return _vtable_index >= 0; }
+  int  vtable_index() const                      { return _vtable_index; }
   void set_vtable_index(int index)               { _vtable_index = index; }
+  DEBUG_ONLY(bool valid_itable_index() const     { return _vtable_index <= pending_itable_index; })
+  bool has_itable_index() const                  { return _vtable_index <= itable_index_max; }
+  int  itable_index() const                      { assert(valid_itable_index(), "");
+                                                   return itable_index_max - _vtable_index; }
+  void set_itable_index(int index)               { _vtable_index = itable_index_max - index; assert(valid_itable_index(), ""); }
 
   // interpreter entry
   address interpreter_entry() const              { return _i2i_entry; }
@@ -560,10 +566,11 @@ class Method : public Metadata {
 
   // checks method and its method holder
   bool is_final_method() const;
-  bool is_strict_method() const;
+  bool is_final_method(AccessFlags class_access_flags) const;
 
   // true if method needs no dynamic dispatch (final and/or no vtable entry)
   bool can_be_statically_bound() const;
+  bool can_be_statically_bound(AccessFlags class_access_flags) const;
 
   // returns true if the method has any backward branches.
   bool has_loops() {
@@ -739,10 +746,6 @@ class Method : public Metadata {
   // needs to be async-safe. No allocation should be done and
   // so handles are not used to avoid deadlock.
   jmethodID find_jmethod_id_or_null()               { return method_holder()->jmethod_id_or_null(this); }
-
-  // JNI static invoke cached itable index accessors
-  int cached_itable_index()                         { return method_holder()->cached_itable_index(method_idnum()); }
-  void set_cached_itable_index(int index)           { method_holder()->set_cached_itable_index(method_idnum(), index); }
 
   // Support for inlining of intrinsic methods
   vmIntrinsics::ID intrinsic_id() const          { return (vmIntrinsics::ID) _intrinsic_id;           }

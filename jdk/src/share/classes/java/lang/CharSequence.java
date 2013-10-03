@@ -228,7 +228,7 @@ public interface CharSequence {
                 Spliterators.spliteratorUnknownSize(
                         new CodePointIterator(),
                         Spliterator.ORDERED),
-                Spliterator.SUBSIZED | Spliterator.SIZED | Spliterator.ORDERED,
+                Spliterator.ORDERED,
                 false);
     }
 }
