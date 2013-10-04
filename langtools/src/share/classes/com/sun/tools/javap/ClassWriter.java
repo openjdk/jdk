@@ -232,6 +232,12 @@ public class ClassWriter extends BasicWriter {
                 return t.accept(this, new StringBuilder()).toString();
             }
 
+            String printTypeArgs(List<? extends TypeParamType> typeParamTypes) {
+                StringBuilder builder = new StringBuilder();
+                appendIfNotEmpty(builder, "<", typeParamTypes, "> ");
+                return builder.toString();
+            }
+
             public StringBuilder visitSimpleType(SimpleType type, StringBuilder sb) {
                 sb.append(getJavaName(type.name));
                 return sb;
@@ -438,7 +444,7 @@ public class ClassWriter extends BasicWriter {
 
         writeModifiers(flags.getMethodModifiers());
         if (methodType != null) {
-            writeListIfNotEmpty("<", methodType.typeParamTypes, "> ");
+            print(new JavaTypePrinter(false).printTypeArgs(methodType.typeParamTypes));
         }
         if (getName(m).equals("<init>")) {
             print(getJavaName(classFile));
