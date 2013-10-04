@@ -620,36 +620,53 @@ public final class Context {
     }
 
     /**
-     * Checks that the given package can be accessed from no permissions context.
+     * Checks that the given Class can be accessed from no permissions context.
      *
-     * @param fullName fully qualified package name
+     * @param clazz Class object
      * @throw SecurityException if not accessible
      */
-    public static void checkPackageAccess(final String fullName) {
-        final int index = fullName.lastIndexOf('.');
-        if (index != -1) {
-            final SecurityManager sm = System.getSecurityManager();
-            if (sm != null) {
-                AccessController.doPrivileged(new PrivilegedAction<Void>() {
-                    @Override
-                    public Void run() {
-                        sm.checkPackageAccess(fullName.substring(0, index));
-                        return null;
-                    }
-                }, NO_PERMISSIONS_ACC_CTXT);
+    public static void checkPackageAccess(final Class clazz) {
+        final SecurityManager sm = System.getSecurityManager();
+        if (sm != null) {
+            Class bottomClazz = clazz;
+            while(bottomClazz.isArray()) {
+                bottomClazz = bottomClazz.getComponentType();
             }
+            checkPackageAccess(sm, bottomClazz.getName());
         }
     }
 
     /**
      * Checks that the given package can be accessed from no permissions context.
      *
+     * @param sm current security manager instance
      * @param fullName fully qualified package name
+     * @throw SecurityException if not accessible
+     */
+    private static void checkPackageAccess(final SecurityManager sm, final String fullName) {
+        sm.getClass(); // null check
+        final int index = fullName.lastIndexOf('.');
+        if (index != -1) {
+            final String pkgName = fullName.substring(0, index);
+            AccessController.doPrivileged(new PrivilegedAction<Void>() {
+                @Override
+                public Void run() {
+                    sm.checkPackageAccess(pkgName);
+                    return null;
+                }
+            }, NO_PERMISSIONS_ACC_CTXT);
+        }
+    }
+
+    /**
+     * Checks that the given Class can be accessed from no permissions context.
+     *
+     * @param clazz Class object
      * @return true if package is accessible, false otherwise
      */
-    public static boolean isAccessiblePackage(final String fullName) {
+    private static boolean isAccessiblePackage(final Class clazz) {
         try {
-            checkPackageAccess(fullName);
+            checkPackageAccess(clazz);
             return true;
         } catch (final SecurityException se) {
             return false;
@@ -663,7 +680,7 @@ public final class Context {
      * @return true if Class is accessible, false otherwise
      */
     public static boolean isAccessibleClass(final Class<?> clazz) {
-        return Modifier.isPublic(clazz.getModifiers()) && Context.isAccessiblePackage(clazz.getName());
+        return Modifier.isPublic(clazz.getModifiers()) && Context.isAccessiblePackage(clazz);
     }
 
     /**
@@ -677,8 +694,16 @@ public final class Context {
      * @throws ClassNotFoundException if class cannot be resolved
      */
     public Class<?> findClass(final String fullName) throws ClassNotFoundException {
+        if (fullName.indexOf('[') != -1 || fullName.indexOf('/') != -1) {
+            // don't allow array class names or internal names.
+            throw new ClassNotFoundException(fullName);
+        }
+
         // check package access as soon as possible!
-        checkPackageAccess(fullName);
+        final SecurityManager sm = System.getSecurityManager();
+        if (sm != null) {
+            checkPackageAccess(sm, fullName);
+        }
 
         // try the script -classpath loader, if that is set
         if (classPathLoader != null) {
