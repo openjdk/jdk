@@ -2931,7 +2931,8 @@ void VM_RedefineClasses::check_methods_and_mark_as_obsolete(
       old_method->set_is_obsolete();
       obsolete_count++;
 
-      // obsolete methods need a unique idnum
+      // obsolete methods need a unique idnum so they become new entries in
+      // the jmethodID cache in InstanceKlass
       u2 num = InstanceKlass::cast(_the_class_oop)->next_method_idnum();
       if (num != ConstMethod::UNSET_IDNUM) {
         old_method->set_method_idnum(num);
