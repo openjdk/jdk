@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -65,10 +65,16 @@ public class Resources extends java.util.ListResourceBundle {
         {"Generates.certificate.from.a.certificate.request",
                 "Generates certificate from a certificate request"}, //-gencert
         {"Generates.CRL", "Generates CRL"}, //-gencrl
+        {"Generated.keyAlgName.secret.key",
+                "Generated {0} secret key"}, //-genseckey
+        {"Generated.keysize.bit.keyAlgName.secret.key",
+                "Generated {0}-bit {1} secret key"}, //-genseckey
         {"Imports.entries.from.a.JDK.1.1.x.style.identity.database",
                 "Imports entries from a JDK 1.1.x-style identity database"}, //-identitydb
         {"Imports.a.certificate.or.a.certificate.chain",
                 "Imports a certificate or a certificate chain"}, //-importcert
+        {"Imports.a.password",
+                "Imports a password"}, //-importpass
         {"Imports.one.or.all.entries.from.another.keystore",
                 "Imports one or all entries from another keystore"}, //-importkeystore
         {"Clones.a.key.entry",
@@ -220,6 +226,8 @@ public class Resources extends java.util.ListResourceBundle {
         {"Must.specify.alias", "Must specify alias"},
         {"Keystore.password.must.be.at.least.6.characters",
                 "Keystore password must be at least 6 characters"},
+        {"Enter.the.password.to.be.stored.",
+                "Enter the password to be stored:  "},
         {"Enter.keystore.password.", "Enter keystore password:  "},
         {"Enter.source.keystore.password.", "Enter source keystore password:  "},
         {"Enter.destination.keystore.password.", "Enter destination keystore password:  "},
@@ -328,6 +336,7 @@ public class Resources extends java.util.ListResourceBundle {
         {"New.prompt.", "New {0}: "},
         {"Passwords.must.differ", "Passwords must differ"},
         {"Re.enter.new.prompt.", "Re-enter new {0}: "},
+        {"Re.enter.passpword.", "Re-enter password: "},
         {"Re.enter.new.password.", "Re-enter new password: "},
         {"They.don.t.match.Try.again", "They don't match. Try again"},
         {"Enter.prompt.alias.name.", "Enter {0} alias name:  "},
