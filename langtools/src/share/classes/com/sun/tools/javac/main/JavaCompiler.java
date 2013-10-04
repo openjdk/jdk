@@ -741,7 +741,7 @@ public class JavaCompiler {
                 out.close();
             }
             return outFile;
-        }''
+        }
     }
 
     /** Generate code and emit a class file for a given class
