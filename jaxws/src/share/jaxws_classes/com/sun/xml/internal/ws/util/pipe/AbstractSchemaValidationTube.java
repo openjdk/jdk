@@ -72,7 +72,7 @@ import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import static com.sun.xml.internal.ws.util.xml.XmlUtil.allowFileAccess;
+import static com.sun.xml.internal.ws.util.xml.XmlUtil.allowExternalAccess;
 
 /**
  * {@link Tube} that does the schema validation.
@@ -92,7 +92,7 @@ public abstract class AbstractSchemaValidationTube extends AbstractFilterTubeImp
         super(next);
         this.binding = binding;
         feature = binding.getFeature(SchemaValidationFeature.class);
-        sf = allowFileAccess(SchemaFactory.newInstance(XMLConstants.W3C_XML_SCHEMA_NS_URI), false);
+        sf = allowExternalAccess(SchemaFactory.newInstance(XMLConstants.W3C_XML_SCHEMA_NS_URI), "file", false);
     }
 
     protected AbstractSchemaValidationTube(AbstractSchemaValidationTube that, TubeCloner cloner) {

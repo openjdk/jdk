@@ -59,7 +59,7 @@ import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.util.*;
 
-import static com.sun.xml.internal.bind.v2.util.XmlFactory.allowFileAccess;
+import static com.sun.xml.internal.bind.v2.util.XmlFactory.allowExternalAccess;
 import static javax.xml.XMLConstants.W3C_XML_SCHEMA_NS_URI;
 
 
@@ -460,7 +460,7 @@ public final class DOMForest {
         }
 
         try {
-            allowFileAccess(sf, options.disableXmlSecurity).newSchema(sources.toArray(new SAXSource[0]));
+            allowExternalAccess(sf, "file,http", options.disableXmlSecurity).newSchema(sources.toArray(new SAXSource[0]));
         } catch (SAXException e) {
             // error should have been reported.
         } catch (RuntimeException re) {

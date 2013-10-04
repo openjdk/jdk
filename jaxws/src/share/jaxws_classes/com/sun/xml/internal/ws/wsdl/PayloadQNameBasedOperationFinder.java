@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -104,7 +104,7 @@ final class PayloadQNameBasedOperationFinder extends WSDLOperationFinder {
             }
         } else {
             for (WSDLBoundOperation wsdlOp : wsdlModel.getBinding().getBindingOperations()) {
-                QName name = wsdlOp.getReqPayloadName();
+                QName name = wsdlOp.getRequestPayloadName();
                 if (name == null)
                     name = EMPTY_PAYLOAD;
                 methodHandlers.put(name, wsdlOperationMapping(wsdlOp));

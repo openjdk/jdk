@@ -140,22 +140,23 @@ final class SingleMapNodeProperty<BeanT,ValueT extends Map> extends PropertyImpl
      */
     private final Loader itemsLoader = new Loader(false) {
 
-        private ThreadLocal<BeanT> target = new ThreadLocal<BeanT>();
-        private ThreadLocal<ValueT> map = new ThreadLocal<ValueT>();
-        private int depthCounter = 0; // needed to clean ThreadLocals
+        private ThreadLocal<Stack<BeanT>> target = new ThreadLocal<Stack<BeanT>>();
+        private ThreadLocal<Stack<ValueT>> map = new ThreadLocal<Stack<ValueT>>();
 
         @Override
         public void startElement(UnmarshallingContext.State state, TagName ea) throws SAXException {
             // create or obtain the Map object
             try {
-                target.set((BeanT)state.prev.target);
-                map.set(acc.get(target.get()));
-                depthCounter++;
-                if(map.get() == null) {
-                    map.set(ClassFactory.create(mapImplClass));
-                }
-                map.get().clear();
-                state.target = map.get();
+                BeanT target = (BeanT) state.prev.target;
+                ValueT mapValue = acc.get(target);
+                if(mapValue == null)
+                    mapValue = ClassFactory.create(mapImplClass);
+                else
+                    mapValue.clear();
+
+                Stack.push(this.target, target);
+                Stack.push(map, mapValue);
+                state.target = mapValue;
             } catch (AccessorException e) {
                 // recover from error by setting a dummy Map that receives and discards the values
                 handleGenericException(e,true);
@@ -167,11 +168,7 @@ final class SingleMapNodeProperty<BeanT,ValueT extends Map> extends PropertyImpl
         public void leaveElement(State state, TagName ea) throws SAXException {
             super.leaveElement(state, ea);
             try {
-                acc.set(target.get(), map.get());
-                if (--depthCounter == 0) {
-                    target.remove();
-                    map.remove();
-                }
+                acc.set(Stack.pop(target), Stack.pop(map));
             } catch (AccessorException ex) {
                 handleGenericException(ex,true);
             }
@@ -288,5 +285,37 @@ final class SingleMapNodeProperty<BeanT,ValueT extends Map> extends PropertyImpl
         if(tagName.equals(nsUri,localName))
             return acc;
         return null;
+    }
+
+    private static final class Stack<T> {
+        private Stack<T> parent;
+        private T value;
+
+        private Stack(Stack<T> parent, T value) {
+            this.parent = parent;
+            this.value = value;
+        }
+
+        private Stack(T value) {
+            this.value = value;
+        }
+
+        private static <T> void push(ThreadLocal<Stack<T>> holder, T value) {
+            Stack<T> parent = holder.get();
+            if (parent == null)
+                holder.set(new Stack<T>(value));
+            else
+                holder.set(new Stack<T>(parent, value));
+        }
+
+        private static <T> T pop(ThreadLocal<Stack<T>> holder) {
+            Stack<T> current = holder.get();
+            if (current.parent == null)
+                holder.remove();
+            else
+                holder.set(current.parent);
+            return current.value;
+        }
+
     }
 }

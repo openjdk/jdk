@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -63,19 +63,15 @@ class AccessorInjector {
             ClassLoader cl = SecureLoader.getClassClassLoader(beanClass);
             if(cl==null)    return null;    // how do I inject classes to this "null" class loader? for now, back off.
 
-            Class c = null;
-            synchronized (AccessorInjector.class) {
-                c = Injector.find(cl,newClassName);
-                if(c==null) {
-                    byte[] image = tailor(templateClassName,newClassName,replacements);
-    //                try {
-    //                    new FileOutputStream("debug.class").write(image);
-    //                } catch (IOException e) {
-    //                    e.printStackTrace();
-    //                }
-                    if(image==null)
-                        return null;
-                    c = Injector.inject(cl,newClassName,image);
+            Class c = Injector.find(cl,newClassName);
+            if (c==null) {
+                byte[] image = tailor(templateClassName,newClassName,replacements);
+                if (image==null) {
+                    return null;
+                }
+                c = Injector.inject(cl,newClassName,image);
+                if (c == null) {
+                    Injector.find(cl, newClassName);
                 }
             }
             return c;
@@ -112,4 +108,5 @@ class AccessorInjector {
     }
 
     private static final ClassLoader CLASS_LOADER = SecureLoader.getClassClassLoader(AccessorInjector.class);
+
 }

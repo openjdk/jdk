@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,6 @@
 package com.sun.xml.internal.ws.model.wsdl;
 
 import com.oracle.webservices.internal.api.message.BasePropertySet;
-import com.oracle.webservices.internal.api.message.PropertySet;
 import com.sun.istack.internal.Nullable;
 import com.sun.xml.internal.ws.api.model.SEIModel;
 import com.sun.xml.internal.ws.api.model.wsdl.WSDLPort;
