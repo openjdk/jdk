@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -49,6 +49,15 @@ public interface Diagnostic<S> {
 
     /**
      * Kinds of diagnostics, for example, error or warning.
+     *
+     * The kind of a diagnostic can be used to determine how the
+     * diagnostic should be presented to the user. For example,
+     * errors might be colored red or prefixed with the word "Error",
+     * while warnings might be colored yellow or prefixed with the
+     * word "Warning". There is no requirement that the Kind
+     * should imply any inherent semantic meaning to the message
+     * of the diagnostic: for example, a tool might provide an
+     * option to report all warnings as errors.
      */
     enum Kind {
         /**
@@ -63,7 +72,7 @@ public interface Diagnostic<S> {
         /**
          * Problem similar to a warning, but is mandated by the tool's
          * specification.  For example, the Java&trade; Language
-         * Specification, 3rd Ed. mandates warnings on certain
+         * Specification mandates warnings on certain
          * unchecked operations and the use of deprecated methods.
          */
         MANDATORY_WARNING,
