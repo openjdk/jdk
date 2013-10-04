@@ -22,7 +22,7 @@
 #
 
 # @test
-# @bug 6543842 6543440 6939248 8009636
+# @bug 6543842 6543440 6939248 8009636 8024302
 # @summary checking response of timestamp
 #
 # @run shell/timeout=600 ts.sh
@@ -53,7 +53,7 @@ fi
 JAR="${TESTJAVA}${FS}bin${FS}jar"
 JAVA="${TESTJAVA}${FS}bin${FS}java"
 JAVAC="${TESTJAVA}${FS}bin${FS}javac"
-KT="${TESTJAVA}${FS}bin${FS}keytool -keystore tsks -storepass changeit -keypass changeit"
+KT="${TESTJAVA}${FS}bin${FS}keytool -keystore tsks -storepass changeit -keypass changeit -validity 200"
 
 rm tsks
 echo Nothing > A
