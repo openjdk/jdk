@@ -108,6 +108,8 @@ SA_LFLAGS = $(SA_LD_FLAGS) -nologo -subsystem:console -machine:$(MACHINE)
 SA_LFLAGS = $(SA_LFLAGS) -map -debug
 !endif
 
+SA_CFLAGS = $(SA_CFLAGS) $(MP_FLAG)
+
 # Note that we do not keep sawindbj.obj around as it would then
 # get included in the dumpbin command in build_vm_def.sh
 
