@@ -134,6 +134,9 @@ java/lang/management/MemoryMXBean/LowMemoryTest2.sh		generic-all
 # 8021230
 java/lang/ThreadLocal/ThreadLocalSupplierTest.java              generic-all
 
+# 8023201
+java/lang/instrument/RetransformBigClass.sh                     generic-all
+java/lang/instrument/RedefineBigClass.sh                        generic-all
 
 ############################################################################
 
