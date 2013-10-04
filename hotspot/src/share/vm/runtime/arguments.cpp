@@ -2647,16 +2647,16 @@ jint Arguments::parse_each_vm_init_arg(const JavaVMInitArgs* args,
       FLAG_SET_CMDLINE(bool, BackgroundCompilation, false);
     // -Xmn for compatibility with other JVM vendors
     } else if (match_option(option, "-Xmn", &tail)) {
-      julong long_initial_eden_size = 0;
-      ArgsRange errcode = parse_memory_size(tail, &long_initial_eden_size, 1);
+      julong long_initial_young_size = 0;
+      ArgsRange errcode = parse_memory_size(tail, &long_initial_young_size, 1);
       if (errcode != arg_in_range) {
         jio_fprintf(defaultStream::error_stream(),
-                    "Invalid initial eden size: %s\n", option->optionString);
+                    "Invalid initial young generation size: %s\n", option->optionString);
         describe_range_error(errcode);
         return JNI_EINVAL;
       }
-      FLAG_SET_CMDLINE(uintx, MaxNewSize, (uintx)long_initial_eden_size);
-      FLAG_SET_CMDLINE(uintx, NewSize, (uintx)long_initial_eden_size);
+      FLAG_SET_CMDLINE(uintx, MaxNewSize, (uintx)long_initial_young_size);
+      FLAG_SET_CMDLINE(uintx, NewSize, (uintx)long_initial_young_size);
     // -Xms
     } else if (match_option(option, "-Xms", &tail)) {
       julong long_initial_heap_size = 0;
