@@ -84,7 +84,9 @@ needs_jdk = \
   runtime/NMT/VirtualAllocTestType.java \
   runtime/RedefineObject/TestRedefineObject.java \
   runtime/XCheckJniJsig/XCheckJSig.java \
-  serviceability/attach/AttachWithStalePidFile.java
+  serviceability/attach/AttachWithStalePidFile.java \
+  serviceability/sa/jmap-hprof/JMapHProfLargeHeapTest.java
+
 
 # JRE adds further tests to compact3
 #
