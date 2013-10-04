@@ -1061,6 +1061,12 @@ public abstract class Symbol implements Element {
                 return ElementKind.CLASS;
         }
 
+        @Override
+        public Set<Modifier> getModifiers() {
+            long flags = flags();
+            return Flags.asModifierSet(flags & ~DEFAULT);
+        }
+
         public NestingKind getNestingKind() {
             complete();
             if (owner.kind == PCK)
