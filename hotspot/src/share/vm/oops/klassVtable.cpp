@@ -292,9 +292,10 @@ bool klassVtable::update_inherited_vtable(InstanceKlass* klass, methodHandle tar
     return allocate_new;
   }
 
-  // private methods always have a new entry in the vtable
+  // private methods in classes always have a new entry in the vtable
   // specification interpretation since classic has
   // private methods not overriding
+  // JDK8 adds private methods in interfaces which require invokespecial
   if (target_method()->is_private()) {
     return allocate_new;
   }
@@ -442,9 +443,10 @@ bool klassVtable::needs_new_vtable_entry(methodHandle target_method,
     return true;
   }
 
-  // private methods always have a new entry in the vtable
+  // private methods in classes always have a new entry in the vtable
   // specification interpretation since classic has
   // private methods not overriding
+  // JDK8 adds private methods in interfaces which require invokespecial
   if (target_method()->is_private()) {
     return true;
   }
@@ -520,7 +522,7 @@ bool klassVtable::is_miranda_entry_at(int i) {
   Klass* method_holder = m->method_holder();
   InstanceKlass *mhk = InstanceKlass::cast(method_holder);
 
-  // miranda methods are interface methods in a class's vtable
+  // miranda methods are public abstract instance interface methods in a class's vtable
   if (mhk->is_interface()) {
     assert(m->is_public(), "should be public");
     assert(ik()->implements_interface(method_holder) , "this class should implement the interface");
@@ -534,6 +536,8 @@ bool klassVtable::is_miranda_entry_at(int i) {
 // "miranda" means not static, not defined by this class, and not defined
 // in super unless it is private and therefore inaccessible to this class.
 // the caller must make sure that the method belongs to an interface implemented by the class
+// Miranda methods only include public interface instance methods
+// Not private methods, not static methods, not default = concrete abstract
 bool klassVtable::is_miranda(Method* m, Array<Method*>* class_methods, Klass* super) {
   if (m->is_static()) {
     return false;

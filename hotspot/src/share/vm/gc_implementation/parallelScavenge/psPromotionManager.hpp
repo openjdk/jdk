@@ -126,7 +126,7 @@ class PSPromotionManager VALUE_OBJ_CLASS_SPEC {
 
   oop* mask_chunked_array_oop(oop obj) {
     assert(!is_oop_masked((oop*) obj), "invariant");
-    oop* ret = (oop*) ((uintptr_t)obj | PS_CHUNKED_ARRAY_OOP_MASK);
+    oop* ret = (oop*) (cast_from_oop<uintptr_t>(obj) | PS_CHUNKED_ARRAY_OOP_MASK);
     assert(is_oop_masked(ret), "invariant");
     return ret;
   }

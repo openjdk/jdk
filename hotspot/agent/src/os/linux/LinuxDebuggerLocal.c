@@ -29,6 +29,7 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <fcntl.h>
+#include <stdlib.h>
 #include <string.h>
 #include <limits.h>
 
@@ -80,7 +81,7 @@ JNIEXPORT void JNICALL Java_sun_jvm_hotspot_debugger_linux_LinuxDebuggerLocal_in
   (JNIEnv *env, jclass cls) {
   jclass listClass;
 
-  if (init_libproc(getenv("LIBSAPROC_DEBUG")) != true) {
+  if (init_libproc(getenv("LIBSAPROC_DEBUG") != NULL) != true) {
      THROW_NEW_DEBUGGER_EXCEPTION("can't initialize libproc");
   }
 

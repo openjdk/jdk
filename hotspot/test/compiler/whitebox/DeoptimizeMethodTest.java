@@ -53,6 +53,12 @@ public class DeoptimizeMethodTest extends CompilerWhiteBoxTest {
      */
     @Override
     protected void test() throws Exception {
+        if (testCase.isOsr && CompilerWhiteBoxTest.MODE.startsWith(
+                "compiled ")) {
+          System.err.printf("Warning: %s is not applicable in %s%n",
+                testCase.name(), CompilerWhiteBoxTest.MODE);
+          return;
+        }
         compile();
         checkCompiled();
         deoptimize();

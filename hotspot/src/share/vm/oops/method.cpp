@@ -901,16 +901,6 @@ address Method::make_adapters(methodHandle mh, TRAPS) {
 // This function must not hit a safepoint!
 address Method::verified_code_entry() {
   debug_only(No_Safepoint_Verifier nsv;)
-  nmethod *code = (nmethod *)OrderAccess::load_ptr_acquire(&_code);
-  if (code == NULL && UseCodeCacheFlushing) {
-    nmethod *saved_code = CodeCache::reanimate_saved_code(this);
-    if (saved_code != NULL) {
-      methodHandle method(this);
-      assert( ! saved_code->is_osr_method(), "should not get here for osr" );
-      set_code( method, saved_code );
-    }
-  }
-
   assert(_from_compiled_entry != NULL, "must be set");
   return _from_compiled_entry;
 }

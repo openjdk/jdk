@@ -83,7 +83,9 @@ G1RemSet::G1RemSet(G1CollectedHeap* g1, CardTableModRefBS* ct_bs)
   for (uint i = 0; i < n_workers(); i++) {
     _cset_rs_update_cl[i] = NULL;
   }
-  _prev_period_summary.initialize(this, n_workers());
+  if (G1SummarizeRSetStats) {
+    _prev_period_summary.initialize(this);
+  }
 }
 
 G1RemSet::~G1RemSet() {
@@ -109,7 +111,7 @@ class ScanRSClosure : public HeapRegionClosure {
   CodeBlobToOopClosure* _code_root_cl;
 
   G1BlockOffsetSharedArray* _bot_shared;
-  CardTableModRefBS *_ct_bs;
+  G1SATBCardTableModRefBS *_ct_bs;
 
   double _strong_code_root_scan_time_sec;
   int    _worker_i;
@@ -130,7 +132,7 @@ public:
   {
     _g1h = G1CollectedHeap::heap();
     _bot_shared = _g1h->bot_shared();
-    _ct_bs = (CardTableModRefBS*) (_g1h->barrier_set());
+    _ct_bs = _g1h->g1_barrier_set();
     _block_size = MAX2<int>(G1RSetScanBlockSize, 1);
   }
 
@@ -505,12 +507,7 @@ public:
   ScrubRSClosure(BitMap* region_bm, BitMap* card_bm) :
     _g1h(G1CollectedHeap::heap()),
     _region_bm(region_bm), _card_bm(card_bm),
-    _ctbs(NULL)
-  {
-    ModRefBarrierSet* bs = _g1h->mr_bs();
-    guarantee(bs->is_a(BarrierSet::CardTableModRef), "Precondition");
-    _ctbs = (CardTableModRefBS*)bs;
-  }
+    _ctbs(_g1h->g1_barrier_set()) {}
 
   bool doHeapRegion(HeapRegion* r) {
     if (!r->continuesHumongous()) {
@@ -731,19 +728,19 @@ bool G1RemSet::refine_card(jbyte* card_ptr, int worker_i,
   return has_refs_into_cset;
 }
 
-void G1RemSet::print_periodic_summary_info() {
+void G1RemSet::print_periodic_summary_info(const char* header) {
   G1RemSetSummary current;
-  current.initialize(this, n_workers());
+  current.initialize(this);
 
   _prev_period_summary.subtract_from(&current);
-  print_summary_info(&_prev_period_summary);
+  print_summary_info(&_prev_period_summary, header);
 
   _prev_period_summary.set(&current);
 }
 
 void G1RemSet::print_summary_info() {
   G1RemSetSummary current;
-  current.initialize(this, n_workers());
+  current.initialize(this);
 
   print_summary_info(&current, " Cumulative RS summary");
 }
