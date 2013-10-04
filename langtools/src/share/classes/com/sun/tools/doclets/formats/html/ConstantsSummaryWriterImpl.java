@@ -207,7 +207,7 @@ public class ConstantsSummaryWriterImpl extends HtmlDocletWriter
      * @return the table caption and header
      */
     protected Content getClassName(Content classStr) {
-        Content table = HtmlTree.TABLE(0, 3, 0, constantsTableSummary,
+        Content table = HtmlTree.TABLE(HtmlStyle.constantsSummary, 0, 3, 0, constantsTableSummary,
                 getTableCaption(classStr));
         table.addContent(getSummaryTableHeader(constantsTableHeader, "col"));
         return table;

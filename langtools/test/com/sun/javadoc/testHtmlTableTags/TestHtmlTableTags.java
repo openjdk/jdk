@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug      6786688
+ * @bug      6786688 8008164
  * @summary  HTML tables should have table summary, caption and table headers.
  * @author   Bhavesh Patel
  * @library  ../lib/
@@ -50,121 +50,121 @@ public class TestHtmlTableTags extends JavadocTester {
 
         //Package summary
         {BUG_ID + FS + "pkg1" + FS + "package-summary.html",
-            "<table class=\"packageSummary\" border=\"0\" cellpadding=\"3\"" +
+            "<table class=\"typeSummary\" border=\"0\" cellpadding=\"3\"" +
             " cellspacing=\"0\" summary=\"Class Summary table, " +
             "listing classes, and an explanation\">"
         },
         {BUG_ID + FS + "pkg1" + FS + "package-summary.html",
-            "<table class=\"packageSummary\" border=\"0\" cellpadding=\"3\"" +
+            "<table class=\"typeSummary\" border=\"0\" cellpadding=\"3\"" +
             " cellspacing=\"0\" summary=\"Interface Summary table, " +
             "listing interfaces, and an explanation\">"
         },
         {BUG_ID + FS + "pkg2" + FS + "package-summary.html",
-            "<table class=\"packageSummary\" border=\"0\" cellpadding=\"3\"" +
+            "<table class=\"typeSummary\" border=\"0\" cellpadding=\"3\"" +
             " cellspacing=\"0\" summary=\"Enum Summary table, " +
             "listing enums, and an explanation\">"
         },
         {BUG_ID + FS + "pkg2" + FS + "package-summary.html",
-            "<table class=\"packageSummary\" border=\"0\" cellpadding=\"3\"" +
+            "<table class=\"typeSummary\" border=\"0\" cellpadding=\"3\"" +
             " cellspacing=\"0\" summary=\"Annotation Types Summary table, " +
             "listing annotation types, and an explanation\">"
         },
         // Class documentation
         {BUG_ID + FS + "pkg1" + FS + "C1.html",
-            "<table class=\"overviewSummary\" border=\"0\" cellpadding=\"3\" " +
+            "<table class=\"memberSummary\" border=\"0\" cellpadding=\"3\" " +
             "cellspacing=\"0\" summary=\"Field Summary table, listing fields, " +
             "and an explanation\">"
         },
         {BUG_ID + FS + "pkg1" + FS + "C1.html",
-            "<table class=\"overviewSummary\" border=\"0\" cellpadding=\"3\" " +
+            "<table class=\"memberSummary\" border=\"0\" cellpadding=\"3\" " +
             "cellspacing=\"0\" summary=\"Method Summary table, listing methods, " +
             "and an explanation\">"
         },
         {BUG_ID + FS + "pkg2" + FS + "C2.html",
-            "<table class=\"overviewSummary\" border=\"0\" cellpadding=\"3\" " +
+            "<table class=\"memberSummary\" border=\"0\" cellpadding=\"3\" " +
             "cellspacing=\"0\" summary=\"Nested Class Summary table, listing " +
             "nested classes, and an explanation\">"
         },
         {BUG_ID + FS + "pkg2" + FS + "C2.html",
-            "<table class=\"overviewSummary\" border=\"0\" cellpadding=\"3\" " +
+            "<table class=\"memberSummary\" border=\"0\" cellpadding=\"3\" " +
             "cellspacing=\"0\" summary=\"Constructor Summary table, listing " +
             "constructors, and an explanation\">"
         },
         {BUG_ID + FS + "pkg2" + FS + "C2.ModalExclusionType.html",
-            "<table class=\"overviewSummary\" border=\"0\" cellpadding=\"3\" " +
+            "<table class=\"memberSummary\" border=\"0\" cellpadding=\"3\" " +
             "cellspacing=\"0\" summary=\"Enum Constant Summary table, listing " +
             "enum constants, and an explanation\">"
         },
         {BUG_ID + FS + "pkg2" + FS + "C3.html",
-            "<table class=\"overviewSummary\" border=\"0\" cellpadding=\"3\" " +
+            "<table class=\"memberSummary\" border=\"0\" cellpadding=\"3\" " +
             "cellspacing=\"0\" summary=\"Required Element Summary table, " +
             "listing required elements, and an explanation\">"
         },
         {BUG_ID + FS + "pkg2" + FS + "C4.html",
-            "<table class=\"overviewSummary\" border=\"0\" cellpadding=\"3\" " +
+            "<table class=\"memberSummary\" border=\"0\" cellpadding=\"3\" " +
             "cellspacing=\"0\" summary=\"Optional Element Summary table, " +
             "listing optional elements, and an explanation\">"
         },
         // Class use documentation
         {BUG_ID + FS + "pkg1" + FS + "class-use" + FS + "I1.html",
-            "<table border=\"0\" cellpadding=\"3\" cellspacing=\"0\" summary=\"Use " +
+            "<table class=\"useSummary\" border=\"0\" cellpadding=\"3\" cellspacing=\"0\" summary=\"Use " +
             "table, listing packages, and an explanation\">"
         },
         {BUG_ID + FS + "pkg1" + FS + "class-use" + FS + "C1.html",
-            "<table border=\"0\" cellpadding=\"3\" cellspacing=\"0\" summary=\"Use " +
+            "<table class=\"useSummary\" border=\"0\" cellpadding=\"3\" cellspacing=\"0\" summary=\"Use " +
             "table, listing fields, and an explanation\">"
         },
         {BUG_ID + FS + "pkg1" + FS + "class-use" + FS + "C1.html",
-            "<table border=\"0\" cellpadding=\"3\" cellspacing=\"0\" summary=\"Use " +
+            "<table class=\"useSummary\" border=\"0\" cellpadding=\"3\" cellspacing=\"0\" summary=\"Use " +
             "table, listing methods, and an explanation\">"
         },
         {BUG_ID + FS + "pkg2" + FS + "class-use" + FS + "C2.html",
-            "<table border=\"0\" cellpadding=\"3\" cellspacing=\"0\" summary=\"Use " +
+            "<table class=\"useSummary\" border=\"0\" cellpadding=\"3\" cellspacing=\"0\" summary=\"Use " +
             "table, listing fields, and an explanation\">"
         },
         {BUG_ID + FS + "pkg2" + FS + "class-use" + FS + "C2.html",
-            "<table border=\"0\" cellpadding=\"3\" cellspacing=\"0\" summary=\"Use " +
+            "<table class=\"useSummary\" border=\"0\" cellpadding=\"3\" cellspacing=\"0\" summary=\"Use " +
             "table, listing methods, and an explanation\">"
         },
         {BUG_ID + FS + "pkg2" + FS + "class-use" + FS + "C2.ModalExclusionType.html",
-            "<table border=\"0\" cellpadding=\"3\" cellspacing=\"0\" summary=\"Use " +
+            "<table class=\"useSummary\" border=\"0\" cellpadding=\"3\" cellspacing=\"0\" summary=\"Use " +
             "table, listing packages, and an explanation\">"
         },
         {BUG_ID + FS + "pkg2" + FS + "class-use" + FS + "C2.ModalExclusionType.html",
-            "<table border=\"0\" cellpadding=\"3\" cellspacing=\"0\" summary=\"Use " +
+            "<table class=\"useSummary\" border=\"0\" cellpadding=\"3\" cellspacing=\"0\" summary=\"Use " +
             "table, listing methods, and an explanation\">"
         },
         // Package use documentation
         {BUG_ID + FS + "pkg1" + FS + "package-use.html",
-            "<table border=\"0\" cellpadding=\"3\" cellspacing=\"0\" summary=\"Use " +
+            "<table class=\"useSummary\" border=\"0\" cellpadding=\"3\" cellspacing=\"0\" summary=\"Use " +
             "table, listing packages, and an explanation\">"
         },
         {BUG_ID + FS + "pkg1" + FS + "package-use.html",
-            "<table border=\"0\" cellpadding=\"3\" cellspacing=\"0\" summary=\"Use " +
+            "<table class=\"useSummary\" border=\"0\" cellpadding=\"3\" cellspacing=\"0\" summary=\"Use " +
             "table, listing classes, and an explanation\">"
         },
         {BUG_ID + FS + "pkg2" + FS + "package-use.html",
-            "<table border=\"0\" cellpadding=\"3\" cellspacing=\"0\" summary=\"Use " +
+            "<table class=\"useSummary\" border=\"0\" cellpadding=\"3\" cellspacing=\"0\" summary=\"Use " +
             "table, listing packages, and an explanation\">"
         },
         {BUG_ID + FS + "pkg2" + FS + "package-use.html",
-            "<table border=\"0\" cellpadding=\"3\" cellspacing=\"0\" summary=\"Use " +
+            "<table class=\"useSummary\" border=\"0\" cellpadding=\"3\" cellspacing=\"0\" summary=\"Use " +
             "table, listing classes, and an explanation\">"
         },
         // Deprecated
         {BUG_ID + FS + "deprecated-list.html",
-            "<table border=\"0\" cellpadding=\"3\" cellspacing=\"0\" " +
+            "<table class=\"deprecatedSummary\" border=\"0\" cellpadding=\"3\" cellspacing=\"0\" " +
             "summary=\"Deprecated Fields table, listing deprecated fields, " +
             "and an explanation\">"
         },
         {BUG_ID + FS + "deprecated-list.html",
-            "<table border=\"0\" cellpadding=\"3\" cellspacing=\"0\" " +
+            "<table class=\"deprecatedSummary\" border=\"0\" cellpadding=\"3\" cellspacing=\"0\" " +
             "summary=\"Deprecated Methods table, listing deprecated methods, " +
             "and an explanation\">"
         },
         // Constant values
         {BUG_ID + FS + "constant-values.html",
-            "<table border=\"0\" cellpadding=\"3\" cellspacing=\"0\" " +
+            "<table class=\"constantsSummary\" border=\"0\" cellpadding=\"3\" cellspacing=\"0\" " +
             "summary=\"Constant Field Values table, listing " +
             "constant fields, and values\">"
         },
