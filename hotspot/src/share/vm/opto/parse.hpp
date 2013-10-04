@@ -73,6 +73,7 @@ protected:
   bool        try_to_inline(ciMethod* callee_method,
                             ciMethod* caller_method,
                             int caller_bci,
+                            JVMState* jvms,
                             ciCallProfile& profile,
                             WarmCallInfo* wci_result,
                             bool& should_delay);
@@ -83,6 +84,7 @@ protected:
                             WarmCallInfo* wci_result);
   bool        should_not_inline(ciMethod* callee_method,
                                 ciMethod* caller_method,
+                                JVMState* jvms,
                                 WarmCallInfo* wci_result);
   void        print_inlining(ciMethod* callee_method, int caller_bci,
                              bool success) const;
