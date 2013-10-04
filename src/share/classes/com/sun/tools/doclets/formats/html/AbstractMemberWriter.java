@@ -413,7 +413,7 @@ public abstract class AbstractMemberWriter {
     protected void addDeprecatedAPI(List<Doc> deprmembers, String headingKey,
             String tableSummary, String[] tableHeader, Content contentTree) {
         if (deprmembers.size() > 0) {
-            Content table = HtmlTree.TABLE(0, 3, 0, tableSummary,
+            Content table = HtmlTree.TABLE(HtmlStyle.deprecatedSummary, 0, 3, 0, tableSummary,
                 writer.getTableCaption(configuration.getResource(headingKey)));
             table.addContent(writer.getSummaryTableHeader(tableHeader, "col"));
             Content tbody = new HtmlTree(HtmlTag.TBODY);
@@ -453,7 +453,7 @@ public abstract class AbstractMemberWriter {
         List<? extends ProgramElementDoc> members = mems;
         boolean printedUseTableHeader = false;
         if (members.size() > 0) {
-            Content table = HtmlTree.TABLE(0, 3, 0, tableSummary,
+            Content table = HtmlTree.TABLE(HtmlStyle.useSummary, 0, 3, 0, tableSummary,
                     writer.getTableCaption(heading));
             Content tbody = new HtmlTree(HtmlTag.TBODY);
             Iterator<? extends ProgramElementDoc> it = members.iterator();
