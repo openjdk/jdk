@@ -32,13 +32,8 @@
 // enumeration.)
 
 uintx GenRemSet::max_alignment_constraint(Name nm) {
-  switch (nm) {
-  case GenRemSet::CardTable:
-    return CardTableRS::ct_max_alignment_constraint();
-  default:
-    guarantee(false, "Unrecognized GenRemSet type.");
-    return (0); // Make Windows compiler happy
-  }
+  assert(nm == GenRemSet::CardTable, "Unrecognized GenRemSet type.");
+  return CardTableRS::ct_max_alignment_constraint();
 }
 
 class HasAccumulatedModifiedOopsClosure : public KlassClosure {

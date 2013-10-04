@@ -423,60 +423,6 @@ void CardTableModRefBS::write_ref_field_work(void* field, oop newVal) {
   inline_write_ref_field(field, newVal);
 }
 
-/*
-   Claimed and deferred bits are used together in G1 during the evacuation
-   pause. These bits can have the following state transitions:
-   1. The claimed bit can be put over any other card state. Except that
-      the "dirty -> dirty and claimed" transition is checked for in
-      G1 code and is not used.
-   2. Deferred bit can be set only if the previous state of the card
-      was either clean or claimed. mark_card_deferred() is wait-free.
-      We do not care if the operation is be successful because if
-      it does not it will only result in duplicate entry in the update
-      buffer because of the "cache-miss". So it's not worth spinning.
- */
-
-
-bool CardTableModRefBS::claim_card(size_t card_index) {
-  jbyte val = _byte_map[card_index];
-  assert(val != dirty_card_val(), "Shouldn't claim a dirty card");
-  while (val == clean_card_val() ||
-         (val & (clean_card_mask_val() | claimed_card_val())) != claimed_card_val()) {
-    jbyte new_val = val;
-    if (val == clean_card_val()) {
-      new_val = (jbyte)claimed_card_val();
-    } else {
-      new_val = val | (jbyte)claimed_card_val();
-    }
-    jbyte res = Atomic::cmpxchg(new_val, &_byte_map[card_index], val);
-    if (res == val) {
-      return true;
-    }
-    val = res;
-  }
-  return false;
-}
-
-bool CardTableModRefBS::mark_card_deferred(size_t card_index) {
-  jbyte val = _byte_map[card_index];
-  // It's already processed
-  if ((val & (clean_card_mask_val() | deferred_card_val())) == deferred_card_val()) {
-    return false;
-  }
-  // Cached bit can be installed either on a clean card or on a claimed card.
-  jbyte new_val = val;
-  if (val == clean_card_val()) {
-    new_val = (jbyte)deferred_card_val();
-  } else {
-    if (val & claimed_card_val()) {
-      new_val = val | (jbyte)deferred_card_val();
-    }
-  }
-  if (new_val != val) {
-    Atomic::cmpxchg(new_val, &_byte_map[card_index], val);
-  }
-  return true;
-}
 
 void CardTableModRefBS::non_clean_card_iterate_possibly_parallel(Space* sp,
                                                                  MemRegion mr,
