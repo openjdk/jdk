@@ -230,7 +230,7 @@ void GenCollectorPolicy::initialize_flags() {
     vm_exit_during_initialization("Too small new size specified");
   }
   if (SurvivorRatio < 1 || NewRatio < 1) {
-    vm_exit_during_initialization("Invalid heap ratio specified");
+    vm_exit_during_initialization("Invalid young gen ratio specified");
   }
 }
 
