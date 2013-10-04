@@ -408,7 +408,7 @@ public abstract class AbstractDocument implements Document, Serializable {
      * <p>
      * This method is thread safe, although most Swing methods
      * are not. Please see
-     * <A HREF="http://download.oracle.com/javase/tutorial/uiswing/concurrency/index.html">Concurrency
+     * <A HREF="http://docs.oracle.com/javase/tutorial/uiswing/concurrency/index.html">Concurrency
      * in Swing</A> for more information.
      *
      * @param r the renderer to execute
@@ -569,7 +569,7 @@ public abstract class AbstractDocument implements Document, Serializable {
      * <p>
      * This method is thread safe, although most Swing methods
      * are not. Please see
-     * <A HREF="http://download.oracle.com/javase/tutorial/uiswing/concurrency/index.html">Concurrency
+     * <A HREF="http://docs.oracle.com/javase/tutorial/uiswing/concurrency/index.html">Concurrency
      * in Swing</A> for more information.
      *
      * @param offs the starting offset &gt;= 0
@@ -682,7 +682,7 @@ public abstract class AbstractDocument implements Document, Serializable {
      * <p>
      * This method is thread safe, although most Swing methods
      * are not. Please see
-     * <A HREF="http://download.oracle.com/javase/tutorial/uiswing/concurrency/index.html">Concurrency
+     * <A HREF="http://docs.oracle.com/javase/tutorial/uiswing/concurrency/index.html">Concurrency
      * in Swing</A> for more information.
      *
      * @param offs the starting offset &gt;= 0
@@ -837,7 +837,7 @@ public abstract class AbstractDocument implements Document, Serializable {
      * <p>
      * This method is thread safe, although most Swing methods
      * are not. Please see
-     * <A HREF="http://download.oracle.com/javase/tutorial/uiswing/concurrency/index.html">Concurrency
+     * <A HREF="http://docs.oracle.com/javase/tutorial/uiswing/concurrency/index.html">Concurrency
      * in Swing</A> for more information.
      *
      * @param offs the position in the model &gt;= 0

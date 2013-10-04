@@ -80,7 +80,7 @@ import java.util.*;
  * should appear between the text and the image.
  * The default is 4 pixels.
  * <p>
- * See <a href="http://java.sun.com/docs/books/tutorial/uiswing/components/label.html">How to Use Labels</a>
+ * See <a href="http://docs.oracle.com/javase/tutorial/uiswing/components/label.html">How to Use Labels</a>
  * in <em>The Java Tutorial</em>
  * for further documentation.
  * <p>

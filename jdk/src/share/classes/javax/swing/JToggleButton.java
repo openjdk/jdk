@@ -42,7 +42,7 @@ import java.io.IOException;
  * are subclasses of this class.
  * For information on using them see
  * <a
- href="http://java.sun.com/docs/books/tutorial/uiswing/components/button.html">How to Use Buttons, Check Boxes, and Radio Buttons</a>,
+ href="http://docs.oracle.com/javase/tutorial/uiswing/components/button.html">How to Use Buttons, Check Boxes, and Radio Buttons</a>,
  * a section in <em>The Java Tutorial</em>.
  * <p>
  * Buttons can be configured, and to some degree controlled, by
@@ -51,7 +51,7 @@ import java.io.IOException;
  * configuring a button.  Refer to <a href="Action.html#buttonActions">
  * Swing Components Supporting <code>Action</code></a> for more
  * details, and you can find more information in <a
- * href="http://java.sun.com/docs/books/tutorial/uiswing/misc/action.html">How
+ * href="http://docs.oracle.com/javase/tutorial/uiswing/misc/action.html">How
  * to Use Actions</a>, a section in <em>The Java Tutorial</em>.
  * <p>
  * <strong>Warning:</strong> Swing is not thread safe. For more

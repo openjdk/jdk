@@ -66,7 +66,7 @@ import java.beans.ConstructorProperties;
  * <p>
  * For further information and examples of using tree paths,
  * see <a
- href="http://java.sun.com/docs/books/tutorial/uiswing/components/tree.html">How to Use Trees</a>
+ href="http://docs.oracle.com/javase/tutorial/uiswing/components/tree.html">How to Use Trees</a>
  * in <em>The Java Tutorial.</em>
  * <p>
  * <strong>Warning:</strong>

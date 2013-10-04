@@ -40,7 +40,7 @@ import java.util.EventListener;
  *
  * @see java.awt.ItemSelectable
  * @see ItemEvent
- * @see <a href="http://java.sun.com/docs/books/tutorial/post1.0/ui/itemlistener.html">Tutorial: Writing an Item Listener</a>
+ * @see <a href="http://docs.oracle.com/javase/tutorial/uiswing/events/itemlistener.html">Tutorial: Writing an Item Listener</a>
  *
  * @since 1.1
  */

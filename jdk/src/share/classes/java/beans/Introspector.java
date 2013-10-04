@@ -87,7 +87,7 @@ import sun.reflect.misc.ReflectUtil;
  * <p>
  * For more information about introspection and design patterns, please
  * consult the
- *  <a href="http://java.sun.com/products/javabeans/docs/index.html">JavaBeans&trade; specification</a>.
+ *  <a href="http://www.oracle.com/technetwork/java/javase/documentation/spec-136004.html">JavaBeans&trade; specification</a>.
  */
 
 public class Introspector {

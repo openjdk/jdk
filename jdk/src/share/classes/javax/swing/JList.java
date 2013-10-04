@@ -257,11 +257,9 @@ import static sun.swing.SwingUtilities2.Section.*;
  * has been added to the <code>java.beans</code> package.
  * Please see {@link java.beans.XMLEncoder}.
  * <p>
- * See <a href="http://java.sun.com/docs/books/tutorial/uiswing/components/list.html">How to Use Lists</a>
- * in <a href="http://java.sun.com/Series/Tutorial/index.html"><em>The Java Tutorial</em></a>
+ * See <a href="http://docs.oracle.com/javase/tutorial/uiswing/components/list.html">How to Use Lists</a>
+ * in <a href="http://docs.oracle.com/javase/tutorial/"><em>The Java Tutorial</em></a>
  * for further documentation.
- * Also see the article <a href="http://java.sun.com/products/jfc/tsc/tech_topics/jlist_1/jlist.html">Advanced JList Programming</a>
- * in <a href="http://java.sun.com/products/jfc/tsc"><em>The Swing Connection</em></a>.
  * <p>
  * @see ListModel
  * @see AbstractListModel

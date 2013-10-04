@@ -2361,7 +2361,7 @@ public class MetalLookAndFeel extends BasicLookAndFeel
     }
 
     // From the JLF Design Guidelines:
-    // http://java.sun.com/products/jlf/ed2/book/HIG.Visual2.html
+    // http://www.oracle.com/technetwork/java/jlf-135985.html
     private static class MetalLayoutStyle extends DefaultLayoutStyle {
         private static MetalLayoutStyle INSTANCE = new MetalLayoutStyle();
 

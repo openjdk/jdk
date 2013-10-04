@@ -41,7 +41,7 @@ import javax.accessibility.*;
  * container, where higher-numbered components sit &quot;on top&quot; of other
  * components.
  * For task-oriented documentation and examples of using layered panes see
- * <a href="http://java.sun.com/docs/books/tutorial/uiswing/components/layeredpane.html">How to Use a Layered Pane</a>,
+ * <a href="http://docs.oracle.com/javase/tutorial/uiswing/components/layeredpane.html">How to Use a Layered Pane</a>,
  * a section in <em>The Java Tutorial</em>.
  * <P>
  * <TABLE STYLE="FLOAT:RIGHT" BORDER="0" SUMMARY="layout">

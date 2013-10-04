@@ -93,7 +93,7 @@ import sun.util.locale.provider.LocaleServiceProviderPool;
  * </pre>
  * <p>
  * For information and examples of using spinner see
- * <a href="http://java.sun.com/doc/books/tutorial/uiswing/components/spinner.html">How to Use Spinners</a>,
+ * <a href="http://docs.oracle.com/javase/tutorial/uiswing/components/spinner.html">How to Use Spinners</a>,
  * a section in <em>The Java Tutorial.</em>
  * <p>
  * <strong>Warning:</strong> Swing is not thread safe. For more

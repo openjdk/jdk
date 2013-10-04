@@ -55,7 +55,7 @@ import java.beans.*;
  * <p>
  * For further information and examples see
  * <a
- href="http://java.sun.com/docs/books/tutorial/uiswing/components/slider.html">How to Use Sliders</a>,
+ href="http://docs.oracle.com/javase/tutorial/uiswing/components/slider.html">How to Use Sliders</a>,
  * a section in <em>The Java Tutorial.</em>
  * <p>
  * <strong>Warning:</strong> Swing is not thread safe. For more

@@ -43,7 +43,7 @@ import sun.security.action.GetBooleanAction;
  * <code>JFrame</code>, <code>JDialog</code>, <code>JWindow</code>,
  * <code>JApplet</code>, and <code>JInternalFrame</code>.
  * For task-oriented information on functionality provided by root panes
- * see <a href="http://java.sun.com/docs/books/tutorial/uiswing/components/rootpane.html">How to Use Root Panes</a>,
+ * see <a href="http://docs.oracle.com/javase/tutorial/uiswing/components/rootpane.html">How to Use Root Panes</a>,
  * a section in <em>The Java Tutorial</em>.
  *
  * <p>

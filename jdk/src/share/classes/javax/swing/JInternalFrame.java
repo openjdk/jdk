@@ -50,7 +50,7 @@ import sun.swing.SwingUtilities2;
  * resizing, title display, and support for a menu bar.
  * For task-oriented documentation and examples of using internal frames,
  * see <a
- href="http://java.sun.com/docs/books/tutorial/uiswing/components/internalframe.html" target="_top">How to Use Internal Frames</a>,
+ href="http://docs.oracle.com/javase/tutorial/uiswing/components/internalframe.html" target="_top">How to Use Internal Frames</a>,
  * a section in <em>The Java Tutorial</em>.
  *
  * <p>
