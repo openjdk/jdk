@@ -23,7 +23,7 @@
  * questions.
  */
 /*
- * Copyright (C) 2004-2011
+ * Copyright (C) 2004-2012
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -55,9 +55,9 @@ import org.xml.sax.Locator;
  * @author Kohsuke Kawaguchi (kk@kohsuke.org)
  */
 public abstract class DPattern implements ParsedPattern {
+
     Locator location;
     DAnnotation annotation;
-
     /**
      * Used to chain the child patterns in a doubly-linked list.
      */
@@ -74,12 +74,12 @@ public abstract class DPattern implements ParsedPattern {
     /**
      * Returns the annotation associated with it.
      *
-     * @return
-     *      may be empty, but never be null.
+     * @return may be empty, but never be null.
      */
     public DAnnotation getAnnotation() {
-        if(annotation==null)
+        if (annotation == null) {
             return DAnnotation.EMPTY;
+        }
         return annotation;
     }
 
@@ -90,7 +90,7 @@ public abstract class DPattern implements ParsedPattern {
      */
     public abstract boolean isNullable();
 
-    public abstract <V> V accept( DPatternVisitor<V> visitor );
+    public abstract <V> V accept(DPatternVisitor<V> visitor);
 
     /**
      * Creates a {@link Parseable} object that reparses this pattern.

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,9 +27,13 @@ package com.sun.xml.internal.ws.model.wsdl;
 
 import com.sun.xml.internal.ws.api.model.wsdl.WSDLOperation;
 import com.sun.xml.internal.ws.api.model.wsdl.WSDLPortType;
+import com.sun.xml.internal.ws.api.model.wsdl.editable.EditableWSDLModel;
+import com.sun.xml.internal.ws.api.model.wsdl.editable.EditableWSDLOperation;
+import com.sun.xml.internal.ws.api.model.wsdl.editable.EditableWSDLPortType;
 
 import javax.xml.namespace.QName;
 import javax.xml.stream.XMLStreamReader;
+
 import java.util.Hashtable;
 import java.util.Map;
 
@@ -38,27 +42,27 @@ import java.util.Map;
  *
  * @author Vivek Pandey
  */
-public final class WSDLPortTypeImpl  extends AbstractExtensibleImpl implements WSDLPortType {
+public final class WSDLPortTypeImpl  extends AbstractExtensibleImpl implements EditableWSDLPortType {
     private QName name;
-    private final Map<String, WSDLOperationImpl> portTypeOperations;
-    private WSDLModelImpl owner;
+    private final Map<String, EditableWSDLOperation> portTypeOperations;
+    private EditableWSDLModel owner;
 
-    public WSDLPortTypeImpl(XMLStreamReader xsr,WSDLModelImpl owner, QName name) {
+    public WSDLPortTypeImpl(XMLStreamReader xsr, EditableWSDLModel owner, QName name) {
         super(xsr);
         this.name = name;
         this.owner = owner;
-        portTypeOperations = new Hashtable<String, WSDLOperationImpl>();
+        portTypeOperations = new Hashtable<String, EditableWSDLOperation>();
     }
 
     public QName getName() {
         return name;
     }
 
-    public WSDLOperationImpl get(String operationName) {
+    public EditableWSDLOperation get(String operationName) {
         return portTypeOperations.get(operationName);
     }
 
-    public Iterable<WSDLOperationImpl> getOperations() {
+    public Iterable<EditableWSDLOperation> getOperations() {
         return portTypeOperations.values();
     }
 
@@ -68,17 +72,17 @@ public final class WSDLPortTypeImpl  extends AbstractExtensibleImpl implements W
      * @param ptOp  Must be non-null
      * @throws NullPointerException if either opName or ptOp is null
      */
-    public void put(String opName, WSDLOperationImpl ptOp){
+    public void put(String opName, EditableWSDLOperation ptOp){
         portTypeOperations.put(opName, ptOp);
     }
 
-    WSDLModelImpl getOwner(){
+    EditableWSDLModel getOwner(){
         return owner;
     }
 
-    void freeze() {
-        for(WSDLOperationImpl op : portTypeOperations.values()){
-            op.freez(owner);
+    public void freeze() {
+        for(EditableWSDLOperation op : portTypeOperations.values()){
+            op.freeze(owner);
         }
     }
 }

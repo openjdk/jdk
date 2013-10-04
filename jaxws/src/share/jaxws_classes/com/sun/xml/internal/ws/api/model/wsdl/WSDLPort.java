@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,9 @@
 package com.sun.xml.internal.ws.api.model.wsdl;
 
 import com.sun.istack.internal.NotNull;
+import com.sun.istack.internal.Nullable;
 import com.sun.xml.internal.ws.api.EndpointAddress;
+import com.sun.xml.internal.ws.api.addressing.WSEndpointReference;
 
 import javax.xml.namespace.QName;
 
@@ -64,4 +66,10 @@ public interface WSDLPort extends WSDLFeaturedObject, WSDLExtensible {
      */
     @NotNull
     WSDLService getOwner();
+
+    /**
+     * Returns endpoint reference
+     * @return Endpoint reference
+     */
+    public @Nullable WSEndpointReference getEPR();
 }

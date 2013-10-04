@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,8 +36,6 @@ import com.sun.xml.internal.ws.api.client.WSPortInfo;
 import com.sun.xml.internal.ws.api.model.wsdl.WSDLPort;
 import com.sun.xml.internal.ws.binding.BindingImpl;
 import com.sun.xml.internal.ws.binding.WebServiceFeatureList;
-import com.sun.xml.internal.ws.model.wsdl.WSDLPortImpl;
-import com.sun.xml.internal.ws.model.wsdl.WSDLModelImpl;
 import com.sun.xml.internal.ws.policy.PolicyMap;
 import com.sun.xml.internal.ws.policy.jaxws.PolicyUtil;
 
@@ -96,7 +94,7 @@ public class PortInfo implements WSPortInfo {
     public PolicyMap createPolicyMap() {
        PolicyMap map;
        if(portModel != null) {
-            map = ((WSDLModelImpl) portModel.getOwner().getParent()).getPolicyMap();
+            map = portModel.getOwner().getParent().getPolicyMap();
        } else {
            map = PolicyResolverFactory.create().resolve(new PolicyResolver.ClientContext(null,owner.getContainer()));
        }
@@ -154,8 +152,8 @@ public class PortInfo implements WSPortInfo {
     private WSDLPort getPortModel(WSServiceDelegate owner, QName portName) {
 
         if (owner.getWsdlService() != null){
-            Iterable<WSDLPortImpl> ports = owner.getWsdlService().getPorts();
-            for (WSDLPortImpl port : ports){
+            Iterable<? extends WSDLPort> ports = owner.getWsdlService().getPorts();
+            for (WSDLPort port : ports){
                 if (port.getName().equals(portName))
                     return port;
             }
