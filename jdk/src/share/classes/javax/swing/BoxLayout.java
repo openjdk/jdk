@@ -116,7 +116,7 @@ import java.io.PrintStream;
  * <p>
  * For further information and examples see
  * <a
- href="http://java.sun.com/docs/books/tutorial/uiswing/layout/box.html">How to Use BoxLayout</a>,
+ href="http://docs.oracle.com/javase/tutorial/uiswing/layout/box.html">How to Use BoxLayout</a>,
  * a section in <em>The Java Tutorial.</em>
  * <p>
  * <strong>Warning:</strong>

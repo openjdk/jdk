@@ -39,7 +39,7 @@ import javax.swing.plaf.*;
  * A text component that can be marked up with attributes that are
  * represented graphically.
  * You can find how-to information and examples of using text panes in
- * <a href="http://java.sun.com/docs/books/tutorial/uiswing/components/text.html">Using Text Components</a>,
+ * <a href="http://docs.oracle.com/javase/tutorial/uiswing/components/text.html">Using Text Components</a>,
  * a section in <em>The Java Tutorial.</em>
  *
  * <p>

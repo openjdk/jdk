@@ -43,7 +43,7 @@ import java.io.IOException;
  * A component that lets the user switch between a group of components by
  * clicking on a tab with a given title and/or icon.
  * For examples and information on using tabbed panes see
- * <a href="http://java.sun.com/docs/books/tutorial/uiswing/components/tabbedpane.html">How to Use Tabbed Panes</a>,
+ * <a href="http://docs.oracle.com/javase/tutorial/uiswing/components/tabbedpane.html">How to Use Tabbed Panes</a>,
  * a section in <em>The Java Tutorial</em>.
  * <p>
  * Tabs/components are added to a <code>TabbedPane</code> object by using the

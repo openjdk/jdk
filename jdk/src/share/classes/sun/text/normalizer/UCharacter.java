@@ -42,7 +42,7 @@ import java.util.MissingResourceException;
 /**
  * <p>
  * The UCharacter class provides extensions to the
- * <a href="http://java.sun.com/j2se/1.5/docs/api/java/lang/Character.html">
+ * <a href="http://docs.oracle.com/javase/1.5.0/docs/api/java/lang/Character.html">
  * java.lang.Character</a> class. These extensions provide support for
  * more Unicode properties and together with the <a href=../text/UTF16.html>UTF16</a>
  * class, provide support for supplementary characters (those with code

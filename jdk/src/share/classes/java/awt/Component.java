@@ -173,10 +173,10 @@ import sun.util.logging.PlatformLogger;
  * <b>Note</b>: For more information on the paint mechanisms utilitized
  * by AWT and Swing, including information on how to write the most
  * efficient painting code, see
- * <a href="http://java.sun.com/products/jfc/tsc/articles/painting/index.html">Painting in AWT and Swing</a>.
+ * <a href="http://www.oracle.com/technetwork/java/painting-140037.html">Painting in AWT and Swing</a>.
  * <p>
  * For details on the focus subsystem, see
- * <a href="http://java.sun.com/docs/books/tutorial/uiswing/misc/focus.html">
+ * <a href="http://docs.oracle.com/javase/tutorial/uiswing/misc/focus.html">
  * How to Use the Focus Subsystem</a>,
  * a section in <em>The Java Tutorial</em>, and the
  * <a href="../../java/awt/doc-files/FocusSpec.html">Focus Specification</a>
@@ -3205,7 +3205,7 @@ public abstract class Component implements ImageObserver, MenuContainer,
      * <b>Note</b>: For more information on the paint mechanisms utilitized
      * by AWT and Swing, including information on how to write the most
      * efficient painting code, see
-     * <a href="http://java.sun.com/products/jfc/tsc/articles/painting/index.html">Painting in AWT and Swing</a>.
+     * <a href="http://www.oracle.com/technetwork/java/painting-140037.html">Painting in AWT and Swing</a>.
      *
      * @param g the graphics context to use for painting
      * @see       #update
@@ -3240,7 +3240,7 @@ public abstract class Component implements ImageObserver, MenuContainer,
      * <b>Note</b>: For more information on the paint mechanisms utilitized
      * by AWT and Swing, including information on how to write the most
      * efficient painting code, see
-     * <a href="http://java.sun.com/products/jfc/tsc/articles/painting/index.html">Painting in AWT and Swing</a>.
+     * <a href="http://www.oracle.com/technetwork/java/painting-140037.html">Painting in AWT and Swing</a>.
      *
      * @param g the specified context to use for updating
      * @see       #paint
@@ -3301,7 +3301,7 @@ public abstract class Component implements ImageObserver, MenuContainer,
      * <b>Note</b>: For more information on the paint mechanisms utilitized
      * by AWT and Swing, including information on how to write the most
      * efficient painting code, see
-     * <a href="http://java.sun.com/products/jfc/tsc/articles/painting/index.html">Painting in AWT and Swing</a>.
+     * <a href="http://www.oracle.com/technetwork/java/painting-140037.html">Painting in AWT and Swing</a>.
 
      *
      * @see       #update(Graphics)
@@ -3319,7 +3319,7 @@ public abstract class Component implements ImageObserver, MenuContainer,
      * <b>Note</b>: For more information on the paint mechanisms utilitized
      * by AWT and Swing, including information on how to write the most
      * efficient painting code, see
-     * <a href="http://java.sun.com/products/jfc/tsc/articles/painting/index.html">Painting in AWT and Swing</a>.
+     * <a href="http://www.oracle.com/technetwork/java/painting-140037.html">Painting in AWT and Swing</a>.
      *
      * @param tm maximum time in milliseconds before update
      * @see #paint
@@ -3341,7 +3341,7 @@ public abstract class Component implements ImageObserver, MenuContainer,
      * <b>Note</b>: For more information on the paint mechanisms utilitized
      * by AWT and Swing, including information on how to write the most
      * efficient painting code, see
-     * <a href="http://java.sun.com/products/jfc/tsc/articles/painting/index.html">Painting in AWT and Swing</a>.
+     * <a href="http://www.oracle.com/technetwork/java/painting-140037.html">Painting in AWT and Swing</a>.
      *
      * @param     x   the <i>x</i> coordinate
      * @param     y   the <i>y</i> coordinate
@@ -3366,7 +3366,7 @@ public abstract class Component implements ImageObserver, MenuContainer,
      * <b>Note</b>: For more information on the paint mechanisms utilitized
      * by AWT and Swing, including information on how to write the most
      * efficient painting code, see
-     * <a href="http://java.sun.com/products/jfc/tsc/articles/painting/index.html">Painting in AWT and Swing</a>.
+     * <a href="http://www.oracle.com/technetwork/java/painting-140037.html">Painting in AWT and Swing</a>.
      *
      * @param     tm   maximum time in milliseconds before update
      * @param     x    the <i>x</i> coordinate

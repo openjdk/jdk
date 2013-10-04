@@ -173,7 +173,7 @@ public class DefaultStyledDocument extends AbstractDocument implements StyledDoc
      * <p>
      * This method is thread safe, although most Swing methods
      * are not. Please see
-     * <A HREF="http://download.oracle.com/javase/tutorial/uiswing/concurrency/index.html">Concurrency
+     * <A HREF="http://docs.oracle.com/javase/tutorial/uiswing/concurrency/index.html">Concurrency
      * in Swing</A> for more information.
      *
      * @param offset the starting offset &gt;= 0
@@ -426,7 +426,7 @@ public class DefaultStyledDocument extends AbstractDocument implements StyledDoc
      * <p>
      * This method is thread safe, although most Swing methods
      * are not. Please see
-     * <A HREF="http://download.oracle.com/javase/tutorial/uiswing/concurrency/index.html">Concurrency
+     * <A HREF="http://docs.oracle.com/javase/tutorial/uiswing/concurrency/index.html">Concurrency
      * in Swing</A> for more information.
      *
      * @param pos the offset from the start of the document &gt;= 0
@@ -483,7 +483,7 @@ public class DefaultStyledDocument extends AbstractDocument implements StyledDoc
      * <p>
      * This method is thread safe, although most Swing methods
      * are not. Please see
-     * <A HREF="http://download.oracle.com/javase/tutorial/uiswing/concurrency/index.html">Concurrency
+     * <A HREF="http://docs.oracle.com/javase/tutorial/uiswing/concurrency/index.html">Concurrency
      * in Swing</A> for more information.
      *
      * @param offset the offset in the document &gt;= 0
@@ -536,7 +536,7 @@ public class DefaultStyledDocument extends AbstractDocument implements StyledDoc
      * <p>
      * This method is thread safe, although most Swing methods
      * are not. Please see
-     * <A HREF="http://download.oracle.com/javase/tutorial/uiswing/concurrency/index.html">Concurrency
+     * <A HREF="http://docs.oracle.com/javase/tutorial/uiswing/concurrency/index.html">Concurrency
      * in Swing</A> for more information.
      *
      * @param offset the offset into the paragraph &gt;= 0

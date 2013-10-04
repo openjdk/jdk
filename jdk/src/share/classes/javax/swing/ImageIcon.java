@@ -50,7 +50,7 @@ import java.security.*;
  *
  * <p>
  * For further information and examples of using image icons, see
- * <a href="http://java.sun.com/docs/books/tutorial/uiswing/misc/icon.html">How to Use Icons</a>
+ * <a href="http://docs.oracle.com/javase/tutorial/uiswing/components/icon.html">How to Use Icons</a>
  * in <em>The Java Tutorial.</em>
  *
  * <p>

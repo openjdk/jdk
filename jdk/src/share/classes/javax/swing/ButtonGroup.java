@@ -51,7 +51,7 @@ import java.io.Serializable;
  * Initially, all buttons in the group are unselected.
  * <p>
  * For examples and further information on using button groups see
- * <a href="http://java.sun.com/docs/books/tutorial/uiswing/components/button.html#radiobutton">How to Use Radio Buttons</a>,
+ * <a href="http://docs.oracle.com/javase/tutorial/uiswing/components/button.html#radiobutton">How to Use Radio Buttons</a>,
  * a section in <em>The Java Tutorial</em>.
  * <p>
  * <strong>Warning:</strong>

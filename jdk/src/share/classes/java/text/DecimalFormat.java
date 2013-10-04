@@ -371,7 +371,7 @@ import sun.util.locale.provider.ResourceBundleBasedAdapter;
  * }
  * }</pre></blockquote>
  *
- * @see          <a href="http://java.sun.com/docs/books/tutorial/i18n/format/decimalFormat.html">Java Tutorial</a>
+ * @see          <a href="http://docs.oracle.com/javase/tutorial/i18n/format/decimalFormat.html">Java Tutorial</a>
  * @see          NumberFormat
  * @see          DecimalFormatSymbols
  * @see          ParsePosition

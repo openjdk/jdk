@@ -292,7 +292,7 @@ public class StyleContext implements Serializable, AbstractDocument.AttributeCon
      * <p>
      * This method is thread safe, although most Swing methods
      * are not. Please see
-     * <A HREF="http://download.oracle.com/javase/tutorial/uiswing/concurrency/index.html">Concurrency
+     * <A HREF="http://docs.oracle.com/javase/tutorial/uiswing/concurrency/index.html">Concurrency
      * in Swing</A> for more information.
      *
      * @param old the old attribute set
@@ -321,7 +321,7 @@ public class StyleContext implements Serializable, AbstractDocument.AttributeCon
      * <p>
      * This method is thread safe, although most Swing methods
      * are not. Please see
-     * <A HREF="http://download.oracle.com/javase/tutorial/uiswing/concurrency/index.html">Concurrency
+     * <A HREF="http://docs.oracle.com/javase/tutorial/uiswing/concurrency/index.html">Concurrency
      * in Swing</A> for more information.
      *
      * @param old the old attribute set
@@ -349,7 +349,7 @@ public class StyleContext implements Serializable, AbstractDocument.AttributeCon
      * <p>
      * This method is thread safe, although most Swing methods
      * are not. Please see
-     * <A HREF="http://download.oracle.com/javase/tutorial/uiswing/concurrency/index.html">Concurrency
+     * <A HREF="http://docs.oracle.com/javase/tutorial/uiswing/concurrency/index.html">Concurrency
      * in Swing</A> for more information.
      *
      * @param old the old set of attributes
@@ -377,7 +377,7 @@ public class StyleContext implements Serializable, AbstractDocument.AttributeCon
      * <p>
      * This method is thread safe, although most Swing methods
      * are not. Please see
-     * <A HREF="http://download.oracle.com/javase/tutorial/uiswing/concurrency/index.html">Concurrency
+     * <A HREF="http://docs.oracle.com/javase/tutorial/uiswing/concurrency/index.html">Concurrency
      * in Swing</A> for more information.
      *
      * @param old the old attribute set
@@ -405,7 +405,7 @@ public class StyleContext implements Serializable, AbstractDocument.AttributeCon
      * <p>
      * This method is thread safe, although most Swing methods
      * are not. Please see
-     * <A HREF="http://download.oracle.com/javase/tutorial/uiswing/concurrency/index.html">Concurrency
+     * <A HREF="http://docs.oracle.com/javase/tutorial/uiswing/concurrency/index.html">Concurrency
      * in Swing</A> for more information.
      *
      * @param old the old attribute set
@@ -445,7 +445,7 @@ public class StyleContext implements Serializable, AbstractDocument.AttributeCon
      * <p>
      * This method is thread safe, although most Swing methods
      * are not. Please see
-     * <A HREF="http://download.oracle.com/javase/tutorial/uiswing/concurrency/index.html">Concurrency
+     * <A HREF="http://docs.oracle.com/javase/tutorial/uiswing/concurrency/index.html">Concurrency
      * in Swing</A> for more information.
      *
      * @param a the set to reclaim

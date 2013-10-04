@@ -62,7 +62,7 @@ import static javax.swing.ClientPropertyKey.PopupFactory_FORCE_HEAVYWEIGHT_POPUP
  * prompts users for a value or informs them of something.
  * For information about using <code>JOptionPane</code>, see
  * <a
- href="http://java.sun.com/docs/books/tutorial/uiswing/components/dialog.html">How to Make Dialogs</a>,
+ href="http://docs.oracle.com/javase/tutorial/uiswing/components/dialog.html">How to Make Dialogs</a>,
  * a section in <em>The Java Tutorial</em>.
  *
  * <p>

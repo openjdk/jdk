@@ -63,7 +63,7 @@ import java.util.TreeSet;
  * (closing, resizing, etc).
  * <p>
  * For further documentation and examples see
- * <a href="http://java.sun.com/docs/books/tutorial/uiswing/components/internalframe.html">How to Use Internal Frames</a>,
+ * <a href="http://docs.oracle.com/javase/tutorial/uiswing/components/internalframe.html">How to Use Internal Frames</a>,
  * a section in <em>The Java Tutorial</em>.
  * <p>
  * <strong>Warning:</strong> Swing is not thread safe. For more

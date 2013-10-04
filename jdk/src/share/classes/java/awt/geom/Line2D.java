@@ -35,7 +35,7 @@ import java.io.Serializable;
  * default coordinate system called <i>user space</i> in which the y-axis
  * values increase downward and x-axis values increase to the right.  For
  * more information on the user space coordinate system, see the
- * <a href="http://java.sun.com/j2se/1.3/docs/guide/2d/spec/j2d-intro.fm2.html#61857">
+ * <a href="http://docs.oracle.com/javase/1.3/docs/guide/2d/spec/j2d-intro.fm2.html#61857">
  * Coordinate Systems</a> section of the Java 2D Programmer's Guide.
  * <p>
  * This class is only the abstract superclass for all objects that

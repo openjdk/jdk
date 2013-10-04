@@ -42,7 +42,7 @@ import sun.swing.SwingUtilities2;
  * a user to manipulate and select a color.
  * For information about using color choosers, see
  * <a
- href="http://java.sun.com/docs/books/tutorial/uiswing/components/colorchooser.html">How to Use Color Choosers</a>,
+ href="http://docs.oracle.com/javase/tutorial/uiswing/components/colorchooser.html">How to Use Color Choosers</a>,
  * a section in <em>The Java Tutorial</em>.
  *
  * <p>
