@@ -48,7 +48,7 @@ import javax.lang.model.element.TypeElement;
  *
  * @since 1.6
  */
-@jdk.Supported
+@jdk.Exported
 public interface Scope {
     /**
      * Returns the enclosing scope.
