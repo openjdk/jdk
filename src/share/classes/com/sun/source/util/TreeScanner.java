@@ -68,7 +68,7 @@ import com.sun.source.tree.*;
  * @author Jonathan Gibbons
  * @since 1.6
  */
-@jdk.Supported
+@jdk.Exported
 public class TreeScanner<R,P> implements TreeVisitor<R,P> {
 
     /** Scan a single node.

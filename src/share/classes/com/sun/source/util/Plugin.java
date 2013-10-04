@@ -48,7 +48,7 @@ import javax.tools.StandardLocation;
  *
  * @since 1.8
  */
-@jdk.Supported
+@jdk.Exported
 public interface Plugin {
     /**
      * Get the user-friendly name of this plug-in.

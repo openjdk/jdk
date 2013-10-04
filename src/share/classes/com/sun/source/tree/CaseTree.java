@@ -45,7 +45,7 @@ import java.util.List;
  * @author Jonathan Gibbons
  * @since 1.6
  */
-@jdk.Supported
+@jdk.Exported
 public interface CaseTree extends Tree {
     /**
      * @return null if and only if this Case is {@code default:}
