@@ -110,6 +110,7 @@ CallGenerator* Compile::call_generator(ciMethod* callee, int vtable_index, bool 
   // then we return it as the inlined version of the call.
   // We do this before the strict f.p. check below because the
   // intrinsics handle strict f.p. correctly.
+  CallGenerator* cg_intrinsic = NULL;
   if (allow_inline && allow_intrinsics) {
     CallGenerator* cg = find_intrinsic(callee, call_does_dispatch);
     if (cg != NULL) {
@@ -121,7 +122,16 @@ CallGenerator* Compile::call_generator(ciMethod* callee, int vtable_index, bool 
           cg = CallGenerator::for_predicted_intrinsic(cg, inline_cg);
         }
       }
-      return cg;
+
+      // If intrinsic does the virtual dispatch, we try to use the type profile
+      // first, and hopefully inline it as the regular virtual call below.
+      // We will retry the intrinsic if nothing had claimed it afterwards.
+      if (cg->does_virtual_dispatch()) {
+        cg_intrinsic = cg;
+        cg = NULL;
+      } else {
+        return cg;
+      }
     }
   }
 
@@ -264,6 +274,13 @@ CallGenerator* Compile::call_generator(ciMethod* callee, int vtable_index, bool 
         }
       }
     }
+  }
+
+  // Nothing claimed the intrinsic, we go with straight-forward inlining
+  // for already discovered intrinsic.
+  if (allow_inline && allow_intrinsics && cg_intrinsic != NULL) {
+    assert(cg_intrinsic->does_virtual_dispatch(), "sanity");
+    return cg_intrinsic;
   }
 
   // There was no special inlining tactic, or it bailed out.
