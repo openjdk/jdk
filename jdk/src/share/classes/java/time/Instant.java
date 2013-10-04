@@ -374,7 +374,7 @@ public final class Instant
     //-----------------------------------------------------------------------
     /**
      * Obtains an instance of {@code Instant} from a text string such as
-     * {@code 2007-12-03T10:15:30:00}.
+     * {@code 2007-12-03T10:15:30.00Z}.
      * <p>
      * The string must represent a valid instant in UTC and is parsed using
      * {@link DateTimeFormatter#ISO_INSTANT}.
