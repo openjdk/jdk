@@ -420,6 +420,8 @@ public abstract class MethodHandle {
     private final MethodType type;
     /*private*/ final LambdaForm form;
     // form is not private so that invokers can easily fetch it
+    /*private*/ MethodHandle asTypeCache;
+    // asTypeCache is not private so that invokers can easily fetch it
 
     /**
      * Reports the type of this method handle.
@@ -739,10 +741,24 @@ public abstract class MethodHandle {
      * @see MethodHandles#explicitCastArguments
      */
     public MethodHandle asType(MethodType newType) {
-        if (!type.isConvertibleTo(newType)) {
-            throw new WrongMethodTypeException("cannot convert "+this+" to "+newType);
+        // Fast path alternative to a heavyweight {@code asType} call.
+        // Return 'this' if the conversion will be a no-op.
+        if (newType == type) {
+            return this;
         }
-        return convertArguments(newType);
+        // Return 'this.asTypeCache' if the conversion is already memoized.
+        MethodHandle atc = asTypeCache;
+        if (atc != null && newType == atc.type) {
+            return atc;
+        }
+        return asTypeUncached(newType);
+    }
+
+    /** Override this to change asType behavior. */
+    /*non-public*/ MethodHandle asTypeUncached(MethodType newType) {
+        if (!type.isConvertibleTo(newType))
+            throw new WrongMethodTypeException("cannot convert "+this+" to "+newType);
+        return asTypeCache = convertArguments(newType);
     }
 
     /**

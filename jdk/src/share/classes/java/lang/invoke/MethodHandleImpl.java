@@ -314,13 +314,13 @@ import static java.lang.invoke.MethodHandles.Lookup.IMPL_LOOKUP;
     static class AsVarargsCollector extends MethodHandle {
         private final MethodHandle target;
         private final Class<?> arrayType;
-        private MethodHandle cache;
+        private /*@Stable*/ MethodHandle asCollectorCache;
 
         AsVarargsCollector(MethodHandle target, MethodType type, Class<?> arrayType) {
             super(type, reinvokerForm(target));
             this.target = target;
             this.arrayType = arrayType;
-            this.cache = target.asCollector(arrayType, 0);
+            this.asCollectorCache = target.asCollector(arrayType, 0);
         }
 
         @Override MethodHandle reinvokerTarget() { return target; }
@@ -336,18 +336,19 @@ import static java.lang.invoke.MethodHandles.Lookup.IMPL_LOOKUP;
         }
 
         @Override
-        public MethodHandle asType(MethodType newType) {
+        public MethodHandle asTypeUncached(MethodType newType) {
             MethodType type = this.type();
             int collectArg = type.parameterCount() - 1;
             int newArity = newType.parameterCount();
             if (newArity == collectArg+1 &&
                 type.parameterType(collectArg).isAssignableFrom(newType.parameterType(collectArg))) {
                 // if arity and trailing parameter are compatible, do normal thing
-                return asFixedArity().asType(newType);
+                return asTypeCache = asFixedArity().asType(newType);
             }
             // check cache
-            if (cache.type().parameterCount() == newArity)
-                return cache.asType(newType);
+            MethodHandle acc = asCollectorCache;
+            if (acc != null && acc.type().parameterCount() == newArity)
+                return asTypeCache = acc.asType(newType);
             // build and cache a collector
             int arrayLength = newArity - collectArg;
             MethodHandle collector;
@@ -357,8 +358,8 @@ import static java.lang.invoke.MethodHandles.Lookup.IMPL_LOOKUP;
             } catch (IllegalArgumentException ex) {
                 throw new WrongMethodTypeException("cannot build collector", ex);
             }
-            cache = collector;
-            return collector.asType(newType);
+            asCollectorCache = collector;
+            return asTypeCache = collector.asType(newType);
         }
 
         @Override
@@ -975,6 +976,12 @@ import static java.lang.invoke.MethodHandles.Lookup.IMPL_LOOKUP;
         @Override
         MethodHandle reinvokerTarget() {
             return target;
+        }
+        @Override
+        public MethodHandle asTypeUncached(MethodType newType) {
+            // This MH is an alias for target, except for the MemberName
+            // Drop the MemberName if there is any conversion.
+            return asTypeCache = target.asType(newType);
         }
         @Override
         MemberName internalMemberName() {

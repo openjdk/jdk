@@ -39,6 +39,7 @@ import sun.reflect.misc.ReflectUtil;
 import sun.security.util.SecurityConstants;
 import static java.lang.invoke.MethodHandleStatics.*;
 import static java.lang.invoke.MethodHandleNatives.Constants.*;
+import java.util.concurrent.ConcurrentHashMap;
 import sun.security.util.SecurityConstants;
 
 /**
@@ -1090,19 +1091,30 @@ return mh1;
 
         MemberName resolveOrFail(byte refKind, Class<?> refc, String name, Class<?> type) throws NoSuchFieldException, IllegalAccessException {
             checkSymbolicClass(refc);  // do this before attempting to resolve
-            name.getClass(); type.getClass();  // NPE
+            name.getClass();  // NPE
+            type.getClass();  // NPE
             return IMPL_NAMES.resolveOrFail(refKind, new MemberName(refc, name, type, refKind), lookupClassOrNull(),
                                             NoSuchFieldException.class);
         }
 
         MemberName resolveOrFail(byte refKind, Class<?> refc, String name, MethodType type) throws NoSuchMethodException, IllegalAccessException {
             checkSymbolicClass(refc);  // do this before attempting to resolve
-            name.getClass(); type.getClass();  // NPE
+            name.getClass();  // NPE
+            type.getClass();  // NPE
             return IMPL_NAMES.resolveOrFail(refKind, new MemberName(refc, name, type, refKind), lookupClassOrNull(),
                                             NoSuchMethodException.class);
         }
 
+        MemberName resolveOrFail(byte refKind, MemberName member) throws ReflectiveOperationException {
+            checkSymbolicClass(member.getDeclaringClass());  // do this before attempting to resolve
+            member.getName().getClass();  // NPE
+            member.getType().getClass();  // NPE
+            return IMPL_NAMES.resolveOrFail(refKind, member, lookupClassOrNull(),
+                                            ReflectiveOperationException.class);
+        }
+
         void checkSymbolicClass(Class<?> refc) throws IllegalAccessException {
+            refc.getClass();  // NPE
             Class<?> caller = lookupClassOrNull();
             if (caller != null && !VerifyAccess.isClassAccessible(refc, caller, allowedModes))
                 throw new MemberName(refc).makeAccessException("symbolic reference class is not public", this);
@@ -1348,29 +1360,74 @@ return mh1;
          */
         /*non-public*/
         MethodHandle linkMethodHandleConstant(byte refKind, Class<?> defc, String name, Object type) throws ReflectiveOperationException {
-            MemberName resolved = null;
-            if (type instanceof MemberName) {
-                resolved = (MemberName) type;
-                if (!resolved.isResolved())  throw new InternalError("unresolved MemberName");
-                assert(name == null || name.equals(resolved.getName()));
+            if (!(type instanceof Class || type instanceof MethodType))
+                throw new InternalError("unresolved MemberName");
+            MemberName member = new MemberName(refKind, defc, name, type);
+            MethodHandle mh = LOOKASIDE_TABLE.get(member);
+            if (mh != null) {
+                checkSymbolicClass(defc);
+                return mh;
             }
+            MemberName resolved = resolveOrFail(refKind, member);
+            mh = getDirectMethodHandle(refKind, defc, resolved);
+            if (mh instanceof DirectMethodHandle
+                    && canBeCached(refKind, defc, resolved)) {
+                MemberName key = mh.internalMemberName();
+                if (key != null) {
+                    key = key.asNormalOriginal();
+                }
+                if (member.equals(key)) {  // better safe than sorry
+                    LOOKASIDE_TABLE.put(key, (DirectMethodHandle) mh);
+                }
+            }
+            return mh;
+        }
+        private
+        boolean canBeCached(byte refKind, Class<?> defc, MemberName member) {
+            if (refKind == REF_invokeSpecial) {
+                return false;
+            }
+            if (!Modifier.isPublic(defc.getModifiers()) ||
+                    !Modifier.isPublic(member.getDeclaringClass().getModifiers()) ||
+                    !member.isPublic() ||
+                    member.isCallerSensitive()) {
+                return false;
+            }
+            ClassLoader loader = defc.getClassLoader();
+            if (!sun.misc.VM.isSystemDomainLoader(loader)) {
+                ClassLoader sysl = ClassLoader.getSystemClassLoader();
+                boolean found = false;
+                while (sysl != null) {
+                    if (loader == sysl) { found = true; break; }
+                    sysl = sysl.getParent();
+                }
+                if (!found) {
+                    return false;
+                }
+            }
+            try {
+                MemberName resolved2 = publicLookup().resolveOrFail(refKind,
+                    new MemberName(refKind, defc, member.getName(), member.getType()));
+                checkSecurityManager(defc, resolved2);
+            } catch (ReflectiveOperationException | SecurityException ex) {
+                return false;
+            }
+            return true;
+        }
+        private
+        MethodHandle getDirectMethodHandle(byte refKind, Class<?> defc, MemberName member) throws ReflectiveOperationException {
             if (MethodHandleNatives.refKindIsField(refKind)) {
-                MemberName field = (resolved != null) ? resolved
-                        : resolveOrFail(refKind, defc, name, (Class<?>) type);
-                return getDirectField(refKind, defc, field);
+                return getDirectField(refKind, defc, member);
             } else if (MethodHandleNatives.refKindIsMethod(refKind)) {
-                MemberName method = (resolved != null) ? resolved
-                        : resolveOrFail(refKind, defc, name, (MethodType) type);
-                return getDirectMethod(refKind, defc, method, lookupClass);
+                return getDirectMethod(refKind, defc, member, lookupClass);
             } else if (refKind == REF_newInvokeSpecial) {
-                assert(name == null || name.equals("<init>"));
-                MemberName ctor = (resolved != null) ? resolved
-                        : resolveOrFail(REF_newInvokeSpecial, defc, name, (MethodType) type);
-                return getDirectConstructor(defc, ctor);
+                return getDirectConstructor(defc, member);
             }
             // oops
-            throw new ReflectiveOperationException("bad MethodHandle constant #"+refKind+" "+name+" : "+type);
+            throw newIllegalArgumentException("bad MethodHandle constant #"+member);
         }
+
+        static ConcurrentHashMap<MemberName, DirectMethodHandle> LOOKASIDE_TABLE = new ConcurrentHashMap<>();
     }
 
     /**
