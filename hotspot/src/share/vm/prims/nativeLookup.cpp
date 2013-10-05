@@ -129,10 +129,6 @@ extern "C" {
 #define FN_PTR(f) CAST_FROM_FN_PTR(void*, &f)
 
 static JNINativeMethod lookup_special_native_methods[] = {
-  // Next two functions only exist for compatibility with 1.3.1 and earlier.
-  { CC"Java_java_io_ObjectOutputStream_getPrimitiveFieldValues",   NULL, FN_PTR(JVM_GetPrimitiveFieldValues)     },  // intercept ObjectOutputStream getPrimitiveFieldValues for faster serialization
-  { CC"Java_java_io_ObjectInputStream_setPrimitiveFieldValues",    NULL, FN_PTR(JVM_SetPrimitiveFieldValues)     },  // intercept ObjectInputStream setPrimitiveFieldValues for faster serialization
-
   { CC"Java_sun_misc_Unsafe_registerNatives",                      NULL, FN_PTR(JVM_RegisterUnsafeMethods)       },
   { CC"Java_java_lang_invoke_MethodHandleNatives_registerNatives", NULL, FN_PTR(JVM_RegisterMethodHandleMethods) },
   { CC"Java_sun_misc_Perf_registerNatives",                        NULL, FN_PTR(JVM_RegisterPerfMethods)         },
@@ -140,9 +136,8 @@ static JNINativeMethod lookup_special_native_methods[] = {
 };
 
 static address lookup_special_native(char* jni_name) {
-  int i = !JDK_Version::is_gte_jdk14x_version() ? 0 : 2;  // see comment in lookup_special_native_methods
   int count = sizeof(lookup_special_native_methods) / sizeof(JNINativeMethod);
-  for (; i < count; i++) {
+  for (int i = 0; i < count; i++) {
     // NB: To ignore the jni prefix and jni postfix strstr is used matching.
     if (strstr(jni_name, lookup_special_native_methods[i].name) != NULL) {
       return CAST_FROM_FN_PTR(address, lookup_special_native_methods[i].fnPtr);
