@@ -292,7 +292,7 @@ mh.invokeExact(System.out, "Hello, world.");
  * generates a single invokevirtual instruction with
  * the symbolic type descriptor indicated in the following comment.
  * In these examples, the helper method {@code assertEquals} is assumed to
- * be a method which calls {@link java.util.Objects#equals(Object,Object) Objects.equals }
+ * be a method which calls {@link java.util.Objects#equals(Object,Object) Objects.equals}
  * on its arguments, and asserts that the result is true.
  *
  * <h1>Exceptions</h1>
@@ -575,10 +575,10 @@ public abstract class MethodHandle {
     /*non-public*/ static native @PolymorphicSignature Object linkToInterface(Object... args) throws Throwable;
 
     /**
-     * Performs a variable arity invocation, passing the arguments in the given array
+     * Performs a variable arity invocation, passing the arguments in the given list
      * to the method handle, as if via an inexact {@link #invoke invoke} from a call site
      * which mentions only the type {@code Object}, and whose arity is the length
-     * of the argument array.
+     * of the argument list.
      * <p>
      * Specifically, execution proceeds as if by the following steps,
      * although the methods are not guaranteed to be called if the JVM
@@ -608,10 +608,10 @@ public abstract class MethodHandle {
      * or forced to null if the return type is void.
      * <p>
      * This call is equivalent to the following code:
-     * <p><blockquote><pre>
+     * <p><blockquote><pre>{@code
      * MethodHandle invoker = MethodHandles.spreadInvoker(this.type(), 0);
      * Object result = invoker.invokeExact(this, arguments);
-     * </pre></blockquote>
+     * }</pre></blockquote>
      * <p>
      * Unlike the signature polymorphic methods {@code invokeExact} and {@code invoke},
      * {@code invokeWithArguments} can be accessed normally via the Core Reflection API and JNI.
@@ -644,7 +644,7 @@ public abstract class MethodHandle {
      * <p>
      * This method is also equivalent to the following code:
      * <p><blockquote><pre>
-     * {@link #invokeWithArguments(Object...) invokeWithArguments}(arguments.toArray())
+     * {@link #invokeWithArguments(Object...) invokeWithArguments}{@code(arguments.toArray())}
      * </pre></blockquote>
      *
      * @param arguments the arguments to pass to the target
@@ -1272,9 +1272,9 @@ assertEquals("[three, thee, tee]", asListFix.invoke((Object)argv).toString());
      * starting with the string {@code "MethodHandle"} and
      * ending with the string representation of the method handle's type.
      * In other words, this method returns a string equal to the value of:
-     * <blockquote><pre>
+     * <blockquote><pre>{@code
      * "MethodHandle" + type().toString()
-     * </pre></blockquote>
+     * }</pre></blockquote>
      * <p>
      * (<em>Note:</em>  Future releases of this API may add further information
      * to the string representation.
@@ -1485,7 +1485,6 @@ assertEquals("[three, thee, tee]", asListFix.invoke((Object)argv).toString());
      * Threads may continue running the old form indefinitely,
      * but it is likely that the new one will be preferred for new executions.
      * Use with discretion.
-     * @param newForm
      */
     /*non-public*/
     void updateForm(LambdaForm newForm) {

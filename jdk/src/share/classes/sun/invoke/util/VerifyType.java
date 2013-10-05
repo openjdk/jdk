@@ -41,8 +41,8 @@ public class VerifyType {
      * True if a value can be stacked as the source type and unstacked as the
      * destination type, without violating the JVM's type consistency.
      *
-     * @param call the type of a stacked value
-     * @param recv the type by which we'd like to treat it
+     * @param src the type of a stacked value
+     * @param dst the type by which we'd like to treat it
      * @return whether the retyping can be done without motion or reformatting
      */
     public static boolean isNullConversion(Class<?> src, Class<?> dst) {
@@ -67,9 +67,8 @@ public class VerifyType {
 
     /**
      * Specialization of isNullConversion to reference types.
-
-     * @param call the type of a stacked value
-     * @param recv the reference type by which we'd like to treat it
+     * @param src the type of a stacked value
+     * @param dst the reference type by which we'd like to treat it
      * @return whether the retyping can be done without a cast
      */
     public static boolean isNullReferenceConversion(Class<?> src, Class<?> dst) {

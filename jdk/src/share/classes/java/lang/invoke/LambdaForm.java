@@ -50,7 +50,7 @@ import java.util.Objects;
  * The result of the lambda is defined as one of the names, often the last one.
  * <p>
  * Here is an approximate grammar:
- * <pre>
+ * <blockquote><pre>{@code
  * LambdaForm = "(" ArgName* ")=>{" TempName* Result "}"
  * ArgName = "a" N ":" T
  * TempName = "t" N ":" T "=" Function "(" Argument* ");"
@@ -60,7 +60,7 @@ import java.util.Objects;
  * NameRef = "a" N | "t" N
  * N = (any whole number)
  * T = "L" | "I" | "J" | "F" | "D" | "V"
- * </pre>
+ * }</pre></blockquote>
  * Names are numbered consecutively from left to right starting at zero.
  * (The letters are merely a taste of syntax sugar.)
  * Thus, the first temporary (if any) is always numbered N (where N=arity).
@@ -69,7 +69,7 @@ import java.util.Objects;
  * A lambda has a void result if and only if its result index is -1.
  * If a temporary has the type "V", it cannot be the subject of a NameRef,
  * even though possesses a number.
- * Note that all reference types are erased to "L", which stands for {@code Object).
+ * Note that all reference types are erased to "L", which stands for {@code Object}.
  * All subword types (boolean, byte, short, char) are erased to "I" which is {@code int}.
  * The other types stand for the usual primitive types.
  * <p>
@@ -89,7 +89,7 @@ import java.util.Objects;
  * encoded by using temporary expressions which call type-transformed identity functions.
  * <p>
  * Examples:
- * <pre>
+ * <blockquote><pre>{@code
  * (a0:J)=>{ a0 }
  *     == identity(long)
  * (a0:I)=>{ t1:V = System.out#println(a0); void }
@@ -113,7 +113,7 @@ import java.util.Objects;
  * (a0:L, a1:L)=>{ t2:L = BoundMethodHandle#argument(a0);
  *                 t3:L = Class#cast(t2,a1); t3 }
  *     == invoker for identity method handle which performs cast
- * </pre>
+ * }</pre></blockquote>
  * <p>
  * @author John Rose, JSR 292 EG
  */
@@ -1441,8 +1441,6 @@ class LambdaForm {
          * Does this Name precede the given binding node in some canonical order?
          * This predicate is used to order data bindings (via insertion sort)
          * with some stability.
-         * @param binding
-         * @return
          */
         boolean isSiblingBindingBefore(Name binding) {
             assert(!binding.isParam());
