@@ -1331,6 +1331,11 @@ assertEquals("[three, thee, tee]", asListFix.invoke((Object)argv).toString());
     }
 
     /*non-public*/
+    Class<?> internalCallerClass() {
+        return null;  // caller-bound MH for @CallerSensitive method returns caller
+    }
+
+    /*non-public*/
     MethodHandle withInternalMemberName(MemberName member) {
         if (member != null) {
             return MethodHandleImpl.makeWrappedMember(this, member);

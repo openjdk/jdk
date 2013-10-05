@@ -61,6 +61,18 @@ import static java.lang.invoke.MethodHandleStatics.*;
  * Cracking must be done via a {@code Lookup} object equivalent to that which created
  * the target method handle, or which has enough access permissions to recreate
  * an equivalent method handle.
+ * <p>
+ * If the underlying method is <a href="MethodHandles.Lookup.html#callsens">caller sensitive</a>,
+ * the direct method handle will have been "bound" to a particular caller class, the
+ * {@linkplain java.lang.invoke.MethodHandles.Lookup#lookupClass() lookup class}
+ * of the lookup object used to create it.
+ * Cracking this method handle with a different lookup class will fail
+ * even if the underlying method is public (like {@code Class.forName}).
+ * <p>
+ * The requirement of lookup object matching provides a "fast fail" behavior
+ * for programs which may otherwise trust erroneous revelation of a method
+ * handle with symbolic information (or caller binding) from an unexpected scope.
+ * Use {@link java.lang.invoke.MethodHandles#reflectAs} to override this limitation.
  *
  * <h1><a name="refkinds"></a>Reference kinds</h1>
  * The <a href="MethodHandles.Lookup.html#lookups">Lookup Factory Methods</a>
