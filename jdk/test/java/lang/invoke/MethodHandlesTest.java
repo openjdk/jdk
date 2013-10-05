@@ -387,6 +387,7 @@ public class MethodHandlesTest {
         protected Example(String name) { this.name = name; }
         @SuppressWarnings("LeakingThisInConstructor")
         protected Example(int x) { this(); called("protected <init>", this, x); }
+        //Example(Void x) { does not exist; lookup elicts NoSuchMethodException }
         @Override public String toString() { return name; }
 
         public void            v0()     { called("v0", this); }
@@ -487,6 +488,9 @@ public class MethodHandlesTest {
         return lookup.in(defc);
     }
 
+    /** Is findVirtual (etc.) of "<init>" supposed to elicit a NoSuchMethodException? */
+    final static boolean INIT_REF_CAUSES_NSME = true;
+
     @Test
     public void testFindStatic() throws Throwable {
         if (CAN_SKIP_WORKING)  return;
@@ -507,6 +511,8 @@ public class MethodHandlesTest {
         testFindStatic(Example.class, Object.class, "s7", float.class, double.class);
 
         testFindStatic(false, PRIVATE, Example.class, void.class, "bogus");
+        testFindStatic(false, PRIVATE, Example.class, void.class, "<init>", int.class);
+        testFindStatic(false, PRIVATE, Example.class, void.class, "<init>", Void.class);
         testFindStatic(false, PRIVATE, Example.class, void.class, "v0");
     }
 
@@ -529,11 +535,12 @@ public class MethodHandlesTest {
             target = maybeMoveIn(lookup, defc).findStatic(defc, methodName, type);
         } catch (ReflectiveOperationException ex) {
             noAccess = ex;
+            assertExceptionClass(
+                (name.contains("bogus") || INIT_REF_CAUSES_NSME && name.contains("<init>"))
+                ?   NoSuchMethodException.class
+                :   IllegalAccessException.class,
+                noAccess);
             if (verbosity >= 5)  ex.printStackTrace(System.out);
-            if (name.contains("bogus"))
-                assertTrue(noAccess instanceof NoSuchMethodException);
-            else
-                assertTrue(noAccess instanceof IllegalAccessException);
         }
         if (verbosity >= 3)
             System.out.println("findStatic "+lookup+": "+defc.getName()+"."+name+"/"+type+" => "+target
@@ -549,6 +556,13 @@ public class MethodHandlesTest {
         assertCalled(name, args);
         if (verbosity >= 1)
             System.out.print(':');
+    }
+
+    static void assertExceptionClass(Class<? extends Throwable> expected,
+                                     Throwable actual) {
+        if (expected.isInstance(actual))  return;
+        actual.printStackTrace();
+        assertEquals(expected, actual.getClass());
     }
 
     static final boolean DEBUG_METHOD_HANDLE_NAMES = Boolean.getBoolean("java.lang.invoke.MethodHandle.DEBUG_NAMES");
@@ -580,6 +594,8 @@ public class MethodHandlesTest {
         testFindVirtual(PubExample.class, void.class, "Pub/pro_v0");
 
         testFindVirtual(false, PRIVATE, Example.class, Example.class, void.class, "bogus");
+        testFindVirtual(false, PRIVATE, Example.class, Example.class, void.class, "<init>", int.class);
+        testFindVirtual(false, PRIVATE, Example.class, Example.class, void.class, "<init>", Void.class);
         testFindVirtual(false, PRIVATE, Example.class, Example.class, void.class, "s0");
 
         // test dispatch
@@ -628,11 +644,12 @@ public class MethodHandlesTest {
             target = maybeMoveIn(lookup, defc).findVirtual(defc, methodName, type);
         } catch (ReflectiveOperationException ex) {
             noAccess = ex;
+            assertExceptionClass(
+                (name.contains("bogus") || INIT_REF_CAUSES_NSME && name.contains("<init>"))
+                ?   NoSuchMethodException.class
+                :   IllegalAccessException.class,
+                noAccess);
             if (verbosity >= 5)  ex.printStackTrace(System.out);
-            if (name.contains("bogus"))
-                assertTrue(noAccess instanceof NoSuchMethodException);
-            else
-                assertTrue(noAccess instanceof IllegalAccessException);
         }
         if (verbosity >= 3)
             System.out.println("findVirtual "+lookup+": "+defc.getName()+"."+name+"/"+type+" => "+target
@@ -682,11 +699,11 @@ public class MethodHandlesTest {
         testFindSpecial(SubExample.class, Example.class, void.class, "pkg_v0");
         testFindSpecial(RemoteExample.class, PubExample.class, void.class, "Pub/pro_v0");
         // Do some negative testing:
-        testFindSpecial(false, EXAMPLE, SubExample.class, Example.class, void.class, "bogus");
-        testFindSpecial(false, PRIVATE, SubExample.class, Example.class, void.class, "bogus");
         for (Lookup lookup : new Lookup[]{ PRIVATE, EXAMPLE, PACKAGE, PUBLIC }) {
             testFindSpecial(false, lookup, Object.class, Example.class, void.class, "v0");
+            testFindSpecial(false, lookup, SubExample.class, Example.class, void.class, "bogus");
             testFindSpecial(false, lookup, SubExample.class, Example.class, void.class, "<init>", int.class);
+            testFindSpecial(false, lookup, SubExample.class, Example.class, void.class, "<init>", Void.class);
             testFindSpecial(false, lookup, SubExample.class, Example.class, void.class, "s0");
         }
     }
@@ -712,19 +729,25 @@ public class MethodHandlesTest {
         countTest(positive);
         String methodName = name.substring(1 + name.indexOf('/'));  // foo/bar => foo
         MethodType type = MethodType.methodType(ret, params);
+        Lookup specialLookup = maybeMoveIn(lookup, specialCaller);
+        boolean specialAccessOK = (specialLookup.lookupClass() == specialCaller &&
+                                   (specialLookup.lookupModes() & Lookup.PRIVATE) != 0);
         MethodHandle target = null;
         Exception noAccess = null;
         try {
             if (verbosity >= 4)  System.out.println("lookup via "+lookup+" of "+defc+" "+name+type);
-            if (verbosity >= 5)  System.out.println("  lookup => "+maybeMoveIn(lookup, specialCaller));
-            target = maybeMoveIn(lookup, specialCaller).findSpecial(defc, methodName, type, specialCaller);
+            if (verbosity >= 5)  System.out.println("  lookup => "+specialLookup);
+            target = specialLookup.findSpecial(defc, methodName, type, specialCaller);
         } catch (ReflectiveOperationException ex) {
             noAccess = ex;
+            assertExceptionClass(
+                (!specialAccessOK)  // this check should happen first
+                ?   IllegalAccessException.class
+                : (name.contains("bogus") || INIT_REF_CAUSES_NSME && name.contains("<init>"))
+                ?   NoSuchMethodException.class
+                : IllegalAccessException.class,
+                noAccess);
             if (verbosity >= 5)  ex.printStackTrace(System.out);
-            if (name.contains("bogus"))
-                assertTrue(noAccess instanceof NoSuchMethodException);
-            else
-                assertTrue(noAccess instanceof IllegalAccessException);
         }
         if (verbosity >= 3)
             System.out.println("findSpecial from "+specialCaller.getName()+" to "+defc.getName()+"."+name+"/"+type+" => "+target
@@ -769,7 +792,7 @@ public class MethodHandlesTest {
             target = lookup.findConstructor(defc, type);
         } catch (ReflectiveOperationException ex) {
             noAccess = ex;
-            assertTrue(noAccess instanceof IllegalAccessException);
+            assertTrue(noAccess.getClass().getName(), noAccess instanceof IllegalAccessException);
         }
         if (verbosity >= 3)
             System.out.println("findConstructor "+defc.getName()+".<init>/"+type+" => "+target
@@ -800,6 +823,8 @@ public class MethodHandlesTest {
         testBind(Example.class, Object.class, "v2", int.class, Object.class);
         testBind(Example.class, Object.class, "v2", int.class, int.class);
         testBind(false, PRIVATE, Example.class, void.class, "bogus");
+        testBind(false, PRIVATE, Example.class, void.class, "<init>", int.class);
+        testBind(false, PRIVATE, Example.class, void.class, "<init>", Void.class);
         testBind(SubExample.class, void.class, "Sub/v0");
         testBind(SubExample.class, void.class, "Sub/pkg_v0");
         testBind(IntExample.Impl.class, void.class, "Int/v0");
@@ -823,11 +848,12 @@ public class MethodHandlesTest {
             target = maybeMoveIn(lookup, defc).bind(receiver, methodName, type);
         } catch (ReflectiveOperationException ex) {
             noAccess = ex;
+            assertExceptionClass(
+                (name.contains("bogus") || INIT_REF_CAUSES_NSME && name.contains("<init>"))
+                ?   NoSuchMethodException.class
+                :   IllegalAccessException.class,
+                noAccess);
             if (verbosity >= 5)  ex.printStackTrace(System.out);
-            if (name.contains("bogus"))
-                assertTrue(noAccess instanceof NoSuchMethodException);
-            else
-                assertTrue(noAccess instanceof IllegalAccessException);
         }
         if (verbosity >= 3)
             System.out.println("bind "+receiver+"."+name+"/"+type+" => "+target
@@ -890,6 +916,10 @@ public class MethodHandlesTest {
         countTest(positive);
         String methodName = name.substring(1 + name.indexOf('/'));  // foo/bar => foo
         MethodType type = MethodType.methodType(ret, params);
+        Lookup specialLookup = (specialCaller != null ? maybeMoveIn(lookup, specialCaller) : null);
+        boolean specialAccessOK = (specialCaller != null &&
+                                   specialLookup.lookupClass() == specialCaller &&
+                                   (specialLookup.lookupModes() & Lookup.PRIVATE) != 0);
         Method rmethod = defc.getDeclaredMethod(methodName, params);
         MethodHandle target = null;
         Exception noAccess = null;
@@ -898,16 +928,15 @@ public class MethodHandlesTest {
         try {
             if (verbosity >= 4)  System.out.println("lookup via "+lookup+" of "+defc+" "+name+type);
             if (isSpecial)
-                target = maybeMoveIn(lookup, specialCaller).unreflectSpecial(rmethod, specialCaller);
+                target = specialLookup.unreflectSpecial(rmethod, specialCaller);
             else
                 target = maybeMoveIn(lookup, defc).unreflect(rmethod);
         } catch (ReflectiveOperationException ex) {
             noAccess = ex;
+            assertExceptionClass(
+                IllegalAccessException.class,  // NSME is impossible, since it was already reflected
+                noAccess);
             if (verbosity >= 5)  ex.printStackTrace(System.out);
-            if (name.contains("bogus"))
-                assertTrue(noAccess instanceof NoSuchMethodException);
-            else
-                assertTrue(noAccess instanceof IllegalAccessException);
         }
         if (verbosity >= 3)
             System.out.println("unreflect"+(isSpecial?"Special":"")+" "+defc.getName()+"."+name+"/"+type
@@ -1141,11 +1170,12 @@ public class MethodHandlesTest {
         } catch (ReflectiveOperationException ex) {
             mh = null;
             noAccess = ex;
+            assertExceptionClass(
+                (fname.contains("bogus"))
+                ?   NoSuchFieldException.class
+                :   IllegalAccessException.class,
+                noAccess);
             if (verbosity >= 5)  ex.printStackTrace(System.out);
-            if (fname.contains("bogus"))
-                assertTrue(noAccess instanceof NoSuchFieldException);
-            else
-                assertTrue(noAccess instanceof IllegalAccessException);
         }
         if (verbosity >= 3)
             System.out.println("find"+(isStatic?"Static":"")+(isGetter?"Getter":"Setter")+" "+fclass.getName()+"."+fname+"/"+ftype
