@@ -1649,6 +1649,14 @@ const RegMask Matcher::method_handle_invoke_SP_save_mask() {
   return PTR_RBP_REG_mask();
 }
 
+const RegMask Matcher::mathExactI_result_proj_mask() {
+  return INT_RAX_REG_mask();
+}
+
+const RegMask Matcher::mathExactI_flags_proj_mask() {
+  return INT_FLAGS_mask();
+}
+
 %}
 
 //----------ENCODING BLOCK-----------------------------------------------------
@@ -4133,6 +4141,8 @@ operand cmpOp()
     greater_equal(0xD, "ge");
     less_equal(0xE, "le");
     greater(0xF, "g");
+    overflow(0x0, "o");
+    no_overflow(0x1, "no");
   %}
 %}
 
@@ -4151,6 +4161,8 @@ operand cmpOpU()
     greater_equal(0x3, "nb");
     less_equal(0x6, "be");
     greater(0x7, "nbe");
+    overflow(0x0, "o");
+    no_overflow(0x1, "no");
   %}
 %}
 
@@ -4170,6 +4182,8 @@ operand cmpOpUCF() %{
     greater_equal(0x3, "nb");
     less_equal(0x6, "be");
     greater(0x7, "nbe");
+    overflow(0x0, "o");
+    no_overflow(0x1, "no");
   %}
 %}
 
@@ -4187,6 +4201,8 @@ operand cmpOpUCF2() %{
     greater_equal(0x3, "nb");
     less_equal(0x6, "be");
     greater(0x7, "nbe");
+    overflow(0x0, "o");
+    no_overflow(0x1, "no");
   %}
 %}
 
@@ -6921,6 +6937,30 @@ instruct cmovD_regUCF(cmpOpUCF cop, rFlagsRegUCF cr, regD dst, regD src) %{
 
 //----------Arithmetic Instructions--------------------------------------------
 //----------Addition Instructions----------------------------------------------
+
+instruct addExactI_rReg(rax_RegI dst, rRegI src, rFlagsReg cr)
+%{
+  match(AddExactI dst src);
+  effect(DEF cr);
+
+  format %{ "addl    $dst, $src\t# addExact int" %}
+  ins_encode %{
+    __ addl($dst$$Register, $src$$Register);
+  %}
+  ins_pipe(ialu_reg_reg);
+%}
+
+instruct addExactI_rReg_imm(rax_RegI dst, immI src, rFlagsReg cr)
+%{
+  match(AddExactI dst src);
+  effect(DEF cr);
+
+  format %{ "addl    $dst, $src\t# addExact int" %}
+  ins_encode %{
+    __ addl($dst$$Register, $src$$constant);
+  %}
+  ins_pipe(ialu_reg_reg);
+%}
 
 instruct addI_rReg(rRegI dst, rRegI src, rFlagsReg cr)
 %{

@@ -305,7 +305,7 @@ static struct symtab* build_symtab_from_build_id(Elf64_Nhdr *note)
 
   unsigned char *bytes
     = (unsigned char*)(note+1) + note->n_namesz;
-  unsigned char *filename
+  char *filename
     = (build_id_to_debug_filename (note->n_descsz, bytes));
 
   fd = pathmap_open(filename);

@@ -77,12 +77,12 @@ double G1RemSetSummary::rs_thread_vtime(uint thread) const {
   return _rs_threads_vtimes[thread];
 }
 
-void G1RemSetSummary::initialize(G1RemSet* remset, uint num_workers) {
+void G1RemSetSummary::initialize(G1RemSet* remset) {
   assert(_rs_threads_vtimes == NULL, "just checking");
   assert(remset != NULL, "just checking");
 
   _remset = remset;
-  _num_vtimes = num_workers;
+  _num_vtimes = ConcurrentG1Refine::thread_num();
   _rs_threads_vtimes = NEW_C_HEAP_ARRAY(double, _num_vtimes, mtGC);
   memset(_rs_threads_vtimes, 0, sizeof(double) * _num_vtimes);
 
@@ -125,25 +125,115 @@ void G1RemSetSummary::subtract_from(G1RemSetSummary* other) {
   _sampling_thread_vtime = other->sampling_thread_vtime() - _sampling_thread_vtime;
 }
 
-class HRRSStatsIter: public HeapRegionClosure {
-  size_t _occupied;
+static double percent_of(size_t numerator, size_t denominator) {
+  if (denominator != 0) {
+    return (double)numerator / denominator * 100.0f;
+  } else {
+    return 0.0f;
+  }
+}
 
-  size_t _total_rs_mem_sz;
+static size_t round_to_K(size_t value) {
+  return value / K;
+}
+
+class RegionTypeCounter VALUE_OBJ_CLASS_SPEC {
+private:
+  const char* _name;
+
+  size_t _rs_mem_size;
+  size_t _cards_occupied;
+  size_t _amount;
+
+  size_t _code_root_mem_size;
+  size_t _code_root_elems;
+
+  double rs_mem_size_percent_of(size_t total) {
+    return percent_of(_rs_mem_size, total);
+  }
+
+  double cards_occupied_percent_of(size_t total) {
+    return percent_of(_cards_occupied, total);
+  }
+
+  double code_root_mem_size_percent_of(size_t total) {
+    return percent_of(_code_root_mem_size, total);
+  }
+
+  double code_root_elems_percent_of(size_t total) {
+    return percent_of(_code_root_elems, total);
+  }
+
+  size_t amount() const { return _amount; }
+
+public:
+
+  RegionTypeCounter(const char* name) : _name(name), _rs_mem_size(0), _cards_occupied(0),
+    _amount(0), _code_root_mem_size(0), _code_root_elems(0) { }
+
+  void add(size_t rs_mem_size, size_t cards_occupied, size_t code_root_mem_size,
+    size_t code_root_elems) {
+    _rs_mem_size += rs_mem_size;
+    _cards_occupied += cards_occupied;
+    _code_root_mem_size += code_root_mem_size;
+    _code_root_elems += code_root_elems;
+    _amount++;
+  }
+
+  size_t rs_mem_size() const { return _rs_mem_size; }
+  size_t cards_occupied() const { return _cards_occupied; }
+
+  size_t code_root_mem_size() const { return _code_root_mem_size; }
+  size_t code_root_elems() const { return _code_root_elems; }
+
+  void print_rs_mem_info_on(outputStream * out, size_t total) {
+    out->print_cr("    %8dK (%5.1f%%) by %zd %s regions", round_to_K(rs_mem_size()), rs_mem_size_percent_of(total), amount(), _name);
+  }
+
+  void print_cards_occupied_info_on(outputStream * out, size_t total) {
+    out->print_cr("     %8d (%5.1f%%) entries by %zd %s regions", cards_occupied(), cards_occupied_percent_of(total), amount(), _name);
+  }
+
+  void print_code_root_mem_info_on(outputStream * out, size_t total) {
+    out->print_cr("    %8dK (%5.1f%%) by %zd %s regions", round_to_K(code_root_mem_size()), code_root_mem_size_percent_of(total), amount(), _name);
+  }
+
+  void print_code_root_elems_info_on(outputStream * out, size_t total) {
+    out->print_cr("     %8d (%5.1f%%) elements by %zd %s regions", code_root_elems(), code_root_elems_percent_of(total), amount(), _name);
+  }
+};
+
+
+class HRRSStatsIter: public HeapRegionClosure {
+private:
+  RegionTypeCounter _young;
+  RegionTypeCounter _humonguous;
+  RegionTypeCounter _free;
+  RegionTypeCounter _old;
+  RegionTypeCounter _all;
+
   size_t _max_rs_mem_sz;
   HeapRegion* _max_rs_mem_sz_region;
 
-  size_t _total_code_root_mem_sz;
+  size_t total_rs_mem_sz() const            { return _all.rs_mem_size(); }
+  size_t total_cards_occupied() const       { return _all.cards_occupied(); }
+
+  size_t max_rs_mem_sz() const              { return _max_rs_mem_sz; }
+  HeapRegion* max_rs_mem_sz_region() const  { return _max_rs_mem_sz_region; }
+
   size_t _max_code_root_mem_sz;
   HeapRegion* _max_code_root_mem_sz_region;
+
+  size_t total_code_root_mem_sz() const     { return _all.code_root_mem_size(); }
+  size_t total_code_root_elems() const      { return _all.code_root_elems(); }
+
+  size_t max_code_root_mem_sz() const       { return _max_code_root_mem_sz; }
+  HeapRegion* max_code_root_mem_sz_region() const { return _max_code_root_mem_sz_region; }
+
 public:
-  HRRSStatsIter() :
-    _occupied(0),
-    _total_rs_mem_sz(0),
-    _max_rs_mem_sz(0),
-    _max_rs_mem_sz_region(NULL),
-    _total_code_root_mem_sz(0),
-    _max_code_root_mem_sz(0),
-    _max_code_root_mem_sz_region(NULL)
+  HRRSStatsIter() : _all("All"), _young("Young"), _humonguous("Humonguous"),
+    _free("Free"), _old("Old"), _max_code_root_mem_sz_region(NULL), _max_rs_mem_sz_region(NULL),
+    _max_rs_mem_sz(0), _max_code_root_mem_sz(0)
   {}
 
   bool doHeapRegion(HeapRegion* r) {
@@ -156,46 +246,95 @@ public:
       _max_rs_mem_sz = rs_mem_sz;
       _max_rs_mem_sz_region = r;
     }
-    _total_rs_mem_sz += rs_mem_sz;
-
+    size_t occupied_cards = hrrs->occupied();
     size_t code_root_mem_sz = hrrs->strong_code_roots_mem_size();
-    if (code_root_mem_sz > _max_code_root_mem_sz) {
-      _max_code_root_mem_sz = code_root_mem_sz;
+    if (code_root_mem_sz > max_code_root_mem_sz()) {
       _max_code_root_mem_sz_region = r;
     }
-    _total_code_root_mem_sz += code_root_mem_sz;
+    size_t code_root_elems = hrrs->strong_code_roots_list_length();
 
-    size_t occ = hrrs->occupied();
-    _occupied += occ;
+    RegionTypeCounter* current = NULL;
+    if (r->is_young()) {
+      current = &_young;
+    } else if (r->isHumongous()) {
+      current = &_humonguous;
+    } else if (r->is_empty()) {
+      current = &_free;
+    } else {
+      current = &_old;
+    }
+    current->add(rs_mem_sz, occupied_cards, code_root_mem_sz, code_root_elems);
+    _all.add(rs_mem_sz, occupied_cards, code_root_mem_sz, code_root_elems);
+
     return false;
   }
-  size_t total_rs_mem_sz() { return _total_rs_mem_sz; }
-  size_t max_rs_mem_sz() { return _max_rs_mem_sz; }
-  HeapRegion* max_rs_mem_sz_region() { return _max_rs_mem_sz_region; }
-  size_t total_code_root_mem_sz() { return _total_code_root_mem_sz; }
-  size_t max_code_root_mem_sz() { return _max_code_root_mem_sz; }
-  HeapRegion* max_code_root_mem_sz_region() { return _max_code_root_mem_sz_region; }
-  size_t occupied() { return _occupied; }
+
+  void print_summary_on(outputStream* out) {
+    RegionTypeCounter* counters[] = { &_young, &_humonguous, &_free, &_old, NULL };
+
+    out->print_cr("\n Current rem set statistics");
+    out->print_cr("  Total per region rem sets sizes = "SIZE_FORMAT"K."
+                  " Max = "SIZE_FORMAT"K.",
+                  round_to_K(total_rs_mem_sz()), round_to_K(max_rs_mem_sz()));
+    for (RegionTypeCounter** current = &counters[0]; *current != NULL; current++) {
+      (*current)->print_rs_mem_info_on(out, total_rs_mem_sz());
+    }
+
+    out->print_cr("   Static structures = "SIZE_FORMAT"K,"
+                  " free_lists = "SIZE_FORMAT"K.",
+                  round_to_K(HeapRegionRemSet::static_mem_size()),
+                  round_to_K(HeapRegionRemSet::fl_mem_size()));
+
+    out->print_cr("    "SIZE_FORMAT" occupied cards represented.",
+                  total_cards_occupied());
+    for (RegionTypeCounter** current = &counters[0]; *current != NULL; current++) {
+      (*current)->print_cards_occupied_info_on(out, total_cards_occupied());
+    }
+
+    // Largest sized rem set region statistics
+    HeapRegionRemSet* rem_set = max_rs_mem_sz_region()->rem_set();
+    out->print_cr("    Region with largest rem set = "HR_FORMAT", "
+                  "size = "SIZE_FORMAT "K, occupied = "SIZE_FORMAT"K.",
+                  HR_FORMAT_PARAMS(max_rs_mem_sz_region()),
+                  round_to_K(rem_set->mem_size()),
+                  round_to_K(rem_set->occupied()));
+
+    // Strong code root statistics
+    HeapRegionRemSet* max_code_root_rem_set = max_code_root_mem_sz_region()->rem_set();
+    out->print_cr("  Total heap region code root sets sizes = "SIZE_FORMAT"K."
+                  "  Max = "SIZE_FORMAT"K.",
+                  round_to_K(total_code_root_mem_sz()),
+                  round_to_K(max_code_root_rem_set->strong_code_roots_mem_size()));
+    for (RegionTypeCounter** current = &counters[0]; *current != NULL; current++) {
+      (*current)->print_code_root_mem_info_on(out, total_code_root_mem_sz());
+    }
+
+    out->print_cr("    "SIZE_FORMAT" code roots represented.",
+                  total_code_root_elems());
+    for (RegionTypeCounter** current = &counters[0]; *current != NULL; current++) {
+      (*current)->print_code_root_elems_info_on(out, total_code_root_elems());
+    }
+
+    out->print_cr("    Region with largest amount of code roots = "HR_FORMAT", "
+                  "size = "SIZE_FORMAT "K, num_elems = "SIZE_FORMAT".",
+                  HR_FORMAT_PARAMS(max_code_root_mem_sz_region()),
+                  round_to_K(max_code_root_rem_set->strong_code_roots_mem_size()),
+                  round_to_K(max_code_root_rem_set->strong_code_roots_list_length()));
+  }
 };
 
-double calc_percentage(size_t numerator, size_t denominator) {
-  if (denominator != 0) {
-    return (double)numerator / denominator * 100.0;
-  } else {
-    return 0.0f;
-  }
-}
-
 void G1RemSetSummary::print_on(outputStream* out) {
-  out->print_cr("\n Concurrent RS processed "SIZE_FORMAT" cards",
+  out->print_cr("\n Recent concurrent refinement statistics");
+  out->print_cr("  Processed "SIZE_FORMAT" cards",
                 num_concurrent_refined_cards());
   out->print_cr("  Of %d completed buffers:", num_processed_buf_total());
   out->print_cr("     %8d (%5.1f%%) by concurrent RS threads.",
                 num_processed_buf_total(),
-                calc_percentage(num_processed_buf_rs_threads(), num_processed_buf_total()));
+                percent_of(num_processed_buf_rs_threads(), num_processed_buf_total()));
   out->print_cr("     %8d (%5.1f%%) by mutator threads.",
                 num_processed_buf_mutator(),
-                calc_percentage(num_processed_buf_mutator(), num_processed_buf_total()));
+                percent_of(num_processed_buf_mutator(), num_processed_buf_total()));
+  out->print_cr("  Did %d coarsenings.", num_coarsenings());
   out->print_cr("  Concurrent RS threads times (s)");
   out->print("     ");
   for (uint i = 0; i < _num_vtimes; i++) {
@@ -207,33 +346,5 @@ void G1RemSetSummary::print_on(outputStream* out) {
 
   HRRSStatsIter blk;
   G1CollectedHeap::heap()->heap_region_iterate(&blk);
-  // RemSet stats
-  out->print_cr("  Total heap region rem set sizes = "SIZE_FORMAT"K."
-                "  Max = "SIZE_FORMAT"K.",
-                blk.total_rs_mem_sz()/K, blk.max_rs_mem_sz()/K);
-  out->print_cr("  Static structures = "SIZE_FORMAT"K,"
-                " free_lists = "SIZE_FORMAT"K.",
-                HeapRegionRemSet::static_mem_size() / K,
-                HeapRegionRemSet::fl_mem_size() / K);
-  out->print_cr("    "SIZE_FORMAT" occupied cards represented.",
-                blk.occupied());
-  HeapRegion* max_rs_mem_sz_region = blk.max_rs_mem_sz_region();
-  HeapRegionRemSet* max_rs_rem_set = max_rs_mem_sz_region->rem_set();
-  out->print_cr("    Max size region = "HR_FORMAT", "
-                "size = "SIZE_FORMAT "K, occupied = "SIZE_FORMAT"K.",
-                HR_FORMAT_PARAMS(max_rs_mem_sz_region),
-                (max_rs_rem_set->mem_size() + K - 1)/K,
-                (max_rs_rem_set->occupied() + K - 1)/K);
-  out->print_cr("    Did %d coarsenings.", num_coarsenings());
-  // Strong code root stats
-  out->print_cr("  Total heap region code-root set sizes = "SIZE_FORMAT"K."
-                "  Max = "SIZE_FORMAT"K.",
-                blk.total_code_root_mem_sz()/K, blk.max_code_root_mem_sz()/K);
-  HeapRegion* max_code_root_mem_sz_region = blk.max_code_root_mem_sz_region();
-  HeapRegionRemSet* max_code_root_rem_set = max_code_root_mem_sz_region->rem_set();
-  out->print_cr("    Max size region = "HR_FORMAT", "
-                "size = "SIZE_FORMAT "K, num_elems = "SIZE_FORMAT".",
-                HR_FORMAT_PARAMS(max_code_root_mem_sz_region),
-                (max_code_root_rem_set->strong_code_roots_mem_size() + K - 1)/K,
-                (max_code_root_rem_set->strong_code_roots_list_length()));
+  blk.print_summary_on(out);
 }

@@ -270,7 +270,7 @@
   template(java_lang_invoke_LambdaForm,               "java/lang/invoke/LambdaForm")              \
   template(java_lang_invoke_ForceInline_signature,    "Ljava/lang/invoke/ForceInline;")           \
   template(java_lang_invoke_DontInline_signature,     "Ljava/lang/invoke/DontInline;")            \
-  template(sun_invoke_Stable_signature,               "Lsun/invoke/Stable;")                      \
+  template(java_lang_invoke_Stable_signature,         "Ljava/lang/invoke/Stable;")                \
   template(java_lang_invoke_LambdaForm_Compiled_signature, "Ljava/lang/invoke/LambdaForm$Compiled;") \
   template(java_lang_invoke_LambdaForm_Hidden_signature, "Ljava/lang/invoke/LambdaForm$Hidden;")  \
   template(java_lang_invoke_MagicLambdaImpl,          "java/lang/invoke/MagicLambdaImpl")         \
@@ -631,6 +631,10 @@
   do_name(log_name,"log")       do_name(log10_name,"log10")     do_name(pow_name,"pow")                                 \
   do_name(exp_name,"exp")       do_name(min_name,"min")         do_name(max_name,"max")                                 \
                                                                                                                         \
+  do_name(addExact_name,"addExact")                                                                                     \
+  do_name(subtractExact_name,"subtractExact")                                                                           \
+  do_name(multiplyExact_name,"multiplyExact")                                                                           \
+                                                                                                                        \
   do_intrinsic(_dabs,                     java_lang_Math,         abs_name,   double_double_signature,           F_S)   \
   do_intrinsic(_dsin,                     java_lang_Math,         sin_name,   double_double_signature,           F_S)   \
   do_intrinsic(_dcos,                     java_lang_Math,         cos_name,   double_double_signature,           F_S)   \
@@ -643,6 +647,7 @@
   do_intrinsic(_dexp,                     java_lang_Math,         exp_name,   double_double_signature,           F_S)   \
   do_intrinsic(_min,                      java_lang_Math,         min_name,   int2_int_signature,                F_S)   \
   do_intrinsic(_max,                      java_lang_Math,         max_name,   int2_int_signature,                F_S)   \
+  do_intrinsic(_addExact,                 java_lang_Math,         addExact_name, int2_int_signature,             F_S)   \
                                                                                                                         \
   do_intrinsic(_floatToRawIntBits,        java_lang_Float,        floatToRawIntBits_name,   float_int_signature, F_S)   \
    do_name(     floatToRawIntBits_name,                          "floatToRawIntBits")                                   \
