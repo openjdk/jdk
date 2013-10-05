@@ -140,7 +140,7 @@ public class MethodHandlesTest {
         Object actual   = calledLog.get(calledLog.size() - 1);
         if (expected.equals(actual) && verbosity < 9)  return;
         System.out.println("assertCalled "+name+":");
-        System.out.println("expected:   "+expected);
+        System.out.println("expected:   "+deepToString(expected));
         System.out.println("actual:     "+actual);
         System.out.println("ex. types:  "+getClasses(expected));
         System.out.println("act. types: "+getClasses(actual));
@@ -148,7 +148,25 @@ public class MethodHandlesTest {
     }
     static void printCalled(MethodHandle target, String name, Object... args) {
         if (verbosity >= 3)
-            System.out.println("calling MH="+target+" to "+name+Arrays.toString(args));
+            System.out.println("calling MH="+target+" to "+name+deepToString(args));
+    }
+    static String deepToString(Object x) {
+        if (x == null)  return "null";
+        if (x instanceof Collection)
+            x = ((Collection)x).toArray();
+        if (x instanceof Object[]) {
+            Object[] ax = (Object[]) x;
+            ax = Arrays.copyOf(ax, ax.length, Object[].class);
+            for (int i = 0; i < ax.length; i++)
+                ax[i] = deepToString(ax[i]);
+            x = Arrays.deepToString(ax);
+        }
+        if (x.getClass().isArray())
+            try {
+                x = Arrays.class.getMethod("toString", x.getClass()).invoke(null, x);
+            } catch (ReflectiveOperationException ex) { throw new Error(ex); }
+        assert(!(x instanceof Object[]));
+        return x.toString();
     }
 
     static Object castToWrapper(Object value, Class<?> dst) {
@@ -229,6 +247,12 @@ public class MethodHandlesTest {
                 if (param.isAssignableFrom(c) && !c.isInterface())
                     { param = c; break; }
             }
+        }
+        if (param.isArray()) {
+            Class<?> ctype = param.getComponentType();
+            Object arg = Array.newInstance(ctype, 2);
+            Array.set(arg, 0, randomArg(ctype));
+            return arg;
         }
         if (param.isInterface() && param.isAssignableFrom(List.class))
             return Arrays.asList("#"+nextArg());
@@ -568,6 +592,16 @@ public class MethodHandlesTest {
         testFindVirtual(IntExample.Impl.class, IntExample.class, void.class, "Int/v0");
     }
 
+    @Test
+    public void testFindVirtualClone() throws Throwable {
+        // test some ad hoc system methods
+        testFindVirtual(false, PUBLIC, Object.class, Object.class, "clone");
+        testFindVirtual(true, PUBLIC, Object[].class, Object.class, "clone");
+        testFindVirtual(true, PUBLIC, int[].class, Object.class, "clone");
+        for (Class<?> cls : new Class<?>[]{ boolean[].class, long[].class, float[].class, char[].class })
+            testFindVirtual(true, PUBLIC, cls, Object.class, "clone");
+    }
+
     void testFindVirtual(Class<?> defc, Class<?> ret, String name, Class<?>... params) throws Throwable {
         Class<?> rcvc = defc;
         testFindVirtual(rcvc, defc, ret, name, params);
@@ -579,6 +613,9 @@ public class MethodHandlesTest {
     }
     void testFindVirtual(Lookup lookup, Class<?> rcvc, Class<?> defc, Class<?> ret, String name, Class<?>... params) throws Throwable {
         testFindVirtual(true, lookup, rcvc, defc, ret, name, params);
+    }
+    void testFindVirtual(boolean positive, Lookup lookup, Class<?> defc, Class<?> ret, String name, Class<?>... params) throws Throwable {
+        testFindVirtual(positive, lookup, defc, defc, ret, name, params);
     }
     void testFindVirtual(boolean positive, Lookup lookup, Class<?> rcvc, Class<?> defc, Class<?> ret, String name, Class<?>... params) throws Throwable {
         countTest(positive);
@@ -618,8 +655,21 @@ public class MethodHandlesTest {
         Object[] argsWithSelf = randomArgs(paramsWithSelf);
         if (selfc.isAssignableFrom(rcvc) && rcvc != selfc)  argsWithSelf[0] = randomArg(rcvc);
         printCalled(target, name, argsWithSelf);
-        target.invokeWithArguments(argsWithSelf);
-        assertCalled(name, argsWithSelf);
+        Object res = target.invokeWithArguments(argsWithSelf);
+        if (Example.class.isAssignableFrom(defc) || IntExample.class.isAssignableFrom(defc)) {
+            assertCalled(name, argsWithSelf);
+        } else if (name.equals("clone")) {
+            // Ad hoc method call outside Example.  For Object[].clone.
+            printCalled(target, name, argsWithSelf);
+            assertEquals(MethodType.methodType(Object.class, rcvc), target.type());
+            Object orig = argsWithSelf[0];
+            assertEquals(orig.getClass(), res.getClass());
+            if (res instanceof Object[])
+                assertArrayEquals((Object[])res, (Object[])argsWithSelf[0]);
+            assert(Arrays.deepEquals(new Object[]{res}, new Object[]{argsWithSelf[0]}));
+        } else {
+            assert(false) : Arrays.asList(positive, lookup, rcvc, defc, ret, name, deepToString(params));
+        }
         if (verbosity >= 1)
             System.out.print(':');
     }
