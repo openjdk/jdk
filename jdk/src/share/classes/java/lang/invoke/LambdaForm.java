@@ -457,7 +457,7 @@ class LambdaForm {
             isCompiled = true;
             return vmentry;
         } catch (Error | Exception ex) {
-            throw newInternalError(this.toString(), ex);
+            throw newInternalError("compileToBytecode", ex);
         }
     }
 
@@ -683,8 +683,9 @@ class LambdaForm {
     */
 
     static void traceInterpreter(String event, Object obj, Object... args) {
-        if (!TRACE_INTERPRETER)  return;
-        System.out.println("LFI: "+event+" "+(obj != null ? obj : "")+(args != null && args.length != 0 ? Arrays.asList(args) : ""));
+        if (TRACE_INTERPRETER) {
+            System.out.println("LFI: "+event+" "+(obj != null ? obj : "")+(args != null && args.length != 0 ? Arrays.asList(args) : ""));
+        }
     }
     static void traceInterpreter(String event, Object obj) {
         traceInterpreter(event, obj, (Object[])null);
@@ -982,6 +983,16 @@ class LambdaForm {
             //resolvedHandle = eraseSubwordTypes(resolvedHandle);
             this.resolvedHandle = resolvedHandle;
         }
+        NamedFunction(MethodType basicInvokerType) {
+            assert(basicInvokerType == basicInvokerType.basicType()) : basicInvokerType;
+            if (basicInvokerType.parameterSlotCount() < MethodType.MAX_MH_INVOKER_ARITY) {
+                this.resolvedHandle = basicInvokerType.invokers().basicInvoker();
+                this.member = resolvedHandle.internalMemberName();
+            } else {
+                // necessary to pass BigArityTest
+                this.member = Invokers.invokeBasicMethod(basicInvokerType);
+            }
+        }
 
         // The next 3 constructors are used to break circular dependencies on MH.invokeStatic, etc.
         // Any LambdaForm containing such a member is not interpretable.
@@ -1229,7 +1240,7 @@ class LambdaForm {
         }
 
         public String toString() {
-            if (member == null)  return resolvedHandle.toString();
+            if (member == null)  return String.valueOf(resolvedHandle);
             return member.getDeclaringClass().getSimpleName()+"."+member.getName();
         }
     }
@@ -1278,6 +1289,10 @@ class LambdaForm {
         }
         Name(MethodHandle function, Object... arguments) {
             this(new NamedFunction(function), arguments);
+        }
+        Name(MethodType functionType, Object... arguments) {
+            this(new NamedFunction(functionType), arguments);
+            assert(arguments[0] instanceof Name && ((Name)arguments[0]).type == 'L');
         }
         Name(MemberName function, Object... arguments) {
             this(new NamedFunction(function), arguments);
@@ -1622,4 +1637,12 @@ class LambdaForm {
  */
 
     static { NamedFunction.initializeInvokers(); }
+
+    // The following hack is necessary in order to suppress TRACE_INTERPRETER
+    // during execution of the static initializes of this class.
+    // Turning on TRACE_INTERPRETER too early will cause
+    // stack overflows and other misbehavior during attempts to trace events
+    // that occur during LambdaForm.<clinit>.
+    // Therefore, do not move this line higher in this file, and do not remove.
+    private static final boolean TRACE_INTERPRETER = MethodHandleStatics.TRACE_INTERPRETER;
 }

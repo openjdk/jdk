@@ -360,6 +360,10 @@ import jdk.internal.org.objectweb.asm.Type;
             return new Name(mh, mhName);
         }
 
+        NamedFunction getterFunction(int i) {
+            return new NamedFunction(getters[i]);
+        }
+
         static final SpeciesData EMPTY = new SpeciesData("", BoundMethodHandle.class);
 
         private SpeciesData(String types, Class<? extends BoundMethodHandle> clazz) {
@@ -394,6 +398,7 @@ import jdk.internal.org.objectweb.asm.Type;
         private boolean isPlaceholder() { return clazz == null; }
 
         private static final HashMap<String, SpeciesData> CACHE = new HashMap<>();
+        static { CACHE.put("", EMPTY); }  // make bootstrap predictable
         private static final boolean INIT_DONE;  // set after <clinit> finishes...
 
         SpeciesData extendWithType(char type) {

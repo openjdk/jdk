@@ -233,20 +233,19 @@ class MethodHandleNatives {
     }
     static String refKindName(byte refKind) {
         assert(refKindIsValid(refKind));
-        return REFERENCE_KIND_NAME[refKind];
+        switch (refKind) {
+        case REF_getField:          return "getField";
+        case REF_getStatic:         return "getStatic";
+        case REF_putField:          return "putField";
+        case REF_putStatic:         return "putStatic";
+        case REF_invokeVirtual:     return "invokeVirtual";
+        case REF_invokeStatic:      return "invokeStatic";
+        case REF_invokeSpecial:     return "invokeSpecial";
+        case REF_newInvokeSpecial:  return "newInvokeSpecial";
+        case REF_invokeInterface:   return "invokeInterface";
+        default:                    return "REF_???";
+        }
     }
-    private static String[] REFERENCE_KIND_NAME = {
-            null,
-            "getField",
-            "getStatic",
-            "putField",
-            "putStatic",
-            "invokeVirtual",
-            "invokeStatic",
-            "invokeSpecial",
-            "newInvokeSpecial",
-            "invokeInterface"
-    };
 
     private static native int getNamedCon(int which, Object[] name);
     static boolean verifyConstants() {
@@ -294,12 +293,18 @@ class MethodHandleNatives {
         Class<?> caller = (Class<?>)callerObj;
         String name = nameObj.toString().intern();
         MethodType type = (MethodType)typeObj;
-        appendixResult[0] = CallSite.makeSite(bootstrapMethod,
+        CallSite callSite = CallSite.makeSite(bootstrapMethod,
                                               name,
                                               type,
                                               staticArguments,
                                               caller);
-        return Invokers.linkToCallSiteMethod(type);
+        if (callSite instanceof ConstantCallSite) {
+            appendixResult[0] = callSite.dynamicInvoker();
+            return Invokers.linkToTargetMethod(type);
+        } else {
+            appendixResult[0] = callSite;
+            return Invokers.linkToCallSiteMethod(type);
+        }
     }
 
     /**
@@ -388,12 +393,7 @@ class MethodHandleNatives {
                                      Object[] appendixResult) {
         try {
             if (defc == MethodHandle.class && refKind == REF_invokeVirtual) {
-                switch (name) {
-                case "invoke":
-                    return Invokers.genericInvokerMethod(fixMethodType(callerClass, type), appendixResult);
-                case "invokeExact":
-                    return Invokers.exactInvokerMethod(fixMethodType(callerClass, type), appendixResult);
-                }
+                return Invokers.methodHandleInvokeLinkerMethod(name, fixMethodType(callerClass, type), appendixResult);
             }
         } catch (Throwable ex) {
             if (ex instanceof LinkageError)
