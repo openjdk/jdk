@@ -277,6 +277,9 @@ public class MethodHandlesTest {
             args[i] = randomArg(param);
         return args;
     }
+    static Object[] randomArgs(List<Class<?>> params) {
+        return randomArgs(params.toArray(new Class<?>[params.size()]));
+    }
 
     @SafeVarargs @SuppressWarnings("varargs")
     static <T, E extends T> T[] array(Class<T[]> atype, E... a) {
@@ -346,6 +349,11 @@ public class MethodHandlesTest {
             throw new RuntimeException("varargsList: "+rtype);
         }
         return list.asType(listType);
+    }
+    /** Variation of varargsList, but with the given ptypes and rtype. */
+    static MethodHandle varargsList(List<Class<?>> ptypes, Class<?> rtype) {
+        MethodHandle list = varargsList(ptypes.size(), rtype);
+        return list.asType(MethodType.methodType(rtype, ptypes));
     }
     private static MethodHandle LIST_TO_STRING, LIST_TO_INT;
     private static String listToString(List<?> x) { return x.toString(); }
@@ -1833,24 +1841,24 @@ public class MethodHandlesTest {
     }
 
     @Test  // SLOW
-    public void testCollectArguments() throws Throwable {
+    public void testAsCollector() throws Throwable {
         if (CAN_SKIP_WORKING)  return;
-        startTest("collectArguments");
+        startTest("asCollector");
         for (Class<?> argType : new Class<?>[]{Object.class, Integer.class, int.class}) {
             if (verbosity >= 3)
-                System.out.println("collectArguments "+argType);
+                System.out.println("asCollector "+argType);
             for (int nargs = 0; nargs < 50; nargs++) {
                 if (CAN_TEST_LIGHTLY && nargs > 11)  break;
                 for (int pos = 0; pos <= nargs; pos++) {
                     if (CAN_TEST_LIGHTLY && pos > 2 && pos < nargs-2)  continue;
                     if (nargs > 10 && pos > 4 && pos < nargs-4 && pos % 10 != 3)
                         continue;
-                    testCollectArguments(argType, pos, nargs);
+                    testAsCollector(argType, pos, nargs);
                 }
             }
         }
     }
-    public void testCollectArguments(Class<?> argType, int pos, int nargs) throws Throwable {
+    public void testAsCollector(Class<?> argType, int pos, int nargs) throws Throwable {
         countTest();
         // fake up a MH with the same type as the desired adapter:
         MethodHandle fake = varargsArray(nargs);
@@ -1997,37 +2005,108 @@ public class MethodHandlesTest {
     }
 
     @Test
+    public void testCollectArguments() throws Throwable {
+        if (CAN_SKIP_WORKING)  return;
+        startTest("collectArguments");
+        testFoldOrCollectArguments(true);
+    }
+
+    @Test
     public void testFoldArguments() throws Throwable {
         if (CAN_SKIP_WORKING)  return;
         startTest("foldArguments");
-        for (int nargs = 0; nargs <= 4; nargs++) {
-            for (int fold = 0; fold <= nargs; fold++) {
-                for (int pos = 0; pos <= nargs; pos++) {
-                    testFoldArguments(nargs, pos, fold);
+        testFoldOrCollectArguments(false);
+    }
+
+    void testFoldOrCollectArguments(boolean isCollect) throws Throwable {
+        for (Class<?> lastType : new Class<?>[]{ Object.class, String.class, int.class }) {
+            for (Class<?> collectType : new Class<?>[]{ Object.class, String.class, int.class, void.class }) {
+                int maxArity = 10;
+                if (collectType != String.class)  maxArity = 5;
+                if (lastType != Object.class)  maxArity = 4;
+                for (int nargs = 0; nargs <= maxArity; nargs++) {
+                    ArrayList<Class<?>> argTypes = new ArrayList<>(Collections.nCopies(nargs, Object.class));
+                    int maxMix = 20;
+                    if (collectType != Object.class)  maxMix = 0;
+                    Map<Object,Integer> argTypesSeen = new HashMap<>();
+                    for (int mix = 0; mix <= maxMix; mix++) {
+                        if (!mixArgs(argTypes, mix, argTypesSeen))  continue;
+                        for (int collect = 0; collect <= nargs; collect++) {
+                            for (int pos = 0; pos <= nargs - collect; pos++) {
+                                testFoldOrCollectArguments(argTypes, pos, collect, collectType, lastType, isCollect);
+                            }
+                        }
+                    }
                 }
             }
         }
     }
 
-    void testFoldArguments(int nargs, int pos, int fold) throws Throwable {
-        if (pos != 0)  return;  // can fold only at pos=0 for now
+    boolean mixArgs(List<Class<?>> argTypes, int mix, Map<Object,Integer> argTypesSeen) {
+        assert(mix >= 0);
+        if (mix == 0)  return true;  // no change
+        if ((mix >>> argTypes.size()) != 0)  return false;
+        for (int i = 0; i < argTypes.size(); i++) {
+            if (i >= 31)  break;
+            boolean bit = (mix & (1 << i)) != 0;
+            if (bit) {
+                Class<?> type = argTypes.get(i);
+                if (type == Object.class)
+                    type = String.class;
+                else if (type == String.class)
+                    type = int.class;
+                else
+                    type = Object.class;
+                argTypes.set(i, type);
+            }
+        }
+        Integer prev = argTypesSeen.put(new ArrayList<>(argTypes), mix);
+        if (prev != null) {
+            if (verbosity >= 4)  System.out.println("mix "+prev+" repeated "+mix+": "+argTypes);
+            return false;
+        }
+        if (verbosity >= 3)  System.out.println("mix "+mix+" = "+argTypes);
+        return true;
+    }
+
+    void testFoldOrCollectArguments(List<Class<?>> argTypes,  // argument types minus the inserted combineType
+                                    int pos, int fold, // position and length of the folded arguments
+                                    Class<?> combineType, // type returned from the combiner
+                                    Class<?> lastType,  // type returned from the target
+                                    boolean isCollect) throws Throwable {
+        int nargs = argTypes.size();
+        if (pos != 0 && !isCollect)  return;  // can fold only at pos=0 for now
         countTest();
-        MethodHandle target = varargsList(1 + nargs);
-        MethodHandle combine = varargsList(fold).asType(MethodType.genericMethodType(fold));
-        List<Object> argsToPass = Arrays.asList(randomArgs(nargs, Object.class));
+        List<Class<?>> combineArgTypes = argTypes.subList(pos, pos + fold);
+        List<Class<?>> targetArgTypes = new ArrayList<>(argTypes);
+        if (isCollect)  // does targret see arg[pos..pos+cc-1]?
+            targetArgTypes.subList(pos, pos + fold).clear();
+        if (combineType != void.class)
+            targetArgTypes.add(pos, combineType);
+        MethodHandle target = varargsList(targetArgTypes, lastType);
+        MethodHandle combine = varargsList(combineArgTypes, combineType);
+        List<Object> argsToPass = Arrays.asList(randomArgs(argTypes));
         if (verbosity >= 3)
-            System.out.println("fold "+target+" with "+combine);
-        MethodHandle target2 = MethodHandles.foldArguments(target, combine);
+            System.out.println((isCollect ? "collect" : "fold")+" "+target+" with "+combine);
+        MethodHandle target2;
+        if (isCollect)
+            target2 = MethodHandles.collectArguments(target, pos, combine);
+        else
+            target2 = MethodHandles.foldArguments(target, combine);
         // Simulate expected effect of combiner on arglist:
-        List<Object> expected = new ArrayList<>(argsToPass);
-        List<Object> argsToFold = expected.subList(pos, pos + fold);
+        List<Object> expectedList = new ArrayList<>(argsToPass);
+        List<Object> argsToFold = expectedList.subList(pos, pos + fold);
         if (verbosity >= 3)
-            System.out.println("fold: "+argsToFold+" into "+target2);
+            System.out.println((isCollect ? "collect" : "fold")+": "+argsToFold+" into "+target2);
         Object foldedArgs = combine.invokeWithArguments(argsToFold);
-        argsToFold.add(0, foldedArgs);
+        if (isCollect)
+            argsToFold.clear();
+        if (combineType != void.class)
+            argsToFold.add(0, foldedArgs);
         Object result = target2.invokeWithArguments(argsToPass);
         if (verbosity >= 3)
             System.out.println("result: "+result);
+        Object expected = target.invokeWithArguments(expectedList);
         if (!expected.equals(result))
             System.out.println("*** fail at n/p/f = "+nargs+"/"+pos+"/"+fold+": "+argsToPass+" => "+result+" != "+expected);
         assertEquals(expected, result);

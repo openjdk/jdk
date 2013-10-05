@@ -2216,15 +2216,120 @@ assertEquals("XY", (String) f2.invokeExact("x", "y")); // XY
         return MethodHandleImpl.makeCollectArguments(target, filter, pos, false);
     }
 
-    // FIXME: Make this public in M1.
-    /*non-public*/ static
-    MethodHandle collectArguments(MethodHandle target, int pos, MethodHandle collector) {
+    /**
+     * Adapts a target method handle by pre-processing
+     * a sub-sequence of its arguments with a filter (another method handle).
+     * The pre-processed arguments are replaced by the result (if any) of the
+     * filter function.
+     * The target is then called on the modified (usually shortened) argument list.
+     * <p>
+     * If the filter returns a value, the target must accept that value as
+     * its argument in position {@code pos}, preceded and/or followed by
+     * any arguments not passed to the filter.
+     * If the filter returns void, the target must accept all arguments
+     * not passed to the filter.
+     * No arguments are reordered, and a result returned from the filter
+     * replaces (in order) the whole subsequence of arguments originally
+     * passed to the adapter.
+     * <p>
+     * The argument types (if any) of the filter
+     * replace zero or one argument types of the target, at position {@code pos},
+     * in the resulting adapted method handle.
+     * The return type of the filter (if any) must be identical to the
+     * argument type of the target at position {@code pos}, and that target argument
+     * is supplied by the return value of the filter.
+     * <p>
+     * In all cases, {@code pos} must be greater than or equal to zero, and
+     * {@code pos} must also be less than or equal to the target's arity.
+     * <p><b>Example:</b>
+     * <p><blockquote><pre>
+import static java.lang.invoke.MethodHandles.*;
+import static java.lang.invoke.MethodType.*;
+...
+MethodHandle deepToString = publicLookup()
+  .findStatic(Arrays.class, "deepToString", methodType(String.class, Object[].class));
+
+MethodHandle ts1 = deepToString.asCollector(String[].class, 1);
+assertEquals("[strange]", (String) ts1.invokeExact("strange"));
+
+MethodHandle ts2 = deepToString.asCollector(String[].class, 2);
+assertEquals("[up, down]", (String) ts2.invokeExact("up", "down"));
+
+MethodHandle ts3 = deepToString.asCollector(String[].class, 3);
+MethodHandle ts3_ts2 = collectArguments(ts3, 1, ts2);
+assertEquals("[top, [up, down], strange]",
+             (String) ts3_ts2.invokeExact("top", "up", "down", "strange"));
+
+MethodHandle ts3_ts2_ts1 = collectArguments(ts3_ts2, 3, ts1);
+assertEquals("[top, [up, down], [strange]]",
+             (String) ts3_ts2_ts1.invokeExact("top", "up", "down", "strange"));
+
+MethodHandle ts3_ts2_ts3 = collectArguments(ts3_ts2, 1, ts3);
+assertEquals("[top, [[up, down, strange], charm], bottom]",
+             (String) ts3_ts2_ts3.invokeExact("top", "up", "down", "strange", "charm", "bottom"));
+     * </pre></blockquote>
+     * <p> Here is pseudocode for the resulting adapter:
+     * <blockquote><pre>
+     * T target(A...,V,C...);
+     * V filter(B...);
+     * T adapter(A... a,B... b,C... c) {
+     *   V v = filter(b...);
+     *   return target(a...,v,c...);
+     * }
+     * // and if the filter has no arguments:
+     * T target2(A...,V,C...);
+     * V filter2();
+     * T adapter2(A... a,C... c) {
+     *   V v = filter2();
+     *   return target2(a...,v,c...);
+     * }
+     * // and if the filter has a void return:
+     * T target3(A...,C...);
+     * void filter3(B...);
+     * void adapter3(A... a,B... b,C... c) {
+     *   filter3(b...);
+     *   return target3(a...,c...);
+     * }
+     * </pre></blockquote>
+     * <p>
+     * A collection adapter {@code collectArguments(mh, 0, coll)} is equivalent to
+     * one which first "folds" the affected arguments, and then drops them, in separate
+     * steps as follows:
+     * <blockquote><pre>{@code
+     * mh = MethodHandles.dropArguments(mh, 1, coll.type().parameterList()); //step 2
+     * mh = MethodHandles.foldArguments(mh, coll); //step 1
+     * }</pre></blockquote>
+     * If the target method handle consumes no arguments besides than the result
+     * (if any) of the filter {@code coll}, then {@code collectArguments(mh, 0, coll)}
+     * is equivalent to {@code filterReturnValue(coll, mh)}.
+     * If the filter method handle {@code coll} consumes one argument and produces
+     * a non-void result, then {@code collectArguments(mh, N, coll)}
+     * is equivalent to {@code filterArguments(mh, N, coll)}.
+     * Other equivalences are possible but would require argument permutation.
+     *
+     * @param target the method handle to invoke after filtering the subsequence of arguments
+     * @param pos the position of the first adapter argument to pass to the filter,
+     *            and/or the target argument which receives the result of the filter
+     * @param filter method handle to call on the subsequence of arguments
+     * @return method handle which incorporates the specified argument subsequence filtering logic
+     * @throws NullPointerException if either argument is null
+     * @throws IllegalArgumentException if the return type of {@code filter}
+     *          is non-void and is not the same as the {@code pos} argument of the target,
+     *          or if {@code pos} is not between 0 and the target's arity, inclusive,
+     *          or if the resulting method handle's type would have
+     *          <a href="MethodHandle.html#maxarity">too many parameters</a>
+     * @see MethodHandles#foldArguments
+     * @see MethodHandles#filterArguments
+     * @see MethodHandles#filterReturnValue
+     */
+    public static
+    MethodHandle collectArguments(MethodHandle target, int pos, MethodHandle filter) {
         MethodType targetType = target.type();
-        MethodType filterType = collector.type();
+        MethodType filterType = filter.type();
         if (filterType.returnType() != void.class &&
             filterType.returnType() != targetType.parameterType(pos))
             throw newIllegalArgumentException("target and filter types do not match", targetType, filterType);
-        return MethodHandleImpl.makeCollectArguments(target, collector, pos, false);
+        return MethodHandleImpl.makeCollectArguments(target, filter, pos, false);
     }
 
     /**
