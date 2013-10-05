@@ -607,13 +607,14 @@ public class MethodHandles {
          * additional receiver argument inserted into the method handle type,
          * as there would be with {@link #findVirtual findVirtual} or {@link #findSpecial findSpecial}.)
          * The method and all its argument types must be accessible to the lookup class.
-         * If the method's class has not yet been initialized, that is done
-         * immediately, before the method handle is returned.
          * <p>
          * The returned method handle will have
          * {@linkplain MethodHandle#asVarargsCollector variable arity} if and only if
          * the method's variable arity modifier bit ({@code 0x0080}) is set.
-         * <b>Example:</b>
+         * <p>
+         * If the returned method handle is invoked, the method's class will
+         * be initialized, if it has not already been initialized.
+         * <p><b>Example:</b>
          * <p><blockquote><pre>{@code
 import static java.lang.invoke.MethodHandles.*;
 import static java.lang.invoke.MethodType.*;
@@ -739,8 +740,6 @@ assertEquals("", (String) MH_newString.invokeExact());
          * The parameter types of the method handle will be those of the constructor,
          * while the return type will be a reference to the constructor's class.
          * The constructor and all its argument types must be accessible to the lookup class.
-         * If the constructor's class has not yet been initialized, that is done
-         * immediately, before the method handle is returned.
          * <p>
          * <em>(Note:  The requested type must have a return type of {@code void}.
          * This is consistent with the JVM's treatment of constructor type descriptors.)</em>
@@ -748,6 +747,9 @@ assertEquals("", (String) MH_newString.invokeExact());
          * The returned method handle will have
          * {@linkplain MethodHandle#asVarargsCollector variable arity} if and only if
          * the constructor's variable arity modifier bit ({@code 0x0080}) is set.
+         * <p>
+         * If the returned method handle is invoked, the constructor's class will
+         * be initialized, if it has not already been initialized.
          * <p><b>Example:</b>
          * <p><blockquote><pre>{@code
 import static java.lang.invoke.MethodHandles.*;
@@ -918,6 +920,9 @@ assertEquals(""+l, (String) MH_this.invokeExact(subl)); // Listie method
          * value type.
          * The method handle will take no arguments.
          * Access checking is performed immediately on behalf of the lookup class.
+         * <p>
+         * If the returned method handle is invoked, the field's class will
+         * be initialized, if it has not already been initialized.
          * @param refc the class or interface from which the method is accessed
          * @param name the field's name
          * @param type the field's type
@@ -940,6 +945,9 @@ assertEquals(""+l, (String) MH_this.invokeExact(subl)); // Listie method
          * The method handle will take a single
          * argument, of the field's value type, the value to be stored.
          * Access checking is performed immediately on behalf of the lookup class.
+         * <p>
+         * If the returned method handle is invoked, the field's class will
+         * be initialized, if it has not already been initialized.
          * @param refc the class or interface from which the method is accessed
          * @param name the field's name
          * @param type the field's type
@@ -1024,6 +1032,10 @@ return mh1;
          * The returned method handle will have
          * {@linkplain MethodHandle#asVarargsCollector variable arity} if and only if
          * the method's variable arity modifier bit ({@code 0x0080}) is set.
+         * <p>
+         * If <i>m</i> is static, and
+         * if the returned method handle is invoked, the method's class will
+         * be initialized, if it has not already been initialized.
          * @param m the reflected method
          * @return a method handle which can invoke the reflected method
          * @throws IllegalAccessException if access checking fails
@@ -1095,6 +1107,9 @@ return mh1;
          * The returned method handle will have
          * {@linkplain MethodHandle#asVarargsCollector variable arity} if and only if
          * the constructor's variable arity modifier bit ({@code 0x0080}) is set.
+         * <p>
+         * If the returned method handle is invoked, the constructor's class will
+         * be initialized, if it has not already been initialized.
          * @param c the reflected constructor
          * @return a method handle which can invoke the reflected constructor
          * @throws IllegalAccessException if access checking fails
@@ -1119,6 +1134,10 @@ return mh1;
          * the field.
          * If the field's {@code accessible} flag is not set,
          * access checking is performed immediately on behalf of the lookup class.
+         * <p>
+         * If the field is static, and
+         * if the returned method handle is invoked, the field's class will
+         * be initialized, if it has not already been initialized.
          * @param f the reflected field
          * @return a method handle which can load values from the reflected field
          * @throws IllegalAccessException if access checking fails
@@ -1145,6 +1164,10 @@ return mh1;
          * the field, and the value to be stored.
          * If the field's {@code accessible} flag is not set,
          * access checking is performed immediately on behalf of the lookup class.
+         * <p>
+         * If the field is static, and
+         * if the returned method handle is invoked, the field's class will
+         * be initialized, if it has not already been initialized.
          * @param f the reflected field
          * @return a method handle which can store values into the reflected field
          * @throws IllegalAccessException if access checking fails
