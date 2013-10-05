@@ -392,7 +392,7 @@ mh.invokeExact(System.out, "Hello, world.");
  * Java types.
  * <ul>
  * <li>Method types range over all possible arities,
- * from no arguments to up to 255 of arguments (a limit imposed by the JVM).
+ * from no arguments to up to the  <a href="MethodHandle.html#maxarity">maximum number</a> of allowed arguments.
  * Generics are not variadic, and so cannot represent this.</li>
  * <li>Method types can specify arguments of primitive types,
  * which Java generic types cannot range over.</li>
@@ -401,6 +401,22 @@ mh.invokeExact(System.out, "Hello, world.");
  * those of multiple arities.  It is impossible to represent such
  * genericity with a Java type parameter.</li>
  * </ul>
+ *
+ * <h1><a name="maxarity"></a>Arity limits</h1>
+ * The JVM imposes on all methods and constructors of any kind an absolute
+ * limit of 255 stacked arguments.  This limit can appear more restrictive
+ * in certain cases:
+ * <ul>
+ * <li>A {@code long} or {@code double} argument counts (for purposes of arity limits) as two argument slots.
+ * <li>A non-static method consumes an extra argument for the object on which the method is called.
+ * <li>A constructor consumes an extra argument for the object which is being constructed.
+ * <li>Since a method handle&rsquo;s {@code invoke} method (or other signature-polymorphic method) is non-virtual,
+ *     it consumes an extra argument for the method handle itself, in addition to any non-virtual receiver object.
+ * </ul>
+ * These limits imply that certain method handles cannot be created, solely because of the JVM limit on stacked arguments.
+ * For example, if a static JVM method accepts exactly 255 arguments, a method handle cannot be created for it.
+ * Attempts to create method handles with impossible method types lead to an {@link IllegalArgumentException}.
+ * In particular, a method handle&rsquo;s type must not have an arity of the exact maximum 255.
  *
  * @see MethodType
  * @see MethodHandles
@@ -831,10 +847,12 @@ assertEquals("[A, B, C]", (String) caToString2.invokeExact('A', "BC".toCharArray
      * @return a new method handle which spreads its final array argument,
      *         before calling the original method handle
      * @throws NullPointerException if {@code arrayType} is a null reference
-     * @throws IllegalArgumentException if {@code arrayType} is not an array type
-     * @throws IllegalArgumentException if target does not have at least
+     * @throws IllegalArgumentException if {@code arrayType} is not an array type,
+     *         or if target does not have at least
      *         {@code arrayLength} parameter types,
-     *         or if {@code arrayLength} is negative
+     *         or if {@code arrayLength} is negative,
+     *         or if the resulting method handle's type would have
+     *         <a href="MethodHandle.html#maxarity">too many parameters</a>
      * @throws WrongMethodTypeException if the implied {@code asType} call fails
      * @see #asCollector
      */
@@ -947,7 +965,9 @@ assertEquals("[123]", (String) longsToString.invokeExact((long)123));
      * @throws NullPointerException if {@code arrayType} is a null reference
      * @throws IllegalArgumentException if {@code arrayType} is not an array type
      *         or {@code arrayType} is not assignable to this method handle's trailing parameter type,
-     *         or {@code arrayLength} is not a legal array size
+     *         or {@code arrayLength} is not a legal array size,
+     *         or the resulting method handle's type would have
+     *         <a href="MethodHandle.html#maxarity">too many parameters</a>
      * @throws WrongMethodTypeException if the implied {@code asType} call fails
      * @see #asSpreader
      * @see #asVarargsCollector
