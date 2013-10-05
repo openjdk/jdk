@@ -460,14 +460,8 @@ import static java.lang.invoke.MethodHandles.Lookup.IMPL_LOOKUP;
     }
 
     static void checkSpreadArgument(Object av, int n) {
-        // FIXME: regression test for bug 7141637 erroneously expects an NPE, and other tests may expect IAE
-        // but the actual exception raised by an arity mismatch should be WMTE
-        final boolean RAISE_RANDOM_EXCEPTIONS = true;  // FIXME: delete in JSR 292 M1
         if (av == null) {
             if (n == 0)  return;
-            int len;
-            if (RAISE_RANDOM_EXCEPTIONS)
-                len = ((Object[])av).length;  // throw NPE; but delete this after tests are fixed
         } else if (av instanceof Object[]) {
             int len = ((Object[])av).length;
             if (len == n)  return;
@@ -476,9 +470,7 @@ import static java.lang.invoke.MethodHandles.Lookup.IMPL_LOOKUP;
             if (len == n)  return;
         }
         // fall through to error:
-        if (RAISE_RANDOM_EXCEPTIONS)
-            throw newIllegalArgumentException("Array is not of length "+n);
-        throw new WrongMethodTypeException("Array is not of length "+n);
+        throw newIllegalArgumentException("array is not of length "+n);
     }
 
     /**
