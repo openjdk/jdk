@@ -60,7 +60,7 @@ import static java.lang.invoke.MethodHandles.Lookup.IMPL_LOOKUP;
  * <p>
  * Here is a sample use of call sites and bootstrap methods which links every
  * dynamic call site to print its arguments:
-<blockquote><pre><!-- see indy-demo/src/PrintArgsDemo.java -->
+<blockquote><pre>{@code
 static void test() throws Throwable {
     // THE FOLLOWING LINE IS PSEUDOCODE FOR A JVM INSTRUCTION
     InvokeDynamic[#bootstrapDynamic].baz("baz arg", 2, 3.14);
@@ -79,7 +79,7 @@ private static CallSite bootstrapDynamic(MethodHandles.Lookup caller, String nam
   // ignore caller and name, but match the type:
   return new ConstantCallSite(printArgs.asType(type));
 }
-</pre></blockquote>
+}</pre></blockquote>
  * @author John Rose, JSR 292 EG
  */
 abstract
@@ -199,12 +199,12 @@ public class CallSite {
      * which has been linked to this call site.
      * <p>
      * This method is equivalent to the following code:
-     * <blockquote><pre>
+     * <blockquote><pre>{@code
      * MethodHandle getTarget, invoker, result;
      * getTarget = MethodHandles.publicLookup().bind(this, "getTarget", MethodType.methodType(MethodHandle.class));
      * invoker = MethodHandles.exactInvoker(this.type());
      * result = MethodHandles.foldArguments(invoker, getTarget)
-     * </pre></blockquote>
+     * }</pre></blockquote>
      *
      * @return a method handle which always invokes this call site's current target
      */
