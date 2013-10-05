@@ -245,6 +245,10 @@ public class MethodHandles {
      * on various grounds (<a href="#secmgr">see below</a>).
      * By contrast, the {@code ldc} instruction is not subject to
      * security manager checks.
+     * <li>If the looked-up method has a
+     * <a href="MethodHandle.html#maxarity">very large arity</a>,
+     * the method handle creation may fail, due to the method handle
+     * type having too many parameters.
      * </ul>
      *
      * <h1><a name="access"></a>Access checking</h1>
@@ -1522,7 +1526,9 @@ return invoker;
      * @return a method handle suitable for invoking any method handle of the given type
      * @throws NullPointerException if {@code type} is null
      * @throws IllegalArgumentException if {@code leadingArgCount} is not in
-     *                  the range from 0 to {@code type.parameterCount()} inclusive
+     *                  the range from 0 to {@code type.parameterCount()} inclusive,
+     *                  or if the resulting method handle's type would have
+     *          <a href="MethodHandle.html#maxarity">too many parameters</a>
      */
     static public
     MethodHandle spreadInvoker(MethodType type, int leadingArgCount) {
@@ -1565,6 +1571,8 @@ publicLookup().findVirtual(MethodHandle.class, "invokeExact", type)
      * This method throws no reflective or security exceptions.
      * @param type the desired target type
      * @return a method handle suitable for invoking any method handle of the given type
+     * @throws IllegalArgumentException if the resulting method handle's type would have
+     *          <a href="MethodHandle.html#maxarity">too many parameters</a>
      */
     static public
     MethodHandle exactInvoker(MethodType type) {
@@ -1598,6 +1606,8 @@ publicLookup().findVirtual(MethodHandle.class, "invoke", type)
      * This method throws no reflective or security exceptions.
      * @param type the desired target type
      * @return a method handle suitable for invoking any method handle convertible to the given type
+     * @throws IllegalArgumentException if the resulting method handle's type would have
+     *          <a href="MethodHandle.html#maxarity">too many parameters</a>
      */
     static public
     MethodHandle invoker(MethodType type) {
@@ -1966,7 +1976,8 @@ assertEquals("xz", (String) d12.invokeExact("x", 12, true, "z"));
      *                              or if the {@code valueTypes} array or any of its elements is null
      * @throws IllegalArgumentException if any element of {@code valueTypes} is {@code void.class},
      *                  or if {@code pos} is negative or greater than the arity of the target,
-     *                  or if the new method handle's type would have too many parameters
+     *                  or if the new method handle's type would have
+     *                  <a href="MethodHandle.html#maxarity">too many parameters</a>
      */
     public static
     MethodHandle dropArguments(MethodHandle target, int pos, Class<?>... valueTypes) {
@@ -2034,7 +2045,9 @@ assertEquals("XY", (String) f2.invokeExact("x", "y")); // XY
      *                              or if the {@code filters} array is null
      * @throws IllegalArgumentException if a non-null element of {@code filters}
      *          does not match a corresponding argument type of target as described above,
-     *          or if the {@code pos+filters.length} is greater than {@code target.type().parameterCount()}
+     *          or if the {@code pos+filters.length} is greater than {@code target.type().parameterCount()},
+     *          or if the resulting method handle's type would have
+     *          <a href="MethodHandle.html#maxarity">too many parameters</a>
      */
     public static
     MethodHandle filterArguments(MethodHandle target, int pos, MethodHandle... filters) {
