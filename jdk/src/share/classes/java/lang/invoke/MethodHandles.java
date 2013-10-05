@@ -1511,6 +1511,9 @@ return mh1;
      * <p>
      * Before invoking its target, the invoker will spread the final array, apply
      * reference casts as necessary, and unbox and widen primitive arguments.
+     * If, when the invoker is called, the supplied array argument does
+     * not have the correct number of elements, the invoker will throw
+     * an {@link IllegalArgumentException} instead of invoking the target.
      * <p>
      * This method is equivalent to the following code (though it may be more efficient):
      * <p><blockquote><pre>
