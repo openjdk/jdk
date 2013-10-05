@@ -36,8 +36,6 @@ import java.util.concurrent.atomic.AtomicLong;
 /**
  * Provide method to compile whole class.
  * Also contains compiled methods and classes counters.
- *
- * @author igor.ignatyev@oracle.com
  */
 public class Compiler {
     private Compiler() { }
