@@ -107,6 +107,11 @@ public class MethodHandleProxies {
      * such as abstract classes with single abstract methods.
      * Future versions of this API may also equip wrapper instances
      * with one or more additional public "marker" interfaces.
+     * <p>
+     * If a security manager is installed, this method is caller sensitive.
+     * During any invocation of the target method handle via the returned wrapper,
+     * the original creator of the wrapper (the caller) will be visible
+     * to context checks requested by the security manager.
      *
      * @param <T> the desired type of the wrapper, a single-method interface
      * @param intfc a class object representing {@code T}
