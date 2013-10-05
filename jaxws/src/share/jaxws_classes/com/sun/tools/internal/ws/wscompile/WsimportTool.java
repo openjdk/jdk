@@ -332,7 +332,7 @@ public class WsimportTool {
                 if(options.verbose) {
                     listener.message(WscompileMessages.WSIMPORT_ARCHIVE_ARTIFACT(f, options.clientjar));
                 }
-                String entry = f.getCanonicalPath().substring(base.length()+1);
+                String entry = f.getCanonicalPath().substring(base.length()+1).replace(File.separatorChar, '/');
                 fi = new FileInputStream(f);
                 bis = new BufferedInputStream(fi);
                 JarEntry jarEntry = new JarEntry(entry);
