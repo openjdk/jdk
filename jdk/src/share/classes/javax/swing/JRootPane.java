@@ -49,7 +49,7 @@ import sun.security.action.GetBooleanAction;
  * <p>
  * The following image shows the relationships between
  * the classes that use root panes.
- * <p align=center><img src="doc-files/JRootPane-1.gif"
+ * <p style="text-align:center"><img src="doc-files/JRootPane-1.gif"
  * alt="The following text describes this graphic."
  * HEIGHT=484 WIDTH=629></p>
  * The &quot;heavyweight&quot; components (those that delegate to a peer, or native
@@ -69,7 +69,7 @@ import sun.security.action.GetBooleanAction;
  * can be used to obtain the <code>JRootPane</code> that contains
  * a given component.
  * </blockquote>
- * <table align="right" border="0" summary="layout">
+ * <table style="float:right" border="0" summary="layout">
  * <tr>
  * <td align="center">
  * <img src="doc-files/JRootPane-2.gif"
@@ -179,7 +179,7 @@ import sun.security.action.GetBooleanAction;
  * future Swing releases. The current serialization support is
  * appropriate for short term storage or RMI between applications running
  * the same version of Swing.  As of 1.4, support for long term storage
- * of all JavaBeans<sup><font size="-2">TM</font></sup>
+ * of all JavaBeans&trade;
  * has been added to the <code>java.beans</code> package.
  * Please see {@link java.beans.XMLEncoder}.
  *
@@ -898,7 +898,7 @@ public class JRootPane extends JComponent implements Accessible {
      * future Swing releases. The current serialization support is
      * appropriate for short term storage or RMI between applications running
      * the same version of Swing.  As of 1.4, support for long term storage
-     * of all JavaBeans<sup><font size="-2">TM</font></sup>
+     * of all JavaBeans&trade;
      * has been added to the <code>java.beans</code> package.
      * Please see {@link java.beans.XMLEncoder}.
      */
@@ -1064,7 +1064,7 @@ public class JRootPane extends JComponent implements Accessible {
      * future Swing releases. The current serialization support is
      * appropriate for short term storage or RMI between applications running
      * the same version of Swing.  As of 1.4, support for long term storage
-     * of all JavaBeans<sup><font size="-2">TM</font></sup>
+     * of all JavaBeans&trade;
      * has been added to the <code>java.beans</code> package.
      * Please see {@link java.beans.XMLEncoder}.
      */
