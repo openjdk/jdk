@@ -64,8 +64,8 @@ public class RunpathTest extends TestHelper {
     }
 
     void testRpath() {
-        String expectedRpath = ".*RPATH.*\\$ORIGIN/../../lib/" + getJreArch() + ".*";
-        elfCheck(java64Cmd, expectedRpath);
+        String expectedRpath = ".*RPATH.*\\$ORIGIN/../lib/" + getJreArch() + ".*";
+        elfCheck(javaCmd, expectedRpath);
     }
 
     public static void main(String... args) throws Exception {
