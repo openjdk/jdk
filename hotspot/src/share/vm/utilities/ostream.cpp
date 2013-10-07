@@ -465,7 +465,7 @@ static const char* make_log_name_internal(const char* log_name, const char* forc
 }
 
 // log_name comes from -XX:LogFile=log_name or -Xloggc:log_name
-// in log_name, %p => pipd1234 and
+// in log_name, %p => pid1234 and
 //              %t => YYYY-MM-DD_HH-MM-SS
 static const char* make_log_name(const char* log_name, const char* force_directory) {
   char timestr[32];
@@ -792,7 +792,7 @@ bool defaultStream::has_log_file() {
 
 void defaultStream::init_log() {
   // %%% Need a MutexLocker?
-  const char* log_name = LogFile != NULL ? LogFile : "hotspot_pid%p.log";
+  const char* log_name = LogFile != NULL ? LogFile : "hotspot_%p.log";
   const char* try_name = make_log_name(log_name, NULL);
   fileStream* file = new(ResourceObj::C_HEAP, mtInternal) fileStream(try_name);
   if (!file->is_open()) {
