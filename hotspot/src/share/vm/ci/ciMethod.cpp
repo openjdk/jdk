@@ -1247,7 +1247,6 @@ ciMethodBlocks  *ciMethod::get_method_blocks() {
 #undef FETCH_FLAG_FROM_VM
 
 void ciMethod::dump_replay_data(outputStream* st) {
-  ASSERT_IN_VM;
   ResourceMark rm;
   Method* method = get_Method();
   MethodCounters* mcs = method->method_counters();
