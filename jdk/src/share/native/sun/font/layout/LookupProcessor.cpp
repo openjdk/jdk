@@ -138,13 +138,16 @@ le_uint32 LookupProcessor::applySingleLookup(le_uint16 lookupTableIndex, GlyphIt
 le_int32 LookupProcessor::selectLookups(const LEReferenceTo<FeatureTable> &featureTable, FeatureMask featureMask, le_int32 order, LEErrorCode &success)
 {
   le_uint16 lookupCount = featureTable.isValid()? SWAPW(featureTable->lookupCount) : 0;
-    le_int32  store = order;
+    le_uint32  store = (le_uint32)order;
 
     LEReferenceToArrayOf<le_uint16> lookupListIndexArray(featureTable, success, featureTable->lookupListIndexArray, lookupCount);
 
     for (le_uint16 lookup = 0; LE_SUCCESS(success) && lookup < lookupCount; lookup += 1) {
       le_uint16 lookupListIndex = SWAPW(lookupListIndexArray.getObject(lookup,success));
       if (lookupListIndex >= lookupSelectCount) {
+        continue;
+      }
+      if (store >= lookupOrderCount) {
         continue;
       }
 
@@ -246,7 +249,7 @@ LookupProcessor::LookupProcessor(const LETableReference &baseAddress,
 
     if (requiredFeatureIndex != 0xFFFF) {
       requiredFeatureTable = featureListTable->getFeatureTable(featureListTable, requiredFeatureIndex, &requiredFeatureTag, success);
-      featureReferences += SWAPW(featureTable->lookupCount);
+      featureReferences += SWAPW(requiredFeatureTable->lookupCount);
     }
 
     lookupOrderArray = LE_NEW_ARRAY(le_uint16, featureReferences);
@@ -254,6 +257,7 @@ LookupProcessor::LookupProcessor(const LETableReference &baseAddress,
         success = LE_MEMORY_ALLOCATION_ERROR;
         return;
     }
+    lookupOrderCount = featureReferences;
 
     for (le_int32 f = 0; f < featureMapCount; f += 1) {
         FeatureMap fm = featureMap[f];
