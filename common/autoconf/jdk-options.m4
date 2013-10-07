@@ -426,6 +426,14 @@ elif test "x$with_update_version" != x; then
   JDK_UPDATE_VERSION="$with_update_version"
 fi
 
+AC_ARG_WITH(user-release-suffix, [AS_HELP_STRING([--with-user-release-suffix], 
+        [Add a custom string to the version string if build number isn't set.@<:@username_builddateb00@:>@])])
+if test "x$with_user_release_suffix" = xyes; then
+  AC_MSG_ERROR([Release suffix must have a value])
+elif test "x$with_user_release_suffix" != x; then
+  USER_RELEASE_SUFFIX="$with_user_release_suffix"
+fi
+
 AC_ARG_WITH(build-number, [AS_HELP_STRING([--with-build-number], 
                           [Set build number value for build @<:@b00@:>@])])
 if test "x$with_build_number" = xyes; then
@@ -433,25 +441,19 @@ if test "x$with_build_number" = xyes; then
 elif test "x$with_build_number" != x; then
   JDK_BUILD_NUMBER="$with_build_number"
 fi
+# Define default USER_RELEASE_SUFFIX if BUILD_NUMBER and USER_RELEASE_SUFFIX are not set
 if test "x$JDK_BUILD_NUMBER" = x; then
   JDK_BUILD_NUMBER=b00
+  if test "x$USER_RELEASE_SUFFIX" = x; then
+    BUILD_DATE=`date '+%Y_%m_%d_%H_%M'`
+    # Avoid [:alnum:] since it depends on the locale.
+    CLEAN_USERNAME=`echo "$USER" | $TR -d -c 'abcdefghijklmnopqrstuvqxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789'`
+    USER_RELEASE_SUFFIX=`echo "${CLEAN_USERNAME}_${BUILD_DATE}" | $TR 'ABCDEFGHIJKLMNOPQRSTUVWXYZ' 'abcdefghijklmnopqrstuvwxyz'`
+  fi
 fi
-
-AC_ARG_WITH(user-release-suffix, [AS_HELP_STRING([--with-user-release-suffix], 
-        [Add a custom string to the version string if build number isn't set.@<:@username_builddateb00@:>@])])
-if test "x$with_user_release_suffix" = xyes; then
-  AC_MSG_ERROR([Release suffix must have a value])
-elif test "x$with_user_release_suffix" != x; then
-  USER_RELEASE_SUFFIX="$with_user_release_suffix"
-else
-  BUILD_DATE=`date '+%Y_%m_%d_%H_%M'`
-  # Avoid [:alnum:] since it depends on the locale.
-  CLEAN_USERNAME=`echo "$USER" | $TR -d -c 'abcdefghijklmnopqrstuvqxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789'`
-  USER_RELEASE_SUFFIX=`echo "${CLEAN_USERNAME}_${BUILD_DATE}" | $TR 'ABCDEFGHIJKLMNOPQRSTUVWXYZ' 'abcdefghijklmnopqrstuvwxyz'`
-fi
-AC_SUBST(USER_RELEASE_SUFFIX)
 
 # Now set the JDK version, milestone, build number etc.
+AC_SUBST(USER_RELEASE_SUFFIX)
 AC_SUBST(JDK_MAJOR_VERSION)
 AC_SUBST(JDK_MINOR_VERSION)
 AC_SUBST(JDK_MICRO_VERSION)
