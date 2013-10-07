@@ -609,7 +609,7 @@ public class TabulatorsTest extends OpTestCase {
     @Test(dataProvider = "StreamTestData<Integer>", dataProviderClass = StreamTestDataProvider.class)
     public void testComposeFinisher(String name, TestData.OfRef<Integer> data) throws ReflectiveOperationException {
         List<Integer> asList = exerciseTerminalOps(data, s -> s.collect(toList()));
-        List<Integer> asImmutableList = exerciseTerminalOps(data, s -> s.collect(collectingAndThen(toList(), Collections::<Integer>unmodifiableList)));
+        List<Integer> asImmutableList = exerciseTerminalOps(data, s -> s.collect(collectingAndThen(toList(), Collections::unmodifiableList)));
         assertEquals(asList, asImmutableList);
         try {
             asImmutableList.add(0);
