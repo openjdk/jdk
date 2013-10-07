@@ -3656,6 +3656,9 @@ jint Arguments::apply_ergo() {
   assert(verify_serial_gc_flags(), "SerialGC unset");
 #endif // INCLUDE_ALL_GCS
 
+  // Initialize Metaspace flags and alignments.
+  Metaspace::ergo_initialize();
+
   // Set bytecode rewriting flags
   set_bytecode_flags();
 

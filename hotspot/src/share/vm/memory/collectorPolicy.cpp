@@ -47,11 +47,6 @@
 
 // CollectorPolicy methods.
 
-// Align down. If the aligning result in 0, return 'alignment'.
-static size_t restricted_align_down(size_t size, size_t alignment) {
-  return MAX2(alignment, align_size_down_(size, alignment));
-}
-
 void CollectorPolicy::initialize_flags() {
   assert(_max_alignment >= _min_alignment,
          err_msg("max_alignment: " SIZE_FORMAT " less than min_alignment: " SIZE_FORMAT,
@@ -64,34 +59,7 @@ void CollectorPolicy::initialize_flags() {
     vm_exit_during_initialization("Incompatible initial and maximum heap sizes specified");
   }
 
-  // Do not use FLAG_SET_ERGO to update MaxMetaspaceSize, since this will
-  // override if MaxMetaspaceSize was set on the command line or not.
-  // This information is needed later to conform to the specification of the
-  // java.lang.management.MemoryUsage API.
-  //
-  // Ideally, we would be able to set the default value of MaxMetaspaceSize in
-  // globals.hpp to the aligned value, but this is not possible, since the
-  // alignment depends on other flags being parsed.
-  MaxMetaspaceSize = restricted_align_down(MaxMetaspaceSize, _max_alignment);
-
-  if (MetaspaceSize > MaxMetaspaceSize) {
-    MetaspaceSize = MaxMetaspaceSize;
-  }
-
-  MetaspaceSize = restricted_align_down(MetaspaceSize, _min_alignment);
-
-  assert(MetaspaceSize <= MaxMetaspaceSize, "Must be");
-
-  MinMetaspaceExpansion = restricted_align_down(MinMetaspaceExpansion, _min_alignment);
-  MaxMetaspaceExpansion = restricted_align_down(MaxMetaspaceExpansion, _min_alignment);
-
   MinHeapDeltaBytes = align_size_up(MinHeapDeltaBytes, _min_alignment);
-
-  assert(MetaspaceSize    % _min_alignment == 0, "metapace alignment");
-  assert(MaxMetaspaceSize % _max_alignment == 0, "maximum metaspace alignment");
-  if (MetaspaceSize < 256*K) {
-    vm_exit_during_initialization("Too small initial Metaspace size");
-  }
 }
 
 void CollectorPolicy::initialize_size_info() {

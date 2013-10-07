@@ -29,13 +29,16 @@
 #include "memory/collectorPolicy.hpp"
 #include "memory/filemap.hpp"
 #include "memory/freeList.hpp"
+#include "memory/gcLocker.hpp"
 #include "memory/metablock.hpp"
 #include "memory/metachunk.hpp"
 #include "memory/metaspace.hpp"
 #include "memory/metaspaceShared.hpp"
 #include "memory/resourceArea.hpp"
 #include "memory/universe.hpp"
+#include "runtime/atomic.inline.hpp"
 #include "runtime/globals.hpp"
+#include "runtime/init.hpp"
 #include "runtime/java.hpp"
 #include "runtime/mutex.hpp"
 #include "runtime/orderAccess.hpp"
@@ -84,13 +87,7 @@ static ChunkIndex next_chunk_index(ChunkIndex i) {
   return (ChunkIndex) (i+1);
 }
 
-// Originally _capacity_until_GC was set to MetaspaceSize here but
-// the default MetaspaceSize before argument processing was being
-// used which was not the desired value.  See the code
-// in should_expand() to see how the initialization is handled
-// now.
-size_t MetaspaceGC::_capacity_until_GC = 0;
-bool MetaspaceGC::_expand_after_GC = false;
+volatile intptr_t MetaspaceGC::_capacity_until_GC = 0;
 uint MetaspaceGC::_shrink_factor = 0;
 bool MetaspaceGC::_should_concurrent_collect = false;
 
@@ -293,8 +290,9 @@ class VirtualSpaceNode : public CHeapObj<mtClass> {
   MetaWord* end() const { return (MetaWord*) _virtual_space.high(); }
 
   size_t reserved_words() const  { return _virtual_space.reserved_size() / BytesPerWord; }
-  size_t expanded_words() const  { return _virtual_space.committed_size() / BytesPerWord; }
   size_t committed_words() const { return _virtual_space.actual_committed_size() / BytesPerWord; }
+
+  bool is_pre_committed() const { return _virtual_space.special(); }
 
   // address of next available space in _virtual_space;
   // Accessors
@@ -337,7 +335,7 @@ class VirtualSpaceNode : public CHeapObj<mtClass> {
 
   // Expands/shrinks the committed space in a virtual space.  Delegates
   // to Virtualspace
-  bool expand_by(size_t words, bool pre_touch = false);
+  bool expand_by(size_t min_words, size_t preferred_words);
 
   // In preparation for deleting this node, remove all the chunks
   // in the node from any freelist.
@@ -351,29 +349,64 @@ class VirtualSpaceNode : public CHeapObj<mtClass> {
   void print_on(outputStream* st) const;
 };
 
+#define assert_is_ptr_aligned(ptr, alignment) \
+  assert(is_ptr_aligned(ptr, alignment),      \
+    err_msg(PTR_FORMAT " is not aligned to "  \
+      SIZE_FORMAT, ptr, alignment))
+
+#define assert_is_size_aligned(size, alignment) \
+  assert(is_size_aligned(size, alignment),      \
+    err_msg(SIZE_FORMAT " is not aligned to "   \
+       SIZE_FORMAT, size, alignment))
+
+
+// Decide if large pages should be committed when the memory is reserved.
+static bool should_commit_large_pages_when_reserving(size_t bytes) {
+  if (UseLargePages && UseLargePagesInMetaspace && !os::can_commit_large_page_memory()) {
+    size_t words = bytes / BytesPerWord;
+    bool is_class = false; // We never reserve large pages for the class space.
+    if (MetaspaceGC::can_expand(words, is_class) &&
+        MetaspaceGC::allowed_expansion() >= words) {
+      return true;
+    }
+  }
+
+  return false;
+}
+
   // byte_size is the size of the associated virtualspace.
-VirtualSpaceNode::VirtualSpaceNode(size_t byte_size) : _top(NULL), _next(NULL), _rs(), _container_count(0) {
-  // align up to vm allocation granularity
-  byte_size = align_size_up(byte_size, os::vm_allocation_granularity());
+VirtualSpaceNode::VirtualSpaceNode(size_t bytes) : _top(NULL), _next(NULL), _rs(), _container_count(0) {
+  assert_is_size_aligned(bytes, Metaspace::reserve_alignment());
 
   // This allocates memory with mmap.  For DumpSharedspaces, try to reserve
   // configurable address, generally at the top of the Java heap so other
   // memory addresses don't conflict.
   if (DumpSharedSpaces) {
-    char* shared_base = (char*)SharedBaseAddress;
-    _rs = ReservedSpace(byte_size, 0, false, shared_base, 0);
+    bool large_pages = false; // No large pages when dumping the CDS archive.
+    char* shared_base = (char*)align_ptr_up((char*)SharedBaseAddress, Metaspace::reserve_alignment());
+
+    _rs = ReservedSpace(bytes, Metaspace::reserve_alignment(), large_pages, shared_base, 0);
     if (_rs.is_reserved()) {
       assert(shared_base == 0 || _rs.base() == shared_base, "should match");
     } else {
       // Get a mmap region anywhere if the SharedBaseAddress fails.
-      _rs = ReservedSpace(byte_size);
+      _rs = ReservedSpace(bytes, Metaspace::reserve_alignment(), large_pages);
     }
     MetaspaceShared::set_shared_rs(&_rs);
   } else {
-    _rs = ReservedSpace(byte_size);
+    bool large_pages = should_commit_large_pages_when_reserving(bytes);
+
+    _rs = ReservedSpace(bytes, Metaspace::reserve_alignment(), large_pages);
   }
 
-  MemTracker::record_virtual_memory_type((address)_rs.base(), mtClass);
+  if (_rs.is_reserved()) {
+    assert(_rs.base() != NULL, "Catch if we get a NULL address");
+    assert(_rs.size() != 0, "Catch if we get a 0 size");
+    assert_is_ptr_aligned(_rs.base(), Metaspace::reserve_alignment());
+    assert_is_size_aligned(_rs.size(), Metaspace::reserve_alignment());
+
+    MemTracker::record_virtual_memory_type((address)_rs.base(), mtClass);
+  }
 }
 
 void VirtualSpaceNode::purge(ChunkManager* chunk_manager) {
@@ -410,8 +443,6 @@ uint VirtualSpaceNode::container_count_slow() {
 #endif
 
 // List of VirtualSpaces for metadata allocation.
-// It has a  _next link for singly linked list and a MemRegion
-// for total space in the VirtualSpace.
 class VirtualSpaceList : public CHeapObj<mtClass> {
   friend class VirtualSpaceNode;
 
@@ -419,16 +450,13 @@ class VirtualSpaceList : public CHeapObj<mtClass> {
     VirtualSpaceSize = 256 * K
   };
 
-  // Global list of virtual spaces
   // Head of the list
   VirtualSpaceNode* _virtual_space_list;
   // virtual space currently being used for allocations
   VirtualSpaceNode* _current_virtual_space;
 
-  // Can this virtual list allocate >1 spaces?  Also, used to determine
-  // whether to allocate unlimited small chunks in this virtual space
+  // Is this VirtualSpaceList used for the compressed class space
   bool _is_class;
-  bool can_grow() const { return !is_class() || !UseCompressedClassPointers; }
 
   // Sum of reserved and committed memory in the virtual spaces
   size_t _reserved_words;
@@ -453,7 +481,7 @@ class VirtualSpaceList : public CHeapObj<mtClass> {
   // Get another virtual space and add it to the list.  This
   // is typically prompted by a failed attempt to allocate a chunk
   // and is typically followed by the allocation of a chunk.
-  bool grow_vs(size_t vs_word_size);
+  bool create_new_virtual_space(size_t vs_word_size);
 
  public:
   VirtualSpaceList(size_t word_size);
@@ -465,12 +493,12 @@ class VirtualSpaceList : public CHeapObj<mtClass> {
                            size_t grow_chunks_by_words,
                            size_t medium_chunk_bunch);
 
-  bool expand_by(VirtualSpaceNode* node, size_t word_size, bool pre_touch = false);
+  bool expand_node_by(VirtualSpaceNode* node,
+                      size_t min_words,
+                      size_t preferred_words);
 
-  // Get the first chunk for a Metaspace.  Used for
-  // special cases such as the boot class loader, reflection
-  // class loader and anonymous class loader.
-  Metachunk* get_initialization_chunk(size_t word_size, size_t chunk_bunch);
+  bool expand_by(size_t min_words,
+                 size_t preferred_words);
 
   VirtualSpaceNode* current_virtual_space() {
     return _current_virtual_space;
@@ -478,8 +506,7 @@ class VirtualSpaceList : public CHeapObj<mtClass> {
 
   bool is_class() const { return _is_class; }
 
-  // Allocate the first virtualspace.
-  void initialize(size_t word_size);
+  bool initialization_succeeded() { return _virtual_space_list != NULL; }
 
   size_t reserved_words()  { return _reserved_words; }
   size_t reserved_bytes()  { return reserved_words() * BytesPerWord; }
@@ -869,6 +896,12 @@ Metachunk* VirtualSpaceNode::take_from_committed(size_t chunk_word_size) {
   MetaWord* chunk_limit = top();
   assert(chunk_limit != NULL, "Not safe to call this method");
 
+  // The virtual spaces are always expanded by the
+  // commit granularity to enforce the following condition.
+  // Without this the is_available check will not work correctly.
+  assert(_virtual_space.committed_size() == _virtual_space.actual_committed_size(),
+      "The committed memory doesn't match the expanded memory.");
+
   if (!is_available(chunk_word_size)) {
     if (TraceMetadataChunkAllocation) {
       gclog_or_tty->print("VirtualSpaceNode::take_from_committed() not available %d words ", chunk_word_size);
@@ -888,14 +921,21 @@ Metachunk* VirtualSpaceNode::take_from_committed(size_t chunk_word_size) {
 
 
 // Expand the virtual space (commit more of the reserved space)
-bool VirtualSpaceNode::expand_by(size_t words, bool pre_touch) {
-  size_t bytes = words * BytesPerWord;
-  bool result =  virtual_space()->expand_by(bytes, pre_touch);
-  if (TraceMetavirtualspaceAllocation && !result) {
-    gclog_or_tty->print_cr("VirtualSpaceNode::expand_by() failed "
-                           "for byte size " SIZE_FORMAT, bytes);
-    virtual_space()->print_on(gclog_or_tty);
+bool VirtualSpaceNode::expand_by(size_t min_words, size_t preferred_words) {
+  size_t min_bytes = min_words * BytesPerWord;
+  size_t preferred_bytes = preferred_words * BytesPerWord;
+
+  size_t uncommitted = virtual_space()->reserved_size() - virtual_space()->actual_committed_size();
+
+  if (uncommitted < min_bytes) {
+    return false;
   }
+
+  size_t commit = MIN2(preferred_bytes, uncommitted);
+  bool result = virtual_space()->expand_by(commit, false);
+
+  assert(result, "Failed to commit memory");
+
   return result;
 }
 
@@ -914,12 +954,23 @@ bool VirtualSpaceNode::initialize() {
     return false;
   }
 
-  // An allocation out of this Virtualspace that is larger
-  // than an initial commit size can waste that initial committed
-  // space.
-  size_t committed_byte_size = 0;
-  bool result = virtual_space()->initialize(_rs, committed_byte_size);
+  // These are necessary restriction to make sure that the virtual space always
+  // grows in steps of Metaspace::commit_alignment(). If both base and size are
+  // aligned only the middle alignment of the VirtualSpace is used.
+  assert_is_ptr_aligned(_rs.base(), Metaspace::commit_alignment());
+  assert_is_size_aligned(_rs.size(), Metaspace::commit_alignment());
+
+  // ReservedSpaces marked as special will have the entire memory
+  // pre-committed. Setting a committed size will make sure that
+  // committed_size and actual_committed_size agrees.
+  size_t pre_committed_size = _rs.special() ? _rs.size() : 0;
+
+  bool result = virtual_space()->initialize_with_granularity(_rs, pre_committed_size,
+                                            Metaspace::commit_alignment());
   if (result) {
+    assert(virtual_space()->committed_size() == virtual_space()->actual_committed_size(),
+        "Checking that the pre-committed memory was registered by the VirtualSpace");
+
     set_top((MetaWord*)virtual_space()->low());
     set_reserved(MemRegion((HeapWord*)_rs.base(),
                  (HeapWord*)(_rs.base() + _rs.size())));
@@ -976,13 +1027,23 @@ void VirtualSpaceList::dec_reserved_words(size_t v) {
   _reserved_words = _reserved_words - v;
 }
 
+#define assert_committed_below_limit()                             \
+  assert(MetaspaceAux::committed_bytes() <= MaxMetaspaceSize,      \
+      err_msg("Too much committed memory. Committed: " SIZE_FORMAT \
+              " limit (MaxMetaspaceSize): " SIZE_FORMAT,           \
+          MetaspaceAux::committed_bytes(), MaxMetaspaceSize));
+
 void VirtualSpaceList::inc_committed_words(size_t v) {
   assert_lock_strong(SpaceManager::expand_lock());
   _committed_words = _committed_words + v;
+
+  assert_committed_below_limit();
 }
 void VirtualSpaceList::dec_committed_words(size_t v) {
   assert_lock_strong(SpaceManager::expand_lock());
   _committed_words = _committed_words - v;
+
+  assert_committed_below_limit();
 }
 
 void VirtualSpaceList::inc_virtual_space_count() {
@@ -1025,8 +1086,8 @@ void VirtualSpaceList::purge(ChunkManager* chunk_manager) {
     if (vsl->container_count() == 0 && vsl != current_virtual_space()) {
       // Unlink it from the list
       if (prev_vsl == vsl) {
-        // This is the case of the current note being the first note.
-        assert(vsl == virtual_space_list(), "Expected to be the first note");
+        // This is the case of the current node being the first node.
+        assert(vsl == virtual_space_list(), "Expected to be the first node");
         set_virtual_space_list(vsl->next());
       } else {
         prev_vsl->set_next(vsl->next());
@@ -1054,7 +1115,7 @@ void VirtualSpaceList::purge(ChunkManager* chunk_manager) {
 #endif
 }
 
-VirtualSpaceList::VirtualSpaceList(size_t word_size ) :
+VirtualSpaceList::VirtualSpaceList(size_t word_size) :
                                    _is_class(false),
                                    _virtual_space_list(NULL),
                                    _current_virtual_space(NULL),
@@ -1063,9 +1124,7 @@ VirtualSpaceList::VirtualSpaceList(size_t word_size ) :
                                    _virtual_space_count(0) {
   MutexLockerEx cl(SpaceManager::expand_lock(),
                    Mutex::_no_safepoint_check_flag);
-  bool initialization_succeeded = grow_vs(word_size);
-  assert(initialization_succeeded,
-    " VirtualSpaceList initialization should not fail");
+  create_new_virtual_space(word_size);
 }
 
 VirtualSpaceList::VirtualSpaceList(ReservedSpace rs) :
@@ -1079,8 +1138,9 @@ VirtualSpaceList::VirtualSpaceList(ReservedSpace rs) :
                    Mutex::_no_safepoint_check_flag);
   VirtualSpaceNode* class_entry = new VirtualSpaceNode(rs);
   bool succeeded = class_entry->initialize();
-  assert(succeeded, " VirtualSpaceList initialization should not fail");
-  link_vs(class_entry);
+  if (succeeded) {
+    link_vs(class_entry);
+  }
 }
 
 size_t VirtualSpaceList::free_bytes() {
@@ -1088,14 +1148,24 @@ size_t VirtualSpaceList::free_bytes() {
 }
 
 // Allocate another meta virtual space and add it to the list.
-bool VirtualSpaceList::grow_vs(size_t vs_word_size) {
+bool VirtualSpaceList::create_new_virtual_space(size_t vs_word_size) {
   assert_lock_strong(SpaceManager::expand_lock());
-  if (vs_word_size == 0) {
+
+  if (is_class()) {
+    assert(false, "We currently don't support more than one VirtualSpace for"
+                  " the compressed class space. The initialization of the"
+                  " CCS uses another code path and should not hit this path.");
     return false;
   }
+
+  if (vs_word_size == 0) {
+    assert(false, "vs_word_size should always be at least _reserve_alignment large.");
+    return false;
+  }
+
   // Reserve the space
   size_t vs_byte_size = vs_word_size * BytesPerWord;
-  assert(vs_byte_size % os::vm_allocation_granularity() == 0, "Not aligned");
+  assert_is_size_aligned(vs_byte_size, Metaspace::reserve_alignment());
 
   // Allocate the meta virtual space and initialize it.
   VirtualSpaceNode* new_entry = new VirtualSpaceNode(vs_byte_size);
@@ -1103,7 +1173,8 @@ bool VirtualSpaceList::grow_vs(size_t vs_word_size) {
     delete new_entry;
     return false;
   } else {
-    assert(new_entry->reserved_words() == vs_word_size, "Must be");
+    assert(new_entry->reserved_words() == vs_word_size,
+        "Reserved memory size differs from requested memory size");
     // ensure lock-free iteration sees fully initialized node
     OrderAccess::storestore();
     link_vs(new_entry);
@@ -1130,18 +1201,65 @@ void VirtualSpaceList::link_vs(VirtualSpaceNode* new_entry) {
   }
 }
 
-bool VirtualSpaceList::expand_by(VirtualSpaceNode* node, size_t word_size, bool pre_touch) {
+bool VirtualSpaceList::expand_node_by(VirtualSpaceNode* node,
+                                      size_t min_words,
+                                      size_t preferred_words) {
   size_t before = node->committed_words();
 
-  bool result = node->expand_by(word_size, pre_touch);
+  bool result = node->expand_by(min_words, preferred_words);
 
   size_t after = node->committed_words();
 
   // after and before can be the same if the memory was pre-committed.
-  assert(after >= before, "Must be");
+  assert(after >= before, "Inconsistency");
   inc_committed_words(after - before);
 
   return result;
+}
+
+bool VirtualSpaceList::expand_by(size_t min_words, size_t preferred_words) {
+  assert_is_size_aligned(min_words,       Metaspace::commit_alignment_words());
+  assert_is_size_aligned(preferred_words, Metaspace::commit_alignment_words());
+  assert(min_words <= preferred_words, "Invalid arguments");
+
+  if (!MetaspaceGC::can_expand(min_words, this->is_class())) {
+    return  false;
+  }
+
+  size_t allowed_expansion_words = MetaspaceGC::allowed_expansion();
+  if (allowed_expansion_words < min_words) {
+    return false;
+  }
+
+  size_t max_expansion_words = MIN2(preferred_words, allowed_expansion_words);
+
+  // Commit more memory from the the current virtual space.
+  bool vs_expanded = expand_node_by(current_virtual_space(),
+                                    min_words,
+                                    max_expansion_words);
+  if (vs_expanded) {
+    return true;
+  }
+
+  // Get another virtual space.
+  size_t grow_vs_words = MAX2((size_t)VirtualSpaceSize, preferred_words);
+  grow_vs_words = align_size_up(grow_vs_words, Metaspace::reserve_alignment_words());
+
+  if (create_new_virtual_space(grow_vs_words)) {
+    if (current_virtual_space()->is_pre_committed()) {
+      // The memory was pre-committed, so we are done here.
+      assert(min_words <= current_virtual_space()->committed_words(),
+          "The new VirtualSpace was pre-committed, so it"
+          "should be large enough to fit the alloc request.");
+      return true;
+    }
+
+    return expand_node_by(current_virtual_space(),
+                          min_words,
+                          max_expansion_words);
+  }
+
+  return false;
 }
 
 Metachunk* VirtualSpaceList::get_new_chunk(size_t word_size,
@@ -1151,63 +1269,27 @@ Metachunk* VirtualSpaceList::get_new_chunk(size_t word_size,
   // Allocate a chunk out of the current virtual space.
   Metachunk* next = current_virtual_space()->get_chunk_vs(grow_chunks_by_words);
 
-  if (next == NULL) {
-    // Not enough room in current virtual space.  Try to commit
-    // more space.
-    size_t expand_vs_by_words = MAX2(medium_chunk_bunch,
-                                     grow_chunks_by_words);
-    size_t page_size_words = os::vm_page_size() / BytesPerWord;
-    size_t aligned_expand_vs_by_words = align_size_up(expand_vs_by_words,
-                                                        page_size_words);
-    bool vs_expanded =
-      expand_by(current_virtual_space(), aligned_expand_vs_by_words);
-    if (!vs_expanded) {
-      // Should the capacity of the metaspaces be expanded for
-      // this allocation?  If it's the virtual space for classes and is
-      // being used for CompressedHeaders, don't allocate a new virtualspace.
-      if (can_grow() && MetaspaceGC::should_expand(this, word_size)) {
-        // Get another virtual space.
-        size_t allocation_aligned_expand_words =
-            align_size_up(aligned_expand_vs_by_words, os::vm_allocation_granularity() / BytesPerWord);
-        size_t grow_vs_words =
-            MAX2((size_t)VirtualSpaceSize, allocation_aligned_expand_words);
-        if (grow_vs(grow_vs_words)) {
-          // Got it.  It's on the list now.  Get a chunk from it.
-          assert(current_virtual_space()->expanded_words() == 0,
-              "New virtual space nodes should not have expanded");
-
-          size_t grow_chunks_by_words_aligned = align_size_up(grow_chunks_by_words,
-                                                              page_size_words);
-          // We probably want to expand by aligned_expand_vs_by_words here.
-          expand_by(current_virtual_space(), grow_chunks_by_words_aligned);
-          next = current_virtual_space()->get_chunk_vs(grow_chunks_by_words);
-        }
-      } else {
-        // Allocation will fail and induce a GC
-        if (TraceMetadataChunkAllocation && Verbose) {
-          gclog_or_tty->print_cr("VirtualSpaceList::get_new_chunk():"
-            " Fail instead of expand the metaspace");
-        }
-      }
-    } else {
-      // The virtual space expanded, get a new chunk
-      next = current_virtual_space()->get_chunk_vs(grow_chunks_by_words);
-      assert(next != NULL, "Just expanded, should succeed");
-    }
+  if (next != NULL) {
+    return next;
   }
 
-  assert(next == NULL || (next->next() == NULL && next->prev() == NULL),
-         "New chunk is still on some list");
-  return next;
-}
+  // The expand amount is currently only determined by the requested sizes
+  // and not how much committed memory is left in the current virtual space.
 
-Metachunk* VirtualSpaceList::get_initialization_chunk(size_t chunk_word_size,
-                                                      size_t chunk_bunch) {
-  // Get a chunk from the chunk freelist
-  Metachunk* new_chunk = get_new_chunk(chunk_word_size,
-                                       chunk_word_size,
-                                       chunk_bunch);
-  return new_chunk;
+  size_t min_word_size       = align_size_up(grow_chunks_by_words, Metaspace::commit_alignment_words());
+  size_t preferred_word_size = align_size_up(medium_chunk_bunch,   Metaspace::commit_alignment_words());
+  if (min_word_size >= preferred_word_size) {
+    // Can happen when humongous chunks are allocated.
+    preferred_word_size = min_word_size;
+  }
+
+  bool expanded = expand_by(min_word_size, preferred_word_size);
+  if (expanded) {
+    next = current_virtual_space()->get_chunk_vs(grow_chunks_by_words);
+    assert(next != NULL, "The allocation was expected to succeed after the expansion");
+  }
+
+   return next;
 }
 
 void VirtualSpaceList::print_on(outputStream* st) const {
@@ -1256,96 +1338,96 @@ bool VirtualSpaceList::contains(const void *ptr) {
 // Calculate the amount to increase the high water mark (HWM).
 // Increase by a minimum amount (MinMetaspaceExpansion) so that
 // another expansion is not requested too soon.  If that is not
-// enough to satisfy the allocation (i.e. big enough for a word_size
-// allocation), increase by MaxMetaspaceExpansion.  If that is still
-// not enough, expand by the size of the allocation (word_size) plus
-// some.
-size_t MetaspaceGC::delta_capacity_until_GC(size_t word_size) {
-  size_t before_inc = MetaspaceGC::capacity_until_GC();
-  size_t min_delta_words = MinMetaspaceExpansion / BytesPerWord;
-  size_t max_delta_words = MaxMetaspaceExpansion / BytesPerWord;
-  size_t page_size_words = os::vm_page_size() / BytesPerWord;
-  size_t size_delta_words = align_size_up(word_size, page_size_words);
-  size_t delta_words = MAX2(size_delta_words, min_delta_words);
-  if (delta_words > min_delta_words) {
+// enough to satisfy the allocation, increase by MaxMetaspaceExpansion.
+// If that is still not enough, expand by the size of the allocation
+// plus some.
+size_t MetaspaceGC::delta_capacity_until_GC(size_t bytes) {
+  size_t min_delta = MinMetaspaceExpansion;
+  size_t max_delta = MaxMetaspaceExpansion;
+  size_t delta = align_size_up(bytes, Metaspace::commit_alignment());
+
+  if (delta <= min_delta) {
+    delta = min_delta;
+  } else if (delta <= max_delta) {
     // Don't want to hit the high water mark on the next
     // allocation so make the delta greater than just enough
     // for this allocation.
-    delta_words = MAX2(delta_words, max_delta_words);
-    if (delta_words > max_delta_words) {
-      // This allocation is large but the next ones are probably not
-      // so increase by the minimum.
-      delta_words = delta_words + min_delta_words;
-    }
-  }
-  return delta_words;
-}
-
-bool MetaspaceGC::should_expand(VirtualSpaceList* vsl, size_t word_size) {
-
-  // If the user wants a limit, impose one.
-  // The reason for someone using this flag is to limit reserved space.  So
-  // for non-class virtual space, compare against virtual spaces that are reserved.
-  // For class virtual space, we only compare against the committed space, not
-  // reserved space, because this is a larger space prereserved for compressed
-  // class pointers.
-  if (!FLAG_IS_DEFAULT(MaxMetaspaceSize)) {
-    size_t nonclass_allocated = MetaspaceAux::reserved_bytes(Metaspace::NonClassType);
-    size_t class_allocated    = MetaspaceAux::allocated_capacity_bytes(Metaspace::ClassType);
-    size_t real_allocated     = nonclass_allocated + class_allocated;
-    if (real_allocated >= MaxMetaspaceSize) {
-      return false;
-    }
-  }
-
-  // Class virtual space should always be expanded.  Call GC for the other
-  // metadata virtual space.
-  if (Metaspace::using_class_space() &&
-      (vsl == Metaspace::class_space_list())) return true;
-
-  // If this is part of an allocation after a GC, expand
-  // unconditionally.
-  if (MetaspaceGC::expand_after_GC()) {
-    return true;
-  }
-
-
-  // If the capacity is below the minimum capacity, allow the
-  // expansion.  Also set the high-water-mark (capacity_until_GC)
-  // to that minimum capacity so that a GC will not be induced
-  // until that minimum capacity is exceeded.
-  size_t committed_capacity_bytes = MetaspaceAux::allocated_capacity_bytes();
-  size_t metaspace_size_bytes = MetaspaceSize;
-  if (committed_capacity_bytes < metaspace_size_bytes ||
-      capacity_until_GC() == 0) {
-    set_capacity_until_GC(metaspace_size_bytes);
-    return true;
+    delta = max_delta;
   } else {
-    if (committed_capacity_bytes < capacity_until_GC()) {
-      return true;
-    } else {
-      if (TraceMetadataChunkAllocation && Verbose) {
-        gclog_or_tty->print_cr("  allocation request size " SIZE_FORMAT
-                        "  capacity_until_GC " SIZE_FORMAT
-                        "  allocated_capacity_bytes " SIZE_FORMAT,
-                        word_size,
-                        capacity_until_GC(),
-                        MetaspaceAux::allocated_capacity_bytes());
-      }
+    // This allocation is large but the next ones are probably not
+    // so increase by the minimum.
+    delta = delta + min_delta;
+  }
+
+  assert_is_size_aligned(delta, Metaspace::commit_alignment());
+
+  return delta;
+}
+
+size_t MetaspaceGC::capacity_until_GC() {
+  size_t value = (size_t)OrderAccess::load_ptr_acquire(&_capacity_until_GC);
+  assert(value >= MetaspaceSize, "Not initialied properly?");
+  return value;
+}
+
+size_t MetaspaceGC::inc_capacity_until_GC(size_t v) {
+  assert_is_size_aligned(v, Metaspace::commit_alignment());
+
+  return (size_t)Atomic::add_ptr(v, &_capacity_until_GC);
+}
+
+size_t MetaspaceGC::dec_capacity_until_GC(size_t v) {
+  assert_is_size_aligned(v, Metaspace::commit_alignment());
+
+  return (size_t)Atomic::add_ptr(-(intptr_t)v, &_capacity_until_GC);
+}
+
+bool MetaspaceGC::can_expand(size_t word_size, bool is_class) {
+  // Check if the compressed class space is full.
+  if (is_class && Metaspace::using_class_space()) {
+    size_t class_committed = MetaspaceAux::committed_bytes(Metaspace::ClassType);
+    if (class_committed + word_size * BytesPerWord > CompressedClassSpaceSize) {
       return false;
     }
   }
+
+  // Check if the user has imposed a limit on the metaspace memory.
+  size_t committed_bytes = MetaspaceAux::committed_bytes();
+  if (committed_bytes + word_size * BytesPerWord > MaxMetaspaceSize) {
+    return false;
+  }
+
+  return true;
 }
 
+size_t MetaspaceGC::allowed_expansion() {
+  size_t committed_bytes = MetaspaceAux::committed_bytes();
 
+  size_t left_until_max  = MaxMetaspaceSize - committed_bytes;
+
+  // Always grant expansion if we are initiating the JVM,
+  // or if the GC_locker is preventing GCs.
+  if (!is_init_completed() || GC_locker::is_active_and_needs_gc()) {
+    return left_until_max / BytesPerWord;
+  }
+
+  size_t capacity_until_gc = capacity_until_GC();
+
+  if (capacity_until_gc <= committed_bytes) {
+    return 0;
+  }
+
+  size_t left_until_GC = capacity_until_gc - committed_bytes;
+  size_t left_to_commit = MIN2(left_until_GC, left_until_max);
+
+  return left_to_commit / BytesPerWord;
+}
 
 void MetaspaceGC::compute_new_size() {
   assert(_shrink_factor <= 100, "invalid shrink factor");
   uint current_shrink_factor = _shrink_factor;
   _shrink_factor = 0;
 
-  // Until a faster way of calculating the "used" quantity is implemented,
-  // use "capacity".
   const size_t used_after_gc = MetaspaceAux::allocated_capacity_bytes();
   const size_t capacity_until_GC = MetaspaceGC::capacity_until_GC();
 
@@ -1377,9 +1459,10 @@ void MetaspaceGC::compute_new_size() {
     // If we have less capacity below the metaspace HWM, then
     // increment the HWM.
     size_t expand_bytes = minimum_desired_capacity - capacity_until_GC;
+    expand_bytes = align_size_up(expand_bytes, Metaspace::commit_alignment());
     // Don't expand unless it's significant
     if (expand_bytes >= MinMetaspaceExpansion) {
-      MetaspaceGC::set_capacity_until_GC(capacity_until_GC + expand_bytes);
+      MetaspaceGC::inc_capacity_until_GC(expand_bytes);
     }
     if (PrintGCDetails && Verbose) {
       size_t new_capacity_until_GC = capacity_until_GC;
@@ -1436,6 +1519,9 @@ void MetaspaceGC::compute_new_size() {
       // on the third call, and 100% by the fourth call.  But if we recompute
       // size without shrinking, it goes back to 0%.
       shrink_bytes = shrink_bytes / 100 * current_shrink_factor;
+
+      shrink_bytes = align_size_down(shrink_bytes, Metaspace::commit_alignment());
+
       assert(shrink_bytes <= max_shrink_bytes,
         err_msg("invalid shrink size " SIZE_FORMAT " not <= " SIZE_FORMAT,
           shrink_bytes, max_shrink_bytes));
@@ -1467,7 +1553,7 @@ void MetaspaceGC::compute_new_size() {
   // Don't shrink unless it's significant
   if (shrink_bytes >= MinMetaspaceExpansion &&
       ((capacity_until_GC - shrink_bytes) >= MetaspaceSize)) {
-    MetaspaceGC::set_capacity_until_GC(capacity_until_GC - shrink_bytes);
+    MetaspaceGC::dec_capacity_until_GC(shrink_bytes);
   }
 }
 
@@ -1700,7 +1786,6 @@ Metachunk* ChunkManager::free_chunks_get(size_t word_size) {
     assert(free_list != NULL, "Sanity check");
 
     chunk = free_list->head();
-    debug_only(Metachunk* debug_head = chunk;)
 
     if (chunk == NULL) {
       return NULL;
@@ -1708,9 +1793,6 @@ Metachunk* ChunkManager::free_chunks_get(size_t word_size) {
 
     // Remove the chunk as the head of the list.
     free_list->remove_chunk(chunk);
-
-    // Chunk is being removed from the chunks free list.
-    dec_free_chunks_total(chunk->capacity_word_size());
 
     if (TraceMetadataChunkAllocation && Verbose) {
       gclog_or_tty->print_cr("ChunkManager::free_chunks_get: free_list "
@@ -1722,20 +1804,21 @@ Metachunk* ChunkManager::free_chunks_get(size_t word_size) {
       word_size,
       FreeBlockDictionary<Metachunk>::atLeast);
 
-    if (chunk != NULL) {
-      if (TraceMetadataHumongousAllocation) {
-        size_t waste = chunk->word_size() - word_size;
-        gclog_or_tty->print_cr("Free list allocate humongous chunk size "
-                               SIZE_FORMAT " for requested size " SIZE_FORMAT
-                               " waste " SIZE_FORMAT,
-                               chunk->word_size(), word_size, waste);
-      }
-      // Chunk is being removed from the chunks free list.
-      dec_free_chunks_total(chunk->capacity_word_size());
-    } else {
+    if (chunk == NULL) {
       return NULL;
     }
+
+    if (TraceMetadataHumongousAllocation) {
+      size_t waste = chunk->word_size() - word_size;
+      gclog_or_tty->print_cr("Free list allocate humongous chunk size "
+                             SIZE_FORMAT " for requested size " SIZE_FORMAT
+                             " waste " SIZE_FORMAT,
+                             chunk->word_size(), word_size, waste);
+    }
   }
+
+  // Chunk is being removed from the chunks free list.
+  dec_free_chunks_total(chunk->capacity_word_size());
 
   // Remove it from the links to this freelist
   chunk->set_next(NULL);
@@ -2002,15 +2085,21 @@ MetaWord* SpaceManager::grow_and_allocate(size_t word_size) {
   size_t grow_chunks_by_words = calc_chunk_size(word_size);
   Metachunk* next = get_new_chunk(word_size, grow_chunks_by_words);
 
+  if (next != NULL) {
+    Metadebug::deallocate_chunk_a_lot(this, grow_chunks_by_words);
+  }
+
+  MetaWord* mem = NULL;
+
   // If a chunk was available, add it to the in-use chunk list
   // and do an allocation from it.
   if (next != NULL) {
-    Metadebug::deallocate_chunk_a_lot(this, grow_chunks_by_words);
     // Add to this manager's list of chunks in use.
     add_chunk(next, false);
-    return next->allocate(word_size);
+    mem = next->allocate(word_size);
   }
-  return NULL;
+
+  return mem;
 }
 
 void SpaceManager::print_on(outputStream* st) const {
@@ -2366,6 +2455,7 @@ MetaWord* SpaceManager::allocate_work(size_t word_size) {
     inc_used_metrics(word_size);
     return current_chunk()->allocate(word_size); // caller handles null result
   }
+
   if (current_chunk() != NULL) {
     result = current_chunk()->allocate(word_size);
   }
@@ -2373,7 +2463,8 @@ MetaWord* SpaceManager::allocate_work(size_t word_size) {
   if (result == NULL) {
     result = grow_and_allocate(word_size);
   }
-  if (result != 0) {
+
+  if (result != NULL) {
     inc_used_metrics(word_size);
     assert(result != (MetaWord*) chunks_in_use(MediumIndex),
            "Head of the list is being allocated");
@@ -2639,24 +2730,26 @@ void MetaspaceAux::print_metaspace_change(size_t prev_metadata_used) {
 void MetaspaceAux::print_on(outputStream* out) {
   Metaspace::MetadataType nct = Metaspace::NonClassType;
 
-  out->print_cr(" Metaspace total "
-                SIZE_FORMAT "K, used " SIZE_FORMAT "K,"
-                " reserved " SIZE_FORMAT "K",
-                allocated_capacity_bytes()/K, allocated_used_bytes()/K, reserved_bytes()/K);
+  out->print_cr(" Metaspace       "
+                "used "      SIZE_FORMAT "K, "
+                "capacity "  SIZE_FORMAT "K, "
+                "committed " SIZE_FORMAT "K, "
+                "reserved "  SIZE_FORMAT "K",
+                allocated_used_bytes()/K,
+                allocated_capacity_bytes()/K,
+                committed_bytes()/K,
+                reserved_bytes()/K);
 
-  out->print_cr("  data space     "
-                SIZE_FORMAT "K, used " SIZE_FORMAT "K,"
-                " reserved " SIZE_FORMAT "K",
-                allocated_capacity_bytes(nct)/K,
-                allocated_used_bytes(nct)/K,
-                reserved_bytes(nct)/K);
   if (Metaspace::using_class_space()) {
     Metaspace::MetadataType ct = Metaspace::ClassType;
     out->print_cr("  class space    "
-                  SIZE_FORMAT "K, used " SIZE_FORMAT "K,"
-                  " reserved " SIZE_FORMAT "K",
-                  allocated_capacity_bytes(ct)/K,
+                  "used "      SIZE_FORMAT "K, "
+                  "capacity "  SIZE_FORMAT "K, "
+                  "committed " SIZE_FORMAT "K, "
+                  "reserved "  SIZE_FORMAT "K",
                   allocated_used_bytes(ct)/K,
+                  allocated_capacity_bytes(ct)/K,
+                  committed_bytes(ct)/K,
                   reserved_bytes(ct)/K);
   }
 }
@@ -2808,6 +2901,9 @@ void MetaspaceAux::verify_metrics() {
 size_t Metaspace::_first_chunk_word_size = 0;
 size_t Metaspace::_first_class_chunk_word_size = 0;
 
+size_t Metaspace::_commit_alignment = 0;
+size_t Metaspace::_reserve_alignment = 0;
+
 Metaspace::Metaspace(Mutex* lock, MetaspaceType type) {
   initialize(lock, type);
 }
@@ -2869,21 +2965,30 @@ void Metaspace::allocate_metaspace_compressed_klass_ptrs(char* requested_addr, a
   assert(UseCompressedClassPointers, "Only use with CompressedKlassPtrs");
   assert(class_metaspace_size() < KlassEncodingMetaspaceMax,
          "Metaspace size is too big");
+  assert_is_ptr_aligned(requested_addr,          _reserve_alignment);
+  assert_is_ptr_aligned(cds_base,                _reserve_alignment);
+  assert_is_size_aligned(class_metaspace_size(), _reserve_alignment);
+
+  // Don't use large pages for the class space.
+  bool large_pages = false;
 
   ReservedSpace metaspace_rs = ReservedSpace(class_metaspace_size(),
-                                             os::vm_allocation_granularity(),
-                                             false, requested_addr, 0);
+                                             _reserve_alignment,
+                                             large_pages,
+                                             requested_addr, 0);
   if (!metaspace_rs.is_reserved()) {
     if (UseSharedSpaces) {
+      size_t increment = align_size_up(1*G, _reserve_alignment);
+
       // Keep trying to allocate the metaspace, increasing the requested_addr
       // by 1GB each time, until we reach an address that will no longer allow
       // use of CDS with compressed klass pointers.
       char *addr = requested_addr;
-      while (!metaspace_rs.is_reserved() && (addr + 1*G > addr) &&
-             can_use_cds_with_metaspace_addr(addr + 1*G, cds_base)) {
-        addr = addr + 1*G;
+      while (!metaspace_rs.is_reserved() && (addr + increment > addr) &&
+             can_use_cds_with_metaspace_addr(addr + increment, cds_base)) {
+        addr = addr + increment;
         metaspace_rs = ReservedSpace(class_metaspace_size(),
-                                     os::vm_allocation_granularity(), false, addr, 0);
+                                     _reserve_alignment, large_pages, addr, 0);
       }
     }
 
@@ -2894,7 +2999,7 @@ void Metaspace::allocate_metaspace_compressed_klass_ptrs(char* requested_addr, a
     // So, UseCompressedClassPointers cannot be turned off at this point.
     if (!metaspace_rs.is_reserved()) {
       metaspace_rs = ReservedSpace(class_metaspace_size(),
-                                   os::vm_allocation_granularity(), false);
+                                   _reserve_alignment, large_pages);
       if (!metaspace_rs.is_reserved()) {
         vm_exit_during_initialization(err_msg("Could not allocate metaspace: %d bytes",
                                               class_metaspace_size()));
@@ -2933,34 +3038,96 @@ void Metaspace::initialize_class_space(ReservedSpace rs) {
   assert(using_class_space(), "Must be using class space");
   _class_space_list = new VirtualSpaceList(rs);
   _chunk_manager_class = new ChunkManager(SpecializedChunk, ClassSmallChunk, ClassMediumChunk);
+
+  if (!_class_space_list->initialization_succeeded()) {
+    vm_exit_during_initialization("Failed to setup compressed class space virtual space list.");
+  }
 }
 
 #endif
+
+// Align down. If the aligning result in 0, return 'alignment'.
+static size_t restricted_align_down(size_t size, size_t alignment) {
+  return MAX2(alignment, align_size_down_(size, alignment));
+}
+
+void Metaspace::ergo_initialize() {
+  if (DumpSharedSpaces) {
+    // Using large pages when dumping the shared archive is currently not implemented.
+    FLAG_SET_ERGO(bool, UseLargePagesInMetaspace, false);
+  }
+
+  size_t page_size = os::vm_page_size();
+  if (UseLargePages && UseLargePagesInMetaspace) {
+    page_size = os::large_page_size();
+  }
+
+  _commit_alignment  = page_size;
+  _reserve_alignment = MAX2(page_size, (size_t)os::vm_allocation_granularity());
+
+  // Do not use FLAG_SET_ERGO to update MaxMetaspaceSize, since this will
+  // override if MaxMetaspaceSize was set on the command line or not.
+  // This information is needed later to conform to the specification of the
+  // java.lang.management.MemoryUsage API.
+  //
+  // Ideally, we would be able to set the default value of MaxMetaspaceSize in
+  // globals.hpp to the aligned value, but this is not possible, since the
+  // alignment depends on other flags being parsed.
+  MaxMetaspaceSize = restricted_align_down(MaxMetaspaceSize, _reserve_alignment);
+
+  if (MetaspaceSize > MaxMetaspaceSize) {
+    MetaspaceSize = MaxMetaspaceSize;
+  }
+
+  MetaspaceSize = restricted_align_down(MetaspaceSize, _commit_alignment);
+
+  assert(MetaspaceSize <= MaxMetaspaceSize, "MetaspaceSize should be limited by MaxMetaspaceSize");
+
+  if (MetaspaceSize < 256*K) {
+    vm_exit_during_initialization("Too small initial Metaspace size");
+  }
+
+  MinMetaspaceExpansion = restricted_align_down(MinMetaspaceExpansion, _commit_alignment);
+  MaxMetaspaceExpansion = restricted_align_down(MaxMetaspaceExpansion, _commit_alignment);
+
+  CompressedClassSpaceSize = restricted_align_down(CompressedClassSpaceSize, _reserve_alignment);
+  set_class_metaspace_size(CompressedClassSpaceSize);
+}
 
 void Metaspace::global_initialize() {
   // Initialize the alignment for shared spaces.
   int max_alignment = os::vm_page_size();
   size_t cds_total = 0;
 
-  set_class_metaspace_size(align_size_up(CompressedClassSpaceSize,
-                                         os::vm_allocation_granularity()));
-
   MetaspaceShared::set_max_alignment(max_alignment);
 
   if (DumpSharedSpaces) {
-    SharedReadOnlySize = align_size_up(SharedReadOnlySize, max_alignment);
+    SharedReadOnlySize  = align_size_up(SharedReadOnlySize,  max_alignment);
     SharedReadWriteSize = align_size_up(SharedReadWriteSize, max_alignment);
-    SharedMiscDataSize  = align_size_up(SharedMiscDataSize, max_alignment);
-    SharedMiscCodeSize  = align_size_up(SharedMiscCodeSize, max_alignment);
+    SharedMiscDataSize  = align_size_up(SharedMiscDataSize,  max_alignment);
+    SharedMiscCodeSize  = align_size_up(SharedMiscCodeSize,  max_alignment);
 
     // Initialize with the sum of the shared space sizes.  The read-only
     // and read write metaspace chunks will be allocated out of this and the
     // remainder is the misc code and data chunks.
     cds_total = FileMapInfo::shared_spaces_size();
+    cds_total = align_size_up(cds_total, _reserve_alignment);
     _space_list = new VirtualSpaceList(cds_total/wordSize);
     _chunk_manager_metadata = new ChunkManager(SpecializedChunk, SmallChunk, MediumChunk);
 
+    if (!_space_list->initialization_succeeded()) {
+      vm_exit_during_initialization("Unable to dump shared archive.", NULL);
+    }
+
 #ifdef _LP64
+    if (cds_total + class_metaspace_size() > (uint64_t)max_juint) {
+      vm_exit_during_initialization("Unable to dump shared archive.",
+          err_msg("Size of archive (" SIZE_FORMAT ") + compressed class space ("
+                  SIZE_FORMAT ") == total (" SIZE_FORMAT ") is larger than compressed "
+                  "klass limit: " SIZE_FORMAT, cds_total, class_metaspace_size(),
+                  cds_total + class_metaspace_size(), (size_t)max_juint));
+    }
+
     // Set the compressed klass pointer base so that decoding of these pointers works
     // properly when creating the shared archive.
     assert(UseCompressedOops && UseCompressedClassPointers,
@@ -2971,9 +3138,6 @@ void Metaspace::global_initialize() {
                              _space_list->current_virtual_space()->bottom());
     }
 
-    // Set the shift to zero.
-    assert(class_metaspace_size() < (uint64_t)(max_juint) - cds_total,
-           "CDS region is too large");
     Universe::set_narrow_klass_shift(0);
 #endif
 
@@ -2992,12 +3156,12 @@ void Metaspace::global_initialize() {
       // Map in spaces now also
       if (mapinfo->initialize() && MetaspaceShared::map_shared_spaces(mapinfo)) {
         FileMapInfo::set_current_info(mapinfo);
+        cds_total = FileMapInfo::shared_spaces_size();
+        cds_address = (address)mapinfo->region_base(0);
       } else {
         assert(!mapinfo->is_open() && !UseSharedSpaces,
                "archive file not closed or shared spaces not disabled.");
       }
-      cds_total = FileMapInfo::shared_spaces_size();
-      cds_address = (address)mapinfo->region_base(0);
     }
 
 #ifdef _LP64
@@ -3005,7 +3169,9 @@ void Metaspace::global_initialize() {
     // above the heap and above the CDS area (if it exists).
     if (using_class_space()) {
       if (UseSharedSpaces) {
-        allocate_metaspace_compressed_klass_ptrs((char *)(cds_address + cds_total), cds_address);
+        char* cds_end = (char*)(cds_address + cds_total);
+        cds_end = (char *)align_ptr_up(cds_end, _reserve_alignment);
+        allocate_metaspace_compressed_klass_ptrs(cds_end, cds_address);
       } else {
         allocate_metaspace_compressed_klass_ptrs((char *)CompressedKlassPointersBase, 0);
       }
@@ -3023,11 +3189,19 @@ void Metaspace::global_initialize() {
     _first_class_chunk_word_size = align_word_size_up(_first_class_chunk_word_size);
     // Arbitrarily set the initial virtual space to a multiple
     // of the boot class loader size.
-    size_t word_size = VIRTUALSPACEMULTIPLIER * first_chunk_word_size();
+    size_t word_size = VIRTUALSPACEMULTIPLIER * _first_chunk_word_size;
+    word_size = align_size_up(word_size, Metaspace::reserve_alignment_words());
+
     // Initialize the list of virtual spaces.
     _space_list = new VirtualSpaceList(word_size);
     _chunk_manager_metadata = new ChunkManager(SpecializedChunk, SmallChunk, MediumChunk);
+
+    if (!_space_list->initialization_succeeded()) {
+      vm_exit_during_initialization("Unable to setup metadata virtual space list.", NULL);
+    }
   }
+
+  MetaspaceGC::initialize();
 }
 
 Metachunk* Metaspace::get_initialization_chunk(MetadataType mdtype,
@@ -3039,7 +3213,7 @@ Metachunk* Metaspace::get_initialization_chunk(MetadataType mdtype,
     return chunk;
   }
 
-  return get_space_list(mdtype)->get_initialization_chunk(chunk_word_size, chunk_bunch);
+  return get_space_list(mdtype)->get_new_chunk(chunk_word_size, chunk_word_size, chunk_bunch);
 }
 
 void Metaspace::initialize(Mutex* lock, MetaspaceType type) {
@@ -3112,19 +3286,18 @@ MetaWord* Metaspace::allocate(size_t word_size, MetadataType mdtype) {
 }
 
 MetaWord* Metaspace::expand_and_allocate(size_t word_size, MetadataType mdtype) {
-  MetaWord* result;
-  MetaspaceGC::set_expand_after_GC(true);
-  size_t before_inc = MetaspaceGC::capacity_until_GC();
-  size_t delta_bytes = MetaspaceGC::delta_capacity_until_GC(word_size) * BytesPerWord;
-  MetaspaceGC::inc_capacity_until_GC(delta_bytes);
+  size_t delta_bytes = MetaspaceGC::delta_capacity_until_GC(word_size * BytesPerWord);
+  assert(delta_bytes > 0, "Must be");
+
+  size_t after_inc = MetaspaceGC::inc_capacity_until_GC(delta_bytes);
+  size_t before_inc = after_inc - delta_bytes;
+
   if (PrintGCDetails && Verbose) {
     gclog_or_tty->print_cr("Increase capacity to GC from " SIZE_FORMAT
-      " to " SIZE_FORMAT, before_inc, MetaspaceGC::capacity_until_GC());
+        " to " SIZE_FORMAT, before_inc, after_inc);
   }
 
-  result = allocate(word_size, mdtype);
-
-  return result;
+  return allocate(word_size, mdtype);
 }
 
 // Space allocated in the Metaspace.  This may
@@ -3206,6 +3379,7 @@ void Metaspace::deallocate(MetaWord* ptr, size_t word_size, bool is_class) {
   }
 }
 
+
 Metablock* Metaspace::allocate(ClassLoaderData* loader_data, size_t word_size,
                               bool read_only, MetaspaceObj::Type type, TRAPS) {
   if (HAS_PENDING_EXCEPTION) {
@@ -3213,20 +3387,16 @@ Metablock* Metaspace::allocate(ClassLoaderData* loader_data, size_t word_size,
     return NULL;  // caller does a CHECK_NULL too
   }
 
-  MetadataType mdtype = (type == MetaspaceObj::ClassType) ? ClassType : NonClassType;
-
-  // SSS: Should we align the allocations and make sure the sizes are aligned.
-  MetaWord* result = NULL;
-
   assert(loader_data != NULL, "Should never pass around a NULL loader_data. "
         "ClassLoaderData::the_null_class_loader_data() should have been used.");
+
   // Allocate in metaspaces without taking out a lock, because it deadlocks
   // with the SymbolTable_lock.  Dumping is single threaded for now.  We'll have
   // to revisit this for application class data sharing.
   if (DumpSharedSpaces) {
     assert(type > MetaspaceObj::UnknownType && type < MetaspaceObj::_number_of_types, "sanity");
     Metaspace* space = read_only ? loader_data->ro_metaspace() : loader_data->rw_metaspace();
-    result = space->allocate(word_size, NonClassType);
+    MetaWord* result = space->allocate(word_size, NonClassType);
     if (result == NULL) {
       report_out_of_shared_space(read_only ? SharedReadOnly : SharedReadWrite);
     } else {
@@ -3235,40 +3405,62 @@ Metablock* Metaspace::allocate(ClassLoaderData* loader_data, size_t word_size,
     return Metablock::initialize(result, word_size);
   }
 
-  result = loader_data->metaspace_non_null()->allocate(word_size, mdtype);
+  MetadataType mdtype = (type == MetaspaceObj::ClassType) ? ClassType : NonClassType;
+
+  // Try to allocate metadata.
+  MetaWord* result = loader_data->metaspace_non_null()->allocate(word_size, mdtype);
 
   if (result == NULL) {
-    // Try to clean out some memory and retry.
-    result =
-      Universe::heap()->collector_policy()->satisfy_failed_metadata_allocation(
-        loader_data, word_size, mdtype);
+    // Allocation failed.
+    if (is_init_completed()) {
+      // Only start a GC if the bootstrapping has completed.
 
-    // If result is still null, we are out of memory.
-    if (result == NULL) {
-      if (Verbose && TraceMetadataChunkAllocation) {
-        gclog_or_tty->print_cr("Metaspace allocation failed for size "
-          SIZE_FORMAT, word_size);
-        if (loader_data->metaspace_or_null() != NULL) loader_data->dump(gclog_or_tty);
-        MetaspaceAux::dump(gclog_or_tty);
-      }
-      // -XX:+HeapDumpOnOutOfMemoryError and -XX:OnOutOfMemoryError support
-      const char* space_string = is_class_space_allocation(mdtype) ? "Compressed class space" :
-                                                                     "Metadata space";
-      report_java_out_of_memory(space_string);
-
-      if (JvmtiExport::should_post_resource_exhausted()) {
-        JvmtiExport::post_resource_exhausted(
-            JVMTI_RESOURCE_EXHAUSTED_OOM_ERROR,
-            space_string);
-      }
-      if (is_class_space_allocation(mdtype)) {
-        THROW_OOP_0(Universe::out_of_memory_error_class_metaspace());
-      } else {
-        THROW_OOP_0(Universe::out_of_memory_error_metaspace());
-      }
+      // Try to clean out some memory and retry.
+      result = Universe::heap()->collector_policy()->satisfy_failed_metadata_allocation(
+          loader_data, word_size, mdtype);
     }
   }
+
+  if (result == NULL) {
+    report_metadata_oome(loader_data, word_size, mdtype, THREAD);
+    // Will not reach here.
+    return NULL;
+  }
+
   return Metablock::initialize(result, word_size);
+}
+
+void Metaspace::report_metadata_oome(ClassLoaderData* loader_data, size_t word_size, MetadataType mdtype, TRAPS) {
+  // If result is still null, we are out of memory.
+  if (Verbose && TraceMetadataChunkAllocation) {
+    gclog_or_tty->print_cr("Metaspace allocation failed for size "
+        SIZE_FORMAT, word_size);
+    if (loader_data->metaspace_or_null() != NULL) {
+      loader_data->dump(gclog_or_tty);
+    }
+    MetaspaceAux::dump(gclog_or_tty);
+  }
+
+  // -XX:+HeapDumpOnOutOfMemoryError and -XX:OnOutOfMemoryError support
+  const char* space_string = is_class_space_allocation(mdtype) ? "Compressed class space" :
+                                                                 "Metadata space";
+  report_java_out_of_memory(space_string);
+
+  if (JvmtiExport::should_post_resource_exhausted()) {
+    JvmtiExport::post_resource_exhausted(
+        JVMTI_RESOURCE_EXHAUSTED_OOM_ERROR,
+        space_string);
+  }
+
+  if (!is_init_completed()) {
+    vm_exit_during_initialization("OutOfMemoryError", space_string);
+  }
+
+  if (is_class_space_allocation(mdtype)) {
+    THROW_OOP(Universe::out_of_memory_error_class_metaspace());
+  } else {
+    THROW_OOP(Universe::out_of_memory_error_metaspace());
+  }
 }
 
 void Metaspace::record_allocation(void* ptr, MetaspaceObj::Type type, size_t word_size) {
