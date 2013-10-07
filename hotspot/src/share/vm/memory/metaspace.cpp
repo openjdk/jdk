@@ -43,6 +43,7 @@
 #include "runtime/mutex.hpp"
 #include "runtime/orderAccess.hpp"
 #include "services/memTracker.hpp"
+#include "services/memoryService.hpp"
 #include "utilities/copy.hpp"
 #include "utilities/debug.hpp"
 
@@ -734,6 +735,9 @@ class SpaceManager : public CHeapObj<mtClass> {
   // Gets a new chunk (may require getting a new virtual space),
   // and allocates from that chunk.
   MetaWord* grow_and_allocate(size_t word_size);
+
+  // Notify memory usage to MemoryService.
+  void track_metaspace_memory_usage();
 
   // debugging support.
 
@@ -2060,6 +2064,15 @@ size_t SpaceManager::calc_chunk_size(size_t word_size) {
   return chunk_word_size;
 }
 
+void SpaceManager::track_metaspace_memory_usage() {
+  if (is_init_completed()) {
+    if (is_class()) {
+      MemoryService::track_compressed_class_memory_usage();
+    }
+    MemoryService::track_metaspace_memory_usage();
+  }
+}
+
 MetaWord* SpaceManager::grow_and_allocate(size_t word_size) {
   assert(vs_list()->current_virtual_space() != NULL,
          "Should have been set");
@@ -2098,6 +2111,9 @@ MetaWord* SpaceManager::grow_and_allocate(size_t word_size) {
     add_chunk(next, false);
     mem = next->allocate(word_size);
   }
+
+  // Track metaspace memory usage statistic.
+  track_metaspace_memory_usage();
 
   return mem;
 }
