@@ -502,6 +502,10 @@ class CommandLineFlags {
   develop(bool, LargePagesIndividualAllocationInjectError, false,           \
           "Fail large pages individual allocation")                         \
                                                                             \
+  product(bool, UseLargePagesInMetaspace, false,                            \
+          "Use large page memory in metaspace. "                            \
+          "Only used if UseLargePages is enabled.")                         \
+                                                                            \
   develop(bool, TracePageSizes, false,                                      \
           "Trace page size selection and usage")                            \
                                                                             \

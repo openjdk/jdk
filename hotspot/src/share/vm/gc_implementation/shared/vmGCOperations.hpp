@@ -214,9 +214,6 @@ class VM_CollectForMetadataAllocation: public VM_GC_Operation {
     : VM_GC_Operation(gc_count_before, gc_cause, full_gc_count_before, true),
       _loader_data(loader_data), _size(size), _mdtype(mdtype), _result(NULL) {
   }
-  ~VM_CollectForMetadataAllocation()  {
-    MetaspaceGC::set_expand_after_GC(false);
-  }
   virtual VMOp_Type type() const { return VMOp_CollectForMetadataAllocation; }
   virtual void doit();
   MetaWord* result() const       { return _result; }
