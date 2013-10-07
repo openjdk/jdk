@@ -241,6 +241,11 @@ public class LogManager {
      * retrieved by calling LogManager.getLogManager.
      */
     protected LogManager() {
+        this(checkSubclassPermissions());
+    }
+
+    private LogManager(Void checked) {
+
         // Add a shutdown hook to close the global handlers.
         try {
             Runtime.getRuntime().addShutdownHook(new Cleaner());
@@ -248,6 +253,19 @@ public class LogManager {
             // If the VM is already shutting down,
             // We do not need to register shutdownHook.
         }
+    }
+
+    private static Void checkSubclassPermissions() {
+        final SecurityManager sm = System.getSecurityManager();
+        if (sm != null) {
+            // These permission will be checked in the LogManager constructor,
+            // in order to register the Cleaner() thread as a shutdown hook.
+            // Check them here to avoid the penalty of constructing the object
+            // etc...
+            sm.checkPermission(new RuntimePermission("shutdownHooks"));
+            sm.checkPermission(new RuntimePermission("setContextClassLoader"));
+        }
+        return null;
     }
 
     /**
