@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -812,8 +812,8 @@ class ClassHierarchyWalker {
     Klass* k = ctxk;
     Method* lm = k->lookup_method(m->name(), m->signature());
     if (lm == NULL && k->oop_is_instance()) {
-      // It might be an abstract interface method, devoid of mirandas.
-      lm = ((InstanceKlass*)k)->lookup_method_in_all_interfaces(m->name(),
+      // It might be an interface method
+        lm = ((InstanceKlass*)k)->lookup_method_in_ordered_interfaces(m->name(),
                                                                 m->signature());
     }
     if (lm == m)
