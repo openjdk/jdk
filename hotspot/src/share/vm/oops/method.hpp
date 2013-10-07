@@ -804,6 +804,7 @@ class Method : public Metadata {
  private:
   void print_made_not_compilable(int comp_level, bool is_osr, bool report, const char* reason);
 
+ public:
   MethodCounters* get_method_counters(TRAPS) {
     if (_method_counters == NULL) {
       build_method_counters(this, CHECK_AND_CLEAR_NULL);
@@ -811,7 +812,6 @@ class Method : public Metadata {
     return _method_counters;
   }
 
- public:
   bool   is_not_c1_compilable() const         { return access_flags().is_not_c1_compilable();  }
   void  set_not_c1_compilable()               {       _access_flags.set_not_c1_compilable();   }
   void clear_not_c1_compilable()              {       _access_flags.clear_not_c1_compilable(); }
