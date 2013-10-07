@@ -591,10 +591,10 @@ public abstract class OpTestCase extends LoggingTestCase {
 
     // Test data
 
-    private class ShortCircuitOp<T> implements StatelessTestOp<T,T> {
+    static class ShortCircuitOp<T> implements StatelessTestOp<T,T> {
         private final StreamShape shape;
 
-        private ShortCircuitOp(StreamShape shape) {
+        ShortCircuitOp(StreamShape shape) {
             this.shape = shape;
         }
 
