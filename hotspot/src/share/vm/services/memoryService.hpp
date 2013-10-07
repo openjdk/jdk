@@ -148,6 +148,12 @@ public:
   static void track_code_cache_memory_usage() {
     track_memory_pool_usage(_code_heap_pool);
   }
+  static void track_metaspace_memory_usage() {
+    track_memory_pool_usage(_metaspace_pool);
+  }
+  static void track_compressed_class_memory_usage() {
+    track_memory_pool_usage(_compressed_class_pool);
+  }
   static void track_memory_pool_usage(MemoryPool* pool);
 
   static void gc_begin(bool fullGC, bool recordGCBeginTime,
