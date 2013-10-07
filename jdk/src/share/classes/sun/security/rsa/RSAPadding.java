@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2013 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -318,33 +318,53 @@ public final class RSAPadding {
 
     /**
      * PKCS#1 v1.5 unpadding (blocktype 1 and 2).
+     *
+     * Note that we want to make it a constant-time operation
      */
     private byte[] unpadV15(byte[] padded) throws BadPaddingException {
         int k = 0;
+        BadPaddingException bpe = null;
+
         if (padded[k++] != 0) {
-            throw new BadPaddingException("Data must start with zero");
+            bpe = new BadPaddingException("Data must start with zero");
         }
-        if (padded[k++] != type) {
-            throw new BadPaddingException("Blocktype mismatch: " + padded[1]);
+        if (padded[k++] != type && bpe == null) {
+            bpe = new BadPaddingException("Blocktype mismatch: " + padded[1]);
         }
-        while (true) {
+        int p = 0;
+        while (k < padded.length) {
             int b = padded[k++] & 0xff;
-            if (b == 0) {
-                break;
+            if (b == 0 && p == 0) {
+                p = k;
             }
-            if (k == padded.length) {
-                throw new BadPaddingException("Padding string not terminated");
+            if (k == padded.length && p == 0 && bpe == null) {
+                bpe = new BadPaddingException("Padding string not terminated");
             }
-            if ((type == PAD_BLOCKTYPE_1) && (b != 0xff)) {
-                throw new BadPaddingException("Padding byte not 0xff: " + b);
+            if ((type == PAD_BLOCKTYPE_1) && (b != 0xff) &&
+                    p == 0 && bpe == null) {
+                bpe = new BadPaddingException("Padding byte not 0xff: " + b);
             }
         }
-        int n = padded.length - k;
-        if (n > maxDataSize) {
-            throw new BadPaddingException("Padding string too short");
+        int n = padded.length - p;
+        if (n > maxDataSize && bpe == null) {
+            bpe = new BadPaddingException("Padding string too short");
         }
+
+        // copy useless padding array for a constant-time method
+        //
+        // Is it necessary?
+        byte[] padding = new byte[p];
+        System.arraycopy(padded, 0, padding, 0, p);
+
         byte[] data = new byte[n];
-        System.arraycopy(padded, padded.length - n, data, 0, n);
+        System.arraycopy(padded, p, data, 0, n);
+
+        if (bpe == null) {
+            bpe = new BadPaddingException("Unused exception");
+        } else {
+            throw bpe;
+        }
+
         return data;
     }
 

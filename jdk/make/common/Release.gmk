@@ -835,10 +835,6 @@ endif
 	    $(BOOT_JAVA_CMD) -jar $(BUILDMETAINDEX_JARFILE) \
 		-o meta-index *.jar
 	@$(CD) $(JRE_IMAGE_DIR)/lib/ext && $(java-vm-cleanup)
-ifeq ($(PLATFORM), macosx)
-	@#install jobjc, apple mac only
-	$(CP) $(OUTPUTDIR)/JObjC.build/JObjC.jar $(JRE_IMAGE_DIR)/lib/JObjC.jar
-endif
 ifeq ($(PLATFORM), windows)
 	@# Remove certain *.lib files
 	$(CD) $(JRE_IMAGE_DIR)/lib && \

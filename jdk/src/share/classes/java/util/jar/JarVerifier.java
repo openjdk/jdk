@@ -179,7 +179,9 @@ class JarVerifier {
             name = name.substring(1);
 
         // only set the jev object for entries that have a signature
-        if (sigFileSigners.get(name) != null) {
+        // (either verified or not)
+        if (sigFileSigners.get(name) != null ||
+                verifiedSigners.get(name) != null) {
             mev.setEntry(name, je);
             return;
         }
