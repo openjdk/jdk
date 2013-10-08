@@ -2045,6 +2045,9 @@ bool Arguments::check_vm_args_consistency() {
   status = status && verify_interval(StringTableSize, minimumStringTableSize,
     (max_uintx / StringTable::bucket_size()), "StringTable size");
 
+  status = status && verify_interval(SymbolTableSize, minimumSymbolTableSize,
+    (max_uintx / SymbolTable::bucket_size()), "SymbolTable size");
+
   if (MinHeapFreeRatio > MaxHeapFreeRatio) {
     jio_fprintf(defaultStream::error_stream(),
                 "MinHeapFreeRatio (" UINTX_FORMAT ") must be less than or "
