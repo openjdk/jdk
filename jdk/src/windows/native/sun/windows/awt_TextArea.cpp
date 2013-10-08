@@ -767,11 +767,11 @@ Java_sun_awt_windows_WTextAreaPeer_create(JNIEnv *env, jobject self,
 
 /*
  * Class:     sun_awt_windows_WTextAreaPeer
- * Method:    replaceText
+ * Method:    replaceRange
  * Signature: (Ljava/lang/String;II)V
  */
 JNIEXPORT void JNICALL
-Java_sun_awt_windows_WTextAreaPeer_replaceText(JNIEnv *env, jobject self,
+Java_sun_awt_windows_WTextAreaPeer_replaceRange(JNIEnv *env, jobject self,
                                                jstring text,
                                                jint start, jint end)
 {
@@ -791,19 +791,4 @@ Java_sun_awt_windows_WTextAreaPeer_replaceText(JNIEnv *env, jobject self,
 
     CATCH_BAD_ALLOC;
 }
-
-/*
- * Class:     sun_awt_windows_WTextAreaPeer
- * Method:    insertText
- * Signature: (Ljava/lang/String;I)V
- */
-JNIEXPORT void JNICALL
-Java_sun_awt_windows_WTextAreaPeer_insertText(JNIEnv *env, jobject self,
-                                              jstring text, jint pos)
-{
-    Java_sun_awt_windows_WTextAreaPeer_replaceText(env, self, text, pos, pos);
-}
-
 } /* extern "C" */
-
-

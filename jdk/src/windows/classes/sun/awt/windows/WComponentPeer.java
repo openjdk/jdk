@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -50,7 +50,6 @@ import sun.java2d.ScreenUpdateManager;
 import sun.java2d.d3d.D3DSurfaceData;
 import sun.java2d.opengl.OGLSurfaceData;
 import sun.java2d.pipe.Region;
-import sun.awt.DisplayChangedListener;
 import sun.awt.PaintEventDispatcher;
 import sun.awt.SunToolkit;
 import sun.awt.event.IgnorePaintEvent;
@@ -880,13 +879,6 @@ public abstract class WComponentPeer extends WObjectPeer
 
     public native void beginValidate();
     public native void endValidate();
-
-    /**
-     * DEPRECATED
-     */
-    public Dimension minimumSize() {
-        return getMinimumSize();
-    }
 
     /**
      * DEPRECATED
