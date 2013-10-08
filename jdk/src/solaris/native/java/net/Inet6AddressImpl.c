@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,7 +33,9 @@
 #include <strings.h>
 #include <stdlib.h>
 #include <ctype.h>
-#ifdef _ALLBSD_SOURCE
+#ifdef MACOSX
+#include <ifaddrs.h>
+#include <net/if.h>
 #include <unistd.h> /* gethostname */
 #endif
 
@@ -121,7 +123,145 @@ static jclass ni_ia6cls;
 static jmethodID ni_ia4ctrID;
 static jmethodID ni_ia6ctrID;
 static jfieldID ni_ia6ipaddressID;
-static int initialized = 0;
+
+static void initializeInetClasses(JNIEnv *env)
+{
+    static int initialized = 0;
+    if (!initialized) {
+        ni_iacls = (*env)->FindClass(env, "java/net/InetAddress");
+        ni_iacls = (*env)->NewGlobalRef(env, ni_iacls);
+        ni_ia4cls = (*env)->FindClass(env, "java/net/Inet4Address");
+        ni_ia4cls = (*env)->NewGlobalRef(env, ni_ia4cls);
+        ni_ia6cls = (*env)->FindClass(env, "java/net/Inet6Address");
+        ni_ia6cls = (*env)->NewGlobalRef(env, ni_ia6cls);
+        ni_ia4ctrID = (*env)->GetMethodID(env, ni_ia4cls, "<init>", "()V");
+        ni_ia6ctrID = (*env)->GetMethodID(env, ni_ia6cls, "<init>", "()V");
+        ni_ia6ipaddressID = (*env)->GetFieldID(env, ni_ia6cls, "ipaddress", "[B");
+        initialized = 1;
+    }
+}
+
+#ifdef MACOSX
+/* also called from Inet4AddressImpl.c */
+__private_extern__ jobjectArray
+lookupIfLocalhost(JNIEnv *env, const char *hostname, jboolean includeV6)
+{
+    jobjectArray result = NULL;
+    jboolean preferIPv6Address;
+    char myhostname[NI_MAXHOST+1];
+    struct ifaddrs *ifa = NULL;
+    int familyOrder = 0;
+    int count = 0, i, j;
+    int addrs4 = 0, addrs6 = 0, numV4Loopbacks = 0, numV6Loopbacks = 0;
+    jboolean includeLoopback = JNI_FALSE;
+    jobject name;
+
+    // Make sure static variables we need are set.
+    initializeInetClasses(env);
+
+    /* get the address preference */
+    preferIPv6Address = (*env)->GetStaticBooleanField(env, ia_class, ia_preferIPv6AddressID);
+
+    /* If the requested name matches this host's hostname, return IP addresses
+     * from all attached interfaces. (#2844683 et al) This prevents undesired
+     * PPP dialup, but may return addresses that don't actually correspond to
+     * the name (if the name actually matches something in DNS etc.
+     */
+    myhostname[0] = '\0';
+    if (JVM_GetHostName(myhostname, NI_MAXHOST)) {
+        /* Something went wrong, maybe networking is not setup? */
+        return NULL;
+    }
+    myhostname[NI_MAXHOST] = '\0';
+
+    if (strcmp(myhostname, hostname) != 0) {
+        // Non-self lookup
+        return NULL;
+    }
+
+    if (getifaddrs(&ifa) != 0) {
+        NET_ThrowNew(env, errno, "Can't get local interface addresses");
+        return NULL;
+    }
+
+    name = (*env)->NewStringUTF(env, hostname);
+
+    /* Iterate over the interfaces, and total up the number of IPv4 and IPv6
+     * addresses we have. Also keep a count of loopback addresses. We need to
+     * exclude them in the normal case, but return them if we don't get an IP
+     * address.
+     */
+    struct ifaddrs *iter = ifa;
+    while (iter) {
+        int family = iter->ifa_addr->sa_family;
+        if (iter->ifa_name[0] != '\0'  &&  iter->ifa_addr)
+        {
+            jboolean isLoopback = iter->ifa_flags & IFF_LOOPBACK;
+            if (family == AF_INET) {
+                addrs4++;
+                if (isLoopback) numV4Loopbacks++;
+            } else if (family == AF_INET6 && includeV6) {
+                addrs6++;
+                if (isLoopback) numV6Loopbacks++;
+            } else {
+                /* We don't care e.g. AF_LINK */
+            }
+        }
+        iter = iter->ifa_next;
+    }
+
+    if (addrs4 == numV4Loopbacks && addrs6 == numV6Loopbacks) {
+        // We don't have a real IP address, just loopback. We need to include
+        // loopback in our results.
+        includeLoopback = JNI_TRUE;
+    }
+
+    /* Create and fill the Java array. */
+    int arraySize = addrs4 + addrs6 -
+        (includeLoopback ? 0 : (numV4Loopbacks + numV6Loopbacks));
+    result = (*env)->NewObjectArray(env, arraySize, ni_iacls, NULL);
+    if (!result) goto done;
+
+    if (preferIPv6Address) {
+        i = includeLoopback ? addrs6 : (addrs6 - numV6Loopbacks);
+        j = 0;
+    } else {
+        i = 0;
+        j = includeLoopback ? addrs4 : (addrs4 - numV4Loopbacks);
+    }
+
+    // Now loop around the ifaddrs
+    iter = ifa;
+    while (iter != NULL) {
+        jboolean isLoopback = iter->ifa_flags & IFF_LOOPBACK;
+        int family = iter->ifa_addr->sa_family;
+
+        if (iter->ifa_name[0] != '\0'  &&  iter->ifa_addr
+            && (family == AF_INET || (family == AF_INET6 && includeV6))
+            && (!isLoopback || includeLoopback))
+        {
+            int port;
+            int index = (family == AF_INET) ? i++ : j++;
+            jobject o = NET_SockaddrToInetAddress(env, iter->ifa_addr, &port);
+            if (!o) {
+                freeifaddrs(ifa);
+                if (!(*env)->ExceptionCheck(env))
+                    JNU_ThrowOutOfMemoryError(env, "Object allocation failed");
+                return NULL;
+            }
+            setInetAddress_hostName(env, o, name);
+            (*env)->SetObjectArrayElement(env, result, index, o);
+            (*env)->DeleteLocalRef(env, o);
+        }
+        iter = iter->ifa_next;
+    }
+
+  done:
+    freeifaddrs(ifa);
+
+    return result;
+}
+#endif
 
 /*
  * Find an internet address for a given hostname.  Note that this
@@ -147,18 +287,7 @@ Java_java_net_Inet6AddressImpl_lookupAllHostAddr(JNIEnv *env, jobject this,
     struct addrinfo hints, *res, *resNew = NULL;
 #endif /* AF_INET6 */
 
-    if (!initialized) {
-      ni_iacls = (*env)->FindClass(env, "java/net/InetAddress");
-      ni_iacls = (*env)->NewGlobalRef(env, ni_iacls);
-      ni_ia4cls = (*env)->FindClass(env, "java/net/Inet4Address");
-      ni_ia4cls = (*env)->NewGlobalRef(env, ni_ia4cls);
-      ni_ia6cls = (*env)->FindClass(env, "java/net/Inet6Address");
-      ni_ia6cls = (*env)->NewGlobalRef(env, ni_ia6cls);
-      ni_ia4ctrID = (*env)->GetMethodID(env, ni_ia4cls, "<init>", "()V");
-      ni_ia6ctrID = (*env)->GetMethodID(env, ni_ia6cls, "<init>", "()V");
-      ni_ia6ipaddressID = (*env)->GetFieldID(env, ni_ia6cls, "ipaddress", "[B");
-      initialized = 1;
-    }
+    initializeInetClasses(env);
 
     if (IS_NULL(host)) {
         JNU_ThrowNullPointerException(env, "host is null");
@@ -166,6 +295,21 @@ Java_java_net_Inet6AddressImpl_lookupAllHostAddr(JNIEnv *env, jobject this,
     }
     hostname = JNU_GetStringPlatformChars(env, host, JNI_FALSE);
     CHECK_NULL_RETURN(hostname, NULL);
+
+#ifdef MACOSX
+    /*
+     * If getaddrinfo has failed and we're looking up the local machine, we
+     * attempt to get the address from getifaddrs. This ensures we get an
+     * IPv6 address for the local machine.
+     */
+    if (error) {
+        ret = lookupIfLocalhost(env, hostname, JNI_TRUE);
+        if (ret != NULL || (*env)->ExceptionCheck(env)) {
+            JNU_ReleaseStringPlatformChars(env, host, hostname);
+            return ret;
+        }
+    }
+#endif
 
 #ifdef AF_INET6
     static jfieldID ia_preferIPv6AddressID;

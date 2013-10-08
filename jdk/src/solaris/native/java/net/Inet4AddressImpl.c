@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -51,6 +51,24 @@
 #define HAS_GLIBC_GETHOSTBY_R   1
 #endif
 
+static jclass ni_iacls;
+static jclass ni_ia4cls;
+static jmethodID ni_ia4ctrID;
+
+static void initializeInetClasses(JNIEnv *env)
+{
+    static int initialized = 0;
+    if (!initialized) {
+        ni_iacls = (*env)->FindClass(env, "java/net/InetAddress");
+        ni_iacls = (*env)->NewGlobalRef(env, ni_iacls);
+        ni_ia4cls = (*env)->FindClass(env, "java/net/Inet4Address");
+        ni_ia4cls = (*env)->NewGlobalRef(env, ni_ia4cls);
+        ni_ia4ctrID = (*env)->GetMethodID(env, ni_ia4cls, "<init>", "()V");
+        initialized = 1;
+    }
+}
+
+
 #if defined(_ALLBSD_SOURCE) && !defined(HAS_GLIBC_GETHOSTBY_R)
 /* Use getaddrinfo(3), which is thread safe */
 /************************************************************************
@@ -99,14 +117,6 @@ Java_java_net_Inet4AddressImpl_getLocalHostName(JNIEnv *env, jobject this) {
     return (*env)->NewStringUTF(env, hostname);
 }
 
-static jclass ni_iacls;
-static jclass ni_ia4cls;
-static jmethodID ni_ia4ctrID;
-static jfieldID ni_iaaddressID;
-static jfieldID ni_iahostID;
-static jfieldID ni_iafamilyID;
-static int initialized = 0;
-
 /*
  * Find an internet address for a given hostname.  Note that this
  * code only works for addresses of type INET. The translation
@@ -129,14 +139,7 @@ Java_java_net_Inet4AddressImpl_lookupAllHostAddr(JNIEnv *env, jobject this,
     int error=0;
     struct addrinfo hints, *res, *resNew = NULL;
 
-    if (!initialized) {
-      ni_iacls = (*env)->FindClass(env, "java/net/InetAddress");
-      ni_iacls = (*env)->NewGlobalRef(env, ni_iacls);
-      ni_ia4cls = (*env)->FindClass(env, "java/net/Inet4Address");
-      ni_ia4cls = (*env)->NewGlobalRef(env, ni_ia4cls);
-      ni_ia4ctrID = (*env)->GetMethodID(env, ni_ia4cls, "<init>", "()V");
-      initialized = 1;
-    }
+    initializeInetClasses(env);
 
     if (IS_NULL(host)) {
         JNU_ThrowNullPointerException(env, "host is null");
@@ -159,6 +162,17 @@ Java_java_net_Inet4AddressImpl_lookupAllHostAddr(JNIEnv *env, jobject this,
         JNU_ReleaseStringPlatformChars(env, host, hostname);
         return NULL;
     }
+
+#ifdef MACOSX
+    /* If we're looking up the local machine, bypass DNS lookups and get
+     * address from getifaddrs.
+     */
+    ret = lookupIfLocalhost(env, hostname, JNI_FALSE);
+    if (ret != NULL || (*env)->ExceptionCheck(env)) {
+        JNU_ReleaseStringPlatformChars(env, host, hostname);
+        return ret;
+    }
+#endif
 
     error = getaddrinfo(hostname, NULL, &hints, &res);
 
@@ -365,10 +379,7 @@ Java_java_net_Inet4AddressImpl_getLocalHostName(JNIEnv *env, jobject this) {
     return (*env)->NewStringUTF(env, hostname);
 }
 
-static jclass ni_iacls;
-static jclass ni_ia4cls;
-static jmethodID ni_ia4ctrID;
-static int initialized = 0;
+extern jobjectArray lookupIfLocalhost(JNIEnv *env, const char *hostname, jboolean includeV6);
 
 /*
  * Find an internet address for a given hostname.  Note that this
@@ -390,14 +401,7 @@ Java_java_net_Inet4AddressImpl_lookupAllHostAddr(JNIEnv *env, jobject this,
     int error = 0;
     struct addrinfo hints, *res, *resNew = NULL;
 
-    if (!initialized) {
-      ni_iacls = (*env)->FindClass(env, "java/net/InetAddress");
-      ni_iacls = (*env)->NewGlobalRef(env, ni_iacls);
-      ni_ia4cls = (*env)->FindClass(env, "java/net/Inet4Address");
-      ni_ia4cls = (*env)->NewGlobalRef(env, ni_ia4cls);
-      ni_ia4ctrID = (*env)->GetMethodID(env, ni_ia4cls, "<init>", "()V");
-      initialized = 1;
-    }
+    initializeInetClasses(env);
 
     if (IS_NULL(host)) {
         JNU_ThrowNullPointerException(env, "host is null");
