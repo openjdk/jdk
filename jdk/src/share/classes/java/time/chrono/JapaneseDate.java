@@ -61,10 +61,8 @@ import static java.time.temporal.ChronoField.ALIGNED_DAY_OF_WEEK_IN_YEAR;
 import static java.time.temporal.ChronoField.ALIGNED_WEEK_OF_MONTH;
 import static java.time.temporal.ChronoField.ALIGNED_WEEK_OF_YEAR;
 import static java.time.temporal.ChronoField.DAY_OF_MONTH;
-import static java.time.temporal.ChronoField.DAY_OF_YEAR;
 import static java.time.temporal.ChronoField.MONTH_OF_YEAR;
 import static java.time.temporal.ChronoField.YEAR;
-import static java.time.temporal.ChronoField.YEAR_OF_ERA;
 
 import java.io.DataInput;
 import java.io.DataOutput;
@@ -76,7 +74,6 @@ import java.time.DateTimeException;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.time.Period;
-import java.time.Year;
 import java.time.ZoneId;
 import java.time.temporal.ChronoField;
 import java.time.temporal.TemporalAccessor;
@@ -119,7 +116,7 @@ import sun.util.calendar.LocalGregorianCalendar;
  * @since 1.8
  */
 public final class JapaneseDate
-        extends ChronoDateImpl<JapaneseDate>
+        extends ChronoLocalDateImpl<JapaneseDate>
         implements ChronoLocalDate, Serializable {
 
     /**
@@ -662,8 +659,9 @@ public final class JapaneseDate
     }
 
     @Override
-    public Period until(ChronoLocalDate endDate) {
-        return isoDate.until(endDate);
+    public ChronoPeriod until(ChronoLocalDate endDate) {
+        Period period = isoDate.until(endDate);
+        return getChronology().period(period.getYears(), period.getMonths(), period.getDays());
     }
 
     @Override  // override for performance

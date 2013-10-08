@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -91,6 +91,8 @@ final class ClientHandshaker extends Handshaker {
 
     private List<SNIServerName> requestedServerNames =
             Collections.<SNIServerName>emptyList();
+
+    private boolean serverNamesAccepted = false;
 
     /*
      * Constructors
@@ -567,7 +569,9 @@ final class ClientHandshaker extends Handshaker {
         // check extensions
         for (HelloExtension ext : mesg.extensions.list()) {
             ExtensionType type = ext.type;
-            if ((type != ExtensionType.EXT_ELLIPTIC_CURVES)
+            if (type == ExtensionType.EXT_SERVER_NAME) {
+                serverNamesAccepted = true;
+            } else if ((type != ExtensionType.EXT_ELLIPTIC_CURVES)
                     && (type != ExtensionType.EXT_EC_POINT_FORMATS)
                     && (type != ExtensionType.EXT_SERVER_NAME)
                     && (type != ExtensionType.EXT_RENEGOTIATION_INFO)) {
@@ -864,15 +868,47 @@ final class ClientHandshaker extends Handshaker {
             break;
         case K_KRB5:
         case K_KRB5_EXPORT:
-            String hostname = getHostSE();
-            if (hostname == null) {
-                throw new IOException("Hostname is required" +
-                                " to use Kerberos cipher suites");
+            String sniHostname = null;
+            for (SNIServerName serverName : requestedServerNames) {
+                if (serverName instanceof SNIHostName) {
+                    sniHostname = ((SNIHostName) serverName).getAsciiName();
+                    break;
+                }
             }
-            KerberosClientKeyExchange kerberosMsg =
-                new KerberosClientKeyExchange(
-                    hostname, isLoopbackSE(), getAccSE(), protocolVersion,
-                sslContext.getSecureRandom());
+
+            KerberosClientKeyExchange kerberosMsg = null;
+            if (sniHostname != null) {
+                // use first requested SNI hostname
+                try {
+                    kerberosMsg = new KerberosClientKeyExchange(
+                        sniHostname, getAccSE(), protocolVersion,
+                        sslContext.getSecureRandom());
+                } catch(IOException e) {
+                    if (serverNamesAccepted) {
+                        // server accepted requested SNI hostname,
+                        // so it must be used
+                        throw e;
+                    }
+                    // fallback to using hostname
+                    if (debug != null && Debug.isOn("handshake")) {
+                        System.out.println(
+                            "Warning, cannot use Server Name Indication: "
+                                + e.getMessage());
+                    }
+                }
+            }
+
+            if (kerberosMsg == null) {
+                String hostname = getHostSE();
+                if (hostname == null) {
+                    throw new IOException("Hostname is required" +
+                        " to use Kerberos cipher suites");
+                }
+                kerberosMsg = new KerberosClientKeyExchange(
+                     hostname, getAccSE(), protocolVersion,
+                     sslContext.getSecureRandom());
+            }
+
             // Record the principals involved in exchange
             session.setPeerPrincipal(kerberosMsg.getPeerPrincipal());
             session.setLocalPrincipal(kerberosMsg.getLocalPrincipal());

@@ -166,6 +166,7 @@ public interface ChronoZonedDateTime<D extends ChronoLocalDate>
         if (temporal instanceof ChronoZonedDateTime) {
             return (ChronoZonedDateTime<?>) temporal;
         }
+        Objects.requireNonNull(temporal, "temporal");
         Chronology chrono = temporal.query(TemporalQuery.chronology());
         if (chrono == null) {
             throw new DateTimeException("Unable to obtain ChronoZonedDateTime from TemporalAccessor: " + temporal.getClass());
@@ -244,6 +245,18 @@ public interface ChronoZonedDateTime<D extends ChronoLocalDate>
      * @return the local date-time part of this date-time, not null
      */
     ChronoLocalDateTime<D> toLocalDateTime();
+
+    /**
+     * Gets the chronology of this date-time.
+     * <p>
+     * The {@code Chronology} represents the calendar system in use.
+     * The era and other fields in {@link ChronoField} are defined by the chronology.
+     *
+     * @return the chronology, not null
+     */
+    default Chronology getChronology() {
+        return toLocalDate().getChronology();
+    }
 
     /**
      * Gets the zone offset, such as '+01:00'.
@@ -397,7 +410,7 @@ public interface ChronoZonedDateTime<D extends ChronoLocalDate>
      */
     @Override
     default ChronoZonedDateTime<D> with(TemporalAdjuster adjuster) {
-        return ChronoZonedDateTimeImpl.ensureValid(toLocalDate().getChronology(), Temporal.super.with(adjuster));
+        return ChronoZonedDateTimeImpl.ensureValid(getChronology(), Temporal.super.with(adjuster));
     }
 
     /**
@@ -415,7 +428,7 @@ public interface ChronoZonedDateTime<D extends ChronoLocalDate>
      */
     @Override
     default ChronoZonedDateTime<D> plus(TemporalAmount amount) {
-        return ChronoZonedDateTimeImpl.ensureValid(toLocalDate().getChronology(), Temporal.super.plus(amount));
+        return ChronoZonedDateTimeImpl.ensureValid(getChronology(), Temporal.super.plus(amount));
     }
 
     /**
@@ -433,7 +446,7 @@ public interface ChronoZonedDateTime<D extends ChronoLocalDate>
      */
     @Override
     default ChronoZonedDateTime<D> minus(TemporalAmount amount) {
-        return ChronoZonedDateTimeImpl.ensureValid(toLocalDate().getChronology(), Temporal.super.minus(amount));
+        return ChronoZonedDateTimeImpl.ensureValid(getChronology(), Temporal.super.minus(amount));
     }
 
     /**
@@ -443,7 +456,7 @@ public interface ChronoZonedDateTime<D extends ChronoLocalDate>
      */
     @Override
     default ChronoZonedDateTime<D> minus(long amountToSubtract, TemporalUnit unit) {
-        return ChronoZonedDateTimeImpl.ensureValid(toLocalDate().getChronology(), Temporal.super.minus(amountToSubtract, unit));
+        return ChronoZonedDateTimeImpl.ensureValid(getChronology(), Temporal.super.minus(amountToSubtract, unit));
     }
 
     //-----------------------------------------------------------------------
@@ -475,7 +488,7 @@ public interface ChronoZonedDateTime<D extends ChronoLocalDate>
         } else if (query == TemporalQuery.localTime()) {
             return (R) toLocalTime();
         } else if (query == TemporalQuery.chronology()) {
-            return (R) toLocalDate().getChronology();
+            return (R) getChronology();
         } else if (query == TemporalQuery.precision()) {
             return (R) NANOS;
         }
@@ -562,7 +575,7 @@ public interface ChronoZonedDateTime<D extends ChronoLocalDate>
                 if (cmp == 0) {
                     cmp = getZone().getId().compareTo(other.getZone().getId());
                     if (cmp == 0) {
-                        cmp = toLocalDate().getChronology().compareTo(other.toLocalDate().getChronology());
+                        cmp = getChronology().compareTo(other.getChronology());
                     }
                 }
             }

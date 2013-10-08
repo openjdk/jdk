@@ -257,12 +257,12 @@ class DirectMethodHandle extends MethodHandle {
         assert(names.length == nameCursor);
         if (doesAlloc) {
             // names = { argx,y,z,... new C, init method }
-            names[NEW_OBJ] = new Name(NF_allocateInstance, names[DMH_THIS]);
-            names[GET_MEMBER] = new Name(NF_constructorMethod, names[DMH_THIS]);
+            names[NEW_OBJ] = new Name(Lazy.NF_allocateInstance, names[DMH_THIS]);
+            names[GET_MEMBER] = new Name(Lazy.NF_constructorMethod, names[DMH_THIS]);
         } else if (needsInit) {
-            names[GET_MEMBER] = new Name(NF_internalMemberNameEnsureInit, names[DMH_THIS]);
+            names[GET_MEMBER] = new Name(Lazy.NF_internalMemberNameEnsureInit, names[DMH_THIS]);
         } else {
-            names[GET_MEMBER] = new Name(NF_internalMemberName, names[DMH_THIS]);
+            names[GET_MEMBER] = new Name(Lazy.NF_internalMemberName, names[DMH_THIS]);
         }
         Object[] outArgs = Arrays.copyOfRange(names, ARG_BASE, GET_MEMBER+1, Object[].class);
         assert(outArgs[outArgs.length-1] == names[GET_MEMBER]);  // look, shifted args!
@@ -637,18 +637,18 @@ class DirectMethodHandle extends MethodHandle {
         final int RESULT    = nameCursor-1;  // either the call or the cast
         Name[] names = arguments(nameCursor - ARG_LIMIT, mtype.invokerType());
         if (needsInit)
-            names[INIT_BAR] = new Name(NF_ensureInitialized, names[DMH_THIS]);
+            names[INIT_BAR] = new Name(Lazy.NF_ensureInitialized, names[DMH_THIS]);
         if (needsCast && !isGetter)
-            names[PRE_CAST] = new Name(NF_checkCast, names[DMH_THIS], names[SET_VALUE]);
+            names[PRE_CAST] = new Name(Lazy.NF_checkCast, names[DMH_THIS], names[SET_VALUE]);
         Object[] outArgs = new Object[1 + linkerType.parameterCount()];
         assert(outArgs.length == (isGetter ? 3 : 4));
         outArgs[0] = UNSAFE;
         if (isStatic) {
-            outArgs[1] = names[F_HOLDER]  = new Name(NF_staticBase, names[DMH_THIS]);
-            outArgs[2] = names[F_OFFSET]  = new Name(NF_staticOffset, names[DMH_THIS]);
+            outArgs[1] = names[F_HOLDER]  = new Name(Lazy.NF_staticBase, names[DMH_THIS]);
+            outArgs[2] = names[F_OFFSET]  = new Name(Lazy.NF_staticOffset, names[DMH_THIS]);
         } else {
-            outArgs[1] = names[OBJ_CHECK] = new Name(NF_checkBase, names[OBJ_BASE]);
-            outArgs[2] = names[F_OFFSET]  = new Name(NF_fieldOffset, names[DMH_THIS]);
+            outArgs[1] = names[OBJ_CHECK] = new Name(Lazy.NF_checkBase, names[OBJ_BASE]);
+            outArgs[2] = names[F_OFFSET]  = new Name(Lazy.NF_fieldOffset, names[DMH_THIS]);
         }
         if (!isGetter) {
             outArgs[3] = (needsCast ? names[PRE_CAST] : names[SET_VALUE]);
@@ -656,7 +656,7 @@ class DirectMethodHandle extends MethodHandle {
         for (Object a : outArgs)  assert(a != null);
         names[LINKER_CALL] = new Name(linker, outArgs);
         if (needsCast && isGetter)
-            names[POST_CAST] = new Name(NF_checkCast, names[DMH_THIS], names[LINKER_CALL]);
+            names[POST_CAST] = new Name(Lazy.NF_checkCast, names[DMH_THIS], names[LINKER_CALL]);
         for (Name n : names)  assert(n != null);
         String fieldOrStatic = (isStatic ? "Static" : "Field");
         String lambdaName = (linkerName + fieldOrStatic);  // significant only for debugging
@@ -665,48 +665,54 @@ class DirectMethodHandle extends MethodHandle {
         return new LambdaForm(lambdaName, ARG_LIMIT, names, RESULT);
     }
 
-    private static final NamedFunction
-            NF_internalMemberName,
-            NF_internalMemberNameEnsureInit,
-            NF_ensureInitialized,
-            NF_fieldOffset,
-            NF_checkBase,
-            NF_staticBase,
-            NF_staticOffset,
-            NF_checkCast,
-            NF_allocateInstance,
-            NF_constructorMethod;
-    static {
-        try {
-            NamedFunction nfs[] = {
-                NF_internalMemberName = new NamedFunction(DirectMethodHandle.class
-                    .getDeclaredMethod("internalMemberName", Object.class)),
-                NF_internalMemberNameEnsureInit = new NamedFunction(DirectMethodHandle.class
-                    .getDeclaredMethod("internalMemberNameEnsureInit", Object.class)),
-                NF_ensureInitialized = new NamedFunction(DirectMethodHandle.class
-                    .getDeclaredMethod("ensureInitialized", Object.class)),
-                NF_fieldOffset = new NamedFunction(DirectMethodHandle.class
-                    .getDeclaredMethod("fieldOffset", Object.class)),
-                NF_checkBase = new NamedFunction(DirectMethodHandle.class
-                    .getDeclaredMethod("checkBase", Object.class)),
-                NF_staticBase = new NamedFunction(DirectMethodHandle.class
-                    .getDeclaredMethod("staticBase", Object.class)),
-                NF_staticOffset = new NamedFunction(DirectMethodHandle.class
-                    .getDeclaredMethod("staticOffset", Object.class)),
-                NF_checkCast = new NamedFunction(DirectMethodHandle.class
-                    .getDeclaredMethod("checkCast", Object.class, Object.class)),
-                NF_allocateInstance = new NamedFunction(DirectMethodHandle.class
-                    .getDeclaredMethod("allocateInstance", Object.class)),
-                NF_constructorMethod = new NamedFunction(DirectMethodHandle.class
-                    .getDeclaredMethod("constructorMethod", Object.class))
-            };
-            for (NamedFunction nf : nfs) {
-                // Each nf must be statically invocable or we get tied up in our bootstraps.
-                assert(InvokerBytecodeGenerator.isStaticallyInvocable(nf.member)) : nf;
-                nf.resolve();
+    /**
+     * Pre-initialized NamedFunctions for bootstrapping purposes.
+     * Factored in an inner class to delay initialization until first usage.
+     */
+    private static class Lazy {
+        static final NamedFunction
+                NF_internalMemberName,
+                NF_internalMemberNameEnsureInit,
+                NF_ensureInitialized,
+                NF_fieldOffset,
+                NF_checkBase,
+                NF_staticBase,
+                NF_staticOffset,
+                NF_checkCast,
+                NF_allocateInstance,
+                NF_constructorMethod;
+        static {
+            try {
+                NamedFunction nfs[] = {
+                        NF_internalMemberName = new NamedFunction(DirectMethodHandle.class
+                                .getDeclaredMethod("internalMemberName", Object.class)),
+                        NF_internalMemberNameEnsureInit = new NamedFunction(DirectMethodHandle.class
+                                .getDeclaredMethod("internalMemberNameEnsureInit", Object.class)),
+                        NF_ensureInitialized = new NamedFunction(DirectMethodHandle.class
+                                .getDeclaredMethod("ensureInitialized", Object.class)),
+                        NF_fieldOffset = new NamedFunction(DirectMethodHandle.class
+                                .getDeclaredMethod("fieldOffset", Object.class)),
+                        NF_checkBase = new NamedFunction(DirectMethodHandle.class
+                                .getDeclaredMethod("checkBase", Object.class)),
+                        NF_staticBase = new NamedFunction(DirectMethodHandle.class
+                                .getDeclaredMethod("staticBase", Object.class)),
+                        NF_staticOffset = new NamedFunction(DirectMethodHandle.class
+                                .getDeclaredMethod("staticOffset", Object.class)),
+                        NF_checkCast = new NamedFunction(DirectMethodHandle.class
+                                .getDeclaredMethod("checkCast", Object.class, Object.class)),
+                        NF_allocateInstance = new NamedFunction(DirectMethodHandle.class
+                                .getDeclaredMethod("allocateInstance", Object.class)),
+                        NF_constructorMethod = new NamedFunction(DirectMethodHandle.class
+                                .getDeclaredMethod("constructorMethod", Object.class))
+                };
+                for (NamedFunction nf : nfs) {
+                    // Each nf must be statically invocable or we get tied up in our bootstraps.
+                    assert(InvokerBytecodeGenerator.isStaticallyInvocable(nf.member)) : nf;
+                    nf.resolve();
+                }
+            } catch (ReflectiveOperationException ex) {
+                throw newInternalError(ex);
             }
-        } catch (ReflectiveOperationException ex) {
-            throw newInternalError(ex);
         }
     }
 }

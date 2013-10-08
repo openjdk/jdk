@@ -55,7 +55,7 @@ package java.lang.invoke;
  * At that point {@code guardWithTest} may ignore {@code T} and return {@code F}.
  * <p>
  * Here is an example of a switch point in action:
- * <blockquote><pre>
+ * <blockquote><pre>{@code
 MethodHandle MH_strcat = MethodHandles.lookup()
     .findVirtual(String.class, "concat", MethodType.methodType(String.class, String.class));
 SwitchPoint spt = new SwitchPoint();
@@ -68,7 +68,7 @@ assertEquals("method", (String) worker.invokeExact("met", "hod"));
 SwitchPoint.invalidateAll(new SwitchPoint[]{ spt });
 assert(spt.hasBeenInvalidated());
 assertEquals("hodmet", (String) worker.invokeExact("met", "hod"));
- * </pre></blockquote>
+ * }</pre></blockquote>
  * <p style="font-size:smaller;">
  * <em>Discussion:</em>
  * Switch points are useful without subclassing.  They may also be subclassed.
@@ -82,7 +82,7 @@ assertEquals("hodmet", (String) worker.invokeExact("met", "hod"));
  * <em>Implementation Note:</em>
  * A switch point behaves as if implemented on top of {@link MutableCallSite},
  * approximately as follows:
- * <blockquote><pre>
+ * <blockquote><pre>{@code
 public class SwitchPoint {
   private static final MethodHandle
     K_true  = MethodHandles.constant(boolean.class, true),
@@ -106,7 +106,7 @@ public class SwitchPoint {
     MutableCallSite.syncAll(mcss.toArray(new MutableCallSite[0]));
   }
 }
- * </pre></blockquote>
+ * }</pre></blockquote>
  * @author Remi Forax, JSR 292 EG
  */
 public class SwitchPoint {

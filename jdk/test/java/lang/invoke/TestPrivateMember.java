@@ -47,11 +47,18 @@ public class TestPrivateMember {
         MethodHandles.Lookup lookup = MethodHandles.lookup();
         MethodType mt = MethodType.methodType(void.class);
         try {
-            MethodHandle mh = lookup.findStatic(Class.class, "checkInitted", mt);
+            Class<?> checkInittedHolder = TestPrivateMemberPackageSibling.class;
+            // Original model:  checkInittedHolder = Class.class;
+            // Not using Class.checkInitted because it could change without notice.
+            MethodHandle mh = lookup.findStatic(checkInittedHolder, "checkInitted", mt);
             throw new RuntimeException("IllegalAccessException not thrown");
         } catch (IllegalAccessException e) {
             // okay
             System.out.println("Expected exception: " + e.getMessage());
         }
     }
+}
+
+class TestPrivateMemberPackageSibling {
+    private static void checkInitted() { }
 }

@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2008, 2012, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2008, 2013, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -143,7 +143,8 @@ fi
 cd ${TESTSRC}
 ${TESTJAVA}${FS}bin${FS}java ${TESTVMOPTS} \
 	-DDIR=${TESTSRC}${FS}BasicData${FS} \
-        -classpath ${TESTCLASSES}${PS}${TESTSRC}${FS}loader.jar \
+        -classpath \
+        ${TESTCLASSES}${PS}${TESTCLASSES}${FS}..${PS}${TESTSRC}${FS}loader.jar \
         -DCUSTOM_DB_DIR=${TESTCLASSES} \
         -DCUSTOM_P11_CONFIG=${TESTSRC}${FS}BasicData${FS}p11-${token}.txt \
 	-DNO_DEFAULT=true \

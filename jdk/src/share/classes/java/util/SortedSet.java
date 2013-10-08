@@ -223,10 +223,10 @@ public interface SortedSet<E> extends Set<E> {
     /**
      * Creates a {@code Spliterator} over the elements in this sorted set.
      *
-     * <p>The {@code Spliterator} reports {@link Spliterator#SIZED},
-     * {@link Spliterator#DISTINCT}, {@link Spliterator#SORTED} and
-     * {@link Spliterator#ORDERED}.  Implementations should document the
-     * reporting of additional characteristic values.
+     * <p>The {@code Spliterator} reports {@link Spliterator#DISTINCT},
+     * {@link Spliterator#SORTED} and {@link Spliterator#ORDERED}.
+     * Implementations should document the reporting of additional
+     * characteristic values.
      *
      * <p>The spliterator's comparator (see
      * {@link java.util.Spliterator#getComparator()}) must be {@code null} if
@@ -240,6 +240,9 @@ public interface SortedSet<E> extends Set<E> {
      * from the sorted set's {@code Iterator}.  The spliterator inherits the
      * <em>fail-fast</em> properties of the set's iterator.  The
      * spliterator's comparator is the same as the sorted set's comparator.
+     * <p>
+     * The created {@code Spliterator} additionally reports
+     * {@link Spliterator#SIZED}.
      *
      * @implNote
      * The created {@code Spliterator} additionally reports

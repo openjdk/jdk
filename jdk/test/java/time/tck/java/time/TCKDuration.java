@@ -77,6 +77,7 @@ import java.io.DataOutputStream;
 import java.time.DateTimeException;
 import java.time.Duration;
 import java.time.Instant;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.Period;
@@ -102,26 +103,6 @@ import org.testng.annotations.Test;
 public class TCKDuration extends AbstractTCKTest {
 
     private static final long CYCLE_SECS = 146097L * 86400L;
-
-    //-----------------------------------------------------------------------
-    @Test
-    public void test_serialization() throws Exception {
-        assertSerializable(Duration.ofHours(5));
-        assertSerializable(Duration.ofHours(0));
-        assertSerializable(Duration.ofHours(-5));
-    }
-
-    @Test
-    public void test_serialization_format() throws Exception {
-        ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        try (DataOutputStream dos = new DataOutputStream(baos) ) {
-            dos.writeByte(1);
-            dos.writeLong(654321);
-            dos.writeInt(123456789);
-        }
-        byte[] bytes = baos.toByteArray();
-        assertSerializedBySer(Duration.ofSeconds(654321, 123456789), bytes);
-    }
 
     //-----------------------------------------------------------------------
     // constants
@@ -863,10 +844,17 @@ public class TCKDuration extends AbstractTCKTest {
         assertEquals(Duration.between(end, start), Duration.between(start, end).negated());
     }
 
-    @Test(expectedExceptions=DateTimeException.class)
+    @Test
     public void factory_between_TemporalTemporal_mixedTypes() {
         Instant start = Instant.ofEpochSecond(1);
         ZonedDateTime end = Instant.ofEpochSecond(4).atZone(ZoneOffset.UTC);
+        assertEquals(Duration.between(start, end), Duration.ofSeconds(3));
+    }
+
+    @Test(expectedExceptions=DateTimeException.class)
+    public void factory_between_TemporalTemporal_invalidMixedTypes() {
+        Instant start = Instant.ofEpochSecond(1);
+        LocalDate end = LocalDate.of(2010, 6, 20);
         Duration.between(start, end);
     }
 

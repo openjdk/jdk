@@ -69,7 +69,6 @@ import java.io.ObjectInput;
 import java.io.ObjectOutput;
 import java.io.ObjectStreamException;
 import java.io.Serializable;
-import java.time.DateTimeException;
 import java.time.LocalTime;
 import java.time.ZoneId;
 import java.time.temporal.ChronoField;
@@ -187,9 +186,9 @@ final class ChronoLocalDateTimeImpl<D extends ChronoLocalDate>
     static <R extends ChronoLocalDate> ChronoLocalDateTimeImpl<R> ensureValid(Chronology chrono, Temporal temporal) {
         @SuppressWarnings("unchecked")
         ChronoLocalDateTimeImpl<R> other = (ChronoLocalDateTimeImpl<R>) temporal;
-        if (chrono.equals(other.toLocalDate().getChronology()) == false) {
+        if (chrono.equals(other.getChronology()) == false) {
             throw new ClassCastException("Chronology mismatch, required: " + chrono.getId()
-                    + ", actual: " + other.toLocalDate().getChronology().getId());
+                    + ", actual: " + other.getChronology().getId());
         }
         return other;
     }
@@ -220,7 +219,7 @@ final class ChronoLocalDateTimeImpl<D extends ChronoLocalDate>
             return this;
         }
         // Validate that the new Temporal is a ChronoLocalDate (and not something else)
-        D cd = ChronoDateImpl.ensureValid(date.getChronology(), newDate);
+        D cd = ChronoLocalDateImpl.ensureValid(date.getChronology(), newDate);
         return new ChronoLocalDateTimeImpl<>(cd, newTime);
     }
 
@@ -369,15 +368,10 @@ final class ChronoLocalDateTimeImpl<D extends ChronoLocalDate>
 
     //-----------------------------------------------------------------------
     @Override
-    public long until(Temporal endDateTime, TemporalUnit unit) {
-        if (endDateTime instanceof ChronoLocalDateTime == false) {
-            throw new DateTimeException("Unable to calculate amount as objects are of two different types");
-        }
+    public long until(Temporal endExclusive, TemporalUnit unit) {
+        Objects.requireNonNull(endExclusive, "endExclusive");
         @SuppressWarnings("unchecked")
-        ChronoLocalDateTime<D> end = (ChronoLocalDateTime<D>) endDateTime;
-        if (toLocalDate().getChronology().equals(end.toLocalDate().getChronology()) == false) {
-            throw new DateTimeException("Unable to calculate amount as objects have different chronologies");
-        }
+        ChronoLocalDateTime<D> end = (ChronoLocalDateTime<D>) getChronology().localDateTime(endExclusive);
         if (unit instanceof ChronoUnit) {
             if (unit.isTimeBased()) {
                 long amount = end.getLong(EPOCH_DAY) - date.getLong(EPOCH_DAY);
@@ -398,7 +392,8 @@ final class ChronoLocalDateTimeImpl<D extends ChronoLocalDate>
             }
             return date.until(endDate, unit);
         }
-        return unit.between(this, endDateTime);
+        Objects.requireNonNull(unit, "unit");
+        return unit.between(this, end);
     }
 
     //-----------------------------------------------------------------------

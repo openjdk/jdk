@@ -70,13 +70,13 @@ import java.util.Objects;
  * @author jrose
  */
 /*non-public*/ final class MemberName implements Member, Cloneable {
-    private Class<?>   clazz;       // class in which the method is defined
-    private String     name;        // may be null if not yet materialized
-    private Object     type;        // may be null if not yet materialized
-    private int        flags;       // modifier bits; see reflect.Modifier
+    private Class<?> clazz;       // class in which the method is defined
+    private String   name;        // may be null if not yet materialized
+    private Object   type;        // may be null if not yet materialized
+    private int      flags;       // modifier bits; see reflect.Modifier
     //@Injected JVM_Method* vmtarget;
     //@Injected int         vmindex;
-    private Object     resolution;  // if null, this guy is resolved
+    private Object   resolution;  // if null, this guy is resolved
 
     /** Return the declaring class of this member.
      *  In the case of a bare name and type, the declaring class will be null.
@@ -98,7 +98,9 @@ import java.util.Objects;
     public String getName() {
         if (name == null) {
             expandFromVM();
-            if (name == null)  return null;
+            if (name == null) {
+                return null;
+            }
         }
         return name;
     }
@@ -119,28 +121,39 @@ import java.util.Objects;
     public MethodType getMethodType() {
         if (type == null) {
             expandFromVM();
-            if (type == null)  return null;
+            if (type == null) {
+                return null;
+            }
         }
-        if (!isInvocable())
+        if (!isInvocable()) {
             throw newIllegalArgumentException("not invocable, no method type");
-        if (type instanceof MethodType) {
-            return (MethodType) type;
         }
-        if (type instanceof String) {
-            String sig = (String) type;
-            MethodType res = MethodType.fromMethodDescriptorString(sig, getClassLoader());
-            this.type = res;
-            return res;
+
+        {
+            // Get a snapshot of type which doesn't get changed by racing threads.
+            final Object type = this.type;
+            if (type instanceof MethodType) {
+                return (MethodType) type;
+            }
         }
-        if (type instanceof Object[]) {
-            Object[] typeInfo = (Object[]) type;
-            Class<?>[] ptypes = (Class<?>[]) typeInfo[1];
-            Class<?> rtype = (Class<?>) typeInfo[0];
-            MethodType res = MethodType.methodType(rtype, ptypes);
-            this.type = res;
-            return res;
+
+        // type is not a MethodType yet.  Convert it thread-safely.
+        synchronized (this) {
+            if (type instanceof String) {
+                String sig = (String) type;
+                MethodType res = MethodType.fromMethodDescriptorString(sig, getClassLoader());
+                type = res;
+            } else if (type instanceof Object[]) {
+                Object[] typeInfo = (Object[]) type;
+                Class<?>[] ptypes = (Class<?>[]) typeInfo[1];
+                Class<?> rtype = (Class<?>) typeInfo[0];
+                MethodType res = MethodType.methodType(rtype, ptypes);
+                type = res;
+            }
+            // Make sure type is a MethodType for racing threads.
+            assert type instanceof MethodType : "bad method type " + type;
         }
-        throw new InternalError("bad method type "+type);
+        return (MethodType) type;
     }
 
     /** Return the actual type under which this method or constructor must be invoked.
@@ -173,21 +186,34 @@ import java.util.Objects;
     public Class<?> getFieldType() {
         if (type == null) {
             expandFromVM();
-            if (type == null)  return null;
+            if (type == null) {
+                return null;
+            }
         }
-        if (isInvocable())
+        if (isInvocable()) {
             throw newIllegalArgumentException("not a field or nested class, no simple type");
-        if (type instanceof Class<?>) {
-            return (Class<?>) type;
         }
-        if (type instanceof String) {
-            String sig = (String) type;
-            MethodType mtype = MethodType.fromMethodDescriptorString("()"+sig, getClassLoader());
-            Class<?> res = mtype.returnType();
-            this.type = res;
-            return res;
+
+        {
+            // Get a snapshot of type which doesn't get changed by racing threads.
+            final Object type = this.type;
+            if (type instanceof Class<?>) {
+                return (Class<?>) type;
+            }
         }
-        throw new InternalError("bad field type "+type);
+
+        // type is not a Class yet.  Convert it thread-safely.
+        synchronized (this) {
+            if (type instanceof String) {
+                String sig = (String) type;
+                MethodType mtype = MethodType.fromMethodDescriptorString("()"+sig, getClassLoader());
+                Class<?> res = mtype.returnType();
+                type = res;
+            }
+            // Make sure type is a Class for racing threads.
+            assert type instanceof Class<?> : "bad field type " + type;
+        }
+        return (Class<?>) type;
     }
 
     /** Utility method to produce either the method type or field type of this member. */
@@ -201,10 +227,10 @@ import java.util.Objects;
     public String getSignature() {
         if (type == null) {
             expandFromVM();
-            if (type == null)  return null;
+            if (type == null) {
+                return null;
+            }
         }
-        if (type instanceof String)
-            return (String) type;
         if (isInvocable())
             return BytecodeDescriptor.unparse(getMethodType());
         else
@@ -463,10 +489,17 @@ import java.util.Objects;
         //assert(referenceKindIsConsistent());  // do this after resolution
     }
 
+    /**
+     * Calls down to the VM to fill in the fields.  This method is
+     * synchronized to avoid racing calls.
+     */
     private void expandFromVM() {
-        if (!isResolved())  return;
-        if (type instanceof Object[])
-            type = null;  // don't saddle JVM w/ typeInfo
+        if (type != null) {
+            return;
+        }
+        if (!isResolved()) {
+            return;
+        }
         MethodHandleNatives.expand(this);
     }
 
@@ -523,12 +556,41 @@ import java.util.Objects;
         }
         throw new IllegalArgumentException(this.toString());
     }
+    /** If this MN is not REF_newInvokeSpecial, return a clone with that ref. kind.
+     *  In that case it must already be REF_invokeSpecial.
+     */
     public MemberName asConstructor() {
         switch (getReferenceKind()) {
         case REF_invokeSpecial:     return clone().changeReferenceKind(REF_newInvokeSpecial, REF_invokeSpecial);
         case REF_newInvokeSpecial:  return this;
         }
         throw new IllegalArgumentException(this.toString());
+    }
+    /** If this MN is a REF_invokeSpecial, return a clone with the "normal" kind
+     *  REF_invokeVirtual; also switch either to REF_invokeInterface if clazz.isInterface.
+     *  The end result is to get a fully virtualized version of the MN.
+     *  (Note that resolving in the JVM will sometimes devirtualize, changing
+     *  REF_invokeVirtual of a final to REF_invokeSpecial, and REF_invokeInterface
+     *  in some corner cases to either of the previous two; this transform
+     *  undoes that change under the assumption that it occurred.)
+     */
+    public MemberName asNormalOriginal() {
+        byte normalVirtual = clazz.isInterface() ? REF_invokeInterface : REF_invokeVirtual;
+        byte refKind = getReferenceKind();
+        byte newRefKind = refKind;
+        MemberName result = this;
+        switch (refKind) {
+        case REF_invokeInterface:
+        case REF_invokeVirtual:
+        case REF_invokeSpecial:
+            newRefKind = normalVirtual;
+            break;
+        }
+        if (newRefKind == refKind)
+            return this;
+        result = clone().changeReferenceKind(newRefKind, refKind);
+        assert(this.referenceKindIsConsistentWith(result.getReferenceKind()));
+        return result;
     }
     /** Create a name for the given reflected constructor.  The resulting name will be in a resolved state. */
     @SuppressWarnings("LeakingThisInConstructor")
@@ -627,7 +689,7 @@ import java.util.Objects;
 
     @Override
     public int hashCode() {
-        return Objects.hash(clazz, flags, name, getType());
+        return Objects.hash(clazz, getReferenceKind(), name, getType());
     }
     @Override
     public boolean equals(Object that) {
@@ -643,13 +705,14 @@ import java.util.Objects;
         if (this == that)  return true;
         if (that == null)  return false;
         return this.clazz == that.clazz
-                && this.flags == that.flags
+                && this.getReferenceKind() == that.getReferenceKind()
                 && Objects.equals(this.name, that.name)
                 && Objects.equals(this.getType(), that.getType());
     }
 
     // Construction from symbolic parts, for queries:
-    /** Create a field or type name from the given components:  Declaring class, name, type, reference kind.
+    /** Create a field or type name from the given components:
+     *  Declaring class, name, type, reference kind.
      *  The declaring class may be supplied as null if this is to be a bare name and type.
      *  The resulting name will in an unresolved state.
      */
@@ -673,21 +736,34 @@ import java.util.Objects;
      *  The resulting name will in an unresolved state.
      */
     public MemberName(Class<?> defClass, String name, MethodType type, byte refKind) {
-        @SuppressWarnings("LocalVariableHidesMemberVariable")
-        int flags = (name != null && name.equals(CONSTRUCTOR_NAME) ? IS_CONSTRUCTOR : IS_METHOD);
-        init(defClass, name, type, flagsMods(flags, 0, refKind));
+        int initFlags = (name != null && name.equals(CONSTRUCTOR_NAME) ? IS_CONSTRUCTOR : IS_METHOD);
+        init(defClass, name, type, flagsMods(initFlags, 0, refKind));
         initResolved(false);
     }
-//    /** Create a method or constructor name from the given components:  Declaring class, name, type, modifiers.
-//     *  It will be a constructor if and only if the name is {@code "&lt;init&gt;"}.
-//     *  The declaring class may be supplied as null if this is to be a bare name and type.
-//     *  The modifier flags default to zero.
-//     *  The resulting name will in an unresolved state.
-//     */
-//    public MemberName(Class<?> defClass, String name, MethodType type, Void unused) {
-//        this(defClass, name, type, REF_NONE);
-//    }
-
+    /** Create a method, constructor, or field name from the given components:
+     *  Reference kind, declaring class, name, type.
+     */
+    public MemberName(byte refKind, Class<?> defClass, String name, Object type) {
+        int kindFlags;
+        if (MethodHandleNatives.refKindIsField(refKind)) {
+            kindFlags = IS_FIELD;
+            if (!(type instanceof Class))
+                throw newIllegalArgumentException("not a field type");
+        } else if (MethodHandleNatives.refKindIsMethod(refKind)) {
+            kindFlags = IS_METHOD;
+            if (!(type instanceof MethodType))
+                throw newIllegalArgumentException("not a method type");
+        } else if (refKind == REF_newInvokeSpecial) {
+            kindFlags = IS_CONSTRUCTOR;
+            if (!(type instanceof MethodType) ||
+                !CONSTRUCTOR_NAME.equals(name))
+                throw newIllegalArgumentException("not a constructor type or name");
+        } else {
+            throw newIllegalArgumentException("bad reference kind "+refKind);
+        }
+        init(defClass, name, type, flagsMods(kindFlags, 0, refKind));
+        initResolved(false);
+    }
     /** Query whether this member name is resolved to a non-static, non-final method.
      */
     public boolean hasReceiverTypeDispatch() {

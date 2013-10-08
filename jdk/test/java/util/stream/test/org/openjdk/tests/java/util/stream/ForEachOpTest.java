@@ -69,7 +69,7 @@ public class ForEachOpTest extends OpTestCase {
         };
     }
 
-    @Test
+    @Test(groups = { "serialization-hostile" })
     public void testForEachOrdered() {
         List<Integer> input = countTo(10000);
         TestData.OfRef<Integer> data = TestData.Factory.ofCollection("[1, 10000]", input);
@@ -116,7 +116,7 @@ public class ForEachOpTest extends OpTestCase {
 
     //
 
-    @Test
+    @Test(groups = { "serialization-hostile" })
     public void testIntForEachOrdered() {
         List<Integer> input = countTo(10000);
         TestData.OfInt data = TestData.Factory.ofIntSupplier("[1, 10000]",
@@ -164,7 +164,7 @@ public class ForEachOpTest extends OpTestCase {
 
     //
 
-    @Test
+    @Test(groups = { "serialization-hostile" })
     public void testLongForEachOrdered() {
         List<Integer> input = countTo(10000);
         TestData.OfLong data = TestData.Factory.ofLongSupplier("[1, 10000]",
@@ -212,7 +212,7 @@ public class ForEachOpTest extends OpTestCase {
 
     //
 
-    @Test
+    @Test(groups = { "serialization-hostile" })
     public void testDoubleForEachOrdered() {
         List<Integer> input = countTo(10000);
         TestData.OfDouble data = TestData.Factory.ofDoubleSupplier("[1, 10000]",

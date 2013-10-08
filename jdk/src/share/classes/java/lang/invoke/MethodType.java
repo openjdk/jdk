@@ -77,7 +77,8 @@ import sun.invoke.util.VerifyType;
  * A method type may be loaded by an {@code ldc} instruction which refers
  * to a suitable {@code CONSTANT_MethodType} constant pool entry.
  * The entry refers to a {@code CONSTANT_Utf8} spelling for the descriptor string.
- * For more details, see the <a href="package-summary.html#mtcon">package summary</a>.
+ * (For full details on method type constants,
+ * see sections 4.4.8 and 5.4.3.5 of the Java Virtual Machine Specification.)
  * <p>
  * When the JVM materializes a {@code MethodType} from a descriptor string,
  * all classes named in the descriptor must be accessible, and will be loaded.
@@ -94,9 +95,9 @@ class MethodType implements java.io.Serializable {
     private final Class<?>[] ptypes;
 
     // The remaining fields are caches of various sorts:
-    private MethodTypeForm form; // erased form, plus cached data about primitives
-    private MethodType wrapAlt;  // alternative wrapped/unwrapped version
-    private Invokers invokers;   // cache of handy higher-order adapters
+    private @Stable MethodTypeForm form; // erased form, plus cached data about primitives
+    private @Stable MethodType wrapAlt;  // alternative wrapped/unwrapped version
+    private @Stable Invokers invokers;   // cache of handy higher-order adapters
 
     /**
      * Check the given parameters for validity and store them into the final fields.
@@ -940,10 +941,10 @@ class MethodType implements java.io.Serializable {
      * Instead, the return type and parameter type arrays are written directly
      * from the {@code writeObject} method, using two calls to {@code s.writeObject}
      * as follows:
-     * <blockquote><pre>
+     * <blockquote><pre>{@code
 s.writeObject(this.returnType());
 s.writeObject(this.parameterArray());
-     * </pre></blockquote>
+     * }</pre></blockquote>
      * <p>
      * The deserialized field values are checked as if they were
      * provided to the factory method {@link #methodType(Class,Class[]) methodType}.

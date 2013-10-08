@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2013, Oracle and/or its affiliates. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -87,12 +87,36 @@ import javax.swing.table.*;
  */
 public class JTop extends JPanel {
 
+    private static class StatusBar extends JPanel {
+        private static final long serialVersionUID = -6483392381797633018L;
+        private final JLabel statusText;
+
+        public StatusBar(boolean defaultVisible) {
+            super(new GridLayout(1, 1));
+            statusText = new JLabel();
+            statusText.setVisible(defaultVisible);
+            add(statusText);
+        }
+
+        @Override
+        public Dimension getMaximumSize() {
+            Dimension maximum = super.getMaximumSize();
+            Dimension minimum = getMinimumSize();
+            return new Dimension(maximum.width, minimum.height);
+        }
+
+        public void setMessage(String text) {
+            statusText.setText(text);
+            statusText.setVisible(true);
+        }
+    }
     private static final long serialVersionUID = -1499762160973870696L;
     private MBeanServerConnection server;
     private ThreadMXBean tmbean;
     private MyTableModel tmodel;
+    private final StatusBar statusBar;
     public JTop() {
-        super(new GridLayout(1,0));
+        super(new GridBagLayout());
 
         tmodel = new MyTableModel();
         JTable table = new JTable(tmodel);
@@ -108,7 +132,22 @@ public class JTop extends JPanel {
         JScrollPane scrollPane = new JScrollPane(table);
 
         // Add the scroll pane to this panel.
-        add(scrollPane);
+        GridBagConstraints c1 = new GridBagConstraints();
+        c1.fill = GridBagConstraints.BOTH;
+        c1.gridy = 0;
+        c1.gridx = 0;
+        c1.weightx = 1;
+        c1.weighty = 1;
+        add(scrollPane, c1);
+
+        statusBar = new StatusBar(false);
+        GridBagConstraints c2 = new GridBagConstraints();
+        c2.fill = GridBagConstraints.HORIZONTAL;
+        c2.gridy = 1;
+        c2.gridx = 0;
+        c2.weightx = 1.0;
+        c2.weighty = 0.0;
+        add(statusBar, c2);
     }
 
     // Set the MBeanServerConnection object for communicating
@@ -123,9 +162,13 @@ public class JTop extends JPanel {
             e.printStackTrace();
         }
         if (!tmbean.isThreadCpuTimeSupported()) {
-            System.err.println("This VM does not support thread CPU time monitoring");
+            statusBar.setMessage("Monitored VM does not support thread CPU time measurement");
         } else {
-            tmbean.setThreadCpuTimeEnabled(true);
+            try {
+                tmbean.setThreadCpuTimeEnabled(true);
+            } catch (SecurityException e) {
+                statusBar.setMessage("Monitored VM does not have permission for enabling thread cpu time measurement");
+            }
         }
     }
 
