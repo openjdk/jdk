@@ -169,7 +169,7 @@ public class PackageWriterImpl extends HtmlDocletWriter
         if(classes.length > 0) {
             Arrays.sort(classes);
             Content caption = getTableCaption(new RawHtml(label));
-            Content table = HtmlTree.TABLE(HtmlStyle.packageSummary, 0, 3, 0,
+            Content table = HtmlTree.TABLE(HtmlStyle.typeSummary, 0, 3, 0,
                     tableSummary, caption);
             table.addContent(getSummaryTableHeader(tableHeader, "col"));
             Content tbody = new HtmlTree(HtmlTag.TBODY);

@@ -41,7 +41,7 @@ import java.util.List;
  * @author Jonathan Gibbons
  * @since 1.6
  */
-@jdk.Supported
+@jdk.Exported
 public interface ParameterizedTypeTree extends Tree {
     Tree getType();
     List<? extends Tree> getTypeArguments();

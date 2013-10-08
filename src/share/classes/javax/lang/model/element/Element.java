@@ -202,6 +202,7 @@ public interface Element extends javax.lang.model.AnnotatedConstruct {
      * @return {@code true} if the specified object represents the same
      *          element as this
      */
+    @Override
     boolean equals(Object obj);
 
     /**
@@ -209,6 +210,7 @@ public interface Element extends javax.lang.model.AnnotatedConstruct {
      *
      * @see #equals
      */
+    @Override
     int hashCode();
 
 
@@ -219,11 +221,18 @@ public interface Element extends javax.lang.model.AnnotatedConstruct {
      * Elements#getAllAnnotationMirrors(Element)
      * getAllAnnotationMirrors}.
      *
-     * @see ElementFilter
      * @since 1.6
      */
     @Override
     List<? extends AnnotationMirror> getAnnotationMirrors();
+
+    /**
+     * {@inheritDoc}
+     * @since 1.6
+     */
+    @Override
+    <A extends Annotation> A getAnnotation(Class<A> annotationType);
+
     /**
      * Applies a visitor to this element.
      *

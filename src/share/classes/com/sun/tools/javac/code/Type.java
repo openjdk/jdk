@@ -1651,6 +1651,9 @@ public abstract class Type implements TypeMirror {
         public <R, P> R accept(TypeVisitor<R, P> v, P p) {
             return v.visitNoType(this, p);
         }
+
+        @Override
+        public boolean isCompound() { return false; }
     }
 
     /** Represents VOID.
@@ -1670,6 +1673,9 @@ public abstract class Type implements TypeMirror {
         public TypeKind getKind() {
             return TypeKind.VOID;
         }
+
+        @Override
+        public boolean isCompound() { return false; }
 
         @Override
         public <R, P> R accept(TypeVisitor<R, P> v, P p) {
@@ -1696,6 +1702,9 @@ public abstract class Type implements TypeMirror {
         public TypeKind getKind() {
             return TypeKind.NULL;
         }
+
+        @Override
+        public boolean isCompound() { return false; }
 
         @Override
         public <R, P> R accept(TypeVisitor<R, P> v, P p) {

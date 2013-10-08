@@ -33,9 +33,9 @@ import javax.lang.model.element.Name;
  *
  * @since 1.8
  */
-@jdk.Supported
+@jdk.Exported
 public interface AttributeTree extends DocTree {
-    @jdk.Supported
+    @jdk.Exported
     enum ValueKind { EMPTY, UNQUOTED, SINGLE, DOUBLE };
 
     Name getName();

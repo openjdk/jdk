@@ -310,6 +310,7 @@ public class Annotate {
     Attribute enterAttributeValue(Type expected,
                                   JCExpression tree,
                                   Env<AttrContext> env) {
+        Type original = expected;
         //first, try completing the attribution value sym - if a completion
         //error is thrown, we should recover gracefully, and display an
         //ordinary resolution diagnostic.
@@ -317,7 +318,54 @@ public class Annotate {
             expected.tsym.complete();
         } catch(CompletionFailure e) {
             log.error(tree.pos(), "cant.resolve", Kinds.kindName(e.sym), e.sym);
-            return new Attribute.Error(expected);
+            expected = syms.errType;
+        }
+        if (expected.hasTag(ARRAY)) {
+            if (!tree.hasTag(NEWARRAY)) {
+                tree = make.at(tree.pos).
+                    NewArray(null, List.<JCExpression>nil(), List.of(tree));
+            }
+            JCNewArray na = (JCNewArray)tree;
+            if (na.elemtype != null) {
+                log.error(na.elemtype.pos(), "new.not.allowed.in.annotation");
+            }
+            ListBuffer<Attribute> buf = new ListBuffer<Attribute>();
+            for (List<JCExpression> l = na.elems; l.nonEmpty(); l=l.tail) {
+                buf.append(enterAttributeValue(types.elemtype(expected),
+                                               l.head,
+                                               env));
+            }
+            na.type = expected;
+            return new Attribute.
+                Array(expected, buf.toArray(new Attribute[buf.length()]));
+        }
+        if (tree.hasTag(NEWARRAY)) { //error recovery
+            if (!expected.isErroneous())
+                log.error(tree.pos(), "annotation.value.not.allowable.type");
+            JCNewArray na = (JCNewArray)tree;
+            if (na.elemtype != null) {
+                log.error(na.elemtype.pos(), "new.not.allowed.in.annotation");
+            }
+            for (List<JCExpression> l = na.elems; l.nonEmpty(); l=l.tail) {
+                enterAttributeValue(syms.errType,
+                                    l.head,
+                                    env);
+            }
+            return new Attribute.Error(original);
+        }
+        if ((expected.tsym.flags() & Flags.ANNOTATION) != 0) {
+            if (tree.hasTag(ANNOTATION)) {
+                return enterAnnotation((JCAnnotation)tree, expected, env);
+            } else {
+                log.error(tree.pos(), "annotation.value.must.be.annotation");
+                expected = syms.errType;
+            }
+        }
+        if (tree.hasTag(ANNOTATION)) { //error recovery
+            if (!expected.isErroneous())
+                log.error(tree.pos(), "annotation.not.valid.for.type", expected);
+            enterAnnotation((JCAnnotation)tree, syms.errType, env);
+            return new Attribute.Error(original);
         }
         if (expected.isPrimitive() || types.isSameType(expected, syms.stringType)) {
             Type result = attr.attribExpr(tree, env, expected);
@@ -353,33 +401,6 @@ public class Annotate {
             return new Attribute.Class(types,
                                        (((JCFieldAccess) tree).selected).type);
         }
-        if ((expected.tsym.flags() & Flags.ANNOTATION) != 0) {
-            if (!tree.hasTag(ANNOTATION)) {
-                log.error(tree.pos(), "annotation.value.must.be.annotation");
-                expected = syms.errorType;
-            }
-            return enterAnnotation((JCAnnotation)tree, expected, env);
-        }
-        if (expected.hasTag(ARRAY)) { // should really be isArray()
-            if (!tree.hasTag(NEWARRAY)) {
-                tree = make.at(tree.pos).
-                    NewArray(null, List.<JCExpression>nil(), List.of(tree));
-            }
-            JCNewArray na = (JCNewArray)tree;
-            if (na.elemtype != null) {
-                log.error(na.elemtype.pos(), "new.not.allowed.in.annotation");
-                return new Attribute.Error(expected);
-            }
-            ListBuffer<Attribute> buf = new ListBuffer<Attribute>();
-            for (List<JCExpression> l = na.elems; l.nonEmpty(); l=l.tail) {
-                buf.append(enterAttributeValue(types.elemtype(expected),
-                                               l.head,
-                                               env));
-            }
-            na.type = expected;
-            return new Attribute.
-                Array(expected, buf.toArray(new Attribute[buf.length()]));
-        }
         if (expected.hasTag(CLASS) &&
             (expected.tsym.flags() & Flags.ENUM) != 0) {
             attr.attribExpr(tree, env, expected);
@@ -394,6 +415,7 @@ public class Annotate {
             VarSymbol enumerator = (VarSymbol) sym;
             return new Attribute.Enum(expected, enumerator);
         }
+        //error recovery:
         if (!expected.isErroneous())
             log.error(tree.pos(), "annotation.value.not.allowable.type");
         return new Attribute.Error(attr.attribExpr(tree, env, expected));

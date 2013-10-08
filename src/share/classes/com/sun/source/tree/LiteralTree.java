@@ -40,7 +40,7 @@ package com.sun.source.tree;
  * @author Jonathan Gibbons
  * @since 1.6
  */
-@jdk.Supported
+@jdk.Exported
 public interface LiteralTree extends ExpressionTree {
     Object getValue();
 }

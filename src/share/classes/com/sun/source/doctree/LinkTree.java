@@ -36,7 +36,7 @@ import java.util.List;
  *
  * @since 1.8
  */
-@jdk.Supported
+@jdk.Exported
 public interface LinkTree extends InlineTagTree {
     ReferenceTree getReference();
     List<? extends DocTree> getLabel();

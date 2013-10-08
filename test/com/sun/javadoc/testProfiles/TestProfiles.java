@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug      8006124 8009684 8016921 8023700 8024096
+ * @bug      8006124 8009684 8016921 8023700 8024096 8008164
  * @summary  Test javadoc support for profiles.
  * @author   Bhavesh Patel, Evgeniya Stepanova
  * @library  ../lib/
@@ -137,7 +137,7 @@ public class TestProfiles extends JavadocTester {
         },
         // need to add teststring when JDK-8015496 will be fixed
         //Test exception in profiles
-        {PROFILE_BUG_ID + FS + "compact1-summary.html","<table class=\"packageSummary\" "
+        {PROFILE_BUG_ID + FS + "compact1-summary.html","<table class=\"typeSummary\" "
             + "border=\"0\" cellpadding=\"3\" cellspacing=\"0\" "
             + "summary=\"Exception Summary table, listing exceptions, and an explanation\">"
             + NL + "<caption><span>Exception Summary</span><span class=\"tabEnd\">"
@@ -149,7 +149,7 @@ public class TestProfiles extends JavadocTester {
         },
         //Test errors in profiles
         {PROFILE_BUG_ID + FS + "compact1-summary.html",
-            "<table class=\"packageSummary\" border=\"0\" cellpadding=\"3\" cellspacing=\"0\" "
+            "<table class=\"typeSummary\" border=\"0\" cellpadding=\"3\" cellspacing=\"0\" "
             + "summary=\"Error Summary table, listing errors, and an explanation\">"
             + NL + "<caption><span>Error Summary</span><span class=\"tabEnd\">&nbsp;"
             + "</span></caption>" + NL + "<tr>" + NL + "<th class=\"colFirst\""
