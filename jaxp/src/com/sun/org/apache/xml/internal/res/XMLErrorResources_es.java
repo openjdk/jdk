@@ -18,7 +18,7 @@
  * limitations under the License.
  */
 /*
- * $Id: XMLErrorResources_es.java,v 1.2.4.1 2005/09/15 07:45:41 suresh_emailid Exp $
+ * $Id: XMLErrorResources_es.java /st_wptg_1.8.0.0.0jdk/2 2013/09/16 09:06:34 gmolloy Exp $
  */
 package com.sun.org.apache.xml.internal.res;
 
@@ -179,7 +179,7 @@ public class XMLErrorResources_es extends ListResourceBundle
   // Error messages...
 
   /** The lookup table for error messages.   */
-  private static final Object[][] _contents = {
+  private static final Object[][] contents = {
 
   /** Error message ID that has a null message, but takes in a single object.    */
     {"ER0000" , "{0}" },
@@ -447,7 +447,7 @@ public class XMLErrorResources_es extends ListResourceBundle
    */
 
     protected Object[][] getContents() {
-        return _contents;
+        return contents;
     }
 
 }

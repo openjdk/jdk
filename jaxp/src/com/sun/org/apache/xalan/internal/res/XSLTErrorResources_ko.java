@@ -3,7 +3,7 @@
  * DO NOT REMOVE OR ALTER!
  */
 /*
- * Copyright 1999-2004 The Apache Software Foundation.
+ * Copyright 1999-2005 The Apache Software Foundation.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,7 +18,7 @@
  * limitations under the License.
  */
 /*
- * $Id: XSLTErrorResources_ko.java,v 1.2.4.1 2005/09/13 11:03:57 pvedula Exp $
+ * $Id: XSLTErrorResources_ko.java /st_wptg_1.8.0.0.0jdk/2 2013/09/16 02:31:33 gmolloy Exp $
  */
 package com.sun.org.apache.xalan.internal.res;
 
@@ -1359,7 +1359,7 @@ public class XSLTErrorResources_ko extends ListResourceBundle
   {  "optionQ", "   [-Q(\uC790\uB3D9 \uBAA8\uB4DC)]"},
   {  "optionLF", "   [-LF(\uCD9C\uB825\uC5D0\uB9CC \uC904 \uBC14\uAFC8 \uC0AC\uC6A9 {\uAE30\uBCF8\uAC12: CR/LF})]"},
   {  "optionCR", "   [-CR(\uCD9C\uB825\uC5D0\uB9CC \uCE90\uB9AC\uC9C0 \uB9AC\uD134 \uC0AC\uC6A9 {\uAE30\uBCF8\uAC12: CR/LF})]"},
-  { "optionESCAPE", "   [-ESCAPE(\uC774\uC2A4\uCF00\uC774\uD504 \uBB38\uC790 {\uAE30\uBCF8\uAC12: <>&\"\'\\r\\n}]"},
+  { "optionESCAPE", "   [-ESCAPE(\uC774\uC2A4\uCF00\uC774\uD504 \uBB38\uC790 {\uAE30\uBCF8\uAC12: <>&\"'\\r\\n}]"},
   { "optionINDENT", "   [-INDENT(\uB4E4\uC5EC \uC4F8 \uACF5\uBC31 \uC218 \uC81C\uC5B4 {\uAE30\uBCF8\uAC12: 0})]"},
   { "optionTT", "   [-TT(\uD15C\uD50C\uB9AC\uD2B8 \uD638\uCD9C \uC2DC \uCD94\uC801)]"},
   { "optionTG", "   [-TG(\uAC01 \uC0DD\uC131 \uC774\uBCA4\uD2B8 \uCD94\uC801)]"},
