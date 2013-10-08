@@ -317,9 +317,25 @@ public class LWWindowPeer
             op |= SET_SIZE;
         }
 
+        // Don't post ComponentMoved/Resized and Paint events
+        // until we've got a notification from the delegate
+        Rectangle cb = constrainBounds(x, y, w, h);
+        setBounds(cb.x, cb.y, cb.width, cb.height, op, false, false);
+        // Get updated bounds, so we don't have to handle 'op' here manually
+        Rectangle r = getBounds();
+        platformWindow.setBounds(r.x, r.y, r.width, r.height);
+    }
+
+    public Rectangle constrainBounds(Rectangle bounds) {
+        return constrainBounds(bounds.x, bounds.y, bounds.width, bounds.height);
+    }
+
+    public Rectangle constrainBounds(int x, int y, int w, int h) {
+
         if (w < MINIMUM_WIDTH) {
             w = MINIMUM_WIDTH;
         }
+
         if (h < MINIMUM_HEIGHT) {
             h = MINIMUM_HEIGHT;
         }
@@ -334,12 +350,7 @@ public class LWWindowPeer
             h = maxH;
         }
 
-        // Don't post ComponentMoved/Resized and Paint events
-        // until we've got a notification from the delegate
-        setBounds(x, y, w, h, op, false, false);
-        // Get updated bounds, so we don't have to handle 'op' here manually
-        Rectangle r = getBounds();
-        platformWindow.setBounds(r.x, r.y, r.width, r.height);
+        return new Rectangle(x, y, w, h);
     }
 
     @Override
@@ -393,8 +404,12 @@ public class LWWindowPeer
     @Override
     public void setModalBlocked(Dialog blocker, boolean blocked) {
         synchronized (getPeerTreeLock()) {
-            this.blocker = !blocked ? null :
-            (LWWindowPeer) AWTAccessor.getComponentAccessor().getPeer(blocker);
+            ComponentPeer peer =  AWTAccessor.getComponentAccessor().getPeer(blocker);
+            if (blocked && (peer instanceof LWWindowPeer)) {
+                this.blocker = (LWWindowPeer) peer;
+            } else {
+                this.blocker = null;
+            }
         }
 
         platformWindow.setModalBlocked(blocked);
@@ -1146,8 +1161,11 @@ public class LWWindowPeer
             return false;
         }
 
-        Window currentActive = KeyboardFocusManager.
-            getCurrentKeyboardFocusManager().getActiveWindow();
+        AppContext targetAppContext = AWTAccessor.getComponentAccessor().getAppContext(getTarget());
+        KeyboardFocusManager kfm = AWTAccessor.getKeyboardFocusManagerAccessor()
+                .getCurrentKeyboardFocusManager(targetAppContext);
+        Window currentActive = kfm.getActiveWindow();
+
 
         Window opposite = LWKeyboardFocusManagerPeer.getInstance().
             getCurrentFocusedWindow();

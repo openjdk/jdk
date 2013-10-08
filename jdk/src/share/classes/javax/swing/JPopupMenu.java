@@ -58,7 +58,7 @@ import java.applet.Applet;
  * <p>
  * For information and examples of using popup menus, see
  * <a
- href="http://java.sun.com/docs/books/tutorial/uiswing/components/menu.html">How to Use Menus</a>
+ href="http://docs.oracle.com/javase/tutorial/uiswing/components/menu.html">How to Use Menus</a>
  * in <em>The Java Tutorial.</em>
  * <p>
  * <strong>Warning:</strong> Swing is not thread safe. For more
@@ -71,7 +71,7 @@ import java.applet.Applet;
  * future Swing releases. The current serialization support is
  * appropriate for short term storage or RMI between applications running
  * the same version of Swing.  As of 1.4, support for long term storage
- * of all JavaBeans<sup><font size="-2">TM</font></sup>
+ * of all JavaBeans&trade;
  * has been added to the <code>java.beans</code> package.
  * Please see {@link java.beans.XMLEncoder}.
  *

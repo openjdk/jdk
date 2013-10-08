@@ -187,9 +187,18 @@ final class JSSecurityManager {
 
     static <T> List<T> getProviders(final Class<T> providerClass) {
         List<T> p = new ArrayList<>();
-        // ServiceLoader creates "lazy" iterator instance, so it doesn't,
-        // require do be called from privileged section
-        final Iterator<T> ps = ServiceLoader.load(providerClass).iterator();
+        // ServiceLoader creates "lazy" iterator instance, but it ensures that
+        // next/hasNext run with permissions that are restricted by whatever
+        // creates the ServiceLoader instance, so it requires to be called from
+        // privileged section
+        final PrivilegedAction<Iterator<T>> psAction =
+                new PrivilegedAction<Iterator<T>>() {
+                    @Override
+                    public Iterator<T> run() {
+                        return ServiceLoader.load(providerClass).iterator();
+                    }
+                };
+        final Iterator<T> ps = AccessController.doPrivileged(psAction);
 
         // the iterator's hasNext() method looks through classpath for
         // the provider class names, so it requires read permissions

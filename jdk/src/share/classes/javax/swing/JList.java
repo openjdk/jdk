@@ -253,15 +253,13 @@ import static sun.swing.SwingUtilities2.Section.*;
  * future Swing releases. The current serialization support is
  * appropriate for short term storage or RMI between applications running
  * the same version of Swing.  As of 1.4, support for long term storage
- * of all JavaBeans<sup><font size="-2">TM</font></sup>
+ * of all JavaBeans&trade;
  * has been added to the <code>java.beans</code> package.
  * Please see {@link java.beans.XMLEncoder}.
  * <p>
- * See <a href="http://java.sun.com/docs/books/tutorial/uiswing/components/list.html">How to Use Lists</a>
- * in <a href="http://java.sun.com/Series/Tutorial/index.html"><em>The Java Tutorial</em></a>
+ * See <a href="http://docs.oracle.com/javase/tutorial/uiswing/components/list.html">How to Use Lists</a>
+ * in <a href="http://docs.oracle.com/javase/tutorial/"><em>The Java Tutorial</em></a>
  * for further documentation.
- * Also see the article <a href="http://java.sun.com/products/jfc/tsc/tech_topics/jlist_1/jlist.html">Advanced JList Programming</a>
- * in <a href="http://java.sun.com/products/jfc/tsc"><em>The Swing Connection</em></a>.
  * <p>
  * @see ListModel
  * @see AbstractListModel
@@ -972,7 +970,7 @@ public class JList<E> extends JComponent implements Scrollable, Accessible
      *
      * <table border="1"
      *  summary="Describes layouts VERTICAL, HORIZONTAL_WRAP, and VERTICAL_WRAP">
-     *   <tr><th><p align="left">Value</p></th><th><p align="left">Description</p></th></tr>
+     *   <tr><th><p style="text-align:left">Value</p></th><th><p style="text-align:left">Description</p></th></tr>
      *   <tr><td><code>VERTICAL</code>
      *       <td>Cells are layed out vertically in a single column.
      *   <tr><td><code>HORIZONTAL_WRAP</code>
@@ -2879,7 +2877,7 @@ public class JList<E> extends JComponent implements Scrollable, Accessible
      * future Swing releases. The current serialization support is
      * appropriate for short term storage or RMI between applications running
      * the same version of Swing.  As of 1.4, support for long term storage
-     * of all JavaBeans<sup><font size="-2">TM</font></sup>
+     * of all JavaBeans&trade;
      * has been added to the <code>java.beans</code> package.
      * Please see {@link java.beans.XMLEncoder}.
      */

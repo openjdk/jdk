@@ -118,7 +118,6 @@ public class InputContext {
      * Otherwise, an input method or keyboard layout that supports the requested
      * locale is selected in an implementation dependent way.</li>
      *
-     * <p>
      * </ul>
      * Before switching away from an input method, any currently uncommitted text
      * is committed. If no input method or keyboard layout supporting the requested

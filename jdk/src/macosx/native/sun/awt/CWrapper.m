@@ -437,6 +437,29 @@ JNF_COCOA_EXIT(env);
 
 /*
  * Class:     sun_lwawt_macosx_CWrapper$NSWindow
+ * Method:    isZoomed
+ * Signature: (J)Z
+ */
+JNIEXPORT jboolean JNICALL
+Java_sun_lwawt_macosx_CWrapper_00024NSWindow_isZoomed
+(JNIEnv *env, jclass cls, jlong windowPtr)
+{
+    __block jboolean isZoomed = JNI_FALSE;
+    
+JNF_COCOA_ENTER(env);
+    
+    NSWindow *window = (NSWindow *)jlong_to_ptr(windowPtr);
+    [ThreadUtilities performOnMainThreadWaiting:YES block:^(){
+        isZoomed = [window isZoomed];
+    }];
+    
+JNF_COCOA_EXIT(env);
+    
+    return isZoomed;
+}
+
+/*
+ * Class:     sun_lwawt_macosx_CWrapper$NSWindow
  * Method:    zoom
  * Signature: (J)V
  */

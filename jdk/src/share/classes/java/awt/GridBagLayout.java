@@ -125,9 +125,9 @@ import java.util.Arrays;
  * <center><table BORDER=0 WIDTH=800
  *        SUMMARY="absolute, relative and baseline values as described above">
  * <tr>
- * <th><P ALIGN="LEFT">Absolute Values</th>
- * <th><P ALIGN="LEFT">Orientation Relative Values</th>
- * <th><P ALIGN="LEFT">Baseline Relative Values</th>
+ * <th><P STYLE="TEXT-ALIGN:LEFT">Absolute Values</th>
+ * <th><P STYLE="TEXT-ALIGN:LEFT">Orientation Relative Values</th>
+ * <th><P STYLE="TEXT-ALIGN:LEFT">Baseline Relative Values</th>
  * </tr>
  * <tr>
  * <td>
@@ -201,7 +201,7 @@ import java.util.Arrays;
  * <tr ALIGN=CENTER>
  * <td>
  * <img src="doc-files/GridBagLayout-baseline.png"
- *  alt="The following text describes this graphic (Figure 1)." ALIGN=center>
+ *  alt="The following text describes this graphic (Figure 1)." style="float:center">
  * </td>
  * </table></center>
  * This layout consists of three components:
@@ -255,10 +255,10 @@ import java.util.Arrays;
  * <center><table WIDTH=600 summary="layout">
  * <tr ALIGN=CENTER>
  * <td>
- * <img src="doc-files/GridBagLayout-1.gif" alt="The preceeding text describes this graphic (Figure 1)." ALIGN=center HSPACE=10 VSPACE=7>
+ * <img src="doc-files/GridBagLayout-1.gif" alt="The preceeding text describes this graphic (Figure 1)." style="float:center; margin: 7px 10px;">
  * </td>
  * <td>
- * <img src="doc-files/GridBagLayout-2.gif" alt="The preceeding text describes this graphic (Figure 2)." ALIGN=center HSPACE=10 VSPACE=7>
+ * <img src="doc-files/GridBagLayout-2.gif" alt="The preceeding text describes this graphic (Figure 2)." style="float:center; margin: 7px 10px;">
  * </td>
  * <tr ALIGN=CENTER>
  * <td>Figure 2: Horizontal, Left-to-Right</td>

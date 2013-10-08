@@ -100,7 +100,7 @@ import javax.swing.plaf.ProgressBarUI;
  * <p>
  *
  * For complete examples and further documentation see
- * <a href="http://java.sun.com/docs/books/tutorial/uiswing/components/progress.html" target="_top">How to Monitor Progress</a>,
+ * <a href="http://docs.oracle.com/javase/tutorial/uiswing/components/progress.html" target="_top">How to Monitor Progress</a>,
  * a section in <em>The Java Tutorial.</em>
  *
  * <p>
@@ -114,7 +114,7 @@ import javax.swing.plaf.ProgressBarUI;
  * future Swing releases. The current serialization support is
  * appropriate for short term storage or RMI between applications running
  * the same version of Swing.  As of 1.4, support for long term storage
- * of all JavaBeans<sup><font size="-2">TM</font></sup>
+ * of all JavaBeans&trade;
  * has been added to the <code>java.beans</code> package.
  * Please see {@link java.beans.XMLEncoder}.
  *
@@ -643,7 +643,7 @@ public class JProgressBar extends JComponent implements SwingConstants, Accessib
      * future Swing releases. The current serialization support is
      * appropriate for short term storage or RMI between applications running
      * the same version of Swing.  As of 1.4, support for long term storage
-     * of all JavaBeans<sup><font size="-2">TM</font></sup>
+     * of all JavaBeans&trade;
      * has been added to the <code>java.beans</code> package.
      * Please see {@link java.beans.XMLEncoder}.
      */
@@ -910,7 +910,7 @@ public class JProgressBar extends JComponent implements SwingConstants, Accessib
      * <p>
      *
      * See
-     * <a href="http://java.sun.com/docs/books/tutorial/uiswing/components/progress.html" target="_top">How to Monitor Progress</a>
+     * <a href="http://docs.oracle.com/javase/tutorial/uiswing/components/progress.html" target="_top">How to Monitor Progress</a>
      * for examples of using indeterminate progress bars.
      *
      * @param newValue  <code>true</code> if the progress bar
@@ -1031,7 +1031,7 @@ public class JProgressBar extends JComponent implements SwingConstants, Accessib
      * future Swing releases. The current serialization support is
      * appropriate for short term storage or RMI between applications running
      * the same version of Swing.  As of 1.4, support for long term storage
-     * of all JavaBeans<sup><font size="-2">TM</font></sup>
+     * of all JavaBeans&trade;
      * has been added to the <code>java.beans</code> package.
      * Please see {@link java.beans.XMLEncoder}.
      */

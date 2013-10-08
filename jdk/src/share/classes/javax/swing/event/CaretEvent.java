@@ -36,7 +36,7 @@ import java.util.EventObject;
  * future Swing releases. The current serialization support is
  * appropriate for short term storage or RMI between applications running
  * the same version of Swing.  As of 1.4, support for long term storage
- * of all JavaBeans<sup><font size="-2">TM</font></sup>
+ * of all JavaBeans&trade;
  * has been added to the <code>java.beans</code> package.
  * Please see {@link java.beans.XMLEncoder}.
  *
@@ -56,7 +56,7 @@ public abstract class CaretEvent extends EventObject {
     /**
      * Fetches the location of the caret.
      *
-     * @return the dot >= 0
+     * @return the dot &gt;= 0
      */
     public abstract int getDot();
 
@@ -65,7 +65,7 @@ public abstract class CaretEvent extends EventObject {
      * selection.  If there is no selection, this
      * will be the same as dot.
      *
-     * @return the mark >= 0
+     * @return the mark &gt;= 0
      */
     public abstract int getMark();
 }
