@@ -366,7 +366,7 @@ AWT_ASSERT_APPKIT_THREAD;
 
 - (BOOL) canBecomeMainWindow {
 AWT_ASSERT_APPKIT_THREAD;
-    if(!self.isEnabled){
+    if (!self.isEnabled) {
         // Native system can bring up the NSWindow to
         // the top even if the window is not main.
         // We should bring up the modal dialog manually
@@ -377,7 +377,7 @@ AWT_ASSERT_APPKIT_THREAD;
         if (platformWindow != NULL) {
             static JNF_MEMBER_CACHE(jm_checkBlockingAndOrder, jc_CPlatformWindow,
                                     "checkBlockingAndOrder", "()Z");
-            JNFCallVoidMethod(env, platformWindow, jm_checkBlockingAndOrder);
+            JNFCallBooleanMethod(env, platformWindow, jm_checkBlockingAndOrder);
             (*env)->DeleteLocalRef(env, platformWindow);
         }
     }

@@ -50,7 +50,7 @@ import sun.swing.SwingUtilities2;
  * resizing, title display, and support for a menu bar.
  * For task-oriented documentation and examples of using internal frames,
  * see <a
- href="http://java.sun.com/docs/books/tutorial/uiswing/components/internalframe.html" target="_top">How to Use Internal Frames</a>,
+ href="http://docs.oracle.com/javase/tutorial/uiswing/components/internalframe.html" target="_top">How to Use Internal Frames</a>,
  * a section in <em>The Java Tutorial</em>.
  *
  * <p>
@@ -90,7 +90,7 @@ import sun.swing.SwingUtilities2;
  * future Swing releases. The current serialization support is
  * appropriate for short term storage or RMI between applications running
  * the same version of Swing.  As of 1.4, support for long term storage
- * of all JavaBeans<sup><font size="-2">TM</font></sup>
+ * of all JavaBeans&trade;
  * has been added to the <code>java.beans</code> package.
  * Please see {@link java.beans.XMLEncoder}.
  *
@@ -2029,7 +2029,7 @@ public class JInternalFrame extends JComponent implements
      * future Swing releases. The current serialization support is
      * appropriate for short term storage or RMI between applications running
      * the same version of Swing.  As of 1.4, support for long term storage
-     * of all JavaBeans<sup><font size="-2">TM</font></sup>
+     * of all JavaBeans&trade;
      * has been added to the <code>java.beans</code> package.
      * Please see {@link java.beans.XMLEncoder}.
      */
@@ -2144,7 +2144,7 @@ public class JInternalFrame extends JComponent implements
      * future Swing releases. The current serialization support is
      * appropriate for short term storage or RMI between applications running
      * the same version of Swing.  As of 1.4, support for long term storage
-     * of all JavaBeans<sup><font size="-2">TM</font></sup>
+     * of all JavaBeans&trade;
      * has been added to the <code>java.beans</code> package.
      * Please see {@link java.beans.XMLEncoder}.
      *
@@ -2318,7 +2318,7 @@ public class JInternalFrame extends JComponent implements
          * future Swing releases. The current serialization support is
          * appropriate for short term storage or RMI between applications running
          * the same version of Swing.  As of 1.4, support for long term storage
-         * of all JavaBeans<sup><font size="-2">TM</font></sup>
+         * of all JavaBeans&trade;
          * has been added to the <code>java.beans</code> package.
          * Please see {@link java.beans.XMLEncoder}.
          */

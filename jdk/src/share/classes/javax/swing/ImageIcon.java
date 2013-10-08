@@ -50,7 +50,7 @@ import java.security.*;
  *
  * <p>
  * For further information and examples of using image icons, see
- * <a href="http://java.sun.com/docs/books/tutorial/uiswing/misc/icon.html">How to Use Icons</a>
+ * <a href="http://docs.oracle.com/javase/tutorial/uiswing/components/icon.html">How to Use Icons</a>
  * in <em>The Java Tutorial.</em>
  *
  * <p>
@@ -59,7 +59,7 @@ import java.security.*;
  * future Swing releases. The current serialization support is
  * appropriate for short term storage or RMI between applications running
  * the same version of Swing.  As of 1.4, support for long term storage
- * of all JavaBeans<sup><font size="-2">TM</font></sup>
+ * of all JavaBeans&trade;
  * has been added to the <code>java.beans</code> package.
  * Please see {@link java.beans.XMLEncoder}.
  *
@@ -555,7 +555,7 @@ public class ImageIcon implements Icon, Serializable, Accessible {
      * future Swing releases. The current serialization support is
      * appropriate for short term storage or RMI between applications running
      * the same version of Swing.  As of 1.4, support for long term storage
-     * of all JavaBeans<sup><font size="-2">TM</font></sup>
+     * of all JavaBeans&trade;
      * has been added to the <code>java.beans</code> package.
      * Please see {@link java.beans.XMLEncoder}.
      * @since 1.3

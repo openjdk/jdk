@@ -54,7 +54,7 @@ import java.io.IOException;
  * <p>
  * <img src="doc-files/FlowLayout-1.gif"
  * ALT="Graphic of Layout for Three Buttons"
- * ALIGN=center HSPACE=10 VSPACE=7>
+ * style="float:center; margin: 7px 10px;">
  * <p>
  * Here is the code for this applet:
  * <p>

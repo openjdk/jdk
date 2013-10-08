@@ -129,7 +129,7 @@ public final class PrinterStateReasons
      * Severity} mappings as the given map. The underlying hash map's initial
      * capacity and load factor are as specified in the superclass constructor
      * {@link java.util.HashMap#HashMap(java.util.Map)
-     * <CODE>HashMap(Map)</CODE>}.
+     * HashMap(Map)}.
      *
      * @param  map  Map to copy.
      *

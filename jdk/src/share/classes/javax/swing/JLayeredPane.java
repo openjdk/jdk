@@ -41,15 +41,15 @@ import javax.accessibility.*;
  * container, where higher-numbered components sit &quot;on top&quot; of other
  * components.
  * For task-oriented documentation and examples of using layered panes see
- * <a href="http://java.sun.com/docs/books/tutorial/uiswing/components/layeredpane.html">How to Use a Layered Pane</a>,
+ * <a href="http://docs.oracle.com/javase/tutorial/uiswing/components/layeredpane.html">How to Use a Layered Pane</a>,
  * a section in <em>The Java Tutorial</em>.
  * <P>
- * <TABLE ALIGN="RIGHT" BORDER="0" SUMMARY="layout">
+ * <TABLE STYLE="FLOAT:RIGHT" BORDER="0" SUMMARY="layout">
  * <TR>
  *   <TD ALIGN="CENTER">
- *     <P ALIGN="CENTER"><IMG SRC="doc-files/JLayeredPane-1.gif"
+ *     <P STYLE="TEXT-ALIGN:CENTER"><IMG SRC="doc-files/JLayeredPane-1.gif"
  *     alt="The following text describes this image."
- *     WIDTH="269" HEIGHT="264" ALIGN="BOTTOM" BORDER="0">
+ *     WIDTH="269" HEIGHT="264" STYLE="FLOAT:BOTTOM; BORDER=0">
  *   </TD>
  * </TR>
  * </TABLE>
@@ -148,7 +148,7 @@ import javax.accessibility.*;
  * future Swing releases. The current serialization support is
  * appropriate for short term storage or RMI between applications running
  * the same version of Swing.  As of 1.4, support for long term storage
- * of all JavaBeans<sup><font size="-2">TM</font></sup>
+ * of all JavaBeans&trade;
  * has been added to the <code>java.beans</code> package.
  * Please see {@link java.beans.XMLEncoder}.
  *
@@ -765,7 +765,7 @@ public class JLayeredPane extends JComponent implements Accessible {
      * future Swing releases. The current serialization support is
      * appropriate for short term storage or RMI between applications running
      * the same version of Swing.  As of 1.4, support for long term storage
-     * of all JavaBeans<sup><font size="-2">TM</font></sup>
+     * of all JavaBeans&trade;
      * has been added to the <code>java.beans</code> package.
      * Please see {@link java.beans.XMLEncoder}.
      */

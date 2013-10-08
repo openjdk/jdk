@@ -110,7 +110,7 @@ public final class JobStateReasons
      * The underlying hash set's initial capacity and load factor are as
      * specified in the superclass constructor {@link
      * java.util.HashSet#HashSet(java.util.Collection)
-     * <CODE>HashSet(Collection)</CODE>}.
+     * HashSet(Collection)}.
      *
      * @param  collection  Collection to copy.
      *

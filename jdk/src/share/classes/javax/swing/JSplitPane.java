@@ -49,7 +49,7 @@ import java.io.IOException;
  * interactively resized by the user.
  * Information on using <code>JSplitPane</code> is in
  * <a
- href="http://java.sun.com/docs/books/tutorial/uiswing/components/splitpane.html">How to Use Split Panes</a> in
+ href="http://docs.oracle.com/javase/tutorial/uiswing/components/splitpane.html">How to Use Split Panes</a> in
  * <em>The Java Tutorial</em>.
  * <p>
  * The two <code>Component</code>s in a split pane can be aligned
@@ -89,7 +89,7 @@ import java.io.IOException;
  * future Swing releases. The current serialization support is
  * appropriate for short term storage or RMI between applications running
  * the same version of Swing.  As of 1.4, support for long term storage
- * of all JavaBeans<sup><font size="-2">TM</font></sup>
+ * of all JavaBeans&trade;
  * has been added to the <code>java.beans</code> package.
  * Please see {@link java.beans.XMLEncoder}.
  *
@@ -1152,7 +1152,7 @@ public class JSplitPane extends JComponent implements Accessible
      * future Swing releases. The current serialization support is
      * appropriate for short term storage or RMI between applications running
      * the same version of Swing.  As of 1.4, support for long term storage
-     * of all JavaBeans<sup><font size="-2">TM</font></sup>
+     * of all JavaBeans&trade;
      * has been added to the <code>java.beans</code> package.
      * Please see {@link java.beans.XMLEncoder}.
      */

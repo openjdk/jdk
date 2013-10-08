@@ -52,7 +52,7 @@ import javax.accessibility.*;
  * it appears as follows in its normal state:
  * <p>
  * <img src="doc-files/Choice-1.gif" alt="The following text describes the graphic"
- * ALIGN=center HSPACE=10 VSPACE=7>
+ * style="float:center; margin: 7px 10px;">
  * <p>
  * In the picture, <code>"Green"</code> is the current choice.
  * Pushing the mouse button down on the object causes a menu to
