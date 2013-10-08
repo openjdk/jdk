@@ -1223,10 +1223,6 @@ public abstract class Component implements ImageObserver, MenuContainer,
      * be called on the toolkit thread.
      */
     final Toolkit getToolkitImpl() {
-        ComponentPeer peer = this.peer;
-        if ((peer != null) && ! (peer instanceof LightweightPeer)){
-            return peer.getToolkit();
-        }
         Container parent = this.parent;
         if (parent != null) {
             return parent.getToolkitImpl();
