@@ -27,7 +27,6 @@
 #include "classfile/javaClasses.hpp"
 #include "classfile/loaderConstraints.hpp"
 #include "classfile/placeholders.hpp"
-#include "classfile/symbolTable.hpp"
 #include "classfile/systemDictionary.hpp"
 #include "ci/ciField.hpp"
 #include "ci/ciInstance.hpp"
@@ -2248,12 +2247,6 @@ typedef BinaryTreeDictionary<Metablock, FreeList> MetablockTreeDictionary;
   declare_preprocessor_constant("PERFDATA_MINOR_VERSION", PERFDATA_MINOR_VERSION) \
   declare_preprocessor_constant("PERFDATA_BIG_ENDIAN", PERFDATA_BIG_ENDIAN)       \
   declare_preprocessor_constant("PERFDATA_LITTLE_ENDIAN", PERFDATA_LITTLE_ENDIAN) \
-                                                                          \
-  /***************/                                                       \
-  /* SymbolTable */                                                       \
-  /***************/                                                       \
-                                                                          \
-  declare_constant(SymbolTable::symbol_table_size)                        \
                                                                           \
   /***********************************/                                   \
   /* LoaderConstraintTable constants */                                   \
