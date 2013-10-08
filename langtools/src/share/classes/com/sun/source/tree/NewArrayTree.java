@@ -43,7 +43,7 @@ import com.sun.tools.javac.util.List;
  * @author Jonathan Gibbons
  * @since 1.6
  */
-@jdk.Supported
+@jdk.Exported
 public interface NewArrayTree extends ExpressionTree {
     Tree getType();
     List<? extends ExpressionTree> getDimensions();

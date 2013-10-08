@@ -7,7 +7,7 @@
 # A full product build (or "control" build) creates a complete JDK image.
 # To test a product build, set TESTJAVA to the path for the image.
 #
-# A langtools build just builds the langtools components of a JDK. 
+# A langtools build just builds the langtools components of a JDK.
 # To test a langtools build, set TESTJAVA to the path for a recent JDK
 # build, and set TESTBOOTCLASSPATH to the compiled langtools classes --
 # for example build/classes or dist/lib/classes.jar.
@@ -122,10 +122,10 @@ else
   TESTJAVA = $(SLASH_JAVA)/re/jdk/1.7.0/promoted/latest/binaries/$(PLATFORM)-$(ARCH)
 endif
 
-# PRODUCT_HOME is a JPRT variable pointing to a directory containing the output from 
+# PRODUCT_HOME is a JPRT variable pointing to a directory containing the output from
 # make/Makefile
 # For langtools, this is a directory containing build and dist
-# For a control build, this is build/$(PRODUCT)-$(ARCH)/XYZ-image 
+# For a control build, this is build/$(PRODUCT)-$(ARCH)/XYZ-image
 #	(i.e, j2sdk-image or jdk-module-image)
 ifdef PRODUCT_HOME
   ifeq ($(shell [ -r $(PRODUCT_HOME)/dist/lib/classes.jar ]; echo $$?),0)
@@ -139,13 +139,13 @@ endif
 ifdef TESTBOOTCLASSPATH
   JTREG_OPTIONS += -Xbootclasspath/p:$(TESTBOOTCLASSPATH)
 ### In the following, -refvmoptions is an undocumented option
-### The following does not work JCK 7 b30 2/6/2010. Awaiting b31. 
+### The following does not work JCK 7 b30 2/6/2010. Awaiting b31.
   JCK_OPTIONS += \
 	-vmoptions:-Xbootclasspath/p:$(TESTBOOTCLASSPATH) \
 	-refvmoptions:-Xbootclasspath/p:$(TESTBOOTCLASSPATH)
 endif
 
-# Concurrency is the number of tests that can execute at once. 
+# Concurrency is the number of tests that can execute at once.
 # On an otherwise empty machine, suggest setting to (#cpus + 2)
 # If unset, the default is (#cpus)
 ### RFE: determine and use #cpus
@@ -206,7 +206,7 @@ FATAL_JTDIFF_EXIT = 2
 # Exit -- used for final "normal" exit from "make". Redefine to "true" to avoid
 # having make exit with non-zero return code.
 EXIT = exit
-# Function to exit shell if exit code of preceding command is greater than or equal 
+# Function to exit shell if exit code of preceding command is greater than or equal
 # to a given level. Redefine function or preceding FATAL_*_EXIT codes as needed.
 EXIT_IF_FATAL = status=$$?; if [ $$status -ge $(1) ]; then exit $$status ; fi
 
@@ -217,8 +217,8 @@ TESTDIRS = $(DEFAULT_TESTDIRS)
 # Root of all test results
 TEST_OUTPUT_DIR = $(TEST_ROOT)/../build/$(PLATFORM)-$(ARCH)/test/langtools
 ABS_TEST_OUTPUT_DIR := \
-	$(shell mkdir -p $(TEST_ROOT)/../build/$(PLATFORM)-$(ARCH)/test/langtools; \
-		cd  $(TEST_ROOT)/../build/$(PLATFORM)-$(ARCH)/test/langtools; \
+	$(shell mkdir -p $(TEST_OUTPUT_DIR); \
+		cd  $(TEST_OUTPUT_DIR); \
 		pwd $(CYGPATH))
 # Subdirectories for different test runs
 JTREG_OUTPUT_DIR = $(ABS_TEST_OUTPUT_DIR)/jtreg
@@ -255,7 +255,7 @@ jdeps:		JTREG_TESTDIRS = tools/jdeps
 # JT_JAVA
 #	Version of java used to run jtreg.  Should normally be the same as TESTJAVA
 # TESTJAVA
-# 	Version of java to be tested.  
+# 	Version of java to be tested.
 # JTREG_OPTIONS
 #	Additional options for jtreg
 # JTREG_TESTDIRS
@@ -311,7 +311,7 @@ check-jtreg: $(PRODUCT_HOME) $(JTREG)
 #	Version of java used to run JCK.  Should normally be the same as TESTJAVA
 #       Default is JDK 7
 # TESTJAVA
-# 	Version of java to be tested.  
+# 	Version of java to be tested.
 # JCK_COMPILER_OPTIONS
 #	Additional options for JCK-compiler
 # JCK_COMPILER_TESTDIRS
@@ -360,7 +360,7 @@ jck-compiler-summary: FRC
 # JT_JAVA
 #	Version of java used to run JCK.  Should normally be the same as TESTJAVA
 # TESTJAVA
-# 	Version of java to be tested.  
+# 	Version of java to be tested.
 # JCK_RUNTIME_OPTIONS
 #	Additional options for JCK-runtime
 # JCK_RUNTIME_TESTDIRS

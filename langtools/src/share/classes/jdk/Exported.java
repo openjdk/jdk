@@ -28,8 +28,9 @@ package jdk;
 import java.lang.annotation.*;
 
 /**
-  * Indicates whether or not a JDK specific type or package is a
-  * supported part of the JDK.
+  * Indicates whether or not a JDK specific type or package is an
+  * exported part of the JDK suitable for use outside of the JDK
+  * implementation itself.
   *
   * This annotation should only be applied to types and packages
   * <em>outside</em> of the Java SE namespaces of {@code java.*} and
@@ -44,10 +45,10 @@ import java.lang.annotation.*;
 @Documented
 @Retention(RetentionPolicy.RUNTIME)
 @Target({ElementType.TYPE, ElementType.PACKAGE})
-@Supported
-public @interface Supported {
+@Exported
+public @interface Exported {
     /**
-     * Whether or not this package or type is a supported part of the JDK.
+     * Whether or not the annotated type or package is an exported part of the JDK.
      */
     boolean value() default true;
 }

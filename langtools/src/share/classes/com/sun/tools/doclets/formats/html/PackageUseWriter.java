@@ -151,7 +151,7 @@ public class PackageUseWriter extends SubWriterHolderWriter {
      * @param contentTree the content tree to which the package list will be added
      */
     protected void addPackageList(Content contentTree) throws IOException {
-        Content table = HtmlTree.TABLE(0, 3, 0, useTableSummary,
+        Content table = HtmlTree.TABLE(HtmlStyle.useSummary, 0, 3, 0, useTableSummary,
                 getTableCaption(configuration.getResource(
                 "doclet.ClassUse_Packages.that.use.0",
                 getPackageLink(pkgdoc, Util.getPackageName(pkgdoc)))));
@@ -196,7 +196,7 @@ public class PackageUseWriter extends SubWriterHolderWriter {
             }
             String tableSummary = configuration.getText("doclet.Use_Table_Summary",
                     configuration.getText("doclet.classes"));
-            Content table = HtmlTree.TABLE(0, 3, 0, tableSummary,
+            Content table = HtmlTree.TABLE(HtmlStyle.useSummary, 0, 3, 0, tableSummary,
                     getTableCaption(configuration.getResource(
                     "doclet.ClassUse_Classes.in.0.used.by.1",
                     getPackageLink(pkgdoc, Util.getPackageName(pkgdoc)),

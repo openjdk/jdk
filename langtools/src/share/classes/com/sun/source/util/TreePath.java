@@ -36,7 +36,7 @@ import com.sun.source.tree.*;
  * @author Jonathan Gibbons
  * @since 1.6
  */
-@jdk.Supported
+@jdk.Exported
 public class TreePath implements Iterable<Tree> {
     /**
      * Gets a tree path for a tree node within a compilation unit.
