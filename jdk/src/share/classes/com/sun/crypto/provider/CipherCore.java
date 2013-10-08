@@ -310,49 +310,20 @@ final class CipherCore {
      * @return the required output buffer size (in bytes)
      */
     int getOutputSize(int inputLen) {
-        int totalLen = buffered + inputLen;
-
-        // GCM: this call may be for either update() or doFinal(), so have to
-        // return the larger value of both
-        // Encryption: based on doFinal value: inputLen + tag
-        // Decryption: based on update value: inputLen
-        if (!decrypting && (cipherMode == GCM_MODE)) {
-            return (totalLen + ((GaloisCounterMode) cipher).getTagLen());
-        }
-
-        if (padding == null) {
-            return totalLen;
-        }
-
-        if (decrypting) {
-            return totalLen;
-        }
-
-        if (unitBytes != blockSize) {
-            if (totalLen < diffBlocksize) {
-                return diffBlocksize;
-            } else {
-                return (totalLen + blockSize -
-                        ((totalLen - diffBlocksize) % blockSize));
-            }
-        } else {
-            return totalLen + padding.padLength(totalLen);
-        }
+        // estimate based on the maximum
+        return getOutputSizeByOperation(inputLen, true);
     }
 
     private int getOutputSizeByOperation(int inputLen, boolean isDoFinal) {
-        int totalLen = 0;
+        int totalLen = buffered + inputLen + cipher.getBufferedLength();
         switch (cipherMode) {
         case GCM_MODE:
-            totalLen = buffered + inputLen;
             if (isDoFinal) {
                 int tagLen = ((GaloisCounterMode) cipher).getTagLen();
-                if (decrypting) {
-                    // need to get the actual value from cipher??
-                    // deduct tagLen
-                    totalLen -= tagLen;
-                } else {
+                if (!decrypting) {
                     totalLen += tagLen;
+                } else {
+                    totalLen -= tagLen;
                 }
             }
             if (totalLen < 0) {
@@ -360,8 +331,19 @@ final class CipherCore {
             }
             break;
         default:
-             totalLen  = getOutputSize(inputLen);
-             break;
+            if (padding != null && !decrypting) {
+                if (unitBytes != blockSize) {
+                    if (totalLen < diffBlocksize) {
+                        totalLen = diffBlocksize;
+                    } else {
+                        int residue = (totalLen - diffBlocksize) % blockSize;
+                        totalLen += (blockSize - residue);
+                    }
+                } else {
+                    totalLen += padding.padLength(totalLen);
+                }
+            }
+            break;
         }
         return totalLen;
     }
@@ -729,36 +711,52 @@ final class CipherCore {
         len = (len > 0 ? (len - (len%unitBytes)) : 0);
 
         // check output buffer capacity
-        if ((output == null) || ((output.length - outputOffset) < len)) {
+        if ((output == null) ||
+            ((output.length - outputOffset) < len)) {
             throw new ShortBufferException("Output buffer must be "
                                            + "(at least) " + len
                                            + " bytes long");
         }
 
-        if (len != 0) {
-            // there is some work to do
-            byte[] in = new byte[len];
-
-            int inputConsumed = len - buffered;
-            int bufferedConsumed = buffered;
-            if (inputConsumed < 0) {
-                inputConsumed = 0;
-                bufferedConsumed = len;
+        int outLen = 0;
+        if (len != 0) { // there is some work to do
+            if (len <= buffered) {
+                // all to-be-processed data are from 'buffer'
+                if (decrypting) {
+                    outLen = cipher.decrypt(buffer, 0, len, output, outputOffset);
+                } else {
+                    outLen = cipher.encrypt(buffer, 0, len, output, outputOffset);
+                }
+                buffered -= len;
+                if (buffered != 0) {
+                    System.arraycopy(buffer, len, buffer, 0, buffered);
+                }
+            } else { // len > buffered
+                if (buffered == 0) {
+                    // all to-be-processed data are from 'input'
+                    if (decrypting) {
+                        outLen = cipher.decrypt(input, inputOffset, len, output, outputOffset);
+                    } else {
+                        outLen = cipher.encrypt(input, inputOffset, len, output, outputOffset);
+                    }
+                    inputOffset += len;
+                    inputLen -= len;
+                } else {
+                    // assemble the data using both 'buffer' and 'input'
+                    byte[] in = new byte[len];
+                    System.arraycopy(buffer, 0, in, 0, buffered);
+                    int inConsumed = len - buffered;
+                    System.arraycopy(input, inputOffset, in, buffered, inConsumed);
+                    buffered = 0;
+                    inputOffset += inConsumed;
+                    inputLen -= inConsumed;
+                    if (decrypting) {
+                        outLen = cipher.decrypt(in, 0, len, output, outputOffset);
+                    } else {
+                        outLen = cipher.encrypt(in, 0, len, output, outputOffset);
+                    }
+                }
             }
-
-            if (buffered != 0) {
-                System.arraycopy(buffer, 0, in, 0, bufferedConsumed);
-            }
-            if (inputConsumed > 0) {
-                System.arraycopy(input, inputOffset, in,
-                                 bufferedConsumed, inputConsumed);
-            }
-            if (decrypting) {
-                cipher.decrypt(in, 0, len, output, outputOffset);
-            } else {
-                cipher.encrypt(in, 0, len, output, outputOffset);
-            }
-
             // Let's keep track of how many bytes are needed to make
             // the total input length a multiple of blocksize when
             // padding is applied
@@ -770,23 +768,14 @@ final class CipherCore {
                         ((len - diffBlocksize) % blockSize);
                 }
             }
-
-            inputLen -= inputConsumed;
-            inputOffset += inputConsumed;
-            outputOffset += len;
-            buffered -= bufferedConsumed;
-            if (buffered > 0) {
-                System.arraycopy(buffer, bufferedConsumed, buffer, 0,
-                                 buffered);
-            }
         }
-        // left over again
+        // Store remaining input into 'buffer' again
         if (inputLen > 0) {
             System.arraycopy(input, inputOffset, buffer, buffered,
                              inputLen);
+            buffered += inputLen;
         }
-        buffered += inputLen;
-        return len;
+        return outLen;
     }
 
     /**
@@ -881,11 +870,24 @@ final class CipherCore {
                 ("Must use either different key or iv for GCM encryption");
         }
 
-        // calculate the total input length
-        int totalLen = buffered + inputLen;
-        int paddedLen = totalLen;
-        int paddingLen = 0;
+        int estOutSize = getOutputSizeByOperation(inputLen, true);
+        // check output buffer capacity.
+        // if we are decrypting with padding applied, we can perform this
+        // check only after we have determined how many padding bytes there
+        // are.
+        int outputCapacity = output.length - outputOffset;
+        int minOutSize = (decrypting? (estOutSize - blockSize):estOutSize);
+        if ((output == null) || (outputCapacity < minOutSize)) {
+            throw new ShortBufferException("Output buffer must be "
+                + "(at least) " + minOutSize + " bytes long");
+        }
 
+        // calculate total input length
+        int len = buffered + inputLen;
+
+        // calculate padding length
+        int totalLen = len + cipher.getBufferedLength();
+        int paddingLen = 0;
         // will the total input length be a multiple of blockSize?
         if (unitBytes != blockSize) {
             if (totalLen < diffBlocksize) {
@@ -898,40 +900,23 @@ final class CipherCore {
             paddingLen = padding.padLength(totalLen);
         }
 
-        if ((paddingLen > 0) && (paddingLen != blockSize) &&
-            (padding != null) && decrypting) {
+        if (decrypting && (padding != null) &&
+            (paddingLen > 0) && (paddingLen != blockSize)) {
             throw new IllegalBlockSizeException
                 ("Input length must be multiple of " + blockSize +
                  " when decrypting with padded cipher");
         }
 
-        // if encrypting and padding not null, add padding
-        if (!decrypting && padding != null) {
-            paddedLen += paddingLen;
-        }
-
-        // check output buffer capacity.
-        // if we are decrypting with padding applied, we can perform this
-        // check only after we have determined how many padding bytes there
-        // are.
-        if (output == null) {
-            throw new ShortBufferException("Output buffer is null");
-        }
-        int outputCapacity = output.length - outputOffset;
-
-        if (((!decrypting) && (outputCapacity < paddedLen)) ||
-            (decrypting && (outputCapacity < (paddedLen - blockSize)))) {
-            throw new ShortBufferException("Output buffer too short: "
-                                           + outputCapacity + " bytes given, "
-                                           + paddedLen + " bytes needed");
-        }
-
         // prepare the final input avoiding copying if possible
         byte[] finalBuf = input;
         int finalOffset = inputOffset;
+        int finalBufLen = inputLen;
         if ((buffered != 0) || (!decrypting && padding != null)) {
+            if (decrypting || padding == null) {
+                paddingLen = 0;
+            }
+            finalBuf = new byte[len + paddingLen];
             finalOffset = 0;
-            finalBuf = new byte[paddedLen];
             if (buffered != 0) {
                 System.arraycopy(buffer, 0, finalBuf, 0, buffered);
             }
@@ -939,50 +924,50 @@ final class CipherCore {
                 System.arraycopy(input, inputOffset, finalBuf,
                                  buffered, inputLen);
             }
-            if (!decrypting && padding != null) {
-                padding.padWithLen(finalBuf, totalLen, paddingLen);
+            if (paddingLen != 0) {
+                padding.padWithLen(finalBuf, (buffered+inputLen), paddingLen);
             }
+            finalBufLen = finalBuf.length;
         }
-
+        int outLen = 0;
         if (decrypting) {
             // if the size of specified output buffer is less than
             // the length of the cipher text, then the current
             // content of cipher has to be preserved in order for
             // users to retry the call with a larger buffer in the
             // case of ShortBufferException.
-            if (outputCapacity < paddedLen) {
+            if (outputCapacity < estOutSize) {
                 cipher.save();
             }
             // create temporary output buffer so that only "real"
             // data bytes are passed to user's output buffer.
-            byte[] outWithPadding = new byte[totalLen];
-            totalLen = finalNoPadding(finalBuf, finalOffset, outWithPadding,
-                                      0, totalLen);
+            byte[] outWithPadding = new byte[estOutSize];
+            outLen = finalNoPadding(finalBuf, finalOffset, outWithPadding,
+                                    0, finalBufLen);
 
             if (padding != null) {
-                int padStart = padding.unpad(outWithPadding, 0, totalLen);
+                int padStart = padding.unpad(outWithPadding, 0, outLen);
                 if (padStart < 0) {
                     throw new BadPaddingException("Given final block not "
                                                   + "properly padded");
                 }
-                totalLen = padStart;
+                outLen = padStart;
             }
 
-            if ((output.length - outputOffset) < totalLen) {
+            if (outputCapacity < outLen) {
                 // restore so users can retry with a larger buffer
                 cipher.restore();
                 throw new ShortBufferException("Output buffer too short: "
-                                               + (output.length-outputOffset)
-                                               + " bytes given, " + totalLen
+                                               + (outputCapacity)
+                                               + " bytes given, " + outLen
                                                + " bytes needed");
             }
-            for (int i = 0; i < totalLen; i++) {
-                output[outputOffset + i] = outWithPadding[i];
-            }
+            // copy the result into user-supplied output buffer
+            System.arraycopy(outWithPadding, 0, output, outputOffset, outLen);
         } else { // encrypting
             try {
-                totalLen = finalNoPadding(finalBuf, finalOffset, output,
-                                          outputOffset, paddedLen);
+                outLen = finalNoPadding(finalBuf, finalOffset, output,
+                                        outputOffset, finalBufLen);
             } finally {
                 // reset after doFinal() for GCM encryption
                 requireReinit = (cipherMode == GCM_MODE);
@@ -994,12 +979,13 @@ final class CipherCore {
         if (cipherMode != ECB_MODE) {
             cipher.reset();
         }
-        return totalLen;
+        return outLen;
     }
 
     private int finalNoPadding(byte[] in, int inOfs, byte[] out, int outOfs,
                                int len)
-        throws IllegalBlockSizeException, AEADBadTagException {
+        throws IllegalBlockSizeException, AEADBadTagException,
+        ShortBufferException {
 
         if ((cipherMode != GCM_MODE) && (in == null || len == 0)) {
             return 0;
