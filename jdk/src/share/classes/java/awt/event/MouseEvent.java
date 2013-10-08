@@ -146,12 +146,12 @@ import sun.awt.SunToolkit;
  * {@link InputEvent#getMaskForButton(int) getMaskForButton(button)} method may be used
  * as button masks.
  * <p>
- * <code>MOUSE_DRAGGED</code> events are delivered to the <code>Component</code>
+ * {@code MOUSE_DRAGGED} events are delivered to the {@code Component}
  * in which the mouse button was pressed until the mouse button is released
  * (regardless of whether the mouse position is within the bounds of the
- * <code>Component</code>).  Due to platform-dependent Drag&Drop implementations,
- * <code>MOUSE_DRAGGED</code> events may not be delivered during a native
- * Drag&Drop operation.
+ * {@code Component}).  Due to platform-dependent Drag&amp;Drop implementations,
+ * {@code MOUSE_DRAGGED} events may not be delivered during a native
+ * Drag&amp;Drop operation.
  *
  * In a multi-screen environment mouse drag events are delivered to the
  * <code>Component</code> even if the mouse position is outside the bounds of the
@@ -327,7 +327,7 @@ public class MouseEvent extends InputEvent {
      * For all other events the count will be 0.
      *
      * @serial
-     * @see #getClickCount().
+     * @see #getClickCount()
      */
     int clickCount;
 
@@ -403,7 +403,7 @@ public class MouseEvent extends InputEvent {
 
     /**
      * Initialize JNI field and method IDs for fields that may be
-       accessed from C.
+     *  accessed from C.
      */
     private static native void initIDs();
 
