@@ -25,14 +25,11 @@
 
 package com.sun.imageio.plugins.jpeg;
 
-import javax.imageio.metadata.IIOMetadataFormatImpl;
 import javax.imageio.ImageTypeSpecifier;
 import javax.imageio.plugins.jpeg.JPEGQTable;
 import javax.imageio.plugins.jpeg.JPEGHuffmanTable;
 
 import java.awt.image.ColorModel;
-import java.awt.image.BufferedImage;
-import java.awt.image.DataBuffer;
 import java.awt.color.ColorSpace;
 import java.awt.color.ICC_ColorSpace;
 
@@ -172,9 +169,9 @@ public class JPEG {
     public static final String vendor = "Oracle Corporation";
     public static final String version = "0.5";
     // Names of the formats we can read or write
-    public static final String [] names = {"JPEG", "jpeg", "JPG", "jpg"};
-    public static final String [] suffixes = {"jpg", "jpeg"};
-    public static final String [] MIMETypes = {"image/jpeg"};
+    static final String [] names = {"JPEG", "jpeg", "JPG", "jpg"};
+    static final String [] suffixes = {"jpg", "jpeg"};
+    static final String [] MIMETypes = {"image/jpeg"};
     public static final String nativeImageMetadataFormatName =
         "javax_imageio_jpeg_image_1.0";
     public static final String nativeImageMetadataFormatClassName =
@@ -201,12 +198,12 @@ public class JPEG {
     public static final int NUM_JCS_CODES = JCS_YCCK+1;
 
     /** IJG can handle up to 4-channel JPEGs */
-    public static final int [] [] bandOffsets = {{0},
+    static final int [] [] bandOffsets = {{0},
                                           {0, 1},
                                           {0, 1, 2},
                                           {0, 1, 2, 3}};
 
-    public static final int [] bOffsRGB = { 2, 1, 0 };
+    static final int [] bOffsRGB = { 2, 1, 0 };
 
     /* These are kept in the inner class to avoid static initialization
      * of the CMM class until someone actually needs it.

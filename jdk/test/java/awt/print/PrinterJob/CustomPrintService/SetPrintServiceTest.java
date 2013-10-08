@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,28 +23,26 @@
  * questions.
  */
 
-package com.sun.imageio.plugins.bmp;
+import java.awt.print.PrinterException;
+import java.awt.print.PrinterJob;
 
-public interface BMPConstants {
-    // bmp versions
-    static final String VERSION_2 = "BMP v. 2.x";
-    static final String VERSION_3 = "BMP v. 3.x";
-    static final String VERSION_3_NT = "BMP v. 3.x NT";
-    static final String VERSION_4 = "BMP v. 4.x";
-    static final String VERSION_5 = "BMP v. 5.x";
+/**
+ * @test
+ * @bug 6870661
+ * @summary tests setPrintService() with a custom implementation
+ * @author reinhapa
+ */
+public class SetPrintServiceTest {
 
-    // Color space types
-    static final int LCS_CALIBRATED_RGB = 0;
-    static final int LCS_sRGB = 1;
-    static final int LCS_WINDOWS_COLOR_SPACE = 2;
-    static final int PROFILE_LINKED = 3;
-    static final int PROFILE_EMBEDDED = 4;
+    public static void main(String[] args) {
+        PrintServiceStub service = new PrintServiceStub("CustomPrintService");
+        PrinterJob printerJob = PrinterJob.getPrinterJob();
+        try {
+            printerJob.setPrintService(service);
+            System.out.println("Test Passed");
+        } catch (PrinterException e) {
+            throw new RuntimeException("Test FAILED", e);
+        }
+    }
 
-    // Compression Types
-    static final int BI_RGB = 0;
-    static final int BI_RLE8 = 1;
-    static final int BI_RLE4 = 2;
-    static final int BI_BITFIELDS = 3;
-    static final int BI_JPEG = 4;
-    static final int BI_PNG = 5;
 }
