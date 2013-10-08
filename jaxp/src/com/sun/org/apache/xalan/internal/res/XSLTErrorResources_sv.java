@@ -3,7 +3,7 @@
  * DO NOT REMOVE OR ALTER!
  */
 /*
- * Copyright 1999-2004 The Apache Software Foundation.
+ * Copyright 1999-2005 The Apache Software Foundation.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,7 +18,7 @@
  * limitations under the License.
  */
 /*
- * $Id: XSLTErrorResources_sv.java,v 1.2.4.1 2005/09/13 11:12:11 pvedula Exp $
+ * $Id: XSLTErrorResources_sv.java /st_wptg_1.8.0.0.0jdk/2 2013/09/16 06:50:58 gmolloy Exp $
  */
 package com.sun.org.apache.xalan.internal.res;
 
@@ -495,7 +495,7 @@ public class XSLTErrorResources_sv extends ListResourceBundle
      "{0} m\u00E5ste ha ett namnattribut."},
 
     {ER_TEMPLATE_NOT_FOUND,
-     "Kunde inte hitta mallen med namnet: {0}"},
+     "Hittade inte mallen med namnet: {0}"},
 
     {ER_CANT_RESOLVE_NAME_AVT,
       "Kunde inte matcha namn-AVT i xsl:call-template."},
@@ -510,10 +510,10 @@ public class XSLTErrorResources_sv extends ListResourceBundle
       "Felaktigt v\u00E4rde i niv\u00E5attribut: {0}"},
 
     {ER_PROCESSINGINSTRUCTION_NAME_CANT_BE_XML,
-      "Namn p\u00E5 processing-instruction kan inte vara 'xml'"},
+      "Namn p\u00E5 bearbetningsinstruktion kan inte vara 'xml'"},
 
     { ER_PROCESSINGINSTRUCTION_NOTVALID_NCNAME,
-      "Namn p\u00E5 processing-instruction m\u00E5ste vara ett giltigt NCName: {0}"},
+      "Namn p\u00E5 bearbetningsinstruktion m\u00E5ste vara ett giltigt NCName: {0}"},
 
     { ER_NEED_MATCH_ATTRIB,
       "{0} m\u00E5ste ha ett matchningsattribut n\u00E4r det anger ett l\u00E4ge."},
@@ -588,7 +588,7 @@ public class XSLTErrorResources_sv extends ListResourceBundle
       "Fick IO-undantag med formatmallfil: {0}"},
 
     { ER_NO_HREF_ATTRIB,
-      "(StylesheetHandler) Kunde inte hitta href-attribut f\u00F6r {0}"},
+      "(StylesheetHandler) Hittade inte href-attribut f\u00F6r {0}"},
 
     { ER_STYLESHEET_INCLUDES_ITSELF,
       "(StylesheetHandler) {0} inkluderar, direkt eller indirekt, sig sj\u00E4lv!"},
@@ -627,7 +627,7 @@ public class XSLTErrorResources_sv extends ListResourceBundle
      "Kunde inte tolka dokumentet {0}!"},
 
     { ER_COULDNT_FIND_FRAGMENT,
-     "Kunde inte hitta fragment: {0}"},
+     "Hittade inte fragment: {0}"},
 
     { ER_NODE_NOT_ELEMENT,
       "Nod som pekades p\u00E5 av fragment-identifierare var inte ett element: {0}"},
@@ -796,7 +796,7 @@ public class XSLTErrorResources_sv extends ListResourceBundle
       "Ogiltigt funktionsanrop: rekursiva key()-anrop \u00E4r inte till\u00E5tna"},
 
     { ER_REFERENCING_ITSELF,
-      "Variabel {0} h\u00E4nvisar, direkt eller indirekt, till sig sj\u00E4lv!"},
+      "Variabeln {0} refererar, direkt eller indirekt, till sig sj\u00E4lv!"},
 
     { ER_ILLEGAL_DOMSOURCE_INPUT,
       "Indatanoden till en DOMSource f\u00F6r newTemplates f\u00E5r inte vara null!"},
@@ -995,7 +995,7 @@ public class XSLTErrorResources_sv extends ListResourceBundle
      "F\u00F6rs\u00F6ker formatera ett tal som \u00E4r st\u00F6rre \u00E4n det st\u00F6rsta l\u00E5nga heltalet"},
 
     { ER_CANNOT_FIND_SAX1_DRIVER,
-     "Kan inte hitta SAX1-drivrutinen klass {0}"},
+     "Hittar inte SAX1-drivrutinen klass {0}"},
 
     { ER_SAX1_DRIVER_NOT_LOADED,
      "SAX1-drivrutinen klass {0} hittades, men kan inte laddas"},
@@ -1058,7 +1058,7 @@ public class XSLTErrorResources_sv extends ListResourceBundle
 //   'RedundentExprEliminator' is the name of a class, and should not be
 //   translated.
     { ER_ASSERT_REDUNDENT_EXPR_ELIMINATOR,
-     "Programmerarverifiering i RedundentExprEliminator: {0}"},
+     "Programmerarens utsaga i RedundentExprEliminator: {0}"},
 
     { ER_NOT_ALLOWED_IN_POSITION,
      "{0} \u00E4r inte till\u00E5ten i denna position i formatmallen!"},
@@ -1223,7 +1223,7 @@ public class XSLTErrorResources_sv extends ListResourceBundle
       "Xalan hanterar \u00E4nnu inte spr\u00E5knamnet i funktionen format-number."},
 
     { WG_LOCALE_NOT_FOUND,
-      "Varning: Kunde inte hitta spr\u00E5kinst\u00E4llning f\u00F6r xml:lang={0}"},
+      "Varning: Hittade inte spr\u00E5kinst\u00E4llning f\u00F6r xml:lang={0}"},
 
     { WG_CANNOT_MAKE_URL_FROM,
       "Kan inte skapa URL fr\u00E5n: {0}"},
@@ -1232,7 +1232,7 @@ public class XSLTErrorResources_sv extends ListResourceBundle
       "Kan inte ladda beg\u00E4rt dokument: {0}"},
 
     { WG_CANNOT_FIND_COLLATOR,
-      "Hittade inte uppsamlare f\u00F6r <sort xml:lang={0}"},
+      "Hittade inte kollationering f\u00F6r <sort xml:lang={0}"},
 
     { WG_FUNCTIONS_SHOULD_USE_URL,
       "Gammal syntax: funktionsinstruktionen b\u00F6r anv\u00E4nda url:en {0}"},
@@ -1244,7 +1244,7 @@ public class XSLTErrorResources_sv extends ListResourceBundle
       "kodning underst\u00F6ds inte: {0}, anv\u00E4nder Java {1}"},
 
     { WG_SPECIFICITY_CONFLICTS,
-      "Specificitetkonflikter hittades: {0} Senast hittade i formatmall kommer att anv\u00E4ndas."},
+      "Specifika konflikter hittades: {0} Senast hittade i formatmall kommer att anv\u00E4ndas."},
 
     { WG_PARSING_AND_PREPARING,
       "========= Tolkar och f\u00F6rbereder {0} =========="},
@@ -1359,7 +1359,7 @@ public class XSLTErrorResources_sv extends ListResourceBundle
   {  "optionQ", "   [-Q  (Tyst l\u00E4ge)]"},
   {  "optionLF", "   [-LF (Anv\u00E4nd radmatningar endast f\u00F6r utdata {standard \u00E4r CR/LF})]"},
   {  "optionCR", "   [-CR (Anv\u00E4nd radmatningar endast f\u00F6r utdata {standard \u00E4r CR/LF})]"},
-  { "optionESCAPE", "   [-ESCAPE (Vilka tecken \u00E4r skiftningstecken {standard \u00E4r <>&\"\'\\r\\n}]"},
+  { "optionESCAPE", "   [-ESCAPE (Vilka tecken \u00E4r skiftningstecken {standard \u00E4r <>&\"'\\r\\n}]"},
   { "optionINDENT", "   [-INDENT (Best\u00E4m antal blanksteg f\u00F6r indrag {standard \u00E4r 0})]"},
   { "optionTT", "   [-TT (Sp\u00E5ra mallar vid anrop.)]"},
   { "optionTG", "   [-TG (Sp\u00E5ra varje generationsh\u00E4ndelse.)]"},

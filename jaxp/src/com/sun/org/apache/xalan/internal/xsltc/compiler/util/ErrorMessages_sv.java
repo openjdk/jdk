@@ -3,7 +3,7 @@
  * DO NOT REMOVE OR ALTER!
  */
 /*
- * Copyright 1999-2004 The Apache Software Foundation.
+ * Copyright 2001-2004 The Apache Software Foundation.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,10 +17,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 /*
- * $Id: ErrorMessages_sv.java 3023 2011-03-01 00:53:34Z joehw $
+ * $Id: ErrorMessages_sv.java /st_wptg_1.8.0.0.0jdk/2 2013/09/16 06:50:58 gmolloy Exp $
  */
+
 package com.sun.org.apache.xalan.internal.xsltc.compiler.util;
 
 import java.util.ListResourceBundle;
@@ -407,7 +407,7 @@ public class ErrorMessages_sv extends ListResourceBundle {
          * encountered.
          */
         {ErrorMsg.INTERNAL_ERR,
-        "Irreparabelt XSLTC-internfel: ''{0}''"},
+        "O\u00E5terkalleligt internt XSLTC-fel: ''{0}''"},
 
         /*
          * Note to translators:  The stylesheet contained an element that was
@@ -447,7 +447,7 @@ public class ErrorMessages_sv extends ListResourceBundle {
          * Note to translators:  access to the stylesheet target is denied
          */
         {ErrorMsg.ACCESSING_XSLT_TARGET_ERR,
-        "Could not read stylesheet target ''{0}'', because ''{1}'' access is not allowed."},
+        "Kunde inte l\u00E4sa formatmallen ''{0}'', eftersom ''{1}''-\u00E5tkomst inte till\u00E5ts p\u00E5 grund av begr\u00E4nsning som anges av egenskapen accessExternalStylesheet."},
 
         /*
          * Note to translators:  This message represents an internal error in
@@ -771,7 +771,7 @@ public class ErrorMessages_sv extends ListResourceBundle {
          * it the same amount as the first in English.
          */
         {ErrorMsg.WARNING_PLUS_WRAPPED_MSG,
-        "VARNING:  ''{0}''\n       :{1}"},
+        "WARNING:  ''{0}''\n       :{1}"},
 
         /*
          * Note to translators:  This message is used to indicate the severity
@@ -787,7 +787,7 @@ public class ErrorMessages_sv extends ListResourceBundle {
          * it the same amount as the first in English.
          */
         {ErrorMsg.FATAL_ERR_PLUS_WRAPPED_MSG,
-        "O\u00C5TERKALLELIGT FEL:  ''{0}''\n           :{1}"},
+        "FATAL ERROR:  ''{0}''\n           :{1}"},
 
         /*
          * Note to translators:  This message is used to indicate the severity
@@ -803,7 +803,7 @@ public class ErrorMessages_sv extends ListResourceBundle {
          * it the same amount as the first in English.
          */
         {ErrorMsg.ERROR_PLUS_WRAPPED_MSG,
-        "FEL:  ''{0}''\n     :{1}"},
+        "ERROR:  ''{0}''\n     :{1}"},
 
         /*
          * Note to translators:  This message is used to indicate the severity
@@ -876,7 +876,7 @@ public class ErrorMessages_sv extends ListResourceBundle {
          * substitution text contains the actual value of the attribute.
          */
         {ErrorMsg.INVALID_QNAME_ERR,
-        "Ett attribut vars v\u00E4rde m\u00E5ste vara ett QName eller en blankteckenseparerad lista med QNames hade v\u00E4rdet ''{0}''"},
+        "Ett attribut vars v\u00E4rde m\u00E5ste vara ett QName eller en blankteckenavgr\u00E4nsad lista med QNames hade v\u00E4rdet ''{0}''"},
 
         /*
          * Note to translators:  An attribute whose value is required to
@@ -910,7 +910,58 @@ public class ErrorMessages_sv extends ListResourceBundle {
         "Kan inte st\u00E4lla in funktionen ''{0}'' i denna TransformerFactory."},
 
         {ErrorMsg.JAXP_SECUREPROCESSING_FEATURE,
-        "FEATURE_SECURE_PROCESSING: Funktionen kan inte anges till false om s\u00E4kerhetshanteraren anv\u00E4nds."}
+        "FEATURE_SECURE_PROCESSING: Funktionen kan inte anges till false om s\u00E4kerhetshanteraren anv\u00E4nds."},
+
+        /*
+         * Note to translators:  This message describes an internal error in the
+         * processor.  The term "byte code" is a Java technical term for the
+         * executable code in a Java method, and "try-catch-finally block"
+         * refers to the Java keywords with those names.  "Outlined" is a
+         * technical term internal to XSLTC and should not be translated.
+         */
+        {ErrorMsg.OUTLINE_ERR_TRY_CATCH,
+         "Internt XSLTC-fel: den genererade bytekoden inneh\u00E5ller ett try-catch-finally-block och kan inte g\u00F6ras till en disposition."},
+
+        /*
+         * Note to translators:  This message describes an internal error in the
+         * processor.  The terms "OutlineableChunkStart" and
+         * "OutlineableChunkEnd" are the names of classes internal to XSLTC and
+         * should not be translated.  The message indicates that for every
+         * "start" there must be a corresponding "end", and vice versa, and
+         * that if one of a pair of "start" and "end" appears between another
+         * pair of corresponding "start" and "end", then the other half of the
+         * pair must also be between that same enclosing pair.
+         */
+        {ErrorMsg.OUTLINE_ERR_UNBALANCED_MARKERS,
+         "Internt XSLTC-fel: mark\u00F6rerna OutlineableChunkStart och OutlineableChunkEnd m\u00E5ste vara balanserade och korrekt kapslade."},
+
+        /*
+         * Note to translators:  This message describes an internal error in the
+         * processor.  The term "byte code" is a Java technical term for the
+         * executable code in a Java method.  The "method" that is being
+         * referred to is a Java method in a translet that XSLTC is generating
+         * in processing a stylesheet.  The "instruction" that is being
+         * referred to is one of the instrutions in the Java byte code in that
+         * method.  "Outlined" is a technical term internal to XSLTC and
+         * should not be translated.
+         */
+        {ErrorMsg.OUTLINE_ERR_DELETED_TARGET,
+         "Internt XSLTC-fel: originalmetoden refererar fortfarande till en instruktion som var en del av ett bytekodsblock som gjordes till en disposition."
+        },
+
+
+        /*
+         * Note to translators:  This message describes an internal error in the
+         * processor.  The "method" that is being referred to is a Java method
+         * in a translet that XSLTC is generating.
+         *
+         */
+        {ErrorMsg.OUTLINE_ERR_METHOD_TOO_BIG,
+         "Internt XSLTC-fel: en metod i transleten \u00F6verstiger Java Virtual Machines l\u00E4ngdbegr\u00E4nsning f\u00F6r en metod p\u00E5 64 kilobytes.  Det h\u00E4r orsakas vanligen av mycket stora mallar i en formatmall. F\u00F6rs\u00F6k att omstrukturera formatmallen att anv\u00E4nda mindre mallar."
+        },
+
+         {ErrorMsg.DESERIALIZE_TRANSLET_ERR, "N\u00E4r Java-s\u00E4kerheten \u00E4r aktiverad \u00E4r st\u00F6det f\u00F6r avserialisering av TemplatesImpl avaktiverat. Du kan \u00E5sidos\u00E4tta det h\u00E4r genom att st\u00E4lla in systemegenskapen jdk.xml.enableTemplatesImplDeserialization till sant."}
+
     };
 
     /** Get the lookup table for error messages.
