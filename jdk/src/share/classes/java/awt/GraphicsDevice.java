@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -334,11 +334,12 @@ public abstract class GraphicsDevice {
     }
 
     /**
-     * Returns the <code>Window</code> object representing the
+     * Returns the {@code Window} object representing the
      * full-screen window if the device is in full-screen mode.
      *
-     * @return the full-screen window, or <code>null</code> if the device is
-     * not in full-screen mode.
+     * @return the full-screen window, or {@code null} if the device is
+     * not in full-screen mode. The {@code Window} object can differ
+     * from the object previously set by {@code setFullScreenWindow}.
      * @see #setFullScreenWindow(Window)
      * @since 1.4
      */
