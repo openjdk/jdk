@@ -1827,6 +1827,8 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
         }
 
         if (cases.isEmpty()) {
+            // still evaluate expression for side-effects.
+            load(expression).pop();
             method.label(breakLabel);
             return false;
         }
