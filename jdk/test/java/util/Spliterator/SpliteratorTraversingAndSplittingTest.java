@@ -1159,7 +1159,7 @@ public class SpliteratorTraversingAndSplittingTest {
             List<T> dest = new ArrayList<>();
             spliterator = supplier.get();
 
-            assertSpliterator(spliterator);
+            assertRootSpliterator(spliterator);
 
             // verify splitting with forEach
             visit(depth, 0, dest, spliterator, boxingAdapter, spliterator.characteristics(), false);
@@ -1234,7 +1234,7 @@ public class SpliteratorTraversingAndSplittingTest {
             UnaryOperator<Consumer<T>> boxingAdapter) {
         Spliterator<T> s = supplier.get();
         boolean isOrdered = s.hasCharacteristics(Spliterator.ORDERED);
-        assertSpliterator(s);
+        assertRootSpliterator(s);
 
         List<T> splits = new ArrayList<>();
         Consumer<T> c = boxingAdapter.apply(splits::add);
@@ -1324,6 +1324,13 @@ public class SpliteratorTraversingAndSplittingTest {
             stack.push(e.fromSplit(parentAndRightSplit));
             stack.push(e.fromSplit(leftSplit));
         }
+    }
+
+    private static void assertRootSpliterator(Spliterator<?> s) {
+        assertFalse(s.hasCharacteristics(Spliterator.SIZED | Spliterator.CONCURRENT),
+                    "Root spliterator should not be SIZED and CONCURRENT");
+
+        assertSpliterator(s);
     }
 
     private static void assertSpliterator(Spliterator<?> s, int rootCharacteristics) {

@@ -38,7 +38,7 @@ import java.io.Serializable;
 import sun.swing.DefaultLookup;
 
 /**
- * A Basic L&F implementation of ProgressBarUI.
+ * A Basic L&amp;F implementation of ProgressBarUI.
  *
  * @author Michael C. Albers
  * @author Kathy Walrath

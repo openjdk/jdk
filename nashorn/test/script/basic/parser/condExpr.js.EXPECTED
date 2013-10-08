@@ -1,0 +1,23 @@
+{
+    "type": "Program",
+    "body": [
+        {
+            "type": "ExpressionStatement",
+            "expression": {
+                "type": "ConditionalExpression",
+                "test": {
+                    "type": "Identifier",
+                    "name": "a"
+                },
+                "consequent": {
+                    "type": "Identifier",
+                    "name": "b"
+                },
+                "alternate": {
+                    "type": "Identifier",
+                    "name": "c"
+                }
+            }
+        }
+    ]
+}

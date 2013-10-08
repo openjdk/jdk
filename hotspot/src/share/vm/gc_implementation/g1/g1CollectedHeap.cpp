@@ -2069,8 +2069,10 @@ jint G1CollectedHeap::initialize() {
   _g1_storage.initialize(g1_rs, 0);
   _g1_committed = MemRegion((HeapWord*)_g1_storage.low(), (size_t) 0);
   _hrs.initialize((HeapWord*) _g1_reserved.start(),
-                  (HeapWord*) _g1_reserved.end(),
-                  _expansion_regions);
+                  (HeapWord*) _g1_reserved.end());
+  assert(_hrs.max_length() == _expansion_regions,
+         err_msg("max length: %u expansion regions: %u",
+                 _hrs.max_length(), _expansion_regions));
 
   // Do later initialization work for concurrent refinement.
   _cg1r->init();
@@ -2189,6 +2191,10 @@ jint G1CollectedHeap::initialize() {
   _g1mm = new G1MonitoringSupport(this);
 
   return JNI_OK;
+}
+
+size_t G1CollectedHeap::conservative_max_heap_alignment() {
+  return HeapRegion::max_region_size();
 }
 
 void G1CollectedHeap::ref_processing_init() {

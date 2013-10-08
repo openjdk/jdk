@@ -68,8 +68,8 @@ public class DocumentFilter {
      * necessary.
      *
      * @param fb FilterBypass that can be used to mutate Document
-     * @param offset the offset from the beginning >= 0
-     * @param length the number of characters to remove >= 0
+     * @param offset the offset from the beginning &gt;= 0
+     * @param length the number of characters to remove &gt;= 0
      * @exception BadLocationException  some portion of the removal range
      *   was not a valid part of the document.  The location in the exception
      *   is the first bad position encountered.
@@ -86,7 +86,7 @@ public class DocumentFilter {
      * necessary, or call directly into the FilterBypass.
      *
      * @param fb FilterBypass that can be used to mutate Document
-     * @param offset  the offset into the document to insert the content >= 0.
+     * @param offset  the offset into the document to insert the content &gt;= 0.
      *    All positions that track change at or after the given location
      *    will move.
      * @param string the string to insert
@@ -141,8 +141,8 @@ public class DocumentFilter {
          * Removes the specified region of text, bypassing the
          * DocumentFilter.
          *
-         * @param offset the offset from the beginning >= 0
-         * @param length the number of characters to remove >= 0
+         * @param offset the offset from the beginning &gt;= 0
+         * @param length the number of characters to remove &gt;= 0
          * @exception BadLocationException some portion of the removal range
          *   was not a valid part of the document.  The location in the
          *   exception is the first bad position encountered.
@@ -154,7 +154,7 @@ public class DocumentFilter {
          * Inserts the specified text, bypassing the
          * DocumentFilter.
          * @param offset  the offset into the document to insert the
-         *   content >= 0. All positions that track change at or after the
+         *   content &gt;= 0. All positions that track change at or after the
          *   given location will move.
          * @param string the string to insert
          * @param attr the attributes to associate with the inserted

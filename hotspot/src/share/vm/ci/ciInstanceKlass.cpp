@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -522,8 +522,7 @@ ciInstanceKlass::compute_nonstatic_fields_impl(GrowableArray<ciField*>*
 
   for (JavaFieldStream fs(k); !fs.done(); fs.next()) {
     if (fs.access_flags().is_static())  continue;
-    fieldDescriptor fd;
-    fd.initialize(k, fs.index());
+    fieldDescriptor& fd = fs.field_descriptor();
     ciField* field = new (arena) ciField(&fd);
     fields->append(field);
   }

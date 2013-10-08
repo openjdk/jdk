@@ -70,6 +70,10 @@ public class Win32MediaTray extends MediaTray {
         winEnumTable.add(this);
     }
 
+    public int getDMBinID() {
+        return winID;
+    }
+
     private static final String[] myStringTable ={
         "Manual-Envelope",
         "Automatic-Feeder",

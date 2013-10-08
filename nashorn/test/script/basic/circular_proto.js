@@ -29,7 +29,6 @@
  */
 
 // check that we cannot create __proto__ cycle
-load("nashorn:mozilla_compat.js");
 
 var obj = {};
 var obj2 = Object.create(obj);

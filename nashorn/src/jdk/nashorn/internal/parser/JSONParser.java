@@ -349,6 +349,10 @@ loop:
 
             case COMMARIGHT:
                 next();
+                // check for trailing comma - not allowed in JSON
+                if (type == RBRACKET) {
+                    throw error(AbstractParser.message("trailing.comma.in.json", type.getNameOrType()));
+                }
                 break;
 
             default:
@@ -388,6 +392,10 @@ loop:
 
             case COMMARIGHT:
                 next();
+                // check for trailing comma - not allowed in JSON
+                if (type == RBRACE) {
+                    throw error(AbstractParser.message("trailing.comma.in.json", type.getNameOrType()));
+                }
                 break;
 
             default:

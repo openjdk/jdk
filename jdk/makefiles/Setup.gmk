@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2012, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2013, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,10 @@
 
 DISABLE_WARNINGS:=-Xlint:all,-deprecation,-unchecked,-rawtypes,-cast,-serial,-dep-ann,-static,-fallthrough,-try,-varargs,-empty,-finally
 
+# To build with all warnings enabled, do the following:
+# make JAVAC_WARNINGS="-Xlint:all -Xmaxwarns 10000" 
+JAVAC_WARNINGS:=-Xlint:-unchecked,-deprecation,-overrides,classfile,dep-ann,divzero,varargs -Werror
+
 # The generate old bytecode javac setup uses the new compiler to compile for the
 # boot jdk to generate tools that need to be run with the boot jdk.
 # Thus we force the target bytecode to 7.
@@ -41,7 +45,7 @@ $(eval $(call SetupJavaCompiler,GENERATE_JDKBYTECODE,\
      JVM:=$(JAVA),\
      JAVAC:=$(NEW_JAVAC),\
      FLAGS:=-bootclasspath $(JDK_OUTPUTDIR)/classes -source 8 -target 8 \
-	    -encoding ascii -XDignore.symbol.file=true $(DISABLE_WARNINGS) \
+	    -encoding ascii -XDignore.symbol.file=true $(JAVAC_WARNINGS) \
 	    $(GENERATE_JDKBYTECODE_EXTRA_FLAGS),\
      SERVER_DIR:=$(SJAVAC_SERVER_DIR),\
      SERVER_JVM:=$(SJAVAC_SERVER_JAVA)))

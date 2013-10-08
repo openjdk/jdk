@@ -1092,6 +1092,9 @@ public:
   // specified by the policy object.
   jint initialize();
 
+  // Return the (conservative) maximum heap alignment for any G1 heap
+  static size_t conservative_max_heap_alignment();
+
   // Initialize weak reference processing.
   virtual void ref_processing_init();
 

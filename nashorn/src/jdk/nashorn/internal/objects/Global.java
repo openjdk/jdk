@@ -33,6 +33,7 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
+import java.lang.ref.ReferenceQueue;
 import java.lang.ref.SoftReference;
 import java.lang.reflect.Field;
 import java.util.Arrays;
@@ -412,6 +413,14 @@ public final class Global extends ScriptObject implements GlobalObject, Scope {
     // initialized by nasgen
     private static PropertyMap $nasgenmap$;
 
+    // context to which this global belongs to
+    private final Context context;
+
+    @Override
+    protected Context getContext() {
+        return context;
+    }
+
     // performs initialization checks for Global constructor and returns the
     // PropertyMap, if everything is fine.
     private static PropertyMap checkAndGetMap(final Context context) {
@@ -439,7 +448,7 @@ public final class Global extends ScriptObject implements GlobalObject, Scope {
      */
     public Global(final Context context) {
         super(checkAndGetMap(context));
-        this.setContext(context);
+        this.context = context;
         this.setIsScope();
 
         final int cacheSize = context.getEnv()._class_cache_size;
@@ -480,6 +489,16 @@ public final class Global extends ScriptObject implements GlobalObject, Scope {
     }
 
     // GlobalObject interface implementation
+
+    @Override
+    public boolean isOfContext(final Context context) {
+        return this.context == context;
+    }
+
+    @Override
+    public boolean isStrictContext() {
+        return context.getEnv()._strict;
+    }
 
     @Override
     public void initBuiltinObjects() {
@@ -673,17 +692,41 @@ public final class Global extends ScriptObject implements GlobalObject, Scope {
      * Cache for compiled script classes.
      */
     @SuppressWarnings("serial")
-    private static class ClassCache extends LinkedHashMap<Source, SoftReference<Class<?>>> {
+    private static class ClassCache extends LinkedHashMap<Source, ClassReference> {
         private final int size;
+        private final ReferenceQueue<Class<?>> queue;
 
         ClassCache(int size) {
             super(size, 0.75f, true);
             this.size = size;
+            this.queue = new ReferenceQueue<>();
+        }
+
+        void cache(final Source source, final Class<?> clazz) {
+            put(source, new ClassReference(clazz, queue, source));
         }
 
         @Override
-        protected boolean removeEldestEntry(final Map.Entry<Source, SoftReference<Class<?>>> eldest) {
-            return size() >= size;
+        protected boolean removeEldestEntry(final Map.Entry<Source, ClassReference> eldest) {
+            return size() > size;
+        }
+
+        @Override
+        public ClassReference get(Object key) {
+            for (ClassReference ref; (ref = (ClassReference)queue.poll()) != null; ) {
+                remove(ref.source);
+            }
+            return super.get(key);
+        }
+
+    }
+
+    private static class ClassReference extends SoftReference<Class<?>> {
+        private final Source source;
+
+        ClassReference(final Class<?> clazz, final ReferenceQueue<Class<?>> queue, final Source source) {
+            super(clazz, queue);
+            this.source = source;
         }
     }
 
@@ -691,22 +734,14 @@ public final class Global extends ScriptObject implements GlobalObject, Scope {
     @Override
     public Class<?> findCachedClass(final Source source) {
         assert classCache != null : "Class cache used without being initialized";
-        SoftReference<Class<?>> ref = classCache.get(source);
-        if (ref != null) {
-            final Class<?> clazz = ref.get();
-            if (clazz == null) {
-                classCache.remove(source);
-            }
-            return clazz;
-        }
-
-        return null;
+        ClassReference ref = classCache.get(source);
+        return ref != null ? ref.get() : null;
     }
 
     @Override
     public void cacheClass(final Source source, final Class<?> clazz) {
         assert classCache != null : "Class cache used without being initialized";
-        classCache.put(source, new SoftReference<Class<?>>(clazz));
+        classCache.cache(source, clazz);
     }
 
     private static <T> T getLazilyCreatedValue(final Object key, final Callable<T> creator, final Map<Object, T> map) {
@@ -1765,7 +1800,7 @@ public final class Global extends ScriptObject implements GlobalObject, Scope {
             // do not fill $ENV if we have a security manager around
             // Retrieve current state of ENV variables.
             final ScriptObject env = newObject();
-            env.putAll(System.getenv());
+            env.putAll(System.getenv(), scriptEnv._strict);
             addOwnProperty(ScriptingFunctions.ENV_NAME, Attribute.NOT_ENUMERABLE, env);
         } else {
             addOwnProperty(ScriptingFunctions.ENV_NAME, Attribute.NOT_ENUMERABLE, UNDEFINED);

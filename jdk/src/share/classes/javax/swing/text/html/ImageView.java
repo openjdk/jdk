@@ -554,8 +554,8 @@ public class ImageView extends View {
      * Sets the size of the view.  This should cause
      * layout of the view if it has any layout duties.
      *
-     * @param width the width >= 0
-     * @param height the height >= 0
+     * @param width the width &gt;= 0
+     * @param height the height &gt;= 0
      */
     public void setSize(float width, float height) {
         sync();

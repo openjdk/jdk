@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,8 @@ package com.sun.tools.javac.code;
 import java.util.HashMap;
 import java.util.Map;
 
+import com.sun.tools.javac.tree.EndPosTable;
+import com.sun.tools.javac.tree.JCTree;
 import com.sun.tools.javac.util.Assert;
 import com.sun.tools.javac.util.Context;
 import com.sun.tools.javac.util.JCDiagnostic.DiagnosticPosition;
@@ -53,10 +55,13 @@ public class DeferredLintHandler {
 
     protected DeferredLintHandler(Context context) {
         context.put(deferredLintHandlerKey, this);
+        this.currentPos = IMMEDIATE_POSITION;
     }
 
-    private DeferredLintHandler() {}
-
+    /**An interface for deferred lint reporting - loggers passed to
+     * {@link #report(LintLogger) } will be called when
+     * {@link #flush(DiagnosticPosition) } is invoked.
+     */
     public interface LintLogger {
         void report();
     }
@@ -64,12 +69,26 @@ public class DeferredLintHandler {
     private DiagnosticPosition currentPos;
     private Map<DiagnosticPosition, ListBuffer<LintLogger>> loggersQueue = new HashMap<DiagnosticPosition, ListBuffer<LintLogger>>();
 
+    /**Associate the given logger with the current position as set by {@link #setPos(DiagnosticPosition) }.
+     * Will be invoked when {@link #flush(DiagnosticPosition) } will be invoked with the same position.
+     * <br>
+     * Will invoke the logger synchronously if {@link #immediate() } was called
+     * instead of {@link #setPos(DiagnosticPosition) }.
+     */
     public void report(LintLogger logger) {
-        ListBuffer<LintLogger> loggers = loggersQueue.get(currentPos);
-        Assert.checkNonNull(loggers);
-        loggers.append(logger);
+        if (currentPos == IMMEDIATE_POSITION) {
+            logger.report();
+        } else {
+            ListBuffer<LintLogger> loggers = loggersQueue.get(currentPos);
+            if (loggers == null) {
+                loggersQueue.put(currentPos, loggers = new ListBuffer<>());
+            }
+            loggers.append(logger);
+        }
     }
 
+    /**Invoke all {@link LintLogger}s that were associated with the provided {@code pos}.
+     */
     public void flush(DiagnosticPosition pos) {
         ListBuffer<LintLogger> loggers = loggersQueue.get(pos);
         if (loggers != null) {
@@ -80,16 +99,46 @@ public class DeferredLintHandler {
         }
     }
 
-    public DeferredLintHandler setPos(DiagnosticPosition currentPos) {
+    /**Sets the current position to the provided {@code currentPos}. {@link LintLogger}s
+     * passed to subsequent invocations of {@link #report(LintLogger) } will be associated
+     * with the given position.
+     */
+    public DiagnosticPosition setPos(DiagnosticPosition currentPos) {
+        DiagnosticPosition prevPosition = this.currentPos;
         this.currentPos = currentPos;
-        loggersQueue.put(currentPos, ListBuffer.<LintLogger>lb());
-        return this;
+        return prevPosition;
     }
 
-    public static final DeferredLintHandler immediateHandler = new DeferredLintHandler() {
+    /**{@link LintLogger}s passed to subsequent invocations of
+     * {@link #report(LintLogger) } will be invoked immediately.
+     */
+    public DiagnosticPosition immediate() {
+        return setPos(IMMEDIATE_POSITION);
+    }
+
+    private static final DiagnosticPosition IMMEDIATE_POSITION = new DiagnosticPosition() {
         @Override
-        public void report(LintLogger logger) {
-            logger.report();
+        public JCTree getTree() {
+            Assert.error();
+            return null;
+        }
+
+        @Override
+        public int getStartPosition() {
+            Assert.error();
+            return -1;
+        }
+
+        @Override
+        public int getPreferredPosition() {
+            Assert.error();
+            return -1;
+        }
+
+        @Override
+        public int getEndPosition(EndPosTable endPosTable) {
+            Assert.error();
+            return -1;
         }
     };
 }
