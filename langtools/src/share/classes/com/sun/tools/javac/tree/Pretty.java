@@ -782,9 +782,9 @@ public class Pretty extends JCTree.Visitor {
     public void visitConditional(JCConditional tree) {
         try {
             open(prec, TreeInfo.condPrec);
-            printExpr(tree.cond, TreeInfo.condPrec);
+            printExpr(tree.cond, TreeInfo.condPrec + 1);
             print(" ? ");
-            printExpr(tree.truepart, TreeInfo.condPrec);
+            printExpr(tree.truepart);
             print(" : ");
             printExpr(tree.falsepart, TreeInfo.condPrec);
             close(prec, TreeInfo.condPrec);
