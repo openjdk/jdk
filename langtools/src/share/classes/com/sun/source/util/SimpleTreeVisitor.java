@@ -33,7 +33,7 @@ import com.sun.source.tree.*;
  * @author Peter von der Ah&eacute;
  * @since 1.6
  */
-@jdk.Supported
+@jdk.Exported
 public class SimpleTreeVisitor <R,P> implements TreeVisitor<R,P> {
     protected final R DEFAULT_VALUE;
 

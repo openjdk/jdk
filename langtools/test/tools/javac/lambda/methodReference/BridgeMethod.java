@@ -108,9 +108,10 @@ public class BridgeMethod {
         System.out.println("methods in SAM conversion of N:");
         for(Method m : methods) {
             System.out.println(m.toGenericString());
-            assertTrue(m.getName().equals("m"));
-            Class<?> returnType = m.getReturnType();
-            assertTrue(types.remove(returnType.getName()));
+            if (m.getName().equals("m")) {
+                Class<?> returnType = m.getReturnType();
+                assertTrue(types.remove(returnType.getName()));
+            }
         }
         assertTrue(types.size() == 1); //there's a bridge
     }

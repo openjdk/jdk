@@ -30,5 +30,5 @@
  * @author Jonathan Gibbons
  * @since 1.6
  */
-@jdk.Supported
+@jdk.Exported
 package com.sun.source.util;

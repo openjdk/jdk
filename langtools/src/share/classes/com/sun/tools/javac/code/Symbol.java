@@ -327,7 +327,8 @@ public abstract class Symbol implements Element {
     public boolean isStatic() {
         return
             (flags() & STATIC) != 0 ||
-            (owner.flags() & INTERFACE) != 0 && kind != MTH;
+            (owner.flags() & INTERFACE) != 0 && kind != MTH &&
+             name != name.table.names._this;
     }
 
     public boolean isInterface() {
@@ -1058,6 +1059,12 @@ public abstract class Symbol implements Element {
                 return ElementKind.ENUM;
             else
                 return ElementKind.CLASS;
+        }
+
+        @Override
+        public Set<Modifier> getModifiers() {
+            long flags = flags();
+            return Flags.asModifierSet(flags & ~DEFAULT);
         }
 
         public NestingKind getNestingKind() {
