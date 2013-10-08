@@ -3,13 +3,13 @@
  * DO NOT REMOVE OR ALTER!
  */
 /*
- * Copyright 1999-2004 The Apache Software Foundation.
+ * Copyright 1999-2005 The Apache Software Foundation.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -17,9 +17,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 /*
- * $Id: XPATHErrorResources_pt_BR.java 3023 2011-03-01 00:53:34Z joehw $
+ * $Id: XPATHErrorResources_pt_BR.java /st_wptg_1.8.0.0.0jdk/2 2013/09/11 12:46:54 gmolloy Exp $
  */
 package com.sun.org.apache.xpath.internal.res;
 
@@ -517,7 +516,7 @@ public static final String ER_IGNORABLE_WHITESPACE_NOT_HANDLED =
       "O prefixo deve ser resolvido para um namespace: {0}"},
 
   { ER_PARSE_NOT_SUPPORTED,
-      "parse (InputSource source) n\u00E3o suportado em XPathContext! N\u00E3o \u00E9 poss\u00EDvel abrir {0}"},
+      "parsing (InputSource source) n\u00E3o suportado em XPathContext! N\u00E3o \u00E9 poss\u00EDvel abrir {0}"},
 
   { ER_SAX_API_NOT_HANDLED,
       "Caracteres SAX API(char ch[]... n\u00E3o tratados por DTM!"},
