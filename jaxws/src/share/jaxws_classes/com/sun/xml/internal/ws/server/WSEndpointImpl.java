@@ -46,7 +46,6 @@ import com.sun.xml.internal.ws.api.server.*;
 import com.sun.xml.internal.ws.binding.BindingImpl;
 import com.sun.xml.internal.ws.fault.SOAPFaultBuilder;
 import com.sun.xml.internal.ws.model.wsdl.WSDLDirectProperties;
-import com.sun.xml.internal.ws.model.wsdl.WSDLPortImpl;
 import com.sun.xml.internal.ws.model.wsdl.WSDLPortProperties;
 import com.sun.xml.internal.ws.model.wsdl.WSDLProperties;
 import com.sun.xml.internal.ws.policy.PolicyMap;
@@ -195,7 +194,7 @@ public /*final*/ class WSEndpointImpl<T> extends WSEndpoint<T> implements LazyMO
         try {
             if (port != null) {
                 //gather EPR extrensions from WSDL Model
-                WSEndpointReference wsdlEpr = ((WSDLPortImpl) port).getEPR();
+                WSEndpointReference wsdlEpr = port.getEPR();
                 if (wsdlEpr != null) {
                     for (WSEndpointReference.EPRExtension extnEl : wsdlEpr.getEPRExtensions()) {
                         eprExtensions.put(extnEl.getQName(), extnEl);
