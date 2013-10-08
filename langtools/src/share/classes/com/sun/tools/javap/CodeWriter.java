@@ -208,7 +208,7 @@ public class CodeWriter extends BasicWriter {
 
 
     public void writeExceptionTable(Code_attribute attr) {
-        if (attr.exception_table_langth > 0) {
+        if (attr.exception_table_length > 0) {
             println("Exception table:");
             indent(+1);
             println(" from    to  target type");

@@ -86,6 +86,9 @@ public enum HtmlTag {
     DD(BlockType.LIST_ITEM, EndKind.OPTIONAL,
             EnumSet.of(Flag.ACCEPTS_BLOCK, Flag.ACCEPTS_INLINE, Flag.EXPECT_CONTENT)),
 
+    DFN(BlockType.INLINE, EndKind.REQUIRED,
+            EnumSet.of(Flag.EXPECT_CONTENT, Flag.NO_NEST)),
+
     DIV(BlockType.BLOCK, EndKind.REQUIRED,
             EnumSet.of(Flag.ACCEPTS_BLOCK, Flag.ACCEPTS_INLINE)),
 

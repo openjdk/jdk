@@ -126,7 +126,7 @@ AWT_ASSERT_APPKIT_THREAD;
 
     self.cglLayer = nil;
 
-    JNIEnv *env = [ThreadUtilities getJNIEnv];
+    JNIEnv *env = [ThreadUtilities getJNIEnvUncached];
     (*env)->DeleteGlobalRef(env, m_cPlatformView);
     m_cPlatformView = NULL;
 
@@ -387,7 +387,7 @@ AWT_ASSERT_APPKIT_THREAD;
         [rolloverTrackingArea release];
     }
 
-    int options = (NSTrackingActiveInActiveApp | NSTrackingMouseEnteredAndExited |
+    int options = (NSTrackingActiveAlways | NSTrackingMouseEnteredAndExited |
                    NSTrackingMouseMoved | NSTrackingEnabledDuringMouseDrag);
 
     rolloverTrackingArea = [[NSTrackingArea alloc] initWithRect:[self visibleRect]

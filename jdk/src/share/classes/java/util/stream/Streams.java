@@ -833,4 +833,61 @@ final class Streams {
             }
         }
     }
+
+    /**
+     * Given two Runnables, return a Runnable that executes both in sequence,
+     * even if the first throws an exception, and if both throw exceptions, add
+     * any exceptions thrown by the second as suppressed exceptions of the first.
+     */
+    static Runnable composeWithExceptions(Runnable a, Runnable b) {
+        return new Runnable() {
+            @Override
+            public void run() {
+                try {
+                    a.run();
+                }
+                catch (Throwable e1) {
+                    try {
+                        b.run();
+                    }
+                    catch (Throwable e2) {
+                        try {
+                            e1.addSuppressed(e2);
+                        } catch (Throwable ignore) {}
+                    }
+                    throw e1;
+                }
+                b.run();
+            }
+        };
+    }
+
+    /**
+     * Given two streams, return a Runnable that
+     * executes both of their {@link BaseStream#close} methods in sequence,
+     * even if the first throws an exception, and if both throw exceptions, add
+     * any exceptions thrown by the second as suppressed exceptions of the first.
+     */
+    static Runnable composedClose(BaseStream<?, ?> a, BaseStream<?, ?> b) {
+        return new Runnable() {
+            @Override
+            public void run() {
+                try {
+                    a.close();
+                }
+                catch (Throwable e1) {
+                    try {
+                        b.close();
+                    }
+                    catch (Throwable e2) {
+                        try {
+                            e1.addSuppressed(e2);
+                        } catch (Throwable ignore) {}
+                    }
+                    throw e1;
+                }
+                b.close();
+            }
+        };
+    }
 }

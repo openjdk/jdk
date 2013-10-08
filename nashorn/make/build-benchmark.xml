@@ -329,7 +329,7 @@
           fork="true"
           dir=".">
       <jvmarg line="${ext.class.path}"/>
-      <jvmarg line="${run.test.jvmargs.octane}"/>
+      <jvmarg line="${run.test.jvmargs.octane} -Xms${run.test.xms} -Xmx${run.test.xmx}"/>
       <arg value="${octane-test-sys-prop.test.js.framework}"/>
       <arg value="--"/>
       <arg value="${octane-tests}"/>
@@ -357,7 +357,7 @@
           classpath="${run.test.classpath}"
           fork="true"
           dir=".">
-      <jvmarg line="${run.test.jvmargs.octane}"/>
+      <jvmarg line="${run.test.jvmargs.octane} -Xms${run.test.xms} -Xmx${run.test.xmx}"/>
       <arg value="${octane-test-sys-prop.test.js.framework}"/>
       <arg value="${octane-tests}"/>
       <arg value="--runtime"/>
@@ -391,7 +391,7 @@
           fork="true"
           dir=".">
       <jvmarg line="${ext.class.path}"/>
-      <jvmarg line="${run.test.jvmargs}"/>
+      <jvmarg line="${run.test.jvmargs} -Xmx${run.test.xmx}"/>
       <arg value="-timezone=PST"/>
       <arg value="--class-cache-size=50"/>
       <arg value="${sunspider-test-sys-prop.test.js.framework}"/>
@@ -415,7 +415,7 @@
           classpath="${run.test.classpath}"
           fork="true"
           dir=".">
-      <jvmarg line="${run.test.jvmargs}"/>
+      <jvmarg line="${run.test.jvmargs} -Xmx${run.test.xmx}"/>
       <arg value="${sunspider-test-sys-prop.test.js.framework}"/>
       <arg value="${sunspider-tests}/"/>
     </java>

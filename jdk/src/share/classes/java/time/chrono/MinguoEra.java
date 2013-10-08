@@ -61,9 +61,6 @@
  */
 package java.time.chrono;
 
-import java.io.DataInput;
-import java.io.DataOutput;
-import java.io.IOException;
 import java.time.DateTimeException;
 
 /**
@@ -153,20 +150,6 @@ public enum MinguoEra implements Era {
     @Override
     public int getValue() {
         return ordinal();
-    }
-
-    //-----------------------------------------------------------------------
-    private Object writeReplace() {
-        return new Ser(Ser.MINGUO_ERA_TYPE, this);
-    }
-
-    void writeExternal(DataOutput out) throws IOException {
-        out.writeByte(this.getValue());
-    }
-
-    static MinguoEra readExternal(DataInput in) throws IOException {
-        byte eraValue = in.readByte();
-        return MinguoEra.of(eraValue);
     }
 
 }

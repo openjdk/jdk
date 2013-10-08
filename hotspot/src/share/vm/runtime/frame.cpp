@@ -652,7 +652,7 @@ void frame::interpreter_frame_print_on(outputStream* st) const {
 // Return whether the frame is in the VM or os indicating a Hotspot problem.
 // Otherwise, it's likely a bug in the native library that the Java code calls,
 // hopefully indicating where to submit bugs.
-static void print_C_frame(outputStream* st, char* buf, int buflen, address pc) {
+void frame::print_C_frame(outputStream* st, char* buf, int buflen, address pc) {
   // C/C++ frame
   bool in_vm = os::address_is_in_vm(pc);
   st->print(in_vm ? "V" : "C");

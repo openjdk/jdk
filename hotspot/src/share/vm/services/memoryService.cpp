@@ -409,7 +409,7 @@ void MemoryService::add_metaspace_memory_pools() {
   mgr->add_pool(_metaspace_pool);
   _pools_list->append(_metaspace_pool);
 
-  if (UseCompressedKlassPointers) {
+  if (UseCompressedClassPointers) {
     _compressed_class_pool = new CompressedKlassSpacePool();
     mgr->add_pool(_compressed_class_pool);
     _pools_list->append(_compressed_class_pool);

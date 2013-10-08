@@ -28,6 +28,7 @@
 
 #include "memory/allocation.hpp"
 #include "runtime/mutex.hpp"
+#include "runtime/mutexLocker.hpp"
 
 class AbstractDecoder : public CHeapObj<mtInternal> {
 public:
@@ -124,6 +125,19 @@ private:
 
 protected:
   static Mutex*               _shared_decoder_lock;
+  static Mutex* shared_decoder_lock();
+
+  friend class DecoderLocker;
+};
+
+class DecoderLocker : public MutexLockerEx {
+  AbstractDecoder* _decoder;
+  inline bool is_first_error_thread();
+public:
+  DecoderLocker();
+  AbstractDecoder* decoder() {
+    return _decoder;
+  }
 };
 
 #endif // SHARE_VM_UTILITIES_DECODER_HPP

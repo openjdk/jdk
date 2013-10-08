@@ -88,7 +88,7 @@ class GC_locker: public AllStatic {
  public:
   // Accessors
   static bool is_active() {
-    assert(_needs_gc || SafepointSynchronize::is_at_safepoint(), "only read at safepoint");
+    assert(SafepointSynchronize::is_at_safepoint(), "only read at safepoint");
     return is_active_internal();
   }
   static bool needs_gc()       { return _needs_gc;                        }

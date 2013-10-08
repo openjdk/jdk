@@ -311,6 +311,26 @@ public:
   static void verify();
   static void dump(outputStream* st);
 
+  enum VerifyMesgModes {
+    _verify_quietly    = 0,
+    _verify_with_mesgs = 1
+  };
+
+  enum VerifyRetTypes {
+    _verify_pass          = 0,
+    _verify_fail_continue = 1,
+    _verify_fail_done     = 2
+  };
+
+  static VerifyRetTypes compare_entries(int bkt1, int e_cnt1,
+                                        HashtableEntry<oop, mtSymbol>* e_ptr1,
+                                        int bkt2, int e_cnt2,
+                                        HashtableEntry<oop, mtSymbol>* e_ptr2);
+  static VerifyRetTypes verify_entry(int bkt, int e_cnt,
+                                     HashtableEntry<oop, mtSymbol>* e_ptr,
+                                     VerifyMesgModes mesg_mode);
+  static int verify_and_compare_entries();
+
   // Sharing
   static void copy_buckets(char** top, char*end) {
     the_table()->Hashtable<oop, mtSymbol>::copy_buckets(top, end);

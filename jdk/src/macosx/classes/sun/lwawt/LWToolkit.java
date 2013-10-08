@@ -38,6 +38,7 @@ import java.util.*;
 import sun.awt.*;
 import sun.lwawt.macosx.*;
 import sun.print.*;
+import sun.security.util.SecurityConstants;
 
 public abstract class LWToolkit extends SunToolkit implements Runnable {
 
@@ -502,7 +503,7 @@ public abstract class LWToolkit extends SunToolkit implements Runnable {
     public Clipboard getSystemClipboard() {
         SecurityManager security = System.getSecurityManager();
         if (security != null) {
-            security.checkSystemClipboardAccess();
+            security.checkPermission(SecurityConstants.AWT.ACCESS_CLIPBOARD_PERMISSION);
         }
 
         synchronized (this) {
@@ -556,16 +557,18 @@ public abstract class LWToolkit extends SunToolkit implements Runnable {
     }
 
     @Override
-    public void grab(Window w) {
-        if (w.getPeer() != null) {
-            ((LWWindowPeer)w.getPeer()).grab();
+    public void grab(final Window w) {
+        final Object peer = AWTAccessor.getComponentAccessor().getPeer(w);
+        if (peer != null) {
+            ((LWWindowPeer) peer).grab();
         }
     }
 
     @Override
-    public void ungrab(Window w) {
-        if (w.getPeer() != null) {
-            ((LWWindowPeer)w.getPeer()).ungrab(false);
+    public void ungrab(final Window w) {
+        final Object peer = AWTAccessor.getComponentAccessor().getPeer(w);
+        if (peer != null) {
+            ((LWWindowPeer) peer).ungrab(false);
         }
     }
 

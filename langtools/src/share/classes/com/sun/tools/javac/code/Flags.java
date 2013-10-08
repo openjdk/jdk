@@ -97,7 +97,6 @@ public class Flags {
     public static final int MANDATED     = 1<<15;
 
     public static final int StandardFlags = 0x0fff;
-    public static final int ModifierFlags = StandardFlags & ~INTERFACE;
 
     // Because the following access flags are overloaded with other
     // bit positions, we translate them when reading and writing class
@@ -262,9 +261,14 @@ public class Flags {
     public static final long SIGNATURE_POLYMORPHIC = 1L<<46;
 
     /**
-     * Flag that marks inference variables used in a 'throws' clause
+     * Flag that indicates that an inference variable is used in a 'throws' clause.
      */
     public static final long THROWS = 1L<<47;
+
+    /**
+     * Flag that marks potentially ambiguous overloads
+     */
+    public static final long POTENTIALLY_AMBIGUOUS = 1L<<48;
 
     /** Modifier masks.
      */
@@ -282,7 +286,9 @@ public class Flags {
                                 SYNCHRONIZED | FINAL | STRICTFP;
     public static final long
         ExtendedStandardFlags       = (long)StandardFlags | DEFAULT,
+        ModifierFlags               = ((long)StandardFlags & ~INTERFACE) | DEFAULT,
         InterfaceMethodMask         = ABSTRACT | STATIC | PUBLIC | STRICTFP | DEFAULT,
+        AnnotationTypeElementMask   = FINAL | ABSTRACT | PUBLIC | STRICTFP,
         LocalVarFlags               = FINAL | PARAMETER;
 
 
