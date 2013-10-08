@@ -630,6 +630,12 @@ public class Window extends Container implements Accessible {
         this.parent = owner;
         if (owner != null) {
             owner.addOwnedWindow(weakThis);
+            if (owner.isAlwaysOnTop()) {
+                try {
+                    setAlwaysOnTop(true);
+                } catch (SecurityException ignore) {
+                }
+            }
         }
 
         // WindowDisposerRecord requires a proper value of parent field.
@@ -2242,6 +2248,15 @@ public class Window extends Container implements Accessible {
                 }
             }
             firePropertyChange("alwaysOnTop", oldAlwaysOnTop, alwaysOnTop);
+        }
+        for (WeakReference<Window> ref : ownedWindowList) {
+            Window window = ref.get();
+            if (window != null) {
+                try {
+                    window.setAlwaysOnTop(alwaysOnTop);
+                } catch (SecurityException ignore) {
+                }
+            }
         }
     }
 
