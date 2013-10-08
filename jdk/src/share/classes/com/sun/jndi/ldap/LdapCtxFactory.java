@@ -237,7 +237,7 @@ final public class LdapCtxFactory implements ObjectFactory, InitialContextFactor
     private static String[] getTypeNames(Class<?> currentClass, Vector<String> v) {
 
         getClassesAux(currentClass, v);
-        Class[] members = currentClass.getInterfaces();
+        Class<?>[] members = currentClass.getInterfaces();
         for (int i = 0; i < members.length; i++) {
             getClassesAux(members[i], v);
         }

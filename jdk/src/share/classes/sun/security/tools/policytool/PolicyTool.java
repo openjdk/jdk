@@ -77,9 +77,9 @@ public class PolicyTool {
     boolean modified = false;
 
     private static final boolean testing = false;
-    private static final Class[] TWOPARAMS = { String.class, String.class };
-    private static final Class[] ONEPARAMS = { String.class };
-    private static final Class[] NOPARAMS  = {};
+    private static final Class<?>[] TWOPARAMS = { String.class, String.class };
+    private static final Class<?>[] ONEPARAMS = { String.class };
+    private static final Class<?>[] NOPARAMS  = {};
     /*
      * All of the policy entries are read in from the
      * policy file and stored here.  Updates to the policy entries
