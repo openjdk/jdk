@@ -18,7 +18,7 @@
  * limitations under the License.
  */
 /*
- * $Id: ErrorMessages_zh_TW.java,v 1.2.4.1 2005/09/15 10:16:08 pvedula Exp $
+ * $Id: ErrorMessages_zh_TW.java /st_wptg_1.8.0.0.0jdk/2 2013/09/14 02:16:34 gmolloy Exp $
  */
 
 package com.sun.org.apache.xalan.internal.xsltc.compiler.util;
@@ -447,7 +447,7 @@ public class ErrorMessages_zh_TW extends ListResourceBundle {
          * Note to translators:  access to the stylesheet target is denied
          */
         {ErrorMsg.ACCESSING_XSLT_TARGET_ERR,
-        "Could not read stylesheet target ''{0}'', because ''{1}'' access is not allowed."},
+        "\u7121\u6CD5\u8B80\u53D6\u6A23\u5F0F\u8868\u76EE\u6A19 ''{0}''\uFF0C\u56E0\u70BA accessExternalStylesheet \u5C6C\u6027\u8A2D\u5B9A\u7684\u9650\u5236\uFF0C\u6240\u4EE5\u4E0D\u5141\u8A31 ''{1}'' \u5B58\u53D6\u3002"},
 
         /*
          * Note to translators:  This message represents an internal error in
@@ -771,7 +771,7 @@ public class ErrorMessages_zh_TW extends ListResourceBundle {
          * it the same amount as the first in English.
          */
         {ErrorMsg.WARNING_PLUS_WRAPPED_MSG,
-        "\u8B66\u544A:  ''{0}''\n       :{1}"},
+        "WARNING:  ''{0}''\n       :{1}"},
 
         /*
          * Note to translators:  This message is used to indicate the severity
@@ -787,7 +787,7 @@ public class ErrorMessages_zh_TW extends ListResourceBundle {
          * it the same amount as the first in English.
          */
         {ErrorMsg.FATAL_ERR_PLUS_WRAPPED_MSG,
-        "\u56B4\u91CD\u932F\u8AA4:  ''{0}''\n           :{1}"},
+        "FATAL ERROR:  ''{0}''\n           :{1}"},
 
         /*
          * Note to translators:  This message is used to indicate the severity
@@ -803,7 +803,7 @@ public class ErrorMessages_zh_TW extends ListResourceBundle {
          * it the same amount as the first in English.
          */
         {ErrorMsg.ERROR_PLUS_WRAPPED_MSG,
-        "\u932F\u8AA4:  ''{0}''\n     :{1}"},
+        "ERROR:  ''{0}''\n     :{1}"},
 
         /*
          * Note to translators:  This message is used to indicate the severity
@@ -910,7 +910,58 @@ public class ErrorMessages_zh_TW extends ListResourceBundle {
         "\u7121\u6CD5\u5728\u6B64 TransformerFactory \u4E0A\u8A2D\u5B9A\u529F\u80FD ''{0}''\u3002"},
 
         {ErrorMsg.JAXP_SECUREPROCESSING_FEATURE,
-        "FEATURE_SECURE_PROCESSING: \u5B89\u5168\u7BA1\u7406\u7A0B\u5F0F\u5B58\u5728\u6642\uFF0C\u7121\u6CD5\u5C07\u529F\u80FD\u8A2D\u70BA\u507D\u3002"}
+        "FEATURE_SECURE_PROCESSING: \u5B89\u5168\u7BA1\u7406\u7A0B\u5F0F\u5B58\u5728\u6642\uFF0C\u7121\u6CD5\u5C07\u529F\u80FD\u8A2D\u70BA\u507D\u3002"},
+
+        /*
+         * Note to translators:  This message describes an internal error in the
+         * processor.  The term "byte code" is a Java technical term for the
+         * executable code in a Java method, and "try-catch-finally block"
+         * refers to the Java keywords with those names.  "Outlined" is a
+         * technical term internal to XSLTC and should not be translated.
+         */
+        {ErrorMsg.OUTLINE_ERR_TRY_CATCH,
+         "\u5167\u90E8 XSLTC \u932F\u8AA4:  \u7522\u751F\u7684\u4F4D\u5143\u7D44\u78BC\u5305\u542B try-catch-finally \u5340\u584A\uFF0C\u7121\u6CD5\u52A0\u4EE5 outlined."},
+
+        /*
+         * Note to translators:  This message describes an internal error in the
+         * processor.  The terms "OutlineableChunkStart" and
+         * "OutlineableChunkEnd" are the names of classes internal to XSLTC and
+         * should not be translated.  The message indicates that for every
+         * "start" there must be a corresponding "end", and vice versa, and
+         * that if one of a pair of "start" and "end" appears between another
+         * pair of corresponding "start" and "end", then the other half of the
+         * pair must also be between that same enclosing pair.
+         */
+        {ErrorMsg.OUTLINE_ERR_UNBALANCED_MARKERS,
+         "\u5167\u90E8 XSLTC \u932F\u8AA4:  OutlineableChunkStart \u548C OutlineableChunkEnd \u6A19\u8A18\u5FC5\u9808\u6210\u5C0D\u51FA\u73FE\uFF0C\u4E26\u4F7F\u7528\u6B63\u78BA\u7684\u5DE2\u72C0\u7D50\u69CB\u3002"},
+
+        /*
+         * Note to translators:  This message describes an internal error in the
+         * processor.  The term "byte code" is a Java technical term for the
+         * executable code in a Java method.  The "method" that is being
+         * referred to is a Java method in a translet that XSLTC is generating
+         * in processing a stylesheet.  The "instruction" that is being
+         * referred to is one of the instrutions in the Java byte code in that
+         * method.  "Outlined" is a technical term internal to XSLTC and
+         * should not be translated.
+         */
+        {ErrorMsg.OUTLINE_ERR_DELETED_TARGET,
+         "\u5167\u90E8 XSLTC \u932F\u8AA4:  \u539F\u59CB\u65B9\u6CD5\u4E2D\u4ECD\u7136\u53C3\u7167\u5C6C\u65BC outlined \u4F4D\u5143\u7D44\u78BC\u5340\u584A\u4E00\u90E8\u5206\u7684\u6307\u793A\u3002"
+        },
+
+
+        /*
+         * Note to translators:  This message describes an internal error in the
+         * processor.  The "method" that is being referred to is a Java method
+         * in a translet that XSLTC is generating.
+         *
+         */
+        {ErrorMsg.OUTLINE_ERR_METHOD_TOO_BIG,
+         "\u5167\u90E8 XSLTC \u932F\u8AA4:  translet \u4E2D\u7684\u65B9\u6CD5\u8D85\u904E Java \u865B\u64EC\u6A5F\u5668\u5C0D\u65BC\u65B9\u6CD5\u9577\u5EA6 64 KB \u7684\u9650\u5236\u3002\u9019\u901A\u5E38\u662F\u56E0\u70BA\u6A23\u5F0F\u8868\u4E2D\u6709\u975E\u5E38\u5927\u7684\u6A23\u677F\u3002\u8ACB\u5617\u8A66\u91CD\u65B0\u7D44\u7E54\u60A8\u7684\u6A23\u5F0F\u8868\u4EE5\u4F7F\u7528\u8F03\u5C0F\u7684\u6A23\u677F\u3002"
+        },
+
+         {ErrorMsg.DESERIALIZE_TRANSLET_ERR, "\u555F\u7528 Java \u5B89\u5168\u6642\uFF0C\u6703\u505C\u7528\u9084\u539F\u5E8F\u5217\u5316 TemplatesImpl \u7684\u652F\u63F4\u3002\u5C07 jdk.xml.enableTemplatesImplDeserialization \u7CFB\u7D71\u5C6C\u6027\u8A2D\u70BA\u771F\u5373\u53EF\u8986\u5BEB\u6B64\u8A2D\u5B9A\u3002"}
+
     };
 
     /** Get the lookup table for error messages.
