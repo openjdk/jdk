@@ -40,7 +40,6 @@ import com.sun.xml.internal.ws.api.model.wsdl.WSDLPort;
 import com.sun.xml.internal.ws.api.model.SEIModel;
 import com.sun.xml.internal.ws.api.model.JavaMethod;
 import com.sun.xml.internal.ws.api.model.WSDLOperationMapping;
-import com.sun.xml.internal.ws.model.wsdl.WSDLOperationImpl;
 import com.sun.xml.internal.ws.model.JavaMethodImpl;
 import com.sun.xml.internal.ws.model.CheckedExceptionImpl;
 import com.sun.istack.internal.Nullable;
@@ -236,7 +235,7 @@ public abstract class WsaTubeHelper {
         }
         WSDLBoundOperation wbo = wsdlOp.getWSDLBoundOperation();
         WSDLOperation op = wbo.getOperation();
-        return ((WSDLOperationImpl) op).getInput().isDefaultAction();
+        return op.getInput().isDefaultAction();
 
     }
 

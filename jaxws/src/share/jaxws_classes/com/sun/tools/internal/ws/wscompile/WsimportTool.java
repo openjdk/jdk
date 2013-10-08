@@ -332,7 +332,7 @@ public class WsimportTool {
                 if(options.verbose) {
                     listener.message(WscompileMessages.WSIMPORT_ARCHIVE_ARTIFACT(f, options.clientjar));
                 }
-                String entry = f.getCanonicalPath().substring(base.length()+1);
+                String entry = f.getCanonicalPath().substring(base.length()+1).replace(File.separatorChar, '/');
                 fi = new FileInputStream(f);
                 bis = new BufferedInputStream(fi);
                 JarEntry jarEntry = new JarEntry(entry);
@@ -524,29 +524,34 @@ public class WsimportTool {
             String classDir = options.destDir.getAbsolutePath();
             String classpathString = createClasspathString();
             boolean bootCP = useBootClasspath(EndpointContext.class) || useBootClasspath(JAXBPermission.class);
-            String[] args = new String[4 + (bootCP ? 1 : 0) + (options.debug ? 1 : 0)
-                    + (options.encoding != null ? 2 : 0) + sourceFiles.size()];
-            args[0] = "-d";
-            args[1] = classDir;
-            args[2] = "-classpath";
-            args[3] = classpathString;
-            int baseIndex = 4;
+            List<String> args = new ArrayList<String>();
+            args.add("-d");
+            args.add(classDir);
+            args.add("-classpath");
+            args.add(classpathString);
             //javac is not working in osgi as the url starts with a bundle
             if (bootCP) {
-                args[baseIndex++] = "-Xbootclasspath/p:"+JavaCompilerHelper.getJarFile(EndpointContext.class)+File.pathSeparator+JavaCompilerHelper.getJarFile(JAXBPermission.class);
+                args.add("-Xbootclasspath/p:"
+                        + JavaCompilerHelper.getJarFile(EndpointContext.class)
+                        + File.pathSeparator
+                        + JavaCompilerHelper.getJarFile(JAXBPermission.class));
             }
 
             if (options.debug) {
-                args[baseIndex++] = "-g";
+                args.add("-g");
             }
 
             if (options.encoding != null) {
-                args[baseIndex++] = "-encoding";
-                args[baseIndex++] = options.encoding;
+                args.add("-encoding");
+                args.add(options.encoding);
+            }
+
+            if (options.javacOptions != null) {
+                args.addAll(options.getJavacOptions(args, listener));
             }
 
             for (int i = 0; i < sourceFiles.size(); ++i) {
-                args[baseIndex + i] = sourceFiles.get(i);
+                args.add(sourceFiles.get(i));
             }
 
             listener.message(WscompileMessages.WSIMPORT_COMPILING_CODE());
@@ -558,7 +563,7 @@ public class WsimportTool {
                 listener.message("javac "+ argstr.toString());
             }
 
-            return JavaCompilerHelper.compile(args, out, receiver);
+            return JavaCompilerHelper.compile(args.toArray(new String[args.size()]), out, receiver);
         }
         //there are no files to compile, so return true?
         return true;
