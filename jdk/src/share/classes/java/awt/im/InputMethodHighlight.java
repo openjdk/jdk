@@ -51,8 +51,8 @@ import java.util.Map;
 * mappings from abstract to concrete styles. Currently defined state values
 * are raw (unconverted) and converted.
 * These state values are recommended for use before and after the
-* main conversion step of text composition, say, before and after kana->kanji
-* or pinyin->hanzi conversion.
+* main conversion step of text composition, say, before and after kana-&gt;kanji
+* or pinyin-&gt;hanzi conversion.
 * The <code>variation</code> field allows input methods to express additional
 * information about the conversion results.
 * <p>
