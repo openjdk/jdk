@@ -40,9 +40,10 @@ import jdk.nashorn.internal.ir.visitor.NodeVisitor;
  */
 @Immutable
 public final class IdentNode extends Expression implements PropertyKey, TypeOverride<IdentNode>, FunctionCall {
-    private static final int PROPERTY_NAME    = 1 << 0;
-    private static final int INITIALIZED_HERE = 1 << 1;
-    private static final int FUNCTION         = 1 << 2;
+    private static final int PROPERTY_NAME     = 1 << 0;
+    private static final int INITIALIZED_HERE  = 1 << 1;
+    private static final int FUNCTION          = 1 << 2;
+    private static final int FUTURESTRICT_NAME = 1 << 3;
 
     /** Identifier. */
     private final String name;
@@ -194,6 +195,25 @@ public final class IdentNode extends Expression implements PropertyKey, TypeOver
             return this;
         }
         return new IdentNode(this, name, callSiteType, flags | PROPERTY_NAME);
+    }
+
+    /**
+     * Check if this IdentNode is a future strict name
+     * @return true if this is a future strict name
+     */
+    public boolean isFutureStrictName() {
+        return (flags & FUTURESTRICT_NAME) != 0;
+    }
+
+    /**
+     * Flag this IdentNode as a future strict name
+     * @return a node equivalent to this one except for the requested change.
+     */
+    public IdentNode setIsFutureStrictName() {
+        if (isFutureStrictName()) {
+            return this;
+        }
+        return new IdentNode(this, name, callSiteType, flags | FUTURESTRICT_NAME);
     }
 
     /**

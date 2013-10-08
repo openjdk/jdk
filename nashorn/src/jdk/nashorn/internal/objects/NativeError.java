@@ -37,10 +37,12 @@ import jdk.nashorn.internal.objects.annotations.Function;
 import jdk.nashorn.internal.objects.annotations.Property;
 import jdk.nashorn.internal.objects.annotations.ScriptClass;
 import jdk.nashorn.internal.objects.annotations.Where;
+import jdk.nashorn.internal.objects.ScriptFunctionImpl;
 import jdk.nashorn.internal.runtime.ECMAException;
 import jdk.nashorn.internal.runtime.JSType;
 import jdk.nashorn.internal.runtime.PropertyMap;
 import jdk.nashorn.internal.runtime.ScriptObject;
+import jdk.nashorn.internal.runtime.ScriptFunction;
 import jdk.nashorn.internal.runtime.ScriptRuntime;
 
 /**
@@ -138,7 +140,10 @@ public final class NativeError extends ScriptObject {
         Global.checkObject(errorObj);
         final ScriptObject sobj = (ScriptObject)errorObj;
         final ECMAException exp = new ECMAException(sobj, null);
-        sobj.set("stack", getScriptStackString(sobj, exp), false);
+        sobj.delete("stack", false);
+        final ScriptFunction getStack = ScriptFunctionImpl.makeFunction("getStack", GET_STACK);
+        final ScriptFunction setStack = ScriptFunctionImpl.makeFunction("setStack", SET_STACK);
+        sobj.addOwnProperty("stack", Attribute.NOT_ENUMERABLE, getStack, setStack);
         return UNDEFINED;
     }
 
