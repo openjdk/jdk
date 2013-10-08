@@ -909,6 +909,10 @@ loop:
             default:
                 break;
             }
+
+            if (ident.isFutureStrictName()) {
+                throw error(AbstractParser.message("strict.name", ident.getName(), contextString), ident.getToken());
+            }
         }
     }
 
