@@ -590,6 +590,7 @@ public abstract class KeyboardFocusManager
      *
      * @see Component#requestFocus()
      * @see java.awt.event.FocusEvent#FOCUS_LOST
+     * @since 1.8
      */
     public void clearFocusOwner() {
         if (getFocusOwner() != null) {
