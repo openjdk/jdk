@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8013827 8011950 8017212
+ * @bug 8013827 8011950 8017212 8025128
  * @summary Check whether File.createTempFile can handle special parameters
  * @author Dan Xu
  */
@@ -33,7 +33,9 @@ import java.io.IOException;
 
 public class SpecialTempFile {
 
-    private static void test(String name, String[] prefix, String[] suffix) {
+    private static void test(String name, String[] prefix, String[] suffix,
+                             boolean exceptionExpected) throws IOException
+    {
         if (prefix == null || suffix == null
             || prefix.length != suffix.length)
         {
@@ -41,24 +43,38 @@ public class SpecialTempFile {
         }
 
         final String exceptionMsg = "Unable to create temporary file";
-        final String errMsg = "IOException is expected";
+        String[] dirs = { null, "." };
 
         for (int i = 0; i < prefix.length; i++) {
             boolean exceptionThrown = false;
             File f = null;
-            System.out.println("In test " + name
-                               + ", creating temp file with prefix, "
-                               + prefix[i] + ", suffix, " + suffix[i]);
-            try {
-                f = File.createTempFile(prefix[i], suffix[i]);
-            } catch (IOException e) {
-                if (exceptionMsg.equals(e.getMessage()))
-                    exceptionThrown = true;
-                else
-                    System.out.println("Wrong error message:" + e.getMessage());
+
+            for (String dir: dirs) {
+                System.out.println("In test " + name +
+                                   ", creating temp file with prefix, " +
+                                   prefix[i] + ", suffix, " + suffix[i] +
+                                   ", in dir, " + dir);
+
+                try {
+                    if (dir == null || dir.isEmpty())
+                        f = File.createTempFile(prefix[i], suffix[i]);
+                    else
+                        f = File.createTempFile(prefix[i], suffix[i], new File(dir));
+                } catch (IOException e) {
+                    if (exceptionExpected) {
+                        if (e.getMessage().startsWith(exceptionMsg))
+                            exceptionThrown = true;
+                        else
+                            System.out.println("Wrong error message:" +
+                                               e.getMessage());
+                    } else {
+                        throw e;
+                    }
+                }
+
+                if (exceptionExpected && (!exceptionThrown || f != null))
+                    throw new RuntimeException("IOException is expected");
             }
-            if (!exceptionThrown || f != null)
-                throw new RuntimeException(errMsg);
         }
     }
 
@@ -71,7 +87,17 @@ public class SpecialTempFile {
         }
         String[] nulPre = { name + "\u0000" };
         String[] nulSuf = { ".test" };
-        test("NulName", nulPre, nulSuf);
+        test("NulName", nulPre, nulSuf, true);
+
+        // Test JDK-8025128
+        String[] goodPre = { "///..///", "/foo" };
+        String[] goodSuf = { ".temp", ".tmp" };
+        test("goodName", goodPre, goodSuf, false);
+
+        // Test JDK-8011950
+        String[] slashPre = { "temp", "///..///", "/foo" };
+        String[] slashSuf = { "///..///..", "///..///..", "///..///.." };
+        test("SlashedName", slashPre, slashSuf, true);
 
         // Windows tests
         if (!System.getProperty("os.name").startsWith("Windows"))
@@ -80,11 +106,6 @@ public class SpecialTempFile {
         // Test JDK-8013827
         String[] resvPre = { "LPT1.package.zip", "com7.4.package.zip" };
         String[] resvSuf = { ".temp", ".temp" };
-        test("ReservedName", resvPre, resvSuf);
-
-        // Test JDK-8011950
-        String[] slashPre = { "///..///", "temp", "///..///" };
-        String[] slashSuf = { ".temp", "///..///..", "///..///.." };
-        test("SlashedName", slashPre, slashSuf);
+        test("ReservedName", resvPre, resvSuf, true);
     }
 }

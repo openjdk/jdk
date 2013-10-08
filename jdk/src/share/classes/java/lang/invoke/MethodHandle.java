@@ -292,7 +292,7 @@ mh.invokeExact(System.out, "Hello, world.");
  * generates a single invokevirtual instruction with
  * the symbolic type descriptor indicated in the following comment.
  * In these examples, the helper method {@code assertEquals} is assumed to
- * be a method which calls {@link java.util.Objects#equals(Object,Object) Objects.equals }
+ * be a method which calls {@link java.util.Objects#equals(Object,Object) Objects.equals}
  * on its arguments, and asserts that the result is true.
  *
  * <h1>Exceptions</h1>
@@ -392,7 +392,7 @@ mh.invokeExact(System.out, "Hello, world.");
  * Java types.
  * <ul>
  * <li>Method types range over all possible arities,
- * from no arguments to up to 255 of arguments (a limit imposed by the JVM).
+ * from no arguments to up to the  <a href="MethodHandle.html#maxarity">maximum number</a> of allowed arguments.
  * Generics are not variadic, and so cannot represent this.</li>
  * <li>Method types can specify arguments of primitive types,
  * which Java generic types cannot range over.</li>
@@ -401,6 +401,22 @@ mh.invokeExact(System.out, "Hello, world.");
  * those of multiple arities.  It is impossible to represent such
  * genericity with a Java type parameter.</li>
  * </ul>
+ *
+ * <h1><a name="maxarity"></a>Arity limits</h1>
+ * The JVM imposes on all methods and constructors of any kind an absolute
+ * limit of 255 stacked arguments.  This limit can appear more restrictive
+ * in certain cases:
+ * <ul>
+ * <li>A {@code long} or {@code double} argument counts (for purposes of arity limits) as two argument slots.
+ * <li>A non-static method consumes an extra argument for the object on which the method is called.
+ * <li>A constructor consumes an extra argument for the object which is being constructed.
+ * <li>Since a method handle&rsquo;s {@code invoke} method (or other signature-polymorphic method) is non-virtual,
+ *     it consumes an extra argument for the method handle itself, in addition to any non-virtual receiver object.
+ * </ul>
+ * These limits imply that certain method handles cannot be created, solely because of the JVM limit on stacked arguments.
+ * For example, if a static JVM method accepts exactly 255 arguments, a method handle cannot be created for it.
+ * Attempts to create method handles with impossible method types lead to an {@link IllegalArgumentException}.
+ * In particular, a method handle&rsquo;s type must not have an arity of the exact maximum 255.
  *
  * @see MethodType
  * @see MethodHandles
@@ -420,6 +436,8 @@ public abstract class MethodHandle {
     private final MethodType type;
     /*private*/ final LambdaForm form;
     // form is not private so that invokers can easily fetch it
+    /*private*/ MethodHandle asTypeCache;
+    // asTypeCache is not private so that invokers can easily fetch it
 
     /**
      * Reports the type of this method handle.
@@ -557,10 +575,10 @@ public abstract class MethodHandle {
     /*non-public*/ static native @PolymorphicSignature Object linkToInterface(Object... args) throws Throwable;
 
     /**
-     * Performs a variable arity invocation, passing the arguments in the given array
+     * Performs a variable arity invocation, passing the arguments in the given list
      * to the method handle, as if via an inexact {@link #invoke invoke} from a call site
      * which mentions only the type {@code Object}, and whose arity is the length
-     * of the argument array.
+     * of the argument list.
      * <p>
      * Specifically, execution proceeds as if by the following steps,
      * although the methods are not guaranteed to be called if the JVM
@@ -590,10 +608,10 @@ public abstract class MethodHandle {
      * or forced to null if the return type is void.
      * <p>
      * This call is equivalent to the following code:
-     * <p><blockquote><pre>
+     * <p><blockquote><pre>{@code
      * MethodHandle invoker = MethodHandles.spreadInvoker(this.type(), 0);
      * Object result = invoker.invokeExact(this, arguments);
-     * </pre></blockquote>
+     * }</pre></blockquote>
      * <p>
      * Unlike the signature polymorphic methods {@code invokeExact} and {@code invoke},
      * {@code invokeWithArguments} can be accessed normally via the Core Reflection API and JNI.
@@ -626,7 +644,7 @@ public abstract class MethodHandle {
      * <p>
      * This method is also equivalent to the following code:
      * <p><blockquote><pre>
-     * {@link #invokeWithArguments(Object...) invokeWithArguments}(arguments.toArray())
+     * {@link #invokeWithArguments(Object...) invokeWithArguments}{@code(arguments.toArray())}
      * </pre></blockquote>
      *
      * @param arguments the arguments to pass to the target
@@ -739,10 +757,24 @@ public abstract class MethodHandle {
      * @see MethodHandles#explicitCastArguments
      */
     public MethodHandle asType(MethodType newType) {
-        if (!type.isConvertibleTo(newType)) {
-            throw new WrongMethodTypeException("cannot convert "+this+" to "+newType);
+        // Fast path alternative to a heavyweight {@code asType} call.
+        // Return 'this' if the conversion will be a no-op.
+        if (newType == type) {
+            return this;
         }
-        return convertArguments(newType);
+        // Return 'this.asTypeCache' if the conversion is already memoized.
+        MethodHandle atc = asTypeCache;
+        if (atc != null && newType == atc.type) {
+            return atc;
+        }
+        return asTypeUncached(newType);
+    }
+
+    /** Override this to change asType behavior. */
+    /*non-public*/ MethodHandle asTypeUncached(MethodType newType) {
+        if (!type.isConvertibleTo(newType))
+            throw new WrongMethodTypeException("cannot convert "+this+" to "+newType);
+        return asTypeCache = convertArguments(newType);
     }
 
     /**
@@ -772,6 +804,10 @@ public abstract class MethodHandle {
      * to the target method handle.
      * (The array may also be null when zero elements are required.)
      * <p>
+     * If, when the adapter is called, the supplied array argument does
+     * not have the correct number of elements, the adapter will throw
+     * an {@link IllegalArgumentException} instead of invoking the target.
+     * <p>
      * Here are some simple examples of array-spreading method handles:
      * <blockquote><pre>{@code
 MethodHandle equals = publicLookup()
@@ -782,6 +818,12 @@ assert(!(boolean) equals.invokeExact("me", (Object)"thee"));
 MethodHandle eq2 = equals.asSpreader(Object[].class, 2);
 assert( (boolean) eq2.invokeExact(new Object[]{ "me", "me" }));
 assert(!(boolean) eq2.invokeExact(new Object[]{ "me", "thee" }));
+// try to spread from anything but a 2-array:
+for (int n = 0; n <= 10; n++) {
+  Object[] badArityArgs = (n == 2 ? null : new Object[n]);
+  try { assert((boolean) eq2.invokeExact(badArityArgs) && false); }
+  catch (IllegalArgumentException ex) { } // OK
+}
 // spread both arguments from a String array:
 MethodHandle eq2s = equals.asSpreader(String[].class, 2);
 assert( (boolean) eq2s.invokeExact(new String[]{ "me", "me" }));
@@ -815,10 +857,12 @@ assertEquals("[A, B, C]", (String) caToString2.invokeExact('A', "BC".toCharArray
      * @return a new method handle which spreads its final array argument,
      *         before calling the original method handle
      * @throws NullPointerException if {@code arrayType} is a null reference
-     * @throws IllegalArgumentException if {@code arrayType} is not an array type
-     * @throws IllegalArgumentException if target does not have at least
+     * @throws IllegalArgumentException if {@code arrayType} is not an array type,
+     *         or if target does not have at least
      *         {@code arrayLength} parameter types,
-     *         or if {@code arrayLength} is negative
+     *         or if {@code arrayLength} is negative,
+     *         or if the resulting method handle's type would have
+     *         <a href="MethodHandle.html#maxarity">too many parameters</a>
      * @throws WrongMethodTypeException if the implied {@code asType} call fails
      * @see #asCollector
      */
@@ -931,7 +975,9 @@ assertEquals("[123]", (String) longsToString.invokeExact((long)123));
      * @throws NullPointerException if {@code arrayType} is a null reference
      * @throws IllegalArgumentException if {@code arrayType} is not an array type
      *         or {@code arrayType} is not assignable to this method handle's trailing parameter type,
-     *         or {@code arrayLength} is not a legal array size
+     *         or {@code arrayLength} is not a legal array size,
+     *         or the resulting method handle's type would have
+     *         <a href="MethodHandle.html#maxarity">too many parameters</a>
      * @throws WrongMethodTypeException if the implied {@code asType} call fails
      * @see #asSpreader
      * @see #asVarargsCollector
@@ -1226,9 +1272,9 @@ assertEquals("[three, thee, tee]", asListFix.invoke((Object)argv).toString());
      * starting with the string {@code "MethodHandle"} and
      * ending with the string representation of the method handle's type.
      * In other words, this method returns a string equal to the value of:
-     * <blockquote><pre>
+     * <blockquote><pre>{@code
      * "MethodHandle" + type().toString()
-     * </pre></blockquote>
+     * }</pre></blockquote>
      * <p>
      * (<em>Note:</em>  Future releases of this API may add further information
      * to the string representation.
@@ -1282,6 +1328,11 @@ assertEquals("[three, thee, tee]", asListFix.invoke((Object)argv).toString());
     /*non-public*/
     MemberName internalMemberName() {
         return null;  // DMH returns DMH.member
+    }
+
+    /*non-public*/
+    Class<?> internalCallerClass() {
+        return null;  // caller-bound MH for @CallerSensitive method returns caller
     }
 
     /*non-public*/
@@ -1434,7 +1485,6 @@ assertEquals("[three, thee, tee]", asListFix.invoke((Object)argv).toString());
      * Threads may continue running the old form indefinitely,
      * but it is likely that the new one will be preferred for new executions.
      * Use with discretion.
-     * @param newForm
      */
     /*non-public*/
     void updateForm(LambdaForm newForm) {

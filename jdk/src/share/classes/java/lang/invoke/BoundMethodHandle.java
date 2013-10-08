@@ -360,6 +360,10 @@ import jdk.internal.org.objectweb.asm.Type;
             return new Name(mh, mhName);
         }
 
+        NamedFunction getterFunction(int i) {
+            return new NamedFunction(getters[i]);
+        }
+
         static final SpeciesData EMPTY = new SpeciesData("", BoundMethodHandle.class);
 
         private SpeciesData(String types, Class<? extends BoundMethodHandle> clazz) {
@@ -394,6 +398,7 @@ import jdk.internal.org.objectweb.asm.Type;
         private boolean isPlaceholder() { return clazz == null; }
 
         private static final HashMap<String, SpeciesData> CACHE = new HashMap<>();
+        static { CACHE.put("", EMPTY); }  // make bootstrap predictable
         private static final boolean INIT_DONE;  // set after <clinit> finishes...
 
         SpeciesData extendWithType(char type) {
@@ -524,18 +529,18 @@ import jdk.internal.org.objectweb.asm.Type;
          * A concrete BMH species adheres to the following schema:
          *
          * <pre>
-         * class Species_<<types>> extends BoundMethodHandle {
-         *     <<fields>>
-         *     final SpeciesData speciesData() { return SpeciesData.get("<<types>>"); }
+         * class Species_[[types]] extends BoundMethodHandle {
+         *     [[fields]]
+         *     final SpeciesData speciesData() { return SpeciesData.get("[[types]]"); }
          * }
          * </pre>
          *
-         * The {@code <<types>>} signature is precisely the string that is passed to this
+         * The {@code [[types]]} signature is precisely the string that is passed to this
          * method.
          *
-         * The {@code <<fields>>} section consists of one field definition per character in
+         * The {@code [[fields]]} section consists of one field definition per character in
          * the type signature, adhering to the naming schema described in the definition of
-         * {@link #makeFieldName()}.
+         * {@link #makeFieldName}.
          *
          * For example, a concrete BMH species for two reference and one integral bound values
          * would have the following shape:
@@ -817,7 +822,7 @@ import jdk.internal.org.objectweb.asm.Type;
          * {@code <init>}. To avoid this, we add an indirection by invoking {@code <init>} through
          * {@link MethodHandle#linkToSpecial}.
          *
-         * The last {@link LambdaForm#Name Name} in the argument's form is expected to be the {@code void}
+         * The last {@link LambdaForm.Name Name} in the argument's form is expected to be the {@code void}
          * result of the {@code <init>} invocation. This entry is replaced.
          */
         private static MethodHandle linkConstructor(MethodHandle cmh) {

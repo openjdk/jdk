@@ -94,7 +94,7 @@ public final class SunPKCS11 extends AuthProvider {
     }
 
     public SunPKCS11() {
-        super("SunPKCS11-Dummy", 1.7d, "SunPKCS11-Dummy");
+        super("SunPKCS11-Dummy", 1.8d, "SunPKCS11-Dummy");
         throw new ProviderException
             ("SunPKCS11 requires configuration file argument");
     }
@@ -127,7 +127,7 @@ public final class SunPKCS11 extends AuthProvider {
     public SunPKCS11(String configName, InputStream configStream) {
         super("SunPKCS11-" +
             Config.getConfig(configName, configStream).getName(),
-            1.7d, Config.getConfig(configName, configStream).getDescription());
+            1.8d, Config.getConfig(configName, configStream).getDescription());
         this.configName = configName;
         this.config = Config.removeConfig(configName);
 

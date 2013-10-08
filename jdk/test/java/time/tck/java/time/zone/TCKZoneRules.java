@@ -103,28 +103,7 @@ public class TCKZoneRules {
     private static final int OVERLAP = 2;
     private static final int GAP = 0;
 
-    //-----------------------------------------------------------------------
-    // Basics
-    //-----------------------------------------------------------------------
-    public void test_serialization_loaded() throws Exception {
-        assertSerialization(europeLondon());
-        assertSerialization(europeParis());
-        assertSerialization(americaNewYork());
-    }
 
-    private void assertSerialization(ZoneRules test) throws Exception {
-        ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        ObjectOutputStream out = new ObjectOutputStream(baos);
-        out.writeObject(test);
-        baos.close();
-        byte[] bytes = baos.toByteArray();
-
-        ByteArrayInputStream bais = new ByteArrayInputStream(bytes);
-        ObjectInputStream in = new ObjectInputStream(bais);
-        ZoneRules result = (ZoneRules) in.readObject();
-
-        assertEquals(result, test);
-    }
 
     //-----------------------------------------------------------------------
     // Europe/London

@@ -169,7 +169,9 @@ final class Streams {
 
         private int splitPoint(long size) {
             int d = (size < BALANCED_SPLIT_THRESHOLD) ? 2 : RIGHT_BALANCED_SPLIT_RATIO;
-            // 2 <= size <= 2^32
+            // Cast to int is safe since:
+            //   2 <= size < 2^32
+            //   2 <= d <= 8
             return (int) (size / d);
         }
     }

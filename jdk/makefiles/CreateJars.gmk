@@ -1003,15 +1003,6 @@ endif
 
 ##########################################################################################
 
-ifndef OPENJDK
-    $(eval $(call SetupArchive,BUILD_ALT_RT_JAR,,\
-		SRCS:=$(JDK_OUTPUTDIR)/altclasses_classes,\
-		JAR:=$(IMAGES_OUTPUTDIR)/lib/alt-rt.jar))
-
-endif
-
-##########################################################################################
-
 # This file is imported from hotspot in Import.gmk. Copying it into images/lib so that
 # all jars can be found in one place when creating images in Images.gmk. It needs to be
 # done here so that clean targets can be simple and accurate.

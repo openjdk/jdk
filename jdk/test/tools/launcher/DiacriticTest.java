@@ -54,7 +54,13 @@ public class DiacriticTest extends TestHelper {
                 "}\n";
         ArrayList<String> content = new ArrayList<>();
         content.add(source);
-        createFile(sourceFile, content);
+        try {
+            createFile(sourceFile, content);
+        } catch (java.nio.file.InvalidPathException ipe) {
+            System.out.println("The locale or file system is configured in a way " +
+                               "that prevents file creation. Real testing impossible.");
+            return;
+        }
 
         HashMap<String, String> env = new HashMap<>();
         env.put("LC_CTYPE", "UTF-8");

@@ -104,6 +104,13 @@ import java.util.stream.StreamSupport;
  * the specified behavior of underlying {@link Object} methods wherever the
  * implementor deems it appropriate.
  *
+ * <p>Some collection operations which perform recursive traversal of the
+ * collection may fail with an exception for self-referential instances where
+ * the collection directly or indirectly contains itself. This includes the
+ * {@code clone()}, {@code equals()}, {@code hashCode()} and {@code toString()}
+ * methods. Implementations may optionally handle the self-referential scenario,
+ * however most current implementations do not do so.
+ *
  * <p>This interface is a member of the
  * <a href="{@docRoot}/../technotes/guides/collections/index.html">
  * Java Collections Framework</a>.
@@ -379,8 +386,8 @@ public interface Collection<E> extends Iterable<E> {
 
     /**
      * Removes all of the elements of this collection that satisfy the given
-     * predicate.  Errors or runtime exceptions thrown by the predicate are
-     * relayed to the caller.
+     * predicate.  Errors or runtime exceptions thrown during iteration or by
+     * the predicate are relayed to the caller.
      *
      * @implSpec
      * The default implementation traverses all elements of the collection using
@@ -393,9 +400,10 @@ public interface Collection<E> extends Iterable<E> {
      *        removed
      * @return {@code true} if any elements were removed
      * @throws NullPointerException if the specified filter is null
-     * @throws UnsupportedOperationException if the {@code remove}
-     *         method is not supported by this collection's
-     *         {@link #iterator}
+     * @throws UnsupportedOperationException if elements cannot be removed
+     *         from this collection.  Implementations may throw this exception if a
+     *         matching element cannot be removed or if, in general, removal is not
+     *         supported.
      * @since 1.8
      */
     default boolean removeIf(Predicate<? super E> filter) {
@@ -502,12 +510,10 @@ public interface Collection<E> extends Iterable<E> {
     /**
      * Creates a {@link Spliterator} over the elements in this collection.
      *
-     * <p>The returned {@code Spliterator} must report the characteristic
-     * {@link Spliterator#SIZED}; implementations should document any additional
-     * characteristic values reported by the returned spliterator.  If
-     * this collection contains no elements then the returned spliterator is
-     * only required to report {@link Spliterator#SIZED} and is not required to
-     * report additional characteristic values (if any).
+     * Implementations should document characteristic values reported by the
+     * spliterator.  Such characteristic values are not required to be reported
+     * if the spliterator reports {@link Spliterator#SIZED} and this collection
+     * contains no elements.
      *
      * <p>The default implementation should be overridden by subclasses that
      * can return a more efficient spliterator.  In order to
@@ -533,9 +539,11 @@ public interface Collection<E> extends Iterable<E> {
      * <em><a href="Spliterator.html#binding">late-binding</a></em> spliterator
      * from the collections's {@code Iterator}.  The spliterator inherits the
      * <em>fail-fast</em> properties of the collection's iterator.
+     * <p>
+     * The created {@code Spliterator} reports {@link Spliterator#SIZED}.
      *
      * @implNote
-     * The returned {@code Spliterator} additionally reports
+     * The created {@code Spliterator} additionally reports
      * {@link Spliterator#SUBSIZED}.
      *
      * <p>If a spliterator covers no elements then the reporting of additional

@@ -77,6 +77,7 @@ import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.Month;
+import java.time.Period;
 import java.time.Year;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
@@ -563,6 +564,24 @@ public final class IsoChronology extends Chronology implements Serializable {
     @Override
     public ValueRange range(ChronoField field) {
         return field.range();
+    }
+
+    //-----------------------------------------------------------------------
+    /**
+     * Obtains a period for this chronology based on years, months and days.
+     * <p>
+     * This returns a period tied to the ISO chronology using the specified
+     * years, months and days. See {@link Period} for further details.
+     *
+     * @param years  the number of years, may be negative
+     * @param months  the number of years, may be negative
+     * @param days  the number of years, may be negative
+     * @return the period in terms of this chronology, not null
+     * @return the ISO period, not null
+     */
+    @Override  // override with covariant return type
+    public Period period(int years, int months, int days) {
+        return Period.of(years, months, days);
     }
 
     //-----------------------------------------------------------------------

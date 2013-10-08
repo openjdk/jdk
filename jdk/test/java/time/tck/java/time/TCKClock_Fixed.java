@@ -80,12 +80,6 @@ public class TCKClock_Fixed extends AbstractTCKTest {
     private static final ZoneId PARIS = ZoneId.of("Europe/Paris");
     private static final Instant INSTANT = LocalDateTime.of(2008, 6, 30, 11, 30, 10, 500).atZone(ZoneOffset.ofHours(2)).toInstant();
 
-    //-----------------------------------------------------------------------
-    public void test_isSerializable() throws IOException, ClassNotFoundException {
-        assertSerializable(Clock.fixed(INSTANT, ZoneOffset.UTC));
-        assertSerializable(Clock.fixed(INSTANT, PARIS));
-    }
-
     //-------------------------------------------------------------------------
     public void test_fixed_InstantZoneId() {
         Clock test = Clock.fixed(INSTANT, PARIS);

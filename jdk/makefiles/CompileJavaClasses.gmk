@@ -237,10 +237,10 @@ endif
 
 # These files do not appear in the build result of the old build. This
 # is because they are generated sources, but the AUTO_JAVA_FILES won't
-# pick them up since they aren't generated when the source dirs are 
+# pick them up since they aren't generated when the source dirs are
 # searched and they aren't referenced by any other classes so they won't
 # be picked up by implicit compilation. On a rebuild, they are picked up
-# and compiled. Exclude them here to produce the same rt.jar as the old 
+# and compiled. Exclude them here to produce the same rt.jar as the old
 # build does when building just once.
 EXFILES+=javax/swing/plaf/nimbus/InternalFrameTitlePanePainter.java \
 	 javax/swing/plaf/nimbus/OptionPaneMessageAreaPainter.java \
@@ -305,19 +305,6 @@ $(eval $(call SetupJavaCompilation,BUILD_JDK,\
 		COPY:=$(COPY_PATTERNS),\
 		COPY_FILES:=$(COPY_FILES),\
 		HEADERS:=$(JDK_OUTPUTDIR)/gensrc_headers))
-
-##########################################################################################
-
-ifndef OPENJDK
-
-    $(eval $(call SetupJavaCompilation,BUILD_ALTCLASSES,\
-		SETUP:=GENERATE_JDKBYTECODE,\
-		SRC:=$(JDK_TOPDIR)/src/closed/share/altclasses, \
-		BIN:=$(JDK_OUTPUTDIR)/altclasses_classes))
-
-    $(BUILD_ALTCLASSES): $(BUILD_JDK)
-
-endif
 
 ##########################################################################################
 
@@ -403,7 +390,7 @@ endif
 
 ##########################################################################################
 
-all: $(BUILD_JDK) $(BUILD_ALTCLASSES) $(BUILD_JOBJC) $(BUILD_JOBJC_HEADERS) $(COPY_EXTRA) \
+all: $(BUILD_JDK) $(BUILD_JOBJC) $(BUILD_JOBJC_HEADERS) $(COPY_EXTRA) \
 	$(JDK_OUTPUTDIR)/classes/META-INF/services/com.sun.tools.xjc.Plugin \
 	$(BUILD_ACCESSBRIDGE_32) $(BUILD_ACCESSBRIDGE_64) \
 	$(BUILD_ACCESSBRIDGE_LEGACY)

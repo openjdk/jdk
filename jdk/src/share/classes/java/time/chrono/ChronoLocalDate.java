@@ -69,7 +69,6 @@ import static java.time.temporal.ChronoUnit.DAYS;
 import java.time.DateTimeException;
 import java.time.LocalDate;
 import java.time.LocalTime;
-import java.time.Period;
 import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoField;
 import java.time.temporal.ChronoUnit;
@@ -292,6 +291,7 @@ public interface ChronoLocalDate
         if (temporal instanceof ChronoLocalDate) {
             return (ChronoLocalDate) temporal;
         }
+        Objects.requireNonNull(temporal, "temporal");
         Chronology chrono = temporal.query(TemporalQuery.chronology());
         if (chrono == null) {
             throw new DateTimeException("Unable to obtain ChronoLocalDate from TemporalAccessor: " + temporal.getClass());
@@ -428,7 +428,7 @@ public interface ChronoLocalDate
      */
     @Override
     default ChronoLocalDate with(TemporalAdjuster adjuster) {
-        return ChronoDateImpl.ensureValid(getChronology(), Temporal.super.with(adjuster));
+        return ChronoLocalDateImpl.ensureValid(getChronology(), Temporal.super.with(adjuster));
     }
 
     /**
@@ -442,7 +442,7 @@ public interface ChronoLocalDate
         if (field instanceof ChronoField) {
             throw new UnsupportedTemporalTypeException("Unsupported field: " + field);
         }
-        return ChronoDateImpl.ensureValid(getChronology(), field.adjustInto(this, newValue));
+        return ChronoLocalDateImpl.ensureValid(getChronology(), field.adjustInto(this, newValue));
     }
 
     /**
@@ -452,7 +452,7 @@ public interface ChronoLocalDate
      */
     @Override
     default ChronoLocalDate plus(TemporalAmount amount) {
-        return ChronoDateImpl.ensureValid(getChronology(), Temporal.super.plus(amount));
+        return ChronoLocalDateImpl.ensureValid(getChronology(), Temporal.super.plus(amount));
     }
 
     /**
@@ -465,7 +465,7 @@ public interface ChronoLocalDate
         if (unit instanceof ChronoUnit) {
             throw new UnsupportedTemporalTypeException("Unsupported unit: " + unit);
         }
-        return ChronoDateImpl.ensureValid(getChronology(), unit.addTo(this, amountToAdd));
+        return ChronoLocalDateImpl.ensureValid(getChronology(), unit.addTo(this, amountToAdd));
     }
 
     /**
@@ -475,7 +475,7 @@ public interface ChronoLocalDate
      */
     @Override
     default ChronoLocalDate minus(TemporalAmount amount) {
-        return ChronoDateImpl.ensureValid(getChronology(), Temporal.super.minus(amount));
+        return ChronoLocalDateImpl.ensureValid(getChronology(), Temporal.super.minus(amount));
     }
 
     /**
@@ -486,7 +486,7 @@ public interface ChronoLocalDate
      */
     @Override
     default ChronoLocalDate minus(long amountToSubtract, TemporalUnit unit) {
-        return ChronoDateImpl.ensureValid(getChronology(), Temporal.super.minus(amountToSubtract, unit));
+        return ChronoLocalDateImpl.ensureValid(getChronology(), Temporal.super.minus(amountToSubtract, unit));
     }
 
     //-----------------------------------------------------------------------
@@ -561,8 +561,8 @@ public interface ChronoLocalDate
      * objects in terms of a single {@code TemporalUnit}.
      * The start and end points are {@code this} and the specified date.
      * The result will be negative if the end is before the start.
-     * The {@code Temporal} passed to this method must be a
-     * {@code ChronoLocalDate} in the same chronology.
+     * The {@code Temporal} passed to this method is converted to a
+     * {@code ChronoLocalDate} using {@link Chronology#date(TemporalAccessor)}.
      * The calculation returns a whole number, representing the number of
      * complete units between the two dates.
      * For example, the amount in days between two dates can be calculated
@@ -586,25 +586,30 @@ public interface ChronoLocalDate
      * <p>
      * If the unit is not a {@code ChronoUnit}, then the result of this method
      * is obtained by invoking {@code TemporalUnit.between(Temporal, Temporal)}
-     * passing {@code this} as the first argument and the input temporal as
+     * passing {@code this} as the first argument and the converted input temporal as
      * the second argument.
      * <p>
      * This instance is immutable and unaffected by this method call.
      *
-     * @param endDate  the end date, which must be a {@code ChronoLocalDate}
-     *  in the same chronology, not null
+     * @param endExclusive  the end date, exclusive, which is converted to a
+     *  {@code ChronoLocalDate} in the same chronology, not null
      * @param unit  the unit to measure the amount in, not null
      * @return the amount of time between this date and the end date
-     * @throws DateTimeException if the amount cannot be calculated
+     * @throws DateTimeException if the amount cannot be calculated, or the end
+     *  temporal cannot be converted to a {@code ChronoLocalDate}
+     * @throws UnsupportedTemporalTypeException if the unit is not supported
      * @throws ArithmeticException if numeric overflow occurs
      */
     @Override  // override for Javadoc
-    long until(Temporal endDate, TemporalUnit unit);
+    long until(Temporal endExclusive, TemporalUnit unit);
 
     /**
-     * Calculates the period between this date and another date as a {@code Period}.
+     * Calculates the period between this date and another date as a {@code ChronoPeriod}.
      * <p>
-     * This calculates the period between two dates in terms of years, months and days.
+     * This calculates the period between two dates. All supplied chronologies
+     * calculate the period using years, months and days, however the
+     * {@code ChronoPeriod} API allows the period to be represented using other units.
+     * <p>
      * The start and end points are {@code this} and the specified date.
      * The result will be negative if the end is before the start.
      * The negative sign will be the same in each of year, month and day.
@@ -614,12 +619,12 @@ public interface ChronoLocalDate
      * <p>
      * This instance is immutable and unaffected by this method call.
      *
-     * @param endDate  the end date, exclusive, which may be in any chronology, not null
+     * @param endDateExclusive  the end date, exclusive, which may be in any chronology, not null
      * @return the period between this date and the end date, not null
      * @throws DateTimeException if the period cannot be calculated
      * @throws ArithmeticException if numeric overflow occurs
      */
-    Period until(ChronoLocalDate endDate);
+    ChronoPeriod until(ChronoLocalDate endDateExclusive);
 
     /**
      * Formats this date using the specified formatter.

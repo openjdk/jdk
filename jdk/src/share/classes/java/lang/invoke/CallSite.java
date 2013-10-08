@@ -60,7 +60,7 @@ import static java.lang.invoke.MethodHandles.Lookup.IMPL_LOOKUP;
  * <p>
  * Here is a sample use of call sites and bootstrap methods which links every
  * dynamic call site to print its arguments:
-<blockquote><pre><!-- see indy-demo/src/PrintArgsDemo.java -->
+<blockquote><pre>{@code
 static void test() throws Throwable {
     // THE FOLLOWING LINE IS PSEUDOCODE FOR A JVM INSTRUCTION
     InvokeDynamic[#bootstrapDynamic].baz("baz arg", 2, 3.14);
@@ -79,7 +79,7 @@ private static CallSite bootstrapDynamic(MethodHandles.Lookup caller, String nam
   // ignore caller and name, but match the type:
   return new ConstantCallSite(printArgs.asType(type));
 }
-</pre></blockquote>
+}</pre></blockquote>
  * @author John Rose, JSR 292 EG
  */
 abstract
@@ -199,12 +199,12 @@ public class CallSite {
      * which has been linked to this call site.
      * <p>
      * This method is equivalent to the following code:
-     * <blockquote><pre>
+     * <blockquote><pre>{@code
      * MethodHandle getTarget, invoker, result;
      * getTarget = MethodHandles.publicLookup().bind(this, "getTarget", MethodType.methodType(MethodHandle.class));
      * invoker = MethodHandles.exactInvoker(this.type());
      * result = MethodHandles.foldArguments(invoker, getTarget)
-     * </pre></blockquote>
+     * }</pre></blockquote>
      *
      * @return a method handle which always invokes this call site's current target
      */
@@ -261,7 +261,7 @@ public class CallSite {
                              Object info,
                              // Caller information:
                              Class<?> callerClass) {
-        Object caller = IMPL_LOOKUP.in(callerClass);
+        MethodHandles.Lookup caller = IMPL_LOOKUP.in(callerClass);
         CallSite site;
         try {
             Object binding;
@@ -273,14 +273,44 @@ public class CallSite {
             } else {
                 Object[] argv = (Object[]) info;
                 maybeReBoxElements(argv);
-                if (3 + argv.length > 255)
-                    throw new BootstrapMethodError("too many bootstrap method arguments");
-                MethodType bsmType = bootstrapMethod.type();
-                if (bsmType.parameterCount() == 4 && bsmType.parameterType(3) == Object[].class)
-                    binding = bootstrapMethod.invoke(caller, name, type, argv);
-                else
-                    binding = MethodHandles.spreadInvoker(bsmType, 3)
-                        .invoke(bootstrapMethod, caller, name, type, argv);
+                switch (argv.length) {
+                case 0:
+                    binding = bootstrapMethod.invoke(caller, name, type);
+                    break;
+                case 1:
+                    binding = bootstrapMethod.invoke(caller, name, type,
+                                                     argv[0]);
+                    break;
+                case 2:
+                    binding = bootstrapMethod.invoke(caller, name, type,
+                                                     argv[0], argv[1]);
+                    break;
+                case 3:
+                    binding = bootstrapMethod.invoke(caller, name, type,
+                                                     argv[0], argv[1], argv[2]);
+                    break;
+                case 4:
+                    binding = bootstrapMethod.invoke(caller, name, type,
+                                                     argv[0], argv[1], argv[2], argv[3]);
+                    break;
+                case 5:
+                    binding = bootstrapMethod.invoke(caller, name, type,
+                                                     argv[0], argv[1], argv[2], argv[3], argv[4]);
+                    break;
+                case 6:
+                    binding = bootstrapMethod.invoke(caller, name, type,
+                                                     argv[0], argv[1], argv[2], argv[3], argv[4], argv[5]);
+                    break;
+                default:
+                    final int NON_SPREAD_ARG_COUNT = 3;  // (caller, name, type)
+                    if (NON_SPREAD_ARG_COUNT + argv.length > MethodType.MAX_MH_ARITY)
+                        throw new BootstrapMethodError("too many bootstrap method arguments");
+                    MethodType bsmType = bootstrapMethod.type();
+                    MethodType invocationType = MethodType.genericMethodType(NON_SPREAD_ARG_COUNT + argv.length);
+                    MethodHandle typedBSM = bootstrapMethod.asType(invocationType);
+                    MethodHandle spreader = invocationType.invokers().spreadInvoker(NON_SPREAD_ARG_COUNT);
+                    binding = spreader.invokeExact(typedBSM, (Object)caller, (Object)name, (Object)type, argv);
+                }
             }
             //System.out.println("BSM for "+name+type+" => "+binding);
             if (binding instanceof CallSite) {
