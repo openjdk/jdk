@@ -1050,7 +1050,7 @@ void VMError::report_and_die() {
         FILE* replay_data_file = os::open(fd, "w");
         if (replay_data_file != NULL) {
           fileStream replay_data_stream(replay_data_file, /*need_close=*/true);
-          env->dump_replay_data(&replay_data_stream);
+          env->dump_replay_data_unsafe(&replay_data_stream);
           out.print_raw("#\n# Compiler replay data is saved as:\n# ");
           out.print_raw_cr(buffer);
         } else {

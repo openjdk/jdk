@@ -2122,7 +2122,7 @@ Node* GraphKit::dstore_rounding(Node* n) {
 // Null check oop.  Set null-path control into Region in slot 3.
 // Make a cast-not-nullness use the other not-null control.  Return cast.
 Node* GraphKit::null_check_oop(Node* value, Node* *null_control,
-                               bool never_see_null) {
+                               bool never_see_null, bool safe_for_replace) {
   // Initial NULL check taken path
   (*null_control) = top();
   Node* cast = null_check_common(value, T_OBJECT, false, null_control);
@@ -2139,6 +2139,9 @@ Node* GraphKit::null_check_oop(Node* value, Node* *null_control,
     uncommon_trap(Deoptimization::Reason_null_check,
                   Deoptimization::Action_make_not_entrant);
     (*null_control) = top();    // NULL path is dead
+  }
+  if ((*null_control) == top() && safe_for_replace) {
+    replace_in_map(value, cast);
   }
 
   // Cast away null-ness on the result
@@ -2634,15 +2637,17 @@ Node* GraphKit::gen_instanceof(Node* obj, Node* superklass) {
   C->set_has_split_ifs(true); // Has chance for split-if optimization
 
   ciProfileData* data = NULL;
+  bool safe_for_replace = false;
   if (java_bc() == Bytecodes::_instanceof) {  // Only for the bytecode
     data = method()->method_data()->bci_to_data(bci());
+    safe_for_replace = true;
   }
   bool never_see_null = (ProfileDynamicTypes  // aggressive use of profile
                          && seems_never_null(obj, data));
 
   // Null check; get casted pointer; set region slot 3
   Node* null_ctl = top();
-  Node* not_null_obj = null_check_oop(obj, &null_ctl, never_see_null);
+  Node* not_null_obj = null_check_oop(obj, &null_ctl, never_see_null, safe_for_replace);
 
   // If not_null_obj is dead, only null-path is taken
   if (stopped()) {              // Doing instance-of on a NULL?
@@ -2723,11 +2728,13 @@ Node* GraphKit::gen_checkcast(Node *obj, Node* superklass,
   }
 
   ciProfileData* data = NULL;
+  bool safe_for_replace = false;
   if (failure_control == NULL) {        // use MDO in regular case only
     assert(java_bc() == Bytecodes::_aastore ||
            java_bc() == Bytecodes::_checkcast,
            "interpreter profiles type checks only for these BCs");
     data = method()->method_data()->bci_to_data(bci());
+    safe_for_replace = true;
   }
 
   // Make the merge point
@@ -2742,7 +2749,7 @@ Node* GraphKit::gen_checkcast(Node *obj, Node* superklass,
 
   // Null check; get casted pointer; set region slot 3
   Node* null_ctl = top();
-  Node* not_null_obj = null_check_oop(obj, &null_ctl, never_see_null);
+  Node* not_null_obj = null_check_oop(obj, &null_ctl, never_see_null, safe_for_replace);
 
   // If not_null_obj is dead, only null-path is taken
   if (stopped()) {              // Doing instance-of on a NULL?
