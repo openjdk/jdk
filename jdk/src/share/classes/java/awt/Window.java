@@ -2197,8 +2197,8 @@ public class Window extends Container implements Accessible {
      * windows.  To detect if always-on-top windows are supported by the
      * current platform, use {@link Toolkit#isAlwaysOnTopSupported()} and
      * {@link Window#isAlwaysOnTopSupported()}.  If always-on-top mode
-     * isn't supported by the toolkit or for this window, calling this
-     * method has no effect.
+     * isn't supported for this window or this window's toolkit does not
+     * support always-on-top windows, calling this method has no effect.
      * <p>
      * If a SecurityManager is installed, the calling thread must be
      * granted the AWTPermission "setWindowAlwaysOnTop" in
@@ -2211,11 +2211,13 @@ public class Window extends Container implements Accessible {
      *        windows
      * @throws SecurityException if the calling thread does not have
      *         permission to set the value of always-on-top property
+     *
      * @see #isAlwaysOnTop
      * @see #toFront
      * @see #toBack
      * @see AWTPermission
      * @see #isAlwaysOnTopSupported
+     * @see #getToolkit
      * @see Toolkit#isAlwaysOnTopSupported
      * @since 1.5
      */
@@ -2248,11 +2250,13 @@ public class Window extends Container implements Accessible {
      * window. Some platforms may not support always-on-top windows, some
      * may support only some kinds of top-level windows; for example,
      * a platform may not support always-on-top modal dialogs.
-     * @return {@code true}, if the always-on-top mode is
-     *         supported by the toolkit and for this window,
-     *         {@code false}, if always-on-top mode is not supported
-     *         for this window or toolkit doesn't support always-on-top windows.
+     *
+     * @return {@code true}, if the always-on-top mode is supported for
+     *         this window and this window's toolkit supports always-on-top windows,
+     *         {@code false} otherwise
+     *
      * @see #setAlwaysOnTop(boolean)
+     * @see #getToolkit
      * @see Toolkit#isAlwaysOnTopSupported
      * @since 1.6
      */

@@ -546,9 +546,6 @@ public abstract class WComponentPeer extends WObjectPeer
             return null;
         }
     }
-    public java.awt.Toolkit getToolkit() {
-        return Toolkit.getDefaultToolkit();
-    }
 
     // fallback default font object
     final static Font defaultFont = new Font(Font.DIALOG, Font.PLAIN, 12);
@@ -739,11 +736,11 @@ public abstract class WComponentPeer extends WObjectPeer
     }
 
     public boolean prepareImage(Image img, int w, int h, ImageObserver o) {
-        return getToolkit().prepareImage(img, w, h, o);
+        return Toolkit.getDefaultToolkit().prepareImage(img, w, h, o);
     }
 
     public int checkImage(Image img, int w, int h, ImageObserver o) {
-        return getToolkit().checkImage(img, w, h, o);
+        return Toolkit.getDefaultToolkit().checkImage(img, w, h, o);
     }
 
     // Object overrides
