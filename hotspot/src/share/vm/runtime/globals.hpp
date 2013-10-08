@@ -3727,6 +3727,9 @@ class CommandLineFlags {
   product(uintx, StringTableSize, defaultStringTableSize,                   \
           "Number of buckets in the interned String table")                 \
                                                                             \
+  experimental(uintx, SymbolTableSize, defaultSymbolTableSize,              \
+          "Number of buckets in the JVM internal Symbol table")             \
+                                                                            \
   develop(bool, TraceDefaultMethods, false,                                 \
           "Trace the default method processing steps")                      \
                                                                             \
