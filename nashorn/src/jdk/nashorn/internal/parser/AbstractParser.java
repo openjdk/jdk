@@ -378,7 +378,7 @@ public abstract class AbstractParser {
             next();
 
             // Create IDENT node.
-            return new IdentNode(identToken, finish, ident);
+            return new IdentNode(identToken, finish, ident).setIsFutureStrictName();
         }
 
         // Get IDENT.
