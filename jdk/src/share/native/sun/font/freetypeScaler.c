@@ -252,7 +252,6 @@ Java_sun_font_FreetypeFontScaler_initNativeScaler(
         JNIEnv *env, jobject scaler, jobject font2D, jint type,
         jint indexInCollection, jboolean supportsCJK, jint filesize) {
     FTScalerInfo* scalerInfo = NULL;
-    FT_Stream ftstream;
     FT_Open_Args ft_open_args;
     int error;
     jobject bBuffer;
@@ -309,34 +308,36 @@ Java_sun_font_FreetypeFontScaler_initNativeScaler(
         }
     } else { /* Truetype */
         scalerInfo->fontData = (unsigned char*) malloc(FILEDATACACHESIZE);
-        ftstream = (FT_Stream) calloc(1, sizeof(FT_StreamRec));
 
-        if (ftstream != NULL && scalerInfo->fontData != NULL) {
-            scalerInfo->directBuffer = (*env)->NewDirectByteBuffer(env,
-                                        scalerInfo->fontData,
-                                        FILEDATACACHESIZE);
-            if (scalerInfo->directBuffer != NULL) {
-                scalerInfo->directBuffer = (*env)->NewGlobalRef(env,
-                                            scalerInfo->directBuffer);
-                ftstream->base = NULL;
-                ftstream->size = filesize;
-                ftstream->pos = 0;
-                ftstream->read = (FT_Stream_IoFunc) ReadTTFontFileFunc;
-                ftstream->close = (FT_Stream_CloseFunc) CloseTTFontFileFunc;
-                ftstream->pathname.pointer = (void *) scalerInfo;
+        if (scalerInfo->fontData != NULL) {
+            FT_Stream ftstream = (FT_Stream) calloc(1, sizeof(FT_StreamRec));
+            if (ftstream != NULL) {
+                scalerInfo->directBuffer = (*env)->NewDirectByteBuffer(env,
+                                           scalerInfo->fontData,
+                                           FILEDATACACHESIZE);
+                if (scalerInfo->directBuffer != NULL) {
+                    scalerInfo->directBuffer = (*env)->NewGlobalRef(env,
+                                               scalerInfo->directBuffer);
+                    ftstream->base = NULL;
+                    ftstream->size = filesize;
+                    ftstream->pos = 0;
+                    ftstream->read = (FT_Stream_IoFunc) ReadTTFontFileFunc;
+                    ftstream->close = (FT_Stream_CloseFunc) CloseTTFontFileFunc;
+                    ftstream->pathname.pointer = (void *) scalerInfo;
 
-                memset(&ft_open_args, 0, sizeof(FT_Open_Args));
-                ft_open_args.flags = FT_OPEN_STREAM;
-                ft_open_args.stream = ftstream;
+                    memset(&ft_open_args, 0, sizeof(FT_Open_Args));
+                    ft_open_args.flags = FT_OPEN_STREAM;
+                    ft_open_args.stream = ftstream;
 
-                error = FT_Open_Face(scalerInfo->library,
-                                     &ft_open_args,
-                                     indexInCollection,
-                                     &scalerInfo->face);
-           }
-           if (error || scalerInfo->directBuffer == NULL) {
-               free(ftstream);
-           }
+                    error = FT_Open_Face(scalerInfo->library,
+                                         &ft_open_args,
+                                         indexInCollection,
+                                         &scalerInfo->face);
+                }
+                if (error || scalerInfo->directBuffer == NULL) {
+                    free(ftstream);
+                }
+            }
         }
     }
 
@@ -902,13 +903,13 @@ Java_sun_font_FreetypeFontScaler_getLayoutTableCacheNative(
  */
 JNIEXPORT void JNICALL
 Java_sun_font_FreetypeFontScaler_disposeNativeScaler(
-        JNIEnv *env, jobject scaler, jlong pScaler) {
+        JNIEnv *env, jobject scaler, jobject font2D, jlong pScaler) {
     FTScalerInfo* scalerInfo = (FTScalerInfo *) jlong_to_ptr(pScaler);
 
     /* Freetype functions *may* cause callback to java
        that can use cached values. Make sure our cache is up to date.
        NB: scaler context is not important at this point, can use NULL. */
-    int errCode = setupFTContext(env, scaler, scalerInfo, NULL);
+    int errCode = setupFTContext(env, font2D, scalerInfo, NULL);
     if (errCode) {
         return;
     }
@@ -957,7 +958,8 @@ Java_sun_font_FreetypeFontScaler_getMissingGlyphCodeNative(
  */
 JNIEXPORT jint JNICALL
 Java_sun_font_FreetypeFontScaler_getGlyphCodeNative(
-        JNIEnv *env, jobject scaler, jlong pScaler, jchar charCode) {
+        JNIEnv *env, jobject scaler,
+        jobject font2D, jlong pScaler, jchar charCode) {
 
     FTScalerInfo* scalerInfo = (FTScalerInfo *) jlong_to_ptr(pScaler);
     int errCode;
@@ -970,7 +972,7 @@ Java_sun_font_FreetypeFontScaler_getGlyphCodeNative(
     /* Freetype functions *may* cause callback to java
        that can use cached values. Make sure our cache is up to date.
        Scaler context is not important here, can use NULL. */
-    errCode = setupFTContext(env, scaler, scalerInfo, NULL);
+    errCode = setupFTContext(env, font2D, scalerInfo, NULL);
     if (errCode) {
         return 0;
     }

@@ -653,12 +653,15 @@ Java_sun_java2d_pipe_ShapeSpanIterator_appendPoly
                     pd->curx = x;
                     pd->cury = y;
                 }
+                (*env)->ReleasePrimitiveArrayCritical(env, yArray,
+                                                      yPoints, JNI_ABORT);
             }
-            (*env)->ReleasePrimitiveArrayCritical(env, yArray,
-                                                  yPoints, JNI_ABORT);
+            (*env)->ReleasePrimitiveArrayCritical(env, xArray,
+                                                  xPoints, JNI_ABORT);
         }
-        (*env)->ReleasePrimitiveArrayCritical(env, xArray,
-                                              xPoints, JNI_ABORT);
+        if (xPoints == NULL || yPoints == NULL) {
+            return;
+        }
     }
     if (!oom) {
         HANDLEENDPATH(pd, {oom = JNI_TRUE;});
