@@ -97,6 +97,7 @@ final class XTextFieldPeer extends XComponentPeer implements TextFieldPeer {
         firstChangeSkipped = true;
     }
 
+    @Override
     public void dispose() {
         XToolkit.specialPeerMap.remove(xtext);
         // visible caret has a timer thread which must be stopped
@@ -136,10 +137,10 @@ final class XTextFieldPeer extends XComponentPeer implements TextFieldPeer {
         setFont(font);
     }
 
-
     /**
      * @see java.awt.peer.TextComponentPeer
      */
+    @Override
     public void setEditable(boolean editable) {
         if (xtext != null) {
             xtext.setEditable(editable);
@@ -150,6 +151,7 @@ final class XTextFieldPeer extends XComponentPeer implements TextFieldPeer {
     /**
      * @see java.awt.peer.ComponentPeer
      */
+    @Override
     public void setEnabled(boolean enabled) {
         super.setEnabled(enabled);
         if (xtext != null) {
@@ -161,22 +163,23 @@ final class XTextFieldPeer extends XComponentPeer implements TextFieldPeer {
     /**
      * @see java.awt.peer.TextComponentPeer
      */
-
+    @Override
     public InputMethodRequests getInputMethodRequests() {
         if (xtext != null) return xtext.getInputMethodRequests();
         else  return null;
 
     }
 
+    @Override
     void handleJavaInputMethodEvent(InputMethodEvent e) {
         if (xtext != null)
             xtext.processInputMethodEventImpl(e);
     }
 
-
     /**
      * @see java.awt.peer.TextFieldPeer
      */
+    @Override
     public void setEchoChar(char c) {
         if (xtext != null) {
             xtext.setEchoChar(c);
@@ -188,6 +191,7 @@ final class XTextFieldPeer extends XComponentPeer implements TextFieldPeer {
     /**
      * @see java.awt.peer.TextComponentPeer
      */
+    @Override
     public int getSelectionStart() {
         return xtext.getSelectionStart();
     }
@@ -195,6 +199,7 @@ final class XTextFieldPeer extends XComponentPeer implements TextFieldPeer {
     /**
      * @see java.awt.peer.TextComponentPeer
      */
+    @Override
     public int getSelectionEnd() {
         return xtext.getSelectionEnd();
     }
@@ -202,6 +207,7 @@ final class XTextFieldPeer extends XComponentPeer implements TextFieldPeer {
     /**
      * @see java.awt.peer.TextComponentPeer
      */
+    @Override
     public String getText() {
         return xtext.getText();
     }
@@ -209,12 +215,13 @@ final class XTextFieldPeer extends XComponentPeer implements TextFieldPeer {
     /**
      * @see java.awt.peer.TextComponentPeer
      */
-    public void setText(String txt) {
-        setXAWTTextField(txt);
+    @Override
+    public void setText(String text) {
+        setXAWTTextField(text);
         repaint();
     }
 
-    private boolean setXAWTTextField(String txt) {
+    private void setXAWTTextField(String txt) {
         text = txt;
         if (xtext != null)  {
             // JTextField.setText() posts two different events (remove & insert).
@@ -229,29 +236,22 @@ final class XTextFieldPeer extends XComponentPeer implements TextFieldPeer {
             xtext.getDocument().addDocumentListener(xtext);
             xtext.setCaretPosition(0);
         }
-        return true;
     }
 
     /**
      * to be implemented.
      * @see java.awt.peer.TextComponentPeer
      */
+    @Override
     public void setCaretPosition(int position) {
         if (xtext != null) xtext.setCaretPosition(position);
-    }
-
-    /**
-     * DEPRECATED
-     * @see java.awt.peer.TextFieldPeer
-     */
-    public void setEchoCharacter(char c) {
-        setEchoChar(c);
     }
 
     void repaintText() {
         xtext.repaintNow();
     }
 
+    @Override
     public void setBackground(Color c) {
         if (log.isLoggable(PlatformLogger.Level.FINE)) {
             log.fine("target="+ target + ", old=" + background + ", new=" + c);
@@ -264,6 +264,7 @@ final class XTextFieldPeer extends XComponentPeer implements TextFieldPeer {
         repaintText();
     }
 
+    @Override
     public void setForeground(Color c) {
         foreground = c;
         if (xtext != null) {
@@ -274,6 +275,7 @@ final class XTextFieldPeer extends XComponentPeer implements TextFieldPeer {
         repaintText();
     }
 
+    @Override
     public void setFont(Font f) {
         synchronized (getStateLock()) {
             font = f;
@@ -282,14 +284,6 @@ final class XTextFieldPeer extends XComponentPeer implements TextFieldPeer {
             }
         }
         xtext.validate();
-    }
-
-    /**
-     * DEPRECATED
-     * @see java.awt.peer.TextFieldPeer
-     */
-    public Dimension preferredSize(int cols) {
-        return getPreferredSize(cols);
     }
 
     /**
@@ -303,20 +297,19 @@ final class XTextFieldPeer extends XComponentPeer implements TextFieldPeer {
         }
     }
 
-
     /**
      * to be implemented.
      * @see java.awt.peer.TextComponentPeer
      */
+    @Override
     public int getCaretPosition() {
         return xtext.getCaretPosition();
     }
 
-
-
     /**
      * @see java.awt.peer.TextComponentPeer
      */
+    @Override
     public void select(int s, int e) {
         xtext.select(s,e);
         // Fixed 5100806
@@ -324,29 +317,32 @@ final class XTextFieldPeer extends XComponentPeer implements TextFieldPeer {
         xtext.repaint();
     }
 
-
+    @Override
     public Dimension getMinimumSize() {
         return xtext.getMinimumSize();
     }
 
+    @Override
     public Dimension getPreferredSize() {
         return xtext.getPreferredSize();
     }
 
+    @Override
     public Dimension getPreferredSize(int cols) {
         return getMinimumSize(cols);
     }
 
     private static final int PADDING = 16;
 
+    @Override
     public Dimension getMinimumSize(int cols) {
         Font f = xtext.getFont();
         FontMetrics fm = xtext.getFontMetrics(f);
         return new Dimension(fm.charWidth('0') * cols + 10,
                              fm.getMaxDescent() + fm.getMaxAscent() + PADDING);
-
     }
 
+    @Override
     public boolean isFocusable() {
         return true;
     }
@@ -359,11 +355,10 @@ final class XTextFieldPeer extends XComponentPeer implements TextFieldPeer {
                                   modifiers));
     }
 
-
     protected void disposeImpl() {
     }
 
-
+    @Override
     public void repaint() {
         if (xtext  != null) xtext.repaint();
     }
@@ -372,27 +367,32 @@ final class XTextFieldPeer extends XComponentPeer implements TextFieldPeer {
         if (xtext  != null) xtext.paint(g);
     }
 
+    @Override
     public void print(Graphics g) {
         if (xtext != null) {
             xtext.print(g);
         }
     }
 
+    @Override
     public void focusLost(FocusEvent e) {
         super.focusLost(e);
         xtext.forwardFocusLost(e);
     }
 
+    @Override
     public void focusGained(FocusEvent e) {
         super.focusGained(e);
         xtext.forwardFocusGained(e);
     }
 
+    @Override
     void handleJavaKeyEvent(KeyEvent e) {
         AWTAccessor.getComponentAccessor().processEvent(xtext,e);
     }
 
 
+    @Override
     public void handleJavaMouseEvent( MouseEvent mouseEvent ) {
         super.handleJavaMouseEvent(mouseEvent);
         if (xtext != null)  {
@@ -405,26 +405,21 @@ final class XTextFieldPeer extends XComponentPeer implements TextFieldPeer {
         }
     }
 
-
     /**
      * DEPRECATED
      */
+    @Override
     public Dimension minimumSize() {
         return getMinimumSize();
     }
 
-    /**
-     * DEPRECATED
-     */
-    public Dimension minimumSize(int cols) {
-        return getMinimumSize(cols);
-    }
-
+    @Override
     public void setVisible(boolean b) {
         super.setVisible(b);
         if (xtext != null) xtext.setVisible(b);
     }
 
+    @Override
     public void setBounds(int x, int y, int width, int height, int op) {
         super.setBounds(x, y, width, height, op);
         if (xtext != null) {
@@ -451,47 +446,11 @@ final class XTextFieldPeer extends XComponentPeer implements TextFieldPeer {
         }
     }
 
+    final class AWTTextFieldUI extends MotifPasswordFieldUI {
 
-    //
-    // Accessibility support
-    //
+        private JTextField jtf;
 
-    // stub functions: to be fully implemented in a future release
-    public int getIndexAtPoint(int x, int y) { return -1; }
-    public Rectangle getCharacterBounds(int i) { return null; }
-    public long filterEvents(long mask) { return 0; }
-
-
-    /*  To be fully implemented in a future release
-
-        int oldSelectionStart;
-        int oldSelectionEnd;
-
-        public native int getIndexAtPoint(int x, int y);
-        public native Rectangle getCharacterBounds(int i);
-        public native long filterEvents(long mask);
-
-        /**
-         * Handle a change in the text selection endpoints
-         * (Note: could be simply a change in the caret location)
-         *
-         public void selectionValuesChanged(int start, int end) {
-         return;  // Need to write implemetation of this.
-         }
-    */
-
-
-    class  AWTTextFieldUI extends MotifPasswordFieldUI {
-
-        /**
-         * Creates a UI for a JTextField.
-         *
-         * @param c the text field
-         * @return the UI
-         */
-        JTextField jtf;
-
-
+        @Override
         protected String getPropertyPrefix() {
             JTextComponent comp = getComponent();
             if (comp instanceof JPasswordField && ((JPasswordField)comp).echoCharIsSet()) {
@@ -501,6 +460,7 @@ final class XTextFieldPeer extends XComponentPeer implements TextFieldPeer {
             }
         }
 
+        @Override
         public void installUI(JComponent c) {
             super.installUI(c);
 
@@ -557,6 +517,7 @@ final class XTextFieldPeer extends XComponentPeer implements TextFieldPeer {
             }
         }
 
+        @Override
         protected void installKeyboardActions() {
             super.installKeyboardActions();
 
@@ -574,21 +535,19 @@ final class XTextFieldPeer extends XComponentPeer implements TextFieldPeer {
             }
         }
 
+        @Override
         protected Caret createCaret() {
             return new XTextAreaPeer.XAWTCaret();
         }
     }
 
-    class XAWTTextField extends JPasswordField
-        implements ActionListener,
-                   DocumentListener
-    {
+    final class XAWTTextField extends JPasswordField
+            implements ActionListener, DocumentListener {
 
-        boolean isFocused = false;
+        private boolean isFocused = false;
+        private final XComponentPeer peer;
 
-        XComponentPeer peer;
-
-        public XAWTTextField(String text, XComponentPeer peer, Container parent) {
+        XAWTTextField(String text, XComponentPeer peer, Container parent) {
             super(text);
             this.peer = peer;
             setDoubleBuffered(true);
@@ -603,6 +562,7 @@ final class XTextFieldPeer extends XComponentPeer implements TextFieldPeer {
 
         }
 
+        @Override
         public void actionPerformed( ActionEvent actionEvent ) {
             peer.postEvent(new ActionEvent(peer.target,
                                            ActionEvent.ACTION_PERFORMED,
@@ -612,6 +572,7 @@ final class XTextFieldPeer extends XComponentPeer implements TextFieldPeer {
 
         }
 
+        @Override
         public void insertUpdate(DocumentEvent e) {
             if (peer != null) {
                 peer.postEvent(new TextEvent(peer.target,
@@ -619,6 +580,7 @@ final class XTextFieldPeer extends XComponentPeer implements TextFieldPeer {
             }
         }
 
+        @Override
         public void removeUpdate(DocumentEvent e) {
             if (peer != null) {
                 peer.postEvent(new TextEvent(peer.target,
@@ -626,6 +588,7 @@ final class XTextFieldPeer extends XComponentPeer implements TextFieldPeer {
             }
         }
 
+        @Override
         public void changedUpdate(DocumentEvent e) {
             if (peer != null) {
                 peer.postEvent(new TextEvent(peer.target,
@@ -633,32 +596,31 @@ final class XTextFieldPeer extends XComponentPeer implements TextFieldPeer {
             }
         }
 
+        @Override
         public ComponentPeer getPeer() {
             return (ComponentPeer) peer;
         }
-
 
         public void repaintNow() {
             paintImmediately(getBounds());
         }
 
+        @Override
         public Graphics getGraphics() {
             return peer.getGraphics();
         }
 
+        @Override
         public void updateUI() {
             ComponentUI ui = new AWTTextFieldUI();
             setUI(ui);
         }
 
-
         void forwardFocusGained( FocusEvent e) {
             isFocused = true;
             FocusEvent fe = CausedFocusEvent.retarget(e, this);
             super.processFocusEvent(fe);
-
         }
-
 
         void forwardFocusLost( FocusEvent e) {
             isFocused = false;
@@ -667,10 +629,10 @@ final class XTextFieldPeer extends XComponentPeer implements TextFieldPeer {
 
         }
 
+        @Override
         public boolean hasFocus() {
             return isFocused;
         }
-
 
         public void processInputMethodEventImpl(InputMethodEvent e) {
             processInputMethodEvent(e);
@@ -686,6 +648,7 @@ final class XTextFieldPeer extends XComponentPeer implements TextFieldPeer {
 
         // Fix for 4915454 - override the default implementation to avoid
         // loading SystemFlavorMap and associated classes.
+        @Override
         public void setTransferHandler(TransferHandler newHandler) {
             TransferHandler oldHandler = (TransferHandler)
                 getClientProperty(AWTAccessor.getClientPropertyKeyAccessor()
@@ -697,6 +660,7 @@ final class XTextFieldPeer extends XComponentPeer implements TextFieldPeer {
             firePropertyChange("transferHandler", oldHandler, newHandler);
         }
 
+        @Override
         public void setEchoChar(char c) {
             super.setEchoChar(c);
             ((AWTTextFieldUI)ui).installKeyboardActions();

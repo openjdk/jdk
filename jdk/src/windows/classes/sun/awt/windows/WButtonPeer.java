@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,7 +29,7 @@ import java.awt.peer.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.KeyEvent;
 
-class WButtonPeer extends WComponentPeer implements ButtonPeer {
+final class WButtonPeer extends WComponentPeer implements ButtonPeer {
 
     static {
         initIDs();
@@ -81,13 +81,6 @@ class WButtonPeer extends WComponentPeer implements ButtonPeer {
 
     public boolean shouldClearRectBeforePaint() {
         return false;
-    }
-
-    /**
-     * DEPRECATED
-     */
-    public Dimension minimumSize() {
-        return getMinimumSize();
     }
 
     /**
