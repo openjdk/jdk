@@ -35,10 +35,12 @@ import static com.sun.crypto.provider.AESConstants.AES_BLOCK_SIZE;
  * This class represents ciphers in GaloisCounter (GCM) mode.
  *
  * <p>This mode currently should only be used w/ AES cipher.
- * Although no checking is done here, caller should only
- * pass AES Cipher to the constructor.
+ * Although no checking is done, caller should only pass AES
+ * Cipher to the constructor.
  *
- * <p>NOTE: This class does not deal with buffering or padding.
+ * <p>NOTE: Unlike other modes, when used for decryption, this class
+ * will buffer all processed outputs internally and won't return them
+ * until the tag has been successfully verified.
  *
  * @since 1.8
  */
@@ -50,6 +52,9 @@ final class GaloisCounterMode extends FeedbackCipher {
     // buffer for AAD data; if null, meaning update has been called
     private ByteArrayOutputStream aadBuffer = new ByteArrayOutputStream();
     private int sizeOfAAD = 0;
+
+    // buffer for storing input in decryption, not used for encryption
+    private ByteArrayOutputStream ibuffer = null;
 
     // in bytes; need to convert to bits (default value 128) when needed
     private int tagLenBytes = DEFAULT_TAG_LEN;
@@ -68,12 +73,14 @@ final class GaloisCounterMode extends FeedbackCipher {
     // additional variables for save/restore calls
     private byte[] aadBufferSave = null;
     private int sizeOfAADSave = 0;
+    private byte[] ibufferSave = null;
     private int processedSave = 0;
 
     // value must be 16-byte long; used by GCTR and GHASH as well
     static void increment32(byte[] value) {
         if (value.length != AES_BLOCK_SIZE) {
-            throw new RuntimeException("Unexpected counter block length");
+            // should never happen
+            throw new ProviderException("Illegal counter block length");
         }
         // start from last byte and only go over 4 bytes, i.e. total 32 bits
         int n = value.length - 1;
@@ -171,6 +178,9 @@ final class GaloisCounterMode extends FeedbackCipher {
         if (ghashAllToS != null) ghashAllToS.reset();
         processed = 0;
         sizeOfAAD = 0;
+        if (ibuffer != null) {
+            ibuffer.reset();
+        }
     }
 
     /**
@@ -184,6 +194,9 @@ final class GaloisCounterMode extends FeedbackCipher {
              null : aadBuffer.toByteArray());
         if (gctrPAndC != null) gctrPAndC.save();
         if (ghashAllToS != null) ghashAllToS.save();
+        if (ibuffer != null) {
+            ibufferSave = ibuffer.toByteArray();
+        }
     }
 
     /**
@@ -198,8 +211,12 @@ final class GaloisCounterMode extends FeedbackCipher {
                 aadBuffer.write(aadBufferSave, 0, aadBufferSave.length);
             }
         }
-       if (gctrPAndC != null) gctrPAndC.restore();
-       if (ghashAllToS != null) ghashAllToS.restore();
+        if (gctrPAndC != null) gctrPAndC.restore();
+        if (ghashAllToS != null) ghashAllToS.restore();
+        if (ibuffer != null) {
+            ibuffer.reset();
+            ibuffer.write(ibufferSave, 0, ibufferSave.length);
+        }
     }
 
     /**
@@ -261,6 +278,9 @@ final class GaloisCounterMode extends FeedbackCipher {
         }
         processed = 0;
         sizeOfAAD = 0;
+        if (decrypting) {
+            ibuffer = new ByteArrayOutputStream();
+        }
     }
 
     /**
@@ -299,7 +319,7 @@ final class GaloisCounterMode extends FeedbackCipher {
 
     // Feed the AAD data to GHASH, pad if necessary
     void processAAD() {
-        if (aadBuffer != null) {
+        if (aadBuffer != null && aadBuffer.size() > 0) {
             byte[] aad = aadBuffer.toByteArray();
             sizeOfAAD = aad.length;
             aadBuffer = null;
@@ -365,13 +385,14 @@ final class GaloisCounterMode extends FeedbackCipher {
      * @param out the buffer for the result
      * @param outOfs the offset in <code>out</code>
      */
-    void encrypt(byte[] in, int inOfs, int len, byte[] out, int outOfs) {
+    int encrypt(byte[] in, int inOfs, int len, byte[] out, int outOfs) {
         processAAD();
         if (len > 0) {
             gctrPAndC.update(in, inOfs, len, out, outOfs);
             processed += len;
             ghashAllToS.update(out, outOfs, len);
         }
+        return len;
     }
 
     /**
@@ -387,28 +408,28 @@ final class GaloisCounterMode extends FeedbackCipher {
      * @param outOfs the offset in <code>out</code>
      * @return the number of bytes placed into the <code>out</code> buffer
      */
-     int encryptFinal(byte[] in, int inOfs, int len, byte[] out, int outOfs)
-         throws IllegalBlockSizeException {
-         if (out.length - outOfs < (len + tagLenBytes)) {
-             throw new RuntimeException("Output buffer too small");
-         }
+    int encryptFinal(byte[] in, int inOfs, int len, byte[] out, int outOfs)
+        throws IllegalBlockSizeException, ShortBufferException {
+        if (out.length - outOfs < (len + tagLenBytes)) {
+            throw new ShortBufferException("Output buffer too small");
+        }
 
-         processAAD();
-         if (len > 0) {
-             //ByteUtil.dumpArray(Arrays.copyOfRange(in, inOfs, inOfs + len));
-             doLastBlock(in, inOfs, len, out, outOfs, true);
-         }
+        processAAD();
+        if (len > 0) {
+            doLastBlock(in, inOfs, len, out, outOfs, true);
+        }
 
-         byte[] lengthBlock = getLengthBlock(sizeOfAAD*8, processed*8);
-         ghashAllToS.update(lengthBlock);
-         byte[] s = ghashAllToS.digest();
-         byte[] sOut = new byte[s.length];
-         GCTR gctrForSToTag = new GCTR(embeddedCipher, this.preCounterBlock);
-         gctrForSToTag.doFinal(s, 0, s.length, sOut, 0);
+        byte[] lengthBlock =
+            getLengthBlock(sizeOfAAD*8, processed*8);
+        ghashAllToS.update(lengthBlock);
+        byte[] s = ghashAllToS.digest();
+        byte[] sOut = new byte[s.length];
+        GCTR gctrForSToTag = new GCTR(embeddedCipher, this.preCounterBlock);
+        gctrForSToTag.doFinal(s, 0, s.length, sOut, 0);
 
-         System.arraycopy(sOut, 0, out, (outOfs + len), tagLenBytes);
-         return (len + tagLenBytes);
-     }
+        System.arraycopy(sOut, 0, out, (outOfs + len), tagLenBytes);
+        return (len + tagLenBytes);
+    }
 
     /**
      * Performs decryption operation.
@@ -432,14 +453,16 @@ final class GaloisCounterMode extends FeedbackCipher {
      * @param out the buffer for the result
      * @param outOfs the offset in <code>out</code>
      */
-    void decrypt(byte[] in, int inOfs, int len, byte[] out, int outOfs) {
+    int decrypt(byte[] in, int inOfs, int len, byte[] out, int outOfs) {
         processAAD();
 
-        if (len > 0) { // must be at least AES_BLOCK_SIZE bytes long
-            gctrPAndC.update(in, inOfs, len, out, outOfs);
-            processed += len;
-            ghashAllToS.update(in, inOfs, len);
+        if (len > 0) {
+            // store internally until decryptFinal is called because
+            // spec mentioned that only return recovered data after tag
+            // is successfully verified
+            ibuffer.write(in, inOfs, len);
         }
+        return 0;
     }
 
     /**
@@ -458,44 +481,62 @@ final class GaloisCounterMode extends FeedbackCipher {
      * @param outOfs the offset in <code>plain</code>
      * @return the number of bytes placed into the <code>out</code> buffer
      */
-     int decryptFinal(byte[] in, int inOfs, int len,
-                      byte[] out, int outOfs)
-         throws IllegalBlockSizeException, AEADBadTagException {
-         if (len < tagLenBytes) {
-             throw new RuntimeException("Input buffer too short - need tag");
-         }
-         if (out.length - outOfs < (len - tagLenBytes)) {
-             throw new RuntimeException("Output buffer too small");
-         }
-         processAAD();
+    int decryptFinal(byte[] in, int inOfs, int len,
+                     byte[] out, int outOfs)
+        throws IllegalBlockSizeException, AEADBadTagException,
+        ShortBufferException {
+        if (len < tagLenBytes) {
+            throw new AEADBadTagException("Input too short - need tag");
+        }
+        if (out.length - outOfs < ((ibuffer.size() + len) - tagLenBytes)) {
+            throw new ShortBufferException("Output buffer too small");
+        }
+        processAAD();
+        if (len != 0) {
+            ibuffer.write(in, inOfs, len);
+        }
 
-         int processedOld = processed;
-         byte[] tag = new byte[tagLenBytes];
-         // get the trailing tag bytes from 'in'
-         System.arraycopy(in, inOfs + len - tagLenBytes, tag, 0, tagLenBytes);
-         len -= tagLenBytes;
+        // refresh 'in' to all buffered-up bytes
+        in = ibuffer.toByteArray();
+        inOfs = 0;
+        len = in.length;
+        ibuffer.reset();
 
-         if (len > 0) {
-             doLastBlock(in, inOfs, len, out, outOfs, false);
-         }
+        byte[] tag = new byte[tagLenBytes];
+        // get the trailing tag bytes from 'in'
+        System.arraycopy(in, len - tagLenBytes, tag, 0, tagLenBytes);
+        len -= tagLenBytes;
 
-         byte[] lengthBlock = getLengthBlock(sizeOfAAD*8, processed*8);
-         ghashAllToS.update(lengthBlock);
+        if (len > 0) {
+            doLastBlock(in, inOfs, len, out, outOfs, false);
+        }
 
-         byte[] s = ghashAllToS.digest();
-         byte[] sOut = new byte[s.length];
-         GCTR gctrForSToTag = new GCTR(embeddedCipher, this.preCounterBlock);
-         gctrForSToTag.doFinal(s, 0, s.length, sOut, 0);
-         for (int i = 0; i < tagLenBytes; i++) {
-             if (tag[i] != sOut[i]) {
-                 throw new AEADBadTagException("Tag mismatch!");
-             }
-         }
-         return len;
-     }
+        byte[] lengthBlock =
+            getLengthBlock(sizeOfAAD*8, processed*8);
+        ghashAllToS.update(lengthBlock);
+
+        byte[] s = ghashAllToS.digest();
+        byte[] sOut = new byte[s.length];
+        GCTR gctrForSToTag = new GCTR(embeddedCipher, this.preCounterBlock);
+        gctrForSToTag.doFinal(s, 0, s.length, sOut, 0);
+        for (int i = 0; i < tagLenBytes; i++) {
+            if (tag[i] != sOut[i]) {
+                throw new AEADBadTagException("Tag mismatch!");
+            }
+        }
+        return len;
+    }
 
     // return tag length in bytes
     int getTagLen() {
         return this.tagLenBytes;
+    }
+
+    int getBufferedLength() {
+        if (ibuffer == null) {
+            return 0;
+        } else {
+            return ibuffer.size();
+        }
     }
 }
