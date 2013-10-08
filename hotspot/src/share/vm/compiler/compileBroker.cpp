@@ -1953,6 +1953,10 @@ void CompileBroker::handle_full_code_cache() {
       // Since code cache is full, immediately stop new compiles
       if (CompileBroker::set_should_compile_new_jobs(CompileBroker::stop_compilation)) {
         NMethodSweeper::log_sweep("disable_compiler");
+
+        // Switch to 'vm_state'. This ensures that possibly_sweep() can be called
+        // without having to consider the state in which the current thread is.
+        ThreadInVMfromUnknown in_vm;
         NMethodSweeper::possibly_sweep();
       }
     } else {
