@@ -1993,11 +1993,15 @@ public class ClassReader {
                 (flags & ABSTRACT) == 0 && !name.equals(names.clinit)) {
             if (majorVersion > Target.JDK1_8.majorVersion ||
                     (majorVersion == Target.JDK1_8.majorVersion && minorVersion >= Target.JDK1_8.minorVersion)) {
-                currentOwner.flags_field |= DEFAULT;
-                flags |= DEFAULT | ABSTRACT;
+                if ((flags & STATIC) == 0) {
+                    currentOwner.flags_field |= DEFAULT;
+                    flags |= DEFAULT | ABSTRACT;
+                }
             } else {
                 //protect against ill-formed classfiles
-                throw new CompletionFailure(currentOwner, "default method found in pre JDK 8 classfile");
+                throw badClassFile((flags & STATIC) == 0 ? "invalid.default.interface" : "invalid.static.interface",
+                                   Integer.toString(majorVersion),
+                                   Integer.toString(minorVersion));
             }
         }
         if (name == names.init && currentOwner.hasOuterInstance()) {
