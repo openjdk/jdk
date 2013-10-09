@@ -2893,7 +2893,7 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
         final Label  falseLabel = new Label("ternary_false");
         final Label  exitLabel  = new Label("ternary_exit");
 
-        Type widest = Type.widest(trueExpr.getType(), falseExpr.getType());
+        Type widest = Type.widest(ternaryNode.getType(), Type.widest(trueExpr.getType(), falseExpr.getType()));
         if (trueExpr.getType().isArray() || falseExpr.getType().isArray()) { //loadArray creates a Java array type on the stack, calls global allocate, which creates a native array type
             widest = Type.OBJECT;
         }
@@ -2904,7 +2904,7 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
         // we still keep the conversion here as the AccessSpecializer can have separated the types, e.g. var y = x ? x=55 : 17
         // will left as (Object)x=55 : (Object)17 by Lower. Then the first term can be {I}x=55 of type int, which breaks the
         // symmetry for the temporary slot for this TernaryNode. This is evidence that we assign types and explicit conversions
-        // to early, or Apply the AccessSpecializer too late. We are mostly probably looking for a separate type pass to
+        // too early, or Apply the AccessSpecializer too late. We are mostly probably looking for a separate type pass to
         // do this property. Then we never need any conversions in CodeGenerator
         method.ifeq(falseLabel);
         load(trueExpr);
