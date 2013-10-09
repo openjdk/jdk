@@ -35,6 +35,7 @@ package com.sun.jdi.request;
  * @author Robert Field
  * @since  1.3
  */
+@jdk.Exported
 public class InvalidRequestStateException extends RuntimeException {
     private static final long serialVersionUID = -3774632428543322148L;
     public InvalidRequestStateException()

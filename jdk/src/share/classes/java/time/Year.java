@@ -249,7 +249,8 @@ public final class Year
             }
             return of(temporal.get(YEAR));
         } catch (DateTimeException ex) {
-            throw new DateTimeException("Unable to obtain Year from TemporalAccessor: " + temporal.getClass(), ex);
+            throw new DateTimeException("Unable to obtain Year from TemporalAccessor: " +
+                    temporal + " of type " + temporal.getClass().getName(), ex);
         }
     }
 

@@ -126,9 +126,10 @@ public class TCKDateTimeFormatters {
     @Test
     public void test_pattern_String() {
         DateTimeFormatter test = DateTimeFormatter.ofPattern("d MMM yyyy");
+        Locale fmtLocale = Locale.getDefault(Locale.Category.FORMAT);
         assertEquals(test.format(LocalDate.of(2012, 6, 30)), "30 " +
-                Month.JUNE.getDisplayName(TextStyle.SHORT, Locale.getDefault()) + " 2012");
-        assertEquals(test.getLocale(), Locale.getDefault());
+                Month.JUNE.getDisplayName(TextStyle.SHORT, fmtLocale) + " 2012");
+        assertEquals(test.getLocale(), fmtLocale, "Locale.Category.FORMAT");
     }
 
     @Test(expectedExceptions=IllegalArgumentException.class)
