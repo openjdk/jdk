@@ -28,10 +28,13 @@ package jdk.nashorn.internal.ir;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+
 import jdk.nashorn.internal.codegen.CompileUnit;
+import jdk.nashorn.internal.codegen.types.ArrayType;
 import jdk.nashorn.internal.codegen.types.Type;
 import jdk.nashorn.internal.ir.annotations.Immutable;
 import jdk.nashorn.internal.ir.visitor.NodeVisitor;
+import jdk.nashorn.internal.objects.NativeArray;
 import jdk.nashorn.internal.parser.Lexer.LexerToken;
 import jdk.nashorn.internal.parser.Token;
 import jdk.nashorn.internal.parser.TokenType;
@@ -526,12 +529,6 @@ public abstract class LiteralNode<T> extends Expression implements PropertyKey {
             return object;
         } else if (object instanceof LiteralNode) {
             return objectAsConstant(((LiteralNode<?>)object).getValue());
-        } else if (object instanceof UnaryNode) {
-            final UnaryNode unaryNode = (UnaryNode)object;
-
-            if (unaryNode.isTokenType(TokenType.CONVERT) && unaryNode.getType().isObject()) {
-                return objectAsConstant(unaryNode.rhs());
-            }
         }
 
         return POSTSET_MARKER;
@@ -782,8 +779,7 @@ public abstract class LiteralNode<T> extends Expression implements PropertyKey {
             return value;
         }
 
-        @Override
-        public Type getType() {
+        public ArrayType getArrayType() {
             if (elementType.isInteger()) {
                 return Type.INT_ARRAY;
             } else if (elementType.isLong()) {
@@ -793,6 +789,11 @@ public abstract class LiteralNode<T> extends Expression implements PropertyKey {
             } else {
                 return Type.OBJECT_ARRAY;
             }
+        }
+
+        @Override
+        public Type getType() {
+            return Type.typeFor(NativeArray.class);
         }
 
         /**

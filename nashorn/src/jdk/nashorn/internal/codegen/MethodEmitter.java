@@ -69,7 +69,6 @@ import java.io.PrintStream;
 import java.lang.reflect.Array;
 import java.util.EnumSet;
 import java.util.List;
-
 import jdk.internal.dynalink.support.NameCodec;
 import jdk.internal.org.objectweb.asm.Handle;
 import jdk.internal.org.objectweb.asm.MethodVisitor;
@@ -1560,7 +1559,7 @@ public class MethodEmitter implements Emitter {
     MethodEmitter convert(final Type to) {
         final Type type = peekType().convert(method, to);
         if (type != null) {
-            if (peekType() != to) {
+            if (!peekType().isEquivalentTo(to)) {
                 debug("convert", peekType(), "->", to);
             }
             popType();
@@ -1790,15 +1789,14 @@ public class MethodEmitter implements Emitter {
      * @param name      name of property
      * @param flags     call site flags
      */
-     void dynamicSet(final Type valueType, final String name, final int flags) {
+     void dynamicSet(final String name, final int flags) {
         debug("dynamic_set", name, peekType());
 
-        Type type = valueType;
-        if (type.isObject() || type.isBoolean()) { //promote strings to objects etc
+        Type type = peekType();
+        if (type.isObject()) { //promote strings to objects etc
             type = Type.OBJECT;
             convert(Type.OBJECT); //TODO bad- until we specialize boolean setters,
         }
-
         popType(type);
         popType(Type.SCOPE);
 
