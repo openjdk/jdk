@@ -26,9 +26,11 @@
 package sun.nio.ch;
 
 import java.io.IOException;
+import java.security.AccessController;
 import java.util.BitSet;
 import java.util.HashMap;
 import java.util.Map;
+import sun.security.action.GetIntegerAction;
 
 /**
  * Manipulates a native array of epoll_event structs on Linux:
@@ -78,8 +80,8 @@ class EPollArrayWrapper {
     private static final int INITIAL_PENDING_UPDATE_SIZE = 64;
 
     // maximum size of updatesLow
-    private static final int MAX_UPDATE_ARRAY_SIZE = Math.min(OPEN_MAX, 64*1024);
-
+    private static final int MAX_UPDATE_ARRAY_SIZE = AccessController.doPrivileged(
+        new GetIntegerAction("sun.nio.ch.maxUpdateArraySize", Math.min(OPEN_MAX, 64*1024)));
 
     // The fd of the epoll driver
     private final int epfd;
@@ -164,6 +166,16 @@ class EPollArrayWrapper {
     }
 
     /**
+     * Returns {@code true} if updates for the given key (file
+     * descriptor) are killed.
+     */
+    private boolean isEventsHighKilled(Integer key) {
+        assert key >= MAX_UPDATE_ARRAY_SIZE;
+        Byte value = eventsHigh.get(key);
+        return (value != null && value == KILLED);
+    }
+
+    /**
      * Sets the pending update events for the given file descriptor. This
      * method has no effect if the update events is already set to KILLED,
      * unless {@code force} is {@code true}.
@@ -175,7 +187,7 @@ class EPollArrayWrapper {
             }
         } else {
             Integer key = Integer.valueOf(fd);
-            if ((eventsHigh.get(key) != KILLED) || force) {
+            if (!isEventsHighKilled(key) || force) {
                 eventsHigh.put(key, Byte.valueOf(events));
             }
         }

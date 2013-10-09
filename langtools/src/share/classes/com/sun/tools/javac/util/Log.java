@@ -123,7 +123,7 @@ public class Log extends AbstractLog {
      * active diagnostic handler.
      */
     public static class DeferredDiagnosticHandler extends DiagnosticHandler {
-        private Queue<JCDiagnostic> deferred = ListBuffer.lb();
+        private Queue<JCDiagnostic> deferred = new ListBuffer<>();
         private final Filter<JCDiagnostic> filter;
 
         public DeferredDiagnosticHandler(Log log) {

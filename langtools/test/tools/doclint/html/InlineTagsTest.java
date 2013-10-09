@@ -39,6 +39,7 @@ public class InlineTagsTest {
      *  <br>
      *  <cite> abc </cite>
      *  <code> abc </code>
+     *  <dfn> abc </dfn>
      *  <em> abc </em>
      *  <font> abc </font>
      *  <i> abc </i>

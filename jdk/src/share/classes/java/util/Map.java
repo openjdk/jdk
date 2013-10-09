@@ -934,6 +934,7 @@ public interface Map<K,V> {
      */
     default V computeIfAbsent(K key,
             Function<? super K, ? extends V> mappingFunction) {
+        Objects.requireNonNull(mappingFunction);
         V v, newValue;
         return ((v = get(key)) == null &&
                 (newValue = mappingFunction.apply(key)) != null &&
@@ -992,6 +993,7 @@ public interface Map<K,V> {
      */
     default V computeIfPresent(K key,
             BiFunction<? super K, ? super V, ? extends V> remappingFunction) {
+        Objects.requireNonNull(remappingFunction);
         V oldValue;
         while ((oldValue = get(key)) != null) {
             V newValue = remappingFunction.apply(key, oldValue);
@@ -1068,6 +1070,7 @@ public interface Map<K,V> {
      */
     default V compute(K key,
             BiFunction<? super K, ? super V, ? extends V> remappingFunction) {
+        Objects.requireNonNull(remappingFunction);
         V oldValue = get(key);
         for (;;) {
             V newValue = remappingFunction.apply(key, oldValue);
@@ -1174,6 +1177,7 @@ public interface Map<K,V> {
      */
     default V merge(K key, V value,
             BiFunction<? super V, ? super V, ? extends V> remappingFunction) {
+        Objects.requireNonNull(remappingFunction);
         V oldValue = get(key);
         for (;;) {
             if (oldValue != null) {

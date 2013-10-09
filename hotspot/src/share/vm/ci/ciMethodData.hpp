@@ -232,8 +232,6 @@ private:
 public:
   bool is_method_data() const { return true; }
 
-  void set_mature() { _state = mature_state; }
-
   bool is_empty()  { return _state == empty_state; }
   bool is_mature() { return _state == mature_state; }
 

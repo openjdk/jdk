@@ -1016,8 +1016,8 @@ with_cacerts_file
 enable_unlimited_crypto
 with_milestone
 with_update_version
-with_build_number
 with_user_release_suffix
+with_build_number
 with_boot_jdk
 with_boot_jdk_jvmargs
 with_add_source_root
@@ -1755,10 +1755,10 @@ Optional Packages:
   --with-cacerts-file     specify alternative cacerts file
   --with-milestone        Set milestone value for build [internal]
   --with-update-version   Set update version value for build [b00]
-  --with-build-number     Set build number value for build [b00]
   --with-user-release-suffix
                           Add a custom string to the version string if build
                           number isn't set.[username_builddateb00]
+  --with-build-number     Set build number value for build [b00]
   --with-boot-jdk         path to Boot JDK (used to bootstrap build) [probed]
   --with-boot-jdk-jvmargs specify JVM arguments to be passed to all
                           invocations of the Boot JDK, overriding the default
@@ -3818,7 +3818,7 @@ fi
 #CUSTOM_AUTOCONF_INCLUDE
 
 # Do not change or remove the following line, it is needed for consistency checks:
-DATE_WHEN_GENERATED=1379504921
+DATE_WHEN_GENERATED=1381162713
 
 ###############################################################################
 #
@@ -10935,7 +10935,7 @@ BUILD_HEADLESS="BUILD_HEADLESS:=true"
 
 if test "x$SUPPORT_HEADFUL" = xyes; then
     # We are building both headful and headless.
-    headful_msg="inlude support for both headful and headless"
+    headful_msg="include support for both headful and headless"
 fi
 
 if test "x$SUPPORT_HEADFUL" = xno; then
@@ -11048,6 +11048,18 @@ elif test "x$with_update_version" != x; then
 fi
 
 
+# Check whether --with-user-release-suffix was given.
+if test "${with_user_release_suffix+set}" = set; then :
+  withval=$with_user_release_suffix;
+fi
+
+if test "x$with_user_release_suffix" = xyes; then
+  as_fn_error $? "Release suffix must have a value" "$LINENO" 5
+elif test "x$with_user_release_suffix" != x; then
+  USER_RELEASE_SUFFIX="$with_user_release_suffix"
+fi
+
+
 # Check whether --with-build-number was given.
 if test "${with_build_number+set}" = set; then :
   withval=$with_build_number;
@@ -11058,29 +11070,19 @@ if test "x$with_build_number" = xyes; then
 elif test "x$with_build_number" != x; then
   JDK_BUILD_NUMBER="$with_build_number"
 fi
+# Define default USER_RELEASE_SUFFIX if BUILD_NUMBER and USER_RELEASE_SUFFIX are not set
 if test "x$JDK_BUILD_NUMBER" = x; then
   JDK_BUILD_NUMBER=b00
+  if test "x$USER_RELEASE_SUFFIX" = x; then
+    BUILD_DATE=`date '+%Y_%m_%d_%H_%M'`
+    # Avoid [:alnum:] since it depends on the locale.
+    CLEAN_USERNAME=`echo "$USER" | $TR -d -c 'abcdefghijklmnopqrstuvqxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789'`
+    USER_RELEASE_SUFFIX=`echo "${CLEAN_USERNAME}_${BUILD_DATE}" | $TR 'ABCDEFGHIJKLMNOPQRSTUVWXYZ' 'abcdefghijklmnopqrstuvwxyz'`
+  fi
 fi
-
-
-# Check whether --with-user-release-suffix was given.
-if test "${with_user_release_suffix+set}" = set; then :
-  withval=$with_user_release_suffix;
-fi
-
-if test "x$with_user_release_suffix" = xyes; then
-  as_fn_error $? "Release suffix must have a value" "$LINENO" 5
-elif test "x$with_user_release_suffix" != x; then
-  USER_RELEASE_SUFFIX="$with_user_release_suffix"
-else
-  BUILD_DATE=`date '+%Y_%m_%d_%H_%M'`
-  # Avoid [:alnum:] since it depends on the locale.
-  CLEAN_USERNAME=`echo "$USER" | $TR -d -c 'abcdefghijklmnopqrstuvqxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789'`
-  USER_RELEASE_SUFFIX=`echo "${CLEAN_USERNAME}_${BUILD_DATE}" | $TR 'ABCDEFGHIJKLMNOPQRSTUVWXYZ' 'abcdefghijklmnopqrstuvwxyz'`
-fi
-
 
 # Now set the JDK version, milestone, build number etc.
+
 
 
 

@@ -341,7 +341,7 @@ Symbol* SymbolTable::new_permanent_symbol(const char* name, TRAPS) {
 
 Symbol* SymbolTable::basic_add(int index_arg, u1 *name, int len,
                                unsigned int hashValue_arg, bool c_heap, TRAPS) {
-  assert(!Universe::heap()->is_in_reserved(name) || GC_locker::is_active(),
+  assert(!Universe::heap()->is_in_reserved(name),
          "proposed name of symbol must be stable");
 
   // Don't allow symbols to be created which cannot fit in a Symbol*.
@@ -685,7 +685,7 @@ oop StringTable::intern(Handle string_or_null, jchar* name,
   if (found_string != NULL) return found_string;
 
   debug_only(StableMemoryChecker smc(name, len * sizeof(name[0])));
-  assert(!Universe::heap()->is_in_reserved(name) || GC_locker::is_active(),
+  assert(!Universe::heap()->is_in_reserved(name),
          "proposed name of symbol must be stable");
 
   Handle string;
@@ -840,7 +840,7 @@ StringTable::VerifyRetTypes StringTable::compare_entries(
   if (str1 == str2) {
     tty->print_cr("ERROR: identical oop values (0x" PTR_FORMAT ") "
                   "in entry @ bucket[%d][%d] and entry @ bucket[%d][%d]",
-                  str1, bkt1, e_cnt1, bkt2, e_cnt2);
+                  (void *)str1, bkt1, e_cnt1, bkt2, e_cnt2);
     return _verify_fail_continue;
   }
 

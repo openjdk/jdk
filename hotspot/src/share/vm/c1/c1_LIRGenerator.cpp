@@ -3053,7 +3053,11 @@ void LIRGenerator::increment_event_counter_impl(CodeEmitInfo* info,
   int offset = -1;
   LIR_Opr counter_holder;
   if (level == CompLevel_limited_profile) {
-    address counters_adr = method->ensure_method_counters();
+    MethodCounters* counters_adr = method->ensure_method_counters();
+    if (counters_adr == NULL) {
+      bailout("method counters allocation failed");
+      return;
+    }
     counter_holder = new_pointer_register();
     __ move(LIR_OprFact::intptrConst(counters_adr), counter_holder);
     offset = in_bytes(backedge ? MethodCounters::backedge_counter_offset() :

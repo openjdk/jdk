@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -52,7 +52,7 @@ HS_DTRACE_PROBE_DECL4(hotspot, class__unloaded, char*, int, oop, bool);
       len = name->utf8_length();                    \
     }                                               \
     HS_DTRACE_PROBE4(hotspot, class__##type,        \
-      data, len, (clss)->class_loader(), (shared)); \
+      data, len, SOLARIS_ONLY((void *))(clss)->class_loader(), (shared)); \
   }
 
 #else /* USDT2 */
