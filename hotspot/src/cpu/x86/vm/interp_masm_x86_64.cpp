@@ -1067,6 +1067,102 @@ void InterpreterMacroAssembler::profile_not_taken_branch(Register mdp) {
   }
 }
 
+void InterpreterMacroAssembler::profile_obj_type(Register obj, const Address& mdo_addr) {
+  Label update, next, none;
+
+  verify_oop(obj);
+
+  testptr(obj, obj);
+  jccb(Assembler::notZero, update);
+  orptr(mdo_addr, TypeEntries::null_seen);
+  jmpb(next);
+
+  bind(update);
+  load_klass(obj, obj);
+
+  xorptr(obj, mdo_addr);
+  testptr(obj, TypeEntries::type_klass_mask);
+  jccb(Assembler::zero, next); // klass seen before, nothing to
+                               // do. The unknown bit may have been
+                               // set already but no need to check.
+
+  testptr(obj, TypeEntries::type_unknown);
+  jccb(Assembler::notZero, next); // already unknown. Nothing to do anymore.
+
+  // There is a chance that by the time we do these checks (re-reading
+  // profiling data from memory) another thread has set the profling
+  // to this obj's klass and we set the profiling as unknow
+  // erroneously
+  cmpptr(mdo_addr, 0);
+  jccb(Assembler::equal, none);
+  cmpptr(mdo_addr, TypeEntries::null_seen);
+  jccb(Assembler::equal, none);
+  // There is a chance that the checks above (re-reading profiling
+  // data from memory) fail if another thread has just set the
+  // profiling to this obj's klass
+  xorptr(obj, mdo_addr);
+  testptr(obj, TypeEntries::type_klass_mask);
+  jccb(Assembler::zero, next);
+
+  // different than before. Cannot keep accurate profile.
+  orptr(mdo_addr, TypeEntries::type_unknown);
+  jmpb(next);
+
+  bind(none);
+  // first time here. Set profile type.
+  movptr(mdo_addr, obj);
+
+  bind(next);
+}
+
+void InterpreterMacroAssembler::profile_arguments_type(Register mdp, Register callee, Register tmp, bool is_virtual) {
+  if (!ProfileInterpreter) {
+    return;
+  }
+
+  if (MethodData::profile_arguments()) {
+    Label profile_continue;
+
+    test_method_data_pointer(mdp, profile_continue);
+
+    int off_to_start = is_virtual ? in_bytes(VirtualCallData::virtual_call_data_size()) : in_bytes(CounterData::counter_data_size());
+
+    cmpb(Address(mdp, in_bytes(DataLayout::tag_offset()) - off_to_start), is_virtual ? DataLayout::virtual_call_type_data_tag : DataLayout::call_type_data_tag);
+    jcc(Assembler::notEqual, profile_continue);
+
+    Label done;
+    int off_to_args = in_bytes(TypeStackSlotEntries::args_data_offset());
+    addptr(mdp, off_to_args);
+
+    for (int i = 0; i < TypeProfileArgsLimit; i++) {
+      if (i > 0) {
+        movq(tmp, Address(mdp, in_bytes(TypeStackSlotEntries::cell_count_offset())-off_to_args));
+        subl(tmp, i*TypeStackSlotEntries::per_arg_count());
+        cmpl(tmp, TypeStackSlotEntries::per_arg_count());
+        jcc(Assembler::less, done);
+      }
+      movptr(tmp, Address(callee, Method::const_offset()));
+      load_unsigned_short(tmp, Address(tmp, ConstMethod::size_of_parameters_offset()));
+      subq(tmp, Address(mdp, in_bytes(TypeStackSlotEntries::stack_slot_offset(i))-off_to_args));
+      subl(tmp, 1);
+      Address arg_addr = argument_address(tmp);
+      movptr(tmp, arg_addr);
+
+      Address mdo_arg_addr(mdp, in_bytes(TypeStackSlotEntries::type_offset(i))-off_to_args);
+      profile_obj_type(tmp, mdo_arg_addr);
+
+      int to_add = in_bytes(TypeStackSlotEntries::per_arg_size());
+      addptr(mdp, to_add);
+      off_to_args += to_add;
+    }
+
+    bind(done);
+
+    movptr(Address(rbp, frame::interpreter_frame_mdx_offset * wordSize), mdp);
+
+    bind(profile_continue);
+  }
+}
 
 void InterpreterMacroAssembler::profile_call(Register mdp) {
   if (ProfileInterpreter) {

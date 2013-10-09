@@ -41,6 +41,8 @@ class ciBranchData;
 class ciArrayData;
 class ciMultiBranchData;
 class ciArgInfoData;
+class ciCallTypeData;
+class ciVirtualCallTypeData;
 
 typedef ProfileData ciProfileData;
 
@@ -59,6 +61,68 @@ public:
   ciJumpData(DataLayout* layout) : JumpData(layout) {};
 };
 
+class ciTypeEntries {
+protected:
+  static intptr_t translate_klass(intptr_t k) {
+    Klass* v = TypeEntries::valid_klass(k);
+    if (v != NULL) {
+      ciKlass* klass = CURRENT_ENV->get_klass(v);
+      return with_status(klass, k);
+    }
+    return with_status(NULL, k);
+  }
+
+public:
+  static ciKlass* valid_ciklass(intptr_t k) {
+    if (!TypeEntries::is_type_none(k) &&
+        !TypeEntries::is_type_unknown(k)) {
+      return (ciKlass*)TypeEntries::klass_part(k);
+    } else {
+      return NULL;
+    }
+  }
+
+  static intptr_t with_status(ciKlass* k, intptr_t in) {
+    return TypeEntries::with_status((intptr_t)k, in);
+  }
+
+#ifndef PRODUCT
+  static void print_ciklass(outputStream* st, intptr_t k);
+#endif
+};
+
+class ciTypeStackSlotEntries : public TypeStackSlotEntries, ciTypeEntries {
+public:
+  void translate_type_data_from(const TypeStackSlotEntries* args);
+
+  ciKlass* valid_type(int i) const {
+    return valid_ciklass(type(i));
+  }
+
+#ifndef PRODUCT
+  void print_data_on(outputStream* st) const;
+#endif
+};
+
+class ciCallTypeData : public CallTypeData {
+public:
+  ciCallTypeData(DataLayout* layout) : CallTypeData(layout) {}
+
+  ciTypeStackSlotEntries* args() const { return (ciTypeStackSlotEntries*)CallTypeData::args(); }
+
+  virtual void translate_from(const ProfileData* data) {
+    args()->translate_type_data_from(data->as_CallTypeData()->args());
+  }
+
+  ciKlass* valid_argument_type(int i) const {
+    return args()->valid_type(i);
+  }
+
+#ifndef PRODUCT
+  void print_data_on(outputStream* st) const;
+#endif
+};
+
 class ciReceiverTypeData : public ReceiverTypeData {
 public:
   ciReceiverTypeData(DataLayout* layout) : ReceiverTypeData(layout) {};
@@ -69,7 +133,7 @@ public:
                   (intptr_t) recv);
   }
 
-  ciKlass* receiver(uint row) {
+  ciKlass* receiver(uint row) const {
     assert((uint)row < row_limit(), "oob");
     ciKlass* recv = (ciKlass*)intptr_at(receiver0_offset + row * receiver_type_row_cell_count);
     assert(recv == NULL || recv->is_klass(), "wrong type");
@@ -77,19 +141,19 @@ public:
   }
 
   // Copy & translate from oop based ReceiverTypeData
-  virtual void translate_from(ProfileData* data) {
+  virtual void translate_from(const ProfileData* data) {
     translate_receiver_data_from(data);
   }
-  void translate_receiver_data_from(ProfileData* data);
+  void translate_receiver_data_from(const ProfileData* data);
 #ifndef PRODUCT
-  void print_data_on(outputStream* st);
-  void print_receiver_data_on(outputStream* st);
+  void print_data_on(outputStream* st) const;
+  void print_receiver_data_on(outputStream* st) const;
 #endif
 };
 
 class ciVirtualCallData : public VirtualCallData {
   // Fake multiple inheritance...  It's a ciReceiverTypeData also.
-  ciReceiverTypeData* rtd_super() { return (ciReceiverTypeData*) this; }
+  ciReceiverTypeData* rtd_super() const { return (ciReceiverTypeData*) this; }
 
 public:
   ciVirtualCallData(DataLayout* layout) : VirtualCallData(layout) {};
@@ -103,11 +167,44 @@ public:
   }
 
   // Copy & translate from oop based VirtualCallData
-  virtual void translate_from(ProfileData* data) {
+  virtual void translate_from(const ProfileData* data) {
     rtd_super()->translate_receiver_data_from(data);
   }
 #ifndef PRODUCT
-  void print_data_on(outputStream* st);
+  void print_data_on(outputStream* st) const;
+#endif
+};
+
+class ciVirtualCallTypeData : public VirtualCallTypeData {
+private:
+  // Fake multiple inheritance...  It's a ciReceiverTypeData also.
+  ciReceiverTypeData* rtd_super() const { return (ciReceiverTypeData*) this; }
+
+public:
+  ciVirtualCallTypeData(DataLayout* layout) : VirtualCallTypeData(layout) {}
+
+  ciTypeStackSlotEntries* args() const { return (ciTypeStackSlotEntries*)VirtualCallTypeData::args(); }
+
+  void set_receiver(uint row, ciKlass* recv) {
+    rtd_super()->set_receiver(row, recv);
+  }
+
+  ciKlass* receiver(uint row) const {
+    return rtd_super()->receiver(row);
+  }
+
+  // Copy & translate from oop based VirtualCallData
+  virtual void translate_from(const ProfileData* data) {
+    rtd_super()->translate_receiver_data_from(data);
+    args()->translate_type_data_from(data->as_VirtualCallTypeData()->args());
+  }
+
+  ciKlass* valid_argument_type(int i) const {
+    return args()->valid_type(i);
+  }
+
+#ifndef PRODUCT
+  void print_data_on(outputStream* st) const;
 #endif
 };
 
@@ -247,6 +344,9 @@ public:
   // Also set the numer of loops and blocks in the method.
   // Again, this is used to determine if a method is trivial.
   void set_compilation_stats(short loops, short blocks);
+  // If the compiler finds a profiled type that is known statically
+  // for sure, set it in the MethodData
+  void set_argument_type(int bci, int i, ciKlass* k);
 
   void load_data();
 

@@ -2571,6 +2571,78 @@ void LIRGenerator::do_Goto(Goto* x) {
 }
 
 
+ciKlass* LIRGenerator::profile_arg_type(ciMethodData* md, int md_base_offset, int md_offset, intptr_t profiled_k, Value arg, LIR_Opr& mdp, bool not_null, ciKlass* signature_k) {
+  ciKlass* result = NULL;
+  bool do_null = !not_null && !TypeEntries::was_null_seen(profiled_k);
+  bool do_update = !TypeEntries::is_type_unknown(profiled_k);
+  // known not to be null or null bit already set and already set to
+  // unknown: nothing we can do to improve profiling
+  if (!do_null && !do_update) {
+    return result;
+  }
+
+  ciKlass* exact_klass = NULL;
+  Compilation* comp = Compilation::current();
+  if (do_update) {
+    // try to find exact type, using CHA if possible, so that loading
+    // the klass from the object can be avoided
+    ciType* type = arg->exact_type();
+    if (type == NULL) {
+      type = arg->declared_type();
+      type = comp->cha_exact_type(type);
+    }
+    assert(type == NULL || type->is_klass(), "type should be class");
+    exact_klass = (type != NULL && type->is_loaded()) ? (ciKlass*)type : NULL;
+
+    do_update = exact_klass == NULL || ciTypeEntries::valid_ciklass(profiled_k) != exact_klass;
+  }
+
+  if (!do_null && !do_update) {
+    return result;
+  }
+
+  ciKlass* exact_signature_k = NULL;
+  if (do_update) {
+    // Is the type from the signature exact (the only one possible)?
+    exact_signature_k = signature_k->exact_klass();
+    if (exact_signature_k == NULL) {
+      exact_signature_k = comp->cha_exact_type(signature_k);
+    } else {
+      result = exact_signature_k;
+      do_update = false;
+      // Known statically. No need to emit any code: prevent
+      // LIR_Assembler::emit_profile_type() from emitting useless code
+      profiled_k = ciTypeEntries::with_status(result, profiled_k);
+    }
+    if (exact_signature_k != NULL && exact_klass != exact_signature_k) {
+      assert(exact_klass == NULL, "arg and signature disagree?");
+      // sometimes the type of the signature is better than the best type
+      // the compiler has
+      exact_klass = exact_signature_k;
+      do_update = exact_klass == NULL || ciTypeEntries::valid_ciklass(profiled_k) != exact_klass;
+    }
+  }
+
+  if (!do_null && !do_update) {
+    return result;
+  }
+
+  if (mdp == LIR_OprFact::illegalOpr) {
+    mdp = new_register(T_METADATA);
+    __ metadata2reg(md->constant_encoding(), mdp);
+    if (md_base_offset != 0) {
+      LIR_Address* base_type_address = new LIR_Address(mdp, md_base_offset, T_ADDRESS);
+      mdp = new_pointer_register();
+      __ leal(LIR_OprFact::address(base_type_address), mdp);
+    }
+  }
+  LIRItem value(arg, this);
+  value.load_item();
+  __ profile_type(new LIR_Address(mdp, md_offset, T_METADATA),
+                  value.result(), exact_klass, profiled_k, new_pointer_register(), not_null, exact_signature_k != NULL);
+  return result;
+}
+
 void LIRGenerator::do_Base(Base* x) {
   __ std_entry(LIR_OprFact::illegalOpr);
   // Emit moves from physical registers / stack slots to virtual registers
@@ -3004,12 +3076,52 @@ void LIRGenerator::do_Intrinsic(Intrinsic* x) {
   }
 }
 
+void LIRGenerator::profile_arguments(ProfileCall* x) {
+  if (MethodData::profile_arguments()) {
+    int bci = x->bci_of_invoke();
+    ciMethodData* md = x->method()->method_data_or_null();
+    ciProfileData* data = md->bci_to_data(bci);
+    if (data->is_CallTypeData() || data->is_VirtualCallTypeData()) {
+      ByteSize extra = data->is_CallTypeData() ? CallTypeData::args_data_offset() : VirtualCallTypeData::args_data_offset();
+      int base_offset = md->byte_offset_of_slot(data, extra);
+      LIR_Opr mdp = LIR_OprFact::illegalOpr;
+      ciTypeStackSlotEntries* args = data->is_CallTypeData() ? ((ciCallTypeData*)data)->args() : ((ciVirtualCallTypeData*)data)->args();
+
+      Bytecodes::Code bc = x->method()->java_code_at_bci(bci);
+      int start = 0;
+      int stop = args->number_of_arguments();
+      if (x->nb_profiled_args() < stop) {
+        // if called through method handle invoke, some arguments may have been popped
+        stop = x->nb_profiled_args();
+      }
+      ciSignature* sig = x->callee()->signature();
+      // method handle call to virtual method
+      bool has_receiver = x->inlined() && !x->callee()->is_static() && !Bytecodes::has_receiver(bc);
+      ciSignatureStream sig_stream(sig, has_receiver ? x->callee()->holder() : NULL);
+      for (int i = 0; i < stop; i++) {
+        int off = in_bytes(TypeStackSlotEntries::type_offset(i)) - in_bytes(TypeStackSlotEntries::args_data_offset());
+        ciKlass* exact = profile_arg_type(md, base_offset, off,
+                                          args->type(i), x->profiled_arg_at(i+start), mdp,
+                                          !x->arg_needs_null_check(i+start), sig_stream.next_klass());
+        if (exact != NULL) {
+          md->set_argument_type(bci, i, exact);
+        }
+      }
+    }
+  }
+}
+
 void LIRGenerator::do_ProfileCall(ProfileCall* x) {
   // Need recv in a temporary register so it interferes with the other temporaries
   LIR_Opr recv = LIR_OprFact::illegalOpr;
   LIR_Opr mdo = new_register(T_OBJECT);
   // tmp is used to hold the counters on SPARC
   LIR_Opr tmp = new_pointer_register();
+
+  if (x->nb_profiled_args() > 0) {
+    profile_arguments(x);
+  }
+
   if (x->recv() != NULL) {
     LIRItem value(x->recv(), this);
     value.load_item();

@@ -1658,6 +1658,42 @@ Dependencies* GraphBuilder::dependency_recorder() const {
   return compilation()->dependency_recorder();
 }
 
+// How many arguments do we want to profile?
+Values* GraphBuilder::args_list_for_profiling(int& start, bool may_have_receiver) {
+  int n = 0;
+  assert(start == 0, "should be initialized");
+  if (MethodData::profile_arguments()) {
+    ciProfileData* data = method()->method_data()->bci_to_data(bci());
+    if (data->is_CallTypeData() || data->is_VirtualCallTypeData()) {
+      n = data->is_CallTypeData() ? data->as_CallTypeData()->number_of_arguments() : data->as_VirtualCallTypeData()->number_of_arguments();
+      bool has_receiver = may_have_receiver && Bytecodes::has_receiver(method()->java_code_at_bci(bci()));
+      start = has_receiver ? 1 : 0;
+    }
+  }
+  if (n > 0) {
+    return new Values(n);
+  }
+  return NULL;
+}
+
+// Collect arguments that we want to profile in a list
+Values* GraphBuilder::collect_args_for_profiling(Values* args, bool may_have_receiver) {
+  int start = 0;
+  Values* obj_args = args_list_for_profiling(start, may_have_receiver);
+  if (obj_args == NULL) {
+    return NULL;
+  }
+  int s = obj_args->size();
+  for (int i = start, j = 0; j < s; i++) {
+    if (args->at(i)->type()->is_object_kind()) {
+      obj_args->push(args->at(i));
+      j++;
+    }
+  }
+  assert(s == obj_args->length(), "missed on arg?");
+  return obj_args;
+}
+
 
 void GraphBuilder::invoke(Bytecodes::Code code) {
   bool will_link;
@@ -1957,7 +1993,7 @@ void GraphBuilder::invoke(Bytecodes::Code code) {
       } else if (exact_target != NULL) {
         target_klass = exact_target->holder();
       }
-      profile_call(target, recv, target_klass);
+      profile_call(target, recv, target_klass, collect_args_for_profiling(args, false), false);
     }
   }
 
@@ -3509,7 +3545,7 @@ bool GraphBuilder::try_inline_intrinsics(ciMethod* callee) {
           recv = args->at(0);
           null_check(recv);
         }
-        profile_call(callee, recv, NULL);
+        profile_call(callee, recv, NULL, collect_args_for_profiling(args, true), true);
       }
     }
   }
@@ -3763,7 +3799,28 @@ bool GraphBuilder::try_inline_full(ciMethod* callee, bool holder_known, Bytecode
     compilation()->set_would_profile(true);
 
     if (profile_calls()) {
-      profile_call(callee, recv, holder_known ? callee->holder() : NULL);
+      int start = 0;
+      Values* obj_args = args_list_for_profiling(start, has_receiver);
+      if (obj_args != NULL) {
+        int s = obj_args->size();
+        // if called through method handle invoke, some arguments may have been popped
+        for (int i = args_base+start, j = 0; j < obj_args->size() && i < state()->stack_size(); ) {
+          Value v = state()->stack_at_inc(i);
+          if (v->type()->is_object_kind()) {
+            obj_args->push(v);
+            j++;
+          }
+        }
+#ifdef ASSERT
+        {
+          bool ignored_will_link;
+          ciSignature* declared_signature = NULL;
+          ciMethod* real_target = method()->get_method_at_bci(bci(), ignored_will_link, &declared_signature);
+          assert(s == obj_args->length() || real_target->is_method_handle_intrinsic(), "missed on arg?");
+        }
+#endif
+      }
+      profile_call(callee, recv, holder_known ? callee->holder() : NULL, obj_args, true);
     }
   }
 
@@ -4251,8 +4308,8 @@ void GraphBuilder::print_stats() {
 }
 #endif // PRODUCT
 
-void GraphBuilder::profile_call(ciMethod* callee, Value recv, ciKlass* known_holder) {
-  append(new ProfileCall(method(), bci(), callee, recv, known_holder));
+void GraphBuilder::profile_call(ciMethod* callee, Value recv, ciKlass* known_holder, Values* obj_args, bool inlined) {
+  append(new ProfileCall(method(), bci(), callee, recv, known_holder, obj_args, inlined));
 }
 
 void GraphBuilder::profile_invocation(ciMethod* callee, ValueStack* state) {
