@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,7 @@
 #include "precompiled.hpp"
 #include "classfile/dictionary.hpp"
 #include "classfile/systemDictionary.hpp"
+#include "memory/iterator.hpp"
 #include "oops/oop.inline.hpp"
 #include "prims/jvmtiRedefineClassesTrace.hpp"
 #include "utilities/hashtable.inline.hpp"
@@ -38,8 +39,8 @@ Dictionary::Dictionary(int table_size)
   : TwoOopHashtable<Klass*, mtClass>(table_size, sizeof(DictionaryEntry)) {
   _current_class_index = 0;
   _current_class_entry = NULL;
+  _pd_cache_table = new ProtectionDomainCacheTable(defaultProtectionDomainCacheSize);
 };
-
 
 
 Dictionary::Dictionary(int table_size, HashtableBucket<mtClass>* t,
@@ -47,8 +48,12 @@ Dictionary::Dictionary(int table_size, HashtableBucket<mtClass>* t,
   : TwoOopHashtable<Klass*, mtClass>(table_size, sizeof(DictionaryEntry), t, number_of_entries) {
   _current_class_index = 0;
   _current_class_entry = NULL;
+  _pd_cache_table = new ProtectionDomainCacheTable(defaultProtectionDomainCacheSize);
 };
 
+ProtectionDomainCacheEntry* Dictionary::cache_get(oop protection_domain) {
+  return _pd_cache_table->get(protection_domain);
+}
 
 DictionaryEntry* Dictionary::new_entry(unsigned int hash, Klass* klass,
                                        ClassLoaderData* loader_data) {
@@ -105,11 +110,12 @@ bool DictionaryEntry::contains_protection_domain(oop protection_domain) const {
 }
 
 
-void DictionaryEntry::add_protection_domain(oop protection_domain) {
+void DictionaryEntry::add_protection_domain(Dictionary* dict, oop protection_domain) {
   assert_locked_or_safepoint(SystemDictionary_lock);
   if (!contains_protection_domain(protection_domain)) {
+    ProtectionDomainCacheEntry* entry = dict->cache_get(protection_domain);
     ProtectionDomainEntry* new_head =
-                new ProtectionDomainEntry(protection_domain, _pd_set);
+                new ProtectionDomainEntry(entry, _pd_set);
     // Warning: Preserve store ordering.  The SystemDictionary is read
     //          without locks.  The new ProtectionDomainEntry must be
     //          complete before other threads can be allowed to see it
@@ -193,7 +199,10 @@ bool Dictionary::do_unloading() {
 
 
 void Dictionary::always_strong_oops_do(OopClosure* blk) {
-  // Follow all system classes and temporary placeholders in dictionary
+  // Follow all system classes and temporary placeholders in dictionary; only
+  // protection domain oops contain references into the heap. In a first
+  // pass over the system dictionary determine which need to be treated as
+  // strongly reachable and mark them as such.
   for (int index = 0; index < table_size(); index++) {
     for (DictionaryEntry *probe = bucket(index);
                           probe != NULL;
@@ -201,10 +210,13 @@ void Dictionary::always_strong_oops_do(OopClosure* blk) {
       Klass* e = probe->klass();
       ClassLoaderData* loader_data = probe->loader_data();
       if (is_strongly_reachable(loader_data, e)) {
-        probe->protection_domain_set_oops_do(blk);
+        probe->set_strongly_reachable();
       }
     }
   }
+  // Then iterate over the protection domain cache to apply the closure on the
+  // previously marked ones.
+  _pd_cache_table->always_strong_oops_do(blk);
 }
 
 
@@ -266,17 +278,11 @@ void Dictionary::classes_do(void f(Klass*, ClassLoaderData*)) {
   }
 }
 
-
 void Dictionary::oops_do(OopClosure* f) {
-  for (int index = 0; index < table_size(); index++) {
-    for (DictionaryEntry* probe = bucket(index);
-                          probe != NULL;
-                          probe = probe->next()) {
-      probe->protection_domain_set_oops_do(f);
-    }
-  }
+  // Only the protection domain oops contain references into the heap. Iterate
+  // over all of them.
+  _pd_cache_table->oops_do(f);
 }
-
 
 void Dictionary::methods_do(void f(Method*)) {
   for (int index = 0; index < table_size(); index++) {
@@ -292,6 +298,11 @@ void Dictionary::methods_do(void f(Method*)) {
   }
 }
 
+void Dictionary::unlink(BoolObjectClosure* is_alive) {
+  // Only the protection domain cache table may contain references to the heap
+  // that need to be unlinked.
+  _pd_cache_table->unlink(is_alive);
+}
 
 Klass* Dictionary::try_get_next_class() {
   while (true) {
@@ -305,7 +316,6 @@ Klass* Dictionary::try_get_next_class() {
   }
   // never reached
 }
-
 
 // Add a loaded class to the system dictionary.
 // Readers of the SystemDictionary aren't always locked, so _buckets
@@ -396,7 +406,7 @@ void Dictionary::add_protection_domain(int index, unsigned int hash,
   assert(protection_domain() != NULL,
          "real protection domain should be present");
 
-  entry->add_protection_domain(protection_domain());
+  entry->add_protection_domain(this, protection_domain());
 
   assert(entry->contains_protection_domain(protection_domain()),
          "now protection domain should be present");
@@ -443,6 +453,146 @@ void Dictionary::reorder_dictionary() {
     p->set_loader_data(NULL);   // loader_data isn't copied to CDS
     p->set_next(bucket(index));
     set_entry(index, p);
+  }
+}
+
+ProtectionDomainCacheTable::ProtectionDomainCacheTable(int table_size)
+  : Hashtable<oop, mtClass>(table_size, sizeof(ProtectionDomainCacheEntry))
+{
+}
+
+void ProtectionDomainCacheTable::unlink(BoolObjectClosure* is_alive) {
+  assert(SafepointSynchronize::is_at_safepoint(), "must be");
+  for (int i = 0; i < table_size(); ++i) {
+    ProtectionDomainCacheEntry** p = bucket_addr(i);
+    ProtectionDomainCacheEntry* entry = bucket(i);
+    while (entry != NULL) {
+      if (is_alive->do_object_b(entry->literal())) {
+        p = entry->next_addr();
+      } else {
+        *p = entry->next();
+        free_entry(entry);
+      }
+      entry = *p;
+    }
+  }
+}
+
+void ProtectionDomainCacheTable::oops_do(OopClosure* f) {
+  for (int index = 0; index < table_size(); index++) {
+    for (ProtectionDomainCacheEntry* probe = bucket(index);
+                                     probe != NULL;
+                                     probe = probe->next()) {
+      probe->oops_do(f);
+    }
+  }
+}
+
+uint ProtectionDomainCacheTable::bucket_size() {
+  return sizeof(ProtectionDomainCacheEntry);
+}
+
+#ifndef PRODUCT
+void ProtectionDomainCacheTable::print() {
+  tty->print_cr("Protection domain cache table (table_size=%d, classes=%d)",
+                table_size(), number_of_entries());
+  for (int index = 0; index < table_size(); index++) {
+    for (ProtectionDomainCacheEntry* probe = bucket(index);
+                                     probe != NULL;
+                                     probe = probe->next()) {
+      probe->print();
+    }
+  }
+}
+
+void ProtectionDomainCacheEntry::print() {
+  tty->print_cr("entry "PTR_FORMAT" value "PTR_FORMAT" strongly_reachable %d next "PTR_FORMAT,
+                this, literal(), _strongly_reachable, next());
+}
+#endif
+
+void ProtectionDomainCacheTable::verify() {
+  int element_count = 0;
+  for (int index = 0; index < table_size(); index++) {
+    for (ProtectionDomainCacheEntry* probe = bucket(index);
+                                     probe != NULL;
+                                     probe = probe->next()) {
+      probe->verify();
+      element_count++;
+    }
+  }
+  guarantee(number_of_entries() == element_count,
+            "Verify of protection domain cache table failed");
+  debug_only(verify_lookup_length((double)number_of_entries() / table_size()));
+}
+
+void ProtectionDomainCacheEntry::verify() {
+  guarantee(literal()->is_oop(), "must be an oop");
+}
+
+void ProtectionDomainCacheTable::always_strong_oops_do(OopClosure* f) {
+  // the caller marked the protection domain cache entries that we need to apply
+  // the closure on. Only process them.
+  for (int index = 0; index < table_size(); index++) {
+    for (ProtectionDomainCacheEntry* probe = bucket(index);
+                                     probe != NULL;
+                                     probe = probe->next()) {
+      if (probe->is_strongly_reachable()) {
+        probe->reset_strongly_reachable();
+        probe->oops_do(f);
+      }
+    }
+  }
+}
+
+ProtectionDomainCacheEntry* ProtectionDomainCacheTable::get(oop protection_domain) {
+  unsigned int hash = compute_hash(protection_domain);
+  int index = hash_to_index(hash);
+
+  ProtectionDomainCacheEntry* entry = find_entry(index, protection_domain);
+  if (entry == NULL) {
+    entry = add_entry(index, hash, protection_domain);
+  }
+  return entry;
+}
+
+ProtectionDomainCacheEntry* ProtectionDomainCacheTable::find_entry(int index, oop protection_domain) {
+  for (ProtectionDomainCacheEntry* e = bucket(index); e != NULL; e = e->next()) {
+    if (e->protection_domain() == protection_domain) {
+      return e;
+    }
+  }
+
+  return NULL;
+}
+
+ProtectionDomainCacheEntry* ProtectionDomainCacheTable::add_entry(int index, unsigned int hash, oop protection_domain) {
+  assert_locked_or_safepoint(SystemDictionary_lock);
+  assert(index == index_for(protection_domain), "incorrect index?");
+  assert(find_entry(index, protection_domain) == NULL, "no double entry");
+
+  ProtectionDomainCacheEntry* p = new_entry(hash, protection_domain);
+  Hashtable<oop, mtClass>::add_entry(index, p);
+  return p;
+}
+
+void ProtectionDomainCacheTable::free(ProtectionDomainCacheEntry* to_delete) {
+  unsigned int hash = compute_hash(to_delete->protection_domain());
+  int index = hash_to_index(hash);
+
+  ProtectionDomainCacheEntry** p = bucket_addr(index);
+  ProtectionDomainCacheEntry* entry = bucket(index);
+  while (true) {
+    assert(entry != NULL, "sanity");
+
+    if (entry == to_delete) {
+      *p = entry->next();
+      Hashtable<oop, mtClass>::free_entry(entry);
+      break;
+    } else {
+      p = entry->next_addr();
+      entry = *p;
+    }
   }
 }
 
@@ -532,10 +682,12 @@ void Dictionary::print() {
       tty->cr();
     }
   }
+  tty->cr();
+  _pd_cache_table->print();
+  tty->cr();
 }
 
 #endif
-
 
 void Dictionary::verify() {
   guarantee(number_of_entries() >= 0, "Verify of system dictionary failed");
@@ -563,5 +715,7 @@ void Dictionary::verify() {
   guarantee(number_of_entries() == element_count,
             "Verify of system dictionary failed");
   debug_only(verify_lookup_length((double)number_of_entries() / table_size()));
+
+  _pd_cache_table->verify();
 }
 
