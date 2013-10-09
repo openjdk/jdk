@@ -140,7 +140,7 @@ final class JSObjectLinker implements TypeBasedGuardingDynamicLinker {
     @SuppressWarnings("unused")
     private static Object get(final Object jsobj, final Object key) {
         if (key instanceof Integer) {
-            return ((JSObject)jsobj).getSlot((int)(Integer)key);
+            return ((JSObject)jsobj).getSlot((Integer)key);
         } else if (key instanceof Number) {
             final int index = getIndex((Number)key);
             if (index > -1) {
@@ -155,7 +155,7 @@ final class JSObjectLinker implements TypeBasedGuardingDynamicLinker {
     @SuppressWarnings("unused")
     private static void put(final Object jsobj, final Object key, final Object value) {
         if (key instanceof Integer) {
-            ((JSObject)jsobj).setSlot((int)(Integer)key, value);
+            ((JSObject)jsobj).setSlot((Integer)key, value);
         } else if (key instanceof Number) {
             ((JSObject)jsobj).setSlot(getIndex((Number)key), value);
         } else if (key instanceof String) {

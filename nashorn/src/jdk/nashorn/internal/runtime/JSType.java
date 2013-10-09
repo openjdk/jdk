@@ -104,14 +104,11 @@ public enum JSType {
     /** JavaScript compliant conversion function from number to int64 */
     public static final Call TO_INT64_D = staticCall(myLookup, JSType.class, "toInt64", long.class, double.class);
 
-    /** JavaScript compliant conversion function from Object to String */
-    public static final Call TO_STRING = staticCall(myLookup, JSType.class, "toString", String.class, Object.class);
-
     /** JavaScript compliant conversion function from number to String */
     public static final Call TO_STRING_D = staticCall(myLookup, JSType.class, "toString", String.class, double.class);
 
-    /** JavaScript compliant conversion function from Object to primitive */
-    public static final Call TO_PRIMITIVE = staticCall(myLookup, JSType.class, "toPrimitive", Object.class,  Object.class);
+    /** Combined call to toPrimitive followed by toString. */
+    public static final Call TO_PRIMITIVE_TO_STRING = staticCall(myLookup, JSType.class, "toPrimitiveToString", String.class,  Object.class);
 
     private static final double INT32_LIMIT = 4294967296.0;
 
@@ -270,6 +267,17 @@ public enum JSType {
         }
 
         return result;
+    }
+
+    /**
+     * Combines a hintless toPrimitive and a toString call.
+     *
+     * @param obj  an object
+     *
+     * @return the string form of the primitive form of the object
+     */
+    public static String toPrimitiveToString(Object obj) {
+        return toString(toPrimitive(obj));
     }
 
     /**
@@ -874,7 +882,7 @@ public enum JSType {
         if (obj instanceof ScriptObject) {
             return convertArray(((ScriptObject)obj).getArray().asObjectArray(), componentType);
         } else if (obj instanceof JSObject) {
-            final ArrayLikeIterator itr = ArrayLikeIterator.arrayLikeIterator(obj);
+            final ArrayLikeIterator<?> itr = ArrayLikeIterator.arrayLikeIterator(obj);
             final int len = (int) itr.getLength();
             final Object[] res = new Object[len];
             int idx = 0;

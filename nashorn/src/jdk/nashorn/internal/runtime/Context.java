@@ -625,11 +625,11 @@ public final class Context {
      * @param clazz Class object
      * @throw SecurityException if not accessible
      */
-    public static void checkPackageAccess(final Class clazz) {
+    public static void checkPackageAccess(final Class<?> clazz) {
         final SecurityManager sm = System.getSecurityManager();
         if (sm != null) {
-            Class bottomClazz = clazz;
-            while(bottomClazz.isArray()) {
+            Class<?> bottomClazz = clazz;
+            while (bottomClazz.isArray()) {
                 bottomClazz = bottomClazz.getComponentType();
             }
             checkPackageAccess(sm, bottomClazz.getName());
@@ -664,7 +664,7 @@ public final class Context {
      * @param clazz Class object
      * @return true if package is accessible, false otherwise
      */
-    private static boolean isAccessiblePackage(final Class clazz) {
+    private static boolean isAccessiblePackage(final Class<?> clazz) {
         try {
             checkPackageAccess(clazz);
             return true;
@@ -838,7 +838,7 @@ public final class Context {
         return Context.getContextTrusted();
     }
 
-    private URL getResourceURL(final String resName) throws IOException {
+    private URL getResourceURL(final String resName) {
         // try the classPathLoader if we have and then
         // try the appLoader if non-null.
         if (classPathLoader != null) {
