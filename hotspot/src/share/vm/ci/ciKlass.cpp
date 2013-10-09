@@ -66,7 +66,9 @@ ciKlass::ciKlass(ciSymbol* name, BasicType bt) : ciType(bt) {
 // ------------------------------------------------------------------
 // ciKlass::is_subtype_of
 bool ciKlass::is_subtype_of(ciKlass* that) {
-  assert(is_loaded() && that->is_loaded(), "must be loaded");
+  assert(this->is_loaded(), err_msg("must be loaded: %s", this->name()->as_quoted_ascii()));
+  assert(that->is_loaded(), err_msg("must be loaded: %s", that->name()->as_quoted_ascii()));
+
   // Check to see if the klasses are identical.
   if (this == that) {
     return true;
@@ -83,8 +85,8 @@ bool ciKlass::is_subtype_of(ciKlass* that) {
 // ------------------------------------------------------------------
 // ciKlass::is_subclass_of
 bool ciKlass::is_subclass_of(ciKlass* that) {
-  assert(is_loaded() && that->is_loaded(), "must be loaded");
-  // Check to see if the klasses are identical.
+  assert(this->is_loaded(), err_msg("must be loaded: %s", this->name()->as_quoted_ascii()));
+  assert(that->is_loaded(), err_msg("must be loaded: %s", that->name()->as_quoted_ascii()));
 
   VM_ENTRY_MARK;
   Klass* this_klass = get_Klass();
