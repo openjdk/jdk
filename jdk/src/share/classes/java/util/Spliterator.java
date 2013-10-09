@@ -414,12 +414,18 @@ public interface Spliterator<T> {
      * #ORDERED}, {@link #DISTINCT}, {@link #SORTED}, {@link #SIZED},
      * {@link #NONNULL}, {@link #IMMUTABLE}, {@link #CONCURRENT},
      * {@link #SUBSIZED}.  Repeated calls to {@code characteristics()} on
-     * a given spliterator should always return the same result.
+     * a given spliterator, prior to or in-between calls to {@code trySplit},
+     * should always return the same result.
      *
      * <p>If a Spliterator reports an inconsistent set of
      * characteristics (either those returned from a single invocation
      * or across multiple invocations), no guarantees can be made
      * about any computation using this Spliterator.
+     *
+     * @apiNote The characteristics of a given spliterator before splitting
+     * may differ from the characteristics after splitting.  For specific
+     * examples see the characteristic values {@link #SIZED}, {@link #SUBSIZED}
+     * and {@link #CONCURRENT}.
      *
      * @return a representation of characteristics
      */
