@@ -347,8 +347,8 @@ public final class OffsetDateTime
         if (temporal instanceof OffsetDateTime) {
             return (OffsetDateTime) temporal;
         }
-        ZoneOffset offset = ZoneOffset.from(temporal);
         try {
+            ZoneOffset offset = ZoneOffset.from(temporal);
             try {
                 LocalDateTime ldt = LocalDateTime.from(temporal);
                 return OffsetDateTime.of(ldt, offset);
@@ -357,7 +357,8 @@ public final class OffsetDateTime
                 return OffsetDateTime.ofInstant(instant, offset);
             }
         } catch (DateTimeException ex) {
-            throw new DateTimeException("Unable to obtain OffsetDateTime from TemporalAccessor: " + temporal.getClass(), ex);
+            throw new DateTimeException("Unable to obtain OffsetDateTime from TemporalAccessor: " +
+                    temporal + " of type " + temporal.getClass().getName(), ex);
         }
     }
 
