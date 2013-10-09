@@ -714,11 +714,17 @@ typedef BinaryTreeDictionary<Metablock, FreeList> MetablockTreeDictionary;
   nonstatic_field(PlaceholderEntry,            _loader_data,                                  ClassLoaderData*)                      \
                                                                                                                                      \
   /**************************/                                                                                                       \
-  /* ProctectionDomainEntry */                                                                                                       \
+  /* ProtectionDomainEntry  */                                                                                                       \
   /**************************/                                                                                                       \
                                                                                                                                      \
   nonstatic_field(ProtectionDomainEntry,       _next,                                         ProtectionDomainEntry*)                \
-  nonstatic_field(ProtectionDomainEntry,       _protection_domain,                            oop)                                   \
+  nonstatic_field(ProtectionDomainEntry,       _pd_cache,                                     ProtectionDomainCacheEntry*)           \
+                                                                                                                                     \
+  /*******************************/                                                                                                  \
+  /* ProtectionDomainCacheEntry  */                                                                                                  \
+  /*******************************/                                                                                                  \
+                                                                                                                                     \
+  nonstatic_field(ProtectionDomainCacheEntry,  _literal,                                      oop)                                   \
                                                                                                                                      \
   /*************************/                                                                                                        \
   /* LoaderConstraintEntry */                                                                                                        \
@@ -1560,6 +1566,7 @@ typedef BinaryTreeDictionary<Metablock, FreeList> MetablockTreeDictionary;
   declare_toplevel_type(SystemDictionary)                                 \
   declare_toplevel_type(vmSymbols)                                        \
   declare_toplevel_type(ProtectionDomainEntry)                            \
+  declare_toplevel_type(ProtectionDomainCacheEntry)                       \
                                                                           \
   declare_toplevel_type(GenericGrowableArray)                             \
   declare_toplevel_type(GrowableArray<int>)                               \
