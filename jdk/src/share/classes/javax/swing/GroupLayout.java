@@ -79,7 +79,7 @@ import static javax.swing.SwingConstants.VERTICAL;
  * The following diagram shows a sequential group along the horizontal
  * axis. The sequential group contains three components. A parallel group
  * was used along the vertical axis.
- * <p align="center">
+ * <p style="text-align:center">
  * <img src="doc-files/groupLayout.1.gif">
  * <p>
  * To reinforce that each axis is treated independently the diagram shows
@@ -101,7 +101,7 @@ import static javax.swing.SwingConstants.VERTICAL;
  * parallel group along the horizontal axis and the sequential group along
  * the vertical axis.
  * <p>
- * <p align="center">
+ * <p style="text-align:center">
  * <img src="doc-files/groupLayout.2.gif">
  * <p>
  * As {@code c1} is the largest of the three components, the parallel
@@ -115,7 +115,7 @@ import static javax.swing.SwingConstants.VERTICAL;
  * <p>
  * The following diagram shows a sequential group along both the horizontal
  * and vertical axis.
- * <p align="center">
+ * <p style="text-align:center">
  * <img src="doc-files/groupLayout.3.gif">
  * <p>
  * {@code GroupLayout} provides the ability to insert gaps between
@@ -172,7 +172,7 @@ import static javax.swing.SwingConstants.VERTICAL;
  * </pre>
  * <p>
  * When run the following is produced.
- * <p align="center">
+ * <p style="text-align:center">
  * <img src="doc-files/groupLayout.example.png">
  * <p>
  * This layout consists of the following.

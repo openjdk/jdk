@@ -39,7 +39,7 @@ import javax.swing.Icon;
  * All sizes are specified in points (such as found in postscript), a
  * device independent measure.
  * </p>
- * <p align=center><img src="doc-files/paragraph.gif"
+ * <p style="text-align:center"><img src="doc-files/paragraph.gif"
  * alt="Diagram shows SpaceAbove, FirstLineIndent, LeftIndent, RightIndent,
  *      and SpaceBelow a paragraph."></p>
  * <p>

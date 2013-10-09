@@ -33,7 +33,7 @@ package java.awt.font;
  * <p>
  * For more information on TrueType and OpenType fonts, see the
  * OpenType specification.
- * ( <a href=http://www.microsoft.com/typography/otspec/">http://www.microsoft.com/typography/otspec/l</a> ).
+ * ( <a href="http://www.microsoft.com/typography/otspec/">http://www.microsoft.com/typography/otspec/</a> ).
  */
 public interface OpenType {
 
