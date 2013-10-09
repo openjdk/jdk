@@ -1458,7 +1458,7 @@ Method* InstanceKlass::uncached_lookup_method(Symbol* name, Symbol* signature) c
 // Do NOT return private or static methods
 Method* InstanceKlass::lookup_method_in_ordered_interfaces(Symbol* name,
                                                          Symbol* signature) const {
-  Method* m;
+  Method* m = NULL;
   if (default_methods() != NULL) {
     m = find_method(default_methods(), name, signature);
   }
