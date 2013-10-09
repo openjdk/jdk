@@ -360,7 +360,7 @@
             datafile="${build.coverage.dir}/cobertura.ser"/>
     </target>
 
-    <target name="diags-examples" depends="build-javac">
+    <target name="diags-examples" depends="build-javac,build-javap">
         <!-- can override the following on the command line if desired. -->
         <property name="diags.examples.out" location="${build.dir}/diag-examples/diags-examples.html"/>
         <mkdir dir="${build.dir}/diag-examples/classes"/>
@@ -370,7 +370,7 @@
             destdir="${build.dir}/diag-examples/classes"
             includes="ArgTypeCompilerFactory.java,Example.java,FileManager.java,HTMLWriter.java,RunExamples.java,DocCommentProcessor.java"
             sourcepath=""
-            classpath="${dist.lib.dir}/javac.jar"
+            classpath="${dist.lib.dir}/javac.jar;${dist.lib.dir}/javap.jar"
             includeAntRuntime="no"
             debug="${javac.debug}"
             debuglevel="${javac.debuglevel}">
@@ -379,7 +379,7 @@
         <java fork="true"
             jvm="${target.java.home}/bin/java"
             dir="test/tools/javac/diags"
-            classpath="${build.dir}/diag-examples/classes;${dist.lib.dir}/javac.jar"
+            classpath="${build.dir}/diag-examples/classes;${dist.lib.dir}/javac.jar;${dist.lib.dir}/javap.jar"
             classname="RunExamples">
             <jvmarg value="-Dtest.classes=${build.dir}/diag-examples/classes"/>
             <arg value="-examples"/>
