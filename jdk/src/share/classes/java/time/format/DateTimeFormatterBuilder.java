@@ -78,9 +78,11 @@ import java.math.RoundingMode;
 import java.text.ParsePosition;
 import java.time.DateTimeException;
 import java.time.Instant;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.ZoneOffset;
+import java.time.chrono.ChronoLocalDate;
 import java.time.chrono.Chronology;
 import java.time.chrono.IsoChronology;
 import java.time.format.DateTimeTextProvider.LocaleStore;
@@ -499,51 +501,16 @@ public final class DateTimeFormatterBuilder {
 
     //-----------------------------------------------------------------------
     /**
-     * Appends the reduced value of a date-time field with fixed width to the formatter.
+     * Appends the reduced value of a date-time field to the formatter.
      * <p>
-     * This is typically used for formatting and parsing a two digit year.
-     * The {@code width} is the printed and parsed width.
-     * The {@code baseValue} is used during parsing to determine the valid range.
-     * <p>
-     * For formatting, the width is used to determine the number of characters to format.
-     * The rightmost characters are output to match the width, left padding with zero.
-     * <p>
-     * For strict parsing, the number of characters allowed by the width are parsed.
-     * For lenient parsing, the number of characters must be at least 1 and less than 10.
-     * If the number of digits parsed is equal to {@code width} and the value is positive,
-     * the value of the field is computed to be the first number greater than
-     * or equal to the {@code baseValue} with the same least significant characters,
-     * otherwise the value parsed is the field value.
-     * This allows a reduced value to be entered for values in range of the baseValue
-     * and width and absolute values can be entered for values outside the range.
-     * <p>
-     * For example, a base value of {@code 1980} and a width of {@code 2} will have
-     * valid values from {@code 1980} to {@code 2079}.
-     * During parsing, the text {@code "12"} will result in the value {@code 2012} as that
-     * is the value within the range where the last two characters are "12".
-     * Compare with lenient parsing the text {@code "1915"} that will result in the
-     * value {@code 1915}.
-     *
-     * @param field  the field to append, not null
-     * @param width  the field width of the printed and parsed field, from 1 to 10
-     * @param baseValue  the base value of the range of valid values
-     * @return this, for chaining, not null
-     * @throws IllegalArgumentException if the width or base value is invalid
-     * @see #appendValueReduced(java.time.temporal.TemporalField, int, int, int)
-     */
-    public DateTimeFormatterBuilder appendValueReduced(TemporalField field,
-            int width, int baseValue) {
-        return appendValueReduced(field, width, width, baseValue);
-    }
-
-    /**
-     * Appends the reduced value of a date-time field with a flexible width to the formatter.
-     * <p>
-     * This is typically used for formatting and parsing a two digit year
-     * but allowing for the year value to be up to maxWidth.
+     * Since fields such as year vary by chronology, it is recommended to use the
+     * {@link #appendValueReduced(TemporalField, int, int, ChronoLocalDate)} date}
+     * variant of this method in most cases. This variant is suitable for
+     * simple fields or working with only the ISO chronology.
      * <p>
      * For formatting, the {@code width} and {@code maxWidth} are used to
      * determine the number of characters to format.
+     * If they are equal then the format is fixed width.
      * If the value of the field is within the range of the {@code baseValue} using
      * {@code width} characters then the reduced value is formatted otherwise the value is
      * truncated to fit {@code maxWidth}.
@@ -562,8 +529,7 @@ public final class DateTimeFormatterBuilder {
      * valid values from {@code 1980} to {@code 2079}.
      * During parsing, the text {@code "12"} will result in the value {@code 2012} as that
      * is the value within the range where the last two characters are "12".
-     * Compare with parsing the text {@code "1915"} that will result in the
-     * value {@code 1915}.
+     * By contrast, parsing the text {@code "1915"} will result in the value {@code 1915}.
      *
      * @param field  the field to append, not null
      * @param width  the field width of the printed and parsed field, from 1 to 10
@@ -575,7 +541,67 @@ public final class DateTimeFormatterBuilder {
     public DateTimeFormatterBuilder appendValueReduced(TemporalField field,
             int width, int maxWidth, int baseValue) {
         Objects.requireNonNull(field, "field");
-        ReducedPrinterParser pp = new ReducedPrinterParser(field, width, maxWidth, baseValue);
+        ReducedPrinterParser pp = new ReducedPrinterParser(field, width, maxWidth, baseValue, null);
+        appendValue(pp);
+        return this;
+    }
+
+    /**
+     * Appends the reduced value of a date-time field to the formatter.
+     * <p>
+     * This is typically used for formatting and parsing a two digit year.
+     * <p>
+     * The base date is used to calculate the full value during parsing.
+     * For example, if the base date is 1950-01-01 then parsed values for
+     * a two digit year parse will be in the range 1950-01-01 to 2049-12-31.
+     * Only the year would be extracted from the date, thus a base date of
+     * 1950-08-25 would also parse to the range 1950-01-01 to 2049-12-31.
+     * This behaviour is necessary to support fields such as week-based-year
+     * or other calendar systems where the parsed value does not align with
+     * standard ISO years.
+     * <p>
+     * The exact behavior is as follows. Parse the full set of fields and
+     * determine the effective chronology. Then convert the base date to the
+     * effective chronology. Then extract the specified field from the
+     * chronology-specific base date and use it to determine the
+     * {@code baseValue} used below.
+     * <p>
+     * For formatting, the {@code width} and {@code maxWidth} are used to
+     * determine the number of characters to format.
+     * If they are equal then the format is fixed width.
+     * If the value of the field is within the range of the {@code baseValue} using
+     * {@code width} characters then the reduced value is formatted otherwise the value is
+     * truncated to fit {@code maxWidth}.
+     * The rightmost characters are output to match the width, left padding with zero.
+     * <p>
+     * For strict parsing, the number of characters allowed by {@code width} to {@code maxWidth} are parsed.
+     * For lenient parsing, the number of characters must be at least 1 and less than 10.
+     * If the number of digits parsed is equal to {@code width} and the value is positive,
+     * the value of the field is computed to be the first number greater than
+     * or equal to the {@code baseValue} with the same least significant characters,
+     * otherwise the value parsed is the field value.
+     * This allows a reduced value to be entered for values in range of the baseValue
+     * and width and absolute values can be entered for values outside the range.
+     * <p>
+     * For example, a base value of {@code 1980} and a width of {@code 2} will have
+     * valid values from {@code 1980} to {@code 2079}.
+     * During parsing, the text {@code "12"} will result in the value {@code 2012} as that
+     * is the value within the range where the last two characters are "12".
+     * By contrast, parsing the text {@code "1915"} will result in the value {@code 1915}.
+     *
+     * @param field  the field to append, not null
+     * @param width  the field width of the printed and parsed field, from 1 to 10
+     * @param maxWidth  the maximum field width of the printed field, from 1 to 10
+     * @param baseDate  the base date used to calculate the base value for the range
+     *  of valid values in the parsed chronology, not null
+     * @return this, for chaining, not null
+     * @throws IllegalArgumentException if the width or base value is invalid
+     */
+    public DateTimeFormatterBuilder appendValueReduced(
+            TemporalField field, int width, int maxWidth, ChronoLocalDate baseDate) {
+        Objects.requireNonNull(field, "field");
+        Objects.requireNonNull(baseDate, "baseDate");
+        ReducedPrinterParser pp = new ReducedPrinterParser(field, width, maxWidth, 0, baseDate);
         appendValue(pp);
         return this;
     }
@@ -1682,7 +1708,7 @@ public final class DateTimeFormatterBuilder {
             case 'u':
             case 'y':
                 if (count == 2) {
-                    appendValueReduced(field, 2, 2000);
+                    appendValueReduced(field, 2, 2, ReducedPrinterParser.BASE_DATE);
                 } else if (count < 4) {
                     appendValue(field, count, 19, SignStyle.NORMAL);
                 } else {
@@ -2516,7 +2542,7 @@ public final class DateTimeFormatterBuilder {
             if (valueLong == null) {
                 return false;
             }
-            long value = getValue(valueLong);
+            long value = getValue(context, valueLong);
             DecimalStyle decimalStyle = context.getDecimalStyle();
             String str = (value == Long.MIN_VALUE ? "9223372036854775808" : Long.toString(Math.abs(value)));
             if (str.length() > maxWidth) {
@@ -2560,10 +2586,11 @@ public final class DateTimeFormatterBuilder {
         /**
          * Gets the value to output.
          *
-         * @param value  the base value of the field, not null
+         * @param context  the context
+         * @param value  the value of the field, not null
          * @return the value
          */
-        long getValue(long value) {
+        long getValue(DateTimePrintContext context, long value) {
             return value;
         }
 
@@ -2703,7 +2730,13 @@ public final class DateTimeFormatterBuilder {
      * Prints and parses a reduced numeric date-time field.
      */
     static final class ReducedPrinterParser extends NumberPrinterParser {
+        /**
+         * The base date for reduced value parsing.
+         */
+        static final LocalDate BASE_DATE = LocalDate.of(2000, 1, 1);
+
         private final int baseValue;
+        private final ChronoLocalDate baseDate;
 
         /**
          * Constructor.
@@ -2712,10 +2745,11 @@ public final class DateTimeFormatterBuilder {
          * @param minWidth  the minimum field width, from 1 to 10
          * @param maxWidth  the maximum field width, from 1 to 10
          * @param baseValue  the base value
+         * @param baseDate  the base date
          */
         ReducedPrinterParser(TemporalField field, int minWidth, int maxWidth,
-                int baseValue) {
-            this(field, minWidth, maxWidth, baseValue, 0);
+                int baseValue, ChronoLocalDate baseDate) {
+            this(field, minWidth, maxWidth, baseValue, baseDate, 0);
             if (minWidth < 1 || minWidth > 10) {
                 throw new IllegalArgumentException("The minWidth must be from 1 to 10 inclusive but was " + minWidth);
             }
@@ -2726,11 +2760,13 @@ public final class DateTimeFormatterBuilder {
                 throw new IllegalArgumentException("Maximum width must exceed or equal the minimum width but " +
                         maxWidth + " < " + minWidth);
             }
-            if (field.range().isValidValue(baseValue) == false) {
-                throw new IllegalArgumentException("The base value must be within the range of the field");
-            }
-            if ((((long) baseValue) + EXCEED_POINTS[maxWidth]) > Integer.MAX_VALUE) {
-                throw new DateTimeException("Unable to add printer-parser as the range exceeds the capacity of an int");
+            if (baseDate == null) {
+                if (field.range().isValidValue(baseValue) == false) {
+                    throw new IllegalArgumentException("The base value must be within the range of the field");
+                }
+                if ((((long) baseValue) + EXCEED_POINTS[maxWidth]) > Integer.MAX_VALUE) {
+                    throw new DateTimeException("Unable to add printer-parser as the range exceeds the capacity of an int");
+                }
             }
         }
 
@@ -2742,17 +2778,24 @@ public final class DateTimeFormatterBuilder {
          * @param minWidth  the minimum field width, from 1 to 10
          * @param maxWidth  the maximum field width, from 1 to 10
          * @param baseValue  the base value
+         * @param baseDate  the base date
          * @param subsequentWidth the subsequentWidth for this instance
          */
         private ReducedPrinterParser(TemporalField field, int minWidth, int maxWidth,
-                int baseValue, int subsequentWidth) {
+                int baseValue, ChronoLocalDate baseDate, int subsequentWidth) {
             super(field, minWidth, maxWidth, SignStyle.NOT_NEGATIVE, subsequentWidth);
             this.baseValue = baseValue;
+            this.baseDate = baseDate;
         }
 
         @Override
-        long getValue(long value) {
+        long getValue(DateTimePrintContext context, long value) {
             long absValue = Math.abs(value);
+            int baseValue = this.baseValue;
+            if (baseDate != null) {
+                Chronology chrono = Chronology.from(context.getTemporal());
+                baseValue = chrono.date(baseDate).get(field);
+            }
             if (value >= baseValue && value < baseValue + EXCEED_POINTS[minWidth]) {
                 // Use the reduced value if it fits in minWidth
                 return absValue % EXCEED_POINTS[minWidth];
@@ -2763,6 +2806,12 @@ public final class DateTimeFormatterBuilder {
 
         @Override
         int setValue(DateTimeParseContext context, long value, int errorPos, int successPos) {
+            int baseValue = this.baseValue;
+            if (baseDate != null) {
+                // TODO: effective chrono is inaccurate at this point
+                Chronology chrono = context.getEffectiveChronology();
+                baseValue = chrono.date(baseDate).get(field);
+            }
             int parseLen = successPos - errorPos;
             if (parseLen == minWidth && value >= 0) {
                 long range = EXCEED_POINTS[minWidth];
@@ -2773,7 +2822,7 @@ public final class DateTimeFormatterBuilder {
                 } else {
                     value = basePart - value;
                 }
-                if (basePart != 0 && value < baseValue) {
+                if (value < baseValue) {
                     value += range;
                 }
             }
@@ -2790,7 +2839,7 @@ public final class DateTimeFormatterBuilder {
             if (subsequentWidth == -1) {
                 return this;
             }
-            return new ReducedPrinterParser(field, minWidth, maxWidth, baseValue, -1);
+            return new ReducedPrinterParser(field, minWidth, maxWidth, baseValue, baseDate, -1);
         }
 
         /**
@@ -2801,13 +2850,13 @@ public final class DateTimeFormatterBuilder {
          */
         @Override
         ReducedPrinterParser withSubsequentWidth(int subsequentWidth) {
-            return new ReducedPrinterParser(field, minWidth, maxWidth, baseValue,
+            return new ReducedPrinterParser(field, minWidth, maxWidth, baseValue, baseDate,
                     this.subsequentWidth + subsequentWidth);
         }
 
         @Override
         public String toString() {
-            return "ReducedValue(" + field + "," + minWidth + "," + maxWidth + "," + baseValue + ")";
+            return "ReducedValue(" + field + "," + minWidth + "," + maxWidth + "," + (baseDate != null ? baseDate : baseValue) + ")";
         }
     }
 
@@ -4351,7 +4400,7 @@ public final class DateTimeFormatterBuilder {
                 case 'Y':
                     field = weekDef.weekBasedYear();
                     if (count == 2) {
-                        return new ReducedPrinterParser(field, 2, 2, 2000, 0);
+                        return new ReducedPrinterParser(field, 2, 2, 0, ReducedPrinterParser.BASE_DATE, 0);
                     } else {
                         return new NumberPrinterParser(field, count, 19,
                                 (count < 4) ? SignStyle.NORMAL : SignStyle.EXCEEDS_PAD, -1);
@@ -4380,7 +4429,7 @@ public final class DateTimeFormatterBuilder {
                 if (count == 1) {
                     sb.append("WeekBasedYear");
                 } else if (count == 2) {
-                    sb.append("ReducedValue(WeekBasedYear,2,2000)");
+                    sb.append("ReducedValue(WeekBasedYear,2,2,2000-01-01)");
                 } else {
                     sb.append("WeekBasedYear,").append(count).append(",")
                             .append(19).append(",")
