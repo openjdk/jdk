@@ -23,6 +23,7 @@
 
 # @test
 # @bug 8024302
+# @bug 8026037
 # @summary Clarify jar verifications
 #
 
@@ -52,7 +53,8 @@ JARSIGNER="$TESTJAVA${FS}bin${FS}jarsigner -keystore $KS -storepass changeit"
 
 rm $KS 2> /dev/null
 
-export LANG=C
+LANG=C
+export LANG
 
 echo 12345 > file
 
