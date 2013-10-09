@@ -47,6 +47,7 @@ import java.security.Principal;
  * @see java.security.Principal
  * @see javax.security.auth.Subject
  */
+@jdk.Exported
 public class NTSid implements Principal, java.io.Serializable {
 
     private static final long serialVersionUID = 4412290580770249885L;

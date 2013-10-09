@@ -32,6 +32,7 @@ import org.ietf.jgss.*;
  * functionalities not defined by {@code org.ietf.jgss.GSSContext},
  * such as querying context-specific attributes.
  */
+@jdk.Exported
 public interface ExtendedGSSContext extends GSSContext {
     /**
      * Return the mechanism-specific attribute associated with {@code type}.
