@@ -184,7 +184,6 @@ import static sun.swing.SwingUtilities2.IMPLIED_CR;
  * of various methods described above.</p>
  *
  * <table border=1 cellspacing=0>
- *   <caption></caption>
  *   <tr>
  *     <th>Example</th>
  *     <th><code>insertAfterStart</code></th>
@@ -262,8 +261,8 @@ import static sun.swing.SwingUtilities2.IMPLIED_CR;
  * not be compatible with future Swing releases. The current
  * serialization support is appropriate for short term storage or RMI
  * between applications running the same version of Swing.  As of 1.4,
- * support for long term storage of all JavaBeans<sup><font
- * size="-2">TM</font></sup> has been added to the
+ * support for long term storage of all JavaBeans&trade;
+ * has been added to the
  * <code>java.beans</code> package.  Please see {@link
  * java.beans.XMLEncoder}.</p>
  *

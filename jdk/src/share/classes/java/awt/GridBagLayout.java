@@ -125,9 +125,9 @@ import java.util.Arrays;
  * <center><table BORDER=0 WIDTH=800
  *        SUMMARY="absolute, relative and baseline values as described above">
  * <tr>
- * <th><P STYLE="TEXT-ALIGN:LEFT">Absolute Values</th>
- * <th><P STYLE="TEXT-ALIGN:LEFT">Orientation Relative Values</th>
- * <th><P STYLE="TEXT-ALIGN:LEFT">Baseline Relative Values</th>
+ * <th><P style="text-align:left">Absolute Values</th>
+ * <th><P style="text-align:left">Orientation Relative Values</th>
+ * <th><P style="text-align:left">Baseline Relative Values</th>
  * </tr>
  * <tr>
  * <td>

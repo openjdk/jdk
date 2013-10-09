@@ -160,9 +160,9 @@ import sun.swing.SwingAccessor;
  *
  * <table border=1 summary="Stages of keyboard and input method event handling">
  * <tr>
- * <th id="stage"><p align="left">Stage</p></th>
- * <th id="ke"><p align="left">KeyEvent</p></th>
- * <th id="ime"><p align="left">InputMethodEvent</p></th></tr>
+ * <th id="stage"><p style="text-align:left">Stage</p></th>
+ * <th id="ke"><p style="text-align:left">KeyEvent</p></th>
+ * <th id="ime"><p style="text-align:left">InputMethodEvent</p></th></tr>
  * <tr><td headers="stage">1.   </td>
  *     <td headers="ke">input methods </td>
  *     <td headers="ime">(generated here)</td></tr>
@@ -214,7 +214,7 @@ import sun.swing.SwingAccessor;
  * The text document model may be shared by other views which act as observers
  * of the model (e.g. a document may be shared by multiple components).
  *
- * <p align=center><img src="doc-files/editor.gif" alt="Diagram showing interaction between Controller, Document, events, and ViewFactory"
+ * <p style="text-align:center"><img src="doc-files/editor.gif" alt="Diagram showing interaction between Controller, Document, events, and ViewFactory"
  *                  HEIGHT=358 WIDTH=587></p>
  *
  * <p>
@@ -1399,8 +1399,8 @@ public abstract class JTextComponent extends JComponent implements Scrollable, A
      * Fetches a portion of the text represented by the
      * component.  Returns an empty string if length is 0.
      *
-     * @param offs the offset >= 0
-     * @param len the length >= 0
+     * @param offs the offset &ge; 0
+     * @param len the length &ge; 0
      * @return the text
      * @exception BadLocationException if the offset or length are invalid
      */
@@ -1416,7 +1416,7 @@ public abstract class JTextComponent extends JComponent implements Scrollable, A
      * be computed until the component has been sized).  The
      * component does not have to be visible or painted.
      *
-     * @param pos the position >= 0
+     * @param pos the position &ge; 0
      * @return the coordinates as a rectangle, with (r.x, r.y) as the location
      *   in the coordinate system, or null if the component does
      *   not yet have a positive size.
@@ -1437,7 +1437,7 @@ public abstract class JTextComponent extends JComponent implements Scrollable, A
      * component does not have to be visible or painted.
      *
      * @param pt the location in the view to translate
-     * @return the offset >= 0 from the start of the document,
+     * @return the offset &ge; 0 from the start of the document,
      *   or -1 if the component does not yet have a positive
      *   size.
      * @see TextUI#viewToModel
@@ -1688,7 +1688,7 @@ public abstract class JTextComponent extends JComponent implements Scrollable, A
      * text component.
      *
      * @return the position of the text insertion caret for the
-     *  text component >= 0
+     *  text component &ge; 0
      */
     @Transient
     public int getCaretPosition() {
@@ -1814,7 +1814,7 @@ public abstract class JTextComponent extends JComponent implements Scrollable, A
      * Returns the selected text's start position.  Return 0 for an
      * empty document, or the value of dot if no selection.
      *
-     * @return the start position >= 0
+     * @return the start position &ge; 0
      */
     @Transient
     public int getSelectionStart() {
@@ -1832,7 +1832,7 @@ public abstract class JTextComponent extends JComponent implements Scrollable, A
      * This is implemented to forward to the <code>Caret</code>
      * implementation which is where the actual selection is maintained.
      *
-     * @param selectionStart the start position of the text >= 0
+     * @param selectionStart the start position of the text &ge; 0
      * @beaninfo
      * description: starting location of the selection.
      */
@@ -1847,7 +1847,7 @@ public abstract class JTextComponent extends JComponent implements Scrollable, A
      * Returns the selected text's end position.  Return 0 if the document
      * is empty, or the value of dot if there is no selection.
      *
-     * @return the end position >= 0
+     * @return the end position &ge; 0
      */
     @Transient
     public int getSelectionEnd() {
@@ -1865,7 +1865,7 @@ public abstract class JTextComponent extends JComponent implements Scrollable, A
      * This is implemented to forward to the <code>Caret</code>
      * implementation which is where the actual selection is maintained.
      *
-     * @param selectionEnd the end position of the text >= 0
+     * @param selectionEnd the end position of the text &ge; 0
      * @beaninfo
      * description: ending location of the selection.
      */
@@ -2785,7 +2785,7 @@ public abstract class JTextComponent extends JComponent implements Scrollable, A
          * if the JTextComponent is contained in a JScrollPane in which
          * case the resulting rectangle should be composed with the parent
          * coordinates.  A good algorithm to use is:
-         * <nf>
+         * <pre>
          * Accessible a:
          * AccessibleText at = a.getAccessibleText();
          * AccessibleComponent ac = a.getAccessibleComponent();
@@ -2793,14 +2793,14 @@ public abstract class JTextComponent extends JComponent implements Scrollable, A
          * Point p = ac.getLocation();
          * r.x += p.x;
          * r.y += p.y;
-         * </nf>
+         * </pre>
          *
          * Note: the JTextComponent must have a valid size (e.g. have
          * been added to a parent container whose ancestor container
          * is a valid top-level window) for this method to be able
          * to return a meaningful (non-null) value.
          *
-         * @param i the index into the String >= 0
+         * @param i the index into the String &ge; 0
          * @return the screen coordinates of the character's bounding box
          */
         public Rectangle getCharacterBounds(int i) {
@@ -2844,7 +2844,7 @@ public abstract class JTextComponent extends JComponent implements Scrollable, A
         /**
          * Returns the number of characters (valid indices)
          *
-         * @return the number of characters >= 0
+         * @return the number of characters &ge; 0
          */
         public int getCharCount() {
             return model.getLength();
@@ -2895,7 +2895,7 @@ public abstract class JTextComponent extends JComponent implements Scrollable, A
          * Return 0 if the text is empty, or the caret position
          * if no selection.
          *
-         * @return the index into the text of the start of the selection >= 0
+         * @return the index into the text of the start of the selection &ge; 0
          */
         public int getSelectionStart() {
             return JTextComponent.this.getSelectionStart();
@@ -2908,7 +2908,7 @@ public abstract class JTextComponent extends JComponent implements Scrollable, A
          * Return 0 if the text is empty, or the caret position
          * if no selection.
          *
-         * @return the index into teh text of the end of the selection >= 0
+         * @return the index into teh text of the end of the selection &ge; 0
          */
         public int getSelectionEnd() {
             return JTextComponent.this.getSelectionEnd();
