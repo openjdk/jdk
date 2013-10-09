@@ -35,6 +35,6 @@ package com.sun.jdi;
  * @author James McIlree
  * @since  1.3
  */
-public interface IntegerType extends PrimitiveType
-{
+@jdk.Exported
+public interface IntegerType extends PrimitiveType {
 }

@@ -30,6 +30,7 @@ package com.sun.security.auth.module;
  * security information for the current user.
  *
  */
+@jdk.Exported
 public class NTSystem {
 
     private native void getCurrent(boolean debug);

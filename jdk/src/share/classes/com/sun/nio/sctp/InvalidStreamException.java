@@ -30,6 +30,7 @@ package com.sun.nio.sctp;
  *
  * @since 1.7
  */
+@jdk.Exported
 public class InvalidStreamException extends IllegalArgumentException {
     private static final long serialVersionUID = -9172703378046665558L;
 

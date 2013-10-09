@@ -42,6 +42,7 @@ import java.security.Principal;
  *
  * @since 1.6
  */
+@jdk.Exported
 public final class UserPrincipal implements Principal, java.io.Serializable {
 
     private static final long serialVersionUID = 892106070870210969L;

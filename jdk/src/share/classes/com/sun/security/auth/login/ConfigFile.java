@@ -83,6 +83,7 @@ import java.net.URI;
  * @see javax.security.auth.login.LoginContext
  * @see java.security.Security security properties
  */
+@jdk.Exported
 public class ConfigFile extends Configuration {
 
     private final sun.security.provider.ConfigFile.Spi spi;

@@ -29,6 +29,7 @@ package com.sun.security.jgss;
  * Attribute types that can be specified as an argument of
  * {@link com.sun.security.jgss.ExtendedGSSContext#inquireSecContext}
  */
+@jdk.Exported
 public enum InquireType {
     /**
      * Attribute type for retrieving the session key of an

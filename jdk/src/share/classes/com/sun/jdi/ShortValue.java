@@ -34,8 +34,9 @@ package com.sun.jdi;
  * @author James McIlree
  * @since  1.3
  */
-public interface ShortValue extends PrimitiveValue, Comparable<ShortValue>
-{
+@jdk.Exported
+public interface ShortValue extends PrimitiveValue, Comparable<ShortValue> {
+
     /**
      * Returns this ShortValue as a short.
      *

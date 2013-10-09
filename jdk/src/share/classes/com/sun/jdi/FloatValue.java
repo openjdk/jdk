@@ -34,8 +34,9 @@ package com.sun.jdi;
  * @author James McIlree
  * @since  1.3
  */
-public interface FloatValue extends PrimitiveValue, Comparable<FloatValue>
-{
+@jdk.Exported
+public interface FloatValue extends PrimitiveValue, Comparable<FloatValue> {
+
     /**
      * Returns this FloatValue as a float.
      *

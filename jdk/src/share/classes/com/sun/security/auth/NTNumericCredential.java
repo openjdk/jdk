@@ -31,6 +31,7 @@ package com.sun.security.auth;
  *
  */
 
+@jdk.Exported
 public class NTNumericCredential {
 
     private long impersonationToken;

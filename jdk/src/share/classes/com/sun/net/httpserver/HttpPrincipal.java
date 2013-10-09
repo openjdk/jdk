@@ -33,6 +33,7 @@ import java.security.Principal;
  * Represents a user authenticated by HTTP Basic or Digest
  * authentication.
  */
+@jdk.Exported
 public class HttpPrincipal implements Principal {
     private String username, realm;
 

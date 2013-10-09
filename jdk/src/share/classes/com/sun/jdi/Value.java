@@ -168,8 +168,8 @@ package com.sun.jdi;
  * @since  1.3
  */
 
-public interface Value extends Mirror
-{
+@jdk.Exported
+public interface Value extends Mirror {
     /**
      * Returns the run-time type of this value.
      *
