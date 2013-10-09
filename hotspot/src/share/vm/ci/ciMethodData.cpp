@@ -78,7 +78,9 @@ ciMethodData::ciMethodData() : ciMetadata(NULL) {
 
 void ciMethodData::load_data() {
   MethodData* mdo = get_MethodData();
-  if (mdo == NULL) return;
+  if (mdo == NULL) {
+    return;
+  }
 
   // To do: don't copy the data if it is not "ripe" -- require a minimum #
   // of invocations.

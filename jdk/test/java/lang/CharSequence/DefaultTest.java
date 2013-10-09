@@ -25,6 +25,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.PrimitiveIterator;
+import java.util.Spliterator;
 import java.util.stream.Collectors;
 
 import org.testng.annotations.Test;
@@ -34,7 +35,7 @@ import static org.testng.Assert.*;
 /*
  * @test
  * @summary Unit test for CharSequence default methods
- * @bug 8012665
+ * @bug 8012665 8025002
  * @run testng DefaultTest
  */
 
@@ -51,6 +52,12 @@ public class DefaultTest {
     public void testSimpleChars() {
         List<Integer> list = "abc".chars().boxed().collect(Collectors.toList());
         assertEquals(list, Arrays.asList((int) 'a', (int) 'b', (int) 'c'));
+    }
+
+    public void testCodePointsCharacteristics() {
+        Spliterator.OfInt s = "".codePoints().spliterator();
+        assertFalse(s.hasCharacteristics(Spliterator.SIZED | Spliterator.SUBSIZED));
+        assertTrue(s.hasCharacteristics(Spliterator.ORDERED));
     }
 
     @Test(expectedExceptions = NoSuchElementException.class)

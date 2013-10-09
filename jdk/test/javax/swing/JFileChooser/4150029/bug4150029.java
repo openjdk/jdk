@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,11 +21,10 @@
  * questions.
  */
 
-/* @test
-   @bug 4150029
-   @summary BackSpace keyboard button does not lead to parent directory
-   @author Oleg Mokhovikov
-   @run applet/manual=done bug4150029.html
+/*
+   bug 4150029 8006087
+   summary BackSpace keyboard button does not lead to parent directory
+   author Oleg Mokhovikov
 */
 
 import javax.swing.*;
@@ -36,6 +35,14 @@ public class bug4150029 extends JApplet {
     private boolean res;
 
     public void init() {
+        if (sun.awt.OSInfo.getOSType() == sun.awt.OSInfo.OSType.MACOSX) {
+            try {
+                UIManager.setLookAndFeel("javax.swing.plaf.metal.MetalLookAndFeel");
+            } catch (Exception e) {
+                throw new RuntimeException(e);
+            }
+        }
+
         String tmpDir = System.getProperty("java.io.tmpdir");
 
         if (tmpDir.length() == 0) {//'java.io.tmpdir' isn't guaranteed to be defined

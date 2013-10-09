@@ -40,8 +40,7 @@ public class Resources_es extends java.util.ListResourceBundle {
                 "*******************************************\n\n"},
 
         // keytool: Help part
-// "Option" should be translated.
-        {".OPTION.", " [Opci\u00F3n]..."},
+        {".OPTION.", " [OPTION]..."},
         {"Options.", "Opciones:"},
         {"Use.keytool.help.for.all.available.commands",
                  "Utilice\"keytool -help\" para todos los comandos disponibles"},
@@ -61,7 +60,6 @@ public class Resources_es extends java.util.ListResourceBundle {
                 "Exporta el certificado"}, //-exportcert
         {"Generates.a.key.pair",
                 "Genera un par de claves"}, //-genkeypair
-// translation of "secret" key should be different to "private" key.
         {"Generates.a.secret.key",
                 "Genera un clave secreta"}, //-genseckey
         {"Generates.certificate.from.a.certificate.request",
@@ -244,8 +242,10 @@ public class Resources_es extends java.util.ListResourceBundle {
         {"Certification.request.stored.in.file.filename.",
                 "Solicitud de certificaci\u00F3n almacenada en el archivo <{0}>"},
         {"Submit.this.to.your.CA", "Enviar a la CA"},
-        {"if.alias.not.specified.destalias.srckeypass.and.destkeypass.must.not.be.specified",
-            "si no se especifica el alias, no se puede especificar destalias, srckeypass ni destkeypass"},
+        {"if.alias.not.specified.destalias.and.srckeypass.must.not.be.specified",
+            "si no se especifica el alias, no se debe especificar destalias ni srckeypass"},
+        {"The.destination.pkcs12.keystore.has.different.storepass.and.keypass.Please.retry.with.destkeypass.specified.",
+            "El almac\u00E9n de claves pkcs12 de destino tiene storepass y keypass diferentes. Vuelva a intentarlo con -destkeypass especificado."},
         {"Certificate.stored.in.file.filename.",
                 "Certificado almacenado en el archivo <{0}>"},
         {"Certificate.reply.was.installed.in.keystore",
@@ -324,7 +324,7 @@ public class Resources_es extends java.util.ListResourceBundle {
         {"Do.you.still.want.to.add.it.to.your.own.keystore.no.",
                 "\u00BFA\u00FAn desea agregarlo a su propio almac\u00E9n de claves? [no]:  "},
         {"Trust.this.certificate.no.", "\u00BFConfiar en este certificado? [no]:  "},
-        {"YES", "S\u00ED"},
+        {"YES", "S\u00CD"},
         {"New.prompt.", "Nuevo {0}: "},
         {"Passwords.must.differ", "Las contrase\u00F1as deben ser distintas"},
         {"Re.enter.new.prompt.", "Vuelva a escribir el nuevo {0}: "},
@@ -361,7 +361,7 @@ public class Resources_es extends java.util.ListResourceBundle {
                  "El alias <{0}> hace referencia a un tipo de entrada que no es una clave privada. El comando -keyclone s\u00F3lo permite la clonaci\u00F3n de entradas de claves privadas"},
 
         {".WARNING.WARNING.WARNING.",
-            "*****************  Advertencia Advertencia Advertencia  *****************"},
+            "*****************  WARNING WARNING WARNING  *****************"},
         {"Signer.d.", "#%d de Firmante:"},
         {"Timestamp.", "Registro de Hora:"},
         {"Signature.", "Firma:"},
@@ -386,7 +386,7 @@ public class Resources_es extends java.util.ListResourceBundle {
                 "Certificado de nivel superior en la respuesta:\n"},
         {".is.not.trusted.", "... no es de confianza. "},
         {"Install.reply.anyway.no.", "\u00BFInstalar respuesta de todos modos? [no]:  "},
-        {"NO", "No"},
+        {"NO", "NO"},
         {"Public.keys.in.reply.and.keystore.don.t.match",
                 "Las claves p\u00FAblicas en la respuesta y en el almac\u00E9n de claves no coinciden"},
         {"Certificate.reply.and.certificate.in.keystore.are.identical",
@@ -399,6 +399,10 @@ public class Resources_es extends java.util.ListResourceBundle {
                 "No se ha generado la clave secreta, el alias <{0}> ya existe"},
         {"Please.provide.keysize.for.secret.key.generation",
                 "Proporcione el valor de -keysize para la generaci\u00F3n de claves secretas"},
+
+        {"verified.by.s.in.s", "Verificado por %s en %s"},
+        {"warning.not.verified.make.sure.keystore.is.correct",
+            "ADVERTENCIA: no se ha verificado. Aseg\u00FArese de que el valor de -keystore es correcto."},
 
         {"Extensions.", "Extensiones: "},
         {".Empty.value.", "(Valor vac\u00EDo)"},

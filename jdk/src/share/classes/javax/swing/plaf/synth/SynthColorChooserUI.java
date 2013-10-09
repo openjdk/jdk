@@ -36,7 +36,7 @@ import java.beans.PropertyChangeListener;
 
 
 /**
- * Provides the Synth L&F UI delegate for
+ * Provides the Synth L&amp;F UI delegate for
  * {@link javax.swing.JColorChooser}.
  *
  * @author Tom Santos
@@ -58,7 +58,7 @@ public class SynthColorChooserUI extends BasicColorChooserUI implements
     }
 
     /**
-     * @inheritDoc
+     * {@inheritDoc}
      */
     @Override
     protected AbstractColorChooserPanel[] createDefaultChoosers() {
@@ -74,7 +74,7 @@ public class SynthColorChooserUI extends BasicColorChooserUI implements
     }
 
     /**
-     * @inheritDoc
+     * {@inheritDoc}
      */
     @Override
     protected void installDefaults() {
@@ -89,7 +89,7 @@ public class SynthColorChooserUI extends BasicColorChooserUI implements
     }
 
     /**
-     * @inheritDoc
+     * {@inheritDoc}
      */
     @Override
     protected void uninstallDefaults() {
@@ -102,7 +102,7 @@ public class SynthColorChooserUI extends BasicColorChooserUI implements
     }
 
     /**
-     * @inheritDoc
+     * {@inheritDoc}
      */
     @Override
     protected void installListeners() {
@@ -111,7 +111,7 @@ public class SynthColorChooserUI extends BasicColorChooserUI implements
     }
 
     /**
-     * @inheritDoc
+     * {@inheritDoc}
      */
     @Override
     protected void uninstallListeners() {
@@ -120,7 +120,7 @@ public class SynthColorChooserUI extends BasicColorChooserUI implements
     }
 
     /**
-     * @inheritDoc
+     * {@inheritDoc}
      */
     @Override
     public SynthContext getContext(JComponent c) {
@@ -188,7 +188,7 @@ public class SynthColorChooserUI extends BasicColorChooserUI implements
     }
 
     /**
-     * @inheritDoc
+     * {@inheritDoc}
      */
     @Override
     public void paintBorder(SynthContext context, Graphics g, int x,
@@ -197,7 +197,7 @@ public class SynthColorChooserUI extends BasicColorChooserUI implements
     }
 
     /**
-     * @inheritDoc
+     * {@inheritDoc}
      */
     @Override
     public void propertyChange(PropertyChangeEvent e) {

@@ -78,7 +78,13 @@ class Abstract_VM_Version: AllStatic {
   static const char* jre_release_version();
 
   // does HW support an 8-byte compare-exchange operation?
-  static bool supports_cx8()  {return _supports_cx8;}
+  static bool supports_cx8()  {
+#ifdef SUPPORTS_NATIVE_CX8
+    return true;
+#else
+    return _supports_cx8;
+#endif
+  }
   // does HW support atomic get-and-set or atomic get-and-add?  Used
   // to guide intrinsification decisions for Unsafe atomic ops
   static bool supports_atomic_getset4()  {return _supports_atomic_getset4;}

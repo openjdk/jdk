@@ -483,7 +483,7 @@ void trace_method_handle_stub(const char* adaptername,
   const char* mh_reg_name = has_mh ? "rcx_mh" : "rcx";
   tty->print_cr("MH %s %s="PTR_FORMAT" sp="PTR_FORMAT,
                 adaptername, mh_reg_name,
-                mh, entry_sp);
+                (void *)mh, entry_sp);
 
   if (Verbose) {
     tty->print_cr("Registers:");
