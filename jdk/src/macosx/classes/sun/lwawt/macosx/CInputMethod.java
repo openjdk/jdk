@@ -620,8 +620,7 @@ public class CInputMethod extends InputMethodAdapter {
                     retString[0] = new String(selectedText);
                 }}
             }, fAwtFocussedComponent);
-        } catch (InterruptedException ie) { ie.printStackTrace(); }
-        catch (InvocationTargetException ite) { ite.printStackTrace(); }
+        } catch (InvocationTargetException ite) { ite.printStackTrace(); }
 
         synchronized(retString) { return retString[0]; }
     }
@@ -669,8 +668,7 @@ public class CInputMethod extends InputMethodAdapter {
 
                 }}
             }, fAwtFocussedComponent);
-        } catch (InterruptedException ie) { ie.printStackTrace(); }
-        catch (InvocationTargetException ite) { ite.printStackTrace(); }
+        } catch (InvocationTargetException ite) { ite.printStackTrace(); }
 
         synchronized(returnValue) { return returnValue; }
     }
@@ -695,8 +693,7 @@ public class CInputMethod extends InputMethodAdapter {
                     returnValue[0] = fIMContext.getInsertPositionOffset();
                 }}
             }, fAwtFocussedComponent);
-        } catch (InterruptedException ie) { ie.printStackTrace(); }
-        catch (InvocationTargetException ite) { ite.printStackTrace(); }
+        } catch (InvocationTargetException ite) { ite.printStackTrace(); }
 
         returnValue[1] = fCurrentTextLength;
         synchronized(returnValue) { return returnValue; }
@@ -743,8 +740,7 @@ public class CInputMethod extends InputMethodAdapter {
                     }
                 }}
             }, fAwtFocussedComponent);
-        } catch (InterruptedException ie) { ie.printStackTrace(); }
-        catch (InvocationTargetException ite) { ite.printStackTrace(); }
+        } catch (InvocationTargetException ite) { ite.printStackTrace(); }
 
         synchronized(rect) { return rect; }
     }
@@ -764,8 +760,7 @@ public class CInputMethod extends InputMethodAdapter {
                     insertPositionOffset[0] = fIMContext.getInsertPositionOffset();
                 }}
             }, fAwtFocussedComponent);
-        } catch (InterruptedException ie) { ie.printStackTrace(); }
-        catch (InvocationTargetException ite) { ite.printStackTrace(); }
+        } catch (InvocationTargetException ite) { ite.printStackTrace(); }
 
         // This bit of gymnastics ensures that the returned location is within the composed text.
         // If it falls outside that region, the input method will commit the text, which is inconsistent with native

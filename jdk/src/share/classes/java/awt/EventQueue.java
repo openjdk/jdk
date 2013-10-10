@@ -1159,6 +1159,10 @@ public class EventQueue {
                         if (entry.event instanceof SentEvent) {
                             ((SentEvent)entry.event).dispose();
                         }
+                        if (entry.event instanceof InvocationEvent) {
+                            AWTAccessor.getInvocationEventAccessor()
+                                    .dispose((InvocationEvent)entry.event);
+                        }
                         if (prev == null) {
                             queues[i].head = entry.next;
                         } else {
