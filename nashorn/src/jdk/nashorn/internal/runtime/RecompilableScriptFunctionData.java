@@ -33,6 +33,7 @@ import java.lang.invoke.MethodType;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.LinkedList;
+import jdk.internal.dynalink.support.NameCodec;
 
 import jdk.nashorn.internal.codegen.Compiler;
 import jdk.nashorn.internal.codegen.CompilerConstants;
@@ -100,9 +101,7 @@ public final class RecompilableScriptFunctionData extends ScriptFunctionData {
      * @param allocatorMap       allocator map to seed instances with, when constructing
      */
     public RecompilableScriptFunctionData(final FunctionNode functionNode, final CodeInstaller<ScriptEnvironment> installer, final String allocatorClassName, final PropertyMap allocatorMap) {
-        super(functionNode.isAnonymous() ?
-                "" :
-                functionNode.getIdent().getName(),
+        super(functionName(functionNode),
               functionNode.getParameters().size(),
               functionNode.isStrict(),
               false,
@@ -137,6 +136,20 @@ public final class RecompilableScriptFunctionData extends ScriptFunctionData {
         }
 
         return sb.toString() + super.toString();
+    }
+
+    private static String functionName(final FunctionNode fn) {
+        if (fn.isAnonymous()) {
+            return "";
+        } else {
+            final FunctionNode.Kind kind = fn.getKind();
+            if (kind == FunctionNode.Kind.GETTER || kind == FunctionNode.Kind.SETTER) {
+                final String name = NameCodec.decode(fn.getIdent().getName());
+                return name.substring(4); // 4 is "get " or "set "
+            } else {
+                return fn.getIdent().getName();
+            }
+        }
     }
 
     private static long tokenFor(final FunctionNode fn) {
