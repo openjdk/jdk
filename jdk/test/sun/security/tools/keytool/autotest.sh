@@ -53,18 +53,27 @@ find_one() {
   done
 }
 
+FS="/"
+${TESTJAVA}${FS}bin${FS}java -XshowSettings:properties -version 2> allprop
+cat allprop | grep sun.arch.data.model | grep 32
+if [ "$?" != "0" ]; then
+  B32=false
+else
+  B32=true
+fi
+
 # set platform-dependent variables
 OS=`uname -s`
 case "$OS" in
   SunOS )
-    FS="/"
-    LIBNAME="/usr/lib/mps/libsoftokn3.so"
+    if [ $B32 = true ]; then
+      LIBNAME="/usr/lib/mps/libsoftokn3.so"
+    else
+      LIBNAME="/usr/lib/mps/64/libsoftokn3.so"
+    fi
     ;;
   Linux )
-    FS="/"
-    ${TESTJAVA}${FS}bin${FS}java -XshowSettings:properties -version 2> allprop
-    cat allprop | grep os.arch | grep 64
-    if [ "$?" != "0" ]; then
+    if [ $B32 = true ]; then
         LIBNAME=`find_one \
             "/usr/lib/libsoftokn3.so" \
             "/usr/lib/i386-linux-gnu/nss/libsoftokn3.so"`
@@ -82,7 +91,7 @@ esac
 
 if [ "$LIBNAME" = "" ]; then
   echo "Cannot find libsoftokn3.so"
-  exit 1
+  exit 0
 fi
 
 ${COMPILEJAVA}${FS}bin${FS}javac ${TESTJAVACOPTS} ${TESTTOOLVMOPTS} -d . -XDignore.symbol.file \
