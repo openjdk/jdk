@@ -2355,7 +2355,8 @@ bool PhaseIdealLoop::partial_peel( IdealLoopTree *loop, Node_List &old_new ) {
         opc == Op_Catch     ||
         opc == Op_CatchProj ||
         opc == Op_Jump      ||
-        opc == Op_JumpProj) {
+        opc == Op_JumpProj  ||
+        opc == Op_FlagsProj) {
 #if !defined(PRODUCT)
       if (TracePartialPeeling) {
         tty->print_cr("\nExit control too complex: lp: %d", head->_idx);

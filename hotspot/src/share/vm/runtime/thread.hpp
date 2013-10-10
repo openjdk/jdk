@@ -1278,7 +1278,7 @@ class JavaThread: public Thread {
   address  exception_handler_pc() const          { return _exception_handler_pc; }
   bool     is_method_handle_return() const       { return _is_method_handle_return == 1; }
 
-  void set_exception_oop(oop o)                  { _exception_oop = o; }
+  void set_exception_oop(oop o)                  { (void)const_cast<oop&>(_exception_oop = o); }
   void set_exception_pc(address a)               { _exception_pc = a; }
   void set_exception_handler_pc(address a)       { _exception_handler_pc = a; }
   void set_is_method_handle_return(bool value)   { _is_method_handle_return = value ? 1 : 0; }
