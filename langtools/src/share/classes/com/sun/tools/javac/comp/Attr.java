@@ -792,17 +792,19 @@ public class Attr extends JCTree.Visitor {
         Type t = tree.type != null ?
             tree.type :
             attribType(tree, env);
-        return checkBase(t, tree, env, classExpected, interfaceExpected, checkExtensible);
+        return checkBase(t, tree, env, classExpected, interfaceExpected, false, checkExtensible);
     }
     Type checkBase(Type t,
                    JCTree tree,
                    Env<AttrContext> env,
                    boolean classExpected,
-                   boolean interfaceOrArrayExpected,
+                   boolean interfacesOnlyExpected,
+                   boolean interfacesOrArraysExpected,
                    boolean checkExtensible) {
         if (t.isErroneous())
             return t;
-        if (t.hasTag(TYPEVAR) && !classExpected && !interfaceOrArrayExpected) {
+        if (t.hasTag(TYPEVAR) && !classExpected &&
+            !interfacesOrArraysExpected && !interfacesOnlyExpected) {
             // check that type variable is already visible
             if (t.getUpperBound() == null) {
                 log.error(tree.pos(), "illegal.forward.ref");
@@ -814,9 +816,14 @@ public class Attr extends JCTree.Visitor {
             t = chk.checkClassOrArrayType(tree.pos(), t,
                                           checkExtensible|!allowGenerics);
         }
-        if (interfaceOrArrayExpected &&
-            !(t.tsym.isInterface() || t.getTag() == ARRAY)) {
+        if (interfacesOnlyExpected && !t.tsym.isInterface()) {
             log.error(tree.pos(), "intf.expected.here");
+            // return errType is necessary since otherwise there might
+            // be undetected cycles which cause attribution to loop
+            return types.createErrorType(t);
+        } else if (interfacesOrArraysExpected &&
+            !(t.tsym.isInterface() || t.getTag() == ARRAY)) {
+            log.error(tree.pos(), "intf.or.array.expected.here");
             // return errType is necessary since otherwise there might
             // be undetected cycles which cause attribution to loop
             return types.createErrorType(t);
@@ -3988,7 +3995,7 @@ public class Attr extends JCTree.Visitor {
         Set<Type> boundSet = new HashSet<Type>();
         if (bounds.nonEmpty()) {
             // accept class or interface or typevar as first bound.
-            bounds.head.type = checkBase(bounds.head.type, bounds.head, env, false, false, false);
+            bounds.head.type = checkBase(bounds.head.type, bounds.head, env, false, false, false, false);
             boundSet.add(types.erasure(bounds.head.type));
             if (bounds.head.type.isErroneous()) {
                 return bounds.head.type;
@@ -4004,7 +4011,7 @@ public class Attr extends JCTree.Visitor {
                 // if first bound was a class or interface, accept only interfaces
                 // as further bounds.
                 for (JCExpression bound : bounds.tail) {
-                    bound.type = checkBase(bound.type, bound, env, false, true, false);
+                    bound.type = checkBase(bound.type, bound, env, false, false, true, false);
                     if (bound.type.isErroneous()) {
                         bounds = List.of(bound);
                     }
