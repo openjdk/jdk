@@ -81,7 +81,7 @@ inline void ConcurrentMark::count_region(MemRegion mr, HeapRegion* hr,
                                          size_t* marked_bytes_array,
                                          BitMap* task_card_bm) {
   G1CollectedHeap* g1h = _g1h;
-  CardTableModRefBS* ct_bs = (CardTableModRefBS*) (g1h->barrier_set());
+  CardTableModRefBS* ct_bs = g1h->g1_barrier_set();
 
   HeapWord* start = mr.start();
   HeapWord* end = mr.end();

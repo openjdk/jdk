@@ -523,8 +523,12 @@ JNIEXPORT jboolean JNICALL Java_sun_awt_X11_XlibWrapper_XkbTranslateKeyCode
     //printf("native, output:  keysym:0x%0X; mods:0x%0X\n", *(unsigned int *)jlong_to_ptr(keysym_rtrn), *(unsigned int *)jlong_to_ptr(mods_rtrn));
     return b;
 }
-
-
+JNIEXPORT void JNICALL Java_sun_awt_X11_XlibWrapper_XkbSetDetectableAutoRepeat
+(JNIEnv *env, jclass clazz, jlong display, jboolean detectable)
+{
+    AWT_CHECK_HAVE_LOCK();
+    XkbSetDetectableAutoRepeat((Display *) jlong_to_ptr(display), detectable, NULL);
+}
 /*
  * Class:     sun_awt_X11_XlibWrapper
  * Method:    XNextEvent

@@ -464,7 +464,7 @@ public class JavacServer {
             PrintStream err) {
         int rc = -3;
         try {
-            int port = portFile.getPort();
+            int port = portFile.containsPortInfo() ? portFile.getPort() : 0;
             if (port == 0) {
                 return ERROR_BUT_TRY_AGAIN;
             }

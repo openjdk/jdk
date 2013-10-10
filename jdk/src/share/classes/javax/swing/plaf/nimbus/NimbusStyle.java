@@ -218,7 +218,7 @@ public final class NimbusStyle extends SynthStyle {
     }
 
     /**
-     * @inheritDoc
+     * {@inheritDoc}
      *
      * Overridden to cause this style to populate itself with data from
      * UIDefaults, if necessary.
@@ -472,7 +472,7 @@ public final class NimbusStyle extends SynthStyle {
     }
 
     /**
-     * @inheritDoc
+     * {@inheritDoc}
      *
      * Overridden to cause this style to populate itself with data from
      * UIDefaults, if necessary.
@@ -519,7 +519,7 @@ public final class NimbusStyle extends SynthStyle {
     }
 
     /**
-     * @inheritDoc
+     * {@inheritDoc}
      *
      * <p>Overridden to cause this style to populate itself with data from
      * UIDefaults, if necessary.</p>
@@ -562,7 +562,7 @@ public final class NimbusStyle extends SynthStyle {
     }
 
     /**
-     * @inheritDoc
+     * {@inheritDoc}
      *
      * Overridden to cause this style to populate itself with data from
      * UIDefaults, if necessary. If a value named "font" is not found in
@@ -590,7 +590,7 @@ public final class NimbusStyle extends SynthStyle {
     }
 
     /**
-     * @inheritDoc
+     * {@inheritDoc}
      *
      * Returns the SynthPainter for this style, which ends up delegating to
      * the Painters installed in this style.
@@ -600,7 +600,7 @@ public final class NimbusStyle extends SynthStyle {
     }
 
     /**
-     * @inheritDoc
+     * {@inheritDoc}
      *
      * Overridden to cause this style to populate itself with data from
      * UIDefaults, if necessary. If opacity is not specified in UI defaults,
@@ -616,7 +616,7 @@ public final class NimbusStyle extends SynthStyle {
     }
 
     /**
-     * @inheritDoc
+     * {@inheritDoc}
      *
      * <p>Overridden to cause this style to populate itself with data from
      * UIDefaults, if necessary.</p>
@@ -628,7 +628,7 @@ public final class NimbusStyle extends SynthStyle {
      * Button.opacity
      * Button.Enabled.foreground
      * Button.Enabled+Selected.background
-     * </pre></p>
+     * </pre>
      *
      * <p>In this example, suppose you were in the Enabled+Selected state and
      * searched for "foreground". In this case, we first check for

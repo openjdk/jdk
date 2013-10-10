@@ -228,7 +228,7 @@ BOOL AwtToolkit::activateKeyboardLayout(HKL hkl) {
         // create input locale string, e.g., "00000409", from hkl.
         TCHAR inputLocale[9];
         TCHAR buf[9];
-        _tcscpy(inputLocale, TEXT("00000000"));
+        _tcscpy_s(inputLocale, 9, TEXT("00000000"));
 
     // 64-bit: ::LoadKeyboardLayout() is such a weird API - a string of
     // the hex value you want?!  Here we're converting our HKL value to

@@ -40,6 +40,7 @@ import java.nio.ByteBuffer;
 import java.nio.CharBuffer;
 import java.nio.charset.CharsetDecoder;
 import javax.tools.JavaFileObject;
+import java.text.Normalizer;
 
 /**
  * A subclass of JavaFileObject representing regular files.
@@ -57,6 +58,7 @@ class RegularFileObject extends BaseFileObject {
     private String name;
     final File file;
     private Reference<File> absFileRef;
+    final static boolean isMacOS = System.getProperty("os.name", "").contains("OS X");
 
     public RegularFileObject(JavacFileManager fileManager, File f) {
         this(fileManager, f.getName(), f);
@@ -180,7 +182,19 @@ class RegularFileObject extends BaseFileObject {
         if (name.equals(n)) {
             return true;
         }
-        if (name.equalsIgnoreCase(n)) {
+        if (isMacOS && Normalizer.isNormalized(name, Normalizer.Form.NFD)
+            && Normalizer.isNormalized(n, Normalizer.Form.NFC)) {
+            // On Mac OS X it is quite possible to file name and class
+            // name normalized in a different way - in that case we have to normalize file name
+            // to the Normal Form Compised (NFC)
+            String normName = Normalizer.normalize(name, Normalizer.Form.NFC);
+            if (normName.equals(n)) {
+                this.name = normName;
+                return true;
+            }
+        }
+
+            if (name.equalsIgnoreCase(n)) {
             try {
                 // allow for Windows
                 return file.getCanonicalFile().getName().equals(n);

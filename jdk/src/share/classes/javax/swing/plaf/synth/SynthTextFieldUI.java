@@ -36,7 +36,7 @@ import java.beans.PropertyChangeEvent;
 
 
 /**
- * Provides the Synth L&F UI delegate for {@link javax.swing.JTextField}.
+ * Provides the Synth L&amp;F UI delegate for {@link javax.swing.JTextField}.
  * <p>
  * <strong>Warning:</strong>
  * Serialized objects of this class will not be compatible with
@@ -148,7 +148,7 @@ public class SynthTextFieldUI extends BasicTextFieldUI implements SynthUI {
     }
 
     /**
-     * @inheritDoc
+     * {@inheritDoc}
      */
     @Override
     public SynthContext getContext(JComponent c) {
@@ -204,7 +204,7 @@ public class SynthTextFieldUI extends BasicTextFieldUI implements SynthUI {
     }
 
     /**
-     * @inheritDoc
+     * {@inheritDoc}
      */
     @Override
     public void paintBorder(SynthContext context, Graphics g, int x,
@@ -213,7 +213,7 @@ public class SynthTextFieldUI extends BasicTextFieldUI implements SynthUI {
     }
 
     /**
-     * @inheritDoc
+     * {@inheritDoc}
      * Overridden to do nothing.
      */
     @Override
@@ -241,7 +241,7 @@ public class SynthTextFieldUI extends BasicTextFieldUI implements SynthUI {
     }
 
     /**
-     * @inheritDoc
+     * {@inheritDoc}
      */
     @Override
     protected void installDefaults() {
@@ -252,7 +252,7 @@ public class SynthTextFieldUI extends BasicTextFieldUI implements SynthUI {
     }
 
     /**
-     * @inheritDoc
+     * {@inheritDoc}
      */
     @Override
     protected void uninstallDefaults() {

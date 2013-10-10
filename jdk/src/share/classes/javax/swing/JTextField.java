@@ -128,7 +128,7 @@ import java.io.Serializable;
 &nbsp;                return;
 &nbsp;            }
 &nbsp;            char[] upper = str.toCharArray();
-&nbsp;            for (int i = 0; i < upper.length; i++) {
+&nbsp;            for (int i = 0; i &lt; upper.length; i++) {
 &nbsp;                upper[i] = Character.toUpperCase(upper[i]);
 &nbsp;            }
 &nbsp;            super.insertString(offs, new String(upper), a);
@@ -223,10 +223,10 @@ public class JTextField extends JTextComponent implements SwingConstants {
      *          <code>createDefaultModel</code> method
      * @param text  the initial string to display, or <code>null</code>
      * @param columns  the number of columns to use to calculate
-     *   the preferred width >= 0; if <code>columns</code>
+     *   the preferred width &gt;= 0; if <code>columns</code>
      *   is set to zero, the preferred width will be whatever
      *   naturally results from the component implementation
-     * @exception IllegalArgumentException if <code>columns</code> < 0
+     * @exception IllegalArgumentException if <code>columns</code> &lt; 0
      */
     public JTextField(Document doc, String text, int columns) {
         if (columns < 0) {
