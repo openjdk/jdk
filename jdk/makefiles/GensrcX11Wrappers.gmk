@@ -48,75 +48,74 @@ GENSRC_SIZER_DIR := $(JDK_TOPDIR)/src/solaris/classes/sun/awt/X11/generator
 GENSRC_X11_VERSION := $(OPENJDK_TARGET_CPU_BITS)
 ifeq ($(OPENJDK_TARGET_CPU_BITS), 64)
   ifneq ($(OPENJDK_TARGET_OS), linux)
-  # On all 64-bit systems except Linux, generate both 32 and 64 bit versions
-  GENSRC_X11_VERSION := 32 64
+    # On all 64-bit systems except Linux, generate both 32 and 64 bit versions
+    GENSRC_X11_VERSION := 32 64
   endif
 else
   ifeq ($(OPENJDK_TARGET_OS), solaris)
-  # As a special case, solaris 32-bit also generates the 64-bit version
-  GENSRC_X11_VERSION := 32 64
+    # As a special case, solaris 32-bit also generates the 64-bit version
+    GENSRC_X11_VERSION := 32 64
   endif
 endif
 
-GENSRC_X11_SIZES_USED := $(addprefix $(GENSRC_X11WRAPPERS_TMP)/sizes.,$(GENSRC_X11_VERSION))
+GENSRC_X11_SIZES_USED := $(addprefix $(GENSRC_X11WRAPPERS_TMP)/sizes., $(GENSRC_X11_VERSION))
 
-# Copy only the sizes.* files that are actually needed. WrapperGenerator picks up any it finds from the 
+# Copy only the sizes.* files that are actually needed. WrapperGenerator picks up any it finds from the
 # file prefix it is given so those not needed need to be hidden.
 $(GENSRC_X11WRAPPERS_TMP)/sizes.%: $(GENSRC_SIZER_DIR)/sizes.%
 	$(MKDIR) -p $(@D)
 	$(RM) '$@'
 	$(SORT) $< > $@
 
-# Run the tool on the offset files copied from the source repository to generate several Java classes 
+# Run the tool on the offset files copied from the source repository to generate several Java classes
 # used in awt.
-$(JDK_OUTPUTDIR)/gensrc/_the.generated.x11 : $(GENSRC_X11_SIZES_USED) $(BUILD_TOOLS)
+$(JDK_OUTPUTDIR)/gensrc/_the.generated.x11: $(GENSRC_X11_SIZES_USED) $(BUILD_TOOLS)
 	$(MKDIR) -p $(GENSRC_X11WRAPPERS_DST)
 	$(TOOL_WRAPPERGENERATOR) $(GENSRC_X11WRAPPERS_DST) $(GENSRC_SIZER_DIR)/xlibtypes.txt "gen" $(GENSRC_X11WRAPPERS_TMP)/sizes
 	$(TOUCH) $@
 
 GENSRC_X11WRAPPERS += $(JDK_OUTPUTDIR)/gensrc/_the.generated.x11
 
-ifneq ($(COMPILE_TYPE),cross)
-    # This is not a cross compile, regenerate the offset file, so that we
-    # can compare it with the version in the source code repository.
+ifneq ($(COMPILE_TYPE), cross)
+  # This is not a cross compile, regenerate the offset file, so that we
+  # can compare it with the version in the source code repository.
 
-    # Generate the C code for the program that will output the offset file.
-    $(GENSRC_X11WRAPPERS_TMP)/sizer.%.c : $(GENSRC_SIZER_DIR)/xlibtypes.txt $(BUILD_TOOLS)
+  # Generate the C code for the program that will output the offset file.
+  $(GENSRC_X11WRAPPERS_TMP)/sizer.%.c: $(GENSRC_SIZER_DIR)/xlibtypes.txt $(BUILD_TOOLS)
 	$(ECHO) "Generating X11 wrapper ($*-bit version)"
 	$(MKDIR) -p $(@D)
 	$(TOOL_WRAPPERGENERATOR) $(@D) $(GENSRC_SIZER_DIR)/xlibtypes.txt "sizer" $*
 
-    # use -m32/-m64 only if the compiler supports it
-    ifeq ($(COMPILER_SUPPORTS_TARGET_BITS_FLAG),true)
-    MEMORY_MODEL_FLAG="-m$*"
-    endif
+  # use -m32/-m64 only if the compiler supports it
+  ifeq ($(COMPILER_SUPPORTS_TARGET_BITS_FLAG), true)
+    MEMORY_MODEL_FLAG = "-m$*"
+  endif
 
-    # Compile the C code into an executable.
-    $(GENSRC_X11WRAPPERS_TMP)/sizer.%.exe : $(GENSRC_X11WRAPPERS_TMP)/sizer.%.c
+  # Compile the C code into an executable.
+  $(GENSRC_X11WRAPPERS_TMP)/sizer.%.exe: $(GENSRC_X11WRAPPERS_TMP)/sizer.%.c
 	$(MKDIR) -p $(@D)
 	(cd $(@D) && $(CC) $(MEMORY_MODEL_FLAG) -o $@ $< \
-              $(X_CFLAGS) \
-              $(X_LIBS) \
-              -I$(JDK_OUTPUTDIR)/include \
-              -I$(JDK_TOPDIR)/src/share/javavm/export \
-              -I$(JDK_TOPDIR)/src/$(OPENJDK_TARGET_OS_API_DIR)/javavm/export \
-              -I$(JDK_TOPDIR)/src/share/native/common \
-              -I$(JDK_TOPDIR)/src/$(OPENJDK_TARGET_OS_API_DIR)/native/common \
-              -I$(JDK_TOPDIR)/src/solaris/native/sun/awt \
-	      -I$(JDK_TOPDIR)/src/share/native/sun/awt/debug \
-	      -I$(JDK_TOPDIR)/src/share/native/sun/awt/image/cvutils -lc)
+	    $(X_CFLAGS) \
+	    $(X_LIBS) \
+	    -I$(JDK_OUTPUTDIR)/include \
+	    -I$(JDK_TOPDIR)/src/share/javavm/export \
+	    -I$(JDK_TOPDIR)/src/$(OPENJDK_TARGET_OS_API_DIR)/javavm/export \
+	    -I$(JDK_TOPDIR)/src/share/native/common \
+	    -I$(JDK_TOPDIR)/src/$(OPENJDK_TARGET_OS_API_DIR)/native/common \
+	    -I$(JDK_TOPDIR)/src/solaris/native/sun/awt \
+	    -I$(JDK_TOPDIR)/src/share/native/sun/awt/debug \
+	    -I$(JDK_TOPDIR)/src/share/native/sun/awt/image/cvutils -lc)
 
-    .PRECIOUS: $(GENSRC_X11WRAPPERS_TMP)/sizer.%.exe $(GENSRC_X11WRAPPERS_TMP)/sizer.%.c
+  .PRECIOUS: $(GENSRC_X11WRAPPERS_TMP)/sizer.%.exe $(GENSRC_X11WRAPPERS_TMP)/sizer.%.c
 
-    # Run the executable create the offset file and check that it is identical
-    # to the offset file in the source code repository.
-    $(GENSRC_X11WRAPPERS_TMP)/sizes.%.verification : $(GENSRC_X11WRAPPERS_TMP)/sizer.%.exe
+  # Run the executable create the offset file and check that it is identical
+  # to the offset file in the source code repository.
+  $(GENSRC_X11WRAPPERS_TMP)/sizes.%.verification: $(GENSRC_X11WRAPPERS_TMP)/sizer.%.exe
 	$(MKDIR) -p $(@D)
 	$(GENSRC_X11WRAPPERS_TMP)/sizer.$*.exe | $(SORT) > $@.tmp
 	$(ECHO) Verifying $(GENSRC_X11WRAPPERS_TMP)/sizes.$*.verification.tmp to $(GENSRC_X11WRAPPERS_TMP)/sizes.$*
 	$(DIFF) $(GENSRC_X11WRAPPERS_TMP)/sizes.$*.verification.tmp $(GENSRC_X11WRAPPERS_TMP)/sizes.$*
 	mv $@.tmp $@
 
-    GENSRC_X11WRAPPERS += $(GENSRC_X11WRAPPERS_TMP)/sizes.$(OPENJDK_TARGET_CPU_BITS).verification
+  GENSRC_X11WRAPPERS += $(GENSRC_X11WRAPPERS_TMP)/sizes.$(OPENJDK_TARGET_CPU_BITS).verification
 endif
-
