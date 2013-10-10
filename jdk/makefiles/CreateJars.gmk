@@ -216,11 +216,6 @@ RT_JAR_EXCLUDES += \
 	oracle/jrockit/jfr \
 	jdk/jfr
 
-ifeq ($(OPENJDK_TARGET_OS), macosx)
-        RT_JAR_EXCLUDES += com/sun/nio/sctp \
-                           sun/nio/ch/sctp
-endif
-
 # Find all files in the classes dir to use as dependencies. This could be more fine granular.
 ALL_FILES_IN_CLASSES := $(call not-containing,_the.,$(filter-out %javac_state,\
                         $(call CacheFind,$(JDK_OUTPUTDIR)/classes)))
