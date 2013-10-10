@@ -779,6 +779,10 @@ public abstract class LiteralNode<T> extends Expression implements PropertyKey {
             return value;
         }
 
+        /**
+         * Get the array element type as Java format, e.g. [I
+         * @return array element type
+         */
         public ArrayType getArrayType() {
             if (elementType.isInteger()) {
                 return Type.INT_ARRAY;
