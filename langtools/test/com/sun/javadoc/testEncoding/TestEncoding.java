@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 4661481
+ * @bug 4661481 8024096
  * @summary This test determines if the value of the -encoding option is
  * properly passed from Javadoc to the source file parser.
  * @author jamieh
@@ -40,12 +40,12 @@ public class TestEncoding extends JavadocTester {
 
     //If ??? is found in the output, the source file was not read with the correct encoding setting.
     private static final String[][] NEGATED_TEST = {
-        {BUG_ID + FS + "EncodeTest.html", "???"}
+        {BUG_ID + FS + "EncodeTest.html", "??"}
     };
     private static final String[] ARGS =
         new String[] {
             "-d", BUG_ID, "-sourcepath", SRC_DIR,
-            "-encoding", "SJIS", SRC_DIR + FS + "EncodeTest.java"
+            "-encoding", "iso-8859-1", SRC_DIR + FS + "EncodeTest.java"
         };
 
     /**

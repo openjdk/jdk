@@ -106,7 +106,7 @@ HS_DTRACE_PROBE_DECL5(hotspot, class__initialization__end,
       len = name->utf8_length();                                 \
     }                                                            \
     HS_DTRACE_PROBE4(hotspot, class__initialization__##type,     \
-      data, len, (clss)->class_loader(), thread_type);           \
+      data, len, SOLARIS_ONLY((void *))(clss)->class_loader(), thread_type);           \
   }
 
 #define DTRACE_CLASSINIT_PROBE_WAIT(type, clss, thread_type, wait) \
@@ -119,7 +119,7 @@ HS_DTRACE_PROBE_DECL5(hotspot, class__initialization__end,
       len = name->utf8_length();                                 \
     }                                                            \
     HS_DTRACE_PROBE5(hotspot, class__initialization__##type,     \
-      data, len, (clss)->class_loader(), thread_type, wait);     \
+      data, len, SOLARIS_ONLY((void *))(clss)->class_loader(), thread_type, wait);     \
   }
 #else /* USDT2 */
 
@@ -1419,6 +1419,8 @@ Method* InstanceKlass::uncached_lookup_method(Symbol* name, Symbol* signature) c
 }
 
 // lookup a method in all the interfaces that this class implements
+// Do NOT return private or static methods, new in JDK8 which are not externally visible
+// They should only be found in the initial InterfaceMethodRef
 Method* InstanceKlass::lookup_method_in_all_interfaces(Symbol* name,
                                                          Symbol* signature) const {
   Array<Klass*>* all_ifs = transitive_interfaces();
@@ -1427,7 +1429,7 @@ Method* InstanceKlass::lookup_method_in_all_interfaces(Symbol* name,
   for (int i = 0; i < num_ifs; i++) {
     ik = InstanceKlass::cast(all_ifs->at(i));
     Method* m = ik->lookup_method(name, signature);
-    if (m != NULL) {
+    if (m != NULL && m->is_public() && !m->is_static()) {
       return m;
     }
   }
@@ -2303,7 +2305,7 @@ void InstanceKlass::set_source_debug_extension(char* array, int length) {
 }
 
 address InstanceKlass::static_field_addr(int offset) {
-  return (address)(offset + InstanceMirrorKlass::offset_of_static_fields() + (intptr_t)java_mirror());
+  return (address)(offset + InstanceMirrorKlass::offset_of_static_fields() + cast_from_oop<intptr_t>(java_mirror()));
 }
 
 
@@ -2769,24 +2771,17 @@ void InstanceKlass::print_on(outputStream* st) const {
   st->print(BULLET"field annotations:       "); fields_annotations()->print_value_on(st); st->cr();
   st->print(BULLET"field type annotations:  "); fields_type_annotations()->print_value_on(st); st->cr();
   {
-    ResourceMark rm;
-    // PreviousVersionInfo objects returned via PreviousVersionWalker
-    // contain a GrowableArray of handles. We have to clean up the
-    // GrowableArray _after_ the PreviousVersionWalker destructor
-    // has destroyed the handles.
-    {
-      bool have_pv = false;
-      PreviousVersionWalker pvw((InstanceKlass*)this);
-      for (PreviousVersionInfo * pv_info = pvw.next_previous_version();
-           pv_info != NULL; pv_info = pvw.next_previous_version()) {
-        if (!have_pv)
-          st->print(BULLET"previous version:  ");
-        have_pv = true;
-        pv_info->prev_constant_pool_handle()()->print_value_on(st);
-      }
-      if (have_pv)  st->cr();
-    } // pvw is cleaned up
-  } // rm is cleaned up
+    bool have_pv = false;
+    PreviousVersionWalker pvw(Thread::current(), (InstanceKlass*)this);
+    for (PreviousVersionNode * pv_node = pvw.next_previous_version();
+         pv_node != NULL; pv_node = pvw.next_previous_version()) {
+      if (!have_pv)
+        st->print(BULLET"previous version:  ");
+      have_pv = true;
+      pv_node->prev_constant_pool()->print_value_on(st);
+    }
+    if (have_pv) st->cr();
+  } // pvw is cleaned up
 
   if (generic_signature() != NULL) {
     st->print(BULLET"generic signature: ");
@@ -3317,34 +3312,34 @@ void InstanceKlass::add_previous_version(instanceKlassHandle ikh,
   Array<Method*>* old_methods = ikh->methods();
 
   if (cp_ref->on_stack()) {
-  PreviousVersionNode * pv_node = NULL;
-  if (emcp_method_count == 0) {
+    PreviousVersionNode * pv_node = NULL;
+    if (emcp_method_count == 0) {
       // non-shared ConstantPool gets a reference
-      pv_node = new PreviousVersionNode(cp_ref, !cp_ref->is_shared(), NULL);
-    RC_TRACE(0x00000400,
-        ("add: all methods are obsolete; flushing any EMCP refs"));
-  } else {
-    int local_count = 0;
+      pv_node = new PreviousVersionNode(cp_ref, NULL);
+      RC_TRACE(0x00000400,
+          ("add: all methods are obsolete; flushing any EMCP refs"));
+    } else {
+      int local_count = 0;
       GrowableArray<Method*>* method_refs = new (ResourceObj::C_HEAP, mtClass)
-        GrowableArray<Method*>(emcp_method_count, true);
-    for (int i = 0; i < old_methods->length(); i++) {
-      if (emcp_methods->at(i)) {
-          // this old method is EMCP. Save it only if it's on the stack
-          Method* old_method = old_methods->at(i);
-          if (old_method->on_stack()) {
-            method_refs->append(old_method);
+          GrowableArray<Method*>(emcp_method_count, true);
+      for (int i = 0; i < old_methods->length(); i++) {
+        if (emcp_methods->at(i)) {
+            // this old method is EMCP. Save it only if it's on the stack
+            Method* old_method = old_methods->at(i);
+            if (old_method->on_stack()) {
+              method_refs->append(old_method);
+            }
+          if (++local_count >= emcp_method_count) {
+            // no more EMCP methods so bail out now
+            break;
           }
-        if (++local_count >= emcp_method_count) {
-          // no more EMCP methods so bail out now
-          break;
         }
       }
-    }
       // non-shared ConstantPool gets a reference
-      pv_node = new PreviousVersionNode(cp_ref, !cp_ref->is_shared(), method_refs);
+      pv_node = new PreviousVersionNode(cp_ref, method_refs);
     }
     // append new previous version.
-  _previous_versions->append(pv_node);
+    _previous_versions->append(pv_node);
   }
 
   // Since the caller is the VMThread and we are at a safepoint, this
@@ -3445,6 +3440,8 @@ Method* InstanceKlass::method_with_idnum(int idnum) {
         return m;
       }
     }
+    // None found, return null for the caller to handle.
+    return NULL;
   }
   return m;
 }
@@ -3461,10 +3458,9 @@ unsigned char * InstanceKlass::get_cached_class_file_bytes() {
 // Construct a PreviousVersionNode entry for the array hung off
 // the InstanceKlass.
 PreviousVersionNode::PreviousVersionNode(ConstantPool* prev_constant_pool,
-  bool prev_cp_is_weak, GrowableArray<Method*>* prev_EMCP_methods) {
+  GrowableArray<Method*>* prev_EMCP_methods) {
 
   _prev_constant_pool = prev_constant_pool;
-  _prev_cp_is_weak = prev_cp_is_weak;
   _prev_EMCP_methods = prev_EMCP_methods;
 }
 
@@ -3480,99 +3476,38 @@ PreviousVersionNode::~PreviousVersionNode() {
   }
 }
 
-
-// Construct a PreviousVersionInfo entry
-PreviousVersionInfo::PreviousVersionInfo(PreviousVersionNode *pv_node) {
-  _prev_constant_pool_handle = constantPoolHandle();  // NULL handle
-  _prev_EMCP_method_handles = NULL;
-
-  ConstantPool* cp = pv_node->prev_constant_pool();
-  assert(cp != NULL, "constant pool ref was unexpectedly cleared");
-  if (cp == NULL) {
-    return;  // robustness
-  }
-
-  // make the ConstantPool* safe to return
-  _prev_constant_pool_handle = constantPoolHandle(cp);
-
-  GrowableArray<Method*>* method_refs = pv_node->prev_EMCP_methods();
-  if (method_refs == NULL) {
-    // the InstanceKlass did not have any EMCP methods
-    return;
-  }
-
-  _prev_EMCP_method_handles = new GrowableArray<methodHandle>(10);
-
-  int n_methods = method_refs->length();
-  for (int i = 0; i < n_methods; i++) {
-    Method* method = method_refs->at(i);
-    assert (method != NULL, "method has been cleared");
-    if (method == NULL) {
-      continue;  // robustness
-    }
-    // make the Method* safe to return
-    _prev_EMCP_method_handles->append(methodHandle(method));
-  }
-}
-
-
-// Destroy a PreviousVersionInfo
-PreviousVersionInfo::~PreviousVersionInfo() {
-  // Since _prev_EMCP_method_handles is not C-heap allocated, we
-  // don't have to delete it.
-}
-
-
 // Construct a helper for walking the previous versions array
-PreviousVersionWalker::PreviousVersionWalker(InstanceKlass *ik) {
+PreviousVersionWalker::PreviousVersionWalker(Thread* thread, InstanceKlass *ik) {
+  _thread = thread;
   _previous_versions = ik->previous_versions();
   _current_index = 0;
-  // _hm needs no initialization
   _current_p = NULL;
-}
-
-
-// Destroy a PreviousVersionWalker
-PreviousVersionWalker::~PreviousVersionWalker() {
-  // Delete the current info just in case the caller didn't walk to
-  // the end of the previous versions list. No harm if _current_p is
-  // already NULL.
-  delete _current_p;
-
-  // When _hm is destroyed, all the Handles returned in
-  // PreviousVersionInfo objects will be destroyed.
-  // Also, after this destructor is finished it will be
-  // safe to delete the GrowableArray allocated in the
-  // PreviousVersionInfo objects.
+  _current_constant_pool_handle = constantPoolHandle(thread, ik->constants());
 }
 
 
 // Return the interesting information for the next previous version
 // of the klass. Returns NULL if there are no more previous versions.
-PreviousVersionInfo* PreviousVersionWalker::next_previous_version() {
+PreviousVersionNode* PreviousVersionWalker::next_previous_version() {
   if (_previous_versions == NULL) {
     // no previous versions so nothing to return
     return NULL;
   }
 
-  delete _current_p;  // cleanup the previous info for the caller
-  _current_p = NULL;  // reset to NULL so we don't delete same object twice
+  _current_p = NULL;  // reset to NULL
+  _current_constant_pool_handle = NULL;
 
   int length = _previous_versions->length();
 
   while (_current_index < length) {
     PreviousVersionNode * pv_node = _previous_versions->at(_current_index++);
-    PreviousVersionInfo * pv_info = new (ResourceObj::C_HEAP, mtClass)
-                                          PreviousVersionInfo(pv_node);
 
-    constantPoolHandle cp_h = pv_info->prev_constant_pool_handle();
-    assert (!cp_h.is_null(), "null cp found in previous version");
-
-    // The caller will need to delete pv_info when they are done with it.
-    _current_p = pv_info;
-    return pv_info;
+    // Save a handle to the constant pool for this previous version,
+    // which keeps all the methods from being deallocated.
+    _current_constant_pool_handle = constantPoolHandle(_thread, pv_node->prev_constant_pool());
+    _current_p = pv_node;
+    return pv_node;
   }
 
-  // all of the underlying nodes' info has been deleted
   return NULL;
 } // end next_previous_version()

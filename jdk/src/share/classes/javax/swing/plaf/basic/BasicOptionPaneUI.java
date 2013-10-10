@@ -131,7 +131,7 @@ public class BasicOptionPaneUI extends OptionPaneUI {
     }
 
     /**
-      * Installs the receiver as the L&F for the passed in
+      * Installs the receiver as the L&amp;F for the passed in
       * <code>JOptionPane</code>.
       */
     public void installUI(JComponent c) {
@@ -144,7 +144,7 @@ public class BasicOptionPaneUI extends OptionPaneUI {
     }
 
     /**
-      * Removes the receiver from the L&F controller of the passed in split
+      * Removes the receiver from the L&amp;F controller of the passed in split
       * pane.
       */
     public void uninstallUI(JComponent c) {
@@ -827,7 +827,7 @@ public class BasicOptionPaneUI extends OptionPaneUI {
     }
 
     /**
-     * Returns true, basic L&F wants all the buttons to have the same
+     * Returns true, basic L&amp;F wants all the buttons to have the same
      * width.
      */
     protected boolean getSizeButtonsToSameWidth() {

@@ -706,7 +706,7 @@ public class UIDefaults extends Hashtable<Object,Object>
 
 
     /**
-     * Returns the L&F class that renders this component.
+     * Returns the L&amp;F class that renders this component.
      *
      * @param uiClassID a string containing the class ID
      * @return the Class object returned by

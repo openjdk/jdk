@@ -55,14 +55,15 @@ public class VisibleMemberMap {
     public static final int FIELDS          = 2;
     public static final int CONSTRUCTORS    = 3;
     public static final int METHODS         = 4;
-    public static final int ANNOTATION_TYPE_MEMBER_OPTIONAL = 5;
-    public static final int ANNOTATION_TYPE_MEMBER_REQUIRED = 6;
-    public static final int PROPERTIES      = 7;
+    public static final int ANNOTATION_TYPE_FIELDS = 5;
+    public static final int ANNOTATION_TYPE_MEMBER_OPTIONAL = 6;
+    public static final int ANNOTATION_TYPE_MEMBER_REQUIRED = 7;
+    public static final int PROPERTIES      = 8;
 
     /**
      * The total number of member types is {@value}.
      */
-    public static final int NUM_MEMBER_TYPES = 8;
+    public static final int NUM_MEMBER_TYPES = 9;
 
     public static final String STARTLEVEL = "start";
 
@@ -433,6 +434,9 @@ public class VisibleMemberMap {
             }
             ProgramElementDoc[] members = null;
             switch (kind) {
+                case ANNOTATION_TYPE_FIELDS:
+                    members = cd.fields(filter);
+                    break;
                 case ANNOTATION_TYPE_MEMBER_OPTIONAL:
                     members = cd.isAnnotationType() ?
                         filter((AnnotationTypeDoc) cd, false) :

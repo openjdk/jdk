@@ -60,7 +60,7 @@ public abstract class AbstractLayoutCache implements RowMapper {
     protected boolean            rootVisible;
 
     /**
-      * Height to use for each row.  If this is <= 0 the renderer will be
+      * Height to use for each row.  If this is &lt;= 0 the renderer will be
       * used to determine the height for each row.
       */
     protected int                rowHeight;

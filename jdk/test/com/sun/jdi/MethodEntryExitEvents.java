@@ -115,7 +115,7 @@ public class MethodEntryExitEvents extends TestScaffold {
      */
     private String[] excludes = {"java.*", "javax.*", "sun.*",
                                  "com.sun.*", "com.oracle.*",
-                                 "oracle.*"};
+                                 "oracle.*", "jdk.internal.*"};
 
     MethodEntryExitEvents (String args[]) {
         super(args);

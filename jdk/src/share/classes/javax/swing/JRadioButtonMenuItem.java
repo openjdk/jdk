@@ -181,7 +181,7 @@ public class JRadioButtonMenuItem extends JMenuItem implements Accessible {
     }
 
     /**
-     * Returns the name of the L&F class that renders this component.
+     * Returns the name of the L&amp;F class that renders this component.
      *
      * @return the string "RadioButtonMenuItemUI"
      * @see JComponent#getUIClassID

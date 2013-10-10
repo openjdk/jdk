@@ -776,7 +776,7 @@ public class MetalTabbedPaneUI extends BasicTabbedPaneUI {
     }
 
     /**
-     * Overridden to do nothing for the Java L&F.
+     * Overridden to do nothing for the Java L&amp;F.
      */
     protected int getTabLabelShiftX( int tabPlacement, int tabIndex, boolean isSelected ) {
         return 0;
@@ -784,7 +784,7 @@ public class MetalTabbedPaneUI extends BasicTabbedPaneUI {
 
 
     /**
-     * Overridden to do nothing for the Java L&F.
+     * Overridden to do nothing for the Java L&amp;F.
      */
     protected int getTabLabelShiftY( int tabPlacement, int tabIndex, boolean isSelected ) {
         return 0;

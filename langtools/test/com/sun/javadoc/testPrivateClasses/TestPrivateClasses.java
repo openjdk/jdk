@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug      4780441 4874845 4978816 8014017
+ * @bug      4780441 4874845 4978816 8014017 8016328
  * @summary  Make sure that when the -private flag is not used, members
  *           inherited from package private class are documented in the child.
  *
@@ -177,7 +177,7 @@ public class TestPrivateClasses extends JavadocTester {
         // Should document that a method overrides method from private class.
        {BUG_ID + "-2" + FS + "pkg" + FS + "PublicChild.html",
             "<dt><span class=\"strong\">Overrides:</span></dt>" + NL +
-            "<dd><code><a href=\"../pkg/PrivateParent.html#methodOverridenFromParent(char[], int, T, V, java.util.List)\">" +
+            "<dd><code><a href=\"../pkg/PrivateParent.html#methodOverridenFromParent(char[],%20int,%20T,%20V,%20java.util.List)\">" +
             "methodOverridenFromParent</a></code>&nbsp;in class&nbsp;<code>" +
             "<a href=\"../pkg/PrivateParent.html\" title=\"class in pkg\">" +
             "PrivateParent</a></code></dd>"},

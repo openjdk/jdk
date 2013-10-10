@@ -162,6 +162,7 @@ public abstract class PersistenceDelegate {
      * @return An expression whose value is <code>oldInstance</code>.
      *
      * @throws NullPointerException if {@code out} is {@code null}
+     *                              and this value is used in the method
      */
     protected abstract Expression instantiate(Object oldInstance, Encoder out);
 

@@ -348,7 +348,7 @@ public class XYZApp extends Applet implements Runnable, MouseListener,
         InputStream is = null;
         try {
             Thread.currentThread().setPriority(Thread.MIN_PRIORITY);
-            is = new URL(getDocumentBase(), mdname).openStream();
+            is = getClass().getResourceAsStream(mdname);
             XYZChemModel m = new XYZChemModel(is);
             Atom.setApplet(this);
             md = m;
