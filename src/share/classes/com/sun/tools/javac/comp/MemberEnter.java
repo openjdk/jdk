@@ -114,11 +114,14 @@ public class MemberEnter extends JCTree.Visitor implements Completer {
         deferredLintHandler = DeferredLintHandler.instance(context);
         lint = Lint.instance(context);
         allowTypeAnnos = source.allowTypeAnnotations();
+        allowRepeatedAnnos = source.allowRepeatedAnnotations();
     }
 
     /** Switch: support type annotations.
      */
     boolean allowTypeAnnos;
+
+    boolean allowRepeatedAnnos;
 
     /** A queue for classes whose members still need to be entered into the
      *  symbol table.
@@ -906,14 +909,14 @@ public class MemberEnter extends JCTree.Visitor implements Completer {
             }
 
             if (annotated.containsKey(a.type.tsym)) {
-                if (source.allowRepeatedAnnotations()) {
-                    ListBuffer<Attribute.Compound> l = annotated.get(a.type.tsym);
-                    l = l.append(c);
-                    annotated.put(a.type.tsym, l);
-                    pos.put(c, a.pos());
-                } else {
-                    log.error(a.pos(), "duplicate.annotation");
+                if (!allowRepeatedAnnos) {
+                    log.error(a.pos(), "repeatable.annotations.not.supported.in.source");
+                    allowRepeatedAnnos = true;
                 }
+                ListBuffer<Attribute.Compound> l = annotated.get(a.type.tsym);
+                l = l.append(c);
+                annotated.put(a.type.tsym, l);
+                pos.put(c, a.pos());
             } else {
                 annotated.put(a.type.tsym, ListBuffer.of(c));
                 pos.put(c, a.pos());
@@ -1197,7 +1200,7 @@ public class MemberEnter extends JCTree.Visitor implements Completer {
                     annotated.put(a.type.tsym, l);
                     pos.put(tc, a.pos());
                 } else {
-                    log.error(a.pos(), "duplicate.annotation");
+                    log.error(a.pos(), "repeatable.annotations.not.supported.in.source");
                 }
             } else {
                 annotated.put(a.type.tsym, ListBuffer.of(tc));

@@ -3420,15 +3420,14 @@ public class Check {
                 sym.name != names.error &&
                 (!staticImport || !e.isStaticallyImported())) {
                 if (!e.sym.type.isErroneous()) {
-                    String what = e.sym.toString();
                     if (!isClassDecl) {
                         if (staticImport)
-                            log.error(pos, "already.defined.static.single.import", what);
+                            log.error(pos, "already.defined.static.single.import", e.sym);
                         else
-                        log.error(pos, "already.defined.single.import", what);
+                        log.error(pos, "already.defined.single.import", e.sym);
                     }
                     else if (sym != e.sym)
-                        log.error(pos, "already.defined.this.unit", what);
+                        log.error(pos, "already.defined.this.unit", e.sym);
                 }
                 return false;
             }
