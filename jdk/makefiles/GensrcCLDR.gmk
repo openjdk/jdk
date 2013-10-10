@@ -31,8 +31,8 @@ GENSRC_DIR := $(JDK_OUTPUTDIR)/gensrc
 CLDR_METAINFO_FILE := $(GENSRC_DIR)/sun/util/cldr/CLDRLocaleDataMetaInfo.java
 
 $(CLDR_METAINFO_FILE): $(wildcard $(CLDRSRCDIR)/common/dtd/*.dtd) \
-			$(wildcard $(CLDRSRCDIR)/common/main/*.xml) \
-			$(wildcard $(CLDRSRCDIR)/common/supplemental/*.xml)
+    $(wildcard $(CLDRSRCDIR)/common/main/*.xml) \
+    $(wildcard $(CLDRSRCDIR)/common/supplemental/*.xml)
 	$(MKDIR) -p $(@D)
 	$(TOOL_CLDRCONVERTER) -base $(CLDRSRCDIR) -o $(GENSRC_DIR)
 

@@ -75,9 +75,9 @@ GENDATA += $(GENDATA_CURDATA)
 
 ##########################################################################################
 
-$(GENDATA) : $(BUILD_TOOLS)
+$(GENDATA): $(BUILD_TOOLS)
 
-$(JDK_OUTPUTDIR)/classes/_the.gendata : $(GENDATA)
+$(JDK_OUTPUTDIR)/classes/_the.gendata: $(GENDATA)
 	$(TOUCH) $@
 
 all: $(JDK_OUTPUTDIR)/classes/_the.gendata

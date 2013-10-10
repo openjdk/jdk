@@ -34,74 +34,74 @@ GENSRC_CHARSETCODER_TEMPLATE := $(GENSRC_CHARSETCODER_SRC)/charset/Charset-X-Cod
 
 ###
 
-$(GENSRC_CHARSETCODER_DST)/CharsetDecoder.java : $(GENSRC_CHARSETCODER_TEMPLATE)
+$(GENSRC_CHARSETCODER_DST)/CharsetDecoder.java: $(GENSRC_CHARSETCODER_TEMPLATE)
 	$(MKDIR) -p $(@D)
 	-$(RM) $@.tmp
 	$(TOOL_SPP) < $< >$@.tmp \
-		-Kdecoder \
-		-DA='A' \
-		-Da='a' \
-		-DCode='Decode' \
-		-Dcode='decode' \
-		-DitypesPhrase='bytes in a specific charset' \
-		-DotypesPhrase='sixteen-bit Unicode characters' \
-		-Ditype='byte' \
-		-Dotype='character' \
-		-DItype='Byte' \
-		-DOtype='Char' \
-		-Dcoder='decoder' \
-		-DCoder='Decoder' \
-		-Dcoding='decoding' \
-		-DOtherCoder='Encoder' \
-		-DreplTypeName='string' \
-		-DdefaultRepl='"\\uFFFD"' \
-		-DdefaultReplName='<tt>"\&#92;uFFFD"<\/tt>' \
-		-DreplType='String' \
-		-DreplFQType='java.lang.String' \
-		-DreplLength='length()' \
-		-DItypesPerOtype='CharsPerByte' \
-		-DnotLegal='not legal for this charset' \
-		-Dotypes-per-itype='chars-per-byte' \
-		-DoutSequence='Unicode character'
+	    -Kdecoder \
+	    -DA='A' \
+	    -Da='a' \
+	    -DCode='Decode' \
+	    -Dcode='decode' \
+	    -DitypesPhrase='bytes in a specific charset' \
+	    -DotypesPhrase='sixteen-bit Unicode characters' \
+	    -Ditype='byte' \
+	    -Dotype='character' \
+	    -DItype='Byte' \
+	    -DOtype='Char' \
+	    -Dcoder='decoder' \
+	    -DCoder='Decoder' \
+	    -Dcoding='decoding' \
+	    -DOtherCoder='Encoder' \
+	    -DreplTypeName='string' \
+	    -DdefaultRepl='"\\uFFFD"' \
+	    -DdefaultReplName='<tt>"\&#92;uFFFD"<\/tt>' \
+	    -DreplType='String' \
+	    -DreplFQType='java.lang.String' \
+	    -DreplLength='length()' \
+	    -DItypesPerOtype='CharsPerByte' \
+	    -DnotLegal='not legal for this charset' \
+	    -Dotypes-per-itype='chars-per-byte' \
+	    -DoutSequence='Unicode character'
 	$(MV) $@.tmp $@
 
 GENSRC_CHARSETCODER += $(GENSRC_CHARSETCODER_DST)/CharsetDecoder.java
 
 ###
 
-$(GENSRC_CHARSETCODER_DST)/CharsetEncoder.java : $(GENSRC_CHARSETCODER_TEMPLATE)
+$(GENSRC_CHARSETCODER_DST)/CharsetEncoder.java: $(GENSRC_CHARSETCODER_TEMPLATE)
 	$(MKDIR) -p $(@D)
 	-$(RM) $@.tmp
 	$(TOOL_SPP) < $< >$@.tmp \
-		-Kencoder \
-		-DA='An' \
-		-Da='an' \
-		-DCode='Encode' \
-		-Dcode='encode' \
-		-DitypesPhrase='sixteen-bit Unicode characters' \
-		-DotypesPhrase='bytes in a specific charset' \
-		-Ditype='character' \
-		-Dotype='byte' \
-		-DItype='Char' \
-		-DOtype='Byte' \
-		-Dcoder='encoder' \
-		-DCoder='Encoder' \
-		-Dcoding='encoding' \
-		-DOtherCoder='Decoder' \
-		-DreplTypeName='byte array' \
-		-DdefaultRepl='new byte[] { (byte)'"'"\\?"'"' }' \
-		-DdefaultReplName='<tt>{<\/tt>\&nbsp;<tt>(byte)'"'"\\?"'"'<\/tt>\&nbsp;<tt>}<\/tt>' \
-		-DreplType='byte[]' \
-		-DreplFQType='byte[]' \
-		-DreplLength='length' \
-		-DItypesPerOtype='BytesPerChar' \
-		-DnotLegal='not a legal sixteen-bit Unicode sequence' \
-		-Dotypes-per-itype='bytes-per-char' \
-		-DoutSequence='byte sequence in the given charset'
+	    -Kencoder \
+	    -DA='An' \
+	    -Da='an' \
+	    -DCode='Encode' \
+	    -Dcode='encode' \
+	    -DitypesPhrase='sixteen-bit Unicode characters' \
+	    -DotypesPhrase='bytes in a specific charset' \
+	    -Ditype='character' \
+	    -Dotype='byte' \
+	    -DItype='Char' \
+	    -DOtype='Byte' \
+	    -Dcoder='encoder' \
+	    -DCoder='Encoder' \
+	    -Dcoding='encoding' \
+	    -DOtherCoder='Decoder' \
+	    -DreplTypeName='byte array' \
+	    -DdefaultRepl='new byte[] { (byte)'"'"\\?"'"' }' \
+	    -DdefaultReplName='<tt>{<\/tt>\&nbsp;<tt>(byte)'"'"\\?"'"'<\/tt>\&nbsp;<tt>}<\/tt>' \
+	    -DreplType='byte[]' \
+	    -DreplFQType='byte[]' \
+	    -DreplLength='length' \
+	    -DItypesPerOtype='BytesPerChar' \
+	    -DnotLegal='not a legal sixteen-bit Unicode sequence' \
+	    -Dotypes-per-itype='bytes-per-char' \
+	    -DoutSequence='byte sequence in the given charset'
 	$(MV) $@.tmp $@
 
 GENSRC_CHARSETCODER += $(GENSRC_CHARSETCODER_DST)/CharsetEncoder.java
 
 ###
 
-$(GENSRC_CHARSETCODER) : $(BUILD_TOOLS)
+$(GENSRC_CHARSETCODER): $(BUILD_TOOLS)

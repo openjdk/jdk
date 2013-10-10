@@ -47,13 +47,13 @@ include ProfileNames.gmk
 
 import: import-only
 import-only:
-#       Import (corba jaxp jaxws langtools hotspot)
+        # Import (corba jaxp jaxws langtools hotspot)
 	+$(MAKE) -f Import.gmk
 
 gensrc: import gensrc-only
 gensrc-only:
 	+$(MAKE) -f GenerateJavaSources.gmk
-#       Ok, now gensrc is fully populated.
+        # Ok, now gensrc is fully populated.
 
 gendata: gensrc gendata-only
 gendata-only:
@@ -62,8 +62,8 @@ gendata-only:
 classes: gendata classes-only
 classes-only:
 	+$(MAKE) -f CompileJavaClasses.gmk
-#       The classes are now built and
-#       any javah files have now been generated.
+        # The classes are now built and
+        # any javah files have now been generated.
 
 libs: classes libs-only
 libs-only:
@@ -71,23 +71,23 @@ libs-only:
 
 launchers: libs launchers-only
 launchers-only:
-#       Finally compile the launchers.
+        # Finally compile the launchers.
 	+$(MAKE) -f CompileLaunchers.gmk
 
 genclasses: launchers genclasses-only
 genclasses-only:
-#	Generate classes that have other sources. Needs
-#       to execute launchers.
+        # Generate classes that have other sources. Needs
+        # to execute launchers.
 	+$(MAKE) -f GenerateClasses.gmk
 
 jdk: genclasses
-#       Now we have a complete jdk, which you can run.
-#       It is not yet wrapped up as an installed image.
+        # Now we have a complete jdk, which you can run.
+        # It is not yet wrapped up as an installed image.
 
 demos:
-#       The demos are compiled against this jdk.
+        # The demos are compiled against this jdk.
 	+$(MAKE) -f CompileDemos.gmk
-#	Now copy the sample sources into the jdk.
+        # Now copy the sample sources into the jdk.
 	+$(MAKE) -f CopySamples.gmk
 
 # Create the final jdk and jre images, to be wrapped up
@@ -96,9 +96,9 @@ demos:
 images:
 	+$(MAKE) PROFILE="" -f CreateJars.gmk
 	+$(MAKE) PROFILE="" -f Images.gmk
-ifeq ($(OPENJDK_TARGET_OS), macosx)
-	+$(MAKE) -f Bundles.gmk
-endif
+        ifeq ($(OPENJDK_TARGET_OS), macosx)
+	  +$(MAKE) -f Bundles.gmk
+        endif
 
 overlay-images:
 	+$(MAKE) -f CompileLaunchers.gmk OVERLAY_IMAGES=true
@@ -114,8 +114,8 @@ profiles: $(ALL_PROFILES)
 sign-jars:
 	+$(MAKE) -f SignJars.gmk
 
-BINARIES:=$(notdir $(wildcard $(JDK_IMAGE_DIR)/bin/*))
-INSTALLDIR:=openjdk-$(RELEASE)
+BINARIES := $(notdir $(wildcard $(JDK_IMAGE_DIR)/bin/*))
+INSTALLDIR := openjdk-$(RELEASE)
 
 # Install the jdk image, in a very crude way. Not taking into
 # account, how to install properly on macosx or windows etc.
@@ -126,8 +126,8 @@ install:
 	$(RM) -r $(INSTALL_PREFIX)/jvm/$(INSTALLDIR)/*
 	$(CP) -rp $(JDK_IMAGE_DIR)/* $(INSTALL_PREFIX)/jvm/$(INSTALLDIR)
 	$(MKDIR) -p $(INSTALL_PREFIX)/bin
-	$(RM) $(addprefix $(INSTALL_PREFIX)/bin/,$(BINARIES))
-	$(foreach b,$(BINARIES),$(LN) -s $(INSTALL_PREFIX)/jvm/$(INSTALLDIR)/bin/$b $(INSTALL_PREFIX)/bin/$b &&) true
+	$(RM) $(addprefix $(INSTALL_PREFIX)/bin/, $(BINARIES))
+	$(foreach b, $(BINARIES), $(LN) -s $(INSTALL_PREFIX)/jvm/$(INSTALLDIR)/bin/$b $(INSTALL_PREFIX)/bin/$b &&) true
 
 # The all target builds the JDK, but not the images
 all: jdk

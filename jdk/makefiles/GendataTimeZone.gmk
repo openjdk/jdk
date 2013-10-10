@@ -43,9 +43,9 @@ TZFILES := \
     $(addprefix $(JDK_TOPDIR)/make/sun/javazic/tzdata/,$(TZFILE0)) \
     $(addprefix $(JDK_TOPDIR)/make/sun/javazic/tzdata_jdk/,$(TZFILE1))
 
-GENDATA_TIMEZONE_MAPFILE:=ZoneInfoMappings
+GENDATA_TIMEZONE_MAPFILE := ZoneInfoMappings
 
-$(GENDATA_TIMEZONE_DST)/$(GENDATA_TIMEZONE_MAPFILE) : $(TZFILES)
+$(GENDATA_TIMEZONE_DST)/$(GENDATA_TIMEZONE_MAPFILE): $(TZFILES)
 	$(RM) -r $(GENDATA_TIMEZONE_TMP)
 	$(MKDIR) -p $(GENDATA_TIMEZONE_TMP)
 	$(RM) -r $(GENDATA_TIMEZONE_DST)

@@ -65,11 +65,11 @@ GENSRC += $(GENSRC_BUFFER)
 include GensrcExceptions.gmk
 GENSRC += $(GENSRC_EXCEPTIONS)
 
-ifneq ($(OPENJDK_TARGET_OS),windows)
+ifneq ($(OPENJDK_TARGET_OS), windows)
 include GensrcIcons.gmk
 GENSRC += $(GENSRC_AWT_ICONS)
 
-ifeq ($(OPENJDK_TARGET_OS),macosx)
+ifeq ($(OPENJDK_TARGET_OS), macosx)
 GENSRC += $(GENSRC_OSX_ICONS)
 endif
 
@@ -84,11 +84,11 @@ include GensrcSwing.gmk
 GENSRC += $(GENSRC_SWING_BEANINFO) $(GENSRC_SWING_NIMBUS)
 
 ifeq ($(OPENJDK_TARGET_OS), macosx)
-     include GensrcJObjC.gmk
-     GENSRC += $(GENSRC_JOBJC)
+  include GensrcJObjC.gmk
+  GENSRC += $(GENSRC_JOBJC)
 endif
 
-$(GENSRC) : $(BUILD_TOOLS)
+$(GENSRC): $(BUILD_TOOLS)
 
 all: $(GENSRC)
 
