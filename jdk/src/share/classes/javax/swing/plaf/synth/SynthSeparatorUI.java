@@ -36,7 +36,7 @@ import javax.swing.plaf.UIResource;
 import javax.swing.plaf.DimensionUIResource;
 
 /**
- * Provides the Synth L&F UI delegate for
+ * Provides the Synth L&amp;F UI delegate for
  * {@link javax.swing.JSeparator}.
  *
  * @author Shannon Hickey
@@ -58,7 +58,7 @@ public class SynthSeparatorUI extends SeparatorUI
     }
 
     /**
-     * @inheritDoc
+     * {@inheritDoc}
      */
     @Override
     public void installUI(JComponent c) {
@@ -67,7 +67,7 @@ public class SynthSeparatorUI extends SeparatorUI
     }
 
     /**
-     * @inheritDoc
+     * {@inheritDoc}
      */
     @Override
     public void uninstallUI(JComponent c) {
@@ -191,7 +191,7 @@ public class SynthSeparatorUI extends SeparatorUI
     }
 
     /**
-     * @inheritDoc
+     * {@inheritDoc}
      */
     @Override
     public void paintBorder(SynthContext context, Graphics g, int x,
@@ -202,7 +202,7 @@ public class SynthSeparatorUI extends SeparatorUI
     }
 
     /**
-     * @inheritDoc
+     * {@inheritDoc}
      */
     @Override
     public Dimension getPreferredSize(JComponent c) {
@@ -224,7 +224,7 @@ public class SynthSeparatorUI extends SeparatorUI
     }
 
     /**
-     * @inheritDoc
+     * {@inheritDoc}
      */
     @Override
     public Dimension getMinimumSize(JComponent c) {
@@ -232,7 +232,7 @@ public class SynthSeparatorUI extends SeparatorUI
     }
 
     /**
-     * @inheritDoc
+     * {@inheritDoc}
      */
     @Override
     public Dimension getMaximumSize(JComponent c) {
@@ -240,7 +240,7 @@ public class SynthSeparatorUI extends SeparatorUI
     }
 
     /**
-     * @inheritDoc
+     * {@inheritDoc}
      */
     @Override
     public SynthContext getContext(JComponent c) {

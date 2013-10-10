@@ -101,7 +101,7 @@ public class JPasswordField extends JTextField {
      * number of columns.  A default model is created, and the initial string
      * is set to <code>null</code>.
      *
-     * @param columns the number of columns >= 0
+     * @param columns the number of columns &gt;= 0
      */
     public JPasswordField(int columns) {
         this(null, null, columns);
@@ -113,7 +113,7 @@ public class JPasswordField extends JTextField {
      * the default.
      *
      * @param text the text to be displayed, <code>null</code> if none
-     * @param columns the number of columns >= 0
+     * @param columns the number of columns &gt;= 0
      */
     public JPasswordField(String text, int columns) {
         this(null, text, columns);
@@ -130,7 +130,7 @@ public class JPasswordField extends JTextField {
      * @param doc  the text storage to use
      * @param txt the text to be displayed, <code>null</code> if none
      * @param columns  the number of columns to use to calculate
-     *   the preferred width >= 0; if columns is set to zero, the
+     *   the preferred width &gt;= 0; if columns is set to zero, the
      *   preferred width will be whatever naturally results from
      *   the component implementation
      */
@@ -143,7 +143,7 @@ public class JPasswordField extends JTextField {
     }
 
     /**
-     * Returns the name of the L&F class that renders this component.
+     * Returns the name of the L&amp;F class that renders this component.
      *
      * @return the string "PasswordFieldUI"
      * @see JComponent#getUIClassID
@@ -271,8 +271,8 @@ public class JPasswordField extends JTextField {
      * <code>getPassword</code> method instead.
      * @deprecated As of Java 2 platform v1.2,
      * replaced by <code>getPassword</code>.
-     * @param offs the offset >= 0
-     * @param len the length >= 0
+     * @param offs the offset &gt;= 0
+     * @param len the length &gt;= 0
      * @return the text
      * @exception BadLocationException if the offset or length are invalid
      */

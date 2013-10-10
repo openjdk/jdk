@@ -31,7 +31,7 @@ import javax.swing.text.*;
 import javax.swing.plaf.ComponentUI;
 
 /**
- * Provides the Synth L&F UI delegate for
+ * Provides the Synth L&amp;F UI delegate for
  * {@link javax.swing.JPasswordField}.
  *
  * @author  Shannon Hickey
@@ -73,7 +73,7 @@ public class SynthPasswordFieldUI extends SynthTextFieldUI {
     }
 
     /**
-     * @inheritDoc
+     * {@inheritDoc}
      */
     @Override
     void paintBackground(SynthContext context, Graphics g, JComponent c) {
@@ -82,7 +82,7 @@ public class SynthPasswordFieldUI extends SynthTextFieldUI {
     }
 
     /**
-     * @inheritDoc
+     * {@inheritDoc}
      */
     @Override
     public void paintBorder(SynthContext context, Graphics g, int x,
@@ -91,7 +91,7 @@ public class SynthPasswordFieldUI extends SynthTextFieldUI {
     }
 
     /**
-     * @inheritDoc
+     * {@inheritDoc}
      */
     @Override
     protected void installKeyboardActions() {

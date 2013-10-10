@@ -51,6 +51,7 @@ import java.nio.charset.Charset;
 import java.nio.file.DirectoryStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.text.Normalizer;
 import java.util.ResourceBundle;
 import java.text.MessageFormat;
 import java.util.ArrayList;
@@ -493,7 +494,19 @@ public enum LauncherHelper {
         try {
             mainClass = scloader.loadClass(cn);
         } catch (NoClassDefFoundError | ClassNotFoundException cnfe) {
-            abort(cnfe, "java.launcher.cls.error1", cn);
+            if (System.getProperty("os.name", "").contains("OS X")
+                && Normalizer.isNormalized(cn, Normalizer.Form.NFD)) {
+                try {
+                    // On Mac OS X since all names with diacretic symbols are given as decomposed it
+                    // is possible that main class name comes incorrectly from the command line
+                    // and we have to re-compose it
+                    mainClass = scloader.loadClass(Normalizer.normalize(cn, Normalizer.Form.NFC));
+                } catch (NoClassDefFoundError | ClassNotFoundException cnfe1) {
+                    abort(cnfe, "java.launcher.cls.error1", cn);
+                }
+            } else {
+                abort(cnfe, "java.launcher.cls.error1", cn);
+            }
         }
         // set to mainClass
         appClass = mainClass;

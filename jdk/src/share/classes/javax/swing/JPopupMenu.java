@@ -196,7 +196,7 @@ public class JPopupMenu extends JComponent implements Accessible,MenuElement {
 
 
     /**
-     * Returns the look and feel (L&F) object that renders this component.
+     * Returns the look and feel (L&amp;F) object that renders this component.
      *
      * @return the <code>PopupMenuUI</code> object that renders this component
      */
@@ -205,9 +205,9 @@ public class JPopupMenu extends JComponent implements Accessible,MenuElement {
     }
 
     /**
-     * Sets the L&F object that renders this component.
+     * Sets the L&amp;F object that renders this component.
      *
-     * @param ui the new <code>PopupMenuUI</code> L&F object
+     * @param ui the new <code>PopupMenuUI</code> L&amp;F object
      * @see UIDefaults#getUI
      * @beaninfo
      *        bound: true
@@ -230,7 +230,7 @@ public class JPopupMenu extends JComponent implements Accessible,MenuElement {
 
 
     /**
-     * Returns the name of the L&F class that renders this component.
+     * Returns the name of the L&amp;F class that renders this component.
      *
      * @return the string "PopupMenuUI"
      * @see JComponent#getUIClassID
@@ -461,7 +461,7 @@ public class JPopupMenu extends JComponent implements Accessible,MenuElement {
      *
      * @param       pos the position of the item to be removed
      * @exception   IllegalArgumentException if the value of
-     *                          <code>pos</code> < 0, or if the value of
+     *                          <code>pos</code> &lt; 0, or if the value of
      *                          <code>pos</code> is greater than the
      *                          number of items
      */
@@ -560,7 +560,7 @@ public class JPopupMenu extends JComponent implements Accessible,MenuElement {
      * @param a  the <code>Action</code> object to insert
      * @param index      specifies the position at which to insert the
      *                   <code>Action</code>, where 0 is the first
-     * @exception IllegalArgumentException if <code>index</code> < 0
+     * @exception IllegalArgumentException if <code>index</code> &lt; 0
      * @see Action
      */
     public void insert(Action a, int index) {
@@ -576,7 +576,7 @@ public class JPopupMenu extends JComponent implements Accessible,MenuElement {
      * @param component  the <code>Component</code> to insert
      * @param index      specifies the position at which
      *                   to insert the component, where 0 is the first
-     * @exception IllegalArgumentException if <code>index</code> < 0
+     * @exception IllegalArgumentException if <code>index</code> &lt; 0
      */
     public void insert(Component component, int index) {
         if (index < 0) {
@@ -1535,7 +1535,7 @@ public class JPopupMenu extends JComponent implements Accessible,MenuElement {
         }
 
         /**
-         * Returns the name of the L&F class that renders this component.
+         * Returns the name of the L&amp;F class that renders this component.
          *
          * @return the string "PopupMenuSeparatorUI"
          * @see JComponent#getUIClassID

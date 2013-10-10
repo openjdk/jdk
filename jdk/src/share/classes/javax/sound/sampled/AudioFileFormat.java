@@ -57,7 +57,7 @@ import java.util.Map;
  * be used in implementations:
  *
  * <table border=1>
- *  <caption>Audio File Format Property Keys</caption>
+ *  <caption>Audio File Format Properties</caption>
  *  <tr>
  *   <th>Property key</th>
  *   <th>Value type</th>

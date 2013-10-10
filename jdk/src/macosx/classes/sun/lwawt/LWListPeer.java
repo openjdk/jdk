@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,7 +33,8 @@ import java.awt.peer.ListPeer;
 import java.util.Arrays;
 
 /**
- * Lightweight implementation of {@link ListPeer}.
+ * Lightweight implementation of {@link ListPeer}. Delegates most of the work to
+ * the {@link JList}, which is placed inside {@link JScrollPane}.
  */
 final class LWListPeer extends LWComponentPeer<List, LWListPeer.ScrollableJList>
         implements ListPeer {
@@ -56,7 +57,7 @@ final class LWListPeer extends LWComponentPeer<List, LWListPeer.ScrollableJList>
     }
 
     @Override
-    protected ScrollableJList createDelegate() {
+    ScrollableJList createDelegate() {
         return new ScrollableJList();
     }
 
@@ -78,7 +79,7 @@ final class LWListPeer extends LWComponentPeer<List, LWListPeer.ScrollableJList>
     }
 
     @Override
-    protected Component getDelegateFocusOwner() {
+    Component getDelegateFocusOwner() {
         return getDelegate().getView();
     }
 
@@ -193,6 +194,7 @@ final class LWListPeer extends LWComponentPeer<List, LWListPeer.ScrollableJList>
         }
     }
 
+    @SuppressWarnings("serial")// Safe: outer class is non-serializable.
     final class ScrollableJList extends JScrollPane implements ListSelectionListener {
 
         private boolean skipStateChangedEvent;
@@ -234,9 +236,10 @@ final class LWListPeer extends LWComponentPeer<List, LWListPeer.ScrollableJList>
         }
 
         @Override
+        @SuppressWarnings("unchecked")
         public void valueChanged(final ListSelectionEvent e) {
             if (!e.getValueIsAdjusting() && !isSkipStateChangedEvent()) {
-                final JList source = (JList) e.getSource();
+                final JList<?> source = (JList<?>) e.getSource();
                 for(int i = 0 ; i < source.getModel().getSize(); i++) {
 
                     final boolean wasSelected = Arrays.binarySearch(oldSelectedIndices, i) >= 0;
@@ -255,6 +258,7 @@ final class LWListPeer extends LWComponentPeer<List, LWListPeer.ScrollableJList>
             }
         }
 
+        @SuppressWarnings("unchecked")
         public JList<String> getView() {
             return (JList<String>) getViewport().getView();
         }
@@ -289,7 +293,7 @@ final class LWListPeer extends LWComponentPeer<List, LWListPeer.ScrollableJList>
         private final class JListDelegate extends JList<String> {
 
             JListDelegate() {
-                super(ScrollableJList.this.model);
+                super(model);
             }
 
             @Override
