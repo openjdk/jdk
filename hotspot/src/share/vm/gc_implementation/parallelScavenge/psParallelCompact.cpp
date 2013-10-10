@@ -27,7 +27,6 @@
 #include "classfile/systemDictionary.hpp"
 #include "code/codeCache.hpp"
 #include "gc_implementation/parallelScavenge/gcTaskManager.hpp"
-#include "gc_implementation/parallelScavenge/generationSizer.hpp"
 #include "gc_implementation/parallelScavenge/parallelScavengeHeap.inline.hpp"
 #include "gc_implementation/parallelScavenge/pcTasks.hpp"
 #include "gc_implementation/parallelScavenge/psAdaptiveSizePolicy.hpp"
