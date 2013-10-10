@@ -162,7 +162,7 @@ enum CompilationPhase {
     LOWERING_PHASE(EnumSet.of(INITIALIZED, PARSED, CONSTANT_FOLDED)) {
         @Override
         FunctionNode transform(final Compiler compiler, final FunctionNode fn) {
-            return (FunctionNode)fn.accept(new Lower());
+            return (FunctionNode)fn.accept(new Lower(compiler));
         }
 
         @Override

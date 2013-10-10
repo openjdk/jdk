@@ -22,31 +22,29 @@
  */
 
 /**
- * NASHORN-293: Per-context caching of compiled script classes.
+ * JDK-8026167: Class cache/reuse of 'eval' scripts results in ClassCastException in some cases.
  *
  * @test
  * @run
  */
 
-// Make sure repeated evals are executed correctly
-for (var i = 0; i < 3; i++) {
-    eval("print('hello')");
+var m = new javax.script.ScriptEngineManager();
+var e = m.getEngineByName('js');
+
+// leave the whitespace - need both eval("e") at same column for this test!
+
+e.eval('function f(e) {            eval("e") } f()');
+e.eval('function f() { var e = 33; eval("e") } f()');
+
+function f() {
+    Function.call.call(function x() { eval("x") }); eval("x") 
 }
 
-// Same content should produce same class only with same source name
-var src = "(void 0).foo";
-
-for (var i = 0; i < 3; i++) {
-    try {
-        eval(src);
-    } catch (e) {
-        printError(e);
-    }
-}
-for (var i = 0; i < 3; i++) {
-    try {
-        eval(src);
-    } catch (e) {
-        printError(e);
+try {
+    f();
+    fail("Should have thrown ReferenceError");
+} catch (e) {
+    if (! (e instanceof ReferenceError)) {
+        fail("ReferenceError expected but got " + e);
     }
 }
