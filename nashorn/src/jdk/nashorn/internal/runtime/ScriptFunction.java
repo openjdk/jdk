@@ -326,7 +326,7 @@ public abstract class ScriptFunction extends ScriptObject {
      * @param self self reference
      * @return bound invoke handle
      */
-    public final MethodHandle getBoundInvokeHandle(final ScriptObject self) {
+    public final MethodHandle getBoundInvokeHandle(final Object self) {
         return MH.bindTo(bindToCalleeIfNeeded(data.getGenericInvoker()), self);
     }
 
