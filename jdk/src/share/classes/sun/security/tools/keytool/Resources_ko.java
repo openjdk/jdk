@@ -40,8 +40,7 @@ public class Resources_ko extends java.util.ListResourceBundle {
                 "*******************************************\n\n"},
 
         // keytool: Help part
-// "Option" should be translated.
-        {".OPTION.", " [\uC635\uC158]..."},
+        {".OPTION.", " [OPTION]..."},
         {"Options.", "\uC635\uC158:"},
         {"Use.keytool.help.for.all.available.commands",
                  "\uC0AC\uC6A9 \uAC00\uB2A5\uD55C \uBAA8\uB4E0 \uBA85\uB839\uC5D0 \"keytool -help\" \uC0AC\uC6A9"},
@@ -61,7 +60,6 @@ public class Resources_ko extends java.util.ListResourceBundle {
                 "\uC778\uC99D\uC11C\uB97C \uC775\uC2A4\uD3EC\uD2B8\uD569\uB2C8\uB2E4."}, //-exportcert
         {"Generates.a.key.pair",
                 "\uD0A4 \uC30D\uC744 \uC0DD\uC131\uD569\uB2C8\uB2E4."}, //-genkeypair
-// translation of "secret" key should be different to "private" key.
         {"Generates.a.secret.key",
                 "\uBCF4\uC548 \uD0A4\uB97C \uC0DD\uC131\uD569\uB2C8\uB2E4."}, //-genseckey
         {"Generates.certificate.from.a.certificate.request",
@@ -174,7 +172,7 @@ public class Resources_ko extends java.util.ListResourceBundle {
                  "\uCCA0\uD68C\uD560 \uC778\uC99D\uC11C\uC758 \uC77C\uB828 ID"}, //-id
         // keytool: Running part
         {"keytool.error.", "keytool \uC624\uB958: "},
-        {"Illegal.option.", "\uC798\uBABB\uB41C \uC635\uC158:   "},
+        {"Illegal.option.", "\uC798\uBABB\uB41C \uC635\uC158:  "},
         {"Illegal.value.", "\uC798\uBABB\uB41C \uAC12: "},
         {"Unknown.password.type.", "\uC54C \uC218 \uC5C6\uB294 \uBE44\uBC00\uBC88\uD638 \uC720\uD615: "},
         {"Cannot.find.environment.variable.",
@@ -244,8 +242,10 @@ public class Resources_ko extends java.util.ListResourceBundle {
         {"Certification.request.stored.in.file.filename.",
                 "\uC778\uC99D \uC694\uCCAD\uC774 <{0}> \uD30C\uC77C\uC5D0 \uC800\uC7A5\uB418\uC5C8\uC2B5\uB2C8\uB2E4."},
         {"Submit.this.to.your.CA", "CA\uC5D0\uAC8C \uC81C\uCD9C\uD558\uC2ED\uC2DC\uC624."},
-        {"if.alias.not.specified.destalias.srckeypass.and.destkeypass.must.not.be.specified",
-            "\uBCC4\uCE6D\uC744 \uC9C0\uC815\uD558\uC9C0 \uC54A\uC740 \uACBD\uC6B0 destalias, srckeypass \uBC0F destkeypass\uB97C \uC9C0\uC815\uD558\uC9C0 \uC54A\uC544\uC57C \uD569\uB2C8\uB2E4."},
+        {"if.alias.not.specified.destalias.and.srckeypass.must.not.be.specified",
+            "\uBCC4\uCE6D\uC744 \uC9C0\uC815\uD558\uC9C0 \uC54A\uC740 \uACBD\uC6B0 destalias \uBC0F srckeypass\uB97C \uC9C0\uC815\uD558\uC9C0 \uC54A\uC544\uC57C \uD569\uB2C8\uB2E4."},
+        {"The.destination.pkcs12.keystore.has.different.storepass.and.keypass.Please.retry.with.destkeypass.specified.",
+            "\uB300\uC0C1 pkcs12 \uD0A4 \uC800\uC7A5\uC18C\uC5D0 \uB2E4\uB978 storepass \uBC0F keypass\uAC00 \uC788\uC2B5\uB2C8\uB2E4. \uC9C0\uC815\uB41C -destkeypass\uB85C \uC7AC\uC2DC\uB3C4\uD558\uC2ED\uC2DC\uC624."},
         {"Certificate.stored.in.file.filename.",
                 "\uC778\uC99D\uC11C\uAC00 <{0}> \uD30C\uC77C\uC5D0 \uC800\uC7A5\uB418\uC5C8\uC2B5\uB2C8\uB2E4."},
         {"Certificate.reply.was.installed.in.keystore",
@@ -361,7 +361,7 @@ public class Resources_ko extends java.util.ListResourceBundle {
                  "<{0}> \uBCC4\uCE6D\uC740 \uC804\uC6A9 \uD0A4 \uD56D\uBAA9\uC774 \uC544\uB2CC \uD56D\uBAA9 \uC720\uD615\uC744 \uCC38\uC870\uD569\uB2C8\uB2E4. -keyclone \uBA85\uB839\uC740 \uC804\uC6A9 \uD0A4 \uD56D\uBAA9\uC758 \uBCF5\uC81C\uB9CC \uC9C0\uC6D0\uD569\uB2C8\uB2E4."},
 
         {".WARNING.WARNING.WARNING.",
-            "*****************  \uACBD\uACE0 \uACBD\uACE0 \uACBD\uACE0  *****************"},
+            "*****************  WARNING WARNING WARNING  *****************"},
         {"Signer.d.", "\uC11C\uBA85\uC790 #%d:"},
         {"Timestamp.", "\uC2DC\uAC04 \uAE30\uB85D:"},
         {"Signature.", "\uC11C\uBA85:"},
@@ -399,6 +399,10 @@ public class Resources_ko extends java.util.ListResourceBundle {
                 "\uBCF4\uC548 \uD0A4\uAC00 \uC0DD\uC131\uB418\uC9C0 \uC54A\uC558\uC73C\uBA70 <{0}> \uBCC4\uCE6D\uC774 \uC874\uC7AC\uD569\uB2C8\uB2E4."},
         {"Please.provide.keysize.for.secret.key.generation",
                 "\uBCF4\uC548 \uD0A4\uB97C \uC0DD\uC131\uD558\uB824\uBA74 -keysize\uB97C \uC81C\uACF5\uD558\uC2ED\uC2DC\uC624."},
+
+        {"verified.by.s.in.s", "%s(%s)\uC5D0 \uC758\uD574 \uD655\uC778\uB428"},
+        {"warning.not.verified.make.sure.keystore.is.correct",
+            "\uACBD\uACE0: \uD655\uC778\uB418\uC9C0 \uC54A\uC74C. -keystore\uAC00 \uC62C\uBC14\uB978\uC9C0 \uD655\uC778\uD558\uC2ED\uC2DC\uC624."},
 
         {"Extensions.", "\uD655\uC7A5: "},
         {".Empty.value.", "(\uBE44\uC5B4 \uC788\uB294 \uAC12)"},

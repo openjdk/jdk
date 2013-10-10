@@ -162,22 +162,27 @@ public final class NativeJSON extends ScriptObject {
 
         String gap;
 
-        if (space instanceof Number || space instanceof NativeNumber) {
-            int indent;
-            if (space instanceof NativeNumber) {
-                indent = ((NativeNumber)space).intValue();
+        // modifiable 'space' - parameter is final
+        Object modSpace = space;
+        if (modSpace instanceof NativeNumber) {
+            modSpace = JSType.toNumber(JSType.toPrimitive(modSpace, Number.class));
+        } else if (modSpace instanceof NativeString) {
+            modSpace = JSType.toString(JSType.toPrimitive(modSpace, String.class));
+        }
+
+        if (modSpace instanceof Number) {
+            int indent = Math.min(10, JSType.toInteger(modSpace));
+            if (indent < 1) {
+                gap = "";
             } else {
-                indent = ((Number)space).intValue();
+                final StringBuilder sb = new StringBuilder();
+                for (int i = 0; i < indent; i++) {
+                    sb.append(' ');
+                }
+                gap = sb.toString();
             }
-
-            final StringBuilder sb = new StringBuilder();
-            for (int i = 0; i < Math.min(10, indent); i++) {
-                sb.append(' ');
-            }
-            gap = sb.toString();
-
-        } else if (space instanceof String || space instanceof ConsString || space instanceof NativeString) {
-            final String str = (space instanceof String) ? (String)space : space.toString();
+        } else if (modSpace instanceof String || modSpace instanceof ConsString) {
+            final String str = modSpace.toString();
             gap = str.substring(0, Math.min(10, str.length()));
         } else {
             gap = "";

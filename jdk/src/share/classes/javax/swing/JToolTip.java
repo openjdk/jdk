@@ -85,7 +85,7 @@ public class JToolTip extends JComponent implements Accessible {
     }
 
     /**
-     * Returns the L&F object that renders this component.
+     * Returns the L&amp;F object that renders this component.
      *
      * @return the <code>ToolTipUI</code> object that renders this component
      */
@@ -104,7 +104,7 @@ public class JToolTip extends JComponent implements Accessible {
 
 
     /**
-     * Returns the name of the L&F class that renders this component.
+     * Returns the name of the L&amp;F class that renders this component.
      *
      * @return the string "ToolTipUI"
      * @see JComponent#getUIClassID

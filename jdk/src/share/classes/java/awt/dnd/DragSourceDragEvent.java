@@ -47,9 +47,9 @@ import java.awt.event.InputEvent;
  * source and the drop action selected by the user. The user can select a drop
  * action by pressing modifier keys during the drag operation:
  * <pre>
- *   Ctrl + Shift -> ACTION_LINK
- *   Ctrl         -> ACTION_COPY
- *   Shift        -> ACTION_MOVE
+ *   Ctrl + Shift -&gt; ACTION_LINK
+ *   Ctrl         -&gt; ACTION_COPY
+ *   Shift        -&gt; ACTION_MOVE
  * </pre>
  * If the user selects a drop action, the <i>user drop action</i> is one of
  * <code>DnDConstants</code> that represents the selected drop action if this
@@ -103,7 +103,7 @@ public class DragSourceDragEvent extends DragSourceEvent {
      *        in one event. Use of the extended modifiers is
      *        preferred.
      *
-     * @throws <code>IllegalArgumentException</code> if <code>dsc</code> is <code>null</code>.
+     * @throws IllegalArgumentException if <code>dsc</code> is <code>null</code>.
      *
      * @see java.awt.event.InputEvent
      * @see DragSourceEvent#getLocation
@@ -154,7 +154,7 @@ public class DragSourceDragEvent extends DragSourceEvent {
      * @param x   the horizontal coordinate for the cursor location
      * @param y   the vertical coordinate for the cursor location
      *
-     * @throws <code>IllegalArgumentException</code> if <code>dsc</code> is <code>null</code>.
+     * @throws IllegalArgumentException if <code>dsc</code> is <code>null</code>.
      *
      * @see java.awt.event.InputEvent
      * @since 1.4

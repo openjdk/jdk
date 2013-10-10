@@ -37,7 +37,7 @@ import java.awt.*;
 
 
 /**
- * A Windows L&F implementation of LabelUI.  This implementation
+ * A Windows L&amp;F implementation of LabelUI.  This implementation
  * is completely static, i.e. there's only one UIView implementation
  * that's shared by all JLabel objects.
  *

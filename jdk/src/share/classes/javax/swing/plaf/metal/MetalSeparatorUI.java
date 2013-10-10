@@ -36,7 +36,7 @@ import javax.swing.plaf.basic.BasicSeparatorUI;
 
 
 /**
- * A Metal L&F implementation of SeparatorUI.  This implementation
+ * A Metal L&amp;F implementation of SeparatorUI.  This implementation
  * is a "combined" view/controller.
  * <p>
  * <strong>Warning:</strong>

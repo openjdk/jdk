@@ -1,7 +1,7 @@
 #!/bin/sh
 
 #
-# Copyright (c) 2003, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,6 @@
 # questions.
 #
 
-
 # @test
 # @bug 4673940
 # @bug 4930794
@@ -38,7 +37,6 @@ if [ "$os" != "Linux" -a "$os" != "SunOS" ]; then
     echo "Test not designed to run on this operating system, skipping..."
     exit 0
 fi
-
 
 # if TESTJAVA isn't set then we assume an interactive run. So that it's
 # clear which version of 'java' is running we do a 'which java' and
@@ -64,24 +62,17 @@ export CLASSPATH
 
 
 # Check that we have libLauncher.so for the right platform.
-# On Solaris we assume 64-bit if java -d64 works.
+# On Solaris we assume 64-bit
 
 DFLAG=
 if [ "$os" = "SunOS" ]; then
     PLATFORM=solaris
     case "`uname -p`" in
 	i[3-9]86) 
-	    ARCH=i586
+	    ARCH=amd64
 	    ;;
 	sparc)
-	    ARCH=sparc
-	    ${JAVA} -d64 -version > /dev/null 2<&1 
-	    if [ $? = 1 ]; then
-	        ARCH=sparc
-	    else
-		ARCH=sparcv9
-		DFLAG=-d64
-	    fi
+	    ARCH=sparcv9
 	    ;;
     esac 
 fi

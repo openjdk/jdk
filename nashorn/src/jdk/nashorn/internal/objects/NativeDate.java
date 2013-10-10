@@ -75,11 +75,11 @@ public final class NativeDate extends ScriptObject {
     private static final int FORMAT_LOCAL_TIME      = 5;
 
     // Constants defined in ECMA 15.9.1.10
-    private static final double hoursPerDay      = 24;
-    private static final double minutesPerHour   = 60;
-    private static final double secondsPerMinute = 60;
-    private static final double msPerSecond   = 1_000;
-    private static final double msPerMinute  = 60_000;
+    private static final int    hoursPerDay      = 24;
+    private static final int    minutesPerHour   = 60;
+    private static final int    secondsPerMinute = 60;
+    private static final int    msPerSecond   = 1_000;
+    private static final int    msPerMinute  = 60_000;
     private static final double msPerHour = 3_600_000;
     private static final double msPerDay = 86_400_000;
 
@@ -926,13 +926,13 @@ public final class NativeDate extends ScriptObject {
                 case FORMAT_DATE :
                 case FORMAT_LOCAL_DATE_TIME:
                     // EEE MMM dd yyyy
-                    sb.append(weekDays[(int) weekDay(t)])
+                    sb.append(weekDays[weekDay(t)])
                             .append(' ')
-                            .append(months[(int) monthFromTime(t)])
+                            .append(months[monthFromTime(t)])
                             .append(' ');
-                    zeroPad(sb, (int) dayFromTime(t), 2);
+                    zeroPad(sb, dayFromTime(t), 2);
                     sb.append(' ');
-                    zeroPad(sb, (int) yearFromTime(t), 4);
+                    zeroPad(sb, yearFromTime(t), 4);
                     if (format == FORMAT_DATE) {
                         break;
                     }
@@ -948,11 +948,11 @@ public final class NativeDate extends ScriptObject {
                     offset = (offset / 60) * 100 + offset % 60;
 
                     // HH:mm:ss GMT+HHmm
-                    zeroPad(sb, (int) hourFromTime(t), 2);
+                    zeroPad(sb, hourFromTime(t), 2);
                     sb.append(':');
-                    zeroPad(sb, (int) minFromTime(t), 2);
+                    zeroPad(sb, minFromTime(t), 2);
                     sb.append(':');
-                    zeroPad(sb, (int) secFromTime(t), 2);
+                    zeroPad(sb, secFromTime(t), 2);
                     sb.append(" GMT")
                             .append(offset < 0 ? '-' : '+');
                     zeroPad(sb, Math.abs(offset), 4);
@@ -963,20 +963,20 @@ public final class NativeDate extends ScriptObject {
 
                 case FORMAT_LOCAL_DATE:
                     // yyyy-MM-dd
-                    zeroPad(sb, (int) yearFromTime(t), 4);
+                    zeroPad(sb, yearFromTime(t), 4);
                     sb.append('-');
-                    zeroPad(sb, (int) monthFromTime(t) + 1, 2);
+                    zeroPad(sb, monthFromTime(t) + 1, 2);
                     sb.append('-');
-                    zeroPad(sb, (int) dayFromTime(t), 2);
+                    zeroPad(sb, dayFromTime(t), 2);
                     break;
 
                 case FORMAT_LOCAL_TIME:
                     // HH:mm:ss
-                    zeroPad(sb, (int) hourFromTime(t), 2);
+                    zeroPad(sb, hourFromTime(t), 2);
                     sb.append(':');
-                    zeroPad(sb, (int) minFromTime(t), 2);
+                    zeroPad(sb, minFromTime(t), 2);
                     sb.append(':');
-                    zeroPad(sb, (int) secFromTime(t), 2);
+                    zeroPad(sb, secFromTime(t), 2);
                     break;
 
                 default:
@@ -996,19 +996,19 @@ public final class NativeDate extends ScriptObject {
             final StringBuilder sb = new StringBuilder(29);
             final double t = nd.getTime();
             // EEE, dd MMM yyyy HH:mm:ss z
-            sb.append(weekDays[(int) weekDay(t)])
+            sb.append(weekDays[weekDay(t)])
                     .append(", ");
-            zeroPad(sb, (int) dayFromTime(t), 2);
+            zeroPad(sb, dayFromTime(t), 2);
             sb.append(' ')
-                    .append(months[(int) monthFromTime(t)])
+                    .append(months[monthFromTime(t)])
                     .append(' ');
-            zeroPad(sb, (int) yearFromTime(t), 4);
+            zeroPad(sb, yearFromTime(t), 4);
             sb.append(' ');
-            zeroPad(sb, (int) hourFromTime(t), 2);
+            zeroPad(sb, hourFromTime(t), 2);
             sb.append(':');
-            zeroPad(sb, (int) minFromTime(t), 2);
+            zeroPad(sb, minFromTime(t), 2);
             sb.append(':');
-            zeroPad(sb, (int) secFromTime(t), 2);
+            zeroPad(sb, secFromTime(t), 2);
             sb.append(" GMT");
             return sb.toString();
         }
@@ -1023,19 +1023,19 @@ public final class NativeDate extends ScriptObject {
             final StringBuilder sb = new StringBuilder(24);
             final double t = nd.getTime();
             // yyyy-MM-dd'T'HH:mm:ss.SSS'Z'
-            zeroPad(sb, (int) yearFromTime(t), 4);
+            zeroPad(sb, yearFromTime(t), 4);
             sb.append('-');
-            zeroPad(sb, (int) monthFromTime(t) + 1, 2);
+            zeroPad(sb, monthFromTime(t) + 1, 2);
             sb.append('-');
-            zeroPad(sb, (int) dayFromTime(t), 2);
+            zeroPad(sb, dayFromTime(t), 2);
             sb.append('T');
-            zeroPad(sb, (int) hourFromTime(t), 2);
+            zeroPad(sb, hourFromTime(t), 2);
             sb.append(':');
-            zeroPad(sb, (int) minFromTime(t), 2);
+            zeroPad(sb, minFromTime(t), 2);
             sb.append(':');
-            zeroPad(sb, (int) secFromTime(t), 2);
+            zeroPad(sb, secFromTime(t), 2);
             sb.append('.');
-            zeroPad(sb, (int) msFromTime(t), 3);
+            zeroPad(sb, msFromTime(t), 3);
             sb.append("Z");
             return sb.toString();
         }
@@ -1072,29 +1072,30 @@ public final class NativeDate extends ScriptObject {
     }
 
     // ECMA 15.9.1.3 Year Number
-    private static double timeFromYear(final double y) {
+    private static double timeFromYear(final int y) {
         return dayFromYear(y) * msPerDay;
     }
 
-    private static double yearFromTime(final double t) {
-        double y = Math.floor(t / (msPerDay * 365.2425)) + 1970;
+    // ECMA 15.9.1.3 Year Number
+    private static int yearFromTime(final double t) {
+        int y = (int) Math.floor(t / (msPerDay * 365.2425)) + 1970;
         final double t2 = timeFromYear(y);
         if (t2 > t) {
             y--;
-        } else if (t2 + msPerDay * daysInYear((int) y) <= t) {
+        } else if (t2 + msPerDay * daysInYear(y) <= t) {
             y++;
         }
         return y;
     }
 
-    private static double dayWithinYear(final double t, final double year) {
-        return day(t) - dayFromYear(year);
+    private static int dayWithinYear(final double t, final int year) {
+        return (int) (day(t) - dayFromYear(year));
     }
 
-    private static double monthFromTime(final double t) {
-        final double year = yearFromTime(t);
-        final double day = dayWithinYear(t, year);
-        final int[] firstDay = firstDayInMonth[isLeapYear((int) year) ? 1 : 0];
+    private static int monthFromTime(final double t) {
+        final int year = yearFromTime(t);
+        final int day = dayWithinYear(t, year);
+        final int[] firstDay = firstDayInMonth[isLeapYear(year) ? 1 : 0];
         int month = 0;
 
         while (month < 11 && firstDay[month + 1] <= day) {
@@ -1103,10 +1104,10 @@ public final class NativeDate extends ScriptObject {
         return month;
     }
 
-    private static double dayFromTime(final double t)  {
-        final double year = yearFromTime(t);
-        final double day = dayWithinYear(t, year);
-        final int[] firstDay = firstDayInMonth[isLeapYear((int) year) ? 1 : 0];
+    private static int dayFromTime(final double t)  {
+        final int year = yearFromTime(t);
+        final int day = dayWithinYear(t, year);
+        final int[] firstDay = firstDayInMonth[isLeapYear(year) ? 1 : 0];
         int month = 0;
 
         while (month < 11 && firstDay[month + 1] <= day) {
@@ -1121,11 +1122,8 @@ public final class NativeDate extends ScriptObject {
         return firstDay[month];
     }
 
-    private static double weekDay(final double time) {
-        if (isNaN(time)) {
-            return NaN;
-        }
-        final double day = (day(time) + 4) % 7;
+    private static int weekDay(final double time) {
+        final int day = (int) (day(time) + 4) % 7;
         return day < 0 ? day + 7 : day;
     }
 
@@ -1140,26 +1138,26 @@ public final class NativeDate extends ScriptObject {
     }
 
     // ECMA 15.9.1.10 Hours, Minutes, Second, and Milliseconds
-    private static double hourFromTime(final double t) {
-        final double h = Math.floor(t / msPerHour) % hoursPerDay;
+    private static int hourFromTime(final double t) {
+        final int h = (int) (Math.floor(t / msPerHour) % hoursPerDay);
         return h < 0 ? h + hoursPerDay: h;
     }
-    private static double minFromTime(final double t) {
-        final double m = Math.floor(t / msPerMinute) % minutesPerHour;
+    private static int minFromTime(final double t) {
+        final int m = (int) (Math.floor(t / msPerMinute) % minutesPerHour);
         return m < 0 ? m + minutesPerHour : m;
     }
 
-    private static double secFromTime(final double t) {
-        final double s = Math.floor(t / msPerSecond) % secondsPerMinute;
+    private static int secFromTime(final double t) {
+        final int s = (int) (Math.floor(t / msPerSecond) % secondsPerMinute);
         return s < 0 ? s + secondsPerMinute : s;
     }
 
-    private static double msFromTime(final double t) {
-        final double m = t % msPerSecond;
+    private static int msFromTime(final double t) {
+        final int m = (int) (t % msPerSecond);
         return m < 0 ? m + msPerSecond : m;
     }
 
-    private static double valueFromTime(final int unit, final double t) {
+    private static int valueFromTime(final int unit, final double t) {
         switch (unit) {
             case YEAR: return yearFromTime(t);
             case MONTH: return monthFromTime(t);
@@ -1180,12 +1178,12 @@ public final class NativeDate extends ScriptObject {
     // ECMA 15.9.1.12 MakeDay (year, month, date)
     private static double makeDay(final double year, final double month, final double date) {
         final double y = year + Math.floor(month / 12);
-        double m = month % 12;
+        int m = (int) (month % 12);
         if (m < 0) {
             m += 12;
         }
-        double d = Math.floor(dayFromYear(y));
-        d += dayFromMonth((int) m, (int) y);
+        double d = dayFromYear(y);
+        d += dayFromMonth(m, (int) y);
 
         return d + date - 1;
     }
@@ -1257,13 +1255,13 @@ public final class NativeDate extends ScriptObject {
                     nullReturn = true;
                 }
 
-                if (! nullReturn) {
+                if (!nullReturn && !isNaN(time)) {
                     d[i - start] = valueFromTime(i, time);
                 }
             }
         }
 
-        return nullReturn? null : d;
+        return nullReturn ? null : d;
     }
 
     // ECMA 15.9.1.14 TimeClip (time)

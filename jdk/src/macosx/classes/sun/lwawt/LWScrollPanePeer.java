@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,6 +33,10 @@ import java.awt.event.MouseWheelEvent;
 import java.awt.peer.ScrollPanePeer;
 import java.util.List;
 
+/**
+ * Lightweight implementation of {@link ScrollPanePeer}. Delegates most of the
+ * work to the {@link JScrollPane}.
+ */
 final class LWScrollPanePeer extends LWContainerPeer<ScrollPane, JScrollPane>
         implements ScrollPanePeer, ChangeListener {
 
@@ -41,7 +45,8 @@ final class LWScrollPanePeer extends LWContainerPeer<ScrollPane, JScrollPane>
         super(target, platformComponent);
     }
 
-    protected JScrollPane createDelegate() {
+    @Override
+    JScrollPane createDelegate() {
         final JScrollPane sp = new JScrollPane();
         final JPanel panel = new JPanel();
         panel.setOpaque(false);
@@ -72,7 +77,7 @@ final class LWScrollPanePeer extends LWContainerPeer<ScrollPane, JScrollPane>
         SwingUtilities.invokeLater(new Runnable() {
             @Override
             public void run() {
-                final LWComponentPeer viewPeer = getViewPeer();
+                final LWComponentPeer<?, ?> viewPeer = getViewPeer();
                 if (viewPeer != null) {
                     final Rectangle r;
                     synchronized (getDelegateLock()) {
@@ -96,14 +101,13 @@ final class LWScrollPanePeer extends LWContainerPeer<ScrollPane, JScrollPane>
         }
     }
 
-    LWComponentPeer getViewPeer() {
-        List<LWComponentPeer> peerList = getChildren();
+    LWComponentPeer<?, ?> getViewPeer() {
+        final List<LWComponentPeer<?, ?>> peerList = getChildren();
         return peerList.isEmpty() ? null : peerList.get(0);
     }
 
-
     @Override
-    protected Rectangle getContentSize() {
+    Rectangle getContentSize() {
         Rectangle viewRect = getDelegate().getViewport().getViewRect();
         return new Rectangle(viewRect.width, viewRect.height);
     }
@@ -112,7 +116,7 @@ final class LWScrollPanePeer extends LWContainerPeer<ScrollPane, JScrollPane>
     public void layout() {
         super.layout();
         synchronized (getDelegateLock()) {
-            LWComponentPeer viewPeer = getViewPeer();
+            final LWComponentPeer<?, ?> viewPeer = getViewPeer();
             if (viewPeer != null) {
                 Component view = getDelegate().getViewport().getView();
                 view.setBounds(viewPeer.getBounds());

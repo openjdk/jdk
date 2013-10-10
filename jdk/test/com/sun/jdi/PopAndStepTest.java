@@ -130,8 +130,12 @@ public class PopAndStepTest extends TestScaffold {
         StepRequest srInto = erm.createStepRequest(mainThread, StepRequest.STEP_LINE,
                                                    StepRequest.STEP_INTO);
         srInto.addClassExclusionFilter("java.*");
+        srInto.addClassExclusionFilter("javax.*");
         srInto.addClassExclusionFilter("sun.*");
         srInto.addClassExclusionFilter("com.sun.*");
+        srInto.addClassExclusionFilter("com.oracle.*");
+        srInto.addClassExclusionFilter("oracle.*");
+        srInto.addClassExclusionFilter("jdk.internal.*");
         srInto.addCountFilter(1);
         srInto.enable(); // This fails
         mainThread.popFrames(frameFor("A"));

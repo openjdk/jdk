@@ -28,6 +28,8 @@ package sun.awt.X11;
 import java.awt.Graphics;
 
 import sun.awt.LightweightFrame;
+import sun.swing.JLightweightFrame;
+import sun.swing.SwingAccessor;
 
 public class XLightweightFramePeer extends XFramePeer {
 
@@ -61,5 +63,10 @@ public class XLightweightFramePeer extends XFramePeer {
         } else {
             getLwTarget().ungrabFocus();
         }
+    }
+
+    @Override
+    public void updateCursorImmediately() {
+        SwingAccessor.getJLightweightFrameAccessor().updateCursor((JLightweightFrame)getLwTarget());
     }
 }

@@ -30,7 +30,7 @@ package java.awt;
  * <code>GridBagLayout</code> class.
  *
  * @author Doug Stein
- * @author Bill Spitzak (orignial NeWS & OLIT implementation)
+ * @author Bill Spitzak (orignial NeWS &amp; OLIT implementation)
  * @see java.awt.GridBagLayout
  * @since JDK1.0
  */

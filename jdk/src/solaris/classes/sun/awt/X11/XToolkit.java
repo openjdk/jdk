@@ -2249,6 +2249,8 @@ public final class XToolkit extends UNIXToolkit implements Runnable {
                                                      XConstants.XkbModifierMapMask |
                                                      XConstants.XkbVirtualModsMask,
                                                      XConstants.XkbUseCoreKbd);
+
+                        XlibWrapper.XkbSetDetectableAutoRepeat(getDisplay(), true);
                     }
                 }
             }

@@ -291,8 +291,7 @@ public class MetalLookAndFeel extends BasicLookAndFeel
      * Populates {@code table} with system colors. The following values are
      * added to {@code table}:
      * <table border="1" cellpadding="1" cellspacing="0"
-     *         summary="Metal's system color mapping"
-     *         valign="top" >
+     *         summary="Metal's system color mapping">
      *  <tr valign="top"  align="left">
      *    <th bgcolor="#CCCCFF" align="left">Key
      *    <th bgcolor="#CCCCFF" align="left">Value

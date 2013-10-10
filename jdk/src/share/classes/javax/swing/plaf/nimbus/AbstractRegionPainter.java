@@ -137,7 +137,7 @@ public abstract class AbstractRegionPainter implements Painter<JComponent> {
     protected AbstractRegionPainter() { }
 
     /**
-     * @inheritDoc
+     * {@inheritDoc}
      */
     @Override
     public final void paint(Graphics2D g, JComponent c, int w, int h) {
@@ -535,11 +535,11 @@ public abstract class AbstractRegionPainter implements Painter<JComponent> {
          * @param maxH The maximium scale in the horizontal direction to use before punting and redrawing from scratch.
          *             For example, if maxH is 2, then we will attempt to scale any cached images up to 2x the canvas
          *             width before redrawing from scratch. Reasonable maxH values may improve painting performance.
-         *             If set too high, then you may get poor looking graphics at higher zoom levels. Must be >= 1.
+         *             If set too high, then you may get poor looking graphics at higher zoom levels. Must be &gt;= 1.
          * @param maxV The maximium scale in the vertical direction to use before punting and redrawing from scratch.
          *             For example, if maxV is 2, then we will attempt to scale any cached images up to 2x the canvas
          *             height before redrawing from scratch. Reasonable maxV values may improve painting performance.
-         *             If set too high, then you may get poor looking graphics at higher zoom levels. Must be >= 1.
+         *             If set too high, then you may get poor looking graphics at higher zoom levels. Must be &gt;= 1.
          */
         public PaintContext(Insets insets, Dimension canvasSize, boolean inverted,
                             CacheMode cacheMode, double maxH, double maxV) {

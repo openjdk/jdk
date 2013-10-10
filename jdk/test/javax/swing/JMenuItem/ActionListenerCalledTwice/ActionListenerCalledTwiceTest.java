@@ -35,12 +35,13 @@ import java.awt.event.*;
 import javax.swing.*;
 
 public class ActionListenerCalledTwiceTest {
-    static String menuItems[] = { "Item1", "Item2", "Item3", "Item4" };
+    static String menuItems[] = { "Item1", "Item2", "Item3", "Item4", "Item5" };
     static KeyStroke keyStrokes[] = {
         KeyStroke.getKeyStroke(KeyEvent.VK_E, InputEvent.META_MASK),
         KeyStroke.getKeyStroke(KeyEvent.VK_DELETE, 0),
         KeyStroke.getKeyStroke(KeyEvent.VK_UP, InputEvent.SHIFT_MASK),
-        KeyStroke.getKeyStroke(KeyEvent.VK_ENTER, InputEvent.META_MASK)
+        KeyStroke.getKeyStroke(KeyEvent.VK_ENTER, InputEvent.META_MASK),
+        KeyStroke.getKeyStroke(KeyEvent.VK_E, InputEvent.CTRL_MASK)
     };
 
     static volatile int listenerCallCounter = 0;

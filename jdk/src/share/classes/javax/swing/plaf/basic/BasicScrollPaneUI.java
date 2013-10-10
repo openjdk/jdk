@@ -45,7 +45,7 @@ import java.awt.Graphics;
 import java.awt.event.*;
 
 /**
- * A default L&F implementation of ScrollPaneUI.
+ * A default L&amp;F implementation of ScrollPaneUI.
  *
  * @author Hans Muller
  */

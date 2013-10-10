@@ -33,8 +33,9 @@ import java.awt.Dimension;
 import java.awt.EventQueue;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
+import java.awt.MouseInfo;
+import java.awt.Point;
 import java.awt.Rectangle;
-import java.awt.event.ComponentListener;
 import java.awt.event.ContainerEvent;
 import java.awt.event.ContainerListener;
 import java.awt.image.BufferedImage;
@@ -48,6 +49,7 @@ import javax.swing.JPanel;
 import javax.swing.JRootPane;
 import javax.swing.LayoutFocusTraversalPolicy;
 import javax.swing.RootPaneContainer;
+import javax.swing.SwingUtilities;
 
 import sun.awt.LightweightFrame;
 import sun.security.action.GetPropertyAction;
@@ -88,6 +90,15 @@ public final class JLightweightFrame extends LightweightFrame implements RootPan
 
     private PropertyChangeListener layoutSizeListener;
 
+    static {
+        SwingAccessor.setJLightweightFrameAccessor(new SwingAccessor.JLightweightFrameAccessor() {
+            @Override
+            public void updateCursor(JLightweightFrame frame) {
+                frame.updateClientCursor();
+            }
+        });
+    }
+
     /**
      * Constructs a new, initially invisible {@code JLightweightFrame}
      * instance.
@@ -95,7 +106,7 @@ public final class JLightweightFrame extends LightweightFrame implements RootPan
     public JLightweightFrame() {
         super();
         copyBufferEnabled = "true".equals(AccessController.
-            doPrivileged(new GetPropertyAction("jlf.copyBufferEnabled", "true")));
+            doPrivileged(new GetPropertyAction("swing.jlf.copyBufferEnabled", "true")));
 
         add(rootPane, BorderLayout.CENTER);
         setFocusTraversalPolicy(new LayoutFocusTraversalPolicy());
@@ -239,6 +250,11 @@ public final class JLightweightFrame extends LightweightFrame implements RootPan
         };
         contentPane.setLayout(new BorderLayout());
         contentPane.add(component);
+        if ("true".equals(AccessController.
+            doPrivileged(new GetPropertyAction("swing.jlf.contentPaneTransparent", "false"))))
+        {
+            contentPane.setOpaque(false);
+        }
         setContentPane(contentPane);
 
         contentPane.addContainerListener(new ContainerListener() {
@@ -357,5 +373,22 @@ public final class JLightweightFrame extends LightweightFrame implements RootPan
     @Override
     public Component getGlassPane() {
         return getRootPane().getGlassPane();
+    }
+
+
+    /*
+     * Notifies client toolkit that it should change a cursor.
+     *
+     * Called from the peer via SwingAccessor, because the
+     * Component.updateCursorImmediately method is final
+     * and could not be overridden.
+     */
+    private void updateClientCursor() {
+        Point p = MouseInfo.getPointerInfo().getLocation();
+        SwingUtilities.convertPointFromScreen(p, this);
+        Component target = SwingUtilities.getDeepestComponentAt(this, p.x, p.y);
+        if (target != null) {
+            content.setCursor(target.getCursor());
+        }
     }
 }

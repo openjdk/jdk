@@ -31,6 +31,8 @@ import java.awt.event.ComponentEvent;
 import java.awt.event.MouseEvent;
 
 import sun.awt.LightweightFrame;
+import sun.swing.JLightweightFrame;
+import sun.swing.SwingAccessor;
 
 public class WLightweightFramePeer extends WFramePeer {
 
@@ -82,5 +84,10 @@ public class WLightweightFramePeer extends WFramePeer {
     @Override
     public void ungrab() {
         getLwTarget().ungrabFocus();
+    }
+
+    @Override
+    public void updateCursorImmediately() {
+        SwingAccessor.getJLightweightFrameAccessor().updateCursor((JLightweightFrame)getLwTarget());
     }
 }

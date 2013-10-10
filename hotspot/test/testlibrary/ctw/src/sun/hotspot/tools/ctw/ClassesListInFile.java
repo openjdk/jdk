@@ -32,8 +32,6 @@ import java.util.concurrent.Executor;
 
 /**
  * Handler for files containing a list of classes to compile.
- *
- * @author igor.ignatyev@oracle.com
  */
 public class ClassesListInFile extends PathHandler {
     public ClassesListInFile(Path root, Executor executor) {
