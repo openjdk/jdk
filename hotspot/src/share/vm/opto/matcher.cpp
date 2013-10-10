@@ -1964,6 +1964,7 @@ void Matcher::find_shared( Node *n ) {
       case Op_Catch:
       case Op_CatchProj:
       case Op_CProj:
+      case Op_FlagsProj:
       case Op_JumpProj:
       case Op_JProj:
       case Op_NeverBranch:

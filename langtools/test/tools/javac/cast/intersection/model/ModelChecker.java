@@ -97,7 +97,7 @@ public class ModelChecker extends JavacTestingAbstractProcessor {
                 }
             }
 
-            assertTrue(assertionCount == 10, "Expected 10 assertions - found " + assertionCount);
+            assertTrue(assertionCount == 9, "Expected 9 assertions - found " + assertionCount);
             return super.visitVariable(node, p);
         }
     }

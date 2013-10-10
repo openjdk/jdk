@@ -405,7 +405,7 @@ public class FXLauncherTest extends TestHelper {
             }
         } else {
             System.err.println("Warning: JavaFX components missing or not supported");
-            System.err.println("         test passes vacuosly.");
+            System.err.println("         test passes vacuously.");
          }
     }
 }

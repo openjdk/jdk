@@ -154,7 +154,7 @@ int ObjectSynchronizer::gOmInUseCount = 0;
 static volatile intptr_t ListLock = 0 ;      // protects global monitor free-list cache
 static volatile int MonitorFreeCount  = 0 ;      // # on gFreeList
 static volatile int MonitorPopulation = 0 ;      // # Extant -- in circulation
-#define CHAINMARKER ((oop)-1)
+#define CHAINMARKER (cast_to_oop<intptr_t>(-1))
 
 // -----------------------------------------------------------------------------
 //  Fast Monitor Enter/Exit
@@ -510,7 +510,7 @@ static markOop ReadStableMark (oop obj) {
          // then for each thread on the list, set the flag and unpark() the thread.
          // This is conceptually similar to muxAcquire-muxRelease, except that muxRelease
          // wakes at most one thread whereas we need to wake the entire list.
-         int ix = (intptr_t(obj) >> 5) & (NINFLATIONLOCKS-1) ;
+         int ix = (cast_from_oop<intptr_t>(obj) >> 5) & (NINFLATIONLOCKS-1) ;
          int YieldThenBlock = 0 ;
          assert (ix >= 0 && ix < NINFLATIONLOCKS, "invariant") ;
          assert ((NINFLATIONLOCKS & (NINFLATIONLOCKS-1)) == 0, "invariant") ;
@@ -565,7 +565,7 @@ static inline intptr_t get_next_hash(Thread * Self, oop obj) {
      // This variation has the property of being stable (idempotent)
      // between STW operations.  This can be useful in some of the 1-0
      // synchronization schemes.
-     intptr_t addrBits = intptr_t(obj) >> 3 ;
+     intptr_t addrBits = cast_from_oop<intptr_t>(obj) >> 3 ;
      value = addrBits ^ (addrBits >> 5) ^ GVars.stwRandom ;
   } else
   if (hashCode == 2) {
@@ -575,7 +575,7 @@ static inline intptr_t get_next_hash(Thread * Self, oop obj) {
      value = ++GVars.hcSequence ;
   } else
   if (hashCode == 4) {
-     value = intptr_t(obj) ;
+     value = cast_from_oop<intptr_t>(obj) ;
   } else {
      // Marsaglia's xor-shift scheme with thread-specific state
      // This is probably the best overall implementation -- we'll
@@ -1321,7 +1321,7 @@ ObjectMonitor * ATTR ObjectSynchronizer::inflate (Thread * Self, oop object) {
             if (object->is_instance()) {
               ResourceMark rm;
               tty->print_cr("Inflating object " INTPTR_FORMAT " , mark " INTPTR_FORMAT " , type %s",
-                (intptr_t) object, (intptr_t) object->mark(),
+                (void *) object, (intptr_t) object->mark(),
                 object->klass()->external_name());
             }
           }
@@ -1371,7 +1371,7 @@ ObjectMonitor * ATTR ObjectSynchronizer::inflate (Thread * Self, oop object) {
         if (object->is_instance()) {
           ResourceMark rm;
           tty->print_cr("Inflating object " INTPTR_FORMAT " , mark " INTPTR_FORMAT " , type %s",
-            (intptr_t) object, (intptr_t) object->mark(),
+            (void *) object, (intptr_t) object->mark(),
             object->klass()->external_name());
         }
       }
@@ -1439,7 +1439,7 @@ bool ObjectSynchronizer::deflate_monitor(ObjectMonitor* mid, oop obj,
        if (obj->is_instance()) {
          ResourceMark rm;
            tty->print_cr("Deflating object " INTPTR_FORMAT " , mark " INTPTR_FORMAT " , type %s",
-                (intptr_t) obj, (intptr_t) obj->mark(), obj->klass()->external_name());
+                (void *) obj, (intptr_t) obj->mark(), obj->klass()->external_name());
        }
      }
 

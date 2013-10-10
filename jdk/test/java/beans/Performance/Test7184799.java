@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 7184799
+ * @bug 7187618 7184799
  * @summary Tests just a benchmark of Introspector.getBeanInfo(Class) performance
  * @author Sergey Malenkov
  * @run main/manual Test7184799

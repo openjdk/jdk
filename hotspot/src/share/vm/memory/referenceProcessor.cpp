@@ -367,7 +367,7 @@ void ReferenceProcessor::enqueue_discovered_reflist(DiscoveredList& refs_list,
       next_d = java_lang_ref_Reference::discovered(obj);
       if (TraceReferenceGC && PrintGCDetails) {
         gclog_or_tty->print_cr("        obj " INTPTR_FORMAT "/next_d " INTPTR_FORMAT,
-                               obj, next_d);
+                               (void *)obj, (void *)next_d);
       }
       assert(java_lang_ref_Reference::next(obj) == NULL,
              "Reference not active; should not be discovered");
@@ -392,7 +392,7 @@ void ReferenceProcessor::enqueue_discovered_reflist(DiscoveredList& refs_list,
       next_d = java_lang_ref_Reference::discovered(obj);
       if (TraceReferenceGC && PrintGCDetails) {
         gclog_or_tty->print_cr("        obj " INTPTR_FORMAT "/next_d " INTPTR_FORMAT,
-                               obj, next_d);
+                               (void *)obj, (void *)next_d);
       }
       assert(java_lang_ref_Reference::next(obj) == NULL,
              "The reference should not be enqueued");
@@ -562,7 +562,7 @@ ReferenceProcessor::process_phase1(DiscoveredList&    refs_list,
         !policy->should_clear_reference(iter.obj(), _soft_ref_timestamp_clock)) {
       if (TraceReferenceGC) {
         gclog_or_tty->print_cr("Dropping reference (" INTPTR_FORMAT ": %s"  ") by policy",
-                               iter.obj(), iter.obj()->klass()->internal_name());
+                               (void *)iter.obj(), iter.obj()->klass()->internal_name());
       }
       // Remove Reference object from list
       iter.remove();
@@ -601,7 +601,7 @@ ReferenceProcessor::pp2_work(DiscoveredList&    refs_list,
     if (iter.is_referent_alive()) {
       if (TraceReferenceGC) {
         gclog_or_tty->print_cr("Dropping strongly reachable reference (" INTPTR_FORMAT ": %s)",
-                               iter.obj(), iter.obj()->klass()->internal_name());
+                               (void *)iter.obj(), iter.obj()->klass()->internal_name());
       }
       // The referent is reachable after all.
       // Remove Reference object from list.
@@ -687,7 +687,7 @@ ReferenceProcessor::process_phase3(DiscoveredList&    refs_list,
     if (TraceReferenceGC) {
       gclog_or_tty->print_cr("Adding %sreference (" INTPTR_FORMAT ": %s) as pending",
                              clear_referent ? "cleared " : "",
-                             iter.obj(), iter.obj()->klass()->internal_name());
+                             (void *)iter.obj(), iter.obj()->klass()->internal_name());
     }
     assert(iter.obj()->is_oop(UseConcMarkSweepGC), "Adding a bad reference");
     iter.next();
@@ -1003,7 +1003,7 @@ void ReferenceProcessor::clean_up_discovered_reflist(DiscoveredList& refs_list) 
           gclog_or_tty->print_cr("clean_up_discovered_list: Dropping Reference: "
             INTPTR_FORMAT " with next field: " INTPTR_FORMAT
             " and referent: " INTPTR_FORMAT,
-            iter.obj(), next, iter.referent());
+            (void *)iter.obj(), (void *)next, (void *)iter.referent());
         }
       )
       // Remove Reference object from list
@@ -1103,14 +1103,14 @@ ReferenceProcessor::add_to_discovered_list_mt(DiscoveredList& refs_list,
 
     if (TraceReferenceGC) {
       gclog_or_tty->print_cr("Discovered reference (mt) (" INTPTR_FORMAT ": %s)",
-                             obj, obj->klass()->internal_name());
+                             (void *)obj, obj->klass()->internal_name());
     }
   } else {
     // If retest was non NULL, another thread beat us to it:
     // The reference has already been discovered...
     if (TraceReferenceGC) {
       gclog_or_tty->print_cr("Already discovered reference (" INTPTR_FORMAT ": %s)",
-                             obj, obj->klass()->internal_name());
+                             (void *)obj, obj->klass()->internal_name());
     }
   }
 }
@@ -1125,7 +1125,7 @@ void ReferenceProcessor::verify_referent(oop obj) {
   assert(da ? referent->is_oop() : referent->is_oop_or_null(),
          err_msg("Bad referent " INTPTR_FORMAT " found in Reference "
                  INTPTR_FORMAT " during %satomic discovery ",
-                 (intptr_t)referent, (intptr_t)obj, da ? "" : "non-"));
+                 (void *)referent, (void *)obj, da ? "" : "non-"));
 }
 #endif
 
@@ -1205,7 +1205,7 @@ bool ReferenceProcessor::discover_reference(oop obj, ReferenceType rt) {
     // The reference has already been discovered...
     if (TraceReferenceGC) {
       gclog_or_tty->print_cr("Already discovered reference (" INTPTR_FORMAT ": %s)",
-                             obj, obj->klass()->internal_name());
+                             (void *)obj, obj->klass()->internal_name());
     }
     if (RefDiscoveryPolicy == ReferentBasedDiscovery) {
       // assumes that an object is not processed twice;
@@ -1273,7 +1273,7 @@ bool ReferenceProcessor::discover_reference(oop obj, ReferenceType rt) {
 
     if (TraceReferenceGC) {
       gclog_or_tty->print_cr("Discovered reference (" INTPTR_FORMAT ": %s)",
-                                obj, obj->klass()->internal_name());
+                                (void *)obj, obj->klass()->internal_name());
     }
   }
   assert(obj->is_oop(), "Discovered a bad reference");
@@ -1372,7 +1372,7 @@ ReferenceProcessor::preclean_discovered_reflist(DiscoveredList&    refs_list,
       // active; we need to trace and mark its cohort.
       if (TraceReferenceGC) {
         gclog_or_tty->print_cr("Precleaning Reference (" INTPTR_FORMAT ": %s)",
-                               iter.obj(), iter.obj()->klass()->internal_name());
+                               (void *)iter.obj(), iter.obj()->klass()->internal_name());
       }
       // Remove Reference object from list
       iter.remove();

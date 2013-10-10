@@ -472,6 +472,13 @@ Node* PhaseCFG::select(Block* block, Node_List &worklist, GrowableArray<int> &re
           break;
         }
 
+        // For nodes that produce a FlagsProj, make the node adjacent to the
+        // use of the FlagsProj
+        if (use->is_FlagsProj() && get_block_for_node(use) == block) {
+          found_machif = true;
+          break;
+        }
+
         // More than this instruction pending for successor to be ready,
         // don't choose this if other opportunities are ready
         if (ready_cnt.at(use->_idx) > 1)

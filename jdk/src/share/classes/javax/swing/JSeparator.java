@@ -108,7 +108,7 @@ public class JSeparator extends JComponent implements SwingConstants, Accessible
     }
 
     /**
-     * Returns the L&F object that renders this component.
+     * Returns the L&amp;F object that renders this component.
      *
      * @return the SeparatorUI object that renders this component
      */
@@ -117,9 +117,9 @@ public class JSeparator extends JComponent implements SwingConstants, Accessible
     }
 
     /**
-     * Sets the L&F object that renders this component.
+     * Sets the L&amp;F object that renders this component.
      *
-     * @param ui  the SeparatorUI L&F object
+     * @param ui  the SeparatorUI L&amp;F object
      * @see UIDefaults#getUI
      * @beaninfo
      *        bound: true
@@ -142,7 +142,7 @@ public class JSeparator extends JComponent implements SwingConstants, Accessible
 
 
     /**
-     * Returns the name of the L&F class that renders this component.
+     * Returns the name of the L&amp;F class that renders this component.
      *
      * @return the string "SeparatorUI"
      * @see JComponent#getUIClassID

@@ -117,7 +117,7 @@ import javax.swing.text.*;
  * </ul>
  * <p><b>Note: for the time being we do not fully support relative units,
  * unless noted, so that
- * p { margin-top: 10% } will be treated as if no margin-top was specified.
+ * p { margin-top: 10% } will be treated as if no margin-top was specified.</b>
  *
  * @author  Timothy Prinzing
  * @author  Scott Violet

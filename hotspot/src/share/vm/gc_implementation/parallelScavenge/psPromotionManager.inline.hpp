@@ -225,7 +225,7 @@ oop PSPromotionManager::copy_to_survivor_space(oop o) {
   if (TraceScavenge) {
     gclog_or_tty->print_cr("{%s %s " PTR_FORMAT " -> " PTR_FORMAT " (%d)}",
        PSScavenge::should_scavenge(&new_obj) ? "copying" : "tenuring",
-       new_obj->klass()->internal_name(), o, new_obj, new_obj->size());
+       new_obj->klass()->internal_name(), (void *)o, (void *)new_obj, new_obj->size());
   }
 #endif
 

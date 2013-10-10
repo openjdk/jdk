@@ -289,9 +289,9 @@ public class JSlider extends JComponent implements SwingConstants, Accessible {
 
 
     /**
-     * Gets the UI object which implements the L&F for this component.
+     * Gets the UI object which implements the L&amp;F for this component.
      *
-     * @return the SliderUI object that implements the Slider L&F
+     * @return the SliderUI object that implements the Slider L&amp;F
      */
     public SliderUI getUI() {
         return(SliderUI)ui;
@@ -299,9 +299,9 @@ public class JSlider extends JComponent implements SwingConstants, Accessible {
 
 
     /**
-     * Sets the UI object which implements the L&F for this component.
+     * Sets the UI object which implements the L&amp;F for this component.
      *
-     * @param ui the SliderUI L&F object
+     * @param ui the SliderUI L&amp;F object
      * @see UIDefaults#getUI
      * @beaninfo
      *        bound: true
@@ -330,7 +330,7 @@ public class JSlider extends JComponent implements SwingConstants, Accessible {
 
 
     /**
-     * Returns the name of the L&F class that renders this component.
+     * Returns the name of the L&amp;F class that renders this component.
      *
      * @return "SliderUI"
      * @see JComponent#getUIClassID
