@@ -48,314 +48,314 @@ $(subst $(SPACE),\n,$(strip $1)))))\
 $(compress_post)
 
 decompress_paths=$(SED) -f $(SRC_ROOT)/common/makefiles/support/ListPathsSafely-uncompress.sed -e 's|X99|\\n|g' \
-		     -e 's|X98|$(OUTPUT_ROOT)|g' -e 's|X97|$(SRC_ROOT)|g' \
-		     -e 's|X00|X|g' | tr '\n' '$2'
+    -e 's|X98|$(OUTPUT_ROOT)|g' -e 's|X97|$(SRC_ROOT)|g' \
+    -e 's|X00|X|g' | tr '\n' '$2'
 
 define ListPathsSafely_If
-    $(if $(word $3,$($1)),$(eval $1_LPS$3:=$(call compress_paths,$(wordlist $3,$4,$($1)))))
+	$(if $(word $3,$($1)),$(eval $1_LPS$3:=$(call compress_paths,$(wordlist $3,$4,$($1)))))
 endef
 
 define ListPathsSafely_Printf
-    $(if $(strip $($1_LPS$4)),printf -- "$(strip $($1_LPS$4))\n" | $(decompress_paths) $3)
+	$(if $(strip $($1_LPS$4)),printf -- "$(strip $($1_LPS$4))\n" | $(decompress_paths) $3)
 endef
 
 # Receipt example:
-#    rm -f thepaths
-#    $(call ListPathsSafely,THEPATHS,\n, >> thepaths)
-#    The \n argument means translate spaces into \n
-#    if instead , , (a space) is supplied, then spaces remain spaces.
+#   rm -f thepaths
+#   $(call ListPathsSafely,THEPATHS,\n, >> thepaths)
+# The \n argument means translate spaces into \n
+# if instead , , (a space) is supplied, then spaces remain spaces.
 define ListPathsSafely
-    $(if $(word 16001,$($1)),$(error Cannot list safely more than 16000 paths. $1 has $(words $($1)) paths!))
-    $(call ListPathsSafely_If,$1,$2,1,250)
-    $(call ListPathsSafely_If,$1,$2,251,500)
-    $(call ListPathsSafely_If,$1,$2,501,750)
-    $(call ListPathsSafely_If,$1,$2,751,1000)
+	$(if $(word 16001,$($1)),$(error Cannot list safely more than 16000 paths. $1 has $(words $($1)) paths!))
+	$(call ListPathsSafely_If,$1,$2,1,250)
+	$(call ListPathsSafely_If,$1,$2,251,500)
+	$(call ListPathsSafely_If,$1,$2,501,750)
+	$(call ListPathsSafely_If,$1,$2,751,1000)
 
-    $(call ListPathsSafely_If,$1,$2,1001,1250)
-    $(call ListPathsSafely_If,$1,$2,1251,1500)
-    $(call ListPathsSafely_If,$1,$2,1501,1750)
-    $(call ListPathsSafely_If,$1,$2,1751,2000)
+	$(call ListPathsSafely_If,$1,$2,1001,1250)
+	$(call ListPathsSafely_If,$1,$2,1251,1500)
+	$(call ListPathsSafely_If,$1,$2,1501,1750)
+	$(call ListPathsSafely_If,$1,$2,1751,2000)
 
-    $(call ListPathsSafely_If,$1,$2,2001,2250)
-    $(call ListPathsSafely_If,$1,$2,2251,2500)
-    $(call ListPathsSafely_If,$1,$2,2501,2750)
-    $(call ListPathsSafely_If,$1,$2,2751,3000)
+	$(call ListPathsSafely_If,$1,$2,2001,2250)
+	$(call ListPathsSafely_If,$1,$2,2251,2500)
+	$(call ListPathsSafely_If,$1,$2,2501,2750)
+	$(call ListPathsSafely_If,$1,$2,2751,3000)
 
-    $(call ListPathsSafely_If,$1,$2,3001,3250)
-    $(call ListPathsSafely_If,$1,$2,3251,3500)
-    $(call ListPathsSafely_If,$1,$2,3501,3750)
-    $(call ListPathsSafely_If,$1,$2,3751,4000)
+	$(call ListPathsSafely_If,$1,$2,3001,3250)
+	$(call ListPathsSafely_If,$1,$2,3251,3500)
+	$(call ListPathsSafely_If,$1,$2,3501,3750)
+	$(call ListPathsSafely_If,$1,$2,3751,4000)
 
-    $(call ListPathsSafely_If,$1,$2,4001,4250)
-    $(call ListPathsSafely_If,$1,$2,4251,4500)
-    $(call ListPathsSafely_If,$1,$2,4501,4750)
-    $(call ListPathsSafely_If,$1,$2,4751,5000)
+	$(call ListPathsSafely_If,$1,$2,4001,4250)
+	$(call ListPathsSafely_If,$1,$2,4251,4500)
+	$(call ListPathsSafely_If,$1,$2,4501,4750)
+	$(call ListPathsSafely_If,$1,$2,4751,5000)
 
-    $(call ListPathsSafely_If,$1,$2,5001,5250)
-    $(call ListPathsSafely_If,$1,$2,5251,5500)
-    $(call ListPathsSafely_If,$1,$2,5501,5750)
-    $(call ListPathsSafely_If,$1,$2,5751,6000)
+	$(call ListPathsSafely_If,$1,$2,5001,5250)
+	$(call ListPathsSafely_If,$1,$2,5251,5500)
+	$(call ListPathsSafely_If,$1,$2,5501,5750)
+	$(call ListPathsSafely_If,$1,$2,5751,6000)
 
-    $(call ListPathsSafely_If,$1,$2,6001,6250)
-    $(call ListPathsSafely_If,$1,$2,6251,6500)
-    $(call ListPathsSafely_If,$1,$2,6501,6750)
-    $(call ListPathsSafely_If,$1,$2,6751,7000)
+	$(call ListPathsSafely_If,$1,$2,6001,6250)
+	$(call ListPathsSafely_If,$1,$2,6251,6500)
+	$(call ListPathsSafely_If,$1,$2,6501,6750)
+	$(call ListPathsSafely_If,$1,$2,6751,7000)
 
-    $(call ListPathsSafely_If,$1,$2,7001,7250)
-    $(call ListPathsSafely_If,$1,$2,7251,7500)
-    $(call ListPathsSafely_If,$1,$2,7501,7750)
-    $(call ListPathsSafely_If,$1,$2,7751,8000)
+	$(call ListPathsSafely_If,$1,$2,7001,7250)
+	$(call ListPathsSafely_If,$1,$2,7251,7500)
+	$(call ListPathsSafely_If,$1,$2,7501,7750)
+	$(call ListPathsSafely_If,$1,$2,7751,8000)
 
-    $(call ListPathsSafely_If,$1,$2,8001,8250)
-    $(call ListPathsSafely_If,$1,$2,8251,8500)
-    $(call ListPathsSafely_If,$1,$2,8501,8750)
-    $(call ListPathsSafely_If,$1,$2,8751,9000)
+	$(call ListPathsSafely_If,$1,$2,8001,8250)
+	$(call ListPathsSafely_If,$1,$2,8251,8500)
+	$(call ListPathsSafely_If,$1,$2,8501,8750)
+	$(call ListPathsSafely_If,$1,$2,8751,9000)
 
-    $(call ListPathsSafely_If,$1,$2,9001,9250)
-    $(call ListPathsSafely_If,$1,$2,9251,9500)
-    $(call ListPathsSafely_If,$1,$2,9501,9750)
-    $(call ListPathsSafely_If,$1,$2,9751,10000)
+	$(call ListPathsSafely_If,$1,$2,9001,9250)
+	$(call ListPathsSafely_If,$1,$2,9251,9500)
+	$(call ListPathsSafely_If,$1,$2,9501,9750)
+	$(call ListPathsSafely_If,$1,$2,9751,10000)
 
-    $(call ListPathsSafely_If,$1,$2,10001,10250)
-    $(call ListPathsSafely_If,$1,$2,10251,10500)
-    $(call ListPathsSafely_If,$1,$2,10501,10750)
-    $(call ListPathsSafely_If,$1,$2,10751,11000)
+	$(call ListPathsSafely_If,$1,$2,10001,10250)
+	$(call ListPathsSafely_If,$1,$2,10251,10500)
+	$(call ListPathsSafely_If,$1,$2,10501,10750)
+	$(call ListPathsSafely_If,$1,$2,10751,11000)
 
-    $(call ListPathsSafely_If,$1,$2,11001,11250)
-    $(call ListPathsSafely_If,$1,$2,11251,11500)
-    $(call ListPathsSafely_If,$1,$2,11501,11750)
-    $(call ListPathsSafely_If,$1,$2,11751,12000)
+	$(call ListPathsSafely_If,$1,$2,11001,11250)
+	$(call ListPathsSafely_If,$1,$2,11251,11500)
+	$(call ListPathsSafely_If,$1,$2,11501,11750)
+	$(call ListPathsSafely_If,$1,$2,11751,12000)
 
-    $(call ListPathsSafely_If,$1,$2,12001,12250)
-    $(call ListPathsSafely_If,$1,$2,12251,12500)
-    $(call ListPathsSafely_If,$1,$2,12501,12750)
-    $(call ListPathsSafely_If,$1,$2,12751,13000)
+	$(call ListPathsSafely_If,$1,$2,12001,12250)
+	$(call ListPathsSafely_If,$1,$2,12251,12500)
+	$(call ListPathsSafely_If,$1,$2,12501,12750)
+	$(call ListPathsSafely_If,$1,$2,12751,13000)
 
-    $(call ListPathsSafely_If,$1,$2,13001,13250)
-    $(call ListPathsSafely_If,$1,$2,13251,13500)
-    $(call ListPathsSafely_If,$1,$2,13501,13750)
-    $(call ListPathsSafely_If,$1,$2,13751,14000)
+	$(call ListPathsSafely_If,$1,$2,13001,13250)
+	$(call ListPathsSafely_If,$1,$2,13251,13500)
+	$(call ListPathsSafely_If,$1,$2,13501,13750)
+	$(call ListPathsSafely_If,$1,$2,13751,14000)
 
-    $(call ListPathsSafely_If,$1,$2,14001,14250)
-    $(call ListPathsSafely_If,$1,$2,14251,14500)
-    $(call ListPathsSafely_If,$1,$2,14501,14750)
-    $(call ListPathsSafely_If,$1,$2,14751,15000)
+	$(call ListPathsSafely_If,$1,$2,14001,14250)
+	$(call ListPathsSafely_If,$1,$2,14251,14500)
+	$(call ListPathsSafely_If,$1,$2,14501,14750)
+	$(call ListPathsSafely_If,$1,$2,14751,15000)
 
-    $(call ListPathsSafely_If,$1,$2,15001,15250)
-    $(call ListPathsSafely_If,$1,$2,15251,15500)
-    $(call ListPathsSafely_If,$1,$2,15501,15750)
-    $(call ListPathsSafely_If,$1,$2,15751,16000)
+	$(call ListPathsSafely_If,$1,$2,15001,15250)
+	$(call ListPathsSafely_If,$1,$2,15251,15500)
+	$(call ListPathsSafely_If,$1,$2,15501,15750)
+	$(call ListPathsSafely_If,$1,$2,15751,16000)
 
-    $(call ListPathsSafely_Printf,$1,$2,$3,1)
-    $(call ListPathsSafely_Printf,$1,$2,$3,251)
-    $(call ListPathsSafely_Printf,$1,$2,$3,501)
-    $(call ListPathsSafely_Printf,$1,$2,$3,751)
+	$(call ListPathsSafely_Printf,$1,$2,$3,1)
+	$(call ListPathsSafely_Printf,$1,$2,$3,251)
+	$(call ListPathsSafely_Printf,$1,$2,$3,501)
+	$(call ListPathsSafely_Printf,$1,$2,$3,751)
 
-    $(call ListPathsSafely_Printf,$1,$2,$3,1001)
-    $(call ListPathsSafely_Printf,$1,$2,$3,1251)
-    $(call ListPathsSafely_Printf,$1,$2,$3,1501)
-    $(call ListPathsSafely_Printf,$1,$2,$3,1751)
+	$(call ListPathsSafely_Printf,$1,$2,$3,1001)
+	$(call ListPathsSafely_Printf,$1,$2,$3,1251)
+	$(call ListPathsSafely_Printf,$1,$2,$3,1501)
+	$(call ListPathsSafely_Printf,$1,$2,$3,1751)
 
-    $(call ListPathsSafely_Printf,$1,$2,$3,2001)
-    $(call ListPathsSafely_Printf,$1,$2,$3,2251)
-    $(call ListPathsSafely_Printf,$1,$2,$3,2501)
-    $(call ListPathsSafely_Printf,$1,$2,$3,2751)
+	$(call ListPathsSafely_Printf,$1,$2,$3,2001)
+	$(call ListPathsSafely_Printf,$1,$2,$3,2251)
+	$(call ListPathsSafely_Printf,$1,$2,$3,2501)
+	$(call ListPathsSafely_Printf,$1,$2,$3,2751)
 
-    $(call ListPathsSafely_Printf,$1,$2,$3,3001)
-    $(call ListPathsSafely_Printf,$1,$2,$3,3251)
-    $(call ListPathsSafely_Printf,$1,$2,$3,3501)
-    $(call ListPathsSafely_Printf,$1,$2,$3,3751)
+	$(call ListPathsSafely_Printf,$1,$2,$3,3001)
+	$(call ListPathsSafely_Printf,$1,$2,$3,3251)
+	$(call ListPathsSafely_Printf,$1,$2,$3,3501)
+	$(call ListPathsSafely_Printf,$1,$2,$3,3751)
 
-    $(call ListPathsSafely_Printf,$1,$2,$3,4001)
-    $(call ListPathsSafely_Printf,$1,$2,$3,4251)
-    $(call ListPathsSafely_Printf,$1,$2,$3,4501)
-    $(call ListPathsSafely_Printf,$1,$2,$3,4751)
+	$(call ListPathsSafely_Printf,$1,$2,$3,4001)
+	$(call ListPathsSafely_Printf,$1,$2,$3,4251)
+	$(call ListPathsSafely_Printf,$1,$2,$3,4501)
+	$(call ListPathsSafely_Printf,$1,$2,$3,4751)
 
-    $(call ListPathsSafely_Printf,$1,$2,$3,5001)
-    $(call ListPathsSafely_Printf,$1,$2,$3,5251)
-    $(call ListPathsSafely_Printf,$1,$2,$3,5501)
-    $(call ListPathsSafely_Printf,$1,$2,$3,5751)
+	$(call ListPathsSafely_Printf,$1,$2,$3,5001)
+	$(call ListPathsSafely_Printf,$1,$2,$3,5251)
+	$(call ListPathsSafely_Printf,$1,$2,$3,5501)
+	$(call ListPathsSafely_Printf,$1,$2,$3,5751)
 
-    $(call ListPathsSafely_Printf,$1,$2,$3,6001)
-    $(call ListPathsSafely_Printf,$1,$2,$3,6251)
-    $(call ListPathsSafely_Printf,$1,$2,$3,6501)
-    $(call ListPathsSafely_Printf,$1,$2,$3,6751)
+	$(call ListPathsSafely_Printf,$1,$2,$3,6001)
+	$(call ListPathsSafely_Printf,$1,$2,$3,6251)
+	$(call ListPathsSafely_Printf,$1,$2,$3,6501)
+	$(call ListPathsSafely_Printf,$1,$2,$3,6751)
 
-    $(call ListPathsSafely_Printf,$1,$2,$3,7001)
-    $(call ListPathsSafely_Printf,$1,$2,$3,7251)
-    $(call ListPathsSafely_Printf,$1,$2,$3,7501)
-    $(call ListPathsSafely_Printf,$1,$2,$3,7751)
+	$(call ListPathsSafely_Printf,$1,$2,$3,7001)
+	$(call ListPathsSafely_Printf,$1,$2,$3,7251)
+	$(call ListPathsSafely_Printf,$1,$2,$3,7501)
+	$(call ListPathsSafely_Printf,$1,$2,$3,7751)
 
-    $(call ListPathsSafely_Printf,$1,$2,$3,8001)
-    $(call ListPathsSafely_Printf,$1,$2,$3,8251)
-    $(call ListPathsSafely_Printf,$1,$2,$3,8501)
-    $(call ListPathsSafely_Printf,$1,$2,$3,8751)
+	$(call ListPathsSafely_Printf,$1,$2,$3,8001)
+	$(call ListPathsSafely_Printf,$1,$2,$3,8251)
+	$(call ListPathsSafely_Printf,$1,$2,$3,8501)
+	$(call ListPathsSafely_Printf,$1,$2,$3,8751)
 
-    $(call ListPathsSafely_Printf,$1,$2,$3,9001)
-    $(call ListPathsSafely_Printf,$1,$2,$3,9251)
-    $(call ListPathsSafely_Printf,$1,$2,$3,9501)
-    $(call ListPathsSafely_Printf,$1,$2,$3,9751)
+	$(call ListPathsSafely_Printf,$1,$2,$3,9001)
+	$(call ListPathsSafely_Printf,$1,$2,$3,9251)
+	$(call ListPathsSafely_Printf,$1,$2,$3,9501)
+	$(call ListPathsSafely_Printf,$1,$2,$3,9751)
 
-    $(call ListPathsSafely_Printf,$1,$2,$3,10001)
-    $(call ListPathsSafely_Printf,$1,$2,$3,10251)
-    $(call ListPathsSafely_Printf,$1,$2,$3,10501)
-    $(call ListPathsSafely_Printf,$1,$2,$3,10751)
+	$(call ListPathsSafely_Printf,$1,$2,$3,10001)
+	$(call ListPathsSafely_Printf,$1,$2,$3,10251)
+	$(call ListPathsSafely_Printf,$1,$2,$3,10501)
+	$(call ListPathsSafely_Printf,$1,$2,$3,10751)
 
-    $(call ListPathsSafely_Printf,$1,$2,$3,11001)
-    $(call ListPathsSafely_Printf,$1,$2,$3,11251)
-    $(call ListPathsSafely_Printf,$1,$2,$3,11501)
-    $(call ListPathsSafely_Printf,$1,$2,$3,11751)
+	$(call ListPathsSafely_Printf,$1,$2,$3,11001)
+	$(call ListPathsSafely_Printf,$1,$2,$3,11251)
+	$(call ListPathsSafely_Printf,$1,$2,$3,11501)
+	$(call ListPathsSafely_Printf,$1,$2,$3,11751)
 
-    $(call ListPathsSafely_Printf,$1,$2,$3,12001)
-    $(call ListPathsSafely_Printf,$1,$2,$3,12251)
-    $(call ListPathsSafely_Printf,$1,$2,$3,12501)
-    $(call ListPathsSafely_Printf,$1,$2,$3,12751)
+	$(call ListPathsSafely_Printf,$1,$2,$3,12001)
+	$(call ListPathsSafely_Printf,$1,$2,$3,12251)
+	$(call ListPathsSafely_Printf,$1,$2,$3,12501)
+	$(call ListPathsSafely_Printf,$1,$2,$3,12751)
 
-    $(call ListPathsSafely_Printf,$1,$2,$3,13001)
-    $(call ListPathsSafely_Printf,$1,$2,$3,13251)
-    $(call ListPathsSafely_Printf,$1,$2,$3,13501)
-    $(call ListPathsSafely_Printf,$1,$2,$3,13751)
+	$(call ListPathsSafely_Printf,$1,$2,$3,13001)
+	$(call ListPathsSafely_Printf,$1,$2,$3,13251)
+	$(call ListPathsSafely_Printf,$1,$2,$3,13501)
+	$(call ListPathsSafely_Printf,$1,$2,$3,13751)
 
-    $(call ListPathsSafely_Printf,$1,$2,$3,14001)
-    $(call ListPathsSafely_Printf,$1,$2,$3,14251)
-    $(call ListPathsSafely_Printf,$1,$2,$3,14501)
-    $(call ListPathsSafely_Printf,$1,$2,$3,14751)
+	$(call ListPathsSafely_Printf,$1,$2,$3,14001)
+	$(call ListPathsSafely_Printf,$1,$2,$3,14251)
+	$(call ListPathsSafely_Printf,$1,$2,$3,14501)
+	$(call ListPathsSafely_Printf,$1,$2,$3,14751)
 
-    $(call ListPathsSafely_Printf,$1,$2,$3,15001)
-    $(call ListPathsSafely_Printf,$1,$2,$3,15251)
-    $(call ListPathsSafely_Printf,$1,$2,$3,15501)
-    $(call ListPathsSafely_Printf,$1,$2,$3,15751)
+	$(call ListPathsSafely_Printf,$1,$2,$3,15001)
+	$(call ListPathsSafely_Printf,$1,$2,$3,15251)
+	$(call ListPathsSafely_Printf,$1,$2,$3,15501)
+	$(call ListPathsSafely_Printf,$1,$2,$3,15751)
 endef
 
 define ListPathsSafelyNow_IfPrintf
-    ifneq (,$$(word $4,$$($1)))
-        $$(eval $1_LPS$4:=$$(call compress_paths,$$(wordlist $4,$5,$$($1))))
-        $$(shell printf -- "$$(strip $$($1_LPS$4))\n" | $(decompress_paths) $3)
-    endif
+  ifneq (,$$(word $4,$$($1)))
+    $$(eval $1_LPS$4:=$$(call compress_paths,$$(wordlist $4,$5,$$($1))))
+    $$(shell printf -- "$$(strip $$($1_LPS$4))\n" | $(decompress_paths) $3)
+  endif
 endef
 
 # And an non-receipt version:
 define ListPathsSafelyNow
-    ifneq (,$$(word 10001,$$($1)))
-        $$(error Cannot list safely more than 10000 paths. $1 has $$(words $$($1)) paths!)
-    endif
-    $(call ListPathsSafelyNow_IfPrintf,$1,$2,$3,1,250)
-    $(call ListPathsSafelyNow_IfPrintf,$1,$2,$3,251,500)
-    $(call ListPathsSafelyNow_IfPrintf,$1,$2,$3,501,750)
-    $(call ListPathsSafelyNow_IfPrintf,$1,$2,$3,751,1000)
+  ifneq (,$$(word 10001,$$($1)))
+    $$(error Cannot list safely more than 10000 paths. $1 has $$(words $$($1)) paths!)
+  endif
+  $(call ListPathsSafelyNow_IfPrintf,$1,$2,$3,1,250)
+  $(call ListPathsSafelyNow_IfPrintf,$1,$2,$3,251,500)
+  $(call ListPathsSafelyNow_IfPrintf,$1,$2,$3,501,750)
+  $(call ListPathsSafelyNow_IfPrintf,$1,$2,$3,751,1000)
 
-    $(call ListPathsSafelyNow_IfPrintf,$1,$2,$3,1001,1250)
-    $(call ListPathsSafelyNow_IfPrintf,$1,$2,$3,1251,1500)
-    $(call ListPathsSafelyNow_IfPrintf,$1,$2,$3,1501,1750)
-    $(call ListPathsSafelyNow_IfPrintf,$1,$2,$3,1751,2000)
+  $(call ListPathsSafelyNow_IfPrintf,$1,$2,$3,1001,1250)
+  $(call ListPathsSafelyNow_IfPrintf,$1,$2,$3,1251,1500)
+  $(call ListPathsSafelyNow_IfPrintf,$1,$2,$3,1501,1750)
+  $(call ListPathsSafelyNow_IfPrintf,$1,$2,$3,1751,2000)
 
-    $(call ListPathsSafelyNow_IfPrintf,$1,$2,$3,2001,2250)
-    $(call ListPathsSafelyNow_IfPrintf,$1,$2,$3,2251,2500)
-    $(call ListPathsSafelyNow_IfPrintf,$1,$2,$3,2501,2750)
-    $(call ListPathsSafelyNow_IfPrintf,$1,$2,$3,2751,3000)
+  $(call ListPathsSafelyNow_IfPrintf,$1,$2,$3,2001,2250)
+  $(call ListPathsSafelyNow_IfPrintf,$1,$2,$3,2251,2500)
+  $(call ListPathsSafelyNow_IfPrintf,$1,$2,$3,2501,2750)
+  $(call ListPathsSafelyNow_IfPrintf,$1,$2,$3,2751,3000)
 
-    $(call ListPathsSafelyNow_IfPrintf,$1,$2,$3,3001,3250)
-    $(call ListPathsSafelyNow_IfPrintf,$1,$2,$3,3251,3500)
-    $(call ListPathsSafelyNow_IfPrintf,$1,$2,$3,3501,3750)
-    $(call ListPathsSafelyNow_IfPrintf,$1,$2,$3,3751,4000)
+  $(call ListPathsSafelyNow_IfPrintf,$1,$2,$3,3001,3250)
+  $(call ListPathsSafelyNow_IfPrintf,$1,$2,$3,3251,3500)
+  $(call ListPathsSafelyNow_IfPrintf,$1,$2,$3,3501,3750)
+  $(call ListPathsSafelyNow_IfPrintf,$1,$2,$3,3751,4000)
 
-    $(call ListPathsSafelyNow_IfPrintf,$1,$2,$3,4001,4250)
-    $(call ListPathsSafelyNow_IfPrintf,$1,$2,$3,4251,4500)
-    $(call ListPathsSafelyNow_IfPrintf,$1,$2,$3,4501,4750)
-    $(call ListPathsSafelyNow_IfPrintf,$1,$2,$3,4751,5000)
+  $(call ListPathsSafelyNow_IfPrintf,$1,$2,$3,4001,4250)
+  $(call ListPathsSafelyNow_IfPrintf,$1,$2,$3,4251,4500)
+  $(call ListPathsSafelyNow_IfPrintf,$1,$2,$3,4501,4750)
+  $(call ListPathsSafelyNow_IfPrintf,$1,$2,$3,4751,5000)
 
-    $(call ListPathsSafelyNow_IfPrintf,$1,$2,$3,5001,5250)
-    $(call ListPathsSafelyNow_IfPrintf,$1,$2,$3,5251,5500)
-    $(call ListPathsSafelyNow_IfPrintf,$1,$2,$3,5501,5750)
-    $(call ListPathsSafelyNow_IfPrintf,$1,$2,$3,5751,6000)
+  $(call ListPathsSafelyNow_IfPrintf,$1,$2,$3,5001,5250)
+  $(call ListPathsSafelyNow_IfPrintf,$1,$2,$3,5251,5500)
+  $(call ListPathsSafelyNow_IfPrintf,$1,$2,$3,5501,5750)
+  $(call ListPathsSafelyNow_IfPrintf,$1,$2,$3,5751,6000)
 
-    $(call ListPathsSafelyNow_IfPrintf,$1,$2,$3,6001,6250)
-    $(call ListPathsSafelyNow_IfPrintf,$1,$2,$3,6251,6500)
-    $(call ListPathsSafelyNow_IfPrintf,$1,$2,$3,6501,6750)
-    $(call ListPathsSafelyNow_IfPrintf,$1,$2,$3,6751,7000)
+  $(call ListPathsSafelyNow_IfPrintf,$1,$2,$3,6001,6250)
+  $(call ListPathsSafelyNow_IfPrintf,$1,$2,$3,6251,6500)
+  $(call ListPathsSafelyNow_IfPrintf,$1,$2,$3,6501,6750)
+  $(call ListPathsSafelyNow_IfPrintf,$1,$2,$3,6751,7000)
 
-    $(call ListPathsSafelyNow_IfPrintf,$1,$2,$3,7001,7250)
-    $(call ListPathsSafelyNow_IfPrintf,$1,$2,$3,7251,7500)
-    $(call ListPathsSafelyNow_IfPrintf,$1,$2,$3,7501,7750)
-    $(call ListPathsSafelyNow_IfPrintf,$1,$2,$3,7751,8000)
+  $(call ListPathsSafelyNow_IfPrintf,$1,$2,$3,7001,7250)
+  $(call ListPathsSafelyNow_IfPrintf,$1,$2,$3,7251,7500)
+  $(call ListPathsSafelyNow_IfPrintf,$1,$2,$3,7501,7750)
+  $(call ListPathsSafelyNow_IfPrintf,$1,$2,$3,7751,8000)
 
-    $(call ListPathsSafelyNow_IfPrintf,$1,$2,$3,8001,8250)
-    $(call ListPathsSafelyNow_IfPrintf,$1,$2,$3,8251,8500)
-    $(call ListPathsSafelyNow_IfPrintf,$1,$2,$3,8501,8750)
-    $(call ListPathsSafelyNow_IfPrintf,$1,$2,$3,8751,9000)
+  $(call ListPathsSafelyNow_IfPrintf,$1,$2,$3,8001,8250)
+  $(call ListPathsSafelyNow_IfPrintf,$1,$2,$3,8251,8500)
+  $(call ListPathsSafelyNow_IfPrintf,$1,$2,$3,8501,8750)
+  $(call ListPathsSafelyNow_IfPrintf,$1,$2,$3,8751,9000)
 
-    $(call ListPathsSafelyNow_IfPrintf,$1,$2,$3,9001,9250)
-    $(call ListPathsSafelyNow_IfPrintf,$1,$2,$3,9251,9500)
-    $(call ListPathsSafelyNow_IfPrintf,$1,$2,$3,9501,9750)
-    $(call ListPathsSafelyNow_IfPrintf,$1,$2,$3,9751,10000)
+  $(call ListPathsSafelyNow_IfPrintf,$1,$2,$3,9001,9250)
+  $(call ListPathsSafelyNow_IfPrintf,$1,$2,$3,9251,9500)
+  $(call ListPathsSafelyNow_IfPrintf,$1,$2,$3,9501,9750)
+  $(call ListPathsSafelyNow_IfPrintf,$1,$2,$3,9751,10000)
 
 endef
 
 # The source tips can come from the Mercurial repository, or in the files
-#   $(HGTIP_FILENAME) which contains the tip but is also positioned in the same
-#   directory as the original $(HGDIR) directory.
-#   These should not be := assignments, only used from the root Makefile.
+# $(HGTIP_FILENAME) which contains the tip but is also positioned in the same
+# directory as the original $(HGDIR) directory.
+# These should not be := assignments, only used from the root Makefile.
 HG_VERSION = $(shell $(HG) version 2> /dev/null)
 HG_DIRECTORY=.hg
 HGTIP_FILENAME=.hgtip
 HG_SEARCH = ./REPO ./*/REPO ./*/*/REPO ./*/*/*/REPO
 REPO_LIST = $(patsubst ./%,%,$(patsubst %/,%,$(sort $(dir \
     $(shell $(CD) $(SRC_ROOT) ; ( $(LS) -d $(HG_SEARCH:%/REPO=%/$(HG_DIRECTORY)) ; \
-                                   $(LS)    $(HG_SEARCH:%/REPO=%/$(HGTIP_FILENAME)) ) \
-	        2> /dev/null)))))
+        $(LS) $(HG_SEARCH:%/REPO=%/$(HGTIP_FILENAME)) ) \
+        2> /dev/null)))))
 
 # Emit the repo:tip pairs to $@
 define GetSourceTips
-$(CD) $(SRC_ROOT) ; \
-for i in $(REPO_LIST) IGNORE ; do \
-  if [ "$${i}" = "IGNORE" ] ; then \
-    continue; \
-  elif [ -d $${i}/$(HG_DIRECTORY) -a "$(HG_VERSION)" != "" ] ; then \
-    $(PRINTF) " %s:%s" \
-      "$${i}" `$(HG) tip --repository $${i} --template '{node|short}\n'` ; \
-  elif [ -f $${i}/$(HGTIP_FILENAME) ] ; then \
-    $(PRINTF) " %s:%s" \
-      "$${i}" `$(CAT) $${i}/$(HGTIP_FILENAME)` ; \
-  fi; \
-done >> $@
-$(PRINTF) "\n" >> $@
+	$(CD) $(SRC_ROOT) ; \
+	for i in $(REPO_LIST) IGNORE ; do \
+	  if [ "$${i}" = "IGNORE" ] ; then \
+	    continue; \
+	  elif [ -d $${i}/$(HG_DIRECTORY) -a "$(HG_VERSION)" != "" ] ; then \
+	    $(PRINTF) " %s:%s" \
+	        "$${i}" `$(HG) tip --repository $${i} --template '{node|short}\n'` ; \
+	  elif [ -f $${i}/$(HGTIP_FILENAME) ] ; then \
+	    $(PRINTF) " %s:%s" \
+	        "$${i}" `$(CAT) $${i}/$(HGTIP_FILENAME)` ; \
+	  fi; \
+	done >> $@
+	$(PRINTF) "\n" >> $@
 endef
 
 # Create the HGTIP_FILENAME file. Called from jdk/make/closed/bundles.gmk
 define CreateHgTip
-$(HG) tip --repository $1 --template '{node|short}\n' > $1/$(HGTIP_FILENAME);\
-$(ECHO) $1/$(HGTIP_FILENAME)
+	$(HG) tip --repository $1 --template '{node|short}\n' > $1/$(HGTIP_FILENAME); \
+	$(ECHO) $1/$(HGTIP_FILENAME)
 endef
 
 define SetupLogging
-    ifeq ($$(LOG_LEVEL),trace)
-        # Shell redefinition trick inspired by http://www.cmcrossroads.com/ask-mr-make/6535-tracing-rule-execution-in-gnu-make
-        # For each target executed, will print
-        # Building <TARGET> (from <FIRST PREREQUISITE>) (<ALL NEWER PREREQUISITES> newer)
-        # but with a limit of 20 on <ALL NEWER PREREQUISITES>, to avoid cluttering logs too much 
-        # (and causing a crash on Cygwin).
-        # Default shell seems to always be /bin/sh. Must override with bash to get this to work on Solaris.
-        # Only use time if it's GNU time which supports format and output file.
-        WRAPPER_SHELL:=/bin/bash $$(SRC_ROOT)/common/bin/shell-tracer.sh $$(if $$(findstring yes,$$(IS_GNU_TIME)),$$(TIME),-) $$(OUTPUT_ROOT)/build-trace-time.log /bin/bash
-        SHELL=$$(warning $$(if $$@,Building $$@,Running shell command) $$(if $$<, (from $$<))$$(if $$?, ($$(wordlist 1, 20, $$?) $$(if $$(wordlist 21, 22, $$?), ... [in total $$(words $$?) files]) newer)))$$(WRAPPER_SHELL)
-    endif
-    # Never remove warning messages; this is just for completeness
-    LOG_WARN= 
-    ifneq ($$(findstring $$(LOG_LEVEL),info debug trace),)
-        LOG_INFO=
-    else
-        LOG_INFO=> /dev/null
-    endif
-    ifneq ($$(findstring $$(LOG_LEVEL),debug trace),)
-        LOG_DEBUG=
-    else
-        LOG_DEBUG=> /dev/null
-    endif
-    ifneq ($$(findstring $$(LOG_LEVEL),trace),)
-        LOG_TRACE=
-    else
-        LOG_TRACE=> /dev/null
-    endif
+  ifeq ($$(LOG_LEVEL),trace)
+    # Shell redefinition trick inspired by http://www.cmcrossroads.com/ask-mr-make/6535-tracing-rule-execution-in-gnu-make
+    # For each target executed, will print
+    # Building <TARGET> (from <FIRST PREREQUISITE>) (<ALL NEWER PREREQUISITES> newer)
+    # but with a limit of 20 on <ALL NEWER PREREQUISITES>, to avoid cluttering logs too much
+    # (and causing a crash on Cygwin).
+    # Default shell seems to always be /bin/sh. Must override with bash to get this to work on Solaris.
+    # Only use time if it's GNU time which supports format and output file.
+    WRAPPER_SHELL:=/bin/bash $$(SRC_ROOT)/common/bin/shell-tracer.sh $$(if $$(findstring yes,$$(IS_GNU_TIME)),$$(TIME),-) $$(OUTPUT_ROOT)/build-trace-time.log /bin/bash
+    SHELL=$$(warning $$(if $$@,Building $$@,Running shell command) $$(if $$<, (from $$<))$$(if $$?, ($$(wordlist 1, 20, $$?) $$(if $$(wordlist 21, 22, $$?), ... [in total $$(words $$?) files]) newer)))$$(WRAPPER_SHELL)
+  endif
+  # Never remove warning messages; this is just for completeness
+  LOG_WARN=
+  ifneq ($$(findstring $$(LOG_LEVEL),info debug trace),)
+    LOG_INFO=
+  else
+    LOG_INFO=> /dev/null
+  endif
+  ifneq ($$(findstring $$(LOG_LEVEL),debug trace),)
+    LOG_DEBUG=
+  else
+    LOG_DEBUG=> /dev/null
+  endif
+  ifneq ($$(findstring $$(LOG_LEVEL),trace),)
+    LOG_TRACE=
+  else
+    LOG_TRACE=> /dev/null
+  endif
 endef
 
 # Make sure logging is setup for everyone that includes MakeBase.gmk.
@@ -363,43 +363,43 @@ $(eval $(call SetupLogging))
 
 # This is to be called by all SetupFoo macros
 define LogSetupMacroEntry
-    $(if $(27),$(error Internal makefile error: Too many arguments to LogSetupMacroEntry, please update MakeBase.gmk))
-    $(if $(findstring $(LOG_LEVEL),debug trace), $(info $1 $(foreach i,2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26,$(if $($i),$(NEWLINE) $(strip [$i] $($i))))))
+  $(if $(27),$(error Internal makefile error: Too many arguments to LogSetupMacroEntry, please update MakeBase.gmk))
+  $(if $(findstring $(LOG_LEVEL),debug trace), $(info $1 $(foreach i,2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26,$(if $($i),$(NEWLINE) $(strip [$i] $($i))))))
 endef
 
 # Make directory without forking mkdir if not needed
 define MakeDir
-    ifneq ($$(wildcard $1 $2 $3 $4 $5 $6 $7 $8 $9),$$(strip $1 $2 $3 $4 $5 $6 $7 $8 $9))
-        $$(shell $(MKDIR) -p $1 $2 $3 $4 $5 $6 $7 $8 $9)
-    endif
+  ifneq ($$(wildcard $1 $2 $3 $4 $5 $6 $7 $8 $9),$$(strip $1 $2 $3 $4 $5 $6 $7 $8 $9))
+    $$(shell $(MKDIR) -p $1 $2 $3 $4 $5 $6 $7 $8 $9)
+  endif
 endef
 
 ifeq ($(OPENJDK_TARGET_OS),solaris)
-# On Solaris, if the target is a symlink and exists, cp won't overwrite.
-# Cp has to operate in recursive mode to allow for -P flag, to preserve soft links. If the
-# name of the target file differs from the source file, rename after copy.
-define install-file
+  # On Solaris, if the target is a symlink and exists, cp won't overwrite.
+  # Cp has to operate in recursive mode to allow for -P flag, to preserve soft links. If the
+  # name of the target file differs from the source file, rename after copy.
+  define install-file
 	$(MKDIR) -p $(@D)
 	$(RM) '$@'
 	$(CP) -f -r -P '$<' '$(@D)'
 	if [ "$(@F)" != "$(<F)" ]; then $(MV) '$(@D)/$(<F)' '$@'; fi
-endef
+  endef
 else ifeq ($(OPENJDK_TARGET_OS),macosx)
-# On mac, extended attributes sometimes creep into the source files, which may later 
-# cause the creation of ._* files which confuses testing. Clear these with xattr if
-# set. Some files get their write permissions removed after being copied to the 
-# output dir. When these are copied again to images, xattr would fail. By only clearing
-# attributes when they are present, failing on this is avoided.
-define install-file
+  # On mac, extended attributes sometimes creep into the source files, which may later
+  # cause the creation of ._* files which confuses testing. Clear these with xattr if
+  # set. Some files get their write permissions removed after being copied to the
+  # output dir. When these are copied again to images, xattr would fail. By only clearing
+  # attributes when they are present, failing on this is avoided.
+  define install-file
 	$(MKDIR) -p $(@D)
 	$(CP) -fRP '$<' '$@'
 	if [ -n "`$(XATTR) -l '$@'`" ]; then $(XATTR) -c '$@'; fi
-endef
+  endef
 else
-define install-file
+  define install-file
 	$(MKDIR) -p $(@D)
 	$(CP) -fP '$<' '$@'
-endef
+  endef
 endif
 
 # Convenience functions for working around make's limitations with $(filter ).
@@ -409,25 +409,25 @@ not-containing = $(foreach v,$2,$(if $(findstring $1,$v),,$v))
 ################################################################################
 # In Cygwin, finds are very costly, both because of expensive forks and because
 # of bad file system caching. Find is used extensively in $(shell) commands to
-# find source files. This makes rerunning make with no or few changes rather 
+# find source files. This makes rerunning make with no or few changes rather
 # expensive. To speed this up, these two macros are used to cache the results
 # of simple find commands for reuse.
-# 
+#
 # Runs a find and stores both the directories where it was run and the results.
 # This macro can be called multiple times to add to the cache. Only finds files
 # with no filters.
 #
 # Needs to be called with $(eval )
-# 
+#
 # Param 1 - Dir to find in
 ifeq ($(OPENJDK_BUILD_OS),windows)
-define FillCacheFind
+  define FillCacheFind
     FIND_CACHE_DIR += $1
     FIND_CACHE := $$(sort $$(FIND_CACHE) $$(shell $(FIND) $1 -type f -o -type l))
-endef
+  endef
 else
-define FillCacheFind
-endef
+  define FillCacheFind
+  endef
 endif
 
 # Mimics find by looking in the cache if all of the directories have been cached.
@@ -437,9 +437,9 @@ endif
 # The extra - is needed when FIND_CACHE_DIR is empty but should be harmless.
 # Param 1 - Dirs to find in
 define CacheFind
-    $(if $(filter-out $(addsuffix %,- $(FIND_CACHE_DIR)),$1),\
-        $(shell $(FIND) $1 -type f -o -type l),\
-        $(filter $(addsuffix %,$1),$(FIND_CACHE)))
+  $(if $(filter-out $(addsuffix %,- $(FIND_CACHE_DIR)),$1), \
+    $(shell $(FIND) $1 -type f -o -type l), \
+    $(filter $(addsuffix %,$1),$(FIND_CACHE)))
 endef
 
 ################################################################################
