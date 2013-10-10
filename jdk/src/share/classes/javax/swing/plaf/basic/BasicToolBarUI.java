@@ -42,7 +42,7 @@ import sun.swing.UIAction;
 
 
 /**
- * A Basic L&F implementation of ToolBarUI.  This implementation
+ * A Basic L&amp;F implementation of ToolBarUI.  This implementation
  * is a "combined" view/controller.
  * <p>
  *

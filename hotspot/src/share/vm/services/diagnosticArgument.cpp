@@ -61,7 +61,7 @@ void GenDCmdArgument::to_string(MemorySizeArgument m, char* buf, size_t len) {
 }
 
 void GenDCmdArgument::to_string(char* c, char* buf, size_t len) {
-  jio_snprintf(buf, len, "%s", c);
+  jio_snprintf(buf, len, "%s", (c != NULL) ? c : "");
 }
 
 void GenDCmdArgument::to_string(StringArrayArgument* f, char* buf, size_t len) {

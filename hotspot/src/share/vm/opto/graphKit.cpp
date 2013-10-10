@@ -3849,9 +3849,9 @@ void GraphKit::store_String_value(Node* ctrl, Node* str, Node* value) {
   const TypeInstPtr* string_type = TypeInstPtr::make(TypePtr::NotNull, C->env()->String_klass(),
                                                      false, NULL, 0);
   const TypePtr* value_field_type = string_type->add_offset(value_offset);
-  int value_field_idx = C->get_alias_index(value_field_type);
-  store_to_memory(ctrl, basic_plus_adr(str, value_offset),
-                  value, T_OBJECT, value_field_idx);
+
+  store_oop_to_object(ctrl, str,  basic_plus_adr(str, value_offset), value_field_type,
+      value, TypeAryPtr::CHARS, T_OBJECT);
 }
 
 void GraphKit::store_String_length(Node* ctrl, Node* str, Node* value) {

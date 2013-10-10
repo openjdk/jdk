@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -84,7 +84,7 @@ inline void ParScanClosure::do_oop_work(T* p,
         Space* sp = gch->space_containing(p);
         oop obj = oop(sp->block_start(p));
         assert((HeapWord*)obj < (HeapWord*)p, "Error");
-        tty->print_cr("Object: " PTR_FORMAT, obj);
+        tty->print_cr("Object: " PTR_FORMAT, (void *)obj);
         tty->print_cr("-------");
         obj->print();
         tty->print_cr("-----");
@@ -110,7 +110,7 @@ inline void ParScanClosure::do_oop_work(T* p,
         if (TraceScavenge) {
           gclog_or_tty->print_cr("{%s %s ( " PTR_FORMAT " ) " PTR_FORMAT " -> " PTR_FORMAT " (%d)}",
              "forwarded ",
-             new_obj->klass()->internal_name(), p, obj, new_obj, new_obj->size());
+             new_obj->klass()->internal_name(), p, (void *)obj, (void *)new_obj, new_obj->size());
         }
 #endif
 

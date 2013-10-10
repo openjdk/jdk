@@ -820,6 +820,7 @@ public class CPlatformWindow extends CFRetainedResource implements PlatformWindo
         }
 
         nativeSetEnabled(getNSWindowPtr(), !blocked);
+        checkBlockingAndOrder();
     }
 
     public final void invalidateShadow(){
@@ -984,7 +985,7 @@ public class CPlatformWindow extends CFRetainedResource implements PlatformWindo
         setStyleBits(SHOULD_BECOME_KEY | SHOULD_BECOME_MAIN, isFocusable); // set both bits at once
     }
 
-    private boolean checkBlocking() {
+    private boolean checkBlockingAndOrder() {
         LWWindowPeer blocker = (peer == null)? null : peer.getBlocker();
         if (blocker == null) {
             return false;
@@ -1040,7 +1041,7 @@ public class CPlatformWindow extends CFRetainedResource implements PlatformWindo
     private void windowDidBecomeMain() {
         assert CThreading.assertAppKit();
 
-        if (checkBlocking()) return;
+        if (checkBlockingAndOrder()) return;
         // If it's not blocked, make sure it's above its siblings
         orderAboveSiblings();
     }

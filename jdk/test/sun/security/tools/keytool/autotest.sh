@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2006, 2012, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2006, 2013, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -58,7 +58,7 @@ OS=`uname -s`
 case "$OS" in
   SunOS )
     FS="/"
-    LIBNAME="/usr/lib/mps/libsoftokn3.so"
+    LIBNAME="/usr/lib/mps/`isainfo -n`/libsoftokn3.so"
     ;;
   Linux )
     FS="/"

@@ -48,8 +48,8 @@ import java.net.*;
  *     <li><i>handleStartTag(head, ...)</i></li>
  *     <li><i>handleEndTag(head)</i></li>
  *     <li><i>handleStartTag(body, ...)</i></li>
- *     <li>handleStartTag(p, ...)</i></li>
- *     <li>handleText(...)</li>
+ *     <li><i>handleStartTag(p, ...)</i></li>
+ *     <li><i>handleText(...)</i></li>
  *     <li><i>handleEndTag(p)</i></li>
  *     <li><i>handleEndTag(body)</i></li>
  *     <li><i>handleEndTag(html)</i></li>

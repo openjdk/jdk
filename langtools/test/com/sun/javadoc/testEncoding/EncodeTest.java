@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,9 @@
 
 
 /**
- * ±ñÉ¿í ¹©¢!
+ * Testing en\u00e7\u00f4ded string.
+ * In the encoded comment string, Unicode U+00E7 is "Latin small letter C with cedilla"
+ * and Unicode U+00F4 is "Latin small letter O with circumflex"
  */
 public class EncodeTest {
 }

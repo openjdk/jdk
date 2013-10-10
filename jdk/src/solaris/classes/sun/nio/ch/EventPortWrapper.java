@@ -25,9 +25,14 @@
 
 package sun.nio.ch;
 
-import sun.misc.Unsafe;
 import java.io.IOException;
-import java.util.*;
+import java.security.AccessController;
+import java.util.BitSet;
+import java.util.HashMap;
+import java.util.Map;
+
+import sun.misc.Unsafe;
+import sun.security.action.GetIntegerAction;
 import static sun.nio.ch.SolarisEventPort.*;
 
 /**
@@ -49,7 +54,8 @@ class EventPortWrapper {
     private final int INITIAL_PENDING_UPDATE_SIZE = 256;
 
     // maximum size of updateArray
-    private final int MAX_UPDATE_ARRAY_SIZE = Math.min(OPEN_MAX, 64*1024);
+    private static final int MAX_UPDATE_ARRAY_SIZE = AccessController.doPrivileged(
+        new GetIntegerAction("sun.nio.ch.maxUpdateArraySize", Math.min(OPEN_MAX, 64*1024)));
 
     // special update status to indicate that it should be ignored
     private static final byte IGNORE = -1;

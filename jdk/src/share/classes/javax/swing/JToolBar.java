@@ -167,9 +167,9 @@ public class JToolBar extends JComponent implements SwingConstants, Accessible
     }
 
     /**
-     * Sets the L&F object that renders this component.
+     * Sets the L&amp;F object that renders this component.
      *
-     * @param ui  the <code>ToolBarUI</code> L&F object
+     * @param ui  the <code>ToolBarUI</code> L&amp;F object
      * @see UIDefaults#getUI
      * @beaninfo
      *        bound: true
@@ -182,7 +182,7 @@ public class JToolBar extends JComponent implements SwingConstants, Accessible
     }
 
     /**
-     * Notification from the <code>UIFactory</code> that the L&F has changed.
+     * Notification from the <code>UIFactory</code> that the L&amp;F has changed.
      * Called to replace the UI with the latest version from the
      * <code>UIFactory</code>.
      *
@@ -202,7 +202,7 @@ public class JToolBar extends JComponent implements SwingConstants, Accessible
 
 
     /**
-     * Returns the name of the L&F class that renders this component.
+     * Returns the name of the L&amp;F class that renders this component.
      *
      * @return the string "ToolBarUI"
      * @see JComponent#getUIClassID
@@ -613,7 +613,7 @@ public class JToolBar extends JComponent implements SwingConstants, Accessible
         }
 
         /**
-         * Returns the name of the L&F class that renders this component.
+         * Returns the name of the L&amp;F class that renders this component.
          *
          * @return the string "ToolBarSeparatorUI"
          * @see JComponent#getUIClassID
