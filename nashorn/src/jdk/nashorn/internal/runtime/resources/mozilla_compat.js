@@ -41,7 +41,12 @@ Object.defineProperty(this, "JavaAdapter", {
     }
 });
 
+
 // importPackage
+// avoid unnecessary chaining of __noSuchProperty__ again
+// in case user loads this script more than once.
+if (typeof importPackage == 'undefined') {
+
 Object.defineProperty(this, "importPackage", {
     configurable: true, enumerable: false, writable: true,
     value: (function() {
@@ -90,6 +95,8 @@ Object.defineProperty(this, "importPackage", {
         }
     })()
 });
+
+}
 
 // Object.prototype.__defineGetter__
 Object.defineProperty(Object.prototype, "__defineGetter__", {
@@ -344,13 +351,16 @@ Object.defineProperty(String.prototype, "sup", {
 // Rhino: global.importClass
 Object.defineProperty(this, "importClass", {
     configurable: true, enumerable: false, writable: true,
-    value: function(clazz) {
-        if (Java.isType(clazz)) {
-            var className = Java.typeName(clazz);
-            var simpleName = className.substring(className.lastIndexOf('.') + 1);
-            this[simpleName] = clazz;
-        } else {
-            throw new TypeError(clazz + " is not a Java class");
+    value: function() {
+        for (var arg in arguments) {
+            var clazz = arguments[arg];
+            if (Java.isType(clazz)) {
+                var className = Java.typeName(clazz);
+                var simpleName = className.substring(className.lastIndexOf('.') + 1);
+                this[simpleName] = clazz;
+            } else {
+                throw new TypeError(clazz + " is not a Java class");
+            }
         }
     }
 });
