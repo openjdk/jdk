@@ -35,7 +35,6 @@ import java.util.Set;
 import javax.lang.model.type.*;
 
 import com.sun.tools.javac.code.Symbol.*;
-import com.sun.tools.javac.model.JavacAnnoConstructs;
 import com.sun.tools.javac.util.*;
 import static com.sun.tools.javac.code.BoundKind.*;
 import static com.sun.tools.javac.code.Flags.*;
@@ -70,7 +69,7 @@ import static com.sun.tools.javac.code.TypeTag.*;
  *
  *  @see TypeTag
  */
-public abstract class Type implements TypeMirror {
+public abstract class Type extends AnnoConstruct implements TypeMirror {
 
     /** Constant type: no type at all. */
     public static final JCNoType noType = new JCNoType();
@@ -233,14 +232,16 @@ public abstract class Type implements TypeMirror {
     }
 
     @Override
-    public List<? extends Attribute.TypeCompound> getAnnotationMirrors() {
+    public List<Attribute.TypeCompound> getAnnotationMirrors() {
         return List.nil();
     }
+
 
     @Override
     public <A extends Annotation> A getAnnotation(Class<A> annotationType) {
         return null;
     }
+
 
     @Override
     public <A extends Annotation> A[] getAnnotationsByType(Class<A> annotationType) {
@@ -1846,19 +1847,10 @@ public abstract class Type implements TypeMirror {
         }
 
         @Override
-        public List<? extends Attribute.TypeCompound> getAnnotationMirrors() {
+        public List<Attribute.TypeCompound> getAnnotationMirrors() {
             return typeAnnotations;
         }
 
-        @Override
-        public <A extends Annotation> A getAnnotation(Class<A> annotationType) {
-            return JavacAnnoConstructs.getAnnotation(this, annotationType);
-        }
-
-        @Override
-        public <A extends Annotation> A[] getAnnotationsByType(Class<A> annotationType) {
-            return JavacAnnoConstructs.getAnnotationsByType(this, annotationType);
-        }
 
         @Override
         public TypeKind getKind() {
