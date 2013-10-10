@@ -48,8 +48,8 @@ public class DeprecatedListWriter extends SubWriterHolderWriter {
 
     private static final String[] ANCHORS = new String[] {
         "package", "interface", "class", "enum", "exception", "error",
-        "annotation_type", "field", "method", "constructor", "enum_constant",
-        "annotation_type_member"
+        "annotation.type", "field", "method", "constructor", "enum.constant",
+        "annotation.type.member"
     };
 
     private static final String[] HEADING_KEYS = new String[] {
