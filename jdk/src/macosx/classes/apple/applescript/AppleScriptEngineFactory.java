@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,14 +30,9 @@ import java.util.*;
 import javax.script.*;
 
 public class AppleScriptEngineFactory implements ScriptEngineFactory {
-    private static native void initNative();
+    private static volatile boolean initialized = false;
 
-    static {
-        java.awt.Toolkit.getDefaultToolkit();
-        System.loadLibrary("AppleScriptEngine");
-        initNative();
-        TRACE("<static-init>");
-    }
+    private static native void initNative();
 
     static void TRACE(final String str) {
 //        System.out.println(AppleScriptEngineFactory.class.getName() + "." + str);
@@ -80,6 +75,7 @@ public class AppleScriptEngineFactory implements ScriptEngineFactory {
      *
      * @return full name of the ScriptEngine
      */
+    @Override
     public String getEngineName() {
         TRACE("getEngineName()");
         return ENGINE_NAME;
@@ -90,6 +86,7 @@ public class AppleScriptEngineFactory implements ScriptEngineFactory {
      *
      * @return version of the ScriptEngine
      */
+    @Override
     public String getEngineVersion() {
         TRACE("getEngineVersion()");
         return ENGINE_VERSION;
@@ -100,6 +97,7 @@ public class AppleScriptEngineFactory implements ScriptEngineFactory {
      *
      * @return name of the language supported by the ScriptEngine(Factory)
      */
+    @Override
     public String getLanguageName() {
         TRACE("getLanguageName()");
         return LANGUAGE;
@@ -110,11 +108,12 @@ public class AppleScriptEngineFactory implements ScriptEngineFactory {
      *
      * @return language version supported by the ScriptEngine(Factory)
      */
+    @Override
     public String getLanguageVersion() {
         TRACE("getLanguageVersion()");
         return AccessController.doPrivileged(new PrivilegedAction<String>() {
             public String run() {
-                final AppleScriptEngine engine = new AppleScriptEngine(AppleScriptEngineFactory.this);
+                final AppleScriptEngine engine = getScriptEngine();
                 return engine.getLanguageVersion();
             }
         });
@@ -126,6 +125,7 @@ public class AppleScriptEngineFactory implements ScriptEngineFactory {
      *
      * @return ArrayList of file extensions AppleScript associates with
      */
+    @Override
     public List<String> getExtensions() {
         TRACE("getExtensions()");
         return Arrays.asList("scpt", "applescript", "app");
@@ -137,6 +137,7 @@ public class AppleScriptEngineFactory implements ScriptEngineFactory {
      *
      * @return ArrayList of mimetypes that AppleScript associates with
      */
+    @Override
     public List<String> getMimeTypes() {
         TRACE("getMimeTypes()");
         return Arrays.asList("application/x-applescript", "text/plain", "text/applescript");
@@ -148,6 +149,7 @@ public class AppleScriptEngineFactory implements ScriptEngineFactory {
      *
      * @return
      */
+    @Override
     public List<String> getNames() {
         TRACE("getNames()");
         return Arrays.asList("AppleScriptEngine", "AppleScript", "OSA");
@@ -165,6 +167,7 @@ public class AppleScriptEngineFactory implements ScriptEngineFactory {
      *            arguments to the function
      * @return the AppleScript string calling the method
      */
+    @Override
     public String getMethodCallSyntax(final String obj, final String fname, final String ... args) {
 //        StringBuilder builder = new StringBuilder();
 //        builder.append("my " + fname + "(");
@@ -181,6 +184,7 @@ public class AppleScriptEngineFactory implements ScriptEngineFactory {
      * @param toDisplay
      * @return
      */
+    @Override
     public String getOutputStatement(final String toDisplay) {
         // TODO -- this might even be good enough? XD
         return getMethodCallSyntax(null, "print", toDisplay);
@@ -193,8 +197,9 @@ public class AppleScriptEngineFactory implements ScriptEngineFactory {
      *            the key to look up
      * @return the static preseeded value for the key in the ScriptEngine, if it exists, otherwise <code>null</code>
      */
+    @Override
     public Object getParameter(final String key) {
-        final AppleScriptEngine engine = new AppleScriptEngine(this);
+        final AppleScriptEngine engine = getScriptEngine();
         if (!engine.getBindings(ScriptContext.ENGINE_SCOPE).containsKey(key)) return null;
         return engine.getBindings(ScriptContext.ENGINE_SCOPE).get(key);
     }
@@ -205,6 +210,7 @@ public class AppleScriptEngineFactory implements ScriptEngineFactory {
      * @param statements
      * @return
      */
+    @Override
     public String getProgram(final String ... statements) {
         final StringBuilder program = new StringBuilder();
         for (final String statement : statements) {
@@ -218,8 +224,21 @@ public class AppleScriptEngineFactory implements ScriptEngineFactory {
      *
      * @return new AppleScriptEngine with this factory as it's parent
      */
-    public ScriptEngine getScriptEngine() {
+    @Override
+    public AppleScriptEngine getScriptEngine() {
         AppleScriptEngine.checkSecurity();
+        ensureInitialized();
+
         return new AppleScriptEngine(this);
+    }
+
+    private static synchronized void ensureInitialized() {
+        if (!initialized) {
+            initialized = true;
+
+            java.awt.Toolkit.getDefaultToolkit();
+            System.loadLibrary("AppleScriptEngine");
+            initNative();
+        }
     }
 }

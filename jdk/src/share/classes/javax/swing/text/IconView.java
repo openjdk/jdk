@@ -101,7 +101,7 @@ public class IconView extends View  {
      * along the x axis.
      *
      * @param axis may be either View.X_AXIS or View.Y_AXIS
-     * @return the desired alignment >= 0.0f && <= 1.0f.  This should be
+     * @return the desired alignment &gt;= 0.0f &amp;&amp; &lt;= 1.0f.  This should be
      *   a value between 0.0 and 1.0 where 0 indicates alignment at the
      *   origin and 1.0 indicates alignment to the full span
      *   away from the origin.  An alignment of 0.5 would be the
@@ -120,7 +120,7 @@ public class IconView extends View  {
      * Provides a mapping from the document model coordinate space
      * to the coordinate space of the view mapped to it.
      *
-     * @param pos the position to convert >= 0
+     * @param pos the position to convert &gt;= 0
      * @param a the allocated region to render into
      * @return the bounding box of the given position
      * @exception BadLocationException  if the given position does not
@@ -145,11 +145,11 @@ public class IconView extends View  {
      * Provides a mapping from the view coordinate space to the logical
      * coordinate space of the model.
      *
-     * @param x the X coordinate >= 0
-     * @param y the Y coordinate >= 0
+     * @param x the X coordinate &gt;= 0
+     * @param y the Y coordinate &gt;= 0
      * @param a the allocated region to render into
      * @return the location within the model that best represents the
-     *  given point of view >= 0
+     *  given point of view &gt;= 0
      * @see View#viewToModel
      */
     public int viewToModel(float x, float y, Shape a, Position.Bias[] bias) {

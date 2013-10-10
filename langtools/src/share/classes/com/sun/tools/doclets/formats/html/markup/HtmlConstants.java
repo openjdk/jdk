@@ -94,6 +94,12 @@ public class HtmlConstants {
             new Comment("=========== ANNOTATION TYPE REQUIRED MEMBER SUMMARY ===========");
 
     /**
+     * Marker to identify start of annotation type required member summary.
+     */
+    public static final Content START_OF_ANNOTATION_TYPE_FIELD_SUMMARY =
+            new Comment("=========== ANNOTATION TYPE FIELD SUMMARY ===========");
+
+    /**
      * Marker to identify start of constructor summary.
      */
     public static final Content START_OF_CONSTRUCTOR_SUMMARY =
@@ -128,6 +134,12 @@ public class HtmlConstants {
      */
     public static final Content START_OF_ANNOTATION_TYPE_DETAILS =
             new Comment("============ ANNOTATION TYPE MEMBER DETAIL ===========");
+
+    /**
+     * Marker to identify start of annotation type field details.
+     */
+    public static final Content START_OF_ANNOTATION_TYPE_FIELD_DETAILS =
+            new Comment("============ ANNOTATION TYPE FIELD DETAIL ===========");
 
     /**
      * Marker to identify start of method details.

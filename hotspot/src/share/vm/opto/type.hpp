@@ -584,6 +584,7 @@ public:
   static const TypeTuple *START_I2C;
   static const TypeTuple *INT_PAIR;
   static const TypeTuple *LONG_PAIR;
+  static const TypeTuple *INT_CC_PAIR;
 #ifndef PRODUCT
   virtual void dump2( Dict &d, uint, outputStream *st  ) const; // Specialized per-Type dumping
 #endif

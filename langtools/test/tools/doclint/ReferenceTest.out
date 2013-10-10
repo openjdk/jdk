@@ -25,6 +25,18 @@ ReferenceTest.java:43: error: invalid use of @return
 ReferenceTest.java:48: error: exception not thrown: java.lang.Exception
      * @throws Exception description
                ^
-8 errors
+ReferenceTest.java:59: error: type arguments not allowed here
+     * {@link java.util.List<String>}
+              ^
+ReferenceTest.java:60: error: type arguments not allowed here
+     * {@link java.util.List<String>#equals}
+              ^
+ReferenceTest.java:61: error: type arguments not allowed here
+     * @see java.util.List<String>
+            ^
+ReferenceTest.java:62: error: type arguments not allowed here
+     * @see java.util.List<String>#equals
+            ^
+12 errors
 1 warning
 

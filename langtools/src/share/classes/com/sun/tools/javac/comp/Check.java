@@ -706,20 +706,6 @@ public class Check {
         return t;
     }
 
-    /** Check that type is a reifiable class, interface or array type.
-     *  @param pos           Position to be used for error reporting.
-     *  @param t             The type to be checked.
-     */
-    Type checkReifiableReferenceType(DiagnosticPosition pos, Type t) {
-        t = checkClassOrArrayType(pos, t);
-        if (!t.isErroneous() && !types.isReifiable(t)) {
-            log.error(pos, "illegal.generic.type.for.instof");
-            return types.createErrorType(t);
-        } else {
-            return t;
-        }
-    }
-
     /** Check that type is a reference type, i.e. a class, interface or array type
      *  or a type variable.
      *  @param pos           Position to be used for error reporting.
@@ -1245,6 +1231,7 @@ public class Check {
      */
     class Validator extends JCTree.Visitor {
 
+        boolean checkRaw;
         boolean isOuter;
         Env<AttrContext> env;
 
@@ -1254,7 +1241,7 @@ public class Check {
 
         @Override
         public void visitTypeArray(JCArrayTypeTree tree) {
-            tree.elemtype.accept(this);
+            validateTree(tree.elemtype, checkRaw, isOuter);
         }
 
         @Override
@@ -1345,15 +1332,20 @@ public class Check {
         }
 
         public void validateTree(JCTree tree, boolean checkRaw, boolean isOuter) {
-            try {
-                if (tree != null) {
-                    this.isOuter = isOuter;
+            if (tree != null) {
+                boolean prevCheckRaw = this.checkRaw;
+                this.checkRaw = checkRaw;
+                this.isOuter = isOuter;
+
+                try {
                     tree.accept(this);
                     if (checkRaw)
                         checkRaw(tree, env);
+                } catch (CompletionFailure ex) {
+                    completionError(tree.pos(), ex);
+                } finally {
+                    this.checkRaw = prevCheckRaw;
                 }
-            } catch (CompletionFailure ex) {
-                completionError(tree.pos(), ex);
             }
         }
 
@@ -2446,8 +2438,8 @@ public class Check {
             Assert.check(m.kind == MTH);
             List<MethodSymbol> prov = types.interfaceCandidates(site, (MethodSymbol)m);
             if (prov.size() > 1) {
-                ListBuffer<Symbol> abstracts = ListBuffer.lb();
-                ListBuffer<Symbol> defaults = ListBuffer.lb();
+                ListBuffer<Symbol> abstracts = new ListBuffer<>();
+                ListBuffer<Symbol> defaults = new ListBuffer<>();
                 for (MethodSymbol provSym : prov) {
                     if ((provSym.flags() & DEFAULT) != 0) {
                         defaults = defaults.append(provSym);

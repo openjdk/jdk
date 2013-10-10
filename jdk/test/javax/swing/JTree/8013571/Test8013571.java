@@ -27,8 +27,8 @@ import javax.swing.tree.DefaultTreeModel;
 
 /*
  * @test
- * @bug 8016545
- * @summary Tests beans with public fields
+ * @bug 8013571
+ * @summary Tests null as a root of TreeModelEvent
  * @author Sergey Malenkov
  */
 

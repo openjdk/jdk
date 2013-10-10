@@ -557,16 +557,18 @@ public abstract class LWToolkit extends SunToolkit implements Runnable {
     }
 
     @Override
-    public void grab(Window w) {
-        if (w.getPeer() != null) {
-            ((LWWindowPeer)w.getPeer()).grab();
+    public void grab(final Window w) {
+        final Object peer = AWTAccessor.getComponentAccessor().getPeer(w);
+        if (peer != null) {
+            ((LWWindowPeer) peer).grab();
         }
     }
 
     @Override
-    public void ungrab(Window w) {
-        if (w.getPeer() != null) {
-            ((LWWindowPeer)w.getPeer()).ungrab(false);
+    public void ungrab(final Window w) {
+        final Object peer = AWTAccessor.getComponentAccessor().getPeer(w);
+        if (peer != null) {
+            ((LWWindowPeer) peer).ungrab(false);
         }
     }
 

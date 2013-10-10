@@ -36,8 +36,7 @@ import java.nio.file.*;
 import java.nio.file.attribute.*;
 
 /**
- * * Handler for dirs containing classes to compile.
- * @author igor.ignatyev@oracle.com
+ * Handler for dirs containing classes to compile.
  */
 public class ClassPathDirEntry extends PathHandler {
 

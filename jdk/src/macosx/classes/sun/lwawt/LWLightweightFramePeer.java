@@ -34,6 +34,8 @@ import java.awt.dnd.DropTarget;
 
 import sun.awt.CausedFocusEvent;
 import sun.awt.LightweightFrame;
+import sun.swing.JLightweightFrame;
+import sun.swing.SwingAccessor;
 
 public class LWLightweightFramePeer extends LWWindowPeer {
 
@@ -91,11 +93,6 @@ public class LWLightweightFramePeer extends LWWindowPeer {
     }
 
     @Override
-    public void updateCursorImmediately() {
-        // TODO: tries to switch to the awt/fx toolkit thread and causes a deadlock on macosx
-    }
-
-    @Override
     public void addDropTarget(DropTarget dt) {
     }
 
@@ -111,5 +108,10 @@ public class LWLightweightFramePeer extends LWWindowPeer {
     @Override
     public void ungrab() {
         getLwTarget().ungrabFocus();
+    }
+
+    @Override
+    public void updateCursorImmediately() {
+        SwingAccessor.getJLightweightFrameAccessor().updateCursor((JLightweightFrame)getLwTarget());
     }
 }

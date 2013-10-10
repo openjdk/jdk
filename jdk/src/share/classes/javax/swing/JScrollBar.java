@@ -344,6 +344,9 @@ public class JScrollBar extends JComponent implements Adjustable, Accessible
      * that override this method and delegate to the viewports
      * Scrollable view, if it has one.  The Scrollable interface
      * provides a more specialized version of this method.
+     * <p>
+     * Some look and feels implement custom scrolling behavior
+     * and ignore this property.
      *
      * @param direction is -1 or 1 for up/down respectively
      * @return the value of the unitIncrement property
@@ -361,6 +364,10 @@ public class JScrollBar extends JComponent implements Adjustable, Accessible
      * <p>
      * Note, that if the argument is equal to the value of Integer.MIN_VALUE,
      * the most look and feels will not provide the scrolling to the right/down.
+     * <p>
+     * Some look and feels implement custom scrolling behavior
+     * and ignore this property.
+     *
      * @see #getUnitIncrement
      * @beaninfo
      *   preferred: true
@@ -387,6 +394,9 @@ public class JScrollBar extends JComponent implements Adjustable, Accessible
      * that override this method and delegate to the viewports
      * Scrollable view, if it has one.  The Scrollable interface
      * provides a more specialized version of this method.
+     * <p>
+     * Some look and feels implement custom scrolling behavior
+     * and ignore this property.
      *
      * @param direction is -1 or 1 for up/down respectively
      * @return the value of the blockIncrement property
@@ -404,6 +414,10 @@ public class JScrollBar extends JComponent implements Adjustable, Accessible
      * <p>
      * Note, that if the argument is equal to the value of Integer.MIN_VALUE,
      * the most look and feels will not provide the scrolling to the right/down.
+     * <p>
+     * Some look and feels implement custom scrolling behavior
+     * and ignore this property.
+     *
      * @see #getBlockIncrement()
      * @beaninfo
      *   preferred: true

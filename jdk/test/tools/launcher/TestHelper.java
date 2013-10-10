@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -66,10 +66,10 @@ public class TestHelper {
 
     static final String JAVAHOME = System.getProperty("java.home");
     static final String JAVA_BIN;
+    static final String JAVA_JRE_BIN;
     static final boolean isSDK = JAVAHOME.endsWith("jre");
     static final String javaCmd;
     static final String javawCmd;
-    static final String java64Cmd;
     static final String javacCmd;
     static final String jarCmd;
 
@@ -88,7 +88,7 @@ public class TestHelper {
             System.getProperty("os.name", "unknown").startsWith("SunOS");
     static final boolean isLinux =
             System.getProperty("os.name", "unknown").startsWith("Linux");
-    static final boolean isDualMode = isSolaris;
+
     static final boolean isSparc = System.getProperty("os.arch").startsWith("sparc");
 
     // make a note of the golden default locale
@@ -124,9 +124,12 @@ public class TestHelper {
             throw new RuntimeException("arch model is not 32 or 64 bit ?");
         }
         compiler = ToolProvider.getSystemJavaCompiler();
-        File binDir = (isSDK) ? new File((new File(JAVAHOME)).getParentFile(), "bin")
-            : new File(JAVAHOME, "bin");
+        File binDir = (isSDK)
+                ? new File((new File(JAVAHOME)).getParentFile(), "bin")
+                : new File(JAVAHOME, "bin");
         JAVA_BIN = binDir.getAbsolutePath();
+        JAVA_JRE_BIN = new File((new File(JAVAHOME)).getParentFile(),
+                        (isSDK) ? "jre/bin" : "bin").getAbsolutePath();
         File javaCmdFile = (isWindows)
                 ? new File(binDir, "java.exe")
                 : new File(binDir, "java");
@@ -165,17 +168,6 @@ public class TestHelper {
             throw new RuntimeException("java <" + javacCmd +
                     "> must exist and should be executable");
         }
-        if (isSolaris) {
-            File sparc64BinDir = new File(binDir,isSparc ? "sparcv9" : "amd64");
-            File java64CmdFile= new File(sparc64BinDir, "java");
-            if (java64CmdFile.exists() && java64CmdFile.canExecute()) {
-                java64Cmd = java64CmdFile.getAbsolutePath();
-            } else {
-                java64Cmd = null;
-            }
-        } else {
-            java64Cmd = null;
-        }
     }
     void run(String[] args) throws Exception {
         int passed = 0, failed = 0;
@@ -194,7 +186,13 @@ public class TestHelper {
                     System.out.printf("Passed: %d, Failed: %d, ExitValue: %d%n",
                                       passed, failed, testExitValue);
                 } catch (Throwable ex) {
-                    System.out.printf("Test %s failed: %s %n", m, ex.getCause());
+                    System.out.printf("Test %s failed: %s %n", m, ex);
+                    System.out.println("----begin detailed exceptions----");
+                    ex.printStackTrace(System.out);
+                    for (Throwable t : ex.getSuppressed()) {
+                        t.printStackTrace(System.out);
+                    }
+                    System.out.println("----end detailed exceptions----");
                     failed++;
                 }
             }
@@ -210,41 +208,15 @@ public class TestHelper {
     }
 
     /*
-     * is a dual mode available in the test jdk
-     */
-    static boolean dualModePresent() {
-        return isDualMode && java64Cmd != null;
-    }
-
-    /*
      * usually the jre/lib/arch-name is the same as os.arch, except for x86.
      */
     static String getJreArch() {
         String arch = System.getProperty("os.arch");
         return arch.equals("x86") ? "i386" : arch;
     }
-
-    /*
-     * get the complementary jre arch ie. if sparc then return sparcv9 and
-     * vice-versa.
-     */
-    static String getComplementaryJreArch() {
-        String arch = System.getProperty("os.arch");
-        if (arch != null) {
-            switch (arch) {
-                case "sparc":
-                    return "sparcv9";
-                case "sparcv9":
-                    return "sparc";
-                case "x86":
-                    return "amd64";
-                case "amd64":
-                    return "i386";
-            }
-        }
-        return null;
+    static String getArch() {
+        return System.getProperty("os.arch");
     }
-
     static File getClassFile(File javaFile) {
         String s = javaFile.getAbsolutePath().replace(JAVA_FILE_EXT, CLASS_FILE_EXT);
         return new File(s);
@@ -621,6 +593,16 @@ public class TestHelper {
                 }
             }
             appendError("string <" + stringToMatch + "> not found");
+            return false;
+        }
+
+        boolean notMatches(String stringToMatch) {
+            for (String x : testOutput) {
+                if (!x.matches(stringToMatch)) {
+                    return true;
+                }
+            }
+            appendError("string <" + stringToMatch + "> found");
             return false;
         }
     }

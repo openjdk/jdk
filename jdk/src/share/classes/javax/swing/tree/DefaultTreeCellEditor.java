@@ -430,7 +430,7 @@ public class DefaultTreeCellEditor implements ActionListener, TreeCellEditor,
 
     /**
      * Returns true if <code>event</code> is <code>null</code>,
-     * or it is a <code>MouseEvent</code> with a click count > 2
+     * or it is a <code>MouseEvent</code> with a click count &gt; 2
      * and <code>inHitRegion</code> returns true.
      * @param event the event being studied
      */
@@ -448,7 +448,7 @@ public class DefaultTreeCellEditor implements ActionListener, TreeCellEditor,
     /**
      * Returns true if the passed in location is a valid mouse location
      * to start editing from. This is implemented to return false if
-     * <code>x</code> is <= the width of the icon and icon gap displayed
+     * <code>x</code> is &lt;= the width of the icon and icon gap displayed
      * by the renderer. In other words this returns true if the user
      * clicks over the text part displayed by the renderer, and false
      * otherwise.

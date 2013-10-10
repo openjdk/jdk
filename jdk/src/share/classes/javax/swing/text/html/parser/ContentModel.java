@@ -42,7 +42,7 @@ import java.io.*;
  */
 public final class ContentModel implements Serializable {
     /**
-     * Type. Either '*', '?', '+', ',', '|', '&'.
+     * Type. Either '*', '?', '+', ',', '|', '&amp;'.
      */
     public int type;
 
@@ -52,7 +52,7 @@ public final class ContentModel implements Serializable {
     public Object content;
 
     /**
-     * The next content model (in a ',', '|' or '&' expression).
+     * The next content model (in a ',', '|' or '&amp;' expression).
      */
     public ContentModel next;
 
