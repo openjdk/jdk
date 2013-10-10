@@ -2113,7 +2113,7 @@ loop:
                 case "get":
                     final PropertyKey getIdent = propertyName();
                     final String getterName = getIdent.getPropertyName();
-                    final IdentNode getNameNode = new IdentNode(((Node)getIdent).getToken(), finish, "get " + NameCodec.encode(getterName));
+                    final IdentNode getNameNode = new IdentNode(((Node)getIdent).getToken(), finish, NameCodec.encode("get " + getterName));
                     expect(LPAREN);
                     expect(RPAREN);
                     functionNode = functionBody(getSetToken, getNameNode, new ArrayList<IdentNode>(), FunctionNode.Kind.GETTER);
@@ -2122,7 +2122,7 @@ loop:
                 case "set":
                     final PropertyKey setIdent = propertyName();
                     final String setterName = setIdent.getPropertyName();
-                    final IdentNode setNameNode = new IdentNode(((Node)setIdent).getToken(), finish, "set " + NameCodec.encode(setterName));
+                    final IdentNode setNameNode = new IdentNode(((Node)setIdent).getToken(), finish, NameCodec.encode("set " + setterName));
                     expect(LPAREN);
                     final IdentNode argIdent = getIdent();
                     verifyStrictIdent(argIdent, "setter argument");
