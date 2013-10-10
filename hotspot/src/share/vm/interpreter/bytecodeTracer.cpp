@@ -215,7 +215,7 @@ void print_oop(oop value, outputStream* st) {
       st->print_cr(" %s", buf);
     }
   } else {
-    st->print_cr(" " PTR_FORMAT, (intptr_t) value);
+    st->print_cr(" " PTR_FORMAT, (void *)value);
   }
 }
 

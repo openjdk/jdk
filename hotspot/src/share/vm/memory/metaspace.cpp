@@ -3104,7 +3104,7 @@ size_t Metaspace::align_word_size_up(size_t word_size) {
 MetaWord* Metaspace::allocate(size_t word_size, MetadataType mdtype) {
   // DumpSharedSpaces doesn't use class metadata area (yet)
   // Also, don't use class_vsm() unless UseCompressedClassPointers is true.
-  if (mdtype == ClassType && using_class_space()) {
+  if (is_class_space_allocation(mdtype)) {
     return  class_vsm()->allocate(word_size);
   } else {
     return  vsm()->allocate(word_size);
@@ -3252,8 +3252,8 @@ Metablock* Metaspace::allocate(ClassLoaderData* loader_data, size_t word_size,
         MetaspaceAux::dump(gclog_or_tty);
       }
       // -XX:+HeapDumpOnOutOfMemoryError and -XX:OnOutOfMemoryError support
-      const char* space_string = (mdtype == ClassType) ? "Compressed class space" :
-                                                         "Metadata space";
+      const char* space_string = is_class_space_allocation(mdtype) ? "Compressed class space" :
+                                                                     "Metadata space";
       report_java_out_of_memory(space_string);
 
       if (JvmtiExport::should_post_resource_exhausted()) {
@@ -3261,7 +3261,7 @@ Metablock* Metaspace::allocate(ClassLoaderData* loader_data, size_t word_size,
             JVMTI_RESOURCE_EXHAUSTED_OOM_ERROR,
             space_string);
       }
-      if (mdtype == ClassType) {
+      if (is_class_space_allocation(mdtype)) {
         THROW_OOP_0(Universe::out_of_memory_error_class_metaspace());
       } else {
         THROW_OOP_0(Universe::out_of_memory_error_metaspace());
