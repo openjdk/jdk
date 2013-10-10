@@ -554,10 +554,12 @@ ifndef OPENJDK
 
     $(JDK_IMAGE_DIR)/db/README-JDK.html: $(JDK_TOPDIR)/src/closed/share/db/README-JDK.html
 	$(ECHO) $(LOG_INFO) Copying '$(patsubst $(OUTPUT_ROOT)/%,%,$@)'
+	$(MKDIR) -p $(@D)
 	$(CAT) $< | $(SED) "s/XXXX/$(shell cat $(JDK_TOPDIR)/src/closed/share/db/COPYRIGHTYEAR)/" > $@
 
     $(JDK_IMAGE_DIR)/db/3RDPARTY: $(JDK_TOPDIR)/src/closed/share/db/3RDPARTY
 	$(ECHO) $(LOG_INFO) Copying '$(patsubst $(OUTPUT_ROOT)/%,%,$@)'
+	$(MKDIR) -p $(@D)
 	$(CAT) $< | $(SED) "s/XXXX/$(shell cat $(JDK_TOPDIR)/src/closed/share/db/COPYRIGHTYEAR)/" > $@
 
     JDK_DB_TARGETS := $(patsubst $(JDK_TOPDIR)/src/closed/share/db/%,$(IMAGES_OUTPUTDIR)/_unzip/%.unzipped,\
