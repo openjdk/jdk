@@ -97,7 +97,7 @@ public class List<A> extends AbstractCollection<A> implements java.util.List<A> 
     }
 
     public List<A> intersect(List<A> that) {
-        ListBuffer<A> buf = ListBuffer.lb();
+        ListBuffer<A> buf = new ListBuffer<>();
         for (A el : this) {
             if (that.contains(el)) {
                 buf.append(el);
@@ -107,7 +107,7 @@ public class List<A> extends AbstractCollection<A> implements java.util.List<A> 
     }
 
     public List<A> diff(List<A> that) {
-        ListBuffer<A> buf = ListBuffer.lb();
+        ListBuffer<A> buf = new ListBuffer<>();
         for (A el : this) {
             if (!that.contains(el)) {
                 buf.append(el);
@@ -120,7 +120,7 @@ public class List<A> extends AbstractCollection<A> implements java.util.List<A> 
      * Create a new list from the first {@code n} elements of this list
      */
     public List<A> take(int n) {
-        ListBuffer<A> buf = ListBuffer.lb();
+        ListBuffer<A> buf = new ListBuffer<>();
         int count = 0;
         for (A el : this) {
             if (count++ == n) break;
@@ -167,7 +167,7 @@ public class List<A> extends AbstractCollection<A> implements java.util.List<A> 
     }
 
     public static <A> List<A> from(Iterable<? extends A> coll) {
-        ListBuffer<A> xs = ListBuffer.lb();
+        ListBuffer<A> xs = new ListBuffer<>();
         for (A a : coll) {
             xs.append(a);
         }

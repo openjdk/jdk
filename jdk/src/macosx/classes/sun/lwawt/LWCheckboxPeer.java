@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,6 +41,11 @@ import javax.swing.JRadioButton;
 import javax.swing.JToggleButton;
 import javax.swing.SwingUtilities;
 
+/**
+ * Lightweight implementation of {@link CheckboxPeer}. Delegates most of the
+ * work to the {@link JCheckBox} and {@link JRadioButton}, which are placed
+ * inside an empty {@link JComponent}.
+ */
 final class LWCheckboxPeer
         extends LWComponentPeer<Checkbox, LWCheckboxPeer.CheckboxDelegate>
         implements CheckboxPeer, ItemListener {
@@ -51,12 +56,12 @@ final class LWCheckboxPeer
     }
 
     @Override
-    protected CheckboxDelegate createDelegate() {
+    CheckboxDelegate createDelegate() {
         return new CheckboxDelegate();
     }
 
     @Override
-    protected Component getDelegateFocusOwner() {
+    Component getDelegateFocusOwner() {
         return getDelegate().getCurrentButton();
     }
 
@@ -137,6 +142,7 @@ final class LWCheckboxPeer
         return true;
     }
 
+    @SuppressWarnings("serial")// Safe: outer class is non-serializable.
     final class CheckboxDelegate extends JComponent {
 
         private final JCheckBox cb;

@@ -637,7 +637,7 @@ class VerifyStrongCodeRootOopClosure: public OopClosure {
           gclog_or_tty->print_cr("Object "PTR_FORMAT" in region "
                                  "["PTR_FORMAT", "PTR_FORMAT") is above "
                                  "top "PTR_FORMAT,
-                                 obj, _hr->bottom(), _hr->end(), _hr->top());
+                                 (void *)obj, _hr->bottom(), _hr->end(), _hr->top());
           _failures = true;
           return;
         }
@@ -951,12 +951,12 @@ void HeapRegion::verify(VerifyOption vo,
         Klass* klass = obj->klass();
         if (!klass->is_metaspace_object()) {
           gclog_or_tty->print_cr("klass "PTR_FORMAT" of object "PTR_FORMAT" "
-                                 "not metadata", klass, obj);
+                                 "not metadata", klass, (void *)obj);
           *failures = true;
           return;
         } else if (!klass->is_klass()) {
           gclog_or_tty->print_cr("klass "PTR_FORMAT" of object "PTR_FORMAT" "
-                                 "not a klass", klass, obj);
+                                 "not a klass", klass, (void *)obj);
           *failures = true;
           return;
         } else {
@@ -971,7 +971,7 @@ void HeapRegion::verify(VerifyOption vo,
           }
         }
       } else {
-        gclog_or_tty->print_cr(PTR_FORMAT" no an oop", obj);
+        gclog_or_tty->print_cr(PTR_FORMAT" no an oop", (void *)obj);
         *failures = true;
         return;
       }

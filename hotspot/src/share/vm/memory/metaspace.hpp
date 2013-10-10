@@ -56,12 +56,15 @@
 //                       +-------------------+
 //
 
+class ChunkManager;
 class ClassLoaderData;
 class Metablock;
+class Metachunk;
 class MetaWord;
 class Mutex;
 class outputStream;
 class SpaceManager;
+class VirtualSpaceList;
 
 // Metaspaces each have a  SpaceManager and allocations
 // are done by the SpaceManager.  Allocations are done
@@ -75,8 +78,6 @@ class SpaceManager;
 // virtual spaces and the list of chunks in use.  Its
 // allocate() method returns a block for use as a
 // quantum of metadata.
-
-class VirtualSpaceList;
 
 class Metaspace : public CHeapObj<mtClass> {
   friend class VMStructs;
@@ -101,6 +102,10 @@ class Metaspace : public CHeapObj<mtClass> {
 
  private:
   void initialize(Mutex* lock, MetaspaceType type);
+
+  Metachunk* get_initialization_chunk(MetadataType mdtype,
+                                      size_t chunk_word_size,
+                                      size_t chunk_bunch);
 
   // Align up the word size to the allocation word size
   static size_t align_word_size_up(size_t);
@@ -134,6 +139,10 @@ class Metaspace : public CHeapObj<mtClass> {
   static VirtualSpaceList* _space_list;
   static VirtualSpaceList* _class_space_list;
 
+  static ChunkManager* _chunk_manager_metadata;
+  static ChunkManager* _chunk_manager_class;
+
+ public:
   static VirtualSpaceList* space_list()       { return _space_list; }
   static VirtualSpaceList* class_space_list() { return _class_space_list; }
   static VirtualSpaceList* get_space_list(MetadataType mdtype) {
@@ -141,6 +150,14 @@ class Metaspace : public CHeapObj<mtClass> {
     return mdtype == ClassType ? class_space_list() : space_list();
   }
 
+  static ChunkManager* chunk_manager_metadata() { return _chunk_manager_metadata; }
+  static ChunkManager* chunk_manager_class()    { return _chunk_manager_class; }
+  static ChunkManager* get_chunk_manager(MetadataType mdtype) {
+    assert(mdtype != MetadataTypeCount, "MetadaTypeCount can't be used as mdtype");
+    return mdtype == ClassType ? chunk_manager_class() : chunk_manager_metadata();
+  }
+
+ private:
   // This is used by DumpSharedSpaces only, where only _vsm is used. So we will
   // maintain a single list for now.
   void record_allocation(void* ptr, MetaspaceObj::Type type, size_t word_size);
@@ -199,6 +216,7 @@ class Metaspace : public CHeapObj<mtClass> {
   void dump(outputStream* const out) const;
 
   // Free empty virtualspaces
+  static void purge(MetadataType mdtype);
   static void purge();
 
   void print_on(outputStream* st) const;
@@ -217,6 +235,9 @@ class Metaspace : public CHeapObj<mtClass> {
     return NOT_LP64(false) LP64_ONLY(UseCompressedClassPointers && !DumpSharedSpaces);
   }
 
+  static bool is_class_space_allocation(MetadataType mdType) {
+    return mdType == ClassType && using_class_space();
+  }
 };
 
 class MetaspaceAux : AllStatic {

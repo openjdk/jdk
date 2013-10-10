@@ -35,7 +35,7 @@ import java.awt.Polygon;
 import java.io.Serializable;
 
 /**
- * Factory object that can vend Icons appropriate for the basic L & F.
+ * Factory object that can vend Icons appropriate for the basic L &amp; F.
  * <p>
  * <strong>Warning:</strong>
  * Serialized objects of this class will not be compatible with

@@ -38,6 +38,7 @@ import java.io.File;
 import java.io.IOException;
 import java.util.*;
 import sun.awt.shell.ShellFolder;
+import sun.swing.AbstractFilterComboBoxModel;
 import sun.swing.SwingUtilities2;
 
 /**
@@ -777,70 +778,9 @@ public class MotifFileChooserUI extends BasicFileChooserUI {
     /**
      * Data model for a type-face selection combo-box.
      */
-    protected class FilterComboBoxModel extends AbstractListModel<FileFilter> implements ComboBoxModel<FileFilter>,
-            PropertyChangeListener {
-        protected FileFilter[] filters;
-        protected FilterComboBoxModel() {
-            super();
-            filters = getFileChooser().getChoosableFileFilters();
-        }
-
-        public void propertyChange(PropertyChangeEvent e) {
-            String prop = e.getPropertyName();
-            if(prop.equals(JFileChooser.CHOOSABLE_FILE_FILTER_CHANGED_PROPERTY)) {
-                filters = (FileFilter[]) e.getNewValue();
-                fireContentsChanged(this, -1, -1);
-            } else if (prop.equals(JFileChooser.FILE_FILTER_CHANGED_PROPERTY)) {
-                fireContentsChanged(this, -1, -1);
-            }
-        }
-
-        public void setSelectedItem(Object filter) {
-            if(filter != null) {
-                getFileChooser().setFileFilter((FileFilter) filter);
-                fireContentsChanged(this, -1, -1);
-            }
-        }
-
-        public Object getSelectedItem() {
-            // Ensure that the current filter is in the list.
-            // NOTE: we shouldnt' have to do this, since JFileChooser adds
-            // the filter to the choosable filters list when the filter
-            // is set. Lets be paranoid just in case someone overrides
-            // setFileFilter in JFileChooser.
-            FileFilter currentFilter = getFileChooser().getFileFilter();
-            boolean found = false;
-            if(currentFilter != null) {
-                for (FileFilter filter : filters) {
-                    if (filter == currentFilter) {
-                        found = true;
-                    }
-                }
-                if (!found) {
-                    getFileChooser().addChoosableFileFilter(currentFilter);
-                }
-            }
-            return getFileChooser().getFileFilter();
-        }
-
-        public int getSize() {
-            if(filters != null) {
-                return filters.length;
-            } else {
-                return 0;
-            }
-        }
-
-        public FileFilter getElementAt(int index) {
-            if(index > getSize() - 1) {
-                // This shouldn't happen. Try to recover gracefully.
-                return getFileChooser().getFileFilter();
-            }
-            if(filters != null) {
-                return filters[index];
-            } else {
-                return null;
-            }
+    protected class FilterComboBoxModel extends AbstractFilterComboBoxModel {
+        protected JFileChooser getFileChooser() {
+            return MotifFileChooserUI.this.getFileChooser();
         }
     }
 

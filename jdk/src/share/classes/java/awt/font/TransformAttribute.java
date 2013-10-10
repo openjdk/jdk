@@ -141,14 +141,16 @@ public final class TransformAttribute implements Serializable {
      * @since 1.6
      */
     public boolean equals(Object rhs) {
-        try {
-            TransformAttribute that = (TransformAttribute)rhs;
-            if (transform == null) {
-                return that.transform == null;
+        if (rhs != null) {
+            try {
+                TransformAttribute that = (TransformAttribute)rhs;
+                if (transform == null) {
+                    return that.transform == null;
+                }
+                return transform.equals(that.transform);
             }
-            return transform.equals(that.transform);
-        }
-        catch (ClassCastException e) {
+            catch (ClassCastException e) {
+            }
         }
         return false;
     }

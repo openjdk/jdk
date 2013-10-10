@@ -2807,28 +2807,20 @@ void VM_RedefineClasses::AdjustCpoolCacheAndVtable::do_klass(Klass* k) {
                                         &trace_name_printed);
       }
     }
-    {
-      ResourceMark rm(_thread);
-      // PreviousVersionInfo objects returned via PreviousVersionWalker
-      // contain a GrowableArray of handles. We have to clean up the
-      // GrowableArray _after_ the PreviousVersionWalker destructor
-      // has destroyed the handles.
-      {
-        // the previous versions' constant pool caches may need adjustment
-        PreviousVersionWalker pvw(ik);
-        for (PreviousVersionInfo * pv_info = pvw.next_previous_version();
-             pv_info != NULL; pv_info = pvw.next_previous_version()) {
-          other_cp = pv_info->prev_constant_pool_handle();
-          cp_cache = other_cp->cache();
-          if (cp_cache != NULL) {
-            cp_cache->adjust_method_entries(_matching_old_methods,
-                                            _matching_new_methods,
-                                            _matching_methods_length,
-                                            &trace_name_printed);
-          }
-        }
-      } // pvw is cleaned up
-    } // rm is cleaned up
+
+    // the previous versions' constant pool caches may need adjustment
+    PreviousVersionWalker pvw(_thread, ik);
+    for (PreviousVersionNode * pv_node = pvw.next_previous_version();
+         pv_node != NULL; pv_node = pvw.next_previous_version()) {
+      other_cp = pv_node->prev_constant_pool();
+      cp_cache = other_cp->cache();
+      if (cp_cache != NULL) {
+        cp_cache->adjust_method_entries(_matching_old_methods,
+                                        _matching_new_methods,
+                                        _matching_methods_length,
+                                        &trace_name_printed);
+      }
+    }
   }
 }
 
@@ -2942,10 +2934,9 @@ void VM_RedefineClasses::check_methods_and_mark_as_obsolete(
       // obsolete methods need a unique idnum
       u2 num = InstanceKlass::cast(_the_class_oop)->next_method_idnum();
       if (num != ConstMethod::UNSET_IDNUM) {
-//      u2 old_num = old_method->method_idnum();
         old_method->set_method_idnum(num);
-// TO DO: attach obsolete annotations to obsolete method's new idnum
       }
+
       // With tracing we try not to "yack" too much. The position of
       // this trace assumes there are fewer obsolete methods than
       // EMCP methods.

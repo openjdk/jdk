@@ -261,7 +261,7 @@ public class Flags {
     public static final long SIGNATURE_POLYMORPHIC = 1L<<46;
 
     /**
-     * Flag that marks inference variables used in a 'throws' clause
+     * Flag that indicates that an inference variable is used in a 'throws' clause.
      */
     public static final long THROWS = 1L<<47;
 
