@@ -1591,10 +1591,8 @@ static jmethodID get_method_id(JNIEnv *env, jclass clazz, const char *name_str,
     }
   } else {
     m = klass->lookup_method(name, signature);
-    // Look up interfaces
-    if (m == NULL && klass->oop_is_instance()) {
-      m = InstanceKlass::cast(klass())->lookup_method_in_all_interfaces(name,
-                                                                   signature);
+    if (m == NULL &&  klass->oop_is_instance()) {
+      m = InstanceKlass::cast(klass())->lookup_method_in_ordered_interfaces(name, signature);
     }
   }
   if (m == NULL || (m->is_static() != is_static)) {
