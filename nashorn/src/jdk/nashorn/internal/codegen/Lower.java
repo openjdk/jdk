@@ -86,10 +86,13 @@ final class Lower extends NodeOperatorVisitor<BlockLexicalContext> {
 
     private static final DebugLogger LOG = new DebugLogger("lower");
 
+    // needed only to get unique eval id from code installer
+    private final Compiler compiler;
+
     /**
      * Constructor.
      */
-    Lower() {
+    Lower(final Compiler compiler) {
         super(new BlockLexicalContext() {
 
             @Override
@@ -132,6 +135,7 @@ final class Lower extends NodeOperatorVisitor<BlockLexicalContext> {
                 return block.setIsTerminal(this, false);
             }
         });
+        this.compiler = compiler;
     }
 
     @Override
@@ -529,11 +533,15 @@ final class Lower extends NodeOperatorVisitor<BlockLexicalContext> {
      */
     private String evalLocation(final IdentNode node) {
         final Source source = lc.getCurrentFunction().getSource();
+        final int pos = node.position();
         return new StringBuilder().
             append(source.getName()).
             append('#').
-            append(source.getLine(node.position())).
-            append("<eval>").
+            append(source.getLine(pos)).
+            append(':').
+            append(source.getColumn(pos)).
+            append("<eval>@").
+            append(compiler.getCodeInstaller().getUniqueEvalId()).
             toString();
     }
 
