@@ -312,6 +312,8 @@ class Compile : public Phase {
   bool                  _do_method_data_update; // True if we generate code to update MethodData*s
   int                   _AliasLevel;            // Locally-adjusted version of AliasLevel flag.
   bool                  _print_assembly;        // True if we should dump assembly code for this compilation
+  bool                  _print_inlining;        // True if we should print inlining for this compilation
+  bool                  _print_intrinsics;      // True if we should print intrinsics for this compilation
 #ifndef PRODUCT
   bool                  _trace_opto_output;
   bool                  _parsed_irreducible_loop; // True if ciTypeFlow detected irreducible loops during parsing
@@ -414,7 +416,7 @@ class Compile : public Phase {
   };
 
   GrowableArray<PrintInliningBuffer>* _print_inlining_list;
-  int _print_inlining;
+  int _print_inlining_idx;
 
   // Only keep nodes in the expensive node list that need to be optimized
   void cleanup_expensive_nodes(PhaseIterGVN &igvn);
@@ -426,24 +428,24 @@ class Compile : public Phase {
  public:
 
   outputStream* print_inlining_stream() const {
-    return _print_inlining_list->at(_print_inlining).ss();
+    return _print_inlining_list->adr_at(_print_inlining_idx)->ss();
   }
 
   void print_inlining_skip(CallGenerator* cg) {
-    if (PrintInlining) {
-      _print_inlining_list->at(_print_inlining).set_cg(cg);
-      _print_inlining++;
-      _print_inlining_list->insert_before(_print_inlining, PrintInliningBuffer());
+    if (_print_inlining) {
+      _print_inlining_list->adr_at(_print_inlining_idx)->set_cg(cg);
+      _print_inlining_idx++;
+      _print_inlining_list->insert_before(_print_inlining_idx, PrintInliningBuffer());
     }
   }
 
   void print_inlining_insert(CallGenerator* cg) {
-    if (PrintInlining) {
+    if (_print_inlining) {
       for (int i = 0; i < _print_inlining_list->length(); i++) {
-        if (_print_inlining_list->at(i).cg() == cg) {
+        if (_print_inlining_list->adr_at(i)->cg() == cg) {
           _print_inlining_list->insert_before(i+1, PrintInliningBuffer());
-          _print_inlining = i+1;
-          _print_inlining_list->at(i).set_cg(NULL);
+          _print_inlining_idx = i+1;
+          _print_inlining_list->adr_at(i)->set_cg(NULL);
           return;
         }
       }
@@ -572,6 +574,10 @@ class Compile : public Phase {
   int               AliasLevel() const          { return _AliasLevel; }
   bool              print_assembly() const       { return _print_assembly; }
   void          set_print_assembly(bool z)       { _print_assembly = z; }
+  bool              print_inlining() const       { return _print_inlining; }
+  void          set_print_inlining(bool z)       { _print_inlining = z; }
+  bool              print_intrinsics() const     { return _print_intrinsics; }
+  void          set_print_intrinsics(bool z)     { _print_intrinsics = z; }
   // check the CompilerOracle for special behaviours for this compile
   bool          method_has_option(const char * option) {
     return method() != NULL && method()->has_option(option);

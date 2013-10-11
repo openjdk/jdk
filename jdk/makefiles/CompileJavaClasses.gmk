@@ -62,6 +62,7 @@ ifndef OPENJDK
 
       # AccessBridge is compiled separately below.
       EXFILES += AccessBridge.java \
+		 AccessBridgeLoader.java \
 		 com/sun/java/accessibility/util/java/awt/ChoiceTranslator.java
       # This seems to never be built
       EXCLUDES += com/sun/java/accessibility/extensions
@@ -268,7 +269,10 @@ ifeq ($(OPENJDK_TARGET_OS),macosx)
                $(JDK_TOPDIR)/src/solaris/classes/java/net/DefaultInterface.java \
                $(JDK_TOPDIR)/src/solaris/classes/java/lang/ClassLoaderHelper.java \
                $(JDK_TOPDIR)/src/solaris/classes/sun/util/locale/provider/HostLocaleProviderAdapterImpl.java \
-               $(JDK_TOPDIR)/src/solaris/classes/sun/nio/fs/GnomeFileTypeDetector.java
+               $(JDK_TOPDIR)/src/solaris/classes/sun/nio/fs/GnomeFileTypeDetector.java \
+               $(JDK_TOPDIR)/src/solaris/classes/sun/nio/ch/sctp/SctpChannelImpl.java \
+               $(JDK_TOPDIR)/src/solaris/classes/sun/nio/ch/sctp/SctpMultiChannelImpl.java \
+               $(JDK_TOPDIR)/src/solaris/classes/sun/nio/ch/sctp/SctpServerChannelImpl.java
 
      # JObjC.jar contains 1.5 byte-code...so skip it here :-(
      # MACOSX_SRC_DIRS += $(JDK_TOPDIR)/src/macosx/native/jobjc/src

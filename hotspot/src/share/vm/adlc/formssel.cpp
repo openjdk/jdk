@@ -2757,14 +2757,18 @@ CondInterface::CondInterface(const char* equal,         const char* equal_format
                              const char* less,          const char* less_format,
                              const char* greater_equal, const char* greater_equal_format,
                              const char* less_equal,    const char* less_equal_format,
-                             const char* greater,       const char* greater_format)
+                             const char* greater,       const char* greater_format,
+                             const char* overflow,      const char* overflow_format,
+                             const char* no_overflow,   const char* no_overflow_format)
   : Interface("COND_INTER"),
     _equal(equal),                 _equal_format(equal_format),
     _not_equal(not_equal),         _not_equal_format(not_equal_format),
     _less(less),                   _less_format(less_format),
     _greater_equal(greater_equal), _greater_equal_format(greater_equal_format),
     _less_equal(less_equal),       _less_equal_format(less_equal_format),
-    _greater(greater),             _greater_format(greater_format) {
+    _greater(greater),             _greater_format(greater_format),
+    _overflow(overflow),           _overflow_format(overflow_format),
+    _no_overflow(no_overflow),     _no_overflow_format(no_overflow_format) {
 }
 CondInterface::~CondInterface() {
   // not owner of any character arrays
@@ -2777,12 +2781,14 @@ void CondInterface::dump() {
 // Write info to output files
 void CondInterface::output(FILE *fp) {
   Interface::output(fp);
-  if ( _equal  != NULL )     fprintf(fp," equal       == %s\n", _equal);
-  if ( _not_equal  != NULL ) fprintf(fp," not_equal   == %s\n", _not_equal);
-  if ( _less  != NULL )      fprintf(fp," less        == %s\n", _less);
-  if ( _greater_equal  != NULL ) fprintf(fp," greater_equal   == %s\n", _greater_equal);
-  if ( _less_equal  != NULL ) fprintf(fp," less_equal  == %s\n", _less_equal);
-  if ( _greater  != NULL )    fprintf(fp," greater     == %s\n", _greater);
+  if ( _equal  != NULL )     fprintf(fp," equal        == %s\n", _equal);
+  if ( _not_equal  != NULL ) fprintf(fp," not_equal    == %s\n", _not_equal);
+  if ( _less  != NULL )      fprintf(fp," less         == %s\n", _less);
+  if ( _greater_equal  != NULL ) fprintf(fp," greater_equal    == %s\n", _greater_equal);
+  if ( _less_equal  != NULL ) fprintf(fp," less_equal   == %s\n", _less_equal);
+  if ( _greater  != NULL )    fprintf(fp," greater      == %s\n", _greater);
+  if ( _overflow != NULL )    fprintf(fp," overflow     == %s\n", _overflow);
+  if ( _no_overflow != NULL ) fprintf(fp," no_overflow  == %s\n", _no_overflow);
   // fprintf(fp,"\n");
 }
 

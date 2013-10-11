@@ -64,11 +64,20 @@ import static java.time.temporal.ChronoField.DAY_OF_YEAR;
 import static java.time.temporal.ChronoField.MONTH_OF_YEAR;
 import static java.time.temporal.ChronoField.YEAR;
 import static java.time.temporal.ChronoField.YEAR_OF_ERA;
+import static java.time.temporal.ChronoUnit.YEARS;
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertTrue;
 import static org.testng.Assert.assertNotNull;
 
 import java.text.ParsePosition;
+import java.time.LocalDate;
+import java.time.chrono.Chronology;
+import java.time.chrono.ChronoLocalDate;
+import java.time.chrono.HijrahChronology;
+import java.time.chrono.IsoChronology;
+import java.time.chrono.JapaneseChronology;
+import java.time.chrono.MinguoChronology;
+import java.time.chrono.ThaiBuddhistChronology;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeFormatterBuilder;
 import java.time.temporal.TemporalAccessor;
@@ -86,11 +95,15 @@ public class TestReducedParser extends AbstractTestPrinterParser {
     private static final boolean LENIENT = false;
 
     private DateTimeFormatter getFormatter0(TemporalField field, int width, int baseValue) {
-        return builder.appendValueReduced(field, width, baseValue).toFormatter(locale).withDecimalStyle(decimalStyle);
+        return builder.appendValueReduced(field, width, width, baseValue).toFormatter(locale).withDecimalStyle(decimalStyle);
     }
 
     private DateTimeFormatter getFormatter0(TemporalField field, int minWidth, int maxWidth, int baseValue) {
         return builder.appendValueReduced(field, minWidth, maxWidth, baseValue).toFormatter(locale).withDecimalStyle(decimalStyle);
+    }
+
+    private DateTimeFormatter getFormatterBaseDate(TemporalField field, int minWidth, int maxWidth, int baseValue) {
+        return builder.appendValueReduced(field, minWidth, maxWidth, LocalDate.of(baseValue, 1, 1)).toFormatter(locale).withDecimalStyle(decimalStyle);
     }
 
     //-----------------------------------------------------------------------
@@ -243,6 +256,10 @@ public class TestReducedParser extends AbstractTestPrinterParser {
 
             // Negative baseValue
             {YEAR, 2, 4, -2005, "123", 0, strict(3, 123), lenient(3, 123)},
+
+            // Basics
+            {YEAR, 2, 4, 2010, "10", 0, strict(2, 2010), lenient(2, 2010)},
+            {YEAR, 2, 4, 2010, "09", 0, strict(2, 2109), lenient(2, 2109)},
         };
     }
 
@@ -264,6 +281,21 @@ public class TestReducedParser extends AbstractTestPrinterParser {
         }
     }
 
+    @Test(dataProvider="ParseLenientSensitive")
+    public void test_parseStrict_baseDate(TemporalField field, int minWidth, int maxWidth, int baseValue, String input, int pos,
+                                 Pair strict, Pair lenient) {
+        ParsePosition ppos = new ParsePosition(pos);
+        setStrict(true);
+        TemporalAccessor parsed = getFormatterBaseDate(field, minWidth, maxWidth, baseValue).parseUnresolved(input, ppos);
+        if (ppos.getErrorIndex() != -1) {
+            assertEquals(ppos.getErrorIndex(), strict.parseLen, "error case parse position");
+            assertEquals(parsed, strict.parseVal, "unexpected parse result");
+        } else {
+            assertEquals(ppos.getIndex(), strict.parseLen, "parse position");
+            assertParsed(parsed, YEAR, strict.parseVal != null ? (long) strict.parseVal : null);
+        }
+    }
+
     //-----------------------------------------------------------------------
     // Parsing tests for lenient mode
     //-----------------------------------------------------------------------
@@ -273,6 +305,21 @@ public class TestReducedParser extends AbstractTestPrinterParser {
         ParsePosition ppos = new ParsePosition(pos);
         setStrict(false);
         TemporalAccessor parsed = getFormatter0(field, minWidth, maxWidth, baseValue).parseUnresolved(input, ppos);
+        if (ppos.getErrorIndex() != -1) {
+            assertEquals(ppos.getErrorIndex(), lenient.parseLen, "error case parse position");
+            assertEquals(parsed, lenient.parseVal, "unexpected parse result");
+        } else {
+            assertEquals(ppos.getIndex(), lenient.parseLen, "parse position");
+            assertParsed(parsed, YEAR, lenient.parseVal != null ? (long) lenient.parseVal : null);
+        }
+    }
+
+    @Test(dataProvider="ParseLenientSensitive")
+    public void test_parseLenient_baseDate(TemporalField field, int minWidth, int maxWidth, int baseValue, String input, int pos,
+                                  Pair strict, Pair lenient) {
+        ParsePosition ppos = new ParsePosition(pos);
+        setStrict(false);
+        TemporalAccessor parsed = getFormatterBaseDate(field, minWidth, maxWidth, baseValue).parseUnresolved(input, ppos);
         if (ppos.getErrorIndex() != -1) {
             assertEquals(ppos.getErrorIndex(), lenient.parseLen, "error case parse position");
             assertEquals(parsed, lenient.parseVal, "unexpected parse result");
@@ -332,6 +379,68 @@ public class TestReducedParser extends AbstractTestPrinterParser {
             assertParsed(parsed, MONTH_OF_YEAR, Long.valueOf(month));
             assertParsed(parsed, DAY_OF_MONTH, Long.valueOf(day));
         }
+    }
+
+    //-----------------------------------------------------------------------
+    // Cases and values in reduced value parsing mode
+    //-----------------------------------------------------------------------
+    @DataProvider(name="ReducedWithChrono")
+    Object[][] provider_reducedWithChrono() {
+        LocalDate baseYear = LocalDate.of(2000, 1, 1);
+        return new Object[][] {
+            {IsoChronology.INSTANCE.date(baseYear)},
+            {IsoChronology.INSTANCE.date(baseYear).plus(1, YEARS)},
+            {IsoChronology.INSTANCE.date(baseYear).plus(99, YEARS)},
+            {HijrahChronology.INSTANCE.date(baseYear)},
+            {HijrahChronology.INSTANCE.date(baseYear).plus(1, YEARS)},
+            {HijrahChronology.INSTANCE.date(baseYear).plus(99, YEARS)},
+            {JapaneseChronology.INSTANCE.date(baseYear)},
+            {JapaneseChronology.INSTANCE.date(baseYear).plus(1, YEARS)},
+            {JapaneseChronology.INSTANCE.date(baseYear).plus(99, YEARS)},
+            {MinguoChronology.INSTANCE.date(baseYear)},
+            {MinguoChronology.INSTANCE.date(baseYear).plus(1, YEARS)},
+            {MinguoChronology.INSTANCE.date(baseYear).plus(99, YEARS)},
+            {ThaiBuddhistChronology.INSTANCE.date(baseYear)},
+            {ThaiBuddhistChronology.INSTANCE.date(baseYear).plus(1, YEARS)},
+            {ThaiBuddhistChronology.INSTANCE.date(baseYear).plus(99, YEARS)},
+        };
+    }
+
+    @Test(dataProvider="ReducedWithChrono")
+    public void test_reducedWithChronoYear(ChronoLocalDate date) {
+        Chronology chrono = date.getChronology();
+        DateTimeFormatter df
+                = new DateTimeFormatterBuilder().appendValueReduced(YEAR, 2, 2, LocalDate.of(2000, 1, 1))
+                .toFormatter()
+                .withChronology(chrono);
+        int expected = date.get(YEAR);
+        String input = df.format(date);
+
+        ParsePosition pos = new ParsePosition(0);
+        TemporalAccessor parsed = df.parseUnresolved(input, pos);
+        int actual = parsed.get(YEAR);
+        assertEquals(actual, expected,
+                String.format("Wrong date parsed, chrono: %s, input: %s",
+                chrono, input));
+
+    }
+    @Test(dataProvider="ReducedWithChrono")
+    public void test_reducedWithChronoYearOfEra(ChronoLocalDate date) {
+        Chronology chrono = date.getChronology();
+        DateTimeFormatter df
+                = new DateTimeFormatterBuilder().appendValueReduced(YEAR_OF_ERA, 2, 2, LocalDate.of(2000, 1, 1))
+                .toFormatter()
+                .withChronology(chrono);
+        int expected = date.get(YEAR_OF_ERA);
+        String input = df.format(date);
+
+        ParsePosition pos = new ParsePosition(0);
+        TemporalAccessor parsed = df.parseUnresolved(input, pos);
+        int actual = parsed.get(YEAR_OF_ERA);
+        assertEquals(actual, expected,
+                String.format("Wrong date parsed, chrono: %s, input: %s",
+                chrono, input));
+
     }
 
     //-----------------------------------------------------------------------

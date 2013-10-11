@@ -504,7 +504,8 @@ public abstract class ZoneId implements Serializable {
     public static ZoneId from(TemporalAccessor temporal) {
         ZoneId obj = temporal.query(TemporalQuery.zone());
         if (obj == null) {
-            throw new DateTimeException("Unable to obtain ZoneId from TemporalAccessor: " + temporal.getClass());
+            throw new DateTimeException("Unable to obtain ZoneId from TemporalAccessor: " +
+                    temporal + " of type " + temporal.getClass().getName());
         }
         return obj;
     }

@@ -50,13 +50,13 @@ import java.util.TreeSet;
  * <code>JLayeredPane</code> to manage the potentially overlapping internal
  * frames. It also maintains a reference to an instance of
  * <code>DesktopManager</code> that is set by the UI
- * class for the current look and feel (L&F).  Note that <code>JDesktopPane</code>
+ * class for the current look and feel (L&amp;F).  Note that <code>JDesktopPane</code>
  * does not support borders.
  * <p>
  * This class is normally used as the parent of <code>JInternalFrames</code>
  * to provide a pluggable <code>DesktopManager</code> object to the
  * <code>JInternalFrames</code>. The <code>installUI</code> of the
- * L&F specific implementation is responsible for setting the
+ * L&amp;F specific implementation is responsible for setting the
  * <code>desktopManager</code> variable appropriately.
  * When the parent of a <code>JInternalFrame</code> is a <code>JDesktopPane</code>,
  * it should delegate most of its behavior to the <code>desktopManager</code>
@@ -146,7 +146,7 @@ public class JDesktopPane extends JLayeredPane implements Accessible
     }
 
     /**
-     * Returns the L&F object that renders this component.
+     * Returns the L&amp;F object that renders this component.
      *
      * @return the <code>DesktopPaneUI</code> object that
      *   renders this component
@@ -156,9 +156,9 @@ public class JDesktopPane extends JLayeredPane implements Accessible
     }
 
     /**
-     * Sets the L&F object that renders this component.
+     * Sets the L&amp;F object that renders this component.
      *
-     * @param ui  the DesktopPaneUI L&F object
+     * @param ui  the DesktopPaneUI L&amp;F object
      * @see UIDefaults#getUI
      * @beaninfo
      *        bound: true
@@ -232,7 +232,7 @@ public class JDesktopPane extends JLayeredPane implements Accessible
     }
 
     /**
-     * Notification from the <code>UIManager</code> that the L&F has changed.
+     * Notification from the <code>UIManager</code> that the L&amp;F has changed.
      * Replaces the current UI object with the latest version from the
      * <code>UIManager</code>.
      *
@@ -244,7 +244,7 @@ public class JDesktopPane extends JLayeredPane implements Accessible
 
 
     /**
-     * Returns the name of the L&F class that renders this component.
+     * Returns the name of the L&amp;F class that renders this component.
      *
      * @return the string "DesktopPaneUI"
      * @see JComponent#getUIClassID

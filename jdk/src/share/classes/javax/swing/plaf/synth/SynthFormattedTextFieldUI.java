@@ -29,7 +29,7 @@ import javax.swing.JComponent;
 import javax.swing.plaf.ComponentUI;
 
 /**
- * Provides the Synth L&F UI delegate for
+ * Provides the Synth L&amp;F UI delegate for
  * {@link javax.swing.JFormattedTextField}.
  *
  * @since 1.7
@@ -58,7 +58,7 @@ public class SynthFormattedTextFieldUI extends SynthTextFieldUI {
     }
 
     /**
-     * @inheritDoc
+     * {@inheritDoc}
      */
     @Override
     void paintBackground(SynthContext context, Graphics g, JComponent c) {
@@ -67,7 +67,7 @@ public class SynthFormattedTextFieldUI extends SynthTextFieldUI {
     }
 
     /**
-     * @inheritDoc
+     * {@inheritDoc}
      */
     @Override
     public void paintBorder(SynthContext context, Graphics g, int x,

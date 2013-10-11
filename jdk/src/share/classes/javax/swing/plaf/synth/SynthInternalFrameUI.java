@@ -34,7 +34,7 @@ import java.beans.*;
 
 
 /**
- * Provides the Synth L&F UI delegate for
+ * Provides the Synth L&amp;F UI delegate for
  * {@link javax.swing.JInternalFrame}.
  *
  * @author David Kloba
@@ -61,7 +61,7 @@ public class SynthInternalFrameUI extends BasicInternalFrameUI
     }
 
     /**
-     * @inheritDoc
+     * {@inheritDoc}
      */
     @Override
     public void installDefaults() {
@@ -70,7 +70,7 @@ public class SynthInternalFrameUI extends BasicInternalFrameUI
     }
 
     /**
-     * @inheritDoc
+     * {@inheritDoc}
      */
     @Override
     protected void installListeners() {
@@ -79,7 +79,7 @@ public class SynthInternalFrameUI extends BasicInternalFrameUI
     }
 
     /**
-     * @inheritDoc
+     * {@inheritDoc}
      */
     @Override
     protected void uninstallComponents() {
@@ -90,7 +90,7 @@ public class SynthInternalFrameUI extends BasicInternalFrameUI
     }
 
     /**
-     * @inheritDoc
+     * {@inheritDoc}
      */
     @Override
     protected void uninstallListeners() {
@@ -118,7 +118,7 @@ public class SynthInternalFrameUI extends BasicInternalFrameUI
     }
 
     /**
-     * @inheritDoc
+     * {@inheritDoc}
      */
     @Override
     protected void uninstallDefaults() {
@@ -133,7 +133,7 @@ public class SynthInternalFrameUI extends BasicInternalFrameUI
     }
 
     /**
-     * @inheritDoc
+     * {@inheritDoc}
      */
     @Override
     public SynthContext getContext(JComponent c) {
@@ -150,7 +150,7 @@ public class SynthInternalFrameUI extends BasicInternalFrameUI
     }
 
     /**
-     * @inheritDoc
+     * {@inheritDoc}
      */
     @Override
     protected JComponent createNorthPane(JInternalFrame w) {
@@ -160,7 +160,7 @@ public class SynthInternalFrameUI extends BasicInternalFrameUI
     }
 
     /**
-     * @inheritDoc
+     * {@inheritDoc}
      */
     @Override
     protected ComponentListener createComponentListener() {
@@ -244,7 +244,7 @@ public class SynthInternalFrameUI extends BasicInternalFrameUI
     }
 
     /**
-     * @inheritDoc
+     * {@inheritDoc}
      */
     @Override
     public void paintBorder(SynthContext context, Graphics g, int x,
@@ -254,7 +254,7 @@ public class SynthInternalFrameUI extends BasicInternalFrameUI
     }
 
     /**
-     * @inheritDoc
+     * {@inheritDoc}
      */
     @Override
     public void propertyChange(PropertyChangeEvent evt) {

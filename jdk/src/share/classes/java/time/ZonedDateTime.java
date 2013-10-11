@@ -553,7 +553,8 @@ public final class ZonedDateTime
                 return of(ldt, zone);
             }
         } catch (DateTimeException ex) {
-            throw new DateTimeException("Unable to create ZonedDateTime from TemporalAccessor: " + temporal.getClass(), ex);
+            throw new DateTimeException("Unable to obtain ZonedDateTime from TemporalAccessor: " +
+                    temporal + " of type " + temporal.getClass().getName(), ex);
         }
     }
 
@@ -1540,6 +1541,11 @@ public final class ZonedDateTime
      */
     @Override
     public ZonedDateTime plus(TemporalAmount amountToAdd) {
+        if (amountToAdd instanceof Period) {
+            Period periodToAdd = (Period) amountToAdd;
+            return resolveLocal(dateTime.plus(periodToAdd));
+        }
+        Objects.requireNonNull(amountToAdd, "amountToAdd");
         return (ZonedDateTime) amountToAdd.addTo(this);
     }
 
@@ -1787,6 +1793,11 @@ public final class ZonedDateTime
      */
     @Override
     public ZonedDateTime minus(TemporalAmount amountToSubtract) {
+        if (amountToSubtract instanceof Period) {
+            Period periodToSubtract = (Period) amountToSubtract;
+            return resolveLocal(dateTime.minus(periodToSubtract));
+        }
+        Objects.requireNonNull(amountToSubtract, "amountToSubtract");
         return (ZonedDateTime) amountToSubtract.subtractFrom(this);
     }
 
@@ -2034,7 +2045,8 @@ public final class ZonedDateTime
      * For example, the period in days between two date-times can be calculated
      * using {@code startDateTime.until(endDateTime, DAYS)}.
      * <p>
-     * The {@code Temporal} passed to this method must be a {@code ZonedDateTime}.
+     * The {@code Temporal} passed to this method is converted to a
+     * {@code ZonedDateTime} using {@link #from(TemporalAccessor)}.
      * If the time-zone differs between the two zoned date-times, the specified
      * end date-time is normalized to have the same zone as this date-time.
      * <p>
@@ -2076,26 +2088,23 @@ public final class ZonedDateTime
      * <p>
      * If the unit is not a {@code ChronoUnit}, then the result of this method
      * is obtained by invoking {@code TemporalUnit.between(Temporal, Temporal)}
-     * passing {@code this} as the first argument and the input temporal as
-     * the second argument.
+     * passing {@code this} as the first argument and the converted input temporal
+     * as the second argument.
      * <p>
      * This instance is immutable and unaffected by this method call.
      *
-     * @param endDateTime  the end date-time, which must be a {@code ZonedDateTime}, not null
+     * @param endExclusive  the end date, exclusive, which is converted to a {@code ZonedDateTime}, not null
      * @param unit  the unit to measure the amount in, not null
      * @return the amount of time between this date-time and the end date-time
-     * @throws DateTimeException if the amount cannot be calculated
+     * @throws DateTimeException if the amount cannot be calculated, or the end
+     *  temporal cannot be converted to a {@code ZonedDateTime}
      * @throws UnsupportedTemporalTypeException if the unit is not supported
      * @throws ArithmeticException if numeric overflow occurs
      */
     @Override
-    public long until(Temporal endDateTime, TemporalUnit unit) {
-        if (endDateTime instanceof ZonedDateTime == false) {
-            Objects.requireNonNull(endDateTime, "endDateTime");
-            throw new DateTimeException("Unable to calculate amount as objects are of two different types");
-        }
+    public long until(Temporal endExclusive, TemporalUnit unit) {
+        ZonedDateTime end = ZonedDateTime.from(endExclusive);
         if (unit instanceof ChronoUnit) {
-            ZonedDateTime end = (ZonedDateTime) endDateTime;
             end = end.withZoneSameInstant(zone);
             if (unit.isDateBased()) {
                 return dateTime.until(end.dateTime, unit);
@@ -2103,7 +2112,7 @@ public final class ZonedDateTime
                 return toOffsetDateTime().until(end.toOffsetDateTime(), unit);
             }
         }
-        return unit.between(this, endDateTime);
+        return unit.between(this, end);
     }
 
     /**

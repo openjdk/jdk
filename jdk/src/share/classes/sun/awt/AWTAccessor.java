@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,6 +39,7 @@ import java.lang.reflect.InvocationTargetException;
 import java.security.AccessControlContext;
 
 import java.io.File;
+import java.util.ResourceBundle;
 import java.util.Vector;
 
 /**
@@ -236,6 +237,11 @@ public final class AWTAccessor {
          */
         AccessControlContext getAccessControlContext(Component comp);
 
+        /**
+         * Revalidates the component synchronously.
+         */
+        void revalidateSynchronously(Component comp);
+
     }
 
     /*
@@ -246,6 +252,14 @@ public final class AWTAccessor {
          * Validates the container unconditionally.
          */
         void validateUnconditionally(Container cont);
+
+        /**
+         *
+         * Access to the private version of findComponentAt method which has
+         * a controllable behavior. Setting 'ignoreEnabled' to 'false'
+         * bypasses disabled Components during the search.
+         */
+        Component findComponentAt(Container cont, int x, int y, boolean ignoreEnabled);
     }
 
     /*
@@ -700,6 +714,13 @@ public final class AWTAccessor {
     }
 
     /*
+     * An accessor for the Toolkit class
+     */
+    public interface ToolkitAccessor {
+        void setPlatformResources(ResourceBundle bundle);
+    }
+
+    /*
      * Accessor instances are initialized in the static initializers of
      * corresponding AWT classes by using setters defined below.
      */
@@ -726,6 +747,7 @@ public final class AWTAccessor {
     private static TrayIconAccessor trayIconAccessor;
     private static DefaultKeyboardFocusManagerAccessor defaultKeyboardFocusManagerAccessor;
     private static SequencedEventAccessor sequencedEventAccessor;
+    private static ToolkitAccessor toolkitAccessor;
 
     /*
      * Set an accessor object for the java.awt.Component class.
@@ -1118,5 +1140,23 @@ public final class AWTAccessor {
         // Null returned value means it's not initialized
         // (so not a single instance of the event has been created).
         return sequencedEventAccessor;
+    }
+
+    /*
+     * Set an accessor object for the java.awt.Toolkit class.
+     */
+    public static void setToolkitAccessor(ToolkitAccessor ta) {
+        toolkitAccessor = ta;
+    }
+
+    /*
+     * Get the accessor object for the java.awt.Toolkit class.
+     */
+    public static ToolkitAccessor getToolkitAccessor() {
+        if (toolkitAccessor == null) {
+            unsafe.ensureClassInitialized(Toolkit.class);
+        }
+
+        return toolkitAccessor;
     }
 }

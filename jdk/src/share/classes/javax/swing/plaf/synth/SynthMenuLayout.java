@@ -31,7 +31,7 @@ import java.awt.Container;
 import java.awt.Dimension;
 
 /**
- * @inheritDoc
+ * {@inheritDoc}
  *
  * @author Georges Saab
  */

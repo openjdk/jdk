@@ -28,6 +28,7 @@ package java.lang.invoke;
 import sun.invoke.util.Wrapper;
 import static java.lang.invoke.MethodHandleStatics.*;
 import static java.lang.invoke.MethodHandleNatives.Constants.*;
+ import static java.lang.invoke.MethodHandles.Lookup.IMPL_LOOKUP;
 
 /**
  * Shared information for a group of method types, which differ
@@ -74,7 +75,8 @@ final class MethodTypeForm {
             LF_GEN_LINKER     = 11,
             LF_GEN_INVOKER    = 12,
             LF_CS_LINKER      = 13,  // linkToCallSite_CS
-            LF_LIMIT          = 14;
+            LF_MH_LINKER      = 14,  // linkToCallSite_MH
+            LF_LIMIT          = 15;
 
     public MethodType erasedType() {
         return erasedType;
@@ -97,9 +99,22 @@ final class MethodTypeForm {
         assert(erasedType == basicType) : "erasedType: " + erasedType + " != basicType: " + basicType;  // primitives must be flattened also
         MethodHandle invoker = basicInvoker;
         if (invoker != null)  return invoker;
-        invoker = basicType.invokers().makeBasicInvoker();
+        invoker = DirectMethodHandle.make(invokeBasicMethod(basicType));
         basicInvoker = invoker;
         return invoker;
+    }
+
+    // This next one is called from LambdaForm.NamedFunction.<init>.
+    /*non-public*/ static MemberName invokeBasicMethod(MethodType basicType) {
+        assert(basicType == basicType.basicType());
+        try {
+            // Do approximately the same as this public API call:
+            //   Lookup.findVirtual(MethodHandle.class, name, type);
+            // But bypass access and corner case checks, since we know exactly what we need.
+            return IMPL_LOOKUP.resolveOrFail(REF_invokeVirtual, MethodHandle.class, "invokeBasic", basicType);
+         } catch (ReflectiveOperationException ex) {
+            throw newInternalError("JVM cannot find invoker for "+basicType, ex);
+        }
     }
 
     /**

@@ -347,8 +347,8 @@ public final class OffsetDateTime
         if (temporal instanceof OffsetDateTime) {
             return (OffsetDateTime) temporal;
         }
-        ZoneOffset offset = ZoneOffset.from(temporal);
         try {
+            ZoneOffset offset = ZoneOffset.from(temporal);
             try {
                 LocalDateTime ldt = LocalDateTime.from(temporal);
                 return OffsetDateTime.of(ldt, offset);
@@ -357,7 +357,8 @@ public final class OffsetDateTime
                 return OffsetDateTime.ofInstant(instant, offset);
             }
         } catch (DateTimeException ex) {
-            throw new DateTimeException("Unable to obtain OffsetDateTime from TemporalAccessor: " + temporal.getClass(), ex);
+            throw new DateTimeException("Unable to obtain OffsetDateTime from TemporalAccessor: " +
+                    temporal + " of type " + temporal.getClass().getName(), ex);
         }
     }
 
@@ -1592,7 +1593,8 @@ public final class OffsetDateTime
      * For example, the period in days between two date-times can be calculated
      * using {@code startDateTime.until(endDateTime, DAYS)}.
      * <p>
-     * The {@code Temporal} passed to this method must be an {@code OffsetDateTime}.
+     * The {@code Temporal} passed to this method is converted to a
+     * {@code OffsetDateTime} using {@link #from(TemporalAccessor)}.
      * If the offset differs between the two date-times, the specified
      * end date-time is normalized to have the same offset as this date-time.
      * <p>
@@ -1620,30 +1622,27 @@ public final class OffsetDateTime
      * <p>
      * If the unit is not a {@code ChronoUnit}, then the result of this method
      * is obtained by invoking {@code TemporalUnit.between(Temporal, Temporal)}
-     * passing {@code this} as the first argument and the input temporal as
-     * the second argument.
+     * passing {@code this} as the first argument and the converted input temporal
+     * as the second argument.
      * <p>
      * This instance is immutable and unaffected by this method call.
      *
-     * @param endDateTime  the end date-time, which must be an {@code OffsetDateTime}, not null
+     * @param endExclusive  the end date, exclusive, which is converted to an {@code OffsetDateTime}, not null
      * @param unit  the unit to measure the amount in, not null
      * @return the amount of time between this date-time and the end date-time
-     * @throws DateTimeException if the amount cannot be calculated
+     * @throws DateTimeException if the amount cannot be calculated, or the end
+     *  temporal cannot be converted to an {@code OffsetDateTime}
      * @throws UnsupportedTemporalTypeException if the unit is not supported
      * @throws ArithmeticException if numeric overflow occurs
      */
     @Override
-    public long until(Temporal endDateTime, TemporalUnit unit) {
-        if (endDateTime instanceof OffsetDateTime == false) {
-            Objects.requireNonNull(endDateTime, "endDateTime");
-            throw new DateTimeException("Unable to calculate amount as objects are of two different types");
-        }
+    public long until(Temporal endExclusive, TemporalUnit unit) {
+        OffsetDateTime end = OffsetDateTime.from(endExclusive);
         if (unit instanceof ChronoUnit) {
-            OffsetDateTime end = (OffsetDateTime) endDateTime;
             end = end.withOffsetSameInstant(offset);
             return dateTime.until(end.dateTime, unit);
         }
-        return unit.between(this, endDateTime);
+        return unit.between(this, end);
     }
 
     /**

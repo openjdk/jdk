@@ -53,7 +53,7 @@ import sun.swing.UIAction;
 import sun.awt.AppContext;
 
 /**
- * A Windows L&F implementation of PopupMenuUI.  This implementation
+ * A Windows L&amp;F implementation of PopupMenuUI.  This implementation
  * is a "combined" view/controller.
  *
  * @author Georges Saab

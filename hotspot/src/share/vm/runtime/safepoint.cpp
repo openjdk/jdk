@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -519,8 +519,8 @@ void SafepointSynchronize::do_cleanup_tasks() {
   }
 
   {
-    TraceTime t4("sweeping nmethods", TraceSafepointCleanupTime);
-    NMethodSweeper::scan_stacks();
+    TraceTime t4("mark nmethods", TraceSafepointCleanupTime);
+    NMethodSweeper::mark_active_nmethods();
   }
 
   if (SymbolTable::needs_rehashing()) {
@@ -745,14 +745,14 @@ void SafepointSynchronize::block(JavaThread *thread) {
 #endif
 
 static void print_ptrs(intptr_t oldptr, intptr_t newptr, bool wasoop) {
-  bool is_oop = newptr ? ((oop)newptr)->is_oop() : false;
+  bool is_oop = newptr ? (cast_to_oop(newptr))->is_oop() : false;
   tty->print_cr(PTR_FORMAT PTR_PAD " %s %c " PTR_FORMAT PTR_PAD " %s %s",
                 oldptr, wasoop?"oop":"   ", oldptr == newptr ? ' ' : '!',
                 newptr, is_oop?"oop":"   ", (wasoop && !is_oop) ? "STALE" : ((wasoop==false&&is_oop==false&&oldptr !=newptr)?"STOMP":"     "));
 }
 
 static void print_longs(jlong oldptr, jlong newptr, bool wasoop) {
-  bool is_oop = newptr ? ((oop)(intptr_t)newptr)->is_oop() : false;
+  bool is_oop = newptr ? (cast_to_oop(newptr))->is_oop() : false;
   tty->print_cr(PTR64_FORMAT " %s %c " PTR64_FORMAT " %s %s",
                 oldptr, wasoop?"oop":"   ", oldptr == newptr ? ' ' : '!',
                 newptr, is_oop?"oop":"   ", (wasoop && !is_oop) ? "STALE" : ((wasoop==false&&is_oop==false&&oldptr !=newptr)?"STOMP":"     "));

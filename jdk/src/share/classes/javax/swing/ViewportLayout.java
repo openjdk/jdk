@@ -25,6 +25,7 @@
 
 package javax.swing;
 
+import java.awt.AWTError;
 import java.awt.LayoutManager;
 import java.awt.Component;
 import java.awt.Container;
@@ -116,7 +117,7 @@ public class ViewportLayout implements LayoutManager, Serializable
      *
      * @param parent  the container to lay out
      *
-     * @exception AWTError  if the target isn't the container specified to the
+     * @throws AWTError if the target isn't the container specified to the
      *                      <code>BoxLayout</code> constructor
      */
     public void layoutContainer(Container parent)

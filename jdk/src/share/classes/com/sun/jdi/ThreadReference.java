@@ -36,8 +36,8 @@ import java.util.List;
  * @author James McIlree
  * @since  1.3
  */
-public interface ThreadReference extends ObjectReference
-{
+@jdk.Exported
+public interface ThreadReference extends ObjectReference {
     /** Thread status is unknown */
     public final int THREAD_STATUS_UNKNOWN  =-1;
     /** Thread has completed execution */

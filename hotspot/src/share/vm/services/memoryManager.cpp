@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -45,7 +45,7 @@ HS_DTRACE_PROBE_DECL8(hotspot, mem__pool__gc__end, char*, int, char*, int,
 
 MemoryManager::MemoryManager() {
   _num_pools = 0;
-  _memory_mgr_obj = NULL;
+  (void)const_cast<instanceOop&>(_memory_mgr_obj = NULL);
 }
 
 void MemoryManager::add_pool(MemoryPool* pool) {

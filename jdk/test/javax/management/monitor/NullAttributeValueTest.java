@@ -23,11 +23,12 @@
 
 /*
  * @test
- * @bug 6200031
+ * @bug 6200031 8025206
  * @summary Test that the counter/gauge/string monitors emit a
  *          jmx.monitor.error.type notification when the attribute
  *          being monitored returns a null value.
  * @author Luis-Miguel Alventosa
+ * @author Shanliang JIANG
  * @run clean NullAttributeValueTest
  * @run build NullAttributeValueTest
  * @run main NullAttributeValueTest
@@ -39,7 +40,7 @@ import javax.management.monitor.*;
 public class NullAttributeValueTest implements NotificationListener {
 
     // Flag to notify that a message has been received
-    private boolean messageReceived = false;
+    private volatile boolean messageReceived = false;
 
     // MBean class
     public class ObservedObject implements ObservedObjectMBean {
@@ -83,7 +84,6 @@ public class NullAttributeValueTest implements NotificationListener {
      * Update the counter and check for notifications
      */
     public int counterMonitorNotification() throws Exception {
-
         CounterMonitor counterMonitor = null;
         try {
             MBeanServer server = MBeanServerFactory.newMBeanServer();
@@ -134,31 +134,17 @@ public class NullAttributeValueTest implements NotificationListener {
             echo(">>> START the CounterMonitor");
             counterMonitor.start();
 
-            // Wait for granularity period (multiplied by 2 for sure)
-            //
-            Thread.sleep(granularityperiod * 2);
-
-            // Check if notification was received
-            //
-            if (messageReceived) {
-                echo("\tOK: CounterMonitor notification received");
-            } else {
-                echo("\tKO: CounterMonitor notification missed or not emitted");
-                return 1;
-            }
+            return checkReceived(granularityperiod, "CounterMonitor");
         } finally {
             if (counterMonitor != null)
                 counterMonitor.stop();
         }
-
-        return 0;
     }
 
     /**
      * Update the gauge and check for notifications
      */
     public int gaugeMonitorNotification() throws Exception {
-
         GaugeMonitor gaugeMonitor = null;
         try {
             MBeanServer server = MBeanServerFactory.newMBeanServer();
@@ -212,31 +198,17 @@ public class NullAttributeValueTest implements NotificationListener {
             echo(">>> START the GaugeMonitor");
             gaugeMonitor.start();
 
-            // Wait for granularity period (multiplied by 2 for sure)
-            //
-            Thread.sleep(granularityperiod * 2);
-
-            // Check if notification was received
-            //
-            if (messageReceived) {
-                echo("\tOK: GaugeMonitor notification received");
-            } else {
-                echo("\tKO: GaugeMonitor notification missed or not emitted");
-                return 1;
-            }
+            return checkReceived(granularityperiod, "GaugeMonitor");
         } finally {
             if (gaugeMonitor != null)
                 gaugeMonitor.stop();
         }
-
-        return 0;
     }
 
     /**
      * Update the string and check for notifications
      */
     public int stringMonitorNotification() throws Exception {
-
         StringMonitor stringMonitor = null;
         try {
             MBeanServer server = MBeanServerFactory.newMBeanServer();
@@ -289,24 +261,11 @@ public class NullAttributeValueTest implements NotificationListener {
             echo(">>> START the StringMonitor");
             stringMonitor.start();
 
-            // Wait for granularity period (multiplied by 2 for sure)
-            //
-            Thread.sleep(granularityperiod * 2);
-
-            // Check if notification was received
-            //
-            if (messageReceived) {
-                echo("\tOK: StringMonitor notification received");
-            } else {
-                echo("\tKO: StringMonitor notification missed or not emitted");
-                return 1;
-            }
+            return checkReceived(granularityperiod, "StringMonitor");
         } finally {
             if (stringMonitor != null)
                 stringMonitor.stop();
         }
-
-        return 0;
     }
 
     /**
@@ -324,6 +283,21 @@ public class NullAttributeValueTest implements NotificationListener {
         error += stringMonitorNotification();
         echo(">>> ----------------------------------------");
         return error;
+    }
+
+    private int checkReceived(long granularityperiod, String caller) throws InterruptedException {
+        int i = 100;
+        do {
+            Thread.sleep(granularityperiod);
+        } while (!messageReceived && i-- > 0);
+
+        if (messageReceived) {
+            echo("\tOK: " + caller + " notification received");
+        } else {
+            echo("\tKO: " + caller + " notification missed or not emitted");
+        }
+
+        return messageReceived ? 0 : 1;
     }
 
     /*

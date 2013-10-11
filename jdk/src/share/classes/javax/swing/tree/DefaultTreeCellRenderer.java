@@ -60,8 +60,7 @@ import sun.swing.DefaultLookup;
  * that have a value of type {@code UIResource} are refreshed from the
  * defaults table. The following table lists the mapping between
  * {@code DefaultTreeCellRenderer} property and defaults table key:
- * <table border="1" cellpadding="1" cellspacing="0"
- *         valign="top" >
+ * <table border="1" cellpadding="1" cellspacing="0" summary="">
  *   <tr valign="top"  align="left">
  *     <th bgcolor="#CCCCFF" align="left">Property:
  *     <th bgcolor="#CCCCFF" align="left">Key:

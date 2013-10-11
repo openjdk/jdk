@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -125,28 +125,22 @@ public class DemoRun {
         String libprefix = os_name.contains("Windows")?"":"lib";
         String libsuffix = os_name.contains("Windows")?".dll":
                                 os_name.contains("OS X")?".dylib":".so";
-        boolean d64      =    ( os_name.contains("Solaris") ||
-                                os_name.contains("SunOS") )
-                           && ( os_arch.equals("sparcv9") ||
-                                os_arch.equals("amd64"));
         boolean hprof    = demo_name.equals("hprof");
-        String isa_dir   = d64?(File.separator+os_arch):"";
         String java      = jre_home
-                             + File.separator + "bin" + isa_dir
+                             + File.separator + "bin"
                              + File.separator + "java";
         /* Array of strings to be passed in for exec:
          *   1. java
          *   2. -Dtest.classes=.
-         *   3. -d64                 (optional)
-         *   4. -Xcheck:jni          (Just because it finds bugs)
-         *   5. -Xverify:all         (Make sure verification is on full blast)
-         *   6. -agent
+         *   3. -Xcheck:jni          (Just because it finds bugs)
+         *   4. -Xverify:all         (Make sure verification is on full blast)
+         *   5. -agent
          *       vm_options
-         *   7+i. classname
+         *   6+i. classname
          */
         int nvm_options = 0;
         if ( vm_options != null ) nvm_options = vm_options.length;
-        String cmd[]     = new String[1 + (d64?1:0) + 7 + nvm_options];
+        String cmd[]     = new String[1 + 7 + nvm_options];
         String cmdLine;
         int exitStatus;
         int i,j;
@@ -160,10 +154,6 @@ public class DemoRun {
         cmdLine += (cmd[i++] = cdir);
         cmdLine += " ";
         cmdLine += (cmd[i++] = "-Dtest.classes=" + cdir);
-        if ( d64 ) {
-            cmdLine += " ";
-            cmdLine += (cmd[i++] = "-d64");
-        }
         cmdLine += " ";
         cmdLine += (cmd[i++] = "-Xcheck:jni");
         cmdLine += " ";
@@ -178,7 +168,7 @@ public class DemoRun {
                          + File.separator + "demo"
                          + File.separator + "jvmti"
                          + File.separator + demo_name
-                         + File.separator + "lib" + isa_dir
+                         + File.separator + "lib"
                          + File.separator + libprefix + demo_name + libsuffix;
             cmdLine += " ";
             cmdLine += (cmd[i++] = "-agentpath:" + libname

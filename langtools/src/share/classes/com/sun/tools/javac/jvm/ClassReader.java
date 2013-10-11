@@ -56,6 +56,7 @@ import com.sun.tools.javac.util.JCDiagnostic.DiagnosticPosition;
 import static com.sun.tools.javac.code.Flags.*;
 import static com.sun.tools.javac.code.Kinds.*;
 import static com.sun.tools.javac.code.TypeTag.CLASS;
+import static com.sun.tools.javac.code.TypeTag.TYPEVAR;
 import static com.sun.tools.javac.jvm.ClassFile.*;
 import static com.sun.tools.javac.jvm.ClassFile.Version.*;
 
@@ -702,6 +703,12 @@ public class ClassReader {
             while (signature[sigp] == '^') {
                 sigp++;
                 thrown = thrown.prepend(sigToType());
+            }
+            // if there is a typevar in the throws clause we should state it.
+            for (List<Type> l = thrown; l.nonEmpty(); l = l.tail) {
+                if (l.head.hasTag(TYPEVAR)) {
+                    l.head.tsym.flags_field |= THROWS;
+                }
             }
             return new MethodType(argtypes,
                                   restype,
@@ -1439,8 +1446,7 @@ public class ClassReader {
     void attachTypeAnnotations(final Symbol sym) {
         int numAttributes = nextChar();
         if (numAttributes != 0) {
-            ListBuffer<TypeAnnotationProxy> proxies =
-                ListBuffer.lb();
+            ListBuffer<TypeAnnotationProxy> proxies = new ListBuffer<>();
             for (int i = 0; i < numAttributes; i++)
                 proxies.append(readTypeAnnotation());
             annotate.normal(new TypeAnnotationCompleter(sym, proxies.toList()));
@@ -1589,7 +1595,7 @@ public class ClassReader {
 
         { // See whether there is location info and read it
             int len = nextByte();
-            ListBuffer<Integer> loc = ListBuffer.lb();
+            ListBuffer<Integer> loc = new ListBuffer<>();
             for (int i = 0; i < len * TypeAnnotationPosition.TypePathEntry.bytesPerEntry; ++i)
                 loc = loc.append(nextByte());
             position.location = TypeAnnotationPosition.getTypePathFromBinary(loc.toList());
@@ -1939,7 +1945,7 @@ public class ClassReader {
         }
 
         List<Attribute.TypeCompound> deproxyTypeCompoundList(List<TypeAnnotationProxy> proxies) {
-            ListBuffer<Attribute.TypeCompound> buf = ListBuffer.lb();
+            ListBuffer<Attribute.TypeCompound> buf = new ListBuffer<>();
             for (TypeAnnotationProxy proxy: proxies) {
                 Attribute.Compound compound = deproxyCompound(proxy.compound);
                 Attribute.TypeCompound typeCompound = new Attribute.TypeCompound(compound, proxy.position);
@@ -2026,7 +2032,7 @@ public class ClassReader {
         boolean isVarargs = (flags & VARARGS) != 0;
         if (isVarargs) {
             Type varargsElem = args.last();
-            ListBuffer<Type> adjustedArgs = ListBuffer.lb();
+            ListBuffer<Type> adjustedArgs = new ListBuffer<>();
             for (Type t : args) {
                 adjustedArgs.append(t != varargsElem ?
                     t :
