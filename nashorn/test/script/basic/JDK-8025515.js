@@ -22,50 +22,37 @@
  */
 
 /**
- * JDK-8023026: Array.prototype iterator functions like forEach, reduce should work for Java arrays, lists
+ * JDK-8025515: Performance issues with Source.getLine()
  *
  * @test
  * @run
  */
 
-function checkIterations(obj) {
-    if (typeof obj.getClass == 'function') {
-        print("iterating on an object of " + obj.getClass());
-    } else {
-        print("iterating on " + String(obj));
+// Make sure synthetic names of anonymous functions have correct line numbers
+
+function testMethodName(f, expected) {
+    try {
+        f();
+        fail("expected error");
+    } catch (e) {
+        var stack = e.getStackTrace();
+        if (stack[0].methodName !== expected) {
+            fail("got " + stack[0].methodName + ", expected " + expected);
+        }
     }
-
-    Array.prototype.forEach.call(obj,
-        function(x) { print("forEach " + x); });
-
-    print("left sum " + Array.prototype.reduce.call(obj,
-        function(x, y) { print("reduce", x, y); return x + y; }));
-
-    print("right sum " + Array.prototype.reduceRight.call(obj,
-        function(x, y) { print("reduceRight", x, y); return x + y; }));
-
-    print("squared " + Array.prototype.map.call(obj,
-        function(x) x*x));
 }
 
-var array = new (Java.type("int[]"))(4);
-for (var i in array) {
-    array[i] = i;
-}
+testMethodName(function() {
+    return a.b.c;
+}, "_L45");
 
-checkIterations(array);
+testMethodName(function() { throw new Error() }, "_L49");
 
-var list = new java.util.ArrayList();
-list.add(1);
-list.add(3);
-list.add(5);
-list.add(7);
+var f = (function() {
+    return function() { a.b.c; };
+})();
+testMethodName(f, "_L51$_L52");
 
-checkIterations(list);
-
-var mirror = loadWithNewGlobal({
-    name: "test",
-    script: "[2, 4, 6, 8]"
-});
-
-checkIterations(mirror);
+testMethodName((function() {
+    return function() { return a.b.c; };
+})(), "_L56$_L57");

@@ -33,7 +33,6 @@ var JFX_SWING_CLASSES    = [];
 var JFX_SWT_CLASSES      = [];
 
 function LOAD_FX_CLASSES(clsList) {
-
     for each (var cls in clsList) {
         // Ex. Stage = Java.type("javafx.stage.Stage");
         this[cls[cls.length - 1]] = Java.type(cls.join("."));
@@ -146,3 +145,5 @@ function LOAD_FX_CLASSES(clsList) {
         }
     }
 })();
+
+LOAD_FX_CLASSES(JFX_BASE_CLASSES);

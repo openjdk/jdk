@@ -22,50 +22,22 @@
  */
 
 /**
- * JDK-8023026: Array.prototype iterator functions like forEach, reduce should work for Java arrays, lists
+ * JDK-8025488: Error.captureStackTrace should not format error stack
  *
  * @test
  * @run
  */
 
-function checkIterations(obj) {
-    if (typeof obj.getClass == 'function') {
-        print("iterating on an object of " + obj.getClass());
-    } else {
-        print("iterating on " + String(obj));
-    }
 
-    Array.prototype.forEach.call(obj,
-        function(x) { print("forEach " + x); });
+function MyError () {
+    Error.call(this);
+    Error.captureStackTrace(this);
+    this.arr = {};
+};
 
-    print("left sum " + Array.prototype.reduce.call(obj,
-        function(x, y) { print("reduce", x, y); return x + y; }));
-
-    print("right sum " + Array.prototype.reduceRight.call(obj,
-        function(x, y) { print("reduceRight", x, y); return x + y; }));
-
-    print("squared " + Array.prototype.map.call(obj,
-        function(x) x*x));
+MyError.prototype.toString = function() {
+    return this.arr.toString();
 }
 
-var array = new (Java.type("int[]"))(4);
-for (var i in array) {
-    array[i] = i;
-}
-
-checkIterations(array);
-
-var list = new java.util.ArrayList();
-list.add(1);
-list.add(3);
-list.add(5);
-list.add(7);
-
-checkIterations(list);
-
-var mirror = loadWithNewGlobal({
-    name: "test",
-    script: "[2, 4, 6, 8]"
-});
-
-checkIterations(mirror);
+var e = new MyError(); 
+print(e.stack);
