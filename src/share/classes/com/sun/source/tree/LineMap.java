@@ -31,7 +31,7 @@ package com.sun.source.tree;
  *
  * @since 1.6
  */
-@jdk.Supported
+@jdk.Exported
 public interface LineMap {
     /**
      * Find the start position of a line.
