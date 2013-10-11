@@ -501,20 +501,6 @@ AWT_ASSERT_APPKIT_THREAD;
     // window exposing in _setVisible:(BOOL)
 }
 
-- (BOOL)windowShouldZoom:(NSWindow *)window toFrame:(NSRect)proposedFrame {
-AWT_ASSERT_APPKIT_THREAD;
-
-    [AWTToolkit eventCountPlusPlus];
-    JNIEnv *env = [ThreadUtilities getJNIEnv];
-    jobject platformWindow = [self.javaPlatformWindow jObjectWithEnv:env];
-    if (platformWindow != NULL) {
-        static JNF_MEMBER_CACHE(jm_deliverZoom, jc_CPlatformWindow, "deliverZoom", "(Z)V");
-        JNFCallVoidMethod(env, platformWindow, jm_deliverZoom, ![window isZoomed]);
-        (*env)->DeleteLocalRef(env, platformWindow);
-    }
-    return YES;
-}
-
 - (void) _deliverIconify:(BOOL)iconify {
 AWT_ASSERT_APPKIT_THREAD;
 
