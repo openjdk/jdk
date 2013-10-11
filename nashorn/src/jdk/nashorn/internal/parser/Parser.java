@@ -2107,7 +2107,7 @@ loop:
             final String ident = (String)expectValue(IDENT);
 
             if (type != COLON) {
-                final long getSetToken = token;
+                final long getSetToken = propertyToken;
 
                 switch (ident) {
                 case "get":
