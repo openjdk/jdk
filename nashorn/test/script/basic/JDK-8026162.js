@@ -22,22 +22,27 @@
  */
 
 /**
- * JDK-8025488: Error.captureStackTrace should not format error stack
+ * JDK-8026162: "this" in SAM adapter functions is wrong
  *
  * @test
  * @run
  */
 
+var global = this;
 
-function MyError () {
-    Error.call(this);
-    Error.captureStackTrace(this);
-    this.arr = {};
-};
+new java.lang.Runnable(
+  function func() {
+      if (this !== global) {
+          fail("Expected 'this' to be global instance");
+      }
+  }
+).run();
 
-MyError.prototype.toString = function() {
-    return this.arr.toString();
-}
-
-var e = new MyError(); 
-print(e.stack.replace(/\\/g, '/'));
+new java.lang.Runnable(
+  function func() {
+      'use strict';
+      if (typeof this != 'undefined') {
+          fail("Expected 'undefined' to be global instance");
+      }
+  }
+).run();
