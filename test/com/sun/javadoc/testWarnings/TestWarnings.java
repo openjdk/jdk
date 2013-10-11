@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug      4515705 4804296 4702454 4697036
+ * @bug      4515705 4804296 4702454 4697036 8025633
  * @summary  Make sure that first sentence warning only appears once.
  *           Make sure that only warnings/errors are printed when quiet is used.
  *           Make sure that links to private/unincluded methods do not cause
@@ -65,8 +65,8 @@ public class TestWarnings extends JavadocTester {
     };
 
     private static final String[][] TEST2 = {
-        {BUG_ID + FS + "pkg" + FS + "X.html", "<a href=\"../pkg/X.html#m()\"><code>m()</code></a><br/>"},
-        {BUG_ID + FS + "pkg" + FS + "X.html", "<a href=\"../pkg/X.html#X()\"><code>X()</code></a><br/>"},
+        {BUG_ID + FS + "pkg" + FS + "X.html", "<a href=\"../pkg/X.html#m--\"><code>m()</code></a><br/>"},
+        {BUG_ID + FS + "pkg" + FS + "X.html", "<a href=\"../pkg/X.html#X--\"><code>X()</code></a><br/>"},
         {BUG_ID + FS + "pkg" + FS + "X.html", "<a href=\"../pkg/X.html#f\"><code>f</code></a><br/>"},
     };
 
