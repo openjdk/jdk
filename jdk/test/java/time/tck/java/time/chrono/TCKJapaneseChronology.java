@@ -79,6 +79,7 @@ import java.time.Year;
 import java.time.ZoneId;
 import java.time.ZoneOffset;
 import java.time.chrono.ChronoLocalDate;
+import java.time.chrono.ChronoPeriod;
 import java.time.chrono.Chronology;
 import java.time.chrono.Era;
 import java.time.chrono.IsoChronology;
@@ -87,6 +88,7 @@ import java.time.chrono.JapaneseDate;
 import java.time.chrono.JapaneseEra;
 import java.time.chrono.MinguoChronology;
 import java.time.chrono.MinguoDate;
+import java.time.chrono.ThaiBuddhistChronology;
 import java.time.format.ResolverStyle;
 import java.time.temporal.ChronoField;
 import java.time.temporal.ChronoUnit;
@@ -615,8 +617,8 @@ public class TCKJapaneseChronology {
     public void test_periodUntilDate() {
         JapaneseDate mdate1 = JapaneseDate.of(1970, 1, 1);
         JapaneseDate mdate2 = JapaneseDate.of(1971, 2, 2);
-        Period period = mdate1.until(mdate2);
-        assertEquals(period, Period.of(1, 1, 1));
+        ChronoPeriod period = mdate1.until(mdate2);
+        assertEquals(period, JapaneseChronology.INSTANCE.period(1, 1, 1));
     }
 
     @Test
@@ -632,8 +634,8 @@ public class TCKJapaneseChronology {
         JapaneseDate mdate1 = JapaneseDate.of(1970, 1, 1);
         JapaneseDate mdate2 = JapaneseDate.of(1971, 2, 2);
         MinguoDate ldate2 = MinguoChronology.INSTANCE.date(mdate2);
-        Period period = mdate1.until(ldate2);
-        assertEquals(period, Period.of(1, 1, 1));
+        ChronoPeriod period = mdate1.until(ldate2);
+        assertEquals(period, JapaneseChronology.INSTANCE.period(1, 1, 1));
     }
 
     //-----------------------------------------------------------------------

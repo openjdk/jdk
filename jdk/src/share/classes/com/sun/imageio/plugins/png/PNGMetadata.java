@@ -29,12 +29,10 @@ import java.awt.image.ColorModel;
 import java.awt.image.IndexColorModel;
 import java.awt.image.SampleModel;
 import java.util.ArrayList;
-import java.util.Iterator;
 import java.util.StringTokenizer;
 import javax.imageio.ImageTypeSpecifier;
 import javax.imageio.metadata.IIOInvalidTreeException;
 import javax.imageio.metadata.IIOMetadata;
-import javax.imageio.metadata.IIOMetadataFormat;
 import javax.imageio.metadata.IIOMetadataFormatImpl;
 import javax.imageio.metadata.IIOMetadataNode;
 import org.w3c.dom.Node;
@@ -49,42 +47,42 @@ public class PNGMetadata extends IIOMetadata implements Cloneable {
         = "com.sun.imageio.plugins.png.PNGMetadataFormat";
 
     // Color types for IHDR chunk
-    public static final String[] IHDR_colorTypeNames = {
+    static final String[] IHDR_colorTypeNames = {
         "Grayscale", null, "RGB", "Palette",
         "GrayAlpha", null, "RGBAlpha"
     };
 
-    public static final int[] IHDR_numChannels = {
+    static final int[] IHDR_numChannels = {
         1, 0, 3, 3, 2, 0, 4
     };
 
     // Bit depths for IHDR chunk
-    public static final String[] IHDR_bitDepths = {
+    static final String[] IHDR_bitDepths = {
         "1", "2", "4", "8", "16"
     };
 
     // Compression methods for IHDR chunk
-    public static final String[] IHDR_compressionMethodNames = {
+    static final String[] IHDR_compressionMethodNames = {
         "deflate"
     };
 
     // Filter methods for IHDR chunk
-    public static final String[] IHDR_filterMethodNames = {
+    static final String[] IHDR_filterMethodNames = {
         "adaptive"
     };
 
     // Interlace methods for IHDR chunk
-    public static final String[] IHDR_interlaceMethodNames = {
+    static final String[] IHDR_interlaceMethodNames = {
         "none", "adam7"
     };
 
     // Compression methods for iCCP chunk
-    public static final String[] iCCP_compressionMethodNames = {
+    static final String[] iCCP_compressionMethodNames = {
         "deflate"
     };
 
     // Compression methods for zTXt chunk
-    public static final String[] zTXt_compressionMethodNames = {
+    static final String[] zTXt_compressionMethodNames = {
         "deflate"
     };
 
@@ -95,12 +93,12 @@ public class PNGMetadata extends IIOMetadata implements Cloneable {
     public static final int PHYS_UNIT_METER = 1;
 
     // Unit specifiers for pHYs chunk
-    public static final String[] unitSpecifierNames = {
+    static final String[] unitSpecifierNames = {
         "unknown", "meter"
     };
 
     // Rendering intents for sRGB chunk
-    public static final String[] renderingIntentNames = {
+    static final String[] renderingIntentNames = {
         "Perceptual", // 0
         "Relative colorimetric", // 1
         "Saturation", // 2
@@ -109,7 +107,7 @@ public class PNGMetadata extends IIOMetadata implements Cloneable {
     };
 
     // Color space types for Chroma->ColorSpaceType node
-    public static final String[] colorSpaceTypeNames = {
+    static final String[] colorSpaceTypeNames = {
         "GRAY", null, "RGB", "RGB",
         "GRAY", null, "RGB"
     };

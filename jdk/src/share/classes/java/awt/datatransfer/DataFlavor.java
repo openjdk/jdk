@@ -90,7 +90,7 @@ import sun.awt.datatransfer.DataTransferer;
  * the same results.
  * <p>
  * For more information on the using data transfer with Swing see
- * the <a href="http://java.sun.com/docs/books/tutorial/uiswing/misc/dnd.html">
+ * the <a href="http://docs.oracle.com/javase/tutorial/uiswing/dnd/index.html">
  * How to Use Drag and Drop and Data Transfer</a>,
  * section in <em>Java Tutorial</em>.
  *

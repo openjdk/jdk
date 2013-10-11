@@ -26,9 +26,9 @@
 package test.java.time.chrono;
 
 import static java.time.temporal.ChronoField.DAY_OF_MONTH;
+import static java.time.temporal.ChronoField.DAY_OF_YEAR;
 import static java.time.temporal.ChronoField.MONTH_OF_YEAR;
 import static java.time.temporal.ChronoField.YEAR;
-import static java.time.temporal.ChronoField.DAY_OF_YEAR;
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertTrue;
 import static org.testng.Assert.fail;
@@ -39,12 +39,12 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.OffsetDateTime;
-import java.time.Period;
 import java.time.ZoneId;
 import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
 import java.time.chrono.ChronoLocalDate;
 import java.time.chrono.ChronoLocalDateTime;
+import java.time.chrono.ChronoPeriod;
 import java.time.chrono.ChronoZonedDateTime;
 import java.time.chrono.Chronology;
 import java.time.chrono.HijrahChronology;
@@ -330,26 +330,26 @@ public class TestUmmAlQuraChronology {
     @DataProvider(name="datesForPeriod")
     Object[][] data_Period() {
         return new Object[][] {
-            {HijrahDate.of(1350, 5, 15), HijrahDate.of(1434, 7, 20), Period.of(84, 2, 5)},
-            {HijrahDate.of(1403, 5, 28), HijrahDate.of(1434, 7, 20), Period.of(31, 1, 22)},
-            {HijrahDate.of(1434, 7, 20), HijrahDate.of(1484, 2, 15), Period.of(49, 6, 24)},
-            {HijrahDate.of(1500, 6, 12), HijrahDate.of(1450, 4, 21), Period.of(-50, -1, -20)},
-            {HijrahDate.of(1549, 3, 11), HijrahDate.of(1550, 3, 10), Period.of(0, 11, 28)},
+            {HijrahDate.of(1350, 5, 15), HijrahDate.of(1434, 7, 20), HijrahChronology.INSTANCE.period(84, 2, 5)},
+            {HijrahDate.of(1403, 5, 28), HijrahDate.of(1434, 7, 20), HijrahChronology.INSTANCE.period(31, 1, 22)},
+            {HijrahDate.of(1434, 7, 20), HijrahDate.of(1484, 2, 15), HijrahChronology.INSTANCE.period(49, 6, 24)},
+            {HijrahDate.of(1500, 6, 12), HijrahDate.of(1450, 4, 21), HijrahChronology.INSTANCE.period(-50, -1, -20)},
+            {HijrahDate.of(1549, 3, 11), HijrahDate.of(1550, 3, 10), HijrahChronology.INSTANCE.period(0, 11, 28)},
         };
     }
 
     // Test to get the Period between two given dates
     @Test(dataProvider="datesForPeriod")
-    public void test_until(HijrahDate h1, HijrahDate h2, Period p) {
-        Period period = h1.until(h2);
+    public void test_until(HijrahDate h1, HijrahDate h2, ChronoPeriod p) {
+        ChronoPeriod period = h1.until(h2);
         assertEquals(period, p);
     }
 
     // Test to get the Period between dates in different chronologies
     @Test(dataProvider="datesForPeriod")
-    public void test_periodUntilDiffChrono(HijrahDate h1, HijrahDate h2, Period p) {
+    public void test_periodUntilDiffChrono(HijrahDate h1, HijrahDate h2, ChronoPeriod p) {
         MinguoDate m = MinguoChronology.INSTANCE.date(h2);
-        Period period = h1.until(m);
+        ChronoPeriod period = h1.until(m);
         assertEquals(period, p);
     }
 
