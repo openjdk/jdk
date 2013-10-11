@@ -87,8 +87,9 @@ public class SelectToolTask extends Task {
             this(toolName, false);
         }
 
-        ToolChoices(String toolName, boolean boostrap) {
+        ToolChoices(String toolName, boolean bootstrap) {
             this.toolName = toolName;
+            this.bootstrap = bootstrap;
         }
 
         @Override

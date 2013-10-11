@@ -242,31 +242,6 @@ public class TCKLocalDateTime extends AbstractDateTimeTest {
     }
 
     //-----------------------------------------------------------------------
-    @Test
-    public void test_serialization() throws Exception {
-        assertSerializable(TEST_2007_07_15_12_30_40_987654321);
-        assertSerializable(LocalDateTime.MIN);
-        assertSerializable(LocalDateTime.MAX);
-    }
-
-    @Test
-    public void test_serialization_format() throws Exception {
-        ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        try (DataOutputStream dos = new DataOutputStream(baos) ) {
-            dos.writeByte(5);
-            dos.writeInt(2012);
-            dos.writeByte(9);
-            dos.writeByte(16);
-            dos.writeByte(22);
-            dos.writeByte(17);
-            dos.writeByte(59);
-            dos.writeInt(459_000_000);
-        }
-        byte[] bytes = baos.toByteArray();
-        assertSerializedBySer(LocalDateTime.of(2012, 9, 16, 22, 17, 59, 459_000_000), bytes);
-    }
-
-    //-----------------------------------------------------------------------
     // constants
     //-----------------------------------------------------------------------
     @Test
@@ -2920,24 +2895,43 @@ public class TCKLocalDateTime extends AbstractDateTimeTest {
     }
 
     @Test(dataProvider="periodUntilUnit")
-    public void test_periodUntil_TemporalUnit(LocalDateTime dt1, LocalDateTime dt2, TemporalUnit unit, long expected) {
+    public void test_until_TemporalUnit(LocalDateTime dt1, LocalDateTime dt2, TemporalUnit unit, long expected) {
         long amount = dt1.until(dt2, unit);
         assertEquals(amount, expected);
     }
 
     @Test(dataProvider="periodUntilUnit")
-    public void test_periodUntil_TemporalUnit_negated(LocalDateTime dt1, LocalDateTime dt2, TemporalUnit unit, long expected) {
+    public void test_until_TemporalUnit_negated(LocalDateTime dt1, LocalDateTime dt2, TemporalUnit unit, long expected) {
         long amount = dt2.until(dt1, unit);
         assertEquals(amount, -expected);
     }
 
+    @Test(dataProvider="periodUntilUnit")
+    public void test_until_TemporalUnit_between(LocalDateTime dt1, LocalDateTime dt2, TemporalUnit unit, long expected) {
+        long amount = unit.between(dt1, dt2);
+        assertEquals(amount, expected);
+    }
+
+    @Test
+    public void test_until_convertedType() {
+        LocalDateTime start = LocalDateTime.of(2010, 6, 30, 2, 30);
+        OffsetDateTime end = start.plusDays(2).atOffset(OFFSET_PONE);
+        assertEquals(start.until(end, DAYS), 2);
+    }
+
+    @Test(expectedExceptions=DateTimeException.class)
+    public void test_until_invalidType() {
+        LocalDateTime start = LocalDateTime.of(2010, 6, 30, 2, 30);
+        start.until(LocalTime.of(11, 30), DAYS);
+    }
+
     @Test(expectedExceptions = NullPointerException.class)
-    public void test_periodUntil_TemporalUnit_nullEnd() {
+    public void test_until_TemporalUnit_nullEnd() {
         TEST_2007_07_15_12_30_40_987654321.until(null, HOURS);
     }
 
     @Test(expectedExceptions = NullPointerException.class)
-    public void test_periodUntil_TemporalUnit_nullUnit() {
+    public void test_until_TemporalUnit_nullUnit() {
         TEST_2007_07_15_12_30_40_987654321.until(TEST_2007_07_15_12_30_40_987654321, null);
     }
 

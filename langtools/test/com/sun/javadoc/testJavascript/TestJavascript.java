@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug      4665566 4855876 7025314 8012375 8015997
+ * @bug      4665566 4855876 7025314 8012375 8015997 8016328
  * @summary  Verify that the output has the right javascript.
  * @author   jamieh
  * @library  ../lib/
@@ -56,6 +56,12 @@ public class TestJavascript extends JavadocTester {
             "    if (targetPage.indexOf(\":\") != -1 || (targetPage != \"\" && !validURL(targetPage)))" + NL +
             "        targetPage = \"undefined\";" + NL +
             "    function validURL(url) {" + NL +
+            "        try {" + NL +
+            "            url = decodeURIComponent(url);" + NL +
+            "        }" + NL +
+            "        catch (error) {" + NL +
+            "            return false;" + NL +
+            "        }" + NL +
             "        var pos = url.indexOf(\".html\");" + NL +
             "        if (pos == -1 || pos != url.length - 5)" + NL +
             "            return false;" + NL +
@@ -67,7 +73,8 @@ public class TestJavascript extends JavadocTester {
             "            if ('a' <= ch && ch <= 'z' ||" + NL +
             "                    'A' <= ch && ch <= 'Z' ||" + NL +
             "                    ch == '$' ||" + NL +
-            "                    ch == '_') {" + NL +
+            "                    ch == '_' ||" + NL +
+            "                    ch.charCodeAt(0) > 127) {" + NL +
             "                allowNumber = true;" + NL +
             "                allowSep = true;" + NL +
             "            } else if ('0' <= ch && ch <= '9'" + NL +

@@ -1064,7 +1064,7 @@ const Type *BoolTest::cc2logical( const Type *CC ) const {
 // Print special per-node info
 #ifndef PRODUCT
 void BoolTest::dump_on(outputStream *st) const {
-  const char *msg[] = {"eq","gt","??","lt","ne","le","??","ge"};
+  const char *msg[] = {"eq","gt","of","lt","ne","le","nof","ge"};
   st->print(msg[_test]);
 }
 #endif
@@ -1126,7 +1126,7 @@ Node *BoolNode::Ideal(PhaseGVN *phase, bool can_reshape) {
   Node *cmp = in(1);
   if( !cmp->is_Sub() ) return NULL;
   int cop = cmp->Opcode();
-  if( cop == Op_FastLock || cop == Op_FastUnlock ) return NULL;
+  if( cop == Op_FastLock || cop == Op_FastUnlock || cop == Op_FlagsProj) return NULL;
   Node *cmp1 = cmp->in(1);
   Node *cmp2 = cmp->in(2);
   if( !cmp1 ) return NULL;

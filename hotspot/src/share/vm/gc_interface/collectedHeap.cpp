@@ -87,15 +87,15 @@ MetaspaceSummary CollectedHeap::create_metaspace_summary() {
   const MetaspaceSizes meta_space(
       MetaspaceAux::allocated_capacity_bytes(),
       MetaspaceAux::allocated_used_bytes(),
-      MetaspaceAux::reserved_in_bytes());
+      MetaspaceAux::reserved_bytes());
   const MetaspaceSizes data_space(
       MetaspaceAux::allocated_capacity_bytes(Metaspace::NonClassType),
       MetaspaceAux::allocated_used_bytes(Metaspace::NonClassType),
-      MetaspaceAux::reserved_in_bytes(Metaspace::NonClassType));
+      MetaspaceAux::reserved_bytes(Metaspace::NonClassType));
   const MetaspaceSizes class_space(
       MetaspaceAux::allocated_capacity_bytes(Metaspace::ClassType),
       MetaspaceAux::allocated_used_bytes(Metaspace::ClassType),
-      MetaspaceAux::reserved_in_bytes(Metaspace::ClassType));
+      MetaspaceAux::reserved_bytes(Metaspace::ClassType));
 
   return MetaspaceSummary(meta_space, data_space, class_space);
 }

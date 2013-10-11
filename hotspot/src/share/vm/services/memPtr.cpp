@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,9 +34,9 @@ jint SequenceGenerator::next() {
   jint seq = Atomic::add(1, &_seq_number);
   if (seq < 0) {
     MemTracker::shutdown(MemTracker::NMT_sequence_overflow);
+  } else {
+    NOT_PRODUCT(_max_seq_number = (seq > _max_seq_number) ? seq : _max_seq_number;)
   }
-  assert(seq > 0, "counter overflow");
-  NOT_PRODUCT(_max_seq_number = (seq > _max_seq_number) ? seq : _max_seq_number;)
   return seq;
 }
 

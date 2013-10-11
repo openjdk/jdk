@@ -231,7 +231,9 @@ public interface TemporalUnit {
      * Calculates the amount of time between two temporal objects.
      * <p>
      * This calculates the amount in terms of this unit. The start and end
-     * points are supplied as temporal objects and must be of the same type.
+     * points are supplied as temporal objects and must be of compatible types.
+     * The implementation will convert the second type to be an instance of the
+     * first type before the calculating the amount.
      * The result will be negative if the end is before the start.
      * For example, the amount in hours between two temporal objects can be
      * calculated using {@code HOURS.between(startTime, endTime)}.
@@ -264,15 +266,22 @@ public interface TemporalUnit {
      * If the unit is not supported an {@code UnsupportedTemporalTypeException} must be thrown.
      * Implementations must not alter the specified temporal objects.
      *
-     * @param temporal1  the base temporal object, not null
-     * @param temporal2  the other temporal object, not null
-     * @return the amount of time between temporal1 and temporal2 in terms of this unit;
-     *  positive if temporal2 is later than temporal1, negative if earlier
-     * @throws DateTimeException if the amount cannot be calculated
+     * @implSpec
+     * Implementations must begin by checking to if the two temporals have the
+     * same type using {@code getClass()}. If they do not, then the result must be
+     * obtained by calling {@code temporal1Inclusive.until(temporal2Exclusive, this)}.
+     *
+     * @param temporal1Inclusive  the base temporal object, not null
+     * @param temporal2Exclusive  the other temporal object, exclusive, not null
+     * @return the amount of time between temporal1Inclusive and temporal2Exclusive
+     *  in terms of this unit; positive if temporal2Exclusive is later than
+     *  temporal1Inclusive, negative if earlier
+     * @throws DateTimeException if the amount cannot be calculated, or the end
+     *  temporal cannot be converted to the same type as the start temporal
      * @throws UnsupportedTemporalTypeException if the unit is not supported by the temporal
      * @throws ArithmeticException if numeric overflow occurs
      */
-    long between(Temporal temporal1, Temporal temporal2);
+    long between(Temporal temporal1Inclusive, Temporal temporal2Exclusive);
 
     //-----------------------------------------------------------------------
     /**

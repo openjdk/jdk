@@ -47,6 +47,11 @@
 
 // CollectorPolicy methods.
 
+// Align down. If the aligning result in 0, return 'alignment'.
+static size_t restricted_align_down(size_t size, size_t alignment) {
+  return MAX2(alignment, align_size_down_(size, alignment));
+}
+
 void CollectorPolicy::initialize_flags() {
   assert(max_alignment() >= min_alignment(),
       err_msg("max_alignment: " SIZE_FORMAT " less than min_alignment: " SIZE_FORMAT,
@@ -59,18 +64,26 @@ void CollectorPolicy::initialize_flags() {
     vm_exit_during_initialization("Incompatible initial and maximum heap sizes specified");
   }
 
-  if (MetaspaceSize > MaxMetaspaceSize) {
-    MaxMetaspaceSize = MetaspaceSize;
-  }
-  MetaspaceSize = MAX2(min_alignment(), align_size_down_(MetaspaceSize, min_alignment()));
-  // Don't increase Metaspace size limit above specified.
-  MaxMetaspaceSize = align_size_down(MaxMetaspaceSize, max_alignment());
+  // Do not use FLAG_SET_ERGO to update MaxMetaspaceSize, since this will
+  // override if MaxMetaspaceSize was set on the command line or not.
+  // This information is needed later to conform to the specification of the
+  // java.lang.management.MemoryUsage API.
+  //
+  // Ideally, we would be able to set the default value of MaxMetaspaceSize in
+  // globals.hpp to the aligned value, but this is not possible, since the
+  // alignment depends on other flags being parsed.
+  MaxMetaspaceSize = restricted_align_down(MaxMetaspaceSize, max_alignment());
+
   if (MetaspaceSize > MaxMetaspaceSize) {
     MetaspaceSize = MaxMetaspaceSize;
   }
 
-  MinMetaspaceExpansion = MAX2(min_alignment(), align_size_down_(MinMetaspaceExpansion, min_alignment()));
-  MaxMetaspaceExpansion = MAX2(min_alignment(), align_size_down_(MaxMetaspaceExpansion, min_alignment()));
+  MetaspaceSize = restricted_align_down(MetaspaceSize, min_alignment());
+
+  assert(MetaspaceSize <= MaxMetaspaceSize, "Must be");
+
+  MinMetaspaceExpansion = restricted_align_down(MinMetaspaceExpansion, min_alignment());
+  MaxMetaspaceExpansion = restricted_align_down(MaxMetaspaceExpansion, min_alignment());
 
   MinHeapDeltaBytes = align_size_up(MinHeapDeltaBytes, min_alignment());
 
@@ -124,15 +137,8 @@ bool CollectorPolicy::use_should_clear_all_soft_refs(bool v) {
 
 GenRemSet* CollectorPolicy::create_rem_set(MemRegion whole_heap,
                                            int max_covered_regions) {
-  switch (rem_set_name()) {
-  case GenRemSet::CardTable: {
-    CardTableRS* res = new CardTableRS(whole_heap, max_covered_regions);
-    return res;
-  }
-  default:
-    guarantee(false, "unrecognized GenRemSet::Name");
-    return NULL;
-  }
+  assert(rem_set_name() == GenRemSet::CardTable, "unrecognized GenRemSet::Name");
+  return new CardTableRS(whole_heap, max_covered_regions);
 }
 
 void CollectorPolicy::cleared_all_soft_refs() {
@@ -145,6 +151,30 @@ void CollectorPolicy::cleared_all_soft_refs() {
   _all_soft_refs_clear = true;
 }
 
+size_t CollectorPolicy::compute_max_alignment() {
+  // The card marking array and the offset arrays for old generations are
+  // committed in os pages as well. Make sure they are entirely full (to
+  // avoid partial page problems), e.g. if 512 bytes heap corresponds to 1
+  // byte entry and the os page size is 4096, the maximum heap size should
+  // be 512*4096 = 2MB aligned.
+
+  // There is only the GenRemSet in Hotspot and only the GenRemSet::CardTable
+  // is supported.
+  // Requirements of any new remembered set implementations must be added here.
+  size_t alignment = GenRemSet::max_alignment_constraint(GenRemSet::CardTable);
+
+  // Parallel GC does its own alignment of the generations to avoid requiring a
+  // large page (256M on some platforms) for the permanent generation.  The
+  // other collectors should also be updated to do their own alignment and then
+  // this use of lcm() should be removed.
+  if (UseLargePages && !UseParallelGC) {
+      // in presence of large pages we have to make sure that our
+      // alignment is large page aware
+      alignment = lcm(os::large_page_size(), alignment);
+  }
+
+  return alignment;
+}
 
 // GenCollectorPolicy methods.
 
@@ -173,29 +203,6 @@ void GenCollectorPolicy::initialize_size_policy(size_t init_eden_size,
                                         init_survivor_size,
                                         max_gc_pause_sec,
                                         GCTimeRatio);
-}
-
-size_t GenCollectorPolicy::compute_max_alignment() {
-  // The card marking array and the offset arrays for old generations are
-  // committed in os pages as well. Make sure they are entirely full (to
-  // avoid partial page problems), e.g. if 512 bytes heap corresponds to 1
-  // byte entry and the os page size is 4096, the maximum heap size should
-  // be 512*4096 = 2MB aligned.
-  size_t alignment = GenRemSet::max_alignment_constraint(rem_set_name());
-
-  // Parallel GC does its own alignment of the generations to avoid requiring a
-  // large page (256M on some platforms) for the permanent generation.  The
-  // other collectors should also be updated to do their own alignment and then
-  // this use of lcm() should be removed.
-  if (UseLargePages && !UseParallelGC) {
-      // in presence of large pages we have to make sure that our
-      // alignment is large page aware
-      alignment = lcm(os::large_page_size(), alignment);
-  }
-
-  assert(alignment >= min_alignment(), "Must be");
-
-  return alignment;
 }
 
 void GenCollectorPolicy::initialize_flags() {

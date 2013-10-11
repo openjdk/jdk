@@ -637,7 +637,7 @@ public class DeferredAttr extends JCTree.Visitor {
                     Env<AttrContext> localEnv = env.dup(tree);
                     JCExpression exprTree = (JCExpression)attribSpeculative(tree.getQualifierExpression(), localEnv,
                             attr.memberReferenceQualifierResult(tree));
-                    ListBuffer<Type> argtypes = ListBuffer.lb();
+                    ListBuffer<Type> argtypes = new ListBuffer<>();
                     for (Type t : types.findDescriptorType(pt).getParameterTypes()) {
                         argtypes.append(Type.noType);
                     }

@@ -351,7 +351,7 @@ void emit_d32_reloc(CodeBuffer &cbuf, int d32, RelocationHolder const& rspec,
         int format) {
 #ifdef ASSERT
   if (rspec.reloc()->type() == relocInfo::oop_type && d32 != 0 && d32 != (int)Universe::non_oop_word()) {
-    assert(oop(d32)->is_oop() && (ScavengeRootsInCode || !oop(d32)->is_scavengable()), "cannot embed scavengable oops in code");
+    assert(cast_to_oop(d32)->is_oop() && (ScavengeRootsInCode || !cast_to_oop(d32)->is_scavengable()), "cannot embed scavengable oops in code");
   }
 #endif
   cbuf.relocate(cbuf.insts_mark(), rspec, format);
@@ -1532,6 +1532,14 @@ RegMask Matcher::modL_proj_mask() {
 
 const RegMask Matcher::method_handle_invoke_SP_save_mask() {
   return EBP_REG_mask();
+}
+
+const RegMask Matcher::mathExactI_result_proj_mask() {
+  return EAX_REG_mask();
+}
+
+const RegMask Matcher::mathExactI_flags_proj_mask() {
+  return INT_FLAGS_mask();
 }
 
 // Returns true if the high 32 bits of the value is known to be zero.
@@ -4922,6 +4930,8 @@ operand cmpOp() %{
     greater_equal(0xD, "ge");
     less_equal(0xE, "le");
     greater(0xF, "g");
+    overflow(0x0, "o");
+    no_overflow(0x1, "no");
   %}
 %}
 
@@ -4939,6 +4949,8 @@ operand cmpOpU() %{
     greater_equal(0x3, "nb");
     less_equal(0x6, "be");
     greater(0x7, "nbe");
+    overflow(0x0, "o");
+    no_overflow(0x1, "no");
   %}
 %}
 
@@ -4957,6 +4969,8 @@ operand cmpOpUCF() %{
     greater_equal(0x3, "nb");
     less_equal(0x6, "be");
     greater(0x7, "nbe");
+    overflow(0x0, "o");
+    no_overflow(0x1, "no");
   %}
 %}
 
@@ -4974,6 +4988,8 @@ operand cmpOpUCF2() %{
     greater_equal(0x3, "nb");
     less_equal(0x6, "be");
     greater(0x7, "nbe");
+    overflow(0x0, "o");
+    no_overflow(0x1, "no");
   %}
 %}
 
@@ -4981,6 +4997,8 @@ operand cmpOpUCF2() %{
 operand cmpOp_fcmov() %{
   match(Bool);
 
+  predicate(n->as_Bool()->_test._test != BoolTest::overflow &&
+            n->as_Bool()->_test._test != BoolTest::no_overflow);
   format %{ "" %}
   interface(COND_INTER) %{
     equal        (0x0C8);
@@ -4989,6 +5007,8 @@ operand cmpOp_fcmov() %{
     greater_equal(0x1C0);
     less_equal   (0x0D0);
     greater      (0x1D0);
+    overflow(0x0, "o"); // not really supported by the instruction
+    no_overflow(0x1, "no"); // not really supported by the instruction
   %}
 %}
 
@@ -5004,6 +5024,8 @@ operand cmpOp_commute() %{
     greater_equal(0xE, "le");
     less_equal(0xD, "ge");
     greater(0xC, "l");
+    overflow(0x0, "o");
+    no_overflow(0x1, "no");
   %}
 %}
 
@@ -7496,6 +7518,31 @@ instruct cmovL_regUCF(cmpOpUCF cop, eFlagsRegUCF cr, eRegL dst, eRegL src) %{
 
 //----------Arithmetic Instructions--------------------------------------------
 //----------Addition Instructions----------------------------------------------
+
+instruct addExactI_rReg(eAXRegI dst, rRegI src, eFlagsReg cr)
+%{
+  match(AddExactI dst src);
+  effect(DEF cr);
+
+  format %{ "ADD    $dst, $src\t# addExact int" %}
+  ins_encode %{
+    __ addl($dst$$Register, $src$$Register);
+  %}
+  ins_pipe(ialu_reg_reg);
+%}
+
+instruct addExactI_rReg_imm(eAXRegI dst, immI src, eFlagsReg cr)
+%{
+  match(AddExactI dst src);
+  effect(DEF cr);
+
+  format %{ "ADD    $dst, $src\t# addExact int" %}
+  ins_encode %{
+    __ addl($dst$$Register, $src$$constant);
+  %}
+  ins_pipe(ialu_reg_reg);
+%}
+
 // Integer Addition Instructions
 instruct addI_eReg(rRegI dst, rRegI src, eFlagsReg cr) %{
   match(Set dst (AddI dst src));

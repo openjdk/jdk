@@ -179,9 +179,11 @@ class Universe: AllStatic {
   // The particular choice of collected heap.
   static CollectedHeap* _collectedHeap;
 
+  static intptr_t _non_oop_bits;
+
   // For UseCompressedOops.
   static struct NarrowPtrStruct _narrow_oop;
-  // For UseCompressedKlassPointers.
+  // For UseCompressedClassPointers.
   static struct NarrowPtrStruct _narrow_klass;
   static address _narrow_ptrs_base;
 
@@ -229,7 +231,7 @@ class Universe: AllStatic {
     _narrow_oop._base    = base;
   }
   static void     set_narrow_klass_base(address base) {
-    assert(UseCompressedKlassPointers, "no compressed klass ptrs?");
+    assert(UseCompressedClassPointers, "no compressed klass ptrs?");
     _narrow_klass._base   = base;
   }
   static void     set_narrow_oop_use_implicit_null_checks(bool use) {
@@ -353,7 +355,7 @@ class Universe: AllStatic {
   static int      narrow_oop_shift()                      { return  _narrow_oop._shift; }
   static bool     narrow_oop_use_implicit_null_checks()   { return  _narrow_oop._use_implicit_null_checks; }
 
-  // For UseCompressedKlassPointers
+  // For UseCompressedClassPointers
   static address  narrow_klass_base()                     { return  _narrow_klass._base; }
   static bool  is_narrow_klass_base(void* addr)           { return (narrow_klass_base() == (address)addr); }
   static int      narrow_klass_shift()                    { return  _narrow_klass._shift; }
