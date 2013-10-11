@@ -557,7 +557,7 @@ int MachCallDynamicJavaNode::ret_addr_offset() {
     int entry_offset = InstanceKlass::vtable_start_offset() + vtable_index*vtableEntry::size();
     int v_off = entry_offset*wordSize + vtableEntry::method_offset_in_bytes();
     int klass_load_size;
-    if (UseCompressedKlassPointers) {
+    if (UseCompressedClassPointers) {
       assert(Universe::heap() != NULL, "java heap should be initialized");
       klass_load_size = MacroAssembler::instr_size_for_decode_klass_not_null() + 1*BytesPerInstWord;
     } else {
@@ -1657,7 +1657,7 @@ uint BoxLockNode::size(PhaseRegAlloc *ra_) const {
 void MachUEPNode::format( PhaseRegAlloc *ra_, outputStream *st ) const {
   st->print_cr("\nUEP:");
 #ifdef    _LP64
-  if (UseCompressedKlassPointers) {
+  if (UseCompressedClassPointers) {
     assert(Universe::heap() != NULL, "java heap should be initialized");
     st->print_cr("\tLDUW   [R_O0 + oopDesc::klass_offset_in_bytes],R_G5\t! Inline cache check - compressed klass");
     st->print_cr("\tSET    Universe::narrow_klass_base,R_G6_heap_base");
@@ -1897,7 +1897,7 @@ bool Matcher::narrow_oop_use_complex_address() {
 
 bool Matcher::narrow_klass_use_complex_address() {
   NOT_LP64(ShouldNotCallThis());
-  assert(UseCompressedKlassPointers, "only for compressed klass code");
+  assert(UseCompressedClassPointers, "only for compressed klass code");
   return false;
 }
 
@@ -2017,6 +2017,15 @@ RegMask Matcher::modL_proj_mask() {
 const RegMask Matcher::method_handle_invoke_SP_save_mask() {
   return L7_REGP_mask();
 }
+
+const RegMask Matcher::mathExactI_result_proj_mask() {
+  return G1_REGI_mask();
+}
+
+const RegMask Matcher::mathExactI_flags_proj_mask() {
+  return INT_FLAGS_mask();
+}
+
 
 %}
 
@@ -2561,7 +2570,7 @@ encode %{
       int off = __ offset();
       __ load_klass(O0, G3_scratch);
       int klass_load_size;
-      if (UseCompressedKlassPointers) {
+      if (UseCompressedClassPointers) {
         assert(Universe::heap() != NULL, "java heap should be initialized");
         klass_load_size = MacroAssembler::instr_size_for_decode_klass_not_null() + 1*BytesPerInstWord;
       } else {
@@ -4245,12 +4254,16 @@ operand cmpOp() %{
     greater_equal(0xB);
     less_equal(0x2);
     greater(0xA);
+    overflow(0x7);
+    no_overflow(0xF);
   %}
 %}
 
 // Comparison Op, unsigned
 operand cmpOpU() %{
   match(Bool);
+  predicate(n->as_Bool()->_test._test != BoolTest::overflow &&
+            n->as_Bool()->_test._test != BoolTest::no_overflow);
 
   format %{ "u" %}
   interface(COND_INTER) %{
@@ -4260,12 +4273,16 @@ operand cmpOpU() %{
     greater_equal(0xD);
     less_equal(0x4);
     greater(0xC);
+    overflow(0x7);
+    no_overflow(0xF);
   %}
 %}
 
 // Comparison Op, pointer (same as unsigned)
 operand cmpOpP() %{
   match(Bool);
+  predicate(n->as_Bool()->_test._test != BoolTest::overflow &&
+            n->as_Bool()->_test._test != BoolTest::no_overflow);
 
   format %{ "p" %}
   interface(COND_INTER) %{
@@ -4275,12 +4292,16 @@ operand cmpOpP() %{
     greater_equal(0xD);
     less_equal(0x4);
     greater(0xC);
+    overflow(0x7);
+    no_overflow(0xF);
   %}
 %}
 
 // Comparison Op, branch-register encoding
 operand cmpOp_reg() %{
   match(Bool);
+  predicate(n->as_Bool()->_test._test != BoolTest::overflow &&
+            n->as_Bool()->_test._test != BoolTest::no_overflow);
 
   format %{ "" %}
   interface(COND_INTER) %{
@@ -4290,12 +4311,16 @@ operand cmpOp_reg() %{
     greater_equal(0x7);
     less_equal   (0x2);
     greater      (0x6);
+    overflow(0x7); // not supported
+    no_overflow(0xF); // not supported
   %}
 %}
 
 // Comparison Code, floating, unordered same as less
 operand cmpOpF() %{
   match(Bool);
+  predicate(n->as_Bool()->_test._test != BoolTest::overflow &&
+            n->as_Bool()->_test._test != BoolTest::no_overflow);
 
   format %{ "fl" %}
   interface(COND_INTER) %{
@@ -4305,12 +4330,17 @@ operand cmpOpF() %{
     greater_equal(0xB);
     less_equal(0xE);
     greater(0x6);
+
+    overflow(0x7); // not supported
+    no_overflow(0xF); // not supported
   %}
 %}
 
 // Used by long compare
 operand cmpOp_commute() %{
   match(Bool);
+  predicate(n->as_Bool()->_test._test != BoolTest::overflow &&
+            n->as_Bool()->_test._test != BoolTest::no_overflow);
 
   format %{ "" %}
   interface(COND_INTER) %{
@@ -4320,6 +4350,8 @@ operand cmpOp_commute() %{
     greater_equal(0x2);
     less_equal(0xB);
     greater(0x3);
+    overflow(0x7);
+    no_overflow(0xF);
   %}
 %}
 

@@ -207,7 +207,7 @@ public class JavacAnnoConstructs {
         Attribute[] contained0 = null;
         if (container != null)
             contained0 = unpackAttributes(container);
-        ListBuffer<Attribute.Compound> compounds = ListBuffer.lb();
+        ListBuffer<Attribute.Compound> compounds = new ListBuffer<>();
         if (contained0 != null) {
             for (Attribute a : contained0)
                 if (a instanceof Attribute.Compound)
@@ -328,7 +328,7 @@ public class JavacAnnoConstructs {
         Attribute[] contained0 = null;
         if (container != null)
             contained0 = unpackAttributes(container);
-        ListBuffer<Attribute.Compound> compounds = ListBuffer.lb();
+        ListBuffer<Attribute.Compound> compounds = new ListBuffer<>();
         if (contained0 != null) {
             for (Attribute a : contained0)
                 if (a instanceof Attribute.Compound)

@@ -84,15 +84,29 @@ _app_start(){
   ${TESTJAVA}/bin/java -server $* -cp ${_testclasses} ${testappname}  >> ${_logname} 2>&1 &
  _last_pid=$!
 
-  npid=`_get_pid`
-  if [ "${npid}" = "" ]
-  then
-     echo "ERROR: Test app not started. Please check machine resources before filing a bug."
-     if [ "${_jtreg}" = "yes" ]
-     then
-       exit 255
-     fi
-  fi
+# wait until VM is actually starts. 
+# please note, if vm doesn't start for some reason
+# jtreg kills the test by timeout. Don't file a bug.
+  cnt=1 
+  while true
+  do
+    npid=`_get_pid`
+    if [ "${npid}" != "" ]
+    then
+      break
+    fi
+    if [ "${cnt}" = "10" ]
+    then
+      echo "ERROR: Test app not started. Please check machine resources before filing a bug."
+      if [ "${_jtreg}" = "yes" ]
+      then
+          exit 255
+      fi
+      break
+    fi
+    cnt=`expr $cnt + 1`
+    sleep 1
+  done
 }
 
 _get_pid(){

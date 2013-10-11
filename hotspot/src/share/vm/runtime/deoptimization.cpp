@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -234,7 +234,7 @@ Deoptimization::UnrollBlock* Deoptimization::fetch_unroll_info_helper(JavaThread
         assert(Universe::heap()->is_in_or_null(result), "must be heap pointer");
         if (TraceDeoptimization) {
           ttyLocker ttyl;
-          tty->print_cr("SAVED OOP RESULT " INTPTR_FORMAT " in thread " INTPTR_FORMAT, result, thread);
+          tty->print_cr("SAVED OOP RESULT " INTPTR_FORMAT " in thread " INTPTR_FORMAT, (void *)result, thread);
         }
       }
       bool reallocated = false;
@@ -278,7 +278,7 @@ Deoptimization::UnrollBlock* Deoptimization::fetch_unroll_info_helper(JavaThread
                   first = false;
                   tty->print_cr("RELOCK OBJECTS in thread " INTPTR_FORMAT, thread);
                 }
-                tty->print_cr("     object <" INTPTR_FORMAT "> locked", mi->owner());
+                tty->print_cr("     object <" INTPTR_FORMAT "> locked", (void *)mi->owner());
               }
             }
           }
@@ -977,7 +977,7 @@ void Deoptimization::print_objects(GrowableArray<ScopeValue*>* objects) {
     KlassHandle k(java_lang_Class::as_Klass(sv->klass()->as_ConstantOopReadValue()->value()()));
     Handle obj = sv->value();
 
-    tty->print("     object <" INTPTR_FORMAT "> of type ", sv->value()());
+    tty->print("     object <" INTPTR_FORMAT "> of type ", (void *)sv->value()());
     k->print_value();
     tty->print(" allocated (%d bytes)", obj->size() * HeapWordSize);
     tty->cr();
@@ -1751,7 +1751,7 @@ int Deoptimization::trap_state_set_recompiled(int trap_state, bool z) {
   else    return trap_state & ~DS_RECOMPILE_BIT;
 }
 //---------------------------format_trap_state---------------------------------
-// This is used for debugging and diagnostics, including hotspot.log output.
+// This is used for debugging and diagnostics, including LogFile output.
 const char* Deoptimization::format_trap_state(char* buf, size_t buflen,
                                               int trap_state) {
   DeoptReason reason      = trap_state_reason(trap_state);
@@ -1828,7 +1828,7 @@ const char* Deoptimization::trap_action_name(int action) {
   return buf;
 }
 
-// This is used for debugging and diagnostics, including hotspot.log output.
+// This is used for debugging and diagnostics, including LogFile output.
 const char* Deoptimization::format_trap_request(char* buf, size_t buflen,
                                                 int trap_request) {
   jint unloaded_class_index = trap_request_index(trap_request);

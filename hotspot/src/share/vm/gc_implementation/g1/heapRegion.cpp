@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -148,6 +148,10 @@ void HeapRegionDCTOC::walk_mem_region_with_cl(MemRegion mr,
 // The automatic region size calculation will try to have around this
 // many regions in the heap (based on the min heap size).
 #define TARGET_REGION_NUMBER          2048
+
+size_t HeapRegion::max_region_size() {
+  return (size_t)MAX_REGION_SIZE;
+}
 
 void HeapRegion::setup_heap_region_size(size_t initial_heap_size, size_t max_heap_size) {
   uintx region_size = G1HeapRegionSize;
@@ -633,7 +637,7 @@ class VerifyStrongCodeRootOopClosure: public OopClosure {
           gclog_or_tty->print_cr("Object "PTR_FORMAT" in region "
                                  "["PTR_FORMAT", "PTR_FORMAT") is above "
                                  "top "PTR_FORMAT,
-                                 obj, _hr->bottom(), _hr->end(), _hr->top());
+                                 (void *)obj, _hr->bottom(), _hr->end(), _hr->top());
           _failures = true;
           return;
         }
@@ -947,12 +951,12 @@ void HeapRegion::verify(VerifyOption vo,
         Klass* klass = obj->klass();
         if (!klass->is_metaspace_object()) {
           gclog_or_tty->print_cr("klass "PTR_FORMAT" of object "PTR_FORMAT" "
-                                 "not metadata", klass, obj);
+                                 "not metadata", klass, (void *)obj);
           *failures = true;
           return;
         } else if (!klass->is_klass()) {
           gclog_or_tty->print_cr("klass "PTR_FORMAT" of object "PTR_FORMAT" "
-                                 "not a klass", klass, obj);
+                                 "not a klass", klass, (void *)obj);
           *failures = true;
           return;
         } else {
@@ -967,7 +971,7 @@ void HeapRegion::verify(VerifyOption vo,
           }
         }
       } else {
-        gclog_or_tty->print_cr(PTR_FORMAT" no an oop", obj);
+        gclog_or_tty->print_cr(PTR_FORMAT" no an oop", (void *)obj);
         *failures = true;
         return;
       }

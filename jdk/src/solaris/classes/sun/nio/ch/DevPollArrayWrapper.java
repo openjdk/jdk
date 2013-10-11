@@ -26,9 +26,11 @@
 package sun.nio.ch;
 
 import java.io.IOException;
+import java.security.AccessController;
 import java.util.BitSet;
 import java.util.Map;
 import java.util.HashMap;
+import sun.security.action.GetIntegerAction;
 
 
 /**
@@ -78,10 +80,11 @@ class DevPollArrayWrapper {
     static final int   NUM_POLLFDS   = Math.min(OPEN_MAX-1, 8192);
 
     // Initial size of arrays for fd registration changes
-    private final int INITIAL_PENDING_UPDATE_SIZE = 64;
+    private static final int INITIAL_PENDING_UPDATE_SIZE = 64;
 
     // maximum size of updatesLow
-    private final int MAX_UPDATE_ARRAY_SIZE = Math.min(OPEN_MAX, 64*1024);
+    private static final int MAX_UPDATE_ARRAY_SIZE = AccessController.doPrivileged(
+        new GetIntegerAction("sun.nio.ch.maxUpdateArraySize", Math.min(OPEN_MAX, 64*1024)));
 
     // The pollfd array for results from devpoll driver
     private final AllocatedNativeObject pollArray;

@@ -53,6 +53,16 @@ typedef struct  {
 static StdArg *stdargs;
 static int    stdargc;
 
+static int copyCh(USHORT ch, char* dest) {
+    if (HIBYTE(ch) == 0) {
+        *dest = (char)ch;
+        return 1;
+    } else {
+        *((USHORT *)dest) = ch;
+        return 2;
+    }
+}
+
 static char* next_arg(char* cmdline, char* arg, jboolean* wildcard) {
 
     char* src = cmdline;
@@ -61,31 +71,43 @@ static char* next_arg(char* cmdline, char* arg, jboolean* wildcard) {
     int quotes = 0;
     int slashes = 0;
 
-    char prev = 0;
-    char ch = 0;
+    // "prev"/"ch" may contain either a single byte, or a double byte
+    // character encoded in CP_ACP.
+    USHORT prev = 0;
+    USHORT ch = 0;
     int i;
     jboolean done = JNI_FALSE;
+    int charLength;
 
     *wildcard = JNI_FALSE;
-    while ((ch = *src) != 0 && !done) {
+    while (!done) {
+        charLength = CharNextExA(CP_ACP, src, 0) - src;
+        if (charLength == 0) {
+            break;
+        } else if (charLength == 1) {
+            ch = (USHORT)(UCHAR)src[0];
+        } else {
+            ch = ((USHORT *)src)[0];
+        }
+
         switch (ch) {
-        case '"':
+        case L'"':
             if (separator) {
                 done = JNI_TRUE;
                 break;
             }
-            if (prev == '\\') {
+            if (prev == L'\\') {
                 for (i = 1; i < slashes; i += 2) {
-                    *dest++ = prev;
+                    dest += copyCh(prev, dest);
                 }
                 if (slashes % 2 == 1) {
-                    *dest++ = ch;
+                    dest += copyCh(ch, dest);
                 } else {
                     quotes++;
                 }
-            } else if (prev == '"' && quotes % 2 == 0) {
+            } else if (prev == L'"' && quotes % 2 == 0) {
                 quotes++;
-                *dest++ = ch; // emit every other consecutive quote
+                dest += copyCh(ch, dest); // emit every other consecutive quote
             } else if (quotes == 0) {
                 quotes++; // starting quote
             } else {
@@ -94,7 +116,7 @@ static char* next_arg(char* cmdline, char* arg, jboolean* wildcard) {
             slashes = 0;
             break;
 
-        case '\\':
+        case L'\\':
             slashes++;
             if (separator) {
                 done = JNI_TRUE;
@@ -102,23 +124,23 @@ static char* next_arg(char* cmdline, char* arg, jboolean* wildcard) {
             }
             break;
 
-        case ' ':
-        case '\t':
-            if (prev == '\\') {
+        case L' ':
+        case L'\t':
+            if (prev == L'\\') {
                 for (i = 0 ; i < slashes; i++) {
-                   *dest++ = prev;
+                    dest += copyCh(prev, dest);
                 }
             }
             if (quotes % 2 == 1) {
-                *dest++ = ch;
+                dest += copyCh(ch, dest);
             } else {
                 separator = JNI_TRUE;
             }
             slashes = 0;
             break;
 
-        case '*':
-        case '?':
+        case L'*':
+        case L'?':
             if (separator) {
                 done = JNI_TRUE;
                 separator = JNI_FALSE;
@@ -127,36 +149,36 @@ static char* next_arg(char* cmdline, char* arg, jboolean* wildcard) {
             if (quotes % 2 == 0) {
                 *wildcard = JNI_TRUE;
             }
-            if (prev == '\\') {
+            if (prev == L'\\') {
                 for (i = 0 ; i < slashes ; i++) {
-                    *dest++ = prev;
+                    dest += copyCh(prev, dest);
                 }
             }
-            *dest++ = ch;
+            dest += copyCh(ch, dest);
             break;
 
         default:
-            if (prev == '\\') {
+            if (prev == L'\\') {
                 for (i = 0 ; i < slashes ; i++) {
-                   *dest++ = prev;
+                    dest += copyCh(prev, dest);
                 }
-                *dest++ = ch;
+                dest += copyCh(ch, dest);
             } else if (separator) {
                 done = JNI_TRUE;
             } else {
-                *dest++ = ch;
+                dest += copyCh(ch, dest);
             }
             slashes = 0;
         }
 
         if (!done) {
             prev = ch;
-            src++;
+            src += charLength;
         }
     }
-    if (prev == '\\') {
+    if (prev == L'\\') {
         for (i = 0; i < slashes; i++) {
-            *dest++ = prev;
+            dest += copyCh(prev, dest);
         }
     }
     *dest = 0;

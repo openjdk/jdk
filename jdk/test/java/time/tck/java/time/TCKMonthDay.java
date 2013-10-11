@@ -137,24 +137,6 @@ public class TCKMonthDay extends AbstractDateTimeTest {
     }
 
     //-----------------------------------------------------------------------
-    @Test
-    public void test_serialization() throws ClassNotFoundException, IOException {
-        assertSerializable(TEST_07_15);
-    }
-
-    @Test
-    public void test_serialization_format() throws Exception {
-        ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        try (DataOutputStream dos = new DataOutputStream(baos) ) {
-            dos.writeByte(13);       // java.time.temporal.Ser.MONTH_DAY_TYPE
-            dos.writeByte(9);
-            dos.writeByte(16);
-        }
-        byte[] bytes = baos.toByteArray();
-        assertSerializedBySer(MonthDay.of(9, 16), bytes);
-    }
-
-    //-----------------------------------------------------------------------
     void check(MonthDay test, int m, int d) {
         assertEquals(test.getMonth().getValue(), m);
         assertEquals(test.getDayOfMonth(), d);

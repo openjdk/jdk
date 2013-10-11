@@ -26,18 +26,18 @@
 package java.lang.reflect;
 
 /**
- * AnnotatedTypeVariable represents the use of a type variable, whose
- * declaration may have bounds which themselves represent annotated uses of
- * types.
+ * {@code AnnotatedTypeVariable} represents the potentially annotated use of a
+ * type variable, whose declaration may have bounds which themselves represent
+ * annotated uses of types.
  *
  * @since 1.8
  */
 public interface AnnotatedTypeVariable extends AnnotatedType {
 
     /**
-     * Returns the annotated bounds of this type variable.
+     * Returns the potentially annotated bounds of this type variable.
      *
-     * @return the annotated bounds of this type variable
+     * @return the potentially annotated bounds of this type variable
      */
     AnnotatedType[] getAnnotatedBounds();
 }

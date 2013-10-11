@@ -96,6 +96,7 @@ public class X11GraphicsEnvironment
 
                     // Now check for XRender system property
                     boolean xRenderRequested = true;
+                    boolean xRenderIgnoreLinuxVersion = false;
                     String xProp = System.getProperty("sun.java2d.xrender");
                         if (xProp != null) {
                         if (xProp.equals("false") || xProp.equals("f")) {
@@ -103,6 +104,10 @@ public class X11GraphicsEnvironment
                         } else if (xProp.equals("True") || xProp.equals("T")) {
                             xRenderRequested = true;
                             xRenderVerbose = true;
+                        }
+
+                        if(xProp.equalsIgnoreCase("t") || xProp.equalsIgnoreCase("true")) {
+                            xRenderIgnoreLinuxVersion = true;
                         }
                     }
 
@@ -121,7 +126,7 @@ public class X11GraphicsEnvironment
 
                     // only attempt to initialize Xrender if it was requested
                     if (xRenderRequested) {
-                        xRenderAvailable = initXRender(xRenderVerbose);
+                        xRenderAvailable = initXRender(xRenderVerbose, xRenderIgnoreLinuxVersion);
                         if (xRenderVerbose && !xRenderAvailable) {
                             System.out.println(
                                          "Could not enable XRender pipeline");
@@ -159,7 +164,7 @@ public class X11GraphicsEnvironment
     private static boolean xRenderVerbose;
     private static boolean xRenderAvailable;
 
-    private static native boolean initXRender(boolean verbose);
+    private static native boolean initXRender(boolean verbose, boolean ignoreLinuxVersion);
     public static boolean isXRenderAvailable() {
         return xRenderAvailable;
     }

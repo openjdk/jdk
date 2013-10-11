@@ -73,7 +73,7 @@ public class MsgAppletViewer_de extends ListResourceBundle {
             {"appletviewer.parse.warning.embed.requiresheight", "Warnung: F\u00FCr <embed>-Tag ist ein \"height\"-Attribut erforderlich."},
             {"appletviewer.parse.warning.embed.requireswidth", "Warnung: F\u00FCr <embed>-Tag ist ein \"width\"-Attribut erforderlich."},
             {"appletviewer.parse.warning.appnotLongersupported", "Warnung: <app>-Tag wird nicht mehr unterst\u00FCtzt. Verwenden Sie stattdessen <applet>:"},
-            {"appletviewer.usage", "Verwendung: appletviewer <Optionen> url(s)\n\nwobei die <Optionen> Folgendes umfassen:\n  -debug                  Applet Viewer im Java-Debugger starten\n  -encoding <Codierung>    Zeichencodierung f\u00FCr HTML-Dateien angeben\n  -J <Laufzeitkennzeichen>        Argument an den Java-Interpreter \u00FCbergeben\n\nDie Option \"-J\" ist nicht standardm\u00E4\u00DFig und kann ohne vorherige Ank\u00FCndigung ge\u00E4ndert werden."},
+            {"appletviewer.usage", "Verwendung: appletviewer <Optionen> url(s)\n\nwobei die <Optionen> Folgendes umfassen:\n  -debug                  Applet Viewer im Java-Debugger starten\n  -encoding <Codierung>    Zeichencodierung f\u00FCr HTML-Dateien angeben\n  -J<Laufzeitkennzeichen>        Argument an den Java-Interpreter \u00FCbergeben\n\nDie Option \"-J\" ist nicht standardm\u00E4\u00DFig und kann ohne vorherige Ank\u00FCndigung ge\u00E4ndert werden."},
             {"appletviewer.main.err.unsupportedopt", "Nicht unterst\u00FCtzte Option: {0}"},
             {"appletviewer.main.err.unrecognizedarg", "Unbekanntes Argument: {0}"},
             {"appletviewer.main.err.dupoption", "Doppelte Verwendung von Option: {0}"},

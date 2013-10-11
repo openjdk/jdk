@@ -333,6 +333,8 @@ Thread::~Thread() {
   // Reclaim the objectmonitors from the omFreeList of the moribund thread.
   ObjectSynchronizer::omFlush (this) ;
 
+  EVENT_THREAD_DESTRUCT(this);
+
   // stack_base can be NULL if the thread is never started or exited before
   // record_stack_base_and_size called. Although, we would like to ensure
   // that all started threads do call record_stack_base_and_size(), there is
@@ -1442,7 +1444,7 @@ void JavaThread::initialize() {
   _in_deopt_handler = 0;
   _doing_unsafe_access = false;
   _stack_guard_state = stack_guard_unused;
-  _exception_oop = NULL;
+  (void)const_cast<oop&>(_exception_oop = NULL);
   _exception_pc  = 0;
   _exception_handler_pc = 0;
   _is_method_handle_return = 0;
@@ -3329,6 +3331,11 @@ jint Threads::create_vm(JavaVMInitArgs* args, bool* canTryAgain) {
   jint parse_result = Arguments::parse(args);
   if (parse_result != JNI_OK) return parse_result;
 
+  os::init_before_ergo();
+
+  jint ergo_result = Arguments::apply_ergo();
+  if (ergo_result != JNI_OK) return ergo_result;
+
   if (PauseAtStartup) {
     os::pause();
   }
@@ -3714,7 +3721,7 @@ static OnLoadEntry_t lookup_on_load(AgentLibrary* agent, const char *on_load_sym
     const char *name = agent->name();
     const char *msg = "Could not find agent library ";
 
-    // First check to see if agent is statcally linked into executable
+    // First check to see if agent is statically linked into executable
     if (os::find_builtin_agent(agent, on_load_symbols, num_symbol_entries)) {
       library = agent->os_lib();
     } else if (agent->is_absolute_path()) {

@@ -38,6 +38,7 @@
 
 class PtrQueueSet;
 class PtrQueue VALUE_OBJ_CLASS_SPEC {
+  friend class VMStructs;
 
 protected:
   // The ptr queue set to which this queue belongs.

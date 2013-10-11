@@ -699,7 +699,8 @@ class Klass : public Metadata {
   void verify(bool check_dictionary = true) { verify_on(tty, check_dictionary); }
 
 #ifndef PRODUCT
-  void verify_vtable_index(int index);
+  bool verify_vtable_index(int index);
+  bool verify_itable_index(int index);
 #endif
 
   virtual void oop_verify_on(oop obj, outputStream* st);

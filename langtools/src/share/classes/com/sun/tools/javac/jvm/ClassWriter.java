@@ -766,8 +766,8 @@ public class ClassWriter extends ClassFile {
     int writeTypeAnnotations(List<Attribute.TypeCompound> typeAnnos, boolean inCode) {
         if (typeAnnos.isEmpty()) return 0;
 
-        ListBuffer<Attribute.TypeCompound> visibles = ListBuffer.lb();
-        ListBuffer<Attribute.TypeCompound> invisibles = ListBuffer.lb();
+        ListBuffer<Attribute.TypeCompound> visibles = new ListBuffer<>();
+        ListBuffer<Attribute.TypeCompound> invisibles = new ListBuffer<>();
 
         for (Attribute.TypeCompound tc : typeAnnos) {
             if (tc.hasUnknownPosition()) {

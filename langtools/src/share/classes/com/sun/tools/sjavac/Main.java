@@ -274,7 +274,7 @@ public class Main {
 //          findFiles(args, "-modulepath", Util.set(".class"), modules_to_link_to, modules, current_module, true);
 
             // Add the set of sources to the build database.
-            javac_state.now().collectPackagesSourcesAndArtifacts(modules);
+            javac_state.now().flattenPackagesSourcesAndArtifacts(modules);
             javac_state.now().checkInternalState("checking sources", false, sources);
             javac_state.now().checkInternalState("checking linked sources", true, sources_to_link_to);
             javac_state.setVisibleSources(sources_to_link_to);
@@ -311,7 +311,7 @@ public class Main {
             Map<String,Source> generated_sources = new HashMap<String,Source>();
             Source.scanRoot(gensrc_dir, Util.set(".java"), null, null, null, null,
                    generated_sources, modules, current_module, false, true, false);
-            javac_state.now().collectPackagesSourcesAndArtifacts(modules);
+            javac_state.now().flattenPackagesSourcesAndArtifacts(modules);
             // Recheck the the source files and their timestamps again.
             javac_state.checkSourceStatus(true);
 
@@ -336,8 +336,8 @@ public class Main {
             // Only update the state if the compile went well.
             if (rc[0]) {
                 javac_state.save();
-                // Collect all the artifacts.
-                javac_state.now().collectArtifacts(modules);
+                // Reflatten only the artifacts.
+                javac_state.now().flattenArtifacts(modules);
                 // Remove artifacts that were generated during the last compile, but not this one.
                 javac_state.removeSuperfluousArtifacts(recently_compiled);
             }

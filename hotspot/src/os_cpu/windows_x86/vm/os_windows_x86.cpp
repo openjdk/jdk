@@ -29,6 +29,7 @@
 #include "classfile/vmSymbols.hpp"
 #include "code/icBuffer.hpp"
 #include "code/vtableStubs.hpp"
+#include "decoder_windows.hpp"
 #include "interpreter/interpreter.hpp"
 #include "jvm_windows.h"
 #include "memory/allocation.inline.hpp"
@@ -327,6 +328,94 @@ add_ptr_func_t*      os::atomic_add_ptr_func      = os::atomic_add_ptr_bootstrap
 
 cmpxchg_long_func_t* os::atomic_cmpxchg_long_func = os::atomic_cmpxchg_long_bootstrap;
 
+#ifdef AMD64
+/*
+ * Windows/x64 does not use stack frames the way expected by Java:
+ * [1] in most cases, there is no frame pointer. All locals are addressed via RSP
+ * [2] in rare cases, when alloca() is used, a frame pointer is used, but this may
+ *     not be RBP.
+ * See http://msdn.microsoft.com/en-us/library/ew5tede7.aspx
+ *
+ * So it's not possible to print the native stack using the
+ *     while (...) {...  fr = os::get_sender_for_C_frame(&fr); }
+ * loop in vmError.cpp. We need to roll our own loop.
+ */
+bool os::platform_print_native_stack(outputStream* st, void* context,
+                                     char *buf, int buf_size)
+{
+  CONTEXT ctx;
+  if (context != NULL) {
+    memcpy(&ctx, context, sizeof(ctx));
+  } else {
+    RtlCaptureContext(&ctx);
+  }
+
+  st->print_cr("Native frames: (J=compiled Java code, j=interpreted, Vv=VM code, C=native code)");
+
+  STACKFRAME stk;
+  memset(&stk, 0, sizeof(stk));
+  stk.AddrStack.Offset    = ctx.Rsp;
+  stk.AddrStack.Mode      = AddrModeFlat;
+  stk.AddrFrame.Offset    = ctx.Rbp;
+  stk.AddrFrame.Mode      = AddrModeFlat;
+  stk.AddrPC.Offset       = ctx.Rip;
+  stk.AddrPC.Mode         = AddrModeFlat;
+
+  int count = 0;
+  address lastpc = 0;
+  while (count++ < StackPrintLimit) {
+    intptr_t* sp = (intptr_t*)stk.AddrStack.Offset;
+    intptr_t* fp = (intptr_t*)stk.AddrFrame.Offset; // NOT necessarily the same as ctx.Rbp!
+    address pc = (address)stk.AddrPC.Offset;
+
+    if (pc != NULL && sp != NULL && fp != NULL) {
+      if (count == 2 && lastpc == pc) {
+        // Skip it -- StackWalk64() may return the same PC
+        // (but different SP) on the first try.
+      } else {
+        // Don't try to create a frame(sp, fp, pc) -- on WinX64, stk.AddrFrame
+        // may not contain what Java expects, and may cause the frame() constructor
+        // to crash. Let's just print out the symbolic address.
+        frame::print_C_frame(st, buf, buf_size, pc);
+        st->cr();
+      }
+      lastpc = pc;
+    } else {
+      break;
+    }
+
+    PVOID p = WindowsDbgHelp::SymFunctionTableAccess64(GetCurrentProcess(), stk.AddrPC.Offset);
+    if (!p) {
+      // StackWalk64() can't handle this PC. Calling StackWalk64 again may cause crash.
+      break;
+    }
+
+    BOOL result = WindowsDbgHelp::StackWalk64(
+        IMAGE_FILE_MACHINE_AMD64,  // __in      DWORD MachineType,
+        GetCurrentProcess(),       // __in      HANDLE hProcess,
+        GetCurrentThread(),        // __in      HANDLE hThread,
+        &stk,                      // __inout   LP STACKFRAME64 StackFrame,
+        &ctx,                      // __inout   PVOID ContextRecord,
+        NULL,                      // __in_opt  PREAD_PROCESS_MEMORY_ROUTINE64 ReadMemoryRoutine,
+        WindowsDbgHelp::pfnSymFunctionTableAccess64(),
+                                   // __in_opt  PFUNCTION_TABLE_ACCESS_ROUTINE64 FunctionTableAccessRoutine,
+        WindowsDbgHelp::pfnSymGetModuleBase64(),
+                                   // __in_opt  PGET_MODULE_BASE_ROUTINE64 GetModuleBaseRoutine,
+        NULL);                     // __in_opt  PTRANSLATE_ADDRESS_ROUTINE64 TranslateAddress
+
+    if (!result) {
+      break;
+    }
+  }
+  if (count > StackPrintLimit) {
+    st->print_cr("...<more frames>...");
+  }
+  st->cr();
+
+  return true;
+}
+#endif // AMD64
+
 ExtendedPC os::fetch_frame_from_context(void* ucVoid,
                     intptr_t** ret_sp, intptr_t** ret_fp) {
 
@@ -401,6 +490,9 @@ frame os::current_frame() {
                                      StubRoutines::x86::get_previous_fp_entry());
   if (func == NULL) return frame();
   intptr_t* fp = (*func)();
+  if (fp == NULL) {
+    return frame();
+  }
 #else
   intptr_t* fp = _get_previous_fp();
 #endif // AMD64

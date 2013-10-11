@@ -529,7 +529,7 @@ void emit_d32_reloc(CodeBuffer& cbuf, int d32, RelocationHolder const& rspec, in
   if (rspec.reloc()->type() == relocInfo::oop_type &&
       d32 != 0 && d32 != (intptr_t) Universe::non_oop_word()) {
     assert(Universe::heap()->is_in_reserved((address)(intptr_t)d32), "should be real oop");
-    assert(oop((intptr_t)d32)->is_oop() && (ScavengeRootsInCode || !oop((intptr_t)d32)->is_scavengable()), "cannot embed scavengable oops in code");
+    assert(cast_to_oop((intptr_t)d32)->is_oop() && (ScavengeRootsInCode || !cast_to_oop((intptr_t)d32)->is_scavengable()), "cannot embed scavengable oops in code");
   }
 #endif
   cbuf.relocate(cbuf.insts_mark(), rspec, format);
@@ -556,7 +556,7 @@ void emit_d64_reloc(CodeBuffer& cbuf, int64_t d64, RelocationHolder const& rspec
   if (rspec.reloc()->type() == relocInfo::oop_type &&
       d64 != 0 && d64 != (int64_t) Universe::non_oop_word()) {
     assert(Universe::heap()->is_in_reserved((address)d64), "should be real oop");
-    assert(oop(d64)->is_oop() && (ScavengeRootsInCode || !oop(d64)->is_scavengable()),
+    assert(cast_to_oop(d64)->is_oop() && (ScavengeRootsInCode || !cast_to_oop(d64)->is_scavengable()),
            "cannot embed scavengable oops in code");
   }
 #endif
@@ -1391,7 +1391,7 @@ uint BoxLockNode::size(PhaseRegAlloc *ra_) const
 #ifndef PRODUCT
 void MachUEPNode::format(PhaseRegAlloc* ra_, outputStream* st) const
 {
-  if (UseCompressedKlassPointers) {
+  if (UseCompressedClassPointers) {
     st->print_cr("movl    rscratch1, [j_rarg0 + oopDesc::klass_offset_in_bytes()]\t# compressed klass");
     st->print_cr("\tdecode_klass_not_null rscratch1, rscratch1");
     st->print_cr("\tcmpq    rax, rscratch1\t # Inline cache check");
@@ -1408,7 +1408,7 @@ void MachUEPNode::emit(CodeBuffer& cbuf, PhaseRegAlloc* ra_) const
 {
   MacroAssembler masm(&cbuf);
   uint insts_size = cbuf.insts_size();
-  if (UseCompressedKlassPointers) {
+  if (UseCompressedClassPointers) {
     masm.load_klass(rscratch1, j_rarg0);
     masm.cmpptr(rax, rscratch1);
   } else {
@@ -1557,7 +1557,7 @@ bool Matcher::narrow_oop_use_complex_address() {
 }
 
 bool Matcher::narrow_klass_use_complex_address() {
-  assert(UseCompressedKlassPointers, "only for compressed klass code");
+  assert(UseCompressedClassPointers, "only for compressed klass code");
   return (LogKlassAlignmentInBytes <= 3);
 }
 
@@ -1647,6 +1647,14 @@ RegMask Matcher::modL_proj_mask() {
 
 const RegMask Matcher::method_handle_invoke_SP_save_mask() {
   return PTR_RBP_REG_mask();
+}
+
+const RegMask Matcher::mathExactI_result_proj_mask() {
+  return INT_RAX_REG_mask();
+}
+
+const RegMask Matcher::mathExactI_flags_proj_mask() {
+  return INT_FLAGS_mask();
 }
 
 %}
@@ -4133,6 +4141,8 @@ operand cmpOp()
     greater_equal(0xD, "ge");
     less_equal(0xE, "le");
     greater(0xF, "g");
+    overflow(0x0, "o");
+    no_overflow(0x1, "no");
   %}
 %}
 
@@ -4151,6 +4161,8 @@ operand cmpOpU()
     greater_equal(0x3, "nb");
     less_equal(0x6, "be");
     greater(0x7, "nbe");
+    overflow(0x0, "o");
+    no_overflow(0x1, "no");
   %}
 %}
 
@@ -4170,6 +4182,8 @@ operand cmpOpUCF() %{
     greater_equal(0x3, "nb");
     less_equal(0x6, "be");
     greater(0x7, "nbe");
+    overflow(0x0, "o");
+    no_overflow(0x1, "no");
   %}
 %}
 
@@ -4187,6 +4201,8 @@ operand cmpOpUCF2() %{
     greater_equal(0x3, "nb");
     less_equal(0x6, "be");
     greater(0x7, "nbe");
+    overflow(0x0, "o");
+    no_overflow(0x1, "no");
   %}
 %}
 
@@ -6921,6 +6937,30 @@ instruct cmovD_regUCF(cmpOpUCF cop, rFlagsRegUCF cr, regD dst, regD src) %{
 
 //----------Arithmetic Instructions--------------------------------------------
 //----------Addition Instructions----------------------------------------------
+
+instruct addExactI_rReg(rax_RegI dst, rRegI src, rFlagsReg cr)
+%{
+  match(AddExactI dst src);
+  effect(DEF cr);
+
+  format %{ "addl    $dst, $src\t# addExact int" %}
+  ins_encode %{
+    __ addl($dst$$Register, $src$$Register);
+  %}
+  ins_pipe(ialu_reg_reg);
+%}
+
+instruct addExactI_rReg_imm(rax_RegI dst, immI src, rFlagsReg cr)
+%{
+  match(AddExactI dst src);
+  effect(DEF cr);
+
+  format %{ "addl    $dst, $src\t# addExact int" %}
+  ins_encode %{
+    __ addl($dst$$Register, $src$$constant);
+  %}
+  ins_pipe(ialu_reg_reg);
+%}
 
 instruct addI_rReg(rRegI dst, rRegI src, rFlagsReg cr)
 %{
