@@ -117,7 +117,9 @@ public:
     ret_data_tag,
     branch_data_tag,
     multi_branch_data_tag,
-    arg_info_data_tag
+    arg_info_data_tag,
+    call_type_data_tag,
+    virtual_call_type_data_tag
   };
 
   enum {
@@ -165,7 +167,7 @@ public:
   // occurred, and the MDO shows N occurrences of X, we make the
   // simplifying assumption that all N occurrences can be blamed
   // on that BCI.
-  int trap_state() {
+  int trap_state() const {
     return ((_header._struct._flags >> trap_shift) & trap_mask);
   }
 
@@ -175,11 +177,11 @@ public:
     _header._struct._flags = (new_state << trap_shift) | old_flags;
   }
 
-  u1 flags() {
+  u1 flags() const {
     return _header._struct._flags;
   }
 
-  u2 bci() {
+  u2 bci() const {
     return _header._struct._bci;
   }
 
@@ -198,7 +200,7 @@ public:
   void release_set_cell_at(int index, intptr_t value) {
     OrderAccess::release_store_ptr(&_cells[index], value);
   }
-  intptr_t cell_at(int index) {
+  intptr_t cell_at(int index) const {
     return _cells[index];
   }
 
@@ -206,7 +208,7 @@ public:
     assert(flag_number < flag_limit, "oob");
     _header._struct._flags |= (0x1 << flag_number);
   }
-  bool flag_at(int flag_number) {
+  bool flag_at(int flag_number) const {
     assert(flag_number < flag_limit, "oob");
     return (_header._struct._flags & (0x1 << flag_number)) != 0;
   }
@@ -254,19 +256,22 @@ class   BitData;
 class     CounterData;
 class       ReceiverTypeData;
 class         VirtualCallData;
+class           VirtualCallTypeData;
 class       RetData;
+class       CallTypeData;
 class   JumpData;
 class     BranchData;
 class   ArrayData;
 class     MultiBranchData;
 class     ArgInfoData;
 
-
 // ProfileData
 //
 // A ProfileData object is created to refer to a section of profiling
 // data in a structured way.
 class ProfileData : public ResourceObj {
+  friend class TypeEntries;
+  friend class TypeStackSlotEntries;
 private:
 #ifndef PRODUCT
   enum {
@@ -280,6 +285,7 @@ private:
 
 protected:
   DataLayout* data() { return _data; }
+  const DataLayout* data() const { return _data; }
 
   enum {
     cell_size = DataLayout::cell_size
@@ -287,7 +293,7 @@ protected:
 
 public:
   // How many cells are in this?
-  virtual int cell_count() {
+  virtual int cell_count() const {
     ShouldNotReachHere();
     return -1;
   }
@@ -307,7 +313,7 @@ protected:
     assert(0 <= index && index < cell_count(), "oob");
     data()->release_set_cell_at(index, value);
   }
-  intptr_t intptr_at(int index) {
+  intptr_t intptr_at(int index) const {
     assert(0 <= index && index < cell_count(), "oob");
     return data()->cell_at(index);
   }
@@ -317,7 +323,7 @@ protected:
   void release_set_uint_at(int index, uint value) {
     release_set_intptr_at(index, (intptr_t) value);
   }
-  uint uint_at(int index) {
+  uint uint_at(int index) const {
     return (uint)intptr_at(index);
   }
   void set_int_at(int index, int value) {
@@ -326,23 +332,23 @@ protected:
   void release_set_int_at(int index, int value) {
     release_set_intptr_at(index, (intptr_t) value);
   }
-  int int_at(int index) {
+  int int_at(int index) const {
     return (int)intptr_at(index);
   }
-  int int_at_unchecked(int index) {
+  int int_at_unchecked(int index) const {
     return (int)data()->cell_at(index);
   }
   void set_oop_at(int index, oop value) {
     set_intptr_at(index, cast_from_oop<intptr_t>(value));
   }
-  oop oop_at(int index) {
+  oop oop_at(int index) const {
     return cast_to_oop(intptr_at(index));
   }
 
   void set_flag_at(int flag_number) {
     data()->set_flag_at(flag_number);
   }
-  bool flag_at(int flag_number) {
+  bool flag_at(int flag_number) const {
     return data()->flag_at(flag_number);
   }
 
@@ -362,7 +368,7 @@ public:
   // Constructor for invalid ProfileData.
   ProfileData();
 
-  u2 bci() {
+  u2 bci() const {
     return data()->bci();
   }
 
@@ -370,7 +376,7 @@ public:
     return (address)_data;
   }
 
-  int trap_state() {
+  int trap_state() const {
     return data()->trap_state();
   }
   void set_trap_state(int new_state) {
@@ -378,57 +384,67 @@ public:
   }
 
   // Type checking
-  virtual bool is_BitData()         { return false; }
-  virtual bool is_CounterData()     { return false; }
-  virtual bool is_JumpData()        { return false; }
-  virtual bool is_ReceiverTypeData(){ return false; }
-  virtual bool is_VirtualCallData() { return false; }
-  virtual bool is_RetData()         { return false; }
-  virtual bool is_BranchData()      { return false; }
-  virtual bool is_ArrayData()       { return false; }
-  virtual bool is_MultiBranchData() { return false; }
-  virtual bool is_ArgInfoData()     { return false; }
+  virtual bool is_BitData()         const { return false; }
+  virtual bool is_CounterData()     const { return false; }
+  virtual bool is_JumpData()        const { return false; }
+  virtual bool is_ReceiverTypeData()const { return false; }
+  virtual bool is_VirtualCallData() const { return false; }
+  virtual bool is_RetData()         const { return false; }
+  virtual bool is_BranchData()      const { return false; }
+  virtual bool is_ArrayData()       const { return false; }
+  virtual bool is_MultiBranchData() const { return false; }
+  virtual bool is_ArgInfoData()     const { return false; }
+  virtual bool is_CallTypeData()    const { return false; }
+  virtual bool is_VirtualCallTypeData()const { return false; }
 
 
-  BitData* as_BitData() {
+  BitData* as_BitData() const {
     assert(is_BitData(), "wrong type");
     return is_BitData()         ? (BitData*)        this : NULL;
   }
-  CounterData* as_CounterData() {
+  CounterData* as_CounterData() const {
     assert(is_CounterData(), "wrong type");
     return is_CounterData()     ? (CounterData*)    this : NULL;
   }
-  JumpData* as_JumpData() {
+  JumpData* as_JumpData() const {
     assert(is_JumpData(), "wrong type");
     return is_JumpData()        ? (JumpData*)       this : NULL;
   }
-  ReceiverTypeData* as_ReceiverTypeData() {
+  ReceiverTypeData* as_ReceiverTypeData() const {
     assert(is_ReceiverTypeData(), "wrong type");
     return is_ReceiverTypeData() ? (ReceiverTypeData*)this : NULL;
   }
-  VirtualCallData* as_VirtualCallData() {
+  VirtualCallData* as_VirtualCallData() const {
     assert(is_VirtualCallData(), "wrong type");
     return is_VirtualCallData() ? (VirtualCallData*)this : NULL;
   }
-  RetData* as_RetData() {
+  RetData* as_RetData() const {
     assert(is_RetData(), "wrong type");
     return is_RetData()         ? (RetData*)        this : NULL;
   }
-  BranchData* as_BranchData() {
+  BranchData* as_BranchData() const {
     assert(is_BranchData(), "wrong type");
     return is_BranchData()      ? (BranchData*)     this : NULL;
   }
-  ArrayData* as_ArrayData() {
+  ArrayData* as_ArrayData() const {
     assert(is_ArrayData(), "wrong type");
     return is_ArrayData()       ? (ArrayData*)      this : NULL;
   }
-  MultiBranchData* as_MultiBranchData() {
+  MultiBranchData* as_MultiBranchData() const {
     assert(is_MultiBranchData(), "wrong type");
     return is_MultiBranchData() ? (MultiBranchData*)this : NULL;
   }
-  ArgInfoData* as_ArgInfoData() {
+  ArgInfoData* as_ArgInfoData() const {
     assert(is_ArgInfoData(), "wrong type");
     return is_ArgInfoData() ? (ArgInfoData*)this : NULL;
+  }
+  CallTypeData* as_CallTypeData() const {
+    assert(is_CallTypeData(), "wrong type");
+    return is_CallTypeData() ? (CallTypeData*)this : NULL;
+  }
+  VirtualCallTypeData* as_VirtualCallTypeData() const {
+    assert(is_VirtualCallTypeData(), "wrong type");
+    return is_VirtualCallTypeData() ? (VirtualCallTypeData*)this : NULL;
   }
 
 
@@ -443,15 +459,15 @@ public:
   // an oop in a ProfileData to the ci equivalent. Generally speaking,
   // most ProfileData don't require any translation, so we provide the null
   // translation here, and the required translators are in the ci subclasses.
-  virtual void translate_from(ProfileData* data) {}
+  virtual void translate_from(const ProfileData* data) {}
 
-  virtual void print_data_on(outputStream* st) {
+  virtual void print_data_on(outputStream* st) const {
     ShouldNotReachHere();
   }
 
 #ifndef PRODUCT
-  void print_shared(outputStream* st, const char* name);
-  void tab(outputStream* st);
+  void print_shared(outputStream* st, const char* name) const;
+  void tab(outputStream* st, bool first = false) const;
 #endif
 };
 
@@ -470,13 +486,13 @@ public:
   BitData(DataLayout* layout) : ProfileData(layout) {
   }
 
-  virtual bool is_BitData() { return true; }
+  virtual bool is_BitData() const { return true; }
 
   static int static_cell_count() {
     return bit_cell_count;
   }
 
-  virtual int cell_count() {
+  virtual int cell_count() const {
     return static_cell_count();
   }
 
@@ -498,7 +514,7 @@ public:
   }
 
 #ifndef PRODUCT
-  void print_data_on(outputStream* st);
+  void print_data_on(outputStream* st) const;
 #endif
 };
 
@@ -514,18 +530,18 @@ protected:
 public:
   CounterData(DataLayout* layout) : BitData(layout) {}
 
-  virtual bool is_CounterData() { return true; }
+  virtual bool is_CounterData() const { return true; }
 
   static int static_cell_count() {
     return counter_cell_count;
   }
 
-  virtual int cell_count() {
+  virtual int cell_count() const {
     return static_cell_count();
   }
 
   // Direct accessor
-  uint count() {
+  uint count() const {
     return uint_at(count_off);
   }
 
@@ -542,7 +558,7 @@ public:
   }
 
 #ifndef PRODUCT
-  void print_data_on(outputStream* st);
+  void print_data_on(outputStream* st) const;
 #endif
 };
 
@@ -570,18 +586,18 @@ public:
       layout->tag() == DataLayout::branch_data_tag, "wrong type");
   }
 
-  virtual bool is_JumpData() { return true; }
+  virtual bool is_JumpData() const { return true; }
 
   static int static_cell_count() {
     return jump_cell_count;
   }
 
-  virtual int cell_count() {
+  virtual int cell_count() const {
     return static_cell_count();
   }
 
   // Direct accessor
-  uint taken() {
+  uint taken() const {
     return uint_at(taken_off_set);
   }
 
@@ -598,7 +614,7 @@ public:
     return cnt;
   }
 
-  int displacement() {
+  int displacement() const {
     return int_at(displacement_off_set);
   }
 
@@ -615,7 +631,332 @@ public:
   void post_initialize(BytecodeStream* stream, MethodData* mdo);
 
 #ifndef PRODUCT
-  void print_data_on(outputStream* st);
+  void print_data_on(outputStream* st) const;
+#endif
+};
+
+// Entries in a ProfileData object to record types: it can either be
+// none (no profile), unknown (conflicting profile data) or a klass if
+// a single one is seen. Whether a null reference was seen is also
+// recorded. No counter is associated with the type and a single type
+// is tracked (unlike VirtualCallData).
+class TypeEntries {
+
+public:
+
+  // A single cell is used to record information for a type:
+  // - the cell is initialized to 0
+  // - when a type is discovered it is stored in the cell
+  // - bit zero of the cell is used to record whether a null reference
+  // was encountered or not
+  // - bit 1 is set to record a conflict in the type information
+
+  enum {
+    null_seen = 1,
+    type_mask = ~null_seen,
+    type_unknown = 2,
+    status_bits = null_seen | type_unknown,
+    type_klass_mask = ~status_bits
+  };
+
+  // what to initialize a cell to
+  static intptr_t type_none() {
+    return 0;
+  }
+
+  // null seen = bit 0 set?
+  static bool was_null_seen(intptr_t v) {
+    return (v & null_seen) != 0;
+  }
+
+  // conflicting type information = bit 1 set?
+  static bool is_type_unknown(intptr_t v) {
+    return (v & type_unknown) != 0;
+  }
+
+  // not type information yet = all bits cleared, ignoring bit 0?
+  static bool is_type_none(intptr_t v) {
+    return (v & type_mask) == 0;
+  }
+
+  // recorded type: cell without bit 0 and 1
+  static intptr_t klass_part(intptr_t v) {
+    intptr_t r = v & type_klass_mask;
+    assert (r != 0, "invalid");
+    return r;
+  }
+
+  // type recorded
+  static Klass* valid_klass(intptr_t k) {
+    if (!is_type_none(k) &&
+        !is_type_unknown(k)) {
+      return (Klass*)klass_part(k);
+    } else {
+      return NULL;
+    }
+  }
+
+  static intptr_t with_status(intptr_t k, intptr_t in) {
+    return k | (in & status_bits);
+  }
+
+  static intptr_t with_status(Klass* k, intptr_t in) {
+    return with_status((intptr_t)k, in);
+  }
+
+#ifndef PRODUCT
+  static void print_klass(outputStream* st, intptr_t k);
+#endif
+
+  // GC support
+  static bool is_loader_alive(BoolObjectClosure* is_alive_cl, intptr_t p);
+
+protected:
+  // ProfileData object these entries are part of
+  ProfileData* _pd;
+  // offset within the ProfileData object where the entries start
+  const int _base_off;
+
+  TypeEntries(int base_off)
+    : _base_off(base_off), _pd(NULL) {}
+
+  void set_intptr_at(int index, intptr_t value) {
+    _pd->set_intptr_at(index, value);
+  }
+
+  intptr_t intptr_at(int index) const {
+    return _pd->intptr_at(index);
+  }
+
+public:
+  void set_profile_data(ProfileData* pd) {
+    _pd = pd;
+  }
+};
+
+// Type entries used for arguments passed at a call and parameters on
+// method entry. 2 cells per entry: one for the type encoded as in
+// TypeEntries and one initialized with the stack slot where the
+// profiled object is to be found so that the interpreter can locate
+// it quickly.
+class TypeStackSlotEntries : public TypeEntries {
+
+private:
+  enum {
+    stack_slot_entry,
+    type_entry,
+    per_arg_cell_count
+  };
+
+  // Start with a header if needed. It stores the number of cells used
+  // for this call type information. Unless we collect only profiling
+  // for a single argument the number of cells is unknown statically.
+  static int header_cell_count() {
+    return (TypeProfileArgsLimit > 1) ? 1 : 0;
+  }
+
+  static int cell_count_local_offset() {
+     assert(arguments_profiling_enabled() && TypeProfileArgsLimit > 1, "no cell count");
+     return 0;
+   }
+
+  int cell_count_global_offset() const {
+    return _base_off + cell_count_local_offset();
+  }
+
+  // offset of cell for stack slot for entry i within ProfileData object
+  int stack_slot_global_offset(int i) const {
+    return _base_off + stack_slot_local_offset(i);
+  }
+
+  void check_number_of_arguments(int total) {
+    assert(number_of_arguments() == total, "should be set in DataLayout::initialize");
+  }
+
+  // number of cells not counting the header
+  int cell_count_no_header() const {
+    return _pd->uint_at(cell_count_global_offset());
+  }
+
+  static bool arguments_profiling_enabled();
+  static void assert_arguments_profiling_enabled() {
+    assert(arguments_profiling_enabled(), "args profiling should be on");
+  }
+
+protected:
+
+  // offset of cell for type for entry i within ProfileData object
+  int type_global_offset(int i) const {
+    return _base_off + type_local_offset(i);
+  }
+
+public:
+
+  TypeStackSlotEntries(int base_off)
+    : TypeEntries(base_off) {}
+
+  static int compute_cell_count(BytecodeStream* stream);
+
+  static void initialize(DataLayout* dl, int base, int cell_count) {
+    if (TypeProfileArgsLimit > 1) {
+      int off = base + cell_count_local_offset();
+      dl->set_cell_at(off, cell_count - base - header_cell_count());
+    }
+  }
+
+  void post_initialize(BytecodeStream* stream);
+
+  int number_of_arguments() const {
+    assert_arguments_profiling_enabled();
+    if (TypeProfileArgsLimit > 1) {
+      int cell_count = cell_count_no_header();
+      int nb = cell_count / TypeStackSlotEntries::per_arg_count();
+      assert(nb > 0 && nb <= TypeProfileArgsLimit , "only when we profile args");
+      return nb;
+    } else {
+      assert(TypeProfileArgsLimit == 1, "at least one arg");
+      return 1;
+    }
+  }
+
+  int cell_count() const {
+    assert_arguments_profiling_enabled();
+    if (TypeProfileArgsLimit > 1) {
+      return _base_off + header_cell_count() + _pd->int_at_unchecked(cell_count_global_offset());
+    } else {
+      return _base_off + TypeStackSlotEntries::per_arg_count();
+    }
+  }
+
+  // offset of cell for stack slot for entry i within this block of cells for a TypeStackSlotEntries
+  static int stack_slot_local_offset(int i) {
+    assert_arguments_profiling_enabled();
+    return header_cell_count() + i * per_arg_cell_count + stack_slot_entry;
+  }
+
+  // offset of cell for type for entry i within this block of cells for a TypeStackSlotEntries
+  static int type_local_offset(int i) {
+    return header_cell_count() + i * per_arg_cell_count + type_entry;
+  }
+
+  // stack slot for entry i
+  uint stack_slot(int i) const {
+    assert(i >= 0 && i < number_of_arguments(), "oob");
+    return _pd->uint_at(stack_slot_global_offset(i));
+  }
+
+  // set stack slot for entry i
+  void set_stack_slot(int i, uint num) {
+    assert(i >= 0 && i < number_of_arguments(), "oob");
+    _pd->set_uint_at(stack_slot_global_offset(i), num);
+  }
+
+  // type for entry i
+  intptr_t type(int i) const {
+    assert(i >= 0 && i < number_of_arguments(), "oob");
+    return _pd->intptr_at(type_global_offset(i));
+  }
+
+  // set type for entry i
+  void set_type(int i, intptr_t k) {
+    assert(i >= 0 && i < number_of_arguments(), "oob");
+    _pd->set_intptr_at(type_global_offset(i), k);
+  }
+
+  static ByteSize per_arg_size() {
+    return in_ByteSize(per_arg_cell_count * DataLayout::cell_size);
+  }
+
+  static int per_arg_count() {
+    return per_arg_cell_count ;
+  }
+
+  // Code generation support
+   static ByteSize cell_count_offset() {
+     return in_ByteSize(cell_count_local_offset() * DataLayout::cell_size);
+   }
+
+   static ByteSize args_data_offset() {
+     return in_ByteSize(header_cell_count() * DataLayout::cell_size);
+   }
+
+   static ByteSize stack_slot_offset(int i) {
+     return in_ByteSize(stack_slot_local_offset(i) * DataLayout::cell_size);
+   }
+
+   static ByteSize type_offset(int i) {
+     return in_ByteSize(type_local_offset(i) * DataLayout::cell_size);
+   }
+
+  // GC support
+  void clean_weak_klass_links(BoolObjectClosure* is_alive_closure);
+
+#ifndef PRODUCT
+  void print_data_on(outputStream* st) const;
+#endif
+};
+
+// CallTypeData
+//
+// A CallTypeData is used to access profiling information about a non
+// virtual call for which we collect type information about arguments.
+class CallTypeData : public CounterData {
+private:
+  TypeStackSlotEntries _args;
+
+public:
+  CallTypeData(DataLayout* layout) :
+    CounterData(layout), _args(CounterData::static_cell_count())  {
+    assert(layout->tag() == DataLayout::call_type_data_tag, "wrong type");
+    // Some compilers (VC++) don't want this passed in member initialization list
+    _args.set_profile_data(this);
+  }
+
+  const TypeStackSlotEntries* args() const { return &_args; }
+
+  virtual bool is_CallTypeData() const { return true; }
+
+  static int static_cell_count() {
+    return -1;
+  }
+
+  static int compute_cell_count(BytecodeStream* stream) {
+    return CounterData::static_cell_count() + TypeStackSlotEntries::compute_cell_count(stream);
+  }
+
+  static void initialize(DataLayout* dl, int cell_count) {
+    TypeStackSlotEntries::initialize(dl, CounterData::static_cell_count(), cell_count);
+  }
+
+  virtual void post_initialize(BytecodeStream* stream, MethodData* mdo) {
+    _args.post_initialize(stream);
+  }
+
+  virtual int cell_count() const {
+    return _args.cell_count();
+  }
+
+  uint number_of_arguments() const {
+    return args()->number_of_arguments();
+  }
+
+  void set_argument_type(int i, Klass* k) {
+    intptr_t current = _args.type(i);
+    _args.set_type(i, TypeEntries::with_status(k, current));
+  }
+
+  // Code generation support
+  static ByteSize args_data_offset() {
+    return cell_offset(CounterData::static_cell_count()) + TypeStackSlotEntries::args_data_offset();
+  }
+
+  // GC support
+  virtual void clean_weak_klass_links(BoolObjectClosure* is_alive_closure) {
+    _args.clean_weak_klass_links(is_alive_closure);
+  }
+
+#ifndef PRODUCT
+  virtual void print_data_on(outputStream* st) const;
 #endif
 };
 
@@ -636,16 +977,17 @@ protected:
 public:
   ReceiverTypeData(DataLayout* layout) : CounterData(layout) {
     assert(layout->tag() == DataLayout::receiver_type_data_tag ||
-           layout->tag() == DataLayout::virtual_call_data_tag, "wrong type");
+           layout->tag() == DataLayout::virtual_call_data_tag ||
+           layout->tag() == DataLayout::virtual_call_type_data_tag, "wrong type");
   }
 
-  virtual bool is_ReceiverTypeData() { return true; }
+  virtual bool is_ReceiverTypeData() const { return true; }
 
   static int static_cell_count() {
     return counter_cell_count + (uint) TypeProfileWidth * receiver_type_row_cell_count;
   }
 
-  virtual int cell_count() {
+  virtual int cell_count() const {
     return static_cell_count();
   }
 
@@ -660,7 +1002,7 @@ public:
     return count0_offset + row * receiver_type_row_cell_count;
   }
 
-  Klass* receiver(uint row) {
+  Klass* receiver(uint row) const {
     assert(row < row_limit(), "oob");
 
     Klass* recv = (Klass*)intptr_at(receiver_cell_index(row));
@@ -673,7 +1015,7 @@ public:
     set_intptr_at(receiver_cell_index(row), (uintptr_t)k);
   }
 
-  uint receiver_count(uint row) {
+  uint receiver_count(uint row) const {
     assert(row < row_limit(), "oob");
     return uint_at(receiver_count_cell_index(row));
   }
@@ -721,8 +1063,8 @@ public:
   virtual void clean_weak_klass_links(BoolObjectClosure* is_alive_closure);
 
 #ifndef PRODUCT
-  void print_receiver_data_on(outputStream* st);
-  void print_data_on(outputStream* st);
+  void print_receiver_data_on(outputStream* st) const;
+  void print_data_on(outputStream* st) const;
 #endif
 };
 
@@ -733,10 +1075,11 @@ public:
 class VirtualCallData : public ReceiverTypeData {
 public:
   VirtualCallData(DataLayout* layout) : ReceiverTypeData(layout) {
-    assert(layout->tag() == DataLayout::virtual_call_data_tag, "wrong type");
+    assert(layout->tag() == DataLayout::virtual_call_data_tag ||
+           layout->tag() == DataLayout::virtual_call_type_data_tag, "wrong type");
   }
 
-  virtual bool is_VirtualCallData() { return true; }
+  virtual bool is_VirtualCallData() const { return true; }
 
   static int static_cell_count() {
     // At this point we could add more profile state, e.g., for arguments.
@@ -744,7 +1087,7 @@ public:
     return ReceiverTypeData::static_cell_count();
   }
 
-  virtual int cell_count() {
+  virtual int cell_count() const {
     return static_cell_count();
   }
 
@@ -754,7 +1097,73 @@ public:
   }
 
 #ifndef PRODUCT
-  void print_data_on(outputStream* st);
+  void print_data_on(outputStream* st) const;
+#endif
+};
+
+// VirtualCallTypeData
+//
+// A VirtualCallTypeData is used to access profiling information about
+// a virtual call for which we collect type information about
+// arguments.
+class VirtualCallTypeData : public VirtualCallData {
+private:
+  TypeStackSlotEntries _args;
+
+public:
+  VirtualCallTypeData(DataLayout* layout) :
+    VirtualCallData(layout), _args(VirtualCallData::static_cell_count())  {
+    assert(layout->tag() == DataLayout::virtual_call_type_data_tag, "wrong type");
+    // Some compilers (VC++) don't want this passed in member initialization list
+    _args.set_profile_data(this);
+  }
+
+  const TypeStackSlotEntries* args() const { return &_args; }
+
+  virtual bool is_VirtualCallTypeData() const { return true; }
+
+  static int static_cell_count() {
+    return -1;
+  }
+
+  static int compute_cell_count(BytecodeStream* stream) {
+    return VirtualCallData::static_cell_count() + TypeStackSlotEntries::compute_cell_count(stream);
+  }
+
+  static void initialize(DataLayout* dl, int cell_count) {
+    TypeStackSlotEntries::initialize(dl, VirtualCallData::static_cell_count(), cell_count);
+  }
+
+  virtual void post_initialize(BytecodeStream* stream, MethodData* mdo) {
+    _args.post_initialize(stream);
+  }
+
+  virtual int cell_count() const {
+    return _args.cell_count();
+  }
+
+  uint number_of_arguments() const {
+    return args()->number_of_arguments();
+  }
+
+  void set_argument_type(int i, Klass* k) {
+    intptr_t current = _args.type(i);
+    _args.set_type(i, TypeEntries::with_status(k, current));
+  }
+
+  // Code generation support
+  static ByteSize args_data_offset() {
+    return cell_offset(VirtualCallData::static_cell_count()) + TypeStackSlotEntries::args_data_offset();
+  }
+
+  // GC support
+  virtual void clean_weak_klass_links(BoolObjectClosure* is_alive_closure) {
+    ReceiverTypeData::clean_weak_klass_links(is_alive_closure);
+    _args.clean_weak_klass_links(is_alive_closure);
+  }
+
+#ifndef PRODUCT
+  virtual void print_data_on(outputStream* st) const;
 #endif
 };
 
@@ -797,7 +1206,7 @@ public:
     assert(layout->tag() == DataLayout::ret_data_tag, "wrong type");
   }
 
-  virtual bool is_RetData() { return true; }
+  virtual bool is_RetData() const { return true; }
 
   enum {
     no_bci = -1 // value of bci when bci1/2 are not in use.
@@ -807,7 +1216,7 @@ public:
     return counter_cell_count + (uint) BciProfileWidth * ret_row_cell_count;
   }
 
-  virtual int cell_count() {
+  virtual int cell_count() const {
     return static_cell_count();
   }
 
@@ -825,13 +1234,13 @@ public:
   }
 
   // Direct accessors
-  int bci(uint row) {
+  int bci(uint row) const {
     return int_at(bci_cell_index(row));
   }
-  uint bci_count(uint row) {
+  uint bci_count(uint row) const {
     return uint_at(bci_count_cell_index(row));
   }
-  int bci_displacement(uint row) {
+  int bci_displacement(uint row) const {
     return int_at(bci_displacement_cell_index(row));
   }
 
@@ -853,7 +1262,7 @@ public:
   void post_initialize(BytecodeStream* stream, MethodData* mdo);
 
 #ifndef PRODUCT
-  void print_data_on(outputStream* st);
+  void print_data_on(outputStream* st) const;
 #endif
 };
 
@@ -878,18 +1287,18 @@ public:
     assert(layout->tag() == DataLayout::branch_data_tag, "wrong type");
   }
 
-  virtual bool is_BranchData() { return true; }
+  virtual bool is_BranchData() const { return true; }
 
   static int static_cell_count() {
     return branch_cell_count;
   }
 
-  virtual int cell_count() {
+  virtual int cell_count() const {
     return static_cell_count();
   }
 
   // Direct accessor
-  uint not_taken() {
+  uint not_taken() const {
     return uint_at(not_taken_off_set);
   }
 
@@ -917,7 +1326,7 @@ public:
   void post_initialize(BytecodeStream* stream, MethodData* mdo);
 
 #ifndef PRODUCT
-  void print_data_on(outputStream* st);
+  void print_data_on(outputStream* st) const;
 #endif
 };
 
@@ -935,15 +1344,15 @@ protected:
     array_start_off_set
   };
 
-  uint array_uint_at(int index) {
+  uint array_uint_at(int index) const {
     int aindex = index + array_start_off_set;
     return uint_at(aindex);
   }
-  int array_int_at(int index) {
+  int array_int_at(int index) const {
     int aindex = index + array_start_off_set;
     return int_at(aindex);
   }
-  oop array_oop_at(int index) {
+  oop array_oop_at(int index) const {
     int aindex = index + array_start_off_set;
     return oop_at(aindex);
   }
@@ -960,17 +1369,17 @@ protected:
 public:
   ArrayData(DataLayout* layout) : ProfileData(layout) {}
 
-  virtual bool is_ArrayData() { return true; }
+  virtual bool is_ArrayData() const { return true; }
 
   static int static_cell_count() {
     return -1;
   }
 
-  int array_len() {
+  int array_len() const {
     return int_at_unchecked(array_len_off_set);
   }
 
-  virtual int cell_count() {
+  virtual int cell_count() const {
     return array_len() + 1;
   }
 
@@ -1017,29 +1426,29 @@ public:
     assert(layout->tag() == DataLayout::multi_branch_data_tag, "wrong type");
   }
 
-  virtual bool is_MultiBranchData() { return true; }
+  virtual bool is_MultiBranchData() const { return true; }
 
   static int compute_cell_count(BytecodeStream* stream);
 
-  int number_of_cases() {
+  int number_of_cases() const {
     int alen = array_len() - 2; // get rid of default case here.
     assert(alen % per_case_cell_count == 0, "must be even");
     return (alen / per_case_cell_count);
   }
 
-  uint default_count() {
+  uint default_count() const {
     return array_uint_at(default_count_off_set);
   }
-  int default_displacement() {
+  int default_displacement() const {
     return array_int_at(default_disaplacement_off_set);
   }
 
-  uint count_at(int index) {
+  uint count_at(int index) const {
     return array_uint_at(case_array_start +
                          index * per_case_cell_count +
                          relative_count_off_set);
   }
-  int displacement_at(int index) {
+  int displacement_at(int index) const {
     return array_int_at(case_array_start +
                         index * per_case_cell_count +
                         relative_displacement_off_set);
@@ -1074,7 +1483,7 @@ public:
   void post_initialize(BytecodeStream* stream, MethodData* mdo);
 
 #ifndef PRODUCT
-  void print_data_on(outputStream* st);
+  void print_data_on(outputStream* st) const;
 #endif
 };
 
@@ -1085,14 +1494,14 @@ public:
     assert(layout->tag() == DataLayout::arg_info_data_tag, "wrong type");
   }
 
-  virtual bool is_ArgInfoData() { return true; }
+  virtual bool is_ArgInfoData() const { return true; }
 
 
-  int number_of_args() {
+  int number_of_args() const {
     return array_len();
   }
 
-  uint arg_modified(int arg) {
+  uint arg_modified(int arg) const {
     return array_uint_at(arg);
   }
 
@@ -1101,7 +1510,7 @@ public:
   }
 
 #ifndef PRODUCT
-  void print_data_on(outputStream* st);
+  void print_data_on(outputStream* st) const;
 #endif
 };
 
@@ -1270,6 +1679,18 @@ private:
 
   // return the argument info cell
   ArgInfoData *arg_info();
+
+  enum {
+    no_type_profile = 0,
+    type_profile_jsr292 = 1,
+    type_profile_all = 2
+  };
+
+  static bool profile_jsr292(methodHandle m, int bci);
+  static int profile_arguments_flag();
+  static bool profile_arguments_jsr292_only();
+  static bool profile_all_arguments();
+  static bool profile_arguments_for_invoke(methodHandle m, int bci);
 
 public:
   static int header_size() {
@@ -1510,6 +1931,8 @@ public:
   // verification
   void verify_on(outputStream* st);
   void verify_data_on(outputStream* st);
+
+  static bool profile_arguments();
 };
 
 #endif // SHARE_VM_OOPS_METHODDATAOOP_HPP

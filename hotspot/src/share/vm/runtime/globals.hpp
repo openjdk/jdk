@@ -2648,6 +2648,13 @@ class CommandLineFlags {
   product(bool, AggressiveOpts, false,                                      \
           "Enable aggressive optimizations - see arguments.cpp")            \
                                                                             \
+  product_pd(uintx, TypeProfileLevel,                                       \
+          "Type profiling of arguments at call:"                            \
+          "0->off ; 1->js292 only; 2->all methods")                         \
+                                                                            \
+  product(intx, TypeProfileArgsLimit,     2,                                \
+          "max number of call arguments to consider for type profiling")    \
+                                                                            \
   /* statistics */                                                          \
   develop(bool, CountCompiledCalls, false,                                  \
           "counts method invocations")                                      \
@@ -3759,7 +3766,6 @@ class CommandLineFlags {
           "Enable event-based tracing")                                     \
   product(bool, UseLockedTracing, false,                                    \
           "Use locked-tracing when doing event-based tracing")
-
 
 /*
  *  Macros for factoring of globals

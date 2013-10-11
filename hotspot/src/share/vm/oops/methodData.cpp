@@ -56,6 +56,11 @@ void DataLayout::initialize(u1 tag, u2 bci, int cell_count) {
   if (needs_array_len(tag)) {
     set_cell_at(ArrayData::array_len_off_set, cell_count - 1); // -1 for header.
   }
+  if (tag == call_type_data_tag) {
+    CallTypeData::initialize(this, cell_count);
+  } else if (tag == virtual_call_type_data_tag) {
+    VirtualCallTypeData::initialize(this, cell_count);
+  }
 }
 
 void DataLayout::clean_weak_klass_links(BoolObjectClosure* cl) {
@@ -76,7 +81,7 @@ ProfileData::ProfileData() {
 }
 
 #ifndef PRODUCT
-void ProfileData::print_shared(outputStream* st, const char* name) {
+void ProfileData::print_shared(outputStream* st, const char* name) const {
   st->print("bci: %d", bci());
   st->fill_to(tab_width_one);
   st->print("%s", name);
@@ -91,8 +96,8 @@ void ProfileData::print_shared(outputStream* st, const char* name) {
     st->print("flags(%d) ", flags);
 }
 
-void ProfileData::tab(outputStream* st) {
-  st->fill_to(tab_width_two);
+void ProfileData::tab(outputStream* st, bool first) const {
+  st->fill_to(first ? tab_width_one : tab_width_two);
 }
 #endif // !PRODUCT
 
@@ -104,7 +109,7 @@ void ProfileData::tab(outputStream* st) {
 
 
 #ifndef PRODUCT
-void BitData::print_data_on(outputStream* st) {
+void BitData::print_data_on(outputStream* st) const {
   print_shared(st, "BitData");
 }
 #endif // !PRODUCT
@@ -115,7 +120,7 @@ void BitData::print_data_on(outputStream* st) {
 // A CounterData corresponds to a simple counter.
 
 #ifndef PRODUCT
-void CounterData::print_data_on(outputStream* st) {
+void CounterData::print_data_on(outputStream* st) const {
   print_shared(st, "CounterData");
   st->print_cr("count(%u)", count());
 }
@@ -145,11 +150,129 @@ void JumpData::post_initialize(BytecodeStream* stream, MethodData* mdo) {
 }
 
 #ifndef PRODUCT
-void JumpData::print_data_on(outputStream* st) {
+void JumpData::print_data_on(outputStream* st) const {
   print_shared(st, "JumpData");
   st->print_cr("taken(%u) displacement(%d)", taken(), displacement());
 }
 #endif // !PRODUCT
+
+int TypeStackSlotEntries::compute_cell_count(BytecodeStream* stream) {
+  int max = TypeProfileArgsLimit;
+  assert(Bytecodes::is_invoke(stream->code()), "should be invoke");
+  Bytecode_invoke inv(stream->method(), stream->bci());
+
+  ResourceMark rm;
+  SignatureStream ss(inv.signature());
+  int args_count = MIN2(ss.reference_parameter_count(), max);
+
+  return args_count * per_arg_cell_count + (args_count > 0 ? header_cell_count() : 0);
+}
+
+class ArgumentOffsetComputer : public SignatureInfo {
+private:
+  int _max;
+  GrowableArray<int> _offsets;
+
+  void set(int size, BasicType type) { _size += size; }
+  void do_object(int begin, int end) {
+    if (_offsets.length() < _max) {
+      _offsets.push(_size);
+    }
+    SignatureInfo::do_object(begin, end);
+  }
+  void do_array (int begin, int end) {
+    if (_offsets.length() < _max) {
+      _offsets.push(_size);
+    }
+    SignatureInfo::do_array(begin, end);
+  }
+
+public:
+  ArgumentOffsetComputer(Symbol* signature, int max)
+    : SignatureInfo(signature), _max(max), _offsets(Thread::current(), max) {
+  }
+
+  int total() { lazy_iterate_parameters(); return _size; }
+
+  int off_at(int i) const { return _offsets.at(i); }
+};
+
+void TypeStackSlotEntries::post_initialize(BytecodeStream* stream) {
+  ResourceMark rm;
+
+  assert(Bytecodes::is_invoke(stream->code()), "should be invoke");
+  Bytecode_invoke inv(stream->method(), stream->bci());
+
+#ifdef ASSERT
+  SignatureStream ss(inv.signature());
+  int count = MIN2(ss.reference_parameter_count(), (int)TypeProfileArgsLimit);
+  assert(count > 0, "room for args type but none found?");
+  check_number_of_arguments(count);
+#endif
+
+  int start = 0;
+  ArgumentOffsetComputer aos(inv.signature(), number_of_arguments()-start);
+  aos.total();
+  bool has_receiver = inv.has_receiver();
+  for (int i = start; i < number_of_arguments(); i++) {
+    set_stack_slot(i, aos.off_at(i-start) + (has_receiver ? 1 : 0));
+    set_type(i, type_none());
+  }
+}
+
+bool TypeEntries::is_loader_alive(BoolObjectClosure* is_alive_cl, intptr_t p) {
+  return !is_type_none(p) &&
+    !((Klass*)klass_part(p))->is_loader_alive(is_alive_cl);
+}
+
+void TypeStackSlotEntries::clean_weak_klass_links(BoolObjectClosure* is_alive_cl) {
+  for (int i = 0; i < number_of_arguments(); i++) {
+    intptr_t p = type(i);
+    if (is_loader_alive(is_alive_cl, p)) {
+      set_type(i, type_none());
+    }
+  }
+}
+
+bool TypeStackSlotEntries::arguments_profiling_enabled() {
+  return MethodData::profile_arguments();
+}
+
+#ifndef PRODUCT
+void TypeEntries::print_klass(outputStream* st, intptr_t k) {
+  if (is_type_none(k)) {
+    st->print("none");
+  } else if (is_type_unknown(k)) {
+    st->print("unknown");
+  } else {
+    valid_klass(k)->print_value_on(st);
+  }
+  if (was_null_seen(k)) {
+    st->print(" (null seen)");
+  }
+}
+
+void TypeStackSlotEntries::print_data_on(outputStream* st) const {
+  _pd->tab(st, true);
+  st->print("argument types");
+  for (int i = 0; i < number_of_arguments(); i++) {
+    _pd->tab(st);
+    st->print("%d: stack(%u) ", i, stack_slot(i));
+    print_klass(st, type(i));
+    st->cr();
+  }
+}
+
+void CallTypeData::print_data_on(outputStream* st) const {
+  CounterData::print_data_on(st);
+  _args.print_data_on(st);
+}
+
+void VirtualCallTypeData::print_data_on(outputStream* st) const {
+  VirtualCallData::print_data_on(st);
+  _args.print_data_on(st);
+}
+#endif
 
 // ==================================================================
 // ReceiverTypeData
@@ -169,7 +292,7 @@ void ReceiverTypeData::clean_weak_klass_links(BoolObjectClosure* is_alive_cl) {
 }
 
 #ifndef PRODUCT
-void ReceiverTypeData::print_receiver_data_on(outputStream* st) {
+void ReceiverTypeData::print_receiver_data_on(outputStream* st) const {
   uint row;
   int entries = 0;
   for (row = 0; row < row_limit(); row++) {
@@ -190,11 +313,11 @@ void ReceiverTypeData::print_receiver_data_on(outputStream* st) {
     }
   }
 }
-void ReceiverTypeData::print_data_on(outputStream* st) {
+void ReceiverTypeData::print_data_on(outputStream* st) const {
   print_shared(st, "ReceiverTypeData");
   print_receiver_data_on(st);
 }
-void VirtualCallData::print_data_on(outputStream* st) {
+void VirtualCallData::print_data_on(outputStream* st) const {
   print_shared(st, "VirtualCallData");
   print_receiver_data_on(st);
 }
@@ -246,7 +369,7 @@ address RetData::fixup_ret(int return_bci, MethodData* h_mdo) {
 
 
 #ifndef PRODUCT
-void RetData::print_data_on(outputStream* st) {
+void RetData::print_data_on(outputStream* st) const {
   print_shared(st, "RetData");
   uint row;
   int entries = 0;
@@ -281,7 +404,7 @@ void BranchData::post_initialize(BytecodeStream* stream, MethodData* mdo) {
 }
 
 #ifndef PRODUCT
-void BranchData::print_data_on(outputStream* st) {
+void BranchData::print_data_on(outputStream* st) const {
   print_shared(st, "BranchData");
   st->print_cr("taken(%u) displacement(%d)",
                taken(), displacement());
@@ -355,7 +478,7 @@ void MultiBranchData::post_initialize(BytecodeStream* stream,
 }
 
 #ifndef PRODUCT
-void MultiBranchData::print_data_on(outputStream* st) {
+void MultiBranchData::print_data_on(outputStream* st) const {
   print_shared(st, "MultiBranchData");
   st->print_cr("default_count(%u) displacement(%d)",
                default_count(), default_displacement());
@@ -369,7 +492,7 @@ void MultiBranchData::print_data_on(outputStream* st) {
 #endif
 
 #ifndef PRODUCT
-void ArgInfoData::print_data_on(outputStream* st) {
+void ArgInfoData::print_data_on(outputStream* st) const {
   print_shared(st, "ArgInfoData");
   int nargs = number_of_args();
   for (int i = 0; i < nargs; i++) {
@@ -407,7 +530,11 @@ int MethodData::bytecode_cell_count(Bytecodes::Code code) {
     }
   case Bytecodes::_invokespecial:
   case Bytecodes::_invokestatic:
-    return CounterData::static_cell_count();
+    if (MethodData::profile_arguments()) {
+      return variable_cell_count;
+    } else {
+      return CounterData::static_cell_count();
+    }
   case Bytecodes::_goto:
   case Bytecodes::_goto_w:
   case Bytecodes::_jsr:
@@ -415,9 +542,17 @@ int MethodData::bytecode_cell_count(Bytecodes::Code code) {
     return JumpData::static_cell_count();
   case Bytecodes::_invokevirtual:
   case Bytecodes::_invokeinterface:
-    return VirtualCallData::static_cell_count();
+    if (MethodData::profile_arguments()) {
+      return variable_cell_count;
+    } else {
+      return VirtualCallData::static_cell_count();
+    }
   case Bytecodes::_invokedynamic:
-    return CounterData::static_cell_count();
+    if (MethodData::profile_arguments()) {
+      return variable_cell_count;
+    } else {
+      return CounterData::static_cell_count();
+    }
   case Bytecodes::_ret:
     return RetData::static_cell_count();
   case Bytecodes::_ifeq:
@@ -453,7 +588,34 @@ int MethodData::compute_data_size(BytecodeStream* stream) {
     return 0;
   }
   if (cell_count == variable_cell_count) {
-    cell_count = MultiBranchData::compute_cell_count(stream);
+    switch (stream->code()) {
+    case Bytecodes::_lookupswitch:
+    case Bytecodes::_tableswitch:
+      cell_count = MultiBranchData::compute_cell_count(stream);
+      break;
+    case Bytecodes::_invokespecial:
+    case Bytecodes::_invokestatic:
+    case Bytecodes::_invokedynamic:
+      assert(MethodData::profile_arguments(), "should be collecting args profile");
+      if (profile_arguments_for_invoke(stream->method(), stream->bci())) {
+        cell_count = CallTypeData::compute_cell_count(stream);
+      } else {
+        cell_count = CounterData::static_cell_count();
+      }
+      break;
+    case Bytecodes::_invokevirtual:
+    case Bytecodes::_invokeinterface: {
+      assert(MethodData::profile_arguments(), "should be collecting args profile");
+      if (profile_arguments_for_invoke(stream->method(), stream->bci())) {
+        cell_count = VirtualCallTypeData::compute_cell_count(stream);
+      } else {
+        cell_count = VirtualCallData::static_cell_count();
+      }
+      break;
+    }
+    default:
+      fatal("unexpected bytecode for var length profile data");
+    }
   }
   // Note:  cell_count might be zero, meaning that there is just
   //        a DataLayout header, with no extra cells.
@@ -499,6 +661,7 @@ int MethodData::compute_allocation_size_in_bytes(methodHandle method) {
   // Add a cell to record information about modified arguments.
   int arg_size = method->size_of_parameters();
   object_size += DataLayout::compute_size_in_bytes(arg_size+1);
+
   return object_size;
 }
 
@@ -534,10 +697,20 @@ int MethodData::initialize_data(BytecodeStream* stream,
     }
     break;
   case Bytecodes::_invokespecial:
-  case Bytecodes::_invokestatic:
-    cell_count = CounterData::static_cell_count();
-    tag = DataLayout::counter_data_tag;
+  case Bytecodes::_invokestatic: {
+    int counter_data_cell_count = CounterData::static_cell_count();
+    if (profile_arguments_for_invoke(stream->method(), stream->bci())) {
+      cell_count = CallTypeData::compute_cell_count(stream);
+    } else {
+      cell_count = counter_data_cell_count;
+    }
+    if (cell_count > counter_data_cell_count) {
+      tag = DataLayout::call_type_data_tag;
+    } else {
+      tag = DataLayout::counter_data_tag;
+    }
     break;
+  }
   case Bytecodes::_goto:
   case Bytecodes::_goto_w:
   case Bytecodes::_jsr:
@@ -546,15 +719,35 @@ int MethodData::initialize_data(BytecodeStream* stream,
     tag = DataLayout::jump_data_tag;
     break;
   case Bytecodes::_invokevirtual:
-  case Bytecodes::_invokeinterface:
-    cell_count = VirtualCallData::static_cell_count();
-    tag = DataLayout::virtual_call_data_tag;
+  case Bytecodes::_invokeinterface: {
+    int virtual_call_data_cell_count = VirtualCallData::static_cell_count();
+    if (profile_arguments_for_invoke(stream->method(), stream->bci())) {
+      cell_count = VirtualCallTypeData::compute_cell_count(stream);
+    } else {
+      cell_count = virtual_call_data_cell_count;
+    }
+    if (cell_count > virtual_call_data_cell_count) {
+      tag = DataLayout::virtual_call_type_data_tag;
+    } else {
+      tag = DataLayout::virtual_call_data_tag;
+    }
     break;
-  case Bytecodes::_invokedynamic:
+  }
+  case Bytecodes::_invokedynamic: {
     // %%% should make a type profile for any invokedynamic that takes a ref argument
-    cell_count = CounterData::static_cell_count();
-    tag = DataLayout::counter_data_tag;
+    int counter_data_cell_count = CounterData::static_cell_count();
+    if (profile_arguments_for_invoke(stream->method(), stream->bci())) {
+      cell_count = CallTypeData::compute_cell_count(stream);
+    } else {
+      cell_count = counter_data_cell_count;
+    }
+    if (cell_count > counter_data_cell_count) {
+      tag = DataLayout::call_type_data_tag;
+    } else {
+      tag = DataLayout::counter_data_tag;
+    }
     break;
+  }
   case Bytecodes::_ret:
     cell_count = RetData::static_cell_count();
     tag = DataLayout::ret_data_tag;
@@ -585,6 +778,11 @@ int MethodData::initialize_data(BytecodeStream* stream,
     break;
   }
   assert(tag == DataLayout::multi_branch_data_tag ||
+         (MethodData::profile_arguments() &&
+          (tag == DataLayout::call_type_data_tag ||
+           tag == DataLayout::counter_data_tag ||
+           tag == DataLayout::virtual_call_type_data_tag ||
+           tag == DataLayout::virtual_call_data_tag)) ||
          cell_count == bytecode_cell_count(c), "cell counts must agree");
   if (cell_count >= 0) {
     assert(tag != DataLayout::no_tag, "bad tag");
@@ -631,6 +829,10 @@ ProfileData* DataLayout::data_in() {
     return new MultiBranchData(this);
   case DataLayout::arg_info_data_tag:
     return new ArgInfoData(this);
+  case DataLayout::call_type_data_tag:
+    return new CallTypeData(this);
+  case DataLayout::virtual_call_type_data_tag:
+    return new VirtualCallTypeData(this);
   };
 }
 
@@ -898,3 +1100,42 @@ void MethodData::verify_data_on(outputStream* st) {
   NEEDS_CLEANUP;
   // not yet implemented.
 }
+
+bool MethodData::profile_jsr292(methodHandle m, int bci) {
+  if (m->is_compiled_lambda_form()) {
+    return true;
+  }
+
+  Bytecode_invoke inv(m , bci);
+  return inv.is_invokedynamic() || inv.is_invokehandle();
+}
+
+int MethodData::profile_arguments_flag() {
+  return TypeProfileLevel;
+}
+
+bool MethodData::profile_arguments() {
+  return profile_arguments_flag() > no_type_profile && profile_arguments_flag() <= type_profile_all;
+}
+
+bool MethodData::profile_arguments_jsr292_only() {
+  return profile_arguments_flag() == type_profile_jsr292;
+}
+
+bool MethodData::profile_all_arguments() {
+  return profile_arguments_flag() == type_profile_all;
+}
+
+bool MethodData::profile_arguments_for_invoke(methodHandle m, int bci) {
+  if (!profile_arguments()) {
+    return false;
+  }
+
+  if (profile_all_arguments()) {
+    return true;
+  }
+
+  assert(profile_arguments_jsr292_only(), "inconsistent");
+  return profile_jsr292(m, bci);
+}
+
