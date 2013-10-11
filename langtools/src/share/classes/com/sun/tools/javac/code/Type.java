@@ -165,6 +165,12 @@ public abstract class Type extends AnnoConstruct implements TypeMirror {
         return lb.toList();
     }
 
+    /**For ErrorType, returns the original type, otherwise returns the type itself.
+     */
+    public Type getOriginalType() {
+        return this;
+    }
+
     public <R,S> R accept(Type.Visitor<R,S> v, S s) { return v.visitType(this, s); }
 
     /** Define a type given its tag and type symbol
