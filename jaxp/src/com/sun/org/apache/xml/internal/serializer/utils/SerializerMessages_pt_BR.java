@@ -18,7 +18,7 @@
  * limitations under the License.
  */
 /*
- * $Id: SerializerMessages_de.java /st_wptg_1.8.0.0.0jdk/2 2013/09/16 04:56:10 gmolloy Exp $
+ * $Id: SerializerMessages_pt_BR.java /st_wptg_1.8.0.0.0jdk/2 2013/09/11 12:46:54 gmolloy Exp $
  */
 package com.sun.org.apache.xml.internal.serializer.utils;
 
@@ -43,7 +43,7 @@ import java.util.ResourceBundle;
  *
  * @xsl.usage internal
  */
-public class SerializerMessages_de extends ListResourceBundle {
+public class SerializerMessages_pt_BR extends ListResourceBundle {
 
     /*
      * This file contains error and warning messages related to
@@ -73,31 +73,31 @@ public class SerializerMessages_de extends ListResourceBundle {
     public Object[][] getContents() {
         Object[][] contents = new Object[][] {
             {   MsgKey.BAD_MSGKEY,
-                "Der Nachrichtenschl\u00FCssel \"{0}\" ist nicht in der Nachrichtenklasse \"{1}\" enthalten" },
+                "A chave de mensagem ''{0}'' n\u00E3o est\u00E1 na classe de mensagem ''{1}''" },
 
             {   MsgKey.BAD_MSGFORMAT,
-                "Das Format der Nachricht \"{0}\" in der Nachrichtenklasse \"{1}\" war nicht erfolgreich." },
+                "Houve falha no formato da mensagem ''{0}'' na classe de mensagem ''{1}''." },
 
             {   MsgKey.ER_SERIALIZER_NOT_CONTENTHANDLER,
-                "Serializer-Klasse \"{0}\" implementiert org.xml.sax.ContentHandler nicht." },
+                "A classe ''{0}'' do serializador n\u00E3o implementa org.xml.sax.ContentHandler." },
 
             {   MsgKey.ER_RESOURCE_COULD_NOT_FIND,
-                    "Ressource [ {0} ] konnte nicht gefunden werden.\n {1}" },
+                    "N\u00E3o foi poss\u00EDvel encontrar o recurso [ {0} ].\n {1}" },
 
             {   MsgKey.ER_RESOURCE_COULD_NOT_LOAD,
-                    "Ressource [ {0} ] konnte nicht geladen werden: {1} \n {2} \t {3}" },
+                    "O recurso [ {0} ] n\u00E3o foi carregado: {1} \n {2} \t {3}" },
 
             {   MsgKey.ER_BUFFER_SIZE_LESSTHAN_ZERO,
-                    "Puffergr\u00F6\u00DFe <=0" },
+                    "Tamanho do buffer <=0" },
 
             {   MsgKey.ER_INVALID_UTF16_SURROGATE,
-                    "Ung\u00FCltige UTF-16-Ersetzung festgestellt: {0}?" },
+                    "Foi detectado um substituto de UTF-16 inv\u00E1lido: {0} ?" },
 
             {   MsgKey.ER_OIERROR,
-                "I/O-Fehler" },
+                "Erro de E/S" },
 
             {   MsgKey.ER_ILLEGAL_ATTRIBUTE_POSITION,
-                "Attribut {0} kann nicht nach untergeordneten Knoten oder vor dem Erstellen eines Elements hinzugef\u00FCgt werden. Attribut wird ignoriert." },
+                "N\u00E3o \u00E9 poss\u00EDvel adicionar o atributo {0} depois dos n\u00F3s filhos ou antes que um elemento seja produzido. O atributo ser\u00E1 ignorado." },
 
             /*
              * Note to translators:  The stylesheet contained a reference to a
@@ -105,7 +105,7 @@ public class SerializerMessages_de extends ListResourceBundle {
              * text is the name of the prefix.
              */
             {   MsgKey.ER_NAMESPACE_PREFIX,
-                "Namespace f\u00FCr Pr\u00E4fix \"{0}\" wurde nicht deklariert." },
+                "O namespace do prefixo ''{0}'' n\u00E3o foi declarado." },
 
             /*
              * Note to translators:  This message is reported if the stylesheet
@@ -114,7 +114,7 @@ public class SerializerMessages_de extends ListResourceBundle {
              * specifies the name of the attribute.
              */
             {   MsgKey.ER_STRAY_ATTRIBUTE,
-                "Attribut \"{0}\" au\u00DFerhalb des Elements." },
+                "Atributo ''{0}'' fora do elemento." },
 
             /*
              * Note to translators:  As with the preceding message, a namespace
@@ -124,70 +124,70 @@ public class SerializerMessages_de extends ListResourceBundle {
              * namespace declaration.
              */
             {   MsgKey.ER_STRAY_NAMESPACE,
-                "Namespace-Deklaration {0}={1} au\u00DFerhalb des Elements." },
+                "Declara\u00E7\u00E3o de namespace ''{0}''=''{1}'' fora do elemento." },
 
             {   MsgKey.ER_COULD_NOT_LOAD_RESOURCE,
-                "\"{0}\" konnte nicht geladen werden (CLASSPATH pr\u00FCfen). Die Standardwerte werden verwendet" },
+                "N\u00E3o foi poss\u00EDvel carregar ''{0}'' (verificar CLASSPATH); usando agora apenas os defaults" },
 
             {   MsgKey.ER_ILLEGAL_CHARACTER,
-                "Versuch, Zeichen mit Integralwert {0} auszugeben, das nicht in der speziellen Ausgabecodierung von {1} dargestellt wird." },
+                "Tentativa de exibir um caractere de valor integral {0} que n\u00E3o est\u00E1 representado na codifica\u00E7\u00E3o de sa\u00EDda especificada de {1}." },
 
             {   MsgKey.ER_COULD_NOT_LOAD_METHOD_PROPERTY,
-                "Property-Datei \"{0}\" konnte f\u00FCr Ausgabemethode \"{1}\" nicht geladen werden (CLASSPATH pr\u00FCfen)" },
+                "N\u00E3o foi poss\u00EDvel carregar o arquivo de propriedade ''{0}'' para o m\u00E9todo de sa\u00EDda ''{1}'' (verificar CLASSPATH)" },
 
             {   MsgKey.ER_INVALID_PORT,
-                "Ung\u00FCltige Portnummer" },
+                "N\u00FAmero de porta inv\u00E1lido" },
 
             {   MsgKey.ER_PORT_WHEN_HOST_NULL,
-                "Port kann nicht festgelegt werden, wenn der Host null ist" },
+                "A porta n\u00E3o pode ser definida quando o host \u00E9 nulo" },
 
             {   MsgKey.ER_HOST_ADDRESS_NOT_WELLFORMED,
-                "Host ist keine wohlgeformte Adresse" },
+                "O host n\u00E3o \u00E9 um endere\u00E7o correto" },
 
             {   MsgKey.ER_SCHEME_NOT_CONFORMANT,
-                "Schema ist nicht konform." },
+                "O esquema n\u00E3o \u00E9 compat\u00EDvel." },
 
             {   MsgKey.ER_SCHEME_FROM_NULL_STRING,
-                "Schema kann nicht von Nullzeichenfolge festgelegt werden" },
+                "N\u00E3o \u00E9 poss\u00EDvel definir o esquema de uma string nula" },
 
             {   MsgKey.ER_PATH_CONTAINS_INVALID_ESCAPE_SEQUENCE,
-                "Pfad enth\u00E4lt eine ung\u00FCltige Escapesequenz" },
+                "O caminho cont\u00E9m uma sequ\u00EAncia inv\u00E1lida de caracteres de escape" },
 
             {   MsgKey.ER_PATH_INVALID_CHAR,
-                "Pfad enth\u00E4lt ung\u00FCltiges Zeichen: {0}" },
+                "O caminho cont\u00E9m um caractere inv\u00E1lido: {0}" },
 
             {   MsgKey.ER_FRAG_INVALID_CHAR,
-                "Fragment enth\u00E4lt ein ung\u00FCltiges Zeichen" },
+                "O fragmento cont\u00E9m um caractere inv\u00E1lido" },
 
             {   MsgKey.ER_FRAG_WHEN_PATH_NULL,
-                "Fragment kann nicht festgelegt werden, wenn der Pfad null ist" },
+                "O fragmento n\u00E3o pode ser definido quando o caminho \u00E9 nulo" },
 
             {   MsgKey.ER_FRAG_FOR_GENERIC_URI,
-                "Fragment kann nur f\u00FCr einen generischen URI festgelegt werden" },
+                "O fragmento s\u00F3 pode ser definido para um URI gen\u00E9rico" },
 
             {   MsgKey.ER_NO_SCHEME_IN_URI,
-                "Kein Schema gefunden in URI" },
+                "Nenhum esquema encontrado no URI" },
 
             {   MsgKey.ER_CANNOT_INIT_URI_EMPTY_PARMS,
-                "URI kann nicht mit leeren Parametern initialisiert werden" },
+                "N\u00E3o \u00E9 poss\u00EDvel inicializar o URI com par\u00E2metros vazios" },
 
             {   MsgKey.ER_NO_FRAGMENT_STRING_IN_PATH,
-                "Fragment kann nicht im Pfad und im Fragment angegeben werden" },
+                "O fragmento n\u00E3o pode ser especificado no caminho nem no fragmento" },
 
             {   MsgKey.ER_NO_QUERY_STRING_IN_PATH,
-                "Abfragezeichenfolge kann nicht im Pfad und in der Abfragezeichenfolge angegeben werden" },
+                "A string de consulta n\u00E3o pode ser especificada no caminho nem na string de consulta" },
 
             {   MsgKey.ER_NO_PORT_IF_NO_HOST,
-                "Port kann nicht angegeben werden, wenn der Host nicht angegeben wurde" },
+                "A porta n\u00E3o pode ser especificada se o host n\u00E3o tiver sido especificado" },
 
             {   MsgKey.ER_NO_USERINFO_IF_NO_HOST,
-                "Benutzerinformationen k\u00F6nnen nicht angegeben werden, wenn der Host nicht angegeben wurde" },
+                "As informa\u00E7\u00F5es do usu\u00E1rio n\u00E3o podem ser especificadas se o host n\u00E3o tiver sido especificado" },
 
             {   MsgKey.ER_XML_VERSION_NOT_SUPPORTED,
-                "Warnung: Die Version des Ausgabedokuments soll \"{0}\" sein. Diese Version von XML wird nicht unterst\u00FCtzt. Die Version des Ausgabedokuments wird \"1.0\" sein." },
+                "Advert\u00EAncia: a vers\u00E3o do documento de sa\u00EDda deve ser obrigatoriamente ''{0}''. Esta vers\u00E3o do XML n\u00E3o \u00E9 suportada. A vers\u00E3o do documento de sa\u00EDda ser\u00E1 ''1.0''." },
 
             {   MsgKey.ER_SCHEME_REQUIRED,
-                "Schema ist erforderlich." },
+                "O esquema \u00E9 obrigat\u00F3rio!" },
 
             /*
              * Note to translators:  The words 'Properties' and
@@ -195,10 +195,10 @@ public class SerializerMessages_de extends ListResourceBundle {
              * and should not be translated.
              */
             {   MsgKey.ER_FACTORY_PROPERTY_MISSING,
-                "Das an die SerializerFactory \u00FCbergebene Properties-Objekt verf\u00FCgt \u00FCber keine Eigenschaft \"{0}\"." },
+                "O objeto Properties especificado para a SerializerFactory n\u00E3o tem uma propriedade ''{0}''." },
 
             {   MsgKey.ER_ENCODING_NOT_SUPPORTED,
-                "Warnung: Die Codierung \"{0}\" wird nicht von der Java-Laufzeit unterst\u00FCtzt." },
+                "Advert\u00EAncia: a codifica\u00E7\u00E3o ''{0}'' n\u00E3o \u00E9 suportada pelo Java runtime." },
 
 
         };
