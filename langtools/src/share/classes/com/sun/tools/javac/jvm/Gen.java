@@ -104,6 +104,8 @@ public class Gen extends JCTree.Visitor {
      */
     private LVTRanges lvtRanges;
 
+    private final boolean typeAnnoAsserts;
+
     protected Gen(Context context) {
         context.put(genKey, this);
 
@@ -140,6 +142,7 @@ public class Gen extends JCTree.Visitor {
         debugCode = options.isSet("debugcode");
         allowInvokedynamic = target.hasInvokedynamic() || options.isSet("invokedynamic");
         pool = new Pool(types);
+        typeAnnoAsserts = options.isSet("TypeAnnotationAsserts");
 
         generateIproxies =
             target.requiresIproxy() ||
@@ -562,9 +565,13 @@ public class Gen extends JCTree.Visitor {
         ListBuffer<Attribute.TypeCompound> fieldTAs = new ListBuffer<Attribute.TypeCompound>();
         ListBuffer<Attribute.TypeCompound> nonfieldTAs = new ListBuffer<Attribute.TypeCompound>();
         for (TypeCompound ta : tas) {
-            if (ta.position.type == TargetType.FIELD) {
+            if (ta.getPosition().type == TargetType.FIELD) {
                 fieldTAs.add(ta);
             } else {
+                if (typeAnnoAsserts) {
+                    Assert.error("Type annotation does not have a valid positior");
+                }
+
                 nonfieldTAs.add(ta);
             }
         }
