@@ -101,7 +101,7 @@ import sun.awt.datatransfer.DataTransferer;
 public class DataFlavor implements Externalizable, Cloneable {
 
     private static final long serialVersionUID = 8367026044764648243L;
-    private static final Class ioInputStreamClass = java.io.InputStream.class;
+    private static final Class<InputStream> ioInputStreamClass = InputStream.class;
 
     /**
      * Tries to load a class from: the bootstrap loader, the system loader,
@@ -116,10 +116,10 @@ public class DataFlavor implements Externalizable, Cloneable {
                                                    ClassLoader fallback)
         throws ClassNotFoundException
     {
-        ClassLoader systemClassLoader = (ClassLoader)
+        ClassLoader systemClassLoader =
             java.security.AccessController.doPrivileged(
-                new java.security.PrivilegedAction() {
-                    public Object run() {
+                new java.security.PrivilegedAction<ClassLoader>() {
+                    public ClassLoader run() {
                         ClassLoader cl = Thread.currentThread().
                             getContextClassLoader();
                         return (cl != null)
@@ -142,7 +142,7 @@ public class DataFlavor implements Externalizable, Cloneable {
     /*
      * private initializer
      */
-    static private DataFlavor createConstant(Class rc, String prn) {
+    static private DataFlavor createConstant(Class<?> rc, String prn) {
         try {
             return new DataFlavor(rc, prn);
         } catch (Exception e) {
@@ -314,7 +314,7 @@ public class DataFlavor implements Externalizable, Cloneable {
      * @exception NullPointerException if either <code>primaryType</code>,
      *            <code>subType</code> or <code>representationClass</code> is null
      */
-    private DataFlavor(String primaryType, String subType, MimeTypeParameterList params, Class representationClass, String humanPresentableName) {
+    private DataFlavor(String primaryType, String subType, MimeTypeParameterList params, Class<?> representationClass, String humanPresentableName) {
         super();
         if (primaryType == null) {
             throw new NullPointerException("primaryType");
@@ -331,7 +331,7 @@ public class DataFlavor implements Externalizable, Cloneable {
         params.set("class", representationClass.getName());
 
         if (humanPresentableName == null) {
-            humanPresentableName = (String)params.get("humanPresentableName");
+            humanPresentableName = params.get("humanPresentableName");
 
             if (humanPresentableName == null)
                 humanPresentableName = primaryType + "/" + subType;
@@ -732,7 +732,7 @@ public class DataFlavor implements Externalizable, Cloneable {
         return bestFlavor;
     }
 
-    private static Comparator textFlavorComparator;
+    private static Comparator<DataFlavor> textFlavorComparator;
 
     static class TextFlavorComparator
         extends DataTransferer.DataFlavorComparator {
@@ -1438,6 +1438,6 @@ public class DataFlavor implements Externalizable, Cloneable {
 
     /** Java class of objects this DataFlavor represents **/
 
-    private Class       representationClass;
+    private Class<?>       representationClass;
 
 } // class DataFlavor

@@ -44,13 +44,13 @@ class MimeTypeParameterList implements Cloneable {
      * Default constructor.
      */
     public MimeTypeParameterList() {
-        parameters = new Hashtable();
+        parameters = new Hashtable<>();
     }
 
     public MimeTypeParameterList(String rawdata)
         throws MimeTypeParseException
     {
-        parameters = new Hashtable();
+        parameters = new Hashtable<>();
 
         //    now parse rawdata
         parse(rawdata);
@@ -59,10 +59,10 @@ class MimeTypeParameterList implements Cloneable {
     public int hashCode() {
         int code = Integer.MAX_VALUE/45; // "random" value for empty lists
         String paramName = null;
-        Enumeration enum_ = this.getNames();
+        Enumeration<String> enum_ = this.getNames();
 
         while (enum_.hasMoreElements()) {
-            paramName = (String)enum_.nextElement();
+            paramName = enum_.nextElement();
             code += paramName.hashCode();
             code += this.get(paramName).hashCode();
         }
@@ -87,14 +87,14 @@ class MimeTypeParameterList implements Cloneable {
         String name = null;
         String thisValue = null;
         String thatValue = null;
-        Set entries = parameters.entrySet();
-        Iterator iterator = entries.iterator();
-        Map.Entry entry = null;
+        Set<Map.Entry<String, String>> entries = parameters.entrySet();
+        Iterator<Map.Entry<String, String>> iterator = entries.iterator();
+        Map.Entry<String, String> entry = null;
         while (iterator.hasNext()) {
-            entry = (Map.Entry)iterator.next();
-            name = (String)entry.getKey();
-            thisValue = (String)entry.getValue();
-            thatValue = (String)that.parameters.get(name);
+            entry = iterator.next();
+            name = entry.getKey();
+            thisValue = entry.getValue();
+            thatValue = that.parameters.get(name);
             if ((thisValue == null) || (thatValue == null)) {
                 // both null -> equal, only one null -> not equal
                 if (thisValue != thatValue) {
@@ -250,7 +250,7 @@ class MimeTypeParameterList implements Cloneable {
      * is no current association.
      */
     public String get(String name) {
-        return (String)parameters.get(name.trim().toLowerCase());
+        return parameters.get(name.trim().toLowerCase());
     }
 
     /**
@@ -271,7 +271,7 @@ class MimeTypeParameterList implements Cloneable {
     /**
      * Retrieve an enumeration of all the names in this list.
      */
-    public Enumeration getNames() {
+    public Enumeration<String> getNames() {
         return parameters.keys();
     }
 
@@ -279,15 +279,15 @@ class MimeTypeParameterList implements Cloneable {
         // Heuristic: 8 characters per field
         StringBuilder buffer = new StringBuilder(parameters.size() * 16);
 
-        Enumeration keys = parameters.keys();
+        Enumeration<String> keys = parameters.keys();
         while(keys.hasMoreElements())
         {
             buffer.append("; ");
 
-            String key = (String)keys.nextElement();
+            String key = keys.nextElement();
             buffer.append(key);
             buffer.append('=');
-               buffer.append(quote((String)parameters.get(key)));
+               buffer.append(quote(parameters.get(key)));
         }
 
         return buffer.toString();
@@ -307,7 +307,7 @@ class MimeTypeParameterList implements Cloneable {
          return newObj;
      }
 
-    private Hashtable parameters;
+    private Hashtable<String, String> parameters;
 
     //    below here be scary parsing related things
 
