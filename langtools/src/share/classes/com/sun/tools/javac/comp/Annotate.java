@@ -37,6 +37,7 @@ import com.sun.tools.javac.tree.JCTree.*;
 import static com.sun.tools.javac.code.TypeTag.ARRAY;
 import static com.sun.tools.javac.code.TypeTag.CLASS;
 import static com.sun.tools.javac.tree.JCTree.Tag.*;
+import javax.lang.model.type.ErrorType;
 
 /** Enter annotations on symbols.  Annotations accumulate in a queue,
  *  which is processed at the top level of any set of recursive calls
@@ -310,7 +311,6 @@ public class Annotate {
     Attribute enterAttributeValue(Type expected,
                                   JCExpression tree,
                                   Env<AttrContext> env) {
-        Type original = expected;
         //first, try completing the attribution value sym - if a completion
         //error is thrown, we should recover gracefully, and display an
         //ordinary resolution diagnostic.
@@ -351,7 +351,7 @@ public class Annotate {
                                     l.head,
                                     env);
             }
-            return new Attribute.Error(original);
+            return new Attribute.Error(syms.errType);
         }
         if ((expected.tsym.flags() & Flags.ANNOTATION) != 0) {
             if (tree.hasTag(ANNOTATION)) {
@@ -365,12 +365,12 @@ public class Annotate {
             if (!expected.isErroneous())
                 log.error(tree.pos(), "annotation.not.valid.for.type", expected);
             enterAnnotation((JCAnnotation)tree, syms.errType, env);
-            return new Attribute.Error(original);
+            return new Attribute.Error(((JCAnnotation)tree).annotationType.type);
         }
         if (expected.isPrimitive() || types.isSameType(expected, syms.stringType)) {
             Type result = attr.attribExpr(tree, env, expected);
             if (result.isErroneous())
-                return new Attribute.Error(expected);
+                return new Attribute.Error(result.getOriginalType());
             if (result.constValue() == null) {
                 log.error(tree.pos(), "attribute.value.must.be.constant");
                 return new Attribute.Error(expected);
@@ -381,14 +381,15 @@ public class Annotate {
         if (expected.tsym == syms.classType.tsym) {
             Type result = attr.attribExpr(tree, env, expected);
             if (result.isErroneous()) {
-                // Does it look like a class literal?
-                if (TreeInfo.name(tree) == names._class) {
+                // Does it look like an unresolved class literal?
+                if (TreeInfo.name(tree) == names._class &&
+                    ((JCFieldAccess) tree).selected.type.isErroneous()) {
                     Name n = (((JCFieldAccess) tree).selected).type.tsym.flatName();
                     return new Attribute.UnresolvedClass(expected,
                             types.createErrorType(n,
                                     syms.unknownSymbol, syms.classType));
                 } else {
-                    return new Attribute.Error(expected);
+                    return new Attribute.Error(result.getOriginalType());
                 }
             }
 
@@ -396,21 +397,21 @@ public class Annotate {
             // at the tree level
             if (TreeInfo.name(tree) != names._class) {
                 log.error(tree.pos(), "annotation.value.must.be.class.literal");
-                return new Attribute.Error(expected);
+                return new Attribute.Error(syms.errType);
             }
             return new Attribute.Class(types,
                                        (((JCFieldAccess) tree).selected).type);
         }
         if (expected.hasTag(CLASS) &&
             (expected.tsym.flags() & Flags.ENUM) != 0) {
-            attr.attribExpr(tree, env, expected);
+            Type result = attr.attribExpr(tree, env, expected);
             Symbol sym = TreeInfo.symbol(tree);
             if (sym == null ||
                 TreeInfo.nonstaticSelect(tree) ||
                 sym.kind != Kinds.VAR ||
                 (sym.flags() & Flags.ENUM) == 0) {
                 log.error(tree.pos(), "enum.annotation.must.be.enum.constant");
-                return new Attribute.Error(expected);
+                return new Attribute.Error(result.getOriginalType());
             }
             VarSymbol enumerator = (VarSymbol) sym;
             return new Attribute.Enum(expected, enumerator);
