@@ -21,7 +21,7 @@
  * questions.
  */
 
-// key: compiler.err.duplicate.annotation
+// key: compiler.err.repeatable.annotations.not.supported.in.source
 // key: compiler.warn.source.no.bootclasspath
 // options: -source 7
 
@@ -29,4 +29,4 @@
 
 @Anno
 @Anno
-class DuplicateAnnotation { }
+class RepeatableAnnotationsNotSupported { }

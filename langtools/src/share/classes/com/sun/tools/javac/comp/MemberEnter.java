@@ -114,11 +114,14 @@ public class MemberEnter extends JCTree.Visitor implements Completer {
         deferredLintHandler = DeferredLintHandler.instance(context);
         lint = Lint.instance(context);
         allowTypeAnnos = source.allowTypeAnnotations();
+        allowRepeatedAnnos = source.allowRepeatedAnnotations();
     }
 
     /** Switch: support type annotations.
      */
     boolean allowTypeAnnos;
+
+    boolean allowRepeatedAnnos;
 
     /** A queue for classes whose members still need to be entered into the
      *  symbol table.
@@ -640,9 +643,6 @@ public class MemberEnter extends JCTree.Visitor implements Completer {
             if (TreeInfo.isEnumInit(tree)) {
                 attr.attribIdentAsEnumType(localEnv, (JCIdent)tree.vartype);
             } else {
-                // Make sure type annotations are processed.
-                // But we don't have a symbol to attach them to yet - use null.
-                typeAnnotate(tree.vartype, env, null, tree.pos());
                 attr.attribType(tree.vartype, localEnv);
                 if (tree.nameexpr != null) {
                     attr.attribExpr(tree.nameexpr, localEnv);
@@ -693,7 +693,6 @@ public class MemberEnter extends JCTree.Visitor implements Completer {
         }
         annotateLater(tree.mods.annotations, localEnv, v, tree.pos());
         typeAnnotate(tree.vartype, env, v, tree.pos());
-        annotate.flush();
         v.pos = tree.pos;
     }
     // where
@@ -906,14 +905,14 @@ public class MemberEnter extends JCTree.Visitor implements Completer {
             }
 
             if (annotated.containsKey(a.type.tsym)) {
-                if (source.allowRepeatedAnnotations()) {
-                    ListBuffer<Attribute.Compound> l = annotated.get(a.type.tsym);
-                    l = l.append(c);
-                    annotated.put(a.type.tsym, l);
-                    pos.put(c, a.pos());
-                } else {
-                    log.error(a.pos(), "duplicate.annotation");
+                if (!allowRepeatedAnnos) {
+                    log.error(a.pos(), "repeatable.annotations.not.supported.in.source");
+                    allowRepeatedAnnos = true;
                 }
+                ListBuffer<Attribute.Compound> l = annotated.get(a.type.tsym);
+                l = l.append(c);
+                annotated.put(a.type.tsym, l);
+                pos.put(c, a.pos());
             } else {
                 annotated.put(a.type.tsym, ListBuffer.of(c));
                 pos.put(c, a.pos());
@@ -1081,7 +1080,6 @@ public class MemberEnter extends JCTree.Visitor implements Completer {
             // Do this here, where we have the symbol.
             for (JCTypeParameter tp : tree.typarams)
                 typeAnnotate(tp, baseEnv, sym, tree.pos());
-            annotate.flush();
 
             // Add default constructor if needed.
             if ((c.flags() & INTERFACE) == 0 &&
@@ -1197,7 +1195,7 @@ public class MemberEnter extends JCTree.Visitor implements Completer {
                     annotated.put(a.type.tsym, l);
                     pos.put(tc, a.pos());
                 } else {
-                    log.error(a.pos(), "duplicate.annotation");
+                    log.error(a.pos(), "repeatable.annotations.not.supported.in.source");
                 }
             } else {
                 annotated.put(a.type.tsym, ListBuffer.of(tc));
