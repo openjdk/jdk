@@ -1,7 +1,7 @@
 /*
  * @test /nodynamiccopyright/
  * @bug 8006733 8006775
- * @ignore 8013409: test failures for type annotations
+
  * @summary A static outer class cannot be annotated.
  * @author Werner Dietl
  * @compile/fail/ref=CantAnnotateStaticClass.out -XDrawDiagnostics CantAnnotateStaticClass.java
