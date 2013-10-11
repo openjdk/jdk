@@ -249,7 +249,8 @@ public final class Context {
     private static final ClassLoader myLoader = Context.class.getClassLoader();
     private static final StructureLoader sharedLoader;
 
-    /*package-private*/ ClassLoader getSharedLoader() {
+    /*package-private*/ @SuppressWarnings("static-method")
+    ClassLoader getSharedLoader() {
         return sharedLoader;
     }
 

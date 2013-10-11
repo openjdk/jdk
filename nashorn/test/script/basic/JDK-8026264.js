@@ -22,22 +22,33 @@
  */
 
 /**
- * JDK-8025488: Error.captureStackTrace should not format error stack
+ * JDK-8026264: Getter, setter function name mangling issues
  *
  * @test
  * @run
  */
 
-
-function MyError () {
-    Error.call(this);
-    Error.captureStackTrace(this);
-    this.arr = {};
+var obj = {
+   get ":"(){},
+   set ":"(x){},
+   get ""(){},
+   set ""(x){}
 };
 
-MyError.prototype.toString = function() {
-    return this.arr.toString();
+var desc = Object.getOwnPropertyDescriptor(obj, ":");
+if (desc.get.name != ':') {
+    fail("getter name is expected to be ':' got " + desc.get.name);
 }
 
-var e = new MyError(); 
-print(e.stack.replace(/\\/g, '/'));
+if (desc.set.name != ':') {
+    fail("setter name is expected to be ':' got " + desc.set.name);
+}
+
+desc = Object.getOwnPropertyDescriptor(obj, "");
+if (desc.get.name != '') {
+    fail("getter name is expected to be '' got " + desc.get.name);
+}
+
+if (desc.set.name != '') {
+    fail("setter name is expected to be '' got " + desc.set.name);
+}
