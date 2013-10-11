@@ -1283,6 +1283,11 @@ class JavaThread: public Thread {
   void set_exception_handler_pc(address a)       { _exception_handler_pc = a; }
   void set_is_method_handle_return(bool value)   { _is_method_handle_return = value ? 1 : 0; }
 
+  void clear_exception_oop_and_pc() {
+    set_exception_oop(NULL);
+    set_exception_pc(NULL);
+  }
+
   // Stack overflow support
   inline size_t stack_available(address cur_sp);
   address stack_yellow_zone_base()
