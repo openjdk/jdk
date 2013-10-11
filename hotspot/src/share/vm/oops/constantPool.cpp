@@ -864,32 +864,14 @@ void ConstantPool::unreference_symbols() {
 }
 
 
-jbyte normalize_error_tag(jbyte tag) {
-  switch (tag) {
-  case JVM_CONSTANT_UnresolvedClassInError:
-    return JVM_CONSTANT_UnresolvedClass;
-  case JVM_CONSTANT_MethodHandleInError:
-    return JVM_CONSTANT_MethodHandle;
-  case JVM_CONSTANT_MethodTypeInError:
-    return JVM_CONSTANT_MethodType;
-  default:
-    return tag;
-  }
-}
-
 // Compare this constant pool's entry at index1 to the constant pool
 // cp2's entry at index2.
 bool ConstantPool::compare_entry_to(int index1, constantPoolHandle cp2,
        int index2, TRAPS) {
 
-  jbyte t1 = tag_at(index1).value();
-  jbyte t2 = cp2->tag_at(index2).value();
-
-
-  // JVM_CONSTANT_UnresolvedClassInError tag is equal to JVM_CONSTANT_UnresolvedClass
-  // when comparing (and the other error tags)
-  t1 = normalize_error_tag(t1);
-  t2 = normalize_error_tag(t2);
+  // The error tags are equivalent to non-error tags when comparing
+  jbyte t1 = tag_at(index1).non_error_value();
+  jbyte t2 = cp2->tag_at(index2).non_error_value();
 
   if (t1 != t2) {
     // Not the same entry type so there is nothing else to check. Note
