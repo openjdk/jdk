@@ -1,5 +1,5 @@
 #
-# Copyright (c) 1996, 2012, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 1996, 2013, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -79,6 +79,9 @@ ifndef OPENJDK
   BLACKLISTED_CERTS_SRC +=	$(wildcard $(CLOSED_SHARE_SRC)/lib/security/blacklisted.certs)
   TRUSTEDLIBS_SRC = $(CLOSED_SHARE_SRC)/lib/security/trusted.libraries
   TRUSTEDLIBS_BUILD = $(LIBDIR)/security/trusted.libraries
+  RESTRICTED_PKGS_SRC = $(CLOSED_SHARE_SRC)/lib/security/restricted.pkgs
+  RESTRICTED_PKGS := $(shell $(CAT) $(RESTRICTED_PKGS_SRC) | $(TR) "\n" " ")
+  ADDTORESTRICTEDPKGS_JARFILE = $(BUILDTOOLJARDIR)/addtorestrictedpkgs.jar
 endif
 
 FILES_class = $(FILES_java:%.java=$(CLASSBINDIR)/%.class)
@@ -108,8 +111,15 @@ blacklisted-certs: classes $(BLACKLISTED_CERTS_BUILD)
 
 trustedlibs: classes $(TRUSTEDLIBS_BUILD)
 
+ifdef OPENJDK
 $(PROPS_BUILD): $(PROPS_SRC)
 	$(install-file)
+else
+$(PROPS_BUILD): $(PROPS_SRC)
+	$(MKDIR) -p $(@D)
+	$(BOOT_JAVA_CMD) -jar $(ADDTORESTRICTEDPKGS_JARFILE) $^ $@.tmp $(RESTRICTED_PKGS)
+	$(MV) $@.tmp $@
+endif
 
 $(POLICY_BUILD): $(POLICY_SRC)
 	$(install-file)

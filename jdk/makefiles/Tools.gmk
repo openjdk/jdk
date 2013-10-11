@@ -151,6 +151,9 @@ TOOL_CHECKDEPS=$(JAVA) -Xbootclasspath/p:$(LANGTOOLS_OUTPUTDIR)/dist/bootstrap/l
     -cp $(JDK_OUTPUTDIR)/btclasses:$(JDK_OUTPUTDIR) \
         build.tools.deps.CheckDeps
 
+TOOL_ADDTORESTRICTEDPKGS=$(JAVA) -cp $(JDK_OUTPUTDIR)/btclasses \
+ 	build.tools.addtorestrictedpkgs.AddToRestrictedPkgs
+
 ##########################################################################################
 
 # Tools needed on solaris because OBJCOPY is broken.
