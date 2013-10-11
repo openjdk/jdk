@@ -121,7 +121,7 @@ import javax.swing.event.EventListenerList;
  * <p>
  * You can find further documentation
  * and several examples of using timers by visiting
- * <a href="http://java.sun.com/docs/books/tutorial/uiswing/misc/timer.html"
+ * <a href="http://docs.oracle.com/javase/tutorial/uiswing/misc/timer.html"
  * target = "_top">How to Use Timers</a>,
  * a section in <em>The Java Tutorial.</em>
  * For more examples and help in choosing between
@@ -137,7 +137,7 @@ import javax.swing.event.EventListenerList;
  * future Swing releases. The current serialization support is
  * appropriate for short term storage or RMI between applications running
  * the same version of Swing.  As of 1.4, support for long term storage
- * of all JavaBeans<sup><font size="-2">TM</font></sup>
+ * of all JavaBeans&trade;
  * has been added to the <code>java.beans</code> package.
  * Please see {@link java.beans.XMLEncoder}.
  *

@@ -35,7 +35,7 @@ import java.lang.annotation.Native;
  * (see {@link GraphicsDevice#isDisplayChangeSupported}).
  * <p>
  * For more information on full-screen exclusive mode API, see the
- * <a href="http://java.sun.com/docs/books/tutorial/extra/fullscreen/index.html">
+ * <a href="http://docs.oracle.com/javase/tutorial/extra/fullscreen/index.html">
  * Full-Screen Exclusive Mode API Tutorial</a>.
  *
  * @see GraphicsDevice

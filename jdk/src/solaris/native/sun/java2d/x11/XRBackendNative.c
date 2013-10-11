@@ -31,6 +31,10 @@
 
 #include <X11/extensions/Xrender.h>
 
+#ifdef __linux__
+    #include <sys/utsname.h>
+#endif
+
 /* On Solaris 10 updates 8, 9, the render.h file defines these
  * protocol values but does not define the structs in Xrender.h.
  * Thus in order to get these always defined on Solaris 10
@@ -131,7 +135,7 @@ static
 #define MAX_PAYLOAD (262140u - 36u)
 #define MAXUINT (0xffffffffu)
 
-static jboolean IsXRenderAvailable(jboolean verbose) {
+static jboolean IsXRenderAvailable(jboolean verbose, jboolean ignoreLinuxVersion) {
 
     void *xrenderlib;
 
@@ -253,6 +257,31 @@ static jboolean IsXRenderAvailable(jboolean verbose) {
     }
 #endif
 
+#ifdef __linux__
+    /*
+     * Check for Linux >= 3.5 (Ubuntu 12.04.02 LTS) to avoid hitting
+     * https://bugs.freedesktop.org/show_bug.cgi?id=48045
+     */
+    struct utsname utsbuf;
+    if(uname(&utsbuf) >= 0) {
+        int major, minor, revision;
+        if(sscanf(utsbuf.release, "%i.%i.%i", &major, &minor, &revision) == 3) {
+            if(major < 3 || (major == 3 && minor < 5)) {
+                if(!ignoreLinuxVersion) {
+                    available = JNI_FALSE;
+                }
+                else if(verbose) {
+                 printf("WARNING: Linux < 3.5 detected.\n"
+                        "The pipeline will be enabled, but graphical "
+                        "artifacts can occur with old graphic drivers.\n"
+                        "See the release notes for more details.\n");
+                        fflush(stdout);
+                }
+            }
+        }
+    }
+#endif // __linux__
+
     return available;
 }
 /*
@@ -262,7 +291,7 @@ static jboolean IsXRenderAvailable(jboolean verbose) {
  */
 JNIEXPORT jboolean JNICALL
 Java_sun_awt_X11GraphicsEnvironment_initXRender
-(JNIEnv *env, jclass x11ge, jboolean verbose)
+(JNIEnv *env, jclass x11ge, jboolean verbose, jboolean ignoreLinuxVersion)
 {
 #ifndef HEADLESS
     static jboolean xrenderAvailable = JNI_FALSE;
@@ -277,7 +306,7 @@ Java_sun_awt_X11GraphicsEnvironment_initXRender
         }
 #endif
         AWT_LOCK();
-        xrenderAvailable = IsXRenderAvailable(verbose);
+        xrenderAvailable = IsXRenderAvailable(verbose, ignoreLinuxVersion);
         AWT_UNLOCK();
         firstTime = JNI_FALSE;
     }
@@ -297,7 +326,13 @@ Java_sun_java2d_xr_XRBackendNative_initIDs(JNIEnv *env, jclass cls) {
     jlong fmt32;
 
     jfieldID a8ID = (*env)->GetStaticFieldID(env, cls, "FMTPTR_A8", "J");
+    if (a8ID == NULL) {
+        return;
+    }
     jfieldID argb32ID = (*env)->GetStaticFieldID(env, cls, "FMTPTR_ARGB32", "J");
+    if (argb32ID == NULL) {
+        return;
+    }
 
     if (awt_display == (Display *)NULL) {
         return;
@@ -317,6 +352,10 @@ Java_sun_java2d_xr_XRBackendNative_initIDs(JNIEnv *env, jclass cls) {
     defaultImg = XCreateImage(awt_display, NULL, 8, ZPixmap, 0, maskData, 32, 32, 8, 0);
     defaultImg->data = maskData; //required?
     maskImgID = (*env)->GetStaticFieldID(env, cls, "MASK_XIMG", "J");
+    if (maskImgID == NULL) {
+       return;
+    }
+
     (*env)->SetStaticLongField(env, cls, maskImgID, ptr_to_jlong(defaultImg));
 }
 

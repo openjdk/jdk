@@ -38,10 +38,9 @@ Java_sun_java2d_Disposer_initIDs(JNIEnv *env, jclass disposerClass)
 {
     addRecordMID = (*env)->GetStaticMethodID(env, disposerClass, "addRecord",
                                              "(Ljava/lang/Object;JJ)V");
-    if (addRecordMID == 0) {
-        JNU_ThrowNoSuchMethodError(env, "Disposer.addRecord");
+    if (addRecordMID != 0) {
+        dispClass = (*env)->NewGlobalRef(env, disposerClass);
     }
-    dispClass = (*env)->NewGlobalRef(env, disposerClass);
 }
 
 JNIEXPORT void JNICALL
@@ -50,6 +49,10 @@ Disposer_AddRecord(JNIEnv *env, jobject obj, GeneralDisposeFunc disposer, jlong 
     if (dispClass == NULL) {
         /* Needed to initialize the Disposer class as it may be not yet referenced */
         jclass clazz = (*env)->FindClass(env, "sun/java2d/Disposer");
+        if ((*env)->ExceptionCheck(env)) {
+            // If there's exception pending, we'll just return.
+            return;
+        }
     }
 
     (*env)->CallStaticVoidMethod(env, dispClass, addRecordMID,
