@@ -1001,6 +1001,17 @@ void LIR_OpVisitState::visit(LIR_Op* op) {
       assert(opProfileCall->_tmp1->is_valid(), "used");  do_temp(opProfileCall->_tmp1);
       break;
     }
+
+// LIR_OpProfileType:
+    case lir_profile_type: {
+      assert(op->as_OpProfileType() != NULL, "must be");
+      LIR_OpProfileType* opProfileType = (LIR_OpProfileType*)op;
+
+      do_input(opProfileType->_mdp); do_temp(opProfileType->_mdp);
+      do_input(opProfileType->_obj);
+      do_temp(opProfileType->_tmp);
+      break;
+    }
   default:
     ShouldNotReachHere();
   }
@@ -1149,6 +1160,10 @@ void LIR_OpDelay::emit_code(LIR_Assembler* masm) {
 
 void LIR_OpProfileCall::emit_code(LIR_Assembler* masm) {
   masm->emit_profile_call(this);
+}
+
+void LIR_OpProfileType::emit_code(LIR_Assembler* masm) {
+  masm->emit_profile_type(this);
 }
 
 // LIR_List
@@ -1803,6 +1818,8 @@ const char * LIR_Op::name() const {
      case lir_cas_int:               s = "cas_int";      break;
      // LIR_OpProfileCall
      case lir_profile_call:          s = "profile_call";  break;
+     // LIR_OpProfileType
+     case lir_profile_type:          s = "profile_type";  break;
      // LIR_OpAssert
 #ifdef ASSERT
      case lir_assert:                s = "assert";        break;
@@ -2084,6 +2101,15 @@ void LIR_OpProfileCall::print_instr(outputStream* out) const {
   mdo()->print(out);           out->print(" ");
   recv()->print(out);          out->print(" ");
   tmp1()->print(out);          out->print(" ");
+}
+
+// LIR_OpProfileType
+void LIR_OpProfileType::print_instr(outputStream* out) const {
+  out->print("exact = "); exact_klass()->print_name_on(out);
+  out->print("current = "); ciTypeEntries::print_ciklass(out, current_klass());
+  mdp()->print(out);          out->print(" ");
+  obj()->print(out);          out->print(" ");
+  tmp()->print(out);          out->print(" ");
 }
 
 #endif // PRODUCT
