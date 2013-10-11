@@ -29,6 +29,9 @@
  *  @run main/othervm CheckPackageAccess
  */
 
+import java.io.File;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
 import java.security.Security;
 import java.util.Collections;
 import java.util.Arrays;
@@ -95,6 +98,16 @@ public class CheckPackageAccess {
 
         List<String> jspkgs =
             getPackages(Security.getProperty("package.access"));
+
+        // get closed restricted packages
+        File f = new File(System.getProperty("test.src"),
+            "../../../../src/closed/share/lib/security/restricted.pkgs");
+        if (f.exists()) {
+            List<String> ipkgs = Files.readAllLines(f.toPath(),
+                                                    StandardCharsets.UTF_8);
+            // Remove any closed packages from list before comparing
+            jspkgs.removeAll(ipkgs);
+        }
 
         // Sort to ensure lists are comparable
         Collections.sort(pkgs);

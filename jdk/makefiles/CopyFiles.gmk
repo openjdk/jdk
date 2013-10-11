@@ -355,8 +355,22 @@ COPY_FILES += $(JVMCFG)
 PROPS_SRC := $(JDK_TOPDIR)/src/share/lib/security/java.security-$(OPENJDK_TARGET_OS)
 PROPS_DST := $(JDK_OUTPUTDIR)/lib/security/java.security
 
+ifndef OPENJDK
+
+RESTRICTED_PKGS_SRC := $(JDK_TOPDIR)/src/closed/share/lib/security/restricted.pkgs
+RESTRICTED_PKGS := $(shell $(CAT) $(RESTRICTED_PKGS_SRC) | $(TR) "\n" " ")
+
+$(PROPS_DST): $(PROPS_SRC)
+	$(MKDIR) -p $(@D)
+	$(TOOL_ADDTORESTRICTEDPKGS) $^ $@.tmp $(RESTRICTED_PKGS)
+	$(MV) $@.tmp $@
+
+else
+
 $(PROPS_DST): $(PROPS_SRC)
 	$(call install-file)
+
+endif
 
 COPY_FILES += $(PROPS_DST)
 
