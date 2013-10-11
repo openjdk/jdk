@@ -44,21 +44,15 @@ public class SymbolTable extends sun.jvm.hotspot.utilities.Hashtable {
   private static synchronized void initialize(TypeDataBase db) {
     Type type = db.lookupType("SymbolTable");
     theTableField  = type.getAddressField("_the_table");
-    symbolTableSize = db.lookupIntConstant("SymbolTable::symbol_table_size").intValue();
   }
 
   // Fields
   private static AddressField theTableField;
-  private static int symbolTableSize;
 
   // Accessors
   public static SymbolTable getTheTable() {
     Address tmp = theTableField.getValue();
     return (SymbolTable) VMObjectFactory.newObject(SymbolTable.class, tmp);
-  }
-
-  public static int getSymbolTableSize() {
-    return symbolTableSize;
   }
 
   public SymbolTable(Address addr) {
