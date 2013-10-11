@@ -1793,7 +1793,7 @@ public class MethodEmitter implements Emitter {
         debug("dynamic_set", name, peekType());
 
         Type type = peekType();
-        if (type.isObject()) { //promote strings to objects etc
+        if (type.isObject() || type.isBoolean()) { //promote strings to objects etc
             type = Type.OBJECT;
             convert(Type.OBJECT); //TODO bad- until we specialize boolean setters,
         }
