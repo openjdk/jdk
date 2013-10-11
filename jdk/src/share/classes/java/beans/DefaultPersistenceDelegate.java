@@ -149,6 +149,7 @@ public class DefaultPersistenceDelegate extends PersistenceDelegate {
      * @return An expression whose value is <code>oldInstance</code>.
      *
      * @throws NullPointerException if {@code out} is {@code null}
+     *                              and this value is used in the method
      *
      * @see #DefaultPersistenceDelegate(String[])
      */

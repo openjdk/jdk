@@ -71,12 +71,12 @@ public class Utilities {
      * where ints are used and 72dpi is assumed.
      *
      * @param s  the source of the text
-     * @param x  the X origin >= 0
-     * @param y  the Y origin >= 0
+     * @param x  the X origin &gt;= 0
+     * @param y  the Y origin &gt;= 0
      * @param g  the graphics context
      * @param e  how to expand the tabs.  If this value is null,
      *   tabs will be expanded as a space character.
-     * @param startOffset starting offset of the text in the document >= 0
+     * @param startOffset starting offset of the text in the document &gt;= 0
      * @return  the X location at the end of the rendered text
      */
     public static final int drawTabbedText(Segment s, int x, int y, Graphics g,
@@ -92,12 +92,12 @@ public class Utilities {
      *
      * @param view View requesting rendering, may be null.
      * @param s  the source of the text
-     * @param x  the X origin >= 0
-     * @param y  the Y origin >= 0
+     * @param x  the X origin &gt;= 0
+     * @param y  the Y origin &gt;= 0
      * @param g  the graphics context
      * @param e  how to expand the tabs.  If this value is null,
      *   tabs will be expanded as a space character.
-     * @param startOffset starting offset of the text in the document >= 0
+     * @param startOffset starting offset of the text in the document &gt;= 0
      * @return  the X location at the end of the rendered text
      */
     static final int drawTabbedText(View view,
@@ -197,10 +197,10 @@ public class Utilities {
      *
      * @param s  the source of the text
      * @param metrics the font metrics to use for the calculation
-     * @param x  the X origin >= 0
+     * @param x  the X origin &gt;= 0
      * @param e  how to expand the tabs.  If this value is null,
      *   tabs will be expanded as a space character.
-     * @param startOffset starting offset of the text in the document >= 0
+     * @param startOffset starting offset of the text in the document &gt;= 0
      * @return  the width of the text
      */
     public static final int getTabbedTextWidth(Segment s, FontMetrics metrics, int x,
@@ -289,13 +289,13 @@ public class Utilities {
      * @param s  the source of the text
      * @param metrics the font metrics to use for the calculation
      * @param x0 the starting view location representing the start
-     *   of the given text >= 0.
+     *   of the given text &gt;= 0.
      * @param x  the target view location to translate to an
-     *   offset into the text >= 0.
+     *   offset into the text &gt;= 0.
      * @param e  how to expand the tabs.  If this value is null,
      *   tabs will be expanded as a space character.
-     * @param startOffset starting offset of the text in the document >= 0
-     * @return  the offset into the text >= 0
+     * @param startOffset starting offset of the text in the document &gt;= 0
+     * @return  the offset into the text &gt;= 0
      */
     public static final int getTabbedTextOffset(Segment s, FontMetrics metrics,
                                              int x0, int x, TabExpander e,
@@ -488,8 +488,8 @@ public class Utilities {
      * a value of -1 will be returned.
      *
      * @param c the editor
-     * @param offs the offset in the document >= 0
-     * @return the position >= 0 if the request can be computed, otherwise
+     * @param offs the offset in the document &gt;= 0
+     * @return the position &gt;= 0 if the request can be computed, otherwise
      *  a value of -1 will be returned.
      * @exception BadLocationException if the offset is out of range
      */
@@ -518,8 +518,8 @@ public class Utilities {
      * a value of -1 will be returned.
      *
      * @param c the editor
-     * @param offs the offset in the document >= 0
-     * @return the position >= 0 if the request can be computed, otherwise
+     * @param offs the offset in the document &gt;= 0
+     * @return the position &gt;= 0 if the request can be computed, otherwise
      *  a value of -1 will be returned.
      * @exception BadLocationException if the offset is out of range
      */
@@ -549,9 +549,9 @@ public class Utilities {
      * a value of -1 will be returned.
      *
      * @param c the editor
-     * @param offs the offset in the document >= 0
-     * @param x the X coordinate >= 0
-     * @return the position >= 0 if the request can be computed, otherwise
+     * @param offs the offset in the document &gt;= 0
+     * @param x the X coordinate &gt;= 0
+     * @return the position &gt;= 0 if the request can be computed, otherwise
      *  a value of -1 will be returned.
      * @exception BadLocationException if the offset is out of range
      */
@@ -586,9 +586,9 @@ public class Utilities {
      * a value of -1 will be returned.
      *
      * @param c the editor
-     * @param offs the offset in the document >= 0
-     * @param x the X coordinate >= 0
-     * @return the position >= 0 if the request can be computed, otherwise
+     * @param offs the offset in the document &gt;= 0
+     * @param x the X coordinate &gt;= 0
+     * @return the position &gt;= 0 if the request can be computed, otherwise
      *  a value of -1 will be returned.
      * @exception BadLocationException if the offset is out of range
      */
@@ -622,8 +622,8 @@ public class Utilities {
      * Uses BreakIterator.getWordInstance() to actually get the words.
      *
      * @param c the editor
-     * @param offs the offset in the document >= 0
-     * @return the location in the model of the word start >= 0
+     * @param offs the offset in the document &gt;= 0
+     * @return the location in the model of the word start &gt;= 0
      * @exception BadLocationException if the offset is out of range
      */
     public static final int getWordStart(JTextComponent c, int offs) throws BadLocationException {
@@ -656,8 +656,8 @@ public class Utilities {
      * Uses BreakIterator.getWordInstance() to actually get the words.
      *
      * @param c the editor
-     * @param offs the offset in the document >= 0
-     * @return the location in the model of the word end >= 0
+     * @param offs the offset in the document &gt;= 0
+     * @return the location in the model of the word end &gt;= 0
      * @exception BadLocationException if the offset is out of range
      */
     public static final int getWordEnd(JTextComponent c, int offs) throws BadLocationException {
@@ -689,8 +689,8 @@ public class Utilities {
      * Uses BreakIterator.getWordInstance() to actually get the words.
      *
      * @param c the editor
-     * @param offs the offset in the document >= 0
-     * @return the location in the model of the word start >= 0
+     * @param offs the offset in the document &gt;= 0
+     * @return the location in the model of the word start &gt;= 0
      * @exception BadLocationException if the offset is out of range
      */
     public static final int getNextWord(JTextComponent c, int offs) throws BadLocationException {
@@ -767,8 +767,8 @@ public class Utilities {
      * Uses BreakIterator.getWordInstance() to actually get the words.
      *
      * @param c the editor
-     * @param offs the offset in the document >= 0
-     * @return the location in the model of the word start >= 0
+     * @param offs the offset in the document &gt;= 0
+     * @return the location in the model of the word start &gt;= 0
      * @exception BadLocationException if the offset is out of range
      */
     public static final int getPreviousWord(JTextComponent c, int offs) throws BadLocationException {
@@ -841,7 +841,7 @@ public class Utilities {
      * Determines the element to use for a paragraph/line.
      *
      * @param c the editor
-     * @param offs the starting offset in the document >= 0
+     * @param offs the starting offset in the document &gt;= 0
      * @return the element
      */
     public static final Element getParagraphElement(JTextComponent c, int offs) {
@@ -972,7 +972,7 @@ public class Utilities {
      * must then override the <code>flipEastAndWestAtEnds</code> method.
      *
      * @param v View to query
-     * @param pos the position to convert >= 0
+     * @param pos the position to convert &gt;= 0
      * @param a the allocated region to render into
      * @param direction the direction from the current position that can
      *  be thought of as the arrow keys typically found on a keyboard;

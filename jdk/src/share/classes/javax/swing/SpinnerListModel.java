@@ -71,7 +71,7 @@ public class SpinnerListModel extends AbstractSpinnerModel implements Serializab
      * size, an <code>IllegalArugmentException</code> is thrown.
      *
      * @param values the sequence this model represents
-     * @throws IllegalArugmentException if <code>values</code> is
+     * @throws IllegalArgumentException if <code>values</code> is
      *    <code>null</code> or zero size
      */
     public SpinnerListModel(List<?> values) {
@@ -88,10 +88,10 @@ public class SpinnerListModel extends AbstractSpinnerModel implements Serializab
      * is defined by the specified array.  The initial value of the model
      * will be <code>values[0]</code>.  If <code>values</code> is
      * <code>null</code> or has zero length, an
-     * <code>IllegalArugmentException</code> is thrown.
+     * <code>IllegalArgumentException</code> is thrown.
      *
      * @param values the sequence this model represents
-     * @throws IllegalArugmentException if <code>values</code> is
+     * @throws IllegalArgumentException if <code>values</code> is
      *    <code>null</code> or zero length
      */
     public SpinnerListModel(Object[] values) {

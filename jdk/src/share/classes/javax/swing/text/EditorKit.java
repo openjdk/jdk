@@ -55,7 +55,7 @@ public abstract class EditorKit implements Cloneable, Serializable {
 
     /**
      * Creates a copy of the editor kit.  This is implemented
-     * to use Object.clone</em>.  If the kit cannot be cloned,
+     * to use <code>Object.clone()</code>.  If the kit cannot be cloned,
      * null is returned.
      *
      * @return the copy
@@ -139,7 +139,7 @@ public abstract class EditorKit implements Cloneable, Serializable {
      * @param in  The stream to read from
      * @param doc The destination for the insertion.
      * @param pos The location in the document to place the
-     *   content >= 0.
+     *   content &gt;= 0.
      * @exception IOException on any I/O error
      * @exception BadLocationException if pos represents an invalid
      *   location within the document.
@@ -154,8 +154,8 @@ public abstract class EditorKit implements Cloneable, Serializable {
      * @param out  The stream to write to
      * @param doc The source for the write.
      * @param pos The location in the document to fetch the
-     *   content from >= 0.
-     * @param len The amount to write out >= 0.
+     *   content from &gt;= 0.
+     * @param len The amount to write out &gt;= 0.
      * @exception IOException on any I/O error
      * @exception BadLocationException if pos represents an invalid
      *   location within the document.
@@ -176,7 +176,7 @@ public abstract class EditorKit implements Cloneable, Serializable {
      * @param in  The stream to read from
      * @param doc The destination for the insertion.
      * @param pos The location in the document to place the
-     *   content >= 0.
+     *   content &gt;= 0.
      * @exception IOException on any I/O error
      * @exception BadLocationException if pos represents an invalid
      *   location within the document.
@@ -196,8 +196,8 @@ public abstract class EditorKit implements Cloneable, Serializable {
      * @param out  The stream to write to
      * @param doc The source for the write.
      * @param pos The location in the document to fetch the
-     *   content >= 0.
-     * @param len The amount to write out >= 0.
+     *   content &gt;= 0.
+     * @param len The amount to write out &gt;= 0.
      * @exception IOException on any I/O error
      * @exception BadLocationException if pos represents an invalid
      *   location within the document.

@@ -690,7 +690,10 @@ public class EventQueue {
         final Object src = event.getSource();
         final PrivilegedAction<Void> action = new PrivilegedAction<Void>() {
             public Void run() {
-                if (fwDispatcher == null) {
+                // In case fwDispatcher is installed and we're already on the
+                // dispatch thread (e.g. performing DefaultKeyboardFocusManager.sendMessage),
+                // dispatch the event straight away.
+                if (fwDispatcher == null || isDispatchThreadImpl()) {
                     dispatchEventImpl(event, src);
                 } else {
                     fwDispatcher.scheduleDispatch(new Runnable() {

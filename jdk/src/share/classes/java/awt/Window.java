@@ -1075,7 +1075,6 @@ public class Window extends Container implements Accessible {
      * Hide this Window, its subcomponents, and all of its owned children.
      * The Window and its subcomponents can be made visible again
      * with a call to {@code show}.
-     * </p>
      * @see #show
      * @see #dispose
      * @deprecated As of JDK version 1.5, replaced by
@@ -3373,27 +3372,27 @@ public class Window extends Container implements Accessible {
      * this property of the Window.
      * <p>
      * For example, after the following code is executed:
-     * <pre><blockquote>
+     * <pre>
      * setLocationByPlatform(true);
      * setVisible(true);
      * boolean flag = isLocationByPlatform();
-     * </blockquote></pre>
+     * </pre>
      * The window will be shown at platform's default location and
      * {@code flag} will be {@code false}.
      * <p>
      * In the following sample:
-     * <pre><blockquote>
+     * <pre>
      * setLocationByPlatform(true);
      * setLocation(10, 10);
      * boolean flag = isLocationByPlatform();
      * setVisible(true);
-     * </blockquote></pre>
+     * </pre>
      * The window will be shown at (10, 10) and {@code flag} will be
      * {@code false}.
      *
      * @param locationByPlatform {@code true} if this Window should appear
      *        at the default location, {@code false} if at the current location
-     * @throws {@code IllegalComponentStateException} if the window
+     * @throws IllegalComponentStateException if the window
      *         is showing on screen and locationByPlatform is {@code true}.
      * @see #setLocation
      * @see #isShowing

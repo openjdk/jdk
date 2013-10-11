@@ -353,9 +353,11 @@ public final class LocalDate
      * @throws DateTimeException if unable to convert to a {@code LocalDate}
      */
     public static LocalDate from(TemporalAccessor temporal) {
+        Objects.requireNonNull(temporal, "temporal");
         LocalDate date = temporal.query(TemporalQuery.localDate());
         if (date == null) {
-            throw new DateTimeException("Unable to obtain LocalDate from TemporalAccessor: " + temporal.getClass());
+            throw new DateTimeException("Unable to obtain LocalDate from TemporalAccessor: " +
+                    temporal + " of type " + temporal.getClass().getName());
         }
         return date;
     }
@@ -1125,6 +1127,11 @@ public final class LocalDate
      */
     @Override
     public LocalDate plus(TemporalAmount amountToAdd) {
+        if (amountToAdd instanceof Period) {
+            Period periodToAdd = (Period) amountToAdd;
+            return plusMonths(periodToAdd.toTotalMonths()).plusDays(periodToAdd.getDays());
+        }
+        Objects.requireNonNull(amountToAdd, "amountToAdd");
         return (LocalDate) amountToAdd.addTo(this);
     }
 
@@ -1353,6 +1360,11 @@ public final class LocalDate
      */
     @Override
     public LocalDate minus(TemporalAmount amountToSubtract) {
+        if (amountToSubtract instanceof Period) {
+            Period periodToSubtract = (Period) amountToSubtract;
+            return minusMonths(periodToSubtract.toTotalMonths()).minusDays(periodToSubtract.getDays());
+        }
+        Objects.requireNonNull(amountToSubtract, "amountToSubtract");
         return (LocalDate) amountToSubtract.subtractFrom(this);
     }
 
@@ -1531,7 +1543,8 @@ public final class LocalDate
      * objects in terms of a single {@code TemporalUnit}.
      * The start and end points are {@code this} and the specified date.
      * The result will be negative if the end is before the start.
-     * The {@code Temporal} passed to this method must be a {@code LocalDate}.
+     * The {@code Temporal} passed to this method is converted to a
+     * {@code LocalDate} using {@link #from(TemporalAccessor)}.
      * For example, the amount in days between two dates can be calculated
      * using {@code startDate.until(endDate, DAYS)}.
      * <p>
@@ -1557,26 +1570,22 @@ public final class LocalDate
      * <p>
      * If the unit is not a {@code ChronoUnit}, then the result of this method
      * is obtained by invoking {@code TemporalUnit.between(Temporal, Temporal)}
-     * passing {@code this} as the first argument and the input temporal as
-     * the second argument.
+     * passing {@code this} as the first argument and the converted input temporal
+     * as the second argument.
      * <p>
      * This instance is immutable and unaffected by this method call.
      *
-     * @param endDate  the end date, which must be a {@code LocalDate}, not null
+     * @param endExclusive  the end date, exclusive, which is converted to a {@code LocalDate}, not null
      * @param unit  the unit to measure the amount in, not null
      * @return the amount of time between this date and the end date
-     * @throws DateTimeException if the amount cannot be calculated
+     * @throws DateTimeException if the amount cannot be calculated, or the end
+     *  temporal cannot be converted to a {@code LocalDate}
      * @throws UnsupportedTemporalTypeException if the unit is not supported
      * @throws ArithmeticException if numeric overflow occurs
      */
     @Override
-    public long until(Temporal endDate, TemporalUnit unit) {
-        Objects.requireNonNull(unit, "unit");
-        if (endDate instanceof LocalDate == false) {
-            Objects.requireNonNull(endDate, "endDate");
-            throw new DateTimeException("Unable to calculate amount as objects are of two different types");
-        }
-        LocalDate end = (LocalDate) endDate;
+    public long until(Temporal endExclusive, TemporalUnit unit) {
+        LocalDate end = LocalDate.from(endExclusive);
         if (unit instanceof ChronoUnit) {
             switch ((ChronoUnit) unit) {
                 case DAYS: return daysUntil(end);
@@ -1590,7 +1599,7 @@ public final class LocalDate
             }
             throw new UnsupportedTemporalTypeException("Unsupported unit: " + unit);
         }
-        return unit.between(this, endDate);
+        return unit.between(this, end);
     }
 
     long daysUntil(LocalDate end) {
@@ -1632,12 +1641,12 @@ public final class LocalDate
      * </pre>
      * The choice should be made based on which makes the code more readable.
      *
-     * @param endDate  the end date, exclusive, which may be in any chronology, not null
+     * @param endDateExclusive  the end date, exclusive, which may be in any chronology, not null
      * @return the period between this date and the end date, not null
      */
     @Override
-    public Period until(ChronoLocalDate endDate) {
-        LocalDate end = LocalDate.from(endDate);
+    public Period until(ChronoLocalDate endDateExclusive) {
+        LocalDate end = LocalDate.from(endDateExclusive);
         long totalMonths = end.getProlepticMonth() - this.getProlepticMonth();  // safe
         int days = end.day - this.day;
         if (totalMonths > 0 && days < 0) {

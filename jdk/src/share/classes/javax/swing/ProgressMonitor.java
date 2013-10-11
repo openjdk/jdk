@@ -251,7 +251,7 @@ public class ProgressMonitor implements Accessible
 
     /**
      * Indicate the progress of the operation being monitored.
-     * If the specified value is >= the maximum, the progress
+     * If the specified value is &gt;= the maximum, the progress
      * monitor is closed.
      * @param nv an int specifying the current value, between the
      *        maximum and minimum specified for this component
@@ -302,7 +302,7 @@ public class ProgressMonitor implements Accessible
 
     /**
      * Indicate that the operation is complete.  This happens automatically
-     * when the value set by setProgress is >= max, but it may be called
+     * when the value set by setProgress is &gt;= max, but it may be called
      * earlier if the operation ends early.
      */
     public void close() {

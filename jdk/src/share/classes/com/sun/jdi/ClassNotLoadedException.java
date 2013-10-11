@@ -67,6 +67,7 @@ package com.sun.jdi;
  * @author Gordon Hirsch
  * @since  1.3
  */
+@jdk.Exported
 public class ClassNotLoadedException extends Exception
 {
     private static final long serialVersionUID = -6242978768444298722L;

@@ -93,11 +93,11 @@ public class WrappedPlainView extends BoxView implements TabExpander {
      * <code>drawSelectedText</code> so that the way selected and
      * unselected text are rendered can be customized.
      *
-     * @param p0 the starting document location to use >= 0
-     * @param p1 the ending document location to use >= p1
+     * @param p0 the starting document location to use &gt;= 0
+     * @param p1 the ending document location to use &gt;= p1
      * @param g the graphics context
-     * @param x the starting X position >= 0
-     * @param y the starting Y position >= 0
+     * @param x the starting X position &gt;= 0
+     * @param y the starting Y position &gt;= 0
      * @see #drawUnselectedText
      * @see #drawSelectedText
      */
@@ -165,11 +165,11 @@ public class WrappedPlainView extends BoxView implements TabExpander {
      * text.
      *
      * @param g the graphics context
-     * @param x the starting X coordinate >= 0
-     * @param y the starting Y coordinate >= 0
-     * @param p0 the beginning position in the model >= 0
-     * @param p1 the ending position in the model >= p0
-     * @return the X location of the end of the range >= 0
+     * @param x the starting X coordinate &gt;= 0
+     * @param y the starting Y coordinate &gt;= 0
+     * @param p0 the beginning position in the model &gt;= 0
+     * @param p1 the ending position in the model &gt;= p0
+     * @return the X location of the end of the range &gt;= 0
      * @exception BadLocationException if the range is invalid
      */
     protected int drawUnselectedText(Graphics g, int x, int y,
@@ -190,10 +190,10 @@ public class WrappedPlainView extends BoxView implements TabExpander {
      * the selected background.
      *
      * @param g the graphics context
-     * @param x the starting X coordinate >= 0
-     * @param y the starting Y coordinate >= 0
-     * @param p0 the beginning position in the model >= 0
-     * @param p1 the ending position in the model >= p0
+     * @param x the starting X coordinate &gt;= 0
+     * @param y the starting Y coordinate &gt;= 0
+     * @param p0 the beginning position in the model &gt;= 0
+     * @param p1 the ending position in the model &gt;= p0
      * @return the location of the end of the range.
      * @exception BadLocationException if the range is invalid
      */
@@ -326,10 +326,10 @@ public class WrappedPlainView extends BoxView implements TabExpander {
      * This implementation does not support things like centering so it
      * ignores the tabOffset argument.
      *
-     * @param x the current position >= 0
+     * @param x the current position &gt;= 0
      * @param tabOffset the position within the text stream
-     *   that the tab occurred at >= 0.
-     * @return the tab stop, measured in points >= 0
+     *   that the tab occurred at &gt;= 0.
+     * @return the tab stop, measured in points &gt;= 0
      */
     public float nextTabStop(float x, int tabOffset) {
         if (tabSize == 0)
@@ -374,8 +374,8 @@ public class WrappedPlainView extends BoxView implements TabExpander {
      * layout of the view along the given axis, if it
      * has any layout duties.
      *
-     * @param width the width >= 0
-     * @param height the height >= 0
+     * @param width the width &gt;= 0
+     * @param height the height &gt;= 0
      */
     public void setSize(float width, float height) {
         updateMetrics();

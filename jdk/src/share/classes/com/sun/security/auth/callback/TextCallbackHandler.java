@@ -53,6 +53,7 @@ import sun.security.util.Password;
  * @see javax.security.auth.callback
  */
 
+@jdk.Exported
 public class TextCallbackHandler implements CallbackHandler {
 
     /**

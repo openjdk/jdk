@@ -381,6 +381,7 @@ public interface Instrumentation {
      *
      * @return an array containing all the classes loaded by the JVM, zero-length if there are none
      */
+    @SuppressWarnings("rawtypes")
     Class[]
     getAllLoadedClasses();
 
@@ -393,6 +394,7 @@ public interface Instrumentation {
      * @return an array containing all the classes for which loader is an initiating loader,
      *          zero-length if there are none
      */
+    @SuppressWarnings("rawtypes")
     Class[]
     getInitiatedClasses(ClassLoader loader);
 

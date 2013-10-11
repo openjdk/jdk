@@ -3725,7 +3725,7 @@ public class Lower extends TreeTranslator {
                 (JCVariableDecl)make.VarDef(dollar_tmp, make.Literal(INT, -1)).setType(dollar_tmp.type);
             dollar_tmp_def.init.type = dollar_tmp.type = syms.intType;
             stmtList.append(dollar_tmp_def);
-            ListBuffer<JCCase> caseBuffer = ListBuffer.lb();
+            ListBuffer<JCCase> caseBuffer = new ListBuffer<>();
             // hashCode will trigger nullcheck on original switch expression
             JCMethodInvocation hashCodeCall = makeCall(make.Ident(dollar_s),
                                                        names.hashCode,
@@ -3749,7 +3749,7 @@ public class Lower extends TreeTranslator {
                                        elsepart);
                 }
 
-                ListBuffer<JCStatement> lb = ListBuffer.lb();
+                ListBuffer<JCStatement> lb = new ListBuffer<>();
                 JCBreak breakStmt = make.Break(null);
                 breakStmt.target = switch1;
                 lb.append(elsepart).append(breakStmt);
@@ -3764,7 +3764,7 @@ public class Lower extends TreeTranslator {
             // with corresponding integer ones from the label to
             // position map.
 
-            ListBuffer<JCCase> lb = ListBuffer.lb();
+            ListBuffer<JCCase> lb = new ListBuffer<>();
             JCSwitch switch2 = make.Switch(make.Ident(dollar_tmp), lb.toList());
             for(JCCase oneCase : caseList ) {
                 // Rewire up old unlabeled break statements to the
