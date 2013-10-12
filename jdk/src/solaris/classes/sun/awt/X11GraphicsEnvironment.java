@@ -25,8 +25,8 @@
 
 package sun.awt;
 
+import java.awt.AWTError;
 import java.awt.GraphicsDevice;
-
 import java.awt.Point;
 import java.awt.Rectangle;
 import java.io.BufferedReader;
@@ -205,7 +205,12 @@ public class X11GraphicsEnvironment
      * Returns the default screen graphics device.
      */
     public GraphicsDevice getDefaultScreenDevice() {
-        return getScreenDevices()[getDefaultScreenNum()];
+        GraphicsDevice[] screens = getScreenDevices();
+        if (screens.length == 0) {
+            throw new AWTError("no screen devices");
+        }
+        int index = getDefaultScreenNum();
+        return screens[0 < index && index < screens.length ? index : 0];
     }
 
     public boolean isDisplayLocal() {

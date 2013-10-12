@@ -42,7 +42,7 @@ import java.io.IOException;
  * are subclasses of this class.
  * For information on using them see
  * <a
- href="http://java.sun.com/docs/books/tutorial/uiswing/components/button.html">How to Use Buttons, Check Boxes, and Radio Buttons</a>,
+ href="http://docs.oracle.com/javase/tutorial/uiswing/components/button.html">How to Use Buttons, Check Boxes, and Radio Buttons</a>,
  * a section in <em>The Java Tutorial</em>.
  * <p>
  * Buttons can be configured, and to some degree controlled, by
@@ -51,7 +51,7 @@ import java.io.IOException;
  * configuring a button.  Refer to <a href="Action.html#buttonActions">
  * Swing Components Supporting <code>Action</code></a> for more
  * details, and you can find more information in <a
- * href="http://java.sun.com/docs/books/tutorial/uiswing/misc/action.html">How
+ * href="http://docs.oracle.com/javase/tutorial/uiswing/misc/action.html">How
  * to Use Actions</a>, a section in <em>The Java Tutorial</em>.
  * <p>
  * <strong>Warning:</strong> Swing is not thread safe. For more
@@ -64,7 +64,7 @@ import java.io.IOException;
  * future Swing releases. The current serialization support is
  * appropriate for short term storage or RMI between applications running
  * the same version of Swing.  As of 1.4, support for long term storage
- * of all JavaBeans<sup><font size="-2">TM</font></sup>
+ * of all JavaBeans&trade;
  * has been added to the <code>java.beans</code> package.
  * Please see {@link java.beans.XMLEncoder}.
  *
@@ -186,14 +186,14 @@ public class JToggleButton extends AbstractButton implements Accessible {
     }
 
     /**
-     * Returns a string that specifies the name of the l&f class
+     * Returns a string that specifies the name of the l&amp;f class
      * that renders this component.
      *
      * @return String "ToggleButtonUI"
      * @see JComponent#getUIClassID
      * @see UIDefaults#getUI
      * @beaninfo
-     *  description: A string that specifies the name of the L&F class
+     *  description: A string that specifies the name of the L&amp;F class
      */
     public String getUIClassID() {
         return uiClassID;
@@ -218,7 +218,7 @@ public class JToggleButton extends AbstractButton implements Accessible {
      * future Swing releases. The current serialization support is
      * appropriate for short term storage or RMI between applications running
      * the same version of Swing.  As of 1.4, support for long term storage
-     * of all JavaBeans<sup><font size="-2">TM</font></sup>
+     * of all JavaBeans&trade;
      * has been added to the <code>java.beans</code> package.
      * Please see {@link java.beans.XMLEncoder}.
      */
@@ -380,7 +380,7 @@ public class JToggleButton extends AbstractButton implements Accessible {
      * future Swing releases. The current serialization support is
      * appropriate for short term storage or RMI between applications running
      * the same version of Swing.  As of 1.4, support for long term storage
-     * of all JavaBeans<sup><font size="-2">TM</font></sup>
+     * of all JavaBeans&trade;
      * has been added to the <code>java.beans</code> package.
      * Please see {@link java.beans.XMLEncoder}.
      */

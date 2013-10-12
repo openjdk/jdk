@@ -93,7 +93,7 @@ import javax.swing.plaf.basic.DragRecognitionSupport.BeforeDrag;
  * future Swing releases. The current serialization support is
  * appropriate for short term storage or RMI between applications running
  * the same version of Swing.  As of 1.4, support for long term storage
- * of all JavaBeans<sup><font size="-2">TM</font></sup>
+ * of all JavaBeans&trade;
  * has been added to the <code>java.beans</code> package.
  * Please see {@link java.beans.XMLEncoder}.
  *
@@ -1012,7 +1012,7 @@ public abstract class BasicTextUI extends TextUI implements ViewFactory {
      * this translation to be computed.
      *
      * @param tc the text component for which this UI is installed
-     * @param pos the local location in the model to translate >= 0
+     * @param pos the local location in the model to translate &gt;= 0
      * @return the coordinates as a rectangle, null if the model is not painted
      * @exception BadLocationException  if the given position does not
      *   represent a valid location in the associated document
@@ -1029,7 +1029,7 @@ public abstract class BasicTextUI extends TextUI implements ViewFactory {
      * this translation to be computed.
      *
      * @param tc the text component for which this UI is installed
-     * @param pos the local location in the model to translate >= 0
+     * @param pos the local location in the model to translate &gt;= 0
      * @return the coordinates as a rectangle, null if the model is not painted
      * @exception BadLocationException  if the given position does not
      *   represent a valid location in the associated document
@@ -1066,7 +1066,7 @@ public abstract class BasicTextUI extends TextUI implements ViewFactory {
      * @param tc the text component for which this UI is installed
      * @param pt the location in the view to translate.  This
      *  should be in the same coordinate system as the mouse events.
-     * @return the offset from the start of the document >= 0,
+     * @return the offset from the start of the document &gt;= 0,
      *   -1 if not painted
      * @see TextUI#viewToModel
      */
@@ -1083,7 +1083,7 @@ public abstract class BasicTextUI extends TextUI implements ViewFactory {
      * @param tc the text component for which this UI is installed
      * @param pt the location in the view to translate.  This
      *  should be in the same coordinate system as the mouse events.
-     * @return the offset from the start of the document >= 0,
+     * @return the offset from the start of the document &gt;= 0,
      *   -1 if the component doesn't yet have a positive size.
      * @see TextUI#viewToModel
      */
@@ -1141,8 +1141,8 @@ public abstract class BasicTextUI extends TextUI implements ViewFactory {
      * the view is not currently painted.
      *
      * @param tc the text component for which this UI is installed
-     * @param p0 the beginning of the range >= 0
-     * @param p1 the end of the range >= p0
+     * @param p0 the beginning of the range &gt;= 0
+     * @param p1 the end of the range &gt;= p0
      * @see TextUI#damageRange
      */
     public void damageRange(JTextComponent tc, int p0, int p1) {
@@ -1153,8 +1153,8 @@ public abstract class BasicTextUI extends TextUI implements ViewFactory {
      * Causes the portion of the view responsible for the
      * given part of the model to be repainted.
      *
-     * @param p0 the beginning of the range >= 0
-     * @param p1 the end of the range >= p0
+     * @param p0 the beginning of the range &gt;= 0
+     * @param p1 the end of the range &gt;= p0
      */
     public void damageRange(JTextComponent t, int p0, int p1,
                             Position.Bias p0Bias, Position.Bias p1Bias) {
@@ -1271,8 +1271,8 @@ public abstract class BasicTextUI extends TextUI implements ViewFactory {
      * it is unable to represent the part of the element.
      *
      * @param elem the element
-     * @param p0 the starting offset >= 0
-     * @param p1 the ending offset >= p0
+     * @param p0 the starting offset &gt;= 0
+     * @param p1 the ending offset &gt;= p0
      * @return the view
      */
     public View create(Element elem, int p0, int p1) {
@@ -1471,7 +1471,7 @@ public abstract class BasicTextUI extends TextUI implements ViewFactory {
          * the model.  This is implemented to return the index of the only
          * child.
          *
-         * @param pos the position >= 0
+         * @param pos the position &gt;= 0
          * @return  index of the view representing the given position, or
          *   -1 if no view represents that position
          * @since 1.3
@@ -1515,11 +1515,11 @@ public abstract class BasicTextUI extends TextUI implements ViewFactory {
          * Provides a mapping from the document model coordinate space
          * to the coordinate space of the view mapped to it.
          *
-         * @param p0 the position to convert >= 0
+         * @param p0 the position to convert &gt;= 0
          * @param b0 the bias toward the previous character or the
          *  next character represented by p0, in case the
          *  position is a boundary of two views.
-         * @param p1 the position to convert >= 0
+         * @param p1 the position to convert &gt;= 0
          * @param b1 the bias toward the previous character or the
          *  next character represented by p1, in case the
          *  position is a boundary of two views.
@@ -1561,7 +1561,7 @@ public abstract class BasicTextUI extends TextUI implements ViewFactory {
          * they might not be in the same order found in the model, or they just
          * might not allow access to some of the locations in the model.
          *
-         * @param pos the position to convert >= 0
+         * @param pos the position to convert &gt;= 0
          * @param a the allocated region to render into
          * @param direction the direction from the current position that can
          *  be thought of as the arrow keys typically found on a keyboard.

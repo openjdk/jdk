@@ -75,7 +75,7 @@ import sun.awt.AWTAccessor;
  * of the transfer, and <code>setForeground</code> for the target of a transfer.
  * <p>
  * Please see
- * <a href="http://java.sun.com/docs/books/tutorial/uiswing/misc/dnd.html">
+ * <a href="http://docs.oracle.com/javase/tutorial/uiswing/dnd/index.html">
  * How to Use Drag and Drop and Data Transfer</a>,
  * a section in <em>The Java Tutorial</em>, for more information.
  *
@@ -502,7 +502,7 @@ public class TransferHandler implements Serializable {
          * the action with the source drop actions, and then compare the result
          * against the original action. For example:
          * <pre>
-         * boolean copySupported = (COPY & getSourceDropActions()) == COPY;
+         * boolean copySupported = (COPY &amp; getSourceDropActions()) == COPY;
          * </pre>
          * <p>
          * This method is only for use with drag and drop transfers.
@@ -1267,6 +1267,14 @@ public class TransferHandler implements Serializable {
                         ((DropTargetListener)listeners[i+1]).dragExit(e);
                     }
                 }
+            }
+            if (!isActive()) {
+                // If the Drop target is inactive the dragExit will not be dispatched to the dtListener,
+                // so make sure that we clean up the dtListener anyway.
+                DropTargetListener dtListener = getDropTargetListener();
+                    if (dtListener != null && dtListener instanceof DropHandler) {
+                        ((DropHandler)dtListener).cleanup(false);
+                    }
             }
         }
 

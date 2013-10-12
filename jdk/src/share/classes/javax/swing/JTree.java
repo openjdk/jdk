@@ -41,10 +41,10 @@ import static sun.swing.SwingUtilities2.Section.*;
 
 
 /**
- * <a name="jtree_description">
+ * <a name="jtree_description"></a>
  * A control that displays a set of hierarchical data as an outline.
  * You can find task-oriented documentation and examples of using trees in
- * <a href="http://java.sun.com/docs/books/tutorial/uiswing/components/tree.html">How to Use Trees</a>,
+ * <a href="http://docs.oracle.com/javase/tutorial/uiswing/components/tree.html">How to Use Trees</a>,
  * a section in <em>The Java Tutorial.</em>
  * <p>
  * A specific node in a tree can be identified either by a
@@ -59,7 +59,7 @@ import static sun.swing.SwingUtilities2.Section.*;
  * under a collapsed ancestor. All of a <i>viewable</i> nodes parents
  * are expanded, but may or may not be displayed. A <i>displayed</i> node
  * is both viewable and in the display area, where it can be seen.
- * <p>
+ * </p>
  * The following <code>JTree</code> methods use "visible" to mean "displayed":
  * <ul>
  * <li><code>isRootVisible()</code>
@@ -69,14 +69,12 @@ import static sun.swing.SwingUtilities2.Section.*;
  * <li><code>getVisibleRowCount()</code>
  * <li><code>setVisibleRowCount()</code>
  * </ul>
- * <p>
  * The next group of <code>JTree</code> methods use "visible" to mean
  * "viewable" (under an expanded parent):
  * <ul>
  * <li><code>isVisible()</code>
  * <li><code>makeVisible()</code>
  * </ul>
- * <p>
  * If you are interested in knowing when the selection changes implement
  * the <code>TreeSelectionListener</code> interface and add the instance
  * using the method <code>addTreeSelectionListener</code>.
@@ -87,6 +85,7 @@ import static sun.swing.SwingUtilities2.Section.*;
  * If you are interested in detecting either double-click events or when
  * a user clicks on a node, regardless of whether or not it was selected,
  * we recommend you do the following:
+ * </p>
  * <pre>
  * final JTree tree = ...;
  *
@@ -114,12 +113,13 @@ import static sun.swing.SwingUtilities2.Section.*;
  * a graphic icon and text), subclass {@link TreeCellRenderer} and use
  * {@link #setCellRenderer} to tell the tree to use it. To edit such nodes,
  * subclass {@link TreeCellEditor} and use {@link #setCellEditor}.
+ * </p>
  * <p>
  * Like all <code>JComponent</code> classes, you can use {@link InputMap} and
  * {@link ActionMap}
  * to associate an {@link Action} object with a {@link KeyStroke}
  * and execute the action under specified conditions.
- * <p>
+ * </p>
  * <strong>Warning:</strong> Swing is not thread safe. For more
  * information see <a
  * href="package-summary.html#threading">Swing's Threading
@@ -130,10 +130,10 @@ import static sun.swing.SwingUtilities2.Section.*;
  * future Swing releases. The current serialization support is
  * appropriate for short term storage or RMI between applications running
  * the same version of Swing.  As of 1.4, support for long term storage
- * of all JavaBeans<sup><font size="-2">TM</font></sup>
+ * of all JavaBeans&trade;
  * has been added to the <code>java.beans</code> package.
  * Please see {@link java.beans.XMLEncoder}.
- *
+ *</p>
  * @beaninfo
  *   attribute: isContainer false
  * description: A component that displays a set of hierarchical data as an outline.
@@ -174,7 +174,7 @@ public class JTree extends JComponent implements Scrollable, Accessible
     transient protected TreeCellRenderer  cellRenderer;
 
     /**
-     * Height to use for each display row. If this is <= 0 the renderer
+     * Height to use for each display row. If this is &lt;= 0 the renderer
      * determines the height for each row.
      */
     protected int                         rowHeight;
@@ -671,7 +671,7 @@ public class JTree extends JComponent implements Scrollable, Accessible
     }
 
     /**
-     * Returns the L&F object that renders this component.
+     * Returns the L&amp;F object that renders this component.
      *
      * @return the <code>TreeUI</code> object that renders this component
      */
@@ -680,11 +680,11 @@ public class JTree extends JComponent implements Scrollable, Accessible
     }
 
     /**
-     * Sets the L&F object that renders this component.
+     * Sets the L&amp;F object that renders this component.
      * <p>
      * This is a bound property.
      *
-     * @param ui  the <code>TreeUI</code> L&F object
+     * @param ui  the <code>TreeUI</code> L&amp;F object
      * @see UIDefaults#getUI
      * @beaninfo
      *        bound: true
@@ -706,7 +706,7 @@ public class JTree extends JComponent implements Scrollable, Accessible
     }
 
     /**
-     * Notification from the <code>UIManager</code> that the L&F has changed.
+     * Notification from the <code>UIManager</code> that the L&amp;F has changed.
      * Replaces the current UI object with the latest version from the
      * <code>UIManager</code>.
      *
@@ -721,7 +721,7 @@ public class JTree extends JComponent implements Scrollable, Accessible
 
 
     /**
-     * Returns the name of the L&F class that renders this component.
+     * Returns the name of the L&amp;F class that renders this component.
      *
      * @return the string "TreeUI"
      * @see JComponent#getUIClassID
@@ -1701,7 +1701,7 @@ public class JTree extends JComponent implements Scrollable, Accessible
     /**
      * Selects the nodes corresponding to each of the specified rows
      * in the display. If a particular element of <code>rows</code> is
-     * < 0 or >= <code>getRowCount</code>, it will be ignored.
+     * &lt; 0 or &gt;= <code>getRowCount</code>, it will be ignored.
      * If none of the elements
      * in <code>rows</code> are valid rows, the selection will
      * be cleared. That is it will be as if <code>clearSelection</code>
@@ -2162,8 +2162,8 @@ public class JTree extends JComponent implements Scrollable, Accessible
      *
      * @param row  an integer specifying a row
      * @return the <code>TreePath</code> to the specified node,
-     *          <code>null</code> if <code>row < 0</code>
-     *          or <code>row >= getRowCount()</code>
+     *          <code>null</code> if <code>row &lt; 0</code>
+     *          or <code>row &gt;= getRowCount()</code>
      */
     public TreePath getPathForRow(int row) {
         TreeUI                  tree = getUI();
@@ -2211,7 +2211,7 @@ public class JTree extends JComponent implements Scrollable, Accessible
      * Ensures that the node in the specified row is expanded and
      * viewable.
      * <p>
-     * If <code>row</code> is < 0 or >= <code>getRowCount</code> this
+     * If <code>row</code> is &lt; 0 or &gt;= <code>getRowCount</code> this
      * will have no effect.
      *
      * @param row  an integer specifying a display row, where 0 is the
@@ -2234,7 +2234,7 @@ public class JTree extends JComponent implements Scrollable, Accessible
     /**
      * Ensures that the node in the specified row is collapsed.
      * <p>
-     * If <code>row</code> is < 0 or >= <code>getRowCount</code> this
+     * If <code>row</code> is &lt; 0 or &gt;= <code>getRowCount</code> this
      * will have no effect.
      *
      * @param row  an integer specifying a display row, where 0 is the
@@ -3238,7 +3238,7 @@ public class JTree extends JComponent implements Scrollable, Accessible
      * future Swing releases. The current serialization support is
      * appropriate for short term storage or RMI between applications running
      * the same version of Swing.  As of 1.4, support for long term storage
-     * of all JavaBeans<sup><font size="-2">TM</font></sup>
+     * of all JavaBeans&trade;
      * has been added to the <code>java.beans</code> package.
      * Please see {@link java.beans.XMLEncoder}.
      */
@@ -3360,7 +3360,7 @@ public class JTree extends JComponent implements Scrollable, Accessible
      * future Swing releases. The current serialization support is
      * appropriate for short term storage or RMI between applications running
      * the same version of Swing.  As of 1.4, support for long term storage
-     * of all JavaBeans<sup><font size="-2">TM</font></sup>
+     * of all JavaBeans&trade;
      * has been added to the <code>java.beans</code> package.
      * Please see {@link java.beans.XMLEncoder}.
      */
@@ -3861,7 +3861,7 @@ public class JTree extends JComponent implements Scrollable, Accessible
      * future Swing releases. The current serialization support is
      * appropriate for short term storage or RMI between applications running
      * the same version of Swing.  As of 1.4, support for long term storage
-     * of all JavaBeans<sup><font size="-2">TM</font></sup>
+     * of all JavaBeans&trade;
      * has been added to the <code>java.beans</code> package.
      * Please see {@link java.beans.XMLEncoder}.
      */
@@ -4093,7 +4093,7 @@ public class JTree extends JComponent implements Scrollable, Accessible
      * future Swing releases. The current serialization support is
      * appropriate for short term storage or RMI between applications running
      * the same version of Swing.  As of 1.4, support for long term storage
-     * of all JavaBeans<sup><font size="-2">TM</font></sup>
+     * of all JavaBeans&trade;
      * has been added to the <code>java.beans</code> package.
      * Please see {@link java.beans.XMLEncoder}.
      */

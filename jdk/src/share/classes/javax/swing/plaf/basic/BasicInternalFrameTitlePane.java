@@ -50,7 +50,7 @@ import sun.swing.UIAction;
  * future Swing releases. The current serialization support is
  * appropriate for short term storage or RMI between applications running
  * the same version of Swing.  As of 1.4, support for long term storage
- * of all JavaBeans<sup><font size="-2">TM</font></sup>
+ * of all JavaBeans&trade;
  * has been added to the <code>java.beans</code> package.
  * Please see {@link java.beans.XMLEncoder}.
  *
@@ -553,7 +553,7 @@ public class BasicInternalFrameTitlePane extends JComponent
 
     /**
      * This class should be treated as a &quot;protected&quot; inner class.
-     * Instantiate it only within subclasses of <Foo>.
+     * Instantiate it only within subclasses of <code>Foo</code>.
      */
     public class PropertyChangeHandler implements PropertyChangeListener {
         // NOTE: This class exists only for backward compatability. All
@@ -567,7 +567,7 @@ public class BasicInternalFrameTitlePane extends JComponent
 
     /**
      * This class should be treated as a &quot;protected&quot; inner class.
-     * Instantiate it only within subclasses of <Foo>.
+     * Instantiate it only within subclasses of <code>Foo</code>.
      */
     public class TitlePaneLayout implements LayoutManager {
         // NOTE: This class exists only for backward compatability. All
@@ -597,7 +597,7 @@ public class BasicInternalFrameTitlePane extends JComponent
 
     /**
      * This class should be treated as a &quot;protected&quot; inner class.
-     * Instantiate it only within subclasses of <Foo>.
+     * Instantiate it only within subclasses of <code>Foo</code>.
      */
     public class CloseAction extends AbstractAction {
         public CloseAction() {
@@ -614,7 +614,7 @@ public class BasicInternalFrameTitlePane extends JComponent
 
     /**
      * This class should be treated as a &quot;protected&quot; inner class.
-     * Instantiate it only within subclasses of <Foo>.
+     * Instantiate it only within subclasses of <code>Foo</code>.
      */
     public class MaximizeAction extends AbstractAction {
         public MaximizeAction() {
@@ -643,7 +643,7 @@ public class BasicInternalFrameTitlePane extends JComponent
 
     /**
      * This class should be treated as a &quot;protected&quot; inner class.
-     * Instantiate it only within subclasses of <Foo>.
+     * Instantiate it only within subclasses of <code>Foo</code>.
      */
     public class IconifyAction extends AbstractAction {
         public IconifyAction() {
@@ -664,7 +664,7 @@ public class BasicInternalFrameTitlePane extends JComponent
 
     /**
      * This class should be treated as a &quot;protected&quot; inner class.
-     * Instantiate it only within subclasses of <Foo>.
+     * Instantiate it only within subclasses of <code>Foo</code>.
      */
     public class RestoreAction extends AbstractAction {
         public RestoreAction() {
@@ -691,7 +691,7 @@ public class BasicInternalFrameTitlePane extends JComponent
 
     /**
      * This class should be treated as a &quot;protected&quot; inner class.
-     * Instantiate it only within subclasses of <Foo>.
+     * Instantiate it only within subclasses of <code>Foo</code>.
      */
     public class MoveAction extends AbstractAction {
         public MoveAction() {
@@ -725,7 +725,7 @@ public class BasicInternalFrameTitlePane extends JComponent
 
     /**
      * This class should be treated as a &quot;protected&quot; inner class.
-     * Instantiate it only within subclasses of <Foo>.
+     * Instantiate it only within subclasses of <code>Foo</code>.
      */
     public class SizeAction extends AbstractAction {
         public SizeAction() {
@@ -741,7 +741,7 @@ public class BasicInternalFrameTitlePane extends JComponent
 
     /**
      * This class should be treated as a &quot;protected&quot; inner class.
-     * Instantiate it only within subclasses of <Foo>.
+     * Instantiate it only within subclasses of <code>Foo</code>.
      */
     public class SystemMenuBar extends JMenuBar {
         public boolean isFocusTraversable() { return false; }

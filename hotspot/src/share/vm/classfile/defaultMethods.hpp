@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,15 +44,5 @@ class DefaultMethods : AllStatic {
   // the class.
   static void generate_default_methods(
       InstanceKlass* klass, GrowableArray<Method*>* mirandas, TRAPS);
-
-
-  // Called during linking when an invokespecial to an direct interface
-  // method is found.  Selects and returns a method if there is a unique
-  // default method in the 'super_iface' part of the hierarchy which is
-  // also a candidate default for 'this_klass'.  Otherwise throws an AME.
-  static Method* find_super_default(
-      Klass* this_klass, Klass* super_iface,
-      Symbol* method_name, Symbol* method_sig, TRAPS);
 };
-
 #endif // SHARE_VM_CLASSFILE_DEFAULTMETHODS_HPP

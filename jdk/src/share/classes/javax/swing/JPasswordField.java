@@ -39,7 +39,7 @@ import java.util.Arrays;
  * the editing of a single line of text where the view indicates
  * something was typed, but does not show the original characters.
  * You can find further information and examples in
- * <a href="http://java.sun.com/docs/books/tutorial/uiswing/components/textfield.html">How to Use Text Fields</a>,
+ * <a href="http://docs.oracle.com/javase/tutorial/uiswing/components/textfield.html">How to Use Text Fields</a>,
  * a section in <em>The Java Tutorial.</em>
  * <p>
  * <code>JPasswordField</code> is intended
@@ -64,7 +64,7 @@ import java.util.Arrays;
  * future Swing releases. The current serialization support is
  * appropriate for short term storage or RMI between applications running
  * the same version of Swing.  As of 1.4, support for long term storage
- * of all JavaBeans<sup><font size="-2">TM</font></sup>
+ * of all JavaBeans&trade;
  * has been added to the <code>java.beans</code> package.
  * Please see {@link java.beans.XMLEncoder}.
  *
@@ -101,7 +101,7 @@ public class JPasswordField extends JTextField {
      * number of columns.  A default model is created, and the initial string
      * is set to <code>null</code>.
      *
-     * @param columns the number of columns >= 0
+     * @param columns the number of columns &gt;= 0
      */
     public JPasswordField(int columns) {
         this(null, null, columns);
@@ -113,7 +113,7 @@ public class JPasswordField extends JTextField {
      * the default.
      *
      * @param text the text to be displayed, <code>null</code> if none
-     * @param columns the number of columns >= 0
+     * @param columns the number of columns &gt;= 0
      */
     public JPasswordField(String text, int columns) {
         this(null, text, columns);
@@ -130,7 +130,7 @@ public class JPasswordField extends JTextField {
      * @param doc  the text storage to use
      * @param txt the text to be displayed, <code>null</code> if none
      * @param columns  the number of columns to use to calculate
-     *   the preferred width >= 0; if columns is set to zero, the
+     *   the preferred width &gt;= 0; if columns is set to zero, the
      *   preferred width will be whatever naturally results from
      *   the component implementation
      */
@@ -143,7 +143,7 @@ public class JPasswordField extends JTextField {
     }
 
     /**
-     * Returns the name of the L&F class that renders this component.
+     * Returns the name of the L&amp;F class that renders this component.
      *
      * @return the string "PasswordFieldUI"
      * @see JComponent#getUIClassID
@@ -271,8 +271,8 @@ public class JPasswordField extends JTextField {
      * <code>getPassword</code> method instead.
      * @deprecated As of Java 2 platform v1.2,
      * replaced by <code>getPassword</code>.
-     * @param offs the offset >= 0
-     * @param len the length >= 0
+     * @param offs the offset &gt;= 0
+     * @param len the length &gt;= 0
      * @return the text
      * @exception BadLocationException if the offset or length are invalid
      */
@@ -399,7 +399,7 @@ public class JPasswordField extends JTextField {
      * future Swing releases. The current serialization support is
      * appropriate for short term storage or RMI between applications running
      * the same version of Swing.  As of 1.4, support for long term storage
-     * of all JavaBeans<sup><font size="-2">TM</font></sup>
+     * of all JavaBeans&trade;
      * has been added to the <code>java.beans</code> package.
      * Please see {@link java.beans.XMLEncoder}.
      */

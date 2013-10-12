@@ -64,7 +64,7 @@ import sun.util.CoreResourceBundleControl;
  * future Swing releases. The current serialization support is
  * appropriate for short term storage or RMI between applications running
  * the same version of Swing.  As of 1.4, support for long term storage
- * of all JavaBeans<sup><font size="-2">TM</font></sup>
+ * of all JavaBeans&trade;
  * has been added to the <code>java.beans</code> package.
  * Please see {@link java.beans.XMLEncoder}.
  *
@@ -706,7 +706,7 @@ public class UIDefaults extends Hashtable<Object,Object>
 
 
     /**
-     * Returns the L&F class that renders this component.
+     * Returns the L&amp;F class that renders this component.
      *
      * @param uiClassID a string containing the class ID
      * @return the Class object returned by

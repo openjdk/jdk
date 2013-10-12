@@ -33,7 +33,7 @@ package javax.swing.text;
  * future Swing releases. The current serialization support is
  * appropriate for short term storage or RMI between applications running
  * the same version of Swing.  As of 1.4, support for long term storage
- * of all JavaBeans<sup><font size="-2">TM</font></sup>
+ * of all JavaBeans&trade;
  * has been added to the <code>java.beans</code> package.
  * Please see {@link java.beans.XMLEncoder}.
  *
@@ -46,7 +46,7 @@ public class BadLocationException extends Exception
      * Creates a new BadLocationException object.
      *
      * @param s         a string indicating what was wrong with the arguments
-     * @param offs      offset within the document that was requested >= 0
+     * @param offs      offset within the document that was requested &gt;= 0
      */
     public BadLocationException(String s, int offs) {
         super(s);
@@ -56,7 +56,7 @@ public class BadLocationException extends Exception
     /**
      * Returns the offset into the document that was not legal.
      *
-     * @return the offset >= 0
+     * @return the offset &gt;= 0
      */
     public int offsetRequested() {
         return offs;

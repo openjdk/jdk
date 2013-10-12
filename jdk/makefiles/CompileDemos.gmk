@@ -65,14 +65,10 @@ $(eval $(call SetupAppletDemo,DitherTest))
 $(eval $(call SetupAppletDemo,DrawTest))
 $(eval $(call SetupAppletDemo,Fractal))
 $(eval $(call SetupAppletDemo,GraphicsTest))
-$(eval $(call SetupAppletDemo,MoleculeViewer))
 $(eval $(call SetupAppletDemo,NervousText))
 $(eval $(call SetupAppletDemo,SimpleGraph))
 $(eval $(call SetupAppletDemo,SortDemo))
 $(eval $(call SetupAppletDemo,SpreadSheet))
-# Build WireFrame without a server since it
-# has a class Matrix3D that also exists in MoleculeViewer.
-$(eval $(call SetupAppletDemo,WireFrame,true))
 
 ifndef OPENJDK
     $(eval $(call SetupAppletDemo,Animator,,closed/))
@@ -83,7 +79,7 @@ endif
 
 ##################################################################################################
 
-PATTERNS_TO_COPY=.html .txt .properties .js .gif .jpg .theme .data .opt README .c .h .png .ttf
+PATTERNS_TO_COPY=.html .txt .properties .js .gif .jpg .theme .data .opt README .c .h .png .ttf .xyz .obj
 
 define SetupDemo
     # Param 1 = Name of the demo
@@ -161,6 +157,8 @@ $(JDK_OUTPUTDIR)/demo/jfc/CodePointIM/_the.services : \
 
 BUILD_DEMOS+=$(JDK_OUTPUTDIR)/demo/jfc/CodePointIM/_the.services
 
+$(eval $(call SetupDemo,MoleculeViewer,applets,,XYZChemModel,,,example*.html XYZApp.java))
+$(eval $(call SetupDemo,WireFrame,applets,,ThreeD,,,example*.html ThreeD.java))
 $(eval $(call SetupDemo,FileChooserDemo,jfc,,FileChooserDemo,,,README*))
 $(eval $(call SetupDemo,Font2DTest,jfc,,Font2DTest,,,*.html *.txt))
 $(eval $(call SetupDemo,Metalworks,jfc,,Metalworks,,,README*))

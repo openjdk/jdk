@@ -26,6 +26,7 @@
 package sun.swing;
 
 import javax.swing.JComponent;
+import java.awt.Cursor;
 
 /**
  * The interface by means of which the {@link JLightweightFrame} class
@@ -179,4 +180,11 @@ public interface LightweightContent {
      * application that the content minimum size has changed.
      */
     public void minimumSizeChanged(int width, int height);
+
+    /**
+     * {@code JLightweightFrame} calls this method to notify the client
+     * application that in needs to set a cursor
+     * @param cursor a cursor to set
+     */
+    default public void setCursor(Cursor cursor) { }
 }

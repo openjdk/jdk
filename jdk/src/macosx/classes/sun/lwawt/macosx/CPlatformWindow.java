@@ -210,7 +210,6 @@ public class CPlatformWindow extends CFRetainedResource implements PlatformWindo
     private boolean undecorated; // initialized in getInitialStyleBits()
     private Rectangle normalBounds = null; // not-null only for undecorated maximized windows
     private CPlatformResponder responder;
-    private volatile boolean zoomed = false; // from native perspective
 
     public CPlatformWindow() {
         super(0, true);
@@ -231,7 +230,9 @@ public class CPlatformWindow extends CFRetainedResource implements PlatformWindo
         contentView.initialize(peer, responder);
 
         final long ownerPtr = owner != null ? owner.getNSWindowPtr() : 0L;
-        final long nativeWindowPtr = nativeCreateNSWindow(contentView.getAWTView(), ownerPtr, styleBits, 0, 0, 0, 0);
+        Rectangle bounds = _peer.constrainBounds(_target.getBounds());
+        final long nativeWindowPtr = nativeCreateNSWindow(contentView.getAWTView(),
+                ownerPtr, styleBits, bounds.x, bounds.y, bounds.width, bounds.height);
         setPtr(nativeWindowPtr);
 
         if (target instanceof javax.swing.RootPaneContainer) {
@@ -466,7 +467,8 @@ public class CPlatformWindow extends CFRetainedResource implements PlatformWindo
     }
 
     private boolean isMaximized() {
-        return undecorated ? this.normalBounds != null : zoomed;
+        return undecorated ? this.normalBounds != null
+                : CWrapper.NSWindow.isZoomed(getNSWindowPtr());
     }
 
     private void maximize() {
@@ -474,7 +476,6 @@ public class CPlatformWindow extends CFRetainedResource implements PlatformWindo
             return;
         }
         if (!undecorated) {
-            zoomed = true;
             CWrapper.NSWindow.zoom(getNSWindowPtr());
         } else {
             deliverZoom(true);
@@ -496,7 +497,6 @@ public class CPlatformWindow extends CFRetainedResource implements PlatformWindo
             return;
         }
         if (!undecorated) {
-            zoomed = false;
             CWrapper.NSWindow.zoom(getNSWindowPtr());
         } else {
             deliverZoom(false);
@@ -820,6 +820,7 @@ public class CPlatformWindow extends CFRetainedResource implements PlatformWindo
         }
 
         nativeSetEnabled(getNSWindowPtr(), !blocked);
+        checkBlockingAndOrder();
     }
 
     public final void invalidateShadow(){
@@ -984,7 +985,7 @@ public class CPlatformWindow extends CFRetainedResource implements PlatformWindo
         setStyleBits(SHOULD_BECOME_KEY | SHOULD_BECOME_MAIN, isFocusable); // set both bits at once
     }
 
-    private boolean checkBlocking() {
+    private boolean checkBlockingAndOrder() {
         LWWindowPeer blocker = (peer == null)? null : peer.getBlocker();
         if (blocker == null) {
             return false;
@@ -1040,7 +1041,7 @@ public class CPlatformWindow extends CFRetainedResource implements PlatformWindo
     private void windowDidBecomeMain() {
         assert CThreading.assertAppKit();
 
-        if (checkBlocking()) return;
+        if (checkBlockingAndOrder()) return;
         // If it's not blocked, make sure it's above its siblings
         orderAboveSiblings();
     }

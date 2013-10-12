@@ -40,8 +40,7 @@ public class Resources_sv extends java.util.ListResourceBundle {
                 "*******************************************\n\n"},
 
         // keytool: Help part
-// "Option" should be translated.
-        {".OPTION.", " [Alternativ]..."},
+        {".OPTION.", " [OPTION]..."},
         {"Options.", "Alternativ:"},
         {"Use.keytool.help.for.all.available.commands",
                  "L\u00E4s \"Hj\u00E4lp - Nyckelverktyg\" f\u00F6r alla tillg\u00E4ngliga kommandon"},
@@ -61,7 +60,6 @@ public class Resources_sv extends java.util.ListResourceBundle {
                 "Exporterar certifikat"}, //-exportcert
         {"Generates.a.key.pair",
                 "Genererar nyckelpar"}, //-genkeypair
-// translation of "secret" key should be different to "private" key.
         {"Generates.a.secret.key",
                 "Genererar hemlig nyckel"}, //-genseckey
         {"Generates.certificate.from.a.certificate.request",
@@ -178,7 +176,7 @@ public class Resources_sv extends java.util.ListResourceBundle {
         {"Illegal.value.", "Otill\u00E5tet v\u00E4rde: "},
         {"Unknown.password.type.", "Ok\u00E4nd l\u00F6senordstyp: "},
         {"Cannot.find.environment.variable.",
-                "Kan inte hitta milj\u00F6variabel: "},
+                "Hittar inte milj\u00F6variabel: "},
         {"Cannot.find.file.", "Hittar inte fil: "},
         {"Command.option.flag.needs.an.argument.", "Kommandoalternativet {0} beh\u00F6ver ett argument."},
         {"Warning.Different.store.and.key.passwords.not.supported.for.PKCS12.KeyStores.Ignoring.user.specified.command.value.",
@@ -244,8 +242,10 @@ public class Resources_sv extends java.util.ListResourceBundle {
         {"Certification.request.stored.in.file.filename.",
                 "Certifikatbeg\u00E4ran har lagrats i filen <{0}>"},
         {"Submit.this.to.your.CA", "Skicka detta till certifikatutf\u00E4rdaren"},
-        {"if.alias.not.specified.destalias.srckeypass.and.destkeypass.must.not.be.specified",
-            "om n\u00E5got alias inte anges f\u00E5r destalias, srckeypass och destkeypass inte anges"},
+        {"if.alias.not.specified.destalias.and.srckeypass.must.not.be.specified",
+            "om alias inte angivits ska inte heller destalias och srckeypass anges"},
+        {"The.destination.pkcs12.keystore.has.different.storepass.and.keypass.Please.retry.with.destkeypass.specified.",
+            "Destinationsnyckellagret pkcs12 har olika storepass och keypass. F\u00F6rs\u00F6k igen med -destkeypass angivet."},
         {"Certificate.stored.in.file.filename.",
                 "Certifikatet har lagrats i filen <{0}>"},
         {"Certificate.reply.was.installed.in.keystore",
@@ -324,7 +324,7 @@ public class Resources_sv extends java.util.ListResourceBundle {
         {"Do.you.still.want.to.add.it.to.your.own.keystore.no.",
                 "Vill du fortfarande l\u00E4gga till det i ditt eget nyckellagret? [nej]:  "},
         {"Trust.this.certificate.no.", "Litar du p\u00E5 det h\u00E4r certifikatet? [nej]:  "},
-        {"YES", "Ja"},
+        {"YES", "JA"},
         {"New.prompt.", "Nytt {0}: "},
         {"Passwords.must.differ", "L\u00F6senorden m\u00E5ste vara olika"},
         {"Re.enter.new.prompt.", "Ange nytt {0} igen: "},
@@ -361,7 +361,7 @@ public class Resources_sv extends java.util.ListResourceBundle {
                  "Aliaset <{0}> refererar till en posttyp som inte \u00E4r n\u00E5gon privat nyckelpost. Kommandot -keyclone har endast st\u00F6d f\u00F6r kloning av privata nyckelposter"},
 
         {".WARNING.WARNING.WARNING.",
-            "*****************  Varning Varning Varning  *****************"},
+            "*****************  WARNING WARNING WARNING  *****************"},
         {"Signer.d.", "Signerare #%d:"},
         {"Timestamp.", "Tidsst\u00E4mpel:"},
         {"Signature.", "Underskrift:"},
@@ -386,7 +386,7 @@ public class Resources_sv extends java.util.ListResourceBundle {
                 "Toppniv\u00E5certifikatet i svaret:\n"},
         {".is.not.trusted.", "... \u00E4r inte betrott. "},
         {"Install.reply.anyway.no.", "Vill du installera svaret \u00E4nd\u00E5? [nej]:  "},
-        {"NO", "Nej"},
+        {"NO", "NEJ"},
         {"Public.keys.in.reply.and.keystore.don.t.match",
                 "De offentliga nycklarna i svaret och nyckellagret matchar inte varandra"},
         {"Certificate.reply.and.certificate.in.keystore.are.identical",
@@ -399,6 +399,10 @@ public class Resources_sv extends java.util.ListResourceBundle {
                 "Den hemliga nyckeln har inte genererats eftersom aliaset <{0}> redan finns"},
         {"Please.provide.keysize.for.secret.key.generation",
                 "Ange -keysize f\u00F6r att skapa hemlig nyckel"},
+
+        {"verified.by.s.in.s", "Verifierad av %s i %s"},
+        {"warning.not.verified.make.sure.keystore.is.correct",
+            "VARNING: ej verifierad. Se till att -nyckellager \u00E4r korrekt."},
 
         {"Extensions.", "Till\u00E4gg: "},
         {".Empty.value.", "(Tomt v\u00E4rde)"},

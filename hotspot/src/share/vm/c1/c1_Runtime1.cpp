@@ -709,10 +709,10 @@ static Klass* resolve_field_return_klass(methodHandle caller, int bci, TRAPS) {
   Bytecodes::Code code       = field_access.code();
 
   // We must load class, initialize class and resolvethe field
-  FieldAccessInfo result; // initialize class if needed
+  fieldDescriptor result; // initialize class if needed
   constantPoolHandle constants(THREAD, caller->constants());
-  LinkResolver::resolve_field(result, constants, field_access.index(), Bytecodes::java_code(code), false, CHECK_NULL);
-  return result.klass()();
+  LinkResolver::resolve_field_access(result, constants, field_access.index(), Bytecodes::java_code(code), CHECK_NULL);
+  return result.field_holder();
 }
 
 
@@ -826,11 +826,11 @@ JRT_ENTRY(void, Runtime1::patch_code(JavaThread* thread, Runtime1::StubID stub_i
   if (stub_id == Runtime1::access_field_patching_id) {
 
     Bytecode_field field_access(caller_method, bci);
-    FieldAccessInfo result; // initialize class if needed
+    fieldDescriptor result; // initialize class if needed
     Bytecodes::Code code = field_access.code();
     constantPoolHandle constants(THREAD, caller_method->constants());
-    LinkResolver::resolve_field(result, constants, field_access.index(), Bytecodes::java_code(code), false, CHECK);
-    patch_field_offset = result.field_offset();
+    LinkResolver::resolve_field_access(result, constants, field_access.index(), Bytecodes::java_code(code), CHECK);
+    patch_field_offset = result.offset();
 
     // If we're patching a field which is volatile then at compile it
     // must not have been know to be volatile, so the generated code
@@ -1019,7 +1019,7 @@ JRT_ENTRY(void, Runtime1::patch_code(JavaThread* thread, Runtime1::StubID stub_i
               n_copy->set_data((intx) (load_klass()));
             } else {
               assert(mirror() != NULL, "klass not set");
-              n_copy->set_data((intx) (mirror()));
+              n_copy->set_data(cast_from_oop<intx>(mirror()));
             }
 
             if (TracePatching) {
@@ -1031,7 +1031,7 @@ JRT_ENTRY(void, Runtime1::patch_code(JavaThread* thread, Runtime1::StubID stub_i
           assert(n_copy->data() == 0 ||
                  n_copy->data() == (intptr_t)Universe::non_oop_word(),
                  "illegal init value");
-          n_copy->set_data((intx) (appendix()));
+          n_copy->set_data(cast_from_oop<intx>(appendix()));
 
           if (TracePatching) {
             Disassembler::decode(copy_buff, copy_buff + *byte_count, tty);
@@ -1078,14 +1078,17 @@ JRT_ENTRY(void, Runtime1::patch_code(JavaThread* thread, Runtime1::StubID stub_i
           // replace instructions
           // first replace the tail, then the call
 #ifdef ARM
-          if(load_klass_or_mirror_patch_id && !VM_Version::supports_movw()) {
+          if((load_klass_or_mirror_patch_id ||
+              stub_id == Runtime1::load_appendix_patching_id) &&
+             !VM_Version::supports_movw()) {
             nmethod* nm = CodeCache::find_nmethod(instr_pc);
             address addr = NULL;
             assert(nm != NULL, "invalid nmethod_pc");
             RelocIterator mds(nm, copy_buff, copy_buff + 1);
             while (mds.next()) {
               if (mds.type() == relocInfo::oop_type) {
-                assert(stub_id == Runtime1::load_mirror_patching_id, "wrong stub id");
+                assert(stub_id == Runtime1::load_mirror_patching_id ||
+                       stub_id == Runtime1::load_appendix_patching_id, "wrong stub id");
                 oop_Relocation* r = mds.oop_reloc();
                 addr = (address)r->oop_addr();
                 break;

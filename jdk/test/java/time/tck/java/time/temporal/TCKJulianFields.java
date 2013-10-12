@@ -76,7 +76,7 @@ import org.testng.annotations.Test;
 import tck.java.time.AbstractTCKTest;
 
 /**
- * Test.
+ * Test Julian Fields.
  */
 @Test
 public class TCKJulianFields extends AbstractTCKTest {
@@ -85,16 +85,6 @@ public class TCKJulianFields extends AbstractTCKTest {
     private static final LocalDate DEC31_1969 = LocalDate.of(1969, 12, 31);
     private static final LocalDate NOV12_1945 = LocalDate.of(1945, 11, 12);
     private static final LocalDate JAN01_0001 = LocalDate.of(1, 1, 1);
-
-    //-----------------------------------------------------------------------
-    @DataProvider(name="julian_fields")
-    Object[][] julian_samples() {
-        return new Object[][] {
-            {JulianFields.JULIAN_DAY},
-            {JulianFields.MODIFIED_JULIAN_DAY},
-            {JulianFields.RATA_DIE},
-        };
-    }
 
     @DataProvider(name="samples")
     Object[][] data_samples() {
@@ -122,11 +112,6 @@ public class TCKJulianFields extends AbstractTCKTest {
     }
 
     //-----------------------------------------------------------------------
-    @Test(dataProvider="julian_fields")
-    public void test_serializable(TemporalField field) throws IOException, ClassNotFoundException {
-        assertSerializable(field);
-    }
-
     public void test_basics() {
         assertEquals(JulianFields.JULIAN_DAY.isDateBased(), true);
         assertEquals(JulianFields.JULIAN_DAY.isTimeBased(), false);

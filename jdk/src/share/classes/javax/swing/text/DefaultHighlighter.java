@@ -105,8 +105,8 @@ public class DefaultHighlighter extends LayeredHighlighter {
      * Adds a highlight to the view.  Returns a tag that can be used
      * to refer to the highlight.
      *
-     * @param p0   the start offset of the range to highlight >= 0
-     * @param p1   the end offset of the range to highlight >= p0
+     * @param p0   the start offset of the range to highlight &gt;= 0
+     * @param p1   the end offset of the range to highlight &gt;= p0
      * @param p    the painter to use to actually render the highlight
      * @return     an object that can be used as a tag
      *   to refer to the highlight
@@ -220,8 +220,8 @@ public class DefaultHighlighter extends LayeredHighlighter {
      * Changes a highlight.
      *
      * @param tag the highlight tag
-     * @param p0 the beginning of the range >= 0
-     * @param p1 the end of the range >= p0
+     * @param p0 the beginning of the range &gt;= 0
+     * @param p1 the end of the range &gt;= p0
      * @exception BadLocationException if the specified location is invalid
      */
     public void changeHighlight(Object tag, int p0, int p1) throws BadLocationException {
@@ -395,8 +395,8 @@ public class DefaultHighlighter extends LayeredHighlighter {
          * Paints a highlight.
          *
          * @param g the graphics context
-         * @param offs0 the starting model offset >= 0
-         * @param offs1 the ending model offset >= offs1
+         * @param offs0 the starting model offset &gt;= 0
+         * @param offs1 the ending model offset &gt;= offs1
          * @param bounds the bounding box for the highlight
          * @param c the editor
          */
@@ -441,8 +441,8 @@ public class DefaultHighlighter extends LayeredHighlighter {
          * Paints a portion of a highlight.
          *
          * @param g the graphics context
-         * @param offs0 the starting model offset >= 0
-         * @param offs1 the ending model offset >= offs1
+         * @param offs0 the starting model offset &gt;= 0
+         * @param offs1 the ending model offset &gt;= offs1
          * @param bounds the bounding box of the view, which is not
          *        necessarily the region to paint.
          * @param c the editor

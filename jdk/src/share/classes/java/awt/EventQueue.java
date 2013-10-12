@@ -652,7 +652,7 @@ public class EventQueue {
      * Dispatches an event. The manner in which the event is
      * dispatched depends upon the type of the event and the
      * type of the event's source object:
-     * <p> </p>
+     * <p>
      * <table border=1 summary="Event types, source types, and dispatch methods">
      * <tr>
      *     <th>Event Type</th>
@@ -680,7 +680,7 @@ public class EventQueue {
      *     <td>No action (ignored)</td>
      * </tr>
      * </table>
-     * <p> </p>
+     * <p>
      * @param event an instance of <code>java.awt.AWTEvent</code>,
      *          or a subclass of it
      * @throws NullPointerException if <code>event</code> is <code>null</code>
@@ -690,7 +690,10 @@ public class EventQueue {
         final Object src = event.getSource();
         final PrivilegedAction<Void> action = new PrivilegedAction<Void>() {
             public Void run() {
-                if (fwDispatcher == null) {
+                // In case fwDispatcher is installed and we're already on the
+                // dispatch thread (e.g. performing DefaultKeyboardFocusManager.sendMessage),
+                // dispatch the event straight away.
+                if (fwDispatcher == null || isDispatchThreadImpl()) {
                     dispatchEventImpl(event, src);
                 } else {
                     fwDispatcher.scheduleDispatch(new Runnable() {

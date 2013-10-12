@@ -43,13 +43,13 @@ import sun.security.action.GetBooleanAction;
  * <code>JFrame</code>, <code>JDialog</code>, <code>JWindow</code>,
  * <code>JApplet</code>, and <code>JInternalFrame</code>.
  * For task-oriented information on functionality provided by root panes
- * see <a href="http://java.sun.com/docs/books/tutorial/uiswing/components/rootpane.html">How to Use Root Panes</a>,
+ * see <a href="http://docs.oracle.com/javase/tutorial/uiswing/components/rootpane.html">How to Use Root Panes</a>,
  * a section in <em>The Java Tutorial</em>.
  *
  * <p>
  * The following image shows the relationships between
  * the classes that use root panes.
- * <p align=center><img src="doc-files/JRootPane-1.gif"
+ * <p style="text-align:center"><img src="doc-files/JRootPane-1.gif"
  * alt="The following text describes this graphic."
  * HEIGHT=484 WIDTH=629></p>
  * The &quot;heavyweight&quot; components (those that delegate to a peer, or native
@@ -69,7 +69,7 @@ import sun.security.action.GetBooleanAction;
  * can be used to obtain the <code>JRootPane</code> that contains
  * a given component.
  * </blockquote>
- * <table align="right" border="0" summary="layout">
+ * <table style="float:right" border="0" summary="layout">
  * <tr>
  * <td align="center">
  * <img src="doc-files/JRootPane-2.gif"
@@ -179,7 +179,7 @@ import sun.security.action.GetBooleanAction;
  * future Swing releases. The current serialization support is
  * appropriate for short term storage or RMI between applications running
  * the same version of Swing.  As of 1.4, support for long term storage
- * of all JavaBeans<sup><font size="-2">TM</font></sup>
+ * of all JavaBeans&trade;
  * has been added to the <code>java.beans</code> package.
  * Please see {@link java.beans.XMLEncoder}.
  *
@@ -448,7 +448,7 @@ public class JRootPane extends JComponent implements Accessible {
     }
 
     /**
-     * Returns the L&F object that renders this component.
+     * Returns the L&amp;F object that renders this component.
      *
      * @return <code>LabelUI</code> object
      * @since 1.3
@@ -458,9 +458,9 @@ public class JRootPane extends JComponent implements Accessible {
     }
 
     /**
-     * Sets the L&F object that renders this component.
+     * Sets the L&amp;F object that renders this component.
      *
-     * @param ui  the <code>LabelUI</code> L&F object
+     * @param ui  the <code>LabelUI</code> L&amp;F object
      * @see UIDefaults#getUI
      * @beaninfo
      *        bound: true
@@ -486,7 +486,7 @@ public class JRootPane extends JComponent implements Accessible {
 
 
     /**
-     * Returns a string that specifies the name of the L&F class
+     * Returns a string that specifies the name of the L&amp;F class
      * that renders this component.
      *
      * @return the string "RootPaneUI"
@@ -898,7 +898,7 @@ public class JRootPane extends JComponent implements Accessible {
      * future Swing releases. The current serialization support is
      * appropriate for short term storage or RMI between applications running
      * the same version of Swing.  As of 1.4, support for long term storage
-     * of all JavaBeans<sup><font size="-2">TM</font></sup>
+     * of all JavaBeans&trade;
      * has been added to the <code>java.beans</code> package.
      * Please see {@link java.beans.XMLEncoder}.
      */
@@ -1064,7 +1064,7 @@ public class JRootPane extends JComponent implements Accessible {
      * future Swing releases. The current serialization support is
      * appropriate for short term storage or RMI between applications running
      * the same version of Swing.  As of 1.4, support for long term storage
-     * of all JavaBeans<sup><font size="-2">TM</font></sup>
+     * of all JavaBeans&trade;
      * has been added to the <code>java.beans</code> package.
      * Please see {@link java.beans.XMLEncoder}.
      */

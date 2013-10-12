@@ -247,7 +247,7 @@ public class ScrollPane extends Container implements Accessible {
      * component is removed and the new one is added.
      * @param comp the component to be added
      * @param constraints  not applicable
-     * @param index position of child component (must be <= 0)
+     * @param index position of child component (must be &lt;= 0)
      */
     protected final void addImpl(Component comp, Object constraints, int index) {
         synchronized (getTreeLock()) {

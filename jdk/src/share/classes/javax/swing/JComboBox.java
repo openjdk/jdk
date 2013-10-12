@@ -57,13 +57,13 @@ import javax.accessibility.*;
  * future Swing releases. The current serialization support is
  * appropriate for short term storage or RMI between applications running
  * the same version of Swing.  As of 1.4, support for long term storage
- * of all JavaBeans<sup><font size="-2">TM</font></sup>
+ * of all JavaBeans&trade;
  * has been added to the <code>java.beans</code> package.
  * Please see {@link java.beans.XMLEncoder}.
  *
  * <p>
- * See <a href="http://java.sun.com/docs/books/tutorial/uiswing/components/combobox.html">How to Use Combo Boxes</a>
- * in <a href="http://java.sun.com/Series/Tutorial/index.html"><em>The Java Tutorial</em></a>
+ * See <a href="http://docs.oracle.com/javase/tutorial/uiswing/components/combobox.html">How to Use Combo Boxes</a>
+ * in <a href="http://docs.oracle.com/javase/tutorial/"><em>The Java Tutorial</em></a>
  * for further information.
  * <p>
  * @see ComboBoxModel
@@ -242,9 +242,9 @@ implements ItemSelectable,ListDataListener,ActionListener, Accessible {
     }
 
     /**
-     * Sets the L&F object that renders this component.
+     * Sets the L&amp;F object that renders this component.
      *
-     * @param ui  the <code>ComboBoxUI</code> L&F object
+     * @param ui  the <code>ComboBoxUI</code> L&amp;F object
      * @see UIDefaults#getUI
      *
      * @beaninfo
@@ -273,7 +273,7 @@ implements ItemSelectable,ListDataListener,ActionListener, Accessible {
 
 
     /**
-     * Returns the name of the L&F class that renders this component.
+     * Returns the name of the L&amp;F class that renders this component.
      *
      * @return the string "ComboBoxUI"
      * @see JComponent#getUIClassID
@@ -285,7 +285,7 @@ implements ItemSelectable,ListDataListener,ActionListener, Accessible {
 
 
     /**
-     * Returns the L&F object that renders this component.
+     * Returns the L&amp;F object that renders this component.
      *
      * @return the ComboBoxUI object that renders this component
      */
@@ -350,9 +350,7 @@ implements ItemSelectable,ListDataListener,ActionListener, Accessible {
      * by the look and feel.  Some look and feels always use
      * heavyweight popups, no matter what the value of this property.
      * <p>
-     * See the article <a href="http://java.sun.com/products/jfc/tsc/articles/mixing/index.html">Mixing Heavy and Light Components</a>
-     * on <a href="http://java.sun.com/products/jfc/tsc">
-     * <em>The Swing Connection</em></a>
+     * See the article <a href="http://www.oracle.com/technetwork/articles/java/mixing-components-433992.html">Mixing Heavy and Light Components</a>
      * This method fires a property changed event.
      *
      * @param aFlag if <code>true</code>, lightweight popups are desired
@@ -607,7 +605,7 @@ implements ItemSelectable,ListDataListener,ActionListener, Accessible {
      *
      * @param anIndex an integer specifying the list item to select,
      *                  where 0 specifies the first item in the list and -1 indicates no selection
-     * @exception IllegalArgumentException if <code>anIndex</code> < -1 or
+     * @exception IllegalArgumentException if <code>anIndex</code> &lt; -1 or
      *                  <code>anIndex</code> is greater than or equal to size
      * @beaninfo
      *   preferred: true
@@ -1610,7 +1608,7 @@ implements ItemSelectable,ListDataListener,ActionListener, Accessible {
      * future Swing releases. The current serialization support is
      * appropriate for short term storage or RMI between applications running
      * the same version of Swing.  As of 1.4, support for long term storage
-     * of all JavaBeans<sup><font size="-2">TM</font></sup>
+     * of all JavaBeans&trade;
      * has been added to the <code>java.beans</code> package.
      * Please see {@link java.beans.XMLEncoder}.
      */

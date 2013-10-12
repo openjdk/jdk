@@ -75,7 +75,7 @@ import sun.security.action.GetBooleanAction;
  * (and hence to the bottom of the stacking order).
  * <p>
  * <b>Note</b>: For details on the focus subsystem, see
- * <a href="http://java.sun.com/docs/books/tutorial/uiswing/misc/focus.html">
+ * <a href="http://docs.oracle.com/javase/tutorial/uiswing/misc/focus.html">
  * How to Use the Focus Subsystem</a>,
  * a section in <em>The Java Tutorial</em>, and the
  * <a href="../../java/awt/doc-files/FocusSpec.html">Focus Specification</a>
@@ -257,6 +257,12 @@ public class Container extends Component {
             @Override
             public void validateUnconditionally(Container cont) {
                 cont.validateUnconditionally();
+            }
+
+            @Override
+            public Component findComponentAt(Container cont, int x, int y,
+                    boolean ignoreEnabled) {
+                return cont.findComponentAt(x, y, ignoreEnabled);
             }
         });
     }
@@ -2651,7 +2657,6 @@ public class Container extends Component {
      * behavior. Setting 'ignoreEnabled' to 'false' bypasses disabled
      * Components during the search. This behavior is used by the
      * lightweight cursor support in sun.awt.GlobalCursorManager.
-     * The cursor code calls this function directly via native code.
      *
      * The addition of this feature is temporary, pending the
      * adoption of new, public API which exports this feature.

@@ -59,6 +59,7 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import jdk.internal.dynalink.support.NameCodec;
 import jdk.nashorn.internal.codegen.CompilerConstants;
 import jdk.nashorn.internal.codegen.Namespace;
 import jdk.nashorn.internal.ir.AccessNode;
@@ -2108,7 +2109,7 @@ loop:
                 case "get":
                     final PropertyKey getIdent = propertyName();
                     final String getterName = getIdent.getPropertyName();
-                    final IdentNode getNameNode = new IdentNode(((Node)getIdent).getToken(), finish, "get " + getterName);
+                    final IdentNode getNameNode = new IdentNode(((Node)getIdent).getToken(), finish, "get " + NameCodec.encode(getterName));
                     expect(LPAREN);
                     expect(RPAREN);
                     functionNode = functionBody(getSetToken, getNameNode, new ArrayList<IdentNode>(), FunctionNode.Kind.GETTER);
@@ -2117,7 +2118,7 @@ loop:
                 case "set":
                     final PropertyKey setIdent = propertyName();
                     final String setterName = setIdent.getPropertyName();
-                    final IdentNode setNameNode = new IdentNode(((Node)setIdent).getToken(), finish, "set " + setterName);
+                    final IdentNode setNameNode = new IdentNode(((Node)setIdent).getToken(), finish, "set " + NameCodec.encode(setterName));
                     expect(LPAREN);
                     final IdentNode argIdent = getIdent();
                     verifyStrictIdent(argIdent, "setter argument");

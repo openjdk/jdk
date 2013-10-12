@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -56,6 +56,7 @@ import sun.awt.HeadlessToolkit;
 import sun.awt.NullComponentPeer;
 import sun.awt.PeerEvent;
 import sun.awt.SunToolkit;
+import sun.awt.AWTAccessor;
 import sun.security.util.SecurityConstants;
 
 import sun.util.CoreResourceBundleControl;
@@ -82,7 +83,7 @@ import sun.util.CoreResourceBundleControl;
  * <p>
  * <li>Moving the focus from one component to another.
  * <br>For more information, see
- * <a href="http://java.sun.com/docs/books/tutorial/uiswing/misc/focus.html#transferTiming">Timing
+ * <a href="http://docs.oracle.com/javase/tutorial/uiswing/misc/focus.html#transferTiming">Timing
  * Focus Transfers</a>, a section in
  * <a href="http://java.sun.com/docs/books/tutorial/uiswing/">The Swing
  * Tutorial</a>.
@@ -467,7 +468,7 @@ public abstract class Toolkit {
         GraphicsEnvironment.checkHeadless();
     }
 
-/**
+    /**
      * Controls whether the layout of Containers is validated dynamically
      * during resizing, or statically, after resizing is complete.
      * Use {@code isDynamicLayoutActive()} to detect if this feature enabled
@@ -497,9 +498,12 @@ public abstract class Toolkit {
      * @see       java.awt.GraphicsEnvironment#isHeadless
      * @since     1.4
      */
-    public void setDynamicLayout(boolean dynamic)
+    public void setDynamicLayout(final boolean dynamic)
         throws HeadlessException {
         GraphicsEnvironment.checkHeadless();
+        if (this != getDefaultToolkit()) {
+            getDefaultToolkit().setDynamicLayout(dynamic);
+        }
     }
 
     /**
@@ -1239,7 +1243,8 @@ public abstract class Toolkit {
     }
 
     /**
-     * Emits an audio beep.
+     * Emits an audio beep depending on native system settings and hardware
+     * capabilities.
      * @since     JDK1.1
      */
     public abstract void beep();
@@ -1598,6 +1603,12 @@ public abstract class Toolkit {
      * here, so that only one copy is maintained.
      */
     private static ResourceBundle resources;
+    private static ResourceBundle platformResources;
+
+    // called by platform toolkit
+    private static void setPlatformResources(ResourceBundle bundle) {
+        platformResources = bundle;
+    }
 
     /**
      * Initialize JNI field and method ids
@@ -1646,6 +1657,14 @@ public abstract class Toolkit {
     }
 
     static {
+        AWTAccessor.setToolkitAccessor(
+                new AWTAccessor.ToolkitAccessor() {
+                    @Override
+                    public void setPlatformResources(ResourceBundle bundle) {
+                        Toolkit.setPlatformResources(bundle);
+                    }
+                });
+
         java.security.AccessController.doPrivileged(
                                  new java.security.PrivilegedAction<Void>() {
             public Void run() {
@@ -1673,6 +1692,15 @@ public abstract class Toolkit {
      * This method returns defaultValue if the property is not found.
      */
     public static String getProperty(String key, String defaultValue) {
+        // first try platform specific bundle
+        if (platformResources != null) {
+            try {
+                return platformResources.getString(key);
+            }
+            catch (MissingResourceException e) {}
+        }
+
+        // then shared one
         if (resources != null) {
             try {
                 return resources.getString(key);

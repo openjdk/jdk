@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2012, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2013, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -67,10 +67,6 @@ default: jdk
 
 all: images docs
 	@$(call CheckIfMakeAtEnd)
-
-ifeq ($(OPENJDK_TARGET_OS)-$(OPENJDK_TARGET_CPU_BITS),solaris-64)
-  all: overlay-images
-endif
 
 # Setup a rule for SPEC file that fails if executed. This check makes sure the configuration
 # is up to date after changes to configure

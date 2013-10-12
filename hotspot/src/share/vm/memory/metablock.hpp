@@ -48,7 +48,6 @@ class Metablock VALUE_OBJ_CLASS_SPEC {
     } _header;
   } _block;
   static size_t _min_block_byte_size;
-  static size_t _overhead;
 
   typedef union block_t Block;
   typedef struct header_t Header;
@@ -73,7 +72,6 @@ class Metablock VALUE_OBJ_CLASS_SPEC {
   void set_prev(Metablock* v) { _block._header._prev = v; }
 
   static size_t min_block_byte_size() { return _min_block_byte_size; }
-  static size_t overhead() { return _overhead; }
 
   bool is_free()                 { return header()->_word_size != 0; }
   void clear_next()              { set_next(NULL); }

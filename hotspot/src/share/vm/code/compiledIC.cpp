@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -160,32 +160,42 @@ address CompiledIC::stub_address() const {
 // High-level access to an inline cache. Guaranteed to be MT-safe.
 
 
-void CompiledIC::set_to_megamorphic(CallInfo* call_info, Bytecodes::Code bytecode, TRAPS) {
-  methodHandle method = call_info->selected_method();
-  bool is_invoke_interface = (bytecode == Bytecodes::_invokeinterface && !call_info->has_vtable_index());
+bool CompiledIC::set_to_megamorphic(CallInfo* call_info, Bytecodes::Code bytecode, TRAPS) {
   assert(CompiledIC_lock->is_locked() || SafepointSynchronize::is_at_safepoint(), "");
   assert(!is_optimized(), "cannot set an optimized virtual call to megamorphic");
   assert(is_call_to_compiled() || is_call_to_interpreted(), "going directly to megamorphic?");
 
   address entry;
-  if (is_invoke_interface) {
-    int index = klassItable::compute_itable_index(call_info->resolved_method()());
-    entry = VtableStubs::create_stub(false, index, method());
-    assert(entry != NULL, "entry not computed");
+  if (call_info->call_kind() == CallInfo::itable_call) {
+    assert(bytecode == Bytecodes::_invokeinterface, "");
+    int itable_index = call_info->itable_index();
+    entry = VtableStubs::find_itable_stub(itable_index);
+    if (entry == false) {
+      return false;
+    }
+#ifdef ASSERT
+    int index = call_info->resolved_method()->itable_index();
+    assert(index == itable_index, "CallInfo pre-computes this");
+#endif //ASSERT
     InstanceKlass* k = call_info->resolved_method()->method_holder();
-    assert(k->is_interface(), "sanity check");
+    assert(k->verify_itable_index(itable_index), "sanity check");
     InlineCacheBuffer::create_transition_stub(this, k, entry);
   } else {
-    // Can be different than method->vtable_index(), due to package-private etc.
+    assert(call_info->call_kind() == CallInfo::vtable_call, "either itable or vtable");
+    // Can be different than selected_method->vtable_index(), due to package-private etc.
     int vtable_index = call_info->vtable_index();
-    entry = VtableStubs::create_stub(true, vtable_index, method());
-    InlineCacheBuffer::create_transition_stub(this, method(), entry);
+    assert(call_info->resolved_klass()->verify_vtable_index(vtable_index), "sanity check");
+    entry = VtableStubs::find_vtable_stub(vtable_index);
+    if (entry == NULL) {
+      return false;
+    }
+    InlineCacheBuffer::create_transition_stub(this, NULL, entry);
   }
 
   if (TraceICs) {
     ResourceMark rm;
     tty->print_cr ("IC@" INTPTR_FORMAT ": to megamorphic %s entry: " INTPTR_FORMAT,
-                   instruction_address(), method->print_value_string(), entry);
+                   instruction_address(), call_info->selected_method()->print_value_string(), entry);
   }
 
   // We can't check this anymore. With lazy deopt we could have already
@@ -195,6 +205,7 @@ void CompiledIC::set_to_megamorphic(CallInfo* call_info, Bytecodes::Code bytecod
   // race because the IC entry was complete when we safepointed so
   // cleaning it immediately is harmless.
   // assert(is_megamorphic(), "sanity check");
+  return true;
 }
 
 

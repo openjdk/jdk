@@ -105,17 +105,23 @@ utf16ToUtf8m(struct UtfInst *ui, unsigned short *utf16, int len, jbyte *output, 
 
         code = utf16[i];
         if ( code >= 0x0001 && code <= 0x007F ) {
+            if ( outputLen + 1 >= outputMaxLen ) {
+                return -1;
+            }
             output[outputLen++] = code;
         } else if ( code == 0 || ( code >= 0x0080 && code <= 0x07FF ) ) {
+            if ( outputLen + 2 >= outputMaxLen ) {
+                return -1;
+            }
             output[outputLen++] = ((code>>6) & 0x1F) | 0xC0;
             output[outputLen++] = (code & 0x3F) | 0x80;
         } else if ( code >= 0x0800 && code <= 0xFFFF ) {
+            if ( outputLen + 3 >= outputMaxLen ) {
+                return -1;
+            }
             output[outputLen++] = ((code>>12) & 0x0F) | 0xE0;
             output[outputLen++] = ((code>>6) & 0x3F) | 0x80;
             output[outputLen++] = (code & 0x3F) | 0x80;
-        }
-        if ( outputLen > outputMaxLen ) {
-            return -1;
         }
     }
     output[outputLen] = 0;
@@ -412,12 +418,15 @@ bytesToPrintable(struct UtfInst *ui, char *bytes, int len, char *output, int out
         unsigned byte;
 
         byte = bytes[i];
-        if ( outputLen >= outputMaxLen ) {
-            return -1;
-        }
         if ( byte <= 0x7f && isprint(byte) && !iscntrl(byte) ) {
+            if ( outputLen + 1 >= outputMaxLen ) {
+                return -1;
+            }
             output[outputLen++] = (char)byte;
         } else {
+            if ( outputLen + 4 >= outputMaxLen ) {
+                return -1;
+            }
             (void)sprintf(output+outputLen,"\\x%02x",byte);
             outputLen += 4;
         }

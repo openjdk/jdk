@@ -46,7 +46,7 @@ import javax.swing.event.*;
  * used are the location between two characters.  As the diagram
  * below shows, a location in a text document can be referred to
  * as a position, or an offset. This position is zero-based.
- * <p align=center><img src="doc-files/Document-coord.gif"
+ * <p style="text-align:center"><img src="doc-files/Document-coord.gif"
  * alt="The following text describes this graphic.">
  * <p>
  * In the example, if the content of a document is the
@@ -58,9 +58,9 @@ import javax.swing.event.*;
  * <p>The following methods give access to the character data
  * that makes up the content.
  * <ul>
- * <li><a href="#getLength()">getLength()</a>
- * <li><a href="#getText(int, int)">getText(int, int)</a>
- * <li><a href="#getText(int, int, javax.swing.text.Segment)">getText(int, int, Segment)</a>
+ * <li>{@link #getLength()}
+ * <li>{@link #getText(int, int)}
+ * <li>{@link #getText(int, int, javax.swing.text.Segment)}
  * </ul>
  * <p><b><font size=+1>Structure</font></b>
  * <p>
@@ -69,7 +69,7 @@ import javax.swing.event.*;
  * Exactly what structure is modeled is up to a particular Document
  * implementation.  It might be as simple as no structure (i.e. a
  * simple text field), or it might be something like diagram below.
- * <p align=center><img src="doc-files/Document-structure.gif"
+ * <p style="text-align:center"><img src="doc-files/Document-structure.gif"
  * alt="Diagram shows Book->Chapter->Paragraph">
  * <p>
  * The unit of structure (i.e. a node of the tree) is referred to
@@ -79,8 +79,8 @@ import javax.swing.event.*;
  * <a href="AttributeSet.html">AttributeSet</a> interface.
  * <p>The following methods give access to the document structure.
  * <ul>
- * <li><a href="#getDefaultRootElement()">getDefaultRootElement</a>
- * <li><a href="#getRootElements()">getRootElements</a>
+ * <li>{@link #getDefaultRootElement()}
+ * <li>{@link #getRootElements()}
  * </ul>
  *
  * <p><b><font size=+1>Mutations</font></b>
@@ -93,9 +93,9 @@ import javax.swing.event.*;
  * <p>The following methods are related to mutation of the
  * document content:
  * <ul>
- * <li><a href="#insertString(int, java.lang.String, javax.swing.text.AttributeSet)">insertString(int, String, AttributeSet)</a>
- * <li><a href="#remove(int, int)">remove(int, int)</a>
- * <li><a href="#createPosition(int)">createPosition(int)</a>
+ * <li>{@link #insertString(int, java.lang.String, javax.swing.text.AttributeSet)}
+ * <li>{@link #remove(int, int)}
+ * <li>{@link #createPosition(int)}
  * </ul>
  *
  * <p><b><font size=+1>Notification</font></b>
@@ -122,7 +122,7 @@ import javax.swing.event.*;
  * generated since that edit is actually the source of the change
  * rather than a mutation to the <code>Document</code> made through its
  * api.
- * <p align=center><img src="doc-files/Document-notification.gif"
+ * <p style="text-align:center"><img src="doc-files/Document-notification.gif"
  * alt="The preceeding text describes this graphic.">
  * <p>
  * Referring to the above diagram, suppose that the component shown
@@ -161,8 +161,8 @@ import javax.swing.event.*;
  * and the <a href="#TitleProperty">TitleProperty</a>, which can be used to
  * name the <code>Document</code>.  The methods related to the properties are:
  * <ul>
- * <li><a href="#getProperty(java.lang.Object)">getProperty(Object)</a>
- * <li><a href="#putProperty(java.lang.Object, java.lang.Object)">putProperty(Object, Object)</a>
+ * <li>{@link #getProperty(java.lang.Object)}
+ * <li>{@link #putProperty(java.lang.Object, java.lang.Object)}
  * </ul>
  *
  * <p>For more information on the <code>Document</code> class, see
@@ -187,7 +187,7 @@ public interface Document {
      * Returns number of characters of content currently
      * in the document.
      *
-     * @return number of characters >= 0
+     * @return number of characters &gt;= 0
      */
     public int getLength();
 
@@ -267,7 +267,7 @@ public interface Document {
      * For a removal, the end of the removal range is collapsed
      * down to the start of the range, and any marks in the removal
      * range are collapsed down to the start of the range.
-     * <p align=center><img src="doc-files/Document-remove.gif"
+     * <p style="text-align:center"><img src="doc-files/Document-remove.gif"
      *  alt="Diagram shows removal of 'quick' from 'The quick brown fox.'">
      * <p>
      * If the Document structure changed as result of the removal,
@@ -280,8 +280,8 @@ public interface Document {
      * If the Document supports undo/redo, an UndoableEditEvent will
      * also be generated.
      *
-     * @param offs  the offset from the beginning >= 0
-     * @param len   the number of characters to remove >= 0
+     * @param offs  the offset from the beginning &gt;= 0
+     * @param len   the number of characters to remove &gt;= 0
      * @exception BadLocationException  some portion of the removal range
      *   was not a valid part of the document.  The location in the exception
      *   is the first bad position encountered.
@@ -300,7 +300,7 @@ public interface Document {
      * insertUpdate method on the DocumentListener.
      * The offset and length of the generated DocumentEvent
      * will indicate what change was actually made to the Document.
-     * <p align=center><img src="doc-files/Document-insert.gif"
+     * <p style="text-align:center"><img src="doc-files/Document-insert.gif"
      *  alt="Diagram shows insertion of 'quick' in 'The quick brown fox'">
      * <p>
      * If the Document structure changed as result of the insertion,
@@ -313,7 +313,7 @@ public interface Document {
      * If the Document supports undo/redo, an UndoableEditEvent will
      * also be generated.
      *
-     * @param offset  the offset into the document to insert the content >= 0.
+     * @param offset  the offset into the document to insert the content &gt;= 0.
      *    All positions that track change at or after the given location
      *    will move.
      * @param str    the string to insert
@@ -333,9 +333,9 @@ public interface Document {
      * of the document.
      *
      * @param offset  the offset into the document representing the desired
-     *   start of the text >= 0
-     * @param length  the length of the desired string >= 0
-     * @return the text, in a String of length >= 0
+     *   start of the text &gt;= 0
+     * @param length  the length of the desired string &gt;= 0
+     * @return the text, in a String of length &gt;= 0
      * @exception BadLocationException  some portion of the given range
      *   was not a valid part of the document.  The location in the exception
      *   is the first bad position encountered.
@@ -361,7 +361,7 @@ public interface Document {
      * &nbsp; Segment text = new Segment();
      * &nbsp; int offs = 0;
      * &nbsp; text.setPartialReturn(true);
-     * &nbsp; while (nleft > 0) {
+     * &nbsp; while (nleft &gt; 0) {
      * &nbsp;     doc.getText(offs, nleft, text);
      * &nbsp;     // do someting with text
      * &nbsp;     nleft -= text.count;
@@ -371,8 +371,8 @@ public interface Document {
      * </code></pre>
      *
      * @param offset  the offset into the document representing the desired
-     *   start of the text >= 0
-     * @param length  the length of the desired string >= 0
+     *   start of the text &gt;= 0
+     * @param length  the length of the desired string &gt;= 0
      * @param txt the Segment object to return the text in
      *
      * @exception BadLocationException  Some portion of the given range
@@ -409,7 +409,7 @@ public interface Document {
      * insertion is forced to a position that follows the
      * original position.
      *
-     * @param offs  the offset from the start of the document >= 0
+     * @param offs  the offset from the start of the document &gt;= 0
      * @return the position
      * @exception BadLocationException  if the given position does not
      *   represent a valid location in the associated document

@@ -26,9 +26,11 @@
 package sun.lwawt.macosx;
 
 import java.awt.*;
+import java.awt.peer.MenuItemPeer;
 import java.awt.peer.MenuPeer;
 
 public class CMenu extends CMenuItem implements MenuPeer {
+
     public CMenu(Menu target) {
         super(target);
     }
@@ -38,6 +40,20 @@ public class CMenu extends CMenuItem implements MenuPeer {
     protected void initialize(MenuItem target) {
         setLabel(target.getLabel());
         setEnabled(target.isEnabled());
+    }
+
+    @Override
+    public final void setEnabled(final boolean b) {
+        super.setEnabled(b);
+        final Menu target = (Menu) getTarget();
+        final int count = target.getItemCount();
+        for (int i = 0; i < count; ++i) {
+            MenuItem item = target.getItem(i);
+            MenuItemPeer p = (MenuItemPeer) LWCToolkit.targetToPeer(item);
+            if (p != null) {
+                p.setEnabled(b && item.isEnabled());
+            }
+        }
     }
 
     @Override

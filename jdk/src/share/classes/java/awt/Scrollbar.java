@@ -42,7 +42,7 @@ import javax.accessibility.*;
  * the red, green, and blue components of a color:
  * <p>
  * <img src="doc-files/Scrollbar-1.gif" alt="Image shows 3 vertical sliders, side-by-side."
- * ALIGN=center HSPACE=10 VSPACE=7>
+ * style="float:center; margin: 7px 10px;">
  * <p>
  * Each scroll bar in this example could be created with
  * code similar to the following:
@@ -60,7 +60,7 @@ import javax.accessibility.*;
  * <p>
  * <img src="doc-files/Scrollbar-2.gif"
  * alt="Image shows horizontal slider with starting range of 0 and ending range of 300. The slider thumb is labeled 60."
- * ALIGN=center HSPACE=10 VSPACE=7>
+ * style="float:center; margin: 7px 10px;">
  * <p>
  * The value range represented by the bubble in this example
  * is the <em>visible amount</em>. The horizontal scroll bar
@@ -295,7 +295,7 @@ public class Scrollbar extends Component implements Adjustable, Accessible {
      * Constructs a new vertical scroll bar.
      * The default properties of the scroll bar are listed in
      * the following table:
-     * <p> </p>
+     * <p>
      * <table border=1 summary="Scrollbar default properties">
      * <tr>
      *   <th>Property</th>
@@ -715,6 +715,9 @@ public class Scrollbar extends Component implements Adjustable, Accessible {
      * The unit increment must be greater than zero.
      * Attepts to set the unit increment to a value lower than 1
      * will result in a value of 1 being set.
+     * <p>
+     * In some operating systems, this property
+     * can be ignored by the underlying controls.
      *
      * @param        v  the amount by which to increment or decrement
      *                         the scroll bar's value
@@ -752,6 +755,9 @@ public class Scrollbar extends Component implements Adjustable, Accessible {
      * scroll bar, generally through a mouse or keyboard gesture
      * that the scroll bar receives as an adjustment event.
      * The unit increment must be greater than zero.
+     * <p>
+     * In some operating systems, this property
+     * can be ignored by the underlying controls.
      *
      * @return      the unit increment of this scroll bar
      * @see         java.awt.Scrollbar#setUnitIncrement

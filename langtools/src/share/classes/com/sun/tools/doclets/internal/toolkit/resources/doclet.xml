@@ -66,10 +66,19 @@
             <AnnotationTypeTagInfo/>
         </AnnotationTypeInfo>
         <MemberSummary>
+            <AnnotationTypeFieldsSummary/>
             <AnnotationTypeRequiredMemberSummary/>
             <AnnotationTypeOptionalMemberSummary/>
         </MemberSummary>
         <AnnotationTypeMemberDetails>
+            <AnnotationTypeFieldDetails>
+                <AnnotationTypeField>
+                    <Signature/>
+                    <DeprecationInfo/>
+                    <MemberComments/>
+                    <TagInfo/>
+                </AnnotationTypeField>
+            </AnnotationTypeFieldDetails>
             <AnnotationTypeRequiredMemberDetails>
                 <AnnotationTypeRequiredMember>
                     <Signature/>
