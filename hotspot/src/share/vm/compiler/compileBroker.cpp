@@ -186,7 +186,7 @@ CompileQueue* CompileBroker::_c2_method_queue    = NULL;
 CompileQueue* CompileBroker::_c1_method_queue    = NULL;
 CompileTask*  CompileBroker::_task_free_list     = NULL;
 
-GrowableArray<CompilerThread*>* CompileBroker::_method_threads = NULL;
+GrowableArray<CompilerThread*>* CompileBroker::_compiler_threads = NULL;
 
 
 class CompilationLog : public StringEventLog {
@@ -587,9 +587,6 @@ void CompileTask::log_task_done(CompileLog* log) {
 
 
 
-// ------------------------------------------------------------------
-// CompileQueue::add
-//
 // Add a CompileTask to a CompileQueue
 void CompileQueue::add(CompileTask* task) {
   assert(lock()->owned_by_self(), "must own lock");
@@ -626,6 +623,16 @@ void CompileQueue::add(CompileTask* task) {
   lock()->notify_all();
 }
 
+void CompileQueue::delete_all() {
+  assert(lock()->owned_by_self(), "must own lock");
+  if (_first != NULL) {
+    for (CompileTask* task = _first; task != NULL; task = task->next()) {
+      delete task;
+    }
+    _first = NULL;
+  }
+}
+
 // ------------------------------------------------------------------
 // CompileQueue::get
 //
@@ -640,6 +647,11 @@ CompileTask* CompileQueue::get() {
   // case we perform code cache sweeps to free memory such that we can re-enable
   // compilation.
   while (_first == NULL) {
+    // Exit loop if compilation is disabled forever
+    if (CompileBroker::is_compilation_disabled_forever()) {
+      return NULL;
+    }
+
     if (UseCodeCacheFlushing && !CompileBroker::should_compile_new_jobs()) {
       // Wait a certain amount of time to possibly do another sweep.
       // We must wait until stack scanning has happened so that we can
@@ -664,9 +676,17 @@ CompileTask* CompileQueue::get() {
       // remains unchanged. This behavior is desired, since we want to keep
       // the stable state, i.e., we do not want to evict methods from the
       // code cache if it is unnecessary.
-      lock()->wait();
+      // We need a timed wait here, since compiler threads can exit if compilation
+      // is disabled forever. We use 5 seconds wait time; the exiting of compiler threads
+      // is not critical and we do not want idle compiler threads to wake up too often.
+      lock()->wait(!Mutex::_no_safepoint_check_flag, 5*1000);
     }
   }
+
+  if (CompileBroker::is_compilation_disabled_forever()) {
+    return NULL;
+  }
+
   CompileTask* task = CompilationPolicy::policy()->select_task(this);
   remove(task);
   return task;
@@ -891,10 +911,8 @@ void CompileBroker::compilation_init() {
 }
 
 
-
-// ------------------------------------------------------------------
-// CompileBroker::make_compiler_thread
-CompilerThread* CompileBroker::make_compiler_thread(const char* name, CompileQueue* queue, CompilerCounters* counters, TRAPS) {
+CompilerThread* CompileBroker::make_compiler_thread(const char* name, CompileQueue* queue, CompilerCounters* counters,
+                                                    AbstractCompiler* comp, TRAPS) {
   CompilerThread* compiler_thread = NULL;
 
   Klass* k =
@@ -961,6 +979,7 @@ CompilerThread* CompileBroker::make_compiler_thread(const char* name, CompileQue
     java_lang_Thread::set_daemon(thread_oop());
 
     compiler_thread->set_threadObj(thread_oop());
+    compiler_thread->set_compiler(comp);
     Threads::add(compiler_thread);
     Thread::start(compiler_thread);
   }
@@ -972,25 +991,24 @@ CompilerThread* CompileBroker::make_compiler_thread(const char* name, CompileQue
 }
 
 
-// ------------------------------------------------------------------
-// CompileBroker::init_compiler_threads
-//
-// Initialize the compilation queue
 void CompileBroker::init_compiler_threads(int c1_compiler_count, int c2_compiler_count) {
   EXCEPTION_MARK;
 #if !defined(ZERO) && !defined(SHARK)
   assert(c2_compiler_count > 0 || c1_compiler_count > 0, "No compilers?");
 #endif // !ZERO && !SHARK
+  // Initialize the compilation queue
   if (c2_compiler_count > 0) {
     _c2_method_queue  = new CompileQueue("C2MethodQueue",  MethodCompileQueue_lock);
+    _compilers[1]->set_num_compiler_threads(c2_compiler_count);
   }
   if (c1_compiler_count > 0) {
     _c1_method_queue  = new CompileQueue("C1MethodQueue",  MethodCompileQueue_lock);
+    _compilers[0]->set_num_compiler_threads(c1_compiler_count);
   }
 
   int compiler_count = c1_compiler_count + c2_compiler_count;
 
-  _method_threads =
+  _compiler_threads =
     new (ResourceObj::C_HEAP, mtCompiler) GrowableArray<CompilerThread*>(compiler_count, true);
 
   char name_buffer[256];
@@ -998,21 +1016,22 @@ void CompileBroker::init_compiler_threads(int c1_compiler_count, int c2_compiler
     // Create a name for our thread.
     sprintf(name_buffer, "C2 CompilerThread%d", i);
     CompilerCounters* counters = new CompilerCounters("compilerThread", i, CHECK);
-    CompilerThread* new_thread = make_compiler_thread(name_buffer, _c2_method_queue, counters, CHECK);
-    _method_threads->append(new_thread);
+    // Shark and C2
+    CompilerThread* new_thread = make_compiler_thread(name_buffer, _c2_method_queue, counters, _compilers[1], CHECK);
+    _compiler_threads->append(new_thread);
   }
 
   for (int i = c2_compiler_count; i < compiler_count; i++) {
     // Create a name for our thread.
     sprintf(name_buffer, "C1 CompilerThread%d", i);
     CompilerCounters* counters = new CompilerCounters("compilerThread", i, CHECK);
-    CompilerThread* new_thread = make_compiler_thread(name_buffer, _c1_method_queue, counters, CHECK);
-    _method_threads->append(new_thread);
+    // C1
+    CompilerThread* new_thread = make_compiler_thread(name_buffer, _c1_method_queue, counters, _compilers[0], CHECK);
+    _compiler_threads->append(new_thread);
   }
 
   if (UsePerfData) {
-    PerfDataManager::create_constant(SUN_CI, "threads", PerfData::U_Bytes,
-                                     compiler_count, CHECK);
+    PerfDataManager::create_constant(SUN_CI, "threads", PerfData::U_Bytes, compiler_count, CHECK);
   }
 }
 
@@ -1027,27 +1046,6 @@ void CompileBroker::mark_on_stack() {
     _c1_method_queue->mark_on_stack();
   }
 }
-
-// ------------------------------------------------------------------
-// CompileBroker::is_idle
-bool CompileBroker::is_idle() {
-  if (_c2_method_queue != NULL && !_c2_method_queue->is_empty()) {
-    return false;
-  } else if (_c1_method_queue != NULL && !_c1_method_queue->is_empty()) {
-    return false;
-  } else {
-    int num_threads = _method_threads->length();
-    for (int i=0; i<num_threads; i++) {
-      if (_method_threads->at(i)->task() != NULL) {
-        return false;
-      }
-    }
-
-    // No pending or active compilations.
-    return true;
-  }
-}
-
 
 // ------------------------------------------------------------------
 // CompileBroker::compile_method
@@ -1551,6 +1549,101 @@ void CompileBroker::wait_for_completion(CompileTask* task) {
   free_task(task);
 }
 
+// Initialize compiler thread(s) + compiler object(s). The postcondition
+// of this function is that the compiler runtimes are initialized and that
+//compiler threads can start compiling.
+bool CompileBroker::init_compiler_runtime() {
+  CompilerThread* thread = CompilerThread::current();
+  AbstractCompiler* comp = thread->compiler();
+  // Final sanity check - the compiler object must exist
+  guarantee(comp != NULL, "Compiler object must exist");
+
+  int system_dictionary_modification_counter;
+  {
+    MutexLocker locker(Compile_lock, thread);
+    system_dictionary_modification_counter = SystemDictionary::number_of_modifications();
+  }
+
+  {
+    // Must switch to native to allocate ci_env
+    ThreadToNativeFromVM ttn(thread);
+    ciEnv ci_env(NULL, system_dictionary_modification_counter);
+    // Cache Jvmti state
+    ci_env.cache_jvmti_state();
+    // Cache DTrace flags
+    ci_env.cache_dtrace_flags();
+
+    // Switch back to VM state to do compiler initialization
+    ThreadInVMfromNative tv(thread);
+    ResetNoHandleMark rnhm;
+
+
+    if (!comp->is_shark()) {
+      // Perform per-thread and global initializations
+      comp->initialize();
+    }
+  }
+
+  if (comp->is_failed()) {
+    disable_compilation_forever();
+    // If compiler initialization failed, no compiler thread that is specific to a
+    // particular compiler runtime will ever start to compile methods.
+
+    shutdown_compiler_runtime(comp, thread);
+    return false;
+  }
+
+  // C1 specific check
+  if (comp->is_c1() && (thread->get_buffer_blob() == NULL)) {
+    warning("Initialization of %s thread failed (no space to run compilers)", thread->name());
+    return false;
+  }
+
+  return true;
+}
+
+// If C1 and/or C2 initialization failed, we shut down all compilation.
+// We do this to keep things simple. This can be changed if it ever turns out to be
+// a problem.
+void CompileBroker::shutdown_compiler_runtime(AbstractCompiler* comp, CompilerThread* thread) {
+  // Free buffer blob, if allocated
+  if (thread->get_buffer_blob() != NULL) {
+    MutexLockerEx mu(CodeCache_lock, Mutex::_no_safepoint_check_flag);
+    CodeCache::free(thread->get_buffer_blob());
+  }
+
+  if (comp->should_perform_shutdown()) {
+    // There are two reasons for shutting down the compiler
+    // 1) compiler runtime initialization failed
+    // 2) The code cache is full and the following flag is set: -XX:-UseCodeCacheFlushing
+    warning("Shutting down compiler %s (no space to run compilers)", comp->name());
+
+    // Only one thread per compiler runtime object enters here
+    // Set state to shut down
+    comp->set_shut_down();
+
+    MutexLocker mu(MethodCompileQueue_lock, thread);
+    CompileQueue* queue;
+    if (_c1_method_queue != NULL) {
+      _c1_method_queue->delete_all();
+      queue = _c1_method_queue;
+      _c1_method_queue = NULL;
+      delete _c1_method_queue;
+    }
+
+    if (_c2_method_queue != NULL) {
+      _c2_method_queue->delete_all();
+      queue = _c2_method_queue;
+      _c2_method_queue = NULL;
+      delete _c2_method_queue;
+    }
+
+    // We could delete compiler runtimes also. However, there are references to
+    // the compiler runtime(s) (e.g.,  nmethod::is_compiled_by_c1()) which then
+    // fail. This can be done later if necessary.
+  }
+}
+
 // ------------------------------------------------------------------
 // CompileBroker::compiler_thread_loop
 //
@@ -1558,7 +1651,6 @@ void CompileBroker::wait_for_completion(CompileTask* task) {
 void CompileBroker::compiler_thread_loop() {
   CompilerThread* thread = CompilerThread::current();
   CompileQueue* queue = thread->queue();
-
   // For the thread that initializes the ciObjectFactory
   // this resource mark holds all the shared objects
   ResourceMark rm;
@@ -1587,64 +1679,77 @@ void CompileBroker::compiler_thread_loop() {
     log->end_elem();
   }
 
-  while (true) {
-    {
-      // We need this HandleMark to avoid leaking VM handles.
-      HandleMark hm(thread);
+  // If compiler thread/runtime initialization fails, exit the compiler thread
+  if (!init_compiler_runtime()) {
+    return;
+  }
 
-      if (CodeCache::unallocated_capacity() < CodeCacheMinimumFreeSpace) {
-        // the code cache is really full
-        handle_full_code_cache();
-      }
+  // Poll for new compilation tasks as long as the JVM runs. Compilation
+  // should only be disabled if something went wrong while initializing the
+  // compiler runtimes. This, in turn, should not happen. The only known case
+  // when compiler runtime initialization fails is if there is not enough free
+  // space in the code cache to generate the necessary stubs, etc.
+  while (!is_compilation_disabled_forever()) {
+    // We need this HandleMark to avoid leaking VM handles.
+    HandleMark hm(thread);
 
-      CompileTask* task = queue->get();
+    if (CodeCache::unallocated_capacity() < CodeCacheMinimumFreeSpace) {
+      // the code cache is really full
+      handle_full_code_cache();
+    }
 
-      // Give compiler threads an extra quanta.  They tend to be bursty and
-      // this helps the compiler to finish up the job.
-      if( CompilerThreadHintNoPreempt )
-        os::hint_no_preempt();
+    CompileTask* task = queue->get();
+    if (task == NULL) {
+      continue;
+    }
 
-      // trace per thread time and compile statistics
-      CompilerCounters* counters = ((CompilerThread*)thread)->counters();
-      PerfTraceTimedEvent(counters->time_counter(), counters->compile_counter());
+    // Give compiler threads an extra quanta.  They tend to be bursty and
+    // this helps the compiler to finish up the job.
+    if( CompilerThreadHintNoPreempt )
+      os::hint_no_preempt();
 
-      // Assign the task to the current thread.  Mark this compilation
-      // thread as active for the profiler.
-      CompileTaskWrapper ctw(task);
-      nmethodLocker result_handle;  // (handle for the nmethod produced by this task)
-      task->set_code_handle(&result_handle);
-      methodHandle method(thread, task->method());
+    // trace per thread time and compile statistics
+    CompilerCounters* counters = ((CompilerThread*)thread)->counters();
+    PerfTraceTimedEvent(counters->time_counter(), counters->compile_counter());
 
-      // Never compile a method if breakpoints are present in it
-      if (method()->number_of_breakpoints() == 0) {
-        // Compile the method.
-        if ((UseCompiler || AlwaysCompileLoopMethods) && CompileBroker::should_compile_new_jobs()) {
+    // Assign the task to the current thread.  Mark this compilation
+    // thread as active for the profiler.
+    CompileTaskWrapper ctw(task);
+    nmethodLocker result_handle;  // (handle for the nmethod produced by this task)
+    task->set_code_handle(&result_handle);
+    methodHandle method(thread, task->method());
+
+    // Never compile a method if breakpoints are present in it
+    if (method()->number_of_breakpoints() == 0) {
+      // Compile the method.
+      if ((UseCompiler || AlwaysCompileLoopMethods) && CompileBroker::should_compile_new_jobs()) {
 #ifdef COMPILER1
-          // Allow repeating compilations for the purpose of benchmarking
-          // compile speed. This is not useful for customers.
-          if (CompilationRepeat != 0) {
-            int compile_count = CompilationRepeat;
-            while (compile_count > 0) {
-              invoke_compiler_on_method(task);
-              nmethod* nm = method->code();
-              if (nm != NULL) {
-                nm->make_zombie();
-                method->clear_code();
-              }
-              compile_count--;
+        // Allow repeating compilations for the purpose of benchmarking
+        // compile speed. This is not useful for customers.
+        if (CompilationRepeat != 0) {
+          int compile_count = CompilationRepeat;
+          while (compile_count > 0) {
+            invoke_compiler_on_method(task);
+            nmethod* nm = method->code();
+            if (nm != NULL) {
+              nm->make_zombie();
+              method->clear_code();
             }
+            compile_count--;
           }
-#endif /* COMPILER1 */
-          invoke_compiler_on_method(task);
-        } else {
-          // After compilation is disabled, remove remaining methods from queue
-          method->clear_queued_for_compilation();
         }
+#endif /* COMPILER1 */
+        invoke_compiler_on_method(task);
+      } else {
+        // After compilation is disabled, remove remaining methods from queue
+        method->clear_queued_for_compilation();
       }
     }
   }
-}
 
+  // Shut down compiler runtime
+  shutdown_compiler_runtime(thread->compiler(), thread);
+}
 
 // ------------------------------------------------------------------
 // CompileBroker::init_compiler_thread_log
@@ -1960,8 +2065,7 @@ void CompileBroker::handle_full_code_cache() {
         NMethodSweeper::possibly_sweep();
       }
     } else {
-      UseCompiler               = false;
-      AlwaysCompileLoopMethods  = false;
+      disable_compilation_forever();
     }
   }
   codecache_print(/* detailed= */ true);
