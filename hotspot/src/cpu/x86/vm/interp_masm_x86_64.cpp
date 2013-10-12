@@ -1120,7 +1120,7 @@ void InterpreterMacroAssembler::profile_arguments_type(Register mdp, Register ca
     return;
   }
 
-  if (MethodData::profile_arguments()) {
+  if (MethodData::profile_arguments() || MethodData::profile_return()) {
     Label profile_continue;
 
     test_method_data_pointer(mdp, profile_continue);
@@ -1130,35 +1130,92 @@ void InterpreterMacroAssembler::profile_arguments_type(Register mdp, Register ca
     cmpb(Address(mdp, in_bytes(DataLayout::tag_offset()) - off_to_start), is_virtual ? DataLayout::virtual_call_type_data_tag : DataLayout::call_type_data_tag);
     jcc(Assembler::notEqual, profile_continue);
 
-    Label done;
-    int off_to_args = in_bytes(TypeStackSlotEntries::args_data_offset());
-    addptr(mdp, off_to_args);
+    if (MethodData::profile_arguments()) {
+      Label done;
+      int off_to_args = in_bytes(TypeEntriesAtCall::args_data_offset());
+      addptr(mdp, off_to_args);
 
-    for (int i = 0; i < TypeProfileArgsLimit; i++) {
-      if (i > 0) {
-        movq(tmp, Address(mdp, in_bytes(TypeStackSlotEntries::cell_count_offset())-off_to_args));
-        subl(tmp, i*TypeStackSlotEntries::per_arg_count());
-        cmpl(tmp, TypeStackSlotEntries::per_arg_count());
-        jcc(Assembler::less, done);
+      for (int i = 0; i < TypeProfileArgsLimit; i++) {
+        if (i > 0 || MethodData::profile_return()) {
+          // If return value type is profiled we may have no argument to profile
+          movq(tmp, Address(mdp, in_bytes(TypeEntriesAtCall::cell_count_offset())-off_to_args));
+          subl(tmp, i*TypeStackSlotEntries::per_arg_count());
+          cmpl(tmp, TypeStackSlotEntries::per_arg_count());
+          jcc(Assembler::less, done);
+        }
+        movptr(tmp, Address(callee, Method::const_offset()));
+        load_unsigned_short(tmp, Address(tmp, ConstMethod::size_of_parameters_offset()));
+        subq(tmp, Address(mdp, in_bytes(TypeEntriesAtCall::stack_slot_offset(i))-off_to_args));
+        subl(tmp, 1);
+        Address arg_addr = argument_address(tmp);
+        movptr(tmp, arg_addr);
+
+        Address mdo_arg_addr(mdp, in_bytes(TypeEntriesAtCall::argument_type_offset(i))-off_to_args);
+        profile_obj_type(tmp, mdo_arg_addr);
+
+        int to_add = in_bytes(TypeStackSlotEntries::per_arg_size());
+        addptr(mdp, to_add);
+        off_to_args += to_add;
       }
-      movptr(tmp, Address(callee, Method::const_offset()));
-      load_unsigned_short(tmp, Address(tmp, ConstMethod::size_of_parameters_offset()));
-      subq(tmp, Address(mdp, in_bytes(TypeStackSlotEntries::stack_slot_offset(i))-off_to_args));
-      subl(tmp, 1);
-      Address arg_addr = argument_address(tmp);
-      movptr(tmp, arg_addr);
 
-      Address mdo_arg_addr(mdp, in_bytes(TypeStackSlotEntries::type_offset(i))-off_to_args);
-      profile_obj_type(tmp, mdo_arg_addr);
+      if (MethodData::profile_return()) {
+        movq(tmp, Address(mdp, in_bytes(TypeEntriesAtCall::cell_count_offset())-off_to_args));
+        subl(tmp, TypeProfileArgsLimit*TypeStackSlotEntries::per_arg_count());
+      }
 
-      int to_add = in_bytes(TypeStackSlotEntries::per_arg_size());
-      addptr(mdp, to_add);
-      off_to_args += to_add;
+      bind(done);
+
+      if (MethodData::profile_return()) {
+        // We're right after the type profile for the last
+        // argument. tmp is the number of cell left in the
+        // CallTypeData/VirtualCallTypeData to reach its end. Non null
+        // if there's a return to profile.
+        assert(ReturnTypeEntry::static_cell_count() < TypeStackSlotEntries::per_arg_count(), "can't move past ret type");
+        shll(tmp, exact_log2(DataLayout::cell_size));
+        addptr(mdp, tmp);
+      }
+      movptr(Address(rbp, frame::interpreter_frame_mdx_offset * wordSize), mdp);
+    } else {
+      assert(MethodData::profile_return(), "either profile call args or call ret");
+      update_mdp_by_constant(mdp, in_bytes(ReturnTypeEntry::size()));
     }
 
-    bind(done);
+    // mdp points right after the end of the
+    // CallTypeData/VirtualCallTypeData, right after the cells for the
+    // return value type if there's one
 
-    movptr(Address(rbp, frame::interpreter_frame_mdx_offset * wordSize), mdp);
+    bind(profile_continue);
+  }
+}
+
+void InterpreterMacroAssembler::profile_return_type(Register mdp, Register ret, Register tmp) {
+  assert_different_registers(mdp, ret, tmp, r13);
+  if (ProfileInterpreter && MethodData::profile_return()) {
+    Label profile_continue, done;
+
+    test_method_data_pointer(mdp, profile_continue);
+
+    if (MethodData::profile_return_jsr292_only()) {
+      // If we don't profile all invoke bytecodes we must make sure
+      // it's a bytecode we indeed profile. We can't go back to the
+      // begining of the ProfileData we intend to update to check its
+      // type because we're right after it and we don't known its
+      // length
+      Label do_profile;
+      cmpb(Address(r13, 0), Bytecodes::_invokedynamic);
+      jcc(Assembler::equal, do_profile);
+      cmpb(Address(r13, 0), Bytecodes::_invokehandle);
+      jcc(Assembler::equal, do_profile);
+      get_method(tmp);
+      cmpb(Address(tmp, Method::intrinsic_id_offset_in_bytes()), vmIntrinsics::_compiledLambdaForm);
+      jcc(Assembler::notEqual, profile_continue);
+
+      bind(do_profile);
+    }
+
+    Address mdo_ret_addr(mdp, -in_bytes(ReturnTypeEntry::size()));
+    mov(tmp, ret);
+    profile_obj_type(tmp, mdo_ret_addr);
 
     bind(profile_continue);
   }

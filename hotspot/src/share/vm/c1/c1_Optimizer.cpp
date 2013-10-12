@@ -531,6 +531,7 @@ public:
   void do_UnsafePrefetchRead (UnsafePrefetchRead*  x);
   void do_UnsafePrefetchWrite(UnsafePrefetchWrite* x);
   void do_ProfileCall    (ProfileCall*     x);
+  void do_ProfileReturnType (ProfileReturnType*  x);
   void do_ProfileInvoke  (ProfileInvoke*   x);
   void do_RuntimeCall    (RuntimeCall*     x);
   void do_MemBar         (MemBar*          x);
@@ -658,6 +659,7 @@ class NullCheckEliminator: public ValueVisitor {
   void handle_ExceptionObject (ExceptionObject* x);
   void handle_Phi             (Phi* x);
   void handle_ProfileCall     (ProfileCall* x);
+  void handle_ProfileReturnType (ProfileReturnType* x);
 };
 
 
@@ -718,6 +720,7 @@ void NullCheckVisitor::do_UnsafePrefetchRead (UnsafePrefetchRead*  x) {}
 void NullCheckVisitor::do_UnsafePrefetchWrite(UnsafePrefetchWrite* x) {}
 void NullCheckVisitor::do_ProfileCall    (ProfileCall*     x) { nce()->clear_last_explicit_null_check();
                                                                 nce()->handle_ProfileCall(x); }
+void NullCheckVisitor::do_ProfileReturnType (ProfileReturnType* x) { nce()->handle_ProfileReturnType(x); }
 void NullCheckVisitor::do_ProfileInvoke  (ProfileInvoke*   x) {}
 void NullCheckVisitor::do_RuntimeCall    (RuntimeCall*     x) {}
 void NullCheckVisitor::do_MemBar         (MemBar*          x) {}
@@ -1140,6 +1143,10 @@ void NullCheckEliminator::handle_ProfileCall(ProfileCall* x) {
   for (int i = 0; i < x->nb_profiled_args(); i++) {
     x->set_arg_needs_null_check(i, !set_contains(x->profiled_arg_at(i)));
   }
+}
+
+void NullCheckEliminator::handle_ProfileReturnType(ProfileReturnType* x) {
+  x->set_needs_null_check(!set_contains(x->ret()));
 }
 
 void Optimizer::eliminate_null_checks() {

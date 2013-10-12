@@ -1466,9 +1466,22 @@ void GraphBuilder::method_return(Value x) {
     // State at end of inlined method is the state of the caller
     // without the method parameters on stack, including the
     // return value, if any, of the inlined method on operand stack.
+    int invoke_bci = state()->caller_state()->bci();
     set_state(state()->caller_state()->copy_for_parsing());
     if (x != NULL) {
       state()->push(x->type(), x);
+      if (profile_calls() && MethodData::profile_return() && x->type()->is_object_kind()) {
+        ciMethod* caller = state()->scope()->method();
+        ciMethodData* md = caller->method_data_or_null();
+        ciProfileData* data = md->bci_to_data(invoke_bci);
+        if (data->is_CallTypeData() || data->is_VirtualCallTypeData()) {
+          bool has_return = data->is_CallTypeData() ? ((ciCallTypeData*)data)->has_return() : ((ciVirtualCallTypeData*)data)->has_return();
+          // May not be true in case of an inlined call through a method handle intrinsic.
+          if (has_return) {
+            profile_return_type(x, method(), caller, invoke_bci);
+          }
+        }
+      }
     }
     Goto* goto_callee = new Goto(continuation(), false);
 
@@ -2007,6 +2020,9 @@ void GraphBuilder::invoke(Bytecodes::Code code) {
     } else {
       push(result_type, result);
     }
+  }
+  if (profile_calls() && MethodData::profile_return() && result_type->is_object_kind()) {
+    profile_return_type(result, target);
   }
 }
 
@@ -3556,6 +3572,10 @@ bool GraphBuilder::try_inline_intrinsics(ciMethod* callee) {
   Value value = append_split(result);
   if (result_type != voidType) push(result_type, value);
 
+  if (callee != method() && profile_calls() && MethodData::profile_return() && result_type->is_object_kind()) {
+    profile_return_type(result, callee);
+  }
+
   // done
   return true;
 }
@@ -4310,6 +4330,21 @@ void GraphBuilder::print_stats() {
 
 void GraphBuilder::profile_call(ciMethod* callee, Value recv, ciKlass* known_holder, Values* obj_args, bool inlined) {
   append(new ProfileCall(method(), bci(), callee, recv, known_holder, obj_args, inlined));
+}
+
+void GraphBuilder::profile_return_type(Value ret, ciMethod* callee, ciMethod* m, int invoke_bci) {
+  assert((m == NULL) == (invoke_bci < 0), "invalid method and invalid bci together");
+  if (m == NULL) {
+    m = method();
+  }
+  if (invoke_bci < 0) {
+    invoke_bci = bci();
+  }
+  ciMethodData* md = m->method_data_or_null();
+  ciProfileData* data = md->bci_to_data(invoke_bci);
+  if (data->is_CallTypeData() || data->is_VirtualCallTypeData()) {
+    append(new ProfileReturnType(m , invoke_bci, callee, ret));
+  }
 }
 
 void GraphBuilder::profile_invocation(ciMethod* callee, ValueStack* state) {

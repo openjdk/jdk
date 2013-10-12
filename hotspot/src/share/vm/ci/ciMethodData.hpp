@@ -104,18 +104,53 @@ public:
 #endif
 };
 
+class ciReturnTypeEntry : public ReturnTypeEntry, ciTypeEntries {
+public:
+  void translate_type_data_from(const ReturnTypeEntry* ret);
+
+  ciKlass* valid_type() const {
+    return valid_ciklass(type());
+  }
+
+#ifndef PRODUCT
+  void print_data_on(outputStream* st) const;
+#endif
+};
+
 class ciCallTypeData : public CallTypeData {
 public:
   ciCallTypeData(DataLayout* layout) : CallTypeData(layout) {}
 
   ciTypeStackSlotEntries* args() const { return (ciTypeStackSlotEntries*)CallTypeData::args(); }
+  ciReturnTypeEntry* ret() const { return (ciReturnTypeEntry*)CallTypeData::ret(); }
 
-  virtual void translate_from(const ProfileData* data) {
-    args()->translate_type_data_from(data->as_CallTypeData()->args());
+  void translate_type_data_from(const ProfileData* data) {
+    if (has_arguments()) {
+      args()->translate_type_data_from(data->as_CallTypeData()->args());
+    }
+    if (has_return()) {
+      ret()->translate_type_data_from(data->as_CallTypeData()->ret());
+    }
+  }
+
+  intptr_t argument_type(int i) const {
+    assert(has_arguments(), "no arg type profiling data");
+    return args()->type(i);
   }
 
   ciKlass* valid_argument_type(int i) const {
+    assert(has_arguments(), "no arg type profiling data");
     return args()->valid_type(i);
+  }
+
+  intptr_t return_type() const {
+    assert(has_return(), "no ret type profiling data");
+    return ret()->type();
+  }
+
+  ciKlass* valid_return_type() const {
+    assert(has_return(), "no ret type profiling data");
+    return ret()->valid_type();
   }
 
 #ifndef PRODUCT
@@ -179,11 +214,8 @@ class ciVirtualCallTypeData : public VirtualCallTypeData {
 private:
   // Fake multiple inheritance...  It's a ciReceiverTypeData also.
   ciReceiverTypeData* rtd_super() const { return (ciReceiverTypeData*) this; }
-
 public:
   ciVirtualCallTypeData(DataLayout* layout) : VirtualCallTypeData(layout) {}
-
-  ciTypeStackSlotEntries* args() const { return (ciTypeStackSlotEntries*)VirtualCallTypeData::args(); }
 
   void set_receiver(uint row, ciKlass* recv) {
     rtd_super()->set_receiver(row, recv);
@@ -193,14 +225,38 @@ public:
     return rtd_super()->receiver(row);
   }
 
+  ciTypeStackSlotEntries* args() const { return (ciTypeStackSlotEntries*)VirtualCallTypeData::args(); }
+  ciReturnTypeEntry* ret() const { return (ciReturnTypeEntry*)VirtualCallTypeData::ret(); }
+
   // Copy & translate from oop based VirtualCallData
   virtual void translate_from(const ProfileData* data) {
     rtd_super()->translate_receiver_data_from(data);
-    args()->translate_type_data_from(data->as_VirtualCallTypeData()->args());
+    if (has_arguments()) {
+      args()->translate_type_data_from(data->as_VirtualCallTypeData()->args());
+    }
+    if (has_return()) {
+      ret()->translate_type_data_from(data->as_VirtualCallTypeData()->ret());
+    }
+  }
+
+  intptr_t argument_type(int i) const {
+    assert(has_arguments(), "no arg type profiling data");
+    return args()->type(i);
   }
 
   ciKlass* valid_argument_type(int i) const {
+    assert(has_arguments(), "no arg type profiling data");
     return args()->valid_type(i);
+  }
+
+  intptr_t return_type() const {
+    assert(has_return(), "no ret type profiling data");
+    return ret()->type();
+  }
+
+  ciKlass* valid_return_type() const {
+    assert(has_return(), "no ret type profiling data");
+    return ret()->valid_type();
   }
 
 #ifndef PRODUCT
@@ -347,6 +403,7 @@ public:
   // If the compiler finds a profiled type that is known statically
   // for sure, set it in the MethodData
   void set_argument_type(int bci, int i, ciKlass* k);
+  void set_return_type(int bci, ciKlass* k);
 
   void load_data();
 

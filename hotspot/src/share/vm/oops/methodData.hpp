@@ -271,6 +271,7 @@ class     ArgInfoData;
 // data in a structured way.
 class ProfileData : public ResourceObj {
   friend class TypeEntries;
+  friend class ReturnTypeEntry;
   friend class TypeStackSlotEntries;
 private:
 #ifndef PRODUCT
@@ -748,119 +749,60 @@ private:
     per_arg_cell_count
   };
 
-  // Start with a header if needed. It stores the number of cells used
-  // for this call type information. Unless we collect only profiling
-  // for a single argument the number of cells is unknown statically.
-  static int header_cell_count() {
-    return (TypeProfileArgsLimit > 1) ? 1 : 0;
-  }
-
-  static int cell_count_local_offset() {
-     assert(arguments_profiling_enabled() && TypeProfileArgsLimit > 1, "no cell count");
-     return 0;
-   }
-
-  int cell_count_global_offset() const {
-    return _base_off + cell_count_local_offset();
-  }
-
   // offset of cell for stack slot for entry i within ProfileData object
-  int stack_slot_global_offset(int i) const {
+  int stack_slot_offset(int i) const {
     return _base_off + stack_slot_local_offset(i);
   }
 
-  void check_number_of_arguments(int total) {
-    assert(number_of_arguments() == total, "should be set in DataLayout::initialize");
-  }
-
-  // number of cells not counting the header
-  int cell_count_no_header() const {
-    return _pd->uint_at(cell_count_global_offset());
-  }
-
-  static bool arguments_profiling_enabled();
-  static void assert_arguments_profiling_enabled() {
-    assert(arguments_profiling_enabled(), "args profiling should be on");
-  }
-
 protected:
+  const int _number_of_entries;
 
   // offset of cell for type for entry i within ProfileData object
-  int type_global_offset(int i) const {
+  int type_offset(int i) const {
     return _base_off + type_local_offset(i);
   }
 
 public:
 
-  TypeStackSlotEntries(int base_off)
-    : TypeEntries(base_off) {}
+  TypeStackSlotEntries(int base_off, int nb_entries)
+    : TypeEntries(base_off), _number_of_entries(nb_entries) {}
 
-  static int compute_cell_count(BytecodeStream* stream);
+  static int compute_cell_count(Symbol* signature, int max);
 
-  static void initialize(DataLayout* dl, int base, int cell_count) {
-    if (TypeProfileArgsLimit > 1) {
-      int off = base + cell_count_local_offset();
-      dl->set_cell_at(off, cell_count - base - header_cell_count());
-    }
-  }
-
-  void post_initialize(BytecodeStream* stream);
-
-  int number_of_arguments() const {
-    assert_arguments_profiling_enabled();
-    if (TypeProfileArgsLimit > 1) {
-      int cell_count = cell_count_no_header();
-      int nb = cell_count / TypeStackSlotEntries::per_arg_count();
-      assert(nb > 0 && nb <= TypeProfileArgsLimit , "only when we profile args");
-      return nb;
-    } else {
-      assert(TypeProfileArgsLimit == 1, "at least one arg");
-      return 1;
-    }
-  }
-
-  int cell_count() const {
-    assert_arguments_profiling_enabled();
-    if (TypeProfileArgsLimit > 1) {
-      return _base_off + header_cell_count() + _pd->int_at_unchecked(cell_count_global_offset());
-    } else {
-      return _base_off + TypeStackSlotEntries::per_arg_count();
-    }
-  }
+  void post_initialize(Symbol* signature, bool has_receiver);
 
   // offset of cell for stack slot for entry i within this block of cells for a TypeStackSlotEntries
   static int stack_slot_local_offset(int i) {
-    assert_arguments_profiling_enabled();
-    return header_cell_count() + i * per_arg_cell_count + stack_slot_entry;
+    return i * per_arg_cell_count + stack_slot_entry;
   }
 
   // offset of cell for type for entry i within this block of cells for a TypeStackSlotEntries
   static int type_local_offset(int i) {
-    return header_cell_count() + i * per_arg_cell_count + type_entry;
+    return i * per_arg_cell_count + type_entry;
   }
 
   // stack slot for entry i
   uint stack_slot(int i) const {
-    assert(i >= 0 && i < number_of_arguments(), "oob");
-    return _pd->uint_at(stack_slot_global_offset(i));
+    assert(i >= 0 && i < _number_of_entries, "oob");
+    return _pd->uint_at(stack_slot_offset(i));
   }
 
   // set stack slot for entry i
   void set_stack_slot(int i, uint num) {
-    assert(i >= 0 && i < number_of_arguments(), "oob");
-    _pd->set_uint_at(stack_slot_global_offset(i), num);
+    assert(i >= 0 && i < _number_of_entries, "oob");
+    _pd->set_uint_at(stack_slot_offset(i), num);
   }
 
   // type for entry i
   intptr_t type(int i) const {
-    assert(i >= 0 && i < number_of_arguments(), "oob");
-    return _pd->intptr_at(type_global_offset(i));
+    assert(i >= 0 && i < _number_of_entries, "oob");
+    return _pd->intptr_at(type_offset(i));
   }
 
   // set type for entry i
   void set_type(int i, intptr_t k) {
-    assert(i >= 0 && i < number_of_arguments(), "oob");
-    _pd->set_intptr_at(type_global_offset(i), k);
+    assert(i >= 0 && i < _number_of_entries, "oob");
+    _pd->set_intptr_at(type_offset(i), k);
   }
 
   static ByteSize per_arg_size() {
@@ -871,22 +813,50 @@ public:
     return per_arg_cell_count ;
   }
 
-  // Code generation support
-   static ByteSize cell_count_offset() {
-     return in_ByteSize(cell_count_local_offset() * DataLayout::cell_size);
-   }
+  // GC support
+  void clean_weak_klass_links(BoolObjectClosure* is_alive_closure);
 
-   static ByteSize args_data_offset() {
-     return in_ByteSize(header_cell_count() * DataLayout::cell_size);
-   }
+#ifndef PRODUCT
+  void print_data_on(outputStream* st) const;
+#endif
+};
 
-   static ByteSize stack_slot_offset(int i) {
-     return in_ByteSize(stack_slot_local_offset(i) * DataLayout::cell_size);
-   }
+// Type entry used for return from a call. A single cell to record the
+// type.
+class ReturnTypeEntry : public TypeEntries {
 
-   static ByteSize type_offset(int i) {
-     return in_ByteSize(type_local_offset(i) * DataLayout::cell_size);
-   }
+private:
+  enum {
+    cell_count = 1
+  };
+
+public:
+  ReturnTypeEntry(int base_off)
+    : TypeEntries(base_off) {}
+
+  void post_initialize() {
+    set_type(type_none());
+  }
+
+  intptr_t type() const {
+    return _pd->intptr_at(_base_off);
+  }
+
+  void set_type(intptr_t k) {
+    _pd->set_intptr_at(_base_off, k);
+  }
+
+  static int static_cell_count() {
+    return cell_count;
+  }
+
+  static ByteSize size() {
+    return in_ByteSize(cell_count * DataLayout::cell_size);
+  }
+
+  ByteSize type_offset() {
+    return DataLayout::cell_offset(_base_off);
+  }
 
   // GC support
   void clean_weak_klass_links(BoolObjectClosure* is_alive_closure);
@@ -896,23 +866,118 @@ public:
 #endif
 };
 
+// Entries to collect type information at a call: contains arguments
+// (TypeStackSlotEntries), a return type (ReturnTypeEntry) and a
+// number of cells. Because the number of cells for the return type is
+// smaller than the number of cells for the type of an arguments, the
+// number of cells is used to tell how many arguments are profiled and
+// whether a return value is profiled. See has_arguments() and
+// has_return().
+class TypeEntriesAtCall {
+private:
+  static int stack_slot_local_offset(int i) {
+    return header_cell_count() + TypeStackSlotEntries::stack_slot_local_offset(i);
+  }
+
+  static int argument_type_local_offset(int i) {
+    return header_cell_count() + TypeStackSlotEntries::type_local_offset(i);;
+  }
+
+public:
+
+  static int header_cell_count() {
+    return 1;
+  }
+
+  static int cell_count_local_offset() {
+    return 0;
+  }
+
+  static int compute_cell_count(BytecodeStream* stream);
+
+  static void initialize(DataLayout* dl, int base, int cell_count) {
+    int off = base + cell_count_local_offset();
+    dl->set_cell_at(off, cell_count - base - header_cell_count());
+  }
+
+  static bool arguments_profiling_enabled();
+  static bool return_profiling_enabled();
+
+  // Code generation support
+  static ByteSize cell_count_offset() {
+    return in_ByteSize(cell_count_local_offset() * DataLayout::cell_size);
+  }
+
+  static ByteSize args_data_offset() {
+    return in_ByteSize(header_cell_count() * DataLayout::cell_size);
+  }
+
+  static ByteSize stack_slot_offset(int i) {
+    return in_ByteSize(stack_slot_local_offset(i) * DataLayout::cell_size);
+  }
+
+  static ByteSize argument_type_offset(int i) {
+    return in_ByteSize(argument_type_local_offset(i) * DataLayout::cell_size);
+  }
+};
+
 // CallTypeData
 //
 // A CallTypeData is used to access profiling information about a non
-// virtual call for which we collect type information about arguments.
+// virtual call for which we collect type information about arguments
+// and return value.
 class CallTypeData : public CounterData {
 private:
+  // entries for arguments if any
   TypeStackSlotEntries _args;
+  // entry for return type if any
+  ReturnTypeEntry _ret;
+
+  int cell_count_global_offset() const {
+    return CounterData::static_cell_count() + TypeEntriesAtCall::cell_count_local_offset();
+  }
+
+  // number of cells not counting the header
+  int cell_count_no_header() const {
+    return uint_at(cell_count_global_offset());
+  }
+
+  void check_number_of_arguments(int total) {
+    assert(number_of_arguments() == total, "should be set in DataLayout::initialize");
+  }
+
+protected:
+  // An entry for a return value takes less space than an entry for an
+  // argument so if the number of cells exceeds the number of cells
+  // needed for an argument, this object contains type information for
+  // at least one argument.
+  bool has_arguments() const {
+    bool res = cell_count_no_header() >= TypeStackSlotEntries::per_arg_count();
+    assert (!res || TypeEntriesAtCall::arguments_profiling_enabled(), "no profiling of arguments");
+    return res;
+  }
 
 public:
   CallTypeData(DataLayout* layout) :
-    CounterData(layout), _args(CounterData::static_cell_count())  {
+    CounterData(layout),
+    _args(CounterData::static_cell_count()+TypeEntriesAtCall::header_cell_count(), number_of_arguments()),
+    _ret(cell_count() - ReturnTypeEntry::static_cell_count())
+  {
     assert(layout->tag() == DataLayout::call_type_data_tag, "wrong type");
     // Some compilers (VC++) don't want this passed in member initialization list
     _args.set_profile_data(this);
+    _ret.set_profile_data(this);
   }
 
-  const TypeStackSlotEntries* args() const { return &_args; }
+  const TypeStackSlotEntries* args() const {
+    assert(has_arguments(), "no profiling of arguments");
+    return &_args;
+  }
+
+  const ReturnTypeEntry* ret() const {
+    assert(has_return(), "no profiling of return value");
+    return &_ret;
+  }
 
   virtual bool is_CallTypeData() const { return true; }
 
@@ -921,38 +986,60 @@ public:
   }
 
   static int compute_cell_count(BytecodeStream* stream) {
-    return CounterData::static_cell_count() + TypeStackSlotEntries::compute_cell_count(stream);
+    return CounterData::static_cell_count() + TypeEntriesAtCall::compute_cell_count(stream);
   }
 
   static void initialize(DataLayout* dl, int cell_count) {
-    TypeStackSlotEntries::initialize(dl, CounterData::static_cell_count(), cell_count);
+    TypeEntriesAtCall::initialize(dl, CounterData::static_cell_count(), cell_count);
   }
 
-  virtual void post_initialize(BytecodeStream* stream, MethodData* mdo) {
-    _args.post_initialize(stream);
-  }
+  virtual void post_initialize(BytecodeStream* stream, MethodData* mdo);
 
   virtual int cell_count() const {
-    return _args.cell_count();
+    return CounterData::static_cell_count() +
+      TypeEntriesAtCall::header_cell_count() +
+      int_at_unchecked(cell_count_global_offset());
   }
 
-  uint number_of_arguments() const {
-    return args()->number_of_arguments();
+  int number_of_arguments() const {
+    return cell_count_no_header() / TypeStackSlotEntries::per_arg_count();
   }
 
   void set_argument_type(int i, Klass* k) {
+    assert(has_arguments(), "no arguments!");
     intptr_t current = _args.type(i);
     _args.set_type(i, TypeEntries::with_status(k, current));
   }
 
+  void set_return_type(Klass* k) {
+    assert(has_return(), "no return!");
+    intptr_t current = _ret.type();
+    _ret.set_type(TypeEntries::with_status(k, current));
+  }
+
+  // An entry for a return value takes less space than an entry for an
+  // argument, so if the remainder of the number of cells divided by
+  // the number of cells for an argument is not null, a return value
+  // is profiled in this object.
+  bool has_return() const {
+    bool res = (cell_count_no_header() % TypeStackSlotEntries::per_arg_count()) != 0;
+    assert (!res || TypeEntriesAtCall::return_profiling_enabled(), "no profiling of return values");
+    return res;
+  }
+
   // Code generation support
   static ByteSize args_data_offset() {
-    return cell_offset(CounterData::static_cell_count()) + TypeStackSlotEntries::args_data_offset();
+    return cell_offset(CounterData::static_cell_count()) + TypeEntriesAtCall::args_data_offset();
   }
 
   // GC support
   virtual void clean_weak_klass_links(BoolObjectClosure* is_alive_closure) {
-    _args.clean_weak_klass_links(is_alive_closure);
+    if (has_arguments()) {
+      _args.clean_weak_klass_links(is_alive_closure);
+    }
+    if (has_return()) {
+      _ret.clean_weak_klass_links(is_alive_closure);
+    }
   }
 
 #ifndef PRODUCT
@@ -1105,20 +1192,59 @@ public:
 //
 // A VirtualCallTypeData is used to access profiling information about
 // a virtual call for which we collect type information about
-// arguments.
+// arguments and return value.
 class VirtualCallTypeData : public VirtualCallData {
 private:
+  // entries for arguments if any
   TypeStackSlotEntries _args;
+  // entry for return type if any
+  ReturnTypeEntry _ret;
+
+  int cell_count_global_offset() const {
+    return VirtualCallData::static_cell_count() + TypeEntriesAtCall::cell_count_local_offset();
+  }
+
+  // number of cells not counting the header
+  int cell_count_no_header() const {
+    return uint_at(cell_count_global_offset());
+  }
+
+  void check_number_of_arguments(int total) {
+    assert(number_of_arguments() == total, "should be set in DataLayout::initialize");
+  }
+
+protected:
+  // An entry for a return value takes less space than an entry for an
+  // argument so if the number of cells exceeds the number of cells
+  // needed for an argument, this object contains type information for
+  // at least one argument.
+  bool has_arguments() const {
+    bool res = cell_count_no_header() >= TypeStackSlotEntries::per_arg_count();
+    assert (!res || TypeEntriesAtCall::arguments_profiling_enabled(), "no profiling of arguments");
+    return res;
+  }
 
 public:
   VirtualCallTypeData(DataLayout* layout) :
-    VirtualCallData(layout), _args(VirtualCallData::static_cell_count())  {
+    VirtualCallData(layout),
+    _args(VirtualCallData::static_cell_count()+TypeEntriesAtCall::header_cell_count(), number_of_arguments()),
+    _ret(cell_count() - ReturnTypeEntry::static_cell_count())
+  {
     assert(layout->tag() == DataLayout::virtual_call_type_data_tag, "wrong type");
     // Some compilers (VC++) don't want this passed in member initialization list
     _args.set_profile_data(this);
+    _ret.set_profile_data(this);
   }
 
-  const TypeStackSlotEntries* args() const { return &_args; }
+  const TypeStackSlotEntries* args() const {
+    assert(has_arguments(), "no profiling of arguments");
+    return &_args;
+  }
+
+  const ReturnTypeEntry* ret() const {
+    assert(has_return(), "no profiling of return value");
+    return &_ret;
+  }
 
   virtual bool is_VirtualCallTypeData() const { return true; }
 
@@ -1127,39 +1253,61 @@ public:
   }
 
   static int compute_cell_count(BytecodeStream* stream) {
-    return VirtualCallData::static_cell_count() + TypeStackSlotEntries::compute_cell_count(stream);
+    return VirtualCallData::static_cell_count() + TypeEntriesAtCall::compute_cell_count(stream);
   }
 
   static void initialize(DataLayout* dl, int cell_count) {
-    TypeStackSlotEntries::initialize(dl, VirtualCallData::static_cell_count(), cell_count);
+    TypeEntriesAtCall::initialize(dl, VirtualCallData::static_cell_count(), cell_count);
   }
 
-  virtual void post_initialize(BytecodeStream* stream, MethodData* mdo) {
-    _args.post_initialize(stream);
-  }
+  virtual void post_initialize(BytecodeStream* stream, MethodData* mdo);
 
   virtual int cell_count() const {
-    return _args.cell_count();
+    return VirtualCallData::static_cell_count() +
+      TypeEntriesAtCall::header_cell_count() +
+      int_at_unchecked(cell_count_global_offset());
   }
 
-  uint number_of_arguments() const {
-    return args()->number_of_arguments();
+  int number_of_arguments() const {
+    return cell_count_no_header() / TypeStackSlotEntries::per_arg_count();
   }
 
   void set_argument_type(int i, Klass* k) {
+    assert(has_arguments(), "no arguments!");
     intptr_t current = _args.type(i);
     _args.set_type(i, TypeEntries::with_status(k, current));
   }
 
+  void set_return_type(Klass* k) {
+    assert(has_return(), "no return!");
+    intptr_t current = _ret.type();
+    _ret.set_type(TypeEntries::with_status(k, current));
+  }
+
+  // An entry for a return value takes less space than an entry for an
+  // argument, so if the remainder of the number of cells divided by
+  // the number of cells for an argument is not null, a return value
+  // is profiled in this object.
+  bool has_return() const {
+    bool res = (cell_count_no_header() % TypeStackSlotEntries::per_arg_count()) != 0;
+    assert (!res || TypeEntriesAtCall::return_profiling_enabled(), "no profiling of return values");
+    return res;
+  }
+
   // Code generation support
   static ByteSize args_data_offset() {
-    return cell_offset(VirtualCallData::static_cell_count()) + TypeStackSlotEntries::args_data_offset();
+    return cell_offset(VirtualCallData::static_cell_count()) + TypeEntriesAtCall::args_data_offset();
   }
 
   // GC support
   virtual void clean_weak_klass_links(BoolObjectClosure* is_alive_closure) {
     ReceiverTypeData::clean_weak_klass_links(is_alive_closure);
-    _args.clean_weak_klass_links(is_alive_closure);
+    if (has_arguments()) {
+      _args.clean_weak_klass_links(is_alive_closure);
+    }
+    if (has_return()) {
+      _ret.clean_weak_klass_links(is_alive_closure);
+    }
   }
 
 #ifndef PRODUCT
@@ -1691,6 +1839,9 @@ private:
   static bool profile_arguments_jsr292_only();
   static bool profile_all_arguments();
   static bool profile_arguments_for_invoke(methodHandle m, int bci);
+  static int profile_return_flag();
+  static bool profile_all_return();
+  static bool profile_return_for_invoke(methodHandle m, int bci);
 
 public:
   static int header_size() {
@@ -1933,6 +2084,8 @@ public:
   void verify_data_on(outputStream* st);
 
   static bool profile_arguments();
+  static bool profile_return();
+  static bool profile_return_jsr292_only();
 };
 
 #endif // SHARE_VM_OOPS_METHODDATAOOP_HPP

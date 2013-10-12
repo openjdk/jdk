@@ -2649,8 +2649,9 @@ class CommandLineFlags {
           "Enable aggressive optimizations - see arguments.cpp")            \
                                                                             \
   product_pd(uintx, TypeProfileLevel,                                       \
-          "Type profiling of arguments at call:"                            \
-          "0->off ; 1->js292 only; 2->all methods")                         \
+          "=XY, with Y, Type profiling of arguments at call"                \
+          "          X, Type profiling of return value at call"             \
+          "X and Y in 0->off ; 1->js292 only; 2->all methods")              \
                                                                             \
   product(intx, TypeProfileArgsLimit,     2,                                \
           "max number of call arguments to consider for type profiling")    \
