@@ -46,7 +46,7 @@ import javax.accessibility.*;
  * produces the following labels:
  * <p>
  * <img src="doc-files/Label-1.gif" alt="Two labels: 'Hi There!' and 'Another label'"
- * ALIGN=center HSPACE=10 VSPACE=7>
+ * style="float:center; margin: 7px 10px;">
  *
  * @author      Sami Shaio
  * @since       JDK1.0

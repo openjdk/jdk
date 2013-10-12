@@ -50,7 +50,7 @@ import javax.swing.event.TableModelEvent;
  * future Swing releases. The current serialization support is
  * appropriate for short term storage or RMI between applications running
  * the same version of Swing.  As of 1.4, support for long term storage
- * of all JavaBeans<sup><font size="-2">TM</font></sup>
+ * of all JavaBeans&trade;
  * has been added to the <code>java.beans</code> package.
  * Please see {@link java.beans.XMLEncoder}.
  *
@@ -418,15 +418,14 @@ public class DefaultTableModel extends AbstractTableModel implements Serializabl
      *
      *  <pre>
      *  Examples of moves:
-     *  <p>
+     *
      *  1. moveRow(1,3,5);
      *          a|B|C|D|e|f|g|h|i|j|k   - before
      *          a|e|f|g|h|B|C|D|i|j|k   - after
-     *  <p>
+     *
      *  2. moveRow(6,7,1);
      *          a|b|c|d|e|f|G|H|i|j|k   - before
      *          a|G|H|b|c|d|e|f|i|j|k   - after
-     *  <p>
      *  </pre>
      *
      * @param   start       the starting row index to be moved
