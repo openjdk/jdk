@@ -85,6 +85,11 @@ public class HtmlDocletWriter extends HtmlDocWriter {
     protected boolean printedAnnotationHeading = false;
 
     /**
+     * To check whether annotation field heading is printed or not.
+     */
+    protected boolean printedAnnotationFieldHeading = false;
+
+    /**
      * To check whether the repeated annotations is documented or not.
      */
     private boolean isAnnotationDocumented = false;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -50,7 +50,6 @@ import sun.java2d.ScreenUpdateManager;
 import sun.java2d.d3d.D3DSurfaceData;
 import sun.java2d.opengl.OGLSurfaceData;
 import sun.java2d.pipe.Region;
-import sun.awt.DisplayChangedListener;
 import sun.awt.PaintEventDispatcher;
 import sun.awt.SunToolkit;
 import sun.awt.event.IgnorePaintEvent;
@@ -546,9 +545,6 @@ public abstract class WComponentPeer extends WObjectPeer
             return null;
         }
     }
-    public java.awt.Toolkit getToolkit() {
-        return Toolkit.getDefaultToolkit();
-    }
 
     // fallback default font object
     final static Font defaultFont = new Font(Font.DIALOG, Font.PLAIN, 12);
@@ -656,7 +652,7 @@ public abstract class WComponentPeer extends WObjectPeer
         _setFont(f);
     }
     public synchronized native void _setFont(Font f);
-    public final void updateCursorImmediately() {
+    public void updateCursorImmediately() {
         WGlobalCursorManager.getCursorManager().updateCursorImmediately();
     }
 
@@ -739,11 +735,11 @@ public abstract class WComponentPeer extends WObjectPeer
     }
 
     public boolean prepareImage(Image img, int w, int h, ImageObserver o) {
-        return getToolkit().prepareImage(img, w, h, o);
+        return Toolkit.getDefaultToolkit().prepareImage(img, w, h, o);
     }
 
     public int checkImage(Image img, int w, int h, ImageObserver o) {
-        return getToolkit().checkImage(img, w, h, o);
+        return Toolkit.getDefaultToolkit().checkImage(img, w, h, o);
     }
 
     // Object overrides
@@ -883,13 +879,6 @@ public abstract class WComponentPeer extends WObjectPeer
 
     public native void beginValidate();
     public native void endValidate();
-
-    /**
-     * DEPRECATED
-     */
-    public Dimension minimumSize() {
-        return getMinimumSize();
-    }
 
     /**
      * DEPRECATED

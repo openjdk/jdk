@@ -90,7 +90,7 @@ import sun.awt.datatransfer.DataTransferer;
  * the same results.
  * <p>
  * For more information on the using data transfer with Swing see
- * the <a href="http://java.sun.com/docs/books/tutorial/uiswing/misc/dnd.html">
+ * the <a href="http://docs.oracle.com/javase/tutorial/uiswing/dnd/index.html">
  * How to Use Drag and Drop and Data Transfer</a>,
  * section in <em>Java Tutorial</em>.
  *
@@ -454,7 +454,7 @@ public class DataFlavor implements Externalizable, Cloneable {
 
     /**
      * Constructs a <code>DataFlavor</code> from a <code>mimeType</code> string.
-     * The string can specify a "class=<fully specified Java class name>"
+     * The string can specify a "class=&lt;fully specified Java class name&gt;"
      * parameter to create a <code>DataFlavor</code> with the desired
      * representation class. If the string does not contain "class=" parameter,
      * <code>java.io.InputStream</code> is used as default.

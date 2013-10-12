@@ -42,7 +42,7 @@ import javax.accessibility.*;
  * display the predefined text <code>"Hello"</code>.
  * <p>
  * <img src="doc-files/TextField-1.gif" alt="The preceding text describes this image."
- * ALIGN=center HSPACE=10 VSPACE=7>
+ * style="float:center; margin: 7px 10px;">
  * <p>
  * Here is the code that produces these four text fields:
  * <p>
@@ -503,7 +503,7 @@ public class TextField extends TextComponent {
      *
      * @see #addActionListener
      * @see #removeActionListener
-     * @see     java.awt.event#ActionListener
+     * @see java.awt.event.ActionListener
      * @since 1.4
      */
     public synchronized ActionListener[] getActionListeners() {

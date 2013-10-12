@@ -52,7 +52,7 @@ import java.util.Vector;
  * future Swing releases. The current serialization support is
  * appropriate for short term storage or RMI between applications running
  * the same version of Swing.  As of 1.4, support for long term storage
- * of all JavaBeans<sup><font size="-2">TM</font></sup>
+ * of all JavaBeans&trade;
  * has been added to the <code>java.beans</code> package.
  * Please see {@link java.beans.XMLEncoder}.
  *
@@ -430,7 +430,7 @@ public class DefaultTreeCellEditor implements ActionListener, TreeCellEditor,
 
     /**
      * Returns true if <code>event</code> is <code>null</code>,
-     * or it is a <code>MouseEvent</code> with a click count > 2
+     * or it is a <code>MouseEvent</code> with a click count &gt; 2
      * and <code>inHitRegion</code> returns true.
      * @param event the event being studied
      */
@@ -448,7 +448,7 @@ public class DefaultTreeCellEditor implements ActionListener, TreeCellEditor,
     /**
      * Returns true if the passed in location is a valid mouse location
      * to start editing from. This is implemented to return false if
-     * <code>x</code> is <= the width of the icon and icon gap displayed
+     * <code>x</code> is &lt;= the width of the icon and icon gap displayed
      * by the renderer. In other words this returns true if the user
      * clicks over the text part displayed by the renderer, and false
      * otherwise.

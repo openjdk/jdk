@@ -308,7 +308,11 @@ static jlong processCreate(
 
                 if (success) {
                     PROCESS_INFORMATION pi;
-                    DWORD processFlag = CREATE_NO_WINDOW | CREATE_UNICODE_ENVIRONMENT;
+                    DWORD processFlag = CREATE_UNICODE_ENVIRONMENT;
+
+                    /* Suppress popping-up of a console window for non-console applications */
+                    if (GetConsoleWindow() == NULL)
+                        processFlag |= CREATE_NO_WINDOW;
 
                     si.dwFlags = STARTF_USESTDHANDLES;
                     if (!CreateProcessW(

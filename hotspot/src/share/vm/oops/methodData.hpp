@@ -72,6 +72,8 @@ class ProfileData;
 //
 // Overlay for generic profiling data.
 class DataLayout VALUE_OBJ_CLASS_SPEC {
+  friend class VMStructs;
+
 private:
   // Every data layout begins with a header.  This header
   // contains a tag, which is used to indicate the size/layout
@@ -331,10 +333,10 @@ protected:
     return (int)data()->cell_at(index);
   }
   void set_oop_at(int index, oop value) {
-    set_intptr_at(index, (intptr_t) value);
+    set_intptr_at(index, cast_from_oop<intptr_t>(value));
   }
   oop oop_at(int index) {
-    return (oop)intptr_at(index);
+    return cast_to_oop(intptr_at(index));
   }
 
   void set_flag_at(int flag_number) {

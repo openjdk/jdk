@@ -140,9 +140,10 @@ void ConstantPoolCacheEntry::set_parameter_size(int value) {
             err_msg("size must not change: parameter_size=%d, value=%d", parameter_size(), value));
 }
 
-void ConstantPoolCacheEntry::set_method(Bytecodes::Code invoke_code,
-                                        methodHandle method,
-                                        int vtable_index) {
+void ConstantPoolCacheEntry::set_direct_or_vtable_call(Bytecodes::Code invoke_code,
+                                                       methodHandle method,
+                                                       int vtable_index) {
+  bool is_vtable_call = (vtable_index >= 0);  // FIXME: split this method on this boolean
   assert(method->interpreter_entry() != NULL, "should have been set at this point");
   assert(!method->is_obsolete(),  "attempt to write obsolete method to cpCache");
 
@@ -160,7 +161,8 @@ void ConstantPoolCacheEntry::set_method(Bytecodes::Code invoke_code,
       // ...and fall through as if we were handling invokevirtual:
     case Bytecodes::_invokevirtual:
       {
-        if (method->can_be_statically_bound()) {
+        if (!is_vtable_call) {
+          assert(method->can_be_statically_bound(), "");
           // set_f2_as_vfinal_method checks if is_vfinal flag is true.
           set_method_flags(as_TosState(method->result_type()),
                            (                             1      << is_vfinal_shift) |
@@ -169,6 +171,7 @@ void ConstantPoolCacheEntry::set_method(Bytecodes::Code invoke_code,
                            method()->size_of_parameters());
           set_f2_as_vfinal_method(method());
         } else {
+          assert(!method->can_be_statically_bound(), "");
           assert(vtable_index >= 0, "valid index");
           assert(!method->is_final_method(), "sanity");
           set_method_flags(as_TosState(method->result_type()),
@@ -182,6 +185,7 @@ void ConstantPoolCacheEntry::set_method(Bytecodes::Code invoke_code,
 
     case Bytecodes::_invokespecial:
     case Bytecodes::_invokestatic:
+      assert(!is_vtable_call, "");
       // Note:  Read and preserve the value of the is_vfinal flag on any
       // invokevirtual bytecode shared with this constant pool cache entry.
       // It is cheap and safe to consult is_vfinal() at all times.
@@ -232,8 +236,22 @@ void ConstantPoolCacheEntry::set_method(Bytecodes::Code invoke_code,
   NOT_PRODUCT(verify(tty));
 }
 
+void ConstantPoolCacheEntry::set_direct_call(Bytecodes::Code invoke_code, methodHandle method) {
+  int index = Method::nonvirtual_vtable_index;
+  // index < 0; FIXME: inline and customize set_direct_or_vtable_call
+  set_direct_or_vtable_call(invoke_code, method, index);
+}
 
-void ConstantPoolCacheEntry::set_interface_call(methodHandle method, int index) {
+void ConstantPoolCacheEntry::set_vtable_call(Bytecodes::Code invoke_code, methodHandle method, int index) {
+  // either the method is a miranda or its holder should accept the given index
+  assert(method->method_holder()->is_interface() || method->method_holder()->verify_vtable_index(index), "");
+  // index >= 0; FIXME: inline and customize set_direct_or_vtable_call
+  set_direct_or_vtable_call(invoke_code, method, index);
+}
+
+void ConstantPoolCacheEntry::set_itable_call(Bytecodes::Code invoke_code, methodHandle method, int index) {
+  assert(method->method_holder()->verify_itable_index(index), "");
+  assert(invoke_code == Bytecodes::_invokeinterface, "");
   InstanceKlass* interf = method->method_holder();
   assert(interf->is_interface(), "must be an interface");
   assert(!method->is_final_method(), "interfaces do not have final methods; cannot link to one here");
@@ -288,8 +306,8 @@ void ConstantPoolCacheEntry::set_method_handle_common(constantPoolHandle cpool,
   if (TraceInvokeDynamic) {
     tty->print_cr("set_method_handle bc=%d appendix="PTR_FORMAT"%s method_type="PTR_FORMAT"%s method="PTR_FORMAT" ",
                   invoke_code,
-                  (intptr_t)appendix(),    (has_appendix    ? "" : " (unused)"),
-                  (intptr_t)method_type(), (has_method_type ? "" : " (unused)"),
+                  (void *)appendix(),    (has_appendix    ? "" : " (unused)"),
+                  (void *)method_type(), (has_method_type ? "" : " (unused)"),
                   (intptr_t)adapter());
     adapter->print();
     if (has_appendix)  appendix()->print();

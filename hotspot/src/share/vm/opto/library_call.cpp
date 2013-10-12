@@ -32,6 +32,7 @@
 #include "opto/callGenerator.hpp"
 #include "opto/cfgnode.hpp"
 #include "opto/idealKit.hpp"
+#include "opto/mathexactnode.hpp"
 #include "opto/mulnode.hpp"
 #include "opto/parse.hpp"
 #include "opto/runtime.hpp"
@@ -46,19 +47,22 @@ class LibraryIntrinsic : public InlineCallGenerator {
  private:
   bool             _is_virtual;
   bool             _is_predicted;
+  bool             _does_virtual_dispatch;
   vmIntrinsics::ID _intrinsic_id;
 
  public:
-  LibraryIntrinsic(ciMethod* m, bool is_virtual, bool is_predicted, vmIntrinsics::ID id)
+  LibraryIntrinsic(ciMethod* m, bool is_virtual, bool is_predicted, bool does_virtual_dispatch, vmIntrinsics::ID id)
     : InlineCallGenerator(m),
       _is_virtual(is_virtual),
       _is_predicted(is_predicted),
+      _does_virtual_dispatch(does_virtual_dispatch),
       _intrinsic_id(id)
   {
   }
   virtual bool is_intrinsic() const { return true; }
   virtual bool is_virtual()   const { return _is_virtual; }
   virtual bool is_predicted()   const { return _is_predicted; }
+  virtual bool does_virtual_dispatch()   const { return _does_virtual_dispatch; }
   virtual JVMState* generate(JVMState* jvms);
   virtual Node* generate_predicate(JVMState* jvms);
   vmIntrinsics::ID intrinsic_id() const { return _intrinsic_id; }
@@ -199,6 +203,8 @@ class LibraryCallKit : public GraphKit {
   bool inline_math_native(vmIntrinsics::ID id);
   bool inline_trig(vmIntrinsics::ID id);
   bool inline_math(vmIntrinsics::ID id);
+  bool inline_math_mathExact(Node* math);
+  bool inline_math_addExact();
   bool inline_exp();
   bool inline_pow();
   void finish_pow_exp(Node* result, Node* x, Node* y, const TypeFunc* call_type, address funcAddr, const char* funcName);
@@ -352,6 +358,7 @@ CallGenerator* Compile::make_vm_intrinsic(ciMethod* m, bool is_virtual) {
   }
 
   bool is_predicted = false;
+  bool does_virtual_dispatch = false;
 
   switch (id) {
   case vmIntrinsics::_compareTo:
@@ -378,8 +385,10 @@ CallGenerator* Compile::make_vm_intrinsic(ciMethod* m, bool is_virtual) {
     break;
   case vmIntrinsics::_hashCode:
     if (!InlineObjectHash)  return NULL;
+    does_virtual_dispatch = true;
     break;
   case vmIntrinsics::_clone:
+    does_virtual_dispatch = true;
   case vmIntrinsics::_copyOf:
   case vmIntrinsics::_copyOfRange:
     if (!InlineObjectCopy)  return NULL;
@@ -498,6 +507,15 @@ CallGenerator* Compile::make_vm_intrinsic(ciMethod* m, bool is_virtual) {
     if (!UseCRC32Intrinsics) return NULL;
     break;
 
+  case vmIntrinsics::_addExact:
+    if (!Matcher::match_rule_supported(Op_AddExactI)) {
+      return NULL;
+    }
+    if (!UseMathExactIntrinsics) {
+      return NULL;
+    }
+    break;
+
  default:
     assert(id <= vmIntrinsics::LAST_COMPILER_INLINE, "caller responsibility");
     assert(id != vmIntrinsics::_Object_init && id != vmIntrinsics::_invoke, "enum out of order?");
@@ -529,7 +547,7 @@ CallGenerator* Compile::make_vm_intrinsic(ciMethod* m, bool is_virtual) {
     if (!InlineUnsafeOps)  return NULL;
   }
 
-  return new LibraryIntrinsic(m, is_virtual, is_predicted, (vmIntrinsics::ID) id);
+  return new LibraryIntrinsic(m, is_virtual, is_predicted, does_virtual_dispatch, (vmIntrinsics::ID) id);
 }
 
 //----------------------register_library_intrinsics-----------------------
@@ -543,7 +561,7 @@ JVMState* LibraryIntrinsic::generate(JVMState* jvms) {
   Compile* C = kit.C;
   int nodes = C->unique();
 #ifndef PRODUCT
-  if ((PrintIntrinsics || PrintInlining NOT_PRODUCT( || PrintOptoInlining) ) && Verbose) {
+  if ((C->print_intrinsics() || C->print_inlining()) && Verbose) {
     char buf[1000];
     const char* str = vmIntrinsics::short_name_as_C_string(intrinsic_id(), buf, sizeof(buf));
     tty->print_cr("Intrinsic %s", str);
@@ -554,7 +572,7 @@ JVMState* LibraryIntrinsic::generate(JVMState* jvms) {
 
   // Try to inline the intrinsic.
   if (kit.try_to_inline()) {
-    if (PrintIntrinsics || PrintInlining NOT_PRODUCT( || PrintOptoInlining) ) {
+    if (C->print_intrinsics() || C->print_inlining()) {
       C->print_inlining(callee, jvms->depth() - 1, bci, is_virtual() ? "(intrinsic, virtual)" : "(intrinsic)");
     }
     C->gather_intrinsic_statistics(intrinsic_id(), is_virtual(), Compile::_intrinsic_worked);
@@ -570,7 +588,7 @@ JVMState* LibraryIntrinsic::generate(JVMState* jvms) {
   }
 
   // The intrinsic bailed out
-  if (PrintIntrinsics || PrintInlining NOT_PRODUCT( || PrintOptoInlining) ) {
+  if (C->print_intrinsics() || C->print_inlining()) {
     if (jvms->has_method()) {
       // Not a root compile.
       const char* msg = is_virtual() ? "failed to inline (intrinsic, virtual)" : "failed to inline (intrinsic)";
@@ -592,7 +610,7 @@ Node* LibraryIntrinsic::generate_predicate(JVMState* jvms) {
   int nodes = C->unique();
 #ifndef PRODUCT
   assert(is_predicted(), "sanity");
-  if ((PrintIntrinsics || PrintInlining NOT_PRODUCT( || PrintOptoInlining) ) && Verbose) {
+  if ((C->print_intrinsics() || C->print_inlining()) && Verbose) {
     char buf[1000];
     const char* str = vmIntrinsics::short_name_as_C_string(intrinsic_id(), buf, sizeof(buf));
     tty->print_cr("Predicate for intrinsic %s", str);
@@ -603,7 +621,7 @@ Node* LibraryIntrinsic::generate_predicate(JVMState* jvms) {
 
   Node* slow_ctl = kit.try_to_predicate();
   if (!kit.failing()) {
-    if (PrintIntrinsics || PrintInlining NOT_PRODUCT( || PrintOptoInlining) ) {
+    if (C->print_intrinsics() || C->print_inlining()) {
       C->print_inlining(callee, jvms->depth() - 1, bci, is_virtual() ? "(intrinsic, virtual)" : "(intrinsic)");
     }
     C->gather_intrinsic_statistics(intrinsic_id(), is_virtual(), Compile::_intrinsic_worked);
@@ -617,7 +635,7 @@ Node* LibraryIntrinsic::generate_predicate(JVMState* jvms) {
   }
 
   // The intrinsic bailed out
-  if (PrintIntrinsics || PrintInlining NOT_PRODUCT( || PrintOptoInlining) ) {
+  if (C->print_intrinsics() || C->print_inlining()) {
     if (jvms->has_method()) {
       // Not a root compile.
       const char* msg = "failed to generate predicate for intrinsic";
@@ -667,6 +685,8 @@ bool LibraryCallKit::try_to_inline() {
 
   case vmIntrinsics::_min:
   case vmIntrinsics::_max:                      return inline_min_max(intrinsic_id());
+
+  case vmIntrinsics::_addExact:                 return inline_math_addExact();
 
   case vmIntrinsics::_arraycopy:                return inline_arraycopy();
 
@@ -1911,6 +1931,45 @@ bool LibraryCallKit::inline_min_max(vmIntrinsics::ID id) {
   return true;
 }
 
+bool LibraryCallKit::inline_math_mathExact(Node* math) {
+  Node* result = _gvn.transform( new(C) ProjNode(math, MathExactNode::result_proj_node));
+  Node* flags = _gvn.transform( new(C) FlagsProjNode(math, MathExactNode::flags_proj_node));
+
+  Node* bol = _gvn.transform( new (C) BoolNode(flags, BoolTest::overflow) );
+  IfNode* check = create_and_map_if(control(), bol, PROB_UNLIKELY_MAG(3), COUNT_UNKNOWN);
+  Node* fast_path = _gvn.transform( new (C) IfFalseNode(check));
+  Node* slow_path = _gvn.transform( new (C) IfTrueNode(check) );
+
+  {
+    PreserveJVMState pjvms(this);
+    PreserveReexecuteState preexecs(this);
+    jvms()->set_should_reexecute(true);
+
+    set_control(slow_path);
+    set_i_o(i_o());
+
+    uncommon_trap(Deoptimization::Reason_intrinsic,
+                  Deoptimization::Action_none);
+  }
+
+  set_control(fast_path);
+  set_result(result);
+  return true;
+}
+
+bool LibraryCallKit::inline_math_addExact() {
+  Node* arg1 = argument(0);
+  Node* arg2 = argument(1);
+
+  Node* add = _gvn.transform( new(C) AddExactINode(NULL, arg1, arg2) );
+  if (add->Opcode() == Op_AddExactI) {
+    return inline_math_mathExact(add);
+  } else {
+    set_result(add);
+  }
+  return true;
+}
+
 Node*
 LibraryCallKit::generate_min_max(vmIntrinsics::ID id, Node* x0, Node* y0) {
   // These are the candidate return value:
@@ -2299,7 +2358,7 @@ const TypeOopPtr* LibraryCallKit::sharpen_unsafe_type(Compile::AliasType* alias_
     const TypeOopPtr* tjp = TypeOopPtr::make_from_klass(sharpened_klass);
 
 #ifndef PRODUCT
-    if (PrintIntrinsics || PrintInlining || PrintOptoInlining) {
+    if (C->print_intrinsics() || C->print_inlining()) {
       tty->print("  from base type: ");  adr_type->dump();
       tty->print("  sharpened value: ");  tjp->dump();
     }
@@ -3260,7 +3319,7 @@ bool LibraryCallKit::inline_native_Class_query(vmIntrinsics::ID id) {
   if (mirror_con == NULL)  return false;  // cannot happen?
 
 #ifndef PRODUCT
-  if (PrintIntrinsics || PrintInlining || PrintOptoInlining) {
+  if (C->print_intrinsics() || C->print_inlining()) {
     ciType* k = mirror_con->java_mirror_type();
     if (k) {
       tty->print("Inlining %s on constant Class ", vmIntrinsics::name_at(intrinsic_id()));
@@ -3734,6 +3793,8 @@ Node* LibraryCallKit::generate_virtual_guard(Node* obj_klass,
                                              RegionNode* slow_region) {
   ciMethod* method = callee();
   int vtable_index = method->vtable_index();
+  assert(vtable_index >= 0 || vtable_index == Method::nonvirtual_vtable_index,
+         err_msg_res("bad index %d", vtable_index));
   // Get the Method* out of the appropriate vtable entry.
   int entry_offset  = (InstanceKlass::vtable_start_offset() +
                      vtable_index*vtableEntry::size()) * wordSize +
@@ -3784,6 +3845,8 @@ LibraryCallKit::generate_method_call(vmIntrinsics::ID method_id, bool is_virtual
       // so the vtable index is fixed.
       // No need to use the linkResolver to get it.
        vtable_index = method->vtable_index();
+       assert(vtable_index >= 0 || vtable_index == Method::nonvirtual_vtable_index,
+              err_msg_res("bad index %d", vtable_index));
     }
     slow_call = new(C) CallDynamicJavaNode(tf,
                           SharedRuntime::get_resolve_virtual_call_stub(),
@@ -3948,14 +4011,14 @@ bool LibraryCallKit::inline_native_getClass() {
 // caller sensitive methods.
 bool LibraryCallKit::inline_native_Reflection_getCallerClass() {
 #ifndef PRODUCT
-  if ((PrintIntrinsics || PrintInlining || PrintOptoInlining) && Verbose) {
+  if ((C->print_intrinsics() || C->print_inlining()) && Verbose) {
     tty->print_cr("Attempting to inline sun.reflect.Reflection.getCallerClass");
   }
 #endif
 
   if (!jvms()->has_method()) {
 #ifndef PRODUCT
-    if ((PrintIntrinsics || PrintInlining || PrintOptoInlining) && Verbose) {
+    if ((C->print_intrinsics() || C->print_inlining()) && Verbose) {
       tty->print_cr("  Bailing out because intrinsic was inlined at top level");
     }
 #endif
@@ -3979,7 +4042,7 @@ bool LibraryCallKit::inline_native_Reflection_getCallerClass() {
       // Frame 0 and 1 must be caller sensitive (see JVM_GetCallerClass).
       if (!m->caller_sensitive()) {
 #ifndef PRODUCT
-        if ((PrintIntrinsics || PrintInlining || PrintOptoInlining) && Verbose) {
+        if ((C->print_intrinsics() || C->print_inlining()) && Verbose) {
           tty->print_cr("  Bailing out: CallerSensitive annotation expected at frame %d", n);
         }
 #endif
@@ -3995,7 +4058,7 @@ bool LibraryCallKit::inline_native_Reflection_getCallerClass() {
         set_result(makecon(TypeInstPtr::make(caller_mirror)));
 
 #ifndef PRODUCT
-        if ((PrintIntrinsics || PrintInlining || PrintOptoInlining) && Verbose) {
+        if ((C->print_intrinsics() || C->print_inlining()) && Verbose) {
           tty->print_cr("  Succeeded: caller = %d) %s.%s, JVMS depth = %d", n, caller_klass->name()->as_utf8(), caller_jvms->method()->name()->as_utf8(), jvms()->depth());
           tty->print_cr("  JVM state at this point:");
           for (int i = jvms()->depth(), n = 1; i >= 1; i--, n++) {
@@ -4011,7 +4074,7 @@ bool LibraryCallKit::inline_native_Reflection_getCallerClass() {
   }
 
 #ifndef PRODUCT
-  if ((PrintIntrinsics || PrintInlining || PrintOptoInlining) && Verbose) {
+  if ((C->print_intrinsics() || C->print_inlining()) && Verbose) {
     tty->print_cr("  Bailing out because caller depth exceeded inlining depth = %d", jvms()->depth());
     tty->print_cr("  JVM state at this point:");
     for (int i = jvms()->depth(), n = 1; i >= 1; i--, n++) {
@@ -4204,7 +4267,7 @@ void LibraryCallKit::copy_to_clone(Node* obj, Node* alloc_obj, Node* obj_size, b
   // 12 - 64-bit VM, compressed klass
   // 16 - 64-bit VM, normal klass
   if (base_off % BytesPerLong != 0) {
-    assert(UseCompressedKlassPointers, "");
+    assert(UseCompressedClassPointers, "");
     if (is_array) {
       // Exclude length to copy by 8 bytes words.
       base_off += sizeof(int);

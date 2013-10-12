@@ -52,6 +52,11 @@ extern "C" void bad_compiled_vtable_index(JavaThread* thread, oopDesc* receiver,
 VtableStub* VtableStubs::create_vtable_stub(int vtable_index) {
   const int sparc_code_length = VtableStub::pd_code_size_limit(true);
   VtableStub* s = new(sparc_code_length) VtableStub(true, vtable_index);
+  // Can be NULL if there is no free space in the code cache.
+  if (s == NULL) {
+    return NULL;
+  }
+
   ResourceMark rm;
   CodeBuffer cb(s->entry_point(), sparc_code_length);
   MacroAssembler* masm = new MacroAssembler(&cb);
@@ -125,6 +130,11 @@ VtableStub* VtableStubs::create_vtable_stub(int vtable_index) {
 VtableStub* VtableStubs::create_itable_stub(int itable_index) {
   const int sparc_code_length = VtableStub::pd_code_size_limit(false);
   VtableStub* s = new(sparc_code_length) VtableStub(false, itable_index);
+  // Can be NULL if there is no free space in the code cache.
+  if (s == NULL) {
+    return NULL;
+  }
+
   ResourceMark rm;
   CodeBuffer cb(s->entry_point(), sparc_code_length);
   MacroAssembler* masm = new MacroAssembler(&cb);
@@ -218,13 +228,13 @@ int VtableStub::pd_code_size_limit(bool is_vtable_stub) {
       // ld;ld;ld,jmp,nop
       const int basic = 5*BytesPerInstWord +
                         // shift;add for load_klass (only shift with zero heap based)
-                        (UseCompressedKlassPointers ?
+                        (UseCompressedClassPointers ?
                           MacroAssembler::instr_size_for_decode_klass_not_null() : 0);
       return basic + slop;
     } else {
       const int basic = (28 LP64_ONLY(+ 6)) * BytesPerInstWord +
                         // shift;add for load_klass (only shift with zero heap based)
-                        (UseCompressedKlassPointers ?
+                        (UseCompressedClassPointers ?
                           MacroAssembler::instr_size_for_decode_klass_not_null() : 0);
       return (basic + slop);
     }

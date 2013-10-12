@@ -144,7 +144,7 @@ public:
   void set_os_lib(void* os_lib)             { _os_lib = os_lib; }
   AgentLibrary* next() const                { return _next; }
   bool is_static_lib() const                { return _is_static_lib; }
-  void set_static_lib(bool static_lib)      { _is_static_lib = static_lib; }
+  void set_static_lib(bool is_static_lib)   { _is_static_lib = is_static_lib; }
   bool valid()                              { return (_state == agent_valid); }
   void set_valid()                          { _state = agent_valid; }
   void set_invalid()                        { _state = agent_invalid; }
@@ -280,6 +280,9 @@ class Arguments : AllStatic {
   // Option flags
   static bool   _has_profile;
   static const char*  _gc_log_filename;
+  // Value of the conservative maximum heap alignment needed
+  static size_t  _conservative_max_heap_alignment;
+
   static uintx  _min_heap_size;
 
   // -Xrun arguments
@@ -327,6 +330,7 @@ class Arguments : AllStatic {
   // Garbage-First (UseG1GC)
   static void set_g1_gc_flags();
   // GC ergonomics
+  static void set_conservative_max_heap_alignment();
   static void set_use_compressed_oops();
   static void set_use_compressed_klass_ptrs();
   static void set_ergonomics_flags();
@@ -356,15 +360,15 @@ class Arguments : AllStatic {
 
   // Argument parsing
   static void do_pd_flag_adjustments();
-  static bool parse_argument(const char* arg, FlagValueOrigin origin);
-  static bool process_argument(const char* arg, jboolean ignore_unrecognized, FlagValueOrigin origin);
+  static bool parse_argument(const char* arg, Flag::Flags origin);
+  static bool process_argument(const char* arg, jboolean ignore_unrecognized, Flag::Flags origin);
   static void process_java_launcher_argument(const char*, void*);
   static void process_java_compiler_argument(char* arg);
   static jint parse_options_environment_variable(const char* name, SysClassPath* scp_p, bool* scp_assembly_required_p);
   static jint parse_java_tool_options_environment_variable(SysClassPath* scp_p, bool* scp_assembly_required_p);
   static jint parse_java_options_environment_variable(SysClassPath* scp_p, bool* scp_assembly_required_p);
   static jint parse_vm_init_args(const JavaVMInitArgs* args);
-  static jint parse_each_vm_init_arg(const JavaVMInitArgs* args, SysClassPath* scp_p, bool* scp_assembly_required_p, FlagValueOrigin origin);
+  static jint parse_each_vm_init_arg(const JavaVMInitArgs* args, SysClassPath* scp_p, bool* scp_assembly_required_p, Flag::Flags origin);
   static jint finalize_vm_init_args(SysClassPath* scp_p, bool scp_assembly_required);
   static bool is_bad_option(const JavaVMOption* option, jboolean ignore,
     const char* option_type);
@@ -430,8 +434,10 @@ class Arguments : AllStatic {
   static char*  SharedArchivePath;
 
  public:
-  // Parses the arguments
+  // Parses the arguments, first phase
   static jint parse(const JavaVMInitArgs* args);
+  // Apply ergonomics
+  static jint apply_ergo();
   // Adjusts the arguments after the OS have adjusted the arguments
   static jint adjust_after_os();
   // Check for consistency in the selection of the garbage collector.
@@ -444,6 +450,10 @@ class Arguments : AllStatic {
   static bool check_stack_pages();
   // Used by os_solaris
   static bool process_settings_file(const char* file_name, bool should_exist, jboolean ignore_unrecognized);
+
+  static size_t conservative_max_heap_alignment() { return _conservative_max_heap_alignment; }
+  // Return the maximum size a heap with compressed oops can take
+  static size_t max_heap_for_compressed_oops();
 
   // return a char* array containing all options
   static char** jvm_flags_array()          { return _jvm_flags_array; }

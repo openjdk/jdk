@@ -98,6 +98,9 @@ class CollectorPolicy : public CHeapObj<mtGC> {
   {}
 
  public:
+  // Return maximum heap alignment that may be imposed by the policy
+  static size_t compute_max_alignment();
+
   void set_min_alignment(size_t align)         { _min_alignment = align; }
   size_t min_alignment()                       { return _min_alignment; }
   void set_max_alignment(size_t align)         { _max_alignment = align; }
@@ -233,9 +236,6 @@ class GenCollectorPolicy : public CollectorPolicy {
 
   // Try to allocate space by expanding the heap.
   virtual HeapWord* expand_heap_and_allocate(size_t size, bool is_tlab);
-
-  // compute max heap alignment
-  size_t compute_max_alignment();
 
  // Scale the base_size by NewRation according to
  //     result = base_size / (NewRatio + 1)

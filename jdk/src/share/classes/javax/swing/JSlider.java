@@ -55,7 +55,7 @@ import java.beans.*;
  * <p>
  * For further information and examples see
  * <a
- href="http://java.sun.com/docs/books/tutorial/uiswing/components/slider.html">How to Use Sliders</a>,
+ href="http://docs.oracle.com/javase/tutorial/uiswing/components/slider.html">How to Use Sliders</a>,
  * a section in <em>The Java Tutorial.</em>
  * <p>
  * <strong>Warning:</strong> Swing is not thread safe. For more
@@ -68,7 +68,7 @@ import java.beans.*;
  * future Swing releases. The current serialization support is
  * appropriate for short term storage or RMI between applications running
  * the same version of Swing.  As of 1.4, support for long term storage
- * of all JavaBeans<sup><font size="-2">TM</font></sup>
+ * of all JavaBeans&trade;
  * has been added to the <code>java.beans</code> package.
  * Please see {@link java.beans.XMLEncoder}.
  *
@@ -289,9 +289,9 @@ public class JSlider extends JComponent implements SwingConstants, Accessible {
 
 
     /**
-     * Gets the UI object which implements the L&F for this component.
+     * Gets the UI object which implements the L&amp;F for this component.
      *
-     * @return the SliderUI object that implements the Slider L&F
+     * @return the SliderUI object that implements the Slider L&amp;F
      */
     public SliderUI getUI() {
         return(SliderUI)ui;
@@ -299,9 +299,9 @@ public class JSlider extends JComponent implements SwingConstants, Accessible {
 
 
     /**
-     * Sets the UI object which implements the L&F for this component.
+     * Sets the UI object which implements the L&amp;F for this component.
      *
-     * @param ui the SliderUI L&F object
+     * @param ui the SliderUI L&amp;F object
      * @see UIDefaults#getUI
      * @beaninfo
      *        bound: true
@@ -330,7 +330,7 @@ public class JSlider extends JComponent implements SwingConstants, Accessible {
 
 
     /**
-     * Returns the name of the L&F class that renders this component.
+     * Returns the name of the L&amp;F class that renders this component.
      *
      * @return "SliderUI"
      * @see JComponent#getUIClassID
@@ -1425,7 +1425,7 @@ public class JSlider extends JComponent implements SwingConstants, Accessible {
      * future Swing releases. The current serialization support is
      * appropriate for short term storage or RMI between applications running
      * the same version of Swing.  As of 1.4, support for long term storage
-     * of all JavaBeans<sup><font size="-2">TM</font></sup>
+     * of all JavaBeans&trade;
      * has been added to the <code>java.beans</code> package.
      * Please see {@link java.beans.XMLEncoder}.
      */

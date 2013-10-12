@@ -85,7 +85,7 @@ import sun.util.logging.PlatformLogger;
  * <p>
  * <img src="doc-files/MultiScreen.gif"
  * alt="Diagram shows virtual device containing 4 physical screens. Primary physical screen shows coords (0,0), other screen shows (-80,-100)."
- * ALIGN=center HSPACE=10 VSPACE=7>
+ * style="float:center; margin: 7px 10px;">
  * <p>
  * In such an environment, when calling {@code setLocation},
  * you must pass a virtual coordinate to this method.  Similarly,
@@ -226,6 +226,7 @@ public class Window extends Container implements Accessible {
     boolean     syncLWRequests = false;
     transient boolean beforeFirstShow = true;
     private transient boolean disposing = false;
+    transient WindowDisposerRecord disposerRecord = null;
 
     static final int OPENED = 0x01;
 
@@ -437,18 +438,28 @@ public class Window extends Container implements Accessible {
 
     transient Object anchor = new Object();
     static class WindowDisposerRecord implements sun.java2d.DisposerRecord {
-        final WeakReference<Window> owner;
+        WeakReference<Window> owner;
         final WeakReference<Window> weakThis;
         final WeakReference<AppContext> context;
+
         WindowDisposerRecord(AppContext context, Window victim) {
-            owner = new WeakReference<Window>(victim.getOwner());
             weakThis = victim.weakThis;
             this.context = new WeakReference<AppContext>(context);
         }
+
+        public void updateOwner() {
+            Window victim = weakThis.get();
+            owner = (victim == null)
+                    ? null
+                    : new WeakReference<Window>(victim.getOwner());
+        }
+
         public void dispose() {
-            Window parent = owner.get();
-            if (parent != null) {
-                parent.removeOwnedWindow(weakThis);
+            if (owner != null) {
+                Window parent = owner.get();
+                if (parent != null) {
+                    parent.removeOwnedWindow(weakThis);
+                }
             }
             AppContext ac = context.get();
             if (null != ac) {
@@ -502,6 +513,8 @@ public class Window extends Container implements Accessible {
         }
 
         modalExclusionType = Dialog.ModalExclusionType.NO_EXCLUDE;
+        disposerRecord = new WindowDisposerRecord(appContext, this);
+        sun.java2d.Disposer.addRecord(anchor, disposerRecord);
 
         SunToolkit.checkAndSetPolicy(this);
     }
@@ -617,11 +630,16 @@ public class Window extends Container implements Accessible {
         this.parent = owner;
         if (owner != null) {
             owner.addOwnedWindow(weakThis);
+            if (owner.isAlwaysOnTop()) {
+                try {
+                    setAlwaysOnTop(true);
+                } catch (SecurityException ignore) {
+                }
+            }
         }
 
-        // Fix for 6758673: this call is moved here from init(gc), because
         // WindowDisposerRecord requires a proper value of parent field.
-        Disposer.addRecord(anchor, new WindowDisposerRecord(appContext, this));
+        disposerRecord.updateOwner();
     }
 
     /**
@@ -1022,7 +1040,9 @@ public class Window extends Container implements Accessible {
             closeSplashScreen();
             Dialog.checkShouldBeBlocked(this);
             super.show();
-            locationByPlatform = false;
+            synchronized (getTreeLock()) {
+                this.locationByPlatform = false;
+            }
             for (int i = 0; i < ownedWindowList.size(); i++) {
                 Window child = ownedWindowList.elementAt(i).get();
                 if ((child != null) && child.showWithParent) {
@@ -1075,7 +1095,6 @@ public class Window extends Container implements Accessible {
      * Hide this Window, its subcomponents, and all of its owned children.
      * The Window and its subcomponents can be made visible again
      * with a call to {@code show}.
-     * </p>
      * @see #show
      * @see #dispose
      * @deprecated As of JDK version 1.5, replaced by
@@ -1096,6 +1115,9 @@ public class Window extends Container implements Accessible {
             modalBlocker.unblockWindow(this);
         }
         super.hide();
+        synchronized (getTreeLock()) {
+            this.locationByPlatform = false;
+        }
     }
 
     final void clearMostRecentFocusOwnerOnHide() {
@@ -2181,8 +2203,8 @@ public class Window extends Container implements Accessible {
      * windows.  To detect if always-on-top windows are supported by the
      * current platform, use {@link Toolkit#isAlwaysOnTopSupported()} and
      * {@link Window#isAlwaysOnTopSupported()}.  If always-on-top mode
-     * isn't supported by the toolkit or for this window, calling this
-     * method has no effect.
+     * isn't supported for this window or this window's toolkit does not
+     * support always-on-top windows, calling this method has no effect.
      * <p>
      * If a SecurityManager is installed, the calling thread must be
      * granted the AWTPermission "setWindowAlwaysOnTop" in
@@ -2195,11 +2217,13 @@ public class Window extends Container implements Accessible {
      *        windows
      * @throws SecurityException if the calling thread does not have
      *         permission to set the value of always-on-top property
+     *
      * @see #isAlwaysOnTop
      * @see #toFront
      * @see #toBack
      * @see AWTPermission
      * @see #isAlwaysOnTopSupported
+     * @see #getToolkit
      * @see Toolkit#isAlwaysOnTopSupported
      * @since 1.5
      */
@@ -2225,6 +2249,15 @@ public class Window extends Container implements Accessible {
             }
             firePropertyChange("alwaysOnTop", oldAlwaysOnTop, alwaysOnTop);
         }
+        for (WeakReference<Window> ref : ownedWindowList) {
+            Window window = ref.get();
+            if (window != null) {
+                try {
+                    window.setAlwaysOnTop(alwaysOnTop);
+                } catch (SecurityException ignore) {
+                }
+            }
+        }
     }
 
     /**
@@ -2232,11 +2265,13 @@ public class Window extends Container implements Accessible {
      * window. Some platforms may not support always-on-top windows, some
      * may support only some kinds of top-level windows; for example,
      * a platform may not support always-on-top modal dialogs.
-     * @return {@code true}, if the always-on-top mode is
-     *         supported by the toolkit and for this window,
-     *         {@code false}, if always-on-top mode is not supported
-     *         for this window or toolkit doesn't support always-on-top windows.
+     *
+     * @return {@code true}, if the always-on-top mode is supported for
+     *         this window and this window's toolkit supports always-on-top windows,
+     *         {@code false} otherwise
+     *
      * @see #setAlwaysOnTop(boolean)
+     * @see #getToolkit
      * @see Toolkit#isAlwaysOnTopSupported
      * @since 1.6
      */
@@ -2775,6 +2810,7 @@ public class Window extends Container implements Accessible {
     void connectOwnedWindow(Window child) {
         child.parent = this;
         addOwnedWindow(child.weakThis);
+        child.disposerRecord.updateOwner();
     }
 
     private void addToWindowList() {
@@ -2937,7 +2973,8 @@ public class Window extends Container implements Accessible {
         weakThis = new WeakReference<>(this);
 
         anchor = new Object();
-        sun.java2d.Disposer.addRecord(anchor, new WindowDisposerRecord(appContext, this));
+        disposerRecord = new WindowDisposerRecord(appContext, this);
+        sun.java2d.Disposer.addRecord(anchor, disposerRecord);
 
         addToWindowList();
         initGC(null);
@@ -3373,27 +3410,27 @@ public class Window extends Container implements Accessible {
      * this property of the Window.
      * <p>
      * For example, after the following code is executed:
-     * <pre><blockquote>
+     * <pre>
      * setLocationByPlatform(true);
      * setVisible(true);
      * boolean flag = isLocationByPlatform();
-     * </blockquote></pre>
+     * </pre>
      * The window will be shown at platform's default location and
      * {@code flag} will be {@code false}.
      * <p>
      * In the following sample:
-     * <pre><blockquote>
+     * <pre>
      * setLocationByPlatform(true);
      * setLocation(10, 10);
      * boolean flag = isLocationByPlatform();
      * setVisible(true);
-     * </blockquote></pre>
+     * </pre>
      * The window will be shown at (10, 10) and {@code flag} will be
      * {@code false}.
      *
      * @param locationByPlatform {@code true} if this Window should appear
      *        at the default location, {@code false} if at the current location
-     * @throws {@code IllegalComponentStateException} if the window
+     * @throws IllegalComponentStateException if the window
      *         is showing on screen and locationByPlatform is {@code true}.
      * @see #setLocation
      * @see #isShowing

@@ -54,8 +54,7 @@ import sun.swing.UIAction;
  * <p>
  * For adding specific actions,
  * overide <code>installKeyboardActions</code> to add actions in response to
- * KeyStroke bindings. See the article <a href="http://java.sun.com/products/jfc/tsc/special_report/kestrel/keybindings.html">Keyboard Bindings in Swing</a>
- * at <a href="http://java.sun.com/products/jfc/tsc"><em>The Swing Connection</em></a>.
+ * KeyStroke bindings. See the article <a href="http://docs.oracle.com/javase/tutorial/uiswing/misc/keybinding.html">How to Use Key Bindings</a>
  *
  * @author Arnaud Weber
  * @author Tom Santos
@@ -971,14 +970,16 @@ public class BasicComboBoxUI extends ComboBoxUI {
                     // cells, if not, this needs to loop through all.
                     value = comboBox.getModel().getElementAt(0);
                 }
-                if (value == null) {
-                    value = " ";
-                } else if (value instanceof String && "".equals(value)) {
-                    value = " ";
-                }
                 Component component = renderer.
                         getListCellRendererComponent(listBox, value, -1,
                                                      false, false);
+                if (component instanceof JLabel) {
+                    JLabel label = (JLabel) component;
+                    String text = label.getText();
+                    if ((text == null) || text.isEmpty()) {
+                        label.setText(" ");
+                    }
+                }
                 if (component instanceof JComponent) {
                     component.setFont(comboBox.getFont());
                 }

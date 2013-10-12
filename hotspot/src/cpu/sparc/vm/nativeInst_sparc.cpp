@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -358,7 +358,7 @@ void NativeMovConstReg::set_data(intptr_t x) {
         oop_Relocation *r = iter.oop_reloc();
         if (oop_addr == NULL) {
           oop_addr = r->oop_addr();
-          *oop_addr = (oop)x;
+          *oop_addr = cast_to_oop(x);
         } else {
           assert(oop_addr == r->oop_addr(), "must be only one set-oop here");
         }
@@ -478,7 +478,7 @@ void NativeMovConstRegPatching::set_data(int x) {
         oop_Relocation *r = iter.oop_reloc();
         if (oop_addr == NULL) {
           oop_addr = r->oop_addr();
-          *oop_addr = (oop)x;
+          *oop_addr = cast_to_oop(x);
         } else {
           assert(oop_addr == r->oop_addr(), "must be only one set-oop here");
         }

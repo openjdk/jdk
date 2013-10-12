@@ -25,6 +25,8 @@
 
 package javax.swing;
 
+import sun.swing.JLightweightFrame;
+
 import java.awt.*;
 import java.awt.event.*;
 import java.awt.peer.ComponentPeer;
@@ -92,7 +94,7 @@ import java.io.Serializable;
  * future Swing releases. The current serialization support is
  * appropriate for short term storage or RMI between applications running
  * the same version of Swing.  As of 1.4, support for long term storage
- * of all JavaBeans<sup><font size="-2">TM</font></sup>
+ * of all JavaBeans&trade;
  * has been added to the <code>java.beans</code> package.
  * Please see {@link java.beans.XMLEncoder}.
  *
@@ -283,7 +285,7 @@ public class JViewport extends JComponent implements Accessible
 
 
     /**
-     * Returns the L&F object that renders this component.
+     * Returns the L&amp;F object that renders this component.
      *
      * @return a <code>ViewportUI</code> object
      * @since 1.3
@@ -294,9 +296,9 @@ public class JViewport extends JComponent implements Accessible
 
 
     /**
-     * Sets the L&F object that renders this component.
+     * Sets the L&amp;F object that renders this component.
      *
-     * @param ui  the <code>ViewportUI</code> L&F object
+     * @param ui  the <code>ViewportUI</code> L&amp;F object
      * @see UIDefaults#getUI
      * @beaninfo
      *        bound: true
@@ -321,7 +323,7 @@ public class JViewport extends JComponent implements Accessible
 
 
     /**
-     * Returns a string that specifies the name of the L&F class
+     * Returns a string that specifies the name of the L&amp;F class
      * that renders this component.
      *
      * @return the string "ViewportUI"
@@ -359,6 +361,17 @@ public class JViewport extends JComponent implements Accessible
     public void remove(Component child) {
         child.removeComponentListener(viewListener);
         super.remove(child);
+    }
+
+    @Override
+    public void addNotify() {
+        super.addNotify();
+        // JLightweightFrame does not support BLIT_SCROLL_MODE, so it should be replaced
+        Window rootWindow = SwingUtilities.getWindowAncestor(this);
+        if (rootWindow instanceof JLightweightFrame
+                && getScrollMode() == BLIT_SCROLL_MODE) {
+            setScrollMode(BACKINGSTORE_SCROLL_MODE);
+        }
     }
 
 
@@ -1279,7 +1292,7 @@ public class JViewport extends JComponent implements Accessible
      * future Swing releases. The current serialization support is
      * appropriate for short term storage or RMI between applications running
      * the same version of Swing.  As of 1.4, support for long term storage
-     * of all JavaBeans<sup><font size="-2">TM</font></sup>
+     * of all JavaBeans&trade;
      * has been added to the <code>java.beans</code> package.
      * Please see {@link java.beans.XMLEncoder}.
      */
@@ -1748,7 +1761,7 @@ public class JViewport extends JComponent implements Accessible
      * future Swing releases. The current serialization support is
      * appropriate for short term storage or RMI between applications running
      * the same version of Swing.  As of 1.4, support for long term storage
-     * of all JavaBeans<sup><font size="-2">TM</font></sup>
+     * of all JavaBeans&trade;
      * has been added to the <code>java.beans</code> package.
      * Please see {@link java.beans.XMLEncoder}.
      */

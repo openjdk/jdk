@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,7 +40,7 @@ public final class SunPCSC extends Provider {
     private static final long serialVersionUID = 6168388284028876579L;
 
     public SunPCSC() {
-        super("SunPCSC", 1.7d, "Sun PC/SC provider");
+        super("SunPCSC", 1.8d, "Sun PC/SC provider");
         AccessController.doPrivileged(new PrivilegedAction<Void>() {
             public Void run() {
                 put("TerminalFactory.PC/SC", "sun.security.smartcardio.SunPCSC$Factory");

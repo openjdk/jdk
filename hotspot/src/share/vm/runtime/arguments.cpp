@@ -28,6 +28,7 @@
 #include "compiler/compilerOracle.hpp"
 #include "memory/allocation.inline.hpp"
 #include "memory/cardTableRS.hpp"
+#include "memory/genCollectedHeap.hpp"
 #include "memory/referenceProcessor.hpp"
 #include "memory/universe.inline.hpp"
 #include "oops/oop.inline.hpp"
@@ -54,6 +55,8 @@
 #endif
 #if INCLUDE_ALL_GCS
 #include "gc_implementation/concurrentMarkSweep/compactibleFreeListSpace.hpp"
+#include "gc_implementation/g1/g1CollectedHeap.inline.hpp"
+#include "gc_implementation/parallelScavenge/parallelScavengeHeap.hpp"
 #endif // INCLUDE_ALL_GCS
 
 // Note: This is a special bug reporting site for the JVM
@@ -90,6 +93,7 @@ char*  Arguments::_java_command                 = NULL;
 SystemProperty* Arguments::_system_properties   = NULL;
 const char*  Arguments::_gc_log_filename        = NULL;
 bool   Arguments::_has_profile                  = false;
+size_t Arguments::_conservative_max_heap_alignment = 0;
 uintx  Arguments::_min_heap_size                = 0;
 Arguments::Mode Arguments::_mode                = _mixed;
 bool   Arguments::_java_compiler                = false;
@@ -621,11 +625,11 @@ void Arguments::describe_range_error(ArgsRange errcode) {
   }
 }
 
-static bool set_bool_flag(char* name, bool value, FlagValueOrigin origin) {
+static bool set_bool_flag(char* name, bool value, Flag::Flags origin) {
   return CommandLineFlags::boolAtPut(name, &value, origin);
 }
 
-static bool set_fp_numeric_flag(char* name, char* value, FlagValueOrigin origin) {
+static bool set_fp_numeric_flag(char* name, char* value, Flag::Flags origin) {
   double v;
   if (sscanf(value, "%lf", &v) != 1) {
     return false;
@@ -637,7 +641,7 @@ static bool set_fp_numeric_flag(char* name, char* value, FlagValueOrigin origin)
   return false;
 }
 
-static bool set_numeric_flag(char* name, char* value, FlagValueOrigin origin) {
+static bool set_numeric_flag(char* name, char* value, Flag::Flags origin) {
   julong v;
   intx intx_v;
   bool is_neg = false;
@@ -670,14 +674,14 @@ static bool set_numeric_flag(char* name, char* value, FlagValueOrigin origin) {
   return false;
 }
 
-static bool set_string_flag(char* name, const char* value, FlagValueOrigin origin) {
+static bool set_string_flag(char* name, const char* value, Flag::Flags origin) {
   if (!CommandLineFlags::ccstrAtPut(name, &value, origin))  return false;
   // Contract:  CommandLineFlags always returns a pointer that needs freeing.
   FREE_C_HEAP_ARRAY(char, value, mtInternal);
   return true;
 }
 
-static bool append_to_string_flag(char* name, const char* new_value, FlagValueOrigin origin) {
+static bool append_to_string_flag(char* name, const char* new_value, Flag::Flags origin) {
   const char* old_value = "";
   if (!CommandLineFlags::ccstrAt(name, &old_value))  return false;
   size_t old_len = old_value != NULL ? strlen(old_value) : 0;
@@ -705,7 +709,7 @@ static bool append_to_string_flag(char* name, const char* new_value, FlagValueOr
   return true;
 }
 
-bool Arguments::parse_argument(const char* arg, FlagValueOrigin origin) {
+bool Arguments::parse_argument(const char* arg, Flag::Flags origin) {
 
   // range of acceptable characters spelled out for portability reasons
 #define NAME_RANGE  "[abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_]"
@@ -846,7 +850,7 @@ void Arguments::print_jvm_args_on(outputStream* st) {
 }
 
 bool Arguments::process_argument(const char* arg,
-    jboolean ignore_unrecognized, FlagValueOrigin origin) {
+    jboolean ignore_unrecognized, Flag::Flags origin) {
 
   JDK_Version since = JDK_Version();
 
@@ -900,7 +904,7 @@ bool Arguments::process_argument(const char* arg,
       jio_fprintf(defaultStream::error_stream(),
                   "Did you mean '%s%s%s'?\n",
                   (fuzzy_matched->is_bool()) ? "(+/-)" : "",
-                  fuzzy_matched->name,
+                  fuzzy_matched->_name,
                   (fuzzy_matched->is_bool()) ? "" : "=<value>");
     }
   }
@@ -948,7 +952,7 @@ bool Arguments::process_settings_file(const char* file_name, bool should_exist, 
         // this allows a way to include spaces in string-valued options
         token[pos] = '\0';
         logOption(token);
-        result &= process_argument(token, ignore_unrecognized, CONFIG_FILE);
+        result &= process_argument(token, ignore_unrecognized, Flag::CONFIG_FILE);
         build_jvm_flags(token);
         pos = 0;
         in_white_space = true;
@@ -966,7 +970,7 @@ bool Arguments::process_settings_file(const char* file_name, bool should_exist, 
   }
   if (pos > 0) {
     token[pos] = '\0';
-    result &= process_argument(token, ignore_unrecognized, CONFIG_FILE);
+    result &= process_argument(token, ignore_unrecognized, Flag::CONFIG_FILE);
     build_jvm_flags(token);
   }
   fclose(stream);
@@ -1096,6 +1100,7 @@ void Arguments::set_mode_flags(Mode mode) {
   }
 }
 
+#if defined(COMPILER2) || defined(_LP64) || !INCLUDE_CDS
 // Conflict: required to use shared spaces (-Xshare:on), but
 // incompatible command line options were chosen.
 
@@ -1108,6 +1113,7 @@ static void no_shared_spaces() {
     FLAG_SET_DEFAULT(UseSharedSpaces, false);
   }
 }
+#endif
 
 void Arguments::set_tiered_flags() {
   // With tiered, set default policy to AdvancedThresholdPolicy, which is 3.
@@ -1125,6 +1131,9 @@ void Arguments::set_tiered_flags() {
   if (!UseInterpreter) { // -Xcomp
     Tier3InvokeNotifyFreqLog = 0;
     Tier4InvocationThreshold = 0;
+  }
+  if (FLAG_IS_DEFAULT(NmethodSweepFraction)) {
+    FLAG_SET_DEFAULT(NmethodSweepFraction, 1 + ReservedCodeCacheSize / (16 * M));
   }
 }
 
@@ -1391,10 +1400,17 @@ bool verify_object_alignment() {
   return true;
 }
 
-inline uintx max_heap_for_compressed_oops() {
+uintx Arguments::max_heap_for_compressed_oops() {
   // Avoid sign flip.
   assert(OopEncodingHeapMax > (uint64_t)os::vm_page_size(), "Unusual page size");
-  LP64_ONLY(return OopEncodingHeapMax - os::vm_page_size());
+  // We need to fit both the NULL page and the heap into the memory budget, while
+  // keeping alignment constraints of the heap. To guarantee the latter, as the
+  // NULL page is located before the heap, we pad the NULL page to the conservative
+  // maximum alignment that the GC may ever impose upon the heap.
+  size_t displacement_due_to_null_page = align_size_up_(os::vm_page_size(),
+    Arguments::conservative_max_heap_alignment());
+
+  LP64_ONLY(return OopEncodingHeapMax - displacement_due_to_null_page);
   NOT_LP64(ShouldNotReachHere(); return 0);
 }
 
@@ -1439,7 +1455,7 @@ void Arguments::set_use_compressed_oops() {
     if (UseCompressedOops && !FLAG_IS_DEFAULT(UseCompressedOops)) {
       warning("Max heap size too large for Compressed Oops");
       FLAG_SET_DEFAULT(UseCompressedOops, false);
-      FLAG_SET_DEFAULT(UseCompressedKlassPointers, false);
+      FLAG_SET_DEFAULT(UseCompressedClassPointers, false);
     }
   }
 #endif // _LP64
@@ -1452,27 +1468,44 @@ void Arguments::set_use_compressed_oops() {
 void Arguments::set_use_compressed_klass_ptrs() {
 #ifndef ZERO
 #ifdef _LP64
-  // UseCompressedOops must be on for UseCompressedKlassPointers to be on.
+  // UseCompressedOops must be on for UseCompressedClassPointers to be on.
   if (!UseCompressedOops) {
-    if (UseCompressedKlassPointers) {
-      warning("UseCompressedKlassPointers requires UseCompressedOops");
+    if (UseCompressedClassPointers) {
+      warning("UseCompressedClassPointers requires UseCompressedOops");
     }
-    FLAG_SET_DEFAULT(UseCompressedKlassPointers, false);
+    FLAG_SET_DEFAULT(UseCompressedClassPointers, false);
   } else {
-    // Turn on UseCompressedKlassPointers too
-    if (FLAG_IS_DEFAULT(UseCompressedKlassPointers)) {
-      FLAG_SET_ERGO(bool, UseCompressedKlassPointers, true);
+    // Turn on UseCompressedClassPointers too
+    if (FLAG_IS_DEFAULT(UseCompressedClassPointers)) {
+      FLAG_SET_ERGO(bool, UseCompressedClassPointers, true);
     }
-    // Check the ClassMetaspaceSize to make sure we use compressed klass ptrs.
-    if (UseCompressedKlassPointers) {
-      if (ClassMetaspaceSize > KlassEncodingMetaspaceMax) {
-        warning("Class metaspace size is too large for UseCompressedKlassPointers");
-        FLAG_SET_DEFAULT(UseCompressedKlassPointers, false);
+    // Check the CompressedClassSpaceSize to make sure we use compressed klass ptrs.
+    if (UseCompressedClassPointers) {
+      if (CompressedClassSpaceSize > KlassEncodingMetaspaceMax) {
+        warning("CompressedClassSpaceSize is too large for UseCompressedClassPointers");
+        FLAG_SET_DEFAULT(UseCompressedClassPointers, false);
       }
     }
   }
 #endif // _LP64
 #endif // !ZERO
+}
+
+void Arguments::set_conservative_max_heap_alignment() {
+  // The conservative maximum required alignment for the heap is the maximum of
+  // the alignments imposed by several sources: any requirements from the heap
+  // itself, the collector policy and the maximum page size we may run the VM
+  // with.
+  size_t heap_alignment = GenCollectedHeap::conservative_max_heap_alignment();
+#if INCLUDE_ALL_GCS
+  if (UseParallelGC) {
+    heap_alignment = ParallelScavengeHeap::conservative_max_heap_alignment();
+  } else if (UseG1GC) {
+    heap_alignment = G1CollectedHeap::conservative_max_heap_alignment();
+  }
+#endif // INCLUDE_ALL_GCS
+  _conservative_max_heap_alignment = MAX3(heap_alignment, os::max_page_size(),
+    CollectorPolicy::compute_max_alignment());
 }
 
 void Arguments::set_ergonomics_flags() {
@@ -1492,16 +1525,20 @@ void Arguments::set_ergonomics_flags() {
         FLAG_SET_ERGO(bool, UseParallelGC, true);
       }
     }
-    // Shared spaces work fine with other GCs but causes bytecode rewriting
-    // to be disabled, which hurts interpreter performance and decreases
-    // server performance.   On server class machines, keep the default
-    // off unless it is asked for.  Future work: either add bytecode rewriting
-    // at link time, or rewrite bytecodes in non-shared methods.
-    if (!DumpSharedSpaces && !RequireSharedSpaces &&
-        (FLAG_IS_DEFAULT(UseSharedSpaces) || !UseSharedSpaces)) {
-      no_shared_spaces();
-    }
   }
+#ifdef COMPILER2
+  // Shared spaces work fine with other GCs but causes bytecode rewriting
+  // to be disabled, which hurts interpreter performance and decreases
+  // server performance.  When -server is specified, keep the default off
+  // unless it is asked for.  Future work: either add bytecode rewriting
+  // at link time, or rewrite bytecodes in non-shared methods.
+  if (!DumpSharedSpaces && !RequireSharedSpaces &&
+      (FLAG_IS_DEFAULT(UseSharedSpaces) || !UseSharedSpaces)) {
+    no_shared_spaces();
+  }
+#endif
+
+  set_conservative_max_heap_alignment();
 
 #ifndef ZERO
 #ifdef _LP64
@@ -1839,7 +1876,7 @@ void check_gclog_consistency() {
         (NumberOfGCLogFiles == 0)  ||
         (GCLogFileSize == 0)) {
       jio_fprintf(defaultStream::output_stream(),
-                  "To enable GC log rotation, use -Xloggc:<filename> -XX:+UseGCLogFileRotation -XX:NumberOfGCLogFiles=<num_of_files> -XX:GCLogFileSize=<num_of_size>\n"
+                  "To enable GC log rotation, use -Xloggc:<filename> -XX:+UseGCLogFileRotation -XX:NumberOfGCLogFiles=<num_of_files> -XX:GCLogFileSize=<num_of_size>[k|K|m|M|g|G]\n"
                   "where num_of_file > 0 and num_of_size > 0\n"
                   "GC log rotation is turned off\n");
       UseGCLogFileRotation = false;
@@ -1851,6 +1888,51 @@ void check_gclog_consistency() {
         jio_fprintf(defaultStream::output_stream(),
                     "GCLogFileSize changed to minimum 8K\n");
   }
+}
+
+// This function is called for -Xloggc:<filename>, it can be used
+// to check if a given file name(or string) conforms to the following
+// specification:
+// A valid string only contains "[A-Z][a-z][0-9].-_%[p|t]"
+// %p and %t only allowed once. We only limit usage of filename not path
+bool is_filename_valid(const char *file_name) {
+  const char* p = file_name;
+  char file_sep = os::file_separator()[0];
+  const char* cp;
+  // skip prefix path
+  for (cp = file_name; *cp != '\0'; cp++) {
+    if (*cp == '/' || *cp == file_sep) {
+      p = cp + 1;
+    }
+  }
+
+  int count_p = 0;
+  int count_t = 0;
+  while (*p != '\0') {
+    if ((*p >= '0' && *p <= '9') ||
+        (*p >= 'A' && *p <= 'Z') ||
+        (*p >= 'a' && *p <= 'z') ||
+         *p == '-'               ||
+         *p == '_'               ||
+         *p == '.') {
+       p++;
+       continue;
+    }
+    if (*p == '%') {
+      if(*(p + 1) == 'p') {
+        p += 2;
+        count_p ++;
+        continue;
+      }
+      if (*(p + 1) == 't') {
+        p += 2;
+        count_t ++;
+        continue;
+      }
+    }
+    return false;
+  }
+  return count_p < 2 && count_t < 2;
 }
 
 // Check consistency of GC selection
@@ -2148,8 +2230,8 @@ bool Arguments::check_vm_args_consistency() {
 
   status = status && verify_object_alignment();
 
-  status = status && verify_interval(ClassMetaspaceSize, 1*M, 3*G,
-                                      "ClassMetaspaceSize");
+  status = status && verify_interval(CompressedClassSpaceSize, 1*M, 3*G,
+                                      "CompressedClassSpaceSize");
 
   status = status && verify_interval(MarkStackSizeMax,
                                   1, (max_jint - 1), "MarkStackSizeMax");
@@ -2258,6 +2340,10 @@ bool Arguments::check_vm_args_consistency() {
                 (2*G)/M);
     status = false;
   }
+
+  status &= verify_interval(NmethodSweepFraction, 1, ReservedCodeCacheSize/K, "NmethodSweepFraction");
+  status &= verify_interval(NmethodSweepActivity, 0, 2000, "NmethodSweepActivity");
+
   return status;
 }
 
@@ -2359,24 +2445,9 @@ jint Arguments::parse_vm_init_args(const JavaVMInitArgs* args) {
   }
 
   // Parse JavaVMInitArgs structure passed in
-  result = parse_each_vm_init_arg(args, &scp, &scp_assembly_required, COMMAND_LINE);
+  result = parse_each_vm_init_arg(args, &scp, &scp_assembly_required, Flag::COMMAND_LINE);
   if (result != JNI_OK) {
     return result;
-  }
-
-  if (AggressiveOpts) {
-    // Insert alt-rt.jar between user-specified bootclasspath
-    // prefix and the default bootclasspath.  os::set_boot_path()
-    // uses meta_index_dir as the default bootclasspath directory.
-    const char* altclasses_jar = "alt-rt.jar";
-    size_t altclasses_path_len = strlen(get_meta_index_dir()) + 1 +
-                                 strlen(altclasses_jar);
-    char* altclasses_path = NEW_C_HEAP_ARRAY(char, altclasses_path_len, mtInternal);
-    strcpy(altclasses_path, get_meta_index_dir());
-    strcat(altclasses_path, altclasses_jar);
-    scp.add_suffix_to_prefix(altclasses_path);
-    scp_assembly_required = true;
-    FREE_C_HEAP_ARRAY(char, altclasses_path, mtInternal);
   }
 
   // Parse _JAVA_OPTIONS environment variable (if present) (mimics classic VM)
@@ -2446,7 +2517,7 @@ bool valid_hprof_or_jdwp_agent(char *name, bool is_path) {
 jint Arguments::parse_each_vm_init_arg(const JavaVMInitArgs* args,
                                        SysClassPath* scp_p,
                                        bool* scp_assembly_required_p,
-                                       FlagValueOrigin origin) {
+                                       Flag::Flags origin) {
   // Remaining part of option string
   const char* tail;
 
@@ -2806,6 +2877,13 @@ jint Arguments::parse_each_vm_init_arg(const JavaVMInitArgs* args,
       // ostream_init_log(), when called will use this filename
       // to initialize a fileStream.
       _gc_log_filename = strdup(tail);
+     if (!is_filename_valid(_gc_log_filename)) {
+       jio_fprintf(defaultStream::output_stream(),
+                  "Invalid file name for use with -Xloggc: Filename can only contain the "
+                  "characters [A-Z][a-z][0-9]-_.%%[p|t] but it has been %s\n"
+                  "Note %%p or %%t can only be used once\n", _gc_log_filename);
+        return JNI_EINVAL;
+      }
       FLAG_SET_CMDLINE(bool, PrintGC, true);
       FLAG_SET_CMDLINE(bool, PrintGCTimeStamps, true);
 
@@ -3262,7 +3340,7 @@ jint Arguments::parse_options_environment_variable(const char* name, SysClassPat
       }
     }
 
-    return(parse_each_vm_init_arg(&vm_args, scp_p, scp_assembly_required_p, ENVIRON_VAR));
+    return(parse_each_vm_init_arg(&vm_args, scp_p, scp_assembly_required_p, Flag::ENVIRON_VAR));
   }
   return JNI_OK;
 }
@@ -3274,13 +3352,13 @@ void Arguments::set_shared_spaces_flags() {
     }
     UseSharedSpaces = false;
 #ifdef _LP64
-    if (!UseCompressedOops || !UseCompressedKlassPointers) {
+    if (!UseCompressedOops || !UseCompressedClassPointers) {
       vm_exit_during_initialization(
-        "Cannot dump shared archive when UseCompressedOops or UseCompressedKlassPointers is off.", NULL);
+        "Cannot dump shared archive when UseCompressedOops or UseCompressedClassPointers is off.", NULL);
     }
   } else {
-    // UseCompressedOops and UseCompressedKlassPointers must be on for UseSharedSpaces.
-    if (!UseCompressedOops || !UseCompressedKlassPointers) {
+    // UseCompressedOops and UseCompressedClassPointers must be on for UseSharedSpaces.
+    if (!UseCompressedOops || !UseCompressedClassPointers) {
       no_shared_spaces();
     }
 #endif
@@ -3325,6 +3403,33 @@ static char* get_shared_archive_path() {
   }
   return shared_archive_path;
 }
+
+#ifndef PRODUCT
+// Determine whether LogVMOutput should be implicitly turned on.
+static bool use_vm_log() {
+  if (LogCompilation || !FLAG_IS_DEFAULT(LogFile) ||
+      PrintCompilation || PrintInlining || PrintDependencies || PrintNativeNMethods ||
+      PrintDebugInfo || PrintRelocations || PrintNMethods || PrintExceptionHandlers ||
+      PrintAssembly || TraceDeoptimization || TraceDependencies ||
+      (VerifyDependencies && FLAG_IS_CMDLINE(VerifyDependencies))) {
+    return true;
+  }
+
+#ifdef COMPILER1
+  if (PrintC1Statistics) {
+    return true;
+  }
+#endif // COMPILER1
+
+#ifdef COMPILER2
+  if (PrintOptoAssembly || PrintOptoStatistics) {
+    return true;
+  }
+#endif // COMPILER2
+
+  return false;
+}
+#endif // PRODUCT
 
 // Parse entry point called from JNI_CreateJavaVM
 
@@ -3506,6 +3611,11 @@ jint Arguments::parse(const JavaVMInitArgs* args) {
   no_shared_spaces();
 #endif // INCLUDE_CDS
 
+  return JNI_OK;
+}
+
+jint Arguments::apply_ergo() {
+
   // Set flags based on ergonomics.
   set_ergonomics_flags();
 
@@ -3581,7 +3691,7 @@ jint Arguments::parse(const JavaVMInitArgs* args) {
   FLAG_SET_DEFAULT(ProfileInterpreter, false);
   FLAG_SET_DEFAULT(UseBiasedLocking, false);
   LP64_ONLY(FLAG_SET_DEFAULT(UseCompressedOops, false));
-  LP64_ONLY(FLAG_SET_DEFAULT(UseCompressedKlassPointers, false));
+  LP64_ONLY(FLAG_SET_DEFAULT(UseCompressedClassPointers, false));
 #endif // CC_INTERP
 
 #ifdef COMPILER2
@@ -3610,6 +3720,10 @@ jint Arguments::parse(const JavaVMInitArgs* args) {
     DebugNonSafepoints = true;
   }
 
+  if (FLAG_IS_CMDLINE(CompressedClassSpaceSize) && !UseCompressedClassPointers) {
+    warning("Setting CompressedClassSpaceSize has no effect when compressed class pointers are not used");
+  }
+
 #ifndef PRODUCT
   if (CompileTheWorld) {
     // Force NmethodSweeper to sweep whole CodeCache each time.
@@ -3617,7 +3731,13 @@ jint Arguments::parse(const JavaVMInitArgs* args) {
       NmethodSweepFraction = 1;
     }
   }
-#endif
+
+  if (!LogVMOutput && FLAG_IS_DEFAULT(LogVMOutput)) {
+    if (use_vm_log()) {
+      LogVMOutput = true;
+    }
+  }
+#endif // PRODUCT
 
   if (PrintCommandLineFlags) {
     CommandLineFlags::printSetFlags(tty);

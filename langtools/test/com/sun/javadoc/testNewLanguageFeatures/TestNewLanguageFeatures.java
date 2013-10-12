@@ -155,13 +155,13 @@ public class TestNewLanguageFeatures extends JavadocTester {
             //=================================
             //Make sure the summary links are correct.
             {BUG_ID + FS + "pkg" + FS + "AnnotationType.html",
-                "<li>Summary:&nbsp;</li>" + NL +
+                "<li>Summary:&nbsp;</li>" + NL + "<li>Field&nbsp;|&nbsp;</li>" + NL +
                 "<li><a href=\"#annotation_type_required_element_summary\">" +
                 "Required</a>&nbsp;|&nbsp;</li>" + NL + "<li>" +
                 "<a href=\"#annotation_type_optional_element_summary\">Optional</a></li>"},
             //Make sure the detail links are correct.
             {BUG_ID + FS + "pkg" + FS + "AnnotationType.html",
-                "<li>Detail:&nbsp;</li>" + NL +
+                "<li>Detail:&nbsp;</li>" + NL + "<li>Field&nbsp;|&nbsp;</li>" + NL +
                 "<li><a href=\"#annotation_type_element_detail\">Element</a></li>"},
             //Make sure the heading is correct.
             {BUG_ID + FS + "pkg" + FS + "AnnotationType.html",

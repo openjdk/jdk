@@ -23,7 +23,7 @@
 
 /**
  * @test
- * @bug 8020156 8020009 8022326 8012913
+ * @bug 8020156 8020009 8022326 8012913 8024405 8024408
  * @run testng SpliteratorCharacteristics
  */
 
@@ -36,24 +36,159 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
+import java.util.List;
 import java.util.Map;
+import java.util.PrimitiveIterator;
 import java.util.Set;
 import java.util.SortedMap;
 import java.util.SortedSet;
 import java.util.Spliterator;
+import java.util.Spliterators;
 import java.util.TreeMap;
 import java.util.TreeSet;
+import java.util.WeakHashMap;
 import java.util.concurrent.ConcurrentSkipListMap;
 import java.util.concurrent.ConcurrentSkipListSet;
+import java.util.function.Supplier;
+import java.util.stream.DoubleStream;
+import java.util.stream.IntStream;
+import java.util.stream.LongStream;
 
 import static org.testng.Assert.*;
 
 @Test
 public class SpliteratorCharacteristics {
 
+    public void testSpliteratorFromCollection() {
+        List<Integer> l = Arrays.asList(1, 2, 3, 4);
+
+        {
+            Spliterator<?> s = Spliterators.spliterator(l, 0);
+            assertCharacteristics(s, Spliterator.SIZED | Spliterator.SUBSIZED);
+            assertHasNotCharacteristics(s, Spliterator.CONCURRENT);
+        }
+
+        {
+            Spliterator<?> s = Spliterators.spliterator(l, Spliterator.CONCURRENT);
+            assertHasNotCharacteristics(s, Spliterator.SIZED | Spliterator.SUBSIZED);
+            assertCharacteristics(s, Spliterator.CONCURRENT);
+        }
+
+        {
+            Spliterator<?> s = Spliterators.spliterator(l.iterator( ), 1, 0);
+            assertCharacteristics(s, Spliterator.SIZED | Spliterator.SUBSIZED);
+            assertHasNotCharacteristics(s, Spliterator.CONCURRENT);
+        }
+
+        {
+            Spliterator<?> s = Spliterators.spliterator(l.iterator( ), 1, Spliterator.CONCURRENT);
+            assertHasNotCharacteristics(s, Spliterator.SIZED | Spliterator.SUBSIZED);
+            assertCharacteristics(s, Spliterator.CONCURRENT);
+        }
+
+        {
+            Spliterator<?> s = Spliterators.spliteratorUnknownSize(l.iterator( ), 0);
+            assertHasNotCharacteristics(s, Spliterator.SIZED | Spliterator.SUBSIZED);
+        }
+
+        {
+            Spliterator<?> s = Spliterators.spliteratorUnknownSize(
+                    l.iterator(), Spliterator.SIZED | Spliterator.SUBSIZED);
+            assertHasNotCharacteristics(s, Spliterator.SIZED | Spliterator.SUBSIZED);
+        }
+    }
+
+    public void testSpliteratorOfIntFromIterator() {
+        Supplier<PrimitiveIterator.OfInt> si = () -> IntStream.of(1, 2, 3, 4).iterator();
+
+        {
+            Spliterator<?> s = Spliterators.spliterator(si.get(), 1, 0);
+            assertCharacteristics(s, Spliterator.SIZED | Spliterator.SUBSIZED);
+            assertHasNotCharacteristics(s, Spliterator.CONCURRENT);
+        }
+
+        {
+            Spliterator<?> s = Spliterators.spliterator(si.get(), 1, Spliterator.CONCURRENT);
+            assertHasNotCharacteristics(s, Spliterator.SIZED | Spliterator.SUBSIZED);
+            assertCharacteristics(s, Spliterator.CONCURRENT);
+        }
+
+        {
+            Spliterator<?> s = Spliterators.spliteratorUnknownSize(si.get(), 0);
+            assertHasNotCharacteristics(s, Spliterator.SIZED | Spliterator.SUBSIZED);
+        }
+
+        {
+            Spliterator<?> s = Spliterators.spliteratorUnknownSize(
+                    si.get(), Spliterator.SIZED | Spliterator.SUBSIZED);
+            assertHasNotCharacteristics(s, Spliterator.SIZED | Spliterator.SUBSIZED);
+        }
+    }
+
+    public void testSpliteratorOfLongFromIterator() {
+        Supplier<PrimitiveIterator.OfLong> si = () -> LongStream.of(1, 2, 3, 4).iterator();
+
+        {
+            Spliterator<?> s = Spliterators.spliterator(si.get(), 1, 0);
+            assertCharacteristics(s, Spliterator.SIZED | Spliterator.SUBSIZED);
+            assertHasNotCharacteristics(s, Spliterator.CONCURRENT);
+        }
+
+        {
+            Spliterator<?> s = Spliterators.spliterator(si.get(), 1, Spliterator.CONCURRENT);
+            assertHasNotCharacteristics(s, Spliterator.SIZED | Spliterator.SUBSIZED);
+            assertCharacteristics(s, Spliterator.CONCURRENT);
+        }
+
+        {
+            Spliterator<?> s = Spliterators.spliteratorUnknownSize(si.get(), 0);
+            assertHasNotCharacteristics(s, Spliterator.SIZED | Spliterator.SUBSIZED);
+        }
+
+        {
+            Spliterator<?> s = Spliterators.spliteratorUnknownSize(
+                    si.get(), Spliterator.SIZED | Spliterator.SUBSIZED);
+            assertHasNotCharacteristics(s, Spliterator.SIZED | Spliterator.SUBSIZED);
+        }
+    }
+
+    public void testSpliteratorOfDoubleFromIterator() {
+        Supplier<PrimitiveIterator.OfDouble> si = () -> DoubleStream.of(1, 2, 3, 4).iterator();
+
+        {
+            Spliterator<?> s = Spliterators.spliterator(si.get(), 1, 0);
+            assertCharacteristics(s, Spliterator.SIZED | Spliterator.SUBSIZED);
+            assertHasNotCharacteristics(s, Spliterator.CONCURRENT);
+        }
+
+        {
+            Spliterator<?> s = Spliterators.spliterator(si.get(), 1, Spliterator.CONCURRENT);
+            assertHasNotCharacteristics(s, Spliterator.SIZED | Spliterator.SUBSIZED);
+            assertCharacteristics(s, Spliterator.CONCURRENT);
+        }
+
+        {
+            Spliterator<?> s = Spliterators.spliteratorUnknownSize(si.get(), 0);
+            assertHasNotCharacteristics(s, Spliterator.SIZED | Spliterator.SUBSIZED);
+        }
+
+        {
+            Spliterator<?> s = Spliterators.spliteratorUnknownSize(
+                    si.get(), Spliterator.SIZED | Spliterator.SUBSIZED);
+            assertHasNotCharacteristics(s, Spliterator.SIZED | Spliterator.SUBSIZED);
+        }
+    }
+
+    //
+
     public void testHashMap() {
         assertMapCharacteristics(new HashMap<>(),
                                  Spliterator.SIZED | Spliterator.DISTINCT);
+    }
+
+    public void testWeakHashMap() {
+        assertMapCharacteristics(new WeakHashMap<>(),
+                                 Spliterator.DISTINCT);
     }
 
     public void testHashSet() {
@@ -199,8 +334,17 @@ public class SpliteratorCharacteristics {
     }
 
     void assertCharacteristics(Collection<?> c, int expectedCharacteristics) {
-        assertTrue(c.spliterator().hasCharacteristics(expectedCharacteristics),
+        assertCharacteristics(c.spliterator(), expectedCharacteristics);
+    }
+
+    void assertCharacteristics(Spliterator<?> s, int expectedCharacteristics) {
+        assertTrue(s.hasCharacteristics(expectedCharacteristics),
                    "Spliterator characteristics");
+    }
+
+    void assertHasNotCharacteristics(Spliterator<?> s, int expectedCharacteristics) {
+        assertFalse(s.hasCharacteristics(expectedCharacteristics),
+                    "Spliterator characteristics");
     }
 
     void assertNullComparator(Collection<?> c) {

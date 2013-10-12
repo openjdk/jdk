@@ -72,7 +72,7 @@ import sun.swing.SwingUtilities2;
  * future Swing releases. The current serialization support is
  * appropriate for short term storage or RMI between applications running
  * the same version of Swing.  As of 1.4, support for long term storage
- * of all JavaBeans<sup><font size="-2">TM</font></sup>
+ * of all JavaBeans&trade;
  * has been added to the <code>java.beans</code> package.
  * Please see {@link java.beans.XMLEncoder}.
  *
@@ -291,11 +291,10 @@ public class MetalLookAndFeel extends BasicLookAndFeel
      * Populates {@code table} with system colors. The following values are
      * added to {@code table}:
      * <table border="1" cellpadding="1" cellspacing="0"
-     *         summary="Metal's system color mapping"
-     *         valign="top" >
+     *         summary="Metal's system color mapping">
      *  <tr valign="top"  align="left">
-     *    <th bgcolor="#CCCCFF" align="left">Key
-     *    <th bgcolor="#CCCCFF" align="left">Value
+     *    <th style="background-color:#CCCCFF" align="left">Key
+     *    <th style="background-color:#CCCCFF" align="left">Value
      *  <tr valign="top"  align="left">
      *    <td>"desktop"
      *    <td>{@code theme.getDesktopColor()}
@@ -2362,7 +2361,7 @@ public class MetalLookAndFeel extends BasicLookAndFeel
     }
 
     // From the JLF Design Guidelines:
-    // http://java.sun.com/products/jlf/ed2/book/HIG.Visual2.html
+    // http://www.oracle.com/technetwork/java/jlf-135985.html
     private static class MetalLayoutStyle extends DefaultLayoutStyle {
         private static MetalLayoutStyle INSTANCE = new MetalLayoutStyle();
 

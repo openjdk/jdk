@@ -62,7 +62,7 @@ jdk = \
 #
 needs_jdk = \
   gc/TestG1ZeroPGCTJcmdThreadPrint.java \
-  gc/metaspace/ClassMetaspaceSizeInJmapHeap.java \
+  gc/metaspace/CompressedClassSpaceSizeInJmapHeap.java \
   gc/metaspace/TestMetaspacePerfCounters.java \
   runtime/6819213/TestBootNativeLibraryPath.java \
   runtime/6878713/Test6878713.sh \
@@ -84,6 +84,7 @@ needs_jdk = \
   runtime/NMT/ThreadedVirtualAllocTestType.java \
   runtime/NMT/VirtualAllocTestType.java \
   runtime/RedefineObject/TestRedefineObject.java \
+  runtime/XCheckJniJsig/XCheckJSig.java \
   serviceability/attach/AttachWithStalePidFile.java
 
 # JRE adds further tests to compact3
@@ -159,7 +160,18 @@ needs_full_vm_compact1 = \
   gc/g1/TestRegionAlignment.java \
   gc/g1/TestShrinkToOneRegion.java \
   gc/metaspace/G1AddMetaspaceDependency.java \
-  runtime/6929067/Test6929067.sh
+  gc/startup_warnings/TestCMS.java \
+  gc/startup_warnings/TestCMSIncrementalMode.java \
+  gc/startup_warnings/TestCMSNoIncrementalMode.java \
+  gc/startup_warnings/TestDefaultMaxRAMFraction.java \
+  gc/startup_warnings/TestDefNewCMS.java \
+  gc/startup_warnings/TestIncGC.java \
+  gc/startup_warnings/TestParallelGC.java \
+  gc/startup_warnings/TestParallelScavengeSerialOld.java \
+  gc/startup_warnings/TestParNewCMS.java \
+  gc/startup_warnings/TestParNewSerialOld.java \
+  runtime/6929067/Test6929067.sh \
+  runtime/SharedArchiveFile/SharedArchiveFile.java
 
 # Minimal VM on Compact 2 adds in some compact2 tests
 #
@@ -181,6 +193,7 @@ compact1_minimal = \
   serviceability/ \
   compiler/ \
   testlibrary/ \
+  testlibrary_tests/ \
   sanity/ \
   runtime/ \
   gc/ \

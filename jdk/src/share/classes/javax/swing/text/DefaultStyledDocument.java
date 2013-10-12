@@ -61,7 +61,7 @@ import static sun.swing.SwingUtilities2.IMPLIED_CR;
  * future Swing releases. The current serialization support is
  * appropriate for short term storage or RMI between applications running
  * the same version of Swing.  As of 1.4, support for long term storage
- * of all JavaBeans<sup><font size="-2">TM</font></sup>
+ * of all JavaBeans&trade;
  * has been added to the <code>java.beans</code> package.
  * Please see {@link java.beans.XMLEncoder}.
  *
@@ -173,10 +173,10 @@ public class DefaultStyledDocument extends AbstractDocument implements StyledDoc
      * <p>
      * This method is thread safe, although most Swing methods
      * are not. Please see
-     * <A HREF="http://download.oracle.com/javase/tutorial/uiswing/concurrency/index.html">Concurrency
+     * <A HREF="http://docs.oracle.com/javase/tutorial/uiswing/concurrency/index.html">Concurrency
      * in Swing</A> for more information.
      *
-     * @param offset the starting offset >= 0
+     * @param offset the starting offset &gt;= 0
      * @param data the element data
      * @exception BadLocationException for an invalid starting offset
      */
@@ -426,10 +426,10 @@ public class DefaultStyledDocument extends AbstractDocument implements StyledDoc
      * <p>
      * This method is thread safe, although most Swing methods
      * are not. Please see
-     * <A HREF="http://download.oracle.com/javase/tutorial/uiswing/concurrency/index.html">Concurrency
+     * <A HREF="http://docs.oracle.com/javase/tutorial/uiswing/concurrency/index.html">Concurrency
      * in Swing</A> for more information.
      *
-     * @param pos the offset from the start of the document >= 0
+     * @param pos the offset from the start of the document &gt;= 0
      * @param s  the logical style to assign to the paragraph, null if none
      */
     public void setLogicalStyle(int pos, Style s) {
@@ -458,7 +458,7 @@ public class DefaultStyledDocument extends AbstractDocument implements StyledDoc
      * represented by the given position.
      *
      * @param p the location to translate to a paragraph
-     *  and determine the logical style assigned >= 0.  This
+     *  and determine the logical style assigned &gt;= 0.  This
      *  is an offset from the start of the document.
      * @return the style, null if none
      */
@@ -483,11 +483,11 @@ public class DefaultStyledDocument extends AbstractDocument implements StyledDoc
      * <p>
      * This method is thread safe, although most Swing methods
      * are not. Please see
-     * <A HREF="http://download.oracle.com/javase/tutorial/uiswing/concurrency/index.html">Concurrency
+     * <A HREF="http://docs.oracle.com/javase/tutorial/uiswing/concurrency/index.html">Concurrency
      * in Swing</A> for more information.
      *
-     * @param offset the offset in the document >= 0
-     * @param length the length >= 0
+     * @param offset the offset in the document &gt;= 0
+     * @param length the length &gt;= 0
      * @param s the attributes
      * @param replace true if the previous attributes should be replaced
      *  before setting the new attributes
@@ -536,11 +536,11 @@ public class DefaultStyledDocument extends AbstractDocument implements StyledDoc
      * <p>
      * This method is thread safe, although most Swing methods
      * are not. Please see
-     * <A HREF="http://download.oracle.com/javase/tutorial/uiswing/concurrency/index.html">Concurrency
+     * <A HREF="http://docs.oracle.com/javase/tutorial/uiswing/concurrency/index.html">Concurrency
      * in Swing</A> for more information.
      *
-     * @param offset the offset into the paragraph >= 0
-     * @param length the number of characters affected >= 0
+     * @param offset the offset into the paragraph &gt;= 0
+     * @param length the number of characters affected &gt;= 0
      * @param s the attributes
      * @param replace whether to replace existing attributes, or merge them
      */
@@ -589,7 +589,7 @@ public class DefaultStyledDocument extends AbstractDocument implements StyledDoc
      * A paragraph consists of at least one child Element, which is usually
      * a leaf.
      *
-     * @param pos the starting offset >= 0
+     * @param pos the starting offset &gt;= 0
      * @return the element
      */
     public Element getParagraphElement(int pos) {
@@ -606,7 +606,7 @@ public class DefaultStyledDocument extends AbstractDocument implements StyledDoc
     /**
      * Gets a character element based on a position.
      *
-     * @param pos the position in the document >= 0
+     * @param pos the position in the document &gt;= 0
      * @return the element
      */
     public Element getCharacterElement(int pos) {
@@ -1124,7 +1124,7 @@ public class DefaultStyledDocument extends AbstractDocument implements StyledDoc
      * future Swing releases. The current serialization support is
      * appropriate for short term storage or RMI between applications running
      * the same version of Swing.  As of 1.4, support for long term storage
-     * of all JavaBeans<sup><font size="-2">TM</font></sup>
+     * of all JavaBeans&trade;
      * has been added to the <code>java.beans</code> package.
      * Please see {@link java.beans.XMLEncoder}.
      */
@@ -1155,7 +1155,7 @@ public class DefaultStyledDocument extends AbstractDocument implements StyledDoc
      * future Swing releases. The current serialization support is
      * appropriate for short term storage or RMI between applications running
      * the same version of Swing.  As of 1.4, support for long term storage
-     * of all JavaBeans<sup><font size="-2">TM</font></sup>
+     * of all JavaBeans&trade;
      * has been added to the <code>java.beans</code> package.
      * Please see {@link java.beans.XMLEncoder}.
      */
@@ -1233,7 +1233,7 @@ public class DefaultStyledDocument extends AbstractDocument implements StyledDoc
          * @param a the attributes for the element
          * @param type the type of the element (StartTagType, EndTagType,
          *  ContentType)
-         * @param len the length >= 0
+         * @param len the length &gt;= 0
          */
         public ElementSpec(AttributeSet a, short type, int len) {
             this(a, type, null, 0, len);
@@ -1247,8 +1247,8 @@ public class DefaultStyledDocument extends AbstractDocument implements StyledDoc
          * @param type the type of the element (StartTagType, EndTagType,
          *  ContentType)
          * @param txt the text for the element
-         * @param offs the offset into the text >= 0
-         * @param len the length of the text >= 0
+         * @param offs the offset into the text &gt;= 0
+         * @param len the length of the text &gt;= 0
          */
         public ElementSpec(AttributeSet a, short type, char[] txt,
                                   int offs, int len) {
@@ -1321,7 +1321,7 @@ public class DefaultStyledDocument extends AbstractDocument implements StyledDoc
         /**
          * Gets the starting offset.
          *
-         * @return the offset >= 0
+         * @return the offset &gt;= 0
          */
         public int getOffset() {
             return offs;
@@ -1330,7 +1330,7 @@ public class DefaultStyledDocument extends AbstractDocument implements StyledDoc
         /**
          * Gets the length.
          *
-         * @return the length >= 0
+         * @return the length &gt;= 0
          */
         public int getLength() {
             return len;
@@ -1390,7 +1390,7 @@ public class DefaultStyledDocument extends AbstractDocument implements StyledDoc
      * future Swing releases. The current serialization support is
      * appropriate for short term storage or RMI between applications running
      * the same version of Swing.  As of 1.4, support for long term storage
-     * of all JavaBeans<sup><font size="-2">TM</font></sup>
+     * of all JavaBeans&trade;
      * has been added to the <code>java.beans</code> package.
      * Please see {@link java.beans.XMLEncoder}.
      */
@@ -1420,8 +1420,8 @@ public class DefaultStyledDocument extends AbstractDocument implements StyledDoc
         /**
          * Inserts new content.
          *
-         * @param offset the starting offset >= 0
-         * @param length the length >= 0
+         * @param offset the starting offset &gt;= 0
+         * @param length the length &gt;= 0
          * @param data the data to insert
          * @param de the event capturing this edit
          */
@@ -1500,8 +1500,8 @@ public class DefaultStyledDocument extends AbstractDocument implements StyledDoc
         /**
          * Removes content.
          *
-         * @param offset the starting offset >= 0
-         * @param length the length >= 0
+         * @param offset the starting offset &gt;= 0
+         * @param length the length &gt;= 0
          * @param de the event capturing this edit
          */
         public void remove(int offset, int length, DefaultDocumentEvent de) {
@@ -1513,8 +1513,8 @@ public class DefaultStyledDocument extends AbstractDocument implements StyledDoc
         /**
          * Changes content.
          *
-         * @param offset the starting offset >= 0
-         * @param length the length >= 0
+         * @param offset the starting offset &gt;= 0
+         * @param length the length &gt;= 0
          * @param de the event capturing this edit
          */
         public void change(int offset, int length, DefaultDocumentEvent de) {

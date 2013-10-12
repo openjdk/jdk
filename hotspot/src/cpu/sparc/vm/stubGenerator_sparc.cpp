@@ -2945,7 +2945,7 @@ class StubGenerator: public StubCodeGenerator {
 
     BLOCK_COMMENT("arraycopy argument klass checks");
     //  get src->klass()
-    if (UseCompressedKlassPointers) {
+    if (UseCompressedClassPointers) {
       __ delayed()->nop(); // ??? not good
       __ load_klass(src, G3_src_klass);
     } else {
@@ -2980,7 +2980,7 @@ class StubGenerator: public StubCodeGenerator {
     // Load 32-bits signed value. Use br() instruction with it to check icc.
     __ lduw(G3_src_klass, lh_offset, G5_lh);
 
-    if (UseCompressedKlassPointers) {
+    if (UseCompressedClassPointers) {
       __ load_klass(dst, G4_dst_klass);
     }
     // Handle objArrays completely differently...
@@ -2988,7 +2988,7 @@ class StubGenerator: public StubCodeGenerator {
     __ set(objArray_lh, O5_temp);
     __ cmp(G5_lh,       O5_temp);
     __ br(Assembler::equal, false, Assembler::pt, L_objArray);
-    if (UseCompressedKlassPointers) {
+    if (UseCompressedClassPointers) {
       __ delayed()->nop();
     } else {
       __ delayed()->ld_ptr(dst, oopDesc::klass_offset_in_bytes(), G4_dst_klass);

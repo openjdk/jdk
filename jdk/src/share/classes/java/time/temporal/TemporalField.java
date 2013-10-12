@@ -63,7 +63,6 @@ package java.time.temporal;
 
 import java.time.DateTimeException;
 import java.time.ZoneId;
-import java.time.chrono.ChronoLocalDate;
 import java.time.chrono.Chronology;
 import java.time.format.ResolverStyle;
 import java.util.Locale;
@@ -350,6 +349,10 @@ public interface TemporalField {
      * be acceptable for the date fields to be resolved into other {@code ChronoField}
      * instances that can produce a date, such as {@code EPOCH_DAY}.
      * <p>
+     * Not all {@code TemporalAccessor} implementations are accepted as return values.
+     * Implementations must accept {@code ChronoLocalDate}, {@code ChronoLocalDateTime},
+     * {@code ChronoZonedDateTime} and {@code LocalTime}.
+     * <p>
      * The zone is not normally required for resolution, but is provided for completeness.
      * <p>
      * The default implementation must return null.
@@ -358,13 +361,13 @@ public interface TemporalField {
      * @param chronology  the effective chronology, not null
      * @param zone  the effective zone, not null
      * @param resolverStyle  the requested type of resolve, not null
-     * @return the resolved date; null if resolving only changed the map,
-     *  or no resolve occurred
+     * @return the resolved temporal object; null if resolving only
+     *  changed the map, or no resolve occurred
      * @throws ArithmeticException if numeric overflow occurs
      * @throws DateTimeException if resolving results in an error. This must not be thrown
      *  by querying a field on the temporal without first checking if it is supported
      */
-    default ChronoLocalDate resolve(
+    default TemporalAccessor resolve(
             Map<TemporalField, Long> fieldValues, Chronology chronology,
             ZoneId zone, ResolverStyle resolverStyle) {
         return null;

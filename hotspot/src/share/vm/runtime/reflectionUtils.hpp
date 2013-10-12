@@ -109,6 +109,8 @@ class FieldStream : public KlassStream {
  private:
   int length() const                { return _klass->java_fields_count(); }
 
+  fieldDescriptor _fd_buf;
+
  public:
   FieldStream(instanceKlassHandle klass, bool local_only, bool classes_only)
     : KlassStream(klass, local_only, classes_only) {
@@ -133,6 +135,12 @@ class FieldStream : public KlassStream {
   // missing: initval()
   int offset() const {
     return _klass->field_offset( index() );
+  }
+  // bridge to a heavier API:
+  fieldDescriptor& field_descriptor() const {
+    fieldDescriptor& field = const_cast<fieldDescriptor&>(_fd_buf);
+    field.reinitialize(_klass(), _index);
+    return field;
   }
 };
 
