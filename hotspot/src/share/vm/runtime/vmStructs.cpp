@@ -910,7 +910,6 @@ typedef BinaryTreeDictionary<Metablock, FreeList> MetablockTreeDictionary;
   volatile_nonstatic_field(JavaThread,         _exception_oop,                                oop)                                   \
   volatile_nonstatic_field(JavaThread,         _exception_pc,                                 address)                               \
   volatile_nonstatic_field(JavaThread,         _is_method_handle_return,                      int)                                   \
-  nonstatic_field(JavaThread,                  _is_compiling,                                 bool)                                  \
   nonstatic_field(JavaThread,                  _special_runtime_exit_condition,               JavaThread::AsyncRequests)             \
   nonstatic_field(JavaThread,                  _saved_exception_pc,                           address)                               \
    volatile_nonstatic_field(JavaThread,        _thread_state,                                 JavaThreadState)                       \
