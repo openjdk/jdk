@@ -326,12 +326,15 @@ typedef jlong  s8;
 
 const int max_method_code_size = 64*K - 1;  // JVM spec, 2nd ed. section 4.8.1 (p.134)
 
+// Default ProtectionDomainCacheSize values
+
+const int defaultProtectionDomainCacheSize = NOT_LP64(137) LP64_ONLY(2017);
 
 //----------------------------------------------------------------------------------------------------
 // Default and minimum StringTableSize values
 
 const int defaultStringTableSize = NOT_LP64(1009) LP64_ONLY(60013);
-const int minimumStringTableSize=1009;
+const int minimumStringTableSize = 1009;
 
 const int defaultSymbolTableSize = 20011;
 const int minimumSymbolTableSize = 1009;
