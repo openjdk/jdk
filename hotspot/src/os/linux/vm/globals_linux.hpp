@@ -53,7 +53,7 @@
 // Defines Linux-specific default values. The flags are available on all
 // platforms, but they may have different default values on other platforms.
 //
-define_pd_global(bool, UseLargePages, true);
+define_pd_global(bool, UseLargePages, false);
 define_pd_global(bool, UseLargePagesIndividualAllocation, false);
 define_pd_global(bool, UseOSErrorReporting, false);
 define_pd_global(bool, UseThreadPriorities, true) ;
