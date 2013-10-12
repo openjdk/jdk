@@ -3089,7 +3089,7 @@ void LIRGenerator::profile_arguments(ProfileCall* x) {
 
       Bytecodes::Code bc = x->method()->java_code_at_bci(bci);
       int start = 0;
-      int stop = args->number_of_arguments();
+      int stop = data->is_CallTypeData() ? ((ciCallTypeData*)data)->number_of_arguments() : ((ciVirtualCallTypeData*)data)->number_of_arguments();
       if (x->nb_profiled_args() < stop) {
         // if called through method handle invoke, some arguments may have been popped
         stop = x->nb_profiled_args();
@@ -3099,7 +3099,7 @@ void LIRGenerator::profile_arguments(ProfileCall* x) {
       bool has_receiver = x->inlined() && !x->callee()->is_static() && !Bytecodes::has_receiver(bc);
       ciSignatureStream sig_stream(sig, has_receiver ? x->callee()->holder() : NULL);
       for (int i = 0; i < stop; i++) {
-        int off = in_bytes(TypeStackSlotEntries::type_offset(i)) - in_bytes(TypeStackSlotEntries::args_data_offset());
+        int off = in_bytes(TypeEntriesAtCall::argument_type_offset(i)) - in_bytes(TypeEntriesAtCall::args_data_offset());
         ciKlass* exact = profile_arg_type(md, base_offset, off,
                                           args->type(i), x->profiled_arg_at(i+start), mdp,
                                           !x->arg_needs_null_check(i+start), sig_stream.next_klass());
@@ -3129,6 +3129,21 @@ void LIRGenerator::do_ProfileCall(ProfileCall* x) {
     __ move(value.result(), recv);
   }
   __ profile_call(x->method(), x->bci_of_invoke(), x->callee(), mdo, recv, tmp, x->known_holder());
+}
+
+void LIRGenerator::do_ProfileReturnType(ProfileReturnType* x) {
+  int bci = x->bci_of_invoke();
+  ciMethodData* md = x->method()->method_data_or_null();
+  ciProfileData* data = md->bci_to_data(bci);
+  assert(data->is_CallTypeData() || data->is_VirtualCallTypeData(), "wrong profile data type");
+  ciReturnTypeEntry* ret = data->is_CallTypeData() ? ((ciCallTypeData*)data)->ret() : ((ciVirtualCallTypeData*)data)->ret();
+  LIR_Opr mdp = LIR_OprFact::illegalOpr;
+  ciKlass* exact = profile_arg_type(md, 0, md->byte_offset_of_slot(data, ret->type_offset()),
+                                    ret->type(), x->ret(), mdp,
+                                    !x->needs_null_check(), x->callee()->signature()->return_type()->as_klass());
+  if (exact != NULL) {
+    md->set_return_type(bci, exact);
+  }
 }
 
 void LIRGenerator::do_ProfileInvoke(ProfileInvoke* x) {

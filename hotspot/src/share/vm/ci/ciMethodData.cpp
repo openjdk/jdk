@@ -137,10 +137,15 @@ void ciReceiverTypeData::translate_receiver_data_from(const ProfileData* data) {
 
 
 void ciTypeStackSlotEntries::translate_type_data_from(const TypeStackSlotEntries* entries) {
-  for (int i = 0; i < number_of_arguments(); i++) {
+  for (int i = 0; i < _number_of_entries; i++) {
     intptr_t k = entries->type(i);
     TypeStackSlotEntries::set_type(i, translate_klass(k));
   }
+}
+
+void ciReturnTypeEntry::translate_type_data_from(const ReturnTypeEntry* ret) {
+  intptr_t k = ret->type();
+  set_type(translate_klass(k));
 }
 
 // Get the data at an arbitrary (sort of) data index.
@@ -309,6 +314,20 @@ void ciMethodData::set_argument_type(int bci, int i, ciKlass* k) {
     } else {
       assert(data->is_VirtualCallTypeData(), "no arguments!");
       data->as_VirtualCallTypeData()->set_argument_type(i, k->get_Klass());
+    }
+  }
+}
+
+void ciMethodData::set_return_type(int bci, ciKlass* k) {
+  VM_ENTRY_MARK;
+  MethodData* mdo = get_MethodData();
+  if (mdo != NULL) {
+    ProfileData* data = mdo->bci_to_data(bci);
+    if (data->is_CallTypeData()) {
+      data->as_CallTypeData()->set_return_type(k->get_Klass());
+    } else {
+      assert(data->is_VirtualCallTypeData(), "no arguments!");
+      data->as_VirtualCallTypeData()->set_return_type(k->get_Klass());
     }
   }
 }
@@ -517,9 +536,7 @@ void ciTypeEntries::print_ciklass(outputStream* st, intptr_t k) {
 }
 
 void ciTypeStackSlotEntries::print_data_on(outputStream* st) const {
-  _pd->tab(st, true);
-  st->print("argument types");
-  for (int i = 0; i < number_of_arguments(); i++) {
+  for (int i = 0; i < _number_of_entries; i++) {
     _pd->tab(st);
     st->print("%d: stack (%u) ", i, stack_slot(i));
     print_ciklass(st, type(i));
@@ -527,9 +544,25 @@ void ciTypeStackSlotEntries::print_data_on(outputStream* st) const {
   }
 }
 
+void ciReturnTypeEntry::print_data_on(outputStream* st) const {
+  _pd->tab(st);
+  st->print("ret ");
+  print_ciklass(st, type());
+  st->cr();
+}
+
 void ciCallTypeData::print_data_on(outputStream* st) const {
   print_shared(st, "ciCallTypeData");
-  args()->print_data_on(st);
+  if (has_arguments()) {
+    tab(st, true);
+    st->print("argument types");
+    args()->print_data_on(st);
+  }
+  if (has_return()) {
+    tab(st, true);
+    st->print("return type");
+    ret()->print_data_on(st);
+  }
 }
 
 void ciReceiverTypeData::print_receiver_data_on(outputStream* st) const {
@@ -561,6 +594,15 @@ void ciVirtualCallData::print_data_on(outputStream* st) const {
 void ciVirtualCallTypeData::print_data_on(outputStream* st) const {
   print_shared(st, "ciVirtualCallTypeData");
   rtd_super()->print_receiver_data_on(st);
-  args()->print_data_on(st);
+  if (has_arguments()) {
+    tab(st, true);
+    st->print("argument types");
+    args()->print_data_on(st);
+  }
+  if (has_return()) {
+    tab(st, true);
+    st->print("return type");
+    ret()->print_data_on(st);
+  }
 }
 #endif

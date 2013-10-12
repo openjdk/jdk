@@ -904,6 +904,12 @@ void InstructionPrinter::do_ProfileCall(ProfileCall* x) {
   output()->put(')');
 }
 
+void InstructionPrinter::do_ProfileReturnType(ProfileReturnType* x) {
+  output()->print("profile ret type ");
+  print_value(x->ret());
+  output()->print(" %s.%s", x->method()->holder()->name()->as_utf8(), x->method()->name()->as_utf8());
+  output()->put(')');
+}
 void InstructionPrinter::do_ProfileInvoke(ProfileInvoke* x) {
   output()->print("profile_invoke ");
   output()->print(" %s.%s", x->inlinee()->holder()->name()->as_utf8(), x->inlinee()->name()->as_utf8());

@@ -375,6 +375,7 @@ class GraphBuilder VALUE_OBJ_CLASS_SPEC {
   void print_inlining(ciMethod* callee, const char* msg = NULL, bool success = true);
 
   void profile_call(ciMethod* callee, Value recv, ciKlass* predicted_holder, Values* obj_args, bool inlined);
+  void profile_return_type(Value ret, ciMethod* callee, ciMethod* m = NULL, int bci = -1);
   void profile_invocation(ciMethod* inlinee, ValueStack* state);
 
   // Shortcuts to profiling control.
