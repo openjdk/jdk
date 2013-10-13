@@ -39,9 +39,9 @@
 #
 # Except for the French entries,
 # I made up all time zone abbreviations mentioned here; corrections welcome!
-# FORMAT is `zzz' and GMTOFF is 0 for locations while uninhabited.
+# FORMAT is 'zzz' and GMTOFF is 0 for locations while uninhabited.
 
-# These rules are stolen from the `southamerica' file.
+# These rules are stolen from the 'southamerica' file.
 # Rule	NAME	FROM	TO	TYPE	IN	ON	AT	SAVE	LETTER/S
 Rule	ArgAQ	1964	1966	-	Mar	 1	0:00	0	-
 Rule	ArgAQ	1964	1966	-	Oct	15	0:00	1:00	S
@@ -251,9 +251,10 @@ Zone Antarctica/Syowa	0	-	zzz	1957 Jan 29
 # Scott Island (never inhabited)
 #
 # year-round base
-# Scott, Ross Island, since 1957-01, is like Antarctica/McMurdo.
+# Scott Base, Ross Island, since 1957-01.
+# See Pacific/Auckland.
 #
-# These rules for New Zealand are stolen from the `australasia' file.
+# These rules for New Zealand are stolen from the 'australasia' file.
 # Rule	NAME	FROM	TO	TYPE	IN	ON	AT	SAVE	LETTER/S
 Rule	NZAQ	1974	only	-	Nov	 3	2:00s	1:00	D
 Rule	NZAQ	1975	1988	-	Oct	lastSun	2:00s	1:00	D
@@ -291,11 +292,11 @@ Rule	NZAQ	2008	max	-	Apr	Sun>=1	2:00s	0	S
 # From Lee Hotz (2001-03-08):
 # I queried the folks at Columbia who spent the summer at Vostok and this is
 # what they had to say about time there:
-# ``in the US Camp (East Camp) we have been on New Zealand (McMurdo)
+# "in the US Camp (East Camp) we have been on New Zealand (McMurdo)
 # time, which is 12 hours ahead of GMT. The Russian Station Vostok was
 # 6 hours behind that (although only 2 miles away, i.e. 6 hours ahead
 # of GMT). This is a time zone I think two hours east of Moscow. The
-# natural time zone is in between the two: 8 hours ahead of GMT.''
+# natural time zone is in between the two: 8 hours ahead of GMT."
 #
 # From Paul Eggert (2001-05-04):
 # This seems to be hopelessly confusing, so I asked Lee Hotz about it
@@ -360,16 +361,8 @@ Zone Antarctica/Palmer	0	-	zzz	1965
 			-4:00	ChileAQ	CL%sT
 #
 #
-# McMurdo, Ross Island, since 1955-12
-# Zone	NAME		GMTOFF	RULES	FORMAT	[UNTIL]
-Zone Antarctica/McMurdo	0	-	zzz	1956
-			12:00	NZAQ	NZ%sT
-#
-# Amundsen-Scott, South Pole, continuously occupied since 1956-11-20
-#
-# From Paul Eggert (1996-09-03):
-# Normally it wouldn't have a separate entry, since it's like the
-# larger Antarctica/McMurdo since 1970, but it's too famous to omit.
+# McMurdo Station, Ross Island, since 1955-12
+# Amundsen-Scott South Pole Station, continuously occupied since 1956-11-20
 #
 # From Chris Carrier (1996-06-27):
 # Siple, the first commander of the South Pole station,
@@ -391,4 +384,4 @@ Zone Antarctica/McMurdo	0	-	zzz	1956
 # we have to go around and set them back 5 minutes or so.
 # Maybe if we let them run fast all of the time, we'd get to leave here sooner!!
 #
-Link	Antarctica/McMurdo	Antarctica/South_Pole
+# See 'australasia' for Antarctica/McMurdo.
