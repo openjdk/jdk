@@ -54,9 +54,9 @@ Link	Etc/GMT				Etc/GMT0
 # even though this is the opposite of what many people expect.
 # POSIX has positive signs west of Greenwich, but many people expect
 # positive signs east of Greenwich.  For example, TZ='Etc/GMT+4' uses
-# the abbreviation "GMT+4" and corresponds to 4 hours behind UTC
+# the abbreviation "GMT+4" and corresponds to 4 hours behind UT
 # (i.e. west of Greenwich) even though many people would expect it to
-# mean 4 hours ahead of UTC (i.e. east of Greenwich).
+# mean 4 hours ahead of UT (i.e. east of Greenwich).
 #
 # In the draft 5 of POSIX 1003.1-200x, the angle bracket notation allows for
 # TZ='<GMT-4>+4'; if you want time zone abbreviations conforming to

@@ -29,7 +29,7 @@
 # go ahead and edit the file (and please send any changes to
 # tz@iana.org for general use in the future).
 
-# From Paul Eggert (2013-02-21):
+# From Paul Eggert (2013-08-11):
 #
 # A good source for time zone historical data outside the U.S. is
 # Thomas G. Shanks and Rique Pottenger, The International Atlas (6th edition),
@@ -67,11 +67,11 @@
 #	4:00 GST	Gulf*
 #	5:30 IST	India
 #	7:00 ICT	Indochina*
-#	7:00 WIT	west Indonesia
-#	8:00 CIT	central Indonesia
+#	7:00 WIB	west Indonesia (Waktu Indonesia Barat)
+#	8:00 WITA	central Indonesia (Waktu Indonesia Tengah)
 #	8:00 CST	China
 #	9:00 CJT	Central Japanese Time (1896/1937)*
-#	9:00 EIT	east Indonesia
+#	9:00 WIT	east Indonesia (Waktu Indonesia Timur)
 #	9:00 JST  JDT	Japan
 #	9:00 KST  KDT	Korea
 #	9:30 CST	(Australian) Central Standard Time
@@ -779,7 +779,7 @@ Zone	Asia/Dili	8:22:20 -	LMT	1912
 			8:00	-	TLT	1942 Feb 21 23:00 # E Timor Time
 			9:00	-	JST	1945 Sep 23
 			9:00	-	TLT	1976 May  3
-			8:00	-	CIT	2000 Sep 17 00:00
+			8:00	-	WITA	2000 Sep 17 00:00
 			9:00	-	TLT
 
 # India
@@ -816,36 +816,53 @@ Zone	Asia/Kolkata	5:53:28 -	LMT	1880	# Kolkata
 # (Hollandia).  For now, assume all Indonesian locations other than Jayapura
 # switched on 1945-09-23.
 #
+# From Paul Eggert (2013-08-11):
+# Normally the tz database uses English-language abbreviations, but in
+# Indonesia it's typical to use Indonesian-language abbreviations even
+# when writing in English.  For example, see the English-language
+# summary published by the Time and Frequency Laboratory of the
+# Research Center for Calibration, Instrumentation and Metrology,
+# Indonesia, <http://time.kim.lipi.go.id/time-eng.php> (2006-09-29).
+# The abbreviations are:
+#
+# WIB  - UTC+7 - Waktu Indonesia Barat (Indonesia western time)
+# WITA - UTC+8 - Waktu Indonesia Tengah (Indonesia central time)
+# WIT  - UTC+9 - Waktu Indonesia Timur (Indonesia eastern time)
+#
 # Zone	NAME		GMTOFF	RULES	FORMAT	[UNTIL]
+# Java, Sumatra
 Zone Asia/Jakarta	7:07:12 -	LMT	1867 Aug 10
 # Shanks & Pottenger say the next transition was at 1924 Jan 1 0:13,
 # but this must be a typo.
-			7:07:12	-	JMT	1923 Dec 31 23:47:12 # Jakarta
+			7:07:12	-	BMT	1923 Dec 31 23:47:12 # Batavia
 			7:20	-	JAVT	1932 Nov	 # Java Time
-			7:30	-	WIT	1942 Mar 23
+			7:30	-	WIB	1942 Mar 23
 			9:00	-	JST	1945 Sep 23
-			7:30	-	WIT	1948 May
-			8:00	-	WIT	1950 May
-			7:30	-	WIT	1964
-			7:00	-	WIT
+			7:30	-	WIB	1948 May
+			8:00	-	WIB	1950 May
+			7:30	-	WIB	1964
+			7:00	-	WIB
+# west and central Borneo
 Zone Asia/Pontianak	7:17:20	-	LMT	1908 May
 			7:17:20	-	PMT	1932 Nov    # Pontianak MT
-			7:30	-	WIT	1942 Jan 29
+			7:30	-	WIB	1942 Jan 29
 			9:00	-	JST	1945 Sep 23
-			7:30	-	WIT	1948 May
-			8:00	-	WIT	1950 May
-			7:30	-	WIT	1964
-			8:00	-	CIT	1988 Jan  1
-			7:00	-	WIT
+			7:30	-	WIB	1948 May
+			8:00	-	WIB	1950 May
+			7:30	-	WIB	1964
+			8:00	-	WITA	1988 Jan  1
+			7:00	-	WIB
+# Sulawesi, Lesser Sundas, east and south Borneo
 Zone Asia/Makassar	7:57:36 -	LMT	1920
 			7:57:36	-	MMT	1932 Nov    # Macassar MT
-			8:00	-	CIT	1942 Feb  9
+			8:00	-	WITA	1942 Feb  9
 			9:00	-	JST	1945 Sep 23
-			8:00	-	CIT
+			8:00	-	WITA
+# Maluku Islands, West Papua, Papua
 Zone Asia/Jayapura	9:22:48 -	LMT	1932 Nov
-			9:00	-	EIT	1944 Sep  1
+			9:00	-	WIT	1944 Sep  1
 			9:30	-	CST	1964
-			9:00	-	EIT
+			9:00	-	WIT
 
 # Iran
 
@@ -1387,9 +1404,11 @@ Zone	Asia/Tokyo	9:18:59	-	LMT	1887 Dec 31 15:00u
 # until about the same time next year (at least).
 # http://www.petra.gov.jo/Public_News/Nws_NewsDetails.aspx?NewsID=88950
 #
-# From Paul Eggert (2012-10-25):
-# For now, assume this is just a one-year measure.  If it becomes
-# permanent, we should move Jordan from EET to AST effective tomorrow.
+# From Paul Eggert (2013-09-21):
+# It's looking like this change will be permanent; see
+# Petra News Agency, Cancelling winter saved Jordan $7 million (2013-02-20)
+# <http://www.albawaba.com/business/jordan-winter-electricity--472005>.
+# So move Jordan to UTC+3 as of the abovementioned date.
 
 # Rule	NAME	FROM	TO	TYPE	IN	ON	AT	SAVE	LETTER/S
 Rule	Jordan	1973	only	-	Jun	6	0:00	1:00	S
@@ -1415,15 +1434,15 @@ Rule	Jordan	1995	1998	-	Sep	Fri>=15	0:00s	0	-
 Rule	Jordan	1999	only	-	Jul	 1	0:00s	1:00	S
 Rule	Jordan	1999	2002	-	Sep	lastFri	0:00s	0	-
 Rule	Jordan	2000	2001	-	Mar	lastThu	0:00s	1:00	S
-Rule	Jordan	2002	max	-	Mar	lastThu	24:00	1:00	S
+Rule	Jordan	2002	2012	-	Mar	lastThu	24:00	1:00	S
 Rule	Jordan	2003	only	-	Oct	24	0:00s	0	-
 Rule	Jordan	2004	only	-	Oct	15	0:00s	0	-
 Rule	Jordan	2005	only	-	Sep	lastFri	0:00s	0	-
-Rule	Jordan	2006	2011	-	Oct	lastFri	0:00s	0	-
-Rule	Jordan	2013	max	-	Oct	lastFri	0:00s	0	-
+Rule	Jordan	2006	2012	-	Oct	lastFri	0:00s	0	-
 # Zone	NAME		GMTOFF	RULES	FORMAT	[UNTIL]
 Zone	Asia/Amman	2:23:44 -	LMT	1931
-			2:00	Jordan	EE%sT
+			2:00	Jordan	EE%sT	2012 Oct 26 0:00s
+			3:00	-	AST
 
 
 # Kazakhstan
@@ -2303,9 +2322,18 @@ Zone	Asia/Karachi	4:28:12 -	LMT	1907
 # http://www.samanews.com/index.php?act=Show&id=154120
 # http://safa.ps/details/news/99844/%D8%B1%D8%A7%D9%85-%D8%A7%D9%84%D9%84%D9%87-%D8%A8%D8%AF%D8%A1-%D8%A7%D9%84%D8%AA%D9%88%D9%82%D9%8A%D8%AA-%D8%A7%D9%84%D8%B5%D9%8A%D9%81%D9%8A-29-%D8%A7%D9%84%D8%AC%D8%A7%D8%B1%D9%8A.html
 
-# From Paul Eggert (2013-04-15):
+# From Steffen Thorsen (2013-09-24):
+# The Gaza and West Bank are ending DST Thursday at midnight
+# (2013-09-27 00:00:00) (one hour earlier than last year...).
+# This source in English, says "that winter time will go into effect
+# at midnight on Thursday in the West Bank and Gaza Strip":
+# http://english.wafa.ps/index.php?action=detail&id=23246
+# official source...:
+# http://www.palestinecabinet.gov.ps/ar/Views/ViewDetails.aspx?pid=1252
+
+# From Paul Eggert (2013-09-24):
 # For future dates, guess the last Thursday in March at 24:00 through
-# the first Friday on or after September 21 at 01:00.  This is consistent with
+# the first Friday on or after September 21 at 00:00.  This is consistent with
 # the predictions in today's editions of the following URLs,
 # which are for Gaza and Hebron respectively:
 # http://www.timeanddate.com/worldclock/timezone.html?n=702
@@ -2336,7 +2364,8 @@ Rule Palestine	2011	only	-	Aug	 1	0:00	0	-
 Rule Palestine	2011	only	-	Aug	30	0:00	1:00	S
 Rule Palestine	2011	only	-	Sep	30	0:00	0	-
 Rule Palestine	2012	max	-	Mar	lastThu	24:00	1:00	S
-Rule Palestine	2012	max	-	Sep	Fri>=21	1:00	0	-
+Rule Palestine	2012	only	-	Sep	21	1:00	0	-
+Rule Palestine	2013	max	-	Sep	Fri>=21	0:00	0	-
 
 # Zone	NAME		GMTOFF	RULES	FORMAT	[UNTIL]
 Zone	Asia/Gaza	2:17:52	-	LMT	1900 Oct
