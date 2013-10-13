@@ -235,6 +235,13 @@ public:
   bool is_instance_klass() const { return true; }
   bool is_java_klass() const     { return true; }
 
+  virtual ciKlass* exact_klass() {
+    if (is_loaded() && is_final() && !is_interface()) {
+      return this;
+    }
+    return NULL;
+  }
+
   // Dump the current state of this klass for compilation replay.
   virtual void dump_replay_data(outputStream* out);
 };
