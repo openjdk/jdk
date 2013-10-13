@@ -34,8 +34,6 @@ import java.util.ListIterator;
 import java.util.Map;
 import java.util.Set;
 
-import javax.xml.parsers.DocumentBuilder;
-import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 
 import com.sun.org.apache.xml.internal.security.c14n.CanonicalizationException;
@@ -49,6 +47,7 @@ import com.sun.org.apache.xml.internal.security.utils.XMLUtils;
 import org.w3c.dom.Attr;
 import org.w3c.dom.Comment;
 import org.w3c.dom.Element;
+import org.w3c.dom.Document;
 import org.w3c.dom.NamedNodeMap;
 import org.w3c.dom.Node;
 import org.w3c.dom.ProcessingInstruction;
@@ -64,7 +63,6 @@ public abstract class CanonicalizerBase extends CanonicalizerSpi {
     public static final String XMLNS = "xmlns";
 
     protected static final AttrCompare COMPARE = new AttrCompare();
-    protected static final Attr nullNode;
 
     private static final byte[] END_PI = {'?','>'};
     private static final byte[] BEGIN_PI = {'<','?'};
@@ -84,27 +82,22 @@ public abstract class CanonicalizerBase extends CanonicalizerSpi {
     protected static final int NODE_NOT_BEFORE_OR_AFTER_DOCUMENT_ELEMENT = 0;
     protected static final int NODE_AFTER_DOCUMENT_ELEMENT = 1;
 
-    static {
-        // The null xmlns definition.
-        try {
-            DocumentBuilder documentBuilder = DocumentBuilderFactory.newInstance().newDocumentBuilder();
-            nullNode = documentBuilder.newDocument().createAttributeNS(Constants.NamespaceSpecNS, XMLNS);
-            nullNode.setValue("");
-        } catch (Exception e) {
-            throw new RuntimeException("Unable to create nullNode: " + e);
-        }
-    }
-
     private List<NodeFilter> nodeFilter;
 
     private boolean includeComments;
     private Set<Node> xpathNodeSet;
+
     /**
      * The node to be skipped/excluded from the DOM tree
      * in subtree canonicalizations.
      */
     private Node excludeNode;
     private OutputStream writer = new ByteArrayOutputStream();
+
+    /**
+     * The null xmlns definition.
+     */
+    private Attr nullNode;
 
     /**
      * Constructor CanonicalizerBase
@@ -641,8 +634,9 @@ public abstract class CanonicalizerBase extends CanonicalizerSpi {
         parents.clear();
         Attr nsprefix;
         if (((nsprefix = ns.getMappingWithoutRendered(XMLNS)) != null)
-            && "".equals(nsprefix.getValue())) {
-            ns.addMappingAndRender(XMLNS, "", nullNode);
+                && "".equals(nsprefix.getValue())) {
+            ns.addMappingAndRender(
+                    XMLNS, "", getNullNode(nsprefix.getOwnerDocument()));
         }
     }
 
@@ -877,6 +871,20 @@ public abstract class CanonicalizerBase extends CanonicalizerSpi {
             }
             writer.write(toWrite);
         }
+    }
+
+    // The null xmlns definition.
+    protected Attr getNullNode(Document ownerDocument) {
+        if (nullNode == null) {
+            try {
+                nullNode = ownerDocument.createAttributeNS(
+                                    Constants.NamespaceSpecNS, XMLNS);
+                nullNode.setValue("");
+            } catch (Exception e) {
+                throw new RuntimeException("Unable to create nullNode: " + e);
+            }
+        }
+        return nullNode;
     }
 
 }
