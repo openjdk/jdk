@@ -277,11 +277,14 @@ public:
 class ciSignatureStream : public StackObj {
 private:
   ciSignature* _sig;
-  int    _pos;
+  int          _pos;
+  // holder is a method's holder
+  ciKlass*     _holder;
 public:
-  ciSignatureStream(ciSignature* signature) {
+  ciSignatureStream(ciSignature* signature, ciKlass* holder = NULL) {
     _sig = signature;
     _pos = 0;
+    _holder = holder;
   }
 
   bool at_return_type() { return _pos == _sig->count(); }
@@ -300,6 +303,23 @@ public:
     } else {
       return _sig->type_at(_pos);
     }
+  }
+
+  // next klass in the signature
+  ciKlass* next_klass() {
+    ciKlass* sig_k;
+    if (_holder != NULL) {
+      sig_k = _holder;
+      _holder = NULL;
+    } else {
+      while (!type()->is_klass()) {
+        next();
+      }
+      assert(!at_return_type(), "passed end of signature");
+      sig_k = type()->as_klass();
+      next();
+    }
+    return sig_k;
   }
 };
 
