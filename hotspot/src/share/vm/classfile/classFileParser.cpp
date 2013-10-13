@@ -2197,8 +2197,8 @@ methodHandle ClassFileParser::parse_method(bool is_interface,
           }
           if (lvt_cnt == max_lvt_cnt) {
             max_lvt_cnt <<= 1;
-            REALLOC_RESOURCE_ARRAY(u2, localvariable_table_length, lvt_cnt, max_lvt_cnt);
-            REALLOC_RESOURCE_ARRAY(u2*, localvariable_table_start, lvt_cnt, max_lvt_cnt);
+            localvariable_table_length = REALLOC_RESOURCE_ARRAY(u2, localvariable_table_length, lvt_cnt, max_lvt_cnt);
+            localvariable_table_start  = REALLOC_RESOURCE_ARRAY(u2*, localvariable_table_start, lvt_cnt, max_lvt_cnt);
           }
           localvariable_table_start[lvt_cnt] =
             parse_localvariable_table(code_length,
@@ -2226,8 +2226,8 @@ methodHandle ClassFileParser::parse_method(bool is_interface,
           // Parse local variable type table
           if (lvtt_cnt == max_lvtt_cnt) {
             max_lvtt_cnt <<= 1;
-            REALLOC_RESOURCE_ARRAY(u2, localvariable_type_table_length, lvtt_cnt, max_lvtt_cnt);
-            REALLOC_RESOURCE_ARRAY(u2*, localvariable_type_table_start, lvtt_cnt, max_lvtt_cnt);
+            localvariable_type_table_length = REALLOC_RESOURCE_ARRAY(u2, localvariable_type_table_length, lvtt_cnt, max_lvtt_cnt);
+            localvariable_type_table_start  = REALLOC_RESOURCE_ARRAY(u2*, localvariable_type_table_start, lvtt_cnt, max_lvtt_cnt);
           }
           localvariable_type_table_start[lvtt_cnt] =
             parse_localvariable_table(code_length,
@@ -4484,9 +4484,8 @@ void ClassFileParser::check_final_method_override(instanceKlassHandle this_klass
   for (int index = 0; index < num_methods; index++) {
     Method* m = methods->at(index);
 
-    // skip private, static and <init> methods
-    if ((!m->is_private()) &&
-        (!m->is_static()) &&
+    // skip static and <init> methods
+    if ((!m->is_static()) &&
         (m->name() != vmSymbols::object_initializer_name())) {
 
       Symbol* name = m->name();
