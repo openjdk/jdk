@@ -25,14 +25,16 @@
 
 package jdk.nashorn.internal.runtime.linker;
 
+import static jdk.nashorn.internal.lookup.Lookup.MH;
 import static jdk.nashorn.internal.runtime.ECMAErrors.typeError;
 import static jdk.nashorn.internal.runtime.ScriptRuntime.UNDEFINED;
-import static jdk.nashorn.internal.lookup.Lookup.MH;
 
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.Deque;
+import java.util.List;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 import jdk.internal.dynalink.support.TypeUtilities;
 import jdk.nashorn.internal.runtime.ConsString;
 import jdk.nashorn.internal.runtime.JSType;
@@ -57,7 +59,13 @@ final class JavaArgumentConverters {
     }
 
     static MethodHandle getConverter(final Class<?> targetType) {
-        return CONVERTERS.get(targetType);
+        MethodHandle converter = CONVERTERS.get(targetType);
+        if(converter ==  null && targetType.isArray()) {
+            converter = MH.insertArguments(JSType.TO_JAVA_ARRAY.methodHandle(), 1, targetType.getComponentType());
+            converter = MH.asType(converter, converter.type().changeReturnType(targetType));
+            CONVERTERS.putIfAbsent(targetType, converter);
+        }
+        return converter;
     }
 
     @SuppressWarnings("unused")
@@ -211,6 +219,20 @@ final class JavaArgumentConverters {
                 return null;
             } else if (obj instanceof Long) {
                 return (Long) obj;
+            } else if (obj instanceof Integer) {
+                return ((Integer)obj).longValue();
+            } else if (obj instanceof Double) {
+                final Double d = (Double)obj;
+                if(Double.isInfinite(d.doubleValue())) {
+                    return 0L;
+                }
+                return d.longValue();
+            } else if (obj instanceof Float) {
+                final Float f = (Float)obj;
+                if(Float.isInfinite(f.floatValue())) {
+                    return 0L;
+                }
+                return f.longValue();
             } else if (obj instanceof Number) {
                 return ((Number)obj).longValue();
             } else if (obj instanceof String || obj instanceof ConsString) {
@@ -241,9 +263,12 @@ final class JavaArgumentConverters {
         return MH.findStatic(MethodHandles.lookup(), JavaArgumentConverters.class, name, MH.type(rtype, types));
     }
 
-    private static final Map<Class<?>, MethodHandle> CONVERTERS = new HashMap<>();
+    private static final ConcurrentMap<Class<?>, MethodHandle> CONVERTERS = new ConcurrentHashMap<>();
 
     static {
+        CONVERTERS.put(List.class, JSType.TO_JAVA_LIST.methodHandle());
+        CONVERTERS.put(Deque.class, JSType.TO_JAVA_DEQUE.methodHandle());
+
         CONVERTERS.put(Number.class, TO_NUMBER);
         CONVERTERS.put(String.class, TO_STRING);
 
