@@ -22,8 +22,8 @@
 //
 
 grant {
-    permission java.net.HttpURLPermission "http://127.0.0.1:12567/foo.html", "GET:X-Foo,Z-Bar";
-    permission java.net.HttpURLPermission "https://127.0.0.1:12568/foo.html", "POST:X-Fob,T-Bar";
+    permission java.net.URLPermission "http://127.0.0.1:12567/foo.html", "GET:X-Foo,Z-Bar";
+    permission java.net.URLPermission "https://127.0.0.1:12568/foo.html", "POST:X-Fob,T-Bar";
 
     // needed for HttpServer
     permission "java.net.SocketPermission" "localhost:1024-", "listen,resolve,accept";
