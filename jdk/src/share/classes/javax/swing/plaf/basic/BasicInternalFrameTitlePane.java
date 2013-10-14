@@ -270,18 +270,27 @@ public class BasicInternalFrameTitlePane extends JComponent
 
     protected void addSystemMenuItems(JMenu systemMenu) {
         JMenuItem mi = systemMenu.add(restoreAction);
-        mi.setMnemonic('R');
+        mi.setMnemonic(getButtonMnemonic("restore"));
         mi = systemMenu.add(moveAction);
-        mi.setMnemonic('M');
+        mi.setMnemonic(getButtonMnemonic("move"));
         mi = systemMenu.add(sizeAction);
-        mi.setMnemonic('S');
+        mi.setMnemonic(getButtonMnemonic("size"));
         mi = systemMenu.add(iconifyAction);
-        mi.setMnemonic('n');
+        mi.setMnemonic(getButtonMnemonic("minimize"));
         mi = systemMenu.add(maximizeAction);
-        mi.setMnemonic('x');
+        mi.setMnemonic(getButtonMnemonic("maximize"));
         systemMenu.add(new JSeparator());
         mi = systemMenu.add(closeAction);
-        mi.setMnemonic('C');
+        mi.setMnemonic(getButtonMnemonic("close"));
+    }
+
+    private static int getButtonMnemonic(String button) {
+        try {
+            return Integer.parseInt(UIManager.getString(
+                    "InternalFrameTitlePane." + button + "Button.mnemonic"));
+        } catch (NumberFormatException e) {
+            return -1;
+        }
     }
 
     protected JMenu createSystemMenu() {
