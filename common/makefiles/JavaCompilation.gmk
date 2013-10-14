@@ -86,7 +86,7 @@ define SetupArchive
   # NOTE: $2 is dependencies, not a named argument!
   $(foreach i,3 4 5 6 7 8 9 10 11 12 13 14 15, $(if $($i),$1_$(strip $($i)))$(NEWLINE))
   $(call LogSetupMacroEntry,SetupArchive($1),<dependencies>,$3,$4,$5,$6,$7,$8,$9,$(10),$(11),$(12),$(13),$(14),$(15))
-  $(if $(findstring $(LOG_LEVEL),debug trace), $(info *[2] <dependencies> = $(strip $2)))
+  $(if $(findstring $(LOG_LEVEL),trace), $(info *[2] <dependencies> = $(strip $2)))
   $(if $(16),$(error Internal makefile error: Too many arguments to SetupArchive, please update JavaCompilation.gmk))
 
   $1_JARMAIN:=$(strip $$($1_JARMAIN))
@@ -111,9 +111,9 @@ define SetupArchive
     ifeq ($$(word 20,$$($1_GREP_INCLUDE_PATTERNS)),)
       $1_GREP_INCLUDES:=| $(GREP) $$(patsubst %,$(SPACE)-e$(SPACE)$(DQUOTE)%$(DQUOTE),$$($1_GREP_INCLUDE_PATTERNS))
     else
-      $1_GREP_INCLUDE_OUTPUT:=$(RM) $$($1_BIN)/_the.$$($1_JARNAME)_include && \
-          $$(strip $$(call ListPathsSafely,$1_GREP_INCLUDE_PATTERNS,\n, \
-          >> $$($1_BIN)/_the.$$($1_JARNAME)_include))
+      $1_GREP_INCLUDE_OUTPUT:=$(RM) $$($1_BIN)/_the.$$($1_JARNAME)_include $$(NEWLINE) \
+          $$(call ListPathsSafely,$1_GREP_INCLUDE_PATTERNS,\n, \
+          >> $$($1_BIN)/_the.$$($1_JARNAME)_include)
       $1_GREP_INCLUDES:=| $(GREP) -f $$($1_BIN)/_the.$$($1_JARNAME)_include
     endif
   endif
@@ -124,9 +124,9 @@ define SetupArchive
     ifeq ($$(word 20,$$($1_GREP_EXCLUDE_PATTERNS)),)
       $1_GREP_EXCLUDES:=| $(GREP) -v $$(patsubst %,$(SPACE)-e$(SPACE)$(DQUOTE)%$(DQUOTE),$$($1_GREP_EXCLUDE_PATTERNS))
     else
-      $1_GREP_EXCLUDE_OUTPUT=$(RM) $$($1_BIN)/_the.$$($1_JARNAME)_exclude && \
-          $$(strip $$(call ListPathsSafely,$1_GREP_EXCLUDE_PATTERNS,\n, \
-          >> $$($1_BIN)/_the.$$($1_JARNAME)_exclude))
+      $1_GREP_EXCLUDE_OUTPUT=$(RM) $$($1_BIN)/_the.$$($1_JARNAME)_exclude $$(NEWLINE) \
+          $$(call ListPathsSafely,$1_GREP_EXCLUDE_PATTERNS,\n, \
+          >> $$($1_BIN)/_the.$$($1_JARNAME)_exclude)
       $1_GREP_EXCLUDES:=| $(GREP) -v -f $$($1_BIN)/_the.$$($1_JARNAME)_exclude
     endif
   endif

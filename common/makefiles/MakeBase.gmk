@@ -56,7 +56,8 @@ define ListPathsSafely_If
 endef
 
 define ListPathsSafely_Printf
-	$(if $(strip $($1_LPS$4)),printf -- "$(strip $($1_LPS$4))\n" | $(decompress_paths) $3)
+	$(if $(strip $($1_LPS$4)),$(if $(findstring $(LOG_LEVEL),trace),,@)printf \
+	    -- "$(strip $($1_LPS$4))\n" | $(decompress_paths) $3)
 endef
 
 # Receipt example:
@@ -66,6 +67,7 @@ endef
 # if instead , , (a space) is supplied, then spaces remain spaces.
 define ListPathsSafely
 	$(if $(word 16001,$($1)),$(error Cannot list safely more than 16000 paths. $1 has $(words $($1)) paths!))
+	$(ECHO) $(LOG_DEBUG) Writing $(words $($1)) paths to '$3'
 	$(call ListPathsSafely_If,$1,$2,1,250)
 	$(call ListPathsSafely_If,$1,$2,251,500)
 	$(call ListPathsSafely_If,$1,$2,501,750)
