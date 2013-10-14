@@ -41,6 +41,10 @@ public class SocksProxyVersion implements Runnable {
     volatile boolean failed;
 
     public static void main(String[] args) throws Exception {
+        if (InetAddress.getLocalHost().isLoopbackAddress()) {
+            System.out.println("Test cannot run. getLocalHost returns a loopback address");
+            return;
+        }
         new SocksProxyVersion();
     }
 
