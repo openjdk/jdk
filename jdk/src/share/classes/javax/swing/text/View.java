@@ -476,8 +476,12 @@ public abstract class View implements SwingConstants {
      * Some views may not be visible,
      * they might not be in the same order found in the model, or they just
      * might not allow access to some of the locations in the model.
+     * This method enables specifying a position to convert
+     * within the range of &gt;=0.  If the value is -1, a position
+     * will be calculated automatically.  If the value &lt; -1,
+     * the {@code BadLocationException} will be thrown.
      *
-     * @param pos the position to convert &gt;= 0
+     * @param pos the position to convert
      * @param a the allocated region in which to render
      * @param direction the direction from the current position that can
      *  be thought of as the arrow keys typically found on a keyboard.
@@ -490,7 +494,8 @@ public abstract class View implements SwingConstants {
      * </ul>
      * @return the location within the model that best represents the next
      *  location visual position
-     * @exception BadLocationException
+     * @exception BadLocationException the given position is not a valid
+     *                                 position within the document
      * @exception IllegalArgumentException if <code>direction</code>
      *          doesn't have one of the legal values above
      */
