@@ -92,6 +92,7 @@ public class Annotate {
     ListBuffer<Annotator> typesQ = new ListBuffer<Annotator>();
     ListBuffer<Annotator> repeatedQ = new ListBuffer<Annotator>();
     ListBuffer<Annotator> afterRepeatedQ = new ListBuffer<Annotator>();
+    ListBuffer<Annotator> validateQ = new ListBuffer<Annotator>();
 
     public void earlier(Annotator a) {
         q.prepend(a);
@@ -111,6 +112,10 @@ public class Annotate {
 
     public void afterRepeated(Annotator a) {
         afterRepeatedQ.append(a);
+    }
+
+    public void validate(Annotator a) {
+        validateQ.append(a);
     }
 
     /** Called when the Enter phase starts. */
@@ -139,6 +144,9 @@ public class Annotate {
             }
             while (afterRepeatedQ.nonEmpty()) {
                 afterRepeatedQ.next().enterAnnotation();
+            }
+            while (validateQ.nonEmpty()) {
+                validateQ.next().enterAnnotation();
             }
         } finally {
             enterCount--;

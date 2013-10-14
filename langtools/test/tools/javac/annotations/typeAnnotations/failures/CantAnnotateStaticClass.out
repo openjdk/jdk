@@ -1,10 +1,10 @@
 CantAnnotateStaticClass.java:22:20: compiler.err.cant.annotate.static.class
 CantAnnotateStaticClass.java:23:13: compiler.err.cant.annotate.static.class
 CantAnnotateStaticClass.java:24:29: compiler.err.cant.annotate.static.class
-CantAnnotateStaticClass.java:26:29: compiler.err.cant.annotate.static.class
 CantAnnotateStaticClass.java:29:26: compiler.err.cant.annotate.static.class
 CantAnnotateStaticClass.java:30:9: compiler.err.cant.annotate.static.class
 CantAnnotateStaticClass.java:31:35: compiler.err.cant.annotate.static.class
+CantAnnotateStaticClass.java:26:29: compiler.err.cant.annotate.static.class
 - compiler.note.unchecked.filename: CantAnnotateStaticClass.java
 - compiler.note.unchecked.recompile
 7 errors
