@@ -871,6 +871,18 @@ public class MemberEnter extends JCTree.Visitor implements Completer {
                     }
                 }
             });
+
+        annotate.validate(new Annotate.Annotator() { //validate annotations
+            @Override
+            public void enterAnnotation() {
+                JavaFileObject prev = log.useSource(localEnv.toplevel.sourcefile);
+                try {
+                    chk.validateAnnotations(annotations, s);
+                } finally {
+                    log.useSource(prev);
+                }
+            }
+        });
     }
 
     /**
@@ -951,6 +963,19 @@ public class MemberEnter extends JCTree.Visitor implements Completer {
                     }
                 }
             });
+        annotate.validate(new Annotate.Annotator() { //validate annotations
+            @Override
+            public void enterAnnotation() {
+                JavaFileObject prev = log.useSource(localEnv.toplevel.sourcefile);
+                try {
+                    // if default value is an annotation, check it is a well-formed
+                    // annotation value (e.g. no duplicate values, no missing values, etc.)
+                    chk.validateAnnotationTree(defaultValue);
+                } finally {
+                    log.useSource(prev);
+                }
+            }
+        });
     }
 
     /** Enter a default value for an attribute method. */
@@ -1157,14 +1182,16 @@ public class MemberEnter extends JCTree.Visitor implements Completer {
         if (wasFirst) {
             try {
                 while (halfcompleted.nonEmpty()) {
-                    finish(halfcompleted.next());
+                    Env<AttrContext> toFinish = halfcompleted.next();
+                    finish(toFinish);
+                    if (allowTypeAnnos) {
+                        typeAnnotations.organizeTypeAnnotationsSignatures(toFinish, (JCClassDecl)toFinish.tree);
+                        typeAnnotations.validateTypeAnnotationsSignatures(toFinish, (JCClassDecl)toFinish.tree);
+                    }
                 }
             } finally {
                 isFirst = true;
             }
-        }
-        if (allowTypeAnnos) {
-            typeAnnotations.organizeTypeAnnotationsSignatures(env, tree);
         }
     }
 
