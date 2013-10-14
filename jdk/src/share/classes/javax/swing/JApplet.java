@@ -46,9 +46,10 @@ import javax.accessibility.*;
  * <code>java.applet.Applet</code>.  <code>JApplet</code> contains a
  * <code>JRootPane</code> as its only child.  The <code>contentPane</code>
  * should be the parent of any children of the <code>JApplet</code>.
- * As a convenience <code>add</code> and its variants, <code>remove</code> and
- * <code>setLayout</code> have been overridden to forward to the
- * <code>contentPane</code> as necessary. This means you can write:
+ * As a convenience, the {@code add}, {@code remove}, and {@code setLayout}
+ * methods of this class are overridden, so that they delegate calls
+ * to the corresponding methods of the {@code ContentPane}.
+ * For example, you can add a child component to an applet as follows:
  * <pre>
  *       applet.add(child);
  * </pre>
