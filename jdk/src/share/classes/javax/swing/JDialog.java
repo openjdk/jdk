@@ -44,9 +44,10 @@ import javax.accessibility.*;
  * as its only child.
  * The {@code contentPane} should be the parent of any children of the
  * {@code JDialog}.
- * As a convenience {@code add} and its variants, {@code remove} and
- * {@code setLayout} have been overridden to forward to the
- * {@code contentPane} as necessary. This means you can write:
+ * As a convenience, the {@code add}, {@code remove}, and {@code setLayout}
+ * methods of this class are overridden, so that they delegate calls
+ * to the corresponding methods of the {@code ContentPane}.
+ * For example, you can add a child component to a dialog as follows:
  * <pre>
  *       dialog.add(child);
  * </pre>
