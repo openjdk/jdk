@@ -1,3 +1,4 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 3.2//EN">
 <html>
 <head>
 <title>javax.print package</title>
@@ -52,7 +53,7 @@ such as IPP printers or JINI printers, a print-service provider can write
 implementations of <code>PrintServiceLookup</code>.  The print-service provider 
 can dynamically install these <code>PrintServiceLookup</code> implementations 
 using the 
-<a href="../../../technotes/guides/jar/jar.html#Service Provider">
+<a href="../../../technotes/guides/jar/jar.html#Service%20Provider">
 SPI JAR file specification</a>.
 
 <h3>Attribute Definitions</h3>
@@ -105,9 +106,8 @@ Service API: locating printers that can print five double-sided copies
 of a Postscript document on size A4 paper, creating a print job from 
 one of the returned print services, and calling print.
 
-<p>
-<pre>
 <blockquote>
+<pre>
 FileInputStream psStream;
 try {
    psStream = new FileInputStream("file.ps");
@@ -132,8 +132,8 @@ if (services.length > 0) {
 	job.print(myDoc, aset);
    } catch (PrintException pe) {}
 }
-</blockquote>
 </pre>
+</blockquote>
 <P>
 Please note: In the javax.print APIs, a null reference parameter to methods 
 is incorrect unless explicitly documented on the method as having a meaningful
