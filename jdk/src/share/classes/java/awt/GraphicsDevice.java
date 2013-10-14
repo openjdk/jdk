@@ -325,7 +325,14 @@ public abstract class GraphicsDevice {
             // Note that we use the graphics configuration of the device,
             // not the window's, because we're setting the fs window for
             // this device.
-            Rectangle screenBounds = getDefaultConfiguration().getBounds();
+            final GraphicsConfiguration gc = getDefaultConfiguration();
+            final Rectangle screenBounds = gc.getBounds();
+            if (SunToolkit.isDispatchThreadForAppContext(fullScreenWindow)) {
+                // Update graphics configuration here directly and do not wait
+                // asynchronous notification from the peer. Note that
+                // setBounds() will reset a GC, if it was set incorrectly.
+                fullScreenWindow.setGraphicsConfiguration(gc);
+            }
             fullScreenWindow.setBounds(screenBounds.x, screenBounds.y,
                                        screenBounds.width, screenBounds.height);
             fullScreenWindow.setVisible(true);
