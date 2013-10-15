@@ -824,6 +824,7 @@ OS_VERSION_MINOR
 OS_VERSION_MAJOR
 PKG_CONFIG
 CODESIGN
+DSYMUTIL
 XATTR
 IS_GNU_TIME
 TIME
@@ -10594,6 +10595,64 @@ $as_echo "no" >&6; }
 $as_echo "yes" >&6; }
     fi
   fi
+
+
+    for ac_prog in dsymutil
+do
+  # Extract the first word of "$ac_prog", so it can be a program name with args.
+set dummy $ac_prog; ac_word=$2
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
+$as_echo_n "checking for $ac_word... " >&6; }
+if ${ac_cv_path_DSYMUTIL+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  case $DSYMUTIL in
+  [\\/]* | ?:[\\/]*)
+  ac_cv_path_DSYMUTIL="$DSYMUTIL" # Let the user override the test with a path.
+  ;;
+  *)
+  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in $PATH
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+    for ac_exec_ext in '' $ac_executable_extensions; do
+  if as_fn_executable_p "$as_dir/$ac_word$ac_exec_ext"; then
+    ac_cv_path_DSYMUTIL="$as_dir/$ac_word$ac_exec_ext"
+    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
+done
+  done
+IFS=$as_save_IFS
+
+  ;;
+esac
+fi
+DSYMUTIL=$ac_cv_path_DSYMUTIL
+if test -n "$DSYMUTIL"; then
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $DSYMUTIL" >&5
+$as_echo "$DSYMUTIL" >&6; }
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+fi
+
+
+  test -n "$DSYMUTIL" && break
+done
+
+
+    if test "x$DSYMUTIL" = x; then
+        if test "xdsymutil" = x; then
+          PROG_NAME=dsymutil
+        else
+          PROG_NAME=dsymutil
+        fi
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Could not find $PROG_NAME!" >&5
+$as_echo "$as_me: Could not find $PROG_NAME!" >&6;}
+        as_fn_error $? "Cannot continue" "$LINENO" 5
+    fi
 fi
 
 
@@ -29549,11 +29608,11 @@ if test "x$enable_debug_symbols" = "xyes"; then
 elif test "x$enable_debug_symbols" = "xno"; then
   ENABLE_DEBUG_SYMBOLS=false
 else
-  # default on macosx is false
-  if test "x$OPENJDK_TARGET_OS" = xmacosx; then
-    ENABLE_DEBUG_SYMBOLS=false
-  # Default is on if objcopy is found, otherwise off
-  elif test "x$OBJCOPY" != x || test "x$OPENJDK_TARGET_OS" = xwindows; then
+  # Default is on if objcopy is found
+  if test "x$OBJCOPY" != x; then
+    ENABLE_DEBUG_SYMBOLS=true
+  # MacOS X and Windows don't use objcopy but default is on for those OSes
+  elif test "x$OPENJDK_TARGET_OS" = xmacosx || test "x$OPENJDK_TARGET_OS" = xwindows; then
     ENABLE_DEBUG_SYMBOLS=true
   else
     ENABLE_DEBUG_SYMBOLS=false

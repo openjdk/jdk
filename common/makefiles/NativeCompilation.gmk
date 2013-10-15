@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2012, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2013, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -435,31 +435,36 @@ define SetupNativeCompilation
 			$(CP) $$< $$@
                 endif
 
-                ifeq ($(OPENJDK_TARGET_OS), solaris)
-                    # gobjcopy crashes on "empty" section headers with the SHF_ALLOC flag set.
-                    # Use $(FIX_EMPTY_SEC_HDR_FLAGS) to clear the SHF_ALLOC flag (if set) from
-                    # empty section headers until a fixed $(OBJCOPY) is available.
-                    # An empty section header has sh_addr == 0 and sh_size == 0.
-                    # This problem has only been seen on Solaris X64, but we call this tool
-                    # on all Solaris builds just in case.
-                    #
-                    # $(OBJCOPY) --add-gnu-debuglink=... corrupts SUNW_* sections.
-                    # Use $(ADD_GNU_DEBUGLINK) until a fixed $(OBJCOPY) is available.
-                    $$($1_OBJECT_DIR)/$$(LIBRARY_PREFIX)$$($1_LIBRARY).debuginfo : $$($1_TARGET) \
-					$(FIX_EMPTY_SEC_HDR_FLAGS) $(ADD_GNU_DEBUGLINK)
-			$(RM) $$@
-			$(FIX_EMPTY_SEC_HDR_FLAGS) $(LOG_INFO) $$<
-			$(OBJCOPY) --only-keep-debug $$< $$@
-			$(CD) $$(@D) && $(ADD_GNU_DEBUGLINK) $(LOG_INFO) $$(@F) $$<
-                else # not solaris
-                    $$($1_OBJECT_DIR)/$$(LIBRARY_PREFIX)$$($1_LIBRARY).debuginfo : $$($1_TARGET)
-			$(RM) $$@
-			$(OBJCOPY) --only-keep-debug $$< $$@
-			$(CD) $$(@D) && $(OBJCOPY) --add-gnu-debuglink=$$(@F) $$<
-                endif # Touch to not retrigger rule on rebuild
+                ifneq ($(OPENJDK_TARGET_OS), macosx)   # OBJCOPY is not used on MacOS X
+                  ifneq ($(OPENJDK_TARGET_OS), windows)  # nor on Windows
+                    ifeq ($(OPENJDK_TARGET_OS), solaris)
+                        # gobjcopy crashes on "empty" section headers with the SHF_ALLOC flag set.
+                        # Use $(FIX_EMPTY_SEC_HDR_FLAGS) to clear the SHF_ALLOC flag (if set) from
+                        # empty section headers until a fixed $(OBJCOPY) is available.
+                        # An empty section header has sh_addr == 0 and sh_size == 0.
+                        # This problem has only been seen on Solaris X64, but we call this tool
+                        # on all Solaris builds just in case.
+                        #
+                        # $(OBJCOPY) --add-gnu-debuglink=... corrupts SUNW_* sections.
+                        # Use $(ADD_GNU_DEBUGLINK) until a fixed $(OBJCOPY) is available.
+                        $$($1_OBJECT_DIR)/$$(LIBRARY_PREFIX)$$($1_LIBRARY).debuginfo : $$($1_TARGET) \
+					    $(FIX_EMPTY_SEC_HDR_FLAGS) $(ADD_GNU_DEBUGLINK)
+			    $(RM) $$@
+			    $(FIX_EMPTY_SEC_HDR_FLAGS) $(LOG_INFO) $$<
+			    $(OBJCOPY) --only-keep-debug $$< $$@
+			    $(CD) $$(@D) && $(ADD_GNU_DEBUGLINK) $(LOG_INFO) $$(@F) $$<
+                    else # not solaris
+                        $$($1_OBJECT_DIR)/$$(LIBRARY_PREFIX)$$($1_LIBRARY).debuginfo : $$($1_TARGET)
+			    $(RM) $$@
+			    $(OBJCOPY) --only-keep-debug $$< $$@
+			    $(CD) $$(@D) && $(OBJCOPY) --add-gnu-debuglink=$$(@F) $$<
+                    endif # Touch to not retrigger rule on rebuild
 			$(TOUCH) $$@
+                  endif # !windows
+                endif # !macosx
 
                 ifeq ($(ZIP_DEBUGINFO_FILES), true)
+                  ifneq ($(OPENJDK_TARGET_OS), macosx) # no MacOS X support yet
                     $1 += $$($1_OUTPUT_DIR)/$$(LIBRARY_PREFIX)$$($1_LIBRARY).diz
 
                     ifeq ($(OPENJDK_TARGET_OS), windows)
@@ -472,11 +477,12 @@ define SetupNativeCompilation
 				$(CD) $$($1_OBJECT_DIR) \
 				&& $(ZIP) -q $$@ $$(LIBRARY_PREFIX)$$($1_LIBRARY).debuginfo 
                     endif
+                  endif # no MacOS X support yet
                 else
                     ifeq ($(OPENJDK_TARGET_OS), windows)
                         $1 += $$($1_OUTPUT_DIR)/$$($1_LIBRARY).map \
 			      $$($1_OUTPUT_DIR)/$$($1_LIBRARY).pdb
-                    else
+                    else ifneq ($(OPENJDK_TARGET_OS), macosx) # MacOS X does not use .debuginfo files
                         $1 += $$($1_OUTPUT_DIR)/$$(LIBRARY_PREFIX)$$($1_LIBRARY).debuginfo
                     endif
                 endif
@@ -513,31 +519,36 @@ define SetupNativeCompilation
 			$(CP) $$< $$@
                 endif
 
-                ifeq ($(OPENJDK_TARGET_OS), solaris)
-                    # gobjcopy crashes on "empty" section headers with the SHF_ALLOC flag set.
-                    # Use $(FIX_EMPTY_SEC_HDR_FLAGS) to clear the SHF_ALLOC flag (if set) from
-                    # empty section headers until a fixed $(OBJCOPY) is available.
-                    # An empty section header has sh_addr == 0 and sh_size == 0.
-                    # This problem has only been seen on Solaris X64, but we call this tool
-                    # on all Solaris builds just in case.
-                    #
-                    # $(OBJCOPY) --add-gnu-debuglink=... corrupts SUNW_* sections.
-                    # Use $(ADD_GNU_DEBUGLINK) until a fixed $(OBJCOPY) is available.
-                    $$($1_OBJECT_DIR)/$$($1_PROGRAM).debuginfo : $$($1_TARGET) \
-					$(FIX_EMPTY_SEC_HDR_FLAGS) $(ADD_GNU_DEBUGLINK)
-			$(RM) $$@
-			$(FIX_EMPTY_SEC_HDR_FLAGS) $(LOG_INFO) $$<
-			$(OBJCOPY) --only-keep-debug $$< $$@
-			$(CD) $$(@D) && $(ADD_GNU_DEBUGLINK) $(LOG_INFO) $$(@F) $$<
-                else # not solaris
-                    $$($1_OBJECT_DIR)/$$($1_PROGRAM).debuginfo : $$($1_TARGET)
-			$(RM) $$@
-			$(OBJCOPY) --only-keep-debug $$< $$@
-			$(CD) $$(@D) && $(OBJCOPY) --add-gnu-debuglink=$$(@F) $$<
-                endif
-			$(TOUCH) $$@
+                ifneq ($(OPENJDK_TARGET_OS), macosx)   # OBJCOPY is not used on MacOS X
+                  ifneq ($(OPENJDK_TARGET_OS), windows)  # nor on Windows
+                    ifeq ($(OPENJDK_TARGET_OS), solaris)
+                        # gobjcopy crashes on "empty" section headers with the SHF_ALLOC flag set.
+                        # Use $(FIX_EMPTY_SEC_HDR_FLAGS) to clear the SHF_ALLOC flag (if set) from
+                        # empty section headers until a fixed $(OBJCOPY) is available.
+                        # An empty section header has sh_addr == 0 and sh_size == 0.
+                        # This problem has only been seen on Solaris X64, but we call this tool
+                        # on all Solaris builds just in case.
+                        #
+                        # $(OBJCOPY) --add-gnu-debuglink=... corrupts SUNW_* sections.
+                        # Use $(ADD_GNU_DEBUGLINK) until a fixed $(OBJCOPY) is available.
+                        $$($1_OBJECT_DIR)/$$($1_PROGRAM).debuginfo : $$($1_TARGET) \
+					    $(FIX_EMPTY_SEC_HDR_FLAGS) $(ADD_GNU_DEBUGLINK)
+			    $(RM) $$@
+			    $(FIX_EMPTY_SEC_HDR_FLAGS) $(LOG_INFO) $$<
+			    $(OBJCOPY) --only-keep-debug $$< $$@
+			    $(CD) $$(@D) && $(ADD_GNU_DEBUGLINK) $(LOG_INFO) $$(@F) $$<
+                    else # not solaris
+                        $$($1_OBJECT_DIR)/$$($1_PROGRAM).debuginfo : $$($1_TARGET)
+			    $(RM) $$@
+			    $(OBJCOPY) --only-keep-debug $$< $$@
+			    $(CD) $$(@D) && $(OBJCOPY) --add-gnu-debuglink=$$(@F) $$<
+                    endif
+			    $(TOUCH) $$@
+                  endif # !windows
+                endif # !macosx
 
                 ifeq ($(ZIP_DEBUGINFO_FILES), true)
+                  ifneq ($(OPENJDK_TARGET_OS), macosx) # no MacOS X support yet
                     $1 += $$($1_OUTPUT_DIR)/$$($1_PROGRAM).diz
 
                     ifeq ($(OPENJDK_TARGET_OS), windows)
@@ -550,11 +561,12 @@ define SetupNativeCompilation
 				$(CD) $$($1_OBJECT_DIR) \
 				&& $(ZIP) -q $$@ $$($1_PROGRAM).debuginfo 
                     endif
+                  endif # no MacOS X support yet
                 else
                     ifeq ($(OPENJDK_TARGET_OS), windows)
                         $1 += $$($1_OUTPUT_DIR)/$$($1_PROGRAM).map \
 			      $$($1_OUTPUT_DIR)/$$($1_PROGRAM).pdb
-                    else
+                    else ifneq ($(OPENJDK_TARGET_OS), macosx) # MacOS X does not use .debuginfo files
                         $1 += $$($1_OUTPUT_DIR)/$$($1_PROGRAM).debuginfo
                     endif
                 endif
