@@ -2175,7 +2175,7 @@ class CommandLineFlags {
           "Minimum ratio of young generation/survivor space size")          \
                                                                             \
   product(uintx, InitialSurvivorRatio, 8,                                   \
-          "Initial ratio of eden/survivor space size")                      \
+          "Initial ratio of young generation/survivor space size")          \
                                                                             \
   product(uintx, BaseFootPrintEstimate, 256*M,                              \
           "Estimate of footprint other than Java Heap")                     \
