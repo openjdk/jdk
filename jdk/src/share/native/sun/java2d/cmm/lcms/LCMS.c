@@ -185,6 +185,10 @@ JNIEXPORT jlong JNICALL Java_sun_java2d_cmm_lcms_LCMS_createNativeTransform
 
     size = (*env)->GetArrayLength (env, profileIDs);
     ids = (*env)->GetLongArrayElements(env, profileIDs, 0);
+    if (ids == NULL) {
+        // An exception should have already been thrown.
+        return 0L;
+    }
 
 #ifdef _LITTLE_ENDIAN
     /* Reversing data packed into int for LE archs */
@@ -272,12 +276,12 @@ JNIEXPORT jlong JNICALL Java_sun_java2d_cmm_lcms_LCMS_loadProfileNative
     sProf.j = 0L;
 
     dataArray = (*env)->GetByteArrayElements (env, data, 0);
-    dataSize = (*env)->GetArrayLength (env, data);
-
     if (dataArray == NULL) {
-        JNU_ThrowIllegalArgumentException(env, "Invalid profile data");
+        // An exception should have already been thrown.
         return 0L;
     }
+
+    dataSize = (*env)->GetArrayLength (env, data);
 
     pf = cmsOpenProfileFromMem((const void *)dataArray,
                                      (cmsUInt32Number) dataSize);
@@ -369,6 +373,10 @@ JNIEXPORT void JNICALL Java_sun_java2d_cmm_lcms_LCMS_getProfileDataNative
     }
 
     dataArray = (*env)->GetByteArrayElements (env, data, 0);
+    if (dataArray == NULL) {
+        // An exception should have already been thrown.
+        return;
+    }
 
     status = cmsSaveProfileToMem(sProf.lcmsPf->pf, dataArray, &pfSize);
 
@@ -415,17 +423,15 @@ JNIEXPORT jbyteArray JNICALL Java_sun_java2d_cmm_lcms_LCMS_getTagNative
         data = (*env)->NewByteArray(env, bufSize);
 
         if (data == NULL) {
-            JNU_ThrowByName(env, "java/awt/color/CMMException",
-                            "Unable to allocate buffer");
+            // An exception should have already been thrown.
             return NULL;
         }
 
         dataArray = (*env)->GetByteArrayElements (env, data, 0);
 
         if (dataArray == NULL) {
-           JNU_ThrowByName(env, "java/awt/color/CMMException",
-                            "Unable to get buffer");
-           return NULL;
+            // An exception should have already been thrown.
+            return NULL;
         }
 
         status = _getHeaderInfo(sProf.lcmsPf->pf, dataArray, bufSize);
@@ -452,16 +458,14 @@ JNIEXPORT jbyteArray JNICALL Java_sun_java2d_cmm_lcms_LCMS_getTagNative
     // allocate java array
     data = (*env)->NewByteArray(env, tagSize);
     if (data == NULL) {
-        JNU_ThrowByName(env, "java/awt/color/CMMException",
-                        "Unable to allocate buffer");
+        // An exception should have already been thrown.
         return NULL;
     }
 
     dataArray = (*env)->GetByteArrayElements (env, data, 0);
 
     if (dataArray == NULL) {
-        JNU_ThrowByName(env, "java/awt/color/CMMException",
-                        "Unable to get buffer");
+        // An exception should have already been thrown.
         return NULL;
     }
 
@@ -506,7 +510,7 @@ JNIEXPORT void JNICALL Java_sun_java2d_cmm_lcms_LCMS_setTagDataNative
     dataArray = (*env)->GetByteArrayElements(env, data, 0);
 
     if (dataArray == NULL) {
-        JNU_ThrowIllegalArgumentException(env, "Can not write tag data.");
+        // An exception should have already been thrown.
         return;
     }
 
@@ -617,8 +621,7 @@ JNIEXPORT void JNICALL Java_sun_java2d_cmm_lcms_LCMS_colorConvert
 
     if (inputBuffer == NULL) {
         J2dRlsTraceLn(J2D_TRACE_ERROR, "");
-        JNU_ThrowByName(env, "java/awt/color/CMMException",
-                        "Cannot get input data");
+        // An exception should have already been thrown.
         return;
     }
 
@@ -626,8 +629,7 @@ JNIEXPORT void JNICALL Java_sun_java2d_cmm_lcms_LCMS_colorConvert
 
     if (outputBuffer == NULL) {
         releaseILData(env, inputBuffer, srcDType, srcData);
-        JNU_ThrowByName(env, "java/awt/color/CMMException",
-                        "Cannot get output data");
+        // An exception should have already been thrown.
         return;
     }
 
@@ -659,9 +661,15 @@ JNIEXPORT jobject JNICALL Java_sun_java2d_cmm_lcms_LCMS_getProfileID
     jfieldID fid = (*env)->GetFieldID (env,
         (*env)->GetObjectClass(env, pf),
         "cmmProfile", "Lsun/java2d/cmm/Profile;");
+    if (fid == NULL) {
+        return NULL;
+    }
 
     jclass clsLcmsProfile = (*env)->FindClass(env,
             "sun/java2d/cmm/lcms/LCMSProfile");
+    if (clsLcmsProfile == NULL) {
+        return NULL;
+    }
 
     jobject cmmProfile = (*env)->GetObjectField (env, pf, fid);
 
@@ -687,18 +695,51 @@ JNIEXPORT void JNICALL Java_sun_java2d_cmm_lcms_LCMS_initLCMS
      * unloading
      */
     Trans_renderType_fID = (*env)->GetFieldID (env, Trans, "renderType", "I");
+    if (Trans_renderType_fID == NULL) {
+        return;
+    }
     Trans_ID_fID = (*env)->GetFieldID (env, Trans, "ID", "J");
+    if (Trans_ID_fID == NULL) {
+        return;
+    }
 
     IL_isIntPacked_fID = (*env)->GetFieldID (env, IL, "isIntPacked", "Z");
+    if (IL_isIntPacked_fID == NULL) {
+        return;
+    }
     IL_dataType_fID = (*env)->GetFieldID (env, IL, "dataType", "I");
+    if (IL_dataType_fID == NULL) {
+        return;
+    }
     IL_pixelType_fID = (*env)->GetFieldID (env, IL, "pixelType", "I");
+    if (IL_pixelType_fID == NULL) {
+        return;
+    }
     IL_dataArray_fID = (*env)->GetFieldID(env, IL, "dataArray",
                                           "Ljava/lang/Object;");
+    if (IL_dataArray_fID == NULL) {
+        return;
+    }
     IL_width_fID = (*env)->GetFieldID (env, IL, "width", "I");
+    if (IL_width_fID == NULL) {
+        return;
+    }
     IL_height_fID = (*env)->GetFieldID (env, IL, "height", "I");
+    if (IL_height_fID == NULL) {
+        return;
+    }
     IL_offset_fID = (*env)->GetFieldID (env, IL, "offset", "I");
+    if (IL_offset_fID == NULL) {
+        return;
+    }
     IL_imageAtOnce_fID = (*env)->GetFieldID (env, IL, "imageAtOnce", "Z");
+    if (IL_imageAtOnce_fID == NULL) {
+        return;
+    }
     IL_nextRowOffset_fID = (*env)->GetFieldID (env, IL, "nextRowOffset", "I");
+    if (IL_nextRowOffset_fID == NULL) {
+        return;
+    }
 }
 
 static cmsBool _getHeaderInfo(cmsHPROFILE pf, jbyte* pBuffer, jint bufferSize)
