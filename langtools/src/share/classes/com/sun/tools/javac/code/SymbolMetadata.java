@@ -205,14 +205,14 @@ public class SymbolMetadata {
 
             // Queue a pass that will replace Attribute.Placeholders
             // with Attribute.Compound (made from synthesized containers).
-            ctx.annotateRepeated(new Annotate.Annotator() {
+            ctx.annotateRepeated(new Annotate.Worker() {
                 @Override
                 public String toString() {
                     return "repeated annotation pass of: " + sym + " in: " + sym.owner;
                 }
 
                 @Override
-                public void enterAnnotation() {
+                public void run() {
                     complete(ctx);
                 }
             });

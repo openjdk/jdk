@@ -202,7 +202,7 @@ public class MemberEnter extends JCTree.Visitor implements Completer {
         }.importFrom(tsym);
 
         // enter non-types before annotations that might use them
-        annotate.earlier(new Annotate.Annotator() {
+        annotate.earlier(new Annotate.Worker() {
             Set<Symbol> processed = new HashSet<Symbol>();
 
             public String toString() {
@@ -228,7 +228,7 @@ public class MemberEnter extends JCTree.Visitor implements Completer {
                     }
                 }
             }
-            public void enterAnnotation() {
+            public void run() {
                 importFrom(tsym);
             }
         });
@@ -296,7 +296,7 @@ public class MemberEnter extends JCTree.Visitor implements Completer {
         }.importFrom(tsym);
 
         // enter non-types before annotations that might use them
-        annotate.earlier(new Annotate.Annotator() {
+        annotate.earlier(new Annotate.Worker() {
             Set<Symbol> processed = new HashSet<Symbol>();
             boolean found = false;
 
@@ -326,7 +326,7 @@ public class MemberEnter extends JCTree.Visitor implements Completer {
                     }
                 }
             }
-            public void enterAnnotation() {
+            public void run() {
                 JavaFileObject prev = log.useSource(env.toplevel.sourcefile);
                 try {
                     importFrom(tsym);
@@ -841,14 +841,14 @@ public class MemberEnter extends JCTree.Visitor implements Completer {
         if (s.kind != PCK) {
             s.resetAnnotations(); // mark Annotations as incomplete for now
         }
-        annotate.normal(new Annotate.Annotator() {
+        annotate.normal(new Annotate.Worker() {
                 @Override
                 public String toString() {
                     return "annotate " + annotations + " onto " + s + " in " + s.owner;
                 }
 
                 @Override
-                public void enterAnnotation() {
+                public void run() {
                     Assert.check(s.kind == PCK || s.annotationsPendingCompletion());
                     JavaFileObject prev = log.useSource(localEnv.toplevel.sourcefile);
                     DiagnosticPosition prevLintPos =
@@ -872,9 +872,9 @@ public class MemberEnter extends JCTree.Visitor implements Completer {
                 }
             });
 
-        annotate.validate(new Annotate.Annotator() { //validate annotations
+        annotate.validate(new Annotate.Worker() { //validate annotations
             @Override
-            public void enterAnnotation() {
+            public void run() {
                 JavaFileObject prev = log.useSource(localEnv.toplevel.sourcefile);
                 try {
                     chk.validateAnnotations(annotations, s);
@@ -946,7 +946,7 @@ public class MemberEnter extends JCTree.Visitor implements Completer {
     void annotateDefaultValueLater(final JCExpression defaultValue,
                                    final Env<AttrContext> localEnv,
                                    final MethodSymbol m) {
-        annotate.normal(new Annotate.Annotator() {
+        annotate.normal(new Annotate.Worker() {
                 @Override
                 public String toString() {
                     return "annotate " + m.owner + "." +
@@ -954,7 +954,7 @@ public class MemberEnter extends JCTree.Visitor implements Completer {
                 }
 
                 @Override
-                public void enterAnnotation() {
+                public void run() {
                     JavaFileObject prev = log.useSource(localEnv.toplevel.sourcefile);
                     try {
                         enterDefaultValue(defaultValue, localEnv, m);
@@ -963,9 +963,9 @@ public class MemberEnter extends JCTree.Visitor implements Completer {
                     }
                 }
             });
-        annotate.validate(new Annotate.Annotator() { //validate annotations
+        annotate.validate(new Annotate.Worker() { //validate annotations
             @Override
-            public void enterAnnotation() {
+            public void run() {
                 JavaFileObject prev = log.useSource(localEnv.toplevel.sourcefile);
                 try {
                     // if default value is an annotation, check it is a well-formed
@@ -1264,13 +1264,13 @@ public class MemberEnter extends JCTree.Visitor implements Completer {
 
             final DiagnosticPosition deferPos = this.deferPos;
 
-            annotate.normal(new Annotate.Annotator() {
+            annotate.normal(new Annotate.Worker() {
                 @Override
                 public String toString() {
                     return "type annotate " + annotations + " onto " + sym + " in " + sym.owner;
                 }
                 @Override
-                public void enterAnnotation() {
+                public void run() {
                     JavaFileObject prev = log.useSource(env.toplevel.sourcefile);
                     DiagnosticPosition prevLintPos = null;
 

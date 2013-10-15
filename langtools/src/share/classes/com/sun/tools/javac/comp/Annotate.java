@@ -88,33 +88,33 @@ public class Annotate {
 
     private int enterCount = 0;
 
-    ListBuffer<Annotator> q = new ListBuffer<Annotator>();
-    ListBuffer<Annotator> typesQ = new ListBuffer<Annotator>();
-    ListBuffer<Annotator> repeatedQ = new ListBuffer<Annotator>();
-    ListBuffer<Annotator> afterRepeatedQ = new ListBuffer<Annotator>();
-    ListBuffer<Annotator> validateQ = new ListBuffer<Annotator>();
+    ListBuffer<Worker> q = new ListBuffer<Worker>();
+    ListBuffer<Worker> typesQ = new ListBuffer<Worker>();
+    ListBuffer<Worker> repeatedQ = new ListBuffer<Worker>();
+    ListBuffer<Worker> afterRepeatedQ = new ListBuffer<Worker>();
+    ListBuffer<Worker> validateQ = new ListBuffer<Worker>();
 
-    public void earlier(Annotator a) {
+    public void earlier(Worker a) {
         q.prepend(a);
     }
 
-    public void normal(Annotator a) {
+    public void normal(Worker a) {
         q.append(a);
     }
 
-    public void typeAnnotation(Annotator a) {
+    public void typeAnnotation(Worker a) {
         typesQ.append(a);
     }
 
-    public void repeated(Annotator a) {
+    public void repeated(Worker a) {
         repeatedQ.append(a);
     }
 
-    public void afterRepeated(Annotator a) {
+    public void afterRepeated(Worker a) {
         afterRepeatedQ.append(a);
     }
 
-    public void validate(Annotator a) {
+    public void validate(Worker a) {
         validateQ.append(a);
     }
 
@@ -134,32 +134,34 @@ public class Annotate {
         enterCount++;
         try {
             while (q.nonEmpty()) {
-                q.next().enterAnnotation();
+                q.next().run();
             }
             while (typesQ.nonEmpty()) {
-                typesQ.next().enterAnnotation();
+                typesQ.next().run();
             }
             while (repeatedQ.nonEmpty()) {
-                repeatedQ.next().enterAnnotation();
+                repeatedQ.next().run();
             }
             while (afterRepeatedQ.nonEmpty()) {
-                afterRepeatedQ.next().enterAnnotation();
+                afterRepeatedQ.next().run();
             }
             while (validateQ.nonEmpty()) {
-                validateQ.next().enterAnnotation();
+                validateQ.next().run();
             }
         } finally {
             enterCount--;
         }
     }
 
-    /** A client that has annotations to add registers an annotator,
-     *  the method it will use to add the annotation.  There are no
-     *  parameters; any needed data should be captured by the
-     *  Annotator.
+    /** A client that needs to run during {@link #flush()} registers an worker
+     *  into one of the queues defined in this class. The queues are: {@link #earlier(Worker)},
+     *  {@link #normal(Worker)}, {@link #typeAnnotation(Worker)}, {@link #repeated(Worker)},
+     *  {@link #afterRepeated(Worker)}, {@link #validate(Worker)}.
+     *  The {@link Worker#run()} method will called inside the {@link #flush()}
+     *  call. Queues are empties in the abovementioned order.
      */
-    public interface Annotator {
-        void enterAnnotation();
+    public interface Worker {
+        void run();
         String toString();
     }
 
@@ -204,12 +206,12 @@ public class Annotate {
         }
 
         /**
-         * Queue the Annotator a on the repeating annotations queue of the
+         * Queue the Worker a on the repeating annotations queue of the
          * Annotate instance this context belongs to.
          *
-         * @param a the Annotator to enqueue for repeating annotation annotating
+         * @param a the Worker to enqueue for repeating annotation annotating
          */
-        public void annotateRepeated(Annotator a) {
+        public void annotateRepeated(Worker a) {
             Annotate.this.repeated(a);
         }
     }
