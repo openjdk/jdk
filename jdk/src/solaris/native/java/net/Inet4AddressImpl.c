@@ -178,8 +178,7 @@ Java_java_net_Inet4AddressImpl_lookupAllHostAddr(JNIEnv *env, jobject this,
 
     if (error) {
         /* report error */
-        JNU_ThrowByName(env, JNU_JAVANETPKG "UnknownHostException",
-                        (char *)hostname);
+        ThrowUnknownHostExceptionWithGaiError(env, hostname, error);
         JNU_ReleaseStringPlatformChars(env, host, hostname);
         return NULL;
     } else {
