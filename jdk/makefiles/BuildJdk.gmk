@@ -52,7 +52,7 @@ import-only:
 
 gensrc: import gensrc-only
 gensrc-only:
-	+$(MAKE) -f GenerateJavaSources.gmk
+	+$(MAKE) -f GenerateSources.gmk
         # Ok, now gensrc is fully populated.
 
 gendata: gensrc gendata-only

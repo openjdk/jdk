@@ -715,7 +715,7 @@ endif
 ##########################################################################################
 
 # Get the CLDRVERSION
-include GensrcCLDR.gmk
+include gensrc/GensrcCLDR.gmk
 
 CLDRDATA_JAR_DST := $(IMAGES_OUTPUTDIR)/lib/ext/cldrdata.jar
 

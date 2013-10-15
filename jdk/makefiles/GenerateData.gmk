@@ -38,16 +38,16 @@ include Tools.gmk
 # These are written directly into classes dir.
 GENDATA :=
 
-include GendataBreakIterator.gmk
+include gendata/GendataBreakIterator.gmk
 GENDATA += $(BREAK_ITERATOR)
 
-include GendataFontConfig.gmk
+include gendata/GendataFontConfig.gmk
 GENDATA += $(GENDATA_FONT_CONFIG)
 
-include GendataTZDB.gmk
+include gendata/GendataTZDB.gmk
 GENDATA += $(GENDATA_TZDB)
 
-include GendataHtml32dtd.gmk
+include gendata/GendataHtml32dtd.gmk
 GENDATA += $(GENDATA_HTML32DTD)
 
 ##########################################################################################
