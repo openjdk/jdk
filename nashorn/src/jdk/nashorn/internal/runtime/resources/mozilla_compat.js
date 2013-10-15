@@ -98,6 +98,17 @@ Object.defineProperty(this, "importPackage", {
 
 }
 
+// sync
+Object.defineProperty(this, "sync", {
+    configurable: true, enumerable: false, writable: true,
+    value: function(func, syncobj) {
+        if (arguments.length < 1 || arguments.length > 2 ) {
+            throw "sync(function [,object]) parameter count mismatch";
+        }
+        return Packages.jdk.nashorn.api.scripting.ScriptUtils.makeSynchronizedFunction(func, syncobj);
+    }
+});
+
 // Object.prototype.__defineGetter__
 Object.defineProperty(Object.prototype, "__defineGetter__", {
     configurable: true, enumerable: false, writable: true,
