@@ -74,7 +74,6 @@ import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
 import java.io.InvalidObjectException;
-import java.io.InvalidObjectException;
 import java.io.Serializable;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
@@ -85,6 +84,7 @@ import java.time.temporal.TemporalAccessor;
 import java.time.temporal.TemporalAdjuster;
 import java.time.temporal.TemporalAmount;
 import java.time.temporal.TemporalField;
+import java.time.temporal.TemporalQueries;
 import java.time.temporal.TemporalQuery;
 import java.time.temporal.TemporalUnit;
 import java.time.temporal.UnsupportedTemporalTypeException;
@@ -383,7 +383,7 @@ public final class LocalTime
      * A {@code TemporalAccessor} represents an arbitrary set of date and time information,
      * which this factory converts to an instance of {@code LocalTime}.
      * <p>
-     * The conversion uses the {@link TemporalQuery#localTime()} query, which relies
+     * The conversion uses the {@link TemporalQueries#localTime()} query, which relies
      * on extracting the {@link ChronoField#NANO_OF_DAY NANO_OF_DAY} field.
      * <p>
      * This method matches the signature of the functional interface {@link TemporalQuery}
@@ -395,7 +395,7 @@ public final class LocalTime
      */
     public static LocalTime from(TemporalAccessor temporal) {
         Objects.requireNonNull(temporal, "temporal");
-        LocalTime time = temporal.query(TemporalQuery.localTime());
+        LocalTime time = temporal.query(TemporalQueries.localTime());
         if (time == null) {
             throw new DateTimeException("Unable to obtain LocalTime from TemporalAccessor: " +
                     temporal + " of type " + temporal.getClass().getName());
@@ -1281,14 +1281,14 @@ public final class LocalTime
     @SuppressWarnings("unchecked")
     @Override
     public <R> R query(TemporalQuery<R> query) {
-        if (query == TemporalQuery.chronology() || query == TemporalQuery.zoneId() ||
-                query == TemporalQuery.zone() || query == TemporalQuery.offset()) {
+        if (query == TemporalQueries.chronology() || query == TemporalQueries.zoneId() ||
+                query == TemporalQueries.zone() || query == TemporalQueries.offset()) {
             return null;
-        } else if (query == TemporalQuery.localTime()) {
+        } else if (query == TemporalQueries.localTime()) {
             return (R) this;
-        } else if (query == TemporalQuery.localDate()) {
+        } else if (query == TemporalQueries.localDate()) {
             return null;
-        } else if (query == TemporalQuery.precision()) {
+        } else if (query == TemporalQueries.precision()) {
             return (R) NANOS;
         }
         // inline TemporalAccessor.super.query(query) as an optimization

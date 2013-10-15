@@ -77,7 +77,7 @@ import static java.time.temporal.ChronoField.YEAR_OF_ERA;
 import static java.time.temporal.ChronoUnit.DAYS;
 import static java.time.temporal.ChronoUnit.MONTHS;
 import static java.time.temporal.ChronoUnit.WEEKS;
-import static java.time.temporal.TemporalAdjuster.nextOrSame;
+import static java.time.temporal.TemporalAdjusters.nextOrSame;
 
 import java.io.DataInput;
 import java.io.DataOutput;
@@ -89,7 +89,7 @@ import java.time.DateTimeException;
 import java.time.DayOfWeek;
 import java.time.format.ResolverStyle;
 import java.time.temporal.ChronoField;
-import java.time.temporal.TemporalAdjuster;
+import java.time.temporal.TemporalAdjusters;
 import java.time.temporal.TemporalField;
 import java.time.temporal.ValueRange;
 import java.util.Comparator;
@@ -561,7 +561,7 @@ public abstract class AbstractChronology implements Chronology {
             try {
                 return date(y, moy, dom);
             } catch (DateTimeException ex) {
-                return date(y, moy, 1).with(TemporalAdjuster.lastDayOfMonth());
+                return date(y, moy, 1).with(TemporalAdjusters.lastDayOfMonth());
             }
         }
         return date(y, moy, dom);

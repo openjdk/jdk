@@ -73,6 +73,7 @@ import java.time.format.TextStyle;
 import java.time.temporal.ChronoField;
 import java.time.temporal.TemporalAccessor;
 import java.time.temporal.TemporalField;
+import java.time.temporal.TemporalQueries;
 import java.time.temporal.TemporalQuery;
 import java.time.temporal.UnsupportedTemporalTypeException;
 import java.time.temporal.ValueRange;
@@ -162,10 +163,10 @@ public interface Chronology extends Comparable<Chronology> {
      * A {@code TemporalAccessor} represents an arbitrary set of date and time information,
      * which this factory converts to an instance of {@code Chronology}.
      * <p>
-     * The conversion will obtain the chronology using {@link TemporalQuery#chronology()}.
+     * The conversion will obtain the chronology using {@link TemporalQueries.chronology()}.
      * If the specified temporal object does not have a chronology, {@link IsoChronology} is returned.
      * <p>
-     * This method matches the signature of the functional interface {@link TemporalQuery}
+     * This method matches the signature of the functional interface {@link TemporalQueries.
      * allowing it to be used in queries via method reference, {@code Chronology::from}.
      *
      * @param temporal  the temporal to convert, not null
@@ -174,7 +175,7 @@ public interface Chronology extends Comparable<Chronology> {
      */
     static Chronology from(TemporalAccessor temporal) {
         Objects.requireNonNull(temporal, "temporal");
-        Chronology obj = temporal.query(TemporalQuery.chronology());
+        Chronology obj = temporal.query(TemporalQueries.chronology());
         return (obj != null ? obj : IsoChronology.INSTANCE);
     }
 
@@ -434,7 +435,7 @@ public interface Chronology extends Comparable<Chronology> {
      * The conversion typically uses the {@link ChronoField#EPOCH_DAY EPOCH_DAY}
      * field, which is standardized across calendar systems.
      * <p>
-     * This method matches the signature of the functional interface {@link TemporalQuery}
+     * This method matches the signature of the functional interface {@link TemporalQueries.
      * allowing it to be used as a query via method reference, {@code aChronology::date}.
      *
      * @param temporal  the temporal object to convert, not null
@@ -457,7 +458,7 @@ public interface Chronology extends Comparable<Chronology> {
      * those fields that are equivalent to the relevant objects.
      * The result uses this chronology.
      * <p>
-     * This method matches the signature of the functional interface {@link TemporalQuery}
+     * This method matches the signature of the functional interface {@link TemporalQueries.
      * allowing it to be used as a query via method reference, {@code aChronology::localDateTime}.
      *
      * @param temporal  the temporal object to convert, not null
@@ -489,7 +490,7 @@ public interface Chronology extends Comparable<Chronology> {
      * those fields that are equivalent to the relevant objects.
      * The result uses this chronology.
      * <p>
-     * This method matches the signature of the functional interface {@link TemporalQuery}
+     * This method matches the signature of the functional interface {@link TemporalQueries.
      * allowing it to be used as a query via method reference, {@code aChronology::zonedDateTime}.
      *
      * @param temporal  the temporal object to convert, not null
@@ -641,7 +642,7 @@ public interface Chronology extends Comparable<Chronology> {
             @SuppressWarnings("unchecked")
             @Override
             public <R> R query(TemporalQuery<R> query) {
-                if (query == TemporalQuery.chronology()) {
+                if (query == TemporalQueries.chronology()) {
                     return (R) Chronology.this;
                 }
                 return TemporalAccessor.super.query(query);
