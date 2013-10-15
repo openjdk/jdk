@@ -58,7 +58,7 @@
 #include "memory/generation.hpp"
 #include "memory/generationSpec.hpp"
 #include "memory/heap.hpp"
-#include "memory/metablock.hpp"
+#include "memory/metachunk.hpp"
 #include "memory/referenceType.hpp"
 #include "memory/space.hpp"
 #include "memory/tenuredGeneration.hpp"
