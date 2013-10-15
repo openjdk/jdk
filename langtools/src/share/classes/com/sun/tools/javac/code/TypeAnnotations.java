@@ -50,6 +50,7 @@ import com.sun.tools.javac.code.Symbol.VarSymbol;
 import com.sun.tools.javac.code.Symbol.MethodSymbol;
 import com.sun.tools.javac.comp.Annotate;
 import com.sun.tools.javac.comp.Annotate.Annotator;
+import com.sun.tools.javac.comp.Attr;
 import com.sun.tools.javac.comp.AttrContext;
 import com.sun.tools.javac.comp.Env;
 import com.sun.tools.javac.tree.JCTree;
@@ -95,6 +96,7 @@ public class TypeAnnotations {
     final Names names;
     final Symtab syms;
     final Annotate annotate;
+    final Attr attr;
     private final boolean typeAnnoAsserts;
 
     protected TypeAnnotations(Context context) {
@@ -103,6 +105,7 @@ public class TypeAnnotations {
         log = Log.instance(context);
         syms = Symtab.instance(context);
         annotate = Annotate.instance(context);
+        attr = Attr.instance(context);
         Options options = Options.instance(context);
         typeAnnoAsserts = options.isSet("TypeAnnotationAsserts");
     }
@@ -124,6 +127,21 @@ public class TypeAnnotations {
 
                 try {
                     new TypeAnnotationPositions(true).scan(tree);
+                } finally {
+                    log.useSource(oldSource);
+                }
+            }
+        } );
+    }
+
+    public void validateTypeAnnotationsSignatures(final Env<AttrContext> env, final JCClassDecl tree) {
+        annotate.validate(new Annotator() { //validate annotations
+            @Override
+            public void enterAnnotation() {
+                JavaFileObject oldSource = log.useSource(env.toplevel.sourcefile);
+
+                try {
+                    attr.validateTypeAnnotations(tree, true);
                 } finally {
                     log.useSource(oldSource);
                 }

@@ -2892,7 +2892,8 @@ public class Gen extends JCTree.Visitor {
 
         @Override
         public void visitMethodDef(JCMethodDecl tree) {
-            if ((tree.sym.flags() & (SYNTHETIC | GENERATEDCONSTR)) != 0) {
+            if ((tree.sym.flags() & (SYNTHETIC | GENERATEDCONSTR)) != 0
+                    && (tree.sym.flags() & LAMBDA_METHOD) == 0) {
                 return;
             }
             if (tree.name.equals(names.clinit)) {
@@ -2906,6 +2907,7 @@ public class Gen extends JCTree.Visitor {
                 return;
             }
             currentMethod = tree.sym;
+
             super.visitMethodDef(tree);
         }
 
