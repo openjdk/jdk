@@ -56,7 +56,7 @@ public class JDKToolLauncher {
         if (useCompilerJDK) {
             executable = JDKToolFinder.getJDKTool(tool);
         } else {
-            executable = JDKToolFinder.getCurrentJDKTool(tool);
+            executable = JDKToolFinder.getTestJDKTool(tool);
         }
         vmArgs.addAll(Arrays.asList(ProcessTools.getPlatformSpecificVMArgs()));
     }
