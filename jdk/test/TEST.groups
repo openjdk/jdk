@@ -360,6 +360,7 @@ needs_jre = \
   java/security/Security/ClassLoaderDeadlock/Deadlock.sh \
   java/util/logging/Listeners.java \
   java/util/logging/ListenersWithSM.java \
+  java/util/logging/TestMainAppContext.java \
   java/util/ResourceBundle/Control/Bug6530694.java \
   java/text/Bidi/BidiConformance.java \
   java/text/Bidi/BidiEmbeddingTest.java \
