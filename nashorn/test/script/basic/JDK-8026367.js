@@ -22,33 +22,40 @@
  */
 
 /**
- * Check that nashorn mozilla compatibility script can be loaded in sandbox.
+ * JDK-8026367: Add a sync keyword to mozilla_compat
  *
  * @test
  * @run
- * @security
  */
 
-load("nashorn:mozilla_compat.js");
-
-var obj = {};
-if (obj.__proto__ !== Object.prototype) {
-    fail("__proto__ does not work as expected");
+if (typeof sync === "undefined") {
+    load("nashorn:mozilla_compat.js");
 }
 
-var array = [];
-if (array.__proto__ !== Array.prototype) {
-    fail("__proto__ does not work as expected");
-}
+var obj = {
+    count: 0,
+    // Sync called with one argument will synchronize on this-object of invocation
+    inc: sync(function(d) {
+        this.count += d;
+    }),
+    // Pass explicit object to synchronize on as second argument
+    dec: sync(function(d) {
+        this.count -= d;
+    }, obj)
+};
 
-if (typeof JavaAdapter != 'function') {
-    fail("JavaAdapter constructor is missing in compatibility script");
-}
+var t1 = new java.lang.Thread(function() {
+    for (var i = 0; i < 100000; i++) obj.inc(1);
+});
+var t2 = new java.lang.Thread(function() {
+    for (var i = 0; i < 100000; i++) obj.dec(1);
+});
 
-if (typeof importPackage != 'function') {
-    fail("importPackage function is missing in compatibility script");
-}
+t1.start();
+t2.start();
+t1.join();
+t2.join();
 
-if (typeof sync != 'function') {
-    fail("sync function is missing in compatibility script");
+if (obj.count !== 0) {
+    throw new Error("Expected count == 0, got " + obj.count);
 }
