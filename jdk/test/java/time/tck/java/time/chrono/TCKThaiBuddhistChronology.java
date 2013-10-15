@@ -88,7 +88,7 @@ import java.time.chrono.ThaiBuddhistEra;
 import java.time.format.ResolverStyle;
 import java.time.temporal.ChronoField;
 import java.time.temporal.ChronoUnit;
-import java.time.temporal.TemporalAdjuster;
+import java.time.temporal.TemporalAdjusters;
 import java.time.temporal.TemporalField;
 import java.time.temporal.ValueRange;
 import java.util.HashMap;
@@ -366,14 +366,14 @@ public class TCKThaiBuddhistChronology {
     @Test
     public void test_adjust1() {
         ThaiBuddhistDate base = ThaiBuddhistChronology.INSTANCE.date(1728, 10, 29);
-        ThaiBuddhistDate test = base.with(TemporalAdjuster.lastDayOfMonth());
+        ThaiBuddhistDate test = base.with(TemporalAdjusters.lastDayOfMonth());
         assertEquals(test, ThaiBuddhistChronology.INSTANCE.date(1728, 10, 31));
     }
 
     @Test
     public void test_adjust2() {
         ThaiBuddhistDate base = ThaiBuddhistChronology.INSTANCE.date(1728, 12, 2);
-        ThaiBuddhistDate test = base.with(TemporalAdjuster.lastDayOfMonth());
+        ThaiBuddhistDate test = base.with(TemporalAdjusters.lastDayOfMonth());
         assertEquals(test, ThaiBuddhistChronology.INSTANCE.date(1728, 12, 31));
     }
 

@@ -82,15 +82,15 @@ import java.time.chrono.Era;
 import java.time.chrono.IsoChronology;
 import java.time.chrono.JapaneseDate;
 import java.time.chrono.MinguoChronology;
-import java.time.chrono.MinguoDate;
 import java.time.chrono.MinguoEra;
+import java.time.chrono.MinguoDate;
 import java.time.chrono.ThaiBuddhistChronology;
 import java.time.chrono.ThaiBuddhistDate;
 import java.time.format.ResolverStyle;
 import java.time.temporal.ChronoField;
 import java.time.temporal.ChronoUnit;
 import java.time.temporal.TemporalAccessor;
-import java.time.temporal.TemporalAdjuster;
+import java.time.temporal.TemporalAdjusters;
 import java.time.temporal.TemporalField;
 import java.util.HashMap;
 import java.util.List;
@@ -360,14 +360,14 @@ public class TCKMinguoChronology {
     @Test
     public void test_adjust1() {
         MinguoDate base = MinguoChronology.INSTANCE.date(2012, 10, 29);
-        MinguoDate test = base.with(TemporalAdjuster.lastDayOfMonth());
+        MinguoDate test = base.with(TemporalAdjusters.lastDayOfMonth());
         assertEquals(test, MinguoChronology.INSTANCE.date(2012, 10, 31));
     }
 
     @Test
     public void test_adjust2() {
         MinguoDate base = MinguoChronology.INSTANCE.date(1728, 12, 2);
-        MinguoDate test = base.with(TemporalAdjuster.lastDayOfMonth());
+        MinguoDate test = base.with(TemporalAdjusters.lastDayOfMonth());
         assertEquals(test, MinguoChronology.INSTANCE.date(1728, 12, 31));
     }
 

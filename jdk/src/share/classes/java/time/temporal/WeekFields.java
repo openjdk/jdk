@@ -892,7 +892,7 @@ public final class WeekFields implements Serializable {
 
         @Override
         public ChronoLocalDate resolve(
-                Map<TemporalField, Long> fieldValues, Chronology chronology, ZoneId zone, ResolverStyle resolverStyle) {
+                Map<TemporalField, Long> fieldValues, TemporalAccessor partialTemporal, ResolverStyle resolverStyle) {
             final long value = fieldValues.get(this);
             final int newValue = Math.toIntExact(value);  // broad limit makes overflow checking lighter
             // first convert localized day-of-week to ISO day-of-week
@@ -915,19 +915,20 @@ public final class WeekFields implements Serializable {
             int dow = localizedDayOfWeek(isoDow);
 
             // build date
+            Chronology chrono = Chronology.from(partialTemporal);
             if (fieldValues.containsKey(YEAR)) {
                 int year = YEAR.checkValidIntValue(fieldValues.get(YEAR));  // validate
                 if (rangeUnit == MONTHS && fieldValues.containsKey(MONTH_OF_YEAR)) {  // week-of-month
                     long month = fieldValues.get(MONTH_OF_YEAR);  // not validated yet
-                    return resolveWoM(fieldValues, chronology, year, month, newValue, dow, resolverStyle);
+                    return resolveWoM(fieldValues, chrono, year, month, newValue, dow, resolverStyle);
                 }
                 if (rangeUnit == YEARS) {  // week-of-year
-                    return resolveWoY(fieldValues, chronology, year, newValue, dow, resolverStyle);
+                    return resolveWoY(fieldValues, chrono, year, newValue, dow, resolverStyle);
                 }
             } else if ((rangeUnit == WEEK_BASED_YEARS || rangeUnit == FOREVER) &&
                     fieldValues.containsKey(weekDef.weekBasedYear) &&
                     fieldValues.containsKey(weekDef.weekOfWeekBasedYear)) { // week-of-week-based-year and year-of-week-based-year
-                return resolveWBY(fieldValues, chronology, dow, resolverStyle);
+                return resolveWBY(fieldValues, chrono, dow, resolverStyle);
             }
             return null;
         }

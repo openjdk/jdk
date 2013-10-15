@@ -90,6 +90,7 @@ import java.time.temporal.ChronoField;
 import java.time.temporal.IsoFields;
 import java.time.temporal.TemporalAccessor;
 import java.time.temporal.TemporalField;
+import java.time.temporal.TemporalQueries;
 import java.time.temporal.TemporalQuery;
 import java.time.temporal.ValueRange;
 import java.time.temporal.WeekFields;
@@ -155,7 +156,7 @@ public final class DateTimeFormatterBuilder {
      * Query for a time-zone that is region-only.
      */
     private static final TemporalQuery<ZoneId> QUERY_REGION_ONLY = (temporal) -> {
-        ZoneId zone = temporal.query(TemporalQuery.zoneId());
+        ZoneId zone = temporal.query(TemporalQueries.zoneId());
         return (zone != null && zone instanceof ZoneOffset == false ? zone : null);
     };
 
@@ -877,7 +878,7 @@ public final class DateTimeFormatterBuilder {
      * This appends an instruction to format/parse the offset ID to the builder.
      * <p>
      * During formatting, the offset is obtained using a mechanism equivalent
-     * to querying the temporal with {@link TemporalQuery#offset()}.
+     * to querying the temporal with {@link TemporalQueries#offset()}.
      * It will be printed using the format defined below.
      * If the offset cannot be obtained then an exception is thrown unless the
      * section of the formatter is optional.
@@ -930,7 +931,7 @@ public final class DateTimeFormatterBuilder {
      * </ul><p>
      * <p>
      * During formatting, the offset is obtained using a mechanism equivalent
-     * to querying the temporal with {@link TemporalQuery#offset()}.
+     * to querying the temporal with {@link TemporalQueries#offset()}.
      * If the offset cannot be obtained then an exception is thrown unless the
      * section of the formatter is optional.
      * <p>
@@ -962,7 +963,7 @@ public final class DateTimeFormatterBuilder {
      * for use with this method, see {@link #appendZoneOrOffsetId()}.
      * <p>
      * During formatting, the zone is obtained using a mechanism equivalent
-     * to querying the temporal with {@link TemporalQuery#zoneId()}.
+     * to querying the temporal with {@link TemporalQueries#zoneId()}.
      * It will be printed using the result of {@link ZoneId#getId()}.
      * If the zone cannot be obtained then an exception is thrown unless the
      * section of the formatter is optional.
@@ -1000,7 +1001,7 @@ public final class DateTimeFormatterBuilder {
      * @see #appendZoneRegionId()
      */
     public DateTimeFormatterBuilder appendZoneId() {
-        appendInternal(new ZoneIdPrinterParser(TemporalQuery.zoneId(), "ZoneId()"));
+        appendInternal(new ZoneIdPrinterParser(TemporalQueries.zoneId(), "ZoneId()"));
         return this;
     }
 
@@ -1012,7 +1013,7 @@ public final class DateTimeFormatterBuilder {
      * only if it is a region-based ID.
      * <p>
      * During formatting, the zone is obtained using a mechanism equivalent
-     * to querying the temporal with {@link TemporalQuery#zoneId()}.
+     * to querying the temporal with {@link TemporalQueries#zoneId()}.
      * If the zone is a {@code ZoneOffset} or it cannot be obtained then
      * an exception is thrown unless the section of the formatter is optional.
      * If the zone is not an offset, then the zone will be printed using
@@ -1071,7 +1072,7 @@ public final class DateTimeFormatterBuilder {
      * then attempts to find an offset, such as that on {@code OffsetDateTime}.
      * <p>
      * During formatting, the zone is obtained using a mechanism equivalent
-     * to querying the temporal with {@link TemporalQuery#zone()}.
+     * to querying the temporal with {@link TemporalQueries#zone()}.
      * It will be printed using the result of {@link ZoneId#getId()}.
      * If the zone cannot be obtained then an exception is thrown unless the
      * section of the formatter is optional.
@@ -1112,7 +1113,7 @@ public final class DateTimeFormatterBuilder {
      * @see #appendZoneId()
      */
     public DateTimeFormatterBuilder appendZoneOrOffsetId() {
-        appendInternal(new ZoneIdPrinterParser(TemporalQuery.zone(), "ZoneOrOffsetId()"));
+        appendInternal(new ZoneIdPrinterParser(TemporalQueries.zone(), "ZoneOrOffsetId()"));
         return this;
     }
 
@@ -1123,7 +1124,7 @@ public final class DateTimeFormatterBuilder {
      * the builder.
      * <p>
      * During formatting, the zone is obtained using a mechanism equivalent
-     * to querying the temporal with {@link TemporalQuery#zoneId()}.
+     * to querying the temporal with {@link TemporalQueries#zoneId()}.
      * If the zone is a {@code ZoneOffset} it will be printed using the
      * result of {@link ZoneOffset#getId()}.
      * If the zone is not an offset, the textual name will be looked up
@@ -1159,7 +1160,7 @@ public final class DateTimeFormatterBuilder {
      * the builder.
      * <p>
      * During formatting, the zone is obtained using a mechanism equivalent
-     * to querying the temporal with {@link TemporalQuery#zoneId()}.
+     * to querying the temporal with {@link TemporalQueries#zoneId()}.
      * If the zone is a {@code ZoneOffset} it will be printed using the
      * result of {@link ZoneOffset#getId()}.
      * If the zone is not an offset, the textual name will be looked up
@@ -1202,7 +1203,7 @@ public final class DateTimeFormatterBuilder {
      * This appends an instruction to format/parse the chronology ID to the builder.
      * <p>
      * During formatting, the chronology is obtained using a mechanism equivalent
-     * to querying the temporal with {@link TemporalQuery#chronology()}.
+     * to querying the temporal with {@link TemporalQueries#chronology()}.
      * It will be printed using the result of {@link Chronology#getId()}.
      * If the chronology cannot be obtained then an exception is thrown unless the
      * section of the formatter is optional.
@@ -3062,7 +3063,7 @@ public final class DateTimeFormatterBuilder {
                 return false;
             }
             String text;
-            Chronology chrono = context.getTemporal().query(TemporalQuery.chronology());
+            Chronology chrono = context.getTemporal().query(TemporalQueries.chronology());
             if (chrono == null || chrono == IsoChronology.INSTANCE) {
                 text = provider.getText(field, value, textStyle, context.getLocale());
             } else {
@@ -3590,7 +3591,7 @@ public final class DateTimeFormatterBuilder {
         private Set<String> preferredZones;
 
         ZoneTextPrinterParser(TextStyle textStyle, Set<ZoneId> preferredZones) {
-            super(TemporalQuery.zone(), "ZoneText(" + textStyle + ")");
+            super(TemporalQueries.zone(), "ZoneText(" + textStyle + ")");
             this.textStyle = Objects.requireNonNull(textStyle, "textStyle");
             if (preferredZones != null && preferredZones.size() != 0) {
                 this.preferredZones = new HashSet<>();
@@ -3647,7 +3648,7 @@ public final class DateTimeFormatterBuilder {
 
         @Override
         public boolean format(DateTimePrintContext context, StringBuilder buf) {
-            ZoneId zone = context.getValue(TemporalQuery.zoneId());
+            ZoneId zone = context.getValue(TemporalQueries.zoneId());
             if (zone == null) {
                 return false;
             }
@@ -4228,7 +4229,7 @@ public final class DateTimeFormatterBuilder {
 
         @Override
         public boolean format(DateTimePrintContext context, StringBuilder buf) {
-            Chronology chrono = context.getValue(TemporalQuery.chronology());
+            Chronology chrono = context.getValue(TemporalQueries.chronology());
             if (chrono == null) {
                 return false;
             }
