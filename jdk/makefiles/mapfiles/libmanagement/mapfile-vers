@@ -57,7 +57,7 @@ SUNWprivate_1.1 {
 	    Java_sun_management_GcInfoBuilder_fillGcAttributeInfo;
 	    Java_sun_management_GcInfoBuilder_getLastGcInfo0;
 	    Java_sun_management_GcInfoBuilder_getNumGcExtAttributes;
-	    Java_sun_management_HotSpotDiagnostic_dumpHeap;
+	    Java_sun_management_HotSpotDiagnostic_dumpHeap0;
 	    Java_sun_management_HotspotThread_getInternalThreadCount;
 	    Java_sun_management_HotspotThread_getInternalThreadTimes0;
 	    Java_sun_management_MemoryImpl_getMemoryManagers0;
