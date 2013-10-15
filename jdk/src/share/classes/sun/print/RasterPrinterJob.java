@@ -1359,34 +1359,7 @@ public abstract class RasterPrinterJob extends PrinterJob {
             setAttributes(attributes);
             // throw exception for invalid destination
             if (destinationAttr != null) {
-                // destinationAttr is null for Destination(new URI(""))
-                // because isAttributeValueSupported returns false in setAttributes
-
-                // Destination(new URI(" ")) throws URISyntaxException
-                File f = new File(destinationAttr);
-                try {
-                    // check if this is a new file and if filename chars are valid
-                    if (f.createNewFile()) {
-                        f.delete();
-                    }
-                } catch (IOException ioe) {
-                    throw new PrinterException("Cannot write to file:"+
-                                               destinationAttr);
-                } catch (SecurityException se) {
-                    //There is already file read/write access so at this point
-                    // only delete access is denied.  Just ignore it because in
-                    // most cases the file created in createNewFile gets overwritten
-                    // anyway.
-                }
-
-                File pFile = f.getParentFile();
-                if ((f.exists() &&
-                     (!f.isFile() || !f.canWrite())) ||
-                    ((pFile != null) &&
-                     (!pFile.exists() || (pFile.exists() && !pFile.canWrite())))) {
-                    throw new PrinterException("Cannot write to file:"+
-                                               destinationAttr);
-                }
+                validateDestination(destinationAttr);
             }
         } else {
             spoolToService(psvc, attributes);
@@ -1506,6 +1479,40 @@ public abstract class RasterPrinterJob extends PrinterJob {
                 performingPrinting = false;
                 notify();
             }
+        }
+    }
+
+    protected void validateDestination(String dest) throws PrinterException {
+        if (dest == null) {
+            return;
+        }
+        // dest is null for Destination(new URI(""))
+        // because isAttributeValueSupported returns false in setAttributes
+
+        // Destination(new URI(" ")) throws URISyntaxException
+        File f = new File(dest);
+        try {
+            // check if this is a new file and if filename chars are valid
+            if (f.createNewFile()) {
+                f.delete();
+            }
+        } catch (IOException ioe) {
+            throw new PrinterException("Cannot write to file:"+
+                                       dest);
+        } catch (SecurityException se) {
+            //There is already file read/write access so at this point
+            // only delete access is denied.  Just ignore it because in
+            // most cases the file created in createNewFile gets overwritten
+            // anyway.
+        }
+
+        File pFile = f.getParentFile();
+        if ((f.exists() &&
+             (!f.isFile() || !f.canWrite())) ||
+            ((pFile != null) &&
+             (!pFile.exists() || (pFile.exists() && !pFile.canWrite())))) {
+            throw new PrinterException("Cannot write to file:"+
+                                       dest);
         }
     }
 
