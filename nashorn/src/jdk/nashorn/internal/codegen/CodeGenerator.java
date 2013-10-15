@@ -453,7 +453,13 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
             public boolean enterFunctionNode(FunctionNode functionNode) {
                 // function nodes will always leave a constructed function object on stack, no need to load the symbol
                 // separately as in enterDefault()
+                lc.pop(functionNode);
                 functionNode.accept(codegen);
+                // NOTE: functionNode.accept() will produce a different FunctionNode that we discard. This incidentally
+                // doesn't cause problems as we're never touching FunctionNode again after it's visited here - codegen
+                // is the last element in the compilation pipeline, the AST it produces is not used externally. So, we
+                // re-push the original functionNode.
+                lc.push(functionNode);
                 method.convert(type);
                 return false;
             }
