@@ -118,7 +118,8 @@ public class TagletWriterImpl extends TagletWriter {
                 if (deprs.length > 0) {
                     Content body = commentTagsToOutput(null, doc,
                         deprs[0].inlineTags(), false);
-                    result.addContent(HtmlTree.SPAN(HtmlStyle.italic, body));
+                    if (!body.isEmpty())
+                        result.addContent(HtmlTree.SPAN(HtmlStyle.italic, body));
                 }
             } else {
                 if (Util.isDeprecated(member.containingClass())) {
