@@ -38,53 +38,53 @@ include Tools.gmk
 # Now include all the rules that generate Java sources.
 # The Java sources are written into the gensrc_.... directories.
 
-include GensrcProperties.gmk
+include gensrc/GensrcProperties.gmk
 GENSRC += $(GENSRC_PROPERTIES)
 
-include GensrcLocaleDataMetaInfo.gmk
+include gensrc/GensrcLocaleDataMetaInfo.gmk
 GENSRC += $(GENSRC_LOCALEDATAMETAINFO)
 
-include GensrcCharacterData.gmk
+include gensrc/GensrcCharacterData.gmk
 GENSRC += $(GENSRC_CHARACTERDATA)
 
-include GensrcJDWP.gmk
+include gensrc/GensrcJDWP.gmk
 GENSRC += $(GENSRC_JDWP)
 
-include GensrcMisc.gmk
+include gensrc/GensrcMisc.gmk
 GENSRC += $(GENSRC_MISC)
 
-include GensrcCharsetMapping.gmk
+include gensrc/GensrcCharsetMapping.gmk
 GENSRC += $(GENSRC_CHARSETMAPPING)
 
-include GensrcCharsetCoder.gmk
+include gensrc/GensrcCharsetCoder.gmk
 GENSRC += $(GENSRC_CHARSETCODER)
 
-include GensrcBuffer.gmk
+include gensrc/GensrcBuffer.gmk
 GENSRC += $(GENSRC_BUFFER)
 
-include GensrcExceptions.gmk
+include gensrc/GensrcExceptions.gmk
 GENSRC += $(GENSRC_EXCEPTIONS)
 
 ifneq ($(OPENJDK_TARGET_OS), windows)
-include GensrcIcons.gmk
+include gensrc/GensrcIcons.gmk
 GENSRC += $(GENSRC_AWT_ICONS)
 
 ifeq ($(OPENJDK_TARGET_OS), macosx)
 GENSRC += $(GENSRC_OSX_ICONS)
 endif
 
-include GensrcX11Wrappers.gmk
+include gensrc/GensrcX11Wrappers.gmk
 GENSRC += $(GENSRC_X11WRAPPERS)
 endif
 
-include GensrcCLDR.gmk
+include gensrc/GensrcCLDR.gmk
 GENSRC += $(GENSRC_CLDR)
 
-include GensrcSwing.gmk
+include gensrc/GensrcSwing.gmk
 GENSRC += $(GENSRC_SWING_BEANINFO) $(GENSRC_SWING_NIMBUS)
 
 ifeq ($(OPENJDK_TARGET_OS), macosx)
-  include GensrcJObjC.gmk
+  include gensrc/GensrcJObjC.gmk
   GENSRC += $(GENSRC_JOBJC)
 endif
 
