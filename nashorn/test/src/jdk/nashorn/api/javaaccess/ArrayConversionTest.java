@@ -87,8 +87,24 @@ public class ArrayConversionTest {
     }
 
     @Test
+    public void testArrayAmbiguity() throws ScriptException {
+        runTest("x", "'abc'");
+        runTest("x", "['foo', 'bar']");
+    }
+
+    @Test
     public void testListArrays() throws ScriptException {
         runTest("assertListArray", "[['foo', 'bar'], ['apple', 'orange']]");
+    }
+
+    @Test
+    public void testVarArgs() throws ScriptException {
+        // Sole NativeArray in vararg position becomes vararg array itself
+        runTest("assertVarArg_42_17", "[42, 17]");
+        // NativeArray in vararg position becomes an argument if there are more arguments
+        runTest("assertVarArg_array_17", "[42], 18");
+        // Only NativeArray is converted to vararg array, other objects (e.g. a function) aren't
+        runTest("assertVarArg_function", "function() { return 'Hello' }");
     }
 
     private static void runTest(final String testMethodName, final String argument) throws ScriptException {
@@ -187,5 +203,33 @@ public class ArrayConversionTest {
         assertEquals(2, array.length);
         assertEquals(Arrays.asList("foo", "bar"), array[0]);
         assertEquals(Arrays.asList("apple", "orange"), array[1]);
+    }
+
+    public static void assertVarArg_42_17(Object... args) throws ScriptException {
+        assertEquals(2, args.length);
+        assertEquals(42, ((Number)args[0]).intValue());
+        assertEquals(17, ((Number)args[1]).intValue());
+    }
+
+    public static void assertVarArg_array_17(Object... args) throws ScriptException {
+        assertEquals(2, args.length);
+        e.getBindings(ScriptContext.ENGINE_SCOPE).put("arr", args[0]);
+        assertTrue((Boolean)e.eval("arr instanceof Array && arr.length == 1 && arr[0] == 42"));
+        assertEquals(18, ((Number)args[1]).intValue());
+    }
+
+    public static void assertVarArg_function(Object... args) throws ScriptException {
+        assertEquals(1, args.length);
+        e.getBindings(ScriptContext.ENGINE_SCOPE).put("fn", args[0]);
+        assertEquals("Hello", e.eval("fn()"));
+    }
+
+
+
+    public static void x(String y) {
+        assertEquals("abc", y);
+    }
+    public static void x(String[] y) {
+        assertTrue(Arrays.equals(new String[] { "foo", "bar"}, y));
     }
 }

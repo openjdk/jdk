@@ -31,10 +31,8 @@ import static jdk.nashorn.internal.runtime.ScriptRuntime.UNDEFINED;
 
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
-import java.util.Deque;
-import java.util.List;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
+import java.util.HashMap;
+import java.util.Map;
 import jdk.internal.dynalink.support.TypeUtilities;
 import jdk.nashorn.internal.runtime.ConsString;
 import jdk.nashorn.internal.runtime.JSType;
@@ -59,13 +57,7 @@ final class JavaArgumentConverters {
     }
 
     static MethodHandle getConverter(final Class<?> targetType) {
-        MethodHandle converter = CONVERTERS.get(targetType);
-        if(converter ==  null && targetType.isArray()) {
-            converter = MH.insertArguments(JSType.TO_JAVA_ARRAY.methodHandle(), 1, targetType.getComponentType());
-            converter = MH.asType(converter, converter.type().changeReturnType(targetType));
-            CONVERTERS.putIfAbsent(targetType, converter);
-        }
-        return converter;
+        return CONVERTERS.get(targetType);
     }
 
     @SuppressWarnings("unused")
@@ -263,12 +255,9 @@ final class JavaArgumentConverters {
         return MH.findStatic(MethodHandles.lookup(), JavaArgumentConverters.class, name, MH.type(rtype, types));
     }
 
-    private static final ConcurrentMap<Class<?>, MethodHandle> CONVERTERS = new ConcurrentHashMap<>();
+    private static final Map<Class<?>, MethodHandle> CONVERTERS = new HashMap<>();
 
     static {
-        CONVERTERS.put(List.class, JSType.TO_JAVA_LIST.methodHandle());
-        CONVERTERS.put(Deque.class, JSType.TO_JAVA_DEQUE.methodHandle());
-
         CONVERTERS.put(Number.class, TO_NUMBER);
         CONVERTERS.put(String.class, TO_STRING);
 
