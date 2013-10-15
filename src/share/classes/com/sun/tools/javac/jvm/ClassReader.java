@@ -1877,7 +1877,7 @@ public class ClassReader {
         }
     }
 
-    class AnnotationDefaultCompleter extends AnnotationDeproxy implements Annotate.Annotator {
+    class AnnotationDefaultCompleter extends AnnotationDeproxy implements Annotate.Worker {
         final MethodSymbol sym;
         final Attribute value;
         final JavaFileObject classFile = currentClassFile;
@@ -1889,8 +1889,8 @@ public class ClassReader {
             this.sym = sym;
             this.value = value;
         }
-        // implement Annotate.Annotator.enterAnnotation()
-        public void enterAnnotation() {
+        // implement Annotate.Worker.run()
+        public void run() {
             JavaFileObject previousClassFile = currentClassFile;
             try {
                 // Reset the interim value set earlier in
@@ -1904,7 +1904,7 @@ public class ClassReader {
         }
     }
 
-    class AnnotationCompleter extends AnnotationDeproxy implements Annotate.Annotator {
+    class AnnotationCompleter extends AnnotationDeproxy implements Annotate.Worker {
         final Symbol sym;
         final List<CompoundAnnotationProxy> l;
         final JavaFileObject classFile;
@@ -1917,8 +1917,8 @@ public class ClassReader {
             this.l = l;
             this.classFile = currentClassFile;
         }
-        // implement Annotate.Annotator.enterAnnotation()
-        public void enterAnnotation() {
+        // implement Annotate.Worker.run()
+        public void run() {
             JavaFileObject previousClassFile = currentClassFile;
             try {
                 currentClassFile = classFile;
@@ -1955,7 +1955,7 @@ public class ClassReader {
         }
 
         @Override
-        public void enterAnnotation() {
+        public void run() {
             JavaFileObject previousClassFile = currentClassFile;
             try {
                 currentClassFile = classFile;
