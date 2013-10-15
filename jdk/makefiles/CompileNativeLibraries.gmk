@@ -559,11 +559,7 @@ endif
 
 ifeq ($(OPENJDK_TARGET_OS),macosx)
 	LIBAWT_FILES += awt_LoadLibrary.c img_colors.c
-	LIBAWT_DIRS += $(JDK_TOPDIR)/src/macosx/native/com/apple/resources
-	LIBAWT_FILES += awt_LoadLibrary.c MacOSXResourceBundle.m
 	LIBAWT_CFLAGS += -F/System/Library/Frameworks/JavaVM.framework/Frameworks
-
-	LIBAWT_MacOSXResourceBundle.m_CFLAGS:=-O0
 endif
 
 ifeq ($(OPENJDK_TARGET_OS)-$(OPENJDK_TARGET_CPU_ARCH), solaris-sparc)

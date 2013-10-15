@@ -27,6 +27,8 @@ package javax.swing.text;
 import java.lang.reflect.*;
 import java.text.*;
 import java.util.*;
+import sun.reflect.misc.ReflectUtil;
+import sun.swing.SwingUtilities2;
 
 /**
  * <code>NumberFormatter</code> subclasses <code>InternationalFormatter</code>
@@ -427,10 +429,12 @@ public class NumberFormatter extends InternationalFormatter {
                         valueClass = value.getClass();
                     }
                     try {
+                        ReflectUtil.checkPackageAccess(valueClass);
+                        SwingUtilities2.checkAccess(valueClass.getModifiers());
                         Constructor cons = valueClass.getConstructor(
                                               new Class[] { String.class });
-
                         if (cons != null) {
+                            SwingUtilities2.checkAccess(cons.getModifiers());
                             return cons.newInstance(new Object[]{string});
                         }
                     } catch (Throwable ex) { }
