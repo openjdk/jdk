@@ -49,7 +49,7 @@ import com.sun.tools.javac.code.TypeAnnotationPosition.TypePathEntryKind;
 import com.sun.tools.javac.code.Symbol.VarSymbol;
 import com.sun.tools.javac.code.Symbol.MethodSymbol;
 import com.sun.tools.javac.comp.Annotate;
-import com.sun.tools.javac.comp.Annotate.Annotator;
+import com.sun.tools.javac.comp.Annotate.Worker;
 import com.sun.tools.javac.comp.Attr;
 import com.sun.tools.javac.comp.AttrContext;
 import com.sun.tools.javac.comp.Env;
@@ -116,13 +116,13 @@ public class TypeAnnotations {
      * This version only visits types in signatures and should be
      * called from MemberEnter.
      * The method takes the Annotate object as parameter and
-     * adds an Annotator to the correct Annotate queue for
+     * adds an Annotate.Worker to the correct Annotate queue for
      * later processing.
      */
     public void organizeTypeAnnotationsSignatures(final Env<AttrContext> env, final JCClassDecl tree) {
-        annotate.afterRepeated( new Annotator() {
+        annotate.afterRepeated( new Worker() {
             @Override
-            public void enterAnnotation() {
+            public void run() {
                 JavaFileObject oldSource = log.useSource(env.toplevel.sourcefile);
 
                 try {
@@ -135,9 +135,9 @@ public class TypeAnnotations {
     }
 
     public void validateTypeAnnotationsSignatures(final Env<AttrContext> env, final JCClassDecl tree) {
-        annotate.validate(new Annotator() { //validate annotations
+        annotate.validate(new Worker() { //validate annotations
             @Override
-            public void enterAnnotation() {
+            public void run() {
                 JavaFileObject oldSource = log.useSource(env.toplevel.sourcefile);
 
                 try {

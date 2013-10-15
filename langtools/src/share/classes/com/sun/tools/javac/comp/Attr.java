@@ -4085,13 +4085,13 @@ public class Attr extends JCTree.Visitor {
     public void annotateType(final AnnotatedType type, final List<JCAnnotation> annotations) {
         if (annotations.isEmpty())
             return;
-        annotate.typeAnnotation(new Annotate.Annotator() {
+        annotate.typeAnnotation(new Annotate.Worker() {
             @Override
             public String toString() {
                 return "annotate " + annotations + " onto " + type;
             }
             @Override
-            public void enterAnnotation() {
+            public void run() {
                 List<Attribute.TypeCompound> compounds = fromAnnotations(annotations);
                 type.typeAnnotations = compounds;
             }
