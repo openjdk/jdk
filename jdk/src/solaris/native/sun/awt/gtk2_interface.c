@@ -81,7 +81,7 @@ const gint DEFAULT    = 1 << 10;
 
 static void *gtk2_libhandle = NULL;
 static void *gthread_libhandle = NULL;
-static gboolean flag_g_thread_get_initialized = FALSE;
+
 static jmp_buf j;
 
 /* Widgets */
@@ -502,7 +502,7 @@ void gtk2_file_chooser_load()
     fp_gtk_g_slist_length = dl_symbol("g_slist_length");
 }
 
-gboolean gtk2_load()
+gboolean gtk2_load(JNIEnv *env)
 {
     gboolean result;
     int i;
@@ -533,6 +533,7 @@ gboolean gtk2_load()
         }
 
         /* GLib */
+        fp_glib_check_version = dl_symbol("glib_check_version");
         fp_g_free = dl_symbol("g_free");
         fp_g_object_unref = dl_symbol("g_object_unref");
 
@@ -708,6 +709,9 @@ gboolean gtk2_load()
         /**
          * GLib thread system
          */
+        if (fp_glib_check_version(2, 20, 0) == NULL) {
+            fp_g_thread_get_initialized = dl_symbol_gthread("g_thread_get_initialized");
+        }
         fp_g_thread_init = dl_symbol_gthread("g_thread_init");
         fp_gdk_threads_init = dl_symbol("gdk_threads_init");
         fp_gdk_threads_enter = dl_symbol("gdk_threads_enter");
@@ -810,16 +814,33 @@ gboolean gtk2_load()
     io_handler = XSetIOErrorHandler(NULL);
 
     if (fp_gtk_check_version(2, 2, 0) == NULL) {
-        // Init the thread system to use GLib in a thread-safe mode
-        if (!flag_g_thread_get_initialized) {
-            flag_g_thread_get_initialized = TRUE;
+        jclass clazz = (*env)->FindClass(env, "sun/misc/GThreadHelper");
+        jmethodID mid_getAndSetInitializationNeededFlag =
+                (*env)->GetStaticMethodID(env, clazz, "getAndSetInitializationNeededFlag", "()Z");
+        jmethodID mid_lock = (*env)->GetStaticMethodID(env, clazz, "lock", "()V");
+        jmethodID mid_unlock = (*env)->GetStaticMethodID(env, clazz, "unlock", "()V");
 
-            fp_g_thread_init(NULL);
+        // Init the thread system to use GLib in a thread-safe mode
+        (*env)->CallStaticVoidMethod(env, clazz, mid_lock);
+
+        // Calling g_thread_init() multiple times leads to crash on GLib < 2.24
+        // We can use g_thread_get_initialized () but it is available only for
+        // GLib >= 2.20. We rely on GThreadHelper for GLib < 2.20.
+        gboolean is_g_thread_get_initialized = FALSE;
+        if (fp_glib_check_version(2, 20, 0) == NULL) {
+            is_g_thread_get_initialized = fp_g_thread_get_initialized();
+        }
+
+        if (!(*env)->CallStaticBooleanMethod(env, clazz, mid_getAndSetInitializationNeededFlag)) {
+            if (!is_g_thread_get_initialized) {
+                fp_g_thread_init(NULL);
+            }
 
             //According the GTK documentation, gdk_threads_init() should be
             //called before gtk_init() or gtk_init_check()
             fp_gdk_threads_init();
         }
+        (*env)->CallStaticVoidMethod(env, clazz, mid_unlock);
     }
     result = (*fp_gtk_init_check)(NULL, NULL);
 
