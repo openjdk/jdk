@@ -2191,13 +2191,11 @@ public class Window extends Container implements Accessible {
      * When the window is later shown, it will be always-on-top.
      *
      * <p> When this method is called on a window with a value of
-     * {@code false} the always-on-top state is set to normal. The
-     * window remains in the top-most position but it`s z-order can be
-     * changed as for any other window.  Calling this method with a value
-     * of {@code false} on a window that has a normal state has no
-     * effect.  Setting the always-on-top state to false has no effect on
-     * the relative z-order of the windows if there are no other
-     * always-on-top windows.
+     * {@code false} the always-on-top state is set to normal. It may also
+     * cause an unspecified, platform-dependent change in the z-order of
+     * top-level windows, but other always-on-top windows will remain in
+     * top-most position. Calling this method with a value of {@code false}
+     * on a window that has a normal state has no effect.
      *
      * <p><b>Note</b>: some platforms might not support always-on-top
      * windows.  To detect if always-on-top windows are supported by the
