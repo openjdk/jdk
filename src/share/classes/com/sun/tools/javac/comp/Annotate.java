@@ -250,7 +250,8 @@ public class Annotate {
         a.type = chk.checkType(a.annotationType.pos(), at, expected);
         if (a.type.isErroneous()) {
             if (typeAnnotation) {
-                return new Attribute.TypeCompound(a.type, List.<Pair<MethodSymbol,Attribute>>nil(), null);
+                return new Attribute.TypeCompound(a.type, List.<Pair<MethodSymbol,Attribute>>nil(),
+                        new TypeAnnotationPosition());
             } else {
                 return new Attribute.Compound(a.type, List.<Pair<MethodSymbol,Attribute>>nil());
             }

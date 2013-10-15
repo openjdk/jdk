@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,26 +21,23 @@
  * questions.
  */
 
-/*
- * @test
- * @bug 8023768
- * @summary Type annotations on a type variable, where the bound of
- *   the type variable is an annotated type variable,
- *   need to be processed correctly.
- * @author Werner Dietl
- * @compile TypeVariableCycleTest.java
- */
+// key: compiler.err.cant.type.annotate.scoping
 
 import java.lang.annotation.*;
 
-class TypeVariableCycleTest<CTV> {
-    <MTV extends  @TA CTV> MTV cast(CTV p) {
-        return (@TB MTV) p;
+class CantAnnotateScoping {
+    @Target(ElementType.TYPE_USE)
+    @interface TA {}
+    @Target(ElementType.TYPE_USE)
+    @interface TB {}
+
+    interface Outer {
+        interface Inner {}
     }
+
+    // Error:
+    @TA @TB Outer.Inner f;
+
+    // OK:
+    @TA @TB Outer g;
 }
-
-@Target(ElementType.TYPE_USE)
-@interface TA {}
-
-@Target(ElementType.TYPE_USE)
-@interface TB {}
