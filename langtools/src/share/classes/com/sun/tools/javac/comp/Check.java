@@ -2399,13 +2399,28 @@ public class Check {
          ClashFilter cf = new ClashFilter(site);
         //for each method m1 that is overridden (directly or indirectly)
         //by method 'sym' in 'site'...
+
+        List<MethodSymbol> potentiallyAmbiguousList = List.nil();
+        boolean overridesAny = false;
         for (Symbol m1 : types.membersClosure(site, false).getElementsByName(sym.name, cf)) {
-             if (!sym.overrides(m1, site.tsym, types, false)) {
-                 checkPotentiallyAmbiguousOverloads(pos, site, sym, (MethodSymbol)m1);
-                 continue;
-             }
-             //...check each method m2 that is a member of 'site'
-             for (Symbol m2 : types.membersClosure(site, false).getElementsByName(sym.name, cf)) {
+            if (!sym.overrides(m1, site.tsym, types, false)) {
+                if (m1 == sym) {
+                    continue;
+                }
+
+                if (!overridesAny) {
+                    potentiallyAmbiguousList = potentiallyAmbiguousList.prepend((MethodSymbol)m1);
+                }
+                continue;
+            }
+
+            if (m1 != sym) {
+                overridesAny = true;
+                potentiallyAmbiguousList = List.nil();
+            }
+
+            //...check each method m2 that is a member of 'site'
+            for (Symbol m2 : types.membersClosure(site, false).getElementsByName(sym.name, cf)) {
                 if (m2 == m1) continue;
                 //if (i) the signature of 'sym' is not a subsignature of m1 (seen as
                 //a member of 'site') and (ii) m1 has the same erasure as m2, issue an error
@@ -2424,9 +2439,13 @@ public class Check {
                 }
             }
         }
+
+        if (!overridesAny) {
+            for (MethodSymbol m: potentiallyAmbiguousList) {
+                checkPotentiallyAmbiguousOverloads(pos, site, sym, m);
+            }
+        }
     }
-
-
 
     /** Check that all static methods accessible from 'site' are
      *  mutually compatible (JLS 8.4.8).
