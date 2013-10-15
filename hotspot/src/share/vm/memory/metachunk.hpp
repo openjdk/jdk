@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,89 +24,44 @@
 #ifndef SHARE_VM_MEMORY_METACHUNK_HPP
 #define SHARE_VM_MEMORY_METACHUNK_HPP
 
-//  Metachunk - Quantum of allocation from a Virtualspace
-//    Metachunks are reused (when freed are put on a global freelist) and
-//    have no permanent association to a SpaceManager.
-
-//            +--------------+ <- end
-//            |              |          --+       ---+
-//            |              |            | free     |
-//            |              |            |          |
-//            |              |            |          | capacity
-//            |              |            |          |
-//            |              | <- top   --+          |
-//            |              |           ---+        |
-//            |              |              | used   |
-//            |              |              |        |
-//            |              |              |        |
-//            +--------------+ <- bottom ---+     ---+
+#include "memory/allocation.hpp"
+#include "utilities/debug.hpp"
+#include "utilities/globalDefinitions.hpp"
 
 class VirtualSpaceNode;
 
-class Metachunk VALUE_OBJ_CLASS_SPEC {
-  // link to support lists of chunks
-  Metachunk* _next;
-  Metachunk* _prev;
-  VirtualSpaceNode* _container;
-
-  MetaWord* _bottom;
-  MetaWord* _end;
-  MetaWord* _top;
+// Super class of Metablock and Metachunk to allow them to
+// be put on the FreeList and in the BinaryTreeDictionary.
+template <class T>
+class Metabase VALUE_OBJ_CLASS_SPEC {
   size_t _word_size;
-  // Used in a guarantee() so included in the Product builds
-  // even through it is only for debugging.
-  bool _is_free;
+  T*     _next;
+  T*     _prev;
 
-  // Metachunks are allocated out of a MetadataVirtualSpace and
-  // and use some of its space to describe itself (plus alignment
-  // considerations).  Metadata is allocated in the rest of the chunk.
-  // This size is the overhead of maintaining the Metachunk within
-  // the space.
-  static size_t _overhead;
+ protected:
+  Metabase(size_t word_size) : _word_size(word_size), _next(NULL), _prev(NULL) {}
 
  public:
-  Metachunk(size_t word_size , VirtualSpaceNode* container);
+  T* next() const         { return _next; }
+  T* prev() const         { return _prev; }
+  void set_next(T* v)     { _next = v; assert(v != this, "Boom");}
+  void set_prev(T* v)     { _prev = v; assert(v != this, "Boom");}
+  void clear_next()       { set_next(NULL); }
+  void clear_prev()       { set_prev(NULL); }
 
-  // Used to add a Metachunk to a list of Metachunks
-  void set_next(Metachunk* v) { _next = v; assert(v != this, "Boom");}
-  void set_prev(Metachunk* v) { _prev = v; assert(v != this, "Boom");}
-  void set_container(VirtualSpaceNode* v) { _container = v; }
-
-  MetaWord* allocate(size_t word_size);
-
-  // Accessors
-  Metachunk* next() const { return _next; }
-  Metachunk* prev() const { return _prev; }
-  VirtualSpaceNode* container() const { return _container; }
-  MetaWord* bottom() const { return _bottom; }
-  MetaWord* end() const { return _end; }
-  MetaWord* top() const { return _top; }
-  size_t word_size() const { return _word_size; }
   size_t size() const volatile { return _word_size; }
   void set_size(size_t v) { _word_size = v; }
-  bool is_free() { return _is_free; }
-  void set_is_free(bool v) { _is_free = v; }
-  static size_t overhead() { return _overhead; }
-  void clear_next()              { set_next(NULL); }
-  void link_prev(Metachunk* ptr) { set_prev(ptr); }
-  uintptr_t* end()              { return ((uintptr_t*) this) + size(); }
-  bool cantCoalesce() const     { return false; }
-  void link_next(Metachunk* ptr) { set_next(ptr); }
-  void link_after(Metachunk* ptr){
+
+  void link_next(T* ptr)  { set_next(ptr); }
+  void link_prev(T* ptr)  { set_prev(ptr); }
+  void link_after(T* ptr) {
     link_next(ptr);
-    if (ptr != NULL) ptr->link_prev(this);
+    if (ptr != NULL) ptr->link_prev((T*)this);
   }
 
-  // Reset top to bottom so chunk can be reused.
-  void reset_empty() { _top = (_bottom + _overhead); _next = NULL; _prev = NULL; }
-  bool is_empty() { return _top == (_bottom + _overhead); }
+  uintptr_t* end() const        { return ((uintptr_t*) this) + size(); }
 
-  // used (has been allocated)
-  // free (available for future allocations)
-  // capacity (total size of chunk)
-  size_t used_word_size() const;
-  size_t free_word_size() const;
-  size_t capacity_word_size()const;
+  bool cantCoalesce() const     { return false; }
 
   // Debug support
 #ifdef ASSERT
@@ -114,14 +69,98 @@ class Metachunk VALUE_OBJ_CLASS_SPEC {
   void* next_addr() const { return (void*)&_next; }
   void* size_addr() const { return (void*)&_word_size; }
 #endif
-  bool verify_chunk_in_free_list(Metachunk* tc) const { return true; }
+  bool verify_chunk_in_free_list(T* tc) const { return true; }
   bool verify_par_locked() { return true; }
 
   void assert_is_mangled() const {/* Don't check "\*/}
 
-  NOT_PRODUCT(void mangle();)
+  bool is_free()                 { return true; }
+};
+
+//  Metachunk - Quantum of allocation from a Virtualspace
+//    Metachunks are reused (when freed are put on a global freelist) and
+//    have no permanent association to a SpaceManager.
+
+//            +--------------+ <- end    --+       --+
+//            |              |             |         |
+//            |              |             | free    |
+//            |              |             |         |
+//            |              |             |         | size | capacity
+//            |              |             |         |
+//            |              | <- top   -- +         |
+//            |              |             |         |
+//            |              |             | used    |
+//            |              |             |         |
+//            |              |             |         |
+//            +--------------+ <- bottom --+       --+
+
+class Metachunk : public Metabase<Metachunk> {
+  friend class TestMetachunk;
+  // The VirtualSpaceNode containing this chunk.
+  VirtualSpaceNode* _container;
+
+  // Current allocation top.
+  MetaWord* _top;
+
+  DEBUG_ONLY(bool _is_tagged_free;)
+
+  MetaWord* initial_top() const { return (MetaWord*)this + overhead(); }
+  MetaWord* top() const         { return _top; }
+
+ public:
+  // Metachunks are allocated out of a MetadataVirtualSpace and
+  // and use some of its space to describe itself (plus alignment
+  // considerations).  Metadata is allocated in the rest of the chunk.
+  // This size is the overhead of maintaining the Metachunk within
+  // the space.
+
+  // Alignment of each allocation in the chunks.
+  static size_t object_alignment();
+
+  // Size of the Metachunk header, including alignment.
+  static size_t overhead();
+
+  Metachunk(size_t word_size , VirtualSpaceNode* container);
+
+  MetaWord* allocate(size_t word_size);
+
+  VirtualSpaceNode* container() const { return _container; }
+
+  MetaWord* bottom() const { return (MetaWord*) this; }
+
+  // Reset top to bottom so chunk can be reused.
+  void reset_empty() { _top = initial_top(); clear_next(); clear_prev(); }
+  bool is_empty() { return _top == initial_top(); }
+
+  // used (has been allocated)
+  // free (available for future allocations)
+  size_t word_size() const { return size(); }
+  size_t used_word_size() const;
+  size_t free_word_size() const;
+
+#ifdef ASSERT
+  void mangle();
+  bool is_tagged_free() { return _is_tagged_free; }
+  void set_is_tagged_free(bool v) { _is_tagged_free = v; }
+#endif
 
   void print_on(outputStream* st) const;
   void verify();
 };
+
+// Metablock is the unit of allocation from a Chunk.
+//
+// A Metablock may be reused by its SpaceManager but are never moved between
+// SpaceManagers.  There is no explicit link to the Metachunk
+// from which it was allocated.  Metablock may be deallocated and
+// put on a freelist but the space is never freed, rather
+// the Metachunk it is a part of will be deallocated when it's
+// associated class loader is collected.
+
+class Metablock : public Metabase<Metablock> {
+  friend class VMStructs;
+ public:
+  Metablock(size_t word_size) : Metabase<Metablock>(word_size) {}
+};
+
 #endif  // SHARE_VM_MEMORY_METACHUNK_HPP
