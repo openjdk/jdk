@@ -33,7 +33,14 @@ class VirtualSpaceNode;
 const size_t metadata_chunk_initialize = 0xf7f7f7f7;
 
 size_t Metachunk::object_alignment() {
-  return ARENA_AMALLOC_ALIGNMENT;
+  // Must align pointers and sizes to 8,
+  // so that 64 bit types get correctly aligned.
+  const size_t alignment = 8;
+
+  // Make sure that the Klass alignment also agree.
+  STATIC_ASSERT(alignment == (size_t)KlassAlignmentInBytes);
+
+  return alignment;
 }
 
 size_t Metachunk::overhead() {
