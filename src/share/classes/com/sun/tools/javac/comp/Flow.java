@@ -1718,9 +1718,9 @@ public class Flow {
             if (tree.body == null) {
                 return;
             }
-            /*  MemberEnter can generate synthetic methods, ignore them
+            /*  Ignore synthetic methods, except for translated lambda methods.
              */
-            if ((tree.sym.flags() & SYNTHETIC) != 0) {
+            if ((tree.sym.flags() & (SYNTHETIC | LAMBDA_METHOD)) == SYNTHETIC) {
                 return;
             }
 
