@@ -77,6 +77,7 @@ import java.time.temporal.TemporalAccessor;
 import java.time.temporal.TemporalAdjuster;
 import java.time.temporal.TemporalAmount;
 import java.time.temporal.TemporalField;
+import java.time.temporal.TemporalQueries;
 import java.time.temporal.TemporalQuery;
 import java.time.temporal.TemporalUnit;
 import java.time.temporal.UnsupportedTemporalTypeException;
@@ -292,7 +293,7 @@ public interface ChronoLocalDate
             return (ChronoLocalDate) temporal;
         }
         Objects.requireNonNull(temporal, "temporal");
-        Chronology chrono = temporal.query(TemporalQuery.chronology());
+        Chronology chrono = temporal.query(TemporalQueries.chronology());
         if (chrono == null) {
             throw new DateTimeException("Unable to obtain ChronoLocalDate from TemporalAccessor: " + temporal.getClass());
         }
@@ -511,13 +512,13 @@ public interface ChronoLocalDate
     @SuppressWarnings("unchecked")
     @Override
     default <R> R query(TemporalQuery<R> query) {
-        if (query == TemporalQuery.zoneId() || query == TemporalQuery.zone() || query == TemporalQuery.offset()) {
+        if (query == TemporalQueries.zoneId() || query == TemporalQueries.zone() || query == TemporalQueries.offset()) {
             return null;
-        } else if (query == TemporalQuery.localTime()) {
+        } else if (query == TemporalQueries.localTime()) {
             return null;
-        } else if (query == TemporalQuery.chronology()) {
+        } else if (query == TemporalQueries.chronology()) {
             return (R) getChronology();
-        } else if (query == TemporalQuery.precision()) {
+        } else if (query == TemporalQueries.precision()) {
             return (R) DAYS;
         }
         // inline TemporalAccessor.super.query(query) as an optimization

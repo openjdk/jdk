@@ -39,7 +39,7 @@ import java.time.format.DateTimeParseException;
 import java.time.format.FormatStyle;
 import java.time.format.TextStyle;
 import java.time.temporal.TemporalAccessor;
-import java.time.temporal.TemporalQuery;
+import java.time.temporal.TemporalQueries;
 import java.util.Locale;
 
 import org.testng.annotations.BeforeMethod;
@@ -163,7 +163,7 @@ public class TestNonIsoFormatter {
         String text = dtf.format(chrono.dateNow());
         assertEquals(text, expected);
         TemporalAccessor ta = dtf.parse(text);
-        Chronology cal = ta.query(TemporalQuery.chronology());
+        Chronology cal = ta.query(TemporalQueries.chronology());
         assertEquals(cal, chrono);
     }
 }

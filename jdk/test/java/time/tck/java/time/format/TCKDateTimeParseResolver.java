@@ -113,7 +113,7 @@ import java.time.temporal.IsoFields;
 import java.time.temporal.Temporal;
 import java.time.temporal.TemporalAccessor;
 import java.time.temporal.TemporalField;
-import java.time.temporal.TemporalQuery;
+import java.time.temporal.TemporalQueries;
 import java.time.temporal.TemporalUnit;
 import java.time.temporal.ValueRange;
 import java.util.Map;
@@ -147,8 +147,8 @@ public class TCKDateTimeParseResolver {
         DateTimeFormatter f = new DateTimeFormatterBuilder().appendValue(field1).toFormatter();
 
         TemporalAccessor accessor = f.parse(str);
-        assertEquals(accessor.query(TemporalQuery.localDate()), null);
-        assertEquals(accessor.query(TemporalQuery.localTime()), null);
+        assertEquals(accessor.query(TemporalQueries.localDate()), null);
+        assertEquals(accessor.query(TemporalQueries.localTime()), null);
         assertEquals(accessor.isSupported(field1), true);
         assertEquals(accessor.getLong(field1), value1);
     }
@@ -186,8 +186,8 @@ public class TCKDateTimeParseResolver {
                 .appendValue(field2).toFormatter();
         TemporalAccessor accessor = f.parse(str);
 
-        assertEquals(accessor.query(TemporalQuery.localDate()), null);
-        assertEquals(accessor.query(TemporalQuery.localTime()), null);
+        assertEquals(accessor.query(TemporalQueries.localDate()), null);
+        assertEquals(accessor.query(TemporalQueries.localTime()), null);
         assertEquals(accessor.isSupported(field1), true);
         assertEquals(accessor.isSupported(field2), true);
         assertEquals(accessor.getLong(field1), value1);
@@ -218,8 +218,8 @@ public class TCKDateTimeParseResolver {
                 .appendValue(field3).toFormatter();
         TemporalAccessor accessor = f.parse(str);
 
-        assertEquals(accessor.query(TemporalQuery.localDate()), null);
-        assertEquals(accessor.query(TemporalQuery.localTime()), null);
+        assertEquals(accessor.query(TemporalQueries.localDate()), null);
+        assertEquals(accessor.query(TemporalQueries.localTime()), null);
         assertEquals(accessor.isSupported(field1), true);
         assertEquals(accessor.isSupported(field2), true);
         assertEquals(accessor.isSupported(field3), true);
@@ -252,8 +252,8 @@ public class TCKDateTimeParseResolver {
         DateTimeFormatter f = new DateTimeFormatterBuilder().appendValue(field1).toFormatter();
 
         TemporalAccessor accessor = f.parse(str);
-        assertEquals(accessor.query(TemporalQuery.localDate()), null);
-        assertEquals(accessor.query(TemporalQuery.localTime()), null);
+        assertEquals(accessor.query(TemporalQueries.localDate()), null);
+        assertEquals(accessor.query(TemporalQueries.localTime()), null);
         if (expectedField1 != null) {
             assertEquals(accessor.isSupported(expectedField1), true);
             assertEquals(accessor.getLong(expectedField1), expectedValue1.longValue());
@@ -278,8 +278,8 @@ public class TCKDateTimeParseResolver {
         DateTimeFormatter f = new DateTimeFormatterBuilder().appendValue(field1).toFormatter();
 
         TemporalAccessor accessor = f.parse(str);
-        assertEquals(accessor.query(TemporalQuery.localDate()), expectedDate);
-        assertEquals(accessor.query(TemporalQuery.localTime()), null);
+        assertEquals(accessor.query(TemporalQueries.localDate()), expectedDate);
+        assertEquals(accessor.query(TemporalQueries.localTime()), null);
     }
 
     //-----------------------------------------------------------------------
@@ -303,8 +303,8 @@ public class TCKDateTimeParseResolver {
         DateTimeFormatter f = new DateTimeFormatterBuilder().appendValue(field1).toFormatter();
 
         TemporalAccessor accessor = f.parse(str);
-        assertEquals(accessor.query(TemporalQuery.localDate()), null);
-        assertEquals(accessor.query(TemporalQuery.localTime()), expectedTime);
+        assertEquals(accessor.query(TemporalQueries.localDate()), null);
+        assertEquals(accessor.query(TemporalQueries.localTime()), expectedTime);
     }
 
     //-----------------------------------------------------------------------
@@ -334,8 +334,8 @@ public class TCKDateTimeParseResolver {
                 .appendValue(field2).toFormatter();
 
         TemporalAccessor accessor = f.parse(str);
-        assertEquals(accessor.query(TemporalQuery.localDate()), null);
-        assertEquals(accessor.query(TemporalQuery.localTime()), null);
+        assertEquals(accessor.query(TemporalQueries.localDate()), null);
+        assertEquals(accessor.query(TemporalQueries.localTime()), null);
         if (expectedField1 != null) {
             assertEquals(accessor.isSupported(expectedField1), true);
             assertEquals(accessor.getLong(expectedField1), expectedValue1.longValue());
@@ -382,8 +382,8 @@ public class TCKDateTimeParseResolver {
                 .appendValue(field2).toFormatter();
 
         TemporalAccessor accessor = f.parse(str);
-        assertEquals(accessor.query(TemporalQuery.localDate()), expectedDate);
-        assertEquals(accessor.query(TemporalQuery.localTime()), null);
+        assertEquals(accessor.query(TemporalQueries.localDate()), expectedDate);
+        assertEquals(accessor.query(TemporalQueries.localTime()), null);
     }
 
     //-----------------------------------------------------------------------
@@ -469,8 +469,8 @@ public class TCKDateTimeParseResolver {
                 .appendValue(field2).toFormatter();
 
         TemporalAccessor accessor = f.parse(str);
-        assertEquals(accessor.query(TemporalQuery.localDate()), null);
-        assertEquals(accessor.query(TemporalQuery.localTime()), expectedTime);
+        assertEquals(accessor.query(TemporalQueries.localDate()), null);
+        assertEquals(accessor.query(TemporalQueries.localTime()), expectedTime);
     }
 
     //-----------------------------------------------------------------------
@@ -502,8 +502,8 @@ public class TCKDateTimeParseResolver {
                 .appendValue(field3).toFormatter();
 
         TemporalAccessor accessor = f.parse(str);
-        assertEquals(accessor.query(TemporalQuery.localDate()), expectedDate);
-        assertEquals(accessor.query(TemporalQuery.localTime()), null);
+        assertEquals(accessor.query(TemporalQueries.localDate()), expectedDate);
+        assertEquals(accessor.query(TemporalQueries.localTime()), null);
     }
 
     //-----------------------------------------------------------------------
@@ -535,8 +535,8 @@ public class TCKDateTimeParseResolver {
                 .appendValue(field4).toFormatter();
 
         TemporalAccessor accessor = f.parse(str);
-        assertEquals(accessor.query(TemporalQuery.localDate()), expectedDate);
-        assertEquals(accessor.query(TemporalQuery.localTime()), null);
+        assertEquals(accessor.query(TemporalQueries.localDate()), expectedDate);
+        assertEquals(accessor.query(TemporalQueries.localTime()), null);
     }
 
     //-----------------------------------------------------------------------
@@ -603,8 +603,8 @@ public class TCKDateTimeParseResolver {
         for (ResolverStyle s : styles) {
             if (expectedTime != null) {
                 TemporalAccessor accessor = f.withResolverStyle(s).parse("");
-                assertEquals(accessor.query(TemporalQuery.localDate()), null, "ResolverStyle: " + s);
-                assertEquals(accessor.query(TemporalQuery.localTime()), expectedTime, "ResolverStyle: " + s);
+                assertEquals(accessor.query(TemporalQueries.localDate()), null, "ResolverStyle: " + s);
+                assertEquals(accessor.query(TemporalQueries.localTime()), expectedTime, "ResolverStyle: " + s);
                 assertEquals(accessor.query(DateTimeFormatter.parsedExcessDays()), excessPeriod, "ResolverStyle: " + s);
             } else {
                 try {
@@ -629,8 +629,8 @@ public class TCKDateTimeParseResolver {
         for (ResolverStyle s : styles) {
             if (expectedTime != null) {
                 TemporalAccessor accessor = f.withResolverStyle(s).parse("");
-                assertEquals(accessor.query(TemporalQuery.localDate()), null, "ResolverStyle: " + s);
-                assertEquals(accessor.query(TemporalQuery.localTime()), expectedTime.minusNanos(nano), "ResolverStyle: " + s);
+                assertEquals(accessor.query(TemporalQueries.localDate()), null, "ResolverStyle: " + s);
+                assertEquals(accessor.query(TemporalQueries.localTime()), expectedTime.minusNanos(nano), "ResolverStyle: " + s);
                 assertEquals(accessor.query(DateTimeFormatter.parsedExcessDays()), excessPeriod, "ResolverStyle: " + s);
             } else {
                 try {
@@ -658,8 +658,8 @@ public class TCKDateTimeParseResolver {
             LocalDate expectedDate = LocalDate.of(2012, 6, 30).plus(excessPeriod);
             for (ResolverStyle s : styles) {
                 TemporalAccessor accessor = f.withResolverStyle(s).parse("");
-                assertEquals(accessor.query(TemporalQuery.localDate()), expectedDate, "ResolverStyle: " + s);
-                assertEquals(accessor.query(TemporalQuery.localTime()), expectedTime, "ResolverStyle: " + s);
+                assertEquals(accessor.query(TemporalQueries.localDate()), expectedDate, "ResolverStyle: " + s);
+                assertEquals(accessor.query(TemporalQueries.localTime()), expectedTime, "ResolverStyle: " + s);
                 assertEquals(accessor.query(DateTimeFormatter.parsedExcessDays()), Period.ZERO, "ResolverStyle: " + s);
             }
         }
@@ -696,8 +696,8 @@ public class TCKDateTimeParseResolver {
 
         if (expectedSecond != null) {
             TemporalAccessor accessor = f.withResolverStyle(style).parse(str);
-            assertEquals(accessor.query(TemporalQuery.localDate()), null);
-            assertEquals(accessor.query(TemporalQuery.localTime()), LocalTime.ofSecondOfDay(expectedSecond));
+            assertEquals(accessor.query(TemporalQueries.localDate()), null);
+            assertEquals(accessor.query(TemporalQueries.localTime()), LocalTime.ofSecondOfDay(expectedSecond));
             assertEquals(accessor.query(DateTimeFormatter.parsedExcessDays()), Period.ofDays(expectedDays));
         } else {
             try {
@@ -740,8 +740,8 @@ public class TCKDateTimeParseResolver {
 
         if (expectedMinute != null) {
             TemporalAccessor accessor = f.withResolverStyle(style).parse(str);
-            assertEquals(accessor.query(TemporalQuery.localDate()), null);
-            assertEquals(accessor.query(TemporalQuery.localTime()), LocalTime.ofSecondOfDay(expectedMinute * 60));
+            assertEquals(accessor.query(TemporalQueries.localDate()), null);
+            assertEquals(accessor.query(TemporalQueries.localTime()), LocalTime.ofSecondOfDay(expectedMinute * 60));
             assertEquals(accessor.query(DateTimeFormatter.parsedExcessDays()), Period.ofDays(expectedDays));
         } else {
             try {
@@ -784,8 +784,8 @@ public class TCKDateTimeParseResolver {
 
         if (expectedHour != null) {
             TemporalAccessor accessor = f.withResolverStyle(style).parse(str);
-            assertEquals(accessor.query(TemporalQuery.localDate()), null);
-            assertEquals(accessor.query(TemporalQuery.localTime()), LocalTime.of(expectedHour, 0));
+            assertEquals(accessor.query(TemporalQueries.localDate()), null);
+            assertEquals(accessor.query(TemporalQueries.localTime()), LocalTime.of(expectedHour, 0));
             assertEquals(accessor.query(DateTimeFormatter.parsedExcessDays()), Period.ofDays(expectedDays));
         } else {
             try {
@@ -828,8 +828,8 @@ public class TCKDateTimeParseResolver {
 
         if (expectedValue != null) {
             TemporalAccessor accessor = f.withResolverStyle(style).parse(str);
-            assertEquals(accessor.query(TemporalQuery.localDate()), null);
-            assertEquals(accessor.query(TemporalQuery.localTime()), null);
+            assertEquals(accessor.query(TemporalQueries.localDate()), null);
+            assertEquals(accessor.query(TemporalQueries.localTime()), null);
             assertEquals(accessor.isSupported(CLOCK_HOUR_OF_AMPM), false);
             assertEquals(accessor.isSupported(HOUR_OF_AMPM), true);
             assertEquals(accessor.getLong(HOUR_OF_AMPM), expectedValue.longValue());
@@ -871,8 +871,8 @@ public class TCKDateTimeParseResolver {
 
         if (expectedValue != null) {
             TemporalAccessor accessor = f.withResolverStyle(style).parse(str);
-            assertEquals(accessor.query(TemporalQuery.localDate()), null);
-            assertEquals(accessor.query(TemporalQuery.localTime()), null);
+            assertEquals(accessor.query(TemporalQueries.localDate()), null);
+            assertEquals(accessor.query(TemporalQueries.localTime()), null);
             assertEquals(accessor.isSupported(AMPM_OF_DAY), true);
             assertEquals(accessor.getLong(AMPM_OF_DAY), expectedValue.longValue());
         } else {
@@ -933,8 +933,8 @@ public class TCKDateTimeParseResolver {
         };
         DateTimeFormatter f = new DateTimeFormatterBuilder().appendValue(field).toFormatter();
         TemporalAccessor accessor = f.parse("1234567890");
-        assertEquals(accessor.query(TemporalQuery.localDate()), null);
-        assertEquals(accessor.query(TemporalQuery.localTime()), LocalTime.of(0, 0, 1, 234_567_890));
+        assertEquals(accessor.query(TemporalQueries.localDate()), null);
+        assertEquals(accessor.query(TemporalQueries.localTime()), LocalTime.of(0, 0, 1, 234_567_890));
     }
 
     @Test
@@ -985,8 +985,8 @@ public class TCKDateTimeParseResolver {
         };
         DateTimeFormatter f = new DateTimeFormatterBuilder().appendValue(field).toFormatter();
         TemporalAccessor accessor = f.parse("1234567890");
-        assertEquals(accessor.query(TemporalQuery.localDate()), LocalDate.of(2010, 6, 30));
-        assertEquals(accessor.query(TemporalQuery.localTime()), LocalTime.of(12, 30));
+        assertEquals(accessor.query(TemporalQueries.localDate()), LocalDate.of(2010, 6, 30));
+        assertEquals(accessor.query(TemporalQueries.localTime()), LocalTime.of(12, 30));
     }
 
     @Test(expectedExceptions = DateTimeParseException.class)

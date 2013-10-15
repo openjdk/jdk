@@ -69,6 +69,7 @@ import java.time.format.DateTimeFormatterBuilder;
 import java.time.format.TextStyle;
 import java.time.temporal.TemporalAccessor;
 import java.time.temporal.TemporalField;
+import java.time.temporal.TemporalQueries;
 import java.time.temporal.TemporalQuery;
 import java.time.temporal.UnsupportedTemporalTypeException;
 import java.time.zone.ZoneRules;
@@ -492,7 +493,7 @@ public abstract class ZoneId implements Serializable {
      * This factory converts the arbitrary temporal object to an instance of {@code ZoneId}.
      * <p>
      * The conversion will try to obtain the zone in a way that favours region-based
-     * zones over offset-based zones using {@link TemporalQuery#zone()}.
+     * zones over offset-based zones using {@link TemporalQueries#zone()}.
      * <p>
      * This method matches the signature of the functional interface {@link TemporalQuery}
      * allowing it to be used in queries via method reference, {@code ZoneId::from}.
@@ -502,7 +503,7 @@ public abstract class ZoneId implements Serializable {
      * @throws DateTimeException if unable to convert to a {@code ZoneId}
      */
     public static ZoneId from(TemporalAccessor temporal) {
-        ZoneId obj = temporal.query(TemporalQuery.zone());
+        ZoneId obj = temporal.query(TemporalQueries.zone());
         if (obj == null) {
             throw new DateTimeException("Unable to obtain ZoneId from TemporalAccessor: " +
                     temporal + " of type " + temporal.getClass().getName());
@@ -558,7 +559,7 @@ public abstract class ZoneId implements Serializable {
      * methods on the interface have no meaning to {@code ZoneId}.
      * <p>
      * The returned temporal has no supported fields, with the query method
-     * supporting the return of the zone using {@link TemporalQuery#zoneId()}.
+     * supporting the return of the zone using {@link TemporalQueries#zoneId()}.
      *
      * @return a temporal equivalent to this zone, not null
      */
@@ -575,7 +576,7 @@ public abstract class ZoneId implements Serializable {
             @SuppressWarnings("unchecked")
             @Override
             public <R> R query(TemporalQuery<R> query) {
-                if (query == TemporalQuery.zoneId()) {
+                if (query == TemporalQueries.zoneId()) {
                     return (R) ZoneId.this;
                 }
                 return TemporalAccessor.super.query(query);

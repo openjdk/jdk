@@ -74,7 +74,6 @@ import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
 import java.io.InvalidObjectException;
-import java.io.InvalidObjectException;
 import java.io.Serializable;
 import java.time.chrono.Chronology;
 import java.time.chrono.IsoChronology;
@@ -89,6 +88,7 @@ import java.time.temporal.TemporalAccessor;
 import java.time.temporal.TemporalAdjuster;
 import java.time.temporal.TemporalAmount;
 import java.time.temporal.TemporalField;
+import java.time.temporal.TemporalQueries;
 import java.time.temporal.TemporalQuery;
 import java.time.temporal.TemporalUnit;
 import java.time.temporal.UnsupportedTemporalTypeException;
@@ -812,9 +812,9 @@ public final class Year
     @SuppressWarnings("unchecked")
     @Override
     public <R> R query(TemporalQuery<R> query) {
-        if (query == TemporalQuery.chronology()) {
+        if (query == TemporalQueries.chronology()) {
             return (R) IsoChronology.INSTANCE;
-        } else if (query == TemporalQuery.precision()) {
+        } else if (query == TemporalQueries.precision()) {
             return (R) YEARS;
         }
         return Temporal.super.query(query);
