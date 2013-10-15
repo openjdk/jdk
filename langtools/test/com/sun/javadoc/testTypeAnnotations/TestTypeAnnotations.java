@@ -27,6 +27,7 @@
  * @summary  Make sure that type annotations are displayed correctly
  * @author   Bhavesh Patel
  * @library  ../lib/
+ * @ignore
  * @build    JavadocTester TestTypeAnnotations
  * @run main TestTypeAnnotations
  */

@@ -429,7 +429,7 @@ public class SymbolMetadata {
             super(on.type, List.<Pair<Symbol.MethodSymbol, Attribute>>nil(),
                     ctx.isTypeCompound ?
                             ((Attribute.TypeCompound)placeholderFor.head).position :
-                                null);
+                                new TypeAnnotationPosition());
             this.ctx = ctx;
             this.placeholderFor = placeholderFor;
             this.on = on;

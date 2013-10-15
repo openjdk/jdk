@@ -2834,20 +2834,9 @@ public class Lower extends TreeTranslator {
         tree.underlyingType = translate(tree.underlyingType);
         // but maintain type annotations in the type.
         if (tree.type.isAnnotated()) {
-            if (tree.underlyingType.type.isAnnotated()) {
-                // The erasure of a type variable might be annotated.
-                // Merge all annotations.
-                AnnotatedType newat = (AnnotatedType) tree.underlyingType.type;
-                AnnotatedType at = (AnnotatedType) tree.type;
-                at.underlyingType = newat.underlyingType;
-                newat.typeAnnotations = at.typeAnnotations.appendList(newat.typeAnnotations);
-                tree.type = newat;
-            } else {
-                // Create a new AnnotatedType to have the correct tag.
-                AnnotatedType oldat = (AnnotatedType) tree.type;
-                tree.type = new AnnotatedType(tree.underlyingType.type);
-                ((AnnotatedType) tree.type).typeAnnotations = oldat.typeAnnotations;
-            }
+            tree.type = tree.underlyingType.type.unannotatedType().annotatedType(tree.type.getAnnotationMirrors());
+        } else if (tree.underlyingType.type.isAnnotated()) {
+            tree.type = tree.underlyingType.type;
         }
         result = tree;
     }

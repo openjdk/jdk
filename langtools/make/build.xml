@@ -89,7 +89,7 @@
       build-classes-TOOL        build the classes for the tool
       build-TOOL                build the jar file and script for the tool
       jtreg-TOOL                build the tool and run the appropriate tests
-      findbugs-TOOL             run findbugs on the tool's source oode
+      findbugs-TOOL             run findbugs on the tool's source code
       TOOL                      build the tool, run the tests, and run findbugs
  - utility definitions
  -->
