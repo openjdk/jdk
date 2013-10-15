@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2012, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2012, 2013, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -119,8 +119,13 @@ HOTSPOT_IMPORT_FILES:=$(addprefix $(LIBRARY_PREFIX), jvm.* saproc.* jsig.* sawin
 $(eval $(call CopyDir,HOTSPOT0, $(HOTSPOT_LIB_DIR), $(INSTALL_LIBRARIES_HERE), $(HOTSPOT_IMPORT_FILES)))
 $(eval $(call CopyDir,HOTSPOT1, $(HOTSPOT_DIST)/lib, $(JDK_OUTPUTDIR)/lib, $(HOTSPOT_IMPORT_FILES)))
 
-JSIG_DEBUGINFO := $(strip $(wildcard $(HOTSPOT_DIST)/jre/lib$(OPENJDK_TARGET_CPU_LIBDIR)/libjsig.debuginfo) \
-                  $(wildcard $(HOTSPOT_DIST)/jre/lib$(OPENJDK_TARGET_CPU_LIBDIR)/libjsig.diz) )
+ifeq ($(OPENJDK_TARGET_OS), macosx)
+    JSIG_DEBUGINFO := $(strip $(wildcard $(HOTSPOT_DIST)/jre/lib$(OPENJDK_TARGET_CPU_LIBDIR)/libjsig.dSYM) \
+                      $(wildcard $(HOTSPOT_DIST)/jre/lib$(OPENJDK_TARGET_CPU_LIBDIR)/libjsig.diz) )
+else
+    JSIG_DEBUGINFO := $(strip $(wildcard $(HOTSPOT_DIST)/jre/lib$(OPENJDK_TARGET_CPU_LIBDIR)/libjsig.debuginfo) \
+                      $(wildcard $(HOTSPOT_DIST)/jre/lib$(OPENJDK_TARGET_CPU_LIBDIR)/libjsig.diz) )
+endif
 
 ifneq ($(OPENJDK_TARGET_OS), windows)
     ifeq ($(JVM_VARIANT_SERVER), true)
@@ -135,10 +140,12 @@ ifneq ($(OPENJDK_TARGET_OS), windows)
             IMPORT_TARGET_FILES += $(INSTALL_LIBRARIES_HERE)/client/$(foreach I,$(JSIG_DEBUGINFO),$(notdir $I))
         endif
     endif
-    ifeq ($(JVM_VARIANT_MINIMAL1), true)
-        IMPORT_TARGET_FILES += $(INSTALL_LIBRARIES_HERE)/minimal/$(LIBRARY_PREFIX)jsig$(SHARED_LIBRARY_SUFFIX)
-        ifneq (,$(JSIG_DEBUGINFO))
-            IMPORT_TARGET_FILES += $(INSTALL_LIBRARIES_HERE)/minimal/$(foreach I,$(JSIG_DEBUGINFO),$(notdir $I))
+    ifneq ($(OPENJDK_TARGET_OS), macosx)
+        ifeq ($(JVM_VARIANT_MINIMAL1), true)
+            IMPORT_TARGET_FILES += $(INSTALL_LIBRARIES_HERE)/minimal/$(LIBRARY_PREFIX)jsig$(SHARED_LIBRARY_SUFFIX)
+            ifneq (,$(JSIG_DEBUGINFO))
+                IMPORT_TARGET_FILES += $(INSTALL_LIBRARIES_HERE)/minimal/$(foreach I,$(JSIG_DEBUGINFO),$(notdir $I))
+            endif
         endif
     endif
 endif
@@ -148,6 +155,21 @@ $(INSTALL_LIBRARIES_HERE)/server/%$(SHARED_LIBRARY_SUFFIX) : $(INSTALL_LIBRARIES
 	$(RM) $@
 	$(LN) -s ../$(@F) $@
 
+ifeq ($(OPENJDK_TARGET_OS), macosx)
+$(INSTALL_LIBRARIES_HERE)/server/%.dSYM : $(INSTALL_LIBRARIES_HERE)/%.dSYM
+	$(MKDIR) -p $(@D)
+	$(RM) $@
+	$(LN) -s ../$(@F) $@
+
+$(INSTALL_LIBRARIES_HERE)/server/%.diz : $(INSTALL_LIBRARIES_HERE)/%.diz
+	$(MKDIR) -p $(@D)
+	$(RM) $@
+	$(RM) $@.tmp $(basename $@).dSYM
+	$(LN) -s ../$(basename $(@F)).dSYM $(basename $@).dSYM
+	$(CD) $(@D) && $(ZIP) -q -y $@.tmp $(basename $(@F)).dSYM
+	$(RM) $(basename $@).dSYM
+	$(MV) $@.tmp $@
+else
 $(INSTALL_LIBRARIES_HERE)/server/%.debuginfo : $(INSTALL_LIBRARIES_HERE)/%.debuginfo
 	$(MKDIR) -p $(@D)
 	$(RM) $@
@@ -161,12 +183,28 @@ $(INSTALL_LIBRARIES_HERE)/server/%.diz : $(INSTALL_LIBRARIES_HERE)/%.diz
 	$(CD) $(@D) && $(ZIP) -q -y $@.tmp $(basename $(@F)).debuginfo
 	$(RM) $(basename $@).debuginfo
 	$(MV) $@.tmp $@
+endif
 
 $(INSTALL_LIBRARIES_HERE)/client/%$(SHARED_LIBRARY_SUFFIX) : $(INSTALL_LIBRARIES_HERE)/%$(SHARED_LIBRARY_SUFFIX)
 	$(MKDIR) -p $(@D)
 	$(RM) $@
 	$(LN) -s ../$(@F) $@
 
+ifeq ($(OPENJDK_TARGET_OS), macosx)
+$(INSTALL_LIBRARIES_HERE)/client/%.dSYM : $(INSTALL_LIBRARIES_HERE)/%.dSYM
+	$(MKDIR) -p $(@D)
+	$(RM) $@
+	$(LN) -s ../$(@F) $@
+
+$(INSTALL_LIBRARIES_HERE)/client/%.diz : $(INSTALL_LIBRARIES_HERE)/%.diz
+	$(MKDIR) -p $(@D)
+	$(RM) $@
+	$(RM) $@.tmp $(basename $@).dSYM
+	$(LN) -s ../$(basename $(@F)).dSYM $(basename $@).dSYM
+	$(CD) $(@D) && $(ZIP) -q -y $@.tmp $(basename $(@F)).dSYM
+	$(RM) $(basename $@).dSYM
+	$(MV) $@.tmp $@
+else
 $(INSTALL_LIBRARIES_HERE)/client/%.debuginfo : $(INSTALL_LIBRARIES_HERE)/%.debuginfo
 	$(MKDIR) -p $(@D)
 	$(RM) $@
@@ -180,12 +218,14 @@ $(INSTALL_LIBRARIES_HERE)/client/%.diz : $(INSTALL_LIBRARIES_HERE)/%.diz
 	$(CD) $(@D) && $(ZIP) -q -y $@.tmp $(basename $(@F)).debuginfo
 	$(RM) $(basename $@).debuginfo
 	$(MV) $@.tmp $@
+endif
 
 $(INSTALL_LIBRARIES_HERE)/minimal/%$(SHARED_LIBRARY_SUFFIX) : $(INSTALL_LIBRARIES_HERE)/%$(SHARED_LIBRARY_SUFFIX)
 	$(MKDIR) -p $(@D)
 	$(RM) $@
 	$(LN) -s ../$(@F) $@
 
+ifneq ($(OPENJDK_TARGET_OS), macosx)
 $(INSTALL_LIBRARIES_HERE)/minimal/%.debuginfo : $(INSTALL_LIBRARIES_HERE)/%.debuginfo
 	$(MKDIR) -p $(@D)
 	$(RM) $@
@@ -199,6 +239,7 @@ $(INSTALL_LIBRARIES_HERE)/minimal/%.diz : $(INSTALL_LIBRARIES_HERE)/%.diz
 	$(CD) $(@D) && $(ZIP) -q -y $@.tmp $(basename $(@F)).debuginfo
 	$(RM) $(basename $@).debuginfo
 	$(MV) $@.tmp $@
+endif
 
 ##########################################################################################
 # Unpack the binary distributions of the crypto classes if they exist.
