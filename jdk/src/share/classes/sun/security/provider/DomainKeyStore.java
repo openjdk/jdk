@@ -652,9 +652,12 @@ abstract class DomainKeyStore extends KeyStoreSpi {
 
                     // Store the keystores
                     KeyStore keystore = keystores.get(builder.name);
-                    keystore.store(new FileOutputStream(builder.file),
-                        password);
 
+                    try (FileOutputStream stream =
+                        new FileOutputStream(builder.file)) {
+
+                        keystore.store(stream, password);
+                    }
                 } catch (KeyStoreException e) {
                     throw new IOException(e);
                 }

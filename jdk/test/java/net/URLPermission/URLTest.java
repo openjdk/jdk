@@ -21,7 +21,7 @@
  * questions.
  */
 
-import java.net.HttpURLPermission;
+import java.net.URLPermission;
 /*
  * Run the tests once without security manager and once with
  *
