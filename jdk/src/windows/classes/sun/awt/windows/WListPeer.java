@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,13 +29,8 @@ import java.awt.peer.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ItemEvent;
 
-class WListPeer extends WComponentPeer implements ListPeer {
+final class WListPeer extends WComponentPeer implements ListPeer {
 
-    // ComponentPeer overrides
-
-    public Dimension minimumSize() {
-        return minimumSize(4);
-    }
     public boolean isFocusable() {
         return true;
     }

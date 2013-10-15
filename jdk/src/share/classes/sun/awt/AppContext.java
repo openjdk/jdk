@@ -839,6 +839,15 @@ public final class AppContext {
                 return (numAppContexts.get() == 1 && mainAppContext != null);
             }
 
+            private boolean hasRootThreadGroup(final AppContext ecx) {
+                return AccessController.doPrivileged(new PrivilegedAction<Boolean>() {
+                    @Override
+                    public Boolean run() {
+                        return ecx.threadGroup.getParent() == null;
+                    }
+                });
+            }
+
             /**
              * Returns the AppContext used for applet logging isolation, or null if
              * the default global context can be used.
@@ -886,7 +895,7 @@ public final class AppContext {
                 // See: JDK-8023258
                 final boolean isMainAppContext = ecx == null
                     || mainAppContext == ecx
-                    || mainAppContext == null && ecx.threadGroup.getParent() == null;
+                    || mainAppContext == null && hasRootThreadGroup(ecx);
 
                 return isMainAppContext ? null : ecx;
             }

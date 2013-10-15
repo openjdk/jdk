@@ -34,18 +34,41 @@ import java.security.Permission;
 
 /**
  * Represents permission to access a resource or set of resources defined by a
- * given http or https url, and for a given set of user-settable request methods
+ * given url, and for a given set of user-settable request methods
  * and request headers. The <i>name</i> of the permission is the url string.
  * The <i>actions</i> string is a concatenation of the request methods and headers.
  * The range of method and header names is not restricted by this class.
  * <p><b>The url</b><p>
- * The url string is also used to instantiate a {@link URI} object which is
- * used for comparison with other HttpURLPermission instances. Therefore, any
- * references in this specification to url, mean this URI object.
- * The path component of the url comprises a sequence of path segments, separated
- * by '/' characters. The path is specified in a similar way to the path
- * in {@link java.io.FilePermission}. There are three different ways
- * as the following examples show:
+ * The url string has the following expected structure.
+ * <pre>
+ *     scheme : // authority [ / path ]
+ * </pre>
+ * <i>scheme</i> will typically be http or https, but is not restricted by this
+ * class.
+ * <i>authority</i> is specified as:<p>
+ * <pre>
+ *     authority = hostrange [ : portrange ]
+ *     portrange = portnumber | -portnumber | portnumber-[portnumber] | *
+ *     hostrange = ([*.] dnsname) | IPv4address | IPv6address
+ * </pre>
+ * <i>dnsname</i> is a standard DNS host or domain name, ie. one or more labels
+ * separated by ".". <i>IPv4address</i> is a standard literal IPv4 address and
+ * <i>IPv6address</i> is as defined in <a href="http://www.ietf.org/rfc/rfc2732.txt">
+ * RFC 2732</a>. Literal IPv6 addresses must however, be enclosed in '[]' characters.
+ * The <i>dnsname</i> specification can be preceded by "*." which means
+ * the name will match any hostname whose right-most domain labels are the same as
+ * this name. For example, "*.oracle.com" matches "foo.bar.oracle.com"
+ * <p>
+ * <i>portrange</i> is used to specify a port number, or a bounded or unbounded range of ports
+ * that this permission applies to. If portrange is absent or invalid, then a default
+ * port number is assumed if the scheme is {@code http} (default 80) or {@code https}
+ * (default 443). No default is assumed for other schemes. A wildcard may be specified
+ * which means all ports.
+ * <p>
+ * The <i>path</i> component comprises a sequence of path segments,
+ * separated by '/' characters. <i>path</i> may also be empty. The path is specified
+ * in a similar way to the path in {@link java.io.FilePermission}. There are
+ * three different ways as the following examples show:
  * <table border>
  * <caption>URL Examples</caption>
  * <tr><th>Example url</th><th>Description</th></tr>
@@ -68,13 +91,19 @@ import java.security.Permission;
  * <p>
  * The '*' and '-' may only be specified in the final segment of a path and must be
  * the only character in that segment. Any query or fragment components of the
- * url are ignored when constructing HttpURLPermissions.
+ * url are ignored when constructing URLPermissions.
  * <p>
- * As a special case, urls of the form, "http:*" or "https:*" are accepted to
+ * As a special case, urls of the form, "scheme:*" are accepted to
  * mean any url of the given scheme.
+ * <p>
+ * The <i>scheme</i> and <i>authority</i> components of the url string are handled
+ * without regard to case. This means {@link #equals(Object)},
+ * {@link #hashCode()} and {@link #implies(Permission)} are case insensitive with respect
+ * to these components. If the <i>authority</i> contains a literal IP address,
+ * then the address is normalized for comparison. The path component is case sensitive.
  * <p><b>The actions string</b><p>
- * The actions string of a HttpURLPermission is a concatenation of the <i>method list</i>
- * and the <i>request headers list</i>. These are lists of the permitted HTTP request
+ * The actions string of a URLPermission is a concatenation of the <i>method list</i>
+ * and the <i>request headers list</i>. These are lists of the permitted request
  * methods and permitted request headers of the permission (respectively). The two lists
  * are separated by a colon ':' character and elements of each list are comma separated.
  * Some examples are:
@@ -89,7 +118,7 @@ import java.security.Permission;
  * <p>
  * The colon separator need not be present if the request headers list is empty.
  * No white-space is permitted in the actions string. The action strings supplied to
- * the HttpURLPermission constructors are case-insensitive and are normalized by converting
+ * the URLPermission constructors are case-insensitive and are normalized by converting
  * method names to upper-case and header names to the form defines in RFC2616 (lower case
  * with initial letter of each word capitalized). Either list can contain a wild-card '*'
  * character which signifies all request methods or headers respectively.
@@ -102,38 +131,40 @@ import java.security.Permission;
  *
  * @since 1.8
  */
-public final class HttpURLPermission extends Permission {
+public final class URLPermission extends Permission {
 
     private static final long serialVersionUID = -2702463814894478682L;
 
-    private transient URI uri;
+    private transient String scheme;
+    private transient String ssp;                 // scheme specific part
+    private transient String path;
     private transient List<String> methods;
     private transient List<String> requestHeaders;
+    private transient Authority authority;
 
     // serialized field
     private String actions;
 
     /**
-     * Creates a new HttpURLPermission from a url string and which permits the given
+     * Creates a new URLPermission from a url string and which permits the given
      * request methods and user-settable request headers.
-     * The name of the permission is its url string. Only the scheme, authority
-     * and path components of the url are used. Any fragment or query
+     * The name of the permission is the url string it was created with. Only the scheme,
+     * authority and path components of the url are used internally. Any fragment or query
      * components are ignored. The permissions action string is as specified above.
      *
      * @param url the url string
      *
      * @param actions the actions string
      *
-     * @throws    IllegalArgumentException if url does not result in a valid {@link URI},
-     *            its scheme is not http or https, or if actions contains white-space.
+     * @exception IllegalArgumentException if url is invalid or if actions contains white-space.
      */
-    public HttpURLPermission(String url, String actions) {
+    public URLPermission(String url, String actions) {
         super(url);
         init(actions);
     }
 
     private void init(String actions) {
-        URI uri = parseURI(getName());
+        parseURI(getName());
         int colon = actions.indexOf(':');
         if (actions.lastIndexOf(':') != colon) {
             throw new IllegalArgumentException("invalid actions string");
@@ -157,19 +188,18 @@ public final class HttpURLPermission extends Permission {
         this.requestHeaders = Collections.unmodifiableList(l);
 
         this.actions = actions();
-        this.uri = uri;
     }
 
     /**
-     * Creates a HttpURLPermission with the given url string and unrestricted
+     * Creates a URLPermission with the given url string and unrestricted
      * methods and request headers by invoking the two argument
-     * constructor as follows: HttpURLPermission(url, "*:*")
+     * constructor as follows: URLPermission(url, "*:*")
      *
      * @param url the url string
      *
      * @throws    IllegalArgumentException if url does not result in a valid {@link URI}
      */
-    public HttpURLPermission(String url) {
+    public URLPermission(String url) {
         this(url, "*:*");
     }
 
@@ -190,20 +220,23 @@ public final class HttpURLPermission extends Permission {
     }
 
     /**
-     * Checks if this HttpURLPermission implies the given permission.
+     * Checks if this URLPermission implies the given permission.
      * Specifically, the following checks are done as if in the
      * following sequence:
      * <p><ul>
-     * <li>if 'p' is not an instance of HttpURLPermission return false</li>
+     * <li>if 'p' is not an instance of URLPermission return false</li>
      * <li>if any of p's methods are not in this's method list, and if
      *     this's method list is not equal to "*", then return false.</li>
      * <li>if any of p's headers are not in this's request header list, and if
      *     this's request header list is not equal to "*", then return false.</li>
-     * <li>if this's url is equal to p's url , then return true</li>
      * <li>if this's url scheme is not equal to p's url scheme return false</li>
      * <li>if the scheme specific part of this's url is '*' return true</li>
-     * <li>if this's url authority is not equal to p's url authority
-     *     return false</li>
+     * <li>if the set of hosts defined by p's url hostrange is not a subset of
+     *     this's url hostrange then return false. For example, "*.foo.oracle.com"
+     *     is a subset of "*.oracle.com". "foo.bar.oracle.com" is not
+     *     a subset of "*.foo.oracle.com"</li>
+     * <li>if the portrange defined by p's url is not a subset of the
+     *     portrange defined by this's url then return false.
      * <li>if the path or paths specified by p's url are contained in the
      *     set of paths specified by this's url, then return true
      * <li>otherwise, return false</li>
@@ -222,11 +255,11 @@ public final class HttpURLPermission extends Permission {
      * </table>
      */
     public boolean implies(Permission p) {
-        if (! (p instanceof HttpURLPermission)) {
+        if (! (p instanceof URLPermission)) {
             return false;
         }
 
-        HttpURLPermission that = (HttpURLPermission)p;
+        URLPermission that = (URLPermission)p;
 
         if (!this.methods.get(0).equals("*") &&
                 Collections.indexOfSubList(this.methods, that.methods) == -1) {
@@ -244,39 +277,36 @@ public final class HttpURLPermission extends Permission {
             return false;
         }
 
-        if (this.uri.equals(that.uri)) {
-            return true;
-        }
-
-        if (!this.uri.getScheme().equals(that.uri.getScheme())) {
+        if (!this.scheme.equals(that.scheme)) {
             return false;
         }
 
-        if (this.uri.getSchemeSpecificPart().equals("*")) {
+        if (this.ssp.equals("*")) {
             return true;
         }
 
-        String thisAuthority = this.uri.getAuthority();
-
-            if (thisAuthority != null &&
-                    !thisAuthority.equals(that.uri.getAuthority())) {
+        if (!this.authority.implies(that.authority)) {
             return false;
         }
 
-        String thispath = this.uri.getPath();
-        String thatpath = that.uri.getPath();
+        if (this.path == null) {
+            return that.path == null;
+        }
+        if (that.path == null) {
+            return false;
+        }
 
-        if (thispath.endsWith("/-")) {
-            String thisprefix = thispath.substring(0, thispath.length() - 1);
-            return thatpath.startsWith(thisprefix);
+        if (this.path.endsWith("/-")) {
+            String thisprefix = this.path.substring(0, this.path.length() - 1);
+            return that.path.startsWith(thisprefix);
             }
 
-        if (thispath.endsWith("/*")) {
-            String thisprefix = thispath.substring(0, thispath.length() - 1);
-            if (!thatpath.startsWith(thisprefix)) {
+        if (this.path.endsWith("/*")) {
+            String thisprefix = this.path.substring(0, this.path.length() - 1);
+            if (!that.path.startsWith(thisprefix)) {
                 return false;
             }
-            String thatsuffix = thatpath.substring(thisprefix.length());
+            String thatsuffix = that.path.substring(thisprefix.length());
             // suffix must not contain '/' chars
             if (thatsuffix.indexOf('/') != -1) {
                 return false;
@@ -286,7 +316,7 @@ public final class HttpURLPermission extends Permission {
             }
             return true;
         }
-        return false;
+        return this.path.equals(that.path);
     }
 
 
@@ -295,20 +325,35 @@ public final class HttpURLPermission extends Permission {
      * and p's url equals this's url.  Returns false otherwise.
      */
     public boolean equals(Object p) {
-        if (!(p instanceof HttpURLPermission)) {
+        if (!(p instanceof URLPermission)) {
             return false;
         }
-        HttpURLPermission that = (HttpURLPermission)p;
-        return this.getActions().equals(that.getActions()) &&
-                  this.uri.equals(that.uri);
+        URLPermission that = (URLPermission)p;
+        if (!this.scheme.equals(that.scheme)) {
+            return false;
+        }
+        if (!this.getActions().equals(that.getActions())) {
+            return false;
+        }
+        if (!this.authority.equals(that.authority)) {
+            return false;
+        }
+        if (this.path != null) {
+            return this.path.equals(that.path);
+        } else {
+            return that.path == null;
+        }
     }
 
     /**
      * Returns a hashcode calculated from the hashcode of the
-     * actions String and the url
+     * actions String and the url string.
      */
     public int hashCode() {
-        return getActions().hashCode() + uri.hashCode();
+        return getActions().hashCode()
+            + scheme.hashCode()
+            + authority.hashCode()
+            + path == null ? 0 : path.hashCode();
     }
 
 
@@ -371,17 +416,31 @@ public final class HttpURLPermission extends Permission {
         return l;
     }
 
-    private URI parseURI(String url) {
-        URI u = URI.create(url);
-        String scheme = u.getScheme();
-        if (!(scheme.equalsIgnoreCase("http") ||
-             scheme.equalsIgnoreCase("https"))) {
-            throw new IllegalArgumentException ("unexpected URL scheme");
+    private void parseURI(String url) {
+        int len = url.length();
+        int delim = url.indexOf(':');
+        if (delim == -1 || delim + 1 == len) {
+            throw new IllegalArgumentException("invalid URL string");
         }
-        if (!u.getSchemeSpecificPart().equals("*")) {
-            u = URI.create(scheme + "://" + u.getRawAuthority() + u.getRawPath());
+        scheme = url.substring(0, delim).toLowerCase();
+        this.ssp = url.substring(delim + 1);
+
+        if (!ssp.startsWith("//")) {
+            this.authority = new Authority(scheme, ssp.toLowerCase());
+            return;
         }
-        return u;
+        String authpath = ssp.substring(2);
+
+        delim = authpath.indexOf('/');
+        String auth;
+        if (delim == -1) {
+            this.path = "";
+            auth = authpath;
+        } else {
+            auth = authpath.substring(0, delim);
+            this.path = authpath.substring(delim);
+        }
+        this.authority = new Authority(scheme, auth.toLowerCase());
     }
 
     private String actions() {
@@ -395,6 +454,7 @@ public final class HttpURLPermission extends Permission {
         }
         return b.toString();
     }
+
     /**
      * restore the state of this object from stream
      */
@@ -404,5 +464,60 @@ public final class HttpURLPermission extends Permission {
         String actions = (String)fields.get("actions", null);
 
         init(actions);
+    }
+
+    static class Authority {
+        HostPortrange p;
+
+        Authority(String scheme, String authority) {
+            p = new HostPortrange(scheme, authority);
+        }
+
+        boolean implies(Authority other) {
+            return impliesHostrange(other) && impliesPortrange(other);
+        }
+
+        private boolean impliesHostrange(Authority that) {
+            String thishost = this.p.hostname();
+            String thathost = that.p.hostname();
+
+            if (p.wildcard() && thishost.equals("")) {
+                // this "*" implies all others
+                return true;
+            }
+            if (that.p.wildcard() && thathost.equals("")) {
+                // that "*" can only be implied by this "*"
+                return false;
+            }
+            if (thishost.equals(thathost)) {
+                // covers all cases of literal IP addresses and fixed
+                // domain names.
+                return true;
+            }
+            if (this.p.wildcard()) {
+                // this "*.foo.com" implies "bub.bar.foo.com"
+                return thathost.endsWith(thishost);
+            }
+            return false;
+        }
+
+        private boolean impliesPortrange(Authority that) {
+            int[] thisrange = this.p.portrange();
+            int[] thatrange = that.p.portrange();
+            if (thisrange[0] == -1) {
+                /* port not specified non http/s URL */
+                return true;
+            }
+            return thisrange[0] <= thatrange[0] &&
+                        thisrange[1] >= thatrange[1];
+        }
+
+        boolean equals(Authority that) {
+            return this.p.equals(that.p);
+        }
+
+        public int hashCode() {
+            return p.hashCode();
+        }
     }
 }
