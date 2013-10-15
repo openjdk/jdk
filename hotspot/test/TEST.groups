@@ -124,7 +124,7 @@ needs_compact3 = \
   compiler/whitebox/IsMethodCompilableTest.java \
   gc/6581734/Test6581734.java \
   gc/7072527/TestFullGCCount.java \
-  gc/7168848/HumongousAlloc.java \
+  gc/g1/TestHumongousAllocInitialMark.java \
   gc/arguments/TestG1HeapRegionSize.java \
   gc/metaspace/TestMetaspaceMemoryPool.java \
   runtime/InternalApi/ThreadCpuTimesDeadlock.java \
