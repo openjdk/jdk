@@ -1,5 +1,5 @@
 #
-# Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -60,14 +60,23 @@ LIBJSIG_NAME           = $(LIB_PREFIX)jsig.$(LIBRARY_SUFFIX)
 JVMDB_NAME             = $(LIB_PREFIX)jvm$(DB_SUFFIX).$(LIBRARY_SUFFIX)
 JVMDTRACE_NAME         = $(LIB_PREFIX)jvm$(DTRACE_SUFFIX).$(LIBRARY_SUFFIX)
 
-JVM_DEBUGINFO_NAME       = $(LIB_PREFIX)jvm.debuginfo
 JVM_DIZ_NAME             = $(LIB_PREFIX)jvm.diz
-LIBJSIG_DEBUGINFO_NAME   = $(LIB_PREFIX)jsig.debuginfo
 LIBJSIG_DIZ_NAME         = $(LIB_PREFIX)jsig.diz
-JVMDB_DEBUGINFO_NAME     = $(LIB_PREFIX)jvm$(DB_SUFFIX).debuginfo
 JVMDB_DIZ_NAME           = $(LIB_PREFIX)jvm$(DB_SUFFIX).diz
-JVMDTRACE_DEBUGINFO_NAME = $(LIB_PREFIX)jvm$(DTRACE_SUFFIX).debuginfo
 JVMDTRACE_DIZ_NAME       = $(LIB_PREFIX)jvm$(DTRACE_SUFFIX).diz
+
+ifeq ($(PLATFORM), macosx)
+  # Note: *.dSYM is a directory
+  JVM_DEBUGINFO_NAME       = $(LIB_PREFIX)jvm.dSYM
+  LIBJSIG_DEBUGINFO_NAME   = $(LIB_PREFIX)jsig.dSYM
+  JVMDB_DEBUGINFO_NAME     = $(LIB_PREFIX)jvm$(DB_SUFFIX).dSYM
+  JVMDTRACE_DEBUGINFO_NAME = $(LIB_PREFIX)jvm$(DTRACE_SUFFIX).dSYM
+else
+  JVM_DEBUGINFO_NAME       = $(LIB_PREFIX)jvm.debuginfo
+  LIBJSIG_DEBUGINFO_NAME   = $(LIB_PREFIX)jsig.debuginfo
+  JVMDB_DEBUGINFO_NAME     = $(LIB_PREFIX)jvm$(DB_SUFFIX).debuginfo
+  JVMDTRACE_DEBUGINFO_NAME = $(LIB_PREFIX)jvm$(DTRACE_SUFFIX).debuginfo
+endif
 
 CLASSSHARINGDATA_DIR   = $(BUILDDIR)/tools/sharing
 
@@ -441,7 +450,7 @@ $(LIB_LOCATION)/$(CLIENT_LOCATION)/$(JVM_DIZ_NAME): $(HOTSPOT_CLIENT_PATH)/$(JVM
 	$(install-import-file)
   else
 $(LIB_LOCATION)/$(CLIENT_LOCATION)/$(JVM_DEBUGINFO_NAME): $(HOTSPOT_CLIENT_PATH)/$(JVM_DEBUGINFO_NAME)
-	$(install-import-file)
+	$(install-import-debuginfo)
   endif
 endif
 
@@ -459,7 +468,7 @@ $(LIB_LOCATION)/$(LIBJSIG_DIZ_NAME): $(HOTSPOT_IMPORT_PATH)/$(ARCH_VM_SUBDIR)/$(
 	$(install-import-file)
   else
 $(LIB_LOCATION)/$(LIBJSIG_DEBUGINFO_NAME): $(HOTSPOT_IMPORT_PATH)/$(ARCH_VM_SUBDIR)/$(LIBJSIG_DEBUGINFO_NAME)
-	$(install-import-file)
+	$(install-import-debuginfo)
   endif
 endif
 
@@ -471,8 +480,8 @@ $(LIB_LOCATION)/$(SERVER_LOCATION)/$(LIBJSIG_NAME):
 
   ifeq ($(ENABLE_FULL_DEBUG_SYMBOLS),1)
 # We don't create a symlink to a libjsig.diz file, but we do put
-# the libjsig.debuginfo symlink into a libjsig.diz file. The aurora
-# system does not like dangling symlinks.
+# the $(LIBJSIG_DEBUGINFO_NAME) symlink into a libjsig.diz file.
+# The aurora system does not like dangling symlinks.
     ifeq ($(ZIP_DEBUGINFO_FILES),1)
 $(LIB_LOCATION)/$(CLIENT_LOCATION)/$(LIBJSIG_DIZ_NAME) \
 $(LIB_LOCATION)/$(SERVER_LOCATION)/$(LIBJSIG_DIZ_NAME):
@@ -496,8 +505,8 @@ $(LIB_LOCATION)/$(CLIENT_LOCATION)/$(LIBJSIG_NAME):
 
   ifeq ($(ENABLE_FULL_DEBUG_SYMBOLS),1)
 # We don't create a symlink to a libjsig.diz file, but we do put
-# the libjsig.debuginfo symlink into a libjsig.diz file. The aurora
-# system does not like dangling symlinks.
+# the $(LIBJSIG_DEBUGINFO_NAME) symlink into a libjsig.diz file.
+# The aurora system does not like dangling symlinks.
     ifeq ($(ZIP_DEBUGINFO_FILES),1)
 $(LIB_LOCATION)/$(CLIENT_LOCATION)/$(LIBJSIG_DIZ_NAME):
 	@$(prep-target)
@@ -531,10 +540,10 @@ $(LIB_LOCATION)/$(CLIENT_LOCATION)/64/$(JVMDB_DIZ_NAME): $(HOTSPOT_CLIENT_PATH)/
 	$(install-import-file)
   else
 $(LIB_LOCATION)/$(CLIENT_LOCATION)/$(JVMDB_DEBUGINFO_NAME): $(HOTSPOT_CLIENT_PATH)/$(JVMDB_DEBUGINFO_NAME)
-	$(install-import-file)
+	$(install-import-debuginfo)
 
 $(LIB_LOCATION)/$(CLIENT_LOCATION)/64/$(JVMDB_DEBUGINFO_NAME): $(HOTSPOT_CLIENT_PATH)/64/$(JVMDB_DEBUGINFO_NAME)
-	$(install-import-file)
+	$(install-import-debuginfo)
   endif
 endif
 
@@ -556,10 +565,10 @@ $(LIB_LOCATION)/$(SERVER_LOCATION)/64/$(JVMDB_DIZ_NAME): $(HOTSPOT_SERVER_PATH)/
 	$(install-import-file)
     else
 $(LIB_LOCATION)/$(SERVER_LOCATION)/$(JVMDB_DEBUGINFO_NAME): $(HOTSPOT_SERVER_PATH)/$(JVMDB_DEBUGINFO_NAME)
-	$(install-import-file)
+	$(install-import-debuginfo)
 
 $(LIB_LOCATION)/$(SERVER_LOCATION)/64/$(JVMDB_DEBUGINFO_NAME): $(HOTSPOT_SERVER_PATH)/64/$(JVMDB_DEBUGINFO_NAME)
-	$(install-import-file)
+	$(install-import-debuginfo)
     endif
   endif
 endif
@@ -581,10 +590,10 @@ $(LIB_LOCATION)/$(CLIENT_LOCATION)/64/$(JVMDTRACE_DIZ_NAME): $(HOTSPOT_CLIENT_PA
 	$(install-import-file)
   else
 $(LIB_LOCATION)/$(CLIENT_LOCATION)/$(JVMDTRACE_DEBUGINFO_NAME): $(HOTSPOT_CLIENT_PATH)/$(JVMDTRACE_DEBUGINFO_NAME)
-	$(install-import-file)
+	$(install-import-debuginfo)
 
 $(LIB_LOCATION)/$(CLIENT_LOCATION)/64/$(JVMDTRACE_DEBUGINFO_NAME): $(HOTSPOT_CLIENT_PATH)/64/$(JVMDTRACE_DEBUGINFO_NAME)
-	$(install-import-file)
+	$(install-import-debuginfo)
   endif
 endif
 
@@ -613,13 +622,13 @@ $(LIB_LOCATION)/$(SERVER_LOCATION)/$(JVM_DIZ_NAME): $(HOTSPOT_SERVER_PATH)/$(JVM
 	$(install-import-file)
   else
 $(LIB_LOCATION)/$(SERVER_LOCATION)/$(JVMDTRACE_DEBUGINFO_NAME): $(HOTSPOT_SERVER_PATH)/$(JVMDTRACE_DEBUGINFO_NAME)
-	$(install-import-file)
+	$(install-import-debuginfo)
 
 $(LIB_LOCATION)/$(SERVER_LOCATION)/64/$(JVMDTRACE_DEBUGINFO_NAME): $(HOTSPOT_SERVER_PATH)/64/$(JVMDTRACE_DEBUGINFO_NAME)
-	$(install-import-file)
+	$(install-import-debuginfo)
 
 $(LIB_LOCATION)/$(SERVER_LOCATION)/$(JVM_DEBUGINFO_NAME): $(HOTSPOT_SERVER_PATH)/$(JVM_DEBUGINFO_NAME)
-	$(install-import-file)
+	$(install-import-debuginfo)
   endif
 endif
 

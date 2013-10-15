@@ -154,6 +154,7 @@ TOOL_CHECKDEPS=$(JAVA) -Xbootclasspath/p:$(LANGTOOLS_OUTPUTDIR)/dist/bootstrap/l
 
 # Tools needed on solaris because OBJCOPY is broken.
 
+ifeq ($(OPENJDK_TARGET_OS), solaris)
 $(eval $(call SetupNativeCompilation,ADD_GNU_DEBUGLINK,\
 		SRC:=$(JDK_TOPDIR)/make/tools/add_gnu_debuglink,\
 		LANG:=C,\
@@ -173,3 +174,4 @@ $(eval $(call SetupNativeCompilation,FIX_EMPTY_SEC_HDR_FLAGS,\
 		OBJECT_DIR:=$(JDK_OUTPUTDIR)/objs/fix_empty_sec_hdr_flags,\
 		OUTPUT_DIR:=$(JDK_OUTPUTDIR)/btbin,\
                 PROGRAM:=fix_empty_sec_hdr_flags))
+endif
