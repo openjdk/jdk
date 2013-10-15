@@ -31,6 +31,8 @@ import static jdk.nashorn.internal.runtime.ECMAErrors.typeError;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.reflect.Array;
+import java.util.Deque;
+import java.util.List;
 import jdk.internal.dynalink.beans.StaticClass;
 import jdk.nashorn.api.scripting.JSObject;
 import jdk.nashorn.internal.codegen.CompilerConstants.Call;
@@ -109,6 +111,15 @@ public enum JSType {
 
     /** Combined call to toPrimitive followed by toString. */
     public static final Call TO_PRIMITIVE_TO_STRING = staticCall(myLookup, JSType.class, "toPrimitiveToString", String.class,  Object.class);
+
+    /** Method handle to convert a JS Object to a Java array. */
+    public static final Call TO_JAVA_ARRAY = staticCall(myLookup, JSType.class, "toJavaArray", Object.class, Object.class, Class.class);
+
+    /** Method handle to convert a JS Object to a Java List. */
+    public static final Call TO_JAVA_LIST = staticCall(myLookup, JSType.class, "toJavaList", List.class, Object.class);
+
+    /** Method handle to convert a JS Object to a Java deque. */
+   public static final Call TO_JAVA_DEQUE = staticCall(myLookup, JSType.class, "toJavaDeque", Deque.class, Object.class);
 
     private static final double INT32_LIMIT = 4294967296.0;
 
@@ -890,6 +901,8 @@ public enum JSType {
                 res[idx++] = itr.next();
             }
             return convertArray(res, componentType);
+        } else if(obj == null) {
+            return null;
         } else {
             throw new IllegalArgumentException("not a script object");
         }
@@ -916,6 +929,24 @@ public enum JSType {
             throw new RuntimeException(t);
         }
         return dst;
+    }
+
+    /**
+     * Converts a JavaScript object to a Java List. See {@link ListAdapter} for details.
+     * @param obj the object to convert. Can be any array-like object.
+     * @return a List that is live-backed by the JavaScript object.
+     */
+    public static List<?> toJavaList(final Object obj) {
+        return ListAdapter.create(obj);
+    }
+
+    /**
+     * Converts a JavaScript object to a Java Deque. See {@link ListAdapter} for details.
+     * @param obj the object to convert. Can be any array-like object.
+     * @return a Deque that is live-backed by the JavaScript object.
+     */
+    public static Deque<?> toJavaDeque(final Object obj) {
+        return ListAdapter.create(obj);
     }
 
     /**

@@ -53,7 +53,7 @@ import jdk.nashorn.internal.parser.TokenType;
 public final class RecompilableScriptFunctionData extends ScriptFunctionData {
 
     /** FunctionNode with the code for this ScriptFunction */
-    private volatile FunctionNode functionNode;
+    private FunctionNode functionNode;
 
     /** Source from which FunctionNode was parsed. */
     private final Source source;
@@ -65,7 +65,7 @@ public final class RecompilableScriptFunctionData extends ScriptFunctionData {
     private final PropertyMap allocatorMap;
 
     /** Code installer used for all further recompilation/specialization of this ScriptFunction */
-    private volatile CodeInstaller<ScriptEnvironment> installer;
+    private CodeInstaller<ScriptEnvironment> installer;
 
     /** Name of class where allocator function resides */
     private final String allocatorClassName;
@@ -178,7 +178,7 @@ public final class RecompilableScriptFunctionData extends ScriptFunctionData {
     }
 
     @Override
-    protected void ensureCodeGenerated() {
+    protected synchronized void ensureCodeGenerated() {
          if (!code.isEmpty()) {
              return; // nothing to do, we have code, at least some.
          }
@@ -336,7 +336,7 @@ public final class RecompilableScriptFunctionData extends ScriptFunctionData {
     }
 
     @Override
-    MethodHandle getBestInvoker(final MethodType callSiteType, final Object[] args) {
+    synchronized MethodHandle getBestInvoker(final MethodType callSiteType, final Object[] args) {
         final MethodType runtimeType = runtimeType(callSiteType, args);
         assert runtimeType.parameterCount() == callSiteType.parameterCount();
 

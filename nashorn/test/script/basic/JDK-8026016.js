@@ -22,33 +22,47 @@
  */
 
 /**
- * Check that nashorn mozilla compatibility script can be loaded in sandbox.
+ * JDK-8026016: too many relinks dominate avatar.js http benchmark
  *
  * @test
  * @run
- * @security
  */
 
-load("nashorn:mozilla_compat.js");
-
-var obj = {};
-if (obj.__proto__ !== Object.prototype) {
-    fail("__proto__ does not work as expected");
+function accessMegamorphic() {
+    for (var i = 0; i < 26; i++) {
+        var o = {};
+        o[String.fromCharCode(i + 97)] = 1;
+        o._;
+    }
 }
 
-var array = [];
-if (array.__proto__ !== Array.prototype) {
-    fail("__proto__ does not work as expected");
+function invokeMegamorphic() {
+    for (var i = 0; i < 26; i++) {
+        var o = {};
+        o[String.fromCharCode(i + 97)] = 1;
+        try {
+            o._(i);
+        } catch (e) {
+            print(e);
+        }
+    }
 }
 
-if (typeof JavaAdapter != 'function') {
-    fail("JavaAdapter constructor is missing in compatibility script");
-}
+Object.prototype.__noSuchProperty__ = function() {
+    print("no such property", Array.prototype.slice.call(arguments));
+};
 
-if (typeof importPackage != 'function') {
-    fail("importPackage function is missing in compatibility script");
-}
+invokeMegamorphic();
+accessMegamorphic();
 
-if (typeof sync != 'function') {
-    fail("sync function is missing in compatibility script");
-}
+Object.prototype.__noSuchMethod__ = function() {
+    print("no such method", Array.prototype.slice.call(arguments));
+};
+
+invokeMegamorphic();
+accessMegamorphic();
+
+Object.prototype.__noSuchMethod__ = "nofunction";
+
+invokeMegamorphic();
+accessMegamorphic();
