@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,21 +21,19 @@
  * questions.
  */
 
-// key: compiler.err.cant.annotate.nested.type
+/*
+ * @test
+ * @bug 1234567
+ * @summary A missing annotation type in a type variable bound
+ *     should result in the same errors with and without an
+ *     annotation processor.
+ * @author Werner Dietl
+ *
+ * @compile DummyProcessor.java
+ * @compile/fail/ref=TypeVariableMissingTA.out -XDrawDiagnostics TypeVariableMissingTA.java
+ * @compile/fail/ref=TypeVariableMissingTA.out -XDrawDiagnostics -cp . -processor DummyProcessor TypeVariableMissingTA.java
+ */
 
 import java.lang.annotation.*;
 
-class CantAnnotateStaticClass {
-    @Target(ElementType.TYPE_USE)
-    @interface A {}
-
-    interface Outer {
-        interface Inner {}
-    }
-
-    // Error:
-    @A Outer.Inner f;
-
-    // OK:
-    @A Outer g;
-}
+class TypeVariableMissingTA<T extends @MISSING Object> {}

@@ -1,0 +1,5 @@
+CantAnnotatePackages.java:19:14: compiler.err.cant.resolve.location: kindname.class, java, , , (compiler.misc.location: kindname.class, CantAnnotatePackages, null)
+CantAnnotatePackages.java:20:9: compiler.err.cant.resolve.location: kindname.class, lang, , , (compiler.misc.location: kindname.package, java, null)
+CantAnnotatePackages.java:21:14: compiler.err.cant.resolve.location: kindname.class, lang, , , (compiler.misc.location: kindname.package, java, null)
+CantAnnotatePackages.java:14:18: compiler.err.cant.type.annotate.scoping.1: @TA
+4 errors

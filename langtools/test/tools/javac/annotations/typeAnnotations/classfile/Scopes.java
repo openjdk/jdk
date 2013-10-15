@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,21 +21,39 @@
  * questions.
  */
 
-// key: compiler.err.cant.annotate.static.class
-
 import java.lang.annotation.*;
+import java.io.*;
+import java.net.URL;
+import java.util.List;
 
-class CantAnnotateStaticClass {
-    @Target(ElementType.TYPE_USE)
-    @interface A {}
+import com.sun.tools.classfile.*;
 
-    static class Outer {
-        class Inner {}
+/*
+ * @test
+ * @bug 6843077 8006775
+ * @summary Qualified inner type annotation accessible to the class.
+ */
+
+@Scopes.UniqueInner
+public class Scopes<T extends @Scopes.UniqueInner Object> extends ClassfileTestHelper{
+    public static void main(String[] args) throws Exception {
+        new Scopes().run();
     }
 
-    // Error:
-    @A Outer.Inner f;
+    public void run() throws Exception {
+        expected_tinvisibles = 1;
+        expected_invisibles = 1;
 
-    // OK:
-    @A Outer g;
+        ClassFile cf = getClassFile("Scopes.class");
+        test(cf);
+
+        countAnnotations();
+
+        if (errors > 0)
+            throw new Exception(errors + " errors found");
+        System.out.println("PASSED");
+    }
+
+    @Target({ElementType.TYPE_USE})
+    @interface UniqueInner { };
 }
