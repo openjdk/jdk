@@ -102,7 +102,12 @@ public class HtmlTree extends Content {
      * @param tagContent tag content to be added
      */
     public void addContent(Content tagContent) {
-        if (tagContent == HtmlTree.EMPTY || tagContent.isValid()) {
+        if (tagContent instanceof ContentBuilder) {
+            for (Content content: ((ContentBuilder)tagContent).contents) {
+                addContent(content);
+            }
+        }
+        else if (tagContent == HtmlTree.EMPTY || tagContent.isValid()) {
             if (content.isEmpty())
                 content = new ArrayList<Content>();
             content.add(tagContent);
