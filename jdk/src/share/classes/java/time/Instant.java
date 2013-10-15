@@ -76,7 +76,6 @@ import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
 import java.io.InvalidObjectException;
-import java.io.InvalidObjectException;
 import java.io.Serializable;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
@@ -87,6 +86,7 @@ import java.time.temporal.TemporalAccessor;
 import java.time.temporal.TemporalAdjuster;
 import java.time.temporal.TemporalAmount;
 import java.time.temporal.TemporalField;
+import java.time.temporal.TemporalQueries;
 import java.time.temporal.TemporalQuery;
 import java.time.temporal.TemporalUnit;
 import java.time.temporal.UnsupportedTemporalTypeException;
@@ -1050,12 +1050,12 @@ public final class Instant
     @SuppressWarnings("unchecked")
     @Override
     public <R> R query(TemporalQuery<R> query) {
-        if (query == TemporalQuery.precision()) {
+        if (query == TemporalQueries.precision()) {
             return (R) NANOS;
         }
         // inline TemporalAccessor.super.query(query) as an optimization
-        if (query == TemporalQuery.chronology() || query == TemporalQuery.zoneId() ||
-                query == TemporalQuery.zone() || query == TemporalQuery.offset()) {
+        if (query == TemporalQueries.chronology() || query == TemporalQueries.zoneId() ||
+                query == TemporalQueries.zone() || query == TemporalQueries.offset()) {
             return null;
         }
         return query.queryFrom(this);

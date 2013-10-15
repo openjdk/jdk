@@ -69,6 +69,7 @@ import static java.time.temporal.ChronoUnit.MONTHS;
 import static java.time.temporal.ChronoUnit.WEEKS;
 import static java.time.temporal.ChronoUnit.YEARS;
 
+import java.time.DateTimeException;
 import java.time.Duration;
 import java.time.LocalDate;
 import java.time.ZoneId;
@@ -343,7 +344,7 @@ public final class IsoFields {
             }
             @Override
             public ChronoLocalDate resolve(
-                    Map<TemporalField, Long> fieldValues, Chronology chronology, ZoneId zone, ResolverStyle resolverStyle) {
+                    Map<TemporalField, Long> fieldValues, TemporalAccessor partialTemporal, ResolverStyle resolverStyle) {
                 Long yearLong = fieldValues.get(YEAR);
                 Long qoyLong = fieldValues.get(QUARTER_OF_YEAR);
                 if (yearLong == null || qoyLong == null) {
@@ -351,6 +352,7 @@ public final class IsoFields {
                 }
                 int y = YEAR.checkValidIntValue(yearLong);  // always validate
                 long doq = fieldValues.get(DAY_OF_QUARTER);
+                ensureIso(partialTemporal);
                 LocalDate date;
                 if (resolverStyle == ResolverStyle.LENIENT) {
                     date = LocalDate.of(y, 1, 1).plusMonths(Math.multiplyExact(Math.subtractExact(qoyLong, 1), 3));
@@ -464,7 +466,7 @@ public final class IsoFields {
             }
             @Override
             public ChronoLocalDate resolve(
-                    Map<TemporalField, Long> fieldValues, Chronology chronology, ZoneId zone, ResolverStyle resolverStyle) {
+                    Map<TemporalField, Long> fieldValues, TemporalAccessor partialTemporal, ResolverStyle resolverStyle) {
                 Long wbyLong = fieldValues.get(WEEK_BASED_YEAR);
                 Long dowLong = fieldValues.get(DAY_OF_WEEK);
                 if (wbyLong == null || dowLong == null) {
@@ -472,6 +474,7 @@ public final class IsoFields {
                 }
                 int wby = WEEK_BASED_YEAR.range().checkValidIntValue(wbyLong, WEEK_BASED_YEAR);  // always validate
                 long wowby = fieldValues.get(WEEK_OF_WEEK_BASED_YEAR);
+                ensureIso(partialTemporal);
                 LocalDate date = LocalDate.of(wby, 1, 4);
                 if (resolverStyle == ResolverStyle.LENIENT) {
                     long dow = dowLong;  // unvalidated
@@ -566,6 +569,12 @@ public final class IsoFields {
 
         private static boolean isIso(TemporalAccessor temporal) {
             return Chronology.from(temporal).equals(IsoChronology.INSTANCE);
+        }
+
+        private static void ensureIso(TemporalAccessor temporal) {
+            if (isIso(temporal) == false) {
+                throw new DateTimeException("Resolve requires IsoChronology");
+            }
         }
 
         private static ValueRange getWeekRange(LocalDate date) {
