@@ -59,7 +59,7 @@ public class JMapHProfLargeHeapTest {
         // If we are on MacOSX, test if JMap tool is signed, otherwise return
         // since test will fail with privilege error.
         if (Platform.isOSX()) {
-            String jmapToolPath = JDKToolFinder.getCurrentJDKTool("jmap");
+            String jmapToolPath = JDKToolFinder.getTestJDKTool("jmap");
             ProcessBuilder codesignProcessBuilder = new ProcessBuilder(
                     "codesign", "-v", jmapToolPath);
             Process codesignProcess = codesignProcessBuilder.start();
