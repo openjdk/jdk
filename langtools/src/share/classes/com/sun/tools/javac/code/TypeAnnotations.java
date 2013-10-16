@@ -97,7 +97,6 @@ public class TypeAnnotations {
     final Symtab syms;
     final Annotate annotate;
     final Attr attr;
-    private final boolean typeAnnoAsserts;
 
     protected TypeAnnotations(Context context) {
         context.put(typeAnnosKey, this);
@@ -107,7 +106,6 @@ public class TypeAnnotations {
         annotate = Annotate.instance(context);
         attr = Attr.instance(context);
         Options options = Options.instance(context);
-        typeAnnoAsserts = options.isSet("TypeAnnotationAsserts");
     }
 
     /**
@@ -1042,11 +1040,7 @@ public class TypeAnnotations {
         @Override
         public void visitMethodDef(final JCMethodDecl tree) {
             if (tree.sym == null) {
-                if (typeAnnoAsserts) {
-                    Assert.error("Visiting tree node before memberEnter");
-                } else {
-                return;
-            }
+                Assert.error("Visiting tree node before memberEnter");
             }
             if (sigOnly) {
                 if (!tree.mods.annotations.isEmpty()) {
@@ -1150,10 +1144,7 @@ public class TypeAnnotations {
                 // Nothing to do for separateAnnotationsKinds if
                 // there are no annotations of either kind.
             } else if (tree.sym == null) {
-                if (typeAnnoAsserts) {
-                    Assert.error("Visiting tree node before memberEnter");
-                }
-                // Something is wrong already. Quietly ignore.
+                Assert.error("Visiting tree node before memberEnter");
             } else if (tree.sym.getKind() == ElementKind.PARAMETER) {
                 // Parameters are handled in visitMethodDef or visitLambda.
             } else if (tree.sym.getKind() == ElementKind.FIELD) {
