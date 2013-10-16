@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2012, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2012, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -23,17 +23,13 @@
 # questions.
 #
 
-CLDRVERSION := 21.0.1
-CLDRSRCDIR := $(JDK_TOPDIR)/src/share/classes/sun/util/cldr/resources/$(subst .,_,$(CLDRVERSION))
+GENDATA_HTML32DTD :=
 
-GENSRC_DIR := $(JDK_OUTPUTDIR)/gensrc
-
-CLDR_METAINFO_FILE := $(GENSRC_DIR)/sun/util/cldr/CLDRLocaleDataMetaInfo.java
-
-$(CLDR_METAINFO_FILE): $(wildcard $(CLDRSRCDIR)/common/dtd/*.dtd) \
-			$(wildcard $(CLDRSRCDIR)/common/main/*.xml) \
-			$(wildcard $(CLDRSRCDIR)/common/supplemental/*.xml)
+HTML32DTD = $(JDK_OUTPUTDIR)/classes/javax/swing/text/html/parser/html32.bdtd
+$(HTML32DTD): $(BUILD_TOOLS)
+	$(ECHO) "Generating HTML DTD file"
 	$(MKDIR) -p $(@D)
-	$(TOOL_CLDRCONVERTER) -base $(CLDRSRCDIR) -o $(GENSRC_DIR)
+	$(RM) $@
+	($(TOOL_DTDBUILDER) $(LOG_INFO) html32 > $@) || exit 1
 
-GENSRC_CLDR := $(CLDR_METAINFO_FILE)
+GENDATA_HTML32DTD += $(HTML32DTD)

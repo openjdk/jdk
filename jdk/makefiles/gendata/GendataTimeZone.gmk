@@ -23,24 +23,34 @@
 # questions.
 #
 
-# Translate the Java debugger wire protocol (jdwp.spec) file into a JDWP.java file
-# and a JDWPCommands.h C-header file.
+GENDATA_TIMEZONE :=
 
-$(JDK_OUTPUTDIR)/gensrc_jdwp_headers/JDWPCommands.h : $(JDK_TOPDIR)/makefiles/jpda/jdwp/jdwp.spec
+# TODO: read from make/sun/javazic/tzdata/VERSION
+GENDATA_TIMEZONE_VERSION := tzdata2012i
 
-$(JDK_OUTPUTDIR)/gensrc/com/sun/tools/jdi/JDWP.java : $(JDK_TOPDIR)/makefiles/jpda/jdwp/jdwp.spec
-	$(MKDIR) -p $(@D)
-	$(MKDIR) -p $(JDK_OUTPUTDIR)/gensrc_jdwp_headers
-	$(RM) $@ $(JDK_OUTPUTDIR)/gensrc_jdwp_headers/JDWPCommands.h
-	$(ECHO) $(LOG_INFO) Creating JDWP.java and JDWPCommands.h from jdwp.spec
-	$(TOOL_JDWPGEN) $< -jdi $@ -include $(JDK_OUTPUTDIR)/gensrc_jdwp_headers/JDWPCommands.h
+GENDATA_TIMEZONE_DST := $(JDK_OUTPUTDIR)/lib/zi
+GENDATA_TIMEZONE_TMP := $(JDK_OUTPUTDIR)/gendata_timezone
 
-$(JDK_OUTPUTDIR)/gensrc_jdwp_doc/jdwp-protocol.html : $(JDK_TOPDIR)/makefiles/jpda/jdwp/jdwp.spec
-	$(MKDIR) -p $(@D)
-	$(RM) $@
-	$(ECHO) $(LOG_INFO) Creating $(@F) from jdwp.spec
-	$(TOOL_JDWPGEN) $< -doc $@
+TZFILE0 := \
+    africa antarctica asia australasia europe northamerica \
+    pacificnew southamerica backward \
+    etcetera systemv
 
-GENSRC_JDWP:=	$(JDK_OUTPUTDIR)/gensrc/com/sun/tools/jdi/JDWP.java \
-		$(JDK_OUTPUTDIR)/gensrc_jdwp_headers/JDWPCommands.h \
-		$(JDK_OUTPUTDIR)/gensrc_jdwp_doc/jdwp-protocol.html
+TZFILE1 := \
+    gmt jdk11_backward
+
+TZFILES := \
+    $(addprefix $(JDK_TOPDIR)/make/sun/javazic/tzdata/,$(TZFILE0)) \
+    $(addprefix $(JDK_TOPDIR)/make/sun/javazic/tzdata_jdk/,$(TZFILE1))
+
+GENDATA_TIMEZONE_MAPFILE := ZoneInfoMappings
+
+$(GENDATA_TIMEZONE_DST)/$(GENDATA_TIMEZONE_MAPFILE): $(TZFILES)
+	$(RM) -r $(GENDATA_TIMEZONE_TMP)
+	$(MKDIR) -p $(GENDATA_TIMEZONE_TMP)
+	$(RM) -r $(GENDATA_TIMEZONE_DST)
+	$(MKDIR) -p $(GENDATA_TIMEZONE_DST)
+	$(TOOL_JAVAZIC) -V "$(GENDATA_TIMEZONE_VERSION)" -d $(GENDATA_TIMEZONE_TMP) $(TZFILES)
+	$(CP) -r $(GENDATA_TIMEZONE_TMP)/* $(GENDATA_TIMEZONE_DST)/
+
+GENDATA_TIMEZONE += $(GENDATA_TIMEZONE_DST)/$(GENDATA_TIMEZONE_MAPFILE)

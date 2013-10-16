@@ -25,7 +25,7 @@
 
 #
 # Generate java files for javax.swing.plaf package
-# 
+#
 NIMBUS_PACKAGE = javax.swing.plaf
 NIMBUS_GENSRC_DIR = $(JDK_OUTPUTDIR)/gensrc/javax/swing/plaf/nimbus
 NIMBUS_SKIN_FILE = $(JDK_TOPDIR)/src/share/classes/javax/swing/plaf/nimbus/skin.laf
@@ -48,22 +48,22 @@ GENSRC_SWING_NIMBUS := $(JDK_OUTPUTDIR)/gensrc/_the.generated_nimbus
 DOCLETSRC_DIR = $(JDK_TOPDIR)/make/tools/swing-beans
 
 # javax.swing package
-BEANS	    = AbstractButton Box JComponent JApplet JButton		\
-	      JCheckBox JCheckBoxMenuItem JComboBox JColorChooser	\
-	      JDesktopPane JDialog JEditorPane JFileChooser JFrame	\
-	      JFormattedTextField JInternalFrame JLabel JLayeredPane	\
-	      JList JMenu JMenuBar JMenuItem JOptionPane JPanel		\
-	      JPasswordField JPopupMenu JProgressBar JRadioButton	\
-	      JRadioButtonMenuItem JScrollBar JScrollPane JSeparator	\
-	      JSlider JSplitPane JSpinner JTabbedPane JTable		\
-	      JTextArea JTextField JTextPane JToggleButton JToolBar	\
-	      JTree JWindow
+BEANS = AbstractButton Box JComponent JApplet JButton \
+    JCheckBox JCheckBoxMenuItem JComboBox JColorChooser \
+    JDesktopPane JDialog JEditorPane JFileChooser JFrame \
+    JFormattedTextField JInternalFrame JLabel JLayeredPane \
+    JList JMenu JMenuBar JMenuItem JOptionPane JPanel \
+    JPasswordField JPopupMenu JProgressBar JRadioButton \
+    JRadioButtonMenuItem JScrollBar JScrollPane JSeparator \
+    JSlider JSplitPane JSpinner JTabbedPane JTable \
+    JTextArea JTextField JTextPane JToggleButton JToolBar \
+    JTree JWindow
 
 # javax.swing.text package
 BEANS_TEXT = JTextComponent
 
 BEANS_SRC = $(BEANS:%=$(JDK_TOPDIR)/src/share/classes/javax/swing/%.java) \
-	    $(BEANS_TEXT:%=$(JDK_TOPDIR)/src/share/classes/javax/swing/text/%.java)
+    $(BEANS_TEXT:%=$(JDK_TOPDIR)/src/share/classes/javax/swing/text/%.java)
 
 # Dummy variable so far, in the old build system it was false by default
 SWINGBEAN_DEBUG_FLAG = false
@@ -71,21 +71,21 @@ SWINGBEAN_DEBUG_FLAG = false
 # LocaleDataMetaInfo needs to be generated before running this to avoid confusing errors
 # in the build log.
 $(JDK_OUTPUTDIR)/gensrc_no_srczip/_the.generated_beaninfo: $(BEANS_SRC) \
-		$(JDK_OUTPUTDIR)/gensrc_no_srczip/javax/swing/SwingBeanInfoBase.java \
-		$(JDK_OUTPUTDIR)/gensrc/sun/swing/BeanInfoUtils.java $(BUILD_TOOLS) \
-		| $(GENSRC_LOCALEDATAMETAINFO)
+    $(JDK_OUTPUTDIR)/gensrc_no_srczip/javax/swing/SwingBeanInfoBase.java \
+    $(JDK_OUTPUTDIR)/gensrc/sun/swing/BeanInfoUtils.java $(BUILD_TOOLS) \
+    | $(GENSRC_LOCALEDATAMETAINFO)
 	$(ECHO) Generating beaninfo
 	$(MKDIR) -p $(JDK_OUTPUTDIR)/gensrc_no_srczip/javax/swing
 	$(JAVA) -Djava.awt.headless=true $(NEW_JAVADOC) \
-	-sourcepath "$(JDK_TOPDIR)/src/share/classes$(PATH_SEP)$(JDK_OUTPUTDIR)/gensrc" \
-	 -doclet GenDocletBeanInfo \
-	-x $(SWINGBEAN_DEBUG_FLAG) -d $(JDK_OUTPUTDIR)/gensrc_no_srczip/javax/swing \
-	-t $(DOCLETSRC_DIR)/SwingBeanInfo.template -docletpath $(JDK_OUTPUTDIR)/btclasses \
-	-XDignore.symbol.file=true \
-	-classpath $(JDK_OUTPUTDIR)/btclasses $(BEANS_SRC) $(LOG_INFO)
-#       Move the JTextComponent into its proper package directory.
+	    -sourcepath "$(JDK_TOPDIR)/src/share/classes$(PATH_SEP)$(JDK_OUTPUTDIR)/gensrc" \
+	    -doclet GenDocletBeanInfo \
+	    -x $(SWINGBEAN_DEBUG_FLAG) -d $(JDK_OUTPUTDIR)/gensrc_no_srczip/javax/swing \
+	    -t $(DOCLETSRC_DIR)/SwingBeanInfo.template -docletpath $(JDK_OUTPUTDIR)/btclasses \
+	    -XDignore.symbol.file=true \
+	    -classpath $(JDK_OUTPUTDIR)/btclasses $(BEANS_SRC) $(LOG_INFO)
+        # Move the JTextComponent into its proper package directory.
 	$(MKDIR) -p $(JDK_OUTPUTDIR)/gensrc_no_srczip/javax/swing/text
-	$(MV) $(JDK_OUTPUTDIR)/gensrc_no_srczip/javax/swing/JTextComponentBeanInfo.java $(JDK_OUTPUTDIR)/gensrc_no_srczip/javax/swing/text/JTextComponentBeanInfo.java 
+	$(MV) $(JDK_OUTPUTDIR)/gensrc_no_srczip/javax/swing/JTextComponentBeanInfo.java $(JDK_OUTPUTDIR)/gensrc_no_srczip/javax/swing/text/JTextComponentBeanInfo.java
 	$(TOUCH) $@
 
 # This file is the part of dt.jar
@@ -94,7 +94,7 @@ $(JDK_OUTPUTDIR)/gensrc_no_srczip/_the.generated_beaninfo: $(BEANS_SRC) \
 $(JDK_OUTPUTDIR)/gensrc_no_srczip/javax/swing/SwingBeanInfoBase.java: $(DOCLETSRC_DIR)/javax/swing/SwingBeanInfoBase.java
 	$(call install-file)
 
-# This file is the part of dt.jar 
+# This file is the part of dt.jar
 # For some reason it is under $(JDK_TOPDIR)/make/tools/swing-beans/sun/swing
 # Should it be moved under $(JDK_TOPDIR)/src/share/classes/sun/swing instead?
 $(JDK_OUTPUTDIR)/gensrc/sun/swing/BeanInfoUtils.java: $(DOCLETSRC_DIR)/sun/swing/BeanInfoUtils.java
