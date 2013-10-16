@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2012, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2013, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -28,12 +28,33 @@ default: all
 include $(SPEC)
 include MakeBase.gmk
 include RMICompilation.gmk
+include JavaCompilation.gmk
+include Setup.gmk
 
-# To ensure the latest stub generator files are picked up from corba repo
-# when available, we need to run with latest rmic version available. 
-ifneq ($(COMPILE_TYPE),cross)
-    RMIC := $(FIXPATH) $(JDK_OUTPUTDIR)/bin/rmic
-endif  
+##########################################################################################
+
+RMIC_PKGS := \
+    sun/rmi/rmic \
+    sun/tools/asm \
+    sun/tools/java \
+    sun/tools/javac \
+    sun/tools/tree \
+    sun/tools/util \
+    #
+
+$(eval $(call SetupJavaCompilation,BUILD_BOOTSTRAP_RMIC, \
+    SETUP := GENERATE_OLDBYTECODE, \
+    SRC := $(JDK_TOPDIR)/src/share/classes, \
+    INCLUDES := $(RMIC_PKGS), \
+    BIN := $(JDK_OUTPUTDIR)/btclasses_rmic, \
+    COPY := .properties, \
+    JAVAC_SOURCE_PATH_OVERRIDE := $(addprefix $(JDK_TOPDIR)/src/share/classes/, $(RMIC_PKGS))))
+
+##########################################################################################
+
+BTRMIC_CP := $(CORBA_OUTPUTDIR)/btjars/btcorba.jar$(PATH_SEP)$(JDK_OUTPUTDIR)/btclasses_rmic$(PATH_SEP)$(BOOTSTRAP_JAVAC_JAR)
+BTRMIC_ARGS := "-Xbootclasspath/p:$(BTRMIC_CP)" -cp $(BTRMIC_CP)
+RMIC := $(JAVA) $(BTRMIC_ARGS) sun.rmi.rmic.Main
 
 CLASSES_DIR := $(JDK_OUTPUTDIR)/classes
 # NOTE: If the smart javac dependency management is reintroduced, these classes risk 
@@ -90,6 +111,8 @@ $(eval $(call SetupRMICompilation,RMI_SRC,\
 GENCLASSES += $(filter %.java,$(RMI_SRC))
 
 ##########################################################################################
+
+$(RMI_12) $(RMI_11) $(RMI_IIOP) $(RMI_SRC): $(BUILD_BOOTSTRAP_RMIC)
 
 $(RMIC_GENSRC_DIR)/_the.classes.removed: $(GENCLASSES)
 	$(FIND) $(RMIC_GENSRC_DIR) -name "*.class" $(FIND_DELETE)
