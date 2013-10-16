@@ -42,8 +42,7 @@ public class JSDB extends Tool {
 
     public static void main(String[] args) {
         JSDB jsdb = new JSDB();
-        jsdb.start(args);
-        jsdb.stop();
+        jsdb.execute(args);
     }
 
     public void run() {
