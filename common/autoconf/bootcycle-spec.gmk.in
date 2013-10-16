@@ -36,7 +36,7 @@ else
   JAVA_EXEC_POS=1
 endif
 ifneq ($(word $(JAVA_EXEC_POS),$(SJAVAC_SERVER_JAVA)),$(word $(JAVA_EXEC_POS),$(JAVA)))
-    $(error Bootcycle builds are not possible if --with-sjavac-server-java is specified)
+  $(error Bootcycle builds are not possible if --with-sjavac-server-java is specified)
 endif
 
 
