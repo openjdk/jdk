@@ -129,6 +129,12 @@ public class Annotate {
         flush();
     }
 
+    /** Variant which allows for a delayed flush of annotations.
+     * Needed by ClassReader */
+    public void enterDoneWithoutFlush() {
+        enterCount--;
+    }
+
     public void flush() {
         if (enterCount != 0) return;
         enterCount++;

@@ -2405,8 +2405,6 @@ public class ClassReader {
             return c;
     }
 
-    private boolean suppressFlush = false;
-
     /** Completion for classes to be loaded. Before a class is loaded
      *  we make sure its enclosing class (if any) is loaded.
      */
@@ -2414,13 +2412,14 @@ public class ClassReader {
         if (sym.kind == TYP) {
             ClassSymbol c = (ClassSymbol)sym;
             c.members_field = new Scope.ErrorScope(c); // make sure it's always defined
-            boolean saveSuppressFlush = suppressFlush;
-            suppressFlush = true;
+            annotate.enterStart();
             try {
                 completeOwners(c.owner);
                 completeEnclosing(c);
             } finally {
-                suppressFlush = saveSuppressFlush;
+                // The flush needs to happen only after annotations
+                // are filled in.
+                annotate.enterDoneWithoutFlush();
             }
             fillIn(c);
         } else if (sym.kind == PCK) {
@@ -2431,7 +2430,7 @@ public class ClassReader {
                 throw new CompletionFailure(sym, ex.getLocalizedMessage()).initCause(ex);
             }
         }
-        if (!filling && !suppressFlush)
+        if (!filling)
             annotate.flush(); // finish attaching annotations
     }
 
