@@ -658,6 +658,8 @@ JNIEXPORT void JNICALL Java_sun_java2d_cmm_lcms_LCMS_colorConvert
 JNIEXPORT jobject JNICALL Java_sun_java2d_cmm_lcms_LCMS_getProfileID
   (JNIEnv *env, jclass cls, jobject pf)
 {
+    jclass clsLcmsProfile;
+    jobject cmmProfile;
     jfieldID fid = (*env)->GetFieldID (env,
         (*env)->GetObjectClass(env, pf),
         "cmmProfile", "Lsun/java2d/cmm/Profile;");
@@ -665,13 +667,13 @@ JNIEXPORT jobject JNICALL Java_sun_java2d_cmm_lcms_LCMS_getProfileID
         return NULL;
     }
 
-    jclass clsLcmsProfile = (*env)->FindClass(env,
+    clsLcmsProfile = (*env)->FindClass(env,
             "sun/java2d/cmm/lcms/LCMSProfile");
     if (clsLcmsProfile == NULL) {
         return NULL;
     }
 
-    jobject cmmProfile = (*env)->GetObjectField (env, pf, fid);
+    cmmProfile = (*env)->GetObjectField (env, pf, fid);
 
     if (JNU_IsNull(env, cmmProfile)) {
         return NULL;
