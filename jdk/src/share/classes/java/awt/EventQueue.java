@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1074,7 +1074,7 @@ public class EventQueue {
         }
     }
 
-    final boolean detachDispatchThread(EventDispatchThread edt, boolean forceDetach) {
+    final void detachDispatchThread(EventDispatchThread edt) {
         /*
          * Minimize discard possibility for non-posted events
          */
@@ -1090,17 +1090,9 @@ public class EventQueue {
         pushPopLock.lock();
         try {
             if (edt == dispatchThread) {
-                /*
-                 * Don't detach the thread if any events are pending. Not
-                 * sure if it's a possible scenario, though.
-                 */
-                if (!forceDetach && (peekEvent() != null)) {
-                    return false;
-                }
                 dispatchThread = null;
             }
             AWTAutoShutdown.getInstance().notifyThreadFree(edt);
-            return true;
         } finally {
             pushPopLock.unlock();
         }
