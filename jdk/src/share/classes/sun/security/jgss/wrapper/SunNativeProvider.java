@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -120,7 +120,7 @@ public final class SunNativeProvider extends Provider {
 
     public SunNativeProvider() {
         /* We are the Sun NativeGSS provider */
-        super(NAME, 1.0, INFO);
+        super(NAME, 1.8d, INFO);
 
         if (MECH_MAP != null) {
             AccessController.doPrivileged(new PutAllAction(this, MECH_MAP));

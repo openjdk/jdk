@@ -83,6 +83,16 @@ public abstract class AbstractDoclet {
         } catch (Configuration.Fault f) {
             root.printError(f.getMessage());
             return false;
+        } catch (DocletAbortException e) {
+            Throwable cause = e.getCause();
+            if (cause != null) {
+                if (cause.getLocalizedMessage() != null) {
+                    root.printError(cause.getLocalizedMessage());
+                } else {
+                    root.printError(cause.toString());
+                }
+            }
+            return false;
         } catch (Exception exc) {
             exc.printStackTrace();
             return false;
