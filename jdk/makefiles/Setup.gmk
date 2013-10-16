@@ -29,13 +29,18 @@ DISABLE_WARNINGS:=-Xlint:all,-deprecation,-unchecked,-rawtypes,-cast,-serial,-de
 # make JAVAC_WARNINGS="-Xlint:all -Xmaxwarns 10000" 
 JAVAC_WARNINGS:=-Xlint:-unchecked,-deprecation,-overrides,classfile,dep-ann,divzero,varargs -Werror
 
+# Any java code executed during a JDK build to build other parts of the JDK must be 
+# executed by the bootstrap JDK (probably with -Xbootclasspath/p: ) and for this 
+# purpose must be built with -target PREVIOUS for bootstrapping purposes, which 
+# requires restricting to language level and api of previous JDK.
+#
 # The generate old bytecode javac setup uses the new compiler to compile for the
 # boot jdk to generate tools that need to be run with the boot jdk.
-# Thus we force the target bytecode to 7.
+# Thus we force the target bytecode to the previous JDK version.
 $(eval $(call SetupJavaCompiler,GENERATE_OLDBYTECODE,\
      JVM:=$(JAVA),\
      JAVAC:=$(NEW_JAVAC),\
-     FLAGS:=-source 7 -target 7 -bootclasspath $(BOOT_RTJAR) $(DISABLE_WARNINGS),\
+    FLAGS := $(BOOT_JDK_SOURCETARGET) -bootclasspath $(BOOT_RTJAR) $(DISABLE_WARNINGS), \
      SERVER_DIR:=$(SJAVAC_SERVER_DIR),\
      SERVER_JVM:=$(SJAVAC_SERVER_JAVA)))
 
