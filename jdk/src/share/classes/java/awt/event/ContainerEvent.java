@@ -52,7 +52,7 @@ import java.awt.Component;
  *
  * @see ContainerAdapter
  * @see ContainerListener
- * @see <a href="http://java.sun.com/docs/books/tutorial/post1.0/ui/containerlistener.html">Tutorial: Writing a Container Listener</a>
+ * @see <a href="http://docs.oracle.com/javase/tutorial/uiswing/events/containerlistener.html">Tutorial: Writing a Container Listener</a>
  *
  * @author Tim Prinzing
  * @author Amy Fowler

@@ -62,7 +62,7 @@ if test -e $custom_hook; then
   # We have custom sources available; also generate configure script
   # with custom hooks compiled in.
   cat $script_dir/configure.ac | sed -e "s|@DATE_WHEN_GENERATED@|$TIMESTAMP|" | \
-    sed -e "s|#CUSTOM_AUTOCONF_INCLUDE|m4_include([$custom_hook])|" | ${AUTOCONF} -W all -I$script_dir - > $custom_script_dir/generated-configure.sh
+      sed -e "s|#CUSTOM_AUTOCONF_INCLUDE|m4_include([$custom_hook])|" | ${AUTOCONF} -W all -I$script_dir - > $custom_script_dir/generated-configure.sh
   rm -rf autom4te.cache
 else
   echo No custom hook found:  $custom_hook

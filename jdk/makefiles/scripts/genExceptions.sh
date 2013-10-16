@@ -32,7 +32,7 @@ DST=$2
 gen() {
   ID=$1
   WHAT=$2
-  SVUID=$3 
+  SVUID=$3
   ARG_TYPE=$4
   ARG_ID=$5
   ARG_PROP=$6
@@ -43,7 +43,7 @@ gen() {
 
   $SH ${SCRIPTS}/addNotices.sh "$COPYRIGHT_YEARS" > $out
 
-cat >>$out <<__END__
+  cat >>$out <<__END__
 
 // -- This file was mechanically generated: Do not edit! -- //
 
