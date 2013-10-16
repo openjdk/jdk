@@ -38,7 +38,7 @@ define SetupRMICompilation
     $(call LogSetupMacroEntry,SetupRMICompilation($1),$2,$3,$4,$5,$6,$7,$8,$9,$(10),$(11),$(12),$(13),$(14),$(15))
     $(if $(16),$(error Internal makefile error: Too many arguments to SetupRMICompilation, please update RMICompilation.gmk))
 
-    $1_DEP_FILE := $$($1_STUB_CLASSES_DIR)/$1_rmic
+  $1_DEP_FILE := $$($1_STUB_CLASSES_DIR)/_the.$1_rmic.generated
 
     $1_CLASSES_SLASH := $$(subst .,/,$$($1_CLASSES))
     $1_CLASS_FILES := $$(addprefix $$($1_CLASSES_DIR)/,$$(addsuffix .class,$$($1_CLASSES_SLASH)))
@@ -88,10 +88,9 @@ define SetupRMICompilation
 	    $(RMIC) $$($1_ARGS2) -classpath "$$($1_CLASSES_DIR)" \
 			-d $$($1_STUB_CLASSES_DIR) $$($1_DOLLAR_SAFE_CLASSES);\
 	fi;
+	$(TOUCH) $$@
 
 
-    $1 := $$($1_TARGETS)
+  $1 := $$($1_TARGETS) $$($1_DEP_FILE)
 
-    # By marking as secondary, this "touch" file doesn't need to be touched and will never exist.
-    .SECONDARY: $$($1_DEP_FILE)
 endef
