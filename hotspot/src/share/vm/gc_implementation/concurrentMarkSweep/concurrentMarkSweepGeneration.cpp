@@ -594,9 +594,9 @@ CMSCollector::CMSCollector(ConcurrentMarkSweepGeneration* cmsGen,
   _verification_mark_bm(0, Mutex::leaf + 1, "CMS_verification_mark_bm_lock"),
   _completed_initialization(false),
   _collector_policy(cp),
-  _should_unload_classes(false),
+  _should_unload_classes(CMSClassUnloadingEnabled),
   _concurrent_cycles_since_last_unload(0),
-  _roots_scanning_options(0),
+  _roots_scanning_options(SharedHeap::SO_None),
   _inter_sweep_estimate(CMS_SweepWeight, CMS_SweepPadding),
   _intra_sweep_estimate(CMS_SweepWeight, CMS_SweepPadding),
   _gc_tracer_cm(new (ResourceObj::C_HEAP, mtGC) CMSTracer()),
@@ -787,14 +787,6 @@ CMSCollector::CMSCollector(ConcurrentMarkSweepGeneration* cmsGen,
          || (   _survivor_chunk_capacity == 0
              && _survivor_chunk_index == 0),
          "Error");
-
-  // Choose what strong roots should be scanned depending on verification options
-  if (!CMSClassUnloadingEnabled) {
-    // If class unloading is disabled we want to include all classes into the root set.
-    add_root_scanning_option(SharedHeap::SO_AllClasses);
-  } else {
-    add_root_scanning_option(SharedHeap::SO_SystemClasses);
-  }
 
   NOT_PRODUCT(_overflow_counter = CMSMarkStackOverflowInterval;)
   _gc_counters = new CollectorCounters("CMS", 1);
@@ -3310,7 +3302,10 @@ void CMSCollector::setup_cms_unloading_and_verification_state() {
                              || VerifyBeforeExit;
   const  int  rso           =   SharedHeap::SO_Strings | SharedHeap::SO_CodeCache;
 
+  // We set the proper root for this CMS cycle here.
   if (should_unload_classes()) {   // Should unload classes this cycle
+    remove_root_scanning_option(SharedHeap::SO_AllClasses);
+    add_root_scanning_option(SharedHeap::SO_SystemClasses);
     remove_root_scanning_option(rso);  // Shrink the root set appropriately
     set_verifying(should_verify);    // Set verification state for this cycle
     return;                            // Nothing else needs to be done at this time
@@ -3318,6 +3313,9 @@ void CMSCollector::setup_cms_unloading_and_verification_state() {
 
   // Not unloading classes this cycle
   assert(!should_unload_classes(), "Inconsitency!");
+  remove_root_scanning_option(SharedHeap::SO_SystemClasses);
+  add_root_scanning_option(SharedHeap::SO_AllClasses);
+
   if ((!verifying() || unloaded_classes_last_cycle()) && should_verify) {
     // Include symbols, strings and code cache elements to prevent their resurrection.
     add_root_scanning_option(rso);
