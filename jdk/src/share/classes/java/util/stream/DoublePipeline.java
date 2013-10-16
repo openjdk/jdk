@@ -340,22 +340,15 @@ abstract class DoublePipeline<E_IN>
     }
 
     @Override
-    public final DoubleStream substream(long startingOffset) {
-        if (startingOffset < 0)
-            throw new IllegalArgumentException(Long.toString(startingOffset));
-        if (startingOffset == 0)
+    public final DoubleStream skip(long n) {
+        if (n < 0)
+            throw new IllegalArgumentException(Long.toString(n));
+        if (n == 0)
             return this;
         else {
             long limit = -1;
-            return SliceOps.makeDouble(this, startingOffset, limit);
+            return SliceOps.makeDouble(this, n, limit);
         }
-    }
-
-    @Override
-    public final DoubleStream substream(long startingOffset, long endingOffset) {
-        if (startingOffset < 0 || endingOffset < startingOffset)
-            throw new IllegalArgumentException(String.format("substream(%d, %d)", startingOffset, endingOffset));
-        return SliceOps.makeDouble(this, startingOffset, endingOffset - startingOffset);
     }
 
     @Override
