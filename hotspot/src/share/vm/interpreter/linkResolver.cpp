@@ -248,7 +248,7 @@ void LinkResolver::lookup_method_in_klasses(methodHandle& result, KlassHandle kl
 void LinkResolver::lookup_instance_method_in_klasses(methodHandle& result, KlassHandle klass, Symbol* name, Symbol* signature, TRAPS) {
   Method* result_oop = klass->uncached_lookup_method(name, signature);
   result = methodHandle(THREAD, result_oop);
-  while (!result.is_null() && result->is_static()) {
+  while (!result.is_null() && result->is_static() && result->method_holder()->super() != NULL) {
     klass = KlassHandle(THREAD, result->method_holder()->super());
     result = methodHandle(THREAD, klass->uncached_lookup_method(name, signature));
   }
