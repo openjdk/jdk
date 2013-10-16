@@ -332,7 +332,9 @@ ifneq ($(OPENJDK_TARGET_OS), windows)
       unpack200.1
 
   ifndef OPENJDK
-    JRE_MAN_PAGES += javaws.1
+    ifneq ($(OPENJDK_TARGET_OS), solaris)
+      JRE_MAN_PAGES += javaws.1
+    endif
   endif
 
   JDK_MAN_PAGES = \
