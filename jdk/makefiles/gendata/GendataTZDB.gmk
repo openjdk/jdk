@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2012, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2012, 2013, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -23,34 +23,19 @@
 # questions.
 #
 
-GENDATA_TIMEZONE :=
+GENDATA_TZDB :=
 
-# TODO: read from make/sun/javazic/tzdata/VERSION
-GENDATA_TIMEZONE_VERSION := tzdata2012i
+#
+# Time zone data file creation
+#
+TZDATA_DIR := $(JDK_TOPDIR)/make/sun/javazic/tzdata
+TZDATA_TZFILE := africa antarctica asia australasia europe northamerica pacificnew southamerica backward etcetera gmt jdk11_backward
+TZDATA_TZFILES := $(addprefix $(TZDATA_DIR)/,$(TZDATA_TZFILE))
 
-GENDATA_TIMEZONE_DST := $(JDK_OUTPUTDIR)/lib/zi
-GENDATA_TIMEZONE_TMP := $(JDK_OUTPUTDIR)/gendata_timezone
+GENDATA_TZDB_DAT := $(JDK_OUTPUTDIR)/lib/tzdb.dat
 
-TZFILE0 := \
-    africa antarctica asia australasia europe northamerica \
-    pacificnew southamerica backward \
-    etcetera systemv
+$(GENDATA_TZDB_DAT): $(TZDATA_TZFILES)
+	$(RM) $(GENDATA_TZDB_DAT)
+	$(TOOL_TZDB) -srcdir $(TZDATA_DIR) -dstfile $(GENDATA_TZDB_DAT) $(TZDATA_TZFILE)
 
-TZFILE1 := \
-    gmt jdk11_backward
-
-TZFILES := \
-    $(addprefix $(JDK_TOPDIR)/make/sun/javazic/tzdata/,$(TZFILE0)) \
-    $(addprefix $(JDK_TOPDIR)/make/sun/javazic/tzdata_jdk/,$(TZFILE1))
-
-GENDATA_TIMEZONE_MAPFILE:=ZoneInfoMappings
-
-$(GENDATA_TIMEZONE_DST)/$(GENDATA_TIMEZONE_MAPFILE) : $(TZFILES)
-	$(RM) -r $(GENDATA_TIMEZONE_TMP)
-	$(MKDIR) -p $(GENDATA_TIMEZONE_TMP)
-	$(RM) -r $(GENDATA_TIMEZONE_DST)
-	$(MKDIR) -p $(GENDATA_TIMEZONE_DST)
-	$(TOOL_JAVAZIC) -V "$(GENDATA_TIMEZONE_VERSION)" -d $(GENDATA_TIMEZONE_TMP) $(TZFILES)
-	$(CP) -r $(GENDATA_TIMEZONE_TMP)/* $(GENDATA_TIMEZONE_DST)/
-
-GENDATA_TIMEZONE += $(GENDATA_TIMEZONE_DST)/$(GENDATA_TIMEZONE_MAPFILE)
+GENDATA_TZDB += $(GENDATA_TZDB_DAT)

@@ -23,13 +23,33 @@
 # questions.
 #
 
-GENDATA_HTML32DTD := 
+GENSRC_EXCEPTIONS :=
 
-HTML32DTD = $(JDK_OUTPUTDIR)/classes/javax/swing/text/html/parser/html32.bdtd
-$(HTML32DTD): $(BUILD_TOOLS)
-	$(ECHO) "Generating HTML DTD file"
+GENSRC_EXCEPTIONS_TMP := $(JDK_OUTPUTDIR)/gensrc
+GENSRC_EXCEPTIONS_DST := $(JDK_OUTPUTDIR)/gensrc/java/nio
+
+GENSRC_EXCEPTIONS_SRC := $(JDK_TOPDIR)/src/share/classes/java/nio
+GENSRC_EXCEPTIONS_CMD := $(JDK_TOPDIR)/makefiles/scripts/genExceptions.sh
+
+GENSRC_EXCEPTIONS_SRC_DIRS := . charset channels
+
+###
+
+$(GENSRC_EXCEPTIONS_DST)/_the.exceptions.dir:
+	$(ECHO) "Generating exceptions classes"
 	$(MKDIR) -p $(@D)
-	$(RM) $@
-	($(TOOL_DTDBUILDER) $(LOG_INFO) html32 > $@) || exit 1
+	$(TOUCH) $@
 
-GENDATA_HTML32DTD += $(HTML32DTD)
+
+###
+
+$(GENSRC_EXCEPTIONS_DST)/_the.%: $(GENSRC_EXCEPTIONS_SRC)/%/exceptions \
+    $(GENSRC_EXCEPTIONS_CMD) \
+    $(GENSRC_EXCEPTIONS_DST)/_the.exceptions.dir
+	$(MKDIR) -p $(@D)/$*
+	SCRIPTS="$(JDK_TOPDIR)/makefiles/scripts" NAWK="$(NAWK)" SH="$(SH)" $(SH) $(GENSRC_EXCEPTIONS_CMD) $< $(@D)/$* $(LOG_INFO)
+	$(TOUCH) $@
+
+GENSRC_EXCEPTIONS += $(foreach D,$(GENSRC_EXCEPTIONS_SRC_DIRS),$(GENSRC_EXCEPTIONS_DST)/_the.$(D))
+
+$(GENSRC_EXCEPTIONS): $(BUILD_TOOLS)

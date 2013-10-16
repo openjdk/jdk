@@ -23,33 +23,24 @@
 # questions.
 #
 
-GENSRC_EXCEPTIONS :=
+# Translate the Java debugger wire protocol (jdwp.spec) file into a JDWP.java file
+# and a JDWPCommands.h C-header file.
 
-GENSRC_EXCEPTIONS_TMP := $(JDK_OUTPUTDIR)/gensrc
-GENSRC_EXCEPTIONS_DST := $(JDK_OUTPUTDIR)/gensrc/java/nio
+$(JDK_OUTPUTDIR)/gensrc_jdwp_headers/JDWPCommands.h: $(JDK_TOPDIR)/makefiles/jpda/jdwp/jdwp.spec
 
-GENSRC_EXCEPTIONS_SRC := $(JDK_TOPDIR)/src/share/classes/java/nio
-GENSRC_EXCEPTIONS_CMD := $(JDK_TOPDIR)/makefiles/scripts/genExceptions.sh
-
-GENSRC_EXCEPTIONS_SRC_DIRS := . charset channels 
-
-###
-
-$(GENSRC_EXCEPTIONS_DST)/_the.exceptions.dir :
-	$(ECHO) "Generating exceptions classes"
+$(JDK_OUTPUTDIR)/gensrc/com/sun/tools/jdi/JDWP.java: $(JDK_TOPDIR)/makefiles/jpda/jdwp/jdwp.spec
 	$(MKDIR) -p $(@D)
-	$(TOUCH) $@
+	$(MKDIR) -p $(JDK_OUTPUTDIR)/gensrc_jdwp_headers
+	$(RM) $@ $(JDK_OUTPUTDIR)/gensrc_jdwp_headers/JDWPCommands.h
+	$(ECHO) $(LOG_INFO) Creating JDWP.java and JDWPCommands.h from jdwp.spec
+	$(TOOL_JDWPGEN) $< -jdi $@ -include $(JDK_OUTPUTDIR)/gensrc_jdwp_headers/JDWPCommands.h
 
+$(JDK_OUTPUTDIR)/gensrc_jdwp_doc/jdwp-protocol.html: $(JDK_TOPDIR)/makefiles/jpda/jdwp/jdwp.spec
+	$(MKDIR) -p $(@D)
+	$(RM) $@
+	$(ECHO) $(LOG_INFO) Creating $(@F) from jdwp.spec
+	$(TOOL_JDWPGEN) $< -doc $@
 
-###
-
-$(GENSRC_EXCEPTIONS_DST)/_the.% : $(GENSRC_EXCEPTIONS_SRC)/%/exceptions \
-                                  $(GENSRC_EXCEPTIONS_CMD) \
-                                  $(GENSRC_EXCEPTIONS_DST)/_the.exceptions.dir
-	$(MKDIR) -p $(@D)/$*
-	SCRIPTS="$(JDK_TOPDIR)/makefiles/scripts" NAWK="$(NAWK)" SH="$(SH)" $(SH) $(GENSRC_EXCEPTIONS_CMD) $< $(@D)/$* $(LOG_INFO) 
-	$(TOUCH) $@
-
-GENSRC_EXCEPTIONS += $(foreach D,$(GENSRC_EXCEPTIONS_SRC_DIRS),$(GENSRC_EXCEPTIONS_DST)/_the.$(D))
-
-$(GENSRC_EXCEPTIONS) : $(BUILD_TOOLS)
+GENSRC_JDWP := $(JDK_OUTPUTDIR)/gensrc/com/sun/tools/jdi/JDWP.java \
+    $(JDK_OUTPUTDIR)/gensrc_jdwp_headers/JDWPCommands.h \
+    $(JDK_OUTPUTDIR)/gensrc_jdwp_doc/jdwp-protocol.html
