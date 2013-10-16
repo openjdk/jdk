@@ -227,8 +227,12 @@ julong os::available_memory() {
 }
 
 julong os::Aix::available_memory() {
-  Unimplemented();
-  return 0;
+  os::Aix::meminfo_t mi;
+  if (os::Aix::get_meminfo(&mi)) {
+    return mi.real_free;
+  } else {
+    return 0xFFFFFFFFFFFFFFFFLL;
+  }
 }
 
 julong os::physical_memory() {
@@ -5060,8 +5064,56 @@ extern char** environ;
 // Unlike system(), this function can be called from signal handler. It
 // doesn't block SIGINT et al.
 int os::fork_and_exec(char* cmd) {
-  Unimplemented();
-  return 0;
+  char * argv[4] = {"sh", "-c", cmd, NULL};
+
+  pid_t pid = fork();
+
+  if (pid < 0) {
+    // fork failed
+    return -1;
+
+  } else if (pid == 0) {
+    // child process
+
+    // try to be consistent with system(), which uses "/usr/bin/sh" on AIX
+    execve("/usr/bin/sh", argv, environ);
+
+    // execve failed
+    _exit(-1);
+
+  } else  {
+    // copied from J2SE ..._waitForProcessExit() in UNIXProcess_md.c; we don't
+    // care about the actual exit code, for now.
+
+    int status;
+
+    // Wait for the child process to exit.  This returns immediately if
+    // the child has already exited. */
+    while (waitpid(pid, &status, 0) < 0) {
+        switch (errno) {
+        case ECHILD: return 0;
+        case EINTR: break;
+        default: return -1;
+        }
+    }
+
+    if (WIFEXITED(status)) {
+       // The child exited normally; get its exit code.
+       return WEXITSTATUS(status);
+    } else if (WIFSIGNALED(status)) {
+       // The child exited because of a signal
+       // The best value to return is 0x80 + signal number,
+       // because that is what all Unix shells do, and because
+       // it allows callers to distinguish between process exit and
+       // process death by signal.
+       return 0x80 + WTERMSIG(status);
+    } else {
+       // Unknown exit code; pass it through
+       return status;
+    }
+  }
+  // Remove warning.
+  return -1;
 }
 
 // is_headless_jre()
