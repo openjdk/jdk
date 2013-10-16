@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2012, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2013, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -371,8 +371,8 @@ define SetupJavaCompilation
     #    INCLUDE_FILES:="com/sun/SolarisFoobar.java" means only compile this file!
     #    EXCLUDE_FILES:="com/sun/SolarisFoobar.java" means do not compile this particular file!
     #                   "SolarisFoobar.java" means do not compile SolarisFoobar, wherever it is found.
-    #    JAVAC_SOURCE_PATH_UGLY_OVERRIDE:=Don't use this. This forces an explicit -sourcepath to javac.
-    #                                     Its only here until we cleanup some nasty source code pasta in the jdk.
+  #   JAVAC_SOURCE_PATH_OVERRIDE:=This forces an explicit -sourcepath to javac instead of the complete
+  #       source roots from SRC. This is sometimes needed when compiling specific subsets of the source.
     #    HEADERS:=path to directory where all generated c-headers are written.
     #    DEPENDS:=Extra dependecy
     $(foreach i,2 3 4 5 6 7 8 9 10 11 12 13 14 15, $(if $($i),$1_$(strip $($i)))$(NEWLINE))
@@ -474,8 +474,8 @@ define SetupJavaCompilation
     endif
 
     # Prep the source paths.
-    ifneq ($$($1_JAVAC_SOURCE_PATH_UGLY_OVERRIDE),)
-      $$(eval $$(call replace_space_with_pathsep,$1_SRCROOTSC,$$($1_JAVAC_SOURCE_PATH_UGLY_OVERRIDE)))
+  ifneq ($$($1_JAVAC_SOURCE_PATH_OVERRIDE),)
+    $$(eval $$(call replace_space_with_pathsep,$1_SRCROOTSC,$$($1_JAVAC_SOURCE_PATH_OVERRIDE)))
     else
       $$(eval $$(call replace_space_with_pathsep,$1_SRCROOTSC,$$($1_SRC)))
     endif
