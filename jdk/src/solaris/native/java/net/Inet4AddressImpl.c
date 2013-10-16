@@ -70,6 +70,8 @@ static void initializeInetClasses(JNIEnv *env)
 
 
 #if defined(_ALLBSD_SOURCE) && !defined(HAS_GLIBC_GETHOSTBY_R)
+extern jobjectArray lookupIfLocalhost(JNIEnv *env, const char *hostname, jboolean includeV6);
+
 /* Use getaddrinfo(3), which is thread safe */
 /************************************************************************
  * Inet4AddressImpl
@@ -377,8 +379,6 @@ Java_java_net_Inet4AddressImpl_getLocalHostName(JNIEnv *env, jobject this) {
     }
     return (*env)->NewStringUTF(env, hostname);
 }
-
-extern jobjectArray lookupIfLocalhost(JNIEnv *env, const char *hostname, jboolean includeV6);
 
 /*
  * Find an internet address for a given hostname.  Note that this
