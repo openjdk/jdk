@@ -270,11 +270,6 @@ public class Flags {
      */
     public static final long POTENTIALLY_AMBIGUOUS = 1L<<48;
 
-    /**
-     * Flag that marks a synthetic method body for a lambda expression
-     */
-    public static final long LAMBDA_METHOD = 1L<<49;
-
     /** Modifier masks.
      */
     public static final int
@@ -383,8 +378,7 @@ public class Flags {
         NOT_IN_PROFILE(Flags.NOT_IN_PROFILE),
         BAD_OVERRIDE(Flags.BAD_OVERRIDE),
         SIGNATURE_POLYMORPHIC(Flags.SIGNATURE_POLYMORPHIC),
-        THROWS(Flags.THROWS),
-        LAMBDA_METHOD(Flags.LAMBDA_METHOD);
+        THROWS(Flags.THROWS);
 
         Flag(long flag) {
             this.value = flag;
