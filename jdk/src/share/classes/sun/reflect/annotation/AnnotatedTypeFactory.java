@@ -118,6 +118,7 @@ public class AnnotatedTypeFactory {
 
     static final AnnotatedType EMPTY_ANNOTATED_TYPE = new AnnotatedTypeBaseImpl(null, LocationInfo.BASE_LOCATION,
                                                             new TypeAnnotation[0], new TypeAnnotation[0], null);
+    static final AnnotatedType[] EMPTY_ANNOTATED_TYPE_ARRAY = new AnnotatedType[0];
 
     private static class AnnotatedTypeBaseImpl implements AnnotatedType {
         private final Type type;

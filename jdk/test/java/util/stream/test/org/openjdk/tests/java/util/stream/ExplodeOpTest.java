@@ -64,6 +64,9 @@ public class ExplodeOpTest extends OpTestCase {
         result = exerciseOps(data, s -> s.flatMap(mfNull));
         assertEquals(0, result.size());
 
+        result = exerciseOps(data, s-> s.flatMap(e -> Stream.empty()));
+        assertEquals(0, result.size());
+
         exerciseOps(data, s -> s.flatMap(mfLt));
         exerciseOps(data, s -> s.flatMap(integerRangeMapper));
         exerciseOps(data, s -> s.flatMap((Integer e) -> IntStream.range(0, e).boxed().limit(10)));

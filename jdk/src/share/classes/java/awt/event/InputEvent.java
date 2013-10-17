@@ -445,7 +445,7 @@ public abstract class InputEvent extends ComponentEvent {
      * <PRE>
      *    int onmask = SHIFT_DOWN_MASK | BUTTON1_DOWN_MASK;
      *    int offmask = CTRL_DOWN_MASK;
-     *    if ((event.getModifiersEx() & (onmask | offmask)) == onmask) {
+     *    if ((event.getModifiersEx() &amp; (onmask | offmask)) == onmask) {
      *        ...
      *    }
      * </PRE>

@@ -587,11 +587,11 @@ public class LexicalContext {
                 final FunctionNode fn = (FunctionNode)node;
                 final Source source = fn.getSource();
                 String src = source.toString();
-                if (src.indexOf(File.pathSeparator) != -1) {
+                if (src.contains(File.pathSeparator)) {
                     src = src.substring(src.lastIndexOf(File.pathSeparator));
                 }
                 src += ' ';
-                src += source.getLine(fn.getStart());
+                src += fn.getLineNumber();
                 sb.append(src);
             }
             sb.append(' ');
