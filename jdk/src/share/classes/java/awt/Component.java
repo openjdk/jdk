@@ -276,7 +276,7 @@ public abstract class Component implements ImageObserver, MenuContainer,
      * @see #getFont
      * @see #setFont
      */
-    Font        font;
+    volatile Font font;
 
     /**
      * The font which the peer is currently using.
@@ -1885,10 +1885,8 @@ public abstract class Component implements ImageObserver, MenuContainer,
     public void setFont(Font f) {
         Font oldFont, newFont;
         synchronized(getTreeLock()) {
-            synchronized (this) {
-                oldFont = font;
-                newFont = font = f;
-            }
+            oldFont = font;
+            newFont = font = f;
             ComponentPeer peer = this.peer;
             if (peer != null) {
                 f = getFont();
