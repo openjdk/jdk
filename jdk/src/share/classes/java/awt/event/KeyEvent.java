@@ -145,7 +145,7 @@ import sun.awt.AWTAccessor;
  *
  * @see KeyAdapter
  * @see KeyListener
- * @see <a href="http://java.sun.com/docs/books/tutorial/post1.0/ui/keylistener.html">Tutorial: Writing a Key Listener</a>
+ * @see <a href="http://docs.oracle.com/javase/tutorial/uiswing/events/keylistener.html">Tutorial: Writing a Key Listener</a>
  *
  * @since 1.1
  */

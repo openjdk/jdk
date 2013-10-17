@@ -147,7 +147,8 @@ public class SliceOpTest extends OpTestCase {
         return Math.max(0, dataSize - skip);
     }
 
-    @Test(dataProvider = "StreamTestData<Integer>", dataProviderClass = StreamTestDataProvider.class)
+    @Test(dataProvider = "StreamTestData<Integer>", dataProviderClass = StreamTestDataProvider.class,
+          groups = { "serialization-hostile" })
     public void testSkipOps(String name, TestData.OfRef<Integer> data) {
         List<Integer> skips = sizes(data.size());
 
@@ -169,7 +170,8 @@ public class SliceOpTest extends OpTestCase {
         }
     }
 
-    @Test(dataProvider = "StreamTestData<Integer>", dataProviderClass = StreamTestDataProvider.class)
+    @Test(dataProvider = "StreamTestData<Integer>", dataProviderClass = StreamTestDataProvider.class,
+          groups = { "serialization-hostile" })
     public void testSkipLimitOps(String name, TestData.OfRef<Integer> data) {
         List<Integer> skips = sizes(data.size());
         List<Integer> limits = skips;
@@ -242,7 +244,8 @@ public class SliceOpTest extends OpTestCase {
         testSkipLimitOps("testSkipLimitOpsWithNonSplittingSpliterator", data);
     }
 
-    @Test(dataProvider = "StreamTestData<Integer>", dataProviderClass = StreamTestDataProvider.class)
+    @Test(dataProvider = "StreamTestData<Integer>", dataProviderClass = StreamTestDataProvider.class,
+          groups = { "serialization-hostile" })
     public void testLimitOps(String name, TestData.OfRef<Integer> data) {
         List<Integer> limits = sizes(data.size());
 

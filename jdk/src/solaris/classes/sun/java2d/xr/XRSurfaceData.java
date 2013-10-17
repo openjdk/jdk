@@ -457,15 +457,15 @@ public abstract class XRSurfaceData extends XSurfaceData {
         if (sg2d != null && sg2d.compositeState == SunGraphics2D.COMP_XOR) {
             if (validatedXorComp != sg2d.getComposite()) {
                 validatedXorComp = (XORComposite) sg2d.getComposite();
-                int xorpixelmod = validatedXorComp.getXorPixel();
                 renderQueue.setGCMode(xgc, false);
+            }
 
-                // validate pixel
-                int pixel = sg2d.pixel;
-                if (validatedGCForegroundPixel != pixel) {
-                    renderQueue.setGCForeground(xgc, pixel ^ xorpixelmod);
-                    validatedGCForegroundPixel = pixel;
-                }
+            // validate pixel
+            int pixel = sg2d.pixel;
+            if (validatedGCForegroundPixel != pixel) {
+                int xorpixelmod = validatedXorComp.getXorPixel();
+                renderQueue.setGCForeground(xgc, pixel ^ xorpixelmod);
+                validatedGCForegroundPixel = pixel;
             }
 
             if (updateGCClip) {

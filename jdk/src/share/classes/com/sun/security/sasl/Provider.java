@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -53,7 +53,7 @@ public final class Provider extends java.security.Provider {
         " server mechanisms for: DIGEST-MD5, GSSAPI, CRAM-MD5, NTLM)";
 
     public Provider() {
-        super("SunSASL", 1.7d, info);
+        super("SunSASL", 1.8d, info);
 
         AccessController.doPrivileged(new PrivilegedAction<Void>() {
             public Void run() {

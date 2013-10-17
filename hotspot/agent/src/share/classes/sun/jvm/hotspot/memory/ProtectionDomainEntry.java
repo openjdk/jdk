@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,7 +32,7 @@ import sun.jvm.hotspot.types.*;
 
 public class ProtectionDomainEntry extends VMObject {
   private static AddressField nextField;
-  private static sun.jvm.hotspot.types.OopField protectionDomainField;
+  private static AddressField pdCacheField;
 
   static {
     VM.registerVMInitializedObserver(new Observer() {
@@ -46,7 +46,7 @@ public class ProtectionDomainEntry extends VMObject {
     Type type = db.lookupType("ProtectionDomainEntry");
 
     nextField = type.getAddressField("_next");
-    protectionDomainField = type.getOopField("_protection_domain");
+    pdCacheField = type.getAddressField("_pd_cache");
   }
 
   public ProtectionDomainEntry(Address addr) {
@@ -54,10 +54,12 @@ public class ProtectionDomainEntry extends VMObject {
   }
 
   public ProtectionDomainEntry next() {
-    return (ProtectionDomainEntry) VMObjectFactory.newObject(ProtectionDomainEntry.class, addr);
+    return (ProtectionDomainEntry) VMObjectFactory.newObject(ProtectionDomainEntry.class, nextField.getValue(addr));
   }
 
   public Oop protectionDomain() {
-    return VM.getVM().getObjectHeap().newOop(protectionDomainField.getValue(addr));
+    ProtectionDomainCacheEntry pd_cache = (ProtectionDomainCacheEntry)
+      VMObjectFactory.newObject(ProtectionDomainCacheEntry.class, pdCacheField.getValue(addr));
+    return pd_cache.protectionDomain();
   }
 }

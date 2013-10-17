@@ -71,7 +71,7 @@ import javax.print.attribute.PrintJobAttribute;
  * <UL>
  * <LI>
  * <A NAME="sdfi">{@link #SINGLE_DOCUMENT
- * <B><CODE>SINGLE_DOCUMENT</CODE></B>}</A>. If a print job has multiple
+ * <B>SINGLE_DOCUMENT</B>}</A>. If a print job has multiple
  * documents -- say, the document data is called <CODE>a</CODE> and
  * <CODE>b</CODE> -- then the result of processing all the document data
  * (<CODE>a</CODE> and then <CODE>b</CODE>) must be treated as a single sequence
@@ -86,7 +86,7 @@ import javax.print.attribute.PrintJobAttribute;
  * <P>
  * <LI>
  * <A NAME="sducfi">{@link #SEPARATE_DOCUMENTS_UNCOLLATED_COPIES
- * <B><CODE>SEPARATE_DOCUMENTS_UNCOLLATED_COPIES</CODE></B>}</A>. If a print job
+ * <B>SEPARATE_DOCUMENTS_UNCOLLATED_COPIES</B>}</A>. If a print job
  * has multiple documents -- say, the document data is called <CODE>a</CODE> and
  * <CODE>b</CODE> -- then the result of processing the data in each document
  * instance must be treated as a single sequence of media sheets for finishing
@@ -99,7 +99,7 @@ import javax.print.attribute.PrintJobAttribute;
  * <P>
  * <LI>
  * <A NAME="sdccfi">{@link #SEPARATE_DOCUMENTS_COLLATED_COPIES
- * <B><CODE>SEPARATE_DOCUMENTS_COLLATED_COPIES</CODE></B>}</A>. If a print job
+ * <B>SEPARATE_DOCUMENTS_COLLATED_COPIES</B>}</A>. If a print job
  * has multiple documents -- say, the document data is called <CODE>a</CODE> and
  * <CODE>b</CODE> -- then the result of processing the data in each document
  * instance must be treated as a single sequence of media sheets for finishing
@@ -112,7 +112,7 @@ import javax.print.attribute.PrintJobAttribute;
  * <P>
  * <LI>
  * <A NAME="sdnsfi">{@link #SINGLE_DOCUMENT_NEW_SHEET
- * <B><CODE>SINGLE_DOCUMENT_NEW_SHEET</CODE></B>}</A>. Same as SINGLE_DOCUMENT,
+ * <B>SINGLE_DOCUMENT_NEW_SHEET</B>}</A>. Same as SINGLE_DOCUMENT,
  * except that the printer must ensure that the first impression of each
  * document instance in the job is placed on a new media sheet. This value
  * allows multiple documents to be stapled together with a single staple where
@@ -127,7 +127,7 @@ import javax.print.attribute.PrintJobAttribute;
  * next document or document copy on to a new sheet.
  * <P>
  * In addition, if a {@link Finishings Finishings} attribute of
- * {@link Finishings#STAPLE <CODE>STAPLE</CODE>} is specified, then:
+ * {@link Finishings#STAPLE STAPLE} is specified, then:
  * <UL>
  * <LI>
  * With SINGLE_DOCUMENT, documents <CODE>a</CODE> and <CODE>b</CODE> are

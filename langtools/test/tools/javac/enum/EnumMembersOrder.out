@@ -1,0 +1,7 @@
+EnumMembersOrder.java:11:16: compiler.err.expected: ')'
+EnumMembersOrder.java:11:17: compiler.err.expected3: ',', '}', ';'
+EnumMembersOrder.java:11:19: compiler.err.expected: '}'
+EnumMembersOrder.java:11:31: compiler.err.expected3: class, interface, enum
+EnumMembersOrder.java:17:13: compiler.err.expected3: class, interface, enum
+EnumMembersOrder.java:19:1: compiler.err.expected3: class, interface, enum
+6 errors
