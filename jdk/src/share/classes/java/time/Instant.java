@@ -156,14 +156,14 @@ import java.util.Objects;
  * internationally-agreed time scale is modified or replaced, a new
  * segment of the Java Time-Scale must be defined for it.  Each segment
  * must meet these requirements:
- * <p><ul>
+ * <ul>
  * <li>the Java Time-Scale shall closely match the underlying international
  *  civil time scale;</li>
  * <li>the Java Time-Scale shall exactly match the international civil
  *  time scale at noon each day;</li>
  * <li>the Java Time-Scale shall have a precisely-defined relationship to
  *  the international civil time scale.</li>
- * </ul><p>
+ * </ul>
  * There are currently, as of 2013, two segments in the Java time-scale.
  * <p>
  * For the segment from 1972-11-03 (exact boundary discussed below) until

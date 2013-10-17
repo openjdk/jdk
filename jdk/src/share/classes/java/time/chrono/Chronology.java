@@ -117,7 +117,7 @@ import java.util.Set;
  * <p>
  * The {@code Chronology} instance provides a set of methods to create {@code ChronoLocalDate} instances.
  * The date classes are used to manipulate specific dates.
- * <p><ul>
+ * <ul>
  * <li> {@link #dateNow() dateNow()}
  * <li> {@link #dateNow(Clock) dateNow(clock)}
  * <li> {@link #dateNow(ZoneId) dateNow(zone)}
@@ -126,7 +126,7 @@ import java.util.Set;
  * <li> {@link #dateYearDay(int, int) dateYearDay(yearProleptic, dayOfYear)}
  * <li> {@link #dateYearDay(Era, int, int) dateYearDay(era, yearOfEra, dayOfYear)}
  * <li> {@link #date(TemporalAccessor) date(TemporalAccessor)}
- * </ul><p>
+ * </ul>
  *
  * <h3 id="addcalendars">Adding New Calendars</h3>
  * The set of available chronologies can be extended by applications.
@@ -163,10 +163,10 @@ public interface Chronology extends Comparable<Chronology> {
      * A {@code TemporalAccessor} represents an arbitrary set of date and time information,
      * which this factory converts to an instance of {@code Chronology}.
      * <p>
-     * The conversion will obtain the chronology using {@link TemporalQueries.chronology()}.
+     * The conversion will obtain the chronology using {@link TemporalQueries#chronology()}.
      * If the specified temporal object does not have a chronology, {@link IsoChronology} is returned.
      * <p>
-     * This method matches the signature of the functional interface {@link TemporalQueries.
+     * This method matches the signature of the functional interface {@link TemporalQuery}
      * allowing it to be used in queries via method reference, {@code Chronology::from}.
      *
      * @param temporal  the temporal to convert, not null
@@ -435,7 +435,7 @@ public interface Chronology extends Comparable<Chronology> {
      * The conversion typically uses the {@link ChronoField#EPOCH_DAY EPOCH_DAY}
      * field, which is standardized across calendar systems.
      * <p>
-     * This method matches the signature of the functional interface {@link TemporalQueries.
+     * This method matches the signature of the functional interface {@link TemporalQuery}
      * allowing it to be used as a query via method reference, {@code aChronology::date}.
      *
      * @param temporal  the temporal object to convert, not null
@@ -458,7 +458,7 @@ public interface Chronology extends Comparable<Chronology> {
      * those fields that are equivalent to the relevant objects.
      * The result uses this chronology.
      * <p>
-     * This method matches the signature of the functional interface {@link TemporalQueries.
+     * This method matches the signature of the functional interface {@link TemporalQuery}
      * allowing it to be used as a query via method reference, {@code aChronology::localDateTime}.
      *
      * @param temporal  the temporal object to convert, not null
@@ -490,7 +490,7 @@ public interface Chronology extends Comparable<Chronology> {
      * those fields that are equivalent to the relevant objects.
      * The result uses this chronology.
      * <p>
-     * This method matches the signature of the functional interface {@link TemporalQueries.
+     * This method matches the signature of the functional interface {@link TemporalQuery}
      * allowing it to be used as a query via method reference, {@code aChronology::zonedDateTime}.
      *
      * @param temporal  the temporal object to convert, not null
@@ -534,10 +534,10 @@ public interface Chronology extends Comparable<Chronology> {
      * <p>
      * A leap-year is a year of a longer length than normal.
      * The exact meaning is determined by the chronology according to the following constraints.
-     * <p><ul>
+     * <ul>
      * <li>a leap-year must imply a year-length longer than a non leap-year.
      * <li>a chronology that does not support the concept of a year must return false.
-     * </ul><p>
+     * </ul>
      *
      * @param prolepticYear  the proleptic-year to check, not validated for range
      * @return true if the year is a leap year

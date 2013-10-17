@@ -111,7 +111,7 @@ import java.util.Objects;
  * Obtaining the offset for an instant is simple, as there is exactly one valid
  * offset for each instant. By contrast, obtaining the offset for a local date-time
  * is not straightforward. There are three cases:
- * <p><ul>
+ * <ul>
  * <li>Normal, with one valid offset. For the vast majority of the year, the normal
  *  case applies, where there is a single valid offset for the local date-time.</li>
  * <li>Gap, with zero valid offsets. This is when clocks jump forward typically
@@ -120,7 +120,7 @@ import java.util.Objects;
  * <li>Overlap, with two valid offsets. This is when clocks are set back typically
  *  due to the autumn daylight savings change from "summer" to "winter".
  *  In an overlap there are local date-time values with two valid offsets.</li>
- * </ul><p>
+ * </ul>
  * <p>
  * Any method that converts directly or implicitly from a local date-time to an
  * instant by obtaining the offset has the potential to be complicated.
@@ -1699,12 +1699,12 @@ public final class ZonedDateTime
      * <p>
      * For example, consider a time-zone where the spring DST cutover means that the
      * local times 01:00 to 01:59 occur twice changing from offset +02:00 to +01:00.
-     * <p><ul>
+     * <ul>
      * <li>Adding one hour to 00:30+02:00 will result in 01:30+02:00
      * <li>Adding one hour to 01:30+02:00 will result in 01:30+01:00
      * <li>Adding one hour to 01:30+01:00 will result in 02:30+01:00
      * <li>Adding three hours to 00:30+02:00 will result in 02:30+01:00
-     * </ul><p>
+     * </ul>
      * <p>
      * This instance is immutable and unaffected by this method call.
      *
@@ -1940,12 +1940,12 @@ public final class ZonedDateTime
      * <p>
      * For example, consider a time-zone where the spring DST cutover means that the
      * local times 01:00 to 01:59 occur twice changing from offset +02:00 to +01:00.
-     * <p><ul>
+     * <ul>
      * <li>Subtracting one hour from 02:30+01:00 will result in 01:30+02:00
      * <li>Subtracting one hour from 01:30+01:00 will result in 01:30+02:00
      * <li>Subtracting one hour from 01:30+02:00 will result in 00:30+01:00
      * <li>Subtracting three hours from 02:30+01:00 will result in 00:30+02:00
-     * </ul><p>
+     * </ul>
      * <p>
      * This instance is immutable and unaffected by this method call.
      *

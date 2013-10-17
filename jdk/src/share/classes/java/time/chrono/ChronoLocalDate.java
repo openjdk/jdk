@@ -195,13 +195,13 @@ import java.util.Objects;
  *
  * <h3>Using LocalDate instead</h3>
  * The primary alternative to using this interface throughout your application is as follows.
- * <p><ul>
+ * <ul>
  * <li>Declare all method signatures referring to dates in terms of {@code LocalDate}.
  * <li>Either store the chronology (calendar system) in the user profile or lookup
  *  the chronology from the user locale
  * <li>Convert the ISO {@code LocalDate} to and from the user's preferred calendar system during
  *  printing and parsing
- * </ul><p>
+ * </ul>
  * This approach treats the problem of globalized calendar systems as a localization issue
  * and confines it to the UI layer. This approach is in keeping with other localization
  * issues in the java platform.
@@ -222,13 +222,13 @@ import java.util.Objects;
  * For example, an application may need to calculate the next Islamic or Hebrew holiday
  * which may require manipulating the date.
  * This kind of use case can be handled as follows:
- * <p><ul>
+ * <ul>
  * <li>start from the ISO {@code LocalDate} being passed to the method
  * <li>convert the date to the alternate calendar system, which for this use case is known
  *  rather than arbitrary
  * <li>perform the calculation
  * <li>convert back to {@code LocalDate}
- * </ul><p>
+ * </ul>
  * Developers writing low-level frameworks or libraries should also avoid this interface.
  * Instead, one of the two general purpose access interfaces should be used.
  * Use {@link TemporalAccessor} if read-only access is required, or use {@link Temporal}
