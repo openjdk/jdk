@@ -84,6 +84,11 @@ Java_sun_java2d_loops_MaskFill_MaskFill
                 (maskArray
                  ? (*env)->GetPrimitiveArrayCritical(env, maskArray, 0)
                  : 0);
+            if (maskArray != NULL && pMask == NULL) {
+                SurfaceData_InvokeRelease(env, sdOps, &rasInfo);
+                SurfaceData_InvokeUnlock(env, sdOps, &rasInfo);
+                return;
+            }
             maskoff += ((rasInfo.bounds.y1 - y) * maskscan +
                         (rasInfo.bounds.x1 - x));
             (*pPrim->funcs.maskfill)(pDst,

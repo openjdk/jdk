@@ -33,7 +33,7 @@ package com.sun.source.doctree;
  *
  * @since 1.8
  */
-@jdk.Supported
+@jdk.Exported
 public interface CommentTree extends DocTree {
     String getBody();
 }

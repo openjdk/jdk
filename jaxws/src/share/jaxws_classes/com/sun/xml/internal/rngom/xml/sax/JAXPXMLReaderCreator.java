@@ -23,7 +23,7 @@
  * questions.
  */
 /*
- * Copyright (C) 2004-2011
+ * Copyright (C) 2004-2012
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -45,10 +45,15 @@
  */
 package com.sun.xml.internal.rngom.xml.sax;
 
+import java.util.logging.Level;
+import java.util.logging.Logger;
+import javax.xml.XMLConstants;
 import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.parsers.SAXParserFactory;
 
 import org.xml.sax.SAXException;
+import org.xml.sax.SAXNotRecognizedException;
+import org.xml.sax.SAXNotSupportedException;
 import org.xml.sax.XMLReader;
 
 /**
@@ -72,7 +77,16 @@ public class JAXPXMLReaderCreator implements XMLReaderCreator {
      */
     public JAXPXMLReaderCreator() {
         spf = SAXParserFactory.newInstance();
-        spf.setNamespaceAware(true);
+        try {
+            spf.setNamespaceAware(true);
+            spf.setFeature(XMLConstants.FEATURE_SECURE_PROCESSING, true);
+        } catch (ParserConfigurationException ex) {
+            Logger.getLogger(JAXPXMLReaderCreator.class.getName()).log(Level.SEVERE, null, ex);
+        } catch (SAXNotRecognizedException ex) {
+            Logger.getLogger(JAXPXMLReaderCreator.class.getName()).log(Level.SEVERE, null, ex);
+        } catch (SAXNotSupportedException ex) {
+            Logger.getLogger(JAXPXMLReaderCreator.class.getName()).log(Level.SEVERE, null, ex);
+        }
     }
 
     /**

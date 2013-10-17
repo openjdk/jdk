@@ -32,7 +32,7 @@ package com.sun.source.util;
  * @author Jonathan Gibbons
  * @since 1.6
  */
-@jdk.Supported
+@jdk.Exported
 public interface TaskListener
 {
     public void started(TaskEvent e);

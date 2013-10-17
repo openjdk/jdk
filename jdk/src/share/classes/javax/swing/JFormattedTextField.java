@@ -54,7 +54,7 @@ import javax.swing.text.*;
  * configuring what action should be taken when focus is lost. The possible
  * configurations are:
  * <table summary="Possible JFormattedTextField configurations and their descriptions">
- * <tr><th><p align="left">Value</p></th><th><p align="left">Description</p></th></tr>
+ * <tr><th><p style="text-align:left">Value</p></th><th><p style="text-align:left">Description</p></th></tr>
  * <tr><td>JFormattedTextField.REVERT
  *            <td>Revert the display to match that of <code>getValue</code>,
  *                possibly losing the current edit.
@@ -171,7 +171,7 @@ import javax.swing.text.*;
  * future Swing releases. The current serialization support is
  * appropriate for short term storage or RMI between applications running
  * the same version of Swing.  As of 1.4, support for long term storage
- * of all JavaBeans<sup><font size="-2">TM</font></sup>
+ * of all JavaBeans&trade;
  * has been added to the <code>java.beans</code> package.
  * Please see {@link java.beans.XMLEncoder}.
  *

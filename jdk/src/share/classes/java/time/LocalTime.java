@@ -394,6 +394,7 @@ public final class LocalTime
      * @throws DateTimeException if unable to convert to a {@code LocalTime}
      */
     public static LocalTime from(TemporalAccessor temporal) {
+        Objects.requireNonNull(temporal, "temporal");
         LocalTime time = temporal.query(TemporalQuery.localTime());
         if (time == null) {
             throw new DateTimeException("Unable to obtain LocalTime from TemporalAccessor: " + temporal.getClass());
@@ -1330,7 +1331,8 @@ public final class LocalTime
      * objects in terms of a single {@code TemporalUnit}.
      * The start and end points are {@code this} and the specified time.
      * The result will be negative if the end is before the start.
-     * The {@code Temporal} passed to this method must be a {@code LocalTime}.
+     * The {@code Temporal} passed to this method is converted to a
+     * {@code LocalTime} using {@link #from(TemporalAccessor)}.
      * For example, the amount in hours between two times can be calculated
      * using {@code startTime.until(endTime, HOURS)}.
      * <p>
@@ -1356,25 +1358,22 @@ public final class LocalTime
      * <p>
      * If the unit is not a {@code ChronoUnit}, then the result of this method
      * is obtained by invoking {@code TemporalUnit.between(Temporal, Temporal)}
-     * passing {@code this} as the first argument and the input temporal as
-     * the second argument.
+     * passing {@code this} as the first argument and the converted input temporal
+     * as the second argument.
      * <p>
      * This instance is immutable and unaffected by this method call.
      *
-     * @param endTime  the end time, which must be a {@code LocalTime}, not null
+     * @param endExclusive  the end time, exclusive, which is converted to a {@code LocalTime}, not null
      * @param unit  the unit to measure the amount in, not null
      * @return the amount of time between this time and the end time
-     * @throws DateTimeException if the amount cannot be calculated
+     * @throws DateTimeException if the amount cannot be calculated, or the end
+     *  temporal cannot be converted to a {@code LocalTime}
      * @throws UnsupportedTemporalTypeException if the unit is not supported
      * @throws ArithmeticException if numeric overflow occurs
      */
     @Override
-    public long until(Temporal endTime, TemporalUnit unit) {
-        if (endTime instanceof LocalTime == false) {
-            Objects.requireNonNull(endTime, "endTime");
-            throw new DateTimeException("Unable to calculate amount as objects are of two different types");
-        }
-        LocalTime end = (LocalTime) endTime;
+    public long until(Temporal endExclusive, TemporalUnit unit) {
+        LocalTime end = LocalTime.from(endExclusive);
         if (unit instanceof ChronoUnit) {
             long nanosUntil = end.toNanoOfDay() - toNanoOfDay();  // no overflow
             switch ((ChronoUnit) unit) {
@@ -1388,7 +1387,7 @@ public final class LocalTime
             }
             throw new UnsupportedTemporalTypeException("Unsupported unit: " + unit);
         }
-        return unit.between(this, endTime);
+        return unit.between(this, end);
     }
 
     /**

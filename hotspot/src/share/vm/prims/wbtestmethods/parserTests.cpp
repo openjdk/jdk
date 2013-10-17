@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -117,11 +117,12 @@ WB_ENTRY(jobjectArray, WB_ParseCommandLine(JNIEnv* env, jobject o, jstring j_cmd
 
   const char* c_cmdline = java_lang_String::as_utf8_string(JNIHandles::resolve(j_cmdline));
   objArrayOop argumentArray = objArrayOop(JNIHandles::resolve_non_null(arguments));
+  objArrayHandle argumentArray_ah(THREAD, argumentArray);
 
-  int length = argumentArray->length();
+  int length = argumentArray_ah->length();
 
   for (int i = 0; i < length; i++) {
-    oop argument_oop = argumentArray->obj_at(i);
+    oop argument_oop = argumentArray_ah->obj_at(i);
     fill_in_parser(&parser, argument_oop);
   }
 
@@ -130,19 +131,20 @@ WB_ENTRY(jobjectArray, WB_ParseCommandLine(JNIEnv* env, jobject o, jstring j_cmd
 
   Klass* k = SystemDictionary::Object_klass();
   objArrayOop returnvalue_array = oopFactory::new_objArray(k, parser.num_arguments() * 2, CHECK_NULL);
+  objArrayHandle returnvalue_array_ah(THREAD, returnvalue_array);
 
   GrowableArray<const char *>*parsedArgNames = parser.argument_name_array();
 
   for (int i = 0; i < parser.num_arguments(); i++) {
     oop parsedName = java_lang_String::create_oop_from_str(parsedArgNames->at(i), CHECK_NULL);
-    returnvalue_array->obj_at_put(i*2, parsedName);
+    returnvalue_array_ah->obj_at_put(i*2, parsedName);
     GenDCmdArgument* arg = parser.lookup_dcmd_option(parsedArgNames->at(i), strlen(parsedArgNames->at(i)));
     char buf[VALUE_MAXLEN];
     arg->value_as_str(buf, sizeof(buf));
     oop parsedValue = java_lang_String::create_oop_from_str(buf, CHECK_NULL);
-    returnvalue_array->obj_at_put(i*2+1, parsedValue);
+    returnvalue_array_ah->obj_at_put(i*2+1, parsedValue);
   }
 
-  return (jobjectArray) JNIHandles::make_local(returnvalue_array);
+  return (jobjectArray) JNIHandles::make_local(returnvalue_array_ah());
 
 WB_END

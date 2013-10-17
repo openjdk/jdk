@@ -62,7 +62,7 @@ import static javax.swing.ClientPropertyKey.PopupFactory_FORCE_HEAVYWEIGHT_POPUP
  * prompts users for a value or informs them of something.
  * For information about using <code>JOptionPane</code>, see
  * <a
- href="http://java.sun.com/docs/books/tutorial/uiswing/components/dialog.html">How to Make Dialogs</a>,
+ href="http://docs.oracle.com/javase/tutorial/uiswing/components/dialog.html">How to Make Dialogs</a>,
  * a section in <em>The Java Tutorial</em>.
  *
  * <p>
@@ -108,16 +108,16 @@ import static javax.swing.ClientPropertyKey.PopupFactory_FORCE_HEAVYWEIGHT_POPUP
  * the caller until the user's interaction is complete.
  * <p>
  *
- * <table cellspacing=6 cellpadding=4 border=0 align=right summary="layout">
+ * <table cellspacing=6 cellpadding=4 border=0 style="float:right" summary="layout">
  * <tr>
- *  <td bgcolor=#FFe0d0 rowspan=2>icon</td>
- *  <td bgcolor=#FFe0d0>message</td>
+ *  <td style="background-color:#FFe0d0" rowspan=2>icon</td>
+ *  <td style="background-color:#FFe0d0">message</td>
  * </tr>
  * <tr>
- *  <td bgcolor=#FFe0d0>input value</td>
+ *  <td style="background-color:#FFe0d0">input value</td>
  * </tr>
  * <tr>
- *   <td bgcolor=#FFe0d0 colspan=2>option buttons</td>
+ *   <td style="background-color:#FFe0d0" colspan=2>option buttons</td>
  * </tr>
  * </table>
  *
@@ -127,7 +127,7 @@ import static javax.swing.ClientPropertyKey.PopupFactory_FORCE_HEAVYWEIGHT_POPUP
  * ultimately responsible for the final result.  In particular, the
  * look-and-feels will adjust the layout to accommodate the option pane's
  * <code>ComponentOrientation</code> property.
- * <br clear=all>
+ * <br style="clear:all">
  * <p>
  * <b>Parameters:</b><br>
  * The parameters to these methods follow consistent patterns:
@@ -298,7 +298,7 @@ import static javax.swing.ClientPropertyKey.PopupFactory_FORCE_HEAVYWEIGHT_POPUP
  * future Swing releases. The current serialization support is
  * appropriate for short term storage or RMI between applications running
  * the same version of Swing.  As of 1.4, support for long term storage
- * of all JavaBeans<sup><font size="-2">TM</font></sup>
+ * of all JavaBeans&trade;
  * has been added to the <code>java.beans</code> package.
  * Please see {@link java.beans.XMLEncoder}.
  *
@@ -2573,7 +2573,7 @@ public class JOptionPane extends JComponent implements Accessible
      * future Swing releases. The current serialization support is
      * appropriate for short term storage or RMI between applications running
      * the same version of Swing.  As of 1.4, support for long term storage
-     * of all JavaBeans<sup><font size="-2">TM</font></sup>
+     * of all JavaBeans&trade;
      * has been added to the <code>java.beans</code> package.
      * Please see {@link java.beans.XMLEncoder}.
      */

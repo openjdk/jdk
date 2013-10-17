@@ -67,8 +67,6 @@ public final class Constructor<T> extends Executable {
     private transient ConstructorRepository genericInfo;
     private byte[]              annotations;
     private byte[]              parameterAnnotations;
-    // This is set by the vm at Constructor creation
-    private byte[]              typeAnnotations;
 
     // Generics infrastructure
     // Accessor for factory
@@ -141,8 +139,6 @@ public final class Constructor<T> extends Executable {
         res.root = this;
         // Might as well eagerly propagate this if already present
         res.constructorAccessor = constructorAccessor;
-
-        res.typeAnnotations = typeAnnotations;
         return res;
     }
 
@@ -154,10 +150,6 @@ public final class Constructor<T> extends Executable {
     @Override
     byte[] getAnnotationBytes() {
         return annotations;
-    }
-    @Override
-    byte[] getTypeAnnotationBytes() {
-        return typeAnnotations;
     }
 
     /**

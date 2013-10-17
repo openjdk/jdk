@@ -1793,8 +1793,17 @@ search:
             } catch (Exception e) {
                 throw new IOException(e.getMessage());
             }
+            // Target data is Image
+        } else if (DataFlavor.imageFlavor.equals(flavor)) {
+            if (!isImageFormat(format)) {
+                throw new IOException("data translation failed");
+            }
+            theObject = platformImageBytesToImage(inputStreamToByteArray(str), format);
         }
 
+        if (theObject == null) {
+            throw new IOException("data translation failed");
+        }
 
         return theObject;
 

@@ -36,7 +36,7 @@ import javax.lang.model.element.Name;
  *
  * @since 1.8
  */
-@jdk.Supported
+@jdk.Exported
 public interface EntityTree extends DocTree {
     Name getName();
 }
