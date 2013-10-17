@@ -143,11 +143,11 @@ public class Applet extends Panel {
      * For example, suppose an applet is contained
      * within the document:
      * <blockquote><pre>
-     *    http://java.sun.com/products/jdk/1.2/index.html
+     *    http://www.oracle.com/technetwork/java/index.html
      * </pre></blockquote>
      * The document base is:
      * <blockquote><pre>
-     *    http://java.sun.com/products/jdk/1.2/index.html
+     *    http://www.oracle.com/technetwork/java/index.html
      * </pre></blockquote>
      *
      * @return  the {@link java.net.URL} of the document that contains this

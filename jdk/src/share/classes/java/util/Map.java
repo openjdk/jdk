@@ -86,10 +86,6 @@ import java.io.Serializable;
  * Such exceptions are marked as "optional" in the specification for this
  * interface.
  *
- * <p>This interface is a member of the
- * <a href="{@docRoot}/../technotes/guides/collections/index.html">
- * Java Collections Framework</a>.
- *
  * <p>Many methods in Collections Framework interfaces are defined
  * in terms of the {@link Object#equals(Object) equals} method.  For
  * example, the specification for the {@link #containsKey(Object)
@@ -106,6 +102,17 @@ import java.io.Serializable;
  * the various Collections Framework interfaces are free to take advantage of
  * the specified behavior of underlying {@link Object} methods wherever the
  * implementor deems it appropriate.
+ *
+ * <p>Some map operations which perform recursive traversal of the map may fail
+ * with an exception for self-referential instances where the map directly or
+ * indirectly contains itself. This includes the {@code clone()},
+ * {@code equals()}, {@code hashCode()} and {@code toString()} methods.
+ * Implementations may optionally handle the self-referential scenario, however
+ * most current implementations do not do so.
+ *
+ * <p>This interface is a member of the
+ * <a href="{@docRoot}/../technotes/guides/collections/index.html">
+ * Java Collections Framework</a>.
  *
  * @param <K> the type of keys maintained by this map
  * @param <V> the type of mapped values
