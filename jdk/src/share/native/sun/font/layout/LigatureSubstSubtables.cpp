@@ -49,14 +49,20 @@ le_uint32 LigatureSubstitutionSubtable::process(const LETableReference &base, Gl
       return 0;
     }
 
-    if (coverageIndex >= 0) {
+    LEReferenceToArrayOf<Offset> ligSetTableOffsetArrayRef(base, success, ligSetTableOffsetArray, SWAPW(ligSetCount));
+
+    if (coverageIndex >= 0 && LE_SUCCESS(success) && (le_uint32)coverageIndex < ligSetTableOffsetArrayRef.getCount()) {
         Offset ligSetTableOffset = SWAPW(ligSetTableOffsetArray[coverageIndex]);
-        const LigatureSetTable *ligSetTable = (const LigatureSetTable *) ((char *) this + ligSetTableOffset);
+        LEReferenceTo<LigatureSetTable>   ligSetTable(base, success, ligSetTableOffset);
+
+        if( LE_FAILURE(success) ) { return 0; }
         le_uint16 ligCount = SWAPW(ligSetTable->ligatureCount);
 
-        for (le_uint16 lig = 0; lig < ligCount; lig += 1) {
+        LEReferenceTo<Offset> ligatureTableOffsetArray(base, success, ligSetTable->ligatureTableOffsetArray, ligCount);
+        for (le_uint16 lig = 0; LE_SUCCESS(success) && lig < ligCount; lig += 1) {
             Offset ligTableOffset = SWAPW(ligSetTable->ligatureTableOffsetArray[lig]);
-            const LigatureTable *ligTable = (const LigatureTable *) ((char *)ligSetTable + ligTableOffset);
+            LEReferenceTo<LigatureTable>   ligTable(ligSetTable, success, ligTableOffset);
+            if(LE_FAILURE(success)) { return 0; }
             le_uint16 compCount = SWAPW(ligTable->compCount) - 1;
             le_int32 startPosition = glyphIterator->getCurrStreamPosition();
             TTGlyphID ligGlyph = SWAPW(ligTable->ligGlyph);
@@ -72,7 +78,7 @@ le_uint32 LigatureSubstitutionSubtable::process(const LETableReference &base, Gl
                 }
             }
 
-            if (comp == compCount && (filter == NULL || filter->accept(LE_SET_GLYPH(glyph, ligGlyph)))) {
+            if (comp == compCount && (filter == NULL || filter->accept(LE_SET_GLYPH(glyph, ligGlyph), success))) {
                 GlyphIterator tempIterator(*glyphIterator);
                 TTGlyphID deletedGlyph = tempIterator.ignoresMarks()? 0xFFFE : 0xFFFF;
 
