@@ -122,10 +122,11 @@ static jclass ni_ia4cls;
 static jclass ni_ia6cls;
 static jmethodID ni_ia4ctrID;
 static jmethodID ni_ia6ctrID;
-static jfieldID ni_ia6ipaddressID;
+static jboolean preferIPv6Address;
 
 static void initializeInetClasses(JNIEnv *env)
 {
+    jfieldID ni_preferIPv6AddressID;
     static int initialized = 0;
     if (!initialized) {
         ni_iacls = (*env)->FindClass(env, "java/net/InetAddress");
@@ -136,7 +137,10 @@ static void initializeInetClasses(JNIEnv *env)
         ni_ia6cls = (*env)->NewGlobalRef(env, ni_ia6cls);
         ni_ia4ctrID = (*env)->GetMethodID(env, ni_ia4cls, "<init>", "()V");
         ni_ia6ctrID = (*env)->GetMethodID(env, ni_ia6cls, "<init>", "()V");
-        ni_ia6ipaddressID = (*env)->GetFieldID(env, ni_ia6cls, "ipaddress", "[B");
+        ni_preferIPv6AddressID =
+            (*env)->GetStaticFieldID(env, ni_iacls, "preferIPv6Address", "Z");
+        preferIPv6Address =
+            (*env)->GetStaticBooleanField(env, ia_class, ia_preferIPv6AddressID);
         initialized = 1;
     }
 }
@@ -147,7 +151,6 @@ __private_extern__ jobjectArray
 lookupIfLocalhost(JNIEnv *env, const char *hostname, jboolean includeV6)
 {
     jobjectArray result = NULL;
-    jboolean preferIPv6Address;
     char myhostname[NI_MAXHOST+1];
     struct ifaddrs *ifa = NULL;
     int familyOrder = 0;
@@ -158,9 +161,6 @@ lookupIfLocalhost(JNIEnv *env, const char *hostname, jboolean includeV6)
 
     // Make sure static variables we need are set.
     initializeInetClasses(env);
-
-    /* get the address preference */
-    preferIPv6Address = (*env)->GetStaticBooleanField(env, ia_class, ia_preferIPv6AddressID);
 
     /* If the requested name matches this host's hostname, return IP addresses
      * from all attached interfaces. (#2844683 et al) This prevents undesired
@@ -280,7 +280,6 @@ Java_java_net_Inet6AddressImpl_lookupAllHostAddr(JNIEnv *env, jobject this,
     const char *hostname;
     jobjectArray ret = 0;
     int retLen = 0;
-    jboolean preferIPv6Address;
 
     int error=0;
 #ifdef AF_INET6
@@ -298,36 +297,18 @@ Java_java_net_Inet6AddressImpl_lookupAllHostAddr(JNIEnv *env, jobject this,
 
 #ifdef MACOSX
     /*
-     * If getaddrinfo has failed and we're looking up the local machine, we
-     * attempt to get the address from getifaddrs. This ensures we get an
-     * IPv6 address for the local machine.
+     * If we're looking up the local machine, attempt to get the address
+     * from getifaddrs. This ensures we get an IPv6 address for the local
+     * machine.
      */
-    if (error) {
-        ret = lookupIfLocalhost(env, hostname, JNI_TRUE);
-        if (ret != NULL || (*env)->ExceptionCheck(env)) {
-            JNU_ReleaseStringPlatformChars(env, host, hostname);
-            return ret;
-        }
+    ret = lookupIfLocalhost(env, hostname, JNI_TRUE);
+    if (ret != NULL || (*env)->ExceptionCheck(env)) {
+        JNU_ReleaseStringPlatformChars(env, host, hostname);
+        return ret;
     }
 #endif
 
 #ifdef AF_INET6
-    static jfieldID ia_preferIPv6AddressID;
-    if (ia_preferIPv6AddressID == NULL) {
-        jclass c = (*env)->FindClass(env,"java/net/InetAddress");
-        if (c)  {
-            ia_preferIPv6AddressID =
-                (*env)->GetStaticFieldID(env, c, "preferIPv6Address", "Z");
-        }
-        if (ia_preferIPv6AddressID == NULL) {
-            JNU_ReleaseStringPlatformChars(env, host, hostname);
-            return NULL;
-        }
-    }
-    /* get the address preference */
-    preferIPv6Address
-        = (*env)->GetStaticBooleanField(env, ia_class, ia_preferIPv6AddressID);
-
     /* Try once, with our static buffer. */
     memset(&hints, 0, sizeof(hints));
     hints.ai_flags = AI_CANONNAME;
@@ -447,6 +428,7 @@ Java_java_net_Inet6AddressImpl_lookupAllHostAddr(JNIEnv *env, jobject this,
         }
 
         while (iterator != NULL) {
+            int ret1;
             if (iterator->ai_family == AF_INET) {
                 jobject iaObj = (*env)->NewObject(env, ni_ia4cls, ni_ia4ctrID);
                 if (IS_NULL(iaObj)) {
@@ -459,26 +441,22 @@ Java_java_net_Inet6AddressImpl_lookupAllHostAddr(JNIEnv *env, jobject this,
                 inetIndex++;
             } else if (iterator->ai_family == AF_INET6) {
                 jint scope = 0;
-                jbyteArray ipaddress;
 
                 jobject iaObj = (*env)->NewObject(env, ni_ia6cls, ni_ia6ctrID);
                 if (IS_NULL(iaObj)) {
                     ret = NULL;
                     goto cleanupAndReturn;
                 }
-                ipaddress = (*env)->NewByteArray(env, 16);
-                if (IS_NULL(ipaddress)) {
+                ret1 = setInet6Address_ipaddress(env, iaObj, (char *)&(((struct sockaddr_in6*)iterator->ai_addr)->sin6_addr));
+                if (!ret1) {
                     ret = NULL;
                     goto cleanupAndReturn;
                 }
-                (*env)->SetByteArrayRegion(env, ipaddress, 0, 16,
-                                           (jbyte *)&(((struct sockaddr_in6*)iterator->ai_addr)->sin6_addr));
+
                 scope = ((struct sockaddr_in6*)iterator->ai_addr)->sin6_scope_id;
                 if (scope != 0) { /* zero is default value, no need to set */
-                    (*env)->SetIntField(env, iaObj, ia6_scopeidID, scope);
-                    (*env)->SetBooleanField(env, iaObj, ia6_scopeidsetID, JNI_TRUE);
+                    setInet6Address_scopeid(env, iaObj, scope);
                 }
-                (*env)->SetObjectField(env, iaObj, ni_ia6ipaddressID, ipaddress);
                 setInetAddress_hostName(env, iaObj, host);
                 (*env)->SetObjectArrayElement(env, ret, inet6Index, iaObj);
                 inet6Index++;

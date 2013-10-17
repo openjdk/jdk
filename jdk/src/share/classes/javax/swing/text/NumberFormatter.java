@@ -27,6 +27,8 @@ package javax.swing.text;
 import java.lang.reflect.*;
 import java.text.*;
 import java.util.*;
+import sun.reflect.misc.ReflectUtil;
+import sun.swing.SwingUtilities2;
 
 /**
  * <code>NumberFormatter</code> subclasses <code>InternationalFormatter</code>
@@ -83,7 +85,7 @@ import java.util.*;
  * future Swing releases. The current serialization support is
  * appropriate for short term storage or RMI between applications running
  * the same version of Swing.  As of 1.4, support for long term storage
- * of all JavaBeans<sup><font size="-2">TM</font></sup>
+ * of all JavaBeans&trade;
  * has been added to the <code>java.beans</code> package.
  * Please see {@link java.beans.XMLEncoder}.
  *
@@ -427,10 +429,12 @@ public class NumberFormatter extends InternationalFormatter {
                         valueClass = value.getClass();
                     }
                     try {
+                        ReflectUtil.checkPackageAccess(valueClass);
+                        SwingUtilities2.checkAccess(valueClass.getModifiers());
                         Constructor cons = valueClass.getConstructor(
                                               new Class[] { String.class });
-
                         if (cons != null) {
+                            SwingUtilities2.checkAccess(cons.getModifiers());
                             return cons.newInstance(new Object[]{string});
                         }
                     } catch (Throwable ex) { }

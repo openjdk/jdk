@@ -89,7 +89,7 @@ public class RefsByTypeQuery extends QueryHandler {
             out.println("<p align='center'>");
             printClass(clazz);
             if (clazz.getId() != -1) {
-                out.println("[" + clazz.getIdString() + "]");
+                println("[" + clazz.getIdString() + "]");
             }
             out.println("</p>");
 
@@ -125,9 +125,9 @@ public class RefsByTypeQuery extends QueryHandler {
             JavaClass clazz = classes[i];
             out.println("<tr><td>");
             out.print("<a href='/refsByType/");
-            out.print(clazz.getIdString());
+            print(clazz.getIdString());
             out.print("'>");
-            out.print(clazz.getName());
+            print(clazz.getName());
             out.println("</a>");
             out.println("</td><td>");
             out.println(map.get(clazz));

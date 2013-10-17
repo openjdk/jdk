@@ -52,8 +52,7 @@ endif
 ifeq ($(OPENJDK_TARGET_OS), macosx)
     ORIGIN_ARG:=$(call SET_EXECUTABLE_ORIGIN)
 else
-    ORIGIN_ARG:=$(call SET_EXECUTABLE_ORIGIN,$(ORIGIN_ROOT)/lib$(OPENJDK_TARGET_CPU_LIBDIR)/jli) \
-                $(call SET_EXECUTABLE_ORIGIN,$(ORIGIN_ROOT)/jre/lib$(OPENJDK_TARGET_CPU_LIBDIR)/jli)
+    ORIGIN_ARG:=$(call SET_EXECUTABLE_ORIGIN,$(ORIGIN_ROOT)/lib$(OPENJDK_TARGET_CPU_LIBDIR)/jli)
 endif
 
 #
@@ -62,8 +61,7 @@ endif
 # devloper documentation of JAWT and what worked with OpenJDK6.
 #
 ifneq ($(findstring $(OPENJDK_TARGET_OS), linux solaris),)
-    ORIGIN_ARG+=$(call SET_EXECUTABLE_ORIGIN,$(ORIGIN_ROOT)/lib$(OPENJDK_TARGET_CPU_LIBDIR)) \
-                $(call SET_EXECUTABLE_ORIGIN,$(ORIGIN_ROOT)/jre/lib$(OPENJDK_TARGET_CPU_LIBDIR))
+    ORIGIN_ARG+=$(call SET_EXECUTABLE_ORIGIN,$(ORIGIN_ROOT)/lib$(OPENJDK_TARGET_CPU_LIBDIR))
 endif
 
 define SetupLauncher

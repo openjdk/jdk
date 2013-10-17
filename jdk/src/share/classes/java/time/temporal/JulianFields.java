@@ -291,13 +291,14 @@ public final class JulianFields {
         //-----------------------------------------------------------------------
         @Override
         public ChronoLocalDate resolve(
-                Map<TemporalField, Long> fieldValues, Chronology chronology, ZoneId zone, ResolverStyle resolverStyle) {
+                Map<TemporalField, Long> fieldValues, TemporalAccessor partialTemporal, ResolverStyle resolverStyle) {
             long value = fieldValues.remove(this);
+            Chronology chrono = Chronology.from(partialTemporal);
             if (resolverStyle == ResolverStyle.LENIENT) {
-                return chronology.dateEpochDay(Math.subtractExact(value, offset));
+                return chrono.dateEpochDay(Math.subtractExact(value, offset));
             }
             range().checkValidValue(value, this);
-            return chronology.dateEpochDay(value - offset);
+            return chrono.dateEpochDay(value - offset);
         }
 
         //-----------------------------------------------------------------------
