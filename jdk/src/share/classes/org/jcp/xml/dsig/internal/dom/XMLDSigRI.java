@@ -28,7 +28,7 @@
  * ===========================================================================
  */
 /*
- * Copyright (c) 2005, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2013 Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * $Id: XMLDSigRI.java 1400021 2012-10-19 10:16:04Z coheigea $
@@ -61,7 +61,7 @@ public final class XMLDSigRI extends Provider {
 
     public XMLDSigRI() {
         /* We are the XMLDSig provider */
-        super("XMLDSig", 1.8, INFO);
+        super("XMLDSig", 1.8d, INFO);
 
         final Map<Object, Object> map = new HashMap<Object, Object>();
         map.put("XMLSignatureFactory.DOM",

@@ -1,0 +1,57 @@
+T8022765.java:10:12: compiler.err.annotation.not.valid.for.type: int
+T8022765.java:11:6: compiler.err.annotation.not.valid.for.type: java.lang.String
+T8022765.java:12:5: compiler.err.annotation.not.valid.for.type: E
+T8022765.java:14:15: compiler.err.annotation.not.valid.for.type: int
+T8022765.java:15:9: compiler.err.annotation.not.valid.for.type: java.lang.String
+T8022765.java:16:8: compiler.err.annotation.not.valid.for.type: E
+T8022765.java:21:10: compiler.err.annotation.value.must.be.annotation
+T8022765.java:23:10: compiler.err.prob.found.req: (compiler.misc.inconvertible.types: int, java.lang.String)
+T8022765.java:24:9: compiler.err.prob.found.req: (compiler.misc.inconvertible.types: int, E)
+T8022765.java:25:13: compiler.err.annotation.value.must.be.annotation
+T8022765.java:27:13: compiler.err.prob.found.req: (compiler.misc.inconvertible.types: int, java.lang.String)
+T8022765.java:28:12: compiler.err.prob.found.req: (compiler.misc.inconvertible.types: int, E)
+T8022765.java:37:10: compiler.err.annotation.value.must.be.annotation
+T8022765.java:38:16: compiler.err.prob.found.req: (compiler.misc.inconvertible.types: java.lang.String, int)
+T8022765.java:40:9: compiler.err.prob.found.req: (compiler.misc.inconvertible.types: java.lang.String, E)
+T8022765.java:41:13: compiler.err.annotation.value.must.be.annotation
+T8022765.java:42:19: compiler.err.prob.found.req: (compiler.misc.inconvertible.types: java.lang.String, int)
+T8022765.java:44:12: compiler.err.prob.found.req: (compiler.misc.inconvertible.types: java.lang.String, E)
+T8022765.java:49:7: compiler.err.annotation.value.must.be.annotation
+T8022765.java:50:13: compiler.err.prob.found.req: (compiler.misc.inconvertible.types: E, int)
+T8022765.java:51:7: compiler.err.prob.found.req: (compiler.misc.inconvertible.types: E, java.lang.String)
+T8022765.java:53:10: compiler.err.annotation.value.must.be.annotation
+T8022765.java:54:16: compiler.err.prob.found.req: (compiler.misc.inconvertible.types: E, int)
+T8022765.java:55:10: compiler.err.prob.found.req: (compiler.misc.inconvertible.types: E, java.lang.String)
+T8022765.java:59:6: compiler.err.annotation.value.not.allowable.type
+T8022765.java:60:12: compiler.err.annotation.value.not.allowable.type
+T8022765.java:61:6: compiler.err.annotation.value.not.allowable.type
+T8022765.java:62:5: compiler.err.annotation.value.not.allowable.type
+T8022765.java:64:16: compiler.err.annotation.not.valid.for.type: int
+T8022765.java:65:10: compiler.err.annotation.not.valid.for.type: java.lang.String
+T8022765.java:66:9: compiler.err.annotation.not.valid.for.type: E
+T8022765.java:71:10: compiler.err.annotation.value.not.allowable.type
+T8022765.java:72:16: compiler.err.annotation.value.not.allowable.type
+T8022765.java:73:10: compiler.err.annotation.value.not.allowable.type
+T8022765.java:74:9: compiler.err.annotation.value.not.allowable.type
+T8022765.java:75:14: compiler.err.annotation.value.must.be.annotation
+T8022765.java:77:14: compiler.err.prob.found.req: (compiler.misc.inconvertible.types: int, java.lang.String)
+T8022765.java:78:13: compiler.err.prob.found.req: (compiler.misc.inconvertible.types: int, E)
+T8022765.java:85:10: compiler.err.annotation.value.not.allowable.type
+T8022765.java:86:16: compiler.err.annotation.value.not.allowable.type
+T8022765.java:87:10: compiler.err.annotation.value.not.allowable.type
+T8022765.java:88:9: compiler.err.annotation.value.not.allowable.type
+T8022765.java:89:14: compiler.err.annotation.value.must.be.annotation
+T8022765.java:90:20: compiler.err.prob.found.req: (compiler.misc.inconvertible.types: java.lang.String, int)
+T8022765.java:92:13: compiler.err.prob.found.req: (compiler.misc.inconvertible.types: java.lang.String, E)
+T8022765.java:97:6: compiler.err.annotation.value.not.allowable.type
+T8022765.java:97:8: compiler.err.attribute.value.must.be.constant
+T8022765.java:98:12: compiler.err.annotation.value.not.allowable.type
+T8022765.java:98:14: compiler.err.attribute.value.must.be.constant
+T8022765.java:99:6: compiler.err.annotation.value.not.allowable.type
+T8022765.java:99:8: compiler.err.attribute.value.must.be.constant
+T8022765.java:100:5: compiler.err.annotation.value.not.allowable.type
+T8022765.java:100:7: compiler.err.attribute.value.must.be.constant
+T8022765.java:101:11: compiler.err.annotation.value.must.be.annotation
+T8022765.java:102:17: compiler.err.prob.found.req: (compiler.misc.inconvertible.types: E, int)
+T8022765.java:103:11: compiler.err.prob.found.req: (compiler.misc.inconvertible.types: E, java.lang.String)
+56 errors

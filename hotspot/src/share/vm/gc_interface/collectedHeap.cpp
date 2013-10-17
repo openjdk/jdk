@@ -202,12 +202,6 @@ void CollectedHeap::collect_as_vm_thread(GCCause::Cause cause) {
       ShouldNotReachHere(); // Unexpected use of this function
   }
 }
-MetaWord* CollectedHeap::satisfy_failed_metadata_allocation(
-                                              ClassLoaderData* loader_data,
-                                              size_t size, Metaspace::MetadataType mdtype) {
-  return collector_policy()->satisfy_failed_metadata_allocation(loader_data, size, mdtype);
-}
-
 
 void CollectedHeap::pre_initialize() {
   // Used for ReduceInitialCardMarks (when COMPILER2 is used);

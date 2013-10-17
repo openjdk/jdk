@@ -713,12 +713,6 @@ public class TCKWeekFields extends AbstractTCKTest {
         }
     }
 
-    //-----------------------------------------------------------------------
-    @Test(dataProvider="weekFields")
-    public void test_serializable_singleton(DayOfWeek firstDayOfWeek, int minDays) throws IOException, ClassNotFoundException {
-        WeekFields weekDef = WeekFields.of(firstDayOfWeek, minDays);
-        assertSerializableSame(weekDef);  // spec state singleton
-    }
 
     //-----------------------------------------------------------------------
     @DataProvider(name="weekFields")

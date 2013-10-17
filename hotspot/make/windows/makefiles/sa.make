@@ -102,11 +102,16 @@ SA_CFLAGS = $(SA_CFLAGS) -ZI
 !if "$(MT)" != ""
 SA_LD_FLAGS = -manifest $(SA_LD_FLAGS)
 !endif
-SASRCFILE = $(AGENT_DIR)/src/os/win32/windbg/sawindbg.cpp
+
+SASRCFILES = $(AGENT_DIR)/src/os/win32/windbg/sawindbg.cpp \
+		$(AGENT_DIR)/src/share/native/sadis.c
+		            
 SA_LFLAGS = $(SA_LD_FLAGS) -nologo -subsystem:console -machine:$(MACHINE)
 !if "$(ENABLE_FULL_DEBUG_SYMBOLS)" == "1"
 SA_LFLAGS = $(SA_LFLAGS) -map -debug
 !endif
+
+SA_CFLAGS = $(SA_CFLAGS) $(MP_FLAG)
 
 # Note that we do not keep sawindbj.obj around as it would then
 # get included in the dumpbin command in build_vm_def.sh
@@ -114,16 +119,16 @@ SA_LFLAGS = $(SA_LFLAGS) -map -debug
 # In VS2005 or VS2008 the link command creates a .manifest file that we want
 # to insert into the linked artifact so we do not need to track it separately.
 # Use ";#2" for .dll and ";#1" for .exe in the MT command below:
-$(SAWINDBG): $(SASRCFILE)
+$(SAWINDBG): $(SASRCFILES)
 	set INCLUDE=$(SA_INCLUDE)$(INCLUDE)
 	$(CXX) @<<
 	  -I"$(BootStrapDir)/include" -I"$(BootStrapDir)/include/win32" 
 	  -I"$(GENERATED)" $(SA_CFLAGS)
-	  $(SASRCFILE)
+	  $(SASRCFILES)
 	  -out:$*.obj
 <<
 	set LIB=$(SA_LIB)$(LIB)
-	$(LD) -out:$@ -DLL $*.obj dbgeng.lib $(SA_LFLAGS)
+	$(LD) -out:$@ -DLL sawindbg.obj sadis.obj dbgeng.lib $(SA_LFLAGS)
 !if "$(MT)" != ""
 	$(MT) -manifest $(@F).manifest -outputresource:$(@F);#2
 !endif

@@ -1082,24 +1082,6 @@ final class Attr extends NodeOperatorVisitor<LexicalContext> {
     private boolean enterAssignmentNode(final BinaryNode binaryNode) {
         start(binaryNode);
 
-        final Node lhs = binaryNode.lhs();
-
-        if (lhs instanceof IdentNode) {
-            final Block     block = lc.getCurrentBlock();
-            final IdentNode ident = (IdentNode)lhs;
-            final String    name  = ident.getName();
-
-            Symbol symbol = findSymbol(block, name);
-
-            if (symbol == null) {
-                symbol = defineSymbol(block, name, IS_GLOBAL);
-            } else {
-                maybeForceScope(symbol);
-            }
-
-            addLocalDef(name);
-        }
-
         return true;
     }
 
@@ -1112,20 +1094,33 @@ final class Attr extends NodeOperatorVisitor<LexicalContext> {
      * @param binaryNode assignment node
      */
     private Node leaveAssignmentNode(final BinaryNode binaryNode) {
-        BinaryNode newBinaryNode = binaryNode;
-
         final Expression lhs = binaryNode.lhs();
         final Expression rhs = binaryNode.rhs();
         final Type type;
 
+        if (lhs instanceof IdentNode) {
+            final Block     block = lc.getCurrentBlock();
+            final IdentNode ident = (IdentNode)lhs;
+            final String    name  = ident.getName();
+            final Symbol symbol = findSymbol(block, name);
+
+            if (symbol == null) {
+                defineSymbol(block, name, IS_GLOBAL);
+            } else {
+                maybeForceScope(symbol);
+            }
+
+            addLocalDef(name);
+        }
+
         if (rhs.getType().isNumeric()) {
-            type = Type.widest(binaryNode.lhs().getType(), binaryNode.rhs().getType());
+            type = Type.widest(lhs.getType(), rhs.getType());
         } else {
             type = Type.OBJECT; //force lhs to be an object if not numeric assignment, e.g. strings too.
         }
 
         newType(lhs.getSymbol(), type);
-        return end(ensureSymbol(type, newBinaryNode));
+        return end(ensureSymbol(type, binaryNode));
     }
 
     private boolean isLocal(FunctionNode function, Symbol symbol) {
