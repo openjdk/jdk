@@ -62,7 +62,6 @@ package tck.java.time;
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertSame;
 
-import java.io.IOException;
 import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
@@ -82,11 +81,6 @@ public class TCKClock_Offset extends AbstractTCKTest {
     private static final ZoneId PARIS = ZoneId.of("Europe/Paris");
     private static final Instant INSTANT = LocalDateTime.of(2008, 6, 30, 11, 30, 10, 500).atZone(ZoneOffset.ofHours(2)).toInstant();
     private static final Duration OFFSET = Duration.ofSeconds(2);
-
-    //-----------------------------------------------------------------------
-    public void test_isSerializable() throws IOException, ClassNotFoundException {
-        assertSerializable(Clock.offset(Clock.system(PARIS), OFFSET));
-    }
 
     //-----------------------------------------------------------------------
     public void test_offset_ClockDuration() {

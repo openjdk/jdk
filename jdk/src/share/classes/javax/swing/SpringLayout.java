@@ -36,7 +36,7 @@ import java.util.*;
 /**
  * A <code>SpringLayout</code> lays out the children of its associated container
  * according to a set of constraints.
- * See <a href="http://java.sun.com/docs/books/tutorial/uiswing/layout/spring.html">How to Use SpringLayout</a>
+ * See <a href="http://docs.oracle.com/javase/tutorial/uiswing/layout/spring.html">How to Use SpringLayout</a>
  * in <em>The Java Tutorial</em> for examples of using
  * <code>SpringLayout</code>.
  *
@@ -172,7 +172,7 @@ import java.util.*;
  * future Swing releases. The current serialization support is
  * appropriate for short term storage or RMI between applications running
  * the same version of Swing.  As of 1.4, support for long term storage
- * of all JavaBeans<sup><font size="-2">TM</font></sup>
+ * of all JavaBeans&trade;
  * has been added to the <code>java.beans</code> package.
  * Please see {@link java.beans.XMLEncoder}.
  *

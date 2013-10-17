@@ -32,9 +32,10 @@ import java.lang.invoke.MethodHandles.Lookup;
 import static java.lang.invoke.MethodHandleStatics.*;
 
 /**
- * A symbolic reference obtained by cracking a method handle into its consitutent symbolic parts.
+ * A symbolic reference obtained by cracking a direct method handle
+ * into its consitutent symbolic parts.
  * To crack a direct method handle, call {@link Lookup#revealDirect Lookup.revealDirect}.
- * <p>
+ * <h1><a name="directmh"></a>Direct Method Handles</h1>
  * A <em>direct method handle</em> represents a method, constructor, or field without
  * any intervening argument bindings or other transformations.
  * The method, constructor, or field referred to by a direct method handle is called
@@ -56,11 +57,25 @@ import static java.lang.invoke.MethodHandleStatics.*;
  *     or {@link Lookup#unreflectSetter Lookup.unreflectSetter}
  *     to convert a {@link Field} into a method handle.
  * </ul>
- * In all of these cases, it is possible to crack the resulting direct method handle
+ *
+ * <h1>Restrictions on Cracking</h1>
+ * Given a suitable {@code Lookup} object, it is possible to crack any direct method handle
  * to recover a symbolic reference for the underlying method, constructor, or field.
  * Cracking must be done via a {@code Lookup} object equivalent to that which created
  * the target method handle, or which has enough access permissions to recreate
  * an equivalent method handle.
+ * <p>
+ * If the underlying method is <a href="MethodHandles.Lookup.html#callsens">caller sensitive</a>,
+ * the direct method handle will have been "bound" to a particular caller class, the
+ * {@linkplain java.lang.invoke.MethodHandles.Lookup#lookupClass() lookup class}
+ * of the lookup object used to create it.
+ * Cracking this method handle with a different lookup class will fail
+ * even if the underlying method is public (like {@code Class.forName}).
+ * <p>
+ * The requirement of lookup object matching provides a "fast fail" behavior
+ * for programs which may otherwise trust erroneous revelation of a method
+ * handle with symbolic information (or caller binding) from an unexpected scope.
+ * Use {@link java.lang.invoke.MethodHandles#reflectAs} to override this limitation.
  *
  * <h1><a name="refkinds"></a>Reference kinds</h1>
  * The <a href="MethodHandles.Lookup.html#lookups">Lookup Factory Methods</a>
@@ -190,7 +205,7 @@ interface MethodHandleInfo {
      * @return the Java language modifiers for underlying member,
      *         or -1 if the member cannot be accessed
      * @see Modifier
-     * @see reflectAs
+     * @see #reflectAs
      */
     public int getModifiers();
 

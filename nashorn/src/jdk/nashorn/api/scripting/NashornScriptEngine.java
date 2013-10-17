@@ -313,7 +313,7 @@ public final class NashornScriptEngine extends AbstractScriptEngine implements C
             if (! Modifier.isPublic(clazz.getModifiers())) {
                 throw new SecurityException(getMessage("implementing.non.public.interface", clazz.getName()));
             }
-            Context.checkPackageAccess(clazz.getName());
+            Context.checkPackageAccess(clazz);
         }
 
         ScriptObject realSelf = null;
