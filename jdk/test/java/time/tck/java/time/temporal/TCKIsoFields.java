@@ -70,11 +70,13 @@ import static org.testng.Assert.fail;
 
 import java.time.DayOfWeek;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeFormatterBuilder;
 import java.time.format.DateTimeParseException;
 import java.time.format.ResolverStyle;
 import java.time.temporal.IsoFields;
+import java.time.temporal.Temporal;
 import java.time.temporal.ValueRange;
 
 import org.testng.annotations.DataProvider;
@@ -276,12 +278,19 @@ public class TCKIsoFields {
                 {LocalDate.of(2000, 1, 1), LocalDate.of(1998, 12, 31), -4},
                 {LocalDate.of(2000, 1, 1), LocalDate.of(1998, 10, 2), -4},
                 {LocalDate.of(2000, 1, 1), LocalDate.of(1998, 10, 1), -5},
+
+                {LocalDate.of(2000, 1, 1), LocalDateTime.of(2001, 4, 5, 0, 0), 5},
         };
     }
 
     @Test(dataProvider="quartersBetween")
-    public void test_quarters_between(LocalDate start, LocalDate end, long expected) {
+    public void test_quarters_between(LocalDate start, Temporal end, long expected) {
         assertEquals(IsoFields.QUARTER_YEARS.between(start, end), expected);
+    }
+
+    @Test(dataProvider="quartersBetween")
+    public void test_quarters_between_until(LocalDate start, Temporal end, long expected) {
+        assertEquals(start.until(end, IsoFields.QUARTER_YEARS), expected);
     }
 
     //-----------------------------------------------------------------------

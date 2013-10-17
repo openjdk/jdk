@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,10 +25,16 @@
 
 package com.sun.xml.internal.ws.model.wsdl;
 
+import java.util.List;
+
 import com.sun.xml.internal.ws.api.EndpointAddress;
 import com.sun.xml.internal.ws.api.SOAPVersion;
 import com.sun.xml.internal.ws.api.addressing.WSEndpointReference;
 import com.sun.xml.internal.ws.api.model.wsdl.WSDLPort;
+import com.sun.xml.internal.ws.api.model.wsdl.editable.EditableWSDLBoundPortType;
+import com.sun.xml.internal.ws.api.model.wsdl.editable.EditableWSDLModel;
+import com.sun.xml.internal.ws.api.model.wsdl.editable.EditableWSDLPort;
+import com.sun.xml.internal.ws.api.model.wsdl.editable.EditableWSDLService;
 import com.sun.xml.internal.ws.resources.ClientMessages;
 import com.sun.xml.internal.ws.util.exception.LocatableWebServiceException;
 import com.sun.xml.internal.ws.wsdl.parser.RuntimeWSDLParser;
@@ -44,19 +50,19 @@ import javax.xml.stream.XMLStreamReader;
  *
  * @author Vivek Pandey
  */
-public final class WSDLPortImpl extends AbstractFeaturedObjectImpl implements WSDLPort {
+public final class WSDLPortImpl extends AbstractFeaturedObjectImpl implements EditableWSDLPort {
     private final QName name;
     private EndpointAddress address;
     private final QName bindingName;
-    private final WSDLServiceImpl owner;
+    private final EditableWSDLService owner;
     private WSEndpointReference epr;
 
     /**
      * To be set after the WSDL parsing is complete.
      */
-    private WSDLBoundPortTypeImpl boundPortType;
+    private EditableWSDLBoundPortType boundPortType;
 
-    public WSDLPortImpl(XMLStreamReader xsr,WSDLServiceImpl owner, QName name, QName binding) {
+    public WSDLPortImpl(XMLStreamReader xsr, EditableWSDLService owner, QName name, QName binding) {
         super(xsr);
         this.owner = owner;
         this.name = name;
@@ -75,7 +81,7 @@ public final class WSDLPortImpl extends AbstractFeaturedObjectImpl implements WS
         return address;
     }
 
-    public WSDLServiceImpl getOwner() {
+    public EditableWSDLService getOwner() {
         return owner;
     }
 
@@ -99,15 +105,13 @@ public final class WSDLPortImpl extends AbstractFeaturedObjectImpl implements WS
     public @Nullable WSEndpointReference getEPR() {
         return epr;
     }
-    public WSDLBoundPortTypeImpl getBinding() {
+
+    public EditableWSDLBoundPortType getBinding() {
         return boundPortType;
     }
 
-    public SOAPVersion getSOAPVersion(){
-        return boundPortType.getSOAPVersion();
-    }
-
-    void freeze(WSDLModelImpl root) {
+    @SuppressWarnings("unchecked")
+    public void freeze(EditableWSDLModel root) {
         boundPortType = root.getBinding(bindingName);
         if(boundPortType==null) {
             throw new LocatableWebServiceException(
@@ -116,6 +120,6 @@ public final class WSDLPortImpl extends AbstractFeaturedObjectImpl implements WS
         if(features == null)
             features =  new WebServiceFeatureList();
         features.setParentFeaturedObject(boundPortType);
-        notUnderstoodExtensions.addAll(boundPortType.notUnderstoodExtensions);
+        notUnderstoodExtensions.addAll((List<UnknownWSDLExtension>)boundPortType.getNotUnderstoodExtensions());
     }
 }

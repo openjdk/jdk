@@ -32,7 +32,7 @@ import java.io.IOException;
  * for a transfer operation.
  * <p>
  * For information on using data transfer with Swing, see
- * <a href="http://java.sun.com/docs/books/tutorial/uiswing/misc/dnd.html">
+ * <a href="http://docs.oracle.com/javase/tutorial/uiswing/dnd/index.html">
  * How to Use Drag and Drop and Data Transfer</a>,
  * a section in <em>The Java Tutorial</em>, for more information.
  *
