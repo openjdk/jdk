@@ -60,9 +60,11 @@ le_uint32 LookupProcessor::applyLookupTable(const LEReferenceTo<LookupTable> &lo
       LEReferenceTo<LookupSubtable> lookupSubtable = lookupTable->getLookupSubtable(lookupTable, subtable, success);
 
         delta = applySubtable(lookupSubtable, lookupType, glyphIterator, fontInstance, success);
-
-        if (delta > 0 || LE_FAILURE(success)) {
-            return 1;
+        if (delta > 0 && LE_FAILURE(success)) {
+#if LE_TRACE
+          _LETRACE("Posn #%d, type %X, applied subtable #%d/%d - %s\n", startPosition, lookupType, subtable, subtableCount, u_errorName((UErrorCode)success));
+#endif
+          return 1;
         }
 
         glyphIterator->setCurrStreamPosition(startPosition);
@@ -86,7 +88,7 @@ le_int32 LookupProcessor::process(LEGlyphStorage &glyphStorage, GlyphPositionAdj
     }
 
     GlyphIterator glyphIterator(glyphStorage, glyphPositionAdjustments,
-                                rightToLeft, 0, 0, glyphDefinitionTableHeader);
+                                rightToLeft, 0, 0, glyphDefinitionTableHeader, success);
     le_int32 newGlyphCount = glyphCount;
 
     for (le_uint16 order = 0; order < lookupOrderCount && LE_SUCCESS(success); order += 1) {
@@ -94,6 +96,7 @@ le_int32 LookupProcessor::process(LEGlyphStorage &glyphStorage, GlyphPositionAdj
         FeatureMask selectMask = lookupSelectArray[lookup];
 
         if (selectMask != 0) {
+          _LETRACE("Processing order#%d/%d", order, lookupOrderCount);
           const LEReferenceTo<LookupTable> lookupTable = lookupListTable->getLookupTable(lookupListTable, lookup, success);
           if (!lookupTable.isValid() ||LE_FAILURE(success) ) {
                 continue;
@@ -103,8 +106,11 @@ le_int32 LookupProcessor::process(LEGlyphStorage &glyphStorage, GlyphPositionAdj
             glyphIterator.reset(lookupFlags, selectMask);
 
             while (glyphIterator.findFeatureTag()) {
-              applyLookupTable(lookupTable, &glyphIterator, fontInstance, success); // TODO
+                applyLookupTable(lookupTable, &glyphIterator, fontInstance, success);
                 if (LE_FAILURE(success)) {
+#if LE_TRACE
+                    _LETRACE("Failure for lookup 0x%x - %s\n", lookup, u_errorName((UErrorCode)success));
+#endif
                     return 0;
                 }
             }
