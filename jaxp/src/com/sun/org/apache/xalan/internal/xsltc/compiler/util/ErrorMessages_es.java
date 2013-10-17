@@ -18,7 +18,7 @@
  * limitations under the License.
  */
 /*
- * $Id: ErrorMessages_es.java,v 1.2.4.1 2005/09/15 10:03:56 pvedula Exp $
+ * $Id: ErrorMessages_es.java /st_wptg_1.8.0.0.0jdk/2 2013/09/16 09:06:34 gmolloy Exp $
  */
 
 package com.sun.org.apache.xalan.internal.xsltc.compiler.util;
@@ -447,7 +447,7 @@ public class ErrorMessages_es extends ListResourceBundle {
          * Note to translators:  access to the stylesheet target is denied
          */
         {ErrorMsg.ACCESSING_XSLT_TARGET_ERR,
-        "Could not read stylesheet target ''{0}'', because ''{1}'' access is not allowed."},
+        "No se ha podido leer el destino de hoja de estilos ''{0}'', porque no se permite el acceso ''{1}'' debido a una restricci\u00F3n definida por la propiedad accessExternalStylesheet."},
 
         /*
          * Note to translators:  This message represents an internal error in
@@ -771,7 +771,7 @@ public class ErrorMessages_es extends ListResourceBundle {
          * it the same amount as the first in English.
          */
         {ErrorMsg.WARNING_PLUS_WRAPPED_MSG,
-        "ADVERTENCIA: ''{0}''\n       :{1}"},
+        "WARNING:  ''{0}''\n       :{1}"},
 
         /*
          * Note to translators:  This message is used to indicate the severity
@@ -787,7 +787,7 @@ public class ErrorMessages_es extends ListResourceBundle {
          * it the same amount as the first in English.
          */
         {ErrorMsg.FATAL_ERR_PLUS_WRAPPED_MSG,
-        "ERROR FATAL: ''{0}''\n           :{1}"},
+        "FATAL ERROR:  ''{0}''\n           :{1}"},
 
         /*
          * Note to translators:  This message is used to indicate the severity
@@ -803,7 +803,7 @@ public class ErrorMessages_es extends ListResourceBundle {
          * it the same amount as the first in English.
          */
         {ErrorMsg.ERROR_PLUS_WRAPPED_MSG,
-        "ERROR: ''{0}''\n     :{1}"},
+        "ERROR:  ''{0}''\n     :{1}"},
 
         /*
          * Note to translators:  This message is used to indicate the severity
@@ -910,7 +910,58 @@ public class ErrorMessages_es extends ListResourceBundle {
         "No se puede definir la funci\u00F3n ''{0}''en esta f\u00E1brica del transformador."},
 
         {ErrorMsg.JAXP_SECUREPROCESSING_FEATURE,
-        "FEATURE_SECURE_PROCESSING: no se puede definir la funci\u00F3n en false cuando est\u00E1 presente el gestor de seguridad."}
+        "FEATURE_SECURE_PROCESSING: no se puede definir la funci\u00F3n en false cuando est\u00E1 presente el gestor de seguridad."},
+
+        /*
+         * Note to translators:  This message describes an internal error in the
+         * processor.  The term "byte code" is a Java technical term for the
+         * executable code in a Java method, and "try-catch-finally block"
+         * refers to the Java keywords with those names.  "Outlined" is a
+         * technical term internal to XSLTC and should not be translated.
+         */
+        {ErrorMsg.OUTLINE_ERR_TRY_CATCH,
+         "Error interno de XSLTC: el c\u00F3digo de bytes generado contiene un bloque try-catch-finally y no se puede delimitar."},
+
+        /*
+         * Note to translators:  This message describes an internal error in the
+         * processor.  The terms "OutlineableChunkStart" and
+         * "OutlineableChunkEnd" are the names of classes internal to XSLTC and
+         * should not be translated.  The message indicates that for every
+         * "start" there must be a corresponding "end", and vice versa, and
+         * that if one of a pair of "start" and "end" appears between another
+         * pair of corresponding "start" and "end", then the other half of the
+         * pair must also be between that same enclosing pair.
+         */
+        {ErrorMsg.OUTLINE_ERR_UNBALANCED_MARKERS,
+         "Error interno de XSLTC: los marcadores OutlineableChunkStart y OutlineableChunkEnd deben estar equilibrados y correctamente anidados."},
+
+        /*
+         * Note to translators:  This message describes an internal error in the
+         * processor.  The term "byte code" is a Java technical term for the
+         * executable code in a Java method.  The "method" that is being
+         * referred to is a Java method in a translet that XSLTC is generating
+         * in processing a stylesheet.  The "instruction" that is being
+         * referred to is one of the instrutions in the Java byte code in that
+         * method.  "Outlined" is a technical term internal to XSLTC and
+         * should not be translated.
+         */
+        {ErrorMsg.OUTLINE_ERR_DELETED_TARGET,
+         "Error interno de XSLTC: todav\u00EDa se hace referencia a una instrucci\u00F3n que formaba parte de un bloque de c\u00F3digo de bytes delimitado en el m\u00E9todo original."
+        },
+
+
+        /*
+         * Note to translators:  This message describes an internal error in the
+         * processor.  The "method" that is being referred to is a Java method
+         * in a translet that XSLTC is generating.
+         *
+         */
+        {ErrorMsg.OUTLINE_ERR_METHOD_TOO_BIG,
+         "Error interno de XSLTC: un m\u00E9todo en el translet excede la limitaci\u00F3n de Java Virtual Machine de longitud de un m\u00E9todo de 64 kilobytes. Normalmente, esto lo causan plantillas en una hoja de estilos demasiado grandes. Pruebe a reestructurar la hoja de estilos para utilizar plantillas m\u00E1s peque\u00F1as."
+        },
+
+         {ErrorMsg.DESERIALIZE_TRANSLET_ERR, "Cuando la seguridad de Java est\u00E1 activada, el soporte para anular la serializaci\u00F3n de TemplatesImpl est\u00E1 desactivado. Esto se puede sustituir definiendo la propiedad del sistema jdk.xml.enableTemplatesImplDeserialization en true."}
+
     };
 
     /** Get the lookup table for error messages.

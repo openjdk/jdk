@@ -46,4 +46,4 @@
 #define HAVE_LIBGIF
 #define HAVE_LIBZ
 #define HAVE_LIBM
-#define HAVE_ALTZONE 
+#define HAVE_ALTZONE

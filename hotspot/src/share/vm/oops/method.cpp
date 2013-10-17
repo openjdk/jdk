@@ -511,9 +511,9 @@ bool Method::compute_has_loops_flag() {
 
 bool Method::is_final_method(AccessFlags class_access_flags) const {
   // or "does_not_require_vtable_entry"
-  // overpass can occur, is not final (reuses vtable entry)
+  // default method or overpass can occur, is not final (reuses vtable entry)
   // private methods get vtable entries for backward class compatibility.
-  if (is_overpass())  return false;
+  if (is_overpass() || is_default_method())  return false;
   return is_final() || class_access_flags.is_final();
 }
 
@@ -521,11 +521,24 @@ bool Method::is_final_method() const {
   return is_final_method(method_holder()->access_flags());
 }
 
+bool Method::is_default_method() const {
+  if (method_holder() != NULL &&
+      method_holder()->is_interface() &&
+      !is_abstract()) {
+    return true;
+  } else {
+    return false;
+  }
+}
+
 bool Method::can_be_statically_bound(AccessFlags class_access_flags) const {
   if (is_final_method(class_access_flags))  return true;
 #ifdef ASSERT
+  ResourceMark rm;
   bool is_nonv = (vtable_index() == nonvirtual_vtable_index);
-  if (class_access_flags.is_interface())  assert(is_nonv == is_static(), err_msg("is_nonv=%s", is_nonv));
+  if (class_access_flags.is_interface()) {
+      assert(is_nonv == is_static(), err_msg("is_nonv=%s", name_and_sig_as_C_string()));
+  }
 #endif
   assert(valid_vtable_index() || valid_itable_index(), "method must be linked before we ask this question");
   return vtable_index() == nonvirtual_vtable_index;
@@ -1371,7 +1384,8 @@ static int method_comparator(Method* a, Method* b) {
 }
 
 // This is only done during class loading, so it is OK to assume method_idnum matches the methods() array
-void Method::sort_methods(Array<Method*>* methods, bool idempotent) {
+// default_methods also uses this without the ordering for fast find_method
+void Method::sort_methods(Array<Method*>* methods, bool idempotent, bool set_idnums) {
   int length = methods->length();
   if (length > 1) {
     {
@@ -1379,13 +1393,14 @@ void Method::sort_methods(Array<Method*>* methods, bool idempotent) {
       QuickSort::sort<Method*>(methods->data(), length, method_comparator, idempotent);
     }
     // Reset method ordering
-    for (int i = 0; i < length; i++) {
-      Method* m = methods->at(i);
-      m->set_method_idnum(i);
+    if (set_idnums) {
+      for (int i = 0; i < length; i++) {
+        Method* m = methods->at(i);
+        m->set_method_idnum(i);
+      }
     }
   }
 }
-
 
 //-----------------------------------------------------------------------------------
 // Non-product code unless JVM/TI needs it
