@@ -1007,19 +1007,42 @@ public final class NativeArray extends ScriptObject {
         final long actualStart = relativeStart < 0 ? Math.max(len + relativeStart, 0) : Math.min(relativeStart, len);
         final long actualDeleteCount = Math.min(Math.max(JSType.toLong(deleteCount), 0), len - actualStart);
 
-        final NativeArray array = new NativeArray(actualDeleteCount);
+        NativeArray returnValue;
 
-        for (long k = 0; k < actualDeleteCount; k++) {
-            final long from = actualStart + k;
+        if (actualStart <= Integer.MAX_VALUE && actualDeleteCount <= Integer.MAX_VALUE && bulkable(sobj)) {
+            try {
+                returnValue =  new NativeArray(sobj.getArray().fastSplice((int)actualStart, (int)actualDeleteCount, items.length));
+
+                // Since this is a dense bulkable array we can use faster defineOwnProperty to copy new elements
+                int k = (int) actualStart;
+                for (int i = 0; i < items.length; i++, k++) {
+                    sobj.defineOwnProperty(k, items[i]);
+                }
+            } catch (UnsupportedOperationException uoe) {
+                returnValue = slowSplice(sobj, actualStart, actualDeleteCount, items, len);
+            }
+        } else {
+            returnValue = slowSplice(sobj, actualStart, actualDeleteCount, items, len);
+        }
+
+        return returnValue;
+    }
+
+    private static NativeArray slowSplice(final ScriptObject sobj, final long start, final long deleteCount, final Object[] items, final long len) {
+
+        final NativeArray array = new NativeArray(deleteCount);
+
+        for (long k = 0; k < deleteCount; k++) {
+            final long from = start + k;
 
             if (sobj.has(from)) {
                 array.defineOwnProperty(ArrayIndex.getArrayIndex(k), sobj.get(from));
             }
         }
 
-        if (items.length < actualDeleteCount) {
-            for (long k = actualStart; k < (len - actualDeleteCount); k++) {
-                final long from = k + actualDeleteCount;
+        if (items.length < deleteCount) {
+            for (long k = start; k < (len - deleteCount); k++) {
+                final long from = k + deleteCount;
                 final long to   = k + items.length;
 
                 if (sobj.has(from)) {
@@ -1029,12 +1052,12 @@ public final class NativeArray extends ScriptObject {
                 }
             }
 
-            for (long k = len; k > (len - actualDeleteCount + items.length); k--) {
+            for (long k = len; k > (len - deleteCount + items.length); k--) {
                 sobj.delete(k - 1, true);
             }
-        } else if (items.length > actualDeleteCount) {
-            for (long k = len - actualDeleteCount; k > actualStart; k--) {
-                final long from = k + actualDeleteCount - 1;
+        } else if (items.length > deleteCount) {
+            for (long k = len - deleteCount; k > start; k--) {
+                final long from = k + deleteCount - 1;
                 final long to   = k + items.length - 1;
 
                 if (sobj.has(from)) {
@@ -1046,12 +1069,12 @@ public final class NativeArray extends ScriptObject {
             }
         }
 
-        long k = actualStart;
+        long k = start;
         for (int i = 0; i < items.length; i++, k++) {
             sobj.set(k, items[i], true);
         }
 
-        final long newLength = len - actualDeleteCount + items.length;
+        final long newLength = len - deleteCount + items.length;
         sobj.set("length", newLength, true);
 
         return array;
