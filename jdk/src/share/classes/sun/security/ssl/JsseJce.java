@@ -110,7 +110,7 @@ final class JsseJce {
         private static final long serialVersionUID = -3284138292032213752L;
 
         SunCertificates(final Provider p) {
-            super("SunCertificates", 1.0d, "SunJSSE internal");
+            super("SunCertificates", 1.8d, "SunJSSE internal");
             AccessController.doPrivileged(new PrivilegedAction<Object>() {
                 @Override
                 public Object run() {

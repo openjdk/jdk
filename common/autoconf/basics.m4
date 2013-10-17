@@ -24,23 +24,23 @@
 #
 
 # Test if $1 is a valid argument to $3 (often is $JAVA passed as $3)
-# If so, then append $1 to $2\
+# If so, then append $1 to $2 \
 # Also set JVM_ARG_OK to true/false depending on outcome.
 AC_DEFUN([ADD_JVM_ARG_IF_OK],
 [
-    $ECHO "Check if jvm arg is ok: $1" >&AS_MESSAGE_LOG_FD
-    $ECHO "Command: $3 $1 -version" >&AS_MESSAGE_LOG_FD
-    OUTPUT=`$3 $1 -version 2>&1`
-    FOUND_WARN=`$ECHO "$OUTPUT" | grep -i warn`
-    FOUND_VERSION=`$ECHO $OUTPUT | grep " version \""`
-    if test "x$FOUND_VERSION" != x && test "x$FOUND_WARN" = x; then
-        $2="[$]$2 $1"
-	JVM_ARG_OK=true
-    else
-	$ECHO "Arg failed:" >&AS_MESSAGE_LOG_FD
-	$ECHO "$OUTPUT" >&AS_MESSAGE_LOG_FD
-	JVM_ARG_OK=false
-    fi
+  $ECHO "Check if jvm arg is ok: $1" >&AS_MESSAGE_LOG_FD
+  $ECHO "Command: $3 $1 -version" >&AS_MESSAGE_LOG_FD
+  OUTPUT=`$3 $1 -version 2>&1`
+  FOUND_WARN=`$ECHO "$OUTPUT" | grep -i warn`
+  FOUND_VERSION=`$ECHO $OUTPUT | grep " version \""`
+  if test "x$FOUND_VERSION" != x && test "x$FOUND_WARN" = x; then
+    $2="[$]$2 $1"
+    JVM_ARG_OK=true
+  else
+    $ECHO "Arg failed:" >&AS_MESSAGE_LOG_FD
+    $ECHO "$OUTPUT" >&AS_MESSAGE_LOG_FD
+    JVM_ARG_OK=false
+  fi
 ])
 
 # Appends a string to a path variable, only adding the : when needed.
@@ -82,7 +82,7 @@ AC_DEFUN([BASIC_FIXUP_PATH],
       AC_MSG_ERROR([The path of $1, which resolves as "$path", is not found.])
     fi
 
-    $1="`cd "$path"; $THEPWDCMD -L`" 
+    $1="`cd "$path"; $THEPWDCMD -L`"
   fi
 ])
 
@@ -129,78 +129,78 @@ AC_DEFUN([BASIC_FIXUP_EXECUTABLE],
       AC_MSG_NOTICE([Resolving $1 (as $path) failed, using $path directly.])
       new_path="$path"
     fi
-    
+
     if test "x$new_path" = x; then
-        AC_MSG_NOTICE([The path of $1, which resolves as "$complete", is not found.])
-        has_space=`$ECHO "$complete" | $GREP " "`
-        if test "x$has_space" != x; then
-          AC_MSG_NOTICE([This might be caused by spaces in the path, which is not allowed.])
-        fi
-        AC_MSG_ERROR([Cannot locate the the path of $1])
+      AC_MSG_NOTICE([The path of $1, which resolves as "$complete", is not found.])
+      has_space=`$ECHO "$complete" | $GREP " "`
+      if test "x$has_space" != x; then
+        AC_MSG_NOTICE([This might be caused by spaces in the path, which is not allowed.])
       fi
+      AC_MSG_ERROR([Cannot locate the the path of $1])
+    fi
   fi
 
-      # Now join together the path and the arguments once again
-      if test "x$arguments" != xEOL; then
-        new_complete="$new_path ${arguments% *}"
-      else
-        new_complete="$new_path"
-      fi
+  # Now join together the path and the arguments once again
+  if test "x$arguments" != xEOL; then
+    new_complete="$new_path ${arguments% *}"
+  else
+    new_complete="$new_path"
+  fi
 
   if test "x$complete" != "x$new_complete"; then
-      $1="$new_complete"
-      AC_MSG_NOTICE([Rewriting $1 to "$new_complete"])
-    fi
+    $1="$new_complete"
+    AC_MSG_NOTICE([Rewriting $1 to "$new_complete"])
+  fi
 ])
 
 AC_DEFUN([BASIC_REMOVE_SYMBOLIC_LINKS],
 [
-    if test "x$OPENJDK_BUILD_OS" != xwindows; then
-        # Follow a chain of symbolic links. Use readlink
-        # where it exists, else fall back to horribly
-        # complicated shell code.
-        if test "x$READLINK_TESTED" != yes; then
-            # On MacOSX there is a readlink tool with a different
-            # purpose than the GNU readlink tool. Check the found readlink.
-            ISGNU=`$READLINK --version 2>&1 | $GREP GNU`
-            if test "x$ISGNU" = x; then
-                 # A readlink that we do not know how to use.
-                 # Are there other non-GNU readlinks out there?
-                 READLINK_TESTED=yes
-                 READLINK=
-            fi
-        fi
-
-        if test "x$READLINK" != x; then
-            $1=`$READLINK -f [$]$1`
-        else
-            # Save the current directory for restoring afterwards
-            STARTDIR=$PWD
-            COUNTER=0
-            sym_link_dir=`$DIRNAME [$]$1`
-            sym_link_file=`$BASENAME [$]$1`
-            cd $sym_link_dir
-            # Use -P flag to resolve symlinks in directories.
-            cd `$THEPWDCMD -P`
-            sym_link_dir=`$THEPWDCMD -P`
-            # Resolve file symlinks
-            while test $COUNTER -lt 20; do
-                ISLINK=`$LS -l $sym_link_dir/$sym_link_file | $GREP '\->' | $SED -e 's/.*-> \(.*\)/\1/'`
-                if test "x$ISLINK" == x; then
-                    # This is not a symbolic link! We are done!
-                    break
-                fi
-                # Again resolve directory symlinks since the target of the just found
-                # link could be in a different directory
-                cd `$DIRNAME $ISLINK`
-                sym_link_dir=`$THEPWDCMD -P`
-                sym_link_file=`$BASENAME $ISLINK`
-                let COUNTER=COUNTER+1
-            done
-            cd $STARTDIR
-            $1=$sym_link_dir/$sym_link_file
-        fi
+  if test "x$OPENJDK_BUILD_OS" != xwindows; then
+    # Follow a chain of symbolic links. Use readlink
+    # where it exists, else fall back to horribly
+    # complicated shell code.
+    if test "x$READLINK_TESTED" != yes; then
+      # On MacOSX there is a readlink tool with a different
+      # purpose than the GNU readlink tool. Check the found readlink.
+      ISGNU=`$READLINK --version 2>&1 | $GREP GNU`
+      if test "x$ISGNU" = x; then
+        # A readlink that we do not know how to use.
+        # Are there other non-GNU readlinks out there?
+        READLINK_TESTED=yes
+        READLINK=
+      fi
     fi
+
+    if test "x$READLINK" != x; then
+      $1=`$READLINK -f [$]$1`
+    else
+      # Save the current directory for restoring afterwards
+      STARTDIR=$PWD
+      COUNTER=0
+      sym_link_dir=`$DIRNAME [$]$1`
+      sym_link_file=`$BASENAME [$]$1`
+      cd $sym_link_dir
+      # Use -P flag to resolve symlinks in directories.
+      cd `$THEPWDCMD -P`
+      sym_link_dir=`$THEPWDCMD -P`
+      # Resolve file symlinks
+      while test $COUNTER -lt 20; do
+        ISLINK=`$LS -l $sym_link_dir/$sym_link_file | $GREP '\->' | $SED -e 's/.*-> \(.*\)/\1/'`
+        if test "x$ISLINK" == x; then
+          # This is not a symbolic link! We are done!
+          break
+        fi
+        # Again resolve directory symlinks since the target of the just found
+        # link could be in a different directory
+        cd `$DIRNAME $ISLINK`
+        sym_link_dir=`$THEPWDCMD -P`
+        sym_link_file=`$BASENAME $ISLINK`
+        let COUNTER=COUNTER+1
+      done
+      cd $STARTDIR
+      $1=$sym_link_dir/$sym_link_file
+    fi
+  fi
 ])
 
 # Register a --with argument but mark it as deprecated
@@ -214,12 +214,12 @@ AC_DEFUN([BASIC_DEPRECATED_ARG_WITH],
 
 AC_DEFUN_ONCE([BASIC_INIT],
 [
-# Save the original command line. This is passed to us by the wrapper configure script.
-AC_SUBST(CONFIGURE_COMMAND_LINE)
-DATE_WHEN_CONFIGURED=`LANG=C date`
-AC_SUBST(DATE_WHEN_CONFIGURED)
-AC_MSG_NOTICE([Configuration created at $DATE_WHEN_CONFIGURED.])
-AC_MSG_NOTICE([configure script generated at timestamp $DATE_WHEN_GENERATED.])
+  # Save the original command line. This is passed to us by the wrapper configure script.
+  AC_SUBST(CONFIGURE_COMMAND_LINE)
+  DATE_WHEN_CONFIGURED=`LANG=C date`
+  AC_SUBST(DATE_WHEN_CONFIGURED)
+  AC_MSG_NOTICE([Configuration created at $DATE_WHEN_CONFIGURED.])
+  AC_MSG_NOTICE([configure script generated at timestamp $DATE_WHEN_GENERATED.])
 ])
 
 # Test that variable $1 denoting a program is not empty. If empty, exit with an error.
@@ -227,15 +227,15 @@ AC_MSG_NOTICE([configure script generated at timestamp $DATE_WHEN_GENERATED.])
 # $2: executable name to print in warning (optional)
 AC_DEFUN([BASIC_CHECK_NONEMPTY],
 [
-    if test "x[$]$1" = x; then
-        if test "x$2" = x; then
-          PROG_NAME=translit($1,A-Z,a-z)
-        else
-          PROG_NAME=$2
-        fi
-        AC_MSG_NOTICE([Could not find $PROG_NAME!])
-        AC_MSG_ERROR([Cannot continue])
+  if test "x[$]$1" = x; then
+    if test "x$2" = x; then
+      PROG_NAME=translit($1,A-Z,a-z)
+    else
+      PROG_NAME=$2
     fi
+    AC_MSG_NOTICE([Could not find $PROG_NAME!])
+    AC_MSG_ERROR([Cannot continue])
+  fi
 ])
 
 # Does AC_PATH_PROG followed by BASIC_CHECK_NONEMPTY.
@@ -244,8 +244,8 @@ AC_DEFUN([BASIC_CHECK_NONEMPTY],
 # $2: executable name to look for
 AC_DEFUN([BASIC_REQUIRE_PROG],
 [
-    AC_PATH_PROGS($1, $2)
-    BASIC_CHECK_NONEMPTY($1, $2)
+  AC_PATH_PROGS($1, $2)
+  BASIC_CHECK_NONEMPTY($1, $2)
 ])
 
 # Setup the most fundamental tools that relies on not much else to set up,
@@ -253,171 +253,171 @@ AC_DEFUN([BASIC_REQUIRE_PROG],
 AC_DEFUN_ONCE([BASIC_SETUP_FUNDAMENTAL_TOOLS],
 [
 
-# Start with tools that do not need have cross compilation support
-# and can be expected to be found in the default PATH. These tools are
-# used by configure. Nor are these tools expected to be found in the
-# devkit from the builddeps server either, since they are
-# needed to download the devkit.
+  # Start with tools that do not need have cross compilation support
+  # and can be expected to be found in the default PATH. These tools are
+  # used by configure. Nor are these tools expected to be found in the
+  # devkit from the builddeps server either, since they are
+  # needed to download the devkit.
 
-# First are all the simple required tools.
-BASIC_REQUIRE_PROG(BASENAME, basename)
-BASIC_REQUIRE_PROG(BASH, bash)
-BASIC_REQUIRE_PROG(CAT, cat)
-BASIC_REQUIRE_PROG(CHMOD, chmod)
-BASIC_REQUIRE_PROG(CMP, cmp)
-BASIC_REQUIRE_PROG(COMM, comm)
-BASIC_REQUIRE_PROG(CP, cp)
-BASIC_REQUIRE_PROG(CPIO, cpio)
-BASIC_REQUIRE_PROG(CUT, cut)
-BASIC_REQUIRE_PROG(DATE, date)
-BASIC_REQUIRE_PROG(DIFF, [gdiff diff])
-BASIC_REQUIRE_PROG(DIRNAME, dirname)
-BASIC_REQUIRE_PROG(ECHO, echo)
-BASIC_REQUIRE_PROG(EXPR, expr)
-BASIC_REQUIRE_PROG(FILE, file)
-BASIC_REQUIRE_PROG(FIND, find)
-BASIC_REQUIRE_PROG(HEAD, head)
-BASIC_REQUIRE_PROG(LN, ln)
-BASIC_REQUIRE_PROG(LS, ls)
-BASIC_REQUIRE_PROG(MKDIR, mkdir)
-BASIC_REQUIRE_PROG(MKTEMP, mktemp)
-BASIC_REQUIRE_PROG(MV, mv)
-BASIC_REQUIRE_PROG(PRINTF, printf)
-BASIC_REQUIRE_PROG(RM, rm)
-BASIC_REQUIRE_PROG(SH, sh)
-BASIC_REQUIRE_PROG(SORT, sort)
-BASIC_REQUIRE_PROG(TAIL, tail)
-BASIC_REQUIRE_PROG(TAR, tar)
-BASIC_REQUIRE_PROG(TEE, tee)
-BASIC_REQUIRE_PROG(TOUCH, touch)
-BASIC_REQUIRE_PROG(TR, tr)
-BASIC_REQUIRE_PROG(UNAME, uname)
-BASIC_REQUIRE_PROG(UNIQ, uniq)
-BASIC_REQUIRE_PROG(WC, wc)
-BASIC_REQUIRE_PROG(WHICH, which)
-BASIC_REQUIRE_PROG(XARGS, xargs)
+  # First are all the simple required tools.
+  BASIC_REQUIRE_PROG(BASENAME, basename)
+  BASIC_REQUIRE_PROG(BASH, bash)
+  BASIC_REQUIRE_PROG(CAT, cat)
+  BASIC_REQUIRE_PROG(CHMOD, chmod)
+  BASIC_REQUIRE_PROG(CMP, cmp)
+  BASIC_REQUIRE_PROG(COMM, comm)
+  BASIC_REQUIRE_PROG(CP, cp)
+  BASIC_REQUIRE_PROG(CPIO, cpio)
+  BASIC_REQUIRE_PROG(CUT, cut)
+  BASIC_REQUIRE_PROG(DATE, date)
+  BASIC_REQUIRE_PROG(DIFF, [gdiff diff])
+  BASIC_REQUIRE_PROG(DIRNAME, dirname)
+  BASIC_REQUIRE_PROG(ECHO, echo)
+  BASIC_REQUIRE_PROG(EXPR, expr)
+  BASIC_REQUIRE_PROG(FILE, file)
+  BASIC_REQUIRE_PROG(FIND, find)
+  BASIC_REQUIRE_PROG(HEAD, head)
+  BASIC_REQUIRE_PROG(LN, ln)
+  BASIC_REQUIRE_PROG(LS, ls)
+  BASIC_REQUIRE_PROG(MKDIR, mkdir)
+  BASIC_REQUIRE_PROG(MKTEMP, mktemp)
+  BASIC_REQUIRE_PROG(MV, mv)
+  BASIC_REQUIRE_PROG(PRINTF, printf)
+  BASIC_REQUIRE_PROG(RM, rm)
+  BASIC_REQUIRE_PROG(SH, sh)
+  BASIC_REQUIRE_PROG(SORT, sort)
+  BASIC_REQUIRE_PROG(TAIL, tail)
+  BASIC_REQUIRE_PROG(TAR, tar)
+  BASIC_REQUIRE_PROG(TEE, tee)
+  BASIC_REQUIRE_PROG(TOUCH, touch)
+  BASIC_REQUIRE_PROG(TR, tr)
+  BASIC_REQUIRE_PROG(UNAME, uname)
+  BASIC_REQUIRE_PROG(UNIQ, uniq)
+  BASIC_REQUIRE_PROG(WC, wc)
+  BASIC_REQUIRE_PROG(WHICH, which)
+  BASIC_REQUIRE_PROG(XARGS, xargs)
 
-# Then required tools that require some special treatment.
-AC_PROG_AWK
-BASIC_CHECK_NONEMPTY(AWK)
-AC_PROG_GREP
-BASIC_CHECK_NONEMPTY(GREP)
-AC_PROG_EGREP
-BASIC_CHECK_NONEMPTY(EGREP)
-AC_PROG_FGREP
-BASIC_CHECK_NONEMPTY(FGREP)
-AC_PROG_SED
-BASIC_CHECK_NONEMPTY(SED)
+  # Then required tools that require some special treatment.
+  AC_PROG_AWK
+  BASIC_CHECK_NONEMPTY(AWK)
+  AC_PROG_GREP
+  BASIC_CHECK_NONEMPTY(GREP)
+  AC_PROG_EGREP
+  BASIC_CHECK_NONEMPTY(EGREP)
+  AC_PROG_FGREP
+  BASIC_CHECK_NONEMPTY(FGREP)
+  AC_PROG_SED
+  BASIC_CHECK_NONEMPTY(SED)
 
-AC_PATH_PROGS(NAWK, [nawk gawk awk])
-BASIC_CHECK_NONEMPTY(NAWK)
+  AC_PATH_PROGS(NAWK, [nawk gawk awk])
+  BASIC_CHECK_NONEMPTY(NAWK)
 
-# Always force rm.
-RM="$RM -f"
+  # Always force rm.
+  RM="$RM -f"
 
-# pwd behaves differently on various platforms and some don't support the -L flag.
-# Always use the bash builtin pwd to get uniform behavior.
-THEPWDCMD=pwd
+  # pwd behaves differently on various platforms and some don't support the -L flag.
+  # Always use the bash builtin pwd to get uniform behavior.
+  THEPWDCMD=pwd
 
-# These are not required on all platforms
-AC_PATH_PROG(CYGPATH, cygpath)
-AC_PATH_PROG(READLINK, readlink)
-AC_PATH_PROG(DF, df)
-AC_PATH_PROG(SETFILE, SetFile)
+  # These are not required on all platforms
+  AC_PATH_PROG(CYGPATH, cygpath)
+  AC_PATH_PROG(READLINK, readlink)
+  AC_PATH_PROG(DF, df)
+  AC_PATH_PROG(SETFILE, SetFile)
 ])
 
 # Setup basic configuration paths, and platform-specific stuff related to PATHs.
 AC_DEFUN_ONCE([BASIC_SETUP_PATHS],
 [
-# Locate the directory of this script.
-SCRIPT="[$]0"
-AUTOCONF_DIR=`cd \`$DIRNAME $SCRIPT\`; $THEPWDCMD -L`
+  # Locate the directory of this script.
+  SCRIPT="[$]0"
+  AUTOCONF_DIR=`cd \`$DIRNAME $SCRIPT\`; $THEPWDCMD -L`
 
-# Where is the source? It is located two levels above the configure script.
-CURDIR="$PWD"
-cd "$AUTOCONF_DIR/../.."
-SRC_ROOT="`$THEPWDCMD -L`"
+  # Where is the source? It is located two levels above the configure script.
+  CURDIR="$PWD"
+  cd "$AUTOCONF_DIR/../.."
+  SRC_ROOT="`$THEPWDCMD -L`"
 
-if test "x$OPENJDK_TARGET_OS" = "xwindows"; then
-  PATH_SEP=";"
-  BASIC_CHECK_PATHS_WINDOWS
-else
-  PATH_SEP=":"
-fi
+  if test "x$OPENJDK_TARGET_OS" = "xwindows"; then
+    PATH_SEP=";"
+    BASIC_CHECK_PATHS_WINDOWS
+  else
+    PATH_SEP=":"
+  fi
 
-AC_SUBST(SRC_ROOT)
-AC_SUBST(PATH_SEP)
-cd "$CURDIR"
+  AC_SUBST(SRC_ROOT)
+  AC_SUBST(PATH_SEP)
+  cd "$CURDIR"
 
-BASIC_FIXUP_PATH(SRC_ROOT)
-BASIC_FIXUP_PATH(CURDIR)
+  BASIC_FIXUP_PATH(SRC_ROOT)
+  BASIC_FIXUP_PATH(CURDIR)
 
-if test "x$OPENJDK_BUILD_OS" = "xsolaris"; then
+  if test "x$OPENJDK_BUILD_OS" = "xsolaris"; then
     # Add extra search paths on solaris for utilities like ar and as etc...
     PATH="$PATH:/usr/ccs/bin:/usr/sfw/bin:/opt/csw/bin"
-fi
+  fi
 
-# You can force the sys-root if the sys-root encoded into the cross compiler tools
-# is not correct.
-AC_ARG_WITH(sys-root, [AS_HELP_STRING([--with-sys-root],
-  [pass this sys-root to the compilers and tools (for cross-compiling)])])
+  # You can force the sys-root if the sys-root encoded into the cross compiler tools
+  # is not correct.
+  AC_ARG_WITH(sys-root, [AS_HELP_STRING([--with-sys-root],
+      [pass this sys-root to the compilers and tools (for cross-compiling)])])
 
-if test "x$with_sys_root" != x; then
-  SYS_ROOT=$with_sys_root
-else
-  SYS_ROOT=/
-fi
-AC_SUBST(SYS_ROOT)
+  if test "x$with_sys_root" != x; then
+    SYS_ROOT=$with_sys_root
+  else
+    SYS_ROOT=/
+  fi
+  AC_SUBST(SYS_ROOT)
 
-AC_ARG_WITH([tools-dir], [AS_HELP_STRING([--with-tools-dir],
-  [search this directory for compilers and tools (for cross-compiling)])], 
-  [TOOLS_DIR=$with_tools_dir]
-)
+  AC_ARG_WITH([tools-dir], [AS_HELP_STRING([--with-tools-dir],
+      [search this directory for compilers and tools (for cross-compiling)])],
+      [TOOLS_DIR=$with_tools_dir]
+  )
 
-AC_ARG_WITH([devkit], [AS_HELP_STRING([--with-devkit],
-  [use this directory as base for tools-dir and sys-root (for cross-compiling)])],
-  [
-    if test "x$with_sys_root" != x; then
-      AC_MSG_ERROR([Cannot specify both --with-devkit and --with-sys-root at the same time])
-    fi
-    BASIC_FIXUP_PATH([with_devkit])
-    BASIC_APPEND_TO_PATH([TOOLS_DIR],$with_devkit/bin)
-    if test -d "$with_devkit/$host_alias/libc"; then
-      SYS_ROOT=$with_devkit/$host_alias/libc
-    elif test -d "$with_devkit/$host/sys-root"; then
-      SYS_ROOT=$with_devkit/$host/sys-root
-    fi
-  ])
+  AC_ARG_WITH([devkit], [AS_HELP_STRING([--with-devkit],
+      [use this directory as base for tools-dir and sys-root (for cross-compiling)])],
+      [
+        if test "x$with_sys_root" != x; then
+          AC_MSG_ERROR([Cannot specify both --with-devkit and --with-sys-root at the same time])
+        fi
+        BASIC_FIXUP_PATH([with_devkit])
+        BASIC_APPEND_TO_PATH([TOOLS_DIR],$with_devkit/bin)
+        if test -d "$with_devkit/$host_alias/libc"; then
+          SYS_ROOT=$with_devkit/$host_alias/libc
+        elif test -d "$with_devkit/$host/sys-root"; then
+          SYS_ROOT=$with_devkit/$host/sys-root
+        fi
+      ])
 ])
 
 AC_DEFUN_ONCE([BASIC_SETUP_OUTPUT_DIR],
 [
 
-AC_ARG_WITH(conf-name, [AS_HELP_STRING([--with-conf-name],
-	[use this as the name of the configuration @<:@generated from important configuration options@:>@])],
-        [ CONF_NAME=${with_conf_name} ])
+  AC_ARG_WITH(conf-name, [AS_HELP_STRING([--with-conf-name],
+      [use this as the name of the configuration @<:@generated from important configuration options@:>@])],
+      [ CONF_NAME=${with_conf_name} ])
 
-# Test from where we are running configure, in or outside of src root.
-if test "x$CURDIR" = "x$SRC_ROOT" || test "x$CURDIR" = "x$SRC_ROOT/common" \
-        || test "x$CURDIR" = "x$SRC_ROOT/common/autoconf" \
-        || test "x$CURDIR" = "x$SRC_ROOT/common/makefiles" ; then
+  # Test from where we are running configure, in or outside of src root.
+  if test "x$CURDIR" = "x$SRC_ROOT" || test "x$CURDIR" = "x$SRC_ROOT/common" \
+      || test "x$CURDIR" = "x$SRC_ROOT/common/autoconf" \
+      || test "x$CURDIR" = "x$SRC_ROOT/common/makefiles" ; then
     # We are running configure from the src root.
     # Create a default ./build/target-variant-debuglevel output root.
     if test "x${CONF_NAME}" = x; then
-        CONF_NAME="${OPENJDK_TARGET_OS}-${OPENJDK_TARGET_CPU}-${JDK_VARIANT}-${ANDED_JVM_VARIANTS}-${DEBUG_LEVEL}"
+      CONF_NAME="${OPENJDK_TARGET_OS}-${OPENJDK_TARGET_CPU}-${JDK_VARIANT}-${ANDED_JVM_VARIANTS}-${DEBUG_LEVEL}"
     fi
     OUTPUT_ROOT="$SRC_ROOT/build/${CONF_NAME}"
     $MKDIR -p "$OUTPUT_ROOT"
     if test ! -d "$OUTPUT_ROOT"; then
-        AC_MSG_ERROR([Could not create build directory $OUTPUT_ROOT])
+      AC_MSG_ERROR([Could not create build directory $OUTPUT_ROOT])
     fi
-else
+  else
     # We are running configure from outside of the src dir.
     # Then use the current directory as output dir!
     # If configuration is situated in normal build directory, just use the build
     # directory name as configuration name, otherwise use the complete path.
     if test "x${CONF_NAME}" = x; then
-        CONF_NAME=`$ECHO $CURDIR | $SED -e "s!^${SRC_ROOT}/build/!!"`
+      CONF_NAME=`$ECHO $CURDIR | $SED -e "s!^${SRC_ROOT}/build/!!"`
     fi
     OUTPUT_ROOT="$CURDIR"
 
@@ -428,10 +428,10 @@ else
       # If we have a spec.gmk, we have run here before and we are OK. Otherwise, check for
       # other files
       files_present=`$LS $OUTPUT_ROOT`
-      # Configure has already touched config.log and confdefs.h in the current dir when this check 
+      # Configure has already touched config.log and confdefs.h in the current dir when this check
       # is performed.
       filtered_files=`$ECHO "$files_present" | $SED -e 's/config.log//g' -e 's/confdefs.h//g' -e 's/ //g' \
-                                             | $TR -d '\n'`
+      | $TR -d '\n'`
       if test "x$filtered_files" != x; then
         AC_MSG_NOTICE([Current directory is $CURDIR.])
         AC_MSG_NOTICE([Since this is not the source root, configure will output the configuration here])
@@ -443,46 +443,46 @@ else
         AC_MSG_ERROR([Will not continue creating configuration in $CURDIR])
       fi
     fi
-fi
-AC_MSG_CHECKING([what configuration name to use])
-AC_MSG_RESULT([$CONF_NAME])
+  fi
+  AC_MSG_CHECKING([what configuration name to use])
+  AC_MSG_RESULT([$CONF_NAME])
 
-BASIC_FIXUP_PATH(OUTPUT_ROOT)
+  BASIC_FIXUP_PATH(OUTPUT_ROOT)
 
-AC_SUBST(SPEC, $OUTPUT_ROOT/spec.gmk)
-AC_SUBST(CONF_NAME, $CONF_NAME)
-AC_SUBST(OUTPUT_ROOT, $OUTPUT_ROOT)
+  AC_SUBST(SPEC, $OUTPUT_ROOT/spec.gmk)
+  AC_SUBST(CONF_NAME, $CONF_NAME)
+  AC_SUBST(OUTPUT_ROOT, $OUTPUT_ROOT)
 
-# Most of the probed defines are put into config.h
-AC_CONFIG_HEADERS([$OUTPUT_ROOT/config.h:$AUTOCONF_DIR/config.h.in])
-# The spec.gmk file contains all variables for the make system.
-AC_CONFIG_FILES([$OUTPUT_ROOT/spec.gmk:$AUTOCONF_DIR/spec.gmk.in])
-# The hotspot-spec.gmk file contains legacy variables for the hotspot make system.
-AC_CONFIG_FILES([$OUTPUT_ROOT/hotspot-spec.gmk:$AUTOCONF_DIR/hotspot-spec.gmk.in])
-# The bootcycle-spec.gmk file contains support for boot cycle builds.
-AC_CONFIG_FILES([$OUTPUT_ROOT/bootcycle-spec.gmk:$AUTOCONF_DIR/bootcycle-spec.gmk.in])
-# The compare.sh is used to compare the build output to other builds.
-AC_CONFIG_FILES([$OUTPUT_ROOT/compare.sh:$AUTOCONF_DIR/compare.sh.in])
-# Spec.sh is currently used by compare-objects.sh
-AC_CONFIG_FILES([$OUTPUT_ROOT/spec.sh:$AUTOCONF_DIR/spec.sh.in])
-# The generated Makefile knows where the spec.gmk is and where the source is.
-# You can run make from the OUTPUT_ROOT, or from the top-level Makefile
-# which will look for generated configurations
-AC_CONFIG_FILES([$OUTPUT_ROOT/Makefile:$AUTOCONF_DIR/Makefile.in])
+  # Most of the probed defines are put into config.h
+  AC_CONFIG_HEADERS([$OUTPUT_ROOT/config.h:$AUTOCONF_DIR/config.h.in])
+  # The spec.gmk file contains all variables for the make system.
+  AC_CONFIG_FILES([$OUTPUT_ROOT/spec.gmk:$AUTOCONF_DIR/spec.gmk.in])
+  # The hotspot-spec.gmk file contains legacy variables for the hotspot make system.
+  AC_CONFIG_FILES([$OUTPUT_ROOT/hotspot-spec.gmk:$AUTOCONF_DIR/hotspot-spec.gmk.in])
+  # The bootcycle-spec.gmk file contains support for boot cycle builds.
+  AC_CONFIG_FILES([$OUTPUT_ROOT/bootcycle-spec.gmk:$AUTOCONF_DIR/bootcycle-spec.gmk.in])
+  # The compare.sh is used to compare the build output to other builds.
+  AC_CONFIG_FILES([$OUTPUT_ROOT/compare.sh:$AUTOCONF_DIR/compare.sh.in])
+  # Spec.sh is currently used by compare-objects.sh
+  AC_CONFIG_FILES([$OUTPUT_ROOT/spec.sh:$AUTOCONF_DIR/spec.sh.in])
+  # The generated Makefile knows where the spec.gmk is and where the source is.
+  # You can run make from the OUTPUT_ROOT, or from the top-level Makefile
+  # which will look for generated configurations
+  AC_CONFIG_FILES([$OUTPUT_ROOT/Makefile:$AUTOCONF_DIR/Makefile.in])
 
-# Save the arguments given to us
-echo "$CONFIGURE_COMMAND_LINE" > $OUTPUT_ROOT/configure-arguments
+  # Save the arguments given to us
+  echo "$CONFIGURE_COMMAND_LINE" > $OUTPUT_ROOT/configure-arguments
 ])
 
 AC_DEFUN_ONCE([BASIC_SETUP_LOGGING],
 [
-# Setup default logging of stdout and stderr to build.log in the output root.
-BUILD_LOG='$(OUTPUT_ROOT)/build.log'
-BUILD_LOG_PREVIOUS='$(OUTPUT_ROOT)/build.log.old'
-BUILD_LOG_WRAPPER='$(BASH) $(SRC_ROOT)/common/bin/logger.sh $(BUILD_LOG)'
-AC_SUBST(BUILD_LOG)
-AC_SUBST(BUILD_LOG_PREVIOUS)
-AC_SUBST(BUILD_LOG_WRAPPER)
+  # Setup default logging of stdout and stderr to build.log in the output root.
+  BUILD_LOG='$(OUTPUT_ROOT)/build.log'
+  BUILD_LOG_PREVIOUS='$(OUTPUT_ROOT)/build.log.old'
+  BUILD_LOG_WRAPPER='$(BASH) $(SRC_ROOT)/common/bin/logger.sh $(BUILD_LOG)'
+  AC_SUBST(BUILD_LOG)
+  AC_SUBST(BUILD_LOG_PREVIOUS)
+  AC_SUBST(BUILD_LOG_WRAPPER)
 ])
 
 
@@ -581,85 +581,85 @@ AC_DEFUN([BASIC_CHECK_GNU_MAKE],
 
 AC_DEFUN([BASIC_CHECK_FIND_DELETE],
 [
-    # Test if find supports -delete
-    AC_MSG_CHECKING([if find supports -delete])
-    FIND_DELETE="-delete"
+  # Test if find supports -delete
+  AC_MSG_CHECKING([if find supports -delete])
+  FIND_DELETE="-delete"
 
-    DELETEDIR=`$MKTEMP -d tmp.XXXXXXXXXX` || (echo Could not create temporary directory!; exit $?)
+  DELETEDIR=`$MKTEMP -d tmp.XXXXXXXXXX` || (echo Could not create temporary directory!; exit $?)
 
-    echo Hejsan > $DELETEDIR/TestIfFindSupportsDelete
+  echo Hejsan > $DELETEDIR/TestIfFindSupportsDelete
 
-    TEST_DELETE=`$FIND "$DELETEDIR" -name TestIfFindSupportsDelete $FIND_DELETE 2>&1`
-    if test -f $DELETEDIR/TestIfFindSupportsDelete; then
-        # No, it does not.
-        rm $DELETEDIR/TestIfFindSupportsDelete
-        FIND_DELETE="-exec rm \{\} \+"
-        AC_MSG_RESULT([no])    
-    else
-        AC_MSG_RESULT([yes])    
-    fi
-    rmdir $DELETEDIR
-    AC_SUBST(FIND_DELETE)
+  TEST_DELETE=`$FIND "$DELETEDIR" -name TestIfFindSupportsDelete $FIND_DELETE 2>&1`
+  if test -f $DELETEDIR/TestIfFindSupportsDelete; then
+    # No, it does not.
+    rm $DELETEDIR/TestIfFindSupportsDelete
+    FIND_DELETE="-exec rm \{\} \+"
+    AC_MSG_RESULT([no])
+  else
+    AC_MSG_RESULT([yes])
+  fi
+  rmdir $DELETEDIR
+  AC_SUBST(FIND_DELETE)
 ])
 
 AC_DEFUN_ONCE([BASIC_SETUP_COMPLEX_TOOLS],
 [
-BASIC_CHECK_GNU_MAKE
+  BASIC_CHECK_GNU_MAKE
 
-BASIC_CHECK_FIND_DELETE
+  BASIC_CHECK_FIND_DELETE
 
-# These tools might not be installed by default, 
-# need hint on how to install them.
-BASIC_REQUIRE_PROG(UNZIP, unzip)
-BASIC_REQUIRE_PROG(ZIP, zip)
+  # These tools might not be installed by default,
+  # need hint on how to install them.
+  BASIC_REQUIRE_PROG(UNZIP, unzip)
+  BASIC_REQUIRE_PROG(ZIP, zip)
 
-# Non-required basic tools
+  # Non-required basic tools
 
-AC_PATH_PROG(LDD, ldd)
-if test "x$LDD" = "x"; then
+  AC_PATH_PROG(LDD, ldd)
+  if test "x$LDD" = "x"; then
     # List shared lib dependencies is used for
     # debug output and checking for forbidden dependencies.
     # We can build without it.
     LDD="true"
-fi
-AC_PATH_PROG(OTOOL, otool)
-if test "x$OTOOL" = "x"; then
-   OTOOL="true"
-fi
-AC_PATH_PROGS(READELF, [readelf greadelf])
-AC_PATH_PROG(HG, hg)
-AC_PATH_PROG(STAT, stat)
-AC_PATH_PROG(TIME, time)
-# Check if it's GNU time
-IS_GNU_TIME=`$TIME --version 2>&1 | $GREP 'GNU time'`
-if test "x$IS_GNU_TIME" != x; then
-  IS_GNU_TIME=yes
-else
-  IS_GNU_TIME=no
-fi
-AC_SUBST(IS_GNU_TIME)
+  fi
+  AC_PATH_PROG(OTOOL, otool)
+  if test "x$OTOOL" = "x"; then
+    OTOOL="true"
+  fi
+  AC_PATH_PROGS(READELF, [readelf greadelf])
+  AC_PATH_PROG(HG, hg)
+  AC_PATH_PROG(STAT, stat)
+  AC_PATH_PROG(TIME, time)
+  # Check if it's GNU time
+  IS_GNU_TIME=`$TIME --version 2>&1 | $GREP 'GNU time'`
+  if test "x$IS_GNU_TIME" != x; then
+    IS_GNU_TIME=yes
+  else
+    IS_GNU_TIME=no
+  fi
+  AC_SUBST(IS_GNU_TIME)
 
-if test "x$OPENJDK_TARGET_OS" = "xwindows"; then
-  BASIC_REQUIRE_PROG(COMM, comm)
-fi
+  if test "x$OPENJDK_TARGET_OS" = "xwindows"; then
+    BASIC_REQUIRE_PROG(COMM, comm)
+  fi
 
-if test "x$OPENJDK_TARGET_OS" = "xmacosx"; then
-  BASIC_REQUIRE_PROG(XATTR, xattr)
-  AC_PATH_PROG(CODESIGN, codesign)
-  if test "x$CODESIGN" != "x"; then
-    # Verify that the openjdk_codesign certificate is present
-    AC_MSG_CHECKING([if openjdk_codesign certificate is present])
-    rm -f codesign-testfile
-    touch codesign-testfile
-    codesign -s openjdk_codesign codesign-testfile 2>&AS_MESSAGE_LOG_FD >&AS_MESSAGE_LOG_FD || CODESIGN=
-    rm -f codesign-testfile
-    if test "x$CODESIGN" = x; then
-      AC_MSG_RESULT([no])
-    else
-      AC_MSG_RESULT([yes])
+  if test "x$OPENJDK_TARGET_OS" = "xmacosx"; then
+    BASIC_REQUIRE_PROG(XATTR, xattr)
+    AC_PATH_PROG(CODESIGN, codesign)
+    if test "x$CODESIGN" != "x"; then
+      # Verify that the openjdk_codesign certificate is present
+      AC_MSG_CHECKING([if openjdk_codesign certificate is present])
+      rm -f codesign-testfile
+      touch codesign-testfile
+      codesign -s openjdk_codesign codesign-testfile 2>&AS_MESSAGE_LOG_FD >&AS_MESSAGE_LOG_FD || CODESIGN=
+      rm -f codesign-testfile
+      if test "x$CODESIGN" = x; then
+        AC_MSG_RESULT([no])
+      else
+        AC_MSG_RESULT([yes])
+      fi
     fi
   fi
-fi
 ])
 
 # Check if build directory is on local disk. If not possible to determine,
@@ -669,8 +669,8 @@ fi
 # Argument 3: what to do otherwise (remote disk or failure)
 AC_DEFUN([BASIC_CHECK_DIR_ON_LOCAL_DISK],
 [
-	# df -l lists only local disks; if the given directory is not found then
-	# a non-zero exit code is given
+  # df -l lists only local disks; if the given directory is not found then
+  # a non-zero exit code is given
   if test "x$DF" = x; then
     if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
       # msys does not have df; use Windows "net use" instead.
@@ -707,32 +707,30 @@ AC_DEFUN_ONCE([BASIC_CHECK_SRC_PERMS],
 
 AC_DEFUN_ONCE([BASIC_TEST_USABILITY_ISSUES],
 [
+  AC_MSG_CHECKING([if build directory is on local disk])
+  BASIC_CHECK_DIR_ON_LOCAL_DISK($OUTPUT_ROOT,
+      [OUTPUT_DIR_IS_LOCAL="yes"],
+      [OUTPUT_DIR_IS_LOCAL="no"])
+  AC_MSG_RESULT($OUTPUT_DIR_IS_LOCAL)
 
-AC_MSG_CHECKING([if build directory is on local disk])
-BASIC_CHECK_DIR_ON_LOCAL_DISK($OUTPUT_ROOT,
-  [OUTPUT_DIR_IS_LOCAL="yes"],
-  [OUTPUT_DIR_IS_LOCAL="no"])
-AC_MSG_RESULT($OUTPUT_DIR_IS_LOCAL)
+  BASIC_CHECK_SRC_PERMS
 
-BASIC_CHECK_SRC_PERMS
+  # Check if the user has any old-style ALT_ variables set.
+  FOUND_ALT_VARIABLES=`env | grep ^ALT_`
 
-# Check if the user has any old-style ALT_ variables set.
-FOUND_ALT_VARIABLES=`env | grep ^ALT_`
+  # Before generating output files, test if they exist. If they do, this is a reconfigure.
+  # Since we can't properly handle the dependencies for this, warn the user about the situation
+  if test -e $OUTPUT_ROOT/spec.gmk; then
+    IS_RECONFIGURE=yes
+  else
+    IS_RECONFIGURE=no
+  fi
 
-# Before generating output files, test if they exist. If they do, this is a reconfigure.
-# Since we can't properly handle the dependencies for this, warn the user about the situation
-if test -e $OUTPUT_ROOT/spec.gmk; then
-  IS_RECONFIGURE=yes
-else
-  IS_RECONFIGURE=no
-fi
-
-if test -e $SRC_ROOT/build/.hide-configure-performance-hints; then
-  HIDE_PERFORMANCE_HINTS=yes
-else
-  HIDE_PERFORMANCE_HINTS=no
-  # Hide it the next time around...
-  $TOUCH $SRC_ROOT/build/.hide-configure-performance-hints > /dev/null 2>&1
-fi
-
+  if test -e $SRC_ROOT/build/.hide-configure-performance-hints; then
+    HIDE_PERFORMANCE_HINTS=yes
+  else
+    HIDE_PERFORMANCE_HINTS=no
+    # Hide it the next time around...
+    $TOUCH $SRC_ROOT/build/.hide-configure-performance-hints > /dev/null 2>&1
+  fi
 ])

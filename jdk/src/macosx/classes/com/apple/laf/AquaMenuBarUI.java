@@ -73,8 +73,9 @@ public class AquaMenuBarUI extends BasicMenuBarUI implements ScreenMenuBarProvid
 
     public Dimension getPreferredSize(final JComponent c) {
         if (isScreenMenuBar((JMenuBar)c)) {
-            if (setScreenMenuBar((JFrame)(c.getTopLevelAncestor()))) ;
-            return new Dimension(0, 0);
+            if (setScreenMenuBar((JFrame)(c.getTopLevelAncestor()))) {
+                return new Dimension(0, 0);
+            }
         }
         return null;
     }
