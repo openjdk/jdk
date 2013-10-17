@@ -892,10 +892,24 @@ void InstructionPrinter::do_ProfileCall(ProfileCall* x) {
   if (x->known_holder() != NULL) {
     output()->print(", ");
     print_klass(x->known_holder());
+    output()->print(" ");
+  }
+  for (int i = 0; i < x->nb_profiled_args(); i++) {
+    if (i > 0) output()->print(", ");
+    print_value(x->profiled_arg_at(i));
+    if (x->arg_needs_null_check(i)) {
+      output()->print(" [NC]");
+    }
   }
   output()->put(')');
 }
 
+void InstructionPrinter::do_ProfileReturnType(ProfileReturnType* x) {
+  output()->print("profile ret type ");
+  print_value(x->ret());
+  output()->print(" %s.%s", x->method()->holder()->name()->as_utf8(), x->method()->name()->as_utf8());
+  output()->put(')');
+}
 void InstructionPrinter::do_ProfileInvoke(ProfileInvoke* x) {
   output()->print("profile_invoke ");
   output()->print(" %s.%s", x->inlinee()->holder()->name()->as_utf8(), x->inlinee()->name()->as_utf8());
