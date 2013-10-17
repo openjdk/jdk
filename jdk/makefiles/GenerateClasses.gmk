@@ -53,7 +53,7 @@ $(eval $(call SetupJavaCompilation,BUILD_BOOTSTRAP_RMIC, \
 ##########################################################################################
 
 BTRMIC_CP := $(CORBA_OUTPUTDIR)/btjars/btcorba.jar$(PATH_SEP)$(JDK_OUTPUTDIR)/btclasses_rmic$(PATH_SEP)$(BOOTSTRAP_JAVAC_JAR)
-BTRMIC_ARGS := "-Xbootclasspath/p:$(BTRMIC_CP)" -cp $(BTRMIC_CP)
+BTRMIC_ARGS := "-Xbootclasspath/p:$(BTRMIC_CP)" -cp "$(BTRMIC_CP)"
 RMIC := $(JAVA) $(BTRMIC_ARGS) sun.rmi.rmic.Main
 
 CLASSES_DIR := $(JDK_OUTPUTDIR)/classes
