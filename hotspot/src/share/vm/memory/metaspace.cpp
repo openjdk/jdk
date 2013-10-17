@@ -52,9 +52,6 @@ typedef BinaryTreeDictionary<Metachunk, FreeList> ChunkTreeDictionary;
 // Set this constant to enable slow integrity checking of the free chunk lists
 const bool metaspace_slow_verify = false;
 
-// Parameters for stress mode testing
-const uint metadata_deallocate_a_lot_block = 10;
-const uint metadata_deallocate_a_lock_chunk = 3;
 size_t const allocation_from_dictionary_limit = 4 * K;
 
 MetaWord* last_allocated = 0;
@@ -149,7 +146,6 @@ class ChunkManager : public CHeapObj<mtInternal> {
 
   // add or delete (return) a chunk to the global freelist.
   Metachunk* chunk_freelist_allocate(size_t word_size);
-  void chunk_freelist_deallocate(Metachunk* chunk);
 
   // Map a size to a list index assuming that there are lists
   // for special, small, medium, and humongous chunks.
@@ -183,9 +179,7 @@ class ChunkManager : public CHeapObj<mtInternal> {
   // Returns the list for the given chunk word size.
   ChunkList* find_free_chunks_list(size_t word_size);
 
-  // Add and remove from a list by size.  Selects
-  // list based on size of chunk.
-  void free_chunks_put(Metachunk* chuck);
+  // Remove from a list by size.  Selects list based on size of chunk.
   Metachunk* free_chunks_get(size_t chunk_word_size);
 
   // Debug support
@@ -533,44 +527,16 @@ class VirtualSpaceList : public CHeapObj<mtClass> {
 
 class Metadebug : AllStatic {
   // Debugging support for Metaspaces
-  static int _deallocate_block_a_lot_count;
-  static int _deallocate_chunk_a_lot_count;
   static int _allocation_fail_alot_count;
 
  public:
-  static int deallocate_block_a_lot_count() {
-    return _deallocate_block_a_lot_count;
-  }
-  static void set_deallocate_block_a_lot_count(int v) {
-    _deallocate_block_a_lot_count = v;
-  }
-  static void inc_deallocate_block_a_lot_count() {
-    _deallocate_block_a_lot_count++;
-  }
-  static int deallocate_chunk_a_lot_count() {
-    return _deallocate_chunk_a_lot_count;
-  }
-  static void reset_deallocate_chunk_a_lot_count() {
-    _deallocate_chunk_a_lot_count = 1;
-  }
-  static void inc_deallocate_chunk_a_lot_count() {
-    _deallocate_chunk_a_lot_count++;
-  }
 
   static void init_allocation_fail_alot_count();
 #ifdef ASSERT
   static bool test_metadata_failure();
 #endif
-
-  static void deallocate_chunk_a_lot(SpaceManager* sm,
-                                     size_t chunk_word_size);
-  static void deallocate_block_a_lot(SpaceManager* sm,
-                                     size_t chunk_word_size);
-
 };
 
-int Metadebug::_deallocate_block_a_lot_count = 0;
-int Metadebug::_deallocate_chunk_a_lot_count = 0;
 int Metadebug::_allocation_fail_alot_count = 0;
 
 //  SpaceManager - used by Metaspace to handle allocations
@@ -1534,54 +1500,6 @@ void MetaspaceGC::compute_new_size() {
 
 // Metadebug methods
 
-void Metadebug::deallocate_chunk_a_lot(SpaceManager* sm,
-                                       size_t chunk_word_size){
-#ifdef ASSERT
-  VirtualSpaceList* vsl = sm->vs_list();
-  if (MetaDataDeallocateALot &&
-      Metadebug::deallocate_chunk_a_lot_count() % MetaDataDeallocateALotInterval == 0 ) {
-    Metadebug::reset_deallocate_chunk_a_lot_count();
-    for (uint i = 0; i < metadata_deallocate_a_lock_chunk; i++) {
-      Metachunk* dummy_chunk = vsl->current_virtual_space()->take_from_committed(chunk_word_size);
-      if (dummy_chunk == NULL) {
-        break;
-      }
-      sm->chunk_manager()->chunk_freelist_deallocate(dummy_chunk);
-
-      if (TraceMetadataChunkAllocation && Verbose) {
-        gclog_or_tty->print("Metadebug::deallocate_chunk_a_lot: %d) ",
-                               sm->sum_count_in_chunks_in_use());
-        dummy_chunk->print_on(gclog_or_tty);
-        gclog_or_tty->print_cr("  Free chunks total %d  count %d",
-                               sm->chunk_manager()->free_chunks_total_words(),
-                               sm->chunk_manager()->free_chunks_count());
-      }
-    }
-  } else {
-    Metadebug::inc_deallocate_chunk_a_lot_count();
-  }
-#endif
-}
-
-void Metadebug::deallocate_block_a_lot(SpaceManager* sm,
-                                       size_t raw_word_size){
-#ifdef ASSERT
-  if (MetaDataDeallocateALot &&
-        Metadebug::deallocate_block_a_lot_count() % MetaDataDeallocateALotInterval == 0 ) {
-    Metadebug::set_deallocate_block_a_lot_count(0);
-    for (uint i = 0; i < metadata_deallocate_a_lot_block; i++) {
-      MetaWord* dummy_block = sm->allocate_work(raw_word_size);
-      if (dummy_block == 0) {
-        break;
-      }
-      sm->deallocate(dummy_block, raw_word_size);
-    }
-  } else {
-    Metadebug::inc_deallocate_block_a_lot_count();
-  }
-#endif
-}
-
 void Metadebug::init_allocation_fail_alot_count() {
   if (MetadataAllocationFailALot) {
     _allocation_fail_alot_count =
@@ -1723,31 +1641,6 @@ ChunkList* ChunkManager::find_free_chunks_list(size_t word_size) {
   ChunkIndex index = list_index(word_size);
   assert(index < HumongousIndex, "No humongous list");
   return free_chunks(index);
-}
-
-void ChunkManager::free_chunks_put(Metachunk* chunk) {
-  assert_lock_strong(SpaceManager::expand_lock());
-  ChunkList* free_list = find_free_chunks_list(chunk->word_size());
-  chunk->set_next(free_list->head());
-  free_list->set_head(chunk);
-  // chunk is being returned to the chunk free list
-  inc_free_chunks_total(chunk->word_size());
-  slow_locked_verify();
-}
-
-void ChunkManager::chunk_freelist_deallocate(Metachunk* chunk) {
-  // The deallocation of a chunk originates in the freelist
-  // manangement code for a Metaspace and does not hold the
-  // lock.
-  assert(chunk != NULL, "Deallocating NULL");
-  assert_lock_strong(SpaceManager::expand_lock());
-  slow_locked_verify();
-  if (TraceMetadataChunkAllocation) {
-    gclog_or_tty->print_cr("ChunkManager::chunk_freelist_deallocate: chunk "
-                           PTR_FORMAT "  size " SIZE_FORMAT,
-                           chunk, chunk->word_size());
-  }
-  free_chunks_put(chunk);
 }
 
 Metachunk* ChunkManager::free_chunks_get(size_t word_size) {
@@ -2068,10 +1961,6 @@ MetaWord* SpaceManager::grow_and_allocate(size_t word_size) {
   // Get another chunk out of the virtual space
   size_t grow_chunks_by_words = calc_chunk_size(word_size);
   Metachunk* next = get_new_chunk(word_size, grow_chunks_by_words);
-
-  if (next != NULL) {
-    Metadebug::deallocate_chunk_a_lot(this, grow_chunks_by_words);
-  }
 
   MetaWord* mem = NULL;
 
@@ -2417,7 +2306,6 @@ MetaWord* SpaceManager::allocate(size_t word_size) {
   if (p == NULL) {
     p = allocate_work(raw_word_size);
   }
-  Metadebug::deallocate_block_a_lot(this, raw_word_size);
 
   return p;
 }
