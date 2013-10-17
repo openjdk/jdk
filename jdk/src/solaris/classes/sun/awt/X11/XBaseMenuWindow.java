@@ -116,6 +116,8 @@ abstract public class XBaseMenuWindow extends XWindow {
     protected Point grabInputPoint = null;
     protected boolean hasPointerMoved = false;
 
+    private AppContext disposeAppContext;
+
     /************************************************
      *
      * Mapping data
@@ -174,6 +176,8 @@ abstract public class XBaseMenuWindow extends XWindow {
     XBaseMenuWindow() {
         super(new XCreateWindowParams(new Object[] {
             DELAYED, Boolean.TRUE}));
+
+        disposeAppContext = AppContext.getAppContext();
     }
 
     /************************************************
@@ -904,12 +908,12 @@ abstract public class XBaseMenuWindow extends XWindow {
      */
     public void dispose() {
         setDisposed(true);
-        InvocationEvent ev = new InvocationEvent(target, new Runnable() {
+
+        SunToolkit.invokeLaterOnAppContext(disposeAppContext, new Runnable()  {
             public void run() {
                 doDispose();
             }
         });
-        super.postEvent(ev);
     }
 
     /**
@@ -923,7 +927,6 @@ abstract public class XBaseMenuWindow extends XWindow {
         if (oldData != null) {
             oldData.invalidate();
         }
-        XToolkit.targetDisposedPeer(target, this);
         destroy();
     }
 

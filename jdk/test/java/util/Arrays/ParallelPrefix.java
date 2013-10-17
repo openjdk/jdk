@@ -22,7 +22,7 @@
  */
 
 /**
- * @test
+ * @test 8014076 8025067
  * @summary unit test for Arrays.ParallelPrefix().
  * @author Tristan Yan
  * @run testng ParallelPrefix
@@ -54,30 +54,44 @@ public class ParallelPrefix {
     private final static int LARGE_ARRAY_SIZE = 1 << 12;
 
     private final static int[] ARRAY_SIZE_COLLECTION  = new int[]{
-        SMALL_ARRAY_SIZE, THRESHOLD_ARRAY_SIZE,MEDIUM_ARRAY_SIZE, LARGE_ARRAY_SIZE};
+        SMALL_ARRAY_SIZE,
+        THRESHOLD_ARRAY_SIZE,
+        MEDIUM_ARRAY_SIZE,
+        LARGE_ARRAY_SIZE
+    };
 
     @DataProvider
     public static Object[][] intSet(){
-        return genericData(size -> IntStream.range(0, size).toArray(), new IntBinaryOperator[]{Integer::sum, Integer::min});
+        return genericData(size -> IntStream.range(0, size).toArray(),
+                new IntBinaryOperator[]{
+                    Integer::sum,
+                    Integer::min});
     }
 
     @DataProvider
     public static Object[][] longSet(){
-        return genericData(size -> LongStream.range(0, size).toArray(), new LongBinaryOperator[]{Long::sum, Long::min});
+        return genericData(size -> LongStream.range(0, size).toArray(),
+                new LongBinaryOperator[]{
+                    Long::sum,
+                    Long::min});
     }
 
     @DataProvider
     public static Object[][] doubleSet(){
         return genericData(size -> IntStream.range(0, size).mapToDouble(i -> (double)i).toArray(),
-                new DoubleBinaryOperator[]{Double::sum, Double::min});
+                new DoubleBinaryOperator[]{
+                    Double::sum,
+                    Double::min});
     }
 
     @DataProvider
     public static Object[][] stringSet(){
         Function<Integer, String[]> stringsFunc = size ->
                 IntStream.range(0, size).mapToObj(Integer::toString).toArray(String[]::new);
-        BinaryOperator<String> cancatBop = String::concat;
-        return genericData(stringsFunc,  new BinaryOperator[]{cancatBop});
+        BinaryOperator<String> concat = String::concat;
+        return genericData(stringsFunc,
+                (BinaryOperator<String>[]) new BinaryOperator[]{
+                    concat });
     }
 
     private static <T, OPS> Object[][] genericData(Function<Integer, T> generateFunc, OPS[] ops) {
@@ -160,6 +174,124 @@ public class ParallelPrefix {
         String[] parallelRangeResult = Arrays.copyOfRange(data, fromIndex, toIndex);
         Arrays.parallelPrefix(parallelRangeResult, op);
         assertEquals(parallelRangeResult, Arrays.copyOfRange(sequentialResult, fromIndex, toIndex));
+    }
+
+    @Test
+    public void testNPEs() {
+        // null array
+        assertThrows( () -> Arrays.parallelPrefix((int[]) null, Integer::max),
+                NullPointerException.class, "should throw NPE");
+        assertThrows( () -> Arrays.parallelPrefix((long []) null, Long::max),
+                NullPointerException.class, "should throw NPE");
+        assertThrows( () -> Arrays.parallelPrefix((double []) null, Double::max),
+                NullPointerException.class, "should throw NPE");
+        assertThrows( () -> Arrays.parallelPrefix((String []) null, String::concat),
+                NullPointerException.class, "should throw NPE");
+
+        // null array w/ range
+        assertThrows( () -> Arrays.parallelPrefix((int[]) null, 0, 0, Integer::max),
+                NullPointerException.class, "should throw NPE");
+        assertThrows( () -> Arrays.parallelPrefix((long []) null, 0, 0, Long::max),
+                NullPointerException.class, "should throw NPE");
+        assertThrows( () -> Arrays.parallelPrefix((double []) null, 0, 0, Double::max),
+                NullPointerException.class, "should throw NPE");
+        assertThrows( () -> Arrays.parallelPrefix((String []) null, 0, 0, String::concat),
+                NullPointerException.class, "should throw NPE");
+
+        // null op
+        assertThrows( () -> Arrays.parallelPrefix(new int[] {}, null),
+                NullPointerException.class, "should throw NPE");
+        assertThrows( () -> Arrays.parallelPrefix(new long[] {}, null),
+                NullPointerException.class, "should throw NPE");
+        assertThrows( () -> Arrays.parallelPrefix(new double[] {}, null),
+                NullPointerException.class, "should throw NPE");
+        assertThrows( () -> Arrays.parallelPrefix(new String[] {}, null),
+                NullPointerException.class, "should throw NPE");
+
+        // null op w/ range
+        assertThrows( () -> Arrays.parallelPrefix(new int[] {}, 0, 0, null),
+                NullPointerException.class, "should throw NPE");
+        assertThrows( () -> Arrays.parallelPrefix(new long[] {}, 0, 0, null),
+                NullPointerException.class, "should throw NPE");
+        assertThrows( () -> Arrays.parallelPrefix(new double[] {}, 0, 0, null),
+                NullPointerException.class, "should throw NPE");
+        assertThrows( () -> Arrays.parallelPrefix(new String[] {}, 0, 0, null),
+                NullPointerException.class, "should throw NPE");
+    }
+
+    @Test
+    public void testIAEs() {
+        assertThrows( () -> Arrays.parallelPrefix(new int[] {}, 1, 0, Integer::max),
+                IllegalArgumentException.class, "should throw IAE");
+        assertThrows( () -> Arrays.parallelPrefix(new long[] {}, 1, 0, Long::max),
+                IllegalArgumentException.class, "should throw IAE");
+        assertThrows( () -> Arrays.parallelPrefix(new double[] {}, 1, 0, Double::max),
+                IllegalArgumentException.class, "should throw IAE");
+        assertThrows( () -> Arrays.parallelPrefix(new String[] {}, 1, 0, String::concat),
+                IllegalArgumentException.class, "should throw IAE");
+    }
+
+    @Test
+    public void testAIOBEs() {
+        // bad "fromIndex"
+        assertThrows( () -> Arrays.parallelPrefix(new int[] {}, -1, 0, Integer::max),
+                ArrayIndexOutOfBoundsException.class, "should throw AIOBE");
+        assertThrows( () -> Arrays.parallelPrefix(new long[] {}, -1, 0, Long::max),
+                ArrayIndexOutOfBoundsException.class, "should throw AIOBE");
+        assertThrows( () -> Arrays.parallelPrefix(new double[] {}, -1, 0, Double::max),
+                ArrayIndexOutOfBoundsException.class, "should throw AIOBE");
+        assertThrows( () -> Arrays.parallelPrefix(new String[] {}, -1, 0, String::concat),
+                ArrayIndexOutOfBoundsException.class, "should throw AIOBE");
+
+        // bad "toIndex"
+        assertThrows( () -> Arrays.parallelPrefix(new int[] {}, 0, 1, Integer::max),
+                ArrayIndexOutOfBoundsException.class, "should throw AIOBE");
+        assertThrows( () -> Arrays.parallelPrefix(new long[] {}, 0, 1, Long::max),
+                ArrayIndexOutOfBoundsException.class, "should throw AIOBE");
+        assertThrows( () -> Arrays.parallelPrefix(new double[] {}, 0, 1, Double::max),
+                ArrayIndexOutOfBoundsException.class, "should throw AIOBE");
+        assertThrows( () -> Arrays.parallelPrefix(new String[] {}, 0, 1, String::concat),
+                ArrayIndexOutOfBoundsException.class, "should throw AIOBE");
+    }
+
+    // "library" code
+
+    public interface Thrower<T extends Throwable> {
+
+        public void run() throws T;
+    }
+
+
+    public static <T extends Throwable> void assertThrows(Thrower<T> thrower, Class<T> throwable) {
+        assertThrows(thrower, throwable, null);
+    }
+
+    public static <T extends Throwable> void assertThrows(Thrower<T> thrower, Class<T> throwable, String message) {
+        Throwable thrown;
+        try {
+            thrower.run();
+            thrown = null;
+        } catch (Throwable caught) {
+            thrown = caught;
+        }
+
+        assertInstance(thrown, throwable,
+            ((null != message) ? message : "") +
+            " Failed to throw " + throwable.getCanonicalName());
+    }
+
+    public static <T extends Throwable> void assertThrows(Class<T> throwable, String message, Thrower<T>... throwers) {
+        for(Thrower<T> thrower : throwers) {
+            assertThrows(thrower, throwable, message);
+        }
+    }
+
+    public static void assertInstance(Object actual, Class<?> expected) {
+        assertInstance(expected.isInstance(actual), null);
+    }
+
+    public static void assertInstance(Object actual, Class<?> expected, String message) {
+        assertTrue(expected.isInstance(actual), message);
     }
 }
 

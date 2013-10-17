@@ -141,10 +141,6 @@ public class NullComponentPeer implements LightweightPeer,
         return new Dimension(1,1);
     }
 
-    public java.awt.Toolkit getToolkit() {
-        return null;
-    }
-
     public ColorModel getColorModel() {
         return null;
     }

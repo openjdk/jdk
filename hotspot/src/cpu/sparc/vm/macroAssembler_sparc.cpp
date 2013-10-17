@@ -3752,7 +3752,7 @@ static void generate_dirty_card_log_enqueue(jbyte* byte_map_base) {
 #define __ masm.
   address start = __ pc();
 
-  Label not_already_dirty, restart, refill;
+  Label not_already_dirty, restart, refill, young_card;
 
 #ifdef _LP64
   __ srlx(O0, CardTableModRefBS::card_shift, O0);
@@ -3763,9 +3763,15 @@ static void generate_dirty_card_log_enqueue(jbyte* byte_map_base) {
   __ set(addrlit, O1); // O1 := <card table base>
   __ ldub(O0, O1, O2); // O2 := [O0 + O1]
 
+  __ cmp_and_br_short(O2, G1SATBCardTableModRefBS::g1_young_card_val(), Assembler::equal, Assembler::pt, young_card);
+
+  __ membar(Assembler::Membar_mask_bits(Assembler::StoreLoad));
+  __ ldub(O0, O1, O2); // O2 := [O0 + O1]
+
   assert(CardTableModRefBS::dirty_card_val() == 0, "otherwise check this code");
   __ cmp_and_br_short(O2, G0, Assembler::notEqual, Assembler::pt, not_already_dirty);
 
+  __ bind(young_card);
   // We didn't take the branch, so we're already dirty: return.
   // Use return-from-leaf
   __ retl();

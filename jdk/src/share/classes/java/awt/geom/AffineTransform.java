@@ -47,7 +47,7 @@ import java.beans.ConstructorProperties;
  *      [ 1 ]   [   0    0    1   ] [ 1 ]   [         1         ]
  * </pre>
  * <p>
- * <a name="quadrantapproximation"><h4>Handling 90-Degree Rotations</h4></a>
+ * <a name="quadrantapproximation"></a><h4>Handling 90-Degree Rotations</h4>
  * <p>
  * In some variations of the <code>rotate</code> methods in the
  * <code>AffineTransform</code> class, a double-precision argument
