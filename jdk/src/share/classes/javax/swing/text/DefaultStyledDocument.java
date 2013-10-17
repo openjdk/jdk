@@ -61,7 +61,7 @@ import static sun.swing.SwingUtilities2.IMPLIED_CR;
  * future Swing releases. The current serialization support is
  * appropriate for short term storage or RMI between applications running
  * the same version of Swing.  As of 1.4, support for long term storage
- * of all JavaBeans<sup><font size="-2">TM</font></sup>
+ * of all JavaBeans&trade;
  * has been added to the <code>java.beans</code> package.
  * Please see {@link java.beans.XMLEncoder}.
  *
@@ -173,7 +173,7 @@ public class DefaultStyledDocument extends AbstractDocument implements StyledDoc
      * <p>
      * This method is thread safe, although most Swing methods
      * are not. Please see
-     * <A HREF="http://download.oracle.com/javase/tutorial/uiswing/concurrency/index.html">Concurrency
+     * <A HREF="http://docs.oracle.com/javase/tutorial/uiswing/concurrency/index.html">Concurrency
      * in Swing</A> for more information.
      *
      * @param offset the starting offset &gt;= 0
@@ -426,7 +426,7 @@ public class DefaultStyledDocument extends AbstractDocument implements StyledDoc
      * <p>
      * This method is thread safe, although most Swing methods
      * are not. Please see
-     * <A HREF="http://download.oracle.com/javase/tutorial/uiswing/concurrency/index.html">Concurrency
+     * <A HREF="http://docs.oracle.com/javase/tutorial/uiswing/concurrency/index.html">Concurrency
      * in Swing</A> for more information.
      *
      * @param pos the offset from the start of the document &gt;= 0
@@ -483,7 +483,7 @@ public class DefaultStyledDocument extends AbstractDocument implements StyledDoc
      * <p>
      * This method is thread safe, although most Swing methods
      * are not. Please see
-     * <A HREF="http://download.oracle.com/javase/tutorial/uiswing/concurrency/index.html">Concurrency
+     * <A HREF="http://docs.oracle.com/javase/tutorial/uiswing/concurrency/index.html">Concurrency
      * in Swing</A> for more information.
      *
      * @param offset the offset in the document &gt;= 0
@@ -536,7 +536,7 @@ public class DefaultStyledDocument extends AbstractDocument implements StyledDoc
      * <p>
      * This method is thread safe, although most Swing methods
      * are not. Please see
-     * <A HREF="http://download.oracle.com/javase/tutorial/uiswing/concurrency/index.html">Concurrency
+     * <A HREF="http://docs.oracle.com/javase/tutorial/uiswing/concurrency/index.html">Concurrency
      * in Swing</A> for more information.
      *
      * @param offset the offset into the paragraph &gt;= 0
@@ -1124,7 +1124,7 @@ public class DefaultStyledDocument extends AbstractDocument implements StyledDoc
      * future Swing releases. The current serialization support is
      * appropriate for short term storage or RMI between applications running
      * the same version of Swing.  As of 1.4, support for long term storage
-     * of all JavaBeans<sup><font size="-2">TM</font></sup>
+     * of all JavaBeans&trade;
      * has been added to the <code>java.beans</code> package.
      * Please see {@link java.beans.XMLEncoder}.
      */
@@ -1155,7 +1155,7 @@ public class DefaultStyledDocument extends AbstractDocument implements StyledDoc
      * future Swing releases. The current serialization support is
      * appropriate for short term storage or RMI between applications running
      * the same version of Swing.  As of 1.4, support for long term storage
-     * of all JavaBeans<sup><font size="-2">TM</font></sup>
+     * of all JavaBeans&trade;
      * has been added to the <code>java.beans</code> package.
      * Please see {@link java.beans.XMLEncoder}.
      */
@@ -1390,7 +1390,7 @@ public class DefaultStyledDocument extends AbstractDocument implements StyledDoc
      * future Swing releases. The current serialization support is
      * appropriate for short term storage or RMI between applications running
      * the same version of Swing.  As of 1.4, support for long term storage
-     * of all JavaBeans<sup><font size="-2">TM</font></sup>
+     * of all JavaBeans&trade;
      * has been added to the <code>java.beans</code> package.
      * Please see {@link java.beans.XMLEncoder}.
      */

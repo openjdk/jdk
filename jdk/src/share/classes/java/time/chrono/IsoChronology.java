@@ -120,7 +120,7 @@ import java.util.Objects;
  *
  * @since 1.8
  */
-public final class IsoChronology extends Chronology implements Serializable {
+public final class IsoChronology extends AbstractChronology implements Serializable {
 
     /**
      * Singleton instance of the ISO chronology.

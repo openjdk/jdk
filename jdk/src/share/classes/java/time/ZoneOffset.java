@@ -70,13 +70,13 @@ import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
 import java.io.InvalidObjectException;
-import java.io.InvalidObjectException;
 import java.io.Serializable;
 import java.time.temporal.ChronoField;
 import java.time.temporal.Temporal;
 import java.time.temporal.TemporalAccessor;
 import java.time.temporal.TemporalAdjuster;
 import java.time.temporal.TemporalField;
+import java.time.temporal.TemporalQueries;
 import java.time.temporal.TemporalQuery;
 import java.time.temporal.UnsupportedTemporalTypeException;
 import java.time.temporal.ValueRange;
@@ -322,7 +322,7 @@ public final class ZoneOffset
      * A {@code TemporalAccessor} represents some form of date and time information.
      * This factory converts the arbitrary temporal object to an instance of {@code ZoneOffset}.
      * <p>
-     * The conversion uses the {@link TemporalQuery#offset()} query, which relies
+     * The conversion uses the {@link TemporalQueries#offset()} query, which relies
      * on extracting the {@link ChronoField#OFFSET_SECONDS OFFSET_SECONDS} field.
      * <p>
      * This method matches the signature of the functional interface {@link TemporalQuery}
@@ -334,7 +334,7 @@ public final class ZoneOffset
      */
     public static ZoneOffset from(TemporalAccessor temporal) {
         Objects.requireNonNull(temporal, "temporal");
-        ZoneOffset offset = temporal.query(TemporalQuery.offset());
+        ZoneOffset offset = temporal.query(TemporalQueries.offset());
         if (offset == null) {
             throw new DateTimeException("Unable to obtain ZoneOffset from TemporalAccessor: " +
                     temporal + " of type " + temporal.getClass().getName());
@@ -642,7 +642,7 @@ public final class ZoneOffset
     @SuppressWarnings("unchecked")
     @Override
     public <R> R query(TemporalQuery<R> query) {
-        if (query == TemporalQuery.offset() || query == TemporalQuery.zone()) {
+        if (query == TemporalQueries.offset() || query == TemporalQueries.zone()) {
             return (R) this;
         }
         return TemporalAccessor.super.query(query);

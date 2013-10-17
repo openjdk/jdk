@@ -138,6 +138,9 @@ java/lang/ThreadLocal/ThreadLocalSupplierTest.java              generic-all
 java/lang/instrument/RetransformBigClass.sh                     generic-all
 java/lang/instrument/RedefineBigClass.sh                        generic-all
 
+# 8026502
+java/lang/invoke/MethodHandleConstants.java                     generic-all
+
 ############################################################################
 
 # jdk_management
