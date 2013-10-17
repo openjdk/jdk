@@ -209,7 +209,7 @@ public class WSDLGenerator {
     private final Class implType;
 
     private boolean inlineSchemas;      // TODO
-    private final boolean disableSecureXmlProcessing;
+    private final boolean disableXmlSecurity;
 
     /**
      * Creates the WSDLGenerator
@@ -229,12 +229,12 @@ public class WSDLGenerator {
      * @param model The {@link AbstractSEIModelImpl} used to generate the WSDL
      * @param wsdlResolver The {@link WSDLResolver} to use resovle names while generating the WSDL
      * @param binding specifies which {@link javax.xml.ws.BindingType} to generate
-     * @param disableSecureXmlProcessing specifies whether to disable the secure xml processing feature
+     * @param disableXmlSecurity specifies whether to disable the secure xml processing feature
      * @param extensions an array {@link WSDLGeneratorExtension} that will
      * be invoked to generate WSDL extensions
      */
     public WSDLGenerator(AbstractSEIModelImpl model, WSDLResolver wsdlResolver, WSBinding binding, Container container,
-                         Class implType, boolean inlineSchemas, boolean disableSecureXmlProcessing,
+                         Class implType, boolean inlineSchemas, boolean disableXmlSecurity,
                          WSDLGeneratorExtension... extensions) {
 
         this.model = model;
@@ -245,7 +245,7 @@ public class WSDLGenerator {
         this.implType = implType;
         extensionHandlers = new ArrayList<WSDLGeneratorExtension>();
         this.inlineSchemas = inlineSchemas;
-        this.disableSecureXmlProcessing = disableSecureXmlProcessing;
+        this.disableXmlSecurity = disableXmlSecurity;
 
         // register handlers for default extensions
         register(new W3CAddressingWSDLGeneratorExtension());
@@ -463,7 +463,7 @@ public class WSDLGenerator {
             }
         }
         if (resolver.nonGlassfishSchemas != null) {
-            TransformerFactory tf = XmlUtil.newTransformerFactory(!disableSecureXmlProcessing);
+            TransformerFactory tf = XmlUtil.newTransformerFactory(!disableXmlSecurity);
             try {
                 Transformer t = tf.newTransformer();
                 for (DOMResult xsd : resolver.nonGlassfishSchemas) {

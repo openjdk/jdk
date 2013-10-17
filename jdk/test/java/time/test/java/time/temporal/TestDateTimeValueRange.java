@@ -88,19 +88,6 @@ public class TestDateTimeValueRange extends AbstractTest {
     }
 
     //-----------------------------------------------------------------------
-    // Serialization
-    //-----------------------------------------------------------------------
-    public void test_serialization() throws Exception {
-        Object obj = ValueRange.of(1, 2, 3, 4);
-        ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        ObjectOutputStream oos = new ObjectOutputStream(baos);
-        oos.writeObject(obj);
-        oos.close();
-        ObjectInputStream ois = new ObjectInputStream(new ByteArrayInputStream(baos.toByteArray()));
-        assertEquals(ois.readObject(), obj);
-    }
-
-    //-----------------------------------------------------------------------
     // of(long,long)
     //-----------------------------------------------------------------------
     public void test_of_longlong() {

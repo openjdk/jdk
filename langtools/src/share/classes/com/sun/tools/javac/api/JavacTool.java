@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -120,7 +120,6 @@ public final class JavacTool implements JavaCompiler {
         try {
             ClientCodeWrapper ccw = ClientCodeWrapper.instance(context);
 
-            final String kindMsg = "All compilation units must be of SOURCE kind";
             if (options != null)
                 for (String option : options)
                     option.getClass(); // null check
@@ -132,8 +131,11 @@ public final class JavacTool implements JavaCompiler {
             if (compilationUnits != null) {
                 compilationUnits = ccw.wrapJavaFileObjects(compilationUnits); // implicit null check
                 for (JavaFileObject cu : compilationUnits) {
-                    if (cu.getKind() != JavaFileObject.Kind.SOURCE)
+                    if (cu.getKind() != JavaFileObject.Kind.SOURCE) {
+                        String kindMsg = "Compilation unit is not of SOURCE kind: "
+                                + "\"" + cu.getName() + "\"";
                         throw new IllegalArgumentException(kindMsg);
+                    }
                 }
             }
 

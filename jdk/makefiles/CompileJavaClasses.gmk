@@ -38,244 +38,244 @@ EXCLUDES :=
 
 ##########################################################################################
 
-EXCLUDES +=	com/sun/pept \
-		com/sun/tools/example/trace\
-		com/sun/tools/example/debug/bdi\
-		com/sun/tools/example/debug/event\
-		com/sun/tools/example/debug/gui
+EXCLUDES += com/sun/pept \
+    com/sun/tools/example/trace \
+    com/sun/tools/example/debug/bdi \
+    com/sun/tools/example/debug/event \
+    com/sun/tools/example/debug/gui
 
 ifdef OPENJDK
-    EXCLUDES+=	sun/dc \
-		com/sun/jmx/snmp \
-		sun/management/snmp \
-		com/sun/script
+  EXCLUDES += sun/dc \
+      com/sun/jmx/snmp \
+      sun/management/snmp \
+      com/sun/script
 endif
 
 ifndef OPENJDK
-   # There exists two versions of this file...
-   EXFILES := $(JDK_TOPDIR)/src/share/classes/javax/crypto/JarVerifier.java
+  # There exists two versions of this file...
+  EXFILES := $(JDK_TOPDIR)/src/share/classes/javax/crypto/JarVerifier.java
 
-   ifeq ($(OPENJDK_TARGET_OS),windows)
-      # This gets built on unix platforms implicitly in the old build even though
-      # it's excluded in the closed build.
-      EXCLUDES+=sun/java2d/pisces
+  ifeq ($(OPENJDK_TARGET_OS), windows)
+    # This gets built on unix platforms implicitly in the old build even though
+    # it's excluded in the closed build.
+    EXCLUDES += sun/java2d/pisces
 
-      # AccessBridge is compiled separately below.
-      EXFILES += AccessBridge.java \
-		 AccessBridgeLoader.java \
-		 com/sun/java/accessibility/util/java/awt/ChoiceTranslator.java
-      # This seems to never be built
-      EXCLUDES += com/sun/java/accessibility/extensions
-   endif
+    # AccessBridge is compiled separately below.
+    EXFILES += AccessBridge.java \
+        AccessBridgeLoader.java \
+        com/sun/java/accessibility/util/java/awt/ChoiceTranslator.java
+    # This seems to never be built
+    EXCLUDES += com/sun/java/accessibility/extensions
+  endif
 
 endif
 
-ifneq ($(OPENJDK_TARGET_OS),solaris)
-   # Exclude Solaris nio and two security related files in src/share/classes
-   EXFILES += SolarisAclFileAttributeView.java \
-	SolarisFileStore.java \
-	SolarisFileSystem.java \
-	SolarisFileSystemProvider.java \
-	SolarisNativeDispatcher.java \
-	SolarisUserDefinedFileAttributeView.java \
-	SolarisWatchService.java \
-	SolarisAclFileAttributeView.java \
-	SolarisLoginModule.java \
-	SolarisSystem.java \
-        sun/nio/ch/DevPollArrayWrapper.java \
-        sun/nio/ch/DevPollSelectorImpl.java \
-        sun/nio/ch/DevPollSelectorProvider.java \
-	sun/nio/ch/EventPortSelectorImpl.java \
-	sun/nio/ch/EventPortSelectorProvider.java \
-	sun/nio/ch/EventPortWrapper.java \
-        sun/nio/ch/SolarisAsynchronousChannelProvider.java \
-        sun/nio/ch/SolarisEventPort.java \
-	sun/tools/attach/SolarisAttachProvider.java \
-	sun/tools/attach/SolarisVirtualMachine.java
+ifneq ($(OPENJDK_TARGET_OS), solaris)
+  # Exclude Solaris nio and two security related files in src/share/classes
+  EXFILES += SolarisAclFileAttributeView.java \
+      SolarisFileStore.java \
+      SolarisFileSystem.java \
+      SolarisFileSystemProvider.java \
+      SolarisNativeDispatcher.java \
+      SolarisUserDefinedFileAttributeView.java \
+      SolarisWatchService.java \
+      SolarisAclFileAttributeView.java \
+      SolarisLoginModule.java \
+      SolarisSystem.java \
+      sun/nio/ch/DevPollArrayWrapper.java \
+      sun/nio/ch/DevPollSelectorImpl.java \
+      sun/nio/ch/DevPollSelectorProvider.java \
+      sun/nio/ch/EventPortSelectorImpl.java \
+      sun/nio/ch/EventPortSelectorProvider.java \
+      sun/nio/ch/EventPortWrapper.java \
+      sun/nio/ch/SolarisAsynchronousChannelProvider.java \
+      sun/nio/ch/SolarisEventPort.java \
+      sun/tools/attach/SolarisAttachProvider.java \
+      sun/tools/attach/SolarisVirtualMachine.java
 
-   EXCLUDES += com/oracle/security
+  EXCLUDES += com/oracle/security
 endif
 
 # In the old build, this isn't excluded on macosx, even though it probably
 # should be.
-ifneq ($(OPENJDK_TARGET_OS),macosx)
-	EXFILES+=WrapperGenerator.java
+ifneq ($(OPENJDK_TARGET_OS), macosx)
+  EXFILES += WrapperGenerator.java
 endif
 
-ifneq ($(OPENJDK_TARGET_OS),windows)
-    # Exclude Window security related files in src/share/classes
-    EXFILES+=NTLoginModule.java \
-             NTSystem.java
+ifneq ($(OPENJDK_TARGET_OS), windows)
+  # Exclude Window security related files in src/share/classes
+  EXFILES += NTLoginModule.java \
+      NTSystem.java
 else
-    EXFILES+=UnixLoginModule.java \
-	     UnixSystem.java
+  EXFILES += UnixLoginModule.java \
+      UnixSystem.java
 endif
 
-ifeq ($(OPENJDK_TARGET_OS),windows)
-    # Don't build GTK L&F on Windows
-    EXCLUDES+=com/sun/java/swing/plaf/gtk
+ifeq ($(OPENJDK_TARGET_OS), windows)
+  # Don't build GTK L&F on Windows
+  EXCLUDES += com/sun/java/swing/plaf/gtk
 endif
 
-ifneq ($(OPENJDK_TARGET_OS),linux)
-    EXFILES+=sun/tools/attach/LinuxAttachProvider.java \
-	     sun/tools/attach/LinuxVirtualMachine.java \
-             sun/nio/ch/EPoll.java \
-             sun/nio/ch/EPollArrayWrapper.java \
-             sun/nio/ch/EPollPort.java \
-             sun/nio/ch/EPollSelectorImpl.java \
-             sun/nio/ch/EPollSelectorProvider.java \
-             sun/nio/ch/LinuxAsynchronousChannelProvider.java \
-	     sun/nio/fs/LinuxDosFileAttributeView.java \
-	     sun/nio/fs/LinuxFileStore.java \
-	     sun/nio/fs/LinuxFileSystem.java \
-	     sun/nio/fs/LinuxFileSystemProvider.java \
-	     sun/nio/fs/MagicFileTypeDetector.java \
-	     sun/nio/fs/LinuxNativeDispatcher.java \
-	     sun/nio/fs/LinuxUserDefinedFileAttributeView.java \
-	     sun/nio/fs/LinuxWatchService.java
+ifneq ($(OPENJDK_TARGET_OS), linux)
+  EXFILES += sun/tools/attach/LinuxAttachProvider.java \
+      sun/tools/attach/LinuxVirtualMachine.java \
+      sun/nio/ch/EPoll.java \
+      sun/nio/ch/EPollArrayWrapper.java \
+      sun/nio/ch/EPollPort.java \
+      sun/nio/ch/EPollSelectorImpl.java \
+      sun/nio/ch/EPollSelectorProvider.java \
+      sun/nio/ch/LinuxAsynchronousChannelProvider.java \
+      sun/nio/fs/LinuxDosFileAttributeView.java \
+      sun/nio/fs/LinuxFileStore.java \
+      sun/nio/fs/LinuxFileSystem.java \
+      sun/nio/fs/LinuxFileSystemProvider.java \
+      sun/nio/fs/MagicFileTypeDetector.java \
+      sun/nio/fs/LinuxNativeDispatcher.java \
+      sun/nio/fs/LinuxUserDefinedFileAttributeView.java \
+      sun/nio/fs/LinuxWatchService.java
 endif
 
-ifneq ($(OPENJDK_TARGET_OS),macosx)
-    EXFILES+=sun/nio/ch/BsdAsynchronousChannelProvider.java \
-             sun/nio/ch/KQueue.java \
-             sun/nio/ch/KQueuePort.java \
-             sun/nio/fs/BsdFileStore.java \
-	     sun/nio/fs/BsdFileSystem.java \
-             sun/nio/fs/BsdFileSystemProvider.java \
-             sun/nio/fs/BsdNativeDispatcher.java \
-             sun/nio/fs/MacOSXFileSystemProvider.java \
-             sun/nio/fs/MacOSXFileSystem.java \
-             sun/nio/fs/MacOSXNativeDispatcher.java \
-             sun/tools/attach/BsdAttachProvider.java \
-             sun/tools/attach/BsdVirtualMachine.java
+ifneq ($(OPENJDK_TARGET_OS), macosx)
+  EXFILES += sun/nio/ch/BsdAsynchronousChannelProvider.java \
+      sun/nio/ch/KQueue.java \
+      sun/nio/ch/KQueuePort.java \
+      sun/nio/fs/BsdFileStore.java \
+      sun/nio/fs/BsdFileSystem.java \
+      sun/nio/fs/BsdFileSystemProvider.java \
+      sun/nio/fs/BsdNativeDispatcher.java \
+      sun/nio/fs/MacOSXFileSystemProvider.java \
+      sun/nio/fs/MacOSXFileSystem.java \
+      sun/nio/fs/MacOSXNativeDispatcher.java \
+      sun/tools/attach/BsdAttachProvider.java \
+      sun/tools/attach/BsdVirtualMachine.java
 endif
 
 # Exclude BreakIterator classes that are just used in compile process to generate
 # data files and shouldn't go in the product
-EXFILES+=sun/text/resources/BreakIteratorRules.java \
-	 sun/text/resources/BreakIteratorRules_th.java
+EXFILES += sun/text/resources/BreakIteratorRules.java \
+    sun/text/resources/BreakIteratorRules_th.java
 
 # TODO: Add BUILD_HEADLESS_ONLY to configure?
 ifdef BUILD_HEADLESS_ONLY
-    EXCLUDES+=sun/applet
+  EXCLUDES += sun/applet
 endif
 
 ifdef OPENJDK
-    EXCLUDES+=sun/java2d/cmm/kcms
+  EXCLUDES += sun/java2d/cmm/kcms
 endif
 
 # Used on windows and macosx
-ifeq (,$(filter $(OPENJDK_TARGET_OS), windows macosx))
-    EXFILES+=sun/awt/AWTCharset.java
+ifeq (, $(filter $(OPENJDK_TARGET_OS), windows macosx))
+  EXFILES += sun/awt/AWTCharset.java
 endif
 
 ifneq ($(OPENJDK_TARGET_OS), macosx)
-    EXFILES+=sun/awt/X11/ScreenFormat.java \
-             sun/awt/X11/XArc.java \
-             sun/awt/X11/XChar2b.java \
-             sun/awt/X11/XCharStruct.java \
-             sun/awt/X11/XClassHint.java \
-             sun/awt/X11/XComposeStatus.java \
-             sun/awt/X11/XExtCodes.java \
-             sun/awt/X11/XFontProp.java \
-             sun/awt/X11/XFontSetExtents.java \
-             sun/awt/X11/XFontStruct.java \
-             sun/awt/X11/XGCValues.java \
-             sun/awt/X11/XHostAddress.java \
-             sun/awt/X11/XIMCallback.java \
-             sun/awt/X11/XIMHotKeyTrigger.java \
-             sun/awt/X11/XIMHotKeyTriggers.java \
-             sun/awt/X11/XIMPreeditCaretCallbackStruct.java \
-             sun/awt/X11/XIMPreeditDrawCallbackStruct.java \
-             sun/awt/X11/XIMPreeditStateNotifyCallbackStruct.java \
-             sun/awt/X11/XIMStatusDrawCallbackStruct.java \
-             sun/awt/X11/XIMStringConversionCallbackStruct.java \
-             sun/awt/X11/XIMStringConversionText.java \
-             sun/awt/X11/XIMStyles.java \
-             sun/awt/X11/XIMText.java \
-             sun/awt/X11/XIMValuesList.java \
-             sun/awt/X11/XImage.java \
-             sun/awt/X11/XKeyboardControl.java \
-             sun/awt/X11/XKeyboardState.java \
-             sun/awt/X11/XOMCharSetList.java \
-             sun/awt/X11/XOMFontInfo.java \
-             sun/awt/X11/XOMOrientation.java \
-             sun/awt/X11/XPoint.java \
-             sun/awt/X11/XRectangle.java \
-             sun/awt/X11/XSegment.java \
-             sun/awt/X11/XStandardColormap.java \
-             sun/awt/X11/XTextItem.java \
-             sun/awt/X11/XTextItem16.java \
-             sun/awt/X11/XTextProperty.java \
-             sun/awt/X11/XTimeCoord.java \
-             sun/awt/X11/XWindowChanges.java \
-             sun/awt/X11/XdbeSwapInfo.java \
-             sun/awt/X11/XmbTextItem.java \
-             sun/awt/X11/XwcTextItem.java
+  EXFILES += sun/awt/X11/ScreenFormat.java \
+      sun/awt/X11/XArc.java \
+      sun/awt/X11/XChar2b.java \
+      sun/awt/X11/XCharStruct.java \
+      sun/awt/X11/XClassHint.java \
+      sun/awt/X11/XComposeStatus.java \
+      sun/awt/X11/XExtCodes.java \
+      sun/awt/X11/XFontProp.java \
+      sun/awt/X11/XFontSetExtents.java \
+      sun/awt/X11/XFontStruct.java \
+      sun/awt/X11/XGCValues.java \
+      sun/awt/X11/XHostAddress.java \
+      sun/awt/X11/XIMCallback.java \
+      sun/awt/X11/XIMHotKeyTrigger.java \
+      sun/awt/X11/XIMHotKeyTriggers.java \
+      sun/awt/X11/XIMPreeditCaretCallbackStruct.java \
+      sun/awt/X11/XIMPreeditDrawCallbackStruct.java \
+      sun/awt/X11/XIMPreeditStateNotifyCallbackStruct.java \
+      sun/awt/X11/XIMStatusDrawCallbackStruct.java \
+      sun/awt/X11/XIMStringConversionCallbackStruct.java \
+      sun/awt/X11/XIMStringConversionText.java \
+      sun/awt/X11/XIMStyles.java \
+      sun/awt/X11/XIMText.java \
+      sun/awt/X11/XIMValuesList.java \
+      sun/awt/X11/XImage.java \
+      sun/awt/X11/XKeyboardControl.java \
+      sun/awt/X11/XKeyboardState.java \
+      sun/awt/X11/XOMCharSetList.java \
+      sun/awt/X11/XOMFontInfo.java \
+      sun/awt/X11/XOMOrientation.java \
+      sun/awt/X11/XPoint.java \
+      sun/awt/X11/XRectangle.java \
+      sun/awt/X11/XSegment.java \
+      sun/awt/X11/XStandardColormap.java \
+      sun/awt/X11/XTextItem.java \
+      sun/awt/X11/XTextItem16.java \
+      sun/awt/X11/XTextProperty.java \
+      sun/awt/X11/XTimeCoord.java \
+      sun/awt/X11/XWindowChanges.java \
+      sun/awt/X11/XdbeSwapInfo.java \
+      sun/awt/X11/XmbTextItem.java \
+      sun/awt/X11/XwcTextItem.java
 endif
 
 # Exclude another implicitly not included file.
-EXFILES+=sun/util/locale/AsciiUtil.java
+EXFILES += sun/util/locale/AsciiUtil.java
 
-ifeq (,$(filter $(OPENJDK_TARGET_OS), solaris macosx))
-#
-# only solaris and macosx
-#
-    EXFILES+=sun/nio/fs/PollingWatchService.java
+ifeq (, $(filter $(OPENJDK_TARGET_OS), solaris macosx))
+  #
+  # only solaris and macosx
+  #
+  EXFILES += sun/nio/fs/PollingWatchService.java
 endif
 
 # TODO: Fix when converting NIO
 # Exclude *-linux-arm.java and *-linux-ppc.java from closed.
-EXFILES+=-linux-arm.java \
-	 -linux-ppc.java
+EXFILES += -linux-arm.java \
+    -linux-ppc.java
 
 ifeq ($(OPENJDK_TARGET_OS), windows)
-    EXFILES+=sun/nio/ch/AbstractPollSelectorImpl.java \
-        sun/nio/ch/PollSelectorProvider.java \
-	sun/nio/ch/SimpleAsynchronousFileChannelImpl.java
+  EXFILES += sun/nio/ch/AbstractPollSelectorImpl.java \
+      sun/nio/ch/PollSelectorProvider.java \
+      sun/nio/ch/SimpleAsynchronousFileChannelImpl.java
 endif
 
 # These files do not appear in the build result of the old build. This
 # is because they are generated sources, but the AUTO_JAVA_FILES won't
-# pick them up since they aren't generated when the source dirs are 
+# pick them up since they aren't generated when the source dirs are
 # searched and they aren't referenced by any other classes so they won't
 # be picked up by implicit compilation. On a rebuild, they are picked up
-# and compiled. Exclude them here to produce the same rt.jar as the old 
+# and compiled. Exclude them here to produce the same rt.jar as the old
 # build does when building just once.
-EXFILES+=javax/swing/plaf/nimbus/InternalFrameTitlePanePainter.java \
-	 javax/swing/plaf/nimbus/OptionPaneMessageAreaPainter.java \
-	 javax/swing/plaf/nimbus/ScrollBarPainter.java \
-	 javax/swing/plaf/nimbus/SliderPainter.java \
-	 javax/swing/plaf/nimbus/SpinnerPainter.java \
-	 javax/swing/plaf/nimbus/SplitPanePainter.java \
-	 javax/swing/plaf/nimbus/TabbedPanePainter.java
+EXFILES += javax/swing/plaf/nimbus/InternalFrameTitlePanePainter.java \
+    javax/swing/plaf/nimbus/OptionPaneMessageAreaPainter.java \
+    javax/swing/plaf/nimbus/ScrollBarPainter.java \
+    javax/swing/plaf/nimbus/SliderPainter.java \
+    javax/swing/plaf/nimbus/SpinnerPainter.java \
+    javax/swing/plaf/nimbus/SplitPanePainter.java \
+    javax/swing/plaf/nimbus/TabbedPanePainter.java
 
 # Acquire a list of files that should be copied straight over to the classes.
 include CopyIntoClasses.gmk
 # Now we have COPY_PATTERNS, COPY_FILES and COPY_EXTRA
 
 ifndef OPENJDK
-    CLOSED_SRC_DIRS:=$(JDK_TOPDIR)/src/closed/share/classes \
-		     $(JDK_TOPDIR)/src/closed/$(OPENJDK_TARGET_OS_API_DIR)/classes
+  CLOSED_SRC_DIRS := $(JDK_TOPDIR)/src/closed/share/classes \
+      $(JDK_TOPDIR)/src/closed/$(OPENJDK_TARGET_OS_API_DIR)/classes
 endif
 
 MACOSX_SRC_DIRS :=
-ifeq ($(OPENJDK_TARGET_OS),macosx)
-     MACOSX_SRC_DIRS += $(JDK_TOPDIR)/src/macosx/classes
+ifeq ($(OPENJDK_TARGET_OS), macosx)
+  MACOSX_SRC_DIRS += $(JDK_TOPDIR)/src/macosx/classes
 
-     # this files are duplicated in MACOSX_SRC_DIRS
-     EXFILES+= $(JDK_TOPDIR)/src/solaris/classes/sun/nio/ch/DefaultSelectorProvider.java \
-               $(JDK_TOPDIR)/src/solaris/classes/sun/java2d/BackBufferCapsProvider.java \
-               $(JDK_TOPDIR)/src/solaris/classes/java/net/DefaultInterface.java \
-               $(JDK_TOPDIR)/src/solaris/classes/java/lang/ClassLoaderHelper.java \
-               $(JDK_TOPDIR)/src/solaris/classes/sun/util/locale/provider/HostLocaleProviderAdapterImpl.java \
-               $(JDK_TOPDIR)/src/solaris/classes/sun/nio/fs/GnomeFileTypeDetector.java
+  # this files are duplicated in MACOSX_SRC_DIRS
+  EXFILES += $(JDK_TOPDIR)/src/solaris/classes/sun/nio/ch/DefaultSelectorProvider.java \
+      $(JDK_TOPDIR)/src/solaris/classes/sun/java2d/BackBufferCapsProvider.java \
+      $(JDK_TOPDIR)/src/solaris/classes/java/net/DefaultInterface.java \
+      $(JDK_TOPDIR)/src/solaris/classes/java/lang/ClassLoaderHelper.java \
+      $(JDK_TOPDIR)/src/solaris/classes/sun/util/locale/provider/HostLocaleProviderAdapterImpl.java \
+      $(JDK_TOPDIR)/src/solaris/classes/sun/nio/fs/GnomeFileTypeDetector.java
 
-     # JObjC.jar contains 1.5 byte-code...so skip it here :-(
-     # MACOSX_SRC_DIRS += $(JDK_TOPDIR)/src/macosx/native/jobjc/src
-     # EXCLUDES+= tests/java/com/apple/jobjc
+  # JObjC.jar contains 1.5 byte-code...so skip it here :-(
+  # MACOSX_SRC_DIRS += $(JDK_TOPDIR)/src/macosx/native/jobjc/src
+  # EXCLUDES += tests/java/com/apple/jobjc
 
-     EXCLUDES+= com/apple/jobjc
+  EXCLUDES += com/apple/jobjc
 endif
 
 # The exception handling of swing beaninfo
@@ -288,36 +288,23 @@ $(JDK_OUTPUTDIR)/classes/javax/swing/beaninfo/images/%.gif: $(JDK_TOPDIR)/make/t
 # JDK_FILTER at the make command line, only a subset of the JDK java files will
 # be recompiled. If multiple paths are separated by comma, convert that into a
 # space separated list.
-JDK_USER_DEFINED_FILTER:=$(strip $(subst $(COMMA),$(SPACE),$(JDK_FILTER)))
+JDK_USER_DEFINED_FILTER := $(strip $(subst $(COMMA),$(SPACE), $(JDK_FILTER)))
 
-$(eval $(call SetupJavaCompilation,BUILD_JDK,\
-                SETUP:=GENERATE_JDKBYTECODE,\
-		SRC:=$(JDK_TOPDIR)/src/share/classes \
-		     $(JDK_TOPDIR)/src/$(OPENJDK_TARGET_OS_API_DIR)/classes \
-		     $(MACOSX_SRC_DIRS) \
-		     $(JDK_OUTPUTDIR)/gensrc \
-		     $(JDK_OUTPUTDIR)/gensrc_no_srczip \
-		     $(CLOSED_SRC_DIRS),\
-		INCLUDES:=$(JDK_USER_DEFINED_FILTER),\
-		EXCLUDES:=$(EXCLUDES),\
-		EXCLUDE_FILES:=$(EXFILES),\
-		BIN:=$(JDK_OUTPUTDIR)/classes,\
-		COPY:=$(COPY_PATTERNS),\
-		COPY_FILES:=$(COPY_FILES),\
-		HEADERS:=$(JDK_OUTPUTDIR)/gensrc_headers))
-
-##########################################################################################
-
-ifndef OPENJDK
-
-    $(eval $(call SetupJavaCompilation,BUILD_ALTCLASSES,\
-		SETUP:=GENERATE_JDKBYTECODE,\
-		SRC:=$(JDK_TOPDIR)/src/closed/share/altclasses, \
-		BIN:=$(JDK_OUTPUTDIR)/altclasses_classes))
-
-    $(BUILD_ALTCLASSES): $(BUILD_JDK)
-
-endif
+$(eval $(call SetupJavaCompilation,BUILD_JDK, \
+    SETUP := GENERATE_JDKBYTECODE, \
+    SRC := $(JDK_TOPDIR)/src/share/classes \
+         $(JDK_TOPDIR)/src/$(OPENJDK_TARGET_OS_API_DIR)/classes \
+         $(MACOSX_SRC_DIRS) \
+         $(JDK_OUTPUTDIR)/gensrc \
+         $(JDK_OUTPUTDIR)/gensrc_no_srczip \
+         $(CLOSED_SRC_DIRS), \
+    INCLUDES := $(JDK_USER_DEFINED_FILTER), \
+    EXCLUDES := $(EXCLUDES), \
+    EXCLUDE_FILES := $(EXFILES), \
+    BIN := $(JDK_OUTPUTDIR)/classes, \
+    COPY := $(COPY_PATTERNS), \
+    COPY_FILES := $(COPY_FILES), \
+    HEADERS := $(JDK_OUTPUTDIR)/gensrc_headers))
 
 ##########################################################################################
 
@@ -327,85 +314,85 @@ $(JDK_OUTPUTDIR)/classes/META-INF/services/com.sun.tools.xjc.Plugin:
 
 ##########################################################################################
 
-ifeq ($(OPENJDK_TARGET_OS),macosx)
-#
-# JObjC.jar is compiled with BOOT_JAVAC which (may) not support the "-h" flag.
-#   so we first compile classes with BOOT_JAVAC and then with JDK_JAVAC :-(
-#
-$(eval $(call SetupJavaCompiler,GENERATE_15BYTECODE,\
-     JAVAC:=$(JAVAC),\
-     FLAGS:=-source 1.5 -target 1.5 -g -bootclasspath $(BOOT_RTJAR) -cp $(JDK_OUTPUTDIR)/../langtools/dist/lib/classes.jar $(DISABLE_WARNINGS),\
-     SERVER_DIR:=$(SJAVAC_SERVER_DIR),\
-     SERVER_JVM:=$(SJAVAC_SERVER_JAVA)))
+ifeq ($(OPENJDK_TARGET_OS), macosx)
+  #
+  # JObjC.jar is compiled with BOOT_JAVAC which (may) not support the "-h" flag.
+  # so we first compile classes with BOOT_JAVAC and then with JDK_JAVAC :-(
+  #
+  $(eval $(call SetupJavaCompiler,GENERATE_15BYTECODE, \
+      JAVAC := $(JAVAC), \
+      FLAGS := -source 1.5 -target 1.5 -g -bootclasspath $(BOOT_RTJAR) -cp $(JDK_OUTPUTDIR)/../langtools/dist/lib/classes.jar $(DISABLE_WARNINGS), \
+      SERVER_DIR := $(SJAVAC_SERVER_DIR), \
+      SERVER_JVM := $(SJAVAC_SERVER_JAVA)))
 
-$(eval $(call SetupJavaCompilation,BUILD_JOBJC,\
-		SETUP:=GENERATE_15BYTECODE,\
-		DISABLE_SJAVAC:=true,\
-		SRC:=$(JDK_TOPDIR)/src/macosx/native/jobjc/src/core/java \
-		     $(JDK_TOPDIR)/src/macosx/native/jobjc/src/runtime-additions/java \
-		     $(JDK_OUTPUTDIR)/gensrc_jobjc/src, \
-		INCLUDES := com/apple/jobjc,\
-                EXCLUDES := tests/java/com/apple/jobjc,\
-		BIN:=$(JDK_OUTPUTDIR)/jobjc_classes,\
-		JAR:=$(JDK_OUTPUTDIR)/lib/JObjC.jar, \
-		JARINDEX := true))
+  $(eval $(call SetupJavaCompilation,BUILD_JOBJC, \
+      SETUP := GENERATE_15BYTECODE, \
+      DISABLE_SJAVAC := true, \
+      SRC := $(JDK_TOPDIR)/src/macosx/native/jobjc/src/core/java \
+          $(JDK_TOPDIR)/src/macosx/native/jobjc/src/runtime-additions/java \
+          $(JDK_OUTPUTDIR)/gensrc_jobjc/src, \
+      INCLUDES := com/apple/jobjc, \
+      EXCLUDES := tests/java/com/apple/jobjc, \
+      BIN := $(JDK_OUTPUTDIR)/jobjc_classes, \
+      JAR := $(JDK_OUTPUTDIR)/lib/JObjC.jar, \
+      JARINDEX := true))
 
-$(BUILD_JOBJC) : $(BUILD_JDK)
+  $(BUILD_JOBJC): $(BUILD_JDK)
 
-$(eval $(call SetupJavaCompilation,BUILD_JOBJC_HEADERS,\
-		SETUP:=GENERATE_JDKBYTECODE,\
-		SRC:=$(JDK_TOPDIR)/src/macosx/native/jobjc/src/core/java \
-		     $(JDK_TOPDIR)/src/macosx/native/jobjc/src/runtime-additions/java \
-		     $(JDK_OUTPUTDIR)/gensrc_jobjc/src, \
-		INCLUDES := com/apple/jobjc,\
-                EXCLUDES := tests/java/com/apple/jobjc,\
-		BIN:=$(JDK_OUTPUTDIR)/jobjc_classes_headers,\
-		HEADERS:=$(JDK_OUTPUTDIR)/gensrc_headers_jobjc))
+  $(eval $(call SetupJavaCompilation,BUILD_JOBJC_HEADERS, \
+      SETUP := GENERATE_JDKBYTECODE, \
+      SRC := $(JDK_TOPDIR)/src/macosx/native/jobjc/src/core/java \
+          $(JDK_TOPDIR)/src/macosx/native/jobjc/src/runtime-additions/java \
+          $(JDK_OUTPUTDIR)/gensrc_jobjc/src, \
+      INCLUDES := com/apple/jobjc, \
+      EXCLUDES := tests/java/com/apple/jobjc, \
+      BIN := $(JDK_OUTPUTDIR)/jobjc_classes_headers, \
+      HEADERS := $(JDK_OUTPUTDIR)/gensrc_headers_jobjc))
 
-$(BUILD_JOBJC_HEADERS) : $(BUILD_JDK)
+$(BUILD_JOBJC_HEADERS): $(BUILD_JDK)
 
 endif
 
 ##########################################################################################
 
 ifndef OPENJDK
-ifeq ($(OPENJDK_TARGET_OS), windows)
-ifeq ($(OPENJDK_TARGET_CPU_BITS), 32)
-    $(eval $(call SetupJavaCompilation,BUILD_ACCESSBRIDGE_32,\
-		SETUP:=GENERATE_JDKBYTECODE,\
-		JAVAC_FLAGS:=-cp $(JDK_OUTPUTDIR)/classes,\
-		SRC:=$(JDK_OUTPUTDIR)/gensrc_ab/32bit,\
-		BIN:=$(JDK_OUTPUTDIR)/classes_ab/32bit))
+  ifeq ($(OPENJDK_TARGET_OS), windows)
+    ifeq ($(OPENJDK_TARGET_CPU_BITS), 32)
+      $(eval $(call SetupJavaCompilation,BUILD_ACCESSBRIDGE_32, \
+          SETUP := GENERATE_JDKBYTECODE, \
+          JAVAC_FLAGS := -cp $(JDK_OUTPUTDIR)/classes, \
+          SRC := $(JDK_OUTPUTDIR)/gensrc_ab/32bit, \
+          BIN := $(JDK_OUTPUTDIR)/classes_ab/32bit))
 
-    $(BUILD_ACCESSBRIDGE_32): $(BUILD_JDK)
+      $(BUILD_ACCESSBRIDGE_32): $(BUILD_JDK)
 
-    $(eval $(call SetupJavaCompilation,BUILD_ACCESSBRIDGE_LEGACY,\
-		SETUP:=GENERATE_JDKBYTECODE,\
-		JAVAC_FLAGS:=-cp $(JDK_OUTPUTDIR)/classes,\
-		SRC:=$(JDK_OUTPUTDIR)/gensrc_ab/legacy,\
-		BIN:=$(JDK_OUTPUTDIR)/classes_ab/legacy))
+      $(eval $(call SetupJavaCompilation,BUILD_ACCESSBRIDGE_LEGACY, \
+          SETUP := GENERATE_JDKBYTECODE, \
+          JAVAC_FLAGS := -cp $(JDK_OUTPUTDIR)/classes, \
+          SRC := $(JDK_OUTPUTDIR)/gensrc_ab/legacy, \
+          BIN := $(JDK_OUTPUTDIR)/classes_ab/legacy))
 
-    $(BUILD_ACCESSBRIDGE_LEGACY): $(BUILD_JDK)
+      $(BUILD_ACCESSBRIDGE_LEGACY): $(BUILD_JDK)
 
-else
+    else
 
-    $(eval $(call SetupJavaCompilation,BUILD_ACCESSBRIDGE_64,\
-		SETUP:=GENERATE_JDKBYTECODE,\
-		JAVAC_FLAGS:=-cp $(JDK_OUTPUTDIR)/classes,\
-		SRC:=$(JDK_OUTPUTDIR)/gensrc_ab/64bit,\
-		BIN:=$(JDK_OUTPUTDIR)/classes_ab/64bit))
+      $(eval $(call SetupJavaCompilation,BUILD_ACCESSBRIDGE_64, \
+          SETUP := GENERATE_JDKBYTECODE, \
+          JAVAC_FLAGS := -cp $(JDK_OUTPUTDIR)/classes, \
+          SRC := $(JDK_OUTPUTDIR)/gensrc_ab/64bit, \
+          BIN := $(JDK_OUTPUTDIR)/classes_ab/64bit))
 
-    $(BUILD_ACCESSBRIDGE_64): $(BUILD_JDK)
+      $(BUILD_ACCESSBRIDGE_64): $(BUILD_JDK)
 
-endif
-endif
+    endif
+  endif
 endif
 
 ##########################################################################################
 
-all: $(BUILD_JDK) $(BUILD_ALTCLASSES) $(BUILD_JOBJC) $(BUILD_JOBJC_HEADERS) $(COPY_EXTRA) \
-	$(JDK_OUTPUTDIR)/classes/META-INF/services/com.sun.tools.xjc.Plugin \
-	$(BUILD_ACCESSBRIDGE_32) $(BUILD_ACCESSBRIDGE_64) \
-	$(BUILD_ACCESSBRIDGE_LEGACY)
+all: $(BUILD_JDK) $(BUILD_JOBJC) $(BUILD_JOBJC_HEADERS) $(COPY_EXTRA) \
+    $(JDK_OUTPUTDIR)/classes/META-INF/services/com.sun.tools.xjc.Plugin \
+    $(BUILD_ACCESSBRIDGE_32) $(BUILD_ACCESSBRIDGE_64) \
+    $(BUILD_ACCESSBRIDGE_LEGACY)
 
 .PHONY: all

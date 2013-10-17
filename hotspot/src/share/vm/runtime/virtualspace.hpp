@@ -178,6 +178,7 @@ class VirtualSpace VALUE_OBJ_CLASS_SPEC {
  public:
   // Initialization
   VirtualSpace();
+  bool initialize_with_granularity(ReservedSpace rs, size_t committed_byte_size, size_t max_commit_ganularity);
   bool initialize(ReservedSpace rs, size_t committed_byte_size);
 
   // Destruction
