@@ -594,7 +594,7 @@ public abstract class ScriptObject extends PropertyListenerManager implements Pr
      * @param index key for property
      * @param value value to define
      */
-    protected final void defineOwnProperty(final int index, final Object value) {
+    public final void defineOwnProperty(final int index, final Object value) {
         assert isValidArrayIndex(index) : "invalid array index";
         final long longIndex = ArrayIndex.toLongIndex(index);
         if (longIndex >= getArray().length()) {
