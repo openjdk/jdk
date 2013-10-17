@@ -210,26 +210,6 @@ public enum JSType {
     }
 
     /**
-     * Get the smallest integer representation of a number. Returns an Integer
-     * for something that is int representable, and Long for something that
-     * is long representable. If the number needs to be a double, this is an
-     * identity function
-     *
-     * @param number number to check
-     *
-     * @return Number instanceof the narrowest possible integer representation for number
-     */
-    public static Number narrowestIntegerRepresentation(final double number) {
-        if (isRepresentableAsInt(number)) {
-            return (int)number;
-        } else if (isRepresentableAsLong(number)) {
-            return (long)number;
-        } else {
-            return number;
-        }
-    }
-
-    /**
      * Check whether an object is primitive
      *
      * @param obj an object
