@@ -45,8 +45,9 @@ DISABLE_CORBA_WARNINGS:=-Xlint:all,-deprecation,-unchecked,-serial,-fallthrough,
 $(eval $(call SetupJavaCompiler,GENERATE_OLDBYTECODE,\
      JVM:=$(JAVA),\
      JAVAC:=$(NEW_JAVAC),\
-    FLAGS := $(BOOT_JDK_SOURCETARGET) -bootclasspath $(BOOT_RTJAR)$(PATH_SEP)$(BOOT_TOOLSJAR) \
-        $(DISABLE_CORBA_WARNINGS), \
+     FLAGS := $(BOOT_JDK_SOURCETARGET) \
+          -bootclasspath "$(BOOT_RTJAR)$(PATH_SEP)$(BOOT_TOOLSJAR)" \
+          $(DISABLE_CORBA_WARNINGS), \
      SERVER_DIR:=$(SJAVAC_SERVER_DIR),\
      SERVER_JVM:=$(SJAVAC_SERVER_JAVA)))
 
