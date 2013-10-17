@@ -1554,13 +1554,13 @@ public final class LocalTime
      * Outputs this time as a {@code String}, such as {@code 10:15}.
      * <p>
      * The output will be one of the following ISO-8601 formats:
-     * <p><ul>
+     * <ul>
      * <li>{@code HH:mm}</li>
      * <li>{@code HH:mm:ss}</li>
      * <li>{@code HH:mm:ss.SSS}</li>
      * <li>{@code HH:mm:ss.SSSSSS}</li>
      * <li>{@code HH:mm:ss.SSSSSSSSS}</li>
-     * </ul><p>
+     * </ul>
      * The format used will be the shortest that outputs the full value of
      * the time where the omitted parts are implied to be zero.
      *

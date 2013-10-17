@@ -64,7 +64,6 @@ package java.time.temporal;
 import static java.time.temporal.ChronoField.DAY_OF_MONTH;
 import static java.time.temporal.ChronoField.DAY_OF_WEEK;
 import static java.time.temporal.ChronoField.DAY_OF_YEAR;
-import static java.time.temporal.ChronoField.EPOCH_DAY;
 import static java.time.temporal.ChronoField.MONTH_OF_YEAR;
 import static java.time.temporal.ChronoField.YEAR;
 import static java.time.temporal.ChronoUnit.DAYS;
@@ -77,12 +76,9 @@ import java.io.InvalidObjectException;
 import java.io.Serializable;
 import java.time.DateTimeException;
 import java.time.DayOfWeek;
-import java.time.ZoneId;
 import java.time.chrono.ChronoLocalDate;
 import java.time.chrono.Chronology;
 import java.time.format.ResolverStyle;
-import java.util.Collections;
-import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
@@ -119,16 +115,16 @@ import sun.util.locale.provider.LocaleResources;
  * For example, the ISO-8601 standard considers Monday to be the first day-of-week.
  * <li>The minimal number of days in the first week.
  * For example, the ISO-8601 standard counts the first week as needing at least 4 days.
- * </ul><p>
+ * </ul>
  * Together these two values allow a year or month to be divided into weeks.
- * <p>
+ *
  * <h3>Week of Month</h3>
  * One field is used: week-of-month.
  * The calculation ensures that weeks never overlap a month boundary.
  * The month is divided into periods where each period starts on the defined first day-of-week.
  * The earliest period is referred to as week 0 if it has less than the minimal number of days
  * and week 1 if it has at least the minimal number of days.
- * <p>
+ *
  * <table cellpadding="0" cellspacing="3" border="0" style="text-align: left; width: 50%;">
  * <caption>Examples of WeekFields</caption>
  * <tr><th>Date</th><td>Day-of-week</td>

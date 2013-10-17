@@ -125,7 +125,7 @@ import sun.util.locale.provider.TimeZoneNameUtility;
  * All date-time formatters are created ultimately using this builder.
  * <p>
  * The basic elements of date-time can all be added:
- * <p><ul>
+ * <ul>
  * <li>Value - a numeric value</li>
  * <li>Fraction - a fractional value including the decimal place. Always use this when
  * outputting fractions to ensure that the fraction is parsed correctly</li>
@@ -138,7 +138,7 @@ import sun.util.locale.provider.TimeZoneNameUtility;
  * <li>Literal - a text literal</li>
  * <li>Nested and Optional - formats can be nested or made optional</li>
  * <li>Other - the printer and parser interfaces can be used to add user supplied formatting</li>
- * </ul><p>
+ * </ul>
  * In addition, any of the elements may be decorated by padding, either with spaces or any other character.
  * <p>
  * Finally, a shorthand pattern, mostly compatible with {@code java.text.SimpleDateFormat SimpleDateFormat}
@@ -889,7 +889,7 @@ public final class DateTimeFormatterBuilder {
      * <p>
      * The format of the offset is controlled by a pattern which must be one
      * of the following:
-     * <p><ul>
+     * <ul>
      * <li>{@code +HH} - hour only, ignoring minute and second
      * <li>{@code +HHmm} - hour, with minute if non-zero, ignoring second, no colon
      * <li>{@code +HH:mm} - hour, with minute if non-zero, ignoring second, with colon
@@ -899,7 +899,7 @@ public final class DateTimeFormatterBuilder {
      * <li>{@code +HH:MM:ss} - hour and minute, with second if non-zero, with colon
      * <li>{@code +HHMMSS} - hour, minute and second, no colon
      * <li>{@code +HH:MM:SS} - hour, minute and second, with colon
-     * </ul><p>
+     * </ul>
      * The "no offset" text controls what text is printed when the total amount of
      * the offset fields to be output is zero.
      * Example values would be 'Z', '+00:00', 'UTC' or 'GMT'.
@@ -921,14 +921,14 @@ public final class DateTimeFormatterBuilder {
      * This appends a localized zone offset to the builder, the format of the
      * localized offset is controlled by the specified {@link FormatStyle style}
      * to this method:
-     * <p><ul>
+     * <ul>
      * <li>{@link TextStyle#FULL full} - formats with localized offset text, such
      * as 'GMT, 2-digit hour and minute field, optional second field if non-zero,
      * and colon.
      * <li>{@link TextStyle#SHORT short} - formats with localized offset text,
      * such as 'GMT, hour without leading zero, optional 2-digit minute and
      * second if non-zero, and colon.
-     * </ul><p>
+     * </ul>
      * <p>
      * During formatting, the offset is obtained using a mechanism equivalent
      * to querying the temporal with {@link TemporalQueries#offset()}.
@@ -1244,12 +1244,12 @@ public final class DateTimeFormatterBuilder {
      * This appends a localized section to the builder, suitable for outputting
      * a date, time or date-time combination. The format of the localized
      * section is lazily looked up based on four items:
-     * <p><ul>
+     * <ul>
      * <li>the {@code dateStyle} specified to this method
      * <li>the {@code timeStyle} specified to this method
      * <li>the {@code Locale} of the {@code DateTimeFormatter}
      * <li>the {@code Chronology}, selecting the best available
-     * </ul><p>
+     * </ul>
      * During formatting, the chronology is obtained from the temporal object
      * being formatted, which may have been overridden by
      * {@link DateTimeFormatter#withChronology(Chronology)}.

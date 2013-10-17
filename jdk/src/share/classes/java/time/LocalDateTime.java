@@ -1941,13 +1941,13 @@ public final class LocalDateTime
      * Outputs this date-time as a {@code String}, such as {@code 2007-12-03T10:15:30}.
      * <p>
      * The output will be one of the following ISO-8601 formats:
-     * <p><ul>
+     * <ul>
      * <li>{@code uuuu-MM-dd'T'HH:mm}</li>
      * <li>{@code uuuu-MM-dd'T'HH:mm:ss}</li>
      * <li>{@code uuuu-MM-dd'T'HH:mm:ss.SSS}</li>
      * <li>{@code uuuu-MM-dd'T'HH:mm:ss.SSSSSS}</li>
      * <li>{@code uuuu-MM-dd'T'HH:mm:ss.SSSSSSSSS}</li>
-     * </ul><p>
+     * </ul>
      * The format used will be the shortest that outputs the full value of
      * the time where the omitted parts are implied to be zero.
      *

@@ -89,12 +89,12 @@ import java.util.TimeZone;
  * A {@code ZoneId} is used to identify the rules used to convert between
  * an {@link Instant} and a {@link LocalDateTime}.
  * There are two distinct types of ID:
- * <p><ul>
+ * <ul>
  * <li>Fixed offsets - a fully resolved offset from UTC/Greenwich, that uses
  *  the same offset for all local date-times
  * <li>Geographical regions - an area where a specific set of rules for finding
  *  the offset from UTC/Greenwich apply
- * </ul><p>
+ * </ul>
  * Most fixed offsets are represented by {@link ZoneOffset}.
  * Calling {@link #normalized()} on any {@code ZoneId} will ensure that a
  * fixed offset ID will be represented as a {@code ZoneOffset}.
@@ -180,7 +180,7 @@ public abstract class ZoneId implements Serializable {
      * This is in line with versions of TZDB before 2005r.
      * <p>
      * This maps as follows:
-     * <p><ul>
+     * <ul>
      * <li>EST - America/New_York</li>
      * <li>MST - America/Denver</li>
      * <li>HST - Pacific/Honolulu</li>
@@ -209,7 +209,7 @@ public abstract class ZoneId implements Serializable {
      * <li>PST - America/Los_Angeles</li>
      * <li>SST - Pacific/Guadalcanal</li>
      * <li>VST - Asia/Ho_Chi_Minh</li>
-     * </ul><p>
+     * </ul>
      * The map is unmodifiable.
      */
     public static final Map<String, String> OLD_SHORT_IDS;
@@ -225,7 +225,7 @@ public abstract class ZoneId implements Serializable {
      * This is in line with TZDB 2005r and later.
      * <p>
      * This maps as follows:
-     * <p><ul>
+     * <ul>
      * <li>EST - -05:00</li>
      * <li>HST - -10:00</li>
      * <li>MST - -07:00</li>
@@ -254,7 +254,7 @@ public abstract class ZoneId implements Serializable {
      * <li>PST - America/Los_Angeles</li>
      * <li>SST - Pacific/Guadalcanal</li>
      * <li>VST - Asia/Ho_Chi_Minh</li>
-     * </ul><p>
+     * </ul>
      * The map is unmodifiable.
      */
     public static final Map<String, String> SHORT_IDS;
