@@ -748,7 +748,7 @@ public class MethodHandles {
          * If the returned method handle is invoked, the method's class will
          * be initialized, if it has not already been initialized.
          * <p><b>Example:</b>
-         * <p><blockquote><pre>{@code
+         * <blockquote><pre>{@code
 import static java.lang.invoke.MethodHandles.*;
 import static java.lang.invoke.MethodType.*;
 ...
@@ -806,7 +806,7 @@ assertEquals("[x, y]", MH_asList.invoke("x", "y").toString());
          * with the same {@code type} argument.
          *
          * <b>Example:</b>
-         * <p><blockquote><pre>{@code
+         * <blockquote><pre>{@code
 import static java.lang.invoke.MethodHandles.*;
 import static java.lang.invoke.MethodType.*;
 ...
@@ -882,7 +882,7 @@ assertEquals("", (String) MH_newString.invokeExact());
          * If the returned method handle is invoked, the constructor's class will
          * be initialized, if it has not already been initialized.
          * <p><b>Example:</b>
-         * <p><blockquote><pre>{@code
+         * <blockquote><pre>{@code
 import static java.lang.invoke.MethodHandles.*;
 import static java.lang.invoke.MethodType.*;
 ...
@@ -942,7 +942,7 @@ assertEquals("[x, y, z]", pb.command().toString());
          * in special circumstances.  Use {@link #findConstructor findConstructor}
          * to access instance initialization methods in a safe manner.)</em>
          * <p><b>Example:</b>
-         * <p><blockquote><pre>{@code
+         * <blockquote><pre>{@code
 import static java.lang.invoke.MethodHandles.*;
 import static java.lang.invoke.MethodType.*;
 ...
@@ -2223,7 +2223,7 @@ assert((int)twice.invokeExact(21) == 42);
      * they will come after.
      * <p>
      * <b>Example:</b>
-     * <p><blockquote><pre>{@code
+     * <blockquote><pre>{@code
 import static java.lang.invoke.MethodHandles.*;
 import static java.lang.invoke.MethodType.*;
 ...
@@ -2237,7 +2237,7 @@ assertEquals("yz", (String) d0.invokeExact(123, "x", "y", "z"));
      * }</pre></blockquote>
      * <p>
      * This method is also equivalent to the following code:
-     * <p><blockquote><pre>
+     * <blockquote><pre>
      * {@link #dropArguments(MethodHandle,int,Class...) dropArguments}{@code (target, pos, valueTypes.toArray(new Class[0]))}
      * </pre></blockquote>
      * @param target the method handle to invoke after the arguments are dropped
@@ -2281,7 +2281,7 @@ assertEquals("yz", (String) d0.invokeExact(123, "x", "y", "z"));
      * they will come after.
      * <p>
      * <b>Example:</b>
-     * <p><blockquote><pre>{@code
+     * <blockquote><pre>{@code
 import static java.lang.invoke.MethodHandles.*;
 import static java.lang.invoke.MethodType.*;
 ...
@@ -2299,7 +2299,7 @@ assertEquals("xz", (String) d12.invokeExact("x", 12, true, "z"));
      * }</pre></blockquote>
      * <p>
      * This method is also equivalent to the following code:
-     * <p><blockquote><pre>
+     * <blockquote><pre>
      * {@link #dropArguments(MethodHandle,int,List) dropArguments}{@code (target, pos, Arrays.asList(valueTypes))}
      * </pre></blockquote>
      * @param target the method handle to invoke after the arguments are dropped
@@ -2347,7 +2347,7 @@ assertEquals("xz", (String) d12.invokeExact("x", 12, true, "z"));
      * (null or not)
      * which do not correspond to argument positions in the target.
      * <p><b>Example:</b>
-     * <p><blockquote><pre>{@code
+     * <blockquote><pre>{@code
 import static java.lang.invoke.MethodHandles.*;
 import static java.lang.invoke.MethodType.*;
 ...
@@ -2440,7 +2440,7 @@ assertEquals("XY", (String) f2.invokeExact("x", "y")); // XY
      * In all cases, {@code pos} must be greater than or equal to zero, and
      * {@code pos} must also be less than or equal to the target's arity.
      * <p><b>Example:</b>
-     * <p><blockquote><pre>{@code
+     * <blockquote><pre>{@code
 import static java.lang.invoke.MethodHandles.*;
 import static java.lang.invoke.MethodType.*;
 ...
@@ -2545,7 +2545,7 @@ assertEquals("[top, [[up, down, strange], charm], bottom]",
      * The argument type of the filter (if any) must be identical to the
      * return type of the target.
      * <p><b>Example:</b>
-     * <p><blockquote><pre>{@code
+     * <blockquote><pre>{@code
 import static java.lang.invoke.MethodHandles.*;
 import static java.lang.invoke.MethodType.*;
 ...
@@ -2636,7 +2636,7 @@ System.out.println((int) f0.invokeExact("x", "y")); // 2
      * arguments will not need to be live on the stack on entry to the
      * target.)
      * <p><b>Example:</b>
-     * <p><blockquote><pre>{@code
+     * <blockquote><pre>{@code
 import static java.lang.invoke.MethodHandles.*;
 import static java.lang.invoke.MethodType.*;
 ...
