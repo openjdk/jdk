@@ -93,6 +93,65 @@ public class BigArityTest {
     }
 
     @Test
+    public void asCollectorIAE01() throws ReflectiveOperationException {
+        final int [] INVALID_ARRAY_LENGTHS = {
+            Integer.MIN_VALUE, Integer.MIN_VALUE + 1, -2, -1, 255, 256, Integer.MAX_VALUE - 1, Integer.MAX_VALUE
+        };
+        MethodHandle target = MethodHandles.publicLookup().findStatic(Arrays.class,
+                "deepToString", MethodType.methodType(String.class, Object[].class));
+        int minbig = Integer.MAX_VALUE;
+        for (int invalidLength : INVALID_ARRAY_LENGTHS) {
+            if (minbig > invalidLength && invalidLength > 100)  minbig = invalidLength;
+            try {
+                target.asCollector(Object[].class, invalidLength);
+                assert(false) : invalidLength;
+            } catch (IllegalArgumentException ex) {
+                System.out.println("OK: "+ex);
+            }
+        }
+        // Sizes not in the above array are good:
+        target.asCollector(Object[].class, minbig-1);
+        for (int i = 2; i <= 10; i++)
+            target.asCollector(Object[].class, minbig-i);
+    }
+
+    @Test
+    public void invoker02() {
+        for (int i = 0; i < 255; i++) {
+            MethodType mt = MethodType.genericMethodType(i);
+            MethodType expMT = mt.insertParameterTypes(0, MethodHandle.class);
+            if (i < 254) {
+                assertEquals(expMT, MethodHandles.invoker(mt).type());
+            } else {
+                try {
+                    MethodHandles.invoker(mt);
+                    assert(false) : i;
+                } catch (IllegalArgumentException ex) {
+                    System.out.println("OK: "+ex);
+                }
+            }
+        }
+    }
+
+    @Test
+    public void exactInvoker02() {
+        for (int i = 0; i < 255; i++) {
+            MethodType mt = MethodType.genericMethodType(i);
+            MethodType expMT = mt.insertParameterTypes(0, MethodHandle.class);
+            if (i < 254) {
+                assertEquals(expMT, MethodHandles.exactInvoker(mt).type());
+            } else {
+                try {
+                    MethodHandles.exactInvoker(mt);
+                    assert(false) : i;
+                } catch (IllegalArgumentException ex) {
+                    System.out.println("OK: "+ex);
+                }
+            }
+        }
+    }
+
+    @Test
     public void testBoundaryValues() throws Throwable {
         for (int badArity : new int[]{ -1, MAX_JVM_ARITY+1, MAX_JVM_ARITY }) {
             try {
@@ -100,6 +159,37 @@ public class BigArityTest {
                 throw new AssertionError("should not be able to build a 255-arity MH: "+badmh);
             } catch (IllegalArgumentException | WrongMethodTypeException ex) {
                 System.out.println("OK: "+ex);
+            }
+        }
+        final int MAX_MH_ARITY      = MAX_JVM_ARITY - 1;  // mh.invoke(arg*[N])
+        final int MAX_INVOKER_ARITY = MAX_MH_ARITY - 1;   // inv.invoke(mh, arg*[N])
+        for (int arity : new int[]{ 0, 1, MAX_MH_ARITY-2, MAX_MH_ARITY-1, MAX_MH_ARITY }) {
+            MethodHandle mh = MH_hashArguments(arity);
+            if (arity < MAX_INVOKER_ARITY) {
+                MethodHandle ximh = MethodHandles.exactInvoker(mh.type());
+                MethodHandle gimh = MethodHandles.invoker(mh.type());
+                MethodHandle simh = MethodHandles.spreadInvoker(mh.type(), 0);
+                if (arity != 0) {
+                    simh = MethodHandles.spreadInvoker(mh.type(), 1);
+                } else {
+                    try {
+                        simh = MethodHandles.spreadInvoker(mh.type(), 1);
+                        assert(false) : arity;
+                    } catch (IllegalArgumentException ex) {
+                        System.out.println("OK: "+ex);
+                    }
+                }
+                if (arity != 0) {
+                    simh = MethodHandles.spreadInvoker(mh.type(), arity-1);
+                } else {
+                    try {
+                        simh = MethodHandles.spreadInvoker(mh.type(), arity-1);
+                        assert(false) : arity;
+                    } catch (IllegalArgumentException ex) {
+                        System.out.println("OK: "+ex);
+                    }
+                }
+                simh = MethodHandles.spreadInvoker(mh.type(), arity);
             }
         }
     }
@@ -133,7 +223,7 @@ public class BigArityTest {
             if (cls == Object[].class)
                 r = smh.invokeExact(tail);
             else if (cls == Integer[].class)
-                r = smh.invokeExact((Integer[]) tail);
+                r = smh.invokeExact((Integer[]) tail); //warning OK, see 8019340
             else
                 r = smh.invoke(tail);
             assertEquals(r0, r);
@@ -235,21 +325,41 @@ public class BigArityTest {
             MethodHandle mh_VA = mh.asSpreader(cls, arity);
             assert(mh_VA.type().parameterType(0) == cls);
             testArities(cls, arity, iterations, verbose, mh, mh_VA);
+            // mh_CA will collect arguments of a particular type and pass them to mh_VA
+            MethodHandle mh_CA = mh_VA.asCollector(cls, arity);
+            MethodHandle mh_VA2 = mh_CA.asSpreader(cls, arity);
+            assert(mh_CA.type().equals(mh.type()));
+            assert(mh_VA2.type().equals(mh_VA.type()));
             if (cls != Object[].class) {
-                // mh_CA will collect arguments of a particular type and pass them to mh_VA
-                MethodHandle mh_CA = mh_VA.asCollector(cls, arity);
-                MethodHandle mh_VA2 = mh_CA.asSpreader(cls, arity);
                 try {
                     mh_VA2.invokeWithArguments(new Object[arity]);
                     throw new AssertionError("should not reach");
                 } catch (ClassCastException | WrongMethodTypeException ex) {
                 }
-                assert(mh_CA.type().equals(mh.type()));
-                assert(mh_VA2.type().equals(mh_VA.type()));
-                testArities(cls, arity, iterations, false, mh_CA, mh_VA2);
             }
+            int iterations_VA = iterations / 100;
+            testArities(cls, arity, iterations_VA, false, mh_CA, mh_VA2);
         }
     }
+
+   /**
+     * Tests calls to {@link BigArityTest#hashArguments hashArguments} as related to a single given arity N.
+     * Applies the given {@code mh} to a set of N integer arguments, checking the answer.
+     * Also applies the varargs variation {@code mh_VA} to an array of type C[] (given by {@code cls}).
+     * Test steps:
+     * <ul>
+     * <li>mh_VA.invokeExact(new C[]{ arg, ... })</li>
+     * <li>mh.invokeWithArguments((Object[]) new C[]{ arg, ... })</li>
+     * <li>exactInvoker(mh.type()).invokeWithArguments(new Object[]{ mh, arg, ... })</li>
+     * <li>invoker(mh.type()).invokeWithArguments(new Object[]{ mh, arg, ... })</li>
+     * </ul>
+     * @param cls     array type for varargs call (one of Object[], Number[], Integer[], Comparable[])
+     * @param arity   N, the number of arguments to {@code mh} and length of its varargs array, in [0..255]
+     * @param iterations  number of times to repeat each test step (at least 4)
+     * @param verbose are we printing extra output?
+     * @param mh      a fixed-arity version of {@code hashArguments}
+     * @param mh_VA   a variable-arity version of {@code hashArguments}, accepting the given array type {@code cls}
+     */
     private void testArities(Class<? extends Object[]> cls,
                              int arity,
                              int iterations,
@@ -292,7 +402,7 @@ public class BigArityTest {
             if (cls == Object[].class)
                 r = mh_VA.invokeExact(args);
             else if (cls == Integer[].class)
-                r = mh_VA.invokeExact((Integer[])args);
+                r = mh_VA.invokeExact((Integer[])args); //warning OK, see 8019340
             else
                 r = mh_VA.invoke(args);
             assertEquals(r0, r);
@@ -392,10 +502,16 @@ public class BigArityTest {
     a[0xE0], a[0xE1], a[0xE2], a[0xE3], a[0xE4], a[0xE5], a[0xE6], a[0xE7], a[0xE8], a[0xE9], a[0xEA], a[0xEB], a[0xEC], a[0xED], a[0xEE], a[0xEF],
     a[0xF0], a[0xF1], a[0xF2], a[0xF3], a[0xF4], a[0xF5], a[0xF6], a[0xF7],
     // </editor-fold>
-    a[0xF8], a[0xF9], a[0xFA], a[0xFB]);
+    a[0xF8], a[0xF9], a[0xFA], a[0xFB]); // hashArguments_252
         assertEquals(r0, r);
         MethodType mt = MethodType.genericMethodType(ARITY);
         MethodHandle mh = MethodHandles.lookup().findStatic(BigArityTest.class, "hashArguments_"+ARITY, mt);
+        test252(mh, a, r0);
+        MethodHandle mh_CA = MH_hashArguments_VA.asFixedArity().asCollector(Object[].class, ARITY);
+        test252(mh_CA, a, r0);
+    }
+    public void test252(MethodHandle mh, Object[] a, Object r0) throws Throwable {
+        Object r;
         r = mh.invokeExact(
     // <editor-fold defaultstate="collapsed" desc="a[0x00], a[0x01], a[0x02], a[0x03], a[0x04], ...">
     a[0x00], a[0x01], a[0x02], a[0x03], a[0x04], a[0x05], a[0x06], a[0x07], a[0x08], a[0x09], a[0x0A], a[0x0B], a[0x0C], a[0x0D], a[0x0E], a[0x0F],
@@ -599,10 +715,16 @@ public class BigArityTest {
     a[0xE0], a[0xE1], a[0xE2], a[0xE3], a[0xE4], a[0xE5], a[0xE6], a[0xE7], a[0xE8], a[0xE9], a[0xEA], a[0xEB], a[0xEC], a[0xED], a[0xEE], a[0xEF],
     a[0xF0], a[0xF1], a[0xF2], a[0xF3], a[0xF4], a[0xF5], a[0xF6], a[0xF7],
     // </editor-fold>
-    a[0xF8], a[0xF9], a[0xFA], a[0xFB], a[0xFC]);
+    a[0xF8], a[0xF9], a[0xFA], a[0xFB], a[0xFC]); // hashArguments_253
         assertEquals(r0, r);
         MethodType mt = MethodType.genericMethodType(ARITY);
         MethodHandle mh = MethodHandles.lookup().findStatic(BigArityTest.class, "hashArguments_"+ARITY, mt);
+        test253(mh, a, r0);
+        MethodHandle mh_CA = MH_hashArguments_VA.asFixedArity().asCollector(Object[].class, ARITY);
+        test253(mh_CA, a, r0);
+    }
+    public void test253(MethodHandle mh, Object[] a, Object r0) throws Throwable {
+        Object r;
         r = mh.invokeExact(
     // <editor-fold defaultstate="collapsed" desc="a[0x00], a[0x01], a[0x02], a[0x03], a[0x04], ...">
     a[0x00], a[0x01], a[0x02], a[0x03], a[0x04], a[0x05], a[0x06], a[0x07], a[0x08], a[0x09], a[0x0A], a[0x0B], a[0x0C], a[0x0D], a[0x0E], a[0x0F],
@@ -648,7 +770,6 @@ public class BigArityTest {
     // </editor-fold>
     a[0xF8], a[0xF9], a[0xFA], a[0xFB], a[0xFC]);
         assertEquals(r0, r);
-        // FIXME: This next one fails, because it uses an internal invoker of arity 255.
         r = ximh.invokeWithArguments(cat(mh,a));
         assertEquals(r0, r);
         MethodHandle gimh = MethodHandles.invoker(mh.type());
@@ -674,7 +795,6 @@ public class BigArityTest {
     // </editor-fold>
     a[0xF8], a[0xF9], a[0xFA], a[0xFB], a[0xFC]);
         assertEquals(r0, r);
-        // FIXME: This next one fails, because it uses an internal invoker of arity 255.
         r = gimh.invokeWithArguments(cat(mh,a));
         assertEquals(r0, r);
         mh = mh.asType(mh.type().changeParameterType(0x10, Integer.class));
@@ -808,10 +928,16 @@ public class BigArityTest {
     a[0xE0], a[0xE1], a[0xE2], a[0xE3], a[0xE4], a[0xE5], a[0xE6], a[0xE7], a[0xE8], a[0xE9], a[0xEA], a[0xEB], a[0xEC], a[0xED], a[0xEE], a[0xEF],
     a[0xF0], a[0xF1], a[0xF2], a[0xF3], a[0xF4], a[0xF5], a[0xF6], a[0xF7],
     // </editor-fold>
-    a[0xF8], a[0xF9], a[0xFA], a[0xFB], a[0xFC], a[0xFD]);
+    a[0xF8], a[0xF9], a[0xFA], a[0xFB], a[0xFC], a[0xFD]); // hashArguments_254
         assertEquals(r0, r);
         MethodType mt = MethodType.genericMethodType(ARITY);
         MethodHandle mh = MethodHandles.lookup().findStatic(BigArityTest.class, "hashArguments_"+ARITY, mt);
+        test254(mh, a, r0);
+        MethodHandle mh_CA = MH_hashArguments_VA.asFixedArity().asCollector(Object[].class, ARITY);
+        test254(mh_CA, a, r0);
+    }
+    public void test254(MethodHandle mh, Object[] a, Object r0) throws Throwable {
+        Object r;
         r = mh.invokeExact(
     // <editor-fold defaultstate="collapsed" desc="a[0x00], a[0x01], a[0x02], a[0x03], a[0x04], ...">
     a[0x00], a[0x01], a[0x02], a[0x03], a[0x04], a[0x05], a[0x06], a[0x07], a[0x08], a[0x09], a[0x0A], a[0x0B], a[0x0C], a[0x0D], a[0x0E], a[0x0F],
@@ -833,7 +959,6 @@ public class BigArityTest {
     // </editor-fold>
     a[0xF8], a[0xF9], a[0xFA], a[0xFB], a[0xFC], a[0xFD]);
         assertEquals(r0, r);
-        // FIXME: This next one fails, because it uses an internal invoker of arity 255.
         r = mh.invokeWithArguments(a);
         assertEquals(r0, r);
         try {
@@ -998,7 +1123,7 @@ public class BigArityTest {
     a[0xE0], a[0xE1], a[0xE2], a[0xE3], a[0xE4], a[0xE5], a[0xE6], a[0xE7], a[0xE8], a[0xE9], a[0xEA], a[0xEB], a[0xEC], a[0xED], a[0xEE], a[0xEF],
     a[0xF0], a[0xF1], a[0xF2], a[0xF3], a[0xF4], a[0xF5], a[0xF6], a[0xF7],
     // </editor-fold>
-    a[0xF8], a[0xF9], a[0xFA], a[0xFB], a[0xFC], a[0xFD], a[0xFE]);
+    a[0xF8], a[0xF9], a[0xFA], a[0xFB], a[0xFC], a[0xFD], a[0xFE]); // hashArguments_255
         assertEquals(r0, r);
         MethodType mt = MethodType.genericMethodType(ARITY);
         MethodHandle mh;

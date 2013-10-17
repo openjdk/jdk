@@ -58,6 +58,7 @@ import static com.sun.tools.javac.code.Kinds.*;
 import static com.sun.tools.javac.code.Kinds.ERRONEOUS;
 import static com.sun.tools.javac.code.TypeTag.*;
 import static com.sun.tools.javac.code.TypeTag.WILDCARD;
+import static com.sun.tools.javac.code.TypeTag.ARRAY;
 import static com.sun.tools.javac.tree.JCTree.Tag.*;
 
 /** This is the main context-dependent analysis phase in GJC. It
@@ -797,28 +798,32 @@ public class Attr extends JCTree.Visitor {
                    JCTree tree,
                    Env<AttrContext> env,
                    boolean classExpected,
-                   boolean interfaceExpected,
+                   boolean interfaceOrArrayExpected,
                    boolean checkExtensible) {
         if (t.isErroneous())
             return t;
-        if (t.hasTag(TYPEVAR) && !classExpected && !interfaceExpected) {
+        if (t.hasTag(TYPEVAR) && !classExpected && !interfaceOrArrayExpected) {
             // check that type variable is already visible
             if (t.getUpperBound() == null) {
                 log.error(tree.pos(), "illegal.forward.ref");
                 return types.createErrorType(t);
             }
-        } else {
+        } else if (classExpected) {
             t = chk.checkClassType(tree.pos(), t, checkExtensible|!allowGenerics);
+        } else {
+            t = chk.checkClassOrArrayType(tree.pos(), t,
+                                          checkExtensible|!allowGenerics);
         }
-        if (interfaceExpected && (t.tsym.flags() & INTERFACE) == 0) {
+        if (interfaceOrArrayExpected &&
+            !(t.tsym.isInterface() || t.getTag() == ARRAY)) {
             log.error(tree.pos(), "intf.expected.here");
             // return errType is necessary since otherwise there might
             // be undetected cycles which cause attribution to loop
             return types.createErrorType(t);
         } else if (checkExtensible &&
                    classExpected &&
-                   (t.tsym.flags() & INTERFACE) != 0) {
-                log.error(tree.pos(), "no.intf.expected.here");
+                   t.tsym.isInterface()) {
+            log.error(tree.pos(), "no.intf.expected.here");
             return types.createErrorType(t);
         }
         if (checkExtensible &&
@@ -829,6 +834,12 @@ public class Attr extends JCTree.Visitor {
         chk.checkNonCyclic(tree.pos(), t);
         return t;
     }
+    //where
+        private Object asTypeParam(Type t) {
+            return (t.hasTag(TYPEVAR))
+                                    ? diags.fragment("type.parameter", t)
+                                    : t;
+        }
 
     Type attribIdentAsEnumType(Env<AttrContext> env, JCIdent id) {
         Assert.check((env.enclClass.sym.flags() & ENUM) != 0);
@@ -4058,8 +4069,7 @@ public class Attr extends JCTree.Visitor {
     }
 
     public void visitAnnotation(JCAnnotation tree) {
-        log.error(tree.pos(), "annotation.not.valid.for.type", pt());
-        result = tree.type = syms.errType;
+        Assert.error("should be handled in Annotate");
     }
 
     public void visitAnnotatedType(JCAnnotatedType tree) {

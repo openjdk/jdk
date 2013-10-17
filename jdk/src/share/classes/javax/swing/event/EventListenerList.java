@@ -69,7 +69,7 @@ import java.lang.reflect.Array;
  *     Object[] listeners = listenerList.getListenerList();
  *     // Process the listeners last to first, notifying
  *     // those that are interested in this event
- *     for (int i = listeners.length-2; i>=0; i-=2) {
+ *     for (int i = listeners.length-2; i&gt;=0; i-=2) {
  *         if (listeners[i]==FooListener.class) {
  *             // Lazily create the event:
  *             if (fooEvent == null)
@@ -88,7 +88,7 @@ import java.lang.reflect.Array;
  * future Swing releases. The current serialization support is
  * appropriate for short term storage or RMI between applications running
  * the same version of Swing.  As of 1.4, support for long term storage
- * of all JavaBeans<sup><font size="-2">TM</font></sup>
+ * of all JavaBeans&trade;
  * has been added to the <code>java.beans</code> package.
  * Please see {@link java.beans.XMLEncoder}.
  *

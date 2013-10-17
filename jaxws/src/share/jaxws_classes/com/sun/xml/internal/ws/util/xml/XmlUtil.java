@@ -84,11 +84,11 @@ public class XmlUtil {
 
     private static final Logger LOGGER = Logger.getLogger(XmlUtil.class.getName());
 
-    private static boolean globalSecureXmlProcessingEnabled;
+    private static boolean XML_SECURITY_DISABLED;
 
     static {
-        String disableSecureXmlProcessing = System.getProperty("disableSecureXmlProcessing");
-        globalSecureXmlProcessingEnabled = disableSecureXmlProcessing == null || !Boolean.valueOf(disableSecureXmlProcessing);
+        String disableXmlSecurity = System.getProperty("com.sun.xml.internal.ws.disableXmlSecurity");
+        XML_SECURITY_DISABLED = disableXmlSecurity == null || !Boolean.valueOf(disableXmlSecurity);
     }
 
     public static String getPrefix(String s) {
@@ -364,9 +364,9 @@ public class XmlUtil {
     public static DocumentBuilderFactory newDocumentBuilderFactory(boolean secureXmlProcessing) {
         DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
         try {
-            factory.setFeature(XMLConstants.FEATURE_SECURE_PROCESSING, checkGlobalOverride(secureXmlProcessing));
+            factory.setFeature(XMLConstants.FEATURE_SECURE_PROCESSING, isXMLSecurityDisabled(secureXmlProcessing));
         } catch (ParserConfigurationException e) {
-            LOGGER.log(Level.WARNING, "Factory [{}] doesn't support secure xml processing!", new Object[] { factory.getClass().getName() } );
+            LOGGER.log(Level.WARNING, "Factory [{0}] doesn't support secure xml processing!", new Object[] { factory.getClass().getName() } );
         }
         return factory;
     }
@@ -374,9 +374,9 @@ public class XmlUtil {
     public static TransformerFactory newTransformerFactory(boolean secureXmlProcessingEnabled) {
         TransformerFactory factory = TransformerFactory.newInstance();
         try {
-            factory.setFeature(XMLConstants.FEATURE_SECURE_PROCESSING, checkGlobalOverride(secureXmlProcessingEnabled));
+            factory.setFeature(XMLConstants.FEATURE_SECURE_PROCESSING, isXMLSecurityDisabled(secureXmlProcessingEnabled));
         } catch (TransformerConfigurationException e) {
-            LOGGER.log(Level.WARNING, "Factory [{}] doesn't support secure xml processing!", new Object[]{factory.getClass().getName()});
+            LOGGER.log(Level.WARNING, "Factory [{0}] doesn't support secure xml processing!", new Object[]{factory.getClass().getName()});
         }
         return factory;
     }
@@ -388,9 +388,9 @@ public class XmlUtil {
     public static SAXParserFactory newSAXParserFactory(boolean secureXmlProcessingEnabled) {
         SAXParserFactory factory = SAXParserFactory.newInstance();
         try {
-            factory.setFeature(XMLConstants.FEATURE_SECURE_PROCESSING, checkGlobalOverride(secureXmlProcessingEnabled));
+            factory.setFeature(XMLConstants.FEATURE_SECURE_PROCESSING, isXMLSecurityDisabled(secureXmlProcessingEnabled));
         } catch (Exception e) {
-            LOGGER.log(Level.WARNING, "Factory [{}] doesn't support secure xml processing!", new Object[]{factory.getClass().getName()});
+            LOGGER.log(Level.WARNING, "Factory [{0}] doesn't support secure xml processing!", new Object[]{factory.getClass().getName()});
         }
         return factory;
     }
@@ -398,16 +398,16 @@ public class XmlUtil {
     public static XPathFactory newXPathFactory(boolean secureXmlProcessingEnabled) {
         XPathFactory factory = XPathFactory.newInstance();
         try {
-            factory.setFeature(XMLConstants.FEATURE_SECURE_PROCESSING, checkGlobalOverride(secureXmlProcessingEnabled));
+            factory.setFeature(XMLConstants.FEATURE_SECURE_PROCESSING, isXMLSecurityDisabled(secureXmlProcessingEnabled));
         } catch (XPathFactoryConfigurationException e) {
-            LOGGER.log(Level.WARNING, "Factory [{}] doesn't support secure xml processing!", new Object[] { factory.getClass().getName() } );
+            LOGGER.log(Level.WARNING, "Factory [{0}] doesn't support secure xml processing!", new Object[] { factory.getClass().getName() } );
         }
         return factory;
     }
 
     public static XMLInputFactory newXMLInputFactory(boolean secureXmlProcessingEnabled)  {
         XMLInputFactory factory = XMLInputFactory.newInstance();
-        if (checkGlobalOverride(secureXmlProcessingEnabled)) {
+        if (isXMLSecurityDisabled(secureXmlProcessingEnabled)) {
             // TODO-Miran: are those apppropriate defaults?
             factory.setProperty(XMLInputFactory.SUPPORT_DTD, false);
             factory.setProperty(XMLInputFactory.IS_SUPPORTING_EXTERNAL_ENTITIES, false);
@@ -415,25 +415,39 @@ public class XmlUtil {
         return factory;
     }
 
-    private static boolean checkGlobalOverride(boolean localSecureXmlProcessingEnabled) {
-        return globalSecureXmlProcessingEnabled && localSecureXmlProcessingEnabled;
+    private static boolean isXMLSecurityDisabled(boolean runtimeDisabled) {
+        return XML_SECURITY_DISABLED || runtimeDisabled;
     }
 
-    public static SchemaFactory allowFileAccess(SchemaFactory sf, boolean disableSecureProcessing) {
+    public static SchemaFactory allowExternalAccess(SchemaFactory sf, String value, boolean disableSecureProcessing) {
 
-        // if feature secure processing enabled, nothing to do, file is allowed,
-        // or user is able to control access by standard JAXP mechanisms
-        if (checkGlobalOverride(disableSecureProcessing)) {
+        // if xml security (feature secure processing) disabled, nothing to do, no restrictions applied
+        if (isXMLSecurityDisabled(disableSecureProcessing)) {
+            if (LOGGER.isLoggable(Level.FINE)) {
+                LOGGER.log(Level.FINE, "Xml Security disabled, no JAXP xsd external access configuration necessary.");
+            }
+            return sf;
+        }
+
+        if (System.getProperty("javax.xml.accessExternalSchema") != null) {
+            if (LOGGER.isLoggable(Level.FINE)) {
+                LOGGER.log(Level.FINE, "Detected explicitly JAXP configuration, no JAXP xsd external access configuration necessary.");
+            }
             return sf;
         }
 
         try {
-            sf.setProperty(ACCESS_EXTERNAL_SCHEMA, "file");
-            LOGGER.log(Level.FINE, "Property \"{}\" is supported and has been successfully set by used JAXP implementation.", new Object[]{ACCESS_EXTERNAL_SCHEMA});
+            sf.setProperty(ACCESS_EXTERNAL_SCHEMA, value);
+            if (LOGGER.isLoggable(Level.FINE)) {
+                LOGGER.log(Level.FINE, "Property \"{0}\" is supported and has been successfully set by used JAXP implementation.", new Object[]{ACCESS_EXTERNAL_SCHEMA});
+            }
         } catch (SAXException ignored) {
-            // depending on JDK/SAX implementation used
-            LOGGER.log(Level.CONFIG, "Property \"{}\" is not supported by used JAXP implementation.", new Object[]{ACCESS_EXTERNAL_SCHEMA});
+            // nothing to do; support depends on version JDK or SAX implementation
+            if (LOGGER.isLoggable(Level.CONFIG)) {
+                LOGGER.log(Level.CONFIG, "Property \"{0}\" is not supported by used JAXP implementation.", new Object[]{ACCESS_EXTERNAL_SCHEMA});
+            }
         }
         return sf;
     }
+
 }

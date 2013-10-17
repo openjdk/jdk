@@ -187,12 +187,34 @@ oop MethodHandles::init_method_MemberName(Handle mname, CallInfo& info) {
     receiver_limit = m->method_holder();
     assert(receiver_limit->verify_itable_index(vmindex), "");
     flags |= IS_METHOD | (JVM_REF_invokeInterface << REFERENCE_KIND_SHIFT);
+    if (TraceInvokeDynamic) {
+      ResourceMark rm;
+      tty->print_cr("memberName: invokeinterface method_holder::method: %s, receiver: %s, itableindex: %d, access_flags:",
+            Method::name_and_sig_as_C_string(receiver_limit(), m->name(), m->signature()),
+            receiver_limit()->internal_name(), vmindex);
+       m->access_flags().print_on(tty);
+       if (!m->is_abstract()) {
+         tty->print("default");
+       }
+       tty->cr();
+    }
     break;
 
   case CallInfo::vtable_call:
     vmindex = info.vtable_index();
     flags |= IS_METHOD | (JVM_REF_invokeVirtual << REFERENCE_KIND_SHIFT);
     assert(receiver_limit->is_subtype_of(m->method_holder()), "virtual call must be type-safe");
+    if (TraceInvokeDynamic) {
+      ResourceMark rm;
+      tty->print_cr("memberName: invokevirtual method_holder::method: %s, receiver: %s, vtableindex: %d, access_flags:",
+            Method::name_and_sig_as_C_string(receiver_limit(), m->name(), m->signature()),
+            receiver_limit()->internal_name(), vmindex);
+       m->access_flags().print_on(tty);
+       if (m->is_default_method()) {
+         tty->print("default");
+       }
+       tty->cr();
+    }
     break;
 
   case CallInfo::direct_call:

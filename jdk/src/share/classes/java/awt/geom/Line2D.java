@@ -35,7 +35,7 @@ import java.io.Serializable;
  * default coordinate system called <i>user space</i> in which the y-axis
  * values increase downward and x-axis values increase to the right.  For
  * more information on the user space coordinate system, see the
- * <a href="http://java.sun.com/j2se/1.3/docs/guide/2d/spec/j2d-intro.fm2.html#61857">
+ * <a href="http://docs.oracle.com/javase/1.3/docs/guide/2d/spec/j2d-intro.fm2.html#61857">
  * Coordinate Systems</a> section of the Java 2D Programmer's Guide.
  * <p>
  * This class is only the abstract superclass for all objects that
@@ -82,7 +82,7 @@ public abstract class Line2D implements Shape, Cloneable {
         public float y2;
 
         /**
-         * Constructs and initializes a Line with coordinates (0, 0) -> (0, 0).
+         * Constructs and initializes a Line with coordinates (0, 0) &rarr; (0, 0).
          * @since 1.2
          */
         public Float() {
@@ -249,7 +249,7 @@ public abstract class Line2D implements Shape, Cloneable {
         public double y2;
 
         /**
-         * Constructs and initializes a Line with coordinates (0, 0) -> (0, 0).
+         * Constructs and initializes a Line with coordinates (0, 0) &rarr; (0, 0).
          * @since 1.2
          */
         public Double() {
@@ -623,7 +623,7 @@ public abstract class Line2D implements Shape, Cloneable {
      *           specified line segment
      * @param y2 the Y coordinate of the end point of the
      *           specified line segment
-     * @return <true> if this line segment and the specified line segment
+     * @return {@code <true>} if this line segment and the specified line segment
      *                  intersect each other; <code>false</code> otherwise.
      * @since 1.2
      */
