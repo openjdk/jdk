@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,11 +21,13 @@
  * questions.
  */
 
-public class Test {
-    public void test() {
-        p.Foo f = new p.Foo();
-    }
-    private String name() {
-        return "this test";
-    }
+package m;
+
+public class Foo extends Bar implements c.I {
+   public void foo() throws e.E {
+   }
+   public void run() {
+      setF(new f.F());
+   }
 }
+
