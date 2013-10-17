@@ -67,6 +67,13 @@ public class Disassembler {
          String libname = "hsdis";
          String arch = System.getProperty("os.arch");
          if (os.lastIndexOf("Windows", 0) != -1) {
+            if (arch.equals("x86")) {
+               libname +=  "-i386";
+            } else if (arch.equals("amd64")) {
+               libname +=  "-amd64";
+            } else {
+               libname +=  "-" + arch;
+            }
             path.append(sep + "bin" + sep);
             libname += ".dll";
          } else if (os.lastIndexOf("SunOS", 0) != -1) {

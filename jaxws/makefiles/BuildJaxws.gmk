@@ -30,42 +30,42 @@ include $(SPEC)
 include MakeBase.gmk
 include JavaCompilation.gmk
 
-DISABLE_JAXWS_WARNINGS:=-Xlint:all,-varargs,-rawtypes,-deprecation,-unchecked,-serial,-dep-ann,-cast,-fallthrough,-static
+DISABLE_JAXWS_WARNINGS := -Xlint:all,-varargs,-rawtypes,-deprecation,-unchecked,-serial,-dep-ann,-cast,-fallthrough,-static
 
 # The generate new bytecode uses the new compiler for to generate bytecode
 # for the new jdk that is being built. The code compiled by this setup
 # cannot necessarily be run with the boot jdk.
-$(eval $(call SetupJavaCompiler,GENERATE_NEWBYTECODE_DEBUG,\
-     JVM:=$(JAVA),\
-     JAVAC:=$(NEW_JAVAC),\
-     FLAGS:=-XDignore.symbol.file=true $(DISABLE_JAXWS_WARNINGS) -g,\
-     SERVER_DIR:=$(SJAVAC_SERVER_DIR),\
-     SERVER_JVM:=$(SJAVAC_SERVER_JAVA)))
+$(eval $(call SetupJavaCompiler,GENERATE_NEWBYTECODE_DEBUG, \
+    JVM := $(JAVA), \
+    JAVAC := $(NEW_JAVAC), \
+    FLAGS := -XDignore.symbol.file=true $(DISABLE_JAXWS_WARNINGS) -g, \
+    SERVER_DIR := $(SJAVAC_SERVER_DIR), \
+    SERVER_JVM := $(SJAVAC_SERVER_JAVA)))
 
 # Dummy here is needed to trigger copying of META-INF
-$(eval $(call SetupJavaCompilation,BUILD_JAF,\
-		SETUP:=GENERATE_NEWBYTECODE_DEBUG,\
-		SRC:=$(JAXWS_TOPDIR)/src/share/jaf_classes,\
-		COPY:="dummy",\
-		BIN:=$(JAXWS_OUTPUTDIR)/jaf_classes))
+$(eval $(call SetupJavaCompilation,BUILD_JAF, \
+    SETUP := GENERATE_NEWBYTECODE_DEBUG, \
+    SRC := $(JAXWS_TOPDIR)/src/share/jaf_classes, \
+    COPY := "dummy", \
+    BIN := $(JAXWS_OUTPUTDIR)/jaf_classes))
 
-$(eval $(call SetupJavaCompilation,BUILD_JAXWS,\
-		SETUP:=GENERATE_NEWBYTECODE_DEBUG,\
-		SRC:=$(JAXWS_TOPDIR)/src/share/jaxws_classes,\
-		BIN:=$(JAXWS_OUTPUTDIR)/jaxws_classes,\
-		COPY:=.xsd,\
-		COPY_FILES:=$(JAXWS_TOPDIR)/src/share/jaxws_classes/com/sun/tools/internal/xjc/runtime/JAXBContextFactory.java \
-			    $(JAXWS_TOPDIR)/src/share/jaxws_classes/com/sun/tools/internal/xjc/runtime/ZeroOneBooleanAdapter.java \
-  			    $(JAXWS_TOPDIR)/src/share/jaxws_classes/com/sun/xml/internal/ws/assembler/jaxws-tubes-default.xml,\
-		ADD_JAVAC_FLAGS=-cp $(OUTPUT_ROOT)/jaxp/dist/lib/classes.jar))
+$(eval $(call SetupJavaCompilation,BUILD_JAXWS, \
+    SETUP := GENERATE_NEWBYTECODE_DEBUG, \
+    SRC := $(JAXWS_TOPDIR)/src/share/jaxws_classes, \
+    BIN := $(JAXWS_OUTPUTDIR)/jaxws_classes, \
+    COPY := .xsd, \
+    COPY_FILES := $(JAXWS_TOPDIR)/src/share/jaxws_classes/com/sun/tools/internal/xjc/runtime/JAXBContextFactory.java \
+        $(JAXWS_TOPDIR)/src/share/jaxws_classes/com/sun/tools/internal/xjc/runtime/ZeroOneBooleanAdapter.java \
+        $(JAXWS_TOPDIR)/src/share/jaxws_classes/com/sun/xml/internal/ws/assembler/jaxws-tubes-default.xml, \
+    ADD_JAVAC_FLAGS = -cp $(OUTPUT_ROOT)/jaxp/dist/lib/classes.jar))
 
 $(JAXWS_OUTPUTDIR)/jaxws_classes/META-INF/services/com.sun.tools.internal.ws.wscompile.Plugin: \
-		         $(JAXWS_TOPDIR)/src/share/jaxws_classes/com/sun/tools/etc/META-INF/services/com.sun.tools.internal.ws.wscompile.Plugin
+    $(JAXWS_TOPDIR)/src/share/jaxws_classes/com/sun/tools/etc/META-INF/services/com.sun.tools.internal.ws.wscompile.Plugin
 	mkdir -p $(@D)
 	cp $< $@
 
 $(JAXWS_OUTPUTDIR)/jaxws_classes/META-INF/services/com.sun.tools.internal.xjc.Plugin: \
-		         $(JAXWS_TOPDIR)/src/share/jaxws_classes/com/sun/tools/etc/META-INF/services/com.sun.tools.internal.xjc.Plugin
+    $(JAXWS_TOPDIR)/src/share/jaxws_classes/com/sun/tools/etc/META-INF/services/com.sun.tools.internal.xjc.Plugin
 	mkdir -p $(@D)
 	cp $< $@
 
@@ -73,7 +73,7 @@ $(JAXWS_OUTPUTDIR)/jaxws_classes/META-INF/services/com.sun.tools.internal.xjc.Pl
 BUILD_JAXWS += $(JAXWS_OUTPUTDIR)/jaxws_classes/META-INF/services/com.sun.tools.internal.ws.wscompile.Plugin \
                $(JAXWS_OUTPUTDIR)/jaxws_classes/META-INF/services/com.sun.tools.internal.xjc.Plugin
 
-# Imitate the property cleaning mechanism in the old build. This will likely be replaced 
+# Imitate the property cleaning mechanism in the old build. This will likely be replaced
 # by the unified functionality in JavaCompilation.gmk, but keep it the same as old build
 # for now, even though it actually breaks properties containing # in the value.
 # Using nawk to avoid solaris sed.
@@ -84,8 +84,8 @@ $(JAXWS_OUTPUTDIR)/jaxws_classes/%.properties: $(JAXWS_TOPDIR)/src/share/jaxws_c
 	$(MV) $@.tmp $@
 
 JAXWS_SRC_PROP_FILES := $(shell $(FIND) $(JAXWS_TOPDIR)/src/share/jaxws_classes -name "*.properties")
-TARGET_PROP_FILES := $(patsubst $(JAXWS_TOPDIR)/src/share/jaxws_classes/%,\
-                       $(JAXWS_OUTPUTDIR)/jaxws_classes/%,$(JAXWS_SRC_PROP_FILES))
+TARGET_PROP_FILES := $(patsubst $(JAXWS_TOPDIR)/src/share/jaxws_classes/%, \
+    $(JAXWS_OUTPUTDIR)/jaxws_classes/%, $(JAXWS_SRC_PROP_FILES))
 
 $(JAXWS_OUTPUTDIR)/jaf_classes/%.properties: $(JAXWS_TOPDIR)/src/share/jaf_classes/%.properties
 	$(MKDIR) -p $(@D)
@@ -94,20 +94,20 @@ $(JAXWS_OUTPUTDIR)/jaf_classes/%.properties: $(JAXWS_TOPDIR)/src/share/jaf_class
 	$(MV) $@.tmp $@
 
 JAF_SRC_PROP_FILES := $(shell $(FIND) $(JAXWS_TOPDIR)/src/share/jaf_classes -name "*.properties")
-TARGET_PROP_FILES += $(patsubst $(JAXWS_TOPDIR)/src/share/jaf_classes/%,\
-                       $(JAXWS_OUTPUTDIR)/jaf_classes/%,$(JAF_SRC_PROP_FILES))
+TARGET_PROP_FILES += $(patsubst $(JAXWS_TOPDIR)/src/share/jaf_classes/%, \
+    $(JAXWS_OUTPUTDIR)/jaf_classes/%, $(JAF_SRC_PROP_FILES))
 
-$(eval $(call SetupArchive,ARCHIVE_JAXWS,$(BUILD_JAXWS) $(BUILD_JAF) $(TARGET_PROP_FILES),\
-		SRCS:=$(JAXWS_OUTPUTDIR)/jaxws_classes $(JAXWS_OUTPUTDIR)/jaf_classes,\
-		SUFFIXES:=.class .properties .xsd .xml .java \
-			  com.sun.mirror.apt.AnnotationProcessorFactory \
-                          com.sun.tools.internal.xjc.Plugin,\
-		JAR:=$(JAXWS_OUTPUTDIR)/dist/lib/classes.jar))
+$(eval $(call SetupArchive,ARCHIVE_JAXWS, $(BUILD_JAXWS) $(BUILD_JAF) $(TARGET_PROP_FILES), \
+    SRCS := $(JAXWS_OUTPUTDIR)/jaxws_classes $(JAXWS_OUTPUTDIR)/jaf_classes, \
+    SUFFIXES := .class .properties .xsd .xml .java \
+        com.sun.mirror.apt.AnnotationProcessorFactory \
+        com.sun.tools.internal.xjc.Plugin, \
+    JAR := $(JAXWS_OUTPUTDIR)/dist/lib/classes.jar))
 
-$(eval $(call SetupZipArchive,ZIP_JAXWS_SOURCES,\
-		SRC:=$(JAXWS_TOPDIR)/src/share/jaf_classes $(JAXWS_TOPDIR)/src/share/jaxws_classes,\
-		ZIP:=$(JAXWS_OUTPUTDIR)/dist/lib/src.zip))
+$(eval $(call SetupZipArchive,ZIP_JAXWS_SOURCES, \
+    SRC := $(JAXWS_TOPDIR)/src/share/jaf_classes $(JAXWS_TOPDIR)/src/share/jaxws_classes, \
+    ZIP := $(JAXWS_OUTPUTDIR)/dist/lib/src.zip))
 
 all: $(JAXWS_OUTPUTDIR)/dist/lib/classes.jar $(JAXWS_OUTPUTDIR)/dist/lib/src.zip
 
-.PHONY: default all 
+.PHONY: default all

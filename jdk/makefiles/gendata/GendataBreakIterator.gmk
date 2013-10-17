@@ -1,0 +1,99 @@
+#
+# Copyright (c) 2011, 2013, Oracle and/or its affiliates. All rights reserved.
+# DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+#
+# This code is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License version 2 only, as
+# published by the Free Software Foundation.  Oracle designates this
+# particular file as subject to the "Classpath" exception as provided
+# by Oracle in the LICENSE file that accompanied this code.
+#
+# This code is distributed in the hope that it will be useful, but WITHOUT
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+# FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+# version 2 for more details (a copy is included in the LICENSE file that
+# accompanied this code).
+#
+# You should have received a copy of the GNU General Public License version
+# 2 along with this work; if not, write to the Free Software Foundation,
+# Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+#
+# Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+# or visit www.oracle.com if you need additional information or have any
+# questions.
+#
+
+#
+# Make file for generating BreakIterator data files.
+#
+
+# input
+#
+# Notes: sun.text.resources.BreakIteratorRules no longer goes to runtime.
+# They are used at JDK build phase in order to create $(BIFILES) which
+# are used on runtime instead.
+#
+TEXT_SRCDIR = $(JDK_TOPDIR)/src/share/classes
+TEXT_PKG = sun/text/resources
+TEXT_SOURCES = $(TEXT_PKG)/BreakIteratorRules.java \
+    $(TEXT_PKG)/BreakIteratorInfo.java \
+    $(TEXT_PKG)/th/BreakIteratorRules_th.java \
+    $(TEXT_PKG)/th/BreakIteratorInfo_th.java
+
+# Generate BreakIteratorData
+BREAK_ITERATOR_DIR = $(JDK_OUTPUTDIR)/break_iterator
+BREAK_ITERATOR_CLASSES = $(BREAK_ITERATOR_DIR)/classes
+
+# JAVAC_SOURCE_PATH_OVERRIDE is set to isolate the compile to just those
+# two files in that directory and not get anything implicit from
+# surrounding directories which aren't jdk N-1 compatible.
+# Because we are targeting jdk N-1, but the surrounding source code is jdk N.
+# These two files should be moved out to a build tool! We have to disable
+# sjavac here as well.
+$(eval $(call SetupJavaCompilation,BUILD_BREAKITERATOR, \
+    SETUP := GENERATE_OLDBYTECODE, \
+    SRC := $(TEXT_SRCDIR), \
+    DISABLE_SJAVAC := true, \
+    JAVAC_SOURCE_PATH_OVERRIDE := $(TEXT_SRCDIR)/$(TEXT_PKG), \
+    INCLUDES := $(TEXT_PKG), \
+    INCLUDE_FILES := $(TEXT_SOURCES), \
+    BIN := $(BREAK_ITERATOR_CLASSES)))
+
+# Generate data resource files.
+# input
+UNICODEDATA = $(JDK_TOPDIR)/make/tools/UnicodeData/UnicodeData.txt
+
+# output
+DATA_PKG_DIR = $(JDK_OUTPUTDIR)/classes/sun/text/resources
+BIFILES = $(DATA_PKG_DIR)/CharacterBreakIteratorData \
+    $(DATA_PKG_DIR)/WordBreakIteratorData \
+    $(DATA_PKG_DIR)/LineBreakIteratorData \
+    $(DATA_PKG_DIR)/SentenceBreakIteratorData
+BIFILES_TH = $(DATA_PKG_DIR)/th/WordBreakIteratorData_th \
+    $(DATA_PKG_DIR)/th/LineBreakIteratorData_th
+
+$(BIFILES): $(DATA_PKG_DIR)/_the.bifiles
+$(DATA_PKG_DIR)/_the.bifiles: JAVA_FLAGS += -Xbootclasspath/p:$(BREAK_ITERATOR_CLASSES)
+$(DATA_PKG_DIR)/_the.bifiles: $(BUILD_TOOLS) $(UNICODEDATA) $(BUILD_BREAKITERATOR)
+	$(ECHO) $(LOG_INFO) "Generating BreakIteratorData"
+	$(MKDIR) -p $(DATA_PKG_DIR)
+	$(RM) $(BIFILES)
+	$(TOOL_GENERATEBREAKITERATORDATA) \
+	    -o $(DATA_PKG_DIR) \
+	    -spec $(UNICODEDATA)
+	$(TOUCH) $@
+
+$(BIFILES_TH): $(DATA_PKG_DIR)/_the.bifiles_th
+$(DATA_PKG_DIR)/_the.bifiles_th: JAVA_FLAGS += -Xbootclasspath/p:$(BREAK_ITERATOR_CLASSES)
+$(DATA_PKG_DIR)/_the.bifiles_th: $(BUILD_TOOLS) $(UNICODEDATA) $(BUILD_BREAKITERATOR)
+	$(ECHO) $(LOG_INFO) "Generating BreakIteratorData_th"
+	$(MKDIR) -p $(DATA_PKG_DIR)/th
+	$(RM) $(BIFILES_TH)
+	$(TOOL_GENERATEBREAKITERATORDATA) \
+	    -o $(DATA_PKG_DIR) \
+	    -spec $(UNICODEDATA) \
+	    -language th
+	$(TOUCH) $@
+
+
+BREAK_ITERATOR += $(BIFILES) $(BIFILES_TH)

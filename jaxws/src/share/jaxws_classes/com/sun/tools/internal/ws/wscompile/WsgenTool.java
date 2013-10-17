@@ -161,7 +161,7 @@ public class WsgenTool {
         final ErrorReceiverFilter errReceiver = new ErrorReceiverFilter(listener);
 
         boolean bootCP = useBootClasspath(EndpointReference.class) || useBootClasspath(XmlSeeAlso.class);
-        Collection<String> args = new ArrayList<String>(6 + (bootCP ? 1 : 0) + (options.nocompile ? 1 : 0)
+        List<String> args = new ArrayList<String>(6 + (bootCP ? 1 : 0) + (options.nocompile ? 1 : 0)
                 + (options.encoding != null ? 2 : 0));
         args.add("-d");
         args.add(options.destDir.getAbsolutePath());
@@ -182,6 +182,9 @@ public class WsgenTool {
                     .append(JavaCompilerHelper.getJarFile(EndpointReference.class))
                     .append(File.pathSeparator)
                     .append(JavaCompilerHelper.getJarFile(XmlSeeAlso.class)).toString());
+        }
+        if (options.javacOptions != null) {
+            args.addAll(options.getJavacOptions(args, listener));
         }
 
         JavaCompiler compiler = ToolProvider.getSystemJavaCompiler();//        compiler = JavacTool.create();
@@ -205,9 +208,9 @@ public class WsgenTool {
             DatabindingConfig config = new DatabindingConfig();
 
             List<String> externalMetadataFileNames = options.externalMetadataFiles;
-            boolean disableSecureXmlProcessing = options.disableSecureXmlProcessing;
+            boolean disableXmlSecurity = options.disableXmlSecurity;
             if (externalMetadataFileNames != null && externalMetadataFileNames.size() > 0) {
-                config.setMetadataReader(new ExternalMetadataReader(getExternalFiles(externalMetadataFileNames), null, null, true, disableSecureXmlProcessing));
+                config.setMetadataReader(new ExternalMetadataReader(getExternalFiles(externalMetadataFileNames), null, null, true, disableXmlSecurity));
             }
 
             String tmpPath = options.destDir.getAbsolutePath() + File.pathSeparator + options.classpath;
@@ -243,7 +246,7 @@ public class WsgenTool {
             final Map<String, File> schemaFiles = new HashMap<String, File>();
 
             WSDLGenInfo wsdlGenInfo = new WSDLGenInfo();
-            wsdlGenInfo.setSecureXmlProcessingDisabled(disableSecureXmlProcessing);
+            wsdlGenInfo.setSecureXmlProcessingDisabled(disableXmlSecurity);
 
             wsdlGenInfo.setWsdlResolver(
                     new WSDLResolver() {
@@ -404,6 +407,7 @@ public class WsgenTool {
             System.out.println(WscompileMessages.WSGEN_HELP("WSGEN",
                     ((WsgenOptions)options).protocols,
                     ((WsgenOptions)options).nonstdProtocols.keySet()));
+            System.out.println(WscompileMessages.WSGEN_USAGE_EXTENSIONS());
             System.out.println(WscompileMessages.WSGEN_USAGE_EXAMPLES());
         }
     }
