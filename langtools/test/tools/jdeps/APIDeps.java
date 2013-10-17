@@ -23,10 +23,10 @@
 
 /*
  * @test
- * @bug 8003562 8005428 8015912
- * @summary Basic tests for jdeps tool
- * @build Test p.Foo
- * @run main Basic
+ * @bug 8015912
+ * @summary find API dependencies
+ * @build m.Bar m.Foo m.Gee b.B c.C c.I d.D e.E f.F g.G
+ * @run main APIDeps
  */
 
 import java.io.File;
@@ -38,7 +38,7 @@ import java.nio.file.Paths;
 import java.util.*;
 import java.util.regex.*;
 
-public class Basic {
+public class APIDeps {
     private static boolean symbolFileExist = initProfiles();
     private static boolean initProfiles() {
         // check if ct.sym exists; if not use the profiles.properties file
@@ -62,50 +62,39 @@ public class Basic {
 
     public static void main(String... args) throws Exception {
         int errors = 0;
-        errors += new Basic().run();
+        errors += new APIDeps().run();
         if (errors > 0)
             throw new Exception(errors + " errors found");
     }
 
     int run() throws IOException {
         File testDir = new File(System.getProperty("test.classes", "."));
-        // test a .class file
-        test(new File(testDir, "Test.class"),
-             new String[] {"java.lang", "p"},
-             new String[] {"compact1", "not found"});
-        // test a directory
-        test(new File(testDir, "p"),
-             new String[] {"java.lang", "java.util", "java.lang.management"},
-             new String[] {"compact1", "compact1", "compact3"});
-        // test class-level dependency output
-        test(new File(testDir, "Test.class"),
-             new String[] {"java.lang.Object", "java.lang.String", "p.Foo"},
-             new String[] {"compact1", "compact1", "not found"},
-             new String[] {"-verbose:class"});
-        // test -p option
-        test(new File(testDir, "Test.class"),
-             new String[] {"p.Foo"},
-             new String[] {"not found"},
-             new String[] {"-verbose:class", "-p", "p"});
-        // test -e option
-        test(new File(testDir, "Test.class"),
-             new String[] {"p.Foo"},
-             new String[] {"not found"},
-             new String[] {"-verbose:class", "-e", "p\\..*"});
-        test(new File(testDir, "Test.class"),
-             new String[] {"java.lang"},
-             new String[] {"compact1"},
-             new String[] {"-verbose:package", "-e", "java\\.lang\\..*"});
-        // test -classpath and -include options
-        test(null,
-             new String[] {"java.lang", "java.util",
-                           "java.lang.management"},
-             new String[] {"compact1", "compact1", "compact3"},
-             new String[] {"-classpath", testDir.getPath(), "-include", "p.+|Test.class"});
-        test(new File(testDir, "Test.class"),
-             new String[] {"java.lang.Object", "java.lang.String", "p.Foo"},
-             new String[] {"compact1", "compact1", testDir.getName()},
-             new String[] {"-v", "-classpath", testDir.getPath(), "Test.class"});
+        String testDirBasename = testDir.toPath().getFileName().toString();
+        File mDir = new File(testDir, "m");
+        // all dependencies
+        test(new File(mDir, "Bar.class"),
+             new String[] {"java.lang.Object", "java.lang.String",
+                           "java.util.Set", "java.util.HashSet",
+                           "java.lang.management.ManagementFactory",
+                           "java.lang.management.RuntimeMXBean",
+                           "b.B", "c.C", "d.D", "f.F", "g.G"},
+             new String[] {"compact1", "compact3", testDirBasename},
+             new String[] {"-classpath", testDir.getPath(), "-verbose", "-P"});
+        test(new File(mDir, "Foo.class"),
+             new String[] {"c.I", "e.E", "f.F", "m.Bar"},
+             new String[] {testDirBasename},
+             new String[] {"-classpath", testDir.getPath(), "-verbose", "-P"});
+        test(new File(mDir, "Gee.class"),
+             new String[] {"g.G", "sun.misc.Lock"},
+             new String[] {testDirBasename, "JDK internal API"},
+             new String[] {"-classpath", testDir.getPath(), "-verbose"});
+        // parse only APIs
+        test(mDir,
+             new String[] {"java.lang.Object", "java.lang.String",
+                           "java.util.Set",
+                           "c.C", "d.D", "c.I", "e.E", "m.Bar"},
+             new String[] {"compact1", testDirBasename, mDir.getName()},
+             new String[] {"-classpath", testDir.getPath(), "-verbose", "-P", "-apionly"});
         return errors;
     }
 
@@ -118,13 +107,8 @@ public class Basic {
         if (file != null) {
             args.add(file.getPath());
         }
-        List<String> argsWithDashP = new ArrayList<>();
-        argsWithDashP.add("-P");
-        argsWithDashP.addAll(args);
-        // test without -P
-        checkResult("dependencies", expect, jdeps(args.toArray(new String[0])).keySet());
-        // test with -P
-        checkResult("profiles", expect, profiles, jdeps(argsWithDashP.toArray(new String[0])));
+        checkResult("api-dependencies", expect, profiles,
+                    jdeps(args.toArray(new String[0])));
     }
 
     Map<String,String> jdeps(String... args) {
@@ -174,18 +158,19 @@ public class Basic {
     }
 
     void checkResult(String label, String[] expect, String[] profiles, Map<String,String> result) {
-        if (expect.length != profiles.length)
-            error("Invalid expected names and profiles");
-
         // check the dependencies
         checkResult(label, expect, result.keySet());
         // check profile information
-        checkResult(label, profiles, result.values());
-        for (int i=0; i < expect.length; i++) {
-            String profile = result.get(expect[i]);
-            if (!profile.equals(profiles[i]))
-                error("Unexpected profile: '" + profile + "', expected: '" + profiles[i] + "'");
+        Set<String> values = new TreeSet<>();
+        String internal = "JDK internal API";
+        for (String s: result.values()) {
+            if (s.startsWith(internal)){
+                values.add(internal);
+            } else {
+                values.add(s);
+            }
         }
+        checkResult(label, profiles, values);
     }
 
     boolean isEqual(List<String> expected, Collection<String> found) {
