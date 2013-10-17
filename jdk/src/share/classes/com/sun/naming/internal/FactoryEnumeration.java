@@ -56,9 +56,12 @@ public final class FactoryEnumeration {
      * references so as not to prevent GC of the class loader.  Each
      * weak reference is tagged with the factory's class name so the
      * class can be reloaded if the reference is cleared.
-
+     *
      * @param factories A non-null list
      * @param loader    The class loader of the list's contents
+     *
+     * This internal method is used with Thread Context Class Loader (TCCL),
+     * please don't expose this method as public.
      */
     FactoryEnumeration(List<NamedWeakReference<Object>> factories,
                        ClassLoader loader) {
@@ -79,7 +82,9 @@ public final class FactoryEnumeration {
 
             try {
                 if (answer == null) {   // reload class if weak ref cleared
-                    answer = Class.forName(className, true, loader);
+                    Class<?> cls = Class.forName(className, true, loader);
+                    VersionHelper12.checkPackageAccess(cls);
+                    answer = cls;
                 }
                 // Instantiate Class to get factory
                 answer = ((Class) answer).newInstance();
