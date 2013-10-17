@@ -475,11 +475,6 @@ class CollectedHeap : public CHeapObj<mtInternal> {
   // the context of the vm thread.
   virtual void collect_as_vm_thread(GCCause::Cause cause);
 
-  // Callback from VM_CollectForMetadataAllocation operation.
-  MetaWord* satisfy_failed_metadata_allocation(ClassLoaderData* loader_data,
-                                               size_t size,
-                                               Metaspace::MetadataType mdtype);
-
   // Returns the barrier set for this heap
   BarrierSet* barrier_set() { return _barrier_set; }
 
