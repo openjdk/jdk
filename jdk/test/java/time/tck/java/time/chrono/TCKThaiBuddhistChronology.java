@@ -72,11 +72,11 @@ import java.time.DateTimeException;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.Month;
-import java.time.Period;
 import java.time.Year;
 import java.time.ZoneId;
 import java.time.ZoneOffset;
 import java.time.chrono.ChronoLocalDate;
+import java.time.chrono.ChronoPeriod;
 import java.time.chrono.Chronology;
 import java.time.chrono.Era;
 import java.time.chrono.IsoChronology;
@@ -458,8 +458,8 @@ public class TCKThaiBuddhistChronology {
     public void test_periodUntilDate() {
         ThaiBuddhistDate mdate1 = ThaiBuddhistDate.of(1, 1, 1);
         ThaiBuddhistDate mdate2 = ThaiBuddhistDate.of(2, 2, 2);
-        Period period = mdate1.until(mdate2);
-        assertEquals(period, Period.of(1, 1, 1));
+        ChronoPeriod period = mdate1.until(mdate2);
+        assertEquals(period, ThaiBuddhistChronology.INSTANCE.period(1, 1, 1));
     }
 
     @Test
@@ -475,8 +475,8 @@ public class TCKThaiBuddhistChronology {
         ThaiBuddhistDate mdate1 = ThaiBuddhistDate.of(1, 1, 1);
         ThaiBuddhistDate mdate2 = ThaiBuddhistDate.of(2, 2, 2);
         MinguoDate ldate2 = MinguoChronology.INSTANCE.date(mdate2);
-        Period period = mdate1.until(ldate2);
-        assertEquals(period, Period.of(1, 1, 1));
+        ChronoPeriod period = mdate1.until(ldate2);
+        assertEquals(period, ThaiBuddhistChronology.INSTANCE.period(1, 1, 1));
     }
 
     //-----------------------------------------------------------------------

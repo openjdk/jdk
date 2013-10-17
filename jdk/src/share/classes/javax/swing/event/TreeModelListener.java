@@ -32,7 +32,7 @@ import java.util.EventListener;
  * to changes in a TreeModel.
  * For further information and examples see
  * <a
- href="http://java.sun.com/docs/books/tutorial/uiswing/events/treemodellistener.html">How to Write a Tree Model Listener</a>,
+ href="http://docs.oracle.com/javase/tutorial/uiswing/events/treemodellistener.html">How to Write a Tree Model Listener</a>,
  * a section in <em>The Java Tutorial.</em>
  *
  * @author Rob Davis

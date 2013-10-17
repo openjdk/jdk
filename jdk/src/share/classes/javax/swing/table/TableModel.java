@@ -40,7 +40,7 @@ import javax.swing.event.*;
  *      JTable table = new JTable(myData);
  *  </pre><p>
  *
- * For further documentation, see <a href="http://java.sun.com/docs/books/tutorial/uiswing/components/table.html#data">Creating a Table Model</a>
+ * For further documentation, see <a href="http://docs.oracle.com/javase/tutorial/uiswing/components/table.html#data">Creating a Table Model</a>
  * in <em>The Java Tutorial</em>.
  * <p>
  * @author Philip Milne

@@ -37,16 +37,16 @@ TEST_FOR_NON_GNUMAKE:sh=echo You are not using GNU make/gmake, this is a require
 
 # Assume we have GNU make, but check version.
 ifeq (,$(findstring 3.81,$(MAKE_VERSION)))
-    ifeq (,$(findstring 3.82,$(MAKE_VERSION)))
-        $(error This version of GNU Make is too low ($(MAKE_VERSION)). Check your path, or upgrade to 3.81 or newer.)
-    endif
+  ifeq (,$(findstring 3.82,$(MAKE_VERSION)))
+    $(error This version of GNU Make is too low ($(MAKE_VERSION)). Check your path, or upgrade to 3.81 or newer.)
+  endif
 endif
 
 # Locate this Makefile
 ifeq ($(filter /%,$(lastword $(MAKEFILE_LIST))),)
-    makefile_path:=$(CURDIR)/$(lastword $(MAKEFILE_LIST))
+  makefile_path:=$(CURDIR)/$(lastword $(MAKEFILE_LIST))
 else
-    makefile_path:=$(lastword $(MAKEFILE_LIST))
+  makefile_path:=$(lastword $(MAKEFILE_LIST))
 endif
 root_dir:=$(dir $(makefile_path))
 
@@ -58,27 +58,27 @@ $(eval $(call ParseConfAndSpec))
 
 # Now determine if we have zero, one or several configurations to build.
 ifeq ($(SPEC),)
-    # Since we got past ParseConfAndSpec, we must be building a global target. Do nothing.
+  # Since we got past ParseConfAndSpec, we must be building a global target. Do nothing.
 else
-    ifeq ($(words $(SPEC)),1)
-        # We are building a single configuration. This is the normal case. Execute the Main.gmk file.
-        include $(root_dir)/common/makefiles/Main.gmk
-    else
-        # We are building multiple configurations.
-        # First, find out the valid targets
-        # Run the makefile with an arbitrary SPEC using -p -q (quiet dry-run and dump rules) to find
-        # available PHONY targets. Use this list as valid targets to pass on to the repeated calls.
-        all_phony_targets=$(filter-out $(global_targets) bundles-only, $(strip $(shell \
-            $(MAKE) -p -q -f common/makefiles/Main.gmk FRC SPEC=$(firstword $(SPEC)) | \
-            grep ^.PHONY: | head -n 1 | cut -d " " -f 2-)))
+  ifeq ($(words $(SPEC)),1)
+    # We are building a single configuration. This is the normal case. Execute the Main.gmk file.
+    include $(root_dir)/common/makefiles/Main.gmk
+  else
+    # We are building multiple configurations.
+    # First, find out the valid targets
+    # Run the makefile with an arbitrary SPEC using -p -q (quiet dry-run and dump rules) to find
+    # available PHONY targets. Use this list as valid targets to pass on to the repeated calls.
+    all_phony_targets=$(filter-out $(global_targets) bundles-only, $(strip $(shell \
+        $(MAKE) -p -q -f common/makefiles/Main.gmk FRC SPEC=$(firstword $(SPEC)) | \
+        grep ^.PHONY: | head -n 1 | cut -d " " -f 2-)))
 
-        $(all_phony_targets):
-		@$(foreach spec,$(SPEC),($(MAKE) -f NewMakefile.gmk SPEC=$(spec) \
-			$(VERBOSE) VERBOSE=$(VERBOSE) LOG_LEVEL=$(LOG_LEVEL) $@) &&) true
+    $(all_phony_targets):
+	@$(foreach spec,$(SPEC),($(MAKE) -f NewMakefile.gmk SPEC=$(spec) \
+	    $(VERBOSE) VERBOSE=$(VERBOSE) LOG_LEVEL=$(LOG_LEVEL) $@) &&) true
 
-        .PHONY: $(all_phony_targets)
+    .PHONY: $(all_phony_targets)
 
-    endif
+  endif
 endif
 
 # Include this after a potential spec file has been included so that the bundles target

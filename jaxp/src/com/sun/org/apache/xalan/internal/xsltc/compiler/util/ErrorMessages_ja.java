@@ -18,7 +18,7 @@
  * limitations under the License.
  */
 /*
- * $Id: ErrorMessages_ja.java,v 1.2.4.1 2005/09/15 10:08:16 pvedula Exp $
+ * $Id: ErrorMessages_ja.java /st_wptg_1.8.0.0.0jdk/2 2013/09/12 17:39:58 gmolloy Exp $
  */
 
 package com.sun.org.apache.xalan.internal.xsltc.compiler.util;
@@ -447,7 +447,7 @@ public class ErrorMessages_ja extends ListResourceBundle {
          * Note to translators:  access to the stylesheet target is denied
          */
         {ErrorMsg.ACCESSING_XSLT_TARGET_ERR,
-        "Could not read stylesheet target ''{0}'', because ''{1}'' access is not allowed."},
+        "accessExternalStylesheet\u30D7\u30ED\u30D1\u30C6\u30A3\u3067\u8A2D\u5B9A\u3055\u308C\u305F\u5236\u9650\u306B\u3088\u308A''{1}''\u30A2\u30AF\u30BB\u30B9\u304C\u8A31\u53EF\u3055\u308C\u3066\u3044\u306A\u3044\u305F\u3081\u3001\u30B9\u30BF\u30A4\u30EB\u30B7\u30FC\u30C8\u30FB\u30BF\u30FC\u30B2\u30C3\u30C8''{0}''\u3092\u8AAD\u307F\u53D6\u308C\u307E\u305B\u3093\u3067\u3057\u305F\u3002"},
 
         /*
          * Note to translators:  This message represents an internal error in
@@ -771,7 +771,7 @@ public class ErrorMessages_ja extends ListResourceBundle {
          * it the same amount as the first in English.
          */
         {ErrorMsg.WARNING_PLUS_WRAPPED_MSG,
-        "\u8B66\u544A:  ''{0}''\n       :{1}"},
+        "WARNING:  ''{0}''\n       :{1}"},
 
         /*
          * Note to translators:  This message is used to indicate the severity
@@ -787,7 +787,7 @@ public class ErrorMessages_ja extends ListResourceBundle {
          * it the same amount as the first in English.
          */
         {ErrorMsg.FATAL_ERR_PLUS_WRAPPED_MSG,
-        "\u81F4\u547D\u7684\u30A8\u30E9\u30FC:  ''{0}''\n           :{1}"},
+        "FATAL ERROR:  ''{0}''\n           :{1}"},
 
         /*
          * Note to translators:  This message is used to indicate the severity
@@ -803,7 +803,7 @@ public class ErrorMessages_ja extends ListResourceBundle {
          * it the same amount as the first in English.
          */
         {ErrorMsg.ERROR_PLUS_WRAPPED_MSG,
-        "\u30A8\u30E9\u30FC:  ''{0}''\n     :{1}"},
+        "ERROR:  ''{0}''\n     :{1}"},
 
         /*
          * Note to translators:  This message is used to indicate the severity
@@ -910,7 +910,58 @@ public class ErrorMessages_ja extends ListResourceBundle {
         "\u6A5F\u80FD''{0}''\u3092\u3053\u306ETransformerFactory\u306B\u8A2D\u5B9A\u3067\u304D\u307E\u305B\u3093\u3002"},
 
         {ErrorMsg.JAXP_SECUREPROCESSING_FEATURE,
-        "FEATURE_SECURE_PROCESSING: \u30BB\u30AD\u30E5\u30EA\u30C6\u30A3\u30FB\u30DE\u30CD\u30FC\u30B8\u30E3\u304C\u5B58\u5728\u3059\u308B\u3068\u304D\u3001\u6A5F\u80FD\u3092false\u306B\u8A2D\u5B9A\u3067\u304D\u307E\u305B\u3093\u3002"}
+        "FEATURE_SECURE_PROCESSING: \u30BB\u30AD\u30E5\u30EA\u30C6\u30A3\u30FB\u30DE\u30CD\u30FC\u30B8\u30E3\u304C\u5B58\u5728\u3059\u308B\u3068\u304D\u3001\u6A5F\u80FD\u3092false\u306B\u8A2D\u5B9A\u3067\u304D\u307E\u305B\u3093\u3002"},
+
+        /*
+         * Note to translators:  This message describes an internal error in the
+         * processor.  The term "byte code" is a Java technical term for the
+         * executable code in a Java method, and "try-catch-finally block"
+         * refers to the Java keywords with those names.  "Outlined" is a
+         * technical term internal to XSLTC and should not be translated.
+         */
+        {ErrorMsg.OUTLINE_ERR_TRY_CATCH,
+         "\u5185\u90E8XSLTC\u30A8\u30E9\u30FC: \u751F\u6210\u3055\u308C\u305F\u30D0\u30A4\u30C8\u30FB\u30B3\u30FC\u30C9\u306F\u3001try-catch-finally\u30D6\u30ED\u30C3\u30AF\u3092\u542B\u3093\u3067\u3044\u308B\u305F\u3081\u3001\u30A2\u30A6\u30C8\u30E9\u30A4\u30F3\u5316\u3067\u304D\u307E\u305B\u3093\u3002"},
+
+        /*
+         * Note to translators:  This message describes an internal error in the
+         * processor.  The terms "OutlineableChunkStart" and
+         * "OutlineableChunkEnd" are the names of classes internal to XSLTC and
+         * should not be translated.  The message indicates that for every
+         * "start" there must be a corresponding "end", and vice versa, and
+         * that if one of a pair of "start" and "end" appears between another
+         * pair of corresponding "start" and "end", then the other half of the
+         * pair must also be between that same enclosing pair.
+         */
+        {ErrorMsg.OUTLINE_ERR_UNBALANCED_MARKERS,
+         "\u5185\u90E8XSLTC\u30A8\u30E9\u30FC: OutlineableChunkStart\u30DE\u30FC\u30AB\u30FC\u3068OutlineableChunkEnd\u30DE\u30FC\u30AB\u30FC\u306F\u3001\u5BFE\u306B\u306A\u3063\u3066\u304A\u308A\u3001\u304B\u3064\u6B63\u3057\u304F\u30CD\u30B9\u30C8\u3055\u308C\u3066\u3044\u308B\u5FC5\u8981\u304C\u3042\u308A\u307E\u3059\u3002"},
+
+        /*
+         * Note to translators:  This message describes an internal error in the
+         * processor.  The term "byte code" is a Java technical term for the
+         * executable code in a Java method.  The "method" that is being
+         * referred to is a Java method in a translet that XSLTC is generating
+         * in processing a stylesheet.  The "instruction" that is being
+         * referred to is one of the instrutions in the Java byte code in that
+         * method.  "Outlined" is a technical term internal to XSLTC and
+         * should not be translated.
+         */
+        {ErrorMsg.OUTLINE_ERR_DELETED_TARGET,
+         "\u5185\u90E8XSLTC\u30A8\u30E9\u30FC: \u30A2\u30A6\u30C8\u30E9\u30A4\u30F3\u5316\u3055\u308C\u305F\u30D0\u30A4\u30C8\u30FB\u30B3\u30FC\u30C9\u306E\u30D6\u30ED\u30C3\u30AF\u306E\u4E00\u90E8\u3067\u3042\u3063\u305F\u547D\u4EE4\u306F\u3001\u5143\u306E\u30E1\u30BD\u30C3\u30C9\u306E\u4E2D\u3067\u307E\u3060\u53C2\u7167\u3055\u308C\u3066\u3044\u307E\u3059\u3002"
+        },
+
+
+        /*
+         * Note to translators:  This message describes an internal error in the
+         * processor.  The "method" that is being referred to is a Java method
+         * in a translet that XSLTC is generating.
+         *
+         */
+        {ErrorMsg.OUTLINE_ERR_METHOD_TOO_BIG,
+         "\u5185\u90E8XSLTC\u30A8\u30E9\u30FC: \u30C8\u30E9\u30F3\u30B9\u30EC\u30C3\u30C8\u5185\u306E\u30E1\u30BD\u30C3\u30C9\u304C\u3001Java\u4EEE\u60F3\u30DE\u30B7\u30F3\u306E\u5236\u9650(1\u30E1\u30BD\u30C3\u30C9\u306E\u9577\u3055\u306F\u6700\u592764\u30AD\u30ED\u30D0\u30A4\u30C8)\u3092\u8D85\u3048\u3066\u3044\u307E\u3059\u3002\u4E00\u822C\u7684\u306B\u3001\u30B9\u30BF\u30A4\u30EB\u30B7\u30FC\u30C8\u5185\u306E\u30C6\u30F3\u30D7\u30EC\u30FC\u30C8\u306E\u30B5\u30A4\u30BA\u304C\u5927\u304D\u904E\u304E\u308B\u3053\u3068\u304C\u539F\u56E0\u3068\u3057\u3066\u8003\u3048\u3089\u308C\u307E\u3059\u3002\u5C0F\u3055\u3044\u30B5\u30A4\u30BA\u306E\u30C6\u30F3\u30D7\u30EC\u30FC\u30C8\u3092\u4F7F\u7528\u3057\u3066\u3001\u30B9\u30BF\u30A4\u30EB\u30B7\u30FC\u30C8\u3092\u518D\u69CB\u6210\u3057\u3066\u304F\u3060\u3055\u3044\u3002"
+        },
+
+         {ErrorMsg.DESERIALIZE_TRANSLET_ERR, "Java\u30BB\u30AD\u30E5\u30EA\u30C6\u30A3\u304C\u6709\u52B9\u5316\u3055\u308C\u3066\u3044\u308B\u5834\u5408\u3001TemplatesImpl\u306E\u30C7\u30B7\u30EA\u30A2\u30E9\u30A4\u30BA\u306E\u30B5\u30DD\u30FC\u30C8\u306F\u7121\u52B9\u5316\u3055\u308C\u307E\u3059\u3002\u3053\u308C\u306F\u3001jdk.xml.enableTemplatesImplDeserialization\u30B7\u30B9\u30C6\u30E0\u30FB\u30D7\u30ED\u30D1\u30C6\u30A3\u3092true\u306B\u8A2D\u5B9A\u3057\u3066\u30AA\u30FC\u30D0\u30FC\u30E9\u30A4\u30C9\u3067\u304D\u307E\u3059\u3002"}
+
     };
 
     /** Get the lookup table for error messages.

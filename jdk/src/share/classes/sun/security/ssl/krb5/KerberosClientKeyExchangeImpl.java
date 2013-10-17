@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -105,12 +105,12 @@ public final class KerberosClientKeyExchangeImpl
      *          secret
      */
     @Override
-    public void init(String serverName, boolean isLoopback,
+    public void init(String serverName,
         AccessControlContext acc, ProtocolVersion protocolVersion,
         SecureRandom rand) throws IOException {
 
          // Get service ticket
-         KerberosTicket ticket = getServiceTicket(serverName, isLoopback, acc);
+         KerberosTicket ticket = getServiceTicket(serverName, acc);
          encodedTicket = ticket.getEncoded();
 
          // Record the Kerberos principals
@@ -292,25 +292,33 @@ public final class KerberosClientKeyExchangeImpl
     }
 
     // Similar to sun.security.jgss.krb5.Krb5InitCredenetial/Krb5Context
-    private static KerberosTicket getServiceTicket(String srvName,
-        boolean isLoopback, final AccessControlContext acc) throws IOException {
+    private static KerberosTicket getServiceTicket(String serverName,
+        final AccessControlContext acc) throws IOException {
 
-        // get the local hostname if srvName is loopback address
-        String serverName = srvName;
-        if (isLoopback) {
+        if ("localhost".equals(serverName) ||
+                "localhost.localdomain".equals(serverName)) {
+
+            if (debug != null && Debug.isOn("handshake")) {
+                System.out.println("Get the local hostname");
+            }
             String localHost = java.security.AccessController.doPrivileged(
                 new java.security.PrivilegedAction<String>() {
                 public String run() {
-                    String hostname;
                     try {
-                        hostname = InetAddress.getLocalHost().getHostName();
+                        return InetAddress.getLocalHost().getHostName();
                     } catch (java.net.UnknownHostException e) {
-                        hostname = "localhost";
+                        if (debug != null && Debug.isOn("handshake")) {
+                            System.out.println("Warning,"
+                                + " cannot get the local hostname: "
+                                + e.getMessage());
+                        }
+                        return null;
                     }
-                    return hostname;
                 }
             });
-          serverName = localHost;
+            if (localHost != null) {
+                serverName = localHost;
+            }
         }
 
         // Resolve serverName (possibly in IP addr form) to Kerberos principal

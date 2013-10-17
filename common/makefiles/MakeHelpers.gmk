@@ -26,7 +26,7 @@
 ################################################################
 #
 # This file contains helper functions for the top-level Makefile that does
-# not depend on the spec.gmk file having been read. (The purpose of this 
+# not depend on the spec.gmk file having been read. (The purpose of this
 # file is ju to avoid cluttering the top-level Makefile.)
 #
 ################################################################
@@ -49,7 +49,7 @@ list_alt_overrides=$(subst =command,,$(subst =environment,,$(list_alt_overrides_
 BUILDTIMESDIR=$(OUTPUT_ROOT)/tmp/buildtimes
 
 # Global targets are possible to run either with or without a SPEC. The prototypical
-# global target is "help". 
+# global target is "help".
 global_targets=help jprt% bridgeBuild
 
 ##############################
@@ -57,55 +57,55 @@ global_targets=help jprt% bridgeBuild
 ##############################
 
 define CheckEnvironment
-    # Find all environment or command line variables that begin with ALT.
-    $(if $(list_alt_overrides),
-        @$(PRINTF) "\nWARNING: You have the following ALT_ variables set:\n"
-    @$(PRINTF) "$(foreach var,$(list_alt_overrides),$(var)=$$$(var))\n"
-    @$(PRINTF) "ALT_ variables are deprecated and will be ignored. Please clean your environment.\n\n"
-    )
+        # Find all environment or command line variables that begin with ALT.
+	$(if $(list_alt_overrides),
+	  @$(PRINTF) "\nWARNING: You have the following ALT_ variables set:\n"
+	  @$(PRINTF) "$(foreach var,$(list_alt_overrides),$(var)=$$$(var))\n"
+	  @$(PRINTF) "ALT_ variables are deprecated and will be ignored. Please clean your environment.\n\n"
+	)
 endef
 
 ### Functions for timers
 
 # Record starting time for build of a sub repository.
 define RecordStartTime
-    $(MKDIR) -p $(BUILDTIMESDIR)
-    $(DATE) '+%Y %m %d %H %M %S' | $(NAWK) '{ print $$1,$$2,$$3,$$4,$$5,$$6,($$4*3600+$$5*60+$$6) }' > $(BUILDTIMESDIR)/build_time_start_$1
-    $(DATE) '+%Y-%m-%d %H:%M:%S' > $(BUILDTIMESDIR)/build_time_start_$1_human_readable
+	$(MKDIR) -p $(BUILDTIMESDIR)
+	$(DATE) '+%Y %m %d %H %M %S' | $(NAWK) '{ print $$1,$$2,$$3,$$4,$$5,$$6,($$4*3600+$$5*60+$$6) }' > $(BUILDTIMESDIR)/build_time_start_$1
+	$(DATE) '+%Y-%m-%d %H:%M:%S' > $(BUILDTIMESDIR)/build_time_start_$1_human_readable
 endef
 
 # Record ending time and calculate the difference and store it in a
 # easy to read format. Handles builds that cross midnight. Expects
-# that a build will never take 24 hours or more. 
+# that a build will never take 24 hours or more.
 define RecordEndTime
-    $(DATE) '+%Y %m %d %H %M %S' | $(NAWK) '{ print $$1,$$2,$$3,$$4,$$5,$$6,($$4*3600+$$5*60+$$6) }' > $(BUILDTIMESDIR)/build_time_end_$1
-    $(DATE) '+%Y-%m-%d %H:%M:%S' > $(BUILDTIMESDIR)/build_time_end_$1_human_readable
-    $(ECHO) `$(CAT) $(BUILDTIMESDIR)/build_time_start_$1` `$(CAT) $(BUILDTIMESDIR)/build_time_end_$1` $1 | \
-        $(NAWK) '{ F=$$7; T=$$14; if (F > T) { T+=3600*24 }; D=T-F; H=int(D/3600); \
-        M=int((D-H*3600)/60); S=D-H*3600-M*60; printf("%02d:%02d:%02d %s\n",H,M,S,$$15); }' \
-        > $(BUILDTIMESDIR)/build_time_diff_$1
+	$(DATE) '+%Y %m %d %H %M %S' | $(NAWK) '{ print $$1,$$2,$$3,$$4,$$5,$$6,($$4*3600+$$5*60+$$6) }' > $(BUILDTIMESDIR)/build_time_end_$1
+	$(DATE) '+%Y-%m-%d %H:%M:%S' > $(BUILDTIMESDIR)/build_time_end_$1_human_readable
+	$(ECHO) `$(CAT) $(BUILDTIMESDIR)/build_time_start_$1` `$(CAT) $(BUILDTIMESDIR)/build_time_end_$1` $1 | \
+	    $(NAWK) '{ F=$$7; T=$$14; if (F > T) { T+=3600*24 }; D=T-F; H=int(D/3600); \
+	    M=int((D-H*3600)/60); S=D-H*3600-M*60; printf("%02d:%02d:%02d %s\n",H,M,S,$$15); }' \
+	    > $(BUILDTIMESDIR)/build_time_diff_$1
 endef
 
 # Find all build_time_* files and print their contents in a list sorted
 # on the name of the sub repository.
 define ReportBuildTimes
-    $(BUILD_LOG_WRAPPER) $(PRINTF) -- "----- Build times -------\nStart %s\nEnd   %s\n%s\n%s\n-------------------------\n" \
-        "`$(CAT) $(BUILDTIMESDIR)/build_time_start_TOTAL_human_readable`" \
-        "`$(CAT) $(BUILDTIMESDIR)/build_time_end_TOTAL_human_readable`" \
-        "`$(LS) $(BUILDTIMESDIR)/build_time_diff_* | $(GREP) -v _TOTAL | $(XARGS) $(CAT) | $(SORT) -k 2`" \
-        "`$(CAT) $(BUILDTIMESDIR)/build_time_diff_TOTAL`"
+	$(BUILD_LOG_WRAPPER) $(PRINTF) -- "----- Build times -------\nStart %s\nEnd   %s\n%s\n%s\n-------------------------\n" \
+	    "`$(CAT) $(BUILDTIMESDIR)/build_time_start_TOTAL_human_readable`" \
+	    "`$(CAT) $(BUILDTIMESDIR)/build_time_end_TOTAL_human_readable`" \
+	    "`$(LS) $(BUILDTIMESDIR)/build_time_diff_* | $(GREP) -v _TOTAL | $(XARGS) $(CAT) | $(SORT) -k 2`" \
+	    "`$(CAT) $(BUILDTIMESDIR)/build_time_diff_TOTAL`"
 endef
 
 define ResetAllTimers
-    $$(shell $(MKDIR) -p $(BUILDTIMESDIR) &&  $(RM) $(BUILDTIMESDIR)/build_time_*)
+  $$(shell $(MKDIR) -p $(BUILDTIMESDIR) && $(RM) $(BUILDTIMESDIR)/build_time_*)
 endef
 
 define StartGlobalTimer
-    $(call RecordStartTime,TOTAL)
+	$(call RecordStartTime,TOTAL)
 endef
 
 define StopGlobalTimer
-    $(call RecordEndTime,TOTAL)
+	$(call RecordEndTime,TOTAL)
 endef
 
 ### Functions for managing makefile structure (start/end of makefile and individual targets)
@@ -123,184 +123,184 @@ endef
 # Check if the current target is the final target, as specified by
 # the user on the command line. If so, call AtRootMakeEnd.
 define CheckIfMakeAtEnd
-    # Check if the current target is the last goal
-    $(if $(filter $@,$(call LastGoal)),$(call AtMakeEnd))
-    # If the target is 'foo-only', check if our goal was stated as 'foo'
-    $(if $(filter $@,$(call LastGoal)-only),$(call AtMakeEnd))
+        # Check if the current target is the last goal
+	$(if $(filter $@,$(call LastGoal)),$(call AtMakeEnd))
+        # If the target is 'foo-only', check if our goal was stated as 'foo'
+	$(if $(filter $@,$(call LastGoal)-only),$(call AtMakeEnd))
 endef
 
 # Hook to be called when starting to execute a top-level target
 define TargetEnter
-    $(BUILD_LOG_WRAPPER) $(PRINTF) "## Starting $(patsubst %-only,%,$@)\n"
-    $(call RecordStartTime,$(patsubst %-only,%,$@))
+	$(BUILD_LOG_WRAPPER) $(PRINTF) "## Starting $(patsubst %-only,%,$@)\n"
+	$(call RecordStartTime,$(patsubst %-only,%,$@))
 endef
 
 # Hook to be called when finish executing a top-level target
 define TargetExit
-    $(call RecordEndTime,$(patsubst %-only,%,$@))
-    $(BUILD_LOG_WRAPPER) $(PRINTF) "## Finished $(patsubst %-only,%,$@) (build time %s)\n\n" \
-        "`$(CAT) $(BUILDTIMESDIR)/build_time_diff_$(patsubst %-only,%,$@) | $(CUT) -f 1 -d ' '`"
-    $(call CheckIfMakeAtEnd)
+	$(call RecordEndTime,$(patsubst %-only,%,$@))
+	$(BUILD_LOG_WRAPPER) $(PRINTF) "## Finished $(patsubst %-only,%,$@) (build time %s)\n\n" \
+	    "`$(CAT) $(BUILDTIMESDIR)/build_time_diff_$(patsubst %-only,%,$@) | $(CUT) -f 1 -d ' '`"
+	$(call CheckIfMakeAtEnd)
 endef
 
 # Hook to be called as the very first thing when running a normal build
 define AtMakeStart
-    $(if $(findstring --jobserver,$(MAKEFLAGS)),$(error make -j is not supported, use make JOBS=n))
-    $(call CheckEnvironment)
-    @$(PRINTF) $(LOG_INFO) "Running make as '$(MAKE) $(MFLAGS) $(MAKE_ARGS)'\n"
-    @$(PRINTF) "Building $(PRODUCT_NAME) for target '$(call GetRealTarget)' in configuration '$(CONF_NAME)'\n\n"
-    $(call StartGlobalTimer)
+	$(if $(findstring --jobserver,$(MAKEFLAGS)),$(error make -j is not supported, use make JOBS=n))
+	$(call CheckEnvironment)
+	@$(PRINTF) $(LOG_INFO) "Running make as '$(MAKE) $(MFLAGS) $(MAKE_ARGS)'\n"
+	@$(PRINTF) "Building $(PRODUCT_NAME) for target '$(call GetRealTarget)' in configuration '$(CONF_NAME)'\n\n"
+	$(call StartGlobalTimer)
 endef
 
 # Hook to be called as the very last thing for targets that are "top level" targets
 define AtMakeEnd
-    [ -f $(SJAVAC_SERVER_DIR)/server.port ] && echo Stopping sjavac server && $(TOUCH) $(SJAVAC_SERVER_DIR)/server.port.stop; true
-    $(call StopGlobalTimer)
-    $(call ReportBuildTimes)
-    @$(PRINTF) "Finished building $(PRODUCT_NAME) for target '$(call GetRealTarget)'\n"
-    $(call CheckEnvironment)
+	[ -f $(SJAVAC_SERVER_DIR)/server.port ] && echo Stopping sjavac server && $(TOUCH) $(SJAVAC_SERVER_DIR)/server.port.stop; true
+	$(call StopGlobalTimer)
+	$(call ReportBuildTimes)
+	@$(PRINTF) "Finished building $(PRODUCT_NAME) for target '$(call GetRealTarget)'\n"
+	$(call CheckEnvironment)
 endef
 
 ### Functions for parsing and setting up make options from command-line
 
 define FatalError
-    # If the user specificed a "global" target (e.g. 'help'), do not exit but continue running
-    $$(if $$(filter-out $(global_targets),$$(call GetRealTarget)),$$(error Cannot continue))
+  # If the user specificed a "global" target (e.g. 'help'), do not exit but continue running
+  $$(if $$(filter-out $(global_targets),$$(call GetRealTarget)),$$(error Cannot continue))
 endef
 
 define ParseLogLevel
-    ifeq ($$(origin VERBOSE),undefined)
-        # Setup logging according to LOG (but only if VERBOSE is not given)
+  ifeq ($$(origin VERBOSE),undefined)
+    # Setup logging according to LOG (but only if VERBOSE is not given)
 
-        # If the "nofile" argument is given, act on it and strip it away
-        ifneq ($$(findstring nofile,$$(LOG)),)
-          # Reset the build log wrapper, regardless of other values
-          override BUILD_LOG_WRAPPER=
-          # COMMA is defined in spec.gmk, but that is not included yet
-          COMMA=,
-          # First try to remove ",nofile" if it exists
-          LOG_STRIPPED1=$$(subst $$(COMMA)nofile,,$$(LOG))
-          # Otherwise just remove "nofile"
-          LOG_STRIPPED2=$$(subst nofile,,$$(LOG_STRIPPED1))
-          # We might have ended up with a leading comma. Remove it
-          LOG_STRIPPED3=$$(strip $$(patsubst $$(COMMA)%,%,$$(LOG_STRIPPED2)))
-          LOG_LEVEL:=$$(LOG_STRIPPED3)
-        else
-          LOG_LEVEL:=$$(LOG)
-        endif
-
-        ifeq ($$(LOG_LEVEL),)
-            # Set LOG to "warn" as default if not set (and no VERBOSE given)
-            override LOG_LEVEL=warn
-        endif
-        ifeq ($$(LOG_LEVEL),warn)
-            VERBOSE=-s
-        else ifeq ($$(LOG_LEVEL),info)
-            VERBOSE=-s
-        else ifeq ($$(LOG_LEVEL),debug)
-            VERBOSE=
-        else ifeq ($$(LOG_LEVEL),trace)
-            VERBOSE=
-        else
-            $$(info Error: LOG must be one of: warn, info, debug or trace.)
-            $$(eval $$(call FatalError))
-        endif
+    # If the "nofile" argument is given, act on it and strip it away
+    ifneq ($$(findstring nofile,$$(LOG)),)
+      # Reset the build log wrapper, regardless of other values
+      override BUILD_LOG_WRAPPER=
+      # COMMA is defined in spec.gmk, but that is not included yet
+      COMMA=,
+      # First try to remove ",nofile" if it exists
+      LOG_STRIPPED1=$$(subst $$(COMMA)nofile,,$$(LOG))
+      # Otherwise just remove "nofile"
+      LOG_STRIPPED2=$$(subst nofile,,$$(LOG_STRIPPED1))
+      # We might have ended up with a leading comma. Remove it
+      LOG_STRIPPED3=$$(strip $$(patsubst $$(COMMA)%,%,$$(LOG_STRIPPED2)))
+      LOG_LEVEL:=$$(LOG_STRIPPED3)
     else
-        # Provide resonable interpretations of LOG_LEVEL if VERBOSE is given.
-        ifeq ($(VERBOSE),)
-            LOG_LEVEL:=debug
-        else
-            LOG_LEVEL:=warn
-        endif
-        ifneq ($$(LOG),)
-            # We have both a VERBOSE and a LOG argument. This is OK only if this is a repeated call by ourselves,
-            # but complain if this is the top-level make call.
-            ifeq ($$(MAKELEVEL),0)
-                $$(info Cannot use LOG=$$(LOG) and VERBOSE=$$(VERBOSE) at the same time. Choose one.)
-                $$(eval $$(call FatalError))
-            endif
-        endif
+      LOG_LEVEL:=$$(LOG)
     endif
+
+    ifeq ($$(LOG_LEVEL),)
+      # Set LOG to "warn" as default if not set (and no VERBOSE given)
+      override LOG_LEVEL=warn
+    endif
+    ifeq ($$(LOG_LEVEL),warn)
+      VERBOSE=-s
+    else ifeq ($$(LOG_LEVEL),info)
+      VERBOSE=-s
+    else ifeq ($$(LOG_LEVEL),debug)
+      VERBOSE=
+    else ifeq ($$(LOG_LEVEL),trace)
+      VERBOSE=
+    else
+      $$(info Error: LOG must be one of: warn, info, debug or trace.)
+      $$(eval $$(call FatalError))
+    endif
+  else
+    # Provide resonable interpretations of LOG_LEVEL if VERBOSE is given.
+    ifeq ($(VERBOSE),)
+      LOG_LEVEL:=debug
+    else
+      LOG_LEVEL:=warn
+    endif
+    ifneq ($$(LOG),)
+      # We have both a VERBOSE and a LOG argument. This is OK only if this is a repeated call by ourselves,
+      # but complain if this is the top-level make call.
+      ifeq ($$(MAKELEVEL),0)
+        $$(info Cannot use LOG=$$(LOG) and VERBOSE=$$(VERBOSE) at the same time. Choose one.)
+        $$(eval $$(call FatalError))
+      endif
+    endif
+  endif
 endef
 
 define ParseConfAndSpec
-    ifneq ($$(filter-out $(global_targets),$$(call GetRealTarget)),)
-        # If we only have global targets, no need to bother with SPEC or CONF
-        ifneq ($$(origin SPEC),undefined)
-            # We have been given a SPEC, check that it works out properly
-            ifeq ($$(wildcard $$(SPEC)),)
-                $$(info Cannot locate spec.gmk, given by SPEC=$$(SPEC))
-                $$(eval $$(call FatalError))
-            endif
-            ifneq ($$(origin CONF),undefined)
-                # We also have a CONF argument. This is OK only if this is a repeated call by ourselves,
-                # but complain if this is the top-level make call.
-                ifeq ($$(MAKELEVEL),0)
-                    $$(info Cannot use CONF=$$(CONF) and SPEC=$$(SPEC) at the same time. Choose one.)
-                    $$(eval $$(call FatalError))
-                endif
-            endif
-            # ... OK, we're satisfied, we'll use this SPEC later on
-        else
-            # Find all spec.gmk files in the build output directory
-            output_dir=$$(root_dir)/build
-            all_spec_files=$$(wildcard $$(output_dir)/*/spec.gmk)
-            ifeq ($$(all_spec_files),)
-                $$(info No configurations found for $$(root_dir)! Please run configure to create a configuration.)
-                $$(eval $$(call FatalError))
-            endif
-            # Extract the configuration names from the path
-            all_confs=$$(patsubst %/spec.gmk,%,$$(patsubst $$(output_dir)/%,%,$$(all_spec_files)))
-
-            ifneq ($$(origin CONF),undefined)
-                # User have given a CONF= argument.
-                ifeq ($$(CONF),)
-                    # If given CONF=, match all configurations
-                    matching_confs=$$(strip $$(all_confs))
-                else
-                    # Otherwise select those that contain the given CONF string
-                    matching_confs=$$(strip $$(foreach var,$$(all_confs),$$(if $$(findstring $$(CONF),$$(var)),$$(var))))
-                endif
-                ifeq ($$(matching_confs),)
-                    $$(info No configurations found matching CONF=$$(CONF))
-                    $$(info Available configurations:)
-                    $$(foreach var,$$(all_confs),$$(info * $$(var)))
-                    $$(eval $$(call FatalError))
-                else
-                    ifeq ($$(words $$(matching_confs)),1)
-                        $$(info Building '$$(matching_confs)' (matching CONF=$$(CONF)))
-                    else
-                        $$(info Building target '$(call GetRealTarget)' in the following configurations (matching CONF=$$(CONF)):)
-                        $$(foreach var,$$(matching_confs),$$(info * $$(var)))
-                    endif
-                endif
-
-                # Create a SPEC definition. This will contain the path to one or more spec.gmk files.
-                SPEC=$$(addsuffix /spec.gmk,$$(addprefix $$(output_dir)/,$$(matching_confs)))
-            else
-                # No CONF or SPEC given, check the available configurations
-                ifneq ($$(words $$(all_spec_files)),1)
-                    $$(info No CONF given, but more than one configuration found in $$(output_dir).)
-                    $$(info Available configurations:)
-                    $$(foreach var,$$(all_confs),$$(info * $$(var)))
-                    $$(info Please retry building with CONF=<config pattern> (or SPEC=<specfile>))
-                    $$(eval $$(call FatalError))
-                endif
-
-                # We found exactly one configuration, use it
-                SPEC=$$(strip $$(all_spec_files))
-            endif
+  ifneq ($$(filter-out $(global_targets),$$(call GetRealTarget)),)
+    # If we only have global targets, no need to bother with SPEC or CONF
+    ifneq ($$(origin SPEC),undefined)
+      # We have been given a SPEC, check that it works out properly
+      ifeq ($$(wildcard $$(SPEC)),)
+        $$(info Cannot locate spec.gmk, given by SPEC=$$(SPEC))
+        $$(eval $$(call FatalError))
+      endif
+      ifneq ($$(origin CONF),undefined)
+        # We also have a CONF argument. This is OK only if this is a repeated call by ourselves,
+        # but complain if this is the top-level make call.
+        ifeq ($$(MAKELEVEL),0)
+          $$(info Cannot use CONF=$$(CONF) and SPEC=$$(SPEC) at the same time. Choose one.)
+          $$(eval $$(call FatalError))
         endif
+      endif
+      # ... OK, we're satisfied, we'll use this SPEC later on
+    else
+      # Find all spec.gmk files in the build output directory
+      output_dir=$$(root_dir)/build
+      all_spec_files=$$(wildcard $$(output_dir)/*/spec.gmk)
+      ifeq ($$(all_spec_files),)
+        $$(info No configurations found for $$(root_dir)! Please run configure to create a configuration.)
+        $$(eval $$(call FatalError))
+      endif
+      # Extract the configuration names from the path
+      all_confs=$$(patsubst %/spec.gmk,%,$$(patsubst $$(output_dir)/%,%,$$(all_spec_files)))
+
+      ifneq ($$(origin CONF),undefined)
+        # User have given a CONF= argument.
+        ifeq ($$(CONF),)
+          # If given CONF=, match all configurations
+          matching_confs=$$(strip $$(all_confs))
+        else
+          # Otherwise select those that contain the given CONF string
+          matching_confs=$$(strip $$(foreach var,$$(all_confs),$$(if $$(findstring $$(CONF),$$(var)),$$(var))))
+        endif
+        ifeq ($$(matching_confs),)
+          $$(info No configurations found matching CONF=$$(CONF))
+          $$(info Available configurations:)
+          $$(foreach var,$$(all_confs),$$(info * $$(var)))
+          $$(eval $$(call FatalError))
+        else
+          ifeq ($$(words $$(matching_confs)),1)
+            $$(info Building '$$(matching_confs)' (matching CONF=$$(CONF)))
+          else
+            $$(info Building target '$(call GetRealTarget)' in the following configurations (matching CONF=$$(CONF)):)
+            $$(foreach var,$$(matching_confs),$$(info * $$(var)))
+          endif
+        endif
+
+        # Create a SPEC definition. This will contain the path to one or more spec.gmk files.
+        SPEC=$$(addsuffix /spec.gmk,$$(addprefix $$(output_dir)/,$$(matching_confs)))
+      else
+        # No CONF or SPEC given, check the available configurations
+        ifneq ($$(words $$(all_spec_files)),1)
+          $$(info No CONF given, but more than one configuration found in $$(output_dir).)
+          $$(info Available configurations:)
+          $$(foreach var,$$(all_confs),$$(info * $$(var)))
+          $$(info Please retry building with CONF=<config pattern> (or SPEC=<specfile>))
+          $$(eval $$(call FatalError))
+        endif
+
+        # We found exactly one configuration, use it
+        SPEC=$$(strip $$(all_spec_files))
+      endif
     endif
+  endif
 endef
 
 ### Convenience functions from Main.gmk
 
 # Cleans the component given as $1
 define CleanComponent
-    @$(PRINTF) "Cleaning $1 build artifacts ..."
-    @($(CD) $(OUTPUT_ROOT) && $(RM) -r $1)
-    @$(PRINTF) " done\n"
+	@$(PRINTF) "Cleaning $1 build artifacts ..."
+	@($(CD) $(OUTPUT_ROOT) && $(RM) -r $1)
+	@$(PRINTF) " done\n"
 endef
 
 endif # _MAKEHELPERS_GMK
