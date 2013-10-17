@@ -139,10 +139,11 @@ class Metachunk : public Metabase<Metachunk> {
   size_t free_word_size() const;
 
 #ifdef ASSERT
-  void mangle();
   bool is_tagged_free() { return _is_tagged_free; }
   void set_is_tagged_free(bool v) { _is_tagged_free = v; }
 #endif
+
+  NOT_PRODUCT(void mangle();)
 
   void print_on(outputStream* st) const;
   void verify();
