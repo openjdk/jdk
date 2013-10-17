@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -19,39 +19,25 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
- *
  */
 
-#ifndef SHARE_VM_OPTO_C2COMPILER_HPP
-#define SHARE_VM_OPTO_C2COMPILER_HPP
+/*
+ * @test
+ * @bug 8023014
+ * @summary Test ensures that there is no crash when compiler initialization fails
+ * @library /testlibrary
+ *
+ */
+import com.oracle.java.testlibrary.*;
 
-#include "compiler/abstractCompiler.hpp"
+public class SmallCodeCacheStartup {
+  public static void main(String[] args) throws Exception {
+    ProcessBuilder pb;
+    OutputAnalyzer out;
 
-class C2Compiler : public AbstractCompiler {
- private:
-  static bool init_c2_runtime();
-
-public:
-  // Name
-  const char *name() { return "C2"; }
-
-#ifdef TIERED
-  virtual bool is_c2() { return true; };
-#endif // TIERED
-
-  void initialize();
-
-  // Compilation entry point for methods
-  void compile_method(ciEnv* env,
-                      ciMethod* target,
-                      int entry_bci);
-
-  // sentinel value used to trigger backtracking in compile_method().
-  static const char* retry_no_subsuming_loads();
-  static const char* retry_no_escape_analysis();
-
-  // Print compilation timers and statistics
-  void print_timers();
-};
-
-#endif // SHARE_VM_OPTO_C2COMPILER_HPP
+    pb = ProcessTools.createJavaProcessBuilder("-XX:ReservedCodeCacheSize=3m", "-XX:CICompilerCount=64", "-version");
+    out = new OutputAnalyzer(pb.start());
+    out.shouldContain("no space to run compiler");
+    out.shouldHaveExitValue(0);
+  }
+}
