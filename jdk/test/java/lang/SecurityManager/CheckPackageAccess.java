@@ -29,9 +29,6 @@
  *  @run main/othervm CheckPackageAccess
  */
 
-import java.io.File;
-import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
 import java.security.Security;
 import java.util.Collections;
 import java.util.Arrays;
@@ -50,6 +47,7 @@ public class CheckPackageAccess {
     /*
      * This array should be updated whenever new packages are added to the
      * package.access property in the java.security file
+     * NOTE: it should be in the same order as the java.security file
      */
     private static final String[] packages = {
         "sun.",
@@ -99,14 +97,14 @@ public class CheckPackageAccess {
         List<String> jspkgs =
             getPackages(Security.getProperty("package.access"));
 
-        // get closed restricted packages
-        File f = new File(System.getProperty("test.src"),
-            "../../../../src/closed/share/lib/security/restricted.pkgs");
-        if (f.exists()) {
-            List<String> ipkgs = Files.readAllLines(f.toPath(),
-                                                    StandardCharsets.UTF_8);
+        if (!isOpenJDKOnly()) {
+            String lastPkg = pkgs.get(pkgs.size() - 1);
+
             // Remove any closed packages from list before comparing
-            jspkgs.removeAll(ipkgs);
+            int index = jspkgs.indexOf(lastPkg);
+            if (index != -1 && index != jspkgs.size() - 1) {
+                jspkgs.subList(index + 1, jspkgs.size()).clear();
+            }
         }
 
         // Sort to ensure lists are comparable
@@ -163,5 +161,10 @@ public class CheckPackageAccess {
             }
         }
         return packages;
+    }
+
+    private static boolean isOpenJDKOnly() {
+        String prop = System.getProperty("java.runtime.name");
+        return prop != null && prop.startsWith("OpenJDK");
     }
 }
