@@ -84,7 +84,6 @@ final class BranchOptimizer {
     private void branchOptimizer(final BinaryNode binaryNode, final Label label, final boolean state) {
         final Expression lhs = binaryNode.lhs();
         final Expression rhs = binaryNode.rhs();
-        Type widest = Type.widest(lhs.getType(), rhs.getType());
 
         switch (binaryNode.tokenType()) {
         case AND:
@@ -113,33 +112,33 @@ final class BranchOptimizer {
 
         case EQ:
         case EQ_STRICT:
-            codegen.loadBinaryOperands(lhs, rhs, widest);
+            codegen.loadBinaryOperands(lhs, rhs, Type.widest(lhs.getType(), rhs.getType()));
             method.conditionalJump(state ? EQ : NE, true, label);
             return;
 
         case NE:
         case NE_STRICT:
-            codegen.loadBinaryOperands(lhs, rhs, widest);
+            codegen.loadBinaryOperands(lhs, rhs, Type.widest(lhs.getType(), rhs.getType()));
             method.conditionalJump(state ? NE : EQ, true, label);
             return;
 
         case GE:
-            codegen.loadBinaryOperands(lhs, rhs, widest);
+            codegen.loadBinaryOperands(lhs, rhs, Type.widest(lhs.getType(), rhs.getType()));
             method.conditionalJump(state ? GE : LT, !state, label);
             return;
 
         case GT:
-            codegen.loadBinaryOperands(lhs, rhs, widest);
+            codegen.loadBinaryOperands(lhs, rhs, Type.widest(lhs.getType(), rhs.getType()));
             method.conditionalJump(state ? GT : LE, !state, label);
             return;
 
         case LE:
-            codegen.loadBinaryOperands(lhs, rhs, widest);
+            codegen.loadBinaryOperands(lhs, rhs, Type.widest(lhs.getType(), rhs.getType()));
             method.conditionalJump(state ? LE : GT, state, label);
             return;
 
         case LT:
-            codegen.loadBinaryOperands(lhs, rhs, widest);
+            codegen.loadBinaryOperands(lhs, rhs, Type.widest(lhs.getType(), rhs.getType()));
             method.conditionalJump(state ? LT : GE, state, label);
             return;
 
