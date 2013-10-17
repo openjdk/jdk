@@ -44,7 +44,7 @@ import sun.jvm.hotspot.runtime.*;
  * WARNING: This format is still under development, and is subject to
  * change without notice.
  *
- * header    "JAVA PROFILE 1.0.1" (0-terminated)
+ * header    "JAVA PROFILE 1.0.1" or "JAVA PROFILE 1.0.2" (0-terminated)
  * u4        size of identifiers. Identifiers are used to represent
  *            UTF8 strings, objects, stack traces, etc. They usually
  *            have the same size as host pointers. For example, on
@@ -292,11 +292,34 @@ import sun.jvm.hotspot.runtime.*;
  *                          0x00000002: cpu sampling on/off
  *                u2        stack trace depth
  *
+ *
+ * When the header is "JAVA PROFILE 1.0.2" a heap dump can optionally
+ * be generated as a sequence of heap dump segments. This sequence is
+ * terminated by an end record. The additional tags allowed by format
+ * "JAVA PROFILE 1.0.2" are:
+ *
+ * HPROF_HEAP_DUMP_SEGMENT  denote a heap dump segment
+ *
+ *               [heap dump sub-records]*
+ *               The same sub-record types allowed by HPROF_HEAP_DUMP
+ *
+ * HPROF_HEAP_DUMP_END      denotes the end of a heap dump
+ *
  */
 
 public class HeapHprofBinWriter extends AbstractHeapGraphWriter {
+
+    // The heap size threshold used to determine if segmented format
+    // ("JAVA PROFILE 1.0.2") should be used.
+    private static final long HPROF_SEGMENTED_HEAP_DUMP_THRESHOLD = 2L * 0x40000000;
+
+    // The approximate size of a heap segment. Used to calculate when to create
+    // a new segment.
+    private static final long HPROF_SEGMENTED_HEAP_DUMP_SEGMENT_SIZE = 1L * 0x40000000;
+
     // hprof binary file header
-    private static final String HPROF_HEADER = "JAVA PROFILE 1.0.1";
+    private static final String HPROF_HEADER_1_0_1 = "JAVA PROFILE 1.0.1";
+    private static final String HPROF_HEADER_1_0_2 = "JAVA PROFILE 1.0.2";
 
     // constants in enum HprofTag
     private static final int HPROF_UTF8             = 0x01;
@@ -311,6 +334,10 @@ public class HeapHprofBinWriter extends AbstractHeapGraphWriter {
     private static final int HPROF_HEAP_DUMP        = 0x0C;
     private static final int HPROF_CPU_SAMPLES      = 0x0D;
     private static final int HPROF_CONTROL_SETTINGS = 0x0E;
+
+    // 1.0.2 record types
+    private static final int HPROF_HEAP_DUMP_SEGMENT = 0x1C;
+    private static final int HPROF_HEAP_DUMP_END     = 0x2C;
 
     // Heap dump constants
     // constants in enum HprofGcTag
@@ -352,11 +379,9 @@ public class HeapHprofBinWriter extends AbstractHeapGraphWriter {
     private static final int JVM_SIGNATURE_ARRAY   = '[';
     private static final int JVM_SIGNATURE_CLASS   = 'L';
 
-
     public synchronized void write(String fileName) throws IOException {
         // open file stream and create buffered data output stream
-        FileOutputStream fos = new FileOutputStream(fileName);
-        FileChannel chn = fos.getChannel();
+        fos = new FileOutputStream(fileName);
         out = new DataOutputStream(new BufferedOutputStream(fos));
 
         VM vm = VM.getVM();
@@ -385,6 +410,9 @@ public class HeapHprofBinWriter extends AbstractHeapGraphWriter {
         FLOAT_SIZE = objectHeap.getFloatSize();
         DOUBLE_SIZE = objectHeap.getDoubleSize();
 
+        // Check weather we should dump the heap as segments
+        useSegmentedHeapDump = vm.getUniverse().heap().used() > HPROF_SEGMENTED_HEAP_DUMP_THRESHOLD;
+
         // hprof bin format header
         writeFileHeader();
 
@@ -394,20 +422,9 @@ public class HeapHprofBinWriter extends AbstractHeapGraphWriter {
 
         // hprof UTF-8 symbols section
         writeSymbols();
+
         // HPROF_LOAD_CLASS records for all classes
         writeClasses();
-
-        // write heap data now
-        out.writeByte((byte)HPROF_HEAP_DUMP);
-        out.writeInt(0); // relative timestamp
-
-        // remember position of dump length, we will fixup
-        // length later - hprof format requires length.
-        out.flush();
-        long dumpStart = chn.position();
-
-        // write dummy length of 0 and we'll fix it later.
-        out.writeInt(0);
 
         // write CLASS_DUMP records
         writeClassDumpRecords();
@@ -415,17 +432,77 @@ public class HeapHprofBinWriter extends AbstractHeapGraphWriter {
         // this will write heap data into the buffer stream
         super.write();
 
+        // flush buffer stream.
+        out.flush();
+
+        // Fill in final length
+        fillInHeapRecordLength();
+
+        if (useSegmentedHeapDump) {
+            // Write heap segment-end record
+            out.writeByte((byte) HPROF_HEAP_DUMP_END);
+            out.writeInt(0);
+            out.writeInt(0);
+        }
+
         // flush buffer stream and throw it.
         out.flush();
         out = null;
 
+        // close the file stream
+        fos.close();
+    }
+
+    @Override
+    protected void writeHeapRecordPrologue() throws IOException {
+        if (currentSegmentStart == 0) {
+            // write heap data header, depending on heap size use segmented heap
+            // format
+            out.writeByte((byte) (useSegmentedHeapDump ? HPROF_HEAP_DUMP_SEGMENT
+                    : HPROF_HEAP_DUMP));
+            out.writeInt(0);
+
+            // remember position of dump length, we will fixup
+            // length later - hprof format requires length.
+            out.flush();
+            currentSegmentStart = fos.getChannel().position();
+
+            // write dummy length of 0 and we'll fix it later.
+            out.writeInt(0);
+        }
+    }
+
+    @Override
+    protected void writeHeapRecordEpilogue() throws IOException {
+        if (useSegmentedHeapDump) {
+            out.flush();
+            if ((fos.getChannel().position() - currentSegmentStart - 4) >= HPROF_SEGMENTED_HEAP_DUMP_SEGMENT_SIZE) {
+                fillInHeapRecordLength();
+                currentSegmentStart = 0;
+            }
+        }
+    }
+
+    private void fillInHeapRecordLength() throws IOException {
+
         // now get current position to calculate length
-        long dumpEnd = chn.position();
+        long dumpEnd = fos.getChannel().position();
+
         // calculate length of heap data
-        int dumpLen = (int) (dumpEnd - dumpStart - 4);
+        long dumpLenLong = (dumpEnd - currentSegmentStart - 4L);
+
+        // Check length boundary, overflow could happen but is _very_ unlikely
+        if(dumpLenLong >= (4L * 0x40000000)){
+            throw new RuntimeException("Heap segment size overflow.");
+        }
+
+        // Save the current position
+        long currentPosition = fos.getChannel().position();
 
         // seek the position to write length
-        chn.position(dumpStart);
+        fos.getChannel().position(currentSegmentStart);
+
+        int dumpLen = (int) dumpLenLong;
 
         // write length as integer
         fos.write((dumpLen >>> 24) & 0xFF);
@@ -433,8 +510,8 @@ public class HeapHprofBinWriter extends AbstractHeapGraphWriter {
         fos.write((dumpLen >>> 8) & 0xFF);
         fos.write((dumpLen >>> 0) & 0xFF);
 
-        // close the file stream
-        fos.close();
+        //Reset to previous current position
+        fos.getChannel().position(currentPosition);
     }
 
     private void writeClassDumpRecords() throws IOException {
@@ -443,7 +520,9 @@ public class HeapHprofBinWriter extends AbstractHeapGraphWriter {
             sysDict.allClassesDo(new SystemDictionary.ClassVisitor() {
                             public void visit(Klass k) {
                                 try {
+                                    writeHeapRecordPrologue();
                                     writeClassDumpRecord(k);
+                                    writeHeapRecordEpilogue();
                                 } catch (IOException e) {
                                     throw new RuntimeException(e);
                                 }
@@ -884,7 +963,12 @@ public class HeapHprofBinWriter extends AbstractHeapGraphWriter {
     // writes hprof binary file header
     private void writeFileHeader() throws IOException {
         // version string
-        out.writeBytes(HPROF_HEADER);
+        if(useSegmentedHeapDump) {
+            out.writeBytes(HPROF_HEADER_1_0_2);
+        }
+        else {
+            out.writeBytes(HPROF_HEADER_1_0_1);
+        }
         out.writeByte((byte)'\0');
 
         // write identifier size. we use pointers as identifiers.
@@ -976,12 +1060,17 @@ public class HeapHprofBinWriter extends AbstractHeapGraphWriter {
     private static final int EMPTY_FRAME_DEPTH = -1;
 
     private DataOutputStream out;
+    private FileOutputStream fos;
     private Debugger dbg;
     private ObjectHeap objectHeap;
     private SymbolTable symTbl;
 
     // oopSize of the debuggee
     private int OBJ_ID_SIZE;
+
+    // Added for hprof file format 1.0.2 support
+    private boolean useSegmentedHeapDump;
+    private long currentSegmentStart;
 
     private long BOOLEAN_BASE_OFFSET;
     private long BYTE_BASE_OFFSET;
@@ -1005,6 +1094,7 @@ public class HeapHprofBinWriter extends AbstractHeapGraphWriter {
     private static class ClassData {
         int instSize;
         List fields;
+
         ClassData(int instSize, List fields) {
             this.instSize = instSize;
             this.fields = fields;

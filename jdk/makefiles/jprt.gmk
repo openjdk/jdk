@@ -25,22 +25,21 @@
 
 # JPRT rule to build this workspace
 
-JPRT_ARCHIVE_BUNDLE=$(ABS_OUTPUTDIR)/$(JPRT_BUILD_FLAVOR)-bundle.zip
+JPRT_ARCHIVE_BUNDLE = $(ABS_OUTPUTDIR)/$(JPRT_BUILD_FLAVOR)-bundle.zip
 
-jprt_build_product:  all images
+jprt_build_product: all images
 	( $(CD) $(OUTPUTDIR)/j2sdk-image && \
-	  $(ZIPEXE) -q -r $(JPRT_ARCHIVE_BUNDLE) . )
+	$(ZIPEXE) -q -r $(JPRT_ARCHIVE_BUNDLE) . )
 
 jprt_build_fastdebug: fastdebug images
 	( $(CD) $(OUTPUTDIR)/j2sdk-image && \
-	  $(ZIPEXE) -q -r $(JPRT_ARCHIVE_BUNDLE) . )
+	$(ZIPEXE) -q -r $(JPRT_ARCHIVE_BUNDLE) . )
 
-jprt_build_debug: debug images 
+jprt_build_debug: debug images
 	( $(CD) $(OUTPUTDIR)/j2sdk-image && \
-	  $(ZIPEXE) -q -r $(JPRT_ARCHIVE_BUNDLE) . )
+	$(ZIPEXE) -q -r $(JPRT_ARCHIVE_BUNDLE) . )
 
 #
 # Phonies to avoid accidents.
 #
 .PHONY: jprt_build_product jprt_build_fastdebug jprt_build_debug
-
