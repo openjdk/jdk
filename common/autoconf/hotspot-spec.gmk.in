@@ -111,12 +111,12 @@ EXTRA_LDFLAGS=@LEGACY_EXTRA_LDFLAGS@
 USE_PRECOMPILED_HEADER=@USE_PRECOMPILED_HEADER@
 
 # Hotspot expects the variable FULL_DEBUG_SYMBOLS=1/0 to control debug symbols
-# creation. 
-ifeq ($(ENABLE_DEBUG_SYMBOLS), true) 
+# creation.
+ifeq ($(ENABLE_DEBUG_SYMBOLS), true)
   FULL_DEBUG_SYMBOLS=1
-  # Ensure hotspot uses the objcopy that configure located 
-  ALT_OBJCOPY:=$(OBJCOPY) 
-else 
+  # Ensure hotspot uses the objcopy that configure located
+  ALT_OBJCOPY:=$(OBJCOPY)
+else
   FULL_DEBUG_SYMBOLS=0
 endif
 

@@ -90,20 +90,33 @@ import static java.time.temporal.ChronoField.SECOND_OF_DAY;
 import static java.time.temporal.ChronoField.SECOND_OF_MINUTE;
 import static java.time.temporal.ChronoField.YEAR;
 import static java.time.temporal.ChronoField.YEAR_OF_ERA;
+import static java.time.temporal.ChronoUnit.DAYS;
+import static java.time.temporal.ChronoUnit.FOREVER;
+import static java.time.temporal.ChronoUnit.NANOS;
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.fail;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.Period;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
+import java.time.chrono.Chronology;
+import java.time.chrono.ThaiBuddhistChronology;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeFormatterBuilder;
 import java.time.format.DateTimeParseException;
 import java.time.format.ResolverStyle;
+import java.time.temporal.ChronoUnit;
 import java.time.temporal.IsoFields;
+import java.time.temporal.Temporal;
 import java.time.temporal.TemporalAccessor;
 import java.time.temporal.TemporalField;
 import java.time.temporal.TemporalQuery;
+import java.time.temporal.TemporalUnit;
+import java.time.temporal.ValueRange;
+import java.util.Map;
 
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
@@ -870,6 +883,212 @@ public class TCKDateTimeParseResolver {
                 // expected
             }
         }
+    }
+
+    //-----------------------------------------------------------------------
+    @Test
+    public void test_fieldResolvesToLocalTime() {
+        TemporalField field = new TemporalField() {
+            @Override
+            public TemporalUnit getBaseUnit() {
+                throw new UnsupportedOperationException();
+            }
+            @Override
+            public TemporalUnit getRangeUnit() {
+                throw new UnsupportedOperationException();
+            }
+            @Override
+            public ValueRange range() {
+                throw new UnsupportedOperationException();
+            }
+            @Override
+            public boolean isDateBased() {
+                throw new UnsupportedOperationException();
+            }
+            @Override
+            public boolean isTimeBased() {
+                throw new UnsupportedOperationException();
+            }
+            @Override
+            public boolean isSupportedBy(TemporalAccessor temporal) {
+                throw new UnsupportedOperationException();
+            }
+            @Override
+            public ValueRange rangeRefinedBy(TemporalAccessor temporal) {
+                throw new UnsupportedOperationException();
+            }
+            @Override
+            public long getFrom(TemporalAccessor temporal) {
+                throw new UnsupportedOperationException();
+            }
+            @Override
+            public <R extends Temporal> R adjustInto(R temporal, long newValue) {
+                throw new UnsupportedOperationException();
+            }
+            @Override
+            public TemporalAccessor resolve(
+                    Map<TemporalField, Long> fieldValues, Chronology chronology,
+                    ZoneId zone, ResolverStyle resolverStyle) {
+                return LocalTime.MIDNIGHT.plusNanos(fieldValues.remove(this));
+            }
+        };
+        DateTimeFormatter f = new DateTimeFormatterBuilder().appendValue(field).toFormatter();
+        TemporalAccessor accessor = f.parse("1234567890");
+        assertEquals(accessor.query(TemporalQuery.localDate()), null);
+        assertEquals(accessor.query(TemporalQuery.localTime()), LocalTime.of(0, 0, 1, 234_567_890));
+    }
+
+    @Test
+    public void test_fieldResolvesToChronoLocalDateTime() {
+        TemporalField field = new TemporalField() {
+            @Override
+            public TemporalUnit getBaseUnit() {
+                throw new UnsupportedOperationException();
+            }
+            @Override
+            public TemporalUnit getRangeUnit() {
+                throw new UnsupportedOperationException();
+            }
+            @Override
+            public ValueRange range() {
+                throw new UnsupportedOperationException();
+            }
+            @Override
+            public boolean isDateBased() {
+                throw new UnsupportedOperationException();
+            }
+            @Override
+            public boolean isTimeBased() {
+                throw new UnsupportedOperationException();
+            }
+            @Override
+            public boolean isSupportedBy(TemporalAccessor temporal) {
+                throw new UnsupportedOperationException();
+            }
+            @Override
+            public ValueRange rangeRefinedBy(TemporalAccessor temporal) {
+                throw new UnsupportedOperationException();
+            }
+            @Override
+            public long getFrom(TemporalAccessor temporal) {
+                throw new UnsupportedOperationException();
+            }
+            @Override
+            public <R extends Temporal> R adjustInto(R temporal, long newValue) {
+                throw new UnsupportedOperationException();
+            }
+            @Override
+            public TemporalAccessor resolve(
+                    Map<TemporalField, Long> fieldValues, Chronology chronology,
+                    ZoneId zone, ResolverStyle resolverStyle) {
+                fieldValues.remove(this);
+                return LocalDateTime.of(2010, 6, 30, 12, 30);
+            }
+        };
+        DateTimeFormatter f = new DateTimeFormatterBuilder().appendValue(field).toFormatter();
+        TemporalAccessor accessor = f.parse("1234567890");
+        assertEquals(accessor.query(TemporalQuery.localDate()), LocalDate.of(2010, 6, 30));
+        assertEquals(accessor.query(TemporalQuery.localTime()), LocalTime.of(12, 30));
+    }
+
+    @Test(expectedExceptions = DateTimeParseException.class)
+    public void test_fieldResolvesWrongChrono() {
+        TemporalField field = new TemporalField() {
+            @Override
+            public TemporalUnit getBaseUnit() {
+                throw new UnsupportedOperationException();
+            }
+            @Override
+            public TemporalUnit getRangeUnit() {
+                throw new UnsupportedOperationException();
+            }
+            @Override
+            public ValueRange range() {
+                throw new UnsupportedOperationException();
+            }
+            @Override
+            public boolean isDateBased() {
+                throw new UnsupportedOperationException();
+            }
+            @Override
+            public boolean isTimeBased() {
+                throw new UnsupportedOperationException();
+            }
+            @Override
+            public boolean isSupportedBy(TemporalAccessor temporal) {
+                throw new UnsupportedOperationException();
+            }
+            @Override
+            public ValueRange rangeRefinedBy(TemporalAccessor temporal) {
+                throw new UnsupportedOperationException();
+            }
+            @Override
+            public long getFrom(TemporalAccessor temporal) {
+                throw new UnsupportedOperationException();
+            }
+            @Override
+            public <R extends Temporal> R adjustInto(R temporal, long newValue) {
+                throw new UnsupportedOperationException();
+            }
+            @Override
+            public TemporalAccessor resolve(
+                    Map<TemporalField, Long> fieldValues, Chronology chronology,
+                    ZoneId zone, ResolverStyle resolverStyle) {
+                return ThaiBuddhistChronology.INSTANCE.dateNow();
+            }
+        };
+        DateTimeFormatter f = new DateTimeFormatterBuilder().appendValue(field).toFormatter();
+        f.parse("1234567890");
+    }
+
+    @Test(expectedExceptions = DateTimeParseException.class)
+    public void test_fieldResolvesWrongZone() {
+        TemporalField field = new TemporalField() {
+            @Override
+            public TemporalUnit getBaseUnit() {
+                throw new UnsupportedOperationException();
+            }
+            @Override
+            public TemporalUnit getRangeUnit() {
+                throw new UnsupportedOperationException();
+            }
+            @Override
+            public ValueRange range() {
+                throw new UnsupportedOperationException();
+            }
+            @Override
+            public boolean isDateBased() {
+                throw new UnsupportedOperationException();
+            }
+            @Override
+            public boolean isTimeBased() {
+                throw new UnsupportedOperationException();
+            }
+            @Override
+            public boolean isSupportedBy(TemporalAccessor temporal) {
+                throw new UnsupportedOperationException();
+            }
+            @Override
+            public ValueRange rangeRefinedBy(TemporalAccessor temporal) {
+                throw new UnsupportedOperationException();
+            }
+            @Override
+            public long getFrom(TemporalAccessor temporal) {
+                throw new UnsupportedOperationException();
+            }
+            @Override
+            public <R extends Temporal> R adjustInto(R temporal, long newValue) {
+                throw new UnsupportedOperationException();
+            }
+            @Override
+            public TemporalAccessor resolve(
+                    Map<TemporalField, Long> fieldValues, Chronology chronology,
+                    ZoneId zone, ResolverStyle resolverStyle) {
+                return ZonedDateTime.of(2010, 6, 30, 12, 30, 0, 0, ZoneId.of("Europe/Paris"));
+            }
+        };
+        DateTimeFormatter f = new DateTimeFormatterBuilder().appendValue(field).toFormatter().withZone(ZoneId.of("Europe/London"));
+        f.parse("1234567890");
     }
 
 }

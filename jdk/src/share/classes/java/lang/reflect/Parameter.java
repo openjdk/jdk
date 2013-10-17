@@ -104,7 +104,7 @@ public final class Parameter implements AnnotatedElement {
      * to the class file.
      */
     public boolean isNamePresent() {
-        return executable.hasRealParameterData();
+        return executable.hasRealParameterData() && name != null;
     }
 
     /**
@@ -180,6 +180,11 @@ public final class Parameter implements AnnotatedElement {
             return "arg" + index;
         else
             return name;
+    }
+
+    // Package-private accessor to the real name field.
+    String getRealName() {
+        return name;
     }
 
     /**
