@@ -83,6 +83,8 @@ import java.time.LocalTime;
 import java.time.Period;
 import java.time.ZoneId;
 import java.time.chrono.ChronoLocalDate;
+import java.time.chrono.ChronoLocalDateTime;
+import java.time.chrono.ChronoZonedDateTime;
 import java.time.chrono.Chronology;
 import java.time.temporal.ChronoField;
 import java.time.temporal.TemporalAccessor;
@@ -260,11 +262,34 @@ final class Parsed implements TemporalAccessor {
             while (changedCount < 50) {
                 for (Map.Entry<TemporalField, Long> entry : fieldValues.entrySet()) {
                     TemporalField targetField = entry.getKey();
-                    ChronoLocalDate resolvedDate = targetField.resolve(fieldValues, chrono, zone, resolverStyle);
-                    if (resolvedDate != null) {
-                        updateCheckConflict(resolvedDate);
-                        changedCount++;
-                        continue outer;  // have to restart to avoid concurrent modification
+                    TemporalAccessor resolvedObject = targetField.resolve(fieldValues, chrono, zone, resolverStyle);
+                    if (resolvedObject != null) {
+                        if (resolvedObject instanceof ChronoZonedDateTime) {
+                            ChronoZonedDateTime czdt = (ChronoZonedDateTime) resolvedObject;
+                            if (zone.equals(czdt.getZone()) == false) {
+                                throw new DateTimeException("ChronoZonedDateTime must use the effective parsed zone: " + zone);
+                            }
+                            resolvedObject = czdt.toLocalDateTime();
+                        }
+                        if (resolvedObject instanceof ChronoLocalDateTime) {
+                            ChronoLocalDateTime cldt = (ChronoLocalDateTime) resolvedObject;
+                            updateCheckConflict(cldt.toLocalTime(), Period.ZERO);
+                            updateCheckConflict(cldt.toLocalDate());
+                            changedCount++;
+                            continue outer;  // have to restart to avoid concurrent modification
+                        }
+                        if (resolvedObject instanceof ChronoLocalDate) {
+                            updateCheckConflict((ChronoLocalDate) resolvedObject);
+                            changedCount++;
+                            continue outer;  // have to restart to avoid concurrent modification
+                        }
+                        if (resolvedObject instanceof LocalTime) {
+                            updateCheckConflict((LocalTime) resolvedObject, Period.ZERO);
+                            changedCount++;
+                            continue outer;  // have to restart to avoid concurrent modification
+                        }
+                        throw new DateTimeException("Method resolveFields() can only return ChronoZonedDateTime," +
+                                "ChronoLocalDateTime, ChronoLocalDate or LocalTime");
                     } else if (fieldValues.containsKey(targetField) == false) {
                         changedCount++;
                         continue outer;  // have to restart to avoid concurrent modification
@@ -302,7 +327,10 @@ final class Parsed implements TemporalAccessor {
             if (cld != null && date.equals(cld) == false) {
                 throw new DateTimeException("Conflict found: Fields resolved to two different dates: " + date + " " + cld);
             }
-        } else {
+        } else if (cld != null) {
+            if (chrono.equals(cld.getChronology()) == false) {
+                throw new DateTimeException("ChronoLocalDate must use the effective parsed chronology: " + chrono);
+            }
             date = cld;
         }
     }

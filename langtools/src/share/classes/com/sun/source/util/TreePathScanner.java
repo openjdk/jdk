@@ -38,7 +38,7 @@ import com.sun.source.tree.*;
  * @author Jonathan Gibbons
  * @since 1.6
  */
-@jdk.Supported
+@jdk.Exported
 public class TreePathScanner<R, P> extends TreeScanner<R, P> {
 
     /**

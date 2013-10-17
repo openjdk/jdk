@@ -88,8 +88,8 @@ final class FoldConstants extends NodeVisitor<LexicalContext> {
     @Override
     public Node leaveIfNode(final IfNode ifNode) {
         final Node test = ifNode.getTest();
-        if (test instanceof LiteralNode) {
-            final Block shortCut = ((LiteralNode<?>)test).isTrue() ? ifNode.getPass() : ifNode.getFail();
+        if (test instanceof LiteralNode.PrimitiveLiteralNode) {
+            final Block shortCut = ((LiteralNode.PrimitiveLiteralNode<?>)test).isTrue() ? ifNode.getPass() : ifNode.getFail();
             if (shortCut != null) {
                 return new BlockStatement(ifNode.getLineNumber(), shortCut);
             }
@@ -101,8 +101,8 @@ final class FoldConstants extends NodeVisitor<LexicalContext> {
     @Override
     public Node leaveTernaryNode(final TernaryNode ternaryNode) {
         final Node test = ternaryNode.getTest();
-        if (test instanceof LiteralNode) {
-            return ((LiteralNode<?>)test).isTrue() ? ternaryNode.getTrueExpression() : ternaryNode.getFalseExpression();
+        if (test instanceof LiteralNode.PrimitiveLiteralNode) {
+            return ((LiteralNode.PrimitiveLiteralNode<?>)test).isTrue() ? ternaryNode.getTrueExpression() : ternaryNode.getFalseExpression();
         }
         return ternaryNode;
     }
