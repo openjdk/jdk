@@ -1,0 +1,395 @@
+#
+# Copyright (c) 2011, 2012, Oracle and/or its affiliates. All rights reserved.
+# DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+#
+# This code is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License version 2 only, as
+# published by the Free Software Foundation.  Oracle designates this
+# particular file as subject to the "Classpath" exception as provided
+# by Oracle in the LICENSE file that accompanied this code.
+#
+# This code is distributed in the hope that it will be useful, but WITHOUT
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+# FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+# version 2 for more details (a copy is included in the LICENSE file that
+# accompanied this code).
+#
+# You should have received a copy of the GNU General Public License version
+# 2 along with this work; if not, write to the Free Software Foundation,
+# Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+#
+# Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+# or visit www.oracle.com if you need additional information or have any
+# questions.
+#
+
+# Prepare the find cache. This is only used on windows.
+$(eval $(call FillCacheFind, $(JDK_TOPDIR)/src/share/classes $(JDK_TOPDIR)/src/windows/classes))
+
+# All .properties files to be compiled are appended to this variable.
+ALL_COMPILED_PROPSOURCES :=
+# All generated .java files from compilation are appended to this variable.
+ALL_COMPILED_PROPJAVAS :=
+# The (very long) command line for compilation, stored in a file, prior to use.
+COMPILE_PROPCMDLINE :=
+
+# All .properties files to be cleaned are appended to this variable.
+ALL_CLEANED_PROPSOURCES :=
+# All generated cleaned .properties files from cleaning are appended to this variable.
+ALL_CLEANED_PROPOUTPUT :=
+# The (very long) command line for cleaning, stored in a file, prior to use.
+CLEAN_PROPCMDLINE :=
+
+define add_properties_to_compile
+  # $1 is the name of the properties group
+  # $2 is the files belonging to this group
+  # $3 is the super class for the generated java file.
+  # $4 is a from pattern for translating stripped name from source to target
+  # $5 is the to pattern replacing $3 in the target
+
+  # Strip away prefix and suffix,
+  # leaving for example: sun/util/resources/CurrencyNames_sv
+  $1_PROPPATHS := $$(patsubst $(JDK_TOPDIR)/src/windows/classes/%.properties, %, \
+      $$(patsubst $(JDK_TOPDIR)/src/macosx/classes/%.properties, %, \
+      $$(patsubst $(JDK_TOPDIR)/src/share/classes/%.properties, %, $2)))
+
+  # Apply optional name transformation, example: hz_TW -> hz_HK
+  $(if $4, $1_PROPPATHS := $$(patsubst $4, $5, $$($1_PROPPATHS)))
+
+  # Accumulate all found properties files.
+  ALL_COMPILED_PROPSOURCES += $2
+
+  # Generate the list of to be created java files.
+  ALL_COMPILED_PROPJAVAS += $$(patsubst %, $(JDK_OUTPUTDIR)/gensrc/%.java, $$($1_PROPPATHS))
+
+  # Now generate a sequence of "-compile ...CurrencyNames_sv.properties ...CurrencyNames_sv.java ListResourceBundle"
+  # suitable to be fed into the CompileProperties command.
+  COMPILE_PROPCMDLINE += $$(subst _SPACE_,$(SPACE),$$(join $$(addprefix -compile_SPACE_, $2), \
+      $$(addsuffix _SPACE_$(strip $3), \
+      $$(addprefix _SPACE_$(JDK_OUTPUTDIR)/gensrc/, \
+      $$(addsuffix .java, $$($1_PROPPATHS))))))
+endef
+
+define add_properties_to_clean
+  # $1 is the name of the properties group
+  # $2 is the files belonging to this group
+  # $3 is a from pattern for translating stripped name from source to target
+  # $4 is the to pattern replacing $3 in the target
+  # $5 optional name of extra directory to put properties files in (ex: resources)
+
+  # Strip away prefix and suffix,
+  # leaving for example: sun/util/resources/CurrencyNames_sv
+  $1_PROPPATHS := $$(patsubst $(JDK_TOPDIR)/src/$(OPENJDK_TARGET_OS_API_DIR)/classes/%.properties, %, \
+      $$(patsubst $(JDK_TOPDIR)/src/share/classes/%.properties, %, $2))
+
+  # Apply optional name transformation, example: hz_TW -> hz_HK
+  $(if $3, $1_PROPPATHS := $$(patsubst $3, $4, $$($1_PROPPATHS)))
+
+  # Accumulate all found properties files.
+  ALL_CLEANED_PROPSOURCES += $2
+
+  # Generate the list of to be created java files.
+  $1_PROPOUTPUT := $$(patsubst %, $(JDK_OUTPUTDIR)/classes/%.properties, $$($1_PROPPATHS))
+  # If the properties target file isn't in a "resources" dir, add one.
+  ifneq ($5, )
+    $1_PROPOUTPUT := $$(foreach p, $$($1_PROPOUTPUT), $$(dir $$p)$5/$$(notdir $$p))
+  endif
+
+  ALL_CLEANED_PROPOUTPUT += $$($1_PROPOUTPUT)
+
+  # Now generate a sequence of "-clean ...[src]...CurrencyNames_sv.properties ...[build]...CurrencyNames_sv.properties"
+  # suitable to be fed into the StripProperties command.
+  CLEAN_PROPCMDLINE += $$(subst _SPACE_,$(SPACE),$$(join $$(addprefix -clean_SPACE_,$2), \
+      $$(addprefix _SPACE_, $$($1_PROPOUTPUT))))
+endef
+
+# Some packages contain pregenerated java files instead of properties files.
+# But unfortunately not all properties should be converted, some should be
+# copied....argggghhh.
+
+# For example:
+#    sun/applet/resources
+#    sun/misc/resources
+#    sun/text/resources
+#    sun/tools/jconsole/resources
+#    sun/tools/native2ascii/resources
+#    sun/util/resources
+
+# Some packages have properties that need to be converted to java source files.
+
+#com/apple/laf/resources
+ifeq ($(OPENJDK_TARGET_OS), macosx)
+  $(eval $(call add_properties_to_compile,COM_APPLE_LAF, \
+      $(filter %.properties, \
+      $(call CacheFind, $(JDK_TOPDIR)/src/macosx/classes/com/apple/laf/resources)), \
+      ListResourceBundle))
+endif
+
+#com/sun/accessibility/internal/resources
+$(eval $(call add_properties_to_compile,COM_SUN_ACCESSIBILITY, \
+    $(filter %.properties, \
+    $(call CacheFind, $(JDK_TOPDIR)/src/share/classes/com/sun/accessibility/internal/resources)), \
+    ListResourceBundle))
+$(eval $(call add_properties_to_compile,COM_SUN_ACCESSIBILITY_HK, \
+    $(filter %.properties, \
+    $(call CacheFind, $(JDK_TOPDIR)/src/share/classes/com/sun/accessibility/internal/resources)), \
+    ListResourceBundle, %zh_TW, %zh_HK))
+#com/sun/imageio/plugins/common
+$(eval $(call add_properties_to_clean,COM_SUN_IMAGEIO, \
+    $(filter %.properties, \
+    $(call CacheFind, $(JDK_TOPDIR)/src/share/classes/com/sun/imageio))))
+#com/sun/java/swing/plaf/gtk/resources
+ifneq ($(OPENJDK_TARGET_OS), windows)
+  # Only compile GTK resource bundles on Solaris/Linux
+  $(eval $(call add_properties_to_compile,COM_SUN_SWING_PLAF_GTK, \
+      $(filter %.properties, \
+      $(call CacheFind, $(JDK_TOPDIR)/src/share/classes/com/sun/java/swing/plaf/gtk/resources)), \
+      ListResourceBundle))
+  $(eval $(call add_properties_to_compile,COM_SUN_SWING_PLAF_GTK_HK, \
+      $(filter %.properties, \
+      $(call CacheFind, $(JDK_TOPDIR)/src/share/classes/com/sun/java/swing/plaf/gtk/resources)), \
+      ListResourceBundle, %zh_TW, %zh_HK))
+endif
+#com/sun/java/swing/plaf/motif/resources
+$(eval $(call add_properties_to_compile,COM_SUN_SWING_PLAF_MOTIF, \
+    $(filter %.properties, \
+    $(call CacheFind, $(JDK_TOPDIR)/src/share/classes/com/sun/java/swing/plaf/motif/resources)), \
+    ListResourceBundle))
+$(eval $(call add_properties_to_compile,COM_SUN_SWING_PLAF_MOTIF_HK, \
+    $(filter %.properties, \
+    $(call CacheFind, $(JDK_TOPDIR)/src/share/classes/com/sun/java/swing/plaf/motif/resources)), \
+    ListResourceBundle, %zh_TW, %zh_HK))
+#com/sun/java/swing/plaf/windows/resources
+$(eval $(call add_properties_to_compile,COM_SUN_SWING_PLAF_WINDOWS, \
+    $(filter %.properties, \
+    $(call CacheFind, $(JDK_TOPDIR)/src/share/classes/com/sun/java/swing/plaf/windows/resources)), \
+    ListResourceBundle))
+$(eval $(call add_properties_to_compile,COM_SUN_SWING_PLAF_WINDOWS_HK, \
+    $(filter %.properties, \
+    $(call CacheFind, $(JDK_TOPDIR)/src/share/classes/com/sun/java/swing/plaf/windows/resources)), \
+    ListResourceBundle, %zh_TW, %zh_HK))
+#com/sun/java/util/jar/pack
+$(eval $(call add_properties_to_clean,JNDI_COSNAMING, \
+    $(JDK_TOPDIR)/src/share/classes/com/sun/java/util/jar/pack/intrinsic.properties))
+#com/sun/jndi/cosnaming
+$(eval $(call add_properties_to_clean,JNDI_COSNAMING, \
+    $(JDK_TOPDIR)/src/share/classes/com/sun/jndi/cosnaming/jndiprovider.properties))
+#com/sun/jndi/ldap
+$(eval $(call add_properties_to_clean,JNDI_COSNAMING, \
+    $(JDK_TOPDIR)/src/share/classes/com/sun/jndi/ldap/jndiprovider.properties))
+
+#com/sun/org/apache/xml/internal/security/resource
+#FIXME: The "xmlsecurity*.properties" pattern is not ideal; we might want to find
+#a better way to select the properties files that are needed.
+$(eval $(call add_properties_to_clean,XML_SECURITY, \
+    $(filter $(JDK_TOPDIR)/src/share/classes/com/sun/org/apache/xml/internal/security/resource/xmlsecurity%.properties, \
+    $(call CacheFind, $(JDK_TOPDIR)/src/share/classes/com/sun/org/apache/xml/internal/security/resource))))
+
+#com/sun/rowset
+$(eval $(call add_properties_to_clean,COM_SUN_ROWSET, \
+    $(filter %.properties, \
+    $(call CacheFind, $(JDK_TOPDIR)/src/share/classes/com/sun/rowset))))
+$(eval $(call add_properties_to_clean,COM_SUN_ROWSET_HK, \
+    $(filter %zh_TW.properties, \
+    $(call CacheFind, $(JDK_TOPDIR)/src/share/classes/com/sun/rowset)), \
+    %zh_TW, %zh_HK))
+
+#com/sun/swing/internal/plaf/basic/resources
+$(eval $(call add_properties_to_compile,COM_SUN_SWING_PLAF_BASIC, \
+    $(filter %.properties, \
+    $(call CacheFind, $(JDK_TOPDIR)/src/share/classes/com/sun/swing/internal/plaf/basic/resources)), \
+    ListResourceBundle))
+$(eval $(call add_properties_to_compile,COM_SUN_SWING_PLAF_BASIC_HK, \
+    $(filter %.properties, \
+    $(call CacheFind, $(JDK_TOPDIR)/src/share/classes/com/sun/swing/internal/plaf/basic/resources)), \
+    ListResourceBundle, %zh_TW, %zh_HK))
+#com/sun/swing/internal/plaf/metal/resources
+$(eval $(call add_properties_to_compile,COM_SUN_SWING_PLAF_METAL, \
+    $(filter %.properties, \
+    $(call CacheFind, $(JDK_TOPDIR)/src/share/classes/com/sun/swing/internal/plaf/metal/resources)), \
+    ListResourceBundle))
+$(eval $(call add_properties_to_compile,COM_SUN_SWING_PLAF_METAL_HK, \
+    $(filter %.properties, $(call CacheFind, $(JDK_TOPDIR)/src/share/classes/com/sun/swing/internal/plaf/metal/resources)), \
+    ListResourceBundle, %zh_TW, %zh_HK))
+#com/sun/swing/internal/plaf/synth/resources
+$(eval $(call add_properties_to_compile,COM_SUN_SWING_PLAF_SYNTH, \
+    $(filter %.properties, \
+    $(call CacheFind, $(JDK_TOPDIR)/src/share/classes/com/sun/swing/internal/plaf/synth/resources)), \
+    ListResourceBundle))
+$(eval $(call add_properties_to_compile,COM_SUN_SWING_PLAF_SYNTH_HK, \
+    $(filter %.properties, \
+    $(call CacheFind, $(JDK_TOPDIR)/src/share/classes/com/sun/swing/internal/plaf/synth/resources)), \
+    ListResourceBundle, %zh_TW, %zh_HK))
+
+#com/sun/tools/jdi/resources
+$(eval $(call add_properties_to_compile,COM_SUN_TOOLS_JDI, \
+    $(filter %.properties, \
+    $(call CacheFind, $(JDK_TOPDIR)/src/share/classes/com/sun/tools/jdi/resources)), \
+    ListResourceBundle))
+
+#com/sun/tools/script/shell
+#java/util
+#javax/sql/rowset
+$(eval $(call add_properties_to_clean,JAVAX_SQL_ROWSET, \
+    $(filter %.properties, \
+    $(call CacheFind, $(JDK_TOPDIR)/src/share/classes/javax/sql/rowset))))
+#sun/awt/resources
+$(eval $(call add_properties_to_compile,SUN_AWT, \
+    $(filter %.properties, \
+    $(call CacheFind, $(JDK_TOPDIR)/src/share/classes/sun/awt/resources)), \
+    ListResourceBundle))
+$(eval $(call add_properties_to_compile,SUN_AWT_HK, \
+    $(filter %.properties, \
+    $(call CacheFind, $(JDK_TOPDIR)/src/share/classes/sun/awt/resources)), \
+    ListResourceBundle, %zh_TW, %zh_HK))
+#sun/awt/windows/
+ifeq ($(OPENJDK_TARGET_OS), windows)
+  $(eval $(call add_properties_to_compile,SUN_AWT, \
+      $(filter $(JDK_TOPDIR)/src/windows/classes/sun/awt/windows/awtLocalization%.properties, \
+      $(call CacheFind, $(JDK_TOPDIR)/src/windows/classes/sun/awt/windows)), \
+      ListResourceBundle))
+  $(eval $(call add_properties_to_compile,SUN_AWT_HK, \
+      $(filter $(JDK_TOPDIR)/src/windows/classes/sun/awt/windows/awtLocalization%.properties, \
+      $(call CacheFind, $(JDK_TOPDIR)/src/windows/classes/sun/awt/windows)), \
+      ListResourceBundle, %zh_TW, %zh_HK))
+endif
+# os x specific awt properties
+ifeq ($(OPENJDK_TARGET_OS),macosx)
+$(eval $(call add_properties_to_compile,SUN_AWT,\
+	$(filter $(JDK_TOPDIR)/src/macosx/classes/sun/awt/resources/%.properties,\
+	$(call CacheFind,$(JDK_TOPDIR)/src/macosx/classes/sun/awt/resources)),\
+	ListResourceBundle))
+endif
+
+#sun/launcher/resources
+$(eval $(call add_properties_to_compile,SUN_LAUNCHER, \
+    $(filter %.properties, \
+    $(call CacheFind, $(JDK_TOPDIR)/src/share/classes/sun/launcher/resources)), \
+    ListResourceBundle))
+$(eval $(call add_properties_to_compile,SUN_LAUNCHER_HK, \
+    $(filter %.properties, \
+    $(call CacheFind, $(JDK_TOPDIR)/src/share/classes/sun/launcher/resources)), \
+    ListResourceBundle, %zh_TW, %zh_HK))
+#sun/management/resources
+$(eval $(call add_properties_to_compile,SUN_MANAGEMENT, \
+    $(filter %.properties, \
+    $(call CacheFind, $(JDK_TOPDIR)/src/share/classes/sun/management/resources)), \
+    ListResourceBundle))
+$(eval $(call add_properties_to_compile,SUN_MANAGEMENT_KH, \
+    $(filter %.properties, \
+    $(call CacheFind, $(JDK_TOPDIR)/src/share/classes/sun/management/resources)), \
+    ListResourceBundle, %zh_TW, %zh_HK))
+#sun/print
+#sun/print/resources
+$(eval $(call add_properties_to_compile,SUN_PRINT, \
+    $(filter %.properties, \
+    $(call CacheFind, $(JDK_TOPDIR)/src/share/classes/sun/print/resources)), \
+    ListResourceBundle))
+$(eval $(call add_properties_to_compile,SUN_PRINT_HK, \
+    $(filter %.properties, \
+    $(call CacheFind, $(JDK_TOPDIR)/src/share/classes/sun/print/resources)), \
+    ListResourceBundle, %zh_TW, %zh_HK))
+#sun/rmi/registry/resources
+$(eval $(call add_properties_to_clean,SUN_RMI_REGISTRY, \
+    $(filter %.properties, \
+    $(call CacheFind, $(JDK_TOPDIR)/src/share/classes/sun/rmi/registry/resources))))
+$(eval $(call add_properties_to_clean,SUN_RMI_REGISTRY_HK, \
+    $(filter %zh_TW.properties, \
+    $(call CacheFind, $(JDK_TOPDIR)/src/share/classes/sun/rmi/registry/resources)), \
+    %zh_TW, %zh_HK))
+
+#sun/rmi/rmic/resources
+$(eval $(call add_properties_to_clean,SUN_RMI_RMIC, \
+    $(filter %.properties, \
+    $(call CacheFind, $(JDK_TOPDIR)/src/share/classes/sun/rmi/rmic/resources))))
+
+#sun/rmi/server/resources
+$(eval $(call add_properties_to_clean,SUN_RMI_SERVER, \
+    $(filter %.properties, \
+    $(call CacheFind, $(JDK_TOPDIR)/src/share/classes/sun/rmi/server/resources))))
+$(eval $(call add_properties_to_clean,SUN_RMI_SERVER_HK, \
+    $(filter %zh_TW.properties, \
+    $(call CacheFind, $(JDK_TOPDIR)/src/share/classes/sun/rmi/server/resources)), \
+    %zh_TW, %zh_HK))
+
+# sun/tools/jar/resources
+$(eval $(call add_properties_to_compile,SUN_TOOLS_JAR, \
+    $(filter %.properties, \
+    $(call CacheFind, $(JDK_TOPDIR)/src/share/classes/sun/tools/jar/resources)), \
+    ListResourceBundle))
+$(eval $(call add_properties_to_compile,SUN_TOOLS_JAR_HK, \
+    $(filter %.properties, \
+    $(call CacheFind, $(JDK_TOPDIR)/src/share/classes/sun/tools/jar/resources)), \
+    ListResourceBundle, %zh_TW, %zh_HK))
+
+#sun/tools/javac/resources
+# It's unclear if the other localized property files here are supposed to be copied or not
+# but the old build system didn't copy them.
+$(eval $(call add_properties_to_clean,SUN_TOOLS_SERIALVER, \
+    $(filter %javac.properties, \
+    $(call CacheFind, $(JDK_TOPDIR)/src/share/classes/sun/tools/javac/resources))))
+
+#sun/tools/jconsole/resources
+$(eval $(call add_properties_to_clean,SUN_TOOLS_JCONSOLE, \
+    $(filter %.properties, \
+    $(call CacheFind, $(JDK_TOPDIR)/src/share/classes/sun/tools/jconsole/resources))))
+
+#sun/tools/serialver
+$(eval $(call add_properties_to_clean,SUN_TOOLS_SERIALVER, \
+    $(filter %.properties, \
+    $(call CacheFind, $(JDK_TOPDIR)/src/share/classes/sun/tools/serialver)), , ,resources))
+
+#sun/util/logging/resources
+$(eval $(call add_properties_to_compile,SUN_UTIL_LOGGING, \
+    $(filter %.properties, \
+    $(call CacheFind, $(JDK_TOPDIR)/src/share/classes/sun/util/logging/resources)), \
+    ListResourceBundle))
+$(eval $(call add_properties_to_compile,SUN_UTIL_LOGGING_HK, \
+    $(filter %.properties, \
+    $(call CacheFind, $(JDK_TOPDIR)/src/share/classes/sun/util/logging/resources)), \
+    ListResourceBundle, %zh_TW, %zh_HK))
+# sun/util/resources
+$(eval $(call add_properties_to_compile,SUN_UTIL, \
+    $(filter %.properties, \
+    $(call CacheFind, $(JDK_TOPDIR)/src/share/classes/sun/util/resources)), \
+    sun.util.resources.LocaleNamesBundle))
+
+# Now setup the rule for the generation of the resource bundles.
+$(JDK_OUTPUTDIR)/gensrc/_the.compiled_properties: $(ALL_COMPILED_PROPSOURCES) $(BUILD_TOOLS)
+        # Generate all output directories in advance since the build tool does not do that...
+	$(MKDIR) -p $(sort $(dir $(ALL_COMPILED_PROPJAVAS)))
+	$(ECHO) Compiling $(words $(ALL_COMPILED_PROPSOURCES)) properties into resource bundles
+	$(call ListPathsSafely,COMPILE_PROPCMDLINE,\n, >> $(JDK_OUTPUTDIR)/gensrc/_the.cmdline)
+	$(TOOL_COMPILEPROPERTIES) -quiet @$(JDK_OUTPUTDIR)/gensrc/_the.cmdline
+	$(TOUCH) $@
+
+# Now setup the rule for the generation of the cleaned properties.
+# FIXME: We currently don't handle removed properties incrementally.
+$(JDK_OUTPUTDIR)/classes/_the.cleaned_properties: $(ALL_CLEANED_PROPSOURCES) $(BUILD_TOOLS)
+	$(RM) $(JDK_OUTPUTDIR)/classes/_the.cleaned_properties.cmdline
+        # Generate all output directories in advance since the build tool does not do that...
+	$(MKDIR) -p $(sort $(dir $(ALL_CLEANED_PROPOUTPUT)))
+	$(ECHO) Copying and cleaning $(words $(ALL_CLEANED_PROPSOURCES)) properties
+	$(call ListPathsSafely,CLEAN_PROPCMDLINE,\n, >> $(JDK_OUTPUTDIR)/classes/_the.cleaned_properties.cmdline)
+	$(TOOL_STRIPPROPERTIES) @$(JDK_OUTPUTDIR)/classes/_the.cleaned_properties.cmdline
+	$(TOUCH) $@
+
+$(ALL_COMPILED_PROPJAVAS): $(JDK_OUTPUTDIR)/gensrc/_the.compiled_properties
+
+$(ALL_CLEANED_PROPOUTPUT): $(JDK_OUTPUTDIR)/classes/_the.cleaned_properties
+
+
+# Some zh_HK resources are just copied of zh_TW
+$(JDK_OUTPUTDIR)/gensrc/%_zh_HK.java: $(JDK_TOPDIR)/src/share/classes/%_zh_TW.java
+	$(MKDIR) -p $(@D)
+	$(CAT) $< | $(SED) -e '/class/s/_zh_TW/_zh_HK/' > $@
+
+ZH_HK_JAVA := sun/applet/resources/MsgAppletViewer_zh_HK.java \
+    sun/misc/resources/Messages_zh_HK.java \
+    sun/security/util/AuthResources_zh_HK.java \
+    sun/security/util/Resources_zh_HK.java
+
+ZH_HK_JAVA_FILES := $(addprefix $(JDK_OUTPUTDIR)/gensrc/, $(ZH_HK_JAVA))
+
+
+GENSRC_PROPERTIES := $(ALL_COMPILED_PROPJAVAS) $(ALL_CLEANED_PROPOUTPUT) $(ZH_HK_JAVA_FILES)

@@ -253,4 +253,3 @@ FULL_JRE_JAR_FILES := \
     ext/nashorn.jar \
     ext/zipfs.jar \
     jfr.jar
-

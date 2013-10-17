@@ -23,52 +23,52 @@
 # questions.
 #
 
-PREFIXES=-pkgPrefix CORBA                org.omg \
-	-pkgPrefix CosNaming             org.omg \
-	-pkgPrefix CosTransactions       org.omg \
-	-pkgPrefix CosTSInteroperation   org.omg \
-	-pkgPrefix DynamicAny            org.omg \
-	-pkgPrefix Dynamic               org.omg \
-	-pkgPrefix IOP                   org.omg \
-	-pkgPrefix Messaging             org.omg \
-	-pkgPrefix PortableInterceptor   org.omg \
-	-pkgPrefix PortableServer        org.omg \
-	-pkgPrefix activation            com.sun.corba.se.spi \
-	-pkgPrefix GIOP                  com.sun.corba.se \
-	-pkgPrefix PortableActivationIDL com.sun.corba.se \
-	-pkgPrefix messages              com.sun.corba.se 
+PREFIXES=-pkgPrefix CORBA org.omg \
+    -pkgPrefix CosNaming org.omg \
+    -pkgPrefix CosTransactions org.omg \
+    -pkgPrefix CosTSInteroperation org.omg \
+    -pkgPrefix DynamicAny org.omg \
+    -pkgPrefix Dynamic org.omg \
+    -pkgPrefix IOP org.omg \
+    -pkgPrefix Messaging org.omg \
+    -pkgPrefix PortableInterceptor org.omg \
+    -pkgPrefix PortableServer org.omg \
+    -pkgPrefix activation com.sun.corba.se.spi \
+    -pkgPrefix GIOP com.sun.corba.se \
+    -pkgPrefix PortableActivationIDL com.sun.corba.se \
+    -pkgPrefix messages com.sun.corba.se
 
 define add_idl_package
-    # param 1 = MYPACKAGE
-    # param 2 = src root
-    # param 3 = gensrc root
-    # param 4 = source idl to compile
-    # param 5 = target idl package
-    # param 6 = delete these files that were output from the idlj
-    # param 7 = idls that match these patterns should be compiled with -oldImplBase
-    # param 8 = the idlj command
-    # Save the generated java files to a temporary directory so
-    # that we can find them and create proper dependencies.
-    # After that, we move them to the real gensrc target dir.
-    $4_TMPDIR:=tmp___$(subst /,_,$(patsubst $2/%,%,$4))___
-    ifneq ($$(filter $7,$4),)
-        $4_OLDIMPLBASE:=-oldImplBase
-        $4_OLDIMPLBASE_MSG:=with -oldImplBase
-    endif
-    $5 : $4
+  # param 1 = MYPACKAGE
+  # param 2 = src root
+  # param 3 = gensrc root
+  # param 4 = source idl to compile
+  # param 5 = target idl package
+  # param 6 = delete these files that were output from the idlj
+  # param 7 = idls that match these patterns should be compiled with -oldImplBase
+  # param 8 = the idlj command
+  # Save the generated java files to a temporary directory so
+  # that we can find them and create proper dependencies.
+  # After that, we move them to the real gensrc target dir.
+  $4_TMPDIR:=tmp___$(subst /,_,$(patsubst $2/%,%,$4))___
+  ifneq ($$(filter $7,$4),)
+    $4_OLDIMPLBASE:=-oldImplBase
+    $4_OLDIMPLBASE_MSG:=with -oldImplBase
+  endif
+  $5 : $4
 	$(MKDIR) -p $3/$$($4_TMPDIR)
 	$(RM) -rf $3/$$($4_TMPDIR)
 	$(MKDIR) -p $(dir $5)
-	$(ECHO) $(LOG_INFO) Compiling IDL $(patsubst $2/%,%,$4) 
+	$(ECHO) $(LOG_INFO) Compiling IDL $(patsubst $2/%,%,$4)
 	$8 -td $3/$$($4_TMPDIR) \
-		-i $2/org/omg/CORBA \
-		-i $2/org/omg/PortableInterceptor \
-		-i $2/org/omg/PortableServer \
-		-D CORBA3 -corba 3.0 \
-		-fall \
-		$$($4_OLDIMPLBASE) \
-		$(PREFIXES) \
-		$4
+	    -i $2/org/omg/CORBA \
+	    -i $2/org/omg/PortableInterceptor \
+	    -i $2/org/omg/PortableServer \
+	    -D CORBA3 -corba 3.0 \
+	    -fall \
+	    $$($4_OLDIMPLBASE) \
+	    $(PREFIXES) \
+	    $4
 	$(RM) -f $$(addprefix $3/$$($4_TMPDIR)/,$6)
 	$(CP) -r $3/$$($4_TMPDIR)/* $3
 	($(CD) $3/$$($4_TMPDIR) && $(FIND) . -type f | $(SED) 's!\./!$3/!g' | $(NAWK) '{ print $$$$1 ": $4" }' > $5)
@@ -76,31 +76,31 @@ define add_idl_package
 endef
 
 define SetupIdlCompilation
-# param 1 is for example BUILD_IDLS
-# param 2,3,4,5,6,7,8 are named args.
-#    IDLJ,SRC,BIN,INCLUDES,EXCLUDES,OLDIMPLBASES,DELETES
-$(foreach i,2 3 4 5 6 7 8 9 10 11 12 13 14 15, $(if $($i),$1_$(strip $($i)))$(NEWLINE))
-$(call LogSetupMacroEntry,SetupIdlCompilation($1),$2,$3,$4,$5,$6,$7,$8,$9,$(10),$(11),$(12),$(13),$(14),$(15))
-$(if $(16),$(error Internal makefile error: Too many arguments to SetupIdlCompilation, please update IdlCompilation.gmk))
+  # param 1 is for example BUILD_IDLS
+  # param 2,3,4,5,6,7,8 are named args.
+  #   IDLJ,SRC,BIN,INCLUDES,EXCLUDES,OLDIMPLBASES,DELETES
+  $(foreach i,2 3 4 5 6 7 8 9 10 11 12 13 14 15, $(if $($i),$1_$(strip $($i)))$(NEWLINE))
+  $(call LogSetupMacroEntry,SetupIdlCompilation($1),$2,$3,$4,$5,$6,$7,$8,$9,$(10),$(11),$(12),$(13),$(14),$(15))
+  $(if $(16),$(error Internal makefile error: Too many arguments to SetupIdlCompilation, please update IdlCompilation.gmk))
 
-# Find all existing java files and existing class files.
-$$(eval $$(call MakeDir,$$($1_BIN)))
-$1_SRCS     := $$(shell find $$($1_SRC) -name "*.idl")
-$1_BINS     := $$(shell find $$($1_BIN) -name "*.java")
-# Prepend the source/bin path to the filter expressions.
-$1_SRC_INCLUDES := $$(addprefix $$($1_SRC)/,$$($1_INCLUDES))
-$1_SRC_EXCLUDES := $$(addprefix $$($1_SRC)/,$$($1_EXCLUDES))
-$1_BIN_INCLUDES := $$(addprefix $$($1_BIN)/,$$($1_INCLUDES))
-$1_BIN_EXCLUDES := $$(addprefix $$($1_BIN)/,$$($1_EXCLUDES))
-$1_OLDIMPLBASES := $$(addprefix $$($1_SRC)/,$$($1_OLDIMPLBASES))
-# Now remove unwanted java/class files.
-$1_SRCS     := $$(filter $$($1_SRC_INCLUDES),$$($1_SRCS))
-$1_SRCS     := $$(filter-out $$($1_SRC_EXCLUDES),$$($1_SRCS))
-$1_BINS     := $$(filter $$($1_BIN_INCLUDES),$$($1_BINS))
-$1_BINS     := $$(filter-out $$($1_BIN_EXCLUDES),$$($1_BINS))
-$1 := $$(sort $$(patsubst $$($1_SRC)/%.idl,$$($1_BIN)/%.idl.d,$$($1_SRCS)))
-# Now create the dependencies for each idl target.
-$$(foreach p,$$($1),$$(eval $$(call add_idl_package,$1,$$($1_SRC),$$($1_BIN),$$(patsubst $$($1_BIN)/%.idl.d,$$($1_SRC)/%.idl,$$p),$$p,$$($1_DELETES),$$($1_OLDIMPLBASES),$$($1_IDLJ))))
+  # Find all existing java files and existing class files.
+  $$(eval $$(call MakeDir,$$($1_BIN)))
+  $1_SRCS := $$(shell find $$($1_SRC) -name "*.idl")
+  $1_BINS := $$(shell find $$($1_BIN) -name "*.java")
+  # Prepend the source/bin path to the filter expressions.
+  $1_SRC_INCLUDES := $$(addprefix $$($1_SRC)/,$$($1_INCLUDES))
+  $1_SRC_EXCLUDES := $$(addprefix $$($1_SRC)/,$$($1_EXCLUDES))
+  $1_BIN_INCLUDES := $$(addprefix $$($1_BIN)/,$$($1_INCLUDES))
+  $1_BIN_EXCLUDES := $$(addprefix $$($1_BIN)/,$$($1_EXCLUDES))
+  $1_OLDIMPLBASES := $$(addprefix $$($1_SRC)/,$$($1_OLDIMPLBASES))
+  # Now remove unwanted java/class files.
+  $1_SRCS := $$(filter $$($1_SRC_INCLUDES),$$($1_SRCS))
+  $1_SRCS := $$(filter-out $$($1_SRC_EXCLUDES),$$($1_SRCS))
+  $1_BINS := $$(filter $$($1_BIN_INCLUDES),$$($1_BINS))
+  $1_BINS := $$(filter-out $$($1_BIN_EXCLUDES),$$($1_BINS))
+  $1 := $$(sort $$(patsubst $$($1_SRC)/%.idl,$$($1_BIN)/%.idl.d,$$($1_SRCS)))
+  # Now create the dependencies for each idl target.
+  $$(foreach p,$$($1),$$(eval $$(call add_idl_package,$1,$$($1_SRC),$$($1_BIN),$$(patsubst $$($1_BIN)/%.idl.d,$$($1_SRC)/%.idl,$$p),$$p,$$($1_DELETES),$$($1_OLDIMPLBASES),$$($1_IDLJ))))
 endef
 
 .SUFFIXES: .java .class .package
