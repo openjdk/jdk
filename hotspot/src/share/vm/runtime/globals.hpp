@@ -1979,13 +1979,6 @@ class CommandLineFlags {
   develop(uintx, MetadataAllocationFailALotInterval, 1000,                  \
           "Metadata allocation failure a lot interval")                     \
                                                                             \
-  develop(bool, MetaDataDeallocateALot, false,                              \
-          "Deallocation bunches of metadata at intervals controlled by "    \
-          "MetaDataAllocateALotInterval")                                   \
-                                                                            \
-  develop(uintx, MetaDataDeallocateALotInterval, 100,                       \
-          "Metadata deallocation alot interval")                            \
-                                                                            \
   develop(bool, TraceMetadataChunkAllocation, false,                        \
           "Trace chunk metadata allocations")                               \
                                                                             \
