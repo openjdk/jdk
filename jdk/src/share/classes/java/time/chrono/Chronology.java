@@ -91,14 +91,11 @@ import java.time.DayOfWeek;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalTime;
-import java.time.Month;
-import java.time.Year;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatterBuilder;
 import java.time.format.ResolverStyle;
 import java.time.format.TextStyle;
 import java.time.temporal.ChronoField;
-import java.time.temporal.Temporal;
 import java.time.temporal.TemporalAccessor;
 import java.time.temporal.TemporalAdjuster;
 import java.time.temporal.TemporalField;
@@ -1188,6 +1185,38 @@ public abstract class Chronology implements Comparable<Chronology> {
             throw new DateTimeException("Conflict found: " + field + " " + old + " differs from " + field + " " + value);
         }
         fieldValues.put(field, value);
+    }
+
+    //-----------------------------------------------------------------------
+    /**
+     * Obtains a period for this chronology based on years, months and days.
+     * <p>
+     * This returns a period tied to this chronology using the specified
+     * years, months and days.  All supplied chronologies use periods
+     * based on years, months and days, however the {@code ChronoPeriod} API
+     * allows the period to be represented using other units.
+     *
+     * @implSpec
+     * The default implementation returns an implementation class suitable
+     * for most calendar systems. It is based solely on the three units.
+     * Normalization, addition and subtraction derive the number of months
+     * in a year from the {@link #range(ChronoField)}. If the number of
+     * months within a year is fixed, then the calculation approach for
+     * addition, subtraction and normalization is slightly different.
+     * <p>
+     * If implementing an unusual calendar system that is not based on
+     * years, months and days, or where you want direct control, then
+     * the {@code ChronoPeriod} interface must be directly implemented.
+     * <p>
+     * The returned period is immutable and thread-safe.
+     *
+     * @param years  the number of years, may be negative
+     * @param months  the number of years, may be negative
+     * @param days  the number of years, may be negative
+     * @return the period in terms of this chronology, not null
+     */
+    public ChronoPeriod period(int years, int months, int days) {
+        return new ChronoPeriodImpl(this, years, months, days);
     }
 
     //-----------------------------------------------------------------------

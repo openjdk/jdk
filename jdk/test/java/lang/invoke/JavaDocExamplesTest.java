@@ -53,7 +53,11 @@ public class JavaDocExamplesTest {
     }
 
     public void run() throws Throwable {
+        testMisc();
+        testFindStatic();
+        testFindConstructor();
         testFindVirtual();
+        testFindSpecial();
         testPermuteArguments();
         testDropArguments();
         testFilterArguments();
@@ -99,7 +103,8 @@ static {
 
 {}
 
-    @Test public void testFindVirtual() throws Throwable {
+    @Test public void testMisc() throws Throwable {
+// Extra tests, not from javadoc:
 {}
 MethodHandle CONCAT_3 = LOOKUP.findVirtual(String.class,
   "concat", methodType(String.class, String.class));
@@ -111,6 +116,92 @@ assertEquals("xy", (String) CONCAT_3.invokeExact("x", "y"));
 //assertEquals("xy".hashCode(), (int) HASHCODE_1.invokeExact((Object)"xy"));
 assertEquals("xy".hashCode(), (int) HASHCODE_2.invokeExact((Object)"xy"));
 assertEquals("xy".hashCode(), (int) HASHCODE_3.invokeExact((Object)"xy"));
+{}
+    }
+
+    @Test public void testFindStatic() throws Throwable {
+{}
+MethodHandle MH_asList = publicLookup().findStatic(Arrays.class,
+  "asList", methodType(List.class, Object[].class));
+assertEquals("[x, y]", MH_asList.invoke("x", "y").toString());
+{}
+    }
+
+    @Test public void testFindVirtual() throws Throwable {
+{}
+MethodHandle MH_concat = publicLookup().findVirtual(String.class,
+  "concat", methodType(String.class, String.class));
+MethodHandle MH_hashCode = publicLookup().findVirtual(Object.class,
+  "hashCode", methodType(int.class));
+MethodHandle MH_hashCode_String = publicLookup().findVirtual(String.class,
+  "hashCode", methodType(int.class));
+assertEquals("xy", (String) MH_concat.invokeExact("x", "y"));
+assertEquals("xy".hashCode(), (int) MH_hashCode.invokeExact((Object)"xy"));
+assertEquals("xy".hashCode(), (int) MH_hashCode_String.invokeExact("xy"));
+// interface method:
+MethodHandle MH_subSequence = publicLookup().findVirtual(CharSequence.class,
+  "subSequence", methodType(CharSequence.class, int.class, int.class));
+assertEquals("def", MH_subSequence.invoke("abcdefghi", 3, 6).toString());
+// constructor "internal method" must be accessed differently:
+MethodType MT_newString = methodType(void.class); //()V for new String()
+try { assertEquals("impossible", lookup()
+        .findVirtual(String.class, "<init>", MT_newString));
+ } catch (NoSuchMethodException ex) { } // OK
+MethodHandle MH_newString = publicLookup()
+  .findConstructor(String.class, MT_newString);
+assertEquals("", (String) MH_newString.invokeExact());
+{}
+    }
+
+    @Test public void testFindConstructor() throws Throwable {
+{}
+MethodHandle MH_newArrayList = publicLookup().findConstructor(
+  ArrayList.class, methodType(void.class, Collection.class));
+Collection orig = Arrays.asList("x", "y");
+Collection copy = (ArrayList) MH_newArrayList.invokeExact(orig);
+assert(orig != copy);
+assertEquals(orig, copy);
+// a variable-arity constructor:
+MethodHandle MH_newProcessBuilder = publicLookup().findConstructor(
+  ProcessBuilder.class, methodType(void.class, String[].class));
+ProcessBuilder pb = (ProcessBuilder)
+  MH_newProcessBuilder.invoke("x", "y", "z");
+assertEquals("[x, y, z]", pb.command().toString());
+{}
+    }
+
+// for testFindSpecial
+{}
+static class Listie extends ArrayList {
+  public String toString() { return "[wee Listie]"; }
+  static Lookup lookup() { return MethodHandles.lookup(); }
+}
+{}
+
+    @Test public void testFindSpecial() throws Throwable {
+{}
+// no access to constructor via invokeSpecial:
+MethodHandle MH_newListie = Listie.lookup()
+  .findConstructor(Listie.class, methodType(void.class));
+Listie l = (Listie) MH_newListie.invokeExact();
+try { assertEquals("impossible", Listie.lookup().findSpecial(
+        Listie.class, "<init>", methodType(void.class), Listie.class));
+ } catch (NoSuchMethodException ex) { } // OK
+// access to super and self methods via invokeSpecial:
+MethodHandle MH_super = Listie.lookup().findSpecial(
+  ArrayList.class, "toString" , methodType(String.class), Listie.class);
+MethodHandle MH_this = Listie.lookup().findSpecial(
+  Listie.class, "toString" , methodType(String.class), Listie.class);
+MethodHandle MH_duper = Listie.lookup().findSpecial(
+  Object.class, "toString" , methodType(String.class), Listie.class);
+assertEquals("[]", (String) MH_super.invokeExact(l));
+assertEquals(""+l, (String) MH_this.invokeExact(l));
+assertEquals("[]", (String) MH_duper.invokeExact(l)); // ArrayList method
+try { assertEquals("inaccessible", Listie.lookup().findSpecial(
+        String.class, "toString", methodType(String.class), Listie.class));
+ } catch (IllegalAccessException ex) { } // OK
+Listie subl = new Listie() { public String toString() { return "[subclass]"; } };
+assertEquals(""+l, (String) MH_this.invokeExact(subl)); // Listie method
 {}
     }
 
@@ -190,6 +281,28 @@ assertEquals("XY", (String) f2.invokeExact("x", "y")); // XY
             }}
     }
 
+    @Test public void testCollectArguments() throws Throwable {
+        {{
+{} /// JAVADOC
+MethodHandle deepToString = publicLookup()
+  .findStatic(Arrays.class, "deepToString", methodType(String.class, Object[].class));
+MethodHandle ts1 = deepToString.asCollector(String[].class, 1);
+assertEquals("[strange]", (String) ts1.invokeExact("strange"));
+MethodHandle ts2 = deepToString.asCollector(String[].class, 2);
+assertEquals("[up, down]", (String) ts2.invokeExact("up", "down"));
+MethodHandle ts3 = deepToString.asCollector(String[].class, 3);
+MethodHandle ts3_ts2 = collectArguments(ts3, 1, ts2);
+assertEquals("[top, [up, down], strange]",
+             (String) ts3_ts2.invokeExact("top", "up", "down", "strange"));
+MethodHandle ts3_ts2_ts1 = collectArguments(ts3_ts2, 3, ts1);
+assertEquals("[top, [up, down], [strange]]",
+             (String) ts3_ts2_ts1.invokeExact("top", "up", "down", "strange"));
+MethodHandle ts3_ts2_ts3 = collectArguments(ts3_ts2, 1, ts3);
+assertEquals("[top, [[up, down, strange], charm], bottom]",
+             (String) ts3_ts2_ts3.invokeExact("top", "up", "down", "strange", "charm", "bottom"));
+            }}
+    }
+
     @Test public void testFoldArguments() throws Throwable {
         {{
 {} /// JAVADOC
@@ -264,6 +377,12 @@ assert(!(boolean) equals.invokeExact("me", (Object)"thee"));
 MethodHandle eq2 = equals.asSpreader(Object[].class, 2);
 assert( (boolean) eq2.invokeExact(new Object[]{ "me", "me" }));
 assert(!(boolean) eq2.invokeExact(new Object[]{ "me", "thee" }));
+// try to spread from anything but a 2-array:
+for (int n = 0; n <= 10; n++) {
+  Object[] badArityArgs = (n == 2 ? null : new Object[n]);
+  try { assert((boolean) eq2.invokeExact(badArityArgs) && false); }
+  catch (IllegalArgumentException ex) { } // OK
+}
 // spread both arguments from a String array:
 MethodHandle eq2s = equals.asSpreader(String[].class, 2);
 assert( (boolean) eq2s.invokeExact(new String[]{ "me", "me" }));

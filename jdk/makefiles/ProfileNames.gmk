@@ -31,7 +31,7 @@
 PROFILE_NAMES := compact1 compact2 compact3
 
 # The include files use 1,2,3 for simplicity and conciseness. Internally we
-# use profile_1, profile_2 and profile_3. 
+# use profile_1, profile_2 and profile_3.
 
 ALL_PROFILES := profile_1 profile_2 profile_3
 
@@ -48,7 +48,7 @@ PROFILE_VERSION_JAVA_TARGETS := $(foreach i, $(ALL_PROFILES), $(subst XXX,$i, $(
 PROFILE_VERSION_CLASS_TARGETS := $(foreach i, $(PROFILE_VERSION_JAVA_TARGETS), $(i:.java=.class))
 
 # Function to map from profile designator, profile_1 etc, to its number
-profile_number = $(if $(patsubst profile_%,%, $(1)),$(patsubst profile_%,%, $(1)), $(words $(PROFILE_NAMES) extra))
+profile_number = $(if $(patsubst profile_%,%, $(1)), $(patsubst profile_%,%, $(1)), $(words $(PROFILE_NAMES) extra))
 
 # Function to map from profile number, 1, 2 etc, to the corresponding name
 # An invalid number maps to an empty name
@@ -58,7 +58,6 @@ profile_name = $(word $(1), $(PROFILE_NAMES))
 # Evaluates to the arg if the arg is not a profile version target
 profile_version_number = $(patsubst $(JDK_OUTPUTDIR)/gen_profile_%/$(VERSION_JAVA_PATH), %, $(1))
 
-# Function to go from a profile Version.java target to profile name. If not 
+# Function to go from a profile Version.java target to profile name. If not
 # a profile version target then we need a number that maps to an empty name
 profile_version_name = $(word $(if $(filter-out $(call profile_version_number, $(1)), $(1)), $(call profile_version_number, $(1)), $(words $(PROFILE_NAMES) extra)), $(PROFILE_NAMES))
-

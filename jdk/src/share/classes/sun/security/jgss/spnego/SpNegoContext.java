@@ -525,6 +525,10 @@ public class SpNegoContext implements GSSContextSpi {
 
                 // get the mechanism token
                 byte[] mechToken = initToken.getMechToken();
+                if (mechToken == null) {
+                    throw new GSSException(GSSException.FAILURE, -1,
+                            "mechToken is missing");
+                }
 
                 /*
                  * Select the best match between the list of mechs

@@ -33,6 +33,7 @@ FILES_c = \
 	Console_md.c \
 	Double.c \
 	Executable.c \
+	Field.c \
 	FileDescriptor_md.c \
 	FileInputStream.c \
 	FileInputStream_md.c \
