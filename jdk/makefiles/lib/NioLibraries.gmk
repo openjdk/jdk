@@ -1,0 +1,185 @@
+#
+# Copyright (c) 2011, 2013, Oracle and/or its affiliates. All rights reserved.
+# DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+#
+# This code is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License version 2 only, as
+# published by the Free Software Foundation.  Oracle designates this
+# particular file as subject to the "Classpath" exception as provided
+# by Oracle in the LICENSE file that accompanied this code.
+#
+# This code is distributed in the hope that it will be useful, but WITHOUT
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+# FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+# version 2 for more details (a copy is included in the LICENSE file that
+# accompanied this code).
+#
+# You should have received a copy of the GNU General Public License version
+# 2 along with this work; if not, write to the Free Software Foundation,
+# Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+#
+# Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+# or visit www.oracle.com if you need additional information or have any
+# questions.
+#
+
+BUILD_LIBNIO_SRC := \
+    $(JDK_TOPDIR)/src/$(OPENJDK_TARGET_OS_API_DIR)/native/java/nio \
+    $(JDK_TOPDIR)/src/$(OPENJDK_TARGET_OS_API_DIR)/native/sun/nio/ch \
+    $(JDK_TOPDIR)/src/$(OPENJDK_TARGET_OS_API_DIR)/native/sun/nio/fs
+
+BUILD_LIBNIO_CFLAGS := \
+    -I$(JDK_TOPDIR)/src/share/native/sun/nio/ch \
+    -I$(JDK_TOPDIR)/src/share/native/java/io \
+    -I$(JDK_TOPDIR)/src/share/native/java/net \
+    -I$(JDK_TOPDIR)/src/$(OPENJDK_TARGET_OS_API_DIR)/native/java/net
+
+BUILD_LIBNIO_FILES := \
+    DatagramChannelImpl.c \
+    DatagramDispatcher.c \
+    FileChannelImpl.c \
+    FileDispatcherImpl.c \
+    FileKey.c \
+    IOUtil.c \
+    MappedByteBuffer.c \
+    Net.c \
+    ServerSocketChannelImpl.c \
+    SocketChannelImpl.c \
+    SocketDispatcher.c
+
+ifeq ($(OPENJDK_TARGET_OS), windows)
+  BUILD_LIBNIO_FILES += \
+      Iocp.c \
+      RegistryFileTypeDetector.c \
+      WindowsAsynchronousFileChannelImpl.c \
+      WindowsAsynchronousServerSocketChannelImpl.c \
+      WindowsAsynchronousSocketChannelImpl.c \
+      WindowsNativeDispatcher.c \
+      WindowsSelectorImpl.c
+endif
+
+ifeq ($(OPENJDK_TARGET_OS), linux)
+  BUILD_LIBNIO_MAPFILE := $(JDK_TOPDIR)/makefiles/mapfiles/libnio/mapfile-$(OPENJDK_TARGET_OS)
+  BUILD_LIBNIO_FILES += \
+      EPoll.c \
+      EPollArrayWrapper.c \
+      EPollPort.c \
+      InheritedChannel.c \
+      NativeThread.c \
+      PollArrayWrapper.c \
+      UnixAsynchronousServerSocketChannelImpl.c \
+      UnixAsynchronousSocketChannelImpl.c \
+      GnomeFileTypeDetector.c \
+      MagicFileTypeDetector.c \
+      LinuxNativeDispatcher.c \
+      LinuxWatchService.c \
+      UnixCopyFile.c \
+      UnixNativeDispatcher.c
+endif
+
+ifeq ($(OPENJDK_TARGET_OS), macosx)
+  BUILD_LIBNIO_MAPFILE := $(JDK_TOPDIR)/makefiles/mapfiles/libnio/mapfile-$(OPENJDK_TARGET_OS)
+  BUILD_LIBNIO_SRC += $(JDK_TOPDIR)/src/macosx/native/sun/nio/ch
+  BUILD_LIBNIO_FILES += \
+      InheritedChannel.c \
+      NativeThread.c \
+      PollArrayWrapper.c \
+      UnixAsynchronousServerSocketChannelImpl.c \
+      UnixAsynchronousSocketChannelImpl.c \
+      BsdNativeDispatcher.c \
+      MacOSXNativeDispatcher.c \
+      UnixCopyFile.c \
+      UnixNativeDispatcher.c \
+      KQueue.c \
+      KQueuePort.c \
+      KQueueArrayWrapper.c
+endif
+
+ifeq ($(OPENJDK_TARGET_OS), solaris)
+  BUILD_LIBNIO_MAPFILE := $(JDK_TOPDIR)/makefiles/mapfiles/libnio/mapfile-$(OPENJDK_TARGET_OS)
+  BUILD_LIBNIO_FILES += \
+      DevPollArrayWrapper.c \
+      InheritedChannel.c \
+      NativeThread.c \
+      PollArrayWrapper.c \
+      SolarisEventPort.c \
+      UnixAsynchronousServerSocketChannelImpl.c \
+      UnixAsynchronousSocketChannelImpl.c \
+      GnomeFileTypeDetector.c \
+      SolarisNativeDispatcher.c \
+      SolarisWatchService.c \
+      UnixCopyFile.c \
+      UnixNativeDispatcher.c
+endif
+
+$(eval $(call SetupNativeCompilation,BUILD_LIBNIO, \
+    LIBRARY := nio, \
+    OUTPUT_DIR := $(INSTALL_LIBRARIES_HERE), \
+    SRC := $(BUILD_LIBNIO_SRC), \
+    INCLUDE_FILES := $(BUILD_LIBNIO_FILES), \
+    LANG := C, \
+    OPTIMIZATION := HIGH, \
+    CFLAGS := $(CFLAGS_JDKLIB) \
+        $(BUILD_LIBNIO_CFLAGS), \
+    MAPFILE := $(BUILD_LIBNIO_MAPFILE), \
+    LDFLAGS := $(LDFLAGS_JDKLIB) $(BUILD_LIBNIO_LDFLAGS) \
+        $(call SET_SHARED_LIBRARY_ORIGIN), \
+    LDFLAGS_SUFFIX_linux := -ljava -lnet -lpthread $(LIBDL), \
+    LDFLAGS_SUFFIX_solaris := -ljvm -lsocket -lposix4 $(LIBDL) \
+        -lsendfile -ljava -lnet -lc, \
+    LDFLAGS_SUFFIX_windows := jvm.lib ws2_32.lib $(WIN_JAVA_LIB) \
+        $(JDK_OUTPUTDIR)/objs/libnet/net.lib \
+        advapi32.lib, \
+    LDFLAGS_SUFFIX_macosx := -ljava -lnet -pthread -framework CoreFoundation, \
+    LDFLAGS_SUFFIX :=, \
+    VERSIONINFO_RESOURCE := $(JDK_TOPDIR)/src/windows/resource/version.rc, \
+    RC_FLAGS := $(RC_FLAGS) \
+        -D "JDK_FNAME=nio.dll" \
+        -D "JDK_INTERNAL_NAME=nio" \
+        -D "JDK_FTYPE=0x2L", \
+    OBJECT_DIR := $(JDK_OUTPUTDIR)/objs/libnio, \
+    DEBUG_SYMBOLS := $(DEBUG_ALL_BINARIES)))
+
+BUILD_LIBRARIES += $(BUILD_LIBNIO)
+
+$(BUILD_LIBNIO): $(BUILD_LIBNET)
+
+##########################################################################################
+
+ifeq ($(OPENJDK_TARGET_OS_API), posix)
+
+  ifneq ($(OPENJDK_TARGET_OS), macosx)
+
+    SCTP_WERROR := -Werror
+    ifeq ($(OPENJDK_TARGET_CPU_ARCH), ppc)
+      SCTP_WERROR :=
+    endif
+
+    $(eval $(call SetupNativeCompilation,BUILD_LIBSCTP, \
+        LIBRARY := sctp, \
+        OUTPUT_DIR := $(INSTALL_LIBRARIES_HERE), \
+        SRC := $(JDK_TOPDIR)/src/$(OPENJDK_TARGET_OS_API_DIR)/native/sun/nio/ch/sctp, \
+        LANG := C, \
+        OPTIMIZATION := LOW, \
+        CFLAGS := $(CFLAGS_JDKLIB) \
+            -I$(JDK_TOPDIR)/src/share/native/sun/nio/ch \
+            -I$(JDK_TOPDIR)/src/share/native/sun/nio/ch/sctp \
+            -I$(JDK_TOPDIR)/src/share/native/java/net \
+            -I$(JDK_TOPDIR)/src/$(OPENJDK_TARGET_OS_API_DIR)/native/sun/nio/ch \
+            -I$(JDK_TOPDIR)/src/$(OPENJDK_TARGET_OS_API_DIR)/native/java/net, \
+        CFLAGS_linux := $(SCTP_WERROR), \
+        MAPFILE := $(JDK_TOPDIR)/makefiles/mapfiles/libsctp/mapfile-vers, \
+        LDFLAGS := $(LDFLAGS_JDKLIB) \
+            $(call SET_SHARED_LIBRARY_ORIGIN), \
+        LDFLAGS_SUFFIX_linux := -lpthread $(LIBDL) -ljava -ljvm, \
+        LDFLAGS_SUFFIX_posix := -lnio -lnet, \
+        LDFLAGS_SUFFIX_solaris := -lsocket -ljava -ljvm -lc, \
+        LDFLAGS_SUFFIX_macosx := -ljava -ljvm, \
+        OBJECT_DIR := $(JDK_OUTPUTDIR)/objs/libsctp, \
+        DEBUG_SYMBOLS := $(DEBUG_ALL_BINARIES)))
+
+    BUILD_LIBRARIES += $(BUILD_LIBSCTP)
+
+    $(BUILD_LIBSCTP): $(BUILD_LIBNIO)
+  endif
+endif

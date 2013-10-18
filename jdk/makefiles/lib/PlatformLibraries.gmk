@@ -1,0 +1,286 @@
+#
+# Copyright (c) 2011, 2013, Oracle and/or its affiliates. All rights reserved.
+# DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+#
+# This code is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License version 2 only, as
+# published by the Free Software Foundation.  Oracle designates this
+# particular file as subject to the "Classpath" exception as provided
+# by Oracle in the LICENSE file that accompanied this code.
+#
+# This code is distributed in the hope that it will be useful, but WITHOUT
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+# FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+# version 2 for more details (a copy is included in the LICENSE file that
+# accompanied this code).
+#
+# You should have received a copy of the GNU General Public License version
+# 2 along with this work; if not, write to the Free Software Foundation,
+# Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+#
+# Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+# or visit www.oracle.com if you need additional information or have any
+# questions.
+#
+
+ifeq ($(OPENJDK_TARGET_OS), macosx)
+
+  $(eval $(call SetupNativeCompilation,BUILD_LIBAPPLESCRIPTENGINE, \
+      LIBRARY := AppleScriptEngine, \
+      OUTPUT_DIR := $(INSTALL_LIBRARIES_HERE), \
+      SRC := $(JDK_TOPDIR)/src/macosx/native/apple/applescript, \
+      LANG := C, \
+      OPTIMIZATION := LOW, \
+      CFLAGS := $(CFLAGS_JDKLIB) \
+          -I$(JDK_TOPDIR)/src/macosx/native/apple/applescript \
+          -F/System/Library/Frameworks/JavaVM.framework/Frameworks \
+          -F/System/Library/Frameworks/ApplicationServices.framework/Frameworks, \
+      LDFLAGS := $(LDFLAGS_JDKLIB) \
+          $(call SET_SHARED_LIBRARY_ORIGIN), \
+      LDFLAGS_SUFFIX := -framework Cocoa \
+          -framework Carbon \
+          -F/System/Library/Frameworks/JavaVM.framework/Frameworks \
+          -framework JavaNativeFoundation \
+          $(LDFLAGS_JDKLIB_SUFFIX), \
+      OBJECT_DIR := $(JDK_OUTPUTDIR)/objs/libAppleScriptEngine, \
+      DEBUG_SYMBOLS := $(DEBUG_ALL_BINARIES)))
+
+  $(BUILD_LIBAPPLESCRIPTENGINE): $(BUILD_LIBJAVA)
+
+  BUILD_LIBRARIES += $(BUILD_LIBAPPLESCRIPTENGINE)
+
+endif
+
+##########################################################################################
+
+ifeq ($(OPENJDK_TARGET_OS), macosx)
+
+  $(eval $(call SetupNativeCompilation,BUILD_LIBOSXAPP, \
+      LIBRARY := osxapp, \
+      OUTPUT_DIR := $(INSTALL_LIBRARIES_HERE), \
+      SRC := $(JDK_TOPDIR)/src/macosx/native/sun/osxapp, \
+      LANG := C, \
+      OPTIMIZATION := LOW, \
+      CFLAGS := $(CFLAGS_JDKLIB) \
+          -I$(JDK_TOPDIR)/src/macosx/native/sun/osxapp \
+          -I$(JDK_OUTPUTDIR)/gensrc/sun/osxapp \
+          -F/System/Library/Frameworks/JavaVM.framework/Frameworks \
+          -F/System/Library/Frameworks/ApplicationServices.framework/Frameworks, \
+      LDFLAGS := $(LDFLAGS_JDKLIB) \
+          $(call SET_SHARED_LIBRARY_ORIGIN), \
+      LDFLAGS_SUFFIX_macosx := \
+          -framework Accelerate \
+          -framework ApplicationServices \
+          -framework AudioToolbox \
+          -framework Carbon \
+          -framework Cocoa \
+          -framework Security \
+          -framework ExceptionHandling \
+          -F/System/Library/Frameworks/JavaVM.framework/Frameworks \
+          -framework JavaNativeFoundation \
+          -framework JavaRuntimeSupport \
+          -framework OpenGL \
+          -framework IOSurface \
+          -framework QuartzCore, \
+      OBJECT_DIR := $(JDK_OUTPUTDIR)/objs/libosxapp, \
+      DEBUG_SYMBOLS := $(DEBUG_ALL_BINARIES)))
+
+  BUILD_LIBRARIES += $(BUILD_LIBOSXAPP)
+
+endif
+
+##########################################################################################
+
+ifeq ($(OPENJDK_TARGET_OS), macosx)
+
+  LIBOSX_DIRS := \
+      $(JDK_TOPDIR)/src/macosx/native/com/apple/concurrent \
+      $(JDK_TOPDIR)/src/macosx/native/java/util \
+      $(JDK_TOPDIR)/src/macosx/native/com/apple/eio \
+      $(JDK_TOPDIR)/src/macosx/native/apple/security \
+      $(JDK_TOPDIR)/src/macosx/native/apple/launcher
+
+  $(eval $(call SetupNativeCompilation,BUILD_LIBOSX, \
+      LIBRARY := osx, \
+      OUTPUT_DIR := $(INSTALL_LIBRARIES_HERE), \
+      SRC := $(LIBOSX_DIRS), \
+      LANG := C, \
+      OPTIMIZATION := LOW, \
+      CFLAGS := $(CFLAGS_JDKLIB) \
+          $(foreach dir, $(LIBOSX_DIRS), -I$(dir)) \
+          -I$(JDK_TOPDIR)/src/macosx/native/sun/osxapp \
+          -F/System/Library/Frameworks/JavaVM.framework/Frameworks \
+          -F/System/Library/Frameworks/ApplicationServices.framework/Frameworks, \
+      LDFLAGS := $(LDFLAGS_JDKLIB) \
+          $(call SET_SHARED_LIBRARY_ORIGIN), \
+      LDFLAGS_SUFFIX_macosx := \
+          -losxapp \
+          -framework Cocoa \
+          -framework ApplicationServices \
+          -F/System/Library/Frameworks/JavaVM.framework/Frameworks \
+          -framework JavaNativeFoundation \
+          -framework JavaRuntimeSupport \
+          -framework Security \
+          -framework SystemConfiguration \
+          $(LDFLAGS_JDKLIB_SUFFIX), \
+      OBJECT_DIR := $(JDK_OUTPUTDIR)/objs/libosx, \
+      DEBUG_SYMBOLS := $(DEBUG_ALL_BINARIES)))
+
+  BUILD_LIBRARIES += $(BUILD_LIBOSX)
+
+  $(BUILD_LIBOSX): $(BUILD_LIBOSXAPP)
+
+  $(BUILD_LIBOSX): $(BUILD_LIBJAVA)
+
+endif
+
+##########################################################################################
+
+ifeq ($(OPENJDK_TARGET_OS), macosx)
+
+  # Ugly hack to mimic behaviour in old build where this is built as an xcode project.
+  SET_SHARED_LIBRARY_NAME = -Xlinker -install_name -Xlinker /usr/local/lib/libJObjC.dylib
+
+  $(eval $(call SetupNativeCompilation,BUILD_LIBJOBJC32, \
+      LIBRARY := JObjC, \
+      OUTPUT_DIR := $(JDK_OUTPUTDIR)/objs/libjobjc32, \
+      SRC := $(JDK_TOPDIR)/src/macosx/native/jobjc/src/core/native \
+          $(JDK_TOPDIR)/src/macosx/native/jobjc/src/runtime-additions/native, \
+      LANG := C, \
+      OPTIMIZATION := LOW, \
+      CFLAGS := -fpascal-strings \
+          -fobjc-gc \
+          -gdwarf-2 \
+          $(CFLAGS_JDKLIB) -I$(JDK_OUTPUTDIR)/gensrc_headers_jobjc \
+          -F/System/Library/Frameworks/JavaVM.framework/Frameworks \
+          -m32, \
+      LDFLAGS := $(LDFLAGS_JDKLIB) \
+          -m32, \
+      LDFLAGS_SUFFIX := -framework Foundation -framework JavaVM \
+          -F/System/Library/Frameworks/JavaVM.framework/Frameworks \
+          -framework JavaNativeFoundation \
+          -lffi, \
+      OBJECT_DIR := $(JDK_OUTPUTDIR)/objs/libjobjc32, \
+      DEBUG_SYMBOLS := $(DEBUG_ALL_BINARIES)))
+
+  $(eval $(call SetupNativeCompilation,BUILD_LIBJOBJC64, \
+      LIBRARY := JObjC, \
+      OUTPUT_DIR := $(JDK_OUTPUTDIR)/objs/libjobjc64, \
+      SRC := $(JDK_TOPDIR)/src/macosx/native/jobjc/src/core/native \
+          $(JDK_TOPDIR)/src/macosx/native/jobjc/src/runtime-additions/native, \
+      LANG := C, \
+      OPTIMIZATION := LOW, \
+      CFLAGS := -fpascal-strings \
+          -fobjc-gc \
+          -gdwarf-2 \
+          $(CFLAGS_JDKLIB) -I$(JDK_OUTPUTDIR)/gensrc_headers_jobjc \
+          -F/System/Library/Frameworks/JavaVM.framework/Frameworks \
+          , \
+      LDFLAGS := -fpascal-strings \
+          -fobjc-gc \
+          -gdwarf-2 \
+          $(LDFLAGS_JDKLIB) \
+          $(call SET_SHARED_LIBRARY_ORIGIN), \
+      LDFLAGS_SUFFIX := -framework Foundation -framework JavaVM \
+          -F/System/Library/Frameworks/JavaVM.framework/Frameworks \
+          -framework JavaNativeFoundation \
+          -lffi, \
+      OBJECT_DIR := $(JDK_OUTPUTDIR)/objs/libjobjc64, \
+      DEBUG_SYMBOLS := $(DEBUG_ALL_BINARIES)))
+
+  $(INSTALL_LIBRARIES_HERE)/$(LIBRARY_PREFIX)JObjC$(SHARED_LIBRARY_SUFFIX): $(BUILD_LIBJOBJC32) $(BUILD_LIBJOBJC64)
+	$(LIPO) -create -output $@ $(BUILD_LIBJOBJC32) $(BUILD_LIBJOBJC64)
+
+  BUILD_LIBRARIES += $(INSTALL_LIBRARIES_HERE)/$(LIBRARY_PREFIX)JObjC$(SHARED_LIBRARY_SUFFIX)
+
+endif
+
+##########################################################################################
+
+ifndef OPENJDK
+  ifeq ($(OPENJDK_TARGET_OS), windows)
+
+    ACCESSBRIDGE_SRCDIR := $(JDK_TOPDIR)/src/closed/windows/native/sun/bridge
+
+    define SetupAccessBridge
+      # Parameter 1 Suffix
+      # Parameter 2 Machine
+      # Parameter 3 ACCESSBRIDGE_ARCH_ suffix
+
+      $(call SetupNativeCompilation,BUILD_JAWTACCESSBRIDGE$1, \
+          LIBRARY = JAWTAccessBridge$1, \
+          OUTPUT_DIR := $(INSTALL_LIBRARIES_HERE), \
+          SRC := $(ACCESSBRIDGE_SRCDIR), \
+          INCLUDE_FILES := JAWTAccessBridge.cpp, \
+          LANG := C++, \
+          OPTIMIZATION := LOW, \
+          CFLAGS := $(CFLAGS_JDKLIB) \
+              -DACCESSBRIDGE_ARCH_$3, \
+          LDFLAGS := $(LDFLAGS_JDKLIB) kernel32.lib user32.lib gdi32.lib \
+              winspool.lib jawt.lib comdlg32.lib advapi32.lib shell32.lib \
+              ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib \
+              -subsystem:windows -machine:$2 \
+              -def:$(ACCESSBRIDGE_SRCDIR)/JAWTAccessBridge.DEF, \
+          VERSIONINFO_RESOURCE := $(ACCESSBRIDGE_SRCDIR)/AccessBridgeStatusWindow.rc, \
+          RC_FLAGS := $(RC_FLAGS), \
+          OBJECT_DIR := $(JDK_OUTPUTDIR)/objs/libjawtaccessbridge$1, \
+          DEBUG_SYMBOLS := true)
+
+      $$(BUILD_JAWTACCESSBRIDGE$1): $(JDK_OUTPUTDIR)/lib/$(LIBRARY_PREFIX)jawt$(STATIC_LIBRARY_SUFFIX)
+
+      $(call SetupNativeCompilation,BUILD_JAVAACCESSBRIDGE$1, \
+          LIBRARY = JavaAccessBridge$1, \
+          OUTPUT_DIR := $(INSTALL_LIBRARIES_HERE), \
+          SRC := $(ACCESSBRIDGE_SRCDIR), \
+          INCLUDE_FILES := AccessBridgeATInstance.cpp AccessBridgeDebug.cpp \
+              AccessBridgeJavaEntryPoints.cpp \
+              AccessBridgeMessages.cpp JavaAccessBridge.cpp, \
+          LANG := C++, \
+          OPTIMIZATION := LOW, \
+          CFLAGS := $(CFLAGS_JDKLIB) \
+              -DACCESSBRIDGE_ARCH_$3, \
+          LDFLAGS := $(LDFLAGS_JDKLIB) kernel32.lib user32.lib gdi32.lib \
+              winspool.lib comdlg32.lib advapi32.lib shell32.lib \
+              ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib \
+              -subsystem:windows -machine:$2 \
+              -def:$(ACCESSBRIDGE_SRCDIR)/JavaAccessBridge.DEF, \
+          VERSIONINFO_RESOURCE := $(ACCESSBRIDGE_SRCDIR)/AccessBridgeStatusWindow.rc, \
+          RC_FLAGS := $(RC_FLAGS), \
+          OBJECT_DIR := $(JDK_OUTPUTDIR)/objs/libjavaaccessbridge$1, \
+          DEBUG_SYMBOLS := true)
+
+      $(call SetupNativeCompilation,BUILD_WINDOWSACCESSBRIDGE$1, \
+          LIBRARY = WindowsAccessBridge$1, \
+          OUTPUT_DIR := $(INSTALL_LIBRARIES_HERE), \
+          SRC := $(ACCESSBRIDGE_SRCDIR), \
+          INCLUDE_FILES := AccessBridgeJavaVMInstance.cpp AccessBridgeMessageQueue.cpp \
+              AccessBridgeMessages.cpp AccessBridgeWindowsEntryPoints.cpp \
+              WinAccessBridge.cpp AccessBridgeDebug.cpp \
+              AccessBridgeEventHandler.cpp, \
+          LANG := C++, \
+          OPTIMIZATION := LOW, \
+          CFLAGS := $(filter-out -MD, $(CFLAGS_JDKLIB)) -MT \
+              -DACCESSBRIDGE_ARCH_$3, \
+          LDFLAGS := $(LDFLAGS_JDKLIB) kernel32.lib user32.lib gdi32.lib \
+              winspool.lib comdlg32.lib advapi32.lib shell32.lib \
+              ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib \
+              -subsystem:windows -machine:$2 \
+              -def:$(ACCESSBRIDGE_SRCDIR)/WinAccessBridge.DEF, \
+          VERSIONINFO_RESOURCE := $(ACCESSBRIDGE_SRCDIR)/AccessBridgeStatusWindow.rc, \
+          RC_FLAGS := $(RC_FLAGS), \
+          OBJECT_DIR := $(JDK_OUTPUTDIR)/objs/libwindowsaccessbridge$1, \
+          DEBUG_SYMBOLS := true)
+
+      BUILD_LIBRARIES += $$(BUILD_JAWTACCESSBRIDGE$1) $$(BUILD_JAVAACCESSBRIDGE$1) \
+          $$(BUILD_WINDOWSACCESSBRIDGE$1)
+
+    endef
+
+    ifeq ($(OPENJDK_TARGET_CPU_BITS), 32)
+      $(eval $(call SetupAccessBridge,-32,I386,32))
+      $(eval $(call SetupAccessBridge,,I386,LEGACY))
+    else
+      $(eval $(call SetupAccessBridge,-64,X64,64))
+    endif
+  endif
+endif
