@@ -46,11 +46,14 @@ class SolarisUserDefinedFileAttributeView
 
     private byte[] nameAsBytes(UnixPath file, String name) throws IOException {
         byte[] bytes = Util.toBytes(name);
-        //  "", "." and ".." not allowed
-        if ((bytes.length == 0 || bytes[0] == '.') &&
-            ((bytes.length <= 1 || (bytes.length == 2 && bytes[1] == '.')) {
-            throw new FileSystemException(file.getPathForExceptionMessage(),
-                null, "'" + name + "' is not a valid name");
+        // "", "." and ".." not allowed
+        if (bytes.length == 0 || bytes[0] == '.') {
+            if (bytes.length <= 1 ||
+                (bytes.length == 2 && bytes[1] == '.'))
+            {
+                throw new FileSystemException(file.getPathForExceptionMessage(),
+                    null, "'" + name + "' is not a valid name");
+            }
         }
         return bytes;
     }
