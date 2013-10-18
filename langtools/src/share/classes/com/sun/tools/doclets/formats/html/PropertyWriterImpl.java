@@ -136,11 +136,11 @@ public class PropertyWriterImpl extends AbstractMemberWriter
                             holder.typeName() : holder.qualifiedTypeName(),
                             false);
                 Content codeLink = HtmlTree.CODE(link);
-                Content strong = HtmlTree.SPAN(HtmlStyle.strong, holder.isClass()?
+                Content descfrmLabel = HtmlTree.SPAN(HtmlStyle.descfrmTypeLabel, holder.isClass()?
                    writer.descfrmClassLabel : writer.descfrmInterfaceLabel);
-                strong.addContent(writer.getSpace());
-                strong.addContent(codeLink);
-                propertyDocTree.addContent(HtmlTree.DIV(HtmlStyle.block, strong));
+                descfrmLabel.addContent(writer.getSpace());
+                descfrmLabel.addContent(codeLink);
+                propertyDocTree.addContent(HtmlTree.DIV(HtmlStyle.block, descfrmLabel));
                 writer.addInlineComment(property, propertyDocTree);
             }
         }
@@ -255,14 +255,14 @@ public class PropertyWriterImpl extends AbstractMemberWriter
      */
     protected void addSummaryLink(LinkInfoImpl.Kind context, ClassDoc cd, ProgramElementDoc member,
             Content tdSummary) {
-        Content strong = HtmlTree.SPAN(HtmlStyle.strong,
+        Content memberLink = HtmlTree.SPAN(HtmlStyle.memberNameLink,
                 writer.getDocLink(context, cd,
                 (MemberDoc) member,
                 member.name().substring(0, member.name().lastIndexOf("Property")),
                 false,
                 true));
 
-        Content code = HtmlTree.CODE(strong);
+        Content code = HtmlTree.CODE(memberLink);
         tdSummary.addContent(code);
     }
 

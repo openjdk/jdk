@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug      8008768
+ * @bug      8008768 8026567
  * @summary  Using {@inheritDoc} in simple tag defined via -tag fails
  * @library  ../lib/
  * @build    JavadocTester TestSimpleTagInherit
@@ -46,10 +46,10 @@ public class TestSimpleTagInherit extends JavadocTester {
     //Input for string search tests.
     private static final String[][] TEST = {
         { BUG_ID + FS + "p" + FS + "TestClass.html",
-          "<dt><span class=\"strong\"><em>Custom:</em></span></dt>" + NL +
+          "<dt><span class=\"simpleTagLabel\"><em>Custom:</em></span></dt>" + NL +
           "<dd>doc for BaseClass class</dd>" },
         { BUG_ID + FS + "p" + FS + "TestClass.html",
-          "<dt><span class=\"strong\"><em>Custom:</em></span></dt>" + NL +
+          "<dt><span class=\"simpleTagLabel\"><em>Custom:</em></span></dt>" + NL +
           "<dd>doc for BaseClass method</dd>" }
     };
     private static final String[][] NEGATED_TEST = NO_TEST;

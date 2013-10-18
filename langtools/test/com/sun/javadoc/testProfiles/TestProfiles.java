@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug      8006124 8009684 8016921 8023700 8024096 8008164
+ * @bug      8006124 8009684 8016921 8023700 8024096 8008164 8026567
  * @summary  Test javadoc support for profiles.
  * @author   Bhavesh Patel, Evgeniya Stepanova
  * @library  ../lib/
@@ -122,17 +122,17 @@ public class TestProfiles extends JavadocTester {
         },
         {PROFILE_BUG_ID + FS + "deprecated-list.html","<td class=\"colOne\">"
             + "<a href=\"pkg2/Class1Pkg2.html\" title=\"class in pkg2\">pkg2.Class1Pkg2</a>"
-            + NL +"<div class=\"block\"><span class=\"italic\">Class1Pkg2. This class is deprecated</span></div>"
+            + NL +"<div class=\"block\"><span class=\"deprecationComment\">Class1Pkg2. This class is deprecated</span></div>"
         },
         //Test deprecated package in profile
         {PROFILE_BUG_ID + FS + "deprecated-list.html","<td class=\"colOne\">"
             + "<a href=\"pkgDeprecated/package-summary.html\">pkgDeprecated</a>"
-            + NL +"<div class=\"block\"><span class=\"italic\">This package is <b>Deprecated</b>."
+            + NL +"<div class=\"block\"><span class=\"deprecationComment\">This package is <b>Deprecated</b>."
             + " Use pkg1.</span></div>"
         },
         {PROFILE_BUG_ID + FS + "pkgDeprecated" + FS + "package-summary.html",
-            "<div class=\"deprecatedContent\"><span class=\"strong\">Deprecated.</span>"
-            + NL + "<div class=\"block\"><span class=\"italic\">This package is <b>Deprecated</b>."
+            "<div class=\"deprecatedContent\"><span class=\"deprecatedLabel\">Deprecated.</span>"
+            + NL + "<div class=\"block\"><span class=\"deprecationComment\">This package is <b>Deprecated</b>."
             + " Use pkg1.</span></div>"
         },
         // need to add teststring when JDK-8015496 will be fixed

@@ -158,7 +158,7 @@ public class ProfilePackageWriterImpl extends HtmlDocletWriter
         if (Util.isDeprecated(packageDoc)) {
             HtmlTree deprDiv = new HtmlTree(HtmlTag.DIV);
             deprDiv.addStyle(HtmlStyle.deprecatedContent);
-            Content deprPhrase = HtmlTree.SPAN(HtmlStyle.strong, deprecatedPhrase);
+            Content deprPhrase = HtmlTree.SPAN(HtmlStyle.deprecatedLabel, deprecatedPhrase);
             deprDiv.addContent(deprPhrase);
             if (deprs.length > 0) {
                 Tag[] commentTags = deprs[0].inlineTags();

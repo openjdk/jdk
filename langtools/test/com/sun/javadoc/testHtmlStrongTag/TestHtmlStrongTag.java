@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,7 @@
 
 /*
  * @test
- * @bug 6786028
+ * @bug 6786028 8026567
  * @summary This test verifys the use of <strong> HTML tag instead of <B> by Javadoc std doclet.
  * @author Bhavesh Patel
  * @library ../lib/
@@ -38,7 +38,7 @@ public class TestHtmlStrongTag extends JavadocTester {
 
     private static final String BUG_ID = "6786028";
     private static final String[][] TEST1 = {
-        {BUG_ID + FS + "pkg1" + FS + "C1.html", "<span class=\"strong\">See Also:</span>"}};
+        {BUG_ID + FS + "pkg1" + FS + "C1.html", "<span class=\"seeLabel\">See Also:</span>"}};
     private static final String[][] NEGATED_TEST1 = {
         {BUG_ID + FS + "pkg1" + FS + "C1.html", "<STRONG>Method Summary</STRONG>"},
         {BUG_ID + FS + "pkg1" + FS + "C1.html", "<B>"},
