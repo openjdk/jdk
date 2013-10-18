@@ -3812,13 +3812,17 @@ fi
 
 
 
+
+
+
+
 # This line needs to be here, verbatim, after all includes and the dummy hook
 # definitions. It is replaced with custom functionality when building
 # custom sources.
 #CUSTOM_AUTOCONF_INCLUDE
 
 # Do not change or remove the following line, it is needed for consistency checks:
-DATE_WHEN_GENERATED=1381407169
+DATE_WHEN_GENERATED=1382084973
 
 ###############################################################################
 #
@@ -17415,63 +17419,303 @@ $as_echo "$as_me: or run \"bash.exe -l\" from a VS command prompt and then run c
     as_fn_error $? "Cannot continue" "$LINENO" 5
   fi
 
-  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for msvcr100.dll" >&5
-$as_echo_n "checking for msvcr100.dll... " >&6; }
+
 
 # Check whether --with-msvcr-dll was given.
 if test "${with_msvcr_dll+set}" = set; then :
   withval=$with_msvcr_dll;
 fi
 
+
   if test "x$with_msvcr_dll" != x; then
-    MSVCR_DLL="$with_msvcr_dll"
-  else
-    if test "x$VCINSTALLDIR" != x; then
-      if test "x$OPENJDK_TARGET_CPU_BITS" = x64; then
-        MSVCR_DLL=`find "$VCINSTALLDIR" -name msvcr100.dll | grep x64 | head --lines 1`
-      else
-        MSVCR_DLL=`find "$VCINSTALLDIR" -name msvcr100.dll | grep x86 | grep -v ia64 | grep -v x64 | head --lines 1`
-        if test "x$MSVCR_DLL" = x; then
-          MSVCR_DLL=`find "$VCINSTALLDIR" -name msvcr100.dll | head --lines 1`
-        fi
-      fi
-      if test "x$MSVCR_DLL" != x; then
-        { $as_echo "$as_me:${as_lineno-$LINENO}: msvcr100.dll found in VCINSTALLDIR: $VCINSTALLDIR" >&5
-$as_echo "$as_me: msvcr100.dll found in VCINSTALLDIR: $VCINSTALLDIR" >&6;}
-      else
-        { $as_echo "$as_me:${as_lineno-$LINENO}: Warning: msvcr100.dll not found in VCINSTALLDIR: $VCINSTALLDIR" >&5
-$as_echo "$as_me: Warning: msvcr100.dll not found in VCINSTALLDIR: $VCINSTALLDIR" >&6;}
-      fi
+    # If given explicitely by user, do not probe. If not present, fail directly.
+
+  POSSIBLE_MSVCR_DLL="$with_msvcr_dll"
+  METHOD="--with-msvcr-dll"
+  if test -e "$POSSIBLE_MSVCR_DLL"; then
+    { $as_echo "$as_me:${as_lineno-$LINENO}: Found msvcr100.dll at $POSSIBLE_MSVCR_DLL using $METHOD" >&5
+$as_echo "$as_me: Found msvcr100.dll at $POSSIBLE_MSVCR_DLL using $METHOD" >&6;}
+
+    # Need to check if the found msvcr is correct architecture
+    { $as_echo "$as_me:${as_lineno-$LINENO}: checking found msvcr100.dll architecture" >&5
+$as_echo_n "checking found msvcr100.dll architecture... " >&6; }
+    MSVCR_DLL_FILETYPE=`$FILE -b "$POSSIBLE_MSVCR_DLL"`
+    if test "x$OPENJDK_TARGET_CPU_BITS" = x32; then
+      CORRECT_MSVCR_ARCH=386
+    else
+      CORRECT_MSVCR_ARCH=x86-64
     fi
-    # Try some fallback alternatives
-    if test "x$MSVCR_DLL" = x; then
-      # If visual studio express is installed, there is usually one with the debugger
-      if test "x$VS100COMNTOOLS" != x; then
-        if test "x$OPENJDK_TARGET_CPU_BITS" = x64; then
-          MSVCR_DLL=`find "$VS100COMNTOOLS/.." -name msvcr100.dll | grep -i x64 | head --lines 1`
-          { $as_echo "$as_me:${as_lineno-$LINENO}: msvcr100.dll found in $VS100COMNTOOLS..: $VS100COMNTOOLS.." >&5
-$as_echo "$as_me: msvcr100.dll found in $VS100COMNTOOLS..: $VS100COMNTOOLS.." >&6;}
-        fi
-      fi
-    fi
-    if test "x$MSVCR_DLL" = x; then
-      if test "x$OPENJDK_TARGET_CPU_BITS" = x32; then
-        # Fallback for 32bit builds, look in the windows directory.
-        if test -f "$SYSTEMROOT/system32/msvcr100.dll"; then
-          { $as_echo "$as_me:${as_lineno-$LINENO}: msvcr100.dll found in $SYSTEMROOT/system32" >&5
-$as_echo "$as_me: msvcr100.dll found in $SYSTEMROOT/system32" >&6;}
-          MSVCR_DLL="$SYSTEMROOT/system32/msvcr100.dll"
-        fi
-      fi
+    if $ECHO "$MSVCR_DLL_FILETYPE" | $GREP $CORRECT_MSVCR_ARCH 2>&1 > /dev/null; then
+      { $as_echo "$as_me:${as_lineno-$LINENO}: result: ok" >&5
+$as_echo "ok" >&6; }
+      MSVCR_DLL="$POSSIBLE_MSVCR_DLL"
+      { $as_echo "$as_me:${as_lineno-$LINENO}: checking for msvcr100.dll" >&5
+$as_echo_n "checking for msvcr100.dll... " >&6; }
+      { $as_echo "$as_me:${as_lineno-$LINENO}: result: $MSVCR_DLL" >&5
+$as_echo "$MSVCR_DLL" >&6; }
+    else
+      { $as_echo "$as_me:${as_lineno-$LINENO}: result: incorrect, ignoring" >&5
+$as_echo "incorrect, ignoring" >&6; }
+      { $as_echo "$as_me:${as_lineno-$LINENO}: The file type of the located msvcr100.dll is $MSVCR_DLL_FILETYPE" >&5
+$as_echo "$as_me: The file type of the located msvcr100.dll is $MSVCR_DLL_FILETYPE" >&6;}
     fi
   fi
+
+    if test "x$MSVCR_DLL" = x; then
+      as_fn_error $? "Could not find a proper msvcr100.dll as specified by --with-msvcr-dll" "$LINENO" 5
+    fi
+  fi
+
   if test "x$MSVCR_DLL" = x; then
+    # Probe: Using well-known location from Visual Studio 10.0
+    if test "x$VCINSTALLDIR" != x; then
+      CYGWIN_VC_INSTALL_DIR="$VCINSTALLDIR"
+
+  windows_path="$CYGWIN_VC_INSTALL_DIR"
+  if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
+    unix_path=`$CYGPATH -u "$windows_path"`
+    CYGWIN_VC_INSTALL_DIR="$unix_path"
+  elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
+    unix_path=`$ECHO "$windows_path" | $SED -e 's,^\\(.\\):,/\\1,g' -e 's,\\\\,/,g'`
+    CYGWIN_VC_INSTALL_DIR="$unix_path"
+  fi
+
+      if test "x$OPENJDK_TARGET_CPU_BITS" = x64; then
+        POSSIBLE_MSVCR_DLL="$CYGWIN_VC_INSTALL_DIR/redist/x64/Microsoft.VC100.CRT/msvcr100.dll"
+      else
+        POSSIBLE_MSVCR_DLL="$CYGWIN_VC_INSTALL_DIR/redist/x86/Microsoft.VC100.CRT/msvcr100.dll"
+      fi
+
+  POSSIBLE_MSVCR_DLL="$POSSIBLE_MSVCR_DLL"
+  METHOD="well-known location in VCINSTALLDIR"
+  if test -e "$POSSIBLE_MSVCR_DLL"; then
+    { $as_echo "$as_me:${as_lineno-$LINENO}: Found msvcr100.dll at $POSSIBLE_MSVCR_DLL using $METHOD" >&5
+$as_echo "$as_me: Found msvcr100.dll at $POSSIBLE_MSVCR_DLL using $METHOD" >&6;}
+
+    # Need to check if the found msvcr is correct architecture
+    { $as_echo "$as_me:${as_lineno-$LINENO}: checking found msvcr100.dll architecture" >&5
+$as_echo_n "checking found msvcr100.dll architecture... " >&6; }
+    MSVCR_DLL_FILETYPE=`$FILE -b "$POSSIBLE_MSVCR_DLL"`
+    if test "x$OPENJDK_TARGET_CPU_BITS" = x32; then
+      CORRECT_MSVCR_ARCH=386
+    else
+      CORRECT_MSVCR_ARCH=x86-64
+    fi
+    if $ECHO "$MSVCR_DLL_FILETYPE" | $GREP $CORRECT_MSVCR_ARCH 2>&1 > /dev/null; then
+      { $as_echo "$as_me:${as_lineno-$LINENO}: result: ok" >&5
+$as_echo "ok" >&6; }
+      MSVCR_DLL="$POSSIBLE_MSVCR_DLL"
+      { $as_echo "$as_me:${as_lineno-$LINENO}: checking for msvcr100.dll" >&5
+$as_echo_n "checking for msvcr100.dll... " >&6; }
+      { $as_echo "$as_me:${as_lineno-$LINENO}: result: $MSVCR_DLL" >&5
+$as_echo "$MSVCR_DLL" >&6; }
+    else
+      { $as_echo "$as_me:${as_lineno-$LINENO}: result: incorrect, ignoring" >&5
+$as_echo "incorrect, ignoring" >&6; }
+      { $as_echo "$as_me:${as_lineno-$LINENO}: The file type of the located msvcr100.dll is $MSVCR_DLL_FILETYPE" >&5
+$as_echo "$as_me: The file type of the located msvcr100.dll is $MSVCR_DLL_FILETYPE" >&6;}
+    fi
+  fi
+
+    fi
+  fi
+
+  if test "x$MSVCR_DLL" = x; then
+    # Probe: Check in the Boot JDK directory.
+    POSSIBLE_MSVCR_DLL="$BOOT_JDK/bin/msvcr100.dll"
+
+  POSSIBLE_MSVCR_DLL="$POSSIBLE_MSVCR_DLL"
+  METHOD="well-known location in Boot JDK"
+  if test -e "$POSSIBLE_MSVCR_DLL"; then
+    { $as_echo "$as_me:${as_lineno-$LINENO}: Found msvcr100.dll at $POSSIBLE_MSVCR_DLL using $METHOD" >&5
+$as_echo "$as_me: Found msvcr100.dll at $POSSIBLE_MSVCR_DLL using $METHOD" >&6;}
+
+    # Need to check if the found msvcr is correct architecture
+    { $as_echo "$as_me:${as_lineno-$LINENO}: checking found msvcr100.dll architecture" >&5
+$as_echo_n "checking found msvcr100.dll architecture... " >&6; }
+    MSVCR_DLL_FILETYPE=`$FILE -b "$POSSIBLE_MSVCR_DLL"`
+    if test "x$OPENJDK_TARGET_CPU_BITS" = x32; then
+      CORRECT_MSVCR_ARCH=386
+    else
+      CORRECT_MSVCR_ARCH=x86-64
+    fi
+    if $ECHO "$MSVCR_DLL_FILETYPE" | $GREP $CORRECT_MSVCR_ARCH 2>&1 > /dev/null; then
+      { $as_echo "$as_me:${as_lineno-$LINENO}: result: ok" >&5
+$as_echo "ok" >&6; }
+      MSVCR_DLL="$POSSIBLE_MSVCR_DLL"
+      { $as_echo "$as_me:${as_lineno-$LINENO}: checking for msvcr100.dll" >&5
+$as_echo_n "checking for msvcr100.dll... " >&6; }
+      { $as_echo "$as_me:${as_lineno-$LINENO}: result: $MSVCR_DLL" >&5
+$as_echo "$MSVCR_DLL" >&6; }
+    else
+      { $as_echo "$as_me:${as_lineno-$LINENO}: result: incorrect, ignoring" >&5
+$as_echo "incorrect, ignoring" >&6; }
+      { $as_echo "$as_me:${as_lineno-$LINENO}: The file type of the located msvcr100.dll is $MSVCR_DLL_FILETYPE" >&5
+$as_echo "$as_me: The file type of the located msvcr100.dll is $MSVCR_DLL_FILETYPE" >&6;}
+    fi
+  fi
+
+  fi
+
+  if test "x$MSVCR_DLL" = x; then
+    # Probe: Look in the Windows system32 directory
+    CYGWIN_SYSTEMROOT="$SYSTEMROOT"
+
+  windows_path="$CYGWIN_SYSTEMROOT"
+  if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
+    unix_path=`$CYGPATH -u "$windows_path"`
+    CYGWIN_SYSTEMROOT="$unix_path"
+  elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
+    unix_path=`$ECHO "$windows_path" | $SED -e 's,^\\(.\\):,/\\1,g' -e 's,\\\\,/,g'`
+    CYGWIN_SYSTEMROOT="$unix_path"
+  fi
+
+    POSSIBLE_MSVCR_DLL="$CYGWIN_SYSTEMROOT/system32/msvcr100.dll"
+
+  POSSIBLE_MSVCR_DLL="$POSSIBLE_MSVCR_DLL"
+  METHOD="well-known location in SYSTEMROOT"
+  if test -e "$POSSIBLE_MSVCR_DLL"; then
+    { $as_echo "$as_me:${as_lineno-$LINENO}: Found msvcr100.dll at $POSSIBLE_MSVCR_DLL using $METHOD" >&5
+$as_echo "$as_me: Found msvcr100.dll at $POSSIBLE_MSVCR_DLL using $METHOD" >&6;}
+
+    # Need to check if the found msvcr is correct architecture
+    { $as_echo "$as_me:${as_lineno-$LINENO}: checking found msvcr100.dll architecture" >&5
+$as_echo_n "checking found msvcr100.dll architecture... " >&6; }
+    MSVCR_DLL_FILETYPE=`$FILE -b "$POSSIBLE_MSVCR_DLL"`
+    if test "x$OPENJDK_TARGET_CPU_BITS" = x32; then
+      CORRECT_MSVCR_ARCH=386
+    else
+      CORRECT_MSVCR_ARCH=x86-64
+    fi
+    if $ECHO "$MSVCR_DLL_FILETYPE" | $GREP $CORRECT_MSVCR_ARCH 2>&1 > /dev/null; then
+      { $as_echo "$as_me:${as_lineno-$LINENO}: result: ok" >&5
+$as_echo "ok" >&6; }
+      MSVCR_DLL="$POSSIBLE_MSVCR_DLL"
+      { $as_echo "$as_me:${as_lineno-$LINENO}: checking for msvcr100.dll" >&5
+$as_echo_n "checking for msvcr100.dll... " >&6; }
+      { $as_echo "$as_me:${as_lineno-$LINENO}: result: $MSVCR_DLL" >&5
+$as_echo "$MSVCR_DLL" >&6; }
+    else
+      { $as_echo "$as_me:${as_lineno-$LINENO}: result: incorrect, ignoring" >&5
+$as_echo "incorrect, ignoring" >&6; }
+      { $as_echo "$as_me:${as_lineno-$LINENO}: The file type of the located msvcr100.dll is $MSVCR_DLL_FILETYPE" >&5
+$as_echo "$as_me: The file type of the located msvcr100.dll is $MSVCR_DLL_FILETYPE" >&6;}
+    fi
+  fi
+
+  fi
+
+  if test "x$MSVCR_DLL" = x; then
+    # Probe: If Visual Studio Express is installed, there is usually one with the debugger
+    if test "x$VS100COMNTOOLS" != x; then
+      CYGWIN_VS_TOOLS_DIR="$VS100COMNTOOLS/.."
+
+  windows_path="$CYGWIN_VS_TOOLS_DIR"
+  if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
+    unix_path=`$CYGPATH -u "$windows_path"`
+    CYGWIN_VS_TOOLS_DIR="$unix_path"
+  elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
+    unix_path=`$ECHO "$windows_path" | $SED -e 's,^\\(.\\):,/\\1,g' -e 's,\\\\,/,g'`
+    CYGWIN_VS_TOOLS_DIR="$unix_path"
+  fi
+
+      if test "x$OPENJDK_TARGET_CPU_BITS" = x64; then
+        POSSIBLE_MSVCR_DLL=`$FIND "$CYGWIN_VS_TOOLS_DIR" -name msvcr100.dll | $GREP -i /x64/ | $HEAD --lines 1`
+      else
+        POSSIBLE_MSVCR_DLL=`$FIND "$CYGWIN_VS_TOOLS_DIR" -name msvcr100.dll | $GREP -i /x86/ | $HEAD --lines 1`
+      fi
+
+  POSSIBLE_MSVCR_DLL="$POSSIBLE_MSVCR_DLL"
+  METHOD="search of VS100COMNTOOLS"
+  if test -e "$POSSIBLE_MSVCR_DLL"; then
+    { $as_echo "$as_me:${as_lineno-$LINENO}: Found msvcr100.dll at $POSSIBLE_MSVCR_DLL using $METHOD" >&5
+$as_echo "$as_me: Found msvcr100.dll at $POSSIBLE_MSVCR_DLL using $METHOD" >&6;}
+
+    # Need to check if the found msvcr is correct architecture
+    { $as_echo "$as_me:${as_lineno-$LINENO}: checking found msvcr100.dll architecture" >&5
+$as_echo_n "checking found msvcr100.dll architecture... " >&6; }
+    MSVCR_DLL_FILETYPE=`$FILE -b "$POSSIBLE_MSVCR_DLL"`
+    if test "x$OPENJDK_TARGET_CPU_BITS" = x32; then
+      CORRECT_MSVCR_ARCH=386
+    else
+      CORRECT_MSVCR_ARCH=x86-64
+    fi
+    if $ECHO "$MSVCR_DLL_FILETYPE" | $GREP $CORRECT_MSVCR_ARCH 2>&1 > /dev/null; then
+      { $as_echo "$as_me:${as_lineno-$LINENO}: result: ok" >&5
+$as_echo "ok" >&6; }
+      MSVCR_DLL="$POSSIBLE_MSVCR_DLL"
+      { $as_echo "$as_me:${as_lineno-$LINENO}: checking for msvcr100.dll" >&5
+$as_echo_n "checking for msvcr100.dll... " >&6; }
+      { $as_echo "$as_me:${as_lineno-$LINENO}: result: $MSVCR_DLL" >&5
+$as_echo "$MSVCR_DLL" >&6; }
+    else
+      { $as_echo "$as_me:${as_lineno-$LINENO}: result: incorrect, ignoring" >&5
+$as_echo "incorrect, ignoring" >&6; }
+      { $as_echo "$as_me:${as_lineno-$LINENO}: The file type of the located msvcr100.dll is $MSVCR_DLL_FILETYPE" >&5
+$as_echo "$as_me: The file type of the located msvcr100.dll is $MSVCR_DLL_FILETYPE" >&6;}
+    fi
+  fi
+
+    fi
+  fi
+
+  if test "x$MSVCR_DLL" = x; then
+    # Probe: Search wildly in the VCINSTALLDIR. We've probably lost by now.
+    # (This was the original behaviour; kept since it might turn up something)
+    if test "x$CYGWIN_VC_INSTALL_DIR" != x; then
+      if test "x$OPENJDK_TARGET_CPU_BITS" = x64; then
+        POSSIBLE_MSVCR_DLL=`$FIND "$CYGWIN_VC_INSTALL_DIR" -name msvcr100.dll | $GREP x64 | $HEAD --lines 1`
+      else
+        POSSIBLE_MSVCR_DLL=`$FIND "$CYGWIN_VC_INSTALL_DIR" -name msvcr100.dll | $GREP x86 | $GREP -v ia64 | $GREP -v x64 | $HEAD --lines 1`
+        if test "x$POSSIBLE_MSVCR_DLL" = x; then
+          # We're grasping at straws now...
+          POSSIBLE_MSVCR_DLL=`$FIND "$CYGWIN_VC_INSTALL_DIR" -name msvcr100.dll | $HEAD --lines 1`
+        fi
+      fi
+
+
+  POSSIBLE_MSVCR_DLL="$POSSIBLE_MSVCR_DLL"
+  METHOD="search of VCINSTALLDIR"
+  if test -e "$POSSIBLE_MSVCR_DLL"; then
+    { $as_echo "$as_me:${as_lineno-$LINENO}: Found msvcr100.dll at $POSSIBLE_MSVCR_DLL using $METHOD" >&5
+$as_echo "$as_me: Found msvcr100.dll at $POSSIBLE_MSVCR_DLL using $METHOD" >&6;}
+
+    # Need to check if the found msvcr is correct architecture
+    { $as_echo "$as_me:${as_lineno-$LINENO}: checking found msvcr100.dll architecture" >&5
+$as_echo_n "checking found msvcr100.dll architecture... " >&6; }
+    MSVCR_DLL_FILETYPE=`$FILE -b "$POSSIBLE_MSVCR_DLL"`
+    if test "x$OPENJDK_TARGET_CPU_BITS" = x32; then
+      CORRECT_MSVCR_ARCH=386
+    else
+      CORRECT_MSVCR_ARCH=x86-64
+    fi
+    if $ECHO "$MSVCR_DLL_FILETYPE" | $GREP $CORRECT_MSVCR_ARCH 2>&1 > /dev/null; then
+      { $as_echo "$as_me:${as_lineno-$LINENO}: result: ok" >&5
+$as_echo "ok" >&6; }
+      MSVCR_DLL="$POSSIBLE_MSVCR_DLL"
+      { $as_echo "$as_me:${as_lineno-$LINENO}: checking for msvcr100.dll" >&5
+$as_echo_n "checking for msvcr100.dll... " >&6; }
+      { $as_echo "$as_me:${as_lineno-$LINENO}: result: $MSVCR_DLL" >&5
+$as_echo "$MSVCR_DLL" >&6; }
+    else
+      { $as_echo "$as_me:${as_lineno-$LINENO}: result: incorrect, ignoring" >&5
+$as_echo "incorrect, ignoring" >&6; }
+      { $as_echo "$as_me:${as_lineno-$LINENO}: The file type of the located msvcr100.dll is $MSVCR_DLL_FILETYPE" >&5
+$as_echo "$as_me: The file type of the located msvcr100.dll is $MSVCR_DLL_FILETYPE" >&6;}
+    fi
+  fi
+
+    fi
+  fi
+
+  if test "x$MSVCR_DLL" = x; then
+    { $as_echo "$as_me:${as_lineno-$LINENO}: checking for msvcr100.dll" >&5
+$as_echo_n "checking for msvcr100.dll... " >&6; }
     { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
 $as_echo "no" >&6; }
-    as_fn_error $? "Could not find msvcr100.dll !" "$LINENO" 5
+    as_fn_error $? "Could not find msvcr100.dll. Please specify using --with-msvcr-dll." "$LINENO" 5
   fi
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $MSVCR_DLL" >&5
-$as_echo "$MSVCR_DLL" >&6; }
+
 
   if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
 
