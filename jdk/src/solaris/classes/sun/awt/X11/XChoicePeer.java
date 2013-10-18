@@ -814,11 +814,11 @@ public class XChoicePeer extends XComponentPeer implements ChoicePeer, ToplevelS
                 x = screen.width - width;
             }
 
+            if (y + height > screen.height) {
+                y = global.y - height;
+            }
             if (y < 0) {
                 y = 0;
-            }
-            else if (y + height > screen.height) {
-                y = screen.height - height;
             }
             return new Rectangle(x, y, width, height);
         }
