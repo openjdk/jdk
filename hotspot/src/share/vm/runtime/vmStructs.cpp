@@ -1938,7 +1938,13 @@ typedef BinaryTreeDictionary<Metablock, FreeList> MetablockTreeDictionary;
   declare_c2_type(CmpDNode, CmpNode)                                      \
   declare_c2_type(CmpD3Node, CmpDNode)                                    \
   declare_c2_type(MathExactNode, MultiNode)                               \
-  declare_c2_type(AddExactINode, MathExactNode)                           \
+  declare_c2_type(MathExactINode, MathExactNode)                          \
+  declare_c2_type(AddExactINode, MathExactINode)                          \
+  declare_c2_type(AddExactLNode, MathExactLNode)                          \
+  declare_c2_type(SubExactINode, MathExactINode)                          \
+  declare_c2_type(SubExactLNode, MathExactLNode)                          \
+  declare_c2_type(NegExactINode, MathExactINode)                          \
+  declare_c2_type(MulExactINode, MathExactINode)                          \
   declare_c2_type(FlagsProjNode, ProjNode)                                \
   declare_c2_type(BoolNode, Node)                                         \
   declare_c2_type(AbsNode, Node)                                          \
