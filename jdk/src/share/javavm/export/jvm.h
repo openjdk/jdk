@@ -351,7 +351,7 @@ JVM_NewMultiArray(JNIEnv *env, jclass eltClass, jintArray dim);
  * java.lang.Class and java.lang.ClassLoader
  */
 
-#define JVM_DEPTH -1
+#define JVM_CALLER_DEPTH -1
 
 /*
  * Returns the immediate caller class of the native method invoking
