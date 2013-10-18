@@ -30,6 +30,7 @@ import com.sun.tools.javac.tree.JCTree.JCMemberReference.ReferenceKind;
 import com.sun.tools.javac.tree.TreeMaker;
 import com.sun.tools.javac.tree.TreeTranslator;
 import com.sun.tools.javac.code.Attribute;
+import com.sun.tools.javac.code.Flags;
 import com.sun.tools.javac.code.Kinds;
 import com.sun.tools.javac.code.Scope;
 import com.sun.tools.javac.code.Symbol;
@@ -1315,7 +1316,9 @@ public class LambdaToMethod extends TreeTranslator {
                 ListBuffer<JCVariableDecl> paramBuff = new ListBuffer<JCVariableDecl>();
                 int i = 0;
                 for (List<Type> l = ptypes; l.nonEmpty(); l = l.tail) {
-                    paramBuff.append(make.Param(make.paramName(i++), l.head, owner));
+                    JCVariableDecl param = make.Param(make.paramName(i++), l.head, owner);
+                    param.sym.pos = tree.pos;
+                    paramBuff.append(param);
                 }
                 List<JCVariableDecl> params = paramBuff.toList();
 
@@ -1755,7 +1758,7 @@ public class LambdaToMethod extends TreeTranslator {
                         ((VarSymbol)ret).pos = ((VarSymbol)sym).pos;
                         break;
                     case CAPTURED_VAR:
-                        ret = new VarSymbol(SYNTHETIC | FINAL, name, types.erasure(sym.type), translatedSym) {
+                        ret = new VarSymbol(SYNTHETIC | FINAL | PARAMETER, name, types.erasure(sym.type), translatedSym) {
                             @Override
                             public Symbol baseSymbol() {
                                 //keep mapping with original captured symbol
@@ -1763,8 +1766,17 @@ public class LambdaToMethod extends TreeTranslator {
                             }
                         };
                         break;
+                    case LOCAL_VAR:
+                        ret = new VarSymbol(FINAL, name, types.erasure(sym.type), translatedSym);
+                        ((VarSymbol) ret).pos = ((VarSymbol) sym).pos;
+                        break;
+                    case PARAM:
+                        ret = new VarSymbol(FINAL | PARAMETER, name, types.erasure(sym.type), translatedSym);
+                        ((VarSymbol) ret).pos = ((VarSymbol) sym).pos;
+                        break;
                     default:
                         ret = makeSyntheticVar(FINAL, name, types.erasure(sym.type), translatedSym);
+                        ((VarSymbol) ret).pos = ((VarSymbol) sym).pos;
                 }
                 if (ret != sym) {
                     ret.setDeclarationAttributes(sym.getRawAttributes());
@@ -1845,7 +1857,7 @@ public class LambdaToMethod extends TreeTranslator {
                 // If instance access isn't needed, make it static.
                 // Interface instance methods must be default methods.
                 // Lambda methods are private synthetic.
-                translatedSym.flags_field = SYNTHETIC |
+                translatedSym.flags_field = SYNTHETIC | LAMBDA_METHOD |
                         PRIVATE |
                         (thisReferenced? (inInterface? DEFAULT : 0) : STATIC);
 
