@@ -26,6 +26,7 @@
 package sun.util.calendar;
 
 import java.io.ByteArrayInputStream;
+import java.io.BufferedInputStream;
 import java.io.DataInput;
 import java.io.DataInputStream;
 import java.io.File;
@@ -243,7 +244,8 @@ public final class ZoneInfoFile {
                 try {
                     String libDir = System.getProperty("java.home") + File.separator + "lib";
                     try (DataInputStream dis = new DataInputStream(
-                             new FileInputStream(new File(libDir, "tzdb.dat")))) {
+                             new BufferedInputStream(new FileInputStream(
+                                 new File(libDir, "tzdb.dat"))))) {
                         load(dis);
                     }
                 } catch (Exception x) {
@@ -263,6 +265,10 @@ public final class ZoneInfoFile {
             aliases.put("MST", "America/Denver");
             aliases.put("HST", "Pacific/Honolulu");
         }
+    }
+
+    public static boolean useOldMapping() {
+       return USE_OLDMAPPING;
     }
 
     /**
