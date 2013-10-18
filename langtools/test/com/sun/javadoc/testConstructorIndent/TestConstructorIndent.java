@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug      4904037
+ * @bug      4904037 8026567
  * @summary  The constructor comments should be surrounded by
  *           <dl></dl>.  Check for this in the output.
  * @author   jamieh
@@ -47,7 +47,7 @@ public class TestConstructorIndent extends JavadocTester {
     private static final String[][] TEST = {
         {BUG_ID + FS + "C.html", "<div class=\"block\">" +
                  "This is just a simple constructor.</div>" + NL +
-                 "<dl>" + NL + "<dt><span class=\"strong\">Parameters:</span></dt>" + NL +
+                 "<dl>" + NL + "<dt><span class=\"paramLabel\">Parameters:</span></dt>" + NL +
                  "<dd><code>i</code> - a param.</dd>" + NL +"</dl>"
         }
     };

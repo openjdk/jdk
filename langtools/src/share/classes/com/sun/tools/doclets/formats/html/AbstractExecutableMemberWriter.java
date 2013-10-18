@@ -101,10 +101,10 @@ public abstract class AbstractExecutableMemberWriter extends AbstractMemberWrite
             Content tdSummary) {
         ExecutableMemberDoc emd = (ExecutableMemberDoc)member;
         String name = emd.name();
-        Content strong = HtmlTree.SPAN(HtmlStyle.strong,
+        Content memberLink = HtmlTree.SPAN(HtmlStyle.memberNameLink,
                 writer.getDocLink(context, cd, (MemberDoc) emd,
                 name, false));
-        Content code = HtmlTree.CODE(strong);
+        Content code = HtmlTree.CODE(memberLink);
         addParameters(emd, false, code, name.length() - 1);
         tdSummary.addContent(code);
     }

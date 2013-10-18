@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 4695326 4750173 4920381
+ * @bug 4695326 4750173 4920381 8026567
  * @summary Test the declarartion of simple tags using -tag. Verify that
  * "-tag name" is a shortcut for "-tag name:a:Name:".  Also verity that
  * you can escape the ":" character with a back slash so that it is not
@@ -42,13 +42,13 @@ public class TestSimpleTag extends JavadocTester {
     private static final String[][] TEST =
         new String[][] {
             {"./" + BUG_ID + "/C.html",
-                "<span class=\"strong\">Todo:</span>"},
+                "<span class=\"simpleTagLabel\">Todo:</span>"},
             {"./" + BUG_ID + "/C.html",
-                "<span class=\"strong\">EJB Beans:</span>"},
+                "<span class=\"simpleTagLabel\">EJB Beans:</span>"},
             {"./" + BUG_ID + "/C.html",
-                "<span class=\"strong\">Regular Tag:</span>"},
+                "<span class=\"simpleTagLabel\">Regular Tag:</span>"},
             {"./" + BUG_ID + "/C.html",
-                "<span class=\"strong\">Back-Slash-Tag:</span>"},
+                "<span class=\"simpleTagLabel\">Back-Slash-Tag:</span>"},
         };
 
     private static final String[] ARGS = new String[] {

@@ -237,9 +237,9 @@ public class AnnotationTypeFieldWriterImpl extends AbstractMemberWriter
      */
     protected void addSummaryLink(LinkInfoImpl.Kind context, ClassDoc cd, ProgramElementDoc member,
             Content tdSummary) {
-        Content strong = HtmlTree.SPAN(HtmlStyle.strong,
+        Content memberLink = HtmlTree.SPAN(HtmlStyle.memberNameLink,
                 writer.getDocLink(context, (MemberDoc) member, member.name(), false));
-        Content code = HtmlTree.CODE(strong);
+        Content code = HtmlTree.CODE(memberLink);
         tdSummary.addContent(code);
     }
 
