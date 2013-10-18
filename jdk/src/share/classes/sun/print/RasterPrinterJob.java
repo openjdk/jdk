@@ -118,6 +118,16 @@ public abstract class RasterPrinterJob extends PrinterJob {
     protected static final int STREAM = 2;
 
     /**
+     * Pageable MAX pages
+     */
+    private static final int MAX_UNKNOWN_PAGES = 9999;
+
+    private static final int PD_ALLPAGES = 0x00000000;
+    private static final int PD_SELECTION = 0x00000001;
+    private static final int PD_PAGENUMS = 0x00000002;
+    private static final int PD_NOSELECTION = 0x00000004;
+
+    /**
      * Maximum amount of memory in bytes to use for the
      * buffered image "band". 4Mb is a compromise between
      * limiting the number of bands on hi-res printers and
@@ -799,6 +809,14 @@ public abstract class RasterPrinterJob extends PrinterJob {
             return null;
         }
    }
+
+   protected PageFormat getPageFormatFromAttributes() {
+       if (attributes == null) {
+            return null;
+        }
+        return attributeToPageFormat(getPrintService(), this.attributes);
+   }
+
 
    /**
      * Presents the user a dialog for changing properties of the
@@ -1762,6 +1780,78 @@ public abstract class RasterPrinterJob extends PrinterJob {
             return mCollate;
     }
 
+    private final int getSelectAttrib() {
+        if (attributes != null) {
+            SunPageSelection pages =
+                (SunPageSelection)attributes.get(SunPageSelection.class);
+            if (pages == SunPageSelection.RANGE) {
+                return PD_PAGENUMS;
+            } else if (pages == SunPageSelection.SELECTION) {
+                return PD_SELECTION;
+            } else if (pages ==  SunPageSelection.ALL) {
+                return PD_ALLPAGES;
+            }
+        }
+        return PD_NOSELECTION;
+    }
+
+    //returns 1-based index for "From" page
+    private final int getFromPageAttrib() {
+        if (attributes != null) {
+            PageRanges pageRangesAttr =
+                (PageRanges)attributes.get(PageRanges.class);
+            if (pageRangesAttr != null) {
+                int[][] range = pageRangesAttr.getMembers();
+                return range[0][0];
+            }
+        }
+        return getMinPageAttrib();
+    }
+
+    //returns 1-based index for "To" page
+    private final int getToPageAttrib() {
+        if (attributes != null) {
+            PageRanges pageRangesAttr =
+                (PageRanges)attributes.get(PageRanges.class);
+            if (pageRangesAttr != null) {
+                int[][] range = pageRangesAttr.getMembers();
+                return range[range.length-1][1];
+            }
+        }
+        return getMaxPageAttrib();
+    }
+
+    private final int getMinPageAttrib() {
+        if (attributes != null) {
+            SunMinMaxPage s =
+                (SunMinMaxPage)attributes.get(SunMinMaxPage.class);
+            if (s != null) {
+                return s.getMin();
+            }
+        }
+        return 1;
+    }
+
+    private final int getMaxPageAttrib() {
+        if (attributes != null) {
+            SunMinMaxPage s =
+                (SunMinMaxPage)attributes.get(SunMinMaxPage.class);
+            if (s != null) {
+                return s.getMax();
+            }
+        }
+
+        Pageable pageable = getPageable();
+        if (pageable != null) {
+            int numPages = pageable.getNumberOfPages();
+            if (numPages <= Pageable.UNKNOWN_NUMBER_OF_PAGES) {
+                numPages = MAX_UNKNOWN_PAGES;
+            }
+            return  ((numPages == 0) ? 1 : numPages);
+        }
+
+        return Integer.MAX_VALUE;
+    }
     /**
      * Called by the print() method at the start of
      * a print job.
