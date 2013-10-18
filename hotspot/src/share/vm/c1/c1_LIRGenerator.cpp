@@ -1265,6 +1265,7 @@ void LIRGenerator::do_getClass(Intrinsic* x) {
 
   LIRItem rcvr(x->argument_at(0), this);
   rcvr.load_item();
+  LIR_Opr temp = new_register(T_METADATA);
   LIR_Opr result = rlock_result(x);
 
   // need to perform the null check on the rcvr
@@ -1272,8 +1273,11 @@ void LIRGenerator::do_getClass(Intrinsic* x) {
   if (x->needs_null_check()) {
     info = state_for(x);
   }
-  __ move(new LIR_Address(rcvr.result(), oopDesc::klass_offset_in_bytes(), T_ADDRESS), result, info);
-  __ move_wide(new LIR_Address(result, in_bytes(Klass::java_mirror_offset()), T_OBJECT), result);
+
+  // FIXME T_ADDRESS should actually be T_METADATA but it can't because the
+  // meaning of these two is mixed up (see JDK-8026837).
+  __ move(new LIR_Address(rcvr.result(), oopDesc::klass_offset_in_bytes(), T_ADDRESS), temp, info);
+  __ move_wide(new LIR_Address(temp, in_bytes(Klass::java_mirror_offset()), T_OBJECT), result);
 }
 
 
