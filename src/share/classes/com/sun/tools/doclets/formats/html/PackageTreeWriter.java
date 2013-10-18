@@ -155,7 +155,7 @@ public class PackageTreeWriter extends AbstractTreeWriter {
      * @param div the content tree to which the link will be added
      */
     protected void addLinkToMainTree(Content div) {
-        Content span = HtmlTree.SPAN(HtmlStyle.strong,
+        Content span = HtmlTree.SPAN(HtmlStyle.packageHierarchyLabel,
                 getResource("doclet.Package_Hierarchies"));
         div.addContent(span);
         HtmlTree ul = new HtmlTree (HtmlTag.UL);
