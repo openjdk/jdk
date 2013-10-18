@@ -3345,9 +3345,7 @@ MetaWord* Metaspace::allocate(ClassLoaderData* loader_data, size_t word_size,
   }
 
   if (result == NULL) {
-    report_metadata_oome(loader_data, word_size, mdtype, THREAD);
-    // Will not reach here.
-    return NULL;
+    report_metadata_oome(loader_data, word_size, mdtype, CHECK_NULL);
   }
 
   // Zero initialize.
