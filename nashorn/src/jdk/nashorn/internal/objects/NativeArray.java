@@ -372,9 +372,7 @@ public final class NativeArray extends ScriptObject {
      */
     @Function(attributes = Attribute.NOT_ENUMERABLE, where = Where.CONSTRUCTOR)
     public static Object isArray(final Object self, final Object arg) {
-        return isArray(arg) || (arg == Global.instance().getArrayPrototype())
-                || (arg instanceof NativeRegExpExecResult)
-                || (arg instanceof JSObject && ((JSObject)arg).isArray());
+        return isArray(arg) || (arg instanceof JSObject && ((JSObject)arg).isArray());
     }
 
     /**
@@ -401,6 +399,26 @@ public final class NativeArray extends ScriptObject {
         if (isArray(self)) {
             ((ScriptObject) self).setLength(validLength(length, true));
         }
+    }
+
+    /**
+     * Prototype length getter
+     * @param self self reference
+     * @return the length of the object
+     */
+    @Getter(name = "length", where = Where.PROTOTYPE, attributes = Attribute.NOT_ENUMERABLE | Attribute.NOT_CONFIGURABLE)
+    public static Object getProtoLength(final Object self) {
+        return length(self);  // Same as instance getter but we can't make nasgen use the same method for prototype
+    }
+
+    /**
+     * Prototype length setter
+     * @param self   self reference
+     * @param length new length property
+     */
+    @Setter(name = "length", where = Where.PROTOTYPE, attributes = Attribute.NOT_ENUMERABLE | Attribute.NOT_CONFIGURABLE)
+    public static void setProtoLength(final Object self, final Object length) {
+        length(self, length);  // Same as instance setter but we can't make nasgen use the same method for prototype
     }
 
     static long validLength(final Object length, final boolean reject) {
