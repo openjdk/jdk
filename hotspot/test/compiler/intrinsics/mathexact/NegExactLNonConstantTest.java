@@ -23,26 +23,15 @@
 
 /*
  * @test
- * @bug 8024924
- * @summary Test non constant addExact
- * @compile LoopDependentTest.java Verify.java
- * @run main LoopDependentTest
+ * @bug 8026844
+ * @summary Test constant negExact
+ * @compile NegExactLNonConstantTest.java Verify.java
+ * @run main NegExactLNonConstantTest
  *
  */
 
-import java.lang.ArithmeticException;
-
-public class LoopDependentTest {
-  public static java.util.Random rnd = new java.util.Random();
-
-  public static void main(String[] args) {
-    int rnd1 = rnd.nextInt(), rnd2 = rnd.nextInt();
-    for (int i = 0; i < 50000; ++i) {
-      Verify.verify(rnd1 + i, rnd2 + i);
-      Verify.verify(rnd1 + i, rnd2 + (i & 0xff));
-      Verify.verify(rnd1 - i, rnd2 - (i & 0xff));
-      Verify.verify(rnd1 + i + 1, rnd2 + i + 2);
-      Verify.verify(rnd1 + i * 2, rnd2 + i);
+public class NegExactLNonConstantTest {
+    public static void main(String[] args) {
+        Verify.NonConstantLongTest.verify(new Verify.UnaryToBinaryLong(new Verify.NegExactL()));
     }
-  }
 }

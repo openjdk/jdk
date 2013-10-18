@@ -435,6 +435,11 @@ void Type::Initialize_shared(Compile* current) {
   intccpair[1] = TypeInt::CC;
   TypeTuple::INT_CC_PAIR = TypeTuple::make(2, intccpair);
 
+  const Type **longccpair = TypeTuple::fields(2);
+  longccpair[0] = TypeLong::LONG;
+  longccpair[1] = TypeInt::CC;
+  TypeTuple::LONG_CC_PAIR = TypeTuple::make(2, longccpair);
+
   _const_basic_type[T_NARROWOOP]   = TypeNarrowOop::BOTTOM;
   _const_basic_type[T_NARROWKLASS] = Type::BOTTOM;
   _const_basic_type[T_BOOLEAN]     = TypeInt::BOOL;
@@ -1675,6 +1680,7 @@ const TypeTuple *TypeTuple::START_I2C;
 const TypeTuple *TypeTuple::INT_PAIR;
 const TypeTuple *TypeTuple::LONG_PAIR;
 const TypeTuple *TypeTuple::INT_CC_PAIR;
+const TypeTuple *TypeTuple::LONG_CC_PAIR;
 
 
 //------------------------------make-------------------------------------------
