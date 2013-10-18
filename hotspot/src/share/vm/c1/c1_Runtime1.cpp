@@ -542,8 +542,7 @@ JRT_ENTRY_NO_ASYNC(static address, exception_handler_for_pc_helper(JavaThread* t
     // exception handler can cause class loading, which might throw an
     // exception and those fields are expected to be clear during
     // normal bytecode execution.
-    thread->set_exception_oop(NULL);
-    thread->set_exception_pc(NULL);
+    thread->clear_exception_oop_and_pc();
 
     continuation = SharedRuntime::compute_compiled_exc_handler(nm, pc, exception, false, false);
     // If an exception was thrown during exception dispatch, the exception oop may have changed
