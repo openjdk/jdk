@@ -62,7 +62,7 @@ inline uint jar::get_crc32(uint c, uchar *ptr, uint len) { return crc32(c, ptr, 
 
 #endif // End of ZLIB
 
-#ifdef sparc
+#ifdef _BIG_ENDIAN
 #define SWAP_BYTES(a) \
     ((((a) << 8) & 0xff00) | 0x00ff) & (((a) >> 8) | 0xff00)
 #else
