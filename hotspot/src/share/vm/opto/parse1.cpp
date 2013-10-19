@@ -381,8 +381,8 @@ void Parse::load_interpreter_state(Node* osr_buf) {
 
 //------------------------------Parse------------------------------------------
 // Main parser constructor.
-Parse::Parse(JVMState* caller, ciMethod* parse_method, float expected_uses)
-  : _exits(caller)
+Parse::Parse(JVMState* caller, ciMethod* parse_method, float expected_uses, Parse* parent)
+  : _exits(caller), _parent(parent)
 {
   // Init some variables
   _caller = caller;
