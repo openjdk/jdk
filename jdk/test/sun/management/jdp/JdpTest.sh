@@ -213,6 +213,7 @@ test_03(){
                 jdp.port=${_port} \
                 jdp.address=${_ip} \
                 jdp.pause=5 \
+                jdp.name=jcmdtest \
                 jmxremote.port=${_jmxport} \
                 jmxremote.authenticate=false \
                 jmxremote.ssl=false
