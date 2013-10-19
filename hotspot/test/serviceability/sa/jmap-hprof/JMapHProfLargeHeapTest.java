@@ -59,7 +59,7 @@ public class JMapHProfLargeHeapTest {
         // If we are on MacOSX, test if JMap tool is signed, otherwise return
         // since test will fail with privilege error.
         if (Platform.isOSX()) {
-            String jmapToolPath = JDKToolFinder.getCurrentJDKTool("jmap");
+            String jmapToolPath = JDKToolFinder.getTestJDKTool("jmap");
             ProcessBuilder codesignProcessBuilder = new ProcessBuilder(
                     "codesign", "-v", jmapToolPath);
             Process codesignProcess = codesignProcessBuilder.start();
@@ -107,7 +107,7 @@ public class JMapHProfLargeHeapTest {
             System.out.println("Extracted pid: " + pid);
 
             JDKToolLauncher jMapLauncher = JDKToolLauncher
-                    .create("jmap", false);
+                    .createUsingTestJDK("jmap");
             jMapLauncher.addToolArg("-dump:format=b,file=" + pid + "-"
                     + HEAP_DUMP_FILE_NAME);
             jMapLauncher.addToolArg(String.valueOf(pid));

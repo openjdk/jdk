@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -50,10 +50,11 @@ class StringConcat : public ResourceObj {
   Node*               _arguments;      // The list of arguments to be concatenated
   GrowableArray<int>  _mode;           // into a String along with a mode flag
                                        // indicating how to treat the value.
-
+  Node_List           _constructors;   // List of constructors (many in case of stacked concat)
   Node_List           _control;        // List of control nodes that will be deleted
   Node_List           _uncommon_traps; // Uncommon traps that needs to be rewritten
                                        // to restart at the initial JVMState.
+
  public:
   // Mode for converting arguments to Strings
   enum {
@@ -73,6 +74,7 @@ class StringConcat : public ResourceObj {
     _arguments->del_req(0);
   }
 
+  bool validate_mem_flow();
   bool validate_control_flow();
 
   void merge_add() {
@@ -189,6 +191,10 @@ class StringConcat : public ResourceObj {
     assert(!_control.contains(ctrl), "only push once");
     _control.push(ctrl);
   }
+  void add_constructor(Node* init) {
+    assert(!_constructors.contains(init), "only push once");
+    _constructors.push(init);
+  }
   CallStaticJavaNode* end() { return _end; }
   AllocateNode* begin() { return _begin; }
   Node* string_alloc() { return _string_alloc; }
@@ -301,6 +307,12 @@ StringConcat* StringConcat::merge(StringConcat* other, Node* arg) {
     }
   }
   result->set_allocation(other->_begin);
+  for (uint i = 0; i < _constructors.size(); i++) {
+    result->add_constructor(_constructors.at(i));
+  }
+  for (uint i = 0; i < other->_constructors.size(); i++) {
+    result->add_constructor(other->_constructors.at(i));
+  }
   result->_multiple = true;
   return result;
 }
@@ -510,7 +522,8 @@ StringConcat* PhaseStringOpts::build_candidate(CallStaticJavaNode* call) {
       sc->add_control(constructor);
       sc->add_control(alloc);
       sc->set_allocation(alloc);
-      if (sc->validate_control_flow()) {
+      sc->add_constructor(constructor);
+      if (sc->validate_control_flow() && sc->validate_mem_flow()) {
         return sc;
       } else {
         return NULL;
@@ -620,7 +633,7 @@ PhaseStringOpts::PhaseStringOpts(PhaseGVN* gvn, Unique_Node_List*):
 #endif
 
             StringConcat* merged = sc->merge(other, arg);
-            if (merged->validate_control_flow()) {
+            if (merged->validate_control_flow() && merged->validate_mem_flow()) {
 #ifndef PRODUCT
               if (PrintOptimizeStringConcat) {
                 tty->print_cr("stacking would succeed");
@@ -708,6 +721,139 @@ void PhaseStringOpts::remove_dead_nodes() {
 }
 
 
+bool StringConcat::validate_mem_flow() {
+  Compile* C = _stringopts->C;
+
+  for (uint i = 0; i < _control.size(); i++) {
+#ifndef PRODUCT
+    Node_List path;
+#endif
+    Node* curr = _control.at(i);
+    if (curr->is_Call() && curr != _begin) { // For all calls except the first allocation
+      // Now here's the main invariant in our case:
+      // For memory between the constructor, and appends, and toString we should only see bottom memory,
+      // produced by the previous call we know about.
+      if (!_constructors.contains(curr)) {
+        NOT_PRODUCT(path.push(curr);)
+        Node* mem = curr->in(TypeFunc::Memory);
+        assert(mem != NULL, "calls should have memory edge");
+        assert(!mem->is_Phi(), "should be handled by control flow validation");
+        NOT_PRODUCT(path.push(mem);)
+        while (mem->is_MergeMem()) {
+          for (uint i = 1; i < mem->req(); i++) {
+            if (i != Compile::AliasIdxBot && mem->in(i) != C->top()) {
+#ifndef PRODUCT
+              if (PrintOptimizeStringConcat) {
+                tty->print("fusion has incorrect memory flow (side effects) for ");
+                _begin->jvms()->dump_spec(tty); tty->cr();
+                path.dump();
+              }
+#endif
+              return false;
+            }
+          }
+          // skip through a potential MergeMem chain, linked through Bot
+          mem = mem->in(Compile::AliasIdxBot);
+          NOT_PRODUCT(path.push(mem);)
+        }
+        // now let it fall through, and see if we have a projection
+        if (mem->is_Proj()) {
+          // Should point to a previous known call
+          Node *prev = mem->in(0);
+          NOT_PRODUCT(path.push(prev);)
+          if (!prev->is_Call() || !_control.contains(prev)) {
+#ifndef PRODUCT
+            if (PrintOptimizeStringConcat) {
+              tty->print("fusion has incorrect memory flow (unknown call) for ");
+              _begin->jvms()->dump_spec(tty); tty->cr();
+              path.dump();
+            }
+#endif
+            return false;
+          }
+        } else {
+          assert(mem->is_Store() || mem->is_LoadStore(), err_msg_res("unexpected node type: %s", mem->Name()));
+#ifndef PRODUCT
+          if (PrintOptimizeStringConcat) {
+            tty->print("fusion has incorrect memory flow (unexpected source) for ");
+            _begin->jvms()->dump_spec(tty); tty->cr();
+            path.dump();
+          }
+#endif
+          return false;
+        }
+      } else {
+        // For memory that feeds into constructors it's more complicated.
+        // However the advantage is that any side effect that happens between the Allocate/Initialize and
+        // the constructor will have to be control-dependent on Initialize.
+        // So we actually don't have to do anything, since it's going to be caught by the control flow
+        // analysis.
+#ifdef ASSERT
+        // Do a quick verification of the control pattern between the constructor and the initialize node
+        assert(curr->is_Call(), "constructor should be a call");
+        // Go up the control starting from the constructor call
+        Node* ctrl = curr->in(0);
+        IfNode* iff = NULL;
+        RegionNode* copy = NULL;
+
+        while (true) {
+          // skip known check patterns
+          if (ctrl->is_Region()) {
+            if (ctrl->as_Region()->is_copy()) {
+              copy = ctrl->as_Region();
+              ctrl = copy->is_copy();
+            } else { // a cast
+              assert(ctrl->req() == 3 &&
+                     ctrl->in(1) != NULL && ctrl->in(1)->is_Proj() &&
+                     ctrl->in(2) != NULL && ctrl->in(2)->is_Proj() &&
+                     ctrl->in(1)->in(0) == ctrl->in(2)->in(0) &&
+                     ctrl->in(1)->in(0) != NULL && ctrl->in(1)->in(0)->is_If(),
+                     "must be a simple diamond");
+              Node* true_proj = ctrl->in(1)->is_IfTrue() ? ctrl->in(1) : ctrl->in(2);
+              for (SimpleDUIterator i(true_proj); i.has_next(); i.next()) {
+                Node* use = i.get();
+                assert(use == ctrl || use->is_ConstraintCast(),
+                       err_msg_res("unexpected user: %s", use->Name()));
+              }
+
+              iff = ctrl->in(1)->in(0)->as_If();
+              ctrl = iff->in(0);
+            }
+          } else if (ctrl->is_IfTrue()) { // null checks, class checks
+            iff = ctrl->in(0)->as_If();
+            assert(iff->is_If(), "must be if");
+            // Verify that the other arm is an uncommon trap
+            Node* otherproj = iff->proj_out(1 - ctrl->as_Proj()->_con);
+            CallStaticJavaNode* call = otherproj->unique_out()->isa_CallStaticJava();
+            assert(strcmp(call->_name, "uncommon_trap") == 0, "must be uncommond trap");
+            ctrl = iff->in(0);
+          } else {
+            break;
+          }
+        }
+
+        assert(ctrl->is_Proj(), "must be a projection");
+        assert(ctrl->in(0)->is_Initialize(), "should be initialize");
+        for (SimpleDUIterator i(ctrl); i.has_next(); i.next()) {
+          Node* use = i.get();
+          assert(use == copy || use == iff || use == curr || use->is_CheckCastPP() || use->is_Load(),
+                 err_msg_res("unexpected user: %s", use->Name()));
+        }
+#endif // ASSERT
+      }
+    }
+  }
+
+#ifndef PRODUCT
+  if (PrintOptimizeStringConcat) {
+    tty->print("fusion has correct memory flow for ");
+    _begin->jvms()->dump_spec(tty); tty->cr();
+    tty->cr();
+  }
+#endif
+  return true;
+}
+
 bool StringConcat::validate_control_flow() {
   // We found all the calls and arguments now lets see if it's
   // safe to transform the graph as we would expect.
@@ -753,7 +899,7 @@ bool StringConcat::validate_control_flow() {
     }
   }
 
-  // Skip backwards through the control checking for unexpected contro flow
+  // Skip backwards through the control checking for unexpected control flow
   Node* ptr = _end;
   bool fail = false;
   while (ptr != _begin) {
@@ -936,7 +1082,7 @@ bool StringConcat::validate_control_flow() {
   if (PrintOptimizeStringConcat && !fail) {
     ttyLocker ttyl;
     tty->cr();
-    tty->print("fusion would succeed (%d %d) for ", null_check_count, _uncommon_traps.size());
+    tty->print("fusion has correct control flow (%d %d) for ", null_check_count, _uncommon_traps.size());
     _begin->jvms()->dump_spec(tty); tty->cr();
     for (int i = 0; i < num_arguments(); i++) {
       argument(i)->dump();
