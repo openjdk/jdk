@@ -28,7 +28,6 @@
 #include "gc_implementation/concurrentMarkSweep/freeChunk.hpp"
 #endif // INCLUDE_ALL_GCS
 #include "memory/freeBlockDictionary.hpp"
-#include "memory/metablock.hpp"
 #include "memory/metachunk.hpp"
 #include "runtime/thread.inline.hpp"
 #include "utilities/macros.hpp"

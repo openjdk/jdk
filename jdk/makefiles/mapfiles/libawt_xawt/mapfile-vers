@@ -439,7 +439,7 @@ SUNWprivate_1.1 {
 	Java_sun_print_CUPSPrinter_initIDs;
 	Java_sun_print_CUPSPrinter_getCupsServer;
 	Java_sun_print_CUPSPrinter_getCupsPort;
-	Java_sun_print_CUPSPrinter_canConnect;	
+	Java_sun_print_CUPSPrinter_canConnect;
 	Java_sun_print_CUPSPrinter_getMedia;
 	Java_sun_print_CUPSPrinter_getPageSizes;
 

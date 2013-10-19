@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,6 +31,7 @@ import com.sun.xml.internal.ws.api.WSService;
 import com.sun.xml.internal.ws.api.ServiceSharedFeatureMarker;
 import com.sun.xml.internal.ws.api.addressing.AddressingVersion;
 import com.sun.xml.internal.ws.api.addressing.WSEndpointReference;
+import com.sun.xml.internal.ws.api.model.wsdl.WSDLModel;
 import com.sun.xml.internal.ws.api.model.wsdl.WSDLPort;
 import com.sun.xml.internal.ws.api.model.wsdl.WSDLService;
 import com.sun.xml.internal.ws.api.server.BoundEndpoint;
@@ -41,12 +42,12 @@ import com.sun.xml.internal.ws.api.server.WSEndpoint;
 import com.sun.xml.internal.ws.api.wsdl.parser.WSDLParserExtension;
 import com.sun.xml.internal.ws.client.WSServiceDelegate;
 import com.sun.xml.internal.ws.developer.MemberSubmissionEndpointReference;
-import com.sun.xml.internal.ws.model.wsdl.WSDLModelImpl;
 import com.sun.xml.internal.ws.resources.ProviderApiMessages;
 import com.sun.xml.internal.ws.transport.http.server.EndpointImpl;
 import com.sun.xml.internal.ws.util.ServiceFinder;
 import com.sun.xml.internal.ws.util.xml.XmlUtil;
 import com.sun.xml.internal.ws.wsdl.parser.RuntimeWSDLParser;
+
 import org.w3c.dom.Element;
 import org.xml.sax.EntityResolver;
 
@@ -65,6 +66,7 @@ import javax.xml.ws.spi.Provider;
 import javax.xml.ws.spi.ServiceDelegate;
 import javax.xml.ws.spi.Invoker;
 import javax.xml.ws.wsaddressing.W3CEndpointReference;
+
 import java.net.URL;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
@@ -217,7 +219,7 @@ public class ProviderImpl extends Provider {
                 EntityResolver er = XmlUtil.createDefaultCatalogResolver();
 
                 URL wsdlLoc = new URL(wsdlDocumentLocation);
-                WSDLModelImpl wsdlDoc = RuntimeWSDLParser.parse(wsdlLoc, new StreamSource(wsdlLoc.toExternalForm()), er,
+                WSDLModel wsdlDoc = RuntimeWSDLParser.parse(wsdlLoc, new StreamSource(wsdlLoc.toExternalForm()), er,
                         true, container, ServiceFinder.find(WSDLParserExtension.class).toArray());
                 if (serviceName != null) {
                     WSDLService wsdlService = wsdlDoc.getService(serviceName);

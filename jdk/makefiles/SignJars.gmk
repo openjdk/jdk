@@ -26,11 +26,11 @@
 include $(SPEC)
 include MakeBase.gmk
 
-# (The terms "OpenJDK" and "JDK" below refer to OpenJDK and Oracle JDK 
+# (The terms "OpenJDK" and "JDK" below refer to OpenJDK and Oracle JDK
 # builds respectively.)
 #
-# JCE builds are very different between OpenJDK and JDK.  The OpenJDK JCE
-# jar files do not require signing, but those for JDK do.  If an unsigned
+# JCE builds are very different between OpenJDK and JDK. The OpenJDK JCE
+# jar files do not require signing, but those for JDK do. If an unsigned
 # jar file is installed into JDK, things will break when the crypto
 # routines are called.
 #
@@ -40,15 +40,15 @@ include MakeBase.gmk
 # For JDK, the binaries use pre-built/pre-signed binary files stored in
 # the closed workspace that are not shipped in the OpenJDK workspaces.
 # We still build the JDK files to verify the files compile, and in
-# preparation for possible signing.  Developers working on JCE in JDK
-# must sign the JCE files before testing.  The JCE signing key is kept
+# preparation for possible signing. Developers working on JCE in JDK
+# must sign the JCE files before testing. The JCE signing key is kept
 # separate from the JDK workspace to prevent its disclosure.
 #
-# SPECIAL NOTE TO JCE/JDK developers:  The source files must eventually
+# SPECIAL NOTE TO JCE/JDK developers: The source files must eventually
 # be built, signed, and then the resulting jar files MUST BE CHECKED
-# INTO THE CLOSED PART OF THE WORKSPACE*.  This separate step *MUST NOT
+# INTO THE CLOSED PART OF THE WORKSPACE*. This separate step *MUST NOT
 # BE FORGOTTEN*, otherwise a bug fixed in the source code will not be
-# reflected in the shipped binaries.  The "sign-jars" target in the top
+# reflected in the shipped binaries. The "sign-jars" target in the top
 # level Makefile should be used to generate the required files.
 #
 
@@ -63,19 +63,19 @@ README-MAKEFILE_WARNING := \
 #
 # Location for JCE codesigning key.
 #
-SIGNING_KEY_DIR    := /security/ws/JCE-signing/src
-SIGNING_KEYSTORE   := $(SIGNING_KEY_DIR)/KeyStore.jks
+SIGNING_KEY_DIR := /security/ws/JCE-signing/src
+SIGNING_KEYSTORE := $(SIGNING_KEY_DIR)/KeyStore.jks
 SIGNING_PASSPHRASE := $(SIGNING_KEY_DIR)/passphrase.txt
-SIGNING_ALIAS      := oracle_jce_rsa
+SIGNING_ALIAS := oracle_jce_rsa
 
 #
 # Defines for signing the various jar files.
 #
 check-keystore:
 	@if [ ! -f $(SIGNING_KEYSTORE) -o ! -f $(SIGNING_PASSPHRASE) ]; then \
-	    $(PRINTF) "\n$(SIGNING_KEYSTORE): Signing mechanism *NOT* available..."; \
-	    $(PRINTF) $(README-MAKEFILE_WARNING); \
-	    exit 2; \
+	  $(PRINTF) "\n$(SIGNING_KEYSTORE): Signing mechanism *NOT* available..."; \
+	  $(PRINTF) $(README-MAKEFILE_WARNING); \
+	  exit 2; \
 	fi
 
 $(JCE_OUTPUTDIR)/%: $(IMAGES_OUTPUTDIR)/unsigned/%
@@ -85,11 +85,11 @@ $(JCE_OUTPUTDIR)/%: $(IMAGES_OUTPUTDIR)/unsigned/%
 	@$(PRINTF) "\nJar codesigning finished.\n"
 
 JAR_LIST := jce.jar \
-            local_policy.jar \
-            sunec.jar \
-            sunjce_provider.jar \
-            sunpkcs11.jar \
-            US_export_policy.jar
+    local_policy.jar \
+    sunec.jar \
+    sunjce_provider.jar \
+    sunpkcs11.jar \
+    US_export_policy.jar
 
 SIGNED_JARS := $(addprefix $(JCE_OUTPUTDIR)/,$(JAR_LIST))
 
@@ -97,7 +97,7 @@ $(SIGNED_JARS): check-keystore
 
 all: $(SIGNED_JARS)
 	@$(PRINTF) "\n***The jar files built by the 'jar-sign' target must***"
-	@$(PRINTF) "\n***still be checked into the closed workspace!     ***"
-	@$(PRINTF)  $(README-MAKEFILE_WARNING)
+	@$(PRINTF) "\n***still be checked into the closed workspace!***"
+	@$(PRINTF) $(README-MAKEFILE_WARNING)
 
-endif  # !OPENJDK
+endif # !OPENJDK

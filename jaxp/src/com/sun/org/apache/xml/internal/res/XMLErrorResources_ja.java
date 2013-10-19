@@ -18,7 +18,7 @@
  * limitations under the License.
  */
 /*
- * $Id: XMLErrorResources_ja.java,v 1.2.4.1 2005/09/15 07:45:42 suresh_emailid Exp $
+ * $Id: XMLErrorResources_ja.java /st_wptg_1.8.0.0.0jdk/2 2013/09/12 17:39:58 gmolloy Exp $
  */
 package com.sun.org.apache.xml.internal.res;
 
@@ -179,7 +179,7 @@ public class XMLErrorResources_ja extends ListResourceBundle
   // Error messages...
 
   /** The lookup table for error messages.   */
-  private static final Object[][] _contents = {
+  private static final Object[][] contents = {
 
   /** Error message ID that has a null message, but takes in a single object.    */
     {"ER0000" , "{0}" },
@@ -269,13 +269,13 @@ public class XMLErrorResources_ja extends ListResourceBundle
        "\u30B9\u30AD\u30FC\u30E0\u304CURI\u306B\u898B\u3064\u304B\u308A\u307E\u305B\u3093"},
 
     { ER_PATH_INVALID_CHAR,
-       "\u30D1\u30B9\u306B\u7121\u52B9\u6587\u5B57{0}\u304C\u542B\u307E\u308C\u3066\u3044\u307E\u3059"},
+       "\u30D1\u30B9\u306B\u7121\u52B9\u306A\u6587\u5B57\u304C\u542B\u307E\u308C\u3066\u3044\u307E\u3059: {0}"},
 
     { ER_SCHEME_FROM_NULL_STRING,
        "null\u6587\u5B57\u5217\u304B\u3089\u306F\u30B9\u30AD\u30FC\u30E0\u3092\u8A2D\u5B9A\u3067\u304D\u307E\u305B\u3093"},
 
     { ER_SCHEME_NOT_CONFORMANT,
-       "\u30B9\u30AD\u30FC\u30E0\u306F\u4E00\u81F4\u3057\u3066\u3044\u307E\u305B\u3093\u3002"},
+       "\u30B9\u30AD\u30FC\u30E0\u304C\u6574\u5408\u3057\u3066\u3044\u307E\u305B\u3093\u3002"},
 
     { ER_HOST_ADDRESS_NOT_WELLFORMED,
        "\u30DB\u30B9\u30C8\u306F\u6574\u5F62\u5F0F\u306E\u30A2\u30C9\u30EC\u30B9\u3067\u306F\u3042\u308A\u307E\u305B\u3093"},
@@ -397,7 +397,7 @@ public class XMLErrorResources_ja extends ListResourceBundle
       "\u7121\u52B9\u306AUTF-16\u30B5\u30ED\u30B2\u30FC\u30C8\u304C\u691C\u51FA\u3055\u308C\u307E\u3057\u305F: {0}\u3002" },
 
     {ER_OIERROR,
-      "\u5165\u51FA\u529B\u30A8\u30E9\u30FC" },
+      "IO\u30A8\u30E9\u30FC" },
 
     {ER_ILLEGAL_ATTRIBUTE_POSITION,
       "\u5B50\u30CE\u30FC\u30C9\u306E\u5F8C\u307E\u305F\u306F\u8981\u7D20\u304C\u751F\u6210\u3055\u308C\u308B\u524D\u306B\u5C5E\u6027{0}\u3092\u8FFD\u52A0\u3067\u304D\u307E\u305B\u3093\u3002\u5C5E\u6027\u306F\u7121\u8996\u3055\u308C\u307E\u3059\u3002"},
@@ -447,7 +447,7 @@ public class XMLErrorResources_ja extends ListResourceBundle
    */
 
     protected Object[][] getContents() {
-        return _contents;
+        return contents;
     }
 
 }

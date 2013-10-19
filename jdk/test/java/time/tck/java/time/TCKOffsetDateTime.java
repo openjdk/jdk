@@ -91,6 +91,13 @@ import static java.time.temporal.ChronoField.SECOND_OF_MINUTE;
 import static java.time.temporal.ChronoField.YEAR;
 import static java.time.temporal.ChronoField.YEAR_OF_ERA;
 import static java.time.temporal.ChronoUnit.DAYS;
+import static java.time.temporal.ChronoUnit.FOREVER;
+import static java.time.temporal.ChronoUnit.HALF_DAYS;
+import static java.time.temporal.ChronoUnit.HOURS;
+import static java.time.temporal.ChronoUnit.MICROS;
+import static java.time.temporal.ChronoUnit.MILLIS;
+import static java.time.temporal.ChronoUnit.MINUTES;
+import static java.time.temporal.ChronoUnit.MONTHS;
 import static java.time.temporal.ChronoUnit.NANOS;
 import static java.time.temporal.ChronoUnit.SECONDS;
 import static org.testng.Assert.assertEquals;
@@ -207,43 +214,6 @@ public class TCKOffsetDateTime extends AbstractDateTimeTest {
         List<TemporalField> list = new ArrayList<>(Arrays.<TemporalField>asList(ChronoField.values()));
         list.removeAll(validFields());
         return list;
-    }
-
-    //-----------------------------------------------------------------------
-    @Test
-    public void test_serialization() throws Exception {
-        assertSerializable(TEST_2008_6_30_11_30_59_000000500);
-        assertSerializable(OffsetDateTime.MIN);
-        assertSerializable(OffsetDateTime.MAX);
-    }
-
-    @Test
-    public void test_serialization_format() throws Exception {
-        ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        try (DataOutputStream dos = new DataOutputStream(baos) ) {
-            dos.writeByte(10);       // java.time.Ser.OFFSET_DATE_TIME_TYPE
-        }
-        byte[] bytes = baos.toByteArray();
-        ByteArrayOutputStream baosDateTime = new ByteArrayOutputStream();
-        try (DataOutputStream dos = new DataOutputStream(baosDateTime) ) {
-            dos.writeByte(5);
-            dos.writeInt(2012);
-            dos.writeByte(9);
-            dos.writeByte(16);
-            dos.writeByte(22);
-            dos.writeByte(17);
-            dos.writeByte(59);
-            dos.writeInt(464_000_000);
-        }
-        byte[] bytesDateTime = baosDateTime.toByteArray();
-        ByteArrayOutputStream baosOffset = new ByteArrayOutputStream();
-        try (DataOutputStream dos = new DataOutputStream(baosOffset) ) {
-            dos.writeByte(8);
-            dos.writeByte(4);  // quarter hours stored: 3600 / 900
-        }
-        byte[] bytesOffset = baosOffset.toByteArray();
-        LocalDateTime ldt = LocalDateTime.of(2012, 9, 16, 22, 17, 59, 464_000_000);
-        assertSerializedBySer(OffsetDateTime.of(ldt, ZoneOffset.ofHours(1)), bytes, bytesDateTime, bytesOffset);
     }
 
     //-----------------------------------------------------------------------
@@ -1163,6 +1133,74 @@ public class TCKOffsetDateTime extends AbstractDateTimeTest {
         OffsetDateTime base = OffsetDateTime.of(2008, 6, 30, 11, 30, 59, 0, OFFSET_PONE);
         OffsetDateTime test = base.minusNanos(1);
         assertEquals(test, OffsetDateTime.of(2008, 6, 30, 11, 30, 58, 999999999, OFFSET_PONE));
+    }
+
+    //-----------------------------------------------------------------------
+    // until(Temporal, TemporalUnit)
+    //-----------------------------------------------------------------------
+    @DataProvider(name="periodUntilUnit")
+    Object[][] data_untilUnit() {
+        return new Object[][] {
+                {OffsetDateTime.of(2010, 6, 30, 1, 1, 1, 0, OFFSET_PONE), OffsetDateTime.of(2010, 6, 30, 13, 1, 1, 0, OFFSET_PONE), HALF_DAYS, 1},
+                {OffsetDateTime.of(2010, 6, 30, 1, 1, 1, 0, OFFSET_PONE), OffsetDateTime.of(2010, 6, 30, 2, 1, 1, 0, OFFSET_PONE), HOURS, 1},
+                {OffsetDateTime.of(2010, 6, 30, 1, 1, 1, 0, OFFSET_PONE), OffsetDateTime.of(2010, 6, 30, 2, 1, 1, 0, OFFSET_PONE), MINUTES, 60},
+                {OffsetDateTime.of(2010, 6, 30, 1, 1, 1, 0, OFFSET_PONE), OffsetDateTime.of(2010, 6, 30, 2, 1, 1, 0, OFFSET_PONE), SECONDS, 3600},
+                {OffsetDateTime.of(2010, 6, 30, 1, 1, 1, 0, OFFSET_PONE), OffsetDateTime.of(2010, 6, 30, 2, 1, 1, 0, OFFSET_PONE), MILLIS, 3600*1000},
+                {OffsetDateTime.of(2010, 6, 30, 1, 1, 1, 0, OFFSET_PONE), OffsetDateTime.of(2010, 6, 30, 2, 1, 1, 0, OFFSET_PONE), MICROS, 3600*1000*1000L},
+                {OffsetDateTime.of(2010, 6, 30, 1, 1, 1, 0, OFFSET_PONE), OffsetDateTime.of(2010, 6, 30, 2, 1, 1, 0, OFFSET_PONE), NANOS, 3600*1000*1000L*1000},
+
+                {OffsetDateTime.of(2010, 6, 30, 1, 1, 1, 0, OFFSET_PONE), OffsetDateTime.of(2010, 6, 30, 14, 1, 1, 0, OFFSET_PTWO), HALF_DAYS, 1},
+                {OffsetDateTime.of(2010, 6, 30, 1, 1, 1, 0, OFFSET_PONE), OffsetDateTime.of(2010, 6, 30, 3, 1, 1, 0, OFFSET_PTWO), HOURS, 1},
+                {OffsetDateTime.of(2010, 6, 30, 1, 1, 1, 0, OFFSET_PONE), OffsetDateTime.of(2010, 6, 30, 3, 1, 1, 0, OFFSET_PTWO), MINUTES, 60},
+                {OffsetDateTime.of(2010, 6, 30, 1, 1, 1, 0, OFFSET_PONE), OffsetDateTime.of(2010, 6, 30, 3, 1, 1, 0, OFFSET_PTWO), SECONDS, 3600},
+                {OffsetDateTime.of(2010, 6, 30, 1, 1, 1, 0, OFFSET_PONE), OffsetDateTime.of(2010, 6, 30, 3, 1, 1, 0, OFFSET_PTWO), MILLIS, 3600*1000},
+                {OffsetDateTime.of(2010, 6, 30, 1, 1, 1, 0, OFFSET_PONE), OffsetDateTime.of(2010, 6, 30, 3, 1, 1, 0, OFFSET_PTWO), MICROS, 3600*1000*1000L},
+                {OffsetDateTime.of(2010, 6, 30, 1, 1, 1, 0, OFFSET_PONE), OffsetDateTime.of(2010, 6, 30, 3, 1, 1, 0, OFFSET_PTWO), NANOS, 3600*1000*1000L*1000},
+
+                {OffsetDateTime.of(2010, 6, 30, 1, 1, 1, 0, OFFSET_PONE), OffsetDateTime.of(2010, 7, 1, 1, 1, 0, 999999999, OFFSET_PONE), DAYS, 0},
+                {OffsetDateTime.of(2010, 6, 30, 1, 1, 1, 0, OFFSET_PONE), OffsetDateTime.of(2010, 7, 1, 1, 1, 1, 0, OFFSET_PONE), DAYS, 1},
+                {OffsetDateTime.of(2010, 6, 30, 1, 1, 1, 0, OFFSET_PONE), OffsetDateTime.of(2010, 8, 29, 1, 1, 1, 0, OFFSET_PONE), MONTHS, 1},
+                {OffsetDateTime.of(2010, 6, 30, 1, 1, 1, 0, OFFSET_PONE), OffsetDateTime.of(2010, 8, 30, 1, 1, 1, 0, OFFSET_PONE), MONTHS, 2},
+                {OffsetDateTime.of(2010, 6, 30, 1, 1, 1, 0, OFFSET_PONE), OffsetDateTime.of(2010, 8, 31, 1, 1, 1, 0, OFFSET_PONE), MONTHS, 2},
+        };
+    }
+
+    @Test(dataProvider="periodUntilUnit")
+    public void test_until_TemporalUnit(OffsetDateTime odt1, OffsetDateTime odt2, TemporalUnit unit, long expected) {
+        long amount = odt1.until(odt2, unit);
+        assertEquals(amount, expected);
+    }
+
+    @Test(dataProvider="periodUntilUnit")
+    public void test_until_TemporalUnit_negated(OffsetDateTime odt1, OffsetDateTime odt2, TemporalUnit unit, long expected) {
+        long amount = odt2.until(odt1, unit);
+        assertEquals(amount, -expected);
+    }
+
+    @Test(dataProvider="periodUntilUnit")
+    public void test_until_TemporalUnit_between(OffsetDateTime odt1, OffsetDateTime odt2, TemporalUnit unit, long expected) {
+        long amount = unit.between(odt1, odt2);
+        assertEquals(amount, expected);
+    }
+
+    @Test
+    public void test_until_convertedType() {
+        OffsetDateTime odt = OffsetDateTime.of(2010, 6, 30, 1, 1, 1, 0, OFFSET_PONE);
+        ZonedDateTime zdt = odt.plusSeconds(3).toZonedDateTime();
+        assertEquals(odt.until(zdt, SECONDS), 3);
+    }
+
+    @Test(expectedExceptions=DateTimeException.class)
+    public void test_until_invalidType() {
+        OffsetDateTime odt = OffsetDateTime.of(2010, 6, 30, 1, 1, 1, 0, OFFSET_PONE);
+        odt.until(Instant.ofEpochSecond(12), SECONDS);
+    }
+
+    @Test(expectedExceptions=DateTimeException.class)
+    public void test_until_invalidTemporalUnit() {
+        OffsetDateTime odt1 = OffsetDateTime.of(2010, 6, 30, 1, 1, 1, 0, OFFSET_PONE);
+        OffsetDateTime odt2 = OffsetDateTime.of(2010, 6, 30, 2, 1, 1, 0, OFFSET_PONE);
+        odt1.until(odt2, FOREVER);
     }
 
     //-----------------------------------------------------------------------

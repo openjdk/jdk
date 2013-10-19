@@ -671,7 +671,6 @@ class StaticFinalFieldPrinter : public FieldClosure {
 
 
 void ciInstanceKlass::dump_replay_data(outputStream* out) {
-  ASSERT_IN_VM;
   ResourceMark rm;
 
   InstanceKlass* ik = get_instanceKlass();
