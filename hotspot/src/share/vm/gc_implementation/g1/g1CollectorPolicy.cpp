@@ -344,6 +344,10 @@ G1YoungGenSizer::G1YoungGenSizer() : _sizer_kind(SizerDefaults), _adaptive_size(
     }
   }
 
+  if (FLAG_IS_CMDLINE(NewSize) && FLAG_IS_CMDLINE(MaxNewSize) && NewSize > MaxNewSize) {
+    vm_exit_during_initialization("Initial young gen size set larger than the maximum young gen size");
+  }
+
   if (FLAG_IS_CMDLINE(NewSize)) {
     _min_desired_young_length = MAX2((uint) (NewSize / HeapRegion::GrainBytes),
                                      1U);

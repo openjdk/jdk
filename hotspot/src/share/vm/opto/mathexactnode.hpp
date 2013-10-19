@@ -27,8 +27,11 @@
 
 #include "opto/multnode.hpp"
 #include "opto/node.hpp"
+#include "opto/subnode.hpp"
 #include "opto/type.hpp"
 
+class BoolNode;
+class IfNode;
 class Node;
 
 class PhaseGVN;
@@ -49,9 +52,13 @@ public:
   virtual bool is_CFG() const { return false; }
   virtual uint ideal_reg() const { return NotAMachineReg; }
 
-  ProjNode* result_node() { return proj_out(result_proj_node); }
-  ProjNode* flags_node() { return proj_out(flags_proj_node); }
+  ProjNode* result_node() const { return proj_out(result_proj_node); }
+  ProjNode* flags_node() const { return proj_out(flags_proj_node); }
+  Node* control_node() const;
+  Node* non_throwing_branch() const;
 protected:
+  IfNode* if_node() const;
+  BoolNode* bool_node() const;
   Node* no_overflow(PhaseGVN *phase, Node* new_result);
 };
 
