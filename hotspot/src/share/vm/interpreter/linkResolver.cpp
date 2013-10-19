@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -157,6 +158,22 @@ CallInfo::CallInfo(Method* resolved_method, Klass* resolved_klass) {
     klassVtable* vt = InstanceKlass::cast(resolved_klass)->vtable();
     index = vt->index_of_miranda(resolved_method->name(),
                                  resolved_method->signature());
+    kind = CallInfo::vtable_call;
+  } else if (resolved_method->has_vtable_index()) {
+    // Can occur if an interface redeclares a method of Object.
+
+#ifdef ASSERT
+    // Ensure that this is really the case.
+    KlassHandle object_klass = SystemDictionary::Object_klass();
+    Method * object_resolved_method = object_klass()->vtable()->method_at(index);
+    assert(object_resolved_method->name() == resolved_method->name(),
+      err_msg("Object and interface method names should match at vtable index %d, %s != %s",
+      index, object_resolved_method->name()->as_C_string(), resolved_method->name()->as_C_string()));
+    assert(object_resolved_method->signature() == resolved_method->signature(),
+      err_msg("Object and interface method signatures should match at vtable index %d, %s != %s",
+      index, object_resolved_method->signature()->as_C_string(), resolved_method->signature()->as_C_string()));
+#endif // ASSERT
+
     kind = CallInfo::vtable_call;
   } else {
     // A regular interface call.

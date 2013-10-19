@@ -316,12 +316,12 @@ Java_sun_awt_windows_WTextFieldPeer_create(JNIEnv *env, jobject self,
 
 /*
  * Class:     sun_awt_windows_WTextFieldPeer
- * Method:    setEchoCharacter
+ * Method:    setEchoChar
  * Signature: (C)V
  */
 JNIEXPORT void JNICALL
-Java_sun_awt_windows_WTextFieldPeer_setEchoCharacter(JNIEnv *env, jobject self,
-                                                     jchar ch)
+Java_sun_awt_windows_WTextFieldPeer_setEchoChar(JNIEnv *env, jobject self,
+                                                jchar ch)
 {
     TRY;
 

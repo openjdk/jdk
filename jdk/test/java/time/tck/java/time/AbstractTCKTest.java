@@ -68,6 +68,8 @@ import java.io.ObjectOutputStream;
 import java.io.ObjectStreamConstants;
 import java.io.Serializable;
 import java.lang.reflect.Field;
+import java.util.Arrays;
+import java.util.Formatter;
 
 /**
  * Base test class.
@@ -131,10 +133,10 @@ public abstract class AbstractTCKTest {
             assertEquals(dis.readByte(), ObjectStreamConstants.TC_NULL);  // no superclasses
             if (expectedBytes.length < 256) {
                 assertEquals(dis.readByte(), ObjectStreamConstants.TC_BLOCKDATA);
-                assertEquals(dis.readUnsignedByte(), expectedBytes.length);
+                assertEquals(dis.readUnsignedByte(), expectedBytes.length, "blockdata length incorrect");
             } else {
                 assertEquals(dis.readByte(), ObjectStreamConstants.TC_BLOCKDATALONG);
-                assertEquals(dis.readInt(), expectedBytes.length);
+                assertEquals(dis.readInt(), expectedBytes.length, "blockdatalong length incorrect");
             }
             byte[] input = new byte[expectedBytes.length];
             dis.readFully(input);
@@ -162,4 +164,33 @@ public abstract class AbstractTCKTest {
         }
     }
 
+
+    /**
+     * Utility method to dump a byte array in a java syntax.
+     * @param bytes and array of bytes
+     * @return a string containing the bytes formatted in java syntax
+     */
+    protected static String dumpSerialStream(byte[] bytes) {
+        StringBuilder sb = new StringBuilder(bytes.length * 5);
+        Formatter fmt = new Formatter(sb);
+        fmt.format("    byte[] bytes = {" );
+        final int linelen = 10;
+        for (int i = 0; i < bytes.length; i++) {
+            if (i % linelen == 0) {
+                fmt.format("%n        ");
+            }
+            fmt.format(" %3d,", bytes[i] & 0xff);
+            if ((i % linelen) == (linelen-1) || i == bytes.length - 1) {
+                fmt.format("  /*");
+                int s = i / linelen * linelen;
+                int k = i % linelen;
+                for (int j = 0; j <= k && s + j < bytes.length; j++) {
+                    fmt.format(" %c", bytes[s + j] & 0xff);
+                }
+                fmt.format(" */");
+            }
+        }
+        fmt.format("%n    };%n");
+        return sb.toString();
+    }
 }

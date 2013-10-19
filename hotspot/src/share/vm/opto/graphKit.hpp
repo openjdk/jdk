@@ -378,8 +378,10 @@ class GraphKit : public Phase {
   // Return a cast-not-null node which depends on the not-null control.
   // If never_see_null, use an uncommon trap (*null_control sees a top).
   // The cast is not valid along the null path; keep a copy of the original.
+  // If safe_for_replace, then we can replace the value with the cast
+  // in the parsing map (the cast is guaranteed to dominate the map)
   Node* null_check_oop(Node* value, Node* *null_control,
-                       bool never_see_null = false);
+                       bool never_see_null = false, bool safe_for_replace = false);
 
   // Check the null_seen bit.
   bool seems_never_null(Node* obj, ciProfileData* data);

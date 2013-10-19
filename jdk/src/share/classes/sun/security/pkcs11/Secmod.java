@@ -756,8 +756,12 @@ public final class Secmod {
             if (DEBUG) System.out.println("handles: " + handles.length);
 
             for (long handle : handles) {
-                TrustAttributes trust = new TrustAttributes(token, session, handle);
-                trustMap.put(trust.getHash(), trust);
+                try {
+                    TrustAttributes trust = new TrustAttributes(token, session, handle);
+                    trustMap.put(trust.getHash(), trust);
+                } catch (PKCS11Exception e) {
+                    // skip put on pkcs11 error
+                }
             }
         } finally {
             token.releaseSession(session);

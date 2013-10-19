@@ -375,6 +375,7 @@ Node *PhaseChaitin::split_Rematerialize( Node *def, Block *b, uint insidx, uint 
       }
 
       if (lidx < _lrg_map.max_lrg_id() && lrgs(lidx).reg() >= LRG::SPILL_REG) {
+        assert(Reachblock != NULL, "Reachblock must be non-NULL");
         Node *rdef = Reachblock[lrg2reach[lidx]];
         if (rdef) {
           spill->set_req(i, rdef);
@@ -1336,7 +1337,8 @@ uint PhaseChaitin::Split(uint maxlrg, ResourceArea* split_arena) {
                _lrg_map.find(pred->get_node(insert - 1)) >= lrgs_before_phi_split) {
           insert--;
         }
-        def = split_Rematerialize(def, pred, insert, maxlrg, splits, slidx, lrg2reach, Reachblock, false);
+        // since the def cannot contain any live range input, we can pass in NULL as Reachlock parameter
+        def = split_Rematerialize(def, pred, insert, maxlrg, splits, slidx, lrg2reach, NULL, false);
         if (!def) {
           return 0;    // Bail out
         }

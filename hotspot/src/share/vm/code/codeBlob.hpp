@@ -209,7 +209,7 @@ class BufferBlob: public CodeBlob {
   BufferBlob(const char* name, int size);
   BufferBlob(const char* name, int size, CodeBuffer* cb);
 
-  void* operator new(size_t s, unsigned size) throw();
+  void* operator new(size_t s, unsigned size, bool is_critical = false) throw();
 
  public:
   // Creation
@@ -253,7 +253,6 @@ public:
 class MethodHandlesAdapterBlob: public BufferBlob {
 private:
   MethodHandlesAdapterBlob(int size)                 : BufferBlob("MethodHandles adapters", size) {}
-  MethodHandlesAdapterBlob(int size, CodeBuffer* cb) : BufferBlob("MethodHandles adapters", size, cb) {}
 
 public:
   // Creation
