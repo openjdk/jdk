@@ -404,11 +404,11 @@ public class TypeAnnotations {
                 depth = depth.append(TypePathEntry.ARRAY);
                 while (arType.elemtype.hasTag(TypeTag.ARRAY)) {
                     if (arType.elemtype.isAnnotated()) {
-                        Type.AnnotatedType aelemtype = (Type.AnnotatedType) arType.elemtype;
+                        Type aelemtype = arType.elemtype;
                         arType = (Type.ArrayType) aelemtype.unannotatedType();
                         ArrayType prevToMod = tomodify;
                         tomodify = new Type.ArrayType(null, arType.tsym);
-                        prevToMod.elemtype = (Type.AnnotatedType) tomodify.annotatedType(arType.elemtype.getAnnotationMirrors());
+                        prevToMod.elemtype = tomodify.annotatedType(arType.elemtype.getAnnotationMirrors());
                     } else {
                         arType = (Type.ArrayType) arType.elemtype;
                         tomodify.elemtype = new Type.ArrayType(null, arType.tsym);
