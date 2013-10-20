@@ -323,7 +323,16 @@ public class TypeAnnotations {
             if (type == null) {
                 // When type is null, put the type annotations to the symbol.
                 // This is used for constructor return annotations, for which
-                // no appropriate type exists.
+                // we use the type of the enclosing class.
+                type = sym.getEnclosingElement().asType();
+
+                // Declaration annotations are always allowed on constructor returns.
+                // Therefore, use typeAnnotations instead of onlyTypeAnnos.
+                type = typeWithAnnotations(typetree, type, typeAnnotations, typeAnnotations);
+                // Note that we don't use the result, the call to
+                // typeWithAnnotations side-effects the type annotation positions.
+                // This is important for constructors of nested classes.
+
                 sym.appendUniqueTypeAttributes(typeAnnotations);
                 return;
             }
