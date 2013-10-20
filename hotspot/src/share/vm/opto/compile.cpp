@@ -655,7 +655,8 @@ Compile::Compile( ciEnv* ci_env, C2Compiler* compiler, ciMethod* target, int osr
                   _inlining_progress(false),
                   _inlining_incrementally(false),
                   _print_inlining_list(NULL),
-                  _print_inlining_idx(0) {
+                  _print_inlining_idx(0),
+                  _preserve_jvm_state(0) {
   C = this;
 
   CompileWrapper cw(this);
@@ -763,7 +764,7 @@ Compile::Compile( ciEnv* ci_env, C2Compiler* compiler, ciMethod* target, int osr
       return;
     }
     JVMState* jvms = build_start_state(start(), tf());
-    if ((jvms = cg->generate(jvms)) == NULL) {
+    if ((jvms = cg->generate(jvms, NULL)) == NULL) {
       record_method_not_compilable("method parse failed");
       return;
     }
@@ -940,7 +941,8 @@ Compile::Compile( ciEnv* ci_env,
     _inlining_progress(false),
     _inlining_incrementally(false),
     _print_inlining_list(NULL),
-    _print_inlining_idx(0) {
+    _print_inlining_idx(0),
+    _preserve_jvm_state(0) {
   C = this;
 
 #ifndef PRODUCT

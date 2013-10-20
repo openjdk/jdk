@@ -495,7 +495,7 @@ void Parse::do_call() {
   // because exceptions don't return to the call site.)
   profile_call(receiver);
 
-  JVMState* new_jvms = cg->generate(jvms);
+  JVMState* new_jvms = cg->generate(jvms, this);
   if (new_jvms == NULL) {
     // When inlining attempt fails (e.g., too many arguments),
     // it may contaminate the current compile state, making it
@@ -509,7 +509,7 @@ void Parse::do_call() {
     // intrinsic was expecting to optimize. Should always be possible to
     // get a normal java call that may inline in that case
     cg = C->call_generator(cg->method(), vtable_index, call_does_dispatch, jvms, try_inline, prof_factor(), /* allow_intrinsics= */ false);
-    if ((new_jvms = cg->generate(jvms)) == NULL) {
+    if ((new_jvms = cg->generate(jvms, this)) == NULL) {
       guarantee(failing(), "call failed to generate:  calls should work");
       return;
     }
