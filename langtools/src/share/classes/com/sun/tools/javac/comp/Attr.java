@@ -4062,8 +4062,6 @@ public class Attr extends JCTree.Visitor {
      * Apply the annotations to the particular type.
      */
     public void annotateType(final JCTree tree, final List<JCAnnotation> annotations) {
-        // Callers ensure this.
-        // Assert.check(annotations != null && annotations.nonEmpty());
         annotate.typeAnnotation(new Annotate.Worker() {
             @Override
             public String toString() {
