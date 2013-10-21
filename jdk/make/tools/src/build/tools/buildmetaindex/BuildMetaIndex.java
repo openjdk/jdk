@@ -173,8 +173,52 @@ class JarMetaIndex {
      */
     private HashMap<String, HashSet<String>> knownPrefixMap = new HashMap<>();
 
+    /**
+     * Special value for the HashSet to indicate that there are classes in
+     * the top-level package.
+     */
+    private static final String TOP_LEVEL = "TOP";
+
     /*
-     * We add maximum 5 second level entries to "sun", "java" and
+     * A class for mapping package prefixes to the number of
+     * levels of package elements to include.
+     */
+    static class ExtraLevel {
+        public ExtraLevel(String prefix, int levels) {
+            this.prefix = prefix;
+            this.levels = levels;
+        }
+        String prefix;
+        int levels;
+    }
+
+    /*
+     * A list of the special-cased package names.
+     */
+    private static ArrayList<ExtraLevel> extraLevels = new ArrayList<>();
+
+    static {
+        // The order of these statements is significant,
+        // since we stop looking after the first match.
+
+        // Need more precise information to disambiguate
+        // (illegal) references from applications to
+        // obsolete backported collections classes in
+        // com/sun/java/util
+        extraLevels.add(new ExtraLevel("com/sun/java/util/", Integer.MAX_VALUE));
+        extraLevels.add(new ExtraLevel("com/sun/java/", 4));
+        // Need more information than just first two package
+        // name elements to determine that classes in
+        // deploy.jar are not in rt.jar
+        extraLevels.add(new ExtraLevel("com/sun/", 3));
+        // Need to make sure things in jfr.jar aren't
+        // confused with other com/oracle/** packages
+        extraLevels.add(new ExtraLevel("com/oracle/jrockit", 3));
+    }
+
+
+    /*
+     * We add maximum 5 second level entries to "sun", "jdk", "java" and
      * "javax" entries. Tune this parameter to get a balance on the
      * cold start and footprint.
      */
@@ -185,6 +229,7 @@ class JarMetaIndex {
     JarMetaIndex(String fileName) throws IOException {
         jar = new JarFile(fileName);
         knownPrefixMap.put("sun", new HashSet<String>());
+        knownPrefixMap.put("jdk", new HashSet<String>());
         knownPrefixMap.put("java", new HashSet<String>());
         knownPrefixMap.put("javax", new HashSet<String>());
     }
@@ -237,39 +282,25 @@ class JarMetaIndex {
                         String[] pkgElements = name.split("/");
                         // Last one is the class name; definitely ignoring that
                         if (pkgElements.length > 2) {
-                            String meta = null;
-                            // Need more information than just first two package
-                            // name elements to determine that classes in
-                            // deploy.jar are not in rt.jar
-                            if (pkgElements.length > 3 &&
-                                pkgElements[0].equals("com") &&
-                                pkgElements[1].equals("sun")) {
-                                // Need more precise information to disambiguate
-                                // (illegal) references from applications to
-                                // obsolete backported collections classes in
-                                // com/sun/java/util
-                                if (pkgElements.length > 4 &&
-                                    pkgElements[2].equals("java")) {
-                                    int bound = 0;
-                                    if (pkgElements[3].equals("util")) {
-                                        // Take all of the packages
-                                        bound = pkgElements.length - 1;
-                                    } else {
-                                        // Trim it somewhat more
-                                        bound = 4;
-                                    }
-                                    meta = "";
-                                    for (int j = 0; j < bound; j++) {
-                                        meta += pkgElements[j] + "/";
-                                    }
-                                } else {
-                                    meta = pkgElements[0] + "/" + pkgElements[1]
-                                        + "/" + pkgElements[2] + "/";
+                            String meta = "";
+
+                            // Default is 2 levels of package elements
+                            int levels = 2;
+
+                            // But for some packages we add more elements
+                            for(ExtraLevel el : extraLevels) {
+                                if (name.startsWith(el.prefix)) {
+                                    levels = el.levels;
+                                    break;
                                 }
-                            } else {
-                                meta = pkgElements[0] + "/" + pkgElements[1] + "/";
                             }
-                            indexSet.add(meta);
+                            for (int i = 0; i < levels && i < pkgElements.length - 1; i++) {
+                                meta += pkgElements[i] + "/";
+                            }
+
+                            if (!meta.equals("")) {
+                                indexSet.add(meta);
+                            }
                         }
 
                     } // end of "while" loop;
@@ -312,12 +343,12 @@ class JarMetaIndex {
             return false;
         }
 
-        String secondPkgElement = name.substring(firstSlashIndex + 1,
-                                                 name.indexOf("/",
-                                                              firstSlashIndex + 1));
-
         /* Add the second level package name to the corresponding hashset. */
-        if (secondPkgElement != null) {
+        int secondSlashIndex = name.indexOf("/", firstSlashIndex+1);
+        if (secondSlashIndex == -1) {
+            pkgSet.add(TOP_LEVEL);
+        } else {
+            String secondPkgElement = name.substring(firstSlashIndex+1, secondSlashIndex);
             pkgSet.add(secondPkgElement);
         }
 
@@ -344,8 +375,9 @@ class JarMetaIndex {
             if (setSize == 0) {
                 continue;
             }
-            else if (setSize > JarMetaIndex.MAX_PKGS_WITH_KNOWN_PREFIX) {
-                indexSet.add(key + "/");
+            if (setSize > JarMetaIndex.MAX_PKGS_WITH_KNOWN_PREFIX ||
+                pkgSetStartsWithKey.contains(TOP_LEVEL)) {
+                 indexSet.add(key + "/");
             } else {
                 /* If the set contains less than MAX_PKGS_WITH_KNOWN_PREFIX, add
                  * them to the indexSet of the MetaIndex object.

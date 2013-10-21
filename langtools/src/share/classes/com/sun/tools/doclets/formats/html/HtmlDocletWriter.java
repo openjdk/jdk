@@ -356,7 +356,7 @@ public class HtmlDocletWriter extends HtmlDocWriter {
         if(classes.length > 0) {
             Arrays.sort(classes);
             Content caption = getTableCaption(new RawHtml(label));
-            Content table = HtmlTree.TABLE(HtmlStyle.packageSummary, 0, 3, 0,
+            Content table = HtmlTree.TABLE(HtmlStyle.typeSummary, 0, 3, 0,
                     tableSummary, caption);
             table.addContent(getSummaryTableHeader(tableHeader, "col"));
             Content tbody = new HtmlTree(HtmlTag.TBODY);
@@ -937,7 +937,7 @@ public class HtmlDocletWriter extends HtmlDocWriter {
     protected void addPackageDeprecatedAPI(List<Doc> deprPkgs, String headingKey,
             String tableSummary, String[] tableHeader, Content contentTree) {
         if (deprPkgs.size() > 0) {
-            Content table = HtmlTree.TABLE(0, 3, 0, tableSummary,
+            Content table = HtmlTree.TABLE(HtmlStyle.deprecatedSummary, 0, 3, 0, tableSummary,
                     getTableCaption(configuration.getResource(headingKey)));
             table.addContent(getSummaryTableHeader(tableHeader, "col"));
             Content tbody = new HtmlTree(HtmlTag.TBODY);

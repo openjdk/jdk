@@ -70,7 +70,6 @@ import static java.time.temporal.ChronoField.OFFSET_SECONDS;
 import static java.time.temporal.ChronoUnit.NANOS;
 
 import java.io.IOException;
-import java.io.InvalidObjectException;
 import java.io.ObjectInput;
 import java.io.ObjectOutput;
 import java.io.InvalidObjectException;
@@ -84,6 +83,7 @@ import java.time.temporal.TemporalAccessor;
 import java.time.temporal.TemporalAdjuster;
 import java.time.temporal.TemporalAmount;
 import java.time.temporal.TemporalField;
+import java.time.temporal.TemporalQueries;
 import java.time.temporal.TemporalQuery;
 import java.time.temporal.TemporalUnit;
 import java.time.temporal.UnsupportedTemporalTypeException;
@@ -284,7 +284,8 @@ public final class OffsetTime
             ZoneOffset offset = ZoneOffset.from(temporal);
             return new OffsetTime(time, offset);
         } catch (DateTimeException ex) {
-            throw new DateTimeException("Unable to obtain OffsetTime from TemporalAccessor: " + temporal.getClass(), ex);
+            throw new DateTimeException("Unable to obtain OffsetTime from TemporalAccessor: " +
+                    temporal + " of type " + temporal.getClass().getName(), ex);
         }
     }
 
@@ -1067,13 +1068,13 @@ public final class OffsetTime
     @SuppressWarnings("unchecked")
     @Override
     public <R> R query(TemporalQuery<R> query) {
-        if (query == TemporalQuery.offset() || query == TemporalQuery.zone()) {
+        if (query == TemporalQueries.offset() || query == TemporalQueries.zone()) {
             return (R) offset;
-        } else if (query == TemporalQuery.zoneId() | query == TemporalQuery.chronology() || query == TemporalQuery.localDate()) {
+        } else if (query == TemporalQueries.zoneId() | query == TemporalQueries.chronology() || query == TemporalQueries.localDate()) {
             return null;
-        } else if (query == TemporalQuery.localTime()) {
+        } else if (query == TemporalQueries.localTime()) {
             return (R) time;
-        } else if (query == TemporalQuery.precision()) {
+        } else if (query == TemporalQueries.precision()) {
             return (R) NANOS;
         }
         // inline TemporalAccessor.super.query(query) as an optimization
@@ -1124,7 +1125,8 @@ public final class OffsetTime
      * For example, the period in hours between two times can be calculated
      * using {@code startTime.until(endTime, HOURS)}.
      * <p>
-     * The {@code Temporal} passed to this method must be an {@code OffsetTime}.
+     * The {@code Temporal} passed to this method is converted to a
+     * {@code OffsetTime} using {@link #from(TemporalAccessor)}.
      * If the offset differs between the two times, then the specified
      * end time is normalized to have the same offset as this time.
      * <p>
@@ -1150,26 +1152,23 @@ public final class OffsetTime
      * <p>
      * If the unit is not a {@code ChronoUnit}, then the result of this method
      * is obtained by invoking {@code TemporalUnit.between(Temporal, Temporal)}
-     * passing {@code this} as the first argument and the input temporal as
-     * the second argument.
+     * passing {@code this} as the first argument and the converted input temporal
+     * as the second argument.
      * <p>
      * This instance is immutable and unaffected by this method call.
      *
-     * @param endTime  the end time, which must be an {@code OffsetTime}, not null
+     * @param endExclusive  the end date, exclusive, which is converted to an {@code OffsetTime}, not null
      * @param unit  the unit to measure the amount in, not null
      * @return the amount of time between this time and the end time
-     * @throws DateTimeException if the amount cannot be calculated
+     * @throws DateTimeException if the amount cannot be calculated, or the end
+     *  temporal cannot be converted to an {@code OffsetTime}
      * @throws UnsupportedTemporalTypeException if the unit is not supported
      * @throws ArithmeticException if numeric overflow occurs
      */
     @Override
-    public long until(Temporal endTime, TemporalUnit unit) {
-        if (endTime instanceof OffsetTime == false) {
-            Objects.requireNonNull(endTime, "endTime");
-            throw new DateTimeException("Unable to calculate amount as objects are of two different types");
-        }
+    public long until(Temporal endExclusive, TemporalUnit unit) {
+        OffsetTime end = OffsetTime.from(endExclusive);
         if (unit instanceof ChronoUnit) {
-            OffsetTime end = (OffsetTime) endTime;
             long nanosUntil = end.toEpochNano() - toEpochNano();  // no overflow
             switch ((ChronoUnit) unit) {
                 case NANOS: return nanosUntil;
@@ -1182,7 +1181,7 @@ public final class OffsetTime
             }
             throw new UnsupportedTemporalTypeException("Unsupported unit: " + unit);
         }
-        return unit.between(this, endTime);
+        return unit.between(this, end);
     }
 
     /**
@@ -1352,13 +1351,13 @@ public final class OffsetTime
      * Outputs this time as a {@code String}, such as {@code 10:15:30+01:00}.
      * <p>
      * The output will be one of the following ISO-8601 formats:
-     * <p><ul>
+     * <ul>
      * <li>{@code HH:mmXXXXX}</li>
      * <li>{@code HH:mm:ssXXXXX}</li>
      * <li>{@code HH:mm:ss.SSSXXXXX}</li>
      * <li>{@code HH:mm:ss.SSSSSSXXXXX}</li>
      * <li>{@code HH:mm:ss.SSSSSSSSSXXXXX}</li>
-     * </ul><p>
+     * </ul>
      * The format used will be the shortest that outputs the full value of
      * the time where the omitted parts are implied to be zero.
      *

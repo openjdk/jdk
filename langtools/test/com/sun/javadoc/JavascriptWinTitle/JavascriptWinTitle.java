@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 4645058 4747738 4855054
+ * @bug 4645058 4747738 4855054 8024756
  * @summary  Javascript IE load error when linked by -linkoffline
  *           Window title shouldn't change when loading left frames (javascript)
  * @author dkramer
@@ -115,9 +115,13 @@ public class JavascriptWinTitle {
 
             // Test that win title javascript is followed by NOSCRIPT code.
             {"<script type=\"text/javascript\"><!--" + LS +
-                     "    if (location.href.indexOf('is-external=true') == -1) {" + LS +
-                     "        parent.document.title=\"C (Window Title)\";" + LS +
-                     "    }" + LS + "//-->" + LS + "</script>",
+            "    try {" + LS +
+            "        if (location.href.indexOf('is-external=true') == -1) {" + LS +
+            "            parent.document.title=\"C (Window Title)\";" + LS +
+            "        }" + LS +
+            "    }" + LS +
+            "    catch(err) {" + LS +
+            "    }" + LS + "//-->" + LS + "</script>",
              TMPDEST_DIR1 + FS + "p1" + FS + "C.html"
             }
 

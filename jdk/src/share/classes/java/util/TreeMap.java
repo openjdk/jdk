@@ -1269,6 +1269,15 @@ public class TreeMap<K,V>
         public K next() {
             return prevEntry().key;
         }
+        public void remove() {
+            if (lastReturned == null)
+                throw new IllegalStateException();
+            if (modCount != expectedModCount)
+                throw new ConcurrentModificationException();
+            deleteEntry(lastReturned);
+            lastReturned = null;
+            expectedModCount = modCount;
+        }
     }
 
     // Little utilities

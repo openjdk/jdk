@@ -1787,7 +1787,7 @@ ClassFileParser::AnnotationCollector::annotation_index(ClassLoaderData* loader_d
     if (_location != _in_method)  break;  // only allow for methods
     if (!privileged)              break;  // only allow in privileged code
     return _method_LambdaForm_Hidden;
-  case vmSymbols::VM_SYMBOL_ENUM_NAME(sun_invoke_Stable_signature):
+  case vmSymbols::VM_SYMBOL_ENUM_NAME(java_lang_invoke_Stable_signature):
     if (_location != _in_field)   break;  // only allow for fields
     if (!privileged)              break;  // only allow in privileged code
     return _field_Stable;
@@ -2545,7 +2545,9 @@ Array<Method*>* ClassFileParser::parse_methods(bool is_interface,
       if (method->is_final()) {
         *has_final_method = true;
       }
-      if (is_interface && !method->is_abstract() && !method->is_static()) {
+      if (is_interface && !(*has_default_methods)
+        && !method->is_abstract() && !method->is_static()
+        && !method->is_private()) {
         // default method
         *has_default_methods = true;
       }
@@ -4078,8 +4080,7 @@ instanceKlassHandle ClassFileParser::parseClassFile(Symbol* name,
 
     // Generate any default methods - default methods are interface methods
     // that have a default implementation.  This is new with Lambda project.
-    if (has_default_methods && !access_flags.is_interface() &&
-        local_interfaces->length() > 0) {
+    if (has_default_methods && !access_flags.is_interface() ) {
       DefaultMethods::generate_default_methods(
           this_klass(), &all_mirandas, CHECK_(nullHandle));
     }

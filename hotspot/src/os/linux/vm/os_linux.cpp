@@ -3361,13 +3361,15 @@ bool os::Linux::setup_large_page_type(size_t page_size) {
   if (FLAG_IS_DEFAULT(UseHugeTLBFS) &&
       FLAG_IS_DEFAULT(UseSHM) &&
       FLAG_IS_DEFAULT(UseTransparentHugePages)) {
-    // If UseLargePages is specified on the command line try all methods,
-    // if it's default, then try only UseTransparentHugePages.
-    if (FLAG_IS_DEFAULT(UseLargePages)) {
-      UseTransparentHugePages = true;
-    } else {
-      UseHugeTLBFS = UseTransparentHugePages = UseSHM = true;
-    }
+
+    // The type of large pages has not been specified by the user.
+
+    // Try UseHugeTLBFS and then UseSHM.
+    UseHugeTLBFS = UseSHM = true;
+
+    // Don't try UseTransparentHugePages since there are known
+    // performance issues with it turned on. This might change in the future.
+    UseTransparentHugePages = false;
   }
 
   if (UseTransparentHugePages) {
@@ -3393,9 +3395,19 @@ bool os::Linux::setup_large_page_type(size_t page_size) {
 }
 
 void os::large_page_init() {
-  if (!UseLargePages) {
-    UseHugeTLBFS = false;
+  if (!UseLargePages &&
+      !UseTransparentHugePages &&
+      !UseHugeTLBFS &&
+      !UseSHM) {
+    // Not using large pages.
+    return;
+  }
+
+  if (!FLAG_IS_DEFAULT(UseLargePages) && !UseLargePages) {
+    // The user explicitly turned off large pages.
+    // Ignore the rest of the large pages flags.
     UseTransparentHugePages = false;
+    UseHugeTLBFS = false;
     UseSHM = false;
     return;
   }
@@ -4838,6 +4850,10 @@ jint os::init_2(void)
         vm_page_size()));
 
   Linux::capture_initial_stack(JavaThread::stack_size_at_create());
+
+#if defined(IA32)
+  workaround_expand_exec_shield_cs_limit();
+#endif
 
   Linux::libpthread_init();
   if (PrintMiscellaneous && (Verbose || WizardMode)) {

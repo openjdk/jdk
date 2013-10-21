@@ -272,6 +272,10 @@ public final class Source {
 
     /**
      * Return line number of character position.
+     *
+     * <p>This method can be expensive for large sources as it iterates through
+     * all characters up to {@code position}.</p>
+     *
      * @param position Position of character in source content.
      * @return Line number.
      */
