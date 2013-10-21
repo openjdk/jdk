@@ -66,8 +66,17 @@ public final class ZoneInfoFile {
      * @return a set of time zone IDs.
      */
     public static String[] getZoneIds() {
-        String[] ids = Arrays.copyOf(regions, regions.length + oldMappings.length);
+        int len = regions.length + oldMappings.length;
+        if (!USE_OLDMAPPING) {
+            len += 3;    // EST/HST/MST not in tzdb.dat
+        }
+        String[] ids = Arrays.copyOf(regions, len);
         int i = regions.length;
+        if (!USE_OLDMAPPING) {
+            ids[i++] = "EST";
+            ids[i++] = "HST";
+            ids[i++] = "MST";
+        }
         for (int j = 0; j < oldMappings.length; j++) {
             ids[i++] = oldMappings[j][0];
         }
@@ -264,6 +273,10 @@ public final class ZoneInfoFile {
             aliases.put("EST", "America/New_York");
             aliases.put("MST", "America/Denver");
             aliases.put("HST", "Pacific/Honolulu");
+        } else {
+            zones.put("EST", new ZoneInfo("EST", -18000000));
+            zones.put("MST", new ZoneInfo("MST", -25200000));
+            zones.put("HST", new ZoneInfo("HST", -36000000));
         }
     }
 
