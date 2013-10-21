@@ -146,11 +146,7 @@ size_t CollectorPolicy::compute_max_alignment() {
 // GenCollectorPolicy methods.
 
 size_t GenCollectorPolicy::scale_by_NewRatio_aligned(size_t base_size) {
-  size_t x = base_size / (NewRatio+1);
-  size_t new_gen_size = x > _min_alignment ?
-                     align_size_down(x, _min_alignment) :
-                     _min_alignment;
-  return new_gen_size;
+  return align_size_down_bounded(base_size / (NewRatio + 1), _min_alignment);
 }
 
 size_t GenCollectorPolicy::bound_minus_alignment(size_t desired_size,
@@ -410,15 +406,11 @@ bool TwoGenerationCollectorPolicy::adjust_gen0_sizes(size_t* gen0_size_ptr,
     if ((heap_size < (*gen0_size_ptr + min_gen1_size)) &&
         (heap_size >= min_gen1_size + _min_alignment)) {
       // Adjust gen0 down to accommodate min_gen1_size
-      *gen0_size_ptr = heap_size - min_gen1_size;
-      *gen0_size_ptr =
-        MAX2((uintx)align_size_down(*gen0_size_ptr, _min_alignment), _min_alignment);
+      *gen0_size_ptr = align_size_down_bounded(heap_size - min_gen1_size, _min_alignment);
       assert(*gen0_size_ptr > 0, "Min gen0 is too large");
       result = true;
     } else {
-      *gen1_size_ptr = heap_size - *gen0_size_ptr;
-      *gen1_size_ptr =
-        MAX2((uintx)align_size_down(*gen1_size_ptr, _min_alignment), _min_alignment);
+      *gen1_size_ptr = align_size_down_bounded(heap_size - *gen0_size_ptr, _min_alignment);
     }
   }
   return result;

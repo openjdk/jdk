@@ -2965,11 +2965,6 @@ void Metaspace::initialize_class_space(ReservedSpace rs) {
 
 #endif
 
-// Align down. If the aligning result in 0, return 'alignment'.
-static size_t restricted_align_down(size_t size, size_t alignment) {
-  return MAX2(alignment, align_size_down_(size, alignment));
-}
-
 void Metaspace::ergo_initialize() {
   if (DumpSharedSpaces) {
     // Using large pages when dumping the shared archive is currently not implemented.
@@ -2992,13 +2987,13 @@ void Metaspace::ergo_initialize() {
   // Ideally, we would be able to set the default value of MaxMetaspaceSize in
   // globals.hpp to the aligned value, but this is not possible, since the
   // alignment depends on other flags being parsed.
-  MaxMetaspaceSize = restricted_align_down(MaxMetaspaceSize, _reserve_alignment);
+  MaxMetaspaceSize = align_size_down_bounded(MaxMetaspaceSize, _reserve_alignment);
 
   if (MetaspaceSize > MaxMetaspaceSize) {
     MetaspaceSize = MaxMetaspaceSize;
   }
 
-  MetaspaceSize = restricted_align_down(MetaspaceSize, _commit_alignment);
+  MetaspaceSize = align_size_down_bounded(MetaspaceSize, _commit_alignment);
 
   assert(MetaspaceSize <= MaxMetaspaceSize, "MetaspaceSize should be limited by MaxMetaspaceSize");
 
@@ -3006,10 +3001,10 @@ void Metaspace::ergo_initialize() {
     vm_exit_during_initialization("Too small initial Metaspace size");
   }
 
-  MinMetaspaceExpansion = restricted_align_down(MinMetaspaceExpansion, _commit_alignment);
-  MaxMetaspaceExpansion = restricted_align_down(MaxMetaspaceExpansion, _commit_alignment);
+  MinMetaspaceExpansion = align_size_down_bounded(MinMetaspaceExpansion, _commit_alignment);
+  MaxMetaspaceExpansion = align_size_down_bounded(MaxMetaspaceExpansion, _commit_alignment);
 
-  CompressedClassSpaceSize = restricted_align_down(CompressedClassSpaceSize, _reserve_alignment);
+  CompressedClassSpaceSize = align_size_down_bounded(CompressedClassSpaceSize, _reserve_alignment);
   set_class_metaspace_size(CompressedClassSpaceSize);
 }
 
