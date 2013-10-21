@@ -1408,7 +1408,7 @@ uintx Arguments::max_heap_for_compressed_oops() {
   // NULL page is located before the heap, we pad the NULL page to the conservative
   // maximum alignment that the GC may ever impose upon the heap.
   size_t displacement_due_to_null_page = align_size_up_(os::vm_page_size(),
-    Arguments::conservative_max_heap_alignment());
+                                                        _conservative_max_heap_alignment);
 
   LP64_ONLY(return OopEncodingHeapMax - displacement_due_to_null_page);
   NOT_LP64(ShouldNotReachHere(); return 0);
@@ -2681,9 +2681,10 @@ jint Arguments::parse_each_vm_init_arg(const JavaVMInitArgs* args,
         describe_range_error(errcode);
         return JNI_EINVAL;
       }
-      FLAG_SET_CMDLINE(uintx, InitialHeapSize, (uintx)long_initial_heap_size);
+      set_min_heap_size((uintx)long_initial_heap_size);
       // Currently the minimum size and the initial heap sizes are the same.
-      set_min_heap_size(InitialHeapSize);
+      // Can be overridden with -XX:InitialHeapSize.
+      FLAG_SET_CMDLINE(uintx, InitialHeapSize, (uintx)long_initial_heap_size);
     // -Xmx
     } else if (match_option(option, "-Xmx", &tail) || match_option(option, "-XX:MaxHeapSize=", &tail)) {
       julong long_max_heap_size = 0;

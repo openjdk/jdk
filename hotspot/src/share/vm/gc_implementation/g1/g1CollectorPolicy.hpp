@@ -217,7 +217,6 @@ private:
     return _during_marking;
   }
 
-private:
   enum PredictionConstants {
     TruncatedSeqLength = 10
   };

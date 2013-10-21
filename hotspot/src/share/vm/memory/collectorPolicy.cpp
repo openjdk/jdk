@@ -160,7 +160,7 @@ size_t GenCollectorPolicy::bound_minus_alignment(size_t desired_size,
 void GenCollectorPolicy::initialize_size_policy(size_t init_eden_size,
                                                 size_t init_promo_size,
                                                 size_t init_survivor_size) {
-  const double max_gc_pause_sec = ((double) MaxGCPauseMillis)/1000.0;
+  const double max_gc_pause_sec = ((double) MaxGCPauseMillis) / 1000.0;
   _size_policy = new AdaptiveSizePolicy(init_eden_size,
                                         init_promo_size,
                                         init_survivor_size,
@@ -192,6 +192,7 @@ void GenCollectorPolicy::initialize_flags() {
      // make sure there room for eden and two survivor spaces
     vm_exit_during_initialization("Too small new size specified");
   }
+
   if (SurvivorRatio < 1 || NewRatio < 1) {
     vm_exit_during_initialization("Invalid young gen ratio specified");
   }
@@ -465,7 +466,7 @@ void TwoGenerationCollectorPolicy::initialize_size_info() {
               "generation sizes: using minimum heap = " SIZE_FORMAT,
               _min_heap_byte_size);
     }
-    if ((OldSize > _max_gen1_size)) {
+    if (OldSize > _max_gen1_size) {
       warning("Inconsistency between maximum heap size and maximum "
               "generation sizes: using maximum heap = " SIZE_FORMAT
               " -XX:OldSize flag is being ignored",
@@ -596,9 +597,7 @@ HeapWord* GenCollectorPolicy::mem_allocate_work(size_t size,
       gc_count_before = Universe::heap()->total_collections();
     }
 
-    VM_GenCollectForAllocation op(size,
-                                  is_tlab,
-                                  gc_count_before);
+    VM_GenCollectForAllocation op(size, is_tlab, gc_count_before);
     VMThread::execute(&op);
     if (op.prologue_succeeded()) {
       result = op.result();
@@ -833,8 +832,9 @@ MarkSweepPolicy::MarkSweepPolicy() {
 
 void MarkSweepPolicy::initialize_generations() {
   _generations = NEW_C_HEAP_ARRAY3(GenerationSpecPtr, number_of_generations(), mtGC, 0, AllocFailStrategy::RETURN_NULL);
-  if (_generations == NULL)
+  if (_generations == NULL) {
     vm_exit_during_initialization("Unable to allocate gen spec");
+  }
 
   if (UseParNewGC) {
     _generations[0] = new GenerationSpec(Generation::ParNew, _initial_gen0_size, _max_gen0_size);
@@ -843,8 +843,9 @@ void MarkSweepPolicy::initialize_generations() {
   }
   _generations[1] = new GenerationSpec(Generation::MarkSweepCompact, _initial_gen1_size, _max_gen1_size);
 
-  if (_generations[0] == NULL || _generations[1] == NULL)
+  if (_generations[0] == NULL || _generations[1] == NULL) {
     vm_exit_during_initialization("Unable to allocate gen spec");
+  }
 }
 
 void MarkSweepPolicy::initialize_gc_policy_counters() {

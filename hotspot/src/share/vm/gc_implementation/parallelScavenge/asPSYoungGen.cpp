@@ -70,7 +70,6 @@ void ASPSYoungGen::initialize(ReservedSpace rs, size_t alignment) {
 }
 
 size_t ASPSYoungGen::available_for_expansion() {
-
   size_t current_committed_size = virtual_space()->committed_size();
   assert((gen_size_limit() >= current_committed_size),
     "generation size limit is wrong");
@@ -85,7 +84,6 @@ size_t ASPSYoungGen::available_for_expansion() {
 // Future implementations could check the survivors and if to_space is in the
 // right place (below from_space), take a chunk from to_space.
 size_t ASPSYoungGen::available_for_contraction() {
-
   size_t uncommitted_bytes = virtual_space()->uncommitted_size();
   if (uncommitted_bytes != 0) {
     return uncommitted_bytes;
@@ -121,7 +119,6 @@ size_t ASPSYoungGen::available_for_contraction() {
       gclog_or_tty->print_cr("  gen_avail %d K", gen_avail/K);
     }
     return result_aligned;
-
   }
 
   return 0;

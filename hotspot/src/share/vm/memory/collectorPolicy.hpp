@@ -79,6 +79,7 @@ class CollectorPolicy : public CHeapObj<mtGC> {
   // Set to true when policy wants soft refs cleared.
   // Reset to false by gc after it clears all soft refs.
   bool _should_clear_all_soft_refs;
+
   // Set to true by the GC if the just-completed gc cleared all
   // softrefs.  This is set to true whenever a gc clears all softrefs, and
   // set to false each time gc returns to the mutator.  For example, in the
@@ -101,8 +102,8 @@ class CollectorPolicy : public CHeapObj<mtGC> {
   // Return maximum heap alignment that may be imposed by the policy
   static size_t compute_max_alignment();
 
-  size_t min_alignment()                       { return _min_alignment; }
-  size_t max_alignment()                       { return _max_alignment; }
+  size_t min_alignment()          { return _min_alignment; }
+  size_t max_alignment()          { return _max_alignment; }
 
   size_t initial_heap_byte_size() { return _initial_heap_byte_size; }
   size_t max_heap_byte_size()     { return _max_heap_byte_size; }
@@ -248,7 +249,7 @@ class GenCollectorPolicy : public CollectorPolicy {
 
   virtual int number_of_generations() = 0;
 
-  virtual GenerationSpec **generations()       {
+  virtual GenerationSpec **generations() {
     assert(_generations != NULL, "Sanity check");
     return _generations;
   }
@@ -273,6 +274,12 @@ class GenCollectorPolicy : public CollectorPolicy {
   virtual void initialize_size_policy(size_t init_eden_size,
                                       size_t init_promo_size,
                                       size_t init_survivor_size);
+
+  // The alignment used for eden and survivors within the young gen
+  // and for boundary between young gen and old gen.
+  static size_t intra_heap_alignment() {
+    return 64 * K * HeapWordSize;
+  }
 };
 
 // All of hotspot's current collectors are subtypes of this
@@ -300,8 +307,8 @@ class TwoGenerationCollectorPolicy : public GenCollectorPolicy {
   // Inherited methods
   TwoGenerationCollectorPolicy* as_two_generation_policy() { return this; }
 
-  int number_of_generations()                  { return 2; }
-  BarrierSet::Name barrier_set_name()          { return BarrierSet::CardTableModRef; }
+  int number_of_generations()          { return 2; }
+  BarrierSet::Name barrier_set_name()  { return BarrierSet::CardTableModRef; }
 
   virtual CollectorPolicy::Name kind() {
     return CollectorPolicy::TwoGenerationCollectorPolicyKind;

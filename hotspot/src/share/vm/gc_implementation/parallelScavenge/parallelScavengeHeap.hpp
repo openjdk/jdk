@@ -35,7 +35,6 @@
 #include "utilities/ostream.hpp"
 
 class AdjoiningGenerations;
-class CollectorPolicy;
 class GCHeapSummary;
 class GCTaskManager;
 class GenerationSizer;
@@ -50,8 +49,8 @@ class ParallelScavengeHeap : public CollectedHeap {
   static PSOldGen*   _old_gen;
 
   // Sizing policy for entire heap
-  static PSAdaptiveSizePolicy* _size_policy;
-  static PSGCAdaptivePolicyCounters*   _gc_policy_counters;
+  static PSAdaptiveSizePolicy*       _size_policy;
+  static PSGCAdaptivePolicyCounters* _gc_policy_counters;
 
   static ParallelScavengeHeap* _psh;
 
@@ -67,7 +66,8 @@ class ParallelScavengeHeap : public CollectedHeap {
   AdjoiningGenerations* _gens;
   unsigned int _death_march_count;
 
-  static GCTaskManager*          _gc_task_manager;      // The task manager.
+  // The task manager
+  static GCTaskManager* _gc_task_manager;
 
   void trace_heap(GCWhen::Type when, GCTracer* tracer);
 
@@ -80,15 +80,14 @@ class ParallelScavengeHeap : public CollectedHeap {
   HeapWord* mem_allocate_old_gen(size_t size);
 
  public:
-  ParallelScavengeHeap() : CollectedHeap() {
-    _death_march_count = 0;
+  ParallelScavengeHeap() : CollectedHeap(), _death_march_count(0) {
     set_alignment(_young_gen_alignment, intra_heap_alignment());
     set_alignment(_old_gen_alignment, intra_heap_alignment());
   }
 
   // Return the (conservative) maximum heap alignment
   static size_t conservative_max_heap_alignment() {
-    return intra_heap_alignment();
+    return GenCollectorPolicy::intra_heap_alignment();
   }
 
   // For use by VM operations
@@ -103,8 +102,8 @@ class ParallelScavengeHeap : public CollectedHeap {
 
   virtual CollectorPolicy* collector_policy() const { return (CollectorPolicy*) _collector_policy; }
 
-  static PSYoungGen* young_gen()     { return _young_gen; }
-  static PSOldGen* old_gen()         { return _old_gen; }
+  static PSYoungGen* young_gen() { return _young_gen; }
+  static PSOldGen* old_gen()     { return _old_gen; }
 
   virtual PSAdaptiveSizePolicy* size_policy() { return _size_policy; }
 
@@ -127,7 +126,7 @@ class ParallelScavengeHeap : public CollectedHeap {
 
   // The alignment used for eden and survivors within the young gen
   // and for boundary between young gen and old gen.
-  static size_t intra_heap_alignment() { return 64 * K * HeapWordSize; }
+  size_t intra_heap_alignment() { return GenCollectorPolicy::intra_heap_alignment(); }
 
   size_t capacity() const;
   size_t used() const;
@@ -157,16 +156,15 @@ class ParallelScavengeHeap : public CollectedHeap {
   virtual bool is_in_partial_collection(const void *p);
 #endif
 
-  bool is_in_young(oop p);        // reserved part
-  bool is_in_old(oop p);          // reserved part
+  bool is_in_young(oop p);  // reserved part
+  bool is_in_old(oop p);    // reserved part
 
   // Memory allocation.   "gc_time_limit_was_exceeded" will
   // be set to true if the adaptive size policy determine that
   // an excessive amount of time is being spent doing collections
   // and caused a NULL to be returned.  If a NULL is not returned,
   // "gc_time_limit_was_exceeded" has an undefined meaning.
-  HeapWord* mem_allocate(size_t size,
-                         bool* gc_overhead_limit_was_exceeded);
+  HeapWord* mem_allocate(size_t size, bool* gc_overhead_limit_was_exceeded);
 
   // Allocation attempt(s) during a safepoint. It should never be called
   // to allocate a new TLAB as this allocation might be satisfied out
@@ -257,7 +255,7 @@ class ParallelScavengeHeap : public CollectedHeap {
 
   // Call these in sequential code around the processing of strong roots.
   class ParStrongRootsScope : public MarkingCodeBlobClosure::MarkScope {
-  public:
+   public:
     ParStrongRootsScope();
     ~ParStrongRootsScope();
   };

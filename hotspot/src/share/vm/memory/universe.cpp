@@ -1021,7 +1021,7 @@ bool universe_post_init() {
     Universe::_virtual_machine_error_instance =
       InstanceKlass::cast(k)->allocate_instance(CHECK_false);
 
-    Universe::_vm_exception               = InstanceKlass::cast(k)->allocate_instance(CHECK_false);
+    Universe::_vm_exception = InstanceKlass::cast(k)->allocate_instance(CHECK_false);
 
   if (!DumpSharedSpaces) {
     // These are the only Java fields that are currently set during shared space dumping.
