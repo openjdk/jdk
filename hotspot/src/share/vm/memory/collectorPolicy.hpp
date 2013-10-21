@@ -151,7 +151,6 @@ class CollectorPolicy : public CHeapObj<mtGC> {
 
 
   virtual BarrierSet::Name barrier_set_name() = 0;
-  virtual GenRemSet::Name  rem_set_name() = 0;
 
   // Create the remembered set (to cover the given reserved region,
   // allowing breaking up into at most "max_covered_regions").
@@ -303,7 +302,6 @@ class TwoGenerationCollectorPolicy : public GenCollectorPolicy {
 
   int number_of_generations()                  { return 2; }
   BarrierSet::Name barrier_set_name()          { return BarrierSet::CardTableModRef; }
-  GenRemSet::Name rem_set_name()               { return GenRemSet::CardTable; }
 
   virtual CollectorPolicy::Name kind() {
     return CollectorPolicy::TwoGenerationCollectorPolicyKind;

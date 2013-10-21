@@ -105,7 +105,6 @@ bool CollectorPolicy::use_should_clear_all_soft_refs(bool v) {
 
 GenRemSet* CollectorPolicy::create_rem_set(MemRegion whole_heap,
                                            int max_covered_regions) {
-  assert(rem_set_name() == GenRemSet::CardTable, "unrecognized GenRemSet::Name");
   return new CardTableRS(whole_heap, max_covered_regions);
 }
 

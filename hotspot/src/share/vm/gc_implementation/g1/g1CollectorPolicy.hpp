@@ -665,8 +665,6 @@ public:
 
   BarrierSet::Name barrier_set_name() { return BarrierSet::G1SATBCTLogging; }
 
-  GenRemSet::Name  rem_set_name()     { return GenRemSet::CardTable; }
-
   bool need_to_start_conc_mark(const char* source, size_t alloc_word_size = 0);
 
   // Record the start and end of an evacuation pause.
