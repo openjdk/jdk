@@ -111,7 +111,7 @@ import java.util.Objects;
  * Obtaining the offset for an instant is simple, as there is exactly one valid
  * offset for each instant. By contrast, obtaining the offset for a local date-time
  * is not straightforward. There are three cases:
- * <p><ul>
+ * <ul>
  * <li>Normal, with one valid offset. For the vast majority of the year, the normal
  *  case applies, where there is a single valid offset for the local date-time.</li>
  * <li>Gap, with zero valid offsets. This is when clocks jump forward typically
@@ -120,7 +120,7 @@ import java.util.Objects;
  * <li>Overlap, with two valid offsets. This is when clocks are set back typically
  *  due to the autumn daylight savings change from "summer" to "winter".
  *  In an overlap there are local date-time values with two valid offsets.</li>
- * </ul><p>
+ * </ul>
  * <p>
  * Any method that converts directly or implicitly from a local date-time to an
  * instant by obtaining the offset has the potential to be complicated.
@@ -553,7 +553,8 @@ public final class ZonedDateTime
                 return of(ldt, zone);
             }
         } catch (DateTimeException ex) {
-            throw new DateTimeException("Unable to create ZonedDateTime from TemporalAccessor: " + temporal.getClass(), ex);
+            throw new DateTimeException("Unable to obtain ZonedDateTime from TemporalAccessor: " +
+                    temporal + " of type " + temporal.getClass().getName(), ex);
         }
     }
 
@@ -1540,6 +1541,11 @@ public final class ZonedDateTime
      */
     @Override
     public ZonedDateTime plus(TemporalAmount amountToAdd) {
+        if (amountToAdd instanceof Period) {
+            Period periodToAdd = (Period) amountToAdd;
+            return resolveLocal(dateTime.plus(periodToAdd));
+        }
+        Objects.requireNonNull(amountToAdd, "amountToAdd");
         return (ZonedDateTime) amountToAdd.addTo(this);
     }
 
@@ -1693,12 +1699,12 @@ public final class ZonedDateTime
      * <p>
      * For example, consider a time-zone where the spring DST cutover means that the
      * local times 01:00 to 01:59 occur twice changing from offset +02:00 to +01:00.
-     * <p><ul>
+     * <ul>
      * <li>Adding one hour to 00:30+02:00 will result in 01:30+02:00
      * <li>Adding one hour to 01:30+02:00 will result in 01:30+01:00
      * <li>Adding one hour to 01:30+01:00 will result in 02:30+01:00
      * <li>Adding three hours to 00:30+02:00 will result in 02:30+01:00
-     * </ul><p>
+     * </ul>
      * <p>
      * This instance is immutable and unaffected by this method call.
      *
@@ -1787,6 +1793,11 @@ public final class ZonedDateTime
      */
     @Override
     public ZonedDateTime minus(TemporalAmount amountToSubtract) {
+        if (amountToSubtract instanceof Period) {
+            Period periodToSubtract = (Period) amountToSubtract;
+            return resolveLocal(dateTime.minus(periodToSubtract));
+        }
+        Objects.requireNonNull(amountToSubtract, "amountToSubtract");
         return (ZonedDateTime) amountToSubtract.subtractFrom(this);
     }
 
@@ -1929,12 +1940,12 @@ public final class ZonedDateTime
      * <p>
      * For example, consider a time-zone where the spring DST cutover means that the
      * local times 01:00 to 01:59 occur twice changing from offset +02:00 to +01:00.
-     * <p><ul>
+     * <ul>
      * <li>Subtracting one hour from 02:30+01:00 will result in 01:30+02:00
      * <li>Subtracting one hour from 01:30+01:00 will result in 01:30+02:00
      * <li>Subtracting one hour from 01:30+02:00 will result in 00:30+01:00
      * <li>Subtracting three hours from 02:30+01:00 will result in 00:30+02:00
-     * </ul><p>
+     * </ul>
      * <p>
      * This instance is immutable and unaffected by this method call.
      *
@@ -2034,7 +2045,8 @@ public final class ZonedDateTime
      * For example, the period in days between two date-times can be calculated
      * using {@code startDateTime.until(endDateTime, DAYS)}.
      * <p>
-     * The {@code Temporal} passed to this method must be a {@code ZonedDateTime}.
+     * The {@code Temporal} passed to this method is converted to a
+     * {@code ZonedDateTime} using {@link #from(TemporalAccessor)}.
      * If the time-zone differs between the two zoned date-times, the specified
      * end date-time is normalized to have the same zone as this date-time.
      * <p>
@@ -2076,26 +2088,23 @@ public final class ZonedDateTime
      * <p>
      * If the unit is not a {@code ChronoUnit}, then the result of this method
      * is obtained by invoking {@code TemporalUnit.between(Temporal, Temporal)}
-     * passing {@code this} as the first argument and the input temporal as
-     * the second argument.
+     * passing {@code this} as the first argument and the converted input temporal
+     * as the second argument.
      * <p>
      * This instance is immutable and unaffected by this method call.
      *
-     * @param endDateTime  the end date-time, which must be a {@code ZonedDateTime}, not null
+     * @param endExclusive  the end date, exclusive, which is converted to a {@code ZonedDateTime}, not null
      * @param unit  the unit to measure the amount in, not null
      * @return the amount of time between this date-time and the end date-time
-     * @throws DateTimeException if the amount cannot be calculated
+     * @throws DateTimeException if the amount cannot be calculated, or the end
+     *  temporal cannot be converted to a {@code ZonedDateTime}
      * @throws UnsupportedTemporalTypeException if the unit is not supported
      * @throws ArithmeticException if numeric overflow occurs
      */
     @Override
-    public long until(Temporal endDateTime, TemporalUnit unit) {
-        if (endDateTime instanceof ZonedDateTime == false) {
-            Objects.requireNonNull(endDateTime, "endDateTime");
-            throw new DateTimeException("Unable to calculate amount as objects are of two different types");
-        }
+    public long until(Temporal endExclusive, TemporalUnit unit) {
+        ZonedDateTime end = ZonedDateTime.from(endExclusive);
         if (unit instanceof ChronoUnit) {
-            ZonedDateTime end = (ZonedDateTime) endDateTime;
             end = end.withZoneSameInstant(zone);
             if (unit.isDateBased()) {
                 return dateTime.until(end.dateTime, unit);
@@ -2103,7 +2112,7 @@ public final class ZonedDateTime
                 return toOffsetDateTime().until(end.toOffsetDateTime(), unit);
             }
         }
-        return unit.between(this, endDateTime);
+        return unit.between(this, end);
     }
 
     /**

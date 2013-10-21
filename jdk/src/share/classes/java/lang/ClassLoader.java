@@ -1069,6 +1069,10 @@ public abstract class ClassLoader {
      * built-in to the virtual machine is searched.  That failing, this method
      * will invoke {@link #findResource(String)} to find the resource.  </p>
      *
+     * @apiNote When overriding this method it is recommended that an
+     * implementation ensures that any delegation is consistent with the {@link
+     * #getResources(java.lang.String) getResources(String)} method.
+     *
      * @param  name
      *         The resource name
      *
@@ -1101,6 +1105,13 @@ public abstract class ClassLoader {
      *
      * <p> The search order is described in the documentation for {@link
      * #getResource(String)}.  </p>
+     *
+     * @apiNote When overriding this method it is recommended that an
+     * implementation ensures that any delegation is consistent with the {@link
+     * #getResource(java.lang.String) getResource(String)} method. This should
+     * ensure that the first element returned by the Enumeration's
+     * {@code nextElement} method is the same resource that the
+     * {@code getResource(String)} method would return.
      *
      * @param  name
      *         The resource name

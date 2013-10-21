@@ -325,6 +325,7 @@ class MethodFamily : public ResourceObj {
 
   Method* _selected_target;  // Filled in later, if a unique target exists
   Symbol* _exception_message; // If no unique target is found
+  Symbol* _exception_name;    // If no unique target is found
 
   bool contains_method(Method* method) {
     int* lookup = _member_index.get(method);
@@ -344,13 +345,12 @@ class MethodFamily : public ResourceObj {
   }
 
   Symbol* generate_no_defaults_message(TRAPS) const;
-  Symbol* generate_abstract_method_message(Method* method, TRAPS) const;
   Symbol* generate_conflicts_message(GrowableArray<Method*>* methods, TRAPS) const;
 
  public:
 
   MethodFamily()
-      : _selected_target(NULL), _exception_message(NULL) {}
+      : _selected_target(NULL), _exception_message(NULL), _exception_name(NULL) {}
 
   void set_target_if_empty(Method* m) {
     if (_selected_target == NULL && !m->is_overpass()) {
@@ -383,6 +383,7 @@ class MethodFamily : public ResourceObj {
 
   Method* get_selected_target() { return _selected_target; }
   Symbol* get_exception_message() { return _exception_message; }
+  Symbol* get_exception_name() { return _exception_name; }
 
   // Either sets the target or the exception error message
   void determine_target(InstanceKlass* root, TRAPS) {
@@ -400,19 +401,21 @@ class MethodFamily : public ResourceObj {
 
     if (qualified_methods.length() == 0) {
       _exception_message = generate_no_defaults_message(CHECK);
+      _exception_name = vmSymbols::java_lang_AbstractMethodError();
     } else if (qualified_methods.length() == 1) {
+      // leave abstract methods alone, they will be found via normal search path
       Method* method = qualified_methods.at(0);
-      if (method->is_abstract()) {
-        _exception_message = generate_abstract_method_message(method, CHECK);
-      } else {
+      if (!method->is_abstract()) {
         _selected_target = qualified_methods.at(0);
       }
     } else {
       _exception_message = generate_conflicts_message(&qualified_methods,CHECK);
+      _exception_name = vmSymbols::java_lang_IncompatibleClassChangeError();
+      if (TraceDefaultMethods) {
+        _exception_message->print_value_on(tty);
+        tty->print_cr("");
+      }
     }
-
-    assert((has_target() ^ throws_exception()) == 1,
-           "One and only one must be true");
   }
 
   bool contains_signature(Symbol* query) {
@@ -459,28 +462,15 @@ class MethodFamily : public ResourceObj {
 
   void print_exception(outputStream* str, int indent) {
     assert(throws_exception(), "Should be called otherwise");
+    assert(_exception_name != NULL, "exception_name should be set");
     streamIndentor si(str, indent * 2);
-    str->indent().print_cr("%s", _exception_message->as_C_string());
+    str->indent().print_cr("%s: %s", _exception_name->as_C_string(), _exception_message->as_C_string());
   }
 #endif // ndef PRODUCT
 };
 
 Symbol* MethodFamily::generate_no_defaults_message(TRAPS) const {
   return SymbolTable::new_symbol("No qualifying defaults found", CHECK_NULL);
-}
-
-Symbol* MethodFamily::generate_abstract_method_message(Method* method, TRAPS) const {
-  Symbol* klass = method->klass_name();
-  Symbol* name = method->name();
-  Symbol* sig = method->signature();
-  stringStream ss;
-  ss.print("Method ");
-  ss.write((const char*)klass->bytes(), klass->utf8_length());
-  ss.print(".");
-  ss.write((const char*)name->bytes(), name->utf8_length());
-  ss.write((const char*)sig->bytes(), sig->utf8_length());
-  ss.print(" is abstract");
-  return SymbolTable::new_symbol(ss.base(), (int)ss.size(), CHECK_NULL);
 }
 
 Symbol* MethodFamily::generate_conflicts_message(GrowableArray<Method*>* methods, TRAPS) const {
@@ -589,6 +579,18 @@ class EmptyVtableSlot : public ResourceObj {
 #endif // ndef PRODUCT
 };
 
+static bool already_in_vtable_slots(GrowableArray<EmptyVtableSlot*>* slots, Method* m) {
+  bool found = false;
+  for (int j = 0; j < slots->length(); ++j) {
+    if (slots->at(j)->name() == m->name() &&
+        slots->at(j)->signature() == m->signature() ) {
+      found = true;
+      break;
+    }
+  }
+  return found;
+}
+
 static GrowableArray<EmptyVtableSlot*>* find_empty_vtable_slots(
     InstanceKlass* klass, GrowableArray<Method*>* mirandas, TRAPS) {
 
@@ -598,8 +600,10 @@ static GrowableArray<EmptyVtableSlot*>* find_empty_vtable_slots(
 
   // All miranda methods are obvious candidates
   for (int i = 0; i < mirandas->length(); ++i) {
-    EmptyVtableSlot* slot = new EmptyVtableSlot(mirandas->at(i));
-    slots->append(slot);
+    Method* m = mirandas->at(i);
+    if (!already_in_vtable_slots(slots, m)) {
+      slots->append(new EmptyVtableSlot(m));
+    }
   }
 
   // Also any overpasses in our superclasses, that we haven't implemented.
@@ -615,7 +619,26 @@ static GrowableArray<EmptyVtableSlot*>* find_empty_vtable_slots(
         // unless we have a real implementation of it in the current class.
         Method* impl = klass->lookup_method(m->name(), m->signature());
         if (impl == NULL || impl->is_overpass()) {
-          slots->append(new EmptyVtableSlot(m));
+          if (!already_in_vtable_slots(slots, m)) {
+            slots->append(new EmptyVtableSlot(m));
+          }
+        }
+      }
+    }
+
+    // also any default methods in our superclasses
+    if (super->default_methods() != NULL) {
+      for (int i = 0; i < super->default_methods()->length(); ++i) {
+        Method* m = super->default_methods()->at(i);
+        // m is a method that would have been a miranda if not for the
+        // default method processing that occurred on behalf of our superclass,
+        // so it's a method we want to re-examine in this new context.  That is,
+        // unless we have a real implementation of it in the current class.
+        Method* impl = klass->lookup_method(m->name(), m->signature());
+        if (impl == NULL || impl->is_overpass()) {
+          if (!already_in_vtable_slots(slots, m)) {
+            slots->append(new EmptyVtableSlot(m));
+          }
         }
       }
     }
@@ -670,7 +693,10 @@ class FindMethodsByErasedSig : public HierarchyVisitor<FindMethodsByErasedSig> {
     InstanceKlass* iklass = current_class();
 
     Method* m = iklass->find_method(_method_name, _method_signature);
-    if (m != NULL) {
+    // private interface methods are not candidates for default methods
+    // invokespecial to private interface methods doesn't use default method logic
+    // future: take access controls into account for superclass methods
+    if (m != NULL && !m->is_static() && (!iklass->is_interface() || m->is_public())) {
       if (_family == NULL) {
         _family = new StatefulMethodFamily();
       }
@@ -691,7 +717,7 @@ class FindMethodsByErasedSig : public HierarchyVisitor<FindMethodsByErasedSig> {
 
 
 
-static void create_overpasses(
+static void create_defaults_and_exceptions(
     GrowableArray<EmptyVtableSlot*>* slots, InstanceKlass* klass, TRAPS);
 
 static void generate_erased_defaults(
@@ -711,6 +737,8 @@ static void generate_erased_defaults(
 }
 
 static void merge_in_new_methods(InstanceKlass* klass,
+    GrowableArray<Method*>* new_methods, TRAPS);
+static void create_default_methods( InstanceKlass* klass,
     GrowableArray<Method*>* new_methods, TRAPS);
 
 // This is the guts of the default methods implementation.  This is called just
@@ -773,7 +801,7 @@ void DefaultMethods::generate_default_methods(
   }
 #endif // ndef PRODUCT
 
-  create_overpasses(empty_slots, klass, CHECK);
+  create_defaults_and_exceptions(empty_slots, klass, CHECK);
 
 #ifndef PRODUCT
   if (TraceDefaultMethods) {
@@ -782,263 +810,9 @@ void DefaultMethods::generate_default_methods(
 #endif // ndef PRODUCT
 }
 
-/**
- * Interface inheritance rules were used to find a unique default method
- * candidate for the resolved class. This
- * method is only viable if it would also be in the set of default method
- * candidates if we ran a full analysis on the current class.
- *
- * The only reason that the method would not be in the set of candidates for
- * the current class is if that there's another matching method
- * which is "more specific" than the found method -- i.e., one could find a
- * path in the interface hierarchy in which the matching method appears
- * before we get to '_target'.
- *
- * In order to determine this, we examine all of the implemented
- * interfaces.  If we find path that leads to the '_target' interface, then
- * we examine that path to see if there are any methods that would shadow
- * the selected method along that path.
- */
-class ShadowChecker : public HierarchyVisitor<ShadowChecker> {
- protected:
-  Thread* THREAD;
+static int assemble_method_error(
+    BytecodeConstantPool* cp, BytecodeBuffer* buffer, Symbol* errorName, Symbol* message, TRAPS) {
 
-  InstanceKlass* _target;
-
-  Symbol* _method_name;
-  InstanceKlass* _method_holder;
-  bool _found_shadow;
-
-
- public:
-
-  ShadowChecker(Thread* thread, Symbol* name, InstanceKlass* holder,
-                InstanceKlass* target)
-                : THREAD(thread), _method_name(name), _method_holder(holder),
-                _target(target), _found_shadow(false) {}
-
-  void* new_node_data(InstanceKlass* cls) { return NULL; }
-  void free_node_data(void* data) { return; }
-
-  bool visit() {
-    InstanceKlass* ik = current_class();
-    if (ik == _target && current_depth() == 1) {
-      return false; // This was the specified super -- no need to search it
-    }
-    if (ik == _method_holder || ik == _target) {
-      // We found a path that should be examined to see if it shadows _method
-      if (path_has_shadow()) {
-        _found_shadow = true;
-        cancel_iteration();
-      }
-      return false; // no need to continue up hierarchy
-    }
-    return true;
-  }
-
-  virtual bool path_has_shadow() = 0;
-  bool found_shadow() { return _found_shadow; }
-};
-
-// Used for Invokespecial.
-// Invokespecial is allowed to invoke a concrete interface method
-// and can be used to disambuiguate among qualified candidates,
-// which are methods in immediate superinterfaces,
-// but may not be used to invoke a candidate that would be shadowed
-// from the perspective of the caller.
-// Invokespecial is also used in the overpass generation today
-// We re-run the shadowchecker because we can't distinguish this case,
-// but it should return the same answer, since the overpass target
-// is now the invokespecial caller.
-class ErasedShadowChecker : public ShadowChecker {
- private:
-  bool path_has_shadow() {
-
-    for (int i = current_depth() - 1; i > 0; --i) {
-      InstanceKlass* ik = class_at_depth(i);
-
-      if (ik->is_interface()) {
-        int end;
-        int start = ik->find_method_by_name(_method_name, &end);
-        if (start != -1) {
-          return true;
-        }
-      }
-    }
-    return false;
-  }
- public:
-
-  ErasedShadowChecker(Thread* thread, Symbol* name, InstanceKlass* holder,
-                InstanceKlass* target)
-    : ShadowChecker(thread, name, holder, target) {}
-};
-
-// Find the unique qualified candidate from the perspective of the super_class
-// which is the resolved_klass, which must be an immediate superinterface
-// of klass
-Method* find_erased_super_default(InstanceKlass* current_class, InstanceKlass* super_class, Symbol* method_name, Symbol* sig, TRAPS) {
-
-  FindMethodsByErasedSig visitor(method_name, sig);
-  visitor.run(super_class);      // find candidates from resolved_klass
-
-  MethodFamily* family;
-  visitor.get_discovered_family(&family);
-
-  if (family != NULL) {
-    family->determine_target(current_class, CHECK_NULL);  // get target from current_class
-
-    if (family->has_target()) {
-      Method* target = family->get_selected_target();
-      InstanceKlass* holder = InstanceKlass::cast(target->method_holder());
-
-      // Verify that the identified method is valid from the context of
-      // the current class, which is the caller class for invokespecial
-      // link resolution, i.e. ensure there it is not shadowed.
-      // You can use invokespecial to disambiguate interface methods, but
-      // you can not use it to skip over an interface method that would shadow it.
-      ErasedShadowChecker checker(THREAD, target->name(), holder, super_class);
-      checker.run(current_class);
-
-      if (checker.found_shadow()) {
-#ifndef PRODUCT
-        if (TraceDefaultMethods) {
-          tty->print_cr("    Only candidate found was shadowed.");
-        }
-#endif // ndef PRODUCT
-        THROW_MSG_(vmSymbols::java_lang_AbstractMethodError(),
-                   "Accessible default method not found", NULL);
-      } else {
-#ifndef PRODUCT
-        if (TraceDefaultMethods) {
-          family->print_sig_on(tty, target->signature(), 1);
-        }
-#endif // ndef PRODUCT
-        return target;
-      }
-    } else {
-      assert(family->throws_exception(), "must have target or throw");
-      THROW_MSG_(vmSymbols::java_lang_AbstractMethodError(),
-                 family->get_exception_message()->as_C_string(), NULL);
-   }
-  } else {
-    // no method found
-    ResourceMark rm(THREAD);
-    THROW_MSG_(vmSymbols::java_lang_NoSuchMethodError(),
-              Method::name_and_sig_as_C_string(current_class,
-                                               method_name, sig), NULL);
-  }
-}
-// This is called during linktime when we find an invokespecial call that
-// refers to a direct superinterface.  It indicates that we should find the
-// default method in the hierarchy of that superinterface, and if that method
-// would have been a candidate from the point of view of 'this' class, then we
-// return that method.
-// This logic assumes that the super is a direct superclass of the caller
-Method* DefaultMethods::find_super_default(
-    Klass* cls, Klass* super, Symbol* method_name, Symbol* sig, TRAPS) {
-
-  ResourceMark rm(THREAD);
-
-  assert(cls != NULL && super != NULL, "Need real classes");
-
-  InstanceKlass* current_class = InstanceKlass::cast(cls);
-  InstanceKlass* super_class = InstanceKlass::cast(super);
-
-  // Keep entire hierarchy alive for the duration of the computation
-  KeepAliveRegistrar keepAlive(THREAD);
-  KeepAliveVisitor loadKeepAlive(&keepAlive);
-  loadKeepAlive.run(current_class);   // get hierarchy from current class
-
-#ifndef PRODUCT
-  if (TraceDefaultMethods) {
-    tty->print_cr("Finding super default method %s.%s%s from %s",
-      super_class->name()->as_C_string(),
-      method_name->as_C_string(), sig->as_C_string(),
-      current_class->name()->as_C_string());
-  }
-#endif // ndef PRODUCT
-
-  assert(super_class->is_interface(), "only call for default methods");
-
-  Method* target = NULL;
-  target = find_erased_super_default(current_class, super_class,
-                                     method_name, sig, CHECK_NULL);
-
-#ifndef PRODUCT
-  if (target != NULL) {
-    if (TraceDefaultMethods) {
-      tty->print("    Returning ");
-      print_method(tty, target, true);
-      tty->print_cr("");
-    }
-  }
-#endif // ndef PRODUCT
-  return target;
-}
-
-#ifndef PRODUCT
-// Return true is broad type is a covariant return of narrow type
-static bool covariant_return_type(BasicType narrow, BasicType broad) {
-  if (narrow == broad) {
-    return true;
-  }
-  if (broad == T_OBJECT) {
-    return true;
-  }
-  return false;
-}
-#endif // ndef PRODUCT
-
-static int assemble_redirect(
-    BytecodeConstantPool* cp, BytecodeBuffer* buffer,
-    Symbol* incoming, Method* target, TRAPS) {
-
-  BytecodeAssembler assem(buffer, cp);
-
-  SignatureStream in(incoming, true);
-  SignatureStream out(target->signature(), true);
-  u2 parameter_count = 0;
-
-  assem.aload(parameter_count++); // load 'this'
-
-  while (!in.at_return_type()) {
-    assert(!out.at_return_type(), "Parameter counts do not match");
-    BasicType bt = in.type();
-    assert(out.type() == bt, "Parameter types are not compatible");
-    assem.load(bt, parameter_count);
-    if (in.is_object() && in.as_symbol(THREAD) != out.as_symbol(THREAD)) {
-      assem.checkcast(out.as_symbol(THREAD));
-    } else if (bt == T_LONG || bt == T_DOUBLE) {
-      ++parameter_count; // longs and doubles use two slots
-    }
-    ++parameter_count;
-    in.next();
-    out.next();
-  }
-  assert(out.at_return_type(), "Parameter counts do not match");
-  assert(covariant_return_type(out.type(), in.type()), "Return types are not compatible");
-
-  if (parameter_count == 1 && (in.type() == T_LONG || in.type() == T_DOUBLE)) {
-    ++parameter_count; // need room for return value
-  }
-  if (target->method_holder()->is_interface()) {
-    assem.invokespecial(target);
-  } else {
-    assem.invokevirtual(target);
-  }
-
-  if (in.is_object() && in.as_symbol(THREAD) != out.as_symbol(THREAD)) {
-    assem.checkcast(in.as_symbol(THREAD));
-  }
-  assem._return(in.type());
-  return parameter_count;
-}
-
-static int assemble_abstract_method_error(
-    BytecodeConstantPool* cp, BytecodeBuffer* buffer, Symbol* message, TRAPS) {
-
-  Symbol* errorName = vmSymbols::java_lang_AbstractMethodError();
   Symbol* init = vmSymbols::object_initializer_name();
   Symbol* sig = vmSymbols::string_void_signature();
 
@@ -1109,18 +883,18 @@ static void switchover_constant_pool(BytecodeConstantPool* bpool,
   }
 }
 
-// A "bridge" is a method created by javac to bridge the gap between
-// an implementation and a generically-compatible, but different, signature.
-// Bridges have actual bytecode implementation in classfiles.
-// An "overpass", on the other hand, performs the same function as a bridge
-// but does not occur in a classfile; the VM creates overpass itself,
-// when it needs a path to get from a call site to an default method, and
-// a bridge doesn't exist.
-static void create_overpasses(
+// Create default_methods list for the current class.
+// With the VM only processing erased signatures, the VM only
+// creates an overpass in a conflict case or a case with no candidates.
+// This allows virtual methods to override the overpass, but ensures
+// that a local method search will find the exception rather than an abstract
+// or default method that is not a valid candidate.
+static void create_defaults_and_exceptions(
     GrowableArray<EmptyVtableSlot*>* slots,
     InstanceKlass* klass, TRAPS) {
 
   GrowableArray<Method*> overpasses;
+  GrowableArray<Method*> defaults;
   BytecodeConstantPool bpool(klass->constants());
 
   for (int i = 0; i < slots->length(); ++i) {
@@ -1128,7 +902,6 @@ static void create_overpasses(
 
     if (slot->is_bound()) {
       MethodFamily* method = slot->get_binding();
-      int max_stack = 0;
       BytecodeBuffer buffer;
 
 #ifndef PRODUCT
@@ -1138,27 +911,27 @@ static void create_overpasses(
         tty->print_cr("");
         if (method->has_target()) {
           method->print_selected(tty, 1);
-        } else {
+        } else if (method->throws_exception()) {
           method->print_exception(tty, 1);
         }
       }
 #endif // ndef PRODUCT
+
       if (method->has_target()) {
         Method* selected = method->get_selected_target();
         if (selected->method_holder()->is_interface()) {
-          max_stack = assemble_redirect(
-            &bpool, &buffer, slot->signature(), selected, CHECK);
+          defaults.push(selected);
         }
       } else if (method->throws_exception()) {
-        max_stack = assemble_abstract_method_error(
-            &bpool, &buffer, method->get_exception_message(), CHECK);
-      }
-      if (max_stack != 0) {
+        int max_stack = assemble_method_error(&bpool, &buffer,
+           method->get_exception_name(), method->get_exception_message(), CHECK);
         AccessFlags flags = accessFlags_from(
           JVM_ACC_PUBLIC | JVM_ACC_SYNTHETIC | JVM_ACC_BRIDGE);
-        Method* m = new_method(&bpool, &buffer, slot->name(), slot->signature(),
+         Method* m = new_method(&bpool, &buffer, slot->name(), slot->signature(),
           flags, max_stack, slot->size_of_parameters(),
           ConstMethod::OVERPASS, CHECK);
+        // We push to the methods list:
+        // overpass methods which are exception throwing methods
         if (m != NULL) {
           overpasses.push(m);
         }
@@ -1169,11 +942,31 @@ static void create_overpasses(
 #ifndef PRODUCT
   if (TraceDefaultMethods) {
     tty->print_cr("Created %d overpass methods", overpasses.length());
+    tty->print_cr("Created %d default  methods", defaults.length());
   }
 #endif // ndef PRODUCT
 
-  switchover_constant_pool(&bpool, klass, &overpasses, CHECK);
-  merge_in_new_methods(klass, &overpasses, CHECK);
+  if (overpasses.length() > 0) {
+    switchover_constant_pool(&bpool, klass, &overpasses, CHECK);
+    merge_in_new_methods(klass, &overpasses, CHECK);
+  }
+  if (defaults.length() > 0) {
+    create_default_methods(klass, &defaults, CHECK);
+  }
+}
+
+static void create_default_methods( InstanceKlass* klass,
+    GrowableArray<Method*>* new_methods, TRAPS) {
+
+  int new_size = new_methods->length();
+  Array<Method*>* total_default_methods = MetadataFactory::new_array<Method*>(
+      klass->class_loader_data(), new_size, NULL, CHECK);
+  for (int index = 0; index < new_size; index++ ) {
+    total_default_methods->at_put(index, new_methods->at(index));
+  }
+  Method::sort_methods(total_default_methods, false, false);
+
+  klass->set_default_methods(total_default_methods);
 }
 
 static void sort_methods(GrowableArray<Method*>* methods) {
@@ -1281,4 +1074,3 @@ static void merge_in_new_methods(InstanceKlass* klass,
     MetadataFactory::free_array(cld, original_ordering);
   }
 }
-

@@ -66,7 +66,7 @@ import javax.sql.rowset.spi.*;
  * object much leaner and therefore much easier to pass to another component.  For
  * example, a disconnected <code>RowSet</code> object can be serialized and passed
  * over the wire to a thin client such as a personal digital assistant (PDA).
- * <P>
+ *
  *
  * <h3>1.0 Creating a <code>CachedRowSet</code> Object</h3>
  * The following line of code uses the default constructor for
@@ -139,7 +139,7 @@ import javax.sql.rowset.spi.*;
  * See the comments for <code>SyncFactory</code> and <code>SyncProvider</code> for
  * more details.
  *
- * <P>
+ *
  * <h3>2.0 Retrieving Data from a <code>CachedRowSet</code> Object</h3>
  * Data is retrieved from a <code>CachedRowSet</code> object by using the
  * getter methods inherited from the <code>ResultSet</code>
@@ -195,7 +195,7 @@ import javax.sql.rowset.spi.*;
  *   <LI><i>It includes <code>setter</code> methods:</i> A <code>RowSet</code>
  *   object uses these methods internally when it is populated with data from a
  *   different <code>ResultSet</code> object.
- *   <P>
+ *
  *   <LI><i>It contains fewer <code>getter</code> methods:</i> Some
  *   <code>ResultSetMetaData</code> methods to not apply to a <code>RowSet</code>
  *   object. For example, methods retrieving whether a column value is writable
@@ -260,7 +260,7 @@ import javax.sql.rowset.spi.*;
  * <code>acceptChanges</code> after all calls to <code>updateRow</code>
  * and <code>insertRow</code> have been made.  If <code>acceptChanges</code>
  * is called only once, only one connection needs to be established.
- * <P>
+ *
  * <h3>4.0 Updating the Underlying Data Source</h3>
  * When the method <code>acceptChanges</code> is executed, the
  * <code>CachedRowSet</code> object's writer, a <code>RowSetWriterImpl</code>
@@ -304,7 +304,7 @@ import javax.sql.rowset.spi.*;
  * the values in the database have been changed, there is a conflict.
  * Whether a writer checks for conflicts, what degree of checking it does, and how
  * it handles conflicts all depend on how it is implemented.
- * <P>
+ *
  * <h3>5.0 Registering and Notifying Listeners</h3>
  * Being JavaBeans components, all rowsets participate in the JavaBeans event
  * model, inheriting methods for registering listeners and notifying them of
@@ -327,7 +327,7 @@ import javax.sql.rowset.spi.*;
  * data also notifies registered listeners of the changes, so
  * <code>table</code> and <code>barGraph</code> will be notified when there is
  * a change in <code>crs</code>.
- * <P>
+ *
  * <h3>6.0 Passing Data to Thin Clients</h3>
  * One of the main reasons to use a <code>CachedRowSet</code> object is to
  * pass data between different components of an application. Because it is
@@ -343,7 +343,7 @@ import javax.sql.rowset.spi.*;
  * due to resource limitations or security considerations.
  * Thus, a <code>CachedRowSet</code> object provides a means to "get rows in"
  * without the need to implement the full JDBC API.
- * <P>
+ *
  * <h3>7.0 Scrolling and Updating</h3>
  * A second major use for <code>CachedRowSet</code> objects is to provide
  * scrolling and updating for <code>ResultSet</code> objects that
@@ -377,7 +377,7 @@ import javax.sql.rowset.spi.*;
  * and it is well suited to sending data to a thin client. However, a
  * <code>CachedRowSet</code> object does have a limitation: It is limited in
  * size by the amount of data it can store in memory at one time.
- * <P>
+ *
  * <h3>8.0 Getting Universal Data Access</h3>
  * Another advantage of the <code>CachedRowSet</code> class is that it makes it
  * possible to retrieve and store data from sources other than a relational
@@ -390,7 +390,7 @@ import javax.sql.rowset.spi.*;
  * non-SQL data sources. Nevertheless, it is expected that most of the time,
  * <code>CachedRowSet</code> objects will contain data that was fetched
  * from an SQL database using the JDBC API.
- * <P>
+ *
  * <h3>9.0 Setting Properties</h3>
  * All rowsets maintain a set of properties, which will usually be set using
  * a tool.  The number and kinds of properties a rowset has will vary,

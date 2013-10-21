@@ -36,7 +36,7 @@ public class ToBin {
         BufferedImage bi = null;
         int iconWidth = im.getWidth(null);
         int iconHeight = im.getHeight(null);
-        if (im != null && iconHeight != 0 &&  iconWidth != 0) {
+        if (im != null && iconHeight != 0 && iconWidth != 0) {
             bi = new BufferedImage(iconWidth, iconHeight, BufferedImage.TYPE_INT_ARGB);
             Graphics g = bi.getGraphics();
             try {

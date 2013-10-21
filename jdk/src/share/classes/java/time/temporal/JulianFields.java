@@ -66,11 +66,9 @@ import static java.time.temporal.ChronoUnit.DAYS;
 import static java.time.temporal.ChronoUnit.FOREVER;
 
 import java.time.DateTimeException;
-import java.time.ZoneId;
 import java.time.chrono.ChronoLocalDate;
 import java.time.chrono.Chronology;
 import java.time.format.ResolverStyle;
-import java.util.Collections;
 import java.util.Map;
 
 /**
@@ -116,7 +114,7 @@ public final class JulianFields {
      * In {@linkplain ResolverStyle#STRICT strict mode} and {@linkplain ResolverStyle#SMART smart mode}
      * the Julian Day value is validated against the range of valid values.
      * In {@linkplain ResolverStyle#LENIENT lenient mode} no validation occurs.
-     * <p>
+     *
      * <h3>Astronomical and Scientific Notes</h3>
      * The standard astronomical definition uses a fraction to indicate the time-of-day,
      * thus 3.25 would represent the time 18:00, since days start at midday.
@@ -124,7 +122,7 @@ public final class JulianFields {
      * The integer value for the Julian Day Number is the astronomical Julian Day value at midday
      * of the date in question.
      * This amounts to the astronomical Julian Day, rounded to an integer {@code JDN = floor(JD + 0.5)}.
-     * <p>
+     *
      * <pre>
      *  | ISO date          |  Julian Day Number | Astronomical Julian Day |
      *  | 1970-01-01T00:00  |         2,440,588  |         2,440,587.5     |
@@ -164,7 +162,7 @@ public final class JulianFields {
      * In {@linkplain ResolverStyle#STRICT strict mode} and {@linkplain ResolverStyle#SMART smart mode}
      * the Modified Julian Day value is validated against the range of valid values.
      * In {@linkplain ResolverStyle#LENIENT lenient mode} no validation occurs.
-     * <p>
+     *
      * <h3>Astronomical and Scientific Notes</h3>
      * <pre>
      *  | ISO date          | Modified Julian Day |      Decimal MJD |
@@ -176,7 +174,7 @@ public final class JulianFields {
      *  | 1970-01-02T06:00  |             40,588  |       40,588.25  |
      *  | 1970-01-02T12:00  |             40,588  |       40,588.5   |
      * </pre>
-     * <p>
+     *
      * Modified Julian Days are sometimes taken to imply Universal Time or UTC, but this
      * implementation always uses the Modified Julian Day for the local date,
      * regardless of the offset or time-zone.
@@ -291,13 +289,14 @@ public final class JulianFields {
         //-----------------------------------------------------------------------
         @Override
         public ChronoLocalDate resolve(
-                Map<TemporalField, Long> fieldValues, Chronology chronology, ZoneId zone, ResolverStyle resolverStyle) {
+                Map<TemporalField, Long> fieldValues, TemporalAccessor partialTemporal, ResolverStyle resolverStyle) {
             long value = fieldValues.remove(this);
+            Chronology chrono = Chronology.from(partialTemporal);
             if (resolverStyle == ResolverStyle.LENIENT) {
-                return chronology.dateEpochDay(Math.subtractExact(value, offset));
+                return chrono.dateEpochDay(Math.subtractExact(value, offset));
             }
             range().checkValidValue(value, this);
-            return chronology.dateEpochDay(value - offset);
+            return chrono.dateEpochDay(value - offset);
         }
 
         //-----------------------------------------------------------------------

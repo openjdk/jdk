@@ -625,11 +625,11 @@ void Arguments::describe_range_error(ArgsRange errcode) {
   }
 }
 
-static bool set_bool_flag(char* name, bool value, FlagValueOrigin origin) {
+static bool set_bool_flag(char* name, bool value, Flag::Flags origin) {
   return CommandLineFlags::boolAtPut(name, &value, origin);
 }
 
-static bool set_fp_numeric_flag(char* name, char* value, FlagValueOrigin origin) {
+static bool set_fp_numeric_flag(char* name, char* value, Flag::Flags origin) {
   double v;
   if (sscanf(value, "%lf", &v) != 1) {
     return false;
@@ -641,7 +641,7 @@ static bool set_fp_numeric_flag(char* name, char* value, FlagValueOrigin origin)
   return false;
 }
 
-static bool set_numeric_flag(char* name, char* value, FlagValueOrigin origin) {
+static bool set_numeric_flag(char* name, char* value, Flag::Flags origin) {
   julong v;
   intx intx_v;
   bool is_neg = false;
@@ -674,14 +674,14 @@ static bool set_numeric_flag(char* name, char* value, FlagValueOrigin origin) {
   return false;
 }
 
-static bool set_string_flag(char* name, const char* value, FlagValueOrigin origin) {
+static bool set_string_flag(char* name, const char* value, Flag::Flags origin) {
   if (!CommandLineFlags::ccstrAtPut(name, &value, origin))  return false;
   // Contract:  CommandLineFlags always returns a pointer that needs freeing.
   FREE_C_HEAP_ARRAY(char, value, mtInternal);
   return true;
 }
 
-static bool append_to_string_flag(char* name, const char* new_value, FlagValueOrigin origin) {
+static bool append_to_string_flag(char* name, const char* new_value, Flag::Flags origin) {
   const char* old_value = "";
   if (!CommandLineFlags::ccstrAt(name, &old_value))  return false;
   size_t old_len = old_value != NULL ? strlen(old_value) : 0;
@@ -709,7 +709,7 @@ static bool append_to_string_flag(char* name, const char* new_value, FlagValueOr
   return true;
 }
 
-bool Arguments::parse_argument(const char* arg, FlagValueOrigin origin) {
+bool Arguments::parse_argument(const char* arg, Flag::Flags origin) {
 
   // range of acceptable characters spelled out for portability reasons
 #define NAME_RANGE  "[abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_]"
@@ -850,7 +850,7 @@ void Arguments::print_jvm_args_on(outputStream* st) {
 }
 
 bool Arguments::process_argument(const char* arg,
-    jboolean ignore_unrecognized, FlagValueOrigin origin) {
+    jboolean ignore_unrecognized, Flag::Flags origin) {
 
   JDK_Version since = JDK_Version();
 
@@ -904,7 +904,7 @@ bool Arguments::process_argument(const char* arg,
       jio_fprintf(defaultStream::error_stream(),
                   "Did you mean '%s%s%s'?\n",
                   (fuzzy_matched->is_bool()) ? "(+/-)" : "",
-                  fuzzy_matched->name,
+                  fuzzy_matched->_name,
                   (fuzzy_matched->is_bool()) ? "" : "=<value>");
     }
   }
@@ -952,7 +952,7 @@ bool Arguments::process_settings_file(const char* file_name, bool should_exist, 
         // this allows a way to include spaces in string-valued options
         token[pos] = '\0';
         logOption(token);
-        result &= process_argument(token, ignore_unrecognized, CONFIG_FILE);
+        result &= process_argument(token, ignore_unrecognized, Flag::CONFIG_FILE);
         build_jvm_flags(token);
         pos = 0;
         in_white_space = true;
@@ -970,7 +970,7 @@ bool Arguments::process_settings_file(const char* file_name, bool should_exist, 
   }
   if (pos > 0) {
     token[pos] = '\0';
-    result &= process_argument(token, ignore_unrecognized, CONFIG_FILE);
+    result &= process_argument(token, ignore_unrecognized, Flag::CONFIG_FILE);
     build_jvm_flags(token);
   }
   fclose(stream);
@@ -1131,6 +1131,9 @@ void Arguments::set_tiered_flags() {
   if (!UseInterpreter) { // -Xcomp
     Tier3InvokeNotifyFreqLog = 0;
     Tier4InvocationThreshold = 0;
+  }
+  if (FLAG_IS_DEFAULT(NmethodSweepFraction)) {
+    FLAG_SET_DEFAULT(NmethodSweepFraction, 1 + ReservedCodeCacheSize / (16 * M));
   }
 }
 
@@ -2042,6 +2045,9 @@ bool Arguments::check_vm_args_consistency() {
   status = status && verify_interval(StringTableSize, minimumStringTableSize,
     (max_uintx / StringTable::bucket_size()), "StringTable size");
 
+  status = status && verify_interval(SymbolTableSize, minimumSymbolTableSize,
+    (max_uintx / SymbolTable::bucket_size()), "SymbolTable size");
+
   if (MinHeapFreeRatio > MaxHeapFreeRatio) {
     jio_fprintf(defaultStream::error_stream(),
                 "MinHeapFreeRatio (" UINTX_FORMAT ") must be less than or "
@@ -2337,6 +2343,10 @@ bool Arguments::check_vm_args_consistency() {
                 (2*G)/M);
     status = false;
   }
+
+  status &= verify_interval(NmethodSweepFraction, 1, ReservedCodeCacheSize/K, "NmethodSweepFraction");
+  status &= verify_interval(NmethodSweepActivity, 0, 2000, "NmethodSweepActivity");
+
   return status;
 }
 
@@ -2438,7 +2448,7 @@ jint Arguments::parse_vm_init_args(const JavaVMInitArgs* args) {
   }
 
   // Parse JavaVMInitArgs structure passed in
-  result = parse_each_vm_init_arg(args, &scp, &scp_assembly_required, COMMAND_LINE);
+  result = parse_each_vm_init_arg(args, &scp, &scp_assembly_required, Flag::COMMAND_LINE);
   if (result != JNI_OK) {
     return result;
   }
@@ -2510,7 +2520,7 @@ bool valid_hprof_or_jdwp_agent(char *name, bool is_path) {
 jint Arguments::parse_each_vm_init_arg(const JavaVMInitArgs* args,
                                        SysClassPath* scp_p,
                                        bool* scp_assembly_required_p,
-                                       FlagValueOrigin origin) {
+                                       Flag::Flags origin) {
   // Remaining part of option string
   const char* tail;
 
@@ -2647,16 +2657,16 @@ jint Arguments::parse_each_vm_init_arg(const JavaVMInitArgs* args,
       FLAG_SET_CMDLINE(bool, BackgroundCompilation, false);
     // -Xmn for compatibility with other JVM vendors
     } else if (match_option(option, "-Xmn", &tail)) {
-      julong long_initial_eden_size = 0;
-      ArgsRange errcode = parse_memory_size(tail, &long_initial_eden_size, 1);
+      julong long_initial_young_size = 0;
+      ArgsRange errcode = parse_memory_size(tail, &long_initial_young_size, 1);
       if (errcode != arg_in_range) {
         jio_fprintf(defaultStream::error_stream(),
-                    "Invalid initial eden size: %s\n", option->optionString);
+                    "Invalid initial young generation size: %s\n", option->optionString);
         describe_range_error(errcode);
         return JNI_EINVAL;
       }
-      FLAG_SET_CMDLINE(uintx, MaxNewSize, (uintx)long_initial_eden_size);
-      FLAG_SET_CMDLINE(uintx, NewSize, (uintx)long_initial_eden_size);
+      FLAG_SET_CMDLINE(uintx, MaxNewSize, (uintx)long_initial_young_size);
+      FLAG_SET_CMDLINE(uintx, NewSize, (uintx)long_initial_young_size);
     // -Xms
     } else if (match_option(option, "-Xms", &tail)) {
       julong long_initial_heap_size = 0;
@@ -3333,7 +3343,7 @@ jint Arguments::parse_options_environment_variable(const char* name, SysClassPat
       }
     }
 
-    return(parse_each_vm_init_arg(&vm_args, scp_p, scp_assembly_required_p, ENVIRON_VAR));
+    return(parse_each_vm_init_arg(&vm_args, scp_p, scp_assembly_required_p, Flag::ENVIRON_VAR));
   }
   return JNI_OK;
 }
@@ -3655,6 +3665,9 @@ jint Arguments::apply_ergo() {
 #else // INCLUDE_ALL_GCS
   assert(verify_serial_gc_flags(), "SerialGC unset");
 #endif // INCLUDE_ALL_GCS
+
+  // Initialize Metaspace flags and alignments.
+  Metaspace::ergo_initialize();
 
   // Set bytecode rewriting flags
   set_bytecode_flags();

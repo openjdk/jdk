@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -315,7 +315,6 @@ public class Rdn implements Serializable, Comparable<Object> {
      * @return  A negative integer, zero, or a positive integer as this Rdn
      *          is less than, equal to, or greater than the given Object.
      * @exception ClassCastException if obj is null or not a Rdn.
-     * <p>
      */
     public int compareTo(Object obj) {
         if (!(obj instanceof Rdn)) {

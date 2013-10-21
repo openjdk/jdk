@@ -72,6 +72,8 @@ import sun.security.provider.certpath.CertStoreHelper;
 import sun.security.util.Password;
 import javax.crypto.KeyGenerator;
 import javax.crypto.SecretKey;
+import javax.crypto.SecretKeyFactory;
+import javax.crypto.spec.PBEKeySpec;
 
 import sun.security.pkcs.PKCS9Attribute;
 import sun.security.tools.KeyStoreUtil;
@@ -190,6 +192,10 @@ public final class Main {
             KEYPASS, KEYSTORE, STOREPASS, STORETYPE,
             PROVIDERNAME, PROVIDERCLASS, PROVIDERARG,
             PROVIDERPATH, V),
+        IMPORTPASS("Imports.a.password",
+            ALIAS, KEYPASS, KEYALG, KEYSIZE, KEYSTORE,
+            STOREPASS, STORETYPE, PROVIDERNAME, PROVIDERCLASS,
+            PROVIDERARG, PROVIDERPATH, V, PROTECTED),
         IMPORTKEYSTORE("Imports.one.or.all.entries.from.another.keystore",
             SRCKEYSTORE, DESTKEYSTORE, SRCSTORETYPE,
             DESTSTORETYPE, SRCSTOREPASS, DESTSTOREPASS,
@@ -303,7 +309,7 @@ public final class Main {
         }
     };
 
-    private static final Class[] PARAM_STRING = { String.class };
+    private static final Class<?>[] PARAM_STRING = { String.class };
 
     private static final String NONE = "NONE";
     private static final String P11KEYSTORE = "PKCS11";
@@ -409,6 +415,8 @@ public final class Main {
                 command = GENKEYPAIR;
             } else if (collator.compare(flags, "-import") == 0) {
                 command = IMPORTCERT;
+            } else if (collator.compare(flags, "-importpassword") == 0) {
+                command = IMPORTPASS;
             }
             /*
              * Help
@@ -727,6 +735,7 @@ public final class Main {
                         command != GENSECKEY &&
                         command != IDENTITYDB &&
                         command != IMPORTCERT &&
+                        command != IMPORTPASS &&
                         command != IMPORTKEYSTORE &&
                         command != PRINTCRL) {
                         throw new Exception(rb.getString
@@ -808,6 +817,7 @@ public final class Main {
                         command == GENKEYPAIR ||
                         command == GENSECKEY ||
                         command == IMPORTCERT ||
+                        command == IMPORTPASS ||
                         command == IMPORTKEYSTORE ||
                         command == KEYCLONE ||
                         command == CHANGEALIAS ||
@@ -956,6 +966,13 @@ public final class Main {
             if (keyAlgName == null) {
                 keyAlgName = "DES";
             }
+            doGenSecretKey(alias, keyAlgName, keysize);
+            kssave = true;
+        } else if (command == IMPORTPASS) {
+            if (keyAlgName == null) {
+                keyAlgName = "PBE";
+            }
+            // password is stored as a secret key
             doGenSecretKey(alias, keyAlgName, keysize);
             kssave = true;
         } else if (command == IDENTITYDB) {
@@ -1419,6 +1436,43 @@ public final class Main {
         }
         return null;    // PKCS11, MSCAPI, or -protected
     }
+
+    /*
+     * Prompt the user for the password credential to be stored.
+     */
+    private char[] promptForCredential() throws Exception {
+        // Handle password supplied via stdin
+        if (System.console() == null) {
+            char[] importPass = Password.readPassword(System.in);
+            passwords.add(importPass);
+            return importPass;
+        }
+
+        int count;
+        for (count = 0; count < 3; count++) {
+            System.err.print(
+                rb.getString("Enter.the.password.to.be.stored."));
+            System.err.flush();
+            char[] entered = Password.readPassword(System.in);
+            passwords.add(entered);
+            System.err.print(rb.getString("Re.enter.password."));
+            char[] passAgain = Password.readPassword(System.in);
+            passwords.add(passAgain);
+            if (!Arrays.equals(entered, passAgain)) {
+                System.err.println(rb.getString("They.don.t.match.Try.again"));
+                continue;
+            }
+            return entered;
+        }
+
+        if (count == 3) {
+            throw new Exception(rb.getString
+                ("Too.many.failures.key.not.added.to.keystore"));
+        }
+
+        return null;
+    }
+
     /**
      * Creates a new secret key.
      */
@@ -1436,24 +1490,63 @@ public final class Main {
             throw new Exception(form.format(source));
         }
 
+        // Use the keystore's default PBE algorithm for entry protection
+        boolean useDefaultPBEAlgorithm = true;
         SecretKey secKey = null;
-        KeyGenerator keygen = KeyGenerator.getInstance(keyAlgName);
-        if (keysize != -1) {
-            keygen.init(keysize);
-        } else if ("DES".equalsIgnoreCase(keyAlgName)) {
-            keygen.init(56);
-        } else if ("DESede".equalsIgnoreCase(keyAlgName)) {
-            keygen.init(168);
+
+        if (keyAlgName.toUpperCase().startsWith("PBE")) {
+            SecretKeyFactory factory = SecretKeyFactory.getInstance("PBE");
+
+            // User is prompted for PBE credential
+            secKey =
+                factory.generateSecret(new PBEKeySpec(promptForCredential()));
+
+            // Check whether a specific PBE algorithm was specified
+            if (!"PBE".equalsIgnoreCase(keyAlgName)) {
+                useDefaultPBEAlgorithm = false;
+            }
+
+            if (verbose) {
+                MessageFormat form = new MessageFormat(rb.getString(
+                    "Generated.keyAlgName.secret.key"));
+                Object[] source =
+                    {useDefaultPBEAlgorithm ? "PBE" : secKey.getAlgorithm()};
+                System.err.println(form.format(source));
+            }
         } else {
-            throw new Exception(rb.getString
-                ("Please.provide.keysize.for.secret.key.generation"));
+            KeyGenerator keygen = KeyGenerator.getInstance(keyAlgName);
+            if (keysize == -1) {
+                if ("DES".equalsIgnoreCase(keyAlgName)) {
+                    keysize = 56;
+                } else if ("DESede".equalsIgnoreCase(keyAlgName)) {
+                    keysize = 168;
+                } else {
+                    throw new Exception(rb.getString
+                        ("Please.provide.keysize.for.secret.key.generation"));
+                }
+            }
+            keygen.init(keysize);
+            secKey = keygen.generateKey();
+
+            if (verbose) {
+                MessageFormat form = new MessageFormat(rb.getString
+                    ("Generated.keysize.bit.keyAlgName.secret.key"));
+                Object[] source = {new Integer(keysize),
+                                    secKey.getAlgorithm()};
+                System.err.println(form.format(source));
+            }
         }
 
-        secKey = keygen.generateKey();
         if (keyPass == null) {
             keyPass = promptForKeyPass(alias, null, storePass);
         }
-        keyStore.setKeyEntry(alias, secKey, keyPass, null);
+
+        if (useDefaultPBEAlgorithm) {
+            keyStore.setKeyEntry(alias, secKey, keyPass, null);
+        } else {
+            keyStore.setEntry(alias, new KeyStore.SecretKeyEntry(secKey),
+                new KeyStore.PasswordProtection(keyPass, keyAlgName, null));
+        }
     }
 
     /**

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -430,7 +430,7 @@ intptr_t* JavaCallArguments::parameters() {
   for(int i = 0; i < _size; i++) {
     if (_is_oop[i]) {
       // Handle conversion
-      _value[i] = (intptr_t)Handle::raw_resolve((oop *)_value[i]);
+      _value[i] = cast_from_oop<intptr_t>(Handle::raw_resolve((oop *)_value[i]));
     }
   }
   // Return argument vector

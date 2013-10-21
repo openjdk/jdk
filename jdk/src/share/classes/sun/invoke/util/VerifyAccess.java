@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,7 @@ package sun.invoke.util;
 
 import java.lang.reflect.Modifier;
 import static java.lang.reflect.Modifier.*;
+import sun.reflect.Reflection;
 
 /**
  * This class centralizes information about the JVM's linkage access control.
@@ -140,7 +141,17 @@ public class VerifyAccess {
     }
 
     static boolean isPublicSuperClass(Class<?> defc, Class<?> lookupClass) {
-        return isPublic(defc.getModifiers()) && defc.isAssignableFrom(lookupClass);
+        return isPublic(getClassModifiers(defc)) && defc.isAssignableFrom(lookupClass);
+    }
+
+    static int getClassModifiers(Class<?> c) {
+        // This would return the mask stored by javac for the source-level modifiers.
+        //   return c.getModifiers();
+        // But what we need for JVM access checks are the actual bits from the class header.
+        // ...But arrays and primitives are synthesized with their own odd flags:
+        if (c.isArray() || c.isPrimitive())
+            return c.getModifiers();
+        return Reflection.getClassAccessFlags(c);
     }
 
     /**
@@ -159,7 +170,7 @@ public class VerifyAccess {
         if (allowedModes == 0)  return false;
         assert((allowedModes & PUBLIC) != 0 &&
                (allowedModes & ~(ALL_ACCESS_MODES|PACKAGE_ALLOWED)) == 0);
-        int mods = refc.getModifiers();
+        int mods = getClassModifiers(refc);
         if (isPublic(mods))
             return true;
         if ((allowedModes & PACKAGE_ALLOWED) != 0 &&
@@ -172,7 +183,7 @@ public class VerifyAccess {
      * Decide if the given method type, attributed to a member or symbolic
      * reference of a given reference class, is really visible to that class.
      * @param type the supposed type of a member or symbolic reference of refc
-     * @param refc
+     * @param refc the class attempting to make the reference
      */
     public static boolean isTypeVisible(Class<?> type, Class<?> refc) {
         if (type == refc)  return true;  // easy check
@@ -197,7 +208,7 @@ public class VerifyAccess {
      * Decide if the given method type, attributed to a member or symbolic
      * reference of a given reference class, is really visible to that class.
      * @param type the supposed type of a member or symbolic reference of refc
-     * @param refc
+     * @param refc the class attempting to make the reference
      */
     public static boolean isTypeVisible(java.lang.invoke.MethodType type, Class<?> refc) {
         for (int n = -1, max = type.parameterCount(); n < max; n++) {
@@ -210,8 +221,8 @@ public class VerifyAccess {
 
     /**
      * Test if two classes have the same class loader and package qualifier.
-     * @param class1
-     * @param class2
+     * @param class1 a class
+     * @param class2 another class
      * @return whether they are in the same package
      */
     public static boolean isSamePackage(Class<?> class1, Class<?> class2) {
@@ -244,8 +255,8 @@ public class VerifyAccess {
     /**
      * Test if two classes are defined as part of the same package member (top-level class).
      * If this is true, they can share private access with each other.
-     * @param class1
-     * @param class2
+     * @param class1 a class
+     * @param class2 another class
      * @return whether they are identical or nested together
      */
     public static boolean isSamePackageMember(Class<?> class1, Class<?> class2) {
@@ -287,8 +298,8 @@ public class VerifyAccess {
     /**
      * Is the class loader of parentClass identical to, or an ancestor of,
      * the class loader of childClass?
-     * @param parentClass
-     * @param childClass
+     * @param parentClass a class
+     * @param childClass another class, which may be a descendent of the first class
      * @return whether parentClass precedes or equals childClass in class loader order
      */
     public static boolean classLoaderIsAncestor(Class<?> parentClass, Class<?> childClass) {

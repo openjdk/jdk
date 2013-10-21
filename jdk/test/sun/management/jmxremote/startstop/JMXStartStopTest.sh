@@ -551,6 +551,11 @@ do
  esac 
 done
 
+if [ "${COMPILEJAVA}" = "" ]
+then 
+  COMPILEJAVA=${TESTJAVA}
+fi
+
 if [ ${_compile} = "yes" ]
 then
  _compile

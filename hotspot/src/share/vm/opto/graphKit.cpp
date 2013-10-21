@@ -3713,7 +3713,8 @@ void GraphKit::g1_write_barrier_post(Node* oop_store,
   Node* no_base = __ top();
   float likely  = PROB_LIKELY(0.999);
   float unlikely  = PROB_UNLIKELY(0.999);
-  Node* zero = __ ConI(0);
+  Node* young_card = __ ConI((jint)G1SATBCardTableModRefBS::g1_young_card_val());
+  Node* dirty_card = __ ConI((jint)CardTableModRefBS::dirty_card_val());
   Node* zeroX = __ ConX(0);
 
   // Get the alias_index for raw card-mark memory
@@ -3769,8 +3770,16 @@ void GraphKit::g1_write_barrier_post(Node* oop_store,
         // load the original value of the card
         Node* card_val = __ load(__ ctrl(), card_adr, TypeInt::INT, T_BYTE, Compile::AliasIdxRaw);
 
-        __ if_then(card_val, BoolTest::ne, zero); {
-          g1_mark_card(ideal, card_adr, oop_store, alias_idx, index, index_adr, buffer, tf);
+        __ if_then(card_val, BoolTest::ne, young_card); {
+          sync_kit(ideal);
+          // Use Op_MemBarVolatile to achieve the effect of a StoreLoad barrier.
+          insert_mem_bar(Op_MemBarVolatile, oop_store);
+          __ sync_kit(this);
+
+          Node* card_val_reload = __ load(__ ctrl(), card_adr, TypeInt::INT, T_BYTE, Compile::AliasIdxRaw);
+          __ if_then(card_val_reload, BoolTest::ne, dirty_card); {
+            g1_mark_card(ideal, card_adr, oop_store, alias_idx, index, index_adr, buffer, tf);
+          } __ end_if();
         } __ end_if();
       } __ end_if();
     } __ end_if();
@@ -3849,9 +3858,9 @@ void GraphKit::store_String_value(Node* ctrl, Node* str, Node* value) {
   const TypeInstPtr* string_type = TypeInstPtr::make(TypePtr::NotNull, C->env()->String_klass(),
                                                      false, NULL, 0);
   const TypePtr* value_field_type = string_type->add_offset(value_offset);
-  int value_field_idx = C->get_alias_index(value_field_type);
-  store_to_memory(ctrl, basic_plus_adr(str, value_offset),
-                  value, T_OBJECT, value_field_idx);
+
+  store_oop_to_object(ctrl, str,  basic_plus_adr(str, value_offset), value_field_type,
+      value, TypeAryPtr::CHARS, T_OBJECT);
 }
 
 void GraphKit::store_String_length(Node* ctrl, Node* str, Node* value) {

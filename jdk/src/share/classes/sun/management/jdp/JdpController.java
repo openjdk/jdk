@@ -29,6 +29,12 @@ import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.UUID;
 
+import java.lang.management.ManagementFactory;
+import java.lang.management.RuntimeMXBean;
+import java.lang.reflect.Field;
+import java.lang.reflect.Method;
+import sun.management.VMManagement;
+
 /**
  * JdpController is responsible to create and manage a broadcast loop
  *
@@ -126,6 +132,25 @@ public final class JdpController {
         }
     }
 
+    // Get the process id of the current running Java process
+    private static Integer getProcessId() {
+        try {
+            // Get the current process id using a reflection hack
+            RuntimeMXBean runtime = ManagementFactory.getRuntimeMXBean();
+            Field jvm = runtime.getClass().getDeclaredField("jvm");
+            jvm.setAccessible(true);
+
+            VMManagement mgmt = (sun.management.VMManagement) jvm.get(runtime);
+            Method pid_method = mgmt.getClass().getDeclaredMethod("getProcessId");
+            pid_method.setAccessible(true);
+            Integer pid = (Integer) pid_method.invoke(mgmt);
+            return pid;
+        } catch(Exception ex) {
+            return null;
+        }
+    }
+
+
     /**
      * Starts discovery service
      *
@@ -172,6 +197,20 @@ public final class JdpController {
         // Put optional explicit java instance name to packet, if user doesn't specify
         // it the key is skipped. PacketWriter is responsible to skip keys having null value.
         packet.setInstanceName(instanceName);
+
+        // Set rmi server hostname if it explicitly specified by user with
+        // java.rmi.server.hostname
+        String rmiHostname = System.getProperty("java.rmi.server.hostname");
+        packet.setRmiHostname(rmiHostname);
+
+        // Set broadcast interval
+        packet.setBroadcastInterval(new Integer(pause).toString());
+
+        // Set process id
+        Integer pid = getProcessId();
+        if (pid != null) {
+           packet.setProcessId(pid.toString());
+        }
 
         JdpBroadcaster bcast = new JdpBroadcaster(address, sourceAddress, port, ttl);
 

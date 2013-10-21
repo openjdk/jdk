@@ -48,6 +48,7 @@ import java.lang.management.PlatformManagedObject;
  *
  * @see ManagementFactory#getPlatformMXBeans(Class)
  */
+@jdk.Exported
 public interface HotSpotDiagnosticMXBean extends PlatformManagedObject {
     /**
      * Dumps the heap to the <tt>outputFile</tt> file in the same

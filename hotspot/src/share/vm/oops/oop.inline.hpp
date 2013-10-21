@@ -183,7 +183,7 @@ inline bool oopDesc::is_null(narrowOop obj) { return obj == 0; }
 // in inner GC loops so these are separated.
 
 inline bool check_obj_alignment(oop obj) {
-  return (intptr_t)obj % MinObjAlignmentInBytes == 0;
+  return cast_from_oop<intptr_t>(obj) % MinObjAlignmentInBytes == 0;
 }
 
 inline narrowOop oopDesc::encode_heap_oop_not_null(oop v) {

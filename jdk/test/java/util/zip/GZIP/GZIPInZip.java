@@ -22,12 +22,14 @@
  */
 
 /* @test
- * @bug 7021870
- * @summary Reading last gzip chain member must not close the input stream
+ * @bug 7021870 8023431 8026756
+ * @summary Reading last gzip chain member must not close the input stream.
+ *          Garbage following gzip entry must be ignored.
  */
 
-import java.io.*;
-import java.util.*;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.util.zip.GZIPInputStream;
 import java.util.zip.GZIPOutputStream;
 import java.util.zip.ZipEntry;
@@ -37,60 +39,59 @@ import java.util.zip.ZipOutputStream;
 
 public class GZIPInZip {
 
-    private static volatile Throwable trouble;
+    public static void main(String[] args)
+            throws Throwable {
 
-    public static void main(String[] args) throws Throwable {
+        doTest(false, false);
+        doTest(false, true);
+        doTest(true, false);
+        doTest(true, true);
+    }
 
-        final PipedOutputStream pos = new PipedOutputStream();
-        final PipedInputStream pis = new PipedInputStream(pos);
+    private static void doTest(final boolean appendGarbage,
+                               final boolean limitGISBuff)
+            throws Throwable {
 
-        Thread compressor = new Thread() {
-            public void run() {
-                final byte[] xbuf = { 'x' };
-                try {
-                    ZipOutputStream zos = new ZipOutputStream(pos);
+        byte[] buf;
 
-                    zos.putNextEntry(new ZipEntry("a.gz"));
-                    GZIPOutputStream gos1 = new GZIPOutputStream(zos);
-                    gos1.write(xbuf); gos1.finish();
-                    zos.closeEntry();
+        try (ByteArrayOutputStream baos = new ByteArrayOutputStream();
+             ZipOutputStream zos = new ZipOutputStream(baos)) {
 
-                    zos.putNextEntry(new ZipEntry("b.gz"));
-                    GZIPOutputStream gos2 = new GZIPOutputStream(zos);
-                    gos2.write(xbuf); gos2.finish();
-                    zos.closeEntry();
+            final byte[] xbuf = { 'x' };
 
-                } catch (Throwable t) {
-                    trouble = t;
-                }
+            zos.putNextEntry(new ZipEntry("a.gz"));
+            GZIPOutputStream gos1 = new GZIPOutputStream(zos);
+            gos1.write(xbuf);
+            gos1.finish();
+            if (appendGarbage)
+                zos.write(xbuf);
+            zos.closeEntry();
+
+            zos.putNextEntry(new ZipEntry("b.gz"));
+            GZIPOutputStream gos2 = new GZIPOutputStream(zos);
+            gos2.write(xbuf);
+            gos2.finish();
+            zos.closeEntry();
+
+            zos.flush();
+            buf = baos.toByteArray();
+        }
+
+        try (ByteArrayInputStream bais = new ByteArrayInputStream(buf);
+             ZipInputStream zis = new ZipInputStream(bais)) {
+
+            zis.getNextEntry();
+            GZIPInputStream gis1 = limitGISBuff ?
+                    new GZIPInputStream(zis, 4) :
+                    new GZIPInputStream(zis);
+            // try to read more than the entry has
+            gis1.skip(2);
+
+            try {
+                zis.getNextEntry();
+            } catch (IOException e) {
+                throw new RuntimeException("ZIP stream was prematurely closed", e);
             }
-        };
-
-        Thread uncompressor = new Thread() {
-            public void run() {
-                try {
-                    ZipInputStream zis = new ZipInputStream(pis);
-                    zis.getNextEntry();
-                    InputStream gis = new GZIPInputStream(zis);
-                    // try to read more than the entry has
-                    gis.skip(2);
-
-                    try {
-                        zis.getNextEntry();
-                    } catch (IOException e) {
-                        throw new AssertionError("ZIP stream was prematurely closed");
-                    }
-
-                } catch (Throwable t) {
-                    trouble = t;
-                }
-            }
-        };
-
-        compressor.start(); uncompressor.start();
-        compressor.join();  uncompressor.join();
-
-        if (trouble != null)
-            throw trouble;
+        }
     }
 }

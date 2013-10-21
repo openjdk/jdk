@@ -269,6 +269,20 @@ public final class WscompileMessages {
         return localizer.localize(localizableWSIMPORT_USAGE(arg0));
     }
 
+    public static Localizable localizableWSGEN_USAGE_EXTENSIONS() {
+        return messageFactory.getMessage("wsgen.usage.extensions");
+    }
+
+    /**
+     *
+     * Extensions:
+     *   -Xnocompile                do not compile generated Java files
+     *
+     */
+    public static String WSGEN_USAGE_EXTENSIONS() {
+        return localizer.localize(localizableWSGEN_USAGE_EXTENSIONS());
+    }
+
     public static Localizable localizablePLEASE() {
         return messageFactory.getMessage("Please");
     }
@@ -281,6 +295,19 @@ public final class WscompileMessages {
      */
     public static String PLEASE() {
         return localizer.localize(localizablePLEASE());
+    }
+
+    public static Localizable localizableWSCOMPILE_EXISTING_OPTION(Object arg0) {
+        return messageFactory.getMessage("wscompile.existingOption", arg0);
+    }
+
+    /**
+     * Ignoring already defined option {0}
+     *
+     *
+     */
+    public static String WSCOMPILE_EXISTING_OPTION(Object arg0) {
+        return localizer.localize(localizableWSCOMPILE_EXISTING_OPTION(arg0));
     }
 
     public static Localizable localizableWSIMPORT_PARSING_WSDL() {
@@ -323,6 +350,8 @@ public final class WscompileMessages {
      *   -B<jaxbOption>            Pass this option to JAXB schema compiler
      *   -catalog <file>           specify catalog file to resolve external entity references
      *                             supports TR9401, XCatalog, and OASIS XML Catalog format.
+     *   -classpath <path>         specify where to find user class files and wsimport extensions
+     *   -cp <path>                specify where to find user class files and wsimport extensions
      *   -d <directory>            specify where to place generated output files
      *   -encoding <encoding>      specify character encoding used by source files
      *   -extension                allow vendor extensions - functionality not specified
@@ -332,6 +361,7 @@ public final class WscompileMessages {
      *   -help                     display help
      *   -httpproxy:<proxy>        set a HTTP proxy. Format is [user[:password]@]proxyHost:proxyPort
      *                             (port defaults to 8080)
+     *   -J<javacOption>           pass this option to javac
      *   -keep                     keep generated files
      *   -p <pkg>                  specifies the target package
      *   -quiet                    suppress wsimport output
@@ -343,7 +373,7 @@ public final class WscompileMessages {
      *   -version                  print version information
      *   -fullversion              print full version information
      *   -wsdllocation <location>  @WebServiceClient.wsdlLocation value
-     *   -clientjar <jarfile>      Creates the jar file of the generated artifacts along with the
+     *   -clientjar <jarfile>      creates the jar file of the generated artifacts along with the
      *                             WSDL metadata required for invoking the web service.
      *   -generateJWS              generate stubbed JWS implementation file
      *   -implDestDir <directory>  specify where to generate JWS implementation file
@@ -656,8 +686,8 @@ public final class WscompileMessages {
      * Usage: {0} [options] <SEI>
      *
      * where [options] include:
-     *   -classpath <path>          specify where to find input class files
-     *   -cp <path>                 same as -classpath <path>
+     *   -classpath <path>          specify where to find input class files and wsgen extensions
+     *   -cp <path>                 specify where to find input class files and wsgen extensions
      *   -d <directory>             specify where to place generated output files
      *   -encoding <encoding>       specify character encoding used by source files
      *   -extension                 allow vendor extensions - functionality not specified
@@ -665,6 +695,7 @@ public final class WscompileMessages {
      *                              result in applications that are not portable or
      *                              may not interoperate with other implementations
      *   -help                      display help
+     *   -J<javacOption>            pass this option to javac
      *   -keep                      keep generated files
      *   -r <directory>             resource destination directory, specify where to
      *                              place resouce files such as WSDLs
@@ -675,7 +706,7 @@ public final class WscompileMessages {
      *   -wsdl[:protocol]           generate a WSDL file. The protocol is optional.
      *                              Valid protocols are {1},
      *                              the default is soap1.1.
-     *                              The non stanadard protocols {2}
+     *                              The non standard protocols {2}
      *                              can only be used in conjunction with the
      *                              -extension option.
      *   -inlineSchemas             inline schemas in the generated wsdl. Must be
@@ -684,6 +715,7 @@ public final class WscompileMessages {
      *                              Used in conjunction with the -wsdl option.
      *   -portname <name>           specify the Port name to use in the generated WSDL
      *                              Used in conjunction with the -wsdl option.
+     *   -x <file>                  specify External Web Service Metadata xml descriptor
      *
      */
     public static String WSGEN_HELP(Object arg0, Object arg1, Object arg2) {
@@ -835,6 +867,18 @@ public final class WscompileMessages {
         return localizer.localize(localizableWSIMPORT_AUTH_INFO_LINENO(arg0, arg1));
     }
 
+    public static Localizable localizableWSGEN_SERVICENAME_MISSING_LOCALNAME(Object arg0) {
+        return messageFactory.getMessage("wsgen.servicename.missing.localname", arg0);
+    }
+
+    /**
+     * The service name "{0}" is missing a localname.
+     *
+     */
+    public static String WSGEN_SERVICENAME_MISSING_LOCALNAME(Object arg0) {
+        return localizer.localize(localizableWSGEN_SERVICENAME_MISSING_LOCALNAME(arg0));
+    }
+
     public static Localizable localizableWSGEN_USAGE(Object arg0) {
         return messageFactory.getMessage("wsgen.usage", arg0);
     }
@@ -847,18 +891,6 @@ public final class WscompileMessages {
      */
     public static String WSGEN_USAGE(Object arg0) {
         return localizer.localize(localizableWSGEN_USAGE(arg0));
-    }
-
-    public static Localizable localizableWSGEN_SERVICENAME_MISSING_LOCALNAME(Object arg0) {
-        return messageFactory.getMessage("wsgen.servicename.missing.localname", arg0);
-    }
-
-    /**
-     * The service name "{0}" is missing a localname.
-     *
-     */
-    public static String WSGEN_SERVICENAME_MISSING_LOCALNAME(Object arg0) {
-        return localizer.localize(localizableWSGEN_SERVICENAME_MISSING_LOCALNAME(arg0));
     }
 
     public static Localizable localizableWSGEN_SERVICENAME_MISSING_NAMESPACE(Object arg0) {

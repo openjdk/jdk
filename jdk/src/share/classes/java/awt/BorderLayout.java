@@ -96,7 +96,7 @@ import java.util.Hashtable;
  * alt="Diagram of an applet demonstrating BorderLayout.
  *      Each section of the BorderLayout contains a Button corresponding to its position in the layout, one of:
  *      North, West, Center, East, or South."
- * ALIGN=center HSPACE=10 VSPACE=7>
+ * style="float:center; margin: 7px 10px;">
  * <p>
  * The code for this applet is as follows:
  * <p>

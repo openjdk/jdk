@@ -310,8 +310,12 @@ public class HtmlWriter {
         if(winTitle != null && winTitle.length() > 0) {
             script.addAttr(HtmlAttr.TYPE, "text/javascript");
             String scriptCode = "<!--" + DocletConstants.NL +
-                    "    if (location.href.indexOf('is-external=true') == -1) {" + DocletConstants.NL +
-                    "        parent.document.title=\"" + winTitle + "\";" + DocletConstants.NL +
+                    "    try {" + DocletConstants.NL +
+                    "        if (location.href.indexOf('is-external=true') == -1) {" + DocletConstants.NL +
+                    "            parent.document.title=\"" + winTitle + "\";" + DocletConstants.NL +
+                    "        }" + DocletConstants.NL +
+                    "    }" + DocletConstants.NL +
+                    "    catch(err) {" + DocletConstants.NL +
                     "    }" + DocletConstants.NL +
                     "//-->" + DocletConstants.NL;
             RawHtml scriptContent = new RawHtml(scriptCode);

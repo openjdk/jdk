@@ -351,7 +351,7 @@ JVM_NewMultiArray(JNIEnv *env, jclass eltClass, jintArray dim);
  * java.lang.Class and java.lang.ClassLoader
  */
 
-#define JVM_DEPTH -1
+#define JVM_CALLER_DEPTH -1
 
 /*
  * Returns the immediate caller class of the native method invoking
@@ -472,6 +472,11 @@ JVM_GetClassAnnotations(JNIEnv *env, jclass cls);
 JNIEXPORT jbyteArray JNICALL
 JVM_GetClassTypeAnnotations(JNIEnv *env, jclass cls);
 
+JNIEXPORT jbyteArray JNICALL
+JVM_GetFieldTypeAnnotations(JNIEnv *env, jobject field);
+
+JNIEXPORT jbyteArray JNICALL
+JVM_GetMethodTypeAnnotations(JNIEnv *env, jobject method);
 
 /*
  * New (JDK 1.4) reflection implementation
