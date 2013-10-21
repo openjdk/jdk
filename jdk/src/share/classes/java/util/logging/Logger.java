@@ -1640,6 +1640,10 @@ public class Logger {
         }
     }
 
+    final boolean isLevelInitialized() {
+        return levelObject != null;
+    }
+
     /**
      * Get the log Level that has been specified for this Logger.
      * The result may be null, which means that this logger's
