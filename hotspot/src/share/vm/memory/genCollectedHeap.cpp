@@ -1053,12 +1053,6 @@ void GenCollectedHeap::save_marks() {
   }
 }
 
-void GenCollectedHeap::compute_new_generation_sizes(int collectedGen) {
-  for (int i = 0; i <= collectedGen; i++) {
-    _gens[i]->compute_new_size();
-  }
-}
-
 GenCollectedHeap* GenCollectedHeap::heap() {
   assert(_gch != NULL, "Uninitialized access to GenCollectedHeap::heap()");
   assert(_gch->kind() == CollectedHeap::GenCollectedHeap, "not a generational heap");

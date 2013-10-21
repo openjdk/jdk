@@ -54,7 +54,6 @@ ASPSOldGen::ASPSOldGen(size_t initial_size,
                        int level) :
   PSOldGen(initial_size, min_size, size_limit, gen_name, level),
   _gen_size_limit(size_limit)
-
 {}
 
 ASPSOldGen::ASPSOldGen(PSVirtualSpace* vs,
@@ -65,13 +64,11 @@ ASPSOldGen::ASPSOldGen(PSVirtualSpace* vs,
                        int level) :
   PSOldGen(initial_size, min_size, size_limit, gen_name, level),
   _gen_size_limit(size_limit)
-
 {
   _virtual_space = vs;
 }
 
 void ASPSOldGen::initialize_work(const char* perf_data_name, int level) {
-
   PSOldGen::initialize_work(perf_data_name, level);
 
   // The old gen can grow to gen_size_limit().  _reserve reflects only
