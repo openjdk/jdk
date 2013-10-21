@@ -320,7 +320,7 @@ G1CollectorPolicy::G1CollectorPolicy() :
 
 void G1CollectorPolicy::initialize_flags() {
   _min_alignment = HeapRegion::GrainBytes;
-  size_t card_table_alignment = GenRemSet::max_alignment_constraint(rem_set_name());
+  size_t card_table_alignment = GenRemSet::max_alignment_constraint(GenRemSet::CardTable);
   size_t page_size = UseLargePages ? os::large_page_size() : os::vm_page_size();
   _max_alignment = MAX3(card_table_alignment, _min_alignment, page_size);
   if (SurvivorRatio < 1) {
