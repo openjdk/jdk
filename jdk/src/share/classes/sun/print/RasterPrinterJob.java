@@ -120,12 +120,12 @@ public abstract class RasterPrinterJob extends PrinterJob {
     /**
      * Pageable MAX pages
      */
-    private static final int MAX_UNKNOWN_PAGES = 9999;
+    protected static final int MAX_UNKNOWN_PAGES = 9999;
 
-    private static final int PD_ALLPAGES = 0x00000000;
-    private static final int PD_SELECTION = 0x00000001;
-    private static final int PD_PAGENUMS = 0x00000002;
-    private static final int PD_NOSELECTION = 0x00000004;
+    protected static final int PD_ALLPAGES = 0x00000000;
+    protected static final int PD_SELECTION = 0x00000001;
+    protected static final int PD_PAGENUMS = 0x00000002;
+    protected static final int PD_NOSELECTION = 0x00000004;
 
     /**
      * Maximum amount of memory in bytes to use for the
@@ -1780,7 +1780,7 @@ public abstract class RasterPrinterJob extends PrinterJob {
             return mCollate;
     }
 
-    private final int getSelectAttrib() {
+    protected final int getSelectAttrib() {
         if (attributes != null) {
             SunPageSelection pages =
                 (SunPageSelection)attributes.get(SunPageSelection.class);
@@ -1796,7 +1796,7 @@ public abstract class RasterPrinterJob extends PrinterJob {
     }
 
     //returns 1-based index for "From" page
-    private final int getFromPageAttrib() {
+    protected final int getFromPageAttrib() {
         if (attributes != null) {
             PageRanges pageRangesAttr =
                 (PageRanges)attributes.get(PageRanges.class);
@@ -1809,7 +1809,7 @@ public abstract class RasterPrinterJob extends PrinterJob {
     }
 
     //returns 1-based index for "To" page
-    private final int getToPageAttrib() {
+    protected final int getToPageAttrib() {
         if (attributes != null) {
             PageRanges pageRangesAttr =
                 (PageRanges)attributes.get(PageRanges.class);
@@ -1821,7 +1821,7 @@ public abstract class RasterPrinterJob extends PrinterJob {
         return getMaxPageAttrib();
     }
 
-    private final int getMinPageAttrib() {
+    protected final int getMinPageAttrib() {
         if (attributes != null) {
             SunMinMaxPage s =
                 (SunMinMaxPage)attributes.get(SunMinMaxPage.class);
@@ -1832,7 +1832,7 @@ public abstract class RasterPrinterJob extends PrinterJob {
         return 1;
     }
 
-    private final int getMaxPageAttrib() {
+    protected final int getMaxPageAttrib() {
         if (attributes != null) {
             SunMinMaxPage s =
                 (SunMinMaxPage)attributes.get(SunMinMaxPage.class);
