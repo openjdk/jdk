@@ -36,10 +36,8 @@ default:
 TEST_FOR_NON_GNUMAKE:sh=echo You are not using GNU make/gmake, this is a requirement. Check your path. 1>&2 && exit 1
 
 # Assume we have GNU make, but check version.
-ifeq (,$(findstring 3.81,$(MAKE_VERSION)))
-  ifeq (,$(findstring 3.82,$(MAKE_VERSION)))
-    $(error This version of GNU Make is too low ($(MAKE_VERSION)). Check your path, or upgrade to 3.81 or newer.)
-  endif
+ifeq ($(strip $(foreach v, 3.81 3.82 4.%, $(filter $v, $(MAKE_VERSION)))), )
+  $(error This version of GNU Make is too low ($(MAKE_VERSION)). Check your path, or upgrade to 3.81 or newer.)
 endif
 
 # Locate this Makefile

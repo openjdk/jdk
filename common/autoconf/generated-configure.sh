@@ -3822,7 +3822,7 @@ fi
 #CUSTOM_AUTOCONF_INCLUDE
 
 # Do not change or remove the following line, it is needed for consistency checks:
-DATE_WHEN_GENERATED=1382084973
+DATE_WHEN_GENERATED=1382349488
 
 ###############################################################################
 #
@@ -8273,7 +8273,7 @@ $as_echo "$as_me: Testing potential make at $MAKE_CANDIDATE, found using $DESCRI
       { $as_echo "$as_me:${as_lineno-$LINENO}: Found potential make at $MAKE_CANDIDATE, however, this is not GNU Make. Ignoring." >&5
 $as_echo "$as_me: Found potential make at $MAKE_CANDIDATE, however, this is not GNU Make. Ignoring." >&6;}
     else
-      IS_MODERN_MAKE=`$ECHO $MAKE_VERSION_STRING | $GREP '3.8[12346789]'`
+      IS_MODERN_MAKE=`$ECHO $MAKE_VERSION_STRING | $GREP '\(3\.8[12]\)\|\(4\.\)'`
       if test "x$IS_MODERN_MAKE" = x; then
         { $as_echo "$as_me:${as_lineno-$LINENO}: Found GNU make at $MAKE_CANDIDATE, however this is not version 3.81 or later. (it is: $MAKE_VERSION_STRING). Ignoring." >&5
 $as_echo "$as_me: Found GNU make at $MAKE_CANDIDATE, however this is not version 3.81 or later. (it is: $MAKE_VERSION_STRING). Ignoring." >&6;}
@@ -8630,7 +8630,7 @@ $as_echo "$as_me: Testing potential make at $MAKE_CANDIDATE, found using $DESCRI
       { $as_echo "$as_me:${as_lineno-$LINENO}: Found potential make at $MAKE_CANDIDATE, however, this is not GNU Make. Ignoring." >&5
 $as_echo "$as_me: Found potential make at $MAKE_CANDIDATE, however, this is not GNU Make. Ignoring." >&6;}
     else
-      IS_MODERN_MAKE=`$ECHO $MAKE_VERSION_STRING | $GREP '3.8[12346789]'`
+      IS_MODERN_MAKE=`$ECHO $MAKE_VERSION_STRING | $GREP '\(3\.8[12]\)\|\(4\.\)'`
       if test "x$IS_MODERN_MAKE" = x; then
         { $as_echo "$as_me:${as_lineno-$LINENO}: Found GNU make at $MAKE_CANDIDATE, however this is not version 3.81 or later. (it is: $MAKE_VERSION_STRING). Ignoring." >&5
 $as_echo "$as_me: Found GNU make at $MAKE_CANDIDATE, however this is not version 3.81 or later. (it is: $MAKE_VERSION_STRING). Ignoring." >&6;}
@@ -8984,7 +8984,7 @@ $as_echo "$as_me: Testing potential make at $MAKE_CANDIDATE, found using $DESCRI
       { $as_echo "$as_me:${as_lineno-$LINENO}: Found potential make at $MAKE_CANDIDATE, however, this is not GNU Make. Ignoring." >&5
 $as_echo "$as_me: Found potential make at $MAKE_CANDIDATE, however, this is not GNU Make. Ignoring." >&6;}
     else
-      IS_MODERN_MAKE=`$ECHO $MAKE_VERSION_STRING | $GREP '3.8[12346789]'`
+      IS_MODERN_MAKE=`$ECHO $MAKE_VERSION_STRING | $GREP '\(3\.8[12]\)\|\(4\.\)'`
       if test "x$IS_MODERN_MAKE" = x; then
         { $as_echo "$as_me:${as_lineno-$LINENO}: Found GNU make at $MAKE_CANDIDATE, however this is not version 3.81 or later. (it is: $MAKE_VERSION_STRING). Ignoring." >&5
 $as_echo "$as_me: Found GNU make at $MAKE_CANDIDATE, however this is not version 3.81 or later. (it is: $MAKE_VERSION_STRING). Ignoring." >&6;}
@@ -9343,7 +9343,7 @@ $as_echo "$as_me: Testing potential make at $MAKE_CANDIDATE, found using $DESCRI
       { $as_echo "$as_me:${as_lineno-$LINENO}: Found potential make at $MAKE_CANDIDATE, however, this is not GNU Make. Ignoring." >&5
 $as_echo "$as_me: Found potential make at $MAKE_CANDIDATE, however, this is not GNU Make. Ignoring." >&6;}
     else
-      IS_MODERN_MAKE=`$ECHO $MAKE_VERSION_STRING | $GREP '3.8[12346789]'`
+      IS_MODERN_MAKE=`$ECHO $MAKE_VERSION_STRING | $GREP '\(3\.8[12]\)\|\(4\.\)'`
       if test "x$IS_MODERN_MAKE" = x; then
         { $as_echo "$as_me:${as_lineno-$LINENO}: Found GNU make at $MAKE_CANDIDATE, however this is not version 3.81 or later. (it is: $MAKE_VERSION_STRING). Ignoring." >&5
 $as_echo "$as_me: Found GNU make at $MAKE_CANDIDATE, however this is not version 3.81 or later. (it is: $MAKE_VERSION_STRING). Ignoring." >&6;}
@@ -9696,7 +9696,7 @@ $as_echo "$as_me: Testing potential make at $MAKE_CANDIDATE, found using $DESCRI
       { $as_echo "$as_me:${as_lineno-$LINENO}: Found potential make at $MAKE_CANDIDATE, however, this is not GNU Make. Ignoring." >&5
 $as_echo "$as_me: Found potential make at $MAKE_CANDIDATE, however, this is not GNU Make. Ignoring." >&6;}
     else
-      IS_MODERN_MAKE=`$ECHO $MAKE_VERSION_STRING | $GREP '3.8[12346789]'`
+      IS_MODERN_MAKE=`$ECHO $MAKE_VERSION_STRING | $GREP '\(3\.8[12]\)\|\(4\.\)'`
       if test "x$IS_MODERN_MAKE" = x; then
         { $as_echo "$as_me:${as_lineno-$LINENO}: Found GNU make at $MAKE_CANDIDATE, however this is not version 3.81 or later. (it is: $MAKE_VERSION_STRING). Ignoring." >&5
 $as_echo "$as_me: Found GNU make at $MAKE_CANDIDATE, however this is not version 3.81 or later. (it is: $MAKE_VERSION_STRING). Ignoring." >&6;}
