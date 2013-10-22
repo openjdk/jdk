@@ -618,7 +618,7 @@ import java.util.stream.StreamSupport;
  * are in conformance with the recommendation of <i>Annex C: Compatibility Properties</i>
  * of <a href="http://www.unicode.org/reports/tr18/"><i>Unicode Regular Expression
  * </i></a>, when {@link #UNICODE_CHARACTER_CLASS} flag is specified.
- * <p>
+ *
  * <table border="0" cellpadding="1" cellspacing="0"
  *  summary="predefined and posix character classes in Unicode mode">
  * <tr align="left">

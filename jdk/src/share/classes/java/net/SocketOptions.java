@@ -134,7 +134,7 @@ public interface SocketOptions {
      * previously written data.
      *<P>
      * Valid for TCP only: SocketImpl.
-     * <P>
+     *
      * @see Socket#setTcpNoDelay
      * @see Socket#getTcpNoDelay
      */
@@ -155,7 +155,7 @@ public interface SocketOptions {
      * This option <B>must</B> be specified in the constructor.
      * <P>
      * Valid for: SocketImpl, DatagramSocketImpl
-     * <P>
+     *
      * @see Socket#getLocalAddress
      * @see DatagramSocket#getLocalAddress
      */
@@ -186,7 +186,7 @@ public interface SocketOptions {
      * want to use other than the system default.  Takes/returns an InetAddress.
      * <P>
      * Valid for Multicast: DatagramSocketImpl
-     * <P>
+     *
      * @see MulticastSocket#setInterface(InetAddress)
      * @see MulticastSocket#getInterface()
      */
