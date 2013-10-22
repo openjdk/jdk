@@ -25,6 +25,7 @@
 package com.sun.tools.javac.code;
 
 import java.lang.annotation.Annotation;
+import java.lang.annotation.Inherited;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 
@@ -112,7 +113,8 @@ public abstract class AnnoConstruct implements AnnotatedConstruct {
         }
 
         // Deal with inherited annotations
-        if (direct == null && container == null)
+        if (direct == null && container == null &&
+                annoType.isAnnotationPresent(Inherited.class))
             return getInheritedAnnotations(annoType);
 
         // Pack them in an array
