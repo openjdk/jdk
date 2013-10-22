@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -98,11 +98,4 @@ public final class RSAPrivateKeyImpl extends PKCS8Key implements RSAPrivateKey {
     public BigInteger getPrivateExponent() {
         return d;
     }
-
-    // return a string representation of this key for debugging
-    public String toString() {
-        return "Sun RSA private key, " + n.bitLength() + " bits\n  modulus: "
-                + n + "\n  private exponent: " + d;
-    }
-
 }
