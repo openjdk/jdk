@@ -116,7 +116,7 @@ public class XRCompositeManager {
         con.renderRectangle(solidSrcPictXID, XRUtils.PictOpSrc,
                 XRColor.FULL_ALPHA, 0, 0, 1, 1);
         solidSrcPict = new XRSurfaceData.XRInternalSurfaceData(con,
-                solidSrcPictXID, null);
+                solidSrcPictXID);
         setForeground(0);
 
         int extraAlphaMask = con.createPixmap(parentXid, 8, 1, 1);
@@ -198,7 +198,7 @@ public class XRCompositeManager {
             } catch (NoninvertibleTransformException e) {
                 at.setToIdentity();
             }
-            src.validateAsSource(at, -1, -1);
+            src.validateAsSource(at, -1, XRUtils.ATransOpToXRQuality(sg2d.interpolationType));
         }
     }
 

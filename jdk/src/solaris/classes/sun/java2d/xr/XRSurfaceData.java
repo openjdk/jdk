@@ -395,6 +395,7 @@ public abstract class XRSurfaceData extends XSurfaceData {
 
     boolean transformInUse = false;
     AffineTransform validatedSourceTransform = new AffineTransform();
+    AffineTransform staticSrcTx = null;
     int validatedRepeat = XRUtils.RepeatNone;
     int validatedFilter = XRUtils.FAST;
 
@@ -423,13 +424,24 @@ public abstract class XRSurfaceData extends XSurfaceData {
             }
         } else if (!transformInUse ||
                    (transformInUse && !sxForm.equals(validatedSourceTransform))) {
+
             validatedSourceTransform.setTransform(sxForm.getScaleX(),
                                                   sxForm.getShearY(),
                                                   sxForm.getShearX(),
                                                   sxForm.getScaleY(),
                                                   sxForm.getTranslateX(),
                                                   sxForm.getTranslateY());
-            renderQueue.setPictureTransform(picture, validatedSourceTransform);
+
+            AffineTransform srcTransform = validatedSourceTransform;
+            if(staticSrcTx != null) {
+                // Apply static transform set when used as texture or gradient.
+                // Create a copy to not modify validatedSourceTransform as
+                // this would confuse the validation logic.
+                srcTransform = new AffineTransform(validatedSourceTransform);
+                srcTransform.preConcatenate(staticSrcTx);
+            }
+
+            renderQueue.setPictureTransform(picture, srcTransform);
             transformInUse = true;
         }
 
@@ -547,15 +559,10 @@ public abstract class XRSurfaceData extends XSurfaceData {
     }
 
     public static class XRInternalSurfaceData extends XRSurfaceData {
-        public XRInternalSurfaceData(XRBackend renderQueue, int pictXid,
-                                     AffineTransform transform) {
+        public XRInternalSurfaceData(XRBackend renderQueue, int pictXid) {
           super(renderQueue);
           this.picture = pictXid;
-          this.validatedSourceTransform = transform;
-
-          if (validatedSourceTransform != null) {
-              transformInUse = true;
-          }
+          this.transformInUse = false;
         }
 
         public boolean canSourceSendExposures(int x, int y, int w, int h) {
@@ -676,5 +683,9 @@ public abstract class XRSurfaceData extends XSurfaceData {
 
     public XRGraphicsConfig getGraphicsConfig() {
         return graphicsConfig;
+    }
+
+    public void setStaticSrcTx(AffineTransform staticSrcTx) {
+        this.staticSrcTx = staticSrcTx;
     }
 }
