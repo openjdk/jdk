@@ -31,6 +31,7 @@
 #include "Trace.h"
 #include "Disposer.h"
 #include "lcms2.h"
+#include "jlong.h"
 
 
 #define ALIGNLONG(x) (((x)+3) & ~(3))         // Aligns to DWORD boundary
@@ -98,13 +99,6 @@ typedef struct lcmsProfile_s {
     cmsHPROFILE pf;
 } lcmsProfile_t, *lcmsProfile_p;
 
-typedef union storeID_s {    /* store SProfile stuff in a Java Long */
-    lcmsProfile_p lcmsPf;
-    cmsHTRANSFORM xf;
-    jobject jobj;
-    jlong j;
-} storeID_t, *storeID_p;
-
 typedef union {
     cmsTagSignature cms;
     jint j;
@@ -148,23 +142,21 @@ JNIEXPORT jint JNICALL JNI_OnLoad(JavaVM *jvm, void *reserved) {
 }
 
 void LCMS_freeProfile(JNIEnv *env, jlong ptr) {
-    storeID_t sProfile;
-    sProfile.j = ptr;
+    lcmsProfile_p p = (lcmsProfile_p)jlong_to_ptr(ptr);
 
-    if (sProfile.lcmsPf != NULL) {
-        if (sProfile.lcmsPf->pf != NULL) {
-            cmsCloseProfile(sProfile.lcmsPf->pf);
+    if (p != NULL) {
+        if (p->pf != NULL) {
+            cmsCloseProfile(p->pf);
         }
-        free(sProfile.lcmsPf);
+        free(p);
     }
 }
 
 void LCMS_freeTransform(JNIEnv *env, jlong ID)
 {
-    storeID_t sTrans;
-    sTrans.j = ID;
+    cmsHTRANSFORM sTrans = jlong_to_ptr(ID);
     /* Passed ID is always valid native ref so there is no check for zero */
-    cmsDeleteTransform(sTrans.xf);
+    cmsDeleteTransform(sTrans);
 }
 
 /*
@@ -179,7 +171,7 @@ JNIEXPORT jlong JNICALL Java_sun_java2d_cmm_lcms_LCMS_createNativeTransform
 {
     cmsHPROFILE _iccArray[DF_ICC_BUF_SIZE];
     cmsHPROFILE *iccArray = &_iccArray[0];
-    storeID_t sTrans;
+    cmsHTRANSFORM sTrans = NULL;
     int i, j, size;
     jlong* ids;
 
@@ -213,11 +205,10 @@ JNIEXPORT jlong JNICALL Java_sun_java2d_cmm_lcms_LCMS_createNativeTransform
 
     j = 0;
     for (i = 0; i < size; i++) {
-        cmsHPROFILE icc;
         cmsColorSpaceSignature cs;
+        lcmsProfile_p profilePtr = (lcmsProfile_p)jlong_to_ptr(ids[i]);
+        cmsHPROFILE icc = profilePtr->pf;
 
-        sTrans.j = ids[i];
-        icc = sTrans.lcmsPf->pf;
         iccArray[j++] = icc;
 
         /* Middle non-abstract profiles should be doubled before passing to
@@ -232,26 +223,26 @@ JNIEXPORT jlong JNICALL Java_sun_java2d_cmm_lcms_LCMS_createNativeTransform
         }
     }
 
-    sTrans.xf = cmsCreateMultiprofileTransform(iccArray, j,
+    sTrans = cmsCreateMultiprofileTransform(iccArray, j,
         inFormatter, outFormatter, renderType, 0);
 
     (*env)->ReleaseLongArrayElements(env, profileIDs, ids, 0);
 
-    if (sTrans.xf == NULL) {
+    if (sTrans == NULL) {
         J2dRlsTraceLn(J2D_TRACE_ERROR, "LCMS_createNativeTransform: "
-                                       "sTrans.xf == NULL");
+                                       "sTrans == NULL");
         if ((*env)->ExceptionOccurred(env) == NULL) {
             JNU_ThrowByName(env, "java/awt/color/CMMException",
                             "Cannot get color transform");
         }
     } else {
-        Disposer_AddRecord(env, disposerRef, LCMS_freeTransform, sTrans.j);
+        Disposer_AddRecord(env, disposerRef, LCMS_freeTransform, ptr_to_jlong(sTrans));
     }
 
     if (iccArray != &_iccArray[0]) {
         free(iccArray);
     }
-    return sTrans.j;
+    return ptr_to_jlong(sTrans);
 }
 
 
@@ -265,15 +256,13 @@ JNIEXPORT jlong JNICALL Java_sun_java2d_cmm_lcms_LCMS_loadProfileNative
 {
     jbyte* dataArray;
     jint dataSize;
-    storeID_t sProf;
+    lcmsProfile_p sProf = NULL;
     cmsHPROFILE pf;
 
     if (JNU_IsNull(env, data)) {
         JNU_ThrowIllegalArgumentException(env, "Invalid profile data");
         return 0L;
     }
-
-    sProf.j = 0L;
 
     dataArray = (*env)->GetByteArrayElements (env, data, 0);
     if (dataArray == NULL) {
@@ -307,17 +296,17 @@ JNIEXPORT jlong JNICALL Java_sun_java2d_cmm_lcms_LCMS_loadProfileNative
 
     if (pf != NULL) {
         // create profile holder
-        sProf.lcmsPf = (lcmsProfile_p)malloc(sizeof(lcmsProfile_t));
-        if (sProf.lcmsPf != NULL) {
+        sProf = (lcmsProfile_p)malloc(sizeof(lcmsProfile_t));
+        if (sProf != NULL) {
             // register the disposer record
-            sProf.lcmsPf->pf = pf;
-            Disposer_AddRecord(env, disposerRef, LCMS_freeProfile, sProf.j);
+            sProf->pf = pf;
+            Disposer_AddRecord(env, disposerRef, LCMS_freeProfile, ptr_to_jlong(sProf));
         } else {
             cmsCloseProfile(pf);
         }
     }
 
-    return sProf.j;
+    return ptr_to_jlong(sProf);
 }
 
 /*
@@ -328,11 +317,10 @@ JNIEXPORT jlong JNICALL Java_sun_java2d_cmm_lcms_LCMS_loadProfileNative
 JNIEXPORT jint JNICALL Java_sun_java2d_cmm_lcms_LCMS_getProfileSizeNative
   (JNIEnv *env, jobject obj, jlong id)
 {
-    storeID_t sProf;
+    lcmsProfile_p sProf = (lcmsProfile_p)jlong_to_ptr(id);
     cmsUInt32Number pfSize = 0;
-    sProf.j = id;
 
-    if (cmsSaveProfileToMem(sProf.lcmsPf->pf, NULL, &pfSize) && ((jint)pfSize > 0)) {
+    if (cmsSaveProfileToMem(sProf->pf, NULL, &pfSize) && ((jint)pfSize > 0)) {
         return (jint)pfSize;
     } else {
       JNU_ThrowByName(env, "java/awt/color/CMMException",
@@ -349,16 +337,14 @@ JNIEXPORT jint JNICALL Java_sun_java2d_cmm_lcms_LCMS_getProfileSizeNative
 JNIEXPORT void JNICALL Java_sun_java2d_cmm_lcms_LCMS_getProfileDataNative
   (JNIEnv *env, jobject obj, jlong id, jbyteArray data)
 {
-    storeID_t sProf;
+    lcmsProfile_p sProf = (lcmsProfile_p)jlong_to_ptr(id);
     jint size;
     jbyte* dataArray;
     cmsUInt32Number pfSize = 0;
     cmsBool status;
 
-    sProf.j = id;
-
     // determine actual profile size
-    if (!cmsSaveProfileToMem(sProf.lcmsPf->pf, NULL, &pfSize)) {
+    if (!cmsSaveProfileToMem(sProf->pf, NULL, &pfSize)) {
         JNU_ThrowByName(env, "java/awt/color/CMMException",
                         "Can not access specified profile.");
         return;
@@ -378,7 +364,7 @@ JNIEXPORT void JNICALL Java_sun_java2d_cmm_lcms_LCMS_getProfileDataNative
         return;
     }
 
-    status = cmsSaveProfileToMem(sProf.lcmsPf->pf, dataArray, &pfSize);
+    status = cmsSaveProfileToMem(sProf->pf, dataArray, &pfSize);
 
     (*env)->ReleaseByteArrayElements (env, data, dataArray, 0);
 
@@ -403,7 +389,7 @@ static cmsHPROFILE _writeCookedTag(cmsHPROFILE pfTarget, cmsTagSignature sig, jb
 JNIEXPORT jbyteArray JNICALL Java_sun_java2d_cmm_lcms_LCMS_getTagNative
   (JNIEnv *env, jobject obj, jlong id, jint tagSig)
 {
-    storeID_t sProf;
+    lcmsProfile_p sProf = (lcmsProfile_p)jlong_to_ptr(id);
     TagSignature_t sig;
     cmsInt32Number tagSize;
 
@@ -412,7 +398,6 @@ JNIEXPORT jbyteArray JNICALL Java_sun_java2d_cmm_lcms_LCMS_getTagNative
 
     jint bufSize;
 
-    sProf.j = id;
     sig.j = tagSig;
 
     if (tagSig == SigHead) {
@@ -434,7 +419,7 @@ JNIEXPORT jbyteArray JNICALL Java_sun_java2d_cmm_lcms_LCMS_getTagNative
             return NULL;
         }
 
-        status = _getHeaderInfo(sProf.lcmsPf->pf, dataArray, bufSize);
+        status = _getHeaderInfo(sProf->pf, dataArray, bufSize);
 
         (*env)->ReleaseByteArrayElements (env, data, dataArray, 0);
 
@@ -447,8 +432,8 @@ JNIEXPORT jbyteArray JNICALL Java_sun_java2d_cmm_lcms_LCMS_getTagNative
         return data;
     }
 
-    if (cmsIsTag(sProf.lcmsPf->pf, sig.cms)) {
-        tagSize = cmsReadRawTag(sProf.lcmsPf->pf, sig.cms, NULL, 0);
+    if (cmsIsTag(sProf->pf, sig.cms)) {
+        tagSize = cmsReadRawTag(sProf->pf, sig.cms, NULL, 0);
     } else {
         JNU_ThrowByName(env, "java/awt/color/CMMException",
                         "ICC profile tag not found");
@@ -469,7 +454,7 @@ JNIEXPORT jbyteArray JNICALL Java_sun_java2d_cmm_lcms_LCMS_getTagNative
         return NULL;
     }
 
-    bufSize = cmsReadRawTag(sProf.lcmsPf->pf, sig.cms, dataArray, tagSize);
+    bufSize = cmsReadRawTag(sProf->pf, sig.cms, dataArray, tagSize);
 
     (*env)->ReleaseByteArrayElements (env, data, dataArray, 0);
 
@@ -489,7 +474,7 @@ JNIEXPORT jbyteArray JNICALL Java_sun_java2d_cmm_lcms_LCMS_getTagNative
 JNIEXPORT void JNICALL Java_sun_java2d_cmm_lcms_LCMS_setTagDataNative
   (JNIEnv *env, jobject obj, jlong id, jint tagSig, jbyteArray data)
 {
-    storeID_t sProf;
+    lcmsProfile_p sProf = (lcmsProfile_p)jlong_to_ptr(id);
     cmsHPROFILE pfReplace = NULL;
 
     TagSignature_t sig;
@@ -497,7 +482,6 @@ JNIEXPORT void JNICALL Java_sun_java2d_cmm_lcms_LCMS_setTagDataNative
     jbyte* dataArray;
     int tagSize;
 
-    sProf.j = id;
     sig.j = tagSig;
 
     if (JNU_IsNull(env, data)) {
@@ -515,14 +499,14 @@ JNIEXPORT void JNICALL Java_sun_java2d_cmm_lcms_LCMS_setTagDataNative
     }
 
     if (tagSig == SigHead) {
-        status  = _setHeaderInfo(sProf.lcmsPf->pf, dataArray, tagSize);
+        status  = _setHeaderInfo(sProf->pf, dataArray, tagSize);
     } else {
         /*
         * New strategy for generic tags: create a place holder,
         * dump all existing tags there, dump externally supplied
         * tag, and return the new profile to the java.
         */
-        pfReplace = _writeCookedTag(sProf.lcmsPf->pf, sig.cms, dataArray, tagSize);
+        pfReplace = _writeCookedTag(sProf->pf, sig.cms, dataArray, tagSize);
         status = (pfReplace != NULL);
     }
 
@@ -531,8 +515,8 @@ JNIEXPORT void JNICALL Java_sun_java2d_cmm_lcms_LCMS_setTagDataNative
     if (!status) {
         JNU_ThrowIllegalArgumentException(env, "Can not write tag data.");
     } else if (pfReplace != NULL) {
-        cmsCloseProfile(sProf.lcmsPf->pf);
-        sProf.lcmsPf->pf = pfReplace;
+        cmsCloseProfile(sProf->pf);
+        sProf->pf = pfReplace;
     }
 }
 
@@ -586,7 +570,7 @@ void releaseILData (JNIEnv *env, void* pData, jint dataType,
 JNIEXPORT void JNICALL Java_sun_java2d_cmm_lcms_LCMS_colorConvert
   (JNIEnv *env, jclass obj, jobject trans, jobject src, jobject dst)
 {
-    storeID_t sTrans;
+    cmsHTRANSFORM sTrans = NULL;
     int srcDType, dstDType;
     int srcOffset, srcNextRowOffset, dstOffset, dstNextRowOffset;
     int width, height, i;
@@ -607,9 +591,9 @@ JNIEXPORT void JNICALL Java_sun_java2d_cmm_lcms_LCMS_colorConvert
     srcAtOnce = (*env)->GetBooleanField(env, src, IL_imageAtOnce_fID);
     dstAtOnce = (*env)->GetBooleanField(env, dst, IL_imageAtOnce_fID);
 
-    sTrans.j = (*env)->GetLongField (env, trans, Trans_ID_fID);
+    sTrans = jlong_to_ptr((*env)->GetLongField (env, trans, Trans_ID_fID));
 
-    if (sTrans.xf == NULL) {
+    if (sTrans == NULL) {
         J2dRlsTraceLn(J2D_TRACE_ERROR, "LCMS_colorConvert: transform == NULL");
         JNU_ThrowByName(env, "java/awt/color/CMMException",
                         "Cannot get color transform");
@@ -637,10 +621,10 @@ JNIEXPORT void JNICALL Java_sun_java2d_cmm_lcms_LCMS_colorConvert
     outputRow = (char*)outputBuffer + dstOffset;
 
     if (srcAtOnce && dstAtOnce) {
-        cmsDoTransform(sTrans.xf, inputRow, outputRow, width * height);
+        cmsDoTransform(sTrans, inputRow, outputRow, width * height);
     } else {
         for (i = 0; i < height; i++) {
-            cmsDoTransform(sTrans.xf, inputRow, outputRow, width);
+            cmsDoTransform(sTrans, inputRow, outputRow, width);
             inputRow += srcNextRowOffset;
             outputRow += dstNextRowOffset;
         }
@@ -752,7 +736,7 @@ static cmsBool _getHeaderInfo(cmsHPROFILE pf, jbyte* pBuffer, jint bufferSize)
 
   if (!cmsSaveProfileToMem(pf, NULL, &pfSize) ||
       pfSize < sizeof(cmsICCHeader) ||
-      bufferSize < sizeof(cmsICCHeader))
+      bufferSize < (jint)sizeof(cmsICCHeader))
   {
     return FALSE;
   }
@@ -773,9 +757,9 @@ static cmsBool _getHeaderInfo(cmsHPROFILE pf, jbyte* pBuffer, jint bufferSize)
 
 static cmsBool _setHeaderInfo(cmsHPROFILE pf, jbyte* pBuffer, jint bufferSize)
 {
-  cmsICCHeader pfHeader = { 0 };
+  cmsICCHeader pfHeader;
 
-  if (pBuffer == NULL || bufferSize < sizeof(cmsICCHeader)) {
+  if (pBuffer == NULL || bufferSize < (jint)sizeof(cmsICCHeader)) {
     return FALSE;
   }
 
@@ -808,13 +792,14 @@ static cmsHPROFILE _writeCookedTag(const cmsHPROFILE pfTarget,
     cmsInt32Number i;
     cmsHPROFILE pfSanity = NULL;
 
-    cmsICCHeader hdr = { 0 };
+    cmsICCHeader hdr;
 
     cmsHPROFILE p = cmsCreateProfilePlaceholder(NULL);
 
     if (NULL == p) {
         return NULL;
     }
+    memset(&hdr, 0, sizeof(cmsICCHeader));
 
     // Populate the placeholder's header according to target profile
     hdr.flags = cmsGetHeaderFlags(pfTarget);
