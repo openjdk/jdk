@@ -33,39 +33,72 @@ AC_DEFUN([HELP_MSG_MISSING_DEPENDENCY],
   # Print a helpful message on how to acquire the necessary build dependency.
   # $1 is the help tag: freetyp2, cups, pulse, alsa etc
   MISSING_DEPENDENCY=$1
-  PKGHANDLER_COMMAND=
 
-  case $PKGHANDLER in
-    apt-get)
-      apt_help     $MISSING_DEPENDENCY ;;
-    yum)
-      yum_help     $MISSING_DEPENDENCY ;;
-    port)
-      port_help    $MISSING_DEPENDENCY ;;
-    pkgutil)
-      pkgutil_help $MISSING_DEPENDENCY ;;
-    pkgadd)
-      pkgadd_help  $MISSING_DEPENDENCY ;;
-    * )
-      break ;;
-  esac
+  if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
+    cygwin_help $MISSING_DEPENDENCY
+  elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
+    msys_help $MISSING_DEPENDENCY
+  else
+    PKGHANDLER_COMMAND=
 
-  if test "x$PKGHANDLER_COMMAND" != x; then
-    HELP_MSG="You might be able to fix this by running '$PKGHANDLER_COMMAND'."
+    case $PKGHANDLER in
+      apt-get)
+        apt_help     $MISSING_DEPENDENCY ;;
+      yum)
+        yum_help     $MISSING_DEPENDENCY ;;
+      port)
+        port_help    $MISSING_DEPENDENCY ;;
+      pkgutil)
+        pkgutil_help $MISSING_DEPENDENCY ;;
+      pkgadd)
+        pkgadd_help  $MISSING_DEPENDENCY ;;
+      * )
+        break ;;
+    esac
+
+    if test "x$PKGHANDLER_COMMAND" != x; then
+      HELP_MSG="You might be able to fix this by running '$PKGHANDLER_COMMAND'."
+    fi
   fi
 ])
 
 cygwin_help() {
   case $1 in
     unzip)
-      PKGHANDLER_COMMAND="cd <location of cygwin setup.exe> && cmd /c setup -q -P unzip" ;;
+      PKGHANDLER_COMMAND="( cd <location of cygwin setup.exe> && cmd /c setup -q -P unzip )"
+      HELP_MSG="You might be able to fix this by running '$PKGHANDLER_COMMAND'."
+      ;;
     zip)
-      PKGHANDLER_COMMAND="cd <location of cygwin setup.exe> && cmd /c setup -q -P zip" ;;
+      PKGHANDLER_COMMAND="( cd <location of cygwin setup.exe> && cmd /c setup -q -P zip )"
+      HELP_MSG="You might be able to fix this by running '$PKGHANDLER_COMMAND'."
+      ;;
     make)
-      PKGHANDLER_COMMAND="cd <location of cygwin setup.exe> && cmd /c setup -q -P make" ;;
+      PKGHANDLER_COMMAND="( cd <location of cygwin setup.exe> && cmd /c setup -q -P make )"
+      HELP_MSG="You might be able to fix this by running '$PKGHANDLER_COMMAND'."
+      ;;
+    freetype2)
+      if test "x$OPENJDK_TARGET_CPU_BITS" = x32; then
+        HELP_MSG="To install freetype, run:
+wget \"http://gnuwin32.sourceforge.net/downlinks/freetype.php\" -O /tmp/freetype-setup.exe
+chmod +x /tmp/freetype-setup.exe
+/tmp/freetype-setup.exe
+Follow GUI prompts, and install to default directory \"C:\Program Files (x86)\GnuWin32\".
+After installation, locate lib/libfreetype.dll.a and make a copy with the name freetype.dll."
+      else
+        HELP_MSG="You need to build a 64-bit version of freetype.
+This is not readily available.
+You can find source code and build instructions on
+http://www.freetype.org/
+If you put the resulting build in \"C:\Program Files\GnuWin32\", it will be found automatically."
+      fi
+      ;;
     * )
       break ;;
   esac
+}
+
+msys_help() {
+  PKGHANDLER_COMMAND=""
 }
 
 apt_help() {
