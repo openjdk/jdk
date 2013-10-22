@@ -76,8 +76,9 @@ public class MaskTileManager {
     public void fillMask(XRSurfaceData dst) {
 
         boolean maskRequired = xrMgr.maskRequired();
+        boolean maskEvaluated = XRUtils.isMaskEvaluated(xrMgr.compRule);
 
-        if (maskRequired) {
+        if (maskRequired && maskEvaluated) {
             mainTile.calculateDirtyAreas();
             DirtyRegion dirtyArea = mainTile.getDirtyArea().cloneRegion();
             mainTile.translate(-dirtyArea.x, -dirtyArea.y);
@@ -106,7 +107,15 @@ public class MaskTileManager {
                 }
             }
         } else {
-            xrMgr.XRRenderRectangles(dst, mainTile.getRects());
+            /*
+             * If a mask would be required to store geometry (maskRequired)
+             * composition has to be done rectangle-by-rectagle.
+             */
+            if(xrMgr.isSolidPaintActive()) {
+                xrMgr.XRRenderRectangles(dst, mainTile.getRects());
+            } else {
+                xrMgr.XRCompositeRectangles(dst, mainTile.getRects());
+            }
         }
 
         mainTile.reset();
