@@ -56,7 +56,7 @@ public class JDKToolLauncher {
         if (useCompilerJDK) {
             executable = JDKToolFinder.getJDKTool(tool);
         } else {
-            executable = JDKToolFinder.getCurrentJDKTool(tool);
+            executable = JDKToolFinder.getTestJDKTool(tool);
         }
         vmArgs.addAll(Arrays.asList(ProcessTools.getPlatformSpecificVMArgs()));
     }
@@ -74,17 +74,15 @@ public class JDKToolLauncher {
     }
 
     /**
-     * Creates a new JDKToolLauncher for the specified tool.
+     * Creates a new JDKToolLauncher for the specified tool in the Tested JDK.
      *
      * @param tool
      *            The name of the tool
-     * @param useCompilerPath
-     *            If true use the compiler JDK path, otherwise use the tested
-     *            JDK path.
+     *
      * @return A new JDKToolLauncher
      */
-    public static JDKToolLauncher create(String tool, boolean useCompilerJDK) {
-        return new JDKToolLauncher(tool, useCompilerJDK);
+    public static JDKToolLauncher createUsingTestJDK(String tool) {
+        return new JDKToolLauncher(tool, false);
     }
 
     /**

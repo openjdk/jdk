@@ -107,6 +107,7 @@ class       UnsafePrefetch;
 class         UnsafePrefetchRead;
 class         UnsafePrefetchWrite;
 class   ProfileCall;
+class   ProfileReturnType;
 class   ProfileInvoke;
 class   RuntimeCall;
 class   MemBar;
@@ -211,6 +212,7 @@ class InstructionVisitor: public StackObj {
   virtual void do_UnsafePrefetchRead (UnsafePrefetchRead*  x) = 0;
   virtual void do_UnsafePrefetchWrite(UnsafePrefetchWrite* x) = 0;
   virtual void do_ProfileCall    (ProfileCall*     x) = 0;
+  virtual void do_ProfileReturnType (ProfileReturnType*  x) = 0;
   virtual void do_ProfileInvoke  (ProfileInvoke*   x) = 0;
   virtual void do_RuntimeCall    (RuntimeCall*     x) = 0;
   virtual void do_MemBar         (MemBar*          x) = 0;
@@ -321,6 +323,36 @@ class Instruction: public CompilationResourceObj {
     assert(type != NULL, "type must exist");
     _type = type;
   }
+
+  // Helper class to keep track of which arguments need a null check
+  class ArgsNonNullState {
+  private:
+    int _nonnull_state; // mask identifying which args are nonnull
+  public:
+    ArgsNonNullState()
+      : _nonnull_state(AllBits) {}
+
+    // Does argument number i needs a null check?
+    bool arg_needs_null_check(int i) const {
+      // No data is kept for arguments starting at position 33 so
+      // conservatively assume that they need a null check.
+      if (i >= 0 && i < (int)sizeof(_nonnull_state) * BitsPerByte) {
+        return is_set_nth_bit(_nonnull_state, i);
+      }
+      return true;
+    }
+
+    // Set whether argument number i needs a null check or not
+    void set_arg_needs_null_check(int i, bool check) {
+      if (i >= 0 && i < (int)sizeof(_nonnull_state) * BitsPerByte) {
+        if (check) {
+          _nonnull_state |= nth_bit(i);
+        } else {
+          _nonnull_state &= ~(nth_bit(i));
+        }
+      }
+    }
+  };
 
  public:
   void* operator new(size_t size) throw() {
@@ -566,7 +598,7 @@ class Instruction: public CompilationResourceObj {
   virtual void other_values_do(ValueVisitor* f)   { /* usually no other - override on demand */ }
           void       values_do(ValueVisitor* f)   { input_values_do(f); state_values_do(f); other_values_do(f); }
 
-  virtual ciType* exact_type() const             { return NULL; }
+  virtual ciType* exact_type() const;
   virtual ciType* declared_type() const          { return NULL; }
 
   // hashing
@@ -689,7 +721,6 @@ LEAF(Local, Instruction)
   int java_index() const                         { return _java_index; }
 
   virtual ciType* declared_type() const          { return _declared_type; }
-  virtual ciType* exact_type() const;
 
   // generic
   virtual void input_values_do(ValueVisitor* f)   { /* no values */ }
@@ -806,7 +837,6 @@ LEAF(LoadField, AccessField)
   {}
 
   ciType* declared_type() const;
-  ciType* exact_type() const;
 
   // generic
   HASHING2(LoadField, !needs_patching() && !field()->is_volatile(), obj()->subst(), offset())  // cannot be eliminated if needs patching or if volatile
@@ -1299,6 +1329,7 @@ BASE(NewArray, StateSplit)
 
   virtual bool needs_exception_state() const     { return false; }
 
+  ciType* exact_type() const                     { return NULL; }
   ciType* declared_type() const;
 
   // generic
@@ -1422,7 +1453,6 @@ LEAF(CheckCast, TypeCheck)
   }
 
   ciType* declared_type() const;
-  ciType* exact_type() const;
 };
 
 
@@ -1490,7 +1520,7 @@ LEAF(Intrinsic, StateSplit)
   vmIntrinsics::ID _id;
   Values*          _args;
   Value            _recv;
-  int              _nonnull_state; // mask identifying which args are nonnull
+  ArgsNonNullState _nonnull_state;
 
  public:
   // preserves_state can be set to true for Intrinsics
@@ -1511,7 +1541,6 @@ LEAF(Intrinsic, StateSplit)
   , _id(id)
   , _args(args)
   , _recv(NULL)
-  , _nonnull_state(AllBits)
   {
     assert(args != NULL, "args must exist");
     ASSERT_VALUES
@@ -1537,21 +1566,12 @@ LEAF(Intrinsic, StateSplit)
   Value receiver() const                         { assert(has_receiver(), "must have receiver"); return _recv; }
   bool preserves_state() const                   { return check_flag(PreservesStateFlag); }
 
-  bool arg_needs_null_check(int i) {
-    if (i >= 0 && i < (int)sizeof(_nonnull_state) * BitsPerByte) {
-      return is_set_nth_bit(_nonnull_state, i);
-    }
-    return true;
+  bool arg_needs_null_check(int i) const {
+    return _nonnull_state.arg_needs_null_check(i);
   }
 
   void set_arg_needs_null_check(int i, bool check) {
-    if (i >= 0 && i < (int)sizeof(_nonnull_state) * BitsPerByte) {
-      if (check) {
-        _nonnull_state |= nth_bit(i);
-      } else {
-        _nonnull_state &= ~(nth_bit(i));
-      }
-    }
+    _nonnull_state.set_arg_needs_null_check(i, check);
   }
 
   // generic
@@ -2450,34 +2470,87 @@ LEAF(UnsafePrefetchWrite, UnsafePrefetch)
 
 LEAF(ProfileCall, Instruction)
  private:
-  ciMethod* _method;
-  int       _bci_of_invoke;
-  ciMethod* _callee;         // the method that is called at the given bci
-  Value     _recv;
-  ciKlass*  _known_holder;
+  ciMethod*        _method;
+  int              _bci_of_invoke;
+  ciMethod*        _callee;         // the method that is called at the given bci
+  Value            _recv;
+  ciKlass*         _known_holder;
+  Values*          _obj_args;       // arguments for type profiling
+  ArgsNonNullState _nonnull_state;  // Do we know whether some arguments are never null?
+  bool             _inlined;        // Are we profiling a call that is inlined
 
  public:
-  ProfileCall(ciMethod* method, int bci, ciMethod* callee, Value recv, ciKlass* known_holder)
+  ProfileCall(ciMethod* method, int bci, ciMethod* callee, Value recv, ciKlass* known_holder, Values* obj_args, bool inlined)
     : Instruction(voidType)
     , _method(method)
     , _bci_of_invoke(bci)
     , _callee(callee)
     , _recv(recv)
     , _known_holder(known_holder)
+    , _obj_args(obj_args)
+    , _inlined(inlined)
   {
     // The ProfileCall has side-effects and must occur precisely where located
     pin();
   }
 
-  ciMethod* method()      { return _method; }
-  int bci_of_invoke()     { return _bci_of_invoke; }
-  ciMethod* callee()      { return _callee; }
-  Value recv()            { return _recv; }
-  ciKlass* known_holder() { return _known_holder; }
+  ciMethod* method()             const { return _method; }
+  int bci_of_invoke()            const { return _bci_of_invoke; }
+  ciMethod* callee()             const { return _callee; }
+  Value recv()                   const { return _recv; }
+  ciKlass* known_holder()        const { return _known_holder; }
+  int nb_profiled_args()         const { return _obj_args == NULL ? 0 : _obj_args->length(); }
+  Value profiled_arg_at(int i)   const { return _obj_args->at(i); }
+  bool arg_needs_null_check(int i) const {
+    return _nonnull_state.arg_needs_null_check(i);
+  }
+  bool inlined()                 const { return _inlined; }
 
-  virtual void input_values_do(ValueVisitor* f)   { if (_recv != NULL) f->visit(&_recv); }
+  void set_arg_needs_null_check(int i, bool check) {
+    _nonnull_state.set_arg_needs_null_check(i, check);
+  }
+
+  virtual void input_values_do(ValueVisitor* f)   {
+    if (_recv != NULL) {
+      f->visit(&_recv);
+    }
+    for (int i = 0; i < nb_profiled_args(); i++) {
+      f->visit(_obj_args->adr_at(i));
+    }
+  }
 };
 
+LEAF(ProfileReturnType, Instruction)
+ private:
+  ciMethod*        _method;
+  ciMethod*        _callee;
+  int              _bci_of_invoke;
+  Value            _ret;
+
+ public:
+  ProfileReturnType(ciMethod* method, int bci, ciMethod* callee, Value ret)
+    : Instruction(voidType)
+    , _method(method)
+    , _callee(callee)
+    , _bci_of_invoke(bci)
+    , _ret(ret)
+  {
+    set_needs_null_check(true);
+    // The ProfileType has side-effects and must occur precisely where located
+    pin();
+  }
+
+  ciMethod* method()             const { return _method; }
+  ciMethod* callee()             const { return _callee; }
+  int bci_of_invoke()            const { return _bci_of_invoke; }
+  Value ret()                    const { return _ret; }
+
+  virtual void input_values_do(ValueVisitor* f)   {
+    if (_ret != NULL) {
+      f->visit(&_ret);
+    }
+  }
+};
 
 // Call some C runtime function that doesn't safepoint,
 // optionally passing the current thread as the first argument.
