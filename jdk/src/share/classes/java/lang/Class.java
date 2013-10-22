@@ -1209,9 +1209,25 @@ public final class Class<T> implements java.io.Serializable,
      * type, or void,then this method returns null.
      *
      * @return the declaring class for this class
+     * @throws SecurityException
+     *         If a security manager, <i>s</i>, is present and the caller's
+     *         class loader is not the same as or an ancestor of the class
+     *         loader for the declaring class and invocation of {@link
+     *         SecurityManager#checkPackageAccess s.checkPackageAccess()}
+     *         denies access to the package of the declaring class
      * @since JDK1.1
      */
-    public native Class<?> getDeclaringClass();
+    @CallerSensitive
+    public Class<?> getDeclaringClass() throws SecurityException {
+        final Class<?> candidate = getDeclaringClass0();
+
+        if (candidate != null)
+            candidate.checkPackageAccess(
+                    ClassLoader.getClassLoader(Reflection.getCallerClass()), true);
+        return candidate;
+    }
+
+    private native Class<?> getDeclaringClass0();
 
 
     /**
@@ -1555,6 +1571,10 @@ public final class Class<T> implements java.io.Serializable,
      * <p> If this {@code Class} object represents a primitive type or void,
      * then the returned array has length 0.
      *
+     * <p> Static methods declared in superinterfaces of the class or interface
+     * represented by this {@code Class} object are not considered members of
+     * the class or interface.
+     *
      * <p> The elements in the returned array are not sorted and are not in any
      * particular order.
      *
@@ -1713,6 +1733,10 @@ public final class Class<T> implements java.io.Serializable,
      * <p> If this {@code Class} object represents an array type, then this
      * method does not find the {@code clone()} method.
      *
+     * <p> Static methods declared in superinterfaces of the class or interface
+     * represented by this {@code Class} object are not considered members of
+     * the class or interface.
+     *
      * @param name the name of the method
      * @param parameterTypes the list of parameters
      * @return the {@code Method} object that matches the specified
@@ -1736,7 +1760,7 @@ public final class Class<T> implements java.io.Serializable,
     public Method getMethod(String name, Class<?>... parameterTypes)
         throws NoSuchMethodException, SecurityException {
         checkMemberAccess(Member.PUBLIC, Reflection.getCallerClass(), true);
-        Method method = getMethod0(name, parameterTypes);
+        Method method = getMethod0(name, parameterTypes, true);
         if (method == null) {
             throw new NoSuchMethodException(getName() + "." + name + argumentTypesToString(parameterTypes));
         }
@@ -2711,6 +2735,14 @@ public final class Class<T> implements java.io.Serializable,
             }
         }
 
+        void addAllNonStatic(Method[] methods) {
+            for (Method candidate : methods) {
+                if (!Modifier.isStatic(candidate.getModifiers())) {
+                    add(candidate);
+                }
+            }
+        }
+
         int length() {
             return length;
         }
@@ -2781,7 +2813,7 @@ public final class Class<T> implements java.io.Serializable,
         MethodArray inheritedMethods = new MethodArray();
         Class<?>[] interfaces = getInterfaces();
         for (int i = 0; i < interfaces.length; i++) {
-            inheritedMethods.addAll(interfaces[i].privateGetPublicMethods());
+            inheritedMethods.addAllNonStatic(interfaces[i].privateGetPublicMethods());
         }
         if (!isInterface()) {
             Class<?> c = getSuperclass();
@@ -2884,7 +2916,7 @@ public final class Class<T> implements java.io.Serializable,
     }
 
 
-    private Method getMethod0(String name, Class<?>[] parameterTypes) {
+    private Method getMethod0(String name, Class<?>[] parameterTypes, boolean includeStaticMethods) {
         // Note: the intent is that the search algorithm this routine
         // uses be equivalent to the ordering imposed by
         // privateGetPublicMethods(). It fetches only the declared
@@ -2897,25 +2929,23 @@ public final class Class<T> implements java.io.Serializable,
         if ((res = searchMethods(privateGetDeclaredMethods(true),
                                  name,
                                  parameterTypes)) != null) {
-            return res;
+            if (includeStaticMethods || !Modifier.isStatic(res.getModifiers()))
+                return res;
         }
         // Search superclass's methods
         if (!isInterface()) {
             Class<? super T> c = getSuperclass();
             if (c != null) {
-                if ((res = c.getMethod0(name, parameterTypes)) != null) {
+                if ((res = c.getMethod0(name, parameterTypes, true)) != null) {
                     return res;
                 }
             }
         }
         // Search superinterfaces' methods
         Class<?>[] interfaces = getInterfaces();
-        for (int i = 0; i < interfaces.length; i++) {
-            Class<?> c = interfaces[i];
-            if ((res = c.getMethod0(name, parameterTypes)) != null) {
+        for (Class<?> c : interfaces)
+            if ((res = c.getMethod0(name, parameterTypes, false)) != null)
                 return res;
-            }
-        }
         // Not found
         return null;
     }
@@ -3284,7 +3314,10 @@ public final class Class<T> implements java.io.Serializable,
     public <A extends Annotation> A[] getAnnotationsByType(Class<A> annotationClass) {
         Objects.requireNonNull(annotationClass);
 
-        return AnnotationSupport.getMultipleAnnotations(annotationData().annotations, annotationClass);
+        AnnotationData annotationData = annotationData();
+        return AnnotationSupport.getAssociatedAnnotations(annotationData.declaredAnnotations,
+                                                          annotationData.annotations,
+                                                          annotationClass);
     }
 
     /**
@@ -3314,7 +3347,8 @@ public final class Class<T> implements java.io.Serializable,
     public <A extends Annotation> A[] getDeclaredAnnotationsByType(Class<A> annotationClass) {
         Objects.requireNonNull(annotationClass);
 
-        return AnnotationSupport.getMultipleAnnotations(annotationData().declaredAnnotations, annotationClass);
+        return AnnotationSupport.getDirectlyAndIndirectlyPresent(annotationData().declaredAnnotations,
+                                                                 annotationClass);
     }
 
     /**

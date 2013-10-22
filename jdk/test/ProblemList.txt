@@ -138,6 +138,9 @@ java/lang/ThreadLocal/ThreadLocalSupplierTest.java              generic-all
 java/lang/instrument/RetransformBigClass.sh                     generic-all
 java/lang/instrument/RedefineBigClass.sh                        generic-all
 
+# 8026502
+java/lang/invoke/MethodHandleConstants.java                     generic-all
+
 ############################################################################
 
 # jdk_management
@@ -321,6 +324,9 @@ tools/pack200/Pack200Test.java                                  solaris-all, mac
 
 # 8007410
 tools/launcher/FXLauncherTest.java                              linux-all
+
+# 7144200
+java/lang/management/ClassLoadingMXBean/LoadCounts.java		generic-all
 
 ############################################################################
 

@@ -33,7 +33,6 @@ import java.io.FilePermission;
 import java.lang.reflect.Constructor;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
-import java.security.ProtectionDomain;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.PropertyPermission;
 
@@ -50,14 +49,13 @@ import static jdk.internal.org.objectweb.asm.Opcodes.*;
 
     private static final int CLASSFILE_VERSION = 51;
     private static final String METHOD_DESCRIPTOR_VOID = Type.getMethodDescriptor(Type.VOID_TYPE);
-    private static final String NAME_MAGIC_ACCESSOR_IMPL = "java/lang/invoke/MagicLambdaImpl";
+    private static final String JAVA_LANG_OBJECT = "java/lang/Object";
     private static final String NAME_CTOR = "<init>";
 
     //Serialization support
     private static final String NAME_SERIALIZED_LAMBDA = "java/lang/invoke/SerializedLambda";
     private static final String DESCR_METHOD_WRITE_REPLACE = "()Ljava/lang/Object;";
     private static final String NAME_METHOD_WRITE_REPLACE = "writeReplace";
-    private static final String NAME_OBJECT = "java/lang/Object";
     private static final String DESCR_CTOR_SERIALIZED_LAMBDA
             = MethodType.methodType(void.class,
                                     Class.class,
@@ -235,7 +233,7 @@ import static jdk.internal.org.objectweb.asm.Opcodes.*;
         }
         cw.visit(CLASSFILE_VERSION, ACC_SUPER + ACC_FINAL + ACC_SYNTHETIC,
                  lambdaClassName, null,
-                 NAME_MAGIC_ACCESSOR_IMPL, interfaces);
+                 JAVA_LANG_OBJECT, interfaces);
 
         // Generate final fields to be filled in by constructor
         for (int i = 0; i < argTypes.length; i++) {
@@ -287,21 +285,7 @@ import static jdk.internal.org.objectweb.asm.Opcodes.*;
             new PropertyPermission("user.dir", "read"));
         }
 
-        ClassLoader loader = targetClass.getClassLoader();
-        ProtectionDomain pd = (loader == null)
-                              ? null
-                              : AccessController.doPrivileged(
-                                      new PrivilegedAction<ProtectionDomain>() {
-                                          @Override
-                                          public ProtectionDomain run() {
-                                              return targetClass.getProtectionDomain();
-                                          }
-                                      }
-                              );
-
-        return UNSAFE.defineClass(lambdaClassName,
-                                  classBytes, 0, classBytes.length,
-                                  loader, pd);
+        return UNSAFE.defineAnonymousClass(targetClass, classBytes, null);
     }
 
     /**
@@ -313,7 +297,7 @@ import static jdk.internal.org.objectweb.asm.Opcodes.*;
                                             constructorDesc, null, null);
         ctor.visitCode();
         ctor.visitVarInsn(ALOAD, 0);
-        ctor.visitMethodInsn(INVOKESPECIAL, NAME_MAGIC_ACCESSOR_IMPL, NAME_CTOR,
+        ctor.visitMethodInsn(INVOKESPECIAL, JAVA_LANG_OBJECT, NAME_CTOR,
                              METHOD_DESCRIPTOR_VOID);
         int lvIndex = 0;
         for (int i = 0; i < argTypes.length; i++) {
@@ -353,7 +337,7 @@ import static jdk.internal.org.objectweb.asm.Opcodes.*;
         mv.visitLdcInsn(instantiatedMethodType.toMethodDescriptorString());
 
         mv.iconst(argTypes.length);
-        mv.visitTypeInsn(ANEWARRAY, NAME_OBJECT);
+        mv.visitTypeInsn(ANEWARRAY, JAVA_LANG_OBJECT);
         for (int i = 0; i < argTypes.length; i++) {
             mv.visitInsn(DUP);
             mv.iconst(i);

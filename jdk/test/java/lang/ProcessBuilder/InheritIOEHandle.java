@@ -35,21 +35,22 @@ import java.io.InputStreamReader;
 
 public class InheritIOEHandle {
     private static enum APP {
-        B, C;
+        A, B, C;
     }
-    private static File stopC = new File(".\\StopC.txt");
+
+    private static File stopC = new File("StopC.txt");
     private static String SIGNAL = "After call child process";
     private static String JAVA_EXE = System.getProperty("java.home")
-        + File.separator + "bin"
-        + File.separator + "java";
+            + File.separator + "bin"
+            + File.separator + "java";
 
     private static String[] getCommandArray(String processName) {
         String[] cmdArray = {
-            JAVA_EXE,
-            "-cp",
-            System.getProperty("java.class.path"),
-            InheritIOEHandle.class.getName(),
-            processName
+                JAVA_EXE,
+                "-cp",
+                System.getProperty("java.class.path"),
+                InheritIOEHandle.class.getName(),
+                processName
         };
         return cmdArray;
     }
@@ -59,19 +60,18 @@ public class InheritIOEHandle {
             return;
         }
 
-        if (args.length > 0) {
-            APP app = APP.valueOf(args[0]);
-            switch (app) {
+        APP app = (args.length > 0) ? APP.valueOf(args[0]) : APP.A;
+        switch (app) {
+            case A:
+                performA();
+                break;
             case B:
                 performB();
                 break;
             case C:
                 performC();
                 break;
-            }
-            return;
         }
-        performA();
     }
 
     private static void performA() {
@@ -87,25 +87,40 @@ public class InheritIOEHandle {
             process.getOutputStream().close();
             process.getErrorStream().close();
 
-            try (BufferedReader in = new BufferedReader( new InputStreamReader(
-                         process.getInputStream(), "utf-8")))
+            boolean isSignalReceived = false;
+            try (BufferedReader in = new BufferedReader(new InputStreamReader(
+                    process.getInputStream(), "utf-8")))
             {
                 String result;
                 while ((result = in.readLine()) != null) {
-                    if (!SIGNAL.equals(result)) {
-                        throw new Error("Catastrophe in process B! Bad output.");
+                    if (SIGNAL.equals(result)) {
+                        isSignalReceived = true;
+                        break;
+                    } else {
+                        throw new RuntimeException("Catastrophe in process B! Bad output.");
                     }
                 }
+
+            }
+            if (!isSignalReceived) {
+                throw new RuntimeException("Signal from B was not received");
             }
 
             // If JDK-7147084 is not fixed that point is unreachable.
-
+            System.out.println("Received signal from B, creating file StopC");
             // write signal file
-            stopC.createNewFile();
+            boolean isFileStopC = stopC.createNewFile();
+            if (!isFileStopC) {
+                throw new RuntimeException("Signal file StopC.txt was not created. TEST or INFRA bug");
+            }
+
+            process.waitFor();
 
             System.err.println("Read stream finished.");
         } catch (IOException ex) {
-            throw new Error("Catastrophe in process A!", ex);
+            throw new RuntimeException("Catastrophe in process A!", ex);
+        } catch (InterruptedException ex) {
+            throw new RuntimeException("A was interrupted while waiting for B", ex);
         }
     }
 
@@ -121,26 +136,30 @@ public class InheritIOEHandle {
             process.getErrorStream().close();
 
             System.out.println(SIGNAL);
+            process.waitFor();
 
             // JDK-7147084 subject:
             // Process C inherits the [System.out] handle and
             // handle close in B does not finalize the streaming for A.
             // (handle reference count > 1).
         } catch (IOException ex) {
-            throw new Error("Catastrophe in process B!", ex);
+            throw new RuntimeException("Catastrophe in process B!", ex);
+        } catch (InterruptedException ex) {
+            throw new RuntimeException("B was interrupted while waiting for C", ex);
         }
     }
 
     private static void performC() {
         // If JDK-7147084 is not fixed the loop is 5min long.
-        for (int i = 0; i < 5*60; ++i) {
+        for (int i = 0; i < 5 * 60; ++i) {
             try {
                 Thread.sleep(1000);
-                // check for sucess
-                if (stopC.exists())
-                    break;
             } catch (InterruptedException ex) {
                 // that is ok. Longer sleep - better effect.
+            }
+            // check for success
+            if (stopC.exists()) {
+                break;
             }
         }
     }

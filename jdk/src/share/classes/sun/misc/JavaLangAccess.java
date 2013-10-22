@@ -27,6 +27,8 @@ package sun.misc;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Executable;
+import java.security.AccessControlContext;
+
 import sun.reflect.ConstantPool;
 import sun.reflect.annotation.AnnotationType;
 import sun.nio.ch.Interruptible;
@@ -113,4 +115,10 @@ public interface JavaLangAccess {
      * @return a newly created string whose content is the character array
      */
     String newStringUnsafe(char[] chars);
+
+    /**
+     * Returns a new Thread with the given Runnable and an
+     * inherited AccessControlContext.
+     */
+    Thread newThreadWithAcc(Runnable target, AccessControlContext acc);
 }

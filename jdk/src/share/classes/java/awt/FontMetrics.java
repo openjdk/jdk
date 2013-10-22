@@ -51,8 +51,8 @@ import java.text.CharacterIterator;
  * <li>{@link #charsWidth(char[], int, int)}
  * </ul>
  * <p>
- * <img src="doc-files/FontMetrics-1.gif" alt="The letter 'p' showing its 'reference point'" border=15 align
- * ALIGN=right HSPACE=10 VSPACE=7>
+ * <img src="doc-files/FontMetrics-1.gif" alt="The letter 'p' showing its 'reference point'"
+ * style="border:15px; float:right; margin: 7px 10px;">
  * Note that the implementations of these methods are
  * inefficient, so they are usually overridden with more efficient
  * toolkit-specific implementations.

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,13 +39,9 @@
 package java.util;
 
 import java.io.Serializable;
-import java.lang.ref.SoftReference;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
 import java.time.ZoneId;
-import java.util.concurrent.ConcurrentHashMap;
-import sun.misc.JavaAWTAccess;
-import sun.misc.SharedSecrets;
 import sun.security.action.GetPropertyAction;
 import sun.util.calendar.ZoneInfo;
 import sun.util.calendar.ZoneInfoFile;
@@ -548,7 +544,16 @@ abstract public class TimeZone implements Serializable, Cloneable {
      * @since 1.8
      */
     public ZoneId toZoneId() {
-        return ZoneId.of(getID(), ZoneId.SHORT_IDS);
+        String id = getID();
+        if (ZoneInfoFile.useOldMapping() && id.length() == 3) {
+            if ("EST".equals(id))
+                return ZoneId.of("America/New_York");
+            if ("MST".equals(id))
+                return ZoneId.of("America/Denver");
+            if ("HST".equals(id))
+                return ZoneId.of("America/Honolulu");
+        }
+        return ZoneId.of(id, ZoneId.SHORT_IDS);
     }
 
     private static TimeZone getTimeZone(String ID, boolean fallback) {
@@ -596,11 +601,26 @@ abstract public class TimeZone implements Serializable, Cloneable {
     private static native String getSystemGMTOffsetID();
 
     /**
-     * Gets the default <code>TimeZone</code> for this host.
-     * The source of the default <code>TimeZone</code>
-     * may vary with implementation.
-     * @return a default <code>TimeZone</code>.
-     * @see #setDefault
+     * Gets the default {@code TimeZone} of the Java virtual machine. If the
+     * cached default {@code TimeZone} is available, its clone is returned.
+     * Otherwise, the method takes the following steps to determine the default
+     * time zone.
+     *
+     * <p><ul>
+     * <li>Use the {@code user.timezone} property value as the default
+     * time zone ID if it's available.</li>
+     * <li>Detect the platform time zone ID. The source of the
+     * platform time zone and ID mapping may vary with implementation.</li>
+     * <li>Use {@code GMT} as the last resort if the given or detected
+     * time zone ID is unknown.</li>
+     * </ul>
+     *
+     * <p>The default {@code TimeZone} created from the ID is cached,
+     * and its clone is returned. The {@code user.timezone} property
+     * value is set to the ID upon return.
+     *
+     * @return the default {@code TimeZone}
+     * @see #setDefault(TimeZone)
      */
     public static TimeZone getDefault() {
         return (TimeZone) getDefaultRef().clone();
@@ -611,14 +631,11 @@ abstract public class TimeZone implements Serializable, Cloneable {
      * method doesn't create a clone.
      */
     static TimeZone getDefaultRef() {
-        TimeZone defaultZone = getDefaultInAppContext();
+        TimeZone defaultZone = defaultTimeZone;
         if (defaultZone == null) {
-            defaultZone = defaultTimeZone;
-            if (defaultZone == null) {
-                // Need to initialize the default time zone.
-                defaultZone = setDefaultZone();
-                assert defaultZone != null;
-            }
+            // Need to initialize the default time zone.
+            defaultZone = setDefaultZone();
+            assert defaultZone != null;
         }
         // Don't clone here.
         return defaultZone;
@@ -676,95 +693,27 @@ abstract public class TimeZone implements Serializable, Cloneable {
         return tz;
     }
 
-    private static boolean hasPermission() {
-        boolean hasPermission = true;
-        SecurityManager sm = System.getSecurityManager();
-        if (sm != null) {
-            try {
-                sm.checkPermission(new PropertyPermission
-                                   ("user.timezone", "write"));
-            } catch (SecurityException e) {
-                hasPermission = false;
-            }
-        }
-        return hasPermission;
-    }
-
     /**
-     * Sets the <code>TimeZone</code> that is
-     * returned by the <code>getDefault</code> method.  If <code>zone</code>
-     * is null, reset the default to the value it had originally when the
-     * VM first started.
-     * @param zone the new default time zone
+     * Sets the {@code TimeZone} that is returned by the {@code getDefault}
+     * method. {@code zone} is cached. If {@code zone} is null, the cached
+     * default {@code TimeZone} is cleared. This method doesn't change the value
+     * of the {@code user.timezone} property.
+     *
+     * @param zone the new default {@code TimeZone}, or null
+     * @throws SecurityException if the security manager's {@code checkPermission}
+     *                           denies {@code PropertyPermission("user.timezone",
+     *                           "write")}
      * @see #getDefault
+     * @see PropertyPermission
      */
     public static void setDefault(TimeZone zone)
     {
-        if (hasPermission()) {
-            synchronized (TimeZone.class) {
-                defaultTimeZone = zone;
-                setDefaultInAppContext(null);
-            }
-        } else {
-            setDefaultInAppContext(zone);
+        SecurityManager sm = System.getSecurityManager();
+        if (sm != null) {
+            sm.checkPermission(new PropertyPermission
+                               ("user.timezone", "write"));
         }
-    }
-
-    /**
-     * Returns the default TimeZone in an AppContext if any AppContext
-     * has ever used. null is returned if any AppContext hasn't been
-     * used or if the AppContext doesn't have the default TimeZone.
-     *
-     * Note that javaAWTAccess may be null if sun.awt.AppContext class hasn't
-     * been loaded. If so, it implies that AWTSecurityManager is not our
-     * SecurityManager and we can use a local static variable.
-     * This works around a build time issue.
-     */
-    private static TimeZone getDefaultInAppContext() {
-        // JavaAWTAccess provides access implementation-private methods without using reflection.
-        JavaAWTAccess javaAWTAccess = SharedSecrets.getJavaAWTAccess();
-
-        if (javaAWTAccess == null) {
-            return mainAppContextDefault;
-        } else {
-            if (!javaAWTAccess.isDisposed()) {
-                TimeZone tz = (TimeZone)
-                    javaAWTAccess.get(TimeZone.class);
-                if (tz == null && javaAWTAccess.isMainAppContext()) {
-                    return mainAppContextDefault;
-                } else {
-                    return tz;
-                }
-            }
-        }
-        return null;
-    }
-
-    /**
-     * Sets the default TimeZone in the AppContext to the given
-     * tz. null is handled special: do nothing if any AppContext
-     * hasn't been used, remove the default TimeZone in the
-     * AppContext otherwise.
-     *
-     * Note that javaAWTAccess may be null if sun.awt.AppContext class hasn't
-     * been loaded. If so, it implies that AWTSecurityManager is not our
-     * SecurityManager and we can use a local static variable.
-     * This works around a build time issue.
-     */
-    private static void setDefaultInAppContext(TimeZone tz) {
-        // JavaAWTAccess provides access implementation-private methods without using reflection.
-        JavaAWTAccess javaAWTAccess = SharedSecrets.getJavaAWTAccess();
-
-        if (javaAWTAccess == null) {
-            mainAppContextDefault = tz;
-        } else {
-            if (!javaAWTAccess.isDisposed()) {
-                javaAWTAccess.put(TimeZone.class, tz);
-                if (javaAWTAccess.isMainAppContext()) {
-                    mainAppContextDefault = null;
-                }
-            }
-        }
+        defaultTimeZone = zone;
     }
 
     /**

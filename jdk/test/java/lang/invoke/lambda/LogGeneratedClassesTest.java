@@ -167,8 +167,12 @@ public class LogGeneratedClassesTest extends LUtils {
     public void testDumpDirNotWritable() throws IOException {
         if (! Files.getFileStore(Paths.get("."))
                    .supportsFileAttributeView(PosixFileAttributeView.class)) {
-            // No easy way to setup readonly directory
-            throw new SkipException("Posix not supported");
+            // No easy way to setup readonly directory without POSIX
+            // We would like to skip the test with a cause with
+            //     throw new SkipException("Posix not supported");
+            // but jtreg will report failure so we just pass the test
+            // which we can look at if jtreg changed its behavior
+            return;
         }
 
         Files.createDirectory(Paths.get("readOnly"),

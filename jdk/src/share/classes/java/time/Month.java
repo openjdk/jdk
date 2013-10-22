@@ -73,6 +73,7 @@ import java.time.temporal.Temporal;
 import java.time.temporal.TemporalAccessor;
 import java.time.temporal.TemporalAdjuster;
 import java.time.temporal.TemporalField;
+import java.time.temporal.TemporalQueries;
 import java.time.temporal.TemporalQuery;
 import java.time.temporal.UnsupportedTemporalTypeException;
 import java.time.temporal.ValueRange;
@@ -560,9 +561,9 @@ public enum Month implements TemporalAccessor, TemporalAdjuster {
     @SuppressWarnings("unchecked")
     @Override
     public <R> R query(TemporalQuery<R> query) {
-        if (query == TemporalQuery.chronology()) {
+        if (query == TemporalQueries.chronology()) {
             return (R) IsoChronology.INSTANCE;
-        } else if (query == TemporalQuery.precision()) {
+        } else if (query == TemporalQueries.precision()) {
             return (R) MONTHS;
         }
         return TemporalAccessor.super.query(query);

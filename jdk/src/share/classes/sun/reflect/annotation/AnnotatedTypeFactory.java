@@ -166,7 +166,7 @@ public class AnnotatedTypeFactory {
 
         @Override
         public <T extends Annotation> T[] getDeclaredAnnotationsByType(Class<T> annotation) {
-            return AnnotationSupport.getMultipleAnnotations(annotations, annotation);
+            return AnnotationSupport.getDirectlyAndIndirectlyPresent(annotations, annotation);
         }
 
         // AnnotatedType

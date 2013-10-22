@@ -70,7 +70,6 @@ import static java.time.temporal.ChronoField.OFFSET_SECONDS;
 import static java.time.temporal.ChronoUnit.NANOS;
 
 import java.io.IOException;
-import java.io.InvalidObjectException;
 import java.io.ObjectInput;
 import java.io.ObjectOutput;
 import java.io.InvalidObjectException;
@@ -84,6 +83,7 @@ import java.time.temporal.TemporalAccessor;
 import java.time.temporal.TemporalAdjuster;
 import java.time.temporal.TemporalAmount;
 import java.time.temporal.TemporalField;
+import java.time.temporal.TemporalQueries;
 import java.time.temporal.TemporalQuery;
 import java.time.temporal.TemporalUnit;
 import java.time.temporal.UnsupportedTemporalTypeException;
@@ -1068,13 +1068,13 @@ public final class OffsetTime
     @SuppressWarnings("unchecked")
     @Override
     public <R> R query(TemporalQuery<R> query) {
-        if (query == TemporalQuery.offset() || query == TemporalQuery.zone()) {
+        if (query == TemporalQueries.offset() || query == TemporalQueries.zone()) {
             return (R) offset;
-        } else if (query == TemporalQuery.zoneId() | query == TemporalQuery.chronology() || query == TemporalQuery.localDate()) {
+        } else if (query == TemporalQueries.zoneId() | query == TemporalQueries.chronology() || query == TemporalQueries.localDate()) {
             return null;
-        } else if (query == TemporalQuery.localTime()) {
+        } else if (query == TemporalQueries.localTime()) {
             return (R) time;
-        } else if (query == TemporalQuery.precision()) {
+        } else if (query == TemporalQueries.precision()) {
             return (R) NANOS;
         }
         // inline TemporalAccessor.super.query(query) as an optimization
@@ -1351,13 +1351,13 @@ public final class OffsetTime
      * Outputs this time as a {@code String}, such as {@code 10:15:30+01:00}.
      * <p>
      * The output will be one of the following ISO-8601 formats:
-     * <p><ul>
+     * <ul>
      * <li>{@code HH:mmXXXXX}</li>
      * <li>{@code HH:mm:ssXXXXX}</li>
      * <li>{@code HH:mm:ss.SSSXXXXX}</li>
      * <li>{@code HH:mm:ss.SSSSSSXXXXX}</li>
      * <li>{@code HH:mm:ss.SSSSSSSSSXXXXX}</li>
-     * </ul><p>
+     * </ul>
      * The format used will be the shortest that outputs the full value of
      * the time where the omitted parts are implied to be zero.
      *

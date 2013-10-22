@@ -57,6 +57,7 @@ import sun.misc.URLClassPath;
 import sun.misc.VM;
 import sun.reflect.CallerSensitive;
 import sun.reflect.Reflection;
+import sun.reflect.misc.ReflectUtil;
 import sun.security.util.SecurityConstants;
 
 /**
@@ -486,6 +487,13 @@ public abstract class ClassLoader {
     private void checkPackageAccess(Class<?> cls, ProtectionDomain pd) {
         final SecurityManager sm = System.getSecurityManager();
         if (sm != null) {
+            if (ReflectUtil.isNonPublicProxyClass(cls)) {
+                for (Class intf: cls.getInterfaces()) {
+                    checkPackageAccess(intf, pd);
+                }
+                return;
+            }
+
             final String name = cls.getName();
             final int i = name.lastIndexOf('.');
             if (i != -1) {
