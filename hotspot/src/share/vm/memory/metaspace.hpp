@@ -139,7 +139,6 @@ class Metaspace : public CHeapObj<mtClass> {
   // Allocate space for metadata of type mdtype. This is space
   // within a Metachunk and is used by
   //   allocate(ClassLoaderData*, size_t, bool, MetadataType, TRAPS)
-  // which returns a Metablock.
   MetaWord* allocate(size_t word_size, MetadataType mdtype);
 
   // Virtual Space lists for both classes and other metadata
@@ -217,8 +216,8 @@ class Metaspace : public CHeapObj<mtClass> {
   size_t used_bytes_slow(MetadataType mdtype) const;
   size_t capacity_bytes_slow(MetadataType mdtype) const;
 
-  static Metablock* allocate(ClassLoaderData* loader_data, size_t word_size,
-                             bool read_only, MetaspaceObj::Type type, TRAPS);
+  static MetaWord* allocate(ClassLoaderData* loader_data, size_t word_size,
+                            bool read_only, MetaspaceObj::Type type, TRAPS);
   void deallocate(MetaWord* ptr, size_t byte_size, bool is_class);
 
   MetaWord* expand_and_allocate(size_t size,
