@@ -43,6 +43,7 @@ import java.util.concurrent.Callable;
 import javax.script.Bindings;
 import jdk.nashorn.internal.runtime.Context;
 import jdk.nashorn.internal.runtime.GlobalObject;
+import jdk.nashorn.internal.runtime.JSType;
 import jdk.nashorn.internal.runtime.ScriptFunction;
 import jdk.nashorn.internal.runtime.ScriptObject;
 import jdk.nashorn.internal.runtime.ScriptRuntime;
@@ -704,5 +705,14 @@ public final class ScriptObjectMirror extends JSObject implements Bindings {
                 Context.setGlobal(oldGlobal);
             }
         }
+    }
+
+    @Override
+    public double toNumber() {
+        return inGlobal(new Callable<Double>() {
+            @Override public Double call() {
+                return JSType.toNumber(sobj);
+            }
+        });
     }
 }

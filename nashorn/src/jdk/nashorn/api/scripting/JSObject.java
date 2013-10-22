@@ -234,4 +234,13 @@ public abstract class JSObject {
     public boolean isArray() {
         return false;
     }
+
+    /**
+     * Returns this object's numeric value.
+     *
+     * @return this object's numeric value.
+     */
+    public double toNumber() {
+        return Double.NaN;
+    }
 }

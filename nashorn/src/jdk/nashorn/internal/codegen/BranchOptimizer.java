@@ -72,8 +72,7 @@ final class BranchOptimizer {
         }
 
         // convert to boolean
-        codegen.load(unaryNode);
-        method.convert(Type.BOOLEAN);
+        codegen.load(unaryNode, Type.BOOLEAN);
         if (state) {
             method.ifne(label);
         } else {
@@ -146,8 +145,7 @@ final class BranchOptimizer {
             break;
         }
 
-        codegen.load(binaryNode);
-        method.convert(Type.BOOLEAN);
+        codegen.load(binaryNode, Type.BOOLEAN);
         if (state) {
             method.ifne(label);
         } else {
@@ -169,8 +167,7 @@ final class BranchOptimizer {
             }
         }
 
-        codegen.load(node);
-        method.convert(Type.BOOLEAN);
+        codegen.load(node, Type.BOOLEAN);
         if (state) {
             method.ifne(label);
         } else {
