@@ -117,17 +117,13 @@ public abstract class AnnoConstruct implements AnnotatedConstruct {
                 annoType.isAnnotationPresent(Inherited.class))
             return getInheritedAnnotations(annoType);
 
-        // Pack them in an array
-        Attribute[] contained0 = null;
-        if (container != null)
-            contained0 = unpackAttributes(container);
-        ListBuffer<Attribute.Compound> compounds = new ListBuffer<>();
-        if (contained0 != null) {
-            for (Attribute a : contained0)
-                if (a instanceof Attribute.Compound)
-                    compounds = compounds.append((Attribute.Compound)a);
-        }
-        Attribute.Compound[] contained = compounds.toArray(new Attribute.Compound[compounds.size()]);
+        Attribute.Compound[] contained = unpackContained(container);
+
+        // In case of an empty legacy container we might need to look for
+        // inherited annos as well
+        if (direct == null && contained.length == 0 &&
+                annoType.isAnnotationPresent(Inherited.class))
+            return getInheritedAnnotations(annoType);
 
         int size = (direct == null ? 0 : 1) + contained.length;
         @SuppressWarnings("unchecked") // annoType is the Class for A
@@ -159,6 +155,19 @@ public abstract class AnnoConstruct implements AnnotatedConstruct {
         return arr;
     }
 
+    private Attribute.Compound[] unpackContained(Attribute.Compound container) {
+        // Pack them in an array
+        Attribute[] contained0 = null;
+        if (container != null)
+            contained0 = unpackAttributes(container);
+        ListBuffer<Attribute.Compound> compounds = new ListBuffer<>();
+        if (contained0 != null) {
+            for (Attribute a : contained0)
+                if (a instanceof Attribute.Compound)
+                    compounds = compounds.append((Attribute.Compound)a);
+        }
+        return compounds.toArray(new Attribute.Compound[compounds.size()]);
+    }
 
     // This method is part of the javax.lang.model API, do not use this in javac code.
     public <A extends Annotation> A getAnnotation(Class<A> annoType) {
