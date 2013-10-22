@@ -639,6 +639,7 @@ PreserveJVMState::PreserveJVMState(GraphKit* kit, bool clone_map) {
   _map    = kit->map();   // preserve the map
   _sp     = kit->sp();
   kit->set_map(clone_map ? kit->clone_map() : NULL);
+  Compile::current()->inc_preserve_jvm_state();
 #ifdef ASSERT
   _bci    = kit->bci();
   Parse* parser = kit->is_Parse();
@@ -656,6 +657,7 @@ PreserveJVMState::~PreserveJVMState() {
 #endif
   kit->set_map(_map);
   kit->set_sp(_sp);
+  Compile::current()->dec_preserve_jvm_state();
 }
 
 
@@ -1373,17 +1375,70 @@ Node* GraphKit::cast_not_null(Node* obj, bool do_replace_in_map) {
 
 //--------------------------replace_in_map-------------------------------------
 void GraphKit::replace_in_map(Node* old, Node* neww) {
-  this->map()->replace_edge(old, neww);
+  if (old == neww) {
+    return;
+  }
+
+  map()->replace_edge(old, neww);
 
   // Note: This operation potentially replaces any edge
   // on the map.  This includes locals, stack, and monitors
   // of the current (innermost) JVM state.
 
-  // We can consider replacing in caller maps.
-  // The idea would be that an inlined function's null checks
-  // can be shared with the entire inlining tree.
-  // The expense of doing this is that the PreserveJVMState class
-  // would have to preserve caller states too, with a deep copy.
+  if (!ReplaceInParentMaps) {
+    return;
+  }
+
+  // PreserveJVMState doesn't do a deep copy so we can't modify
+  // parents
+  if (Compile::current()->has_preserve_jvm_state()) {
+    return;
+  }
+
+  Parse* parser = is_Parse();
+  bool progress = true;
+  Node* ctrl = map()->in(0);
+  // Follow the chain of parsers and see whether the update can be
+  // done in the map of callers. We can do the replace for a caller if
+  // the current control post dominates the control of a caller.
+  while (parser != NULL && parser->caller() != NULL && progress) {
+    progress = false;
+    Node* parent_map = parser->caller()->map();
+    assert(parser->exits().map()->jvms()->depth() == parser->caller()->depth(), "map mismatch");
+
+    Node* parent_ctrl = parent_map->in(0);
+
+    while (parent_ctrl->is_Region()) {
+      Node* n = parent_ctrl->as_Region()->is_copy();
+      if (n == NULL) {
+        break;
+      }
+      parent_ctrl = n;
+    }
+
+    for (;;) {
+      if (ctrl == parent_ctrl) {
+        // update the map of the exits which is the one that will be
+        // used when compilation resume after inlining
+        parser->exits().map()->replace_edge(old, neww);
+        progress = true;
+        break;
+      }
+      if (ctrl->is_Proj() && ctrl->as_Proj()->is_uncommon_trap_if_pattern(Deoptimization::Reason_none)) {
+        ctrl = ctrl->in(0)->in(0);
+      } else if (ctrl->is_Region()) {
+        Node* n = ctrl->as_Region()->is_copy();
+        if (n == NULL) {
+          break;
+        }
+        ctrl = n;
+      } else {
+        break;
+      }
+    }
+
+    parser = parser->parent_parser();
+  }
 }
 
 
