@@ -74,7 +74,7 @@ import sun.security.action.GetIntegerAction;
  * <code>ActivationGroup</code> will override the system properties
  * with the properties requested when its
  * <code>ActivationGroupDesc</code> was created, and will set a
- * <code>java.rmi.RMISecurityManager</code> as the default system
+ * {@link SecurityManager} as the default system
  * security manager.  If your application requires specific properties
  * to be set when objects are activated in the group, the application
  * should create a special <code>Properties</code> object containing
@@ -84,7 +84,7 @@ import sun.security.action.GetIntegerAction;
  * <code>ActivationDesc</code>s (before the default
  * <code>ActivationGroupDesc</code> is created).  If your application
  * requires the use of a security manager other than
- * <code>java.rmi.RMISecurityManager</code>, in the
+ * {@link SecurityManager}, in the
  * ActivativationGroupDescriptor properties list you can set
  * <code>java.security.manager</code> property to the name of the security
  * manager you would like to install.
@@ -235,7 +235,7 @@ public abstract class ActivationGroup
      * <p>Note that if your application creates its own custom
      * activation group, a security manager must be set for that
      * group.  Otherwise objects cannot be activated in the group.
-     * <code>java.rmi.RMISecurityManager</code> is set by default.
+     * {@link SecurityManager} is set by default.
      *
      * <p>If a security manager is already set in the group VM, this
      * method first calls the security manager's
