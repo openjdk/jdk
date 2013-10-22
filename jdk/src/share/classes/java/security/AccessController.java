@@ -39,9 +39,9 @@ import sun.reflect.Reflection;
  * <ul>
  * <li> to decide whether an access to a critical system
  * resource is to be allowed or denied, based on the security policy
- * currently in effect,<p>
+ * currently in effect,
  * <li>to mark code as being "privileged", thus affecting subsequent
- * access determinations, and<p>
+ * access determinations, and
  * <li>to obtain a "snapshot" of the current calling context so
  * access-control decisions from a different context can be made with
  * respect to the saved context. </ul>

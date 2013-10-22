@@ -138,13 +138,13 @@ public final class Period
     /**
      * The pattern for parsing.
      */
-    private final static Pattern PATTERN =
+    private static final Pattern PATTERN =
             Pattern.compile("([-+]?)P(?:([-+]?[0-9]+)Y)?(?:([-+]?[0-9]+)M)?(?:([-+]?[0-9]+)W)?(?:([-+]?[0-9]+)D)?", Pattern.CASE_INSENSITIVE);
 
     /**
      * The set of supported units.
      */
-    private final static List<TemporalUnit> SUPPORTED_UNITS =
+    private static final List<TemporalUnit> SUPPORTED_UNITS =
             Collections.unmodifiableList(Arrays.<TemporalUnit>asList(YEARS, MONTHS, DAYS));
 
     /**

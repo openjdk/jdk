@@ -49,7 +49,6 @@ import sun.security.action.GetPropertyAction;
  * <p>
  * When encoding a String, the following rules apply:
  *
- * <p>
  * <ul>
  * <li>The alphanumeric characters &quot;{@code a}&quot; through
  *     &quot;{@code z}&quot;, &quot;{@code A}&quot; through

@@ -141,7 +141,7 @@ public final class Duration
     /**
      * The pattern for parsing.
      */
-    private final static Pattern PATTERN =
+    private static final Pattern PATTERN =
             Pattern.compile("([-+]?)P(?:([-+]?[0-9]+)D)?" +
                     "(T(?:([-+]?[0-9]+)H)?(?:([-+]?[0-9]+)M)?(?:([-+]?[0-9]+)(?:[.,]([0-9]{0,9}))?S)?)?",
                     Pattern.CASE_INSENSITIVE);
@@ -554,7 +554,7 @@ public final class Duration
      * the simple initialization in Duration.
      */
     private static class DurationUnits {
-        final static List<TemporalUnit> UNITS =
+        static final List<TemporalUnit> UNITS =
                 Collections.unmodifiableList(Arrays.<TemporalUnit>asList(SECONDS, NANOS));
     }
 

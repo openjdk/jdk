@@ -562,9 +562,8 @@ public interface Map<K,V> {
     // Defaultable methods
 
     /**
-     * Returns the value to which the specified key is mapped,
-     * or {@code defaultValue} if this map contains no mapping
-     * for the key.
+     * Returns the value to which the specified key is mapped, or
+     * {@code defaultValue} if this map contains no mapping for the key.
      *
      * <p>The default implementation makes no guarantees about synchronization
      * or atomicity properties of this method. Any implementation providing
@@ -591,9 +590,10 @@ public interface Map<K,V> {
     }
 
     /**
-     * Performs the given action on each entry in this map, in the order entries
-     * are returned by an entry set iterator (which may be unspecified), until
-     * all entries have been processed or the action throws an {@code Exception}.
+     * Performs the given action for each entry in this map until all entries
+     * have been processed or the action throws an exception.   Unless
+     * otherwise specified by the implementing class, actions are performed in
+     * the order of entry set iteration (if an iteration order is specified.)
      * Exceptions thrown by the action are relayed to the caller.
      *
      * <p>The default implementation should be overridden by implementations if
@@ -636,9 +636,9 @@ public interface Map<K,V> {
 
     /**
      * Replaces each entry's value with the result of invoking the given
-     * function on that entry, in the order entries are returned by an entry
-     * set iterator, until all entries have been processed or the function
-     * throws an exception.
+     * function on that entry until all entries have been processed or the
+     * function throws an exception.  Exceptions thrown by the function are
+     * relayed to the caller.
      *
      * <p>The default implementation makes no guarantees about synchronization
      * or atomicity properties of this method. Any implementation providing
