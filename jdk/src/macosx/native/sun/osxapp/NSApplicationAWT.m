@@ -341,6 +341,10 @@ AWT_ASSERT_APPKIT_THREAD;
     if ([event type] == NSApplicationDefined && TS_EQUAL([event timestamp], dummyEventTimestamp)) {
         [seenDummyEventLock lockWhenCondition:NO];
         [seenDummyEventLock unlockWithCondition:YES];
+    } else if ([event type] == NSKeyUp && ([event modifierFlags] & NSCommandKeyMask)) {
+        // Cocoa won't send us key up event when releasing a key while Cmd is down,
+        // so we have to do it ourselves.
+        [[self keyWindow] sendEvent:event];
     } else {
         [super sendEvent:event];
     }
