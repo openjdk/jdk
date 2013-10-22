@@ -38,7 +38,6 @@ import jdk.internal.dynalink.linker.LinkerServices;
 import jdk.internal.dynalink.linker.TypeBasedGuardingDynamicLinker;
 import jdk.internal.dynalink.support.CallSiteDescriptorFactory;
 import jdk.nashorn.api.scripting.JSObject;
-import jdk.nashorn.api.scripting.ScriptObjectMirror;
 import jdk.nashorn.internal.lookup.MethodHandleFactory;
 import jdk.nashorn.internal.lookup.MethodHandleFunctionality;
 import jdk.nashorn.internal.runtime.JSType;
@@ -81,16 +80,17 @@ final class JSObjectLinker implements TypeBasedGuardingDynamicLinker, GuardingTy
 
     @Override
     public GuardedInvocation convertToType(final Class<?> sourceType, final Class<?> targetType) throws Exception {
-        if(!sourceType.isAssignableFrom(ScriptObjectMirror.class)) {
+        final boolean sourceIsAlwaysJSObject = JSObject.class.isAssignableFrom(sourceType);
+        if(!sourceIsAlwaysJSObject && !sourceType.isAssignableFrom(JSObject.class)) {
             return null;
         }
 
-        final MethodHandle converter = MIRROR_CONVERTERS.get(targetType);
+        final MethodHandle converter = CONVERTERS.get(targetType);
         if(converter == null) {
             return null;
         }
 
-        return new GuardedInvocation(converter, sourceType == ScriptObjectMirror.class ? null : IS_MIRROR_GUARD).asType(MethodType.methodType(targetType, sourceType));
+        return new GuardedInvocation(converter, sourceIsAlwaysJSObject ? null : IS_JSOBJECT_GUARD).asType(MethodType.methodType(targetType, sourceType));
     }
 
 
@@ -157,11 +157,6 @@ final class JSObjectLinker implements TypeBasedGuardingDynamicLinker, GuardingTy
     }
 
     @SuppressWarnings("unused")
-    private static boolean isScriptObjectMirror(final Object self) {
-        return self instanceof ScriptObjectMirror;
-    }
-
-    @SuppressWarnings("unused")
     private static Object get(final Object jsobj, final Object key) {
         if (key instanceof Integer) {
             return ((JSObject)jsobj).getSlot((Integer)key);
@@ -187,6 +182,25 @@ final class JSObjectLinker implements TypeBasedGuardingDynamicLinker, GuardingTy
         }
     }
 
+    @SuppressWarnings("unused")
+    private static int toInt32(final JSObject obj) {
+        return JSType.toInt32(toNumber(obj));
+    }
+
+    @SuppressWarnings("unused")
+    private static long toInt64(final JSObject obj) {
+        return JSType.toInt64(toNumber(obj));
+    }
+
+    private static double toNumber(final JSObject obj) {
+        return obj == null ? 0 : obj.toNumber();
+    }
+
+    @SuppressWarnings("unused")
+    private static boolean toBoolean(final JSObject obj) {
+        return obj != null;
+    }
+
     private static int getIndex(final Number n) {
         final double value = n.doubleValue();
         return JSType.isRepresentableAsInt(value) ? (int)value : -1;
@@ -196,7 +210,6 @@ final class JSObjectLinker implements TypeBasedGuardingDynamicLinker, GuardingTy
 
     // method handles of the current class
     private static final MethodHandle IS_JSOBJECT_GUARD  = findOwnMH("isJSObject", boolean.class, Object.class);
-    private static final MethodHandle IS_MIRROR_GUARD    = findOwnMH("isScriptObjectMirror", boolean.class, Object.class);
     private static final MethodHandle JSOBJECTLINKER_GET = findOwnMH("get", Object.class, Object.class, Object.class);
     private static final MethodHandle JSOBJECTLINKER_PUT = findOwnMH("put", Void.TYPE, Object.class, Object.class, Object.class);
 
@@ -207,12 +220,12 @@ final class JSObjectLinker implements TypeBasedGuardingDynamicLinker, GuardingTy
     private static final MethodHandle JSOBJECT_CALL       = findJSObjectMH("call", Object.class, Object.class, Object[].class);
     private static final MethodHandle JSOBJECT_NEW        = findJSObjectMH("newObject", Object.class, Object[].class);
 
-    private static final Map<Class<?>, MethodHandle> MIRROR_CONVERTERS = new HashMap<>();
+    private static final Map<Class<?>, MethodHandle> CONVERTERS = new HashMap<>();
     static {
-        MIRROR_CONVERTERS.put(boolean.class, MH.dropArguments(MH.constant(boolean.class, Boolean.TRUE), 0, Object.class));
-        MIRROR_CONVERTERS.put(int.class, findMirrorMH("toInt32", int.class));
-        MIRROR_CONVERTERS.put(long.class, findMirrorMH("toInt64", long.class));
-        MIRROR_CONVERTERS.put(double.class, findMirrorMH("toNumber", double.class));
+        CONVERTERS.put(boolean.class, findOwnMH("toBoolean", boolean.class, JSObject.class));
+        CONVERTERS.put(int.class, findOwnMH("toInt32", int.class, JSObject.class));
+        CONVERTERS.put(long.class, findOwnMH("toInt64", long.class, JSObject.class));
+        CONVERTERS.put(double.class, findOwnMH("toNumber", double.class, JSObject.class));
     }
 
     private static MethodHandle findOwnMH(final String name, final Class<?> rtype, final Class<?>... types) {
@@ -221,10 +234,6 @@ final class JSObjectLinker implements TypeBasedGuardingDynamicLinker, GuardingTy
 
     private static MethodHandle findJSObjectMH(final String name, final Class<?> rtype, final Class<?>... types) {
         return findMH(name, JSObject.class, rtype, types);
-    }
-
-    private static MethodHandle findMirrorMH(final String name, final Class<?> rtype, final Class<?>... types) {
-        return findMH(name, ScriptObjectMirror.class, rtype, types);
     }
 
     private static MethodHandle findMH(final String name, final Class<?> target, final Class<?> rtype, final Class<?>... types) {

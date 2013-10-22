@@ -631,17 +631,6 @@ public enum JSType {
     }
 
     /**
-     * JavaScript compliant Object to int32 conversion
-     * See ECMA 9.5 ToInt32
-     *
-     * @param obj an object
-     * @return an int32
-     */
-    public static int toInt32(final ScriptObject obj) {
-        return toInt32(toNumber(obj));
-    }
-
-    /**
      * JavaScript compliant long to int32 conversion
      *
      * @param num a long
@@ -668,16 +657,6 @@ public enum JSType {
      * @return an int64
      */
     public static long toInt64(final Object obj) {
-        return toInt64(toNumber(obj));
-    }
-
-    /**
-     * JavaScript compliant Object to int64 conversion
-     *
-     * @param obj an object
-     * @return an int64
-     */
-    public static long toInt64(final ScriptObject obj) {
         return toInt64(toNumber(obj));
     }
 
