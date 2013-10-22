@@ -576,9 +576,7 @@ ifeq ($(OPENJDK_TARGET_OS), linux)
   BUILD_LAUNCHERS += $(JAVA_RMI_CGI)
 endif
 ifeq ($(OPENJDK_TARGET_OS), solaris)
-  ifeq ($(OPENJDK_TARGET_CPU_BITS), 32)
-    BUILD_LAUNCHERS += $(JAVA_RMI_CGI)
-  endif
+  BUILD_LAUNCHERS += $(JAVA_RMI_CGI)
 endif
 
 # TODO:
