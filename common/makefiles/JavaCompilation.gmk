@@ -266,8 +266,12 @@ define SetupZipArchive
   endif
 
   # Find all files in the source tree.
-  $1_ALL_SRCS := $$(call not-containing,_the., \
-      $$(filter $$(addprefix %,$$($1_SUFFIXES)),$$(call CacheFind,$$($1_FIND_LIST))))
+  $1_ALL_SRCS := $$(call not-containing,_the.,$$(call CacheFind,$$($1_FIND_LIST)))
+
+  # Filter on suffixes if set
+  ifneq ($$($1_SUFFIXES),)
+    $1_ALL_SRCS := $$(filter $$(addprefix %, $$($1_SUFFIXES)), $$($1_ALL_SRCS))
+  endif
 
   ifneq ($$($1_INCLUDES),)
     ifneq ($$($1_SUFFIXES),)

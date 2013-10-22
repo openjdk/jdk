@@ -60,7 +60,7 @@ AC_DEFUN_ONCE([LIB_SETUP_INIT],
     FREETYPE2_NOT_NEEDED=yes
     # If the java runtime framework is disabled, then we need X11.
     # This will be adjusted below.
-    AC_MSG_RESULT([alsa pulse x11])
+    AC_MSG_RESULT([alsa pulse x11 freetype])
   fi
 
   if test "x$OPENJDK_TARGET_OS" = xbsd; then
@@ -79,32 +79,16 @@ AC_DEFUN_ONCE([LIB_SETUP_INIT],
 
   ###############################################################################
   #
-  # Check for MacOSX support for OpenJDK. If this exists, try to build a JVM
-  # that uses this API.
+  # Check for MacOSX support for OpenJDK.
   #
-  AC_ARG_ENABLE([macosx-runtime-support], [AS_HELP_STRING([--disable-macosx-runtime-support],
-      [disable the use of MacOSX Java runtime support framework @<:@enabled@:>@])],
-      [MACOSX_RUNTIME_SUPPORT="${enableval}"],[MACOSX_RUNTIME_SUPPORT="no"])
 
-  USE_MACOSX_RUNTIME_SUPPORT=no
-  AC_MSG_CHECKING([for explicit Java runtime support in the OS])
+  BASIC_DEPRECATED_ARG_ENABLE(macosx-runtime-support, macosx_runtime_support)
+
+  AC_MSG_CHECKING([for Mac OS X Java Framework])
   if test -f /System/Library/Frameworks/JavaVM.framework/Frameworks/JavaRuntimeSupport.framework/Headers/JavaRuntimeSupport.h; then
-    if test "x$MACOSX_RUNTIME_SUPPORT" != xno; then
-      MACOSX_RUNTIME_SUPPORT=yes
-      USE_MACOSX_RUNTIME_SUPPORT=yes
-      AC_MSG_RESULT([yes, does not need alsa freetype2 pulse and X11])
-    else
-      AC_MSG_RESULT([yes, but explicitly disabled.])
-    fi
+    AC_MSG_RESULT([/System/Library/Frameworks/JavaVM.framework])
   else
     AC_MSG_RESULT([no])
-  fi
-
-  if test "x$OPENJDK_TARGET_OS" = xmacosx && test "x$USE_MACOSX_RUNTIME_SUPPORT" = xno; then
-    AC_MSG_CHECKING([what is not needed on an X11 build on MacOSX?])
-    X11_NOT_NEEDED=
-    FREETYPE2_NOT_NEEDED=
-    AC_MSG_RESULT([alsa pulse])
   fi
 ])
 

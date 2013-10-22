@@ -1716,9 +1716,9 @@ Optional Features:
   --disable-debug-symbols disable generation of debug symbols [enabled]
   --disable-zip-debug-info
                           disable zipping of debug-info files [enabled]
-  --disable-macosx-runtime-support
-                          disable the use of MacOSX Java runtime support
-                          framework [enabled]
+  --enable-macosx-runtime-support
+                          Deprecated. Option is kept for backwards
+                          compatibility and is ignored
   --enable-sjavac         use sjavac to do fast incremental compiles
                           [disabled]
   --disable-precompiled-headers
@@ -3149,6 +3149,11 @@ ac_configure="$SHELL $ac_aux_dir/configure"  # Please don't use this var.
 # $1: The name of the with argument to deprecate, not including --with-
 
 
+# Register a --enable argument but mark it as deprecated
+# $1: The name of the with argument to deprecate, not including --enable-
+# $2: The name of the argument to deprecate, in shell variable style (i.e. with _ instead of -)
+
+
 
 
 # Test that variable $1 denoting a program is not empty. If empty, exit with an error.
@@ -3444,14 +3449,40 @@ ac_configure="$SHELL $ac_aux_dir/configure"  # Please don't use this var.
 cygwin_help() {
   case $1 in
     unzip)
-      PKGHANDLER_COMMAND="cd <location of cygwin setup.exe> && cmd /c setup -q -P unzip" ;;
+      PKGHANDLER_COMMAND="( cd <location of cygwin setup.exe> && cmd /c setup -q -P unzip )"
+      HELP_MSG="You might be able to fix this by running '$PKGHANDLER_COMMAND'."
+      ;;
     zip)
-      PKGHANDLER_COMMAND="cd <location of cygwin setup.exe> && cmd /c setup -q -P zip" ;;
+      PKGHANDLER_COMMAND="( cd <location of cygwin setup.exe> && cmd /c setup -q -P zip )"
+      HELP_MSG="You might be able to fix this by running '$PKGHANDLER_COMMAND'."
+      ;;
     make)
-      PKGHANDLER_COMMAND="cd <location of cygwin setup.exe> && cmd /c setup -q -P make" ;;
+      PKGHANDLER_COMMAND="( cd <location of cygwin setup.exe> && cmd /c setup -q -P make )"
+      HELP_MSG="You might be able to fix this by running '$PKGHANDLER_COMMAND'."
+      ;;
+    freetype2)
+      if test "x$OPENJDK_TARGET_CPU_BITS" = x32; then
+        HELP_MSG="To install freetype, run:
+wget \"http://gnuwin32.sourceforge.net/downlinks/freetype.php\" -O /tmp/freetype-setup.exe
+chmod +x /tmp/freetype-setup.exe
+/tmp/freetype-setup.exe
+Follow GUI prompts, and install to default directory \"C:\Program Files (x86)\GnuWin32\".
+After installation, locate lib/libfreetype.dll.a and make a copy with the name freetype.dll."
+      else
+        HELP_MSG="You need to build a 64-bit version of freetype.
+This is not readily available.
+You can find source code and build instructions on
+http://www.freetype.org/
+If you put the resulting build in \"C:\Program Files\GnuWin32\", it will be found automatically."
+      fi
+      ;;
     * )
       break ;;
   esac
+}
+
+msys_help() {
+  PKGHANDLER_COMMAND=""
 }
 
 apt_help() {
@@ -3813,13 +3844,17 @@ fi
 
 
 
+
+
+
+
 # This line needs to be here, verbatim, after all includes and the dummy hook
 # definitions. It is replaced with custom functionality when building
 # custom sources.
 #CUSTOM_AUTOCONF_INCLUDE
 
 # Do not change or remove the following line, it is needed for consistency checks:
-DATE_WHEN_GENERATED=1381407169
+DATE_WHEN_GENERATED=1382437436
 
 ###############################################################################
 #
@@ -8270,7 +8305,7 @@ $as_echo "$as_me: Testing potential make at $MAKE_CANDIDATE, found using $DESCRI
       { $as_echo "$as_me:${as_lineno-$LINENO}: Found potential make at $MAKE_CANDIDATE, however, this is not GNU Make. Ignoring." >&5
 $as_echo "$as_me: Found potential make at $MAKE_CANDIDATE, however, this is not GNU Make. Ignoring." >&6;}
     else
-      IS_MODERN_MAKE=`$ECHO $MAKE_VERSION_STRING | $GREP '3.8[12346789]'`
+      IS_MODERN_MAKE=`$ECHO $MAKE_VERSION_STRING | $GREP '\(3\.8[12]\)\|\(4\.\)'`
       if test "x$IS_MODERN_MAKE" = x; then
         { $as_echo "$as_me:${as_lineno-$LINENO}: Found GNU make at $MAKE_CANDIDATE, however this is not version 3.81 or later. (it is: $MAKE_VERSION_STRING). Ignoring." >&5
 $as_echo "$as_me: Found GNU make at $MAKE_CANDIDATE, however this is not version 3.81 or later. (it is: $MAKE_VERSION_STRING). Ignoring." >&6;}
@@ -8627,7 +8662,7 @@ $as_echo "$as_me: Testing potential make at $MAKE_CANDIDATE, found using $DESCRI
       { $as_echo "$as_me:${as_lineno-$LINENO}: Found potential make at $MAKE_CANDIDATE, however, this is not GNU Make. Ignoring." >&5
 $as_echo "$as_me: Found potential make at $MAKE_CANDIDATE, however, this is not GNU Make. Ignoring." >&6;}
     else
-      IS_MODERN_MAKE=`$ECHO $MAKE_VERSION_STRING | $GREP '3.8[12346789]'`
+      IS_MODERN_MAKE=`$ECHO $MAKE_VERSION_STRING | $GREP '\(3\.8[12]\)\|\(4\.\)'`
       if test "x$IS_MODERN_MAKE" = x; then
         { $as_echo "$as_me:${as_lineno-$LINENO}: Found GNU make at $MAKE_CANDIDATE, however this is not version 3.81 or later. (it is: $MAKE_VERSION_STRING). Ignoring." >&5
 $as_echo "$as_me: Found GNU make at $MAKE_CANDIDATE, however this is not version 3.81 or later. (it is: $MAKE_VERSION_STRING). Ignoring." >&6;}
@@ -8981,7 +9016,7 @@ $as_echo "$as_me: Testing potential make at $MAKE_CANDIDATE, found using $DESCRI
       { $as_echo "$as_me:${as_lineno-$LINENO}: Found potential make at $MAKE_CANDIDATE, however, this is not GNU Make. Ignoring." >&5
 $as_echo "$as_me: Found potential make at $MAKE_CANDIDATE, however, this is not GNU Make. Ignoring." >&6;}
     else
-      IS_MODERN_MAKE=`$ECHO $MAKE_VERSION_STRING | $GREP '3.8[12346789]'`
+      IS_MODERN_MAKE=`$ECHO $MAKE_VERSION_STRING | $GREP '\(3\.8[12]\)\|\(4\.\)'`
       if test "x$IS_MODERN_MAKE" = x; then
         { $as_echo "$as_me:${as_lineno-$LINENO}: Found GNU make at $MAKE_CANDIDATE, however this is not version 3.81 or later. (it is: $MAKE_VERSION_STRING). Ignoring." >&5
 $as_echo "$as_me: Found GNU make at $MAKE_CANDIDATE, however this is not version 3.81 or later. (it is: $MAKE_VERSION_STRING). Ignoring." >&6;}
@@ -9340,7 +9375,7 @@ $as_echo "$as_me: Testing potential make at $MAKE_CANDIDATE, found using $DESCRI
       { $as_echo "$as_me:${as_lineno-$LINENO}: Found potential make at $MAKE_CANDIDATE, however, this is not GNU Make. Ignoring." >&5
 $as_echo "$as_me: Found potential make at $MAKE_CANDIDATE, however, this is not GNU Make. Ignoring." >&6;}
     else
-      IS_MODERN_MAKE=`$ECHO $MAKE_VERSION_STRING | $GREP '3.8[12346789]'`
+      IS_MODERN_MAKE=`$ECHO $MAKE_VERSION_STRING | $GREP '\(3\.8[12]\)\|\(4\.\)'`
       if test "x$IS_MODERN_MAKE" = x; then
         { $as_echo "$as_me:${as_lineno-$LINENO}: Found GNU make at $MAKE_CANDIDATE, however this is not version 3.81 or later. (it is: $MAKE_VERSION_STRING). Ignoring." >&5
 $as_echo "$as_me: Found GNU make at $MAKE_CANDIDATE, however this is not version 3.81 or later. (it is: $MAKE_VERSION_STRING). Ignoring." >&6;}
@@ -9693,7 +9728,7 @@ $as_echo "$as_me: Testing potential make at $MAKE_CANDIDATE, found using $DESCRI
       { $as_echo "$as_me:${as_lineno-$LINENO}: Found potential make at $MAKE_CANDIDATE, however, this is not GNU Make. Ignoring." >&5
 $as_echo "$as_me: Found potential make at $MAKE_CANDIDATE, however, this is not GNU Make. Ignoring." >&6;}
     else
-      IS_MODERN_MAKE=`$ECHO $MAKE_VERSION_STRING | $GREP '3.8[12346789]'`
+      IS_MODERN_MAKE=`$ECHO $MAKE_VERSION_STRING | $GREP '\(3\.8[12]\)\|\(4\.\)'`
       if test "x$IS_MODERN_MAKE" = x; then
         { $as_echo "$as_me:${as_lineno-$LINENO}: Found GNU make at $MAKE_CANDIDATE, however this is not version 3.81 or later. (it is: $MAKE_VERSION_STRING). Ignoring." >&5
 $as_echo "$as_me: Found GNU make at $MAKE_CANDIDATE, however this is not version 3.81 or later. (it is: $MAKE_VERSION_STRING). Ignoring." >&6;}
@@ -15778,25 +15813,32 @@ $as_echo "$BOOT_JDK_VERSION" >&6; }
   # Print a helpful message on how to acquire the necessary build dependency.
   # openjdk is the help tag: freetyp2, cups, pulse, alsa etc
   MISSING_DEPENDENCY=openjdk
-  PKGHANDLER_COMMAND=
 
-  case $PKGHANDLER in
-    apt-get)
-      apt_help     $MISSING_DEPENDENCY ;;
-    yum)
-      yum_help     $MISSING_DEPENDENCY ;;
-    port)
-      port_help    $MISSING_DEPENDENCY ;;
-    pkgutil)
-      pkgutil_help $MISSING_DEPENDENCY ;;
-    pkgadd)
-      pkgadd_help  $MISSING_DEPENDENCY ;;
-    * )
-      break ;;
-  esac
+  if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
+    cygwin_help $MISSING_DEPENDENCY
+  elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
+    msys_help $MISSING_DEPENDENCY
+  else
+    PKGHANDLER_COMMAND=
 
-  if test "x$PKGHANDLER_COMMAND" != x; then
-    HELP_MSG="You might be able to fix this by running '$PKGHANDLER_COMMAND'."
+    case $PKGHANDLER in
+      apt-get)
+        apt_help     $MISSING_DEPENDENCY ;;
+      yum)
+        yum_help     $MISSING_DEPENDENCY ;;
+      port)
+        port_help    $MISSING_DEPENDENCY ;;
+      pkgutil)
+        pkgutil_help $MISSING_DEPENDENCY ;;
+      pkgadd)
+        pkgadd_help  $MISSING_DEPENDENCY ;;
+      * )
+        break ;;
+    esac
+
+    if test "x$PKGHANDLER_COMMAND" != x; then
+      HELP_MSG="You might be able to fix this by running '$PKGHANDLER_COMMAND'."
+    fi
   fi
 
     { $as_echo "$as_me:${as_lineno-$LINENO}: Could not find a valid Boot JDK. $HELP_MSG" >&5
@@ -17474,63 +17516,303 @@ $as_echo "$as_me: or run \"bash.exe -l\" from a VS command prompt and then run c
     as_fn_error $? "Cannot continue" "$LINENO" 5
   fi
 
-  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for msvcr100.dll" >&5
-$as_echo_n "checking for msvcr100.dll... " >&6; }
+
 
 # Check whether --with-msvcr-dll was given.
 if test "${with_msvcr_dll+set}" = set; then :
   withval=$with_msvcr_dll;
 fi
 
+
   if test "x$with_msvcr_dll" != x; then
-    MSVCR_DLL="$with_msvcr_dll"
-  else
-    if test "x$VCINSTALLDIR" != x; then
-      if test "x$OPENJDK_TARGET_CPU_BITS" = x64; then
-        MSVCR_DLL=`find "$VCINSTALLDIR" -name msvcr100.dll | grep x64 | head --lines 1`
-      else
-        MSVCR_DLL=`find "$VCINSTALLDIR" -name msvcr100.dll | grep x86 | grep -v ia64 | grep -v x64 | head --lines 1`
-        if test "x$MSVCR_DLL" = x; then
-          MSVCR_DLL=`find "$VCINSTALLDIR" -name msvcr100.dll | head --lines 1`
-        fi
-      fi
-      if test "x$MSVCR_DLL" != x; then
-        { $as_echo "$as_me:${as_lineno-$LINENO}: msvcr100.dll found in VCINSTALLDIR: $VCINSTALLDIR" >&5
-$as_echo "$as_me: msvcr100.dll found in VCINSTALLDIR: $VCINSTALLDIR" >&6;}
-      else
-        { $as_echo "$as_me:${as_lineno-$LINENO}: Warning: msvcr100.dll not found in VCINSTALLDIR: $VCINSTALLDIR" >&5
-$as_echo "$as_me: Warning: msvcr100.dll not found in VCINSTALLDIR: $VCINSTALLDIR" >&6;}
-      fi
+    # If given explicitely by user, do not probe. If not present, fail directly.
+
+  POSSIBLE_MSVCR_DLL="$with_msvcr_dll"
+  METHOD="--with-msvcr-dll"
+  if test -e "$POSSIBLE_MSVCR_DLL"; then
+    { $as_echo "$as_me:${as_lineno-$LINENO}: Found msvcr100.dll at $POSSIBLE_MSVCR_DLL using $METHOD" >&5
+$as_echo "$as_me: Found msvcr100.dll at $POSSIBLE_MSVCR_DLL using $METHOD" >&6;}
+
+    # Need to check if the found msvcr is correct architecture
+    { $as_echo "$as_me:${as_lineno-$LINENO}: checking found msvcr100.dll architecture" >&5
+$as_echo_n "checking found msvcr100.dll architecture... " >&6; }
+    MSVCR_DLL_FILETYPE=`$FILE -b "$POSSIBLE_MSVCR_DLL"`
+    if test "x$OPENJDK_TARGET_CPU_BITS" = x32; then
+      CORRECT_MSVCR_ARCH=386
+    else
+      CORRECT_MSVCR_ARCH=x86-64
     fi
-    # Try some fallback alternatives
-    if test "x$MSVCR_DLL" = x; then
-      # If visual studio express is installed, there is usually one with the debugger
-      if test "x$VS100COMNTOOLS" != x; then
-        if test "x$OPENJDK_TARGET_CPU_BITS" = x64; then
-          MSVCR_DLL=`find "$VS100COMNTOOLS/.." -name msvcr100.dll | grep -i x64 | head --lines 1`
-          { $as_echo "$as_me:${as_lineno-$LINENO}: msvcr100.dll found in $VS100COMNTOOLS..: $VS100COMNTOOLS.." >&5
-$as_echo "$as_me: msvcr100.dll found in $VS100COMNTOOLS..: $VS100COMNTOOLS.." >&6;}
-        fi
-      fi
-    fi
-    if test "x$MSVCR_DLL" = x; then
-      if test "x$OPENJDK_TARGET_CPU_BITS" = x32; then
-        # Fallback for 32bit builds, look in the windows directory.
-        if test -f "$SYSTEMROOT/system32/msvcr100.dll"; then
-          { $as_echo "$as_me:${as_lineno-$LINENO}: msvcr100.dll found in $SYSTEMROOT/system32" >&5
-$as_echo "$as_me: msvcr100.dll found in $SYSTEMROOT/system32" >&6;}
-          MSVCR_DLL="$SYSTEMROOT/system32/msvcr100.dll"
-        fi
-      fi
+    if $ECHO "$MSVCR_DLL_FILETYPE" | $GREP $CORRECT_MSVCR_ARCH 2>&1 > /dev/null; then
+      { $as_echo "$as_me:${as_lineno-$LINENO}: result: ok" >&5
+$as_echo "ok" >&6; }
+      MSVCR_DLL="$POSSIBLE_MSVCR_DLL"
+      { $as_echo "$as_me:${as_lineno-$LINENO}: checking for msvcr100.dll" >&5
+$as_echo_n "checking for msvcr100.dll... " >&6; }
+      { $as_echo "$as_me:${as_lineno-$LINENO}: result: $MSVCR_DLL" >&5
+$as_echo "$MSVCR_DLL" >&6; }
+    else
+      { $as_echo "$as_me:${as_lineno-$LINENO}: result: incorrect, ignoring" >&5
+$as_echo "incorrect, ignoring" >&6; }
+      { $as_echo "$as_me:${as_lineno-$LINENO}: The file type of the located msvcr100.dll is $MSVCR_DLL_FILETYPE" >&5
+$as_echo "$as_me: The file type of the located msvcr100.dll is $MSVCR_DLL_FILETYPE" >&6;}
     fi
   fi
+
+    if test "x$MSVCR_DLL" = x; then
+      as_fn_error $? "Could not find a proper msvcr100.dll as specified by --with-msvcr-dll" "$LINENO" 5
+    fi
+  fi
+
   if test "x$MSVCR_DLL" = x; then
+    # Probe: Using well-known location from Visual Studio 10.0
+    if test "x$VCINSTALLDIR" != x; then
+      CYGWIN_VC_INSTALL_DIR="$VCINSTALLDIR"
+
+  windows_path="$CYGWIN_VC_INSTALL_DIR"
+  if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
+    unix_path=`$CYGPATH -u "$windows_path"`
+    CYGWIN_VC_INSTALL_DIR="$unix_path"
+  elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
+    unix_path=`$ECHO "$windows_path" | $SED -e 's,^\\(.\\):,/\\1,g' -e 's,\\\\,/,g'`
+    CYGWIN_VC_INSTALL_DIR="$unix_path"
+  fi
+
+      if test "x$OPENJDK_TARGET_CPU_BITS" = x64; then
+        POSSIBLE_MSVCR_DLL="$CYGWIN_VC_INSTALL_DIR/redist/x64/Microsoft.VC100.CRT/msvcr100.dll"
+      else
+        POSSIBLE_MSVCR_DLL="$CYGWIN_VC_INSTALL_DIR/redist/x86/Microsoft.VC100.CRT/msvcr100.dll"
+      fi
+
+  POSSIBLE_MSVCR_DLL="$POSSIBLE_MSVCR_DLL"
+  METHOD="well-known location in VCINSTALLDIR"
+  if test -e "$POSSIBLE_MSVCR_DLL"; then
+    { $as_echo "$as_me:${as_lineno-$LINENO}: Found msvcr100.dll at $POSSIBLE_MSVCR_DLL using $METHOD" >&5
+$as_echo "$as_me: Found msvcr100.dll at $POSSIBLE_MSVCR_DLL using $METHOD" >&6;}
+
+    # Need to check if the found msvcr is correct architecture
+    { $as_echo "$as_me:${as_lineno-$LINENO}: checking found msvcr100.dll architecture" >&5
+$as_echo_n "checking found msvcr100.dll architecture... " >&6; }
+    MSVCR_DLL_FILETYPE=`$FILE -b "$POSSIBLE_MSVCR_DLL"`
+    if test "x$OPENJDK_TARGET_CPU_BITS" = x32; then
+      CORRECT_MSVCR_ARCH=386
+    else
+      CORRECT_MSVCR_ARCH=x86-64
+    fi
+    if $ECHO "$MSVCR_DLL_FILETYPE" | $GREP $CORRECT_MSVCR_ARCH 2>&1 > /dev/null; then
+      { $as_echo "$as_me:${as_lineno-$LINENO}: result: ok" >&5
+$as_echo "ok" >&6; }
+      MSVCR_DLL="$POSSIBLE_MSVCR_DLL"
+      { $as_echo "$as_me:${as_lineno-$LINENO}: checking for msvcr100.dll" >&5
+$as_echo_n "checking for msvcr100.dll... " >&6; }
+      { $as_echo "$as_me:${as_lineno-$LINENO}: result: $MSVCR_DLL" >&5
+$as_echo "$MSVCR_DLL" >&6; }
+    else
+      { $as_echo "$as_me:${as_lineno-$LINENO}: result: incorrect, ignoring" >&5
+$as_echo "incorrect, ignoring" >&6; }
+      { $as_echo "$as_me:${as_lineno-$LINENO}: The file type of the located msvcr100.dll is $MSVCR_DLL_FILETYPE" >&5
+$as_echo "$as_me: The file type of the located msvcr100.dll is $MSVCR_DLL_FILETYPE" >&6;}
+    fi
+  fi
+
+    fi
+  fi
+
+  if test "x$MSVCR_DLL" = x; then
+    # Probe: Check in the Boot JDK directory.
+    POSSIBLE_MSVCR_DLL="$BOOT_JDK/bin/msvcr100.dll"
+
+  POSSIBLE_MSVCR_DLL="$POSSIBLE_MSVCR_DLL"
+  METHOD="well-known location in Boot JDK"
+  if test -e "$POSSIBLE_MSVCR_DLL"; then
+    { $as_echo "$as_me:${as_lineno-$LINENO}: Found msvcr100.dll at $POSSIBLE_MSVCR_DLL using $METHOD" >&5
+$as_echo "$as_me: Found msvcr100.dll at $POSSIBLE_MSVCR_DLL using $METHOD" >&6;}
+
+    # Need to check if the found msvcr is correct architecture
+    { $as_echo "$as_me:${as_lineno-$LINENO}: checking found msvcr100.dll architecture" >&5
+$as_echo_n "checking found msvcr100.dll architecture... " >&6; }
+    MSVCR_DLL_FILETYPE=`$FILE -b "$POSSIBLE_MSVCR_DLL"`
+    if test "x$OPENJDK_TARGET_CPU_BITS" = x32; then
+      CORRECT_MSVCR_ARCH=386
+    else
+      CORRECT_MSVCR_ARCH=x86-64
+    fi
+    if $ECHO "$MSVCR_DLL_FILETYPE" | $GREP $CORRECT_MSVCR_ARCH 2>&1 > /dev/null; then
+      { $as_echo "$as_me:${as_lineno-$LINENO}: result: ok" >&5
+$as_echo "ok" >&6; }
+      MSVCR_DLL="$POSSIBLE_MSVCR_DLL"
+      { $as_echo "$as_me:${as_lineno-$LINENO}: checking for msvcr100.dll" >&5
+$as_echo_n "checking for msvcr100.dll... " >&6; }
+      { $as_echo "$as_me:${as_lineno-$LINENO}: result: $MSVCR_DLL" >&5
+$as_echo "$MSVCR_DLL" >&6; }
+    else
+      { $as_echo "$as_me:${as_lineno-$LINENO}: result: incorrect, ignoring" >&5
+$as_echo "incorrect, ignoring" >&6; }
+      { $as_echo "$as_me:${as_lineno-$LINENO}: The file type of the located msvcr100.dll is $MSVCR_DLL_FILETYPE" >&5
+$as_echo "$as_me: The file type of the located msvcr100.dll is $MSVCR_DLL_FILETYPE" >&6;}
+    fi
+  fi
+
+  fi
+
+  if test "x$MSVCR_DLL" = x; then
+    # Probe: Look in the Windows system32 directory
+    CYGWIN_SYSTEMROOT="$SYSTEMROOT"
+
+  windows_path="$CYGWIN_SYSTEMROOT"
+  if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
+    unix_path=`$CYGPATH -u "$windows_path"`
+    CYGWIN_SYSTEMROOT="$unix_path"
+  elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
+    unix_path=`$ECHO "$windows_path" | $SED -e 's,^\\(.\\):,/\\1,g' -e 's,\\\\,/,g'`
+    CYGWIN_SYSTEMROOT="$unix_path"
+  fi
+
+    POSSIBLE_MSVCR_DLL="$CYGWIN_SYSTEMROOT/system32/msvcr100.dll"
+
+  POSSIBLE_MSVCR_DLL="$POSSIBLE_MSVCR_DLL"
+  METHOD="well-known location in SYSTEMROOT"
+  if test -e "$POSSIBLE_MSVCR_DLL"; then
+    { $as_echo "$as_me:${as_lineno-$LINENO}: Found msvcr100.dll at $POSSIBLE_MSVCR_DLL using $METHOD" >&5
+$as_echo "$as_me: Found msvcr100.dll at $POSSIBLE_MSVCR_DLL using $METHOD" >&6;}
+
+    # Need to check if the found msvcr is correct architecture
+    { $as_echo "$as_me:${as_lineno-$LINENO}: checking found msvcr100.dll architecture" >&5
+$as_echo_n "checking found msvcr100.dll architecture... " >&6; }
+    MSVCR_DLL_FILETYPE=`$FILE -b "$POSSIBLE_MSVCR_DLL"`
+    if test "x$OPENJDK_TARGET_CPU_BITS" = x32; then
+      CORRECT_MSVCR_ARCH=386
+    else
+      CORRECT_MSVCR_ARCH=x86-64
+    fi
+    if $ECHO "$MSVCR_DLL_FILETYPE" | $GREP $CORRECT_MSVCR_ARCH 2>&1 > /dev/null; then
+      { $as_echo "$as_me:${as_lineno-$LINENO}: result: ok" >&5
+$as_echo "ok" >&6; }
+      MSVCR_DLL="$POSSIBLE_MSVCR_DLL"
+      { $as_echo "$as_me:${as_lineno-$LINENO}: checking for msvcr100.dll" >&5
+$as_echo_n "checking for msvcr100.dll... " >&6; }
+      { $as_echo "$as_me:${as_lineno-$LINENO}: result: $MSVCR_DLL" >&5
+$as_echo "$MSVCR_DLL" >&6; }
+    else
+      { $as_echo "$as_me:${as_lineno-$LINENO}: result: incorrect, ignoring" >&5
+$as_echo "incorrect, ignoring" >&6; }
+      { $as_echo "$as_me:${as_lineno-$LINENO}: The file type of the located msvcr100.dll is $MSVCR_DLL_FILETYPE" >&5
+$as_echo "$as_me: The file type of the located msvcr100.dll is $MSVCR_DLL_FILETYPE" >&6;}
+    fi
+  fi
+
+  fi
+
+  if test "x$MSVCR_DLL" = x; then
+    # Probe: If Visual Studio Express is installed, there is usually one with the debugger
+    if test "x$VS100COMNTOOLS" != x; then
+      CYGWIN_VS_TOOLS_DIR="$VS100COMNTOOLS/.."
+
+  windows_path="$CYGWIN_VS_TOOLS_DIR"
+  if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
+    unix_path=`$CYGPATH -u "$windows_path"`
+    CYGWIN_VS_TOOLS_DIR="$unix_path"
+  elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
+    unix_path=`$ECHO "$windows_path" | $SED -e 's,^\\(.\\):,/\\1,g' -e 's,\\\\,/,g'`
+    CYGWIN_VS_TOOLS_DIR="$unix_path"
+  fi
+
+      if test "x$OPENJDK_TARGET_CPU_BITS" = x64; then
+        POSSIBLE_MSVCR_DLL=`$FIND "$CYGWIN_VS_TOOLS_DIR" -name msvcr100.dll | $GREP -i /x64/ | $HEAD --lines 1`
+      else
+        POSSIBLE_MSVCR_DLL=`$FIND "$CYGWIN_VS_TOOLS_DIR" -name msvcr100.dll | $GREP -i /x86/ | $HEAD --lines 1`
+      fi
+
+  POSSIBLE_MSVCR_DLL="$POSSIBLE_MSVCR_DLL"
+  METHOD="search of VS100COMNTOOLS"
+  if test -e "$POSSIBLE_MSVCR_DLL"; then
+    { $as_echo "$as_me:${as_lineno-$LINENO}: Found msvcr100.dll at $POSSIBLE_MSVCR_DLL using $METHOD" >&5
+$as_echo "$as_me: Found msvcr100.dll at $POSSIBLE_MSVCR_DLL using $METHOD" >&6;}
+
+    # Need to check if the found msvcr is correct architecture
+    { $as_echo "$as_me:${as_lineno-$LINENO}: checking found msvcr100.dll architecture" >&5
+$as_echo_n "checking found msvcr100.dll architecture... " >&6; }
+    MSVCR_DLL_FILETYPE=`$FILE -b "$POSSIBLE_MSVCR_DLL"`
+    if test "x$OPENJDK_TARGET_CPU_BITS" = x32; then
+      CORRECT_MSVCR_ARCH=386
+    else
+      CORRECT_MSVCR_ARCH=x86-64
+    fi
+    if $ECHO "$MSVCR_DLL_FILETYPE" | $GREP $CORRECT_MSVCR_ARCH 2>&1 > /dev/null; then
+      { $as_echo "$as_me:${as_lineno-$LINENO}: result: ok" >&5
+$as_echo "ok" >&6; }
+      MSVCR_DLL="$POSSIBLE_MSVCR_DLL"
+      { $as_echo "$as_me:${as_lineno-$LINENO}: checking for msvcr100.dll" >&5
+$as_echo_n "checking for msvcr100.dll... " >&6; }
+      { $as_echo "$as_me:${as_lineno-$LINENO}: result: $MSVCR_DLL" >&5
+$as_echo "$MSVCR_DLL" >&6; }
+    else
+      { $as_echo "$as_me:${as_lineno-$LINENO}: result: incorrect, ignoring" >&5
+$as_echo "incorrect, ignoring" >&6; }
+      { $as_echo "$as_me:${as_lineno-$LINENO}: The file type of the located msvcr100.dll is $MSVCR_DLL_FILETYPE" >&5
+$as_echo "$as_me: The file type of the located msvcr100.dll is $MSVCR_DLL_FILETYPE" >&6;}
+    fi
+  fi
+
+    fi
+  fi
+
+  if test "x$MSVCR_DLL" = x; then
+    # Probe: Search wildly in the VCINSTALLDIR. We've probably lost by now.
+    # (This was the original behaviour; kept since it might turn up something)
+    if test "x$CYGWIN_VC_INSTALL_DIR" != x; then
+      if test "x$OPENJDK_TARGET_CPU_BITS" = x64; then
+        POSSIBLE_MSVCR_DLL=`$FIND "$CYGWIN_VC_INSTALL_DIR" -name msvcr100.dll | $GREP x64 | $HEAD --lines 1`
+      else
+        POSSIBLE_MSVCR_DLL=`$FIND "$CYGWIN_VC_INSTALL_DIR" -name msvcr100.dll | $GREP x86 | $GREP -v ia64 | $GREP -v x64 | $HEAD --lines 1`
+        if test "x$POSSIBLE_MSVCR_DLL" = x; then
+          # We're grasping at straws now...
+          POSSIBLE_MSVCR_DLL=`$FIND "$CYGWIN_VC_INSTALL_DIR" -name msvcr100.dll | $HEAD --lines 1`
+        fi
+      fi
+
+
+  POSSIBLE_MSVCR_DLL="$POSSIBLE_MSVCR_DLL"
+  METHOD="search of VCINSTALLDIR"
+  if test -e "$POSSIBLE_MSVCR_DLL"; then
+    { $as_echo "$as_me:${as_lineno-$LINENO}: Found msvcr100.dll at $POSSIBLE_MSVCR_DLL using $METHOD" >&5
+$as_echo "$as_me: Found msvcr100.dll at $POSSIBLE_MSVCR_DLL using $METHOD" >&6;}
+
+    # Need to check if the found msvcr is correct architecture
+    { $as_echo "$as_me:${as_lineno-$LINENO}: checking found msvcr100.dll architecture" >&5
+$as_echo_n "checking found msvcr100.dll architecture... " >&6; }
+    MSVCR_DLL_FILETYPE=`$FILE -b "$POSSIBLE_MSVCR_DLL"`
+    if test "x$OPENJDK_TARGET_CPU_BITS" = x32; then
+      CORRECT_MSVCR_ARCH=386
+    else
+      CORRECT_MSVCR_ARCH=x86-64
+    fi
+    if $ECHO "$MSVCR_DLL_FILETYPE" | $GREP $CORRECT_MSVCR_ARCH 2>&1 > /dev/null; then
+      { $as_echo "$as_me:${as_lineno-$LINENO}: result: ok" >&5
+$as_echo "ok" >&6; }
+      MSVCR_DLL="$POSSIBLE_MSVCR_DLL"
+      { $as_echo "$as_me:${as_lineno-$LINENO}: checking for msvcr100.dll" >&5
+$as_echo_n "checking for msvcr100.dll... " >&6; }
+      { $as_echo "$as_me:${as_lineno-$LINENO}: result: $MSVCR_DLL" >&5
+$as_echo "$MSVCR_DLL" >&6; }
+    else
+      { $as_echo "$as_me:${as_lineno-$LINENO}: result: incorrect, ignoring" >&5
+$as_echo "incorrect, ignoring" >&6; }
+      { $as_echo "$as_me:${as_lineno-$LINENO}: The file type of the located msvcr100.dll is $MSVCR_DLL_FILETYPE" >&5
+$as_echo "$as_me: The file type of the located msvcr100.dll is $MSVCR_DLL_FILETYPE" >&6;}
+    fi
+  fi
+
+    fi
+  fi
+
+  if test "x$MSVCR_DLL" = x; then
+    { $as_echo "$as_me:${as_lineno-$LINENO}: checking for msvcr100.dll" >&5
+$as_echo_n "checking for msvcr100.dll... " >&6; }
     { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
 $as_echo "no" >&6; }
-    as_fn_error $? "Could not find msvcr100.dll !" "$LINENO" 5
+    as_fn_error $? "Could not find msvcr100.dll. Please specify using --with-msvcr-dll." "$LINENO" 5
   fi
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $MSVCR_DLL" >&5
-$as_echo "$MSVCR_DLL" >&6; }
+
 
   if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
 
@@ -18935,25 +19217,32 @@ done
   # Print a helpful message on how to acquire the necessary build dependency.
   # devkit is the help tag: freetyp2, cups, pulse, alsa etc
   MISSING_DEPENDENCY=devkit
-  PKGHANDLER_COMMAND=
 
-  case $PKGHANDLER in
-    apt-get)
-      apt_help     $MISSING_DEPENDENCY ;;
-    yum)
-      yum_help     $MISSING_DEPENDENCY ;;
-    port)
-      port_help    $MISSING_DEPENDENCY ;;
-    pkgutil)
-      pkgutil_help $MISSING_DEPENDENCY ;;
-    pkgadd)
-      pkgadd_help  $MISSING_DEPENDENCY ;;
-    * )
-      break ;;
-  esac
+  if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
+    cygwin_help $MISSING_DEPENDENCY
+  elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
+    msys_help $MISSING_DEPENDENCY
+  else
+    PKGHANDLER_COMMAND=
 
-  if test "x$PKGHANDLER_COMMAND" != x; then
-    HELP_MSG="You might be able to fix this by running '$PKGHANDLER_COMMAND'."
+    case $PKGHANDLER in
+      apt-get)
+        apt_help     $MISSING_DEPENDENCY ;;
+      yum)
+        yum_help     $MISSING_DEPENDENCY ;;
+      port)
+        port_help    $MISSING_DEPENDENCY ;;
+      pkgutil)
+        pkgutil_help $MISSING_DEPENDENCY ;;
+      pkgadd)
+        pkgadd_help  $MISSING_DEPENDENCY ;;
+      * )
+        break ;;
+    esac
+
+    if test "x$PKGHANDLER_COMMAND" != x; then
+      HELP_MSG="You might be able to fix this by running '$PKGHANDLER_COMMAND'."
+    fi
   fi
 
     as_fn_error $? "Could not find a $COMPILER_NAME compiler. $HELP_MSG" "$LINENO" 5
@@ -20507,25 +20796,32 @@ done
   # Print a helpful message on how to acquire the necessary build dependency.
   # devkit is the help tag: freetyp2, cups, pulse, alsa etc
   MISSING_DEPENDENCY=devkit
-  PKGHANDLER_COMMAND=
 
-  case $PKGHANDLER in
-    apt-get)
-      apt_help     $MISSING_DEPENDENCY ;;
-    yum)
-      yum_help     $MISSING_DEPENDENCY ;;
-    port)
-      port_help    $MISSING_DEPENDENCY ;;
-    pkgutil)
-      pkgutil_help $MISSING_DEPENDENCY ;;
-    pkgadd)
-      pkgadd_help  $MISSING_DEPENDENCY ;;
-    * )
-      break ;;
-  esac
+  if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
+    cygwin_help $MISSING_DEPENDENCY
+  elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
+    msys_help $MISSING_DEPENDENCY
+  else
+    PKGHANDLER_COMMAND=
 
-  if test "x$PKGHANDLER_COMMAND" != x; then
-    HELP_MSG="You might be able to fix this by running '$PKGHANDLER_COMMAND'."
+    case $PKGHANDLER in
+      apt-get)
+        apt_help     $MISSING_DEPENDENCY ;;
+      yum)
+        yum_help     $MISSING_DEPENDENCY ;;
+      port)
+        port_help    $MISSING_DEPENDENCY ;;
+      pkgutil)
+        pkgutil_help $MISSING_DEPENDENCY ;;
+      pkgadd)
+        pkgadd_help  $MISSING_DEPENDENCY ;;
+      * )
+        break ;;
+    esac
+
+    if test "x$PKGHANDLER_COMMAND" != x; then
+      HELP_MSG="You might be able to fix this by running '$PKGHANDLER_COMMAND'."
+    fi
   fi
 
     as_fn_error $? "Could not find a $COMPILER_NAME compiler. $HELP_MSG" "$LINENO" 5
@@ -29688,8 +29984,8 @@ $as_echo_n "checking what is not needed on MacOSX?... " >&6; }
     FREETYPE2_NOT_NEEDED=yes
     # If the java runtime framework is disabled, then we need X11.
     # This will be adjusted below.
-    { $as_echo "$as_me:${as_lineno-$LINENO}: result: alsa pulse x11" >&5
-$as_echo "alsa pulse x11" >&6; }
+    { $as_echo "$as_me:${as_lineno-$LINENO}: result: alsa pulse x11 freetype" >&5
+$as_echo "alsa pulse x11 freetype" >&6; }
   fi
 
   if test "x$OPENJDK_TARGET_OS" = xbsd; then
@@ -29710,42 +30006,29 @@ $as_echo "alsa" >&6; }
 
   ###############################################################################
   #
-  # Check for MacOSX support for OpenJDK. If this exists, try to build a JVM
-  # that uses this API.
+  # Check for MacOSX support for OpenJDK.
   #
+
+
   # Check whether --enable-macosx-runtime-support was given.
 if test "${enable_macosx_runtime_support+set}" = set; then :
-  enableval=$enable_macosx_runtime_support; MACOSX_RUNTIME_SUPPORT="${enableval}"
-else
-  MACOSX_RUNTIME_SUPPORT="no"
+  enableval=$enable_macosx_runtime_support;
 fi
 
+  if test "x$enable_macosx_runtime_support" != x; then
+    { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: Option --enable-macosx-runtime-support is deprecated and will be ignored." >&5
+$as_echo "$as_me: WARNING: Option --enable-macosx-runtime-support is deprecated and will be ignored." >&2;}
+  fi
 
-  USE_MACOSX_RUNTIME_SUPPORT=no
-  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for explicit Java runtime support in the OS" >&5
-$as_echo_n "checking for explicit Java runtime support in the OS... " >&6; }
+
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for Mac OS X Java Framework" >&5
+$as_echo_n "checking for Mac OS X Java Framework... " >&6; }
   if test -f /System/Library/Frameworks/JavaVM.framework/Frameworks/JavaRuntimeSupport.framework/Headers/JavaRuntimeSupport.h; then
-    if test "x$MACOSX_RUNTIME_SUPPORT" != xno; then
-      MACOSX_RUNTIME_SUPPORT=yes
-      USE_MACOSX_RUNTIME_SUPPORT=yes
-      { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes, does not need alsa freetype2 pulse and X11" >&5
-$as_echo "yes, does not need alsa freetype2 pulse and X11" >&6; }
-    else
-      { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes, but explicitly disabled." >&5
-$as_echo "yes, but explicitly disabled." >&6; }
-    fi
+    { $as_echo "$as_me:${as_lineno-$LINENO}: result: /System/Library/Frameworks/JavaVM.framework" >&5
+$as_echo "/System/Library/Frameworks/JavaVM.framework" >&6; }
   else
     { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
 $as_echo "no" >&6; }
-  fi
-
-  if test "x$OPENJDK_TARGET_OS" = xmacosx && test "x$USE_MACOSX_RUNTIME_SUPPORT" = xno; then
-    { $as_echo "$as_me:${as_lineno-$LINENO}: checking what is not needed on an X11 build on MacOSX?" >&5
-$as_echo_n "checking what is not needed on an X11 build on MacOSX?... " >&6; }
-    X11_NOT_NEEDED=
-    FREETYPE2_NOT_NEEDED=
-    { $as_echo "$as_me:${as_lineno-$LINENO}: result: alsa pulse" >&5
-$as_echo "alsa pulse" >&6; }
   fi
 
 
@@ -30473,25 +30756,32 @@ fi
   # Print a helpful message on how to acquire the necessary build dependency.
   # x11 is the help tag: freetyp2, cups, pulse, alsa etc
   MISSING_DEPENDENCY=x11
-  PKGHANDLER_COMMAND=
 
-  case $PKGHANDLER in
-    apt-get)
-      apt_help     $MISSING_DEPENDENCY ;;
-    yum)
-      yum_help     $MISSING_DEPENDENCY ;;
-    port)
-      port_help    $MISSING_DEPENDENCY ;;
-    pkgutil)
-      pkgutil_help $MISSING_DEPENDENCY ;;
-    pkgadd)
-      pkgadd_help  $MISSING_DEPENDENCY ;;
-    * )
-      break ;;
-  esac
+  if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
+    cygwin_help $MISSING_DEPENDENCY
+  elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
+    msys_help $MISSING_DEPENDENCY
+  else
+    PKGHANDLER_COMMAND=
 
-  if test "x$PKGHANDLER_COMMAND" != x; then
-    HELP_MSG="You might be able to fix this by running '$PKGHANDLER_COMMAND'."
+    case $PKGHANDLER in
+      apt-get)
+        apt_help     $MISSING_DEPENDENCY ;;
+      yum)
+        yum_help     $MISSING_DEPENDENCY ;;
+      port)
+        port_help    $MISSING_DEPENDENCY ;;
+      pkgutil)
+        pkgutil_help $MISSING_DEPENDENCY ;;
+      pkgadd)
+        pkgadd_help  $MISSING_DEPENDENCY ;;
+      * )
+        break ;;
+    esac
+
+    if test "x$PKGHANDLER_COMMAND" != x; then
+      HELP_MSG="You might be able to fix this by running '$PKGHANDLER_COMMAND'."
+    fi
   fi
 
     as_fn_error $? "Could not find X11 libraries. $HELP_MSG" "$LINENO" 5
@@ -30568,25 +30858,32 @@ ac_compiler_gnu=$ac_cv_cxx_compiler_gnu
   # Print a helpful message on how to acquire the necessary build dependency.
   # x11 is the help tag: freetyp2, cups, pulse, alsa etc
   MISSING_DEPENDENCY=x11
-  PKGHANDLER_COMMAND=
 
-  case $PKGHANDLER in
-    apt-get)
-      apt_help     $MISSING_DEPENDENCY ;;
-    yum)
-      yum_help     $MISSING_DEPENDENCY ;;
-    port)
-      port_help    $MISSING_DEPENDENCY ;;
-    pkgutil)
-      pkgutil_help $MISSING_DEPENDENCY ;;
-    pkgadd)
-      pkgadd_help  $MISSING_DEPENDENCY ;;
-    * )
-      break ;;
-  esac
+  if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
+    cygwin_help $MISSING_DEPENDENCY
+  elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
+    msys_help $MISSING_DEPENDENCY
+  else
+    PKGHANDLER_COMMAND=
 
-  if test "x$PKGHANDLER_COMMAND" != x; then
-    HELP_MSG="You might be able to fix this by running '$PKGHANDLER_COMMAND'."
+    case $PKGHANDLER in
+      apt-get)
+        apt_help     $MISSING_DEPENDENCY ;;
+      yum)
+        yum_help     $MISSING_DEPENDENCY ;;
+      port)
+        port_help    $MISSING_DEPENDENCY ;;
+      pkgutil)
+        pkgutil_help $MISSING_DEPENDENCY ;;
+      pkgadd)
+        pkgadd_help  $MISSING_DEPENDENCY ;;
+      * )
+        break ;;
+    esac
+
+    if test "x$PKGHANDLER_COMMAND" != x; then
+      HELP_MSG="You might be able to fix this by running '$PKGHANDLER_COMMAND'."
+    fi
   fi
 
     as_fn_error $? "Could not find all X11 headers (shape.h Xrender.h XTest.h Intrinsic.h). $HELP_MSG" "$LINENO" 5
@@ -30823,25 +31120,32 @@ $as_echo "$CUPS_FOUND" >&6; }
   # Print a helpful message on how to acquire the necessary build dependency.
   # cups is the help tag: freetyp2, cups, pulse, alsa etc
   MISSING_DEPENDENCY=cups
-  PKGHANDLER_COMMAND=
 
-  case $PKGHANDLER in
-    apt-get)
-      apt_help     $MISSING_DEPENDENCY ;;
-    yum)
-      yum_help     $MISSING_DEPENDENCY ;;
-    port)
-      port_help    $MISSING_DEPENDENCY ;;
-    pkgutil)
-      pkgutil_help $MISSING_DEPENDENCY ;;
-    pkgadd)
-      pkgadd_help  $MISSING_DEPENDENCY ;;
-    * )
-      break ;;
-  esac
+  if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
+    cygwin_help $MISSING_DEPENDENCY
+  elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
+    msys_help $MISSING_DEPENDENCY
+  else
+    PKGHANDLER_COMMAND=
 
-  if test "x$PKGHANDLER_COMMAND" != x; then
-    HELP_MSG="You might be able to fix this by running '$PKGHANDLER_COMMAND'."
+    case $PKGHANDLER in
+      apt-get)
+        apt_help     $MISSING_DEPENDENCY ;;
+      yum)
+        yum_help     $MISSING_DEPENDENCY ;;
+      port)
+        port_help    $MISSING_DEPENDENCY ;;
+      pkgutil)
+        pkgutil_help $MISSING_DEPENDENCY ;;
+      pkgadd)
+        pkgadd_help  $MISSING_DEPENDENCY ;;
+      * )
+        break ;;
+    esac
+
+    if test "x$PKGHANDLER_COMMAND" != x; then
+      HELP_MSG="You might be able to fix this by running '$PKGHANDLER_COMMAND'."
+    fi
   fi
 
       as_fn_error $? "Could not find cups! $HELP_MSG " "$LINENO" 5
@@ -31448,25 +31752,32 @@ $as_echo "$FREETYPE2_FOUND" >&6; }
   # Print a helpful message on how to acquire the necessary build dependency.
   # freetype2 is the help tag: freetyp2, cups, pulse, alsa etc
   MISSING_DEPENDENCY=freetype2
-  PKGHANDLER_COMMAND=
 
-  case $PKGHANDLER in
-    apt-get)
-      apt_help     $MISSING_DEPENDENCY ;;
-    yum)
-      yum_help     $MISSING_DEPENDENCY ;;
-    port)
-      port_help    $MISSING_DEPENDENCY ;;
-    pkgutil)
-      pkgutil_help $MISSING_DEPENDENCY ;;
-    pkgadd)
-      pkgadd_help  $MISSING_DEPENDENCY ;;
-    * )
-      break ;;
-  esac
+  if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
+    cygwin_help $MISSING_DEPENDENCY
+  elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
+    msys_help $MISSING_DEPENDENCY
+  else
+    PKGHANDLER_COMMAND=
 
-  if test "x$PKGHANDLER_COMMAND" != x; then
-    HELP_MSG="You might be able to fix this by running '$PKGHANDLER_COMMAND'."
+    case $PKGHANDLER in
+      apt-get)
+        apt_help     $MISSING_DEPENDENCY ;;
+      yum)
+        yum_help     $MISSING_DEPENDENCY ;;
+      port)
+        port_help    $MISSING_DEPENDENCY ;;
+      pkgutil)
+        pkgutil_help $MISSING_DEPENDENCY ;;
+      pkgadd)
+        pkgadd_help  $MISSING_DEPENDENCY ;;
+      * )
+        break ;;
+    esac
+
+    if test "x$PKGHANDLER_COMMAND" != x; then
+      HELP_MSG="You might be able to fix this by running '$PKGHANDLER_COMMAND'."
+    fi
   fi
 
       as_fn_error $? "Could not find freetype2! $HELP_MSG " "$LINENO" 5
@@ -31821,25 +32132,32 @@ done
   # Print a helpful message on how to acquire the necessary build dependency.
   # alsa is the help tag: freetyp2, cups, pulse, alsa etc
   MISSING_DEPENDENCY=alsa
-  PKGHANDLER_COMMAND=
 
-  case $PKGHANDLER in
-    apt-get)
-      apt_help     $MISSING_DEPENDENCY ;;
-    yum)
-      yum_help     $MISSING_DEPENDENCY ;;
-    port)
-      port_help    $MISSING_DEPENDENCY ;;
-    pkgutil)
-      pkgutil_help $MISSING_DEPENDENCY ;;
-    pkgadd)
-      pkgadd_help  $MISSING_DEPENDENCY ;;
-    * )
-      break ;;
-  esac
+  if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
+    cygwin_help $MISSING_DEPENDENCY
+  elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
+    msys_help $MISSING_DEPENDENCY
+  else
+    PKGHANDLER_COMMAND=
 
-  if test "x$PKGHANDLER_COMMAND" != x; then
-    HELP_MSG="You might be able to fix this by running '$PKGHANDLER_COMMAND'."
+    case $PKGHANDLER in
+      apt-get)
+        apt_help     $MISSING_DEPENDENCY ;;
+      yum)
+        yum_help     $MISSING_DEPENDENCY ;;
+      port)
+        port_help    $MISSING_DEPENDENCY ;;
+      pkgutil)
+        pkgutil_help $MISSING_DEPENDENCY ;;
+      pkgadd)
+        pkgadd_help  $MISSING_DEPENDENCY ;;
+      * )
+        break ;;
+    esac
+
+    if test "x$PKGHANDLER_COMMAND" != x; then
+      HELP_MSG="You might be able to fix this by running '$PKGHANDLER_COMMAND'."
+    fi
   fi
 
       as_fn_error $? "Could not find alsa! $HELP_MSG " "$LINENO" 5
@@ -34633,25 +34951,32 @@ $CHMOD +x $OUTPUT_ROOT/compare.sh
   # Print a helpful message on how to acquire the necessary build dependency.
   # ccache is the help tag: freetyp2, cups, pulse, alsa etc
   MISSING_DEPENDENCY=ccache
-  PKGHANDLER_COMMAND=
 
-  case $PKGHANDLER in
-    apt-get)
-      apt_help     $MISSING_DEPENDENCY ;;
-    yum)
-      yum_help     $MISSING_DEPENDENCY ;;
-    port)
-      port_help    $MISSING_DEPENDENCY ;;
-    pkgutil)
-      pkgutil_help $MISSING_DEPENDENCY ;;
-    pkgadd)
-      pkgadd_help  $MISSING_DEPENDENCY ;;
-    * )
-      break ;;
-  esac
+  if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
+    cygwin_help $MISSING_DEPENDENCY
+  elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
+    msys_help $MISSING_DEPENDENCY
+  else
+    PKGHANDLER_COMMAND=
 
-  if test "x$PKGHANDLER_COMMAND" != x; then
-    HELP_MSG="You might be able to fix this by running '$PKGHANDLER_COMMAND'."
+    case $PKGHANDLER in
+      apt-get)
+        apt_help     $MISSING_DEPENDENCY ;;
+      yum)
+        yum_help     $MISSING_DEPENDENCY ;;
+      port)
+        port_help    $MISSING_DEPENDENCY ;;
+      pkgutil)
+        pkgutil_help $MISSING_DEPENDENCY ;;
+      pkgadd)
+        pkgadd_help  $MISSING_DEPENDENCY ;;
+      * )
+        break ;;
+    esac
+
+    if test "x$PKGHANDLER_COMMAND" != x; then
+      HELP_MSG="You might be able to fix this by running '$PKGHANDLER_COMMAND'."
+    fi
   fi
 
     printf "$HELP_MSG\n"
