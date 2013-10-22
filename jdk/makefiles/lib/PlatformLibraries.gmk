@@ -138,9 +138,6 @@ endif
 
 ifeq ($(OPENJDK_TARGET_OS), macosx)
 
-  # Ugly hack to mimic behaviour in old build where this is built as an xcode project.
-  SET_SHARED_LIBRARY_NAME = -Xlinker -install_name -Xlinker /usr/local/lib/libJObjC.dylib
-
   $(eval $(call SetupNativeCompilation,BUILD_LIBJOBJC32, \
       LIBRARY := JObjC, \
       OUTPUT_DIR := $(JDK_OUTPUTDIR)/objs/libjobjc32, \
