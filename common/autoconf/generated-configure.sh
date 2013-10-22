@@ -3443,14 +3443,40 @@ ac_configure="$SHELL $ac_aux_dir/configure"  # Please don't use this var.
 cygwin_help() {
   case $1 in
     unzip)
-      PKGHANDLER_COMMAND="cd <location of cygwin setup.exe> && cmd /c setup -q -P unzip" ;;
+      PKGHANDLER_COMMAND="( cd <location of cygwin setup.exe> && cmd /c setup -q -P unzip )"
+      HELP_MSG="You might be able to fix this by running '$PKGHANDLER_COMMAND'."
+      ;;
     zip)
-      PKGHANDLER_COMMAND="cd <location of cygwin setup.exe> && cmd /c setup -q -P zip" ;;
+      PKGHANDLER_COMMAND="( cd <location of cygwin setup.exe> && cmd /c setup -q -P zip )"
+      HELP_MSG="You might be able to fix this by running '$PKGHANDLER_COMMAND'."
+      ;;
     make)
-      PKGHANDLER_COMMAND="cd <location of cygwin setup.exe> && cmd /c setup -q -P make" ;;
+      PKGHANDLER_COMMAND="( cd <location of cygwin setup.exe> && cmd /c setup -q -P make )"
+      HELP_MSG="You might be able to fix this by running '$PKGHANDLER_COMMAND'."
+      ;;
+    freetype2)
+      if test "x$OPENJDK_TARGET_CPU_BITS" = x32; then
+        HELP_MSG="To install freetype, run:
+wget \"http://gnuwin32.sourceforge.net/downlinks/freetype.php\" -O /tmp/freetype-setup.exe
+chmod +x /tmp/freetype-setup.exe
+/tmp/freetype-setup.exe
+Follow GUI prompts, and install to default directory \"C:\Program Files (x86)\GnuWin32\".
+After installation, locate lib/libfreetype.dll.a and make a copy with the name freetype.dll."
+      else
+        HELP_MSG="You need to build a 64-bit version of freetype.
+This is not readily available.
+You can find source code and build instructions on
+http://www.freetype.org/
+If you put the resulting build in \"C:\Program Files\GnuWin32\", it will be found automatically."
+      fi
+      ;;
     * )
       break ;;
   esac
+}
+
+msys_help() {
+  PKGHANDLER_COMMAND=""
 }
 
 apt_help() {
@@ -3822,7 +3848,7 @@ fi
 #CUSTOM_AUTOCONF_INCLUDE
 
 # Do not change or remove the following line, it is needed for consistency checks:
-DATE_WHEN_GENERATED=1382349488
+DATE_WHEN_GENERATED=1382433088
 
 ###############################################################################
 #
@@ -15723,25 +15749,32 @@ $as_echo "$BOOT_JDK_VERSION" >&6; }
   # Print a helpful message on how to acquire the necessary build dependency.
   # openjdk is the help tag: freetyp2, cups, pulse, alsa etc
   MISSING_DEPENDENCY=openjdk
-  PKGHANDLER_COMMAND=
 
-  case $PKGHANDLER in
-    apt-get)
-      apt_help     $MISSING_DEPENDENCY ;;
-    yum)
-      yum_help     $MISSING_DEPENDENCY ;;
-    port)
-      port_help    $MISSING_DEPENDENCY ;;
-    pkgutil)
-      pkgutil_help $MISSING_DEPENDENCY ;;
-    pkgadd)
-      pkgadd_help  $MISSING_DEPENDENCY ;;
-    * )
-      break ;;
-  esac
+  if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
+    cygwin_help $MISSING_DEPENDENCY
+  elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
+    msys_help $MISSING_DEPENDENCY
+  else
+    PKGHANDLER_COMMAND=
 
-  if test "x$PKGHANDLER_COMMAND" != x; then
-    HELP_MSG="You might be able to fix this by running '$PKGHANDLER_COMMAND'."
+    case $PKGHANDLER in
+      apt-get)
+        apt_help     $MISSING_DEPENDENCY ;;
+      yum)
+        yum_help     $MISSING_DEPENDENCY ;;
+      port)
+        port_help    $MISSING_DEPENDENCY ;;
+      pkgutil)
+        pkgutil_help $MISSING_DEPENDENCY ;;
+      pkgadd)
+        pkgadd_help  $MISSING_DEPENDENCY ;;
+      * )
+        break ;;
+    esac
+
+    if test "x$PKGHANDLER_COMMAND" != x; then
+      HELP_MSG="You might be able to fix this by running '$PKGHANDLER_COMMAND'."
+    fi
   fi
 
     { $as_echo "$as_me:${as_lineno-$LINENO}: Could not find a valid Boot JDK. $HELP_MSG" >&5
@@ -19120,25 +19153,32 @@ done
   # Print a helpful message on how to acquire the necessary build dependency.
   # devkit is the help tag: freetyp2, cups, pulse, alsa etc
   MISSING_DEPENDENCY=devkit
-  PKGHANDLER_COMMAND=
 
-  case $PKGHANDLER in
-    apt-get)
-      apt_help     $MISSING_DEPENDENCY ;;
-    yum)
-      yum_help     $MISSING_DEPENDENCY ;;
-    port)
-      port_help    $MISSING_DEPENDENCY ;;
-    pkgutil)
-      pkgutil_help $MISSING_DEPENDENCY ;;
-    pkgadd)
-      pkgadd_help  $MISSING_DEPENDENCY ;;
-    * )
-      break ;;
-  esac
+  if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
+    cygwin_help $MISSING_DEPENDENCY
+  elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
+    msys_help $MISSING_DEPENDENCY
+  else
+    PKGHANDLER_COMMAND=
 
-  if test "x$PKGHANDLER_COMMAND" != x; then
-    HELP_MSG="You might be able to fix this by running '$PKGHANDLER_COMMAND'."
+    case $PKGHANDLER in
+      apt-get)
+        apt_help     $MISSING_DEPENDENCY ;;
+      yum)
+        yum_help     $MISSING_DEPENDENCY ;;
+      port)
+        port_help    $MISSING_DEPENDENCY ;;
+      pkgutil)
+        pkgutil_help $MISSING_DEPENDENCY ;;
+      pkgadd)
+        pkgadd_help  $MISSING_DEPENDENCY ;;
+      * )
+        break ;;
+    esac
+
+    if test "x$PKGHANDLER_COMMAND" != x; then
+      HELP_MSG="You might be able to fix this by running '$PKGHANDLER_COMMAND'."
+    fi
   fi
 
     as_fn_error $? "Could not find a $COMPILER_NAME compiler. $HELP_MSG" "$LINENO" 5
@@ -20692,25 +20732,32 @@ done
   # Print a helpful message on how to acquire the necessary build dependency.
   # devkit is the help tag: freetyp2, cups, pulse, alsa etc
   MISSING_DEPENDENCY=devkit
-  PKGHANDLER_COMMAND=
 
-  case $PKGHANDLER in
-    apt-get)
-      apt_help     $MISSING_DEPENDENCY ;;
-    yum)
-      yum_help     $MISSING_DEPENDENCY ;;
-    port)
-      port_help    $MISSING_DEPENDENCY ;;
-    pkgutil)
-      pkgutil_help $MISSING_DEPENDENCY ;;
-    pkgadd)
-      pkgadd_help  $MISSING_DEPENDENCY ;;
-    * )
-      break ;;
-  esac
+  if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
+    cygwin_help $MISSING_DEPENDENCY
+  elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
+    msys_help $MISSING_DEPENDENCY
+  else
+    PKGHANDLER_COMMAND=
 
-  if test "x$PKGHANDLER_COMMAND" != x; then
-    HELP_MSG="You might be able to fix this by running '$PKGHANDLER_COMMAND'."
+    case $PKGHANDLER in
+      apt-get)
+        apt_help     $MISSING_DEPENDENCY ;;
+      yum)
+        yum_help     $MISSING_DEPENDENCY ;;
+      port)
+        port_help    $MISSING_DEPENDENCY ;;
+      pkgutil)
+        pkgutil_help $MISSING_DEPENDENCY ;;
+      pkgadd)
+        pkgadd_help  $MISSING_DEPENDENCY ;;
+      * )
+        break ;;
+    esac
+
+    if test "x$PKGHANDLER_COMMAND" != x; then
+      HELP_MSG="You might be able to fix this by running '$PKGHANDLER_COMMAND'."
+    fi
   fi
 
     as_fn_error $? "Could not find a $COMPILER_NAME compiler. $HELP_MSG" "$LINENO" 5
@@ -30658,25 +30705,32 @@ fi
   # Print a helpful message on how to acquire the necessary build dependency.
   # x11 is the help tag: freetyp2, cups, pulse, alsa etc
   MISSING_DEPENDENCY=x11
-  PKGHANDLER_COMMAND=
 
-  case $PKGHANDLER in
-    apt-get)
-      apt_help     $MISSING_DEPENDENCY ;;
-    yum)
-      yum_help     $MISSING_DEPENDENCY ;;
-    port)
-      port_help    $MISSING_DEPENDENCY ;;
-    pkgutil)
-      pkgutil_help $MISSING_DEPENDENCY ;;
-    pkgadd)
-      pkgadd_help  $MISSING_DEPENDENCY ;;
-    * )
-      break ;;
-  esac
+  if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
+    cygwin_help $MISSING_DEPENDENCY
+  elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
+    msys_help $MISSING_DEPENDENCY
+  else
+    PKGHANDLER_COMMAND=
 
-  if test "x$PKGHANDLER_COMMAND" != x; then
-    HELP_MSG="You might be able to fix this by running '$PKGHANDLER_COMMAND'."
+    case $PKGHANDLER in
+      apt-get)
+        apt_help     $MISSING_DEPENDENCY ;;
+      yum)
+        yum_help     $MISSING_DEPENDENCY ;;
+      port)
+        port_help    $MISSING_DEPENDENCY ;;
+      pkgutil)
+        pkgutil_help $MISSING_DEPENDENCY ;;
+      pkgadd)
+        pkgadd_help  $MISSING_DEPENDENCY ;;
+      * )
+        break ;;
+    esac
+
+    if test "x$PKGHANDLER_COMMAND" != x; then
+      HELP_MSG="You might be able to fix this by running '$PKGHANDLER_COMMAND'."
+    fi
   fi
 
     as_fn_error $? "Could not find X11 libraries. $HELP_MSG" "$LINENO" 5
@@ -30753,25 +30807,32 @@ ac_compiler_gnu=$ac_cv_cxx_compiler_gnu
   # Print a helpful message on how to acquire the necessary build dependency.
   # x11 is the help tag: freetyp2, cups, pulse, alsa etc
   MISSING_DEPENDENCY=x11
-  PKGHANDLER_COMMAND=
 
-  case $PKGHANDLER in
-    apt-get)
-      apt_help     $MISSING_DEPENDENCY ;;
-    yum)
-      yum_help     $MISSING_DEPENDENCY ;;
-    port)
-      port_help    $MISSING_DEPENDENCY ;;
-    pkgutil)
-      pkgutil_help $MISSING_DEPENDENCY ;;
-    pkgadd)
-      pkgadd_help  $MISSING_DEPENDENCY ;;
-    * )
-      break ;;
-  esac
+  if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
+    cygwin_help $MISSING_DEPENDENCY
+  elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
+    msys_help $MISSING_DEPENDENCY
+  else
+    PKGHANDLER_COMMAND=
 
-  if test "x$PKGHANDLER_COMMAND" != x; then
-    HELP_MSG="You might be able to fix this by running '$PKGHANDLER_COMMAND'."
+    case $PKGHANDLER in
+      apt-get)
+        apt_help     $MISSING_DEPENDENCY ;;
+      yum)
+        yum_help     $MISSING_DEPENDENCY ;;
+      port)
+        port_help    $MISSING_DEPENDENCY ;;
+      pkgutil)
+        pkgutil_help $MISSING_DEPENDENCY ;;
+      pkgadd)
+        pkgadd_help  $MISSING_DEPENDENCY ;;
+      * )
+        break ;;
+    esac
+
+    if test "x$PKGHANDLER_COMMAND" != x; then
+      HELP_MSG="You might be able to fix this by running '$PKGHANDLER_COMMAND'."
+    fi
   fi
 
     as_fn_error $? "Could not find all X11 headers (shape.h Xrender.h XTest.h Intrinsic.h). $HELP_MSG" "$LINENO" 5
@@ -31008,25 +31069,32 @@ $as_echo "$CUPS_FOUND" >&6; }
   # Print a helpful message on how to acquire the necessary build dependency.
   # cups is the help tag: freetyp2, cups, pulse, alsa etc
   MISSING_DEPENDENCY=cups
-  PKGHANDLER_COMMAND=
 
-  case $PKGHANDLER in
-    apt-get)
-      apt_help     $MISSING_DEPENDENCY ;;
-    yum)
-      yum_help     $MISSING_DEPENDENCY ;;
-    port)
-      port_help    $MISSING_DEPENDENCY ;;
-    pkgutil)
-      pkgutil_help $MISSING_DEPENDENCY ;;
-    pkgadd)
-      pkgadd_help  $MISSING_DEPENDENCY ;;
-    * )
-      break ;;
-  esac
+  if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
+    cygwin_help $MISSING_DEPENDENCY
+  elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
+    msys_help $MISSING_DEPENDENCY
+  else
+    PKGHANDLER_COMMAND=
 
-  if test "x$PKGHANDLER_COMMAND" != x; then
-    HELP_MSG="You might be able to fix this by running '$PKGHANDLER_COMMAND'."
+    case $PKGHANDLER in
+      apt-get)
+        apt_help     $MISSING_DEPENDENCY ;;
+      yum)
+        yum_help     $MISSING_DEPENDENCY ;;
+      port)
+        port_help    $MISSING_DEPENDENCY ;;
+      pkgutil)
+        pkgutil_help $MISSING_DEPENDENCY ;;
+      pkgadd)
+        pkgadd_help  $MISSING_DEPENDENCY ;;
+      * )
+        break ;;
+    esac
+
+    if test "x$PKGHANDLER_COMMAND" != x; then
+      HELP_MSG="You might be able to fix this by running '$PKGHANDLER_COMMAND'."
+    fi
   fi
 
       as_fn_error $? "Could not find cups! $HELP_MSG " "$LINENO" 5
@@ -31633,25 +31701,32 @@ $as_echo "$FREETYPE2_FOUND" >&6; }
   # Print a helpful message on how to acquire the necessary build dependency.
   # freetype2 is the help tag: freetyp2, cups, pulse, alsa etc
   MISSING_DEPENDENCY=freetype2
-  PKGHANDLER_COMMAND=
 
-  case $PKGHANDLER in
-    apt-get)
-      apt_help     $MISSING_DEPENDENCY ;;
-    yum)
-      yum_help     $MISSING_DEPENDENCY ;;
-    port)
-      port_help    $MISSING_DEPENDENCY ;;
-    pkgutil)
-      pkgutil_help $MISSING_DEPENDENCY ;;
-    pkgadd)
-      pkgadd_help  $MISSING_DEPENDENCY ;;
-    * )
-      break ;;
-  esac
+  if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
+    cygwin_help $MISSING_DEPENDENCY
+  elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
+    msys_help $MISSING_DEPENDENCY
+  else
+    PKGHANDLER_COMMAND=
 
-  if test "x$PKGHANDLER_COMMAND" != x; then
-    HELP_MSG="You might be able to fix this by running '$PKGHANDLER_COMMAND'."
+    case $PKGHANDLER in
+      apt-get)
+        apt_help     $MISSING_DEPENDENCY ;;
+      yum)
+        yum_help     $MISSING_DEPENDENCY ;;
+      port)
+        port_help    $MISSING_DEPENDENCY ;;
+      pkgutil)
+        pkgutil_help $MISSING_DEPENDENCY ;;
+      pkgadd)
+        pkgadd_help  $MISSING_DEPENDENCY ;;
+      * )
+        break ;;
+    esac
+
+    if test "x$PKGHANDLER_COMMAND" != x; then
+      HELP_MSG="You might be able to fix this by running '$PKGHANDLER_COMMAND'."
+    fi
   fi
 
       as_fn_error $? "Could not find freetype2! $HELP_MSG " "$LINENO" 5
@@ -32006,25 +32081,32 @@ done
   # Print a helpful message on how to acquire the necessary build dependency.
   # alsa is the help tag: freetyp2, cups, pulse, alsa etc
   MISSING_DEPENDENCY=alsa
-  PKGHANDLER_COMMAND=
 
-  case $PKGHANDLER in
-    apt-get)
-      apt_help     $MISSING_DEPENDENCY ;;
-    yum)
-      yum_help     $MISSING_DEPENDENCY ;;
-    port)
-      port_help    $MISSING_DEPENDENCY ;;
-    pkgutil)
-      pkgutil_help $MISSING_DEPENDENCY ;;
-    pkgadd)
-      pkgadd_help  $MISSING_DEPENDENCY ;;
-    * )
-      break ;;
-  esac
+  if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
+    cygwin_help $MISSING_DEPENDENCY
+  elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
+    msys_help $MISSING_DEPENDENCY
+  else
+    PKGHANDLER_COMMAND=
 
-  if test "x$PKGHANDLER_COMMAND" != x; then
-    HELP_MSG="You might be able to fix this by running '$PKGHANDLER_COMMAND'."
+    case $PKGHANDLER in
+      apt-get)
+        apt_help     $MISSING_DEPENDENCY ;;
+      yum)
+        yum_help     $MISSING_DEPENDENCY ;;
+      port)
+        port_help    $MISSING_DEPENDENCY ;;
+      pkgutil)
+        pkgutil_help $MISSING_DEPENDENCY ;;
+      pkgadd)
+        pkgadd_help  $MISSING_DEPENDENCY ;;
+      * )
+        break ;;
+    esac
+
+    if test "x$PKGHANDLER_COMMAND" != x; then
+      HELP_MSG="You might be able to fix this by running '$PKGHANDLER_COMMAND'."
+    fi
   fi
 
       as_fn_error $? "Could not find alsa! $HELP_MSG " "$LINENO" 5
@@ -34818,25 +34900,32 @@ $CHMOD +x $OUTPUT_ROOT/compare.sh
   # Print a helpful message on how to acquire the necessary build dependency.
   # ccache is the help tag: freetyp2, cups, pulse, alsa etc
   MISSING_DEPENDENCY=ccache
-  PKGHANDLER_COMMAND=
 
-  case $PKGHANDLER in
-    apt-get)
-      apt_help     $MISSING_DEPENDENCY ;;
-    yum)
-      yum_help     $MISSING_DEPENDENCY ;;
-    port)
-      port_help    $MISSING_DEPENDENCY ;;
-    pkgutil)
-      pkgutil_help $MISSING_DEPENDENCY ;;
-    pkgadd)
-      pkgadd_help  $MISSING_DEPENDENCY ;;
-    * )
-      break ;;
-  esac
+  if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
+    cygwin_help $MISSING_DEPENDENCY
+  elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
+    msys_help $MISSING_DEPENDENCY
+  else
+    PKGHANDLER_COMMAND=
 
-  if test "x$PKGHANDLER_COMMAND" != x; then
-    HELP_MSG="You might be able to fix this by running '$PKGHANDLER_COMMAND'."
+    case $PKGHANDLER in
+      apt-get)
+        apt_help     $MISSING_DEPENDENCY ;;
+      yum)
+        yum_help     $MISSING_DEPENDENCY ;;
+      port)
+        port_help    $MISSING_DEPENDENCY ;;
+      pkgutil)
+        pkgutil_help $MISSING_DEPENDENCY ;;
+      pkgadd)
+        pkgadd_help  $MISSING_DEPENDENCY ;;
+      * )
+        break ;;
+    esac
+
+    if test "x$PKGHANDLER_COMMAND" != x; then
+      HELP_MSG="You might be able to fix this by running '$PKGHANDLER_COMMAND'."
+    fi
   fi
 
     printf "$HELP_MSG\n"
