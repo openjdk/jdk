@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -79,4 +79,11 @@ public interface WSDLOutput extends WSDLObject, WSDLExtensible {
      */
     @NotNull
     QName getQName();
+
+    /**
+     * Checks if the Action value is implicitly derived using the rules defined in WS-Addressing.
+     *
+     * @return true if the Action value is implicitly derived using the rules defined in WS-Addressing.
+     */
+    public boolean isDefaultAction();
 }

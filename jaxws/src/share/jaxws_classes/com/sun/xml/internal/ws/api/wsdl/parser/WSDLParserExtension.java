@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,17 @@
 package com.sun.xml.internal.ws.api.wsdl.parser;
 
 import com.sun.xml.internal.ws.api.WSService;
-import com.sun.xml.internal.ws.api.model.wsdl.*;
+import com.sun.xml.internal.ws.api.model.wsdl.editable.EditableWSDLBoundFault;
+import com.sun.xml.internal.ws.api.model.wsdl.editable.EditableWSDLBoundOperation;
+import com.sun.xml.internal.ws.api.model.wsdl.editable.EditableWSDLBoundPortType;
+import com.sun.xml.internal.ws.api.model.wsdl.editable.EditableWSDLFault;
+import com.sun.xml.internal.ws.api.model.wsdl.editable.EditableWSDLInput;
+import com.sun.xml.internal.ws.api.model.wsdl.editable.EditableWSDLMessage;
+import com.sun.xml.internal.ws.api.model.wsdl.editable.EditableWSDLOperation;
+import com.sun.xml.internal.ws.api.model.wsdl.editable.EditableWSDLOutput;
+import com.sun.xml.internal.ws.api.model.wsdl.editable.EditableWSDLPort;
+import com.sun.xml.internal.ws.api.model.wsdl.editable.EditableWSDLPortType;
+import com.sun.xml.internal.ws.api.model.wsdl.editable.EditableWSDLService;
 import com.sun.xml.internal.ws.api.pipe.Tube;
 import com.sun.xml.internal.ws.wsdl.parser.RuntimeWSDLParser;
 
@@ -138,34 +148,36 @@ import javax.xml.ws.WebServiceException;
  * @author Kohsuke Kawaguchi
  */
 public abstract class WSDLParserExtension {
+
     public void start(WSDLParserExtensionContext context){
         // noop
     }
-    public void serviceAttributes(WSDLService service, XMLStreamReader reader) {
+
+    public void serviceAttributes(EditableWSDLService service, XMLStreamReader reader) {
         // noop
     }
 
-    public boolean serviceElements(WSDLService service, XMLStreamReader reader) {
+    public boolean serviceElements(EditableWSDLService service, XMLStreamReader reader) {
         return false;
     }
 
-    public void portAttributes(WSDLPort port, XMLStreamReader reader) {
+    public void portAttributes(EditableWSDLPort port, XMLStreamReader reader) {
         // noop
     }
 
-    public boolean portElements(WSDLPort port, XMLStreamReader reader) {
+    public boolean portElements(EditableWSDLPort port, XMLStreamReader reader) {
         return false;
     }
 
-    public boolean portTypeOperationInput(WSDLOperation op, XMLStreamReader reader) {
+    public boolean portTypeOperationInput(EditableWSDLOperation op, XMLStreamReader reader) {
         return false;
     }
 
-    public boolean portTypeOperationOutput(WSDLOperation op, XMLStreamReader reader) {
+    public boolean portTypeOperationOutput(EditableWSDLOperation op, XMLStreamReader reader) {
         return false;
     }
 
-    public boolean portTypeOperationFault(WSDLOperation op, XMLStreamReader reader) {
+    public boolean portTypeOperationFault(EditableWSDLOperation op, XMLStreamReader reader) {
         return false;
     }
 
@@ -173,81 +185,81 @@ public abstract class WSDLParserExtension {
         return false;
     }
 
-    public boolean bindingElements(WSDLBoundPortType binding, XMLStreamReader reader) {
+    public boolean bindingElements(EditableWSDLBoundPortType binding, XMLStreamReader reader) {
         return false;
     }
 
-    public void bindingAttributes(WSDLBoundPortType binding, XMLStreamReader reader) {
+    public void bindingAttributes(EditableWSDLBoundPortType binding, XMLStreamReader reader) {
     }
 
-    public boolean portTypeElements(WSDLPortType portType, XMLStreamReader reader) {
+    public boolean portTypeElements(EditableWSDLPortType portType, XMLStreamReader reader) {
         return false;
     }
 
-    public void portTypeAttributes(WSDLPortType portType, XMLStreamReader reader) {
+    public void portTypeAttributes(EditableWSDLPortType portType, XMLStreamReader reader) {
     }
 
-    public boolean portTypeOperationElements(WSDLOperation operation, XMLStreamReader reader) {
+    public boolean portTypeOperationElements(EditableWSDLOperation operation, XMLStreamReader reader) {
         return false;
     }
 
-    public void portTypeOperationAttributes(WSDLOperation operation, XMLStreamReader reader) {
+    public void portTypeOperationAttributes(EditableWSDLOperation operation, XMLStreamReader reader) {
     }
 
-    public boolean bindingOperationElements(WSDLBoundOperation operation, XMLStreamReader reader) {
+    public boolean bindingOperationElements(EditableWSDLBoundOperation operation, XMLStreamReader reader) {
         return false;
     }
 
-    public void bindingOperationAttributes(WSDLBoundOperation operation, XMLStreamReader reader) {
+    public void bindingOperationAttributes(EditableWSDLBoundOperation operation, XMLStreamReader reader) {
     }
 
-    public boolean messageElements(WSDLMessage msg, XMLStreamReader reader) {
+    public boolean messageElements(EditableWSDLMessage msg, XMLStreamReader reader) {
         return false;
     }
 
-    public void messageAttributes(WSDLMessage msg, XMLStreamReader reader) {
+    public void messageAttributes(EditableWSDLMessage msg, XMLStreamReader reader) {
     }
 
-    public boolean portTypeOperationInputElements(WSDLInput input, XMLStreamReader reader) {
+    public boolean portTypeOperationInputElements(EditableWSDLInput input, XMLStreamReader reader) {
         return false;
     }
 
-    public void portTypeOperationInputAttributes(WSDLInput input, XMLStreamReader reader) {
+    public void portTypeOperationInputAttributes(EditableWSDLInput input, XMLStreamReader reader) {
     }
 
-    public boolean portTypeOperationOutputElements(WSDLOutput output, XMLStreamReader reader) {
+    public boolean portTypeOperationOutputElements(EditableWSDLOutput output, XMLStreamReader reader) {
         return false;
     }
 
-    public void portTypeOperationOutputAttributes(WSDLOutput output, XMLStreamReader reader) {
+    public void portTypeOperationOutputAttributes(EditableWSDLOutput output, XMLStreamReader reader) {
     }
 
-    public boolean portTypeOperationFaultElements(WSDLFault fault, XMLStreamReader reader) {
+    public boolean portTypeOperationFaultElements(EditableWSDLFault fault, XMLStreamReader reader) {
         return false;
     }
 
-    public void portTypeOperationFaultAttributes(WSDLFault fault, XMLStreamReader reader) {
+    public void portTypeOperationFaultAttributes(EditableWSDLFault fault, XMLStreamReader reader) {
     }
 
-    public boolean bindingOperationInputElements(WSDLBoundOperation operation, XMLStreamReader reader) {
+    public boolean bindingOperationInputElements(EditableWSDLBoundOperation operation, XMLStreamReader reader) {
         return false;
     }
 
-    public void bindingOperationInputAttributes(WSDLBoundOperation operation, XMLStreamReader reader) {
+    public void bindingOperationInputAttributes(EditableWSDLBoundOperation operation, XMLStreamReader reader) {
     }
 
-    public boolean bindingOperationOutputElements(WSDLBoundOperation operation, XMLStreamReader reader) {
+    public boolean bindingOperationOutputElements(EditableWSDLBoundOperation operation, XMLStreamReader reader) {
         return false;
     }
 
-    public void bindingOperationOutputAttributes(WSDLBoundOperation operation, XMLStreamReader reader) {
+    public void bindingOperationOutputAttributes(EditableWSDLBoundOperation operation, XMLStreamReader reader) {
     }
 
-    public boolean bindingOperationFaultElements(WSDLBoundFault fault, XMLStreamReader reader) {
+    public boolean bindingOperationFaultElements(EditableWSDLBoundFault fault, XMLStreamReader reader) {
         return false;
     }
 
-    public void bindingOperationFaultAttributes(WSDLBoundFault fault, XMLStreamReader reader) {
+    public void bindingOperationFaultAttributes(EditableWSDLBoundFault fault, XMLStreamReader reader) {
     }
 
     // TODO: complete the rest of the callback

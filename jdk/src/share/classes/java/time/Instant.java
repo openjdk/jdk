@@ -76,7 +76,6 @@ import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
 import java.io.InvalidObjectException;
-import java.io.InvalidObjectException;
 import java.io.Serializable;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
@@ -87,6 +86,7 @@ import java.time.temporal.TemporalAccessor;
 import java.time.temporal.TemporalAdjuster;
 import java.time.temporal.TemporalAmount;
 import java.time.temporal.TemporalField;
+import java.time.temporal.TemporalQueries;
 import java.time.temporal.TemporalQuery;
 import java.time.temporal.TemporalUnit;
 import java.time.temporal.UnsupportedTemporalTypeException;
@@ -156,14 +156,14 @@ import java.util.Objects;
  * internationally-agreed time scale is modified or replaced, a new
  * segment of the Java Time-Scale must be defined for it.  Each segment
  * must meet these requirements:
- * <p><ul>
+ * <ul>
  * <li>the Java Time-Scale shall closely match the underlying international
  *  civil time scale;</li>
  * <li>the Java Time-Scale shall exactly match the international civil
  *  time scale at noon each day;</li>
  * <li>the Java Time-Scale shall have a precisely-defined relationship to
  *  the international civil time scale.</li>
- * </ul><p>
+ * </ul>
  * There are currently, as of 2013, two segments in the Java time-scale.
  * <p>
  * For the segment from 1972-11-03 (exact boundary discussed below) until
@@ -1050,12 +1050,12 @@ public final class Instant
     @SuppressWarnings("unchecked")
     @Override
     public <R> R query(TemporalQuery<R> query) {
-        if (query == TemporalQuery.precision()) {
+        if (query == TemporalQueries.precision()) {
             return (R) NANOS;
         }
         // inline TemporalAccessor.super.query(query) as an optimization
-        if (query == TemporalQuery.chronology() || query == TemporalQuery.zoneId() ||
-                query == TemporalQuery.zone() || query == TemporalQuery.offset()) {
+        if (query == TemporalQueries.chronology() || query == TemporalQueries.zoneId() ||
+                query == TemporalQueries.zone() || query == TemporalQueries.offset()) {
             return null;
         }
         return query.queryFrom(this);

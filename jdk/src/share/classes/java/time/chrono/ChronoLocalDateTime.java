@@ -80,6 +80,7 @@ import java.time.temporal.TemporalAccessor;
 import java.time.temporal.TemporalAdjuster;
 import java.time.temporal.TemporalAmount;
 import java.time.temporal.TemporalField;
+import java.time.temporal.TemporalQueries;
 import java.time.temporal.TemporalQuery;
 import java.time.temporal.TemporalUnit;
 import java.time.zone.ZoneRules;
@@ -136,7 +137,7 @@ public interface ChronoLocalDateTime<D extends ChronoLocalDate>
      * @see #isEqual
      */
     static Comparator<ChronoLocalDateTime<?>> timeLineOrder() {
-        return Chronology.DATE_TIME_ORDER;
+        return AbstractChronology.DATE_TIME_ORDER;
     }
 
     //-----------------------------------------------------------------------
@@ -166,7 +167,7 @@ public interface ChronoLocalDateTime<D extends ChronoLocalDate>
             return (ChronoLocalDateTime<?>) temporal;
         }
         Objects.requireNonNull(temporal, "temporal");
-        Chronology chrono = temporal.query(TemporalQuery.chronology());
+        Chronology chrono = temporal.query(TemporalQueries.chronology());
         if (chrono == null) {
             throw new DateTimeException("Unable to obtain ChronoLocalDateTime from TemporalAccessor: " + temporal.getClass());
         }
@@ -334,13 +335,13 @@ public interface ChronoLocalDateTime<D extends ChronoLocalDate>
     @SuppressWarnings("unchecked")
     @Override
     default <R> R query(TemporalQuery<R> query) {
-        if (query == TemporalQuery.zoneId() || query == TemporalQuery.zone() || query == TemporalQuery.offset()) {
+        if (query == TemporalQueries.zoneId() || query == TemporalQueries.zone() || query == TemporalQueries.offset()) {
             return null;
-        } else if (query == TemporalQuery.localTime()) {
+        } else if (query == TemporalQueries.localTime()) {
             return (R) toLocalTime();
-        } else if (query == TemporalQuery.chronology()) {
+        } else if (query == TemporalQueries.chronology()) {
             return (R) getChronology();
-        } else if (query == TemporalQuery.precision()) {
+        } else if (query == TemporalQueries.precision()) {
             return (R) NANOS;
         }
         // inline TemporalAccessor.super.query(query) as an optimization

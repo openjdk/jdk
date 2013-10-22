@@ -67,6 +67,11 @@ public interface HotSpotDiagnosticMXBean extends PlatformManagedObject {
      *                     cannot be created, opened, or written to.
      * @throws UnsupportedOperationException if this operation is not supported.
      * @throws NullPointerException if <tt>outputFile</tt> is <tt>null</tt>.
+     * @throws SecurityException
+     *         If a security manager exists and its {@link
+     *         java.lang.SecurityManager#checkWrite(java.lang.String)}
+     *         method denies write access to the named file
+     *         or the caller does not have ManagmentPermission("control").
      */
     public void dumpHeap(String outputFile, boolean live) throws java.io.IOException;
 

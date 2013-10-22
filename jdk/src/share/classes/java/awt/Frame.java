@@ -83,7 +83,7 @@ import javax.accessibility.*;
  * <img src="doc-files/MultiScreen.gif"
  * alt="Diagram of virtual device encompassing three physical screens and one primary physical screen. The primary physical screen
  * shows (0,0) coords while a different physical screen shows (-80,-100) coords."
- * ALIGN=center HSPACE=10 VSPACE=7>
+ * style="float:center; margin: 7px 10px;">
  * <p>
  * In such an environment, when calling <code>setLocation</code>,
  * you must pass a virtual coordinate to this method.  Similarly,
