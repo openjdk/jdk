@@ -402,7 +402,7 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
         return loadBinaryOperands(node.lhs(), node.rhs(), node.getType(), false);
     }
 
-    private MethodEmitter load(final Expression node, final Type type) {
+    MethodEmitter load(final Expression node, final Type type) {
         return load(node, type, false);
     }
 
@@ -432,7 +432,7 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
             @Override
             public boolean enterAccessNode(final AccessNode accessNode) {
                 if (!baseAlreadyOnStack) {
-                    load(accessNode.getBase()).convert(Type.OBJECT);
+                    load(accessNode.getBase(), Type.OBJECT);
                 }
                 assert method.peekType().isObject();
                 method.dynamicGet(type, accessNode.getProperty().getName(), getCallSiteFlags(), accessNode.isFunction());
@@ -442,7 +442,7 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
             @Override
             public boolean enterIndexNode(final IndexNode indexNode) {
                 if (!baseAlreadyOnStack) {
-                    load(indexNode.getBase()).convert(Type.OBJECT);
+                    load(indexNode.getBase(), Type.OBJECT);
                     load(indexNode.getIndex());
                 }
                 method.dynamicGetIndex(type, getCallSiteFlags(), indexNode.isFunction());
@@ -632,11 +632,13 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
         final Type[] params = signature == null ? null : Type.getMethodArguments(signature);
         for (final Expression arg : args) {
             assert arg != null;
-            load(arg);
             if (n >= argCount) {
+                load(arg);
                 method.pop(); // we had to load the arg for its side effects
             } else if (params != null) {
-                method.convert(params[n]);
+                load(arg, params[n]);
+            } else {
+                load(arg);
             }
             n++;
         }
@@ -1277,7 +1279,7 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
         for (int i = 0; i < args.size(); i++) {
             method.dup();
             method.load(i);
-            load(args.get(i)).convert(Type.OBJECT); //has to be upcast to object or we fail
+            load(args.get(i), Type.OBJECT); //has to be upcast to object or we fail
             method.arraystore();
         }
 
@@ -1719,7 +1721,7 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
         }
 
         for (final Expression arg : args) {
-            load(arg).convert(Type.OBJECT);
+            load(arg, Type.OBJECT);
         }
 
         method.invokestatic(
@@ -2105,7 +2107,7 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
 
             if (exceptionCondition != null) {
                 next = new Label("next");
-                load(exceptionCondition).convert(Type.BOOLEAN).ifeq(next);
+                load(exceptionCondition, Type.BOOLEAN).ifeq(next);
             } else {
                 next = null;
             }
@@ -2352,7 +2354,7 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
         final List<Expression> args   = callNode.getArgs();
 
         // Load function reference.
-        load(callNode.getFunction()).convert(Type.OBJECT); // must detect type error
+        load(callNode.getFunction(), Type.OBJECT); // must detect type error
 
         method.dynamicNew(1 + loadArgs(args), getCallSiteFlags());
         method.store(unaryNode.getSymbol());
@@ -2383,7 +2385,7 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
     @Override
     public boolean enterSUB(final UnaryNode unaryNode) {
         assert unaryNode.getType().isNumeric();
-        load(unaryNode.rhs()).convert(unaryNode.getType()).neg().store(unaryNode.getSymbol());
+        load(unaryNode.rhs(), unaryNode.getType()).neg().store(unaryNode.getSymbol());
         return false;
     }
 
@@ -2424,7 +2426,7 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
 
         final Label skip = new Label("skip");
 
-        load(lhs).convert(Type.OBJECT).dup().convert(Type.BOOLEAN);
+        load(lhs, Type.OBJECT).dup().convert(Type.BOOLEAN);
 
         if (binaryNode.tokenType() == TokenType.AND) {
             method.ifeq(skip);
@@ -2433,7 +2435,7 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
         }
 
         method.pop();
-        load(rhs).convert(Type.OBJECT);
+        load(rhs, Type.OBJECT);
         method.label(skip);
         method.store(binaryNode.getSymbol());
 
