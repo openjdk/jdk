@@ -3006,10 +3006,15 @@ void Compile::final_graph_reshaping_impl( Node *n, Final_Reshape_Counts &frc) {
       if (result != NULL) {
         for (DUIterator_Fast jmax, j = result->fast_outs(jmax); j < jmax; j++) {
           Node* out = result->fast_out(j);
-          if (out->in(0) == NULL) {
-            out->set_req(0, non_throwing);
-          } else if (out->in(0) == ctrl) {
-            out->set_req(0, non_throwing);
+          // Phi nodes shouldn't be moved. They would only match below if they
+          // had the same control as the MathExactNode. The only time that
+          // would happen is if the Phi is also an input to the MathExact
+          if (!out->is_Phi()) {
+            if (out->in(0) == NULL) {
+              out->set_req(0, non_throwing);
+            } else if (out->in(0) == ctrl) {
+              out->set_req(0, non_throwing);
+            }
           }
         }
       }
