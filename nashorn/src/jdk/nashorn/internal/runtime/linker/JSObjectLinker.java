@@ -25,25 +25,29 @@
 
 package jdk.nashorn.internal.runtime.linker;
 
-import jdk.nashorn.internal.lookup.MethodHandleFunctionality;
-import jdk.nashorn.internal.lookup.MethodHandleFactory;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
+import java.util.HashMap;
+import java.util.Map;
 import jdk.internal.dynalink.CallSiteDescriptor;
 import jdk.internal.dynalink.linker.GuardedInvocation;
+import jdk.internal.dynalink.linker.GuardingTypeConverterFactory;
 import jdk.internal.dynalink.linker.LinkRequest;
 import jdk.internal.dynalink.linker.LinkerServices;
 import jdk.internal.dynalink.linker.TypeBasedGuardingDynamicLinker;
 import jdk.internal.dynalink.support.CallSiteDescriptorFactory;
-import jdk.nashorn.internal.runtime.JSType;
 import jdk.nashorn.api.scripting.JSObject;
+import jdk.nashorn.api.scripting.ScriptObjectMirror;
+import jdk.nashorn.internal.lookup.MethodHandleFactory;
+import jdk.nashorn.internal.lookup.MethodHandleFunctionality;
+import jdk.nashorn.internal.runtime.JSType;
 
 /**
  * A Dynalink linker to handle web browser built-in JS (DOM etc.) objects as well
  * as ScriptObjects from other Nashorn contexts.
  */
-final class JSObjectLinker implements TypeBasedGuardingDynamicLinker {
+final class JSObjectLinker implements TypeBasedGuardingDynamicLinker, GuardingTypeConverterFactory {
     @Override
     public boolean canLinkType(final Class<?> type) {
         return canLinkTypeStatic(type);
@@ -75,6 +79,21 @@ final class JSObjectLinker implements TypeBasedGuardingDynamicLinker {
         return Bootstrap.asType(inv, linkerServices, desc);
     }
 
+    @Override
+    public GuardedInvocation convertToType(final Class<?> sourceType, final Class<?> targetType) throws Exception {
+        if(!sourceType.isAssignableFrom(ScriptObjectMirror.class)) {
+            return null;
+        }
+
+        final MethodHandle converter = MIRROR_CONVERTERS.get(targetType);
+        if(converter == null) {
+            return null;
+        }
+
+        return new GuardedInvocation(converter, sourceType == ScriptObjectMirror.class ? null : IS_MIRROR_GUARD).asType(MethodType.methodType(targetType, sourceType));
+    }
+
+
     private static GuardedInvocation lookup(final CallSiteDescriptor desc) {
         final String operator = CallSiteDescriptorFactory.tokenizeOperators(desc).get(0);
         final int c = desc.getNameTokenCount();
@@ -87,9 +106,9 @@ final class JSObjectLinker implements TypeBasedGuardingDynamicLinker {
             case "setElem":
                 return c > 2 ? findSetMethod(desc) : findSetIndexMethod();
             case "call":
-                return findCallMethod(desc, operator);
+                return findCallMethod(desc);
             case "callMethod":
-                return findCallMethodMethod(desc, operator);
+                return findCallMethodMethod(desc);
             case "new":
                 return findNewMethod(desc);
             default:
@@ -115,14 +134,14 @@ final class JSObjectLinker implements TypeBasedGuardingDynamicLinker {
         return new GuardedInvocation(JSOBJECTLINKER_PUT, null, IS_JSOBJECT_GUARD);
     }
 
-    private static GuardedInvocation findCallMethodMethod(final CallSiteDescriptor desc, final String operator) {
+    private static GuardedInvocation findCallMethodMethod(final CallSiteDescriptor desc) {
         final String methodName = desc.getNameToken(2);
         MethodHandle func = MH.insertArguments(JSOBJECT_CALLMEMBER, 1, methodName);
         func = MH.asCollector(func, Object[].class, desc.getMethodType().parameterCount() - 1);
         return new GuardedInvocation(func, null, IS_JSOBJECT_GUARD);
     }
 
-    private static GuardedInvocation findCallMethod(final CallSiteDescriptor desc, final String operator) {
+    private static GuardedInvocation findCallMethod(final CallSiteDescriptor desc) {
         final MethodHandle func = MH.asCollector(JSOBJECT_CALL, Object[].class, desc.getMethodType().parameterCount() - 2);
         return new GuardedInvocation(func, null, IS_JSOBJECT_GUARD);
     }
@@ -135,6 +154,11 @@ final class JSObjectLinker implements TypeBasedGuardingDynamicLinker {
     @SuppressWarnings("unused")
     private static boolean isJSObject(final Object self) {
         return self instanceof JSObject;
+    }
+
+    @SuppressWarnings("unused")
+    private static boolean isScriptObjectMirror(final Object self) {
+        return self instanceof ScriptObjectMirror;
     }
 
     @SuppressWarnings("unused")
@@ -172,6 +196,7 @@ final class JSObjectLinker implements TypeBasedGuardingDynamicLinker {
 
     // method handles of the current class
     private static final MethodHandle IS_JSOBJECT_GUARD  = findOwnMH("isJSObject", boolean.class, Object.class);
+    private static final MethodHandle IS_MIRROR_GUARD    = findOwnMH("isScriptObjectMirror", boolean.class, Object.class);
     private static final MethodHandle JSOBJECTLINKER_GET = findOwnMH("get", Object.class, Object.class, Object.class);
     private static final MethodHandle JSOBJECTLINKER_PUT = findOwnMH("put", Void.TYPE, Object.class, Object.class, Object.class);
 
@@ -182,23 +207,32 @@ final class JSObjectLinker implements TypeBasedGuardingDynamicLinker {
     private static final MethodHandle JSOBJECT_CALL       = findJSObjectMH("call", Object.class, Object.class, Object[].class);
     private static final MethodHandle JSOBJECT_NEW        = findJSObjectMH("newObject", Object.class, Object[].class);
 
+    private static final Map<Class<?>, MethodHandle> MIRROR_CONVERTERS = new HashMap<>();
+    static {
+        MIRROR_CONVERTERS.put(boolean.class, MH.dropArguments(MH.constant(boolean.class, Boolean.TRUE), 0, Object.class));
+        MIRROR_CONVERTERS.put(int.class, findMirrorMH("toInt32", int.class));
+        MIRROR_CONVERTERS.put(long.class, findMirrorMH("toInt64", long.class));
+        MIRROR_CONVERTERS.put(double.class, findMirrorMH("toNumber", double.class));
+    }
+
     private static MethodHandle findOwnMH(final String name, final Class<?> rtype, final Class<?>... types) {
-        final Class<?>   own = JSObjectLinker.class;
-        final MethodType mt  = MH.type(rtype, types);
-        try {
-            return MH.findStatic(MethodHandles.lookup(), own, name, mt);
-        } catch (final MethodHandleFactory.LookupException e) {
-            return MH.findVirtual(MethodHandles.lookup(), own, name, mt);
-        }
+        return findMH(name, JSObjectLinker.class, rtype, types);
     }
 
     private static MethodHandle findJSObjectMH(final String name, final Class<?> rtype, final Class<?>... types) {
-        final Class<?>   own = JSObject.class;
+        return findMH(name, JSObject.class, rtype, types);
+    }
+
+    private static MethodHandle findMirrorMH(final String name, final Class<?> rtype, final Class<?>... types) {
+        return findMH(name, ScriptObjectMirror.class, rtype, types);
+    }
+
+    private static MethodHandle findMH(final String name, final Class<?> target, final Class<?> rtype, final Class<?>... types) {
         final MethodType mt  = MH.type(rtype, types);
         try {
-            return MH.findVirtual(MethodHandles.publicLookup(), own, name, mt);
+            return MH.findStatic(MethodHandles.lookup(), target, name, mt);
         } catch (final MethodHandleFactory.LookupException e) {
-            return MH.findVirtual(MethodHandles.lookup(), own, name, mt);
+            return MH.findVirtual(MethodHandles.lookup(), target, name, mt);
         }
     }
 }
