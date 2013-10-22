@@ -49,6 +49,7 @@ import com.sun.tools.javac.util.*;
 import com.sun.tools.javac.util.JCDiagnostic.DiagnosticPosition;
 import com.sun.source.tree.MemberReferenceTree.ReferenceMode;
 
+import java.util.EnumMap;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -69,6 +70,7 @@ import static com.sun.tools.javac.tree.JCTree.Tag.*;
  */
 public class LambdaToMethod extends TreeTranslator {
 
+    private Attr attr;
     private JCDiagnostic.Factory diags;
     private Log log;
     private Lower lower;
@@ -103,6 +105,35 @@ public class LambdaToMethod extends TreeTranslator {
 
     /** Flag for alternate metafactories indicating the lambda object requires multiple bridges */
     public static final int FLAG_BRIDGES = 1 << 2;
+
+    // <editor-fold defaultstate="collapsed" desc="Instantiating">
+    protected static final Context.Key<LambdaToMethod> unlambdaKey =
+            new Context.Key<LambdaToMethod>();
+
+    public static LambdaToMethod instance(Context context) {
+        LambdaToMethod instance = context.get(unlambdaKey);
+        if (instance == null) {
+            instance = new LambdaToMethod(context);
+        }
+        return instance;
+    }
+    private LambdaToMethod(Context context) {
+        context.put(unlambdaKey, this);
+        diags = JCDiagnostic.Factory.instance(context);
+        log = Log.instance(context);
+        lower = Lower.instance(context);
+        names = Names.instance(context);
+        syms = Symtab.instance(context);
+        rs = Resolve.instance(context);
+        make = TreeMaker.instance(context);
+        types = Types.instance(context);
+        transTypes = TransTypes.instance(context);
+        analyzer = new LambdaAnalyzerPreprocessor();
+        Options options = Options.instance(context);
+        dumpLambdaToMethodStats = options.isSet("dumpLambdaToMethodStats");
+        attr = Attr.instance(context);
+    }
+    // </editor-fold>
 
     private class KlassInfo {
 
@@ -140,37 +171,6 @@ public class LambdaToMethod extends TreeTranslator {
             appendedMethodList = appendedMethodList.prepend(decl);
         }
     }
-
-    // <editor-fold defaultstate="collapsed" desc="Instantiating">
-    private static final Context.Key<LambdaToMethod> unlambdaKey =
-            new Context.Key<LambdaToMethod>();
-
-    public static LambdaToMethod instance(Context context) {
-        LambdaToMethod instance = context.get(unlambdaKey);
-        if (instance == null) {
-            instance = new LambdaToMethod(context);
-        }
-        return instance;
-    }
-
-    private Attr attr;
-
-    private LambdaToMethod(Context context) {
-        diags = JCDiagnostic.Factory.instance(context);
-        log = Log.instance(context);
-        lower = Lower.instance(context);
-        names = Names.instance(context);
-        syms = Symtab.instance(context);
-        rs = Resolve.instance(context);
-        make = TreeMaker.instance(context);
-        types = Types.instance(context);
-        transTypes = TransTypes.instance(context);
-        analyzer = new LambdaAnalyzerPreprocessor();
-        Options options = Options.instance(context);
-        dumpLambdaToMethodStats = options.isSet("dumpLambdaToMethodStats");
-        attr = Attr.instance(context);
-    }
-    // </editor-fold>
 
     // <editor-fold defaultstate="collapsed" desc="translate methods">
     @Override
@@ -402,21 +402,9 @@ public class LambdaToMethod extends TreeTranslator {
             super.visitIdent(tree);
         } else {
             LambdaTranslationContext lambdaContext = (LambdaTranslationContext) context;
-            if (lambdaContext.getSymbolMap(PARAM).containsKey(tree.sym)) {
-                Symbol translatedSym = lambdaContext.getSymbolMap(PARAM).get(tree.sym);
-                result = make.Ident(translatedSym).setType(tree.type);
-                translatedSym.setTypeAttributes(tree.sym.getRawTypeAttributes());
-            } else if (lambdaContext.getSymbolMap(LOCAL_VAR).containsKey(tree.sym)) {
-                Symbol translatedSym = lambdaContext.getSymbolMap(LOCAL_VAR).get(tree.sym);
-                result = make.Ident(translatedSym).setType(tree.type);
-                translatedSym.setTypeAttributes(tree.sym.getRawTypeAttributes());
-            } else if (lambdaContext.getSymbolMap(TYPE_VAR).containsKey(tree.sym)) {
-                Symbol translatedSym = lambdaContext.getSymbolMap(TYPE_VAR).get(tree.sym);
-                result = make.Ident(translatedSym).setType(translatedSym.type);
-                translatedSym.setTypeAttributes(tree.sym.getRawTypeAttributes());
-            } else if (lambdaContext.getSymbolMap(CAPTURED_VAR).containsKey(tree.sym)) {
-                Symbol translatedSym = lambdaContext.getSymbolMap(CAPTURED_VAR).get(tree.sym);
-                result = make.Ident(translatedSym).setType(tree.type);
+            JCTree ltree = lambdaContext.translate(tree);
+            if (ltree != null) {
+                result = ltree;
             } else {
                 //access to untranslated symbols (i.e. compile-time constants,
                 //members defined inside the lambda body, etc.) )
@@ -1704,20 +1692,7 @@ public class LambdaToMethod extends TreeTranslator {
             /** variable in the enclosing context to which this lambda is assigned */
             Symbol self;
 
-            /** map from original to translated lambda parameters */
-            Map<Symbol, Symbol> lambdaParams = new LinkedHashMap<Symbol, Symbol>();
-
-            /** map from original to translated lambda locals */
-            Map<Symbol, Symbol> lambdaLocals = new LinkedHashMap<Symbol, Symbol>();
-
-            /** map from variables in enclosing scope to translated synthetic parameters */
-            Map<Symbol, Symbol> capturedLocals  = new LinkedHashMap<Symbol, Symbol>();
-
-            /** map from class symbols to translated synthetic parameters (for captured member access) */
-            Map<Symbol, Symbol> capturedThis = new LinkedHashMap<Symbol, Symbol>();
-
-            /** map from original to translated lambda locals */
-            Map<Symbol, Symbol> typeVars = new LinkedHashMap<Symbol, Symbol>();
+            Map<LambdaSymbolKind, Map<Symbol, Symbol>> translatedSymbols;
 
             /** the synthetic symbol for the method hoisting the translated lambda */
             Symbol translatedSym;
@@ -1735,6 +1710,13 @@ public class LambdaToMethod extends TreeTranslator {
                 if (dumpLambdaToMethodStats) {
                     log.note(tree, "lambda.stat", needsAltMetafactory(), translatedSym);
                 }
+                translatedSymbols = new EnumMap<>(LambdaSymbolKind.class);
+
+                translatedSymbols.put(PARAM, new LinkedHashMap<Symbol, Symbol>());
+                translatedSymbols.put(LOCAL_VAR, new LinkedHashMap<Symbol, Symbol>());
+                translatedSymbols.put(CAPTURED_VAR, new LinkedHashMap<Symbol, Symbol>());
+                translatedSymbols.put(CAPTURED_THIS, new LinkedHashMap<Symbol, Symbol>());
+                translatedSymbols.put(TYPE_VAR, new LinkedHashMap<Symbol, Symbol>());
             }
 
             /**
@@ -1786,27 +1768,22 @@ public class LambdaToMethod extends TreeTranslator {
             }
 
             void addSymbol(Symbol sym, LambdaSymbolKind skind) {
-                Map<Symbol, Symbol> transMap = null;
+                Map<Symbol, Symbol> transMap = getSymbolMap(skind);
                 Name preferredName;
                 switch (skind) {
                     case CAPTURED_THIS:
-                        transMap = capturedThis;
-                        preferredName = names.fromString("encl$" + capturedThis.size());
+                        preferredName = names.fromString("encl$" + transMap.size());
                         break;
                     case CAPTURED_VAR:
-                        transMap = capturedLocals;
-                        preferredName = names.fromString("cap$" + capturedLocals.size());
+                        preferredName = names.fromString("cap$" + transMap.size());
                         break;
                     case LOCAL_VAR:
-                        transMap = lambdaLocals;
                         preferredName = sym.name;
                         break;
                     case PARAM:
-                        transMap = lambdaParams;
                         preferredName = sym.name;
                         break;
                     case TYPE_VAR:
-                        transMap = typeVars;
                         preferredName = sym.name;
                         break;
                     default: throw new AssertionError();
@@ -1816,29 +1793,22 @@ public class LambdaToMethod extends TreeTranslator {
                 }
             }
 
-            Map<Symbol, Symbol> getSymbolMap(LambdaSymbolKind... skinds) {
-                LinkedHashMap<Symbol, Symbol> translationMap = new LinkedHashMap<Symbol, Symbol>();
-                for (LambdaSymbolKind skind : skinds) {
-                    switch (skind) {
-                        case CAPTURED_THIS:
-                            translationMap.putAll(capturedThis);
-                            break;
-                        case CAPTURED_VAR:
-                            translationMap.putAll(capturedLocals);
-                            break;
-                        case LOCAL_VAR:
-                            translationMap.putAll(lambdaLocals);
-                            break;
-                        case PARAM:
-                            translationMap.putAll(lambdaParams);
-                            break;
-                        case TYPE_VAR:
-                            translationMap.putAll(typeVars);
-                            break;
-                        default: throw new AssertionError();
+            Map<Symbol, Symbol> getSymbolMap(LambdaSymbolKind skind) {
+                Map<Symbol, Symbol> m = translatedSymbols.get(skind);
+                Assert.checkNonNull(m);
+                return m;
+            }
+
+            JCTree translate(JCIdent lambdaIdent) {
+                for (Map<Symbol, Symbol> m : translatedSymbols.values()) {
+                    if (m.containsKey(lambdaIdent.sym)) {
+                        Symbol tSym = m.get(lambdaIdent.sym);
+                        JCTree t = make.Ident(tSym).setType(lambdaIdent.type);
+                        tSym.setTypeAttributes(lambdaIdent.sym.getRawTypeAttributes());
+                        return t;
                     }
                 }
-                return translationMap;
+                return null;
             }
 
             /**
@@ -1869,10 +1839,12 @@ public class LambdaToMethod extends TreeTranslator {
                 //
                 // 1) reference to enclosing contexts captured by the lambda expression
                 // 2) enclosing locals captured by the lambda expression
-                for (Symbol thisSym : getSymbolMap(CAPTURED_VAR, PARAM).values()) {
+                for (Symbol thisSym : getSymbolMap(CAPTURED_VAR).values()) {
                     params.append(make.VarDef((VarSymbol) thisSym, null));
                 }
-
+                for (Symbol thisSym : getSymbolMap(PARAM).values()) {
+                    params.append(make.VarDef((VarSymbol) thisSym, null));
+                }
                 syntheticParams = params.toList();
 
                 //prepend synthetic args to translated lambda method signature
@@ -1964,12 +1936,16 @@ public class LambdaToMethod extends TreeTranslator {
     }
     // </editor-fold>
 
+    /*
+     * These keys provide mappings for various translated lambda symbols
+     * and the prevailing order must be maintained.
+     */
     enum LambdaSymbolKind {
-        CAPTURED_VAR,
-        CAPTURED_THIS,
-        LOCAL_VAR,
-        PARAM,
-        TYPE_VAR;
+        PARAM,          // original to translated lambda parameters
+        LOCAL_VAR,      // original to translated lambda locals
+        CAPTURED_VAR,   // variables in enclosing scope to translated synthetic parameters
+        CAPTURED_THIS,  // class symbols to translated synthetic parameters (for captured member access)
+        TYPE_VAR;       // original to translated lambda type variables
     }
 
     /**
