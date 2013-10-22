@@ -37,8 +37,6 @@ import javax.swing.plaf.basic.BasicLookAndFeel;
 import sun.swing.*;
 import apple.laf.*;
 
-import com.apple.resources.MacOSXResourceBundle;
-
 public class AquaLookAndFeel extends BasicLookAndFeel {
     static final String sOldPropertyPrefix = "com.apple.macos."; // old prefix for things like 'useScreenMenuBar'
     static final String sPropertyPrefix = "apple.laf."; // new prefix for things like 'useScreenMenuBar'
@@ -252,7 +250,7 @@ public class AquaLookAndFeel extends BasicLookAndFeel {
         table.setDefaultLocale(Locale.getDefault());
         table.addResourceBundle(PKG_PREFIX + "resources.aqua");
         try {
-            final ResourceBundle aquaProperties = MacOSXResourceBundle.getMacResourceBundle(PKG_PREFIX + "resources.aqua");
+            final ResourceBundle aquaProperties = ResourceBundle.getBundle(PKG_PREFIX + "resources.aqua");
             final Enumeration<String> propertyKeys = aquaProperties.getKeys();
 
             while (propertyKeys.hasMoreElements()) {

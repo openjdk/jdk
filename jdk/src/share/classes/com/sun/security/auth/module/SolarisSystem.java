@@ -30,6 +30,7 @@ package com.sun.security.auth.module;
  * UID/GID/groups information for the current user.
  *
  */
+@jdk.Exported
 public class SolarisSystem {
 
     private native void getSolarisInfo();
