@@ -246,12 +246,11 @@ public enum JSType {
      * @return the primitive form of the object
      */
     public static Object toPrimitive(final Object obj, final Class<?> hint) {
-        if (!(obj instanceof ScriptObject)) {
-            return obj;
-        }
+        return obj instanceof ScriptObject ? toPrimitive((ScriptObject)obj, hint) : obj;
+    }
 
-        final ScriptObject sobj   = (ScriptObject)obj;
-        final Object       result = sobj.getDefaultValue(hint);
+    private static Object toPrimitive(final ScriptObject sobj, final Class<?> hint) {
+        final Object result = sobj.getDefaultValue(hint);
 
         if (!isPrimitive(result)) {
             throw typeError("bad.default.value", result.toString());
@@ -475,6 +474,19 @@ public enum JSType {
         return toNumberGeneric(obj);
     }
 
+
+    /**
+     * JavaScript compliant conversion of Object to number
+     * See ECMA 9.3 ToNumber
+     *
+     * @param obj  an object
+     *
+     * @return a number
+     */
+    public static double toNumber(final ScriptObject obj) {
+        return toNumber(toPrimitive(obj, Number.class));
+    }
+
     /**
      * Digit representation for a character
      *
@@ -619,6 +631,17 @@ public enum JSType {
     }
 
     /**
+     * JavaScript compliant Object to int32 conversion
+     * See ECMA 9.5 ToInt32
+     *
+     * @param obj an object
+     * @return an int32
+     */
+    public static int toInt32(final ScriptObject obj) {
+        return toInt32(toNumber(obj));
+    }
+
+    /**
      * JavaScript compliant long to int32 conversion
      *
      * @param num a long
@@ -645,6 +668,16 @@ public enum JSType {
      * @return an int64
      */
     public static long toInt64(final Object obj) {
+        return toInt64(toNumber(obj));
+    }
+
+    /**
+     * JavaScript compliant Object to int64 conversion
+     *
+     * @param obj an object
+     * @return an int64
+     */
+    public static long toInt64(final ScriptObject obj) {
         return toInt64(toNumber(obj));
     }
 
@@ -1028,7 +1061,7 @@ public enum JSType {
         }
 
         if (obj instanceof ScriptObject) {
-            return toNumber(toPrimitive(obj, Number.class));
+            return toNumber((ScriptObject)obj);
         }
 
         return Double.NaN;

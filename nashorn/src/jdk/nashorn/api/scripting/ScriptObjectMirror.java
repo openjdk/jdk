@@ -43,6 +43,7 @@ import java.util.concurrent.Callable;
 import javax.script.Bindings;
 import jdk.nashorn.internal.runtime.Context;
 import jdk.nashorn.internal.runtime.GlobalObject;
+import jdk.nashorn.internal.runtime.JSType;
 import jdk.nashorn.internal.runtime.ScriptFunction;
 import jdk.nashorn.internal.runtime.ScriptObject;
 import jdk.nashorn.internal.runtime.ScriptRuntime;
@@ -704,5 +705,46 @@ public final class ScriptObjectMirror extends JSObject implements Bindings {
                 Context.setGlobal(oldGlobal);
             }
         }
+    }
+
+    /**
+     * JavaScript compliant Object to int32 conversion
+     * See ECMA 9.5 ToInt32
+     *
+     * @return this object's int32 representation
+     */
+    public int toInt32() {
+        return inGlobal(new Callable<Integer>() {
+            @Override public Integer call() {
+                return JSType.toInt32(sobj);
+            }
+        });
+    }
+
+    /**
+     * JavaScript compliant Object to int64 conversion
+     *
+     * @return this object's int64 representation
+     */
+    public long toInt64() {
+        return inGlobal(new Callable<Long>() {
+            @Override public Long call() {
+                return JSType.toInt64(sobj);
+            }
+        });
+    }
+
+    /**
+     * JavaScript compliant conversion of Object to number
+     * See ECMA 9.3 ToNumber
+     *
+     * @return this object's number representation
+     */
+    public double toNumber() {
+        return inGlobal(new Callable<Double>() {
+            @Override public Double call() {
+                return JSType.toNumber(sobj);
+            }
+        });
     }
 }
