@@ -528,7 +528,7 @@ public class Check {
             inferenceContext.addFreeTypeListener(List.of(req), new FreeTypeListener() {
                 @Override
                 public void typesInferred(InferenceContext inferenceContext) {
-                    checkType(pos, found, inferenceContext.asInstType(req), checkContext);
+                    checkType(pos, inferenceContext.asInstType(found), inferenceContext.asInstType(req), checkContext);
                 }
             });
         }

@@ -250,6 +250,14 @@ public class Attr extends JCTree.Visitor {
         Type owntype = found;
         if (!owntype.hasTag(ERROR) && !resultInfo.pt.hasTag(METHOD) && !resultInfo.pt.hasTag(FORALL)) {
             if (allowPoly && inferenceContext.free(found)) {
+                if ((ownkind & ~resultInfo.pkind) == 0) {
+                    owntype = resultInfo.check(tree, inferenceContext.asFree(owntype));
+                } else {
+                    log.error(tree.pos(), "unexpected.type",
+                            kindNames(resultInfo.pkind),
+                            kindName(ownkind));
+                    owntype = types.createErrorType(owntype);
+                }
                 inferenceContext.addFreeTypeListener(List.of(found, resultInfo.pt), new FreeTypeListener() {
                     @Override
                     public void typesInferred(InferenceContext inferenceContext) {
@@ -510,6 +518,15 @@ public class Attr extends JCTree.Visitor {
 
         protected ResultInfo dup(CheckContext newContext) {
             return new ResultInfo(pkind, pt, newContext);
+        }
+
+        @Override
+        public String toString() {
+            if (pt != null) {
+                return pt.toString();
+            } else {
+                return "";
+            }
         }
     }
 
