@@ -45,7 +45,7 @@ import sun.net.www.MessageHeader;
  * application and a URL. Instances of this class can be used both to
  * read from and to write to the resource referenced by the URL. In
  * general, creating a connection to a URL is a multistep process:
- * <p>
+ *
  * <center><table border=2 summary="Describes the process of creating a connection to a URL: openConnection() and connect() over time.">
  * <tr><th>{@code openConnection()}</th>
  *     <th>{@code connect()}</th></tr>

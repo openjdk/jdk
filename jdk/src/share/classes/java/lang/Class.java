@@ -91,7 +91,7 @@ import sun.reflect.misc.ReflectUtil;
  * <p> The following example uses a {@code Class} object to print the
  * class name of an object:
  *
- * <p> <blockquote><pre>
+ * <blockquote><pre>
  *     void printClassName(Object obj) {
  *         System.out.println("The class of " + obj +
  *                            " is " + obj.getClass().getName());
@@ -103,7 +103,7 @@ import sun.reflect.misc.ReflectUtil;
  * <cite>The Java&trade; Language Specification</cite>.
  * For example:
  *
- * <p> <blockquote>
+ * <blockquote>
  *     {@code System.out.println("The name of class Foo is: "+Foo.class.getName());}
  * </blockquote>
  *
