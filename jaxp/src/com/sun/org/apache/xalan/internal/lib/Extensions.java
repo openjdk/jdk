@@ -56,6 +56,7 @@ import org.xml.sax.SAXNotSupportedException;
  */
 public class Extensions
 {
+    static final String JDK_DEFAULT_DOM = "com.sun.org.apache.xerces.internal.jaxp.DocumentBuilderFactoryImpl";
   /**
    * Constructor Extensions
    *
@@ -407,7 +408,11 @@ public class Extensions
         {
             try
             {
-                m_doc = DocumentBuilderFactory.newInstance().newDocumentBuilder().newDocument();
+                if (System.getSecurityManager() == null) {
+                    m_doc = DocumentBuilderFactory.newInstance().newDocumentBuilder().newDocument();
+                } else {
+                    m_doc = DocumentBuilderFactory.newInstance(JDK_DEFAULT_DOM, null).newDocumentBuilder().newDocument();
+                }
             }
 
             catch(ParserConfigurationException pce)

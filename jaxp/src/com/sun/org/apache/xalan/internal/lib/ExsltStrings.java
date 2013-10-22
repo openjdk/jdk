@@ -52,6 +52,8 @@ import org.w3c.dom.Text;
  */
 public class ExsltStrings extends ExsltBase
 {
+   static final String JDK_DEFAULT_DOM = "com.sun.org.apache.xerces.internal.jaxp.DocumentBuilderFactoryImpl";
+
   /**
    * The str:align function aligns a string within another string.
    * <p>
@@ -343,7 +345,11 @@ public class ExsltStrings extends ExsltBase
         static {
             try
             {
-                m_doc =DocumentBuilderFactory.newInstance().newDocumentBuilder().newDocument();
+                if (System.getSecurityManager() == null) {
+                    m_doc = DocumentBuilderFactory.newInstance().newDocumentBuilder().newDocument();
+                } else {
+                    m_doc = DocumentBuilderFactory.newInstance(JDK_DEFAULT_DOM, null).newDocumentBuilder().newDocument();
+                }
             }
 
             catch(ParserConfigurationException pce)
