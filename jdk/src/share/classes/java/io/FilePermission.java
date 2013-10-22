@@ -55,7 +55,7 @@ import sun.security.util.SecurityConstants;
  * a list of one or more comma-separated keywords. The possible keywords are
  * "read", "write", "execute", "delete", and "readlink". Their meaning is
  * defined as follows:
- * <P>
+ *
  * <DL>
  *    <DT> read <DD> read permission
  *    <DT> write <DD> write permission
@@ -297,11 +297,11 @@ public final class FilePermission extends Permission implements Serializable {
     /**
      * Checks if this FilePermission object "implies" the specified permission.
      * <P>
-     * More specifically, this method returns true if:<p>
+     * More specifically, this method returns true if:
      * <ul>
-     * <li> <i>p</i> is an instanceof FilePermission,<p>
+     * <li> <i>p</i> is an instanceof FilePermission,
      * <li> <i>p</i>'s actions are a proper subset of this
-     * object's actions, and <p>
+     * object's actions, and
      * <li> <i>p</i>'s pathname is implied by this object's
      *      pathname. For example, "/tmp/*" implies "/tmp/foo", since
      *      "/tmp/*" encompasses all files in the "/tmp" directory,

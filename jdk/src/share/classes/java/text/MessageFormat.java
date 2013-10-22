@@ -125,7 +125,6 @@ import java.util.Locale;
  * valid patterns, but <code>"ab {0'}' de"</code>, <code>"ab } de"</code>
  * and <code>"''{''"</code> are not.
  *
- * <p>
  * <dl><dt><b>Warning:</b><dd>The rules for using quotes within message
  * format patterns unfortunately have shown to be somewhat confusing.
  * In particular, it isn't always obvious to localizers whether single
@@ -146,7 +145,7 @@ import java.util.Locale;
  * table shows how the values map to {@code Format} instances. Combinations not
  * shown in the table are illegal. A <i>SubformatPattern</i> must
  * be a valid pattern string for the {@code Format} subclass used.
- * <p>
+ *
  * <table border=1 summary="Shows how FormatType and FormatStyle values map to Format instances">
  *    <tr>
  *       <th id="ft" class="TableHeadingColor">FormatType
@@ -215,7 +214,6 @@ import java.util.Locale;
  *       <td headers="fs"><i>SubformatPattern</i>
  *       <td headers="sc">{@code new} {@link ChoiceFormat#ChoiceFormat(String) ChoiceFormat}{@code (subformatPattern)}
  * </table>
- * <p>
  *
  * <h4>Usage Information</h4>
  *
@@ -761,7 +759,7 @@ public class MessageFormat extends Format {
      * as indicated by the first matching line of the following table. An
      * argument is <i>unavailable</i> if <code>arguments</code> is
      * <code>null</code> or has fewer than argumentIndex+1 elements.
-     * <p>
+     *
      * <table border=1 summary="Examples of subformat,argument,and formatted text">
      *    <tr>
      *       <th>Subformat

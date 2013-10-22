@@ -76,6 +76,7 @@ public interface PrimitiveIterator<T, T_CONS> extends Iterator<T> {
      * @param action The action to be performed for each element
      * @throws NullPointerException if the specified action is null
      */
+    @SuppressWarnings("overloads")
     void forEachRemaining(T_CONS action);
 
     /**
@@ -93,10 +94,10 @@ public interface PrimitiveIterator<T, T_CONS> extends Iterator<T> {
         int nextInt();
 
         /**
-         * Performs the given action for each remaining element, in the order
-         * elements occur when iterating, until all elements have been processed
-         * or the action throws an exception.  Errors or runtime exceptions
-         * thrown by the action are relayed to the caller.
+         * Performs the given action for each remaining element until all elements
+         * have been processed or the action throws an exception.  Actions are
+         * performed in the order of iteration, if that order is specified.
+         * Exceptions thrown by the action are relayed to the caller.
          *
          * @implSpec
          * <p>The default implementation behaves as if:
@@ -167,10 +168,10 @@ public interface PrimitiveIterator<T, T_CONS> extends Iterator<T> {
         long nextLong();
 
         /**
-         * Performs the given action for each remaining element, in the order
-         * elements occur when iterating, until all elements have been processed
-         * or the action throws an exception.  Errors or runtime exceptions
-         * thrown by the action are relayed to the caller.
+         * Performs the given action for each remaining element until all elements
+         * have been processed or the action throws an exception.  Actions are
+         * performed in the order of iteration, if that order is specified.
+         * Exceptions thrown by the action are relayed to the caller.
          *
          * @implSpec
          * <p>The default implementation behaves as if:
@@ -240,10 +241,10 @@ public interface PrimitiveIterator<T, T_CONS> extends Iterator<T> {
         double nextDouble();
 
         /**
-         * Performs the given action for each remaining element, in the order
-         * elements occur when iterating, until all elements have been processed
-         * or the action throws an exception.  Errors or runtime exceptions
-         * thrown by the action are relayed to the caller.
+         * Performs the given action for each remaining element until all elements
+         * have been processed or the action throws an exception.  Actions are
+         * performed in the order of iteration, if that order is specified.
+         * Exceptions thrown by the action are relayed to the caller.
          *
          * @implSpec
          * <p>The default implementation behaves as if:

@@ -356,7 +356,6 @@ import sun.util.locale.provider.LocaleProviderAdapter;
  * may be replaced with other, locale dependent, pattern letters.
  * <code>SimpleDateFormat</code> does not deal with the localization of text
  * other than the pattern letters; that's up to the client of the class.
- * <p>
  *
  * <h4>Examples</h4>
  *

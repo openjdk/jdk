@@ -219,30 +219,17 @@
  * <em>not modified at all</em> during the execution of the stream pipeline.
  * The notable exception to this are streams whose sources are concurrent
  * collections, which are specifically designed to handle concurrent modification.
+ * Concurrent stream sources are those whose {@code Spliterator} reports the
+ * {@code CONCURRENT} characteristic.
  *
- * <p>Accordingly, behavioral parameters passed to stream methods should never
- * modify the stream's data source.  An implementation is said to
- * <em>interfere</em> with the data source if it modifies, or causes to be
+ * <p>Accordingly, behavioral parameters in stream pipelines whose source might
+ * not be concurrent should never modify the stream's data source.
+ * A behavioral parameter is said to <em>interfere</em> with a non-concurrent
+ * data source if it modifies, or causes to be
  * modified, the stream's data source.  The need for non-interference applies
  * to all pipelines, not just parallel ones.  Unless the stream source is
  * concurrent, modifying a stream's data source during execution of a stream
  * pipeline can cause exceptions, incorrect answers, or nonconformant behavior.
- *
- * <p>Results may be nondeterministic or incorrect if the behavioral
- * parameters of stream operations are <em>stateful</em>.  A stateful lambda
- * (or other object implementing the appropriate functional interface) is one
- * whose result depends on any state which might change during the execution
- * of the stream pipeline.  An example of a stateful lambda is:
- *
- * <pre>{@code
- *     Set<Integer> seen = Collections.synchronizedSet(new HashSet<>());
- *     stream.parallel().map(e -> { if (seen.add(e)) return 0; else return e; })...
- * }</pre>
- *
- * Here, if the mapping operation is performed in parallel, the results for the
- * same input could vary from run to run, due to thread scheduling differences,
- * whereas, with a stateless lambda expression the results would always be the
- * same.
  *
  * For well-behaved stream sources, the source can be modified before the
  * terminal operation commences and those modifications will be reflected in
@@ -265,26 +252,54 @@
  * <a href="package-summary.html#StreamSources">Low-level stream
  * construction</a> for requirements for building well-behaved streams.
  *
- * <p>Some streams, particularly those whose stream sources are concurrent, can
- * tolerate concurrent modification during execution of a stream pipeline.
- * However, in no case -- even if the stream source is concurrent -- should
- * behavioral parameters to stream operations modify the stream source.  Modifying
- * the stream source from within the stream source may cause pipeline execution
- * to fail to terminate, produce inaccurate results, or throw exceptions.
- * The following example shows inappropriate interference with the source:
+ * <h3><a name="Statelessness">Stateless behaviors</a></h3>
+ *
+ * Stream pipeline results may be nondeterministic or incorrect if the behavioral
+ * parameters to the stream operations are <em>stateful</em>.  A stateful lambda
+ * (or other object implementing the appropriate functional interface) is one
+ * whose result depends on any state which might change during the execution
+ * of the stream pipeline.  An example of a stateful lambda is the parameter
+ * to {@code map()} in:
+ *
  * <pre>{@code
- *     // Don't do this!
- *     List<String> l = new ArrayList(Arrays.asList("one", "two"));
- *     Stream<String> sl = l.stream();
- *     String s = sl.peek(s -> l.add("BAD LAMBDA")).collect(joining(" "));
+ *     Set<Integer> seen = Collections.synchronizedSet(new HashSet<>());
+ *     stream.parallel().map(e -> { if (seen.add(e)) return 0; else return e; })...
  * }</pre>
+ *
+ * Here, if the mapping operation is performed in parallel, the results for the
+ * same input could vary from run to run, due to thread scheduling differences,
+ * whereas, with a stateless lambda expression the results would always be the
+ * same.
+ *
+ * <p>Note also that attempting to access mutable state from behavioral parameters
+ * presents you with a bad choice with respect to safety and performance; if
+ * you do not synchronize access to that state, you have a data race and
+ * therefore your code is broken, but if you do synchronize access to that
+ * state, you risk having contention undermine the parallelism you are seeking
+ * to benefit from.  The best approach is to avoid stateful behavioral
+ * parameters to stream operations entirely; there is usually a way to
+ * restructure the stream pipeline to avoid statefulness.
  *
  * <h3>Side-effects</h3>
  *
  * Side-effects in behavioral parameters to stream operations are, in general,
  * discouraged, as they can often lead to unwitting violations of the
- * statelessness requirement, as well as other thread-safety hazards.  Many
- * computations where one might be tempted to use side effects can be more
+ * statelessness requirement, as well as other thread-safety hazards.
+ *
+ * <p>If the behavioral parameters do have side-effects, unless explicitly
+ * stated, there are no guarantees as to the
+ * <a href="../concurrent/package-summary.html#MemoryVisibility"><i>visibility</i></a>
+ * of those side-effects to other threads, nor are there any guarantees that
+ * different operations on the "same" element within the same stream pipeline
+ * are executed in the same thread.  Further, the ordering of those effects
+ * may be surprising.  Even when a pipeline is constrained to produce a
+ * <em>result</em> that is consistent with the encounter order of the stream
+ * source (for example, {@code IntStream.range(0,5).parallel().map(x -> x*2).toArray()}
+ * must produce {@code [0, 2, 4, 6, 8]}), no guarantees are made as to the order
+ * in which the mapper function is applied to individual elements, or in what
+ * thread any behavioral parameter is executed for a given element.
+ *
+ * <p>Many computations where one might be tempted to use side effects can be more
  * safely and efficiently expressed without side-effects, such as using
  * <a href="package-summary.html#Reduction">reduction</a> instead of mutable
  * accumulators. However, side-effects such as using {@code println()} for debugging
