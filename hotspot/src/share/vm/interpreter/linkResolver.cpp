@@ -1,6 +1,5 @@
 /*
  * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -419,18 +418,28 @@ void LinkResolver::check_method_accessability(KlassHandle ref_klass,
 
   AccessFlags flags = sel_method->access_flags();
 
-  // Special case:  arrays always override "clone". JVMS 2.15.
+  // Special case #1:  arrays always override "clone". JVMS 2.15.
   // If the resolved klass is an array class, and the declaring class
   // is java.lang.Object and the method is "clone", set the flags
   // to public.
+  // Special case #2:  If the resolved klass is an interface, and
+  // the declaring class is java.lang.Object, and the method is
+  // "clone" or "finalize", set the flags to public. If the
+  // resolved interface does not contain "clone" or "finalize"
+  // methods, the method/interface method resolution looks to
+  // the interface's super class, java.lang.Object.  With JDK 8
+  // interface accessability check requirement, special casing
+  // this scenario is necessary to avoid an IAE.
   //
-  // We'll check for the method name first, as that's most likely
-  // to be false (so we'll short-circuit out of these tests).
-  if (sel_method->name() == vmSymbols::clone_name() &&
-      sel_klass() == SystemDictionary::Object_klass() &&
-      resolved_klass->oop_is_array()) {
+  // We'll check for each method name first and then java.lang.Object
+  // to best short-circuit out of these tests.
+  if (((sel_method->name() == vmSymbols::clone_name() &&
+        (resolved_klass->oop_is_array() || resolved_klass->is_interface())) ||
+       (sel_method->name() == vmSymbols::finalize_method_name() &&
+        resolved_klass->is_interface())) &&
+      sel_klass() == SystemDictionary::Object_klass()) {
     // We need to change "protected" to "public".
-    assert(flags.is_protected(), "clone not protected?");
+    assert(flags.is_protected(), "clone or finalize not protected?");
     jint new_flags = flags.as_int();
     new_flags = new_flags & (~JVM_ACC_PROTECTED);
     new_flags = new_flags | JVM_ACC_PUBLIC;
