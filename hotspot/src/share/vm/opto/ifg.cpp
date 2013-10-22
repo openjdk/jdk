@@ -677,7 +677,7 @@ uint PhaseChaitin::build_ifg_physical( ResourceArea *a ) {
             } else {            // Common case: size 1 bound removal
               if( lrg.mask().Member(r_reg) ) {
                 lrg.Remove(r_reg);
-                lrg.set_mask_size(lrg.mask().is_AllStack() ? 65535:old_size-1);
+                lrg.set_mask_size(lrg.mask().is_AllStack() ? LRG::AllStack_size : old_size - 1);
               }
             }
             // If 'l' goes completely dry, it must spill.

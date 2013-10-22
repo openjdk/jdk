@@ -25,15 +25,43 @@
 #include "precompiled.hpp"
 #include "memory/allocation.inline.hpp"
 #include "opto/addnode.hpp"
+#include "opto/cfgnode.hpp"
 #include "opto/machnode.hpp"
-#include "opto/mathexactnode.hpp"
 #include "opto/matcher.hpp"
+#include "opto/mathexactnode.hpp"
 #include "opto/subnode.hpp"
 
 MathExactNode::MathExactNode(Node* ctrl, Node* n1, Node* n2) : MultiNode(3) {
   init_req(0, ctrl);
   init_req(1, n1);
   init_req(2, n2);
+}
+
+BoolNode* MathExactNode::bool_node() const {
+  Node* flags = flags_node();
+  BoolNode* boolnode = flags->unique_out()->as_Bool();
+  assert(boolnode != NULL, "must have BoolNode");
+  return boolnode;
+}
+
+IfNode* MathExactNode::if_node() const {
+  BoolNode* boolnode = bool_node();
+  IfNode* ifnode = boolnode->unique_out()->as_If();
+  assert(ifnode != NULL, "must have IfNode");
+  return ifnode;
+}
+
+Node* MathExactNode::control_node() const {
+  IfNode* ifnode = if_node();
+  return ifnode->in(0);
+}
+
+Node* MathExactNode::non_throwing_branch() const {
+  IfNode* ifnode = if_node();
+  if (bool_node()->_test._test == BoolTest::overflow) {
+    return ifnode->proj_out(0);
+  }
+  return ifnode->proj_out(1);
 }
 
 Node* AddExactINode::match(const ProjNode* proj, const Matcher* m) {
@@ -62,15 +90,15 @@ Node* MathExactNode::no_overflow(PhaseGVN *phase, Node* new_result) {
     }
 
     if (flags != NULL) {
-      BoolNode* bolnode = (BoolNode *) flags->unique_out();
-      switch (bolnode->_test._test) {
+      BoolNode* boolnode = bool_node();
+      switch (boolnode->_test._test) {
         case BoolTest::overflow:
           // if the check is for overflow - never taken
-          igvn->replace_node(bolnode, phase->intcon(0));
+          igvn->replace_node(boolnode, phase->intcon(0));
           break;
         case BoolTest::no_overflow:
           // if the check is for no overflow - always taken
-          igvn->replace_node(bolnode, phase->intcon(1));
+          igvn->replace_node(boolnode, phase->intcon(1));
           break;
         default:
           fatal("Unexpected value of BoolTest");

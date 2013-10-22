@@ -104,6 +104,14 @@ void Instruction::state_values_do(ValueVisitor* f) {
   }
 }
 
+ciType* Instruction::exact_type() const {
+  ciType* t =  declared_type();
+  if (t != NULL && t->is_klass()) {
+    return t->as_klass()->exact_klass();
+  }
+  return NULL;
+}
+
 
 #ifndef PRODUCT
 void Instruction::check_state(ValueStack* state) {
@@ -135,9 +143,7 @@ void Instruction::print(InstructionPrinter& ip) {
 
 // perform constant and interval tests on index value
 bool AccessIndexed::compute_needs_range_check() {
-
   if (length()) {
-
     Constant* clength = length()->as_Constant();
     Constant* cindex = index()->as_Constant();
     if (clength && cindex) {
@@ -157,34 +163,8 @@ bool AccessIndexed::compute_needs_range_check() {
 }
 
 
-ciType* Local::exact_type() const {
-  ciType* type = declared_type();
-
-  // for primitive arrays, the declared type is the exact type
-  if (type->is_type_array_klass()) {
-    return type;
-  } else if (type->is_instance_klass()) {
-    ciInstanceKlass* ik = (ciInstanceKlass*)type;
-    if (ik->is_loaded() && ik->is_final() && !ik->is_interface()) {
-      return type;
-    }
-  } else if (type->is_obj_array_klass()) {
-    ciObjArrayKlass* oak = (ciObjArrayKlass*)type;
-    ciType* base = oak->base_element_type();
-    if (base->is_instance_klass()) {
-      ciInstanceKlass* ik = base->as_instance_klass();
-      if (ik->is_loaded() && ik->is_final()) {
-        return type;
-      }
-    } else if (base->is_primitive_type()) {
-      return type;
-    }
-  }
-  return NULL;
-}
-
 ciType* Constant::exact_type() const {
-  if (type()->is_object()) {
+  if (type()->is_object() && type()->as_ObjectType()->is_loaded()) {
     return type()->as_ObjectType()->exact_type();
   }
   return NULL;
@@ -192,19 +172,18 @@ ciType* Constant::exact_type() const {
 
 ciType* LoadIndexed::exact_type() const {
   ciType* array_type = array()->exact_type();
-  if (array_type == NULL) {
-    return NULL;
-  }
-  assert(array_type->is_array_klass(), "what else?");
-  ciArrayKlass* ak = (ciArrayKlass*)array_type;
+  if (array_type != NULL) {
+    assert(array_type->is_array_klass(), "what else?");
+    ciArrayKlass* ak = (ciArrayKlass*)array_type;
 
-  if (ak->element_type()->is_instance_klass()) {
-    ciInstanceKlass* ik = (ciInstanceKlass*)ak->element_type();
-    if (ik->is_loaded() && ik->is_final()) {
-      return ik;
+    if (ak->element_type()->is_instance_klass()) {
+      ciInstanceKlass* ik = (ciInstanceKlass*)ak->element_type();
+      if (ik->is_loaded() && ik->is_final()) {
+        return ik;
+      }
     }
   }
-  return NULL;
+  return Instruction::exact_type();
 }
 
 
@@ -221,22 +200,6 @@ ciType* LoadIndexed::declared_type() const {
 
 ciType* LoadField::declared_type() const {
   return field()->type();
-}
-
-
-ciType* LoadField::exact_type() const {
-  ciType* type = declared_type();
-  // for primitive arrays, the declared type is the exact type
-  if (type->is_type_array_klass()) {
-    return type;
-  }
-  if (type->is_instance_klass()) {
-    ciInstanceKlass* ik = (ciInstanceKlass*)type;
-    if (ik->is_loaded() && ik->is_final()) {
-      return type;
-    }
-  }
-  return NULL;
 }
 
 
@@ -262,16 +225,6 @@ ciType* NewInstance::declared_type() const {
 
 ciType* CheckCast::declared_type() const {
   return klass();
-}
-
-ciType* CheckCast::exact_type() const {
-  if (klass()->is_instance_klass()) {
-    ciInstanceKlass* ik = (ciInstanceKlass*)klass();
-    if (ik->is_loaded() && ik->is_final()) {
-      return ik;
-    }
-  }
-  return NULL;
 }
 
 // Implementation of ArithmeticOp
