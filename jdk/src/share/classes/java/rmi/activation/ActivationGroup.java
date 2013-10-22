@@ -154,21 +154,21 @@ public abstract class ActivationGroup
      * active). If the object does not call
      * <code>Activatable.inactive</code> when it deactivates, the
      * object will never be garbage collected since the group keeps
-     * strong references to the objects it creates. <p>
+     * strong references to the objects it creates.
      *
      * <p>The group's <code>inactiveObject</code> method unexports the
      * remote object from the RMI runtime so that the object can no
      * longer receive incoming RMI calls. An object will only be unexported
      * if the object has no pending or executing calls.
      * The subclass of <code>ActivationGroup</code> must override this
-     * method and unexport the object. <p>
+     * method and unexport the object.
      *
      * <p>After removing the object from the RMI runtime, the group
      * must inform its <code>ActivationMonitor</code> (via the monitor's
      * <code>inactiveObject</code> method) that the remote object is
      * not currently active so that the remote object will be
      * re-activated by the activator upon a subsequent activation
-     * request.<p>
+     * request.
      *
      * <p>This method simply informs the group's monitor that the object
      * is inactive.  It is up to the concrete subclass of ActivationGroup

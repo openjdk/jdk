@@ -606,7 +606,7 @@ abstract public class TimeZone implements Serializable, Cloneable {
      * Otherwise, the method takes the following steps to determine the default
      * time zone.
      *
-     * <p><ul>
+     * <ul>
      * <li>Use the {@code user.timezone} property value as the default
      * time zone ID if it's available.</li>
      * <li>Detect the platform time zone ID. The source of the

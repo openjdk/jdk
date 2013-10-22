@@ -150,7 +150,7 @@ import sun.reflect.Reflection;
  * has or inherited a resource bundle name, then that resource bundle name
  * will be mapped to a {@code ResourceBundle} object, using the default Locale
  * at the time of logging.
- * <br><a name="ResourceBundleMapping"/>When mapping resource bundle names to
+ * <br id="ResourceBundleMapping">When mapping resource bundle names to
  * {@code ResourceBundle} objects, the logger will first try to use the
  * Thread's {@linkplain java.lang.Thread#getContextClassLoader() context class
  * loader} to map the given resource bundle name to a {@code ResourceBundle}.

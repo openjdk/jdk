@@ -63,7 +63,7 @@ import sun.security.jca.GetInstance.Instance;
  * supports those methods), so that each call to
  * {@code generateCertificate} consumes only one certificate, and the
  * read position of the input stream is positioned to the next certificate in
- * the file:<p>
+ * the file:
  *
  * <pre>{@code
  * FileInputStream fis = new FileInputStream(filename);
@@ -78,7 +78,7 @@ import sun.security.jca.GetInstance.Instance;
  * }</pre>
  *
  * <p>The following example parses a PKCS#7-formatted certificate reply stored
- * in a file and extracts all the certificates from it:<p>
+ * in a file and extracts all the certificates from it:
  *
  * <pre>
  * FileInputStream fis = new FileInputStream(filename);
