@@ -51,10 +51,12 @@ public interface Iterable<T> {
     Iterator<T> iterator();
 
     /**
-     * Performs the given action on the contents of the {@code Iterable}, in the
-     * order elements occur when iterating, until all elements have been
-     * processed or the action throws an exception.  Errors or runtime
-     * exceptions thrown by the action are relayed to the caller.
+     * Performs the given action for each element of the {@code Iterable}
+     * until all elements have been processed or the action throws an
+     * exception.  Unless otherwise specified by the implementing class,
+     * actions are performed in the order of iteration (if an iteration order
+     * is specified).  Exceptions thrown by the action are relayed to the
+     * caller.
      *
      * @implSpec
      * <p>The default implementation behaves as if:
