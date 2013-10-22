@@ -22,27 +22,30 @@
  */
 
 /**
- * NASHORN-397 : typeof on certain member access expressions computes to undefined wrongly
+ * JDK-8026955: for-in should convert primitive values to object
  *
  * @test
  * @run
  */
 
-Object.defineProperty(Number.prototype, 'x',
-    { get : function() { return 42; } });
+Object.prototype[4] = "world";
+String.prototype[3] = "hello";
+Number.prototype[3] = "hello";
+Boolean.prototype[3] = "hello";
 
-if (typeof (5).x !== 'number') {
-    fail("typeof(5).x is not 'number'");
+function testForIn(x) {
+    for (var i in x) {
+        print(i, x[i]);
+    }
+    for each (var i in x) {
+        print(i);
+    }
 }
 
-if (typeof (java.net.Proxy.NO_PROXY) != 'object') {
-    fail("typeof java.net.Proxy.NO_PROXY is not 'object'");
-}
+testForIn("abc");
+testForIn(false);
+testForIn(3);
+testForIn(null);
+testForIn();
+testForIn(String.prototype);
 
-if (typeof (java.lang.Math.PI) != 'number') {
-    fail("typeof java.lang.Math.PI is not 'number'");
-}
-
-if (typeof (java.io.File.separator) != 'string') {
-    fail("typeof java.io.File.separator is not 'string'");
-}

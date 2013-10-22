@@ -22,27 +22,21 @@
  */
 
 /**
- * NASHORN-397 : typeof on certain member access expressions computes to undefined wrongly
+ * JDK-8027016: Array.prototype.indexOf should return -1 when array is of length zero
  *
  * @test
  * @run
  */
 
-Object.defineProperty(Number.prototype, 'x',
-    { get : function() { return 42; } });
-
-if (typeof (5).x !== 'number') {
-    fail("typeof(5).x is not 'number'");
+var res = [].indexOf(null, {valueOf:function(){throw "not reached"}});
+if (res != -1) {
+    fail("expected -1 on indexOf on empty array");
 }
 
-if (typeof (java.net.Proxy.NO_PROXY) != 'object') {
-    fail("typeof java.net.Proxy.NO_PROXY is not 'object'");
+// add index beyond length check as well
+
+res = [].indexOf(null, 1);
+if (res != -1) {
+    fail("expected -1 on indexOf on empty array");
 }
 
-if (typeof (java.lang.Math.PI) != 'number') {
-    fail("typeof java.lang.Math.PI is not 'number'");
-}
-
-if (typeof (java.io.File.separator) != 'string') {
-    fail("typeof java.io.File.separator is not 'string'");
-}
