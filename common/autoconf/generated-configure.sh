@@ -1715,9 +1715,9 @@ Optional Features:
   --disable-debug-symbols disable generation of debug symbols [enabled]
   --disable-zip-debug-info
                           disable zipping of debug-info files [enabled]
-  --disable-macosx-runtime-support
-                          disable the use of MacOSX Java runtime support
-                          framework [enabled]
+  --enable-macosx-runtime-support
+                          Deprecated. Option is kept for backwards
+                          compatibility and is ignored
   --enable-sjavac         use sjavac to do fast incremental compiles
                           [disabled]
   --disable-precompiled-headers
@@ -3148,6 +3148,11 @@ ac_configure="$SHELL $ac_aux_dir/configure"  # Please don't use this var.
 # $1: The name of the with argument to deprecate, not including --with-
 
 
+# Register a --enable argument but mark it as deprecated
+# $1: The name of the with argument to deprecate, not including --enable-
+# $2: The name of the argument to deprecate, in shell variable style (i.e. with _ instead of -)
+
+
 
 
 # Test that variable $1 denoting a program is not empty. If empty, exit with an error.
@@ -3848,7 +3853,7 @@ fi
 #CUSTOM_AUTOCONF_INCLUDE
 
 # Do not change or remove the following line, it is needed for consistency checks:
-DATE_WHEN_GENERATED=1382433088
+DATE_WHEN_GENERATED=1382437436
 
 ###############################################################################
 #
@@ -29920,8 +29925,8 @@ $as_echo_n "checking what is not needed on MacOSX?... " >&6; }
     FREETYPE2_NOT_NEEDED=yes
     # If the java runtime framework is disabled, then we need X11.
     # This will be adjusted below.
-    { $as_echo "$as_me:${as_lineno-$LINENO}: result: alsa pulse x11" >&5
-$as_echo "alsa pulse x11" >&6; }
+    { $as_echo "$as_me:${as_lineno-$LINENO}: result: alsa pulse x11 freetype" >&5
+$as_echo "alsa pulse x11 freetype" >&6; }
   fi
 
   if test "x$OPENJDK_TARGET_OS" = xbsd; then
@@ -29942,42 +29947,29 @@ $as_echo "alsa" >&6; }
 
   ###############################################################################
   #
-  # Check for MacOSX support for OpenJDK. If this exists, try to build a JVM
-  # that uses this API.
+  # Check for MacOSX support for OpenJDK.
   #
+
+
   # Check whether --enable-macosx-runtime-support was given.
 if test "${enable_macosx_runtime_support+set}" = set; then :
-  enableval=$enable_macosx_runtime_support; MACOSX_RUNTIME_SUPPORT="${enableval}"
-else
-  MACOSX_RUNTIME_SUPPORT="no"
+  enableval=$enable_macosx_runtime_support;
 fi
 
+  if test "x$enable_macosx_runtime_support" != x; then
+    { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: Option --enable-macosx-runtime-support is deprecated and will be ignored." >&5
+$as_echo "$as_me: WARNING: Option --enable-macosx-runtime-support is deprecated and will be ignored." >&2;}
+  fi
 
-  USE_MACOSX_RUNTIME_SUPPORT=no
-  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for explicit Java runtime support in the OS" >&5
-$as_echo_n "checking for explicit Java runtime support in the OS... " >&6; }
+
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for Mac OS X Java Framework" >&5
+$as_echo_n "checking for Mac OS X Java Framework... " >&6; }
   if test -f /System/Library/Frameworks/JavaVM.framework/Frameworks/JavaRuntimeSupport.framework/Headers/JavaRuntimeSupport.h; then
-    if test "x$MACOSX_RUNTIME_SUPPORT" != xno; then
-      MACOSX_RUNTIME_SUPPORT=yes
-      USE_MACOSX_RUNTIME_SUPPORT=yes
-      { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes, does not need alsa freetype2 pulse and X11" >&5
-$as_echo "yes, does not need alsa freetype2 pulse and X11" >&6; }
-    else
-      { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes, but explicitly disabled." >&5
-$as_echo "yes, but explicitly disabled." >&6; }
-    fi
+    { $as_echo "$as_me:${as_lineno-$LINENO}: result: /System/Library/Frameworks/JavaVM.framework" >&5
+$as_echo "/System/Library/Frameworks/JavaVM.framework" >&6; }
   else
     { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
 $as_echo "no" >&6; }
-  fi
-
-  if test "x$OPENJDK_TARGET_OS" = xmacosx && test "x$USE_MACOSX_RUNTIME_SUPPORT" = xno; then
-    { $as_echo "$as_me:${as_lineno-$LINENO}: checking what is not needed on an X11 build on MacOSX?" >&5
-$as_echo_n "checking what is not needed on an X11 build on MacOSX?... " >&6; }
-    X11_NOT_NEEDED=
-    FREETYPE2_NOT_NEEDED=
-    { $as_echo "$as_me:${as_lineno-$LINENO}: result: alsa pulse" >&5
-$as_echo "alsa pulse" >&6; }
   fi
 
 

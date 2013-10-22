@@ -212,6 +212,18 @@ AC_DEFUN([BASIC_DEPRECATED_ARG_WITH],
       [AC_MSG_WARN([Option --with-$1 is deprecated and will be ignored.])])
 ])
 
+# Register a --enable argument but mark it as deprecated
+# $1: The name of the with argument to deprecate, not including --enable-
+# $2: The name of the argument to deprecate, in shell variable style (i.e. with _ instead of -)
+AC_DEFUN([BASIC_DEPRECATED_ARG_ENABLE],
+[
+  AC_ARG_ENABLE($1, [AS_HELP_STRING([--enable-$1],
+      [Deprecated. Option is kept for backwards compatibility and is ignored])])
+  if test "x$enable_$2" != x; then
+    AC_MSG_WARN([Option --enable-$1 is deprecated and will be ignored.])
+  fi
+])
+
 AC_DEFUN_ONCE([BASIC_INIT],
 [
   # Save the original command line. This is passed to us by the wrapper configure script.
