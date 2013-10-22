@@ -1163,11 +1163,15 @@ public final class NativeArray extends ScriptObject {
         try {
             final ScriptObject sobj = (ScriptObject)Global.toObject(self);
             final long         len  = JSType.toUint32(sobj.getLength());
-            final long         n    = JSType.toLong(fromIndex);
-
-            if (len == 0 || n >= len) {
+            if (len == 0) {
                 return -1;
             }
+
+            final long         n = JSType.toLong(fromIndex);
+            if (n >= len) {
+                return -1;
+            }
+
 
             for (long k = Math.max(0, (n < 0) ? (len - Math.abs(n)) : n); k < len; k++) {
                 if (sobj.has(k)) {
