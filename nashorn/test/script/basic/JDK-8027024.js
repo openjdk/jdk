@@ -22,27 +22,37 @@
  */
 
 /**
- * NASHORN-397 : typeof on certain member access expressions computes to undefined wrongly
+ * JDK-8027024: String.prototype.charAt and charCodeAt do not evaluate 'self' and 'pos' arguments in right order 
  *
  * @test
  * @run
  */
 
-Object.defineProperty(Number.prototype, 'x',
-    { get : function() { return 42; } });
 
-if (typeof (5).x !== 'number') {
-    fail("typeof(5).x is not 'number'");
-}
+String.prototype.charAt.call(
+    {
+        toString: function() {
+            print("charAt.self.toString");
+        }
+    },
 
-if (typeof (java.net.Proxy.NO_PROXY) != 'object') {
-    fail("typeof java.net.Proxy.NO_PROXY is not 'object'");
-}
+    {
+        valueOf: function() {
+            print("charAt.pos.valueOf");
+        }
+    }
+);
 
-if (typeof (java.lang.Math.PI) != 'number') {
-    fail("typeof java.lang.Math.PI is not 'number'");
-}
+String.prototype.charCodeAt.call(
+    {
+        toString: function() {
+            print("charCodeAt.self.toString");
+        }
+    },
 
-if (typeof (java.io.File.separator) != 'string') {
-    fail("typeof java.io.File.separator is not 'string'");
-}
+    {
+        valueOf: function() {
+            print("charCodeAt.pos.valueOf");
+        }
+    }
+);
