@@ -325,6 +325,9 @@ tools/pack200/Pack200Test.java                                  solaris-all, mac
 # 8007410
 tools/launcher/FXLauncherTest.java                              linux-all
 
+# 7144200
+java/lang/management/ClassLoadingMXBean/LoadCounts.java		generic-all
+
 ############################################################################
 
 # jdk_jdi

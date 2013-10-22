@@ -1,12 +1,10 @@
 /*
- * Copyright (c) 2004, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.  Oracle designates this
- * particular file as subject to the "Classpath" exception as provided
- * by Oracle in the LICENSE file that accompanied this code.
+ * published by the Free Software Foundation.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -23,24 +21,20 @@
  * questions.
  */
 
-package java.io;
-
-import java.io.IOException;
-
 /**
- * A <tt>Flushable</tt> is a destination of data that can be flushed.  The
- * flush method is invoked to write any buffered output to the underlying
- * stream.
- *
- * @since 1.5
+ * The first version of this class. The second version is in
+ * RedefineMethodInBacktraceTargetB_2.java.
  */
-public interface Flushable {
+public class RedefineMethodInBacktraceTargetB {
+    public static void methodToRedefine() {
+        try {
+            // signal that we are here
+            RedefineMethodInBacktraceApp.called.countDown();
 
-    /**
-     * Flushes this stream by writing any buffered output to the underlying
-     * stream.
-     *
-     * @throws IOException If an I/O error occurs
-     */
-    void flush() throws IOException;
+            // wait until test is done
+            RedefineMethodInBacktraceApp.stop.await();
+        } catch (InterruptedException ex) {
+            // ignore, test will fail
+        }
+    }
 }
