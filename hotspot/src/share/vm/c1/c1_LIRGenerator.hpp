@@ -434,6 +434,8 @@ class LIRGenerator: public InstructionVisitor, public BlockClosure {
   void do_ThreadIDIntrinsic(Intrinsic* x);
   void do_ClassIDIntrinsic(Intrinsic* x);
 #endif
+  ciKlass* profile_arg_type(ciMethodData* md, int md_first_offset, int md_offset, intptr_t profiled_k, Value arg, LIR_Opr& mdp, bool not_null, ciKlass* signature_k);
+  void profile_arguments(ProfileCall* x);
 
  public:
   Compilation*  compilation() const              { return _compilation; }
@@ -534,6 +536,7 @@ class LIRGenerator: public InstructionVisitor, public BlockClosure {
   virtual void do_UnsafePrefetchRead (UnsafePrefetchRead*  x);
   virtual void do_UnsafePrefetchWrite(UnsafePrefetchWrite* x);
   virtual void do_ProfileCall    (ProfileCall*     x);
+  virtual void do_ProfileReturnType (ProfileReturnType* x);
   virtual void do_ProfileInvoke  (ProfileInvoke*   x);
   virtual void do_RuntimeCall    (RuntimeCall*     x);
   virtual void do_MemBar         (MemBar*          x);

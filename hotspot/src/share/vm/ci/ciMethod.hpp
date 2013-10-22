@@ -265,7 +265,7 @@ class ciMethod : public ciMetadata {
   bool is_klass_loaded(int refinfo_index, bool must_be_resolved) const;
   bool check_call(int refinfo_index, bool is_static) const;
   bool ensure_method_data();  // make sure it exists in the VM also
-  address ensure_method_counters();
+  MethodCounters* ensure_method_counters();
   int instructions_size();
   int scale_count(int count, float prof_factor = 1.);  // make MDO count commensurate with IIC
 
