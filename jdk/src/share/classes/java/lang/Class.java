@@ -3314,7 +3314,10 @@ public final class Class<T> implements java.io.Serializable,
     public <A extends Annotation> A[] getAnnotationsByType(Class<A> annotationClass) {
         Objects.requireNonNull(annotationClass);
 
-        return AnnotationSupport.getMultipleAnnotations(annotationData().annotations, annotationClass);
+        AnnotationData annotationData = annotationData();
+        return AnnotationSupport.getAssociatedAnnotations(annotationData.declaredAnnotations,
+                                                          annotationData.annotations,
+                                                          annotationClass);
     }
 
     /**
@@ -3344,7 +3347,8 @@ public final class Class<T> implements java.io.Serializable,
     public <A extends Annotation> A[] getDeclaredAnnotationsByType(Class<A> annotationClass) {
         Objects.requireNonNull(annotationClass);
 
-        return AnnotationSupport.getMultipleAnnotations(annotationData().declaredAnnotations, annotationClass);
+        return AnnotationSupport.getDirectlyAndIndirectlyPresent(annotationData().declaredAnnotations,
+                                                                 annotationClass);
     }
 
     /**
