@@ -1470,7 +1470,7 @@ void GraphBuilder::method_return(Value x) {
     set_state(state()->caller_state()->copy_for_parsing());
     if (x != NULL) {
       state()->push(x->type(), x);
-      if (profile_calls() && MethodData::profile_return() && x->type()->is_object_kind()) {
+      if (profile_return() && x->type()->is_object_kind()) {
         ciMethod* caller = state()->scope()->method();
         ciMethodData* md = caller->method_data_or_null();
         ciProfileData* data = md->bci_to_data(invoke_bci);
@@ -1672,15 +1672,23 @@ Dependencies* GraphBuilder::dependency_recorder() const {
 }
 
 // How many arguments do we want to profile?
-Values* GraphBuilder::args_list_for_profiling(int& start, bool may_have_receiver) {
+Values* GraphBuilder::args_list_for_profiling(ciMethod* target, int& start, bool may_have_receiver) {
   int n = 0;
-  assert(start == 0, "should be initialized");
-  if (MethodData::profile_arguments()) {
+  bool has_receiver = may_have_receiver && Bytecodes::has_receiver(method()->java_code_at_bci(bci()));
+  start = has_receiver ? 1 : 0;
+  if (profile_arguments()) {
     ciProfileData* data = method()->method_data()->bci_to_data(bci());
     if (data->is_CallTypeData() || data->is_VirtualCallTypeData()) {
       n = data->is_CallTypeData() ? data->as_CallTypeData()->number_of_arguments() : data->as_VirtualCallTypeData()->number_of_arguments();
-      bool has_receiver = may_have_receiver && Bytecodes::has_receiver(method()->java_code_at_bci(bci()));
-      start = has_receiver ? 1 : 0;
+    }
+  }
+  // If we are inlining then we need to collect arguments to profile parameters for the target
+  if (profile_parameters() && target != NULL) {
+    if (target->method_data() != NULL && target->method_data()->parameters_type_data() != NULL) {
+      // The receiver is profiled on method entry so it's included in
+      // the number of parameters but here we're only interested in
+      // actual arguments.
+      n = MAX2(n, target->method_data()->parameters_type_data()->number_of_parameters() - start);
     }
   }
   if (n > 0) {
@@ -1690,9 +1698,9 @@ Values* GraphBuilder::args_list_for_profiling(int& start, bool may_have_receiver
 }
 
 // Collect arguments that we want to profile in a list
-Values* GraphBuilder::collect_args_for_profiling(Values* args, bool may_have_receiver) {
+Values* GraphBuilder::collect_args_for_profiling(Values* args, ciMethod* target, bool may_have_receiver) {
   int start = 0;
-  Values* obj_args = args_list_for_profiling(start, may_have_receiver);
+  Values* obj_args = args_list_for_profiling(target, start, may_have_receiver);
   if (obj_args == NULL) {
     return NULL;
   }
@@ -2006,7 +2014,7 @@ void GraphBuilder::invoke(Bytecodes::Code code) {
       } else if (exact_target != NULL) {
         target_klass = exact_target->holder();
       }
-      profile_call(target, recv, target_klass, collect_args_for_profiling(args, false), false);
+      profile_call(target, recv, target_klass, collect_args_for_profiling(args, NULL, false), false);
     }
   }
 
@@ -2021,7 +2029,7 @@ void GraphBuilder::invoke(Bytecodes::Code code) {
       push(result_type, result);
     }
   }
-  if (profile_calls() && MethodData::profile_return() && result_type->is_object_kind()) {
+  if (profile_return() && result_type->is_object_kind()) {
     profile_return_type(result, target);
   }
 }
@@ -3561,7 +3569,7 @@ bool GraphBuilder::try_inline_intrinsics(ciMethod* callee) {
           recv = args->at(0);
           null_check(recv);
         }
-        profile_call(callee, recv, NULL, collect_args_for_profiling(args, true), true);
+        profile_call(callee, recv, NULL, collect_args_for_profiling(args, callee, true), true);
       }
     }
   }
@@ -3572,7 +3580,7 @@ bool GraphBuilder::try_inline_intrinsics(ciMethod* callee) {
   Value value = append_split(result);
   if (result_type != voidType) push(result_type, value);
 
-  if (callee != method() && profile_calls() && MethodData::profile_return() && result_type->is_object_kind()) {
+  if (callee != method() && profile_return() && result_type->is_object_kind()) {
     profile_return_type(result, callee);
   }
 
@@ -3820,7 +3828,7 @@ bool GraphBuilder::try_inline_full(ciMethod* callee, bool holder_known, Bytecode
 
     if (profile_calls()) {
       int start = 0;
-      Values* obj_args = args_list_for_profiling(start, has_receiver);
+      Values* obj_args = args_list_for_profiling(callee, start, has_receiver);
       if (obj_args != NULL) {
         int s = obj_args->size();
         // if called through method handle invoke, some arguments may have been popped
