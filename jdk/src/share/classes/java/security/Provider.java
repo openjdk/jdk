@@ -30,6 +30,9 @@ import java.util.*;
 import static java.util.Locale.ENGLISH;
 import java.lang.ref.*;
 import java.lang.reflect.*;
+import java.util.function.BiConsumer;
+import java.util.function.BiFunction;
+import java.util.function.Function;
 
 /**
  * This class represents a "provider" for the
@@ -185,15 +188,10 @@ public abstract class Provider extends Properties {
      * Clears this provider so that it no longer contains the properties
      * used to look up facilities implemented by the provider.
      *
-     * <p>First, if there is a security manager, its
-     * {@code checkSecurityAccess} method is called with the string
-     * {@code "clearProviderProperties."+name} (where {@code name}
-     * is the provider name) to see if it's ok to clear this provider.
-     * If the default implementation of {@code checkSecurityAccess}
-     * is used (that is, that method is not overriden), then this results in
-     * a call to the security manager's {@code checkPermission} method
-     * with a {@code SecurityPermission("clearProviderProperties."+name)}
-     * permission.
+     * <p>If a security manager is enabled, its {@code checkSecurityAccess}
+     * method is called with the string {@code "clearProviderProperties."+name}
+     * (where {@code name} is the provider name) to see if it's ok to clear
+     * this provider.
      *
      * @throws  SecurityException
      *          if a security manager exists and its {@link
@@ -202,6 +200,7 @@ public abstract class Provider extends Properties {
      *
      * @since 1.2
      */
+    @Override
     public synchronized void clear() {
         check("clearProviderProperties."+name);
         if (debug != null) {
@@ -218,6 +217,7 @@ public abstract class Provider extends Properties {
      *               input stream.
      * @see java.util.Properties#load
      */
+    @Override
     public synchronized void load(InputStream inStream) throws IOException {
         check("putProviderProperty."+name);
         if (debug != null) {
@@ -235,6 +235,7 @@ public abstract class Provider extends Properties {
      *
      * @since 1.2
      */
+    @Override
     public synchronized void putAll(Map<?,?> t) {
         check("putProviderProperty."+name);
         if (debug != null) {
@@ -250,6 +251,7 @@ public abstract class Provider extends Properties {
      * @see   java.util.Map.Entry
      * @since 1.2
      */
+    @Override
     public synchronized Set<Map.Entry<Object,Object>> entrySet() {
         checkInitialized();
         if (entrySet == null) {
@@ -276,6 +278,7 @@ public abstract class Provider extends Properties {
      *
      * @since 1.2
      */
+    @Override
     public Set<Object> keySet() {
         checkInitialized();
         return Collections.unmodifiableSet(super.keySet());
@@ -287,6 +290,7 @@ public abstract class Provider extends Properties {
      *
      * @since 1.2
      */
+    @Override
     public Collection<Object> values() {
         checkInitialized();
         return Collections.unmodifiableCollection(super.values());
@@ -296,22 +300,10 @@ public abstract class Provider extends Properties {
      * Sets the {@code key} property to have the specified
      * {@code value}.
      *
-     * <p>First, if there is a security manager, its
-     * {@code checkSecurityAccess} method is called with the string
-     * {@code "putProviderProperty."+name}, where {@code name} is the
-     * provider name, to see if it's ok to set this provider's property values.
-     * If the default implementation of {@code checkSecurityAccess}
-     * is used (that is, that method is not overriden), then this results in
-     * a call to the security manager's {@code checkPermission} method
-     * with a {@code SecurityPermission("putProviderProperty."+name)}
-     * permission.
-     *
-     * @param key the property key.
-     *
-     * @param value the property value.
-     *
-     * @return the previous value of the specified property
-     * ({@code key}), or null if it did not have one.
+     * <p>If a security manager is enabled, its {@code checkSecurityAccess}
+     * method is called with the string {@code "putProviderProperty."+name},
+     * where {@code name} is the provider name, to see if it's ok to set this
+     * provider's property values.
      *
      * @throws  SecurityException
      *          if a security manager exists and its {@link
@@ -320,6 +312,7 @@ public abstract class Provider extends Properties {
      *
      * @since 1.2
      */
+    @Override
     public synchronized Object put(Object key, Object value) {
         check("putProviderProperty."+name);
         if (debug != null) {
@@ -330,24 +323,38 @@ public abstract class Provider extends Properties {
     }
 
     /**
+     * If the specified key is not already associated with a value (or is mapped
+     * to {@code null}) associates it with the given value and returns
+     * {@code null}, else returns the current value.
+     *
+     * <p>If a security manager is enabled, its {@code checkSecurityAccess}
+     * method is called with the string {@code "putProviderProperty."+name},
+     * where {@code name} is the provider name, to see if it's ok to set this
+     * provider's property values.
+     *
+     * @throws  SecurityException
+     *          if a security manager exists and its {@link
+     *          java.lang.SecurityManager#checkSecurityAccess} method
+     *          denies access to set property values.
+     */
+    @Override
+    public synchronized Object putIfAbsent(Object key, Object value) {
+        check("putProviderProperty."+name);
+        if (debug != null) {
+            debug.println("Set " + name + " provider property [" +
+                          key + "/" + value +"]");
+        }
+        return implPutIfAbsent(key, value);
+    }
+
+    /**
      * Removes the {@code key} property (and its corresponding
      * {@code value}).
      *
-     * <p>First, if there is a security manager, its
-     * {@code checkSecurityAccess} method is called with the string
-     * {@code "removeProviderProperty."+name}, where {@code name} is
-     * the provider name, to see if it's ok to remove this provider's
-     * properties. If the default implementation of
-     * {@code checkSecurityAccess} is used (that is, that method is not
-     * overriden), then this results in a call to the security manager's
-     * {@code checkPermission} method with a
-     * {@code SecurityPermission("removeProviderProperty."+name)}
-     * permission.
-     *
-     * @param key the key for the property to be removed.
-     *
-     * @return the value to which the key had been mapped,
-     * or null if the key did not have a mapping.
+     * <p>If a security manager is enabled, its {@code checkSecurityAccess}
+     * method is called with the string {@code "removeProviderProperty."+name},
+     * where {@code name} is the provider name, to see if it's ok to remove this
+     * provider's properties.
      *
      * @throws  SecurityException
      *          if a security manager exists and its {@link
@@ -356,6 +363,7 @@ public abstract class Provider extends Properties {
      *
      * @since 1.2
      */
+    @Override
     public synchronized Object remove(Object key) {
         check("removeProviderProperty."+name);
         if (debug != null) {
@@ -364,19 +372,245 @@ public abstract class Provider extends Properties {
         return implRemove(key);
     }
 
+    /**
+     * Removes the entry for the specified key only if it is currently
+     * mapped to the specified value.
+     *
+     * <p>If a security manager is enabled, its {@code checkSecurityAccess}
+     * method is called with the string {@code "removeProviderProperty."+name},
+     * where {@code name} is the provider name, to see if it's ok to remove this
+     * provider's properties.
+     *
+     * @throws  SecurityException
+     *          if a security manager exists and its {@link
+     *          java.lang.SecurityManager#checkSecurityAccess} method
+     *          denies access to remove this provider's properties.
+     */
+    @Override
+    public synchronized boolean remove(Object key, Object value) {
+        check("removeProviderProperty."+name);
+        if (debug != null) {
+            debug.println("Remove " + name + " provider property " + key);
+        }
+        return implRemove(key, value);
+    }
+
+    /**
+     * Replaces the entry for the specified key only if currently
+     * mapped to the specified value.
+     *
+     * <p>If a security manager is enabled, its {@code checkSecurityAccess}
+     * method is called with the string {@code "putProviderProperty."+name},
+     * where {@code name} is the provider name, to see if it's ok to set this
+     * provider's property values.
+     *
+     * @throws  SecurityException
+     *          if a security manager exists and its {@link
+     *          java.lang.SecurityManager#checkSecurityAccess} method
+     *          denies access to set property values.
+     */
+    @Override
+    public synchronized boolean replace(Object key, Object oldValue,
+            Object newValue) {
+        check("putProviderProperty." + name);
+
+        if (debug != null) {
+            debug.println("Replace " + name + " provider property " + key);
+        }
+        return implReplace(key, oldValue, newValue);
+    }
+
+    /**
+     * Replaces the entry for the specified key only if it is
+     * currently mapped to some value.
+     *
+     * <p>If a security manager is enabled, its {@code checkSecurityAccess}
+     * method is called with the string {@code "putProviderProperty."+name},
+     * where {@code name} is the provider name, to see if it's ok to set this
+     * provider's property values.
+     *
+     * @throws  SecurityException
+     *          if a security manager exists and its {@link
+     *          java.lang.SecurityManager#checkSecurityAccess} method
+     *          denies access to set property values.
+     */
+    @Override
+    public synchronized Object replace(Object key, Object value) {
+        check("putProviderProperty." + name);
+
+        if (debug != null) {
+            debug.println("Replace " + name + " provider property " + key);
+        }
+        return implReplace(key, value);
+    }
+
+    /**
+     * Replaces each entry's value with the result of invoking the given
+     * function on that entry, in the order entries are returned by an entry
+     * set iterator, until all entries have been processed or the function
+     * throws an exception.
+     *
+     * <p>If a security manager is enabled, its {@code checkSecurityAccess}
+     * method is called with the string {@code "putProviderProperty."+name},
+     * where {@code name} is the provider name, to see if it's ok to set this
+     * provider's property values.
+     *
+     * @throws  SecurityException
+     *          if a security manager exists and its {@link
+     *          java.lang.SecurityManager#checkSecurityAccess} method
+     *          denies access to set property values.
+     */
+    @Override
+    public synchronized void replaceAll(BiFunction<? super Object, ? super Object, ? extends Object> function) {
+        check("putProviderProperty." + name);
+
+        if (debug != null) {
+            debug.println("ReplaceAll " + name + " provider property ");
+        }
+        implReplaceAll(function);
+    }
+
+    /**
+     * Attempts to compute a mapping for the specified key and its
+     * current mapped value (or {@code null} if there is no current
+     * mapping).
+     *
+     * <p>If a security manager is enabled, its {@code checkSecurityAccess}
+     * method is called with the strings {@code "putProviderProperty."+name}
+     * and {@code "removeProviderProperty."+name}, where {@code name} is the
+     * provider name, to see if it's ok to set this provider's property values
+     * and remove this provider's properties.
+     *
+     * @throws  SecurityException
+     *          if a security manager exists and its {@link
+     *          java.lang.SecurityManager#checkSecurityAccess} method
+     *          denies access to set property values or remove properties.
+     */
+    @Override
+    public synchronized Object compute(Object key,
+        BiFunction<? super Object, ? super Object, ? extends Object> remappingFunction) {
+        check("putProviderProperty." + name);
+        check("removeProviderProperty" + name);
+
+        if (debug != null) {
+            debug.println("Compute " + name + " provider property " + key);
+        }
+        return implCompute(key, remappingFunction);
+    }
+
+    /**
+     * If the specified key is not already associated with a value (or
+     * is mapped to {@code null}), attempts to compute its value using
+     * the given mapping function and enters it into this map unless
+     * {@code null}.
+     *
+     * <p>If a security manager is enabled, its {@code checkSecurityAccess}
+     * method is called with the strings {@code "putProviderProperty."+name}
+     * and {@code "removeProviderProperty."+name}, where {@code name} is the
+     * provider name, to see if it's ok to set this provider's property values
+     * and remove this provider's properties.
+     *
+     * @throws  SecurityException
+     *          if a security manager exists and its {@link
+     *          java.lang.SecurityManager#checkSecurityAccess} method
+     *          denies access to set property values and remove properties.
+     */
+    @Override
+    public synchronized Object computeIfAbsent(Object key, Function<? super Object, ? extends Object> mappingFunction) {
+        check("putProviderProperty." + name);
+        check("removeProviderProperty" + name);
+
+        if (debug != null) {
+            debug.println("ComputeIfAbsent " + name + " provider property " +
+                    key);
+        }
+        return implComputeIfAbsent(key, mappingFunction);
+    }
+
+    /**
+     * If the value for the specified key is present and non-null, attempts to
+     * compute a new mapping given the key and its current mapped value.
+     *
+     * <p>If a security manager is enabled, its {@code checkSecurityAccess}
+     * method is called with the strings {@code "putProviderProperty."+name}
+     * and {@code "removeProviderProperty."+name}, where {@code name} is the
+     * provider name, to see if it's ok to set this provider's property values
+     * and remove this provider's properties.
+     *
+     * @throws  SecurityException
+     *          if a security manager exists and its {@link
+     *          java.lang.SecurityManager#checkSecurityAccess} method
+     *          denies access to set property values or remove properties.
+     */
+    @Override
+    public synchronized Object computeIfPresent(Object key, BiFunction<? super Object, ? super Object, ? extends Object> remappingFunction) {
+        check("putProviderProperty." + name);
+        check("removeProviderProperty" + name);
+
+        if (debug != null) {
+            debug.println("ComputeIfPresent " + name + " provider property " +
+                    key);
+        }
+        return implComputeIfPresent(key, remappingFunction);
+    }
+
+    /**
+     * If the specified key is not already associated with a value or is
+     * associated with null, associates it with the given value. Otherwise,
+     * replaces the value with the results of the given remapping function,
+     * or removes if the result is null. This method may be of use when
+     * combining multiple mapped values for a key.
+     *
+     * <p>If a security manager is enabled, its {@code checkSecurityAccess}
+     * method is called with the strings {@code "putProviderProperty."+name}
+     * and {@code "removeProviderProperty."+name}, where {@code name} is the
+     * provider name, to see if it's ok to set this provider's property values
+     * and remove this provider's properties.
+     *
+     * @throws  SecurityException
+     *          if a security manager exists and its {@link
+     *          java.lang.SecurityManager#checkSecurityAccess} method
+     *          denies access to set property values or remove properties.
+     */
+    @Override
+    public synchronized Object merge(Object key, Object value,  BiFunction<? super Object, ? super Object, ? extends Object>  remappingFunction) {
+        check("putProviderProperty." + name);
+        check("removeProviderProperty" + name);
+
+        if (debug != null) {
+            debug.println("Merge " + name + " provider property " + key);
+        }
+        return implMerge(key, value, remappingFunction);
+    }
+
     // let javadoc show doc from superclass
+    @Override
     public Object get(Object key) {
         checkInitialized();
         return super.get(key);
     }
 
+    @Override
+    public synchronized Object getOrDefault(Object key, Object defaultValue) {
+        checkInitialized();
+        return super.getOrDefault(key, defaultValue);
+    }
+
+    @Override
+    public synchronized void forEach(BiConsumer<? super Object, ? super Object> action) {
+        checkInitialized();
+        super.forEach(action);
+    }
+
     // let javadoc show doc from superclass
+    @Override
     public Enumeration<Object> keys() {
         checkInitialized();
         return super.keys();
     }
 
     // let javadoc show doc from superclass
+    @Override
     public Enumeration<Object> elements() {
         checkInitialized();
         return super.elements();
@@ -446,6 +680,19 @@ public abstract class Provider extends Properties {
         putAll(copy);
     }
 
+    private boolean checkLegacy(Object key) {
+        String keyString = (String)key;
+        if (keyString.startsWith("Provider.")) {
+            return false;
+        }
+
+        legacyChanged = true;
+        if (legacyStrings == null) {
+            legacyStrings = new LinkedHashMap<String,String>();
+        }
+        return true;
+    }
+
     /**
      * Copies all of the mappings from the specified Map to this provider.
      * Internal method to be called AFTER the security check has been
@@ -459,32 +706,119 @@ public abstract class Provider extends Properties {
 
     private Object implRemove(Object key) {
         if (key instanceof String) {
-            String keyString = (String)key;
-            if (keyString.startsWith("Provider.")) {
+            if (!checkLegacy(key)) {
                 return null;
             }
-            legacyChanged = true;
-            if (legacyStrings == null) {
-                legacyStrings = new LinkedHashMap<String,String>();
-            }
-            legacyStrings.remove(keyString);
+            legacyStrings.remove((String)key);
         }
         return super.remove(key);
     }
 
-    private Object implPut(Object key, Object value) {
+    private boolean implRemove(Object key, Object value) {
+        if (key instanceof String && value instanceof String) {
+            if (!checkLegacy(key)) {
+                return false;
+            }
+            legacyStrings.remove((String)key, value);
+        }
+        return super.remove(key, value);
+    }
+
+    private boolean implReplace(Object key, Object oldValue, Object newValue) {
+        if ((key instanceof String) && (oldValue instanceof String) &&
+                (newValue instanceof String)) {
+            if (!checkLegacy(key)) {
+                return false;
+            }
+            legacyStrings.replace((String)key, (String)oldValue,
+                    (String)newValue);
+        }
+        return super.replace(key, oldValue, newValue);
+    }
+
+    private Object implReplace(Object key, Object value) {
         if ((key instanceof String) && (value instanceof String)) {
-            String keyString = (String)key;
-            if (keyString.startsWith("Provider.")) {
+            if (!checkLegacy(key)) {
                 return null;
             }
-            legacyChanged = true;
-            if (legacyStrings == null) {
-                legacyStrings = new LinkedHashMap<String,String>();
+            legacyStrings.replace((String)key, (String)value);
+        }
+        return super.replace(key, value);
+    }
+
+    private void implReplaceAll(BiFunction<? super Object, ? super Object, ? extends Object> function) {
+        legacyChanged = true;
+        if (legacyStrings == null) {
+            legacyStrings = new LinkedHashMap<String,String>();
+        } else {
+            legacyStrings.replaceAll((BiFunction<? super String, ? super String, ? extends String>) function);
+        }
+        super.replaceAll(function);
+    }
+
+
+    private Object implMerge(Object key, Object value, BiFunction<? super Object, ? super Object, ? extends Object> remappingFunction) {
+        if ((key instanceof String) && (value instanceof String)) {
+            if (!checkLegacy(key)) {
+                return null;
             }
-            legacyStrings.put(keyString, (String)value);
+            legacyStrings.merge((String)key, (String)value,
+                    (BiFunction<? super String, ? super String, ? extends String>) remappingFunction);
+        }
+        return super.merge(key, value, remappingFunction);
+    }
+
+    private Object implCompute(Object key, BiFunction<? super Object, ? super Object, ? extends Object> remappingFunction) {
+        if (key instanceof String) {
+            if (!checkLegacy(key)) {
+                return null;
+            }
+            legacyStrings.computeIfAbsent((String) key,
+                    (Function<? super String, ? extends String>) remappingFunction);
+        }
+        return super.compute(key, remappingFunction);
+    }
+
+    private Object implComputeIfAbsent(Object key, Function<? super Object, ? extends Object> mappingFunction) {
+        if (key instanceof String) {
+            if (!checkLegacy(key)) {
+                return null;
+            }
+            legacyStrings.computeIfAbsent((String) key,
+                    (Function<? super String, ? extends String>) mappingFunction);
+        }
+        return super.computeIfAbsent(key, mappingFunction);
+    }
+
+    private Object implComputeIfPresent(Object key, BiFunction<? super Object, ? super Object, ? extends Object> remappingFunction) {
+        if (key instanceof String) {
+            if (!checkLegacy(key)) {
+                return null;
+            }
+            legacyStrings.computeIfPresent((String) key,
+                    (BiFunction<? super String, ? super String, ? extends String>) remappingFunction);
+        }
+        return super.computeIfPresent(key, remappingFunction);
+    }
+
+    private Object implPut(Object key, Object value) {
+        if ((key instanceof String) && (value instanceof String)) {
+            if (!checkLegacy(key)) {
+                return null;
+            }
+            legacyStrings.put((String)key, (String)value);
         }
         return super.put(key, value);
+    }
+
+    private Object implPutIfAbsent(Object key, Object value) {
+        if ((key instanceof String) && (value instanceof String)) {
+            if (!checkLegacy(key)) {
+                return null;
+            }
+            legacyStrings.putIfAbsent((String)key, (String)value);
+        }
+        return super.putIfAbsent(key, value);
     }
 
     private void implClear() {
