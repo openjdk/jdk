@@ -272,7 +272,6 @@ AWT_ASSERT_APPKIT_THREAD;
  */
 
 - (void) keyDown: (NSEvent *)event {
-
     fProcessingKeystroke = YES;
     fKeyEventsNeeded = YES;
 
@@ -308,6 +307,23 @@ AWT_ASSERT_APPKIT_THREAD;
 
 - (BOOL) performKeyEquivalent: (NSEvent *) event {
     [self deliverJavaKeyEventHelper: event];
+
+    // Workaround for 8020209: special case for "Cmd =" and "Cmd ." 
+    // because Cocoa calls performKeyEquivalent twice for these keystrokes  
+    NSUInteger modFlags = [event modifierFlags] & 
+        (NSCommandKeyMask | NSAlternateKeyMask | NSShiftKeyMask | NSControlKeyMask);
+    if (modFlags == NSCommandKeyMask) {
+        NSString *eventChars = [event charactersIgnoringModifiers];
+        if ([eventChars length] == 1) {
+            unichar ch = [eventChars characterAtIndex:0];
+            if (ch == '=' || ch == '.') {
+                [[NSApp mainMenu] performKeyEquivalent: event];
+                return YES;
+            }
+        }
+
+    }
+
     return NO;
 }
 

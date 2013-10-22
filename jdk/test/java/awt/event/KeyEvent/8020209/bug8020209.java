@@ -23,29 +23,25 @@
 
 /*
  * @test
- * @bug 7160951
- * @summary [macosx] ActionListener called twice for JMenuItem using ScreenMenuBar
- * @author vera.akulova@oracle.com
- * @run main ActionListenerCalledTwiceTest
+ * @bug 8020209
+ * @summary [macosx] Mac OS X key event confusion for "COMMAND PLUS"
+ * @author leonid.romanov@oracle.com
+ * @run main bug8020209
  */
 
 import sun.awt.*;
 import java.awt.*;
 import java.awt.event.*;
-import javax.swing.*;
 
-public class ActionListenerCalledTwiceTest {
-    static String menuItems[] = { "Item1", "Item2", "Item3", "Item4", "Item5", "Item6" };
-    static KeyStroke keyStrokes[] = {
-        KeyStroke.getKeyStroke(KeyEvent.VK_E, InputEvent.META_MASK),
-        KeyStroke.getKeyStroke(KeyEvent.VK_DELETE, 0),
-        KeyStroke.getKeyStroke(KeyEvent.VK_UP, InputEvent.SHIFT_MASK),
-        KeyStroke.getKeyStroke(KeyEvent.VK_ENTER, InputEvent.META_MASK),
-        KeyStroke.getKeyStroke(KeyEvent.VK_E, InputEvent.CTRL_MASK),
-        KeyStroke.getKeyStroke(KeyEvent.VK_EQUALS, InputEvent.META_MASK)
+public class bug8020209 {
+    static volatile int listenerCallCounter = 0;
+
+    static AWTKeyStroke keyStrokes[] = {
+        AWTKeyStroke.getAWTKeyStroke(KeyEvent.VK_DECIMAL,  InputEvent.META_MASK),
+        AWTKeyStroke.getAWTKeyStroke(KeyEvent.VK_EQUALS,   InputEvent.META_MASK),
+        AWTKeyStroke.getAWTKeyStroke(KeyEvent.VK_ESCAPE,   InputEvent.CTRL_MASK),
     };
 
-    static volatile int listenerCallCounter = 0;
     public static void main(String[] args) throws Exception {
         if (sun.awt.OSInfo.getOSType() != sun.awt.OSInfo.OSType.MACOSX) {
             System.out.println("This test is for MacOS only. Automatically passed on other platforms.");
@@ -53,63 +49,51 @@ public class ActionListenerCalledTwiceTest {
         }
 
         System.setProperty("apple.laf.useScreenMenuBar", "true");
-        SwingUtilities.invokeAndWait(new Runnable() {
-            public void run() {
-                createAndShowGUI();
-            }
-        });
 
         SunToolkit toolkit = (SunToolkit) Toolkit.getDefaultToolkit();
         Robot robot = new Robot();
-        robot.setAutoDelay(100);
+        robot.setAutoDelay(50);
 
-        for (int i = 0; i < menuItems.length; ++i) {
-            KeyStroke ks = keyStrokes[i];
+        createAndShowGUI();
+        toolkit.realSync();
+
+        for (int i = 0; i < keyStrokes.length; ++i) {
+            AWTKeyStroke ks = keyStrokes[i];
+
             int modKeyCode = getModKeyCode(ks.getModifiers());
-
-            if (modKeyCode != 0) {
-                robot.keyPress(modKeyCode);
-            }
+            robot.keyPress(modKeyCode);
 
             robot.keyPress(ks.getKeyCode());
             robot.keyRelease(ks.getKeyCode());
 
-            if (modKeyCode != 0) {
-                robot.keyRelease(modKeyCode);
-            }
+            robot.keyRelease(modKeyCode);
 
             toolkit.realSync();
 
-            if (listenerCallCounter != 1) {
-                throw new Exception("Test failed: ActionListener for " + menuItems[i] +
-                    " called " + listenerCallCounter + " times instead of 1!");
+            if (listenerCallCounter != 4) {
+                throw new Exception("Test failed: KeyListener for '" + ks.toString() +
+                        "' called " + listenerCallCounter + " times instead of 4!");
             }
 
             listenerCallCounter = 0;
         }
+
     }
 
     private static void createAndShowGUI() {
-        JMenu menu = new JMenu("Menu");
+        Frame frame = new Frame("Test");
+        frame.addKeyListener(new KeyAdapter() {
+            @Override
+            public void keyPressed(KeyEvent e) {
+                listenerCallCounter++;
+            }
 
-        for (int i = 0; i < menuItems.length; ++i) {
-            JMenuItem newItem = new JMenuItem(menuItems[i]);
-            newItem.setAccelerator(keyStrokes[i]);
-            newItem.addActionListener(
-                new ActionListener(){
-                    public void actionPerformed(ActionEvent e) {
-                        listenerCallCounter++;
-                    }
-                }
-            );
-            menu.add(newItem);
-        }
+            @Override
+            public void keyReleased(KeyEvent e) {
+                listenerCallCounter++;
+            }
+        });
 
-        JMenuBar bar = new JMenuBar();
-        bar.add(menu);
-        JFrame frame = new JFrame("Test");
-        frame.setJMenuBar(bar);
-        frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         frame.pack();
         frame.setVisible(true);
     }
