@@ -183,15 +183,15 @@ public class LambdaMetafactory {
      * @param samMethodType MethodType of the method in the functional interface
      *                      to which the lambda or method reference is being
      *                      converted, represented as a MethodType.
-     * @param implMethod The implementation method which should be called
-     *                   (with suitable adaptation of argument types, return
-     *                   types, and adjustment for captured arguments) when
-     *                   methods of the resulting functional interface instance
-     *                   are invoked.
+     * @param implMethod A direct method handle describing the implementation
+     *                   method which should be called (with suitable adaptation
+     *                   of argument types, return types, and adjustment for
+     *                   captured arguments) when methods of the resulting
+     *                   functional interface instance are invoked.
      * @param instantiatedMethodType The signature of the primary functional
      *                               interface method after type variables
      *                               are substituted with their instantiation
-     *                               from the capture site
+     *                               from the capture site.
      * @return a CallSite, which, when invoked, will return an instance of the
      * functional interface
      * @throws ReflectiveOperationException if the caller is not able to
@@ -220,15 +220,21 @@ public class LambdaMetafactory {
      * references to functional interfaces, which supports serialization and
      * other uncommon options.
      *
-     * The declared argument list for this method is:
+     * <p>The declared argument list for this method is:
      *
+     * <pre>{@code
      *  CallSite altMetafactory(MethodHandles.Lookup caller,
      *                          String invokedName,
      *                          MethodType invokedType,
      *                          Object... args)
+     * }</pre>
      *
-     * but it behaves as if the argument list is:
+     * <p>but it behaves as if the argument list is as follows, where names that
+     * appear in the argument list for
+     * {@link #metafactory(MethodHandles.Lookup, String, MethodType, MethodType, MethodHandle, MethodType)}
+     * have the same specification as in that method:
      *
+     * <pre>{@code
      *  CallSite altMetafactory(MethodHandles.Lookup caller,
      *                          String invokedName,
      *                          MethodType invokedType,
@@ -241,7 +247,15 @@ public class LambdaMetafactory {
      *                          int bridgeCount,          // IF flags has BRIDGES set
      *                          MethodType... bridges     // IF flags has BRIDGES set
      *                          )
+     * }</pre>
      *
+     * <p>If the flags contains {@code FLAG_SERIALIZABLE}, or one of the marker
+     * interfaces extends {@link Serializable}, the metafactory will link the
+     * call site to one that produces a serializable lambda.  In addition to
+     * the lambda instance implementing {@code Serializable}, it will have a
+     * {@code writeReplace} method that returns an appropriate {@link
+     * SerializedLambda}, and an appropriate {@code $deserializeLambda$}
+     * method.
      *
      * @param caller Stacked automatically by VM; represents a lookup context
      *               with the accessibility privileges of the caller.
@@ -257,7 +271,7 @@ public class LambdaMetafactory {
      *                    In the event that the implementation method is an
      *                    instance method, the first argument in the invocation
      *                    signature will correspond to the receiver.
-     * @param  args       flags and optional arguments, as described above
+     * @param  args       flags and optional arguments, as described above.
      * @return a CallSite, which, when invoked, will return an instance of the
      * functional interface
      * @throws ReflectiveOperationException if the caller is not able to
