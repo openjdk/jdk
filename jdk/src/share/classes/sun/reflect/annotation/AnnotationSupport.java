@@ -28,109 +28,224 @@ package sun.reflect.annotation;
 import java.lang.annotation.*;
 import java.lang.reflect.*;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
 public final class AnnotationSupport {
+
     /**
-     * Finds and returns all annotation of the type indicated by
-     * {@code annotationClass} from the {@code Map} {@code
-     * annotationMap}. Looks into containers of the {@code
-     * annotationClass} (as specified by an the {@code
-     * annotationClass} type being meta-annotated with an {@code
-     * Repeatable} annotation).
+     * Finds and returns all annotations in {@code annotations} matching
+     * the given {@code annoClass}.
      *
-     * @param annotationMap the {@code Map} used to store annotations indexed by their type
-     * @param annotationClass the type of annotation to search for
+     * Apart from annotations directly present in {@code annotations} this
+     * method searches for annotations inside containers i.e. indirectly
+     * present annotations.
      *
-     * @return an array of instances of {@code annotationClass} or an empty array if none were found
+     * The order of the elements in the array returned depends on the iteration
+     * order of the provided map. Specifically, the directly present annotations
+     * come before the indirectly present annotations if and only if the
+     * directly present annotations come before the indirectly present
+     * annotations in the map.
+     *
+     * @param annotations the {@code Map} in which to search for annotations
+     * @param annoClass the type of annotation to search for
+     * @param includeNonInheritedContainees if false, the annoClass must be
+     *        inheritable for the containers to be searched
+     *
+     * @return an array of instances of {@code annoClass} or an empty
+     *         array if none were found
      */
-    public static  <A extends Annotation> A[] getMultipleAnnotations(
-            final Map<Class<? extends Annotation>, Annotation> annotationMap,
-            final Class<A> annotationClass) {
-        final List<A> res = new ArrayList<A>();
+    private static <A extends Annotation> A[] getDirectlyAndIndirectlyPresent(
+            Map<Class<? extends Annotation>, Annotation> annotations,
+            Class<A> annoClass,
+            boolean includeNonInheritedContainees) {
+
+        List<A> result = new ArrayList<A>();
 
         @SuppressWarnings("unchecked")
-        final A candidate = (A)annotationMap.get(annotationClass);
-        if (candidate != null) {
-            res.add(candidate);
+        A direct = (A) annotations.get(annoClass);
+        if (direct != null)
+            result.add(direct);
+
+        if (includeNonInheritedContainees ||
+                AnnotationType.getInstance(annoClass).isInherited()) {
+            A[] indirect = getIndirectlyPresent(annotations, annoClass);
+
+            if (indirect != null) {
+
+                boolean indirectFirst = direct == null ||
+                                        containerBeforeContainee(annotations, annoClass);
+
+                result.addAll((indirectFirst ? 0 : 1), Arrays.asList(indirect));
+            }
         }
 
-        final Class<? extends Annotation> containerClass = getContainer(annotationClass);
-        if (containerClass != null) {
-            res.addAll(unpackAll(annotationMap.get(containerClass), annotationClass));
-        }
-
-        @SuppressWarnings("unchecked") // should be safe annotationClass is a token for A
-        final A[] emptyTemplateArray = (A[])Array.newInstance(annotationClass, 0);
-        return res.isEmpty() ? emptyTemplateArray : res.toArray(emptyTemplateArray);
+        @SuppressWarnings("unchecked")
+        A[] arr = (A[]) Array.newInstance(annoClass, result.size());
+        return result.toArray(arr);
     }
 
-    /** Helper to get the container, or null if none, of an annotation. */
-    private static <A extends Annotation> Class<? extends Annotation> getContainer(Class<A> annotationClass) {
-        Repeatable containingAnnotation = annotationClass.getDeclaredAnnotation(Repeatable.class);
-        return (containingAnnotation == null) ? null : containingAnnotation.value();
-    }
 
-    /** Reflectively look up and get the returned array from the the
-     * invocation of the value() element on an instance of an
-     * Annotation.
+    /**
+     * Equivalent to calling {@code getDirectlyAndIndirectlyPresentAnnotations(
+     * annotations, annoClass, true)}.
      */
-    private static  <A extends Annotation> A[] getValueArray(Annotation containerInstance) {
-        try {
-            // the spec tells us the container must have an array-valued
-            // value element. Get the AnnotationType, get the "value" element
-            // and invoke it to get the contents.
+    public static <A extends Annotation> A[] getDirectlyAndIndirectlyPresent(
+            Map<Class<? extends Annotation>, Annotation> annotations,
+            Class<A> annoClass) {
 
-            Class<? extends Annotation> containerClass = containerInstance.annotationType();
+        return getDirectlyAndIndirectlyPresent(annotations, annoClass, true);
+    }
+
+
+    /**
+     * Finds and returns all annotations matching the given {@code annoClass}
+     * indirectly present in {@code annotations}.
+     *
+     * @param annotations annotations to search indexed by their types
+     * @param annoClass the type of annotation to search for
+     *
+     * @return an array of instances of {@code annoClass} or an empty array if no
+     *         indirectly present annotations were found
+     */
+    private static <A extends Annotation> A[] getIndirectlyPresent(
+            Map<Class<? extends Annotation>, Annotation> annotations,
+            Class<A> annoClass) {
+
+        Repeatable repeatable = annoClass.getDeclaredAnnotation(Repeatable.class);
+        if (repeatable == null)
+            return null;  // Not repeatable -> no indirectly present annotations
+
+        Class<? extends Annotation> containerClass = repeatable.value();
+
+        Annotation container = annotations.get(containerClass);
+        if (container == null)
+            return null;
+
+        // Unpack container
+        A[] valueArray = getValueArray(container);
+        checkTypes(valueArray, container, annoClass);
+
+        return valueArray;
+    }
+
+
+    /**
+     * Figures out if conatiner class comes before containee class among the
+     * keys of the given map.
+     *
+     * @return true if container class is found before containee class when
+     *         iterating over annotations.keySet().
+     */
+    private static <A extends Annotation> boolean containerBeforeContainee(
+            Map<Class<? extends Annotation>, Annotation> annotations,
+            Class<A> annoClass) {
+
+        Class<? extends Annotation> containerClass =
+                annoClass.getDeclaredAnnotation(Repeatable.class).value();
+
+        for (Class<? extends Annotation> c : annotations.keySet()) {
+            if (c == containerClass) return true;
+            if (c == annoClass) return false;
+        }
+
+        // Neither containee nor container present
+        return false;
+    }
+
+
+    /**
+     * Finds and returns all associated annotations matching the given class.
+     *
+     * The order of the elements in the array returned depends on the iteration
+     * order of the provided maps. Specifically, the directly present annotations
+     * come before the indirectly present annotations if and only if the
+     * directly present annotations come before the indirectly present
+     * annotations in the relevant map.
+     *
+     * @param declaredAnnotations the declared annotations indexed by their types
+     * @param allAnnotations declared and inherited annotations indexed by their types
+     * @param annoClass the type of annotation to search for
+     *
+     * @return an array of instances of {@code annoClass} or an empty array if none were found.
+     */
+    public static <A extends Annotation> A[] getAssociatedAnnotations(
+            Map<Class<? extends Annotation>, Annotation> declaredAnnotations,
+            Map<Class<? extends Annotation>, Annotation> allAnnotations,
+            Class<A> annoClass) {
+
+        // Search declared
+        A[] result = getDirectlyAndIndirectlyPresent(declaredAnnotations, annoClass);
+
+        // Search inherited
+        if (result.length == 0)
+            result = getDirectlyAndIndirectlyPresent(allAnnotations, annoClass, false);
+
+        return result;
+    }
+
+
+    /* Reflectively invoke the values-method of the given annotation
+     * (container), cast it to an array of annotations and return the result.
+     */
+    private static <A extends Annotation> A[] getValueArray(Annotation container) {
+        try {
+            // According to JLS the container must have an array-valued value
+            // method. Get the AnnotationType, get the "value" method and invoke
+            // it to get the content.
+
+            Class<? extends Annotation> containerClass = container.annotationType();
             AnnotationType annoType = AnnotationType.getInstance(containerClass);
             if (annoType == null)
-                throw new AnnotationFormatError(containerInstance + " is an invalid container for repeating annotations");
+                throw invalidContainerException(container, null);
 
             Method m = annoType.members().get("value");
             if (m == null)
-                throw new AnnotationFormatError(containerInstance +
-                                                          " is an invalid container for repeating annotations");
+                throw invalidContainerException(container, null);
+
             m.setAccessible(true);
 
-            @SuppressWarnings("unchecked") // not provably safe, but we catch the ClassCastException
-            A[] a = (A[])m.invoke(containerInstance); // this will erase to (Annotation[]) but we
-                                                      // do a runtime cast on the return-value
-                                                      // in the methods that call this method
-            return a;
-        } catch (IllegalAccessException | // couldnt loosen security
-                 IllegalArgumentException | // parameters doesn't match
+            // This will erase to (Annotation[]) but we do a runtime cast on the
+            // return-value in the method that call this method.
+            @SuppressWarnings("unchecked")
+            A[] values = (A[]) m.invoke(container);
+
+            return values;
+
+        } catch (IllegalAccessException    | // couldn't loosen security
+                 IllegalArgumentException  | // parameters doesn't match
                  InvocationTargetException | // the value method threw an exception
-                 ClassCastException e) { // well, a cast failed ...
-            throw new AnnotationFormatError(
-                    containerInstance + " is an invalid container for repeating annotations",
-                    e);
+                 ClassCastException e) {
+
+            throw invalidContainerException(container, e);
+
         }
     }
 
-    /* Sanity check type of and return a list of all the annotation
-     * instances of type {@code annotationClass} from {@code
-     * containerInstance}.
-     */
-    private static <A extends Annotation> List<A> unpackAll(Annotation containerInstance,
-                                                            Class<A> annotationClass) {
-        if (containerInstance == null) {
-            return Collections.emptyList(); // container not present
-        }
 
-        try {
-            A[] a = getValueArray(containerInstance);
-            List<A> l = new ArrayList<>(a.length);
-            for (int i  = 0; i < a.length; i++)
-                l.add(annotationClass.cast(a[i]));
-            return l;
-        } catch (ClassCastException |
-                 NullPointerException e) {
-            throw new AnnotationFormatError(
-                    String.format("%s is an invalid container for repeating annotations of type: %s",
-                        containerInstance, annotationClass),
-                    e);
+    private static AnnotationFormatError invalidContainerException(Annotation anno,
+                                                                   Throwable cause) {
+        return new AnnotationFormatError(
+                anno + " is an invalid container for repeating annotations",
+                cause);
+    }
+
+
+    /* Sanity check type of all the annotation instances of type {@code annoClass}
+     * from {@code container}.
+     */
+    private static <A extends Annotation> void checkTypes(A[] annotations,
+                                                          Annotation container,
+                                                          Class<A> annoClass) {
+        for (A a : annotations) {
+            if (!annoClass.isInstance(a)) {
+                throw new AnnotationFormatError(
+                        String.format("%s is an invalid container for " +
+                                      "repeating annotations of type: %s",
+                                      container, annoClass));
+            }
         }
     }
 }
