@@ -40,7 +40,6 @@ import java.nio.charset.StandardCharsets;
  * <a href="http://www.ietf.org/rfc/rfc4648.txt">RFC 4648</a> and
  * <a href="http://www.ietf.org/rfc/rfc2045.txt">RFC 2045</a>.
  *
- * <p>
  * <ul>
  * <li><a name="basic"><b>Basic</b></a>
  * <p> Uses "The Base64 Alphabet" as specified in Table 1 of

@@ -99,4 +99,3 @@ public interface Iterable<T> {
         return Spliterators.spliteratorUnknownSize(iterator(), 0);
     }
 }
-
