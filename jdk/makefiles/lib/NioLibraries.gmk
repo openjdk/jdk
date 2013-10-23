@@ -150,7 +150,8 @@ ifeq ($(OPENJDK_TARGET_OS_API), posix)
 
   ifneq ($(OPENJDK_TARGET_OS), macosx)
 
-    SCTP_WERROR := -Werror
+    # Suppress unused parameters required by exported JNI functions.
+    SCTP_WERROR := -Werror -Wno-error=unused-parameter
     ifeq ($(OPENJDK_TARGET_CPU_ARCH), ppc)
       SCTP_WERROR :=
     endif
