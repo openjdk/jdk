@@ -273,14 +273,8 @@ sun/security/pkcs11/sslecc/ClientJSSEServerJSSE.java            solaris-all
 sun/security/pkcs11/Secmod/AddPrivateKey.java			linux-all
 sun/security/pkcs11/Secmod/TrustAnchors.java 			linux-all
 
-# 7041639, Solaris DSA keypair generation bug (Note: jdk_util also affected)
+# 7041639, Solaris DSA keypair generation bug
 java/security/KeyPairGenerator/SolarisShortDSA.java             solaris-all
-sun/security/tools/jarsigner/onlymanifest.sh                    solaris-all
-sun/security/tools/jarsigner/ts.sh                              solaris-all
-sun/security/tools/keytool/emptysubject.sh                      solaris-all
-sun/security/tools/keytool/importreadall.sh                     solaris-all
-sun/security/tools/keytool/readjar.sh                           solaris-all
-sun/security/tools/keytool/selfissued.sh                        solaris-all
 sun/security/tools/keytool/standard.sh                          solaris-all
 
 # 8000439: NPG: REGRESSION : sun/security/krb5/auto/MaxRetries.java fails with timeout
@@ -350,8 +344,5 @@ java/util/concurrent/ThreadPoolExecutor/CoreThreadTimeOut.java  generic-all
 
 # Filed 6772009
 java/util/concurrent/locks/ReentrantLock/CancelledLockLoops.java generic-all
-
-# 7041639, Solaris DSA keypair generation bug
-java/util/TimeZone/TimeZoneDatePermissionCheck.sh               solaris-all
 
 ############################################################################
