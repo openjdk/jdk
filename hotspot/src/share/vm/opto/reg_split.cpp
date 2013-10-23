@@ -365,7 +365,6 @@ Node *PhaseChaitin::split_Rematerialize( Node *def, Block *b, uint insidx, uint 
       }
 
       if (lidx < _lrg_map.max_lrg_id() && lrgs(lidx).reg() >= LRG::SPILL_REG) {
-        assert(Reachblock != NULL, "Reachblock must be non-NULL");
         Node *rdef = Reachblock[lrg2reach[lidx]];
         if (rdef) {
           spill->set_req(i, rdef);
@@ -476,7 +475,6 @@ uint PhaseChaitin::Split(uint maxlrg, ResourceArea* split_arena) {
 
   uint                 bidx, pidx, slidx, insidx, inpidx, twoidx;
   uint                 non_phi = 1, spill_cnt = 0;
-  Node               **Reachblock;
   Node                *n1, *n2, *n3;
   Node_List           *defs,*phis;
   bool                *UPblock;
@@ -559,7 +557,7 @@ uint PhaseChaitin::Split(uint maxlrg, ResourceArea* split_arena) {
 
     b  = _cfg.get_block(bidx);
     // Reaches & UP arrays for this block
-    Reachblock = Reaches[b->_pre_order];
+    Node** Reachblock = Reaches[b->_pre_order];
     UPblock    = UP[b->_pre_order];
     // Reset counter of start of non-Phi nodes in block
     non_phi = 1;
@@ -1315,6 +1313,7 @@ uint PhaseChaitin::Split(uint maxlrg, ResourceArea* split_arena) {
       pidx = pred->_pre_order;
       // Grab reaching def
       Node *def = Reaches[pidx][slidx];
+      Node** Reachblock = Reaches[pidx];
       assert( def, "must have reaching def" );
       // If input up/down sense and reg-pressure DISagree
       if (def->rematerialize()) {
@@ -1327,8 +1326,7 @@ uint PhaseChaitin::Split(uint maxlrg, ResourceArea* split_arena) {
                _lrg_map.find(pred->get_node(insert - 1)) >= lrgs_before_phi_split) {
           insert--;
         }
-        // since the def cannot contain any live range input, we can pass in NULL as Reachlock parameter
-        def = split_Rematerialize(def, pred, insert, maxlrg, splits, slidx, lrg2reach, NULL, false);
+        def = split_Rematerialize(def, pred, insert, maxlrg, splits, slidx, lrg2reach, Reachblock, false);
         if (!def) {
           return 0;    // Bail out
         }
