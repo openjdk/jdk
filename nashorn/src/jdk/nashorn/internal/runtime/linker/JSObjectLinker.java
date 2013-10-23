@@ -107,8 +107,6 @@ final class JSObjectLinker implements TypeBasedGuardingDynamicLinker, GuardingTy
                 return c > 2 ? findSetMethod(desc) : findSetIndexMethod();
             case "call":
                 return findCallMethod(desc);
-            case "callMethod":
-                return findCallMethodMethod(desc);
             case "new":
                 return findNewMethod(desc);
             default:
@@ -132,13 +130,6 @@ final class JSObjectLinker implements TypeBasedGuardingDynamicLinker, GuardingTy
 
     private static GuardedInvocation findSetIndexMethod() {
         return new GuardedInvocation(JSOBJECTLINKER_PUT, null, IS_JSOBJECT_GUARD);
-    }
-
-    private static GuardedInvocation findCallMethodMethod(final CallSiteDescriptor desc) {
-        final String methodName = desc.getNameToken(2);
-        MethodHandle func = MH.insertArguments(JSOBJECT_CALLMEMBER, 1, methodName);
-        func = MH.asCollector(func, Object[].class, desc.getMethodType().parameterCount() - 1);
-        return new GuardedInvocation(func, null, IS_JSOBJECT_GUARD);
     }
 
     private static GuardedInvocation findCallMethod(final CallSiteDescriptor desc) {
@@ -216,7 +207,6 @@ final class JSObjectLinker implements TypeBasedGuardingDynamicLinker, GuardingTy
     // method handles of JSObject class
     private static final MethodHandle JSOBJECT_GETMEMBER  = findJSObjectMH("getMember", Object.class, String.class);
     private static final MethodHandle JSOBJECT_SETMEMBER  = findJSObjectMH("setMember", Void.TYPE, String.class, Object.class);
-    private static final MethodHandle JSOBJECT_CALLMEMBER = findJSObjectMH("callMember", Object.class, String.class, Object[].class);
     private static final MethodHandle JSOBJECT_CALL       = findJSObjectMH("call", Object.class, Object.class, Object[].class);
     private static final MethodHandle JSOBJECT_NEW        = findJSObjectMH("newObject", Object.class, Object[].class);
 
