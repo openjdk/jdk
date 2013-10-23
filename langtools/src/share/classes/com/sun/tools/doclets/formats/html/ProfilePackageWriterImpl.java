@@ -175,8 +175,11 @@ public class ProfilePackageWriterImpl extends HtmlDocletWriter
      */
     public void addClassesSummary(ClassDoc[] classes, String label,
             String tableSummary, String[] tableHeader, Content packageSummaryContentTree) {
+        HtmlTree li = new HtmlTree(HtmlTag.LI);
+        li.addStyle(HtmlStyle.blockList);
         addClassesSummary(classes, label, tableSummary, tableHeader,
-                packageSummaryContentTree, profileValue);
+                li, profileValue);
+        packageSummaryContentTree.addContent(li);
     }
 
     /**
