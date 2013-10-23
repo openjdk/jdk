@@ -391,8 +391,7 @@ public class HtmlDocletWriter extends HtmlDocWriter {
                 tbody.addContent(tr);
             }
             table.addContent(tbody);
-            Content li = HtmlTree.LI(HtmlStyle.blockList, table);
-            summaryContentTree.addContent(li);
+            summaryContentTree.addContent(table);
         }
     }
 
