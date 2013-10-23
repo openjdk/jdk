@@ -1043,6 +1043,10 @@ public enum JSType {
             return toNumber((ScriptObject)obj);
         }
 
+        if (obj instanceof JSObject) {
+            return ((JSObject)obj).toNumber();
+        }
+
         return Double.NaN;
     }
 

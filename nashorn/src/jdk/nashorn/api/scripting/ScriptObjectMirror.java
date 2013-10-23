@@ -51,7 +51,7 @@ import jdk.nashorn.internal.runtime.ScriptRuntime;
 /**
  * Mirror object that wraps a given Nashorn Script object.
  */
-public final class ScriptObjectMirror extends JSObject implements Bindings {
+public final class ScriptObjectMirror extends AbstractJSObject implements Bindings {
     private static AccessControlContext getContextAccCtxt() {
         final Permissions perms = new Permissions();
         perms.add(new RuntimePermission(Context.NASHORN_GET_CONTEXT));
@@ -162,7 +162,6 @@ public final class ScriptObjectMirror extends JSObject implements Bindings {
         });
     }
 
-    @Override
     public Object callMember(final String functionName, final Object... args) {
         functionName.getClass(); // null check
         final ScriptObject oldGlobal = Context.getGlobal();
