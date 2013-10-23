@@ -156,12 +156,15 @@ public class LambdaToMethod extends TreeTranslator {
          */
         private final VarSymbol deserParamSym;
 
-        private KlassInfo(Symbol kSym) {
+        private final JCClassDecl clazz;
+
+        private KlassInfo(JCClassDecl clazz) {
+            this.clazz = clazz;
             appendedMethodList = new ListBuffer<>();
             deserializeCases = new HashMap<String, ListBuffer<JCStatement>>();
             MethodType type = new MethodType(List.of(syms.serializedLambdaType), syms.objectType,
                     List.<Type>nil(), syms.methodClass);
-            deserMethodSym = makePrivateSyntheticMethod(STATIC, names.deserializeLambda, type, kSym);
+            deserMethodSym = makePrivateSyntheticMethod(STATIC, names.deserializeLambda, type, clazz.sym);
             deserParamSym = new VarSymbol(FINAL, names.fromString("lambda"),
                     syms.serializedLambdaType, deserMethodSym);
         }
@@ -221,10 +224,16 @@ public class LambdaToMethod extends TreeTranslator {
         }
         KlassInfo prevKlassInfo = kInfo;
         try {
-            kInfo = new KlassInfo(tree.sym);
+            kInfo = new KlassInfo(tree);
             super.visitClassDef(tree);
             if (!kInfo.deserializeCases.isEmpty()) {
-                kInfo.addMethod(makeDeserializeMethod(tree.sym));
+                int prevPos = make.pos;
+                try {
+                    make.at(tree);
+                    kInfo.addMethod(makeDeserializeMethod(tree.sym));
+                } finally {
+                    make.at(prevPos);
+                }
             }
             //add all translated instance methods here
             List<JCTree> newMethods = kInfo.appendedMethodList.toList();
@@ -400,14 +409,21 @@ public class LambdaToMethod extends TreeTranslator {
         if (context == null || !analyzer.lambdaIdentSymbolFilter(tree.sym)) {
             super.visitIdent(tree);
         } else {
-            LambdaTranslationContext lambdaContext = (LambdaTranslationContext) context;
-            JCTree ltree = lambdaContext.translate(tree);
-            if (ltree != null) {
-                result = ltree;
-            } else {
-                //access to untranslated symbols (i.e. compile-time constants,
-                //members defined inside the lambda body, etc.) )
-                super.visitIdent(tree);
+            int prevPos = make.pos;
+            try {
+                make.at(tree);
+
+                LambdaTranslationContext lambdaContext = (LambdaTranslationContext) context;
+                JCTree ltree = lambdaContext.translate(tree);
+                if (ltree != null) {
+                    result = ltree;
+                } else {
+                    //access to untranslated symbols (i.e. compile-time constants,
+                    //members defined inside the lambda body, etc.) )
+                    super.visitIdent(tree);
+                }
+            } finally {
+                make.at(prevPos);
             }
         }
     }
@@ -417,11 +433,21 @@ public class LambdaToMethod extends TreeTranslator {
         LambdaTranslationContext lambdaContext = (LambdaTranslationContext)context;
         if (context != null && lambdaContext.getSymbolMap(LOCAL_VAR).containsKey(tree.sym)) {
             JCExpression init = translate(tree.init);
-            result = make.VarDef((VarSymbol)lambdaContext.getSymbolMap(LOCAL_VAR).get(tree.sym), init);
+            int prevPos = make.pos;
+            try {
+                result = make.at(tree).VarDef((VarSymbol)lambdaContext.getSymbolMap(LOCAL_VAR).get(tree.sym), init);
+            } finally {
+                make.at(prevPos);
+            }
         } else if (context != null && lambdaContext.getSymbolMap(TYPE_VAR).containsKey(tree.sym)) {
             JCExpression init = translate(tree.init);
             VarSymbol xsym = (VarSymbol)lambdaContext.getSymbolMap(TYPE_VAR).get(tree.sym);
-            result = make.VarDef(xsym, init);
+            int prevPos = make.pos;
+            try {
+                result = make.at(tree).VarDef(xsym, init);
+            } finally {
+                make.at(prevPos);
+            }
             // Replace the entered symbol for this variable
             Scope sc = tree.sym.owner.members();
             if (sc != null) {
@@ -448,23 +474,28 @@ public class LambdaToMethod extends TreeTranslator {
         boolean isLambda_void = expr.type.hasTag(VOID);
         boolean isTarget_void = restype.hasTag(VOID);
         boolean isTarget_Void = types.isSameType(restype, types.boxedClass(syms.voidType).type);
-        if (isTarget_void) {
-            //target is void:
-            // BODY;
-            JCStatement stat = make.Exec(expr);
-            return make.Block(0, List.<JCStatement>of(stat));
-        } else if (isLambda_void && isTarget_Void) {
-            //void to Void conversion:
-            // BODY; return null;
-            ListBuffer<JCStatement> stats = new ListBuffer<>();
-            stats.append(make.Exec(expr));
-            stats.append(make.Return(make.Literal(BOT, null).setType(syms.botType)));
-            return make.Block(0, stats.toList());
-        } else {
-            //non-void to non-void conversion:
-            // return (TYPE)BODY;
-            JCExpression retExpr = transTypes.coerce(attrEnv, expr, restype);
-            return make.at(retExpr).Block(0, List.<JCStatement>of(make.Return(retExpr)));
+        int prevPos = make.pos;
+        try {
+            if (isTarget_void) {
+                //target is void:
+                // BODY;
+                JCStatement stat = make.at(expr).Exec(expr);
+                return make.Block(0, List.<JCStatement>of(stat));
+            } else if (isLambda_void && isTarget_Void) {
+                //void to Void conversion:
+                // BODY; return null;
+                ListBuffer<JCStatement> stats = new ListBuffer<>();
+                stats.append(make.at(expr).Exec(expr));
+                stats.append(make.Return(make.Literal(BOT, null).setType(syms.botType)));
+                return make.Block(0, stats.toList());
+            } else {
+                //non-void to non-void conversion:
+                // return (TYPE)BODY;
+                JCExpression retExpr = transTypes.coerce(attrEnv, expr, restype);
+                return make.at(retExpr).Block(0, List.<JCStatement>of(make.Return(retExpr)));
+            }
+        } finally {
+            make.at(prevPos);
         }
     }
 
@@ -966,8 +997,14 @@ public class LambdaToMethod extends TreeTranslator {
                 }
             }
             if (context.isSerializable()) {
-                addDeserializationCase(refKind, refSym, tree.type, samSym,
-                        tree, staticArgs, indyType);
+                int prevPos = make.pos;
+                try {
+                    make.at(kInfo.clazz);
+                    addDeserializationCase(refKind, refSym, tree.type, samSym,
+                            tree, staticArgs, indyType);
+                } finally {
+                    make.at(prevPos);
+                }
             }
         }
 

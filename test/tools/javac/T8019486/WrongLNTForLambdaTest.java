@@ -25,11 +25,11 @@
 
 /*
  * @test
- * @bug 8019486
+ * @bug 8019486 8026861
  * @summary javac, generates erroneous LVT for a test case with lambda code
  * @library /tools/javac/lib
  * @build ToolBox
- * @run main WrongLVTForLambdaTest
+ * @run main WrongLNTForLambdaTest
  */
 
 import java.io.File;
@@ -41,7 +41,7 @@ import com.sun.tools.classfile.LineNumberTable_attribute;
 import com.sun.tools.classfile.Method;
 import com.sun.tools.javac.util.Assert;
 
-public class WrongLVTForLambdaTest {
+public class WrongLNTForLambdaTest {
 
     static final String testSource =
     /* 01 */        "import java.util.List;\n" +
@@ -54,21 +54,72 @@ public class WrongLVTForLambdaTest {
     /* 08 */        "        final List<Integer> numbersPlusOne = \n" +
     /* 09 */        "             numbers.stream().map(number -> number / 1).collect(Collectors.toList());\n" +
     /* 10 */        "    }\n" +
-    /* 11 */        "}";
+    /* 11 */        "    void variablesInLambdas(int value) {\n" +
+    /* 12 */        "        Runnable r1 = () -> {\n" +
+    /* 13 */        "            int i  = value;\n" +
+    /* 14 */        "            class FooBar<T extends CharSequence> {\n" +
+    /* 15 */        "                public void run() {\n" +
+    /* 16 */        "                    T t = null;\n" +
+    /* 17 */        "                }\n" +
+    /* 18 */        "            }\n" +
+    /* 19 */        "        };\n" +
+    /* 20 */        "        Runnable r2 = () -> System.err.println(1);\n" +
+    /* 21 */        "        Runnable r3 = (Runnable & java.io.Serializable) this::foo;\n" +
+    /* 22 */        "        Runnable r4 = super :: notify;\n" +
+    /* 23 */        "    }\n" +
+    /* 24 */        "    private void foo() {}\n" +
+    /* 25 */        "}";
 
-    static final int[][] expectedLNT = {
+    static final int[][] simpleLambdaExpectedLNT = {
     //  {line-number, start-pc},
         {9,           0},       //number -> number / 1
     };
 
+    static final int[][] lambdaWithVarsExpectedLNT = {
+    //  {line-number, start-pc},
+        {13,           0},       //number -> number / 1
+        {19,           2},       //number -> number / 1
+    };
+
+    static final int[][] insideLambdaWithVarsExpectedLNT = {
+    //  {line-number, start-pc},
+        {16,           0},       //number -> number / 1
+        {17,           2},       //number -> number / 1
+    };
+
+    static final int[][] lambdaVoid2VoidExpectedLNT = {
+    //  {line-number, start-pc},
+        {20,           0},       //number -> number / 1
+    };
+
+    static final int[][] deserializeExpectedLNT = {
+    //  {line-number, start-pc},
+        {05,           0},       //number -> number / 1
+    };
+
+    static final int[][] lambdaBridgeExpectedLNT = {
+    //  {line-number, start-pc},
+        {22,           0},       //number -> number / 1
+    };
+
     public static void main(String[] args) throws Exception {
-        new WrongLVTForLambdaTest().run();
+        new WrongLNTForLambdaTest().run();
     }
 
     void run() throws Exception {
         compileTestClass();
         checkClassFile(new File(Paths.get(System.getProperty("user.dir"),
-                "Foo.class").toUri()));
+                "Foo.class").toUri()), "lambda$bar$0", simpleLambdaExpectedLNT);
+        checkClassFile(new File(Paths.get(System.getProperty("user.dir"),
+                "Foo.class").toUri()), "lambda$variablesInLambdas$1", lambdaWithVarsExpectedLNT);
+        checkClassFile(new File(Paths.get(System.getProperty("user.dir"),
+                "Foo$1FooBar.class").toUri()), "run", insideLambdaWithVarsExpectedLNT);
+        checkClassFile(new File(Paths.get(System.getProperty("user.dir"),
+                "Foo.class").toUri()), "lambda$variablesInLambdas$2", lambdaVoid2VoidExpectedLNT);
+        checkClassFile(new File(Paths.get(System.getProperty("user.dir"),
+                "Foo.class").toUri()), "$deserializeLambda$", deserializeExpectedLNT);
+        checkClassFile(new File(Paths.get(System.getProperty("user.dir"),
+                "Foo.class").toUri()), "lambda$MR$variablesInLambdas$notify$8bc4f5bd$1", lambdaBridgeExpectedLNT);
     }
 
     void compileTestClass() throws Exception {
@@ -77,12 +128,12 @@ public class WrongLVTForLambdaTest {
         ToolBox.javac(javacSuccessArgs);
     }
 
-    void checkClassFile(final File cfile) throws Exception {
+    void checkClassFile(final File cfile, String methodToFind, int[][] expectedLNT) throws Exception {
         ClassFile classFile = ClassFile.read(cfile);
-        int methodsFound = 0;
+        boolean methodFound = false;
         for (Method method : classFile.methods) {
-            if (method.getName(classFile.constant_pool).startsWith("lambda$")) {
-                ++methodsFound;
+            if (method.getName(classFile.constant_pool).equals(methodToFind)) {
+                methodFound = true;
                 Code_attribute code = (Code_attribute) method.attributes.get("Code");
                 LineNumberTable_attribute lnt =
                         (LineNumberTable_attribute) code.attributes.get("LineNumberTable");
@@ -99,7 +150,7 @@ public class WrongLVTForLambdaTest {
                 }
             }
         }
-        Assert.check(methodsFound == 1, "Expected to find one lambda method, found " + methodsFound);
+        Assert.check(methodFound, "The seek method was not found");
     }
 
     void error(String msg) {
