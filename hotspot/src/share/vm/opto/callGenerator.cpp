@@ -486,6 +486,8 @@ class LateInlineStringCallGenerator : public LateInlineCallGenerator {
     JVMState* new_jvms =  DirectCallGenerator::generate(jvms, parent_parser);
     return new_jvms;
   }
+
+  virtual bool is_string_late_inline() const { return true; }
 };
 
 CallGenerator* CallGenerator::for_string_late_inline(ciMethod* method, CallGenerator* inline_cg) {
@@ -773,7 +775,7 @@ CallGenerator* CallGenerator::for_method_handle_inline(JVMState* jvms, ciMethod*
         ciMethod* target = oop_ptr->const_oop()->as_method_handle()->get_vmtarget();
         guarantee(!target->is_method_handle_intrinsic(), "should not happen");  // XXX remove
         const int vtable_index = Method::invalid_vtable_index;
-        CallGenerator* cg = C->call_generator(target, vtable_index, false, jvms, true, PROB_ALWAYS, true, true);
+        CallGenerator* cg = C->call_generator(target, vtable_index, false, jvms, true, PROB_ALWAYS, NULL, true, true);
         assert(!cg->is_late_inline() || cg->is_mh_late_inline(), "no late inline here");
         if (cg != NULL && cg->is_inline())
           return cg;
@@ -829,6 +831,7 @@ CallGenerator* CallGenerator::for_method_handle_inline(JVMState* jvms, ciMethod*
         int  vtable_index       = Method::invalid_vtable_index;
         bool call_does_dispatch = false;
 
+        ciKlass* speculative_receiver_type = NULL;
         if (is_virtual_or_interface) {
           ciInstanceKlass* klass = target->holder();
           Node*             receiver_node = kit.argument(0);
@@ -837,9 +840,12 @@ CallGenerator* CallGenerator::for_method_handle_inline(JVMState* jvms, ciMethod*
           target = C->optimize_virtual_call(caller, jvms->bci(), klass, target, receiver_type,
                                             is_virtual,
                                             call_does_dispatch, vtable_index);  // out-parameters
+          // We lack profiling at this call but type speculation may
+          // provide us with a type
+          speculative_receiver_type = receiver_type->speculative_type();
         }
 
-        CallGenerator* cg = C->call_generator(target, vtable_index, call_does_dispatch, jvms, true, PROB_ALWAYS, true, true);
+        CallGenerator* cg = C->call_generator(target, vtable_index, call_does_dispatch, jvms, true, PROB_ALWAYS, speculative_receiver_type, true, true);
         assert(!cg->is_late_inline() || cg->is_mh_late_inline(), "no late inline here");
         if (cg != NULL && cg->is_inline())
           return cg;
