@@ -185,7 +185,7 @@ public class TimestampCheck {
             DerOutputStream tstInfo2 = new DerOutputStream();
             tstInfo2.putOctetString(tstInfo.toByteArray());
 
-            Signature sig = Signature.getInstance("SHA1withDSA");
+            Signature sig = Signature.getInstance("SHA1withRSA");
             sig.initSign((PrivateKey)(ks.getKey(
                     alias, "changeit".toCharArray())));
             sig.update(tstInfo.toByteArray());
