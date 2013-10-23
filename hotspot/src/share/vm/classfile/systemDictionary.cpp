@@ -2360,6 +2360,11 @@ methodHandle SystemDictionary::find_method_handle_invoker(Symbol* name,
   objArrayHandle appendix_box = oopFactory::new_objArray(SystemDictionary::Object_klass(), 1, CHECK_(empty));
   assert(appendix_box->obj_at(0) == NULL, "");
 
+  // This should not happen.  JDK code should take care of that.
+  if (accessing_klass.is_null() || method_type.is_null()) {
+    THROW_MSG_(vmSymbols::java_lang_InternalError(), "bad invokehandle", empty);
+  }
+
   // call java.lang.invoke.MethodHandleNatives::linkMethod(... String, MethodType) -> MemberName
   JavaCallArguments args;
   args.push_oop(accessing_klass()->java_mirror());
@@ -2485,6 +2490,9 @@ Handle SystemDictionary::link_method_handle_constant(KlassHandle caller,
   Handle type;
   if (signature->utf8_length() > 0 && signature->byte_at(0) == '(') {
     type = find_method_handle_type(signature, caller, CHECK_(empty));
+  } else if (caller.is_null()) {
+    // This should not happen.  JDK code should take care of that.
+    THROW_MSG_(vmSymbols::java_lang_InternalError(), "bad MH constant", empty);
   } else {
     ResourceMark rm(THREAD);
     SignatureStream ss(signature, false);
@@ -2547,6 +2555,11 @@ methodHandle SystemDictionary::find_dynamic_call_site_invoker(KlassHandle caller
 
   Handle method_name = java_lang_String::create_from_symbol(name, CHECK_(empty));
   Handle method_type = find_method_handle_type(type, caller, CHECK_(empty));
+
+  // This should not happen.  JDK code should take care of that.
+  if (caller.is_null() || method_type.is_null()) {
+    THROW_MSG_(vmSymbols::java_lang_InternalError(), "bad invokedynamic", empty);
+  }
 
   objArrayHandle appendix_box = oopFactory::new_objArray(SystemDictionary::Object_klass(), 1, CHECK_(empty));
   assert(appendix_box->obj_at(0) == NULL, "");
