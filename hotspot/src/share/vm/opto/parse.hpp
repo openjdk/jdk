@@ -607,6 +607,9 @@ class Parse : public GraphKit {
   // Assumes that there is no applicable local handler.
   void throw_to_exit(SafePointNode* ex_map);
 
+  // Use speculative type to optimize CmpP node
+  Node* optimize_cmp_with_klass(Node* c);
+
  public:
 #ifndef PRODUCT
   // Handle PrintOpto, etc.

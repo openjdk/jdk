@@ -100,6 +100,10 @@ public:
     return valid_ciklass(type(i));
   }
 
+  bool maybe_null(int i) const {
+    return was_null_seen(type(i));
+  }
+
 #ifndef PRODUCT
   void print_data_on(outputStream* st) const;
 #endif
@@ -111,6 +115,10 @@ public:
 
   ciKlass* valid_type() const {
     return valid_ciklass(type());
+  }
+
+  bool maybe_null() const {
+    return was_null_seen(type());
   }
 
 #ifndef PRODUCT
@@ -152,6 +160,14 @@ public:
   ciKlass* valid_return_type() const {
     assert(has_return(), "no ret type profiling data");
     return ret()->valid_type();
+  }
+
+  bool argument_maybe_null(int i) const {
+    return args()->maybe_null(i);
+  }
+
+  bool return_maybe_null() const {
+    return ret()->maybe_null();
   }
 
 #ifndef PRODUCT
@@ -260,6 +276,14 @@ public:
     return ret()->valid_type();
   }
 
+  bool argument_maybe_null(int i) const {
+    return args()->maybe_null(i);
+  }
+
+  bool return_maybe_null() const {
+    return ret()->maybe_null();
+  }
+
 #ifndef PRODUCT
   void print_data_on(outputStream* st) const;
 #endif
@@ -303,6 +327,10 @@ public:
 
   ciKlass* valid_parameter_type(int i) const {
     return parameters()->valid_type(i);
+  }
+
+  bool parameter_maybe_null(int i) const {
+    return parameters()->maybe_null(i);
   }
 
 #ifndef PRODUCT

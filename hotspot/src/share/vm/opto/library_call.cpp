@@ -3353,6 +3353,7 @@ bool LibraryCallKit::inline_native_Class_query(vmIntrinsics::ID id) {
   // If kls is null, we have a primitive mirror.
   phi->init_req(_prim_path, prim_return_value);
   if (stopped()) { set_result(region, phi); return true; }
+  bool safe_for_replace = (region->in(_prim_path) == top());
 
   Node* p;  // handy temp
   Node* null_ctl;
@@ -3363,7 +3364,7 @@ bool LibraryCallKit::inline_native_Class_query(vmIntrinsics::ID id) {
   switch (id) {
   case vmIntrinsics::_isInstance:
     // nothing is an instance of a primitive type
-    query_value = gen_instanceof(obj, kls);
+    query_value = gen_instanceof(obj, kls, safe_for_replace);
     break;
 
   case vmIntrinsics::_getModifiers:
@@ -4553,8 +4554,62 @@ bool LibraryCallKit::inline_arraycopy() {
   const Type* dest_type = dest->Value(&_gvn);
   const TypeAryPtr* top_src  = src_type->isa_aryptr();
   const TypeAryPtr* top_dest = dest_type->isa_aryptr();
-  if (top_src  == NULL || top_src->klass()  == NULL ||
-      top_dest == NULL || top_dest->klass() == NULL) {
+
+  // Do we have the type of src?
+  bool has_src = (top_src != NULL && top_src->klass() != NULL);
+  // Do we have the type of dest?
+  bool has_dest = (top_dest != NULL && top_dest->klass() != NULL);
+  // Is the type for src from speculation?
+  bool src_spec = false;
+  // Is the type for dest from speculation?
+  bool dest_spec = false;
+
+  if (!has_src || !has_dest) {
+    // We don't have sufficient type information, let's see if
+    // speculative types can help. We need to have types for both src
+    // and dest so that it pays off.
+
+    // Do we already have or could we have type information for src
+    bool could_have_src = has_src;
+    // Do we already have or could we have type information for dest
+    bool could_have_dest = has_dest;
+
+    ciKlass* src_k = NULL;
+    if (!has_src) {
+      src_k = src_type->speculative_type();
+      if (src_k != NULL && src_k->is_array_klass()) {
+        could_have_src = true;
+      }
+    }
+
+    ciKlass* dest_k = NULL;
+    if (!has_dest) {
+      dest_k = dest_type->speculative_type();
+      if (dest_k != NULL && dest_k->is_array_klass()) {
+        could_have_dest = true;
+      }
+    }
+
+    if (could_have_src && could_have_dest) {
+      // This is going to pay off so emit the required guards
+      if (!has_src) {
+        src = maybe_cast_profiled_obj(src, src_k);
+        src_type  = _gvn.type(src);
+        top_src  = src_type->isa_aryptr();
+        has_src = (top_src != NULL && top_src->klass() != NULL);
+        src_spec = true;
+      }
+      if (!has_dest) {
+        dest = maybe_cast_profiled_obj(dest, dest_k);
+        dest_type  = _gvn.type(dest);
+        top_dest  = dest_type->isa_aryptr();
+        has_dest = (top_dest != NULL && top_dest->klass() != NULL);
+        dest_spec = true;
+      }
+    }
+  }
+
+  if (!has_src || !has_dest) {
     // Conservatively insert a memory barrier on all memory slices.
     // Do not let writes into the source float below the arraycopy.
     insert_mem_bar(Op_MemBarCPUOrder);
@@ -4587,6 +4642,40 @@ bool LibraryCallKit::inline_arraycopy() {
                             src, src_offset, dest, dest_offset, length,
                             /*dest_uninitialized*/false);
     return true;
+  }
+
+  if (src_elem == T_OBJECT) {
+    // If both arrays are object arrays then having the exact types
+    // for both will remove the need for a subtype check at runtime
+    // before the call and may make it possible to pick a faster copy
+    // routine (without a subtype check on every element)
+    // Do we have the exact type of src?
+    bool could_have_src = src_spec;
+    // Do we have the exact type of dest?
+    bool could_have_dest = dest_spec;
+    ciKlass* src_k = top_src->klass();
+    ciKlass* dest_k = top_dest->klass();
+    if (!src_spec) {
+      src_k = src_type->speculative_type();
+      if (src_k != NULL && src_k->is_array_klass()) {
+          could_have_src = true;
+      }
+    }
+    if (!dest_spec) {
+      dest_k = dest_type->speculative_type();
+      if (dest_k != NULL && dest_k->is_array_klass()) {
+        could_have_dest = true;
+      }
+    }
+    if (could_have_src && could_have_dest) {
+      // If we can have both exact types, emit the missing guards
+      if (could_have_src && !src_spec) {
+        src = maybe_cast_profiled_obj(src, src_k);
+      }
+      if (could_have_dest && !dest_spec) {
+        dest = maybe_cast_profiled_obj(dest, dest_k);
+      }
+    }
   }
 
   //---------------------------------------------------------------------------
