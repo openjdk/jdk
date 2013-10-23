@@ -74,6 +74,7 @@ class CallGenerator : public ResourceObj {
   virtual bool      is_late_inline() const      { return false; }
   // same but for method handle calls
   virtual bool      is_mh_late_inline() const   { return false; }
+  virtual bool      is_string_late_inline() const{ return false; }
 
   // for method handle calls: have we tried inlinining the call already?
   virtual bool      already_attempted() const   { ShouldNotReachHere(); return false; }
