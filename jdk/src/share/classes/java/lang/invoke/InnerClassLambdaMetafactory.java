@@ -33,8 +33,10 @@ import java.io.FilePermission;
 import java.lang.reflect.Constructor;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
+import java.util.LinkedHashSet;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.PropertyPermission;
+import java.util.Set;
 
 import static jdk.internal.org.objectweb.asm.Opcodes.*;
 
@@ -226,11 +228,20 @@ import static jdk.internal.org.objectweb.asm.Opcodes.*;
      * is not found
      */
     private Class<?> spinInnerClass() throws LambdaConversionException {
-        String[] interfaces = new String[markerInterfaces.length + 1];
-        interfaces[0] = samBase.getName().replace('.', '/');
-        for (int i=0; i<markerInterfaces.length; i++) {
-            interfaces[i+1] = markerInterfaces[i].getName().replace('.', '/');
+        String[] interfaces;
+        String samIntf = samBase.getName().replace('.', '/');
+        if (markerInterfaces.length == 0) {
+            interfaces = new String[]{samIntf};
+        } else {
+            // Assure no duplicate interfaces (ClassFormatError)
+            Set<String> itfs = new LinkedHashSet<>(markerInterfaces.length + 1);
+            itfs.add(samIntf);
+            for (int i = 0; i < markerInterfaces.length; i++) {
+                itfs.add(markerInterfaces[i].getName().replace('.', '/'));
+            }
+            interfaces = itfs.toArray(new String[itfs.size()]);
         }
+
         cw.visit(CLASSFILE_VERSION, ACC_SUPER + ACC_FINAL + ACC_SYNTHETIC,
                  lambdaClassName, null,
                  JAVA_LANG_OBJECT, interfaces);
