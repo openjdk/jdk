@@ -1175,7 +1175,7 @@ void LIRGenerator::do_Return(Return* x) {
   if (compilation()->env()->dtrace_method_probes()) {
     BasicTypeList signature;
     signature.append(LP64_ONLY(T_LONG) NOT_LP64(T_INT));    // thread
-    signature.append(T_OBJECT); // Method*
+    signature.append(T_METADATA); // Method*
     LIR_OprList* args = new LIR_OprList();
     args->append(getThreadPointer());
     LIR_Opr meth = new_register(T_METADATA);
@@ -2720,7 +2720,7 @@ void LIRGenerator::do_Base(Base* x) {
   if (compilation()->env()->dtrace_method_probes()) {
     BasicTypeList signature;
     signature.append(LP64_ONLY(T_LONG) NOT_LP64(T_INT));    // thread
-    signature.append(T_OBJECT); // Method*
+    signature.append(T_METADATA); // Method*
     LIR_OprList* args = new LIR_OprList();
     args->append(getThreadPointer());
     LIR_Opr meth = new_register(T_METADATA);
@@ -3331,7 +3331,7 @@ void LIRGenerator::do_RuntimeCall(RuntimeCall* x) {
   BasicTypeList* signature = new BasicTypeList(x->number_of_arguments());
 
   if (x->pass_thread()) {
-    signature->append(T_ADDRESS);
+    signature->append(LP64_ONLY(T_LONG) NOT_LP64(T_INT));    // thread
     args->append(getThreadPointer());
   }
 

@@ -432,15 +432,16 @@ int LIR_Assembler::emit_unwind_handler() {
   int offset = code_offset();
 
   // Fetch the exception from TLS and clear out exception related thread state
-  __ get_thread(rsi);
-  __ movptr(rax, Address(rsi, JavaThread::exception_oop_offset()));
-  __ movptr(Address(rsi, JavaThread::exception_oop_offset()), (intptr_t)NULL_WORD);
-  __ movptr(Address(rsi, JavaThread::exception_pc_offset()), (intptr_t)NULL_WORD);
+  Register thread = NOT_LP64(rsi) LP64_ONLY(r15_thread);
+  NOT_LP64(__ get_thread(rsi));
+  __ movptr(rax, Address(thread, JavaThread::exception_oop_offset()));
+  __ movptr(Address(thread, JavaThread::exception_oop_offset()), (intptr_t)NULL_WORD);
+  __ movptr(Address(thread, JavaThread::exception_pc_offset()), (intptr_t)NULL_WORD);
 
   __ bind(_unwind_handler_entry);
   __ verify_not_null_oop(rax);
   if (method()->is_synchronized() || compilation()->env()->dtrace_method_probes()) {
-    __ mov(rsi, rax);  // Preserve the exception
+    __ mov(rbx, rax);  // Preserve the exception (rbx is always callee-saved)
   }
 
   // Preform needed unlocking
@@ -448,19 +449,24 @@ int LIR_Assembler::emit_unwind_handler() {
   if (method()->is_synchronized()) {
     monitor_address(0, FrameMap::rax_opr);
     stub = new MonitorExitStub(FrameMap::rax_opr, true, 0);
-    __ unlock_object(rdi, rbx, rax, *stub->entry());
+    __ unlock_object(rdi, rsi, rax, *stub->entry());
     __ bind(*stub->continuation());
   }
 
   if (compilation()->env()->dtrace_method_probes()) {
+#ifdef _LP64
+    __ mov(rdi, r15_thread);
+    __ mov_metadata(rsi, method()->constant_encoding());
+#else
     __ get_thread(rax);
     __ movptr(Address(rsp, 0), rax);
     __ mov_metadata(Address(rsp, sizeof(void*)), method()->constant_encoding());
+#endif
     __ call(RuntimeAddress(CAST_FROM_FN_PTR(address, SharedRuntime::dtrace_method_exit)));
   }
 
   if (method()->is_synchronized() || compilation()->env()->dtrace_method_probes()) {
-    __ mov(rax, rsi);  // Restore the exception
+    __ mov(rax, rbx);  // Restore the exception
   }
 
   // remove the activation and dispatch to the unwind handler
