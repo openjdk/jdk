@@ -3864,7 +3864,7 @@ fi
 #CUSTOM_AUTOCONF_INCLUDE
 
 # Do not change or remove the following line, it is needed for consistency checks:
-DATE_WHEN_GENERATED=1382526194
+DATE_WHEN_GENERATED=1382540536
 
 ###############################################################################
 #
@@ -30857,16 +30857,6 @@ fi
     as_fn_error $? "Could not find X11 libraries. $HELP_MSG" "$LINENO" 5
   fi
 
-  # Some of the old makefiles require a setting of OPENWIN_HOME
-  # Since the X11R6 directory has disappeared on later Linuxes,
-  # we need to probe for it.
-  if test "x$OPENJDK_TARGET_OS" = xlinux; then
-    if test -d "$SYS_ROOT/usr/X11R6"; then
-      OPENWIN_HOME="$SYS_ROOT/usr/X11R6"
-    elif test -d "$SYS_ROOT/usr/include/X11"; then
-      OPENWIN_HOME="$SYS_ROOT/usr"
-    fi
-  fi
   if test "x$OPENJDK_TARGET_OS" = xsolaris; then
     OPENWIN_HOME="/usr/openwin"
   fi
