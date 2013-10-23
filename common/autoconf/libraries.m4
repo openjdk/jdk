@@ -57,10 +57,9 @@ AC_DEFUN_ONCE([LIB_SETUP_INIT],
     ALSA_NOT_NEEDED=yes
     PULSE_NOT_NEEDED=yes
     X11_NOT_NEEDED=yes
-    FREETYPE2_NOT_NEEDED=yes
     # If the java runtime framework is disabled, then we need X11.
     # This will be adjusted below.
-    AC_MSG_RESULT([alsa pulse x11 freetype])
+    AC_MSG_RESULT([alsa pulse x11])
   fi
 
   if test "x$OPENJDK_TARGET_OS" = xbsd; then
@@ -70,7 +69,7 @@ AC_DEFUN_ONCE([LIB_SETUP_INIT],
   fi
 
   if test "x$OPENJDK" = "xfalse"; then
-    FREETYPE2_NOT_NEEDED=yes
+    FREETYPE_NOT_NEEDED=yes
   fi
 
   if test "x$SUPPORT_HEADFUL" = xno; then
@@ -261,151 +260,279 @@ AC_DEFUN_ONCE([LIB_SETUP_CUPS],
 
 ])
 
+AC_DEFUN([LIB_CHECK_POTENTIAL_FREETYPE],
+[
+  POTENTIAL_FREETYPE_INCLUDE_PATH="$1"
+  POTENTIAL_FREETYPE_LIB_PATH="$2"
+  METHOD="$3"
+  
+  # First check if the files exists.
+  if test -s "$POTENTIAL_FREETYPE_INCLUDE_PATH/ft2build.h"; then
+    # We found an arbitrary include file. That's a good sign.
+    AC_MSG_NOTICE([Found freetype include files at $POTENTIAL_FREETYPE_INCLUDE_PATH using $METHOD])
+    FOUND_FREETYPE=yes
+
+    FREETYPE_LIB_NAME="${LIBRARY_PREFIX}freetype${SHARED_LIBRARY_SUFFIX}"
+    if ! test -s "$POTENTIAL_FREETYPE_LIB_PATH/$FREETYPE_LIB_NAME"; then
+      AC_MSG_NOTICE([Could not find $POTENTIAL_FREETYPE_LIB_PATH/$FREETYPE_LIB_NAME. Ignoring location.])
+      FOUND_FREETYPE=no
+    else
+      if test "x$OPENJDK_TARGET_OS" = xwindows; then
+        # On Windows, we will need both .lib and .dll file.
+        if ! test -s "$POTENTIAL_FREETYPE_LIB_PATH/freetype.lib"; then
+          AC_MSG_NOTICE([Could not find $POTENTIAL_FREETYPE_LIB_PATH/freetype.lib. Ignoring location.])
+          FOUND_FREETYPE=no
+        fi
+      elif test "x$OPENJDK_TARGET_OS" = xsolaris && test "x$OPENJDK_TARGET_CPU" = xx86_64 && test -s "$POTENTIAL_FREETYPE_LIB_PATH/amd64/$FREETYPE_LIB_NAME"; then
+        # On solaris-x86_86, default is (normally) PATH/lib/amd64. Update our guess!
+        POTENTIAL_FREETYPE_LIB_PATH="$POTENTIAL_FREETYPE_LIB_PATH/amd64"
+      fi
+    fi
+  fi
+
+  if test "x$FOUND_FREETYPE" = xyes; then
+    BASIC_FIXUP_PATH(POTENTIAL_FREETYPE_INCLUDE_PATH)
+    BASIC_FIXUP_PATH(POTENTIAL_FREETYPE_LIB_PATH)
+
+    FREETYPE_INCLUDE_PATH="$POTENTIAL_FREETYPE_INCLUDE_PATH"
+    AC_MSG_CHECKING([for freetype includes])
+    AC_MSG_RESULT([$FREETYPE_INCLUDE_PATH])
+    FREETYPE_LIB_PATH="$POTENTIAL_FREETYPE_LIB_PATH"
+    AC_MSG_CHECKING([for freetype libraries])
+    AC_MSG_RESULT([$FREETYPE_LIB_PATH])
+  fi
+])
+
 AC_DEFUN_ONCE([LIB_SETUP_FREETYPE],
 [
 
   ###############################################################################
   #
-  # The ubiquitous freetype2 library is used to render fonts.
+  # The ubiquitous freetype library is used to render fonts.
   #
   AC_ARG_WITH(freetype, [AS_HELP_STRING([--with-freetype],
-      [specify prefix directory for the freetype2 package
+      [specify prefix directory for the freetype package
       (expecting the libraries under PATH/lib and the headers under PATH/include)])])
+  AC_ARG_WITH(freetype-include, [AS_HELP_STRING([--with-freetype-include],
+      [specify directory for the freetype include files])])
+  AC_ARG_WITH(freetype-lib, [AS_HELP_STRING([--with-freetype-lib],
+      [specify directory for the freetype library])])
+  AC_ARG_ENABLE(freetype-bundling, [AS_HELP_STRING([--disable-freetype-bundling],
+      [disable bundling of the freetype library with the build result @<:@enabled on Windows or when using --with-freetype, disabled otherwise@:>@])])
 
-  # If we are using the OS installed system lib for freetype, then we do not need to copy it to the build tree
-  USING_SYSTEM_FT_LIB=false
+  FREETYPE_CFLAGS=
+  FREETYPE_LIBS=
+  FREETYPE_BUNDLE_LIB_PATH=
 
-  if test "x$FREETYPE2_NOT_NEEDED" = xyes; then
+  if test "x$FREETYPE_NOT_NEEDED" = xyes; then
     if test "x$with_freetype" != x || test "x$with_freetype_include" != x || test "x$with_freetype_lib" != x; then
       AC_MSG_WARN([freetype not used, so --with-freetype is ignored])
     fi
-    FREETYPE2_CFLAGS=
-    FREETYPE2_LIBS=
-    FREETYPE2_LIB_PATH=
+    if test "x$enable_freetype_bundling" != x; then
+      AC_MSG_WARN([freetype not used, so --enable-freetype-bundling is ignored])
+    fi
   else
-    FREETYPE2_FOUND=no
+    # freetype is needed to build; go get it!
 
-    if test "x$with_freetype" != x; then
-      BASIC_FIXUP_PATH(with_freetype)
-      FREETYPE2_LIBS="-L$with_freetype/lib -lfreetype"
-      FREETYPE2_LIB_PATH="$with_freetype/lib"
-      if test "x$OPENJDK_TARGET_OS" = xsolaris && test "x$OPENJDK_TARGET_CPU" = xx86_64 && test -d "$with_freetype/lib/amd64"; then
-        FREETYPE2_LIBS="-L$with_freetype/lib/amd64 -lfreetype"
-        FREETYPE2_LIB_PATH="$with_freetype/lib/amd64"
+    BUNDLE_FREETYPE="$enable_freetype_bundling"
+
+    if test "x$with_freetype" != x || test "x$with_freetype_include" != x || test "x$with_freetype_lib" != x; then
+      # User has specified settings
+
+      if test "x$BUNDLE_FREETYPE" = x; then
+        # If not specified, default is to bundle freetype
+        BUNDLE_FREETYPE=yes
       fi
+      
+      if test "x$with_freetype" != x; then
+        POTENTIAL_FREETYPE_INCLUDE_PATH="$with_freetype/include"
+        POTENTIAL_FREETYPE_LIB_PATH="$with_freetype/lib"
+      fi
+      
+      # Allow --with-freetype-lib and --with-freetype-include to override
+      if test "x$with_freetype_include" != x; then
+        POTENTIAL_FREETYPE_INCLUDE_PATH="$with_freetype_include"
+      fi
+      if test "x$with_freetype_lib" != x; then
+        POTENTIAL_FREETYPE_LIB_PATH="$with_freetype_lib"
+      fi
+
+      if test "x$POTENTIAL_FREETYPE_INCLUDE_PATH" != x && test "x$POTENTIAL_FREETYPE_LIB_PATH" != x; then
+        # Okay, we got it. Check that it works.
+        LIB_CHECK_POTENTIAL_FREETYPE($POTENTIAL_FREETYPE_INCLUDE_PATH, $POTENTIAL_FREETYPE_LIB_PATH, [--with-freetype])
+        if test "x$FOUND_FREETYPE" != xyes; then
+          AC_MSG_ERROR([Can not find or use freetype at location given by --with-freetype])
+        fi
+      else
+        # User specified only one of lib or include. This is an error.
+        if test "x$POTENTIAL_FREETYPE_INCLUDE_PATH" = x ; then
+          AC_MSG_NOTICE([User specified --with-freetype-lib but not --with-freetype-include])
+          AC_MSG_ERROR([Need both freetype lib and include paths. Consider using --with-freetype instead.])
+        else
+          AC_MSG_NOTICE([User specified --with-freetype-include but not --with-freetype-lib])
+          AC_MSG_ERROR([Need both freetype lib and include paths. Consider using --with-freetype instead.])
+        fi
+      fi
+    else
+      # User did not specify settings, but we need freetype. Try to locate it.
+
+      if test "x$BUNDLE_FREETYPE" = x; then
+        # If not specified, default is to bundle freetype only on windows
+        if test "x$OPENJDK_TARGET_OS" = xwindows; then
+          BUNDLE_FREETYPE=yes
+        else
+          BUNDLE_FREETYPE=no
+        fi
+      fi
+
+      if test "x$FOUND_FREETYPE" != xyes; then
+        # Check builddeps
+        BDEPS_CHECK_MODULE(FREETYPE, freetype2, xxx, [FOUND_FREETYPE=yes], [FOUND_FREETYPE=no])
+        # BDEPS_CHECK_MODULE will set FREETYPE_CFLAGS and _LIBS, but we don't get a lib path for bundling.
+        if test "x$FOUND_FREETYPE" = xyes; then
+          if test "x$BUNDLE_FREETYPE" = xyes; then
+            AC_MSG_NOTICE([Found freetype using builddeps, but ignoring since we can not bundle that])
+            FOUND_FREETYPE=no
+          else
+            AC_MSG_CHECKING([for freetype])
+            AC_MSG_RESULT([yes (using builddeps)])
+          fi
+        fi
+      fi
+
+      if test "x$FOUND_FREETYPE" != xyes; then
+        # Check modules using pkg-config, but only if we have it (ugly output results otherwise)
+        if test "x$PKG_CONFIG" != x; then
+          PKG_CHECK_MODULES(FREETYPE, freetype2, [FOUND_FREETYPE=yes], [FOUND_FREETYPE=no])
+          if test "x$FOUND_FREETYPE" = xyes; then
+            # On solaris, pkg_check adds -lz to freetype libs, which isn't necessary for us.
+            FREETYPE_LIBS=`$ECHO $FREETYPE_LIBS | $SED 's/-lz//g'`
+            # 64-bit libs for Solaris x86 are installed in the amd64 subdirectory, change lib to lib/amd64
+            if test "x$OPENJDK_TARGET_OS" = xsolaris && test "x$OPENJDK_TARGET_CPU" = xx86_64; then
+              FREETYPE_LIBS=`$ECHO $FREETYPE_LIBS | $SED 's?/lib?/lib/amd64?g'`
+            fi
+            # BDEPS_CHECK_MODULE will set FREETYPE_CFLAGS and _LIBS, but we don't get a lib path for bundling.
+            if test "x$BUNDLE_FREETYPE" = xyes; then
+              AC_MSG_NOTICE([Found freetype using pkg-config, but ignoring since we can not bundle that])
+              FOUND_FREETYPE=no
+            else
+              AC_MSG_CHECKING([for freetype])
+              AC_MSG_RESULT([yes (using pkg-config)])
+            fi
+          fi
+        fi
+      fi
+
+      if test "x$FOUND_FREETYPE" != xyes; then
+        # Check in well-known locations
+        if test "x$OPENJDK_TARGET_OS" = xwindows; then
+          FREETYPE_BASE_DIR="$PROGRAMFILES/GnuWin32"
+          BASIC_WINDOWS_REWRITE_AS_UNIX_PATH(FREETYPE_BASE_DIR)
+          LIB_CHECK_POTENTIAL_FREETYPE([$FREETYPE_BASE_DIR/include], [$FREETYPE_BASE_DIR/lib], [well-known location])
+          if test "x$FOUND_FREETYPE" != xyes; then
+            FREETYPE_BASE_DIR="$ProgramW6432/GnuWin32"
+            BASIC_WINDOWS_REWRITE_AS_UNIX_PATH(FREETYPE_BASE_DIR)
+            LIB_CHECK_POTENTIAL_FREETYPE([$FREETYPE_BASE_DIR/include], [$FREETYPE_BASE_DIR/lib], [well-known location])
+          fi
+        else
+          if test "x$SYS_ROOT" = "x/"; then
+            FREETYPE_ROOT=
+          else
+            FREETYPE_ROOT="$SYS_ROOT"
+          fi
+          FREETYPE_BASE_DIR="$FREETYPE_ROOT/usr"
+          LIB_CHECK_POTENTIAL_FREETYPE([$FREETYPE_BASE_DIR/include], [$FREETYPE_BASE_DIR/lib], [well-known location])
+
+          if test "x$FOUND_FREETYPE" != xyes; then
+            FREETYPE_BASE_DIR="$FREETYPE_ROOT/usr/X11"
+            LIB_CHECK_POTENTIAL_FREETYPE([$FREETYPE_BASE_DIR/include], [$FREETYPE_BASE_DIR/lib], [well-known location])
+          fi
+
+          if test "x$FOUND_FREETYPE" != xyes; then
+            FREETYPE_BASE_DIR="$FREETYPE_ROOT/usr"
+            if test "x$OPENJDK_TARGET_CPU_BITS" = x64; then
+              LIB_CHECK_POTENTIAL_FREETYPE([$FREETYPE_BASE_DIR/include], [$FREETYPE_BASE_DIR/lib/x86_64-linux-gnu], [well-known location])
+            else
+              LIB_CHECK_POTENTIAL_FREETYPE([$FREETYPE_BASE_DIR/include], [$FREETYPE_BASE_DIR/lib/i386-linux-gnu], [well-known location])
+              if test "x$FOUND_FREETYPE" != xyes; then
+                LIB_CHECK_POTENTIAL_FREETYPE([$FREETYPE_BASE_DIR/include], [$FREETYPE_BASE_DIR/lib32], [well-known location])
+              fi
+            fi
+          fi
+        fi
+      fi # end check in well-known locations
+
+      if test "x$FOUND_FREETYPE" != xyes; then
+        HELP_MSG_MISSING_DEPENDENCY([freetype])
+        AC_MSG_ERROR([Could not find freetype! $HELP_MSG ])
+      fi
+    fi # end user specified settings
+
+    # Set FREETYPE_CFLAGS, _LIBS and _LIB_PATH from include and lib dir.
+    if test "x$FREETYPE_CFLAGS" = x; then
+      BASIC_FIXUP_PATH(FREETYPE_INCLUDE_PATH)
+      if test -d $FREETYPE_INCLUDE_PATH/freetype2/freetype; then
+        FREETYPE_CFLAGS="-I$FREETYPE_INCLUDE_PATH/freetype2 -I$FREETYPE_INCLUDE_PATH"
+      else
+        FREETYPE_CFLAGS="-I$FREETYPE_INCLUDE_PATH"
+      fi
+    fi
+    
+    if test "x$FREETYPE_LIBS" = x; then
+      BASIC_FIXUP_PATH(FREETYPE_LIB_PATH)
       if test "x$OPENJDK_TARGET_OS" = xwindows; then
-        FREETYPE2_LIBS="$with_freetype/lib/freetype.lib"
+        FREETYPE_LIBS="$FREETYPE_LIB_PATH/freetype.lib"
+      else
+        FREETYPE_LIBS="-L$FREETYPE_LIB_PATH -lfreetype"
       fi
-      FREETYPE2_CFLAGS="-I$with_freetype/include"
-      if test -s $with_freetype/include/ft2build.h && test -d $with_freetype/include/freetype2/freetype; then
-        FREETYPE2_CFLAGS="-I$with_freetype/include/freetype2 -I$with_freetype/include"
-      fi
-      FREETYPE2_FOUND=yes
-      if test "x$FREETYPE2_FOUND" = xyes; then
-        # Verify that the directories exist
-        if ! test -d "$with_freetype/lib" || ! test -d "$with_freetype/include"; then
-          AC_MSG_ERROR([Could not find the expected directories $with_freetype/lib and $with_freetype/include])
-        fi
-        # List the contents of the lib.
-        FREETYPELIB=`ls $with_freetype/lib/libfreetype.so $with_freetype/lib/freetype.dll 2> /dev/null`
-        if test "x$FREETYPELIB" = x; then
-          AC_MSG_ERROR([Could not find libfreetype.so nor freetype.dll in $with_freetype/lib])
-        fi
-        # Check one h-file
-        if ! test -s "$with_freetype/include/ft2build.h"; then
-          AC_MSG_ERROR([Could not find $with_freetype/include/ft2build.h])
-        fi
-      fi
-    fi
-    if test "x$FREETYPE2_FOUND" = xno; then
-      BDEPS_CHECK_MODULE(FREETYPE2, freetype2, xxx, [FREETYPE2_FOUND=yes], [FREETYPE2_FOUND=no])
-      USING_SYSTEM_FT_LIB=true
-    fi
-    if test "x$FREETYPE2_FOUND" = xno && test "x$OPENJDK_TARGET_OS" = xwindows; then
-      FREETYPELOCATION="$PROGRAMFILES/GnuWin32"
-      BASIC_FIXUP_PATH(FREETYPELOCATION)
-      AC_MSG_CHECKING([for freetype in some standard windows locations])
-      if test -s "$FREETYPELOCATION/include/ft2build.h" && test -d "$FREETYPELOCATION/include/freetype2/freetype"; then
-        FREETYPE2_CFLAGS="-I$FREETYPELOCATION/include/freetype2 -I$FREETYPELOCATION/include"
-        FREETYPE2_LIBS="$FREETYPELOCATION/lib/freetype.lib"
-        FREETYPE2_LIB_PATH="$FREETYPELOCATION/lib"
-        if ! test -s "$FREETYPE2_LIBS"; then
-          AC_MSG_ERROR([Could not find $FREETYPE2_LIBS])
-        fi
-        if ! test -s "$FREETYPE2_LIB_PATH/freetype.dll"; then
-          AC_MSG_ERROR([Could not find $FREETYPE2_LIB_PATH/freetype.dll])
-        fi
-        USING_SYSTEM_FT_LIB=true
-        FREETYPE2_FOUND=yes
-      fi
-      AC_MSG_RESULT([$FREETYPE2_FOUND])
-    fi
-    if test "x$FREETYPE2_FOUND" = xno; then
-      PKG_CHECK_MODULES(FREETYPE2, freetype2, [FREETYPE2_FOUND=yes], [FREETYPE2_FOUND=no])
-      # On solaris, pkg_check adds -lz to freetype libs, which isn't necessary for us.
-      FREETYPE2_LIBS=`$ECHO $FREETYPE2_LIBS | $SED 's/-lz//g'`
-      USING_SYSTEM_FT_LIB=true
-      # 64-bit libs for Solaris x86 are installed in the amd64 subdirectory, change lib to lib/amd64
-      if test "x$FREETYPE2_FOUND" = xyes && test "x$OPENJDK_TARGET_OS" = xsolaris && test "x$OPENJDK_TARGET_CPU" = xx86_64; then
-        FREETYPE2_LIBS=`$ECHO $FREETYPE2_LIBS | $SED 's?/lib?/lib/amd64?g'`
-      fi
-    fi
-    if test "x$FREETYPE2_FOUND" = xno; then
-      AC_MSG_CHECKING([for freetype in some standard locations])
-
-      if test -s $SYS_ROOT/usr/X11/include/ft2build.h && test -d $SYS_ROOT/usr/X11/include/freetype2/freetype; then
-        DEFAULT_FREETYPE_CFLAGS="-I$SYS_ROOT/usr/X11/include/freetype2 -I$SYS_ROOT/usr/X11/include"
-        DEFAULT_FREETYPE_LIBS="-L$SYS_ROOT/usr/X11/lib -lfreetype"
-      fi
-      if test -s $SYS_ROOT/usr/include/ft2build.h && test -d $SYS_ROOT/usr/include/freetype2/freetype; then
-        DEFAULT_FREETYPE_CFLAGS="-I$SYS_ROOT/usr/include/freetype2"
-        DEFAULT_FREETYPE_LIBS="-lfreetype"
-      fi
-
-      PREV_CXXCFLAGS="$CXXFLAGS"
-      PREV_LDFLAGS="$LDFLAGS"
-      CXXFLAGS="$CXXFLAGS $DEFAULT_FREETYPE_CFLAGS"
-      LDFLAGS="$LDFLAGS $DEFAULT_FREETYPE_LIBS"
-      AC_LINK_IFELSE([AC_LANG_SOURCE([[
-            #include<ft2build.h>
-            #include FT_FREETYPE_H
-            int main() { return 0; }
-          ]])],
-          [
-            # Yes, the default cflags and libs did the trick.
-            FREETYPE2_FOUND=yes
-            FREETYPE2_CFLAGS="$DEFAULT_FREETYPE_CFLAGS"
-            FREETYPE2_LIBS="$DEFAULT_FREETYPE_LIBS"
-          ],
-          [
-            FREETYPE2_FOUND=no
-          ]
-      )
-      CXXCFLAGS="$PREV_CXXFLAGS"
-      LDFLAGS="$PREV_LDFLAGS"
-      AC_MSG_RESULT([$FREETYPE2_FOUND])
-      USING_SYSTEM_FT_LIB=true
-    fi
-    if test "x$FREETYPE2_FOUND" = xno; then
-      HELP_MSG_MISSING_DEPENDENCY([freetype2])
-      AC_MSG_ERROR([Could not find freetype2! $HELP_MSG ])
     fi
 
-    if test "x$OPENJDK_TARGET_OS" != xwindows; then
-      # AC_CHECK_LIB does not support use of cl.exe
-      PREV_LDFLAGS="$LDFLAGS"
-      LDFLAGS="$FREETYPE2_LIBS"
-      AC_CHECK_LIB(freetype, FT_Init_FreeType,
-          FREETYPE2_FOUND=true,
-          AC_MSG_ERROR([Could not find freetype2! $HELP_MSG ]))
-      LDFLAGS="$PREV_LDFLAGS"
-    fi
-  fi
+    # Try to compile it
+    AC_MSG_CHECKING([if we can compile and link with freetype])
+    AC_LANG_PUSH(C++)
+    PREV_CXXCFLAGS="$CXXFLAGS"
+    PREV_LDFLAGS="$LDFLAGS"
+    PREV_CXX="$CXX"
+    CXXFLAGS="$CXXFLAGS $FREETYPE_CFLAGS" 
+    LDFLAGS="$LDFLAGS $FREETYPE_LIBS"
+    CXX="$FIXPATH $CXX"
+    AC_LINK_IFELSE([AC_LANG_SOURCE([[
+          #include<ft2build.h>
+          #include FT_FREETYPE_H
+          int main () {
+            FT_Init_FreeType(NULL);
+            return 0;
+          }
+        ]])],
+        [
+          AC_MSG_RESULT([yes])
+        ],
+        [
+          AC_MSG_RESULT([no])
+          AC_MSG_NOTICE([Could not compile and link with freetype. This might be a 32/64-bit mismatch.])
+          AC_MSG_NOTICE([Using FREETYPE_CFLAGS=$FREETYPE_CFLAGS and FREETYPE_LIBS=$FREETYPE_LIBS])
+          
+          HELP_MSG_MISSING_DEPENDENCY([freetype])
+          
+          AC_MSG_ERROR([Can not continue without freetype. $HELP_MSG])
+        ]
+    )
+    CXXCFLAGS="$PREV_CXXFLAGS"
+    LDFLAGS="$PREV_LDFLAGS"
+    CXX="$PREV_CXX"
+    AC_LANG_POP(C++)
 
-  AC_SUBST(USING_SYSTEM_FT_LIB)
-  AC_SUBST(FREETYPE2_LIB_PATH)
-  AC_SUBST(FREETYPE2_CFLAGS)
-  AC_SUBST(FREETYPE2_LIBS)
+    AC_MSG_CHECKING([if we should bundle freetype])
+    if test "x$BUNDLE_FREETYPE" = xyes; then
+      FREETYPE_BUNDLE_LIB_PATH="$FREETYPE_LIB_PATH"
+    fi
+    AC_MSG_RESULT([$BUNDLE_FREETYPE])
+
+  fi # end freetype needed
+
+  AC_SUBST(FREETYPE_BUNDLE_LIB_PATH)
+  AC_SUBST(FREETYPE_CFLAGS)
+  AC_SUBST(FREETYPE_LIBS)
 ])
 
 AC_DEFUN_ONCE([LIB_SETUP_ALSA],

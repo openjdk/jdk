@@ -31,7 +31,7 @@ AC_DEFUN_ONCE([HELP_SETUP_DEPENDENCY_HELP],
 AC_DEFUN([HELP_MSG_MISSING_DEPENDENCY],
 [
   # Print a helpful message on how to acquire the necessary build dependency.
-  # $1 is the help tag: freetyp2, cups, pulse, alsa etc
+  # $1 is the help tag: freetype, cups, pulse, alsa etc
   MISSING_DEPENDENCY=$1
 
   if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
@@ -76,7 +76,7 @@ cygwin_help() {
       PKGHANDLER_COMMAND="( cd <location of cygwin setup.exe> && cmd /c setup -q -P make )"
       HELP_MSG="You might be able to fix this by running '$PKGHANDLER_COMMAND'."
       ;;
-    freetype2)
+    freetype)
       if test "x$OPENJDK_TARGET_CPU_BITS" = x32; then
         HELP_MSG="To install freetype, run:
 wget \"http://gnuwin32.sourceforge.net/downlinks/freetype.php\" -O /tmp/freetype-setup.exe
@@ -111,7 +111,7 @@ apt_help() {
       PKGHANDLER_COMMAND="sudo apt-get install libasound2-dev" ;;
     cups)
       PKGHANDLER_COMMAND="sudo apt-get install libcups2-dev" ;;
-    freetype2)
+    freetype)
       PKGHANDLER_COMMAND="sudo apt-get install libfreetype6-dev" ;;
     pulse)
       PKGHANDLER_COMMAND="sudo apt-get install libpulse-dev" ;;
@@ -134,7 +134,7 @@ yum_help() {
       PKGHANDLER_COMMAND="sudo yum install alsa-lib-devel" ;;
     cups)
       PKGHANDLER_COMMAND="sudo yum install cups-devel" ;;
-    freetype2)
+    freetype)
       PKGHANDLER_COMMAND="sudo yum install freetype-devel" ;;
     pulse)
       PKGHANDLER_COMMAND="sudo yum install pulseaudio-libs-devel" ;;
