@@ -3768,6 +3768,7 @@ bool GraphBuilder::try_inline_full(ciMethod* callee, bool holder_known, Bytecode
 
   // now perform tests that are based on flag settings
   if (callee->force_inline()) {
+    if (inline_level() > MaxForceInlineLevel) INLINE_BAILOUT("MaxForceInlineLevel");
     print_inlining(callee, "force inline by annotation");
   } else if (callee->should_inline()) {
     print_inlining(callee, "force inline by CompileOracle");
