@@ -2087,13 +2087,6 @@ public class LambdaToMethod extends TreeTranslator {
                 return tree.sym.owner == syms.arrayClass;
             }
 
-            boolean isPrivateConstructor() {
-                //hack needed to workaround 292 bug (8005122)
-                //when 292 issue is fixed we should simply remove this
-                return tree.sym.name == names.init &&
-                        (tree.sym.flags() & PRIVATE) != 0;
-            }
-
             boolean receiverAccessible() {
                 //hack needed to workaround 292 bug (7087658)
                 //when 292 issue is fixed we should remove this and change the backend
@@ -2102,12 +2095,24 @@ public class LambdaToMethod extends TreeTranslator {
             }
 
             /**
+             * The VM does not support access across nested classes (8010319).
+             * Were that ever to change, this should be removed.
+             */
+            boolean isPrivateInOtherClass() {
+                return  (tree.sym.flags() & PRIVATE) != 0 &&
+                        !types.isSameType(
+                              types.erasure(tree.sym.enclClass().asType()),
+                              types.erasure(owner.enclClass().asType()));
+            }
+
+            /**
              * Does this reference needs a bridge (i.e. var args need to be
              * expanded or "super" is used)
              */
             final boolean needsBridge() {
                 return isSuper || needsVarArgsConversion() || isArrayOp() ||
-                        isPrivateConstructor() || !receiverAccessible();
+                        isPrivateInOtherClass() ||
+                        !receiverAccessible();
             }
 
             Type generatedRefSig() {
