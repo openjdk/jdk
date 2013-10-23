@@ -23,10 +23,7 @@
 # questions.
 #
 
-#
-# TODO replace with X_FLAGS / X_LIBS
-# and add them to configure
-#
+# Openwin is defined on Solaris.
 OPENWIN_LIB := $(OPENWIN_HOME)/lib
 
 WIN_AWT_LIB := $(JDK_OUTPUTDIR)/objs/libawt/awt.lib
@@ -1250,10 +1247,12 @@ ifndef BUILD_HEADLESS_ONLY
     LIBSPLASHSCREEN_splashscreen_png.c_CFLAGS := -x objective-c -O0
     LIBSPLASHSCREEN_splashscreen_sys.m_CFLAGS := -O0
 
-  else ifneq ($(OPENJDK_TARGET_OS), windows)
+  else ifeq ($(OPENJDK_TARGET_OS), windows)
+    LIBSPLASHSCREEN_CFLAGS += -DWITH_WIN32
+  else ifeq ($(OPENJDK_TARGET_OS), solaris)
     LIBSPLASHSCREEN_CFLAGS += -DWITH_X11 -I$(OPENWIN_HOME)/include -I$(OPENWIN_HOME)/include/X11/extensions
   else
-    LIBSPLASHSCREEN_CFLAGS += -DWITH_WIN32
+    LIBSPLASHSCREEN_CFLAGS += -DWITH_X11 $(X_CFLAGS)
   endif
 
   LIBSPLASHSCREEN_LDFLAGS_SUFFIX :=
@@ -1270,11 +1269,14 @@ ifndef BUILD_HEADLESS_ONLY
         -framework Cocoa \
         -F/System/Library/Frameworks/JavaVM.framework/Frameworks \
         -framework JavaNativeFoundation
-  else ifneq ($(OPENJDK_TARGET_OS), windows)
-    LIBSPLASHSCREEN_LDFLAGS_SUFFIX += -L$(OPENWIN_LIB)$(OPENJDK_TARGET_CPU_ISADIR) -lX11 -lXext $(LIBM) -lpthread
-  else # OPENJDK_TARGET_OS
+  else ifeq ($(OPENJDK_TARGET_OS), windows)
     LIBSPLASHSCREEN_LDFLAGS_SUFFIX += kernel32.lib user32.lib gdi32.lib delayimp.lib -DELAYLOAD:user32.dll
-  endif # OPENJDK_TARGET_OS
+  else ifeq ($(OPENJDK_TARGET_OS), solaris)
+    # Solaris still uses OPENWIN_LIB ..
+    LIBSPLASHSCREEN_LDFLAGS_SUFFIX += -L$(OPENWIN_LIB)$(OPENJDK_TARGET_CPU_ISADIR) -lX11 -lXext $(LIBM) -lpthread
+  else	# .. all other Unixes can use X_LIBS
+    LIBSPLASHSCREEN_LDFLAGS_SUFFIX += $(X_LIBS) -lX11 -lXext $(LIBM) -lpthread
+  endif
 
   $(eval $(call SetupNativeCompilation,LIBSPLASHSCREEN, \
       LIBRARY := splashscreen, \
@@ -1440,9 +1442,9 @@ ifeq ($(OPENJDK_TARGET_OS), macosx)
       INCLUDE_FILES := $(LIBAWT_LWAWT_FILES), \
       OPTIMIZATION := LOW, \
       CFLAGS := $(CFLAGS_JDKLIB) \
-      $(X_CFLAGS) \
-      $(X_LIBS) \
-      $(foreach dir, $(LIBAWT_LWAWT_DIRS), -I$(dir)) \
+          $(X_CFLAGS) \
+          $(X_LIBS) \
+          $(foreach dir, $(LIBAWT_LWAWT_DIRS), -I$(dir)) \
           -I$(JDK_TOPDIR)/src/macosx/native/sun/osxapp \
           -I$(JDK_TOPDIR)/src/share/native/sun/java2d \
           -I$(JDK_TOPDIR)/src/solaris/native/sun/java2d \
