@@ -2647,6 +2647,39 @@ ciKlass* LIRGenerator::profile_arg_type(ciMethodData* md, int md_base_offset, in
   return result;
 }
 
+// profile parameters on entry to the root of the compilation
+void LIRGenerator::profile_parameters(Base* x) {
+  if (compilation()->profile_parameters()) {
+    CallingConvention* args = compilation()->frame_map()->incoming_arguments();
+    ciMethodData* md = scope()->method()->method_data_or_null();
+    assert(md != NULL, "Sanity");
+
+    if (md->parameters_type_data() != NULL) {
+      ciParametersTypeData* parameters_type_data = md->parameters_type_data();
+      ciTypeStackSlotEntries* parameters =  parameters_type_data->parameters();
+      LIR_Opr mdp = LIR_OprFact::illegalOpr;
+      for (int java_index = 0, i = 0, j = 0; j < parameters_type_data->number_of_parameters(); i++) {
+        LIR_Opr src = args->at(i);
+        assert(!src->is_illegal(), "check");
+        BasicType t = src->type();
+        if (t == T_OBJECT || t == T_ARRAY) {
+          intptr_t profiled_k = parameters->type(j);
+          Local* local = x->state()->local_at(java_index)->as_Local();
+          ciKlass* exact = profile_arg_type(md, md->byte_offset_of_slot(parameters_type_data, ParametersTypeData::type_offset(0)),
+                                            in_bytes(ParametersTypeData::type_offset(j)) - in_bytes(ParametersTypeData::type_offset(0)),
+                                            profiled_k, local, mdp, false, local->declared_type()->as_klass());
+          // If the profile is known statically set it once for all and do not emit any code
+          if (exact != NULL) {
+            md->set_parameter_type(j, exact);
+          }
+          j++;
+        }
+        java_index += type2size[t];
+      }
+    }
+  }
+}
+
 void LIRGenerator::do_Base(Base* x) {
   __ std_entry(LIR_OprFact::illegalOpr);
   // Emit moves from physical registers / stack slots to virtual registers
@@ -2722,6 +2755,7 @@ void LIRGenerator::do_Base(Base* x) {
 
   // increment invocation counters if needed
   if (!method()->is_accessor()) { // Accessors do not have MDOs, so no counting.
+    profile_parameters(x);
     CodeEmitInfo* info = new CodeEmitInfo(scope()->start()->state()->copy(ValueStack::StateBefore, SynchronizationEntryBCI), NULL, false);
     increment_invocation_counter(info);
   }
@@ -3081,11 +3115,12 @@ void LIRGenerator::do_Intrinsic(Intrinsic* x) {
 }
 
 void LIRGenerator::profile_arguments(ProfileCall* x) {
-  if (MethodData::profile_arguments()) {
+  if (compilation()->profile_arguments()) {
     int bci = x->bci_of_invoke();
     ciMethodData* md = x->method()->method_data_or_null();
     ciProfileData* data = md->bci_to_data(bci);
-    if (data->is_CallTypeData() || data->is_VirtualCallTypeData()) {
+    if ((data->is_CallTypeData() && data->as_CallTypeData()->has_arguments()) ||
+        (data->is_VirtualCallTypeData() && data->as_VirtualCallTypeData()->has_arguments())) {
       ByteSize extra = data->is_CallTypeData() ? CallTypeData::args_data_offset() : VirtualCallTypeData::args_data_offset();
       int base_offset = md->byte_offset_of_slot(data, extra);
       LIR_Opr mdp = LIR_OprFact::illegalOpr;
@@ -3111,6 +3146,71 @@ void LIRGenerator::profile_arguments(ProfileCall* x) {
           md->set_argument_type(bci, i, exact);
         }
       }
+    } else {
+#ifdef ASSERT
+      Bytecodes::Code code = x->method()->raw_code_at_bci(x->bci_of_invoke());
+      int n = x->nb_profiled_args();
+      assert(MethodData::profile_parameters() && x->inlined() &&
+             ((code == Bytecodes::_invokedynamic && n <= 1) || (code == Bytecodes::_invokehandle && n <= 2)),
+             "only at JSR292 bytecodes");
+#endif
+    }
+  }
+}
+
+// profile parameters on entry to an inlined method
+void LIRGenerator::profile_parameters_at_call(ProfileCall* x) {
+  if (compilation()->profile_parameters() && x->inlined()) {
+    ciMethodData* md = x->callee()->method_data_or_null();
+    if (md != NULL) {
+      ciParametersTypeData* parameters_type_data = md->parameters_type_data();
+      if (parameters_type_data != NULL) {
+        ciTypeStackSlotEntries* parameters =  parameters_type_data->parameters();
+        LIR_Opr mdp = LIR_OprFact::illegalOpr;
+        bool has_receiver = !x->callee()->is_static();
+        ciSignature* sig = x->callee()->signature();
+        ciSignatureStream sig_stream(sig, has_receiver ? x->callee()->holder() : NULL);
+        int i = 0; // to iterate on the Instructions
+        Value arg = x->recv();
+        bool not_null = false;
+        int bci = x->bci_of_invoke();
+        Bytecodes::Code bc = x->method()->java_code_at_bci(bci);
+        // The first parameter is the receiver so that's what we start
+        // with if it exists. On exception if method handle call to
+        // virtual method has receiver in the args list
+        if (arg == NULL || !Bytecodes::has_receiver(bc)) {
+          i = 1;
+          arg = x->profiled_arg_at(0);
+          not_null = !x->arg_needs_null_check(0);
+        }
+        int k = 0; // to iterate on the profile data
+        for (;;) {
+          intptr_t profiled_k = parameters->type(k);
+          ciKlass* exact = profile_arg_type(md, md->byte_offset_of_slot(parameters_type_data, ParametersTypeData::type_offset(0)),
+                                            in_bytes(ParametersTypeData::type_offset(k)) - in_bytes(ParametersTypeData::type_offset(0)),
+                                            profiled_k, arg, mdp, not_null, sig_stream.next_klass());
+          // If the profile is known statically set it once for all and do not emit any code
+          if (exact != NULL) {
+            md->set_parameter_type(k, exact);
+          }
+          k++;
+          if (k >= parameters_type_data->number_of_parameters()) {
+#ifdef ASSERT
+            int extra = 0;
+            if (MethodData::profile_arguments() && TypeProfileParmsLimit != -1 &&
+                x->nb_profiled_args() >= TypeProfileParmsLimit &&
+                x->recv() != NULL && Bytecodes::has_receiver(bc)) {
+              extra += 1;
+            }
+            assert(i == x->nb_profiled_args() - extra || (TypeProfileParmsLimit != -1 && TypeProfileArgsLimit > TypeProfileParmsLimit), "unused parameters?");
+#endif
+            break;
+          }
+          arg = x->profiled_arg_at(i);
+          not_null = !x->arg_needs_null_check(i);
+          i++;
+        }
+      }
     }
   }
 }
@@ -3124,6 +3224,11 @@ void LIRGenerator::do_ProfileCall(ProfileCall* x) {
 
   if (x->nb_profiled_args() > 0) {
     profile_arguments(x);
+  }
+
+  // profile parameters on inlined method entry including receiver
+  if (x->recv() != NULL || x->nb_profiled_args() > 0) {
+    profile_parameters_at_call(x);
   }
 
   if (x->recv() != NULL) {

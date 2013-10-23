@@ -1102,6 +1102,10 @@ void Parse::do_method_entry() {
     _synch_lock = shared_lock(lock_obj);
   }
 
+  // Feed profiling data for parameters to the type system so it can
+  // propagate it as speculative types
+  record_profiled_parameters_for_speculation();
+
   if (depth() == 1) {
     increment_and_test_invocation_counter(Tier2CompileThreshold);
   }

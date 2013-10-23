@@ -63,7 +63,8 @@ void trace_type_profile(Compile* C, ciMethod *method, int depth, int bci, ciMeth
 
 CallGenerator* Compile::call_generator(ciMethod* callee, int vtable_index, bool call_does_dispatch,
                                        JVMState* jvms, bool allow_inline,
-                                       float prof_factor, bool allow_intrinsics, bool delayed_forbidden) {
+                                       float prof_factor, ciKlass* speculative_receiver_type,
+                                       bool allow_intrinsics, bool delayed_forbidden) {
   ciMethod*       caller   = jvms->method();
   int             bci      = jvms->bci();
   Bytecodes::Code bytecode = caller->java_code_at_bci(bci);
@@ -117,7 +118,7 @@ CallGenerator* Compile::call_generator(ciMethod* callee, int vtable_index, bool 
       if (cg->is_predicted()) {
         // Code without intrinsic but, hopefully, inlined.
         CallGenerator* inline_cg = this->call_generator(callee,
-              vtable_index, call_does_dispatch, jvms, allow_inline, prof_factor, false);
+              vtable_index, call_does_dispatch, jvms, allow_inline, prof_factor, speculative_receiver_type, false);
         if (inline_cg != NULL) {
           cg = CallGenerator::for_predicted_intrinsic(cg, inline_cg);
         }
@@ -212,8 +213,24 @@ CallGenerator* Compile::call_generator(ciMethod* callee, int vtable_index, bool 
       // The major receiver's count >= TypeProfileMajorReceiverPercent of site_count.
       bool have_major_receiver = (100.*profile.receiver_prob(0) >= (float)TypeProfileMajorReceiverPercent);
       ciMethod* receiver_method = NULL;
-      if (have_major_receiver || profile.morphism() == 1 ||
-          (profile.morphism() == 2 && UseBimorphicInlining)) {
+
+      int morphism = profile.morphism();
+      if (speculative_receiver_type != NULL) {
+        // We have a speculative type, we should be able to resolve
+        // the call. We do that before looking at the profiling at
+        // this invoke because it may lead to bimorphic inlining which
+        // a speculative type should help us avoid.
+        receiver_method = callee->resolve_invoke(jvms->method()->holder(),
+                                                 speculative_receiver_type);
+        if (receiver_method == NULL) {
+          speculative_receiver_type = NULL;
+        } else {
+          morphism = 1;
+        }
+      }
+      if (receiver_method == NULL &&
+          (have_major_receiver || morphism == 1 ||
+           (morphism == 2 && UseBimorphicInlining))) {
         // receiver_method = profile.method();
         // Profiles do not suggest methods now.  Look it up in the major receiver.
         receiver_method = callee->resolve_invoke(jvms->method()->holder(),
@@ -227,7 +244,7 @@ CallGenerator* Compile::call_generator(ciMethod* callee, int vtable_index, bool 
           // Look up second receiver.
           CallGenerator* next_hit_cg = NULL;
           ciMethod* next_receiver_method = NULL;
-          if (profile.morphism() == 2 && UseBimorphicInlining) {
+          if (morphism == 2 && UseBimorphicInlining) {
             next_receiver_method = callee->resolve_invoke(jvms->method()->holder(),
                                                                profile.receiver(1));
             if (next_receiver_method != NULL) {
@@ -242,11 +259,10 @@ CallGenerator* Compile::call_generator(ciMethod* callee, int vtable_index, bool 
             }
           }
           CallGenerator* miss_cg;
-          Deoptimization::DeoptReason reason = (profile.morphism() == 2) ?
+          Deoptimization::DeoptReason reason = morphism == 2 ?
                                     Deoptimization::Reason_bimorphic :
                                     Deoptimization::Reason_class_check;
-          if (( profile.morphism() == 1 ||
-               (profile.morphism() == 2 && next_hit_cg != NULL) ) &&
+          if ((morphism == 1 || (morphism == 2 && next_hit_cg != NULL)) &&
               !too_many_traps(jvms->method(), jvms->bci(), reason)
              ) {
             // Generate uncommon trap for class check failure path
@@ -260,6 +276,7 @@ CallGenerator* Compile::call_generator(ciMethod* callee, int vtable_index, bool 
           }
           if (miss_cg != NULL) {
             if (next_hit_cg != NULL) {
+              assert(speculative_receiver_type == NULL, "shouldn't end up here if we used speculation");
               trace_type_profile(C, jvms->method(), jvms->depth() - 1, jvms->bci(), next_receiver_method, profile.receiver(1), site_count, profile.receiver_count(1));
               // We don't need to record dependency on a receiver here and below.
               // Whenever we inline, the dependency is added by Parse::Parse().
@@ -267,7 +284,9 @@ CallGenerator* Compile::call_generator(ciMethod* callee, int vtable_index, bool 
             }
             if (miss_cg != NULL) {
               trace_type_profile(C, jvms->method(), jvms->depth() - 1, jvms->bci(), receiver_method, profile.receiver(0), site_count, receiver_count);
-              CallGenerator* cg = CallGenerator::for_predicted_call(profile.receiver(0), miss_cg, hit_cg, profile.receiver_prob(0));
+              ciKlass* k = speculative_receiver_type != NULL ? speculative_receiver_type : profile.receiver(0);
+              float hit_prob = speculative_receiver_type != NULL ? 1.0 : profile.receiver_prob(0);
+              CallGenerator* cg = CallGenerator::for_predicted_call(k, miss_cg, hit_cg, hit_prob);
               if (cg != NULL)  return cg;
             }
           }
@@ -446,13 +465,16 @@ void Parse::do_call() {
   int       vtable_index       = Method::invalid_vtable_index;
   bool      call_does_dispatch = false;
 
+  // Speculative type of the receiver if any
+  ciKlass* speculative_receiver_type = NULL;
   if (is_virtual_or_interface) {
-    Node*             receiver_node = stack(sp() - nargs);
+    Node* receiver_node             = stack(sp() - nargs);
     const TypeOopPtr* receiver_type = _gvn.type(receiver_node)->isa_oopptr();
     // call_does_dispatch and vtable_index are out-parameters.  They might be changed.
     callee = C->optimize_virtual_call(method(), bci(), klass, orig_callee, receiver_type,
                                       is_virtual,
                                       call_does_dispatch, vtable_index);  // out-parameters
+    speculative_receiver_type = receiver_type != NULL ? receiver_type->speculative_type() : NULL;
   }
 
   // Note:  It's OK to try to inline a virtual call.
@@ -468,7 +490,7 @@ void Parse::do_call() {
   // Decide call tactic.
   // This call checks with CHA, the interpreter profile, intrinsics table, etc.
   // It decides whether inlining is desirable or not.
-  CallGenerator* cg = C->call_generator(callee, vtable_index, call_does_dispatch, jvms, try_inline, prof_factor());
+  CallGenerator* cg = C->call_generator(callee, vtable_index, call_does_dispatch, jvms, try_inline, prof_factor(), speculative_receiver_type);
 
   // NOTE:  Don't use orig_callee and callee after this point!  Use cg->method() instead.
   orig_callee = callee = NULL;
@@ -476,6 +498,10 @@ void Parse::do_call() {
   // ---------------------
   // Round double arguments before call
   round_double_arguments(cg->method());
+
+  // Feed profiling data for arguments to the type system so it can
+  // propagate it as speculative types
+  record_profiled_arguments_for_speculation(cg->method(), bc());
 
 #ifndef PRODUCT
   // bump global counters for calls
@@ -490,6 +516,13 @@ void Parse::do_call() {
 
   // save across call, for a subsequent cast_not_null.
   Node* receiver = has_receiver ? argument(0) : NULL;
+
+  // The extra CheckCastPP for speculative types mess with PhaseStringOpts
+  if (receiver != NULL && !call_does_dispatch && !cg->is_string_late_inline()) {
+    // Feed profiling data for a single receiver to the type system so
+    // it can propagate it as a speculative type
+    receiver = record_profiled_receiver_for_speculation(receiver);
+  }
 
   // Bump method data counters (We profile *before* the call is made
   // because exceptions don't return to the call site.)
@@ -508,7 +541,7 @@ void Parse::do_call() {
     // the call site, perhaps because it did not match a pattern the
     // intrinsic was expecting to optimize. Should always be possible to
     // get a normal java call that may inline in that case
-    cg = C->call_generator(cg->method(), vtable_index, call_does_dispatch, jvms, try_inline, prof_factor(), /* allow_intrinsics= */ false);
+    cg = C->call_generator(cg->method(), vtable_index, call_does_dispatch, jvms, try_inline, prof_factor(), speculative_receiver_type, /* allow_intrinsics= */ false);
     if ((new_jvms = cg->generate(jvms, this)) == NULL) {
       guarantee(failing(), "call failed to generate:  calls should work");
       return;
@@ -606,6 +639,16 @@ void Parse::do_call() {
       set_bci(iter().next_bci());
       null_assert(peek());
       set_bci(iter().cur_bci()); // put it back
+    }
+    BasicType ct = ctype->basic_type();
+    if (ct == T_OBJECT || ct == T_ARRAY) {
+      ciKlass* better_type = method()->return_profiled_type(bci());
+      if (UseTypeSpeculation && better_type != NULL) {
+        // If profiling reports a single type for the return value,
+        // feed it to the type system so it can propagate it as a
+        // speculative type
+        record_profile_for_speculation(stack(sp()-1), better_type);
+      }
     }
   }
 
