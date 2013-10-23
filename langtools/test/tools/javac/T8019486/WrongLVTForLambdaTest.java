@@ -61,8 +61,6 @@ public class WrongLVTForLambdaTest {
         {9,           0},       //number -> number / 1
     };
 
-    static final String methodToLookFor = "lambda$0";
-
     public static void main(String[] args) throws Exception {
         new WrongLVTForLambdaTest().run();
     }
@@ -70,7 +68,7 @@ public class WrongLVTForLambdaTest {
     void run() throws Exception {
         compileTestClass();
         checkClassFile(new File(Paths.get(System.getProperty("user.dir"),
-                "Foo.class").toUri()), methodToLookFor);
+                "Foo.class").toUri()));
     }
 
     void compileTestClass() throws Exception {
@@ -79,12 +77,12 @@ public class WrongLVTForLambdaTest {
         ToolBox.javac(javacSuccessArgs);
     }
 
-    void checkClassFile(final File cfile, String methodToFind) throws Exception {
+    void checkClassFile(final File cfile) throws Exception {
         ClassFile classFile = ClassFile.read(cfile);
-        boolean methodFound = false;
+        int methodsFound = 0;
         for (Method method : classFile.methods) {
-            if (method.getName(classFile.constant_pool).equals(methodToFind)) {
-                methodFound = true;
+            if (method.getName(classFile.constant_pool).startsWith("lambda$")) {
+                ++methodsFound;
                 Code_attribute code = (Code_attribute) method.attributes.get("Code");
                 LineNumberTable_attribute lnt =
                         (LineNumberTable_attribute) code.attributes.get("LineNumberTable");
@@ -101,7 +99,7 @@ public class WrongLVTForLambdaTest {
                 }
             }
         }
-        Assert.check(methodFound, "The seek method was not found");
+        Assert.check(methodsFound == 1, "Expected to find one lambda method, found " + methodsFound);
     }
 
     void error(String msg) {
