@@ -25,7 +25,7 @@
  * @test
  * @bug 8022585
  * @summary VM crashes when ran with -XX:+PrintInlining
- * @run main/othervm -Xcomp -XX:+PrintInlining PrintInlining
+ * @run main/othervm -Xcomp -XX:+UnlockDiagnosticVMOptions -XX:+PrintInlining PrintInlining
  *
  */
 
