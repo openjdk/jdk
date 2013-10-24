@@ -1957,12 +1957,6 @@ bool Arguments::check_gc_consistency() {
                 "please refer to the release notes for the combinations "
                 "allowed\n");
     status = false;
-  } else if (ReservedCodeCacheSize > 2*G) {
-    // Code cache size larger than MAXINT is not supported.
-    jio_fprintf(defaultStream::error_stream(),
-                "Invalid ReservedCodeCacheSize=%dM. Must be at most %uM.\n", ReservedCodeCacheSize/M,
-                (2*G)/M);
-    status = false;
   }
   return status;
 }
@@ -3729,6 +3723,10 @@ jint Arguments::apply_ergo() {
     // Doing the replace in parent maps helps speculation
     FLAG_SET_DEFAULT(ReplaceInParentMaps, true);
   }
+#ifndef X86
+  // Only on x86 for now
+  FLAG_SET_DEFAULT(TypeProfileLevel, 0);
+#endif
 #endif
 
   if (PrintAssembly && FLAG_IS_DEFAULT(DebugNonSafepoints)) {

@@ -203,8 +203,15 @@ class LibraryCallKit : public GraphKit {
   bool inline_math_native(vmIntrinsics::ID id);
   bool inline_trig(vmIntrinsics::ID id);
   bool inline_math(vmIntrinsics::ID id);
-  bool inline_math_mathExact(Node* math);
-  bool inline_math_addExact();
+  void inline_math_mathExact(Node* math);
+  bool inline_math_addExactI(bool is_increment);
+  bool inline_math_addExactL(bool is_increment);
+  bool inline_math_multiplyExactI();
+  bool inline_math_multiplyExactL();
+  bool inline_math_negateExactI();
+  bool inline_math_negateExactL();
+  bool inline_math_subtractExactI(bool is_decrement);
+  bool inline_math_subtractExactL(bool is_decrement);
   bool inline_exp();
   bool inline_pow();
   void finish_pow_exp(Node* result, Node* x, Node* y, const TypeFunc* call_type, address funcAddr, const char* funcName);
@@ -507,13 +514,33 @@ CallGenerator* Compile::make_vm_intrinsic(ciMethod* m, bool is_virtual) {
     if (!UseCRC32Intrinsics) return NULL;
     break;
 
-  case vmIntrinsics::_addExact:
-    if (!Matcher::match_rule_supported(Op_AddExactI)) {
-      return NULL;
-    }
-    if (!UseMathExactIntrinsics) {
-      return NULL;
-    }
+  case vmIntrinsics::_incrementExactI:
+  case vmIntrinsics::_addExactI:
+    if (!Matcher::match_rule_supported(Op_AddExactI) || !UseMathExactIntrinsics) return NULL;
+    break;
+  case vmIntrinsics::_incrementExactL:
+  case vmIntrinsics::_addExactL:
+    if (!Matcher::match_rule_supported(Op_AddExactL) || !UseMathExactIntrinsics) return NULL;
+    break;
+  case vmIntrinsics::_decrementExactI:
+  case vmIntrinsics::_subtractExactI:
+    if (!Matcher::match_rule_supported(Op_SubExactI) || !UseMathExactIntrinsics) return NULL;
+    break;
+  case vmIntrinsics::_decrementExactL:
+  case vmIntrinsics::_subtractExactL:
+    if (!Matcher::match_rule_supported(Op_SubExactL) || !UseMathExactIntrinsics) return NULL;
+    break;
+  case vmIntrinsics::_negateExactI:
+    if (!Matcher::match_rule_supported(Op_NegExactI) || !UseMathExactIntrinsics) return NULL;
+    break;
+  case vmIntrinsics::_negateExactL:
+    if (!Matcher::match_rule_supported(Op_NegExactL) || !UseMathExactIntrinsics) return NULL;
+    break;
+  case vmIntrinsics::_multiplyExactI:
+    if (!Matcher::match_rule_supported(Op_MulExactI) || !UseMathExactIntrinsics) return NULL;
+    break;
+  case vmIntrinsics::_multiplyExactL:
+    if (!Matcher::match_rule_supported(Op_MulExactL) || !UseMathExactIntrinsics) return NULL;
     break;
 
  default:
@@ -686,7 +713,18 @@ bool LibraryCallKit::try_to_inline() {
   case vmIntrinsics::_min:
   case vmIntrinsics::_max:                      return inline_min_max(intrinsic_id());
 
-  case vmIntrinsics::_addExact:                 return inline_math_addExact();
+  case vmIntrinsics::_addExactI:                return inline_math_addExactI(false /* add */);
+  case vmIntrinsics::_addExactL:                return inline_math_addExactL(false /* add */);
+  case vmIntrinsics::_decrementExactI:          return inline_math_subtractExactI(true /* decrement */);
+  case vmIntrinsics::_decrementExactL:          return inline_math_subtractExactL(true /* decrement */);
+  case vmIntrinsics::_incrementExactI:          return inline_math_addExactI(true /* increment */);
+  case vmIntrinsics::_incrementExactL:          return inline_math_addExactL(true /* increment */);
+  case vmIntrinsics::_multiplyExactI:           return inline_math_multiplyExactI();
+  case vmIntrinsics::_multiplyExactL:           return inline_math_multiplyExactL();
+  case vmIntrinsics::_negateExactI:             return inline_math_negateExactI();
+  case vmIntrinsics::_negateExactL:             return inline_math_negateExactL();
+  case vmIntrinsics::_subtractExactI:           return inline_math_subtractExactI(false /* subtract */);
+  case vmIntrinsics::_subtractExactL:           return inline_math_subtractExactL(false /* subtract */);
 
   case vmIntrinsics::_arraycopy:                return inline_arraycopy();
 
@@ -1931,7 +1969,14 @@ bool LibraryCallKit::inline_min_max(vmIntrinsics::ID id) {
   return true;
 }
 
-bool LibraryCallKit::inline_math_mathExact(Node* math) {
+void LibraryCallKit::inline_math_mathExact(Node* math) {
+  // If we didn't get the expected opcode it means we have optimized
+  // the node to something else and don't need the exception edge.
+  if (!math->is_MathExact()) {
+    set_result(math);
+    return;
+  }
+
   Node* result = _gvn.transform( new(C) ProjNode(math, MathExactNode::result_proj_node));
   Node* flags = _gvn.transform( new(C) FlagsProjNode(math, MathExactNode::flags_proj_node));
 
@@ -1954,19 +1999,106 @@ bool LibraryCallKit::inline_math_mathExact(Node* math) {
 
   set_control(fast_path);
   set_result(result);
+}
+
+bool LibraryCallKit::inline_math_addExactI(bool is_increment) {
+  Node* arg1 = argument(0);
+  Node* arg2 = NULL;
+
+  if (is_increment) {
+      arg2 = intcon(1);
+  } else {
+      arg2 = argument(1);
+  }
+
+  Node* add = _gvn.transform( new(C) AddExactINode(NULL, arg1, arg2) );
+  inline_math_mathExact(add);
   return true;
 }
 
-bool LibraryCallKit::inline_math_addExact() {
+bool LibraryCallKit::inline_math_addExactL(bool is_increment) {
+  Node* arg1 = argument(0); // type long
+  // argument(1) == TOP
+  Node* arg2 = NULL;
+
+  if (is_increment) {
+    arg2 = longcon(1);
+  } else {
+    arg2 = argument(2); // type long
+    // argument(3) == TOP
+  }
+
+  Node* add = _gvn.transform(new(C) AddExactLNode(NULL, arg1, arg2));
+  inline_math_mathExact(add);
+  return true;
+}
+
+bool LibraryCallKit::inline_math_subtractExactI(bool is_decrement) {
+  Node* arg1 = argument(0);
+  Node* arg2 = NULL;
+
+  if (is_decrement) {
+    arg2 = intcon(1);
+  } else {
+    arg2 = argument(1);
+  }
+
+  Node* sub = _gvn.transform(new(C) SubExactINode(NULL, arg1, arg2));
+  inline_math_mathExact(sub);
+  return true;
+}
+
+bool LibraryCallKit::inline_math_subtractExactL(bool is_decrement) {
+  Node* arg1 = argument(0); // type long
+  // argument(1) == TOP
+  Node* arg2 = NULL;
+
+  if (is_decrement) {
+    arg2 = longcon(1);
+  } else {
+    Node* arg2 = argument(2); // type long
+    // argument(3) == TOP
+  }
+
+  Node* sub = _gvn.transform(new(C) SubExactLNode(NULL, arg1, arg2));
+  inline_math_mathExact(sub);
+  return true;
+}
+
+bool LibraryCallKit::inline_math_negateExactI() {
+  Node* arg1 = argument(0);
+
+  Node* neg = _gvn.transform(new(C) NegExactINode(NULL, arg1));
+  inline_math_mathExact(neg);
+  return true;
+}
+
+bool LibraryCallKit::inline_math_negateExactL() {
+  Node* arg1 = argument(0);
+  // argument(1) == TOP
+
+  Node* neg = _gvn.transform(new(C) NegExactLNode(NULL, arg1));
+  inline_math_mathExact(neg);
+  return true;
+}
+
+bool LibraryCallKit::inline_math_multiplyExactI() {
   Node* arg1 = argument(0);
   Node* arg2 = argument(1);
 
-  Node* add = _gvn.transform( new(C) AddExactINode(NULL, arg1, arg2) );
-  if (add->Opcode() == Op_AddExactI) {
-    return inline_math_mathExact(add);
-  } else {
-    set_result(add);
-  }
+  Node* mul = _gvn.transform(new(C) MulExactINode(NULL, arg1, arg2));
+  inline_math_mathExact(mul);
+  return true;
+}
+
+bool LibraryCallKit::inline_math_multiplyExactL() {
+  Node* arg1 = argument(0);
+  // argument(1) == TOP
+  Node* arg2 = argument(2);
+  // argument(3) == TOP
+
+  Node* mul = _gvn.transform(new(C) MulExactLNode(NULL, arg1, arg2));
+  inline_math_mathExact(mul);
   return true;
 }
 
