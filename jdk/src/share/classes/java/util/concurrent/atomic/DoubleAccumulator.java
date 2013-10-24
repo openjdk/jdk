@@ -224,18 +224,71 @@ public class DoubleAccumulator extends Striped64 implements Serializable {
         return (float)get();
     }
 
-    private void writeObject(java.io.ObjectOutputStream s)
-        throws java.io.IOException {
-        s.defaultWriteObject();
-        s.writeDouble(get());
+    /**
+     * Serialization proxy, used to avoid reference to the non-public
+     * Striped64 superclass in serialized forms.
+     * @serial include
+     */
+    private static class SerializationProxy implements Serializable {
+        private static final long serialVersionUID = 7249069246863182397L;
+
+        /**
+         * The current value returned by get().
+         * @serial
+         */
+        private final double value;
+        /**
+         * The function used for updates.
+         * @serial
+         */
+        private final DoubleBinaryOperator function;
+        /**
+         * The identity value
+         * @serial
+         */
+        private final long identity;
+
+        SerializationProxy(DoubleAccumulator a) {
+            function = a.function;
+            identity = a.identity;
+            value = a.get();
+        }
+
+        /**
+         * Returns a {@code DoubleAccumulator} object with initial state
+         * held by this proxy.
+         *
+         * @return a {@code DoubleAccumulator} object with initial state
+         * held by this proxy.
+         */
+        private Object readResolve() {
+            double d = Double.longBitsToDouble(identity);
+            DoubleAccumulator a = new DoubleAccumulator(function, d);
+            a.base = Double.doubleToRawLongBits(value);
+            return a;
+        }
     }
 
+    /**
+     * Returns a
+     * <a href="../../../../serialized-form.html#java.util.concurrent.atomic.DoubleAccumulator.SerializationProxy">
+     * SerializationProxy</a>
+     * representing the state of this instance.
+     *
+     * @return a {@link SerializationProxy}
+     * representing the state of this instance
+     */
+    private Object writeReplace() {
+        return new SerializationProxy(this);
+    }
+
+    /**
+     * @param s the stream
+     * @throws java.io.InvalidObjectException always
+     */
     private void readObject(java.io.ObjectInputStream s)
-        throws java.io.IOException, ClassNotFoundException {
-        s.defaultReadObject();
-        cellsBusy = 0;
-        cells = null;
-        base = Double.doubleToRawLongBits(s.readDouble());
+        throws java.io.InvalidObjectException {
+        throw new java.io.InvalidObjectException("Proxy required");
     }
 
 }
