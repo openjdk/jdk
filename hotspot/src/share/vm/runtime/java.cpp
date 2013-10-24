@@ -193,6 +193,11 @@ void print_method_profiling_data() {
       m->print_invocation_count();
       tty->print_cr("  mdo size: %d bytes", m->method_data()->size_in_bytes());
       tty->cr();
+      // Dump data on parameters if any
+      if (m->method_data() != NULL && m->method_data()->parameters_type_data() != NULL) {
+        tty->fill_to(2);
+        m->method_data()->parameters_type_data()->print_data_on(tty);
+      }
       m->print_codes();
       total_size += m->method_data()->size_in_bytes();
     }
