@@ -498,3 +498,21 @@ jdk.certpath.disabledAlgorithms=MD2, RSA keySize < 1024
 # Example:
 #   jdk.tls.disabledAlgorithms=MD5, SHA1, DSA, RSA keySize < 2048
 
+
+#
+# Default ephemeral port ranges (operating system specific)
+# used by java.net.SocketPermission to interpret the meaning of the special
+# port value zero, as in the following example:
+#
+#        SocketPermission("localhost:0" , "listen");
+#
+# These can be overridden by the system properties:
+#
+#       jdk.net.ephemeralPortRange.low and
+#       jdk.net.ephemeralPortRange.high
+#
+# respectively.
+#
+network.ephemeralPortRange.low=49152
+network.ephemeralPortRange.high=65535
+
