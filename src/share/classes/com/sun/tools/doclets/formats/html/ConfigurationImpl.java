@@ -284,7 +284,7 @@ public class ConfigurationImpl extends Configuration {
         setTopFile(root);
 
         if (root instanceof RootDocImpl) {
-            ((RootDocImpl) root).initDocLint(doclintOpts);
+            ((RootDocImpl) root).initDocLint(doclintOpts, tagletManager.getCustomTagNames());
         }
     }
 
