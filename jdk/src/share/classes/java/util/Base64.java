@@ -127,7 +127,7 @@ public class Base64 {
      *          character of "The Base64 Alphabet" as specified in Table 1 of
      *          RFC 2045.
      */
-    public static Encoder getEncoder(int lineLength, byte[] lineSeparator) {
+    public static Encoder getMimeEncoder(int lineLength, byte[] lineSeparator) {
          Objects.requireNonNull(lineSeparator);
          int[] base64 = Decoder.fromBase64;
          for (byte b : lineSeparator) {
@@ -619,11 +619,20 @@ public class Base64 {
      * required. So if the final unit of the encoded byte data only has
      * two or three Base64 characters (without the corresponding padding
      * character(s) padded), they are decoded as if followed by padding
-     * character(s). If there is padding character present in the
-     * final unit, the correct number of padding character(s) must be
-     * present, otherwise {@code IllegalArgumentException} (
-     * {@code IOException} when reading from a Base64 stream) is thrown
-     * during decoding.
+     * character(s).
+     * <p>
+     * For decoders that use the <a href="#basic">Basic</a> and
+     * <a href="#url">URL and Filename safe</a> type base64 scheme, and
+     * if there is padding character present in the final unit, the
+     * correct number of padding character(s) must be present, otherwise
+     * {@code IllegalArgumentException} ({@code IOException} when reading
+     * from a Base64 stream) is thrown during decoding.
+     * <p>
+     * Decoders that use the <a href="#mime">MIME</a> type base64 scheme
+     * are more lenient when decoding the padding character(s). If the
+     * padding character(s) is incorrectly encoded, the first padding
+     * character encountered is interpreted as the end of the encoded byte
+     * data, the decoding operation will then end and return normally.
      *
      * <p> Instances of {@link Decoder} class are safe for use by
      * multiple concurrent threads.
@@ -902,8 +911,9 @@ public class Base64 {
                     int b = sa[sp++] & 0xff;
                     if ((b = base64[b]) < 0) {
                         if (b == -2) {   // padding byte
-                            if (shiftto == 6 && (sp == sl || sa[sp++] != '=') ||
-                                shiftto == 18) {
+                            if (!isMIME &&
+                                (shiftto == 6 && (sp == sl || sa[sp++] != '=') ||
+                                 shiftto == 18)) {
                                 throw new IllegalArgumentException(
                                      "Input byte array has wrong 4-byte ending unit");
                             }
@@ -942,11 +952,12 @@ public class Base64 {
                     throw new IllegalArgumentException(
                         "Last unit does not have enough valid bits");
                 }
-                while (sp < sl) {
-                    if (isMIME && base64[sa[sp++]] < 0)
-                        continue;
-                    throw new IllegalArgumentException(
-                        "Input byte array has incorrect ending byte at " + sp);
+                if (sp < sl) {
+                    if (isMIME)
+                        sp = sl;
+                    else
+                        throw new IllegalArgumentException(
+                            "Input byte array has incorrect ending byte at " + sp);
                 }
                 mark = sp;
                 return dp - dp0;
@@ -971,8 +982,9 @@ public class Base64 {
                     int b = src.get(sp++) & 0xff;
                     if ((b = base64[b]) < 0) {
                         if (b == -2) {  // padding byte
-                            if (shiftto == 6 && (sp == sl || src.get(sp++) != '=') ||
-                                shiftto == 18) {
+                            if (!isMIME &&
+                                (shiftto == 6 && (sp == sl || src.get(sp++) != '=') ||
+                                 shiftto == 18)) {
                                 throw new IllegalArgumentException(
                                      "Input byte array has wrong 4-byte ending unit");
                             }
@@ -1011,11 +1023,12 @@ public class Base64 {
                     throw new IllegalArgumentException(
                         "Last unit does not have enough valid bits");
                 }
-                while (sp < sl) {
-                    if (isMIME && base64[src.get(sp++)] < 0)
-                        continue;
-                    throw new IllegalArgumentException(
-                        "Input byte array has incorrect ending byte at " + sp);
+                if (sp < sl) {
+                    if (isMIME)
+                        sp = sl;
+                    else
+                        throw new IllegalArgumentException(
+                            "Input byte array has incorrect ending byte at " + sp);
                 }
                 mark = sp;
                 return dp - dp0;
@@ -1071,14 +1084,15 @@ public class Base64 {
             while (sp < sl) {
                 int b = src[sp++] & 0xff;
                 if ((b = base64[b]) < 0) {
-                    if (b == -2) {     // padding byte '='
-                        // xx=   shiftto==6&&sp==sl missing last =
-                        // xx=y  shiftto==6 last is not =
-                        // =     shiftto==18 unnecessary padding
-                        // x=    shiftto==12 be taken care later
-                        //       together with single x, invalid anyway
-                        if (shiftto == 6 && (sp == sl || src[sp++] != '=') ||
-                            shiftto == 18) {
+                    if (b == -2) {         // padding byte '='
+                        if (!isMIME  &&    // be lenient for rfc2045
+                            // =     shiftto==18 unnecessary padding
+                            // x=    shiftto==12 a dangling single x
+                            // x     to be handled together with non-padding case
+                            // xx=   shiftto==6&&sp==sl missing last =
+                            // xx=y  shiftto==6 last is not =
+                            (shiftto == 6 && (sp == sl || src[sp++] != '=') ||
+                            shiftto == 18)) {
                             throw new IllegalArgumentException(
                                 "Input byte array has wrong 4-byte ending unit");
                         }
@@ -1108,14 +1122,14 @@ public class Base64 {
                 dst[dp++] = (byte)(bits >> 16);
                 dst[dp++] = (byte)(bits >>  8);
             } else if (shiftto == 12) {
+                // dangling single "x", throw exception even in lenient mode,
+                // it's incorrectly encoded.
                 throw new IllegalArgumentException(
                     "Last unit does not have enough valid bits");
             }
             // anything left is invalid, if is not MIME.
-            // if MIME, ignore all non-base64 character
-            while (sp < sl) {
-                if (isMIME && base64[src[sp++]] < 0)
-                    continue;
+            // if MIME (lenient), just ignore all leftover
+            if (sp < sl && !isMIME) {
                 throw new IllegalArgumentException(
                     "Input byte array has incorrect ending byte at " + sp);
             }
@@ -1285,7 +1299,7 @@ public class Base64 {
                         if (nextin == 12)
                             throw new IOException("Base64 stream has one un-decoded dangling byte.");
                         // treat ending xx/xxx without padding character legal.
-                        // same logic as v == 'v' below
+                        // same logic as v == '=' below
                         b[off++] = (byte)(bits >> (16));
                         len--;
                         if (nextin == 0) {           // only one padding byte
@@ -1304,21 +1318,31 @@ public class Base64 {
                 }
                 if (v == '=') {                  // padding byte(s)
                     // =     shiftto==18 unnecessary padding
-                    // x=    shiftto==12 invalid unit
+                    // x=    shiftto==12 dangling x, invalid unit
                     // xx=   shiftto==6 && missing last '='
-                    // xx=y                or last is not '='
+                    // xx=y  or last is not '='
                     if (nextin == 18 || nextin == 12 ||
                         nextin == 6 && is.read() != '=') {
-                        throw new IOException("Illegal base64 ending sequence:" + nextin);
-                    }
-                    b[off++] = (byte)(bits >> (16));
-                    len--;
-                    if (nextin == 0) {           // only one padding byte
-                        if (len == 0) {          // no enough output space
-                            bits >>= 8;          // shift to lowest byte
-                            nextout = 0;
-                        } else {
-                            b[off++] = (byte) (bits >>  8);
+                        if (!isMIME || nextin == 12) {
+                            throw new IOException("Illegal base64 ending sequence:" + nextin);
+                        } else if (nextin != 18) {
+                            // lenient mode for mime
+                            // (1) handle the "unnecessary padding in "xxxx ="
+                            //     case as the eof (nextin == 18)
+                            // (2) decode "xx=" and "xx=y" normally
+                            b[off++] = (byte)(bits >> (16));
+                            len--;
+                        }
+                    } else {
+                        b[off++] = (byte)(bits >> (16));
+                        len--;
+                        if (nextin == 0) {           // only one padding byte
+                            if (len == 0) {          // no enough output space
+                                bits >>= 8;          // shift to lowest byte
+                                nextout = 0;
+                            } else {
+                                b[off++] = (byte) (bits >>  8);
+                            }
                         }
                     }
                     eof = true;

@@ -230,7 +230,7 @@ public class TestBase64Golden {
             46, -97, -35, -44, 127, -60, -39, -4, -112, 34, -57, 47, -14, 67,
             40, 18, 90, -59, 68, 112, 23, 121, -91, 94, 35, 49, 104, 17, 30,
             -80, -104, -3, -53, 27, 38, -72, -47, 113, -52, 18, 5, -126 };
-        Encoder encoder = Base64.getEncoder(49, new byte[] { 0x7e });
+        Encoder encoder = Base64.getMimeEncoder(49, new byte[] { 0x7e });
         byte[] encoded = encoder.encode(src);
         Decoder decoder = Base64.getMimeDecoder();
         byte[] decoded = decoder.decode(encoded);
