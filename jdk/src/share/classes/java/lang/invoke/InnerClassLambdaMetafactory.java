@@ -128,7 +128,6 @@ import static jdk.internal.org.objectweb.asm.Opcodes.*;
      *                       should implement.
      * @param additionalBridges Method types for additional signatures to be
      *                          bridged to the implementation method
-     * @throws ReflectiveOperationException
      * @throws LambdaConversionException If any of the meta-factory protocol
      * invariants are violated
      */
@@ -141,7 +140,7 @@ import static jdk.internal.org.objectweb.asm.Opcodes.*;
                                        boolean isSerializable,
                                        Class<?>[] markerInterfaces,
                                        MethodType[] additionalBridges)
-            throws ReflectiveOperationException, LambdaConversionException {
+            throws LambdaConversionException {
         super(caller, invokedType, samMethodName, samMethodType,
               implMethod, instantiatedMethodType,
               isSerializable, markerInterfaces, additionalBridges);
@@ -179,7 +178,7 @@ import static jdk.internal.org.objectweb.asm.Opcodes.*;
      * is not found
      */
     @Override
-    CallSite buildCallSite() throws ReflectiveOperationException, LambdaConversionException {
+    CallSite buildCallSite() throws LambdaConversionException {
         final Class<?> innerClass = spinInnerClass();
         if (invokedType.parameterCount() == 0) {
             final Constructor[] ctrs = AccessController.doPrivileged(
@@ -190,7 +189,7 @@ import static jdk.internal.org.objectweb.asm.Opcodes.*;
                 }
             });
             if (ctrs.length != 1) {
-                throw new ReflectiveOperationException("Expected one lambda constructor for "
+                throw new LambdaConversionException("Expected one lambda constructor for "
                         + innerClass.getCanonicalName() + ", got " + ctrs.length);
             }
             // The lambda implementing inner class constructor is private, set
@@ -202,13 +201,23 @@ import static jdk.internal.org.objectweb.asm.Opcodes.*;
                     return null;
                 }
             });
-            Object inst = ctrs[0].newInstance();
-            return new ConstantCallSite(MethodHandles.constant(samBase, inst));
+            try {
+                Object inst = ctrs[0].newInstance();
+                return new ConstantCallSite(MethodHandles.constant(samBase, inst));
+            }
+            catch (ReflectiveOperationException e) {
+                throw new LambdaConversionException("Exception instantiating lambda object", e);
+            }
         } else {
-            return new ConstantCallSite(
-                    MethodHandles.Lookup.IMPL_LOOKUP
-                         .findConstructor(innerClass, constructorType)
-                         .asType(constructorType.changeReturnType(samBase)));
+            try {
+                return new ConstantCallSite(
+                        MethodHandles.Lookup.IMPL_LOOKUP
+                             .findConstructor(innerClass, constructorType)
+                             .asType(constructorType.changeReturnType(samBase)));
+            }
+            catch (ReflectiveOperationException e) {
+                throw new LambdaConversionException("Exception finding constructor", e);
+            }
         }
     }
 
