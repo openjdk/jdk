@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2003, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -19,41 +19,28 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
- *
  */
 
-package sun.jvm.hotspot.tools;
-
-import java.io.PrintStream;
-import sun.jvm.hotspot.debugger.JVMDebugger;
-import sun.jvm.hotspot.runtime.*;
-
-public class FlagDumper extends Tool {
-
-    public FlagDumper() {
-        super();
+/*
+ * @test
+ * @bug 8024804
+ * @summary registerNatives() interface resolution should receive IAE
+ * @run main RegisterNatives
+ */
+public class RegisterNatives {
+  interface I { void registerNatives(); }
+  interface J extends I {}
+  static class B implements J { public void registerNatives() { System.out.println("B"); } }
+  public static void main(String... args) {
+    System.out.println("Regression test for JDK-8024804, crash when InterfaceMethodref resolves to Object.registerNatives\n");
+    J val = new B();
+    try {
+      val.registerNatives();
+    } catch (IllegalAccessError e) {
+      System.out.println("TEST PASSES - according to current JVM spec, IAE expected\n");
+      return;
     }
-
-    public FlagDumper(JVMDebugger d) {
-        super(d);
-    }
-
-   public void run() {
-      VM.Flag[] flags = VM.getVM().getCommandLineFlags();
-      PrintStream out = System.out;
-      if (flags == null) {
-         out.println("Command Flags info not available! (use 1.4.1_03 or later)");
-      } else {
-         for (int f = 0; f < flags.length; f++) {
-            out.print(flags[f].getName());
-            out.print(" = ");
-            out.println(flags[f].getValue());
-         }
-      }
-   }
-
-   public static void main(String[] args) {
-      FlagDumper fd = new FlagDumper();
-      fd.execute(args);
-   }
+    System.out.println("TEST FAILS - no IAE resulted\n");
+    System.exit(1);
+  }
 }

@@ -1464,6 +1464,7 @@ typedef BinaryTreeDictionary<Metablock, FreeList> MetablockTreeDictionary;
   declare_toplevel_type(CheckedExceptionElement)                          \
   declare_toplevel_type(LocalVariableTableElement)                        \
   declare_toplevel_type(ExceptionTableElement)                            \
+  declare_toplevel_type(MethodParametersElement)                          \
                                                                           \
   declare_toplevel_type(ClassLoaderData)                                  \
   declare_toplevel_type(ClassLoaderDataGraph)                             \
@@ -2336,6 +2337,7 @@ typedef BinaryTreeDictionary<Metablock, FreeList> MetablockTreeDictionary;
   declare_constant(ConstMethod::_has_localvariable_table)                 \
   declare_constant(ConstMethod::_has_exception_table)                     \
   declare_constant(ConstMethod::_has_generic_signature)                   \
+  declare_constant(ConstMethod::_has_method_parameters)                   \
   declare_constant(ConstMethod::_has_method_annotations)                  \
   declare_constant(ConstMethod::_has_parameter_annotations)               \
   declare_constant(ConstMethod::_has_default_annotations)                 \
