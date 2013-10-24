@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -255,7 +255,7 @@ public class DefaultMethodsTest extends TestHarness {
      * interface J { default int m() { return 88; } }
      * class C implements I, J {}
      *
-     * TEST: C c = new C(); c.m() throws AME
+     * TEST: C c = new C(); c.m() throws ICCE
      */
     public void testConflict() {
         // debugTest();
@@ -263,7 +263,7 @@ public class DefaultMethodsTest extends TestHarness {
         Interface J = new Interface("J", DefaultMethod.std("88"));
         Class C = new Class("C", I, J);
 
-        assertThrows(AbstractMethodError.class, C);
+        assertThrows(IncompatibleClassChangeError.class, C);
     }
 
     /**
@@ -271,14 +271,14 @@ public class DefaultMethodsTest extends TestHarness {
      * interface J { default int m() { return 88; } }
      * class C implements I, J {}
      *
-     * TEST: C c = new C(); c.m() throws AME
+     * TEST: C c = new C(); c.m() == 88
      */
     public void testAmbiguousReabstract() {
         Interface I = new Interface("I", AbstractMethod.std());
         Interface J = new Interface("J", DefaultMethod.std("88"));
         Class C = new Class("C", I, J);
 
-        assertThrows(AbstractMethodError.class, C);
+        assertInvokeVirtualEquals(88, C);
     }
 
     /**
@@ -555,8 +555,8 @@ public class DefaultMethodsTest extends TestHarness {
      * interface I extends J, K { int m() default { J.super.m(); } }
      * class C implements I {}
      *
-     * TEST: C c = new C(); c.m() throws AME
-     * TODO: add case for K k = new C(); k.m() throws AME
+     * TEST: C c = new C(); c.m() throws ICCE
+     * TODO: add case for K k = new C(); k.m() throws ICCE
      */
     public void testSuperConflict() {
         // debugTest();
@@ -571,7 +571,7 @@ public class DefaultMethodsTest extends TestHarness {
         I.addCompilationDependency(Jstub.findMethod(stdMethodName));
         Class C = new Class("C", I);
 
-        assertThrows(AbstractMethodError.class, C);
+        assertThrows(IncompatibleClassChangeError.class, C);
     }
 
     /**
@@ -579,8 +579,8 @@ public class DefaultMethodsTest extends TestHarness {
      * interface J extends I { default int m() { return 55; } }
      * class C implements I, J { public int m() { return I.super.m(); } }
      *
-     * TEST: C c = new C(); c.m() throws AME
-     * TODO: add case for J j = new C(); j.m() throws AME
+     * TEST: C c = new C(); c.m() == 99
+     * TODO: add case for J j = new C(); j.m() == ???
      */
     public void testSuperDisqual() {
         Interface I = new Interface("I", DefaultMethod.std("99"));
@@ -590,7 +590,7 @@ public class DefaultMethodsTest extends TestHarness {
                 AccessFlag.PUBLIC));
         C.addCompilationDependency(I.findMethod(stdMethodName));
 
-        assertThrows(AbstractMethodError.class, C);
+        assertInvokeVirtualEquals(99, C);
     }
 
     /**
@@ -646,7 +646,7 @@ public class DefaultMethodsTest extends TestHarness {
      *     public int m(String s) { return I.super.m(s); }
      * }
      *
-     * TEST: C c = new C(); c.m("string") throws AME
+     * TEST: C c = new C(); c.m("string") == 44
      */
     public void testSuperGenericDisqual() {
         MethodParameter t = new MethodParameter("T", "t");
@@ -661,7 +661,7 @@ public class DefaultMethodsTest extends TestHarness {
                 "return I.super.m(s);", AccessFlag.PUBLIC, s));
         C.addCompilationDependency(I.findMethod(stdMethodName));
 
-        assertThrows(AbstractMethodError.class, C,
+        assertInvokeVirtualEquals(44, C,
             new ConcreteMethod(
                 "int", stdMethodName, "return -1;", AccessFlag.PUBLIC, s),
             "-1", "\"string\"");
