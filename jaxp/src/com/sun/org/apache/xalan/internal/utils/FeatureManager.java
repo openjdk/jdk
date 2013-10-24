@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,27 +27,34 @@ package com.sun.org.apache.xalan.internal.utils;
 
 
 import com.sun.org.apache.xalan.internal.XalanConstants;
-import javax.xml.XMLConstants;
 
 /**
  * This class manages security related properties
  *
  */
-public final class XMLSecurityPropertyManager extends FeaturePropertyBase {
+public final class FeatureManager extends FeaturePropertyBase {
 
     /**
-     * Properties managed by the security property manager
+     * States of the settings of a property, in the order: default value, value
+     * set by FEATURE_SECURE_PROCESSING, jaxp.properties file, jaxp system
+     * properties, and jaxp api properties
      */
-    public static enum Property {
-        ACCESS_EXTERNAL_DTD(XMLConstants.ACCESS_EXTERNAL_DTD,
-                XalanConstants.EXTERNAL_ACCESS_DEFAULT),
-        ACCESS_EXTERNAL_STYLESHEET(XMLConstants.ACCESS_EXTERNAL_STYLESHEET,
-                XalanConstants.EXTERNAL_ACCESS_DEFAULT);
+    public static enum State {
+        //this order reflects the overriding order
+        DEFAULT, FSP, JAXPDOTPROPERTIES, SYSTEMPROPERTY, APIPROPERTY
+    }
+
+    /**
+     * Xalan Features
+     */
+    public static enum Feature {
+        ORACLE_ENABLE_EXTENSION_FUNCTION(XalanConstants.ORACLE_ENABLE_EXTENSION_FUNCTION,
+                "true");
 
         final String name;
         final String defaultValue;
 
-        Property(String name, String value) {
+        Feature(String name, String value) {
             this.name = name;
             this.defaultValue = value;
         }
@@ -61,17 +68,35 @@ public final class XMLSecurityPropertyManager extends FeaturePropertyBase {
         }
     }
 
-
     /**
      * Default constructor. Establishes default values
      */
-    public XMLSecurityPropertyManager() {
-        values = new String[Property.values().length];
-        for (Property property : Property.values()) {
-            values[property.ordinal()] = property.defaultValue();
+    public FeatureManager() {
+        values = new String[Feature.values().length];
+        for (Feature feature : Feature.values()) {
+            values[feature.ordinal()] = feature.defaultValue();
         }
         //read system properties or jaxp.properties
         readSystemProperties();
+    }
+
+
+    /**
+     * Check if the feature is enabled
+     * @param feature name of the feature
+     * @return true if enabled, false otherwise
+     */
+    public boolean isFeatureEnabled(Feature feature) {
+        return Boolean.parseBoolean(values[feature.ordinal()]);
+    }
+
+    /**
+     * Check if the feature is enabled
+     * @param propertyName name of the feature
+     * @return true if enabled, false otherwise
+     */
+    public boolean isFeatureEnabled(String propertyName) {
+        return Boolean.parseBoolean(values[getIndex(propertyName)]);
     }
 
     /**
@@ -80,10 +105,9 @@ public final class XMLSecurityPropertyManager extends FeaturePropertyBase {
      * @return the index of the property if found; return -1 if not
      */
     public int getIndex(String propertyName){
-        for (Property property : Property.values()) {
-            if (property.equalsName(propertyName)) {
-                //internally, ordinal is used as index
-                return property.ordinal();
+        for (Feature feature : Feature.values()) {
+            if (feature.equalsName(propertyName)) {
+                return feature.ordinal();
             }
         }
         return -1;
@@ -93,10 +117,8 @@ public final class XMLSecurityPropertyManager extends FeaturePropertyBase {
      * Read from system properties, or those in jaxp.properties
      */
     private void readSystemProperties() {
-        getSystemProperty(Property.ACCESS_EXTERNAL_DTD,
-                XalanConstants.SP_ACCESS_EXTERNAL_DTD);
-        getSystemProperty(Property.ACCESS_EXTERNAL_STYLESHEET,
-                XalanConstants.SP_ACCESS_EXTERNAL_STYLESHEET);
+        getSystemProperty(Feature.ORACLE_ENABLE_EXTENSION_FUNCTION,
+                XalanConstants.SP_ORACLE_ENABLE_EXTENSION_FUNCTION);
     }
 
 }
