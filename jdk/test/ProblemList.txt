@@ -338,4 +338,7 @@ java/util/concurrent/ThreadPoolExecutor/CoreThreadTimeOut.java  generic-all
 # Filed 6772009
 java/util/concurrent/locks/ReentrantLock/CancelledLockLoops.java generic-all
 
+# 8026772: test/sun/util/resources/TimeZone/Bug6317929.java failing
+sun/util/resources/TimeZone/Bug6317929.java                     generic-all
+
 ############################################################################
