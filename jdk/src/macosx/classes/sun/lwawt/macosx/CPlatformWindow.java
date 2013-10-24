@@ -230,7 +230,14 @@ public class CPlatformWindow extends CFRetainedResource implements PlatformWindo
         contentView.initialize(peer, responder);
 
         final long ownerPtr = owner != null ? owner.getNSWindowPtr() : 0L;
-        Rectangle bounds = _peer.constrainBounds(_target.getBounds());
+        Rectangle bounds;
+        if (!IS(DECORATED, styleBits)) {
+            // For undecorated frames the move/resize event does not come if the frame is centered on the screen
+            // so we need to set a stub location to force an initial move/resize. Real bounds would be set later.
+            bounds = new Rectangle(0, 0, 1, 1);
+        } else {
+            bounds = _peer.constrainBounds(_target.getBounds());
+        }
         final long nativeWindowPtr = nativeCreateNSWindow(contentView.getAWTView(),
                 ownerPtr, styleBits, bounds.x, bounds.y, bounds.width, bounds.height);
         setPtr(nativeWindowPtr);
