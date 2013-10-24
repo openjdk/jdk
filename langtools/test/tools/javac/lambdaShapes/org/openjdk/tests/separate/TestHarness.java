@@ -300,7 +300,7 @@ public class TestHarness {
             if (verboseLocal.get() == Boolean.TRUE) {
                 System.out.println(e.getCause());
             }
-            assertEquals(e.getCause().getClass(), exceptionType);
+            assertTrue(exceptionType.isAssignableFrom(e.getCause().getClass()));
         }
         compiler.cleanup();
     }
