@@ -51,6 +51,7 @@ public class ConstMethod extends VMObject {
   private static int HAS_GENERIC_SIGNATURE;
   private static int HAS_METHOD_ANNOTATIONS;
   private static int HAS_PARAMETER_ANNOTATIONS;
+  private static int HAS_METHOD_PARAMETERS;
   private static int HAS_DEFAULT_ANNOTATIONS;
   private static int HAS_TYPE_ANNOTATIONS;
 
@@ -70,6 +71,7 @@ public class ConstMethod extends VMObject {
     HAS_GENERIC_SIGNATURE     = db.lookupIntConstant("ConstMethod::_has_generic_signature").intValue();
     HAS_METHOD_ANNOTATIONS    = db.lookupIntConstant("ConstMethod::_has_method_annotations").intValue();
     HAS_PARAMETER_ANNOTATIONS = db.lookupIntConstant("ConstMethod::_has_parameter_annotations").intValue();
+    HAS_METHOD_PARAMETERS = db.lookupIntConstant("ConstMethod::_has_method_parameters").intValue();
     HAS_DEFAULT_ANNOTATIONS   = db.lookupIntConstant("ConstMethod::_has_default_annotations").intValue();
     HAS_TYPE_ANNOTATIONS      = db.lookupIntConstant("ConstMethod::_has_type_annotations").intValue();
 
@@ -84,6 +86,9 @@ public class ConstMethod extends VMObject {
 
     // start of byte code
     bytecodeOffset = type.getSize();
+
+    type                       = db.lookupType("MethodParametersElement");
+    methodParametersElementSize = type.getSize();
 
     type                       = db.lookupType("CheckedExceptionElement");
     checkedExceptionElementSize = type.getSize();
@@ -113,7 +118,7 @@ public class ConstMethod extends VMObject {
 
   // start of bytecode
   private static long bytecodeOffset;
-
+  private static long methodParametersElementSize;
   private static long checkedExceptionElementSize;
   private static long localVariableTableElementSize;
   private static long exceptionTableElementSize;
@@ -387,6 +392,10 @@ public class ConstMethod extends VMObject {
     return ret;
   }
 
+  private boolean hasMethodParameters() {
+    return (getFlags() & HAS_METHOD_PARAMETERS) != 0;
+  }
+
   private boolean hasGenericSignature() {
     return (getFlags() & HAS_GENERIC_SIGNATURE) != 0;
   }
@@ -442,9 +451,39 @@ public class ConstMethod extends VMObject {
     return offsetOfLastU2Element();
   }
 
-  private long offsetOfCheckedExceptionsLength() {
+  private long offsetOfMethodParametersLength() {
+    if (Assert.ASSERTS_ENABLED) {
+      Assert.that(hasMethodParameters(), "should only be called if table is present");
+    }
     return hasGenericSignature() ? offsetOfLastU2Element() - sizeofShort :
                                    offsetOfLastU2Element();
+  }
+
+  private int getMethodParametersLength() {
+      if (hasMethodParameters())
+          return (int) getAddress().getCIntegerAt(offsetOfMethodParametersLength(), 2, true);
+      else
+          return 0;
+  }
+
+  // Offset of start of checked exceptions
+  private long offsetOfMethodParameters() {
+    long offset = offsetOfMethodParametersLength();
+    long length = getMethodParametersLength();
+    if (Assert.ASSERTS_ENABLED) {
+      Assert.that(length > 0, "should only be called if method parameter information is present");
+    }
+    offset -= length * methodParametersElementSize;
+    return offset;
+  }
+
+  private long offsetOfCheckedExceptionsLength() {
+    if (hasMethodParameters())
+      return offsetOfMethodParameters() - sizeofShort;
+    else {
+      return hasGenericSignature() ? offsetOfLastU2Element() - sizeofShort :
+                                     offsetOfLastU2Element();
+    }
   }
 
   private int getCheckedExceptionsLength() {
@@ -496,6 +535,8 @@ public class ConstMethod extends VMObject {
       return offsetOfExceptionTable() - sizeofShort;
     } else if (hasCheckedExceptions()) {
       return offsetOfCheckedExceptions() - sizeofShort;
+    } else if (hasMethodParameters()) {
+      return offsetOfMethodParameters() - sizeofShort;
     } else {
       return hasGenericSignature() ? offsetOfLastU2Element() - sizeofShort :
                                      offsetOfLastU2Element();
@@ -526,6 +567,8 @@ public class ConstMethod extends VMObject {
     }
     if (hasCheckedExceptions()) {
       return offsetOfCheckedExceptions() - sizeofShort;
+    } else if (hasMethodParameters()) {
+      return offsetOfMethodParameters() - sizeofShort;
     } else {
       return hasGenericSignature() ? offsetOfLastU2Element() - sizeofShort :
                                      offsetOfLastU2Element();
