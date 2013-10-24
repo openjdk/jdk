@@ -32,8 +32,12 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
+
+import sun.misc.JavaLangAccess;
 
 public final class AnnotationSupport {
+    private static final JavaLangAccess LANG_ACCESS = sun.misc.SharedSecrets.getJavaLangAccess();
 
     /**
      * Finds and returns all annotations in {@code annotations} matching
@@ -51,17 +55,13 @@ public final class AnnotationSupport {
      *
      * @param annotations the {@code Map} in which to search for annotations
      * @param annoClass the type of annotation to search for
-     * @param includeNonInheritedContainees if false, the annoClass must be
-     *        inheritable for the containers to be searched
      *
      * @return an array of instances of {@code annoClass} or an empty
      *         array if none were found
      */
-    private static <A extends Annotation> A[] getDirectlyAndIndirectlyPresent(
+    public static <A extends Annotation> A[] getDirectlyAndIndirectlyPresent(
             Map<Class<? extends Annotation>, Annotation> annotations,
-            Class<A> annoClass,
-            boolean includeNonInheritedContainees) {
-
+            Class<A> annoClass) {
         List<A> result = new ArrayList<A>();
 
         @SuppressWarnings("unchecked")
@@ -69,36 +69,18 @@ public final class AnnotationSupport {
         if (direct != null)
             result.add(direct);
 
-        if (includeNonInheritedContainees ||
-                AnnotationType.getInstance(annoClass).isInherited()) {
-            A[] indirect = getIndirectlyPresent(annotations, annoClass);
+        A[] indirect = getIndirectlyPresent(annotations, annoClass);
+        if (indirect != null && indirect.length != 0) {
+            boolean indirectFirst = direct == null ||
+                                    containerBeforeContainee(annotations, annoClass);
 
-            if (indirect != null) {
-
-                boolean indirectFirst = direct == null ||
-                                        containerBeforeContainee(annotations, annoClass);
-
-                result.addAll((indirectFirst ? 0 : 1), Arrays.asList(indirect));
-            }
+            result.addAll((indirectFirst ? 0 : 1), Arrays.asList(indirect));
         }
 
         @SuppressWarnings("unchecked")
         A[] arr = (A[]) Array.newInstance(annoClass, result.size());
         return result.toArray(arr);
     }
-
-
-    /**
-     * Equivalent to calling {@code getDirectlyAndIndirectlyPresentAnnotations(
-     * annotations, annoClass, true)}.
-     */
-    public static <A extends Annotation> A[] getDirectlyAndIndirectlyPresent(
-            Map<Class<? extends Annotation>, Annotation> annotations,
-            Class<A> annoClass) {
-
-        return getDirectlyAndIndirectlyPresent(annotations, annoClass, true);
-    }
-
 
     /**
      * Finds and returns all annotations matching the given {@code annoClass}
@@ -166,22 +148,28 @@ public final class AnnotationSupport {
      * annotations in the relevant map.
      *
      * @param declaredAnnotations the declared annotations indexed by their types
-     * @param allAnnotations declared and inherited annotations indexed by their types
+     * @param decl the class declaration on which to search for annotations
      * @param annoClass the type of annotation to search for
      *
      * @return an array of instances of {@code annoClass} or an empty array if none were found.
      */
     public static <A extends Annotation> A[] getAssociatedAnnotations(
             Map<Class<? extends Annotation>, Annotation> declaredAnnotations,
-            Map<Class<? extends Annotation>, Annotation> allAnnotations,
+            Class<?> decl,
             Class<A> annoClass) {
+        Objects.requireNonNull(decl);
 
         // Search declared
         A[] result = getDirectlyAndIndirectlyPresent(declaredAnnotations, annoClass);
 
         // Search inherited
-        if (result.length == 0)
-            result = getDirectlyAndIndirectlyPresent(allAnnotations, annoClass, false);
+        if(AnnotationType.getInstance(annoClass).isInherited()) {
+            Class<?> superDecl = decl.getSuperclass();
+            while (result.length == 0 && superDecl != null) {
+                result = getDirectlyAndIndirectlyPresent(LANG_ACCESS.getDeclaredAnnotationMap(superDecl), annoClass);
+                superDecl = superDecl.getSuperclass();
+            }
+        }
 
         return result;
     }

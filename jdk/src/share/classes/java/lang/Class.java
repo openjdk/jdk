@@ -3316,7 +3316,7 @@ public final class Class<T> implements java.io.Serializable,
 
         AnnotationData annotationData = annotationData();
         return AnnotationSupport.getAssociatedAnnotations(annotationData.declaredAnnotations,
-                                                          annotationData.annotations,
+                                                          this,
                                                           annotationClass);
     }
 
@@ -3440,6 +3440,10 @@ public final class Class<T> implements java.io.Serializable,
 
     AnnotationType getAnnotationType() {
         return annotationType;
+    }
+
+    Map<Class<? extends Annotation>, Annotation> getDeclaredAnnotationMap() {
+        return annotationData().declaredAnnotations;
     }
 
     /* Backing store of user-defined values pertaining to this class.
