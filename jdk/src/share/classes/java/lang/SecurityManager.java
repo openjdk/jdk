@@ -1114,11 +1114,8 @@ class SecurityManager {
      * calling thread is not allowed to wait for a connection request on
      * the specified local port number.
      * <p>
-     * If port is not 0, this method calls
-     * <code>checkPermission</code> with the
+     * This method calls <code>checkPermission</code> with the
      * <code>SocketPermission("localhost:"+port,"listen")</code>.
-     * If port is zero, this method calls <code>checkPermission</code>
-     * with <code>SocketPermission("localhost:1024-","listen").</code>
      * <p>
      * If you override this method, then you should make a call to
      * <code>super.checkListen</code>
@@ -1131,12 +1128,8 @@ class SecurityManager {
      * @see        #checkPermission(java.security.Permission) checkPermission
      */
     public void checkListen(int port) {
-        if (port == 0) {
-            checkPermission(SecurityConstants.LOCAL_LISTEN_PERMISSION);
-        } else {
-            checkPermission(new SocketPermission("localhost:"+port,
-                SecurityConstants.SOCKET_LISTEN_ACTION));
-        }
+        checkPermission(new SocketPermission("localhost:"+port,
+            SecurityConstants.SOCKET_LISTEN_ACTION));
     }
 
     /**
