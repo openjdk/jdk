@@ -383,7 +383,7 @@ public abstract class Executable extends AccessibleObject
     private transient volatile Parameter[] parameters;
 
     private native Parameter[] getParameters0();
-    private native byte[] getTypeAnnotationBytes0();
+    native byte[] getTypeAnnotationBytes0();
 
     // Needed by reflectaccess
     byte[] getTypeAnnotationBytes() {
