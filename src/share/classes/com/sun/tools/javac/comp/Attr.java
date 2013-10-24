@@ -4096,8 +4096,9 @@ public class Attr extends JCTree.Visitor {
     }
 
     private static List<Attribute.TypeCompound> fromAnnotations(List<JCAnnotation> annotations) {
-        if (annotations.isEmpty())
+        if (annotations.isEmpty()) {
             return List.nil();
+        }
 
         ListBuffer<Attribute.TypeCompound> buf = new ListBuffer<>();
         for (JCAnnotation anno : annotations) {
@@ -4109,6 +4110,10 @@ public class Attr extends JCTree.Visitor {
                 // Any better solutions?
                 buf.append((Attribute.TypeCompound) anno.attribute);
             }
+            // Eventually we will want to throw an exception here, but
+            // we can't do that just yet, because it gets triggered
+            // when attempting to attach an annotation that isn't
+            // defined.
         }
         return buf.toList();
     }

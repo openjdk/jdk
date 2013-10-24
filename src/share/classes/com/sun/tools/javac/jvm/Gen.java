@@ -1652,9 +1652,10 @@ public class Gen extends JCTree.Visitor {
                                       startpc,  end, code.curCP(),
                                       catchType);
                         if (subCatch.type.isAnnotated()) {
-                            // All compounds share the same position, simply update the
-                            // first one.
-                            subCatch.type.getAnnotationMirrors().head.position.type_index = catchType;
+                            for (Attribute.TypeCompound tc :
+                                     subCatch.type.getAnnotationMirrors()) {
+                                tc.position.type_index = catchType;
+                            }
                         }
                     }
                     gaps = gaps.tail;
@@ -1668,9 +1669,10 @@ public class Gen extends JCTree.Visitor {
                                       startpc, endpc, code.curCP(),
                                       catchType);
                         if (subCatch.type.isAnnotated()) {
-                            // All compounds share the same position, simply update the
-                            // first one.
-                            subCatch.type.getAnnotationMirrors().head.position.type_index = catchType;
+                            for (Attribute.TypeCompound tc :
+                                     subCatch.type.getAnnotationMirrors()) {
+                                tc.position.type_index = catchType;
+                            }
                         }
                     }
                 }
