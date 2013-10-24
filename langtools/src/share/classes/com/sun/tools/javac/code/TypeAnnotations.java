@@ -370,9 +370,9 @@ public class TypeAnnotations {
             sym.appendUniqueTypeAttributes(typeAnnotations);
 
             if (sym.getKind() == ElementKind.PARAMETER ||
-                    sym.getKind() == ElementKind.LOCAL_VARIABLE ||
-                    sym.getKind() == ElementKind.RESOURCE_VARIABLE ||
-                    sym.getKind() == ElementKind.EXCEPTION_PARAMETER) {
+                sym.getKind() == ElementKind.LOCAL_VARIABLE ||
+                sym.getKind() == ElementKind.RESOURCE_VARIABLE ||
+                sym.getKind() == ElementKind.EXCEPTION_PARAMETER) {
                 // Make sure all type annotations from the symbol are also
                 // on the owner.
                 sym.owner.appendUniqueTypeAttributes(sym.getRawTypeAttributes());
@@ -1221,6 +1221,22 @@ public class TypeAnnotations {
             super.visitTypeParameter(tree);
         }
 
+        private void copyNewClassAnnotationsToOwner(JCNewClass tree) {
+            Symbol sym = tree.def.sym;
+            TypeAnnotationPosition pos = new TypeAnnotationPosition();
+            ListBuffer<Attribute.TypeCompound> newattrs =
+                new ListBuffer<Attribute.TypeCompound>();
+
+            for (Attribute.TypeCompound old : sym.getRawTypeAttributes()) {
+                newattrs.append(new Attribute.TypeCompound(old.type, old.values,
+                                                           pos));
+            }
+
+            pos.type = TargetType.NEW;
+            pos.pos = tree.pos;
+            sym.owner.appendUniqueTypeAttributes(newattrs.toList());
+        }
+
         @Override
         public void visitNewClass(JCNewClass tree) {
             if (tree.def != null &&
@@ -1239,7 +1255,7 @@ public class TypeAnnotations {
                 }
                 Type before = classdecl.sym.type;
                 separateAnnotationsKinds(classdecl, tree.clazz.type, classdecl.sym, pos);
-
+                copyNewClassAnnotationsToOwner(tree);
                 // classdecl.sym.type now contains an annotated type, which
                 // is not what we want there.
                 // TODO: should we put this type somewhere in the superclass/interface?
