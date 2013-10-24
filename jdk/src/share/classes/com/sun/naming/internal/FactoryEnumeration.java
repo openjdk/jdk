@@ -83,7 +83,6 @@ public final class FactoryEnumeration {
             try {
                 if (answer == null) {   // reload class if weak ref cleared
                     Class<?> cls = Class.forName(className, true, loader);
-                    VersionHelper12.checkPackageAccess(cls);
                     answer = cls;
                 }
                 // Instantiate Class to get factory

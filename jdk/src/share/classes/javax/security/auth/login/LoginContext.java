@@ -37,10 +37,8 @@ import javax.security.auth.AuthPermission;
 import javax.security.auth.callback.*;
 import java.security.AccessController;
 import java.security.AccessControlContext;
-import java.security.PrivilegedAction;
 import sun.security.util.PendingException;
 import sun.security.util.ResourcesMgr;
-import sun.reflect.misc.ReflectUtil;
 
 /**
  * <p> The {@code LoginContext} class describes the basic methods used
@@ -227,19 +225,6 @@ public class LoginContext {
     private static final sun.security.util.Debug debug =
         sun.security.util.Debug.getInstance("logincontext", "\t[LoginContext]");
 
-    // workaround to disable additional package access control with
-    // Thread Context Class Loader (TCCL).
-    private static final boolean noPackageAccessWithTCCL = "true".equals(
-        AccessController.doPrivileged(
-            new PrivilegedAction<String>() {
-                public String run() {
-                    return System.getProperty(
-                        "auth.login.untieAccessContextWithTCCL");
-                }
-            }
-        ));
-
-
     private void init(String name) throws LoginException {
 
         SecurityManager sm = System.getSecurityManager();
@@ -293,7 +278,15 @@ public class LoginContext {
         contextClassLoader = java.security.AccessController.doPrivileged
                 (new java.security.PrivilegedAction<ClassLoader>() {
                 public ClassLoader run() {
-                    return Thread.currentThread().getContextClassLoader();
+                    ClassLoader loader =
+                            Thread.currentThread().getContextClassLoader();
+                    if (loader == null) {
+                        // Don't use bootstrap class loader directly to ensure
+                        // proper package access control!
+                        loader = ClassLoader.getSystemClassLoader();
+                    }
+
+                    return loader;
                 }
         });
     }
@@ -713,17 +706,11 @@ public class LoginContext {
                     // instantiate the LoginModule
                     //
                     // Allow any object to be a LoginModule as long as it
-                    // conforms to the interface if no customized config or
-                    // noPackageAccessWithTCCL is true.
+                    // conforms to the interface.
                     Class<?> c = Class.forName(
                                 moduleStack[i].entry.getLoginModuleName(),
                                 true,
                                 contextClassLoader);
-                    // check package access for customized config
-                    if (!noPackageAccessWithTCCL && creatorAcc != null) {
-                        c.asSubclass(javax.security.auth.spi.LoginModule.class);
-                        checkPackageAccess(c, creatorAcc);
-                    }
 
                     Constructor<?> constructor = c.getConstructor(PARAMS);
                     Object[] args = { };
@@ -923,35 +910,6 @@ public class LoginContext {
 
             clearState();
             return;
-        }
-    }
-
-    /**
-     * check package access of a class that is loaded with Thread Context
-     * Class Loader (TCCL) with specified access control context.
-     *
-     * Similar to java.lang.ClassLoader.checkPackageAccess()
-     */
-    static void checkPackageAccess(Class<?> cls, AccessControlContext context) {
-        final SecurityManager sm = System.getSecurityManager();
-        if (sm != null) {
-            if (ReflectUtil.isNonPublicProxyClass(cls)) {
-                for (Class<?> intf: cls.getInterfaces()) {
-                    checkPackageAccess(intf, context);
-                }
-                return;
-            }
-
-            final String name = cls.getName();
-            final int i = name.lastIndexOf('.');
-            if (i != -1) {
-                AccessController.doPrivileged(new PrivilegedAction<Void>() {
-                    public Void run() {
-                        sm.checkPackageAccess(name.substring(0, i));
-                        return null;
-                    }
-                }, context);
-            }
         }
     }
 

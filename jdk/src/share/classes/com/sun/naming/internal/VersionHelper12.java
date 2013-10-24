@@ -39,7 +39,6 @@ import java.util.NoSuchElementException;
 import java.util.Properties;
 
 import javax.naming.*;
-import sun.reflect.misc.ReflectUtil;
 
 /**
  * VersionHelper was used by JNDI to accommodate differences between
@@ -53,18 +52,6 @@ import sun.reflect.misc.ReflectUtil;
  */
 
 final class VersionHelper12 extends VersionHelper {
-
-    // workaround to disable additional package access control with
-    // Thread Context Class Loader (TCCL).
-    private final static boolean noPackageAccessWithTCCL = "true".equals(
-        AccessController.doPrivileged(
-            new PrivilegedAction<String>() {
-                public String run() {
-                    return System.getProperty(
-                        "com.sun.naming.untieAccessContextWithTCCL");
-                }
-            }
-        ));
 
     // Disallow external from creating one of these.
     VersionHelper12() {
@@ -83,9 +70,6 @@ final class VersionHelper12 extends VersionHelper {
     Class<?> loadClass(String className, ClassLoader cl)
         throws ClassNotFoundException {
         Class<?> cls = Class.forName(className, true, cl);
-        if (!noPackageAccessWithTCCL) {
-            checkPackageAccess(cls);
-        }
         return cls;
     }
 
@@ -101,35 +85,6 @@ final class VersionHelper12 extends VersionHelper {
                  URLClassLoader.newInstance(getUrlArray(codebase), parent);
 
         return loadClass(className, cl);
-    }
-
-    /**
-     * check package access of a class that is loaded with Thread Context
-     * Class Loader (TCCL).
-     *
-     * Similar to java.lang.ClassLoader.checkPackageAccess()
-     */
-    static void checkPackageAccess(Class<?> cls) {
-        final SecurityManager sm = System.getSecurityManager();
-        if (sm != null) {
-            if (ReflectUtil.isNonPublicProxyClass(cls)) {
-                for (Class<?> intf: cls.getInterfaces()) {
-                    checkPackageAccess(intf);
-                }
-                return;
-            }
-
-            final String name = cls.getName();
-            final int i = name.lastIndexOf('.');
-            if (i != -1) {
-                AccessController.doPrivileged(new PrivilegedAction<Void>() {
-                    public Void run() {
-                        sm.checkPackageAccess(name.substring(0, i));
-                        return null;
-                    }
-                }, AccessController.getContext());
-            }
-        }
     }
 
     String getJndiProperty(final int i) {
@@ -220,18 +175,24 @@ final class VersionHelper12 extends VersionHelper {
     /**
      * Package private.
      *
-     * This internal method makes use of Thread Context Class Loader (TCCL),
-     * please don't expose this method as public.
+     * This internal method returns Thread Context Class Loader (TCCL),
+     * if null, returns the system Class Loader.
      *
-     * Please take care of package access control on the current context
-     * whenever using TCCL.
+     * Please don't expose this method as public.
      */
     ClassLoader getContextClassLoader() {
 
         return AccessController.doPrivileged(
             new PrivilegedAction<ClassLoader>() {
                 public ClassLoader run() {
-                    return Thread.currentThread().getContextClassLoader();
+                    ClassLoader loader =
+                            Thread.currentThread().getContextClassLoader();
+                    if (loader == null) {
+                        // Don't use bootstrap class loader directly!
+                        loader = ClassLoader.getSystemClassLoader();
+                    }
+
+                    return loader;
                 }
             }
         );
