@@ -1674,6 +1674,15 @@ search:
                 theObject = translateStream(bais, flavor, format, localeTransferable);
             }
 
+        } else if (flavor.isRepresentationClassRemote()) {
+            try (ByteArrayInputStream bais = new ByteArrayInputStream(bytes);
+                 ObjectInputStream ois = new ObjectInputStream(bais))
+            {
+                theObject = RMI.getMarshalledObject(ois.readObject());
+            } catch (Exception e) {
+                throw new IOException(e.getMessage());
+            }
+
             // Target data is Serializable
         } else if (flavor.isRepresentationClassSerializable()) {
 
