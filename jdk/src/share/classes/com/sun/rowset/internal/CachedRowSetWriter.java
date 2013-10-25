@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,6 +29,7 @@ import java.sql.*;
 import javax.sql.*;
 import java.util.*;
 import java.io.*;
+import sun.reflect.misc.ReflectUtil;
 
 import com.sun.rowset.*;
 import java.text.MessageFormat;
@@ -572,13 +573,9 @@ public class CachedRowSetWriter implements TransactionalWriter, Serializable {
                         // create new instance of the class
                         SQLData obj = null;
                         try {
-                            obj = (SQLData)c.newInstance();
-                        } catch (java.lang.InstantiationException ex) {
-                            throw new SQLException(MessageFormat.format(resBundle.handleGetObject("cachedrowsetimpl.unableins").toString(),
-                            ex.getMessage()));
-                        } catch (java.lang.IllegalAccessException ex) {
-                            throw new SQLException(MessageFormat.format(resBundle.handleGetObject("cachedrowsetimpl.unableins").toString(),
-                            ex.getMessage()));
+                            obj = (SQLData)ReflectUtil.newInstance(c);
+                        } catch (Exception ex) {
+                            throw new SQLException("Unable to Instantiate: ", ex);
                         }
                         // get the attributes from the struct
                         Object attribs[] = s.getAttributes(map);
