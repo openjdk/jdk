@@ -3312,6 +3312,11 @@ MetaWord* Metaspace::allocate(ClassLoaderData* loader_data, size_t word_size,
   return result;
 }
 
+size_t Metaspace::class_chunk_size(size_t word_size) {
+  assert(using_class_space(), "Has to use class space");
+  return class_vsm()->calc_chunk_size(word_size);
+}
+
 void Metaspace::report_metadata_oome(ClassLoaderData* loader_data, size_t word_size, MetadataType mdtype, TRAPS) {
   // If result is still null, we are out of memory.
   if (Verbose && TraceMetadataChunkAllocation) {
@@ -3323,9 +3328,19 @@ void Metaspace::report_metadata_oome(ClassLoaderData* loader_data, size_t word_s
     MetaspaceAux::dump(gclog_or_tty);
   }
 
+  bool out_of_compressed_class_space = false;
+  if (is_class_space_allocation(mdtype)) {
+    Metaspace* metaspace = loader_data->metaspace_non_null();
+    out_of_compressed_class_space =
+      MetaspaceAux::committed_bytes(Metaspace::ClassType) +
+      (metaspace->class_chunk_size(word_size) * BytesPerWord) >
+      CompressedClassSpaceSize;
+  }
+
   // -XX:+HeapDumpOnOutOfMemoryError and -XX:OnOutOfMemoryError support
-  const char* space_string = is_class_space_allocation(mdtype) ? "Compressed class space" :
-                                                                 "Metadata space";
+  const char* space_string = out_of_compressed_class_space ?
+    "Compressed class space" : "Metaspace";
+
   report_java_out_of_memory(space_string);
 
   if (JvmtiExport::should_post_resource_exhausted()) {
@@ -3338,7 +3353,7 @@ void Metaspace::report_metadata_oome(ClassLoaderData* loader_data, size_t word_s
     vm_exit_during_initialization("OutOfMemoryError", space_string);
   }
 
-  if (is_class_space_allocation(mdtype)) {
+  if (out_of_compressed_class_space) {
     THROW_OOP(Universe::out_of_memory_error_class_metaspace());
   } else {
     THROW_OOP(Universe::out_of_memory_error_metaspace());
