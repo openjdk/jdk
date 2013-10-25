@@ -96,11 +96,7 @@ ifneq ($(OPENJDK_TARGET_OS), solaris)
   EXCLUDES += com/oracle/security
 endif
 
-# In the old build, this isn't excluded on macosx, even though it probably
-# should be.
-ifneq ($(OPENJDK_TARGET_OS), macosx)
-  EXFILES += WrapperGenerator.java
-endif
+EXFILES += WrapperGenerator.java
 
 ifneq ($(OPENJDK_TARGET_OS), windows)
   # Exclude Window security related files in src/share/classes
@@ -169,7 +165,11 @@ ifeq (, $(filter $(OPENJDK_TARGET_OS), windows macosx))
   EXFILES += sun/awt/AWTCharset.java
 endif
 
-ifneq ($(OPENJDK_TARGET_OS), macosx)
+ifeq ($(OPENJDK_TARGET_OS), macosx)
+  # exclude all X11 on Mac, we can't exclude some like below or we'll have compilation errors
+  EXCLUDES += sun/awt/X11
+else
+  # TBD: figure out how to eliminate this long list
   EXFILES += sun/awt/X11/ScreenFormat.java \
       sun/awt/X11/XArc.java \
       sun/awt/X11/XChar2b.java \
