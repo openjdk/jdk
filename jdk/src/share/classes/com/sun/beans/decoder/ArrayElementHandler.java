@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2013 Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -108,6 +108,20 @@ final class ArrayElementHandler extends NewElementHandler {
             getValueObject();
         }
     }
+
+    /**
+     * Tests whether the value of this element can be used
+     * as an argument of the element that contained in this one.
+     *
+     * @return {@code true} if the value of this element can be used
+     *         as an argument of the element that contained in this one,
+     *         {@code false} otherwise
+     */
+    @Override
+    protected boolean isArgument() {
+        return true; // hack for compatibility
+    }
+
 
     /**
      * Creates an instance of the array.
