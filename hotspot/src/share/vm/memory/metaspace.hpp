@@ -192,6 +192,8 @@ class Metaspace : public CHeapObj<mtClass> {
   AllocRecord * _alloc_record_head;
   AllocRecord * _alloc_record_tail;
 
+  size_t class_chunk_size(size_t word_size);
+
  public:
 
   Metaspace(Mutex* lock, MetaspaceType type);
@@ -252,6 +254,7 @@ class Metaspace : public CHeapObj<mtClass> {
   static bool is_class_space_allocation(MetadataType mdType) {
     return mdType == ClassType && using_class_space();
   }
+
 };
 
 class MetaspaceAux : AllStatic {
