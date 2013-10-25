@@ -51,7 +51,9 @@ BasicType constantTag::basic_type() const {
     case JVM_CONSTANT_ClassIndex :
     case JVM_CONSTANT_StringIndex :
     case JVM_CONSTANT_MethodHandle :
+    case JVM_CONSTANT_MethodHandleInError :
     case JVM_CONSTANT_MethodType :
+    case JVM_CONSTANT_MethodTypeInError :
       return T_OBJECT;
     default:
       ShouldNotReachHere();
@@ -59,6 +61,19 @@ BasicType constantTag::basic_type() const {
   }
 }
 
+
+jbyte constantTag::non_error_value() const {
+  switch (_tag) {
+  case JVM_CONSTANT_UnresolvedClassInError:
+    return JVM_CONSTANT_UnresolvedClass;
+  case JVM_CONSTANT_MethodHandleInError:
+    return JVM_CONSTANT_MethodHandle;
+  case JVM_CONSTANT_MethodTypeInError:
+    return JVM_CONSTANT_MethodType;
+  default:
+    return _tag;
+  }
+}
 
 
 const char* constantTag::internal_name() const {

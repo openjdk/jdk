@@ -203,6 +203,7 @@ class ValueNumberingVisitor: public InstructionVisitor {
   void do_UnsafePrefetchRead (UnsafePrefetchRead*  x) { /* nothing to do */ }
   void do_UnsafePrefetchWrite(UnsafePrefetchWrite* x) { /* nothing to do */ }
   void do_ProfileCall    (ProfileCall*     x) { /* nothing to do */ }
+  void do_ProfileReturnType (ProfileReturnType*  x) { /* nothing to do */ }
   void do_ProfileInvoke  (ProfileInvoke*   x) { /* nothing to do */ };
   void do_RuntimeCall    (RuntimeCall*     x) { /* nothing to do */ };
   void do_MemBar         (MemBar*          x) { /* nothing to do */ };

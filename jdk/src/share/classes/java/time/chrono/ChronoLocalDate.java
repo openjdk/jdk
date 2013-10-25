@@ -77,6 +77,7 @@ import java.time.temporal.TemporalAccessor;
 import java.time.temporal.TemporalAdjuster;
 import java.time.temporal.TemporalAmount;
 import java.time.temporal.TemporalField;
+import java.time.temporal.TemporalQueries;
 import java.time.temporal.TemporalQuery;
 import java.time.temporal.TemporalUnit;
 import java.time.temporal.UnsupportedTemporalTypeException;
@@ -194,13 +195,13 @@ import java.util.Objects;
  *
  * <h3>Using LocalDate instead</h3>
  * The primary alternative to using this interface throughout your application is as follows.
- * <p><ul>
+ * <ul>
  * <li>Declare all method signatures referring to dates in terms of {@code LocalDate}.
  * <li>Either store the chronology (calendar system) in the user profile or lookup
  *  the chronology from the user locale
  * <li>Convert the ISO {@code LocalDate} to and from the user's preferred calendar system during
  *  printing and parsing
- * </ul><p>
+ * </ul>
  * This approach treats the problem of globalized calendar systems as a localization issue
  * and confines it to the UI layer. This approach is in keeping with other localization
  * issues in the java platform.
@@ -221,13 +222,13 @@ import java.util.Objects;
  * For example, an application may need to calculate the next Islamic or Hebrew holiday
  * which may require manipulating the date.
  * This kind of use case can be handled as follows:
- * <p><ul>
+ * <ul>
  * <li>start from the ISO {@code LocalDate} being passed to the method
  * <li>convert the date to the alternate calendar system, which for this use case is known
  *  rather than arbitrary
  * <li>perform the calculation
  * <li>convert back to {@code LocalDate}
- * </ul><p>
+ * </ul>
  * Developers writing low-level frameworks or libraries should also avoid this interface.
  * Instead, one of the two general purpose access interfaces should be used.
  * Use {@link TemporalAccessor} if read-only access is required, or use {@link Temporal}
@@ -262,7 +263,7 @@ public interface ChronoLocalDate
      * @see #isEqual
      */
     static Comparator<ChronoLocalDate> timeLineOrder() {
-        return Chronology.DATE_ORDER;
+        return AbstractChronology.DATE_ORDER;
     }
 
     //-----------------------------------------------------------------------
@@ -292,7 +293,7 @@ public interface ChronoLocalDate
             return (ChronoLocalDate) temporal;
         }
         Objects.requireNonNull(temporal, "temporal");
-        Chronology chrono = temporal.query(TemporalQuery.chronology());
+        Chronology chrono = temporal.query(TemporalQueries.chronology());
         if (chrono == null) {
             throw new DateTimeException("Unable to obtain ChronoLocalDate from TemporalAccessor: " + temporal.getClass());
         }
@@ -511,13 +512,13 @@ public interface ChronoLocalDate
     @SuppressWarnings("unchecked")
     @Override
     default <R> R query(TemporalQuery<R> query) {
-        if (query == TemporalQuery.zoneId() || query == TemporalQuery.zone() || query == TemporalQuery.offset()) {
+        if (query == TemporalQueries.zoneId() || query == TemporalQueries.zone() || query == TemporalQueries.offset()) {
             return null;
-        } else if (query == TemporalQuery.localTime()) {
+        } else if (query == TemporalQueries.localTime()) {
             return null;
-        } else if (query == TemporalQuery.chronology()) {
+        } else if (query == TemporalQueries.chronology()) {
             return (R) getChronology();
-        } else if (query == TemporalQuery.precision()) {
+        } else if (query == TemporalQueries.precision()) {
             return (R) DAYS;
         }
         // inline TemporalAccessor.super.query(query) as an optimization

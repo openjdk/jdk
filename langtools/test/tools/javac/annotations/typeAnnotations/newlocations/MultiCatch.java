@@ -25,6 +25,7 @@ import java.lang.annotation.*;
 
 /*
  * @test
+ * @ignore 8008762 Type annotations failures
  * @bug 8006775
  * @summary new type annotation location: multicatch
  * @author Werner Dietl

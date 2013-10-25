@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -158,6 +158,9 @@ static int ParseLocale(JNIEnv* env, int cat, char ** std_language, char ** std_s
 
     temp = malloc(strlen(lc) + 1);
     if (temp == NULL) {
+#ifdef MACOSX
+        free(lc); // malloced memory
+#endif
         JNU_ThrowOutOfMemoryError(env, NULL);
         return 0;
     }
@@ -172,7 +175,6 @@ static int ParseLocale(JNIEnv* env, int cat, char ** std_language, char ** std_s
          * the encoding - without it, we wouldn't get ISO-8859-15.
          * Therefore, this code section is Solaris-specific.
          */
-        lc = strdup(lc);    /* keep a copy, setlocale trashes original. */
         strcpy(temp, lc);
         p = strstr(temp, "@euro");
         if (p != NULL) {

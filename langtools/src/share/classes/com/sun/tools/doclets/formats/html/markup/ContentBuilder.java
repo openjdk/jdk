@@ -41,8 +41,6 @@ public class ContentBuilder extends Content {
     @Override
     public void addContent(Content content) {
         nullCheck(content);
-        if ((content instanceof ContentBuilder) && content.isEmpty())
-            return;
         ensureMutableContents();
         if (content instanceof ContentBuilder) {
             contents.addAll(((ContentBuilder) content).contents);

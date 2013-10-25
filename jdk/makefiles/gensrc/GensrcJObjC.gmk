@@ -1,0 +1,112 @@
+#
+# Copyright (c) 2011, 2012, Oracle and/or its affiliates. All rights reserved.
+# DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+#
+# This code is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License version 2 only, as
+# published by the Free Software Foundation.  Oracle designates this
+# particular file as subject to the "Classpath" exception as provided
+# by Oracle in the LICENSE file that accompanied this code.
+#
+# This code is distributed in the hope that it will be useful, but WITHOUT
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+# FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+# version 2 for more details (a copy is included in the LICENSE file that
+# accompanied this code).
+#
+# You should have received a copy of the GNU General Public License version
+# 2 along with this work; if not, write to the Free Software Foundation,
+# Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+#
+# Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+# or visit www.oracle.com if you need additional information or have any
+# questions.
+#
+
+GENSRC_JOBJC :=
+
+JOBJC_FRAMEWORKS := Foundation CoreFoundation AppKit
+FRAMEWORKS_DIR := /System/Library/Frameworks
+GBM := /usr/bin/gen_bridge_metadata
+
+JOBJC_SRC := $(JDK_TOPDIR)/src/macosx/native/jobjc
+JOBJC_TMP := $(JDK_OUTPUTDIR)/gensrc_jobjc
+JOBJC_DST := $(JDK_OUTPUTDIR)/gensrc_jobjc/src
+
+#
+# Build generator
+#
+$(eval $(call SetupJavaCompilation,BUILD_JOBJC_PRIMITIVE_CODER, \
+    SETUP := GENERATE_OLDBYTECODE, \
+    DISABLE_SJAVAC := true, \
+    INCLUDES := core/java \
+        com/apple, \
+    SRC := $(JOBJC_SRC)/src \
+        $(JOBJC_SRC)/src/generator/java, \
+    BIN := $(JOBJC_TMP)/bin))
+
+GENSRC_JOBJC += $(BUILD_JOBJC_PRIMITIVE_CODER)
+
+#
+# Generate bridge support for select frameworks
+#
+BRIDGESUPPORT := $(addprefix $(JOBJC_TMP)/bridge/, $(addsuffix Full.bridgesupport, $(JOBJC_FRAMEWORKS)))
+
+#
+# Define macro for rules to create bridge support
+# Not sure why, but if the system has this framework bridge support,
+# we appear to copy that, otherwise we run GBM which can be very slow.
+#
+define CreateBridgeSupport # Framework
+	$(RM) $@ $@.tmp
+	$(MKDIR) -p $(@D)
+	if [ -f $(FRAMEWORKS_DIR)/$1.framework/Resources/BridgeSupport/$(@F) ]; then \
+	  $(CP) $(FRAMEWORKS_DIR)/$1.framework/Resources/BridgeSupport/$(@F) $@.tmp ; \
+	else \
+	  $(GBM) $(LOG_INFO) -F complete --framework $1 -o $@.tmp ; \
+	fi
+	$(MV) $@.tmp $@
+endef
+
+#
+# Currently 3 frameworks, avoid pattern rule due to the names being conflicting
+#
+$(JOBJC_TMP)/bridge/FoundationFull.bridgesupport: \
+    $(wildcard $(FRAMEWORKS_DIR)/Foundation.framework/Headers/*.h)
+	$(call CreateBridgeSupport,Foundation)
+$(JOBJC_TMP)/bridge/CoreFoundationFull.bridgesupport: \
+    $(wildcard $(FRAMEWORKS_DIR)/CoreFoundation.framework/Headers/*.h)
+	$(call CreateBridgeSupport,CoreFoundation)
+$(JOBJC_TMP)/bridge/AppKitFull.bridgesupport: \
+    $(wildcard $(FRAMEWORKS_DIR)/AppKit.framework/Headers/*.h)
+	$(call CreateBridgeSupport,AppKit)
+
+#
+# Find Xbootclasspath, for some reason, this involves firing up Java just
+# so we can get the boot classpath, so we can remove anything in that
+# classpath that ends with "JObjC.jar", and emit the new bootclasspath.
+#
+$(JOBJC_TMP)/_the.generator_bootclasspath: $(BUILD_JOBJC_PRIMITIVE_CODER)
+	$(ECHO) Generating jobjc framework bridge
+	$(RM) $@
+	$(JAVA) $(LOG_INFO) -cp $(JOBJC_TMP)/bin com.apple.internal.jobjc.generator.BootClassPathMinus JObjC.jar > $@.tmp
+	$(MV) $@.tmp $@
+
+#
+# Run generator
+# Now we use bootclasspath to run java again, with the bridge support to
+# generate more source.
+#
+$(JOBJC_TMP)/_the.generator: $(JOBJC_TMP)/_the.generator_bootclasspath $(BRIDGESUPPORT)
+	$(RM) $@
+	$(JAVA) $(LOG_INFO) -d64 -Xbootclasspath:`$(CAT) $(JOBJC_TMP)/_the.generator_bootclasspath` -cp $(JOBJC_TMP)/bin -ea com.apple.internal.jobjc.generator.Generator dst=$(JOBJC_DST) frameworks=$(JOBJC_TMP)/bridge
+	$(TOUCH) $@
+
+# The generator delets all files in the target dir so it has to work in its
+# own dir and have the files copied over to gensrc aftewards.
+$(JDK_OUTPUTDIR)/gensrc/_the.jobjc.files: $(JOBJC_TMP)/_the.generator
+	$(MKDIR) -p $(@D)
+	$(CP) -rp $(JOBJC_DST)/* $(@D)
+	$(TOUCH) $@
+
+GENSRC_JOBJC += $(JDK_OUTPUTDIR)/gensrc/_the.jobjc.files

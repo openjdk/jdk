@@ -1,0 +1,7 @@
+class LambdaTest -- 
+LambdaTest.<init>()
+LambdaTest.foo(i)
+LambdaTest.lambda$1(arg0, arg1)/*synthetic*/
+LambdaTest.lambda$0(arg0)/*synthetic*/
+static interface LambdaTest$I -- inner
+LambdaTest$I.m(x)

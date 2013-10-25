@@ -909,6 +909,10 @@ loop:
             default:
                 break;
             }
+
+            if (ident.isFutureStrictName()) {
+                throw error(AbstractParser.message("strict.name", ident.getName(), contextString), ident.getToken());
+            }
         }
     }
 
@@ -2103,13 +2107,13 @@ loop:
             final String ident = (String)expectValue(IDENT);
 
             if (type != COLON) {
-                final long getSetToken = token;
+                final long getSetToken = propertyToken;
 
                 switch (ident) {
                 case "get":
                     final PropertyKey getIdent = propertyName();
                     final String getterName = getIdent.getPropertyName();
-                    final IdentNode getNameNode = new IdentNode(((Node)getIdent).getToken(), finish, "get " + NameCodec.encode(getterName));
+                    final IdentNode getNameNode = new IdentNode(((Node)getIdent).getToken(), finish, NameCodec.encode("get " + getterName));
                     expect(LPAREN);
                     expect(RPAREN);
                     functionNode = functionBody(getSetToken, getNameNode, new ArrayList<IdentNode>(), FunctionNode.Kind.GETTER);
@@ -2118,7 +2122,7 @@ loop:
                 case "set":
                     final PropertyKey setIdent = propertyName();
                     final String setterName = setIdent.getPropertyName();
-                    final IdentNode setNameNode = new IdentNode(((Node)setIdent).getToken(), finish, "set " + NameCodec.encode(setterName));
+                    final IdentNode setNameNode = new IdentNode(((Node)setIdent).getToken(), finish, NameCodec.encode("set " + setterName));
                     expect(LPAREN);
                     final IdentNode argIdent = getIdent();
                     verifyStrictIdent(argIdent, "setter argument");
@@ -2436,7 +2440,7 @@ loop:
         // name is null, generate anonymous name
         boolean isAnonymous = false;
         if (name == null) {
-            final String tmpName = "_L" + source.getLine(Token.descPosition(token));
+            final String tmpName = "_L" + functionLine;
             name = new IdentNode(functionToken, Token.descPosition(functionToken), tmpName);
             isAnonymous = true;
         }

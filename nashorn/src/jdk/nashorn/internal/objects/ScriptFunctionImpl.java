@@ -25,6 +25,7 @@
 
 package jdk.nashorn.internal.objects;
 
+import static jdk.nashorn.internal.lookup.Lookup.MH;
 import static jdk.nashorn.internal.runtime.ScriptRuntime.UNDEFINED;
 
 import java.lang.invoke.MethodHandle;
@@ -253,6 +254,12 @@ public class ScriptFunctionImpl extends ScriptFunction {
      */
     static ScriptFunction makeFunction(final String name, final MethodHandle methodHandle) {
         return makeFunction(name, methodHandle, null);
+    }
+
+    @Override
+    public ScriptFunction makeSynchronizedFunction(final Object sync) {
+        final MethodHandle mh = MH.insertArguments(ScriptFunction.INVOKE_SYNC, 0, this, sync);
+        return makeFunction(getName(), mh);
     }
 
     /**

@@ -1,6 +1,6 @@
-SyntaxError: test/script/basic/NASHORN-40.js#32<eval>:1:6 Expected an operand but found .
+SyntaxError:32:Expected an operand but found .
 print(.foo)
       ^
-SyntaxError: test/script/basic/NASHORN-40.js#38<eval>:1:0 Expected an operand but found .
+SyntaxError:38:Expected an operand but found .
 .bar = 3423;
 ^
