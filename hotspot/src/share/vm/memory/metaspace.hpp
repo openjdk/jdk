@@ -115,13 +115,13 @@ class Metaspace : public CHeapObj<mtClass> {
   static size_t align_word_size_up(size_t);
 
   // Aligned size of the metaspace.
-  static size_t _class_metaspace_size;
+  static size_t _compressed_class_space_size;
 
-  static size_t class_metaspace_size() {
-    return _class_metaspace_size;
+  static size_t compressed_class_space_size() {
+    return _compressed_class_space_size;
   }
-  static void set_class_metaspace_size(size_t metaspace_size) {
-    _class_metaspace_size = metaspace_size;
+  static void set_compressed_class_space_size(size_t size) {
+    _compressed_class_space_size = size;
   }
 
   static size_t _first_chunk_word_size;
