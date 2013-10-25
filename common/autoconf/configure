@@ -88,7 +88,6 @@ check_hg_updates() {
         check_autoconf_timestamps
       fi
     fi
-    
   fi
 }
 
@@ -106,7 +105,7 @@ if test -e $conf_custom_script_dir/generated-configure.sh; then
   fi
 fi
 
-# Autoconf calls the configure script recursively sometimes. 
+# Autoconf calls the configure script recursively sometimes.
 # Don't start logging twice in that case
 if test "x$conf_debug_configure" = xtrue; then
   conf_debug_configure=recursive
@@ -120,28 +119,28 @@ conf_openjdk_target=
 for conf_option
 do
   case $conf_option in
-  --openjdk-target=*)
-    conf_openjdk_target=`expr "X$conf_option" : '[^=]*=\(.*\)'`
-    continue ;;
-  --debug-configure)
-    if test "x$conf_debug_configure" != xrecursive; then
-      conf_debug_configure=true
-      export conf_debug_configure
-    fi
-    continue ;;
-  *)
-    conf_processed_arguments=("${conf_processed_arguments[@]}" "$conf_option") ;;
+    --openjdk-target=*)
+      conf_openjdk_target=`expr "X$conf_option" : '[^=]*=\(.*\)'`
+      continue ;;
+    --debug-configure)
+      if test "x$conf_debug_configure" != xrecursive; then
+        conf_debug_configure=true
+        export conf_debug_configure
+      fi
+      continue ;;
+    *)
+      conf_processed_arguments=("${conf_processed_arguments[@]}" "$conf_option") ;;
   esac
 
   case $conf_option in
-  -build | --build | --buil | --bui | --bu |-build=* | --build=* | --buil=* | --bui=* | --bu=*)
-    conf_legacy_crosscompile="$conf_legacy_crosscompile $conf_option" ;;
-  -target | --target | --targe | --targ | --tar | --ta | --t | -target=* | --target=* | --targe=* | --targ=* | --tar=* | --ta=* | --t=*)
-    conf_legacy_crosscompile="$conf_legacy_crosscompile $conf_option" ;;
-  -host | --host | --hos | --ho | -host=* | --host=* | --hos=* | --ho=*)
-    conf_legacy_crosscompile="$conf_legacy_crosscompile $conf_option" ;;
-  -help | --help | --hel | --he | -h)
-    conf_print_help=true ;;
+    -build | --build | --buil | --bui | --bu |-build=* | --build=* | --buil=* | --bui=* | --bu=*)
+      conf_legacy_crosscompile="$conf_legacy_crosscompile $conf_option" ;;
+    -target | --target | --targe | --targ | --tar | --ta | --t | -target=* | --target=* | --targe=* | --targ=* | --tar=* | --ta=* | --t=*)
+      conf_legacy_crosscompile="$conf_legacy_crosscompile $conf_option" ;;
+    -host | --host | --hos | --ho | -host=* | --host=* | --hos=* | --ho=*)
+      conf_legacy_crosscompile="$conf_legacy_crosscompile $conf_option" ;;
+    -help | --help | --hel | --he | -h)
+      conf_print_help=true ;;
   esac
 done
 
@@ -179,7 +178,7 @@ if test -e $conf_custom_script_dir/generated-configure.sh; then
 else
   echo Running generated-configure.sh
   conf_script_to_run=$conf_script_dir/generated-configure.sh
-fi  
+fi
 
 if test "x$conf_debug_configure" != x; then
   # Turn on shell debug output if requested (initial or recursive)

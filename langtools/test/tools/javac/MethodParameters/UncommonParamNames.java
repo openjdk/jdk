@@ -27,7 +27,7 @@
  * @summary javac should generate method parameters correctly.
  * @build Tester
  * @compile -parameters UncommonParamNames.java
- * @run main Tester UncommonParamNames
+ * @run main Tester UncommonParamNames UncommonParamNames.out
  */
 
 /** Test uncommon parameter names */

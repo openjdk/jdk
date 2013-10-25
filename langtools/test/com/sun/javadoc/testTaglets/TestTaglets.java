@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug      4654308 4767038
+ * @bug      4654308 4767038 8025633
  * @summary  Use a Taglet and include some inline tags such as {@link}.  The
  *           inline tags should be interpreted properly.
  *           Run Javadoc on some sample source that uses {@inheritDoc}.  Make
@@ -56,7 +56,7 @@ public class TestTaglets extends JavadocTester {
     //Input for string search tests.
     private static final String[][] TEST_4654308 = new String[][] {
         {"4654308" + FS + "C.html", "<span class=\"strong\">Foo:</span></dt>" +
-                 "<dd>my only method is <a href=\"C.html#method()\"><code>here" +
+                 "<dd>my only method is <a href=\"C.html#method--\"><code>here" +
                  "</code></a></dd></dl>"}
     };
     private static final String[][] NEGATED_TEST_4654308 = NO_TEST;

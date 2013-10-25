@@ -84,6 +84,7 @@ class Bsd {
   static void hotspot_sigmask(Thread* thread);
 
   static bool is_initial_thread(void);
+  static pid_t gettid();
 
   static int page_size(void)                                        { return _page_size; }
   static void set_page_size(int val)                                { _page_size = val; }

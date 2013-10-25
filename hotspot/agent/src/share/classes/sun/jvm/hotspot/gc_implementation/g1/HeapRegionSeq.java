@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,13 +37,11 @@ import sun.jvm.hotspot.types.CIntegerField;
 import sun.jvm.hotspot.types.Type;
 import sun.jvm.hotspot.types.TypeDataBase;
 
-// Mirror class for HeapRegionSeq. It's essentially an index -> HeapRegion map.
+// Mirror class for HeapRegionSeq. It essentially encapsulates the G1HeapRegionTable.
 
 public class HeapRegionSeq extends VMObject {
-    // HeapRegion** _regions;
-    static private AddressField regionsField;
-    // uint _length;
-    static private CIntegerField lengthField;
+    // G1HeapRegionTable _regions
+    static private long regionsFieldOffset;
 
     static {
         VM.registerVMInitializedObserver(new Observer() {
@@ -56,44 +54,21 @@ public class HeapRegionSeq extends VMObject {
     static private synchronized void initialize(TypeDataBase db) {
         Type type = db.lookupType("HeapRegionSeq");
 
-        regionsField = type.getAddressField("_regions");
-        lengthField = type.getCIntegerField("_length");
+        regionsFieldOffset = type.getField("_regions").getOffset();
     }
 
-    private HeapRegion at(long index) {
-        Address arrayAddr = regionsField.getValue(addr);
-        // Offset of &_region[index]
-        long offset = index * VM.getVM().getAddressSize();
-        Address regionAddr = arrayAddr.getAddressAt(offset);
-        return (HeapRegion) VMObjectFactory.newObject(HeapRegion.class,
-                                                      regionAddr);
+    private G1HeapRegionTable regions() {
+        Address regionsAddr = addr.addOffsetTo(regionsFieldOffset);
+        return (G1HeapRegionTable) VMObjectFactory.newObject(G1HeapRegionTable.class,
+                                                             regionsAddr);
     }
 
     public long length() {
-        return lengthField.getValue(addr);
-    }
-
-    private class HeapRegionIterator implements Iterator<HeapRegion> {
-        private long index;
-        private long length;
-
-        @Override
-        public boolean hasNext() { return index < length; }
-
-        @Override
-        public HeapRegion next() { return at(index++);    }
-
-        @Override
-        public void remove()     { /* not supported */    }
-
-        HeapRegionIterator(Address addr) {
-            index = 0;
-            length = length();
-        }
+        return regions().length();
     }
 
     public Iterator<HeapRegion> heapRegionIterator() {
-        return new HeapRegionIterator(addr);
+        return regions().heapRegionIterator();
     }
 
     public HeapRegionSeq(Address addr) {

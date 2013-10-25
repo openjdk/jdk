@@ -491,8 +491,8 @@ public final class Global extends ScriptObject implements GlobalObject, Scope {
     // GlobalObject interface implementation
 
     @Override
-    public boolean isOfContext(final Context context) {
-        return this.context == context;
+    public boolean isOfContext(final Context ctxt) {
+        return this.context == ctxt;
     }
 
     @Override

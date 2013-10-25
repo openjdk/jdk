@@ -44,6 +44,7 @@ CXX=cl.exe
 #   /GS       Inserts security stack checks in some functions (VS2005 default)
 #   /Oi       Use intrinsics (in /O2)
 #   /Od       Disable all optimizations
+#   /MP       Use multiple cores for compilation
 #
 # NOTE: Normally following any of the above with a '-' will turn off that flag
 #
@@ -180,6 +181,7 @@ DEBUG_OPT_OPTION     = /Od
 PRODUCT_OPT_OPTION   = /O2 /Oy-
 FASTDEBUG_OPT_OPTION = /O2 /Oy-
 DEBUG_OPT_OPTION     = /Od
+SAFESEH_FLAG = /SAFESEH
 !endif
 
 !if "$(COMPILER_NAME)" == "VS2005"
@@ -198,6 +200,7 @@ LD_FLAGS = /manifest $(LD_FLAGS) $(BUFFEROVERFLOWLIB)
 !if "x$(MT)" == "x"
 MT=mt.exe
 !endif
+SAFESEH_FLAG = /SAFESEH
 !endif
 
 !if "$(COMPILER_NAME)" == "VS2008"
@@ -206,11 +209,13 @@ FASTDEBUG_OPT_OPTION = /O2 /Oy-
 DEBUG_OPT_OPTION     = /Od
 GX_OPTION = /EHsc
 LD_FLAGS = /manifest $(LD_FLAGS)
+MP_FLAG = /MP
 # Manifest Tool - used in VS2005 and later to adjust manifests stored
 # as resources inside build artifacts.
 !if "x$(MT)" == "x"
 MT=mt.exe
 !endif
+SAFESEH_FLAG = /SAFESEH
 !endif
 
 !if "$(COMPILER_NAME)" == "VS2010"
@@ -219,6 +224,7 @@ FASTDEBUG_OPT_OPTION = /O2 /Oy-
 DEBUG_OPT_OPTION     = /Od
 GX_OPTION = /EHsc
 LD_FLAGS = /manifest $(LD_FLAGS)
+MP_FLAG = /MP
 # Manifest Tool - used in VS2005 and later to adjust manifests stored
 # as resources inside build artifacts.
 !if "x$(MT)" == "x"
@@ -235,15 +241,20 @@ FASTDEBUG_OPT_OPTION = /O2 /Oy-
 DEBUG_OPT_OPTION     = /Od
 GX_OPTION = /EHsc
 LD_FLAGS = /manifest $(LD_FLAGS)
+MP_FLAG = /MP
 # Manifest Tool - used in VS2005 and later to adjust manifests stored
 # as resources inside build artifacts.
 !if "x$(MT)" == "x"
 MT=mt.exe
 !endif
+SAFESEH_FLAG = /SAFESEH
+!endif
+
 !if "$(BUILDARCH)" == "i486"
-LD_FLAGS = /SAFESEH $(LD_FLAGS)
+LD_FLAGS = $(SAFESEH_FLAG) $(LD_FLAGS)
 !endif
-!endif
+
+CXX_FLAGS = $(CXX_FLAGS) $(MP_FLAG)
 
 # If NO_OPTIMIZATIONS is defined in the environment, turn everything off
 !ifdef NO_OPTIMIZATIONS

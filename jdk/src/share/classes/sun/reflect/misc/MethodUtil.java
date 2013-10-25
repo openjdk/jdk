@@ -217,7 +217,7 @@ public final class MethodUtil extends SecureClassLoader {
      */
     private static class Signature {
         private String methodName;
-        private Class[] argClasses;
+        private Class<?>[] argClasses;
 
         private volatile int hashCode = 0;
 
@@ -299,7 +299,7 @@ public final class MethodUtil extends SecureClassLoader {
                 new PrivilegedExceptionAction<Method>() {
                     public Method run() throws Exception {
                         Class<?> t = getTrampolineClass();
-                        Class[] types = {
+                        Class<?>[] types = {
                             Method.class, Object.class, Object[].class
                         };
                         Method b = t.getDeclaredMethod("invoke", types);

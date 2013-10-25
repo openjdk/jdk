@@ -35,6 +35,7 @@ import java.io.IOException;
  * @author Gordon Hirsch
  * @since  1.3
  */
+@jdk.Exported
 public interface AttachingConnector extends Connector {
     /**
      * Attaches to a running application and and returns a

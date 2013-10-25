@@ -92,7 +92,7 @@ public abstract class SubWriterHolderWriter extends HtmlDocletWriter {
         else {
             caption = getTableCaption(mw.getCaption());
         }
-        Content table = HtmlTree.TABLE(HtmlStyle.overviewSummary, 0, 3, 0,
+        Content table = HtmlTree.TABLE(HtmlStyle.memberSummary, 0, 3, 0,
                 mw.getTableSummary(), caption);
         table.addContent(getSummaryTableHeader(mw.getSummaryTableHeader(cd), "col"));
         for (int i = 0; i < tableContents.size(); i++) {
