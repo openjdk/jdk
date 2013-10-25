@@ -37,7 +37,7 @@ import javax.tools.Diagnostic;
  *
  * @since 1.8
  */
-@jdk.Supported
+@jdk.Exported
 public abstract class DocTrees extends Trees {
     /**
      * Gets a DocTrees object for a given CompilationTask.

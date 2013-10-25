@@ -51,14 +51,17 @@ go() {
 
 # Run test with each GC configuration
 # 
-# Notes: To ensure that perm gen fills up we disable class unloading.
-# Also we set the max perm space to 8MB - otherwise the test takes too
+# Notes: To ensure that metaspace fills up we disable class unloading.
+# Also we set the max metaspace to 8MB - otherwise the test takes too
 # long to run. 
 
-go -noclassgc -XX:PermSize=8m -XX:MaxPermSize=8m -XX:+UseSerialGC LowMemoryTest2
-go -noclassgc -XX:PermSize=8m -XX:MaxPermSize=8m -XX:+UseParallelGC LowMemoryTest2
-go -noclassgc -XX:PermSize=8m -XX:MaxPermSize=8m -XX:+UseParNewGC -XX:+UseConcMarkSweepGC \
-    LowMemoryTest2
+go -noclassgc -XX:MaxMetaspaceSize=16m -XX:+UseSerialGC LowMemoryTest2
+go -noclassgc -XX:MaxMetaspaceSize=16m -XX:+UseParallelGC LowMemoryTest2
+go -noclassgc -XX:MaxMetaspaceSize=16m -XX:+UseParNewGC -XX:+UseConcMarkSweepGC LowMemoryTest2
+
+# Test class metaspace - might hit MaxMetaspaceSize instead if
+# UseCompressedClassPointers is off or if 32 bit.
+go -noclassgc -XX:MaxMetaspaceSize=16m -XX:CompressedClassSpaceSize=4m LowMemoryTest2
 
 echo ''
 if [ $failures -gt 0 ];

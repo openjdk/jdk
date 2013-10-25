@@ -287,10 +287,11 @@ public class Base64Data implements CharSequence, Cloneable {
      * @throws IOException if i/o error occurs
      */
     public InputStream getInputStream() throws IOException {
-        if(dataHandler!=null)
+        if(dataHandler!=null) {
             return dataHandler.getInputStream();
-        else
+        } else {
             return new ByteArrayInputStream(data,0,dataLen);
+        }
     }
 
     /**
@@ -342,8 +343,9 @@ public class Base64Data implements CharSequence, Cloneable {
     }
 
     public String getMimeType() {
-        if(mimeType==null)
+        if (mimeType==null) {
             return "application/octet-stream";
+        }
         return mimeType;
     }
 
@@ -376,31 +378,35 @@ public class Base64Data implements CharSequence, Cloneable {
         case 0:
             return Base64Encoder.encode(data[base]>>2);
         case 1:
-            if(base+1<dataLen)
+            if (base+1<dataLen) {
                 b1 = data[base+1];
-            else
+            } else {
                 b1 = 0;
+            }
             return Base64Encoder.encode(
                         ((data[base]&0x3)<<4) |
                         ((b1>>4)&0xF));
         case 2:
-            if(base+1<dataLen) {
+            if (base+1<dataLen) {
                 b1 = data[base+1];
-                if(base+2<dataLen)
+                if (base+2<dataLen) {
                     b2 = data[base+2];
-                else
+                } else {
                     b2 = 0;
+                }
 
                 return Base64Encoder.encode(
                             ((b1&0xF)<<2)|
                             ((b2>>6)&0x3));
-            } else
+            } else {
                 return '=';
+            }
         case 3:
-            if(base+2<dataLen)
+            if(base+2<dataLen) {
                 return Base64Encoder.encode(data[base+2]&0x3F);
-            else
+            } else {
                 return '=';
+            }
         }
 
         throw new IllegalStateException();
@@ -414,8 +420,9 @@ public class Base64Data implements CharSequence, Cloneable {
     public CharSequence subSequence(int start, int end) {
         StringBuilder buf = new StringBuilder();
         get();  // fill in the buffer if we haven't done so
-        for( int i=start; i<end; i++ )
+        for (int i=start; i<end; i++ ) {
             buf.append(charAt(i));
+        }
         return buf;
     }
 
@@ -473,7 +480,25 @@ public class Base64Data implements CharSequence, Cloneable {
 
     @Override
     public Base64Data clone() {
-        return new Base64Data(this);
+        try {
+            Base64Data clone = (Base64Data) super.clone();
+            clone.get();
+            if (clone.dataCloneByRef) {
+                this.data = clone.data;
+            } else {
+                this.data = new byte[clone.dataLen];
+                System.arraycopy(clone.data, 0, this.data, 0, clone.dataLen);
+            }
+
+            this.dataCloneByRef = true;
+            this.dataLen = clone.dataLen;
+            this.dataHandler = null;
+            this.mimeType = clone.mimeType;
+            return clone;
+        } catch (CloneNotSupportedException ex) {
+            Logger.getLogger(Base64Data.class.getName()).log(Level.SEVERE, null, ex);
+            return null;
+        }
     }
 
     static String getProperty(final String propName) {

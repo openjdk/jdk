@@ -102,7 +102,12 @@ public class HtmlTree extends Content {
      * @param tagContent tag content to be added
      */
     public void addContent(Content tagContent) {
-        if (tagContent == HtmlTree.EMPTY || tagContent.isValid()) {
+        if (tagContent instanceof ContentBuilder) {
+            for (Content content: ((ContentBuilder)tagContent).contents) {
+                addContent(content);
+            }
+        }
+        else if (tagContent == HtmlTree.EMPTY || tagContent.isValid()) {
             if (content.isEmpty())
                 content = new ArrayList<Content>();
             content.add(tagContent);
@@ -619,25 +624,6 @@ public class HtmlTree extends Content {
     }
 
     /**
-     * Generates a Table tag with border, width and summary attributes and
-     * some content.
-     *
-     * @param border border for the table
-     * @param width width of the table
-     * @param summary summary for the table
-     * @param body content for the table
-     * @return an HtmlTree object for the TABLE tag
-     */
-    public static HtmlTree TABLE(int border, int width, String summary,
-            Content body) {
-        HtmlTree htmltree = new HtmlTree(HtmlTag.TABLE, nullCheck(body));
-        htmltree.addAttr(HtmlAttr.BORDER, Integer.toString(border));
-        htmltree.addAttr(HtmlAttr.WIDTH, Integer.toString(width));
-        htmltree.addAttr(HtmlAttr.SUMMARY, nullCheck(summary));
-        return htmltree;
-    }
-
-    /**
      * Generates a Table tag with style class, border, cell padding,
      * cellspacing and summary attributes and some content.
      *
@@ -659,22 +645,6 @@ public class HtmlTree extends Content {
         htmltree.addAttr(HtmlAttr.CELLSPACING, Integer.toString(cellSpacing));
         htmltree.addAttr(HtmlAttr.SUMMARY, nullCheck(summary));
         return htmltree;
-    }
-
-    /**
-     * Generates a Table tag with border, cell padding,
-     * cellspacing and summary attributes and some content.
-     *
-     * @param border border for the table
-     * @param cellPadding cell padding for the table
-     * @param cellSpacing cell spacing for the table
-     * @param summary summary for the table
-     * @param body content for the table
-     * @return an HtmlTree object for the TABLE tag
-     */
-    public static HtmlTree TABLE(int border, int cellPadding,
-            int cellSpacing, String summary, Content body) {
-        return TABLE(null, border, cellPadding, cellSpacing, summary, body);
     }
 
     /**

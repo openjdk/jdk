@@ -507,6 +507,20 @@ public final class WsservletMessages {
         return localizer.localize(localizableSERVLET_ERROR_NO_RESPONSE_MESSAGE());
     }
 
+    public static Localizable localizableMESSAGE_TOO_LONG(Object arg0) {
+        return messageFactory.getMessage("message.too.long", arg0);
+    }
+
+    /**
+     *
+     * Message has been truncated
+     * use {0} property to increase the amount of printed part of the message
+     *
+     */
+    public static String MESSAGE_TOO_LONG(Object arg0) {
+        return localizer.localize(localizableMESSAGE_TOO_LONG(arg0));
+    }
+
     public static Localizable localizableLISTENER_INFO_INITIALIZE() {
         return messageFactory.getMessage("listener.info.initialize");
     }

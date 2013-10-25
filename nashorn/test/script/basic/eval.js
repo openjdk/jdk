@@ -69,5 +69,5 @@ try {
     eval("print('hello)");
 } catch (e) {
     print("is syntax error? " + (e instanceof SyntaxError));
-    print(e.toString().replace(/\\/g, '/'));
+    printError(e);
 }

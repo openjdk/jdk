@@ -246,6 +246,8 @@ class Compilation: public StackObj {
       (RangeCheckElimination || UseLoopInvariantCodeMotion) &&
       method()->method_data()->trap_count(Deoptimization::Reason_none) == 0;
   }
+
+  ciKlass* cha_exact_type(ciType* type);
 };
 
 

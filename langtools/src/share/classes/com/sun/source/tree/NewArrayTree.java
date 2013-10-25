@@ -25,7 +25,7 @@
 
 package com.sun.source.tree;
 
-import com.sun.tools.javac.util.List;
+import java.util.List;
 
 /**
  * A tree node for an expression to create a new instance of an array.
@@ -43,7 +43,7 @@ import com.sun.tools.javac.util.List;
  * @author Jonathan Gibbons
  * @since 1.6
  */
-@jdk.Supported
+@jdk.Exported
 public interface NewArrayTree extends ExpressionTree {
     Tree getType();
     List<? extends ExpressionTree> getDimensions();

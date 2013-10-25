@@ -59,7 +59,7 @@ import java.io.*;
  * with the data of a <code>ResultSet</code> object and then operate on the
  * <code>JdbcRowSet</code> object as if it were the <code>ResultSet</code>
  * object.
- * <P>
+ *
  * <h3>2.0 Creating a <code>JdbcRowSet</code> Object</h3>
  * The reference implementation of the <code>JdbcRowSet</code> interface,
  * <code>JdbcRowSetImpl</code>, provides an implementation of

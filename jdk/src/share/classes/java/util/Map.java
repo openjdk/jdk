@@ -465,6 +465,7 @@ public interface Map<K,V> {
          * @param  <V> the type of the map values
          * @return a comparator that compares {@link Map.Entry} in natural order on key.
          * @see Comparable
+         * @since 1.8
          */
         public static <K extends Comparable<? super K>, V> Comparator<Map.Entry<K,V>> comparingByKey() {
             return (Comparator<Map.Entry<K, V>> & Serializable)
@@ -481,6 +482,7 @@ public interface Map<K,V> {
          * @param <V> the {@link Comparable} type of the map values
          * @return a comparator that compares {@link Map.Entry} in natural order on value.
          * @see Comparable
+         * @since 1.8
          */
         public static <K, V extends Comparable<? super V>> Comparator<Map.Entry<K,V>> comparingByValue() {
             return (Comparator<Map.Entry<K, V>> & Serializable)
@@ -498,6 +500,7 @@ public interface Map<K,V> {
          * @param  <V> the type of the map values
          * @param  cmp the key {@link Comparator}
          * @return a comparator that compares {@link Map.Entry} by the key.
+         * @since 1.8
          */
         public static <K, V> Comparator<Map.Entry<K, V>> comparingByKey(Comparator<? super K> cmp) {
             Objects.requireNonNull(cmp);
@@ -516,6 +519,7 @@ public interface Map<K,V> {
          * @param  <V> the type of the map values
          * @param  cmp the value {@link Comparator}
          * @return a comparator that compares {@link Map.Entry} by the value.
+         * @since 1.8
          */
         public static <K, V> Comparator<Map.Entry<K, V>> comparingByValue(Comparator<? super V> cmp) {
             Objects.requireNonNull(cmp);
@@ -558,26 +562,27 @@ public interface Map<K,V> {
     // Defaultable methods
 
     /**
-    *  Returns the value to which the specified key is mapped,
-    *  or {@code defaultValue} if this map contains no mapping
-    *  for the key.
-    *
-    * <p>The default implementation makes no guarantees about synchronization
-    * or atomicity properties of this method. Any implementation providing
-    * atomicity guarantees must override this method and document its
-    * concurrency properties.
-    *
-    * @param key the key whose associated value is to be returned
-    * @param defaultValue the default mapping of the key
-    * @return the value to which the specified key is mapped, or
-    * {@code defaultValue} if this map contains no mapping for the key
-    * @throws ClassCastException if the key is of an inappropriate type for
-    * this map
-    * (<a href="Collection.html#optional-restrictions">optional</a>)
-    * @throws NullPointerException if the specified key is null and this map
-    * does not permit null keys
-    * (<a href="Collection.html#optional-restrictions">optional</a>)
-    */
+     * Returns the value to which the specified key is mapped,
+     * or {@code defaultValue} if this map contains no mapping
+     * for the key.
+     *
+     * <p>The default implementation makes no guarantees about synchronization
+     * or atomicity properties of this method. Any implementation providing
+     * atomicity guarantees must override this method and document its
+     * concurrency properties.
+     *
+     * @param key the key whose associated value is to be returned
+     * @param defaultValue the default mapping of the key
+     * @return the value to which the specified key is mapped, or
+     * {@code defaultValue} if this map contains no mapping for the key
+     * @throws ClassCastException if the key is of an inappropriate type for
+     * this map
+     * (<a href="Collection.html#optional-restrictions">optional</a>)
+     * @throws NullPointerException if the specified key is null and this map
+     * does not permit null keys
+     * (<a href="Collection.html#optional-restrictions">optional</a>)
+     * @since 1.8
+     */
     default V getOrDefault(Object key, V defaultValue) {
         V v;
         return (((v = get(key)) != null) || containsKey(key))

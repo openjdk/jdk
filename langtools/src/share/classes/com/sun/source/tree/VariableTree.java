@@ -42,7 +42,7 @@ import javax.lang.model.element.Name;
  * @author Jonathan Gibbons
  * @since 1.6
  */
-@jdk.Supported
+@jdk.Exported
 public interface VariableTree extends StatementTree {
     ModifiersTree getModifiers();
     Name getName();

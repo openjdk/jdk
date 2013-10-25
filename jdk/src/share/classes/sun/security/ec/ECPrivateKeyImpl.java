@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -152,12 +152,4 @@ public final class ECPrivateKeyImpl extends PKCS8Key implements ECPrivateKey {
             throw new InvalidKeyException("Invalid EC private key", e);
         }
     }
-
-    // return a string representation of this key for debugging
-    public String toString() {
-        return "Sun EC private key, " + params.getCurve().getField().getFieldSize()
-            + " bits\n  private value:  "
-            + s + "\n  parameters: " + params;
-    }
-
 }

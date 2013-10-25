@@ -25,4 +25,7 @@ public class Test {
     public void test() {
         p.Foo f = new p.Foo();
     }
+    private String name() {
+        return "this test";
+    }
 }

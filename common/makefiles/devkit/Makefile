@@ -25,12 +25,12 @@
 
 ##########################################################################################
 #
-# This Makefile, together with Tools.gmk, can be used to compile a set of 
-# gcc based cross compilation, portable, self contained packages, capable 
+# This Makefile, together with Tools.gmk, can be used to compile a set of
+# gcc based cross compilation, portable, self contained packages, capable
 # of building OpenJDK.
-# 
-# In addition to the makefiles, access to Oracle Linux installation 
-# media is required. This has been tested against Oracle Enterprise Linux 
+#
+# In addition to the makefiles, access to Oracle Linux installation
+# media is required. This has been tested against Oracle Enterprise Linux
 # 5.5. Set variables RPM_DIR_x86_64 and RPM_DIR_i686 respectively to point
 # to directory containing the RPMs.
 #
@@ -43,9 +43,9 @@
 #
 # To build the full set of crosstools, use a command line looking like this:
 #
-# make tars  RPM_DIR_x86_64=/tmp/oel55-x86_64/Server/ RPM_DIR_i686=/tmp/oel55-i686/Server/
+# make tars RPM_DIR_x86_64=/tmp/oel55-x86_64/Server/ RPM_DIR_i686=/tmp/oel55-i686/Server/
 #
-# To create a x86_64 package without the redundant i686 cross compiler, do 
+# To create a x86_64 package without the redundant i686 cross compiler, do
 # like this:
 #
 # make tars platforms=x86_64-unknown-linux-gnu RPM_DIR_x86_64=/tmp/oel55-x86_64/Server/ RPM_DIR_i686=/tmp/oel55-i686/Server/
@@ -54,70 +54,68 @@
 # Main makefile which iterates over all host and target platforms.
 #
 
-os		:= $(shell uname -o)
-cpu 		:= x86_64
+os := $(shell uname -o)
+cpu := x86_64
 #$(shell uname -p)
 
 #
 # This wrapper script can handle exactly these platforms
 #
-platforms	:= $(foreach p,x86_64 i686,$(p)-unknown-linux-gnu)
-#platforms	:= $(foreach p,x86_64,$(p)-unknown-linux-gnu)
+platforms := $(foreach p,x86_64 i686,$(p)-unknown-linux-gnu)
+#platforms := $(foreach p,x86_64,$(p)-unknown-linux-gnu)
 
 # Figure out what platform this is building on.
-me		:= $(cpu)-$(if $(findstring Linux,$(os)),unknown-linux-gnu)
+me := $(cpu)-$(if $(findstring Linux,$(os)),unknown-linux-gnu)
 
 $(info Building on platform $(me))
 
-all compile	: $(platforms)
+all compile : $(platforms)
 
 ifeq (,$(SKIP_ME))
-$(foreach p,$(filter-out $(me),$(platforms)),$(eval $(p) : $$(me)))
+  $(foreach p,$(filter-out $(me),$(platforms)),$(eval $(p) : $$(me)))
 endif
 
-OUTPUT_ROOT	= $(abspath ../../../build/devkit)
-RESULT		= $(OUTPUT_ROOT)/result
+OUTPUT_ROOT = $(abspath ../../../build/devkit)
+RESULT = $(OUTPUT_ROOT)/result
 
-submakevars	= HOST=$@ BUILD=$(me)				\
-			RESULT=$(RESULT) PREFIX=$(RESULT)/$@    \
-			OUTPUT_ROOT=$(OUTPUT_ROOT)
-$(platforms)	:
-		@echo 'Building compilers for $@'
-		@echo 'Targets: $(platforms)'
-		for p in $@ $(filter-out $@,$(platforms)); do	\
-			$(MAKE) -f Tools.gmk all $(submakevars)	\
-				TARGET=$$p || exit 1	;	\
-		done
-		@echo 'Building ccache program for $@'
-		$(MAKE) -f Tools.gmk ccache $(submakevars) TARGET=$@
-		@echo 'All done"'
+submakevars = HOST=$@ BUILD=$(me) \
+    RESULT=$(RESULT) PREFIX=$(RESULT)/$@ \
+    OUTPUT_ROOT=$(OUTPUT_ROOT)
+$(platforms) :
+	@echo 'Building compilers for $@'
+	@echo 'Targets: $(platforms)'
+	for p in $@ $(filter-out $@,$(platforms)); do \
+	  $(MAKE) -f Tools.gmk all $(submakevars) \
+	      TARGET=$$p || exit 1 ; \
+	done
+	@echo 'Building ccache program for $@'
+	$(MAKE) -f Tools.gmk ccache $(submakevars) TARGET=$@
+	@echo 'All done"'
 
 $(foreach a,i686 x86_64,$(eval $(a) : $(filter $(a)%,$(platforms))))
 
-ia32		:  i686
-today		:= $(shell date +%Y%m%d)
+ia32 : i686
+today := $(shell date +%Y%m%d)
 
 
 define Mktar
-$(1)_tar	= $$(RESULT)/sdk-$(1)-$$(today).tar.gz
-$$($(1)_tar)	: PLATFORM = $(1)
-TARFILES	+= $$($(1)_tar)
-$$($(1)_tar)	: $(1) $$(shell find $$(RESULT)/$(1))
+  $(1)_tar = $$(RESULT)/sdk-$(1)-$$(today).tar.gz
+  $$($(1)_tar) : PLATFORM = $(1)
+  TARFILES += $$($(1)_tar)
+  $$($(1)_tar) : $(1) $$(shell find $$(RESULT)/$(1))
 endef
 
 $(foreach p,$(platforms),$(eval $(call Mktar,$(p))))
 
-tars		: all $(TARFILES)
-onlytars	: $(TARFILES)
-%.tar.gz	:
-		@echo 'Creating compiler package $@'
-		cd $(RESULT)/$(PLATFORM) && tar -czf $@ *
-		touch $@
+tars : all $(TARFILES)
+onlytars : $(TARFILES)
+%.tar.gz :
+	@echo 'Creating compiler package $@'
+	cd $(RESULT)/$(PLATFORM) && tar -czf $@ *
+	touch $@
 
-clean		:
+clean :
 	rm -rf build result
 
-FORCE		:
-.PHONY		: $(configs) $(platforms)
-
-
+FORCE :
+.PHONY : $(configs) $(platforms)
