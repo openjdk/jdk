@@ -869,6 +869,7 @@ SRC_ROOT
 ZERO_ARCHDEF
 DEFINE_CROSS_COMPILE_ARCH
 LP64
+OPENJDK_TARGET_OS_EXPORT_DIR
 OPENJDK_TARGET_OS_API_DIR
 OPENJDK_TARGET_CPU_JLI_CFLAGS
 OPENJDK_TARGET_CPU_OSARCH
@@ -3864,7 +3865,7 @@ fi
 #CUSTOM_AUTOCONF_INCLUDE
 
 # Do not change or remove the following line, it is needed for consistency checks:
-DATE_WHEN_GENERATED=1382540536
+DATE_WHEN_GENERATED=1382659005
 
 ###############################################################################
 #
@@ -7146,6 +7147,13 @@ $as_echo "$COMPILE_TYPE" >&6; }
   fi
   if test "x$OPENJDK_TARGET_OS_API" = xwinapi; then
     OPENJDK_TARGET_OS_API_DIR="windows"
+  fi
+
+
+  if test "x$OPENJDK_TARGET_OS" = xmacosx; then
+      OPENJDK_TARGET_OS_EXPORT_DIR=macosx
+  else
+      OPENJDK_TARGET_OS_EXPORT_DIR=${OPENJDK_TARGET_OS_API_DIR}
   fi
 
 
@@ -29638,7 +29646,7 @@ fi
       -I${JDK_OUTPUTDIR}/include \
       -I${JDK_OUTPUTDIR}/include/$OPENJDK_TARGET_OS \
       -I${JDK_TOPDIR}/src/share/javavm/export \
-      -I${JDK_TOPDIR}/src/$OPENJDK_TARGET_OS_API_DIR/javavm/export \
+      -I${JDK_TOPDIR}/src/$OPENJDK_TARGET_OS_EXPORT_DIR/javavm/export \
       -I${JDK_TOPDIR}/src/share/native/common \
       -I${JDK_TOPDIR}/src/$OPENJDK_TARGET_OS_API_DIR/native/common"
 
