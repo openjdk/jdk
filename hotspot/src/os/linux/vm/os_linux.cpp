@@ -1333,17 +1333,15 @@ void os::Linux::capture_initial_stack(size_t max_size) {
 // Used by VMSelfDestructTimer and the MemProfiler.
 double os::elapsedTime() {
 
-  return (double)(os::elapsed_counter()) * 0.000001;
+  return ((double)os::elapsed_counter()) / os::elapsed_frequency(); // nanosecond resolution
 }
 
 jlong os::elapsed_counter() {
-  timeval time;
-  int status = gettimeofday(&time, NULL);
-  return jlong(time.tv_sec) * 1000 * 1000 + jlong(time.tv_usec) - initial_time_count;
+  return javaTimeNanos() - initial_time_count;
 }
 
 jlong os::elapsed_frequency() {
-  return (1000 * 1000);
+  return NANOSECS_PER_SEC; // nanosecond resolution
 }
 
 bool os::supports_vtime() { return true; }
@@ -4750,7 +4748,7 @@ void os::init(void) {
   Linux::_main_thread = pthread_self();
 
   Linux::clock_init();
-  initial_time_count = os::elapsed_counter();
+  initial_time_count = javaTimeNanos();
 
   // pthread_condattr initialization for monotonic clock
   int status;
