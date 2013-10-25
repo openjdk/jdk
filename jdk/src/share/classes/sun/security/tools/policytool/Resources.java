@@ -45,11 +45,8 @@ public class Resources extends java.util.ListResourceBundle {
         {".file.file.policy.file.location",
                 "  [-file <file>]    policy file location"},
         {"New", "&New"},
-        {"New.accelerator", "control N"},
         {"Open", "&Open..."},
-        {"Open.accelerator", "control O"},
         {"Save", "&Save"},
-        {"Save.accelerator", "control S"},
         {"Save.As", "Save &As..."},
         {"View.Warning.Log", "View &Warning Log"},
         {"Exit", "E&xit"},
@@ -92,8 +89,6 @@ public class Resources extends java.util.ListResourceBundle {
         {"OK.to.overwrite.existing.file.filename.",
                 "OK to overwrite existing file {0}?"},
         {"Cancel", "Cancel"},
-
-        // Policy Entry Dialog
         {"CodeBase.", "&CodeBase:"},
         {"SignedBy.", "&SignedBy:"},
         {"Add.Principal", "&Add Principal"},
@@ -104,13 +99,10 @@ public class Resources extends java.util.ListResourceBundle {
         {".Edit.Permission", "  Ed&it Permission"},
         {"Remove.Permission", "Re&move Permission"},
         {"Done", "Done"},
-
-        // KeyStore Edit Dialog
         {"KeyStore.URL.", "KeyStore &URL:"},
         {"KeyStore.Type.", "KeyStore &Type:"},
         {"KeyStore.Provider.", "KeyStore &Provider:"},
         {"KeyStore.Password.URL.", "KeyStore Pass&word URL:"},
-
         {"Principals", "Principals"},
         {".Edit.Principal.", "  Edit Principal:"},
         {".Add.New.Principal.", "  Add New Principal:"},
