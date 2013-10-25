@@ -3865,7 +3865,7 @@ fi
 #CUSTOM_AUTOCONF_INCLUDE
 
 # Do not change or remove the following line, it is needed for consistency checks:
-DATE_WHEN_GENERATED=1382659005
+DATE_WHEN_GENERATED=1382702260
 
 ###############################################################################
 #
@@ -34253,10 +34253,10 @@ ac_link='$CXX -o conftest$ac_exeext $CXXFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ex
 ac_compiler_gnu=$ac_cv_cxx_compiler_gnu
 
     PREV_CXXCFLAGS="$CXXFLAGS"
-    PREV_LDFLAGS="$LDFLAGS"
+    PREV_LIBS="$LIBS"
     PREV_CXX="$CXX"
     CXXFLAGS="$CXXFLAGS $FREETYPE_CFLAGS"
-    LDFLAGS="$LDFLAGS $FREETYPE_LIBS"
+    LIBS="$LIBS $FREETYPE_LIBS"
     CXX="$FIXPATH $CXX"
     cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
@@ -34323,7 +34323,7 @@ fi
 rm -f core conftest.err conftest.$ac_objext \
     conftest$ac_exeext conftest.$ac_ext
     CXXCFLAGS="$PREV_CXXFLAGS"
-    LDFLAGS="$PREV_LDFLAGS"
+    LIBS="$PREV_LIBS"
     CXX="$PREV_CXX"
     ac_ext=cpp
 ac_cpp='$CXXCPP $CPPFLAGS'
