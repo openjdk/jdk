@@ -39,6 +39,7 @@ import java.util.*;
  * exchange handler.
  * @since 1.6
  */
+@jdk.Exported
 public abstract class Filter {
 
     protected Filter () {}
@@ -48,6 +49,7 @@ public abstract class Filter {
      * Each filter in the chain is given one of these
      * so it can invoke the next filter in the chain
      */
+    @jdk.Exported
     public static class Chain {
         /* the last element in the chain must invoke the users
          * handler

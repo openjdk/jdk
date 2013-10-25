@@ -179,3 +179,16 @@ ciObjArrayKlass* ciObjArrayKlass::make_impl(ciKlass* element_klass) {
 ciObjArrayKlass* ciObjArrayKlass::make(ciKlass* element_klass) {
   GUARDED_VM_ENTRY(return make_impl(element_klass);)
 }
+
+ciKlass* ciObjArrayKlass::exact_klass() {
+  ciType* base = base_element_type();
+  if (base->is_instance_klass()) {
+    ciInstanceKlass* ik = base->as_instance_klass();
+    if (ik->exact_klass() != NULL) {
+      return this;
+    }
+  } else if (base->is_primitive_type()) {
+    return this;
+  }
+  return NULL;
+}

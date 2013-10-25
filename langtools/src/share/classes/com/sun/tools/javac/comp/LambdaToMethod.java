@@ -128,10 +128,9 @@ public class LambdaToMethod extends TreeTranslator {
         private KlassInfo(Symbol kSym) {
             appendedMethodList = new ListBuffer<>();
             deserializeCases = new HashMap<String, ListBuffer<JCStatement>>();
-            long flags = PRIVATE | STATIC | SYNTHETIC;
             MethodType type = new MethodType(List.of(syms.serializedLambdaType), syms.objectType,
                     List.<Type>nil(), syms.methodClass);
-            deserMethodSym = makeSyntheticMethod(flags, names.deserializeLambda, type, kSym);
+            deserMethodSym = makePrivateSyntheticMethod(STATIC, names.deserializeLambda, type, kSym);
             deserParamSym = new VarSymbol(FINAL, names.fromString("lambda"),
                     syms.serializedLambdaType, deserMethodSym);
         }
@@ -671,8 +670,8 @@ public class LambdaToMethod extends TreeTranslator {
     /**
      * Create new synthetic method with given flags, name, type, owner
      */
-    private MethodSymbol makeSyntheticMethod(long flags, Name name, Type type, Symbol owner) {
-        return new MethodSymbol(flags | SYNTHETIC, name, type, owner);
+    private MethodSymbol makePrivateSyntheticMethod(long flags, Name name, Type type, Symbol owner) {
+        return new MethodSymbol(flags | SYNTHETIC | PRIVATE, name, type, owner);
     }
 
     /**
@@ -1067,12 +1066,12 @@ public class LambdaToMethod extends TreeTranslator {
         } else {
             if (refSym.isStatic()) {
                 return ClassFile.REF_invokeStatic;
+            } else if ((refSym.flags() & PRIVATE) != 0) {
+                return ClassFile.REF_invokeSpecial;
             } else if (refSym.enclClass().isInterface()) {
                 return ClassFile.REF_invokeInterface;
             } else {
-                return (refSym.flags() & PRIVATE) != 0 ?
-                        ClassFile.REF_invokeSpecial :
-                        ClassFile.REF_invokeVirtual;
+                return ClassFile.REF_invokeVirtual;
             }
         }
     }
@@ -1480,7 +1479,7 @@ public class LambdaToMethod extends TreeTranslator {
                 //static clinits are generated in Gen - so we need to fake them
                 Symbol clinit = clinits.get(csym);
                 if (clinit == null) {
-                    clinit = makeSyntheticMethod(STATIC,
+                    clinit = makePrivateSyntheticMethod(STATIC,
                             names.clinit,
                             new MethodType(List.<Type>nil(), syms.voidType, List.<Type>nil(), syms.methodClass),
                             csym);
@@ -1729,7 +1728,7 @@ public class LambdaToMethod extends TreeTranslator {
                     self = ((JCVariableDecl)frame.tree).sym;
                 }
                 Name name = isSerializable() ? serializedLambdaName(owner) : lambdaName();
-                this.translatedSym = makeSyntheticMethod(0, name, null, owner.enclClass());
+                this.translatedSym = makePrivateSyntheticMethod(0, name, null, owner.enclClass());
                 if (dumpLambdaToMethodStats) {
                     log.note(tree, "lambda.stat", needsAltMetafactory(), translatedSym);
                 }
@@ -1845,9 +1844,9 @@ public class LambdaToMethod extends TreeTranslator {
 
                 // If instance access isn't needed, make it static.
                 // Interface instance methods must be default methods.
-                // Awaiting VM channges, default methods are public
+                // Lambda methods are private synthetic.
                 translatedSym.flags_field = SYNTHETIC |
-                        ((inInterface && thisReferenced)? PUBLIC : PRIVATE) |
+                        PRIVATE |
                         (thisReferenced? (inInterface? DEFAULT : 0) : STATIC);
 
                 //compute synthetic params
@@ -1890,7 +1889,7 @@ public class LambdaToMethod extends TreeTranslator {
                 super(tree);
                 this.isSuper = tree.hasKind(ReferenceKind.SUPER);
                 this.bridgeSym = needsBridge()
-                        ? makeSyntheticMethod(isSuper ? 0 : STATIC,
+                        ? makePrivateSyntheticMethod(isSuper ? 0 : STATIC,
                                               lambdaName().append(names.fromString("$bridge")), null,
                                               owner.enclClass())
                         : null;

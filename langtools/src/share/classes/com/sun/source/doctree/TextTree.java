@@ -30,7 +30,7 @@ package com.sun.source.doctree;
  *
  * @since 1.8
  */
-@jdk.Supported
+@jdk.Exported
 public interface TextTree extends DocTree {
     String getBody();
 }

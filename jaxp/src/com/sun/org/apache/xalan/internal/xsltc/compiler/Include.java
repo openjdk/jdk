@@ -87,7 +87,7 @@ final class Include extends TopLevelElement {
             if (input == null) {
                 docToLoad = SystemIDResolver.getAbsoluteURI(docToLoad, currLoadedDoc);
                 String accessError = SecuritySupport.checkAccess(docToLoad,
-                        xsltc.getProperty(XMLConstants.ACCESS_EXTERNAL_STYLESHEET),
+                        (String)xsltc.getProperty(XMLConstants.ACCESS_EXTERNAL_STYLESHEET),
                         XalanConstants.ACCESS_EXTERNAL_ALL);
 
                 if (accessError != null) {

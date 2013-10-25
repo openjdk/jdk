@@ -31,13 +31,13 @@ include Setup.gmk
 default: images
 
 # Prepare the find cache. Only used if running on windows.
-$(eval $(call FillCacheFind,\
+$(eval $(call FillCacheFind, \
     $(wildcard $(JDK_OUTPUTDIR)/bin \
-               $(JDK_OUTPUTDIR)/lib \
-               $(IMAGES_OUTPUTDIR)/lib \
-               $(JDK_OUTPUTDIR)/include \
-               $(JDK_OUTPUTDIR)/sample \
-               $(JDK_OUTPUTDIR)/demo)))
+        $(JDK_OUTPUTDIR)/lib \
+        $(IMAGES_OUTPUTDIR)/lib \
+        $(JDK_OUTPUTDIR)/include \
+        $(JDK_OUTPUTDIR)/sample \
+        $(JDK_OUTPUTDIR)/demo)))
 
 include Tools.gmk
 
@@ -92,102 +92,102 @@ endef
 ################################################################################
 # /bin dir
 
-ifeq ($(PROFILE),)
-    NOT_JRE_BIN_FILES := \
-	appletviewer$(EXE_SUFFIX) \
-	extcheck$(EXE_SUFFIX) \
-	idlj$(EXE_SUFFIX) \
-	jar$(EXE_SUFFIX) \
-	jarsigner$(EXE_SUFFIX) \
-	java-rmi.cgi \
-	javac$(EXE_SUFFIX) \
-	javadoc$(EXE_SUFFIX) \
-	javah$(EXE_SUFFIX) \
-	javap$(EXE_SUFFIX) \
-	jdeps$(EXE_SUFFIX) \
-	jcmd$(EXE_SUFFIX) \
-	jdb$(EXE_SUFFIX) \
-	jps$(EXE_SUFFIX) \
-	jrunscript$(EXE_SUFFIX) \
-	jstat$(EXE_SUFFIX) \
-	jstatd$(EXE_SUFFIX) \
-	jstack$(EXE_SUFFIX) \
-	packagebean$(SCRIPT_SUFFIX) \
-	rmic$(EXE_SUFFIX) \
-	serialver$(EXE_SUFFIX) \
-	unregbean$(EXE_SUFFIX) \
-	jconsole$(EXE_SUFFIX) \
-	jinfo$(EXE_SUFFIX) \
-	jmap$(EXE_SUFFIX) \
-	native2ascii$(EXE_SUFFIX) \
-	xjc$(EXE_SUFFIX) \
-	wsgen$(EXE_SUFFIX) \
-	wsimport$(EXE_SUFFIX) \
-        schemagen$(EXE_SUFFIX) \
-	jsadebugd$(EXE_SUFFIX) \
-	jhat$(EXE_SUFFIX)
+ifeq ($(PROFILE), )
+  NOT_JRE_BIN_FILES := \
+      appletviewer$(EXE_SUFFIX) \
+      extcheck$(EXE_SUFFIX) \
+      idlj$(EXE_SUFFIX) \
+      jar$(EXE_SUFFIX) \
+      jarsigner$(EXE_SUFFIX) \
+      java-rmi.cgi \
+      javac$(EXE_SUFFIX) \
+      javadoc$(EXE_SUFFIX) \
+      javah$(EXE_SUFFIX) \
+      javap$(EXE_SUFFIX) \
+      jdeps$(EXE_SUFFIX) \
+      jcmd$(EXE_SUFFIX) \
+      jdb$(EXE_SUFFIX) \
+      jps$(EXE_SUFFIX) \
+      jrunscript$(EXE_SUFFIX) \
+      jstat$(EXE_SUFFIX) \
+      jstatd$(EXE_SUFFIX) \
+      jstack$(EXE_SUFFIX) \
+      packagebean$(SCRIPT_SUFFIX) \
+      rmic$(EXE_SUFFIX) \
+      serialver$(EXE_SUFFIX) \
+      unregbean$(EXE_SUFFIX) \
+      jconsole$(EXE_SUFFIX) \
+      jinfo$(EXE_SUFFIX) \
+      jmap$(EXE_SUFFIX) \
+      native2ascii$(EXE_SUFFIX) \
+      xjc$(EXE_SUFFIX) \
+      wsgen$(EXE_SUFFIX) \
+      wsimport$(EXE_SUFFIX) \
+      schemagen$(EXE_SUFFIX) \
+      jsadebugd$(EXE_SUFFIX) \
+      jhat$(EXE_SUFFIX)
 endif
 
 WINDOWS_JDK_BIN_FILES = \
-	$(EXE_SUFFIX) \
-	$(LIBRARY_PREFIX)jli$(SHARED_LIBRARY_SUFFIX) \
-	$(notdir $(MSVCR_DLL))
+    $(EXE_SUFFIX) \
+    $(LIBRARY_PREFIX)jli$(SHARED_LIBRARY_SUFFIX) \
+    $(notdir $(MSVCR_DLL))
 
 WINDOWS_JDKJRE_BIN_FILES := \
-	$(LIBRARY_PREFIX)attach$(SHARED_LIBRARY_SUFFIX) \
-	$(SALIB_NAME)
+    $(LIBRARY_PREFIX)attach$(SHARED_LIBRARY_SUFFIX) \
+    $(SALIB_NAME)
 
 # Find all files in bin dir
-ALL_BIN_LIST := $(call CacheFind,$(JDK_OUTPUTDIR)/bin)
+ALL_BIN_LIST := $(call CacheFind, $(JDK_OUTPUTDIR)/bin)
 
 # Prevent sjavac from entering the images.
-ALL_BIN_LIST := $(filter-out %/sjavac,$(ALL_BIN_LIST))
+ALL_BIN_LIST := $(filter-out %/sjavac, $(ALL_BIN_LIST))
 
 # For unknown reason the debuginfo files for executables are not put into images
 # e.g filter them out
-ifneq ($(OPENJDK_TARGET_OS),windows)
-    ALL_BIN_LIST := $(filter-out %.debuginfo %.diz, $(ALL_BIN_LIST))
+ifneq ($(OPENJDK_TARGET_OS), windows)
+  ALL_BIN_LIST := $(filter-out %.debuginfo %.diz, $(ALL_BIN_LIST))
 else
-# On windows, the libraries are in the bin dir, only filter out debuginfo files
-# for executables. "java" is both a library and executable.
-    ALL_BIN_EXEC_FILES := $(filter-out java.exe,$(notdir $(filter %.exe,$(ALL_BIN_LIST))))
-    ALL_BIN_DEBUG_FILTER := $(addprefix %,$(patsubst %.exe,%.debuginfo,$(ALL_BIN_EXEC_FILES)) \
-					   $(patsubst %.exe,%.diz,$(ALL_BIN_EXEC_FILES))) %.pdb
-    ALL_BIN_LIST := $(filter-out $(ALL_BIN_DEBUG_FILTER),$(ALL_BIN_LIST))
+  # On windows, the libraries are in the bin dir, only filter out debuginfo files
+  # for executables. "java" is both a library and executable.
+  ALL_BIN_EXEC_FILES := $(filter-out java.exe, $(notdir $(filter %.exe, $(ALL_BIN_LIST))))
+  ALL_BIN_DEBUG_FILTER := $(addprefix %, $(patsubst %.exe, %.debuginfo, $(ALL_BIN_EXEC_FILES)) \
+      $(patsubst %.exe, %.diz, $(ALL_BIN_EXEC_FILES))) %.pdb
+  ALL_BIN_LIST := $(filter-out $(ALL_BIN_DEBUG_FILTER), $(ALL_BIN_LIST))
 endif
 
-JDKJRE_BIN_LIST := $(filter-out $(addprefix %,$(NOT_JRE_BIN_FILES)), $(ALL_BIN_LIST))
-JRE_BIN_LIST := $(filter-out $(addprefix %,$(WINDOWS_JDKJRE_BIN_FILES)), $(JDKJRE_BIN_LIST))
+JDKJRE_BIN_LIST := $(filter-out $(addprefix %, $(NOT_JRE_BIN_FILES)), $(ALL_BIN_LIST))
+JRE_BIN_LIST := $(filter-out $(addprefix %, $(WINDOWS_JDKJRE_BIN_FILES)), $(JDKJRE_BIN_LIST))
 
-ifeq ($(OPENJDK_TARGET_OS),windows)
-    JDK_BIN_LIST := $(filter $(addprefix %,$(WINDOWS_JDK_BIN_FILES)), $(ALL_BIN_LIST))
-    # On windows x86, the server jvm is filtered out from the j2re image. This could possibly 
-    # be handled by profiles in the future. If no client jvm is built, leave server in.
-    ifeq ($(OPENJDK_TARGET_CPU),x86)
-        ifeq ($(JVM_VARIANT_CLIENT),true)
-            JRE_BIN_LIST := $(filter-out $(JDK_OUTPUTDIR)/bin/server/%,$(JRE_BIN_LIST))
-	endif
+ifeq ($(OPENJDK_TARGET_OS), windows)
+  JDK_BIN_LIST := $(filter $(addprefix %, $(WINDOWS_JDK_BIN_FILES)), $(ALL_BIN_LIST))
+  # On windows x86, the server jvm is filtered out from the j2re image. This could possibly
+  # be handled by profiles in the future. If no client jvm is built, leave server in.
+  ifeq ($(OPENJDK_TARGET_CPU), x86)
+    ifeq ($(JVM_VARIANT_CLIENT), true)
+      JRE_BIN_LIST := $(filter-out $(JDK_OUTPUTDIR)/bin/server/%, $(JRE_BIN_LIST))
     endif
+  endif
 else
-    JDK_BIN_LIST := $(ALL_BIN_LIST)
+  JDK_BIN_LIST := $(ALL_BIN_LIST)
 endif
 
-ifneq ($(OPENJDK_TARGET_CPU_ISADIR),)
-    OVERLAY_FILTER := $(JDK_OUTPUTDIR)/bin$(OPENJDK_TARGET_CPU_ISADIR)%
+ifneq ($(OPENJDK_TARGET_CPU_ISADIR), )
+  OVERLAY_FILTER := $(JDK_OUTPUTDIR)/bin$(OPENJDK_TARGET_CPU_ISADIR)%
 endif
 
-$(foreach f,$(filter-out $(OVERLAY_FILTER),$(JRE_BIN_LIST)),\
+$(foreach f,$(filter-out $(OVERLAY_FILTER),$(JRE_BIN_LIST)), \
     $(eval $(call AddFileToCopy,$(JDK_OUTPUTDIR),$(JRE_IMAGE_DIR),$f,JRE_BIN_TARGETS)))
-$(foreach f,$(filter-out $(OVERLAY_FILTER),$(JDK_BIN_LIST)),\
+$(foreach f,$(filter-out $(OVERLAY_FILTER),$(JDK_BIN_LIST)), \
     $(eval $(call AddFileToCopy,$(JDK_OUTPUTDIR),$(JDK_IMAGE_DIR),$f,JDK_BIN_TARGETS)))
-$(foreach f,$(filter-out $(OVERLAY_FILTER),$(JDKJRE_BIN_LIST)),\
+$(foreach f,$(filter-out $(OVERLAY_FILTER),$(JDKJRE_BIN_LIST)), \
     $(eval $(call AddFileToCopy,$(JDK_OUTPUTDIR),$(JDK_IMAGE_DIR)/jre,$f,JDKJRE_BIN_TARGETS)))
 
-$(foreach f,$(filter $(OVERLAY_FILTER),$(JRE_BIN_LIST)),\
+$(foreach f,$(filter $(OVERLAY_FILTER),$(JRE_BIN_LIST)), \
     $(eval $(call AddFileToCopy,$(JDK_OUTPUTDIR),$(JRE_OVERLAY_IMAGE_DIR),$f,JRE_BIN_TARGETS)))
-$(foreach f,$(filter $(OVERLAY_FILTER),$(JDK_BIN_LIST)),\
+$(foreach f,$(filter $(OVERLAY_FILTER),$(JDK_BIN_LIST)), \
     $(eval $(call AddFileToCopy,$(JDK_OUTPUTDIR),$(JDK_OVERLAY_IMAGE_DIR),$f,JDK_BIN_TARGETS)))
-$(foreach f,$(filter $(OVERLAY_FILTER),$(JDKJRE_BIN_LIST)),\
+$(foreach f,$(filter $(OVERLAY_FILTER),$(JDKJRE_BIN_LIST)), \
     $(eval $(call AddFileToCopy,$(JDK_OUTPUTDIR),$(JDK_OVERLAY_IMAGE_DIR)/jre,$f,JDKJRE_BIN_TARGETS)))
 
 ifeq ($(OPENJDK_TARGET_OS)-$(OPENJDK_TARGET_CPU_BITS),solaris-64)
@@ -213,88 +213,93 @@ endif
 ################################################################################
 # /lib dir
 ifneq ($(OPENJDK_TARGET_OS), macosx)
-    JDKJRE_LIB_FILES := \
-	$(LIBRARY_PREFIX)attach$(SHARED_LIBRARY_SUFFIX) \
-	$(SALIB_NAME)
+  JDKJRE_LIB_FILES := \
+      $(LIBRARY_PREFIX)attach$(SHARED_LIBRARY_SUFFIX) \
+      $(SALIB_NAME)
 endif
 
-ifeq ($(PROFILE),)
-    NOT_JRE_LIB_FILES := \
-	tools.jar \
-	jconsole.jar \
-	sa-jdi.jar \
-	dt.jar \
-	orb.idl \
-	ir.idl \
-	ct.sym
+ifeq ($(PROFILE), )
+  NOT_JRE_LIB_FILES := \
+      tools.jar \
+      jconsole.jar \
+      sa-jdi.jar \
+      dt.jar \
+      orb.idl \
+      ir.idl \
+      ct.sym
 
-    ifeq ($(OPENJDK_TARGET_OS), windows)
-      NOT_JRE_LIB_FILES += jawt.lib jvm.lib
-    endif
+  ifeq ($(OPENJDK_TARGET_OS), windows)
+    NOT_JRE_LIB_FILES += jawt.lib jvm.lib
+  endif
 endif
 
 JDK_LIB_FILES := $(NOT_JRE_LIB_FILES)
 ifeq ($(OPENJDK_TARGET_OS), linux)
-    JDK_LIB_FILES += jexec
+  JDK_LIB_FILES += jexec
+endif
+
+ifneq ($(findstring $(OPENJDK_TARGET_OS), linux solaris),) # If Linux or Solaris
+    JDK_LIB_FILES += $(LIBRARY_PREFIX)jli$(SHARED_LIBRARY_SUFFIX) \
+		     $(LIBRARY_PREFIX)jawt$(SHARED_LIBRARY_SUFFIX)
 endif
 
 # Find all files to copy from $(JDK_OUTPUTDIR)/lib
 # Jar files are not expected to be here
-ALL_JDKOUT_LIB_LIST := $(call not-containing,_the.,$(filter-out %.jar,\
-                            $(call CacheFind,$(JDK_OUTPUTDIR)/lib)))
+ALL_JDKOUT_LIB_LIST := $(call not-containing,_the., $(filter-out %.jar, \
+    $(call CacheFind, $(JDK_OUTPUTDIR)/lib)))
 # Find all files to copy from $(IMAGES_OUTPUTDIR)/lib
 # This is were the jar files are and might not exist if building overlay-images
-ifneq ($(wildcard $(IMAGES_OUTPUTDIR)/lib),)
-    ALL_IMAGES_LIB_LIST := $(call not-containing,_the.,\
-                            $(call CacheFind,$(IMAGES_OUTPUTDIR)/lib))
+ifneq ($(wildcard $(IMAGES_OUTPUTDIR)/lib), )
+  ALL_IMAGES_LIB_LIST := $(call not-containing,_the., \
+      $(call CacheFind, $(IMAGES_OUTPUTDIR)/lib))
 endif
 
 # Filter files to copy for each destination
-JRE_JDKOUT_LIB_LIST := $(filter-out $(addprefix %,$(NOT_JRE_LIB_FILES) $(JDKJRE_LIB_FILES)),\
-                       $(ALL_JDKOUT_LIB_LIST))
-JDKJRE_JDKOUT_LIB_LIST := $(filter-out $(addprefix %,$(NOT_JRE_LIB_FILES)),$(ALL_JDKOUT_LIB_LIST))
-JDK_JDKOUT_LIB_LIST := $(filter $(addprefix %,$(JDK_LIB_FILES)),$(ALL_JDKOUT_LIB_LIST))
+JRE_JDKOUT_LIB_LIST := $(filter-out $(addprefix %, $(NOT_JRE_LIB_FILES) $(JDKJRE_LIB_FILES)), \
+    $(ALL_JDKOUT_LIB_LIST))
+JDKJRE_JDKOUT_LIB_LIST := $(filter-out $(addprefix %, $(NOT_JRE_LIB_FILES)), $(ALL_JDKOUT_LIB_LIST))
+JDK_JDKOUT_LIB_LIST := $(filter $(addprefix %, $(JDK_LIB_FILES)), $(ALL_JDKOUT_LIB_LIST))
 
-JRE_IMAGES_LIB_LIST := $(filter-out $(addprefix %,$(NOT_JRE_LIB_FILES) $(JDKJRE_LIB_FILES)),\
-                       $(ALL_IMAGES_LIB_LIST))
-JDKJRE_IMAGES_LIB_LIST := $(filter-out $(addprefix %,$(NOT_JRE_LIB_FILES)),$(ALL_IMAGES_LIB_LIST))
-JDK_IMAGES_LIB_LIST := $(filter $(addprefix %,$(JDK_LIB_FILES)),$(ALL_IMAGES_LIB_LIST))
+JRE_IMAGES_LIB_LIST := $(filter-out $(addprefix %, $(NOT_JRE_LIB_FILES) $(JDKJRE_LIB_FILES)), \
+    $(ALL_IMAGES_LIB_LIST))
+JDKJRE_IMAGES_LIB_LIST := $(filter-out $(addprefix %, $(NOT_JRE_LIB_FILES)), $(ALL_IMAGES_LIB_LIST))
+JDK_IMAGES_LIB_LIST := $(filter $(addprefix %, $(JDK_LIB_FILES)), $(ALL_IMAGES_LIB_LIST))
 
 # Iterate over files to copy to create rules for each one
-$(foreach f,$(JRE_JDKOUT_LIB_LIST),\
+$(foreach f,$(JRE_JDKOUT_LIB_LIST), \
     $(eval $(call AddFileToCopy,$(JDK_OUTPUTDIR),$(JRE_IMAGE_DIR),$f,JRE_LIB_TARGETS)))
-$(foreach f,$(JDK_JDKOUT_LIB_LIST),\
+$(foreach f,$(JDK_JDKOUT_LIB_LIST), \
     $(eval $(call AddFileToCopy,$(JDK_OUTPUTDIR),$(JDK_IMAGE_DIR),$f,JDK_LIB_TARGETS)))
-$(foreach f,$(JDKJRE_JDKOUT_LIB_LIST),\
+$(foreach f,$(JDKJRE_JDKOUT_LIB_LIST), \
     $(eval $(call AddFileToCopy,$(JDK_OUTPUTDIR),$(JDK_IMAGE_DIR)/jre,$f,JDKJRE_LIB_TARGETS)))
 
-$(foreach f,$(JRE_IMAGES_LIB_LIST),\
+$(foreach f,$(JRE_IMAGES_LIB_LIST), \
     $(eval $(call AddFileToCopy,$(IMAGES_OUTPUTDIR),$(JRE_IMAGE_DIR),$f,JRE_LIB_TARGETS)))
-$(foreach f,$(JDK_IMAGES_LIB_LIST),\
+$(foreach f,$(JDK_IMAGES_LIB_LIST), \
     $(eval $(call AddFileToCopy,$(IMAGES_OUTPUTDIR),$(JDK_IMAGE_DIR),$f,JDK_LIB_TARGETS)))
-$(foreach f,$(JDKJRE_IMAGES_LIB_LIST),\
+$(foreach f,$(JDKJRE_IMAGES_LIB_LIST), \
     $(eval $(call AddFileToCopy,$(IMAGES_OUTPUTDIR),$(JDK_IMAGE_DIR)/jre,$f,JDKJRE_LIB_TARGETS)))
 
-$(foreach f,$(filter $(JDK_OUTPUTDIR)/lib$(OPENJDK_TARGET_CPU_ISADIR)/%,$(JRE_JDKOUT_LIB_LIST)),\
+$(foreach f,$(filter $(JDK_OUTPUTDIR)/lib$(OPENJDK_TARGET_CPU_ISADIR)/%,$(JRE_JDKOUT_LIB_LIST)), \
     $(eval $(call AddFileToCopy,$(JDK_OUTPUTDIR),$(JRE_OVERLAY_IMAGE_DIR),$f,JRE_OVERLAY_LIB_TARGETS)))
-$(foreach f,$(filter $(JDK_OUTPUTDIR)/lib$(OPENJDK_TARGET_CPU_ISADIR)/%,$(JDK_JDKOUT_LIB_LIST)),\
+$(foreach f,$(filter $(JDK_OUTPUTDIR)/lib$(OPENJDK_TARGET_CPU_ISADIR)/%,$(JDK_JDKOUT_LIB_LIST)), \
     $(eval $(call AddFileToCopy,$(JDK_OUTPUTDIR),$(JDK_OVERLAY_IMAGE_DIR),$f,JDK_OVERLAY_LIB_TARGETS)))
-$(foreach f,$(filter $(JDK_OUTPUTDIR)/lib$(OPENJDK_TARGET_CPU_ISADIR)/%,$(JDKJRE_JDKOUT_LIB_LIST)),\
+$(foreach f,$(filter $(JDK_OUTPUTDIR)/lib$(OPENJDK_TARGET_CPU_ISADIR)/%,$(JDKJRE_JDKOUT_LIB_LIST)), \
     $(eval $(call AddFileToCopy,$(JDK_OUTPUTDIR),$(JDK_OVERLAY_IMAGE_DIR)/jre,$f,JDKJRE_OVERLAY_LIB_TARGETS)))
 
-ifneq ($(PROFILE),)
-# Files in lib$(PROFILE) are excluded from the generic copying routines so 
-# we have to add them back in here
-$(foreach f,$(CUSTOM_PROFILE_JARS),\
-    $(eval $(call AddFileToCopy,$(IMAGES_OUTPUTDIR)/lib$(PROFILE),$(JRE_IMAGE_DIR)/lib,$f,JRE_LIB_TARGETS)))
+ifneq ($(PROFILE), )
+  # Files in lib$(PROFILE) are excluded from the generic copying routines so
+  # we have to add them back in here
+  $(foreach f,$(CUSTOM_PROFILE_JARS), \
+      $(eval $(call AddFileToCopy,$(IMAGES_OUTPUTDIR)/lib$(PROFILE),$(JRE_IMAGE_DIR)/lib,$f,JRE_LIB_TARGETS)))
 endif
 
 # CTE plugin security change require new empty directory lib/applet
-$(JRE_IMAGE_DIR)/lib/applet: 
+$(JRE_IMAGE_DIR)/lib/applet:
 	$(ECHO) $(LOG_INFO) Creating $(patsubst $(OUTPUT_ROOT)/%,%,$@)
 	$(MKDIR) -p $@
 
-$(JDK_IMAGE_DIR)/jre/lib/applet: 
+$(JDK_IMAGE_DIR)/jre/lib/applet:
 	$(ECHO) $(LOG_INFO) Creating $(patsubst $(OUTPUT_ROOT)/%,%,$@)
 	$(MKDIR) -p $@
 
@@ -318,185 +323,187 @@ $(JDK_IMAGE_DIR)/jre/lib/ext/meta-index: $(JDKJRE_LIB_TARGETS)
 ################################################################################
 # /man dir
 # Avoid evaluating this whole section on windows for speed and stability
-ifneq ($(OPENJDK_TARGET_OS),windows)
-    JRE_MAN_PAGES := \
-	java.1		\
-	keytool.1	\
-	orbd.1          \
-	pack200.1	\
-	policytool.1    \
-	rmid.1		\
-	rmiregistry.1	\
-	servertool.1    \
-	tnameserv.1     \
-	unpack200.1
+ifneq ($(OPENJDK_TARGET_OS), windows)
+  JRE_MAN_PAGES := \
+      java.1 \
+      keytool.1 \
+      orbd.1 \
+      pack200.1 \
+      policytool.1 \
+      rmid.1 \
+      rmiregistry.1 \
+      servertool.1 \
+      tnameserv.1 \
+      unpack200.1
 
-    ifndef OPENJDK
-        JRE_MAN_PAGES += javaws.1
+  ifndef OPENJDK
+    ifneq ($(OPENJDK_TARGET_OS), solaris)
+      JRE_MAN_PAGES += javaws.1
     endif
+  endif
 
-    JDK_MAN_PAGES =        \
-	$(JRE_MAN_PAGES)   \
-	appletviewer.1     \
-	extcheck.1         \
-	idlj.1             \
-	jar.1              \
-	jarsigner.1        \
-	javac.1            \
-	javadoc.1          \
-	javah.1            \
-	javap.1            \
-	jconsole.1         \
-	jcmd.1             \
-	jdb.1              \
-	jhat.1             \
-        jinfo.1            \
-        jmap.1             \
-        jps.1              \
-	jrunscript.1       \
-        jsadebugd.1        \
-        jstack.1           \
-        jstat.1            \
-        jstatd.1           \
-	native2ascii.1     \
-	rmic.1             \
-        schemagen.1        \
-	serialver.1        \
-        wsgen.1            \
-        wsimport.1         \
-        xjc.1
+  JDK_MAN_PAGES = \
+      $(JRE_MAN_PAGES) \
+      appletviewer.1 \
+      extcheck.1 \
+      idlj.1 \
+      jar.1 \
+      jarsigner.1 \
+      javac.1 \
+      javadoc.1 \
+      javah.1 \
+      javap.1 \
+      jconsole.1 \
+      jcmd.1 \
+      jdb.1 \
+      jhat.1 \
+      jinfo.1 \
+      jmap.1 \
+      jps.1 \
+      jrunscript.1 \
+      jsadebugd.1 \
+      jstack.1 \
+      jstat.1 \
+      jstatd.1 \
+      native2ascii.1 \
+      rmic.1 \
+      schemagen.1 \
+      serialver.1 \
+      wsgen.1 \
+      wsimport.1 \
+      xjc.1
 
-    ifndef OPENJDK
-        JDK_MAN_PAGES += jvisualvm.1
-    endif
+  ifndef OPENJDK
+    JDK_MAN_PAGES += jvisualvm.1
+  endif
 
-    # This variable is potentially overridden in the closed makefile.
-    MAN_SRC_BASEDIR ?= $(JDK_TOPDIR)/src
+  # This variable is potentially overridden in the closed makefile.
+  MAN_SRC_BASEDIR ?= $(JDK_TOPDIR)/src
 
-    ifeq ($(OPENJDK_TARGET_OS), linux)
-        MAN_SRC_DIR:=$(MAN_SRC_BASEDIR)/linux/doc
-        MAN1_SUBDIR:=man
-    endif
-    ifeq ($(OPENJDK_TARGET_OS), solaris)
-        MAN_SRC_DIR:=$(MAN_SRC_BASEDIR)/solaris/doc
-        MAN1_SUBDIR:=sun/man/man1
-    endif
-    ifeq ($(OPENJDK_TARGET_OS), macosx)
-        MAN_SRC_DIR:=$(MAN_SRC_BASEDIR)/bsd/doc
-        MAN1_SUBDIR:=man
-        JDK_MAN_PAGES := $(filter-out jcmd.1, $(JDK_MAN_PAGES))
-        JDK_MAN_PAGES := $(filter-out jvisualvm.1, $(JDK_MAN_PAGES))
-    endif
+  ifeq ($(OPENJDK_TARGET_OS), linux)
+    MAN_SRC_DIR := $(MAN_SRC_BASEDIR)/linux/doc
+    MAN1_SUBDIR := man
+  endif
+  ifeq ($(OPENJDK_TARGET_OS), solaris)
+    MAN_SRC_DIR := $(MAN_SRC_BASEDIR)/solaris/doc
+    MAN1_SUBDIR := sun/man/man1
+  endif
+  ifeq ($(OPENJDK_TARGET_OS), macosx)
+    MAN_SRC_DIR := $(MAN_SRC_BASEDIR)/bsd/doc
+    MAN1_SUBDIR := man
+    JDK_MAN_PAGES := $(filter-out jcmd.1, $(JDK_MAN_PAGES))
+    JDK_MAN_PAGES := $(filter-out jvisualvm.1, $(JDK_MAN_PAGES))
+  endif
 
 
-    $(JRE_IMAGE_DIR)/man/man1/%: $(MAN_SRC_DIR)/$(MAN1_SUBDIR)/%
+  $(JRE_IMAGE_DIR)/man/man1/%: $(MAN_SRC_DIR)/$(MAN1_SUBDIR)/%
 	$(ECHO) $(LOG_INFO) Copying $(patsubst $(OUTPUT_ROOT)/%,%,$@)
 	$(install-file)
 
-    $(JDK_IMAGE_DIR)/man/man1/%: $(MAN_SRC_DIR)/$(MAN1_SUBDIR)/%
+  $(JDK_IMAGE_DIR)/man/man1/%: $(MAN_SRC_DIR)/$(MAN1_SUBDIR)/%
 	$(ECHO) $(LOG_INFO) Copying $(patsubst $(OUTPUT_ROOT)/%,%,$@)
 	$(install-file)
 
-    $(JRE_IMAGE_DIR)/man/man1/%: $(JDK_OUTPUTDIR)/impdoc/$(MAN1_SUBDIR)/%
+  $(JRE_IMAGE_DIR)/man/man1/%: $(JDK_OUTPUTDIR)/impdoc/$(MAN1_SUBDIR)/%
 	$(ECHO) $(LOG_INFO) Copying $(patsubst $(OUTPUT_ROOT)/%,%,$@)
 	$(install-file)
 
-    $(JDK_IMAGE_DIR)/man/man1/%: $(JDK_OUTPUTDIR)/impdoc/$(MAN1_SUBDIR)/%
+  $(JDK_IMAGE_DIR)/man/man1/%: $(JDK_OUTPUTDIR)/impdoc/$(MAN1_SUBDIR)/%
 	$(ECHO) $(LOG_INFO) Copying $(patsubst $(OUTPUT_ROOT)/%,%,$@)
 	$(install-file)
 
-    define install-ja-manpage
+  define install-ja-manpage
 	$(MKDIR) -p $(@D)
 	$(CAT) $< \
-		| $(NATIVE2ASCII) -encoding eucJP \
-		| $(SED) 's/@@VERSION@@/$(THIS_JDK_VERSION)/g' \
-		| $(NATIVE2ASCII) -reverse -encoding $1 \
-		> $@
-    endef
+	    | $(NATIVE2ASCII) -encoding eucJP \
+	    | $(SED) 's/@@VERSION@@/$(THIS_JDK_VERSION)/g' \
+	    | $(NATIVE2ASCII) -reverse -encoding $1 \
+	    > $@
+  endef
 
-    $(JRE_IMAGE_DIR)/man/ja_JP.UTF-8/man1/%: $(MAN_SRC_DIR)/$(MAN1_SUBDIR)/ja/%
+  $(JRE_IMAGE_DIR)/man/ja_JP.UTF-8/man1/%: $(MAN_SRC_DIR)/$(MAN1_SUBDIR)/ja/%
 	$(ECHO) $(LOG_INFO) Converting $(patsubst $(OUTPUT_ROOT)/%,%,$@)
-	$(call install-ja-manpage,UTF-8)
+	$(call install-ja-manpage, UTF-8)
 
-    $(JDK_IMAGE_DIR)/man/ja_JP.UTF-8/man1/%: $(MAN_SRC_DIR)/$(MAN1_SUBDIR)/ja/%
+  $(JDK_IMAGE_DIR)/man/ja_JP.UTF-8/man1/%: $(MAN_SRC_DIR)/$(MAN1_SUBDIR)/ja/%
 	$(ECHO) $(LOG_INFO) Converting $(patsubst $(OUTPUT_ROOT)/%,%,$@)
-	$(call install-ja-manpage,UTF-8)
+	$(call install-ja-manpage, UTF-8)
 
-    $(JRE_IMAGE_DIR)/man/ja_JP.PCK/man1/%: $(MAN_SRC_DIR)/$(MAN1_SUBDIR)/ja/%
+  $(JRE_IMAGE_DIR)/man/ja_JP.PCK/man1/%: $(MAN_SRC_DIR)/$(MAN1_SUBDIR)/ja/%
 	$(ECHO) $(LOG_INFO) Converting $(patsubst $(OUTPUT_ROOT)/%,%,$@)
-	$(call install-ja-manpage,PCK)
+	$(call install-ja-manpage, PCK)
 
-    $(JDK_IMAGE_DIR)/man/ja_JP.PCK/man1/%: $(MAN_SRC_DIR)/$(MAN1_SUBDIR)/ja/%
+  $(JDK_IMAGE_DIR)/man/ja_JP.PCK/man1/%: $(MAN_SRC_DIR)/$(MAN1_SUBDIR)/ja/%
 	$(ECHO) $(LOG_INFO) Converting $(patsubst $(OUTPUT_ROOT)/%,%,$@)
-	$(call install-ja-manpage,PCK)
+	$(call install-ja-manpage, PCK)
 
-    ifeq ($(OPENJDK_TARGET_OS), solaris)
-        $(JRE_IMAGE_DIR)/man/ja/man1/%: $(MAN_SRC_DIR)/$(MAN1_SUBDIR)/ja/%
-		$(ECHO) $(LOG_INFO) Converting $(patsubst $(OUTPUT_ROOT)/%,%,$@)
-		$(install-file)
+  ifeq ($(OPENJDK_TARGET_OS), solaris)
+    $(JRE_IMAGE_DIR)/man/ja/man1/%: $(MAN_SRC_DIR)/$(MAN1_SUBDIR)/ja/%
+	$(ECHO) $(LOG_INFO) Converting $(patsubst $(OUTPUT_ROOT)/%,%,$@)
+	$(install-file)
 
-        $(JDK_IMAGE_DIR)/man/ja/man1/%: $(MAN_SRC_DIR)/$(MAN1_SUBDIR)/ja/%
-		$(ECHO) $(LOG_INFO) Converting $(patsubst $(OUTPUT_ROOT)/%,%,$@)
-		$(install-file)
-    endif
+    $(JDK_IMAGE_DIR)/man/ja/man1/%: $(MAN_SRC_DIR)/$(MAN1_SUBDIR)/ja/%
+	$(ECHO) $(LOG_INFO) Converting $(patsubst $(OUTPUT_ROOT)/%,%,$@)
+	$(install-file)
+  endif
 
-    # Old build creates empty man page for this, mimicing behaviour.
-    $(JDK_IMAGE_DIR)/man/ja_JP.UTF-8/man1/jcmd.1 $(JDK_IMAGE_DIR)/man/ja_JP.PCK/man1/jcmd.1 $(JDK_IMAGE_DIR)/man/ja/man1/jcmd.1:
+  # Old build creates empty man page for this, mimicing behaviour.
+  $(JDK_IMAGE_DIR)/man/ja_JP.UTF-8/man1/jcmd.1 $(JDK_IMAGE_DIR)/man/ja_JP.PCK/man1/jcmd.1 $(JDK_IMAGE_DIR)/man/ja/man1/jcmd.1:
 	$(ECHO) $(LOG_INFO) Creating dummy $(patsubst $(OUTPUT_ROOT)/%,%,$@)
 	$(MKDIR) -p $(@D)
 	$(TOUCH) $@
 
-    ifeq ($(OPENJDK_TARGET_OS), linux)
-        $(JRE_IMAGE_DIR)/man/ja:
-		$(ECHO) $(LOG_INFO) Creating $(patsubst $(OUTPUT_ROOT)/%,%,$@)
-		$(CD) $(@D) && $(RM) ja && $(LN) -s ja_JP.UTF-8 ja
+  ifeq ($(OPENJDK_TARGET_OS), linux)
+    $(JRE_IMAGE_DIR)/man/ja:
+	$(ECHO) $(LOG_INFO) Creating $(patsubst $(OUTPUT_ROOT)/%,%,$@)
+	$(CD) $(@D) && $(RM) ja && $(LN) -s ja_JP.UTF-8 ja
 
-        $(JDK_IMAGE_DIR)/man/ja:
-		$(ECHO) $(LOG_INFO) Creating $(patsubst $(OUTPUT_ROOT)/%,%,$@)
-		$(CD) $(@D) && $(RM) ja && $(LN) -s ja_JP.UTF-8 ja
-    endif
+    $(JDK_IMAGE_DIR)/man/ja:
+	$(ECHO) $(LOG_INFO) Creating $(patsubst $(OUTPUT_ROOT)/%,%,$@)
+	$(CD) $(@D) && $(RM) ja && $(LN) -s ja_JP.UTF-8 ja
+  endif
 
-    ifeq ($(OPENJDK_TARGET_OS), macosx)
-        $(JRE_IMAGE_DIR)/man/ja:
-		$(ECHO) $(LOG_INFO) Creating $(patsubst $(OUTPUT_ROOT)/%,%,$@)
-		$(CD) $(@D) && $(RM) ja && $(LN) -s ja_JP.UTF-8 ja
+  ifeq ($(OPENJDK_TARGET_OS), macosx)
+    $(JRE_IMAGE_DIR)/man/ja:
+	$(ECHO) $(LOG_INFO) Creating $(patsubst $(OUTPUT_ROOT)/%,%,$@)
+	$(CD) $(@D) && $(RM) ja && $(LN) -s ja_JP.UTF-8 ja
 
-        $(JDK_IMAGE_DIR)/man/ja:
-		$(ECHO) $(LOG_INFO) Creating $(patsubst $(OUTPUT_ROOT)/%,%,$@)
-		$(CD) $(@D) && $(RM) ja && $(LN) -s ja_JP.UTF-8 ja
-    endif
+    $(JDK_IMAGE_DIR)/man/ja:
+	$(ECHO) $(LOG_INFO) Creating $(patsubst $(OUTPUT_ROOT)/%,%,$@)
+	$(CD) $(@D) && $(RM) ja && $(LN) -s ja_JP.UTF-8 ja
+  endif
 
-    ifeq ($(OPENJDK_TARGET_OS), linux)
-        JRE_MAN_PAGE_LIST := $(addprefix $(JRE_IMAGE_DIR)/man/man1/,$(JRE_MAN_PAGES)) \
-                             $(addprefix $(JRE_IMAGE_DIR)/man/ja_JP.UTF-8/man1/,$(JRE_MAN_PAGES)) \
-                             $(JRE_IMAGE_DIR)/man/ja
+  ifeq ($(OPENJDK_TARGET_OS), linux)
+    JRE_MAN_PAGE_LIST := $(addprefix $(JRE_IMAGE_DIR)/man/man1/, $(JRE_MAN_PAGES)) \
+        $(addprefix $(JRE_IMAGE_DIR)/man/ja_JP.UTF-8/man1/, $(JRE_MAN_PAGES)) \
+        $(JRE_IMAGE_DIR)/man/ja
 
-        JDK_MAN_PAGE_LIST := $(addprefix $(JDK_IMAGE_DIR)/man/man1/,$(JDK_MAN_PAGES)) \
-                             $(addprefix $(JDK_IMAGE_DIR)/man/ja_JP.UTF-8/man1/,$(JDK_MAN_PAGES)) \
-                             $(JDK_IMAGE_DIR)/man/ja
-    endif
+    JDK_MAN_PAGE_LIST := $(addprefix $(JDK_IMAGE_DIR)/man/man1/, $(JDK_MAN_PAGES)) \
+        $(addprefix $(JDK_IMAGE_DIR)/man/ja_JP.UTF-8/man1/, $(JDK_MAN_PAGES)) \
+    $(JDK_IMAGE_DIR)/man/ja
+  endif
 
-    ifeq ($(OPENJDK_TARGET_OS), solaris)
-        JRE_MAN_PAGE_LIST := $(addprefix $(JRE_IMAGE_DIR)/man/man1/,$(JRE_MAN_PAGES)) \
-                             $(addprefix $(JRE_IMAGE_DIR)/man/ja/man1/,$(JRE_MAN_PAGES)) \
-                             $(addprefix $(JRE_IMAGE_DIR)/man/ja_JP.UTF-8/man1/,$(JRE_MAN_PAGES)) \
-                             $(addprefix $(JRE_IMAGE_DIR)/man/ja_JP.PCK/man1/,$(JRE_MAN_PAGES))
+  ifeq ($(OPENJDK_TARGET_OS), solaris)
+    JRE_MAN_PAGE_LIST := $(addprefix $(JRE_IMAGE_DIR)/man/man1/, $(JRE_MAN_PAGES)) \
+        $(addprefix $(JRE_IMAGE_DIR)/man/ja/man1/, $(JRE_MAN_PAGES)) \
+        $(addprefix $(JRE_IMAGE_DIR)/man/ja_JP.UTF-8/man1/, $(JRE_MAN_PAGES)) \
+        $(addprefix $(JRE_IMAGE_DIR)/man/ja_JP.PCK/man1/, $(JRE_MAN_PAGES))
 
-        JDK_MAN_PAGE_LIST := $(addprefix $(JDK_IMAGE_DIR)/man/man1/,$(JDK_MAN_PAGES)) \
-                             $(addprefix $(JDK_IMAGE_DIR)/man/ja/man1/,$(JDK_MAN_PAGES)) \
-                             $(addprefix $(JDK_IMAGE_DIR)/man/ja_JP.UTF-8/man1/,$(JDK_MAN_PAGES)) \
-                             $(addprefix $(JDK_IMAGE_DIR)/man/ja_JP.PCK/man1/,$(JDK_MAN_PAGES))
-    endif
+    JDK_MAN_PAGE_LIST := $(addprefix $(JDK_IMAGE_DIR)/man/man1/, $(JDK_MAN_PAGES)) \
+        $(addprefix $(JDK_IMAGE_DIR)/man/ja/man1/, $(JDK_MAN_PAGES)) \
+        $(addprefix $(JDK_IMAGE_DIR)/man/ja_JP.UTF-8/man1/, $(JDK_MAN_PAGES)) \
+        $(addprefix $(JDK_IMAGE_DIR)/man/ja_JP.PCK/man1/, $(JDK_MAN_PAGES))
+  endif
 
-    ifeq ($(OPENJDK_TARGET_OS), macosx)
-        JRE_MAN_PAGE_LIST := $(addprefix $(JRE_IMAGE_DIR)/man/man1/,$(JRE_MAN_PAGES)) \
-                             $(addprefix $(JRE_IMAGE_DIR)/man/ja_JP.UTF-8/man1/,$(JRE_MAN_PAGES)) \
-                             $(JRE_IMAGE_DIR)/man/ja
+  ifeq ($(OPENJDK_TARGET_OS), macosx)
+    JRE_MAN_PAGE_LIST := $(addprefix $(JRE_IMAGE_DIR)/man/man1/, $(JRE_MAN_PAGES)) \
+        $(addprefix $(JRE_IMAGE_DIR)/man/ja_JP.UTF-8/man1/, $(JRE_MAN_PAGES)) \
+        $(JRE_IMAGE_DIR)/man/ja
 
-        JDK_MAN_PAGE_LIST := $(addprefix $(JDK_IMAGE_DIR)/man/man1/,$(JDK_MAN_PAGES)) \
-                             $(addprefix $(JDK_IMAGE_DIR)/man/ja_JP.UTF-8/man1/,$(JDK_MAN_PAGES)) \
-                             $(JDK_IMAGE_DIR)/man/ja
-    endif
+    JDK_MAN_PAGE_LIST := $(addprefix $(JDK_IMAGE_DIR)/man/man1/, $(JDK_MAN_PAGES)) \
+        $(addprefix $(JDK_IMAGE_DIR)/man/ja_JP.UTF-8/man1/, $(JDK_MAN_PAGES)) \
+        $(JDK_IMAGE_DIR)/man/ja
+  endif
 
 endif # Windows
 
@@ -505,9 +512,9 @@ endif # Windows
 
 # FIXME: demo/applets/GraphLayout/GraphPanel$2.class is sometimes not copied.
 
-#   The db demo contains an empty dir that needs to be copied. The other 
-#   directories will always trigger the rule for recompile since 
-#   _the.list_of_packages files are touched.
+# The db demo contains an empty dir that needs to be copied. The other
+# directories will always trigger the rule for recompile since
+# _the.list_of_packages files are touched.
 $(JDK_IMAGE_DIR)/demo/%: $(JDK_OUTPUTDIR)/demo/%
 	if [ ! -d "$@" ]; then \
 	  $(ECHO) $(LOG_INFO) Copying '$(patsubst $(OUTPUT_ROOT)/%,%,$@)'; \
@@ -515,36 +522,36 @@ $(JDK_IMAGE_DIR)/demo/%: $(JDK_OUTPUTDIR)/demo/%
 	  if [ -d "$<" ]; then $(MKDIR) -p $@; else $(CP) '$<' '$@'; fi \
 	fi
 
-#   Find all files including directories
-JDK_DEMO_TARGETS := $(patsubst $(JDK_OUTPUTDIR)/demo/%,$(JDK_IMAGE_DIR)/demo/%,\
-			$(shell $(FIND) $(JDK_OUTPUTDIR)/demo ! \( -name "_the*" -o -name "javac_state" \) ))
+# Find all files including directories
+JDK_DEMO_TARGETS := $(patsubst $(JDK_OUTPUTDIR)/demo/%, $(JDK_IMAGE_DIR)/demo/%, \
+    $(shell $(FIND) $(JDK_OUTPUTDIR)/demo ! \( -name "_the*" -o -name "javac_state" \) ))
 
 
 
 # Param 1 is source file
 define CreateOverlayDemoRule
-    $1_TARGET:=$$(subst $(JDK_OUTPUTDIR),$(JDK_OVERLAY_IMAGE_DIR),\
-			$$(dir $1)$(OPENJDK_TARGET_CPU_ISADIR)/$$(notdir $1))
-    $$($1_TARGET): $1
-		$(ECHO) $(LOG_INFO) Copying '$$(patsubst $(OUTPUT_ROOT)/%,%,$$@)'
-		$$(call install-file)
+  $1_TARGET := $$(subst $(JDK_OUTPUTDIR),$(JDK_OVERLAY_IMAGE_DIR), \
+      $$(dir $1)$(OPENJDK_TARGET_CPU_ISADIR)/$$(notdir $1))
+  $$($1_TARGET): $1
+	$(ECHO) $(LOG_INFO) Copying '$$(patsubst $(OUTPUT_ROOT)/%,%,$$@)'
+	$$(call install-file)
 
-    JDK_OVERLAY_DEMO_TARGETS += $$($1_TARGET)
+  JDK_OVERLAY_DEMO_TARGETS += $$($1_TARGET)
 endef
-JDK_OVERLAY_DEMO_SOURCES := $(filter %$(SHARED_LIBRARY_SUFFIX),$(call CacheFind,$(JDK_OUTPUTDIR)/demo))
-$(foreach lib,$(JDK_OVERLAY_DEMO_SOURCES),$(eval $(call CreateOverlayDemoRule,$(lib))))
+JDK_OVERLAY_DEMO_SOURCES := $(filter %$(SHARED_LIBRARY_SUFFIX), $(call CacheFind, $(JDK_OUTPUTDIR)/demo))
+$(foreach lib, $(JDK_OVERLAY_DEMO_SOURCES), $(eval $(call CreateOverlayDemoRule, $(lib))))
 
 ################################################################################
 # /sample dir
 
-$(foreach f,$(call CacheFind,$(JDK_OUTPUTDIR)/sample),\
+$(foreach f,$(call CacheFind,$(JDK_OUTPUTDIR)/sample), \
     $(eval $(call AddFileToCopy,$(JDK_OUTPUTDIR),$(JDK_IMAGE_DIR),$f,JDK_SAMPLE_TARGETS)))
 
 ################################################################################
 # /db dir
 
 ifndef OPENJDK
-    $(IMAGES_OUTPUTDIR)/_unzip/%.unzipped: $(JDK_TOPDIR)/src/closed/share/db/%
+  $(IMAGES_OUTPUTDIR)/_unzip/%.unzipped: $(JDK_TOPDIR)/src/closed/share/db/%
 	$(ECHO) Unzipping $(patsubst $(SRC_ROOT)/%,%,$<)
 	$(MKDIR) -p $(JDK_IMAGE_DIR)/db
 	cd $(JDK_IMAGE_DIR)/db && $(UNZIP) -q -o $< -x */index.html */KEYS */test/* *javadoc/* */docs/* */demo/* 2> /dev/null
@@ -552,49 +559,51 @@ ifndef OPENJDK
 	$(MKDIR) -p $(@D)
 	$(TOUCH) $@
 
-    $(JDK_IMAGE_DIR)/db/README-JDK.html: $(JDK_TOPDIR)/src/closed/share/db/README-JDK.html
+  $(JDK_IMAGE_DIR)/db/README-JDK.html: $(JDK_TOPDIR)/src/closed/share/db/README-JDK.html
 	$(ECHO) $(LOG_INFO) Copying '$(patsubst $(OUTPUT_ROOT)/%,%,$@)'
+	$(MKDIR) -p $(@D)
 	$(CAT) $< | $(SED) "s/XXXX/$(shell cat $(JDK_TOPDIR)/src/closed/share/db/COPYRIGHTYEAR)/" > $@
 
-    $(JDK_IMAGE_DIR)/db/3RDPARTY: $(JDK_TOPDIR)/src/closed/share/db/3RDPARTY
+  $(JDK_IMAGE_DIR)/db/3RDPARTY: $(JDK_TOPDIR)/src/closed/share/db/3RDPARTY
 	$(ECHO) $(LOG_INFO) Copying '$(patsubst $(OUTPUT_ROOT)/%,%,$@)'
+	$(MKDIR) -p $(@D)
 	$(CAT) $< | $(SED) "s/XXXX/$(shell cat $(JDK_TOPDIR)/src/closed/share/db/COPYRIGHTYEAR)/" > $@
 
-    JDK_DB_TARGETS := $(patsubst $(JDK_TOPDIR)/src/closed/share/db/%,$(IMAGES_OUTPUTDIR)/_unzip/%.unzipped,\
-			$(wildcard $(JDK_TOPDIR)/src/closed/share/db/*.zip)) \
-		      $(JDK_IMAGE_DIR)/db/README-JDK.html $(JDK_IMAGE_DIR)/db/3RDPARTY
+  JDK_DB_TARGETS := $(patsubst $(JDK_TOPDIR)/src/closed/share/db/%, $(IMAGES_OUTPUTDIR)/_unzip/%.unzipped, \
+      $(wildcard $(JDK_TOPDIR)/src/closed/share/db/*.zip)) \
+      $(JDK_IMAGE_DIR)/db/README-JDK.html $(JDK_IMAGE_DIR)/db/3RDPARTY
 
 endif
 
 ################################################################################
 # /include dir
 
-$(foreach f,$(call CacheFind,$(JDK_OUTPUTDIR)/include),\
+$(foreach f,$(call CacheFind,$(JDK_OUTPUTDIR)/include), \
     $(eval $(call AddFileToCopy,$(JDK_OUTPUTDIR),$(JDK_IMAGE_DIR),$f,JDK_INCLUDE_TARGETS)))
 
 ################################################################################
 # doc files
 
 ifdef OPENJDK
-    JRE_DOC_FILES := LICENSE ASSEMBLY_EXCEPTION THIRD_PARTY_README
-    JDK_DOC_FILES := LICENSE ASSEMBLY_EXCEPTION THIRD_PARTY_README
-    JRE_DOC_LOCATION := $(JDK_TOPDIR)
-    JDK_DOC_LOCATION := $(JDK_TOPDIR)
+  JRE_DOC_FILES := LICENSE ASSEMBLY_EXCEPTION THIRD_PARTY_README
+  JDK_DOC_FILES := LICENSE ASSEMBLY_EXCEPTION THIRD_PARTY_README
+  JRE_DOC_LOCATION := $(JDK_TOPDIR)
+  JDK_DOC_LOCATION := $(JDK_TOPDIR)
 else
-    JRE_DOC_FILES := COPYRIGHT Welcome.html LICENSE THIRDPARTYLICENSEREADME.txt
-    JDK_DOC_FILES := COPYRIGHT README.html  LICENSE THIRDPARTYLICENSEREADME.txt
-    ifeq ($(OPENJDK_TARGET_OS), windows)
-        JRE_DOC_FILES += README.txt
-    else
-        JRE_DOC_FILES += README
-    endif
-    JDK_DOC_FILES += demo/DEMOS_LICENSE sample/SAMPLES_LICENSE
-    JRE_DOC_LOCATION := $(JDK_TOPDIR)/src/closed/share/doc/jre
-    JDK_DOC_LOCATION := $(JDK_TOPDIR)/src/closed/share/doc/jdk
+  JRE_DOC_FILES := COPYRIGHT Welcome.html LICENSE THIRDPARTYLICENSEREADME.txt
+  JDK_DOC_FILES := COPYRIGHT README.html LICENSE THIRDPARTYLICENSEREADME.txt
+  ifeq ($(OPENJDK_TARGET_OS), windows)
+    JRE_DOC_FILES += README.txt
+  else
+    JRE_DOC_FILES += README
+  endif
+  JDK_DOC_FILES += demo/DEMOS_LICENSE sample/SAMPLES_LICENSE
+  JRE_DOC_LOCATION := $(JDK_TOPDIR)/src/closed/share/doc/jre
+  JDK_DOC_LOCATION := $(JDK_TOPDIR)/src/closed/share/doc/jdk
 endif
-JRE_DOC_TARGETS := $(addprefix $(JRE_IMAGE_DIR)/,$(JRE_DOC_FILES))
-JDKJRE_DOC_TARGETS := $(addprefix $(JDK_IMAGE_DIR)/jre/,$(JRE_DOC_FILES))
-JDK_DOC_TARGETS := $(addprefix $(JDK_IMAGE_DIR)/,$(JDK_DOC_FILES))
+JRE_DOC_TARGETS := $(addprefix $(JRE_IMAGE_DIR)/, $(JRE_DOC_FILES))
+JDKJRE_DOC_TARGETS := $(addprefix $(JDK_IMAGE_DIR)/jre/, $(JRE_DOC_FILES))
+JDK_DOC_TARGETS := $(addprefix $(JDK_IMAGE_DIR)/, $(JDK_DOC_FILES))
 
 $(JRE_IMAGE_DIR)/%: $(JRE_DOC_LOCATION)/%
 	$(process-doc-file)
@@ -625,31 +634,31 @@ JDK_OVERLAY_INFO_FILE := $(JDK_OVERLAY_IMAGE_DIR)/release
 
 # Common way to emit a line into the release or info file
 define info-file-item # name value
-$(PRINTF) '%s="%s"\n' $1 $2 >> $@
+	$(PRINTF) '%s="%s"\n' $1 $2 >> $@
 endef
 
 define create-info-file
 	$(MKDIR) -p $(@D)
 	$(RM) $@
 	$(call info-file-item, "JAVA_VERSION", "$(JDK_VERSION)")
-	$(call info-file-item, "OS_NAME",      "$(REQUIRED_OS_NAME)")
-	$(call info-file-item, "OS_VERSION",   "$(REQUIRED_OS_VERSION)")
-	$(call info-file-item, "OS_ARCH",      "$(OPENJDK_TARGET_CPU_LEGACY)")
+	$(call info-file-item, "OS_NAME", "$(REQUIRED_OS_NAME)")
+	$(call info-file-item, "OS_VERSION", "$(REQUIRED_OS_VERSION)")
+	$(call info-file-item, "OS_ARCH", "$(OPENJDK_TARGET_CPU_LEGACY)")
 	if [ -n "$(JDK_ARCH_ABI_PROP_NAME)" ]; then $(call info-file-item, "SUN_ARCH_ABI", "$(JDK_ARCH_ABI_PROP_NAME)"); fi
-	$(call info-file-item, "SOURCE",       "$(ALL_SOURCE_TIPS)")
+	$(call info-file-item, "SOURCE", "$(ALL_SOURCE_TIPS)")
 endef
 
 ALL_SOURCE_TIPS = $(shell \
-  if [ -f $(OUTPUT_ROOT)/source_tips ] ; then \
-    $(CAT) $(OUTPUT_ROOT)/source_tips ; \
-  fi)
+    if [ -f $(OUTPUT_ROOT)/source_tips ] ; then \
+      $(CAT) $(OUTPUT_ROOT)/source_tips ; \
+    fi)
 
 $(JRE_INFO_FILE): $(OUTPUT_ROOT)/spec.gmk $(OUTPUT_ROOT)/source_tips
 	$(ECHO) $(LOG_INFO) Generating $(patsubst $(OUTPUT_ROOT)/%,%,$@)
 	$(call create-info-file)
-ifneq ($(PROFILE),)
-	$(call info-file-item, "JAVA_PROFILE", "$(call profile_name, $(call profile_number, $(PROFILE)))")
-endif
+        ifneq ($(PROFILE), )
+	  $(call info-file-item, "JAVA_PROFILE", "$(call profile_name, $(call profile_number, $(PROFILE)))")
+        endif
 
 $(JDK_INFO_FILE): $(OUTPUT_ROOT)/spec.gmk $(OUTPUT_ROOT)/source_tips
 	$(ECHO) $(LOG_INFO) Generating $(patsubst $(OUTPUT_ROOT)/%,%,$@)
@@ -670,57 +679,57 @@ $(JDK_IMAGE_DIR)/src.zip: $(IMAGES_OUTPUTDIR)/src.zip
 ################################################################################
 # Post processing (strip etc)
 
-ifneq ($(POST_STRIP_CMD),)
-    ifeq ($(OPENJDK_TARGET_OS), windows)
-        EXEC_LIST_BIN:=$(filter-out %$(notdir $(MSVCR_DLL)),$(filter %.exe %.dll,$(ALL_BIN_LIST)))
-    else
-        # Find all executables in JDK_OUTPUTDIR since they exist when this makefile is parsed
-        EXEC_LIST_BIN:=$(shell $(FILE) `$(FIND) $(JDK_OUTPUTDIR)/bin -type f -name \*$(EXE_SUFFIX) ! -name \*.debuginfo` \
-		| $(EGREP) 'ELF' | $(CUT) -d':' -f1)
-        # On mac, the old build searches for static libraries for stripping instead of shared.
-        # Not clear if it's intentional.
-	ifneq ($(OPENJDK_TARGET_OS), macosx)
-            EXEC_LIST_LIB:=$(shell $(FIND) $(JDK_OUTPUTDIR)/lib -type f -name \*$(SHARED_LIBRARY_SUFFIX))
-	endif
+ifneq ($(POST_STRIP_CMD), )
+  ifeq ($(OPENJDK_TARGET_OS), windows)
+    EXEC_LIST_BIN := $(filter-out %$(notdir $(MSVCR_DLL)), $(filter %.exe %.dll, $(ALL_BIN_LIST)))
+  else
+    # Find all executables in JDK_OUTPUTDIR since they exist when this makefile is parsed
+    EXEC_LIST_BIN := $(shell $(FILE) `$(FIND) $(JDK_OUTPUTDIR)/bin -type f -name \*$(EXE_SUFFIX) ! -name \*.debuginfo` \
+        | $(EGREP) 'ELF' | $(CUT) -d':' -f1)
+    # On mac, the old build searches for static libraries for stripping instead of shared.
+    # Not clear if it's intentional.
+    ifneq ($(OPENJDK_TARGET_OS), macosx)
+      EXEC_LIST_LIB := $(shell $(FIND) $(JDK_OUTPUTDIR)/lib -type f -name \*$(SHARED_LIBRARY_SUFFIX))
     endif
-    # Filter out sjavac
-    EXEC_LIST_BIN:=$(filter-out %sjavac$(EXE_SUFFIX),$(EXEC_LIST_BIN))
+  endif
+  # Filter out sjavac
+  EXEC_LIST_BIN := $(filter-out %sjavac$(EXE_SUFFIX), $(EXEC_LIST_BIN))
 
-    # Filter out the overlay specific bin files
-    EXEC_LIST:=$(filter-out $(OVERLAY_FILTER),$(EXEC_LIST_BIN)) $(EXEC_LIST_LIB)
-    EXEC_LIST_OVERLAY:=$(filter $(OVERLAY_FILTER),$(EXEC_LIST_BIN)) $(EXEC_LIST_LIB)
+  # Filter out the overlay specific bin files
+  EXEC_LIST := $(filter-out $(OVERLAY_FILTER), $(EXEC_LIST_BIN)) $(EXEC_LIST_LIB)
+  EXEC_LIST_OVERLAY := $(filter $(OVERLAY_FILTER), $(EXEC_LIST_BIN)) $(EXEC_LIST_LIB)
 
-    # Filter out non JRE files and convert to unique touch files to depend on
-    JRE_STRIP_LIST:=$(patsubst $(JDK_OUTPUTDIR)/%,$(IMAGES_OUTPUTDIR)/_strip_jre$(PROFILE)/%.stripped,\
-			$(filter-out $(addprefix %,$(NOT_JRE_BIN_FILES) $(NOT_JRE_LIB_FILES) $(JDKJRE_LIB_FILES)),\
-				 $(EXEC_LIST)))
+  # Filter out non JRE files and convert to unique touch files to depend on
+  JRE_STRIP_LIST := $(patsubst $(JDK_OUTPUTDIR)/%, $(IMAGES_OUTPUTDIR)/_strip_jre$(PROFILE)/%.stripped, \
+      $(filter-out $(addprefix %, $(NOT_JRE_BIN_FILES) $(NOT_JRE_LIB_FILES) $(JDKJRE_LIB_FILES)), \
+      $(EXEC_LIST)))
 
-    JDKJRE_STRIP_LIST:=$(patsubst $(JDK_OUTPUTDIR)/%, \
-                        $(IMAGES_OUTPUTDIR)/_strip_jdk/jre/%.stripped, \
-			$(filter-out $(addprefix %,$(NOT_JRE_BIN_FILES) $(NOT_JRE_LIB_FILES)), $(EXEC_LIST)))
+  JDKJRE_STRIP_LIST := $(patsubst $(JDK_OUTPUTDIR)/%, \
+      $(IMAGES_OUTPUTDIR)/_strip_jdk/jre/%.stripped, \
+      $(filter-out $(addprefix %, $(NOT_JRE_BIN_FILES) $(NOT_JRE_LIB_FILES)), $(EXEC_LIST)))
 
-    JDK_BIN_STRIP_LIST:=$(patsubst $(JDK_OUTPUTDIR)/%, \
-                          $(IMAGES_OUTPUTDIR)/_strip_jdk/%.stripped, \
-                          $(filter-out $(JDK_OUTPUTDIR)/lib/%, $(EXEC_LIST)))
+  JDK_BIN_STRIP_LIST := $(patsubst $(JDK_OUTPUTDIR)/%, \
+      $(IMAGES_OUTPUTDIR)/_strip_jdk/%.stripped, \
+      $(filter-out $(JDK_OUTPUTDIR)/lib/%, $(EXEC_LIST)))
 
-    # Do the same for overlay image
-    JRE_OVERLAY_STRIP_LIST:=$(patsubst $(JDK_OUTPUTDIR)/%,$(IMAGES_OUTPUTDIR)/_strip_jre_overlay/%.stripped,\
-			$(filter-out $(addprefix %,$(NOT_JRE_BIN_FILES) $(NOT_JRE_LIB_FILES) $(JDKJRE_LIB_FILES)),\
-				 $(EXEC_LIST_OVERLAY)))
+  # Do the same for overlay image
+  JRE_OVERLAY_STRIP_LIST := $(patsubst $(JDK_OUTPUTDIR)/%, $(IMAGES_OUTPUTDIR)/_strip_jre_overlay/%.stripped, \
+      $(filter-out $(addprefix %, $(NOT_JRE_BIN_FILES) $(NOT_JRE_LIB_FILES) $(JDKJRE_LIB_FILES)), \
+      $(EXEC_LIST_OVERLAY)))
 
-    JDKJRE_OVERLAY_STRIP_LIST:=$(patsubst $(JDK_OUTPUTDIR)/%, \
-                        $(IMAGES_OUTPUTDIR)/_strip_jdk_overlay/jre/%.stripped, \
-			$(filter-out $(addprefix %,$(NOT_JRE_BIN_FILES) $(NOT_JRE_LIB_FILES)), $(EXEC_LIST_OVERLAY)))
+  JDKJRE_OVERLAY_STRIP_LIST := $(patsubst $(JDK_OUTPUTDIR)/%, \
+      $(IMAGES_OUTPUTDIR)/_strip_jdk_overlay/jre/%.stripped, \
+      $(filter-out $(addprefix %, $(NOT_JRE_BIN_FILES) $(NOT_JRE_LIB_FILES)), $(EXEC_LIST_OVERLAY)))
 
-    JDK_OVERLAY_BIN_STRIP_LIST:=$(patsubst $(JDK_OUTPUTDIR)/%, \
-                          $(IMAGES_OUTPUTDIR)/_strip_jdk_overlay/%.stripped, \
-                          $(filter-out $(JDK_OUTPUTDIR)/lib/%, $(EXEC_LIST_OVERLAY)))
+  JDK_OVERLAY_BIN_STRIP_LIST := $(patsubst $(JDK_OUTPUTDIR)/%, \
+      $(IMAGES_OUTPUTDIR)/_strip_jdk_overlay/%.stripped, \
+      $(filter-out $(JDK_OUTPUTDIR)/lib/%, $(EXEC_LIST_OVERLAY)))
 
-    define mcs-file
-	$(if $(POST_MCS_CMD),$(POST_MCS_CMD) $<)
-    endef
+  define mcs-file
+	$(if $(POST_MCS_CMD), $(POST_MCS_CMD) $<)
+  endef
 
-    define strip-file
+  define strip-file
 	$(ECHO) Stripping $(LOG_INFO) $(patsubst $(OUTPUT_ROOT)/%,%,$<)
 	$(CHMOD) u+w $<
 	$(POST_STRIP_CMD) $<
@@ -728,19 +737,19 @@ ifneq ($(POST_STRIP_CMD),)
 	$(CHMOD) go-w $<
 	$(MKDIR) -p $(@D)
 	$(TOUCH) $@
-    endef
+  endef
 
-    # Setup a rule for stripping files based on touch files
-    $(IMAGES_OUTPUTDIR)/_strip_jre$(PROFILE)/%.stripped: $(JRE_IMAGE_DIR)/%
+  # Setup a rule for stripping files based on touch files
+  $(IMAGES_OUTPUTDIR)/_strip_jre$(PROFILE)/%.stripped: $(JRE_IMAGE_DIR)/%
 	$(call strip-file)
 
-    $(IMAGES_OUTPUTDIR)/_strip_jdk/%.stripped: $(JDK_IMAGE_DIR)/%
+  $(IMAGES_OUTPUTDIR)/_strip_jdk/%.stripped: $(JDK_IMAGE_DIR)/%
 	$(call strip-file)
 
-    $(IMAGES_OUTPUTDIR)/_strip_jre_overlay/%.stripped: $(JRE_OVERLAY_IMAGE_DIR)/%
+  $(IMAGES_OUTPUTDIR)/_strip_jre_overlay/%.stripped: $(JRE_OVERLAY_IMAGE_DIR)/%
 	$(call strip-file)
 
-    $(IMAGES_OUTPUTDIR)/_strip_jdk_overlay/%.stripped: $(JDK_OVERLAY_IMAGE_DIR)/%
+  $(IMAGES_OUTPUTDIR)/_strip_jdk_overlay/%.stripped: $(JDK_OVERLAY_IMAGE_DIR)/%
 	$(call strip-file)
 
 endif
@@ -749,45 +758,45 @@ endif
 # Main targets
 
 jre-image: $(JRE_BIN_TARGETS) $(JRE_LIB_TARGETS) $(JRE_IMAGE_DIR)/lib/applet \
-	$(JRE_IMAGE_DIR)/lib/meta-index $(JRE_IMAGE_DIR)/lib/ext/meta-index \
-	$(JRE_MAN_PAGE_LIST) $(JRE_DOC_TARGETS) $(JRE_INFO_FILE) $(JRE_STRIP_LIST) \
-	$(JRE_BIN_ISADIR_LINK_TARGETS)
+    $(JRE_IMAGE_DIR)/lib/meta-index $(JRE_IMAGE_DIR)/lib/ext/meta-index \
+    $(JRE_MAN_PAGE_LIST) $(JRE_DOC_TARGETS) $(JRE_INFO_FILE) $(JRE_STRIP_LIST) \
+    $(JRE_BIN_ISADIR_LINK_TARGETS)
 
 jdk-image: $(JDK_BIN_TARGETS) $(JDKJRE_BIN_TARGETS) \
-	$(JDK_LIB_TARGETS) $(JDKJRE_LIB_TARGETS) \
-	$(JDK_IMAGE_DIR)/jre/lib/applet \
-	$(JDK_DEMO_TARGETS) \
-	$(JDK_IMAGE_DIR)/jre/lib/meta-index $(JDK_IMAGE_DIR)/jre/lib/ext/meta-index \
-	$(JDK_MAN_PAGE_LIST) $(JDK_SAMPLE_TARGETS) \
-	$(JDK_DB_TARGETS) $(JDK_INCLUDE_TARGETS) \
-	$(JDKJRE_DOC_TARGETS) $(JDK_DOC_TARGETS) \
-	$(JDK_INFO_FILE) $(JDKJRE_STRIP_LIST) $(JDK_BIN_STRIP_LIST) \
-        $(JDK_IMAGE_DIR)/src.zip \
-	$(JDK_BIN_ISADIR_LINK_TARGETS) $(JDKJRE_BIN_ISADIR_LINK_TARGETS)
+    $(JDK_LIB_TARGETS) $(JDKJRE_LIB_TARGETS) \
+    $(JDK_IMAGE_DIR)/jre/lib/applet \
+    $(JDK_DEMO_TARGETS) \
+    $(JDK_IMAGE_DIR)/jre/lib/meta-index $(JDK_IMAGE_DIR)/jre/lib/ext/meta-index \
+    $(JDK_MAN_PAGE_LIST) $(JDK_SAMPLE_TARGETS) \
+    $(JDK_DB_TARGETS) $(JDK_INCLUDE_TARGETS) \
+    $(JDKJRE_DOC_TARGETS) $(JDK_DOC_TARGETS) \
+    $(JDK_INFO_FILE) $(JDKJRE_STRIP_LIST) $(JDK_BIN_STRIP_LIST) \
+    $(JDK_IMAGE_DIR)/src.zip \
+    $(JDK_BIN_ISADIR_LINK_TARGETS) $(JDKJRE_BIN_ISADIR_LINK_TARGETS)
 
 jre-overlay-image: $(JRE_OVERLAY_BIN_TARGETS) $(JRE_OVERLAY_LIB_TARGETS) \
-	 $(JRE_OVERLAY_INFO_FILE) $(JRE_OVERLAY_STRIP_LIST)
+    $(JRE_OVERLAY_INFO_FILE) $(JRE_OVERLAY_STRIP_LIST)
 
 jdk-overlay-image: $(JDK_OVERLAY_BIN_TARGETS) $(JDKJRE_OVERLAY_BIN_TARGETS) \
-	$(JDK_OVERLAY_LIB_TARGETS) $(JDKJRE_OVERLAY_LIB_TARGETS) \
-	$(JDK_OVERLAY_DEMO_TARGETS) $(JDK_OVERLAY_INFO_FILE) \
-	$(JDKJRE_OVERLAY_STRIP_LIST) $(JDK_OVERLAY_BIN_STRIP_LIST) 
+    $(JDK_OVERLAY_LIB_TARGETS) $(JDKJRE_OVERLAY_LIB_TARGETS) \
+    $(JDK_OVERLAY_DEMO_TARGETS) $(JDK_OVERLAY_INFO_FILE) \
+    $(JDKJRE_OVERLAY_STRIP_LIST) $(JDK_OVERLAY_BIN_STRIP_LIST)
 
-ifneq ($(PROFILE),)
-PROFILE_IMAGE_JARS := $(filter %.jar, $(JRE_LIB_TARGETS))
+ifneq ($(PROFILE), )
+  PROFILE_IMAGE_JARS := $(filter %.jar, $(JRE_LIB_TARGETS))
 
-PROFILE_IMAGE_JARS_CHECKED := $(IMAGES_OUTPUTDIR)/lib$(PROFILE)/_jars_checked
+  PROFILE_IMAGE_JARS_CHECKED := $(IMAGES_OUTPUTDIR)/lib$(PROFILE)/_jars_checked
 
-$(PROFILE_IMAGE_JARS_CHECKED) : $(PROFILE_IMAGE_JARS)
+  $(PROFILE_IMAGE_JARS_CHECKED) : $(PROFILE_IMAGE_JARS)
 	$(TOOL_CHECKDEPS) $(JRE_IMAGE_DIR) \
 	    $(call profile_name, $(call profile_number, $(PROFILE)))
 	$(TOUCH) $@
 
-profile-image: $(JRE_BIN_TARGETS) $(JRE_LIB_TARGETS) \
+  profile-image: $(JRE_BIN_TARGETS) $(JRE_LIB_TARGETS) \
 	$(JRE_IMAGE_DIR)/lib/meta-index $(JRE_IMAGE_DIR)/lib/ext/meta-index \
 	$(JRE_INFO_FILE) $(JRE_STRIP_LIST) $(PROFILE_IMAGE_JARS_CHECKED)
 
-.PHONY: profile-image
+  .PHONY: profile-image
 
 endif # Profile
 
