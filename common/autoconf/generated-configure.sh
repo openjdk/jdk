@@ -29913,11 +29913,11 @@ $as_echo_n "checking if we should generate debug symbols... " >&6; }
   elif test "x$enable_debug_symbols" = "xno"; then
     ENABLE_DEBUG_SYMBOLS=false
   else
-  # Default is on if objcopy is found
-  if test "x$OBJCOPY" != x; then
-    ENABLE_DEBUG_SYMBOLS=true
-  # MacOS X and Windows don't use objcopy but default is on for those OSes
-  elif test "x$OPENJDK_TARGET_OS" = xmacosx || test "x$OPENJDK_TARGET_OS" = xwindows; then
+    # Default is on if objcopy is found
+    if test "x$OBJCOPY" != x; then
+      ENABLE_DEBUG_SYMBOLS=true
+    # MacOS X and Windows don't use objcopy but default is on for those OSes
+    elif test "x$OPENJDK_TARGET_OS" = xmacosx || test "x$OPENJDK_TARGET_OS" = xwindows; then
       ENABLE_DEBUG_SYMBOLS=true
     else
       ENABLE_DEBUG_SYMBOLS=false
