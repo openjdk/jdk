@@ -1809,8 +1809,7 @@ public abstract class Toolkit {
 
         // This property should never be cached
         if (propertyName.equals("awt.dynamicLayoutSupported")) {
-            value = lazilyLoadDesktopProperty(propertyName);
-            return value;
+            return getDefaultToolkit().lazilyLoadDesktopProperty(propertyName);
         }
 
         value = desktopProperties.get(propertyName);
