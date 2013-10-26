@@ -3333,7 +3333,8 @@ void MacroAssembler::tlab_refill(Label& retry, Label& try_eden, Label& slow_case
 
   if (CMSIncrementalMode || !Universe::heap()->supports_inline_contig_alloc()) {
     // No allocation in the shared eden.
-    ba_short(slow_case);
+    ba(slow_case);
+    delayed()->nop();
   }
 
   ld_ptr(G2_thread, in_bytes(JavaThread::tlab_top_offset()), top);
@@ -3358,7 +3359,8 @@ void MacroAssembler::tlab_refill(Label& retry, Label& try_eden, Label& slow_case
     add(t2, 1, t2);
     stw(t2, G2_thread, in_bytes(JavaThread::tlab_slow_allocations_offset()));
   }
-  ba_short(try_eden);
+  ba(try_eden);
+  delayed()->nop();
 
   bind(discard_tlab);
   if (TLABStats) {
@@ -3420,7 +3422,8 @@ void MacroAssembler::tlab_refill(Label& retry, Label& try_eden, Label& slow_case
   sub(top, ThreadLocalAllocBuffer::alignment_reserve_in_bytes(), top);
   st_ptr(top, G2_thread, in_bytes(JavaThread::tlab_end_offset()));
   verify_tlab();
-  ba_short(retry);
+  ba(retry);
+  delayed()->nop();
 }
 
 void MacroAssembler::incr_allocated_bytes(RegisterOrConstant size_in_bytes,

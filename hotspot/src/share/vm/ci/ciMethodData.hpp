@@ -43,6 +43,7 @@ class ciMultiBranchData;
 class ciArgInfoData;
 class ciCallTypeData;
 class ciVirtualCallTypeData;
+class ciParametersTypeData;
 
 typedef ProfileData ciProfileData;
 
@@ -99,6 +100,10 @@ public:
     return valid_ciklass(type(i));
   }
 
+  bool maybe_null(int i) const {
+    return was_null_seen(type(i));
+  }
+
 #ifndef PRODUCT
   void print_data_on(outputStream* st) const;
 #endif
@@ -110,6 +115,10 @@ public:
 
   ciKlass* valid_type() const {
     return valid_ciklass(type());
+  }
+
+  bool maybe_null() const {
+    return was_null_seen(type());
   }
 
 #ifndef PRODUCT
@@ -124,7 +133,7 @@ public:
   ciTypeStackSlotEntries* args() const { return (ciTypeStackSlotEntries*)CallTypeData::args(); }
   ciReturnTypeEntry* ret() const { return (ciReturnTypeEntry*)CallTypeData::ret(); }
 
-  void translate_type_data_from(const ProfileData* data) {
+  void translate_from(const ProfileData* data) {
     if (has_arguments()) {
       args()->translate_type_data_from(data->as_CallTypeData()->args());
     }
@@ -151,6 +160,14 @@ public:
   ciKlass* valid_return_type() const {
     assert(has_return(), "no ret type profiling data");
     return ret()->valid_type();
+  }
+
+  bool argument_maybe_null(int i) const {
+    return args()->maybe_null(i);
+  }
+
+  bool return_maybe_null() const {
+    return ret()->maybe_null();
   }
 
 #ifndef PRODUCT
@@ -259,6 +276,14 @@ public:
     return ret()->valid_type();
   }
 
+  bool argument_maybe_null(int i) const {
+    return args()->maybe_null(i);
+  }
+
+  bool return_maybe_null() const {
+    return ret()->maybe_null();
+  }
+
 #ifndef PRODUCT
   void print_data_on(outputStream* st) const;
 #endif
@@ -288,6 +313,29 @@ public:
 class ciArgInfoData : public ArgInfoData {
 public:
   ciArgInfoData(DataLayout* layout) : ArgInfoData(layout) {};
+};
+
+class ciParametersTypeData : public ParametersTypeData {
+public:
+  ciParametersTypeData(DataLayout* layout) : ParametersTypeData(layout) {}
+
+  virtual void translate_from(const ProfileData* data) {
+    parameters()->translate_type_data_from(data->as_ParametersTypeData()->parameters());
+  }
+
+  ciTypeStackSlotEntries* parameters() const { return (ciTypeStackSlotEntries*)ParametersTypeData::parameters(); }
+
+  ciKlass* valid_parameter_type(int i) const {
+    return parameters()->valid_type(i);
+  }
+
+  bool parameter_maybe_null(int i) const {
+    return parameters()->maybe_null(i);
+  }
+
+#ifndef PRODUCT
+  void print_data_on(outputStream* st) const;
+#endif
 };
 
 // ciMethodData
@@ -334,6 +382,10 @@ private:
 
   // Coherent snapshot of original header.
   MethodData _orig;
+
+  // Dedicated area dedicated to parameters. Null if no parameter
+  // profiling for this method.
+  DataLayout* _parameters;
 
   ciMethodData(MethodData* md);
   ciMethodData();
@@ -403,6 +455,7 @@ public:
   // If the compiler finds a profiled type that is known statically
   // for sure, set it in the MethodData
   void set_argument_type(int bci, int i, ciKlass* k);
+  void set_parameter_type(int i, ciKlass* k);
   void set_return_type(int bci, ciKlass* k);
 
   void load_data();
@@ -466,6 +519,10 @@ public:
   bool is_arg_stack(int i) const;
   bool is_arg_returned(int i) const;
   uint arg_modified(int arg) const;
+
+  ciParametersTypeData* parameters_type_data() const {
+    return _parameters != NULL ? new ciParametersTypeData(_parameters) : NULL;
+  }
 
   // Code generation helper
   ByteSize offset_of_slot(ciProfileData* data, ByteSize slot_offset_in_data);
