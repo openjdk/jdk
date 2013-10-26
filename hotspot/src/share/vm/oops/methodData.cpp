@@ -41,7 +41,7 @@
 
 // Some types of data layouts need a length field.
 bool DataLayout::needs_array_len(u1 tag) {
-  return (tag == multi_branch_data_tag) || (tag == arg_info_data_tag);
+  return (tag == multi_branch_data_tag) || (tag == arg_info_data_tag) || (tag == parameters_type_data_tag);
 }
 
 // Perform generic initialization of the data.  More specific
@@ -156,10 +156,13 @@ void JumpData::print_data_on(outputStream* st) const {
 }
 #endif // !PRODUCT
 
-int TypeStackSlotEntries::compute_cell_count(Symbol* signature, int max) {
+int TypeStackSlotEntries::compute_cell_count(Symbol* signature, bool include_receiver, int max) {
+  // Parameter profiling include the receiver
+  int args_count = include_receiver ? 1 : 0;
   ResourceMark rm;
   SignatureStream ss(signature);
-  int args_count = MIN2(ss.reference_parameter_count(), max);
+  args_count += ss.reference_parameter_count();
+  args_count = MIN2(args_count, max);
   return args_count * per_arg_cell_count;
 }
 
@@ -169,7 +172,7 @@ int TypeEntriesAtCall::compute_cell_count(BytecodeStream* stream) {
   Bytecode_invoke inv(stream->method(), stream->bci());
   int args_cell = 0;
   if (arguments_profiling_enabled()) {
-    args_cell = TypeStackSlotEntries::compute_cell_count(inv.signature(), TypeProfileArgsLimit);
+    args_cell = TypeStackSlotEntries::compute_cell_count(inv.signature(), false, TypeProfileArgsLimit);
   }
   int ret_cell = 0;
   if (return_profiling_enabled() && (inv.result_type() == T_OBJECT || inv.result_type() == T_ARRAY)) {
@@ -212,12 +215,19 @@ public:
   int off_at(int i) const { return _offsets.at(i); }
 };
 
-void TypeStackSlotEntries::post_initialize(Symbol* signature, bool has_receiver) {
+void TypeStackSlotEntries::post_initialize(Symbol* signature, bool has_receiver, bool include_receiver) {
   ResourceMark rm;
-  ArgumentOffsetComputer aos(signature, _number_of_entries);
+  int start = 0;
+  // Parameter profiling include the receiver
+  if (include_receiver && has_receiver) {
+    set_stack_slot(0, 0);
+    set_type(0, type_none());
+    start += 1;
+  }
+  ArgumentOffsetComputer aos(signature, _number_of_entries-start);
   aos.total();
-  for (int i = 0; i < _number_of_entries; i++) {
-    set_stack_slot(i, aos.off_at(i) + (has_receiver ? 1 : 0));
+  for (int i = start; i < _number_of_entries; i++) {
+    set_stack_slot(i, aos.off_at(i-start) + (has_receiver ? 1 : 0));
     set_type(i, type_none());
   }
 }
@@ -234,7 +244,7 @@ void CallTypeData::post_initialize(BytecodeStream* stream, MethodData* mdo) {
     assert(count > 0, "room for args type but none found?");
     check_number_of_arguments(count);
 #endif
-    _args.post_initialize(inv.signature(), inv.has_receiver());
+    _args.post_initialize(inv.signature(), inv.has_receiver(), false);
   }
 
   if (has_return()) {
@@ -255,7 +265,7 @@ void VirtualCallTypeData::post_initialize(BytecodeStream* stream, MethodData* md
     assert(count > 0, "room for args type but none found?");
     check_number_of_arguments(count);
 #endif
-    _args.post_initialize(inv.signature(), inv.has_receiver());
+    _args.post_initialize(inv.signature(), inv.has_receiver(), false);
   }
 
   if (has_return()) {
@@ -579,6 +589,34 @@ void ArgInfoData::print_data_on(outputStream* st) const {
 }
 
 #endif
+
+int ParametersTypeData::compute_cell_count(Method* m) {
+  if (!MethodData::profile_parameters_for_method(m)) {
+    return 0;
+  }
+  int max = TypeProfileParmsLimit == -1 ? INT_MAX : TypeProfileParmsLimit;
+  int obj_args = TypeStackSlotEntries::compute_cell_count(m->signature(), !m->is_static(), max);
+  if (obj_args > 0) {
+    return obj_args + 1; // 1 cell for array len
+  }
+  return 0;
+}
+
+void ParametersTypeData::post_initialize(BytecodeStream* stream, MethodData* mdo) {
+  _parameters.post_initialize(mdo->method()->signature(), !mdo->method()->is_static(), true);
+}
+
+bool ParametersTypeData::profiling_enabled() {
+  return MethodData::profile_parameters();
+}
+
+#ifndef PRODUCT
+void ParametersTypeData::print_data_on(outputStream* st) const {
+  st->print("parameter types");
+  _parameters.print_data_on(st);
+}
+#endif
+
 // ==================================================================
 // MethodData*
 //
@@ -741,6 +779,12 @@ int MethodData::compute_allocation_size_in_bytes(methodHandle method) {
   int arg_size = method->size_of_parameters();
   object_size += DataLayout::compute_size_in_bytes(arg_size+1);
 
+  // Reserve room for an area of the MDO dedicated to profiling of
+  // parameters
+  int args_cell = ParametersTypeData::compute_cell_count(method());
+  if (args_cell > 0) {
+    object_size += DataLayout::compute_size_in_bytes(args_cell);
+  }
   return object_size;
 }
 
@@ -915,6 +959,8 @@ ProfileData* DataLayout::data_in() {
     return new CallTypeData(this);
   case DataLayout::virtual_call_type_data_tag:
     return new VirtualCallTypeData(this);
+  case DataLayout::parameters_type_data_tag:
+    return new ParametersTypeData(this);
   };
 }
 
@@ -935,6 +981,9 @@ void MethodData::post_initialize(BytecodeStream* stream) {
     stream->set_start(data->bci());
     stream->next();
     data->post_initialize(stream, this);
+  }
+  if (_parameters_type_data_di != -1) {
+    parameters_type_data()->post_initialize(NULL, this);
   }
 }
 
@@ -975,7 +1024,23 @@ MethodData::MethodData(methodHandle method, int size, TRAPS) {
   int arg_size = method->size_of_parameters();
   dp->initialize(DataLayout::arg_info_data_tag, 0, arg_size+1);
 
-  object_size += extra_size + DataLayout::compute_size_in_bytes(arg_size+1);
+  int arg_data_size = DataLayout::compute_size_in_bytes(arg_size+1);
+  object_size += extra_size + arg_data_size;
+
+  int args_cell = ParametersTypeData::compute_cell_count(method());
+  // If we are profiling parameters, we reserver an area near the end
+  // of the MDO after the slots for bytecodes (because there's no bci
+  // for method entry so they don't fit with the framework for the
+  // profiling of bytecodes). We store the offset within the MDO of
+  // this area (or -1 if no parameter is profiled)
+  if (args_cell > 0) {
+    object_size += DataLayout::compute_size_in_bytes(args_cell);
+    _parameters_type_data_di = data_size + extra_size + arg_data_size;
+    DataLayout *dp = data_layout_at(data_size + extra_size + arg_data_size);
+    dp->initialize(DataLayout::parameters_type_data_tag, 0, args_cell);
+  } else {
+    _parameters_type_data_di = -1;
+  }
 
   // Set an initial hint. Don't use set_hint_di() because
   // first_di() may be out of bounds if data_size is 0.
@@ -1134,6 +1199,9 @@ void MethodData::print_value_on(outputStream* st) const {
 void MethodData::print_data_on(outputStream* st) const {
   ResourceMark rm;
   ProfileData* data = first_data();
+  if (_parameters_type_data_di != -1) {
+    parameters_type_data()->print_data_on(st);
+  }
   for ( ; is_valid(data); data = next_data(data)) {
     st->print("%d", dp_to_di(data->dp()));
     st->fill_to(6);
@@ -1222,7 +1290,7 @@ bool MethodData::profile_arguments_for_invoke(methodHandle m, int bci) {
 }
 
 int MethodData::profile_return_flag() {
-  return TypeProfileLevel / 10;
+  return (TypeProfileLevel % 100) / 10;
 }
 
 bool MethodData::profile_return() {
@@ -1248,4 +1316,33 @@ bool MethodData::profile_return_for_invoke(methodHandle m, int bci) {
 
   assert(profile_return_jsr292_only(), "inconsistent");
   return profile_jsr292(m, bci);
+}
+
+int MethodData::profile_parameters_flag() {
+  return TypeProfileLevel / 100;
+}
+
+bool MethodData::profile_parameters() {
+  return profile_parameters_flag() > no_type_profile && profile_parameters_flag() <= type_profile_all;
+}
+
+bool MethodData::profile_parameters_jsr292_only() {
+  return profile_parameters_flag() == type_profile_jsr292;
+}
+
+bool MethodData::profile_all_parameters() {
+  return profile_parameters_flag() == type_profile_all;
+}
+
+bool MethodData::profile_parameters_for_method(methodHandle m) {
+  if (!profile_parameters()) {
+    return false;
+  }
+
+  if (profile_all_parameters()) {
+    return true;
+  }
+
+  assert(profile_parameters_jsr292_only(), "inconsistent");
+  return m->is_compiled_lambda_form();
 }
