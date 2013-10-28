@@ -40,7 +40,6 @@
 #include "runtime/init.hpp"
 #include "runtime/javaCalls.hpp"
 #include "runtime/signature.hpp"
-#include "runtime/synchronizer.hpp"
 #include "runtime/vframe.hpp"
 
 ConstantPool* ConstantPool::allocate(ClassLoaderData* loader_data, int length, TRAPS) {
@@ -70,6 +69,7 @@ ConstantPool::ConstantPool(Array<u1>* tags) {
 
   // only set to non-zero if constant pool is merged by RedefineClasses
   set_version(0);
+  set_lock(new Monitor(Monitor::nonleaf + 2, "A constant pool lock"));
 
   // initialize tag array
   int length = tags->length();
@@ -95,6 +95,9 @@ void ConstantPool::deallocate_contents(ClassLoaderData* loader_data) {
 void ConstantPool::release_C_heap_structures() {
   // walk constant pool and decrement symbol reference counts
   unreference_symbols();
+
+  delete _lock;
+  set_lock(NULL);
 }
 
 objArrayOop ConstantPool::resolved_references() const {
@@ -151,6 +154,9 @@ void ConstantPool::restore_unshareable_info(TRAPS) {
       ClassLoaderData* loader_data = pool_holder()->class_loader_data();
       set_resolved_references(loader_data->add_handle(refs_handle));
     }
+
+    // Also need to recreate the mutex.  Make sure this matches the constructor
+    set_lock(new Monitor(Monitor::nonleaf + 2, "A constant pool lock"));
   }
 }
 
@@ -161,23 +167,7 @@ void ConstantPool::remove_unshareable_info() {
   set_resolved_reference_length(
     resolved_references() != NULL ? resolved_references()->length() : 0);
   set_resolved_references(NULL);
-}
-
-oop ConstantPool::lock() {
-  if (_pool_holder) {
-    // We re-use the _pool_holder's init_lock to reduce footprint.
-    // Notes on deadlocks:
-    // [1] This lock is a Java oop, so it can be recursively locked by
-    //     the same thread without self-deadlocks.
-    // [2] Deadlock will happen if there is circular dependency between
-    //     the <clinit> of two Java classes. However, in this case,
-    //     the deadlock would have happened long before we reach
-    //     ConstantPool::lock(), so reusing init_lock does not
-    //     increase the possibility of deadlock.
-    return _pool_holder->init_lock();
-  } else {
-    return NULL;
-  }
+  set_lock(NULL);
 }
 
 int ConstantPool::cp_to_object_index(int cp_index) {
@@ -211,9 +201,7 @@ Klass* ConstantPool::klass_at_impl(constantPoolHandle this_oop, int which, TRAPS
 
   Symbol* name = NULL;
   Handle       loader;
-  {
-    oop cplock = this_oop->lock();
-    ObjectLocker ol(cplock , THREAD, cplock != NULL);
+  {  MonitorLockerEx ml(this_oop->lock());
 
     if (this_oop->tag_at(which).is_unresolved_klass()) {
       if (this_oop->tag_at(which).is_unresolved_klass_in_error()) {
@@ -260,8 +248,7 @@ Klass* ConstantPool::klass_at_impl(constantPoolHandle this_oop, int which, TRAPS
 
       bool throw_orig_error = false;
       {
-        oop cplock = this_oop->lock();
-        ObjectLocker ol(cplock, THREAD, cplock != NULL);
+        MonitorLockerEx ml(this_oop->lock());
 
         // some other thread has beaten us and has resolved the class.
         if (this_oop->tag_at(which).is_klass()) {
@@ -329,8 +316,7 @@ Klass* ConstantPool::klass_at_impl(constantPoolHandle this_oop, int which, TRAPS
       }
       return k();
     } else {
-      oop cplock = this_oop->lock();
-      ObjectLocker ol(cplock, THREAD, cplock != NULL);
+      MonitorLockerEx ml(this_oop->lock());
       // Only updated constant pool - if it is resolved.
       do_resolve = this_oop->tag_at(which).is_unresolved_klass();
       if (do_resolve) {
@@ -600,8 +586,7 @@ void ConstantPool::save_and_throw_exception(constantPoolHandle this_oop, int whi
                                      int tag, TRAPS) {
   ResourceMark rm;
   Symbol* error = PENDING_EXCEPTION->klass()->name();
-  oop cplock = this_oop->lock();
-  ObjectLocker ol(cplock, THREAD, cplock != NULL);  // lock cpool to change tag.
+  MonitorLockerEx ml(this_oop->lock());  // lock cpool to change tag.
 
   int error_tag = (tag == JVM_CONSTANT_MethodHandle) ?
            JVM_CONSTANT_MethodHandleInError : JVM_CONSTANT_MethodTypeInError;
@@ -762,8 +747,7 @@ oop ConstantPool::resolve_constant_at_impl(constantPoolHandle this_oop, int inde
   if (cache_index >= 0) {
     // Cache the oop here also.
     Handle result_handle(THREAD, result_oop);
-    oop cplock = this_oop->lock();
-    ObjectLocker ol(cplock, THREAD, cplock != NULL);  // don't know if we really need this
+    MonitorLockerEx ml(this_oop->lock());  // don't know if we really need this
     oop result = this_oop->resolved_references()->obj_at(cache_index);
     // Benign race condition:  resolved_references may already be filled in while we were trying to lock.
     // The important thing here is that all threads pick up the same result.
@@ -869,18 +853,9 @@ void ConstantPool::unreference_symbols() {
 bool ConstantPool::compare_entry_to(int index1, constantPoolHandle cp2,
        int index2, TRAPS) {
 
-  jbyte t1 = tag_at(index1).value();
-  jbyte t2 = cp2->tag_at(index2).value();
-
-
-  // JVM_CONSTANT_UnresolvedClassInError is equal to JVM_CONSTANT_UnresolvedClass
-  // when comparing
-  if (t1 == JVM_CONSTANT_UnresolvedClassInError) {
-    t1 = JVM_CONSTANT_UnresolvedClass;
-  }
-  if (t2 == JVM_CONSTANT_UnresolvedClassInError) {
-    t2 = JVM_CONSTANT_UnresolvedClass;
-  }
+  // The error tags are equivalent to non-error tags when comparing
+  jbyte t1 = tag_at(index1).non_error_value();
+  jbyte t2 = cp2->tag_at(index2).non_error_value();
 
   if (t1 != t2) {
     // Not the same entry type so there is nothing else to check. Note
@@ -1001,8 +976,8 @@ bool ConstantPool::compare_entry_to(int index1, constantPoolHandle cp2,
 
   case JVM_CONSTANT_MethodType:
   {
-    int k1 = method_type_index_at(index1);
-    int k2 = cp2->method_type_index_at(index2);
+    int k1 = method_type_index_at_error_ok(index1);
+    int k2 = cp2->method_type_index_at_error_ok(index2);
     bool match = compare_entry_to(k1, cp2, k2, CHECK_false);
     if (match) {
       return true;
@@ -1011,11 +986,11 @@ bool ConstantPool::compare_entry_to(int index1, constantPoolHandle cp2,
 
   case JVM_CONSTANT_MethodHandle:
   {
-    int k1 = method_handle_ref_kind_at(index1);
-    int k2 = cp2->method_handle_ref_kind_at(index2);
+    int k1 = method_handle_ref_kind_at_error_ok(index1);
+    int k2 = cp2->method_handle_ref_kind_at_error_ok(index2);
     if (k1 == k2) {
-      int i1 = method_handle_index_at(index1);
-      int i2 = cp2->method_handle_index_at(index2);
+      int i1 = method_handle_index_at_error_ok(index1);
+      int i2 = cp2->method_handle_index_at_error_ok(index2);
       bool match = compare_entry_to(i1, cp2, i2, CHECK_false);
       if (match) {
         return true;
@@ -1329,14 +1304,6 @@ void ConstantPool::copy_entry_to(constantPoolHandle from_cp, int from_i,
     }
   } break;
 
-  case JVM_CONSTANT_UnresolvedClassInError:
-  {
-    Symbol* k = from_cp->unresolved_klass_at(from_i);
-    to_cp->unresolved_klass_at_put(to_i, k);
-    to_cp->tag_at_put(to_i, JVM_CONSTANT_UnresolvedClassInError);
-  } break;
-
-
   case JVM_CONSTANT_String:
   {
     Symbol* s = from_cp->unresolved_string_at(from_i);
@@ -1352,15 +1319,17 @@ void ConstantPool::copy_entry_to(constantPoolHandle from_cp, int from_i,
   } break;
 
   case JVM_CONSTANT_MethodType:
+  case JVM_CONSTANT_MethodTypeInError:
   {
-    jint k = from_cp->method_type_index_at(from_i);
+    jint k = from_cp->method_type_index_at_error_ok(from_i);
     to_cp->method_type_index_at_put(to_i, k);
   } break;
 
   case JVM_CONSTANT_MethodHandle:
+  case JVM_CONSTANT_MethodHandleInError:
   {
-    int k1 = from_cp->method_handle_ref_kind_at(from_i);
-    int k2 = from_cp->method_handle_index_at(from_i);
+    int k1 = from_cp->method_handle_ref_kind_at_error_ok(from_i);
+    int k2 = from_cp->method_handle_index_at_error_ok(from_i);
     to_cp->method_handle_index_at_put(to_i, k1, k2);
   } break;
 

@@ -559,7 +559,7 @@ public interface Statement extends Wrapper, AutoCloseable {
      * <code>BatchUpdateException.getUpdateCounts</code>
      * will contain as many elements as there are commands in the batch, and
      * at least one of the elements will be the following:
-     * <P>
+     *
      * <LI>A value of <code>EXECUTE_FAILED</code> -- indicates that the command failed
      * to execute successfully and occurs only if a driver continues to
      * process commands after a command fails
@@ -1165,7 +1165,7 @@ public interface Statement extends Wrapper, AutoCloseable {
      * <code>BatchUpdateException.getLargeUpdateCounts</code>
      * will contain as many elements as there are commands in the batch, and
      * at least one of the elements will be the following:
-     * <P>
+     *
      * <LI>A value of <code>EXECUTE_FAILED</code> -- indicates that the command failed
      * to execute successfully and occurs only if a driver continues to
      * process commands after a command fails

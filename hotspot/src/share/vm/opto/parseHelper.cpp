@@ -128,7 +128,7 @@ void Parse::do_instanceof() {
   }
 
   // Push the bool result back on stack
-  Node* res = gen_instanceof(peek(), makecon(TypeKlassPtr::make(klass)));
+  Node* res = gen_instanceof(peek(), makecon(TypeKlassPtr::make(klass)), true);
 
   // Pop from stack AFTER gen_instanceof because it can uncommon trap.
   pop();
@@ -343,10 +343,14 @@ void Parse::increment_and_test_invocation_counter(int limit) {
 
   // Get the Method* node.
   ciMethod* m = method();
-  address counters_adr = m->ensure_method_counters();
+  MethodCounters* counters_adr = m->ensure_method_counters();
+  if (counters_adr == NULL) {
+    C->record_failure("method counters allocation failed");
+    return;
+  }
 
   Node* ctrl = control();
-  const TypePtr* adr_type = TypeRawPtr::make(counters_adr);
+  const TypePtr* adr_type = TypeRawPtr::make((address) counters_adr);
   Node *counters_node = makecon(adr_type);
   Node* adr_iic_node = basic_plus_adr(counters_node, counters_node,
     MethodCounters::interpreter_invocation_counter_offset_in_bytes());

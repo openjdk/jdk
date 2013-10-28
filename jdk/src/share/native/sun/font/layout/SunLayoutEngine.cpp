@@ -104,6 +104,10 @@ Java_sun_font_SunLayoutEngine_initGVIDs
 
 int putGV(JNIEnv* env, jint gmask, jint baseIndex, jobject gvdata, const LayoutEngine* engine, int glyphCount) {
     int count = env->GetIntField(gvdata, gvdCountFID);
+    if (count < 0) {
+      JNU_ThrowInternalError(env, "count negative");
+      return 0;
+    }
 
     jarray glyphArray = (jarray)env->GetObjectField(gvdata, gvdGlyphsFID);
     if (IS_NULL(glyphArray)) {

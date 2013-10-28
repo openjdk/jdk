@@ -338,6 +338,7 @@ public:
   static RegMask modL_proj_mask();
 
   static const RegMask mathExactI_result_proj_mask();
+  static const RegMask mathExactL_result_proj_mask();
   static const RegMask mathExactI_flags_proj_mask();
 
   // Use hardware DIV instruction when it is faster than

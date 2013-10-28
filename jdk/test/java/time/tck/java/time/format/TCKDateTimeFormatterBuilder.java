@@ -190,8 +190,69 @@ public class TCKDateTimeFormatterBuilder {
 
     //-----------------------------------------------------------------------
     @Test(expectedExceptions=NullPointerException.class)
-    public void test_appendValueReduced_null() throws Exception {
-        builder.appendValueReduced(null, 2, 2000);
+    public void test_appendValueReduced_int_nullField() throws Exception {
+        builder.appendValueReduced(null, 2, 2, 2000);
+    }
+
+    @Test(expectedExceptions=IllegalArgumentException.class)
+    public void test_appendValueReduced_int_minWidthTooSmall() throws Exception {
+        builder.appendValueReduced(YEAR, 0, 2, 2000);
+    }
+
+    @Test(expectedExceptions=IllegalArgumentException.class)
+    public void test_appendValueReduced_int_minWidthTooBig() throws Exception {
+        builder.appendValueReduced(YEAR, 11, 2, 2000);
+    }
+
+    @Test(expectedExceptions=IllegalArgumentException.class)
+    public void test_appendValueReduced_int_maxWidthTooSmall() throws Exception {
+        builder.appendValueReduced(YEAR, 2, 0, 2000);
+    }
+
+    @Test(expectedExceptions=IllegalArgumentException.class)
+    public void test_appendValueReduced_int_maxWidthTooBig() throws Exception {
+        builder.appendValueReduced(YEAR, 2, 11, 2000);
+    }
+
+    @Test(expectedExceptions=IllegalArgumentException.class)
+    public void test_appendValueReduced_int_maxWidthLessThanMin() throws Exception {
+        builder.appendValueReduced(YEAR, 2, 1, 2000);
+    }
+
+    //-----------------------------------------------------------------------
+    @Test(expectedExceptions=NullPointerException.class)
+    public void test_appendValueReduced_date_nullField() throws Exception {
+        builder.appendValueReduced(null, 2, 2, LocalDate.of(2000, 1, 1));
+    }
+
+    @Test(expectedExceptions=NullPointerException.class)
+    public void test_appendValueReduced_date_nullDate() throws Exception {
+        builder.appendValueReduced(YEAR, 2, 2, null);
+    }
+
+    @Test(expectedExceptions=IllegalArgumentException.class)
+    public void test_appendValueReduced_date_minWidthTooSmall() throws Exception {
+        builder.appendValueReduced(YEAR, 0, 2, LocalDate.of(2000, 1, 1));
+    }
+
+    @Test(expectedExceptions=IllegalArgumentException.class)
+    public void test_appendValueReduced_date_minWidthTooBig() throws Exception {
+        builder.appendValueReduced(YEAR, 11, 2, LocalDate.of(2000, 1, 1));
+    }
+
+    @Test(expectedExceptions=IllegalArgumentException.class)
+    public void test_appendValueReduced_date_maxWidthTooSmall() throws Exception {
+        builder.appendValueReduced(YEAR, 2, 0, LocalDate.of(2000, 1, 1));
+    }
+
+    @Test(expectedExceptions=IllegalArgumentException.class)
+    public void test_appendValueReduced_date_maxWidthTooBig() throws Exception {
+        builder.appendValueReduced(YEAR, 2, 11, LocalDate.of(2000, 1, 1));
+    }
+
+    @Test(expectedExceptions=IllegalArgumentException.class)
+    public void test_appendValueReduced_date_maxWidthLessThanMin() throws Exception {
+        builder.appendValueReduced(YEAR, 2, 1, LocalDate.of(2000, 1, 1));
     }
 
     //-----------------------------------------------------------------------

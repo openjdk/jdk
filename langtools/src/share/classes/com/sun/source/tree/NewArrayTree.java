@@ -25,7 +25,7 @@
 
 package com.sun.source.tree;
 
-import com.sun.tools.javac.util.List;
+import java.util.List;
 
 /**
  * A tree node for an expression to create a new instance of an array.

@@ -320,7 +320,8 @@ InstanceKlass::InstanceKlass(int vtable_len,
 
 void InstanceKlass::deallocate_methods(ClassLoaderData* loader_data,
                                        Array<Method*>* methods) {
-  if (methods != NULL && methods != Universe::the_empty_method_array()) {
+  if (methods != NULL && methods != Universe::the_empty_method_array() &&
+      !methods->is_shared()) {
     for (int i = 0; i < methods->length(); i++) {
       Method* method = methods->at(i);
       if (method == NULL) continue;  // maybe null if error processing
@@ -344,13 +345,14 @@ void InstanceKlass::deallocate_interfaces(ClassLoaderData* loader_data,
     // check that the interfaces don't come from super class
     Array<Klass*>* sti = (super_klass == NULL) ? NULL :
                     InstanceKlass::cast(super_klass)->transitive_interfaces();
-    if (ti != sti) {
+    if (ti != sti && ti != NULL && !ti->is_shared()) {
       MetadataFactory::free_array<Klass*>(loader_data, ti);
     }
   }
 
   // local interfaces can be empty
-  if (local_interfaces != Universe::the_empty_klass_array()) {
+  if (local_interfaces != Universe::the_empty_klass_array() &&
+      local_interfaces != NULL && !local_interfaces->is_shared()) {
     MetadataFactory::free_array<Klass*>(loader_data, local_interfaces);
   }
 }
@@ -380,21 +382,25 @@ void InstanceKlass::deallocate_contents(ClassLoaderData* loader_data) {
   deallocate_methods(loader_data, methods());
   set_methods(NULL);
 
-  if (method_ordering() != Universe::the_empty_int_array()) {
+  if (method_ordering() != NULL &&
+      method_ordering() != Universe::the_empty_int_array() &&
+      !method_ordering()->is_shared()) {
     MetadataFactory::free_array<int>(loader_data, method_ordering());
   }
   set_method_ordering(NULL);
 
   // default methods can be empty
   if (default_methods() != NULL &&
-      default_methods() != Universe::the_empty_method_array()) {
+      default_methods() != Universe::the_empty_method_array() &&
+      !default_methods()->is_shared()) {
     MetadataFactory::free_array<Method*>(loader_data, default_methods());
   }
   // Do NOT deallocate the default methods, they are owned by superinterfaces.
   set_default_methods(NULL);
 
   // default methods vtable indices can be empty
-  if (default_vtable_indices() != NULL) {
+  if (default_vtable_indices() != NULL &&
+      !default_vtable_indices()->is_shared()) {
     MetadataFactory::free_array<int>(loader_data, default_vtable_indices());
   }
   set_default_vtable_indices(NULL);
@@ -403,8 +409,10 @@ void InstanceKlass::deallocate_contents(ClassLoaderData* loader_data) {
   // This array is in Klass, but remove it with the InstanceKlass since
   // this place would be the only caller and it can share memory with transitive
   // interfaces.
-  if (secondary_supers() != Universe::the_empty_klass_array() &&
-      secondary_supers() != transitive_interfaces()) {
+  if (secondary_supers() != NULL &&
+      secondary_supers() != Universe::the_empty_klass_array() &&
+      secondary_supers() != transitive_interfaces() &&
+      !secondary_supers()->is_shared()) {
     MetadataFactory::free_array<Klass*>(loader_data, secondary_supers());
   }
   set_secondary_supers(NULL);
@@ -413,24 +421,32 @@ void InstanceKlass::deallocate_contents(ClassLoaderData* loader_data) {
   set_transitive_interfaces(NULL);
   set_local_interfaces(NULL);
 
-  MetadataFactory::free_array<jushort>(loader_data, fields());
+  if (fields() != NULL && !fields()->is_shared()) {
+    MetadataFactory::free_array<jushort>(loader_data, fields());
+  }
   set_fields(NULL, 0);
 
   // If a method from a redefined class is using this constant pool, don't
   // delete it, yet.  The new class's previous version will point to this.
   if (constants() != NULL) {
     assert (!constants()->on_stack(), "shouldn't be called if anything is onstack");
-    MetadataFactory::free_metadata(loader_data, constants());
+    if (!constants()->is_shared()) {
+      MetadataFactory::free_metadata(loader_data, constants());
+    }
     set_constants(NULL);
   }
 
-  if (inner_classes() != Universe::the_empty_short_array()) {
+  if (inner_classes() != NULL &&
+      inner_classes() != Universe::the_empty_short_array() &&
+      !inner_classes()->is_shared()) {
     MetadataFactory::free_array<jushort>(loader_data, inner_classes());
   }
   set_inner_classes(NULL);
 
-  // We should deallocate the Annotations instance
-  MetadataFactory::free_metadata(loader_data, annotations());
+  // We should deallocate the Annotations instance if it's not in shared spaces.
+  if (annotations() != NULL && !annotations()->is_shared()) {
+    MetadataFactory::free_metadata(loader_data, annotations());
+  }
   set_annotations(NULL);
 }
 
@@ -482,13 +498,27 @@ objArrayOop InstanceKlass::signers() const {
 
 oop InstanceKlass::init_lock() const {
   // return the init lock from the mirror
-  return java_lang_Class::init_lock(java_mirror());
+  oop lock = java_lang_Class::init_lock(java_mirror());
+  assert((oop)lock != NULL || !is_not_initialized(), // initialized or in_error state
+         "only fully initialized state can have a null lock");
+  return lock;
+}
+
+// Set the initialization lock to null so the object can be GC'ed.  Any racing
+// threads to get this lock will see a null lock and will not lock.
+// That's okay because they all check for initialized state after getting
+// the lock and return.
+void InstanceKlass::fence_and_clear_init_lock() {
+  // make sure previous stores are all done, notably the init_state.
+  OrderAccess::storestore();
+  java_lang_Class::set_init_lock(java_mirror(), NULL);
+  assert(!is_not_initialized(), "class must be initialized now");
 }
 
 void InstanceKlass::eager_initialize_impl(instanceKlassHandle this_oop) {
   EXCEPTION_MARK;
   oop init_lock = this_oop->init_lock();
-  ObjectLocker ol(init_lock, THREAD);
+  ObjectLocker ol(init_lock, THREAD, init_lock != NULL);
 
   // abort if someone beat us to the initialization
   if (!this_oop->is_not_initialized()) return;  // note: not equivalent to is_initialized()
@@ -507,6 +537,7 @@ void InstanceKlass::eager_initialize_impl(instanceKlassHandle this_oop) {
   } else {
     // linking successfull, mark class as initialized
     this_oop->set_init_state (fully_initialized);
+    this_oop->fence_and_clear_init_lock();
     // trace
     if (TraceClassInitialization) {
       ResourceMark rm(THREAD);
@@ -633,7 +664,7 @@ bool InstanceKlass::link_class_impl(
   // verification & rewriting
   {
     oop init_lock = this_oop->init_lock();
-    ObjectLocker ol(init_lock, THREAD);
+    ObjectLocker ol(init_lock, THREAD, init_lock != NULL);
     // rewritten will have been set if loader constraint error found
     // on an earlier link attempt
     // don't verify or rewrite if already rewritten
@@ -756,7 +787,7 @@ void InstanceKlass::initialize_impl(instanceKlassHandle this_oop, TRAPS) {
   // Step 1
   {
     oop init_lock = this_oop->init_lock();
-    ObjectLocker ol(init_lock, THREAD);
+    ObjectLocker ol(init_lock, THREAD, init_lock != NULL);
 
     Thread *self = THREAD; // it's passed the current thread
 
@@ -904,8 +935,9 @@ void InstanceKlass::set_initialization_state_and_notify(ClassState state, TRAPS)
 
 void InstanceKlass::set_initialization_state_and_notify_impl(instanceKlassHandle this_oop, ClassState state, TRAPS) {
   oop init_lock = this_oop->init_lock();
-  ObjectLocker ol(init_lock, THREAD);
+  ObjectLocker ol(init_lock, THREAD, init_lock != NULL);
   this_oop->set_init_state(state);
+  this_oop->fence_and_clear_init_lock();
   ol.notify_all(CHECK);
 }
 

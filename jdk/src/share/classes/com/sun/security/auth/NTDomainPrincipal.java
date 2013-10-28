@@ -45,6 +45,7 @@ import java.security.Principal;
  * @see java.security.Principal
  * @see javax.security.auth.Subject
  */
+@jdk.Exported
 public class NTDomainPrincipal implements Principal, java.io.Serializable {
 
     private static final long serialVersionUID = -4408637351440771220L;

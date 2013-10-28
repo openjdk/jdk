@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,8 @@
 
 /*
  * @test
- * @summary  Make sure that annotations types with optional elements has
+ * @bug 8025633
+ * @summary  Make sure that annotations types with optional elements have
  *           element headers
  * @author   Mahmood Ali
  * @library  ../lib/
@@ -45,7 +46,7 @@ public class TestAnnotationOptional extends JavadocTester {
     //Input for string search tests.
     private static final String[][] TEST = {
         {BUG_ID + FS + "pkg" + FS + "AnnotationOptional.html",
-            "<a name=\"annotation_type_element_detail\">"
+            "<a name=\"annotation.type.element.detail\">"
         }
     };
 

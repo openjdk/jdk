@@ -453,6 +453,12 @@ public final class ServiceLoader<S>
      * Invoking its {@link java.util.Iterator#remove() remove} method will
      * cause an {@link UnsupportedOperationException} to be thrown.
      *
+     * @implNote When adding providers to the cache, the {@link #iterator
+     * Iterator} processes resources in the order that the {@link
+     * java.lang.ClassLoader#getResources(java.lang.String)
+     * ClassLoader.getResources(String)} method finds the service configuration
+     * files.
+     *
      * @return  An iterator that lazily loads providers for this loader's
      *          service
      */
