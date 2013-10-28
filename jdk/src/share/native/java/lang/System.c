@@ -206,6 +206,11 @@ Java_java_lang_System_initProperties(JNIEnv *env, jclass cla, jobject props)
     if (sprops->awt_toolkit) {
         PUTPROP(props, "awt.toolkit", sprops->awt_toolkit);
     }
+#ifdef MACOSX
+    if (sprops->awt_headless) {
+        PUTPROP(props, "java.awt.headless", sprops->awt_headless);
+    }
+#endif
 
     /* os properties */
     PUTPROP(props, "os.name", sprops->os_name);
