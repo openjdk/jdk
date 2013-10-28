@@ -1076,6 +1076,25 @@ OopMapSet* Runtime1::generate_handle_exception(StubID id, StubAssembler* sasm) {
 
   __ verify_not_null_oop(Oexception);
 
+#ifdef ASSERT
+  // check that fields in JavaThread for exception oop and issuing pc are
+  // empty before writing to them
+  Label oop_empty;
+  Register scratch = I7;  // We can use I7 here because it's overwritten later anyway.
+  __ ld_ptr(Address(G2_thread, JavaThread::exception_oop_offset()), scratch);
+  __ br_null(scratch, false, Assembler::pt, oop_empty);
+  __ delayed()->nop();
+  __ stop("exception oop already set");
+  __ bind(oop_empty);
+
+  Label pc_empty;
+  __ ld_ptr(Address(G2_thread, JavaThread::exception_pc_offset()), scratch);
+  __ br_null(scratch, false, Assembler::pt, pc_empty);
+  __ delayed()->nop();
+  __ stop("exception pc already set");
+  __ bind(pc_empty);
+#endif
+
   // save the exception and issuing pc in the thread
   __ st_ptr(Oexception,  G2_thread, in_bytes(JavaThread::exception_oop_offset()));
   __ st_ptr(Oissuing_pc, G2_thread, in_bytes(JavaThread::exception_pc_offset()));

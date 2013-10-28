@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -65,6 +65,7 @@ class MetadataFactory : AllStatic {
   static void free_array(ClassLoaderData* loader_data, Array<T>* data) {
     if (data != NULL) {
       assert(loader_data != NULL, "shouldn't pass null");
+      assert(!data->is_shared(), "cannot deallocate array in shared spaces");
       int size = data->size();
       if (DumpSharedSpaces) {
         loader_data->ro_metaspace()->deallocate((MetaWord*)data, size, false);
@@ -83,6 +84,7 @@ class MetadataFactory : AllStatic {
       // Call metadata's deallocate function which will call deallocate fields
       assert(!DumpSharedSpaces, "cannot deallocate metadata when dumping CDS archive");
       assert(!md->on_stack(), "can't deallocate things on stack");
+      assert(!md->is_shared(), "cannot deallocate if in shared spaces");
       md->deallocate_contents(loader_data);
       loader_data->metaspace_non_null()->deallocate((MetaWord*)md, size, md->is_klass());
     }

@@ -208,6 +208,7 @@ class LIR_Assembler: public CompilationResourceObj {
   void emit_call(LIR_OpJavaCall* op);
   void emit_rtcall(LIR_OpRTCall* op);
   void emit_profile_call(LIR_OpProfileCall* op);
+  void emit_profile_type(LIR_OpProfileType* op);
   void emit_delay(LIR_OpDelay* op);
 
   void arith_op(LIR_Code code, LIR_Opr left, LIR_Opr right, LIR_Opr dest, CodeEmitInfo* info, bool pop_fpu_stack);

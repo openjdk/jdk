@@ -25,7 +25,7 @@
 
 /*
  * @test
- * @bug 6786690 6820360
+ * @bug 6786690 6820360 8025633
  * @summary This test verifies the nesting of definition list tags.
  * @author Bhavesh Patel
  * @library ../lib/
@@ -64,7 +64,7 @@ public class TestHtmlDefinitionListTag extends JavadocTester {
         {BUG_ID + FS + "pkg1" + FS + "C1.html", "<dl>" + NL + "<dt><span class=\"strong\">Since:</span></dt>" + NL +
                  "<dd>1.4</dd>" + NL +
                  "<dt><span class=\"strong\">See Also:</span></dt>" + NL + "<dd>" +
-                 "<a href=\"../pkg1/C1.html#setUndecorated(boolean)\">" +
+                 "<a href=\"../pkg1/C1.html#setUndecorated-boolean-\">" +
                  "<code>setUndecorated(boolean)</code></a></dd>" + NL + "</dl>"},
         {BUG_ID + FS + "pkg1" + FS + "C1.html", "<dl>"+ NL + "<dt><span class=\"strong\">Parameters:</span></dt>" + NL + "<dd><code>title" +
                  "</code> - the title</dd>" + NL + "<dd><code>test</code> - boolean value" +
@@ -79,11 +79,11 @@ public class TestHtmlDefinitionListTag extends JavadocTester {
                  "if decorations are to be enabled.</dd>" + NL + "<dt><span class=\"strong\">Since:" +
                  "</span></dt>" + NL + "<dd>1.4</dd>" + NL +
                  "<dt><span class=\"strong\">See Also:</span></dt>" + NL + "<dd>" +
-                 "<a href=\"../pkg1/C1.html#readObject()\"><code>readObject()" +
+                 "<a href=\"../pkg1/C1.html#readObject--\"><code>readObject()" +
                  "</code></a></dd>" + NL + "</dl>"},
         {BUG_ID + FS + "pkg1" + FS + "C1.html", "<dl>" + NL + "<dt><span class=\"strong\">Throws:</span></dt>" + NL +
                  "<dd><code>java.io.IOException</code></dd>" + NL + "<dt><span class=\"strong\">See Also:" +
-                 "</span></dt>" + NL + "<dd><a href=\"../pkg1/C1.html#setUndecorated(boolean)\">" +
+                 "</span></dt>" + NL + "<dd><a href=\"../pkg1/C1.html#setUndecorated-boolean-\">" +
                  "<code>setUndecorated(boolean)</code></a></dd>" + NL + "</dl>"},
         {BUG_ID + FS + "pkg1" + FS + "C2.html", "<dl>" + NL + "<dt><span class=\"strong\">Parameters:" +
                  "</span></dt>" + NL + "<dd><code>set</code> - boolean</dd>" + NL + "<dt><span class=\"strong\">" +
@@ -91,20 +91,20 @@ public class TestHtmlDefinitionListTag extends JavadocTester {
         {BUG_ID + FS + "serialized-form.html", "<dl>" + NL + "<dt><span class=\"strong\">Throws:</span>" +
                  "</dt>" + NL + "<dd><code>" +
                  "java.io.IOException</code></dd>" + NL + "<dt><span class=\"strong\">See Also:</span>" +
-                 "</dt>" + NL + "<dd><a href=\"pkg1/C1.html#setUndecorated(boolean)\">" +
+                 "</dt>" + NL + "<dd><a href=\"pkg1/C1.html#setUndecorated-boolean-\">" +
                  "<code>C1.setUndecorated(boolean)</code></a></dd>" + NL + "</dl>"},
         {BUG_ID + FS + "serialized-form.html", "<span class=\"strong\">Deprecated.</span>" +
                  "&nbsp;<span class=\"italic\">As of JDK version 1.5, replaced by" + NL +
-                 " <a href=\"pkg1/C1.html#setUndecorated(boolean)\">" +
+                 " <a href=\"pkg1/C1.html#setUndecorated-boolean-\">" +
                  "<code>setUndecorated(boolean)</code></a>.</span></div>" + NL +
                  "<div class=\"block\">This field indicates whether the C1 is " +
                  "undecorated.</div>" + NL + "&nbsp;" + NL + "<dl>" + NL + "<dt><span class=\"strong\">Since:</span></dt>" + NL +
                  "<dd>1.4</dd>" + NL + "<dt><span class=\"strong\">See Also:</span>" +
-                 "</dt>" + NL + "<dd><a href=\"pkg1/C1.html#setUndecorated(boolean)\">" +
+                 "</dt>" + NL + "<dd><a href=\"pkg1/C1.html#setUndecorated-boolean-\">" +
                  "<code>C1.setUndecorated(boolean)</code></a></dd>" + NL + "</dl>"},
         {BUG_ID + FS + "serialized-form.html", "<span class=\"strong\">Deprecated.</span>" +
                  "&nbsp;<span class=\"italic\">As of JDK version 1.5, replaced by" + NL +
-                 " <a href=\"pkg1/C1.html#setUndecorated(boolean)\">" +
+                 " <a href=\"pkg1/C1.html#setUndecorated-boolean-\">" +
                  "<code>setUndecorated(boolean)</code></a>.</span></div>" + NL +
                  "<div class=\"block\">Reads the object stream.</div>" + NL +
                  "<dl>" + NL + "<dt><span class=\"strong\">Throws:" +
@@ -141,29 +141,29 @@ public class TestHtmlDefinitionListTag extends JavadocTester {
                  " if no decorations are" + NL + "         to be enabled;" + NL +
                  "         <code>false</code> if decorations are to be enabled." +
                  "</dd>" + NL + "<dt><span class=\"strong\">Since:</span></dt>" + NL + "<dd>1.4</dd>" + NL +
-                 "<dt><span class=\"strong\">See Also:</span></dt>" + NL + "<dd><a href=\"../pkg1/C1.html#readObject()\">" +
+                 "<dt><span class=\"strong\">See Also:</span></dt>" + NL + "<dd><a href=\"../pkg1/C1.html#readObject--\">" +
                  "<code>readObject()</code></a></dd>" + NL + "</dl>"},
         {BUG_ID + FS + "pkg1" + FS + "C1.html", "<dl>" + NL + "<dt><span class=\"strong\">Throws:</span>" +
                  "</dt>" + NL + "<dd><code>java.io.IOException</code></dd>" + NL + "<dt>" +
-                 "<span class=\"strong\">See Also:</span></dt>" + NL + "<dd><a href=\"../pkg1/C1.html#setUndecorated(boolean)\">" +
+                 "<span class=\"strong\">See Also:</span></dt>" + NL + "<dd><a href=\"../pkg1/C1.html#setUndecorated-boolean-\">" +
                  "<code>setUndecorated(boolean)</code></a></dd>" + NL + "</dl>"},
         {BUG_ID + FS + "serialized-form.html", "<dl>" + NL + "<dt><span class=\"strong\">Throws:</span>" +
                  "</dt>" + NL + "<dd><code>" +
                  "java.io.IOException</code></dd>" + NL + "<dt><span class=\"strong\">See Also:</span>" +
-                 "</dt>" + NL + "<dd><a href=\"pkg1/C1.html#setUndecorated(boolean)\">" +
+                 "</dt>" + NL + "<dd><a href=\"pkg1/C1.html#setUndecorated-boolean-\">" +
                  "<code>C1.setUndecorated(boolean)</code></a></dd>" + NL + "</dl>"},
         {BUG_ID + FS + "serialized-form.html", "<span class=\"strong\">Deprecated.</span>" +
                  "&nbsp;<span class=\"italic\">As of JDK version 1.5, replaced by" + NL +
-                 " <a href=\"pkg1/C1.html#setUndecorated(boolean)\">" +
+                 " <a href=\"pkg1/C1.html#setUndecorated-boolean-\">" +
                  "<code>setUndecorated(boolean)</code></a>.</span></div>" + NL +
                  "<div class=\"block\">This field indicates whether the C1 is " +
                  "undecorated.</div>" + NL + "&nbsp;" + NL + "<dl>" + NL + "<dt><span class=\"strong\">Since:</span></dt>" + NL +
                  "<dd>1.4</dd>" + NL + "<dt><span class=\"strong\">See Also:</span>" +
-                 "</dt>" + NL + "<dd><a href=\"pkg1/C1.html#setUndecorated(boolean)\">" +
+                 "</dt>" + NL + "<dd><a href=\"pkg1/C1.html#setUndecorated-boolean-\">" +
                  "<code>C1.setUndecorated(boolean)</code></a></dd>" + NL + "</dl>"},
         {BUG_ID + FS + "serialized-form.html", "<span class=\"strong\">Deprecated.</span>" +
                  "&nbsp;<span class=\"italic\">As of JDK version 1.5, replaced by" + NL +
-                 " <a href=\"pkg1/C1.html#setUndecorated(boolean)\">" +
+                 " <a href=\"pkg1/C1.html#setUndecorated-boolean-\">" +
                  "<code>setUndecorated(boolean)</code></a>.</span></div>" + NL +
                  "<div class=\"block\">Reads the object stream.</div>" + NL +
                  "<dl>" + NL + "<dt><span class=\"strong\">Throws:" +
@@ -188,12 +188,12 @@ public class TestHtmlDefinitionListTag extends JavadocTester {
         {BUG_ID + FS + "serialized-form.html", "<pre>boolean " +
                  "undecorated</pre>" + NL + "<div class=\"block\"><span class=\"strong\">" +
                  "Deprecated.</span>&nbsp;<span class=\"italic\">As of JDK version 1.5, replaced by" + NL +
-                 " <a href=\"pkg1/C1.html#setUndecorated(boolean)\"><code>" +
+                 " <a href=\"pkg1/C1.html#setUndecorated-boolean-\"><code>" +
                  "setUndecorated(boolean)</code></a>.</span></div>" + NL + "</li>"},
         {BUG_ID + FS + "serialized-form.html", "<span class=\"strong\">" +
                  "Deprecated.</span>&nbsp;<span class=\"italic\">As of JDK version" +
                  " 1.5, replaced by" + NL +
-                 " <a href=\"pkg1/C1.html#setUndecorated(boolean)\">" +
+                 " <a href=\"pkg1/C1.html#setUndecorated-boolean-\">" +
                  "<code>setUndecorated(boolean)</code></a>.</span></div>" + NL + "</li>"}};
 
     // Test for valid HTML generation which should not comprise of empty
