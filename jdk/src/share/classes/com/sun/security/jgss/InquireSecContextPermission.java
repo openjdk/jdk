@@ -35,6 +35,7 @@ import java.security.BasicPermission;
  *
  * <p>The target name is the {@link InquireType} allowed.
  */
+@jdk.Exported
 public final class InquireSecContextPermission extends BasicPermission {
     private static final long serialVersionUID = -7131173349668647297L;
 

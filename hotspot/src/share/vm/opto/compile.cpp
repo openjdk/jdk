@@ -47,6 +47,7 @@
 #include "opto/machnode.hpp"
 #include "opto/macro.hpp"
 #include "opto/matcher.hpp"
+#include "opto/mathexactnode.hpp"
 #include "opto/memnode.hpp"
 #include "opto/mulnode.hpp"
 #include "opto/node.hpp"
@@ -654,7 +655,8 @@ Compile::Compile( ciEnv* ci_env, C2Compiler* compiler, ciMethod* target, int osr
                   _inlining_progress(false),
                   _inlining_incrementally(false),
                   _print_inlining_list(NULL),
-                  _print_inlining_idx(0) {
+                  _print_inlining_idx(0),
+                  _preserve_jvm_state(0) {
   C = this;
 
   CompileWrapper cw(this);
@@ -762,7 +764,7 @@ Compile::Compile( ciEnv* ci_env, C2Compiler* compiler, ciMethod* target, int osr
       return;
     }
     JVMState* jvms = build_start_state(start(), tf());
-    if ((jvms = cg->generate(jvms)) == NULL) {
+    if ((jvms = cg->generate(jvms, NULL)) == NULL) {
       record_method_not_compilable("method parse failed");
       return;
     }
@@ -939,7 +941,8 @@ Compile::Compile( ciEnv* ci_env,
     _inlining_progress(false),
     _inlining_incrementally(false),
     _print_inlining_list(NULL),
-    _print_inlining_idx(0) {
+    _print_inlining_idx(0),
+    _preserve_jvm_state(0) {
   C = this;
 
 #ifndef PRODUCT
@@ -1357,7 +1360,7 @@ const TypePtr *Compile::flatten_alias_type( const TypePtr *tj ) const {
     // During the 2nd round of IterGVN, NotNull castings are removed.
     // Make sure the Bottom and NotNull variants alias the same.
     // Also, make sure exact and non-exact variants alias the same.
-    if( ptr == TypePtr::NotNull || ta->klass_is_exact() ) {
+    if (ptr == TypePtr::NotNull || ta->klass_is_exact() || ta->speculative() != NULL) {
       tj = ta = TypeAryPtr::make(TypePtr::BotPTR,ta->ary(),ta->klass(),false,offset);
     }
   }
@@ -1381,6 +1384,9 @@ const TypePtr *Compile::flatten_alias_type( const TypePtr *tj ) const {
       // Make sure the Bottom and NotNull variants alias the same.
       // Also, make sure exact and non-exact variants alias the same.
       tj = to = TypeInstPtr::make(TypePtr::BotPTR,to->klass(),false,0,offset);
+    }
+    if (to->speculative() != NULL) {
+      tj = to = TypeInstPtr::make(to->ptr(),to->klass(),to->klass_is_exact(),to->const_oop(),to->offset(), to->instance_id());
     }
     // Canonicalize the holder of this field
     if (offset >= 0 && offset < instanceOopDesc::base_offset_in_bytes()) {
@@ -2009,6 +2015,12 @@ void Compile::Optimize() {
 
     if (failing())  return;
   }
+
+  // Remove the speculative part of types and clean up the graph from
+  // the extra CastPP nodes whose only purpose is to carry them. Do
+  // that early so that optimizations are not disrupted by the extra
+  // CastPP nodes.
+  remove_speculative_types(igvn);
 
   // No more new expensive nodes will be added to the list from here
   // so keep only the actual candidates for optimizations.
@@ -2986,6 +2998,37 @@ void Compile::final_graph_reshaping_impl( Node *n, Final_Reshape_Counts &frc) {
       n->set_req(MemBarNode::Precedent, top());
     }
     break;
+    // Must set a control edge on all nodes that produce a FlagsProj
+    // so they can't escape the block that consumes the flags.
+    // Must also set the non throwing branch as the control
+    // for all nodes that depends on the result. Unless the node
+    // already have a control that isn't the control of the
+    // flag producer
+  case Op_FlagsProj:
+    {
+      MathExactNode* math = (MathExactNode*)  n->in(0);
+      Node* ctrl = math->control_node();
+      Node* non_throwing = math->non_throwing_branch();
+      math->set_req(0, ctrl);
+
+      Node* result = math->result_node();
+      if (result != NULL) {
+        for (DUIterator_Fast jmax, j = result->fast_outs(jmax); j < jmax; j++) {
+          Node* out = result->fast_out(j);
+          // Phi nodes shouldn't be moved. They would only match below if they
+          // had the same control as the MathExactNode. The only time that
+          // would happen is if the Phi is also an input to the MathExact
+          if (!out->is_Phi()) {
+            if (out->in(0) == NULL) {
+              out->set_req(0, non_throwing);
+            } else if (out->in(0) == ctrl) {
+              out->set_req(0, non_throwing);
+            }
+          }
+        }
+      }
+    }
+    break;
   default:
     assert( !n->is_Call(), "" );
     assert( !n->is_Mem(), "" );
@@ -3762,6 +3805,45 @@ void Compile::add_expensive_node(Node * n) {
     // Clear control input and let IGVN optimize expensive nodes if
     // OptimizeExpensiveOps is off.
     n->set_req(0, NULL);
+  }
+}
+
+/**
+ * Remove the speculative part of types and clean up the graph
+ */
+void Compile::remove_speculative_types(PhaseIterGVN &igvn) {
+  if (UseTypeSpeculation) {
+    Unique_Node_List worklist;
+    worklist.push(root());
+    int modified = 0;
+    // Go over all type nodes that carry a speculative type, drop the
+    // speculative part of the type and enqueue the node for an igvn
+    // which may optimize it out.
+    for (uint next = 0; next < worklist.size(); ++next) {
+      Node *n  = worklist.at(next);
+      if (n->is_Type() && n->as_Type()->type()->isa_oopptr() != NULL &&
+          n->as_Type()->type()->is_oopptr()->speculative() != NULL) {
+        TypeNode* tn = n->as_Type();
+        const TypeOopPtr* t = tn->type()->is_oopptr();
+        bool in_hash = igvn.hash_delete(n);
+        assert(in_hash, "node should be in igvn hash table");
+        tn->set_type(t->remove_speculative());
+        igvn.hash_insert(n);
+        igvn._worklist.push(n); // give it a chance to go away
+        modified++;
+      }
+      uint max = n->len();
+      for( uint i = 0; i < max; ++i ) {
+        Node *m = n->in(i);
+        if (not_a_node(m))  continue;
+        worklist.push(m);
+      }
+    }
+    // Drop the speculative part of all types in the igvn's type table
+    igvn.remove_speculative_types();
+    if (modified > 0) {
+      igvn.optimize();
+    }
   }
 }
 

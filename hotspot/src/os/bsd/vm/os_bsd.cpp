@@ -159,9 +159,21 @@ julong os::available_memory() {
   return Bsd::available_memory();
 }
 
+// available here means free
 julong os::Bsd::available_memory() {
-  // XXXBSD: this is just a stopgap implementation
-  return physical_memory() >> 2;
+  uint64_t available = physical_memory() >> 2;
+#ifdef __APPLE__
+  mach_msg_type_number_t count = HOST_VM_INFO64_COUNT;
+  vm_statistics64_data_t vmstat;
+  kern_return_t kerr = host_statistics64(mach_host_self(), HOST_VM_INFO64,
+                                         (host_info64_t)&vmstat, &count);
+  assert(kerr == KERN_SUCCESS,
+         "host_statistics64 failed - check mach_host_self() and count");
+  if (kerr == KERN_SUCCESS) {
+    available = vmstat.free_count * os::vm_page_size();
+  }
+#endif
+  return available;
 }
 
 julong os::physical_memory() {
@@ -4734,6 +4746,10 @@ int os::fork_and_exec(char* cmd) {
 // as libawt.so, and renamed libawt_xawt.so
 //
 bool os::is_headless_jre() {
+#ifdef __APPLE__
+    // We no longer build headless-only on Mac OS X
+    return false;
+#else
     struct stat statbuf;
     char buf[MAXPATHLEN];
     char libmawtpath[MAXPATHLEN];
@@ -4765,6 +4781,7 @@ bool os::is_headless_jre() {
     if (::stat(libmawtpath, &statbuf) == 0) return false;
 
     return true;
+#endif
 }
 
 // Get the default path to the core file

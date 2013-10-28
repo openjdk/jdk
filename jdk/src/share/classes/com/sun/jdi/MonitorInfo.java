@@ -32,6 +32,7 @@ package com.sun.jdi;
  * @since  1.6
  */
 
+@jdk.Exported
 public interface MonitorInfo extends Mirror {
 
     /**

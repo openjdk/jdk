@@ -173,7 +173,7 @@ public class SymbolTable {
         for (int i = 0; i < length; i++) {
             code = code * 37 + symbol.charAt(i);
         }
-        return code & 0x7FFFFFF;
+        return code & 0x7FFFFFFF;
 
     } // hash(String):int
 
@@ -194,7 +194,7 @@ public class SymbolTable {
         for (int i = 0; i < length; i++) {
             code = code * 37 + buffer[offset + i];
         }
-        return code & 0x7FFFFFF;
+        return code & 0x7FFFFFFF;
 
     } // hash(char[],int,int):int
 

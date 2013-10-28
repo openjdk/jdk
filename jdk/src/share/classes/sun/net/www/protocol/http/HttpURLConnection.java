@@ -46,7 +46,7 @@ import java.net.ResponseCache;
 import java.net.CacheResponse;
 import java.net.SecureCacheResponse;
 import java.net.CacheRequest;
-import java.net.HttpURLPermission;
+import java.net.URLPermission;
 import java.net.Authenticator.RequestorType;
 import java.security.AccessController;
 import java.security.PrivilegedExceptionAction;
@@ -389,7 +389,7 @@ public class HttpURLConnection extends java.net.HttpURLConnection {
     private int connectTimeout = NetworkClient.DEFAULT_CONNECT_TIMEOUT;
     private int readTimeout = NetworkClient.DEFAULT_READ_TIMEOUT;
 
-    /* A permission converted from a HttpURLPermission */
+    /* A permission converted from a URLPermission */
     private SocketPermission socketPermission;
 
     /* Logging support */
@@ -930,8 +930,7 @@ public class HttpURLConnection extends java.net.HttpURLConnection {
                             plainConnect0();
                             return null;
                         }
-                    }
-//                    }, null, p -- replace line above, when limited doPriv ready
+                    }, null, p
                 );
             } catch (PrivilegedActionException e) {
                     throw (IOException) e.getException();
@@ -943,7 +942,7 @@ public class HttpURLConnection extends java.net.HttpURLConnection {
     }
 
     /**
-     *  if the caller has a HttpURLPermission for connecting to the
+     *  if the caller has a URLPermission for connecting to the
      *  given URL, then return a SocketPermission which permits
      *  access to that destination. Return null otherwise. The permission
      *  is cached in a field (which can only be changed by redirects)
@@ -969,7 +968,10 @@ public class HttpURLConnection extends java.net.HttpURLConnection {
         String actions = getRequestMethod()+":" +
                 getUserSetHeaders().getHeaderNamesInList();
 
-        HttpURLPermission p = new HttpURLPermission(url.toString(), actions);
+        String urlstring = url.getProtocol() + "://" + url.getAuthority()
+                + url.getPath();
+
+        URLPermission p = new URLPermission(urlstring, actions);
         try {
             sm.checkPermission(p);
             socketPermission = newPerm;
@@ -1188,8 +1190,7 @@ public class HttpURLConnection extends java.net.HttpURLConnection {
                         public OutputStream run() throws IOException {
                             return getOutputStream0();
                         }
-                    }
-//                    }, null, p -- replace line above, when limited doPriv ready
+                    }, null, p
                 );
             } catch (PrivilegedActionException e) {
                 throw (IOException) e.getException();
@@ -1372,8 +1373,7 @@ public class HttpURLConnection extends java.net.HttpURLConnection {
                         public InputStream run() throws IOException {
                             return getInputStream0();
                         }
-                    }
-//                    }, null, p -- replace line above, when limited doPriv ready
+                    }, null, p
                 );
             } catch (PrivilegedActionException e) {
                 throw (IOException) e.getException();
@@ -2507,8 +2507,7 @@ public class HttpURLConnection extends java.net.HttpURLConnection {
                         public Boolean run() throws IOException {
                             return followRedirect0(loc, stat, locUrl0);
                         }
-                    }
-//                    }, null, p -- replace line above, when limited doPriv ready
+                    }, null, p
                 );
             } catch (PrivilegedActionException e) {
                 throw (IOException) e.getException();

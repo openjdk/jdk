@@ -368,32 +368,21 @@ abstract class IntPipeline<E_IN>
 
     // Stateful intermediate ops from IntStream
 
-    private IntStream slice(long skip, long limit) {
-        return SliceOps.makeInt(this, skip, limit);
-    }
-
     @Override
     public final IntStream limit(long maxSize) {
         if (maxSize < 0)
             throw new IllegalArgumentException(Long.toString(maxSize));
-        return slice(0, maxSize);
+        return SliceOps.makeInt(this, 0, maxSize);
     }
 
     @Override
-    public final IntStream substream(long startingOffset) {
-        if (startingOffset < 0)
-            throw new IllegalArgumentException(Long.toString(startingOffset));
-        if (startingOffset == 0)
+    public final IntStream skip(long n) {
+        if (n < 0)
+            throw new IllegalArgumentException(Long.toString(n));
+        if (n == 0)
             return this;
         else
-            return slice(startingOffset, -1);
-    }
-
-    @Override
-    public final IntStream substream(long startingOffset, long endingOffset) {
-        if (startingOffset < 0 || endingOffset < startingOffset)
-            throw new IllegalArgumentException(String.format("substream(%d, %d)", startingOffset, endingOffset));
-        return slice(startingOffset, endingOffset - startingOffset);
+            return SliceOps.makeInt(this, n, -1);
     }
 
     @Override

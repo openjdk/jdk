@@ -56,7 +56,7 @@ import java.time.ZoneId;
 import java.time.ZoneOffset;
 import java.time.temporal.ChronoField;
 import java.time.temporal.TemporalAccessor;
-import java.time.temporal.TemporalQuery;
+import java.time.temporal.TemporalQueries;
 
 import sun.misc.DoubleConsts;
 import sun.misc.FormattedFloatingDecimal;
@@ -4153,7 +4153,7 @@ public final class Formatter implements Closeable, Flushable {
                     break;
                 }
                 case DateTime.ZONE:        { // 'Z' (symbol)
-                    ZoneId zid = t.query(TemporalQuery.zone());
+                    ZoneId zid = t.query(TemporalQueries.zone());
                     if (zid == null) {
                         throw new IllegalFormatConversionException(c, t.getClass());
                     }

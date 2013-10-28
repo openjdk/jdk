@@ -378,6 +378,16 @@ Symbol* SignatureStream::as_symbol_or_null() {
   return result;
 }
 
+int SignatureStream::reference_parameter_count() {
+  int args_count = 0;
+  for ( ; !at_return_type(); next()) {
+    if (is_object()) {
+      args_count++;
+    }
+  }
+  return args_count;
+}
+
 bool SignatureVerifier::is_valid_signature(Symbol* sig) {
   const char* signature = (const char*)sig->bytes();
   ssize_t len = sig->utf8_length();

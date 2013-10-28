@@ -41,6 +41,9 @@ class ciBranchData;
 class ciArrayData;
 class ciMultiBranchData;
 class ciArgInfoData;
+class ciCallTypeData;
+class ciVirtualCallTypeData;
+class ciParametersTypeData;
 
 typedef ProfileData ciProfileData;
 
@@ -59,6 +62,119 @@ public:
   ciJumpData(DataLayout* layout) : JumpData(layout) {};
 };
 
+class ciTypeEntries {
+protected:
+  static intptr_t translate_klass(intptr_t k) {
+    Klass* v = TypeEntries::valid_klass(k);
+    if (v != NULL) {
+      ciKlass* klass = CURRENT_ENV->get_klass(v);
+      return with_status(klass, k);
+    }
+    return with_status(NULL, k);
+  }
+
+public:
+  static ciKlass* valid_ciklass(intptr_t k) {
+    if (!TypeEntries::is_type_none(k) &&
+        !TypeEntries::is_type_unknown(k)) {
+      return (ciKlass*)TypeEntries::klass_part(k);
+    } else {
+      return NULL;
+    }
+  }
+
+  static intptr_t with_status(ciKlass* k, intptr_t in) {
+    return TypeEntries::with_status((intptr_t)k, in);
+  }
+
+#ifndef PRODUCT
+  static void print_ciklass(outputStream* st, intptr_t k);
+#endif
+};
+
+class ciTypeStackSlotEntries : public TypeStackSlotEntries, ciTypeEntries {
+public:
+  void translate_type_data_from(const TypeStackSlotEntries* args);
+
+  ciKlass* valid_type(int i) const {
+    return valid_ciklass(type(i));
+  }
+
+  bool maybe_null(int i) const {
+    return was_null_seen(type(i));
+  }
+
+#ifndef PRODUCT
+  void print_data_on(outputStream* st) const;
+#endif
+};
+
+class ciReturnTypeEntry : public ReturnTypeEntry, ciTypeEntries {
+public:
+  void translate_type_data_from(const ReturnTypeEntry* ret);
+
+  ciKlass* valid_type() const {
+    return valid_ciklass(type());
+  }
+
+  bool maybe_null() const {
+    return was_null_seen(type());
+  }
+
+#ifndef PRODUCT
+  void print_data_on(outputStream* st) const;
+#endif
+};
+
+class ciCallTypeData : public CallTypeData {
+public:
+  ciCallTypeData(DataLayout* layout) : CallTypeData(layout) {}
+
+  ciTypeStackSlotEntries* args() const { return (ciTypeStackSlotEntries*)CallTypeData::args(); }
+  ciReturnTypeEntry* ret() const { return (ciReturnTypeEntry*)CallTypeData::ret(); }
+
+  void translate_from(const ProfileData* data) {
+    if (has_arguments()) {
+      args()->translate_type_data_from(data->as_CallTypeData()->args());
+    }
+    if (has_return()) {
+      ret()->translate_type_data_from(data->as_CallTypeData()->ret());
+    }
+  }
+
+  intptr_t argument_type(int i) const {
+    assert(has_arguments(), "no arg type profiling data");
+    return args()->type(i);
+  }
+
+  ciKlass* valid_argument_type(int i) const {
+    assert(has_arguments(), "no arg type profiling data");
+    return args()->valid_type(i);
+  }
+
+  intptr_t return_type() const {
+    assert(has_return(), "no ret type profiling data");
+    return ret()->type();
+  }
+
+  ciKlass* valid_return_type() const {
+    assert(has_return(), "no ret type profiling data");
+    return ret()->valid_type();
+  }
+
+  bool argument_maybe_null(int i) const {
+    return args()->maybe_null(i);
+  }
+
+  bool return_maybe_null() const {
+    return ret()->maybe_null();
+  }
+
+#ifndef PRODUCT
+  void print_data_on(outputStream* st) const;
+#endif
+};
+
 class ciReceiverTypeData : public ReceiverTypeData {
 public:
   ciReceiverTypeData(DataLayout* layout) : ReceiverTypeData(layout) {};
@@ -69,7 +185,7 @@ public:
                   (intptr_t) recv);
   }
 
-  ciKlass* receiver(uint row) {
+  ciKlass* receiver(uint row) const {
     assert((uint)row < row_limit(), "oob");
     ciKlass* recv = (ciKlass*)intptr_at(receiver0_offset + row * receiver_type_row_cell_count);
     assert(recv == NULL || recv->is_klass(), "wrong type");
@@ -77,19 +193,19 @@ public:
   }
 
   // Copy & translate from oop based ReceiverTypeData
-  virtual void translate_from(ProfileData* data) {
+  virtual void translate_from(const ProfileData* data) {
     translate_receiver_data_from(data);
   }
-  void translate_receiver_data_from(ProfileData* data);
+  void translate_receiver_data_from(const ProfileData* data);
 #ifndef PRODUCT
-  void print_data_on(outputStream* st);
-  void print_receiver_data_on(outputStream* st);
+  void print_data_on(outputStream* st) const;
+  void print_receiver_data_on(outputStream* st) const;
 #endif
 };
 
 class ciVirtualCallData : public VirtualCallData {
   // Fake multiple inheritance...  It's a ciReceiverTypeData also.
-  ciReceiverTypeData* rtd_super() { return (ciReceiverTypeData*) this; }
+  ciReceiverTypeData* rtd_super() const { return (ciReceiverTypeData*) this; }
 
 public:
   ciVirtualCallData(DataLayout* layout) : VirtualCallData(layout) {};
@@ -103,11 +219,73 @@ public:
   }
 
   // Copy & translate from oop based VirtualCallData
-  virtual void translate_from(ProfileData* data) {
+  virtual void translate_from(const ProfileData* data) {
     rtd_super()->translate_receiver_data_from(data);
   }
 #ifndef PRODUCT
-  void print_data_on(outputStream* st);
+  void print_data_on(outputStream* st) const;
+#endif
+};
+
+class ciVirtualCallTypeData : public VirtualCallTypeData {
+private:
+  // Fake multiple inheritance...  It's a ciReceiverTypeData also.
+  ciReceiverTypeData* rtd_super() const { return (ciReceiverTypeData*) this; }
+public:
+  ciVirtualCallTypeData(DataLayout* layout) : VirtualCallTypeData(layout) {}
+
+  void set_receiver(uint row, ciKlass* recv) {
+    rtd_super()->set_receiver(row, recv);
+  }
+
+  ciKlass* receiver(uint row) const {
+    return rtd_super()->receiver(row);
+  }
+
+  ciTypeStackSlotEntries* args() const { return (ciTypeStackSlotEntries*)VirtualCallTypeData::args(); }
+  ciReturnTypeEntry* ret() const { return (ciReturnTypeEntry*)VirtualCallTypeData::ret(); }
+
+  // Copy & translate from oop based VirtualCallData
+  virtual void translate_from(const ProfileData* data) {
+    rtd_super()->translate_receiver_data_from(data);
+    if (has_arguments()) {
+      args()->translate_type_data_from(data->as_VirtualCallTypeData()->args());
+    }
+    if (has_return()) {
+      ret()->translate_type_data_from(data->as_VirtualCallTypeData()->ret());
+    }
+  }
+
+  intptr_t argument_type(int i) const {
+    assert(has_arguments(), "no arg type profiling data");
+    return args()->type(i);
+  }
+
+  ciKlass* valid_argument_type(int i) const {
+    assert(has_arguments(), "no arg type profiling data");
+    return args()->valid_type(i);
+  }
+
+  intptr_t return_type() const {
+    assert(has_return(), "no ret type profiling data");
+    return ret()->type();
+  }
+
+  ciKlass* valid_return_type() const {
+    assert(has_return(), "no ret type profiling data");
+    return ret()->valid_type();
+  }
+
+  bool argument_maybe_null(int i) const {
+    return args()->maybe_null(i);
+  }
+
+  bool return_maybe_null() const {
+    return ret()->maybe_null();
+  }
+
+#ifndef PRODUCT
+  void print_data_on(outputStream* st) const;
 #endif
 };
 
@@ -135,6 +313,29 @@ public:
 class ciArgInfoData : public ArgInfoData {
 public:
   ciArgInfoData(DataLayout* layout) : ArgInfoData(layout) {};
+};
+
+class ciParametersTypeData : public ParametersTypeData {
+public:
+  ciParametersTypeData(DataLayout* layout) : ParametersTypeData(layout) {}
+
+  virtual void translate_from(const ProfileData* data) {
+    parameters()->translate_type_data_from(data->as_ParametersTypeData()->parameters());
+  }
+
+  ciTypeStackSlotEntries* parameters() const { return (ciTypeStackSlotEntries*)ParametersTypeData::parameters(); }
+
+  ciKlass* valid_parameter_type(int i) const {
+    return parameters()->valid_type(i);
+  }
+
+  bool parameter_maybe_null(int i) const {
+    return parameters()->maybe_null(i);
+  }
+
+#ifndef PRODUCT
+  void print_data_on(outputStream* st) const;
+#endif
 };
 
 // ciMethodData
@@ -181,6 +382,10 @@ private:
 
   // Coherent snapshot of original header.
   MethodData _orig;
+
+  // Dedicated area dedicated to parameters. Null if no parameter
+  // profiling for this method.
+  DataLayout* _parameters;
 
   ciMethodData(MethodData* md);
   ciMethodData();
@@ -232,8 +437,6 @@ private:
 public:
   bool is_method_data() const { return true; }
 
-  void set_mature() { _state = mature_state; }
-
   bool is_empty()  { return _state == empty_state; }
   bool is_mature() { return _state == mature_state; }
 
@@ -249,6 +452,11 @@ public:
   // Also set the numer of loops and blocks in the method.
   // Again, this is used to determine if a method is trivial.
   void set_compilation_stats(short loops, short blocks);
+  // If the compiler finds a profiled type that is known statically
+  // for sure, set it in the MethodData
+  void set_argument_type(int bci, int i, ciKlass* k);
+  void set_parameter_type(int i, ciKlass* k);
+  void set_return_type(int bci, ciKlass* k);
 
   void load_data();
 
@@ -311,6 +519,10 @@ public:
   bool is_arg_stack(int i) const;
   bool is_arg_returned(int i) const;
   uint arg_modified(int arg) const;
+
+  ciParametersTypeData* parameters_type_data() const {
+    return _parameters != NULL ? new ciParametersTypeData(_parameters) : NULL;
+  }
 
   // Code generation helper
   ByteSize offset_of_slot(ciProfileData* data, ByteSize slot_offset_in_data);

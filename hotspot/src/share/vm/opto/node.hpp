@@ -100,6 +100,7 @@ class MachSafePointNode;
 class MachSpillCopyNode;
 class MachTempNode;
 class Matcher;
+class MathExactNode;
 class MemBarNode;
 class MemBarStoreStoreNode;
 class MemNode;
@@ -568,6 +569,7 @@ public:
       DEFINE_CLASS_ID(MemBar,      Multi, 3)
         DEFINE_CLASS_ID(Initialize,       MemBar, 0)
         DEFINE_CLASS_ID(MemBarStoreStore, MemBar, 1)
+      DEFINE_CLASS_ID(MathExact,   Multi, 4)
 
     DEFINE_CLASS_ID(Mach,  Node, 1)
       DEFINE_CLASS_ID(MachReturn, Mach, 0)
@@ -757,6 +759,7 @@ public:
   DEFINE_CLASS_QUERY(MachSafePoint)
   DEFINE_CLASS_QUERY(MachSpillCopy)
   DEFINE_CLASS_QUERY(MachTemp)
+  DEFINE_CLASS_QUERY(MathExact)
   DEFINE_CLASS_QUERY(Mem)
   DEFINE_CLASS_QUERY(MemBar)
   DEFINE_CLASS_QUERY(MemBarStoreStore)

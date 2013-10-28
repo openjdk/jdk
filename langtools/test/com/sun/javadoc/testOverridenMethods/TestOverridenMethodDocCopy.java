@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug      4368820
+ * @bug      4368820 8025633
  * @summary  Inherited comment should link directly to member, not just
  *           class
  * @author   jamieh
@@ -47,7 +47,7 @@ public class TestOverridenMethodDocCopy extends JavadocTester {
     private static final String[][] TEST = {
         {BUG_ID + FS + "pkg1" + FS + "SubClass.html",
             "<span class=\"strong\">Description copied from class:&nbsp;<code>" +
-            "<a href=\"../pkg1/BaseClass.html#overridenMethodWithDocsToCopy()\">" +
+            "<a href=\"../pkg1/BaseClass.html#overridenMethodWithDocsToCopy--\">" +
             "BaseClass</a></code></span>"
         }
     };

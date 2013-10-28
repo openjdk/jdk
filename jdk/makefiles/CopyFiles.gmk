@@ -48,7 +48,7 @@ H_TARGET_FILES = $(INCLUDEDIR)/jdwpTransport.h \
 $(INCLUDEDIR)/%.h: $(JDK_TOPDIR)/src/share/javavm/export/%.h
 	$(call install-file)
 
-$(OPENJDK_TARGET_OS_INCLUDE)/%.h: $(JDK_TOPDIR)/src/$(OPENJDK_TARGET_OS_API_DIR)/javavm/export/%.h
+$(OPENJDK_TARGET_OS_INCLUDE)/%.h: $(JDK_TOPDIR)/src/$(OPENJDK_TARGET_OS_EXPORT_DIR)/javavm/export/%.h
 	$(call install-file)
 
 COPY_FILES = $(H_TARGET_FILES)
@@ -215,39 +215,37 @@ COPY_FILES += $(ICCPROFILE_TARGET_FILES)
 
 ##########################################################################################
 
-# make sure freetype dll will be available at runtime as well as link time
-#
-# NB: Default freetype build system uses -h linker option and
-# result .so contains hardcoded library name that is later
-# used for adding dependencies to other objects
-# (e.g. libfontmanager.so).
-#
-# It is not obvious how to extract that hardcoded name (libfreetype.so.6)
-# without overcomplicating logic here.
-# To workaround this we hardcode .6 suffix for now.
-#
-# Note that .so.6 library will not be found by System.loadLibrary()
-# but fortunately we need to load FreeType library explicitly
-# on windows only
-#
-#TODO: rework this to avoid hardcoding library name in the makefile
-#
-ifdef OPENJDK
+ifneq ($(FREETYPE_BUNDLE_LIB_PATH), )
+  # We need to bundle the freetype library, so it will be available at runtime as well as link time.
+  #
+  # NB: Default freetype build system uses -h linker option and
+  # result .so contains hardcoded library name that is later
+  # used for adding dependencies to other objects
+  # (e.g. libfontmanager.so).
+  #
+  # It is not obvious how to extract that hardcoded name (libfreetype.so.6)
+  # without overcomplicating logic here.
+  # To workaround this we hardcode .6 suffix for now.
+  #
+  # Note that .so.6 library will not be found by System.loadLibrary()
+  # but fortunately we need to load FreeType library explicitly
+  # on windows only
+  #
+  #TODO: rework this to avoid hardcoding library name in the makefile
+  #
   ifeq ($(OPENJDK_TARGET_OS), windows)
-    FREETYPE_LIB = $(JDK_OUTPUTDIR)/bin/$(call SHARED_LIBRARY,freetype)
+    FREETYPE_TARGET_LIB = $(JDK_OUTPUTDIR)/bin/$(call SHARED_LIBRARY,freetype)
   else
-    ifeq ($(USING_SYSTEM_FT_LIB), false)
-      FREETYPE_LIB = $(JDK_OUTPUTDIR)/lib$(OPENJDK_TARGET_CPU_LIBDIR)/$(call SHARED_LIBRARY,freetype).6
-    endif
+    FREETYPE_TARGET_LIB = $(JDK_OUTPUTDIR)/lib$(OPENJDK_TARGET_CPU_LIBDIR)/$(call SHARED_LIBRARY,freetype).6
   endif
 
-  $(FREETYPE_LIB): $(FREETYPE2_LIB_PATH)/$(call SHARED_LIBRARY,freetype)
-	$(CP) $(FREETYPE2_LIB_PATH)/$(call SHARED_LIBRARY,freetype) $@
+  $(FREETYPE_TARGET_LIB): $(FREETYPE_BUNDLE_LIB_PATH)/$(call SHARED_LIBRARY,freetype)
+	$(CP) $(FREETYPE_BUNDLE_LIB_PATH)/$(call SHARED_LIBRARY,freetype) $@
         ifeq ($(OPENJDK_BUILD_OS), windows)
 	  $(CHMOD) +rx $@
         endif
 
-  COPY_FILES += $(FREETYPE_LIB)
+  COPY_FILES += $(FREETYPE_TARGET_LIB)
 endif
 
 ##########################################################################################
@@ -354,8 +352,22 @@ COPY_FILES += $(JVMCFG)
 PROPS_SRC := $(JDK_TOPDIR)/src/share/lib/security/java.security-$(OPENJDK_TARGET_OS)
 PROPS_DST := $(JDK_OUTPUTDIR)/lib/security/java.security
 
+ifndef OPENJDK
+
+RESTRICTED_PKGS_SRC := $(JDK_TOPDIR)/src/closed/share/lib/security/restricted.pkgs
+RESTRICTED_PKGS := $(shell $(CAT) $(RESTRICTED_PKGS_SRC) | $(TR) "\n" " ")
+
+$(PROPS_DST): $(PROPS_SRC)
+	$(MKDIR) -p $(@D)
+	$(TOOL_ADDTORESTRICTEDPKGS) $^ $@.tmp $(RESTRICTED_PKGS)
+	$(MV) $@.tmp $@
+
+else
+
 $(PROPS_DST): $(PROPS_SRC)
 	$(call install-file)
+
+endif
 
 COPY_FILES += $(PROPS_DST)
 
