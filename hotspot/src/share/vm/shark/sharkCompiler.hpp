@@ -50,10 +50,6 @@ class SharkCompiler : public AbstractCompiler {
     return ! (method->is_method_handle_intrinsic() || method->is_compiled_lambda_form());
   }
 
-  // Customization
-  bool needs_adapters()  { return false; }
-  bool needs_stubs()     { return false; }
-
   // Initialization
   void initialize();
 

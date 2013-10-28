@@ -134,6 +134,7 @@ import java.time.temporal.TemporalAccessor;
 import java.time.temporal.TemporalAdjuster;
 import java.time.temporal.TemporalAmount;
 import java.time.temporal.TemporalField;
+import java.time.temporal.TemporalQueries;
 import java.time.temporal.TemporalQuery;
 import java.time.temporal.TemporalUnit;
 import java.util.ArrayList;
@@ -1017,13 +1018,13 @@ public class TCKLocalDateTime extends AbstractDateTimeTest {
     @DataProvider(name="query")
     Object[][] data_query() {
         return new Object[][] {
-                {TEST_2007_07_15_12_30_40_987654321, TemporalQuery.chronology(), IsoChronology.INSTANCE},
-                {TEST_2007_07_15_12_30_40_987654321, TemporalQuery.zoneId(), null},
-                {TEST_2007_07_15_12_30_40_987654321, TemporalQuery.precision(), ChronoUnit.NANOS},
-                {TEST_2007_07_15_12_30_40_987654321, TemporalQuery.zone(), null},
-                {TEST_2007_07_15_12_30_40_987654321, TemporalQuery.offset(), null},
-                {TEST_2007_07_15_12_30_40_987654321, TemporalQuery.localDate(), LocalDate.of(2007, 7, 15)},
-                {TEST_2007_07_15_12_30_40_987654321, TemporalQuery.localTime(), LocalTime.of(12, 30, 40, 987654321)},
+                {TEST_2007_07_15_12_30_40_987654321, TemporalQueries.chronology(), IsoChronology.INSTANCE},
+                {TEST_2007_07_15_12_30_40_987654321, TemporalQueries.zoneId(), null},
+                {TEST_2007_07_15_12_30_40_987654321, TemporalQueries.precision(), ChronoUnit.NANOS},
+                {TEST_2007_07_15_12_30_40_987654321, TemporalQueries.zone(), null},
+                {TEST_2007_07_15_12_30_40_987654321, TemporalQueries.offset(), null},
+                {TEST_2007_07_15_12_30_40_987654321, TemporalQueries.localDate(), LocalDate.of(2007, 7, 15)},
+                {TEST_2007_07_15_12_30_40_987654321, TemporalQueries.localTime(), LocalTime.of(12, 30, 40, 987654321)},
         };
     }
 

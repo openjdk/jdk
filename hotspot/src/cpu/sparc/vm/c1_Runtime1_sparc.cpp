@@ -404,7 +404,9 @@ OopMapSet* Runtime1::generate_code_for(StubID id, StubAssembler* sasm) {
           if (id == fast_new_instance_init_check_id) {
             // make sure the klass is initialized
             __ ldub(G5_klass, in_bytes(InstanceKlass::init_state_offset()), G3_t1);
-            __ cmp_and_br_short(G3_t1, InstanceKlass::fully_initialized, Assembler::notEqual, Assembler::pn, slow_path);
+            __ cmp(G3_t1, InstanceKlass::fully_initialized);
+            __ br(Assembler::notEqual, false, Assembler::pn, slow_path);
+            __ delayed()->nop();
           }
 #ifdef ASSERT
           // assert object can be fast path allocated
@@ -515,7 +517,9 @@ OopMapSet* Runtime1::generate_code_for(StubID id, StubAssembler* sasm) {
 
           // check that array length is small enough for fast path
           __ set(C1_MacroAssembler::max_array_allocation_length, G3_t1);
-          __ cmp_and_br_short(G4_length, G3_t1, Assembler::greaterUnsigned, Assembler::pn, slow_path);
+          __ cmp(G4_length, G3_t1);
+          __ br(Assembler::greaterUnsigned, false, Assembler::pn, slow_path);
+          __ delayed()->nop();
 
           // if we got here then the TLAB allocation failed, so try
           // refilling the TLAB or allocating directly from eden.
@@ -1075,6 +1079,25 @@ OopMapSet* Runtime1::generate_handle_exception(StubID id, StubAssembler* sasm) {
   }
 
   __ verify_not_null_oop(Oexception);
+
+#ifdef ASSERT
+  // check that fields in JavaThread for exception oop and issuing pc are
+  // empty before writing to them
+  Label oop_empty;
+  Register scratch = I7;  // We can use I7 here because it's overwritten later anyway.
+  __ ld_ptr(Address(G2_thread, JavaThread::exception_oop_offset()), scratch);
+  __ br_null(scratch, false, Assembler::pt, oop_empty);
+  __ delayed()->nop();
+  __ stop("exception oop already set");
+  __ bind(oop_empty);
+
+  Label pc_empty;
+  __ ld_ptr(Address(G2_thread, JavaThread::exception_pc_offset()), scratch);
+  __ br_null(scratch, false, Assembler::pt, pc_empty);
+  __ delayed()->nop();
+  __ stop("exception pc already set");
+  __ bind(pc_empty);
+#endif
 
   // save the exception and issuing pc in the thread
   __ st_ptr(Oexception,  G2_thread, in_bytes(JavaThread::exception_oop_offset()));

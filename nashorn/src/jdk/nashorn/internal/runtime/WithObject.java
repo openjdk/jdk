@@ -316,6 +316,10 @@ public final class WithObject extends ScriptObject implements Scope {
         return expression;
     }
 
+    /**
+     * Get the parent scope for this {@code WithObject}
+     * @return the parent scope
+     */
     public ScriptObject getParentScope() {
         return getProto();
     }

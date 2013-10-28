@@ -72,8 +72,6 @@ jmethodID ni_ia4Ctor;       /* Inet4Address() */
 
 jclass ni_ia6cls;           /* Inet6Address */
 jmethodID ni_ia6ctrID;      /* Inet6Address() */
-jfieldID ni_ia6ipaddressID;
-jfieldID ni_ia6ipaddressID;
 
 jclass ni_ibcls;            /* InterfaceAddress */
 jmethodID ni_ibctrID;       /* InterfaceAddress() */
@@ -520,7 +518,6 @@ Java_java_net_NetworkInterface_init(JNIEnv *env, jclass cls)
     ni_ia6cls = (*env)->FindClass(env, "java/net/Inet6Address");
     ni_ia6cls = (*env)->NewGlobalRef(env, ni_ia6cls);
     ni_ia6ctrID = (*env)->GetMethodID(env, ni_ia6cls, "<init>", "()V");
-    ni_ia6ipaddressID = (*env)->GetFieldID(env, ni_ia6cls, "ipaddress", "[B");
 
     ni_ibcls = (*env)->FindClass(env, "java/net/InterfaceAddress");
     ni_ibcls = (*env)->NewGlobalRef(env, ni_ibcls);
@@ -621,19 +618,16 @@ jobject createNetworkInterface
             int scope;
             iaObj = (*env)->NewObject(env, ni_ia6cls, ni_ia6ctrID);
             if (iaObj) {
-                jbyteArray ipaddress = (*env)->NewByteArray(env, 16);
-                if (ipaddress == NULL) {
+                int ret = setInet6Address_ipaddress(env, iaObj,  (jbyte *)&(addrs->addr.him6.sin6_addr.s6_addr));
+                if (ret == JNI_FALSE) {
                     return NULL;
                 }
-                (*env)->SetByteArrayRegion(env, ipaddress, 0, 16,
-                    (jbyte *)&(addrs->addr.him6.sin6_addr.s6_addr));
+
                 scope = addrs->addr.him6.sin6_scope_id;
                 if (scope != 0) { /* zero is default value, no need to set */
-                    (*env)->SetIntField(env, iaObj, ia6_scopeidID, scope);
-                    (*env)->SetBooleanField(env, iaObj, ia6_scopeidsetID, JNI_TRUE);
-                    (*env)->SetObjectField(env, iaObj, ia6_scopeifnameID, netifObj);
+                    setInet6Address_scopeid(env, iaObj, scope);
+                    setInet6Address_scopeifname(env, iaObj, netifObj);
                 }
-                (*env)->SetObjectField(env, iaObj, ni_ia6ipaddressID, ipaddress);
                 ibObj = (*env)->NewObject(env, ni_ibcls, ni_ibctrID);
                 if (ibObj == NULL) {
                   free_netaddr(netaddrP);

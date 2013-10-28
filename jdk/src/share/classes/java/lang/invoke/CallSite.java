@@ -124,7 +124,7 @@ public class CallSite {
      *         or if the target returned by the hook is not of the given {@code targetType}
      * @throws NullPointerException if the hook returns a null value
      * @throws ClassCastException if the hook returns something other than a {@code MethodHandle}
-     * @throws Throwable anything else thrown by the the hook function
+     * @throws Throwable anything else thrown by the hook function
      */
     /*package-private*/
     CallSite(MethodType targetType, MethodHandle createTargetHook) throws Throwable {

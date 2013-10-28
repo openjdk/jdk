@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug      4131628 4664607 7025314 8023700 7198273
+ * @bug      4131628 4664607 7025314 8023700 7198273 8025633
  * @summary  Make sure the Next/Prev Class links iterate through all types.
  *           Make sure the navagation is 2 columns, not 3.
  * @author   jamieh
@@ -60,7 +60,7 @@ public class TestNavigation extends JavadocTester {
         {BUG_ID + FS + "pkg" + FS + "I.html", "<li>Next&nbsp;Class</li>"},
         // Test for 4664607
         {BUG_ID + FS + "pkg" + FS + "I.html",
-            "<div class=\"skipNav\"><a href=\"#skip-navbar_top\" title=\"Skip navigation links\">Skip navigation links</a></div>" + NL + "<a name=\"navbar_top_firstrow\">" + NL +
+            "<div class=\"skipNav\"><a href=\"#skip.navbar.top\" title=\"Skip navigation links\">Skip navigation links</a></div>" + NL + "<a name=\"navbar.top.firstrow\">" + NL +
             "<!--   -->" + NL + "</a>"}
     };
     private static final String[][] NEGATED_TEST = NO_TEST;
