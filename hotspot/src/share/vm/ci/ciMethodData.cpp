@@ -53,6 +53,7 @@ ciMethodData::ciMethodData(MethodData* md) : ciMetadata(md) {
   _hint_di = first_di();
   // Initialize the escape information (to "don't know.");
   _eflags = _arg_local = _arg_stack = _arg_returned = 0;
+  _parameters = NULL;
 }
 
 // ------------------------------------------------------------------
@@ -74,6 +75,7 @@ ciMethodData::ciMethodData() : ciMetadata(NULL) {
   _hint_di = first_di();
   // Initialize the escape information (to "don't know.");
   _eflags = _arg_local = _arg_stack = _arg_returned = 0;
+  _parameters = NULL;
 }
 
 void ciMethodData::load_data() {
@@ -108,6 +110,12 @@ void ciMethodData::load_data() {
     ci_data = next_data(ci_data);
     data = mdo->next_data(data);
   }
+  if (mdo->parameters_type_data() != NULL) {
+    _parameters = data_layout_at(mdo->parameters_type_data_di());
+    ciParametersTypeData* parameters = new ciParametersTypeData(_parameters);
+    parameters->translate_from(mdo->parameters_type_data());
+  }
+
   // Note:  Extra data are all BitData, and do not need translation.
   _current_mileage = MethodData::mileage_of(mdo->method());
   _invocation_counter = mdo->invocation_count();
@@ -182,6 +190,8 @@ ciProfileData* ciMethodData::data_at(int data_index) {
     return new ciCallTypeData(data_layout);
   case DataLayout::virtual_call_type_data_tag:
     return new ciVirtualCallTypeData(data_layout);
+  case DataLayout::parameters_type_data_tag:
+    return new ciParametersTypeData(data_layout);
   };
 }
 
@@ -315,6 +325,14 @@ void ciMethodData::set_argument_type(int bci, int i, ciKlass* k) {
       assert(data->is_VirtualCallTypeData(), "no arguments!");
       data->as_VirtualCallTypeData()->set_argument_type(i, k->get_Klass());
     }
+  }
+}
+
+void ciMethodData::set_parameter_type(int i, ciKlass* k) {
+  VM_ENTRY_MARK;
+  MethodData* mdo = get_MethodData();
+  if (mdo != NULL) {
+    mdo->parameters_type_data()->set_type(i, k->get_Klass());
   }
 }
 
@@ -604,5 +622,10 @@ void ciVirtualCallTypeData::print_data_on(outputStream* st) const {
     st->print("return type");
     ret()->print_data_on(st);
   }
+}
+
+void ciParametersTypeData::print_data_on(outputStream* st) const {
+  st->print_cr("Parametertypes");
+  parameters()->print_data_on(st);
 }
 #endif

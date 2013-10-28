@@ -225,18 +225,20 @@ JvmtiBreakpoint::JvmtiBreakpoint() {
   _method = NULL;
   _bci    = 0;
   _class_loader = NULL;
-#ifdef CHECK_UNHANDLED_OOPS
-  // This one is always allocated with new, but check it just in case.
-  Thread *thread = Thread::current();
-  if (thread->is_in_stack((address)&_method)) {
-    thread->allow_unhandled_oop((oop*)&_method);
-  }
-#endif // CHECK_UNHANDLED_OOPS
 }
 
 JvmtiBreakpoint::JvmtiBreakpoint(Method* m_method, jlocation location) {
   _method        = m_method;
   _class_loader  = _method->method_holder()->class_loader_data()->class_loader();
+#ifdef CHECK_UNHANDLED_OOPS
+  // _class_loader can't be wrapped in a Handle, because JvmtiBreakpoint:s are
+  // eventually allocated on the heap.
+  //
+  // The code handling JvmtiBreakpoint:s allocated on the stack can't be
+  // interrupted by a GC until _class_loader is reachable by the GC via the
+  // oops_do method.
+  Thread::current()->allow_unhandled_oop(&_class_loader);
+#endif // CHECK_UNHANDLED_OOPS
   assert(_method != NULL, "_method != NULL");
   _bci           = (int) location;
   assert(_bci >= 0, "_bci >= 0");

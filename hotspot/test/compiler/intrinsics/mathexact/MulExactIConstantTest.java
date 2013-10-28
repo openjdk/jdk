@@ -23,26 +23,15 @@
 
 /*
  * @test
- * @bug 8024924
- * @summary Test non constant addExact
- * @compile NonConstantTest.java Verify.java
- * @run main NonConstantTest
+ * @bug 8026844
+ * @summary Test constant multiplyExact
+ * @compile MulExactIConstantTest.java Verify.java
+ * @run main MulExactIConstantTest
  *
  */
 
-import java.lang.ArithmeticException;
-
-public class NonConstantTest {
-  public static java.util.Random rnd = new java.util.Random();
-
-  public static void main(String[] args) {
-    for (int i = 0; i < 50000; ++i) {
-      int rnd1 = rnd.nextInt(), rnd2 = rnd.nextInt();
-      Verify.verify(rnd1, rnd2);
-      Verify.verify(rnd1, rnd2 + 1);
-      Verify.verify(rnd1 + 1, rnd2);
-      Verify.verify(rnd1 - 1, rnd2);
-      Verify.verify(rnd1, rnd2 - 1);
+public class MulExactIConstantTest {
+    public static void main(String[] args) {
+        Verify.ConstantTest.verify(new Verify.MulExactI());
     }
-  }
 }
