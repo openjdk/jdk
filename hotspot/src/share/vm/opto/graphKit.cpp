@@ -639,6 +639,7 @@ PreserveJVMState::PreserveJVMState(GraphKit* kit, bool clone_map) {
   _map    = kit->map();   // preserve the map
   _sp     = kit->sp();
   kit->set_map(clone_map ? kit->clone_map() : NULL);
+  Compile::current()->inc_preserve_jvm_state();
 #ifdef ASSERT
   _bci    = kit->bci();
   Parse* parser = kit->is_Parse();
@@ -656,6 +657,7 @@ PreserveJVMState::~PreserveJVMState() {
 #endif
   kit->set_map(_map);
   kit->set_sp(_sp);
+  Compile::current()->dec_preserve_jvm_state();
 }
 
 
@@ -1373,17 +1375,70 @@ Node* GraphKit::cast_not_null(Node* obj, bool do_replace_in_map) {
 
 //--------------------------replace_in_map-------------------------------------
 void GraphKit::replace_in_map(Node* old, Node* neww) {
-  this->map()->replace_edge(old, neww);
+  if (old == neww) {
+    return;
+  }
+
+  map()->replace_edge(old, neww);
 
   // Note: This operation potentially replaces any edge
   // on the map.  This includes locals, stack, and monitors
   // of the current (innermost) JVM state.
 
-  // We can consider replacing in caller maps.
-  // The idea would be that an inlined function's null checks
-  // can be shared with the entire inlining tree.
-  // The expense of doing this is that the PreserveJVMState class
-  // would have to preserve caller states too, with a deep copy.
+  if (!ReplaceInParentMaps) {
+    return;
+  }
+
+  // PreserveJVMState doesn't do a deep copy so we can't modify
+  // parents
+  if (Compile::current()->has_preserve_jvm_state()) {
+    return;
+  }
+
+  Parse* parser = is_Parse();
+  bool progress = true;
+  Node* ctrl = map()->in(0);
+  // Follow the chain of parsers and see whether the update can be
+  // done in the map of callers. We can do the replace for a caller if
+  // the current control post dominates the control of a caller.
+  while (parser != NULL && parser->caller() != NULL && progress) {
+    progress = false;
+    Node* parent_map = parser->caller()->map();
+    assert(parser->exits().map()->jvms()->depth() == parser->caller()->depth(), "map mismatch");
+
+    Node* parent_ctrl = parent_map->in(0);
+
+    while (parent_ctrl->is_Region()) {
+      Node* n = parent_ctrl->as_Region()->is_copy();
+      if (n == NULL) {
+        break;
+      }
+      parent_ctrl = n;
+    }
+
+    for (;;) {
+      if (ctrl == parent_ctrl) {
+        // update the map of the exits which is the one that will be
+        // used when compilation resume after inlining
+        parser->exits().map()->replace_edge(old, neww);
+        progress = true;
+        break;
+      }
+      if (ctrl->is_Proj() && ctrl->as_Proj()->is_uncommon_trap_if_pattern(Deoptimization::Reason_none)) {
+        ctrl = ctrl->in(0)->in(0);
+      } else if (ctrl->is_Region()) {
+        Node* n = ctrl->as_Region()->is_copy();
+        if (n == NULL) {
+          break;
+        }
+        ctrl = n;
+      } else {
+        break;
+      }
+    }
+
+    parser = parser->parent_parser();
+  }
 }
 
 
@@ -2043,6 +2098,104 @@ void GraphKit::round_double_arguments(ciMethod* dest_method) {
   }
 }
 
+/**
+ * Record profiling data exact_kls for Node n with the type system so
+ * that it can propagate it (speculation)
+ *
+ * @param n          node that the type applies to
+ * @param exact_kls  type from profiling
+ *
+ * @return           node with improved type
+ */
+Node* GraphKit::record_profile_for_speculation(Node* n, ciKlass* exact_kls) {
+  const TypeOopPtr* current_type = _gvn.type(n)->isa_oopptr();
+  assert(UseTypeSpeculation, "type speculation must be on");
+  if (exact_kls != NULL &&
+      // nothing to improve if type is already exact
+      (current_type == NULL ||
+       (!current_type->klass_is_exact() &&
+        (current_type->speculative() == NULL ||
+         !current_type->speculative()->klass_is_exact())))) {
+    const TypeKlassPtr* tklass = TypeKlassPtr::make(exact_kls);
+    const TypeOopPtr* xtype = tklass->as_instance_type();
+    assert(xtype->klass_is_exact(), "Should be exact");
+
+    // Build a type with a speculative type (what we think we know
+    // about the type but will need a guard when we use it)
+    const TypeOopPtr* spec_type = TypeOopPtr::make(TypePtr::BotPTR, Type::OffsetBot, TypeOopPtr::InstanceBot, xtype);
+    // We're changing the type, we need a new cast node to carry the
+    // new type. The new type depends on the control: what profiling
+    // tells us is only valid from here as far as we can tell.
+    Node* cast = new(C) CastPPNode(n, spec_type);
+    cast->init_req(0, control());
+    cast = _gvn.transform(cast);
+    replace_in_map(n, cast);
+    n = cast;
+  }
+  return n;
+}
+
+/**
+ * Record profiling data from receiver profiling at an invoke with the
+ * type system so that it can propagate it (speculation)
+ *
+ * @param n  receiver node
+ *
+ * @return           node with improved type
+ */
+Node* GraphKit::record_profiled_receiver_for_speculation(Node* n) {
+  if (!UseTypeSpeculation) {
+    return n;
+  }
+  ciKlass* exact_kls = profile_has_unique_klass();
+  return record_profile_for_speculation(n, exact_kls);
+}
+
+/**
+ * Record profiling data from argument profiling at an invoke with the
+ * type system so that it can propagate it (speculation)
+ *
+ * @param dest_method  target method for the call
+ * @param bc           what invoke bytecode is this?
+ */
+void GraphKit::record_profiled_arguments_for_speculation(ciMethod* dest_method, Bytecodes::Code bc) {
+  if (!UseTypeSpeculation) {
+    return;
+  }
+  const TypeFunc* tf    = TypeFunc::make(dest_method);
+  int             nargs = tf->_domain->_cnt - TypeFunc::Parms;
+  int skip = Bytecodes::has_receiver(bc) ? 1 : 0;
+  for (int j = skip, i = 0; j < nargs && i < TypeProfileArgsLimit; j++) {
+    const Type *targ = tf->_domain->field_at(j + TypeFunc::Parms);
+    if (targ->basic_type() == T_OBJECT || targ->basic_type() == T_ARRAY) {
+      ciKlass* better_type = method()->argument_profiled_type(bci(), i);
+      if (better_type != NULL) {
+        record_profile_for_speculation(argument(j), better_type);
+      }
+      i++;
+    }
+  }
+}
+
+/**
+ * Record profiling data from parameter profiling at an invoke with
+ * the type system so that it can propagate it (speculation)
+ */
+void GraphKit::record_profiled_parameters_for_speculation() {
+  if (!UseTypeSpeculation) {
+    return;
+  }
+  for (int i = 0, j = 0; i < method()->arg_size() ; i++) {
+    if (_gvn.type(local(i))->isa_oopptr()) {
+      ciKlass* better_type = method()->parameter_profiled_type(j);
+      if (better_type != NULL) {
+        record_profile_for_speculation(local(i), better_type);
+      }
+      j++;
+    }
+  }
+}
+
 void GraphKit::round_double_result(ciMethod* dest_method) {
   // A non-strict method may return a double value which has an extended
   // exponent, but this must not be visible in a caller which is 'strict'
@@ -2122,7 +2275,7 @@ Node* GraphKit::dstore_rounding(Node* n) {
 // Null check oop.  Set null-path control into Region in slot 3.
 // Make a cast-not-nullness use the other not-null control.  Return cast.
 Node* GraphKit::null_check_oop(Node* value, Node* *null_control,
-                               bool never_see_null) {
+                               bool never_see_null, bool safe_for_replace) {
   // Initial NULL check taken path
   (*null_control) = top();
   Node* cast = null_check_common(value, T_OBJECT, false, null_control);
@@ -2139,6 +2292,9 @@ Node* GraphKit::null_check_oop(Node* value, Node* *null_control,
     uncommon_trap(Deoptimization::Reason_null_check,
                   Deoptimization::Action_make_not_entrant);
     (*null_control) = top();    // NULL path is dead
+  }
+  if ((*null_control) == top() && safe_for_replace) {
+    replace_in_map(value, cast);
   }
 
   // Cast away null-ness on the result
@@ -2577,10 +2733,10 @@ bool GraphKit::seems_never_null(Node* obj, ciProfileData* data) {
 // If the profile has seen exactly one type, narrow to exactly that type.
 // Subsequent type checks will always fold up.
 Node* GraphKit::maybe_cast_profiled_receiver(Node* not_null_obj,
-                                             ciProfileData* data,
-                                             ciKlass* require_klass) {
+                                             ciKlass* require_klass,
+                                            ciKlass* spec_klass,
+                                             bool safe_for_replace) {
   if (!UseTypeProfile || !TypeProfileCasts) return NULL;
-  if (data == NULL)  return NULL;
 
   // Make sure we haven't already deoptimized from this tactic.
   if (too_many_traps(Deoptimization::Reason_class_check))
@@ -2588,15 +2744,15 @@ Node* GraphKit::maybe_cast_profiled_receiver(Node* not_null_obj,
 
   // (No, this isn't a call, but it's enough like a virtual call
   // to use the same ciMethod accessor to get the profile info...)
-  ciCallProfile profile = method()->call_profile_at_bci(bci());
-  if (profile.count() >= 0 &&         // no cast failures here
-      profile.has_receiver(0) &&
-      profile.morphism() == 1) {
-    ciKlass* exact_kls = profile.receiver(0);
+  // If we have a speculative type use it instead of profiling (which
+  // may not help us)
+  ciKlass* exact_kls = spec_klass == NULL ? profile_has_unique_klass() : spec_klass;
+  if (exact_kls != NULL) {// no cast failures here
     if (require_klass == NULL ||
         static_subtype_check(require_klass, exact_kls) == SSC_always_true) {
-      // If we narrow the type to match what the type profile sees,
-      // we can then remove the rest of the cast.
+      // If we narrow the type to match what the type profile sees or
+      // the speculative type, we can then remove the rest of the
+      // cast.
       // This is a win, even if the exact_kls is very specific,
       // because downstream operations, such as method calls,
       // will often benefit from the sharper type.
@@ -2608,7 +2764,9 @@ Node* GraphKit::maybe_cast_profiled_receiver(Node* not_null_obj,
         uncommon_trap(Deoptimization::Reason_class_check,
                       Deoptimization::Action_maybe_recompile);
       }
-      replace_in_map(not_null_obj, exact_obj);
+      if (safe_for_replace) {
+        replace_in_map(not_null_obj, exact_obj);
+      }
       return exact_obj;
     }
     // assert(ssc == SSC_always_true)... except maybe the profile lied to us.
@@ -2617,11 +2775,59 @@ Node* GraphKit::maybe_cast_profiled_receiver(Node* not_null_obj,
   return NULL;
 }
 
+/**
+ * Cast obj to type and emit guard unless we had too many traps here
+ * already
+ *
+ * @param obj       node being casted
+ * @param type      type to cast the node to
+ * @param not_null  true if we know node cannot be null
+ */
+Node* GraphKit::maybe_cast_profiled_obj(Node* obj,
+                                        ciKlass* type,
+                                        bool not_null) {
+  // type == NULL if profiling tells us this object is always null
+  if (type != NULL) {
+    if (!too_many_traps(Deoptimization::Reason_null_check) &&
+        !too_many_traps(Deoptimization::Reason_class_check)) {
+      Node* not_null_obj = NULL;
+      // not_null is true if we know the object is not null and
+      // there's no need for a null check
+      if (!not_null) {
+        Node* null_ctl = top();
+        not_null_obj = null_check_oop(obj, &null_ctl, true, true);
+        assert(null_ctl->is_top(), "no null control here");
+      } else {
+        not_null_obj = obj;
+      }
+
+      Node* exact_obj = not_null_obj;
+      ciKlass* exact_kls = type;
+      Node* slow_ctl  = type_check_receiver(exact_obj, exact_kls, 1.0,
+                                            &exact_obj);
+      {
+        PreserveJVMState pjvms(this);
+        set_control(slow_ctl);
+        uncommon_trap(Deoptimization::Reason_class_check,
+                      Deoptimization::Action_maybe_recompile);
+      }
+      replace_in_map(not_null_obj, exact_obj);
+      obj = exact_obj;
+    }
+  } else {
+    if (!too_many_traps(Deoptimization::Reason_null_assert)) {
+      Node* exact_obj = null_assert(obj);
+      replace_in_map(obj, exact_obj);
+      obj = exact_obj;
+    }
+  }
+  return obj;
+}
 
 //-------------------------------gen_instanceof--------------------------------
 // Generate an instance-of idiom.  Used by both the instance-of bytecode
 // and the reflective instance-of call.
-Node* GraphKit::gen_instanceof(Node* obj, Node* superklass) {
+Node* GraphKit::gen_instanceof(Node* obj, Node* superklass, bool safe_for_replace) {
   kill_dead_locals();           // Benefit all the uncommon traps
   assert( !stopped(), "dead parse path should be checked in callers" );
   assert(!TypePtr::NULL_PTR->higher_equal(_gvn.type(superklass)->is_klassptr()),
@@ -2642,7 +2848,7 @@ Node* GraphKit::gen_instanceof(Node* obj, Node* superklass) {
 
   // Null check; get casted pointer; set region slot 3
   Node* null_ctl = top();
-  Node* not_null_obj = null_check_oop(obj, &null_ctl, never_see_null);
+  Node* not_null_obj = null_check_oop(obj, &null_ctl, never_see_null, safe_for_replace);
 
   // If not_null_obj is dead, only null-path is taken
   if (stopped()) {              // Doing instance-of on a NULL?
@@ -2659,14 +2865,37 @@ Node* GraphKit::gen_instanceof(Node* obj, Node* superklass) {
     phi   ->del_req(_null_path);
   }
 
-  if (ProfileDynamicTypes && data != NULL) {
-    Node* cast_obj = maybe_cast_profiled_receiver(not_null_obj, data, NULL);
-    if (stopped()) {            // Profile disagrees with this path.
-      set_control(null_ctl);    // Null is the only remaining possibility.
-      return intcon(0);
+  // Do we know the type check always succeed?
+  bool known_statically = false;
+  if (_gvn.type(superklass)->singleton()) {
+    ciKlass* superk = _gvn.type(superklass)->is_klassptr()->klass();
+    ciKlass* subk = _gvn.type(obj)->is_oopptr()->klass();
+    if (subk != NULL && subk->is_loaded()) {
+      int static_res = static_subtype_check(superk, subk);
+      known_statically = (static_res == SSC_always_true || static_res == SSC_always_false);
     }
-    if (cast_obj != NULL)
-      not_null_obj = cast_obj;
+  }
+
+  if (known_statically && UseTypeSpeculation) {
+    // If we know the type check always succeed then we don't use the
+    // profiling data at this bytecode. Don't lose it, feed it to the
+    // type system as a speculative type.
+    not_null_obj = record_profiled_receiver_for_speculation(not_null_obj);
+  } else {
+    const TypeOopPtr* obj_type = _gvn.type(obj)->is_oopptr();
+    // We may not have profiling here or it may not help us. If we
+    // have a speculative type use it to perform an exact cast.
+    ciKlass* spec_obj_type = obj_type->speculative_type();
+    if (spec_obj_type != NULL || (ProfileDynamicTypes && data != NULL)) {
+      Node* cast_obj = maybe_cast_profiled_receiver(not_null_obj, NULL, spec_obj_type, safe_for_replace);
+      if (stopped()) {            // Profile disagrees with this path.
+        set_control(null_ctl);    // Null is the only remaining possibility.
+        return intcon(0);
+      }
+      if (cast_obj != NULL) {
+        not_null_obj = cast_obj;
+      }
+    }
   }
 
   // Load the object's klass
@@ -2713,7 +2942,10 @@ Node* GraphKit::gen_checkcast(Node *obj, Node* superklass,
     if (objtp != NULL && objtp->klass() != NULL) {
       switch (static_subtype_check(tk->klass(), objtp->klass())) {
       case SSC_always_true:
-        return obj;
+        // If we know the type check always succeed then we don't use
+        // the profiling data at this bytecode. Don't lose it, feed it
+        // to the type system as a speculative type.
+        return record_profiled_receiver_for_speculation(obj);
       case SSC_always_false:
         // It needs a null check because a null will *pass* the cast check.
         // A non-null value will always produce an exception.
@@ -2723,11 +2955,13 @@ Node* GraphKit::gen_checkcast(Node *obj, Node* superklass,
   }
 
   ciProfileData* data = NULL;
+  bool safe_for_replace = false;
   if (failure_control == NULL) {        // use MDO in regular case only
     assert(java_bc() == Bytecodes::_aastore ||
            java_bc() == Bytecodes::_checkcast,
            "interpreter profiles type checks only for these BCs");
     data = method()->method_data()->bci_to_data(bci());
+    safe_for_replace = true;
   }
 
   // Make the merge point
@@ -2742,7 +2976,7 @@ Node* GraphKit::gen_checkcast(Node *obj, Node* superklass,
 
   // Null check; get casted pointer; set region slot 3
   Node* null_ctl = top();
-  Node* not_null_obj = null_check_oop(obj, &null_ctl, never_see_null);
+  Node* not_null_obj = null_check_oop(obj, &null_ctl, never_see_null, safe_for_replace);
 
   // If not_null_obj is dead, only null-path is taken
   if (stopped()) {              // Doing instance-of on a NULL?
@@ -2760,12 +2994,17 @@ Node* GraphKit::gen_checkcast(Node *obj, Node* superklass,
   }
 
   Node* cast_obj = NULL;
-  if (data != NULL &&
-      // Counter has never been decremented (due to cast failure).
-      // ...This is a reasonable thing to expect.  It is true of
-      // all casts inserted by javac to implement generic types.
-      data->as_CounterData()->count() >= 0) {
-    cast_obj = maybe_cast_profiled_receiver(not_null_obj, data, tk->klass());
+  const TypeOopPtr* obj_type = _gvn.type(obj)->is_oopptr();
+  // We may not have profiling here or it may not help us. If we have
+  // a speculative type use it to perform an exact cast.
+  ciKlass* spec_obj_type = obj_type->speculative_type();
+  if (spec_obj_type != NULL ||
+      (data != NULL &&
+       // Counter has never been decremented (due to cast failure).
+       // ...This is a reasonable thing to expect.  It is true of
+       // all casts inserted by javac to implement generic types.
+       data->as_CounterData()->count() >= 0)) {
+    cast_obj = maybe_cast_profiled_receiver(not_null_obj, tk->klass(), spec_obj_type, safe_for_replace);
     if (cast_obj != NULL) {
       if (failure_control != NULL) // failure is now impossible
         (*failure_control) = top();
@@ -3608,7 +3847,7 @@ void GraphKit::g1_write_barrier_pre(bool do_load,
   Node* marking = __ load(__ ctrl(), marking_adr, TypeInt::INT, active_type, Compile::AliasIdxRaw);
 
   // if (!marking)
-  __ if_then(marking, BoolTest::ne, zero); {
+  __ if_then(marking, BoolTest::ne, zero, unlikely); {
     BasicType index_bt = TypeX_X->basic_type();
     assert(sizeof(size_t) == type2aelembytes(index_bt), "Loading G1 PtrQueue::_index with wrong size.");
     Node* index   = __ load(__ ctrl(), index_adr, TypeX_X, index_bt, Compile::AliasIdxRaw);

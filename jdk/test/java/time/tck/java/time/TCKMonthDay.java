@@ -86,6 +86,7 @@ import java.time.temporal.ChronoField;
 import java.time.temporal.JulianFields;
 import java.time.temporal.TemporalAccessor;
 import java.time.temporal.TemporalField;
+import java.time.temporal.TemporalQueries;
 import java.time.temporal.TemporalQuery;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -428,13 +429,13 @@ public class TCKMonthDay extends AbstractDateTimeTest {
     @DataProvider(name="query")
     Object[][] data_query() {
         return new Object[][] {
-                {TEST_07_15, TemporalQuery.chronology(), IsoChronology.INSTANCE},
-                {TEST_07_15, TemporalQuery.zoneId(), null},
-                {TEST_07_15, TemporalQuery.precision(), null},
-                {TEST_07_15, TemporalQuery.zone(), null},
-                {TEST_07_15, TemporalQuery.offset(), null},
-                {TEST_07_15, TemporalQuery.localDate(), null},
-                {TEST_07_15, TemporalQuery.localTime(), null},
+                {TEST_07_15, TemporalQueries.chronology(), IsoChronology.INSTANCE},
+                {TEST_07_15, TemporalQueries.zoneId(), null},
+                {TEST_07_15, TemporalQueries.precision(), null},
+                {TEST_07_15, TemporalQueries.zone(), null},
+                {TEST_07_15, TemporalQueries.offset(), null},
+                {TEST_07_15, TemporalQueries.localDate(), null},
+                {TEST_07_15, TemporalQueries.localTime(), null},
         };
     }
 

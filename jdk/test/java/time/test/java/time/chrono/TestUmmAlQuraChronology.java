@@ -60,7 +60,7 @@ import java.time.format.FormatStyle;
 import java.time.temporal.ChronoField;
 import java.time.temporal.ChronoUnit;
 import java.time.temporal.TemporalAccessor;
-import java.time.temporal.TemporalAdjuster;
+import java.time.temporal.TemporalAdjusters;
 import java.time.temporal.ValueRange;
 import java.time.temporal.WeekFields;
 import java.util.Locale;
@@ -357,12 +357,12 @@ public class TestUmmAlQuraChronology {
     @Test
     public void test_temporalDayAdjustments() {
         HijrahDate date = HijrahDate.of(1554, 7, 21);
-        assertEquals(date.with(TemporalAdjuster.firstDayOfMonth()), HijrahDate.of(1554, 7, 1));
-        assertEquals(date.with(TemporalAdjuster.lastDayOfMonth()), HijrahDate.of(1554, 7, 29));
-        assertEquals(date.with(TemporalAdjuster.firstDayOfNextMonth()), HijrahDate.of(1554, 8, 1));
-        assertEquals(date.with(TemporalAdjuster.firstDayOfNextYear()), HijrahDate.of(1555, 1, 1));
-        assertEquals(date.with(TemporalAdjuster.firstDayOfYear()), HijrahDate.of(1554, 1, 1));
-        assertEquals(date.with(TemporalAdjuster.lastDayOfYear()), HijrahDate.of(1554, 12, 30));
+        assertEquals(date.with(TemporalAdjusters.firstDayOfMonth()), HijrahDate.of(1554, 7, 1));
+        assertEquals(date.with(TemporalAdjusters.lastDayOfMonth()), HijrahDate.of(1554, 7, 29));
+        assertEquals(date.with(TemporalAdjusters.firstDayOfNextMonth()), HijrahDate.of(1554, 8, 1));
+        assertEquals(date.with(TemporalAdjusters.firstDayOfNextYear()), HijrahDate.of(1555, 1, 1));
+        assertEquals(date.with(TemporalAdjusters.firstDayOfYear()), HijrahDate.of(1554, 1, 1));
+        assertEquals(date.with(TemporalAdjusters.lastDayOfYear()), HijrahDate.of(1554, 12, 30));
     }
 
     // Data provider for string representation of the date instances
@@ -412,7 +412,7 @@ public class TestUmmAlQuraChronology {
     @Test(dataProvider="monthDays")
     public void test_lastDayOfMonth(int year, int month, int numDays) {
         HijrahDate hDate = HijrahChronology.INSTANCE.date(year, month, 1);
-        hDate = hDate.with(TemporalAdjuster.lastDayOfMonth());
+        hDate = hDate.with(TemporalAdjusters.lastDayOfMonth());
         assertEquals(hDate.get(ChronoField.DAY_OF_MONTH), numDays);
     }
 

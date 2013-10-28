@@ -47,6 +47,7 @@ public class CheckPackageAccess {
     /*
      * This array should be updated whenever new packages are added to the
      * package.access property in the java.security file
+     * NOTE: it should be in the same order as the java.security file
      */
     private static final String[] packages = {
         "sun.",
@@ -95,6 +96,16 @@ public class CheckPackageAccess {
 
         List<String> jspkgs =
             getPackages(Security.getProperty("package.access"));
+
+        if (!isOpenJDKOnly()) {
+            String lastPkg = pkgs.get(pkgs.size() - 1);
+
+            // Remove any closed packages from list before comparing
+            int index = jspkgs.indexOf(lastPkg);
+            if (index != -1 && index != jspkgs.size() - 1) {
+                jspkgs.subList(index + 1, jspkgs.size()).clear();
+            }
+        }
 
         // Sort to ensure lists are comparable
         Collections.sort(pkgs);
@@ -150,5 +161,10 @@ public class CheckPackageAccess {
             }
         }
         return packages;
+    }
+
+    private static boolean isOpenJDKOnly() {
+        String prop = System.getProperty("java.runtime.name");
+        return prop != null && prop.startsWith("OpenJDK");
     }
 }

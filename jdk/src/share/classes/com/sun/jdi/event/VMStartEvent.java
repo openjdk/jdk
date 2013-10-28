@@ -43,6 +43,7 @@ import com.sun.jdi.*;
  * @author Robert Field
  * @since  1.3
  */
+@jdk.Exported
 public interface VMStartEvent extends Event {
     /**
      * Returns the initial thread of the VM which has started.

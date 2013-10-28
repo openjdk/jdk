@@ -31,7 +31,7 @@ import java.sql.*;
 /**
  * The standard interface that provides the framework for all
  * <code>FilteredRowSet</code> objects to describe their filters.
- * <p>
+ *
  * <h3>1.0 Background</h3>
  * The <code>Predicate</code> interface is a standard interface that
  * applications can implement to define the filter they wish to apply to a

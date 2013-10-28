@@ -99,6 +99,7 @@ import java.time.temporal.Temporal;
 import java.time.temporal.TemporalAccessor;
 import java.time.temporal.TemporalAmount;
 import java.time.temporal.TemporalField;
+import java.time.temporal.TemporalQueries;
 import java.time.temporal.TemporalQuery;
 import java.time.temporal.TemporalUnit;
 import java.time.temporal.UnsupportedTemporalTypeException;
@@ -411,13 +412,13 @@ public class TCKYear extends AbstractDateTimeTest {
     @DataProvider(name="query")
     Object[][] data_query() {
         return new Object[][] {
-                {TEST_2008, TemporalQuery.chronology(), IsoChronology.INSTANCE},
-                {TEST_2008, TemporalQuery.zoneId(), null},
-                {TEST_2008, TemporalQuery.precision(), ChronoUnit.YEARS},
-                {TEST_2008, TemporalQuery.zone(), null},
-                {TEST_2008, TemporalQuery.offset(), null},
-                {TEST_2008, TemporalQuery.localDate(), null},
-                {TEST_2008, TemporalQuery.localTime(), null},
+                {TEST_2008, TemporalQueries.chronology(), IsoChronology.INSTANCE},
+                {TEST_2008, TemporalQueries.zoneId(), null},
+                {TEST_2008, TemporalQueries.precision(), ChronoUnit.YEARS},
+                {TEST_2008, TemporalQueries.zone(), null},
+                {TEST_2008, TemporalQueries.offset(), null},
+                {TEST_2008, TemporalQueries.localDate(), null},
+                {TEST_2008, TemporalQueries.localTime(), null},
         };
     }
 
@@ -596,7 +597,7 @@ public class TCKYear extends AbstractDateTimeTest {
     }
 
     @Test(dataProvider="plus_long_TemporalUnit")
-    public void test_plus_long_TemporalUnit(Year base, long amount, TemporalUnit unit, Year expectedYear, Class expectedEx) {
+    public void test_plus_long_TemporalUnit(Year base, long amount, TemporalUnit unit, Year expectedYear, Class<?> expectedEx) {
         if (expectedEx == null) {
             assertEquals(base.plus(amount, unit), expectedYear);
         } else {
@@ -728,7 +729,7 @@ public class TCKYear extends AbstractDateTimeTest {
     }
 
     @Test(dataProvider="minus_long_TemporalUnit")
-    public void test_minus_long_TemporalUnit(Year base, long amount, TemporalUnit unit, Year expectedYear, Class expectedEx) {
+    public void test_minus_long_TemporalUnit(Year base, long amount, TemporalUnit unit, Year expectedYear, Class<?> expectedEx) {
         if (expectedEx == null) {
             assertEquals(base.minus(amount, unit), expectedYear);
         } else {

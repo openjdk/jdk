@@ -378,16 +378,41 @@ class GraphKit : public Phase {
   // Return a cast-not-null node which depends on the not-null control.
   // If never_see_null, use an uncommon trap (*null_control sees a top).
   // The cast is not valid along the null path; keep a copy of the original.
+  // If safe_for_replace, then we can replace the value with the cast
+  // in the parsing map (the cast is guaranteed to dominate the map)
   Node* null_check_oop(Node* value, Node* *null_control,
-                       bool never_see_null = false);
+                       bool never_see_null = false, bool safe_for_replace = false);
 
   // Check the null_seen bit.
   bool seems_never_null(Node* obj, ciProfileData* data);
 
+  // Check for unique class for receiver at call
+  ciKlass* profile_has_unique_klass() {
+    ciCallProfile profile = method()->call_profile_at_bci(bci());
+    if (profile.count() >= 0 &&         // no cast failures here
+        profile.has_receiver(0) &&
+        profile.morphism() == 1) {
+      return profile.receiver(0);
+    }
+    return NULL;
+  }
+
+  // record type from profiling with the type system
+  Node* record_profile_for_speculation(Node* n, ciKlass* exact_kls);
+  Node* record_profiled_receiver_for_speculation(Node* n);
+  void record_profiled_arguments_for_speculation(ciMethod* dest_method, Bytecodes::Code bc);
+  void record_profiled_parameters_for_speculation();
+
   // Use the type profile to narrow an object type.
   Node* maybe_cast_profiled_receiver(Node* not_null_obj,
-                                     ciProfileData* data,
-                                     ciKlass* require_klass);
+                                     ciKlass* require_klass,
+                                    ciKlass* spec,
+                                     bool safe_for_replace);
+
+  // Cast obj to type and emit guard unless we had too many traps here already
+  Node* maybe_cast_profiled_obj(Node* obj,
+                                ciKlass* type,
+                                bool not_null = false);
 
   // Cast obj to not-null on this path
   Node* cast_not_null(Node* obj, bool do_replace_in_map = true);
@@ -773,7 +798,7 @@ class GraphKit : public Phase {
 
   // Generate an instance-of idiom.  Used by both the instance-of bytecode
   // and the reflective instance-of call.
-  Node* gen_instanceof( Node *subobj, Node* superkls );
+  Node* gen_instanceof(Node *subobj, Node* superkls, bool safe_for_replace = false);
 
   // Generate a check-cast idiom.  Used by both the check-cast bytecode
   // and the array-store bytecode

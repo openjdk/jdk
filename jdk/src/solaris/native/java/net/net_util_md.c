@@ -782,7 +782,6 @@ NET_InetAddressToSockaddr(JNIEnv *env, jobject iaObj, int port, struct sockaddr 
     /* needs work. 1. family 2. clean up him6 etc deallocate memory */
     if (ipv6_available() && !(family == IPv4 && v4MappedAddress == JNI_FALSE)) {
         struct sockaddr_in6 *him6 = (struct sockaddr_in6 *)him;
-        jbyteArray ipaddress;
         jbyte caddr[16];
         jint address;
 
@@ -803,8 +802,7 @@ NET_InetAddressToSockaddr(JNIEnv *env, jobject iaObj, int port, struct sockaddr 
                 caddr[15] = (address & 0xff);
             }
         } else {
-            ipaddress = (*env)->GetObjectField(env, iaObj, ia6_ipaddressID);
-            (*env)->GetByteArrayRegion(env, ipaddress, 0, 16, caddr);
+            getInet6Address_ipaddress(env, iaObj, (char *)caddr);
         }
         memset((char *)him6, 0, sizeof(struct sockaddr_in6));
         him6->sin6_port = htons(port);
@@ -840,7 +838,7 @@ NET_InetAddressToSockaddr(JNIEnv *env, jobject iaObj, int port, struct sockaddr 
                  */
                 if (!cached_scope_id) {
                     if (ia6_scopeidID) {
-                        scope_id = (int)(*env)->GetIntField(env,iaObj,ia6_scopeidID);
+                        scope_id = getInet6Address_scopeid(env, iaObj);
                     }
                     if (scope_id != 0) {
                         /* check user-specified value for loopback case
@@ -884,7 +882,7 @@ NET_InetAddressToSockaddr(JNIEnv *env, jobject iaObj, int port, struct sockaddr 
 
         if (family != IPv4) {
             if (ia6_scopeidID) {
-                him6->sin6_scope_id = (int)(*env)->GetIntField(env, iaObj, ia6_scopeidID);
+                him6->sin6_scope_id = getInet6Address_scopeid(env, iaObj);
             }
         }
 #endif

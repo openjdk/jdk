@@ -2565,7 +2565,7 @@ void LIR_Assembler::type_profile_helper(Register mdo, int mdo_offset_bias,
     Address receiver_addr(mdo, md->byte_offset_of_slot(data, ReceiverTypeData::receiver_offset(i)) -
                           mdo_offset_bias);
     __ ld_ptr(receiver_addr, tmp1);
-    __ verify_oop(tmp1);
+    __ verify_klass_ptr(tmp1);
     __ cmp_and_brx_short(recv, tmp1, Assembler::notEqual, Assembler::pt, next_test);
     Address data_addr(mdo, md->byte_offset_of_slot(data, ReceiverTypeData::receiver_count_offset(i)) -
                       mdo_offset_bias);
@@ -3098,6 +3098,10 @@ void LIR_Assembler::emit_profile_call(LIR_OpProfileCall* op) {
     __ add(tmp1, DataLayout::counter_increment, tmp1);
     __ st_ptr(tmp1, counter_addr);
   }
+}
+
+void LIR_Assembler::emit_profile_type(LIR_OpProfileType* op) {
+  fatal("Type profiling not implemented on this platform");
 }
 
 void LIR_Assembler::align_backward_branch_target() {

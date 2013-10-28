@@ -61,3 +61,22 @@ Object.defineProperty(this, "fail", {
         }
     }
 });
+
+Object.defineProperty(this, "printError", {
+    configuable: true,
+    enumerable: false,
+    writable: true,
+    value: function (e) {
+        var msg = e.message;
+        var str = e.name + ':';
+        if (e.lineNumber > 0) {
+            str += e.lineNumber + ':';
+        }
+        if (e.columnNumber > 0) {
+            str += e.columnNumber + ':';
+        }
+        str += msg.substring(msg.indexOf(' ') + 1);
+        print(str);
+    }
+});
+

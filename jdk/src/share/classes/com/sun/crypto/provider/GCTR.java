@@ -54,7 +54,7 @@ final class GCTR {
     private byte[] counter;
 
     // needed for save/restore calls
-    private byte[] counterSave;
+    private byte[] counterSave = null;
 
     // NOTE: cipher should already be initialized
     GCTR(SymmetricCipher cipher, byte[] initialCounterBlk) {
@@ -98,17 +98,16 @@ final class GCTR {
                 throw new IllegalBlockSizeException("Negative input size!");
             } else if (inLen > 0) {
                 int lastBlockSize = inLen % AES_BLOCK_SIZE;
+                int completeBlkLen = inLen - lastBlockSize;
                 // process the complete blocks first
-                update(in, inOfs, inLen - lastBlockSize, out, outOfs);
+                update(in, inOfs, completeBlkLen, out, outOfs);
                 if (lastBlockSize != 0) {
                     // do the last partial block
                     byte[] encryptedCntr = new byte[AES_BLOCK_SIZE];
                     aes.encryptBlock(counter, 0, encryptedCntr, 0);
-
-                    int processed = inLen - lastBlockSize;
                     for (int n = 0; n < lastBlockSize; n++) {
-                        out[outOfs + processed + n] =
-                            (byte) ((in[inOfs + processed + n] ^
+                        out[outOfs + completeBlkLen + n] =
+                            (byte) ((in[inOfs + completeBlkLen + n] ^
                                      encryptedCntr[n]));
                     }
                 }
@@ -120,12 +119,11 @@ final class GCTR {
     }
 
     /**
-     * Resets the current counter to its initial value.
-     * This is used after the doFinal() is called so this object can be
-     * reused w/o explicit re-initialization.
+     * Resets the content of this object to when it's first constructed.
      */
     void reset() {
         System.arraycopy(icb, 0, counter, 0, icb.length);
+        counterSave = null;
     }
 
     /**

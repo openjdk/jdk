@@ -54,7 +54,6 @@ public class FlagDumper extends Tool {
 
    public static void main(String[] args) {
       FlagDumper fd = new FlagDumper();
-      fd.start(args);
-      fd.stop();
+      fd.execute(args);
    }
 }

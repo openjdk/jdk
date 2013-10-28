@@ -69,14 +69,13 @@ import static java.time.temporal.ChronoUnit.MONTHS;
 import static java.time.temporal.ChronoUnit.WEEKS;
 import static java.time.temporal.ChronoUnit.YEARS;
 
+import java.time.DateTimeException;
 import java.time.Duration;
 import java.time.LocalDate;
-import java.time.ZoneId;
 import java.time.chrono.ChronoLocalDate;
 import java.time.chrono.Chronology;
 import java.time.chrono.IsoChronology;
 import java.time.format.ResolverStyle;
-import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
@@ -101,11 +100,11 @@ import sun.util.locale.provider.LocaleResources;
  * October, November and December are in Q4.
  * <p>
  * The complete date is expressed using three fields:
- * <p><ul>
+ * <ul>
  * <li>{@link #DAY_OF_QUARTER DAY_OF_QUARTER} - the day within the quarter, from 1 to 90, 91 or 92
  * <li>{@link #QUARTER_OF_YEAR QUARTER_OF_YEAR} - the week within the week-based-year
  * <li>{@link ChronoField#YEAR YEAR} - the standard ISO year
- * </ul><p>
+ * </ul>
  *
  * <h3>Week based years</h3>
  * The ISO-8601 standard was originally intended as a data interchange format,
@@ -113,18 +112,18 @@ import sun.util.locale.provider.LocaleResources;
  * alternate way of expressing the date, based on the concept of week-based-year.
  * <p>
  * The date is expressed using three fields:
- * <p><ul>
+ * <ul>
  * <li>{@link ChronoField#DAY_OF_WEEK DAY_OF_WEEK} - the standard field defining the
  *  day-of-week from Monday (1) to Sunday (7)
  * <li>{@link #WEEK_OF_WEEK_BASED_YEAR} - the week within the week-based-year
  * <li>{@link #WEEK_BASED_YEAR WEEK_BASED_YEAR} - the week-based-year
- * </ul><p>
+ * </ul>
  * The week-based-year itself is defined relative to the standard ISO proleptic year.
  * It differs from the standard year in that it always starts on a Monday.
  * <p>
  * The first week of a week-based-year is the first Monday-based week of the standard
  * ISO year that has at least 4 days in the new year.
- * <p><ul>
+ * <ul>
  * <li>If January 1st is Monday then week 1 starts on January 1st
  * <li>If January 1st is Tuesday then week 1 starts on December 31st of the previous standard year
  * <li>If January 1st is Wednesday then week 1 starts on December 30th of the previous standard year
@@ -132,11 +131,11 @@ import sun.util.locale.provider.LocaleResources;
  * <li>If January 1st is Friday then week 1 starts on January 4th
  * <li>If January 1st is Saturday then week 1 starts on January 3rd
  * <li>If January 1st is Sunday then week 1 starts on January 2nd
- * </ul><p>
+ * </ul>
  * There are 52 weeks in most week-based years, however on occasion there are 53 weeks.
  * <p>
  * For example:
- * <p>
+ *
  * <table cellpadding="0" cellspacing="3" border="0" style="text-align: left; width: 50%;">
  * <caption>Examples of Week based Years</caption>
  * <tr><th>Date</th><th>Day-of-week</th><th>Field values</th></tr>
@@ -343,7 +342,7 @@ public final class IsoFields {
             }
             @Override
             public ChronoLocalDate resolve(
-                    Map<TemporalField, Long> fieldValues, Chronology chronology, ZoneId zone, ResolverStyle resolverStyle) {
+                    Map<TemporalField, Long> fieldValues, TemporalAccessor partialTemporal, ResolverStyle resolverStyle) {
                 Long yearLong = fieldValues.get(YEAR);
                 Long qoyLong = fieldValues.get(QUARTER_OF_YEAR);
                 if (yearLong == null || qoyLong == null) {
@@ -351,6 +350,7 @@ public final class IsoFields {
                 }
                 int y = YEAR.checkValidIntValue(yearLong);  // always validate
                 long doq = fieldValues.get(DAY_OF_QUARTER);
+                ensureIso(partialTemporal);
                 LocalDate date;
                 if (resolverStyle == ResolverStyle.LENIENT) {
                     date = LocalDate.of(y, 1, 1).plusMonths(Math.multiplyExact(Math.subtractExact(qoyLong, 1), 3));
@@ -464,7 +464,7 @@ public final class IsoFields {
             }
             @Override
             public ChronoLocalDate resolve(
-                    Map<TemporalField, Long> fieldValues, Chronology chronology, ZoneId zone, ResolverStyle resolverStyle) {
+                    Map<TemporalField, Long> fieldValues, TemporalAccessor partialTemporal, ResolverStyle resolverStyle) {
                 Long wbyLong = fieldValues.get(WEEK_BASED_YEAR);
                 Long dowLong = fieldValues.get(DAY_OF_WEEK);
                 if (wbyLong == null || dowLong == null) {
@@ -472,6 +472,7 @@ public final class IsoFields {
                 }
                 int wby = WEEK_BASED_YEAR.range().checkValidIntValue(wbyLong, WEEK_BASED_YEAR);  // always validate
                 long wowby = fieldValues.get(WEEK_OF_WEEK_BASED_YEAR);
+                ensureIso(partialTemporal);
                 LocalDate date = LocalDate.of(wby, 1, 4);
                 if (resolverStyle == ResolverStyle.LENIENT) {
                     long dow = dowLong;  // unvalidated
@@ -566,6 +567,12 @@ public final class IsoFields {
 
         private static boolean isIso(TemporalAccessor temporal) {
             return Chronology.from(temporal).equals(IsoChronology.INSTANCE);
+        }
+
+        private static void ensureIso(TemporalAccessor temporal) {
+            if (isIso(temporal) == false) {
+                throw new DateTimeException("Resolve requires IsoChronology");
+            }
         }
 
         private static ValueRange getWeekRange(LocalDate date) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009,2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,13 +36,34 @@ import java.rmi.RemoteException;
 import java.rmi.NoSuchObjectException;
 
 import com.sun.jmx.remote.internal.IIOPProxy;
+import java.io.SerializablePermission;
+import java.security.AccessControlContext;
+import java.security.AccessController;
+import java.security.Permissions;
+import java.security.PrivilegedActionException;
+import java.security.PrivilegedExceptionAction;
+import java.security.ProtectionDomain;
 
 /**
- * An implementatin of IIOPProxy that simply delegates to the appropriate
+ * An implementation of IIOPProxy that simply delegates to the appropriate
  * RMI-IIOP and CORBA APIs.
  */
 
 public class IIOPProxyImpl implements IIOPProxy {
+    // special ACC used to initialize the IIOP stub
+    // the only allowed privilege is SerializablePermission("enableSubclassImplementation")
+    private static final AccessControlContext STUB_ACC;
+
+    static {
+        Permissions p = new Permissions();
+        p.add(new SerializablePermission("enableSubclassImplementation"));
+        STUB_ACC = new AccessControlContext(
+            new ProtectionDomain[]{
+                new ProtectionDomain(null, p)
+            }
+        );
+    }
+
     public IIOPProxyImpl() { }
 
     @Override
@@ -113,7 +134,24 @@ public class IIOPProxyImpl implements IIOPProxy {
     }
 
     @Override
-    public Remote toStub(Remote obj) throws NoSuchObjectException {
-        return PortableRemoteObject.toStub(obj);
+    public Remote toStub(final Remote obj) throws NoSuchObjectException {
+        if (System.getSecurityManager() == null) {
+            return PortableRemoteObject.toStub(obj);
+        } else {
+            try {
+                return AccessController.doPrivileged(new PrivilegedExceptionAction<Remote>() {
+
+                    @Override
+                    public Remote run() throws Exception {
+                        return PortableRemoteObject.toStub(obj);
+                    }
+                }, STUB_ACC);
+            } catch (PrivilegedActionException e) {
+                if (e.getException() instanceof NoSuchObjectException) {
+                    throw (NoSuchObjectException)e.getException();
+                }
+                throw new RuntimeException("Unexpected exception type", e.getException());
+            }
+        }
     }
 }
