@@ -30,7 +30,7 @@ package java.sql;
  * ( the value is 'zero' A).
  * This indicates that the JDBC driver does not support an optional JDBC feature.
  * Optional JDBC features can fall into the fallowing categories:
- *<p>
+ *
  *<UL>
  *<LI>no support for an optional feature
  *<LI>no support for an optional overloaded method

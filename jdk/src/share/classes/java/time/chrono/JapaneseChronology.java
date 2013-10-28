@@ -56,8 +56,6 @@
  */
 package java.time.chrono;
 
-import java.io.InvalidObjectException;
-import java.io.ObjectStreamException;
 import static java.time.temporal.ChronoField.DAY_OF_MONTH;
 import static java.time.temporal.ChronoField.DAY_OF_YEAR;
 import static java.time.temporal.ChronoField.ERA;
@@ -67,6 +65,7 @@ import static java.time.temporal.ChronoField.YEAR_OF_ERA;
 import static java.time.temporal.ChronoUnit.DAYS;
 import static java.time.temporal.ChronoUnit.MONTHS;
 
+import java.io.InvalidObjectException;
 import java.io.Serializable;
 import java.time.Clock;
 import java.time.DateTimeException;
@@ -77,7 +76,7 @@ import java.time.ZoneId;
 import java.time.format.ResolverStyle;
 import java.time.temporal.ChronoField;
 import java.time.temporal.TemporalAccessor;
-import java.time.temporal.TemporalAdjuster;
+import java.time.temporal.TemporalAdjusters;
 import java.time.temporal.TemporalField;
 import java.time.temporal.UnsupportedTemporalTypeException;
 import java.time.temporal.ValueRange;
@@ -120,7 +119,7 @@ import sun.util.calendar.LocalGregorianCalendar;
  *
  * @since 1.8
  */
-public final class JapaneseChronology extends Chronology implements Serializable {
+public final class JapaneseChronology extends AbstractChronology implements Serializable {
 
     static final LocalGregorianCalendar JCAL =
         (LocalGregorianCalendar) CalendarSystem.forName("japanese");
@@ -480,7 +479,7 @@ public final class JapaneseChronology extends Chronology implements Serializable
              try {
                  result = date(y, moy, dom);
              } catch (DateTimeException ex) {
-                 result = date(y, moy, 1).with(TemporalAdjuster.lastDayOfMonth());
+                 result = date(y, moy, 1).with(TemporalAdjusters.lastDayOfMonth());
              }
              // handle the era being changed
              // only allow if the new date is in the same Jan-Dec as the era change

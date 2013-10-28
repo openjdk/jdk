@@ -64,6 +64,8 @@ public abstract class Attribute implements AnnotationValue {
         return false;
     }
 
+    public TypeAnnotationPosition getPosition() { return null; };
+
     /** The value for an annotation element of primitive type or String. */
     public static class Constant extends Attribute {
         public final Object value;
@@ -191,8 +193,13 @@ public abstract class Attribute implements AnnotationValue {
         }
 
         public Attribute member(Name member) {
+            Pair<MethodSymbol,Attribute> res = getElemPair(member);
+            return res == null ? null : res.snd;
+        }
+
+        private Pair<MethodSymbol, Attribute> getElemPair(Name member) {
             for (Pair<MethodSymbol,Attribute> pair : values)
-                if (pair.fst.name == member) return pair.snd;
+                if (pair.fst.name == member) return pair;
             return null;
         }
 
@@ -208,6 +215,16 @@ public abstract class Attribute implements AnnotationValue {
             return (DeclaredType) type;
         }
 
+        @Override
+        public TypeAnnotationPosition getPosition() {
+            if (values.size() != 0) {
+                Name valueName = values.head.fst.name.table.names.value;
+                Pair<MethodSymbol, Attribute> res = getElemPair(valueName);
+                    return res == null ? null : res.snd.getPosition();
+            }
+            return null;
+        }
+
         public Map<MethodSymbol, Attribute> getElementValues() {
             Map<MethodSymbol, Attribute> valmap =
                 new LinkedHashMap<MethodSymbol, Attribute>();
@@ -219,6 +236,7 @@ public abstract class Attribute implements AnnotationValue {
 
     public static class TypeCompound extends Compound {
         public TypeAnnotationPosition position;
+
         public TypeCompound(Compound compound,
                 TypeAnnotationPosition position) {
             this(compound.type, compound.values, position);
@@ -230,8 +248,16 @@ public abstract class Attribute implements AnnotationValue {
             this.position = position;
         }
 
+        @Override
+        public TypeAnnotationPosition getPosition() {
+            if (hasUnknownPosition()) {
+                position = super.getPosition();
+            }
+            return position;
+        }
+
         public boolean hasUnknownPosition() {
-            return position == null || position.type == TargetType.UNKNOWN;
+            return position.type == TargetType.UNKNOWN;
         }
 
         public boolean isContainerTypeCompound() {
@@ -301,6 +327,14 @@ public abstract class Attribute implements AnnotationValue {
         }
         public <R, P> R accept(AnnotationValueVisitor<R, P> v, P p) {
             return v.visitArray(getValue(), p);
+        }
+
+        @Override
+        public TypeAnnotationPosition getPosition() {
+            if (values.length != 0)
+                return values[0].getPosition();
+            else
+                return null;
         }
     }
 

@@ -176,6 +176,7 @@ AC_DEFUN([TOOLCHAIN_SETUP_PATHS],
 [
   if test "x$OPENJDK_TARGET_OS" = "xwindows"; then
     TOOLCHAIN_SETUP_VISUAL_STUDIO_ENV
+    TOOLCHAIN_SETUP_MSVCR_DLL
     BASIC_DEPRECATED_ARG_WITH([dxsdk])
     BASIC_DEPRECATED_ARG_WITH([dxsdk-lib])
     BASIC_DEPRECATED_ARG_WITH([dxsdk-include])
@@ -941,7 +942,7 @@ AC_DEFUN_ONCE([TOOLCHAIN_SETUP_COMPILER_FLAGS_FOR_JDK],
       -I${JDK_OUTPUTDIR}/include \
       -I${JDK_OUTPUTDIR}/include/$OPENJDK_TARGET_OS \
       -I${JDK_TOPDIR}/src/share/javavm/export \
-      -I${JDK_TOPDIR}/src/$OPENJDK_TARGET_OS_API_DIR/javavm/export \
+      -I${JDK_TOPDIR}/src/$OPENJDK_TARGET_OS_EXPORT_DIR/javavm/export \
       -I${JDK_TOPDIR}/src/share/native/common \
       -I${JDK_TOPDIR}/src/$OPENJDK_TARGET_OS_API_DIR/native/common"
 

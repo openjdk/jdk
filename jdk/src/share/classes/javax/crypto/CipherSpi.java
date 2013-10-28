@@ -786,7 +786,9 @@ public abstract class CipherSpi {
             int total = 0;
             do {
                 int chunk = Math.min(inLen, inArray.length);
-                input.get(inArray, 0, chunk);
+                if (chunk > 0) {
+                    input.get(inArray, 0, chunk);
+                }
                 int n;
                 if (isUpdate || (inLen != chunk)) {
                     n = engineUpdate(inArray, 0, chunk, outArray, outOfs);
@@ -814,8 +816,9 @@ public abstract class CipherSpi {
             int total = 0;
             boolean resized = false;
             do {
-                int chunk = Math.min(inLen, outSize);
-                if ((a1 == false) && (resized == false)) {
+                int chunk =
+                    Math.min(inLen, (outSize == 0? inArray.length : outSize));
+                if (!a1 && !resized && chunk > 0) {
                     input.get(inArray, 0, chunk);
                     inOfs = 0;
                 }
@@ -829,8 +832,10 @@ public abstract class CipherSpi {
                     resized = false;
                     inOfs += chunk;
                     inLen -= chunk;
-                    output.put(outArray, 0, n);
-                    total += n;
+                    if (n > 0) {
+                        output.put(outArray, 0, n);
+                        total += n;
+                    }
                 } catch (ShortBufferException e) {
                     if (resized) {
                         // we just resized the output buffer, but it still
@@ -840,11 +845,13 @@ public abstract class CipherSpi {
                     }
                     // output buffer is too small, realloc and try again
                     resized = true;
-                    int newOut = engineGetOutputSize(chunk);
-                    outArray = new byte[newOut];
+                    outSize = engineGetOutputSize(chunk);
+                    outArray = new byte[outSize];
                 }
             } while (inLen > 0);
-            input.position(inLimit);
+            if (a1) {
+                input.position(inLimit);
+            }
             return total;
         }
     }

@@ -130,11 +130,13 @@ $(CLASSDESTDIR)/%_Stub.class: $(CLASSDESTDIR)/%.class
 	$(RMIC) -classpath "$(CLASSDESTDIR)"    \
                 -d $(CLASSDESTDIR)              \
                 -iiop -v1.2                     \
+                -emitPermissionCheck            \
                 $(subst /,.,$(<:$(CLASSDESTDIR)/%.class=%))
 	$(RMIC) $(HOTSPOT_INTERPRETER_FLAG) -classpath "$(CLASSDESTDIR)"    \
                 -d $(CLASSDESTDIR)              \
                 -iiop -v1.2                     \
                 -standardPackage                \
+                -emitPermissionCheck            \
                 $(subst /,.,$(<:$(CLASSDESTDIR)/%.class=%))
 	@$(java-vm-cleanup)
 

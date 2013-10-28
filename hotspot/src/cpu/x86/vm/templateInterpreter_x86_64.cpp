@@ -177,6 +177,12 @@ address TemplateInterpreterGenerator::generate_return_entry_for(TosState state, 
   __ restore_bcp();
   __ restore_locals();
 
+  if (state == atos) {
+    Register mdp = rbx;
+    Register tmp = rcx;
+    __ profile_return_type(mdp, rax, tmp);
+  }
+
   Label L_got_cache, L_giant_index;
   if (EnableInvokeDynamic) {
     __ cmpb(Address(r13, 0), Bytecodes::_invokedynamic);
@@ -1491,6 +1497,7 @@ address InterpreterGenerator::generate_normal_entry(bool synchronized) {
         in_bytes(JavaThread::do_not_unlock_if_synchronized_offset()));
   __ movbool(do_not_unlock_if_synchronized, true);
 
+  __ profile_parameters_type(rax, rcx, rdx);
   // increment invocation count & check for overflow
   Label invocation_counter_overflow;
   Label profile_method;

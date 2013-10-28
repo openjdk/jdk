@@ -35,6 +35,7 @@ public class x_xpixmap extends ContentHandler {
         return new URLImageSource(urlc);
     }
 
+    @SuppressWarnings("rawtypes")
     public Object getContent(URLConnection urlc, Class[] classes) throws java.io.IOException {
         Class<?>[] cls = classes;
         for (int i = 0; i < cls.length; i++) {
