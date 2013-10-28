@@ -1162,9 +1162,13 @@ private:
 
   void imull(Register dst, Register src);
   void imull(Register dst, Register src, int value);
+  void imull(Register dst, Address src);
 
   void imulq(Register dst, Register src);
   void imulq(Register dst, Register src, int value);
+#ifdef _LP64
+  void imulq(Register dst, Address src);
+#endif
 
 
   // jcc is the generic conditional branch generator to run-

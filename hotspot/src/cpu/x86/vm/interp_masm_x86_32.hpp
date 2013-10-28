@@ -22,18 +22,6 @@
  *
  */
 
-#ifndef CPU_X86_VM_INTERP_MASM_X86_32_HPP
-#define CPU_X86_VM_INTERP_MASM_X86_32_HPP
-
-#include "asm/macroAssembler.hpp"
-#include "asm/macroAssembler.inline.hpp"
-#include "interpreter/invocationCounter.hpp"
-#include "runtime/frame.hpp"
-
-// This file specializes the assember with interpreter-specific macros
-
-
-class InterpreterMacroAssembler: public MacroAssembler {
 #ifndef CC_INTERP
  protected:
   // Interpreter specific version of call_VM_base
@@ -59,7 +47,7 @@ class InterpreterMacroAssembler: public MacroAssembler {
 #endif /* CC_INTERP */
 
  public:
-  InterpreterMacroAssembler(CodeBuffer* code) : MacroAssembler(code) {}
+  InterpreterMacroAssembler(CodeBuffer* code) : MacroAssembler(code), _locals_register(rdi), _bcp_register(rsi) {}
 
   void load_earlyret_value(TosState state);
 
@@ -233,7 +221,3 @@ class InterpreterMacroAssembler: public MacroAssembler {
   // support for jvmti
   void notify_method_entry();
   void notify_method_exit(TosState state, NotifyMethodExitMode mode);
-
-};
-
-#endif // CPU_X86_VM_INTERP_MASM_X86_32_HPP

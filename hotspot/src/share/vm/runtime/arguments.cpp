@@ -1957,12 +1957,6 @@ bool Arguments::check_gc_consistency() {
                 "please refer to the release notes for the combinations "
                 "allowed\n");
     status = false;
-  } else if (ReservedCodeCacheSize > 2*G) {
-    // Code cache size larger than MAXINT is not supported.
-    jio_fprintf(defaultStream::error_stream(),
-                "Invalid ReservedCodeCacheSize=%dM. Must be at most %uM.\n", ReservedCodeCacheSize/M,
-                (2*G)/M);
-    status = false;
   }
   return status;
 }
@@ -2694,8 +2688,9 @@ jint Arguments::parse_each_vm_init_arg(const JavaVMInitArgs* args,
       FLAG_SET_CMDLINE(uintx, MaxHeapSize, (uintx)long_max_heap_size);
     // Xmaxf
     } else if (match_option(option, "-Xmaxf", &tail)) {
-      int maxf = (int)(atof(tail) * 100);
-      if (maxf < 0 || maxf > 100) {
+      char* err;
+      int maxf = (int)(strtod(tail, &err) * 100);
+      if (*err != '\0' || maxf < 0 || maxf > 100) {
         jio_fprintf(defaultStream::error_stream(),
                     "Bad max heap free percentage size: %s\n",
                     option->optionString);
@@ -2705,8 +2700,9 @@ jint Arguments::parse_each_vm_init_arg(const JavaVMInitArgs* args,
       }
     // Xminf
     } else if (match_option(option, "-Xminf", &tail)) {
-      int minf = (int)(atof(tail) * 100);
-      if (minf < 0 || minf > 100) {
+      char* err;
+      int minf = (int)(strtod(tail, &err) * 100);
+      if (*err != '\0' || minf < 0 || minf > 100) {
         jio_fprintf(defaultStream::error_stream(),
                     "Bad min heap free percentage size: %s\n",
                     option->optionString);
@@ -3719,6 +3715,18 @@ jint Arguments::apply_ergo() {
     // incremental inlining: bump MaxNodeLimit
     FLAG_SET_DEFAULT(MaxNodeLimit, (intx)75000);
   }
+  if (!UseTypeSpeculation && FLAG_IS_DEFAULT(TypeProfileLevel)) {
+    // nothing to use the profiling, turn if off
+    FLAG_SET_DEFAULT(TypeProfileLevel, 0);
+  }
+  if (UseTypeSpeculation && FLAG_IS_DEFAULT(ReplaceInParentMaps)) {
+    // Doing the replace in parent maps helps speculation
+    FLAG_SET_DEFAULT(ReplaceInParentMaps, true);
+  }
+#ifndef X86
+  // Only on x86 for now
+  FLAG_SET_DEFAULT(TypeProfileLevel, 0);
+#endif
 #endif
 
   if (PrintAssembly && FLAG_IS_DEFAULT(DebugNonSafepoints)) {

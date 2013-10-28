@@ -55,8 +55,9 @@ import java.util.Map;
  * @author James McIlree
  * @since  1.3
  */
-public interface ObjectReference extends Value
-{
+@jdk.Exported
+public interface ObjectReference extends Value {
+
     /**
      * Gets the {@link ReferenceType} that mirrors the type
      * of this object. The type may be a subclass or implementor of the

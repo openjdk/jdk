@@ -74,6 +74,7 @@ import java.util.ServiceLoader;
  * @since 1.6
  */
 
+@jdk.Exported
 public abstract class AttachProvider {
 
     private static final Object lock = new Object();

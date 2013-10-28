@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2012, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2013, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -266,8 +266,12 @@ define SetupZipArchive
   endif
 
   # Find all files in the source tree.
-  $1_ALL_SRCS := $$(call not-containing,_the., \
-      $$(filter $$(addprefix %,$$($1_SUFFIXES)),$$(call CacheFind,$$($1_FIND_LIST))))
+  $1_ALL_SRCS := $$(call not-containing,_the.,$$(call CacheFind,$$($1_FIND_LIST)))
+
+  # Filter on suffixes if set
+  ifneq ($$($1_SUFFIXES),)
+    $1_ALL_SRCS := $$(filter $$(addprefix %, $$($1_SUFFIXES)), $$($1_ALL_SRCS))
+  endif
 
   ifneq ($$($1_INCLUDES),)
     ifneq ($$($1_SUFFIXES),)
@@ -371,8 +375,8 @@ define SetupJavaCompilation
   #   INCLUDE_FILES:="com/sun/SolarisFoobar.java" means only compile this file!
   #   EXCLUDE_FILES:="com/sun/SolarisFoobar.java" means do not compile this particular file!
   #       "SolarisFoobar.java" means do not compile SolarisFoobar, wherever it is found.
-  #   JAVAC_SOURCE_PATH_UGLY_OVERRIDE:=Don't use this. This forces an explicit -sourcepath to javac.
-  #       Its only here until we cleanup some nasty source code pasta in the jdk.
+  #   JAVAC_SOURCE_PATH_OVERRIDE:=This forces an explicit -sourcepath to javac instead of the complete
+  #       source roots from SRC. This is sometimes needed when compiling specific subsets of the source.
   #   HEADERS:=path to directory where all generated c-headers are written.
   #   DEPENDS:=Extra dependecy
   $(foreach i,2 3 4 5 6 7 8 9 10 11 12 13 14 15, $(if $($i),$1_$(strip $($i)))$(NEWLINE))
@@ -474,8 +478,8 @@ define SetupJavaCompilation
   endif
 
   # Prep the source paths.
-  ifneq ($$($1_JAVAC_SOURCE_PATH_UGLY_OVERRIDE),)
-    $$(eval $$(call replace_space_with_pathsep,$1_SRCROOTSC,$$($1_JAVAC_SOURCE_PATH_UGLY_OVERRIDE)))
+  ifneq ($$($1_JAVAC_SOURCE_PATH_OVERRIDE),)
+    $$(eval $$(call replace_space_with_pathsep,$1_SRCROOTSC,$$($1_JAVAC_SOURCE_PATH_OVERRIDE)))
   else
     $$(eval $$(call replace_space_with_pathsep,$1_SRCROOTSC,$$($1_SRC)))
   endif
@@ -502,30 +506,30 @@ define SetupJavaCompilation
 
     $$($1_BIN)/javac_state: $$($1_SRCS) $$($1_DEPENDS)
 	$(MKDIR) -p $$(@D)
-	$$(call ListPathsSafely,$1_SRCS,\n, >> $$($1_BIN)/_the.batch.tmp)
+	$$(call ListPathsSafely,$1_SRCS,\n, >> $$($1_BIN)/_the.$1_batch.tmp)
 	$(ECHO) Compiling $1
 	($$($1_JVM) $$($1_SJAVAC) \
 	    $$($1_REMOTE) \
 	    -j $(JOBS) \
 	    --permit-unidentified-artifacts \
 	    --permit-sources-without-package \
-	    --compare-found-sources $$($1_BIN)/_the.batch.tmp \
+	    --compare-found-sources $$($1_BIN)/_the.$1_batch.tmp \
 	    --log=$(LOG_LEVEL) \
 	    $$($1_SJAVAC_ARGS) \
 	    $$($1_FLAGS) \
 	    $$($1_HEADERS_ARG) \
 	    -d $$($1_BIN) && \
-	$(MV) $$($1_BIN)/_the.batch.tmp $$($1_BIN)/_the.batch)
+	$(MV) $$($1_BIN)/_the.$1_batch.tmp $$($1_BIN)/_the.$1_batch)
   else
     # Using plain javac to batch compile everything.
-    $1 := $$($1_ALL_COPY_TARGETS) $$($1_ALL_COPY_CLEAN_TARGETS) $$($1_BIN)/_the.batch
+    $1 := $$($1_ALL_COPY_TARGETS) $$($1_ALL_COPY_CLEAN_TARGETS) $$($1_BIN)/_the.$1_batch
 
     # When building in batch, put headers in a temp dir to filter out those that actually
     # changed before copying them to the real header dir.
     ifneq (,$$($1_HEADERS))
       $1_HEADERS_ARG := -h $$($1_HEADERS).tmp
 
-      $$($1_HEADERS)/_the.headers: $$($1_BIN)/_the.batch
+      $$($1_HEADERS)/_the.$1_headers: $$($1_BIN)/_the.$1_batch
 		$(MKDIR) -p $$(@D)
 		for f in `ls $$($1_HEADERS).tmp`; do \
 		  if [ ! -f "$$($1_HEADERS)/$$$$f" ] || [ "`$(DIFF) $$($1_HEADERS)/$$$$f $$($1_HEADERS).tmp/$$$$f`" != "" ]; then \
@@ -535,19 +539,19 @@ define SetupJavaCompilation
 		$(RM) -r $$($1_HEADERS).tmp
 		$(TOUCH) $$@
 
-      $1 += $$($1_HEADERS)/_the.headers
+      $1 += $$($1_HEADERS)/_the.$1_headers
     endif
 
     # When not using sjavac, pass along all sources to javac using an @file.
-    $$($1_BIN)/_the.batch: $$($1_SRCS) $$($1_DEPENDS)
+    $$($1_BIN)/_the.$1_batch: $$($1_SRCS) $$($1_DEPENDS)
 	$(MKDIR) -p $$(@D)
-	$(RM) $$($1_BIN)/_the.batch $$($1_BIN)/_the.batch.tmp
-	$$(call ListPathsSafely,$1_SRCS,\n, >> $$($1_BIN)/_the.batch.tmp)
-	$(ECHO) Compiling `$(WC) $$($1_BIN)/_the.batch.tmp | $(TR) -s ' ' | $(CUT) -f 2 -d ' '` files for $1
+	$(RM) $$($1_BIN)/_the.$1_batch $$($1_BIN)/_the.$1_batch.tmp
+	$$(call ListPathsSafely,$1_SRCS,\n, >> $$($1_BIN)/_the.$1_batch.tmp)
+	$(ECHO) Compiling `$(WC) $$($1_BIN)/_the.$1_batch.tmp | $(TR) -s ' ' | $(CUT) -f 2 -d ' '` files for $1
 	($$($1_JVM) $$($1_JAVAC) $$($1_FLAGS) \
 	    -implicit:none -sourcepath "$$($1_SRCROOTSC)" \
-	    -d $$($1_BIN) $$($1_HEADERS_ARG) @$$($1_BIN)/_the.batch.tmp && \
-	$(MV) $$($1_BIN)/_the.batch.tmp $$($1_BIN)/_the.batch)
+	    -d $$($1_BIN) $$($1_HEADERS_ARG) @$$($1_BIN)/_the.$1_batch.tmp && \
+	$(MV) $$($1_BIN)/_the.$1_batch.tmp $$($1_BIN)/_the.$1_batch)
 
   endif
 
