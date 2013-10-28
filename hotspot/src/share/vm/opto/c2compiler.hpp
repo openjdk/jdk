@@ -28,23 +28,16 @@
 #include "compiler/abstractCompiler.hpp"
 
 class C2Compiler : public AbstractCompiler {
-private:
-
-  static void initialize_runtime();
+ private:
+  static bool init_c2_runtime();
 
 public:
   // Name
   const char *name() { return "C2"; }
 
-  static volatile int _runtimes;
-
 #ifdef TIERED
   virtual bool is_c2() { return true; };
 #endif // TIERED
-
-  // Customization
-  bool needs_adapters         () { return true; }
-  bool needs_stubs            () { return true; }
 
   void initialize();
 

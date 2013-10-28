@@ -23,8 +23,8 @@ package com.sun.org.apache.xerces.internal.parsers;
 import com.sun.org.apache.xerces.internal.impl.Constants;
 import com.sun.org.apache.xerces.internal.xni.grammars.XMLGrammarPool;
 import com.sun.org.apache.xerces.internal.xni.parser.XMLComponentManager;
-import com.sun.org.apache.xerces.internal.util.SecurityManager;
 import com.sun.org.apache.xerces.internal.util.SymbolTable;
+import com.sun.org.apache.xerces.internal.utils.XMLSecurityManager;
 
 /**
  * This configuration allows Xerces to behave in a security-conscious manner; that is,
@@ -44,6 +44,7 @@ import com.sun.org.apache.xerces.internal.util.SymbolTable;
  *
  * @author Neil Graham, IBM
  *
+ * @version $Id: SecurityConfiguration.java,v 1.6 2010-11-01 04:40:09 joehw Exp $
  */
 public class SecurityConfiguration extends XIncludeAwareParserConfiguration
 {
@@ -107,7 +108,7 @@ public class SecurityConfiguration extends XIncludeAwareParserConfiguration
         super(symbolTable, grammarPool, parentSettings);
 
         // create the SecurityManager property:
-        setProperty(SECURITY_MANAGER_PROPERTY, new SecurityManager());
+        setProperty(SECURITY_MANAGER_PROPERTY, new XMLSecurityManager(true));
     } // <init>(SymbolTable,XMLGrammarPool)
 
 } // class SecurityConfiguration

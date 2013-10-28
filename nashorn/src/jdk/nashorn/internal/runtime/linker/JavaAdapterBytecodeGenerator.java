@@ -93,7 +93,7 @@ import sun.reflect.CallerSensitive;
  * its last argument preceded by original constructor arguments. This constructor will use the passed function as the
  * implementation for all abstract methods. For consistency, any concrete methods sharing the single abstract method
  * name will also be overridden by the function. When methods on the adapter instance are invoked, the ScriptFunction is
- * invoked with {@code null} as its "this".
+ * invoked with global or UNDEFINED as its "this" depending whether the function is non-strict or not.
  * </li>
  * <li>
  * If the adapter being generated can have class-level overrides, constructors taking same arguments as the superclass

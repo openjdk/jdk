@@ -129,7 +129,8 @@ public class ProfilePackageWriterImpl extends HtmlDocletWriter
             addSummaryComment(packageDoc, docSummaryDiv);
             div.addContent(docSummaryDiv);
             Content space = getSpace();
-            Content descLink = getHyperLink(DocLink.fragment("package_description"),
+            Content descLink = getHyperLink(getDocLink(
+                    SectionName.PACKAGE_DESCRIPTION),
                     descriptionLabel, "", "");
             Content descPara = new HtmlTree(HtmlTag.P, seeLabel, space, descLink);
             div.addContent(descPara);
@@ -192,7 +193,8 @@ public class ProfilePackageWriterImpl extends HtmlDocletWriter
      */
     public void addPackageDescription(Content packageContentTree) {
         if (packageDoc.inlineTags().length > 0) {
-            packageContentTree.addContent(getMarkerAnchor("package_description"));
+            packageContentTree.addContent(
+                    getMarkerAnchor(SectionName.PACKAGE_DESCRIPTION));
             Content h2Content = new StringContent(
                     configuration.getText("doclet.Package_Description",
                     packageDoc.name()));

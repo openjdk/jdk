@@ -25,6 +25,8 @@
 
 package jdk.nashorn.internal.codegen;
 
+import java.util.ArrayList;
+import java.util.List;
 import jdk.nashorn.internal.codegen.types.Type;
 import jdk.nashorn.internal.ir.BinaryNode;
 import jdk.nashorn.internal.ir.Block;
@@ -37,8 +39,10 @@ import jdk.nashorn.internal.ir.LexicalContext;
 import jdk.nashorn.internal.ir.LiteralNode;
 import jdk.nashorn.internal.ir.LiteralNode.ArrayLiteralNode;
 import jdk.nashorn.internal.ir.Node;
+import jdk.nashorn.internal.ir.Statement;
 import jdk.nashorn.internal.ir.TernaryNode;
 import jdk.nashorn.internal.ir.UnaryNode;
+import jdk.nashorn.internal.ir.VarNode;
 import jdk.nashorn.internal.ir.visitor.NodeVisitor;
 import jdk.nashorn.internal.runtime.DebugLogger;
 import jdk.nashorn.internal.runtime.JSType;
@@ -89,11 +93,21 @@ final class FoldConstants extends NodeVisitor<LexicalContext> {
     public Node leaveIfNode(final IfNode ifNode) {
         final Node test = ifNode.getTest();
         if (test instanceof LiteralNode.PrimitiveLiteralNode) {
-            final Block shortCut = ((LiteralNode.PrimitiveLiteralNode<?>)test).isTrue() ? ifNode.getPass() : ifNode.getFail();
-            if (shortCut != null) {
-                return new BlockStatement(ifNode.getLineNumber(), shortCut);
+            final boolean isTrue = ((LiteralNode.PrimitiveLiteralNode<?>)test).isTrue();
+            final Block executed = isTrue ? ifNode.getPass() : ifNode.getFail();
+            final Block dropped  = isTrue ? ifNode.getFail() : ifNode.getPass();
+            final List<Statement> statements = new ArrayList<>();
+
+            if (executed != null) {
+                statements.addAll(executed.getStatements()); // Get statements form executed branch
             }
-            return new EmptyNode(ifNode);
+            if (dropped != null) {
+                extractVarNodes(dropped, statements); // Get var-nodes from non-executed branch
+            }
+            if (statements.isEmpty()) {
+                return new EmptyNode(ifNode);
+            }
+            return BlockStatement.createReplacement(ifNode, ifNode.getFinish(), statements);
         }
         return ifNode;
     }
@@ -129,6 +143,17 @@ final class FoldConstants extends NodeVisitor<LexicalContext> {
          * @return the literal node
          */
         protected abstract LiteralNode<?> eval();
+    }
+
+    private static void extractVarNodes(final Block block, final List<Statement> statements) {
+        final LexicalContext lc = new LexicalContext();
+        block.accept(lc, new NodeVisitor<LexicalContext>(lc) {
+            @Override
+            public boolean enterVarNode(VarNode varNode) {
+                statements.add(varNode.setInit(null));
+                return false;
+            }
+        });
     }
 
     private static class UnaryNodeConstantEvaluator extends ConstantEvaluator<UnaryNode> {

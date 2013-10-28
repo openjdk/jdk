@@ -27,7 +27,7 @@
  * @summary javac should generate method parameters correctly.
  * @build Tester
  * @compile -parameters Constructors.java
- * @run main Tester Constructors
+ * @run main Tester Constructors Constructors.out
  */
 
 public class Constructors {
