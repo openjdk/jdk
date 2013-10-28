@@ -71,6 +71,7 @@ import java.time.temporal.Temporal;
 import java.time.temporal.TemporalAccessor;
 import java.time.temporal.TemporalAdjuster;
 import java.time.temporal.TemporalField;
+import java.time.temporal.TemporalQueries;
 import java.time.temporal.TemporalQuery;
 import java.time.temporal.UnsupportedTemporalTypeException;
 import java.time.temporal.ValueRange;
@@ -187,7 +188,12 @@ public enum DayOfWeek implements TemporalAccessor, TemporalAdjuster {
         if (temporal instanceof DayOfWeek) {
             return (DayOfWeek) temporal;
         }
-        return of(temporal.get(DAY_OF_WEEK));
+        try {
+            return of(temporal.get(DAY_OF_WEEK));
+        } catch (DateTimeException ex) {
+            throw new DateTimeException("Unable to obtain DayOfWeek from TemporalAccessor: " +
+                    temporal + " of type " + temporal.getClass().getName(), ex);
+        }
     }
 
     //-----------------------------------------------------------------------
@@ -398,7 +404,7 @@ public enum DayOfWeek implements TemporalAccessor, TemporalAdjuster {
     @SuppressWarnings("unchecked")
     @Override
     public <R> R query(TemporalQuery<R> query) {
-        if (query == TemporalQuery.precision()) {
+        if (query == TemporalQueries.precision()) {
             return (R) DAYS;
         }
         return TemporalAccessor.super.query(query);

@@ -1422,7 +1422,7 @@ public class XPath {
                             }
                             ch = data.charAt(currentOffset);
                         } while (ch == ' ' || ch == 0x0A || ch == 0x09 || ch == 0x0D);
-                        if (currentOffset == endOffset || ch == '|') {
+                        if (currentOffset == endOffset || ch == '|' || ch == '/') {
                             addToken(tokens, XPath.Tokens.EXPRTOKEN_PERIOD);
                             starIsMultiplyOperator = true;
                             break;

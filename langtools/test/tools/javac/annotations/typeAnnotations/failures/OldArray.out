@@ -1,0 +1,10 @@
+OldArray.java:12:11: compiler.err.expected: ']'
+OldArray.java:12:13: compiler.err.expected: token.identifier
+OldArray.java:12:14: compiler.err.expected: ';'
+OldArray.java:12:17: compiler.err.illegal.start.of.type
+OldArray.java:12:18: compiler.err.expected: token.identifier
+OldArray.java:12:19: compiler.err.expected: ';'
+OldArray.java:12:22: compiler.err.illegal.start.of.type
+OldArray.java:12:28: compiler.err.expected: token.identifier
+OldArray.java:13:1: compiler.err.expected3: class, interface, enum
+9 errors

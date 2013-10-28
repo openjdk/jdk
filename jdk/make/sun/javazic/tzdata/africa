@@ -881,13 +881,23 @@ Zone	Indian/Mayotte	3:00:56 -	LMT	1911 Jul	# Mamoutzou
 # transitions would be 2013-07-07 and 2013-08-10; see:
 # http://www.maroc.ma/en/news/morocco-suspends-daylight-saving-time-july-7-aug10
 
-# From Paul Eggert (2013-07-03):
+# From Steffen Thorsen (2013-09-28):
+# Morocco extends DST by one month, on very short notice, just 1 day
+# before it was going to end.  There is a new decree (2.13.781) for
+# this, where DST from now on goes from last Sunday of March at 02:00
+# to last Sunday of October at 03:00, similar to EU rules.  Official
+# source (French):
+# http://www.maroc.gov.ma/fr/actualites/lhoraire-dete-gmt1-maintenu-jusquau-27-octobre-2013
+# Another source (specifying the time for start and end in the decree):
+# http://www.lemag.ma/Heure-d-ete-au-Maroc-jusqu-au-27-octobre_a75620.html
+
+# From Paul Eggert (2013-09-30):
 # To estimate what the Moroccan government will do in future years,
-# transition dates for 2014 through 2021 were determined by running
+# transition dates for 2014 through 2037 were determined by running
 # the following program under GNU Emacs 24.3:
 #
 # (let ((islamic-year 1435))
-#   (while (< islamic-year 1444)
+#   (while (< islamic-year 1460)
 #     (let ((a
 #	     (calendar-gregorian-from-absolute
 #	      (calendar-islamic-to-absolute (list 9 1 islamic-year))))
@@ -902,13 +912,14 @@ Zone	Indian/Mayotte	3:00:56 -	LMT	1911 Jul	# Mamoutzou
 #	  (car (cdr (cdr b))) (calendar-month-name (car b) t) (car (cdr b)))))
 #     (setq islamic-year (+ 1 islamic-year))))
 #
-# with the results hand-edited for 2020-2022, when the normal spring-forward
-# date falls during the estimated Ramadan.
-#
-# From 2023 through 2038 Ramadan is not predicted to overlap with
-# daylight saving time.  Starting in 2039 there will be overlap again,
+# with spring-forward transitions removed for 2023-2025, when the
+# normal spring-forward date falls during the estimated Ramadan; with
+# all transitions removed for 2026-2035, where the estimated Ramadan
+# falls entirely outside daylight-saving time; and with fall-back
+# transitions removed for 2036-2037, where the normal fall-back
+# date falls during the estimated Ramadan.  Problems continue after that,
 # but 32-bit time_t values roll around in 2038 so for now do not worry
-# about dates after 2038.
+# about dates after 2037.
 
 # RULE	NAME	FROM	TO	TYPE	IN	ON	AT	SAVE	LETTER/S
 
@@ -935,12 +946,14 @@ Rule	Morocco	2010	only	-	May	 2	 0:00	1:00	S
 Rule	Morocco	2010	only	-	Aug	 8	 0:00	0	-
 Rule	Morocco	2011	only	-	Apr	 3	 0:00	1:00	S
 Rule	Morocco	2011	only	-	Jul	 31	 0	0	-
-Rule	Morocco	2012	2019	-	Apr	 lastSun 2:00	1:00	S
-Rule	Morocco	2012	max	-	Sep	 lastSun 3:00	0	-
+Rule	Morocco	2012	2013	-	Apr	 lastSun 2:00	1:00	S
+Rule	Morocco	2012	only	-	Sep	 30	 3:00	0	-
 Rule	Morocco	2012	only	-	Jul	 20	 3:00	0	-
 Rule	Morocco	2012	only	-	Aug	 20	 2:00	1:00	S
 Rule	Morocco	2013	only	-	Jul	  7	 3:00	0	-
 Rule	Morocco	2013	only	-	Aug	 10	 2:00	1:00	S
+Rule	Morocco	2013	2035	-	Oct	 lastSun 3:00	0	-
+Rule	Morocco	2014	2022	-	Mar	 lastSun 2:00	1:00	S
 Rule	Morocco	2014	only	-	Jun	 29	 3:00	0	-
 Rule	Morocco	2014	only	-	Jul	 29	 2:00	1:00	S
 Rule	Morocco	2015	only	-	Jun	 18	 3:00	0	-
@@ -953,10 +966,21 @@ Rule	Morocco	2018	only	-	May	 16	 3:00	0	-
 Rule	Morocco	2018	only	-	Jun	 15	 2:00	1:00	S
 Rule	Morocco	2019	only	-	May	  6	 3:00	0	-
 Rule	Morocco	2019	only	-	Jun	  5	 2:00	1:00	S
+Rule	Morocco	2020	only	-	Apr	 24	 3:00	0	-
 Rule	Morocco	2020	only	-	May	 24	 2:00	1:00	S
+Rule	Morocco	2021	only	-	Apr	 13	 3:00	0	-
 Rule	Morocco	2021	only	-	May	 13	 2:00	1:00	S
+Rule	Morocco	2022	only	-	Apr	  3	 3:00	0	-
 Rule	Morocco	2022	only	-	May	  3	 2:00	1:00	S
-Rule	Morocco	2023	max	-	Apr	 lastSun 2:00	1:00	S
+Rule	Morocco	2023	only	-	Apr	 22	 2:00	1:00	S
+Rule	Morocco	2024	only	-	Apr	 10	 2:00	1:00	S
+Rule	Morocco	2025	only	-	Mar	 31	 2:00	1:00	S
+Rule	Morocco	2026	max	-	Mar	 lastSun 2:00	1:00	S
+Rule	Morocco	2036	only	-	Oct	 21	 3:00	0	-
+Rule	Morocco	2037	only	-	Oct	 11	 3:00	0	-
+Rule	Morocco	2038	only	-	Sep	 30	 3:00	0	-
+Rule	Morocco	2038	only	-	Oct	 30	 2:00	1:00	S
+Rule	Morocco	2038	max	-	Oct	 lastSun 3:00	0	-
 
 # Zone	NAME		GMTOFF	RULES	FORMAT	[UNTIL]
 Zone Africa/Casablanca	-0:30:20 -	LMT	1913 Oct 26
@@ -1123,9 +1147,7 @@ Zone	Africa/Khartoum	2:10:08 -	LMT	1931
 			3:00	-	EAT
 
 # South Sudan
-Zone	Africa/Juba	2:06:24 -	LMT	1931
-			2:00	Sudan	CA%sT	2000 Jan 15 12:00
-			3:00	-	EAT
+Link Africa/Khartoum Africa/Juba
 
 # Swaziland
 # Zone	NAME		GMTOFF	RULES	FORMAT	[UNTIL]

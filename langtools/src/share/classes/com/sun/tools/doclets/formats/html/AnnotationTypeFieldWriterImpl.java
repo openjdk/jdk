@@ -88,7 +88,7 @@ public class AnnotationTypeFieldWriterImpl extends AbstractMemberWriter
             Content memberDetailsTree) {
         if (!writer.printedAnnotationFieldHeading) {
             memberDetailsTree.addContent(writer.getMarkerAnchor(
-                    "annotation_type_field_detail"));
+                    SectionName.ANNOTATION_TYPE_FIELD_DETAIL));
             Content heading = HtmlTree.HEADING(HtmlConstants.DETAILS_HEADING,
                     writer.fieldDetailsLabel);
             memberDetailsTree.addContent(heading);
@@ -217,7 +217,7 @@ public class AnnotationTypeFieldWriterImpl extends AbstractMemberWriter
      */
     public void addSummaryAnchor(ClassDoc cd, Content memberTree) {
         memberTree.addContent(writer.getMarkerAnchor(
-                "annotation_type_field_summary"));
+                SectionName.ANNOTATION_TYPE_FIELD_SUMMARY));
     }
 
     /**
@@ -272,7 +272,8 @@ public class AnnotationTypeFieldWriterImpl extends AbstractMemberWriter
      */
     protected Content getNavSummaryLink(ClassDoc cd, boolean link) {
         if (link) {
-            return writer.getHyperLink("annotation_type_field_summary",
+            return writer.getHyperLink(
+                    SectionName.ANNOTATION_TYPE_FIELD_SUMMARY,
                     writer.getResource("doclet.navField"));
         } else {
             return writer.getResource("doclet.navField");
@@ -284,7 +285,8 @@ public class AnnotationTypeFieldWriterImpl extends AbstractMemberWriter
      */
     protected void addNavDetailLink(boolean link, Content liNav) {
         if (link) {
-            liNav.addContent(writer.getHyperLink("annotation_type_field_detail",
+            liNav.addContent(writer.getHyperLink(
+                    SectionName.ANNOTATION_TYPE_FIELD_DETAIL,
                     writer.getResource("doclet.navField")));
         } else {
             liNav.addContent(writer.getResource("doclet.navField"));

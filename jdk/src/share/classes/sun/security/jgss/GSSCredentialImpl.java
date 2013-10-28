@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -651,7 +651,7 @@ public class GSSCredentialImpl implements ExtendedGSSCredential {
                 buffer.append(element.isAcceptorCredential() ?
                               " Accept" : "");
                 buffer.append(" [");
-                buffer.append(element.toString());
+                buffer.append(element.getClass());
                 buffer.append(']');
             } catch (GSSException e) {
                 // skip to next element

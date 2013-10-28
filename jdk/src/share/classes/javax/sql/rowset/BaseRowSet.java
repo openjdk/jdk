@@ -38,7 +38,7 @@ import javax.sql.rowset.serial.*;
  * An abstract class providing a <code>RowSet</code> object with its basic functionality.
  * The basic functions include having properties and sending event notifications,
  * which all JavaBeans&trade; components must implement.
- * <P>
+ *
  * <h3>1.0 Overview</h3>
  * The <code>BaseRowSet</code> class provides the core functionality
  * for all <code>RowSet</code> implementations,
@@ -52,19 +52,19 @@ import javax.sql.rowset.serial.*;
  * interfaces.
  * <p>
  * The <code>BaseRowSet</code> class provides the following:
- * <p>
+ *
  * <UL>
  * <LI><b>Properties</b>
  *     <ul>
  *     <li>Fields for storing current properties
  *     <li>Methods for getting and setting properties
  *     </ul>
- *  <p>
+ *
  * <LI><b>Event notification</b>
- * <P>
+ *
  * <LI><b>A complete set of setter methods</b> for setting the parameters in a
  *      <code>RowSet</code> object's command
- *  <p>
+ *
  * <LI> <b>Streams</b>
  *  <ul>
  *  <li>Fields for storing stream instances
@@ -95,7 +95,7 @@ import javax.sql.rowset.serial.*;
  * with a naming service that uses the Java Naming and Directory
  * Interface&trade; (JNDI) API.  This registration
  * is usually done by a person acting in the capacity of a system administrator.
- * <P>
+ *
  * <h3>3.0 Setting the Command and Its Parameters</h3>
  * When a rowset gets its data from a relational database, it executes a command (a query)
  * that produces a <code>ResultSet</code> object.  This query is the command that is set
@@ -255,7 +255,7 @@ import javax.sql.rowset.serial.*;
 * identify the <code>RowSet</code> object on which the event occurred.
 * What the listener does with this information, which may be nothing, depends on how it was
 * implemented.
-* <p>
+*
 * <h3>6.0 Default Behavior</h3>
 * A default <code>BaseRowSet</code> object is initialized with many starting values.
 *
@@ -2530,7 +2530,7 @@ public abstract class BaseRowSet implements Serializable, Cloneable {
      * <code>Struct</code>, or <code>Array</code>,
      * the driver should pass it to the database as a value of the
      * corresponding SQL type.
-     * <P>
+     *
      * <p>Note that this method may be used to pass database-
      * specific abstract data types.
      * <P>

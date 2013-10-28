@@ -549,19 +549,15 @@ static jobject createNetworkInterfaceXP(JNIEnv *env, netif *ifs)
             int scope;
             iaObj = (*env)->NewObject(env, ni_ia6cls, ni_ia6ctrID);
             if (iaObj) {
-                jbyteArray ipaddress = (*env)->NewByteArray(env, 16);
-                if (ipaddress == NULL) {
+                int ret = setInet6Address_ipaddress(env, iaObj, (jbyte *)&(addrs->addr.him6.sin6_addr.s6_addr));
+                if (ret == JNI_FALSE) {
                     return NULL;
                 }
-                (*env)->SetByteArrayRegion(env, ipaddress, 0, 16,
-                    (jbyte *)&(addrs->addr.him6.sin6_addr.s6_addr));
                 scope = addrs->addr.him6.sin6_scope_id;
                 if (scope != 0) { /* zero is default value, no need to set */
-                    (*env)->SetIntField(env, iaObj, ia6_scopeidID, scope);
-                    (*env)->SetBooleanField(env, iaObj, ia6_scopeidsetID, JNI_TRUE);
-                    (*env)->SetObjectField(env, iaObj, ia6_scopeifnameID, netifObj);
+                    setInet6Address_scopeid(env, iaObj, scope);
+                    setInet6Address_scopeifname(env, iaObj, netifObj);
                 }
-                (*env)->SetObjectField(env, iaObj, ni_ia6ipaddressID, ipaddress);
                 ibObj = (*env)->NewObject(env, ni_ibcls, ni_ibctrID);
                 if (ibObj == NULL) {
                   free_netaddr(netaddrP);
