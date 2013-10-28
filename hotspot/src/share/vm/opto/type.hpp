@@ -63,7 +63,7 @@ class     TypeRawPtr;
 class     TypeOopPtr;
 class       TypeInstPtr;
 class       TypeAryPtr;
-class       TypeKlassPtr;
+class     TypeKlassPtr;
 class     TypeMetadataPtr;
 
 //------------------------------Type-------------------------------------------
@@ -1201,6 +1201,9 @@ public:
   virtual const Type    *xdual() const;      // Compute dual right now.
 
   virtual intptr_t get_con() const;
+
+  // Do not allow interface-vs.-noninterface joins to collapse to top.
+  virtual const Type *filter( const Type *kills ) const;
 
   // Convenience common pre-built types.
   static const TypeKlassPtr* OBJECT; // Not-null object klass or below
