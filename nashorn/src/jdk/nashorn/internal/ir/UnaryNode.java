@@ -26,7 +26,6 @@
 package jdk.nashorn.internal.ir;
 
 import static jdk.nashorn.internal.parser.TokenType.BIT_NOT;
-import static jdk.nashorn.internal.parser.TokenType.CONVERT;
 import static jdk.nashorn.internal.parser.TokenType.DECPOSTFIX;
 import static jdk.nashorn.internal.parser.TokenType.INCPOSTFIX;
 
@@ -150,19 +149,10 @@ public final class UnaryNode extends Expression implements Assignment<Expression
         final TokenType type      = tokenType();
         final String    name      = type.getName();
         final boolean   isPostfix = type == DECPOSTFIX || type == INCPOSTFIX;
-        final boolean   isConvert = type == CONVERT && getSymbol() != null;
 
         boolean rhsParen   = type.needsParens(rhs().tokenType(), false);
-        int     convertPos = 0;
 
-        if (isConvert) {
-            convertPos = sb.length();
-            sb.append("(");
-            sb.append(getType());
-            sb.append(")(");
-        }
-
-        if (!isPostfix && !isConvert) {
+        if (!isPostfix) {
             if (name == null) {
                 sb.append(type.name());
                 rhsParen = true;
@@ -185,16 +175,6 @@ public final class UnaryNode extends Expression implements Assignment<Expression
 
         if (isPostfix) {
             sb.append(type == DECPOSTFIX ? "--" : "++");
-        }
-
-        if (isConvert) {
-            // strip extra cast parenthesis which makes the printout harder to read
-            final boolean endsWithParenthesis = sb.charAt(sb.length() - 1) == ')';
-            if (!endsWithParenthesis) {
-                sb.append(')');
-            } else {
-                sb.setCharAt(convertPos, ' ');
-            }
         }
     }
 

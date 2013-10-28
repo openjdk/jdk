@@ -946,8 +946,8 @@ public class DPrinter {
      */
     public class TypeVisitor implements Type.Visitor<Void,Void> {
         public Void visitAnnotatedType(AnnotatedType type, Void ignore) {
-            printList("typeAnnotations", type.typeAnnotations);
-            printType("underlyingType", type.underlyingType, Details.FULL);
+            printList("typeAnnotations", type.getAnnotationMirrors());
+            printType("underlyingType", type.unannotatedType(), Details.FULL);
             return visitType(type, null);
         }
 

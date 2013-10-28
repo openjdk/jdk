@@ -83,6 +83,11 @@ ifeq ($(SPEC),)
   AS   = $(CC) -c 
 endif
 
+ifeq ($(OS_VENDOR), Darwin)
+  ifeq ($(DSYMUTIL),)
+    DSYMUTIL=dsymutil
+  endif
+endif
 
 ifeq ($(USE_CLANG), true)
   CC_VER_MAJOR := $(shell $(CC) -v 2>&1 | grep version | sed "s/.*version \([0-9]*\.[0-9]*\).*/\1/" | cut -d'.' -f1)
@@ -433,6 +438,36 @@ else
   DEBUG_CFLAGS += $(DEBUG_CFLAGS/$(BUILDARCH))
   ifeq ($(DEBUG_CFLAGS/$(BUILDARCH)),)
   DEBUG_CFLAGS += -gstabs
+  endif
+  
+  ifeq ($(ENABLE_FULL_DEBUG_SYMBOLS),1)
+    FASTDEBUG_CFLAGS/ia64  = -g
+    FASTDEBUG_CFLAGS/amd64 = -g
+    FASTDEBUG_CFLAGS/arm   = -g
+    FASTDEBUG_CFLAGS/ppc   = -g
+    FASTDEBUG_CFLAGS += $(FASTDEBUG_CFLAGS/$(BUILDARCH))
+    ifeq ($(FASTDEBUG_CFLAGS/$(BUILDARCH)),)
+      ifeq ($(USE_CLANG), true)
+        # Clang doesn't understand -gstabs
+        FASTDEBUG_CFLAGS += -g
+      else
+        FASTDEBUG_CFLAGS += -gstabs
+      endif
+    endif
+  
+    OPT_CFLAGS/ia64  = -g
+    OPT_CFLAGS/amd64 = -g
+    OPT_CFLAGS/arm   = -g
+    OPT_CFLAGS/ppc   = -g
+    OPT_CFLAGS += $(OPT_CFLAGS/$(BUILDARCH))
+    ifeq ($(OPT_CFLAGS/$(BUILDARCH)),)
+      ifeq ($(USE_CLANG), true)
+        # Clang doesn't understand -gstabs
+        OPT_CFLAGS += -g
+      else
+        OPT_CFLAGS += -gstabs
+      endif
+    endif
   endif
 endif
 

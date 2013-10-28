@@ -347,11 +347,11 @@ public class Proxy implements java.io.Serializable {
      *             s.checkPermission} with
      *             {@code RuntimePermission("getClassLoader")} permission
      *             denies access.</li>
-     *             <li> the caller's class loader is not the same as or an
-     *             ancestor of the class loader for the current class and
+     *             <li> for each proxy interface, {@code intf},
+     *             the caller's class loader is not the same as or an
+     *             ancestor of the class loader for {@code intf} and
      *             invocation of {@link SecurityManager#checkPackageAccess
-     *             s.checkPackageAccess()} denies access to any one of the
-     *             given proxy interfaces.</li>
+     *             s.checkPackageAccess()} denies access to {@code intf}.</li>
      *          </ul>
 
      * @throws  NullPointerException if the {@code interfaces} array
@@ -680,11 +680,11 @@ public class Proxy implements java.io.Serializable {
      *               s.checkPermission} with
      *               {@code RuntimePermission("getClassLoader")} permission
      *               denies access;</li>
-     *          <li> the caller's class loader is not the same as or an
-     *               ancestor of the class loader for the current class and
+     *          <li> for each proxy interface, {@code intf},
+     *               the caller's class loader is not the same as or an
+     *               ancestor of the class loader for {@code intf} and
      *               invocation of {@link SecurityManager#checkPackageAccess
-     *               s.checkPackageAccess()} denies access to any one of the
-     *               given proxy interfaces.</li>
+     *               s.checkPackageAccess()} denies access to {@code intf};</li>
      *          <li> any of the given proxy interfaces is non-public and the
      *               caller class is not in the same {@linkplain Package runtime package}
      *               as the non-public interface and the invocation of
@@ -795,7 +795,14 @@ public class Proxy implements java.io.Serializable {
      * @return  the invocation handler for the proxy instance
      * @throws  IllegalArgumentException if the argument is not a
      *          proxy instance
+     * @throws  SecurityException if a security manager, <em>s</em>, is present
+     *          and the caller's class loader is not the same as or an
+     *          ancestor of the class loader for the invocation handler
+     *          and invocation of {@link SecurityManager#checkPackageAccess
+     *          s.checkPackageAccess()} denies access to the invocation
+     *          handler's class.
      */
+    @CallerSensitive
     public static InvocationHandler getInvocationHandler(Object proxy)
         throws IllegalArgumentException
     {
@@ -806,8 +813,19 @@ public class Proxy implements java.io.Serializable {
             throw new IllegalArgumentException("not a proxy instance");
         }
 
-        Proxy p = (Proxy) proxy;
-        return p.h;
+        final Proxy p = (Proxy) proxy;
+        final InvocationHandler ih = p.h;
+        if (System.getSecurityManager() != null) {
+            Class<?> ihClass = ih.getClass();
+            Class<?> caller = Reflection.getCallerClass();
+            if (ReflectUtil.needsPackageAccessCheck(caller.getClassLoader(),
+                                                    ihClass.getClassLoader()))
+            {
+                ReflectUtil.checkPackageAccess(ihClass);
+            }
+        }
+
+        return ih;
     }
 
     private static native Class<?> defineClass0(ClassLoader loader, String name,

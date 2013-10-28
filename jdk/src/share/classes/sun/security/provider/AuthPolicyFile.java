@@ -91,7 +91,7 @@ public class AuthPolicyFile extends javax.security.auth.Policy {
     private boolean ignoreIdentityScope = true;
 
     // for use with the reflection API
-    private static final Class[] PARAMS = { String.class, String.class};
+    private static final Class<?>[] PARAMS = { String.class, String.class};
 
     /**
      * Initializes the Policy object and reads the default policy

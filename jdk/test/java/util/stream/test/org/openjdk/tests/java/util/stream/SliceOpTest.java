@@ -50,27 +50,27 @@ import static java.util.stream.LambdaTestHelpers.*;
 public class SliceOpTest extends OpTestCase {
 
     public void testSkip() {
-        assertCountSum(countTo(0).stream().substream(0), 0, 0);
-        assertCountSum(countTo(0).stream().substream(4), 0, 0);
-        assertCountSum(countTo(4).stream().substream(4), 0, 0);
-        assertCountSum(countTo(4).stream().substream(2), 2, 7);
-        assertCountSum(countTo(4).stream().substream(0), 4, 10);
+        assertCountSum(countTo(0).stream().skip(0), 0, 0);
+        assertCountSum(countTo(0).stream().skip(4), 0, 0);
+        assertCountSum(countTo(4).stream().skip(4), 0, 0);
+        assertCountSum(countTo(4).stream().skip(2), 2, 7);
+        assertCountSum(countTo(4).stream().skip(0), 4, 10);
 
-        assertCountSum(countTo(0).parallelStream().substream(0), 0, 0);
-        assertCountSum(countTo(0).parallelStream().substream(4), 0, 0);
-        assertCountSum(countTo(4).parallelStream().substream(4), 0, 0);
-        assertCountSum(countTo(4).parallelStream().substream(2), 2, 7);
-        assertCountSum(countTo(4).parallelStream().substream(0), 4, 10);
+        assertCountSum(countTo(0).parallelStream().skip(0), 0, 0);
+        assertCountSum(countTo(0).parallelStream().skip(4), 0, 0);
+        assertCountSum(countTo(4).parallelStream().skip(4), 0, 0);
+        assertCountSum(countTo(4).parallelStream().skip(2), 2, 7);
+        assertCountSum(countTo(4).parallelStream().skip(0), 4, 10);
 
-        exerciseOps(Collections.emptyList(), s -> s.substream(0), Collections.emptyList());
-        exerciseOps(Collections.emptyList(), s -> s.substream(10), Collections.emptyList());
+        exerciseOps(Collections.emptyList(), s -> s.skip(0), Collections.emptyList());
+        exerciseOps(Collections.emptyList(), s -> s.skip(10), Collections.emptyList());
 
-        exerciseOps(countTo(1), s -> s.substream(0), countTo(1));
-        exerciseOps(countTo(1), s -> s.substream(1), Collections.emptyList());
-        exerciseOps(countTo(100), s -> s.substream(0), countTo(100));
-        exerciseOps(countTo(100), s -> s.substream(10), range(11, 100));
-        exerciseOps(countTo(100), s -> s.substream(100), Collections.emptyList());
-        exerciseOps(countTo(100), s -> s.substream(200), Collections.emptyList());
+        exerciseOps(countTo(1), s -> s.skip(0), countTo(1));
+        exerciseOps(countTo(1), s -> s.skip(1), Collections.emptyList());
+        exerciseOps(countTo(100), s -> s.skip(0), countTo(100));
+        exerciseOps(countTo(100), s -> s.skip(10), range(11, 100));
+        exerciseOps(countTo(100), s -> s.skip(100), Collections.emptyList());
+        exerciseOps(countTo(100), s -> s.skip(200), Collections.emptyList());
     }
 
     public void testLimit() {
@@ -97,43 +97,43 @@ public class SliceOpTest extends OpTestCase {
     }
 
     public void testSkipLimit() {
-        exerciseOps(Collections.emptyList(), s -> s.substream(0).limit(0), Collections.emptyList());
-        exerciseOps(Collections.emptyList(), s -> s.substream(0).limit(10), Collections.emptyList());
-        exerciseOps(Collections.emptyList(), s -> s.substream(10).limit(0), Collections.emptyList());
-        exerciseOps(Collections.emptyList(), s -> s.substream(10).limit(10), Collections.emptyList());
+        exerciseOps(Collections.emptyList(), s -> s.skip(0).limit(0), Collections.emptyList());
+        exerciseOps(Collections.emptyList(), s -> s.skip(0).limit(10), Collections.emptyList());
+        exerciseOps(Collections.emptyList(), s -> s.skip(10).limit(0), Collections.emptyList());
+        exerciseOps(Collections.emptyList(), s -> s.skip(10).limit(10), Collections.emptyList());
 
-        exerciseOps(countTo(100), s -> s.substream(0).limit(100), countTo(100));
-        exerciseOps(countTo(100), s -> s.substream(0).limit(10), countTo(10));
-        exerciseOps(countTo(100), s -> s.substream(0).limit(0), Collections.emptyList());
-        exerciseOps(countTo(100), s -> s.substream(10).limit(100), range(11, 100));
-        exerciseOps(countTo(100), s -> s.substream(10).limit(10), range(11, 20));
-        exerciseOps(countTo(100), s -> s.substream(10).limit(0), Collections.emptyList());
-        exerciseOps(countTo(100), s -> s.substream(100).limit(100), Collections.emptyList());
-        exerciseOps(countTo(100), s -> s.substream(100).limit(10), Collections.emptyList());
-        exerciseOps(countTo(100), s -> s.substream(100).limit(0), Collections.emptyList());
-        exerciseOps(countTo(100), s -> s.substream(200).limit(100), Collections.emptyList());
-        exerciseOps(countTo(100), s -> s.substream(200).limit(10), Collections.emptyList());
-        exerciseOps(countTo(100), s -> s.substream(200).limit(0), Collections.emptyList());
+        exerciseOps(countTo(100), s -> s.skip(0).limit(100), countTo(100));
+        exerciseOps(countTo(100), s -> s.skip(0).limit(10), countTo(10));
+        exerciseOps(countTo(100), s -> s.skip(0).limit(0), Collections.emptyList());
+        exerciseOps(countTo(100), s -> s.skip(10).limit(100), range(11, 100));
+        exerciseOps(countTo(100), s -> s.skip(10).limit(10), range(11, 20));
+        exerciseOps(countTo(100), s -> s.skip(10).limit(0), Collections.emptyList());
+        exerciseOps(countTo(100), s -> s.skip(100).limit(100), Collections.emptyList());
+        exerciseOps(countTo(100), s -> s.skip(100).limit(10), Collections.emptyList());
+        exerciseOps(countTo(100), s -> s.skip(100).limit(0), Collections.emptyList());
+        exerciseOps(countTo(100), s -> s.skip(200).limit(100), Collections.emptyList());
+        exerciseOps(countTo(100), s -> s.skip(200).limit(10), Collections.emptyList());
+        exerciseOps(countTo(100), s -> s.skip(200).limit(0), Collections.emptyList());
     }
 
     public void testSlice() {
-        exerciseOps(Collections.emptyList(), s -> s.substream(0, 0), Collections.emptyList());
-        exerciseOps(Collections.emptyList(), s -> s.substream(0, 10), Collections.emptyList());
-        exerciseOps(Collections.emptyList(), s -> s.substream(10, 10), Collections.emptyList());
-        exerciseOps(Collections.emptyList(), s -> s.substream(10, 20), Collections.emptyList());
+        exerciseOps(Collections.emptyList(), s -> s.skip(0).limit(0), Collections.emptyList());
+        exerciseOps(Collections.emptyList(), s -> s.skip(0).limit(10), Collections.emptyList());
+        exerciseOps(Collections.emptyList(), s -> s.skip(10).limit(10), Collections.emptyList());
+        exerciseOps(Collections.emptyList(), s -> s.skip(10).limit(20), Collections.emptyList());
 
-        exerciseOps(countTo(100), s -> s.substream(0, 100), countTo(100));
-        exerciseOps(countTo(100), s -> s.substream(0, 10), countTo(10));
-        exerciseOps(countTo(100), s -> s.substream(0, 0), Collections.emptyList());
-        exerciseOps(countTo(100), s -> s.substream(10, 110), range(11, 100));
-        exerciseOps(countTo(100), s -> s.substream(10, 20), range(11, 20));
-        exerciseOps(countTo(100), s -> s.substream(10, 10), Collections.emptyList());
-        exerciseOps(countTo(100), s -> s.substream(100, 200), Collections.emptyList());
-        exerciseOps(countTo(100), s -> s.substream(100, 110), Collections.emptyList());
-        exerciseOps(countTo(100), s -> s.substream(100, 100), Collections.emptyList());
-        exerciseOps(countTo(100), s -> s.substream(200, 300), Collections.emptyList());
-        exerciseOps(countTo(100), s -> s.substream(200, 210), Collections.emptyList());
-        exerciseOps(countTo(100), s -> s.substream(200, 200), Collections.emptyList());
+        exerciseOps(countTo(100), s -> s.skip(0).limit(100), countTo(100));
+        exerciseOps(countTo(100), s -> s.skip(0).limit(10), countTo(10));
+        exerciseOps(countTo(100), s -> s.skip(0).limit(0), Collections.emptyList());
+        exerciseOps(countTo(100), s -> s.skip(10).limit(100), range(11, 100));
+        exerciseOps(countTo(100), s -> s.skip(10).limit(10), range(11, 20));
+        exerciseOps(countTo(100), s -> s.skip(10).limit(0), Collections.emptyList());
+        exerciseOps(countTo(100), s -> s.skip(100).limit(100), Collections.emptyList());
+        exerciseOps(countTo(100), s -> s.skip(100).limit(10), Collections.emptyList());
+        exerciseOps(countTo(100), s -> s.skip(100).limit(0), Collections.emptyList());
+        exerciseOps(countTo(100), s -> s.skip(200).limit(100), Collections.emptyList());
+        exerciseOps(countTo(100), s -> s.skip(200).limit(10), Collections.emptyList());
+        exerciseOps(countTo(100), s -> s.skip(200).limit(0), Collections.emptyList());
     }
 
     private int sliceSize(int dataSize, int skip, int limit) {
@@ -156,17 +156,17 @@ public class SliceOpTest extends OpTestCase {
             setContext("skip", s);
             testSliceMulti(data,
                            sliceSize(data.size(), s),
-                           st -> st.substream(s),
-                           st -> st.substream(s),
-                           st -> st.substream(s),
-                           st -> st.substream(s));
+                           st -> st.skip(s),
+                           st -> st.skip(s),
+                           st -> st.skip(s),
+                           st -> st.skip(s));
 
             testSliceMulti(data,
                            sliceSize(sliceSize(data.size(), s), s/2),
-                           st -> st.substream(s).substream(s / 2),
-                           st -> st.substream(s).substream(s / 2),
-                           st -> st.substream(s).substream(s / 2),
-                           st -> st.substream(s).substream(s / 2));
+                           st -> st.skip(s).skip(s / 2),
+                           st -> st.skip(s).skip(s / 2),
+                           st -> st.skip(s).skip(s / 2),
+                           st -> st.skip(s).skip(s / 2));
         }
     }
 
@@ -182,17 +182,10 @@ public class SliceOpTest extends OpTestCase {
                 setContext("limit", l);
                 testSliceMulti(data,
                                sliceSize(sliceSize(data.size(), s), 0, l),
-                               st -> st.substream(s).limit(l),
-                               st -> st.substream(s).limit(l),
-                               st -> st.substream(s).limit(l),
-                               st -> st.substream(s).limit(l));
-
-                testSliceMulti(data,
-                               sliceSize(data.size(), s, l),
-                                st -> st.substream(s, l+s),
-                                st -> st.substream(s, l+s),
-                                st -> st.substream(s, l+s),
-                                st -> st.substream(s, l+s));
+                               st -> st.skip(s).limit(l),
+                               st -> st.skip(s).limit(l),
+                               st -> st.skip(s).limit(l),
+                               st -> st.skip(s).limit(l));
             }
         }
     }

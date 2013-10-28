@@ -3100,6 +3100,10 @@ void LIR_Assembler::emit_profile_call(LIR_OpProfileCall* op) {
   }
 }
 
+void LIR_Assembler::emit_profile_type(LIR_OpProfileType* op) {
+  fatal("Type profiling not implemented on this platform");
+}
+
 void LIR_Assembler::align_backward_branch_target() {
   __ align(OptoLoopAlignment);
 }

@@ -76,7 +76,7 @@ import java.io.InputStream;
  * getter method and returns a suitable Java value.  The JDBC specification
  * has a table showing the allowable mappings from SQL types to Java types
  * that can be used by the <code>ResultSet</code> getter methods.
- * <P>
+ *
  * <P>Column names used as input to getter methods are case
  * insensitive.  When a getter method is called  with
  * a column name and several columns have the same name,
@@ -199,8 +199,7 @@ public interface ResultSet extends Wrapper, AutoCloseable {
      *<p>
      * Calling the method <code>close</code> on a <code>ResultSet</code>
      * object that is already closed is a no-op.
-     * <P>
-     * <p>
+     *
      *
      * @exception SQLException if a database access error occurs
      */
