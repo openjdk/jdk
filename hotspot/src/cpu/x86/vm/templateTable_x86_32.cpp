@@ -2925,9 +2925,7 @@ void TemplateTable::prepare_invoke(int byte_no,
   ConstantPoolCacheEntry::verify_tos_state_shift();
   // load return address
   {
-    const address table_addr = (is_invokeinterface || is_invokedynamic) ?
-        (address)Interpreter::return_5_addrs_by_index_table() :
-        (address)Interpreter::return_3_addrs_by_index_table();
+    const address table_addr = (address) Interpreter::invoke_return_entry_table_for(code);
     ExternalAddress table(table_addr);
     __ movptr(flags, ArrayAddress(table, Address(noreg, flags, Address::times_ptr)));
   }
