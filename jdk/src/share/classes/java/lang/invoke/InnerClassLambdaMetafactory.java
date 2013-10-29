@@ -30,6 +30,7 @@ import sun.misc.Unsafe;
 import sun.security.action.GetPropertyAction;
 
 import java.io.FilePermission;
+import java.io.Serializable;
 import java.lang.reflect.Constructor;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
@@ -56,8 +57,13 @@ import static jdk.internal.org.objectweb.asm.Opcodes.*;
 
     //Serialization support
     private static final String NAME_SERIALIZED_LAMBDA = "java/lang/invoke/SerializedLambda";
+    private static final String NAME_NOT_SERIALIZABLE_EXCEPTION = "java/io/NotSerializableException";
     private static final String DESCR_METHOD_WRITE_REPLACE = "()Ljava/lang/Object;";
+    private static final String DESCR_METHOD_WRITE_OBJECT = "(Ljava/io/ObjectOutputStream;)V";
+    private static final String DESCR_METHOD_READ_OBJECT = "(Ljava/io/ObjectInputStream;)V";
     private static final String NAME_METHOD_WRITE_REPLACE = "writeReplace";
+    private static final String NAME_METHOD_READ_OBJECT = "readObject";
+    private static final String NAME_METHOD_WRITE_OBJECT = "writeObject";
     private static final String DESCR_CTOR_SERIALIZED_LAMBDA
             = MethodType.methodType(void.class,
                                     Class.class,
@@ -65,6 +71,10 @@ import static jdk.internal.org.objectweb.asm.Opcodes.*;
                                     int.class, String.class, String.class, String.class,
                                     String.class,
                                     Object[].class).toMethodDescriptorString();
+    private static final String DESCR_CTOR_NOT_SERIALIZABLE_EXCEPTION
+            = MethodType.methodType(void.class, String.class).toMethodDescriptorString();
+    private static final String[] SER_HOSTILE_EXCEPTIONS = new String[] {NAME_NOT_SERIALIZABLE_EXCEPTION};
+
 
     // Used to ensure that each spun class name is unique
     private static final AtomicInteger counter = new AtomicInteger(0);
@@ -239,14 +249,16 @@ import static jdk.internal.org.objectweb.asm.Opcodes.*;
     private Class<?> spinInnerClass() throws LambdaConversionException {
         String[] interfaces;
         String samIntf = samBase.getName().replace('.', '/');
+        boolean accidentallySerializable = !isSerializable && Serializable.class.isAssignableFrom(samBase);
         if (markerInterfaces.length == 0) {
             interfaces = new String[]{samIntf};
         } else {
             // Assure no duplicate interfaces (ClassFormatError)
             Set<String> itfs = new LinkedHashSet<>(markerInterfaces.length + 1);
             itfs.add(samIntf);
-            for (int i = 0; i < markerInterfaces.length; i++) {
-                itfs.add(markerInterfaces[i].getName().replace('.', '/'));
+            for (Class<?> markerInterface : markerInterfaces) {
+                itfs.add(markerInterface.getName().replace('.', '/'));
+                accidentallySerializable |= !isSerializable && Serializable.class.isAssignableFrom(markerInterface);
             }
             interfaces = itfs.toArray(new String[itfs.size()]);
         }
@@ -283,7 +295,9 @@ import static jdk.internal.org.objectweb.asm.Opcodes.*;
         }
 
         if (isSerializable)
-            generateWriteReplace();
+            generateSerializationFriendlyMethods();
+        else if (accidentallySerializable)
+            generateSerializationHostileMethods();
 
         cw.visitEnd();
 
@@ -334,9 +348,9 @@ import static jdk.internal.org.objectweb.asm.Opcodes.*;
     }
 
     /**
-     * Generate the writeReplace method (if needed for serialization)
+     * Generate a writeReplace method that supports serialization
      */
-    private void generateWriteReplace() {
+    private void generateSerializationFriendlyMethods() {
         TypeConvertingMethodAdapter mv
                 = new TypeConvertingMethodAdapter(
                     cw.visitMethod(ACC_PRIVATE + ACC_FINAL,
@@ -371,6 +385,37 @@ import static jdk.internal.org.objectweb.asm.Opcodes.*;
                 DESCR_CTOR_SERIALIZED_LAMBDA);
         mv.visitInsn(ARETURN);
         // Maxs computed by ClassWriter.COMPUTE_MAXS, these arguments ignored
+        mv.visitMaxs(-1, -1);
+        mv.visitEnd();
+    }
+
+    /**
+     * Generate a readObject/writeObject method that is hostile to serialization
+     */
+    private void generateSerializationHostileMethods() {
+        MethodVisitor mv = cw.visitMethod(ACC_PRIVATE + ACC_FINAL,
+                                          NAME_METHOD_WRITE_OBJECT, DESCR_METHOD_WRITE_OBJECT,
+                                          null, SER_HOSTILE_EXCEPTIONS);
+        mv.visitCode();
+        mv.visitTypeInsn(NEW, NAME_NOT_SERIALIZABLE_EXCEPTION);
+        mv.visitInsn(DUP);
+        mv.visitLdcInsn("Non-serializable lambda");
+        mv.visitMethodInsn(INVOKESPECIAL, NAME_NOT_SERIALIZABLE_EXCEPTION, NAME_CTOR,
+                           DESCR_CTOR_NOT_SERIALIZABLE_EXCEPTION);
+        mv.visitInsn(ATHROW);
+        mv.visitMaxs(-1, -1);
+        mv.visitEnd();
+
+        mv = cw.visitMethod(ACC_PRIVATE + ACC_FINAL,
+                            NAME_METHOD_READ_OBJECT, DESCR_METHOD_READ_OBJECT,
+                            null, SER_HOSTILE_EXCEPTIONS);
+        mv.visitCode();
+        mv.visitTypeInsn(NEW, NAME_NOT_SERIALIZABLE_EXCEPTION);
+        mv.visitInsn(DUP);
+        mv.visitLdcInsn("Non-serializable lambda");
+        mv.visitMethodInsn(INVOKESPECIAL, NAME_NOT_SERIALIZABLE_EXCEPTION, NAME_CTOR,
+                           DESCR_CTOR_NOT_SERIALIZABLE_EXCEPTION);
+        mv.visitInsn(ATHROW);
         mv.visitMaxs(-1, -1);
         mv.visitEnd();
     }
