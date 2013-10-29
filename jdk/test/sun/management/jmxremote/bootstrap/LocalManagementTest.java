@@ -35,7 +35,7 @@ import java.util.concurrent.atomic.AtomicReference;
 
 /**
  * @test
- * @library ../../../../lib/testlibrary
+ * @library /lib/testlibrary
  * @bug 5016507 6173612 6319776 6342019 6484550 8004926
  * @summary Start a managed VM and test that a management tool can connect
  *          without connection or username/password details.
@@ -108,6 +108,8 @@ public class LocalManagementTest {
                 "=com.sun.management.jmxremote.port=7775," +
                 "com.sun.management.jmxremote.authenticate=false," +
                 "com.sun.management.jmxremote.ssl=false",
+                "-cp",
+                TEST_CLASSES,
                 "TestApplication",
                 "-exit"
             );
@@ -160,6 +162,9 @@ public class LocalManagementTest {
 
     private static boolean doTest(String arg) throws Exception {
         List<String> args = new ArrayList<>();
+        args.add("-cp");
+        args.add(TEST_CLASSES);
+
         if (arg != null) {
             args.add(arg);
         }
