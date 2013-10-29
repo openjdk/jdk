@@ -35,7 +35,7 @@ import jdk.testlibrary.ProcessTools;
 /**
  * @test
  * @bug 6434402 8004926
- * @library ../../../../lib/testlibrary
+ * @library /lib/testlibrary
  * @build TestManager TestApplication CustomLauncherTest
  * @run main CustomLauncherTest
  * @author Jaroslav Bachorik
