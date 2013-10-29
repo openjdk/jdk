@@ -5252,7 +5252,7 @@ public abstract class Component implements ImageObserver, MenuContainer,
      * Returns an array of all the component listeners
      * registered on this component.
      *
-     * @return all <code>ComponentListener</code>s of this component
+     * @return all <code>ComponentListener</code>s of this component
      *         or an empty array if no component
      *         listeners are currently registered
      *
