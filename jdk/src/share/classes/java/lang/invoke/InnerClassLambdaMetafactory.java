@@ -197,22 +197,20 @@ import static jdk.internal.org.objectweb.asm.Opcodes.*;
                     new PrivilegedAction<Constructor[]>() {
                 @Override
                 public Constructor[] run() {
-                    return innerClass.getDeclaredConstructors();
+                    Constructor<?>[] ctrs = innerClass.getDeclaredConstructors();
+                    if (ctrs.length == 1) {
+                        // The lambda implementing inner class constructor is private, set
+                        // it accessible (by us) before creating the constant sole instance
+                        ctrs[0].setAccessible(true);
+                    }
+                    return ctrs;
                 }
-            });
+                    });
             if (ctrs.length != 1) {
                 throw new LambdaConversionException("Expected one lambda constructor for "
                         + innerClass.getCanonicalName() + ", got " + ctrs.length);
             }
-            // The lambda implementing inner class constructor is private, set
-            // it accessible (by us) before creating the constant sole instance
-            AccessController.doPrivileged(new PrivilegedAction<Void>() {
-                @Override
-                public Void run() {
-                    ctrs[0].setAccessible(true);
-                    return null;
-                }
-            });
+
             try {
                 Object inst = ctrs[0].newInstance();
                 return new ConstantCallSite(MethodHandles.constant(samBase, inst));
@@ -222,6 +220,7 @@ import static jdk.internal.org.objectweb.asm.Opcodes.*;
             }
         } else {
             try {
+                UNSAFE.ensureClassInitialized(innerClass);
                 return new ConstantCallSite(
                         MethodHandles.Lookup.IMPL_LOOKUP
                              .findStatic(innerClass, NAME_FACTORY, invokedType));
