@@ -58,7 +58,7 @@ public class Klist {
      * The main program that can be invoked at command line.
      * <br>Usage: klist
      * [[-c] [-f] [-e] [-a [-n]]] [-k [-t] [-K]] [name]
-     * -c specifes that credential cache is to be listed
+     * -c specifies that credential cache is to be listed
      * -k specifies that key tab is to be listed
      * name name of the credentials cache or keytab
      * <br>available options for credential caches:

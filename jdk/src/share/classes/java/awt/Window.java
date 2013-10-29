@@ -1656,7 +1656,7 @@ public class Window extends Container implements Accessible {
      * effect until it is hidden and then shown again.
      *
      * @param exclusionType the modal exclusion type for this window; a {@code null}
-     *     value is equivivalent to {@link Dialog.ModalExclusionType#NO_EXCLUDE
+     *     value is equivalent to {@link Dialog.ModalExclusionType#NO_EXCLUDE
      *     NO_EXCLUDE}
      * @throws SecurityException if the calling thread does not have permission
      *     to set the modal exclusion property to the window with the given
@@ -2079,7 +2079,7 @@ public class Window extends Container implements Accessible {
     }
 
     /**
-     * Processes window focus event occuring on this window by
+     * Processes window focus event occurring on this window by
      * dispatching them to any registered WindowFocusListener objects.
      * NOTE: this method will not be called unless window focus events
      * are enabled for this window. This happens when one of the
@@ -2114,7 +2114,7 @@ public class Window extends Container implements Accessible {
     }
 
     /**
-     * Processes window state event occuring on this window by
+     * Processes window state event occurring on this window by
      * dispatching them to any registered {@code WindowStateListener}
      * objects.
      * NOTE: this method will not be called unless window state events
@@ -3676,7 +3676,7 @@ public class Window extends Container implements Accessible {
      * and either the {@code UnsupportedOperationException} or {@code
      * IllegalComponentStateException} will be thrown.
      * <p>
-     * The tranlucency levels of individual pixels may also be effected by the
+     * The translucency levels of individual pixels may also be effected by the
      * alpha component of their color (see {@link Window#setBackground(Color)}) and the
      * opacity value (see {@link #setOpacity(float)}). See {@link
      * GraphicsDevice.WindowTranslucency} for more details.
@@ -3747,7 +3747,7 @@ public class Window extends Container implements Accessible {
      * <p>
      * If the windowing system supports the {@link
      * GraphicsDevice.WindowTranslucency#PERPIXEL_TRANSLUCENT PERPIXEL_TRANSLUCENT}
-     * tranclucency, the alpha component of the given background color
+     * translucency, the alpha component of the given background color
      * may effect the mode of operation for this window: it indicates whether
      * this window must be opaque (alpha equals {@code 1.0f}) or per-pixel translucent
      * (alpha is less than {@code 1.0f}). If the given background color is

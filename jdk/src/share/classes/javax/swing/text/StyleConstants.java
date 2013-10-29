@@ -65,7 +65,7 @@ public class StyleConstants {
     public static final Object NameAttribute = new StyleConstants("name");
 
     /**
-     * Attribute name used to identifiy the resolving parent
+     * Attribute name used to identify the resolving parent
      * set of attributes, if one is defined.
      */
     public static final Object ResolveAttribute = new StyleConstants("resolver");

@@ -1457,7 +1457,7 @@ public abstract class Toolkit {
      * <p>Note that multi-frame images are invalid and may cause this
      * method to hang.
      *
-     * @param cursor the image to display when the cursor is actived
+     * @param cursor the image to display when the cursor is activated
      * @param hotSpot the X and Y of the large cursor's hot spot; the
      *   hotSpot values must be less than the Dimension returned by
      *   <code>getBestCursorSize</code>

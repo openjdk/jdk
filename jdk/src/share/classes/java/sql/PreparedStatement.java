@@ -856,7 +856,7 @@ public interface PreparedStatement extends Statement {
      * this method is called on a closed <code>PreparedStatement</code>;
      *  if the length specified
      * is less than zero or if the number of bytes in the inputstream does not match
-     * the specfied length.
+     * the specified length.
      * @throws SQLFeatureNotSupportedException  if the JDBC driver does not support this method
      *
      * @since 1.6

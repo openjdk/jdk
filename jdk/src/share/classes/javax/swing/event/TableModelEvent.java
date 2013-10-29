@@ -67,7 +67,7 @@ import javax.swing.table.*;
  */
 public class TableModelEvent extends java.util.EventObject
 {
-    /** Identifies the addtion of new rows or columns. */
+    /** Identifies the addition of new rows or columns. */
     public static final int INSERT =  1;
     /** Identifies a change to existing data. */
     public static final int UPDATE =  0;

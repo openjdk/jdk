@@ -2682,7 +2682,7 @@ public abstract class Component implements ImageObserver, MenuContainer,
     }
 
     /**
-     * Gets the mininimum size of this component.
+     * Gets the minimum size of this component.
      * @return a dimension object indicating this component's minimum size
      * @see #getPreferredSize
      * @see LayoutManager
@@ -5252,7 +5252,7 @@ public abstract class Component implements ImageObserver, MenuContainer,
      * Returns an array of all the component listeners
      * registered on this component.
      *
-     * @return all of this comonent's <code>ComponentListener</code>s
+     * @return all <code>ComponentListener</code>s of this component
      *         or an empty array if no component
      *         listeners are currently registered
      *

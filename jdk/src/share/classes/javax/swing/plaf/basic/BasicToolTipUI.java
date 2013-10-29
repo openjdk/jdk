@@ -204,7 +204,7 @@ public class BasicToolTipUI extends ToolTipUI
         JComponent comp = ((JToolTip)c).getComponent();
 
         if (comp != null && !(comp.isEnabled())) {
-            // For better backward compatability, only install inactive
+            // For better backward compatibility, only install inactive
             // properties if they are defined.
             if (UIManager.getBorder("ToolTip.borderInactive") != null) {
                 LookAndFeel.installBorder(c, "ToolTip.borderInactive");

@@ -382,7 +382,7 @@ public class GroupLayout implements LayoutManager2 {
     }
 
     /**
-     * Sets whether component visiblity is considered when sizing and
+     * Sets whether component visibility is considered when sizing and
      * positioning components. A value of {@code true} indicates that
      * non-visible components should not be treated as part of the
      * layout. A value of {@code false} indicates that components should be
@@ -397,7 +397,7 @@ public class GroupLayout implements LayoutManager2 {
      * <p>
      * The default is {@code true}.
      *
-     * @param honorsVisibility whether component visiblity is considered when
+     * @param honorsVisibility whether component visibility is considered when
      *                         sizing and positioning components
      * @see #setHonorsVisibility(Component,Boolean)
      */
@@ -411,10 +411,10 @@ public class GroupLayout implements LayoutManager2 {
     }
 
     /**
-     * Returns whether component visiblity is considered when sizing and
+     * Returns whether component visibility is considered when sizing and
      * positioning components.
      *
-     * @return whether component visiblity is considered when sizing and
+     * @return whether component visibility is considered when sizing and
      *         positioning components
      */
     public boolean getHonorsVisibility() {
@@ -422,7 +422,7 @@ public class GroupLayout implements LayoutManager2 {
     }
 
     /**
-     * Sets whether the component's visiblity is considered for
+     * Sets whether the component's visibility is considered for
      * sizing and positioning. A value of {@code Boolean.TRUE}
      * indicates that if {@code component} is not visible it should
      * not be treated as part of the layout. A value of {@code false}
@@ -432,11 +432,11 @@ public class GroupLayout implements LayoutManager2 {
      * setHonorsVisibility} should be used.
      * <p>
      * If {@code component} is not a child of the {@code Container} this
-     * {@code GroupLayout} is managine, it will be added to the
+     * {@code GroupLayout} is managing, it will be added to the
      * {@code Container}.
      *
      * @param component the component
-     * @param honorsVisibility whether {@code component}'s visiblity should be
+     * @param honorsVisibility whether visibility of this {@code component} should be
      *              considered for sizing and positioning
      * @throws IllegalArgumentException if {@code component} is {@code null}
      * @see #setHonorsVisibility(Component,Boolean)
@@ -1315,7 +1315,7 @@ public class GroupLayout implements LayoutManager2 {
             return parent;
         }
 
-        // This is here purely as a conveniance for ParallelGroup to avoid
+        // This is here purely as a convenience for ParallelGroup to avoid
         // having to track alignment separately.
         void setAlignment(Alignment alignment) {
             this.alignment = alignment;
@@ -2048,7 +2048,7 @@ public class GroupLayout implements LayoutManager2 {
             // 2. Sort the list in ascending order
             // 3. Iterate through each of the resizable Springs, attempting
             //    to give them (pref - size) / resizeCount
-            // 4. For any Springs that can not accomodate that much space
+            // 4. For any Springs that can not accommodate that much space
             //    add the remainder back to the amount to distribute and
             //    recalculate how must space the remaining springs will get.
             // 5. Set the size of the springs.
@@ -2275,7 +2275,7 @@ public class GroupLayout implements LayoutManager2 {
                 if (!baselineSpring.isResizable(VERTICAL)) {
                     // Spring to use for baseline isn't resizable. In this case
                     // baseline resize behavior can be determined based on how
-                    // preceeding springs resize.
+                    // preceding springs resize.
                     boolean leadingResizable = false;
                     for (Spring spring : springs) {
                         if (spring == baselineSpring) {

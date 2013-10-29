@@ -1104,7 +1104,7 @@ public interface CachedRowSet extends RowSet, Joinable {
     public SyncProvider getSyncProvider() throws SQLException;
 
    /**
-    * Sets the <code>SyncProvider</code> objec for this <code>CachedRowSet</code>
+    * Sets the <code>SyncProvider</code> object for this <code>CachedRowSet</code>
     * object to the one specified.  This method
     * allows the <code>SyncProvider</code> object to be reset.
     * <P>
@@ -1173,7 +1173,7 @@ public interface CachedRowSet extends RowSet, Joinable {
     * the last synchronization with the underlying data source.  If there have been
     * no synchronizations, the original value will be the value with which the
     * <code>RowSet</code> object was populated.  This method is called internally
-    * when an aplication calls the method <code>acceptChanges</code> and the
+    * when an application calls the method <code>acceptChanges</code> and the
     * <code>SyncProvider</code> object has been implemented to check for conflicts.
     * If this is the case, the writer compares the original value with the value
     * currently in the data source to check for conflicts.

@@ -358,7 +358,7 @@ class Authenticator {
      * will be based on a URL, but in a future JDK it could be, for
      * example, "SOCKS" for a password-protected SOCKS5 firewall.
      *
-     * @return the protcol, optionally followed by "/version", where
+     * @return the protocol, optionally followed by "/version", where
      *          version is a version number.
      *
      * @see java.net.URL#getProtocol()

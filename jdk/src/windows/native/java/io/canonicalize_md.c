@@ -161,7 +161,7 @@ dots(char *start)
 {
     char *p = start;
     while (*p) {
-        if ((p = strchr(p, '.')) == NULL) // find next occurence of '.'
+        if ((p = strchr(p, '.')) == NULL) // find next occurrence of '.'
             return 0; // no more dots
         p++; // next char
         while ((*p) == '.') // go to the end of dots
@@ -184,7 +184,7 @@ wdots(WCHAR *start)
         p = p + 4;
 
     while (*p) {
-        if ((p = wcschr(p, L'.')) == NULL) // find next occurence of '.'
+        if ((p = wcschr(p, L'.')) == NULL) // find next occurrence of '.'
             return 0; // no more dots
         p++; // next char
         while ((*p) == L'.') // go to the end of dots

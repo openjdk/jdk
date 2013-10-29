@@ -750,7 +750,7 @@ public class HTMLWriter extends AbstractWriter {
 
     /**
      * Searches the attribute set and for each tag
-     * that is stored in the tag vector.  If the tag isnt found,
+     * that is stored in the tag vector.  If the tag is not found,
      * then the tag is removed from the vector and a corresponding
      * end tag is written out.
      *

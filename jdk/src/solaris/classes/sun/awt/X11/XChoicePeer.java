@@ -87,7 +87,7 @@ public class XChoicePeer extends XComponentPeer implements ChoicePeer, ToplevelS
     private boolean firstPress = false;      // mouse was pressed on
                                              // furled Choice so we
                                              // not need to furl the
-                                             // Choice when MOUSE_RELEASED occured
+                                             // Choice when MOUSE_RELEASED occurred
 
     // 6425067. Mouse was pressed on furled choice and dropdown list appeared over Choice itself
     // and then there were no mouse movements until MOUSE_RELEASE.

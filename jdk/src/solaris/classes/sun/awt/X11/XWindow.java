@@ -250,7 +250,7 @@ public class XWindow extends XBaseWindow implements X11ComponentPeer {
         if (target != null && (c = target.getBackground()) != null) {
             // We need a version of setBackground that does not call repaint !!
             // and one that does not get overridden. The problem is that in postInit
-            // we call setBackground and we dont have all the stuff initialized to
+            // we call setBackground and we don't have all the stuff initialized to
             // do a full paint for most peers. So we cannot call setBackground in postInit.
             // instead we need to call xSetBackground.
             xSetBackground(c);
@@ -436,7 +436,7 @@ public class XWindow extends XBaseWindow implements X11ComponentPeer {
 
     // We need a version of setBackground that does not call repaint !!
     // and one that does not get overridden. The problem is that in postInit
-    // we call setBackground and we dont have all the stuff initialized to
+    // we call setBackground and we don't have all the stuff initialized to
     // do a full paint for most peers. So we cannot call setBackground in postInit.
     final public void xSetBackground(Color c) {
         XToolkit.awtLock();

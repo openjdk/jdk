@@ -268,7 +268,7 @@ public interface OpenType {
   public final static int       TAG_ACNT        = 0x61636e74;
 
   /**
-   * Axis variaiton.  Table tag "avar" in the Open
+   * Axis variation.  Table tag "avar" in the Open
    * Type Specification.
    */
   public final static int       TAG_AVAR        = 0x61766172;

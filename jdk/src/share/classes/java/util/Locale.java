@@ -1836,7 +1836,7 @@ public final class Locale implements Cloneable, Serializable {
      * country<br>
      * </blockquote>
      * depending on which fields are specified in the locale.  If the
-     * language, sacript, country, and variant fields are all empty,
+     * language, script, country, and variant fields are all empty,
      * this function returns the empty string.
      *
      * @return The name of the locale appropriate to display.

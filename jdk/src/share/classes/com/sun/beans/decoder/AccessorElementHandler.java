@@ -40,7 +40,7 @@ abstract class AccessorElementHandler extends ElementHandler {
 
     /**
      * Parses attributes of the element.
-     * The following atributes are supported:
+     * The following attributes are supported:
      * <dl>
      * <dt>name
      * <dd>the name of the accessible entity

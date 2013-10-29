@@ -1252,7 +1252,7 @@ static GtkWidget *gtk2_get_widget(WidgetType widget_type)
             if (init_result = (NULL == gtk2_widgets[_GTK_CONTAINER_TYPE]))
             {
                 /* There is no constructor for a container type.  I've
-                 * choosen GtkFixed container since it has a default
+                 * chosen GtkFixed container since it has a default
                  * constructor.
                  */
                 gtk2_widgets[_GTK_CONTAINER_TYPE] =

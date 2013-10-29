@@ -33,7 +33,7 @@ import javax.swing.event.*;
  * A model for a potentially unbounded sequence of object values.  This model
  * is similar to <code>ListModel</code> however there are some important differences:
  * <ul>
- * <li> The number of sequence elements isn't neccessarily bounded.
+ * <li> The number of sequence elements isn't necessarily bounded.
  * <li> The model doesn't support indexed random access to sequence elements.
  *      Only three sequence values are accessible at a time: current, next and
  *      previous.
@@ -50,7 +50,7 @@ import javax.swing.event.*;
  *     last element of the sequence.
  *
  *   <dt><code>previousValue</code>
- *   <dd>The preceeding element or null if <code>value</code> is the
+ *   <dd>The preceding element or null if <code>value</code> is the
  *     first element of the sequence.
  * </dl>
  * When the the <code>value</code> property changes,

@@ -380,8 +380,8 @@ public class WrappedPlainView extends BoxView implements TabExpander {
     public void setSize(float width, float height) {
         updateMetrics();
         if ((int) width != getWidth()) {
-            // invalidate the view itself since the childrens
-            // desired widths will be based upon this views width.
+            // invalidate the view itself since the desired widths
+            // of the children will be based upon this views width.
             preferenceChanged(null, true, true);
             widthChanging = true;
         }

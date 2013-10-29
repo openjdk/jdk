@@ -426,7 +426,7 @@ public abstract class JTextComponent extends JComponent implements Scrollable, A
         Document old = model;
 
         /*
-         * aquire a read lock on the old model to prevent notification of
+         * acquire a read lock on the old model to prevent notification of
          * mutations while we disconnecting the old model.
          */
         try {
@@ -1493,10 +1493,10 @@ public abstract class JTextComponent extends JComponent implements Scrollable, A
     }
 
     /**
-     * This is a conveniance method that is only useful for
+     * This is a convenience method that is only useful for
      * <code>cut</code>, <code>copy</code> and <code>paste</code>.  If
      * an <code>Action</code> with the name <code>name</code> does not
-     * exist in the <code>ActionMap</code>, this will attemp to install a
+     * exist in the <code>ActionMap</code>, this will attempt to install a
      * <code>TransferHandler</code> and then use <code>altAction</code>.
      */
     private void invokeAction(String name, Action altAction) {
@@ -2908,7 +2908,7 @@ public abstract class JTextComponent extends JComponent implements Scrollable, A
          * Return 0 if the text is empty, or the caret position
          * if no selection.
          *
-         * @return the index into teh text of the end of the selection &ge; 0
+         * @return the index into the text of the end of the selection &ge; 0
          */
         public int getSelectionEnd() {
             return JTextComponent.this.getSelectionEnd();

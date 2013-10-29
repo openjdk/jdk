@@ -137,7 +137,7 @@ public abstract class BufferedTextPipe extends GlyphListPipe {
                 buf.put(positions, 0, 2*totalGlyphs);
             }
         } else {
-            // queue is too small to accomodate glyphs; perform
+            // queue is too small to accommodate glyphs; perform
             // the operation directly on the queue flushing thread
             rq.flushAndInvokeNow(new Runnable() {
                 public void run() {
