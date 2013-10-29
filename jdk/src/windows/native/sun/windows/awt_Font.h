@@ -242,7 +242,7 @@ public:
     */
 
 private:
-    /* The array of assocated font handles */
+    /* The array of associated font handles */
     HFONT* m_hFont;
     /* The number of handles. */
     int    m_hFontNum;

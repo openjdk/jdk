@@ -42,7 +42,7 @@ import javax.swing.event.DocumentEvent;
  * or a visible area) can be taken on.
  * <p>
  * While the child view is being accessed
- * a read lock is aquired on the associated document
+ * a read lock is acquired on the associated document
  * so that the model is stable while being accessed.
  *
  * @author  Timothy Prinzing
@@ -77,7 +77,7 @@ public class AsyncBoxView extends View {
     }
 
     /**
-     * Fetch the minor axis (the axis orthoginal
+     * Fetch the minor axis (the axis orthogonal
      * to the tiled axis).  This will have a value of
      * either X_AXIS or Y_AXIS.
      */
@@ -1056,7 +1056,7 @@ public class AsyncBoxView extends View {
         /**
          * Copy the currently allocated shape into the Rectangle
          * used to store the current allocation.  This would be
-         * a floating point rectangle in a Java2D-specific implmentation.
+         * a floating point rectangle in a Java2D-specific implementation.
          */
         protected void setAllocation(Shape a) {
             if (a instanceof Rectangle) {
@@ -1224,7 +1224,7 @@ public class AsyncBoxView extends View {
          * time updating the child state (intended to
          * be the layout thread).
          * <p>
-         * This aquires a read lock on the associated
+         * This acquires a read lock on the associated
          * document for the duration of the update to
          * ensure the model is not changed while it is
          * operating.  The first thing to do would be

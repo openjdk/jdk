@@ -70,7 +70,7 @@ abstract class XDragSourceProtocol {
     public abstract String getProtocolName();
 
     /**
-     * Initalizes a drag operation with the specified supported drop actions,
+     * Initializes a drag operation with the specified supported drop actions,
      * contents and data formats.
      *
      * @param actions a bitwise mask of <code>DnDConstants</code> that represent

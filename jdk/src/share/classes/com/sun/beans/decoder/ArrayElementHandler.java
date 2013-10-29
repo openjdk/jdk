@@ -57,7 +57,7 @@ import java.lang.reflect.Array;
  *     &lt;int&gt;456&lt;/int&gt;
  * &lt;/array&gt;</pre>
  * is equivalent to {@code int[] array = {123, 456}} in Java code.
- * <p>The following atributes are supported:
+ * <p>The following attributes are supported:
  * <dl>
  * <dt>length
  * <dd>the array length
@@ -76,7 +76,7 @@ final class ArrayElementHandler extends NewElementHandler {
 
     /**
      * Parses attributes of the element.
-     * The following atributes are supported:
+     * The following attributes are supported:
      * <dl>
      * <dt>length
      * <dd>the array length

@@ -244,7 +244,7 @@ public class AquaLookAndFeel extends BasicLookAndFeel {
      * used for getting localized defaults.  Also initialize the default
      * locale used when no locale is passed into UIDefaults.get().  The
      * default locale should generally not be relied upon. It is here for
-     * compatability with releases prior to 1.4.
+     * compatibility with releases prior to 1.4.
      */
     private void initResourceBundle(final UIDefaults table) {
         table.setDefaultLocale(Locale.getDefault());

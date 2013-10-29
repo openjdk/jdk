@@ -97,7 +97,7 @@ Java_sun_nio_ch_SocketChannelImpl_checkConnect(JNIEnv *env, jobject this,
     }
 
     /*
-     * Socket is writable or error occured. On some Windows editions
+     * Socket is writable or error occurred. On some Windows editions
      * the socket will appear writable when the connect fails so we
      * check for error rather than writable.
      */

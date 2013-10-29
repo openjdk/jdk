@@ -596,7 +596,7 @@ AWT_ASSERT_APPKIT_THREAD;
 
 // --- Services menu support for lightweights ---
 
-// finds the focused accessable element, and if it's a text element, obtains the text from it
+// finds the focused accessible element, and if it is a text element, obtains the text from it
 - (NSString *)accessibleSelectedText
 {
     id focused = [self accessibilityFocusedUIElement];
@@ -614,7 +614,7 @@ AWT_ASSERT_APPKIT_THREAD;
     return rtfdData;
 }
 
-// finds the focused accessable element, and if it's a text element, sets the text in it
+// finds the focused accessible element, and if it is a text element, sets the text in it
 - (BOOL)replaceAccessibleTextSelection:(NSString *)text
 {
     id focused = [self accessibilityFocusedUIElement];

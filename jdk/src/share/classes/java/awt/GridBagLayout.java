@@ -255,10 +255,10 @@ import java.util.Arrays;
  * <center><table WIDTH=600 summary="layout">
  * <tr ALIGN=CENTER>
  * <td>
- * <img src="doc-files/GridBagLayout-1.gif" alt="The preceeding text describes this graphic (Figure 1)." style="float:center; margin: 7px 10px;">
+ * <img src="doc-files/GridBagLayout-1.gif" alt="The preceding text describes this graphic (Figure 1)." style="float:center; margin: 7px 10px;">
  * </td>
  * <td>
- * <img src="doc-files/GridBagLayout-2.gif" alt="The preceeding text describes this graphic (Figure 2)." style="float:center; margin: 7px 10px;">
+ * <img src="doc-files/GridBagLayout-2.gif" alt="The preceding text describes this graphic (Figure 2)." style="float:center; margin: 7px 10px;">
  * </td>
  * <tr ALIGN=CENTER>
  * <td>Figure 2: Horizontal, Left-to-Right</td>
@@ -366,7 +366,7 @@ java.io.Serializable {
 
     static final int EMPIRICMULTIPLIER = 2;
     /**
-     * This field is no longer used to reserve arrays and keeped for backward
+     * This field is no longer used to reserve arrays and kept for backward
      * compatibility. Previously, this was
      * the maximum number of grid positions (both horizontal and
      * vertical) that could be laid out by the grid bag layout.
@@ -444,7 +444,7 @@ java.io.Serializable {
      * applied to the gridbag after all of the minimum row
      * heights have been calculated.
      * If <code>rowHeights</code> has more elements than the number of
-     * rows, rowa are added to the gridbag to match
+     * rows, rows are added to the gridbag to match
      * the number of elements in <code>rowHeights</code>.
      *
      * @serial
@@ -533,7 +533,7 @@ java.io.Serializable {
      * and returns <code>null</code>.
      *
      * @param       comp the component to be queried
-     * @return      the contraints for the specified component
+     * @return      the constraints for the specified component
      */
     protected GridBagConstraints lookupConstraints(Component comp) {
         GridBagConstraints constraints = comptable.get(comp);
@@ -800,7 +800,7 @@ java.io.Serializable {
     /**
      * Lays out the specified container using this grid bag layout.
      * This method reshapes components in the specified container in
-     * order to satisfy the contraints of this <code>GridBagLayout</code>
+     * order to satisfy the constraints of this <code>GridBagLayout</code>
      * object.
      * <p>
      * Most applications do not call this method directly.
@@ -897,7 +897,7 @@ java.io.Serializable {
      * <ol>
      * <li>Figure out the dimensions of the layout grid.
      * <li>Determine which cells the components occupy.
-     * <li>Distribute the weights and min sizes amoung the rows/columns.
+     * <li>Distribute the weights and min sizes among the rows/columns.
      * </ol>
      *
      * This also caches the minsizes for all the children when they are
@@ -979,7 +979,7 @@ java.io.Serializable {
 
     /**
      * This method is obsolete and supplied for backwards
-     * compatability only; new code should call {@link
+     * compatibility only; new code should call {@link
      * #getLayoutInfo(java.awt.Container, int) getLayoutInfo} instead.
      * This method is the same as <code>getLayoutInfo</code>;
      * refer to <code>getLayoutInfo</code> for details on parameters
@@ -1612,7 +1612,7 @@ java.io.Serializable {
 
     /**
      * This method is obsolete and supplied for backwards
-     * compatability only; new code should call {@link
+     * compatibility only; new code should call {@link
      * #adjustForGravity(java.awt.GridBagConstraints, java.awt.Rectangle)
      * adjustForGravity} instead.
      * This method is the same as <code>adjustForGravity</code>;
@@ -1993,7 +1993,7 @@ java.io.Serializable {
 
     /**
      * This method is obsolete and supplied for backwards
-     * compatability only; new code should call {@link
+     * compatibility only; new code should call {@link
      * #getMinSize(java.awt.Container, GridBagLayoutInfo) getMinSize} instead.
      * This method is the same as <code>getMinSize</code>;
      * refer to <code>getMinSize</code> for details on parameters
@@ -2033,7 +2033,7 @@ java.io.Serializable {
 
     /**
      * This method is obsolete and supplied for backwards
-     * compatability only; new code should call {@link
+     * compatibility only; new code should call {@link
      * #arrangeGrid(Container) arrangeGrid} instead.
      * This method is the same as <code>arrangeGrid</code>;
      * refer to <code>arrangeGrid</code> for details on the
@@ -2229,6 +2229,6 @@ java.io.Serializable {
         }
     }
 
-    // Added for serial backwards compatability (4348425)
+    // Added for serial backwards compatibility (4348425)
     static final long serialVersionUID = 8838754796412211005L;
 }

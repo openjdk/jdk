@@ -128,7 +128,7 @@ A view has the following responsibilities:
     A view should set any settings needed.
     <li>A <code>View</code> is inherently transparent.  While a view may render into its
     entire allocation, typically a view does not.  Rendering is performed by
-    tranversing down the tree of <code>View</code> implementations.
+    traversing down the tree of <code>View</code> implementations.
     Each <code>View</code> is responsible
     for rendering its children.  This behavior is depended upon for thread
     safety.  While view implementations do not necessarily have to be implemented
@@ -324,7 +324,7 @@ public abstract class View implements SwingConstants {
      * the view has been removed from the hierarchy as
      * well. When this method is called to set the parent to
      * null, this method does the same for each of its children,
-     * propogating the notification that they have been
+     * propagating the notification that they have been
      * disconnected from the view tree. If this is
      * reimplemented, <code>super.setParent()</code> should
      * be called.

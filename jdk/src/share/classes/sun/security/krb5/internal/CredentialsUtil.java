@@ -281,7 +281,7 @@ public class CredentialsUtil {
             }
             else {
                 /*
-                 * The new tgt's realm is not in the heirarchy of realms.
+                 * The new tgt's realm is not in the hierarchy of realms.
                  * It's probably not safe to get a tgt from
                  * a tgs that is outside the known list of realms.
                  * Give up now.

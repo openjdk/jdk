@@ -364,10 +364,10 @@ class ReverseBuilder extends Builder {
          * check for looping - abort a loop if
          * ((we encounter the same certificate twice) AND
          * ((policyMappingInhibited = true) OR (no policy mapping
-         * extensions can be found between the occurences of the same
+         * extensions can be found between the occurrences of the same
          * certificate)))
          * in order to facilitate the check to see if there are
-         * any policy mapping extensions found between the occurences
+         * any policy mapping extensions found between the occurrences
          * of the same certificate, we reverse the certpathlist first
          */
         if ((certPathList != null) && (!certPathList.isEmpty())) {

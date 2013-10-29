@@ -33,7 +33,7 @@ import java.util.Set;
 
 
 /**
- * An object that encapsualtes the parameter list of a MimeType
+ * An object that encapsulates the parameter list of a MimeType
  * as defined in RFC 2045 and 2046.
  *
  * @author jeff.dunn@eng.sun.com

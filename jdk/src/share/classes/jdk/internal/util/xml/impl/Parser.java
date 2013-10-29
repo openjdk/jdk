@@ -1052,7 +1052,7 @@ public abstract class Parser {
                         case 'X':
                         case ':':
                             bkch();
-                            //          Get the attribut from the list or add a new one.
+                            //          Get the attribute from the list or add a new one.
                             attqn = qname(mIsNSAware);
                             att = find(elm.list, attqn);
                             if (att == null) {
@@ -2960,7 +2960,7 @@ public abstract class Parser {
      * Parses the xml text declaration.
      *
      * This method gets encoding from the xml text declaration [#4.3.1] if any.
-     * The method assumes the buffer (mChars) is big enough to accomodate whole
+     * The method assumes the buffer (mChars) is big enough to accommodate whole
      * xml text declaration.
      *
      * @param reader is entity reader.

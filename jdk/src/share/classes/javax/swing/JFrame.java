@@ -506,7 +506,7 @@ public class JFrame  extends Frame implements WindowConstants,
      * <code>setLayout</code> are forwarded to the <code>contentPane</code>.
      *
      * @return true if <code>add</code> and <code>setLayout</code>
-     *         are fowarded; false otherwise
+     *         are forwarded; false otherwise
      *
      * @see #addImpl
      * @see #setLayout
@@ -674,7 +674,7 @@ public class JFrame  extends Frame implements WindowConstants,
      * This method is called by the constructor.
      * <p>
      * Swing's painting architecture requires an opaque <code>JComponent</code>
-     * in the containment hiearchy. This is typically provided by the
+     * in the containment hierarchy. This is typically provided by the
      * content pane. If you replace the content pane it is recommended you
      * replace it with an opaque <code>JComponent</code>.
      *

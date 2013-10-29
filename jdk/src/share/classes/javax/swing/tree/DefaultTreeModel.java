@@ -357,7 +357,7 @@ public class DefaultTreeModel implements Serializable, TreeModel {
 
     /**
       * Invoke this method if you've totally changed the children of
-      * node and its childrens children...  This will post a
+      * node and its children's children...  This will post a
       * treeStructureChanged event.
       */
     public void nodeStructureChanged(TreeNode node) {

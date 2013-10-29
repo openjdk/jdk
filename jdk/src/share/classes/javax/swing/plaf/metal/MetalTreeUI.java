@@ -64,7 +64,7 @@ import javax.swing.plaf.basic.*;
  * </table>
  *
  * <p>
- * As it is typically impratical to obtain the <code>TreeUI</code> from
+ * As it is typically impractical to obtain the <code>TreeUI</code> from
  * the <code>JTree</code> and cast to an instance of <code>MetalTreeUI</code>
  * you enable this property via the client property
  * <code>JTree.lineStyle</code>. For example, to switch to

@@ -446,7 +446,7 @@ public class JInternalFrame extends JComponent implements
      * <code>setLayout</code> are forwarded to the <code>contentPane</code>.
      *
      * @return true if <code>add</code> and <code>setLayout</code>
-     *         are fowarded; false otherwise
+     *         are forwarded; false otherwise
      *
      * @see #addImpl
      * @see #setLayout

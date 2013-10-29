@@ -694,7 +694,7 @@ public class XComponentPeer extends XWindow implements ComponentPeer, DropTarget
             }
             font = f;
         }
-        // as it stands currently we dont need to do layout since
+        // as it stands currently we don't need to do layout since
         // layout is done in the Component upon setFont.
         //layout();
         repaint();

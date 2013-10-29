@@ -74,7 +74,7 @@ import java.util.StringTokenizer;
  * BasicLookAndFeel} providing the key-value pair {@code
  * "TreeUI"-"javax.swing.plaf.basic.BasicTreeUI"}, in the
  * {@code UIDefaults} returned from {@code getDefaults}. Refer to
- * {@link UIDefaults#getUI(JComponent)} for defails on how the implementation
+ * {@link UIDefaults#getUI(JComponent)} for details on how the implementation
  * of the {@code ComponentUI} subclass is obtained.
  * <p>
  * When a {@code LookAndFeel} is installed the {@code UIManager} does
@@ -114,7 +114,7 @@ import java.util.StringTokenizer;
  * <p>
  * For primitive values, such as {@code opaque}, the method {@code
  * installProperty} should be invoked.  {@code installProperty} only changes
- * the correspoding property if the value has not been changed by the
+ * the corresponding property if the value has not been changed by the
  * developer.
  * <p>
  * {@code ComponentUI} implementations should use the various install methods
@@ -269,7 +269,7 @@ public abstract class LookAndFeel
      */
     public static void installProperty(JComponent c,
                                        String propertyName, Object propertyValue) {
-        // this is a special case because the JPasswordField's ancestor heirarchy
+        // this is a special case because the JPasswordField's ancestor hierarchy
         // includes a class outside of javax.swing, thus we cannot call setUIProperty
         // directly.
         if (SunToolkit.isInstanceOf(c, "javax.swing.JPasswordField")) {

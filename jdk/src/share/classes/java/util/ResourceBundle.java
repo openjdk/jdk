@@ -1255,7 +1255,7 @@ public abstract class ResourceBundle {
      * <p><code>getBundle</code> finds
      * <code>foo/bar/Messages_fr.properties</code> and creates a
      * <code>ResourceBundle</code> instance. Then, <code>getBundle</code>
-     * sets up its parent chain from the list of the candiate locales.  Only
+     * sets up its parent chain from the list of the candidate locales.  Only
      * <code>foo/bar/Messages.properties</code> is found in the list and
      * <code>getBundle</code> creates a <code>ResourceBundle</code> instance
      * that becomes the parent of the instance for
@@ -2241,7 +2241,7 @@ public abstract class ResourceBundle {
          * <li>For an input <code>Locale</code> with a variant value consisting
          * of multiple subtags separated by underscore, generate candidate
          * <code>Locale</code>s by omitting the variant subtags one by one, then
-         * insert them after every occurence of <code> Locale</code>s with the
+         * insert them after every occurrence of <code> Locale</code>s with the
          * full variant value in the original list.  For example, if the
          * the variant consists of two subtags <em>V1</em> and <em>V2</em>:
          *
@@ -2844,7 +2844,7 @@ public abstract class ResourceBundle {
          * and <code>variant</code> are the language, script, country, and variant
          * values of <code>locale</code>, respectively. Final component values that
          * are empty Strings are omitted along with the preceding '_'.  When the
-         * script is empty, the script value is ommitted along with the preceding '_'.
+         * script is empty, the script value is omitted along with the preceding '_'.
          * If all of the values are empty strings, then <code>baseName</code>
          * is returned.
          *
