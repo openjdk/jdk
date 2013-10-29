@@ -90,6 +90,9 @@ public final class BinaryNode extends Expression implements Assignment<Expressio
             return Type.LONG;
         case ASSIGN_SAR:
         case ASSIGN_SHL:
+        case BIT_AND:
+        case BIT_OR:
+        case BIT_XOR:
         case ASSIGN_BIT_AND:
         case ASSIGN_BIT_OR:
         case ASSIGN_BIT_XOR:
@@ -167,6 +170,42 @@ public final class BinaryNode extends Expression implements Assignment<Expressio
         }
 
         return this;
+    }
+
+    @Override
+    public boolean isLocal() {
+        switch (tokenType()) {
+        case SAR:
+        case SHL:
+        case SHR:
+        case BIT_AND:
+        case BIT_OR:
+        case BIT_XOR:
+        case ADD:
+        case DIV:
+        case MOD:
+        case MUL:
+        case SUB:
+            return lhs.isLocal() && lhs.getType().isJSPrimitive()
+                && rhs.isLocal() && rhs.getType().isJSPrimitive();
+        case ASSIGN_ADD:
+        case ASSIGN_BIT_AND:
+        case ASSIGN_BIT_OR:
+        case ASSIGN_BIT_XOR:
+        case ASSIGN_DIV:
+        case ASSIGN_MOD:
+        case ASSIGN_MUL:
+        case ASSIGN_SAR:
+        case ASSIGN_SHL:
+        case ASSIGN_SHR:
+        case ASSIGN_SUB:
+            return lhs instanceof IdentNode && lhs.isLocal() && lhs.getType().isJSPrimitive()
+                    && rhs.isLocal() && rhs.getType().isJSPrimitive();
+        case ASSIGN:
+            return lhs instanceof IdentNode && lhs.isLocal() && rhs.isLocal();
+        default:
+            return false;
+        }
     }
 
     @Override
