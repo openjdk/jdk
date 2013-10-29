@@ -120,11 +120,11 @@ $(eval $(call CopyDir,HOTSPOT0, $(HOTSPOT_LIB_DIR), $(INSTALL_LIBRARIES_HERE), $
 $(eval $(call CopyDir,HOTSPOT1, $(HOTSPOT_DIST)/lib, $(JDK_OUTPUTDIR)/lib, $(HOTSPOT_IMPORT_FILES)))
 
 ifeq ($(OPENJDK_TARGET_OS), macosx)
-  JSIG_DEBUGINFO := $(strip $(wildcard $(HOTSPOT_DIST)/jre/lib$(OPENJDK_TARGET_CPU_LIBDIR)/libjsig.dSYM) \
-                    $(wildcard $(HOTSPOT_DIST)/jre/lib$(OPENJDK_TARGET_CPU_LIBDIR)/libjsig.diz) )
+  JSIG_DEBUGINFO := $(strip $(wildcard $(HOTSPOT_DIST)/jre/lib$(OPENJDK_TARGET_CPU_LIBDIR)/libjsig$(SHARED_LIBRARY_SUFFIX).dSYM) \
+      $(wildcard $(HOTSPOT_DIST)/jre/lib$(OPENJDK_TARGET_CPU_LIBDIR)/libjsig.diz) )
 else
   JSIG_DEBUGINFO := $(strip $(wildcard $(HOTSPOT_DIST)/jre/lib$(OPENJDK_TARGET_CPU_LIBDIR)/libjsig.debuginfo) \
-                    $(wildcard $(HOTSPOT_DIST)/jre/lib$(OPENJDK_TARGET_CPU_LIBDIR)/libjsig.diz) )
+      $(wildcard $(HOTSPOT_DIST)/jre/lib$(OPENJDK_TARGET_CPU_LIBDIR)/libjsig.diz) )
 endif
 
 ifneq ($(OPENJDK_TARGET_OS), windows)
@@ -156,26 +156,26 @@ $(INSTALL_LIBRARIES_HERE)/server/%$(SHARED_LIBRARY_SUFFIX): $(INSTALL_LIBRARIES_
 	$(LN) -s ../$(@F) $@
 
 ifeq ($(OPENJDK_TARGET_OS), macosx)
-$(INSTALL_LIBRARIES_HERE)/server/%.dSYM : $(INSTALL_LIBRARIES_HERE)/%.dSYM
+  $(INSTALL_LIBRARIES_HERE)/server/%.dSYM : $(INSTALL_LIBRARIES_HERE)/%.dSYM
 	$(MKDIR) -p $(@D)
 	$(RM) $@
 	$(LN) -s ../$(@F) $@
 
-$(INSTALL_LIBRARIES_HERE)/server/%.diz : $(INSTALL_LIBRARIES_HERE)/%.diz
+  $(INSTALL_LIBRARIES_HERE)/server/%.diz : $(INSTALL_LIBRARIES_HERE)/%.diz
 	$(MKDIR) -p $(@D)
 	$(RM) $@
-	$(RM) $@.tmp $(basename $@).dSYM
-	$(LN) -s ../$(basename $(@F)).dSYM $(basename $@).dSYM
-	$(CD) $(@D) && $(ZIP) -q -y $@.tmp $(basename $(@F)).dSYM
-	$(RM) $(basename $@).dSYM
+	$(RM) $@.tmp $(basename $@)$(SHARED_LIBRARY_SUFFIX).dSYM
+	$(LN) -s ../$(basename $(@F))$(SHARED_LIBRARY_SUFFIX).dSYM $(basename $@)$(SHARED_LIBRARY_SUFFIX).dSYM
+	$(CD) $(@D) && $(ZIP) -q -y $@.tmp $(basename $(@F))$(SHARED_LIBRARY_SUFFIX).dSYM
+	$(RM) $(basename $@)$(SHARED_LIBRARY_SUFFIX).dSYM
 	$(MV) $@.tmp $@
 else
-$(INSTALL_LIBRARIES_HERE)/server/%.debuginfo: $(INSTALL_LIBRARIES_HERE)/%.debuginfo
+  $(INSTALL_LIBRARIES_HERE)/server/%.debuginfo: $(INSTALL_LIBRARIES_HERE)/%.debuginfo
 	$(MKDIR) -p $(@D)
 	$(RM) $@
 	$(LN) -s ../$(@F) $@
 
-$(INSTALL_LIBRARIES_HERE)/server/%.diz: $(INSTALL_LIBRARIES_HERE)/%.diz
+  $(INSTALL_LIBRARIES_HERE)/server/%.diz: $(INSTALL_LIBRARIES_HERE)/%.diz
 	$(MKDIR) -p $(@D)
 	$(RM) $@
 	$(RM) $@.tmp $(basename $@).debuginfo
@@ -191,26 +191,26 @@ $(INSTALL_LIBRARIES_HERE)/client/%$(SHARED_LIBRARY_SUFFIX): $(INSTALL_LIBRARIES_
 	$(LN) -s ../$(@F) $@
 
 ifeq ($(OPENJDK_TARGET_OS), macosx)
-$(INSTALL_LIBRARIES_HERE)/client/%.dSYM : $(INSTALL_LIBRARIES_HERE)/%.dSYM
+  $(INSTALL_LIBRARIES_HERE)/client/%.dSYM : $(INSTALL_LIBRARIES_HERE)/%.dSYM
 	$(MKDIR) -p $(@D)
 	$(RM) $@
 	$(LN) -s ../$(@F) $@
 
-$(INSTALL_LIBRARIES_HERE)/client/%.diz : $(INSTALL_LIBRARIES_HERE)/%.diz
+  $(INSTALL_LIBRARIES_HERE)/client/%.diz : $(INSTALL_LIBRARIES_HERE)/%.diz
 	$(MKDIR) -p $(@D)
 	$(RM) $@
-	$(RM) $@.tmp $(basename $@).dSYM
-	$(LN) -s ../$(basename $(@F)).dSYM $(basename $@).dSYM
-	$(CD) $(@D) && $(ZIP) -q -y $@.tmp $(basename $(@F)).dSYM
-	$(RM) $(basename $@).dSYM
+	$(RM) $@.tmp $(basename $@)$(SHARED_LIBRARY_SUFFIX).dSYM
+	$(LN) -s ../$(basename $(@F))$(SHARED_LIBRARY_SUFFIX).dSYM $(basename $@)$(SHARED_LIBRARY_SUFFIX).dSYM
+	$(CD) $(@D) && $(ZIP) -q -y $@.tmp $(basename $(@F))$(SHARED_LIBRARY_SUFFIX).dSYM
+	$(RM) $(basename $@)$(SHARED_LIBRARY_SUFFIX).dSYM
 	$(MV) $@.tmp $@
 else
-$(INSTALL_LIBRARIES_HERE)/client/%.debuginfo: $(INSTALL_LIBRARIES_HERE)/%.debuginfo
+  $(INSTALL_LIBRARIES_HERE)/client/%.debuginfo: $(INSTALL_LIBRARIES_HERE)/%.debuginfo
 	$(MKDIR) -p $(@D)
 	$(RM) $@
 	$(LN) -s ../$(@F) $@
 
-$(INSTALL_LIBRARIES_HERE)/client/%.diz: $(INSTALL_LIBRARIES_HERE)/%.diz
+  $(INSTALL_LIBRARIES_HERE)/client/%.diz: $(INSTALL_LIBRARIES_HERE)/%.diz
 	$(MKDIR) -p $(@D)
 	$(RM) $@
 	$(RM) $@.tmp $(basename $@).debuginfo
@@ -226,12 +226,12 @@ $(INSTALL_LIBRARIES_HERE)/minimal/%$(SHARED_LIBRARY_SUFFIX): $(INSTALL_LIBRARIES
 	$(LN) -s ../$(@F) $@
 
 ifneq ($(OPENJDK_TARGET_OS), macosx)
-$(INSTALL_LIBRARIES_HERE)/minimal/%.debuginfo: $(INSTALL_LIBRARIES_HERE)/%.debuginfo
+  $(INSTALL_LIBRARIES_HERE)/minimal/%.debuginfo: $(INSTALL_LIBRARIES_HERE)/%.debuginfo
 	$(MKDIR) -p $(@D)
 	$(RM) $@
 	$(LN) -s ../$(@F) $@
 
-$(INSTALL_LIBRARIES_HERE)/minimal/%.diz: $(INSTALL_LIBRARIES_HERE)/%.diz
+  $(INSTALL_LIBRARIES_HERE)/minimal/%.diz: $(INSTALL_LIBRARIES_HERE)/%.diz
 	$(MKDIR) -p $(@D)
 	$(RM) $@
 	$(RM) $@.tmp $(basename $@).debuginfo
