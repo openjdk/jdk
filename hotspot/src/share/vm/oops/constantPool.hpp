@@ -111,6 +111,7 @@ class ConstantPool : public Metadata {
     int                _version;
   } _saved;
 
+  Monitor*             _lock;
 
   void set_tags(Array<u1>* tags)               { _tags = tags; }
   void tag_at_put(int which, jbyte t)          { tags()->at_put(which, t); }
@@ -843,17 +844,8 @@ class ConstantPool : public Metadata {
 
   void set_resolved_reference_length(int length) { _saved._resolved_reference_length = length; }
   int  resolved_reference_length() const  { return _saved._resolved_reference_length; }
-
-  // lock() may return null -- constant pool updates may happen before this lock is
-  // initialized, because the _pool_holder has not been fully initialized and
-  // has not been registered into the system dictionary. In this case, no other
-  // thread can be modifying this constantpool, so no synchronization is
-  // necessary.
-  //
-  // Use cplock() like this:
-  //    oop cplock = cp->lock();
-  //    ObjectLocker ol(cplock , THREAD, cplock != NULL);
-  oop lock();
+  void set_lock(Monitor* lock)            { _lock = lock; }
+  Monitor* lock()                         { return _lock; }
 
   // Decrease ref counts of symbols that are in the constant pool
   // when the holder class is unloaded

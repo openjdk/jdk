@@ -1497,6 +1497,7 @@ address InterpreterGenerator::generate_normal_entry(bool synchronized) {
         in_bytes(JavaThread::do_not_unlock_if_synchronized_offset()));
   __ movbool(do_not_unlock_if_synchronized, true);
 
+  __ profile_parameters_type(rax, rcx, rdx);
   // increment invocation count & check for overflow
   Label invocation_counter_overflow;
   Label profile_method;

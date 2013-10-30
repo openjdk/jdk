@@ -96,11 +96,7 @@ ifneq ($(OPENJDK_TARGET_OS), solaris)
   EXCLUDES += com/oracle/security
 endif
 
-# In the old build, this isn't excluded on macosx, even though it probably
-# should be.
-ifneq ($(OPENJDK_TARGET_OS), macosx)
-  EXFILES += WrapperGenerator.java
-endif
+EXFILES += WrapperGenerator.java
 
 ifneq ($(OPENJDK_TARGET_OS), windows)
   # Exclude Window security related files in src/share/classes
@@ -169,7 +165,11 @@ ifeq (, $(filter $(OPENJDK_TARGET_OS), windows macosx))
   EXFILES += sun/awt/AWTCharset.java
 endif
 
-ifneq ($(OPENJDK_TARGET_OS), macosx)
+ifeq ($(OPENJDK_TARGET_OS), macosx)
+  # exclude all X11 on Mac, we can't exclude some like below or we'll have compilation errors
+  EXCLUDES += sun/awt/X11
+else
+  # TBD: figure out how to eliminate this long list
   EXFILES += sun/awt/X11/ScreenFormat.java \
       sun/awt/X11/XArc.java \
       sun/awt/X11/XChar2b.java \
@@ -281,6 +281,19 @@ ifeq ($(OPENJDK_TARGET_OS), macosx)
   EXCLUDES += com/apple/jobjc
 endif
 
+# The security classes should not end up in the classes directory as that will prevent them
+# from working when running the exploded jdk image. Compile them separately to a different
+# directory from where the jars can be created.
+SECURITY_PKGS := \
+    com/oracle/security/ucrypto \
+    com/sun/crypto/provider \
+    javax/crypto \
+    sun/security/ec \
+    sun/security/internal \
+    sun/security/mscapi \
+    sun/security/pkcs11 \
+    #
+
 # The exception handling of swing beaninfo
 # These resources violates the convention of having code and resources together under
 # $(JDK_TOPDIR)/src/.../classes directories
@@ -293,21 +306,45 @@ $(JDK_OUTPUTDIR)/classes/javax/swing/beaninfo/images/%.gif: $(JDK_TOPDIR)/make/t
 # space separated list.
 JDK_USER_DEFINED_FILTER := $(strip $(subst $(COMMA),$(SPACE), $(JDK_FILTER)))
 
-$(eval $(call SetupJavaCompilation,BUILD_JDK, \
+ifeq ($(ENABLE_SJAVAC),yes)
+  # With sjavac enabled, excluded sources are not even considered for linking. 
+  # Explicitly add the security sources to sourcepath for linking.
+  BUILD_JDK_SOURCEPATH:=$(patsubst %,-i$(SPACE)%.*,$(subst /,.,$(SECURITY_PKGS))) \
+      -sourcepath $(JDK_TOPDIR)/src/share/classes
+endif
+
+$(eval $(call SetupJavaCompilation,BUILD_JDK,\
+    SETUP:=GENERATE_JDKBYTECODE,\
+    SRC:=$(JDK_TOPDIR)/src/share/classes \
+        $(JDK_TOPDIR)/src/$(OPENJDK_TARGET_OS_API_DIR)/classes \
+        $(MACOSX_SRC_DIRS) \
+        $(JDK_OUTPUTDIR)/gensrc \
+        $(JDK_OUTPUTDIR)/gensrc_no_srczip \
+        $(CLOSED_SRC_DIRS),\
+    INCLUDES:=$(JDK_USER_DEFINED_FILTER),\
+    EXCLUDES:=$(EXCLUDES) $(SECURITY_PKGS),\
+    EXCLUDE_FILES:=$(EXFILES),\
+    BIN:=$(JDK_OUTPUTDIR)/classes,\
+    COPY:=$(COPY_PATTERNS),\
+    COPY_FILES:=$(COPY_FILES),\
+    HEADERS:=$(JDK_OUTPUTDIR)/gensrc_headers,\
+    ADD_JAVAC_FLAGS:=$(BUILD_JDK_SOURCEPATH)))
+
+##########################################################################################
+
+$(eval $(call SetupJavaCompilation,BUILD_SECURITY, \
     SETUP := GENERATE_JDKBYTECODE, \
     SRC := $(JDK_TOPDIR)/src/share/classes \
-         $(JDK_TOPDIR)/src/$(OPENJDK_TARGET_OS_API_DIR)/classes \
-         $(MACOSX_SRC_DIRS) \
-         $(JDK_OUTPUTDIR)/gensrc \
-         $(JDK_OUTPUTDIR)/gensrc_no_srczip \
-         $(CLOSED_SRC_DIRS), \
-    INCLUDES := $(JDK_USER_DEFINED_FILTER), \
+        $(JDK_TOPDIR)/src/$(OPENJDK_TARGET_OS_API_DIR)/classes \
+        $(MACOSX_SRC_DIRS) \
+        $(CLOSED_SRC_DIRS), \
+    INCLUDES := $(SECURITY_PKGS), \
     EXCLUDES := $(EXCLUDES), \
     EXCLUDE_FILES := $(EXFILES), \
-    BIN := $(JDK_OUTPUTDIR)/classes, \
-    COPY := $(COPY_PATTERNS), \
-    COPY_FILES := $(COPY_FILES), \
+    BIN := $(JDK_OUTPUTDIR)/classes_security, \
     HEADERS := $(JDK_OUTPUTDIR)/gensrc_headers))
+
+$(BUILD_SECURITY): $(BUILD_JDK)
 
 ##########################################################################################
 
@@ -393,7 +430,7 @@ endif
 
 ##########################################################################################
 
-all: $(BUILD_JDK) $(BUILD_JOBJC) $(BUILD_JOBJC_HEADERS) $(COPY_EXTRA) \
+all: $(BUILD_JDK) $(BUILD_SECURITY) $(BUILD_JOBJC) $(BUILD_JOBJC_HEADERS) $(COPY_EXTRA) \
     $(JDK_OUTPUTDIR)/classes/META-INF/services/com.sun.tools.xjc.Plugin \
     $(BUILD_ACCESSBRIDGE_32) $(BUILD_ACCESSBRIDGE_64) \
     $(BUILD_ACCESSBRIDGE_LEGACY)
