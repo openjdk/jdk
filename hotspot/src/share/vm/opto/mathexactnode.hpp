@@ -39,6 +39,7 @@ class PhaseTransform;
 
 class MathExactNode : public MultiNode {
 public:
+  MathExactNode(Node* ctrl, Node* in1);
   MathExactNode(Node* ctrl, Node* in1, Node* in2);
   enum {
     result_proj_node = 0,
@@ -62,13 +63,78 @@ protected:
   Node* no_overflow(PhaseGVN *phase, Node* new_result);
 };
 
-class AddExactINode : public MathExactNode {
-public:
-  AddExactINode(Node* ctrl, Node* in1, Node* in2) : MathExactNode(ctrl, in1, in2) {}
+class MathExactINode : public MathExactNode {
+ public:
+  MathExactINode(Node* ctrl, Node* in1) : MathExactNode(ctrl, in1) {}
+  MathExactINode(Node* ctrl, Node* in1, Node* in2) : MathExactNode(ctrl, in1, in2) {}
   virtual int Opcode() const;
-  virtual const Type* bottom_type() const { return TypeTuple::INT_CC_PAIR; }
   virtual Node* match(const ProjNode* proj, const Matcher* m);
+  virtual const Type* bottom_type() const { return TypeTuple::INT_CC_PAIR; }
+};
+
+class MathExactLNode : public MathExactNode {
+public:
+  MathExactLNode(Node* ctrl, Node* in1) : MathExactNode(ctrl, in1) {}
+  MathExactLNode(Node* ctrl, Node* in1, Node* in2) : MathExactNode(ctrl, in1, in2) {}
+  virtual int Opcode() const;
+  virtual Node* match(const ProjNode* proj, const Matcher* m);
+  virtual const Type* bottom_type() const { return TypeTuple::LONG_CC_PAIR; }
+};
+
+class AddExactINode : public MathExactINode {
+public:
+  AddExactINode(Node* ctrl, Node* in1, Node* in2) : MathExactINode(ctrl, in1, in2) {}
+  virtual int Opcode() const;
   virtual Node *Ideal(PhaseGVN *phase, bool can_reshape);
+};
+
+class AddExactLNode : public MathExactLNode {
+public:
+  AddExactLNode(Node* ctrl, Node* in1, Node* in2) : MathExactLNode(ctrl, in1, in2) {}
+  virtual int Opcode() const;
+  virtual Node* Ideal(PhaseGVN* phase, bool can_reshape);
+};
+
+class SubExactINode : public MathExactINode {
+public:
+  SubExactINode(Node* ctrl, Node* in1, Node* in2) : MathExactINode(ctrl, in1, in2) {}
+  virtual int Opcode() const;
+  virtual Node* Ideal(PhaseGVN* phase, bool can_reshape);
+};
+
+class SubExactLNode : public MathExactLNode {
+public:
+  SubExactLNode(Node* ctrl, Node* in1, Node* in2) : MathExactLNode(ctrl, in1, in2) {}
+  virtual int Opcode() const;
+  virtual Node* Ideal(PhaseGVN* phase, bool can_reshape);
+};
+
+class NegExactINode : public MathExactINode {
+public:
+  NegExactINode(Node* ctrl, Node* in1) : MathExactINode(ctrl, in1) {}
+  virtual int Opcode() const;
+  virtual Node* Ideal(PhaseGVN* phase, bool can_reshape);
+};
+
+class NegExactLNode : public MathExactLNode {
+public:
+  NegExactLNode(Node* ctrl, Node* in1) : MathExactLNode(ctrl, in1) {}
+  virtual int Opcode() const;
+  virtual Node* Ideal(PhaseGVN* phase, bool can_reshape);
+};
+
+class MulExactINode : public MathExactINode {
+public:
+  MulExactINode(Node* ctrl, Node* in1, Node* in2) : MathExactINode(ctrl, in1, in2) {}
+  virtual int Opcode() const;
+  virtual Node* Ideal(PhaseGVN* phase, bool can_reshape);
+};
+
+class MulExactLNode : public MathExactLNode {
+public:
+  MulExactLNode(Node* ctrl, Node* in1, Node* in2) : MathExactLNode(ctrl, in1, in2) {}
+  virtual int Opcode() const;
+  virtual Node* Ideal(PhaseGVN* phase, bool can_reshape);
 };
 
 class FlagsProjNode : public ProjNode {

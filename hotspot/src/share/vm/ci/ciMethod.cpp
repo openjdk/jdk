@@ -565,6 +565,116 @@ void ciCallProfile::add_receiver(ciKlass* receiver, int receiver_count) {
   if (_limit < MorphismLimit) _limit++;
 }
 
+
+void ciMethod::assert_virtual_call_type_ok(int bci) {
+  assert(java_code_at_bci(bci) == Bytecodes::_invokevirtual ||
+         java_code_at_bci(bci) == Bytecodes::_invokeinterface, err_msg("unexpected bytecode %s", Bytecodes::name(java_code_at_bci(bci))));
+}
+
+void ciMethod::assert_call_type_ok(int bci) {
+  assert(java_code_at_bci(bci) == Bytecodes::_invokestatic ||
+         java_code_at_bci(bci) == Bytecodes::_invokespecial ||
+         java_code_at_bci(bci) == Bytecodes::_invokedynamic, err_msg("unexpected bytecode %s", Bytecodes::name(java_code_at_bci(bci))));
+}
+
+/**
+ * Check whether profiling provides a type for the argument i to the
+ * call at bci bci
+ *
+ * @param bci  bci of the call
+ * @param i    argument number
+ * @return     profiled type
+ *
+ * If the profile reports that the argument may be null, return false
+ * at least for now.
+ */
+ciKlass* ciMethod::argument_profiled_type(int bci, int i) {
+  if (MethodData::profile_parameters() && method_data() != NULL && method_data()->is_mature()) {
+    ciProfileData* data = method_data()->bci_to_data(bci);
+    if (data != NULL) {
+      if (data->is_VirtualCallTypeData()) {
+        assert_virtual_call_type_ok(bci);
+        ciVirtualCallTypeData* call = (ciVirtualCallTypeData*)data->as_VirtualCallTypeData();
+        if (i >= call->number_of_arguments()) {
+          return NULL;
+        }
+        ciKlass* type = call->valid_argument_type(i);
+        if (type != NULL && !call->argument_maybe_null(i)) {
+          return type;
+        }
+      } else if (data->is_CallTypeData()) {
+        assert_call_type_ok(bci);
+        ciCallTypeData* call = (ciCallTypeData*)data->as_CallTypeData();
+        if (i >= call->number_of_arguments()) {
+          return NULL;
+        }
+        ciKlass* type = call->valid_argument_type(i);
+        if (type != NULL && !call->argument_maybe_null(i)) {
+          return type;
+        }
+      }
+    }
+  }
+  return NULL;
+}
+
+/**
+ * Check whether profiling provides a type for the return value from
+ * the call at bci bci
+ *
+ * @param bci  bci of the call
+ * @return     profiled type
+ *
+ * If the profile reports that the argument may be null, return false
+ * at least for now.
+ */
+ciKlass* ciMethod::return_profiled_type(int bci) {
+  if (MethodData::profile_return() && method_data() != NULL && method_data()->is_mature()) {
+    ciProfileData* data = method_data()->bci_to_data(bci);
+    if (data != NULL) {
+      if (data->is_VirtualCallTypeData()) {
+        assert_virtual_call_type_ok(bci);
+        ciVirtualCallTypeData* call = (ciVirtualCallTypeData*)data->as_VirtualCallTypeData();
+        ciKlass* type = call->valid_return_type();
+        if (type != NULL && !call->return_maybe_null()) {
+          return type;
+        }
+      } else if (data->is_CallTypeData()) {
+        assert_call_type_ok(bci);
+        ciCallTypeData* call = (ciCallTypeData*)data->as_CallTypeData();
+        ciKlass* type = call->valid_return_type();
+        if (type != NULL && !call->return_maybe_null()) {
+          return type;
+        }
+      }
+    }
+  }
+  return NULL;
+}
+
+/**
+ * Check whether profiling provides a type for the parameter i
+ *
+ * @param i    parameter number
+ * @return     profiled type
+ *
+ * If the profile reports that the argument may be null, return false
+ * at least for now.
+ */
+ciKlass* ciMethod::parameter_profiled_type(int i) {
+  if (MethodData::profile_parameters() && method_data() != NULL && method_data()->is_mature()) {
+    ciParametersTypeData* parameters = method_data()->parameters_type_data();
+    if (parameters != NULL && i < parameters->number_of_parameters()) {
+      ciKlass* type = parameters->valid_parameter_type(i);
+      if (type != NULL && !parameters->parameter_maybe_null(i)) {
+        return type;
+      }
+    }
+  }
+  return NULL;
+}
+
+
 // ------------------------------------------------------------------
 // ciMethod::find_monomorphic_target
 //
