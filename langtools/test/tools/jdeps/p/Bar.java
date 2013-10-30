@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,12 +21,13 @@
  * questions.
  */
 
-public class Test {
-    public void test() {
-        p.Foo f = new p.Foo();
-        p.Bar b = new p.Bar();
+package p;
+
+public class Bar extends javax.activity.NotCompactProfile {
+    public String bar() {
+        return "bar";
     }
-    private String name() {
-        return "this test";
+    public javax.crypto.Cipher getCiper() {
+        return null;
     }
 }
