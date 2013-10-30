@@ -353,7 +353,7 @@ public final class URLPermission extends Permission {
         return getActions().hashCode()
             + scheme.hashCode()
             + authority.hashCode()
-            + path == null ? 0 : path.hashCode();
+            + (path == null ? 0 : path.hashCode());
     }
 
 
