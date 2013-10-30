@@ -7684,3 +7684,6 @@ CurrencyNames/lv_LV/EUR=\u20AC
 
 # bug # 6192407
 LocaleNames/ko/PT=\ud3ec\ub974\ud22c\uce7c
+
+# bug 6931564
+LocaleNames/sv/ZA=Sydafrika
