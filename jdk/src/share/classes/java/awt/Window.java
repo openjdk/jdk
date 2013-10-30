@@ -2976,11 +2976,11 @@ public class Window extends Container implements Accessible {
 
         addToWindowList();
         initGC(null);
+        ownedWindowList = new Vector<>();
     }
 
     private void deserializeResources(ObjectInputStream s)
         throws ClassNotFoundException, IOException, HeadlessException {
-            ownedWindowList = new Vector<>();
 
             if (windowSerializedDataVersion < 2) {
                 // Translate old-style focus tracking to new model. For 1.4 and
