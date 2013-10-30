@@ -134,8 +134,7 @@ public class JInfo extends Tool {
         }
 
         JInfo jinfo = new JInfo(mode);
-        jinfo.start(args);
-        jinfo.stop();
+        jinfo.execute(args);
     }
 
     private void printVMFlags() {
