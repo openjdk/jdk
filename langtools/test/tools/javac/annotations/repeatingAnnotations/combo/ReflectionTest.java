@@ -45,6 +45,8 @@ import javax.tools.JavaFileObject;
 
 import expectedFiles.ExpectedBase;
 import expectedFiles.ExpectedContainer;
+import java.util.Iterator;
+import java.util.regex.Pattern;
 
 /*
  * Objective:
@@ -99,6 +101,7 @@ public class ReflectionTest {
      *  Set it to true to get more debug information
      */
     static final boolean DEBUG = false;
+    static boolean CHECKORDERING;
 
     public static void main(String args[]) throws Exception {
         ReflectionTest test = new ReflectionTest();
@@ -145,6 +148,23 @@ public class ReflectionTest {
                 if (c != null) {
                     // For the loaded class object, compare expected and actual annotation values
                     // for each of the methods under test from java.lang.reflect.AnnotatedElement
+
+
+                    // Ignoring following test cases since for now they are
+                    // failing with ordering issues.
+                    // @ignore 8025924: Several test cases in repeatingAnnotations/combo/ReflectionTest
+                    // fail with ordering issues
+                    List<String> orderingTestFailures = Arrays.asList(
+                            "SingleOnSuperContainerOnSub_Inherited_Legacy",
+                            "SingleOnSuperContainerAndSingleOnSub_Inherited_Legacy",
+                            "ContainerAndSingleOnSuperSingleOnSub_Inherited_Legacy",
+                            "SingleAnnoWithContainer",
+                            "SingleOnSuperContainerAndSingleOnSub_Inherited");
+                    if (orderingTestFailures.contains(testCase.toString())) {
+                        CHECKORDERING = false;
+                    } else
+                        CHECKORDERING = true;
+
                     checkAnnoValues(srcType, c);
                 } else {
                     error("Could not load className = " + c);
@@ -167,12 +187,12 @@ public class ReflectionTest {
     enum TestCase {
         BasicNonRepeatable_Legacy(
         "@ExpectedBase(value=Foo.class, "
-                + "getAnnotationVal = \"Foo\", "
-                + "getAnnotationsVals = {\"ExpectedBase\", \"ExpectedContainer\", \"Foo\"}, "
-                + "getDeclAnnosVals = {\"ExpectedBase\", \"ExpectedContainer\", \"Foo\"}, "
-                + "getDeclAnnoVal = \"Foo\", "
-                + "getAnnosArgs = {\"Foo\"}, "
-                + "getDeclAnnosArgs = {\"Foo\"}) ",
+                + "getAnnotationVal = \"@Foo(value=0)\", "
+                + "getAnnotationsVals = {\"ExpectedBase\", \"ExpectedContainer\", \"@Foo(value=0)\"}, "
+                + "getDeclAnnosVals = {\"ExpectedBase\", \"ExpectedContainer\", \"@Foo(value=0)\"}, "
+                + "getDeclAnnoVal = \"@Foo(value=0)\", "
+                + "getAnnosArgs = {\"@Foo(value=0)\"}, "
+                + "getDeclAnnosArgs = {\"@Foo(value=0)\"}) ",
         "@ExpectedContainer") {
 
             @Override
@@ -202,11 +222,11 @@ public class ReflectionTest {
                         Sample package-info.java
                         @ExpectedBase
                         @ExpectedContainer
-                        @Foo
+                        @Foo(0)
                         package testpkg;
 
                         @Retention(RetentionPolicy.RUNTIME)
-                        @interface Foo {}
+                        @interface Foo {int value() default Integer.MAX_VALUE;}
 
                         Sample testSrc:
                         package testpkg;
@@ -229,11 +249,11 @@ public class ReflectionTest {
                     /*
                         Sample testSrc for class
                         @Retention(RetentionPolicy.RUNTIME)
-                        @interface Foo {}
+                        @interface Foo {int value() default Integer.MAX_VALUE;}
 
                         @ExpectedBase
                         @ExpectedContainer
-                        @Foo
+                        @Foo(0)
                         class A {}
                          */
                         replaceVal = expectedVals + anno;
@@ -248,11 +268,11 @@ public class ReflectionTest {
         },
         SingleAnnoInherited_Legacy(
         "@ExpectedBase(value=Foo.class, "
-                + "getAnnotationVal = \"Foo\", "
-                + "getAnnotationsVals = {\"Foo\", \"ExpectedBase\", \"ExpectedContainer\"}, "
+                + "getAnnotationVal = \"@Foo(value=0)\", "
+                + "getAnnotationsVals = {\"@Foo(value=0)\", \"ExpectedBase\", \"ExpectedContainer\"}, "
                 + "getDeclAnnosVals = {\"ExpectedBase\", \"ExpectedContainer\"}, "
                 + "getDeclAnnoVal = \"NULL\", "
-                + "getAnnosArgs = {\"Foo\"}, "
+                + "getAnnosArgs = {\"@Foo(value=0)\"}, "
                 + "getDeclAnnosArgs = {})",
         "@ExpectedContainer") {
 
@@ -273,9 +293,9 @@ public class ReflectionTest {
                 Sample testSrc:
                 @Retention(RetentionPolicy.RUNTIME)
                 @Inherited
-                @interface Foo {}
+                @interface Foo {int value() default Integer.MAX_VALUE;}
 
-                @Foo
+                @Foo(0)
                 class SuperClass { }
 
                 @ExpectedBase
@@ -337,9 +357,9 @@ public class ReflectionTest {
                 Sample test src:
                 @Retention(RetentionPolicy.RUNTIME)
                 @Inherited
-                @interface Foo {}
+                @interface Foo {int value() default Integer.MAX_VALUE;}
 
-                @Foo
+                @Foo(0)
                 interface TestInterface { }
 
                 @ExpectedBase
@@ -375,18 +395,18 @@ public class ReflectionTest {
         },
         AnnoOnSuperAndSubClass_Inherited_Legacy(
         "@ExpectedBase(value=Foo.class, "
-                + "getAnnotationVal = \"Foo\", "
-                + "getAnnotationsVals = {\"ExpectedBase\", \"ExpectedContainer\", \"Foo\"}, "
+                + "getAnnotationVal = \"@Foo(value=2)\", "
+                + "getAnnotationsVals = {\"ExpectedBase\", \"ExpectedContainer\", \"@Foo(value=2)\"}, "
                 + // override every annotation on superClass
-                "getDeclAnnosVals = {\"ExpectedBase\", \"ExpectedContainer\", \"Foo\"}, "
+                "getDeclAnnosVals = {\"ExpectedBase\", \"ExpectedContainer\", \"@Foo(value=2)\"}, "
                 + // ignores inherited annotations
-                "getDeclAnnoVal = \"Foo\", " // ignores inherited
-                + "getAnnosArgs = {\"Foo\"}, "
-                + "getDeclAnnosArgs = { \"Foo\" })", // ignores inherited
+                "getDeclAnnoVal = \"@Foo(value=2)\", " // ignores inherited
+                + "getAnnosArgs = {\"@Foo(value=2)\"}, "
+                + "getDeclAnnosArgs = { \"@Foo(value=2)\" })", // ignores inherited
         "@ExpectedContainer(value=FooContainer.class, "
                 + "getAnnotationVal = \"NULL\", "
-                + "getAnnotationsVals = {\"ExpectedBase\", \"ExpectedContainer\", \"Foo\"}, "
-                + "getDeclAnnosVals = {\"ExpectedBase\", \"ExpectedContainer\", \"Foo\"}, "
+                + "getAnnotationsVals = {\"ExpectedBase\", \"ExpectedContainer\", \"@Foo(value=2)\"}, "
+                + "getDeclAnnosVals = {\"ExpectedBase\", \"ExpectedContainer\", \"@Foo(value=2)\"}, "
                 + // ignores inherited annotations
                 "getDeclAnnoVal = \"NULL\", " + // ignores inherited
                 "getAnnosArgs = {}, " + "getDeclAnnosArgs = {})") { // ignores inherited
@@ -408,19 +428,19 @@ public class ReflectionTest {
                 Sample test src
                 @Retention(RetentionPolicy.RUNTIME)
                 @Inherited
-                @interface Foo {}
+                @interface Foo {int value() default Integer.MAX_VALUE;}
 
                 @Inherited
                 @interface FooContainer {
                 Foo[] value();
                 }
 
-                @Foo
+                @Foo(1)
                 class SuperClass { }
 
                 @ExpectedBase
                 @ExpectedContainer
-                @Foo
+                @Foo(2)
                 class SubClass extends SuperClass {}
                  */
                 // @Inherited only works for classes, no switch cases for
@@ -435,12 +455,13 @@ public class ReflectionTest {
 
                 if (srcType == SrcType.CLASS) {
                     // Contents for SuperClass
-                    anno = Helper.ContentVars.BASEANNO.getVal();
+                    anno = "@Foo(1)";
                     replaceVal = commonStmts + "\n" + anno;
                     String superClassContents = srcType.getTemplate()
                             .replace("#CN", SUPERCLASS).replace("#REPLACE", replaceVal);
 
                     // Contents for SubClass that extends SuperClass
+                    anno = "@Foo(2)";
                     replaceVal = expectedVals + "\n" + anno;
                     String subClassContents = SrcType.CLASSEXTENDS.getTemplate()
                             .replace("#CN", className).replace("#SN", SUPERCLASS)
@@ -456,17 +477,17 @@ public class ReflectionTest {
         BasicContainer_Legacy(
         "@ExpectedBase(value = Foo.class, "
                 + "getAnnotationVal = \"NULL\","
-                + "getAnnotationsVals = {\"ExpectedBase\", \"ExpectedContainer\", \"FooContainer\"}, "
-                + "getDeclAnnosVals = {\"ExpectedBase\", \"ExpectedContainer\", \"FooContainer\"}, "
+                + "getAnnotationsVals = {\"ExpectedBase\", \"ExpectedContainer\", \"@FooContainer(value=[@Foo(value=1), @Foo(value=2)])\"}, "
+                + "getDeclAnnosVals = {\"ExpectedBase\", \"ExpectedContainer\", \"@FooContainer(value=[@Foo(value=1), @Foo(value=2)])\"}, "
                 + "getDeclAnnoVal = \"NULL\", " + "getAnnosArgs = {}, "
                 + "getDeclAnnosArgs = {} )",
         "@ExpectedContainer(value=FooContainer.class, "
-                + "getAnnotationVal = \"FooContainer\", "
-                + "getAnnotationsVals = {\"ExpectedBase\", \"ExpectedContainer\", \"FooContainer\"}, "
-                + "getDeclAnnosVals = {\"ExpectedBase\", \"ExpectedContainer\", \"FooContainer\"}, "
-                + "getDeclAnnoVal = \"FooContainer\", "
-                + "getAnnosArgs = {\"FooContainer\"}, "
-                + "getDeclAnnosArgs = {\"FooContainer\"} )") {
+                + "getAnnotationVal = \"@FooContainer(value=[@Foo(value=1), @Foo(value=2)])\", "
+                + "getAnnotationsVals = {\"ExpectedBase\", \"ExpectedContainer\", \"@FooContainer(value=[@Foo(value=1), @Foo(value=2)])\"}, "
+                + "getDeclAnnosVals = {\"ExpectedBase\", \"ExpectedContainer\", \"@FooContainer(value=[@Foo(value=1), @Foo(value=2)])\"}, "
+                + "getDeclAnnoVal = \"@FooContainer(value=[@Foo(value=1), @Foo(value=2)])\", "
+                + "getAnnosArgs = {\"@FooContainer(value=[@Foo(value=1), @Foo(value=2)])\"}, "
+                + "getDeclAnnosArgs = {\"@FooContainer(value=[@Foo(value=1), @Foo(value=2)])\"} )") {
 
             @Override
             public Iterable<? extends JavaFileObject> getTestFiles(SrcType srcType,
@@ -498,11 +519,11 @@ public class ReflectionTest {
                         Sample package-info.java
                         @ExpectedBase
                         @ExpectedContainer
-                        @FooContainer(value = {@Foo, @Foo})
+                        @FooContainer(value = {@Foo(1), @Foo(2)})
                         package testpkg;
 
                         @Retention(RetentionPolicy.RUNTIME)
-                        @interface Foo {}
+                        @interface Foo {int value() default Integer.MAX_VALUE;}
 
                         @Retention(RetentionPolicy.RUNTIME)
                         @interface FooContainer {
@@ -529,7 +550,7 @@ public class ReflectionTest {
                         Sample testSrc for class:
                         @Retention(RetentionPolicy.RUNTIME)
                         @Inherited
-                        @interface Foo {}
+                        @interface Foo {int value() default Integer.MAX_VALUE;}
 
                         @Retention(RetentionPolicy.RUNTIME)
                         @Inherited
@@ -539,7 +560,7 @@ public class ReflectionTest {
 
                         @ExpectedBase
                         @ExpectedContainer
-                        @FooContainer(value = {@Foo, @Foo})
+                        @FooContainer(value = {@Foo(1), @Foo(2)})
                         class A {}
                          */
                         replaceVal = expectedVals + anno;
@@ -554,23 +575,23 @@ public class ReflectionTest {
         },
         SingleAndContainerOnSuper_Legacy(
         "@ExpectedBase(value = Foo.class, "
-                + "getAnnotationVal = \"Foo\","
+                + "getAnnotationVal = \"@Foo(value=0)\","
                 + "getAnnotationsVals = {"
-                +       "\"ExpectedBase\", \"ExpectedContainer\", \"Foo\", \"FooContainer\"}, "
+                +       "\"ExpectedBase\", \"ExpectedContainer\", \"@Foo(value=0)\", \"@FooContainer(value=[@Foo(value=1), @Foo(value=2)])\"}, "
                 + "getDeclAnnosVals = {"
-                +       "\"ExpectedBase\", \"ExpectedContainer\", \"Foo\", \"FooContainer\"}, "
-                + "getDeclAnnoVal = \"Foo\", "
-                + "getAnnosArgs = {\"Foo\"}, "
-                + "getDeclAnnosArgs = {\"Foo\"} )",
+                +       "\"ExpectedBase\", \"ExpectedContainer\", \"@Foo(value=0)\", \"@FooContainer(value=[@Foo(value=1), @Foo(value=2)])\"}, "
+                + "getDeclAnnoVal = \"@Foo(value=0)\", "
+                + "getAnnosArgs = {\"@Foo(value=0)\"}, "
+                + "getDeclAnnosArgs = {\"@Foo(value=0)\"} )",
         "@ExpectedContainer(value=FooContainer.class, "
-                + "getAnnotationVal = \"FooContainer\", "
+                + "getAnnotationVal = \"@FooContainer(value=[@Foo(value=1), @Foo(value=2)])\", "
                 + "getAnnotationsVals = {"
-                +       "\"ExpectedBase\", \"ExpectedContainer\", \"Foo\", \"FooContainer\"}, "
+                +       "\"ExpectedBase\", \"ExpectedContainer\", \"@Foo(value=0)\", \"@FooContainer(value=[@Foo(value=1), @Foo(value=2)])\"}, "
                 + "getDeclAnnosVals = {"
-                +       "\"ExpectedBase\", \"ExpectedContainer\", \"Foo\", \"FooContainer\"}, "
-                + "getDeclAnnoVal = \"FooContainer\", "
-                + "getAnnosArgs = {\"FooContainer\"}, "
-                + "getDeclAnnosArgs = {\"FooContainer\"} )") {
+                +       "\"ExpectedBase\", \"ExpectedContainer\", \"@Foo(value=0)\", \"@FooContainer(value=[@Foo(value=1), @Foo(value=2)])\"}, "
+                + "getDeclAnnoVal = \"@FooContainer(value=[@Foo(value=1), @Foo(value=2)])\", "
+                + "getAnnosArgs = {\"@FooContainer(value=[@Foo(value=1), @Foo(value=2)])\"}, "
+                + "getDeclAnnosArgs = {\"@FooContainer(value=[@Foo(value=1), @Foo(value=2)])\"} )") {
 
             @Override
             public Iterable<? extends JavaFileObject> getTestFiles(SrcType srcType,
@@ -589,8 +610,8 @@ public class ReflectionTest {
                         + getExpectedContainer() + "\n";
                 StringBuilder commonStmts = new StringBuilder();
 
-                anno = Helper.ContentVars.LEGACYCONTAINER.getVal()
-                        + Helper.ContentVars.BASEANNO.getVal();
+                anno = Helper.ContentVars.BASEANNO.getVal() +
+                       Helper.ContentVars.LEGACYCONTAINER.getVal();
                 commonStmts.append(Helper.ContentVars.IMPORTEXPECTED.getVal())
                         .append(Helper.ContentVars.IMPORTSTMTS.getVal())
                         .append(Helper.ContentVars.RETENTIONRUNTIME.getVal())
@@ -603,12 +624,12 @@ public class ReflectionTest {
                         Sample package-info.java
                         @ExpectedBase
                         @ExpectedContainer
-                        @Foo
-                        @FooContainer(value = {@Foo, @Foo})
+                        @Foo(0)
+                        @FooContainer(value = {@Foo(1), @Foo(2)})
                         package testpkg;
 
                         @Retention(RetentionPolicy.RUNTIME)
-                        @interface Foo {}
+                        @interface Foo {int value() default Integer.MAX_VALUE;}
 
                         @Retention(RetentionPolicy.RUNTIME)
                         @interface FooContainer {
@@ -636,7 +657,7 @@ public class ReflectionTest {
                         Sample testSrc for class:
                         @Retention(RetentionPolicy.RUNTIME)
                         @Inherited
-                        @interface Foo {}
+                        @interface Foo {int value() default Integer.MAX_VALUE;}
 
                         @Retention(RetentionPolicy.RUNTIME)
                         @Inherited
@@ -646,8 +667,8 @@ public class ReflectionTest {
 
                         @ExpectedBase
                         @ExpectedContainer
-                        @Foo
-                        @FooContainer(value = {@Foo, @Foo})
+                        @Foo(0)
+                        @FooContainer(value = {@Foo(1), @Foo(2)})
                         class A {}
                          */
                         replaceVal = expectedVals + anno;
@@ -664,17 +685,17 @@ public class ReflectionTest {
         BasicContainer_Inherited_Legacy(
         "@ExpectedBase(value = Foo.class, "
                 + "getAnnotationVal = \"NULL\","
-                + "getAnnotationsVals = {\"ExpectedBase\", \"ExpectedContainer\", \"FooContainer\"}, "
+                + "getAnnotationsVals = {\"ExpectedBase\", \"ExpectedContainer\", \"@FooContainer(value=[@Foo(value=1), @Foo(value=2)])\"}, "
                 + "getDeclAnnosVals = {\"ExpectedBase\", \"ExpectedContainer\"}, "
                 + "getDeclAnnoVal = \"NULL\", "
                 + "getAnnosArgs = {}, "
                 + "getDeclAnnosArgs = {} )",
         "@ExpectedContainer(value=FooContainer.class, "
-                + "getAnnotationVal = \"FooContainer\", "
-                + "getAnnotationsVals = {\"ExpectedBase\", \"ExpectedContainer\", \"FooContainer\"}, "
+                + "getAnnotationVal = \"@FooContainer(value=[@Foo(value=1), @Foo(value=2)])\", "
+                + "getAnnotationsVals = {\"ExpectedBase\", \"ExpectedContainer\", \"@FooContainer(value=[@Foo(value=1), @Foo(value=2)])\"}, "
                 + "getDeclAnnosVals = {\"ExpectedBase\", \"ExpectedContainer\"}, "
                 + "getDeclAnnoVal = \"NULL\", "
-                + "getAnnosArgs = {\"FooContainer\"}, "
+                + "getAnnosArgs = {\"@FooContainer(value=[@Foo(value=1), @Foo(value=2)])\"}, "
                 + "getDeclAnnosArgs = {} )") {
 
             @Override
@@ -694,7 +715,7 @@ public class ReflectionTest {
                 Sample testSrc:
                 @Retention(RetentionPolicy.RUNTIME)
                 @Inherited
-                @interface Foo {}
+                @interface Foo {int value() default Integer.MAX_VALUE;}
 
                 @Retention(RetentionPolicy.RUNTIME)
                 @Inherited
@@ -702,7 +723,7 @@ public class ReflectionTest {
                 Foo[] value();
                 }
 
-                @FooContainer(value = {@Foo, @Foo})
+                @FooContainer(value = {@Foo(1), @Foo(2)})
                 class SuperClass { }
 
                 @ExpectedBase
@@ -736,20 +757,20 @@ public class ReflectionTest {
         },
         ContainerOnSuperSingleOnSub_Inherited_Legacy(
         "@ExpectedBase(value=Foo.class, "
-                + "getAnnotationVal = \"Foo\", "
+                + "getAnnotationVal = \"@Foo(value=0)\", "
                 + "getAnnotationsVals = {"
-                +       "\"ExpectedBase\", \"ExpectedContainer\", \"Foo\", \"FooContainer\"}, "
-                + "getDeclAnnosVals = {\"ExpectedBase\", \"ExpectedContainer\", \"Foo\"},"
-                + "getDeclAnnoVal = \"Foo\","
-                + "getAnnosArgs = {\"Foo\"},"
-                + "getDeclAnnosArgs = {\"Foo\"})",
+                +       "\"ExpectedBase\", \"ExpectedContainer\", \"@FooContainer(value=[@Foo(value=1), @Foo(value=2)])\", \"@Foo(value=0)\"}, "
+                + "getDeclAnnosVals = {\"ExpectedBase\", \"ExpectedContainer\", \"@Foo(value=0)\"},"
+                + "getDeclAnnoVal = \"@Foo(value=0)\","
+                + "getAnnosArgs = {\"@Foo(value=0)\"},"
+                + "getDeclAnnosArgs = {\"@Foo(value=0)\"})",
         "@ExpectedContainer(value=FooContainer.class, "
-                + "getAnnotationVal = \"FooContainer\", "
+                + "getAnnotationVal = \"@FooContainer(value=[@Foo(value=1), @Foo(value=2)])\", "
                 + "getAnnotationsVals = {"
-                +       "\"ExpectedBase\", \"ExpectedContainer\", \"Foo\", \"FooContainer\"}, "
-                + "getDeclAnnosVals = {\"ExpectedBase\", \"ExpectedContainer\", \"Foo\"},"
+                +       "\"ExpectedBase\", \"ExpectedContainer\", \"@FooContainer(value=[@Foo(value=1), @Foo(value=2)])\", \"@Foo(value=0)\"}, "
+                + "getDeclAnnosVals = {\"ExpectedBase\", \"ExpectedContainer\", \"@Foo(value=0)\"},"
                 + "getDeclAnnoVal = \"NULL\","
-                + "getAnnosArgs = {\"FooContainer\"},"
+                + "getAnnosArgs = {\"@FooContainer(value=[@Foo(value=1), @Foo(value=2)])\"},"
                 + "getDeclAnnosArgs = {})") {
 
             @Override
@@ -769,7 +790,7 @@ public class ReflectionTest {
                 Sample testSrc:
                 @Retention(RetentionPolicy.RUNTIME)
                 @Inherited
-                @interface Foo {}
+                @interface Foo {int value() default Integer.MAX_VALUE;}
 
                 @Retention(RetentionPolicy.RUNTIME)
                 @Inherited
@@ -777,12 +798,12 @@ public class ReflectionTest {
                 Foo[] value();
                 }
 
-                @FooContainer(value = {@Foo, @Foo})
+                @FooContainer(value = {@Foo(1), @Foo(2)})
                 class SuperClass { }
 
                 @ExpectedBase
                 @ExpectedContainer
-                @Foo
+                @Foo(0)
                 class SubClass extends SuperClass {}
                  */
                 // @Inherited only works for classes, no switch cases for
@@ -811,22 +832,24 @@ public class ReflectionTest {
                 return files;
             }
         },
+        // @ignore 8025924: Several test cases in repeatingAnnotations/combo/ReflectionTest
+        // fail with ordering issues
         ContainerAndSingleOnSuperSingleOnSub_Inherited_Legacy(
         "@ExpectedBase(value=Foo.class, "
-                + "getAnnotationVal = \"Foo\", "
+                + "getAnnotationVal = \"@Foo(value=0)\", "
                 + "getAnnotationsVals = {"
-                +       "\"ExpectedBase\", \"ExpectedContainer\", \"Foo\", \"FooContainer\"}, "
-                + "getDeclAnnosVals = {\"ExpectedBase\", \"ExpectedContainer\", \"Foo\"},"
-                + "getDeclAnnoVal = \"Foo\","
-                + "getAnnosArgs = {\"Foo\"},"
-                + "getDeclAnnosArgs = {\"Foo\"})",
+                +       "\"ExpectedBase\", \"ExpectedContainer\", \"@FooContainer(value=[@Foo(value=1), @Foo(value=2)])\", \"@Foo(value=0)\"}, "
+                + "getDeclAnnosVals = {\"ExpectedBase\", \"ExpectedContainer\", \"@Foo(value=0)\"},"
+                + "getDeclAnnoVal = \"@Foo(value=0)\","
+                + "getAnnosArgs = {\"@Foo(value=0)\"},"
+                + "getDeclAnnosArgs = {\"@Foo(value=0)\"})",
         "@ExpectedContainer(value=FooContainer.class, "
-                + "getAnnotationVal = \"FooContainer\", "
+                + "getAnnotationVal = \"@FooContainer(value=[@Foo(value=1), @Foo(value=2)])\", "
                 + "getAnnotationsVals = {"
-                +       "\"ExpectedBase\", \"ExpectedContainer\", \"Foo\", \"FooContainer\"}, "
-                + "getDeclAnnosVals = {\"ExpectedBase\", \"ExpectedContainer\", \"Foo\"},"
+                +       "\"ExpectedBase\", \"ExpectedContainer\", \"@FooContainer(value=[@Foo(value=1), @Foo(value=2)])\", \"@Foo(value=0)\"}, "
+                + "getDeclAnnosVals = {\"ExpectedBase\", \"ExpectedContainer\", \"@Foo(value=0)\"},"
                 + "getDeclAnnoVal = \"NULL\","
-                + "getAnnosArgs = {\"FooContainer\"},"
+                + "getAnnosArgs = {\"@FooContainer(value=[@Foo(value=1), @Foo(value=2)])\"},"
                 + "getDeclAnnosArgs = {})") {
 
             @Override
@@ -846,7 +869,7 @@ public class ReflectionTest {
                 Sample testSrc:
                 @Retention(RetentionPolicy.RUNTIME)
                 @Inherited
-                @interface Foo {}
+                @interface Foo {int value() default Integer.MAX_VALUE;}
 
                 @Retention(RetentionPolicy.RUNTIME)
                 @Inherited
@@ -854,12 +877,12 @@ public class ReflectionTest {
                 Foo[] value();
                 }
 
-                @FooContainer(value = {@Foo, @Foo}) @Foo
+                @FooContainer(value = {@Foo(1), @Foo(2)}) @Foo(3)
                 class SuperClass { }
 
                 @ExpectedBase
                 @ExpectedContainer
-                @Foo
+                @Foo(0)
                 class SubClass extends SuperClass {}
                  */
                 // @Inherited only works for classes, no switch cases for
@@ -868,7 +891,7 @@ public class ReflectionTest {
                 if (srcType == SrcType.CLASS) {
                     // Contents for SuperClass
                     anno = Helper.ContentVars.LEGACYCONTAINER.getVal()
-                            + Helper.ContentVars.BASEANNO.getVal();
+                            + "@Foo(3)";
                     replaceVal = commonStmts + "\n" + anno;
                     String superClassContents = srcType.getTemplate()
                             .replace("#CN", SUPERCLASS)
@@ -888,23 +911,25 @@ public class ReflectionTest {
                 return files;
             }
         },
+        // @ignore 8025924: Several test cases in repeatingAnnotations/combo/ReflectionTest
+        // fail with ordering issues
         SingleOnSuperContainerOnSub_Inherited_Legacy(
         "@ExpectedBase(value=Foo.class, "
-                + "getAnnotationVal = \"Foo\", "
+                + "getAnnotationVal = \"@Foo(value=0)\", "
                 + "getAnnotationsVals = {"
-                +       "\"ExpectedBase\", \"ExpectedContainer\", \"Foo\", \"FooContainer\"}, "
-                + "getDeclAnnosVals = {\"ExpectedBase\", \"ExpectedContainer\", \"FooContainer\"},"
+                +       "\"ExpectedBase\", \"ExpectedContainer\", \"@Foo(value=0)\", \"@FooContainer(value=[@Foo(value=1), @Foo(value=2)])\"}, "
+                + "getDeclAnnosVals = {\"ExpectedBase\", \"ExpectedContainer\", \"@FooContainer(value=[@Foo(value=1), @Foo(value=2)])\"},"
                 + "getDeclAnnoVal = \"NULL\","
-                + "getAnnosArgs = {\"Foo\"},"
+                + "getAnnosArgs = {\"@Foo(value=0)\"},"
                 + "getDeclAnnosArgs = {})",
         "@ExpectedContainer(value=FooContainer.class, "
-                + "getAnnotationVal = \"FooContainer\", "
+                + "getAnnotationVal = \"@FooContainer(value=[@Foo(value=1), @Foo(value=2)])\", "
                 + "getAnnotationsVals = {"
-                +       "\"ExpectedBase\", \"ExpectedContainer\", \"Foo\", \"FooContainer\"}, "
-                + "getDeclAnnosVals = {\"ExpectedBase\", \"ExpectedContainer\", \"FooContainer\"},"
-                + "getDeclAnnoVal = \"FooContainer\","
-                + "getAnnosArgs = {\"FooContainer\"},"
-                + "getDeclAnnosArgs = {\"FooContainer\"})") {
+                +       "\"ExpectedBase\", \"ExpectedContainer\", \"@Foo(value=0)\", \"@FooContainer(value=[@Foo(value=1), @Foo(value=2)])\"}, "
+                + "getDeclAnnosVals = {\"ExpectedBase\", \"ExpectedContainer\", \"@FooContainer(value=[@Foo(value=1), @Foo(value=2)])\"},"
+                + "getDeclAnnoVal = \"@FooContainer(value=[@Foo(value=1), @Foo(value=2)])\","
+                + "getAnnosArgs = {\"@FooContainer(value=[@Foo(value=1), @Foo(value=2)])\"},"
+                + "getDeclAnnosArgs = {\"@FooContainer(value=[@Foo(value=1), @Foo(value=2)])\"})") {
 
             @Override
             public Iterable<? extends JavaFileObject> getTestFiles(SrcType srcType,
@@ -924,7 +949,7 @@ public class ReflectionTest {
                 Sample testSrc:
                 @Retention(RetentionPolicy.RUNTIME)
                 @Inherited
-                @interface Foo {}
+                @interface Foo {int value() default Integer.MAX_VALUE;}
 
                 @Retention(RetentionPolicy.RUNTIME)
                 @Inherited
@@ -932,12 +957,12 @@ public class ReflectionTest {
                 Foo[] value();
                 }
 
-                @Foo
+                @Foo(0)
                 class SuperClass { }
 
                 @ExpectedBase
                 @ExpectedContainer
-                @FooContainer(value = {@Foo, @Foo})
+                @FooContainer(value = {@Foo(1), @Foo(2)})
                 class SubClass extends SuperClass {}
                  */
 
@@ -963,25 +988,27 @@ public class ReflectionTest {
                 return files;
             }
         },
+        // @ignore 8025924: Several test cases in repeatingAnnotations/combo/ReflectionTest
+        // fail with ordering issues
         SingleOnSuperContainerAndSingleOnSub_Inherited_Legacy(
         "@ExpectedBase(value=Foo.class, "
-                + "getAnnotationVal = \"Foo\", "
+                + "getAnnotationVal = \"@Foo(value=3)\", "
                 + "getAnnotationsVals = {"
-                +       "\"ExpectedBase\", \"ExpectedContainer\", \"Foo\", \"FooContainer\"}, "
+                +       "\"ExpectedBase\", \"ExpectedContainer\", \"@FooContainer(value=[@Foo(value=1), @Foo(value=2)])\", \"@Foo(value=3)\"}, "
                 + "getDeclAnnosVals = {"
-                +       "\"ExpectedBase\", \"ExpectedContainer\", \"Foo\", \"FooContainer\"},"
-                + "getDeclAnnoVal = \"Foo\","
-                + "getAnnosArgs = {\"Foo\"},"
-                + "getDeclAnnosArgs = {\"Foo\"})",
+                +       "\"ExpectedBase\", \"ExpectedContainer\", \"@FooContainer(value=[@Foo(value=1), @Foo(value=2)])\", \"@Foo(value=3)\"},"
+                + "getDeclAnnoVal = \"@Foo(value=3)\","
+                + "getAnnosArgs = {\"@Foo(value=3)\"},"
+                + "getDeclAnnosArgs = {\"@Foo(value=3)\"})",
         "@ExpectedContainer(value=FooContainer.class, "
-                + "getAnnotationVal = \"FooContainer\", "
+                + "getAnnotationVal = \"@FooContainer(value=[@Foo(value=1), @Foo(value=2)])\", "
                 + "getAnnotationsVals = {"
-                +       "\"ExpectedBase\", \"ExpectedContainer\", \"Foo\", \"FooContainer\"}, "
+                +       "\"ExpectedBase\", \"ExpectedContainer\", \"@FooContainer(value=[@Foo(value=1), @Foo(value=2)])\", \"@Foo(value=3)\"}, "
                 + "getDeclAnnosVals = {"
-                +       "\"ExpectedBase\", \"ExpectedContainer\", \"Foo\", \"FooContainer\"},"
-                + "getDeclAnnoVal = \"FooContainer\","
-                + "getAnnosArgs = {\"FooContainer\"},"
-                + "getDeclAnnosArgs = {\"FooContainer\"})") {
+                +       "\"ExpectedBase\", \"ExpectedContainer\", \"@FooContainer(value=[@Foo(value=1), @Foo(value=2)])\", \"@Foo(value=3)\"},"
+                + "getDeclAnnoVal = \"@FooContainer(value=[@Foo(value=1), @Foo(value=2)])\","
+                + "getAnnosArgs = {\"@FooContainer(value=[@Foo(value=1), @Foo(value=2)])\"},"
+                + "getDeclAnnosArgs = {\"@FooContainer(value=[@Foo(value=1), @Foo(value=2)])\"})") {
 
             @Override
             public Iterable<? extends JavaFileObject> getTestFiles(SrcType srcType,
@@ -1001,7 +1028,7 @@ public class ReflectionTest {
                 Sample testSrc:
                 @Retention(RetentionPolicy.RUNTIME)
                 @Inherited
-                @interface Foo {}
+                @interface Foo {int value() default Integer.MAX_VALUE;}
 
                 @Retention(RetentionPolicy.RUNTIME)
                 @Inherited
@@ -1009,12 +1036,12 @@ public class ReflectionTest {
                 Foo[] value();
                 }
 
-                @Foo
+                @Foo(0)
                 class SuperClass { }
 
                 @ExpectedBase
                 @ExpectedContainer
-                @FooContainer(value = {@Foo, @Foo}) @Foo
+                @FooContainer(value = {@Foo(1), @Foo(2)}) @Foo(3)
                 class SubClass extends SuperClass {}
                  */
 
@@ -1028,7 +1055,7 @@ public class ReflectionTest {
 
                     //Contents for SubClass that extends SuperClass
                     anno = Helper.ContentVars.LEGACYCONTAINER.getVal()
-                            + Helper.ContentVars.BASEANNO.getVal();
+                            + "@Foo(3)";
                     replaceVal = expectedVals + "\n" + anno;
                     String subClassContents = SrcType.CLASSEXTENDS.getTemplate()
                             .replace("#CN", className).replace("#SN", SUPERCLASS)
@@ -1044,18 +1071,18 @@ public class ReflectionTest {
         BasicRepeatable(
         "@ExpectedBase(value=Foo.class, "
                 + "getAnnotationVal = \"NULL\", "
-                + "getAnnotationsVals = {\"ExpectedBase\", \"ExpectedContainer\", \"FooContainer\" }, "
-                + "getDeclAnnosVals = {\"ExpectedBase\", \"ExpectedContainer\", \"FooContainer\"},"
+                + "getAnnotationsVals = {\"ExpectedBase\", \"ExpectedContainer\", \"@FooContainer(value=[@Foo(value=1), @Foo(value=2)])\" }, "
+                + "getDeclAnnosVals = {\"ExpectedBase\", \"ExpectedContainer\", \"@FooContainer(value=[@Foo(value=1), @Foo(value=2)])\"},"
                 + "getDeclAnnoVal = \"NULL\","
-                + "getAnnosArgs = {\"Foo\", \"Foo\"},"
-                + "getDeclAnnosArgs = {\"Foo\", \"Foo\"})",
+                + "getAnnosArgs = {\"@Foo(value=1)\", \"@Foo(value=2)\"},"
+                + "getDeclAnnosArgs = {\"@Foo(value=1)\", \"@Foo(value=2)\"})",
         "@ExpectedContainer(value=FooContainer.class, "
-                + "getAnnotationVal = \"FooContainer\","
-                + "getAnnotationsVals = {\"ExpectedBase\", \"ExpectedContainer\", \"FooContainer\"},"
-                + "getDeclAnnosVals = {\"ExpectedBase\", \"ExpectedContainer\", \"FooContainer\"}, "
-                + "getDeclAnnoVal = \"FooContainer\","
-                + "getAnnosArgs = {\"FooContainer\"},"
-                + "getDeclAnnosArgs = {\"FooContainer\"} )") {
+                + "getAnnotationVal = \"@FooContainer(value=[@Foo(value=1), @Foo(value=2)])\","
+                + "getAnnotationsVals = {\"ExpectedBase\", \"ExpectedContainer\", \"@FooContainer(value=[@Foo(value=1), @Foo(value=2)])\"},"
+                + "getDeclAnnosVals = {\"ExpectedBase\", \"ExpectedContainer\", \"@FooContainer(value=[@Foo(value=1), @Foo(value=2)])\"}, "
+                + "getDeclAnnoVal = \"@FooContainer(value=[@Foo(value=1), @Foo(value=2)])\","
+                + "getAnnosArgs = {\"@FooContainer(value=[@Foo(value=1), @Foo(value=2)])\"},"
+                + "getDeclAnnosArgs = {\"@FooContainer(value=[@Foo(value=1), @Foo(value=2)])\"} )") {
 
             @Override
             public Iterable<? extends JavaFileObject> getTestFiles(SrcType srcType,
@@ -1088,12 +1115,12 @@ public class ReflectionTest {
                         Sample package-info.java
                         @ExpectedBase
                         @ExpectedContainer
-                        @Foo() @Foo()
+                        @Foo(1) @Foo(2)
                         package testpkg;
 
                         @Retention(RetentionPolicy.RUNTIME)
                         @Repeatable(FooContainer.class)
-                        @interface Foo {}
+                        @interface Foo {int value() default Integer.MAX_VALUE;}
 
                         @Retention(RetentionPolicy.RUNTIME)
                         @interface FooContainer {
@@ -1120,7 +1147,7 @@ public class ReflectionTest {
                         Sample testSrc for class:
                         @Retention(RetentionPolicy.RUNTIME)
                         @Repeatable(FooContainer.class)
-                        @interface Foo {}
+                        @interface Foo {int value() default Integer.MAX_VALUE;}
 
                         @Retention(RetentionPolicy.RUNTIME)
                         @interface FooContainer {
@@ -1129,7 +1156,7 @@ public class ReflectionTest {
 
                         @ExpectedBase
                         @ExpectedContainer
-                        @Foo @Foo
+                        @Foo(1) @Foo(2)
                         class A { }
                          */
                         replaceVal = expectedVals + anno;
@@ -1146,21 +1173,21 @@ public class ReflectionTest {
         "@ExpectedBase(value=Foo.class, "
                 + "getAnnotationVal = \"NULL\", "
                 + "getAnnotationsVals = {"
-                +       "\"ExpectedBase\", \"ExpectedContainer\", \"FooContainer\"}, "
+                +       "\"ExpectedBase\", \"ExpectedContainer\", \"@FooContainer(value=[@Foo(value=1), @Foo(value=2)])\"}, "
                 + "getDeclAnnosVals = {"
-                +       "\"ExpectedBase\", \"ExpectedContainer\", \"FooContainer\"},"
+                +       "\"ExpectedBase\", \"ExpectedContainer\", \"@FooContainer(value=[@Foo(value=1), @Foo(value=2)])\"},"
                 + "getDeclAnnoVal = \"NULL\","
-                + "getAnnosArgs = {\"Foo\", \"Foo\"},"
-                + "getDeclAnnosArgs = {\"Foo\", \"Foo\"})",
+                + "getAnnosArgs = {\"@Foo(value=1)\", \"@Foo(value=2)\"},"
+                + "getDeclAnnosArgs = {\"@Foo(value=1)\", \"@Foo(value=2)\"})",
         "@ExpectedContainer(value=FooContainer.class, "
-                + "getAnnotationVal = \"FooContainer\","
+                + "getAnnotationVal = \"@FooContainer(value=[@Foo(value=1), @Foo(value=2)])\","
                 + "getAnnotationsVals = {"
-                +       "\"ExpectedBase\", \"ExpectedContainer\", \"FooContainer\"},"
+                +       "\"ExpectedBase\", \"ExpectedContainer\", \"@FooContainer(value=[@Foo(value=1), @Foo(value=2)])\"},"
                 + "getDeclAnnosVals = {"
-                +       "\"ExpectedBase\", \"ExpectedContainer\", \"FooContainer\"}, "
-                + "getDeclAnnoVal = \"FooContainer\","
-                + "getAnnosArgs = {\"FooContainer\"},"
-                + "getDeclAnnosArgs = {\"FooContainer\"} )") {
+                +       "\"ExpectedBase\", \"ExpectedContainer\", \"@FooContainer(value=[@Foo(value=1), @Foo(value=2)])\"}, "
+                + "getDeclAnnoVal = \"@FooContainer(value=[@Foo(value=1), @Foo(value=2)])\","
+                + "getAnnosArgs = {\"@FooContainer(value=[@Foo(value=1), @Foo(value=2)])\"},"
+                + "getDeclAnnosArgs = {\"@FooContainer(value=[@Foo(value=1), @Foo(value=2)])\"} )") {
 
             @Override
             public Iterable<? extends JavaFileObject> getTestFiles(SrcType srcType,
@@ -1193,12 +1220,12 @@ public class ReflectionTest {
                         Sample package-info.java
                         @ExpectedBase
                         @ExpectedContainer
-                        @FooContainer(value = {@Foo, @Foo})
+                        @FooContainer(value = {@Foo(1), @Foo(2)})
                         package testpkg;
 
                         @Retention(RetentionPolicy.RUNTIME)
                         @Repeatable(FooContainer.class)
-                        @interface Foo {}
+                        @interface Foo {int value() default Integer.MAX_VALUE;}
 
                         @Retention(RetentionPolicy.RUNTIME)
                         @interface FooContainer {
@@ -1225,7 +1252,7 @@ public class ReflectionTest {
                         Sample testSrc for class:
                         @Retention(RetentionPolicy.RUNTIME)
                         @Repeatable(FooContainer.class)
-                        @interface Foo {}
+                        @interface Foo {int value() default Integer.MAX_VALUE;}
 
                         @Retention(RetentionPolicy.RUNTIME)
                         @interface FooContainer {
@@ -1234,7 +1261,7 @@ public class ReflectionTest {
 
                         @ExpectedBase
                         @ExpectedContainer
-                        @FooContainer(value = {@Foo, @Foo})
+                        @FooContainer(value = {@Foo(1), @Foo(2)})
                         class A { }
                          */
                         replaceVal = expectedVals + anno;
@@ -1250,17 +1277,17 @@ public class ReflectionTest {
         BasicContainerRepeatable_Inherited(
         "@ExpectedBase(value=Foo.class, "
                 + "getAnnotationVal = \"NULL\", "
-                + "getAnnotationsVals = {\"ExpectedBase\", \"ExpectedContainer\", \"FooContainer\"}, "
+                + "getAnnotationsVals = {\"ExpectedBase\", \"ExpectedContainer\", \"@FooContainer(value=[@Foo(value=1), @Foo(value=2)])\"}, "
                 + "getDeclAnnosVals = {\"ExpectedBase\", \"ExpectedContainer\"}, "
                 + "getDeclAnnoVal = \"NULL\", "
-                + "getAnnosArgs = {\"Foo\", \"Foo\"}, "
+                + "getAnnosArgs = {\"@Foo(value=1)\", \"@Foo(value=2)\"}, "
                 + "getDeclAnnosArgs = {})",
         "@ExpectedContainer(value=FooContainer.class, "
-                + "getAnnotationVal = \"FooContainer\", "
-                + "getAnnotationsVals = {\"ExpectedBase\", \"ExpectedContainer\", \"FooContainer\"}, "
+                + "getAnnotationVal = \"@FooContainer(value=[@Foo(value=1), @Foo(value=2)])\", "
+                + "getAnnotationsVals = {\"ExpectedBase\", \"ExpectedContainer\", \"@FooContainer(value=[@Foo(value=1), @Foo(value=2)])\"}, "
                 + "getDeclAnnosVals = { \"ExpectedBase\", \"ExpectedContainer\"}, "
                 + "getDeclAnnoVal = \"NULL\", "
-                + "getAnnosArgs = {\"FooContainer\"}, "
+                + "getAnnosArgs = {\"@FooContainer(value=[@Foo(value=1), @Foo(value=2)])\"}, "
                 + "getDeclAnnosArgs = {})") {
 
             @Override
@@ -1280,7 +1307,7 @@ public class ReflectionTest {
                 @Retention(RetentionPolicy.RUNTIME)
                 @Inherited
                 @Repeatable(FooContainer.class)
-                @interface Foo {}
+                @interface Foo {int value() default Integer.MAX_VALUE;}
 
                 @Retention(RetentionPolicy.RUNTIME)
                 @Inherited
@@ -1288,7 +1315,7 @@ public class ReflectionTest {
                 Foo[] value();
                 }
 
-                @FooContainer(value = {@Foo, @Foo})
+                @FooContainer(value = {@Foo(1), @Foo(2)})
                 class SuperClass { }
 
                 @ExpectedBase
@@ -1323,21 +1350,21 @@ public class ReflectionTest {
         RepeatableAnnoInherited(
         "@ExpectedBase(value=Foo.class, "
                 + "getAnnotationVal = \"NULL\", "
-                + "getAnnotationsVals = {\"ExpectedBase\", \"ExpectedContainer\", \"FooContainer\"}, "
+                + "getAnnotationsVals = {\"ExpectedBase\", \"ExpectedContainer\", \"@FooContainer(value=[@Foo(value=1), @Foo(value=2)])\"}, "
                 + "getDeclAnnosVals = {\"ExpectedBase\", \"ExpectedContainer\"}, "
                 + // ignores inherited annotations
                 "getDeclAnnoVal = \"NULL\", "
                 + // ignores inherited
-                "getAnnosArgs = {\"Foo\", \"Foo\"}, "
+                "getAnnosArgs = {\"@Foo(value=1)\", \"@Foo(value=2)\"}, "
                 + "getDeclAnnosArgs = {})", // ignores inherited
         "@ExpectedContainer(value=FooContainer.class, "
-                + "getAnnotationVal = \"FooContainer\", "
-                + "getAnnotationsVals = {\"ExpectedBase\", \"ExpectedContainer\", \"FooContainer\"}, "
+                + "getAnnotationVal = \"@FooContainer(value=[@Foo(value=1), @Foo(value=2)])\", "
+                + "getAnnotationsVals = {\"ExpectedBase\", \"ExpectedContainer\", \"@FooContainer(value=[@Foo(value=1), @Foo(value=2)])\"}, "
                 + "getDeclAnnosVals = { \"ExpectedBase\", \"ExpectedContainer\"}, "
                 + // ignores inherited annotations
                 "getDeclAnnoVal = \"NULL\", "
                 + // ignores inherited
-                "getAnnosArgs = {\"FooContainer\"}, "
+                "getAnnosArgs = {\"@FooContainer(value=[@Foo(value=1), @Foo(value=2)])\"}, "
                 + "getDeclAnnosArgs = {})") { // ignores inherited
 
             @Override
@@ -1357,7 +1384,7 @@ public class ReflectionTest {
                 @Retention(RetentionPolicy.RUNTIME)
                 @Inherited
                 @Repeatable(FooContainer.class)
-                @interface Foo {}
+                @interface Foo {int value() default Integer.MAX_VALUE;}
 
                 @Retention(RetentionPolicy.RUNTIME)
                 @Inherited
@@ -1365,7 +1392,7 @@ public class ReflectionTest {
                 Foo[] value();
                 }
 
-                @Foo() @Foo()
+                @Foo(1) @Foo(2)
                 class SuperClass { }
 
                 @ExpectedBase
@@ -1397,25 +1424,27 @@ public class ReflectionTest {
                 return files;
             }
         },
+        // @ignore 8025924: Several test cases in repeatingAnnotations/combo/ReflectionTest
+        // fail with ordering issues
         SingleAnnoWithContainer(
         "@ExpectedBase(value=Foo.class, "
-                + "getAnnotationVal = \"Foo\", "
+                + "getAnnotationVal = \"@Foo(value=0)\", "
                 + "getAnnotationsVals = {"
-                +       "\"ExpectedBase\", \"ExpectedContainer\", \"Foo\", \"FooContainer\"},"
+                +       "\"ExpectedBase\", \"ExpectedContainer\", \"@Foo(value=0)\", \"@FooContainer(value=[@Foo(value=1), @Foo(value=2)])\"},"
                 + "getDeclAnnosVals = {"
-                +       "\"ExpectedBase\", \"ExpectedContainer\", \"Foo\", \"FooContainer\"},"
-                + "getDeclAnnoVal = \"Foo\","
-                + "getAnnosArgs = {\"Foo\", \"Foo\", \"Foo\"},"
-                + "getDeclAnnosArgs = {\"Foo\", \"Foo\",\"Foo\"})",
+                +       "\"ExpectedBase\", \"ExpectedContainer\", \"@Foo(value=0)\", \"@FooContainer(value=[@Foo(value=1), @Foo(value=2)])\"},"
+                + "getDeclAnnoVal = \"@Foo(value=0)\","
+                + "getAnnosArgs = {\"@Foo(value=0)\", \"@Foo(value=1)\", \"@Foo(value=2)\"},"
+                + "getDeclAnnosArgs = {\"@Foo(value=0)\", \"@Foo(value=1)\",\"@Foo(value=2)\"})",
         "@ExpectedContainer(value=FooContainer.class, "
-                + "getAnnotationVal = \"FooContainer\", "
+                + "getAnnotationVal = \"@FooContainer(value=[@Foo(value=1), @Foo(value=2)])\", "
                 + "getAnnotationsVals = {"
-                +       "\"ExpectedBase\", \"ExpectedContainer\", \"Foo\", \"FooContainer\"},"
+                +       "\"ExpectedBase\", \"ExpectedContainer\", \"@Foo(value=0)\", \"@FooContainer(value=[@Foo(value=1), @Foo(value=2)])\"},"
                 + "getDeclAnnosVals = {"
-                +       "\"ExpectedBase\", \"ExpectedContainer\", \"Foo\", \"FooContainer\"}, "
-                + "getDeclAnnoVal = \"FooContainer\","
-                + "getDeclAnnosArgs = {\"FooContainer\"},"
-                + "getAnnosArgs = {\"FooContainer\"})") {
+                +       "\"ExpectedBase\", \"ExpectedContainer\", \"@Foo(value=0)\", \"@FooContainer(value=[@Foo(value=1), @Foo(value=2)])\"}, "
+                + "getDeclAnnoVal = \"@FooContainer(value=[@Foo(value=1), @Foo(value=2)])\","
+                + "getDeclAnnosArgs = {\"@FooContainer(value=[@Foo(value=1), @Foo(value=2)])\"},"
+                + "getAnnosArgs = {\"@FooContainer(value=[@Foo(value=1), @Foo(value=2)])\"})") {
 
             @Override
             public Iterable<? extends JavaFileObject> getTestFiles(SrcType srcType,
@@ -1449,12 +1478,12 @@ public class ReflectionTest {
                         Sample package-info.java
                         @ExpectedBase
                         @ExpectedContainer
-                        @Foo @FooContainer(value = {@Foo, @Foo})
+                        @Foo(0) @FooContainer(value = {@Foo(1), @Foo(2)})
                         package testpkg;
 
                         @Retention(RetentionPolicy.RUNTIME)
                         @Repeatable(FooContainer.class)
-                        @interface Foo {}
+                        @interface Foo {int value() default Integer.MAX_VALUE;}
 
                         @Retention(RetentionPolicy.RUNTIME)
                         @interface FooContainer {
@@ -1482,7 +1511,7 @@ public class ReflectionTest {
                         @Retention(RetentionPolicy.RUNTIME)
                         @Inherited
                         @Repeatable(FooContainer.class)
-                        @interface Foo {}
+                        @interface Foo {int value() default Integer.MAX_VALUE;}
 
                         @Retention(RetentionPolicy.RUNTIME)
                         @Inherited
@@ -1492,7 +1521,7 @@ public class ReflectionTest {
 
                         @ExpectedBase
                         @ExpectedContainer
-                        @Foo @FooContainer(value = {@Foo, @Foo})
+                        @Foo(0) @FooContainer(value = {@Foo(1), @Foo(2)})
                         class A { }
                          */
                         replaceVal = expectedVals + anno;
@@ -1508,18 +1537,18 @@ public class ReflectionTest {
         },
         AnnoOnSuperAndSubClass_Inherited(
         "@ExpectedBase(value=Foo.class, "
-                + "getAnnotationVal = \"Foo\", "
-                + "getAnnotationsVals = {\"ExpectedBase\", \"ExpectedContainer\", \"Foo\" }, "
+                + "getAnnotationVal = \"@Foo(value=1)\", "
+                + "getAnnotationsVals = {\"ExpectedBase\", \"ExpectedContainer\", \"@Foo(value=1)\" }, "
                 + // override every annotation on superClass
-                "getDeclAnnosVals = {\"ExpectedBase\", \"ExpectedContainer\", \"Foo\"}, "
+                "getDeclAnnosVals = {\"ExpectedBase\", \"ExpectedContainer\", \"@Foo(value=1)\"}, "
                 + // ignores inherited annotations
-                "getDeclAnnoVal = \"Foo\", " // ignores inherited
-                + "getAnnosArgs = {\"Foo\"}, "
-                + "getDeclAnnosArgs = { \"Foo\" })", // ignores inherited
+                "getDeclAnnoVal = \"@Foo(value=1)\", " // ignores inherited
+                + "getAnnosArgs = {\"@Foo(value=1)\"}, "
+                + "getDeclAnnosArgs = { \"@Foo(value=1)\" })", // ignores inherited
         "@ExpectedContainer(value=FooContainer.class, "
                 + "getAnnotationVal = \"NULL\", "
-                + "getAnnotationsVals = {\"ExpectedBase\", \"ExpectedContainer\", \"Foo\" }, "
-                + "getDeclAnnosVals = {\"ExpectedBase\", \"ExpectedContainer\", \"Foo\"}, "
+                + "getAnnotationsVals = {\"ExpectedBase\", \"ExpectedContainer\", \"@Foo(value=1)\" }, "
+                + "getDeclAnnosVals = {\"ExpectedBase\", \"ExpectedContainer\", \"@Foo(value=1)\"}, "
                 + // ignores inherited annotations
                 "getDeclAnnoVal = \"NULL\", " + // ignores inherited
                 "getAnnosArgs = {}, " + "getDeclAnnosArgs = {})") {
@@ -1542,7 +1571,7 @@ public class ReflectionTest {
                 @Retention(RetentionPolicy.RUNTIME)
                 @Inherited
                 @Repeatable(FooContainer.class)
-                @interface Foo {}
+                @interface Foo {int value() default Integer.MAX_VALUE;}
 
                 @Retention(RetentionPolicy.RUNTIME)
                 @Inherited
@@ -1550,12 +1579,12 @@ public class ReflectionTest {
                 Foo[] value();
                 }
 
-                @Foo()
+                @Foo(0)
                 class SuperClass { }
 
                 @ExpectedBase
                 @ExpectedContainer
-                @Foo
+                @Foo(1)
                 class SubClass extends SuperClass { }
                  */
                 // @Inherited only works for classes, no switch cases for
@@ -1570,7 +1599,7 @@ public class ReflectionTest {
                             .replace("#REPLACE", replaceVal);
 
                     // Contents for SubClass that extends SuperClass
-                    replaceVal = expectedVals + "\n" + anno;
+                    replaceVal = expectedVals + "\n" + "@Foo(1)";
                     String subClassContents = SrcType.CLASSEXTENDS.getTemplate()
                             .replace("#CN", className)
                             .replace("#SN", SUPERCLASS)
@@ -1623,7 +1652,7 @@ public class ReflectionTest {
 //                 @Retention(RetentionPolicy.RUNTIME)
 //                 @Inherited
 //                 @Repeatable(FooContainer.class)
-//                 @interface Foo {}
+//                 @interface Foo {int value() default Integer.MAX_VALUE;}
 
 //                 @Retention(RetentionPolicy.RUNTIME)
 //                 @Inherited
@@ -1650,7 +1679,7 @@ public class ReflectionTest {
 //                             .replace("#REPLACE", replaceVal);
 
 //                     //Contents for SubClass that extends SuperClass
-//                     anno = Helper.ContentVars.BASEANNO.getVal();
+//                     anno = "@Foo(0)";
 //                     replaceVal = expectedVals + "\n" + anno;
 //                     String subClassContents = SrcType.CLASSEXTENDS.getTemplate()
 //                             .replace("#CN", className)
@@ -1703,7 +1732,7 @@ public class ReflectionTest {
 //                 @Retention(RetentionPolicy.RUNTIME)
 //                 @Inherited
 //                 @Repeatable(FooContainer.class)
-//                 @interface Foo {}
+//                 @interface Foo {int value() default Integer.MAX_VALUE;}
 
 //                 @Retention(RetentionPolicy.RUNTIME)
 //                 @Inherited
@@ -1723,7 +1752,7 @@ public class ReflectionTest {
 //                 //@Inherited only works for classes, no switch cases for method, field, package
 //                 if (srcType == SrcType.CLASS) {
 //                     //Contents for SuperClass
-//                     anno = Helper.ContentVars.BASEANNO.getVal();
+//                     anno = "@Foo(0)";
 //                     replaceVal = commonStmts + "\n" + anno;
 //                     String superClassContents = srcType.getTemplate()
 //                             .replace("#CN", SUPERCLASS)
@@ -1781,7 +1810,7 @@ public class ReflectionTest {
 //                 @Retention(RetentionPolicy.RUNTIME)
 //                 @Inherited
 //                 @Repeatable(FooContainer.class)
-//                 @interface Foo {}
+//                 @interface Foo {int value() default Integer.MAX_VALUE;}
 
 //                 @Retention(RetentionPolicy.RUNTIME)
 //                 @Inherited
@@ -1808,7 +1837,7 @@ public class ReflectionTest {
 //                             .replace("#REPLACE", replaceVal);
 
 //                     //Contents for SubClass that extends SuperClass
-//                     anno = Helper.ContentVars.BASEANNO.getVal();
+//                     anno = "@Foo(0)";
 //                     replaceVal = expectedVals + "\n" + anno;
 //                     String subClassContents = SrcType.CLASSEXTENDS.getTemplate()
 //                             .replace("#CN", className)
@@ -1859,7 +1888,7 @@ public class ReflectionTest {
 //                 @Retention(RetentionPolicy.RUNTIME)
 //                 @Inherited
 //                 @Repeatable(FooContainer.class)
-//                 @interface Foo {}
+//                 @interface Foo {int value() default Integer.MAX_VALUE;}
 
 //                 @Retention(RetentionPolicy.RUNTIME)
 //                 @Inherited
@@ -1879,7 +1908,7 @@ public class ReflectionTest {
 //                 //@Inherited only works for classes, no switch cases for method, field, package
 //                 if (srcType == SrcType.CLASS) {
 //                     //Contents for SuperClass
-//                     anno = Helper.ContentVars.BASEANNO.getVal();
+//                     anno = "@Foo(0)";
 //                     replaceVal = commonStmts + "\n" + anno;
 //                     String superClassContents = srcType.getTemplate()
 //                             .replace("#CN", SUPERCLASS)
@@ -1900,25 +1929,27 @@ public class ReflectionTest {
 //                 return files;
 //             }
 //         },
+        // @ignore 8025924: Several test cases in repeatingAnnotations/combo/ReflectionTest
+        // fail with ordering issues
         SingleOnSuperContainerAndSingleOnSub_Inherited(
         "@ExpectedBase(value=Foo.class, "
-                + "getAnnotationVal = \"Foo\", "
+                + "getAnnotationVal = \"@Foo(value=3)\", "
                 + "getAnnotationsVals = {"
-                +       "\"ExpectedBase\", \"ExpectedContainer\", \"Foo\", \"FooContainer\"}, "
+                +       "\"ExpectedBase\", \"ExpectedContainer\", \"@FooContainer(value=[@Foo(value=1), @Foo(value=2)])\", \"@Foo(value=3)\"}, "
                 + "getDeclAnnosVals = {"
-                +       "\"ExpectedBase\", \"ExpectedContainer\", \"Foo\", \"FooContainer\"},"
-                + "getDeclAnnoVal = \"Foo\","
-                + "getAnnosArgs = {\"Foo\", \"Foo\", \"Foo\"},"
-                + "getDeclAnnosArgs = {\"Foo\", \"Foo\", \"Foo\"})",
+                +       "\"ExpectedBase\", \"ExpectedContainer\", \"@FooContainer(value=[@Foo(value=1), @Foo(value=2)])\", \"@Foo(value=3)\"},"
+                + "getDeclAnnoVal = \"@Foo(value=3)\","
+                + "getAnnosArgs = {\"@Foo(value=1)\", \"@Foo(value=2)\", \"@Foo(value=3)\"},"
+                + "getDeclAnnosArgs = {\"@Foo(value=1)\", \"@Foo(value=2)\", \"@Foo(value=3)\"})",
         "@ExpectedContainer(value=FooContainer.class, "
-                + "getAnnotationVal = \"FooContainer\", "
+                + "getAnnotationVal = \"@FooContainer(value=[@Foo(value=1), @Foo(value=2)])\", "
                 + "getAnnotationsVals = {"
-                +       "\"ExpectedBase\", \"ExpectedContainer\", \"Foo\", \"FooContainer\"}, "
+                +       "\"ExpectedBase\", \"ExpectedContainer\", \"@FooContainer(value=[@Foo(value=1), @Foo(value=2)])\", \"@Foo(value=3)\"}, "
                 + "getDeclAnnosVals = {"
-                +       "\"ExpectedBase\", \"ExpectedContainer\", \"Foo\", \"FooContainer\"},"
-                + "getDeclAnnoVal = \"FooContainer\","
-                + "getAnnosArgs = {\"FooContainer\"},"
-                + "getDeclAnnosArgs = {\"FooContainer\"})") {
+                +       "\"ExpectedBase\", \"ExpectedContainer\", \"@FooContainer(value=[@Foo(value=1), @Foo(value=2)])\", \"@Foo(value=3)\"},"
+                + "getDeclAnnoVal = \"@FooContainer(value=[@Foo(value=1), @Foo(value=2)])\","
+                + "getAnnosArgs = {\"@FooContainer(value=[@Foo(value=1), @Foo(value=2)])\"},"
+                + "getDeclAnnosArgs = {\"@FooContainer(value=[@Foo(value=1), @Foo(value=2)])\"})") {
 
             @Override
             public Iterable<? extends JavaFileObject> getTestFiles(SrcType srcType,
@@ -1936,7 +1967,7 @@ public class ReflectionTest {
                 Sample testSrc:
                 @Retention(RetentionPolicy.RUNTIME)
                 @Inherited
-                @interface Foo {}
+                @interface Foo {int value() default Integer.MAX_VALUE;}
 
                 @Retention(RetentionPolicy.RUNTIME)
                 @Inherited
@@ -1945,12 +1976,12 @@ public class ReflectionTest {
                 Foo[] value();
                 }
 
-                @Foo
+                @Foo(0)
                 class SuperClass { }
 
                 @ExpectedBase
                 @ExpectedContainer
-                @FooContainer(value = {@Foo, @Foo}) @Foo
+                @FooContainer(value = {@Foo(1), @Foo(2)}) @Foo(3)
                 class SubClass extends SuperClass {}
                  */
 
@@ -1964,7 +1995,7 @@ public class ReflectionTest {
 
                     //Contents for SubClass that extends SuperClass
                     anno = Helper.ContentVars.LEGACYCONTAINER.getVal()
-                            + Helper.ContentVars.BASEANNO.getVal();
+                            + "@Foo(3)";
                     replaceVal = expectedVals + "\n" + anno;
                     String subClassContents = SrcType.CLASSEXTENDS.getTemplate()
                             .replace("#CN", className)
@@ -2015,7 +2046,7 @@ public class ReflectionTest {
 //                  @Retention(RetentionPolicy.RUNTIME)
 //                  @Inherited
 //                  @Repeatable(FooContainer.class)
-//                  @interface Foo {}
+//                  @interface Foo {int value() default Integer.MAX_VALUE;}
 
 //                  @Retention(RetentionPolicy.RUNTIME)
 //                  @Inherited
@@ -2044,7 +2075,7 @@ public class ReflectionTest {
 //                              .replace("#REPLACE", replaceVal);
 
 //                      //Contents for SubClass that extends SuperClass
-//                      anno = Helper.ContentVars.BASEANNO.getVal();
+//                      anno = "@Foo(0)";
 //                      replaceVal = expectedVals + "\n" + anno;
 //                      String subClassContents = SrcType.CLASSEXTENDS.getTemplate()
 //                              .replace("#CN", className)
@@ -2800,6 +2831,8 @@ public class ReflectionTest {
     // should be present in actualAnno[].
     private static boolean compareAnnotations(Annotation[] actualAnnos,
             String[] expectedAnnos) {
+        boolean compOrder = false;
+
         // Length is different
         if (actualAnnos.length != expectedAnnos.length) {
             error("Length not same, Actual length = " + actualAnnos.length
@@ -2830,12 +2863,16 @@ public class ReflectionTest {
             // Lengths are same, compare array contents
             String[] actualArr = new String[actualAnnos.length];
             for (Annotation a : actualAnnos) {
+                if (a.annotationType().getSimpleName().contains("Expected"))
                 actualArr[i++] = a.annotationType().getSimpleName();
+                 else if (a.annotationType().getName().contains(TESTPKG)) {
+                    String replaced = a.toString().replaceAll(Pattern.quote("testpkg."),"");
+                    actualArr[i++] = replaced;
+                } else
+                    actualArr[i++] = a.toString();
             }
-
-            List<String> actualList = Arrays.asList(actualArr);
-            List<String> expectedList = Arrays.asList(expectedAnnos);
-
+            List<String> actualList = new ArrayList<String>(Arrays.asList(actualArr));
+            List<String> expectedList = new ArrayList<String>(Arrays.asList(expectedAnnos));
             if (!actualList.containsAll(expectedList)) {
                 error("Array values are not same");
                 printArrContents(actualAnnos);
@@ -2843,9 +2880,62 @@ public class ReflectionTest {
                 return false;
             } else {
                 debugPrint("Arr values are same as expected");
+                if (CHECKORDERING) {
+                    debugPrint("Checking if annotation ordering is as expected..");
+                    compOrder = compareOrdering(actualList, expectedList);
+                    if (compOrder)
+                        debugPrint("Arr values ordering is as expected");
+                    else
+                        error("Arr values ordering is not as expected! actual values: "
+                            + actualList + " expected values: " + expectedList);
+                } else
+                    compOrder = true;
             }
         }
+        return compOrder;
+    }
+
+    // Annotation ordering comparison
+    private static boolean compareOrdering(List<String> actualList, List<String> expectedList) {
+        boolean order = true;
+        // Discarding Expected* annotations before comparison of ordering
+        actualList = iterateList(actualList);
+        expectedList = iterateList(expectedList);
+        // Length is different
+        if (actualList.size() != expectedList.size()) {
+            error("Length not same, Actual list length = " + actualList.size()
+                    + " Expected list length = " + expectedList.size());
+            return false;
+        } else {
+            if (actualList.isEmpty() && expectedList.isEmpty()) {
         return true;
+    }
+            boolean tmp = true;
+            for (int i = 0; i < actualList.size(); i++) {
+                // Checking ordering
+                if (order) {
+                    if (!actualList.get(i).equals(expectedList.get(i))) {
+                        tmp = false;
+                        debugPrint("Odering is false");
+                        debugPrint("actualList values: " + actualList
+                                + " expectedList values: " + expectedList);
+                    }
+                }
+            }
+            order = tmp;
+        }
+        return order;
+    }
+
+    private static List<String> iterateList(List<String> list) {
+        Iterator<String> iter = list.iterator();
+        while (iter.hasNext()) {
+            String anno = iter.next();
+            if (anno.contains("Expected")) {
+                iter.remove();
+            }
+        }
+        return list;
     }
 
     private static void printArrContents(Annotation[] actualAnnos) {

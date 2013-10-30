@@ -1273,7 +1273,7 @@ public class Types {
                     return false;
                 if (!s.getAnnotationMirrors().containsAll(t.getAnnotationMirrors()))
                     return false;
-                return visit(t.underlyingType, s);
+                return visit(t.unannotatedType(), s);
             }
         };
     // </editor-fold>
@@ -2217,15 +2217,15 @@ public class Types {
 
             @Override
             public Type visitAnnotatedType(AnnotatedType t, Boolean recurse) {
-                Type erased = erasure(t.underlyingType, recurse);
+                Type erased = erasure(t.unannotatedType(), recurse);
                 if (erased.isAnnotated()) {
                     // This can only happen when the underlying type is a
                     // type variable and the upper bound of it is annotated.
                     // The annotation on the type variable overrides the one
                     // on the bound.
-                    erased = ((AnnotatedType)erased).underlyingType;
+                    erased = ((AnnotatedType)erased).unannotatedType();
                 }
-                return new AnnotatedType(t.typeAnnotations, erased);
+                return erased.annotatedType(t.getAnnotationMirrors());
             }
         };
 
@@ -4419,7 +4419,7 @@ public class Types {
         public R visitUndetVar(UndetVar t, S s)         { return visitType(t, s); }
         public R visitErrorType(ErrorType t, S s)       { return visitType(t, s); }
         // Pretend annotations don't exist
-        public R visitAnnotatedType(AnnotatedType t, S s) { return visit(t.underlyingType, s); }
+        public R visitAnnotatedType(AnnotatedType t, S s) { return visit(t.unannotatedType(), s); }
     }
 
     /**

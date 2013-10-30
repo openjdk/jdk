@@ -394,32 +394,21 @@ abstract class ReferencePipeline<P_IN, P_OUT>
         return SortedOps.makeRef(this, comparator);
     }
 
-    private Stream<P_OUT> slice(long skip, long limit) {
-        return SliceOps.makeRef(this, skip, limit);
-    }
-
     @Override
     public final Stream<P_OUT> limit(long maxSize) {
         if (maxSize < 0)
             throw new IllegalArgumentException(Long.toString(maxSize));
-        return slice(0, maxSize);
+        return SliceOps.makeRef(this, 0, maxSize);
     }
 
     @Override
-    public final Stream<P_OUT> substream(long startingOffset) {
-        if (startingOffset < 0)
-            throw new IllegalArgumentException(Long.toString(startingOffset));
-        if (startingOffset == 0)
+    public final Stream<P_OUT> skip(long n) {
+        if (n < 0)
+            throw new IllegalArgumentException(Long.toString(n));
+        if (n == 0)
             return this;
         else
-            return slice(startingOffset, -1);
-    }
-
-    @Override
-    public final Stream<P_OUT> substream(long startingOffset, long endingOffset) {
-        if (startingOffset < 0 || endingOffset < startingOffset)
-            throw new IllegalArgumentException(String.format("substream(%d, %d)", startingOffset, endingOffset));
-        return slice(startingOffset, endingOffset - startingOffset);
+            return SliceOps.makeRef(this, n, -1);
     }
 
     // Terminal operations from Stream

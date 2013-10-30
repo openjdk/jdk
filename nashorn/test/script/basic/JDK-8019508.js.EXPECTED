@@ -1,12 +1,12 @@
-test/script/basic/JDK-8019508.js#33<eval>:1:2 Expected property id but found ,
+SyntaxError:33:Expected property id but found ,
 ({,})
   ^
-test/script/basic/JDK-8019508.js#33<eval>:1:2 Expected property id but found ,
+SyntaxError:33:Expected property id but found ,
 ({, a:2 })
   ^
-test/script/basic/JDK-8019508.js#33<eval>:1:6 Expected property id but found ,
+SyntaxError:33:Expected property id but found ,
 ({a:3,,})
       ^
-test/script/basic/JDK-8019508.js#33<eval>:1:6 Expected comma but found ident
+SyntaxError:33:Expected comma but found ident
 ({a:3 b:2}
       ^

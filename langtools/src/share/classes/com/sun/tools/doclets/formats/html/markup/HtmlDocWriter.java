@@ -30,6 +30,7 @@ import java.util.*;
 
 import com.sun.javadoc.*;
 import com.sun.tools.doclets.formats.html.ConfigurationImpl;
+import com.sun.tools.doclets.formats.html.SectionName;
 import com.sun.tools.doclets.internal.toolkit.*;
 import com.sun.tools.doclets.internal.toolkit.util.DocFile;
 import com.sun.tools.doclets.internal.toolkit.util.DocLink;
@@ -78,7 +79,7 @@ public abstract class HtmlDocWriter extends HtmlWriter {
     }
 
     /**
-     * Get Html Hyper Link string.
+     * Get Html Hyper Link Content.
      *
      * @param where      Position of the link in the file. Character '#' is not
      *                   needed.
@@ -87,7 +88,125 @@ public abstract class HtmlDocWriter extends HtmlWriter {
      */
     public Content getHyperLink(String where,
                                Content label) {
-        return getHyperLink(DocLink.fragment(where), label, "", "");
+        return getHyperLink(getDocLink(where), label, "", "");
+    }
+
+    /**
+     * Get Html Hyper Link Content.
+     *
+     * @param sectionName      The section name to which the link will be created.
+     * @param label            Tag for the link.
+     * @return a content tree for the hyper link
+     */
+    public Content getHyperLink(SectionName sectionName,
+                               Content label) {
+        return getHyperLink(getDocLink(sectionName), label, "", "");
+    }
+
+    /**
+     * Get Html Hyper Link Content.
+     *
+     * @param sectionName      The section name combined with where to which the link
+     *                         will be created.
+     * @param where            The fragment combined with sectionName to which the link
+     *                         will be created.
+     * @param label            Tag for the link.
+     * @return a content tree for the hyper link
+     */
+    public Content getHyperLink(SectionName sectionName, String where,
+                               Content label) {
+        return getHyperLink(getDocLink(sectionName, where), label, "", "");
+    }
+
+    /**
+     * Get the link.
+     *
+     * @param where      Position of the link in the file.
+     * @return a DocLink object for the hyper link
+     */
+    public DocLink getDocLink(String where) {
+        return DocLink.fragment(getName(where));
+    }
+
+    /**
+     * Get the link.
+     *
+     * @param sectionName      The section name to which the link will be created.
+     * @return a DocLink object for the hyper link
+     */
+    public DocLink getDocLink(SectionName sectionName) {
+        return DocLink.fragment(sectionName.getName());
+    }
+
+    /**
+     * Get the link.
+     *
+     * @param sectionName      The section name combined with where to which the link
+     *                         will be created.
+     * @param where            The fragment combined with sectionName to which the link
+     *                         will be created.
+     * @return a DocLink object for the hyper link
+     */
+    public DocLink getDocLink(SectionName sectionName, String where) {
+        return DocLink.fragment(sectionName.getName() + getName(where));
+    }
+
+    /**
+     * Convert the name to a valid HTML name.
+     *
+     * @param name the name that needs to be converted to valid HTML name.
+     * @return a valid HTML name string.
+     */
+    public String getName(String name) {
+        StringBuilder sb = new StringBuilder();
+        char ch;
+        /* The HTML 4 spec at http://www.w3.org/TR/html4/types.html#h-6.2 mentions
+         * that the name/id should begin with a letter followed by other valid characters.
+         * The HTML 5 spec (draft) is more permissive on names/ids where the only restriction
+         * is that it should be at least one character long and should not contain spaces.
+         * The spec draft is @ http://www.w3.org/html/wg/drafts/html/master/dom.html#the-id-attribute.
+         *
+         * For HTML 4, we need to check for non-characters at the beginning of the name and
+         * substitute it accordingly, "_" and "$" can appear at the beginning of a member name.
+         * The method substitutes "$" with "Z:Z:D" and will prefix "_" with "Z:Z".
+         */
+        for (int i = 0; i < name.length(); i++) {
+            ch = name.charAt(i);
+            switch (ch) {
+                case '(':
+                case ')':
+                case '<':
+                case '>':
+                case ',':
+                    sb.append('-');
+                    break;
+                case ' ':
+                case '[':
+                    break;
+                case ']':
+                    sb.append(":A");
+                    break;
+                // Any appearance of $ needs to be substituted with ":D" and not with hyphen
+                // since a field name "P$$ and a method P(), both valid member names, can end
+                // up as "P--". A member name beginning with $ needs to be substituted with
+                // "Z:Z:D".
+                case '$':
+                    if (i == 0)
+                        sb.append("Z:Z");
+                    sb.append(":D");
+                    break;
+                // A member name beginning with _ needs to be prefixed with "Z:Z" since valid anchor
+                // names can only begin with a letter.
+                case '_':
+                    if (i == 0)
+                        sb.append("Z:Z");
+                    sb.append(ch);
+                    break;
+                default:
+                    sb.append(ch);
+            }
+        }
+        return sb.toString();
     }
 
     /**

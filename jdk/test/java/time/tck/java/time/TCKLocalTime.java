@@ -116,6 +116,7 @@ import java.time.temporal.TemporalAccessor;
 import java.time.temporal.TemporalAdjuster;
 import java.time.temporal.TemporalAmount;
 import java.time.temporal.TemporalField;
+import java.time.temporal.TemporalQueries;
 import java.time.temporal.TemporalQuery;
 import java.time.temporal.TemporalUnit;
 import java.time.temporal.UnsupportedTemporalTypeException;
@@ -143,7 +144,7 @@ public class TCKLocalTime extends AbstractDateTimeTest {
     private static final TemporalUnit[] INVALID_UNITS;
     static {
         EnumSet<ChronoUnit> set = EnumSet.range(DAYS, FOREVER);
-        INVALID_UNITS = (TemporalUnit[]) set.toArray(new TemporalUnit[set.size()]);
+        INVALID_UNITS = set.toArray(new TemporalUnit[set.size()]);
     }
 
     @BeforeMethod
@@ -654,13 +655,13 @@ public class TCKLocalTime extends AbstractDateTimeTest {
     @DataProvider(name="query")
     Object[][] data_query() {
         return new Object[][] {
-                {TEST_12_30_40_987654321, TemporalQuery.chronology(), null},
-                {TEST_12_30_40_987654321, TemporalQuery.zoneId(), null},
-                {TEST_12_30_40_987654321, TemporalQuery.precision(), ChronoUnit.NANOS},
-                {TEST_12_30_40_987654321, TemporalQuery.zone(), null},
-                {TEST_12_30_40_987654321, TemporalQuery.offset(), null},
-                {TEST_12_30_40_987654321, TemporalQuery.localDate(), null},
-                {TEST_12_30_40_987654321, TemporalQuery.localTime(), TEST_12_30_40_987654321},
+                {TEST_12_30_40_987654321, TemporalQueries.chronology(), null},
+                {TEST_12_30_40_987654321, TemporalQueries.zoneId(), null},
+                {TEST_12_30_40_987654321, TemporalQueries.precision(), ChronoUnit.NANOS},
+                {TEST_12_30_40_987654321, TemporalQueries.zone(), null},
+                {TEST_12_30_40_987654321, TemporalQueries.offset(), null},
+                {TEST_12_30_40_987654321, TemporalQueries.localDate(), null},
+                {TEST_12_30_40_987654321, TemporalQueries.localTime(), TEST_12_30_40_987654321},
         };
     }
 

@@ -312,7 +312,7 @@ public class HtmlWriter {
             String scriptCode = "<!--" + DocletConstants.NL +
                     "    try {" + DocletConstants.NL +
                     "        if (location.href.indexOf('is-external=true') == -1) {" + DocletConstants.NL +
-                    "            parent.document.title=\"" + winTitle + "\";" + DocletConstants.NL +
+                    "            parent.document.title=\"" + escapeJavaScriptChars(winTitle) + "\";" + DocletConstants.NL +
                     "        }" + DocletConstants.NL +
                     "    }" + DocletConstants.NL +
                     "    catch(err) {" + DocletConstants.NL +
@@ -322,6 +322,53 @@ public class HtmlWriter {
             script.addContent(scriptContent);
         }
         return script;
+    }
+
+    /**
+     * Returns a String with escaped special JavaScript characters.
+     *
+     * @param s String that needs to be escaped
+     * @return a valid escaped JavaScript string
+     */
+    private static String escapeJavaScriptChars(String s) {
+        StringBuilder sb = new StringBuilder();
+        for (int i = 0; i < s.length(); i++) {
+            char ch = s.charAt(i);
+            switch (ch) {
+                case '\b':
+                    sb.append("\\b");
+                    break;
+                case '\t':
+                    sb.append("\\t");
+                    break;
+                case '\n':
+                    sb.append("\\n");
+                    break;
+                case '\f':
+                    sb.append("\\f");
+                    break;
+                case '\r':
+                    sb.append("\\r");
+                    break;
+                case '"':
+                    sb.append("\\\"");
+                    break;
+                case '\'':
+                    sb.append("\\\'");
+                    break;
+                case '\\':
+                    sb.append("\\\\");
+                    break;
+                default:
+                    if (ch < 32 || ch >= 127) {
+                        sb.append(String.format("\\u%04X", (int)ch));
+                    } else {
+                        sb.append(ch);
+                    }
+                    break;
+            }
+        }
+        return sb.toString();
     }
 
     /**

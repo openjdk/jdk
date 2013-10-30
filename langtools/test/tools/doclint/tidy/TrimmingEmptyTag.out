@@ -43,4 +43,10 @@ TrimmingEmptyTag.java:25: warning: empty <tt> tag
 TrimmingEmptyTag.java:26: warning: empty <ul> tag
  * <ul></ul>
        ^
-15 warnings
+TrimmingEmptyTag.java:30: warning: empty <p> tag
+    /** <p> */
+        ^
+TrimmingEmptyTag.java:32: warning: empty <p> tag
+    /** <p> <ul><li>text</ul> */
+        ^
+17 warnings

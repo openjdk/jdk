@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8003562 8005428
+ * @bug 8003562 8005428 8015912
  * @summary Basic tests for jdeps tool
  * @build Test p.Foo
  * @run main Basic
@@ -79,40 +79,33 @@ public class Basic {
              new String[] {"compact1", "compact1", "compact3"});
         // test class-level dependency output
         test(new File(testDir, "Test.class"),
-             new String[] {"java.lang.Object", "p.Foo"},
-             new String[] {"compact1", "not found"},
-             new String[] {"-V", "class"});
+             new String[] {"java.lang.Object", "java.lang.String", "p.Foo"},
+             new String[] {"compact1", "compact1", "not found"},
+             new String[] {"-verbose:class"});
         // test -p option
         test(new File(testDir, "Test.class"),
              new String[] {"p.Foo"},
              new String[] {"not found"},
-             new String[] {"--verbose-level=class", "-p", "p"});
+             new String[] {"-verbose:class", "-p", "p"});
         // test -e option
         test(new File(testDir, "Test.class"),
              new String[] {"p.Foo"},
              new String[] {"not found"},
-             new String[] {"-V", "class", "-e", "p\\..*"});
+             new String[] {"-verbose:class", "-e", "p\\..*"});
         test(new File(testDir, "Test.class"),
              new String[] {"java.lang"},
              new String[] {"compact1"},
-             new String[] {"-V", "package", "-e", "java\\.lang\\..*"});
-        // test -classpath and wildcard options
+             new String[] {"-verbose:package", "-e", "java\\.lang\\..*"});
+        // test -classpath and -include options
         test(null,
-             new String[] {"com.sun.tools.jdeps", "java.lang", "java.util",
-                           "java.util.regex", "java.io", "java.nio.file",
+             new String[] {"java.lang", "java.util",
                            "java.lang.management"},
-             new String[] {(symbolFileExist? "not found" : "JDK internal API (classes)"),
-                           "compact1", "compact1", "compact1",
-                           "compact1", "compact1", "compact3"},
-             new String[] {"--classpath", testDir.getPath(), "*"});
-        /* Temporary disable this test case.  Test.class has a dependency
-         * on java.lang.String on certain windows machine (8008479).
-         // -v shows intra-dependency
-         test(new File(testDir, "Test.class"),
-              new String[] {"java.lang.Object", "p.Foo"},
-              new String[] {"compact1", testDir.getName()},
-              new String[] {"-v", "--classpath", testDir.getPath(), "Test.class"});
-        */
+             new String[] {"compact1", "compact1", "compact3"},
+             new String[] {"-classpath", testDir.getPath(), "-include", "p.+|Test.class"});
+        test(new File(testDir, "Test.class"),
+             new String[] {"java.lang.Object", "java.lang.String", "p.Foo"},
+             new String[] {"compact1", "compact1", testDir.getName()},
+             new String[] {"-v", "-classpath", testDir.getPath(), "Test.class"});
         return errors;
     }
 
