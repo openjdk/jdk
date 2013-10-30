@@ -474,6 +474,17 @@ Rule	Arg	2008	only	-	Oct	Sun>=15	0:00	1:00	S
 # rules...San Luis is still using "Western ARgentina Time" and it got
 # stuck on Summer daylight savings time even though the summer is over.
 
+# From Paul Eggert (2013-09-05):
+# Perhaps San Luis operates on the legal fiction that it is at UTC-4
+# with perpetual summer time, but ordinary usage typically seems to
+# just say it's at UTC-3; see, for example,
+# <http://es.wikipedia.org/wiki/Hora_oficial_argentina>.
+# We've documented similar situations as being plain changes to
+# standard time, so let's do that here too.  This does not change UTC
+# offsets, only tm_isdst and the time zone abbreviations.  One minor
+# plus is that this silences a zic complaint that there's no POSIX TZ
+# setting for time stamps past 2038.
+
 # From Paul Eggert (2013-02-21):
 # Milne says Cordoba time was -4:16:48.2.  Round to the nearest second.
 
@@ -611,7 +622,7 @@ Zone America/Argentina/Mendoza -4:35:16 - LMT	1894 Oct 31
 # San Luis (SL)
 
 Rule	SanLuis	2008	2009	-	Mar	Sun>=8	0:00	0	-
-Rule	SanLuis	2007	2009	-	Oct	Sun>=8	0:00	1:00	S
+Rule	SanLuis	2007	2008	-	Oct	Sun>=8	0:00	1:00	S
 
 Zone America/Argentina/San_Luis -4:25:24 - LMT	1894 Oct 31
 			-4:16:48 -	CMT	1920 May
@@ -627,7 +638,8 @@ Zone America/Argentina/San_Luis -4:25:24 - LMT	1894 Oct 31
 			-3:00	-	ART	2004 May 31
 			-4:00	-	WART	2004 Jul 25
 			-3:00	Arg	AR%sT	2008 Jan 21
-			-4:00	SanLuis	WAR%sT
+			-4:00	SanLuis	WAR%sT	2009 Oct 11
+			-3:00	-	ART
 #
 # Santa Cruz (SC)
 Zone America/Argentina/Rio_Gallegos -4:36:52 - LMT 1894 Oct 31
@@ -654,10 +666,7 @@ Zone America/Argentina/Ushuaia -4:33:12 - LMT 1894 Oct 31
 			-3:00	-	ART
 
 # Aruba
-# Zone	NAME		GMTOFF	RULES	FORMAT	[UNTIL]
-Zone	America/Aruba	-4:40:24 -	LMT	1912 Feb 12	# Oranjestad
-			-4:30	-	ANT	1965 # Netherlands Antilles Time
-			-4:00	-	AST
+Link America/Curacao America/Aruba
 
 # Bolivia
 # Zone	NAME		GMTOFF	RULES	FORMAT	[UNTIL]
@@ -858,6 +867,12 @@ Zone	America/La_Paz	-4:32:36 -	LMT	1890
 # From Rodrigo Severo (2012-10-16):
 # Tocantins state will have DST.
 # http://noticias.terra.com.br/brasil/noticias/0,,OI6232536-EI306.html
+
+# From Steffen Thorsen (2013-09-20):
+# Tocantins in Brazil is very likely not to observe DST from October....
+# http://conexaoto.com.br/2013/09/18/ministerio-confirma-que-tocantins-esta-fora-do-horario-de-verao-em-2013-mas-falta-publicacao-de-decreto
+# We will keep this article updated when this is confirmed:
+# http://www.timeanddate.com/news/time/brazil-starts-dst-2013.html
 
 # Rule	NAME	FROM	TO	TYPE	IN	ON	AT	SAVE	LETTER/S
 # Decree <a href="http://pcdsh01.on.br/HV20466.htm">20,466</a> (1931-10-01)
@@ -1078,7 +1093,8 @@ Zone America/Araguaina	-3:12:48 -	LMT	1914
 			-3:00	-	BRT	1995 Sep 14
 			-3:00	Brazil	BR%sT	2003 Sep 24
 			-3:00	-	BRT	2012 Oct 21
-			-3:00	Brazil	BR%sT
+			-3:00	Brazil	BR%sT	2013 Sep
+			-3:00	-	BRT
 #
 # Alagoas (AL), Sergipe (SE)
 Zone America/Maceio	-2:22:52 -	LMT	1914
@@ -1373,12 +1389,12 @@ Zone	America/Curacao	-4:35:47 -	LMT	1912 Feb 12	# Willemstad
 			-4:00	-	AST
 
 # From Arthur David Olson (2011-06-15):
-# At least for now, use links for places with new iso3166 codes.
+# use links for places with new iso3166 codes.
 # The name "Lower Prince's Quarter" is both longer than fourteen charaters
 # and contains an apostrophe; use "Lower_Princes" below.
 
-Link	America/Curacao	America/Lower_Princes # Sint Maarten
-Link	America/Curacao	America/Kralendijk # Bonaire, Sint Estatius and Saba
+Link	America/Curacao	America/Lower_Princes	# Sint Maarten
+Link	America/Curacao	America/Kralendijk	# Caribbean Netherlands
 
 # Ecuador
 #
@@ -1519,10 +1535,16 @@ Zone	America/Guyana	-3:52:40 -	LMT	1915 Mar	# Georgetown
 			-4:00	-	GYT
 
 # Paraguay
+#
 # From Paul Eggert (2006-03-22):
 # Shanks & Pottenger say that spring transitions are from 01:00 -> 02:00,
 # and autumn transitions are from 00:00 -> 23:00.  Go with pre-1999
 # editions of Shanks, and with the IATA, who say transitions occur at 00:00.
+#
+# From Waldemar Villamayor-Venialbo (2013-09-20):
+# No time of the day is established for the adjustment, so people normally
+# adjust their clocks at 0 hour of the given dates.
+#
 # Rule	NAME	FROM	TO	TYPE	IN	ON	AT	SAVE	LETTER/S
 Rule	Para	1975	1988	-	Oct	 1	0:00	1:00	S
 Rule	Para	1975	1978	-	Mar	 1	0:00	0	-
@@ -1656,6 +1678,19 @@ Zone America/Paramaribo	-3:40:40 -	LMT	1911
 Zone America/Port_of_Spain -4:06:04 -	LMT	1912 Mar 2
 			-4:00	-	AST
 
+Link America/Port_of_Spain America/Anguilla
+Link America/Port_of_Spain America/Dominica
+Link America/Port_of_Spain America/Grenada
+Link America/Port_of_Spain America/Guadeloupe
+Link America/Port_of_Spain America/Marigot
+Link America/Port_of_Spain America/Montserrat
+Link America/Port_of_Spain America/St_Barthelemy
+Link America/Port_of_Spain America/St_Kitts
+Link America/Port_of_Spain America/St_Lucia
+Link America/Port_of_Spain America/St_Thomas
+Link America/Port_of_Spain America/St_Vincent
+Link America/Port_of_Spain America/Tortola
+
 # Uruguay
 # From Paul Eggert (1993-11-18):
 # Uruguay wins the prize for the strangest peacetime manipulation of the rules.
@@ -1673,7 +1708,7 @@ Rule	Uruguay	1937	1941	-	Mar	lastSun	 0:00	0	-
 # Whitman gives 1937 Oct 3; go with Shanks & Pottenger.
 Rule	Uruguay	1937	1940	-	Oct	lastSun	 0:00	0:30	HS
 # Whitman gives 1941 Oct 24 - 1942 Mar 27, 1942 Dec 14 - 1943 Apr 13,
-# and 1943 Apr 13 ``to present time''; go with Shanks & Pottenger.
+# and 1943 Apr 13 "to present time"; go with Shanks & Pottenger.
 Rule	Uruguay	1941	only	-	Aug	 1	 0:00	0:30	HS
 Rule	Uruguay	1942	only	-	Jan	 1	 0:00	0	-
 Rule	Uruguay	1942	only	-	Dec	14	 0:00	1:00	S

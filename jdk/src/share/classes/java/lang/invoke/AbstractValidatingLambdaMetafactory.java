@@ -101,7 +101,6 @@ import static sun.invoke.util.Wrapper.isWrapperType;
      *                       should implement.
      * @param additionalBridges Method types for additional signatures to be
      *                          bridged to the implementation method
-     * @throws ReflectiveOperationException
      * @throws LambdaConversionException If any of the meta-factory protocol
      * invariants are violated
      */
@@ -114,7 +113,7 @@ import static sun.invoke.util.Wrapper.isWrapperType;
                                        boolean isSerializable,
                                        Class<?>[] markerInterfaces,
                                        MethodType[] additionalBridges)
-            throws ReflectiveOperationException, LambdaConversionException {
+            throws LambdaConversionException {
         this.targetClass = caller.lookupClass();
         this.invokedType = invokedType;
 
@@ -160,7 +159,7 @@ import static sun.invoke.util.Wrapper.isWrapperType;
      * @throws ReflectiveOperationException
      */
     abstract CallSite buildCallSite()
-            throws ReflectiveOperationException, LambdaConversionException;
+            throws LambdaConversionException;
 
     /**
      * Check the meta-factory arguments for errors

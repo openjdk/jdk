@@ -10,6 +10,6 @@ eval.length 1
 100
 3300
 is syntax error? true
-SyntaxError: test/script/basic/eval.js#69<eval>:1:13 Missing close quote
+SyntaxError:69:Missing close quote
 print('hello)
              ^

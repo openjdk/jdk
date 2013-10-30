@@ -1,0 +1,4 @@
+// IDL file bug.idl
+module bug {
+    typedef string myString;
+};

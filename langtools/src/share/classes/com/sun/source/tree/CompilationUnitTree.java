@@ -37,7 +37,7 @@ import javax.tools.JavaFileObject;
  * @author Peter von der Ah&eacute;
  * @since 1.6
  */
-@jdk.Supported
+@jdk.Exported
 public interface CompilationUnitTree extends Tree {
     List<? extends AnnotationTree> getPackageAnnotations();
     ExpressionTree getPackageName();

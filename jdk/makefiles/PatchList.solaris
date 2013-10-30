@@ -19,7 +19,7 @@ RUNTIME       5.8 Sparc 108921-16 x86 108922-16 REQ "CDE patch"
 RUNTIME       5.8 Sparc 108773-18 x86 108774-18 REQ "X input method patch"
 RUNTIME       5.8 Sparc 110386-03 x86 none      REQ "RBAC Feature Patch"
 RUNTIME       5.8 Sparc 111023-02 x86 none      REQ "/kernel/fs/mntfs and /kernel/fs/sparcv9/mntfs patch"
-RUNTIME       5.8 Sparc 112472-01 x86 112473-01 OPT "Font2DTest2 patch" 
+RUNTIME       5.8 Sparc 112472-01 x86 112473-01 OPT "Font2DTest2 patch"
 RUNTIME       5.8 Sparc 112438-01 x86 112439-01 REQ "/kernel/drv/random patch"
 
 COMPILER      5.8 Sparc 109505-06 x86 109502-03 REQ "For C 5.0, C++ 5.0"
@@ -28,4 +28,3 @@ COMPILER      5.8 Sparc 109508-03 x86 109509-03 REQ "For Forte Development 6 upd
 COMPILER      5.8 Sparc 109510-03 x86 109511-03 REQ "For Forte 6.1 Debugger"
 COMPILER      5.8 Sparc 109516-02 x86 109517-02 REQ "For Forte 6.1 Performance Analyzer"
 COMPILER      5.8 Sparc 110480-01 x86 110481-01 REQ "For Forte TeamWare"
-

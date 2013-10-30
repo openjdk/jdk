@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -62,7 +62,7 @@ inline uint jar::get_crc32(uint c, uchar *ptr, uint len) { return crc32(c, ptr, 
 
 #endif // End of ZLIB
 
-#ifdef sparc
+#ifdef _BIG_ENDIAN
 #define SWAP_BYTES(a) \
     ((((a) << 8) & 0xff00) | 0x00ff) & (((a) >> 8) | 0xff00)
 #else
@@ -340,6 +340,10 @@ uLong jar::get_dostime(int modtime) {
   struct tm sbuf;
   (void)memset((void*)&sbuf,0, sizeof(sbuf));
   struct tm* s = gmtime_r(&t, &sbuf);
+  if (s == NULL) {
+    fprintf(u->errstrm, "Error: gmtime failure, invalid input archive\n");
+    exit(2);
+  }
   modtime_cache = modtime;
   dostime_cache = dostime(s->tm_year + 1900, s->tm_mon + 1, s->tm_mday,
                           s->tm_hour, s->tm_min, s->tm_sec);
@@ -384,7 +388,7 @@ bool jar::deflate_bytes(bytes& head, bytes& tail) {
   }
 
   deflated.empty();
-  zs.next_out  = (uchar*) deflated.grow(len + (len/2));
+  zs.next_out  = (uchar*) deflated.grow(add_size(len, (len/2)));
   zs.avail_out = (int)deflated.size();
 
   zs.next_in = (uchar*)head.ptr;

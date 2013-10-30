@@ -134,9 +134,8 @@ java/lang/management/MemoryMXBean/LowMemoryTest2.sh		generic-all
 # 8021230
 java/lang/ThreadLocal/ThreadLocalSupplierTest.java              generic-all
 
-# 8023201
-java/lang/instrument/RetransformBigClass.sh                     generic-all
-java/lang/instrument/RedefineBigClass.sh                        generic-all
+# 8026502
+java/lang/invoke/MethodHandleConstants.java                     generic-all
 
 ############################################################################
 
@@ -182,9 +181,6 @@ com/sun/net/httpserver/bugs/6725892/Test.java                   generic-all
 
 # Filed 7036666
 com/sun/net/httpserver/Test9a.java                              generic-all
-
-# 7079145 java/net/ipv6tests/UdpTest.java hang at IPv6 only data exchange
-java/net/ipv6tests/UdpTest.java                                 linux-all
 
 # 7102670
 java/net/InetAddress/CheckJNI.java                              linux-all
@@ -270,14 +266,8 @@ sun/security/pkcs11/sslecc/ClientJSSEServerJSSE.java            solaris-all
 sun/security/pkcs11/Secmod/AddPrivateKey.java			linux-all
 sun/security/pkcs11/Secmod/TrustAnchors.java 			linux-all
 
-# 7041639, Solaris DSA keypair generation bug (Note: jdk_util also affected)
+# 7041639, Solaris DSA keypair generation bug
 java/security/KeyPairGenerator/SolarisShortDSA.java             solaris-all
-sun/security/tools/jarsigner/onlymanifest.sh                    solaris-all
-sun/security/tools/jarsigner/ts.sh                              solaris-all
-sun/security/tools/keytool/emptysubject.sh                      solaris-all
-sun/security/tools/keytool/importreadall.sh                     solaris-all
-sun/security/tools/keytool/readjar.sh                           solaris-all
-sun/security/tools/keytool/selfissued.sh                        solaris-all
 sun/security/tools/keytool/standard.sh                          solaris-all
 
 # 8000439: NPG: REGRESSION : sun/security/krb5/auto/MaxRetries.java fails with timeout
@@ -322,6 +312,9 @@ tools/pack200/Pack200Test.java                                  solaris-all, mac
 # 8007410
 tools/launcher/FXLauncherTest.java                              linux-all
 
+# 7144200
+java/lang/management/ClassLoadingMXBean/LoadCounts.java		generic-all
+
 ############################################################################
 
 # jdk_jdi
@@ -345,7 +338,7 @@ java/util/concurrent/ThreadPoolExecutor/CoreThreadTimeOut.java  generic-all
 # Filed 6772009
 java/util/concurrent/locks/ReentrantLock/CancelledLockLoops.java generic-all
 
-# 7041639, Solaris DSA keypair generation bug
-java/util/TimeZone/TimeZoneDatePermissionCheck.sh               solaris-all
+# 8026772: test/sun/util/resources/TimeZone/Bug6317929.java failing
+sun/util/resources/TimeZone/Bug6317929.java                     generic-all
 
 ############################################################################

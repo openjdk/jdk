@@ -120,7 +120,7 @@ class UnixPath
         SoftReference<CharsetEncoder> ref = encoder.get();
         CharsetEncoder ce = (ref != null) ? ref.get() : null;
         if (ce == null) {
-            ce = Charset.defaultCharset().newEncoder()
+            ce = Util.jnuEncoding().newEncoder()
                 .onMalformedInput(CodingErrorAction.REPORT)
                 .onUnmappableCharacter(CodingErrorAction.REPORT);
             encoder.set(new SoftReference<CharsetEncoder>(ce));
@@ -186,7 +186,7 @@ class UnixPath
     // use this path for permission checks
     String getPathForPermissionCheck() {
         if (getFileSystem().needToResolveAgainstDefaultDirectory()) {
-            return new String(getByteArrayForSysCalls());
+            return Util.toString(getByteArrayForSysCalls());
         } else {
             return toString();
         }
@@ -758,7 +758,7 @@ class UnixPath
     public String toString() {
         // OK if two or more threads create a String
         if (stringValue == null) {
-            stringValue = fs.normalizeJavaPath(new String(path));     // platform encoding
+            stringValue = fs.normalizeJavaPath(Util.toString(path));     // platform encoding
         }
         return stringValue;
     }

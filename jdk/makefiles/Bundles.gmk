@@ -31,108 +31,108 @@ default: bundles
 # Only macosx has bundles defined.
 ifeq ($(OPENJDK_TARGET_OS), macosx)
 
-bundles: jre-bundle jdk-bundle
+  bundles: jre-bundle jdk-bundle
 
-# JDK_BUNDLE_DIR and JRE_BUNDLE_DIR are defined in SPEC.
+  # JDK_BUNDLE_DIR and JRE_BUNDLE_DIR are defined in SPEC.
 
-MACOSX_SRC := $(JDK_TOPDIR)/src/macosx
+  MACOSX_SRC := $(JDK_TOPDIR)/src/macosx
 
-# All these OPENJDK checks are needed since there is no coherency between
-# these values in open and closed. Should probably be fixed.
-ifndef OPENJDK
+  # All these OPENJDK checks are needed since there is no coherency between
+  # these values in open and closed. Should probably be fixed.
+  ifndef OPENJDK
     BUNDLE_ID := $(MACOSX_BUNDLE_ID_BASE).$(JDK_MINOR_VERSION)u$(JDK_UPDATE_VERSION)
-else
+  else
     BUNDLE_ID := $(MACOSX_BUNDLE_ID_BASE)
-endif
-BUNDLE_ID_JRE := $(BUNDLE_ID).jre
-BUNDLE_ID_JDK := $(BUNDLE_ID).jdk
+  endif
+  BUNDLE_ID_JRE := $(BUNDLE_ID).jre
+  BUNDLE_ID_JDK := $(BUNDLE_ID).jdk
 
-BUNDLE_NAME := $(MACOSX_BUNDLE_NAME_BASE) $(JDK_MINOR_VERSION)
-BUNDLE_NAME_JRE := $(BUNDLE_NAME)
-BUNDLE_NAME_JDK := $(BUNDLE_NAME)
+  BUNDLE_NAME := $(MACOSX_BUNDLE_NAME_BASE) $(JDK_MINOR_VERSION)
+  BUNDLE_NAME_JRE := $(BUNDLE_NAME)
+  BUNDLE_NAME_JDK := $(BUNDLE_NAME)
 
-ifndef OPENJDK
+  ifndef OPENJDK
     BUNDLE_INFO := $(MACOSX_BUNDLE_NAME_BASE) $(JDK_VERSION)
-else
+  else
     BUNDLE_INFO := $(MACOSX_BUNDLE_NAME_BASE) ($(JDK_VERSION))
-endif
-BUNDLE_INFO_JRE := $(BUNDLE_INFO)
-BUNDLE_INFO_JDK := $(BUNDLE_INFO)
+  endif
+  BUNDLE_INFO_JRE := $(BUNDLE_INFO)
+  BUNDLE_INFO_JDK := $(BUNDLE_INFO)
 
-BUNDLE_PLATFORM_VERSION := $(JDK_MAJOR_VERSION).$(JDK_MINOR_VERSION)
-BUNDLE_VERSION := $(JDK_VERSION)
-ifeq ($(COMPANY_NAME),N/A)
+  BUNDLE_PLATFORM_VERSION := $(JDK_MAJOR_VERSION).$(JDK_MINOR_VERSION)
+  BUNDLE_VERSION := $(JDK_VERSION)
+  ifeq ($(COMPANY_NAME), N/A)
     BUNDLE_VENDOR := UNDEFINED
-else
+  else
     BUNDLE_VENDOR := $(COMPANY_NAME)
-endif
+  endif
 
 
-JDK_FILE_LIST := $(shell $(FIND) $(JDK_IMAGE_DIR))
-JRE_FILE_LIST := $(shell $(FIND) $(JRE_IMAGE_DIR))
+  JDK_FILE_LIST := $(shell $(FIND) $(JDK_IMAGE_DIR))
+  JRE_FILE_LIST := $(shell $(FIND) $(JRE_IMAGE_DIR))
 
-JDK_TARGET_LIST := $(subst $(JDK_IMAGE_DIR)/,$(JDK_BUNDLE_DIR)/Home/,$(JDK_FILE_LIST))
-JRE_TARGET_LIST := $(subst $(JRE_IMAGE_DIR)/,$(JRE_BUNDLE_DIR)/Home/,$(JRE_FILE_LIST))
+  JDK_TARGET_LIST := $(subst $(JDK_IMAGE_DIR)/,$(JDK_BUNDLE_DIR)/Home/,$(JDK_FILE_LIST))
+  JRE_TARGET_LIST := $(subst $(JRE_IMAGE_DIR)/,$(JRE_BUNDLE_DIR)/Home/,$(JRE_FILE_LIST))
 
-# The old builds implementation of this did not preserve symlinks so
-# make sure they are followed and the contents copied instead.
-# To fix this, remove -L
-# Copy empty directories (jre/lib/applet).
-$(JDK_BUNDLE_DIR)/Home/%: $(JDK_IMAGE_DIR)/%
+  # The old builds implementation of this did not preserve symlinks so
+  # make sure they are followed and the contents copied instead.
+  # To fix this, remove -L
+  # Copy empty directories (jre/lib/applet).
+  $(JDK_BUNDLE_DIR)/Home/%: $(JDK_IMAGE_DIR)/%
 	$(ECHO) Copying $(patsubst $(OUTPUT_ROOT)/%,%,$@)
 	$(MKDIR) -p $(@D)
 	if [ -d "$<" ]; then $(MKDIR) -p $@; else $(CP) -f -R -L '$<' '$@'; fi
 
-$(JRE_BUNDLE_DIR)/Home/%: $(JRE_IMAGE_DIR)/%
+  $(JRE_BUNDLE_DIR)/Home/%: $(JRE_IMAGE_DIR)/%
 	$(ECHO) Copying $(patsubst $(OUTPUT_ROOT)/%,%,$@)
 	$(MKDIR) -p $(@D)
 	if [ -d "$<" ]; then $(MKDIR) -p $@; else $(CP) -f -R -L '$<' '$@'; fi
 
-$(JDK_BUNDLE_DIR)/MacOS/libjli.dylib:
+  $(JDK_BUNDLE_DIR)/MacOS/libjli.dylib:
 	$(ECHO) Creating link $(patsubst $(OUTPUT_ROOT)/%,%,$@)
 	$(MKDIR) -p $(@D)
 	$(RM) $@
 	$(LN) -s ../Home/jre/lib/jli/libjli.dylib $@
 
-$(JRE_BUNDLE_DIR)/MacOS/libjli.dylib:
+  $(JRE_BUNDLE_DIR)/MacOS/libjli.dylib:
 	$(ECHO) Creating link $(patsubst $(OUTPUT_ROOT)/%,%,$@)
 	$(MKDIR) -p $(@D)
 	$(RM) $@
 	$(LN) -s ../Home/lib/jli/libjli.dylib $@
 
-$(JDK_BUNDLE_DIR)/Info.plist: $(SPEC)
+  $(JDK_BUNDLE_DIR)/Info.plist: $(SPEC)
 	$(ECHO) Creating $(patsubst $(OUTPUT_ROOT)/%,%,$@)
 	$(MKDIR) -p $(@D)
-	$(SED)  -e "s/@@ID@@/$(BUNDLE_ID_JDK)/g" \
-		-e "s/@@NAME@@/$(BUNDLE_NAME_JDK)/g" \
-		-e "s/@@INFO@@/$(BUNDLE_INFO_JDK)/g" \
-		-e "s/@@PLATFORM_VERSION@@/$(BUNDLE_PLATFORM_VERSION)/g" \
-		-e "s/@@VERSION@@/$(BUNDLE_VERSION)/g" \
-		-e "s/@@VENDOR@@/$(BUNDLE_VENDOR)/g" \
-		< $(MACOSX_SRC)/bundle/JDK-Info.plist > $@
+	$(SED) -e "s/@@ID@@/$(BUNDLE_ID_JDK)/g" \
+	    -e "s/@@NAME@@/$(BUNDLE_NAME_JDK)/g" \
+	    -e "s/@@INFO@@/$(BUNDLE_INFO_JDK)/g" \
+	    -e "s/@@PLATFORM_VERSION@@/$(BUNDLE_PLATFORM_VERSION)/g" \
+	    -e "s/@@VERSION@@/$(BUNDLE_VERSION)/g" \
+	    -e "s/@@VENDOR@@/$(BUNDLE_VENDOR)/g" \
+	    < $(MACOSX_SRC)/bundle/JDK-Info.plist > $@
 
-$(JRE_BUNDLE_DIR)/Info.plist: $(SPEC)
+  $(JRE_BUNDLE_DIR)/Info.plist: $(SPEC)
 	$(ECHO) Creating $(patsubst $(OUTPUT_ROOT)/%,%,$@)
 	$(MKDIR) -p $(@D)
-	$(SED)  -e "s/@@ID@@/$(BUNDLE_ID_JRE)/g" \
-		-e "s/@@NAME@@/$(BUNDLE_NAME_JRE)/g" \
-		-e "s/@@INFO@@/$(BUNDLE_INFO_JRE)/g" \
-		-e "s/@@PLATFORM_VERSION@@/$(BUNDLE_PLATFORM_VERSION)/g" \
-		-e "s/@@VERSION@@/$(BUNDLE_VERSION)/g" \
-		-e "s/@@VENDOR@@/$(BUNDLE_VENDOR)/g" \
-		< $(MACOSX_SRC)/bundle/JRE-Info.plist > $@
+	$(SED) -e "s/@@ID@@/$(BUNDLE_ID_JRE)/g" \
+	    -e "s/@@NAME@@/$(BUNDLE_NAME_JRE)/g" \
+	    -e "s/@@INFO@@/$(BUNDLE_INFO_JRE)/g" \
+	    -e "s/@@PLATFORM_VERSION@@/$(BUNDLE_PLATFORM_VERSION)/g" \
+	    -e "s/@@VERSION@@/$(BUNDLE_VERSION)/g" \
+	    -e "s/@@VENDOR@@/$(BUNDLE_VENDOR)/g" \
+	    < $(MACOSX_SRC)/bundle/JRE-Info.plist > $@
 
-jdk-bundle: $(JDK_TARGET_LIST) $(JDK_BUNDLE_DIR)/MacOS/libjli.dylib \
-		$(JDK_BUNDLE_DIR)/Info.plist
+  jdk-bundle: $(JDK_TARGET_LIST) $(JDK_BUNDLE_DIR)/MacOS/libjli.dylib \
+      $(JDK_BUNDLE_DIR)/Info.plist
 	$(SETFILE) -a B $(dir $(JDK_BUNDLE_DIR))
 
-jre-bundle: $(JRE_TARGET_LIST) $(JRE_BUNDLE_DIR)/MacOS/libjli.dylib \
-		$(JRE_BUNDLE_DIR)/Info.plist
+  jre-bundle: $(JRE_TARGET_LIST) $(JRE_BUNDLE_DIR)/MacOS/libjli.dylib \
+      $(JRE_BUNDLE_DIR)/Info.plist
 	$(SETFILE) -a B $(dir $(JRE_BUNDLE_DIR))
 
 else # Not macosx
 
-bundles:
+  bundles:
 	$(ECHO) "No bundles defined for $(OPENJDK_TARGET_OS)"
 
 endif # macosx

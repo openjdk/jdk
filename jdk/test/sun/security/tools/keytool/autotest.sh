@@ -73,11 +73,13 @@ case "$OS" in
     if [ $B32 = true ]; then
         LIBNAME=`find_one \
             "/usr/lib/libsoftokn3.so" \
-            "/usr/lib/i386-linux-gnu/nss/libsoftokn3.so"`
+            "/usr/lib/i386-linux-gnu/nss/libsoftokn3.so" \
+            "/usr/lib/nss/libsoftokn3.so"`
     else
         LIBNAME=`find_one \
             "/usr/lib64/libsoftokn3.so" \
-            "/usr/lib/x86_64-linux-gnu/nss/libsoftokn3.so"`
+            "/usr/lib/x86_64-linux-gnu/nss/libsoftokn3.so" \
+            "/usr/lib/nss/libsoftokn3.so"`
     fi
     ;;
   * )

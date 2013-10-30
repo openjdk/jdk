@@ -319,10 +319,10 @@ G1CollectorPolicy::G1CollectorPolicy() :
 }
 
 void G1CollectorPolicy::initialize_flags() {
-  set_min_alignment(HeapRegion::GrainBytes);
+  _min_alignment = HeapRegion::GrainBytes;
   size_t card_table_alignment = GenRemSet::max_alignment_constraint(rem_set_name());
   size_t page_size = UseLargePages ? os::large_page_size() : os::vm_page_size();
-  set_max_alignment(MAX3(card_table_alignment, min_alignment(), page_size));
+  _max_alignment = MAX3(card_table_alignment, _min_alignment, page_size);
   if (SurvivorRatio < 1) {
     vm_exit_during_initialization("Invalid survivor ratio specified");
   }
@@ -342,6 +342,10 @@ G1YoungGenSizer::G1YoungGenSizer() : _sizer_kind(SizerDefaults), _adaptive_size(
       _adaptive_size = false;
       return;
     }
+  }
+
+  if (FLAG_IS_CMDLINE(NewSize) && FLAG_IS_CMDLINE(MaxNewSize) && NewSize > MaxNewSize) {
+    vm_exit_during_initialization("Initial young gen size set larger than the maximum young gen size");
   }
 
   if (FLAG_IS_CMDLINE(NewSize)) {

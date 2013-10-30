@@ -43,7 +43,7 @@ public class UnknownAndUnparseable {
         // Create a cert with an unknown extension: 1.2.3.4, and an invalid
         // KeyUsage extension
         String genkey = s
-                + "-genkeypair -alias a -dname CN=A -ext 1.2.3.4=1234 "
+                + "-genkeypair -alias a -dname CN=A -ext 1.2.3.4=1234 -keyalg rsa "
                 + "-ext " + PKIXExtensions.KeyUsage_Id.toString() + "=5678";
         sun.security.tools.keytool.Main.main(genkey.split(" "));
 

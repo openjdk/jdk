@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug      4682448 4947464 5029946
+ * @bug      4682448 4947464 5029946 8025633
  * @summary  Verify that the public modifier does not show up in the
  *           documentation for public methods, as recommended by the JLS.
  *           If A implements I and B extends A, B should be in the list of
@@ -84,7 +84,7 @@ public class TestInterface extends JavadocTester {
         //Make sure "Specified By" has substituted type parameters.
         {BUG_ID + FS + "pkg" + FS + "Child.html",
             "<dt><span class=\"strong\">Specified by:</span></dt>" + NL +
-            "<dd><code><a href=\"../pkg/Interface.html#method()\">method</a>" +
+            "<dd><code><a href=\"../pkg/Interface.html#method--\">method</a>" +
             "</code>&nbsp;in interface&nbsp;<code>" +
             "<a href=\"../pkg/Interface.html\" title=\"interface in pkg\">" +
             "Interface</a>&lt;<a href=\"../pkg/Child.html\" title=\"type parameter in Child\">" +
@@ -93,7 +93,7 @@ public class TestInterface extends JavadocTester {
         //Make sure "Overrides" has substituted type parameters.
         {BUG_ID + FS + "pkg" + FS + "Child.html",
             "<dt><span class=\"strong\">Overrides:</span></dt>" + NL +
-            "<dd><code><a href=\"../pkg/Parent.html#method()\">method</a>" +
+            "<dd><code><a href=\"../pkg/Parent.html#method--\">method</a>" +
             "</code>&nbsp;in class&nbsp;<code><a href=\"../pkg/Parent.html\" " +
             "title=\"class in pkg\">Parent</a>&lt;<a href=\"../pkg/Child.html\" " +
             "title=\"type parameter in Child\">T</a>&gt;</code></dd>"

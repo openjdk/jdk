@@ -25,11 +25,12 @@
 
 package com.sun.jndi.ldap;
 
-import java.net.URL;
 import java.net.URLClassLoader;
 import java.net.MalformedURLException;
+import java.security.AccessControlContext;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
+import sun.misc.SharedSecrets;
 
 final class VersionHelper12 extends VersionHelper {
 
@@ -82,12 +83,16 @@ final class VersionHelper12 extends VersionHelper {
     }
 
     Thread createThread(final Runnable r) {
+        final AccessControlContext acc = AccessController.getContext();
+        // 4290486: doPrivileged is needed to create a thread in
+        // an environment that restricts "modifyThreadGroup".
         return AccessController.doPrivileged(
-            new PrivilegedAction<Thread>() {
-                public Thread run() {
-                    return new Thread(r);
+                new PrivilegedAction<Thread>() {
+                    public Thread run() {
+                        return SharedSecrets.getJavaLangAccess()
+                                .newThreadWithAcc(r, acc);
+                    }
                 }
-            }
         );
     }
 }

@@ -128,7 +128,7 @@ public class CallerSensitiveFinder {
     {
         ExecutorService pool = Executors.newFixedThreadPool(numThreads);
         for (Path path : classes) {
-            ClassFileReader reader = ClassFileReader.newInstance(path.toFile());
+            ClassFileReader reader = ClassFileReader.newInstance(path);
             for (ClassFile cf : reader.getClassFiles()) {
                 String classFileName = cf.getName();
                 // for each ClassFile

@@ -77,7 +77,4 @@ final class AnyNameClass extends NameClass {
         return true;
     }
 
-    private static Object readReplace() {
-        return NameClass.ANY;
-    }
 }

@@ -45,7 +45,7 @@ import java.security.Permission;
  * </pre>
  * <i>scheme</i> will typically be http or https, but is not restricted by this
  * class.
- * <i>authority</i> is specified as:<p>
+ * <i>authority</i> is specified as:
  * <pre>
  *     authority = hostrange [ : portrange ]
  *     portrange = portnumber | -portnumber | portnumber-[portnumber] | *
@@ -223,7 +223,7 @@ public final class URLPermission extends Permission {
      * Checks if this URLPermission implies the given permission.
      * Specifically, the following checks are done as if in the
      * following sequence:
-     * <p><ul>
+     * <ul>
      * <li>if 'p' is not an instance of URLPermission return false</li>
      * <li>if any of p's methods are not in this's method list, and if
      *     this's method list is not equal to "*", then return false.</li>
@@ -242,7 +242,7 @@ public final class URLPermission extends Permission {
      * <li>otherwise, return false</li>
      * </ul>
      * <p>Some examples of how paths are matched are shown below:
-     * <p><table border>
+     * <table border>
      * <caption>Examples of Path Matching</caption>
      * <tr><th>this's path</th><th>p's path</th><th>match</th></tr>
      * <tr><td>/a/b</td><td>/a/b</td><td>yes</td></tr>

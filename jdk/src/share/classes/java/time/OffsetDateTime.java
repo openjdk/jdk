@@ -69,7 +69,6 @@ import static java.time.temporal.ChronoUnit.FOREVER;
 import static java.time.temporal.ChronoUnit.NANOS;
 
 import java.io.IOException;
-import java.io.InvalidObjectException;
 import java.io.ObjectInput;
 import java.io.ObjectOutput;
 import java.io.InvalidObjectException;
@@ -84,6 +83,7 @@ import java.time.temporal.TemporalAccessor;
 import java.time.temporal.TemporalAdjuster;
 import java.time.temporal.TemporalAmount;
 import java.time.temporal.TemporalField;
+import java.time.temporal.TemporalQueries;
 import java.time.temporal.TemporalQuery;
 import java.time.temporal.TemporalUnit;
 import java.time.temporal.UnsupportedTemporalTypeException;
@@ -1527,17 +1527,17 @@ public final class OffsetDateTime
     @SuppressWarnings("unchecked")
     @Override
     public <R> R query(TemporalQuery<R> query) {
-        if (query == TemporalQuery.offset() || query == TemporalQuery.zone()) {
+        if (query == TemporalQueries.offset() || query == TemporalQueries.zone()) {
             return (R) getOffset();
-        } else if (query == TemporalQuery.zoneId()) {
+        } else if (query == TemporalQueries.zoneId()) {
             return null;
-        } else if (query == TemporalQuery.localDate()) {
+        } else if (query == TemporalQueries.localDate()) {
             return (R) toLocalDate();
-        } else if (query == TemporalQuery.localTime()) {
+        } else if (query == TemporalQueries.localTime()) {
             return (R) toLocalTime();
-        } else if (query == TemporalQuery.chronology()) {
+        } else if (query == TemporalQueries.chronology()) {
             return (R) IsoChronology.INSTANCE;
-        } else if (query == TemporalQuery.precision()) {
+        } else if (query == TemporalQueries.precision()) {
             return (R) NANOS;
         }
         // inline TemporalAccessor.super.query(query) as an optimization
@@ -1880,13 +1880,13 @@ public final class OffsetDateTime
      * Outputs this date-time as a {@code String}, such as {@code 2007-12-03T10:15:30+01:00}.
      * <p>
      * The output will be one of the following ISO-8601 formats:
-     * <p><ul>
+     * <ul>
      * <li>{@code uuuu-MM-dd'T'HH:mmXXXXX}</li>
      * <li>{@code uuuu-MM-dd'T'HH:mm:ssXXXXX}</li>
      * <li>{@code uuuu-MM-dd'T'HH:mm:ss.SSSXXXXX}</li>
      * <li>{@code uuuu-MM-dd'T'HH:mm:ss.SSSSSSXXXXX}</li>
      * <li>{@code uuuu-MM-dd'T'HH:mm:ss.SSSSSSSSSXXXXX}</li>
-     * </ul><p>
+     * </ul>
      * The format used will be the shortest that outputs the full value of
      * the time where the omitted parts are implied to be zero.
      *
@@ -1903,9 +1903,9 @@ public final class OffsetDateTime
      * <a href="../../serialized-form.html#java.time.Ser">dedicated serialized form</a>.
      * @serialData
      * <pre>
-     *  out.writeByte(10);  // identifies a OffsetDateTime
-     *  out.writeObject(dateTime);
-     *  out.writeObject(offset);
+     *  out.writeByte(10);  // identifies an OffsetDateTime
+     *  // the <a href="../../serialized-form.html#java.time.LocalDateTime">datetime</a> excluding the one byte header
+     *  // the <a href="../../serialized-form.html#java.time.ZoneOffset">offset</a> excluding the one byte header
      * </pre>
      *
      * @return the instance of {@code Ser}, not null
@@ -1924,13 +1924,13 @@ public final class OffsetDateTime
     }
 
     void writeExternal(ObjectOutput out) throws IOException {
-        out.writeObject(dateTime);
-        out.writeObject(offset);
+        dateTime.writeExternal(out);
+        offset.writeExternal(out);
     }
 
     static OffsetDateTime readExternal(ObjectInput in) throws IOException, ClassNotFoundException {
-        LocalDateTime dateTime = (LocalDateTime) in.readObject();
-        ZoneOffset offset = (ZoneOffset) in.readObject();
+        LocalDateTime dateTime = LocalDateTime.readExternal(in);
+        ZoneOffset offset = ZoneOffset.readExternal(in);
         return OffsetDateTime.of(dateTime, offset);
     }
 

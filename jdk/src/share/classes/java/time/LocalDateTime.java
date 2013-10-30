@@ -76,7 +76,6 @@ import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
 import java.io.InvalidObjectException;
-import java.io.InvalidObjectException;
 import java.io.Serializable;
 import java.time.chrono.ChronoLocalDateTime;
 import java.time.format.DateTimeFormatter;
@@ -88,6 +87,7 @@ import java.time.temporal.TemporalAccessor;
 import java.time.temporal.TemporalAdjuster;
 import java.time.temporal.TemporalAmount;
 import java.time.temporal.TemporalField;
+import java.time.temporal.TemporalQueries;
 import java.time.temporal.TemporalQuery;
 import java.time.temporal.TemporalUnit;
 import java.time.temporal.UnsupportedTemporalTypeException;
@@ -1579,7 +1579,7 @@ public final class LocalDateTime
     @SuppressWarnings("unchecked")
     @Override  // override for Javadoc
     public <R> R query(TemporalQuery<R> query) {
-        if (query == TemporalQuery.localDate()) {
+        if (query == TemporalQueries.localDate()) {
             return (R) date;
         }
         return ChronoLocalDateTime.super.query(query);
@@ -1941,13 +1941,13 @@ public final class LocalDateTime
      * Outputs this date-time as a {@code String}, such as {@code 2007-12-03T10:15:30}.
      * <p>
      * The output will be one of the following ISO-8601 formats:
-     * <p><ul>
+     * <ul>
      * <li>{@code uuuu-MM-dd'T'HH:mm}</li>
      * <li>{@code uuuu-MM-dd'T'HH:mm:ss}</li>
      * <li>{@code uuuu-MM-dd'T'HH:mm:ss.SSS}</li>
      * <li>{@code uuuu-MM-dd'T'HH:mm:ss.SSSSSS}</li>
      * <li>{@code uuuu-MM-dd'T'HH:mm:ss.SSSSSSSSS}</li>
-     * </ul><p>
+     * </ul>
      * The format used will be the shortest that outputs the full value of
      * the time where the omitted parts are implied to be zero.
      *

@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug      4789689 4905985 4927164 4827184 4993906 5004549 7025314 7010344
+ * @bug      4789689 4905985 4927164 4827184 4993906 5004549 7025314 7010344 8025633
  * @summary  Run Javadoc on a set of source files that demonstrate new
  *           language features.  Check the output to ensure that the new
  *           language features are properly documented.
@@ -145,7 +145,7 @@ public class TestNewLanguageFeatures extends JavadocTester {
             //=================================
             {BUG_ID + FS + "pkg" + FS + "VarArgs.html", "(int...&nbsp;i)"},
             {BUG_ID + FS + "pkg" + FS + "VarArgs.html", "(int[][]...&nbsp;i)"},
-            {BUG_ID + FS + "pkg" + FS + "VarArgs.html", "(int[]...)"},
+            {BUG_ID + FS + "pkg" + FS + "VarArgs.html", "-int:A...-"},
             {BUG_ID + FS + "pkg" + FS + "VarArgs.html",
                 "<a href=\"../pkg/TypeParameters.html\" title=\"class in pkg\">" +
                 "TypeParameters</a>...&nbsp;t"},
@@ -156,13 +156,13 @@ public class TestNewLanguageFeatures extends JavadocTester {
             //Make sure the summary links are correct.
             {BUG_ID + FS + "pkg" + FS + "AnnotationType.html",
                 "<li>Summary:&nbsp;</li>" + NL + "<li>Field&nbsp;|&nbsp;</li>" + NL +
-                "<li><a href=\"#annotation_type_required_element_summary\">" +
+                "<li><a href=\"#annotation.type.required.element.summary\">" +
                 "Required</a>&nbsp;|&nbsp;</li>" + NL + "<li>" +
-                "<a href=\"#annotation_type_optional_element_summary\">Optional</a></li>"},
+                "<a href=\"#annotation.type.optional.element.summary\">Optional</a></li>"},
             //Make sure the detail links are correct.
             {BUG_ID + FS + "pkg" + FS + "AnnotationType.html",
                 "<li>Detail:&nbsp;</li>" + NL + "<li>Field&nbsp;|&nbsp;</li>" + NL +
-                "<li><a href=\"#annotation_type_element_detail\">Element</a></li>"},
+                "<li><a href=\"#annotation.type.element.detail\">Element</a></li>"},
             //Make sure the heading is correct.
             {BUG_ID + FS + "pkg" + FS + "AnnotationType.html",
                 "Annotation Type AnnotationType</h2>"},
@@ -188,16 +188,16 @@ public class TestNewLanguageFeatures extends JavadocTester {
 
             //PACKAGE
             {BUG_ID + FS + "pkg" + FS + "package-summary.html",
-                "<a href=\"../pkg/AnnotationType.html\" title=\"annotation in pkg\">@AnnotationType</a>(<a href=\"../pkg/AnnotationType.html#optional()\">optional</a>=\"Package Annotation\"," + NL +
-                "                <a href=\"../pkg/AnnotationType.html#required()\">required</a>=1994)"},
+                "<a href=\"../pkg/AnnotationType.html\" title=\"annotation in pkg\">@AnnotationType</a>(<a href=\"../pkg/AnnotationType.html#optional--\">optional</a>=\"Package Annotation\"," + NL +
+                "                <a href=\"../pkg/AnnotationType.html#required--\">required</a>=1994)"},
 
             //CLASS
             {BUG_ID + FS + "pkg" + FS + "AnnotationTypeUsage.html",
                 "<pre><a href=\"../pkg/AnnotationType.html\" " +
                 "title=\"annotation in pkg\">@AnnotationType</a>(" +
-                "<a href=\"../pkg/AnnotationType.html#optional()\">optional</a>" +
+                "<a href=\"../pkg/AnnotationType.html#optional--\">optional</a>" +
                 "=\"Class Annotation\"," + NL +
-                "                <a href=\"../pkg/AnnotationType.html#required()\">" +
+                "                <a href=\"../pkg/AnnotationType.html#required--\">" +
                 "required</a>=1994)" + NL + "public class <span class=\"strong\">" +
                 "AnnotationTypeUsage</span>" + NL + "extends java.lang.Object</pre>"},
 
@@ -205,36 +205,36 @@ public class TestNewLanguageFeatures extends JavadocTester {
             {BUG_ID + FS + "pkg" + FS + "AnnotationTypeUsage.html",
                 "<pre><a href=\"../pkg/AnnotationType.html\" " +
                 "title=\"annotation in pkg\">@AnnotationType</a>(" +
-                "<a href=\"../pkg/AnnotationType.html#optional()\">optional</a>" +
+                "<a href=\"../pkg/AnnotationType.html#optional--\">optional</a>" +
                 "=\"Field Annotation\"," + NL +
-                "                <a href=\"../pkg/AnnotationType.html#required()\">" +
+                "                <a href=\"../pkg/AnnotationType.html#required--\">" +
                 "required</a>=1994)" + NL + "public&nbsp;int field</pre>"},
 
             //CONSTRUCTOR
             {BUG_ID + FS + "pkg" + FS + "AnnotationTypeUsage.html",
                 "<pre><a href=\"../pkg/AnnotationType.html\" " +
                 "title=\"annotation in pkg\">@AnnotationType</a>(" +
-                "<a href=\"../pkg/AnnotationType.html#optional()\">optional</a>" +
+                "<a href=\"../pkg/AnnotationType.html#optional--\">optional</a>" +
                 "=\"Constructor Annotation\"," + NL +
-                "                <a href=\"../pkg/AnnotationType.html#required()\">" +
+                "                <a href=\"../pkg/AnnotationType.html#required--\">" +
                 "required</a>=1994)" + NL + "public&nbsp;AnnotationTypeUsage()</pre>"},
 
             //METHOD
             {BUG_ID + FS + "pkg" + FS + "AnnotationTypeUsage.html",
                 "<pre><a href=\"../pkg/AnnotationType.html\" " +
                 "title=\"annotation in pkg\">@AnnotationType</a>(" +
-                "<a href=\"../pkg/AnnotationType.html#optional()\">optional</a>" +
+                "<a href=\"../pkg/AnnotationType.html#optional--\">optional</a>" +
                 "=\"Method Annotation\"," + NL +
-                "                <a href=\"../pkg/AnnotationType.html#required()\">" +
+                "                <a href=\"../pkg/AnnotationType.html#required--\">" +
                 "required</a>=1994)" + NL + "public&nbsp;void&nbsp;method()</pre>"},
 
             //METHOD PARAMS
             {BUG_ID + FS + "pkg" + FS + "AnnotationTypeUsage.html",
                 "<pre>public&nbsp;void&nbsp;methodWithParams(" +
                 "<a href=\"../pkg/AnnotationType.html\" title=\"annotation in pkg\">" +
-                "@AnnotationType</a>(<a href=\"../pkg/AnnotationType.html#optional()\">" +
+                "@AnnotationType</a>(<a href=\"../pkg/AnnotationType.html#optional--\">" +
                 "optional</a>=\"Parameter Annotation\",<a " +
-                "href=\"../pkg/AnnotationType.html#required()\">required</a>=1994)" + NL +
+                "href=\"../pkg/AnnotationType.html#required--\">required</a>=1994)" + NL +
                 "                             int&nbsp;documented," + NL +
                 "                             int&nbsp;undocmented)</pre>"},
 
@@ -242,9 +242,9 @@ public class TestNewLanguageFeatures extends JavadocTester {
             {BUG_ID + FS + "pkg" + FS + "AnnotationTypeUsage.html",
                 "<pre>public&nbsp;AnnotationTypeUsage(<a " +
                 "href=\"../pkg/AnnotationType.html\" title=\"annotation in pkg\">" +
-                "@AnnotationType</a>(<a href=\"../pkg/AnnotationType.html#optional()\">" +
+                "@AnnotationType</a>(<a href=\"../pkg/AnnotationType.html#optional--\">" +
                 "optional</a>=\"Constructor Param Annotation\",<a " +
-                "href=\"../pkg/AnnotationType.html#required()\">required</a>=1994)" + NL +
+                "href=\"../pkg/AnnotationType.html#required--\">required</a>=1994)" + NL +
                 "                           int&nbsp;documented," + NL +
                 "                           int&nbsp;undocmented)</pre>"},
 
@@ -254,43 +254,43 @@ public class TestNewLanguageFeatures extends JavadocTester {
 
             //Integer
             {BUG_ID + FS + "pkg1" + FS + "B.html",
-                "<a href=\"../pkg1/A.html#d()\">d</a>=3.14,"},
+                "<a href=\"../pkg1/A.html#d--\">d</a>=3.14,"},
 
             //Double
             {BUG_ID + FS + "pkg1" + FS + "B.html",
-                "<a href=\"../pkg1/A.html#d()\">d</a>=3.14,"},
+                "<a href=\"../pkg1/A.html#d--\">d</a>=3.14,"},
 
             //Boolean
             {BUG_ID + FS + "pkg1" + FS + "B.html",
-                "<a href=\"../pkg1/A.html#b()\">b</a>=true,"},
+                "<a href=\"../pkg1/A.html#b--\">b</a>=true,"},
 
             //String
             {BUG_ID + FS + "pkg1" + FS + "B.html",
-                "<a href=\"../pkg1/A.html#s()\">s</a>=\"sigh\","},
+                "<a href=\"../pkg1/A.html#s--\">s</a>=\"sigh\","},
 
             //Class
             {BUG_ID + FS + "pkg1" + FS + "B.html",
-                "<a href=\"../pkg1/A.html#c()\">c</a>=<a href=\"../pkg2/Foo.html\" title=\"class in pkg2\">Foo.class</a>,"},
+                "<a href=\"../pkg1/A.html#c--\">c</a>=<a href=\"../pkg2/Foo.html\" title=\"class in pkg2\">Foo.class</a>,"},
 
             //Bounded Class
             {BUG_ID + FS + "pkg1" + FS + "B.html",
-                "<a href=\"../pkg1/A.html#w()\">w</a>=<a href=\"../pkg/TypeParameterSubClass.html\" title=\"class in pkg\">TypeParameterSubClass.class</a>,"},
+                "<a href=\"../pkg1/A.html#w--\">w</a>=<a href=\"../pkg/TypeParameterSubClass.html\" title=\"class in pkg\">TypeParameterSubClass.class</a>,"},
 
             //Enum
             {BUG_ID + FS + "pkg1" + FS + "B.html",
-                "<a href=\"../pkg1/A.html#e()\">e</a>=<a href=\"../pkg/Coin.html#Penny\">Penny</a>,"},
+                "<a href=\"../pkg1/A.html#e--\">e</a>=<a href=\"../pkg/Coin.html#Penny\">Penny</a>,"},
 
             //Annotation Type
             {BUG_ID + FS + "pkg1" + FS + "B.html",
-                "<a href=\"../pkg1/A.html#a()\">a</a>=<a href=\"../pkg/AnnotationType.html\" title=\"annotation in pkg\">@AnnotationType</a>(<a href=\"../pkg/AnnotationType.html#optional()\">optional</a>=\"foo\",<a href=\"../pkg/AnnotationType.html#required()\">required</a>=1994),"},
+                "<a href=\"../pkg1/A.html#a--\">a</a>=<a href=\"../pkg/AnnotationType.html\" title=\"annotation in pkg\">@AnnotationType</a>(<a href=\"../pkg/AnnotationType.html#optional--\">optional</a>=\"foo\",<a href=\"../pkg/AnnotationType.html#required--\">required</a>=1994),"},
 
             //String Array
             {BUG_ID + FS + "pkg1" + FS + "B.html",
-                "<a href=\"../pkg1/A.html#sa()\">sa</a>={\"up\",\"down\"},"},
+                "<a href=\"../pkg1/A.html#sa--\">sa</a>={\"up\",\"down\"},"},
 
             //Primitive
             {BUG_ID + FS + "pkg1" + FS + "B.html",
-                "<a href=\"../pkg1/A.html#primitiveClassTest()\">primitiveClassTest</a>=boolean.class,"},
+                "<a href=\"../pkg1/A.html#primitiveClassTest--\">primitiveClassTest</a>=boolean.class,"},
 
             //XXX:  Add array test case after this if fixed:
             //5020899: Incorrect internal representation of class-valued annotation elements
@@ -335,7 +335,7 @@ public class TestNewLanguageFeatures extends JavadocTester {
             {BUG_ID + FS + "pkg2" + FS + "class-use" + FS + "Foo.html",
                      "<td class=\"colLast\"><span class=\"strong\">ClassUseTest1." +
                      "</span><code><span class=\"strong\"><a href=\"../../pkg2/" +
-                     "ClassUseTest1.html#method(T)\">method</a></span>" +
+                     "ClassUseTest1.html#method-T-\">method</a></span>" +
                      "(T&nbsp;t)</code>&nbsp;</td>"
             },
             {BUG_ID + FS + "pkg2" + FS + "class-use" + FS + "Foo.html",
@@ -388,7 +388,7 @@ public class TestNewLanguageFeatures extends JavadocTester {
             {BUG_ID + FS + "pkg2" + FS + "class-use" + FS + "Foo2.html",
                      "<td class=\"colLast\"><span class=\"strong\">" +
                      "ClassUseTest1.</span><code><span class=\"strong\"><a href=\"../../" +
-                     "pkg2/ClassUseTest1.html#method(T)\">method</a></span>" +
+                     "pkg2/ClassUseTest1.html#method-T-\">method</a></span>" +
                      "(T&nbsp;t)</code>&nbsp;</td>"
             },
 
@@ -417,7 +417,7 @@ public class TestNewLanguageFeatures extends JavadocTester {
             {BUG_ID + FS + "pkg2" + FS + "class-use" + FS + "ParamTest.html",
                      "<td class=\"colLast\"><span class=\"strong\">ClassUseTest2." +
                      "</span><code><span class=\"strong\"><a href=\"../../pkg2/" +
-                     "ClassUseTest2.html#method(T)\">method</a></span>" +
+                     "ClassUseTest2.html#method-T-\">method</a></span>" +
                      "(T&nbsp;t)</code>&nbsp;</td>"
             },
             {BUG_ID + FS + "pkg2" + FS + "class-use" + FS + "ParamTest.html",
@@ -472,7 +472,7 @@ public class TestNewLanguageFeatures extends JavadocTester {
             {BUG_ID + FS + "pkg2" + FS + "class-use" + FS + "Foo3.html",
                      "<td class=\"colLast\"><span class=\"strong\">ClassUseTest2." +
                      "</span><code><span class=\"strong\"><a href=\"../../pkg2/" +
-                     "ClassUseTest2.html#method(T)\">method</a></span>" +
+                     "ClassUseTest2.html#method-T-\">method</a></span>" +
                      "(T&nbsp;t)</code>&nbsp;</td>"
             },
             {BUG_ID + FS + "pkg2" + FS + "class-use" + FS + "Foo3.html",
@@ -517,7 +517,7 @@ public class TestNewLanguageFeatures extends JavadocTester {
             {BUG_ID + FS + "pkg2" + FS + "class-use" + FS + "ParamTest2.html",
                      "<td class=\"colLast\"><span class=\"strong\">ClassUseTest3" +
                      ".</span><code><span class=\"strong\"><a href=\"../../pkg2/ClassUseTest3." +
-                     "html#method(T)\">method</a></span>(T&nbsp;t)</code>&nbsp;</td>"
+                     "html#method-T-\">method</a></span>(T&nbsp;t)</code>&nbsp;</td>"
             },
             {BUG_ID + FS + "pkg2" + FS + "class-use" + FS + "ParamTest2.html",
                      "<td class=\"colFirst\"><code>&lt;T extends <a href=\"../" +
@@ -554,7 +554,7 @@ public class TestNewLanguageFeatures extends JavadocTester {
             {BUG_ID + FS + "pkg2" + FS + "class-use" + FS + "Foo4.html",
                      "<td class=\"colLast\"><span class=\"strong\">ClassUseTest3." +
                      "</span><code><span class=\"strong\"><a href=\"../../pkg2/ClassUseTest3." +
-                     "html#method(T)\">method</a></span>(T&nbsp;t)</code>" +
+                     "html#method-T-\">method</a></span>(T&nbsp;t)</code>" +
                      "&nbsp;</td>"
             },
             {BUG_ID + FS + "pkg2" + FS + "class-use" + FS + "Foo4.html",
@@ -588,7 +588,7 @@ public class TestNewLanguageFeatures extends JavadocTester {
                      "<td class=\"colFirst\"><code>void</code></td>" + NL +
                      "<td class=\"colLast\"><span class=\"strong\">ClassUseTest3." +
                      "</span><code><span class=\"strong\"><a href=\"../../pkg2/ClassUseTest3." +
-                     "html#method(java.util.Set)\">method</a></span>(java." +
+                     "html#method-java.util.Set-\">method</a></span>(java." +
                      "util.Set&lt;<a href=\"../../pkg2/Foo4.html\" title=\"" +
                      "class in pkg2\">Foo4</a>&gt;&nbsp;p)</code>&nbsp;</td>" + NL +
                      "</tr>" + NL + "</tbody>"
@@ -663,14 +663,14 @@ public class TestNewLanguageFeatures extends JavadocTester {
             // TYPE PARAMETER IN INDEX
             //=================================
             {BUG_ID + FS + "index-all.html",
-                "<span class=\"strong\"><a href=\"pkg2/Foo.html#method(java.util.Vector)\">" +
+                "<span class=\"strong\"><a href=\"pkg2/Foo.html#method-java.util.Vector-\">" +
                 "method(Vector&lt;Object&gt;)</a></span>"
             },
             //=================================
             // TYPE PARAMETER IN INDEX
             //=================================
             {BUG_ID + FS + "index-all.html",
-                "<span class=\"strong\"><a href=\"pkg2/Foo.html#method(java.util.Vector)\">" +
+                "<span class=\"strong\"><a href=\"pkg2/Foo.html#method-java.util.Vector-\">" +
                 "method(Vector&lt;Object&gt;)</a></span>"
             },
         };

@@ -123,7 +123,7 @@ public class TCKLocalizedPrinterParser {
         };
     }
 
-    @SuppressWarnings("deprecated")
+    @SuppressWarnings("deprecation")
     @Test(dataProvider="date")
     public void test_date_print(LocalDate date, FormatStyle dateStyle, int dateStyleOld, Locale locale) {
         DateFormat old = DateFormat.getDateInstance(dateStyleOld, locale);
@@ -135,7 +135,7 @@ public class TCKLocalizedPrinterParser {
         assertEquals(formatted, text);
     }
 
-    @SuppressWarnings("deprecated")
+    @SuppressWarnings("deprecation")
     @Test(dataProvider="date")
     public void test_date_parse(LocalDate date, FormatStyle dateStyle, int dateStyleOld, Locale locale) {
         DateFormat old = DateFormat.getDateInstance(dateStyleOld, locale);
@@ -176,7 +176,7 @@ public class TCKLocalizedPrinterParser {
         };
     }
 
-    @SuppressWarnings("deprecated")
+    @SuppressWarnings("deprecation")
     @Test(dataProvider="time")
     public void test_time_print(LocalTime time, FormatStyle timeStyle, int timeStyleOld, Locale locale) {
         DateFormat old = DateFormat.getTimeInstance(timeStyleOld, locale);
@@ -188,7 +188,7 @@ public class TCKLocalizedPrinterParser {
         assertEquals(formatted, text);
     }
 
-    @SuppressWarnings("deprecated")
+    @SuppressWarnings("deprecation")
     @Test(dataProvider="time")
     public void test_time_parse(LocalTime time, FormatStyle timeStyle, int timeStyleOld, Locale locale) {
         DateFormat old = DateFormat.getTimeInstance(timeStyleOld, locale);

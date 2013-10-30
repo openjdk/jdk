@@ -69,6 +69,7 @@ import java.time.format.DateTimeFormatterBuilder;
 import java.time.format.TextStyle;
 import java.time.temporal.TemporalAccessor;
 import java.time.temporal.TemporalField;
+import java.time.temporal.TemporalQueries;
 import java.time.temporal.TemporalQuery;
 import java.time.temporal.UnsupportedTemporalTypeException;
 import java.time.zone.ZoneRules;
@@ -88,12 +89,12 @@ import java.util.TimeZone;
  * A {@code ZoneId} is used to identify the rules used to convert between
  * an {@link Instant} and a {@link LocalDateTime}.
  * There are two distinct types of ID:
- * <p><ul>
+ * <ul>
  * <li>Fixed offsets - a fully resolved offset from UTC/Greenwich, that uses
  *  the same offset for all local date-times
  * <li>Geographical regions - an area where a specific set of rules for finding
  *  the offset from UTC/Greenwich apply
- * </ul><p>
+ * </ul>
  * Most fixed offsets are represented by {@link ZoneOffset}.
  * Calling {@link #normalized()} on any {@code ZoneId} will ensure that a
  * fixed offset ID will be represented as a {@code ZoneOffset}.
@@ -168,63 +169,18 @@ import java.util.TimeZone;
 public abstract class ZoneId implements Serializable {
 
     /**
-     * A map of zone overrides to enable the older short time-zone names to be used.
-     * <p>
-     * Use of short zone IDs has been deprecated in {@code java.util.TimeZone}.
-     * This map allows the IDs to continue to be used via the
-     * {@link #of(String, Map)} factory method.
-     * <p>
-     * This map contains an older mapping of the IDs, where 'EST', 'MST' and 'HST'
-     * map to IDs which include daylight savings.
-     * This is in line with versions of TZDB before 2005r.
-     * <p>
-     * This maps as follows:
-     * <p><ul>
-     * <li>EST - America/New_York</li>
-     * <li>MST - America/Denver</li>
-     * <li>HST - Pacific/Honolulu</li>
-     * <li>ACT - Australia/Darwin</li>
-     * <li>AET - Australia/Sydney</li>
-     * <li>AGT - America/Argentina/Buenos_Aires</li>
-     * <li>ART - Africa/Cairo</li>
-     * <li>AST - America/Anchorage</li>
-     * <li>BET - America/Sao_Paulo</li>
-     * <li>BST - Asia/Dhaka</li>
-     * <li>CAT - Africa/Harare</li>
-     * <li>CNT - America/St_Johns</li>
-     * <li>CST - America/Chicago</li>
-     * <li>CTT - Asia/Shanghai</li>
-     * <li>EAT - Africa/Addis_Ababa</li>
-     * <li>ECT - Europe/Paris</li>
-     * <li>IET - America/Indiana/Indianapolis</li>
-     * <li>IST - Asia/Kolkata</li>
-     * <li>JST - Asia/Tokyo</li>
-     * <li>MIT - Pacific/Apia</li>
-     * <li>NET - Asia/Yerevan</li>
-     * <li>NST - Pacific/Auckland</li>
-     * <li>PLT - Asia/Karachi</li>
-     * <li>PNT - America/Phoenix</li>
-     * <li>PRT - America/Puerto_Rico</li>
-     * <li>PST - America/Los_Angeles</li>
-     * <li>SST - Pacific/Guadalcanal</li>
-     * <li>VST - Asia/Ho_Chi_Minh</li>
-     * </ul><p>
-     * The map is unmodifiable.
-     */
-    public static final Map<String, String> OLD_SHORT_IDS;
-    /**
      * A map of zone overrides to enable the short time-zone names to be used.
      * <p>
      * Use of short zone IDs has been deprecated in {@code java.util.TimeZone}.
      * This map allows the IDs to continue to be used via the
      * {@link #of(String, Map)} factory method.
      * <p>
-     * This map contains a newer mapping of the IDs, where 'EST', 'MST' and 'HST'
-     * map to IDs which do not include daylight savings
-     * This is in line with TZDB 2005r and later.
+     * This map contains a mapping of the IDs that is in line with TZDB 2005r and
+     * later, where 'EST', 'MST' and 'HST' map to IDs which do not include daylight
+     * savings.
      * <p>
      * This maps as follows:
-     * <p><ul>
+     * <ul>
      * <li>EST - -05:00</li>
      * <li>HST - -10:00</li>
      * <li>MST - -07:00</li>
@@ -253,47 +209,41 @@ public abstract class ZoneId implements Serializable {
      * <li>PST - America/Los_Angeles</li>
      * <li>SST - Pacific/Guadalcanal</li>
      * <li>VST - Asia/Ho_Chi_Minh</li>
-     * </ul><p>
+     * </ul>
      * The map is unmodifiable.
      */
     public static final Map<String, String> SHORT_IDS;
     static {
-        Map<String, String> base = new HashMap<>();
-        base.put("ACT", "Australia/Darwin");
-        base.put("AET", "Australia/Sydney");
-        base.put("AGT", "America/Argentina/Buenos_Aires");
-        base.put("ART", "Africa/Cairo");
-        base.put("AST", "America/Anchorage");
-        base.put("BET", "America/Sao_Paulo");
-        base.put("BST", "Asia/Dhaka");
-        base.put("CAT", "Africa/Harare");
-        base.put("CNT", "America/St_Johns");
-        base.put("CST", "America/Chicago");
-        base.put("CTT", "Asia/Shanghai");
-        base.put("EAT", "Africa/Addis_Ababa");
-        base.put("ECT", "Europe/Paris");
-        base.put("IET", "America/Indiana/Indianapolis");
-        base.put("IST", "Asia/Kolkata");
-        base.put("JST", "Asia/Tokyo");
-        base.put("MIT", "Pacific/Apia");
-        base.put("NET", "Asia/Yerevan");
-        base.put("NST", "Pacific/Auckland");
-        base.put("PLT", "Asia/Karachi");
-        base.put("PNT", "America/Phoenix");
-        base.put("PRT", "America/Puerto_Rico");
-        base.put("PST", "America/Los_Angeles");
-        base.put("SST", "Pacific/Guadalcanal");
-        base.put("VST", "Asia/Ho_Chi_Minh");
-        Map<String, String> pre = new HashMap<>(base);
-        pre.put("EST", "America/New_York");
-        pre.put("MST", "America/Denver");
-        pre.put("HST", "Pacific/Honolulu");
-        OLD_SHORT_IDS = Collections.unmodifiableMap(pre);
-        Map<String, String> post = new HashMap<>(base);
-        post.put("EST", "-05:00");
-        post.put("MST", "-07:00");
-        post.put("HST", "-10:00");
-        SHORT_IDS = Collections.unmodifiableMap(post);
+        Map<String, String> map = new HashMap<>(64);
+        map.put("ACT", "Australia/Darwin");
+        map.put("AET", "Australia/Sydney");
+        map.put("AGT", "America/Argentina/Buenos_Aires");
+        map.put("ART", "Africa/Cairo");
+        map.put("AST", "America/Anchorage");
+        map.put("BET", "America/Sao_Paulo");
+        map.put("BST", "Asia/Dhaka");
+        map.put("CAT", "Africa/Harare");
+        map.put("CNT", "America/St_Johns");
+        map.put("CST", "America/Chicago");
+        map.put("CTT", "Asia/Shanghai");
+        map.put("EAT", "Africa/Addis_Ababa");
+        map.put("ECT", "Europe/Paris");
+        map.put("IET", "America/Indiana/Indianapolis");
+        map.put("IST", "Asia/Kolkata");
+        map.put("JST", "Asia/Tokyo");
+        map.put("MIT", "Pacific/Apia");
+        map.put("NET", "Asia/Yerevan");
+        map.put("NST", "Pacific/Auckland");
+        map.put("PLT", "Asia/Karachi");
+        map.put("PNT", "America/Phoenix");
+        map.put("PRT", "America/Puerto_Rico");
+        map.put("PST", "America/Los_Angeles");
+        map.put("SST", "Pacific/Guadalcanal");
+        map.put("VST", "Asia/Ho_Chi_Minh");
+        map.put("EST", "-05:00");
+        map.put("MST", "-07:00");
+        map.put("HST", "-10:00");
+        SHORT_IDS = Collections.unmodifiableMap(map);
     }
     /**
      * Serialization version.
@@ -313,7 +263,7 @@ public abstract class ZoneId implements Serializable {
      * @throws ZoneRulesException if the converted zone region ID cannot be found
      */
     public static ZoneId systemDefault() {
-        return ZoneId.of(TimeZone.getDefault().getID(), SHORT_IDS);
+        return TimeZone.getDefault().toZoneId();
     }
 
     /**
@@ -492,7 +442,7 @@ public abstract class ZoneId implements Serializable {
      * This factory converts the arbitrary temporal object to an instance of {@code ZoneId}.
      * <p>
      * The conversion will try to obtain the zone in a way that favours region-based
-     * zones over offset-based zones using {@link TemporalQuery#zone()}.
+     * zones over offset-based zones using {@link TemporalQueries#zone()}.
      * <p>
      * This method matches the signature of the functional interface {@link TemporalQuery}
      * allowing it to be used in queries via method reference, {@code ZoneId::from}.
@@ -502,7 +452,7 @@ public abstract class ZoneId implements Serializable {
      * @throws DateTimeException if unable to convert to a {@code ZoneId}
      */
     public static ZoneId from(TemporalAccessor temporal) {
-        ZoneId obj = temporal.query(TemporalQuery.zone());
+        ZoneId obj = temporal.query(TemporalQueries.zone());
         if (obj == null) {
             throw new DateTimeException("Unable to obtain ZoneId from TemporalAccessor: " +
                     temporal + " of type " + temporal.getClass().getName());
@@ -558,7 +508,7 @@ public abstract class ZoneId implements Serializable {
      * methods on the interface have no meaning to {@code ZoneId}.
      * <p>
      * The returned temporal has no supported fields, with the query method
-     * supporting the return of the zone using {@link TemporalQuery#zoneId()}.
+     * supporting the return of the zone using {@link TemporalQueries#zoneId()}.
      *
      * @return a temporal equivalent to this zone, not null
      */
@@ -575,7 +525,7 @@ public abstract class ZoneId implements Serializable {
             @SuppressWarnings("unchecked")
             @Override
             public <R> R query(TemporalQuery<R> query) {
-                if (query == TemporalQuery.zoneId()) {
+                if (query == TemporalQueries.zoneId()) {
                     return (R) ZoneId.this;
                 }
                 return TemporalAccessor.super.query(query);

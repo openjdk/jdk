@@ -90,6 +90,7 @@ import java.time.temporal.ChronoField;
 import java.time.temporal.IsoFields;
 import java.time.temporal.TemporalAccessor;
 import java.time.temporal.TemporalField;
+import java.time.temporal.TemporalQueries;
 import java.time.temporal.TemporalQuery;
 import java.time.temporal.ValueRange;
 import java.time.temporal.WeekFields;
@@ -124,7 +125,7 @@ import sun.util.locale.provider.TimeZoneNameUtility;
  * All date-time formatters are created ultimately using this builder.
  * <p>
  * The basic elements of date-time can all be added:
- * <p><ul>
+ * <ul>
  * <li>Value - a numeric value</li>
  * <li>Fraction - a fractional value including the decimal place. Always use this when
  * outputting fractions to ensure that the fraction is parsed correctly</li>
@@ -137,7 +138,7 @@ import sun.util.locale.provider.TimeZoneNameUtility;
  * <li>Literal - a text literal</li>
  * <li>Nested and Optional - formats can be nested or made optional</li>
  * <li>Other - the printer and parser interfaces can be used to add user supplied formatting</li>
- * </ul><p>
+ * </ul>
  * In addition, any of the elements may be decorated by padding, either with spaces or any other character.
  * <p>
  * Finally, a shorthand pattern, mostly compatible with {@code java.text.SimpleDateFormat SimpleDateFormat}
@@ -155,7 +156,7 @@ public final class DateTimeFormatterBuilder {
      * Query for a time-zone that is region-only.
      */
     private static final TemporalQuery<ZoneId> QUERY_REGION_ONLY = (temporal) -> {
-        ZoneId zone = temporal.query(TemporalQuery.zoneId());
+        ZoneId zone = temporal.query(TemporalQueries.zoneId());
         return (zone != null && zone instanceof ZoneOffset == false ? zone : null);
     };
 
@@ -556,12 +557,13 @@ public final class DateTimeFormatterBuilder {
      * a two digit year parse will be in the range 1950-01-01 to 2049-12-31.
      * Only the year would be extracted from the date, thus a base date of
      * 1950-08-25 would also parse to the range 1950-01-01 to 2049-12-31.
-     * This behaviour is necessary to support fields such as week-based-year
+     * This behavior is necessary to support fields such as week-based-year
      * or other calendar systems where the parsed value does not align with
      * standard ISO years.
      * <p>
      * The exact behavior is as follows. Parse the full set of fields and
-     * determine the effective chronology. Then convert the base date to the
+     * determine the effective chronology using the last chronology if
+     * it appears more than once. Then convert the base date to the
      * effective chronology. Then extract the specified field from the
      * chronology-specific base date and use it to determine the
      * {@code baseValue} used below.
@@ -877,7 +879,7 @@ public final class DateTimeFormatterBuilder {
      * This appends an instruction to format/parse the offset ID to the builder.
      * <p>
      * During formatting, the offset is obtained using a mechanism equivalent
-     * to querying the temporal with {@link TemporalQuery#offset()}.
+     * to querying the temporal with {@link TemporalQueries#offset()}.
      * It will be printed using the format defined below.
      * If the offset cannot be obtained then an exception is thrown unless the
      * section of the formatter is optional.
@@ -888,7 +890,7 @@ public final class DateTimeFormatterBuilder {
      * <p>
      * The format of the offset is controlled by a pattern which must be one
      * of the following:
-     * <p><ul>
+     * <ul>
      * <li>{@code +HH} - hour only, ignoring minute and second
      * <li>{@code +HHmm} - hour, with minute if non-zero, ignoring second, no colon
      * <li>{@code +HH:mm} - hour, with minute if non-zero, ignoring second, with colon
@@ -898,7 +900,7 @@ public final class DateTimeFormatterBuilder {
      * <li>{@code +HH:MM:ss} - hour and minute, with second if non-zero, with colon
      * <li>{@code +HHMMSS} - hour, minute and second, no colon
      * <li>{@code +HH:MM:SS} - hour, minute and second, with colon
-     * </ul><p>
+     * </ul>
      * The "no offset" text controls what text is printed when the total amount of
      * the offset fields to be output is zero.
      * Example values would be 'Z', '+00:00', 'UTC' or 'GMT'.
@@ -920,17 +922,17 @@ public final class DateTimeFormatterBuilder {
      * This appends a localized zone offset to the builder, the format of the
      * localized offset is controlled by the specified {@link FormatStyle style}
      * to this method:
-     * <p><ul>
+     * <ul>
      * <li>{@link TextStyle#FULL full} - formats with localized offset text, such
      * as 'GMT, 2-digit hour and minute field, optional second field if non-zero,
      * and colon.
      * <li>{@link TextStyle#SHORT short} - formats with localized offset text,
      * such as 'GMT, hour without leading zero, optional 2-digit minute and
      * second if non-zero, and colon.
-     * </ul><p>
+     * </ul>
      * <p>
      * During formatting, the offset is obtained using a mechanism equivalent
-     * to querying the temporal with {@link TemporalQuery#offset()}.
+     * to querying the temporal with {@link TemporalQueries#offset()}.
      * If the offset cannot be obtained then an exception is thrown unless the
      * section of the formatter is optional.
      * <p>
@@ -962,7 +964,7 @@ public final class DateTimeFormatterBuilder {
      * for use with this method, see {@link #appendZoneOrOffsetId()}.
      * <p>
      * During formatting, the zone is obtained using a mechanism equivalent
-     * to querying the temporal with {@link TemporalQuery#zoneId()}.
+     * to querying the temporal with {@link TemporalQueries#zoneId()}.
      * It will be printed using the result of {@link ZoneId#getId()}.
      * If the zone cannot be obtained then an exception is thrown unless the
      * section of the formatter is optional.
@@ -1000,7 +1002,7 @@ public final class DateTimeFormatterBuilder {
      * @see #appendZoneRegionId()
      */
     public DateTimeFormatterBuilder appendZoneId() {
-        appendInternal(new ZoneIdPrinterParser(TemporalQuery.zoneId(), "ZoneId()"));
+        appendInternal(new ZoneIdPrinterParser(TemporalQueries.zoneId(), "ZoneId()"));
         return this;
     }
 
@@ -1012,7 +1014,7 @@ public final class DateTimeFormatterBuilder {
      * only if it is a region-based ID.
      * <p>
      * During formatting, the zone is obtained using a mechanism equivalent
-     * to querying the temporal with {@link TemporalQuery#zoneId()}.
+     * to querying the temporal with {@link TemporalQueries#zoneId()}.
      * If the zone is a {@code ZoneOffset} or it cannot be obtained then
      * an exception is thrown unless the section of the formatter is optional.
      * If the zone is not an offset, then the zone will be printed using
@@ -1071,7 +1073,7 @@ public final class DateTimeFormatterBuilder {
      * then attempts to find an offset, such as that on {@code OffsetDateTime}.
      * <p>
      * During formatting, the zone is obtained using a mechanism equivalent
-     * to querying the temporal with {@link TemporalQuery#zone()}.
+     * to querying the temporal with {@link TemporalQueries#zone()}.
      * It will be printed using the result of {@link ZoneId#getId()}.
      * If the zone cannot be obtained then an exception is thrown unless the
      * section of the formatter is optional.
@@ -1112,7 +1114,7 @@ public final class DateTimeFormatterBuilder {
      * @see #appendZoneId()
      */
     public DateTimeFormatterBuilder appendZoneOrOffsetId() {
-        appendInternal(new ZoneIdPrinterParser(TemporalQuery.zone(), "ZoneOrOffsetId()"));
+        appendInternal(new ZoneIdPrinterParser(TemporalQueries.zone(), "ZoneOrOffsetId()"));
         return this;
     }
 
@@ -1123,7 +1125,7 @@ public final class DateTimeFormatterBuilder {
      * the builder.
      * <p>
      * During formatting, the zone is obtained using a mechanism equivalent
-     * to querying the temporal with {@link TemporalQuery#zoneId()}.
+     * to querying the temporal with {@link TemporalQueries#zoneId()}.
      * If the zone is a {@code ZoneOffset} it will be printed using the
      * result of {@link ZoneOffset#getId()}.
      * If the zone is not an offset, the textual name will be looked up
@@ -1159,7 +1161,7 @@ public final class DateTimeFormatterBuilder {
      * the builder.
      * <p>
      * During formatting, the zone is obtained using a mechanism equivalent
-     * to querying the temporal with {@link TemporalQuery#zoneId()}.
+     * to querying the temporal with {@link TemporalQueries#zoneId()}.
      * If the zone is a {@code ZoneOffset} it will be printed using the
      * result of {@link ZoneOffset#getId()}.
      * If the zone is not an offset, the textual name will be looked up
@@ -1202,7 +1204,7 @@ public final class DateTimeFormatterBuilder {
      * This appends an instruction to format/parse the chronology ID to the builder.
      * <p>
      * During formatting, the chronology is obtained using a mechanism equivalent
-     * to querying the temporal with {@link TemporalQuery#chronology()}.
+     * to querying the temporal with {@link TemporalQueries#chronology()}.
      * It will be printed using the result of {@link Chronology#getId()}.
      * If the chronology cannot be obtained then an exception is thrown unless the
      * section of the formatter is optional.
@@ -1243,12 +1245,12 @@ public final class DateTimeFormatterBuilder {
      * This appends a localized section to the builder, suitable for outputting
      * a date, time or date-time combination. The format of the localized
      * section is lazily looked up based on four items:
-     * <p><ul>
+     * <ul>
      * <li>the {@code dateStyle} specified to this method
      * <li>the {@code timeStyle} specified to this method
      * <li>the {@code Locale} of the {@code DateTimeFormatter}
      * <li>the {@code Chronology}, selecting the best available
-     * </ul><p>
+     * </ul>
      * During formatting, the chronology is obtained from the temporal object
      * being formatted, which may have been overridden by
      * {@link DateTimeFormatter#withChronology(Chronology)}.
@@ -2808,9 +2810,19 @@ public final class DateTimeFormatterBuilder {
         int setValue(DateTimeParseContext context, long value, int errorPos, int successPos) {
             int baseValue = this.baseValue;
             if (baseDate != null) {
-                // TODO: effective chrono is inaccurate at this point
                 Chronology chrono = context.getEffectiveChronology();
                 baseValue = chrono.date(baseDate).get(field);
+
+                // In case the Chronology is changed later, add a callback when/if it changes
+                final long initialValue = value;
+                context.addChronoChangedListener(
+                        (_unused) ->  {
+                            /* Repeat the set of the field using the current Chronology
+                             * The success/error position is ignored because the value is
+                             * intentionally being overwritten.
+                             */
+                            setValue(context, initialValue, errorPos, successPos);
+                        });
             }
             int parseLen = successPos - errorPos;
             if (parseLen == minWidth && value >= 0) {
@@ -3062,7 +3074,7 @@ public final class DateTimeFormatterBuilder {
                 return false;
             }
             String text;
-            Chronology chrono = context.getTemporal().query(TemporalQuery.chronology());
+            Chronology chrono = context.getTemporal().query(TemporalQueries.chronology());
             if (chrono == null || chrono == IsoChronology.INSTANCE) {
                 text = provider.getText(field, value, textStyle, context.getLocale());
             } else {
@@ -3590,7 +3602,7 @@ public final class DateTimeFormatterBuilder {
         private Set<String> preferredZones;
 
         ZoneTextPrinterParser(TextStyle textStyle, Set<ZoneId> preferredZones) {
-            super(TemporalQuery.zone(), "ZoneText(" + textStyle + ")");
+            super(TemporalQueries.zone(), "ZoneText(" + textStyle + ")");
             this.textStyle = Objects.requireNonNull(textStyle, "textStyle");
             if (preferredZones != null && preferredZones.size() != 0) {
                 this.preferredZones = new HashSet<>();
@@ -3647,7 +3659,7 @@ public final class DateTimeFormatterBuilder {
 
         @Override
         public boolean format(DateTimePrintContext context, StringBuilder buf) {
-            ZoneId zone = context.getValue(TemporalQuery.zoneId());
+            ZoneId zone = context.getValue(TemporalQueries.zoneId());
             if (zone == null) {
                 return false;
             }
@@ -4228,7 +4240,7 @@ public final class DateTimeFormatterBuilder {
 
         @Override
         public boolean format(DateTimePrintContext context, StringBuilder buf) {
-            Chronology chrono = context.getValue(TemporalQuery.chronology());
+            Chronology chrono = context.getValue(TemporalQueries.chronology());
             if (chrono == null) {
                 return false;
             }

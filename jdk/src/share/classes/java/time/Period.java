@@ -79,7 +79,7 @@ import java.time.temporal.ChronoUnit;
 import java.time.temporal.Temporal;
 import java.time.temporal.TemporalAccessor;
 import java.time.temporal.TemporalAmount;
-import java.time.temporal.TemporalQuery;
+import java.time.temporal.TemporalQueries;
 import java.time.temporal.TemporalUnit;
 import java.time.temporal.UnsupportedTemporalTypeException;
 import java.util.Arrays;
@@ -138,13 +138,13 @@ public final class Period
     /**
      * The pattern for parsing.
      */
-    private final static Pattern PATTERN =
+    private static final Pattern PATTERN =
             Pattern.compile("([-+]?)P(?:([-+]?[0-9]+)Y)?(?:([-+]?[0-9]+)M)?(?:([-+]?[0-9]+)W)?(?:([-+]?[0-9]+)D)?", Pattern.CASE_INSENSITIVE);
 
     /**
      * The set of supported units.
      */
-    private final static List<TemporalUnit> SUPPORTED_UNITS =
+    private static final List<TemporalUnit> SUPPORTED_UNITS =
             Collections.unmodifiableList(Arrays.<TemporalUnit>asList(YEARS, MONTHS, DAYS));
 
     /**
@@ -958,7 +958,7 @@ public final class Period
      */
     private void validateChrono(TemporalAccessor temporal) {
         Objects.requireNonNull(temporal, "temporal");
-        Chronology temporalChrono = temporal.query(TemporalQuery.chronology());
+        Chronology temporalChrono = temporal.query(TemporalQueries.chronology());
         if (temporalChrono != null && IsoChronology.INSTANCE.equals(temporalChrono) == false) {
             throw new DateTimeException("Chronology mismatch, expected: ISO, actual: " + temporalChrono.getId());
         }

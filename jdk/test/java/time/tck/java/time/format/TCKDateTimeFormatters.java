@@ -94,6 +94,7 @@ import java.time.format.TextStyle;
 import java.time.temporal.IsoFields;
 import java.time.temporal.TemporalAccessor;
 import java.time.temporal.TemporalField;
+import java.time.temporal.TemporalQueries;
 import java.time.temporal.TemporalQuery;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -1405,8 +1406,8 @@ public class TCKDateTimeFormatters {
             assertEquals(parsed.isSupported(field), true);
             parsed.getLong(field);
         }
-        assertEquals(parsed.query(TemporalQuery.chronology()), expected.chrono);
-        assertEquals(parsed.query(TemporalQuery.zoneId()), expected.zone);
+        assertEquals(parsed.query(TemporalQueries.chronology()), expected.chrono);
+        assertEquals(parsed.query(TemporalQueries.zoneId()), expected.zone);
     }
 
     //-------------------------------------------------------------------------
@@ -1471,7 +1472,7 @@ public class TCKDateTimeFormatters {
         @SuppressWarnings("unchecked")
         @Override
         public <R> R query(TemporalQuery<R> query) {
-            if (query == TemporalQuery.zoneId()) {
+            if (query == TemporalQueries.zoneId()) {
                 return (R) zoneId;
             }
             return TemporalAccessor.super.query(query);

@@ -36,7 +36,7 @@ import sun.rmi.server.UnicastServerRef2;
  * below, the stub for a remote object being exported is obtained as
  * follows:
  *
- * <p><ul>
+ * <ul>
  *
  * <li>If the remote object is exported using the {@link
  * #exportObject(Remote) UnicastRemoteObject.exportObject(Remote)} method,
@@ -66,9 +66,8 @@ import sun.rmi.server.UnicastServerRef2;
  * could not be loaded, or a problem occurs creating the stub instance, a
  * {@link StubNotFoundException} is thrown.
  *
- * <p>
  * <li>For all other means of exporting:
- * <p><ul>
+ * <ul>
  *
  * <li>If the remote object's stub class (as defined above) could not be
  * loaded or the system property
@@ -93,7 +92,6 @@ import sun.rmi.server.UnicastServerRef2;
  * will be thrown.
  * </ul>
  *
- * <p>
  * <li>Otherwise, an instance of the remote object's stub class (as
  * described above) is used as the stub.
  *

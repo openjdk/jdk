@@ -47,6 +47,7 @@
 #include "opto/machnode.hpp"
 #include "opto/macro.hpp"
 #include "opto/matcher.hpp"
+#include "opto/mathexactnode.hpp"
 #include "opto/memnode.hpp"
 #include "opto/mulnode.hpp"
 #include "opto/node.hpp"
@@ -2984,6 +2985,32 @@ void Compile::final_graph_reshaping_impl( Node *n, Final_Reshape_Counts &frc) {
     // confuses register allocation.
     if (n->req() > MemBarNode::Precedent) {
       n->set_req(MemBarNode::Precedent, top());
+    }
+    break;
+    // Must set a control edge on all nodes that produce a FlagsProj
+    // so they can't escape the block that consumes the flags.
+    // Must also set the non throwing branch as the control
+    // for all nodes that depends on the result. Unless the node
+    // already have a control that isn't the control of the
+    // flag producer
+  case Op_FlagsProj:
+    {
+      MathExactNode* math = (MathExactNode*)  n->in(0);
+      Node* ctrl = math->control_node();
+      Node* non_throwing = math->non_throwing_branch();
+      math->set_req(0, ctrl);
+
+      Node* result = math->result_node();
+      if (result != NULL) {
+        for (DUIterator_Fast jmax, j = result->fast_outs(jmax); j < jmax; j++) {
+          Node* out = result->fast_out(j);
+          if (out->in(0) == NULL) {
+            out->set_req(0, non_throwing);
+          } else if (out->in(0) == ctrl) {
+            out->set_req(0, non_throwing);
+          }
+        }
+      }
     }
     break;
   default:
