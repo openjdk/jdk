@@ -34,7 +34,7 @@ try {
     if (! (e instanceof SyntaxError)) {
        fail("syntax error expected here got " + e);
     }
-    print(e.toString().replace(/\\/g, '/'));
+    printError(e);
 } 
 
 try {
@@ -43,5 +43,5 @@ try {
     if (! (e instanceof SyntaxError)) {
        fail("syntax error expected here got " + e);
     }
-    print(e.toString().replace(/\\/g, '/'));
+    printError(e);
 } 

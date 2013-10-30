@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -57,6 +57,14 @@ public class Reflection {
     @CallerSensitive
     public static native Class<?> getCallerClass();
 
+    /**
+     * @deprecated This method will be removed in JDK 9.
+     * This method is a private JDK API and retained temporarily for
+     * existing code to run until a replacement API is defined.
+     */
+    @Deprecated
+    public static native Class<?> getCallerClass(int depth);
+
     /** Retrieves the access flags written to the class file. For
         inner classes these flags may differ from those returned by
         Class.getModifiers(), which searches the InnerClasses
@@ -65,7 +73,7 @@ public class Reflection {
         to compatibility reasons; see 4471811. Only the values of the
         low 13 bits (i.e., a mask of 0x1FFF) are guaranteed to be
         valid. */
-    private static native int getClassAccessFlags(Class<?> c);
+    public static native int getClassAccessFlags(Class<?> c);
 
     /** A quick "fast-path" check to try to avoid getCallerClass()
         calls. */

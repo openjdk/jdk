@@ -201,7 +201,7 @@ SUNWprivate_1.1 {
                 Java_sun_print_CUPSPrinter_initIDs;
                 Java_sun_print_CUPSPrinter_getCupsServer;
                 Java_sun_print_CUPSPrinter_getCupsPort;
-                Java_sun_print_CUPSPrinter_canConnect;	
+                Java_sun_print_CUPSPrinter_canConnect;
                 Java_sun_print_CUPSPrinter_getMedia;
                 Java_sun_print_CUPSPrinter_getPageSizes;
 
@@ -230,7 +230,7 @@ SUNWprivate_1.1 {
                 Java_com_sun_java_swing_plaf_gtk_GTKStyle_nativeGetColorForState;
                 Java_com_sun_java_swing_plaf_gtk_GTKStyle_nativeGetClassValue;
                 Java_com_sun_java_swing_plaf_gtk_GTKStyle_nativeGetPangoFontName;
-                
+
 		awt_display;
 		awt_Lock;
 		awt_Unlock;
@@ -253,7 +253,7 @@ SUNWprivate_1.1 {
 		getAwtLockFunctions;
 		getAwtData;
 		getAwtDisplay;
-		
+
 		# libfontmanager entry points
 		AWTIsHeadless;
 		AWTCountFonts;
@@ -282,4 +282,3 @@ SUNWprivate_1.1 {
 	local:
 		*;
 };
-

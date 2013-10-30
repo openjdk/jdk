@@ -819,8 +819,15 @@ public final class NativeArray extends ScriptObject {
             if (bulkable(sobj)) {
                 sobj.getArray().shiftLeft(1);
             } else {
+                boolean hasPrevious = true;
                 for (long k = 1; k < len; k++) {
-                    sobj.set(k - 1, sobj.get(k), true);
+                    boolean hasCurrent = sobj.has(k);
+                    if (hasCurrent) {
+                        sobj.set(k - 1, sobj.get(k), true);
+                    } else if (hasPrevious) {
+                        sobj.delete(k - 1, true);
+                    }
+                    hasPrevious = hasCurrent;
                 }
             }
             sobj.delete(--len, true);
@@ -844,6 +851,10 @@ public final class NativeArray extends ScriptObject {
     @Function(attributes = Attribute.NOT_ENUMERABLE)
     public static Object slice(final Object self, final Object start, final Object end) {
         final Object       obj                 = Global.toObject(self);
+        if (!(obj instanceof ScriptObject)) {
+            return ScriptRuntime.UNDEFINED;
+        }
+
         final ScriptObject sobj                = (ScriptObject)obj;
         final long         len                 = JSType.toUint32(sobj.getLength());
         final long         relativeStart       = JSType.toLong(start);
@@ -860,9 +871,12 @@ public final class NativeArray extends ScriptObject {
             return new NativeArray(sobj.getArray().slice(k, finale));
         }
 
-        final NativeArray copy = new NativeArray(0);
+        // Construct array with proper length to have a deleted filter on undefined elements
+        final NativeArray copy = new NativeArray(finale - k);
         for (long n = 0; k < finale; n++, k++) {
-            copy.defineOwnProperty(ArrayIndex.getArrayIndex(n), sobj.get(k));
+            if (sobj.has(k)) {
+                copy.defineOwnProperty(ArrayIndex.getArrayIndex(n), sobj.get(k));
+            }
         }
 
         return copy;

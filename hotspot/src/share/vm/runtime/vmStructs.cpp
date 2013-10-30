@@ -27,7 +27,6 @@
 #include "classfile/javaClasses.hpp"
 #include "classfile/loaderConstraints.hpp"
 #include "classfile/placeholders.hpp"
-#include "classfile/symbolTable.hpp"
 #include "classfile/systemDictionary.hpp"
 #include "ci/ciField.hpp"
 #include "ci/ciInstance.hpp"
@@ -59,7 +58,7 @@
 #include "memory/generation.hpp"
 #include "memory/generationSpec.hpp"
 #include "memory/heap.hpp"
-#include "memory/metablock.hpp"
+#include "memory/metachunk.hpp"
 #include "memory/referenceType.hpp"
 #include "memory/space.hpp"
 #include "memory/tenuredGeneration.hpp"
@@ -289,6 +288,7 @@ typedef BinaryTreeDictionary<Metablock, FreeList> MetablockTreeDictionary;
   nonstatic_field(ConstantPoolCache,    _constant_pool,                                ConstantPool*)                         \
   nonstatic_field(InstanceKlass,               _array_klasses,                                Klass*)                                \
   nonstatic_field(InstanceKlass,               _methods,                                      Array<Method*>*)                       \
+  nonstatic_field(InstanceKlass,               _default_methods,                              Array<Method*>*)                       \
   nonstatic_field(InstanceKlass,               _local_interfaces,                             Array<Klass*>*)                        \
   nonstatic_field(InstanceKlass,               _transitive_interfaces,                        Array<Klass*>*)                        \
   nonstatic_field(InstanceKlass,               _fields,                                       Array<u2>*)                            \
@@ -323,6 +323,7 @@ typedef BinaryTreeDictionary<Metablock, FreeList> MetablockTreeDictionary;
   nonstatic_field(nmethodBucket,               _count,                                        int)                                   \
   nonstatic_field(nmethodBucket,               _next,                                         nmethodBucket*)                        \
   nonstatic_field(InstanceKlass,               _method_ordering,                              Array<int>*)                           \
+  nonstatic_field(InstanceKlass,               _default_vtable_indices,                       Array<int>*)                           \
   nonstatic_field(Klass,                       _super_check_offset,                           juint)                                 \
   nonstatic_field(Klass,                       _secondary_super_cache,                        Klass*)                                \
   nonstatic_field(Klass,                       _secondary_supers,                             Array<Klass*>*)                        \
@@ -715,11 +716,17 @@ typedef BinaryTreeDictionary<Metablock, FreeList> MetablockTreeDictionary;
   nonstatic_field(PlaceholderEntry,            _loader_data,                                  ClassLoaderData*)                      \
                                                                                                                                      \
   /**************************/                                                                                                       \
-  /* ProctectionDomainEntry */                                                                                                       \
+  /* ProtectionDomainEntry  */                                                                                                       \
   /**************************/                                                                                                       \
                                                                                                                                      \
   nonstatic_field(ProtectionDomainEntry,       _next,                                         ProtectionDomainEntry*)                \
-  nonstatic_field(ProtectionDomainEntry,       _protection_domain,                            oop)                                   \
+  nonstatic_field(ProtectionDomainEntry,       _pd_cache,                                     ProtectionDomainCacheEntry*)           \
+                                                                                                                                     \
+  /*******************************/                                                                                                  \
+  /* ProtectionDomainCacheEntry  */                                                                                                  \
+  /*******************************/                                                                                                  \
+                                                                                                                                     \
+  nonstatic_field(ProtectionDomainCacheEntry,  _literal,                                      oop)                                   \
                                                                                                                                      \
   /*************************/                                                                                                        \
   /* LoaderConstraintEntry */                                                                                                        \
@@ -910,7 +917,6 @@ typedef BinaryTreeDictionary<Metablock, FreeList> MetablockTreeDictionary;
   volatile_nonstatic_field(JavaThread,         _exception_oop,                                oop)                                   \
   volatile_nonstatic_field(JavaThread,         _exception_pc,                                 address)                               \
   volatile_nonstatic_field(JavaThread,         _is_method_handle_return,                      int)                                   \
-  nonstatic_field(JavaThread,                  _is_compiling,                                 bool)                                  \
   nonstatic_field(JavaThread,                  _special_runtime_exit_condition,               JavaThread::AsyncRequests)             \
   nonstatic_field(JavaThread,                  _saved_exception_pc,                           address)                               \
    volatile_nonstatic_field(JavaThread,        _thread_state,                                 JavaThreadState)                       \
@@ -1562,6 +1568,7 @@ typedef BinaryTreeDictionary<Metablock, FreeList> MetablockTreeDictionary;
   declare_toplevel_type(SystemDictionary)                                 \
   declare_toplevel_type(vmSymbols)                                        \
   declare_toplevel_type(ProtectionDomainEntry)                            \
+  declare_toplevel_type(ProtectionDomainCacheEntry)                       \
                                                                           \
   declare_toplevel_type(GenericGrowableArray)                             \
   declare_toplevel_type(GrowableArray<int>)                               \
@@ -2246,12 +2253,6 @@ typedef BinaryTreeDictionary<Metablock, FreeList> MetablockTreeDictionary;
   declare_preprocessor_constant("PERFDATA_MINOR_VERSION", PERFDATA_MINOR_VERSION) \
   declare_preprocessor_constant("PERFDATA_BIG_ENDIAN", PERFDATA_BIG_ENDIAN)       \
   declare_preprocessor_constant("PERFDATA_LITTLE_ENDIAN", PERFDATA_LITTLE_ENDIAN) \
-                                                                          \
-  /***************/                                                       \
-  /* SymbolTable */                                                       \
-  /***************/                                                       \
-                                                                          \
-  declare_constant(SymbolTable::symbol_table_size)                        \
                                                                           \
   /***********************************/                                   \
   /* LoaderConstraintTable constants */                                   \

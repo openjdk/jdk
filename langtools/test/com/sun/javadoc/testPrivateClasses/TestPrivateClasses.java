@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug      4780441 4874845 4978816 8014017 8016328
+ * @bug      4780441 4874845 4978816 8014017 8016328 8025633
  * @summary  Make sure that when the -private flag is not used, members
  *           inherited from package private class are documented in the child.
  *
@@ -66,7 +66,7 @@ public class TestPrivateClasses extends JavadocTester {
 
         // Method inheritence from non-public superclass.
         {BUG_ID + "-1" + FS + "pkg" + FS + "PublicChild.html",
-            "<a href=\"../pkg/PublicChild.html#methodInheritedFromParent(int)\">" +
+            "<a href=\"../pkg/PublicChild.html#methodInheritedFromParent-int-\">" +
                 "methodInheritedFromParent</a>"
         },
 
@@ -78,7 +78,7 @@ public class TestPrivateClasses extends JavadocTester {
 
         // Method inheritence from non-public superinterface.
         {BUG_ID + "-1" + FS + "pkg" + FS + "PublicInterface.html",
-            "<a href=\"../pkg/PublicInterface.html#methodInterface(int)\">" +
+            "<a href=\"../pkg/PublicInterface.html#methodInterface-int-\">" +
                 "methodInterface</a>"
         },
 
@@ -139,7 +139,7 @@ public class TestPrivateClasses extends JavadocTester {
         //Do not inherit private interface method with generic parameters.
         //This method has been implemented.
         {BUG_ID + "-1" + FS + "pkg2" + FS + "C.html",
-            "<span class=\"strong\"><a href=\"../pkg2/I.html#hello(T)\">hello</a></span>"},
+            "<span class=\"strong\"><a href=\"../pkg2/I.html#hello-T-\">hello</a></span>"},
     };
 
     // Test output when -private flag is used.
@@ -171,20 +171,20 @@ public class TestPrivateClasses extends JavadocTester {
             "PrivateParent</a>"
         },
         {BUG_ID + "-2" + FS + "pkg" + FS + "PublicChild.html",
-            "<a href=\"../pkg/PrivateParent.html#methodInheritedFromParent(int)\">" +
+            "<a href=\"../pkg/PrivateParent.html#methodInheritedFromParent-int-\">" +
                 "methodInheritedFromParent</a>"
         },
         // Should document that a method overrides method from private class.
        {BUG_ID + "-2" + FS + "pkg" + FS + "PublicChild.html",
             "<dt><span class=\"strong\">Overrides:</span></dt>" + NL +
-            "<dd><code><a href=\"../pkg/PrivateParent.html#methodOverridenFromParent(char[],%20int,%20T,%20V,%20java.util.List)\">" +
+            "<dd><code><a href=\"../pkg/PrivateParent.html#methodOverridenFromParent-char:A-int-T-V-java.util.List-\">" +
             "methodOverridenFromParent</a></code>&nbsp;in class&nbsp;<code>" +
             "<a href=\"../pkg/PrivateParent.html\" title=\"class in pkg\">" +
             "PrivateParent</a></code></dd>"},
        // Should document that a method is specified by private interface.
        {BUG_ID + "-2" + FS + "pkg" + FS + "PublicChild.html",
             "<dt><span class=\"strong\">Specified by:</span></dt>" + NL +
-            "<dd><code><a href=\"../pkg/PrivateInterface.html#methodInterface(int)\">" +
+            "<dd><code><a href=\"../pkg/PrivateInterface.html#methodInterface-int-\">" +
             "methodInterface</a></code>&nbsp;in interface&nbsp;<code>" +
             "<a href=\"../pkg/PrivateInterface.html\" title=\"interface in pkg\">" +
             "PrivateInterface</a></code></dd>"},
@@ -195,7 +195,7 @@ public class TestPrivateClasses extends JavadocTester {
             "PrivateInterface</a>"
         },
         {BUG_ID + "-2" + FS + "pkg" + FS + "PrivateInterface.html",
-            "<a href=\"../pkg/PrivateInterface.html#methodInterface(int)\">" +
+            "<a href=\"../pkg/PrivateInterface.html#methodInterface-int-\">" +
                 "methodInterface</a>"
         },
       // Should mention that any documentation was copied.
@@ -228,11 +228,11 @@ public class TestPrivateClasses extends JavadocTester {
       //with generic parameters has been implemented.
       {BUG_ID + "-2" + FS + "pkg2" + FS + "C.html",
             "<span class=\"strong\">Description copied from interface:&nbsp;<code>" +
-            "<a href=\"../pkg2/I.html#hello(T)\">I</a></code></span>"},
+            "<a href=\"../pkg2/I.html#hello-T-\">I</a></code></span>"},
 
       {BUG_ID + "-2" + FS + "pkg2" + FS + "C.html",
             "<dt><span class=\"strong\">Specified by:</span></dt>" + NL +
-            "<dd><code><a href=\"../pkg2/I.html#hello(T)\">hello</a></code>" +
+            "<dd><code><a href=\"../pkg2/I.html#hello-T-\">hello</a></code>" +
             "&nbsp;in interface&nbsp;<code>" +
             "<a href=\"../pkg2/I.html\" title=\"interface in pkg2\">I</a>" +
             "&lt;java.lang.String&gt;</code></dd>"},

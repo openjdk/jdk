@@ -70,7 +70,6 @@ import static java.time.temporal.ChronoField.OFFSET_SECONDS;
 import static java.time.temporal.ChronoUnit.NANOS;
 
 import java.io.IOException;
-import java.io.InvalidObjectException;
 import java.io.ObjectInput;
 import java.io.ObjectOutput;
 import java.io.InvalidObjectException;
@@ -84,6 +83,7 @@ import java.time.temporal.TemporalAccessor;
 import java.time.temporal.TemporalAdjuster;
 import java.time.temporal.TemporalAmount;
 import java.time.temporal.TemporalField;
+import java.time.temporal.TemporalQueries;
 import java.time.temporal.TemporalQuery;
 import java.time.temporal.TemporalUnit;
 import java.time.temporal.UnsupportedTemporalTypeException;
@@ -1068,13 +1068,13 @@ public final class OffsetTime
     @SuppressWarnings("unchecked")
     @Override
     public <R> R query(TemporalQuery<R> query) {
-        if (query == TemporalQuery.offset() || query == TemporalQuery.zone()) {
+        if (query == TemporalQueries.offset() || query == TemporalQueries.zone()) {
             return (R) offset;
-        } else if (query == TemporalQuery.zoneId() | query == TemporalQuery.chronology() || query == TemporalQuery.localDate()) {
+        } else if (query == TemporalQueries.zoneId() | query == TemporalQueries.chronology() || query == TemporalQueries.localDate()) {
             return null;
-        } else if (query == TemporalQuery.localTime()) {
+        } else if (query == TemporalQueries.localTime()) {
             return (R) time;
-        } else if (query == TemporalQuery.precision()) {
+        } else if (query == TemporalQueries.precision()) {
             return (R) NANOS;
         }
         // inline TemporalAccessor.super.query(query) as an optimization
@@ -1351,13 +1351,13 @@ public final class OffsetTime
      * Outputs this time as a {@code String}, such as {@code 10:15:30+01:00}.
      * <p>
      * The output will be one of the following ISO-8601 formats:
-     * <p><ul>
+     * <ul>
      * <li>{@code HH:mmXXXXX}</li>
      * <li>{@code HH:mm:ssXXXXX}</li>
      * <li>{@code HH:mm:ss.SSSXXXXX}</li>
      * <li>{@code HH:mm:ss.SSSSSSXXXXX}</li>
      * <li>{@code HH:mm:ss.SSSSSSSSSXXXXX}</li>
-     * </ul><p>
+     * </ul>
      * The format used will be the shortest that outputs the full value of
      * the time where the omitted parts are implied to be zero.
      *
@@ -1374,9 +1374,9 @@ public final class OffsetTime
      * <a href="../../serialized-form.html#java.time.Ser">dedicated serialized form</a>.
      * @serialData
      * <pre>
-     *  out.writeByte(9);  // identifies a OffsetTime
-     *  out.writeObject(time);
-     *  out.writeObject(offset);
+     *  out.writeByte(9);  // identifies an OffsetTime
+     *  // the <a href="../../serialized-form.html#java.time.LocalTime">time</a> excluding the one byte header
+     *  // the <a href="../../serialized-form.html#java.time.ZoneOffset">offset</a> excluding the one byte header
      * </pre>
      *
      * @return the instance of {@code Ser}, not null
@@ -1395,13 +1395,13 @@ public final class OffsetTime
     }
 
     void writeExternal(ObjectOutput out) throws IOException {
-        out.writeObject(time);
-        out.writeObject(offset);
+        time.writeExternal(out);
+        offset.writeExternal(out);
     }
 
     static OffsetTime readExternal(ObjectInput in) throws IOException, ClassNotFoundException {
-        LocalTime time = (LocalTime) in.readObject();
-        ZoneOffset offset = (ZoneOffset) in.readObject();
+        LocalTime time = LocalTime.readExternal(in);
+        ZoneOffset offset = ZoneOffset.readExternal(in);
         return OffsetTime.of(time, offset);
     }
 

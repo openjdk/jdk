@@ -611,7 +611,7 @@ public interface Connection  extends Wrapper, AutoCloseable {
      * <code>Map</code> object returned from
      *  <code>getTypeMap</code> as a JDBC driver may create an internal
      * copy of the <code>Map</code> object passed to <code>setTypeMap</code>:
-     * <p>
+     *
      * <pre>
      *      Map&lt;String,Class&lt;?&gt;&gt; myMap = con.getTypeMap();
      *      myMap.put("mySchemaName.ATHLETES", Athletes.class);
@@ -636,7 +636,7 @@ public interface Connection  extends Wrapper, AutoCloseable {
      * You must set the the values for the <code>TypeMap</code> prior to
      * callng <code>setMap</code> as a JDBC driver may create an internal copy
      * of the <code>TypeMap</code>:
-     * <p>
+     *
      * <pre>
      *      Map myMap&lt;String,Class&lt;?&gt;&gt; = new HashMap&lt;String,Class&lt;?&gt;&gt;();
      *      myMap.put("mySchemaName.ATHLETES", Athletes.class);
@@ -1119,7 +1119,7 @@ public interface Connection  extends Wrapper, AutoCloseable {
          * @exception SQLException if the value supplied for <code>timeout</code>
          * is less then 0
          * @since 1.6
-         * <p>
+         *
          * @see java.sql.DatabaseMetaData#getClientInfoProperties
          */
          boolean isValid(int timeout) throws SQLException;
@@ -1154,7 +1154,7 @@ public interface Connection  extends Wrapper, AutoCloseable {
          * required to support these properties however if the driver supports a
          * client info property that can be described by one of the standard
          * properties, the standard property name should be used.
-         * <p>
+         *
          * <ul>
          * <li>ApplicationName  -       The name of the application currently utilizing
          *                                                      the connection</li>
@@ -1208,7 +1208,7 @@ public interface Connection  extends Wrapper, AutoCloseable {
      * @throws SQLClientInfoException if the database server returns an error while
      *                  setting the clientInfo values on the database server or this method
      * is called on a closed connection
-     * <p>
+     *
      */
          void setClientInfo(Properties properties)
                 throws SQLClientInfoException;
@@ -1232,7 +1232,7 @@ public interface Connection  extends Wrapper, AutoCloseable {
          *or this method is called on a closed connection
          * <p>
          * @since 1.6
-         * <p>
+         *
          * @see java.sql.DatabaseMetaData#getClientInfoProperties
          */
          String getClientInfo(String name)

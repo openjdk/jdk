@@ -78,7 +78,6 @@ import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
 import java.io.InvalidObjectException;
-import java.io.InvalidObjectException;
 import java.io.Serializable;
 import java.time.chrono.ChronoLocalDate;
 import java.time.chrono.Era;
@@ -92,6 +91,7 @@ import java.time.temporal.TemporalAccessor;
 import java.time.temporal.TemporalAdjuster;
 import java.time.temporal.TemporalAmount;
 import java.time.temporal.TemporalField;
+import java.time.temporal.TemporalQueries;
 import java.time.temporal.TemporalQuery;
 import java.time.temporal.TemporalUnit;
 import java.time.temporal.UnsupportedTemporalTypeException;
@@ -342,7 +342,7 @@ public final class LocalDate
      * A {@code TemporalAccessor} represents an arbitrary set of date and time information,
      * which this factory converts to an instance of {@code LocalDate}.
      * <p>
-     * The conversion uses the {@link TemporalQuery#localDate()} query, which relies
+     * The conversion uses the {@link TemporalQueries#localDate()} query, which relies
      * on extracting the {@link ChronoField#EPOCH_DAY EPOCH_DAY} field.
      * <p>
      * This method matches the signature of the functional interface {@link TemporalQuery}
@@ -354,7 +354,7 @@ public final class LocalDate
      */
     public static LocalDate from(TemporalAccessor temporal) {
         Objects.requireNonNull(temporal, "temporal");
-        LocalDate date = temporal.query(TemporalQuery.localDate());
+        LocalDate date = temporal.query(TemporalQueries.localDate());
         if (date == null) {
             throw new DateTimeException("Unable to obtain LocalDate from TemporalAccessor: " +
                     temporal + " of type " + temporal.getClass().getName());
@@ -1501,7 +1501,7 @@ public final class LocalDate
     @SuppressWarnings("unchecked")
     @Override
     public <R> R query(TemporalQuery<R> query) {
-        if (query == TemporalQuery.localDate()) {
+        if (query == TemporalQueries.localDate()) {
             return (R) this;
         }
         return ChronoLocalDate.super.query(query);

@@ -192,45 +192,66 @@ Java_sun_nio_ch_SocketDispatcher_writev0(JNIEnv *env, jclass clazz,
                                          jobject fdo, jlong address, jint len)
 {
     /* set up */
-    int i = 0;
+    int next_index, next_offset, ret=0;
     DWORD written = 0;
     jint fd = fdval(env, fdo);
     struct iovec *iovp = (struct iovec *)address;
     WSABUF *bufs = malloc(len * sizeof(WSABUF));
-    jint rem = MAX_BUFFER_SIZE;
+    jlong count = 0;
 
     if (bufs == 0) {
         JNU_ThrowOutOfMemoryError(env, 0);
         return IOS_THROWN;
     }
 
-    /* copy iovec into WSABUF */
-    for(i=0; i<len; i++) {
-        jint iov_len = iovp[i].iov_len;
-        if (iov_len > rem)
-            iov_len = rem;
-        bufs[i].buf = (char *)iovp[i].iov_base;
-        bufs[i].len = (u_long)iov_len;
-        rem -= iov_len;
-        if (rem == 0) {
-            len = i+1;
+    // next buffer and offset to consume
+    next_index = 0;
+    next_offset = 0;
+
+    while (next_index  < len) {
+        DWORD buf_count = 0;
+
+        /* Prepare the WSABUF array to a maximum total size of MAX_BUFFER_SIZE */
+        jint rem = MAX_BUFFER_SIZE;
+        while (next_index < len && rem > 0) {
+            jint iov_len = iovp[next_index].iov_len - next_offset;
+            char* ptr = (char *)iovp[next_index].iov_base;
+            ptr += next_offset;
+            if (iov_len > rem) {
+                iov_len = rem;
+                next_offset += rem;
+            } else {
+                next_index ++;
+                next_offset = 0;
+            }
+
+            bufs[buf_count].buf = ptr;
+            bufs[buf_count].len = (u_long)iov_len;
+            buf_count++;
+
+            rem -= iov_len;
+        }
+
+        /* write the buffers */
+        ret = WSASend((SOCKET)fd,           /* Socket */
+                              bufs,         /* pointers to the buffers */
+                              buf_count,    /* number of buffers to process */
+                              &written,     /* receives number of bytes written */
+                              0,            /* no flags */
+                              0,            /* no overlapped sockets */
+                              0);           /* no completion routine */
+
+        if (ret == SOCKET_ERROR) {
             break;
         }
-    }
 
-    /* read into the buffers */
-    i = WSASend((SOCKET)fd, /* Socket */
-            bufs,           /* pointers to the buffers */
-            (DWORD)len,     /* number of buffers to process */
-            &written,       /* receives number of bytes written */
-            0,              /* no flags */
-            0,              /* no overlapped sockets */
-            0);             /* no completion routine */
+        count += written;
+    }
 
     /* clean up */
     free(bufs);
 
-    if (i != 0) {
+    if (ret == SOCKET_ERROR && count == 0) {
         int theErr = (jint)WSAGetLastError();
         if (theErr == WSAEWOULDBLOCK) {
             return IOS_UNAVAILABLE;
@@ -239,7 +260,7 @@ Java_sun_nio_ch_SocketDispatcher_writev0(JNIEnv *env, jclass clazz,
         return IOS_THROWN;
     }
 
-    return convertLongReturnVal(env, (jlong)written, JNI_FALSE);
+    return convertLongReturnVal(env, count, JNI_FALSE);
 }
 
 JNIEXPORT void JNICALL

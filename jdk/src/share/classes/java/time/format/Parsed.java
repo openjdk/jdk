@@ -89,6 +89,7 @@ import java.time.chrono.Chronology;
 import java.time.temporal.ChronoField;
 import java.time.temporal.TemporalAccessor;
 import java.time.temporal.TemporalField;
+import java.time.temporal.TemporalQueries;
 import java.time.temporal.TemporalQuery;
 import java.time.temporal.UnsupportedTemporalTypeException;
 import java.util.HashMap;
@@ -207,17 +208,17 @@ final class Parsed implements TemporalAccessor {
     @SuppressWarnings("unchecked")
     @Override
     public <R> R query(TemporalQuery<R> query) {
-        if (query == TemporalQuery.zoneId()) {
+        if (query == TemporalQueries.zoneId()) {
             return (R) zone;
-        } else if (query == TemporalQuery.chronology()) {
+        } else if (query == TemporalQueries.chronology()) {
             return (R) chrono;
-        } else if (query == TemporalQuery.localDate()) {
+        } else if (query == TemporalQueries.localDate()) {
             return (R) (date != null ? LocalDate.from(date) : null);
-        } else if (query == TemporalQuery.localTime()) {
+        } else if (query == TemporalQueries.localTime()) {
             return (R) time;
-        } else if (query == TemporalQuery.zone() || query == TemporalQuery.offset()) {
+        } else if (query == TemporalQueries.zone() || query == TemporalQueries.offset()) {
             return query.queryFrom(this);
-        } else if (query == TemporalQuery.precision()) {
+        } else if (query == TemporalQueries.precision()) {
             return null;  // not a complete date/time
         }
         // inline TemporalAccessor.super.query(query) as an optimization
@@ -262,7 +263,7 @@ final class Parsed implements TemporalAccessor {
             while (changedCount < 50) {
                 for (Map.Entry<TemporalField, Long> entry : fieldValues.entrySet()) {
                     TemporalField targetField = entry.getKey();
-                    TemporalAccessor resolvedObject = targetField.resolve(fieldValues, chrono, zone, resolverStyle);
+                    TemporalAccessor resolvedObject = targetField.resolve(fieldValues, this, resolverStyle);
                     if (resolvedObject != null) {
                         if (resolvedObject instanceof ChronoZonedDateTime) {
                             ChronoZonedDateTime czdt = (ChronoZonedDateTime) resolvedObject;

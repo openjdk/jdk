@@ -1,6 +1,6 @@
-SyntaxError: test/script/basic/NASHORN-98.js#32<eval>:1:13 Expected comma but found decimal
+SyntaxError:32:Expected comma but found decimal
 var x = [ 23 34 ]
              ^
-SyntaxError: test/script/basic/NASHORN-98.js#41<eval>:1:18 Expected comma but found ident
+SyntaxError:41:Expected comma but found ident
 var x = { foo: 33 bar: 'hello' }
                   ^

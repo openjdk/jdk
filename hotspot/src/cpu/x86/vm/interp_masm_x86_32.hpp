@@ -215,6 +215,9 @@ class InterpreterMacroAssembler: public MacroAssembler {
 
   void profile_taken_branch(Register mdp, Register bumped_count);
   void profile_not_taken_branch(Register mdp);
+  void profile_obj_type(Register obj, const Address& mdo_addr);
+  void profile_arguments_type(Register mdp, Register callee, Register tmp, bool is_virtual);
+  void profile_return_type(Register mdp, Register ret, Register tmp);
   void profile_call(Register mdp);
   void profile_final_call(Register mdp);
   void profile_virtual_call(Register receiver, Register mdp, Register scratch2,

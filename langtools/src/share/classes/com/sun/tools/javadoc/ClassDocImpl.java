@@ -619,8 +619,10 @@ public class ClassDocImpl extends ProgramElementDocImpl implements ClassDoc {
         Names names = tsym.name.table.names;
         List<MethodDocImpl> methods = List.nil();
         for (Scope.Entry e = tsym.members().elems; e != null; e = e.sibling) {
-            if (e.sym != null &&
-                e.sym.kind == Kinds.MTH && e.sym.name != names.init) {
+            if (e.sym != null
+                && e.sym.kind == Kinds.MTH
+                && e.sym.name != names.init
+                && e.sym.name != names.clinit) {
                 MethodSymbol s = (MethodSymbol)e.sym;
                 if (!filter || env.shouldDocument(s)) {
                     methods = methods.prepend(env.getMethodDoc(s));

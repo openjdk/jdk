@@ -67,7 +67,7 @@ public final class VMID implements java.io.Serializable {
      * conditions: a) the conditions for uniqueness for objects of
      * the class <code>java.rmi.server.UID</code> are satisfied, and b) an
      * address can be obtained for this host that is unique and constant
-     * for the lifetime of this object.  <p>
+     * for the lifetime of this object.
      */
     public VMID() {
         addr = randomBytes;
