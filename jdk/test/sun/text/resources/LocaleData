@@ -7681,3 +7681,6 @@ FormatData/pt/MonthAbbreviations/11=dez
 
 # bug 8021121
 CurrencyNames/lv_LV/EUR=\u20AC
+
+# bug # 6192407
+LocaleNames/ko/PT=\ud3ec\ub974\ud22c\uce7c
