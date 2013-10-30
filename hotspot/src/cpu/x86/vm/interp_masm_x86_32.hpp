@@ -22,18 +22,6 @@
  *
  */
 
-#ifndef CPU_X86_VM_INTERP_MASM_X86_32_HPP
-#define CPU_X86_VM_INTERP_MASM_X86_32_HPP
-
-#include "asm/macroAssembler.hpp"
-#include "asm/macroAssembler.inline.hpp"
-#include "interpreter/invocationCounter.hpp"
-#include "runtime/frame.hpp"
-
-// This file specializes the assember with interpreter-specific macros
-
-
-class InterpreterMacroAssembler: public MacroAssembler {
 #ifndef CC_INTERP
  protected:
   // Interpreter specific version of call_VM_base
@@ -59,7 +47,7 @@ class InterpreterMacroAssembler: public MacroAssembler {
 #endif /* CC_INTERP */
 
  public:
-  InterpreterMacroAssembler(CodeBuffer* code) : MacroAssembler(code) {}
+  InterpreterMacroAssembler(CodeBuffer* code) : MacroAssembler(code), _locals_register(rdi), _bcp_register(rsi) {}
 
   void load_earlyret_value(TosState state);
 
@@ -215,9 +203,6 @@ class InterpreterMacroAssembler: public MacroAssembler {
 
   void profile_taken_branch(Register mdp, Register bumped_count);
   void profile_not_taken_branch(Register mdp);
-  void profile_obj_type(Register obj, const Address& mdo_addr);
-  void profile_arguments_type(Register mdp, Register callee, Register tmp, bool is_virtual);
-  void profile_return_type(Register mdp, Register ret, Register tmp);
   void profile_call(Register mdp);
   void profile_final_call(Register mdp);
   void profile_virtual_call(Register receiver, Register mdp, Register scratch2,
@@ -236,7 +221,3 @@ class InterpreterMacroAssembler: public MacroAssembler {
   // support for jvmti
   void notify_method_entry();
   void notify_method_exit(TosState state, NotifyMethodExitMode mode);
-
-};
-
-#endif // CPU_X86_VM_INTERP_MASM_X86_32_HPP
