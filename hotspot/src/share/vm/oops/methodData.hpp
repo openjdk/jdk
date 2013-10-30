@@ -119,7 +119,8 @@ public:
     multi_branch_data_tag,
     arg_info_data_tag,
     call_type_data_tag,
-    virtual_call_type_data_tag
+    virtual_call_type_data_tag,
+    parameters_type_data_tag
   };
 
   enum {
@@ -264,6 +265,7 @@ class     BranchData;
 class   ArrayData;
 class     MultiBranchData;
 class     ArgInfoData;
+class     ParametersTypeData;
 
 // ProfileData
 //
@@ -397,6 +399,7 @@ public:
   virtual bool is_ArgInfoData()     const { return false; }
   virtual bool is_CallTypeData()    const { return false; }
   virtual bool is_VirtualCallTypeData()const { return false; }
+  virtual bool is_ParametersTypeData() const { return false; }
 
 
   BitData* as_BitData() const {
@@ -446,6 +449,10 @@ public:
   VirtualCallTypeData* as_VirtualCallTypeData() const {
     assert(is_VirtualCallTypeData(), "wrong type");
     return is_VirtualCallTypeData() ? (VirtualCallTypeData*)this : NULL;
+  }
+  ParametersTypeData* as_ParametersTypeData() const {
+    assert(is_ParametersTypeData(), "wrong type");
+    return is_ParametersTypeData() ? (ParametersTypeData*)this : NULL;
   }
 
 
@@ -767,9 +774,9 @@ public:
   TypeStackSlotEntries(int base_off, int nb_entries)
     : TypeEntries(base_off), _number_of_entries(nb_entries) {}
 
-  static int compute_cell_count(Symbol* signature, int max);
+  static int compute_cell_count(Symbol* signature, bool include_receiver, int max);
 
-  void post_initialize(Symbol* signature, bool has_receiver);
+  void post_initialize(Symbol* signature, bool has_receiver, bool include_receiver);
 
   // offset of cell for stack slot for entry i within this block of cells for a TypeStackSlotEntries
   static int stack_slot_local_offset(int i) {
@@ -946,17 +953,6 @@ private:
     assert(number_of_arguments() == total, "should be set in DataLayout::initialize");
   }
 
-protected:
-  // An entry for a return value takes less space than an entry for an
-  // argument so if the number of cells exceeds the number of cells
-  // needed for an argument, this object contains type information for
-  // at least one argument.
-  bool has_arguments() const {
-    bool res = cell_count_no_header() >= TypeStackSlotEntries::per_arg_count();
-    assert (!res || TypeEntriesAtCall::arguments_profiling_enabled(), "no profiling of arguments");
-    return res;
-  }
-
 public:
   CallTypeData(DataLayout* layout) :
     CounterData(layout),
@@ -1015,6 +1011,16 @@ public:
     assert(has_return(), "no return!");
     intptr_t current = _ret.type();
     _ret.set_type(TypeEntries::with_status(k, current));
+  }
+
+  // An entry for a return value takes less space than an entry for an
+  // argument so if the number of cells exceeds the number of cells
+  // needed for an argument, this object contains type information for
+  // at least one argument.
+  bool has_arguments() const {
+    bool res = cell_count_no_header() >= TypeStackSlotEntries::per_arg_count();
+    assert (!res || TypeEntriesAtCall::arguments_profiling_enabled(), "no profiling of arguments");
+    return res;
   }
 
   // An entry for a return value takes less space than an entry for an
@@ -1213,17 +1219,6 @@ private:
     assert(number_of_arguments() == total, "should be set in DataLayout::initialize");
   }
 
-protected:
-  // An entry for a return value takes less space than an entry for an
-  // argument so if the number of cells exceeds the number of cells
-  // needed for an argument, this object contains type information for
-  // at least one argument.
-  bool has_arguments() const {
-    bool res = cell_count_no_header() >= TypeStackSlotEntries::per_arg_count();
-    assert (!res || TypeEntriesAtCall::arguments_profiling_enabled(), "no profiling of arguments");
-    return res;
-  }
-
 public:
   VirtualCallTypeData(DataLayout* layout) :
     VirtualCallData(layout),
@@ -1291,6 +1286,16 @@ public:
   bool has_return() const {
     bool res = (cell_count_no_header() % TypeStackSlotEntries::per_arg_count()) != 0;
     assert (!res || TypeEntriesAtCall::return_profiling_enabled(), "no profiling of return values");
+    return res;
+  }
+
+  // An entry for a return value takes less space than an entry for an
+  // argument so if the number of cells exceeds the number of cells
+  // needed for an argument, this object contains type information for
+  // at least one argument.
+  bool has_arguments() const {
+    bool res = cell_count_no_header() >= TypeStackSlotEntries::per_arg_count();
+    assert (!res || TypeEntriesAtCall::arguments_profiling_enabled(), "no profiling of arguments");
     return res;
   }
 
@@ -1662,6 +1667,75 @@ public:
 #endif
 };
 
+// ParametersTypeData
+//
+// A ParametersTypeData is used to access profiling information about
+// types of parameters to a method
+class ParametersTypeData : public ArrayData {
+
+private:
+  TypeStackSlotEntries _parameters;
+
+  static int stack_slot_local_offset(int i) {
+    assert_profiling_enabled();
+    return array_start_off_set + TypeStackSlotEntries::stack_slot_local_offset(i);
+  }
+
+  static int type_local_offset(int i) {
+    assert_profiling_enabled();
+    return array_start_off_set + TypeStackSlotEntries::type_local_offset(i);
+  }
+
+  static bool profiling_enabled();
+  static void assert_profiling_enabled() {
+    assert(profiling_enabled(), "method parameters profiling should be on");
+  }
+
+public:
+  ParametersTypeData(DataLayout* layout) : ArrayData(layout), _parameters(1, number_of_parameters()) {
+    assert(layout->tag() == DataLayout::parameters_type_data_tag, "wrong type");
+    // Some compilers (VC++) don't want this passed in member initialization list
+    _parameters.set_profile_data(this);
+  }
+
+  static int compute_cell_count(Method* m);
+
+  virtual bool is_ParametersTypeData() const { return true; }
+
+  virtual void post_initialize(BytecodeStream* stream, MethodData* mdo);
+
+  int number_of_parameters() const {
+    return array_len() / TypeStackSlotEntries::per_arg_count();
+  }
+
+  const TypeStackSlotEntries* parameters() const { return &_parameters; }
+
+  uint stack_slot(int i) const {
+    return _parameters.stack_slot(i);
+  }
+
+  void set_type(int i, Klass* k) {
+    intptr_t current = _parameters.type(i);
+    _parameters.set_type(i, TypeEntries::with_status((intptr_t)k, current));
+  }
+
+  virtual void clean_weak_klass_links(BoolObjectClosure* is_alive_closure) {
+    _parameters.clean_weak_klass_links(is_alive_closure);
+  }
+
+#ifndef PRODUCT
+  virtual void print_data_on(outputStream* st) const;
+#endif
+
+  static ByteSize stack_slot_offset(int i) {
+    return cell_offset(stack_slot_local_offset(i));
+  }
+
+  static ByteSize type_offset(int i) {
+    return cell_offset(type_local_offset(i));
+  }
+};
+
 // MethodData*
 //
 // A MethodData* holds information which has been collected about
@@ -1773,6 +1847,10 @@ private:
   // Size of _data array in bytes.  (Excludes header and extra_data fields.)
   int _data_size;
 
+  // data index for the area dedicated to parameters. -1 if no
+  // parameter profiling.
+  int _parameters_type_data_di;
+
   // Beginning of the data entries
   intptr_t _data[1];
 
@@ -1842,6 +1920,9 @@ private:
   static int profile_return_flag();
   static bool profile_all_return();
   static bool profile_return_for_invoke(methodHandle m, int bci);
+  static int profile_parameters_flag();
+  static bool profile_parameters_jsr292_only();
+  static bool profile_all_parameters();
 
 public:
   static int header_size() {
@@ -2048,6 +2129,16 @@ public:
     }
   }
 
+  // Return pointer to area dedicated to parameters in MDO
+  ParametersTypeData* parameters_type_data() const {
+    return _parameters_type_data_di != -1 ? data_layout_at(_parameters_type_data_di)->data_in()->as_ParametersTypeData() : NULL;
+  }
+
+  int parameters_type_data_di() const {
+    assert(_parameters_type_data_di != -1, "no args type data");
+    return _parameters_type_data_di;
+  }
+
   // Support for code generation
   static ByteSize data_offset() {
     return byte_offset_of(MethodData, _data[0]);
@@ -2058,6 +2149,10 @@ public:
   }
   static ByteSize backedge_counter_offset() {
     return byte_offset_of(MethodData, _backedge_counter);
+  }
+
+  static ByteSize parameters_type_data_di_offset() {
+    return byte_offset_of(MethodData, _parameters_type_data_di);
   }
 
   // Deallocation support - no pointer fields to deallocate
@@ -2083,8 +2178,10 @@ public:
   void verify_on(outputStream* st);
   void verify_data_on(outputStream* st);
 
+  static bool profile_parameters_for_method(methodHandle m);
   static bool profile_arguments();
   static bool profile_return();
+  static bool profile_parameters();
   static bool profile_return_jsr292_only();
 };
 

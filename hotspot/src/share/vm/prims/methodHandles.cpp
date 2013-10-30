@@ -1194,9 +1194,7 @@ JVM_ENTRY(jobject, MHN_getMemberVMInfo(JNIEnv *env, jobject igcls, jobject mname
   } else if (vmtarget->is_klass()) {
     x = ((Klass*) vmtarget)->java_mirror();
   } else if (vmtarget->is_method()) {
-    Handle mname2 = MethodHandles::new_MemberName(CHECK_NULL);
-    CallInfo info((Method*)vmtarget);
-    x = MethodHandles::init_method_MemberName(mname2, info);
+    x = mname();
   }
   result->obj_at_put(1, x);
   return JNIHandles::make_local(env, result());
