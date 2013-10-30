@@ -1214,7 +1214,7 @@ public interface RowSet extends ResultSet {
    *  <code>Struct</code>, <code>java.net.URL</code>,
    * or <code>Array</code>, the driver should pass it to the database as a
    * value of the corresponding SQL type.
-   * <P>
+   *
    *
    * <p>Note that this method may be used to pass datatabase-specific
    * abstract data types.
@@ -1384,7 +1384,7 @@ public interface RowSet extends ResultSet {
    *  <code>Struct</code>, <code>java.net.URL</code>,
    * or <code>Array</code>, the driver should pass it to the database as a
    * value of the corresponding SQL type.
-   * <P>
+   *
    * <P>
    * An exception is thrown if there is an ambiguity, for example, if the
    * object is of a class implementing more than one of these interfaces.

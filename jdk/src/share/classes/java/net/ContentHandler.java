@@ -96,6 +96,7 @@ abstract public class ContentHandler {
      * @exception  IOException  if an I/O error occurs while reading the object.
      * @since 1.3
      */
+    @SuppressWarnings("rawtypes")
     public Object getContent(URLConnection urlc, Class[] classes) throws IOException {
         Object obj = getContent(urlc);
 

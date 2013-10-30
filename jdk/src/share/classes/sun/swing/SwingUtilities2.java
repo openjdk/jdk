@@ -1361,6 +1361,19 @@ public class SwingUtilities2 {
     }
 
     /**
+     * Utility method that throws SecurityException if SecurityManager is set
+     * and modifiers are not public
+     *
+     * @param modifiers a set of modifiers
+     */
+    public static void checkAccess(int modifiers) {
+        if (System.getSecurityManager() != null
+                && !Modifier.isPublic(modifiers)) {
+            throw new SecurityException("Resource is not accessible");
+        }
+    }
+
+    /**
      * Returns true if EventQueue.getCurrentEvent() has the permissions to
      * access the system clipboard and if it is allowed gesture (if
      * checkGesture true)

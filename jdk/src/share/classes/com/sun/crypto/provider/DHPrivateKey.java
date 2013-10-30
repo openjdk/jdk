@@ -271,22 +271,6 @@ javax.crypto.interfaces.DHPrivateKey, Serializable {
         }
     }
 
-    public String toString() {
-        String LINE_SEP = System.getProperty("line.separator");
-
-        StringBuffer strbuf
-            = new StringBuffer("SunJCE Diffie-Hellman Private Key:"
-                               + LINE_SEP + "x:" + LINE_SEP
-                               + Debug.toHexString(this.x)
-                               + LINE_SEP + "p:" + LINE_SEP
-                               + Debug.toHexString(this.p)
-                               + LINE_SEP + "g:" + LINE_SEP
-                               + Debug.toHexString(this.g));
-        if (this.l != 0)
-            strbuf.append(LINE_SEP + "l:" + LINE_SEP + "    " + this.l);
-        return strbuf.toString();
-    }
-
     private void parseKeyBits() throws InvalidKeyException {
         try {
             DerInputStream in = new DerInputStream(this.key);

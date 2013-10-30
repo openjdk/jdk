@@ -25,6 +25,8 @@
 
 package com.sun.tools.javac.code;
 
+import java.lang.annotation.Annotation;
+import java.lang.annotation.Inherited;
 import java.util.Set;
 import java.util.concurrent.Callable;
 
@@ -37,8 +39,6 @@ import com.sun.tools.javac.comp.Attr;
 import com.sun.tools.javac.comp.AttrContext;
 import com.sun.tools.javac.comp.Env;
 import com.sun.tools.javac.jvm.*;
-import com.sun.tools.javac.model.*;
-import com.sun.tools.javac.tree.JCTree;
 import com.sun.tools.javac.util.*;
 import com.sun.tools.javac.util.Name;
 import static com.sun.tools.javac.code.Flags.*;
@@ -58,8 +58,7 @@ import com.sun.tools.javac.tree.JCTree.JCVariableDecl;
  *  This code and its internal interfaces are subject to change or
  *  deletion without notice.</b>
  */
-public abstract class Symbol implements Element {
-    // public Throwable debug = new Throwable();
+public abstract class Symbol extends AnnoConstruct implements Element {
 
     /** The kind of this symbol.
      *  @see Kinds
@@ -102,6 +101,7 @@ public abstract class Symbol implements Element {
      * SymbolMetadata. The SymbolMetadata instance is NOT immutable.
      */
     protected SymbolMetadata annotations;
+
 
     /** An accessor method for the attributes of this symbol.
      *  Attributes of class symbols should be accessed through the accessor
@@ -596,18 +596,6 @@ public abstract class Symbol implements Element {
         return getRawAttributes();
     }
 
-    /**
-     * @deprecated this method should never be used by javac internally.
-     */
-    @Deprecated
-    public <A extends java.lang.annotation.Annotation> A getAnnotation(Class<A> annoType) {
-        return JavacAnnoConstructs.getAnnotation(this, annoType);
-    }
-
-    // This method is part of the javax.lang.model API, do not use this in javac code.
-    public <A extends java.lang.annotation.Annotation> A[] getAnnotationsByType(Class<A> annoType) {
-        return JavacAnnoConstructs.getAnnotationsByType(this, annoType);
-    }
 
     // TODO: getEnclosedElements should return a javac List, fix in FilteredMemberList
     public java.util.List<Symbol> getEnclosedElements() {
@@ -792,6 +780,28 @@ public abstract class Symbol implements Element {
 
             return res = res.reverse();
         }
+
+
+
+        // Helper to getAnnotation[s]
+        @Override
+        public <A extends Annotation> Attribute.Compound getAttribute(Class<A> annoType) {
+
+            String name = annoType.getName();
+
+            // Declaration annotations on type variables are stored in type attributes
+            // on the owner of the TypeVariableSymbol
+            List<Attribute.TypeCompound> candidates = owner.getRawTypeAttributes();
+            for (Attribute.TypeCompound anno : candidates)
+                if (anno.position.type == TargetType.CLASS_TYPE_PARAMETER ||
+                        anno.position.type == TargetType.METHOD_TYPE_PARAMETER)
+                    if (name.contentEquals(anno.type.tsym.flatName()))
+                        return anno;
+
+            return null;
+        }
+
+
 
         @Override
         public <R, P> R accept(ElementVisitor<R, P> v, P p) {
@@ -1049,6 +1059,31 @@ public abstract class Symbol implements Element {
             }
         }
 
+        /**
+         * Returns the next class to search for inherited annotations or {@code null}
+         * if the next class can't be found.
+         */
+        private ClassSymbol getSuperClassToSearchForAnnotations() {
+
+            Type sup = getSuperclass();
+
+            if (!sup.hasTag(CLASS) || sup.isErroneous())
+                return null;
+
+            return (ClassSymbol) sup.tsym;
+        }
+
+
+        @Override
+        protected <A extends Annotation> A[] getInheritedAnnotations(Class<A> annoType) {
+
+            ClassSymbol sup = getSuperClassToSearchForAnnotations();
+
+            return sup == null ? super.getInheritedAnnotations(annoType)
+                               : sup.getAnnotationsByType(annoType);
+        }
+
+
         public ElementKind getKind() {
             long flags = flags();
             if ((flags & ANNOTATION) != 0)
@@ -1079,14 +1114,24 @@ public abstract class Symbol implements Element {
                 return NestingKind.MEMBER;
         }
 
-        /**
-         * Since this method works in terms of the runtime representation
-         * of annotations, it should never be used by javac internally.
-         */
+
         @Override
-        public <A extends java.lang.annotation.Annotation> A getAnnotation(Class<A> annoType) {
-            return JavacAnnoConstructs.getAnnotation(this, annoType);
+        protected <A extends Annotation> Attribute.Compound getAttribute(final Class<A> annoType) {
+
+            Attribute.Compound attrib = super.getAttribute(annoType);
+
+            boolean inherited = annoType.isAnnotationPresent(Inherited.class);
+            if (attrib != null || !inherited)
+                return attrib;
+
+            // Search supertypes
+            ClassSymbol superType = getSuperClassToSearchForAnnotations();
+            return superType == null ? null
+                                     : superType.getAttribute(annoType);
         }
+
+
+
 
         public <R, P> R accept(ElementVisitor<R, P> v, P p) {
             return v.visitType(this, p);

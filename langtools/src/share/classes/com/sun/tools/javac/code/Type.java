@@ -35,7 +35,6 @@ import java.util.Set;
 import javax.lang.model.type.*;
 
 import com.sun.tools.javac.code.Symbol.*;
-import com.sun.tools.javac.model.JavacAnnoConstructs;
 import com.sun.tools.javac.util.*;
 import static com.sun.tools.javac.code.BoundKind.*;
 import static com.sun.tools.javac.code.Flags.*;
@@ -70,7 +69,7 @@ import static com.sun.tools.javac.code.TypeTag.*;
  *
  *  @see TypeTag
  */
-public abstract class Type implements TypeMirror {
+public abstract class Type extends AnnoConstruct implements TypeMirror {
 
     /** Constant type: no type at all. */
     public static final JCNoType noType = new JCNoType();
@@ -166,6 +165,12 @@ public abstract class Type implements TypeMirror {
         return lb.toList();
     }
 
+    /**For ErrorType, returns the original type, otherwise returns the type itself.
+     */
+    public Type getOriginalType() {
+        return this;
+    }
+
     public <R,S> R accept(Type.Visitor<R,S> v, S s) { return v.visitType(this, s); }
 
     /** Define a type given its tag and type symbol
@@ -220,6 +225,10 @@ public abstract class Type implements TypeMirror {
         return this;
     }
 
+    public Type annotatedType(List<Attribute.TypeCompound> annos) {
+        return new AnnotatedType(annos, this);
+    }
+
     public boolean isAnnotated() {
         return false;
     }
@@ -233,14 +242,16 @@ public abstract class Type implements TypeMirror {
     }
 
     @Override
-    public List<? extends Attribute.TypeCompound> getAnnotationMirrors() {
+    public List<Attribute.TypeCompound> getAnnotationMirrors() {
         return List.nil();
     }
+
 
     @Override
     public <A extends Annotation> A getAnnotation(Class<A> annotationType) {
         return null;
     }
+
 
     @Override
     public <A extends Annotation> A[] getAnnotationsByType(Class<A> annotationType) {
@@ -1811,25 +1822,19 @@ public abstract class Type implements TypeMirror {
                 javax.lang.model.type.WildcardType {
         /** The type annotations on this type.
          */
-        public List<Attribute.TypeCompound> typeAnnotations;
+        private List<Attribute.TypeCompound> typeAnnotations;
 
         /** The underlying type that is annotated.
          */
-        public Type underlyingType;
+        private Type underlyingType;
 
-        public AnnotatedType(Type underlyingType) {
-            super(underlyingType.tsym);
-            this.typeAnnotations = List.nil();
-            this.underlyingType = underlyingType;
-            Assert.check(!underlyingType.isAnnotated(),
-                    "Can't annotate already annotated type: " + underlyingType);
-        }
-
-        public AnnotatedType(List<Attribute.TypeCompound> typeAnnotations,
+        protected AnnotatedType(List<Attribute.TypeCompound> typeAnnotations,
                 Type underlyingType) {
             super(underlyingType.tsym);
             this.typeAnnotations = typeAnnotations;
             this.underlyingType = underlyingType;
+            Assert.check(typeAnnotations != null && typeAnnotations.nonEmpty(),
+                    "Can't create AnnotatedType without annotations: " + underlyingType);
             Assert.check(!underlyingType.isAnnotated(),
                     "Can't annotate already annotated type: " + underlyingType +
                     "; adding: " + typeAnnotations);
@@ -1846,19 +1851,10 @@ public abstract class Type implements TypeMirror {
         }
 
         @Override
-        public List<? extends Attribute.TypeCompound> getAnnotationMirrors() {
+        public List<Attribute.TypeCompound> getAnnotationMirrors() {
             return typeAnnotations;
         }
 
-        @Override
-        public <A extends Annotation> A getAnnotation(Class<A> annotationType) {
-            return JavacAnnoConstructs.getAnnotation(this, annotationType);
-        }
-
-        @Override
-        public <A extends Annotation> A[] getAnnotationsByType(Class<A> annotationType) {
-            return JavacAnnoConstructs.getAnnotationsByType(this, annotationType);
-        }
 
         @Override
         public TypeKind getKind() {
@@ -1979,10 +1975,8 @@ public abstract class Type implements TypeMirror {
         public TypeMirror getComponentType()     { return ((ArrayType)underlyingType).getComponentType(); }
 
         // The result is an ArrayType, but only in the model sense, not the Type sense.
-        public AnnotatedType makeVarargs() {
-            AnnotatedType atype = new AnnotatedType(((ArrayType)underlyingType).makeVarargs());
-            atype.typeAnnotations = this.typeAnnotations;
-            return atype;
+        public Type makeVarargs() {
+            return ((ArrayType) underlyingType).makeVarargs().annotatedType(typeAnnotations);
         }
 
         @Override

@@ -26,27 +26,30 @@
 # This file is in the public domain, so clarified as of
 # 2009-05-17 by Arthur David Olson.
 #
-# From Paul Eggert (2013-05-27):
+# From Paul Eggert (2013-08-14):
 #
-# This file contains a table with the following columns:
-# 1.  ISO 3166 2-character country code.  See the file `iso3166.tab'.
-#     This identifies a country that overlaps the zone.  The country may
-#     overlap other zones and the zone may overlap other countries.
-# 2.  Latitude and longitude of the zone's principal location
+# This file contains a table where each row stands for an area that is
+# the intersection of a region identified by a country code and of a
+# zone where civil clocks have agreed since 1970.  The columns of the
+# table are as follows:
+#
+# 1.  ISO 3166 2-character country code.  See the file 'iso3166.tab'.
+# 2.  Latitude and longitude of the area's principal location
 #     in ISO 6709 sign-degrees-minutes-seconds format,
 #     either +-DDMM+-DDDMM or +-DDMMSS+-DDDMMSS,
 #     first latitude (+ is north), then longitude (+ is east).
-#     This location need not lie within the column-1 country.
 # 3.  Zone name used in value of TZ environment variable.
 #     Please see the 'Theory' file for how zone names are chosen.
+#     If multiple zones overlap a country, each has a row in the
+#     table, with column 1 being duplicated.
 # 4.  Comments; present if and only if the country has multiple rows.
 #
 # Columns are separated by a single tab.
 # The table is sorted first by country, then an order within the country that
 # (1) makes some geographical sense, and
-# (2) puts the most populous zones first, where that does not contradict (1).
+# (2) puts the most populous areas first, where that does not contradict (1).
 #
-# Lines beginning with `#' are comments.
+# Lines beginning with '#' are comments.
 #
 # This table is intended as an aid for users, to help them select time
 # zone data appropriate for their practical needs.  It is not intended
@@ -62,8 +65,7 @@ AI	+1812-06304	America/Anguilla
 AL	+4120+01950	Europe/Tirane
 AM	+4011+04430	Asia/Yerevan
 AO	-0848+01314	Africa/Luanda
-AQ	-7750+16636	Antarctica/McMurdo	McMurdo Station, Ross Island
-AQ	-9000+00000	Antarctica/South_Pole	Amundsen-Scott Station, South Pole
+AQ	-7750+16636	Antarctica/McMurdo	McMurdo, South Pole, Scott (New Zealand time)
 AQ	-6734-06808	Antarctica/Rothera	Rothera Station, Adelaide Island
 AQ	-6448-06406	Antarctica/Palmer	Palmer Station, Anvers Island
 AQ	-6736+06253	Antarctica/Mawson	Mawson Station, Holme Bay
@@ -143,8 +145,7 @@ CA	+4612-05957	America/Glace_Bay	Atlantic Time - Nova Scotia - places that did n
 CA	+4606-06447	America/Moncton	Atlantic Time - New Brunswick
 CA	+5320-06025	America/Goose_Bay	Atlantic Time - Labrador - most locations
 CA	+5125-05707	America/Blanc-Sablon	Atlantic Standard Time - Quebec - Lower North Shore
-CA	+4531-07334	America/Montreal	Eastern Time - Quebec - most locations
-CA	+4339-07923	America/Toronto	Eastern Time - Ontario - most locations
+CA	+4339-07923	America/Toronto	Eastern Time - Ontario & Quebec - most locations
 CA	+4901-08816	America/Nipigon	Eastern Time - Ontario & Quebec - places that did not observe DST 1967-1973
 CA	+4823-08915	America/Thunder_Bay	Eastern Time - Thunder Bay, Ontario
 CA	+6344-06828	America/Iqaluit	Eastern Time - east Nunavut - most locations
@@ -255,7 +256,7 @@ IR	+3540+05126	Asia/Tehran
 IS	+6409-02151	Atlantic/Reykjavik
 IT	+4154+01229	Europe/Rome
 JE	+4912-00207	Europe/Jersey
-JM	+1800-07648	America/Jamaica
+JM	+175805-0764736	America/Jamaica
 JO	+3157+03556	Asia/Amman
 JP	+353916+1394441	Asia/Tokyo
 KE	-0117+03649	Africa/Nairobi
@@ -444,8 +445,7 @@ US	+465042-1012439	America/North_Dakota/New_Salem	Central Time - North Dakota - 
 US	+471551-1014640	America/North_Dakota/Beulah	Central Time - North Dakota - Mercer County
 US	+394421-1045903	America/Denver	Mountain Time
 US	+433649-1161209	America/Boise	Mountain Time - south Idaho & east Oregon
-US	+364708-1084111	America/Shiprock	Mountain Time - Navajo
-US	+332654-1120424	America/Phoenix	Mountain Standard Time - Arizona
+US	+332654-1120424	America/Phoenix	Mountain Standard Time - Arizona (except Navajo)
 US	+340308-1181434	America/Los_Angeles	Pacific Time
 US	+611305-1495401	America/Anchorage	Alaska Time
 US	+581807-1342511	America/Juneau	Alaska Time - Alaska panhandle

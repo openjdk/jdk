@@ -468,9 +468,10 @@ public final class GlyphLayout {
                         _gvdata.grow();
                     }
                 }
-                if (_gvdata._count < 0) {
-                    break;
-                }
+            }
+            // Break out of the outer for loop if layout fails.
+            if (_gvdata._count < 0) {
+                break;
             }
         }
 

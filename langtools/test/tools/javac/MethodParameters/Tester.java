@@ -23,6 +23,12 @@
 
 import java.io.*;
 import java.lang.reflect.Constructor;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
 
 /**
  * Test driver for MethodParameters testing.
@@ -44,6 +50,13 @@ public class Tester {
 
     final static File classesdir = new File(System.getProperty("test.classes", "."));
 
+    private String classname;
+    private File[] files;
+    private File refFile;
+    private int errors;
+    private int warnings;
+    private int diffGolden;
+
     /**
      * The visitor classes that does the actual checking are referenced
      * statically, to force compilations, without having to reference
@@ -62,32 +75,38 @@ public class Tester {
      * Test-driver expect a single classname as argument.
      */
     public static void main(String... args) throws Exception {
-        if (args.length != 1) {
-            throw new Error("A single class name is expected as argument");
+        if (args.length != 2) {
+            throw new Error("A single class name and a golden file are expected as argument");
         }
-        final String pattern = args[0] + ".*\\.class";
-        File files[] = classesdir.listFiles(new FileFilter() {
+        String testSrc = System.getProperty("test.src");
+        String testName = args[0];
+        String testGoldenFile = args[1];
+        final String pattern = testName + ".*\\.class";
+        File refFile = new File(testSrc, testGoldenFile);
+        File[] files = classesdir.listFiles(new FileFilter() {
                 public boolean accept(File f) {
                     return f.getName().matches(pattern);
                 }
             });
         if (files.length == 0) {
-            File file = new File(classesdir, args[0] + ".class");
+            File file = new File(classesdir, testName + ".class");
             throw new Error(file.getPath() + " not found");
         }
 
-        new Tester(args[0], files).run();
+        new Tester(testName, files, refFile).run();
     }
 
-    public Tester(String name, File files[]) {
+    public Tester(String name, File[] files, File refFile) {
         this.classname = name;
         this.files = files;
+        this.refFile = refFile;
     }
 
     void run() throws Exception {
 
         // Test with each visitor
         for (Class<Visitor> vclass : visitors) {
+            boolean compResult = false;
             try {
                 String vname = vclass.getName();
                 Constructor c = vclass.getConstructor(Tester.class);
@@ -105,12 +124,21 @@ public class Tester {
                         e.printStackTrace();
                     }
                 }
-                info(sb.toString());
+                String output = sb.toString();
+                info(output);
+                compResult = compareOutput(refFile, output);
             } catch(ReflectiveOperationException e) {
                 warn("Class " + vclass.getName() + " ignored, not a Visitor");
                 continue;
             }
+            if (!compResult) {
+                diffGolden++;
+                error("The output from " + vclass.getName() + " did not match golden file.");
         }
+        }
+
+        if (0 != diffGolden)
+            throw new Exception("Test output is not equal with golden file.");
 
         if(0 != warnings)
                 System.err.println("Test generated " + warnings + " warnings");
@@ -118,6 +146,25 @@ public class Tester {
         if(0 != errors)
             throw new Exception("Tester test failed with " +
                                 errors + " errors");
+    }
+    // Check if test output matches the golden file.
+    boolean compareOutput(File refFile, String sb)
+            throws FileNotFoundException, IOException {
+
+        List<String> refFileList = Files.readAllLines(refFile.toPath(), StandardCharsets.UTF_8);
+        List<String> sbList = Arrays.asList(sb.split(System.getProperty("line.separator")));
+        // Check if test output contains unexpected lines or is missing expected lines.
+        List<String> sbOnly = new ArrayList<String>(sbList);
+        sbOnly.removeAll(refFileList);
+        for (String line: sbOnly)
+            error("unexpected line found: " + line);
+
+        List<String> refOnly = new ArrayList<String>(refFileList);
+        refOnly.removeAll(sbList);
+        for (String line: refOnly)
+            error("expected line not found: " + line);
+
+        return sbOnly.isEmpty() && refOnly.isEmpty();
     }
 
     abstract static  class Visitor {
@@ -153,9 +200,4 @@ public class Tester {
     void info(String msg) {
         System.out.println(msg);
     }
-
-    int errors;
-    int warnings;
-    String classname;
-    File files[];
 }

@@ -45,17 +45,17 @@ public class ClassFileReader {
     /**
      * Returns a ClassFileReader instance of a given path.
      */
-    public static ClassFileReader newInstance(File path) throws IOException {
-        if (!path.exists()) {
-            throw new FileNotFoundException(path.getAbsolutePath());
+    public static ClassFileReader newInstance(Path path) throws IOException {
+        if (!Files.exists(path)) {
+            throw new FileNotFoundException(path.toString());
         }
 
-        if (path.isDirectory()) {
-            return new DirectoryReader(path.toPath());
-        } else if (path.getName().endsWith(".jar")) {
-            return new JarFileReader(path.toPath());
+        if (Files.isDirectory(path)) {
+            return new DirectoryReader(path);
+        } else if (path.getFileName().toString().endsWith(".jar")) {
+            return new JarFileReader(path);
         } else {
-            return new ClassFileReader(path.toPath());
+            return new ClassFileReader(path);
         }
     }
 
@@ -163,16 +163,16 @@ public class ClassFileReader {
                 int i = name.lastIndexOf('.');
                 String pathname = name.replace('.', File.separatorChar) + ".class";
                 Path p = path.resolve(pathname);
-                if (!p.toFile().exists()) {
+                if (!Files.exists(p)) {
                     p = path.resolve(pathname.substring(0, i) + "$" +
                                      pathname.substring(i+1, pathname.length()));
                 }
-                if (p.toFile().exists()) {
+                if (Files.exists(p)) {
                     return readClassFile(p);
                 }
             } else {
                 Path p = path.resolve(name + ".class");
-                if (p.toFile().exists()) {
+                if (Files.exists(p)) {
                     return readClassFile(p);
                 }
             }
@@ -193,7 +193,7 @@ public class ClassFileReader {
             Files.walkFileTree(dir, new SimpleFileVisitor<Path>() {
                 public FileVisitResult visitFile(Path file, BasicFileAttributes attrs)
                         throws IOException {
-                    if (file.toFile().getName().endsWith(".class")) {
+                    if (file.getFileName().toString().endsWith(".class")) {
                         files.add(file);
                     }
                     return FileVisitResult.CONTINUE;

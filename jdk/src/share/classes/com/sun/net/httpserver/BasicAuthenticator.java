@@ -33,6 +33,7 @@ import java.util.Base64;
  * to provide an implementation of {@link #checkCredentials(String,String)}
  * which is called to verify each incoming request.
  */
+@jdk.Exported
 public abstract class BasicAuthenticator extends Authenticator {
 
     protected String realm;

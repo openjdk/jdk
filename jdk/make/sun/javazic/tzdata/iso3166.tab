@@ -32,7 +32,7 @@
 # 1.  ISO 3166-1 alpha-2 country code, current as of
 #     ISO 3166-1 Newsletter VI-15 (2013-05-10).  See: Updates on ISO 3166
 #   http://www.iso.org/iso/home/standards/country_codes/updates_on_iso_3166.htm
-# 2.  The usual English name for the country,
+# 2.  The usual English name for the coded region,
 #     chosen so that alphabetic sorting of subsets produces helpful lists.
 #     This is not the same as the English name in the ISO 3166 tables.
 #
@@ -46,7 +46,7 @@
 # to take or endorse any position on legal or territorial claims.
 #
 #country-
-#code	country name
+#code	name of country, territory, area, or subdivision
 AD	Andorra
 AE	United Arab Emirates
 AF	Afghanistan
@@ -76,7 +76,7 @@ BL	St Barthelemy
 BM	Bermuda
 BN	Brunei
 BO	Bolivia
-BQ	Bonaire, St Eustatius & Saba
+BQ	Caribbean Netherlands
 BR	Brazil
 BS	Bahamas
 BT	Bhutan
