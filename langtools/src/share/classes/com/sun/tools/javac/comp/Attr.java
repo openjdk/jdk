@@ -250,6 +250,14 @@ public class Attr extends JCTree.Visitor {
         Type owntype = found;
         if (!owntype.hasTag(ERROR) && !resultInfo.pt.hasTag(METHOD) && !resultInfo.pt.hasTag(FORALL)) {
             if (allowPoly && inferenceContext.free(found)) {
+                if ((ownkind & ~resultInfo.pkind) == 0) {
+                    owntype = resultInfo.check(tree, inferenceContext.asFree(owntype));
+                } else {
+                    log.error(tree.pos(), "unexpected.type",
+                            kindNames(resultInfo.pkind),
+                            kindName(ownkind));
+                    owntype = types.createErrorType(owntype);
+                }
                 inferenceContext.addFreeTypeListener(List.of(found, resultInfo.pt), new FreeTypeListener() {
                     @Override
                     public void typesInferred(InferenceContext inferenceContext) {
@@ -314,9 +322,6 @@ public class Attr extends JCTree.Visitor {
                 case CLASSDEF:
                     //class def is always an owner
                     return ((JCClassDecl)env.tree).sym;
-                case LAMBDA:
-                    //a lambda is an owner - return a fresh synthetic method symbol
-                    return new MethodSymbol(0, names.empty, null, syms.methodClass);
                 case BLOCK:
                     //static/instance init blocks are owner
                     Symbol blockSym = env.info.scope.owner;
@@ -513,6 +518,15 @@ public class Attr extends JCTree.Visitor {
 
         protected ResultInfo dup(CheckContext newContext) {
             return new ResultInfo(pkind, pt, newContext);
+        }
+
+        @Override
+        public String toString() {
+            if (pt != null) {
+                return pt.toString();
+            } else {
+                return "";
+            }
         }
     }
 
@@ -4065,8 +4079,6 @@ public class Attr extends JCTree.Visitor {
      * Apply the annotations to the particular type.
      */
     public void annotateType(final JCTree tree, final List<JCAnnotation> annotations) {
-        // Callers ensure this.
-        // Assert.check(annotations != null && annotations.nonEmpty());
         annotate.typeAnnotation(new Annotate.Worker() {
             @Override
             public String toString() {
@@ -4084,8 +4096,9 @@ public class Attr extends JCTree.Visitor {
     }
 
     private static List<Attribute.TypeCompound> fromAnnotations(List<JCAnnotation> annotations) {
-        if (annotations.isEmpty())
+        if (annotations.isEmpty()) {
             return List.nil();
+        }
 
         ListBuffer<Attribute.TypeCompound> buf = new ListBuffer<>();
         for (JCAnnotation anno : annotations) {
@@ -4097,6 +4110,10 @@ public class Attr extends JCTree.Visitor {
                 // Any better solutions?
                 buf.append((Attribute.TypeCompound) anno.attribute);
             }
+            // Eventually we will want to throw an exception here, but
+            // we can't do that just yet, because it gets triggered
+            // when attempting to attach an annotation that isn't
+            // defined.
         }
         return buf.toList();
     }

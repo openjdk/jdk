@@ -391,8 +391,7 @@ public class HtmlDocletWriter extends HtmlDocWriter {
                 tbody.addContent(tr);
             }
             table.addContent(tbody);
-            Content li = HtmlTree.LI(HtmlStyle.blockList, table);
-            summaryContentTree.addContent(li);
+            summaryContentTree.addContent(table);
         }
     }
 
@@ -1051,7 +1050,7 @@ public class HtmlDocletWriter extends HtmlDocWriter {
 
     public Content italicsClassName(ClassDoc cd, boolean qual) {
         Content name = new StringContent((qual)? cd.qualifiedName(): cd.name());
-        return (cd.isInterface())?  HtmlTree.SPAN(HtmlStyle.italic, name): name;
+        return (cd.isInterface())?  HtmlTree.SPAN(HtmlStyle.interfaceName, name): name;
     }
 
     /**
@@ -1567,7 +1566,7 @@ public class HtmlDocletWriter extends HtmlDocWriter {
         Content div;
         Content result = commentTagsToContent(null, doc, tags, first);
         if (depr) {
-            Content italic = HtmlTree.SPAN(HtmlStyle.italic, result);
+            Content italic = HtmlTree.SPAN(HtmlStyle.deprecationComment, result);
             div = HtmlTree.DIV(HtmlStyle.block, italic);
             htmltree.addContent(div);
         }
