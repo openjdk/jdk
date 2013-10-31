@@ -2869,7 +2869,7 @@ void Metaspace::set_narrow_klass_base_and_shift(address metaspace_base, address 
 
   Universe::set_narrow_klass_base(lower_base);
 
-  if ((uint64_t)(higher_address - lower_base) < UnscaledClassSpaceMax) {
+  if ((uint64_t)(higher_address - lower_base) <= UnscaledClassSpaceMax) {
     Universe::set_narrow_klass_shift(0);
   } else {
     assert(!UseSharedSpaces, "Cannot shift with UseSharedSpaces");
@@ -2885,7 +2885,7 @@ bool Metaspace::can_use_cds_with_metaspace_addr(char* metaspace_base, address cd
   address lower_base = MIN2((address)metaspace_base, cds_base);
   address higher_address = MAX2((address)(cds_base + FileMapInfo::shared_spaces_size()),
                                 (address)(metaspace_base + compressed_class_space_size()));
-  return ((uint64_t)(higher_address - lower_base) < UnscaledClassSpaceMax);
+  return ((uint64_t)(higher_address - lower_base) <= UnscaledClassSpaceMax);
 }
 
 // Try to allocate the metaspace at the requested addr.
