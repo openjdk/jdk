@@ -706,6 +706,12 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
                 final CallNode.EvalArgs evalArgs = callNode.getEvalArgs();
                 // load evaluated code
                 load(evalArgs.getCode(), Type.OBJECT);
+                // load second and subsequent args for side-effect
+                final List<Expression> args = callNode.getArgs();
+                final int numArgs = args.size();
+                for (int i = 1; i < numArgs; i++) {
+                    load(args.get(i)).pop();
+                }
                 // special/extra 'eval' arguments
                 load(evalArgs.getThis());
                 method.load(evalArgs.getLocation());
