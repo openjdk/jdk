@@ -23,16 +23,22 @@
 
 /*
  * @test
- * @bug 8026844
- * @bug 8027353
- * @summary Test non constant subtractExact
- * @compile SubExactLNonConstantTest.java Verify.java
- * @run main SubExactLNonConstantTest
+ * @bug 8026949
+ * @summary Test ensures correct VM output during startup
+ * @library ../../testlibrary
  *
  */
+import com.oracle.java.testlibrary.*;
 
-public class SubExactLNonConstantTest {
-    public static void main(String[] args) {
-        Verify.NonConstantLongTest.verify(new Verify.SubExactL());
-    }
+public class StartupOutput {
+  public static void main(String[] args) throws Exception {
+    ProcessBuilder pb;
+    OutputAnalyzer out;
+
+    pb = ProcessTools.createJavaProcessBuilder("-Xint", "-XX:+DisplayVMOutputToStdout", "-version");
+    out = new OutputAnalyzer(pb.start());
+    out.shouldNotContain("no space to run compilers");
+
+    out.shouldHaveExitValue(0);
+  }
 }
