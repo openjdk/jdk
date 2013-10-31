@@ -295,7 +295,7 @@ public final class Parameter implements AnnotatedElement {
     public <T extends Annotation> T[] getAnnotationsByType(Class<T> annotationClass) {
         Objects.requireNonNull(annotationClass);
 
-        return AnnotationSupport.getMultipleAnnotations(declaredAnnotations(), annotationClass);
+        return AnnotationSupport.getDirectlyAndIndirectlyPresent(declaredAnnotations(), annotationClass);
     }
 
     /**

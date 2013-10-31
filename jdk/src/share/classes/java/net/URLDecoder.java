@@ -43,7 +43,7 @@ import java.io.*;
  * as the start of a special escaped sequence.
  * <p>
  * The following rules are applied in the conversion:
- * <p>
+ *
  * <ul>
  * <li>The alphanumeric characters &quot;{@code a}&quot; through
  *     &quot;{@code z}&quot;, &quot;{@code A}&quot; through

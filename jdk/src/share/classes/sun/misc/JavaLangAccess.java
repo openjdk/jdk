@@ -28,6 +28,7 @@ package sun.misc;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Executable;
 import java.security.AccessControlContext;
+import java.util.Map;
 
 import sun.reflect.ConstantPool;
 import sun.reflect.annotation.AnnotationType;
@@ -48,6 +49,11 @@ public interface JavaLangAccess {
      * (This method only applies to annotation types.)
      */
     AnnotationType getAnnotationType(Class<?> klass);
+
+    /**
+     * Get the declared annotations for a given class, indexed by their types.
+     */
+    Map<Class<? extends Annotation>, Annotation> getDeclaredAnnotationMap(Class<?> klass);
 
     /**
      * Get the array of bytes that is the class-file representation

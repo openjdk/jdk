@@ -1248,7 +1248,7 @@ public final class Locale implements Cloneable, Serializable {
      * Returns a string representation of this <code>Locale</code>
      * object, consisting of language, country, variant, script,
      * and extensions as below:
-     * <p><blockquote>
+     * <blockquote>
      * language + "_" + country + "_" + (variant + "_#" | "#") + script + "-" + extensions
      * </blockquote>
      *
@@ -2199,7 +2199,7 @@ public final class Locale implements Cloneable, Serializable {
      * are exactly "ja", "JP", "JP" or "th", "TH", "TH" and script/extensions
      * fields are empty, this method supplies <code>UNICODE_LOCALE_EXTENSION</code>
      * "ca"/"japanese" (calendar type is "japanese") or "nu"/"thai" (number script
-     * type is "thai"). See <a href="Locale.html#special_cases_constructor"/>Special Cases</a>
+     * type is "thai"). See <a href="Locale.html#special_cases_constructor">Special Cases</a>
      * for more information.
      *
      * @return an instance of <code>Locale</code> equivalent to
