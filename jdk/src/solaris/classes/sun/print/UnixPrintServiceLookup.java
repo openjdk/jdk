@@ -48,6 +48,7 @@ import javax.print.attribute.PrintRequestAttributeSet;
 import javax.print.attribute.PrintServiceAttribute;
 import javax.print.attribute.PrintServiceAttributeSet;
 import javax.print.attribute.standard.PrinterName;
+import javax.print.attribute.standard.PrinterURI;
 import java.io.File;
 import java.io.FileReader;
 import java.net.URL;
@@ -203,6 +204,33 @@ public class UnixPrintServiceLookup extends PrintServiceLookup
         }
     }
 
+    private int addPrintServiceToList(ArrayList printerList, PrintService ps) {
+        int index = printerList.indexOf(ps);
+        // Check if PrintService with same name is already in the list.
+        if (CUPSPrinter.isCupsRunning() && index != -1) {
+            // Bug in Linux: Duplicate entry of a remote printer
+            // and treats it as local printer but it is returning wrong
+            // information when queried using IPP. Workaround is to remove it.
+            // Even CUPS ignores these entries as shown in lpstat or using
+            // their web configuration.
+            PrinterURI uri = (PrinterURI)ps.getAttribute(PrinterURI.class);
+            if (uri.getURI().getHost().equals("localhost")) {
+                IPPPrintService.debug_println(debugPrefix+"duplicate PrintService, ignoring the new local printer: "+ps);
+                return index;  // Do not add this.
+            }
+            PrintService oldPS = (PrintService)(printerList.get(index));
+            uri = (PrinterURI)oldPS.getAttribute(PrinterURI.class);
+            if (uri.getURI().getHost().equals("localhost")) {
+                IPPPrintService.debug_println(debugPrefix+"duplicate PrintService, removing existing local printer: "+oldPS);
+                printerList.remove(oldPS);
+            } else {
+                return index;
+            }
+        }
+        printerList.add(ps);
+        return (printerList.size() - 1);
+    }
+
 
     // refreshes "printServices"
     public synchronized void refreshServices() {
@@ -246,8 +274,7 @@ public class UnixPrintServiceLookup extends PrintServiceLookup
             }
             if ((defaultPrintService != null)
                 && printers[p].equals(getPrinterDestName(defaultPrintService))) {
-                printerList.add(defaultPrintService);
-                defaultIndex = printerList.size() - 1;
+                defaultIndex = addPrintServiceToList(printerList, defaultPrintService);
             } else {
                 if (printServices == null) {
                     IPPPrintService.debug_println(debugPrefix+
@@ -255,9 +282,10 @@ public class UnixPrintServiceLookup extends PrintServiceLookup
 
                     if (CUPSPrinter.isCupsRunning()) {
                         try {
-                            printerList.add(new IPPPrintService(printers[p],
-                                                                printerURIs[p],
-                                                                true));
+                            addPrintServiceToList(printerList,
+                                                  new IPPPrintService(printers[p],
+                                                                   printerURIs[p],
+                                                                   true));
                         } catch (Exception e) {
                             IPPPrintService.debug_println(debugPrefix+
                                                           " getAllPrinters Exception "+
@@ -282,10 +310,10 @@ public class UnixPrintServiceLookup extends PrintServiceLookup
                     if (j == printServices.length) {      // not found?
                         if (CUPSPrinter.isCupsRunning()) {
                             try {
-                                printerList.add(new IPPPrintService(
-                                                               printers[p],
-                                                               printerURIs[p],
-                                                               true));
+                                addPrintServiceToList(printerList,
+                                             new IPPPrintService(printers[p],
+                                                                 printerURIs[p],
+                                                                 true));
                             } catch (Exception e) {
                                 IPPPrintService.debug_println(debugPrefix+
                                                               " getAllPrinters Exception "+
@@ -312,9 +340,7 @@ public class UnixPrintServiceLookup extends PrintServiceLookup
 
         //if defaultService is not found in printerList
         if (defaultIndex == -1 && defaultPrintService != null) {
-            //add default to the list
-            printerList.add(defaultPrintService);
-            defaultIndex = printerList.size() - 1;
+            defaultIndex = addPrintServiceToList(printerList, defaultPrintService);
         }
 
         printServices = (PrintService[])printerList.toArray(
@@ -563,11 +589,14 @@ public class UnixPrintServiceLookup extends PrintServiceLookup
 
         // clear defaultPrintService
         defaultPrintService = null;
+        String psuri = null;
 
         IPPPrintService.debug_println("isRunning ? "+
                                       (CUPSPrinter.isCupsRunning()));
         if (CUPSPrinter.isCupsRunning()) {
-            defaultPrinter = CUPSPrinter.getDefaultPrinter();
+            String[] printerInfo = CUPSPrinter.getDefaultPrinter();
+            defaultPrinter = printerInfo[0];
+            psuri = printerInfo[1];
         } else {
             if (isMac() || isSysV()) {
                 defaultPrinter = getDefaultPrinterNameSysV();
@@ -590,12 +619,17 @@ public class UnixPrintServiceLookup extends PrintServiceLookup
         if (defaultPrintService == null) {
             if (CUPSPrinter.isCupsRunning()) {
                 try {
-                    PrintService defaultPS =
-                        new IPPPrintService(defaultPrinter,
+                    PrintService defaultPS;
+                    if (psuri != null) {
+                        defaultPS = new IPPPrintService(defaultPrinter,
+                                                        psuri, true);
+                    } else {
+                        defaultPS = new IPPPrintService(defaultPrinter,
                                             new URL("http://"+
                                                     CUPSPrinter.getServer()+":"+
                                                     CUPSPrinter.getPort()+"/"+
                                                     defaultPrinter));
+                    }
                     defaultPrintService = defaultPS;
                 } catch (Exception e) {
                 }
