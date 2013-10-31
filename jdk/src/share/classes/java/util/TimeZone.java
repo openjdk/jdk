@@ -544,7 +544,16 @@ abstract public class TimeZone implements Serializable, Cloneable {
      * @since 1.8
      */
     public ZoneId toZoneId() {
-        return ZoneId.of(getID(), ZoneId.SHORT_IDS);
+        String id = getID();
+        if (ZoneInfoFile.useOldMapping() && id.length() == 3) {
+            if ("EST".equals(id))
+                return ZoneId.of("America/New_York");
+            if ("MST".equals(id))
+                return ZoneId.of("America/Denver");
+            if ("HST".equals(id))
+                return ZoneId.of("America/Honolulu");
+        }
+        return ZoneId.of(id, ZoneId.SHORT_IDS);
     }
 
     private static TimeZone getTimeZone(String ID, boolean fallback) {
@@ -597,7 +606,7 @@ abstract public class TimeZone implements Serializable, Cloneable {
      * Otherwise, the method takes the following steps to determine the default
      * time zone.
      *
-     * <p><ul>
+     * <ul>
      * <li>Use the {@code user.timezone} property value as the default
      * time zone ID if it's available.</li>
      * <li>Detect the platform time zone ID. The source of the

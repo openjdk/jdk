@@ -97,25 +97,14 @@ public class TCKOffsetTimeSerialization extends AbstractTCKTest {
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         try (DataOutputStream dos = new DataOutputStream(baos) ) {
             dos.writeByte(9);       // java.time.Ser.OFFSET_TIME_TYPE
-        }
-        byte[] bytes = baos.toByteArray();
-        ByteArrayOutputStream baosTime = new ByteArrayOutputStream();
-        try (DataOutputStream dos = new DataOutputStream(baosTime) ) {
-            dos.writeByte(4);
             dos.writeByte(22);
             dos.writeByte(17);
             dos.writeByte(59);
             dos.writeInt(464_000_000);
-        }
-        byte[] bytesTime = baosTime.toByteArray();
-        ByteArrayOutputStream baosOffset = new ByteArrayOutputStream();
-        try (DataOutputStream dos = new DataOutputStream(baosOffset) ) {
-            dos.writeByte(8);
             dos.writeByte(4);  // quarter hours stored: 3600 / 900
         }
-        byte[] bytesOffset = baosOffset.toByteArray();
-        assertSerializedBySer(OffsetTime.of(22, 17, 59, 464_000_000, ZoneOffset.ofHours(1)), bytes,
-                bytesTime, bytesOffset);
+        byte[] bytes = baos.toByteArray();
+        assertSerializedBySer(OffsetTime.of(22, 17, 59, 464_000_000, ZoneOffset.ofHours(1)), bytes);
     }
 
 

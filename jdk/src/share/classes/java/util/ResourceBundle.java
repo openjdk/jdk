@@ -1084,7 +1084,6 @@ public abstract class ResourceBundle {
      * bundles. Conceptually, the bundle loading process with the given
      * <code>control</code> is performed in the following steps.
      *
-     * <p>
      * <ol>
      * <li>This factory method looks up the resource bundle in the cache for
      * the specified <code>baseName</code>, <code>targetLocale</code> and

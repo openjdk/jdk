@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,7 +36,6 @@ import javax.management.*;
 import static java.lang.management.ManagementFactory.*;
 import java.util.List;
 import java.util.Map;
-import java.util.Properties;
 import com.sun.management.GcInfo;
 
 public class ProxyTypeMapping {
@@ -162,23 +161,23 @@ public class ProxyTypeMapping {
     }
 
     private static void checkMemoryUsage() throws Exception {
-        // sanity check to have non-zero usage
+        // sanity check to have non-negative usage
         MemoryUsage u1 = memory.getHeapMemoryUsage();
         MemoryUsage u2 = memory.getNonHeapMemoryUsage();
         MemoryUsage u3 = heapPool.getUsage();
         MemoryUsage u4 = nonHeapPool.getUsage();
-        if (u1.getCommitted() <= 0 ||
-            u2.getCommitted() <= 0 ||
-            u3.getCommitted() <= 0 ||
-            u4.getCommitted() <= 0) {
+        if (u1.getCommitted() < 0 ||
+            u2.getCommitted() < 0 ||
+            u3.getCommitted() < 0 ||
+            u4.getCommitted() < 0) {
             throw new RuntimeException("TEST FAILED: " +
-                " expected non-zero committed usage");
+                " expected non-negative committed usage");
         }
         memory.gc();
         MemoryUsage u5 = heapPool.getCollectionUsage();
-        if (u5.getCommitted() <= 0) {
+        if (u5.getCommitted() < 0) {
             throw new RuntimeException("TEST FAILED: " +
-                " expected non-zero committed collected usage");
+                " expected non-negative committed collected usage");
         }
     }
 
