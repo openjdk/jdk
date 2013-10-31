@@ -127,7 +127,7 @@ public abstract class SnmpMibAgent
      *            be retrieved. This list is composed of
      *            <CODE>SnmpVarBind</CODE> objects.
      *
-     * @exception SnmpStatusException An error occured during the operation.
+     * @exception SnmpStatusException An error occurred during the operation.
      */
     @Override
     public abstract void get(SnmpMibRequest req)
@@ -142,7 +142,7 @@ public abstract class SnmpMibAgent
      *            OIDs from which the next variables should be retrieved.
      *            This list is composed of <CODE>SnmpVarBind</CODE> objects.
      *
-     * @exception SnmpStatusException An error occured during the operation.
+     * @exception SnmpStatusException An error occurred during the operation.
      */
     @Override
     public abstract void getNext(SnmpMibRequest req)
@@ -166,7 +166,7 @@ public abstract class SnmpMibAgent
      *    following the first <CODE>nonRepeat</CODE> variables for which
      *    multiple lexicographic successors are requested.
      *
-     * @exception SnmpStatusException An error occured during the operation.
+     * @exception SnmpStatusException An error occurred during the operation.
      */
     @Override
     public abstract void getBulk(SnmpMibRequest req, int nonRepeat,
@@ -184,7 +184,7 @@ public abstract class SnmpMibAgent
      *            be set. This list is composed of
      *            <CODE>SnmpVarBind</CODE> objects.
      *
-     * @exception SnmpStatusException An error occured during the operation.
+     * @exception SnmpStatusException An error occurred during the operation.
      *            Throwing an exception in this method will break the
      *            atomicity of the SET operation. Care must be taken so that
      *            the exception is thrown in the {@link #check(SnmpMibRequest)}
@@ -643,7 +643,7 @@ public abstract class SnmpMibAgent
      *
      * @return The variable list containing returned values.
      *
-     * @exception SnmpStatusException An error occured during the operation.
+     * @exception SnmpStatusException An error occurred during the operation.
      */
     void getBulkWithGetNext(SnmpMibRequest req, int nonRepeat, int maxRepeat)
         throws SnmpStatusException {

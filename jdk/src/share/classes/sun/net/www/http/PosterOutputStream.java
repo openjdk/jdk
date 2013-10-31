@@ -81,7 +81,7 @@ public class PosterOutputStream extends ByteArrayOutputStream {
     /**
      * Resets the <code>count</code> field of this output
      * stream to zero, so that all currently accumulated output in the
-     * ouput stream is discarded. The output stream can be used again,
+     * output stream is discarded. The output stream can be used again,
      * reusing the already allocated buffer space. If the output stream
      * has been closed, then this method has no effect.
      *

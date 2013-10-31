@@ -614,7 +614,7 @@ public class ComponentSampleModel extends SampleModel
      *
      * @throws NullPointerException if data is null.
      * @throws ArrayIndexOutOfBoundsException if the coordinates are
-     * not in bounds, or if obj is too small to hold the ouput.
+     * not in bounds, or if obj is too small to hold the output.
      */
     public Object getDataElements(int x, int y, Object obj, DataBuffer data) {
         if ((x < 0) || (y < 0) || (x >= width) || (y >= height)) {

@@ -1340,7 +1340,7 @@ public abstract class PathGraphics extends ProxyGraphics2D {
      *
      * @param   img     The image to be drawn.
      *                  This method does nothing if <code>img</code> is null.
-     * @param   xform   Used to tranform the image before drawing.
+     * @param   xform   Used to transform the image before drawing.
      *                  This can be null.
      * @param   bgcolor This color is drawn where the image has transparent
      *                  pixels. If this parameter is null then the

@@ -40,7 +40,7 @@ struct ip {
         short   ip_len;                 /* total length */
         unsigned short ip_id;                   /* identification */
         short   ip_off;                 /* fragment offset field */
-#define IP_DF 0x4000                    /* dont fragment flag */
+#define IP_DF 0x4000                    /* don't fragment flag */
 #define IP_MF 0x2000                    /* more fragments flag */
         unsigned char   ip_ttl;                 /* time to live */
         unsigned char   ip_p;                   /* protocol */

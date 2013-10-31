@@ -581,7 +581,7 @@ final class SnmpRequestTree {
 
 
             } else if (pos < entrycount) {
-                // Vectors are large enough to accomodate one additional
+                // Vectors are large enough to accommodate one additional
                 // entry.
                 //
                 // Shift vectors, making an empty room at `pos'

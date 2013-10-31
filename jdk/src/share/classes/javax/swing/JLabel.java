@@ -1457,7 +1457,7 @@ public class JLabel extends JComponent implements SwingConstants, Accessible
          * If there is no selection, but there is
          * a caret, the start and end offsets will be the same.
          *
-         * @return the index into teh text of the end of the selection
+         * @return the index into the text of the end of the selection
          * @since 1.3
          */
         public int getSelectionEnd() {
