@@ -158,8 +158,8 @@ class AbstractInterpreter: AllStatic {
   // Runtime support
 
   // length = invoke bytecode length (to advance to next bytecode)
-  static address    deopt_entry   (TosState state, int length) { ShouldNotReachHere(); return NULL; }
-  static address    return_entry  (TosState state, int length) { ShouldNotReachHere(); return NULL; }
+  static address deopt_entry(TosState state, int length) { ShouldNotReachHere(); return NULL; }
+  static address return_entry(TosState state, int length, Bytecodes::Code code) { ShouldNotReachHere(); return NULL; }
 
   static address    rethrow_exception_entry()                   { return _rethrow_exception_entry; }
 
