@@ -71,6 +71,8 @@ import com.sun.source.doctree.SinceTree;
 import com.sun.source.doctree.StartElementTree;
 import com.sun.source.doctree.TextTree;
 import com.sun.source.doctree.ThrowsTree;
+import com.sun.source.doctree.UnknownBlockTagTree;
+import com.sun.source.doctree.UnknownInlineTagTree;
 import com.sun.source.doctree.ValueTree;
 import com.sun.source.doctree.VersionTree;
 import com.sun.source.util.DocTreePath;
@@ -839,6 +841,23 @@ public class Checker extends DocTreePathScanner<Void, Void> {
             if (isCheckedException(tl) && !foundThrows.contains(tl))
                 reportMissing("dc.missing.throws", tl);
         }
+    }
+
+    @Override
+    public Void visitUnknownBlockTag(UnknownBlockTagTree tree, Void ignore) {
+        checkUnknownTag(tree, tree.getTagName());
+        return super.visitUnknownBlockTag(tree, ignore);
+    }
+
+    @Override
+    public Void visitUnknownInlineTag(UnknownInlineTagTree tree, Void ignore) {
+        checkUnknownTag(tree, tree.getTagName());
+        return super.visitUnknownInlineTag(tree, ignore);
+    }
+
+    private void checkUnknownTag(DocTree tree, String tagName) {
+        if (env.customTags != null && !env.customTags.contains(tagName))
+            env.messages.error(SYNTAX, tree, "dc.tag.unknown", tagName);
     }
 
     @Override

@@ -514,9 +514,11 @@ h1.hidden {
     display:block;
     margin:3px 0 0 0;
 }
-.strong {
+.deprecatedLabel, .descfrmTypeLabel, .memberNameLabel, .memberNameLink,
+.overrideSpecifyLabel, .packageHierarchyLabel, .paramLabel, .returnLabel,
+.seeLabel, .simpleTagLabel, .throwsLabel, .typeNameLabel, .typeNameLink {
     font-weight:bold;
 }
-.italic {
+.deprecationComment, .emphasizedPhrase, .interfaceName {
     font-style:italic;
 }
