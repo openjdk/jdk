@@ -36,6 +36,23 @@ implements the RMI Transport protocol and HTTP tunneling.
 mechanism has been deprecated. See {@link java.rmi.server.RMISocketFactory} for
 further information.</em>
 
+<p><strong>Deprecated: Skeletons and Static Stubs.</strong>
+
+<em>Skeletons and statically generated stubs are deprecated.  This
+includes the APIs in this package that require the use of skeletons
+or static stubs, the runtime support for them, and the use of the
+{@code rmic} stub compiler to generate them.  Support for skeletons
+and static stubs may be removed in a future release of the
+platform. Skeletons are unnecessary, as server-side method dispatching
+is handled directly by the RMI runtime. Statically generated stubs are
+unnecessary, as stubs are generated dynamically using {@link
+java.lang.reflect.Proxy Proxy} objects. See {@link
+java.rmi.server.UnicastRemoteObject UnicastRemoteObject} for
+information about dynamic stub generation. Generation of skeletons and
+static stubs was typically performed as part of an application's build
+process by calling the {@code rmic} tool. This is unnecessary, and
+calls to {@code rmic} can simply be omitted.</em>
+
 <!--
 <h2>Package Specification</h2>
 
