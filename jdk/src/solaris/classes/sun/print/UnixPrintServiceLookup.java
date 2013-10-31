@@ -62,7 +62,7 @@ public class UnixPrintServiceLookup extends PrintServiceLookup
     implements BackgroundServiceLookup, Runnable {
 
     /* Remind: the current implementation is static, as its assumed
-     * its preferable to minimise creation of PrintService instances.
+     * its preferable to minimize creation of PrintService instances.
      * Later we should add logic to add/remove services on the fly which
      * will take a hit of needing to regather the list of services.
      */

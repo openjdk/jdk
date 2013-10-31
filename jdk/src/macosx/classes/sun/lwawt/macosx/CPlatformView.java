@@ -96,14 +96,6 @@ public class CPlatformView extends CFRetainedResource {
         return peer;
     }
 
-    public void enterFullScreenMode() {
-        CWrapper.NSView.enterFullScreenMode(ptr);
-    }
-
-    public void exitFullScreenMode() {
-        CWrapper.NSView.exitFullScreenMode(ptr);
-    }
-
     public void setToolTip(String msg) {
         CWrapper.NSView.setToolTip(ptr, msg);
     }

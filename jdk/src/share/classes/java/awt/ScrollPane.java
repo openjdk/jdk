@@ -425,8 +425,8 @@ public class ScrollPane extends Container implements Accessible {
 
     /**
      * Determine the size to allocate the child component.
-     * If the viewport area is bigger than the childs
-     * preferred size then the child is allocated enough
+     * If the viewport area is bigger than the preferred size
+     * of the child then the child is allocated enough
      * to fill the viewport, otherwise the child is given
      * it's preferred size.
      */

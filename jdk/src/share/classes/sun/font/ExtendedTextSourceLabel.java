@@ -569,7 +569,7 @@ class ExtendedTextSourceLabel extends ExtendedTextLabel implements Decoration.La
 * The output maps this to character positions, and therefore caret positions, via the following assumptions:
 * - zero-advance glyphs do not contribute to the advance of their character (i.e. position is ignored), conversely
 *   if a glyph is to contribute to the advance of its character it must have a non-zero (float) advance
-* - no carets can appear between a zero width character and its preceeding character, where 'preceeding' is
+* - no carets can appear between a zero width character and its preceding character, where 'preceding' is
 *   defined logically.
 * - no carets can appear within a split character
 * - no carets can appear within a local reordering (i.e. Indic reordering, or non-adjacent split characters)

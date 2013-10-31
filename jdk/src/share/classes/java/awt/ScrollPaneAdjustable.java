@@ -336,7 +336,7 @@ public class ScrollPaneAdjustable implements Adjustable, Serializable {
      * the AdjustementEvent with specified type and value.
      *
      * @param v the new value of the scrollbar
-     * @param type the type of the scrolling operation occured
+     * @param type the type of the scrolling operation occurred
      */
     private void setTypedValue(int v, int type) {
         v = Math.max(v, minimum);

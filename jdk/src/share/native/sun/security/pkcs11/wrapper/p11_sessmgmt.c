@@ -539,7 +539,7 @@ NotifyEncapsulation * removeFirstNotifyEntry(JNIEnv *env) {
 #ifndef NO_CALLBACKS
 
 /*
- * The function handling notify callbacks. It casts the pApplication paramter
+ * The function handling notify callbacks. It casts the pApplication parameter
  * back to a NotifyEncapsulation structure and retrieves the Notify object and
  * the application data from it.
  *

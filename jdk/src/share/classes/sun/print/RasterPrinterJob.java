@@ -205,7 +205,7 @@ public abstract class RasterPrinterJob extends PrinterJob {
     /* Instance Variables */
 
     /**
-     * Used to minimise GC & reallocation of band when printing
+     * Used to minimize GC & reallocation of band when printing
      */
     private int cachedBandWidth = 0;
     private int cachedBandHeight = 0;

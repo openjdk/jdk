@@ -269,7 +269,7 @@ public interface Shape {
      * Tests if the interior of the <code>Shape</code> entirely contains
      * the specified rectangular area.  All coordinates that lie inside
      * the rectangular area must lie within the <code>Shape</code> for the
-     * entire rectanglar area to be considered contained within the
+     * entire rectangular area to be considered contained within the
      * <code>Shape</code>.
      * <p>
      * The {@code Shape.contains()} method allows a {@code Shape}

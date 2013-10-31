@@ -1170,7 +1170,7 @@ class Main {
     }
 
     /**
-     * Print an error mesage; like something is broken
+     * Print an error message; like something is broken
      */
     protected void error(String s) {
         err.println(s);

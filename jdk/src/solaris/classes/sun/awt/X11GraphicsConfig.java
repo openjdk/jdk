@@ -95,7 +95,7 @@ public class X11GraphicsConfig extends GraphicsConfiguration
     }
 
     /*
-     * Note this method is currently here for backward compatability
+     * Note this method is currently here for backward compatibility
      * as this was the method used in jdk 1.2 beta4 to create the
      * X11GraphicsConfig objects. Java3D code had called this method
      * explicitly so without this, if a user tries to use JDK1.2 fcs

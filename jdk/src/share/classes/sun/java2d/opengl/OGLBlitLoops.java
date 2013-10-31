@@ -720,7 +720,7 @@ class OGLTextureToSurfaceTransform extends TransformBlit {
 }
 
 /**
- * This general Blit implemenation converts any source surface to an
+ * This general Blit implementation converts any source surface to an
  * intermediate IntArgbPre surface, and then uses the more specific
  * IntArgbPre->OpenGLSurface/Texture loop to get the intermediate
  * (premultiplied) surface down to OpenGL.
