@@ -780,6 +780,10 @@ CompilerCounters::CompilerCounters(const char* thread_name, int instance, TRAPS)
 void CompileBroker::compilation_init() {
   _last_method_compiled[0] = '\0';
 
+  // No need to initialize compilation system if we do not use it.
+  if (!UseCompiler) {
+    return;
+  }
 #ifndef SHARK
   // Set the interface to the current compiler(s).
   int c1_count = CompilationPolicy::policy()->compiler_count(CompLevel_simple);
