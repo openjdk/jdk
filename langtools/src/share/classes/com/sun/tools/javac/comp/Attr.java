@@ -2254,7 +2254,8 @@ public class Attr extends JCTree.Visitor {
         // empty annotations, if only declaration annotations were given.
         // This method will raise an error for such a type.
         for (JCAnnotation ai : annotations) {
-            if (typeAnnotations.annotationType(ai.attribute, sym) == TypeAnnotations.AnnotationType.DECLARATION) {
+            if (!ai.type.isErroneous() &&
+                typeAnnotations.annotationType(ai.attribute, sym) == TypeAnnotations.AnnotationType.DECLARATION) {
                 log.error(ai.pos(), "annotation.type.not.applicable");
             }
         }
