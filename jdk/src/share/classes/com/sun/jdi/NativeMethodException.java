@@ -32,6 +32,7 @@ package com.sun.jdi;
  * @author Gordon Hirsch
  * @since  1.3
  */
+@jdk.Exported
 public class NativeMethodException extends RuntimeException {
 
     private static final long serialVersionUID = 3924951669039469992L;

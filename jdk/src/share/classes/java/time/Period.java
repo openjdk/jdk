@@ -79,7 +79,7 @@ import java.time.temporal.ChronoUnit;
 import java.time.temporal.Temporal;
 import java.time.temporal.TemporalAccessor;
 import java.time.temporal.TemporalAmount;
-import java.time.temporal.TemporalQuery;
+import java.time.temporal.TemporalQueries;
 import java.time.temporal.TemporalUnit;
 import java.time.temporal.UnsupportedTemporalTypeException;
 import java.util.Arrays;
@@ -958,7 +958,7 @@ public final class Period
      */
     private void validateChrono(TemporalAccessor temporal) {
         Objects.requireNonNull(temporal, "temporal");
-        Chronology temporalChrono = temporal.query(TemporalQuery.chronology());
+        Chronology temporalChrono = temporal.query(TemporalQueries.chronology());
         if (temporalChrono != null && IsoChronology.INSTANCE.equals(temporalChrono) == false) {
             throw new DateTimeException("Chronology mismatch, expected: ISO, actual: " + temporalChrono.getId());
         }

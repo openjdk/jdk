@@ -86,7 +86,7 @@ import java.util.Map;
  * Dates are aligned such that {@code 2484-01-01 (Buddhist)} is {@code 1941-01-01 (ISO)}.
  * <p>
  * The fields are defined as follows:
- * <p><ul>
+ * <ul>
  * <li>era - There are two eras, the current 'Buddhist' (ERA_BE) and the previous era (ERA_BEFORE_BE).
  * <li>year-of-era - The year-of-era for the current era increases uniformly from the epoch at year one.
  *  For the previous era the year increases from one as time goes backwards.
@@ -99,14 +99,14 @@ import java.util.Map;
  * <li>day-of-year - The ThaiBuddhist day-of-year exactly matches ISO.
  * <li>leap-year - The ThaiBuddhist leap-year pattern exactly matches ISO, such that the two calendars
  *  are never out of step.
- * </ul><p>
+ * </ul>
  *
  * @implSpec
  * This class is immutable and thread-safe.
  *
  * @since 1.8
  */
-public final class ThaiBuddhistChronology extends Chronology implements Serializable {
+public final class ThaiBuddhistChronology extends AbstractChronology implements Serializable {
 
     /**
      * Singleton instance of the Buddhist chronology.

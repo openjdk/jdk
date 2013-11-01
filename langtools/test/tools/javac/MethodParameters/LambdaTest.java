@@ -27,7 +27,7 @@
  * @summary javac should generate method parameters correctly.
  * @build Tester
  * @compile -parameters LambdaTest.java
- * @run main Tester LambdaTest
+ * @run main Tester LambdaTest LambdaTest.out
  */
 
 /**

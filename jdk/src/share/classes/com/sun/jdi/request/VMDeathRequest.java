@@ -56,6 +56,7 @@ import com.sun.jdi.*;
  * @author Robert Field
  * @since  1.4
  */
+@jdk.Exported
 public interface VMDeathRequest extends EventRequest {
 
 }
