@@ -133,7 +133,7 @@ public class AnnotationTypeOptionalMemberWriterImpl extends
      */
     public void addSummaryAnchor(ClassDoc cd, Content memberTree) {
         memberTree.addContent(writer.getMarkerAnchor(
-                "annotation_type_optional_element_summary"));
+                SectionName.ANNOTATION_TYPE_OPTIONAL_ELEMENT_SUMMARY));
     }
 
     /**
@@ -141,7 +141,8 @@ public class AnnotationTypeOptionalMemberWriterImpl extends
      */
     protected Content getNavSummaryLink(ClassDoc cd, boolean link) {
         if (link) {
-            return writer.getHyperLink("annotation_type_optional_element_summary",
+            return writer.getHyperLink(
+                    SectionName.ANNOTATION_TYPE_OPTIONAL_ELEMENT_SUMMARY,
                     writer.getResource("doclet.navAnnotationTypeOptionalMember"));
         } else {
             return writer.getResource("doclet.navAnnotationTypeOptionalMember");

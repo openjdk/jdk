@@ -136,8 +136,7 @@ public final class BooleanType extends Type {
             invokeStatic(method, JSType.TO_LONG);
         } else if (to.isString()) {
             invokeStatic(method, VALUE_OF);
-            invokeStatic(method, JSType.TO_PRIMITIVE);
-            invokeStatic(method, JSType.TO_STRING);
+            invokeStatic(method, JSType.TO_PRIMITIVE_TO_STRING);
         } else if (to.isObject()) {
             invokeStatic(method, VALUE_OF);
         } else {

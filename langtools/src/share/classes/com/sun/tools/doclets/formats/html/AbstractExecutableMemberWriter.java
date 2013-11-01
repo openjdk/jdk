@@ -305,6 +305,6 @@ public abstract class AbstractExecutableMemberWriter extends AbstractMemberWrite
             buf.append(t.dimension());
         }
         buf.append(")");
-        return foundTypeVariable ? buf.toString() : null;
+        return foundTypeVariable ? writer.getName(buf.toString()) : null;
     }
 }

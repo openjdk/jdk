@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,262 +22,318 @@
  */
 
 /* @test
- * @bug 7006126 8020669 8024788
+ * @bug 7006126 8020669 8024788 8019526
  * @build BytesAndLines PassThroughFileSystem
- * @run main BytesAndLines
+ * @run testng BytesAndLines
  * @summary Unit test for methods for Files readAllBytes, readAllLines and
  *     and write methods.
  */
 
-import java.nio.file.*;
-import static java.nio.file.Files.*;
-import java.io.*;
-import java.util.*;
-import java.nio.charset.*;
+import java.nio.ByteBuffer;
+import java.nio.CharBuffer;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.nio.file.OpenOption;
+import static java.nio.file.StandardOpenOption.*;
+import java.nio.charset.Charset;
+import java.nio.charset.CharacterCodingException;
+import java.nio.charset.MalformedInputException;
+import java.nio.charset.UnmappableCharacterException;
+import static java.nio.charset.StandardCharsets.*;
+import java.util.Arrays;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.Random;
+import java.util.concurrent.Callable;
+import java.io.IOException;
 
+import org.testng.annotations.AfterClass;
+import org.testng.annotations.BeforeClass;
+import org.testng.annotations.Test;
+import static org.testng.Assert.*;
+
+@Test(groups = "unit")
 public class BytesAndLines {
-    static final Random rand = new Random();
 
-    static final Charset US_ASCII = Charset.forName("US-ASCII");
+    // data for text files
+    private static final String EN_STRING = "The quick brown fox jumps over the lazy dog";
+    private static final String JA_STRING = "\u65e5\u672c\u8a9e\u6587\u5b57\u5217";
 
-    public static void main(String[] args) throws IOException {
-        testReadAndWriteBytes();
-        testReadLines();
-        testWriteLines();
+    // used for random byte content
+    private static Random RAND = new Random();
+
+    // file used by most tests
+    private Path tmpfile;
+
+    @BeforeClass
+    void setup() throws IOException {
+        tmpfile = Files.createTempFile("blah", null);
+    }
+
+    @AfterClass
+    void cleanup() throws IOException {
+        Files.deleteIfExists(tmpfile);
     }
 
     /**
-     * Test readAllBytes(Path) and write(Path, byte[], OpenOption...)
+     * Returns a byte[] of the given size with random content
      */
-    static void testReadAndWriteBytes() throws IOException {
-        // exercise methods with various sizes
-        testReadAndWriteBytes(0);
-        for (int i=0; i<100; i++) {
-            testReadAndWriteBytes(rand.nextInt(32000));
-        }
+    private byte[] genBytes(int size) {
+        byte[] arr = new byte[size];
+        RAND.nextBytes(arr);
+        return arr;
+    }
 
-        // NullPointerException
+    /**
+     * Exercise NullPointerException
+     */
+    public void testNulls() {
         Path file = Paths.get("foo");
+        byte[] bytes = new byte[100];
         List<String> lines = Collections.emptyList();
-        try {
-            readAllBytes(null);
-            throw new RuntimeException("NullPointerException expected");
-        } catch (NullPointerException ignore) { }
-        try {
-            write(null, lines, Charset.defaultCharset());
-            throw new RuntimeException("NullPointerException expected");
-        } catch (NullPointerException ignore) { }
-        try {
-            write(file, null, Charset.defaultCharset());
-            throw new RuntimeException("NullPointerException expected");
-        } catch (NullPointerException ignore) { }
-        try {
-            write(file, lines, null);
-            throw new RuntimeException("NullPointerException expected");
-        } catch (NullPointerException ignore) { }
-        try {
-            write(file, lines, Charset.defaultCharset(), (OpenOption[])null);
-            throw new RuntimeException("NullPointerException expected");
-        } catch (NullPointerException ignore) { }
-        try {
-            OpenOption[] opts = { null };
-            write(file, lines, Charset.defaultCharset(), opts);
-            throw new RuntimeException("NullPointerException expected");
-        } catch (NullPointerException ignore) { }
 
+        checkNullPointerException(() -> Files.readAllBytes(null));
+
+        checkNullPointerException(() -> Files.write(null, bytes));
+        checkNullPointerException(() -> Files.write(file, (byte[])null));
+        checkNullPointerException(() -> Files.write(file, bytes, (OpenOption[])null));
+        checkNullPointerException(() -> Files.write(file, bytes, new OpenOption[] { null } ));
+
+        checkNullPointerException(() -> Files.readAllLines(null));
+        checkNullPointerException(() -> Files.readAllLines(file, (Charset)null));
+        checkNullPointerException(() -> Files.readAllLines(null, Charset.defaultCharset()));
+
+        checkNullPointerException(() -> Files.write(null, lines));
+        checkNullPointerException(() -> Files.write(file, (List<String>)null));
+        checkNullPointerException(() -> Files.write(file, lines, (OpenOption[])null));
+        checkNullPointerException(() -> Files.write(file, lines, new OpenOption[] { null } ));
+        checkNullPointerException(() -> Files.write(null, lines, Charset.defaultCharset()));
+        checkNullPointerException(() -> Files.write(file, null, Charset.defaultCharset()));
+        checkNullPointerException(() -> Files.write(file, lines, (Charset)null));
+        checkNullPointerException(() -> Files.write(file, lines, Charset.defaultCharset(), (OpenOption[])null));
+        checkNullPointerException(() -> Files.write(file, lines, Charset.defaultCharset(), new OpenOption[] { null } ));
+    }
+
+    private void checkNullPointerException(Callable<?> c) {
+        try {
+            c.call();
+            fail("NullPointerException expected");
+        } catch (NullPointerException ignore) {
+        } catch (Exception e) {
+            fail(e + " not expected");
+        }
+    }
+
+    /**
+     * Exercise Files.readAllBytes(Path) on varied file sizes
+     */
+    public void testReadAllBytes() throws IOException {
+        int size = 0;
+        while (size <= 16*1024) {
+            testReadAllBytes(size);
+            size += 512;
+        }
+    }
+
+    private void testReadAllBytes(int size) throws IOException {
+        // write bytes to file (random content)
+        byte[] expected = genBytes(size);
+        Files.write(tmpfile, expected);
+
+        // check expected bytes are read
+        byte[] read = Files.readAllBytes(tmpfile);
+        assertTrue(Arrays.equals(read, expected), "Bytes read not the same as written");
+    }
+
+    /**
+     * Linux specific test to exercise Files.readAllBytes on /proc. This is
+     * special because file sizes are reported as 0 even though the file
+     * has content.
+     */
+    public void testReadAllBytesOnProcFS() throws IOException {
         // read from procfs
         if (System.getProperty("os.name").equals("Linux")) {
-            // Refer to the Linux proc(5) man page for details about /proc/self/stat file
-            // procfs reports it to be zero sized, even though data can be read from it
-            String statFile = "/proc/self/stat";
-            Path pathStat = Paths.get(statFile);
-            byte[] data = Files.readAllBytes(pathStat);
+            Path statFile = Paths.get("/proc/self/stat");
+            byte[] data = Files.readAllBytes(statFile);
             assertTrue(data.length > 0, "Files.readAllBytes('" + statFile + "') failed to read");
         }
-
-        // test readAllBytes on custom file system
-        Path myfile = PassThroughFileSystem.create().getPath(file.toString());
-        for (int size=0; size<=1024; size+=512) {
-            byte[] b1 = new byte[size];
-            rand.nextBytes(b1);
-            Files.write(myfile, b1);
-            byte[] b2 = Files.readAllBytes(myfile);
-            assertTrue(Arrays.equals(b1, b2), "bytes not equal");
-        }
     }
 
-
-    static void testReadAndWriteBytes(int size) throws IOException {
-        Path path = createTempFile("blah", null);
+    /**
+     * Exercise Files.readAllBytes(Path) on custom file system. This is special
+     * because readAllBytes was originally implemented to use FileChannel
+     * and so may not be supported by custom file system providers.
+     */
+    public void testReadAllBytesOnCustomFS() throws IOException {
+        Path myfile = PassThroughFileSystem.create().getPath("myfile");
         try {
-            boolean append = rand.nextBoolean();
-
-            byte[] b1 = new byte[size];
-            rand.nextBytes(b1);
-
-            byte[] b2 = (append) ? new byte[size] : new byte[0];
-            rand.nextBytes(b2);
-
-            // write method should create file if it doesn't exist
-            if (rand.nextBoolean())
-                delete(path);
-
-            // write bytes to file
-            Path target = write(path, b1);
-            assertTrue(target==path, "Unexpected path");
-            assertTrue(size(path) == b1.length, "Unexpected file size");
-
-            // append bytes to file (might be 0 bytes)
-            write(path, b2, StandardOpenOption.APPEND);
-            assertTrue(size(path) == b1.length + b2.length, "Unexpected file size");
-
-            // read entire file
-            byte[] read = readAllBytes(path);
-
-            // check bytes are correct
-            byte[] expected;
-            if (append) {
-                expected = new byte[b1.length + b2.length];
-                System.arraycopy(b1, 0, expected, 0, b1.length);
-                System.arraycopy(b2, 0, expected, b1.length, b2.length);
-            } else {
-                expected = b1;
+            int size = 0;
+            while (size <= 1024) {
+                byte[] b1 = genBytes(size);
+                Files.write(myfile, b1);
+                byte[] b2 = Files.readAllBytes(myfile);
+                assertTrue(Arrays.equals(b1, b2), "bytes not equal");
+                size += 512;
             }
-            assertTrue(Arrays.equals(read, expected),
-                       "Bytes read not the same as bytes written");
         } finally {
-            deleteIfExists(path);
+            Files.deleteIfExists(myfile);
         }
     }
 
     /**
-     * Test readAllLines(Path,Charset)
+     * Exercise Files.write(Path, byte[], OpenOption...) on various sizes
      */
-    static void testReadLines() throws IOException {
-        Path tmpfile = createTempFile("blah", "txt");
-        try {
-            List<String> lines;
+    public void testWriteBytes() throws IOException {
+        int size = 0;
+        while (size < 16*1024) {
+            testWriteBytes(size, false);
+            testWriteBytes(size, true);
+            size += 512;
+        }
+    }
 
-            // zero lines
-            assertTrue(size(tmpfile) == 0, "File should be empty");
-            lines = readAllLines(tmpfile, US_ASCII);
+    private void testWriteBytes(int size, boolean append) throws IOException {
+        byte[] bytes = genBytes(size);
+        Path result = Files.write(tmpfile, bytes);
+        assertTrue(result == tmpfile);
+        if (append) {
+            Files.write(tmpfile, bytes, APPEND);
+            assertTrue(Files.size(tmpfile) == size*2);
+        }
+
+        byte[] expected;
+        if (append) {
+            expected = new byte[size << 1];
+            System.arraycopy(bytes, 0, expected, 0, bytes.length);
+            System.arraycopy(bytes, 0, expected, bytes.length, bytes.length);
+        } else {
+            expected = bytes;
+        }
+
+        byte[] read = Files.readAllBytes(tmpfile);
+        assertTrue(Arrays.equals(read, expected), "Bytes read not the same as written");
+    }
+
+    /**
+     * Exercise Files.readAllLines(Path, Charset)
+     */
+    public void testReadAllLines() throws IOException {
+        // zero lines
+        Files.write(tmpfile, new byte[0]);
+        List<String> lines = Files.readAllLines(tmpfile, US_ASCII);
             assertTrue(lines.isEmpty(), "No line expected");
 
-            // one line
-            byte[] hi = { (byte)'h', (byte)'i' };
-            write(tmpfile, hi);
-            lines = readAllLines(tmpfile, US_ASCII);
-            assertTrue(lines.size() == 1, "One line expected");
-            assertTrue(lines.get(0).equals("hi"), "'Hi' expected");
+        // one line
+        byte[] hi = { (byte)'h', (byte)'i' };
+        Files.write(tmpfile, hi);
+        lines = Files.readAllLines(tmpfile, US_ASCII);
+        assertTrue(lines.size() == 1, "One line expected");
+        assertTrue(lines.get(0).equals("hi"), "'Hi' expected");
 
-            // two lines using platform's line separator
-            List<String> expected = Arrays.asList("hi", "there");
-            write(tmpfile, expected, US_ASCII);
-            assertTrue(size(tmpfile) > 0, "File is empty");
-            lines = readAllLines(tmpfile, US_ASCII);
-            assertTrue(lines.equals(expected), "Unexpected lines");
+        // two lines using platform's line separator
+        List<String> expected = Arrays.asList("hi", "there");
+        Files.write(tmpfile, expected, US_ASCII);
+        assertTrue(Files.size(tmpfile) > 0, "File is empty");
+        lines = Files.readAllLines(tmpfile, US_ASCII);
+        assertTrue(lines.equals(expected), "Unexpected lines");
 
-            // MalformedInputException
-            byte[] bad = { (byte)0xff, (byte)0xff };
-            write(tmpfile, bad);
-            try {
-                readAllLines(tmpfile, US_ASCII);
-                throw new RuntimeException("MalformedInputException expected");
-            } catch (MalformedInputException ignore) { }
+        // MalformedInputException
+        byte[] bad = { (byte)0xff, (byte)0xff };
+        Files.write(tmpfile, bad);
+        try {
+            Files.readAllLines(tmpfile, US_ASCII);
+            fail("MalformedInputException expected");
+        } catch (MalformedInputException ignore) { }
+    }
 
-
-            // NullPointerException
-            try {
-                readAllLines(null, US_ASCII);
-                throw new RuntimeException("NullPointerException expected");
-            } catch (NullPointerException ignore) { }
-            try {
-                readAllLines(tmpfile, null);
-                throw new RuntimeException("NullPointerException expected");
-            } catch (NullPointerException ignore) { }
-
-            // read from procfs
-            if (System.getProperty("os.name").equals("Linux")) {
-                // Refer to the Linux proc(5) man page for details about /proc/self/status file
-                // procfs reports this file to be zero sized, even though data can be read from it
-                String statusFile = "/proc/self/status";
-                Path pathStatus = Paths.get(statusFile);
-                lines = Files.readAllLines(pathStatus, US_ASCII);
-                assertTrue(lines.size() > 0, "Files.readAllLines('" + pathStatus + "') failed to read");
-            }
-
-        } finally {
-            delete(tmpfile);
+    /**
+     * Linux specific test to exercise Files.readAllLines(Path) on /proc. This
+     * is special because file sizes are reported as 0 even though the file
+     * has content.
+     */
+    public void testReadAllLinesOnProcFS() throws IOException {
+        if (System.getProperty("os.name").equals("Linux")) {
+            Path statFile = Paths.get("/proc/self/stat");
+            List<String> lines = Files.readAllLines(statFile);
+            assertTrue(lines.size() > 0, "Files.readAllLines('" + statFile + "') failed to read");
         }
     }
 
     /**
-     * Test write(Path,Iterable<? extends CharSequence>,Charset,OpenOption...)
+     * Exercise Files.readAllLines(Path)
      */
-    static void testWriteLines() throws IOException {
-        Path tmpfile = createTempFile("blah", "txt");
-        try {
-            // write method should create file if it doesn't exist
-            if (rand.nextBoolean())
-                delete(tmpfile);
+    public void testReadAllLinesUTF8() throws IOException {
+        Files.write(tmpfile, encodeAsUTF8(EN_STRING + "\n" + JA_STRING));
 
-            // zero lines
-            Path result = write(tmpfile, Collections.<String>emptyList(), US_ASCII);
-            assert(size(tmpfile) == 0);
-            assert(result == tmpfile);
+        List<String> lines = Files.readAllLines(tmpfile);
+        assertTrue(lines.size() == 2, "Read " + lines.size() + " lines instead of 2");
+        assertTrue(lines.get(0).equals(EN_STRING));
+        assertTrue(lines.get(1).equals(JA_STRING));
 
-            // two lines
-            List<String> lines = Arrays.asList("hi", "there");
-            write(tmpfile, lines, US_ASCII);
-            List<String> actual = readAllLines(tmpfile, US_ASCII);
-            assertTrue(actual.equals(lines), "Unexpected lines");
-
-            // append two lines
-            write(tmpfile, lines, US_ASCII, StandardOpenOption.APPEND);
-            List<String> expected = new ArrayList<String>();
-            expected.addAll(lines);
-            expected.addAll(lines);
-            assertTrue(expected.size() == 4, "List should have 4 elements");
-            actual = readAllLines(tmpfile, US_ASCII);
-            assertTrue(actual.equals(expected), "Unexpected lines");
-
-            // UnmappableCharacterException
-            try {
-                String s = "\u00A0\u00A1";
-                write(tmpfile, Arrays.asList(s), US_ASCII);
-                throw new RuntimeException("UnmappableCharacterException expected");
-            } catch (UnmappableCharacterException ignore) { }
-
-            // NullPointerException
-            try {
-                write(null, lines, US_ASCII);
-                throw new RuntimeException("NullPointerException expected");
-            } catch (NullPointerException ignore) { }
-            try {
-                write(tmpfile, null, US_ASCII);
-                throw new RuntimeException("NullPointerException expected");
-            } catch (NullPointerException ignore) { }
-            try {
-                write(tmpfile, lines, null);
-                throw new RuntimeException("NullPointerException expected");
-            } catch (NullPointerException ignore) { }
-            try {
-                write(tmpfile, lines, US_ASCII, (OpenOption[])null);
-                throw new RuntimeException("NullPointerException expected");
-            } catch (NullPointerException ignore) { }
-            try {
-                OpenOption[] opts = { (OpenOption)null };
-                write(tmpfile, lines, US_ASCII, opts);
-                throw new RuntimeException("NullPointerException expected");
-            } catch (NullPointerException ignore) { }
-
-        } finally {
-            delete(tmpfile);
-        }
+        // a sample of malformed sequences
+        testReadAllLinesMalformedUTF8((byte)0xFF); // one-byte sequence
+        testReadAllLinesMalformedUTF8((byte)0xC0, (byte)0x80);  // invalid first byte
+        testReadAllLinesMalformedUTF8((byte)0xC2, (byte)0x00); // invalid second byte
     }
 
-    static void assertTrue(boolean expr, String errmsg) {
-        if (!expr)
-            throw new RuntimeException(errmsg);
+    private byte[] encodeAsUTF8(String s) throws CharacterCodingException {
+        // not using s.getBytes here so as to catch unmappable characters
+        ByteBuffer bb = UTF_8.newEncoder().encode(CharBuffer.wrap(s));
+        byte[] result = new byte[bb.limit()];
+        bb.get(result);
+        assertTrue(bb.remaining() == 0);
+        return result;
+    }
+
+    private void testReadAllLinesMalformedUTF8(byte... bytes) throws IOException {
+        Files.write(tmpfile, bytes);
+        try {
+            Files.readAllLines(tmpfile);
+            fail("MalformedInputException expected");
+        } catch (MalformedInputException ignore) { }
+    }
+
+    /**
+     * Exercise Files.write(Path, Iterable<? extends CharSequence>, Charset, OpenOption...)
+     */
+    public void testWriteLines() throws IOException {
+        // zero lines
+        Path result = Files.write(tmpfile, Collections.<String>emptyList(), US_ASCII);
+        assert(Files.size(tmpfile) == 0);
+        assert(result == tmpfile);
+
+        // two lines
+        List<String> lines = Arrays.asList("hi", "there");
+        Files.write(tmpfile, lines, US_ASCII);
+        List<String> actual = Files.readAllLines(tmpfile, US_ASCII);
+        assertTrue(actual.equals(lines), "Unexpected lines");
+
+        // append two lines
+        Files.write(tmpfile, lines, US_ASCII, APPEND);
+        List<String> expected = new ArrayList<>();
+        expected.addAll(lines);
+        expected.addAll(lines);
+        assertTrue(expected.size() == 4, "List should have 4 elements");
+        actual = Files.readAllLines(tmpfile, US_ASCII);
+        assertTrue(actual.equals(expected), "Unexpected lines");
+
+        // UnmappableCharacterException
+        try {
+            String s = "\u00A0\u00A1";
+            Files.write(tmpfile, Arrays.asList(s), US_ASCII);
+            fail("UnmappableCharacterException expected");
+        } catch (UnmappableCharacterException ignore) { }
+    }
+
+    /**
+     * Exercise Files.write(Path, Iterable<? extends CharSequence>, OpenOption...)
+     */
+    public void testWriteLinesUTF8() throws IOException {
+        List<String> lines = Arrays.asList(EN_STRING, JA_STRING);
+        Files.write(tmpfile, lines);
+        List<String> actual = Files.readAllLines(tmpfile, UTF_8);
+        assertTrue(actual.equals(lines), "Unexpected lines");
     }
 }

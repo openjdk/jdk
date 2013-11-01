@@ -26,6 +26,7 @@ package java.lang;
 
 import java.io.*;
 import java.lang.reflect.Executable;
+import java.security.AccessControlContext;
 import java.util.Properties;
 import java.util.PropertyPermission;
 import java.util.StringTokenizer;
@@ -1253,6 +1254,9 @@ public final class System {
             }
             public String newStringUnsafe(char[] chars) {
                 return new String(chars, true);
+            }
+            public Thread newThreadWithAcc(Runnable target, AccessControlContext acc) {
+                return new Thread(target, acc);
             }
         });
     }

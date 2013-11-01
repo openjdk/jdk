@@ -1074,6 +1074,27 @@ cmsHPROFILE CMSEXPORT cmsOpenProfileFromMem(const void* MemPtr, cmsUInt32Number 
 }
 
 
+static
+cmsBool SanityCheck(_cmsICCPROFILE* profile)
+{
+    cmsIOHANDLER* io = profile->IOhandler;
+    if (!io) {
+        return FALSE;
+    }
+
+    if (!io->Seek ||
+        !(io->Seek==NULLSeek || io->Seek==MemorySeek || io->Seek==FileSeek))
+    {
+        return FALSE;
+    }
+    if (!io->Read ||
+        !(io->Read==NULLRead || io->Read==MemoryRead || io->Read==FileRead))
+    {
+        return FALSE;
+    }
+
+    return TRUE;
+}
 
 // Dump tag contents. If the profile is being modified, untouched tags are copied from FileOrig
 static
@@ -1087,6 +1108,7 @@ cmsBool SaveTags(_cmsICCPROFILE* Icc, _cmsICCPROFILE* FileOrig)
     cmsTagTypeSignature TypeBase;
     cmsTagTypeHandler* TypeHandler;
 
+    if (!SanityCheck(FileOrig)) return FALSE;
 
     for (i=0; i < Icc -> TagCount; i++) {
 
@@ -1292,8 +1314,8 @@ cmsBool CMSEXPORT cmsSaveProfileToMem(cmsHPROFILE hProfile, void *MemPtr, cmsUIn
     // Should we just calculate the needed space?
     if (MemPtr == NULL) {
 
-           *BytesNeeded =  cmsSaveProfileToIOhandler(hProfile, NULL);
-            return TRUE;
+        *BytesNeeded = cmsSaveProfileToIOhandler(hProfile, NULL);
+        return (*BytesNeeded == 0 ? FALSE : TRUE);
     }
 
     // That is a real write operation

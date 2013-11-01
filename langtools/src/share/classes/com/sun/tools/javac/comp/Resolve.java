@@ -424,13 +424,14 @@ public class Resolve {
          */
         private
         boolean isProtectedAccessible(Symbol sym, ClassSymbol c, Type site) {
+            Type newSite = site.hasTag(TYPEVAR) ? site.getUpperBound() : site;
             while (c != null &&
                    !(c.isSubClass(sym.owner, types) &&
                      (c.flags() & INTERFACE) == 0 &&
                      // In JLS 2e 6.6.2.1, the subclass restriction applies
                      // only to instance fields and methods -- types are excluded
                      // regardless of whether they are declared 'static' or not.
-                     ((sym.flags() & STATIC) != 0 || sym.kind == TYP || site.tsym.isSubClass(c, types))))
+                     ((sym.flags() & STATIC) != 0 || sym.kind == TYP || newSite.tsym.isSubClass(c, types))))
                 c = c.owner.enclClass();
             return c != null;
         }
@@ -2709,11 +2710,6 @@ public class Resolve {
                                   MethodCheck methodCheck,
                                   InferenceContext inferenceContext) {
         MethodResolutionPhase maxPhase = boxingAllowed ? VARARITY : BASIC;
-
-        if (site.hasTag(TYPEVAR)) {
-            return resolveMemberReference(pos, env, referenceTree, site.getUpperBound(),
-                    name, argtypes, typeargtypes, boxingAllowed, methodCheck, inferenceContext);
-        }
 
         site = types.capture(site);
 

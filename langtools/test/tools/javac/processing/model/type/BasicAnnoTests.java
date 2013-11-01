@@ -26,6 +26,7 @@
  * @bug     1234567
  * @summary Annotations on types
  * @library /tools/javac/lib
+ * @ignore
  * @build JavacTestingAbstractProcessor DPrinter BasicAnnoTests
  * @compile/process -processor BasicAnnoTests -proc:only BasicAnnoTests.java
  */

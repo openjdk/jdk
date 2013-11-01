@@ -84,7 +84,7 @@ class AllClassesQuery extends QueryHandler {
             lastPackage = pkg;
             printClass(clazz);
             if (clazz.getId() != -1) {
-                out.print(" [" + clazz.getIdString() + "]");
+                print(" [" + clazz.getIdString() + "]");
             }
             out.println("<br>");
         }
