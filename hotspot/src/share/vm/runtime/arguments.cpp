@@ -1505,7 +1505,7 @@ void Arguments::set_conservative_max_heap_alignment() {
   }
 #endif // INCLUDE_ALL_GCS
   _conservative_max_heap_alignment = MAX3(heap_alignment, os::max_page_size(),
-    CollectorPolicy::compute_max_alignment());
+    CollectorPolicy::compute_heap_alignment());
 }
 
 void Arguments::set_ergonomics_flags() {
@@ -2165,6 +2165,10 @@ bool Arguments::check_vm_args_consistency() {
 
 #if INCLUDE_ALL_GCS
   if (UseG1GC) {
+    status = status && verify_percentage(G1NewSizePercent, "G1NewSizePercent");
+    status = status && verify_percentage(G1MaxNewSizePercent, "G1MaxNewSizePercent");
+    status = status && verify_interval(G1NewSizePercent, 0, G1MaxNewSizePercent, "G1NewSizePercent");
+
     status = status && verify_percentage(InitiatingHeapOccupancyPercent,
                                          "InitiatingHeapOccupancyPercent");
     status = status && verify_min_value(G1RefProcDrainInterval, 1,

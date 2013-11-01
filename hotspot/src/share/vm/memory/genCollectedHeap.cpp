@@ -111,7 +111,7 @@ jint GenCollectedHeap::initialize() {
   int n_covered_regions = 0;
   ReservedSpace heap_rs;
 
-  size_t heap_alignment = collector_policy()->max_alignment();
+  size_t heap_alignment = collector_policy()->heap_alignment();
 
   heap_address = allocate(heap_alignment, &total_reserved,
                           &n_covered_regions, &heap_rs);

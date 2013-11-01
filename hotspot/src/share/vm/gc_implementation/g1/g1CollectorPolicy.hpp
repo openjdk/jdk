@@ -136,8 +136,16 @@ private:
   uint calculate_default_min_length(uint new_number_of_heap_regions);
   uint calculate_default_max_length(uint new_number_of_heap_regions);
 
+  // Update the given values for minimum and maximum young gen length in regions
+  // given the number of heap regions depending on the kind of sizing algorithm.
+  void recalculate_min_max_young_length(uint number_of_heap_regions, uint* min_young_length, uint* max_young_length);
+
 public:
   G1YoungGenSizer();
+  // Calculate the maximum length of the young gen given the number of regions
+  // depending on the sizing algorithm.
+  uint max_young_length(uint number_of_heap_regions);
+
   void heap_size_changed(uint new_number_of_heap_regions);
   uint min_desired_young_length() {
     return _min_desired_young_length;
@@ -165,12 +173,8 @@ private:
 
   G1MMUTracker* _mmu_tracker;
 
+  void initialize_alignments();
   void initialize_flags();
-
-  void initialize_all() {
-    initialize_flags();
-    initialize_size_info();
-  }
 
   CollectionSetChooser* _collectionSetChooser;
 
@@ -931,6 +935,7 @@ public:
   // Calculates survivor space parameters.
   void update_survivors_policy();
 
+  virtual void post_heap_initialize();
 };
 
 // This should move to some place more general...

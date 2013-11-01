@@ -765,6 +765,7 @@ jint Universe::initialize_heap() {
   } else if (UseG1GC) {
 #if INCLUDE_ALL_GCS
     G1CollectorPolicy* g1p = new G1CollectorPolicy();
+    g1p->initialize_all();
     G1CollectedHeap* g1h = new G1CollectedHeap(g1p);
     Universe::_collectedHeap = g1h;
 #else  // INCLUDE_ALL_GCS
@@ -789,6 +790,7 @@ jint Universe::initialize_heap() {
     } else { // default old generation
       gc_policy = new MarkSweepPolicy();
     }
+    gc_policy->initialize_all();
 
     Universe::_collectedHeap = new GenCollectedHeap(gc_policy);
   }
