@@ -114,11 +114,14 @@ public class MemberEnter extends JCTree.Visitor implements Completer {
         deferredLintHandler = DeferredLintHandler.instance(context);
         lint = Lint.instance(context);
         allowTypeAnnos = source.allowTypeAnnotations();
+        allowRepeatedAnnos = source.allowRepeatedAnnotations();
     }
 
     /** Switch: support type annotations.
      */
     boolean allowTypeAnnos;
+
+    boolean allowRepeatedAnnos;
 
     /** A queue for classes whose members still need to be entered into the
      *  symbol table.
@@ -199,7 +202,7 @@ public class MemberEnter extends JCTree.Visitor implements Completer {
         }.importFrom(tsym);
 
         // enter non-types before annotations that might use them
-        annotate.earlier(new Annotate.Annotator() {
+        annotate.earlier(new Annotate.Worker() {
             Set<Symbol> processed = new HashSet<Symbol>();
 
             public String toString() {
@@ -225,7 +228,7 @@ public class MemberEnter extends JCTree.Visitor implements Completer {
                     }
                 }
             }
-            public void enterAnnotation() {
+            public void run() {
                 importFrom(tsym);
             }
         });
@@ -293,7 +296,7 @@ public class MemberEnter extends JCTree.Visitor implements Completer {
         }.importFrom(tsym);
 
         // enter non-types before annotations that might use them
-        annotate.earlier(new Annotate.Annotator() {
+        annotate.earlier(new Annotate.Worker() {
             Set<Symbol> processed = new HashSet<Symbol>();
             boolean found = false;
 
@@ -323,7 +326,7 @@ public class MemberEnter extends JCTree.Visitor implements Completer {
                     }
                 }
             }
-            public void enterAnnotation() {
+            public void run() {
                 JavaFileObject prev = log.useSource(env.toplevel.sourcefile);
                 try {
                     importFrom(tsym);
@@ -640,9 +643,6 @@ public class MemberEnter extends JCTree.Visitor implements Completer {
             if (TreeInfo.isEnumInit(tree)) {
                 attr.attribIdentAsEnumType(localEnv, (JCIdent)tree.vartype);
             } else {
-                // Make sure type annotations are processed.
-                // But we don't have a symbol to attach them to yet - use null.
-                typeAnnotate(tree.vartype, env, null, tree.pos());
                 attr.attribType(tree.vartype, localEnv);
                 if (tree.nameexpr != null) {
                     attr.attribExpr(tree.nameexpr, localEnv);
@@ -693,7 +693,6 @@ public class MemberEnter extends JCTree.Visitor implements Completer {
         }
         annotateLater(tree.mods.annotations, localEnv, v, tree.pos());
         typeAnnotate(tree.vartype, env, v, tree.pos());
-        annotate.flush();
         v.pos = tree.pos;
     }
     // where
@@ -842,14 +841,14 @@ public class MemberEnter extends JCTree.Visitor implements Completer {
         if (s.kind != PCK) {
             s.resetAnnotations(); // mark Annotations as incomplete for now
         }
-        annotate.normal(new Annotate.Annotator() {
+        annotate.normal(new Annotate.Worker() {
                 @Override
                 public String toString() {
                     return "annotate " + annotations + " onto " + s + " in " + s.owner;
                 }
 
                 @Override
-                public void enterAnnotation() {
+                public void run() {
                     Assert.check(s.kind == PCK || s.annotationsPendingCompletion());
                     JavaFileObject prev = log.useSource(localEnv.toplevel.sourcefile);
                     DiagnosticPosition prevLintPos =
@@ -872,6 +871,18 @@ public class MemberEnter extends JCTree.Visitor implements Completer {
                     }
                 }
             });
+
+        annotate.validate(new Annotate.Worker() { //validate annotations
+            @Override
+            public void run() {
+                JavaFileObject prev = log.useSource(localEnv.toplevel.sourcefile);
+                try {
+                    chk.validateAnnotations(annotations, s);
+                } finally {
+                    log.useSource(prev);
+                }
+            }
+        });
     }
 
     /**
@@ -906,14 +917,14 @@ public class MemberEnter extends JCTree.Visitor implements Completer {
             }
 
             if (annotated.containsKey(a.type.tsym)) {
-                if (source.allowRepeatedAnnotations()) {
-                    ListBuffer<Attribute.Compound> l = annotated.get(a.type.tsym);
-                    l = l.append(c);
-                    annotated.put(a.type.tsym, l);
-                    pos.put(c, a.pos());
-                } else {
-                    log.error(a.pos(), "duplicate.annotation");
+                if (!allowRepeatedAnnos) {
+                    log.error(a.pos(), "repeatable.annotations.not.supported.in.source");
+                    allowRepeatedAnnos = true;
                 }
+                ListBuffer<Attribute.Compound> l = annotated.get(a.type.tsym);
+                l = l.append(c);
+                annotated.put(a.type.tsym, l);
+                pos.put(c, a.pos());
             } else {
                 annotated.put(a.type.tsym, ListBuffer.of(c));
                 pos.put(c, a.pos());
@@ -935,7 +946,7 @@ public class MemberEnter extends JCTree.Visitor implements Completer {
     void annotateDefaultValueLater(final JCExpression defaultValue,
                                    final Env<AttrContext> localEnv,
                                    final MethodSymbol m) {
-        annotate.normal(new Annotate.Annotator() {
+        annotate.normal(new Annotate.Worker() {
                 @Override
                 public String toString() {
                     return "annotate " + m.owner + "." +
@@ -943,7 +954,7 @@ public class MemberEnter extends JCTree.Visitor implements Completer {
                 }
 
                 @Override
-                public void enterAnnotation() {
+                public void run() {
                     JavaFileObject prev = log.useSource(localEnv.toplevel.sourcefile);
                     try {
                         enterDefaultValue(defaultValue, localEnv, m);
@@ -952,6 +963,19 @@ public class MemberEnter extends JCTree.Visitor implements Completer {
                     }
                 }
             });
+        annotate.validate(new Annotate.Worker() { //validate annotations
+            @Override
+            public void run() {
+                JavaFileObject prev = log.useSource(localEnv.toplevel.sourcefile);
+                try {
+                    // if default value is an annotation, check it is a well-formed
+                    // annotation value (e.g. no duplicate values, no missing values, etc.)
+                    chk.validateAnnotationTree(defaultValue);
+                } finally {
+                    log.useSource(prev);
+                }
+            }
+        });
     }
 
     /** Enter a default value for an attribute method. */
@@ -1081,7 +1105,6 @@ public class MemberEnter extends JCTree.Visitor implements Completer {
             // Do this here, where we have the symbol.
             for (JCTypeParameter tp : tree.typarams)
                 typeAnnotate(tp, baseEnv, sym, tree.pos());
-            annotate.flush();
 
             // Add default constructor if needed.
             if ((c.flags() & INTERFACE) == 0 &&
@@ -1159,14 +1182,16 @@ public class MemberEnter extends JCTree.Visitor implements Completer {
         if (wasFirst) {
             try {
                 while (halfcompleted.nonEmpty()) {
-                    finish(halfcompleted.next());
+                    Env<AttrContext> toFinish = halfcompleted.next();
+                    finish(toFinish);
+                    if (allowTypeAnnos) {
+                        typeAnnotations.organizeTypeAnnotationsSignatures(toFinish, (JCClassDecl)toFinish.tree);
+                        typeAnnotations.validateTypeAnnotationsSignatures(toFinish, (JCClassDecl)toFinish.tree);
+                    }
                 }
             } finally {
                 isFirst = true;
             }
-        }
-        if (allowTypeAnnos) {
-            typeAnnotations.organizeTypeAnnotationsSignatures(env, tree);
         }
     }
 
@@ -1197,7 +1222,7 @@ public class MemberEnter extends JCTree.Visitor implements Completer {
                     annotated.put(a.type.tsym, l);
                     pos.put(tc, a.pos());
                 } else {
-                    log.error(a.pos(), "duplicate.annotation");
+                    log.error(a.pos(), "repeatable.annotations.not.supported.in.source");
                 }
             } else {
                 annotated.put(a.type.tsym, ListBuffer.of(tc));
@@ -1239,13 +1264,13 @@ public class MemberEnter extends JCTree.Visitor implements Completer {
 
             final DiagnosticPosition deferPos = this.deferPos;
 
-            annotate.normal(new Annotate.Annotator() {
+            annotate.normal(new Annotate.Worker() {
                 @Override
                 public String toString() {
                     return "type annotate " + annotations + " onto " + sym + " in " + sym.owner;
                 }
                 @Override
-                public void enterAnnotation() {
+                public void run() {
                     JavaFileObject prev = log.useSource(env.toplevel.sourcefile);
                     DiagnosticPosition prevLintPos = null;
 
@@ -1381,7 +1406,7 @@ public class MemberEnter extends JCTree.Visitor implements Completer {
         if (!t.hasTag(ERROR))
             return t;
 
-        return new ErrorType(((ErrorType) t).getOriginalType(), t.tsym) {
+        return new ErrorType(t.getOriginalType(), t.tsym) {
             private Type modelType;
 
             @Override

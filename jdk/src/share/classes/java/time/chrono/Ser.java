@@ -161,7 +161,7 @@ final class Ser implements Externalizable {
         out.writeByte(type);
         switch (type) {
             case CHRONO_TYPE:
-                ((Chronology) object).writeExternal(out);
+                ((AbstractChronology) object).writeExternal(out);
                 break;
             case CHRONO_LOCAL_DATE_TIME_TYPE:
                 ((ChronoLocalDateTimeImpl<?>) object).writeExternal(out);
@@ -231,7 +231,7 @@ final class Ser implements Externalizable {
 
     private static Object readInternal(byte type, ObjectInput in) throws IOException, ClassNotFoundException {
         switch (type) {
-            case CHRONO_TYPE: return Chronology.readExternal(in);
+            case CHRONO_TYPE: return AbstractChronology.readExternal(in);
             case CHRONO_LOCAL_DATE_TIME_TYPE: return ChronoLocalDateTimeImpl.readExternal(in);
             case CHRONO_ZONE_DATE_TIME_TYPE: return ChronoZonedDateTimeImpl.readExternal(in);
             case JAPANESE_DATE_TYPE:  return JapaneseDate.readExternal(in);

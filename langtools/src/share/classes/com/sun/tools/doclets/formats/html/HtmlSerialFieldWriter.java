@@ -49,8 +49,6 @@ public class HtmlSerialFieldWriter extends FieldWriterImpl
         implements SerializedFormWriter.SerialFieldWriter {
     ProgramElementDoc[] members = null;
 
-    private boolean printedOverallAnchor = false;
-
     public HtmlSerialFieldWriter(SubWriterHolderWriter writer,
                                     ClassDoc classdoc) {
         super(writer, classdoc);
@@ -98,10 +96,6 @@ public class HtmlSerialFieldWriter extends FieldWriterImpl
         HtmlTree li = new HtmlTree(HtmlTag.LI);
         li.addStyle(HtmlStyle.blockList);
         if (serializableFieldsTree.isValid()) {
-            if (!printedOverallAnchor) {
-                li.addContent(writer.getMarkerAnchor("serializedForm"));
-                printedOverallAnchor = true;
-            }
             Content headingContent = new StringContent(heading);
             Content serialHeading = HtmlTree.HEADING(HtmlConstants.SERIALIZED_MEMBER_HEADING,
                     headingContent);

@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug      4732864 6280605 7064544 8014636 8016328
+ * @bug      4732864 6280605 7064544 8014636 8016328 8025633
  * @summary  Make sure that you can link from one member to another using
  *           non-qualified name, furthermore, ensure the right one is linked.
  * @author   jamieh
@@ -49,9 +49,9 @@ public class TestLinkTaglet extends JavadocTester {
             "Qualified Link: <a href=\"../pkg/C.InnerC.html\" title=\"class in pkg\"><code>C.InnerC</code></a>.<br/>" + NL +
             " Unqualified Link1: <a href=\"../pkg/C.InnerC.html\" title=\"class in pkg\"><code>C.InnerC</code></a>.<br/>" + NL +
             " Unqualified Link2: <a href=\"../pkg/C.InnerC.html\" title=\"class in pkg\"><code>C.InnerC</code></a>.<br/>" + NL +
-            " Qualified Link: <a href=\"../pkg/C.html#method(pkg.C.InnerC,%20pkg.C.InnerC2)\"><code>method(pkg.C.InnerC, pkg.C.InnerC2)</code></a>.<br/>" + NL +
-            " Unqualified Link: <a href=\"../pkg/C.html#method(pkg.C.InnerC,%20pkg.C.InnerC2)\"><code>method(C.InnerC, C.InnerC2)</code></a>.<br/>" + NL +
-            " Unqualified Link: <a href=\"../pkg/C.html#method(pkg.C.InnerC,%20pkg.C.InnerC2)\"><code>method(InnerC, InnerC2)</code></a>.<br/>"
+            " Qualified Link: <a href=\"../pkg/C.html#method-pkg.C.InnerC-pkg.C.InnerC2-\"><code>method(pkg.C.InnerC, pkg.C.InnerC2)</code></a>.<br/>" + NL +
+            " Unqualified Link: <a href=\"../pkg/C.html#method-pkg.C.InnerC-pkg.C.InnerC2-\"><code>method(C.InnerC, C.InnerC2)</code></a>.<br/>" + NL +
+            " Unqualified Link: <a href=\"../pkg/C.html#method-pkg.C.InnerC-pkg.C.InnerC2-\"><code>method(InnerC, InnerC2)</code></a>.<br/>"
         },
         {BUG_ID + FS + "pkg" + FS + "C.InnerC.html",
             "Link to member in outer class: <a href=\"../pkg/C.html#MEMBER\"><code>C.MEMBER</code></a> <br/>" + NL +

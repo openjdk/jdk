@@ -35,5 +35,5 @@ try {
     if (! (e instanceof SyntaxError)) {
         fail("#2 expected SyntaxError got " + e);
     }
-    print(e.toString().replace(/\\/g, '/'));
+    printError(e);
 }

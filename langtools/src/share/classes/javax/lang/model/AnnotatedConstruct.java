@@ -221,8 +221,8 @@ public interface AnnotatedConstruct {
      *         type if present on this construct, else an empty array
      *
      * @see #getAnnotationMirrors()
-     * @see #getAnnotation(java.lang.Class)
-     * @see java.lang.reflect.AnnotatedElement#getAnnotationsByType
+     * @see #getAnnotation(Class)
+     * @see java.lang.reflect.AnnotatedElement#getAnnotationsByType(Class)
      * @see EnumConstantNotPresentException
      * @see AnnotationTypeMismatchException
      * @see IncompleteAnnotationException

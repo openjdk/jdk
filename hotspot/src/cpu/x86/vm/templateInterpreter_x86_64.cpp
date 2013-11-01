@@ -166,7 +166,7 @@ address TemplateInterpreterGenerator::generate_continuation_for(TosState state) 
 }
 
 
-address TemplateInterpreterGenerator::generate_return_entry_for(TosState state, int step) {
+address TemplateInterpreterGenerator::generate_return_entry_for(TosState state, int step, size_t index_size) {
   address entry = __ pc();
 
   // Restore stack bottom in case i2c adjusted stack
@@ -183,27 +183,15 @@ address TemplateInterpreterGenerator::generate_return_entry_for(TosState state, 
     __ profile_return_type(mdp, rax, tmp);
   }
 
-  Label L_got_cache, L_giant_index;
-  if (EnableInvokeDynamic) {
-    __ cmpb(Address(r13, 0), Bytecodes::_invokedynamic);
-    __ jcc(Assembler::equal, L_giant_index);
-  }
-  __ get_cache_and_index_at_bcp(rbx, rcx, 1, sizeof(u2));
-  __ bind(L_got_cache);
-  __ movl(rbx, Address(rbx, rcx,
-                       Address::times_ptr,
-                       in_bytes(ConstantPoolCache::base_offset()) +
-                       3 * wordSize));
-  __ andl(rbx, 0xFF);
-  __ lea(rsp, Address(rsp, rbx, Address::times_8));
-  __ dispatch_next(state, step);
+  const Register cache = rbx;
+  const Register index = rcx;
+  __ get_cache_and_index_at_bcp(cache, index, 1, index_size);
 
-  // out of the main line of code...
-  if (EnableInvokeDynamic) {
-    __ bind(L_giant_index);
-    __ get_cache_and_index_at_bcp(rbx, rcx, 1, sizeof(u4));
-    __ jmp(L_got_cache);
-  }
+  const Register flags = cache;
+  __ movl(flags, Address(cache, index, Address::times_ptr, ConstantPoolCache::base_offset() + ConstantPoolCacheEntry::flags_offset()));
+  __ andl(flags, ConstantPoolCacheEntry::parameter_size_mask);
+  __ lea(rsp, Address(rsp, flags, Interpreter::stackElementScale()));
+  __ dispatch_next(state, step);
 
   return entry;
 }

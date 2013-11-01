@@ -1,0 +1,12 @@
+class LocalClassTest$1Local_has_constructor -- inner
+LocalClassTest$1Local_has_constructor.<init>(final this$0/*implicit*/, a, ba)
+LocalClassTest$1Local_has_constructor.<init>(final this$0/*implicit*/)
+LocalClassTest$1Local_has_constructor.foo(m, nm)
+LocalClassTest$1Local_has_constructor.foo()
+class LocalClassTest$1Local_default_constructor -- inner
+LocalClassTest$1Local_default_constructor.<init>(final this$0/*implicit*/)
+LocalClassTest$1Local_default_constructor.foo()
+LocalClassTest$1Local_default_constructor.foo(m, nm)
+class LocalClassTest -- 
+LocalClassTest.<init>()
+LocalClassTest.foo()

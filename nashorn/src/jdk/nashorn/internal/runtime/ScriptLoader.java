@@ -64,6 +64,7 @@ final class ScriptLoader extends NashornLoader {
                     return context.getSharedLoader().loadClass(name);
                 }
             } catch (final ClassNotFoundException ignored) {
+                //ignored
             }
 
             // throw the original exception from here

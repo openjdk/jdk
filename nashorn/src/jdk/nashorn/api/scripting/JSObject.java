@@ -46,7 +46,7 @@ public abstract class JSObject {
      * @param args arguments to method
      * @return result of call
      */
-    public Object call(Object thiz, Object... args) {
+    public Object call(final Object thiz, final Object... args) {
         throw new UnsupportedOperationException("call");
     }
 
@@ -57,7 +57,7 @@ public abstract class JSObject {
      * @param args arguments to method
      * @return result of constructor call
      */
-    public Object newObject(Object... args) {
+    public Object newObject(final Object... args) {
         throw new UnsupportedOperationException("newObject");
     }
 
@@ -67,7 +67,7 @@ public abstract class JSObject {
      * @param s JavaScript expression to evaluate
      * @return evaluation result
      */
-    public Object eval(String s) {
+    public Object eval(final String s) {
         throw new UnsupportedOperationException("eval");
     }
 
@@ -78,7 +78,7 @@ public abstract class JSObject {
      * @param args arguments to be passed to the member function
      * @return result of call
      */
-    public Object callMember(String name, Object... args) {
+    public Object callMember(final String name, final Object... args) {
         throw new UnsupportedOperationException("call");
     }
 
@@ -88,7 +88,7 @@ public abstract class JSObject {
      * @param name of member
      * @return member
      */
-    public Object getMember(String name) {
+    public Object getMember(final String name) {
         return null;
     }
 
@@ -98,7 +98,7 @@ public abstract class JSObject {
      * @param index index slot to retrieve
      * @return member
      */
-    public Object getSlot(int index) {
+    public Object getSlot(final int index) {
         return null;
     }
 
@@ -108,7 +108,7 @@ public abstract class JSObject {
      * @param name name of member
      * @return true if this object has a member of the given name
      */
-    public boolean hasMember(String name) {
+    public boolean hasMember(final String name) {
         return false;
     }
 
@@ -118,7 +118,7 @@ public abstract class JSObject {
      * @param slot index to check
      * @return true if this object has a slot
      */
-    public boolean hasSlot(int slot) {
+    public boolean hasSlot(final int slot) {
         return false;
     }
 
@@ -127,7 +127,8 @@ public abstract class JSObject {
      *
      * @param name name of the member
      */
-    public void removeMember(String name) {
+    public void removeMember(final String name) {
+        //empty
     }
 
     /**
@@ -136,7 +137,8 @@ public abstract class JSObject {
      * @param name  name of the member
      * @param value value of the member
      */
-    public void setMember(String name, Object value) {
+    public void setMember(final String name, final Object value) {
+        //empty
     }
 
     /**
@@ -145,7 +147,8 @@ public abstract class JSObject {
      * @param index index of the member slot
      * @param value value of the member
      */
-    public void setSlot(int index, Object value) {
+    public void setSlot(final int index, final Object value) {
+        //empty
     }
 
     // property and value iteration

@@ -137,7 +137,7 @@ class MethodType implements java.io.Serializable {
 
     /** This number is the maximum arity of a method handle invoker, 253.
      *  It is derived from the absolute JVM-imposed arity by subtracting two,
-     *  which are the slots occupied by invoke method handle, and the the
+     *  which are the slots occupied by invoke method handle, and the
      *  target method handle, which are both at the beginning of the argument
      *  list used to invoke the target method handle.
      *  The longest possible invocation will look like

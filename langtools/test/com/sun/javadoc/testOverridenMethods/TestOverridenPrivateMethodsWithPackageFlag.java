@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 4634891
+ * @bug 4634891 8025633
  * @summary Determine if overriden methods are properly documented when
  * -protected (default) visibility flag is used.
  * @author jamieh
@@ -41,14 +41,14 @@ public class TestOverridenPrivateMethodsWithPackageFlag extends JavadocTester {
         //The public method should be overriden
         {BUG_ID + FS + "pkg1" + FS + "SubClass.html",
          "<dt><span class=\"strong\">Overrides:</span></dt>" + NL +
-                 "<dd><code><a href=\"../pkg1/BaseClass.html#publicMethod()\">" +
+                 "<dd><code><a href=\"../pkg1/BaseClass.html#publicMethod--\">" +
                  "publicMethod</a></code>&nbsp;in class&nbsp;<code>" +
                  "<a href=\"../pkg1/BaseClass.html\" title=\"class in pkg1\">BaseClass</a></code></dd>"},
 
         //The public method in different package should be overriden
         {BUG_ID + FS + "pkg2" + FS + "SubClass.html",
          "<dt><span class=\"strong\">Overrides:</span></dt>" + NL +
-                 "<dd><code><a href=\"../pkg1/BaseClass.html#publicMethod()\">" +
+                 "<dd><code><a href=\"../pkg1/BaseClass.html#publicMethod--\">" +
                  "publicMethod</a></code>&nbsp;in class&nbsp;<code>" +
                  "<a href=\"../pkg1/BaseClass.html\" title=\"class in pkg1\">BaseClass</a></code></dd>"},
 
@@ -56,7 +56,7 @@ public class TestOverridenPrivateMethodsWithPackageFlag extends JavadocTester {
         //package.
         {BUG_ID + FS + "pkg1" + FS + "SubClass.html",
          "<dt><span class=\"strong\">Overrides:</span></dt>" + NL +
-                 "<dd><code><a href=\"../pkg1/BaseClass.html#packagePrivateMethod()\">" +
+                 "<dd><code><a href=\"../pkg1/BaseClass.html#packagePrivateMethod--\">" +
                  "packagePrivateMethod</a></code>&nbsp;in class&nbsp;<code>" +
                  "<a href=\"../pkg1/BaseClass.html\" title=\"class in pkg1\">BaseClass</a></code></dd>"}
     };

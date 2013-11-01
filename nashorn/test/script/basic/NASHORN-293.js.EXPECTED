@@ -1,9 +1,9 @@
 hello
 hello
 hello
-TypeError @ #41<eval>
-TypeError @ #41<eval>
-TypeError @ #41<eval>
-TypeError @ #49<eval>
-TypeError @ #49<eval>
-TypeError @ #49<eval>
+TypeError:1:read property "foo" from undefined
+TypeError:1:read property "foo" from undefined
+TypeError:1:read property "foo" from undefined
+TypeError:1:read property "foo" from undefined
+TypeError:1:read property "foo" from undefined
+TypeError:1:read property "foo" from undefined

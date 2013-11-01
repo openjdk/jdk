@@ -78,9 +78,11 @@ import java.math.RoundingMode;
 import java.text.ParsePosition;
 import java.time.DateTimeException;
 import java.time.Instant;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.ZoneOffset;
+import java.time.chrono.ChronoLocalDate;
 import java.time.chrono.Chronology;
 import java.time.chrono.IsoChronology;
 import java.time.format.DateTimeTextProvider.LocaleStore;
@@ -88,6 +90,7 @@ import java.time.temporal.ChronoField;
 import java.time.temporal.IsoFields;
 import java.time.temporal.TemporalAccessor;
 import java.time.temporal.TemporalField;
+import java.time.temporal.TemporalQueries;
 import java.time.temporal.TemporalQuery;
 import java.time.temporal.ValueRange;
 import java.time.temporal.WeekFields;
@@ -122,7 +125,7 @@ import sun.util.locale.provider.TimeZoneNameUtility;
  * All date-time formatters are created ultimately using this builder.
  * <p>
  * The basic elements of date-time can all be added:
- * <p><ul>
+ * <ul>
  * <li>Value - a numeric value</li>
  * <li>Fraction - a fractional value including the decimal place. Always use this when
  * outputting fractions to ensure that the fraction is parsed correctly</li>
@@ -135,7 +138,7 @@ import sun.util.locale.provider.TimeZoneNameUtility;
  * <li>Literal - a text literal</li>
  * <li>Nested and Optional - formats can be nested or made optional</li>
  * <li>Other - the printer and parser interfaces can be used to add user supplied formatting</li>
- * </ul><p>
+ * </ul>
  * In addition, any of the elements may be decorated by padding, either with spaces or any other character.
  * <p>
  * Finally, a shorthand pattern, mostly compatible with {@code java.text.SimpleDateFormat SimpleDateFormat}
@@ -153,7 +156,7 @@ public final class DateTimeFormatterBuilder {
      * Query for a time-zone that is region-only.
      */
     private static final TemporalQuery<ZoneId> QUERY_REGION_ONLY = (temporal) -> {
-        ZoneId zone = temporal.query(TemporalQuery.zoneId());
+        ZoneId zone = temporal.query(TemporalQueries.zoneId());
         return (zone != null && zone instanceof ZoneOffset == false ? zone : null);
     };
 
@@ -499,51 +502,16 @@ public final class DateTimeFormatterBuilder {
 
     //-----------------------------------------------------------------------
     /**
-     * Appends the reduced value of a date-time field with fixed width to the formatter.
+     * Appends the reduced value of a date-time field to the formatter.
      * <p>
-     * This is typically used for formatting and parsing a two digit year.
-     * The {@code width} is the printed and parsed width.
-     * The {@code baseValue} is used during parsing to determine the valid range.
-     * <p>
-     * For formatting, the width is used to determine the number of characters to format.
-     * The rightmost characters are output to match the width, left padding with zero.
-     * <p>
-     * For strict parsing, the number of characters allowed by the width are parsed.
-     * For lenient parsing, the number of characters must be at least 1 and less than 10.
-     * If the number of digits parsed is equal to {@code width} and the value is positive,
-     * the value of the field is computed to be the first number greater than
-     * or equal to the {@code baseValue} with the same least significant characters,
-     * otherwise the value parsed is the field value.
-     * This allows a reduced value to be entered for values in range of the baseValue
-     * and width and absolute values can be entered for values outside the range.
-     * <p>
-     * For example, a base value of {@code 1980} and a width of {@code 2} will have
-     * valid values from {@code 1980} to {@code 2079}.
-     * During parsing, the text {@code "12"} will result in the value {@code 2012} as that
-     * is the value within the range where the last two characters are "12".
-     * Compare with lenient parsing the text {@code "1915"} that will result in the
-     * value {@code 1915}.
-     *
-     * @param field  the field to append, not null
-     * @param width  the field width of the printed and parsed field, from 1 to 10
-     * @param baseValue  the base value of the range of valid values
-     * @return this, for chaining, not null
-     * @throws IllegalArgumentException if the width or base value is invalid
-     * @see #appendValueReduced(java.time.temporal.TemporalField, int, int, int)
-     */
-    public DateTimeFormatterBuilder appendValueReduced(TemporalField field,
-            int width, int baseValue) {
-        return appendValueReduced(field, width, width, baseValue);
-    }
-
-    /**
-     * Appends the reduced value of a date-time field with a flexible width to the formatter.
-     * <p>
-     * This is typically used for formatting and parsing a two digit year
-     * but allowing for the year value to be up to maxWidth.
+     * Since fields such as year vary by chronology, it is recommended to use the
+     * {@link #appendValueReduced(TemporalField, int, int, ChronoLocalDate)} date}
+     * variant of this method in most cases. This variant is suitable for
+     * simple fields or working with only the ISO chronology.
      * <p>
      * For formatting, the {@code width} and {@code maxWidth} are used to
      * determine the number of characters to format.
+     * If they are equal then the format is fixed width.
      * If the value of the field is within the range of the {@code baseValue} using
      * {@code width} characters then the reduced value is formatted otherwise the value is
      * truncated to fit {@code maxWidth}.
@@ -562,8 +530,7 @@ public final class DateTimeFormatterBuilder {
      * valid values from {@code 1980} to {@code 2079}.
      * During parsing, the text {@code "12"} will result in the value {@code 2012} as that
      * is the value within the range where the last two characters are "12".
-     * Compare with parsing the text {@code "1915"} that will result in the
-     * value {@code 1915}.
+     * By contrast, parsing the text {@code "1915"} will result in the value {@code 1915}.
      *
      * @param field  the field to append, not null
      * @param width  the field width of the printed and parsed field, from 1 to 10
@@ -575,7 +542,67 @@ public final class DateTimeFormatterBuilder {
     public DateTimeFormatterBuilder appendValueReduced(TemporalField field,
             int width, int maxWidth, int baseValue) {
         Objects.requireNonNull(field, "field");
-        ReducedPrinterParser pp = new ReducedPrinterParser(field, width, maxWidth, baseValue);
+        ReducedPrinterParser pp = new ReducedPrinterParser(field, width, maxWidth, baseValue, null);
+        appendValue(pp);
+        return this;
+    }
+
+    /**
+     * Appends the reduced value of a date-time field to the formatter.
+     * <p>
+     * This is typically used for formatting and parsing a two digit year.
+     * <p>
+     * The base date is used to calculate the full value during parsing.
+     * For example, if the base date is 1950-01-01 then parsed values for
+     * a two digit year parse will be in the range 1950-01-01 to 2049-12-31.
+     * Only the year would be extracted from the date, thus a base date of
+     * 1950-08-25 would also parse to the range 1950-01-01 to 2049-12-31.
+     * This behaviour is necessary to support fields such as week-based-year
+     * or other calendar systems where the parsed value does not align with
+     * standard ISO years.
+     * <p>
+     * The exact behavior is as follows. Parse the full set of fields and
+     * determine the effective chronology. Then convert the base date to the
+     * effective chronology. Then extract the specified field from the
+     * chronology-specific base date and use it to determine the
+     * {@code baseValue} used below.
+     * <p>
+     * For formatting, the {@code width} and {@code maxWidth} are used to
+     * determine the number of characters to format.
+     * If they are equal then the format is fixed width.
+     * If the value of the field is within the range of the {@code baseValue} using
+     * {@code width} characters then the reduced value is formatted otherwise the value is
+     * truncated to fit {@code maxWidth}.
+     * The rightmost characters are output to match the width, left padding with zero.
+     * <p>
+     * For strict parsing, the number of characters allowed by {@code width} to {@code maxWidth} are parsed.
+     * For lenient parsing, the number of characters must be at least 1 and less than 10.
+     * If the number of digits parsed is equal to {@code width} and the value is positive,
+     * the value of the field is computed to be the first number greater than
+     * or equal to the {@code baseValue} with the same least significant characters,
+     * otherwise the value parsed is the field value.
+     * This allows a reduced value to be entered for values in range of the baseValue
+     * and width and absolute values can be entered for values outside the range.
+     * <p>
+     * For example, a base value of {@code 1980} and a width of {@code 2} will have
+     * valid values from {@code 1980} to {@code 2079}.
+     * During parsing, the text {@code "12"} will result in the value {@code 2012} as that
+     * is the value within the range where the last two characters are "12".
+     * By contrast, parsing the text {@code "1915"} will result in the value {@code 1915}.
+     *
+     * @param field  the field to append, not null
+     * @param width  the field width of the printed and parsed field, from 1 to 10
+     * @param maxWidth  the maximum field width of the printed field, from 1 to 10
+     * @param baseDate  the base date used to calculate the base value for the range
+     *  of valid values in the parsed chronology, not null
+     * @return this, for chaining, not null
+     * @throws IllegalArgumentException if the width or base value is invalid
+     */
+    public DateTimeFormatterBuilder appendValueReduced(
+            TemporalField field, int width, int maxWidth, ChronoLocalDate baseDate) {
+        Objects.requireNonNull(field, "field");
+        Objects.requireNonNull(baseDate, "baseDate");
+        ReducedPrinterParser pp = new ReducedPrinterParser(field, width, maxWidth, 0, baseDate);
         appendValue(pp);
         return this;
     }
@@ -851,7 +878,7 @@ public final class DateTimeFormatterBuilder {
      * This appends an instruction to format/parse the offset ID to the builder.
      * <p>
      * During formatting, the offset is obtained using a mechanism equivalent
-     * to querying the temporal with {@link TemporalQuery#offset()}.
+     * to querying the temporal with {@link TemporalQueries#offset()}.
      * It will be printed using the format defined below.
      * If the offset cannot be obtained then an exception is thrown unless the
      * section of the formatter is optional.
@@ -862,7 +889,7 @@ public final class DateTimeFormatterBuilder {
      * <p>
      * The format of the offset is controlled by a pattern which must be one
      * of the following:
-     * <p><ul>
+     * <ul>
      * <li>{@code +HH} - hour only, ignoring minute and second
      * <li>{@code +HHmm} - hour, with minute if non-zero, ignoring second, no colon
      * <li>{@code +HH:mm} - hour, with minute if non-zero, ignoring second, with colon
@@ -872,7 +899,7 @@ public final class DateTimeFormatterBuilder {
      * <li>{@code +HH:MM:ss} - hour and minute, with second if non-zero, with colon
      * <li>{@code +HHMMSS} - hour, minute and second, no colon
      * <li>{@code +HH:MM:SS} - hour, minute and second, with colon
-     * </ul><p>
+     * </ul>
      * The "no offset" text controls what text is printed when the total amount of
      * the offset fields to be output is zero.
      * Example values would be 'Z', '+00:00', 'UTC' or 'GMT'.
@@ -894,17 +921,17 @@ public final class DateTimeFormatterBuilder {
      * This appends a localized zone offset to the builder, the format of the
      * localized offset is controlled by the specified {@link FormatStyle style}
      * to this method:
-     * <p><ul>
+     * <ul>
      * <li>{@link TextStyle#FULL full} - formats with localized offset text, such
      * as 'GMT, 2-digit hour and minute field, optional second field if non-zero,
      * and colon.
      * <li>{@link TextStyle#SHORT short} - formats with localized offset text,
      * such as 'GMT, hour without leading zero, optional 2-digit minute and
      * second if non-zero, and colon.
-     * </ul><p>
+     * </ul>
      * <p>
      * During formatting, the offset is obtained using a mechanism equivalent
-     * to querying the temporal with {@link TemporalQuery#offset()}.
+     * to querying the temporal with {@link TemporalQueries#offset()}.
      * If the offset cannot be obtained then an exception is thrown unless the
      * section of the formatter is optional.
      * <p>
@@ -936,7 +963,7 @@ public final class DateTimeFormatterBuilder {
      * for use with this method, see {@link #appendZoneOrOffsetId()}.
      * <p>
      * During formatting, the zone is obtained using a mechanism equivalent
-     * to querying the temporal with {@link TemporalQuery#zoneId()}.
+     * to querying the temporal with {@link TemporalQueries#zoneId()}.
      * It will be printed using the result of {@link ZoneId#getId()}.
      * If the zone cannot be obtained then an exception is thrown unless the
      * section of the formatter is optional.
@@ -974,7 +1001,7 @@ public final class DateTimeFormatterBuilder {
      * @see #appendZoneRegionId()
      */
     public DateTimeFormatterBuilder appendZoneId() {
-        appendInternal(new ZoneIdPrinterParser(TemporalQuery.zoneId(), "ZoneId()"));
+        appendInternal(new ZoneIdPrinterParser(TemporalQueries.zoneId(), "ZoneId()"));
         return this;
     }
 
@@ -986,7 +1013,7 @@ public final class DateTimeFormatterBuilder {
      * only if it is a region-based ID.
      * <p>
      * During formatting, the zone is obtained using a mechanism equivalent
-     * to querying the temporal with {@link TemporalQuery#zoneId()}.
+     * to querying the temporal with {@link TemporalQueries#zoneId()}.
      * If the zone is a {@code ZoneOffset} or it cannot be obtained then
      * an exception is thrown unless the section of the formatter is optional.
      * If the zone is not an offset, then the zone will be printed using
@@ -1045,7 +1072,7 @@ public final class DateTimeFormatterBuilder {
      * then attempts to find an offset, such as that on {@code OffsetDateTime}.
      * <p>
      * During formatting, the zone is obtained using a mechanism equivalent
-     * to querying the temporal with {@link TemporalQuery#zone()}.
+     * to querying the temporal with {@link TemporalQueries#zone()}.
      * It will be printed using the result of {@link ZoneId#getId()}.
      * If the zone cannot be obtained then an exception is thrown unless the
      * section of the formatter is optional.
@@ -1086,7 +1113,7 @@ public final class DateTimeFormatterBuilder {
      * @see #appendZoneId()
      */
     public DateTimeFormatterBuilder appendZoneOrOffsetId() {
-        appendInternal(new ZoneIdPrinterParser(TemporalQuery.zone(), "ZoneOrOffsetId()"));
+        appendInternal(new ZoneIdPrinterParser(TemporalQueries.zone(), "ZoneOrOffsetId()"));
         return this;
     }
 
@@ -1097,7 +1124,7 @@ public final class DateTimeFormatterBuilder {
      * the builder.
      * <p>
      * During formatting, the zone is obtained using a mechanism equivalent
-     * to querying the temporal with {@link TemporalQuery#zoneId()}.
+     * to querying the temporal with {@link TemporalQueries#zoneId()}.
      * If the zone is a {@code ZoneOffset} it will be printed using the
      * result of {@link ZoneOffset#getId()}.
      * If the zone is not an offset, the textual name will be looked up
@@ -1133,7 +1160,7 @@ public final class DateTimeFormatterBuilder {
      * the builder.
      * <p>
      * During formatting, the zone is obtained using a mechanism equivalent
-     * to querying the temporal with {@link TemporalQuery#zoneId()}.
+     * to querying the temporal with {@link TemporalQueries#zoneId()}.
      * If the zone is a {@code ZoneOffset} it will be printed using the
      * result of {@link ZoneOffset#getId()}.
      * If the zone is not an offset, the textual name will be looked up
@@ -1176,7 +1203,7 @@ public final class DateTimeFormatterBuilder {
      * This appends an instruction to format/parse the chronology ID to the builder.
      * <p>
      * During formatting, the chronology is obtained using a mechanism equivalent
-     * to querying the temporal with {@link TemporalQuery#chronology()}.
+     * to querying the temporal with {@link TemporalQueries#chronology()}.
      * It will be printed using the result of {@link Chronology#getId()}.
      * If the chronology cannot be obtained then an exception is thrown unless the
      * section of the formatter is optional.
@@ -1217,12 +1244,12 @@ public final class DateTimeFormatterBuilder {
      * This appends a localized section to the builder, suitable for outputting
      * a date, time or date-time combination. The format of the localized
      * section is lazily looked up based on four items:
-     * <p><ul>
+     * <ul>
      * <li>the {@code dateStyle} specified to this method
      * <li>the {@code timeStyle} specified to this method
      * <li>the {@code Locale} of the {@code DateTimeFormatter}
      * <li>the {@code Chronology}, selecting the best available
-     * </ul><p>
+     * </ul>
      * During formatting, the chronology is obtained from the temporal object
      * being formatted, which may have been overridden by
      * {@link DateTimeFormatter#withChronology(Chronology)}.
@@ -1682,7 +1709,7 @@ public final class DateTimeFormatterBuilder {
             case 'u':
             case 'y':
                 if (count == 2) {
-                    appendValueReduced(field, 2, 2000);
+                    appendValueReduced(field, 2, 2, ReducedPrinterParser.BASE_DATE);
                 } else if (count < 4) {
                     appendValue(field, count, 19, SignStyle.NORMAL);
                 } else {
@@ -2516,7 +2543,7 @@ public final class DateTimeFormatterBuilder {
             if (valueLong == null) {
                 return false;
             }
-            long value = getValue(valueLong);
+            long value = getValue(context, valueLong);
             DecimalStyle decimalStyle = context.getDecimalStyle();
             String str = (value == Long.MIN_VALUE ? "9223372036854775808" : Long.toString(Math.abs(value)));
             if (str.length() > maxWidth) {
@@ -2560,10 +2587,11 @@ public final class DateTimeFormatterBuilder {
         /**
          * Gets the value to output.
          *
-         * @param value  the base value of the field, not null
+         * @param context  the context
+         * @param value  the value of the field, not null
          * @return the value
          */
-        long getValue(long value) {
+        long getValue(DateTimePrintContext context, long value) {
             return value;
         }
 
@@ -2703,7 +2731,13 @@ public final class DateTimeFormatterBuilder {
      * Prints and parses a reduced numeric date-time field.
      */
     static final class ReducedPrinterParser extends NumberPrinterParser {
+        /**
+         * The base date for reduced value parsing.
+         */
+        static final LocalDate BASE_DATE = LocalDate.of(2000, 1, 1);
+
         private final int baseValue;
+        private final ChronoLocalDate baseDate;
 
         /**
          * Constructor.
@@ -2712,10 +2746,11 @@ public final class DateTimeFormatterBuilder {
          * @param minWidth  the minimum field width, from 1 to 10
          * @param maxWidth  the maximum field width, from 1 to 10
          * @param baseValue  the base value
+         * @param baseDate  the base date
          */
         ReducedPrinterParser(TemporalField field, int minWidth, int maxWidth,
-                int baseValue) {
-            this(field, minWidth, maxWidth, baseValue, 0);
+                int baseValue, ChronoLocalDate baseDate) {
+            this(field, minWidth, maxWidth, baseValue, baseDate, 0);
             if (minWidth < 1 || minWidth > 10) {
                 throw new IllegalArgumentException("The minWidth must be from 1 to 10 inclusive but was " + minWidth);
             }
@@ -2726,11 +2761,13 @@ public final class DateTimeFormatterBuilder {
                 throw new IllegalArgumentException("Maximum width must exceed or equal the minimum width but " +
                         maxWidth + " < " + minWidth);
             }
-            if (field.range().isValidValue(baseValue) == false) {
-                throw new IllegalArgumentException("The base value must be within the range of the field");
-            }
-            if ((((long) baseValue) + EXCEED_POINTS[maxWidth]) > Integer.MAX_VALUE) {
-                throw new DateTimeException("Unable to add printer-parser as the range exceeds the capacity of an int");
+            if (baseDate == null) {
+                if (field.range().isValidValue(baseValue) == false) {
+                    throw new IllegalArgumentException("The base value must be within the range of the field");
+                }
+                if ((((long) baseValue) + EXCEED_POINTS[maxWidth]) > Integer.MAX_VALUE) {
+                    throw new DateTimeException("Unable to add printer-parser as the range exceeds the capacity of an int");
+                }
             }
         }
 
@@ -2742,17 +2779,24 @@ public final class DateTimeFormatterBuilder {
          * @param minWidth  the minimum field width, from 1 to 10
          * @param maxWidth  the maximum field width, from 1 to 10
          * @param baseValue  the base value
+         * @param baseDate  the base date
          * @param subsequentWidth the subsequentWidth for this instance
          */
         private ReducedPrinterParser(TemporalField field, int minWidth, int maxWidth,
-                int baseValue, int subsequentWidth) {
+                int baseValue, ChronoLocalDate baseDate, int subsequentWidth) {
             super(field, minWidth, maxWidth, SignStyle.NOT_NEGATIVE, subsequentWidth);
             this.baseValue = baseValue;
+            this.baseDate = baseDate;
         }
 
         @Override
-        long getValue(long value) {
+        long getValue(DateTimePrintContext context, long value) {
             long absValue = Math.abs(value);
+            int baseValue = this.baseValue;
+            if (baseDate != null) {
+                Chronology chrono = Chronology.from(context.getTemporal());
+                baseValue = chrono.date(baseDate).get(field);
+            }
             if (value >= baseValue && value < baseValue + EXCEED_POINTS[minWidth]) {
                 // Use the reduced value if it fits in minWidth
                 return absValue % EXCEED_POINTS[minWidth];
@@ -2763,6 +2807,12 @@ public final class DateTimeFormatterBuilder {
 
         @Override
         int setValue(DateTimeParseContext context, long value, int errorPos, int successPos) {
+            int baseValue = this.baseValue;
+            if (baseDate != null) {
+                // TODO: effective chrono is inaccurate at this point
+                Chronology chrono = context.getEffectiveChronology();
+                baseValue = chrono.date(baseDate).get(field);
+            }
             int parseLen = successPos - errorPos;
             if (parseLen == minWidth && value >= 0) {
                 long range = EXCEED_POINTS[minWidth];
@@ -2773,7 +2823,7 @@ public final class DateTimeFormatterBuilder {
                 } else {
                     value = basePart - value;
                 }
-                if (basePart != 0 && value < baseValue) {
+                if (value < baseValue) {
                     value += range;
                 }
             }
@@ -2790,7 +2840,7 @@ public final class DateTimeFormatterBuilder {
             if (subsequentWidth == -1) {
                 return this;
             }
-            return new ReducedPrinterParser(field, minWidth, maxWidth, baseValue, -1);
+            return new ReducedPrinterParser(field, minWidth, maxWidth, baseValue, baseDate, -1);
         }
 
         /**
@@ -2801,13 +2851,13 @@ public final class DateTimeFormatterBuilder {
          */
         @Override
         ReducedPrinterParser withSubsequentWidth(int subsequentWidth) {
-            return new ReducedPrinterParser(field, minWidth, maxWidth, baseValue,
+            return new ReducedPrinterParser(field, minWidth, maxWidth, baseValue, baseDate,
                     this.subsequentWidth + subsequentWidth);
         }
 
         @Override
         public String toString() {
-            return "ReducedValue(" + field + "," + minWidth + "," + maxWidth + "," + baseValue + ")";
+            return "ReducedValue(" + field + "," + minWidth + "," + maxWidth + "," + (baseDate != null ? baseDate : baseValue) + ")";
         }
     }
 
@@ -3013,7 +3063,7 @@ public final class DateTimeFormatterBuilder {
                 return false;
             }
             String text;
-            Chronology chrono = context.getTemporal().query(TemporalQuery.chronology());
+            Chronology chrono = context.getTemporal().query(TemporalQueries.chronology());
             if (chrono == null || chrono == IsoChronology.INSTANCE) {
                 text = provider.getText(field, value, textStyle, context.getLocale());
             } else {
@@ -3541,7 +3591,7 @@ public final class DateTimeFormatterBuilder {
         private Set<String> preferredZones;
 
         ZoneTextPrinterParser(TextStyle textStyle, Set<ZoneId> preferredZones) {
-            super(TemporalQuery.zone(), "ZoneText(" + textStyle + ")");
+            super(TemporalQueries.zone(), "ZoneText(" + textStyle + ")");
             this.textStyle = Objects.requireNonNull(textStyle, "textStyle");
             if (preferredZones != null && preferredZones.size() != 0) {
                 this.preferredZones = new HashSet<>();
@@ -3598,7 +3648,7 @@ public final class DateTimeFormatterBuilder {
 
         @Override
         public boolean format(DateTimePrintContext context, StringBuilder buf) {
-            ZoneId zone = context.getValue(TemporalQuery.zoneId());
+            ZoneId zone = context.getValue(TemporalQueries.zoneId());
             if (zone == null) {
                 return false;
             }
@@ -4179,7 +4229,7 @@ public final class DateTimeFormatterBuilder {
 
         @Override
         public boolean format(DateTimePrintContext context, StringBuilder buf) {
-            Chronology chrono = context.getValue(TemporalQuery.chronology());
+            Chronology chrono = context.getValue(TemporalQueries.chronology());
             if (chrono == null) {
                 return false;
             }
@@ -4351,7 +4401,7 @@ public final class DateTimeFormatterBuilder {
                 case 'Y':
                     field = weekDef.weekBasedYear();
                     if (count == 2) {
-                        return new ReducedPrinterParser(field, 2, 2, 2000, 0);
+                        return new ReducedPrinterParser(field, 2, 2, 0, ReducedPrinterParser.BASE_DATE, 0);
                     } else {
                         return new NumberPrinterParser(field, count, 19,
                                 (count < 4) ? SignStyle.NORMAL : SignStyle.EXCEEDS_PAD, -1);
@@ -4380,7 +4430,7 @@ public final class DateTimeFormatterBuilder {
                 if (count == 1) {
                     sb.append("WeekBasedYear");
                 } else if (count == 2) {
-                    sb.append("ReducedValue(WeekBasedYear,2,2000)");
+                    sb.append("ReducedValue(WeekBasedYear,2,2,2000-01-01)");
                 } else {
                     sb.append("WeekBasedYear,").append(count).append(",")
                             .append(19).append(",")

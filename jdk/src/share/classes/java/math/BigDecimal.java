@@ -727,36 +727,27 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
      * <dl>
      * <dt><i>BigDecimalString:</i>
      * <dd><i>Sign<sub>opt</sub> Significand Exponent<sub>opt</sub></i>
-     * <p>
      * <dt><i>Sign:</i>
      * <dd>{@code +}
      * <dd>{@code -}
-     * <p>
      * <dt><i>Significand:</i>
      * <dd><i>IntegerPart</i> {@code .} <i>FractionPart<sub>opt</sub></i>
      * <dd>{@code .} <i>FractionPart</i>
      * <dd><i>IntegerPart</i>
-     * <p>
      * <dt><i>IntegerPart:</i>
      * <dd><i>Digits</i>
-     * <p>
      * <dt><i>FractionPart:</i>
      * <dd><i>Digits</i>
-     * <p>
      * <dt><i>Exponent:</i>
      * <dd><i>ExponentIndicator SignedInteger</i>
-     * <p>
      * <dt><i>ExponentIndicator:</i>
      * <dd>{@code e}
      * <dd>{@code E}
-     * <p>
      * <dt><i>SignedInteger:</i>
      * <dd><i>Sign<sub>opt</sub> Digits</i>
-     * <p>
      * <dt><i>Digits:</i>
      * <dd><i>Digit</i>
      * <dd><i>Digits Digit</i>
-     * <p>
      * <dt><i>Digit:</i>
      * <dd>any character for which {@link Character#isDigit}
      * returns {@code true}, including 0, 1, 2 ...

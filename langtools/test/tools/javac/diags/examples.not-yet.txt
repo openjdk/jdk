@@ -40,7 +40,6 @@ compiler.err.type.var.more.than.once                    # UNUSED
 compiler.err.type.var.more.than.once.in.result          # UNUSED
 compiler.err.unexpected.type
 compiler.err.unsupported.cross.fp.lit                   # Scanner: host system dependent
-compiler.misc.bad.class.file.header                     # bad class file
 compiler.misc.bad.class.signature                       # bad class file
 compiler.misc.bad.const.pool.tag                        # bad class file
 compiler.misc.bad.const.pool.tag.at                     # bad class file
