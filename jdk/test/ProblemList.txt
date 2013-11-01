@@ -128,9 +128,6 @@ java/lang/management/ThreadMXBean/ThreadStateTest.java          generic-all
 # 7067973
 java/lang/management/MemoryMXBean/CollectionUsageThreshold.java generic-all
 
-# 7196801
-java/lang/management/MemoryMXBean/LowMemoryTest2.sh		generic-all
-
 # 8021230
 java/lang/ThreadLocal/ThreadLocalSupplierTest.java              generic-all
 
