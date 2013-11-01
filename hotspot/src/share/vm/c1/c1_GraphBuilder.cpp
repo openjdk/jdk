@@ -1873,7 +1873,7 @@ void GraphBuilder::invoke(Bytecodes::Code code) {
         // number of implementors for decl_interface is 0 or 1. If
         // it's 0 then no class implements decl_interface and there's
         // no point in inlining.
-        if (!holder->is_loaded() || decl_interface->nof_implementors() != 1) {
+        if (!holder->is_loaded() || decl_interface->nof_implementors() != 1 || decl_interface->has_default_methods()) {
           singleton = NULL;
         }
       }
