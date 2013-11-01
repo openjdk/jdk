@@ -25,6 +25,7 @@
 #ifndef SHARE_VM_GC_IMPLEMENTATION_PARALLELSCAVENGE_PARALLELSCAVENGEHEAP_HPP
 #define SHARE_VM_GC_IMPLEMENTATION_PARALLELSCAVENGE_PARALLELSCAVENGEHEAP_HPP
 
+#include "gc_implementation/parallelScavenge/generationSizer.hpp"
 #include "gc_implementation/parallelScavenge/objectStartArray.hpp"
 #include "gc_implementation/parallelScavenge/psGCAdaptivePolicyCounters.hpp"
 #include "gc_implementation/parallelScavenge/psOldGen.hpp"
@@ -32,13 +33,12 @@
 #include "gc_implementation/shared/gcPolicyCounters.hpp"
 #include "gc_implementation/shared/gcWhen.hpp"
 #include "gc_interface/collectedHeap.inline.hpp"
+#include "memory/collectorPolicy.hpp"
 #include "utilities/ostream.hpp"
 
 class AdjoiningGenerations;
 class GCHeapSummary;
 class GCTaskManager;
-class GenerationSizer;
-class CollectorPolicy;
 class PSAdaptiveSizePolicy;
 class PSHeapSummary;
 
@@ -54,12 +54,7 @@ class ParallelScavengeHeap : public CollectedHeap {
 
   static ParallelScavengeHeap* _psh;
 
-  size_t _young_gen_alignment;
-  size_t _old_gen_alignment;
-
   GenerationSizer* _collector_policy;
-
-  inline size_t set_alignment(size_t& var, size_t val);
 
   // Collection of generations that are adjacent in the
   // space reserved for the heap.
@@ -80,15 +75,7 @@ class ParallelScavengeHeap : public CollectedHeap {
   HeapWord* mem_allocate_old_gen(size_t size);
 
  public:
-  ParallelScavengeHeap() : CollectedHeap(), _death_march_count(0) {
-    set_alignment(_young_gen_alignment, intra_heap_alignment());
-    set_alignment(_old_gen_alignment, intra_heap_alignment());
-  }
-
-  // Return the (conservative) maximum heap alignment
-  static size_t conservative_max_heap_alignment() {
-    return GenCollectorPolicy::intra_heap_alignment();
-  }
+  ParallelScavengeHeap() : CollectedHeap(), _death_march_count(0) { }
 
   // For use by VM operations
   enum CollectionType {
@@ -120,13 +107,15 @@ class ParallelScavengeHeap : public CollectedHeap {
 
   void post_initialize();
   void update_counters();
-  // The alignment used for the various generations.
-  size_t young_gen_alignment() const { return _young_gen_alignment; }
-  size_t old_gen_alignment()  const { return _old_gen_alignment; }
 
-  // The alignment used for eden and survivors within the young gen
-  // and for boundary between young gen and old gen.
-  size_t intra_heap_alignment() { return GenCollectorPolicy::intra_heap_alignment(); }
+  // The alignment used for the various areas
+  size_t space_alignment()      { return _collector_policy->space_alignment(); }
+  size_t generation_alignment() { return _collector_policy->gen_alignment(); }
+
+  // Return the (conservative) maximum heap alignment
+  static size_t conservative_max_heap_alignment() {
+    return CollectorPolicy::compute_heap_alignment();
+  }
 
   size_t capacity() const;
   size_t used() const;
@@ -260,12 +249,5 @@ class ParallelScavengeHeap : public CollectedHeap {
     ~ParStrongRootsScope();
   };
 };
-
-inline size_t ParallelScavengeHeap::set_alignment(size_t& var, size_t val)
-{
-  assert(is_power_of_2((intptr_t)val), "must be a power of 2");
-  var = round_to(val, intra_heap_alignment());
-  return var;
-}
 
 #endif // SHARE_VM_GC_IMPLEMENTATION_PARALLELSCAVENGE_PARALLELSCAVENGEHEAP_HPP

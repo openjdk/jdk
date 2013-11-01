@@ -174,11 +174,6 @@ void HeapRegion::setup_heap_region_size(size_t initial_heap_size, size_t max_hea
     region_size = MAX_REGION_SIZE;
   }
 
-  if (region_size != G1HeapRegionSize) {
-    // Update the flag to make sure that PrintFlagsFinal logs the correct value
-    FLAG_SET_ERGO(uintx, G1HeapRegionSize, region_size);
-  }
-
   // And recalculate the log.
   region_size_log = log2_long((jlong) region_size);
 

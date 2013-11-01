@@ -91,7 +91,7 @@ size_t ASPSOldGen::available_for_expansion() {
 
   ParallelScavengeHeap* heap = (ParallelScavengeHeap*)Universe::heap();
   size_t result =  gen_size_limit() - virtual_space()->committed_size();
-  size_t result_aligned = align_size_down(result, heap->old_gen_alignment());
+  size_t result_aligned = align_size_down(result, heap->generation_alignment());
   return result_aligned;
 }
 
@@ -102,7 +102,7 @@ size_t ASPSOldGen::available_for_contraction() {
   }
 
   ParallelScavengeHeap* heap = (ParallelScavengeHeap*)Universe::heap();
-  const size_t gen_alignment = heap->old_gen_alignment();
+  const size_t gen_alignment = heap->generation_alignment();
   PSAdaptiveSizePolicy* policy = heap->size_policy();
   const size_t working_size =
     used_in_bytes() + (size_t) policy->avg_promoted()->padded_average();

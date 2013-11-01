@@ -75,7 +75,7 @@ size_t ASPSYoungGen::available_for_expansion() {
     "generation size limit is wrong");
   ParallelScavengeHeap* heap = (ParallelScavengeHeap*)Universe::heap();
   size_t result =  gen_size_limit() - current_committed_size;
-  size_t result_aligned = align_size_down(result, heap->young_gen_alignment());
+  size_t result_aligned = align_size_down(result, heap->generation_alignment());
   return result_aligned;
 }
 
@@ -92,8 +92,8 @@ size_t ASPSYoungGen::available_for_contraction() {
   if (eden_space()->is_empty()) {
     // Respect the minimum size for eden and for the young gen as a whole.
     ParallelScavengeHeap* heap = (ParallelScavengeHeap*)Universe::heap();
-    const size_t eden_alignment = heap->intra_heap_alignment();
-    const size_t gen_alignment = heap->young_gen_alignment();
+    const size_t eden_alignment = heap->space_alignment();
+    const size_t gen_alignment = heap->generation_alignment();
 
     assert(eden_space()->capacity_in_bytes() >= eden_alignment,
       "Alignment is wrong");
@@ -129,7 +129,7 @@ size_t ASPSYoungGen::available_for_contraction() {
 // to_space can be.
 size_t ASPSYoungGen::available_to_live() {
   ParallelScavengeHeap* heap = (ParallelScavengeHeap*)Universe::heap();
-  const size_t alignment = heap->intra_heap_alignment();
+  const size_t alignment = heap->space_alignment();
 
   // Include any space that is committed but is not in eden.
   size_t available = pointer_delta(eden_space()->bottom(),
@@ -293,7 +293,7 @@ void ASPSYoungGen::resize_spaces(size_t requested_eden_size,
   assert(eden_start < from_start, "Cannot push into from_space");
 
   ParallelScavengeHeap* heap = (ParallelScavengeHeap*)Universe::heap();
-  const size_t alignment = heap->intra_heap_alignment();
+  const size_t alignment = heap->space_alignment();
   const bool maintain_minimum =
     (requested_eden_size + 2 * requested_survivor_size) <= min_gen_size();
 

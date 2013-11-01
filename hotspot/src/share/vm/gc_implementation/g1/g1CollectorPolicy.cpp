@@ -313,27 +313,38 @@ G1CollectorPolicy::G1CollectorPolicy() :
   // for the first time during initialization.
   _reserve_regions = 0;
 
-  initialize_all();
   _collectionSetChooser = new CollectionSetChooser();
-  _young_gen_sizer = new G1YoungGenSizer(); // Must be after call to initialize_flags
+}
+
+void G1CollectorPolicy::initialize_alignments() {
+  _space_alignment = HeapRegion::GrainBytes;
+  size_t card_table_alignment = GenRemSet::max_alignment_constraint(GenRemSet::CardTable);
+  size_t page_size = UseLargePages ? os::large_page_size() : os::vm_page_size();
+  _heap_alignment = MAX3(card_table_alignment, _space_alignment, page_size);
 }
 
 void G1CollectorPolicy::initialize_flags() {
-  _min_alignment = HeapRegion::GrainBytes;
-  size_t card_table_alignment = GenRemSet::max_alignment_constraint(GenRemSet::CardTable);
-  size_t page_size = UseLargePages ? os::large_page_size() : os::vm_page_size();
-  _max_alignment = MAX3(card_table_alignment, _min_alignment, page_size);
+  if (G1HeapRegionSize != HeapRegion::GrainBytes) {
+    FLAG_SET_ERGO(uintx, G1HeapRegionSize, HeapRegion::GrainBytes);
+  }
+
   if (SurvivorRatio < 1) {
     vm_exit_during_initialization("Invalid survivor ratio specified");
   }
   CollectorPolicy::initialize_flags();
+  _young_gen_sizer = new G1YoungGenSizer(); // Must be after call to initialize_flags
 }
 
-G1YoungGenSizer::G1YoungGenSizer() : _sizer_kind(SizerDefaults), _adaptive_size(true) {
-  assert(G1NewSizePercent <= G1MaxNewSizePercent, "Min larger than max");
-  assert(G1NewSizePercent > 0 && G1NewSizePercent < 100, "Min out of bounds");
-  assert(G1MaxNewSizePercent > 0 && G1MaxNewSizePercent < 100, "Max out of bounds");
+void G1CollectorPolicy::post_heap_initialize() {
+  uintx max_regions = G1CollectedHeap::heap()->max_regions();
+  size_t max_young_size = (size_t)_young_gen_sizer->max_young_length(max_regions) * HeapRegion::GrainBytes;
+  if (max_young_size != MaxNewSize) {
+    FLAG_SET_ERGO(uintx, MaxNewSize, max_young_size);
+  }
+}
 
+G1YoungGenSizer::G1YoungGenSizer() : _sizer_kind(SizerDefaults), _adaptive_size(true),
+        _min_desired_young_length(0), _max_desired_young_length(0) {
   if (FLAG_IS_CMDLINE(NewRatio)) {
     if (FLAG_IS_CMDLINE(NewSize) || FLAG_IS_CMDLINE(MaxNewSize)) {
       warning("-XX:NewSize and -XX:MaxNewSize override -XX:NewRatio");
@@ -344,8 +355,13 @@ G1YoungGenSizer::G1YoungGenSizer() : _sizer_kind(SizerDefaults), _adaptive_size(
     }
   }
 
-  if (FLAG_IS_CMDLINE(NewSize) && FLAG_IS_CMDLINE(MaxNewSize) && NewSize > MaxNewSize) {
-    vm_exit_during_initialization("Initial young gen size set larger than the maximum young gen size");
+  if (NewSize > MaxNewSize) {
+    if (FLAG_IS_CMDLINE(MaxNewSize)) {
+      warning("NewSize (" SIZE_FORMAT "k) is greater than the MaxNewSize (" SIZE_FORMAT "k). "
+              "A new max generation size of " SIZE_FORMAT "k will be used.",
+              NewSize/K, MaxNewSize/K, NewSize/K);
+    }
+    MaxNewSize = NewSize;
   }
 
   if (FLAG_IS_CMDLINE(NewSize)) {
@@ -378,34 +394,48 @@ uint G1YoungGenSizer::calculate_default_max_length(uint new_number_of_heap_regio
   return MAX2(1U, default_value);
 }
 
-void G1YoungGenSizer::heap_size_changed(uint new_number_of_heap_regions) {
-  assert(new_number_of_heap_regions > 0, "Heap must be initialized");
+void G1YoungGenSizer::recalculate_min_max_young_length(uint number_of_heap_regions, uint* min_young_length, uint* max_young_length) {
+  assert(number_of_heap_regions > 0, "Heap must be initialized");
 
   switch (_sizer_kind) {
     case SizerDefaults:
-      _min_desired_young_length = calculate_default_min_length(new_number_of_heap_regions);
-      _max_desired_young_length = calculate_default_max_length(new_number_of_heap_regions);
+      *min_young_length = calculate_default_min_length(number_of_heap_regions);
+      *max_young_length = calculate_default_max_length(number_of_heap_regions);
       break;
     case SizerNewSizeOnly:
-      _max_desired_young_length = calculate_default_max_length(new_number_of_heap_regions);
-      _max_desired_young_length = MAX2(_min_desired_young_length, _max_desired_young_length);
+      *max_young_length = calculate_default_max_length(number_of_heap_regions);
+      *max_young_length = MAX2(*min_young_length, *max_young_length);
       break;
     case SizerMaxNewSizeOnly:
-      _min_desired_young_length = calculate_default_min_length(new_number_of_heap_regions);
-      _min_desired_young_length = MIN2(_min_desired_young_length, _max_desired_young_length);
+      *min_young_length = calculate_default_min_length(number_of_heap_regions);
+      *min_young_length = MIN2(*min_young_length, *max_young_length);
       break;
     case SizerMaxAndNewSize:
       // Do nothing. Values set on the command line, don't update them at runtime.
       break;
     case SizerNewRatio:
-      _min_desired_young_length = new_number_of_heap_regions / (NewRatio + 1);
-      _max_desired_young_length = _min_desired_young_length;
+      *min_young_length = number_of_heap_regions / (NewRatio + 1);
+      *max_young_length = *min_young_length;
       break;
     default:
       ShouldNotReachHere();
   }
 
-  assert(_min_desired_young_length <= _max_desired_young_length, "Invalid min/max young gen size values");
+  assert(*min_young_length <= *max_young_length, "Invalid min/max young gen size values");
+}
+
+uint G1YoungGenSizer::max_young_length(uint number_of_heap_regions) {
+  // We need to pass the desired values because recalculation may not update these
+  // values in some cases.
+  uint temp = _min_desired_young_length;
+  uint result = _max_desired_young_length;
+  recalculate_min_max_young_length(number_of_heap_regions, &temp, &result);
+  return result;
+}
+
+void G1YoungGenSizer::heap_size_changed(uint new_number_of_heap_regions) {
+  recalculate_min_max_young_length(new_number_of_heap_regions, &_min_desired_young_length,
+          &_max_desired_young_length);
 }
 
 void G1CollectorPolicy::init() {
