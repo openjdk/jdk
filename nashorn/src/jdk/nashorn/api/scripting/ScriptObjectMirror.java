@@ -41,6 +41,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.Callable;
 import javax.script.Bindings;
+import jdk.nashorn.internal.runtime.ConsString;
 import jdk.nashorn.internal.runtime.Context;
 import jdk.nashorn.internal.runtime.GlobalObject;
 import jdk.nashorn.internal.runtime.JSType;
@@ -594,14 +595,20 @@ public final class ScriptObjectMirror extends AbstractJSObject implements Bindin
     }
 
     /**
-     * Make a script object mirror on given object if needed.
+     * Make a script object mirror on given object if needed. Also converts ConsString instances to Strings.
      *
-     * @param obj object to be wrapped
-     * @param homeGlobal global to which this object belongs
-     * @return wrapped object
+     * @param obj object to be wrapped/converted
+     * @param homeGlobal global to which this object belongs. Not used for ConsStrings.
+     * @return wrapped/converted object
      */
     public static Object wrap(final Object obj, final ScriptObject homeGlobal) {
-        return (obj instanceof ScriptObject && homeGlobal != null) ? new ScriptObjectMirror((ScriptObject)obj, homeGlobal) : obj;
+        if(obj instanceof ScriptObject) {
+            return homeGlobal != null ? new ScriptObjectMirror((ScriptObject)obj, homeGlobal) : obj;
+        }
+        if(obj instanceof ConsString) {
+            return obj.toString();
+        }
+        return obj;
     }
 
     /**
