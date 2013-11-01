@@ -36,8 +36,6 @@ import static jdk.nashorn.internal.codegen.CompilerConstants.SOURCE;
 import static jdk.nashorn.internal.codegen.CompilerConstants.THIS;
 import static jdk.nashorn.internal.codegen.CompilerConstants.VARARGS;
 
-import jdk.nashorn.internal.ir.TemporarySymbols;
-
 import java.io.File;
 import java.lang.reflect.Field;
 import java.security.AccessController;
@@ -48,18 +46,20 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.EnumSet;
 import java.util.HashMap;
-import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
+import java.util.TreeSet;
 import java.util.logging.Level;
 import jdk.internal.dynalink.support.NameCodec;
 import jdk.nashorn.internal.codegen.ClassEmitter.Flag;
 import jdk.nashorn.internal.codegen.types.Type;
 import jdk.nashorn.internal.ir.FunctionNode;
 import jdk.nashorn.internal.ir.FunctionNode.CompilationState;
+import jdk.nashorn.internal.ir.TemporarySymbols;
 import jdk.nashorn.internal.ir.debug.ClassHistogramElement;
 import jdk.nashorn.internal.ir.debug.ObjectSizeCalculator;
 import jdk.nashorn.internal.runtime.CodeInstaller;
@@ -256,8 +256,8 @@ public final class Compiler {
         this.sequence      = sequence;
         this.installer     = installer;
         this.constantData  = new ConstantData();
-        this.compileUnits  = new HashSet<>();
-        this.bytecode      = new HashMap<>();
+        this.compileUnits  = new TreeSet<>();
+        this.bytecode      = new LinkedHashMap<>();
     }
 
     private void initCompiler(final FunctionNode functionNode) {

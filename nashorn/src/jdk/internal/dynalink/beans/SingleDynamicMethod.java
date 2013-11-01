@@ -91,6 +91,7 @@ import java.util.StringTokenizer;
 import jdk.internal.dynalink.CallSiteDescriptor;
 import jdk.internal.dynalink.linker.LinkerServices;
 import jdk.internal.dynalink.support.Guards;
+import jdk.internal.dynalink.support.Lookup;
 
 /**
  * Base class for dynamic methods that dispatch to a single target Java method or constructor. Handles adaptation of the
@@ -100,6 +101,9 @@ import jdk.internal.dynalink.support.Guards;
  * @version $Id: $
  */
 abstract class SingleDynamicMethod extends DynamicMethod {
+
+    private static final MethodHandle CAN_CONVERT_TO = Lookup.findOwnStatic(MethodHandles.lookup(), "canConvertTo", boolean.class, LinkerServices.class, Class.class, Object.class);
+
     SingleDynamicMethod(String name) {
         super(name);
     }
@@ -201,21 +205,67 @@ abstract class SingleDynamicMethod extends DynamicMethod {
                 return createConvertingInvocation(target, linkerServices, callSiteType).asVarargsCollector(
                         callSiteLastArgType);
             }
-            if(!linkerServices.canConvert(callSiteLastArgType, varArgType)) {
-                // Call site signature guarantees the argument can definitely not be an array (i.e. it is primitive);
-                // link immediately to a vararg-packing method handle.
-                return createConvertingInvocation(collectArguments(fixTarget, argsLen), linkerServices, callSiteType);
+
+            // This method handle takes the single argument and packs it into a newly allocated single-element array. It
+            // will be used when the incoming argument can't be converted to the vararg array type (the "vararg packer"
+            // method).
+            final MethodHandle varArgCollectingInvocation = createConvertingInvocation(collectArguments(fixTarget,
+                    argsLen), linkerServices, callSiteType);
+
+            // Is call site type assignable from an array type (e.g. Object:int[], or Object[]:String[])
+            final boolean isAssignableFromArray = callSiteLastArgType.isAssignableFrom(varArgType);
+            // Do we have a custom conversion that can potentially convert the call site type to an array?
+            final boolean isCustomConvertible = linkerServices.canConvert(callSiteLastArgType, varArgType);
+            if(!isAssignableFromArray && !isCustomConvertible) {
+                // Call site signature guarantees the argument can definitely not be converted to an array (i.e. it is
+                // primitive), and no conversion can help with it either. Link immediately to a vararg-packing method
+                // handle.
+                return varArgCollectingInvocation;
             }
-            // Call site signature makes no guarantees that the single argument in the vararg position will be
-            // compatible across all invocations. Need to insert an appropriate guard and fall back to generic vararg
-            // method when it is not.
-            return MethodHandles.guardWithTest(Guards.isInstance(varArgType, fixParamsLen, callSiteType),
-                    createConvertingInvocation(fixTarget, linkerServices, callSiteType),
-                    createConvertingInvocation(collectArguments(fixTarget, argsLen), linkerServices, callSiteType));
+
+            // This method handle employs language-specific conversions to convert the last argument into an array of
+            // vararg type.
+            final MethodHandle arrayConvertingInvocation = createConvertingInvocation(MethodHandles.filterArguments(
+                    fixTarget, fixParamsLen, linkerServices.getTypeConverter(callSiteLastArgType, varArgType)),
+                    linkerServices, callSiteType);
+
+            // This method handle determines whether the value can be converted to the array of vararg type using a
+            // language-specific conversion.
+            final MethodHandle canConvertArgToArray = MethodHandles.insertArguments(CAN_CONVERT_TO, 0, linkerServices,
+                    varArgType);
+
+            // This one adjusts the previous one for the location of the argument and the call site type.
+            final MethodHandle canConvertLastArgToArray = MethodHandles.dropArguments(canConvertArgToArray, 0,
+                    MethodType.genericMethodType(fixParamsLen).parameterList()).asType(callSiteType.changeReturnType(boolean.class));
+
+            // This one takes the previous ones and combines them into a method handle that converts the argument into
+            // a vararg array when it can, otherwise falls back to the vararg packer.
+            final MethodHandle convertToArrayWhenPossible = MethodHandles.guardWithTest(canConvertLastArgToArray,
+                    arrayConvertingInvocation, varArgCollectingInvocation);
+
+            if(isAssignableFromArray) {
+                return MethodHandles.guardWithTest(
+                        // Is incoming parameter already a compatible array?
+                        Guards.isInstance(varArgType, fixParamsLen, callSiteType),
+                        // Yes: just pass it to the method
+                        createConvertingInvocation(fixTarget, linkerServices, callSiteType),
+                        // No: either go through a custom conversion, or if it is not possible, go directly to the
+                        // vararg packer.
+                        isCustomConvertible ? convertToArrayWhenPossible : varArgCollectingInvocation);
+            }
+
+            // Just do the custom conversion with fallback to the vararg packer logic.
+            assert isCustomConvertible;
+            return convertToArrayWhenPossible;
         }
 
         // Remaining case: more than one vararg.
         return createConvertingInvocation(collectArguments(fixTarget, argsLen), linkerServices, callSiteType);
+    }
+
+    @SuppressWarnings("unused")
+    private static boolean canConvertTo(final LinkerServices linkerServices, Class<?> to, Object obj) {
+        return obj == null ? false : linkerServices.canConvert(obj.getClass(), to);
     }
 
     /**

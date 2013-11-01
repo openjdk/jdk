@@ -70,7 +70,7 @@ import java.time.DateTimeException;
  * The current era, for years from 1 onwards, is known as the 'Republic of China' era.
  * All previous years, zero or earlier in the proleptic count or one and greater
  * in the year-of-era count, are part of the 'Before Republic of China' era.
- * <p>
+ *
  * <table summary="Minguo years and eras" cellpadding="2" cellspacing="3" border="0" >
  * <thead>
  * <tr class="tableSubHeadingColor">

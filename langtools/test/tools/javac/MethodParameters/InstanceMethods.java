@@ -27,7 +27,7 @@
  * @summary javac should generate method parameters correctly.
  * @build Tester
  * @compile -parameters InstanceMethods.java
- * @run main Tester InstanceMethods
+ * @run main Tester InstanceMethods InstanceMethods.out
  */
 
 public class InstanceMethods {

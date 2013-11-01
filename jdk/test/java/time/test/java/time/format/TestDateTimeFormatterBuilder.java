@@ -267,12 +267,12 @@ public class TestDateTimeFormatterBuilder {
     //-----------------------------------------------------------------------
     @Test(expectedExceptions=NullPointerException.class)
     public void test_appendValueReduced_null() throws Exception {
-        builder.appendValueReduced(null, 2, 2000);
+        builder.appendValueReduced(null, 2, 2, 2000);
     }
 
     @Test
     public void test_appendValueReduced() throws Exception {
-        builder.appendValueReduced(YEAR, 2, 2000);
+        builder.appendValueReduced(YEAR, 2, 2, 2000);
         DateTimeFormatter f = builder.toFormatter();
         assertEquals(f.toString(), "ReducedValue(Year,2,2,2000)");
         TemporalAccessor parsed = f.parseUnresolved("12", new ParsePosition(0));
@@ -281,7 +281,7 @@ public class TestDateTimeFormatterBuilder {
 
     @Test
     public void test_appendValueReduced_subsequent_parse() throws Exception {
-        builder.appendValue(MONTH_OF_YEAR, 1, 2, SignStyle.NORMAL).appendValueReduced(YEAR, 2, 2000);
+        builder.appendValue(MONTH_OF_YEAR, 1, 2, SignStyle.NORMAL).appendValueReduced(YEAR, 2, 2, 2000);
         DateTimeFormatter f = builder.toFormatter();
         assertEquals(f.toString(), "Value(MonthOfYear,1,2,NORMAL)ReducedValue(Year,2,2,2000)");
         ParsePosition ppos = new ParsePosition(0);
@@ -654,19 +654,19 @@ public class TestDateTimeFormatterBuilder {
             {"GGGGG", "Text(Era,NARROW)"},
 
             {"u", "Value(Year)"},
-            {"uu", "ReducedValue(Year,2,2,2000)"},
+            {"uu", "ReducedValue(Year,2,2,2000-01-01)"},
             {"uuu", "Value(Year,3,19,NORMAL)"},
             {"uuuu", "Value(Year,4,19,EXCEEDS_PAD)"},
             {"uuuuu", "Value(Year,5,19,EXCEEDS_PAD)"},
 
             {"y", "Value(YearOfEra)"},
-            {"yy", "ReducedValue(YearOfEra,2,2,2000)"},
+            {"yy", "ReducedValue(YearOfEra,2,2,2000-01-01)"},
             {"yyy", "Value(YearOfEra,3,19,NORMAL)"},
             {"yyyy", "Value(YearOfEra,4,19,EXCEEDS_PAD)"},
             {"yyyyy", "Value(YearOfEra,5,19,EXCEEDS_PAD)"},
 
             {"Y", "Localized(WeekBasedYear)"},
-            {"YY", "Localized(ReducedValue(WeekBasedYear,2,2000))"},
+            {"YY", "Localized(ReducedValue(WeekBasedYear,2,2,2000-01-01))"},
             {"YYY", "Localized(WeekBasedYear,3,19,NORMAL)"},
             {"YYYY", "Localized(WeekBasedYear,4,19,EXCEEDS_PAD)"},
             {"YYYYY", "Localized(WeekBasedYear,5,19,EXCEEDS_PAD)"},

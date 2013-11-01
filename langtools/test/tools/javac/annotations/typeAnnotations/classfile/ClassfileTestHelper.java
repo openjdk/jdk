@@ -36,7 +36,8 @@ public class ClassfileTestHelper {
 
     //Makes debugging much easier. Set to 'false' for less output.
     public Boolean verbose = true;
-    void println(String msg) { if(verbose) System.out.println(msg); }
+    void println(String msg) { if (verbose) System.out.println(msg); }
+    void print(String msg) { if (verbose) System.out.print(msg); }
 
     File writeTestFile(String fname, String source) throws IOException {
       File f = new File(fname);
@@ -183,6 +184,13 @@ public class ClassfileTestHelper {
                         (RuntimeTypeAnnotations_attribute)attr;
                 println(testtype + ": " + name + ", " + annName + ": " +
                         tAttr.annotations.length );
+                if (tAttr.annotations.length > 0) {
+                    for (int i = 0; i < tAttr.annotations.length; i++) {
+                        println("  types:" + tAttr.annotations[i].position.type);
+                    }
+                } else {
+                    println("");
+                }
                 allt += tAttr.annotations.length;
                 if (visible)
                     tvisibles += tAttr.annotations.length;

@@ -72,7 +72,7 @@ import java.time.format.DateTimeFormatter;
 import java.time.format.SignStyle;
 import java.time.temporal.TemporalAccessor;
 import java.time.temporal.TemporalField;
-import java.time.temporal.TemporalQuery;
+import java.time.temporal.TemporalQueries;
 
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
@@ -178,8 +178,8 @@ public class TestNumberParser extends AbstractTestPrinterParser {
             assertTrue(subsequentWidth >= 0);
             assertEquals(ppos.getIndex(), expectedPos + subsequentWidth);
             assertEquals(parsed.getLong(DAY_OF_MONTH), expectedValue);
-            assertEquals(parsed.query(TemporalQuery.chronology()), null);
-            assertEquals(parsed.query(TemporalQuery.zoneId()), null);
+            assertEquals(parsed.query(TemporalQueries.chronology()), null);
+            assertEquals(parsed.query(TemporalQueries.zoneId()), null);
         }
     }
 
@@ -198,8 +198,8 @@ public class TestNumberParser extends AbstractTestPrinterParser {
             assertTrue(subsequentWidth >= 0);
             assertEquals(ppos.getIndex(), expectedPos + subsequentWidth);
             assertEquals(parsed.getLong(DAY_OF_WEEK), expectedValue);
-            assertEquals(parsed.query(TemporalQuery.chronology()), null);
-            assertEquals(parsed.query(TemporalQuery.zoneId()), null);
+            assertEquals(parsed.query(TemporalQueries.chronology()), null);
+            assertEquals(parsed.query(TemporalQueries.zoneId()), null);
         }
     }
 
@@ -313,8 +313,8 @@ public class TestNumberParser extends AbstractTestPrinterParser {
         } else {
             assertEquals(pos.getIndex(), parseLen);
             assertEquals(parsed.getLong(DAY_OF_MONTH), (long)parseVal);
-            assertEquals(parsed.query(TemporalQuery.chronology()), null);
-            assertEquals(parsed.query(TemporalQuery.zoneId()), null);
+            assertEquals(parsed.query(TemporalQueries.chronology()), null);
+            assertEquals(parsed.query(TemporalQueries.zoneId()), null);
         }
     }
 
@@ -423,8 +423,8 @@ public class TestNumberParser extends AbstractTestPrinterParser {
         } else {
             assertEquals(pos.getIndex(), parseLen);
             assertEquals(parsed.getLong(DAY_OF_MONTH), (long)parseVal);
-            assertEquals(parsed.query(TemporalQuery.chronology()), null);
-            assertEquals(parsed.query(TemporalQuery.zoneId()), null);
+            assertEquals(parsed.query(TemporalQueries.chronology()), null);
+            assertEquals(parsed.query(TemporalQueries.zoneId()), null);
         }
     }
 
@@ -514,8 +514,8 @@ public class TestNumberParser extends AbstractTestPrinterParser {
         } else {
             assertEquals(pos.getIndex(), parseLen);
             assertEquals(parsed.getLong(DAY_OF_MONTH), (long)parseVal);
-            assertEquals(parsed.query(TemporalQuery.chronology()), null);
-            assertEquals(parsed.query(TemporalQuery.zoneId()), null);
+            assertEquals(parsed.query(TemporalQueries.chronology()), null);
+            assertEquals(parsed.query(TemporalQueries.zoneId()), null);
         }
     }
 
@@ -552,8 +552,8 @@ public class TestNumberParser extends AbstractTestPrinterParser {
             assertEquals(pos.getIndex(), parseLen);
             assertEquals(parsed.getLong(MONTH_OF_YEAR), (long) parseMonth);
             assertEquals(parsed.getLong(DAY_OF_MONTH), (long) parsedDay);
-            assertEquals(parsed.query(TemporalQuery.chronology()), null);
-            assertEquals(parsed.query(TemporalQuery.zoneId()), null);
+            assertEquals(parsed.query(TemporalQueries.chronology()), null);
+            assertEquals(parsed.query(TemporalQueries.zoneId()), null);
         }
     }
 

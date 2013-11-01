@@ -47,6 +47,7 @@ import com.sun.security.auth.UnixNumericGroupPrincipal;
  * debug messages will be output to the output stream, System.out.
  *
  */
+@jdk.Exported
 public class UnixLoginModule implements LoginModule {
 
     // initial state
