@@ -173,8 +173,6 @@ class SymbolPropertyTable;
   /* It's okay if this turns out to be NULL in non-1.4 JDKs. */                                                          \
   do_klass(nio_Buffer_klass,                            java_nio_Buffer,                           Opt                 ) \
                                                                                                                          \
-  do_klass(PostVMInitHook_klass,                        sun_misc_PostVMInitHook,                   Opt                 ) \
-                                                                                                                         \
   /* Preload boxing klasses */                                                                                           \
   do_klass(Boolean_klass,                               java_lang_Boolean,                         Pre                 ) \
   do_klass(Character_klass,                             java_lang_Character,                       Pre                 ) \

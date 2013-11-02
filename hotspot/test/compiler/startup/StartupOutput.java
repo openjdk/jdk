@@ -1,12 +1,10 @@
 /*
- * Copyright (c) 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.  Oracle designates this
- * particular file as subject to the "Classpath" exception as provided
- * by Oracle in the LICENSE file that accompanied this code.
+ * published by the Free Software Foundation.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -23,25 +21,24 @@
  * questions.
  */
 
-#import <jawt_md.h>
-
 /*
- * The CALayer-based rendering model returns an object conforming
- * to the JAWT_SurfaceLayers protocol
+ * @test
+ * @bug 8026949
+ * @summary Test ensures correct VM output during startup
+ * @library ../../testlibrary
  *
- * @protocol JAWT_SurfaceLayers
- * @property (readwrite, retain) CALayer *layer;
- * @property (readonly) CALayer *windowLayer;
- * @end
  */
+import com.oracle.java.testlibrary.*;
 
-@interface AWTSurfaceLayers : NSObject<JAWT_SurfaceLayers> {
-@private
-    CALayer *layer;
-    CALayer *windowLayer;
+public class StartupOutput {
+  public static void main(String[] args) throws Exception {
+    ProcessBuilder pb;
+    OutputAnalyzer out;
+
+    pb = ProcessTools.createJavaProcessBuilder("-Xint", "-XX:+DisplayVMOutputToStdout", "-version");
+    out = new OutputAnalyzer(pb.start());
+    out.shouldNotContain("no space to run compilers");
+
+    out.shouldHaveExitValue(0);
+  }
 }
-
-- (id) initWithWindowLayer: (CALayer *)windowLayer;
-- (void) setBounds: (CGRect)rect;
-
-@end

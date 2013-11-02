@@ -2787,13 +2787,11 @@ intptr_t TypeOopPtr::get_con() const {
 
 //-----------------------------filter------------------------------------------
 // Do not allow interface-vs.-noninterface joins to collapse to top.
-const Type *TypeOopPtr::filter( const Type *kills ) const {
+const Type *TypeOopPtr::filter(const Type *kills) const {
 
   const Type* ft = join(kills);
   const TypeInstPtr* ftip = ft->isa_instptr();
   const TypeInstPtr* ktip = kills->isa_instptr();
-  const TypeKlassPtr* ftkp = ft->isa_klassptr();
-  const TypeKlassPtr* ktkp = kills->isa_klassptr();
 
   if (ft->empty()) {
     // Check for evil case of 'this' being a class and 'kills' expecting an
@@ -2806,8 +2804,6 @@ const Type *TypeOopPtr::filter( const Type *kills ) const {
     // into a Phi which "knows" it's an Interface type we'll have to
     // uplift the type.
     if (!empty() && ktip != NULL && ktip->is_loaded() && ktip->klass()->is_interface())
-      return kills;             // Uplift to interface
-    if (!empty() && ktkp != NULL && ktkp->klass()->is_loaded() && ktkp->klass()->is_interface())
       return kills;             // Uplift to interface
 
     return Type::TOP;           // Canonical empty value
@@ -2824,14 +2820,6 @@ const Type *TypeOopPtr::filter( const Type *kills ) const {
     // Happens in a CTW of rt.jar, 320-341, no extra flags
     assert(!ftip->klass_is_exact(), "interface could not be exact");
     return ktip->cast_to_ptr_type(ftip->ptr());
-  }
-  // Interface klass type could be exact in opposite to interface type,
-  // return it here instead of incorrect Constant ptr J/L/Object (6894807).
-  if (ftkp != NULL && ktkp != NULL &&
-      ftkp->is_loaded() &&  ftkp->klass()->is_interface() &&
-      !ftkp->klass_is_exact() && // Keep exact interface klass
-      ktkp->is_loaded() && !ktkp->klass()->is_interface()) {
-    return ktkp->cast_to_ptr_type(ftkp->ptr());
   }
 
   return ft;
@@ -4383,6 +4371,33 @@ bool TypeKlassPtr::singleton(void) const {
   // detune optimizer to not generate constant klass + constant offset as a constant!
   // TopPTR, Null, AnyNull, Constant are all singletons
   return (_offset == 0) && !below_centerline(_ptr);
+}
+
+// Do not allow interface-vs.-noninterface joins to collapse to top.
+const Type *TypeKlassPtr::filter(const Type *kills) const {
+  // logic here mirrors the one from TypeOopPtr::filter. See comments
+  // there.
+  const Type* ft = join(kills);
+  const TypeKlassPtr* ftkp = ft->isa_klassptr();
+  const TypeKlassPtr* ktkp = kills->isa_klassptr();
+
+  if (ft->empty()) {
+    if (!empty() && ktkp != NULL && ktkp->klass()->is_loaded() && ktkp->klass()->is_interface())
+      return kills;             // Uplift to interface
+
+    return Type::TOP;           // Canonical empty value
+  }
+
+  // Interface klass type could be exact in opposite to interface type,
+  // return it here instead of incorrect Constant ptr J/L/Object (6894807).
+  if (ftkp != NULL && ktkp != NULL &&
+      ftkp->is_loaded() &&  ftkp->klass()->is_interface() &&
+      !ftkp->klass_is_exact() && // Keep exact interface klass
+      ktkp->is_loaded() && !ktkp->klass()->is_interface()) {
+    return ktkp->cast_to_ptr_type(ftkp->ptr());
+  }
+
+  return ft;
 }
 
 //----------------------compute_klass------------------------------------------
