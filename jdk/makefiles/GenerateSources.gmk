@@ -66,15 +66,17 @@ include gensrc/GensrcExceptions.gmk
 GENSRC += $(GENSRC_EXCEPTIONS)
 
 ifneq ($(OPENJDK_TARGET_OS), windows)
-include gensrc/GensrcIcons.gmk
-GENSRC += $(GENSRC_AWT_ICONS)
+  include gensrc/GensrcIcons.gmk
+  GENSRC += $(GENSRC_AWT_ICONS)
 
-ifeq ($(OPENJDK_TARGET_OS), macosx)
-GENSRC += $(GENSRC_OSX_ICONS)
-endif
+  ifeq ($(OPENJDK_TARGET_OS), macosx)
+    GENSRC += $(GENSRC_OSX_ICONS)
+  endif
 
-include gensrc/GensrcX11Wrappers.gmk
-GENSRC += $(GENSRC_X11WRAPPERS)
+  ifneq ($(OPENJDK_TARGET_OS), macosx)
+    include gensrc/GensrcX11Wrappers.gmk
+    GENSRC += $(GENSRC_X11WRAPPERS)
+  endif
 endif
 
 include gensrc/GensrcCLDR.gmk
