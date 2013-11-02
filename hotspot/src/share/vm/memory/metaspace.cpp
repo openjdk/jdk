@@ -56,7 +56,7 @@ size_t const allocation_from_dictionary_limit = 4 * K;
 
 MetaWord* last_allocated = 0;
 
-size_t Metaspace::_class_metaspace_size;
+size_t Metaspace::_compressed_class_space_size;
 
 // Used in declarations in SpaceManager and ChunkManager
 enum ChunkIndex {
@@ -2843,6 +2843,8 @@ ChunkManager* Metaspace::_chunk_manager_class = NULL;
 #define VIRTUALSPACEMULTIPLIER 2
 
 #ifdef _LP64
+static const uint64_t UnscaledClassSpaceMax = (uint64_t(max_juint) + 1);
+
 void Metaspace::set_narrow_klass_base_and_shift(address metaspace_base, address cds_base) {
   // Figure out the narrow_klass_base and the narrow_klass_shift.  The
   // narrow_klass_base is the lower of the metaspace base and the cds base
@@ -2852,14 +2854,22 @@ void Metaspace::set_narrow_klass_base_and_shift(address metaspace_base, address 
   address higher_address;
   if (UseSharedSpaces) {
     higher_address = MAX2((address)(cds_base + FileMapInfo::shared_spaces_size()),
-                          (address)(metaspace_base + class_metaspace_size()));
+                          (address)(metaspace_base + compressed_class_space_size()));
     lower_base = MIN2(metaspace_base, cds_base);
   } else {
-    higher_address = metaspace_base + class_metaspace_size();
+    higher_address = metaspace_base + compressed_class_space_size();
     lower_base = metaspace_base;
+
+    uint64_t klass_encoding_max = UnscaledClassSpaceMax << LogKlassAlignmentInBytes;
+    // If compressed class space fits in lower 32G, we don't need a base.
+    if (higher_address <= (address)klass_encoding_max) {
+      lower_base = 0; // effectively lower base is zero.
+    }
   }
+
   Universe::set_narrow_klass_base(lower_base);
-  if ((uint64_t)(higher_address - lower_base) < (uint64_t)max_juint) {
+
+  if ((uint64_t)(higher_address - lower_base) < UnscaledClassSpaceMax) {
     Universe::set_narrow_klass_shift(0);
   } else {
     assert(!UseSharedSpaces, "Cannot shift with UseSharedSpaces");
@@ -2874,24 +2884,24 @@ bool Metaspace::can_use_cds_with_metaspace_addr(char* metaspace_base, address cd
   assert(UseCompressedClassPointers, "Only use with CompressedKlassPtrs");
   address lower_base = MIN2((address)metaspace_base, cds_base);
   address higher_address = MAX2((address)(cds_base + FileMapInfo::shared_spaces_size()),
-                                (address)(metaspace_base + class_metaspace_size()));
-  return ((uint64_t)(higher_address - lower_base) < (uint64_t)max_juint);
+                                (address)(metaspace_base + compressed_class_space_size()));
+  return ((uint64_t)(higher_address - lower_base) < UnscaledClassSpaceMax);
 }
 
 // Try to allocate the metaspace at the requested addr.
 void Metaspace::allocate_metaspace_compressed_klass_ptrs(char* requested_addr, address cds_base) {
   assert(using_class_space(), "called improperly");
   assert(UseCompressedClassPointers, "Only use with CompressedKlassPtrs");
-  assert(class_metaspace_size() < KlassEncodingMetaspaceMax,
+  assert(compressed_class_space_size() < KlassEncodingMetaspaceMax,
          "Metaspace size is too big");
-  assert_is_ptr_aligned(requested_addr,          _reserve_alignment);
-  assert_is_ptr_aligned(cds_base,                _reserve_alignment);
-  assert_is_size_aligned(class_metaspace_size(), _reserve_alignment);
+  assert_is_ptr_aligned(requested_addr, _reserve_alignment);
+  assert_is_ptr_aligned(cds_base, _reserve_alignment);
+  assert_is_size_aligned(compressed_class_space_size(), _reserve_alignment);
 
   // Don't use large pages for the class space.
   bool large_pages = false;
 
-  ReservedSpace metaspace_rs = ReservedSpace(class_metaspace_size(),
+  ReservedSpace metaspace_rs = ReservedSpace(compressed_class_space_size(),
                                              _reserve_alignment,
                                              large_pages,
                                              requested_addr, 0);
@@ -2906,7 +2916,7 @@ void Metaspace::allocate_metaspace_compressed_klass_ptrs(char* requested_addr, a
       while (!metaspace_rs.is_reserved() && (addr + increment > addr) &&
              can_use_cds_with_metaspace_addr(addr + increment, cds_base)) {
         addr = addr + increment;
-        metaspace_rs = ReservedSpace(class_metaspace_size(),
+        metaspace_rs = ReservedSpace(compressed_class_space_size(),
                                      _reserve_alignment, large_pages, addr, 0);
       }
     }
@@ -2917,11 +2927,11 @@ void Metaspace::allocate_metaspace_compressed_klass_ptrs(char* requested_addr, a
     // initialization has happened that depends on UseCompressedClassPointers.
     // So, UseCompressedClassPointers cannot be turned off at this point.
     if (!metaspace_rs.is_reserved()) {
-      metaspace_rs = ReservedSpace(class_metaspace_size(),
+      metaspace_rs = ReservedSpace(compressed_class_space_size(),
                                    _reserve_alignment, large_pages);
       if (!metaspace_rs.is_reserved()) {
         vm_exit_during_initialization(err_msg("Could not allocate metaspace: %d bytes",
-                                              class_metaspace_size()));
+                                              compressed_class_space_size()));
       }
     }
   }
@@ -2943,8 +2953,8 @@ void Metaspace::allocate_metaspace_compressed_klass_ptrs(char* requested_addr, a
   if (PrintCompressedOopsMode || (PrintMiscellaneous && Verbose)) {
     gclog_or_tty->print_cr("Narrow klass base: " PTR_FORMAT ", Narrow klass shift: " SIZE_FORMAT,
                             Universe::narrow_klass_base(), Universe::narrow_klass_shift());
-    gclog_or_tty->print_cr("Metaspace Size: " SIZE_FORMAT " Address: " PTR_FORMAT " Req Addr: " PTR_FORMAT,
-                           class_metaspace_size(), metaspace_rs.base(), requested_addr);
+    gclog_or_tty->print_cr("Compressed class space size: " SIZE_FORMAT " Address: " PTR_FORMAT " Req Addr: " PTR_FORMAT,
+                           compressed_class_space_size(), metaspace_rs.base(), requested_addr);
   }
 }
 
@@ -3005,7 +3015,7 @@ void Metaspace::ergo_initialize() {
   MaxMetaspaceExpansion = align_size_down_bounded(MaxMetaspaceExpansion, _commit_alignment);
 
   CompressedClassSpaceSize = align_size_down_bounded(CompressedClassSpaceSize, _reserve_alignment);
-  set_class_metaspace_size(CompressedClassSpaceSize);
+  set_compressed_class_space_size(CompressedClassSpaceSize);
 }
 
 void Metaspace::global_initialize() {
@@ -3034,12 +3044,12 @@ void Metaspace::global_initialize() {
     }
 
 #ifdef _LP64
-    if (cds_total + class_metaspace_size() > (uint64_t)max_juint) {
+    if (cds_total + compressed_class_space_size() > UnscaledClassSpaceMax) {
       vm_exit_during_initialization("Unable to dump shared archive.",
           err_msg("Size of archive (" SIZE_FORMAT ") + compressed class space ("
                   SIZE_FORMAT ") == total (" SIZE_FORMAT ") is larger than compressed "
-                  "klass limit: " SIZE_FORMAT, cds_total, class_metaspace_size(),
-                  cds_total + class_metaspace_size(), (size_t)max_juint));
+                  "klass limit: " SIZE_FORMAT, cds_total, compressed_class_space_size(),
+                  cds_total + compressed_class_space_size(), UnscaledClassSpaceMax));
     }
 
     // Set the compressed klass pointer base so that decoding of these pointers works
@@ -3087,7 +3097,8 @@ void Metaspace::global_initialize() {
         cds_end = (char *)align_ptr_up(cds_end, _reserve_alignment);
         allocate_metaspace_compressed_klass_ptrs(cds_end, cds_address);
       } else {
-        allocate_metaspace_compressed_klass_ptrs((char *)CompressedKlassPointersBase, 0);
+        char* base = (char*)align_ptr_up(Universe::heap()->reserved_region().end(), _reserve_alignment);
+        allocate_metaspace_compressed_klass_ptrs(base, 0);
       }
     }
 #endif
@@ -3349,6 +3360,11 @@ MetaWord* Metaspace::allocate(ClassLoaderData* loader_data, size_t word_size,
   return result;
 }
 
+size_t Metaspace::class_chunk_size(size_t word_size) {
+  assert(using_class_space(), "Has to use class space");
+  return class_vsm()->calc_chunk_size(word_size);
+}
+
 void Metaspace::report_metadata_oome(ClassLoaderData* loader_data, size_t word_size, MetadataType mdtype, TRAPS) {
   // If result is still null, we are out of memory.
   if (Verbose && TraceMetadataChunkAllocation) {
@@ -3360,9 +3376,19 @@ void Metaspace::report_metadata_oome(ClassLoaderData* loader_data, size_t word_s
     MetaspaceAux::dump(gclog_or_tty);
   }
 
+  bool out_of_compressed_class_space = false;
+  if (is_class_space_allocation(mdtype)) {
+    Metaspace* metaspace = loader_data->metaspace_non_null();
+    out_of_compressed_class_space =
+      MetaspaceAux::committed_bytes(Metaspace::ClassType) +
+      (metaspace->class_chunk_size(word_size) * BytesPerWord) >
+      CompressedClassSpaceSize;
+  }
+
   // -XX:+HeapDumpOnOutOfMemoryError and -XX:OnOutOfMemoryError support
-  const char* space_string = is_class_space_allocation(mdtype) ? "Compressed class space" :
-                                                                 "Metadata space";
+  const char* space_string = out_of_compressed_class_space ?
+    "Compressed class space" : "Metaspace";
+
   report_java_out_of_memory(space_string);
 
   if (JvmtiExport::should_post_resource_exhausted()) {
@@ -3375,7 +3401,7 @@ void Metaspace::report_metadata_oome(ClassLoaderData* loader_data, size_t word_s
     vm_exit_during_initialization("OutOfMemoryError", space_string);
   }
 
-  if (is_class_space_allocation(mdtype)) {
+  if (out_of_compressed_class_space) {
     THROW_OOP(Universe::out_of_memory_error_class_metaspace());
   } else {
     THROW_OOP(Universe::out_of_memory_error_metaspace());
