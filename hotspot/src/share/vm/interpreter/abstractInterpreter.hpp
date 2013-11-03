@@ -30,11 +30,8 @@
 #include "runtime/thread.inline.hpp"
 #include "runtime/vmThread.hpp"
 #include "utilities/top.hpp"
-#ifdef TARGET_ARCH_MODEL_x86_32
-# include "interp_masm_x86_32.hpp"
-#endif
-#ifdef TARGET_ARCH_MODEL_x86_64
-# include "interp_masm_x86_64.hpp"
+#ifdef TARGET_ARCH_x86
+# include "interp_masm_x86.hpp"
 #endif
 #ifdef TARGET_ARCH_MODEL_sparc
 # include "interp_masm_sparc.hpp"

@@ -64,6 +64,7 @@ needs_jdk = \
   gc/TestG1ZeroPGCTJcmdThreadPrint.java \
   gc/metaspace/CompressedClassSpaceSizeInJmapHeap.java \
   gc/metaspace/TestMetaspacePerfCounters.java \
+  gc/metaspace/TestPerfCountersAndMemoryPools.java \
   runtime/6819213/TestBootNativeLibraryPath.java \
   runtime/6925573/SortMethodsTest.java \
   runtime/7107135/Test7107135.sh \
@@ -101,7 +102,9 @@ jre = \
 needs_jre = \
   compiler/6852078/Test6852078.java \
   compiler/7047069/Test7047069.java \
-  runtime/6294277/SourceDebugExtension.java
+  runtime/6294277/SourceDebugExtension.java \
+  runtime/ClassFile/JsrRewriting.java \
+  runtime/ClassFile/OomWhileParsingRepeatedJsr.java
 
 # Compact 3 adds further tests to compact2
 #

@@ -53,6 +53,8 @@ LIR_Opr FrameMap::map_to_opr(BasicType type, VMRegPair* reg, bool outgoing) {
       opr = as_long_opr(reg);
     } else if (type == T_OBJECT || type == T_ARRAY) {
       opr = as_oop_opr(reg);
+    } else if (type == T_METADATA) {
+      opr = as_metadata_opr(reg);
     } else {
       opr = as_opr(reg);
     }
