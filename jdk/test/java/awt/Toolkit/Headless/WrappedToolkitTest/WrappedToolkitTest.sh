@@ -77,6 +77,12 @@ case "$OS" in
       FILESEP="\\"
       ;;
 
+    Darwin)
+      VAR="Lets not forget about Mac"
+      DEFAULT_JDK=$(/usr/libexec/java_home)
+      FILESEP="/"
+      ;;
+
    # catch all other OSs
    * )
       echo "Unrecognized system!  $OS"
@@ -168,6 +174,22 @@ case "$OS" in
     status=$?
     if [ ! $status -eq "0" ]; then
       fail "Test FAILED: toolkit wrapped into HeadlessToolkit is not an instance of sun.awt.xawt.XToolkit";
+    fi
+    ;;
+
+  Darwin)
+    ${TESTJAVA}/bin/java -Djava.awt.headless=true \
+                         TestWrapped sun.lwawt.macosx.LWCToolkit
+    status=$?
+    if [ ! $status -eq "0" ]; then
+      fail "Test FAILED: toolkit wrapped into HeadlessToolkit is not an instance of sun.lwawt.macosx.LWCToolkit";
+    fi
+    ${TESTJAVA}/bin/java -Djava.awt.headless=true \
+                         -Dawt.toolkit=sun.lwawt.macosx.LWCToolkit \
+                         TestWrapped sun.lwawt.macosx.LWCToolkit
+    status=$?
+    if [ ! $status -eq "0" ]; then
+      fail "Test FAILED: toolkit wrapped into HeadlessToolkit is not an instance of sun.lwawt.macosx.LWCToolkit";
     fi
     ;;
 

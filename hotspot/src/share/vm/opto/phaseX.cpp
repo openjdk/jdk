@@ -1385,6 +1385,20 @@ void PhaseIterGVN::add_users_to_worklist( Node *n ) {
   }
 }
 
+/**
+ * Remove the speculative part of all types that we know of
+ */
+void PhaseIterGVN::remove_speculative_types()  {
+  assert(UseTypeSpeculation, "speculation is off");
+  for (uint i = 0; i < _types.Size(); i++)  {
+    const Type* t = _types.fast_lookup(i);
+    if (t != NULL && t->isa_oopptr()) {
+      const TypeOopPtr* to = t->is_oopptr();
+      _types.map(i, to->remove_speculative());
+    }
+  }
+}
+
 //=============================================================================
 #ifndef PRODUCT
 uint PhaseCCP::_total_invokes   = 0;

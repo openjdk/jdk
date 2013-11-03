@@ -99,7 +99,7 @@ ifneq ($(COMPILE_TYPE), cross)
 	    $(X_LIBS) \
 	    -I$(JDK_OUTPUTDIR)/include \
 	    -I$(JDK_TOPDIR)/src/share/javavm/export \
-	    -I$(JDK_TOPDIR)/src/$(OPENJDK_TARGET_OS_API_DIR)/javavm/export \
+	    -I$(JDK_TOPDIR)/src/$(OPENJDK_TARGET_OS_EXPORT_DIR)/javavm/export \
 	    -I$(JDK_TOPDIR)/src/share/native/common \
 	    -I$(JDK_TOPDIR)/src/$(OPENJDK_TARGET_OS_API_DIR)/native/common \
 	    -I$(JDK_TOPDIR)/src/solaris/native/sun/awt \
