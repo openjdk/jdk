@@ -186,6 +186,14 @@ public class URLPermissionTest {
         imtest("http:*", "https://www.foo.com/a/b/c", false),
         imtest("http:*", "http://www.foo.com/a/b/c", true),
         imtest("http:*", "http://foo/bar", true),
+        imtest("http://WWW.foO.cOM/a/b/*", "http://wwW.foo.com/a/b/c", true),
+        imtest("http://wWw.fOo.cOm/a/b/*", "http://Www.foo.com/a/b/*", true),
+        imtest("http://www.FOO.com/", "http://www.foo.COM/", true),
+        imtest("http://66ww-w.F-O012O.com/", "http://66ww-w.f-o012o.COM/",true),
+        imtest("http://xn--ire-9la.com/", "http://xn--ire-9la.COM/", true),
+        imtest("http://x/", "http://X/", true),
+        imtest("http://x/", "http://x/", true),
+        imtest("http://X/", "http://X/", true),
         imtest("http://foo/bar", "https://foo/bar", false)
     };
 
@@ -194,9 +202,12 @@ public class URLPermissionTest {
     static Test[] exceptionTests = {
         extest("http://1.2.3.4.5/a/b/c"),
         extest("http://www.*.com"),
-        //extest("http://www.foo.com:1-X"),
         extest("http://[foo.com]:99"),
         extest("http://[fec0::X]:99"),
+        extest("http:\\www.foo.com"),
+        extest("http://w_09ww.foo.com"),
+        extest("http://w&09ww.foo.com/p"),
+        extest("http://www+foo.com"),
         extest("http:")
     };
 
