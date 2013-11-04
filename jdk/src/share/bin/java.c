@@ -53,6 +53,8 @@
 
 #include "java.h"
 
+#include <time.h>
+
 /*
  * A NOTE TO DEVELOPERS: For performance reasons it is important that
  * the program image remain relatively small until after SelectVersion
@@ -167,6 +169,26 @@ static jlong threadStackSize    = 0;  /* stack size of the new thread */
 static jlong maxHeapSize        = 0;  /* max heap size */
 static jlong initialHeapSize    = 0;  /* inital heap size */
 
+static jlong timestamps[256];
+static char* descriptors[256];
+static int ts_index = 0;
+
+static void stamp(char* info) {
+  struct timespec tp;
+  clock_gettime(CLOCK_MONOTONIC, &tp);
+  timestamps[ts_index] = ((jlong)tp.tv_sec) * (1000 * 1000 * 1000) + tp.tv_nsec;
+  descriptors[ts_index++] = info;
+}
+
+static void report_times() {
+  printf("[0] %s\n", descriptors[0]);
+  int i;
+  for (i = 1; i < ts_index; i++) {
+    jlong elapsed = timestamps[i] - timestamps[i-1];
+    printf("[%d] elapsed us: %.3g - Next: %s\n", i, (elapsed/1000.0), descriptors[i]);
+  }
+}
+
 /*
  * Entry point.
  */
@@ -184,6 +206,7 @@ JLI_Launch(int argc, char ** argv,              /* main argc, argc */
         jint ergo                               /* ergonomics class policy */
 )
 {
+    stamp("Entered JLI_Launch");
     int mode = LM_UNKNOWN;
     char *what = NULL;
     char *cpath = 0;
@@ -203,6 +226,7 @@ JLI_Launch(int argc, char ** argv,              /* main argc, argc */
     _wc_enabled = cpwildcard;
     _ergo_policy = ergo;
 
+stamp("InitLauncher");
     InitLauncher(javaw);
     DumpState();
     if (JLI_IsTraceLauncher()) {
@@ -231,8 +255,9 @@ JLI_Launch(int argc, char ** argv,              /* main argc, argc */
      *     (Note: This side effect has been disabled.  See comment on
      *     bugid 5030265 below.)
      */
+stamp("SelectVersion");
     SelectVersion(argc, argv, &main_class);
-
+stamp("CreateExecutionEnvironment");
     CreateExecutionEnvironment(&argc, &argv,
                                jrepath, sizeof(jrepath),
                                jvmpath, sizeof(jvmpath),
@@ -244,11 +269,11 @@ JLI_Launch(int argc, char ** argv,              /* main argc, argc */
     if (JLI_IsTraceLauncher()) {
         start = CounterGet();
     }
-
+stamp("LoadJavaVM");
     if (!LoadJavaVM(jvmpath, &ifn)) {
         return(6);
     }
-
+stamp("Arg processing");
     if (JLI_IsTraceLauncher()) {
         end   = CounterGet();
     }
@@ -295,8 +320,10 @@ JLI_Launch(int argc, char ** argv,              /* main argc, argc */
 
     /* set the -Dsun.java.launcher.* platform properties */
     SetJavaLauncherPlatformProps();
-
-    return JVMInit(&ifn, threadStackSize, argc, argv, mode, what, ret);
+stamp("JVMInit");
+    int res = JVMInit(&ifn, threadStackSize, argc, argv, mode, what, ret);
+stamp("initial thread DONE");
+    return res;
 }
 /*
  * Always detach the main thread so that it appears to have ended when
@@ -348,6 +375,7 @@ JLI_Launch(int argc, char ** argv,              /* main argc, argc */
 int JNICALL
 JavaMain(void * _args)
 {
+stamp("JavaMain");
     JavaMainArgs *args = (JavaMainArgs *)_args;
     int argc = args->argc;
     char **argv = args->argv;
@@ -363,11 +391,12 @@ JavaMain(void * _args)
     jobjectArray mainArgs;
     int ret = 0;
     jlong start, end;
-
+stamp("RegisterThread");
     RegisterThread();
 
     /* Initialize the virtual machine */
     start = CounterGet();
+stamp("InitializeJVM");
     if (!InitializeJVM(&vm, &env, &ifn)) {
         JLI_ReportErrorMessage(JVM_ERROR1);
         exit(1);
@@ -436,6 +465,7 @@ JavaMain(void * _args)
      * This method also correctly handles launching existing JavaFX
      * applications that may or may not have a Main-Class manifest entry.
      */
+stamp("LoadMainClass");
     mainClass = LoadMainClass(env, mode, what);
     CHECK_EXCEPTION_NULL_LEAVE(mainClass);
     /*
@@ -444,6 +474,7 @@ JavaMain(void * _args)
      * applications own main class but rather a helper class. To keep things
      * consistent in the UI we need to track and report the application main class.
      */
+stamp("GetApplicationClass");
     appClass = GetApplicationClass(env);
     NULL_CHECK_RETURN_VALUE(appClass, -1);
     /*
@@ -453,6 +484,7 @@ JavaMain(void * _args)
      * instead of mainClass as that may be a launcher or helper class instead
      * of the application class.
      */
+stamp("PostJVMInit");
     PostJVMInit(env, appClass, vm);
     /*
      * The LoadMainClass not only loads the main class, it will also ensure
@@ -460,17 +492,20 @@ JavaMain(void * _args)
      * is not required. The main method is invoked here so that extraneous java
      * stacks are not in the application stack trace.
      */
+stamp("Get main method");
     mainID = (*env)->GetStaticMethodID(env, mainClass, "main",
                                        "([Ljava/lang/String;)V");
     CHECK_EXCEPTION_NULL_LEAVE(mainID);
-
+stamp("CreateApplicationArgs");
     /* Build platform specific argument array */
     mainArgs = CreateApplicationArgs(env, argv, argc);
     CHECK_EXCEPTION_NULL_LEAVE(mainArgs);
 
     /* Invoke main method. */
+stamp("Invoke main method");
     (*env)->CallStaticVoidMethod(env, mainClass, mainID, mainArgs);
-
+stamp("main complete");
+report_times();
     /*
      * The launcher's exit code (in the absence of calls to
      * System.exit) will be non-zero if main threw an exception.
@@ -1875,6 +1910,7 @@ ContinueInNewThread(InvocationFunctions* ifn, jlong threadStackSize,
                     int argc, char **argv,
                     int mode, char *what, int ret)
 {
+stamp("ContinueInNewThread");
 
     /*
      * If user doesn't specify stack size, check if VM has a preference.
@@ -1900,7 +1936,7 @@ ContinueInNewThread(InvocationFunctions* ifn, jlong threadStackSize,
       args.mode = mode;
       args.what = what;
       args.ifn = *ifn;
-
+stamp("ContinueInNewThread0");
       rslt = ContinueInNewThread0(JavaMain, threadStackSize, (void*)&args);
       /* If the caller has deemed there is an error we
        * simply return that, otherwise we return the value of
