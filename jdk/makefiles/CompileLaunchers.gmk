@@ -154,7 +154,7 @@ define SetupLauncher
           $(ORIGIN_ARG) \
           $$($1_LDFLAGS), \
       LDFLAGS_macosx := $(call SET_SHARED_LIBRARY_NAME,$1), \
-      LDFLAGS_linux := -lpthread -lrt \
+      LDFLAGS_linux := -lpthread \
           $(call SET_SHARED_LIBRARY_NAME,$(LIBRARY_PREFIX)$(SHARED_LIBRARY_SUFFIX)), \
       LDFLAGS_solaris := $$($1_LDFLAGS_solaris) \
           $(call SET_SHARED_LIBRARY_NAME,$(LIBRARY_PREFIX)$(SHARED_LIBRARY_SUFFIX)), \
