@@ -601,9 +601,9 @@ public final class ScriptObjectMirror extends AbstractJSObject implements Bindin
      * @param homeGlobal global to which this object belongs. Not used for ConsStrings.
      * @return wrapped/converted object
      */
-    public static Object wrap(final Object obj, final ScriptObject homeGlobal) {
+    public static Object wrap(final Object obj, final Object homeGlobal) {
         if(obj instanceof ScriptObject) {
-            return homeGlobal != null ? new ScriptObjectMirror((ScriptObject)obj, homeGlobal) : obj;
+            return homeGlobal instanceof ScriptObject ? new ScriptObjectMirror((ScriptObject)obj, (ScriptObject)homeGlobal) : obj;
         }
         if(obj instanceof ConsString) {
             return obj.toString();
@@ -618,7 +618,7 @@ public final class ScriptObjectMirror extends AbstractJSObject implements Bindin
      * @param homeGlobal global to which this object belongs
      * @return unwrapped object
      */
-    public static Object unwrap(final Object obj, final ScriptObject homeGlobal) {
+    public static Object unwrap(final Object obj, final Object homeGlobal) {
         if (obj instanceof ScriptObjectMirror) {
             final ScriptObjectMirror mirror = (ScriptObjectMirror)obj;
             return (mirror.global == homeGlobal)? mirror.sobj : obj;
@@ -634,7 +634,7 @@ public final class ScriptObjectMirror extends AbstractJSObject implements Bindin
      * @param homeGlobal global to which this object belongs
      * @return wrapped array
      */
-    public static Object[] wrapArray(final Object[] args, final ScriptObject homeGlobal) {
+    public static Object[] wrapArray(final Object[] args, final Object homeGlobal) {
         if (args == null || args.length == 0) {
             return args;
         }
@@ -655,7 +655,7 @@ public final class ScriptObjectMirror extends AbstractJSObject implements Bindin
      * @param homeGlobal global to which this object belongs
      * @return unwrapped array
      */
-    public static Object[] unwrapArray(final Object[] args, final ScriptObject homeGlobal) {
+    public static Object[] unwrapArray(final Object[] args, final Object homeGlobal) {
         if (args == null || args.length == 0) {
             return args;
         }
