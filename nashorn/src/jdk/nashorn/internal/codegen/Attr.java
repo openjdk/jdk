@@ -271,6 +271,7 @@ final class Attr extends NodeOperatorVisitor<LexicalContext> {
                     functionNode.addDeclaredSymbol(symbol);
                     if (varNode.isFunctionDeclaration()) {
                         newType(symbol, FunctionNode.FUNCTION_TYPE);
+                        symbol.setIsFunctionDeclaration();
                     }
                     return varNode.setName((IdentNode)ident.setSymbol(lc, symbol));
                 }
