@@ -25,7 +25,9 @@
 
 package jdk.nashorn.api.scripting;
 
+import jdk.nashorn.internal.runtime.Context;
 import jdk.nashorn.internal.runtime.ScriptFunction;
+import jdk.nashorn.internal.runtime.ScriptObject;
 import jdk.nashorn.internal.runtime.ScriptRuntime;
 
 /**
@@ -71,4 +73,59 @@ public final class ScriptUtils {
         return func.makeSynchronizedFunction(sync);
     }
 
+    /**
+     * Make a script object mirror on given object if needed.
+     *
+     * @param obj object to be wrapped
+     * @return wrapped object
+     */
+    public static Object wrap(final Object obj) {
+        if (obj instanceof ScriptObject) {
+            return ScriptObjectMirror.wrap(obj, Context.getGlobal());
+        }
+
+        return obj;
+    }
+
+    /**
+     * Unwrap a script object mirror if needed.
+     *
+     * @param obj object to be unwrapped
+     * @return unwrapped object
+     */
+    public static Object unwrap(final Object obj) {
+        if (obj instanceof ScriptObjectMirror) {
+            return ScriptObjectMirror.unwrap(obj, Context.getGlobal());
+        }
+
+        return obj;
+    }
+
+    /**
+     * Wrap an array of object to script object mirrors if needed.
+     *
+     * @param args array to be unwrapped
+     * @return wrapped array
+     */
+    public static Object[] wrapArray(final Object[] args) {
+        if (args == null || args.length == 0) {
+            return args;
+        }
+
+        return ScriptObjectMirror.wrapArray(args, Context.getGlobal());
+    }
+
+    /**
+     * Unwrap an array of script object mirrors if needed.
+     *
+     * @param args array to be unwrapped
+     * @return unwrapped array
+     */
+    public static Object[] unwrapArray(final Object[] args) {
+        if (args == null || args.length == 0) {
+            return args;
+        }
+
+        return ScriptObjectMirror.unwrapArray(args, Context.getGlobal());
+    }
 }
