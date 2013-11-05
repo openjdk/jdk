@@ -22,7 +22,8 @@
  */
 
 /**
- * @test @bug 8022548
+ * @test
+ * @bug 8022548
  * @summary test that a parser can use DTDConfiguration
  * @run main XOMParserTest
  */
@@ -60,30 +61,27 @@ public class XOMParserTest extends TestBase {
     }
 
     public final void testTransform() {
+        String inFilename = filePath + "/JDK8022548.xml";
+        String xslFilename = filePath + "/JDK8022548.xsl";
+        String outFilename = "JDK8022548.out";
 
-        try {
+        try (InputStream xslInput = new FileInputStream(xslFilename);
+             InputStream xmlInput = new FileInputStream(inFilename);
+             OutputStream out = new FileOutputStream(outFilename);
+        ) {
 
-            String inFilename = filePath + "/JDK8022548.xml";
-            String xslFilename = filePath + "/JDK8022548.xsl";
-            String outFilename = "JDK8022548.out";
 
             StringWriter sw = new StringWriter();
             // Create transformer factory
             TransformerFactory factory = TransformerFactory.newInstance();
-            // set the translet name
-//            factory.setAttribute("translet-name", "myTranslet");
-
-            // set the destination directory
-//            factory.setAttribute("destination-directory", "c:\\temp");
-//            factory.setAttribute("generate-translet", Boolean.TRUE);
 
             // Use the factory to create a template containing the xsl file
-            Templates template = factory.newTemplates(new StreamSource(new FileInputStream(xslFilename)));
+            Templates template = factory.newTemplates(new StreamSource(xslInput));
             // Use the template to create a transformer
             Transformer xformer = template.newTransformer();
             // Prepare the input and output files
-            Source source = new StreamSource(new FileInputStream(inFilename));
-            Result result = new StreamResult(new FileOutputStream(outFilename));
+            Source source = new StreamSource(xmlInput);
+            Result result = new StreamResult(outFilename);
             //Result result = new StreamResult(sw);
             // Apply the xsl file to the source file and write the result to the output file
             xformer.transform(source, result);
