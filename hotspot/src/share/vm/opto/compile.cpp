@@ -848,6 +848,7 @@ Compile::Compile( ciEnv* ci_env, C2Compiler* compiler, ciMethod* target, int osr
   }
 #endif
 
+  NOT_PRODUCT( verify_barriers(); )
   // Now that we know the size of all the monitors we can add a fixed slot
   // for the original deopt pc.
 
@@ -3368,6 +3369,72 @@ void Compile::verify_graph_edges(bool no_dead_code) {
     }
   }
 }
+
+// Verify GC barriers consistency
+// Currently supported:
+// - G1 pre-barriers (see GraphKit::g1_write_barrier_pre())
+void Compile::verify_barriers() {
+  if (UseG1GC) {
+    // Verify G1 pre-barriers
+    const int marking_offset = in_bytes(JavaThread::satb_mark_queue_offset() + PtrQueue::byte_offset_of_active());
+
+    ResourceArea *area = Thread::current()->resource_area();
+    Unique_Node_List visited(area);
+    Node_List worklist(area);
+    // We're going to walk control flow backwards starting from the Root
+    worklist.push(_root);
+    while (worklist.size() > 0) {
+      Node* x = worklist.pop();
+      if (x == NULL || x == top()) continue;
+      if (visited.member(x)) {
+        continue;
+      } else {
+        visited.push(x);
+      }
+
+      if (x->is_Region()) {
+        for (uint i = 1; i < x->req(); i++) {
+          worklist.push(x->in(i));
+        }
+      } else {
+        worklist.push(x->in(0));
+        // We are looking for the pattern:
+        //                            /->ThreadLocal
+        // If->Bool->CmpI->LoadB->AddP->ConL(marking_offset)
+        //              \->ConI(0)
+        // We want to verify that the If and the LoadB have the same control
+        // See GraphKit::g1_write_barrier_pre()
+        if (x->is_If()) {
+          IfNode *iff = x->as_If();
+          if (iff->in(1)->is_Bool() && iff->in(1)->in(1)->is_Cmp()) {
+            CmpNode *cmp = iff->in(1)->in(1)->as_Cmp();
+            if (cmp->Opcode() == Op_CmpI && cmp->in(2)->is_Con() && cmp->in(2)->bottom_type()->is_int()->get_con() == 0
+                && cmp->in(1)->is_Load()) {
+              LoadNode* load = cmp->in(1)->as_Load();
+              if (load->Opcode() == Op_LoadB && load->in(2)->is_AddP() && load->in(2)->in(2)->Opcode() == Op_ThreadLocal
+                  && load->in(2)->in(3)->is_Con()
+                  && load->in(2)->in(3)->bottom_type()->is_intptr_t()->get_con() == marking_offset) {
+
+                Node* if_ctrl = iff->in(0);
+                Node* load_ctrl = load->in(0);
+
+                if (if_ctrl != load_ctrl) {
+                  // Skip possible CProj->NeverBranch in infinite loops
+                  if ((if_ctrl->is_Proj() && if_ctrl->Opcode() == Op_CProj)
+                      && (if_ctrl->in(0)->is_MultiBranch() && if_ctrl->in(0)->Opcode() == Op_NeverBranch)) {
+                    if_ctrl = if_ctrl->in(0)->in(0);
+                  }
+                }
+                assert(load_ctrl != NULL && if_ctrl == load_ctrl, "controls must match");
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
+
 #endif
 
 // The Compile object keeps track of failure reasons separately from the ciEnv.
