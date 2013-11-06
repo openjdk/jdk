@@ -37,9 +37,9 @@ class instanceOopDesc : public oopDesc {
 
   // If compressed, the offset of the fields of the instance may not be aligned.
   static int base_offset_in_bytes() {
-    // offset computation code breaks if UseCompressedKlassPointers
+    // offset computation code breaks if UseCompressedClassPointers
     // only is true
-    return (UseCompressedOops && UseCompressedKlassPointers) ?
+    return (UseCompressedOops && UseCompressedClassPointers) ?
              klass_gap_offset_in_bytes() :
              sizeof(instanceOopDesc);
   }

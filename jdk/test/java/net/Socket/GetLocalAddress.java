@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,10 @@
 
 /*
  * @test
- * @bug 4106601
+ * @bug 4106601 8026245
+ * @run main/othervm GetLocalAddress
+ * @run main/othervm -Djava.net.preferIPv4Stack=true GetLocalAddress
+ * @run main/othervm -Djava.net.preferIPv6Addresses=true GetLocalAddress
  * @summary Test the java.net.socket.GetLocalAddress method
  *
  */

@@ -41,7 +41,12 @@ Object.defineProperty(this, "JavaAdapter", {
     }
 });
 
+
 // importPackage
+// avoid unnecessary chaining of __noSuchProperty__ again
+// in case user loads this script more than once.
+if (typeof importPackage == 'undefined') {
+
 Object.defineProperty(this, "importPackage", {
     configurable: true, enumerable: false, writable: true,
     value: (function() {
@@ -91,6 +96,19 @@ Object.defineProperty(this, "importPackage", {
     })()
 });
 
+}
+
+// sync
+Object.defineProperty(this, "sync", {
+    configurable: true, enumerable: false, writable: true,
+    value: function(func, syncobj) {
+        if (arguments.length < 1 || arguments.length > 2 ) {
+            throw "sync(function [,object]) parameter count mismatch";
+        }
+        return Packages.jdk.nashorn.api.scripting.ScriptUtils.makeSynchronizedFunction(func, syncobj);
+    }
+});
+
 // Object.prototype.__defineGetter__
 Object.defineProperty(Object.prototype, "__defineGetter__", {
     configurable: true, enumerable: false, writable: true,
@@ -134,17 +152,6 @@ Object.defineProperty(Object.prototype, "__lookupSetter__", {
             obj = Object.getPrototypeOf(obj);
         }
         return undefined;
-    }
-});
-
-// Object.prototype.__proto__ (read-only)
-Object.defineProperty(Object.prototype, "__proto__", {
-    configurable: true, enumerable: false,
-    get: function() {
-        return Object.getPrototypeOf(this);
-    },
-    set: function(x) {
-        Object.setPrototypeOf(this, x);
     }
 });
 
@@ -355,13 +362,16 @@ Object.defineProperty(String.prototype, "sup", {
 // Rhino: global.importClass
 Object.defineProperty(this, "importClass", {
     configurable: true, enumerable: false, writable: true,
-    value: function(clazz) {
-        if (Java.isType(clazz)) {
-            var className = Java.typeName(clazz);
-            var simpleName = className.substring(className.lastIndexOf('.') + 1);
-            this[simpleName] = clazz;
-        } else {
-            throw new TypeError(clazz + " is not a Java class");
+    value: function() {
+        for (var arg in arguments) {
+            var clazz = arguments[arg];
+            if (Java.isType(clazz)) {
+                var className = Java.typeName(clazz);
+                var simpleName = className.substring(className.lastIndexOf('.') + 1);
+                this[simpleName] = clazz;
+            } else {
+                throw new TypeError(clazz + " is not a Java class");
+            }
         }
     }
 });

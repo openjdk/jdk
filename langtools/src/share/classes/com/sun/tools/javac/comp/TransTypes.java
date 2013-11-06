@@ -310,7 +310,7 @@ public class TransTypes extends TreeTranslator {
             Type.MethodType mType = (Type.MethodType)bridgeType;
             List<Type> argTypes = mType.argtypes;
             while (implParams.nonEmpty() && argTypes.nonEmpty()) {
-                VarSymbol param = new VarSymbol(implParams.head.flags() | SYNTHETIC,
+                VarSymbol param = new VarSymbol(implParams.head.flags() | SYNTHETIC | PARAMETER,
                         implParams.head.name, argTypes.head, bridge);
                 param.setAttributes(implParams.head);
                 bridgeParams = bridgeParams.append(param);
@@ -833,7 +833,7 @@ public class TransTypes extends TreeTranslator {
     }
 
     public void visitReference(JCMemberReference tree) {
-        tree.expr = translate(tree.expr, null);
+        tree.expr = translate(tree.expr, erasure(tree.expr.type));
         tree.type = erasure(tree.type);
         result = tree;
     }
@@ -887,7 +887,7 @@ public class TransTypes extends TreeTranslator {
 
     private List<JCTree> addOverrideBridgesIfNeeded(DiagnosticPosition pos,
                                     final ClassSymbol c) {
-        ListBuffer<JCTree> buf = ListBuffer.lb();
+        ListBuffer<JCTree> buf = new ListBuffer<>();
         if (c.isInterface() || !boundsRestricted(c))
             return buf.toList();
         Type t = types.supertype(c.type);

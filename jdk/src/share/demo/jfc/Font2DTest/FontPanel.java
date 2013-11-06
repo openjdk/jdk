@@ -524,7 +524,7 @@ public final class FontPanel extends JPanel implements AdjustmentListener {
              * graphics anti-aliasing hint if the text anti-aliasing hint
              * was set. The dubious element here is that people simply
              * using this program may think this is built-in behaviour
-             * but its not - at least not when the app explictly draws
+             * but its not - at least not when the app explicitly draws
              * outline text.
              * This becomes more dubious in cases such as "GASP" where the
              * size at which text is AA'ed is not something you can easily

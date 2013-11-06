@@ -37,7 +37,7 @@ import javax.swing.text.View;
 
 
 /**
- * Provides the Synth L&F UI delegate for
+ * Provides the Synth L&amp;F UI delegate for
  * {@link javax.swing.JToolTip}.
  *
  * @author Joshua Outwater
@@ -58,7 +58,7 @@ public class SynthToolTipUI extends BasicToolTipUI
     }
 
     /**
-     * @inheritDoc
+     * {@inheritDoc}
      */
     @Override
     protected void installDefaults(JComponent c) {
@@ -72,7 +72,7 @@ public class SynthToolTipUI extends BasicToolTipUI
     }
 
     /**
-     * @inheritDoc
+     * {@inheritDoc}
      */
     @Override
     protected void uninstallDefaults(JComponent c) {
@@ -83,7 +83,7 @@ public class SynthToolTipUI extends BasicToolTipUI
     }
 
     /**
-     * @inheritDoc
+     * {@inheritDoc}
      */
     @Override
     protected void installListeners(JComponent c) {
@@ -91,7 +91,7 @@ public class SynthToolTipUI extends BasicToolTipUI
     }
 
     /**
-     * @inheritDoc
+     * {@inheritDoc}
      */
     @Override
     protected void uninstallListeners(JComponent c) {
@@ -99,7 +99,7 @@ public class SynthToolTipUI extends BasicToolTipUI
     }
 
     /**
-     * @inheritDoc
+     * {@inheritDoc}
      */
     @Override
     public SynthContext getContext(JComponent c) {
@@ -144,7 +144,7 @@ public class SynthToolTipUI extends BasicToolTipUI
     }
 
     /**
-     * @inheritDoc
+     * {@inheritDoc}
      */
     @Override
     public void paintBorder(SynthContext context, Graphics g, int x,
@@ -196,7 +196,7 @@ public class SynthToolTipUI extends BasicToolTipUI
     }
 
     /**
-     * @inheritDoc
+     * {@inheritDoc}
      */
     @Override
     public Dimension getPreferredSize(JComponent c) {
@@ -224,7 +224,7 @@ public class SynthToolTipUI extends BasicToolTipUI
     }
 
     /**
-     * @inheritDoc
+     * {@inheritDoc}
      */
     @Override
     public void propertyChange(PropertyChangeEvent e) {

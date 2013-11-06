@@ -43,7 +43,7 @@ import java.util.List;
  * @author Jonathan Gibbons
  * @since 1.6
  */
-@jdk.Supported
+@jdk.Exported
 public interface MethodInvocationTree extends ExpressionTree {
     List<? extends Tree> getTypeArguments();
     ExpressionTree getMethodSelect();

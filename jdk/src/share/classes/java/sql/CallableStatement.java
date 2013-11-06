@@ -56,7 +56,7 @@ import java.io.InputStream;
  * For maximum portability, a call's <code>ResultSet</code> objects and
  * update counts should be processed prior to getting the values of output
  * parameters.
- * <P>
+ *
  *
  * @see Connection#prepareCall
  * @see ResultSet
@@ -1900,7 +1900,7 @@ public interface CallableStatement extends PreparedStatement {
      * @throws SQLException  if parameterName does not correspond to a named
      * parameter; if the length specified
      * is less than zero; if the number of bytes in the inputstream does not match
-     * the specfied length; if a database access error occurs or
+     * the specified length; if a database access error occurs or
      * this method is called on a closed <code>CallableStatement</code>
      * @exception SQLFeatureNotSupportedException if the JDBC driver does not support
      * this method

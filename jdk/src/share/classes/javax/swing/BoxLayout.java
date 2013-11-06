@@ -36,12 +36,12 @@ import java.io.PrintStream;
  * vertically or horizontally. The components will not wrap so, for
  * example, a vertical arrangement of components will stay vertically
  * arranged when the frame is resized.
- * <TABLE ALIGN="RIGHT" BORDER="0" SUMMARY="layout">
+ * <TABLE STYLE="FLOAT:RIGHT" BORDER="0" SUMMARY="layout">
  *    <TR>
  *      <TD ALIGN="CENTER">
- *         <P ALIGN="CENTER"><IMG SRC="doc-files/BoxLayout-1.gif"
+ *         <P STYLE="TEXT-ALIGN:CENTER"><IMG SRC="doc-files/BoxLayout-1.gif"
  *          alt="The following text describes this graphic."
- *          WIDTH="191" HEIGHT="201" ALIGN="BOTTOM" BORDER="0">
+ *          WIDTH="191" HEIGHT="201" STYLE="FLOAT:BOTTOM; BORDER:0">
  *      </TD>
  *    </TR>
  * </TABLE>
@@ -116,7 +116,7 @@ import java.io.PrintStream;
  * <p>
  * For further information and examples see
  * <a
- href="http://java.sun.com/docs/books/tutorial/uiswing/layout/box.html">How to Use BoxLayout</a>,
+ href="http://docs.oracle.com/javase/tutorial/uiswing/layout/box.html">How to Use BoxLayout</a>,
  * a section in <em>The Java Tutorial.</em>
  * <p>
  * <strong>Warning:</strong>
@@ -124,7 +124,7 @@ import java.io.PrintStream;
  * future Swing releases. The current serialization support is
  * appropriate for short term storage or RMI between applications running
  * the same version of Swing.  As of 1.4, support for long term storage
- * of all JavaBeans<sup><font size="-2">TM</font></sup>
+ * of all JavaBeans&trade;
  * has been added to the <code>java.beans</code> package.
  * Please see {@link java.beans.XMLEncoder}.
  *
@@ -338,7 +338,7 @@ public class BoxLayout implements LayoutManager2, Serializable {
      * to lay out the components it contains.
      *
      * @param target  the container that needs to be laid out
-     * @return the dimenions >= 0 && <= Integer.MAX_VALUE
+     * @return the dimensions >= 0 && <= Integer.MAX_VALUE
      * @exception AWTError  if the target isn't the container specified to the
      *                      BoxLayout constructor
      * @see #preferredLayoutSize

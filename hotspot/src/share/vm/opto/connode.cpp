@@ -630,7 +630,7 @@ const Type *EncodePKlassNode::Value( PhaseTransform *phase ) const {
   if (t == Type::TOP) return Type::TOP;
   assert (t != TypePtr::NULL_PTR, "null klass?");
 
-  assert(UseCompressedKlassPointers && t->isa_klassptr(), "only klass ptr here");
+  assert(UseCompressedClassPointers && t->isa_klassptr(), "only klass ptr here");
   return t->make_narrowklass();
 }
 

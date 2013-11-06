@@ -137,7 +137,7 @@ public abstract class AbstractRegionPainter implements Painter<JComponent> {
     protected AbstractRegionPainter() { }
 
     /**
-     * @inheritDoc
+     * {@inheritDoc}
      */
     @Override
     public final void paint(Graphics2D g, JComponent c, int w, int h) {
@@ -187,7 +187,7 @@ public abstract class AbstractRegionPainter implements Painter<JComponent> {
     protected abstract PaintContext getPaintContext();
 
     /**
-     * <p>Configures the given Graphics2D. Often, rendering hints or compositiing rules are
+     * <p>Configures the given Graphics2D. Often, rendering hints or compositing rules are
      * applied to a Graphics2D object prior to painting, which should affect all of the
      * subsequent painting operations. This method provides a convenient hook for configuring
      * the Graphics object prior to rendering, regardless of whether the render operation is
@@ -201,7 +201,7 @@ public abstract class AbstractRegionPainter implements Painter<JComponent> {
 
     /**
      * Actually performs the painting operation. Subclasses must implement this method.
-     * The graphics object passed may represent the actual surface being rendererd to,
+     * The graphics object passed may represent the actual surface being rendered to,
      * or it may be an intermediate buffer. It has also been pre-translated. Simply render
      * the component as if it were located at 0, 0 and had a width of <code>width</code>
      * and a height of <code>height</code>. For performance reasons, you may want to read
@@ -313,13 +313,13 @@ public abstract class AbstractRegionPainter implements Painter<JComponent> {
      * Decodes and returns a color, which is derived from a base color in UI
      * defaults.
      *
-     * @param key     A key corrosponding to the value in the UI Defaults table
+     * @param key     A key corresponding to the value in the UI Defaults table
      *                of UIManager where the base color is defined
      * @param hOffset The hue offset used for derivation.
      * @param sOffset The saturation offset used for derivation.
      * @param bOffset The brightness offset used for derivation.
      * @param aOffset The alpha offset used for derivation. Between 0...255
-     * @return The derived color, whos color value will change if the parent
+     * @return The derived color, whose color value will change if the parent
      *         uiDefault color changes.
      */
     protected final Color decodeColor(String key, float hOffset, float sOffset,
@@ -532,14 +532,14 @@ public abstract class AbstractRegionPainter implements Painter<JComponent> {
          *                   to one of the "decode" methods will return the passed in value.
          * @param inverted Whether to "invert" the meaning of the 9-square grid and stretching insets
          * @param cacheMode A hint as to which caching mode to use. If null, then set to no caching.
-         * @param maxH The maximium scale in the horizontal direction to use before punting and redrawing from scratch.
+         * @param maxH The maximum scale in the horizontal direction to use before punting and redrawing from scratch.
          *             For example, if maxH is 2, then we will attempt to scale any cached images up to 2x the canvas
          *             width before redrawing from scratch. Reasonable maxH values may improve painting performance.
-         *             If set too high, then you may get poor looking graphics at higher zoom levels. Must be >= 1.
-         * @param maxV The maximium scale in the vertical direction to use before punting and redrawing from scratch.
+         *             If set too high, then you may get poor looking graphics at higher zoom levels. Must be &gt;= 1.
+         * @param maxV The maximum scale in the vertical direction to use before punting and redrawing from scratch.
          *             For example, if maxV is 2, then we will attempt to scale any cached images up to 2x the canvas
          *             height before redrawing from scratch. Reasonable maxV values may improve painting performance.
-         *             If set too high, then you may get poor looking graphics at higher zoom levels. Must be >= 1.
+         *             If set too high, then you may get poor looking graphics at higher zoom levels. Must be &gt;= 1.
          */
         public PaintContext(Insets insets, Dimension canvasSize, boolean inverted,
                             CacheMode cacheMode, double maxH, double maxV) {

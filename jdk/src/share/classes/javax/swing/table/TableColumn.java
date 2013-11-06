@@ -37,7 +37,7 @@ import java.beans.PropertyChangeListener;
 
 /**
  *  A <code>TableColumn</code> represents all the attributes of a column in a
- *  <code>JTable</code>, such as width, resizibility, minimum and maximum width.
+ *  <code>JTable</code>, such as width, resizability, minimum and maximum width.
  *  In addition, the <code>TableColumn</code> provides slots for a renderer and
  *  an editor that can be used to display and edit the values in this column.
  *  <p>
@@ -67,7 +67,7 @@ import java.beans.PropertyChangeListener;
  * future Swing releases. The current serialization support is
  * appropriate for short term storage or RMI between applications running
  * the same version of Swing.  As of 1.4, support for long term storage
- * of all JavaBeans<sup><font size="-2">TM</font></sup>
+ * of all JavaBeans&trade;
  * has been added to the <code>java.beans</code> package.
  * Please see {@link java.beans.XMLEncoder}.
  *

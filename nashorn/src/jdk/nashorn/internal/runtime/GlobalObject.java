@@ -37,6 +37,19 @@ import jdk.nashorn.internal.runtime.linker.InvokeByName;
 
 public interface GlobalObject {
     /**
+     * Is this global of the given Context?
+     * @param ctxt the context
+     * @return true if this global belongs to the given Context
+     */
+    public boolean isOfContext(final Context ctxt);
+
+    /**
+     * Does this global belong to a strict Context?
+     * @return true if this global belongs to a strict Context
+     */
+    public boolean isStrictContext();
+
+    /**
      * Initialize standard builtin objects like "Object", "Array", "Function" etc.
      * as well as our extension builtin objects like "Java", "JSAdapter" as properties
      * of the global scope object.

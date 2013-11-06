@@ -44,7 +44,7 @@ import java.io.Serializable;
  * of a single line of text.
  * For information on and examples of using text fields,
  * see
- * <a href="http://java.sun.com/docs/books/tutorial/uiswing/components/textfield.html">How to Use Text Fields</a>
+ * <a href="http://docs.oracle.com/javase/tutorial/uiswing/components/textfield.html">How to Use Text Fields</a>
  * in <em>The Java Tutorial.</em>
  *
  * <p>
@@ -128,7 +128,7 @@ import java.io.Serializable;
 &nbsp;                return;
 &nbsp;            }
 &nbsp;            char[] upper = str.toCharArray();
-&nbsp;            for (int i = 0; i < upper.length; i++) {
+&nbsp;            for (int i = 0; i &lt; upper.length; i++) {
 &nbsp;                upper[i] = Character.toUpperCase(upper[i]);
 &nbsp;            }
 &nbsp;            super.insertString(offs, new String(upper), a);
@@ -148,7 +148,7 @@ import java.io.Serializable;
  * future Swing releases. The current serialization support is
  * appropriate for short term storage or RMI between applications running
  * the same version of Swing.  As of 1.4, support for long term storage
- * of all JavaBeans<sup><font size="-2">TM</font></sup>
+ * of all JavaBeans&trade;
  * has been added to the <code>java.beans</code> package.
  * Please see {@link java.beans.XMLEncoder}.
  *
@@ -223,10 +223,10 @@ public class JTextField extends JTextComponent implements SwingConstants {
      *          <code>createDefaultModel</code> method
      * @param text  the initial string to display, or <code>null</code>
      * @param columns  the number of columns to use to calculate
-     *   the preferred width >= 0; if <code>columns</code>
+     *   the preferred width &gt;= 0; if <code>columns</code>
      *   is set to zero, the preferred width will be whatever
      *   naturally results from the component implementation
-     * @exception IllegalArgumentException if <code>columns</code> < 0
+     * @exception IllegalArgumentException if <code>columns</code> &lt; 0
      */
     public JTextField(Document doc, String text, int columns) {
         if (columns < 0) {
@@ -939,7 +939,7 @@ public class JTextField extends JTextComponent implements SwingConstants {
      * future Swing releases. The current serialization support is
      * appropriate for short term storage or RMI between applications running
      * the same version of Swing.  As of 1.4, support for long term storage
-     * of all JavaBeans<sup><font size="-2">TM</font></sup>
+     * of all JavaBeans&trade;
      * has been added to the <code>java.beans</code> package.
      * Please see {@link java.beans.XMLEncoder}.
      */

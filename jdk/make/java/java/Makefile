@@ -105,6 +105,7 @@ FILES_java += 	java/util/prefs/MacOSXPreferences.java \
 		java/util/prefs/MacOSXPreferencesFactory.java
 
 CFLAGS_$(VARIANT)/java_props_md.o = -Os -x objective-c
+CFLAGS_$(VARIANT)/java_props_macosx.o = -Os -x objective-c
 endif
 
 #

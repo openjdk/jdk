@@ -139,7 +139,7 @@ Method* Klass::uncached_lookup_method(Symbol* name, Symbol* signature) const {
   return NULL;
 }
 
-void* Klass::operator new(size_t size, ClassLoaderData* loader_data, size_t word_size, TRAPS) {
+void* Klass::operator new(size_t size, ClassLoaderData* loader_data, size_t word_size, TRAPS) throw() {
   return Metaspace::allocate(loader_data, word_size, /*read_only*/false,
                              MetaspaceObj::ClassType, CHECK_NULL);
 }
@@ -674,13 +674,23 @@ void Klass::oop_verify_on(oop obj, outputStream* st) {
 
 #ifndef PRODUCT
 
-void Klass::verify_vtable_index(int i) {
+bool Klass::verify_vtable_index(int i) {
   if (oop_is_instance()) {
-    assert(i>=0 && i<((InstanceKlass*)this)->vtable_length()/vtableEntry::size(), "index out of bounds");
+    int limit = ((InstanceKlass*)this)->vtable_length()/vtableEntry::size();
+    assert(i >= 0 && i < limit, err_msg("index %d out of bounds %d", i, limit));
   } else {
     assert(oop_is_array(), "Must be");
-    assert(i>=0 && i<((ArrayKlass*)this)->vtable_length()/vtableEntry::size(), "index out of bounds");
+    int limit = ((ArrayKlass*)this)->vtable_length()/vtableEntry::size();
+    assert(i >= 0 && i < limit, err_msg("index %d out of bounds %d", i, limit));
   }
+  return true;
+}
+
+bool Klass::verify_itable_index(int i) {
+  assert(oop_is_instance(), "");
+  int method_count = klassItable::method_count_for_interface(this);
+  assert(i >= 0 && i < method_count, "index out of bounds");
+  return true;
 }
 
 #endif

@@ -341,7 +341,7 @@ int LIR_Assembler::check_icache() {
   Register receiver = FrameMap::receiver_opr->as_register();
   Register ic_klass = IC_Klass;
   const int ic_cmp_size = LP64_ONLY(10) NOT_LP64(9);
-  const bool do_post_padding = VerifyOops || UseCompressedKlassPointers;
+  const bool do_post_padding = VerifyOops || UseCompressedClassPointers;
   if (!do_post_padding) {
     // insert some nops so that the verified entry point is aligned on CodeEntryAlignment
     while ((__ offset() + ic_cmp_size) % CodeEntryAlignment != 0) {
@@ -362,7 +362,7 @@ int LIR_Assembler::check_icache() {
 
 void LIR_Assembler::jobject2reg_with_patching(Register reg, CodeEmitInfo* info) {
   jobject o = NULL;
-  PatchingStub* patch = new PatchingStub(_masm, PatchingStub::load_mirror_id);
+  PatchingStub* patch = new PatchingStub(_masm, patching_id(info));
   __ movoop(reg, o);
   patching_epilog(patch, lir_patch_normal, reg, info);
 }
@@ -432,15 +432,16 @@ int LIR_Assembler::emit_unwind_handler() {
   int offset = code_offset();
 
   // Fetch the exception from TLS and clear out exception related thread state
-  __ get_thread(rsi);
-  __ movptr(rax, Address(rsi, JavaThread::exception_oop_offset()));
-  __ movptr(Address(rsi, JavaThread::exception_oop_offset()), (intptr_t)NULL_WORD);
-  __ movptr(Address(rsi, JavaThread::exception_pc_offset()), (intptr_t)NULL_WORD);
+  Register thread = NOT_LP64(rsi) LP64_ONLY(r15_thread);
+  NOT_LP64(__ get_thread(rsi));
+  __ movptr(rax, Address(thread, JavaThread::exception_oop_offset()));
+  __ movptr(Address(thread, JavaThread::exception_oop_offset()), (intptr_t)NULL_WORD);
+  __ movptr(Address(thread, JavaThread::exception_pc_offset()), (intptr_t)NULL_WORD);
 
   __ bind(_unwind_handler_entry);
   __ verify_not_null_oop(rax);
   if (method()->is_synchronized() || compilation()->env()->dtrace_method_probes()) {
-    __ mov(rsi, rax);  // Preserve the exception
+    __ mov(rbx, rax);  // Preserve the exception (rbx is always callee-saved)
   }
 
   // Preform needed unlocking
@@ -448,19 +449,24 @@ int LIR_Assembler::emit_unwind_handler() {
   if (method()->is_synchronized()) {
     monitor_address(0, FrameMap::rax_opr);
     stub = new MonitorExitStub(FrameMap::rax_opr, true, 0);
-    __ unlock_object(rdi, rbx, rax, *stub->entry());
+    __ unlock_object(rdi, rsi, rax, *stub->entry());
     __ bind(*stub->continuation());
   }
 
   if (compilation()->env()->dtrace_method_probes()) {
+#ifdef _LP64
+    __ mov(rdi, r15_thread);
+    __ mov_metadata(rsi, method()->constant_encoding());
+#else
     __ get_thread(rax);
     __ movptr(Address(rsp, 0), rax);
     __ mov_metadata(Address(rsp, sizeof(void*)), method()->constant_encoding());
+#endif
     __ call(RuntimeAddress(CAST_FROM_FN_PTR(address, SharedRuntime::dtrace_method_exit)));
   }
 
   if (method()->is_synchronized() || compilation()->env()->dtrace_method_probes()) {
-    __ mov(rax, rsi);  // Restore the exception
+    __ mov(rax, rbx);  // Restore the exception
   }
 
   // remove the activation and dispatch to the unwind handler
@@ -1206,6 +1212,10 @@ void LIR_Assembler::mem2reg(LIR_Opr src, LIR_Opr dest, BasicType type, LIR_Patch
   LIR_Address* addr = src->as_address_ptr();
   Address from_addr = as_Address(addr);
 
+  if (addr->base()->type() == T_OBJECT) {
+    __ verify_oop(addr->base()->as_pointer_register());
+  }
+
   switch (type) {
     case T_BOOLEAN: // fall through
     case T_BYTE:    // fall through
@@ -1263,7 +1273,7 @@ void LIR_Assembler::mem2reg(LIR_Opr src, LIR_Opr dest, BasicType type, LIR_Patch
       break;
 
     case T_ADDRESS:
-      if (UseCompressedKlassPointers && addr->disp() == oopDesc::klass_offset_in_bytes()) {
+      if (UseCompressedClassPointers && addr->disp() == oopDesc::klass_offset_in_bytes()) {
         __ movl(dest->as_register(), from_addr);
       } else {
         __ movptr(dest->as_register(), from_addr);
@@ -1371,7 +1381,7 @@ void LIR_Assembler::mem2reg(LIR_Opr src, LIR_Opr dest, BasicType type, LIR_Patch
     __ verify_oop(dest->as_register());
   } else if (type == T_ADDRESS && addr->disp() == oopDesc::klass_offset_in_bytes()) {
 #ifdef _LP64
-    if (UseCompressedKlassPointers) {
+    if (UseCompressedClassPointers) {
       __ decode_klass_not_null(dest->as_register());
     }
 #endif
@@ -1716,7 +1726,7 @@ void LIR_Assembler::emit_typecheck_helper(LIR_OpTypeCheck *op, Label* success, L
   } else if (obj == klass_RInfo) {
     klass_RInfo = dst;
   }
-  if (k->is_loaded() && !UseCompressedKlassPointers) {
+  if (k->is_loaded() && !UseCompressedClassPointers) {
     select_different_registers(obj, dst, k_RInfo, klass_RInfo);
   } else {
     Rtmp1 = op->tmp3()->as_register();
@@ -1724,14 +1734,6 @@ void LIR_Assembler::emit_typecheck_helper(LIR_OpTypeCheck *op, Label* success, L
   }
 
   assert_different_registers(obj, k_RInfo, klass_RInfo);
-  if (!k->is_loaded()) {
-    klass2reg_with_patching(k_RInfo, op->info_for_patch());
-  } else {
-#ifdef _LP64
-    __ mov_metadata(k_RInfo, k->constant_encoding());
-#endif // _LP64
-  }
-  assert(obj != k_RInfo, "must be different");
 
   __ cmpptr(obj, (int32_t)NULL_WORD);
   if (op->should_profile()) {
@@ -1748,13 +1750,21 @@ void LIR_Assembler::emit_typecheck_helper(LIR_OpTypeCheck *op, Label* success, L
   } else {
     __ jcc(Assembler::equal, *obj_is_null);
   }
+
+  if (!k->is_loaded()) {
+    klass2reg_with_patching(k_RInfo, op->info_for_patch());
+  } else {
+#ifdef _LP64
+    __ mov_metadata(k_RInfo, k->constant_encoding());
+#endif // _LP64
+  }
   __ verify_oop(obj);
 
   if (op->fast_check()) {
     // get object class
     // not a safepoint as obj null check happens earlier
 #ifdef _LP64
-    if (UseCompressedKlassPointers) {
+    if (UseCompressedClassPointers) {
       __ load_klass(Rtmp1, obj);
       __ cmpptr(k_RInfo, Rtmp1);
     } else {
@@ -3294,7 +3304,7 @@ void LIR_Assembler::emit_arraycopy(LIR_OpArrayCopy* op) {
     // We don't know the array types are compatible
     if (basic_type != T_OBJECT) {
       // Simple test for basic type arrays
-      if (UseCompressedKlassPointers) {
+      if (UseCompressedClassPointers) {
         __ movl(tmp, src_klass_addr);
         __ cmpl(tmp, dst_klass_addr);
       } else {
@@ -3456,21 +3466,21 @@ void LIR_Assembler::emit_arraycopy(LIR_OpArrayCopy* op) {
     Label known_ok, halt;
     __ mov_metadata(tmp, default_type->constant_encoding());
 #ifdef _LP64
-    if (UseCompressedKlassPointers) {
+    if (UseCompressedClassPointers) {
       __ encode_klass_not_null(tmp);
     }
 #endif
 
     if (basic_type != T_OBJECT) {
 
-      if (UseCompressedKlassPointers)          __ cmpl(tmp, dst_klass_addr);
+      if (UseCompressedClassPointers)          __ cmpl(tmp, dst_klass_addr);
       else                   __ cmpptr(tmp, dst_klass_addr);
       __ jcc(Assembler::notEqual, halt);
-      if (UseCompressedKlassPointers)          __ cmpl(tmp, src_klass_addr);
+      if (UseCompressedClassPointers)          __ cmpl(tmp, src_klass_addr);
       else                   __ cmpptr(tmp, src_klass_addr);
       __ jcc(Assembler::equal, known_ok);
     } else {
-      if (UseCompressedKlassPointers)          __ cmpl(tmp, dst_klass_addr);
+      if (UseCompressedClassPointers)          __ cmpl(tmp, dst_klass_addr);
       else                   __ cmpptr(tmp, dst_klass_addr);
       __ jcc(Assembler::equal, known_ok);
       __ cmpptr(src, dst);
@@ -3629,6 +3639,161 @@ void LIR_Assembler::emit_profile_call(LIR_OpProfileCall* op) {
   } else {
     // Static call
     __ addptr(counter_addr, DataLayout::counter_increment);
+  }
+}
+
+void LIR_Assembler::emit_profile_type(LIR_OpProfileType* op) {
+  Register obj = op->obj()->as_register();
+  Register tmp = op->tmp()->as_pointer_register();
+  Address mdo_addr = as_Address(op->mdp()->as_address_ptr());
+  ciKlass* exact_klass = op->exact_klass();
+  intptr_t current_klass = op->current_klass();
+  bool not_null = op->not_null();
+  bool no_conflict = op->no_conflict();
+
+  Label update, next, none;
+
+  bool do_null = !not_null;
+  bool exact_klass_set = exact_klass != NULL && ciTypeEntries::valid_ciklass(current_klass) == exact_klass;
+  bool do_update = !TypeEntries::is_type_unknown(current_klass) && !exact_klass_set;
+
+  assert(do_null || do_update, "why are we here?");
+  assert(!TypeEntries::was_null_seen(current_klass) || do_update, "why are we here?");
+
+  __ verify_oop(obj);
+
+  if (tmp != obj) {
+    __ mov(tmp, obj);
+  }
+  if (do_null) {
+    __ testptr(tmp, tmp);
+    __ jccb(Assembler::notZero, update);
+    if (!TypeEntries::was_null_seen(current_klass)) {
+      __ orptr(mdo_addr, TypeEntries::null_seen);
+    }
+    if (do_update) {
+#ifndef ASSERT
+      __ jmpb(next);
+    }
+#else
+      __ jmp(next);
+    }
+  } else {
+    __ testptr(tmp, tmp);
+    __ jccb(Assembler::notZero, update);
+    __ stop("unexpect null obj");
+#endif
+  }
+
+  __ bind(update);
+
+  if (do_update) {
+#ifdef ASSERT
+    if (exact_klass != NULL) {
+      Label ok;
+      __ load_klass(tmp, tmp);
+      __ push(tmp);
+      __ mov_metadata(tmp, exact_klass->constant_encoding());
+      __ cmpptr(tmp, Address(rsp, 0));
+      __ jccb(Assembler::equal, ok);
+      __ stop("exact klass and actual klass differ");
+      __ bind(ok);
+      __ pop(tmp);
+    }
+#endif
+    if (!no_conflict) {
+      if (exact_klass == NULL || TypeEntries::is_type_none(current_klass)) {
+        if (exact_klass != NULL) {
+          __ mov_metadata(tmp, exact_klass->constant_encoding());
+        } else {
+          __ load_klass(tmp, tmp);
+        }
+
+        __ xorptr(tmp, mdo_addr);
+        __ testptr(tmp, TypeEntries::type_klass_mask);
+        // klass seen before, nothing to do. The unknown bit may have been
+        // set already but no need to check.
+        __ jccb(Assembler::zero, next);
+
+        __ testptr(tmp, TypeEntries::type_unknown);
+        __ jccb(Assembler::notZero, next); // already unknown. Nothing to do anymore.
+
+        if (TypeEntries::is_type_none(current_klass)) {
+          __ cmpptr(mdo_addr, 0);
+          __ jccb(Assembler::equal, none);
+          __ cmpptr(mdo_addr, TypeEntries::null_seen);
+          __ jccb(Assembler::equal, none);
+          // There is a chance that the checks above (re-reading profiling
+          // data from memory) fail if another thread has just set the
+          // profiling to this obj's klass
+          __ xorptr(tmp, mdo_addr);
+          __ testptr(tmp, TypeEntries::type_klass_mask);
+          __ jccb(Assembler::zero, next);
+        }
+      } else {
+        assert(ciTypeEntries::valid_ciklass(current_klass) != NULL &&
+               ciTypeEntries::valid_ciklass(current_klass) != exact_klass, "conflict only");
+
+        __ movptr(tmp, mdo_addr);
+        __ testptr(tmp, TypeEntries::type_unknown);
+        __ jccb(Assembler::notZero, next); // already unknown. Nothing to do anymore.
+      }
+
+      // different than before. Cannot keep accurate profile.
+      __ orptr(mdo_addr, TypeEntries::type_unknown);
+
+      if (TypeEntries::is_type_none(current_klass)) {
+        __ jmpb(next);
+
+        __ bind(none);
+        // first time here. Set profile type.
+        __ movptr(mdo_addr, tmp);
+      }
+    } else {
+      // There's a single possible klass at this profile point
+      assert(exact_klass != NULL, "should be");
+      if (TypeEntries::is_type_none(current_klass)) {
+        __ mov_metadata(tmp, exact_klass->constant_encoding());
+        __ xorptr(tmp, mdo_addr);
+        __ testptr(tmp, TypeEntries::type_klass_mask);
+#ifdef ASSERT
+        __ jcc(Assembler::zero, next);
+
+        {
+          Label ok;
+          __ push(tmp);
+          __ cmpptr(mdo_addr, 0);
+          __ jcc(Assembler::equal, ok);
+          __ cmpptr(mdo_addr, TypeEntries::null_seen);
+          __ jcc(Assembler::equal, ok);
+          // may have been set by another thread
+          __ mov_metadata(tmp, exact_klass->constant_encoding());
+          __ xorptr(tmp, mdo_addr);
+          __ testptr(tmp, TypeEntries::type_mask);
+          __ jcc(Assembler::zero, ok);
+
+          __ stop("unexpected profiling mismatch");
+          __ bind(ok);
+          __ pop(tmp);
+        }
+#else
+        __ jccb(Assembler::zero, next);
+#endif
+        // first time here. Set profile type.
+        __ movptr(mdo_addr, tmp);
+      } else {
+        assert(ciTypeEntries::valid_ciklass(current_klass) != NULL &&
+               ciTypeEntries::valid_ciklass(current_klass) != exact_klass, "inconsistent");
+
+        __ movptr(tmp, mdo_addr);
+        __ testptr(tmp, TypeEntries::type_unknown);
+        __ jccb(Assembler::notZero, next); // already unknown. Nothing to do anymore.
+
+        __ orptr(mdo_addr, TypeEntries::type_unknown);
+      }
+    }
+
+    __ bind(next);
   }
 }
 

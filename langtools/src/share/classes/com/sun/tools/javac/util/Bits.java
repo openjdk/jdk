@@ -27,8 +27,6 @@ package com.sun.tools.javac.util;
 
 import java.util.Arrays;
 
-import static com.sun.tools.javac.util.Bits.BitsOpKind.*;
-
 /** A class for extensible, mutable bit sets.
  *
  *  <p><b>This is NOT part of any supported API.
@@ -37,20 +35,6 @@ import static com.sun.tools.javac.util.Bits.BitsOpKind.*;
  *  deletion without notice.</b>
  */
 public class Bits {
-
-    public enum BitsOpKind {
-        INIT,
-        CLEAR,
-        INCL_BIT,
-        EXCL_BIT,
-        ASSIGN,
-        AND_SET,
-        OR_SET,
-        DIFF_SET,
-        XOR_SET,
-        INCL_RANGE,
-        EXCL_RANGE,
-    }
 
     //       ____________      reset    _________
     //      /  UNKNOWN   \   <-------- / UNINIT  \
@@ -64,11 +48,14 @@ public class Bits {
     //                            |         |
     //                            -----------
     //                               any
-    private enum BitsState {
+    protected enum BitsState {
         /*  A Bits instance is in UNKNOWN state if it has been explicitly reset.
          *  It is possible to get to this state from any other by calling the
          *  reset method. An instance in the UNKNOWN state can pass to the
          *  NORMAL state after being assigned another Bits instance.
+         *
+         *  Bits instances are final fields in Flow so the UNKNOWN state models
+         *  the null assignment.
          */
         UNKNOWN,
         /*  A Bits instance is in UNINIT when it is created with the default
@@ -103,13 +90,9 @@ public class Bits {
 
     public int[] bits = null;
     // This field will store last version of bits after every change.
-    public int[] oldBits = null;
-
-    public BitsOpKind lastOperation = null;
-
     private static final int[] unassignedBits = new int[0];
 
-    private BitsState currentState;
+    protected BitsState currentState;
 
     /** Construct an initially empty set.
      */
@@ -127,27 +110,20 @@ public class Bits {
 
     /** Construct a set consisting initially of given bit vector.
      */
-    private Bits(int[] bits, BitsState initState) {
+    protected Bits(int[] bits, BitsState initState) {
         this.bits = bits;
         this.currentState = initState;
         switch (initState) {
             case UNKNOWN:
-                reset(); //this will also set current state;
+                this.bits = null;
                 break;
             case NORMAL:
                 Assert.check(bits != unassignedBits);
-                lastOperation = INIT;
                 break;
         }
     }
 
-    /** This method will be called after any operation that causes a change to
-     *  the bits. Subclasses can thus override it in order to extract information
-     *  from the changes produced to the bits by the given operation.
-     */
-    public void changed() {}
-
-    private void sizeTo(int len) {
+    protected void sizeTo(int len) {
         if (bits.length < len) {
             bits = Arrays.copyOf(bits, len);
         }
@@ -157,16 +133,18 @@ public class Bits {
      */
     public void clear() {
         Assert.check(currentState != BitsState.UNKNOWN);
-        oldBits = bits;
-        lastOperation = CLEAR;
-        for (int i = 0; i < bits.length; i++) bits[i] = 0;
-        changed();
+        for (int i = 0; i < bits.length; i++) {
+            bits[i] = 0;
+        }
         currentState = BitsState.NORMAL;
     }
 
     public void reset() {
+        internalReset();
+    }
+
+    protected void internalReset() {
         bits = null;
-        oldBits = null;
         currentState = BitsState.UNKNOWN;
     }
 
@@ -175,40 +153,40 @@ public class Bits {
     }
 
     public Bits assign(Bits someBits) {
-        lastOperation = ASSIGN;
-        oldBits = bits;
         bits = someBits.dup().bits;
-        changed();
         currentState = BitsState.NORMAL;
         return this;
     }
 
     /** Return a copy of this set.
      */
-    private Bits dup() {
+    public Bits dup() {
         Assert.check(currentState != BitsState.UNKNOWN);
         Bits tmp = new Bits();
-        if (currentState != BitsState.NORMAL) {
-            tmp.bits = bits;
-        } else {
-            tmp.bits = new int[bits.length];
-            System.arraycopy(bits, 0, tmp.bits, 0, bits.length);
-        }
+        tmp.bits = dupBits();
         currentState = BitsState.NORMAL;
         return tmp;
+    }
+
+    protected int[] dupBits() {
+        int [] result;
+        if (currentState != BitsState.NORMAL) {
+            result = bits;
+        } else {
+            result = new int[bits.length];
+            System.arraycopy(bits, 0, result, 0, bits.length);
+        }
+        return result;
     }
 
     /** Include x in this set.
      */
     public void incl(int x) {
         Assert.check(currentState != BitsState.UNKNOWN);
-        Assert.check(x >= 0);
-        oldBits = bits;
-        lastOperation = INCL_BIT;
+        Assert.check(x >= 0, "Value of x " + x);
         sizeTo((x >>> wordshift) + 1);
         bits[x >>> wordshift] = bits[x >>> wordshift] |
             (1 << (x & wordmask));
-        changed();
         currentState = BitsState.NORMAL;
     }
 
@@ -217,14 +195,11 @@ public class Bits {
      */
     public void inclRange(int start, int limit) {
         Assert.check(currentState != BitsState.UNKNOWN);
-        oldBits = bits;
-        lastOperation = INCL_RANGE;
         sizeTo((limit >>> wordshift) + 1);
         for (int x = start; x < limit; x++) {
             bits[x >>> wordshift] = bits[x >>> wordshift] |
                 (1 << (x & wordmask));
         }
-        changed();
         currentState = BitsState.NORMAL;
     }
 
@@ -232,13 +207,10 @@ public class Bits {
      */
     public void excludeFrom(int start) {
         Assert.check(currentState != BitsState.UNKNOWN);
-        oldBits = bits;
-        lastOperation = EXCL_RANGE;
         Bits temp = new Bits();
         temp.sizeTo(bits.length);
         temp.inclRange(0, start);
         internalAndSet(temp);
-        changed();
         currentState = BitsState.NORMAL;
     }
 
@@ -247,12 +219,9 @@ public class Bits {
     public void excl(int x) {
         Assert.check(currentState != BitsState.UNKNOWN);
         Assert.check(x >= 0);
-        oldBits = bits;
-        lastOperation = EXCL_BIT;
         sizeTo((x >>> wordshift) + 1);
         bits[x >>> wordshift] = bits[x >>> wordshift] &
             ~(1 << (x & wordmask));
-        changed();
         currentState = BitsState.NORMAL;
     }
 
@@ -269,15 +238,12 @@ public class Bits {
      */
     public Bits andSet(Bits xs) {
         Assert.check(currentState != BitsState.UNKNOWN);
-        oldBits = bits;
-        lastOperation = AND_SET;
         internalAndSet(xs);
-        changed();
         currentState = BitsState.NORMAL;
         return this;
     }
 
-    private void internalAndSet(Bits xs) {
+    protected void internalAndSet(Bits xs) {
         Assert.check(currentState != BitsState.UNKNOWN);
         sizeTo(xs.bits.length);
         for (int i = 0; i < xs.bits.length; i++) {
@@ -289,13 +255,10 @@ public class Bits {
      */
     public Bits orSet(Bits xs) {
         Assert.check(currentState != BitsState.UNKNOWN);
-        oldBits = bits;
-        lastOperation = OR_SET;
         sizeTo(xs.bits.length);
         for (int i = 0; i < xs.bits.length; i++) {
             bits[i] = bits[i] | xs.bits[i];
         }
-        changed();
         currentState = BitsState.NORMAL;
         return this;
     }
@@ -304,14 +267,11 @@ public class Bits {
      */
     public Bits diffSet(Bits xs) {
         Assert.check(currentState != BitsState.UNKNOWN);
-        oldBits = bits;
-        lastOperation = DIFF_SET;
         for (int i = 0; i < bits.length; i++) {
             if (i < xs.bits.length) {
                 bits[i] = bits[i] & ~xs.bits[i];
             }
         }
-        changed();
         currentState = BitsState.NORMAL;
         return this;
     }
@@ -320,13 +280,10 @@ public class Bits {
      */
     public Bits xorSet(Bits xs) {
         Assert.check(currentState != BitsState.UNKNOWN);
-        oldBits = bits;
-        lastOperation = XOR_SET;
         sizeTo(xs.bits.length);
         for (int i = 0; i < xs.bits.length; i++) {
             bits[i] = bits[i] ^ xs.bits[i];
         }
-        changed();
         currentState = BitsState.NORMAL;
         return this;
     }
@@ -336,7 +293,9 @@ public class Bits {
      */
     private static int trailingZeroBits(int x) {
         Assert.check(wordlen == 32);
-        if (x == 0) return 32;
+        if (x == 0) {
+            return 32;
+        }
         int n = 1;
         if ((x & 0xffff) == 0) { n += 16; x >>>= 16; }
         if ((x & 0x00ff) == 0) { n +=  8; x >>>=  8; }
@@ -355,24 +314,31 @@ public class Bits {
     public int nextBit(int x) {
         Assert.check(currentState != BitsState.UNKNOWN);
         int windex = x >>> wordshift;
-        if (windex >= bits.length) return -1;
+        if (windex >= bits.length) {
+            return -1;
+        }
         int word = bits[windex] & ~((1 << (x & wordmask))-1);
         while (true) {
-            if (word != 0)
+            if (word != 0) {
                 return (windex << wordshift) + trailingZeroBits(word);
+            }
             windex++;
-            if (windex >= bits.length) return -1;
+            if (windex >= bits.length) {
+                return -1;
+            }
             word = bits[windex];
         }
     }
 
     /** a string representation of this set.
      */
+    @Override
     public String toString() {
-        if (bits.length > 0) {
+        if (bits != null && bits.length > 0) {
             char[] digits = new char[bits.length * wordlen];
-            for (int i = 0; i < bits.length * wordlen; i++)
+            for (int i = 0; i < bits.length * wordlen; i++) {
                 digits[i] = isMember(i) ? '1' : '0';
+            }
             return new String(digits);
         } else {
             return "[]";
@@ -396,6 +362,8 @@ public class Bits {
             System.out.println("found " + i);
             count ++;
         }
-        if (count != 125) throw new Error();
+        if (count != 125) {
+            throw new Error();
+        }
     }
 }

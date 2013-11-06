@@ -65,6 +65,12 @@ public final class MenuBarSetFont {
     }
 
     public static void main(final String[] args) throws Exception {
+
+        if (sun.awt.OSInfo.getOSType() == sun.awt.OSInfo.OSType.MACOSX) {
+            System.err.println("This test is not for OS X. Menu.setFont() is not supported on OS X.");
+            return;
+        }
+
         //Components initialization.
         frame.setMenuBar(mb);
         mb.setFont(new Font("Helvetica", Font.ITALIC, 5));

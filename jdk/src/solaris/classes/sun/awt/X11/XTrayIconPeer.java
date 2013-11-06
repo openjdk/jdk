@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -459,7 +459,7 @@ public class XTrayIconPeer implements TrayIconPeer,
             // other class tries to cast source field to Component).
             // We already filter DRAG events out (CR 6565779).
             e.setSource(xtiPeer.target);
-            Toolkit.getDefaultToolkit().getSystemEventQueue().postEvent(e);
+            XToolkit.postEvent(XToolkit.targetToAppContext(e.getSource()), e);
         }
         public void mouseClicked(MouseEvent e) {
             if ((e.getClickCount() > 1 || xtiPeer.balloon.isVisible()) &&

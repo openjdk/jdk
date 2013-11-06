@@ -26,9 +26,6 @@
 
 package java.util.logging;
 
-import java.io.*;
-import java.net.*;
-
 /**
  * This <tt>Handler</tt> publishes log records to <tt>System.err</tt>.
  * By default the <tt>SimpleFormatter</tt> is used to generate brief summaries.
@@ -114,6 +111,7 @@ public class ConsoleHandler extends StreamHandler {
      * @param  record  description of the log event. A null record is
      *                 silently ignored and is not published
      */
+    @Override
     public void publish(LogRecord record) {
         super.publish(record);
         flush();
@@ -124,6 +122,7 @@ public class ConsoleHandler extends StreamHandler {
      * to close the output stream.  That is, we do <b>not</b>
      * close <tt>System.err</tt>.
      */
+    @Override
     public void close() {
         flush();
     }

@@ -1,5 +1,5 @@
-/*
- * @test /nodynamiccopyright/
+/* @test /nodynamiccopyright/
+ * @bug 7192246
  * @summary flow analysis is not run on inlined default bodies
  * @compile/fail/ref=Neg06.out -XDrawDiagnostics Neg06.java
  */

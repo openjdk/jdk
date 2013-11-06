@@ -53,7 +53,7 @@ public class StatementEvent extends EventObject {
          * <p>
          * @param con                   The <code>PooledConnection</code> that the closed or invalid
          * <code>PreparedStatement</code>is associated with.
-         * @param statement             The <code>PreparedStatement</code> that is bieng closed or is invalid
+         * @param statement             The <code>PreparedStatement</code> that is being closed or is invalid
          * <p>
          * @throws IllegalArgumentException if <code>con</code> is null.
          *

@@ -1095,7 +1095,7 @@ static void check_peepmatch_instruction_sequence(FILE *fp, PeepMatch *pmatch, Pe
         fprintf(fp, "  // Identify previous instruction if inside this block\n");
         fprintf(fp, "  if( ");
         print_block_index(fp, inst_position);
-        fprintf(fp, " > 0 ) {\n    Node *n = block->_nodes.at(");
+        fprintf(fp, " > 0 ) {\n    Node *n = block->get_node(");
         print_block_index(fp, inst_position);
         fprintf(fp, ");\n    inst%d = (n->is_Mach()) ? ", inst_position);
         fprintf(fp, "n->as_Mach() : NULL;\n  }\n");

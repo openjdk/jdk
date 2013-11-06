@@ -502,7 +502,7 @@ class OptionListModel<E> extends DefaultListModel<E> implements ListSelectionMod
      * leadIndex and newLeadIndex is the new one.
      * <p>
      * If the value at the anchor index is not selected, do the same thing in reverse,
-     * selecting values in the old range and deslecting values in the new one.
+     * selecting values in the old range and deselecting values in the new one.
      * <p>
      * Generate a single event for this change and notify all listeners.
      * For the purposes of generating minimal bounds in this event, do the

@@ -39,7 +39,7 @@ import jdk.internal.dynalink.beans.BeansLinker;
 import jdk.internal.dynalink.beans.StaticClass;
 import jdk.internal.dynalink.linker.GuardedInvocation;
 import jdk.internal.dynalink.linker.LinkerServices;
-import jdk.nashorn.api.scripting.ScriptObjectMirror;
+import jdk.nashorn.api.scripting.JSObject;
 import jdk.nashorn.internal.codegen.CompilerConstants.Call;
 import jdk.nashorn.internal.codegen.RuntimeCallSite;
 import jdk.nashorn.internal.runtime.JSType;
@@ -87,7 +87,7 @@ public final class Bootstrap {
         }
 
         return obj instanceof ScriptFunction ||
-            ((obj instanceof ScriptObjectMirror) && ((ScriptObjectMirror)obj).isFunction()) ||
+            ((obj instanceof JSObject) && ((JSObject)obj).isFunction()) ||
             isDynamicMethod(obj) ||
             isFunctionalInterfaceObject(obj) ||
             obj instanceof StaticClass;

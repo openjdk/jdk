@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,7 +40,7 @@ import java.util.LinkedHashMap;
  * the list of protocols to be allowed, the endpoint identification
  * algorithm during SSL/TLS handshaking, the Server Name Indication (SNI),
  * the algorithm constraints and whether SSL/TLS servers should request
- * or require client authentication.
+ * or require client authentication, etc.
  * <p>
  * SSLParameters can be created via the constructors in this class.
  * Objects can also be obtained using the <code>getSSLParameters()</code>
@@ -73,13 +73,14 @@ public class SSLParameters {
     private AlgorithmConstraints algorithmConstraints;
     private Map<Integer, SNIServerName> sniNames = null;
     private Map<Integer, SNIMatcher> sniMatchers = null;
+    private boolean preferLocalCipherSuites;
 
     /**
      * Constructs SSLParameters.
      * <p>
      * The values of cipherSuites, protocols, cryptographic algorithm
      * constraints, endpoint identification algorithm, server names and
-     * server name matchers are set to <code>null</code>,
+     * server name matchers are set to <code>null</code>, useCipherSuitesOrder,
      * wantClientAuth and needClientAuth are set to <code>false</code>.
      */
     public SSLParameters() {
@@ -433,6 +434,35 @@ public class SSLParameters {
         }
 
         return null;
+    }
+
+    /**
+     * Sets whether the local cipher suites preference should be honored.
+     *
+     * @param honorOrder whether local cipher suites order in
+     *        {@code #getCipherSuites} should be honored during
+     *        SSL/TLS handshaking.
+     *
+     * @see #getUseCipherSuitesOrder()
+     *
+     * @since 1.8
+     */
+    public final void setUseCipherSuitesOrder(boolean honorOrder) {
+        this.preferLocalCipherSuites = honorOrder;
+    }
+
+    /**
+     * Returns whether the local cipher suites preference should be honored.
+     *
+     * @return whether local cipher suites order in {@code #getCipherSuites}
+     *         should be honored during SSL/TLS handshaking.
+     *
+     * @see #setUseCipherSuitesOrder(boolean)
+     *
+     * @since 1.8
+     */
+    public final boolean getUseCipherSuitesOrder() {
+        return preferLocalCipherSuites;
     }
 }
 

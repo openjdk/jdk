@@ -44,7 +44,7 @@ import java.beans.PropertyChangeListener;
  * The unpacker  engine is used by deployment applications to
  * transform the byte-stream back to JAR format.
  * <p>
- * Here is an example using  packer and unpacker:<p>
+ * Here is an example using  packer and unpacker:
  * <pre>{@code
  *    import java.util.jar.Pack200;
  *    import java.util.jar.Pack200.*;

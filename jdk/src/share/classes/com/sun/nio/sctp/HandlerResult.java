@@ -34,6 +34,7 @@ package com.sun.nio.sctp;
  *
  * @since 1.7
  */
+@jdk.Exported
 public enum HandlerResult {
     /**
      * Try to receieve another message or notification.

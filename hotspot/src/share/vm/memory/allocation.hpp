@@ -204,12 +204,12 @@ const bool NMT_track_callsite = false;
 
 template <MEMFLAGS F> class CHeapObj ALLOCATION_SUPER_CLASS_SPEC {
  public:
-  _NOINLINE_ void* operator new(size_t size, address caller_pc = 0);
+  _NOINLINE_ void* operator new(size_t size, address caller_pc = 0) throw();
   _NOINLINE_ void* operator new (size_t size, const std::nothrow_t&  nothrow_constant,
-                               address caller_pc = 0);
-  _NOINLINE_ void* operator new [](size_t size, address caller_pc = 0);
+                               address caller_pc = 0) throw();
+  _NOINLINE_ void* operator new [](size_t size, address caller_pc = 0) throw();
   _NOINLINE_ void* operator new [](size_t size, const std::nothrow_t&  nothrow_constant,
-                               address caller_pc = 0);
+                               address caller_pc = 0) throw();
   void  operator delete(void* p);
   void  operator delete [] (void* p);
 };
@@ -219,9 +219,9 @@ template <MEMFLAGS F> class CHeapObj ALLOCATION_SUPER_CLASS_SPEC {
 
 class StackObj ALLOCATION_SUPER_CLASS_SPEC {
  private:
-  void* operator new(size_t size);
+  void* operator new(size_t size) throw();
   void  operator delete(void* p);
-  void* operator new [](size_t size);
+  void* operator new [](size_t size) throw();
   void  operator delete [](void* p);
 };
 
@@ -245,9 +245,9 @@ class StackObj ALLOCATION_SUPER_CLASS_SPEC {
 //
 class _ValueObj {
  private:
-  void* operator new(size_t size);
+  void* operator new(size_t size) throw();
   void  operator delete(void* p);
-  void* operator new [](size_t size);
+  void* operator new [](size_t size) throw();
   void  operator delete [](void* p);
 };
 
@@ -316,7 +316,7 @@ class MetaspaceObj {
 
   void* operator new(size_t size, ClassLoaderData* loader_data,
                      size_t word_size, bool read_only,
-                     Type type, Thread* thread);
+                     Type type, Thread* thread) throw();
                      // can't use TRAPS from this header file.
   void operator delete(void* p) { ShouldNotCallThis(); }
 };
@@ -339,7 +339,7 @@ class Chunk: CHeapObj<mtChunk> {
   Chunk*       _next;     // Next Chunk in list
   const size_t _len;      // Size of this Chunk
  public:
-  void* operator new(size_t size, AllocFailType alloc_failmode, size_t length);
+  void* operator new(size_t size, AllocFailType alloc_failmode, size_t length) throw();
   void  operator delete(void* p);
   Chunk(size_t length);
 
@@ -422,12 +422,12 @@ protected:
   char* hwm() const             { return _hwm; }
 
   // new operators
-  void* operator new (size_t size);
-  void* operator new (size_t size, const std::nothrow_t& nothrow_constant);
+  void* operator new (size_t size) throw();
+  void* operator new (size_t size, const std::nothrow_t& nothrow_constant) throw();
 
   // dynamic memory type tagging
-  void* operator new(size_t size, MEMFLAGS flags);
-  void* operator new(size_t size, const std::nothrow_t& nothrow_constant, MEMFLAGS flags);
+  void* operator new(size_t size, MEMFLAGS flags) throw();
+  void* operator new(size_t size, const std::nothrow_t& nothrow_constant, MEMFLAGS flags) throw();
   void  operator delete(void* p);
 
   // Fast allocate in the arena.  Common case is: pointer test + increment.
@@ -583,44 +583,44 @@ class ResourceObj ALLOCATION_SUPER_CLASS_SPEC {
 #endif // ASSERT
 
  public:
-  void* operator new(size_t size, allocation_type type, MEMFLAGS flags);
-  void* operator new [](size_t size, allocation_type type, MEMFLAGS flags);
+  void* operator new(size_t size, allocation_type type, MEMFLAGS flags) throw();
+  void* operator new [](size_t size, allocation_type type, MEMFLAGS flags) throw();
   void* operator new(size_t size, const std::nothrow_t&  nothrow_constant,
-      allocation_type type, MEMFLAGS flags);
+      allocation_type type, MEMFLAGS flags) throw();
   void* operator new [](size_t size, const std::nothrow_t&  nothrow_constant,
-      allocation_type type, MEMFLAGS flags);
+      allocation_type type, MEMFLAGS flags) throw();
 
-  void* operator new(size_t size, Arena *arena) {
+  void* operator new(size_t size, Arena *arena) throw() {
       address res = (address)arena->Amalloc(size);
       DEBUG_ONLY(set_allocation_type(res, ARENA);)
       return res;
   }
 
-  void* operator new [](size_t size, Arena *arena) {
+  void* operator new [](size_t size, Arena *arena) throw() {
       address res = (address)arena->Amalloc(size);
       DEBUG_ONLY(set_allocation_type(res, ARENA);)
       return res;
   }
 
-  void* operator new(size_t size) {
+  void* operator new(size_t size) throw() {
       address res = (address)resource_allocate_bytes(size);
       DEBUG_ONLY(set_allocation_type(res, RESOURCE_AREA);)
       return res;
   }
 
-  void* operator new(size_t size, const std::nothrow_t& nothrow_constant) {
+  void* operator new(size_t size, const std::nothrow_t& nothrow_constant) throw() {
       address res = (address)resource_allocate_bytes(size, AllocFailStrategy::RETURN_NULL);
       DEBUG_ONLY(if (res != NULL) set_allocation_type(res, RESOURCE_AREA);)
       return res;
   }
 
-  void* operator new [](size_t size) {
+  void* operator new [](size_t size) throw() {
       address res = (address)resource_allocate_bytes(size);
       DEBUG_ONLY(set_allocation_type(res, RESOURCE_AREA);)
       return res;
   }
 
-  void* operator new [](size_t size, const std::nothrow_t& nothrow_constant) {
+  void* operator new [](size_t size, const std::nothrow_t& nothrow_constant) throw() {
       address res = (address)resource_allocate_bytes(size, AllocFailStrategy::RETURN_NULL);
       DEBUG_ONLY(if (res != NULL) set_allocation_type(res, RESOURCE_AREA);)
       return res;

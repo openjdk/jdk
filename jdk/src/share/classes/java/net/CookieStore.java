@@ -48,7 +48,7 @@ public interface CookieStore {
      * <p>A cookie to store may or may not be associated with an URI. If it
      * is not associated with an URI, the cookie's domain and path attribute
      * will indicate where it comes from. If it is associated with an URI and
-     * its domain and path attribute are not speicifed, given URI will indicate
+     * its domain and path attribute are not specified, given URI will indicate
      * where this cookie comes from.
      *
      * <p>If a cookie corresponding to the given URI already exists,

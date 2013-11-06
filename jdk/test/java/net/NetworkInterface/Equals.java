@@ -25,41 +25,83 @@
  * @bug 7003398
  * @run main/othervm Equals
  */
-import java.net.NetworkInterface;
+
+import java.io.ByteArrayOutputStream;
+import java.io.PrintStream;
 import java.net.InetAddress;
+import java.net.NetworkInterface;
+import java.net.SocketException;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.Enumeration;
 import java.util.HashMap;
 
 public class Equals {
 
     public static void main(String args[]) throws Exception {
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        PrintStream bufferedOut = new PrintStream(baos);
 
-        Enumeration nifs1 = NetworkInterface.getNetworkInterfaces();
+        Enumeration<NetworkInterface> nifs1 = NetworkInterface.getNetworkInterfaces();
         HashMap<String,Integer> hashes = new HashMap<>();
         HashMap<String,NetworkInterface> nicMap = new HashMap<>();
 
         while (nifs1.hasMoreElements()) {
-            NetworkInterface ni = (NetworkInterface)nifs1.nextElement();
+            NetworkInterface ni = nifs1.nextElement();
             hashes.put(ni.getName(),ni.hashCode());
             nicMap.put(ni.getName(),ni);
+            displayInterfaceInformation(ni, bufferedOut);
+            bufferedOut.flush();
         }
 
         System.setSecurityManager(new SecurityManager());
 
-        Enumeration nifs2 = NetworkInterface.getNetworkInterfaces();
+        Enumeration<NetworkInterface> nifs2 = NetworkInterface.getNetworkInterfaces();
         while (nifs2.hasMoreElements()) {
-            NetworkInterface ni = (NetworkInterface)nifs2.nextElement();
+            NetworkInterface ni = nifs2.nextElement();
             NetworkInterface niOrig = nicMap.get(ni.getName());
 
-            int h = hashes.get(ni.getName());
-            if (h != ni.hashCode()) {
-                throw new RuntimeException ("Hashcodes different for " +
+            int h = ni.hashCode();
+            if (h != hashes.get(ni.getName())) {
+                System.out.printf("%nSystem information:%n");
+                System.out.printf("%s", baos.toString("UTF8"));
+                System.out.printf("%nni.hashCode() returned %d, expected %d, for:%n",
+                                  h, hashes.get(ni.getName()));
+                displayInterfaceInformation(ni, System.out);
+                throw new RuntimeException("Hashcodes different for " +
                         ni.getName());
             }
             if (!ni.equals(niOrig)) {
-                throw new RuntimeException ("equality different for " +
+                System.out.printf("%nSystem information:%n");
+                System.out.printf("%s", baos.toString("UTF8"));
+                System.out.printf("%nExpected the following interfaces to be the same:%n");
+                displayInterfaceInformation(niOrig, System.out);
+                displayInterfaceInformation(ni, System.out);
+                throw new RuntimeException("equality different for " +
                         ni.getName());
             }
         }
     }
+
+    static void displayInterfaceInformation(NetworkInterface netint,
+                                            PrintStream out) throws SocketException {
+        out.printf("Display name: %s%n", netint.getDisplayName());
+        out.printf("Name: %s%n", netint.getName());
+        Enumeration<InetAddress> inetAddresses = netint.getInetAddresses();
+
+        for (InetAddress inetAddress : Collections.list(inetAddresses))
+            out.printf("InetAddress: %s%n", inetAddress);
+
+        out.printf("Up? %s%n", netint.isUp());
+        out.printf("Loopback? %s%n", netint.isLoopback());
+        out.printf("PointToPoint? %s%n", netint.isPointToPoint());
+        out.printf("Supports multicast? %s%n", netint.supportsMulticast());
+        out.printf("Virtual? %s%n", netint.isVirtual());
+        out.printf("Hardware address: %s%n",
+                    Arrays.toString(netint.getHardwareAddress()));
+        out.printf("MTU: %s%n", netint.getMTU());
+        out.printf("Index: %s%n", netint.getIndex());
+        out.printf("%n");
+     }
 }
+

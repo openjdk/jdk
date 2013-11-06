@@ -32,12 +32,8 @@ import java.util.function.Supplier;
  * Low-level utility methods for creating and manipulating streams.
  *
  * <p>This class is mostly for library writers presenting stream views
- * of their data structures; most static stream methods for end users are in
- * {@link Streams}.
- *
- * <p>Unless otherwise stated, streams are created as sequential
- * streams.  A sequential stream can be transformed into a parallel stream by
- * calling the {@code parallel()} method on the created stream.
+ * of data structures; most static stream methods intended for end users are in
+ * the various {@code Stream} classes.
  *
  * @since 1.8
  */
@@ -80,7 +76,7 @@ public final class StreamSupport {
      * {@code Supplier} of {@code Spliterator}.
      *
      * <p>The {@link Supplier#get()} method will be invoked on the supplier no
-     * more than once, and after the terminal operation of the stream pipeline
+     * more than once, and only after the terminal operation of the stream pipeline
      * commences.
      *
      * <p>For spliterators that report a characteristic of {@code IMMUTABLE}
@@ -88,7 +84,7 @@ public final class StreamSupport {
      * <a href="../Spliterator.html#binding">late-binding</a>, it is likely
      * more efficient to use {@link #stream(java.util.Spliterator, boolean)}
      * instead.
-     * The use of a {@code Supplier} in this form provides a level of
+     * <p>The use of a {@code Supplier} in this form provides a level of
      * indirection that reduces the scope of potential interference with the
      * source.  Since the supplier is only invoked after the terminal operation
      * commences, any modifications to the source up to the start of the
@@ -100,7 +96,8 @@ public final class StreamSupport {
      * @param supplier a {@code Supplier} of a {@code Spliterator}
      * @param characteristics Spliterator characteristics of the supplied
      *        {@code Spliterator}.  The characteristics must be equal to
-     *        {@code supplier.get().characteristics()}.
+     *        {@code supplier.get().characteristics()}, otherwise undefined
+     *        behavior may occur when terminal operation commences.
      * @param parallel if {@code true} then the returned stream is a parallel
      *        stream; if {@code false} the returned stream is a sequential
      *        stream.
@@ -148,7 +145,7 @@ public final class StreamSupport {
      * {@code Supplier} of {@code Spliterator.OfInt}.
      *
      * <p>The {@link Supplier#get()} method will be invoked on the supplier no
-     * more than once, and after the terminal operation of the stream pipeline
+     * more than once, and only after the terminal operation of the stream pipeline
      * commences.
      *
      * <p>For spliterators that report a characteristic of {@code IMMUTABLE}
@@ -156,7 +153,7 @@ public final class StreamSupport {
      * <a href="../Spliterator.html#binding">late-binding</a>, it is likely
      * more efficient to use {@link #intStream(java.util.Spliterator.OfInt, boolean)}
      * instead.
-     * The use of a {@code Supplier} in this form provides a level of
+     * <p>The use of a {@code Supplier} in this form provides a level of
      * indirection that reduces the scope of potential interference with the
      * source.  Since the supplier is only invoked after the terminal operation
      * commences, any modifications to the source up to the start of the
@@ -167,7 +164,8 @@ public final class StreamSupport {
      * @param supplier a {@code Supplier} of a {@code Spliterator.OfInt}
      * @param characteristics Spliterator characteristics of the supplied
      *        {@code Spliterator.OfInt}.  The characteristics must be equal to
-     *        {@code supplier.get().characteristics()}
+     *        {@code supplier.get().characteristics()}, otherwise undefined
+     *        behavior may occur when terminal operation commences.
      * @param parallel if {@code true} then the returned stream is a parallel
      *        stream; if {@code false} the returned stream is a sequential
      *        stream.
@@ -215,7 +213,7 @@ public final class StreamSupport {
      * {@code Supplier} of {@code Spliterator.OfLong}.
      *
      * <p>The {@link Supplier#get()} method will be invoked on the supplier no
-     * more than once, and after the terminal operation of the stream pipeline
+     * more than once, and only after the terminal operation of the stream pipeline
      * commences.
      *
      * <p>For spliterators that report a characteristic of {@code IMMUTABLE}
@@ -223,7 +221,7 @@ public final class StreamSupport {
      * <a href="../Spliterator.html#binding">late-binding</a>, it is likely
      * more efficient to use {@link #longStream(java.util.Spliterator.OfLong, boolean)}
      * instead.
-     * The use of a {@code Supplier} in this form provides a level of
+     * <p>The use of a {@code Supplier} in this form provides a level of
      * indirection that reduces the scope of potential interference with the
      * source.  Since the supplier is only invoked after the terminal operation
      * commences, any modifications to the source up to the start of the
@@ -234,7 +232,8 @@ public final class StreamSupport {
      * @param supplier a {@code Supplier} of a {@code Spliterator.OfLong}
      * @param characteristics Spliterator characteristics of the supplied
      *        {@code Spliterator.OfLong}.  The characteristics must be equal to
-     *        {@code supplier.get().characteristics()}
+     *        {@code supplier.get().characteristics()}, otherwise undefined
+     *        behavior may occur when terminal operation commences.
      * @param parallel if {@code true} then the returned stream is a parallel
      *        stream; if {@code false} the returned stream is a sequential
      *        stream.
@@ -282,7 +281,7 @@ public final class StreamSupport {
      * {@code Supplier} of {@code Spliterator.OfDouble}.
      *
      * <p>The {@link Supplier#get()} method will be invoked on the supplier no
-     * more than once, and after the terminal operation of the stream pipeline
+     * more than once, and only after the terminal operation of the stream pipeline
      * commences.
      *
      * <p>For spliterators that report a characteristic of {@code IMMUTABLE}
@@ -290,7 +289,7 @@ public final class StreamSupport {
      * <a href="../Spliterator.html#binding">late-binding</a>, it is likely
      * more efficient to use {@link #doubleStream(java.util.Spliterator.OfDouble, boolean)}
      * instead.
-     * The use of a {@code Supplier} in this form provides a level of
+     * <p>The use of a {@code Supplier} in this form provides a level of
      * indirection that reduces the scope of potential interference with the
      * source.  Since the supplier is only invoked after the terminal operation
      * commences, any modifications to the source up to the start of the
@@ -301,7 +300,8 @@ public final class StreamSupport {
      * @param supplier A {@code Supplier} of a {@code Spliterator.OfDouble}
      * @param characteristics Spliterator characteristics of the supplied
      *        {@code Spliterator.OfDouble}.  The characteristics must be equal to
-     *        {@code supplier.get().characteristics()}
+     *        {@code supplier.get().characteristics()}, otherwise undefined
+     *        behavior may occur when terminal operation commences.
      * @param parallel if {@code true} then the returned stream is a parallel
      *        stream; if {@code false} the returned stream is a sequential
      *        stream.

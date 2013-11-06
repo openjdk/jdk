@@ -98,17 +98,15 @@ class CollectorPolicy : public CHeapObj<mtGC> {
   {}
 
  public:
-  void set_min_alignment(size_t align)         { _min_alignment = align; }
+  // Return maximum heap alignment that may be imposed by the policy
+  static size_t compute_max_alignment();
+
   size_t min_alignment()                       { return _min_alignment; }
-  void set_max_alignment(size_t align)         { _max_alignment = align; }
   size_t max_alignment()                       { return _max_alignment; }
 
   size_t initial_heap_byte_size() { return _initial_heap_byte_size; }
-  void set_initial_heap_byte_size(size_t v) { _initial_heap_byte_size = v; }
   size_t max_heap_byte_size()     { return _max_heap_byte_size; }
-  void set_max_heap_byte_size(size_t v) { _max_heap_byte_size = v; }
   size_t min_heap_byte_size()     { return _min_heap_byte_size; }
-  void set_min_heap_byte_size(size_t v) { _min_heap_byte_size = v; }
 
   enum Name {
     CollectorPolicyKind,
@@ -234,9 +232,6 @@ class GenCollectorPolicy : public CollectorPolicy {
   // Try to allocate space by expanding the heap.
   virtual HeapWord* expand_heap_and_allocate(size_t size, bool is_tlab);
 
-  // compute max heap alignment
-  size_t compute_max_alignment();
-
  // Scale the base_size by NewRation according to
  //     result = base_size / (NewRatio + 1)
  // and align by min_alignment()
@@ -248,12 +243,9 @@ class GenCollectorPolicy : public CollectorPolicy {
 
  public:
   // Accessors
-  size_t min_gen0_size() { return _min_gen0_size; }
-  void set_min_gen0_size(size_t v) { _min_gen0_size = v; }
+  size_t min_gen0_size()     { return _min_gen0_size; }
   size_t initial_gen0_size() { return _initial_gen0_size; }
-  void set_initial_gen0_size(size_t v) { _initial_gen0_size = v; }
-  size_t max_gen0_size() { return _max_gen0_size; }
-  void set_max_gen0_size(size_t v) { _max_gen0_size = v; }
+  size_t max_gen0_size()     { return _max_gen0_size; }
 
   virtual int number_of_generations() = 0;
 
@@ -302,12 +294,9 @@ class TwoGenerationCollectorPolicy : public GenCollectorPolicy {
 
  public:
   // Accessors
-  size_t min_gen1_size() { return _min_gen1_size; }
-  void set_min_gen1_size(size_t v) { _min_gen1_size = v; }
+  size_t min_gen1_size()     { return _min_gen1_size; }
   size_t initial_gen1_size() { return _initial_gen1_size; }
-  void set_initial_gen1_size(size_t v) { _initial_gen1_size = v; }
-  size_t max_gen1_size() { return _max_gen1_size; }
-  void set_max_gen1_size(size_t v) { _max_gen1_size = v; }
+  size_t max_gen1_size()     { return _max_gen1_size; }
 
   // Inherited methods
   TwoGenerationCollectorPolicy* as_two_generation_policy() { return this; }

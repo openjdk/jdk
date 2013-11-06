@@ -211,13 +211,13 @@ public final class OutputAnalyzer {
       if (matcher.find()) {
           reportDiagnosticSummary();
           throw new RuntimeException("'" + pattern
-                  + "' found in stdout \n");
+                  + "' found in stdout: '" + matcher.group() + "' \n");
       }
       matcher = Pattern.compile(pattern, Pattern.MULTILINE).matcher(stderr);
       if (matcher.find()) {
           reportDiagnosticSummary();
           throw new RuntimeException("'" + pattern
-                  + "' found in stderr \n");
+                  + "' found in stderr: '" + matcher.group() + "' \n");
       }
   }
 
@@ -251,6 +251,37 @@ public final class OutputAnalyzer {
           throw new RuntimeException("'" + pattern
                   + "' found in stderr \n");
       }
+  }
+
+  /**
+   * Get the captured group of the first string matching the pattern.
+   * stderr is searched before stdout.
+   *
+   * @param pattern The multi-line pattern to match
+   * @param group The group to capture
+   * @return The matched string or null if no match was found
+   */
+  public String firstMatch(String pattern, int group) {
+    Matcher stderrMatcher = Pattern.compile(pattern, Pattern.MULTILINE).matcher(stderr);
+    Matcher stdoutMatcher = Pattern.compile(pattern, Pattern.MULTILINE).matcher(stdout);
+    if (stderrMatcher.find()) {
+      return stderrMatcher.group(group);
+    }
+    if (stdoutMatcher.find()) {
+      return stdoutMatcher.group(group);
+    }
+    return null;
+  }
+
+  /**
+   * Get the first string matching the pattern.
+   * stderr is searched before stdout.
+   *
+   * @param pattern The multi-line pattern to match
+   * @return The matched string or null if no match was found
+   */
+  public String firstMatch(String pattern) {
+    return firstMatch(pattern, 0);
   }
 
   /**

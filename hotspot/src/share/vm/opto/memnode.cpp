@@ -962,6 +962,19 @@ uint LoadNode::hash() const {
   return (uintptr_t)in(Control) + (uintptr_t)in(Memory) + (uintptr_t)in(Address);
 }
 
+static bool skip_through_membars(Compile::AliasType* atp, const TypeInstPtr* tp, bool eliminate_boxing) {
+  if ((atp != NULL) && (atp->index() >= Compile::AliasIdxRaw)) {
+    bool non_volatile = (atp->field() != NULL) && !atp->field()->is_volatile();
+    bool is_stable_ary = FoldStableValues &&
+                         (tp != NULL) && (tp->isa_aryptr() != NULL) &&
+                         tp->isa_aryptr()->is_stable();
+
+    return (eliminate_boxing && non_volatile) || is_stable_ary;
+  }
+
+  return false;
+}
+
 //---------------------------can_see_stored_value------------------------------
 // This routine exists to make sure this set of tests is done the same
 // everywhere.  We need to make a coordinated change: first LoadNode::Ideal
@@ -976,11 +989,9 @@ Node* MemNode::can_see_stored_value(Node* st, PhaseTransform* phase) const {
   const TypeInstPtr* tp = phase->type(ld_adr)->isa_instptr();
   Compile::AliasType* atp = (tp != NULL) ? phase->C->alias_type(tp) : NULL;
   // This is more general than load from boxing objects.
-  if (phase->C->eliminate_boxing() && (atp != NULL) &&
-      (atp->index() >= Compile::AliasIdxRaw) &&
-      (atp->field() != NULL) && !atp->field()->is_volatile()) {
+  if (skip_through_membars(atp, tp, phase->C->eliminate_boxing())) {
     uint alias_idx = atp->index();
-    bool final = atp->field()->is_final();
+    bool final = !atp->is_rewritable();
     Node* result = NULL;
     Node* current = st;
     // Skip through chains of MemBarNodes checking the MergeMems for
@@ -1014,7 +1025,6 @@ Node* MemNode::can_see_stored_value(Node* st, PhaseTransform* phase) const {
       st = result;
     }
   }
-
 
   // Loop around twice in the case Load -> Initialize -> Store.
   // (See PhaseIterGVN::add_users_to_worklist, which knows about this case.)
@@ -1577,6 +1587,40 @@ LoadNode::load_array_final_field(const TypeKlassPtr *tkls,
   return NULL;
 }
 
+// Try to constant-fold a stable array element.
+static const Type* fold_stable_ary_elem(const TypeAryPtr* ary, int off, BasicType loadbt) {
+  assert(ary->is_stable(), "array should be stable");
+
+  if (ary->const_oop() != NULL) {
+    // Decode the results of GraphKit::array_element_address.
+    ciArray* aobj = ary->const_oop()->as_array();
+    ciConstant con = aobj->element_value_by_offset(off);
+
+    if (con.basic_type() != T_ILLEGAL && !con.is_null_or_zero()) {
+      const Type* con_type = Type::make_from_constant(con);
+      if (con_type != NULL) {
+        if (con_type->isa_aryptr()) {
+          // Join with the array element type, in case it is also stable.
+          int dim = ary->stable_dimension();
+          con_type = con_type->is_aryptr()->cast_to_stable(true, dim-1);
+        }
+        if (loadbt == T_NARROWOOP && con_type->isa_oopptr()) {
+          con_type = con_type->make_narrowoop();
+        }
+#ifndef PRODUCT
+        if (TraceIterativeGVN) {
+          tty->print("FoldStableValues: array element [off=%d]: con_type=", off);
+          con_type->dump(); tty->cr();
+        }
+#endif //PRODUCT
+        return con_type;
+      }
+    }
+  }
+
+  return NULL;
+}
+
 //------------------------------Value-----------------------------------------
 const Type *LoadNode::Value( PhaseTransform *phase ) const {
   // Either input is TOP ==> the result is TOP
@@ -1591,8 +1635,31 @@ const Type *LoadNode::Value( PhaseTransform *phase ) const {
   Compile* C = phase->C;
 
   // Try to guess loaded type from pointer type
-  if (tp->base() == Type::AryPtr) {
-    const Type *t = tp->is_aryptr()->elem();
+  if (tp->isa_aryptr()) {
+    const TypeAryPtr* ary = tp->is_aryptr();
+    const Type *t = ary->elem();
+
+    // Determine whether the reference is beyond the header or not, by comparing
+    // the offset against the offset of the start of the array's data.
+    // Different array types begin at slightly different offsets (12 vs. 16).
+    // We choose T_BYTE as an example base type that is least restrictive
+    // as to alignment, which will therefore produce the smallest
+    // possible base offset.
+    const int min_base_off = arrayOopDesc::base_offset_in_bytes(T_BYTE);
+    const bool off_beyond_header = ((uint)off >= (uint)min_base_off);
+
+    // Try to constant-fold a stable array element.
+    if (FoldStableValues && ary->is_stable()) {
+      // Make sure the reference is not into the header
+      if (off_beyond_header && off != Type::OffsetBot) {
+        assert(adr->is_AddP() && adr->in(AddPNode::Offset)->is_Con(), "offset is a constant");
+        const Type* con_type = fold_stable_ary_elem(ary, off, memory_type());
+        if (con_type != NULL) {
+          return con_type;
+        }
+      }
+    }
+
     // Don't do this for integer types. There is only potential profit if
     // the element type t is lower than _type; that is, for int types, if _type is
     // more restrictive than t.  This only happens here if one is short and the other
@@ -1613,14 +1680,7 @@ const Type *LoadNode::Value( PhaseTransform *phase ) const {
         && Opcode() != Op_LoadKlass && Opcode() != Op_LoadNKlass) {
       // t might actually be lower than _type, if _type is a unique
       // concrete subclass of abstract class t.
-      // Make sure the reference is not into the header, by comparing
-      // the offset against the offset of the start of the array's data.
-      // Different array types begin at slightly different offsets (12 vs. 16).
-      // We choose T_BYTE as an example base type that is least restrictive
-      // as to alignment, which will therefore produce the smallest
-      // possible base offset.
-      const int min_base_off = arrayOopDesc::base_offset_in_bytes(T_BYTE);
-      if ((uint)off >= (uint)min_base_off) {  // is the offset beyond the header?
+      if (off_beyond_header) {  // is the offset beyond the header?
         const Type* jt = t->join(_type);
         // In any case, do not allow the join, per se, to empty out the type.
         if (jt->empty() && !t->empty()) {
@@ -1971,7 +2031,7 @@ Node *LoadKlassNode::make( PhaseGVN& gvn, Node *mem, Node *adr, const TypePtr* a
   assert(adr_type != NULL, "expecting TypeKlassPtr");
 #ifdef _LP64
   if (adr_type->is_ptr_to_narrowklass()) {
-    assert(UseCompressedKlassPointers, "no compressed klasses");
+    assert(UseCompressedClassPointers, "no compressed klasses");
     Node* load_klass = gvn.transform(new (C) LoadNKlassNode(ctl, mem, adr, at, tk->make_narrowklass()));
     return new (C) DecodeNKlassNode(load_klass, load_klass->bottom_type()->make_ptr());
   }
@@ -2309,7 +2369,7 @@ StoreNode* StoreNode::make( PhaseGVN& gvn, Node* ctl, Node* mem, Node* adr, cons
       val = gvn.transform(new (C) EncodePNode(val, val->bottom_type()->make_narrowoop()));
       return new (C) StoreNNode(ctl, mem, adr, adr_type, val);
     } else if (adr->bottom_type()->is_ptr_to_narrowklass() ||
-               (UseCompressedKlassPointers && val->bottom_type()->isa_klassptr() &&
+               (UseCompressedClassPointers && val->bottom_type()->isa_klassptr() &&
                 adr->bottom_type()->isa_rawptr())) {
       val = gvn.transform(new (C) EncodePKlassNode(val, val->bottom_type()->make_narrowklass()));
       return new (C) StoreNKlassNode(ctl, mem, adr, adr_type, val);

@@ -67,6 +67,7 @@ class StubAssembler;
   stub(access_field_patching)        \
   stub(load_klass_patching)          \
   stub(load_mirror_patching)         \
+  stub(load_appendix_patching)       \
   stub(g1_pre_barrier_slow)          \
   stub(g1_post_barrier_slow)         \
   stub(fpu2long_stub)                \
@@ -160,6 +161,7 @@ class Runtime1: public AllStatic {
   static int access_field_patching(JavaThread* thread);
   static int move_klass_patching(JavaThread* thread);
   static int move_mirror_patching(JavaThread* thread);
+  static int move_appendix_patching(JavaThread* thread);
 
   static void patch_code(JavaThread* thread, StubID stub_id);
 

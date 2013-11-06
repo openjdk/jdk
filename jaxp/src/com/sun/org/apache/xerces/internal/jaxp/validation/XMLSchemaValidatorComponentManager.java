@@ -39,10 +39,10 @@ import com.sun.org.apache.xerces.internal.util.FeatureState;
 import com.sun.org.apache.xerces.internal.util.NamespaceSupport;
 import com.sun.org.apache.xerces.internal.util.ParserConfigurationSettings;
 import com.sun.org.apache.xerces.internal.util.PropertyState;
-import com.sun.org.apache.xerces.internal.util.SecurityManager;
 import com.sun.org.apache.xerces.internal.util.Status;
 import com.sun.org.apache.xerces.internal.util.SymbolTable;
 import com.sun.org.apache.xerces.internal.utils.XMLSecurityPropertyManager;
+import com.sun.org.apache.xerces.internal.utils.XMLSecurityManager;
 import com.sun.org.apache.xerces.internal.xni.NamespaceContext;
 import com.sun.org.apache.xerces.internal.xni.XNIException;
 import com.sun.org.apache.xerces.internal.xni.parser.XMLComponent;
@@ -181,7 +181,7 @@ final class XMLSchemaValidatorComponentManager extends ParserConfigurationSettin
     private final HashMap fInitProperties = new HashMap();
 
     /** Stores the initial security manager. */
-    private final SecurityManager fInitSecurityManager;
+    private XMLSecurityManager fInitSecurityManager;
 
     /** Stores the initial security property manager. */
     private final XMLSecurityPropertyManager fSecurityPropertyMgr;
@@ -221,12 +221,6 @@ final class XMLSchemaValidatorComponentManager extends ParserConfigurationSettin
         fComponents.put(ENTITY_RESOLVER, null);
         fComponents.put(ERROR_HANDLER, null);
 
-        if (System.getSecurityManager() != null) {
-            _isSecureMode = true;
-            setProperty(SECURITY_MANAGER, new SecurityManager());
-        } else {
-            fComponents.put(SECURITY_MANAGER, null);
-        }
         fComponents.put(SYMBOL_TABLE, new SymbolTable());
 
         // setup grammar pool
@@ -241,15 +235,21 @@ final class XMLSchemaValidatorComponentManager extends ParserConfigurationSettin
         addRecognizedParamsAndSetDefaults(fErrorReporter, grammarContainer);
         addRecognizedParamsAndSetDefaults(fSchemaValidator, grammarContainer);
 
-        // if the secure processing feature is set to true, add a security manager to the configuration
-        Boolean secureProcessing = grammarContainer.getFeature(XMLConstants.FEATURE_SECURE_PROCESSING);
-        if (Boolean.TRUE.equals(secureProcessing)) {
-            fInitSecurityManager = new SecurityManager();
+        boolean secureProcessing = grammarContainer.getFeature(XMLConstants.FEATURE_SECURE_PROCESSING);
+        if (System.getSecurityManager() != null) {
+            _isSecureMode = true;
+            secureProcessing = true;
         }
-        else {
-            fInitSecurityManager = null;
+
+        fInitSecurityManager = (XMLSecurityManager)
+                grammarContainer.getProperty(SECURITY_MANAGER);
+        if (fInitSecurityManager != null ) {
+            fInitSecurityManager.setSecureProcessing(secureProcessing);
+        } else {
+            fInitSecurityManager = new XMLSecurityManager(secureProcessing);
         }
-        fComponents.put(SECURITY_MANAGER, fInitSecurityManager);
+
+        setProperty(SECURITY_MANAGER, fInitSecurityManager);
 
         //pass on properties set on SchemaFactory
         fSecurityPropertyMgr = (XMLSecurityPropertyManager)
@@ -281,7 +281,7 @@ final class XMLSchemaValidatorComponentManager extends ParserConfigurationSettin
             return FeatureState.is(fUseGrammarPoolOnly);
         }
         else if (XMLConstants.FEATURE_SECURE_PROCESSING.equals(featureId)) {
-            return FeatureState.is(getProperty(SECURITY_MANAGER) != null);
+            return FeatureState.is(fInitSecurityManager.isSecureProcessing());
         }
         else if (SCHEMA_ELEMENT_DEFAULT.equals(featureId)) {
             return FeatureState.is(true); //pre-condition: VALIDATION and SCHEMA_VALIDATION are always true
@@ -311,7 +311,9 @@ final class XMLSchemaValidatorComponentManager extends ParserConfigurationSettin
             if (_isSecureMode && !value) {
                 throw new XMLConfigurationException(Status.NOT_ALLOWED, XMLConstants.FEATURE_SECURE_PROCESSING);
             }
-            setProperty(SECURITY_MANAGER, value ? new SecurityManager() : null);
+
+            fInitSecurityManager.setSecureProcessing(value);
+            setProperty(SECURITY_MANAGER, fInitSecurityManager);
 
             if (value && Constants.IS_JDK8_OR_ABOVE) {
                 fSecurityPropertyMgr.setValue(XMLSecurityPropertyManager.Property.ACCESS_EXTERNAL_DTD,
@@ -390,10 +392,19 @@ final class XMLSchemaValidatorComponentManager extends ParserConfigurationSettin
             fComponents.put(propertyId, value);
             return;
         }
-        if (!fInitProperties.containsKey(propertyId)) {
-            fInitProperties.put(propertyId, super.getProperty(propertyId));
+        //check if the property is managed by security manager
+        if (fInitSecurityManager == null ||
+                !fInitSecurityManager.setLimit(propertyId, XMLSecurityManager.State.APIPROPERTY, value)) {
+            //check if the property is managed by security property manager
+            if (fSecurityPropertyMgr == null ||
+                    !fSecurityPropertyMgr.setValue(propertyId, XMLSecurityPropertyManager.State.APIPROPERTY, value)) {
+                //fall back to the existing property manager
+                if (!fInitProperties.containsKey(propertyId)) {
+                    fInitProperties.put(propertyId, super.getProperty(propertyId));
+                }
+                super.setProperty(propertyId, value);
+            }
         }
-        super.setProperty(propertyId, value);
     }
 
     /**

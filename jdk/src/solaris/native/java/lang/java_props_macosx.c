@@ -31,6 +31,7 @@
 #include <Security/AuthSession.h>
 #include <CoreFoundation/CoreFoundation.h>
 #include <SystemConfiguration/SystemConfiguration.h>
+#include <Foundation/Foundation.h>
 
 #include "java_props_macosx.h"
 
@@ -104,40 +105,17 @@ char *setupMacOSXLocale(int cat) {
     }
 }
 
-/* There are several toolkit options on Mac OS X, so we should try to
- * pick the "best" one, given what we know about the environment Java
- * is running under
- */
-
-static PreferredToolkit getPreferredToolkitFromEnv() {
-    char *envVar = getenv("AWT_TOOLKIT");
-    if (envVar == NULL) return unset;
-
-    if (strcasecmp(envVar, "CToolkit") == 0) return CToolkit;
-    if (strcasecmp(envVar, "XToolkit") == 0) return XToolkit;
-    if (strcasecmp(envVar, "HToolkit") == 0) return HToolkit;
-    return unset;
-}
-
-static bool isInAquaSession() {
+int isInAquaSession() {
     // Is the WindowServer available?
     SecuritySessionId session_id;
     SessionAttributeBits session_info;
     OSStatus status = SessionGetInfo(callerSecuritySession, &session_id, &session_info);
-    if (status != noErr) return false;
-    if (!(session_info & sessionHasGraphicAccess)) return false;
-    return true;
-}
-
-PreferredToolkit getPreferredToolkit() {
-    static PreferredToolkit pref = unset;
-    if (pref != unset) return pref;
-
-    PreferredToolkit prefFromEnv = getPreferredToolkitFromEnv();
-    if (prefFromEnv != unset) return pref = prefFromEnv;
-
-    if (isInAquaSession()) return pref = CToolkit;
-    return pref = HToolkit;
+    if (status == noErr) {
+        if (session_info & sessionHasGraphicAccess) {
+            return 1;
+        }
+    }
+    return 0;
 }
 
 void setOSNameAndVersion(java_props_t *sprops) {
@@ -271,9 +249,20 @@ static char * createConvertedException(CFStringRef cf_original) {
     return c_exception;
 }
 
+/*
+ * Method for fetching the user.home path and storing it in the property list.
+ * For signed .apps running in the Mac App Sandbox, user.home is set to the
+ * app's sandbox container.
+ */
+void setUserHome(java_props_t *sprops) {
+    if (sprops == NULL) { return; }
+    NSAutoreleasePool *pool = [[NSAutoreleasePool alloc] init];
+    sprops->user_home = createUTF8CString((CFStringRef)NSHomeDirectory());
+    [pool drain];
+}
 
 /*
- * Method for fetching proxy info and storing it in the propery list.
+ * Method for fetching proxy info and storing it in the property list.
  */
 void setProxyProperties(java_props_t *sProps) {
     if (sProps == NULL) return;

@@ -45,7 +45,7 @@ import javax.swing.plaf.basic.BasicHTML;
  * specified position and justification.
  * <p>
  * If the border, font, or color property values are not
- * specified in the constuctor or by invoking the appropriate
+ * specified in the constructor or by invoking the appropriate
  * set methods, the property values will be defined by the current
  * look and feel, using the following property names in the
  * Defaults Table:
@@ -60,7 +60,7 @@ import javax.swing.plaf.basic.BasicHTML;
  * future Swing releases. The current serialization support is
  * appropriate for short term storage or RMI between applications running
  * the same version of Swing.  As of 1.4, support for long term storage
- * of all JavaBeans<sup><font size="-2">TM</font></sup>
+ * of all JavaBeans&trade;
  * has been added to the <code>java.beans</code> package.
  * Please see {@link java.beans.XMLEncoder}.
  *

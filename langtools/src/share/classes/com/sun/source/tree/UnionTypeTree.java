@@ -34,7 +34,7 @@ import java.util.List;
  *
  * @since 1.7
  */
-@jdk.Supported
+@jdk.Exported
 public interface UnionTypeTree extends Tree {
     List<? extends Tree> getTypeAlternatives();
 }

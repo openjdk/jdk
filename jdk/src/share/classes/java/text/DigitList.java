@@ -483,7 +483,7 @@ final class DigitList implements Cloneable {
              *
              *   This has to be considered only if digit at maximumDigits index
              *   is exactly the last one in the set of digits, otherwise there are
-             *   remaining digits after that position and we dont have to consider
+             *   remaining digits after that position and we don't have to consider
              *   what FloatingDecimal did.
              *
              * - Other rounding modes are not impacted by these tie cases.
@@ -570,7 +570,7 @@ final class DigitList implements Cloneable {
                             return false;
 
                         if (!allDecimalDigits)
-                            // Otherwise if the digits dont represent exact value,
+                            // Otherwise if the digits don't represent exact value,
                             // value was above tie and FloatingDecimal truncated
                             // digits to tie. We must round up.
                             return true;

@@ -264,7 +264,7 @@ class ProfilerNode {
 
  public:
 
-  void* operator new(size_t size, ThreadProfiler* tp);
+  void* operator new(size_t size, ThreadProfiler* tp) throw();
   void  operator delete(void* p);
 
   ProfilerNode() {
@@ -373,7 +373,7 @@ class ProfilerNode {
   }
 };
 
-void* ProfilerNode::operator new(size_t size, ThreadProfiler* tp){
+void* ProfilerNode::operator new(size_t size, ThreadProfiler* tp) throw() {
   void* result = (void*) tp->area_top;
   tp->area_top += size;
 
@@ -925,6 +925,8 @@ void FlatProfiler::record_thread_ticks() {
       FlatProfiler::interval_print();
       FlatProfiler::interval_reset();
     }
+
+    FREE_C_HEAP_ARRAY(JavaThread *, threadsList, mtInternal);
   } else {
     // Couldn't get the threads lock, just record that rather than blocking
     FlatProfiler::threads_lock_ticks += 1;

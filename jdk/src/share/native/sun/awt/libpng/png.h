@@ -1351,7 +1351,7 @@ PNG_FIXED_EXPORT(228, void, png_set_alpha_mode_fixed, (png_structp png_ptr,
  *
  * When the default gamma of PNG files doesn't match the output gamma.
  *    If you have PNG files with no gamma information png_set_alpha_mode allows
- *    you to provide a default gamma, but it also sets the ouput gamma to the
+ *    you to provide a default gamma, but it also sets the output gamma to the
  *    matching value.  If you know your PNG files have a gamma that doesn't
  *    match the output you can take advantage of the fact that
  *    png_set_alpha_mode always sets the output gamma but only sets the PNG

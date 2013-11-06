@@ -23,10 +23,11 @@
 
 /*
  * @test
- * @bug      8005091 8009686
+ * @bug      8005091 8009686 8025633 8026567
  * @summary  Make sure that type annotations are displayed correctly
  * @author   Bhavesh Patel
  * @library  ../lib/
+ * @ignore
  * @build    JavadocTester TestTypeAnnotations
  * @run main TestTypeAnnotations
  */
@@ -73,12 +74,12 @@ public class TestTypeAnnotations extends JavadocTester {
 
         // Test for type annotations on Class Parameters (ClassParameters.java).
         {BUG_ID + FS + "typeannos" + FS + "ExtendsBound.html",
-            "class <span class=\"strong\">ExtendsBound&lt;K extends <a " +
+            "class <span class=\"typeNameLabel\">ExtendsBound&lt;K extends <a " +
             "href=\"../typeannos/ClassParamA.html\" title=\"annotation in " +
             "typeannos\">@ClassParamA</a> java.lang.String&gt;</span>"
         },
         {BUG_ID + FS + "typeannos" + FS + "ExtendsGeneric.html",
-            "<pre>class <span class=\"strong\">ExtendsGeneric&lt;K extends " +
+            "<pre>class <span class=\"typeNameLabel\">ExtendsGeneric&lt;K extends " +
             "<a href=\"../typeannos/ClassParamA.html\" title=\"annotation in " +
             "typeannos\">@ClassParamA</a> <a href=\"../typeannos/Unannotated.html\" " +
             "title=\"class in typeannos\">Unannotated</a>&lt;<a href=\"" +
@@ -86,24 +87,24 @@ public class TestTypeAnnotations extends JavadocTester {
             "@ClassParamB</a> java.lang.String&gt;&gt;</span>"
         },
         {BUG_ID + FS + "typeannos" + FS + "TwoBounds.html",
-            "<pre>class <span class=\"strong\">TwoBounds&lt;K extends <a href=\"" +
+            "<pre>class <span class=\"typeNameLabel\">TwoBounds&lt;K extends <a href=\"" +
             "../typeannos/ClassParamA.html\" title=\"annotation in typeannos\">" +
             "@ClassParamA</a> java.lang.String,V extends <a href=\"../typeannos/" +
             "ClassParamB.html\" title=\"annotation in typeannos\">@ClassParamB" +
             "</a> java.lang.String&gt;</span>"
         },
         {BUG_ID + FS + "typeannos" + FS + "Complex1.html",
-            "class <span class=\"strong\">Complex1&lt;K extends <a href=\"../" +
+            "class <span class=\"typeNameLabel\">Complex1&lt;K extends <a href=\"../" +
             "typeannos/ClassParamA.html\" title=\"annotation in typeannos\">" +
             "@ClassParamA</a> java.lang.String &amp; java.lang.Runnable&gt;</span>"
         },
         {BUG_ID + FS + "typeannos" + FS + "Complex2.html",
-            "class <span class=\"strong\">Complex2&lt;K extends java.lang." +
+            "class <span class=\"typeNameLabel\">Complex2&lt;K extends java.lang." +
             "String &amp; <a href=\"../typeannos/ClassParamB.html\" title=\"" +
             "annotation in typeannos\">@ClassParamB</a> java.lang.Runnable&gt;</span>"
         },
         {BUG_ID + FS + "typeannos" + FS + "ComplexBoth.html",
-            "class <span class=\"strong\">ComplexBoth&lt;K extends <a href=\"" +
+            "class <span class=\"typeNameLabel\">ComplexBoth&lt;K extends <a href=\"" +
             "../typeannos/ClassParamA.html\" title=\"annotation in typeannos\"" +
             ">@ClassParamA</a> java.lang.String &amp; <a href=\"../typeannos/" +
             "ClassParamA.html\" title=\"annotation in typeannos\">@ClassParamA" +
@@ -272,13 +273,13 @@ public class TestTypeAnnotations extends JavadocTester {
             "<pre>void&nbsp;oneException()" + NL +
             "           throws <a href=\"../typeannos/ThrB.html\" title=\"" +
             "annotation in typeannos\">@ThrB</a>(<a href=\"../typeannos/" +
-            "ThrB.html#value()\">value</a>=\"m\") java.lang.Exception</pre>"
+            "ThrB.html#value--\">value</a>=\"m\") java.lang.Exception</pre>"
         },
         {BUG_ID + FS + "typeannos" + FS + "ThrWithValue.html",
             "<pre>void&nbsp;twoExceptions()" + NL +
             "            throws <a href=\"../typeannos/ThrB.html\" title=\"" +
             "annotation in typeannos\">@ThrB</a>(<a href=\"../typeannos/" +
-            "ThrB.html#value()\">value</a>=\"m\") java.lang.RuntimeException," + NL +
+            "ThrB.html#value--\">value</a>=\"m\") java.lang.RuntimeException," + NL +
             "                   <a href=\"../typeannos/ThrA.html\" title=\"" +
             "annotation in typeannos\">@ThrA</a> java.lang.Exception</pre>"
         },
@@ -307,14 +308,14 @@ public class TestTypeAnnotations extends JavadocTester {
             "<pre>void&nbsp;wcSuper(<a href=\"../typeannos/MyList.html\" title=\"" +
             "class in typeannos\">MyList</a>&lt;? super <a href=\"../typeannos/" +
             "WldB.html\" title=\"annotation in typeannos\">@WldB</a>(<a href=\"" +
-            "../typeannos/WldB.html#value()\">value</a>=\"m\") java.lang." +
+            "../typeannos/WldB.html#value--\">value</a>=\"m\") java.lang." +
             "String&gt;&nbsp;l)</pre>"
         },
         {BUG_ID + FS + "typeannos" + FS + "BoundWithValue.html",
             "<pre><a href=\"../typeannos/MyList.html\" title=\"class in " +
             "typeannos\">MyList</a>&lt;? extends <a href=\"../typeannos/WldB." +
             "html\" title=\"annotation in typeannos\">@WldB</a>(<a href=\"../" +
-            "typeannos/WldB.html#value()\">value</a>=\"m\") java.lang.String" +
+            "typeannos/WldB.html#value--\">value</a>=\"m\") java.lang.String" +
             "&gt;&nbsp;returnWcExtends()</pre>"
         },
 
@@ -329,7 +330,7 @@ public class TestTypeAnnotations extends JavadocTester {
             "<pre>java.lang.String&nbsp;nonVoid(<a href=\"../typeannos/RcvrA." +
             "html\" title=\"annotation in typeannos\">@RcvrA</a> <a href=\"../" +
             "typeannos/RcvrB.html\" title=\"annotation in typeannos\">@RcvrB" +
-            "</a>(<a href=\"../typeannos/RcvrB.html#value()\">value</a>=\"m\")" +
+            "</a>(<a href=\"../typeannos/RcvrB.html#value--\">value</a>=\"m\")" +
             "&nbsp;DefaultUnmodified&nbsp;this)</pre>"
         },
         {BUG_ID + FS + "typeannos" + FS + "DefaultUnmodified.html",
@@ -354,7 +355,7 @@ public class TestTypeAnnotations extends JavadocTester {
         {BUG_ID + FS + "typeannos" + FS + "WithValue.html",
             "<pre>&lt;T extends java.lang.Runnable&gt;&nbsp;void&nbsp;accept(" +
             "<a href=\"../typeannos/RcvrB.html\" title=\"annotation in " +
-            "typeannos\">@RcvrB</a>(<a href=\"../typeannos/RcvrB.html#value()\">" +
+            "typeannos\">@RcvrB</a>(<a href=\"../typeannos/RcvrB.html#value--\">" +
             "value</a>=\"m\")&nbsp;WithValue&nbsp;this," + NL +
             "                                           T&nbsp;r)" + NL +
             "                                    throws java.lang.Exception</pre>"
@@ -362,7 +363,7 @@ public class TestTypeAnnotations extends JavadocTester {
         {BUG_ID + FS + "typeannos" + FS + "WithFinal.html",
             "<pre>java.lang.String&nbsp;nonVoid(<a href=\"../typeannos/RcvrB." +
             "html\" title=\"annotation in typeannos\">@RcvrB</a>(<a href=\"../" +
-            "typeannos/RcvrB.html#value()\">value</a>=\"m\")&nbsp;WithFinal" +
+            "typeannos/RcvrB.html#value--\">value</a>=\"m\")&nbsp;WithFinal" +
             "&nbsp;this)</pre>"
         },
         {BUG_ID + FS + "typeannos" + FS + "WithBody.html",

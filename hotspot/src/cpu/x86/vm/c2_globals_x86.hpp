@@ -30,7 +30,6 @@
 
 // Sets the default values for platform dependent flags used by the server compiler.
 // (see c2_globals.hpp).  Alpha-sorted.
-
 define_pd_global(bool, BackgroundCompilation,        true);
 define_pd_global(bool, UseTLAB,                      true);
 define_pd_global(bool, ResizeTLAB,                   true);
@@ -52,6 +51,7 @@ define_pd_global(intx, OnStackReplacePercentage,     140);
 define_pd_global(intx, ConditionalMoveLimit,         3);
 define_pd_global(intx, FLOATPRESSURE,                6);
 define_pd_global(intx, FreqInlineSize,               325);
+define_pd_global(intx, MinJumpTableSize,             10);
 #ifdef AMD64
 define_pd_global(intx, INTPRESSURE,                  13);
 define_pd_global(intx, InteriorEntryAlignment,       16);

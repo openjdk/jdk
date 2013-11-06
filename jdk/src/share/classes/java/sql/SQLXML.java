@@ -177,8 +177,8 @@ import javax.xml.transform.Source;
  * The state moves from writable to not writeable once free() or any of the
  * writing APIs are called: setBinaryStream(), setCharacterStream(), setResult(), and setString().
  * Implementations may also change the state to not readable when this occurs.
+ *
  * <p>
-  * <p>
  * All methods on the <code>SQLXML</code> interface must be fully implemented if the
  * JDBC driver supports the data type.
  *
@@ -362,7 +362,7 @@ public interface SQLXML
    *
    * @param <T> the type of the class modeled by this Class object
    * @param sourceClass The class of the source, or null.
-   * If the class is null, a vendor specifc Source implementation will be returned.
+   * If the class is null, a vendor specific Source implementation will be returned.
    * The following classes are supported at a minimum:
    * <pre>
    *   javax.xml.transform.dom.DOMSource - returns a DOMSource

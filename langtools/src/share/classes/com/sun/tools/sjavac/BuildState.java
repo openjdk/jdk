@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -81,12 +81,13 @@ public class BuildState {
     }
 
     /**
-     * Collect all packages, sources and artifacts for all modules
-     * into the build state.
+     * Store references to all packages, sources and artifacts for all modules
+     * into the build state. I.e. flatten the module tree structure
+     * into global maps stored in the BuildState for easy access.
      *
      * @param m The set of modules.
      */
-    public void collectPackagesSourcesAndArtifacts(Map<String,Module> m) {
+    public void flattenPackagesSourcesAndArtifacts(Map<String,Module> m) {
         modules = m;
         // Extract all the found packages.
         for (Module i : modules.values()) {
@@ -121,11 +122,12 @@ public class BuildState {
     }
 
     /**
-     * Collect all the artifacts of all modules and packages.
+     * Store references to all artifacts found in the module tree into the maps
+     * stored in the build state.
      *
      * @param m The set of modules.
      */
-    public void collectArtifacts(Map<String,Module> m) {
+    public void flattenArtifacts(Map<String,Module> m) {
         modules = m;
         // Extract all the found packages.
         for (Module i : modules.values()) {
@@ -270,6 +272,8 @@ public class BuildState {
             Module mnew = findModuleFromPackageName(pkg);
             Package pprev = prev.packages().get(pkg);
             mnew.addPackage(pprev);
+            // Do not forget to update the flattened data.
+            packages.put(pkg, pprev);
         }
     }
 }

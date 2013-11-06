@@ -37,6 +37,8 @@ import static jdk.nashorn.internal.runtime.PropertyDescriptor.SET;
 import static jdk.nashorn.internal.runtime.PropertyDescriptor.VALUE;
 import static jdk.nashorn.internal.runtime.PropertyDescriptor.WRITABLE;
 import static jdk.nashorn.internal.runtime.ScriptRuntime.UNDEFINED;
+import static jdk.nashorn.internal.runtime.arrays.ArrayIndex.getArrayIndex;
+import static jdk.nashorn.internal.runtime.arrays.ArrayIndex.isValidArrayIndex;
 
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
@@ -87,6 +89,8 @@ import jdk.nashorn.internal.runtime.linker.NashornGuards;
  */
 
 public abstract class ScriptObject extends PropertyListenerManager implements PropertyAccess {
+    /** __proto__ special property name */
+    public static final String PROTO_PROPERTY_NAME   = "__proto__";
 
     /** Search fall back routine name for "no such method" */
     static final String NO_SUCH_METHOD_NAME   = "__noSuchMethod__";
@@ -118,9 +122,6 @@ public abstract class ScriptObject extends PropertyListenerManager implements Pr
     /** objects proto. */
     private ScriptObject proto;
 
-    /** Context of the object, lazily cached. */
-    private Context context;
-
     /** Object flags. */
     private int flags;
 
@@ -129,6 +130,10 @@ public abstract class ScriptObject extends PropertyListenerManager implements Pr
 
     /** Indexed array data. */
     private ArrayData arrayData;
+
+    static final MethodHandle GETPROTO           = findOwnMH("getProto", ScriptObject.class);
+    static final MethodHandle SETPROTOCHECK      = findOwnMH("setProtoCheck", void.class, Object.class);
+    static final MethodHandle MEGAMORPHIC_GET    = findOwnMH("megamorphicGet", Object.class, String.class, boolean.class);
 
     static final MethodHandle SETFIELD           = findOwnMH("setField",         void.class, CallSiteDescriptor.class, PropertyMap.class, PropertyMap.class, MethodHandle.class, Object.class, Object.class);
     static final MethodHandle SETSPILL           = findOwnMH("setSpill",         void.class, CallSiteDescriptor.class, PropertyMap.class, PropertyMap.class, int.class, Object.class, Object.class);
@@ -149,6 +154,9 @@ public abstract class ScriptObject extends PropertyListenerManager implements Pr
 
     /** Method handle for setting the proto of a ScriptObject */
     public static final Call SET_PROTO          = virtualCallNoLookup(ScriptObject.class, "setProto", void.class, ScriptObject.class);
+
+    /** Method handle for setting the proto of a ScriptObject after checking argument */
+    public static final Call SET_PROTO_CHECK    = virtualCallNoLookup(ScriptObject.class, "setProtoCheck", void.class, Object.class);
 
     /** Method handle for setting the user accessors of a ScriptObject */
     public static final Call SET_USER_ACCESSORS = virtualCall(MethodHandles.lookup(), ScriptObject.class, "setUserAccessors", void.class, String.class, ScriptFunction.class, ScriptFunction.class);
@@ -383,7 +391,7 @@ public abstract class ScriptObject extends PropertyListenerManager implements Pr
             return global.newDataDescriptor(getWithProperty(property), configurable, enumerable, writable);
         }
 
-        final int index = ArrayIndex.getArrayIndex(key);
+        final int index = getArrayIndex(key);
         final ArrayData array = getArray();
 
         if (array.has(index)) {
@@ -500,7 +508,7 @@ public abstract class ScriptObject extends PropertyListenerManager implements Pr
             if (property == null) {
                 // promoting an arrayData value to actual property
                 addOwnProperty(key, propFlags, value);
-                removeArraySlot(key);
+                checkIntegerKey(key);
             } else {
                 // Now set the new flags
                 modifyOwnProperty(property, propFlags);
@@ -586,8 +594,8 @@ public abstract class ScriptObject extends PropertyListenerManager implements Pr
      * @param index key for property
      * @param value value to define
      */
-    protected final void defineOwnProperty(final int index, final Object value) {
-        assert ArrayIndex.isValidArrayIndex(index) : "invalid array index";
+    public final void defineOwnProperty(final int index, final Object value) {
+        assert isValidArrayIndex(index) : "invalid array index";
         final long longIndex = ArrayIndex.toLongIndex(index);
         if (longIndex >= getArray().length()) {
             // make array big enough to hold..
@@ -597,23 +605,14 @@ public abstract class ScriptObject extends PropertyListenerManager implements Pr
     }
 
     private void checkIntegerKey(final String key) {
-        final int index = ArrayIndex.getArrayIndex(key);
+        final int index = getArrayIndex(key);
 
-        if (ArrayIndex.isValidArrayIndex(index)) {
+        if (isValidArrayIndex(index)) {
             final ArrayData data = getArray();
 
             if (data.has(index)) {
                 setArray(data.delete(index));
             }
-        }
-    }
-
-    private void removeArraySlot(final String key) {
-        final int index = ArrayIndex.getArrayIndex(key);
-        final ArrayData array = getArray();
-
-        if (array.has(index)) {
-            setArray(array.delete(index));
         }
     }
 
@@ -709,6 +708,28 @@ public abstract class ScriptObject extends PropertyListenerManager implements Pr
         }
 
         return null;
+    }
+
+    /**
+     * Low level property API. This is similar to {@link #findProperty(String, boolean)} but returns a
+     * {@code boolean} value instead of a {@link FindProperty} object.
+     * @param key  Property key.
+     * @param deep Whether the search should look up proto chain.
+     * @return true if the property was found.
+     */
+    boolean hasProperty(final String key, final boolean deep) {
+        if (getMap().findProperty(key) != null) {
+            return true;
+        }
+
+        if (deep) {
+            final ScriptObject myProto = getProto();
+            if (myProto != null) {
+                return myProto.hasProperty(key, deep);
+            }
+        }
+
+        return false;
     }
 
     /**
@@ -1035,40 +1056,11 @@ public abstract class ScriptObject extends PropertyListenerManager implements Pr
     }
 
     /**
-     * Return true if the script object context is strict
-     * @return true if strict context
-     */
-    public final boolean isStrictContext() {
-        return getContext()._strict;
-    }
-
-    /**
-     * Checks if this object belongs to the given context
-     * @param ctx context to check against
-     * @return true if this object belongs to the given context
-     */
-    public final boolean isOfContext(final Context ctx) {
-        return context == ctx;
-    }
-
-    /**
      * Return the current context from the object's map.
      * @return Current context.
      */
-    protected final Context getContext() {
-        if (context == null) {
-            context = Context.fromClass(getClass());
-        }
-        return context;
-    }
-
-    /**
-     * Set the current context.
-     * @param ctx context instance to set
-     */
-    protected final void setContext(final Context ctx) {
-        ctx.getClass();
-        this.context = ctx;
+    protected Context getContext() {
+        return Context.fromClass(getClass());
     }
 
     /**
@@ -1202,21 +1194,10 @@ public abstract class ScriptObject extends PropertyListenerManager implements Pr
      * Check if this ScriptObject has array entries. This means that someone has
      * set values with numeric keys in the object.
      *
-     * Note: this can be O(n) up to the array length
-     *
      * @return true if array entries exists.
      */
     public boolean hasArrayEntries() {
-        final ArrayData array = getArray();
-        final long length = array.length();
-
-        for (long i = 0; i < length; i++) {
-            if (array.has((int)i)) {
-                return true;
-            }
-        }
-
-        return false;
+        return getArray().length() > 0 || getMap().containsArrayKeys();
     }
 
     /**
@@ -1474,9 +1455,10 @@ public abstract class ScriptObject extends PropertyListenerManager implements Pr
     /**
      * Clears the properties from a ScriptObject
      * (java.util.Map-like method to help ScriptObjectMirror implementation)
+     *
+     * @param strict strict mode or not
      */
-    public void clear() {
-        final boolean strict = isStrictContext();
+    public void clear(final boolean strict) {
         final Iterator<String> iter = propertyIterator();
         while (iter.hasNext()) {
             delete(iter.next(), strict);
@@ -1560,11 +1542,12 @@ public abstract class ScriptObject extends PropertyListenerManager implements Pr
      *
      * @param key property key
      * @param value property value
+     * @param strict strict mode or not
      * @return oldValue if property with same key existed already
      */
-    public Object put(final Object key, final Object value) {
+    public Object put(final Object key, final Object value, final boolean strict) {
         final Object oldValue = get(key);
-        set(key, value, isStrictContext());
+        set(key, value, strict);
         return oldValue;
     }
 
@@ -1574,9 +1557,9 @@ public abstract class ScriptObject extends PropertyListenerManager implements Pr
      * (java.util.Map-like method to help ScriptObjectMirror implementation)
      *
      * @param otherMap a {@literal <key,value>} map of properties to add
+     * @param strict strict mode or not
      */
-    public void putAll(final Map<?, ?> otherMap) {
-        final boolean strict = isStrictContext();
+    public void putAll(final Map<?, ?> otherMap, final boolean strict) {
         for (final Map.Entry<?, ?> entry : otherMap.entrySet()) {
             set(entry.getKey(), entry.getValue(), strict);
         }
@@ -1587,23 +1570,13 @@ public abstract class ScriptObject extends PropertyListenerManager implements Pr
      * (java.util.Map-like method to help ScriptObjectMirror implementation)
      *
      * @param key the key of the property
+     * @param strict strict mode or not
      * @return the oldValue of the removed property
      */
-    public Object remove(final Object key) {
+    public Object remove(final Object key, final boolean strict) {
         final Object oldValue = get(key);
-        delete(key, isStrictContext());
+        delete(key, strict);
         return oldValue;
-    }
-
-    /**
-     * Delete a property from the ScriptObject.
-     * (to help ScriptObjectMirror implementation)
-     *
-     * @param key the key of the property
-     * @return if the delete was successful or not
-     */
-    public boolean delete(final Object key) {
-        return delete(key, isStrictContext());
     }
 
     /**
@@ -1740,11 +1713,18 @@ public abstract class ScriptObject extends PropertyListenerManager implements Pr
      */
     protected GuardedInvocation findGetMethod(final CallSiteDescriptor desc, final LinkRequest request, final String operator) {
         final String name = desc.getNameToken(CallSiteDescriptor.NAME_OPERAND);
-        final FindProperty find = findProperty(name, true);
+        if (request.isCallSiteUnstable()) {
+            return findMegaMorphicGetMethod(desc, name, "getMethod".equals(operator));
+        }
 
+        final FindProperty find = findProperty(name, true);
         MethodHandle methodHandle;
 
         if (find == null) {
+            if (PROTO_PROPERTY_NAME.equals(name)) {
+                return new GuardedInvocation(GETPROTO, NashornGuards.getScriptObjectGuard());
+            }
+
             if ("getProp".equals(operator)) {
                 return noSuchProperty(desc, request);
             } else if ("getMethod".equals(operator)) {
@@ -1753,10 +1733,6 @@ public abstract class ScriptObject extends PropertyListenerManager implements Pr
                 return createEmptyGetter(desc, name);
             }
             throw new AssertionError(); // never invoked with any other operation
-        }
-
-        if (request.isCallSiteUnstable()) {
-            return findMegaMorphicGetMethod(desc, name);
         }
 
         final Class<?> returnType = desc.getMethodType().returnType();
@@ -1785,11 +1761,21 @@ public abstract class ScriptObject extends PropertyListenerManager implements Pr
         return new GuardedInvocation(Lookup.emptyGetter(returnType), getMap().getProtoGetSwitchPoint(proto, name), guard);
     }
 
-    private static GuardedInvocation findMegaMorphicGetMethod(final CallSiteDescriptor desc, final String name) {
-        final MethodType mhType = desc.getMethodType().insertParameterTypes(1, Object.class);
-        final GuardedInvocation inv = findGetIndexMethod(mhType);
+    private static GuardedInvocation findMegaMorphicGetMethod(final CallSiteDescriptor desc, final String name, final boolean isMethod) {
+        final MethodHandle invoker = MH.insertArguments(MEGAMORPHIC_GET, 1, name, isMethod);
+        final MethodHandle guard = getScriptObjectGuard(desc.getMethodType());
+        return new GuardedInvocation(invoker, guard);
+    }
 
-        return inv.replaceMethods(MH.insertArguments(inv.getInvocation(), 1, name), inv.getGuard());
+    @SuppressWarnings("unused")
+    private Object megamorphicGet(final String key, final boolean isMethod) {
+        final FindProperty find = findProperty(key, true);
+
+        if (find != null) {
+            return getObjectValue(find);
+        }
+
+        return isMethod ? getNoSuchMethod(key) : invokeNoSuchProperty(key);
     }
 
     /**
@@ -1838,7 +1824,7 @@ public abstract class ScriptObject extends PropertyListenerManager implements Pr
      */
     protected GuardedInvocation findSetMethod(final CallSiteDescriptor desc, final LinkRequest request) {
         final String name = desc.getNameToken(CallSiteDescriptor.NAME_OPERAND);
-        if(request.isCallSiteUnstable()) {
+        if (request.isCallSiteUnstable()) {
             return findMegaMorphicSetMethod(desc, name);
         }
 
@@ -1851,6 +1837,7 @@ public abstract class ScriptObject extends PropertyListenerManager implements Pr
          * toString = function() { print("global toString"); } // don't affect Object.prototype.toString
          */
         FindProperty find = findProperty(name, true, scope, this);
+
         // If it's not a scope search, then we don't want any inherited properties except those with user defined accessors.
         if (!scope && find != null && find.isInherited() && !(find.getProperty() instanceof UserAccessorProperty)) {
             // We should still check if inherited data property is not writable
@@ -1866,9 +1853,12 @@ public abstract class ScriptObject extends PropertyListenerManager implements Pr
                 // Existing, non-writable property
                 return createEmptySetMethod(desc, "property.not.writable", true);
             }
-        } else if (!isExtensible()) {
-            // Non-existing property on a non-extensible object
-            return createEmptySetMethod(desc, "object.non.extensible", false);
+        } else {
+            if (PROTO_PROPERTY_NAME.equals(name)) {
+                return new GuardedInvocation(SETPROTOCHECK, NashornGuards.getScriptObjectGuard());
+            } else if (! isExtensible()) {
+                return createEmptySetMethod(desc, "object.non.extensible", false);
+            }
         }
 
         return new SetMethodCreator(this, find, desc).createGuardedInvocation();
@@ -2067,6 +2057,26 @@ public abstract class ScriptObject extends PropertyListenerManager implements Pr
         }
 
         return UNDEFINED;
+    }
+
+    /**
+     * Get __noSuchMethod__ as a function bound to this object and {@code name} if it is defined.
+     * @param name the method name
+     * @return the bound function, or undefined
+     */
+    private Object getNoSuchMethod(final String name) {
+        final FindProperty find = findProperty(NO_SUCH_METHOD_NAME, true);
+
+        if (find == null) {
+            return invokeNoSuchProperty(name);
+        }
+
+        final Object value = getObjectValue(find);
+        if (! (value instanceof ScriptFunction)) {
+            return UNDEFINED;
+        }
+
+        return ((ScriptFunction)value).makeBoundFunction(this, new Object[] {name});
     }
 
     private GuardedInvocation createEmptyGetter(final CallSiteDescriptor desc, final String name) {
@@ -2317,24 +2327,43 @@ public abstract class ScriptObject extends PropertyListenerManager implements Pr
            return;
        }
 
-       final boolean isStrict = isStrictContext();
-
        if (newLength > arrayLength) {
            setArray(getArray().ensure(newLength - 1));
-            if (getArray().canDelete(arrayLength, (newLength - 1), isStrict)) {
+            if (getArray().canDelete(arrayLength, (newLength - 1), false)) {
                setArray(getArray().delete(arrayLength, (newLength - 1)));
            }
            return;
        }
 
        if (newLength < arrayLength) {
-           setArray(getArray().shrink(newLength));
-           getArray().setLength(newLength);
+           long actualLength = newLength;
+
+           // Check for numeric keys in property map and delete them or adjust length, depending on whether
+           // they're defined as configurable. See ES5 #15.4.5.2
+           if (getMap().containsArrayKeys()) {
+
+               for (long l = arrayLength - 1; l >= newLength; l--) {
+                   final FindProperty find = findProperty(JSType.toString(l), false);
+
+                   if (find != null) {
+
+                       if (find.getProperty().isConfigurable()) {
+                           deleteOwnProperty(find.getProperty());
+                       } else {
+                           actualLength = l + 1;
+                           break;
+                       }
+                   }
+               }
+           }
+
+           setArray(getArray().shrink(actualLength));
+           getArray().setLength(actualLength);
        }
     }
 
     private int getInt(final int index, final String key) {
-        if (ArrayIndex.isValidArrayIndex(index)) {
+        if (isValidArrayIndex(index)) {
              for (ScriptObject object = this; ; ) {
                 final FindProperty find = object.findProperty(key, false, false, this);
 
@@ -2365,7 +2394,7 @@ public abstract class ScriptObject extends PropertyListenerManager implements Pr
 
     @Override
     public int getInt(final Object key) {
-        final int index = ArrayIndex.getArrayIndex(key);
+        final int index = getArrayIndex(key);
         final ArrayData array = getArray();
 
         if (array.has(index)) {
@@ -2377,7 +2406,7 @@ public abstract class ScriptObject extends PropertyListenerManager implements Pr
 
     @Override
     public int getInt(final double key) {
-        final int index = ArrayIndex.getArrayIndex(key);
+        final int index = getArrayIndex(key);
         final ArrayData array = getArray();
 
         if (array.has(index)) {
@@ -2389,7 +2418,7 @@ public abstract class ScriptObject extends PropertyListenerManager implements Pr
 
     @Override
     public int getInt(final long key) {
-        final int index = ArrayIndex.getArrayIndex(key);
+        final int index = getArrayIndex(key);
         final ArrayData array = getArray();
 
         if (array.has(index)) {
@@ -2411,7 +2440,7 @@ public abstract class ScriptObject extends PropertyListenerManager implements Pr
     }
 
     private long getLong(final int index, final String key) {
-        if (ArrayIndex.isValidArrayIndex(index)) {
+        if (isValidArrayIndex(index)) {
             for (ScriptObject object = this; ; ) {
                 final FindProperty find = object.findProperty(key, false, false, this);
 
@@ -2442,7 +2471,7 @@ public abstract class ScriptObject extends PropertyListenerManager implements Pr
 
     @Override
     public long getLong(final Object key) {
-        final int index = ArrayIndex.getArrayIndex(key);
+        final int index = getArrayIndex(key);
         final ArrayData array = getArray();
 
         if (array.has(index)) {
@@ -2454,7 +2483,7 @@ public abstract class ScriptObject extends PropertyListenerManager implements Pr
 
     @Override
     public long getLong(final double key) {
-        final int index = ArrayIndex.getArrayIndex(key);
+        final int index = getArrayIndex(key);
         final ArrayData array = getArray();
 
         if (array.has(index)) {
@@ -2466,7 +2495,7 @@ public abstract class ScriptObject extends PropertyListenerManager implements Pr
 
     @Override
     public long getLong(final long key) {
-        final int index = ArrayIndex.getArrayIndex(key);
+        final int index = getArrayIndex(key);
         final ArrayData array = getArray();
 
         if (array.has(index)) {
@@ -2488,7 +2517,7 @@ public abstract class ScriptObject extends PropertyListenerManager implements Pr
     }
 
     private double getDouble(final int index, final String key) {
-        if (ArrayIndex.isValidArrayIndex(index)) {
+        if (isValidArrayIndex(index)) {
             for (ScriptObject object = this; ; ) {
                 final FindProperty find = object.findProperty(key, false, false, this);
 
@@ -2519,7 +2548,7 @@ public abstract class ScriptObject extends PropertyListenerManager implements Pr
 
     @Override
     public double getDouble(final Object key) {
-        final int index = ArrayIndex.getArrayIndex(key);
+        final int index = getArrayIndex(key);
         final ArrayData array = getArray();
 
         if (array.has(index)) {
@@ -2531,7 +2560,7 @@ public abstract class ScriptObject extends PropertyListenerManager implements Pr
 
     @Override
     public double getDouble(final double key) {
-        final int index = ArrayIndex.getArrayIndex(key);
+        final int index = getArrayIndex(key);
         final ArrayData array = getArray();
 
         if (array.has(index)) {
@@ -2543,7 +2572,7 @@ public abstract class ScriptObject extends PropertyListenerManager implements Pr
 
     @Override
     public double getDouble(final long key) {
-        final int index = ArrayIndex.getArrayIndex(key);
+        final int index = getArrayIndex(key);
         final ArrayData array = getArray();
 
         if (array.has(index)) {
@@ -2565,7 +2594,7 @@ public abstract class ScriptObject extends PropertyListenerManager implements Pr
     }
 
     private Object get(final int index, final String key) {
-        if (ArrayIndex.isValidArrayIndex(index)) {
+        if (isValidArrayIndex(index)) {
             for (ScriptObject object = this; ; ) {
                 final FindProperty find = object.findProperty(key, false, false, this);
 
@@ -2596,7 +2625,7 @@ public abstract class ScriptObject extends PropertyListenerManager implements Pr
 
     @Override
     public Object get(final Object key) {
-        final int index = ArrayIndex.getArrayIndex(key);
+        final int index = getArrayIndex(key);
         final ArrayData array = getArray();
 
         if (array.has(index)) {
@@ -2608,7 +2637,7 @@ public abstract class ScriptObject extends PropertyListenerManager implements Pr
 
     @Override
     public Object get(final double key) {
-        final int index = ArrayIndex.getArrayIndex(key);
+        final int index = getArrayIndex(key);
         final ArrayData array = getArray();
 
         if (array.has(index)) {
@@ -2620,7 +2649,7 @@ public abstract class ScriptObject extends PropertyListenerManager implements Pr
 
     @Override
     public Object get(final long key) {
-        final int index = ArrayIndex.getArrayIndex(key);
+        final int index = getArrayIndex(key);
         final ArrayData array = getArray();
 
         if (array.has(index)) {
@@ -2652,7 +2681,7 @@ public abstract class ScriptObject extends PropertyListenerManager implements Pr
         final long oldLength = getArray().length();
         final long longIndex = index & JSType.MAX_UINT;
 
-        if (!getArray().has(index)) {
+        if (getMap().containsArrayKeys()) {
             final String key = JSType.toString(longIndex);
             final FindProperty find = findProperty(key, true);
 
@@ -2736,9 +2765,9 @@ public abstract class ScriptObject extends PropertyListenerManager implements Pr
 
     @Override
     public void set(final Object key, final int value, final boolean strict) {
-        final int index = ArrayIndex.getArrayIndex(key);
+        final int index = getArrayIndex(key);
 
-        if (ArrayIndex.isValidArrayIndex(index)) {
+        if (isValidArrayIndex(index)) {
             if (getArray().has(index)) {
                 setArray(getArray().set(index, value, strict));
             } else {
@@ -2748,14 +2777,15 @@ public abstract class ScriptObject extends PropertyListenerManager implements Pr
             return;
         }
 
-        set(key, JSType.toObject(value), strict);
+        final String propName = JSType.toString(key);
+        setObject(findProperty(propName, true), strict, propName, JSType.toObject(value));
     }
 
     @Override
     public void set(final Object key, final long value, final boolean strict) {
-        final int index = ArrayIndex.getArrayIndex(key);
+        final int index = getArrayIndex(key);
 
-        if (ArrayIndex.isValidArrayIndex(index)) {
+        if (isValidArrayIndex(index)) {
             if (getArray().has(index)) {
                 setArray(getArray().set(index, value, strict));
             } else {
@@ -2765,14 +2795,15 @@ public abstract class ScriptObject extends PropertyListenerManager implements Pr
             return;
         }
 
-        set(key, JSType.toObject(value), strict);
+        final String propName = JSType.toString(key);
+        setObject(findProperty(propName, true), strict, propName, JSType.toObject(value));
     }
 
     @Override
     public void set(final Object key, final double value, final boolean strict) {
-        final int index = ArrayIndex.getArrayIndex(key);
+        final int index = getArrayIndex(key);
 
-        if (ArrayIndex.isValidArrayIndex(index)) {
+        if (isValidArrayIndex(index)) {
             if (getArray().has(index)) {
                 setArray(getArray().set(index, value, strict));
             } else {
@@ -2782,14 +2813,15 @@ public abstract class ScriptObject extends PropertyListenerManager implements Pr
             return;
         }
 
-        set(key, JSType.toObject(value), strict);
+        final String propName = JSType.toString(key);
+        setObject(findProperty(propName, true), strict, propName, JSType.toObject(value));
     }
 
     @Override
     public void set(final Object key, final Object value, final boolean strict) {
-        final int index = ArrayIndex.getArrayIndex(key);
+        final int index = getArrayIndex(key);
 
-        if (ArrayIndex.isValidArrayIndex(index)) {
+        if (isValidArrayIndex(index)) {
             if (getArray().has(index)) {
                 setArray(getArray().set(index, value, strict));
             } else {
@@ -2799,17 +2831,15 @@ public abstract class ScriptObject extends PropertyListenerManager implements Pr
             return;
         }
 
-        final String       propName = JSType.toString(key);
-        final FindProperty find     = findProperty(propName, true);
-
-        setObject(find, strict, propName, value);
+        final String propName = JSType.toString(key);
+        setObject(findProperty(propName, true), strict, propName, value);
     }
 
     @Override
     public void set(final double key, final int value, final boolean strict) {
-        final int index = ArrayIndex.getArrayIndex(key);
+        final int index = getArrayIndex(key);
 
-        if (ArrayIndex.isValidArrayIndex(index)) {
+        if (isValidArrayIndex(index)) {
             if (getArray().has(index)) {
                 setArray(getArray().set(index, value, strict));
             } else {
@@ -2819,14 +2849,15 @@ public abstract class ScriptObject extends PropertyListenerManager implements Pr
             return;
         }
 
-        set(JSType.toObject(key), JSType.toObject(value), strict);
+        final String propName = JSType.toString(key);
+        setObject(findProperty(propName, true), strict, propName, JSType.toObject(value));
     }
 
     @Override
     public void set(final double key, final long value, final boolean strict) {
-        final int index = ArrayIndex.getArrayIndex(key);
+        final int index = getArrayIndex(key);
 
-        if (ArrayIndex.isValidArrayIndex(index)) {
+        if (isValidArrayIndex(index)) {
             if (getArray().has(index)) {
                 setArray(getArray().set(index, value, strict));
             } else {
@@ -2836,14 +2867,15 @@ public abstract class ScriptObject extends PropertyListenerManager implements Pr
             return;
         }
 
-        set(JSType.toObject(key), JSType.toObject(value), strict);
+        final String propName = JSType.toString(key);
+        setObject(findProperty(propName, true), strict, propName, JSType.toObject(value));
     }
 
     @Override
     public void set(final double key, final double value, final boolean strict) {
-        final int index = ArrayIndex.getArrayIndex(key);
+        final int index = getArrayIndex(key);
 
-        if (ArrayIndex.isValidArrayIndex(index)) {
+        if (isValidArrayIndex(index)) {
             if (getArray().has(index)) {
                 setArray(getArray().set(index, value, strict));
             } else {
@@ -2853,14 +2885,15 @@ public abstract class ScriptObject extends PropertyListenerManager implements Pr
             return;
         }
 
-        set(JSType.toObject(key), JSType.toObject(value), strict);
+        final String propName = JSType.toString(key);
+        setObject(findProperty(propName, true), strict, propName, JSType.toObject(value));
     }
 
     @Override
     public void set(final double key, final Object value, final boolean strict) {
-        final int index = ArrayIndex.getArrayIndex(key);
+        final int index = getArrayIndex(key);
 
-        if (ArrayIndex.isValidArrayIndex(index)) {
+        if (isValidArrayIndex(index)) {
             if (getArray().has(index)) {
                 setArray(getArray().set(index, value, strict));
             } else {
@@ -2870,14 +2903,15 @@ public abstract class ScriptObject extends PropertyListenerManager implements Pr
             return;
         }
 
-        set(JSType.toObject(key), value, strict);
+        final String propName = JSType.toString(key);
+        setObject(findProperty(propName, true), strict, propName, value);
     }
 
     @Override
     public void set(final long key, final int value, final boolean strict) {
-        final int index = ArrayIndex.getArrayIndex(key);
+        final int index = getArrayIndex(key);
 
-        if (ArrayIndex.isValidArrayIndex(index)) {
+        if (isValidArrayIndex(index)) {
             if (getArray().has(index)) {
                 setArray(getArray().set(index, value, strict));
             } else {
@@ -2887,14 +2921,15 @@ public abstract class ScriptObject extends PropertyListenerManager implements Pr
             return;
         }
 
-        set(JSType.toObject(key), JSType.toObject(value), strict);
+        final String propName = JSType.toString(key);
+        setObject(findProperty(propName, true), strict, propName, JSType.toObject(value));
     }
 
     @Override
     public void set(final long key, final long value, final boolean strict) {
-        final int index = ArrayIndex.getArrayIndex(key);
+        final int index = getArrayIndex(key);
 
-        if (ArrayIndex.isValidArrayIndex(index)) {
+        if (isValidArrayIndex(index)) {
             if (getArray().has(index)) {
                 setArray(getArray().set(index, value, strict));
             } else {
@@ -2904,14 +2939,15 @@ public abstract class ScriptObject extends PropertyListenerManager implements Pr
             return;
         }
 
-        set(JSType.toObject(key), JSType.toObject(value), strict);
+        final String propName = JSType.toString(key);
+        setObject(findProperty(propName, true), strict, propName, JSType.toObject(value));
     }
 
     @Override
     public void set(final long key, final double value, final boolean strict) {
-        final int index = ArrayIndex.getArrayIndex(key);
+        final int index = getArrayIndex(key);
 
-        if (ArrayIndex.isValidArrayIndex(index)) {
+        if (isValidArrayIndex(index)) {
             if (getArray().has(index)) {
                 setArray(getArray().set(index, value, strict));
             } else {
@@ -2921,14 +2957,15 @@ public abstract class ScriptObject extends PropertyListenerManager implements Pr
             return;
         }
 
-        set(JSType.toObject(key), JSType.toObject(value), strict);
+        final String propName = JSType.toString(key);
+        setObject(findProperty(propName, true), strict, propName, JSType.toObject(value));
     }
 
     @Override
     public void set(final long key, final Object value, final boolean strict) {
-        final int index = ArrayIndex.getArrayIndex(key);
+        final int index = getArrayIndex(key);
 
-        if (ArrayIndex.isValidArrayIndex(index)) {
+        if (isValidArrayIndex(index)) {
             if (getArray().has(index)) {
                 setArray(getArray().set(index, value, strict));
             } else {
@@ -2938,14 +2975,15 @@ public abstract class ScriptObject extends PropertyListenerManager implements Pr
             return;
         }
 
-        set(JSType.toObject(key), value, strict);
+        final String propName = JSType.toString(key);
+        setObject(findProperty(propName, true), strict, propName, value);
     }
 
     @Override
     public void set(final int key, final int value, final boolean strict) {
-        final int index = ArrayIndex.getArrayIndex(key);
+        final int index = getArrayIndex(key);
 
-        if (ArrayIndex.isValidArrayIndex(index)) {
+        if (isValidArrayIndex(index)) {
             if (getArray().has(index)) {
                 setArray(getArray().set(index, value, strict));
             } else {
@@ -2955,14 +2993,15 @@ public abstract class ScriptObject extends PropertyListenerManager implements Pr
             return;
         }
 
-        set(JSType.toObject(key), JSType.toObject(value), strict);
+        final String propName = JSType.toString(key);
+        setObject(findProperty(propName, true), strict, propName, JSType.toObject(value));
     }
 
     @Override
     public void set(final int key, final long value, final boolean strict) {
-        final int index = ArrayIndex.getArrayIndex(key);
+        final int index = getArrayIndex(key);
 
-        if (ArrayIndex.isValidArrayIndex(index)) {
+        if (isValidArrayIndex(index)) {
             if (getArray().has(index)) {
                 setArray(getArray().set(index, value, strict));
             } else {
@@ -2972,14 +3011,15 @@ public abstract class ScriptObject extends PropertyListenerManager implements Pr
             return;
         }
 
-        set(JSType.toObject(key), JSType.toObject(value), strict);
+        final String propName = JSType.toString(key);
+        setObject(findProperty(propName, true), strict, propName, JSType.toObject(value));
     }
 
     @Override
     public void set(final int key, final double value, final boolean strict) {
-        final int index = ArrayIndex.getArrayIndex(key);
+        final int index = getArrayIndex(key);
 
-        if (ArrayIndex.isValidArrayIndex(index)) {
+        if (isValidArrayIndex(index)) {
             if (getArray().has(index)) {
                 setArray(getArray().set(index, value, strict));
             } else {
@@ -2989,14 +3029,15 @@ public abstract class ScriptObject extends PropertyListenerManager implements Pr
             return;
         }
 
-        set(JSType.toObject(key), JSType.toObject(value), strict);
+        final String propName = JSType.toString(key);
+        setObject(findProperty(propName, true), strict, propName, JSType.toObject(value));
     }
 
     @Override
     public void set(final int key, final Object value, final boolean strict) {
-        final int index = ArrayIndex.getArrayIndex(key);
+        final int index = getArrayIndex(key);
 
-        if (ArrayIndex.isValidArrayIndex(index)) {
+        if (isValidArrayIndex(index)) {
             if (getArray().has(index)) {
                 setArray(getArray().set(index, value, strict));
             } else {
@@ -3006,14 +3047,15 @@ public abstract class ScriptObject extends PropertyListenerManager implements Pr
             return;
         }
 
-        set(JSType.toObject(key), value, strict);
+        final String propName = JSType.toString(key);
+        setObject(findProperty(propName, true), strict, propName, value);
     }
 
     @Override
     public boolean has(final Object key) {
-        final int index = ArrayIndex.getArrayIndex(key);
+        final int index = getArrayIndex(key);
 
-        if (ArrayIndex.isValidArrayIndex(index)) {
+        if (isValidArrayIndex(index)) {
             for (ScriptObject self = this; self != null; self = self.getProto()) {
                 if (self.getArray().has(index)) {
                     return true;
@@ -3021,16 +3063,14 @@ public abstract class ScriptObject extends PropertyListenerManager implements Pr
             }
         }
 
-        final FindProperty find = findProperty(JSType.toString(key), true);
-
-        return find != null;
+        return hasProperty(JSType.toString(key), true);
     }
 
     @Override
     public boolean has(final double key) {
-        final int index = ArrayIndex.getArrayIndex(key);
+        final int index = getArrayIndex(key);
 
-        if (ArrayIndex.isValidArrayIndex(index)) {
+        if (isValidArrayIndex(index)) {
             for (ScriptObject self = this; self != null; self = self.getProto()) {
                 if (self.getArray().has(index)) {
                     return true;
@@ -3038,16 +3078,14 @@ public abstract class ScriptObject extends PropertyListenerManager implements Pr
             }
         }
 
-        final FindProperty find = findProperty(JSType.toString(key), true);
-
-        return find != null;
+        return hasProperty(JSType.toString(key), true);
     }
 
     @Override
     public boolean has(final long key) {
-        final int index = ArrayIndex.getArrayIndex(key);
+        final int index = getArrayIndex(key);
 
-        if (ArrayIndex.isValidArrayIndex(index)) {
+        if (isValidArrayIndex(index)) {
             for (ScriptObject self = this; self != null; self = self.getProto()) {
                 if (self.getArray().has(index)) {
                     return true;
@@ -3055,16 +3093,14 @@ public abstract class ScriptObject extends PropertyListenerManager implements Pr
             }
         }
 
-        final FindProperty find = findProperty(JSType.toString(key), true);
-
-        return find != null;
+        return hasProperty(JSType.toString(key), true);
     }
 
     @Override
     public boolean has(final int key) {
-        final int index = ArrayIndex.getArrayIndex(key);
+        final int index = getArrayIndex(key);
 
-        if (ArrayIndex.isValidArrayIndex(index)) {
+        if (isValidArrayIndex(index)) {
             for (ScriptObject self = this; self != null; self = self.getProto()) {
                 if (self.getArray().has(index)) {
                     return true;
@@ -3072,66 +3108,32 @@ public abstract class ScriptObject extends PropertyListenerManager implements Pr
             }
         }
 
-        final FindProperty find = findProperty(JSType.toString(key), true);
-
-        return find != null;
+        return hasProperty(JSType.toString(key), true);
     }
 
     @Override
     public boolean hasOwnProperty(final Object key) {
-        final int index = ArrayIndex.getArrayIndex(key);
-
-        if (getArray().has(index)) {
-            return true;
-        }
-
-        final FindProperty find = findProperty(JSType.toString(key), false);
-
-        return find != null;
+        return getArray().has(getArrayIndex(key)) || hasProperty(JSType.toString(key), false);
     }
 
     @Override
     public boolean hasOwnProperty(final int key) {
-        final int index = ArrayIndex.getArrayIndex(key);
-
-        if (getArray().has(index)) {
-            return true;
-        }
-
-        final FindProperty find = findProperty(JSType.toString(key), false);
-
-        return find != null;
+        return getArray().has(getArrayIndex(key)) || hasProperty(JSType.toString(key), false);
     }
 
     @Override
     public boolean hasOwnProperty(final long key) {
-        final int index = ArrayIndex.getArrayIndex(key);
-
-        if (getArray().has(index)) {
-            return true;
-        }
-
-        final FindProperty find = findProperty(JSType.toString(key), false);
-
-        return find != null;
+        return getArray().has(getArrayIndex(key)) || hasProperty(JSType.toString(key), false);
     }
 
     @Override
     public boolean hasOwnProperty(final double key) {
-        final int index = ArrayIndex.getArrayIndex(key);
-
-        if (getArray().has(index)) {
-            return true;
-        }
-
-        final FindProperty find = findProperty(JSType.toString(key), false);
-
-        return find != null;
+        return getArray().has(getArrayIndex(key)) || hasProperty(JSType.toString(key), false);
     }
 
     @Override
     public boolean delete(final int key, final boolean strict) {
-        final int index = ArrayIndex.getArrayIndex(key);
+        final int index = getArrayIndex(key);
         final ArrayData array = getArray();
 
         if (array.has(index)) {
@@ -3147,7 +3149,7 @@ public abstract class ScriptObject extends PropertyListenerManager implements Pr
 
     @Override
     public boolean delete(final long key, final boolean strict) {
-        final int index = ArrayIndex.getArrayIndex(key);
+        final int index = getArrayIndex(key);
         final ArrayData array = getArray();
 
         if (array.has(index)) {
@@ -3163,7 +3165,7 @@ public abstract class ScriptObject extends PropertyListenerManager implements Pr
 
     @Override
     public boolean delete(final double key, final boolean strict) {
-        final int index = ArrayIndex.getArrayIndex(key);
+        final int index = getArrayIndex(key);
         final ArrayData array = getArray();
 
         if (array.has(index)) {
@@ -3179,7 +3181,7 @@ public abstract class ScriptObject extends PropertyListenerManager implements Pr
 
     @Override
     public boolean delete(final Object key, final boolean strict) {
-        final int index = ArrayIndex.getArrayIndex(key);
+        final int index = getArrayIndex(key);
         final ArrayData array = getArray();
 
         if (array.has(index)) {

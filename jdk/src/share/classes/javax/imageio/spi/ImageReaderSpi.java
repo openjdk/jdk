@@ -341,7 +341,7 @@ public abstract class ImageReaderSpi extends ImageReaderWriterSpi {
      * @exception IOException if the attempt to instantiate
      * the reader fails.
      * @exception IllegalArgumentException if the
-     * <code>ImageReader</code>'s contructor throws an
+     * <code>ImageReader</code>'s constructor throws an
      * <code>IllegalArgumentException</code> to indicate that the
      * extension object is unsuitable.
      */

@@ -39,7 +39,7 @@ import java.security.*;
  * negative interaction with the JCA mechanisms for hardware providers.
  *
  * The class should be instantiated via the getInstance() method in this class,
- * which returns the implementation from the prefered provider. The internal
+ * which returns the implementation from the preferred provider. The internal
  * implementation allows the hashes to be explicitly set, which is required
  * for RSA client authentication. It can be obtained via the
  * getInternalInstance() method.

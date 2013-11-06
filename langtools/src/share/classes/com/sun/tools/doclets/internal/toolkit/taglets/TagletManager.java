@@ -205,6 +205,10 @@ public class TagletManager {
         }
     }
 
+    public Set<String> getCustomTagNames() {
+        return customTags.keySet();
+    }
+
     /**
      * Add a new <code>Taglet</code>.  Print a message to indicate whether or not
      * the Taglet was registered properly.

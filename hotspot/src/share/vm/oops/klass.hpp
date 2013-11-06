@@ -179,7 +179,7 @@ class Klass : public Metadata {
   // Constructor
   Klass();
 
-  void* operator new(size_t size, ClassLoaderData* loader_data, size_t word_size, TRAPS);
+  void* operator new(size_t size, ClassLoaderData* loader_data, size_t word_size, TRAPS) throw();
 
  public:
   bool is_klass() const volatile { return true; }
@@ -699,7 +699,8 @@ class Klass : public Metadata {
   void verify(bool check_dictionary = true) { verify_on(tty, check_dictionary); }
 
 #ifndef PRODUCT
-  void verify_vtable_index(int index);
+  bool verify_vtable_index(int index);
+  bool verify_itable_index(int index);
 #endif
 
   virtual void oop_verify_on(oop obj, outputStream* st);

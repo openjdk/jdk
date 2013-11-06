@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -158,6 +158,9 @@ static int ParseLocale(JNIEnv* env, int cat, char ** std_language, char ** std_s
 
     temp = malloc(strlen(lc) + 1);
     if (temp == NULL) {
+#ifdef MACOSX
+        free(lc); // malloced memory
+#endif
         JNU_ThrowOutOfMemoryError(env, NULL);
         return 0;
     }
@@ -172,7 +175,6 @@ static int ParseLocale(JNIEnv* env, int cat, char ** std_language, char ** std_s
          * the encoding - without it, we wouldn't get ISO-8859-15.
          * Therefore, this code section is Solaris-specific.
          */
-        lc = strdup(lc);    /* keep a copy, setlocale trashes original. */
         strcpy(temp, lc);
         p = strstr(temp, "@euro");
         if (p != NULL) {
@@ -452,40 +454,21 @@ GetJavaProperties(JNIEnv *env)
     /* patches/service packs installed */
     sprops.patch_level = "unknown";
 
-    /* Java 2D properties */
+    /* Java 2D/AWT properties */
 #ifdef MACOSX
-    PreferredToolkit prefToolkit = getPreferredToolkit();
-    switch (prefToolkit) {
-        case CToolkit:
-        case HToolkit:
-            sprops.graphics_env = "sun.awt.CGraphicsEnvironment";
-            break;
-        case XToolkit:
-#endif
+    // Always the same GraphicsEnvironment and Toolkit on Mac OS X
+    sprops.graphics_env = "sun.awt.CGraphicsEnvironment";
+    sprops.awt_toolkit = "sun.lwawt.macosx.LWCToolkit";
+
+    // check if we're in a GUI login session and set java.awt.headless=true if not
+    sprops.awt_headless = isInAquaSession() ? NULL : "true";
+#else
     sprops.graphics_env = "sun.awt.X11GraphicsEnvironment";
-#ifdef MACOSX
-            break;
-    }
-#endif
-    /* AWT properties */
 #ifdef JAVASE_EMBEDDED
     sprops.awt_toolkit = getEmbeddedToolkit();
     if (sprops.awt_toolkit == NULL) // default as below
 #endif
-#ifdef MACOSX
-        switch (prefToolkit) {
-            case CToolkit:
-                sprops.awt_toolkit = "sun.lwawt.macosx.LWCToolkit";
-                break;
-            case XToolkit:
-#endif
     sprops.awt_toolkit = "sun.awt.X11.XToolkit";
-#ifdef MACOSX
-                break;
-            default:
-                sprops.awt_toolkit = "sun.awt.HToolkit";
-                break;
-        }
 #endif
 
     /* This is used only for debugging of font problems. */
@@ -591,7 +574,14 @@ GetJavaProperties(JNIEnv *env)
     {
         struct passwd *pwent = getpwuid(getuid());
         sprops.user_name = pwent ? strdup(pwent->pw_name) : "?";
-        sprops.user_home = pwent ? strdup(pwent->pw_dir) : "?";
+#ifdef MACOSX
+        setUserHome(&sprops);
+#else
+        sprops.user_home = pwent ? strdup(pwent->pw_dir) : NULL;
+#endif
+        if (sprops.user_home == NULL) {
+            sprops.user_home = "?";
+        }
     }
 
     /* User TIMEZONE */

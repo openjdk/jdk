@@ -93,12 +93,23 @@ void LIR_Assembler::patching_epilog(PatchingStub* patch, LIR_PatchCode patch_cod
       default:
         ShouldNotReachHere();
     }
+  } else if (patch->id() == PatchingStub::load_appendix_id) {
+    Bytecodes::Code bc_raw = info->scope()->method()->raw_code_at_bci(info->stack()->bci());
+    assert(Bytecodes::has_optional_appendix(bc_raw), "unexpected appendix resolution");
   } else {
     ShouldNotReachHere();
   }
 #endif
 }
 
+PatchingStub::PatchID LIR_Assembler::patching_id(CodeEmitInfo* info) {
+  IRScope* scope = info->scope();
+  Bytecodes::Code bc_raw = scope->method()->raw_code_at_bci(info->stack()->bci());
+  if (Bytecodes::has_optional_appendix(bc_raw)) {
+    return PatchingStub::load_appendix_id;
+  }
+  return PatchingStub::load_mirror_id;
+}
 
 //---------------------------------------------------------------
 

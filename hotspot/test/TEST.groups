@@ -27,7 +27,7 @@
 # - compact1, compact2, compact3, full JRE, JDK
 #
 # In addition they support testing of the minimal VM on compact1 and compact2.
-# Essentially this defines groups based around the specified API's and VM 
+# Essentially this defines groups based around the specified API's and VM
 # services available in the runtime.
 #
 # The groups are defined hierarchically in two forms:
@@ -44,9 +44,9 @@
 # by listing the top-level test directories.
 #
 # To use a group simply list it on the jtreg command line eg:
-#   jtreg :jdk    
+#   jtreg :jdk
 # runs all tests. While
-#   jtreg :compact2  
+#   jtreg :compact2
 # runs those tests that only require compact1 and compact2 API's.
 #
 
@@ -62,14 +62,15 @@ jdk = \
 #
 needs_jdk = \
   gc/TestG1ZeroPGCTJcmdThreadPrint.java \
-  gc/metaspace/ClassMetaspaceSizeInJmapHeap.java \
+  gc/metaspace/CompressedClassSpaceSizeInJmapHeap.java \
   gc/metaspace/TestMetaspacePerfCounters.java \
+  gc/metaspace/TestPerfCountersAndMemoryPools.java \
   runtime/6819213/TestBootNativeLibraryPath.java \
-  runtime/6878713/Test6878713.sh \
   runtime/6925573/SortMethodsTest.java \
   runtime/7107135/Test7107135.sh \
   runtime/7158988/FieldMonitor.java \
   runtime/7194254/Test7194254.java \
+  runtime/8026365/InvokeSpecialAnonTest.java \
   runtime/jsig/Test8017498.sh \
   runtime/Metaspace/FragmentMetaspace.java \
   runtime/NMT/BaselineWithParameter.java \
@@ -84,7 +85,10 @@ needs_jdk = \
   runtime/NMT/ThreadedVirtualAllocTestType.java \
   runtime/NMT/VirtualAllocTestType.java \
   runtime/RedefineObject/TestRedefineObject.java \
-  serviceability/attach/AttachWithStalePidFile.java
+  runtime/XCheckJniJsig/XCheckJSig.java \
+  serviceability/attach/AttachWithStalePidFile.java \
+  serviceability/sa/jmap-hprof/JMapHProfLargeHeapTest.java
+
 
 # JRE adds further tests to compact3
 #
@@ -98,7 +102,9 @@ jre = \
 needs_jre = \
   compiler/6852078/Test6852078.java \
   compiler/7047069/Test7047069.java \
-  runtime/6294277/SourceDebugExtension.java
+  runtime/6294277/SourceDebugExtension.java \
+  runtime/ClassFile/JsrRewriting.java \
+  runtime/ClassFile/OomWhileParsingRepeatedJsr.java
 
 # Compact 3 adds further tests to compact2
 #
@@ -122,7 +128,7 @@ needs_compact3 = \
   compiler/whitebox/IsMethodCompilableTest.java \
   gc/6581734/Test6581734.java \
   gc/7072527/TestFullGCCount.java \
-  gc/7168848/HumongousAlloc.java \
+  gc/g1/TestHumongousAllocInitialMark.java \
   gc/arguments/TestG1HeapRegionSize.java \
   gc/metaspace/TestMetaspaceMemoryPool.java \
   runtime/InternalApi/ThreadCpuTimesDeadlock.java \
@@ -138,7 +144,7 @@ compact2 = \
  -:needs_jdk
 
 # Tests that require compact2 API's and a full VM
-#  
+#
 needs_full_vm_compact2 =
 
 # Compact 1 adds full VM tests
@@ -159,7 +165,18 @@ needs_full_vm_compact1 = \
   gc/g1/TestRegionAlignment.java \
   gc/g1/TestShrinkToOneRegion.java \
   gc/metaspace/G1AddMetaspaceDependency.java \
-  runtime/6929067/Test6929067.sh
+  gc/startup_warnings/TestCMS.java \
+  gc/startup_warnings/TestCMSIncrementalMode.java \
+  gc/startup_warnings/TestCMSNoIncrementalMode.java \
+  gc/startup_warnings/TestDefaultMaxRAMFraction.java \
+  gc/startup_warnings/TestDefNewCMS.java \
+  gc/startup_warnings/TestIncGC.java \
+  gc/startup_warnings/TestParallelGC.java \
+  gc/startup_warnings/TestParallelScavengeSerialOld.java \
+  gc/startup_warnings/TestParNewCMS.java \
+  gc/startup_warnings/TestParNewSerialOld.java \
+  runtime/6929067/Test6929067.sh \
+  runtime/SharedArchiveFile/SharedArchiveFile.java
 
 # Minimal VM on Compact 2 adds in some compact2 tests
 #
@@ -181,6 +198,7 @@ compact1_minimal = \
   serviceability/ \
   compiler/ \
   testlibrary/ \
+  testlibrary_tests/ \
   sanity/ \
   runtime/ \
   gc/ \

@@ -32,7 +32,7 @@ import java.beans.beancontext.BeanContext;
 /**
  * <p>
  * This interface is designed to work in collusion with java.beans.Beans.instantiate.
- * The interafce is intended to provide mechanism to allow the proper
+ * The interface is intended to provide mechanism to allow the proper
  * initialization of JavaBeans that are also Applets, during their
  * instantiation by java.beans.Beans.instantiate().
  * </p>

@@ -23,20 +23,17 @@
 
 package com.oracle.java.testlibrary;
 
-import java.util.List;
 import java.util.ArrayList;
 import java.util.Arrays;
-
-import com.oracle.java.testlibrary.JDKToolFinder;
-import com.oracle.java.testlibrary.ProcessTools;
+import java.util.List;
 
 /**
  * A utility for constructing command lines for starting JDK tool processes.
  *
  * The JDKToolLauncher can in particular be combined with a
- * java.lang.ProcessBuilder to easily run a JDK tool. For example, the
- * following code run {@code jmap -heap} against a process with GC logging
- * turned on for the {@code jmap} process:
+ * java.lang.ProcessBuilder to easily run a JDK tool. For example, the following
+ * code run {@code jmap -heap} against a process with GC logging turned on for
+ * the {@code jmap} process:
  *
  * <pre>
  * {@code
@@ -55,19 +52,37 @@ public class JDKToolLauncher {
     private final List<String> vmArgs = new ArrayList<String>();
     private final List<String> toolArgs = new ArrayList<String>();
 
-    private JDKToolLauncher(String tool) {
-        executable = JDKToolFinder.getJDKTool(tool);
+    private JDKToolLauncher(String tool, boolean useCompilerJDK) {
+        if (useCompilerJDK) {
+            executable = JDKToolFinder.getJDKTool(tool);
+        } else {
+            executable = JDKToolFinder.getTestJDKTool(tool);
+        }
         vmArgs.addAll(Arrays.asList(ProcessTools.getPlatformSpecificVMArgs()));
     }
 
     /**
-     * Creates a new JDKToolLauncher for the specified tool.
+     * Creates a new JDKToolLauncher for the specified tool. Using tools path
+     * from the compiler JDK.
      *
-     * @param tool The name of the tool
+     * @param tool
+     *            The name of the tool
      * @return A new JDKToolLauncher
      */
     public static JDKToolLauncher create(String tool) {
-        return new JDKToolLauncher(tool);
+        return new JDKToolLauncher(tool, true);
+    }
+
+    /**
+     * Creates a new JDKToolLauncher for the specified tool in the Tested JDK.
+     *
+     * @param tool
+     *            The name of the tool
+     *
+     * @return A new JDKToolLauncher
+     */
+    public static JDKToolLauncher createUsingTestJDK(String tool) {
+        return new JDKToolLauncher(tool, false);
     }
 
     /**
@@ -80,18 +95,20 @@ public class JDKToolLauncher {
      * automatically added.
      *
      *
-     * @param arg The argument to VM running the tool
+     * @param arg
+     *            The argument to VM running the tool
      * @return The JDKToolLauncher instance
      */
     public JDKToolLauncher addVMArg(String arg) {
-        vmArgs.add("-J" + arg);
+        vmArgs.add(arg);
         return this;
     }
 
     /**
      * Adds an argument to the tool.
      *
-     * @param arg The argument to the tool
+     * @param arg
+     *            The argument to the tool
      * @return The JDKToolLauncher instance
      */
     public JDKToolLauncher addToolArg(String arg) {
@@ -107,7 +124,10 @@ public class JDKToolLauncher {
     public String[] getCommand() {
         List<String> command = new ArrayList<String>();
         command.add(executable);
-        command.addAll(vmArgs);
+        // Add -J in front of all vmArgs
+        for (String arg : vmArgs) {
+            command.add("-J" + arg);
+        }
         command.addAll(toolArgs);
         return command.toArray(new String[command.size()]);
     }

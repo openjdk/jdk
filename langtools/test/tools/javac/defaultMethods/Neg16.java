@@ -1,5 +1,5 @@
-/*
- * @test /nodynamiccopyright/
+/* @test /nodynamiccopyright/
+ * @bug 7192246
  * @summary check that level skipping in default super calls is correctly rejected
  * @compile/fail/ref=Neg16.out -XDrawDiagnostics Neg16.java
  */

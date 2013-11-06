@@ -42,7 +42,7 @@ import sun.swing.SwingUtilities2;
  * a user to manipulate and select a color.
  * For information about using color choosers, see
  * <a
- href="http://java.sun.com/docs/books/tutorial/uiswing/components/colorchooser.html">How to Use Color Choosers</a>,
+ href="http://docs.oracle.com/javase/tutorial/uiswing/components/colorchooser.html">How to Use Color Choosers</a>,
  * a section in <em>The Java Tutorial</em>.
  *
  * <p>
@@ -69,7 +69,7 @@ import sun.swing.SwingUtilities2;
  * future Swing releases. The current serialization support is
  * appropriate for short term storage or RMI between applications running
  * the same version of Swing.  As of 1.4, support for long term storage
- * of all JavaBeans<sup><font size="-2">TM</font></sup>
+ * of all JavaBeans&trade;
  * has been added to the <code>java.beans</code> package.
  * Please see {@link java.beans.XMLEncoder}.
  *
@@ -216,7 +216,7 @@ public class JColorChooser extends JComponent implements Accessible {
     }
 
     /**
-     * Returns the L&F object that renders this component.
+     * Returns the L&amp;F object that renders this component.
      *
      * @return the <code>ColorChooserUI</code> object that renders
      *          this component
@@ -226,9 +226,9 @@ public class JColorChooser extends JComponent implements Accessible {
     }
 
     /**
-     * Sets the L&F object that renders this component.
+     * Sets the L&amp;F object that renders this component.
      *
-     * @param ui  the <code>ColorChooserUI</code> L&F object
+     * @param ui  the <code>ColorChooserUI</code> L&amp;F object
      * @see UIDefaults#getUI
      *
      * @beaninfo
@@ -241,7 +241,7 @@ public class JColorChooser extends JComponent implements Accessible {
     }
 
     /**
-     * Notification from the <code>UIManager</code> that the L&F has changed.
+     * Notification from the <code>UIManager</code> that the L&amp;F has changed.
      * Replaces the current UI object with the latest version from the
      * <code>UIManager</code>.
      *
@@ -252,7 +252,7 @@ public class JColorChooser extends JComponent implements Accessible {
     }
 
     /**
-     * Returns the name of the L&F class that renders this component.
+     * Returns the name of the L&amp;F class that renders this component.
      *
      * @return the string "ColorChooserUI"
      * @see JComponent#getUIClassID

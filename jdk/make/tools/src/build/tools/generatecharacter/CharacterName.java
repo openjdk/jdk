@@ -11,7 +11,7 @@ public class CharacterName {
         FileReader reader = null;
         try {
             if (args.length != 2) {
-                System.err.println("Usage: java CharacterName UniocdeData.txt uniName.dat");
+                System.err.println("Usage: java CharacterName UnicodeData.txt uniName.dat");
                 System.exit(1);
             }
 

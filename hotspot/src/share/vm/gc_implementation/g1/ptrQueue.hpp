@@ -38,6 +38,7 @@
 
 class PtrQueueSet;
 class PtrQueue VALUE_OBJ_CLASS_SPEC {
+  friend class VMStructs;
 
 protected:
   // The ptr queue set to which this queue belongs.
@@ -78,6 +79,10 @@ public:
   void set_lock(Mutex* lock) { _lock = lock; }
 
   void reset() { if (_buf != NULL) _index = _sz; }
+
+  void enqueue(volatile void* ptr) {
+    enqueue((void*)(ptr));
+  }
 
   // Enqueues the given "obj".
   void enqueue(void* ptr) {

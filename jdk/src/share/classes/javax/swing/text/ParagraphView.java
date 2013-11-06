@@ -267,8 +267,6 @@ public class ParagraphView extends FlowView implements TabExpander {
               throws BadLocationException {
         JTextComponent text = (JTextComponent)getContainer();
         Document doc = getDocument();
-        AbstractDocument aDoc = (doc instanceof AbstractDocument) ?
-                                (AbstractDocument)doc : null;
         View row = getView(rowIndex);
         int lastPos = -1;
         // This could be made better to check backward positions too.
@@ -276,8 +274,7 @@ public class ParagraphView extends FlowView implements TabExpander {
         for(int vc = 0, numViews = row.getViewCount(); vc < numViews; vc++) {
             View v = row.getView(vc);
             int start = v.getStartOffset();
-            boolean ltr = (aDoc != null) ? aDoc.isLeftToRight
-                           (start, start + 1) : true;
+            boolean ltr = AbstractDocument.isLeftToRight(doc, start, start + 1);
             if(ltr) {
                 lastPos = start;
                 for(int end = v.getEndOffset(); lastPos < end; lastPos++) {
@@ -338,12 +335,8 @@ public class ParagraphView extends FlowView implements TabExpander {
     protected boolean flipEastAndWestAtEnds(int position,
                                             Position.Bias bias) {
         Document doc = getDocument();
-        if(doc instanceof AbstractDocument &&
-           !((AbstractDocument)doc).isLeftToRight(getStartOffset(),
-                                                  getStartOffset() + 1)) {
-            return true;
-        }
-        return false;
+        position = getStartOffset();
+        return !AbstractDocument.isLeftToRight(doc, position, position + 1);
     }
 
     // --- FlowView methods ---------------------------------------------
@@ -416,8 +409,8 @@ public class ParagraphView extends FlowView implements TabExpander {
      *
      * @param x the X reference position
      * @param tabOffset the position within the text stream
-     *   that the tab occurred at >= 0
-     * @return the trailing end of the tab expansion >= 0
+     *   that the tab occurred at &gt;= 0
+     * @return the trailing end of the tab expansion &gt;= 0
      * @see TabSet
      * @see TabStop
      * @see LabelView
@@ -496,9 +489,9 @@ public class ParagraphView extends FlowView implements TabExpander {
      * the <code>TabableView</code> interface,
      * the <code>preferredSpan</code> will be used.
      *
-     * @param startOffset the starting document offset >= 0
-     * @param endOffset the ending document offset >= startOffset
-     * @return the size >= 0
+     * @param startOffset the starting document offset &gt;= 0
+     * @param endOffset the ending document offset &gt;= startOffset
+     * @return the size &gt;= 0
      */
     protected float getPartialSize(int startOffset, int endOffset) {
         float size = 0.0f;
@@ -536,7 +529,7 @@ public class ParagraphView extends FlowView implements TabExpander {
      * there are no characters found, -1 will be returned.
      *
      * @param string the string of characters
-     * @param start where to start in the model >= 0
+     * @param start where to start in the model &gt;= 0
      * @return the document offset, or -1 if no characters found
      */
     protected int findOffsetToCharactersInString(char[] string,
@@ -574,7 +567,7 @@ public class ParagraphView extends FlowView implements TabExpander {
 
     /**
      * Renders using the given rendering surface and area on that
-     * surface.  This is implemented to delgate to the superclass
+     * surface.  This is implemented to delegate to the superclass
      * after stashing the base coordinate for tab calculations.
      *
      * @param g the rendering surface to use
@@ -649,7 +642,7 @@ public class ParagraphView extends FlowView implements TabExpander {
      * @param axis may be either <code>View.X_AXIS</code>
      *  or <code>View.Y_AXIS</code>
      * @param len specifies where a potential break is desired
-     *  along the given axis >= 0
+     *  along the given axis &gt;= 0
      * @param a the current allocation of the view
      * @return the fragment of the view that represents the
      *  given span, if the view can be broken; if the view
@@ -682,7 +675,7 @@ public class ParagraphView extends FlowView implements TabExpander {
      *
      * @param axis may be either <code>View.X_AXIS</code>
      *  or <code>View.Y_AXIS</code>
-     * @param len specifies where a potential break is desired >= 0
+     * @param len specifies where a potential break is desired &gt;= 0
      * @return a value indicating the attractiveness of breaking here;
      *  either <code>GoodBreakWeight</code> or <code>BadBreakWeight</code>
      * @see View#getBreakWeight
@@ -938,7 +931,7 @@ public class ParagraphView extends FlowView implements TabExpander {
 
         /**
          * Perform layout for the minor axis of the box (i.e. the
-         * axis orthoginal to the axis that it represents).  The results
+         * axis orthogonal to the axis that it represents).  The results
          * of the layout should be placed in the given arrays which represent
          * the allocations to the children along the minor axis.
          * <p>
@@ -946,7 +939,7 @@ public class ParagraphView extends FlowView implements TabExpander {
          * by calling BoxView.baselineLayout.
          *
          * @param targetSpan the total span given to the view, which
-         *  whould be used to layout the children.
+         *  would be used to layout the children.
          * @param axis the axis being layed out.
          * @param offsets the offsets from the origin of the view for
          *  each of the child views.  This is a return value and is
@@ -1148,7 +1141,7 @@ public class ParagraphView extends FlowView implements TabExpander {
          * Fetches the child view index representing the given position in
          * the model.
          *
-         * @param pos the position >= 0
+         * @param pos the position &gt;= 0
          * @return  index of the view representing the given position, or
          *   -1 if no view represents that position
          */

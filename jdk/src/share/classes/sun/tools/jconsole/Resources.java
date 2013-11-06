@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,7 +30,7 @@ import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
 import java.text.MessageFormat;
 import java.util.Collections;
-import java.util.HashMap;
+import java.util.IdentityHashMap;
 import java.util.Map;
 import java.util.MissingResourceException;
 import java.util.ResourceBundle;
@@ -40,7 +40,7 @@ import java.util.ResourceBundle;
  */
 public final class Resources {
     private static Map<String, Integer> MNEMONIC_LOOKUP = Collections
-            .synchronizedMap(new HashMap<String, Integer>());
+            .synchronizedMap(new IdentityHashMap<String, Integer>());
 
     private Resources() {
         throw new AssertionError();

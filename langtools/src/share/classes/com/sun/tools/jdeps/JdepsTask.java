@@ -24,12 +24,18 @@
  */
 package com.sun.tools.jdeps;
 
+import com.sun.tools.classfile.AccessFlags;
 import com.sun.tools.classfile.ClassFile;
 import com.sun.tools.classfile.ConstantPoolException;
 import com.sun.tools.classfile.Dependencies;
 import com.sun.tools.classfile.Dependencies.ClassFileError;
 import com.sun.tools.classfile.Dependency;
+import com.sun.tools.jdeps.PlatformClassPath.JDKArchive;
 import java.io.*;
+import java.nio.file.DirectoryStream;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.text.MessageFormat;
 import java.util.*;
 import java.util.regex.Pattern;
@@ -67,11 +73,10 @@ class JdepsTask {
 
         boolean matches(String opt) {
             for (String a : aliases) {
-                if (a.equals(opt)) {
+                if (a.equals(opt))
                     return true;
-                } else if (opt.startsWith("--") && hasArg && opt.startsWith(a + "=")) {
+                if (hasArg && opt.startsWith(a + "="))
                     return true;
-                }
             }
             return false;
         }
@@ -96,78 +101,107 @@ class JdepsTask {
     }
 
     static Option[] recognizedOptions = {
-        new Option(false, "-h", "-?", "--help") {
+        new Option(false, "-h", "-?", "-help") {
             void process(JdepsTask task, String opt, String arg) {
                 task.options.help = true;
             }
         },
-        new Option(false, "-s", "--summary") {
+        new Option(true, "-dotoutput") {
+            void process(JdepsTask task, String opt, String arg) throws BadArgs {
+                Path p = Paths.get(arg);
+                if (Files.exists(p) && (!Files.isDirectory(p) || !Files.isWritable(p))) {
+                    throw new BadArgs("err.dot.output.path", arg);
+                }
+                task.options.dotOutputDir = arg;
+            }
+        },
+        new Option(false, "-s", "-summary") {
             void process(JdepsTask task, String opt, String arg) {
                 task.options.showSummary = true;
                 task.options.verbose = Analyzer.Type.SUMMARY;
             }
         },
-        new Option(false, "-v", "--verbose") {
-            void process(JdepsTask task, String opt, String arg) {
-                task.options.verbose = Analyzer.Type.VERBOSE;
-            }
-        },
-        new Option(true, "-V", "--verbose-level") {
+        new Option(false, "-v", "-verbose",
+                          "-verbose:package",
+                          "-verbose:class")
+        {
             void process(JdepsTask task, String opt, String arg) throws BadArgs {
-                if ("package".equals(arg)) {
-                    task.options.verbose = Analyzer.Type.PACKAGE;
-                } else if ("class".equals(arg)) {
-                    task.options.verbose = Analyzer.Type.CLASS;
-                } else {
-                    throw new BadArgs("err.invalid.arg.for.option", opt);
+                switch (opt) {
+                    case "-v":
+                    case "-verbose":
+                        task.options.verbose = Analyzer.Type.VERBOSE;
+                        break;
+                    case "-verbose:package":
+                            task.options.verbose = Analyzer.Type.PACKAGE;
+                            break;
+                    case "-verbose:class":
+                            task.options.verbose = Analyzer.Type.CLASS;
+                            break;
+                    default:
+                        throw new BadArgs("err.invalid.arg.for.option", opt);
                 }
             }
         },
-        new Option(true, "-c", "--classpath") {
+        new Option(true, "-cp", "-classpath") {
             void process(JdepsTask task, String opt, String arg) {
                 task.options.classpath = arg;
             }
         },
-        new Option(true, "-p", "--package") {
+        new Option(true, "-p", "-package") {
             void process(JdepsTask task, String opt, String arg) {
                 task.options.packageNames.add(arg);
             }
         },
-        new Option(true, "-e", "--regex") {
+        new Option(true, "-e", "-regex") {
             void process(JdepsTask task, String opt, String arg) {
                 task.options.regex = arg;
             }
         },
-        new Option(false, "-P", "--profile") {
+        new Option(true, "-include") {
+            void process(JdepsTask task, String opt, String arg) throws BadArgs {
+                task.options.includePattern = Pattern.compile(arg);
+            }
+        },
+        new Option(false, "-P", "-profile") {
             void process(JdepsTask task, String opt, String arg) throws BadArgs {
                 task.options.showProfile = true;
-                if (Profiles.getProfileCount() == 0) {
+                if (Profile.getProfileCount() == 0) {
                     throw new BadArgs("err.option.unsupported", opt, getMessage("err.profiles.msg"));
                 }
             }
         },
-        new Option(false, "-R", "--recursive") {
+        new Option(false, "-apionly") {
+            void process(JdepsTask task, String opt, String arg) {
+                task.options.apiOnly = true;
+            }
+        },
+        new Option(false, "-R", "-recursive") {
             void process(JdepsTask task, String opt, String arg) {
                 task.options.depth = 0;
             }
         },
-        new HiddenOption(true, "-d", "--depth") {
+        new Option(false, "-version") {
+            void process(JdepsTask task, String opt, String arg) {
+                task.options.version = true;
+            }
+        },
+        new HiddenOption(false, "-fullversion") {
+            void process(JdepsTask task, String opt, String arg) {
+                task.options.fullVersion = true;
+            }
+        },
+        new HiddenOption(false, "-showlabel") {
+            void process(JdepsTask task, String opt, String arg) {
+                task.options.showLabel = true;
+            }
+        },
+        new HiddenOption(true, "-depth") {
             void process(JdepsTask task, String opt, String arg) throws BadArgs {
                 try {
                     task.options.depth = Integer.parseInt(arg);
                 } catch (NumberFormatException e) {
                     throw new BadArgs("err.invalid.arg.for.option", opt);
                 }
-            }
-        },
-        new Option(false, "--version") {
-            void process(JdepsTask task, String opt, String arg) {
-                task.options.version = true;
-            }
-        },
-        new HiddenOption(false, "--fullversion") {
-            void process(JdepsTask task, String opt, String arg) {
-                task.options.fullVersion = true;
             }
         },
     };
@@ -202,7 +236,7 @@ class JdepsTask {
             if (options.version || options.fullVersion) {
                 showVersion(options.fullVersion);
             }
-            if (classes.isEmpty() && !options.wildcard) {
+            if (classes.isEmpty() && options.includePattern == null) {
                 if (options.help || options.version || options.fullVersion) {
                     return EXIT_OK;
                 } else {
@@ -233,19 +267,60 @@ class JdepsTask {
         }
     }
 
-    private final List<Archive> sourceLocations = new ArrayList<Archive>();
+    private final List<Archive> sourceLocations = new ArrayList<>();
     private boolean run() throws IOException {
         findDependencies();
         Analyzer analyzer = new Analyzer(options.verbose);
         analyzer.run(sourceLocations);
-        if (options.verbose == Analyzer.Type.SUMMARY) {
-            printSummary(log, analyzer);
+        if (options.dotOutputDir != null) {
+            Path dir = Paths.get(options.dotOutputDir);
+            Files.createDirectories(dir);
+            generateDotFiles(dir, analyzer);
         } else {
-            printDependencies(log, analyzer);
+            printRawOutput(log, analyzer);
         }
         return true;
     }
 
+    private void generateDotFiles(Path dir, Analyzer analyzer) throws IOException {
+        Path summary = dir.resolve("summary.dot");
+        boolean verbose = options.verbose == Analyzer.Type.VERBOSE;
+        DotGraph<?> graph = verbose ? new DotSummaryForPackage()
+                                    : new DotSummaryForArchive();
+        for (Archive archive : sourceLocations) {
+            analyzer.visitArchiveDependences(archive, graph);
+            if (verbose || options.showLabel) {
+                // traverse detailed dependences to generate package-level
+                // summary or build labels for edges
+                analyzer.visitDependences(archive, graph);
+            }
+        }
+        try (PrintWriter sw = new PrintWriter(Files.newOutputStream(summary))) {
+            graph.writeTo(sw);
+        }
+        // output individual .dot file for each archive
+        if (options.verbose != Analyzer.Type.SUMMARY) {
+            for (Archive archive : sourceLocations) {
+                if (analyzer.hasDependences(archive)) {
+                    Path dotfile = dir.resolve(archive.getFileName() + ".dot");
+                    try (PrintWriter pw = new PrintWriter(Files.newOutputStream(dotfile));
+                         DotFileFormatter formatter = new DotFileFormatter(pw, archive)) {
+                        analyzer.visitDependences(archive, formatter);
+                    }
+                }
+            }
+        }
+    }
+
+    private void printRawOutput(PrintWriter writer, Analyzer analyzer) {
+        for (Archive archive : sourceLocations) {
+            RawOutputFormatter formatter = new RawOutputFormatter(writer);
+            analyzer.visitArchiveDependences(archive, formatter);
+            if (options.verbose != Analyzer.Type.SUMMARY) {
+                analyzer.visitDependences(archive, formatter);
+            }
+        }
+    }
     private boolean isValidClassName(String name) {
         if (!Character.isJavaIdentifierStart(name.charAt(0))) {
             return false;
@@ -259,27 +334,43 @@ class JdepsTask {
         return true;
     }
 
-    private void findDependencies() throws IOException {
-        Dependency.Finder finder = Dependencies.getClassDependencyFinder();
-        Dependency.Filter filter;
-        if (options.regex != null) {
-            filter = Dependencies.getRegexFilter(Pattern.compile(options.regex));
+    private Dependency.Filter getDependencyFilter() {
+         if (options.regex != null) {
+            return Dependencies.getRegexFilter(Pattern.compile(options.regex));
         } else if (options.packageNames.size() > 0) {
-            filter = Dependencies.getPackageFilter(options.packageNames, false);
+            return Dependencies.getPackageFilter(options.packageNames, false);
         } else {
-            filter = new Dependency.Filter() {
+            return new Dependency.Filter() {
+                @Override
                 public boolean accepts(Dependency dependency) {
                     return !dependency.getOrigin().equals(dependency.getTarget());
                 }
             };
         }
+    }
 
-        List<Archive> archives = new ArrayList<Archive>();
-        Deque<String> roots = new LinkedList<String>();
+    private boolean matches(String classname, AccessFlags flags) {
+        if (options.apiOnly && !flags.is(AccessFlags.ACC_PUBLIC)) {
+            return false;
+        } else if (options.includePattern != null) {
+            return options.includePattern.matcher(classname.replace('/', '.')).matches();
+        } else {
+            return true;
+        }
+    }
+
+    private void findDependencies() throws IOException {
+        Dependency.Finder finder =
+            options.apiOnly ? Dependencies.getAPIFinder(AccessFlags.ACC_PROTECTED)
+                            : Dependencies.getClassDependencyFinder();
+        Dependency.Filter filter = getDependencyFilter();
+
+        List<Archive> archives = new ArrayList<>();
+        Deque<String> roots = new LinkedList<>();
         for (String s : classes) {
-            File f = new File(s);
-            if (f.exists()) {
-                archives.add(new Archive(f, ClassFileReader.newInstance(f)));
+            Path p = Paths.get(s);
+            if (Files.exists(p)) {
+                archives.add(new Archive(p, ClassFileReader.newInstance(p)));
             } else {
                 if (isValidClassName(s)) {
                     roots.add(s);
@@ -288,25 +379,23 @@ class JdepsTask {
                 }
             }
         }
+        sourceLocations.addAll(archives);
 
-        List<Archive> classpaths = new ArrayList<Archive>(); // for class file lookup
-        if (options.wildcard) {
-            // include all archives from classpath to the initial list
-            archives.addAll(getClassPathArchives(options.classpath));
-        } else {
-            classpaths.addAll(getClassPathArchives(options.classpath));
+        List<Archive> classpaths = new ArrayList<>(); // for class file lookup
+        classpaths.addAll(getClassPathArchives(options.classpath));
+        if (options.includePattern != null) {
+            archives.addAll(classpaths);
         }
         classpaths.addAll(PlatformClassPath.getArchives());
 
-        // add all archives to the source locations for reporting
-        sourceLocations.addAll(archives);
+        // add all classpath archives to the source locations for reporting
         sourceLocations.addAll(classpaths);
 
         // Work queue of names of classfiles to be searched.
         // Entries will be unique, and for classes that do not yet have
         // dependencies in the results map.
-        Deque<String> deque = new LinkedList<String>();
-        Set<String> doneClasses = new HashSet<String>();
+        Deque<String> deque = new LinkedList<>();
+        Set<String> doneClasses = new HashSet<>();
 
         // get the immediate dependencies of the input files
         for (Archive a : archives) {
@@ -318,16 +407,18 @@ class JdepsTask {
                     throw new ClassFileError(e);
                 }
 
-                if (!doneClasses.contains(classFileName)) {
-                    doneClasses.add(classFileName);
-                }
-                for (Dependency d : finder.findDependencies(cf)) {
-                    if (filter.accepts(d)) {
-                        String cn = d.getTarget().getName();
-                        if (!doneClasses.contains(cn) && !deque.contains(cn)) {
-                            deque.add(cn);
+                if (matches(classFileName, cf.access_flags)) {
+                    if (!doneClasses.contains(classFileName)) {
+                        doneClasses.add(classFileName);
+                    }
+                    for (Dependency d : finder.findDependencies(cf)) {
+                        if (filter.accepts(d)) {
+                            String cn = d.getTarget().getName();
+                            if (!doneClasses.contains(cn) && !deque.contains(cn)) {
+                                deque.add(cn);
+                            }
+                            a.addClass(d.getOrigin(), d.getTarget());
                         }
-                        a.addClass(d.getOrigin(), d.getTarget());
                     }
                 }
             }
@@ -379,44 +470,8 @@ class JdepsTask {
                 }
             }
             unresolved = deque;
-            deque = new LinkedList<String>();
+            deque = new LinkedList<>();
         } while (!unresolved.isEmpty() && depth-- > 0);
-    }
-
-    private void printSummary(final PrintWriter out, final Analyzer analyzer) {
-        Analyzer.Visitor visitor = new Analyzer.Visitor() {
-            public void visit(String origin, String target, String profile) {
-                if (options.showProfile) {
-                    out.format("%-30s -> %s%n", origin, target);
-                }
-            }
-            public void visit(Archive origin, Archive target) {
-                if (!options.showProfile) {
-                    out.format("%-30s -> %s%n", origin, target);
-                }
-            }
-        };
-        analyzer.visitSummary(visitor);
-    }
-
-    private void printDependencies(final PrintWriter out, final Analyzer analyzer) {
-        Analyzer.Visitor visitor = new Analyzer.Visitor() {
-            private String pkg = "";
-            public void visit(String origin, String target, String profile) {
-                if (!origin.equals(pkg)) {
-                    pkg = origin;
-                    out.format("   %s (%s)%n", origin, analyzer.getArchive(origin).getFileName());
-                }
-                out.format("      -> %-50s %s%n", target,
-                           (options.showProfile && !profile.isEmpty())
-                               ? profile
-                               : analyzer.getArchiveName(target, profile));
-            }
-            public void visit(Archive origin, Archive target) {
-                out.format("%s -> %s%n", origin, target);
-            }
-        };
-        analyzer.visit(visitor);
     }
 
     public void handleOptions(String[] args) throws BadArgs {
@@ -427,7 +482,7 @@ class JdepsTask {
                 Option option = getOption(name);
                 String param = null;
                 if (option.hasArg) {
-                    if (name.startsWith("--") && name.indexOf('=') > 0) {
+                    if (name.startsWith("-") && name.indexOf('=') > 0) {
                         param = name.substring(name.indexOf('=') + 1, name.length());
                     } else if (i + 1 < args.length) {
                         param = args[++i];
@@ -447,11 +502,7 @@ class JdepsTask {
                     if (name.charAt(0) == '-') {
                         throw new BadArgs("err.option.after.class", name).showUsage(true);
                     }
-                    if (name.equals("*") || name.equals("\"*\"")) {
-                        options.wildcard = true;
-                    } else {
-                        classes.add(name);
-                    }
+                    classes.add(name);
                 }
             }
         }
@@ -518,13 +569,16 @@ class JdepsTask {
         boolean showProfile;
         boolean showSummary;
         boolean wildcard;
-        String regex;
+        boolean apiOnly;
+        boolean showLabel;
+        String dotOutputDir;
         String classpath = "";
         int depth = 1;
         Analyzer.Type verbose = Analyzer.Type.PACKAGE;
-        Set<String> packageNames = new HashSet<String>();
+        Set<String> packageNames = new HashSet<>();
+        String regex;             // apply to the dependences
+        Pattern includePattern;   // apply to classes
     }
-
     private static class ResourceBundleHelper {
         static final ResourceBundle versionRB;
         static final ResourceBundle bundle;
@@ -547,9 +601,9 @@ class JdepsTask {
     private List<Archive> getArchives(List<String> filenames) throws IOException {
         List<Archive> result = new ArrayList<Archive>();
         for (String s : filenames) {
-            File f = new File(s);
-            if (f.exists()) {
-                result.add(new Archive(f, ClassFileReader.newInstance(f)));
+            Path p = Paths.get(s);
+            if (Files.exists(p)) {
+                result.add(new Archive(p, ClassFileReader.newInstance(p)));
             } else {
                 warning("warn.file.not.exist", s);
             }
@@ -558,18 +612,271 @@ class JdepsTask {
     }
 
     private List<Archive> getClassPathArchives(String paths) throws IOException {
-        List<Archive> result = new ArrayList<Archive>();
+        List<Archive> result = new ArrayList<>();
         if (paths.isEmpty()) {
             return result;
         }
         for (String p : paths.split(File.pathSeparator)) {
             if (p.length() > 0) {
-                File f = new File(p);
-                if (f.exists()) {
-                    result.add(new Archive(f, ClassFileReader.newInstance(f)));
+                List<Path> files = new ArrayList<>();
+                // wildcard to parse all JAR files e.g. -classpath dir/*
+                int i = p.lastIndexOf(".*");
+                if (i > 0) {
+                    Path dir = Paths.get(p.substring(0, i));
+                    try (DirectoryStream<Path> stream = Files.newDirectoryStream(dir, "*.jar")) {
+                        for (Path entry : stream) {
+                            files.add(entry);
+                        }
+                    }
+                } else {
+                    files.add(Paths.get(p));
+                }
+                for (Path f : files) {
+                    if (Files.exists(f)) {
+                        result.add(new Archive(f, ClassFileReader.newInstance(f)));
+                    }
                 }
             }
         }
         return result;
+    }
+
+    /**
+     * If the given archive is JDK archive and non-null Profile,
+     * this method returns the profile name only if -profile option is specified;
+     * a null profile indicates it accesses a private JDK API and this method
+     * will return "JDK internal API".
+     *
+     * For non-JDK archives, this method returns the file name of the archive.
+     */
+    private String getProfileArchiveInfo(Archive source, Profile profile) {
+        if (options.showProfile && profile != null)
+            return profile.toString();
+
+        if (source instanceof JDKArchive) {
+            return profile == null ? "JDK internal API (" + source.getFileName() + ")" : "";
+        }
+        return source.getFileName();
+    }
+
+    /**
+     * Returns the profile name or "JDK internal API" for JDK archive;
+     * otherwise empty string.
+     */
+    private String profileName(Archive archive, Profile profile) {
+        if (archive instanceof JDKArchive) {
+            return Objects.toString(profile, "JDK internal API");
+        } else {
+            return "";
+        }
+    }
+
+    class RawOutputFormatter implements Analyzer.Visitor {
+        private final PrintWriter writer;
+        RawOutputFormatter(PrintWriter writer) {
+            this.writer = writer;
+        }
+
+        private String pkg = "";
+        @Override
+        public void visitDependence(String origin, Archive source,
+                                    String target, Archive archive, Profile profile) {
+            if (!origin.equals(pkg)) {
+                pkg = origin;
+                writer.format("   %s (%s)%n", origin, source.getFileName());
+            }
+            writer.format("      -> %-50s %s%n", target, getProfileArchiveInfo(archive, profile));
+        }
+
+        @Override
+        public void visitArchiveDependence(Archive origin, Archive target, Profile profile) {
+            writer.format("%s -> %s", origin.getPathName(), target.getPathName());
+            if (options.showProfile && profile != null) {
+                writer.format(" (%s)%n", profile);
+            } else {
+                writer.format("%n");
+            }
+        }
+    }
+
+    class DotFileFormatter extends DotGraph<String> implements AutoCloseable {
+        private final PrintWriter writer;
+        private final String name;
+        DotFileFormatter(PrintWriter writer, Archive archive) {
+            this.writer = writer;
+            this.name = archive.getFileName();
+            writer.format("digraph \"%s\" {%n", name);
+            writer.format("    // Path: %s%n", archive.getPathName());
+        }
+
+        @Override
+        public void close() {
+            writer.println("}");
+        }
+
+        @Override
+        public void visitDependence(String origin, Archive source,
+                                    String target, Archive archive, Profile profile) {
+            // if -P option is specified, package name -> profile will
+            // be shown and filter out multiple same edges.
+            String name = getProfileArchiveInfo(archive, profile);
+            writeEdge(writer, new Edge(origin, target, getProfileArchiveInfo(archive, profile)));
+        }
+        @Override
+        public void visitArchiveDependence(Archive origin, Archive target, Profile profile) {
+            throw new UnsupportedOperationException();
+        }
+    }
+
+    class DotSummaryForArchive extends DotGraph<Archive> {
+        @Override
+        public void visitDependence(String origin, Archive source,
+                                    String target, Archive archive, Profile profile) {
+            Edge e = findEdge(source, archive);
+            assert e != null;
+            // add the dependency to the label if enabled and not compact1
+            if (profile == Profile.COMPACT1) {
+                return;
+            }
+            e.addLabel(origin, target, profileName(archive, profile));
+        }
+        @Override
+        public void visitArchiveDependence(Archive origin, Archive target, Profile profile) {
+            // add an edge with the archive's name with no tag
+            // so that there is only one node for each JDK archive
+            // while there may be edges to different profiles
+            Edge e = addEdge(origin, target, "");
+            if (target instanceof JDKArchive) {
+                // add a label to print the profile
+                if (profile == null) {
+                    e.addLabel("JDK internal API");
+                } else if (options.showProfile && !options.showLabel) {
+                    e.addLabel(profile.toString());
+                }
+            }
+        }
+    }
+
+    // DotSummaryForPackage generates the summary.dot file for verbose mode
+    // (-v or -verbose option) that includes all class dependencies.
+    // The summary.dot file shows package-level dependencies.
+    class DotSummaryForPackage extends DotGraph<String> {
+        private String packageOf(String cn) {
+            int i = cn.lastIndexOf('.');
+            return i > 0 ? cn.substring(0, i) : "<unnamed>";
+        }
+        @Override
+        public void visitDependence(String origin, Archive source,
+                                    String target, Archive archive, Profile profile) {
+            // add a package dependency edge
+            String from = packageOf(origin);
+            String to = packageOf(target);
+            Edge e = addEdge(from, to, getProfileArchiveInfo(archive, profile));
+
+            // add the dependency to the label if enabled and not compact1
+            if (!options.showLabel || profile == Profile.COMPACT1) {
+                return;
+            }
+
+            // trim the package name of origin to shorten the label
+            int i = origin.lastIndexOf('.');
+            String n1 = i < 0 ? origin : origin.substring(i+1);
+            e.addLabel(n1, target, profileName(archive, profile));
+        }
+        @Override
+        public void visitArchiveDependence(Archive origin, Archive target, Profile profile) {
+            // nop
+        }
+    }
+    abstract class DotGraph<T> implements Analyzer.Visitor  {
+        private final Set<Edge> edges = new LinkedHashSet<>();
+        private Edge curEdge;
+        public void writeTo(PrintWriter writer) {
+            writer.format("digraph \"summary\" {%n");
+            for (Edge e: edges) {
+                writeEdge(writer, e);
+            }
+            writer.println("}");
+        }
+
+        void writeEdge(PrintWriter writer, Edge e) {
+            writer.format("   %-50s -> \"%s\"%s;%n",
+                          String.format("\"%s\"", e.from.toString()),
+                          e.tag.isEmpty() ? e.to
+                                          : String.format("%s (%s)", e.to, e.tag),
+                          getLabel(e));
+        }
+
+        Edge addEdge(T origin, T target, String tag) {
+            Edge e = new Edge(origin, target, tag);
+            if (e.equals(curEdge)) {
+                return curEdge;
+            }
+
+            if (edges.contains(e)) {
+                for (Edge e1 : edges) {
+                   if (e.equals(e1)) {
+                       curEdge = e1;
+                   }
+                }
+            } else {
+                edges.add(e);
+                curEdge = e;
+            }
+            return curEdge;
+        }
+
+        Edge findEdge(T origin, T target) {
+            for (Edge e : edges) {
+                if (e.from.equals(origin) && e.to.equals(target)) {
+                    return e;
+                }
+            }
+            return null;
+        }
+
+        String getLabel(Edge e) {
+            String label = e.label.toString();
+            return label.isEmpty() ? "" : String.format("[label=\"%s\",fontsize=9]", label);
+        }
+
+        class Edge {
+            final T from;
+            final T to;
+            final String tag;  // optional tag
+            final StringBuilder label = new StringBuilder();
+            Edge(T from, T to, String tag) {
+                this.from = from;
+                this.to = to;
+                this.tag = tag;
+            }
+            void addLabel(String s) {
+                label.append(s).append("\\n");
+            }
+            void addLabel(String origin, String target, String profile) {
+                label.append(origin).append(" -> ").append(target);
+                if (!profile.isEmpty()) {
+                    label.append(" (" + profile + ")");
+                }
+                label.append("\\n");
+            }
+            @Override @SuppressWarnings("unchecked")
+            public boolean equals(Object o) {
+                if (o instanceof DotGraph<?>.Edge) {
+                    DotGraph<?>.Edge e = (DotGraph<?>.Edge)o;
+                    return this.from.equals(e.from) &&
+                           this.to.equals(e.to) &&
+                           this.tag.equals(e.tag);
+                }
+                return false;
+            }
+            @Override
+            public int hashCode() {
+                int hash = 7;
+                hash = 67 * hash + Objects.hashCode(this.from) +
+                       Objects.hashCode(this.to) + Objects.hashCode(this.tag);
+                return hash;
+            }
+        }
     }
 }

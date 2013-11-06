@@ -131,6 +131,17 @@ void ClassLoaderData::classes_do(void f(Klass * const)) {
   }
 }
 
+void ClassLoaderData::loaded_classes_do(KlassClosure* klass_closure) {
+  // Lock to avoid classes being modified/added/removed during iteration
+  MutexLockerEx ml(metaspace_lock(),  Mutex::_no_safepoint_check_flag);
+  for (Klass* k = _klasses; k != NULL; k = k->next_link()) {
+    // Do not filter ArrayKlass oops here...
+    if (k->oop_is_array() || (k->oop_is_instance() && InstanceKlass::cast(k)->is_loaded())) {
+      klass_closure->do_klass(k);
+    }
+  }
+}
+
 void ClassLoaderData::classes_do(void f(InstanceKlass*)) {
   for (Klass* k = _klasses; k != NULL; k = k->next_link()) {
     if (k->oop_is_instance()) {
@@ -261,7 +272,7 @@ void ClassLoaderData::add_class(Klass* k) {
                   k,
                   k->external_name(),
                   k->class_loader_data(),
-                  k->class_loader(),
+                  (void *)k->class_loader(),
                   loader_name());
   }
 }
@@ -297,7 +308,7 @@ void ClassLoaderData::unload() {
   if (TraceClassLoaderData) {
     ResourceMark rm;
     tty->print("[ClassLoaderData: unload loader data "PTR_FORMAT, this);
-    tty->print(" for instance "PTR_FORMAT" of %s", class_loader(),
+    tty->print(" for instance "PTR_FORMAT" of %s", (void *)class_loader(),
                loader_name());
     if (is_anonymous()) {
       tty->print(" for anonymous class  "PTR_FORMAT " ", _klasses);
@@ -458,7 +469,7 @@ const char* ClassLoaderData::loader_name() {
 void ClassLoaderData::dump(outputStream * const out) {
   ResourceMark rm;
   out->print("ClassLoaderData CLD: "PTR_FORMAT", loader: "PTR_FORMAT", loader_klass: "PTR_FORMAT" %s {",
-      this, class_loader(),
+      this, (void *)class_loader(),
       class_loader() != NULL ? class_loader()->klass() : NULL, loader_name());
   if (claimed()) out->print(" claimed ");
   if (is_unloading()) out->print(" unloading ");
@@ -553,7 +564,7 @@ ClassLoaderData* ClassLoaderDataGraph::add(Handle loader, bool is_anonymous, TRA
         ResourceMark rm;
         tty->print("[ClassLoaderData: ");
         tty->print("create class loader data "PTR_FORMAT, cld);
-        tty->print(" for instance "PTR_FORMAT" of %s", cld->class_loader(),
+        tty->print(" for instance "PTR_FORMAT" of %s", (void *)cld->class_loader(),
                    cld->loader_name());
         tty->print_cr("]");
       }
@@ -597,6 +608,12 @@ void ClassLoaderDataGraph::classes_do(KlassClosure* klass_closure) {
 void ClassLoaderDataGraph::classes_do(void f(Klass* const)) {
   for (ClassLoaderData* cld = _head; cld != NULL; cld = cld->next()) {
     cld->classes_do(f);
+  }
+}
+
+void ClassLoaderDataGraph::loaded_classes_do(KlassClosure* klass_closure) {
+  for (ClassLoaderData* cld = _head; cld != NULL; cld = cld->next()) {
+    cld->loaded_classes_do(klass_closure);
   }
 }
 
