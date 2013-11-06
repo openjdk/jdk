@@ -68,11 +68,11 @@ package jdk.internal.org.objectweb.asm;
  * <tt>visitTryCatchBlock</tt> | <tt>visitTryCatchBlockAnnotation</tt> |
  * <tt>visitLocalVariable</tt> | <tt>visitLocalVariableAnnotation</tt> |
  * <tt>visitLineNumber</tt> )* <tt>visitMaxs</tt> ] <tt>visitEnd</tt>. In
- * addition, the <tt>visit<i>X</i>Insn</tt> and <tt>visitLabel</tt>
- * methods must be called in the sequential order of the bytecode instructions
- * of the visited code, <tt>visitInsnAnnotation</tt> must be called <i>after</i>
- * the annotated instruction, <tt>visitTryCatchBlock</tt> must be called
- * <i>before</i> the labels passed as arguments have been visited,
+ * addition, the <tt>visit<i>X</i>Insn</tt> and <tt>visitLabel</tt> methods must
+ * be called in the sequential order of the bytecode instructions of the visited
+ * code, <tt>visitInsnAnnotation</tt> must be called <i>after</i> the annotated
+ * instruction, <tt>visitTryCatchBlock</tt> must be called <i>before</i> the
+ * labels passed as arguments have been visited,
  * <tt>visitTryCatchBlockAnnotation</tt> must be called <i>after</i> the
  * corresponding try catch block has been visited, and the
  * <tt>visitLocalVariable</tt>, <tt>visitLocalVariableAnnotation</tt> and
@@ -274,13 +274,9 @@ public abstract class MethodVisitor {
      * compressed form (all frames must use the same format, i.e. you must not
      * mix expanded and compressed frames within a single method):
      * <ul>
-     * <li>In expanded form, all frames must have the F_NEW type, and a first
-     * frame corresponding to the method signature must be explicitly visited
-     * before the first instruction.</li>
+     * <li>In expanded form, all frames must have the F_NEW type.</li>
      * <li>In compressed form, frames are basically "deltas" from the state of
-     * the previous frame (the first frame, corresponding to the method's
-     * parameters and access flags, is implicit in this form, and must not be
-     * visited):
+     * the previous frame:
      * <ul>
      * <li>{@link Opcodes#F_SAME} representing frame with exactly the same
      * locals as the previous frame and with the empty stack.</li>
@@ -296,8 +292,14 @@ public abstract class MethodVisitor {
      * same as the locals in the previous frame, except that the last 1-3 locals
      * are absent and with the empty stack (<code>nLocals</code> is 1, 2 or 3).</li>
      * <li>{@link Opcodes#F_FULL} representing complete frame data.</li>
-     * </ul></li>
      * </ul>
+     * </li>
+     * </ul>
+     * <br>
+     * In both cases the first frame, corresponding to the method's parameters
+     * and access flags, is implicit and must not be visited. Also, it is
+     * illegal to visit two or more frames for the same code location (i.e., at
+     * least one instruction must be visited between two calls to visitFrame).
      *
      * @param type
      *            the type of this stack map frame. Must be
@@ -466,10 +468,49 @@ public abstract class MethodVisitor {
      * @param desc
      *            the method's descriptor (see {@link Type Type}).
      */
+    @Deprecated
     public void visitMethodInsn(int opcode, String owner, String name,
             String desc) {
+        if (api >= Opcodes.ASM5) {
+            boolean itf = opcode == Opcodes.INVOKEINTERFACE;
+            visitMethodInsn(opcode, owner, name, desc, itf);
+            return;
+        }
         if (mv != null) {
             mv.visitMethodInsn(opcode, owner, name, desc);
+        }
+    }
+
+    /**
+     * Visits a method instruction. A method instruction is an instruction that
+     * invokes a method.
+     *
+     * @param opcode
+     *            the opcode of the type instruction to be visited. This opcode
+     *            is either INVOKEVIRTUAL, INVOKESPECIAL, INVOKESTATIC or
+     *            INVOKEINTERFACE.
+     * @param owner
+     *            the internal name of the method's owner class (see
+     *            {@link Type#getInternalName() getInternalName}).
+     * @param name
+     *            the method's name.
+     * @param desc
+     *            the method's descriptor (see {@link Type Type}).
+     * @param itf
+     *            if the method's owner class is an interface.
+     */
+    public void visitMethodInsn(int opcode, String owner, String name,
+            String desc, boolean itf) {
+        if (api < Opcodes.ASM5) {
+            if (itf != (opcode == Opcodes.INVOKEINTERFACE)) {
+                throw new IllegalArgumentException(
+                        "INVOKESPECIAL/STATIC on interfaces require ASM 5");
+            }
+            visitMethodInsn(opcode, owner, name, desc);
+            return;
+        }
+        if (mv != null) {
+            mv.visitMethodInsn(opcode, owner, name, desc, itf);
         }
     }
 
