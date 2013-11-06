@@ -314,13 +314,13 @@ import static java.lang.invoke.MethodHandles.Lookup.IMPL_LOOKUP;
     static class AsVarargsCollector extends MethodHandle {
         private final MethodHandle target;
         private final Class<?> arrayType;
-        private MethodHandle cache;
+        private /*@Stable*/ MethodHandle asCollectorCache;
 
         AsVarargsCollector(MethodHandle target, MethodType type, Class<?> arrayType) {
-            super(type, reinvokerForm(type));
+            super(type, reinvokerForm(target));
             this.target = target;
             this.arrayType = arrayType;
-            this.cache = target.asCollector(arrayType, 0);
+            this.asCollectorCache = target.asCollector(arrayType, 0);
         }
 
         @Override MethodHandle reinvokerTarget() { return target; }
@@ -336,18 +336,19 @@ import static java.lang.invoke.MethodHandles.Lookup.IMPL_LOOKUP;
         }
 
         @Override
-        public MethodHandle asType(MethodType newType) {
+        public MethodHandle asTypeUncached(MethodType newType) {
             MethodType type = this.type();
             int collectArg = type.parameterCount() - 1;
             int newArity = newType.parameterCount();
             if (newArity == collectArg+1 &&
                 type.parameterType(collectArg).isAssignableFrom(newType.parameterType(collectArg))) {
                 // if arity and trailing parameter are compatible, do normal thing
-                return asFixedArity().asType(newType);
+                return asTypeCache = asFixedArity().asType(newType);
             }
             // check cache
-            if (cache.type().parameterCount() == newArity)
-                return cache.asType(newType);
+            MethodHandle acc = asCollectorCache;
+            if (acc != null && acc.type().parameterCount() == newArity)
+                return asTypeCache = acc.asType(newType);
             // build and cache a collector
             int arrayLength = newArity - collectArg;
             MethodHandle collector;
@@ -357,8 +358,8 @@ import static java.lang.invoke.MethodHandles.Lookup.IMPL_LOOKUP;
             } catch (IllegalArgumentException ex) {
                 throw new WrongMethodTypeException("cannot build collector", ex);
             }
-            cache = collector;
-            return collector.asType(newType);
+            asCollectorCache = collector;
+            return asTypeCache = collector.asType(newType);
         }
 
         @Override
@@ -379,6 +380,10 @@ import static java.lang.invoke.MethodHandles.Lookup.IMPL_LOOKUP;
         @Override
         MemberName internalMemberName() {
             return asFixedArity().internalMemberName();
+        }
+        @Override
+        Class<?> internalCallerClass() {
+            return asFixedArity().internalCallerClass();
         }
 
         /*non-public*/
@@ -435,7 +440,7 @@ import static java.lang.invoke.MethodHandles.Lookup.IMPL_LOOKUP;
                 // Spread the array.
                 MethodHandle aload = MethodHandles.arrayElementGetter(spreadArgType);
                 Name array = names[argIndex];
-                names[nameCursor++] = new Name(NF_checkSpreadArgument, array, spreadArgCount);
+                names[nameCursor++] = new Name(Lazy.NF_checkSpreadArgument, array, spreadArgCount);
                 for (int j = 0; j < spreadArgCount; i++, j++) {
                     indexes[i] = nameCursor;
                     names[nameCursor++] = new Name(aload, array, j);
@@ -459,14 +464,8 @@ import static java.lang.invoke.MethodHandles.Lookup.IMPL_LOOKUP;
     }
 
     static void checkSpreadArgument(Object av, int n) {
-        // FIXME: regression test for bug 7141637 erroneously expects an NPE, and other tests may expect IAE
-        // but the actual exception raised by an arity mismatch should be WMTE
-        final boolean RAISE_RANDOM_EXCEPTIONS = true;  // FIXME: delete in JSR 292 M1
         if (av == null) {
             if (n == 0)  return;
-            int len;
-            if (RAISE_RANDOM_EXCEPTIONS)
-                len = ((Object[])av).length;  // throw NPE; but delete this after tests are fixed
         } else if (av instanceof Object[]) {
             int len = ((Object[])av).length;
             if (len == n)  return;
@@ -475,19 +474,23 @@ import static java.lang.invoke.MethodHandles.Lookup.IMPL_LOOKUP;
             if (len == n)  return;
         }
         // fall through to error:
-        if (RAISE_RANDOM_EXCEPTIONS)
-            throw newIllegalArgumentException("Array is not of length "+n);
-        throw new WrongMethodTypeException("Array is not of length "+n);
+        throw newIllegalArgumentException("array is not of length "+n);
     }
 
-    private static final NamedFunction NF_checkSpreadArgument;
-    static {
-        try {
-            NF_checkSpreadArgument = new NamedFunction(MethodHandleImpl.class
-                    .getDeclaredMethod("checkSpreadArgument", Object.class, int.class));
-            NF_checkSpreadArgument.resolve();
-        } catch (ReflectiveOperationException ex) {
-            throw newInternalError(ex);
+    /**
+     * Pre-initialized NamedFunctions for bootstrapping purposes.
+     * Factored in an inner class to delay initialization until first usage.
+     */
+    private static class Lazy {
+        static final NamedFunction NF_checkSpreadArgument;
+        static {
+            try {
+                NF_checkSpreadArgument = new NamedFunction(MethodHandleImpl.class
+                        .getDeclaredMethod("checkSpreadArgument", Object.class, int.class));
+                NF_checkSpreadArgument.resolve();
+            } catch (ReflectiveOperationException ex) {
+                throw newInternalError(ex);
+            }
         }
     }
 
@@ -778,16 +781,27 @@ import static java.lang.invoke.MethodHandles.Lookup.IMPL_LOOKUP;
     }
     static <T extends Throwable> Empty throwException(T t) throws T { throw t; }
 
-    static MethodHandle FAKE_METHOD_HANDLE_INVOKE;
-    static
-    MethodHandle fakeMethodHandleInvoke(MemberName method) {
-        MethodType type = method.getInvocationType();
-        assert(type.equals(MethodType.methodType(Object.class, Object[].class)));
-        MethodHandle mh = FAKE_METHOD_HANDLE_INVOKE;
+    static MethodHandle[] FAKE_METHOD_HANDLE_INVOKE = new MethodHandle[2];
+    static MethodHandle fakeMethodHandleInvoke(MemberName method) {
+        int idx;
+        assert(method.isMethodHandleInvoke());
+        switch (method.getName()) {
+        case "invoke":       idx = 0; break;
+        case "invokeExact":  idx = 1; break;
+        default:             throw new InternalError(method.getName());
+        }
+        MethodHandle mh = FAKE_METHOD_HANDLE_INVOKE[idx];
         if (mh != null)  return mh;
-        mh = throwException(type.insertParameterTypes(0, UnsupportedOperationException.class));
+        MethodType type = MethodType.methodType(Object.class, UnsupportedOperationException.class,
+                                                MethodHandle.class, Object[].class);
+        mh = throwException(type);
         mh = mh.bindTo(new UnsupportedOperationException("cannot reflectively invoke MethodHandle"));
-        FAKE_METHOD_HANDLE_INVOKE = mh;
+        if (!method.getInvocationType().equals(mh.type()))
+            throw new InternalError(method.toString());
+        mh = mh.withInternalMemberName(method);
+        mh = mh.asVarargsCollector(Object[].class);
+        assert(method.isVarargs());
+        FAKE_METHOD_HANDLE_INVOKE[idx] = mh;
         return mh;
     }
 
@@ -821,7 +835,7 @@ import static java.lang.invoke.MethodHandles.Lookup.IMPL_LOOKUP;
             MethodHandle vamh = prepareForInvoker(mh);
             // Cache the result of makeInjectedInvoker once per argument class.
             MethodHandle bccInvoker = CV_makeInjectedInvoker.get(hostClass);
-            return restoreToType(bccInvoker.bindTo(vamh), mh.type());
+            return restoreToType(bccInvoker.bindTo(vamh), mh.type(), mh.internalMemberName(), hostClass);
         }
 
         private static MethodHandle makeInjectedInvoker(Class<?> hostClass) {
@@ -876,8 +890,13 @@ import static java.lang.invoke.MethodHandles.Lookup.IMPL_LOOKUP;
         }
 
         // Undo the adapter effect of prepareForInvoker:
-        private static MethodHandle restoreToType(MethodHandle vamh, MethodType type) {
-            return vamh.asCollector(Object[].class, type.parameterCount()).asType(type);
+        private static MethodHandle restoreToType(MethodHandle vamh, MethodType type,
+                                                  MemberName member,
+                                                  Class<?> hostClass) {
+            MethodHandle mh = vamh.asCollector(Object[].class, type.parameterCount());
+            mh = mh.asType(type);
+            mh = new WrappedMember(mh, type, member, hostClass);
+            return mh;
         }
 
         private static final MethodHandle MH_checkCallerClass;
@@ -939,4 +958,53 @@ import static java.lang.invoke.MethodHandles.Lookup.IMPL_LOOKUP;
             }
         }
     }
+
+
+    /** This subclass allows a wrapped method handle to be re-associated with an arbitrary member name. */
+    static class WrappedMember extends MethodHandle {
+        private final MethodHandle target;
+        private final MemberName member;
+        private final Class<?> callerClass;
+
+        private WrappedMember(MethodHandle target, MethodType type, MemberName member, Class<?> callerClass) {
+            super(type, reinvokerForm(target));
+            this.target = target;
+            this.member = member;
+            this.callerClass = callerClass;
+        }
+
+        @Override
+        MethodHandle reinvokerTarget() {
+            return target;
+        }
+        @Override
+        public MethodHandle asTypeUncached(MethodType newType) {
+            // This MH is an alias for target, except for the MemberName
+            // Drop the MemberName if there is any conversion.
+            return asTypeCache = target.asType(newType);
+        }
+        @Override
+        MemberName internalMemberName() {
+            return member;
+        }
+        @Override
+        Class<?> internalCallerClass() {
+            return callerClass;
+        }
+        @Override
+        boolean isInvokeSpecial() {
+            return target.isInvokeSpecial();
+        }
+        @Override
+        MethodHandle viewAsType(MethodType newType) {
+            return new WrappedMember(target, newType, member, callerClass);
+        }
+    }
+
+    static MethodHandle makeWrappedMember(MethodHandle target, MemberName member) {
+        if (member.equals(target.internalMemberName()))
+            return target;
+        return new WrappedMember(target, target.type(), member, null);
+    }
+
 }

@@ -317,7 +317,7 @@ protected:
   Array(const Array<T>&);
   void operator=(const Array<T>&);
 
-  void* operator new(size_t size, ClassLoaderData* loader_data, int length, bool read_only, TRAPS) {
+  void* operator new(size_t size, ClassLoaderData* loader_data, int length, bool read_only, TRAPS) throw() {
     size_t word_size = Array::size(length);
     return (void*) Metaspace::allocate(loader_data, word_size, read_only,
                                        MetaspaceObj::array_type(sizeof(T)), CHECK_NULL);
@@ -353,9 +353,9 @@ protected:
   // sort the array.
   bool contains(const T& x) const      { return index_of(x) >= 0; }
 
-  T    at(int i) const                 { assert(i >= 0 && i< _length, err_msg_res("oob: 0 <= %d < %d", i, _length)); return _data[i]; }
-  void at_put(const int i, const T& x) { assert(i >= 0 && i< _length, err_msg_res("oob: 0 <= %d < %d", i, _length)); _data[i] = x; }
-  T*   adr_at(const int i)             { assert(i >= 0 && i< _length, err_msg_res("oob: 0 <= %d < %d", i, _length)); return &_data[i]; }
+  T    at(int i) const                 { assert(i >= 0 && i< _length, err_msg("oob: 0 <= %d < %d", i, _length)); return _data[i]; }
+  void at_put(const int i, const T& x) { assert(i >= 0 && i< _length, err_msg("oob: 0 <= %d < %d", i, _length)); _data[i] = x; }
+  T*   adr_at(const int i)             { assert(i >= 0 && i< _length, err_msg("oob: 0 <= %d < %d", i, _length)); return &_data[i]; }
   int  find(const T& x)                { return index_of(x); }
 
   T at_acquire(const int which)              { return OrderAccess::load_acquire(adr_at(which)); }

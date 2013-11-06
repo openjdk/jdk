@@ -32,7 +32,11 @@ WindowsDecoder::WindowsDecoder() {
   _can_decode_in_vm = false;
   _pfnSymGetSymFromAddr64 = NULL;
   _pfnUndecorateSymbolName = NULL;
-
+#ifdef AMD64
+  _pfnStackWalk64 = NULL;
+  _pfnSymFunctionTableAccess64 = NULL;
+  _pfnSymGetModuleBase64 = NULL;
+#endif
   _decoder_status = no_error;
   initialize();
 }
@@ -53,13 +57,23 @@ void WindowsDecoder::initialize() {
     _pfnUndecorateSymbolName = (pfn_UndecorateSymbolName)::GetProcAddress(handle, "UnDecorateSymbolName");
 
     if (_pfnSymSetOptions == NULL || _pfnSymInitialize == NULL || _pfnSymGetSymFromAddr64 == NULL) {
-      _pfnSymGetSymFromAddr64 = NULL;
-      _pfnUndecorateSymbolName = NULL;
-      ::FreeLibrary(handle);
-      _dbghelp_handle = NULL;
+      uninitialize();
       _decoder_status = helper_func_error;
       return;
     }
+
+#ifdef AMD64
+    _pfnStackWalk64 = (pfn_StackWalk64)::GetProcAddress(handle, "StackWalk64");
+    _pfnSymFunctionTableAccess64 = (pfn_SymFunctionTableAccess64)::GetProcAddress(handle, "SymFunctionTableAccess64");
+    _pfnSymGetModuleBase64 = (pfn_SymGetModuleBase64)::GetProcAddress(handle, "SymGetModuleBase64");
+    if (_pfnStackWalk64 == NULL || _pfnSymFunctionTableAccess64 == NULL || _pfnSymGetModuleBase64 == NULL) {
+      // We can't call StackWalk64 to walk the stack, but we are still
+      // able to decode the symbols. Let's limp on.
+      _pfnStackWalk64 = NULL;
+      _pfnSymFunctionTableAccess64 = NULL;
+      _pfnSymGetModuleBase64 = NULL;
+    }
+#endif
 
     HANDLE hProcess = ::GetCurrentProcess();
     _pfnSymSetOptions(SYMOPT_UNDNAME | SYMOPT_DEFERRED_LOADS | SYMOPT_EXACT_SYMBOLS);
@@ -156,6 +170,11 @@ void WindowsDecoder::initialize() {
 void WindowsDecoder::uninitialize() {
   _pfnSymGetSymFromAddr64 = NULL;
   _pfnUndecorateSymbolName = NULL;
+#ifdef AMD64
+  _pfnStackWalk64 = NULL;
+  _pfnSymFunctionTableAccess64 = NULL;
+  _pfnSymGetModuleBase64 = NULL;
+#endif
   if (_dbghelp_handle != NULL) {
     ::FreeLibrary(_dbghelp_handle);
   }
@@ -195,3 +214,65 @@ bool WindowsDecoder::demangle(const char* symbol, char *buf, int buflen) {
          _pfnUndecorateSymbolName(symbol, buf, buflen, UNDNAME_COMPLETE);
 }
 
+#ifdef AMD64
+BOOL WindowsDbgHelp::StackWalk64(DWORD MachineType,
+                                 HANDLE hProcess,
+                                 HANDLE hThread,
+                                 LPSTACKFRAME64 StackFrame,
+                                 PVOID ContextRecord,
+                                 PREAD_PROCESS_MEMORY_ROUTINE64 ReadMemoryRoutine,
+                                 PFUNCTION_TABLE_ACCESS_ROUTINE64 FunctionTableAccessRoutine,
+                                 PGET_MODULE_BASE_ROUTINE64 GetModuleBaseRoutine,
+                                 PTRANSLATE_ADDRESS_ROUTINE64 TranslateAddress) {
+  DecoderLocker locker;
+  WindowsDecoder* wd = (WindowsDecoder*)locker.decoder();
+
+  if (!wd->has_error() && wd->_pfnStackWalk64) {
+    return wd->_pfnStackWalk64(MachineType,
+                               hProcess,
+                               hThread,
+                               StackFrame,
+                               ContextRecord,
+                               ReadMemoryRoutine,
+                               FunctionTableAccessRoutine,
+                               GetModuleBaseRoutine,
+                               TranslateAddress);
+  } else {
+    return false;
+  }
+}
+
+PVOID WindowsDbgHelp::SymFunctionTableAccess64(HANDLE hProcess, DWORD64 AddrBase) {
+  DecoderLocker locker;
+  WindowsDecoder* wd = (WindowsDecoder*)locker.decoder();
+
+  if (!wd->has_error() && wd->_pfnSymFunctionTableAccess64) {
+    return wd->_pfnSymFunctionTableAccess64(hProcess, AddrBase);
+  } else {
+    return NULL;
+  }
+}
+
+pfn_SymFunctionTableAccess64 WindowsDbgHelp::pfnSymFunctionTableAccess64() {
+  DecoderLocker locker;
+  WindowsDecoder* wd = (WindowsDecoder*)locker.decoder();
+
+  if (!wd->has_error()) {
+    return wd->_pfnSymFunctionTableAccess64;
+  } else {
+    return NULL;
+  }
+}
+
+pfn_SymGetModuleBase64 WindowsDbgHelp::pfnSymGetModuleBase64() {
+  DecoderLocker locker;
+  WindowsDecoder* wd = (WindowsDecoder*)locker.decoder();
+
+  if (!wd->has_error()) {
+    return wd->_pfnSymGetModuleBase64;
+  } else {
+    return NULL;
+  }
+}
+
+#endif // AMD64

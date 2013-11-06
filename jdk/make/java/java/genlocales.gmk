@@ -38,31 +38,31 @@ FILES_compiled_properties_orig := $(FILES_compiled_properties)
 # only FILES_java and FILES_compiled_properties variables will be picked up
 #
 # $(BUILDDIR)/java/util/FILES_java.gmk & $(BUILDDIR)/java/util/FILES_properties.gmk
-# contain "sun.util.resources" for US language support
+# contain "sun.util.resources" for EN language support
 
 include $(BUILDDIR)/java/util/FILES_java.gmk
 include $(BUILDDIR)/java/util/FILES_properties.gmk
 
-US_Resources_java := $(FILES_java)
-US_Resources_properties := $(FILES_compiled_properties)
+EN_Resources_java := $(FILES_java)
+EN_Resources_properties := $(FILES_compiled_properties)
 
 # $(BUILDDIR)/java/text/FILES_java.gmk contains the "sun.text.resources" for 
-# US language support
+# EN language support
 
 include $(BUILDDIR)/java/text/base/FILES_java.gmk
 
-US_Resources_java += $(FILES_java)
+EN_Resources_java += $(FILES_java)
 
 FILES_compiled_properties=
 
 # $(BUILDDIR)/sun/text/FILES_java.gmk & $(BUILDDIR)/sun/text/FILES_properties.gmk
-# contain both resources for Non-US language support
+# contain both resources for Non-EN language support
 
 include $(BUILDDIR)/sun/text/FILES_java.gmk
 include $(BUILDDIR)/sun/text/FILES_properties.gmk
 
-NonUS_Resources_java := $(FILES_java)
-NonUS_Resources_properties := $(FILES_compiled_properties)
+NonEN_Resources_java := $(FILES_java)
+NonEN_Resources_properties := $(FILES_compiled_properties)
 
 # Restore the orignal FILES_java & FILES_compiled_properties variables
 FILES_java := $(FILES_java_orig)
@@ -80,30 +80,30 @@ RESOURCE_NAMES="FormatData CollationData TimeZoneNames LocaleNames CurrencyNames
 ifeq ($(PLATFORM), macosx)
 
 $(LocaleDataMetaInfo_Dest):$(LocaleDataMetaInfo_Src) $(LOCALEGEN_SH)
-	@$(RM) $@.tmp.us $@.tmp.nonus;
+	@$(RM) $@.tmp.en $@.tmp.nonen;
 	@$(prep-target) 
-	@$(ECHO) $(US_Resources_properties) | $(NAWK) 'gsub(/.properties/,"\n") {print}'  > $@.tmp.us;
-	@$(ECHO) $(US_Resources_java) | $(NAWK) 'gsub(/.java/,"\n") {print}' >> $@.tmp.us;
-	@$(ECHO) $(NonUS_Resources_properties) | $(NAWK) 'gsub(/.properties/,"\n") {print}' > $@.tmp.nonus;
-	@$(ECHO) $(NonUS_Resources_java) | $(NAWK) 'gsub(/.java/,"\n") {print}' >> $@.tmp.nonus;
+	@$(ECHO) $(EN_Resources_properties) | $(NAWK) 'gsub(/.properties/,"\n") {print}'  > $@.tmp.en;
+	@$(ECHO) $(EN_Resources_java) | $(NAWK) 'gsub(/.java/,"\n") {print}' >> $@.tmp.en;
+	@$(ECHO) $(NonEN_Resources_properties) | $(NAWK) 'gsub(/.properties/,"\n") {print}' > $@.tmp.nonen;
+	@$(ECHO) $(NonEN_Resources_java) | $(NAWK) 'gsub(/.java/,"\n") {print}' >> $@.tmp.nonen;
 	NAWK="$(NAWK)" SED="$(SED)" SORT="$(SORT)" \
-	     $(SH) $(LOCALEGEN_SH) $(RESOURCE_NAMES) $@.tmp.us \
-		$@.tmp.nonus $< $@
-	@$(RM) $@.tmp.us $@.tmp.nonus;
+	     $(SH) $(LOCALEGEN_SH) $(RESOURCE_NAMES) $@.tmp.en \
+		$@.tmp.nonen $< $@
+	@$(RM) $@.tmp.en $@.tmp.nonen;
 
 else
 
 $(LocaleDataMetaInfo_Dest):$(LocaleDataMetaInfo_Src) $(LOCALEGEN_SH)
-	@$(RM) $@.tmp.us $@.tmp.nonus;
+	@$(RM) $@.tmp.en $@.tmp.nonen;
 	@$(prep-target) 
-	@$(ECHO) $(subst .properties,'\n',$(US_Resources_properties)) > $@.tmp.us;
-	@$(ECHO) $(subst .java,'\n',$(US_Resources_java)) >> $@.tmp.us;	
-	@$(ECHO) $(subst .properties,'\n',$(NonUS_Resources_properties)) > $@.tmp.nonus;
-	@$(ECHO) $(subst .java,'\n',$(NonUS_Resources_java)) >> $@.tmp.nonus;
+	@$(ECHO) $(subst .properties,'\n',$(EN_Resources_properties)) > $@.tmp.en;
+	@$(ECHO) $(subst .java,'\n',$(EN_Resources_java)) >> $@.tmp.en;	
+	@$(ECHO) $(subst .properties,'\n',$(NonEN_Resources_properties)) > $@.tmp.nonen;
+	@$(ECHO) $(subst .java,'\n',$(NonEN_Resources_java)) >> $@.tmp.nonen;
 	NAWK="$(NAWK)" SED="$(SED)" SORT="$(SORT)" \
-	     $(SH) $(LOCALEGEN_SH) $(RESOURCE_NAMES) $@.tmp.us \
-		$@.tmp.nonus $< $@
-	@$(RM) $@.tmp.us $@.tmp.nonus;
+	     $(SH) $(LOCALEGEN_SH) $(RESOURCE_NAMES) $@.tmp.en \
+		$@.tmp.nonen $< $@
+	@$(RM) $@.tmp.en $@.tmp.nonen;
 endif
 	
 genlocales : $(LocaleDataMetaInfo_Dest)  

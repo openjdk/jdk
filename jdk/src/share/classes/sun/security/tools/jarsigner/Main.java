@@ -93,7 +93,7 @@ public class Main {
     // prefix for new signature-related files in META-INF directory
     private static final String SIG_PREFIX = META_INF + "SIG-";
 
-    private static final Class[] PARAM_STRING = { String.class };
+    private static final Class<?>[] PARAM_STRING = { String.class };
 
     private static final String NONE = "NONE";
     private static final String P11KEYSTORE = "PKCS11";
@@ -682,7 +682,7 @@ public class Main {
 
                         // The label finally contains 2 parts separated by '|':
                         // The legend displayed before the entry names, and
-                        // the cert info (if -certs specfied).
+                        // the cert info (if -certs specified).
 
                         if (!output.containsKey(label)) {
                             output.put(label, new ArrayList<String>());

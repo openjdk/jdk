@@ -140,7 +140,7 @@ class AppletSecurity extends AWTSecurityManager {
          * fix bug # 6433620 the logic here is : try to find URLClassLoader from
          * class context, check its AccessControlContext to see if
          * AppletClassLoader is in stack when it's created. for this kind of
-         * URLClassLoader, return the AppContext assocated with the
+         * URLClassLoader, return the AppContext associated with the
          * AppletClassLoader.
          */
         for (int i = 0; i < context.length; i++) {
@@ -304,7 +304,7 @@ class AppletSecurity extends AWTSecurityManager {
      *
      * @since   JDK1.1
      * @exception  SecurityException  if the caller does not have
-     *             permission to accesss the AWT event queue.
+     *             permission to access the AWT event queue.
      */
     public void checkAwtEventQueueAccess() {
         AppContext appContext = AppContext.getAppContext();
@@ -314,7 +314,7 @@ class AppletSecurity extends AWTSecurityManager {
             // If we're about to allow access to the main EventQueue,
             // and anything untrusted is on the class context stack,
             // disallow access.
-            super.checkAwtEventQueueAccess();
+            super.checkPermission(SecurityConstants.AWT.CHECK_AWT_EVENTQUEUE_PERMISSION);
         }
     } // checkAwtEventQueueAccess()
 

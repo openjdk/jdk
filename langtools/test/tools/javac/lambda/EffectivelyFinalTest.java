@@ -1,6 +1,6 @@
 /*
  * @test /nodynamiccopyright/
- * @bug 8003280
+ * @bug 7175538 8003280
  * @summary Add lambda tests
  *  Integrate effectively final check with DA/DU analysis
  * @compile/fail/ref=EffectivelyFinalTest01.out -XDrawDiagnostics EffectivelyFinalTest.java

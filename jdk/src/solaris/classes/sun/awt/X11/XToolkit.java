@@ -54,6 +54,7 @@ import sun.print.PrintJob2D;
 import sun.security.action.GetPropertyAction;
 import sun.security.action.GetBooleanAction;
 import sun.util.logging.PlatformLogger;
+import sun.security.util.SecurityConstants;
 
 public final class XToolkit extends UNIXToolkit implements Runnable {
     private static final PlatformLogger log = PlatformLogger.getLogger("sun.awt.X11.XToolkit");
@@ -239,9 +240,14 @@ public final class XToolkit extends UNIXToolkit implements Runnable {
                 @Override
                 public void dispatchEvent(XEvent ev) {
                     if (ev.get_type() == XConstants.ConfigureNotify) {
-                        ((X11GraphicsEnvironment)GraphicsEnvironment.
-                         getLocalGraphicsEnvironment()).
-                            displayChanged();
+                        awtUnlock();
+                        try {
+                            ((X11GraphicsEnvironment)GraphicsEnvironment.
+                             getLocalGraphicsEnvironment()).
+                                displayChanged();
+                        } finally {
+                            awtLock();
+                        }
                     }
                 }
             });
@@ -554,7 +560,7 @@ public final class XToolkit extends UNIXToolkit implements Runnable {
             awtLock();
             try {
                 if (loop == SECONDARY_LOOP) {
-                    // In the secondary loop we may have already aquired awt_lock
+                    // In the secondary loop we may have already acquired awt_lock
                     // several times, so waitForEvents() might be unable to release
                     // the awt_lock and this causes lock up.
                     // For now, we just avoid waitForEvents in the secondary loop.
@@ -1152,7 +1158,7 @@ public final class XToolkit extends UNIXToolkit implements Runnable {
     public  Clipboard getSystemClipboard() {
         SecurityManager security = System.getSecurityManager();
         if (security != null) {
-            security.checkSystemClipboardAccess();
+            security.checkPermission(SecurityConstants.AWT.ACCESS_CLIPBOARD_PERMISSION);
         }
         synchronized (this) {
             if (clipboard == null) {
@@ -1165,7 +1171,7 @@ public final class XToolkit extends UNIXToolkit implements Runnable {
     public Clipboard getSystemSelection() {
         SecurityManager security = System.getSecurityManager();
         if (security != null) {
-            security.checkSystemClipboardAccess();
+            security.checkPermission(SecurityConstants.AWT.ACCESS_CLIPBOARD_PERMISSION);
         }
         synchronized (this) {
             if (selection == null) {
@@ -2248,6 +2254,8 @@ public final class XToolkit extends UNIXToolkit implements Runnable {
                                                      XConstants.XkbModifierMapMask |
                                                      XConstants.XkbVirtualModsMask,
                                                      XConstants.XkbUseCoreKbd);
+
+                        XlibWrapper.XkbSetDetectableAutoRepeat(getDisplay(), true);
                     }
                 }
             }

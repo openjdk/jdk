@@ -201,7 +201,7 @@ import sun.security.action.GetPropertyAction;
  *
  * </ul>
  *
- * In any case, byte order marks occuring after the first element of an
+ * In any case, byte order marks occurring after the first element of an
  * input sequence are not omitted since the same code is used to represent
  * <small>ZERO-WIDTH NON-BREAKING SPACE</small>.
  *

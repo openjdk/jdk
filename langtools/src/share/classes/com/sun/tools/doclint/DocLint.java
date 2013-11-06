@@ -29,9 +29,14 @@ import java.io.File;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.LinkedList;
 import java.util.List;
+import java.util.Queue;
+import java.util.Set;
 
 import javax.lang.model.element.Name;
+import javax.tools.JavaFileObject;
 import javax.tools.StandardLocation;
 
 import com.sun.source.doctree.DocCommentTree;
@@ -73,6 +78,8 @@ public class DocLint implements Plugin {
     public static final String XMSGS_CUSTOM_PREFIX = "-Xmsgs:";
     private static final String STATS = "-stats";
     public static final String XIMPLICIT_HEADERS = "-XimplicitHeaders:";
+    public static final String XCUSTOM_TAGS_PREFIX = "-XcustomTags:";
+    public static final String TAGS_SEPARATOR = ",";
 
     // <editor-fold defaultstate="collapsed" desc="Command-line entry point">
     public static void main(String... args) {
@@ -194,6 +201,8 @@ public class DocLint implements Plugin {
                 env.messages.setOptions(null);
             } else if (arg.startsWith(XMSGS_CUSTOM_PREFIX)) {
                 env.messages.setOptions(arg.substring(arg.indexOf(":") + 1));
+            } else if (arg.startsWith(XCUSTOM_TAGS_PREFIX)) {
+                env.setCustomTags(arg.substring(arg.indexOf(":") + 1));
             } else if (arg.equals("-h") || arg.equals("-help") || arg.equals("--help")
                     || arg.equals("-?") || arg.equals("-usage")) {
                 needHelp = true;
@@ -257,6 +266,8 @@ public class DocLint implements Plugin {
             } else if (arg.matches(XIMPLICIT_HEADERS + "[1-6]")) {
                 char ch = arg.charAt(arg.length() - 1);
                 env.setImplicitHeaders(Character.digit(ch, 10));
+            } else if (arg.startsWith(XCUSTOM_TAGS_PREFIX)) {
+                env.setCustomTags(arg.substring(arg.indexOf(":") + 1));
             } else
                 throw new IllegalArgumentException(arg);
         }
@@ -278,15 +289,25 @@ public class DocLint implements Plugin {
             TaskListener tl = new TaskListener() {
                 @Override
                 public void started(TaskEvent e) {
+                    switch (e.getKind()) {
+                        case ANALYZE:
+                            CompilationUnitTree tree;
+                            while ((tree = todo.poll()) != null)
+                                ds.scan(tree, null);
+                            break;
+                    }
                 }
 
                 @Override
                 public void finished(TaskEvent e) {
                     switch (e.getKind()) {
-                        case ENTER:
-                            ds.scan(e.getCompilationUnit(), null);
+                        case PARSE:
+                            todo.add(e.getCompilationUnit());
+                            break;
                     }
                 }
+
+                Queue<CompilationUnitTree> todo = new LinkedList<CompilationUnitTree>();
             };
 
             task.addTaskListener(tl);

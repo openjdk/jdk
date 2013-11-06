@@ -21,14 +21,18 @@
  * questions.
  */
 
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
+
+import java.util.SortedSet;
 
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
@@ -38,43 +42,68 @@ import static org.testng.Assert.fail;
 
 import java.util.TreeMap;
 import java.util.TreeSet;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentSkipListMap;
 import java.util.function.Predicate;
+import java.util.function.Supplier;
 
 /**
  * @test
- * @library testlibrary
- * @build CollectionAsserts CollectionSupplier
- * @run testng CollectionDefaults
  * @summary Unit tests for extension methods on Collection
+ * @library testlibrary
+ * @build CollectionAsserts CollectionSupplier ExtendsAbstractSet ExtendsAbstractCollection
+ * @run testng CollectionDefaults
  */
 public class CollectionDefaults {
 
     public static final Predicate<Integer> pEven = x -> 0 == x % 2;
     public static final Predicate<Integer> pOdd = x -> 1 == x % 2;
 
-    private static final String[] SET_CLASSES = {
-        "java.util.HashSet",
-        "java.util.LinkedHashSet",
-        "java.util.TreeSet"
+    @SuppressWarnings("unchecked")
+    private static final Supplier<?>[] TEST_CLASSES = {
+        // Collection
+        ExtendsAbstractCollection<Integer>::new,
+
+        // Lists
+        java.util.ArrayList<Integer>::new,
+        java.util.LinkedList<Integer>::new,
+        java.util.Vector<Integer>::new,
+        java.util.concurrent.CopyOnWriteArrayList<Integer>::new,
+        ExtendsAbstractList<Integer>::new,
+
+        // Sets
+        java.util.HashSet<Integer>::new,
+        java.util.LinkedHashSet<Integer>::new,
+        java.util.TreeSet<Integer>::new,
+        java.util.concurrent.ConcurrentSkipListSet<Integer>::new,
+        java.util.concurrent.CopyOnWriteArraySet<Integer>::new,
+        ExtendsAbstractSet<Integer>::new
     };
 
     private static final int SIZE = 100;
 
     @DataProvider(name="setProvider", parallel=true)
-    public static Object[][] setCases() {
+    public static Iterator<Object[]> setCases() {
         final List<Object[]> cases = new LinkedList<>();
         cases.add(new Object[] { new HashSet<>() });
         cases.add(new Object[] { new LinkedHashSet<>() });
         cases.add(new Object[] { new TreeSet<>() });
+        cases.add(new Object[] { new java.util.concurrent.ConcurrentSkipListSet<>() });
+        cases.add(new Object[] { new java.util.concurrent.CopyOnWriteArraySet<>() });
+
+        cases.add(new Object[] { new ExtendsAbstractSet<>() });
 
         cases.add(new Object[] { Collections.newSetFromMap(new HashMap<>()) });
         cases.add(new Object[] { Collections.newSetFromMap(new LinkedHashMap()) });
         cases.add(new Object[] { Collections.newSetFromMap(new TreeMap<>()) });
+        cases.add(new Object[] { Collections.newSetFromMap(new ConcurrentHashMap<>()) });
+        cases.add(new Object[] { Collections.newSetFromMap(new ConcurrentSkipListMap<>()) });
 
-        cases.add(new Object[] { new HashSet(){{add(42);}} });
-        cases.add(new Object[] { new LinkedHashSet(){{add(42);}} });
-        cases.add(new Object[] { new TreeSet(){{add(42);}} });
-        return cases.toArray(new Object[0][cases.size()]);
+        cases.add(new Object[] { new HashSet<Integer>(){{add(42);}} });
+        cases.add(new Object[] { new ExtendsAbstractSet<Integer>(){{add(42);}} });
+        cases.add(new Object[] { new LinkedHashSet<Integer>(){{add(42);}} });
+        cases.add(new Object[] { new TreeSet<Integer>(){{add(42);}} });
+        return cases.iterator();
     }
 
     @Test(dataProvider = "setProvider")
@@ -82,57 +111,66 @@ public class CollectionDefaults {
         try {
             set.forEach(null);
             fail("expected NPE not thrown");
-        } catch (NullPointerException npe) {}
+        } catch (NullPointerException expected) {
+                ; // expected
+            }
         try {
             set.removeIf(null);
             fail("expected NPE not thrown");
-        } catch (NullPointerException npe) {}
+        } catch (NullPointerException expected) {
+               ; // expected
+        }
     }
 
     @Test
     public void testForEach() throws Exception {
-        final CollectionSupplier supplier = new CollectionSupplier(SET_CLASSES, SIZE);
-        for (final CollectionSupplier.TestCase test : supplier.get()) {
-            final Set<Integer> original = ((Set<Integer>) test.original);
-            final Set<Integer> set = ((Set<Integer>) test.collection);
+        final CollectionSupplier<Collection<Integer>> supplier = new CollectionSupplier((Supplier<Collection<Integer>>[]) TEST_CLASSES, SIZE);
+
+        for (final CollectionSupplier.TestCase<Collection<Integer>> test : supplier.get()) {
+            final Collection<Integer> original = test.expected;
+            final Collection<Integer> set = test.collection;
 
             try {
                 set.forEach(null);
                 fail("expected NPE not thrown");
-            } catch (NullPointerException npe) {}
-            if (test.className.equals("java.util.HashSet")) {
-                CollectionAsserts.assertContentsUnordered(set, original);
+            } catch (NullPointerException expected) {
+                ; // expected
+            }
+            if (set instanceof Set && !((set instanceof SortedSet) || (set instanceof LinkedHashSet))) {
+                CollectionAsserts.assertContentsUnordered(set, original, test.toString());
             } else {
-                CollectionAsserts.assertContents(set, original);
+                CollectionAsserts.assertContents(set, original, test.toString());
             }
 
             final List<Integer> actual = new LinkedList<>();
             set.forEach(actual::add);
-            if (test.className.equals("java.util.HashSet")) {
-                CollectionAsserts.assertContentsUnordered(actual, set);
-                CollectionAsserts.assertContentsUnordered(actual, original);
+            if (set instanceof Set && !((set instanceof SortedSet) || (set instanceof LinkedHashSet))) {
+                CollectionAsserts.assertContentsUnordered(actual, set, test.toString());
+                CollectionAsserts.assertContentsUnordered(actual, original, test.toString());
             } else {
-                CollectionAsserts.assertContents(actual, set);
-                CollectionAsserts.assertContents(actual, original);
+                CollectionAsserts.assertContents(actual, set, test.toString());
+                CollectionAsserts.assertContents(actual, original, test.toString());
             }
         }
     }
 
     @Test
     public void testRemoveIf() throws Exception {
-        final CollectionSupplier supplier = new CollectionSupplier(SET_CLASSES, SIZE);
-        for (final CollectionSupplier.TestCase test : supplier.get()) {
-            final Set<Integer> original = ((Set<Integer>) test.original);
-            final Set<Integer> set = ((Set<Integer>) test.collection);
+        final CollectionSupplier<Collection<Integer>> supplier = new CollectionSupplier((Supplier<Collection<Integer>>[]) TEST_CLASSES, SIZE);
+        for (final CollectionSupplier.TestCase<Collection<Integer>> test : supplier.get()) {
+            final Collection<Integer> original = test.expected;
+            final Collection<Integer> set = test.collection;
 
             try {
                 set.removeIf(null);
                 fail("expected NPE not thrown");
-            } catch (NullPointerException npe) {}
-            if (test.className.equals("java.util.HashSet")) {
-                CollectionAsserts.assertContentsUnordered(set, original);
+            } catch (NullPointerException expected) {
+                ; // expected
+            }
+            if (set instanceof Set && !((set instanceof SortedSet) || (set instanceof LinkedHashSet))) {
+                CollectionAsserts.assertContentsUnordered(set, original, test.toString());
             } else {
-                CollectionAsserts.assertContents(set, original);
+                CollectionAsserts.assertContents(set, original, test.toString());
             }
 
             set.removeIf(pEven);

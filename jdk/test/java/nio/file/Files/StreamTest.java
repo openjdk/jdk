@@ -22,11 +22,11 @@
  */
 
 /* @test
- * @bug 8006884
- * @summary Unit test for java.nio.file.Files
+ * @bug 8006884 8019526
  * @library ..
  * @build PassThroughFileSystem FaultyFileSystem
  * @run testng StreamTest
+ * @summary Unit test for java.nio.file.Files methods that return a Stream
  */
 
 import java.io.IOException;
@@ -43,14 +43,15 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.util.Arrays;
-import java.util.Comparator;
+import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
 import java.util.TreeSet;
+import java.util.concurrent.Callable;
 import java.util.function.BiPredicate;
-import java.util.stream.CloseableStream;
+import java.util.stream.Stream;
 import java.util.stream.Collectors;
 import org.testng.annotations.AfterClass;
 import org.testng.annotations.BeforeClass;
@@ -138,14 +139,14 @@ public class StreamTest {
     }
 
     public void testBasic() {
-        try (CloseableStream<Path> s = Files.list(testFolder)) {
-            Object[] actual = s.sorted(Comparator.naturalOrder()).toArray();
+        try (Stream<Path> s = Files.list(testFolder)) {
+            Object[] actual = s.sorted().toArray();
             assertEquals(actual, level1);
         } catch (IOException ioe) {
             fail("Unexpected IOException");
         }
 
-        try (CloseableStream<Path> s = Files.list(testFolder.resolve("empty"))) {
+        try (Stream<Path> s = Files.list(testFolder.resolve("empty"))) {
             int count = s.mapToInt(p -> 1).reduce(0, Integer::sum);
             assertEquals(count, 0, "Expect empty stream.");
         } catch (IOException ioe) {
@@ -154,8 +155,8 @@ public class StreamTest {
     }
 
     public void testWalk() {
-        try (CloseableStream<Path> s = Files.walk(testFolder)) {
-            Object[] actual = s.sorted(Comparator.naturalOrder()).toArray();
+        try (Stream<Path> s = Files.walk(testFolder)) {
+            Object[] actual = s.sorted().toArray();
             assertEquals(actual, all);
         } catch (IOException ioe) {
             fail("Unexpected IOException");
@@ -163,9 +164,9 @@ public class StreamTest {
     }
 
     public void testWalkOneLevel() {
-        try (CloseableStream<Path> s = Files.walk(testFolder, 1)) {
+        try (Stream<Path> s = Files.walk(testFolder, 1)) {
             Object[] actual = s.filter(path -> ! path.equals(testFolder))
-                               .sorted(Comparator.naturalOrder())
+                               .sorted()
                                .toArray();
             assertEquals(actual, level1);
         } catch (IOException ioe) {
@@ -176,8 +177,8 @@ public class StreamTest {
     public void testWalkFollowLink() {
         // If link is not supported, the directory structure won't have link.
         // We still want to test the behavior with FOLLOW_LINKS option.
-        try (CloseableStream<Path> s = Files.walk(testFolder, FileVisitOption.FOLLOW_LINKS)) {
-            Object[] actual = s.sorted(Comparator.naturalOrder()).toArray();
+        try (Stream<Path> s = Files.walk(testFolder, FileVisitOption.FOLLOW_LINKS)) {
+            Object[] actual = s.sorted().toArray();
             assertEquals(actual, all_folowLinks);
         } catch (IOException ioe) {
             fail("Unexpected IOException");
@@ -185,7 +186,7 @@ public class StreamTest {
     }
 
     private void validateFileSystemLoopException(Path start, Path... causes) {
-        try (CloseableStream<Path> s = Files.walk(start, FileVisitOption.FOLLOW_LINKS)) {
+        try (Stream<Path> s = Files.walk(start, FileVisitOption.FOLLOW_LINKS)) {
             try {
                 int count = s.mapToInt(p -> 1).reduce(0, Integer::sum);
                 fail("Should got FileSystemLoopException, but got " + count + "elements.");
@@ -282,28 +283,28 @@ public class StreamTest {
     public void testFind() throws IOException {
         PathBiPredicate pred = new PathBiPredicate((path, attrs) -> true);
 
-        try (CloseableStream<Path> s = Files.find(testFolder, Integer.MAX_VALUE, pred)) {
+        try (Stream<Path> s = Files.find(testFolder, Integer.MAX_VALUE, pred)) {
             Set<Path> result = s.collect(Collectors.toCollection(TreeSet::new));
             assertEquals(pred.visited(), all);
             assertEquals(result.toArray(new Path[0]), pred.visited());
         }
 
         pred = new PathBiPredicate((path, attrs) -> attrs.isSymbolicLink());
-        try (CloseableStream<Path> s = Files.find(testFolder, Integer.MAX_VALUE, pred)) {
+        try (Stream<Path> s = Files.find(testFolder, Integer.MAX_VALUE, pred)) {
             s.forEach(path -> assertTrue(Files.isSymbolicLink(path)));
             assertEquals(pred.visited(), all);
         }
 
         pred = new PathBiPredicate((path, attrs) ->
             path.getFileName().toString().startsWith("e"));
-        try (CloseableStream<Path> s = Files.find(testFolder, Integer.MAX_VALUE, pred)) {
+        try (Stream<Path> s = Files.find(testFolder, Integer.MAX_VALUE, pred)) {
             s.forEach(path -> assertEquals(path.getFileName().toString(), "empty"));
             assertEquals(pred.visited(), all);
         }
 
         pred = new PathBiPredicate((path, attrs) ->
             path.getFileName().toString().startsWith("l") && attrs.isRegularFile());
-        try (CloseableStream<Path> s = Files.find(testFolder, Integer.MAX_VALUE, pred)) {
+        try (Stream<Path> s = Files.find(testFolder, Integer.MAX_VALUE, pred)) {
             s.forEach(path -> fail("Expect empty stream"));
             assertEquals(pred.visited(), all);
         }
@@ -317,53 +318,77 @@ public class StreamTest {
         try {
             // zero lines
             assertTrue(Files.size(tmpfile) == 0, "File should be empty");
-            try (CloseableStream<String> s = Files.lines(tmpfile, US_ASCII)) {
-                assertEquals(s.mapToInt(l -> 1).reduce(0, Integer::sum), 0, "No line expected");
+            try (Stream<String> s = Files.lines(tmpfile)) {
+                checkLines(s, Collections.emptyList());
+            }
+            try (Stream<String> s = Files.lines(tmpfile, US_ASCII)) {
+                checkLines(s, Collections.emptyList());
             }
 
             // one line
-            byte[] hi = { (byte)'h', (byte)'i' };
-            Files.write(tmpfile, hi);
-            try (CloseableStream<String> s = Files.lines(tmpfile, US_ASCII)) {
-                List<String> lines = s.collect(Collectors.toList());
-                assertTrue(lines.size() == 1, "One line expected");
-                assertTrue(lines.get(0).equals("hi"), "'Hi' expected");
+            List<String> oneLine = Arrays.asList("hi");
+            Files.write(tmpfile, oneLine, US_ASCII);
+            try (Stream<String> s = Files.lines(tmpfile)) {
+                checkLines(s, oneLine);
+            }
+            try (Stream<String> s = Files.lines(tmpfile, US_ASCII)) {
+                checkLines(s, oneLine);
             }
 
             // two lines using platform's line separator
-            List<String> expected = Arrays.asList("hi", "there");
-            Files.write(tmpfile, expected, US_ASCII);
-            assertTrue(Files.size(tmpfile) > 0, "File is empty");
-            try (CloseableStream<String> s = Files.lines(tmpfile, US_ASCII)) {
-                List<String> lines = s.collect(Collectors.toList());
-                assertTrue(lines.equals(expected), "Unexpected lines");
+            List<String> twoLines = Arrays.asList("hi", "there");
+            Files.write(tmpfile, twoLines, US_ASCII);
+            try (Stream<String> s = Files.lines(tmpfile)) {
+                checkLines(s, twoLines);
+            }
+            try (Stream<String> s = Files.lines(tmpfile, US_ASCII)) {
+                checkLines(s, twoLines);
             }
 
             // MalformedInputException
             byte[] bad = { (byte)0xff, (byte)0xff };
             Files.write(tmpfile, bad);
-            try (CloseableStream<String> s = Files.lines(tmpfile, US_ASCII)) {
-                try {
-                    List<String> lines = s.collect(Collectors.toList());
-                    throw new RuntimeException("UncheckedIOException expected");
-                } catch (UncheckedIOException ex) {
-                    assertTrue(ex.getCause() instanceof MalformedInputException,
-                               "MalformedInputException expected");
-                }
+            try (Stream<String> s = Files.lines(tmpfile)) {
+                checkMalformedInputException(s);
+            }
+            try (Stream<String> s = Files.lines(tmpfile, US_ASCII)) {
+                checkMalformedInputException(s);
             }
 
             // NullPointerException
-            try {
-                Files.lines(null, US_ASCII);
-                throw new RuntimeException("NullPointerException expected");
-            } catch (NullPointerException ignore) { }
-            try {
-                Files.lines(tmpfile, null);
-                throw new RuntimeException("NullPointerException expected");
-            } catch (NullPointerException ignore) { }
+            checkNullPointerException(() -> Files.lines(null));
+            checkNullPointerException(() -> Files.lines(null, US_ASCII));
+            checkNullPointerException(() -> Files.lines(tmpfile, null));
 
         } finally {
             Files.delete(tmpfile);
+        }
+    }
+
+    private void checkLines(Stream<String> s, List<String> expected) {
+        List<String> lines = s.collect(Collectors.toList());
+        assertTrue(lines.size() == expected.size(), "Unexpected number of lines");
+        assertTrue(lines.equals(expected), "Unexpected content");
+    }
+
+    private void checkMalformedInputException(Stream<String> s) {
+        try {
+            List<String> lines = s.collect(Collectors.toList());
+            fail("UncheckedIOException expected");
+        } catch (UncheckedIOException ex) {
+            IOException cause = ex.getCause();
+            assertTrue(cause instanceof MalformedInputException,
+                "MalformedInputException expected");
+        }
+    }
+
+    private void checkNullPointerException(Callable<?> c) {
+        try {
+            c.call();
+            fail("NullPointerException expected");
+        } catch (NullPointerException ignore) {
+        } catch (Exception e) {
+            fail(e + " not expected");
         }
     }
 
@@ -378,7 +403,7 @@ public class StreamTest {
             fsp.setFaultyMode(false);
             Path fakeRoot = fs.getRoot();
             try {
-                try (CloseableStream<Path> s = Files.list(fakeRoot)) {
+                try (Stream<Path> s = Files.list(fakeRoot)) {
                     s.forEach(path -> assertEquals(path.getFileName().toString(), "DirectoryIteratorException"));
                 }
             } catch (UncheckedIOException uioe) {
@@ -398,7 +423,7 @@ public class StreamTest {
             }
 
             try {
-                try (CloseableStream<Path> s = Files.list(fakeRoot)) {
+                try (Stream<Path> s = Files.list(fakeRoot)) {
                     s.forEach(path -> fail("should not get here"));
                 }
             } catch (UncheckedIOException uioe) {
@@ -427,12 +452,12 @@ public class StreamTest {
         try {
             fsp.setFaultyMode(false);
             Path fakeRoot = fs.getRoot();
-            try (CloseableStream<Path> s = Files.list(fakeRoot.resolve("dir2"))) {
+            try (Stream<Path> s = Files.list(fakeRoot.resolve("dir2"))) {
                 // only one file
                 s.forEach(path -> assertEquals(path.getFileName().toString(), "IOException"));
             }
 
-            try (CloseableStream<Path> s = Files.walk(fakeRoot.resolve("empty"))) {
+            try (Stream<Path> s = Files.walk(fakeRoot.resolve("empty"))) {
                 String[] result = s.map(path -> path.getFileName().toString())
                                    .toArray(String[]::new);
                 // ordered as depth-first
@@ -440,13 +465,13 @@ public class StreamTest {
             }
 
             fsp.setFaultyMode(true);
-            try (CloseableStream<Path> s = Files.list(fakeRoot.resolve("dir2"))) {
+            try (Stream<Path> s = Files.list(fakeRoot.resolve("dir2"))) {
                 s.forEach(path -> fail("should have caused exception"));
             } catch (UncheckedIOException uioe) {
                 assertTrue(uioe.getCause() instanceof FaultyFileSystem.FaultyException);
             }
 
-            try (CloseableStream<Path> s = Files.walk(fakeRoot.resolve("empty"))) {
+            try (Stream<Path> s = Files.walk(fakeRoot.resolve("empty"))) {
                 String[] result = s.map(path -> path.getFileName().toString())
                                    .toArray(String[]::new);
                 fail("should not reach here due to IOException");
@@ -454,7 +479,7 @@ public class StreamTest {
                 assertTrue(uioe.getCause() instanceof FaultyFileSystem.FaultyException);
             }
 
-            try (CloseableStream<Path> s = Files.walk(
+            try (Stream<Path> s = Files.walk(
                 fakeRoot.resolve("empty").resolve("IOException")))
             {
                 String[] result = s.map(path -> path.getFileName().toString())
@@ -502,20 +527,20 @@ public class StreamTest {
             fsp.setFaultyMode(false);
             Path fakeRoot = fs.getRoot();
             // validate setting
-            try (CloseableStream<Path> s = Files.list(fakeRoot.resolve("empty"))) {
+            try (Stream<Path> s = Files.list(fakeRoot.resolve("empty"))) {
                 String[] result = s.map(path -> path.getFileName().toString())
                                    .toArray(String[]::new);
                 assertEqualsNoOrder(result, new String[] { "SecurityException", "sample" });
             }
 
-            try (CloseableStream<Path> s = Files.walk(fakeRoot.resolve("dir2"))) {
+            try (Stream<Path> s = Files.walk(fakeRoot.resolve("dir2"))) {
                 String[] result = s.map(path -> path.getFileName().toString())
                                    .toArray(String[]::new);
                 assertEqualsNoOrder(result, new String[] { "dir2", "SecurityException", "fileInSE", "file" });
             }
 
             if (supportsLinks) {
-                try (CloseableStream<Path> s = Files.list(fakeRoot.resolve("dir"))) {
+                try (Stream<Path> s = Files.list(fakeRoot.resolve("dir"))) {
                     String[] result = s.map(path -> path.getFileName().toString())
                                        .toArray(String[]::new);
                     assertEqualsNoOrder(result, new String[] { "d1", "f1", "lnDir2", "SecurityException", "lnDirSE", "lnFileSE" });
@@ -525,13 +550,13 @@ public class StreamTest {
             // execute test
             fsp.setFaultyMode(true);
             // ignore file cause SecurityException
-            try (CloseableStream<Path> s = Files.walk(fakeRoot.resolve("empty"))) {
+            try (Stream<Path> s = Files.walk(fakeRoot.resolve("empty"))) {
                 String[] result = s.map(path -> path.getFileName().toString())
                                    .toArray(String[]::new);
                 assertEqualsNoOrder(result, new String[] { "empty", "sample" });
             }
             // skip folder cause SecurityException
-            try (CloseableStream<Path> s = Files.walk(fakeRoot.resolve("dir2"))) {
+            try (Stream<Path> s = Files.walk(fakeRoot.resolve("dir2"))) {
                 String[] result = s.map(path -> path.getFileName().toString())
                                    .toArray(String[]::new);
                 assertEqualsNoOrder(result, new String[] { "dir2", "file" });
@@ -539,14 +564,14 @@ public class StreamTest {
 
             if (supportsLinks) {
                 // not following links
-                try (CloseableStream<Path> s = Files.walk(fakeRoot.resolve("dir"))) {
+                try (Stream<Path> s = Files.walk(fakeRoot.resolve("dir"))) {
                     String[] result = s.map(path -> path.getFileName().toString())
                                        .toArray(String[]::new);
                     assertEqualsNoOrder(result, new String[] { "dir", "d1", "f1", "lnDir2", "lnDirSE", "lnFileSE" });
                 }
 
                 // following links
-                try (CloseableStream<Path> s = Files.walk(fakeRoot.resolve("dir"), FileVisitOption.FOLLOW_LINKS)) {
+                try (Stream<Path> s = Files.walk(fakeRoot.resolve("dir"), FileVisitOption.FOLLOW_LINKS)) {
                     String[] result = s.map(path -> path.getFileName().toString())
                                        .toArray(String[]::new);
                     // ?? Should fileInSE show up?
@@ -556,19 +581,19 @@ public class StreamTest {
             }
 
             // list instead of walk
-            try (CloseableStream<Path> s = Files.list(fakeRoot.resolve("empty"))) {
+            try (Stream<Path> s = Files.list(fakeRoot.resolve("empty"))) {
                 String[] result = s.map(path -> path.getFileName().toString())
                                    .toArray(String[]::new);
                 assertEqualsNoOrder(result, new String[] { "sample" });
             }
-            try (CloseableStream<Path> s = Files.list(fakeRoot.resolve("dir2"))) {
+            try (Stream<Path> s = Files.list(fakeRoot.resolve("dir2"))) {
                 String[] result = s.map(path -> path.getFileName().toString())
                                    .toArray(String[]::new);
                 assertEqualsNoOrder(result, new String[] { "file" });
             }
 
             // root cause SecurityException should be reported
-            try (CloseableStream<Path> s = Files.walk(
+            try (Stream<Path> s = Files.walk(
                 fakeRoot.resolve("dir2").resolve("SecurityException")))
             {
                 String[] result = s.map(path -> path.getFileName().toString())
@@ -579,7 +604,7 @@ public class StreamTest {
             }
 
             // Walk a file cause SecurityException, we should get SE
-            try (CloseableStream<Path> s = Files.walk(
+            try (Stream<Path> s = Files.walk(
                 fakeRoot.resolve("dir").resolve("SecurityException")))
             {
                 String[] result = s.map(path -> path.getFileName().toString())
@@ -590,7 +615,7 @@ public class StreamTest {
             }
 
             // List a file cause SecurityException, we should get SE as cannot read attribute
-            try (CloseableStream<Path> s = Files.list(
+            try (Stream<Path> s = Files.list(
                 fakeRoot.resolve("dir2").resolve("SecurityException")))
             {
                 String[] result = s.map(path -> path.getFileName().toString())
@@ -600,7 +625,7 @@ public class StreamTest {
                 assertTrue(se.getCause() instanceof FaultyFileSystem.FaultyException);
             }
 
-            try (CloseableStream<Path> s = Files.list(
+            try (Stream<Path> s = Files.list(
                 fakeRoot.resolve("dir").resolve("SecurityException")))
             {
                 String[] result = s.map(path -> path.getFileName().toString())
@@ -627,7 +652,7 @@ public class StreamTest {
     }
 
     public void testConstructException() {
-        try (CloseableStream<String> s = Files.lines(testFolder.resolve("notExist"), Charset.forName("UTF-8"))) {
+        try (Stream<String> s = Files.lines(testFolder.resolve("notExist"), Charset.forName("UTF-8"))) {
             s.forEach(l -> fail("File is not even exist!"));
         } catch (IOException ioe) {
             assertTrue(ioe instanceof NoSuchFileException);
@@ -635,24 +660,26 @@ public class StreamTest {
     }
 
     public void testClosedStream() throws IOException {
-        try (CloseableStream<Path> s = Files.list(testFolder)) {
+        try (Stream<Path> s = Files.list(testFolder)) {
             s.close();
-            Object[] actual = s.sorted(Comparator.naturalOrder()).toArray();
-            assertTrue(actual.length <= level1.length);
-        }
-
-        try (CloseableStream<Path> s = Files.walk(testFolder)) {
-            s.close();
-            Object[] actual = s.sorted(Comparator.naturalOrder()).toArray();
+            Object[] actual = s.sorted().toArray();
             fail("Operate on closed stream should throw IllegalStateException");
         } catch (IllegalStateException ex) {
             // expected
         }
 
-        try (CloseableStream<Path> s = Files.find(testFolder, Integer.MAX_VALUE,
+        try (Stream<Path> s = Files.walk(testFolder)) {
+            s.close();
+            Object[] actual = s.sorted().toArray();
+            fail("Operate on closed stream should throw IllegalStateException");
+        } catch (IllegalStateException ex) {
+            // expected
+        }
+
+        try (Stream<Path> s = Files.find(testFolder, Integer.MAX_VALUE,
                     (p, attr) -> true)) {
             s.close();
-            Object[] actual = s.sorted(Comparator.naturalOrder()).toArray();
+            Object[] actual = s.sorted().toArray();
             fail("Operate on closed stream should throw IllegalStateException");
         } catch (IllegalStateException ex) {
             // expected

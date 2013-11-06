@@ -43,7 +43,6 @@ import static jdk.nashorn.internal.codegen.CompilerConstants.constructorNoLookup
 import static jdk.nashorn.internal.codegen.CompilerConstants.interfaceCallNoLookup;
 import static jdk.nashorn.internal.codegen.CompilerConstants.methodDescriptor;
 import static jdk.nashorn.internal.codegen.CompilerConstants.staticCallNoLookup;
-import static jdk.nashorn.internal.codegen.CompilerConstants.staticField;
 import static jdk.nashorn.internal.codegen.CompilerConstants.typeDescriptor;
 import static jdk.nashorn.internal.codegen.CompilerConstants.virtualCallNoLookup;
 import static jdk.nashorn.internal.ir.Symbol.IS_INTERNAL;
@@ -60,7 +59,6 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Locale;
 import java.util.Set;
 import java.util.TreeMap;
 import jdk.nashorn.internal.codegen.ClassEmitter.Flag;
@@ -111,7 +109,6 @@ import jdk.nashorn.internal.ir.UnaryNode;
 import jdk.nashorn.internal.ir.VarNode;
 import jdk.nashorn.internal.ir.WhileNode;
 import jdk.nashorn.internal.ir.WithNode;
-import jdk.nashorn.internal.ir.debug.ASTWriter;
 import jdk.nashorn.internal.ir.visitor.NodeOperatorVisitor;
 import jdk.nashorn.internal.ir.visitor.NodeVisitor;
 import jdk.nashorn.internal.objects.Global;
@@ -217,12 +214,12 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
      * @param identNode an identity node to load
      * @return the method generator used
      */
-    private MethodEmitter loadIdent(final IdentNode identNode) {
+    private MethodEmitter loadIdent(final IdentNode identNode, final Type type) {
         final Symbol symbol = identNode.getSymbol();
 
         if (!symbol.isScope()) {
             assert symbol.hasSlot() || symbol.isParam();
-            return method.load(symbol);
+            return method.load(symbol).convert(type);
         }
 
         final String name   = symbol.getName();
@@ -243,11 +240,11 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
             if (isFastScope(symbol)) {
                 // Only generate shared scope getter for fast-scope symbols so we know we can dial in correct scope.
                 if (symbol.getUseCount() > SharedScopeCall.FAST_SCOPE_GET_THRESHOLD) {
-                    return loadSharedScopeVar(identNode.getType(), symbol, flags);
+                    return loadSharedScopeVar(type, symbol, flags);
                 }
-                return loadFastScopeVar(identNode.getType(), symbol, flags, identNode.isFunction());
+                return loadFastScopeVar(type, symbol, flags, identNode.isFunction());
             }
-            return method.dynamicGet(identNode.getType(), identNode.getName(), flags, identNode.isFunction());
+            return method.dynamicGet(type, identNode.getName(), flags, identNode.isFunction());
         }
     }
 
@@ -313,9 +310,9 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
         return method.dynamicGet(valueType, symbol.getName(), flags | CALLSITE_FAST_SCOPE, isMethod);
     }
 
-    private MethodEmitter storeFastScopeVar(final Type valueType, final Symbol symbol, final int flags) {
+    private MethodEmitter storeFastScopeVar(final Symbol symbol, final int flags) {
         loadFastScopeProto(symbol, true);
-        method.dynamicSet(valueType, symbol.getName(), flags | CALLSITE_FAST_SCOPE);
+        method.dynamicSet(symbol.getName(), flags | CALLSITE_FAST_SCOPE);
         return method;
     }
 
@@ -359,14 +356,58 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
      * @return the method emitter used
      */
     MethodEmitter load(final Expression node) {
-        return load(node, false);
+        return load(node, node.hasType() ? node.getType() : null, false);
     }
 
-    private MethodEmitter load(final Expression node, final boolean baseAlreadyOnStack) {
+    // Test whether conversion from source to target involves a call of ES 9.1 ToPrimitive
+    // with possible side effects from calling an object's toString or valueOf methods.
+    private boolean noToPrimitiveConversion(final Type source, final Type target) {
+        // Object to boolean conversion does not cause ToPrimitive call
+        return source.isJSPrimitive() || !target.isJSPrimitive() || target.isBoolean();
+    }
+
+    MethodEmitter loadBinaryOperands(final Expression lhs, final Expression rhs, final Type type) {
+        return loadBinaryOperands(lhs, rhs, type, false);
+    }
+
+    private MethodEmitter loadBinaryOperands(final Expression lhs, final Expression rhs, final Type type, final boolean baseAlreadyOnStack) {
+        // ECMAScript 5.1 specification (sections 11.5-11.11 and 11.13) prescribes that when evaluating a binary
+        // expression "LEFT op RIGHT", the order of operations must be: LOAD LEFT, LOAD RIGHT, CONVERT LEFT, CONVERT
+        // RIGHT, EXECUTE OP. Unfortunately, doing it in this order defeats potential optimizations that arise when we
+        // can combine a LOAD with a CONVERT operation (e.g. use a dynamic getter with the conversion target type as its
+        // return value). What we do here is reorder LOAD RIGHT and CONVERT LEFT when possible; it is possible only when
+        // we can prove that executing CONVERT LEFT can't have a side effect that changes the value of LOAD RIGHT.
+        // Basically, if we know that either LEFT already is a primitive value, or does not have to be converted to
+        // a primitive value, or RIGHT is an expression that loads without side effects, then we can do the
+        // reordering and collapse LOAD/CONVERT into a single operation; otherwise we need to do the more costly
+        // separate operations to preserve specification semantics.
+        if (noToPrimitiveConversion(lhs.getType(), type) || rhs.isLocal()) {
+            // Can reorder. Combine load and convert into single operations.
+            load(lhs, type, baseAlreadyOnStack);
+            load(rhs, type, false);
+        } else {
+            // Can't reorder. Load and convert separately.
+            load(lhs, lhs.getType(), baseAlreadyOnStack);
+            load(rhs, rhs.getType(), false);
+            method.swap().convert(type).swap().convert(type);
+        }
+
+        return method;
+    }
+
+    MethodEmitter loadBinaryOperands(final BinaryNode node) {
+        return loadBinaryOperands(node.lhs(), node.rhs(), node.getType(), false);
+    }
+
+    MethodEmitter load(final Expression node, final Type type) {
+        return load(node, type, false);
+    }
+
+    private MethodEmitter load(final Expression node, final Type type, final boolean baseAlreadyOnStack) {
         final Symbol symbol = node.getSymbol();
 
         // If we lack symbols, we just generate what we see.
-        if (symbol == null) {
+        if (symbol == null || type == null) {
             node.accept(this);
             return method;
         }
@@ -378,30 +419,30 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
          */
         final CodeGenerator codegen = this;
 
-        node.accept(new NodeVisitor<LexicalContext>(new LexicalContext()) {
+        node.accept(new NodeVisitor<LexicalContext>(lc) {
             @Override
             public boolean enterIdentNode(final IdentNode identNode) {
-                loadIdent(identNode);
+                loadIdent(identNode, type);
                 return false;
             }
 
             @Override
             public boolean enterAccessNode(final AccessNode accessNode) {
                 if (!baseAlreadyOnStack) {
-                    load(accessNode.getBase()).convert(Type.OBJECT);
+                    load(accessNode.getBase(), Type.OBJECT);
                 }
                 assert method.peekType().isObject();
-                method.dynamicGet(node.getType(), accessNode.getProperty().getName(), getCallSiteFlags(), accessNode.isFunction());
+                method.dynamicGet(type, accessNode.getProperty().getName(), getCallSiteFlags(), accessNode.isFunction());
                 return false;
             }
 
             @Override
             public boolean enterIndexNode(final IndexNode indexNode) {
                 if (!baseAlreadyOnStack) {
-                    load(indexNode.getBase()).convert(Type.OBJECT);
+                    load(indexNode.getBase(), Type.OBJECT);
                     load(indexNode.getIndex());
                 }
-                method.dynamicGetIndex(node.getType(), getCallSiteFlags(), indexNode.isFunction());
+                method.dynamicGetIndex(type, getCallSiteFlags(), indexNode.isFunction());
                 return false;
             }
 
@@ -409,14 +450,36 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
             public boolean enterFunctionNode(FunctionNode functionNode) {
                 // function nodes will always leave a constructed function object on stack, no need to load the symbol
                 // separately as in enterDefault()
+                lc.pop(functionNode);
                 functionNode.accept(codegen);
+                // NOTE: functionNode.accept() will produce a different FunctionNode that we discard. This incidentally
+                // doesn't cause problems as we're never touching FunctionNode again after it's visited here - codegen
+                // is the last element in the compilation pipeline, the AST it produces is not used externally. So, we
+                // re-push the original functionNode.
+                lc.push(functionNode);
+                method.convert(type);
                 return false;
             }
 
             @Override
+            public boolean enterCallNode(CallNode callNode) {
+                return codegen.enterCallNode(callNode, type);
+            }
+
+            @Override
+            public boolean enterLiteralNode(LiteralNode<?> literalNode) {
+                return codegen.enterLiteralNode(literalNode, type);
+            }
+
+            @Override
             public boolean enterDefault(final Node otherNode) {
+                final Node currentDiscard = codegen.lc.getCurrentDiscard();
                 otherNode.accept(codegen); // generate code for whatever we are looking at.
-                method.load(symbol); // load the final symbol to the stack (or nop if no slot, then result is already there)
+                if(currentDiscard != otherNode) {
+                    method.load(symbol); // load the final symbol to the stack (or nop if no slot, then result is already there)
+                    assert method.peekType() != null;
+                    method.convert(type);
+                }
                 return false;
             }
         });
@@ -566,11 +629,13 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
         final Type[] params = signature == null ? null : Type.getMethodArguments(signature);
         for (final Expression arg : args) {
             assert arg != null;
-            load(arg);
             if (n >= argCount) {
+                load(arg);
                 method.pop(); // we had to load the arg for its side effects
             } else if (params != null) {
-                method.convert(params[n]);
+                load(arg, params[n]);
+            } else {
+                load(arg);
             }
             n++;
         }
@@ -583,15 +648,19 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
         return argCount;
     }
 
+
     @Override
     public boolean enterCallNode(final CallNode callNode) {
+        return enterCallNode(callNode, callNode.getType());
+    }
+
+    private boolean enterCallNode(final CallNode callNode, final Type callNodeType) {
         lineNumber(callNode.getLineNumber());
 
         final List<Expression> args = callNode.getArgs();
         final Expression function = callNode.getFunction();
         final Block currentBlock = lc.getCurrentBlock();
         final CodeGeneratorLexicalContext codegenLexicalContext = lc;
-        final Type callNodeType = callNode.getType();
 
         function.accept(new NodeVisitor<LexicalContext>(new LexicalContext()) {
 
@@ -612,16 +681,14 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
             }
 
             private void scopeCall(final IdentNode node, final int flags) {
-                load(node);
-                method.convert(Type.OBJECT); // foo() makes no sense if foo == 3
+                load(node, Type.OBJECT); // Type.OBJECT as foo() makes no sense if foo == 3
                 // ScriptFunction will see CALLSITE_SCOPE and will bind scope accordingly.
                 method.loadNull(); //the 'this'
                 method.dynamicCall(callNodeType, 2 + loadArgs(args), flags);
             }
 
             private void evalCall(final IdentNode node, final int flags) {
-                load(node);
-                method.convert(Type.OBJECT); // foo() makes no sense if foo == 3
+                load(node, Type.OBJECT); // Type.OBJECT as foo() makes no sense if foo == 3
 
                 final Label not_eval  = new Label("not_eval");
                 final Label eval_done = new Label("eval_done");
@@ -638,8 +705,13 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
 
                 final CallNode.EvalArgs evalArgs = callNode.getEvalArgs();
                 // load evaluated code
-                load(evalArgs.getCode());
-                method.convert(Type.OBJECT);
+                load(evalArgs.getCode(), Type.OBJECT);
+                // load second and subsequent args for side-effect
+                final List<Expression> args = callNode.getArgs();
+                final int numArgs = args.size();
+                for (int i = 1; i < numArgs; i++) {
+                    load(args.get(i)).pop();
+                }
                 // special/extra 'eval' arguments
                 load(evalArgs.getThis());
                 method.load(evalArgs.getLocation());
@@ -690,13 +762,11 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
 
             @Override
             public boolean enterAccessNode(final AccessNode node) {
-                load(node.getBase());
-                method.convert(Type.OBJECT);
+                load(node.getBase(), Type.OBJECT);
                 method.dup();
                 method.dynamicGet(node.getType(), node.getProperty().getName(), getCallSiteFlags(), true);
                 method.swap();
                 method.dynamicCall(callNodeType, 2 + loadArgs(args), getCallSiteFlags());
-                assert method.peekType().equals(callNodeType);
 
                 return false;
             }
@@ -727,18 +797,17 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
 
             @Override
             public boolean enterIndexNode(final IndexNode node) {
-                load(node.getBase());
-                method.convert(Type.OBJECT);
+                load(node.getBase(), Type.OBJECT);
                 method.dup();
-                load(node.getIndex());
                 final Type indexType = node.getIndex().getType();
                 if (indexType.isObject() || indexType.isBoolean()) {
-                    method.convert(Type.OBJECT); //TODO
+                    load(node.getIndex(), Type.OBJECT); //TODO
+                } else {
+                    load(node.getIndex());
                 }
                 method.dynamicGetIndex(node.getType(), getCallSiteFlags(), true);
                 method.swap();
                 method.dynamicCall(callNodeType, 2 + loadArgs(args), getCallSiteFlags());
-                assert method.peekType().equals(callNode.getType());
 
                 return false;
             }
@@ -746,11 +815,9 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
             @Override
             protected boolean enterDefault(final Node node) {
                 // Load up function.
-                load(function);
-                method.convert(Type.OBJECT); //TODO, e.g. booleans can be used as functions
+                load(function, Type.OBJECT); //TODO, e.g. booleans can be used as functions
                 method.loadNull(); // ScriptFunction will figure out the correct this when it sees CALLSITE_SCOPE
                 method.dynamicCall(callNodeType, 2 + loadArgs(args), getCallSiteFlags() | CALLSITE_SCOPE);
-                assert method.peekType().equals(callNode.getType());
 
                 return false;
             }
@@ -852,10 +919,8 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
         final Label  loopLabel = new Label("loop");
 
         final Expression init = forNode.getInit();
-        assert init instanceof IdentNode;
 
-        load(modify);
-        assert modify.getType().isObject();
+        load(modify, Type.OBJECT);
         method.invoke(forNode.isForEach() ? ScriptRuntime.TO_VALUE_ITERATOR : ScriptRuntime.TO_PROPERTY_ITERATOR);
         method.store(iter);
         method._goto(forNode.getContinueLabel());
@@ -1204,8 +1269,7 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
         if (element == null) {
             method.loadEmpty(elementType);
         } else {
-            assert elementType.isEquivalentTo(element.getType()) : "array element type doesn't match array type";
-            load(element);
+            load(element, elementType);
         }
 
         method.arraystore();
@@ -1218,7 +1282,7 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
         for (int i = 0; i < args.size(); i++) {
             method.dup();
             method.load(i);
-            load(args.get(i)).convert(Type.OBJECT); //has to be upcast to object or we fail
+            load(args.get(i), Type.OBJECT); //has to be upcast to object or we fail
             method.arraystore();
         }
 
@@ -1275,7 +1339,7 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
     }
 
     // literal values
-    private MethodEmitter load(final LiteralNode<?> node) {
+    private MethodEmitter loadLiteral(final LiteralNode<?> node, final Type type) {
         final Object value = node.getValue();
 
         if (value == null) {
@@ -1295,15 +1359,26 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
         } else if (value instanceof Boolean) {
             method.load((Boolean)value);
         } else if (value instanceof Integer) {
-            method.load((Integer)value);
+            if(type.isEquivalentTo(Type.NUMBER)) {
+                method.load(((Integer)value).doubleValue());
+            } else if(type.isEquivalentTo(Type.LONG)) {
+                method.load(((Integer)value).longValue());
+            } else {
+                method.load((Integer)value);
+            }
         } else if (value instanceof Long) {
-            method.load((Long)value);
+            if(type.isEquivalentTo(Type.NUMBER)) {
+                method.load(((Long)value).doubleValue());
+            } else {
+                method.load((Long)value);
+            }
         } else if (value instanceof Double) {
             method.load((Double)value);
         } else if (node instanceof ArrayLiteralNode) {
-            final ArrayType type = (ArrayType)node.getType();
-            loadArray((ArrayLiteralNode)node, type);
-            globalAllocateArray(type);
+            final ArrayLiteralNode arrayLiteral = (ArrayLiteralNode)node;
+            final ArrayType atype = arrayLiteral.getArrayType();
+            loadArray(arrayLiteral, atype);
+            globalAllocateArray(atype);
         } else {
             assert false : "Unknown literal for " + node.getClass() + " " + value.getClass() + " " + value;
         }
@@ -1347,8 +1422,12 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
 
     @Override
     public boolean enterLiteralNode(final LiteralNode<?> literalNode) {
+        return enterLiteralNode(literalNode, literalNode.getType());
+    }
+
+    private boolean enterLiteralNode(final LiteralNode<?> literalNode, final Type type) {
         assert literalNode.getSymbol() != null : literalNode + " has no symbol";
-        load(literalNode).store(literalNode.getSymbol());
+        loadLiteral(literalNode, type).convert(type).store(literalNode.getSymbol());
         return false;
     }
 
@@ -1361,6 +1440,7 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
         final List<Expression> values  = new ArrayList<>();
 
         boolean hasGettersSetters = false;
+        Expression protoNode = null;
 
         for (PropertyNode propertyNode: elements) {
             final Expression   value        = propertyNode.getValue();
@@ -1369,6 +1449,9 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
 
             if (value == null) {
                 hasGettersSetters = true;
+            } else if (key.equals(ScriptObject.PROTO_PROPERTY_NAME)) {
+                protoNode = value;
+                continue;
             }
 
             keys.add(key);
@@ -1410,8 +1493,13 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
         }
 
         method.dup();
-        globalObjectPrototype();
-        method.invoke(ScriptObject.SET_PROTO);
+        if (protoNode != null) {
+            load(protoNode);
+            method.invoke(ScriptObject.SET_PROTO_CHECK);
+        } else {
+            globalObjectPrototype();
+            method.invoke(ScriptObject.SET_PROTO);
+        }
 
         if (hasGettersSetters) {
             for (final PropertyNode propertyNode : elements) {
@@ -1614,10 +1702,8 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
                 return enterCmp(lhs, rhs, Condition.GT, type, symbol);
             case ADD:
                 Type widest = Type.widest(lhs.getType(), rhs.getType());
-                load(lhs);
-                method.convert(widest);
-                load(rhs);
-                method.convert(widest);
+                load(lhs, widest);
+                load(rhs, widest);
                 method.add();
                 method.convert(type);
                 method.store(symbol);
@@ -1630,15 +1716,15 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
         }
 
         if (nullCheck(runtimeNode, args, new FunctionSignature(false, false, runtimeNode.getType(), args).toString())) {
-            return false;
+           return false;
         }
 
         if (!runtimeNode.isFinal() && specializationCheck(runtimeNode.getRequest(), runtimeNode, args)) {
-            return false;
+           return false;
         }
 
         for (final Expression arg : args) {
-            load(arg).convert(Type.OBJECT); //TODO this should not be necessary below Lower
+            load(arg, Type.OBJECT);
         }
 
         method.invokestatic(
@@ -1819,6 +1905,8 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
         }
 
         if (cases.isEmpty()) {
+            // still evaluate expression for side-effects.
+            load(expression).pop();
             method.label(breakLabel);
             return false;
         }
@@ -1893,24 +1981,15 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
                 method.lookupswitch(defaultLabel, ints, labels);
             }
         } else {
-            load(expression);
-
-            if (expression.getType().isInteger()) {
-                method.convert(Type.NUMBER).dup();
-                method.store(tag);
-                method.conditionalJump(Condition.NE, true, defaultLabel);
-            } else {
-                assert tag.getSymbolType().isObject();
-                method.convert(Type.OBJECT); //e.g. 1 literal pushed and tag is object
-                method.store(tag);
-            }
+            load(expression, Type.OBJECT);
+            method.store(tag);
 
             for (final CaseNode caseNode : cases) {
                 final Expression test = caseNode.getTest();
 
                 if (test != null) {
                     method.load(tag);
-                    load(test);
+                    load(test, Type.OBJECT);
                     method.invoke(ScriptRuntime.EQ_STRICT);
                     method.ifne(caseNode.getEntry());
                 }
@@ -1948,11 +2027,10 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
 
         final Expression expression = throwNode.getExpression();
         final int        position   = throwNode.position();
-        final int        line       = source.getLine(position);
+        final int        line       = throwNode.getLineNumber();
         final int        column     = source.getColumn(position);
 
-        load(expression);
-        assert expression.getType().isObject();
+        load(expression, Type.OBJECT);
 
         method.load(source.getName());
         method.load(line);
@@ -2032,7 +2110,7 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
 
             if (exceptionCondition != null) {
                 next = new Label("next");
-                load(exceptionCondition).convert(Type.BOOLEAN).ifeq(next);
+                load(exceptionCondition, Type.BOOLEAN).ifeq(next);
             } else {
                 next = null;
             }
@@ -2077,29 +2155,28 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
 
         lineNumber(varNode);
 
-        final Symbol varSymbol = varNode.getName().getSymbol();
-        assert varSymbol != null : "variable node " + varNode + " requires a name with a symbol";
+        final IdentNode identNode = varNode.getName();
+        final Symbol identSymbol = identNode.getSymbol();
+        assert identSymbol != null : "variable node " + varNode + " requires a name with a symbol";
 
         assert method != null;
 
-        final boolean needsScope = varSymbol.isScope();
+        final boolean needsScope = identSymbol.isScope();
         if (needsScope) {
             method.loadCompilerConstant(SCOPE);
         }
-        load(init);
 
         if (needsScope) {
+            load(init);
             int flags = CALLSITE_SCOPE | getCallSiteFlags();
-            final IdentNode identNode = varNode.getName();
-            final Type type = identNode.getType();
-            if (isFastScope(varSymbol)) {
-                storeFastScopeVar(type, varSymbol, flags);
+            if (isFastScope(identSymbol)) {
+                storeFastScopeVar(identSymbol, flags);
             } else {
-                method.dynamicSet(type, identNode.getName(), flags);
+                method.dynamicSet(identNode.getName(), flags);
             }
         } else {
-            method.convert(varNode.getName().getType()); // aw: convert moved here
-            method.store(varSymbol);
+            load(init, identNode.getType());
+            method.store(identSymbol);
         }
 
         return false;
@@ -2158,16 +2235,16 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
             tryLabel = null;
         }
 
-        load(expression);
-        assert expression.getType().isObject() : "with expression needs to be object: " + expression;
+        load(expression, Type.OBJECT);
 
         if (hasScope) {
             // Construct a WithObject if we have a scope
             method.invoke(ScriptRuntime.OPEN_WITH);
             method.storeCompilerConstant(SCOPE);
         } else {
-            // We just loaded the expression for its side effect; discard it
-            method.pop();
+            // We just loaded the expression for its side effect and to check
+            // for null or undefined value.
+            globalCheckObjectCoercible();
         }
 
 
@@ -2200,54 +2277,15 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
 
     @Override
     public boolean enterADD(final UnaryNode unaryNode) {
-        load(unaryNode.rhs());
-        assert unaryNode.rhs().getType().isNumber() : unaryNode.rhs().getType() + " "+ unaryNode.getSymbol();
+        load(unaryNode.rhs(), unaryNode.getType());
+        assert unaryNode.getType().isNumeric();
         method.store(unaryNode.getSymbol());
-
         return false;
     }
 
     @Override
     public boolean enterBIT_NOT(final UnaryNode unaryNode) {
-        load(unaryNode.rhs()).convert(Type.INT).load(-1).xor().store(unaryNode.getSymbol());
-        return false;
-    }
-
-    // do this better with convert calls to method. TODO
-    @Override
-    public boolean enterCONVERT(final UnaryNode unaryNode) {
-        final Expression rhs = unaryNode.rhs();
-        final Type to  = unaryNode.getType();
-
-        if (to.isObject() && rhs instanceof LiteralNode) {
-            final LiteralNode<?> literalNode = (LiteralNode<?>)rhs;
-            final Object value = literalNode.getValue();
-
-            if (value instanceof Number) {
-                assert !to.isArray() : "type hygiene - cannot convert number to array: (" + to.getTypeClass().getSimpleName() + ')' + value;
-                if (value instanceof Integer) {
-                    method.load((Integer)value);
-                } else if (value instanceof Long) {
-                    method.load((Long)value);
-                } else if (value instanceof Double) {
-                    method.load((Double)value);
-                } else {
-                    assert false;
-                }
-                method.convert(Type.OBJECT);
-            } else if (value instanceof Boolean) {
-                method.getField(staticField(Boolean.class, value.toString().toUpperCase(Locale.ENGLISH), Boolean.class));
-            } else {
-                load(rhs);
-                method.convert(unaryNode.getType());
-            }
-        } else {
-            load(rhs);
-            method.convert(unaryNode.getType());
-        }
-
-        method.store(unaryNode.getSymbol());
-
+        load(unaryNode.rhs(), Type.INT).load(-1).xor().store(unaryNode.getSymbol());
         return false;
     }
 
@@ -2265,9 +2303,7 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
 
             @Override
             protected void evaluate() {
-                load(rhs, true);
-
-                method.convert(type);
+                load(rhs, type, true);
                 if (!isPostfix) {
                     if (type.isInteger()) {
                         method.load(isIncrement ? 1 : -1);
@@ -2321,7 +2357,7 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
         final List<Expression> args   = callNode.getArgs();
 
         // Load function reference.
-        load(callNode.getFunction()).convert(Type.OBJECT); // must detect type error
+        load(callNode.getFunction(), Type.OBJECT); // must detect type error
 
         method.dynamicNew(1 + loadArgs(args), getCallSiteFlags());
         method.store(unaryNode.getSymbol());
@@ -2333,12 +2369,11 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
     public boolean enterNOT(final UnaryNode unaryNode) {
         final Expression rhs = unaryNode.rhs();
 
-        load(rhs);
+        load(rhs, Type.BOOLEAN);
 
         final Label trueLabel  = new Label("true");
         final Label afterLabel = new Label("after");
 
-        method.convert(Type.BOOLEAN);
         method.ifne(trueLabel);
         method.load(true);
         method._goto(afterLabel);
@@ -2352,8 +2387,8 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
 
     @Override
     public boolean enterSUB(final UnaryNode unaryNode) {
-        load(unaryNode.rhs()).neg().store(unaryNode.getSymbol());
-
+        assert unaryNode.getType().isNumeric();
+        load(unaryNode.rhs(), unaryNode.getType()).neg().store(unaryNode.getSymbol());
         return false;
     }
 
@@ -2366,9 +2401,7 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
     }
 
     private void enterNumericAdd(final Expression lhs, final Expression rhs, final Type type, final Symbol symbol) {
-        assert lhs.getType().equals(rhs.getType()) && lhs.getType().equals(type) : lhs.getType() + " != " + rhs.getType() + " != " + type + " " + new ASTWriter(lhs) + " " + new ASTWriter(rhs);
-        load(lhs);
-        load(rhs);
+        loadBinaryOperands(lhs, rhs, type);
         method.add(); //if the symbol is optimistic, it always needs to be written, not on the stack?
         method.store(symbol);
     }
@@ -2382,8 +2415,7 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
         if (type.isNumeric()) {
             enterNumericAdd(lhs, rhs, type, binaryNode.getSymbol());
         } else {
-            load(lhs).convert(Type.OBJECT);
-            load(rhs).convert(Type.OBJECT);
+            loadBinaryOperands(binaryNode);
             method.add();
             method.store(binaryNode.getSymbol());
         }
@@ -2397,7 +2429,7 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
 
         final Label skip = new Label("skip");
 
-        load(lhs).convert(Type.OBJECT).dup().convert(Type.BOOLEAN);
+        load(lhs, Type.OBJECT).dup().convert(Type.BOOLEAN);
 
         if (binaryNode.tokenType() == TokenType.AND) {
             method.ifeq(skip);
@@ -2406,7 +2438,7 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
         }
 
         method.pop();
-        load(rhs).convert(Type.OBJECT);
+        load(rhs, Type.OBJECT);
         method.label(skip);
         method.store(binaryNode.getSymbol());
 
@@ -2428,13 +2460,16 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
 
         if (!lhsType.isEquivalentTo(rhsType)) {
             //this is OK if scoped, only locals are wrong
-            assert !(lhs instanceof IdentNode) || lhs.getSymbol().isScope() : new ASTWriter(binaryNode);
         }
 
         new Store<BinaryNode>(binaryNode, lhs) {
             @Override
             protected void evaluate() {
-                load(rhs);
+                if ((lhs instanceof IdentNode) && !lhs.getSymbol().isScope()) {
+                    load(rhs, lhsType);
+                } else {
+                    load(rhs);
+                }
             }
         }.store();
 
@@ -2473,8 +2508,7 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
 
         @Override
         protected void evaluate() {
-            load(assignNode.lhs(), true).convert(opType);
-            load(assignNode.rhs()).convert(opType);
+            loadBinaryOperands(assignNode.lhs(), assignNode.rhs(), opType, true);
             op();
             method.convert(assignNode.getType());
         }
@@ -2645,8 +2679,7 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
         protected abstract void op();
 
         protected void evaluate(final BinaryNode node) {
-            load(node.lhs());
-            load(node.rhs());
+            loadBinaryOperands(node);
             op();
             method.store(node.getSymbol());
         }
@@ -2728,11 +2761,7 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
         final Type widest = Type.widest(lhsType, rhsType);
         assert widest.isNumeric() || widest.isBoolean() : widest;
 
-        load(lhs);
-        method.convert(widest);
-        load(rhs);
-        method.convert(widest);
-
+        loadBinaryOperands(lhs, rhs, widest);
         final Label trueLabel  = new Label("trueLabel");
         final Label afterLabel = new Label("skip");
 
@@ -2851,6 +2880,12 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
     public boolean enterSHR(final BinaryNode binaryNode) {
         new BinaryArith() {
             @Override
+            protected void evaluate(final BinaryNode node) {
+                loadBinaryOperands(node.lhs(), node.rhs(), Type.INT);
+                op();
+                method.store(node.getSymbol());
+            }
+            @Override
             protected void op() {
                 method.shr();
                 method.convert(Type.LONG).load(JSType.MAX_UINT).and();
@@ -2882,26 +2917,22 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
         final Label  falseLabel = new Label("ternary_false");
         final Label  exitLabel  = new Label("ternary_exit");
 
-        Type widest = Type.widest(trueExpr.getType(), falseExpr.getType());
+        Type widest = Type.widest(ternaryNode.getType(), Type.widest(trueExpr.getType(), falseExpr.getType()));
         if (trueExpr.getType().isArray() || falseExpr.getType().isArray()) { //loadArray creates a Java array type on the stack, calls global allocate, which creates a native array type
             widest = Type.OBJECT;
         }
 
-        load(test);
-        assert test.getType().isBoolean() : "lhs in ternary must be boolean";
-
+        load(test, Type.BOOLEAN);
         // we still keep the conversion here as the AccessSpecializer can have separated the types, e.g. var y = x ? x=55 : 17
         // will left as (Object)x=55 : (Object)17 by Lower. Then the first term can be {I}x=55 of type int, which breaks the
         // symmetry for the temporary slot for this TernaryNode. This is evidence that we assign types and explicit conversions
-        // to early, or Apply the AccessSpecializer too late. We are mostly probably looking for a separate type pass to
+        // too early, or Apply the AccessSpecializer too late. We are mostly probably looking for a separate type pass to
         // do this property. Then we never need any conversions in CodeGenerator
         method.ifeq(falseLabel);
-        load(trueExpr);
-        method.convert(widest);
+        load(trueExpr, widest);
         method._goto(exitLabel);
         method.label(falseLabel);
-        load(falseExpr);
-        method.convert(widest);
+        load(falseExpr, widest);
         method.label(exitLabel);
         method.store(symbol);
 
@@ -3033,8 +3064,7 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
                     final BaseNode   baseNode = (BaseNode)target;
                     final Expression base     = baseNode.getBase();
 
-                    load(base);
-                    method.convert(Type.OBJECT);
+                    load(base, Type.OBJECT);
                     depth += Type.OBJECT.getSlots();
 
                     if (isSelfModifying()) {
@@ -3053,10 +3083,11 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
                     enterBaseNode();
 
                     final Expression index = node.getIndex();
-                    // could be boolean here as well
-                    load(index);
                     if (!index.getType().isNumeric()) {
-                        method.convert(Type.OBJECT);
+                        // could be boolean here as well
+                        load(index, Type.OBJECT);
+                    } else {
+                        load(index);
                     }
                     depth += index.getType().getSlots();
 
@@ -3125,20 +3156,10 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
              * need to do a conversion on non-equivalent types exists, but is
              * very rare. See for example test/script/basic/access-specializer.js
              */
-            method.convert(target.getType());
-
             target.accept(new NodeVisitor<LexicalContext>(new LexicalContext()) {
                 @Override
                 protected boolean enterDefault(Node node) {
                     throw new AssertionError("Unexpected node " + node + " in store epilogue");
-                }
-
-                @Override
-                public boolean enterUnaryNode(final UnaryNode node) {
-                    if (node.tokenType() == TokenType.CONVERT && node.getSymbol() != null) {
-                        method.convert(node.rhs().getType());
-                    }
-                    return true;
                 }
 
                 @Override
@@ -3147,11 +3168,12 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
                     assert symbol != null;
                     if (symbol.isScope()) {
                         if (isFastScope(symbol)) {
-                            storeFastScopeVar(node.getType(), symbol, CALLSITE_SCOPE | getCallSiteFlags());
+                            storeFastScopeVar(symbol, CALLSITE_SCOPE | getCallSiteFlags());
                         } else {
-                            method.dynamicSet(node.getType(), node.getName(), CALLSITE_SCOPE | getCallSiteFlags());
+                            method.dynamicSet(node.getName(), CALLSITE_SCOPE | getCallSiteFlags());
                         }
                     } else {
+                        method.convert(node.getType());
                         method.store(symbol);
                     }
                     return false;
@@ -3160,7 +3182,7 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
 
                 @Override
                 public boolean enterAccessNode(final AccessNode node) {
-                    method.dynamicSet(node.getProperty().getType(), node.getProperty().getName(), getCallSiteFlags());
+                    method.dynamicSet(node.getProperty().getName(), getCallSiteFlags());
                     return false;
                 }
 
@@ -3247,6 +3269,10 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
 
     private MethodEmitter globalIsEval() {
         return method.invokestatic(GLOBAL_OBJECT, "isEval", methodDescriptor(boolean.class, Object.class));
+    }
+
+    private MethodEmitter globalCheckObjectCoercible() {
+        return method.invokestatic(GLOBAL_OBJECT, "checkObjectCoercible", methodDescriptor(void.class, Object.class));
     }
 
     private MethodEmitter globalDirectEval() {

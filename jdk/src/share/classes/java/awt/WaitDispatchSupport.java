@@ -224,8 +224,8 @@ class WaitDispatchSupport implements SecondaryLoop {
             // starts. Thus, the enter() method will not hang.
             //
             // Event pump should be privileged. See 6300270.
-            AccessController.doPrivileged(new PrivilegedAction() {
-                public Object run() {
+            AccessController.doPrivileged(new PrivilegedAction<Void>() {
+                public Void run() {
                     run.run();
                     return null;
                 }

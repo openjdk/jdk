@@ -32,7 +32,7 @@ import java.util.EventListener;
   * a node.
   * For further documentation and examples see
   * <a
-  href="http://java.sun.com/docs/books/tutorial/uiswing/events/treeexpansionlistener.html">How to Write a Tree Expansion Listener</a>,
+  href="http://docs.oracle.com/javase/tutorial/uiswing/events/treeexpansionlistener.html">How to Write a Tree Expansion Listener</a>,
   * a section in <em>The Java Tutorial.</em>
   *
   * @author Scott Violet

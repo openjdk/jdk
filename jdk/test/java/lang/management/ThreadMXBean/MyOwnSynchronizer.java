@@ -30,7 +30,7 @@
  *
  * @build Barrier
  * @build ThreadDump
- * @run main MyOwnSynchronizer
+ * @run main/othervm MyOwnSynchronizer
  */
 
 import java.lang.management.*;

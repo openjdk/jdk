@@ -41,7 +41,7 @@ import sun.swing.UIAction;
 /**
  * Basic UI implementation for JComboBox.
  * <p>
- * The combo box is a compound component which means that it is an agregate of
+ * The combo box is a compound component which means that it is an aggregate of
  * many simpler components. This class creates and manages the listeners
  * on the combo box and the combo box model. These listeners update the user
  * interface in response to changes in the properties and state of the combo box.
@@ -54,8 +54,7 @@ import sun.swing.UIAction;
  * <p>
  * For adding specific actions,
  * overide <code>installKeyboardActions</code> to add actions in response to
- * KeyStroke bindings. See the article <a href="http://java.sun.com/products/jfc/tsc/special_report/kestrel/keybindings.html">Keyboard Bindings in Swing</a>
- * at <a href="http://java.sun.com/products/jfc/tsc"><em>The Swing Connection</em></a>.
+ * KeyStroke bindings. See the article <a href="http://docs.oracle.com/javase/tutorial/uiswing/misc/keybinding.html">How to Use Key Bindings</a>
  *
  * @author Arnaud Weber
  * @author Tom Santos
@@ -706,7 +705,7 @@ public class BasicComboBoxUI extends ComboBoxUI {
     }
 
     /**
-     * The aggregate components which compise the combo box are
+     * The aggregate components which comprise the combo box are
      * unregistered and uninitialized. This method is called as part of the
      * UI uninstallation process.
      */
@@ -912,7 +911,7 @@ public class BasicComboBoxUI extends ComboBoxUI {
     }
 
     /**
-     * The minumum size is the size of the display area plus insets plus the button.
+     * The minimum size is the size of the display area plus insets plus the button.
      */
     @Override
     public Dimension getMinimumSize( JComponent c ) {
@@ -971,14 +970,16 @@ public class BasicComboBoxUI extends ComboBoxUI {
                     // cells, if not, this needs to loop through all.
                     value = comboBox.getModel().getElementAt(0);
                 }
-                if (value == null) {
-                    value = " ";
-                } else if (value instanceof String && "".equals(value)) {
-                    value = " ";
-                }
                 Component component = renderer.
                         getListCellRendererComponent(listBox, value, -1,
                                                      false, false);
+                if (component instanceof JLabel) {
+                    JLabel label = (JLabel) component;
+                    String text = label.getText();
+                    if ((text == null) || text.isEmpty()) {
+                        label.setText(" ");
+                    }
+                }
                 if (component instanceof JComponent) {
                     component.setFont(comboBox.getFont());
                 }

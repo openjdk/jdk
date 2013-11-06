@@ -74,11 +74,13 @@ public abstract class CompilerWhiteBoxTest {
     protected static final int THRESHOLD;
     /** count of invocation to triger OSR compilation */
     protected static final long BACKEDGE_THRESHOLD;
+    /** Value of {@code java.vm.info} (interpreted|mixed|comp mode) */
+    protected static final String MODE
+            = System.getProperty("java.vm.info");
 
     static {
         if (TIERED_COMPILATION) {
-            THRESHOLD = 150000;
-            BACKEDGE_THRESHOLD = 0xFFFFFFFFL;
+            BACKEDGE_THRESHOLD = THRESHOLD = 150000;
         } else {
             THRESHOLD = COMPILE_THRESHOLD;
             BACKEDGE_THRESHOLD = COMPILE_THRESHOLD * Long.parseLong(getVMOption(
@@ -202,7 +204,7 @@ public abstract class CompilerWhiteBoxTest {
         if (WHITE_BOX.getMethodCompilationLevel(method, true) != 0) {
             throw new RuntimeException(method + " osr_comp_level must be == 0");
         }
-    }
+   }
 
     /**
      * Checks, that {@linkplain #method} is compiled.
@@ -361,7 +363,7 @@ enum TestCase {
     /** OSR constructor test case */
     OSR_CONSTRUCTOR_TEST(Helper.OSR_CONSTRUCTOR,
             Helper.OSR_CONSTRUCTOR_CALLABLE, true),
-     /** OSR method test case */
+    /** OSR method test case */
     OSR_METOD_TEST(Helper.OSR_METHOD, Helper.OSR_METHOD_CALLABLE, true),
     /** OSR static method test case */
     OSR_STATIC_TEST(Helper.OSR_STATIC, Helper.OSR_STATIC_CALLABLE, true);
@@ -370,7 +372,7 @@ enum TestCase {
     final Executable executable;
     /** object to invoke {@linkplain #executable} */
     final Callable<Integer> callable;
-   /** flag for OSR test case */
+    /** flag for OSR test case */
     final boolean isOsr;
 
     private TestCase(Executable executable, Callable<Integer> callable,

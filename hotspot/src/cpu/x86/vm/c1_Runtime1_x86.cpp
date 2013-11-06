@@ -38,6 +38,9 @@
 #include "runtime/vframeArray.hpp"
 #include "utilities/macros.hpp"
 #include "vmreg_x86.inline.hpp"
+#if INCLUDE_ALL_GCS
+#include "gc_implementation/g1/g1SATBCardTableModRefBS.hpp"
+#endif
 
 
 // Implementation of StubAssembler
@@ -1499,6 +1502,13 @@ OopMapSet* Runtime1::generate_code_for(StubID id, StubAssembler* sasm) {
       }
       break;
 
+    case load_appendix_patching_id:
+      { StubFrame f(sasm, "load_appendix_patching", dont_gc_arguments);
+        // we should set up register map
+        oop_maps = generate_patching(sasm, CAST_FROM_FN_PTR(address, move_appendix_patching));
+      }
+      break;
+
     case dtrace_object_alloc_id:
       { // rax,: object
         StubFrame f(sasm, "dtrace_object_alloc", dont_gc_arguments);
@@ -1746,13 +1756,17 @@ OopMapSet* Runtime1::generate_code_for(StubID id, StubAssembler* sasm) {
         __ leal(card_addr, __ as_Address(ArrayAddress(cardtable, index)));
 #endif
 
-        __ cmpb(Address(card_addr, 0), 0);
+        __ cmpb(Address(card_addr, 0), (int)G1SATBCardTableModRefBS::g1_young_card_val());
+        __ jcc(Assembler::equal, done);
+
+        __ membar(Assembler::Membar_mask_bits(Assembler::StoreLoad));
+        __ cmpb(Address(card_addr, 0), (int)CardTableModRefBS::dirty_card_val());
         __ jcc(Assembler::equal, done);
 
         // storing region crossing non-NULL, card is clean.
         // dirty card and log.
 
-        __ movb(Address(card_addr, 0), 0);
+        __ movb(Address(card_addr, 0), (int)CardTableModRefBS::dirty_card_val());
 
         __ cmpl(queue_index, 0);
         __ jcc(Assembler::equal, runtime);

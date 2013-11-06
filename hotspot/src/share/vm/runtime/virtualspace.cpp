@@ -371,8 +371,15 @@ VirtualSpace::VirtualSpace() {
 
 
 bool VirtualSpace::initialize(ReservedSpace rs, size_t committed_size) {
+  const size_t max_commit_granularity = os::page_size_for_region(rs.size(), rs.size(), 1);
+  return initialize_with_granularity(rs, committed_size, max_commit_granularity);
+}
+
+bool VirtualSpace::initialize_with_granularity(ReservedSpace rs, size_t committed_size, size_t max_commit_granularity) {
   if(!rs.is_reserved()) return false;  // allocation failed.
   assert(_low_boundary == NULL, "VirtualSpace already initialized");
+  assert(max_commit_granularity > 0, "Granularity must be non-zero.");
+
   _low_boundary  = rs.base();
   _high_boundary = low_boundary() + rs.size();
 
@@ -393,7 +400,7 @@ bool VirtualSpace::initialize(ReservedSpace rs, size_t committed_size) {
   // No attempt is made to force large page alignment at the very top and
   // bottom of the space if they are not aligned so already.
   _lower_alignment  = os::vm_page_size();
-  _middle_alignment = os::page_size_for_region(rs.size(), rs.size(), 1);
+  _middle_alignment = max_commit_granularity;
   _upper_alignment  = os::vm_page_size();
 
   // End of each region
@@ -454,6 +461,42 @@ size_t VirtualSpace::reserved_size() const {
 
 size_t VirtualSpace::uncommitted_size()  const {
   return reserved_size() - committed_size();
+}
+
+size_t VirtualSpace::actual_committed_size() const {
+  // Special VirtualSpaces commit all reserved space up front.
+  if (special()) {
+    return reserved_size();
+  }
+
+  size_t committed_low    = pointer_delta(_lower_high,  _low_boundary,         sizeof(char));
+  size_t committed_middle = pointer_delta(_middle_high, _lower_high_boundary,  sizeof(char));
+  size_t committed_high   = pointer_delta(_upper_high,  _middle_high_boundary, sizeof(char));
+
+#ifdef ASSERT
+  size_t lower  = pointer_delta(_lower_high_boundary,  _low_boundary,         sizeof(char));
+  size_t middle = pointer_delta(_middle_high_boundary, _lower_high_boundary,  sizeof(char));
+  size_t upper  = pointer_delta(_upper_high_boundary,  _middle_high_boundary, sizeof(char));
+
+  if (committed_high > 0) {
+    assert(committed_low == lower, "Must be");
+    assert(committed_middle == middle, "Must be");
+  }
+
+  if (committed_middle > 0) {
+    assert(committed_low == lower, "Must be");
+  }
+  if (committed_middle < middle) {
+    assert(committed_high == 0, "Must be");
+  }
+
+  if (committed_low < lower) {
+    assert(committed_high == 0, "Must be");
+    assert(committed_middle == 0, "Must be");
+  }
+#endif
+
+  return committed_low + committed_middle + committed_high;
 }
 
 
@@ -721,16 +764,19 @@ void VirtualSpace::check_for_contiguity() {
   assert(high() <= upper_high(), "upper high");
 }
 
-void VirtualSpace::print() {
-  tty->print   ("Virtual space:");
-  if (special()) tty->print(" (pinned in memory)");
-  tty->cr();
-  tty->print_cr(" - committed: " SIZE_FORMAT, committed_size());
-  tty->print_cr(" - reserved:  " SIZE_FORMAT, reserved_size());
-  tty->print_cr(" - [low, high]:     [" INTPTR_FORMAT ", " INTPTR_FORMAT "]",  low(), high());
-  tty->print_cr(" - [low_b, high_b]: [" INTPTR_FORMAT ", " INTPTR_FORMAT "]",  low_boundary(), high_boundary());
+void VirtualSpace::print_on(outputStream* out) {
+  out->print   ("Virtual space:");
+  if (special()) out->print(" (pinned in memory)");
+  out->cr();
+  out->print_cr(" - committed: " SIZE_FORMAT, committed_size());
+  out->print_cr(" - reserved:  " SIZE_FORMAT, reserved_size());
+  out->print_cr(" - [low, high]:     [" INTPTR_FORMAT ", " INTPTR_FORMAT "]",  low(), high());
+  out->print_cr(" - [low_b, high_b]: [" INTPTR_FORMAT ", " INTPTR_FORMAT "]",  low_boundary(), high_boundary());
 }
 
+void VirtualSpace::print() {
+  print_on(tty);
+}
 
 /////////////// Unit tests ///////////////
 
@@ -911,6 +957,178 @@ class TestReservedSpace : AllStatic {
 
 void TestReservedSpace_test() {
   TestReservedSpace::test_reserved_space();
+}
+
+#define assert_equals(actual, expected)     \
+  assert(actual == expected,                \
+    err_msg("Got " SIZE_FORMAT " expected " \
+      SIZE_FORMAT, actual, expected));
+
+#define assert_ge(value1, value2)                  \
+  assert(value1 >= value2,                         \
+    err_msg("'" #value1 "': " SIZE_FORMAT " '"     \
+      #value2 "': " SIZE_FORMAT, value1, value2));
+
+#define assert_lt(value1, value2)                  \
+  assert(value1 < value2,                          \
+    err_msg("'" #value1 "': " SIZE_FORMAT " '"     \
+      #value2 "': " SIZE_FORMAT, value1, value2));
+
+
+class TestVirtualSpace : AllStatic {
+  enum TestLargePages {
+    Default,
+    Disable,
+    Reserve,
+    Commit
+  };
+
+  static ReservedSpace reserve_memory(size_t reserve_size_aligned, TestLargePages mode) {
+    switch(mode) {
+    default:
+    case Default:
+    case Reserve:
+      return ReservedSpace(reserve_size_aligned);
+    case Disable:
+    case Commit:
+      return ReservedSpace(reserve_size_aligned,
+                           os::vm_allocation_granularity(),
+                           /* large */ false, /* exec */ false);
+    }
+  }
+
+  static bool initialize_virtual_space(VirtualSpace& vs, ReservedSpace rs, TestLargePages mode) {
+    switch(mode) {
+    default:
+    case Default:
+    case Reserve:
+      return vs.initialize(rs, 0);
+    case Disable:
+      return vs.initialize_with_granularity(rs, 0, os::vm_page_size());
+    case Commit:
+      return vs.initialize_with_granularity(rs, 0, os::page_size_for_region(rs.size(), rs.size(), 1));
+    }
+  }
+
+ public:
+  static void test_virtual_space_actual_committed_space(size_t reserve_size, size_t commit_size,
+                                                        TestLargePages mode = Default) {
+    size_t granularity = os::vm_allocation_granularity();
+    size_t reserve_size_aligned = align_size_up(reserve_size, granularity);
+
+    ReservedSpace reserved = reserve_memory(reserve_size_aligned, mode);
+
+    assert(reserved.is_reserved(), "Must be");
+
+    VirtualSpace vs;
+    bool initialized = initialize_virtual_space(vs, reserved, mode);
+    assert(initialized, "Failed to initialize VirtualSpace");
+
+    vs.expand_by(commit_size, false);
+
+    if (vs.special()) {
+      assert_equals(vs.actual_committed_size(), reserve_size_aligned);
+    } else {
+      assert_ge(vs.actual_committed_size(), commit_size);
+      // Approximate the commit granularity.
+      // Make sure that we don't commit using large pages
+      // if large pages has been disabled for this VirtualSpace.
+      size_t commit_granularity = (mode == Disable || !UseLargePages) ?
+                                   os::vm_page_size() : os::large_page_size();
+      assert_lt(vs.actual_committed_size(), commit_size + commit_granularity);
+    }
+
+    reserved.release();
+  }
+
+  static void test_virtual_space_actual_committed_space_one_large_page() {
+    if (!UseLargePages) {
+      return;
+    }
+
+    size_t large_page_size = os::large_page_size();
+
+    ReservedSpace reserved(large_page_size, large_page_size, true, false);
+
+    assert(reserved.is_reserved(), "Must be");
+
+    VirtualSpace vs;
+    bool initialized = vs.initialize(reserved, 0);
+    assert(initialized, "Failed to initialize VirtualSpace");
+
+    vs.expand_by(large_page_size, false);
+
+    assert_equals(vs.actual_committed_size(), large_page_size);
+
+    reserved.release();
+  }
+
+  static void test_virtual_space_actual_committed_space() {
+    test_virtual_space_actual_committed_space(4 * K, 0);
+    test_virtual_space_actual_committed_space(4 * K, 4 * K);
+    test_virtual_space_actual_committed_space(8 * K, 0);
+    test_virtual_space_actual_committed_space(8 * K, 4 * K);
+    test_virtual_space_actual_committed_space(8 * K, 8 * K);
+    test_virtual_space_actual_committed_space(12 * K, 0);
+    test_virtual_space_actual_committed_space(12 * K, 4 * K);
+    test_virtual_space_actual_committed_space(12 * K, 8 * K);
+    test_virtual_space_actual_committed_space(12 * K, 12 * K);
+    test_virtual_space_actual_committed_space(64 * K, 0);
+    test_virtual_space_actual_committed_space(64 * K, 32 * K);
+    test_virtual_space_actual_committed_space(64 * K, 64 * K);
+    test_virtual_space_actual_committed_space(2 * M, 0);
+    test_virtual_space_actual_committed_space(2 * M, 4 * K);
+    test_virtual_space_actual_committed_space(2 * M, 64 * K);
+    test_virtual_space_actual_committed_space(2 * M, 1 * M);
+    test_virtual_space_actual_committed_space(2 * M, 2 * M);
+    test_virtual_space_actual_committed_space(10 * M, 0);
+    test_virtual_space_actual_committed_space(10 * M, 4 * K);
+    test_virtual_space_actual_committed_space(10 * M, 8 * K);
+    test_virtual_space_actual_committed_space(10 * M, 1 * M);
+    test_virtual_space_actual_committed_space(10 * M, 2 * M);
+    test_virtual_space_actual_committed_space(10 * M, 5 * M);
+    test_virtual_space_actual_committed_space(10 * M, 10 * M);
+  }
+
+  static void test_virtual_space_disable_large_pages() {
+    if (!UseLargePages) {
+      return;
+    }
+    // These test cases verify that if we force VirtualSpace to disable large pages
+    test_virtual_space_actual_committed_space(10 * M, 0, Disable);
+    test_virtual_space_actual_committed_space(10 * M, 4 * K, Disable);
+    test_virtual_space_actual_committed_space(10 * M, 8 * K, Disable);
+    test_virtual_space_actual_committed_space(10 * M, 1 * M, Disable);
+    test_virtual_space_actual_committed_space(10 * M, 2 * M, Disable);
+    test_virtual_space_actual_committed_space(10 * M, 5 * M, Disable);
+    test_virtual_space_actual_committed_space(10 * M, 10 * M, Disable);
+
+    test_virtual_space_actual_committed_space(10 * M, 0, Reserve);
+    test_virtual_space_actual_committed_space(10 * M, 4 * K, Reserve);
+    test_virtual_space_actual_committed_space(10 * M, 8 * K, Reserve);
+    test_virtual_space_actual_committed_space(10 * M, 1 * M, Reserve);
+    test_virtual_space_actual_committed_space(10 * M, 2 * M, Reserve);
+    test_virtual_space_actual_committed_space(10 * M, 5 * M, Reserve);
+    test_virtual_space_actual_committed_space(10 * M, 10 * M, Reserve);
+
+    test_virtual_space_actual_committed_space(10 * M, 0, Commit);
+    test_virtual_space_actual_committed_space(10 * M, 4 * K, Commit);
+    test_virtual_space_actual_committed_space(10 * M, 8 * K, Commit);
+    test_virtual_space_actual_committed_space(10 * M, 1 * M, Commit);
+    test_virtual_space_actual_committed_space(10 * M, 2 * M, Commit);
+    test_virtual_space_actual_committed_space(10 * M, 5 * M, Commit);
+    test_virtual_space_actual_committed_space(10 * M, 10 * M, Commit);
+  }
+
+  static void test_virtual_space() {
+    test_virtual_space_actual_committed_space();
+    test_virtual_space_actual_committed_space_one_large_page();
+    test_virtual_space_disable_large_pages();
+  }
+};
+
+void TestVirtualSpace_test() {
+  TestVirtualSpace::test_virtual_space();
 }
 
 #endif // PRODUCT

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 6430675
+ * @bug 6430675 8010430
  * @summary Check for correct implementation of {Math, StrictMath}.round
  */
 public class RoundTests {
@@ -32,6 +32,8 @@ public class RoundTests {
 
         failures += testNearFloatHalfCases();
         failures += testNearDoubleHalfCases();
+        failures += testUnityULPCases();
+        failures += testSpecialCases();
 
         if (failures > 0) {
             System.err.println("Testing {Math, StrictMath}.round incurred "
@@ -92,6 +94,71 @@ public class RoundTests {
 
         failures += Tests.test("Math.round",        input, Math.round(input),       expected);
         failures += Tests.test("StrictMath.round",  input, StrictMath.round(input), expected);
+
+        return failures;
+    }
+
+    private static int testUnityULPCases() {
+        int failures = 0;
+        for (float sign : new float[]{-1, 1}) {
+            for (float v1 : new float[]{1 << 23, 1 << 24}) {
+                for (int k = -5; k <= 5; k++) {
+                    float value = (v1 + k) * sign;
+                    float actual = Math.round(value);
+                    failures += Tests.test("Math.round", value, actual, value);
+                }
+            }
+        }
+
+        if (failures != 0) {
+            System.out.println();
+        }
+
+        for (double sign : new double[]{-1, 1}) {
+            for (double v1 : new double[]{1L << 52, 1L << 53}) {
+                for (int k = -5; k <= 5; k++) {
+                    double value = (v1 + k) * sign;
+                    double actual = Math.round(value);
+                    failures += Tests.test("Math.round", value, actual, value);
+                }
+            }
+        }
+
+        return failures;
+    }
+
+    private static int testSpecialCases() {
+        int failures = 0;
+
+        failures += Tests.test("Math.round", Float.NaN, Math.round(Float.NaN), 0.0F);
+        failures += Tests.test("Math.round", Float.POSITIVE_INFINITY,
+                Math.round(Float.POSITIVE_INFINITY), Integer.MAX_VALUE);
+        failures += Tests.test("Math.round", Float.NEGATIVE_INFINITY,
+                Math.round(Float.NEGATIVE_INFINITY), Integer.MIN_VALUE);
+        failures += Tests.test("Math.round", -(float)Integer.MIN_VALUE,
+                Math.round(-(float)Integer.MIN_VALUE), Integer.MAX_VALUE);
+        failures += Tests.test("Math.round", (float) Integer.MIN_VALUE,
+                Math.round((float) Integer.MIN_VALUE), Integer.MIN_VALUE);
+        failures += Tests.test("Math.round", 0F, Math.round(0F), 0.0F);
+        failures += Tests.test("Math.round", Float.MIN_VALUE,
+                Math.round(Float.MIN_VALUE), 0.0F);
+        failures += Tests.test("Math.round", -Float.MIN_VALUE,
+                Math.round(-Float.MIN_VALUE), 0.0F);
+
+        failures += Tests.test("Math.round", Double.NaN, Math.round(Double.NaN), 0.0);
+        failures += Tests.test("Math.round", Double.POSITIVE_INFINITY,
+                Math.round(Double.POSITIVE_INFINITY), Long.MAX_VALUE);
+        failures += Tests.test("Math.round", Double.NEGATIVE_INFINITY,
+                Math.round(Double.NEGATIVE_INFINITY), Long.MIN_VALUE);
+        failures += Tests.test("Math.round", -(double)Long.MIN_VALUE,
+                Math.round(-(double)Long.MIN_VALUE), Long.MAX_VALUE);
+        failures += Tests.test("Math.round", (double) Long.MIN_VALUE,
+                Math.round((double) Long.MIN_VALUE), Long.MIN_VALUE);
+        failures += Tests.test("Math.round", 0, Math.round(0), 0.0);
+        failures += Tests.test("Math.round", Double.MIN_VALUE,
+                Math.round(Double.MIN_VALUE), 0.0);
+        failures += Tests.test("Math.round", -Double.MIN_VALUE,
+                Math.round(-Double.MIN_VALUE), 0.0);
 
         return failures;
     }

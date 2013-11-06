@@ -28,7 +28,6 @@ package jdk.nashorn.internal.runtime;
 import java.text.MessageFormat;
 import java.util.Locale;
 import java.util.ResourceBundle;
-
 import jdk.nashorn.api.scripting.NashornException;
 import jdk.nashorn.internal.scripts.JS;
 

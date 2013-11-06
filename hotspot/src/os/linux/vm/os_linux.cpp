@@ -131,6 +131,7 @@ bool os::Linux::_is_NPTL = false;
 bool os::Linux::_supports_fast_thread_cpu_time = false;
 const char * os::Linux::_glibc_version = NULL;
 const char * os::Linux::_libpthread_version = NULL;
+pthread_condattr_t os::Linux::_condattr[1];
 
 static jlong initial_time_count=0;
 
@@ -1334,17 +1335,15 @@ void os::Linux::capture_initial_stack(size_t max_size) {
 // Used by VMSelfDestructTimer and the MemProfiler.
 double os::elapsedTime() {
 
-  return (double)(os::elapsed_counter()) * 0.000001;
+  return ((double)os::elapsed_counter()) / os::elapsed_frequency(); // nanosecond resolution
 }
 
 jlong os::elapsed_counter() {
-  timeval time;
-  int status = gettimeofday(&time, NULL);
-  return jlong(time.tv_sec) * 1000 * 1000 + jlong(time.tv_usec) - initial_time_count;
+  return javaTimeNanos() - initial_time_count;
 }
 
 jlong os::elapsed_frequency() {
-  return (1000 * 1000);
+  return NANOSECS_PER_SEC; // nanosecond resolution
 }
 
 bool os::supports_vtime() { return true; }
@@ -1401,12 +1400,15 @@ void os::Linux::clock_init() {
           clock_gettime_func(CLOCK_MONOTONIC, &tp)  == 0) {
         // yes, monotonic clock is supported
         _clock_gettime = clock_gettime_func;
+        return;
       } else {
         // close librt if there is no monotonic clock
         dlclose(handle);
       }
     }
   }
+  warning("No monotonic clock was available - timed services may " \
+          "be adversely affected if the time-of-day clock changes");
 }
 
 #ifndef SYS_clock_getres
@@ -2167,23 +2169,49 @@ void os::print_os_info(outputStream* st) {
 }
 
 // Try to identify popular distros.
-// Most Linux distributions have /etc/XXX-release file, which contains
-// the OS version string. Some have more than one /etc/XXX-release file
-// (e.g. Mandrake has both /etc/mandrake-release and /etc/redhat-release.),
-// so the order is important.
+// Most Linux distributions have a /etc/XXX-release file, which contains
+// the OS version string. Newer Linux distributions have a /etc/lsb-release
+// file that also contains the OS version string. Some have more than one
+// /etc/XXX-release file (e.g. Mandrake has both /etc/mandrake-release and
+// /etc/redhat-release.), so the order is important.
+// Any Linux that is based on Redhat (i.e. Oracle, Mandrake, Sun JDS...) have
+// their own specific XXX-release file as well as a redhat-release file.
+// Because of this the XXX-release file needs to be searched for before the
+// redhat-release file.
+// Since Red Hat has a lsb-release file that is not very descriptive the
+// search for redhat-release needs to be before lsb-release.
+// Since the lsb-release file is the new standard it needs to be searched
+// before the older style release files.
+// Searching system-release (Red Hat) and os-release (other Linuxes) are a
+// next to last resort.  The os-release file is a new standard that contains
+// distribution information and the system-release file seems to be an old
+// standard that has been replaced by the lsb-release and os-release files.
+// Searching for the debian_version file is the last resort.  It contains
+// an informative string like "6.0.6" or "wheezy/sid". Because of this
+// "Debian " is printed before the contents of the debian_version file.
 void os::Linux::print_distro_info(outputStream* st) {
-  if (!_print_ascii_file("/etc/mandrake-release", st) &&
-      !_print_ascii_file("/etc/sun-release", st) &&
-      !_print_ascii_file("/etc/redhat-release", st) &&
-      !_print_ascii_file("/etc/SuSE-release", st) &&
-      !_print_ascii_file("/etc/turbolinux-release", st) &&
-      !_print_ascii_file("/etc/gentoo-release", st) &&
-      !_print_ascii_file("/etc/debian_version", st) &&
-      !_print_ascii_file("/etc/ltib-release", st) &&
-      !_print_ascii_file("/etc/angstrom-version", st)) {
-      st->print("Linux");
-  }
-  st->cr();
+   if (!_print_ascii_file("/etc/oracle-release", st) &&
+       !_print_ascii_file("/etc/mandriva-release", st) &&
+       !_print_ascii_file("/etc/mandrake-release", st) &&
+       !_print_ascii_file("/etc/sun-release", st) &&
+       !_print_ascii_file("/etc/redhat-release", st) &&
+       !_print_ascii_file("/etc/lsb-release", st) &&
+       !_print_ascii_file("/etc/SuSE-release", st) &&
+       !_print_ascii_file("/etc/turbolinux-release", st) &&
+       !_print_ascii_file("/etc/gentoo-release", st) &&
+       !_print_ascii_file("/etc/ltib-release", st) &&
+       !_print_ascii_file("/etc/angstrom-version", st) &&
+       !_print_ascii_file("/etc/system-release", st) &&
+       !_print_ascii_file("/etc/os-release", st)) {
+
+       if (file_exists("/etc/debian_version")) {
+         st->print("Debian ");
+         _print_ascii_file("/etc/debian_version", st);
+       } else {
+         st->print("Linux");
+       }
+   }
+   st->cr();
 }
 
 void os::Linux::print_libversion_info(outputStream* st) {
@@ -2723,7 +2751,19 @@ void os::numa_make_global(char *addr, size_t bytes) {
   Linux::numa_interleave_memory(addr, bytes);
 }
 
+// Define for numa_set_bind_policy(int). Setting the argument to 0 will set the
+// bind policy to MPOL_PREFERRED for the current thread.
+#define USE_MPOL_PREFERRED 0
+
 void os::numa_make_local(char *addr, size_t bytes, int lgrp_hint) {
+  // To make NUMA and large pages more robust when both enabled, we need to ease
+  // the requirements on where the memory should be allocated. MPOL_BIND is the
+  // default policy and it will force memory to be allocated on the specified
+  // node. Changing this to MPOL_PREFERRED will prefer to allocate the memory on
+  // the specified node, but will not force it. Using this policy will prevent
+  // getting SIGBUS when trying to allocate large pages on NUMA nodes with no
+  // free large pages.
+  Linux::numa_set_bind_policy(USE_MPOL_PREFERRED);
   Linux::numa_tonode_memory(addr, bytes, lgrp_hint);
 }
 
@@ -2825,6 +2865,8 @@ bool os::Linux::libnuma_init() {
                                             libnuma_dlsym(handle, "numa_tonode_memory")));
       set_numa_interleave_memory(CAST_TO_FN_PTR(numa_interleave_memory_func_t,
                                             libnuma_dlsym(handle, "numa_interleave_memory")));
+      set_numa_set_bind_policy(CAST_TO_FN_PTR(numa_set_bind_policy_func_t,
+                                            libnuma_dlsym(handle, "numa_set_bind_policy")));
 
 
       if (numa_available() != -1) {
@@ -2891,6 +2933,7 @@ os::Linux::numa_max_node_func_t os::Linux::_numa_max_node;
 os::Linux::numa_available_func_t os::Linux::_numa_available;
 os::Linux::numa_tonode_memory_func_t os::Linux::_numa_tonode_memory;
 os::Linux::numa_interleave_memory_func_t os::Linux::_numa_interleave_memory;
+os::Linux::numa_set_bind_policy_func_t os::Linux::_numa_set_bind_policy;
 unsigned long* os::Linux::_numa_all_nodes;
 
 bool os::pd_uncommit_memory(char* addr, size_t size) {
@@ -2898,6 +2941,53 @@ bool os::pd_uncommit_memory(char* addr, size_t size) {
                 MAP_PRIVATE|MAP_FIXED|MAP_NORESERVE|MAP_ANONYMOUS, -1, 0);
   return res  != (uintptr_t) MAP_FAILED;
 }
+
+static
+address get_stack_commited_bottom(address bottom, size_t size) {
+  address nbot = bottom;
+  address ntop = bottom + size;
+
+  size_t page_sz = os::vm_page_size();
+  unsigned pages = size / page_sz;
+
+  unsigned char vec[1];
+  unsigned imin = 1, imax = pages + 1, imid;
+  int mincore_return_value;
+
+  while (imin < imax) {
+    imid = (imax + imin) / 2;
+    nbot = ntop - (imid * page_sz);
+
+    // Use a trick with mincore to check whether the page is mapped or not.
+    // mincore sets vec to 1 if page resides in memory and to 0 if page
+    // is swapped output but if page we are asking for is unmapped
+    // it returns -1,ENOMEM
+    mincore_return_value = mincore(nbot, page_sz, vec);
+
+    if (mincore_return_value == -1) {
+      // Page is not mapped go up
+      // to find first mapped page
+      if (errno != EAGAIN) {
+        assert(errno == ENOMEM, "Unexpected mincore errno");
+        imax = imid;
+      }
+    } else {
+      // Page is mapped go down
+      // to find first not mapped page
+      imin = imid + 1;
+    }
+  }
+
+  nbot = nbot + page_sz;
+
+  // Adjust stack bottom one page up if last checked page is not mapped
+  if (mincore_return_value == -1) {
+    nbot = nbot + page_sz;
+  }
+
+  return nbot;
+}
+
 
 // Linux uses a growable mapping for the stack, and if the mapping for
 // the stack guard pages is not removed when we detach a thread the
@@ -2913,59 +3003,37 @@ bool os::pd_uncommit_memory(char* addr, size_t size) {
 // So, we need to know the extent of the stack mapping when
 // create_stack_guard_pages() is called.
 
-// Find the bounds of the stack mapping.  Return true for success.
-//
 // We only need this for stacks that are growable: at the time of
 // writing thread stacks don't use growable mappings (i.e. those
 // creeated with MAP_GROWSDOWN), and aren't marked "[stack]", so this
 // only applies to the main thread.
 
-static
-bool get_stack_bounds(uintptr_t *bottom, uintptr_t *top) {
-
-  char buf[128];
-  int fd, sz;
-
-  if ((fd = ::open("/proc/self/maps", O_RDONLY)) < 0) {
-    return false;
-  }
-
-  const char kw[] = "[stack]";
-  const int kwlen = sizeof(kw)-1;
-
-  // Address part of /proc/self/maps couldn't be more than 128 bytes
-  while ((sz = os::get_line_chars(fd, buf, sizeof(buf))) > 0) {
-     if (sz > kwlen && ::memcmp(buf+sz-kwlen, kw, kwlen) == 0) {
-        // Extract addresses
-        if (sscanf(buf, "%" SCNxPTR "-%" SCNxPTR, bottom, top) == 2) {
-           uintptr_t sp = (uintptr_t) __builtin_frame_address(0);
-           if (sp >= *bottom && sp <= *top) {
-              ::close(fd);
-              return true;
-           }
-        }
-     }
-  }
-
- ::close(fd);
-  return false;
-}
-
-
 // If the (growable) stack mapping already extends beyond the point
 // where we're going to put our guard pages, truncate the mapping at
 // that point by munmap()ping it.  This ensures that when we later
 // munmap() the guard pages we don't leave a hole in the stack
-// mapping. This only affects the main/initial thread, but guard
-// against future OS changes
+// mapping. This only affects the main/initial thread
+
 bool os::pd_create_stack_guard_pages(char* addr, size_t size) {
-  uintptr_t stack_extent, stack_base;
-  bool chk_bounds = NOT_DEBUG(os::Linux::is_initial_thread()) DEBUG_ONLY(true);
-  if (chk_bounds && get_stack_bounds(&stack_extent, &stack_base)) {
-      assert(os::Linux::is_initial_thread(),
-           "growable stack in non-initial thread");
-    if (stack_extent < (uintptr_t)addr)
-      ::munmap((void*)stack_extent, (uintptr_t)addr - stack_extent);
+
+  if (os::Linux::is_initial_thread()) {
+    // As we manually grow stack up to bottom inside create_attached_thread(),
+    // it's likely that os::Linux::initial_thread_stack_bottom is mapped and
+    // we don't need to do anything special.
+    // Check it first, before calling heavy function.
+    uintptr_t stack_extent = (uintptr_t) os::Linux::initial_thread_stack_bottom();
+    unsigned char vec[1];
+
+    if (mincore((address)stack_extent, os::vm_page_size(), vec) == -1) {
+      // Fallback to slow path on all errors, including EAGAIN
+      stack_extent = (uintptr_t) get_stack_commited_bottom(
+                                    os::Linux::initial_thread_stack_bottom(),
+                                    (size_t)addr - stack_extent);
+    }
+
+    if (stack_extent < (uintptr_t)addr) {
+      ::munmap((void*)stack_extent, (uintptr_t)(addr - stack_extent));
+    }
   }
 
   return os::commit_memory(addr, size, !ExecMem);
@@ -2974,13 +3042,13 @@ bool os::pd_create_stack_guard_pages(char* addr, size_t size) {
 // If this is a growable mapping, remove the guard pages entirely by
 // munmap()ping them.  If not, just call uncommit_memory(). This only
 // affects the main/initial thread, but guard against future OS changes
+// It's safe to always unmap guard pages for initial thread because we
+// always place it right after end of the mapped region
+
 bool os::remove_stack_guard_pages(char* addr, size_t size) {
   uintptr_t stack_extent, stack_base;
-  bool chk_bounds = NOT_DEBUG(os::Linux::is_initial_thread()) DEBUG_ONLY(true);
-  if (chk_bounds && get_stack_bounds(&stack_extent, &stack_base)) {
-      assert(os::Linux::is_initial_thread(),
-           "growable stack in non-initial thread");
 
+  if (os::Linux::is_initial_thread()) {
     return ::munmap(addr, size) == 0;
   }
 
@@ -3247,13 +3315,15 @@ bool os::Linux::setup_large_page_type(size_t page_size) {
   if (FLAG_IS_DEFAULT(UseHugeTLBFS) &&
       FLAG_IS_DEFAULT(UseSHM) &&
       FLAG_IS_DEFAULT(UseTransparentHugePages)) {
-    // If UseLargePages is specified on the command line try all methods,
-    // if it's default, then try only UseTransparentHugePages.
-    if (FLAG_IS_DEFAULT(UseLargePages)) {
-      UseTransparentHugePages = true;
-    } else {
-      UseHugeTLBFS = UseTransparentHugePages = UseSHM = true;
-    }
+
+    // The type of large pages has not been specified by the user.
+
+    // Try UseHugeTLBFS and then UseSHM.
+    UseHugeTLBFS = UseSHM = true;
+
+    // Don't try UseTransparentHugePages since there are known
+    // performance issues with it turned on. This might change in the future.
+    UseTransparentHugePages = false;
   }
 
   if (UseTransparentHugePages) {
@@ -3279,9 +3349,19 @@ bool os::Linux::setup_large_page_type(size_t page_size) {
 }
 
 void os::large_page_init() {
-  if (!UseLargePages) {
-    UseHugeTLBFS = false;
+  if (!UseLargePages &&
+      !UseTransparentHugePages &&
+      !UseHugeTLBFS &&
+      !UseSHM) {
+    // Not using large pages.
+    return;
+  }
+
+  if (!FLAG_IS_DEFAULT(UseLargePages) && !UseLargePages) {
+    // The user explicitly turned off large pages.
+    // Ignore the rest of the large pages flags.
     UseTransparentHugePages = false;
+    UseHugeTLBFS = false;
     UseSHM = false;
     return;
   }
@@ -4626,7 +4706,27 @@ void os::init(void) {
   Linux::_main_thread = pthread_self();
 
   Linux::clock_init();
-  initial_time_count = os::elapsed_counter();
+  initial_time_count = javaTimeNanos();
+
+  // pthread_condattr initialization for monotonic clock
+  int status;
+  pthread_condattr_t* _condattr = os::Linux::condAttr();
+  if ((status = pthread_condattr_init(_condattr)) != 0) {
+    fatal(err_msg("pthread_condattr_init: %s", strerror(status)));
+  }
+  // Only set the clock if CLOCK_MONOTONIC is available
+  if (Linux::supports_monotonic_clock()) {
+    if ((status = pthread_condattr_setclock(_condattr, CLOCK_MONOTONIC)) != 0) {
+      if (status == EINVAL) {
+        warning("Unable to use monotonic clock with relative timed-waits" \
+                " - changes to the time-of-day clock may have adverse affects");
+      } else {
+        fatal(err_msg("pthread_condattr_setclock: %s", strerror(status)));
+      }
+    }
+  }
+  // else it defaults to CLOCK_REALTIME
+
   pthread_mutex_init(&dl_mutex, NULL);
 
   // If the pagesize of the VM is greater than 8K determine the appropriate
@@ -4673,8 +4773,6 @@ jint os::init_2(void)
 #endif
   }
 
-  os::large_page_init();
-
   // initialize suspend/resume support - must do this before signal_sets_init()
   if (SR_initialize() != 0) {
     perror("SR_initialize failed");
@@ -4708,6 +4806,10 @@ jint os::init_2(void)
         vm_page_size()));
 
   Linux::capture_initial_stack(JavaThread::stack_size_at_create());
+
+#if defined(IA32)
+  workaround_expand_exec_shield_cs_limit();
+#endif
 
   Linux::libpthread_init();
   if (PrintMiscellaneous && (Verbose || WizardMode)) {
@@ -5436,21 +5538,36 @@ void os::pause() {
 
 static struct timespec* compute_abstime(timespec* abstime, jlong millis) {
   if (millis < 0)  millis = 0;
-  struct timeval now;
-  int status = gettimeofday(&now, NULL);
-  assert(status == 0, "gettimeofday");
+
   jlong seconds = millis / 1000;
   millis %= 1000;
   if (seconds > 50000000) { // see man cond_timedwait(3T)
     seconds = 50000000;
   }
-  abstime->tv_sec = now.tv_sec  + seconds;
-  long       usec = now.tv_usec + millis * 1000;
-  if (usec >= 1000000) {
-    abstime->tv_sec += 1;
-    usec -= 1000000;
+
+  if (os::Linux::supports_monotonic_clock()) {
+    struct timespec now;
+    int status = os::Linux::clock_gettime(CLOCK_MONOTONIC, &now);
+    assert_status(status == 0, status, "clock_gettime");
+    abstime->tv_sec = now.tv_sec  + seconds;
+    long nanos = now.tv_nsec + millis * NANOSECS_PER_MILLISEC;
+    if (nanos >= NANOSECS_PER_SEC) {
+      abstime->tv_sec += 1;
+      nanos -= NANOSECS_PER_SEC;
+    }
+    abstime->tv_nsec = nanos;
+  } else {
+    struct timeval now;
+    int status = gettimeofday(&now, NULL);
+    assert(status == 0, "gettimeofday");
+    abstime->tv_sec = now.tv_sec  + seconds;
+    long usec = now.tv_usec + millis * 1000;
+    if (usec >= 1000000) {
+      abstime->tv_sec += 1;
+      usec -= 1000000;
+    }
+    abstime->tv_nsec = usec * 1000;
   }
-  abstime->tv_nsec = usec * 1000;
   return abstime;
 }
 
@@ -5542,7 +5659,7 @@ int os::PlatformEvent::park(jlong millis) {
     status = os::Linux::safe_cond_timedwait(_cond, _mutex, &abst);
     if (status != 0 && WorkAroundNPTLTimedWaitHang) {
       pthread_cond_destroy (_cond);
-      pthread_cond_init (_cond, NULL) ;
+      pthread_cond_init (_cond, os::Linux::condAttr()) ;
     }
     assert_status(status == 0 || status == EINTR ||
                   status == ETIME || status == ETIMEDOUT,
@@ -5643,32 +5760,50 @@ void os::PlatformEvent::unpark() {
 
 static void unpackTime(timespec* absTime, bool isAbsolute, jlong time) {
   assert (time > 0, "convertTime");
+  time_t max_secs = 0;
 
-  struct timeval now;
-  int status = gettimeofday(&now, NULL);
-  assert(status == 0, "gettimeofday");
+  if (!os::Linux::supports_monotonic_clock() || isAbsolute) {
+    struct timeval now;
+    int status = gettimeofday(&now, NULL);
+    assert(status == 0, "gettimeofday");
 
-  time_t max_secs = now.tv_sec + MAX_SECS;
+    max_secs = now.tv_sec + MAX_SECS;
 
-  if (isAbsolute) {
-    jlong secs = time / 1000;
-    if (secs > max_secs) {
-      absTime->tv_sec = max_secs;
+    if (isAbsolute) {
+      jlong secs = time / 1000;
+      if (secs > max_secs) {
+        absTime->tv_sec = max_secs;
+      } else {
+        absTime->tv_sec = secs;
+      }
+      absTime->tv_nsec = (time % 1000) * NANOSECS_PER_MILLISEC;
+    } else {
+      jlong secs = time / NANOSECS_PER_SEC;
+      if (secs >= MAX_SECS) {
+        absTime->tv_sec = max_secs;
+        absTime->tv_nsec = 0;
+      } else {
+        absTime->tv_sec = now.tv_sec + secs;
+        absTime->tv_nsec = (time % NANOSECS_PER_SEC) + now.tv_usec*1000;
+        if (absTime->tv_nsec >= NANOSECS_PER_SEC) {
+          absTime->tv_nsec -= NANOSECS_PER_SEC;
+          ++absTime->tv_sec; // note: this must be <= max_secs
+        }
+      }
     }
-    else {
-      absTime->tv_sec = secs;
-    }
-    absTime->tv_nsec = (time % 1000) * NANOSECS_PER_MILLISEC;
-  }
-  else {
+  } else {
+    // must be relative using monotonic clock
+    struct timespec now;
+    int status = os::Linux::clock_gettime(CLOCK_MONOTONIC, &now);
+    assert_status(status == 0, status, "clock_gettime");
+    max_secs = now.tv_sec + MAX_SECS;
     jlong secs = time / NANOSECS_PER_SEC;
     if (secs >= MAX_SECS) {
       absTime->tv_sec = max_secs;
       absTime->tv_nsec = 0;
-    }
-    else {
+    } else {
       absTime->tv_sec = now.tv_sec + secs;
-      absTime->tv_nsec = (time % NANOSECS_PER_SEC) + now.tv_usec*1000;
+      absTime->tv_nsec = (time % NANOSECS_PER_SEC) + now.tv_nsec;
       if (absTime->tv_nsec >= NANOSECS_PER_SEC) {
         absTime->tv_nsec -= NANOSECS_PER_SEC;
         ++absTime->tv_sec; // note: this must be <= max_secs
@@ -5748,15 +5883,19 @@ void Parker::park(bool isAbsolute, jlong time) {
   jt->set_suspend_equivalent();
   // cleared by handle_special_suspend_equivalent_condition() or java_suspend_self()
 
+  assert(_cur_index == -1, "invariant");
   if (time == 0) {
-    status = pthread_cond_wait (_cond, _mutex) ;
+    _cur_index = REL_INDEX; // arbitrary choice when not timed
+    status = pthread_cond_wait (&_cond[_cur_index], _mutex) ;
   } else {
-    status = os::Linux::safe_cond_timedwait (_cond, _mutex, &absTime) ;
+    _cur_index = isAbsolute ? ABS_INDEX : REL_INDEX;
+    status = os::Linux::safe_cond_timedwait (&_cond[_cur_index], _mutex, &absTime) ;
     if (status != 0 && WorkAroundNPTLTimedWaitHang) {
-      pthread_cond_destroy (_cond) ;
-      pthread_cond_init    (_cond, NULL);
+      pthread_cond_destroy (&_cond[_cur_index]) ;
+      pthread_cond_init    (&_cond[_cur_index], isAbsolute ? NULL : os::Linux::condAttr());
     }
   }
+  _cur_index = -1;
   assert_status(status == 0 || status == EINTR ||
                 status == ETIME || status == ETIMEDOUT,
                 status, "cond_timedwait");
@@ -5785,17 +5924,24 @@ void Parker::unpark() {
   s = _counter;
   _counter = 1;
   if (s < 1) {
-     if (WorkAroundNPTLTimedWaitHang) {
-        status = pthread_cond_signal (_cond) ;
-        assert (status == 0, "invariant") ;
+    // thread might be parked
+    if (_cur_index != -1) {
+      // thread is definitely parked
+      if (WorkAroundNPTLTimedWaitHang) {
+        status = pthread_cond_signal (&_cond[_cur_index]);
+        assert (status == 0, "invariant");
         status = pthread_mutex_unlock(_mutex);
-        assert (status == 0, "invariant") ;
-     } else {
+        assert (status == 0, "invariant");
+      } else {
         status = pthread_mutex_unlock(_mutex);
-        assert (status == 0, "invariant") ;
-        status = pthread_cond_signal (_cond) ;
-        assert (status == 0, "invariant") ;
-     }
+        assert (status == 0, "invariant");
+        status = pthread_cond_signal (&_cond[_cur_index]);
+        assert (status == 0, "invariant");
+      }
+    } else {
+      pthread_mutex_unlock(_mutex);
+      assert (status == 0, "invariant") ;
+    }
   } else {
     pthread_mutex_unlock(_mutex);
     assert (status == 0, "invariant") ;

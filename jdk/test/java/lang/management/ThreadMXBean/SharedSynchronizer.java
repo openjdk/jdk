@@ -28,7 +28,7 @@
  *          in shared mode which has no owner when a thread is parked.
  * @author  Mandy Chung
  *
- * @run main SharedSynchronizer
+ * @run main/othervm SharedSynchronizer
  */
 
 

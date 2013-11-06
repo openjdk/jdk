@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2005, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -74,7 +74,7 @@ import sun.security.action.GetIntegerAction;
  * <code>ActivationGroup</code> will override the system properties
  * with the properties requested when its
  * <code>ActivationGroupDesc</code> was created, and will set a
- * <code>java.rmi.RMISecurityManager</code> as the default system
+ * {@link SecurityManager} as the default system
  * security manager.  If your application requires specific properties
  * to be set when objects are activated in the group, the application
  * should create a special <code>Properties</code> object containing
@@ -84,7 +84,7 @@ import sun.security.action.GetIntegerAction;
  * <code>ActivationDesc</code>s (before the default
  * <code>ActivationGroupDesc</code> is created).  If your application
  * requires the use of a security manager other than
- * <code>java.rmi.RMISecurityManager</code>, in the
+ * {@link SecurityManager}, in the
  * ActivativationGroupDescriptor properties list you can set
  * <code>java.security.manager</code> property to the name of the security
  * manager you would like to install.
@@ -133,6 +133,8 @@ public abstract class ActivationGroup
      *
      * @param   groupID the group's identifier
      * @throws  RemoteException if this group could not be exported
+     * @throws  UnsupportedOperationException if and only if activation is
+     *          not supported by this implementation
      * @since   1.2
      */
     protected ActivationGroup(ActivationGroupID groupID)
@@ -152,21 +154,21 @@ public abstract class ActivationGroup
      * active). If the object does not call
      * <code>Activatable.inactive</code> when it deactivates, the
      * object will never be garbage collected since the group keeps
-     * strong references to the objects it creates. <p>
+     * strong references to the objects it creates.
      *
      * <p>The group's <code>inactiveObject</code> method unexports the
      * remote object from the RMI runtime so that the object can no
      * longer receive incoming RMI calls. An object will only be unexported
      * if the object has no pending or executing calls.
      * The subclass of <code>ActivationGroup</code> must override this
-     * method and unexport the object. <p>
+     * method and unexport the object.
      *
      * <p>After removing the object from the RMI runtime, the group
      * must inform its <code>ActivationMonitor</code> (via the monitor's
      * <code>inactiveObject</code> method) that the remote object is
      * not currently active so that the remote object will be
      * re-activated by the activator upon a subsequent activation
-     * request.<p>
+     * request.
      *
      * <p>This method simply informs the group's monitor that the object
      * is inactive.  It is up to the concrete subclass of ActivationGroup
@@ -233,7 +235,7 @@ public abstract class ActivationGroup
      * <p>Note that if your application creates its own custom
      * activation group, a security manager must be set for that
      * group.  Otherwise objects cannot be activated in the group.
-     * <code>java.rmi.RMISecurityManager</code> is set by default.
+     * {@link SecurityManager} is set by default.
      *
      * <p>If a security manager is already set in the group VM, this
      * method first calls the security manager's
@@ -267,6 +269,8 @@ public abstract class ActivationGroup
      * (Note: The default implementation of the security manager
      * <code>checkSetFactory</code>
      * method requires the RuntimePermission "setFactory")
+     * @exception UnsupportedOperationException if and only if activation is
+     * not supported by this implementation
      * @see SecurityManager#checkSetFactory
      * @since 1.2
      */
@@ -345,6 +349,8 @@ public abstract class ActivationGroup
     /**
      * Returns the current activation group's identifier.  Returns null
      * if no group is currently active for this VM.
+     * @exception UnsupportedOperationException if and only if activation is
+     * not supported by this implementation
      * @return the activation group's identifier
      * @since 1.2
      */
@@ -394,6 +400,8 @@ public abstract class ActivationGroup
      * (Note: The default implementation of the security manager
      * <code>checkSetFactory</code>
      * method requires the RuntimePermission "setFactory")
+     * @exception UnsupportedOperationException if and only if activation is
+     * not supported by this implementation
      * @see #getSystem
      * @see SecurityManager#checkSetFactory
      * @since 1.2
@@ -428,6 +436,8 @@ public abstract class ActivationGroup
      * @exception ActivationException if activation system cannot be
      *  obtained or is not bound
      * (means that it is not running)
+     * @exception UnsupportedOperationException if and only if activation is
+     * not supported by this implementation
      * @see #setSystem
      * @since 1.2
      */

@@ -139,8 +139,8 @@ public class HandshakeOutStream extends OutputStream {
     /*
      * Tell the OutputRecord that a finished message was
      * contained either in this record or the one immeiately
-     * preceeding it.  We need to reliably pass back notifications
-     * that a finish message occured.
+     * preceding it.  We need to reliably pass back notifications
+     * that a finish message occurred.
      */
     void setFinishedMsg() {
         assert(socket == null);

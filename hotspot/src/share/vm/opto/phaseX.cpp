@@ -1385,6 +1385,20 @@ void PhaseIterGVN::add_users_to_worklist( Node *n ) {
   }
 }
 
+/**
+ * Remove the speculative part of all types that we know of
+ */
+void PhaseIterGVN::remove_speculative_types()  {
+  assert(UseTypeSpeculation, "speculation is off");
+  for (uint i = 0; i < _types.Size(); i++)  {
+    const Type* t = _types.fast_lookup(i);
+    if (t != NULL && t->isa_oopptr()) {
+      const TypeOopPtr* to = t->is_oopptr();
+      _types.map(i, to->remove_speculative());
+    }
+  }
+}
+
 //=============================================================================
 #ifndef PRODUCT
 uint PhaseCCP::_total_invokes   = 0;
@@ -1648,10 +1662,10 @@ void PhasePeephole::do_transform() {
     bool block_not_printed = true;
 
     // and each instruction within a block
-    uint end_index = block->_nodes.size();
+    uint end_index = block->number_of_nodes();
     // block->end_idx() not valid after PhaseRegAlloc
     for( uint instruction_index = 1; instruction_index < end_index; ++instruction_index ) {
-      Node     *n = block->_nodes.at(instruction_index);
+      Node     *n = block->get_node(instruction_index);
       if( n->is_Mach() ) {
         MachNode *m = n->as_Mach();
         int deleted_count = 0;
@@ -1673,7 +1687,7 @@ void PhasePeephole::do_transform() {
             }
             // Print instructions being deleted
             for( int i = (deleted_count - 1); i >= 0; --i ) {
-              block->_nodes.at(instruction_index-i)->as_Mach()->format(_regalloc); tty->cr();
+              block->get_node(instruction_index-i)->as_Mach()->format(_regalloc); tty->cr();
             }
             tty->print_cr("replaced with");
             // Print new instruction
@@ -1687,11 +1701,11 @@ void PhasePeephole::do_transform() {
           //  the node index to live range mappings.)
           uint safe_instruction_index = (instruction_index - deleted_count);
           for( ; (instruction_index > safe_instruction_index); --instruction_index ) {
-            block->_nodes.remove( instruction_index );
+            block->remove_node( instruction_index );
           }
           // install new node after safe_instruction_index
-          block->_nodes.insert( safe_instruction_index + 1, m2 );
-          end_index = block->_nodes.size() - 1; // Recompute new block size
+          block->insert_node(m2, safe_instruction_index + 1);
+          end_index = block->number_of_nodes() - 1; // Recompute new block size
           NOT_PRODUCT( inc_peepholes(); )
         }
       }

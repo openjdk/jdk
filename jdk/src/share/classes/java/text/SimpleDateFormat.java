@@ -356,7 +356,6 @@ import sun.util.locale.provider.LocaleProviderAdapter;
  * may be replaced with other, locale dependent, pattern letters.
  * <code>SimpleDateFormat</code> does not deal with the localization of text
  * other than the pattern letters; that's up to the client of the class.
- * <p>
  *
  * <h4>Examples</h4>
  *
@@ -412,7 +411,7 @@ import sun.util.locale.provider.LocaleProviderAdapter;
  * If multiple threads access a format concurrently, it must be synchronized
  * externally.
  *
- * @see          <a href="http://java.sun.com/docs/books/tutorial/i18n/format/simpleDateFormat.html">Java Tutorial</a>
+ * @see          <a href="http://docs.oracle.com/javase/tutorial/i18n/format/simpleDateFormat.html">Java Tutorial</a>
  * @see          java.util.Calendar
  * @see          java.util.TimeZone
  * @see          DateFormat

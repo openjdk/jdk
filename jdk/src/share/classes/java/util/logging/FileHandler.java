@@ -149,7 +149,7 @@ public class FileHandler extends StreamHandler {
     private FileChannel lockFileChannel;
     private File files[];
     private static final int MAX_LOCKS = 100;
-    private static java.util.HashMap<String, String> locks = new java.util.HashMap<>();
+    private static final java.util.HashMap<String, String> locks = new java.util.HashMap<>();
 
     /**
      * A metered stream is a subclass of OutputStream that
@@ -157,7 +157,7 @@ public class FileHandler extends StreamHandler {
      * (b) keeps track of how many bytes have been written
      */
     private class MeteredStream extends OutputStream {
-        OutputStream out;
+        final OutputStream out;
         int written;
 
         MeteredStream(OutputStream out, int written) {
@@ -165,25 +165,30 @@ public class FileHandler extends StreamHandler {
             this.written = written;
         }
 
+        @Override
         public void write(int b) throws IOException {
             out.write(b);
             written++;
         }
 
+        @Override
         public void write(byte buff[]) throws IOException {
             out.write(buff);
             written += buff.length;
         }
 
+        @Override
         public void write(byte buff[], int off, int len) throws IOException {
             out.write(buff,off,len);
             written += len;
         }
 
+        @Override
         public void flush() throws IOException {
             out.flush();
         }
 
+        @Override
         public void close() throws IOException {
             out.close();
         }
@@ -607,6 +612,7 @@ public class FileHandler extends StreamHandler {
      * @param  record  description of the log event. A null record is
      *                 silently ignored and is not published
      */
+    @Override
     public synchronized void publish(LogRecord record) {
         if (!isLoggable(record)) {
             return;
@@ -620,6 +626,7 @@ public class FileHandler extends StreamHandler {
             // currently being called from untrusted code.
             // So it is safe to raise privilege here.
             AccessController.doPrivileged(new PrivilegedAction<Object>() {
+                @Override
                 public Object run() {
                     rotate();
                     return null;
@@ -634,6 +641,7 @@ public class FileHandler extends StreamHandler {
      * @exception  SecurityException  if a security manager exists and if
      *             the caller does not have <tt>LoggingPermission("control")</tt>.
      */
+    @Override
     public synchronized void close() throws SecurityException {
         super.close();
         // Unlock any lock file.
@@ -656,6 +664,7 @@ public class FileHandler extends StreamHandler {
 
     private static class InitializationErrorManager extends ErrorManager {
         Exception lastException;
+        @Override
         public void error(String msg, Exception ex, int code) {
             lastException = ex;
         }

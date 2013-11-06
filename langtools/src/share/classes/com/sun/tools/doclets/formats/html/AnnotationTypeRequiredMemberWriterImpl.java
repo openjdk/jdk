@@ -71,11 +71,25 @@ public class AnnotationTypeRequiredMemberWriterImpl extends AbstractMemberWriter
     /**
      * {@inheritDoc}
      */
+    public Content getMemberTreeHeader() {
+        return writer.getMemberTreeHeader();
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    public void addAnnotationDetailsMarker(Content memberDetails) {
+        memberDetails.addContent(HtmlConstants.START_OF_ANNOTATION_TYPE_DETAILS);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
     public void addAnnotationDetailsTreeHeader(ClassDoc classDoc,
             Content memberDetailsTree) {
         if (!writer.printedAnnotationHeading) {
             memberDetailsTree.addContent(writer.getMarkerAnchor(
-                    "annotation_type_element_detail"));
+                    SectionName.ANNOTATION_TYPE_ELEMENT_DETAIL));
             Content heading = HtmlTree.HEADING(HtmlConstants.DETAILS_HEADING,
                     writer.annotationTypeDetailsLabel);
             memberDetailsTree.addContent(heading);
@@ -205,7 +219,7 @@ public class AnnotationTypeRequiredMemberWriterImpl extends AbstractMemberWriter
      */
     public void addSummaryAnchor(ClassDoc cd, Content memberTree) {
         memberTree.addContent(writer.getMarkerAnchor(
-                "annotation_type_required_element_summary"));
+                SectionName.ANNOTATION_TYPE_REQUIRED_ELEMENT_SUMMARY));
     }
 
     /**
@@ -225,9 +239,9 @@ public class AnnotationTypeRequiredMemberWriterImpl extends AbstractMemberWriter
      */
     protected void addSummaryLink(LinkInfoImpl.Kind context, ClassDoc cd, ProgramElementDoc member,
             Content tdSummary) {
-        Content strong = HtmlTree.SPAN(HtmlStyle.strong,
+        Content memberLink = HtmlTree.SPAN(HtmlStyle.memberNameLink,
                 writer.getDocLink(context, (MemberDoc) member, member.name(), false));
-        Content code = HtmlTree.CODE(strong);
+        Content code = HtmlTree.CODE(memberLink);
         tdSummary.addContent(code);
     }
 
@@ -260,7 +274,8 @@ public class AnnotationTypeRequiredMemberWriterImpl extends AbstractMemberWriter
      */
     protected Content getNavSummaryLink(ClassDoc cd, boolean link) {
         if (link) {
-            return writer.getHyperLink("annotation_type_required_element_summary",
+            return writer.getHyperLink(
+                    SectionName.ANNOTATION_TYPE_REQUIRED_ELEMENT_SUMMARY,
                     writer.getResource("doclet.navAnnotationTypeRequiredMember"));
         } else {
             return writer.getResource("doclet.navAnnotationTypeRequiredMember");
@@ -272,7 +287,8 @@ public class AnnotationTypeRequiredMemberWriterImpl extends AbstractMemberWriter
      */
     protected void addNavDetailLink(boolean link, Content liNav) {
         if (link) {
-            liNav.addContent(writer.getHyperLink("annotation_type_element_detail",
+            liNav.addContent(writer.getHyperLink(
+                    SectionName.ANNOTATION_TYPE_ELEMENT_DETAIL,
                     writer.getResource("doclet.navAnnotationTypeMember")));
         } else {
             liNav.addContent(writer.getResource("doclet.navAnnotationTypeMember"));

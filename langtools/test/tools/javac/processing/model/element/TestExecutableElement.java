@@ -23,54 +23,57 @@
 
 /*
  * @test
- * @bug 8005046 8011052
- * @summary Test basic properties of javax.lang.element.Element
+ * @bug 8005046 8011052 8025087
+ * @summary Test basic properties of javax.lang.element.ExecutableElement
  * @author  Joseph D. Darcy
  * @library /tools/javac/lib
  * @build   JavacTestingAbstractProcessor TestExecutableElement
- * @compile -processor TestExecutableElement -proc:only TestExecutableElement.java
+ * @compile -processor TestExecutableElement -proc:only -AexpectedMethodCount=7 TestExecutableElement.java
+ * @compile/process -processor TestExecutableElement -proc:only -AexpectedMethodCount=3 ProviderOfDefault
  */
 
 import java.lang.annotation.*;
 import java.util.Formatter;
 import java.util.Set;
-import java.util.Objects;
 import java.util.regex.*;
 import javax.annotation.processing.*;
-import javax.lang.model.SourceVersion;
-import static javax.lang.model.SourceVersion.*;
 import javax.lang.model.element.*;
-import javax.lang.model.util.*;
 import static javax.lang.model.util.ElementFilter.*;
 import static javax.tools.Diagnostic.Kind.*;
-import static javax.tools.StandardLocation.*;
 
 /**
  * Test some basic workings of javax.lang.element.ExecutableElement
  */
+@SupportedOptions("expectedMethodCount")
 public class TestExecutableElement extends JavacTestingAbstractProcessor implements ProviderOfDefault {
+    private int seenMethods = 0;
     @IsDefault(false)
     public boolean process(Set<? extends TypeElement> annotations,
                            RoundEnvironment roundEnv) {
-        int errors = 0;
         if (!roundEnv.processingOver()) {
-            boolean hasRun = false;
             for (Element element : roundEnv.getRootElements()) {
                 for (ExecutableElement method : methodsIn(element.getEnclosedElements())) {
-                    hasRun = true;
-                    errors += checkIsDefault(method);
+                    checkIsDefault(method);
+                    seenMethods++;
                 }
             }
+        } else {
+            String expectedMethodCountStr = processingEnv.getOptions().get("expectedMethodCount");
+            if (expectedMethodCountStr == null) {
+                messager.printMessage(ERROR, "No expected method count specified.");
+            } else {
+                int expectedMethodCount = Integer.parseInt(expectedMethodCountStr);
 
-            if (!hasRun) {
-                messager.printMessage(ERROR, "No test cases run; test fails.");
+                if (seenMethods != expectedMethodCount) {
+                    messager.printMessage(ERROR, "Wrong number of seen methods: " + seenMethods);
+                }
             }
         }
         return true;
     }
 
     @IsDefault(false)
-    int checkIsDefault(ExecutableElement method) {
+    void checkIsDefault(ExecutableElement method) {
         System.out.println("Testing " + method);
         IsDefault expectedIsDefault = method.getAnnotation(IsDefault.class);
 
@@ -116,9 +119,7 @@ public class TestExecutableElement extends JavacTestingAbstractProcessor impleme
                                                          expectedDefault,
                                                          methodIsDefault).toString(),
                                   method);
-            return 1;
         }
-        return 0;
     }
 }
 
@@ -142,4 +143,6 @@ interface ProviderOfDefault {
 
     @IsDefault(value=true, expectedTextRegex="\\s*@IsDefault\\(.*\\)\\s*default strictfp void quux\\(\\);\\s*$")
     default strictfp void quux() {};
+    @IsDefault(false)
+    static void statik() {}
 }

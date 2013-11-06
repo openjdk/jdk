@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 4638136
+ * @bug 4638136 7198273 8025633
  * @summary  Add ability to skip over nav bar for accessibility
  * @author dkramer
  * @run main AccessSkipNav
@@ -42,7 +42,7 @@ import java.io.*;
  */
 public class AccessSkipNav {
 
-    private static final String BUGID = "4638136";
+    private static final String BUGID = "4638136 - 7198273";
     private static final String BUGNAME = "AccessSkipNav";
     private static final String FS = System.getProperty("file.separator");
     private static final String PS = System.getProperty("path.separator");
@@ -86,20 +86,20 @@ public class AccessSkipNav {
             // Testing only for the presence of the <a href> and <a name>
 
             // Top navbar <a href>
-            { "<a href=\"#skip-navbar_top\" title=\"Skip navigation links\"></a>",
+            { "<a href=\"#skip.navbar.top\" title=\"Skip navigation links\">Skip navigation links</a>",
                      TMPDEST_DIR1 + "p1" + FS + "C1.html" },
 
             // Top navbar <a name>
-            { "<a name=\"skip-navbar_top\">" + LS +
+            { "<a name=\"skip.navbar.top\">" + LS +
                       "<!--   -->" + LS + "</a>",
                      TMPDEST_DIR1 + "p1" + FS + "C1.html" },
 
             // Bottom navbar <a href>
-            { "<a href=\"#skip-navbar_bottom\" title=\"Skip navigation links\"></a>",
+            { "<a href=\"#skip.navbar.bottom\" title=\"Skip navigation links\">Skip navigation links</a>",
                      TMPDEST_DIR1 + "p1" + FS + "C1.html" },
 
             // Bottom navbar <a name>
-            { "<a name=\"skip-navbar_bottom\">" + LS +
+            { "<a name=\"skip.navbar.bottom\">" + LS +
                       "<!--   -->" + LS + "</a>",
                      TMPDEST_DIR1 + "p1" + FS + "C1.html" }
         };

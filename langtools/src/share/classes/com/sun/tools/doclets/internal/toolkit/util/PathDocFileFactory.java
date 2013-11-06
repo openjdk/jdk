@@ -34,6 +34,7 @@ import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.io.UnsupportedEncodingException;
 import java.io.Writer;
+import java.nio.file.DirectoryStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
@@ -221,8 +222,10 @@ class PathDocFileFactory extends DocFileFactory {
         /** If the file is a directory, list its contents. */
         public Iterable<DocFile> list() throws IOException {
             List<DocFile> files = new ArrayList<DocFile>();
-            for (Path f: Files.newDirectoryStream(file)) {
-                files.add(new StandardDocFile(f));
+            try (DirectoryStream<Path> ds = Files.newDirectoryStream(file)) {
+                for (Path f: ds) {
+                    files.add(new StandardDocFile(f));
+                }
             }
             return files;
         }

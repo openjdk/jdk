@@ -1,5 +1,5 @@
-/*
- * @test /nodynamiccopyright/
+/* @test /nodynamiccopyright/
+ * @bug 7192246
  * @summary negative test for ambiguous defaults
  * @compile/fail/ref=Neg01.out -XDrawDiagnostics Neg01.java
  */

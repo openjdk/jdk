@@ -3,7 +3,7 @@
  * DO NOT REMOVE OR ALTER!
  */
 /*
- * Copyright 1999-2004 The Apache Software Foundation.
+ * Copyright 1999-2005 The Apache Software Foundation.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,7 +18,7 @@
  * limitations under the License.
  */
 /*
- * $Id: XSLTErrorResources_it.java,v 1.2.4.1 2005/09/13 10:23:57 pvedula Exp $
+ * $Id: XSLTErrorResources_it.java /st_wptg_1.8.0.0.0jdk/2 2013/09/16 07:02:00 gmolloy Exp $
  */
 package com.sun.org.apache.xalan.internal.res;
 
@@ -471,7 +471,13 @@ public class XSLTErrorResources_it extends ListResourceBundle
 
   // Error messages...
 
-  private static final Object[][] _contents = new Object[][] {
+  /** Get the lookup table for error messages.
+    *
+    * @return The message lookup table.
+    */
+  public Object[][] getContents()
+  {
+      return new Object[][] {
 
   /** Error message ID that has a null message, but takes in a single object.    */
   {"ER0000" , "{0}" },
@@ -1359,7 +1365,7 @@ public class XSLTErrorResources_it extends ListResourceBundle
   {  "optionQ", "   [-Q  (modalit\u00E0 silenziosa)]"},
   {  "optionLF", "   [-LF (usa avanzamenti riga solo nell'output {il valore predefinito \u00E8 CR/LF})]"},
   {  "optionCR", "   [-CR (usa ritorni a capo solo nell'output {il valore predefinito \u00E8 CR/LF})]"},
-  { "optionESCAPE", "   [-ESCAPE (caratteri da sottoporre a escape {il valore predefinito \u00E8 <>&\"\'\\r\\n}]"},
+  { "optionESCAPE", "   [-ESCAPE (caratteri da sottoporre a escape {il valore predefinito \u00E8 <>&\"'\\r\\n}]"},
   { "optionINDENT", "   [-INDENT (determina il numero di spazi da indentare {il valore predefinito \u00E8 0})]"},
   { "optionTT", "   [-TT (tiene traccia dei modelli mentre vengono richiamati.)]"},
   { "optionTG", "   [-TG (tiene traccia di ogni evento di generazione.)]"},
@@ -1412,13 +1418,6 @@ public class XSLTErrorResources_it extends ListResourceBundle
 
   };
 
-  /** Get the lookup table for error messages.
-   *
-   * @return The int to message lookup table.
-   */
-  public Object[][] getContents()
-  {
-      return _contents;
   }
   // ================= INFRASTRUCTURE ======================
 

@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8002099
+ * @bug 8002099 6499673
  * @summary Add support for intersection types in cast expression
  * @library /tools/javac/lib
  * @build JavacTestingAbstractProcessor ModelChecker
@@ -46,7 +46,7 @@ class Test {
     }
 
     void test(){
-        @IntersectionTypeInfo({"java.lang.Object", "Test.A", "Test.B"})
+        @IntersectionTypeInfo({"Test.A", "Test.B"})
         Object o = (A & B)null;
     }
 }

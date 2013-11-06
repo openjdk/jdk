@@ -602,7 +602,7 @@ oop Universe::gen_out_of_memory_error(oop default_err) {
   }
 }
 
-static intptr_t non_oop_bits = 0;
+intptr_t Universe::_non_oop_bits = 0;
 
 void* Universe::non_oop_word() {
   // Neither the high bits nor the low bits of this value is allowed
@@ -616,11 +616,11 @@ void* Universe::non_oop_word() {
   // Using the OS-supplied non-memory-address word (usually 0 or -1)
   // will take care of the high bits, however many there are.
 
-  if (non_oop_bits == 0) {
-    non_oop_bits = (intptr_t)os::non_memory_address_word() | 1;
+  if (_non_oop_bits == 0) {
+    _non_oop_bits = (intptr_t)os::non_memory_address_word() | 1;
   }
 
-  return (void*)non_oop_bits;
+  return (void*)_non_oop_bits;
 }
 
 jint universe_init() {
@@ -677,13 +677,13 @@ jint universe_init() {
 // HeapBased - Use compressed oops with heap base + encoding.
 
 // 4Gb
-static const uint64_t NarrowOopHeapMax = (uint64_t(max_juint) + 1);
+static const uint64_t UnscaledOopHeapMax = (uint64_t(max_juint) + 1);
 // 32Gb
-// OopEncodingHeapMax == NarrowOopHeapMax << LogMinObjAlignmentInBytes;
+// OopEncodingHeapMax == UnscaledOopHeapMax << LogMinObjAlignmentInBytes;
 
 char* Universe::preferred_heap_base(size_t heap_size, size_t alignment, NARROW_OOP_MODE mode) {
   assert(is_size_aligned((size_t)OopEncodingHeapMax, alignment), "Must be");
-  assert(is_size_aligned((size_t)NarrowOopHeapMax, alignment), "Must be");
+  assert(is_size_aligned((size_t)UnscaledOopHeapMax, alignment), "Must be");
   assert(is_size_aligned(heap_size, alignment), "Must be");
 
   uintx heap_base_min_address_aligned = align_size_up(HeapBaseMinAddress, alignment);
@@ -702,20 +702,40 @@ char* Universe::preferred_heap_base(size_t heap_size, size_t alignment, NARROW_O
     // If the total size is small enough to allow UnscaledNarrowOop then
     // just use UnscaledNarrowOop.
     } else if ((total_size <= OopEncodingHeapMax) && (mode != HeapBasedNarrowOop)) {
-      if ((total_size <= NarrowOopHeapMax) && (mode == UnscaledNarrowOop) &&
+      if ((total_size <= UnscaledOopHeapMax) && (mode == UnscaledNarrowOop) &&
           (Universe::narrow_oop_shift() == 0)) {
         // Use 32-bits oops without encoding and
         // place heap's top on the 4Gb boundary
-        base = (NarrowOopHeapMax - heap_size);
+        base = (UnscaledOopHeapMax - heap_size);
       } else {
         // Can't reserve with NarrowOopShift == 0
         Universe::set_narrow_oop_shift(LogMinObjAlignmentInBytes);
+
         if (mode == UnscaledNarrowOop ||
-            mode == ZeroBasedNarrowOop && total_size <= NarrowOopHeapMax) {
+            mode == ZeroBasedNarrowOop && total_size <= UnscaledOopHeapMax) {
+
           // Use zero based compressed oops with encoding and
           // place heap's top on the 32Gb boundary in case
           // total_size > 4Gb or failed to reserve below 4Gb.
-          base = (OopEncodingHeapMax - heap_size);
+          uint64_t heap_top = OopEncodingHeapMax;
+
+          // For small heaps, save some space for compressed class pointer
+          // space so it can be decoded with no base.
+          if (UseCompressedClassPointers && !UseSharedSpaces &&
+              OopEncodingHeapMax <= 32*G) {
+
+            uint64_t class_space = align_size_up(CompressedClassSpaceSize, alignment);
+            assert(is_size_aligned((size_t)OopEncodingHeapMax-class_space,
+                   alignment), "difference must be aligned too");
+            uint64_t new_top = OopEncodingHeapMax-class_space;
+
+            if (total_size <= new_top) {
+              heap_top = new_top;
+            }
+          }
+
+          // Align base to the adjusted top of the heap
+          base = heap_top - heap_size;
         }
       }
     } else {
@@ -737,7 +757,7 @@ char* Universe::preferred_heap_base(size_t heap_size, size_t alignment, NARROW_O
       // Set to a non-NULL value so the ReservedSpace ctor computes
       // the correct no-access prefix.
       // The final value will be set in initialize_heap() below.
-      Universe::set_narrow_oop_base((address)NarrowOopHeapMax);
+      Universe::set_narrow_oop_base((address)UnscaledOopHeapMax);
 #if defined(_WIN64) || defined(AIX)
       if (UseLargePages) {
         // Cannot allocate guard pages for implicit checks in indexed
@@ -838,7 +858,7 @@ jint Universe::initialize_heap() {
         Universe::set_narrow_oop_use_implicit_null_checks(true);
       }
 #endif //  _WIN64
-      if((uint64_t)Universe::heap()->reserved_region().end() > NarrowOopHeapMax) {
+      if((uint64_t)Universe::heap()->reserved_region().end() > UnscaledOopHeapMax) {
         // Can't reserve heap below 4Gb.
         Universe::set_narrow_oop_shift(LogMinObjAlignmentInBytes);
       } else {
@@ -877,13 +897,16 @@ jint Universe::initialize_heap() {
 
 // Reserve the Java heap, which is now the same for all GCs.
 ReservedSpace Universe::reserve_heap(size_t heap_size, size_t alignment) {
+  assert(alignment <= Arguments::conservative_max_heap_alignment(),
+      err_msg("actual alignment "SIZE_FORMAT" must be within maximum heap alignment "SIZE_FORMAT,
+          alignment, Arguments::conservative_max_heap_alignment()));
   size_t total_reserved = align_size_up(heap_size, alignment);
   assert(!UseCompressedOops || (total_reserved <= (OopEncodingHeapMax - os::vm_page_size())),
       "heap size is too big for compressed oops");
 
   bool use_large_pages = UseLargePages && is_size_aligned(alignment, os::large_page_size());
   assert(!UseLargePages
-      || UseParallelOldGC
+      || UseParallelGC
       || use_large_pages, "Wrong alignment to use large pages");
 
   char* addr = Universe::preferred_heap_base(total_reserved, alignment, Universe::UnscaledNarrowOop);
@@ -1031,9 +1054,9 @@ bool universe_post_init() {
     Handle msg = java_lang_String::create_from_str("Java heap space", CHECK_false);
     java_lang_Throwable::set_message(Universe::_out_of_memory_error_java_heap, msg());
 
-    msg = java_lang_String::create_from_str("Metadata space", CHECK_false);
+    msg = java_lang_String::create_from_str("Metaspace", CHECK_false);
     java_lang_Throwable::set_message(Universe::_out_of_memory_error_metaspace, msg());
-    msg = java_lang_String::create_from_str("Class Metadata space", CHECK_false);
+    msg = java_lang_String::create_from_str("Compressed class space", CHECK_false);
     java_lang_Throwable::set_message(Universe::_out_of_memory_error_class_metaspace, msg());
 
     msg = java_lang_String::create_from_str("Requested array size exceeds VM limit", CHECK_false);

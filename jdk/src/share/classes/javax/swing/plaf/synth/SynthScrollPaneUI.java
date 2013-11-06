@@ -41,7 +41,7 @@ import java.awt.event.FocusListener;
 import java.awt.event.FocusEvent;
 
 /**
- * Provides the Synth L&F UI delegate for
+ * Provides the Synth L&amp;F UI delegate for
  * {@link javax.swing.JScrollPane}.
  *
  * @author Scott Violet
@@ -119,7 +119,7 @@ public class SynthScrollPaneUI extends BasicScrollPaneUI
     }
 
     /**
-     * @inheritDoc
+     * {@inheritDoc}
      */
     @Override
     public void paintBorder(SynthContext context, Graphics g, int x,
@@ -128,7 +128,7 @@ public class SynthScrollPaneUI extends BasicScrollPaneUI
     }
 
     /**
-     * @inheritDoc
+     * {@inheritDoc}
      */
     @Override
     protected void installDefaults(JScrollPane scrollpane) {
@@ -154,7 +154,7 @@ public class SynthScrollPaneUI extends BasicScrollPaneUI
     }
 
     /**
-     * @inheritDoc
+     * {@inheritDoc}
      */
     @Override
     protected void installListeners(JScrollPane c) {
@@ -171,7 +171,7 @@ public class SynthScrollPaneUI extends BasicScrollPaneUI
     }
 
     /**
-     * @inheritDoc
+     * {@inheritDoc}
      */
     @Override
     protected void uninstallDefaults(JScrollPane c) {
@@ -186,7 +186,7 @@ public class SynthScrollPaneUI extends BasicScrollPaneUI
     }
 
     /**
-     * @inheritDoc
+     * {@inheritDoc}
      */
     @Override
     protected void uninstallListeners(JComponent c) {
@@ -203,7 +203,7 @@ public class SynthScrollPaneUI extends BasicScrollPaneUI
     }
 
     /**
-     * @inheritDoc
+     * {@inheritDoc}
      */
     @Override
     public SynthContext getContext(JComponent c) {

@@ -97,7 +97,8 @@ int PhaseChaitin::yank( Node *old, Block *current_block, Node_List *value, Node_
 static bool expected_yanked_node(Node *old, Node *orig_old) {
   // This code is expected only next original nodes:
   // - load from constant table node which may have next data input nodes:
-  //     MachConstantBase, Phi, MachTemp, MachSpillCopy
+  //     MachConstantBase, MachTemp, MachSpillCopy
+  // - Phi nodes that are considered Junk
   // - load constant node which may have next data input nodes:
   //     MachTemp, MachSpillCopy
   // - MachSpillCopy
@@ -112,7 +113,9 @@ static bool expected_yanked_node(Node *old, Node *orig_old) {
     return (old == orig_old);
   } else if (old->is_MachTemp()) {
     return orig_old->is_Con();
-  } else if (old->is_Phi() || old->is_MachConstantBase()) {
+  } else if (old->is_Phi()) { // Junk phi's
+    return true;
+  } else if (old->is_MachConstantBase()) {
     return (orig_old->is_Con() && orig_old->is_MachConstant());
   }
   return false;
@@ -423,8 +426,8 @@ void PhaseChaitin::post_allocate_copy_removal() {
 
     // Count of Phis in block
     uint phi_dex;
-    for (phi_dex = 1; phi_dex < block->_nodes.size(); phi_dex++) {
-      Node* phi = block->_nodes[phi_dex];
+    for (phi_dex = 1; phi_dex < block->number_of_nodes(); phi_dex++) {
+      Node* phi = block->get_node(phi_dex);
       if (!phi->is_Phi()) {
         break;
       }
@@ -439,7 +442,7 @@ void PhaseChaitin::post_allocate_copy_removal() {
       Block* pb = _cfg.get_block_for_node(block->pred(j));
       // Remove copies along phi edges
       for (uint k = 1; k < phi_dex; k++) {
-        elide_copy(block->_nodes[k], j, block, *blk2value[pb->_pre_order], *blk2regnd[pb->_pre_order], false);
+        elide_copy(block->get_node(k), j, block, *blk2value[pb->_pre_order], *blk2regnd[pb->_pre_order], false);
       }
       if (blk2value[pb->_pre_order]) { // Have a mapping on this edge?
         // See if this predecessor's mappings have been used by everybody
@@ -510,7 +513,7 @@ void PhaseChaitin::post_allocate_copy_removal() {
     // For all Phi's
     for (j = 1; j < phi_dex; j++) {
       uint k;
-      Node *phi = block->_nodes[j];
+      Node *phi = block->get_node(j);
       uint pidx = _lrg_map.live_range_id(phi);
       OptoReg::Name preg = lrgs(_lrg_map.live_range_id(phi)).reg();
 
@@ -522,11 +525,9 @@ void PhaseChaitin::post_allocate_copy_removal() {
           u = u ? NodeSentinel : x; // Capture unique input, or NodeSentinel for 2nd input
       }
       if (u != NodeSentinel) {    // Junk Phi.  Remove
-        block->_nodes.remove(j--);
-        phi_dex--;
-        _cfg.unmap_node_from_block(phi);
         phi->replace_by(u);
-        phi->disconnect_inputs(NULL, C);
+        j -= yank_if_dead(phi, block, &value, &regnd);
+        phi_dex--;
         continue;
       }
       // Note that if value[pidx] exists, then we merged no new values here
@@ -552,8 +553,8 @@ void PhaseChaitin::post_allocate_copy_removal() {
     }
 
     // For all remaining instructions
-    for (j = phi_dex; j < block->_nodes.size(); j++) {
-      Node* n = block->_nodes[j];
+    for (j = phi_dex; j < block->number_of_nodes(); j++) {
+      Node* n = block->get_node(j);
 
       if(n->outcnt() == 0 &&   // Dead?
          n != C->top() &&      // (ignore TOP, it has no du info)

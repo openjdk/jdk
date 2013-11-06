@@ -43,7 +43,7 @@ import java.lang.reflect.Field;
  * For example:<pre>
  * &lt;field name="id"&gt;&lt;int&gt;0&lt;/int&gt;&lt;/field&gt;</pre>
  * is equivalent to {@code id = 0} in Java code.
- * <p>The following atributes are supported:
+ * <p>The following attributes are supported:
  * <dl>
  * <dt>name
  * <dd>the field name
@@ -62,7 +62,7 @@ final class FieldElementHandler extends AccessorElementHandler {
 
     /**
      * Parses attributes of the element.
-     * The following atributes are supported:
+     * The following attributes are supported:
      * <dl>
      * <dt>name
      * <dd>the field name

@@ -1,5 +1,7 @@
 TargetType21.java:28:9: compiler.err.ref.ambiguous: call, kindname.method, call(TargetType21.SAM2), TargetType21, kindname.method, <R,A>call(TargetType21.SAM3<R,A>), TargetType21
-TargetType21.java:29:9: compiler.err.ref.ambiguous: call, kindname.method, call(TargetType21.SAM2), TargetType21, kindname.method, <R,A>call(TargetType21.SAM3<R,A>), TargetType21
-TargetType21.java:30:13: compiler.err.prob.found.req: (compiler.misc.cyclic.inference: A)
-TargetType21.java:31:9: compiler.err.ref.ambiguous: call, kindname.method, call(TargetType21.SAM1), TargetType21, kindname.method, <R,A>call(TargetType21.SAM3<R,A>), TargetType21
-4 errors
+TargetType21.java:31:9: compiler.err.ref.ambiguous: call, kindname.method, call(TargetType21.SAM2), TargetType21, kindname.method, <R,A>call(TargetType21.SAM3<R,A>), TargetType21
+TargetType21.java:32:9: compiler.err.ref.ambiguous: call, kindname.method, call(TargetType21.SAM2), TargetType21, kindname.method, <R,A>call(TargetType21.SAM3<R,A>), TargetType21
+TargetType21.java:32:13: compiler.err.cant.apply.symbol: kindname.method, call, TargetType21.SAM2, @888, kindname.class, TargetType21, (compiler.misc.no.conforming.assignment.exists: (compiler.misc.incompatible.ret.type.in.lambda: (compiler.misc.unexpected.ret.val)))
+TargetType21.java:33:9: compiler.err.ref.ambiguous: call, kindname.method, call(TargetType21.SAM2), TargetType21, kindname.method, <R,A>call(TargetType21.SAM3<R,A>), TargetType21
+TargetType21.java:33:13: compiler.err.cant.apply.symbol: kindname.method, call, TargetType21.SAM2, @946, kindname.class, TargetType21, (compiler.misc.no.conforming.assignment.exists: (compiler.misc.incompatible.ret.type.in.lambda: (compiler.misc.unexpected.ret.val)))
+6 errors

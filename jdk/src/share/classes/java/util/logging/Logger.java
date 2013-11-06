@@ -88,17 +88,21 @@ import sun.reflect.Reflection;
  * the LogRecord to its output Handlers.  By default, loggers also
  * publish to their parent's Handlers, recursively up the tree.
  * <p>
- * Each Logger may have a ResourceBundle name associated with it.
- * The named bundle will be used for localizing logging messages.
- * If a Logger does not have its own ResourceBundle name, then
- * it will inherit the ResourceBundle name from its parent,
- * recursively up the tree.
+ * Each Logger may have a {@code ResourceBundle} associated with it.
+ * The {@code ResourceBundle} may be specified by name, using the
+ * {@link #getLogger(java.lang.String, java.lang.String)} factory
+ * method, or by value - using the {@link
+ * #setResourceBundle(java.util.ResourceBundle) setResourceBundle} method.
+ * This bundle will be used for localizing logging messages.
+ * If a Logger does not have its own {@code ResourceBundle} or resource bundle
+ * name, then it will inherit the {@code ResourceBundle} or resource bundle name
+ * from its parent, recursively up the tree.
  * <p>
  * Most of the logger output methods take a "msg" argument.  This
  * msg argument may be either a raw value or a localization key.
  * During formatting, if the logger has (or inherits) a localization
- * ResourceBundle and if the ResourceBundle has a mapping for the msg
- * string, then the msg string is replaced by the localized value.
+ * {@code ResourceBundle} and if the {@code ResourceBundle} has a mapping for
+ * the msg string, then the msg string is replaced by the localized value.
  * Otherwise the original msg string is used.  Typically, formatters use
  * java.text.MessageFormat style formatting to format parameters, so
  * for example a format string "{0} {1}" would format two parameters
@@ -131,10 +135,30 @@ import sun.reflect.Reflection;
    logger.log(Level.FINER, DiagnosisMessages::systemHealthStatus);
 </code></pre>
  * <p>
- * When mapping ResourceBundle names to ResourceBundles, the Logger
- * will first try to use the Thread's ContextClassLoader.  If that
- * is null it will try the
- * {@linkplain java.lang.ClassLoader#getSystemClassLoader() system ClassLoader} instead.
+ * When looking for a {@code ResourceBundle}, the logger will first look at
+ * whether a bundle was specified using {@link
+ * #setResourceBundle(java.util.ResourceBundle) setResourceBundle}, and then
+ * only whether a resource bundle name was specified through the {@link
+ * #getLogger(java.lang.String, java.lang.String) getLogger} factory method.
+ * If no {@code ResourceBundle} or no resource bundle name is found,
+ * then it will use the nearest {@code ResourceBundle} or resource bundle
+ * name inherited from its parent tree.<br>
+ * When a {@code ResourceBundle} was inherited or specified through the
+ * {@link
+ * #setResourceBundle(java.util.ResourceBundle) setResourceBundle} method, then
+ * that {@code ResourceBundle} will be used. Otherwise if the logger only
+ * has or inherited a resource bundle name, then that resource bundle name
+ * will be mapped to a {@code ResourceBundle} object, using the default Locale
+ * at the time of logging.
+ * <br id="ResourceBundleMapping">When mapping resource bundle names to
+ * {@code ResourceBundle} objects, the logger will first try to use the
+ * Thread's {@linkplain java.lang.Thread#getContextClassLoader() context class
+ * loader} to map the given resource bundle name to a {@code ResourceBundle}.
+ * If the thread context class loader is {@code null}, it will try the
+ * {@linkplain java.lang.ClassLoader#getSystemClassLoader() system class loader}
+ * instead.  If the {@code ResourceBundle} is still not found, it will use the
+ * class loader of the first caller of the {@link
+ * #getLogger(java.lang.String, java.lang.String) getLogger} factory method.
  * <p>
  * Formatting (including localization) is the responsibility of
  * the output Handler, which will typically call a Formatter.
@@ -154,7 +178,7 @@ import sun.reflect.Reflection;
  * <li><p>
  *     There are a set of "logrb" method (for "log with resource bundle")
  *     that are like the "logp" method, but also take an explicit resource
- *     bundle name for use in localizing the log message.
+ *     bundle object for use in localizing the log message.
  * <li><p>
  *     There are convenience methods for tracing method entries (the
  *     "entering" methods), method returns (the "exiting" methods) and
@@ -198,18 +222,20 @@ public class Logger {
     private String name;
     private final CopyOnWriteArrayList<Handler> handlers =
         new CopyOnWriteArrayList<>();
-    private String resourceBundleName;
+    private String resourceBundleName;  // Base name of the bundle.
+    private ResourceBundle userBundle;  // Bundle set through setResourceBundle.
     private volatile boolean useParentHandlers = true;
     private volatile Filter filter;
     private boolean anonymous;
 
+    // Cache to speed up behavior of findResourceBundle:
     private ResourceBundle catalog;     // Cached resource bundle
     private String catalogName;         // name associated with catalog
     private Locale catalogLocale;       // locale associated with catalog
 
     // The fields relating to parent-child relationships and levels
     // are managed under a separate lock, the treeLock.
-    private static Object treeLock = new Object();
+    private static final Object treeLock = new Object();
     // We keep weak references from parents to children, but strong
     // references from children to parents.
     private volatile Logger parent;    // our nearest parent.
@@ -245,14 +271,26 @@ public class Logger {
         // In order to finish the initialization of the global logger, we
         // will therefore call LogManager.getLogManager() here.
         //
-        // Care must be taken *not* to call Logger.getGlobal() in
-        // LogManager static initializers in order to avoid such
-        // deadlocks.
-        //
-        if (global != null && global.manager == null) {
-            // Complete initialization of the global Logger.
-            global.manager = LogManager.getLogManager();
-        }
+        // To prevent race conditions we also need to call
+        // LogManager.getLogManager() unconditionally here.
+        // Indeed we cannot rely on the observed value of global.manager,
+        // because global.manager will become not null somewhere during
+        // the initialization of LogManager.
+        // If two threads are calling getGlobal() concurrently, one thread
+        // will see global.manager null and call LogManager.getLogManager(),
+        // but the other thread could come in at a time when global.manager
+        // is already set although ensureLogManagerInitialized is not finished
+        // yet...
+        // Calling LogManager.getLogManager() unconditionally will fix that.
+
+        LogManager.getLogManager();
+
+        // Now the global LogManager should be initialized,
+        // and the global logger should have been added to
+        // it, unless we were called within the constructor of a LogManager
+        // subclass installed as LogManager, in which case global.manager
+        // would still be null, and global will be lazily initialized later on.
+
         return global;
     }
 
@@ -298,11 +336,11 @@ public class Logger {
      *             no corresponding resource can be found.
      */
     protected Logger(String name, String resourceBundleName) {
-        this(name, resourceBundleName, null);
+        this(name, resourceBundleName, null, LogManager.getLogManager());
     }
 
-    Logger(String name, String resourceBundleName, Class<?> caller) {
-        this.manager = LogManager.getLogManager();
+    Logger(String name, String resourceBundleName, Class<?> caller, LogManager manager) {
+        this.manager = manager;
         setupResourceInfo(resourceBundleName, caller);
         this.name = name;
         levelValue = Level.INFO.intValue();
@@ -332,8 +370,8 @@ public class Logger {
         levelValue = Level.INFO.intValue();
     }
 
-    // It is called from the LogManager.<clinit> to complete
-    // initialization of the global Logger.
+    // It is called from LoggerContext.addLocalLogger() when the logger
+    // is actually added to a LogManager.
     void setLogManager(LogManager manager) {
         this.manager = manager;
     }
@@ -360,6 +398,7 @@ public class Logger {
         static boolean disableCallerCheck = getBooleanProperty("sun.util.logging.disableCallerCheck");
         private static boolean getBooleanProperty(final String key) {
             String s = AccessController.doPrivileged(new PrivilegedAction<String>() {
+                @Override
                 public String run() {
                     return System.getProperty(key);
                 }
@@ -516,7 +555,9 @@ public class Logger {
      * Even although the new logger is anonymous, it is configured
      * to have the root logger ("") as its parent.  This means that
      * by default it inherits its effective level and handlers
-     * from the root logger.
+     * from the root logger. Changing its parent via the
+     * {@link #setParent(java.util.logging.Logger) setParent} method
+     * will still require the security permission specified by that method.
      * <p>
      *
      * @return a newly created private Logger
@@ -540,7 +581,9 @@ public class Logger {
      * Even although the new logger is anonymous, it is configured
      * to have the root logger ("") as its parent.  This means that
      * by default it inherits its effective level and handlers
-     * from the root logger.
+     * from the root logger.  Changing its parent via the
+     * {@link #setParent(java.util.logging.Logger) setParent} method
+     * will still require the security permission specified by that method.
      * <p>
      * @param   resourceBundleName  name of ResourceBundle to be used for localizing
      *                          messages for this logger.
@@ -558,7 +601,7 @@ public class Logger {
         // cleanup some Loggers that have been GC'ed
         manager.drainLoggerRefQueueBounded();
         Logger result = new Logger(null, resourceBundleName,
-                                   Reflection.getCallerClass());
+                                   Reflection.getCallerClass(), manager);
         result.anonymous = true;
         Logger root = manager.getLogger("");
         result.doSetParent(root);
@@ -567,11 +610,18 @@ public class Logger {
 
     /**
      * Retrieve the localization resource bundle for this
-     * logger for the current default locale.  Note that if
-     * the result is null, then the Logger will use a resource
-     * bundle inherited from its parent.
+     * logger.
+     * This method will return a {@code ResourceBundle} that was either
+     * set by the {@link
+     * #setResourceBundle(java.util.ResourceBundle) setResourceBundle} method or
+     * <a href="#ResourceBundleMapping">mapped from the
+     * the resource bundle name</a> set via the {@link
+     * Logger#getLogger(java.lang.String, java.lang.String) getLogger} factory
+     * method for the current default locale.
+     * <br>Note that if the result is {@code null}, then the Logger will use a resource
+     * bundle or resource bundle name inherited from its parent.
      *
-     * @return localization bundle (may be null)
+     * @return localization bundle (may be {@code null})
      */
     public ResourceBundle getResourceBundle() {
         return findResourceBundle(getResourceBundleName(), true);
@@ -579,10 +629,16 @@ public class Logger {
 
     /**
      * Retrieve the localization resource bundle name for this
-     * logger.  Note that if the result is null, then the Logger
-     * will use a resource bundle name inherited from its parent.
+     * logger.
+     * This is either the name specified through the {@link
+     * #getLogger(java.lang.String, java.lang.String) getLogger} factory method,
+     * or the {@linkplain ResourceBundle#getBaseBundleName() base name} of the
+     * ResourceBundle set through {@link
+     * #setResourceBundle(java.util.ResourceBundle) setResourceBundle} method.
+     * <br>Note that if the result is {@code null}, then the Logger will use a resource
+     * bundle or resource bundle name inherited from its parent.
      *
-     * @return localization bundle name (may be null)
+     * @return localization bundle name (may be {@code null})
      */
     public String getResourceBundleName() {
         return resourceBundleName;
@@ -596,8 +652,9 @@ public class Logger {
      * be published.
      *
      * @param   newFilter  a filter object (may be null)
-     * @exception  SecurityException  if a security manager exists and if
-     *             the caller does not have LoggingPermission("control").
+     * @throws  SecurityException if a security manager exists,
+     *          this logger is not anonymous, and the caller
+     *          does not have LoggingPermission("control").
      */
     public void setFilter(Filter newFilter) throws SecurityException {
         checkPermission();
@@ -623,7 +680,7 @@ public class Logger {
      * @param record the LogRecord to be published
      */
     public void log(LogRecord record) {
-        if (record.getLevel().intValue() < levelValue || levelValue == offValue) {
+        if (!isLoggable(record.getLevel())) {
             return;
         }
         Filter theFilter = filter;
@@ -653,10 +710,11 @@ public class Logger {
     // resource bundle and then call "void log(LogRecord)".
     private void doLog(LogRecord lr) {
         lr.setLoggerName(name);
-        String ebname = getEffectiveResourceBundleName();
-        if (ebname != null && !ebname.equals(SYSTEM_LOGGER_RB_NAME)) {
+        final ResourceBundle bundle = getEffectiveResourceBundle();
+        final String ebname = getEffectiveResourceBundleName();
+        if (ebname != null && bundle != null) {
             lr.setResourceBundleName(ebname);
-            lr.setResourceBundle(findResourceBundle(ebname, true));
+            lr.setResourceBundle(bundle);
         }
         log(lr);
     }
@@ -677,7 +735,7 @@ public class Logger {
      * @param   msg     The string message (or a key in the message catalog)
      */
     public void log(Level level, String msg) {
-        if (level.intValue() < levelValue || levelValue == offValue) {
+        if (!isLoggable(level)) {
             return;
         }
         LogRecord lr = new LogRecord(level, msg);
@@ -698,7 +756,7 @@ public class Logger {
      *                        desired log message
      */
     public void log(Level level, Supplier<String> msgSupplier) {
-        if (level.intValue() < levelValue || levelValue == offValue) {
+        if (!isLoggable(level)) {
             return;
         }
         LogRecord lr = new LogRecord(level, msgSupplier.get());
@@ -717,7 +775,7 @@ public class Logger {
      * @param   param1  parameter to the message
      */
     public void log(Level level, String msg, Object param1) {
-        if (level.intValue() < levelValue || levelValue == offValue) {
+        if (!isLoggable(level)) {
             return;
         }
         LogRecord lr = new LogRecord(level, msg);
@@ -738,7 +796,7 @@ public class Logger {
      * @param   params  array of parameters to the message
      */
     public void log(Level level, String msg, Object params[]) {
-        if (level.intValue() < levelValue || levelValue == offValue) {
+        if (!isLoggable(level)) {
             return;
         }
         LogRecord lr = new LogRecord(level, msg);
@@ -763,7 +821,7 @@ public class Logger {
      * @param   thrown  Throwable associated with log message.
      */
     public void log(Level level, String msg, Throwable thrown) {
-        if (level.intValue() < levelValue || levelValue == offValue) {
+        if (!isLoggable(level)) {
             return;
         }
         LogRecord lr = new LogRecord(level, msg);
@@ -791,7 +849,7 @@ public class Logger {
      * @since   1.8
      */
     public void log(Level level, Throwable thrown, Supplier<String> msgSupplier) {
-        if (level.intValue() < levelValue || levelValue == offValue) {
+        if (!isLoggable(level)) {
             return;
         }
         LogRecord lr = new LogRecord(level, msgSupplier.get());
@@ -817,7 +875,7 @@ public class Logger {
      * @param   msg     The string message (or a key in the message catalog)
      */
     public void logp(Level level, String sourceClass, String sourceMethod, String msg) {
-        if (level.intValue() < levelValue || levelValue == offValue) {
+        if (!isLoggable(level)) {
             return;
         }
         LogRecord lr = new LogRecord(level, msg);
@@ -844,7 +902,7 @@ public class Logger {
      */
     public void logp(Level level, String sourceClass, String sourceMethod,
                      Supplier<String> msgSupplier) {
-        if (level.intValue() < levelValue || levelValue == offValue) {
+        if (!isLoggable(level)) {
             return;
         }
         LogRecord lr = new LogRecord(level, msgSupplier.get());
@@ -869,7 +927,7 @@ public class Logger {
      */
     public void logp(Level level, String sourceClass, String sourceMethod,
                                                 String msg, Object param1) {
-        if (level.intValue() < levelValue || levelValue == offValue) {
+        if (!isLoggable(level)) {
             return;
         }
         LogRecord lr = new LogRecord(level, msg);
@@ -896,7 +954,7 @@ public class Logger {
      */
     public void logp(Level level, String sourceClass, String sourceMethod,
                                                 String msg, Object params[]) {
-        if (level.intValue() < levelValue || levelValue == offValue) {
+        if (!isLoggable(level)) {
             return;
         }
         LogRecord lr = new LogRecord(level, msg);
@@ -927,7 +985,7 @@ public class Logger {
      */
     public void logp(Level level, String sourceClass, String sourceMethod,
                      String msg, Throwable thrown) {
-        if (level.intValue() < levelValue || levelValue == offValue) {
+        if (!isLoggable(level)) {
             return;
         }
         LogRecord lr = new LogRecord(level, msg);
@@ -961,7 +1019,7 @@ public class Logger {
      */
     public void logp(Level level, String sourceClass, String sourceMethod,
                      Throwable thrown, Supplier<String> msgSupplier) {
-        if (level.intValue() < levelValue || levelValue == offValue) {
+        if (!isLoggable(level)) {
             return;
         }
         LogRecord lr = new LogRecord(level, msgSupplier.get());
@@ -988,6 +1046,16 @@ public class Logger {
         log(lr);
     }
 
+    // Private support method for logging for "logrb" methods.
+    private void doLog(LogRecord lr, ResourceBundle rb) {
+        lr.setLoggerName(name);
+        if (rb != null) {
+            lr.setResourceBundleName(rb.getBaseBundleName());
+            lr.setResourceBundle(rb);
+        }
+        log(lr);
+    }
+
     /**
      * Log a message, specifying source class, method, and resource bundle name
      * with no arguments.
@@ -1006,10 +1074,14 @@ public class Logger {
      * @param   bundleName     name of resource bundle to localize msg,
      *                         can be null
      * @param   msg     The string message (or a key in the message catalog)
+     * @deprecated Use {@link #logrb(java.util.logging.Level, java.lang.String,
+     * java.lang.String, java.util.ResourceBundle, java.lang.String,
+     * java.lang.Object...)} instead.
      */
+    @Deprecated
     public void logrb(Level level, String sourceClass, String sourceMethod,
                                 String bundleName, String msg) {
-        if (level.intValue() < levelValue || levelValue == offValue) {
+        if (!isLoggable(level)) {
             return;
         }
         LogRecord lr = new LogRecord(level, msg);
@@ -1037,10 +1109,14 @@ public class Logger {
      *                         can be null
      * @param   msg      The string message (or a key in the message catalog)
      * @param   param1    Parameter to the log message.
+     * @deprecated Use {@link #logrb(java.util.logging.Level, java.lang.String,
+     *   java.lang.String, java.util.ResourceBundle, java.lang.String,
+     *   java.lang.Object...)} instead
      */
+    @Deprecated
     public void logrb(Level level, String sourceClass, String sourceMethod,
                                 String bundleName, String msg, Object param1) {
-        if (level.intValue() < levelValue || levelValue == offValue) {
+        if (!isLoggable(level)) {
             return;
         }
         LogRecord lr = new LogRecord(level, msg);
@@ -1070,10 +1146,14 @@ public class Logger {
      *                         can be null.
      * @param   msg     The string message (or a key in the message catalog)
      * @param   params  Array of parameters to the message
+     * @deprecated Use {@link #logrb(java.util.logging.Level, java.lang.String,
+     *      java.lang.String, java.util.ResourceBundle, java.lang.String,
+     *      java.lang.Object...)} instead.
      */
+    @Deprecated
     public void logrb(Level level, String sourceClass, String sourceMethod,
                                 String bundleName, String msg, Object params[]) {
-        if (level.intValue() < levelValue || levelValue == offValue) {
+        if (!isLoggable(level)) {
             return;
         }
         LogRecord lr = new LogRecord(level, msg);
@@ -1081,6 +1161,41 @@ public class Logger {
         lr.setSourceMethodName(sourceMethod);
         lr.setParameters(params);
         doLog(lr, bundleName);
+    }
+
+    /**
+     * Log a message, specifying source class, method, and resource bundle,
+     * with an optional list of message parameters.
+     * <p>
+     * If the logger is currently enabled for the given message
+     * level then a corresponding LogRecord is created and forwarded
+     * to all the registered output Handler objects.
+     * <p>
+     * The {@code msg} string is localized using the given resource bundle.
+     * If the resource bundle is {@code null}, then the {@code msg} string is not
+     * localized.
+     * <p>
+     * @param   level   One of the message level identifiers, e.g., SEVERE
+     * @param   sourceClass    Name of the class that issued the logging request
+     * @param   sourceMethod   Name of the method that issued the logging request
+     * @param   bundle         Resource bundle to localize {@code msg},
+     *                         can be {@code null}.
+     * @param   msg     The string message (or a key in the message catalog)
+     * @param   params  Parameters to the message (optional, may be none).
+     * @since 1.8
+     */
+    public void logrb(Level level, String sourceClass, String sourceMethod,
+                      ResourceBundle bundle, String msg, Object... params) {
+        if (!isLoggable(level)) {
+            return;
+        }
+        LogRecord lr = new LogRecord(level, msg);
+        lr.setSourceClassName(sourceClass);
+        lr.setSourceMethodName(sourceMethod);
+        if (params != null && params.length != 0) {
+            lr.setParameters(params);
+        }
+        doLog(lr, bundle);
     }
 
     /**
@@ -1107,10 +1222,14 @@ public class Logger {
      *                         can be null
      * @param   msg     The string message (or a key in the message catalog)
      * @param   thrown  Throwable associated with log message.
+     * @deprecated Use {@link #logrb(java.util.logging.Level, java.lang.String,
+     *     java.lang.String, java.util.ResourceBundle, java.lang.String,
+     *     java.lang.Throwable)} instead.
      */
+    @Deprecated
     public void logrb(Level level, String sourceClass, String sourceMethod,
                                         String bundleName, String msg, Throwable thrown) {
-        if (level.intValue() < levelValue || levelValue == offValue) {
+        if (!isLoggable(level)) {
             return;
         }
         LogRecord lr = new LogRecord(level, msg);
@@ -1120,6 +1239,43 @@ public class Logger {
         doLog(lr, bundleName);
     }
 
+    /**
+     * Log a message, specifying source class, method, and resource bundle,
+     * with associated Throwable information.
+     * <p>
+     * If the logger is currently enabled for the given message
+     * level then the given arguments are stored in a LogRecord
+     * which is forwarded to all registered output handlers.
+     * <p>
+     * The {@code msg} string is localized using the given resource bundle.
+     * If the resource bundle is {@code null}, then the {@code msg} string is not
+     * localized.
+     * <p>
+     * Note that the thrown argument is stored in the LogRecord thrown
+     * property, rather than the LogRecord parameters property.  Thus it is
+     * processed specially by output Formatters and is not treated
+     * as a formatting parameter to the LogRecord message property.
+     * <p>
+     * @param   level   One of the message level identifiers, e.g., SEVERE
+     * @param   sourceClass    Name of the class that issued the logging request
+     * @param   sourceMethod   Name of the method that issued the logging request
+     * @param   bundle         Resource bundle to localize {@code msg},
+     *                         can be {@code null}
+     * @param   msg     The string message (or a key in the message catalog)
+     * @param   thrown  Throwable associated with the log message.
+     * @since 1.8
+     */
+    public void logrb(Level level, String sourceClass, String sourceMethod,
+                      ResourceBundle bundle, String msg, Throwable thrown) {
+        if (!isLoggable(level)) {
+            return;
+        }
+        LogRecord lr = new LogRecord(level, msg);
+        lr.setSourceClassName(sourceClass);
+        lr.setSourceMethodName(sourceMethod);
+        lr.setThrown(thrown);
+        doLog(lr, bundle);
+    }
 
     //======================================================================
     // Start of convenience methods for logging method entries and returns.
@@ -1136,9 +1292,6 @@ public class Logger {
      * @param   sourceMethod   name of method that is being entered
      */
     public void entering(String sourceClass, String sourceMethod) {
-        if (Level.FINER.intValue() < levelValue) {
-            return;
-        }
         logp(Level.FINER, sourceClass, sourceMethod, "ENTRY");
     }
 
@@ -1155,11 +1308,7 @@ public class Logger {
      * @param   param1         parameter to the method being entered
      */
     public void entering(String sourceClass, String sourceMethod, Object param1) {
-        if (Level.FINER.intValue() < levelValue) {
-            return;
-        }
-        Object params[] = { param1 };
-        logp(Level.FINER, sourceClass, sourceMethod, "ENTRY {0}", params);
+        logp(Level.FINER, sourceClass, sourceMethod, "ENTRY {0}", param1);
     }
 
     /**
@@ -1176,14 +1325,12 @@ public class Logger {
      * @param   params         array of parameters to the method being entered
      */
     public void entering(String sourceClass, String sourceMethod, Object params[]) {
-        if (Level.FINER.intValue() < levelValue) {
-            return;
-        }
         String msg = "ENTRY";
         if (params == null ) {
            logp(Level.FINER, sourceClass, sourceMethod, msg);
            return;
         }
+        if (!isLoggable(Level.FINER)) return;
         for (int i = 0; i < params.length; i++) {
             msg = msg + " {" + i + "}";
         }
@@ -1201,9 +1348,6 @@ public class Logger {
      * @param   sourceMethod   name of the method
      */
     public void exiting(String sourceClass, String sourceMethod) {
-        if (Level.FINER.intValue() < levelValue) {
-            return;
-        }
         logp(Level.FINER, sourceClass, sourceMethod, "RETURN");
     }
 
@@ -1221,10 +1365,6 @@ public class Logger {
      * @param   result  Object that is being returned
      */
     public void exiting(String sourceClass, String sourceMethod, Object result) {
-        if (Level.FINER.intValue() < levelValue) {
-            return;
-        }
-        Object params[] = { result };
         logp(Level.FINER, sourceClass, sourceMethod, "RETURN {0}", result);
     }
 
@@ -1250,7 +1390,7 @@ public class Logger {
      * @param   thrown  The Throwable that is being thrown.
      */
     public void throwing(String sourceClass, String sourceMethod, Throwable thrown) {
-        if (Level.FINER.intValue() < levelValue || levelValue == offValue ) {
+        if (!isLoggable(Level.FINER)) {
             return;
         }
         LogRecord lr = new LogRecord(Level.FINER, "THROW");
@@ -1274,9 +1414,6 @@ public class Logger {
      * @param   msg     The string message (or a key in the message catalog)
      */
     public void severe(String msg) {
-        if (Level.SEVERE.intValue() < levelValue) {
-            return;
-        }
         log(Level.SEVERE, msg);
     }
 
@@ -1290,9 +1427,6 @@ public class Logger {
      * @param   msg     The string message (or a key in the message catalog)
      */
     public void warning(String msg) {
-        if (Level.WARNING.intValue() < levelValue) {
-            return;
-        }
         log(Level.WARNING, msg);
     }
 
@@ -1306,9 +1440,6 @@ public class Logger {
      * @param   msg     The string message (or a key in the message catalog)
      */
     public void info(String msg) {
-        if (Level.INFO.intValue() < levelValue) {
-            return;
-        }
         log(Level.INFO, msg);
     }
 
@@ -1322,9 +1453,6 @@ public class Logger {
      * @param   msg     The string message (or a key in the message catalog)
      */
     public void config(String msg) {
-        if (Level.CONFIG.intValue() < levelValue) {
-            return;
-        }
         log(Level.CONFIG, msg);
     }
 
@@ -1338,9 +1466,6 @@ public class Logger {
      * @param   msg     The string message (or a key in the message catalog)
      */
     public void fine(String msg) {
-        if (Level.FINE.intValue() < levelValue) {
-            return;
-        }
         log(Level.FINE, msg);
     }
 
@@ -1354,9 +1479,6 @@ public class Logger {
      * @param   msg     The string message (or a key in the message catalog)
      */
     public void finer(String msg) {
-        if (Level.FINER.intValue() < levelValue) {
-            return;
-        }
         log(Level.FINER, msg);
     }
 
@@ -1370,9 +1492,6 @@ public class Logger {
      * @param   msg     The string message (or a key in the message catalog)
      */
     public void finest(String msg) {
-        if (Level.FINEST.intValue() < levelValue) {
-            return;
-        }
         log(Level.FINEST, msg);
     }
 
@@ -1515,8 +1634,9 @@ public class Logger {
      * (non-null) level value.
      *
      * @param newLevel   the new value for the log level (may be null)
-     * @exception  SecurityException  if a security manager exists and if
-     *             the caller does not have LoggingPermission("control").
+     * @throws  SecurityException if a security manager exists,
+     *          this logger is not anonymous, and the caller
+     *          does not have LoggingPermission("control").
      */
     public void setLevel(Level newLevel) throws SecurityException {
         checkPermission();
@@ -1524,6 +1644,10 @@ public class Logger {
             levelObject = newLevel;
             updateEffectiveLevel();
         }
+    }
+
+    final boolean isLevelInitialized() {
+        return levelObject != null;
     }
 
     /**
@@ -1568,8 +1692,9 @@ public class Logger {
      * that essentially act as default handlers for all loggers.
      *
      * @param   handler a logging Handler
-     * @exception  SecurityException  if a security manager exists and if
-     *             the caller does not have LoggingPermission("control").
+     * @throws  SecurityException if a security manager exists,
+     *          this logger is not anonymous, and the caller
+     *          does not have LoggingPermission("control").
      */
     public void addHandler(Handler handler) throws SecurityException {
         // Check for null handler
@@ -1584,8 +1709,9 @@ public class Logger {
      * Returns silently if the given Handler is not found or is null
      *
      * @param   handler a logging Handler
-     * @exception  SecurityException  if a security manager exists and if
-     *             the caller does not have LoggingPermission("control").
+     * @throws  SecurityException if a security manager exists,
+     *          this logger is not anonymous, and the caller
+     *          does not have LoggingPermission("control").
      */
     public void removeHandler(Handler handler) throws SecurityException {
         checkPermission();
@@ -1612,8 +1738,9 @@ public class Logger {
      *
      * @param useParentHandlers   true if output is to be sent to the
      *          logger's parent.
-     * @exception  SecurityException  if a security manager exists and if
-     *             the caller does not have LoggingPermission("control").
+     * @throws  SecurityException if a security manager exists,
+     *          this logger is not anonymous, and the caller
+     *          does not have LoggingPermission("control").
      */
     public void setUseParentHandlers(boolean useParentHandlers) {
         checkPermission();
@@ -1635,6 +1762,7 @@ public class Logger {
     private static ResourceBundle findSystemResourceBundle(final Locale locale) {
         // the resource bundle is in a restricted package
         return AccessController.doPrivileged(new PrivilegedAction<ResourceBundle>() {
+            @Override
             public ResourceBundle run() {
                 try {
                     return ResourceBundle.getBundle(SYSTEM_LOGGER_RB_NAME,
@@ -1675,7 +1803,10 @@ public class Logger {
         Locale currentLocale = Locale.getDefault();
 
         // Normally we should hit on our simple one entry cache.
-        if (catalog != null && currentLocale.equals(catalogLocale)
+        if (userBundle != null &&
+                name.equals(resourceBundleName)) {
+            return userBundle;
+        } else if (catalog != null && currentLocale.equals(catalogLocale)
                 && name.equals(catalogName)) {
             return catalog;
         }
@@ -1763,6 +1894,46 @@ public class Logger {
     }
 
     /**
+     * Sets a resource bundle on this logger.
+     * All messages will be logged using the given resource bundle for its
+     * specific {@linkplain ResourceBundle#getLocale locale}.
+     * @param bundle The resource bundle that this logger shall use.
+     * @throws NullPointerException if the given bundle is {@code null}.
+     * @throws IllegalArgumentException if the given bundle doesn't have a
+     *         {@linkplain ResourceBundle#getBaseBundleName base name},
+     *         or if this logger already has a resource bundle set but
+     *         the given bundle has a different base name.
+     * @throws SecurityException if a security manager exists,
+     *         this logger is not anonymous, and the caller
+     *         does not have LoggingPermission("control").
+     * @since 1.8
+     */
+    public void setResourceBundle(ResourceBundle bundle) {
+        checkPermission();
+
+        // Will throw NPE if bundle is null.
+        final String baseName = bundle.getBaseBundleName();
+
+        // bundle must have a name
+        if (baseName == null || baseName.isEmpty()) {
+            throw new IllegalArgumentException("resource bundle must have a name");
+        }
+
+        synchronized (this) {
+            final boolean canReplaceResourceBundle = resourceBundleName == null
+                    || resourceBundleName.equals(baseName);
+
+            if (!canReplaceResourceBundle) {
+                throw new IllegalArgumentException("can't replace resource bundle");
+            }
+
+
+            userBundle = bundle;
+            resourceBundleName = baseName;
+        }
+    }
+
+    /**
      * Return the parent for this Logger.
      * <p>
      * This method returns the nearest extant parent in the namespace.
@@ -1791,14 +1962,20 @@ public class Logger {
      * It should not be called from application code.
      * <p>
      * @param  parent   the new parent logger
-     * @exception  SecurityException  if a security manager exists and if
-     *             the caller does not have LoggingPermission("control").
+     * @throws  SecurityException  if a security manager exists and if
+     *          the caller does not have LoggingPermission("control").
      */
     public void setParent(Logger parent) {
         if (parent == null) {
             throw new NullPointerException();
         }
+
+        // check permission for all loggers, including anonymous loggers
+        if (manager == null) {
+            manager = LogManager.getLogManager();
+        }
         manager.checkPermission();
+
         doSetParent(parent);
     }
 
@@ -1838,7 +2015,7 @@ public class Logger {
                 // we didn't have a previous parent
                 ref = manager.new LoggerWeakRef(this);
             }
-            ref.setParentRef(new WeakReference<Logger>(parent));
+            ref.setParentRef(new WeakReference<>(parent));
             parent.kids.add(ref);
 
             // As a result of the reparenting, the effective level
@@ -1919,5 +2096,31 @@ public class Logger {
         return null;
     }
 
+
+    private ResourceBundle getEffectiveResourceBundle() {
+        Logger target = this;
+        if (SYSTEM_LOGGER_RB_NAME.equals(resourceBundleName)) return null;
+        ResourceBundle localRB = getResourceBundle();
+        if (localRB != null) {
+            return localRB;
+        }
+
+        while (target != null) {
+            final ResourceBundle rb = target.userBundle;
+            if (rb != null) {
+                return rb;
+            }
+            final String rbn = target.getResourceBundleName();
+            if (rbn != null) {
+                if (!SYSTEM_LOGGER_RB_NAME.equals(rbn)) {
+                    return findResourceBundle(rbn, true);
+                } else {
+                    return null;
+                }
+            }
+            target = target.getParent();
+        }
+        return null;
+    }
 
 }

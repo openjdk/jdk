@@ -458,7 +458,7 @@ void JVMState::format(PhaseRegAlloc *regalloc, const Node *n, outputStream* st) 
       st->print("={");
       uint nf = spobj->n_fields();
       if (nf > 0) {
-        uint first_ind = spobj->first_index();
+        uint first_ind = spobj->first_index(mcall->jvms());
         Node* fld_node = mcall->in(first_ind);
         ciField* cifield;
         if (iklass != NULL) {
@@ -1063,7 +1063,6 @@ void SafePointNode::grow_stack(JVMState* jvms, uint grow_by) {
   int scloff = jvms->scloff();
   int endoff = jvms->endoff();
   assert(endoff == (int)req(), "no other states or debug info after me");
-  assert(jvms->scl_size() == 0, "parsed code should not have scalar objects");
   Node* top = Compile::current()->top();
   for (uint i = 0; i < grow_by; i++) {
     ins_req(monoff, top);
@@ -1079,32 +1078,31 @@ void SafePointNode::push_monitor(const FastLockNode *lock) {
   const int MonitorEdges = 2;
   assert(JVMState::logMonitorEdges == exact_log2(MonitorEdges), "correct MonitorEdges");
   assert(req() == jvms()->endoff(), "correct sizing");
-  assert((jvms()->scl_size() == 0), "parsed code should not have scalar objects");
   int nextmon = jvms()->scloff();
   if (GenerateSynchronizationCode) {
-    add_req(lock->box_node());
-    add_req(lock->obj_node());
+    ins_req(nextmon,   lock->box_node());
+    ins_req(nextmon+1, lock->obj_node());
   } else {
     Node* top = Compile::current()->top();
-    add_req(top);
-    add_req(top);
+    ins_req(nextmon, top);
+    ins_req(nextmon, top);
   }
-  jvms()->set_scloff(nextmon+MonitorEdges);
+  jvms()->set_scloff(nextmon + MonitorEdges);
   jvms()->set_endoff(req());
 }
 
 void SafePointNode::pop_monitor() {
   // Delete last monitor from debug info
-  assert((jvms()->scl_size() == 0), "parsed code should not have scalar objects");
   debug_only(int num_before_pop = jvms()->nof_monitors());
-  const int MonitorEdges = (1<<JVMState::logMonitorEdges);
+  const int MonitorEdges = 2;
+  assert(JVMState::logMonitorEdges == exact_log2(MonitorEdges), "correct MonitorEdges");
   int scloff = jvms()->scloff();
   int endoff = jvms()->endoff();
   int new_scloff = scloff - MonitorEdges;
   int new_endoff = endoff - MonitorEdges;
   jvms()->set_scloff(new_scloff);
   jvms()->set_endoff(new_endoff);
-  while (scloff > new_scloff)  del_req(--scloff);
+  while (scloff > new_scloff)  del_req_ordered(--scloff);
   assert(jvms()->nof_monitors() == num_before_pop-1, "");
 }
 
@@ -1169,13 +1167,12 @@ uint SafePointScalarObjectNode::match_edge(uint idx) const {
 }
 
 SafePointScalarObjectNode*
-SafePointScalarObjectNode::clone(int jvms_adj, Dict* sosn_map) const {
+SafePointScalarObjectNode::clone(Dict* sosn_map) const {
   void* cached = (*sosn_map)[(void*)this];
   if (cached != NULL) {
     return (SafePointScalarObjectNode*)cached;
   }
   SafePointScalarObjectNode* res = (SafePointScalarObjectNode*)Node::clone();
-  res->_first_index += jvms_adj;
   sosn_map->Insert((void*)this, (void*)res);
   return res;
 }

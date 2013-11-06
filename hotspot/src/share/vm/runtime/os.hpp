@@ -95,6 +95,8 @@ const bool ExecMem = true;
 typedef void (*java_call_t)(JavaValue* value, methodHandle* method, JavaCallArguments* args, Thread* thread);
 
 class os: AllStatic {
+  friend class VMStructs;
+
  public:
   enum { page_sizes_max = 9 }; // Size of _page_sizes array (8 plus a sentinel)
 
@@ -143,7 +145,10 @@ class os: AllStatic {
 
  public:
   static void init(void);                      // Called before command line parsing
+  static void init_before_ergo(void);          // Called after command line parsing
+                                               // before VM ergonomics processing.
   static jint init_2(void);                    // Called after command line parsing
+                                               // and VM ergonomics processing
   static void init_globals(void) {             // Called from init_globals() in init.cpp
     init_globals_ext();
   }
@@ -258,6 +263,11 @@ class os: AllStatic {
   static size_t page_size_for_region(size_t region_min_size,
                                      size_t region_max_size,
                                      uint min_pages);
+  // Return the largest page size that can be used
+  static size_t max_page_size() {
+    // The _page_sizes array is sorted in descending order.
+    return _page_sizes[0];
+  }
 
   // Methods for tracing page sizes returned by the above method; enabled by
   // TracePageSizes.  The region_{min,max}_size parameters should be the values
@@ -742,10 +752,6 @@ class os: AllStatic {
   // Hook for os specific jvm options that we don't want to abort on seeing
   static bool obsolete_option(const JavaVMOption *option);
 
-  // Read file line by line. If line is longer than bsize,
-  // rest of line is skipped. Returns number of bytes read or -1 on EOF
-  static int get_line_chars(int fd, char *buf, const size_t bsize);
-
   // Extensions
 #include "runtime/os_ext.hpp"
 
@@ -810,6 +816,14 @@ class os: AllStatic {
 #endif
 
  public:
+#ifndef PLATFORM_PRINT_NATIVE_STACK
+  // No platform-specific code for printing the native stack.
+  static bool platform_print_native_stack(outputStream* st, void* context,
+                                          char *buf, int buf_size) {
+    return false;
+  }
+#endif
+
   // debugging support (mostly used by debug.cpp but also fatal error handler)
   static bool find(address pc, outputStream* st = tty); // OS specific function to make sense out of an address
 

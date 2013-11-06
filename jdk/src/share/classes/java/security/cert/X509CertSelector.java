@@ -359,7 +359,7 @@ public class X509CertSelector implements CertSelector {
      * criticality setting, and encapsulating OCTET STRING)
      * for a SubjectKeyIdentifier extension.
      * The ASN.1 notation for this structure follows.
-     * <p>
+     *
      * <pre>{@code
      * SubjectKeyIdentifier ::= KeyIdentifier
      *
@@ -399,7 +399,7 @@ public class X509CertSelector implements CertSelector {
      * criticality setting, and encapsulating OCTET STRING)
      * for an AuthorityKeyIdentifier extension.
      * The ASN.1 notation for this structure follows.
-     * <p>
+     *
      * <pre>{@code
      * AuthorityKeyIdentifier ::= SEQUENCE {
      *    keyIdentifier             [0] KeyIdentifier           OPTIONAL,

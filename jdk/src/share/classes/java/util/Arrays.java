@@ -1225,7 +1225,7 @@ public class Arrays {
      *
      * <p>The implementation was adapted from Tim Peters's list sort for Python
      * (<a href="http://svn.python.org/projects/python/trunk/Objects/listsort.txt">
-     * TimSort</a>).  It uses techiques from Peter McIlroy's "Optimistic
+     * TimSort</a>).  It uses techniques from Peter McIlroy's "Optimistic
      * Sorting and Information Theoretic Complexity", in Proceedings of the
      * Fourth Annual ACM-SIAM Symposium on Discrete Algorithms, pp 467-474,
      * January 1993.
@@ -1284,7 +1284,7 @@ public class Arrays {
      *
      * <p>The implementation was adapted from Tim Peters's list sort for Python
      * (<a href="http://svn.python.org/projects/python/trunk/Objects/listsort.txt">
-     * TimSort</a>).  It uses techiques from Peter McIlroy's "Optimistic
+     * TimSort</a>).  It uses techniques from Peter McIlroy's "Optimistic
      * Sorting and Information Theoretic Complexity", in Proceedings of the
      * Fourth Annual ACM-SIAM Symposium on Discrete Algorithms, pp 467-474,
      * January 1993.
@@ -1411,7 +1411,7 @@ public class Arrays {
      *
      * <p>The implementation was adapted from Tim Peters's list sort for Python
      * (<a href="http://svn.python.org/projects/python/trunk/Objects/listsort.txt">
-     * TimSort</a>).  It uses techiques from Peter McIlroy's "Optimistic
+     * TimSort</a>).  It uses techniques from Peter McIlroy's "Optimistic
      * Sorting and Information Theoretic Complexity", in Proceedings of the
      * Fourth Annual ACM-SIAM Symposium on Discrete Algorithms, pp 467-474,
      * January 1993.
@@ -1475,7 +1475,7 @@ public class Arrays {
      *
      * <p>The implementation was adapted from Tim Peters's list sort for Python
      * (<a href="http://svn.python.org/projects/python/trunk/Objects/listsort.txt">
-     * TimSort</a>).  It uses techiques from Peter McIlroy's "Optimistic
+     * TimSort</a>).  It uses techniques from Peter McIlroy's "Optimistic
      * Sorting and Information Theoretic Complexity", in Proceedings of the
      * Fourth Annual ACM-SIAM Symposium on Discrete Algorithms, pp 467-474,
      * January 1993.
@@ -1583,6 +1583,7 @@ public class Arrays {
      * @since 1.8
      */
     public static <T> void parallelPrefix(T[] array, BinaryOperator<T> op) {
+        Objects.requireNonNull(op);
         if (array.length > 0)
             new ArrayPrefixHelpers.CumulateTask<>
                     (null, op, array, 0, array.length).invoke();
@@ -1606,6 +1607,7 @@ public class Arrays {
      */
     public static <T> void parallelPrefix(T[] array, int fromIndex,
                                           int toIndex, BinaryOperator<T> op) {
+        Objects.requireNonNull(op);
         rangeCheck(array.length, fromIndex, toIndex);
         if (fromIndex < toIndex)
             new ArrayPrefixHelpers.CumulateTask<>
@@ -1627,6 +1629,7 @@ public class Arrays {
      * @since 1.8
      */
     public static void parallelPrefix(long[] array, LongBinaryOperator op) {
+        Objects.requireNonNull(op);
         if (array.length > 0)
             new ArrayPrefixHelpers.LongCumulateTask
                     (null, op, array, 0, array.length).invoke();
@@ -1649,6 +1652,7 @@ public class Arrays {
      */
     public static void parallelPrefix(long[] array, int fromIndex,
                                       int toIndex, LongBinaryOperator op) {
+        Objects.requireNonNull(op);
         rangeCheck(array.length, fromIndex, toIndex);
         if (fromIndex < toIndex)
             new ArrayPrefixHelpers.LongCumulateTask
@@ -1673,6 +1677,7 @@ public class Arrays {
      * @since 1.8
      */
     public static void parallelPrefix(double[] array, DoubleBinaryOperator op) {
+        Objects.requireNonNull(op);
         if (array.length > 0)
             new ArrayPrefixHelpers.DoubleCumulateTask
                     (null, op, array, 0, array.length).invoke();
@@ -1695,6 +1700,7 @@ public class Arrays {
      */
     public static void parallelPrefix(double[] array, int fromIndex,
                                       int toIndex, DoubleBinaryOperator op) {
+        Objects.requireNonNull(op);
         rangeCheck(array.length, fromIndex, toIndex);
         if (fromIndex < toIndex)
             new ArrayPrefixHelpers.DoubleCumulateTask
@@ -1716,6 +1722,7 @@ public class Arrays {
      * @since 1.8
      */
     public static void parallelPrefix(int[] array, IntBinaryOperator op) {
+        Objects.requireNonNull(op);
         if (array.length > 0)
             new ArrayPrefixHelpers.IntCumulateTask
                     (null, op, array, 0, array.length).invoke();
@@ -1738,6 +1745,7 @@ public class Arrays {
      */
     public static void parallelPrefix(int[] array, int fromIndex,
                                       int toIndex, IntBinaryOperator op) {
+        Objects.requireNonNull(op);
         rangeCheck(array.length, fromIndex, toIndex);
         if (fromIndex < toIndex)
             new ArrayPrefixHelpers.IntCumulateTask

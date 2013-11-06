@@ -30,6 +30,7 @@ import java.security.AccessController;
 
 import com.sun.jmx.mbeanserver.GetPropertyAction;
 import com.sun.jmx.mbeanserver.Introspector;
+import java.util.Objects;
 
 
 /**
@@ -285,10 +286,10 @@ public class MBeanAttributeInfo extends MBeanFeatureInfo implements Cloneable {
         if (!(o instanceof MBeanAttributeInfo))
             return false;
         MBeanAttributeInfo p = (MBeanAttributeInfo) o;
-        return (p.getName().equals(getName()) &&
-                p.getType().equals(getType()) &&
-                p.getDescription().equals(getDescription()) &&
-                p.getDescriptor().equals(getDescriptor()) &&
+        return (Objects.equals(p.getName(), getName()) &&
+                Objects.equals(p.getType(), getType()) &&
+                Objects.equals(p.getDescription(), getDescription()) &&
+                Objects.equals(p.getDescriptor(), getDescriptor()) &&
                 p.isReadable() == isReadable() &&
                 p.isWritable() == isWritable() &&
                 p.isIs() == isIs());
@@ -301,7 +302,7 @@ public class MBeanAttributeInfo extends MBeanFeatureInfo implements Cloneable {
        right and we needlessly hashed in the description and parameter
        array.  */
     public int hashCode() {
-        return getName().hashCode() ^ getType().hashCode();
+        return Objects.hash(getName(), getType());
     }
 
     private static boolean isIs(Method getter) {

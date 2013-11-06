@@ -1165,6 +1165,11 @@ public class JPEGImageReader extends ImageReader {
             target = imRas;
         }
         int [] bandSizes = target.getSampleModel().getSampleSize();
+        for (int i = 0; i < bandSizes.length; i++) {
+            if (bandSizes[i] <= 0 || bandSizes[i] > 8) {
+                throw new IIOException("Illegal band size: should be 0 < size <= 8");
+            }
+        }
 
         /*
          * If the process is sequential, and we have restart markers,

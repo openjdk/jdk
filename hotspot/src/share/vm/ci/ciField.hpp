@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -52,9 +52,6 @@ private:
   ciInstanceKlass* _known_to_link_with_put;
   ciInstanceKlass* _known_to_link_with_get;
   ciConstant       _constant_value;
-
-  // Used for will_link
-  int              _cp_index;
 
   ciType* compute_type();
   ciType* compute_type_impl();
@@ -139,7 +136,10 @@ public:
   //      non-constant fields.  These are java.lang.System.in
   //      and java.lang.System.out.  Abomination.
   //
-  // Note: the check for case 4 is not yet implemented.
+  // A field is also considered constant if it is marked @Stable
+  // and is non-null (or non-zero, if a primitive).
+  // For non-static fields, the null/zero check must be
+  // arranged by the user, as constant_value().is_null_or_zero().
   bool is_constant() { return _is_constant; }
 
   // Get the constant value of this field.
@@ -173,6 +173,7 @@ public:
   bool is_protected   () { return flags().is_protected(); }
   bool is_static      () { return flags().is_static(); }
   bool is_final       () { return flags().is_final(); }
+  bool is_stable      () { return flags().is_stable(); }
   bool is_volatile    () { return flags().is_volatile(); }
   bool is_transient   () { return flags().is_transient(); }
 

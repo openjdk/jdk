@@ -37,9 +37,12 @@ package com.sun.nio.sctp;
  *
  * @since 1.7
  */
+@jdk.Exported
 public interface Notification {
     /**
      * Returns the association that this notification is applicable to.
+     *
+     * @return  The association
      */
     public Association association();
 }

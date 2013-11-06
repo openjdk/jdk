@@ -180,6 +180,12 @@ ul.subNavList li{
     margin: auto 5px;
     border:1px solid #c9aa44;
 }
+.skipNav {
+    position:absolute;
+    top:auto;
+    left:-9999px;
+    overflow:hidden;
+    }
 /*
 Page header and footer styles
 */
@@ -342,27 +348,16 @@ table tr td dl, table tr td dl dt, table tr td dl dd {
 /*
 Table styles
 */
-.contentContainer table, .classUseContainer table, .constantValuesContainer table {
+.overviewSummary, .memberSummary, .typeSummary, .useSummary, .constantsSummary, .deprecatedSummary {
     border-bottom:1px solid #9eadc0;
+    margin:0 0 12px 0px;
     width:100%;
 }
-.contentContainer ul li table, .classUseContainer ul li table, .constantValuesContainer ul li table {
-    width:100%;
+.overviewSummary, .memberSummary  {
+    padding:0px;
 }
-.contentContainer .description table, .contentContainer .details table {
-    border-bottom:none;
-}
-.contentContainer ul li table th.colOne, .contentContainer ul li table th.colFirst, .contentContainer ul li table th.colLast, .classUseContainer ul li table th, .constantValuesContainer ul li table th, .contentContainer ul li table td.colOne, .contentContainer ul li table td.colFirst, .contentContainer ul li table td.colLast, .classUseContainer ul li table td, .constantValuesContainer ul li table td{
-    vertical-align:top;
-    padding-right:20px;
-}
-.contentContainer ul li table th.colLast, .classUseContainer ul li table th.colLast,.constantValuesContainer ul li table th.colLast,
-.contentContainer ul li table td.colLast, .classUseContainer ul li table td.colLast,.constantValuesContainer ul li table td.colLast,
-.contentContainer ul li table th.colOne, .classUseContainer ul li table th.colOne,
-.contentContainer ul li table td.colOne, .classUseContainer ul li table td.colOne {
-    padding-right:3px;
-}
-.overviewSummary caption, .packageSummary caption, .contentContainer ul.blockList li.blockList caption, .summary caption, .classUseContainer caption, .constantValuesContainer caption {
+.overviewSummary caption, .memberSummary caption, .typeSummary caption,
+.useSummary caption, .constantsSummary caption, .deprecatedSummary caption {
     position:relative;
     text-align:left;
     background-repeat:no-repeat;
@@ -372,46 +367,51 @@ Table styles
     overflow:hidden;
     padding:0px;
     margin:0px;
-    white-space:pre;
 }
-caption a:link, caption a:hover, caption a:active, caption a:visited {
+.overviewSummary caption a:link, .memberSummary caption a:link, .typeSummary caption a:link,
+.useSummary caption a:link, .constantsSummary caption a:link, .deprecatedSummary caption a:link,
+.overviewSummary caption a:hover, .memberSummary caption a:hover, .typeSummary caption a:hover,
+.useSummary caption a:hover, .constantsSummary caption a:hover, .deprecatedSummary caption a:hover,
+.overviewSummary caption a:active, .memberSummary caption a:active, .typeSummary caption a:active,
+.useSummary caption a:active, .constantsSummary caption a:active, .deprecatedSummary caption a:active,
+.overviewSummary caption a:visited, .memberSummary caption a:visited, .typeSummary caption a:visited,
+.useSummary caption a:visited, .constantsSummary caption a:visited, .deprecatedSummary caption a:visited {
     color:#FFFFFF;
 }
-.overviewSummary caption span, .packageSummary caption span, .contentContainer ul.blockList li.blockList caption span, .summary caption span, .classUseContainer caption span, .constantValuesContainer caption span {
+.overviewSummary caption span, .memberSummary caption span, .typeSummary caption span,
+.useSummary caption span, .constantsSummary caption span, .deprecatedSummary caption span {
     white-space:nowrap;
     padding-top:8px;
     padding-left:8px;
-    display:block;
+    display:inline-block;
     float:left;
     background-image:url(resources/titlebar.gif);
-    height:18px;
 }
-.contentContainer ul.blockList li.blockList caption span.activeTableTab span {
+.memberSummary caption span.activeTableTab span {
     white-space:nowrap;
     padding-top:8px;
     padding-left:8px;
-    display:block;
+    display:inline-block;
     float:left;
     background-image:url(resources/activetitlebar.gif);
-    height:18px;
 }
-.contentContainer ul.blockList li.blockList caption span.tableTab span {
+.memberSummary caption span.tableTab span {
     white-space:nowrap;
     padding-top:8px;
     padding-left:8px;
-    display:block;
+    display:inline-block;
     float:left;
     background-image:url(resources/titlebar.gif);
-    height:18px;
 }
-.contentContainer ul.blockList li.blockList caption span.tableTab, .contentContainer ul.blockList li.blockList caption span.activeTableTab {
+.memberSummary caption span.tableTab, .memberSummary caption span.activeTableTab {
     padding-top:0px;
     padding-left:0px;
     background-image:none;
     float:none;
-    display:inline;
+    display:inline-block;
 }
-.overviewSummary .tabEnd, .packageSummary .tabEnd, .contentContainer ul.blockList li.blockList .tabEnd, .summary .tabEnd, .classUseContainer .tabEnd, .constantValuesContainer .tabEnd {
+.overviewSummary .tabEnd, .memberSummary .tabEnd, .typeSummary .tabEnd,
+.useSummary .tabEnd, .constantsSummary .tabEnd, .deprecatedSummary .tabEnd {
     width:10px;
     background-image:url(resources/titlebar_end.gif);
     background-repeat:no-repeat;
@@ -419,7 +419,7 @@ caption a:link, caption a:hover, caption a:active, caption a:visited {
     position:relative;
     float:left;
 }
-.contentContainer ul.blockList li.blockList .activeTableTab .tabEnd {
+.memberSummary .activeTableTab .tabEnd {
     width:10px;
     margin-right:5px;
     background-image:url(resources/activetitlebar_end.gif);
@@ -428,7 +428,7 @@ caption a:link, caption a:hover, caption a:active, caption a:visited {
     position:relative;
     float:left;
 }
-.contentContainer ul.blockList li.blockList .tableTab .tabEnd {
+.memberSummary .tableTab .tabEnd {
     width:10px;
     margin-right:5px;
     background-image:url(resources/titlebar_end.gif);
@@ -437,32 +437,22 @@ caption a:link, caption a:hover, caption a:active, caption a:visited {
     position:relative;
     float:left;
 }
-ul.blockList ul.blockList li.blockList table {
-    margin:0 0 12px 0px;
-    width:100%;
-}
-.tableSubHeadingColor {
-    background-color: #EEEEFF;
-}
-.altColor {
-    background-color:#eeeeef;
-}
-.rowColor {
-    background-color:#ffffff;
-}
-.overviewSummary td, .packageSummary td, .contentContainer ul.blockList li.blockList td, .summary td, .classUseContainer td, .constantValuesContainer td {
+.overviewSummary td, .memberSummary td, .typeSummary td,
+.useSummary td, .constantsSummary td, .deprecatedSummary td {
     text-align:left;
     padding:3px 3px 3px 7px;
 }
-th.colFirst, th.colLast, th.colOne, .constantValuesContainer th {
+th.colOne, th.colFirst, th.colLast, .useSummary th, .constantsSummary th,
+td.colOne, td.colFirst, td.colLast, .useSummary td, .constantsSummary td{
+    vertical-align:top;
+    padding-right:3px;
+}
+th.colFirst, th.colLast, th.colOne, .constantsSummary th {
     background:#dee3e9;
     border-top:1px solid #9eadc0;
     border-bottom:1px solid #9eadc0;
     text-align:left;
     padding:3px 3px 3px 7px;
-}
-td.colOne a:link, td.colOne a:active, td.colOne a:visited, td.colOne a:hover, td.colFirst a:link, td.colFirst a:active, td.colFirst a:visited, td.colFirst a:hover, td.colLast a:link, td.colLast a:active, td.colLast a:visited, td.colLast a:hover, .constantValuesContainer td a:link, .constantValuesContainer td a:active, .constantValuesContainer td a:visited, .constantValuesContainer td a:hover {
-    font-weight:bold;
 }
 td.colFirst, th.colFirst {
     border-left:1px solid #9eadc0;
@@ -475,18 +465,25 @@ td.colOne, th.colOne {
     border-right:1px solid #9eadc0;
     border-left:1px solid #9eadc0;
 }
-table.overviewSummary  {
-    padding:0px;
-    margin-left:0px;
-}
-table.overviewSummary td.colFirst, table.overviewSummary th.colFirst,
-table.overviewSummary td.colOne, table.overviewSummary th.colOne {
+.overviewSummary td.colFirst, .overviewSummary th.colFirst,
+.overviewSummary td.colOne, .overviewSummary th.colOne,
+.memberSummary td.colFirst, .memberSummary th.colFirst,
+.memberSummary td.colOne, .memberSummary th.colOne,
+.typeSummary td.colFirst{
     width:25%;
     vertical-align:middle;
 }
-table.packageSummary td.colFirst, table.overviewSummary th.colFirst {
-    width:25%;
-    vertical-align:middle;
+td.colOne a:link, td.colOne a:active, td.colOne a:visited, td.colOne a:hover, td.colFirst a:link, td.colFirst a:active, td.colFirst a:visited, td.colFirst a:hover, td.colLast a:link, td.colLast a:active, td.colLast a:visited, td.colLast a:hover, .constantValuesContainer td a:link, .constantValuesContainer td a:active, .constantValuesContainer td a:visited, .constantValuesContainer td a:hover {
+    font-weight:bold;
+}
+.tableSubHeadingColor {
+    background-color: #EEEEFF;
+}
+.altColor {
+    background-color:#eeeeef;
+}
+.rowColor {
+    background-color:#ffffff;
 }
 /*
 Content styles
@@ -517,9 +514,11 @@ h1.hidden {
     display:block;
     margin:3px 0 0 0;
 }
-.strong {
+.deprecatedLabel, .descfrmTypeLabel, .memberNameLabel, .memberNameLink,
+.overrideSpecifyLabel, .packageHierarchyLabel, .paramLabel, .returnLabel,
+.seeLabel, .simpleTagLabel, .throwsLabel, .typeNameLabel, .typeNameLink {
     font-weight:bold;
 }
-.italic {
+.deprecationComment, .emphasizedPhrase, .interfaceName {
     font-style:italic;
 }

@@ -458,8 +458,10 @@
       the same name from being loaded dynamically.
 <p/>
       The VM will invoke the Agent_OnUnload_L function of the agent, if such
-      a function is exported, at the same point during startup as it would
-      have called the dynamic entry point Agent_OnUnLoad.
+      a function is exported, at the same point during VM execution as it would
+      have called the dynamic entry point Agent_OnUnLoad. A statically loaded
+      agent cannot be unloaded. The Agent_OnUnload_L function will still be
+      called to do any other agent shutdown related tasks. 
       If a <i>statically linked</i> agent L exports a function called
       Agent_OnUnLoad_L and a function called Agent_OnUnLoad, the Agent_OnUnLoad
       function will be ignored.

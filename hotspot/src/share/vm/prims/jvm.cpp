@@ -671,13 +671,12 @@ JVM_END
 JVM_ENTRY(jclass, JVM_GetCallerClass(JNIEnv* env, int depth))
   JVMWrapper("JVM_GetCallerClass");
 
-  // Pre-JDK 8 and early builds of JDK 8 don't have a CallerSensitive annotation.
-  if (SystemDictionary::reflect_CallerSensitive_klass() == NULL) {
+  // Pre-JDK 8 and early builds of JDK 8 don't have a CallerSensitive annotation; or
+  // sun.reflect.Reflection.getCallerClass with a depth parameter is provided
+  // temporarily for existing code to use until a replacement API is defined.
+  if (SystemDictionary::reflect_CallerSensitive_klass() == NULL || depth != JVM_CALLER_DEPTH) {
     Klass* k = thread->security_get_caller_class(depth);
     return (k == NULL) ? NULL : (jclass) JNIHandles::make_local(env, k->java_mirror());
-  } else {
-    // Basic handshaking with Java_sun_reflect_Reflection_getCallerClass
-    assert(depth == -1, "wrong handshake depth");
   }
 
   // Getting the class of the caller frame.
@@ -1827,7 +1826,7 @@ JVM_ENTRY(jobjectArray, JVM_GetClassDeclaredFields(JNIEnv *env, jclass ofClass, 
     }
 
     if (!publicOnly || fs.access_flags().is_public()) {
-      fd.initialize(k(), fs.index());
+      fd.reinitialize(k(), fs.index());
       oop field = Reflection::new_field(&fd, UseNewReflection, CHECK_NULL);
       result->obj_at_put(out_idx, field);
       ++out_idx;
@@ -1838,16 +1837,27 @@ JVM_ENTRY(jobjectArray, JVM_GetClassDeclaredFields(JNIEnv *env, jclass ofClass, 
 }
 JVM_END
 
-JVM_ENTRY(jobjectArray, JVM_GetClassDeclaredMethods(JNIEnv *env, jclass ofClass, jboolean publicOnly))
-{
-  JVMWrapper("JVM_GetClassDeclaredMethods");
+static bool select_method(methodHandle method, bool want_constructor) {
+  if (want_constructor) {
+    return (method->is_initializer() && !method->is_static());
+  } else {
+    return  (!method->is_initializer() && !method->is_overpass());
+  }
+}
+
+static jobjectArray get_class_declared_methods_helper(
+                                  JNIEnv *env,
+                                  jclass ofClass, jboolean publicOnly,
+                                  bool want_constructor,
+                                  Klass* klass, TRAPS) {
+
   JvmtiVMObjectAllocEventCollector oam;
 
   // Exclude primitive types and array types
   if (java_lang_Class::is_primitive(JNIHandles::resolve_non_null(ofClass))
       || java_lang_Class::as_Klass(JNIHandles::resolve_non_null(ofClass))->oop_is_array()) {
     // Return empty array
-    oop res = oopFactory::new_objArray(SystemDictionary::reflect_Method_klass(), 0, CHECK_NULL);
+    oop res = oopFactory::new_objArray(klass, 0, CHECK_NULL);
     return (jobjectArray) JNIHandles::make_local(env, res);
   }
 
@@ -1858,87 +1868,67 @@ JVM_ENTRY(jobjectArray, JVM_GetClassDeclaredMethods(JNIEnv *env, jclass ofClass,
 
   Array<Method*>* methods = k->methods();
   int methods_length = methods->length();
+
+  // Save original method_idnum in case of redefinition, which can change
+  // the idnum of obsolete methods.  The new method will have the same idnum
+  // but if we refresh the methods array, the counts will be wrong.
+  ResourceMark rm(THREAD);
+  GrowableArray<int>* idnums = new GrowableArray<int>(methods_length);
   int num_methods = 0;
 
-  int i;
-  for (i = 0; i < methods_length; i++) {
+  for (int i = 0; i < methods_length; i++) {
     methodHandle method(THREAD, methods->at(i));
-    if (!method->is_initializer() && !method->is_overpass()) {
+    if (select_method(method, want_constructor)) {
       if (!publicOnly || method->is_public()) {
+        idnums->push(method->method_idnum());
         ++num_methods;
       }
     }
   }
 
   // Allocate result
-  objArrayOop r = oopFactory::new_objArray(SystemDictionary::reflect_Method_klass(), num_methods, CHECK_NULL);
+  objArrayOop r = oopFactory::new_objArray(klass, num_methods, CHECK_NULL);
   objArrayHandle result (THREAD, r);
 
-  int out_idx = 0;
-  for (i = 0; i < methods_length; i++) {
-    methodHandle method(THREAD, methods->at(i));
-    if (!method->is_initializer() && !method->is_overpass()) {
-      if (!publicOnly || method->is_public()) {
-        oop m = Reflection::new_method(method, UseNewReflection, false, CHECK_NULL);
-        result->obj_at_put(out_idx, m);
-        ++out_idx;
+  // Now just put the methods that we selected above, but go by their idnum
+  // in case of redefinition.  The methods can be redefined at any safepoint,
+  // so above when allocating the oop array and below when creating reflect
+  // objects.
+  for (int i = 0; i < num_methods; i++) {
+    methodHandle method(THREAD, k->method_with_idnum(idnums->at(i)));
+    if (method.is_null()) {
+      // Method may have been deleted and seems this API can handle null
+      // Otherwise should probably put a method that throws NSME
+      result->obj_at_put(i, NULL);
+    } else {
+      oop m;
+      if (want_constructor) {
+        m = Reflection::new_constructor(method, CHECK_NULL);
+      } else {
+        m = Reflection::new_method(method, UseNewReflection, false, CHECK_NULL);
       }
+      result->obj_at_put(i, m);
     }
   }
-  assert(out_idx == num_methods, "just checking");
+
   return (jobjectArray) JNIHandles::make_local(env, result());
+}
+
+JVM_ENTRY(jobjectArray, JVM_GetClassDeclaredMethods(JNIEnv *env, jclass ofClass, jboolean publicOnly))
+{
+  JVMWrapper("JVM_GetClassDeclaredMethods");
+  return get_class_declared_methods_helper(env, ofClass, publicOnly,
+                                           /*want_constructor*/ false,
+                                           SystemDictionary::reflect_Method_klass(), THREAD);
 }
 JVM_END
 
 JVM_ENTRY(jobjectArray, JVM_GetClassDeclaredConstructors(JNIEnv *env, jclass ofClass, jboolean publicOnly))
 {
   JVMWrapper("JVM_GetClassDeclaredConstructors");
-  JvmtiVMObjectAllocEventCollector oam;
-
-  // Exclude primitive types and array types
-  if (java_lang_Class::is_primitive(JNIHandles::resolve_non_null(ofClass))
-      || java_lang_Class::as_Klass(JNIHandles::resolve_non_null(ofClass))->oop_is_array()) {
-    // Return empty array
-    oop res = oopFactory::new_objArray(SystemDictionary::reflect_Constructor_klass(), 0 , CHECK_NULL);
-    return (jobjectArray) JNIHandles::make_local(env, res);
-  }
-
-  instanceKlassHandle k(THREAD, java_lang_Class::as_Klass(JNIHandles::resolve_non_null(ofClass)));
-
-  // Ensure class is linked
-  k->link_class(CHECK_NULL);
-
-  Array<Method*>* methods = k->methods();
-  int methods_length = methods->length();
-  int num_constructors = 0;
-
-  int i;
-  for (i = 0; i < methods_length; i++) {
-    methodHandle method(THREAD, methods->at(i));
-    if (method->is_initializer() && !method->is_static()) {
-      if (!publicOnly || method->is_public()) {
-        ++num_constructors;
-      }
-    }
-  }
-
-  // Allocate result
-  objArrayOop r = oopFactory::new_objArray(SystemDictionary::reflect_Constructor_klass(), num_constructors, CHECK_NULL);
-  objArrayHandle result(THREAD, r);
-
-  int out_idx = 0;
-  for (i = 0; i < methods_length; i++) {
-    methodHandle method(THREAD, methods->at(i));
-    if (method->is_initializer() && !method->is_static()) {
-      if (!publicOnly || method->is_public()) {
-        oop m = Reflection::new_constructor(method, CHECK_NULL);
-        result->obj_at_put(out_idx, m);
-        ++out_idx;
-      }
-    }
-  }
-  assert(out_idx == num_constructors, "just checking");
-  return (jobjectArray) JNIHandles::make_local(env, result());
+  return get_class_declared_methods_helper(env, ofClass, publicOnly,
+                                           /*want_constructor*/ true,
+                                           SystemDictionary::reflect_Constructor_klass(), THREAD);
 }
 JVM_END
 
@@ -3966,248 +3956,6 @@ void initialize_converter_functions() {
 }
 
 
-// Serialization
-JVM_ENTRY(void, JVM_SetPrimitiveFieldValues(JNIEnv *env, jclass cb, jobject obj,
-                                            jlongArray fieldIDs, jcharArray typecodes, jbyteArray data))
-  assert(!JDK_Version::is_gte_jdk14x_version(), "should only be used in 1.3.1 and earlier");
-
-  typeArrayOop tcodes = typeArrayOop(JNIHandles::resolve(typecodes));
-  typeArrayOop dbuf   = typeArrayOop(JNIHandles::resolve(data));
-  typeArrayOop fids   = typeArrayOop(JNIHandles::resolve(fieldIDs));
-  oop          o      = JNIHandles::resolve(obj);
-
-  if (o == NULL || fids == NULL  || dbuf == NULL  || tcodes == NULL) {
-    THROW(vmSymbols::java_lang_NullPointerException());
-  }
-
-  jsize nfids = fids->length();
-  if (nfids == 0) return;
-
-  if (tcodes->length() < nfids) {
-    THROW(vmSymbols::java_lang_ArrayIndexOutOfBoundsException());
-  }
-
-  jsize off = 0;
-  /* loop through fields, setting values */
-  for (jsize i = 0; i < nfids; i++) {
-    jfieldID fid = (jfieldID)(intptr_t) fids->long_at(i);
-    int field_offset;
-    if (fid != NULL) {
-      // NULL is a legal value for fid, but retrieving the field offset
-      // trigger assertion in that case
-      field_offset = jfieldIDWorkaround::from_instance_jfieldID(o->klass(), fid);
-    }
-
-    switch (tcodes->char_at(i)) {
-      case 'Z':
-        if (fid != NULL) {
-          jboolean val = (dbuf->byte_at(off) != 0) ? JNI_TRUE : JNI_FALSE;
-          o->bool_field_put(field_offset, val);
-        }
-        off++;
-        break;
-
-      case 'B':
-        if (fid != NULL) {
-          o->byte_field_put(field_offset, dbuf->byte_at(off));
-        }
-        off++;
-        break;
-
-      case 'C':
-        if (fid != NULL) {
-          jchar val = ((dbuf->byte_at(off + 0) & 0xFF) << 8)
-                    + ((dbuf->byte_at(off + 1) & 0xFF) << 0);
-          o->char_field_put(field_offset, val);
-        }
-        off += 2;
-        break;
-
-      case 'S':
-        if (fid != NULL) {
-          jshort val = ((dbuf->byte_at(off + 0) & 0xFF) << 8)
-                     + ((dbuf->byte_at(off + 1) & 0xFF) << 0);
-          o->short_field_put(field_offset, val);
-        }
-        off += 2;
-        break;
-
-      case 'I':
-        if (fid != NULL) {
-          jint ival = ((dbuf->byte_at(off + 0) & 0xFF) << 24)
-                    + ((dbuf->byte_at(off + 1) & 0xFF) << 16)
-                    + ((dbuf->byte_at(off + 2) & 0xFF) << 8)
-                    + ((dbuf->byte_at(off + 3) & 0xFF) << 0);
-          o->int_field_put(field_offset, ival);
-        }
-        off += 4;
-        break;
-
-      case 'F':
-        if (fid != NULL) {
-          jint ival = ((dbuf->byte_at(off + 0) & 0xFF) << 24)
-                    + ((dbuf->byte_at(off + 1) & 0xFF) << 16)
-                    + ((dbuf->byte_at(off + 2) & 0xFF) << 8)
-                    + ((dbuf->byte_at(off + 3) & 0xFF) << 0);
-          jfloat fval = (*int_bits_to_float_fn)(env, NULL, ival);
-          o->float_field_put(field_offset, fval);
-        }
-        off += 4;
-        break;
-
-      case 'J':
-        if (fid != NULL) {
-          jlong lval = (((jlong) dbuf->byte_at(off + 0) & 0xFF) << 56)
-                     + (((jlong) dbuf->byte_at(off + 1) & 0xFF) << 48)
-                     + (((jlong) dbuf->byte_at(off + 2) & 0xFF) << 40)
-                     + (((jlong) dbuf->byte_at(off + 3) & 0xFF) << 32)
-                     + (((jlong) dbuf->byte_at(off + 4) & 0xFF) << 24)
-                     + (((jlong) dbuf->byte_at(off + 5) & 0xFF) << 16)
-                     + (((jlong) dbuf->byte_at(off + 6) & 0xFF) << 8)
-                     + (((jlong) dbuf->byte_at(off + 7) & 0xFF) << 0);
-          o->long_field_put(field_offset, lval);
-        }
-        off += 8;
-        break;
-
-      case 'D':
-        if (fid != NULL) {
-          jlong lval = (((jlong) dbuf->byte_at(off + 0) & 0xFF) << 56)
-                     + (((jlong) dbuf->byte_at(off + 1) & 0xFF) << 48)
-                     + (((jlong) dbuf->byte_at(off + 2) & 0xFF) << 40)
-                     + (((jlong) dbuf->byte_at(off + 3) & 0xFF) << 32)
-                     + (((jlong) dbuf->byte_at(off + 4) & 0xFF) << 24)
-                     + (((jlong) dbuf->byte_at(off + 5) & 0xFF) << 16)
-                     + (((jlong) dbuf->byte_at(off + 6) & 0xFF) << 8)
-                     + (((jlong) dbuf->byte_at(off + 7) & 0xFF) << 0);
-          jdouble dval = (*long_bits_to_double_fn)(env, NULL, lval);
-          o->double_field_put(field_offset, dval);
-        }
-        off += 8;
-        break;
-
-      default:
-        // Illegal typecode
-        THROW_MSG(vmSymbols::java_lang_IllegalArgumentException(), "illegal typecode");
-    }
-  }
-JVM_END
-
-
-JVM_ENTRY(void, JVM_GetPrimitiveFieldValues(JNIEnv *env, jclass cb, jobject obj,
-                            jlongArray fieldIDs, jcharArray typecodes, jbyteArray data))
-  assert(!JDK_Version::is_gte_jdk14x_version(), "should only be used in 1.3.1 and earlier");
-
-  typeArrayOop tcodes = typeArrayOop(JNIHandles::resolve(typecodes));
-  typeArrayOop dbuf   = typeArrayOop(JNIHandles::resolve(data));
-  typeArrayOop fids   = typeArrayOop(JNIHandles::resolve(fieldIDs));
-  oop          o      = JNIHandles::resolve(obj);
-
-  if (o == NULL || fids == NULL  || dbuf == NULL  || tcodes == NULL) {
-    THROW(vmSymbols::java_lang_NullPointerException());
-  }
-
-  jsize nfids = fids->length();
-  if (nfids == 0) return;
-
-  if (tcodes->length() < nfids) {
-    THROW(vmSymbols::java_lang_ArrayIndexOutOfBoundsException());
-  }
-
-  /* loop through fields, fetching values */
-  jsize off = 0;
-  for (jsize i = 0; i < nfids; i++) {
-    jfieldID fid = (jfieldID)(intptr_t) fids->long_at(i);
-    if (fid == NULL) {
-      THROW(vmSymbols::java_lang_NullPointerException());
-    }
-    int field_offset = jfieldIDWorkaround::from_instance_jfieldID(o->klass(), fid);
-
-     switch (tcodes->char_at(i)) {
-       case 'Z':
-         {
-           jboolean val = o->bool_field(field_offset);
-           dbuf->byte_at_put(off++, (val != 0) ? 1 : 0);
-         }
-         break;
-
-       case 'B':
-         dbuf->byte_at_put(off++, o->byte_field(field_offset));
-         break;
-
-       case 'C':
-         {
-           jchar val = o->char_field(field_offset);
-           dbuf->byte_at_put(off++, (val >> 8) & 0xFF);
-           dbuf->byte_at_put(off++, (val >> 0) & 0xFF);
-         }
-         break;
-
-       case 'S':
-         {
-           jshort val = o->short_field(field_offset);
-           dbuf->byte_at_put(off++, (val >> 8) & 0xFF);
-           dbuf->byte_at_put(off++, (val >> 0) & 0xFF);
-         }
-         break;
-
-       case 'I':
-         {
-           jint val = o->int_field(field_offset);
-           dbuf->byte_at_put(off++, (val >> 24) & 0xFF);
-           dbuf->byte_at_put(off++, (val >> 16) & 0xFF);
-           dbuf->byte_at_put(off++, (val >> 8)  & 0xFF);
-           dbuf->byte_at_put(off++, (val >> 0)  & 0xFF);
-         }
-         break;
-
-       case 'F':
-         {
-           jfloat fval = o->float_field(field_offset);
-           jint ival = (*float_to_int_bits_fn)(env, NULL, fval);
-           dbuf->byte_at_put(off++, (ival >> 24) & 0xFF);
-           dbuf->byte_at_put(off++, (ival >> 16) & 0xFF);
-           dbuf->byte_at_put(off++, (ival >> 8)  & 0xFF);
-           dbuf->byte_at_put(off++, (ival >> 0)  & 0xFF);
-         }
-         break;
-
-       case 'J':
-         {
-           jlong val = o->long_field(field_offset);
-           dbuf->byte_at_put(off++, (val >> 56) & 0xFF);
-           dbuf->byte_at_put(off++, (val >> 48) & 0xFF);
-           dbuf->byte_at_put(off++, (val >> 40) & 0xFF);
-           dbuf->byte_at_put(off++, (val >> 32) & 0xFF);
-           dbuf->byte_at_put(off++, (val >> 24) & 0xFF);
-           dbuf->byte_at_put(off++, (val >> 16) & 0xFF);
-           dbuf->byte_at_put(off++, (val >> 8)  & 0xFF);
-           dbuf->byte_at_put(off++, (val >> 0)  & 0xFF);
-         }
-         break;
-
-       case 'D':
-         {
-           jdouble dval = o->double_field(field_offset);
-           jlong lval = (*double_to_long_bits_fn)(env, NULL, dval);
-           dbuf->byte_at_put(off++, (lval >> 56) & 0xFF);
-           dbuf->byte_at_put(off++, (lval >> 48) & 0xFF);
-           dbuf->byte_at_put(off++, (lval >> 40) & 0xFF);
-           dbuf->byte_at_put(off++, (lval >> 32) & 0xFF);
-           dbuf->byte_at_put(off++, (lval >> 24) & 0xFF);
-           dbuf->byte_at_put(off++, (lval >> 16) & 0xFF);
-           dbuf->byte_at_put(off++, (lval >> 8)  & 0xFF);
-           dbuf->byte_at_put(off++, (lval >> 0)  & 0xFF);
-         }
-         break;
-
-       default:
-         // Illegal typecode
-         THROW_MSG(vmSymbols::java_lang_IllegalArgumentException(), "illegal typecode");
-     }
-  }
-JVM_END
-
 
 // Shared JNI/JVM entry points //////////////////////////////////////////////////////////////
 
@@ -4238,13 +3986,13 @@ extern "C" {
 
 JVM_LEAF(jboolean, JVM_AccessVMBooleanFlag(const char* name, jboolean* value, jboolean is_get))
   JVMWrapper("JVM_AccessBoolVMFlag");
-  return is_get ? CommandLineFlags::boolAt((char*) name, (bool*) value) : CommandLineFlags::boolAtPut((char*) name, (bool*) value, INTERNAL);
+  return is_get ? CommandLineFlags::boolAt((char*) name, (bool*) value) : CommandLineFlags::boolAtPut((char*) name, (bool*) value, Flag::INTERNAL);
 JVM_END
 
 JVM_LEAF(jboolean, JVM_AccessVMIntFlag(const char* name, jint* value, jboolean is_get))
   JVMWrapper("JVM_AccessVMIntFlag");
   intx v;
-  jboolean result = is_get ? CommandLineFlags::intxAt((char*) name, &v) : CommandLineFlags::intxAtPut((char*) name, &v, INTERNAL);
+  jboolean result = is_get ? CommandLineFlags::intxAt((char*) name, &v) : CommandLineFlags::intxAtPut((char*) name, &v, Flag::INTERNAL);
   *value = (jint)v;
   return result;
 JVM_END

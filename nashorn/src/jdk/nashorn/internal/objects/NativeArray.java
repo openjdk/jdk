@@ -41,7 +41,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.concurrent.Callable;
 
-import jdk.nashorn.api.scripting.ScriptObjectMirror;
+import jdk.nashorn.api.scripting.JSObject;
 import jdk.nashorn.internal.objects.annotations.Attribute;
 import jdk.nashorn.internal.objects.annotations.Constructor;
 import jdk.nashorn.internal.objects.annotations.Function;
@@ -372,9 +372,7 @@ public final class NativeArray extends ScriptObject {
      */
     @Function(attributes = Attribute.NOT_ENUMERABLE, where = Where.CONSTRUCTOR)
     public static Object isArray(final Object self, final Object arg) {
-        return isArray(arg) || (arg == Global.instance().getArrayPrototype())
-                || (arg instanceof NativeRegExpExecResult)
-                || (arg instanceof ScriptObjectMirror && ((ScriptObjectMirror)arg).isArray());
+        return isArray(arg) || (arg instanceof JSObject && ((JSObject)arg).isArray());
     }
 
     /**
@@ -401,6 +399,26 @@ public final class NativeArray extends ScriptObject {
         if (isArray(self)) {
             ((ScriptObject) self).setLength(validLength(length, true));
         }
+    }
+
+    /**
+     * Prototype length getter
+     * @param self self reference
+     * @return the length of the object
+     */
+    @Getter(name = "length", where = Where.PROTOTYPE, attributes = Attribute.NOT_ENUMERABLE | Attribute.NOT_CONFIGURABLE)
+    public static Object getProtoLength(final Object self) {
+        return length(self);  // Same as instance getter but we can't make nasgen use the same method for prototype
+    }
+
+    /**
+     * Prototype length setter
+     * @param self   self reference
+     * @param length new length property
+     */
+    @Setter(name = "length", where = Where.PROTOTYPE, attributes = Attribute.NOT_ENUMERABLE | Attribute.NOT_CONFIGURABLE)
+    public static void setProtoLength(final Object self, final Object length) {
+        length(self, length);  // Same as instance setter but we can't make nasgen use the same method for prototype
     }
 
     static long validLength(final Object length, final boolean reject) {
@@ -819,8 +837,15 @@ public final class NativeArray extends ScriptObject {
             if (bulkable(sobj)) {
                 sobj.getArray().shiftLeft(1);
             } else {
+                boolean hasPrevious = true;
                 for (long k = 1; k < len; k++) {
-                    sobj.set(k - 1, sobj.get(k), true);
+                    boolean hasCurrent = sobj.has(k);
+                    if (hasCurrent) {
+                        sobj.set(k - 1, sobj.get(k), true);
+                    } else if (hasPrevious) {
+                        sobj.delete(k - 1, true);
+                    }
+                    hasPrevious = hasCurrent;
                 }
             }
             sobj.delete(--len, true);
@@ -844,6 +869,10 @@ public final class NativeArray extends ScriptObject {
     @Function(attributes = Attribute.NOT_ENUMERABLE)
     public static Object slice(final Object self, final Object start, final Object end) {
         final Object       obj                 = Global.toObject(self);
+        if (!(obj instanceof ScriptObject)) {
+            return ScriptRuntime.UNDEFINED;
+        }
+
         final ScriptObject sobj                = (ScriptObject)obj;
         final long         len                 = JSType.toUint32(sobj.getLength());
         final long         relativeStart       = JSType.toLong(start);
@@ -860,9 +889,12 @@ public final class NativeArray extends ScriptObject {
             return new NativeArray(sobj.getArray().slice(k, finale));
         }
 
-        final NativeArray copy = new NativeArray(0);
+        // Construct array with proper length to have a deleted filter on undefined elements
+        final NativeArray copy = new NativeArray(finale - k);
         for (long n = 0; k < finale; n++, k++) {
-            copy.defineOwnProperty(ArrayIndex.getArrayIndex(n), sobj.get(k));
+            if (sobj.has(k)) {
+                copy.defineOwnProperty(ArrayIndex.getArrayIndex(n), sobj.get(k));
+            }
         }
 
         return copy;
@@ -993,19 +1025,42 @@ public final class NativeArray extends ScriptObject {
         final long actualStart = relativeStart < 0 ? Math.max(len + relativeStart, 0) : Math.min(relativeStart, len);
         final long actualDeleteCount = Math.min(Math.max(JSType.toLong(deleteCount), 0), len - actualStart);
 
-        final NativeArray array = new NativeArray(actualDeleteCount);
+        NativeArray returnValue;
 
-        for (long k = 0; k < actualDeleteCount; k++) {
-            final long from = actualStart + k;
+        if (actualStart <= Integer.MAX_VALUE && actualDeleteCount <= Integer.MAX_VALUE && bulkable(sobj)) {
+            try {
+                returnValue =  new NativeArray(sobj.getArray().fastSplice((int)actualStart, (int)actualDeleteCount, items.length));
+
+                // Since this is a dense bulkable array we can use faster defineOwnProperty to copy new elements
+                int k = (int) actualStart;
+                for (int i = 0; i < items.length; i++, k++) {
+                    sobj.defineOwnProperty(k, items[i]);
+                }
+            } catch (UnsupportedOperationException uoe) {
+                returnValue = slowSplice(sobj, actualStart, actualDeleteCount, items, len);
+            }
+        } else {
+            returnValue = slowSplice(sobj, actualStart, actualDeleteCount, items, len);
+        }
+
+        return returnValue;
+    }
+
+    private static NativeArray slowSplice(final ScriptObject sobj, final long start, final long deleteCount, final Object[] items, final long len) {
+
+        final NativeArray array = new NativeArray(deleteCount);
+
+        for (long k = 0; k < deleteCount; k++) {
+            final long from = start + k;
 
             if (sobj.has(from)) {
                 array.defineOwnProperty(ArrayIndex.getArrayIndex(k), sobj.get(from));
             }
         }
 
-        if (items.length < actualDeleteCount) {
-            for (long k = actualStart; k < (len - actualDeleteCount); k++) {
-                final long from = k + actualDeleteCount;
+        if (items.length < deleteCount) {
+            for (long k = start; k < (len - deleteCount); k++) {
+                final long from = k + deleteCount;
                 final long to   = k + items.length;
 
                 if (sobj.has(from)) {
@@ -1015,12 +1070,12 @@ public final class NativeArray extends ScriptObject {
                 }
             }
 
-            for (long k = len; k > (len - actualDeleteCount + items.length); k--) {
+            for (long k = len; k > (len - deleteCount + items.length); k--) {
                 sobj.delete(k - 1, true);
             }
-        } else if (items.length > actualDeleteCount) {
-            for (long k = len - actualDeleteCount; k > actualStart; k--) {
-                final long from = k + actualDeleteCount - 1;
+        } else if (items.length > deleteCount) {
+            for (long k = len - deleteCount; k > start; k--) {
+                final long from = k + deleteCount - 1;
                 final long to   = k + items.length - 1;
 
                 if (sobj.has(from)) {
@@ -1032,12 +1087,12 @@ public final class NativeArray extends ScriptObject {
             }
         }
 
-        long k = actualStart;
+        long k = start;
         for (int i = 0; i < items.length; i++, k++) {
             sobj.set(k, items[i], true);
         }
 
-        final long newLength = len - actualDeleteCount + items.length;
+        final long newLength = len - deleteCount + items.length;
         sobj.set("length", newLength, true);
 
         return array;
@@ -1108,11 +1163,15 @@ public final class NativeArray extends ScriptObject {
         try {
             final ScriptObject sobj = (ScriptObject)Global.toObject(self);
             final long         len  = JSType.toUint32(sobj.getLength());
-            final long         n    = JSType.toLong(fromIndex);
-
-            if (len == 0 || n >= len) {
+            if (len == 0) {
                 return -1;
             }
+
+            final long         n = JSType.toLong(fromIndex);
+            if (n >= len) {
+                return -1;
+            }
+
 
             for (long k = Math.max(0, (n < 0) ? (len - Math.abs(n)) : n); k < len; k++) {
                 if (sobj.has(k)) {

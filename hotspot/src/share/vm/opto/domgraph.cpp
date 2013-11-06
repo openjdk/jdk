@@ -211,21 +211,21 @@ class Block_Stack {
 uint Block_Stack::most_frequent_successor( Block *b ) {
   uint freq_idx = 0;
   int eidx = b->end_idx();
-  Node *n = b->_nodes[eidx];
+  Node *n = b->get_node(eidx);
   int op = n->is_Mach() ? n->as_Mach()->ideal_Opcode() : n->Opcode();
   switch( op ) {
   case Op_CountedLoopEnd:
   case Op_If: {               // Split frequency amongst children
     float prob = n->as_MachIf()->_prob;
     // Is succ[0] the TRUE branch or the FALSE branch?
-    if( b->_nodes[eidx+1]->Opcode() == Op_IfFalse )
+    if( b->get_node(eidx+1)->Opcode() == Op_IfFalse )
       prob = 1.0f - prob;
     freq_idx = prob < PROB_FAIR;      // freq=1 for succ[0] < 0.5 prob
     break;
   }
   case Op_Catch:                // Split frequency amongst children
     for( freq_idx = 0; freq_idx < b->_num_succs; freq_idx++ )
-      if( b->_nodes[eidx+1+freq_idx]->as_CatchProj()->_con == CatchProjNode::fall_through_index )
+      if( b->get_node(eidx+1+freq_idx)->as_CatchProj()->_con == CatchProjNode::fall_through_index )
         break;
     // Handle case of no fall-thru (e.g., check-cast MUST throw an exception)
     if( freq_idx == b->_num_succs ) freq_idx = 0;

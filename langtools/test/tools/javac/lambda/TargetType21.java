@@ -26,8 +26,10 @@ class TargetType21 {
 
     void test() {
         call(x -> { throw new Exception(); }); //ambiguous
+        call((Integer x) -> { System.out.println(""); }); //ok (only one is void)
+        call((Integer x) -> { return (Object) null; }); //ok (only one returns Object)
         call(x -> { System.out.println(""); }); //ambiguous
-        call(x -> { return (Object) null; }); //cyclic inference
+        call(x -> { return (Object) null; }); //ambiguous
         call(x -> { return null; }); //ambiguous
     }
 }

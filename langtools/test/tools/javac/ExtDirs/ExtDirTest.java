@@ -112,11 +112,6 @@ public class ExtDirTest {
     }
 
     void createJars() throws Exception {
-
-//        for i in 1 2 3; do
-//            if test ! -d ext${i}; then mkdir ext${i}; fi
-//            cp ${TESTSRC}${FS}ext${i}${FS}*.jar ext${i}
-//        done
         sun.tools.jar.Main jarGenerator =
                 new sun.tools.jar.Main(System.out, System.err, "jar");
 
@@ -155,19 +150,19 @@ public class ExtDirTest {
 
     void compileWithExtDirs() throws Exception {
 
-//"$javac" ${TESTTOOLVMOPTS} -d . -extdirs ext1 "${TESTSRC}${FS}ExtDirTest_1.java"
+//javac -extdirs ext1 ExtDirTest_1.java
         ToolBox.JavaToolArgs params =
                 new ToolBox.JavaToolArgs()
                 .setOptions("-d", ".", "-extdirs", "ext1")
                 .setSources(ExtDirTest_1Src);
         ToolBox.javac(params);
 
-//"$javac" ${TESTTOOLVMOPTS} -d . -extdirs ext1${PS}ext2 "${TESTSRC}${FS}ExtDirTest_2.java"
+//javac -extdirs ext1:ext2 ExtDirTest_2.java
         params.setOptions("-d", ".", "-extdirs", "ext1" + File.pathSeparator + "ext2")
                 .setSources(ExtDirTest_2Src);
         ToolBox.javac(params);
 
-//"$javac" ${TESTTOOLVMOPTS} -d . -extdirs ext3 "${TESTSRC}${FS}ExtDirTest_3.java"
+//javac -extdirs ext3 ExtDirTest_3.java
         params.setOptions("-d", ".", "-extdirs", "ext3")
                 .setSources(ExtDirTest_3Src);
         ToolBox.javac(params);

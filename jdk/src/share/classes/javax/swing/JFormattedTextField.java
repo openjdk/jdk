@@ -54,7 +54,7 @@ import javax.swing.text.*;
  * configuring what action should be taken when focus is lost. The possible
  * configurations are:
  * <table summary="Possible JFormattedTextField configurations and their descriptions">
- * <tr><th><p align="left">Value</p></th><th><p align="left">Description</p></th></tr>
+ * <tr><th><p style="text-align:left">Value</p></th><th><p style="text-align:left">Description</p></th></tr>
  * <tr><td>JFormattedTextField.REVERT
  *            <td>Revert the display to match that of <code>getValue</code>,
  *                possibly losing the current edit.
@@ -126,14 +126,14 @@ import javax.swing.text.*;
  * policy is <code>JFormattedTextField.PERSIST</code>
  * and the <code>JFormattedTextField</code> has been edited, the
  * <code>AbstractFormatterFactory</code> will not be queried until the
- * value has been commited. Similarly if the focus lost policy is
+ * value has been committed. Similarly if the focus lost policy is
  * <code>JFormattedTextField.COMMIT</code> and an exception
  * is thrown from <code>stringToValue</code>, the
- * <code>AbstractFormatterFactory</code> will not be querired when focus is
+ * <code>AbstractFormatterFactory</code> will not be queried when focus is
  * lost or gained.
  * <p>
  * <code>JFormattedTextField.AbstractFormatter</code>
- * is also responsible for determining when values are commited to
+ * is also responsible for determining when values are committed to
  * the <code>JFormattedTextField</code>. Some
  * <code>JFormattedTextField.AbstractFormatter</code>s will make new values
  * available on every edit, and others will never commit the value. You can
@@ -171,7 +171,7 @@ import javax.swing.text.*;
  * future Swing releases. The current serialization support is
  * appropriate for short term storage or RMI between applications running
  * the same version of Swing.  As of 1.4, support for long term storage
- * of all JavaBeans<sup><font size="-2">TM</font></sup>
+ * of all JavaBeans&trade;
  * has been added to the <code>java.beans</code> package.
  * Please see {@link java.beans.XMLEncoder}.
  *
@@ -184,7 +184,7 @@ public class JFormattedTextField extends JTextField {
 
     /**
      * Constant identifying that when focus is lost,
-     * <code>commitEdit</code> should be invoked. If in commiting the
+     * <code>commitEdit</code> should be invoked. If in committing the
      * new value a <code>ParseException</code> is thrown, the invalid
      * value will remain.
      *
@@ -194,7 +194,7 @@ public class JFormattedTextField extends JTextField {
 
     /**
      * Constant identifying that when focus is lost,
-     * <code>commitEdit</code> should be invoked. If in commiting the new
+     * <code>commitEdit</code> should be invoked. If in committing the new
      * value a <code>ParseException</code> is thrown, the value will be
      * reverted.
      *
@@ -878,7 +878,7 @@ public class JFormattedTextField extends JTextField {
      * Instances of <code>AbstractFormatter</code> are used by
      * <code>JFormattedTextField</code> to handle the conversion both
      * from an Object to a String, and back from a String to an Object.
-     * <code>AbstractFormatter</code>s can also enfore editing policies,
+     * <code>AbstractFormatter</code>s can also enforce editing policies,
      * or navigation policies, or manipulate the
      * <code>JFormattedTextField</code> in any way it sees fit to
      * enforce the desired policy.
@@ -1116,7 +1116,7 @@ public class JFormattedTextField extends JTextField {
                     ((JFormattedTextField)target).commitEdit();
                 } catch (ParseException pe) {
                     ((JFormattedTextField)target).invalidEdit();
-                    // value not commited, don't notify ActionListeners
+                    // value not committed, don't notify ActionListeners
                     return;
                 }
             }

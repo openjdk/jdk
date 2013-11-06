@@ -61,7 +61,6 @@ public class ObjectHistogram extends Tool {
 
    public static void main(String[] args) {
       ObjectHistogram oh = new ObjectHistogram();
-      oh.start(args);
-      oh.stop();
+      oh.execute(args);
    }
 }
