@@ -44,7 +44,7 @@ import sun.swing.SwingUtilities2;
  * future Swing releases. The current serialization support is
  * appropriate for short term storage or RMI between applications running
  * the same version of Swing.  As of 1.4, support for long term storage
- * of all JavaBeans<sup><font size="-2">TM</font></sup>
+ * of all JavaBeans&trade;
  * has been added to the <code>java.beans</code> package.
  * Please see {@link java.beans.XMLEncoder}.
  *
@@ -315,7 +315,7 @@ public class DefaultTableColumnModel implements TableColumnModel,
      * of the view/controller object using this model (typically JTable).  The
      * view/controller need not display the columns sequentially from left to
      * right.  For example, columns could be displayed from right to left to
-     * accomodate a locale preference or some columns might be hidden at the
+     * accommodate a locale preference or some columns might be hidden at the
      * request of the user.  Because the model does not know how the columns
      * are laid out on screen, the given <code>xPosition</code> should not be
      * considered to be a coordinate in 2D graphics space.  Instead, it should

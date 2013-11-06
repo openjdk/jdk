@@ -40,15 +40,16 @@ import javax.accessibility.*;
  * in <em>The Java Tutorial</em>,
  * in the section
  * <a
- href="http://java.sun.com/docs/books/tutorial/uiswing/components/applet.html">How to Make Applets</a>.
+ href="http://docs.oracle.com/javase/tutorial/uiswing/components/applet.html">How to Make Applets</a>.
  * <p>
  * The <code>JApplet</code> class is slightly incompatible with
  * <code>java.applet.Applet</code>.  <code>JApplet</code> contains a
  * <code>JRootPane</code> as its only child.  The <code>contentPane</code>
  * should be the parent of any children of the <code>JApplet</code>.
- * As a convenience <code>add</code> and its variants, <code>remove</code> and
- * <code>setLayout</code> have been overridden to forward to the
- * <code>contentPane</code> as necessary. This means you can write:
+ * As a convenience, the {@code add}, {@code remove}, and {@code setLayout}
+ * methods of this class are overridden, so that they delegate calls
+ * to the corresponding methods of the {@code ContentPane}.
+ * For example, you can add a child component to an applet as follows:
  * <pre>
  *       applet.add(child);
  * </pre>
@@ -77,7 +78,7 @@ import javax.accessibility.*;
  * future Swing releases. The current serialization support is
  * appropriate for short term storage or RMI between applications running
  * the same version of Swing.  As of 1.4, support for long term storage
- * of all JavaBeans<sup><font size="-2">TM</font></sup>
+ * of all JavaBeans&trade;
  * has been added to the <code>java.beans</code> package.
  * Please see {@link java.beans.XMLEncoder}.
  *
@@ -183,7 +184,7 @@ public class JApplet extends Applet implements Accessible,
      * are currently typed to {@code JComponent}.
      * <p>
      * Please see
-     * <a href="http://java.sun.com/docs/books/tutorial/uiswing/misc/dnd.html">
+     * <a href="http://docs.oracle.com/javase/tutorial/uiswing/dnd/index.html">
      * How to Use Drag and Drop and Data Transfer</a>, a section in
      * <em>The Java Tutorial</em>, for more information.
      *
@@ -256,7 +257,7 @@ public class JApplet extends Applet implements Accessible,
      * <code>setLayout</code> are forwarded to the <code>contentPane</code>.
      *
      * @return true if <code>add</code> and <code>setLayout</code>
-     *         are fowarded; false otherwise
+     *         are forwarded; false otherwise
      *
      * @see #addImpl
      * @see #setLayout

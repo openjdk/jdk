@@ -38,7 +38,7 @@ import java.io.ByteArrayOutputStream;
  *
  * <p>To complete the message digest computation, call one of the
  * {@code digest} methods on the associated message
- * digest after your calls to one of this digest ouput stream's
+ * digest after your calls to one of this digest output stream's
  * {@link #write(int) write} methods.
  *
  * <p>It is possible to turn this stream on or off (see

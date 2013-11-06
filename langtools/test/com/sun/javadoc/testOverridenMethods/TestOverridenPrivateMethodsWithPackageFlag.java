@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 4634891
+ * @bug 4634891 8025633 8026567
  * @summary Determine if overriden methods are properly documented when
  * -protected (default) visibility flag is used.
  * @author jamieh
@@ -40,23 +40,23 @@ public class TestOverridenPrivateMethodsWithPackageFlag extends JavadocTester {
     private static final String[][] TEST = {
         //The public method should be overriden
         {BUG_ID + FS + "pkg1" + FS + "SubClass.html",
-         "<dt><span class=\"strong\">Overrides:</span></dt>" + NL +
-                 "<dd><code><a href=\"../pkg1/BaseClass.html#publicMethod()\">" +
+         "<dt><span class=\"overrideSpecifyLabel\">Overrides:</span></dt>" + NL +
+                 "<dd><code><a href=\"../pkg1/BaseClass.html#publicMethod--\">" +
                  "publicMethod</a></code>&nbsp;in class&nbsp;<code>" +
                  "<a href=\"../pkg1/BaseClass.html\" title=\"class in pkg1\">BaseClass</a></code></dd>"},
 
         //The public method in different package should be overriden
         {BUG_ID + FS + "pkg2" + FS + "SubClass.html",
-         "<dt><span class=\"strong\">Overrides:</span></dt>" + NL +
-                 "<dd><code><a href=\"../pkg1/BaseClass.html#publicMethod()\">" +
+         "<dt><span class=\"overrideSpecifyLabel\">Overrides:</span></dt>" + NL +
+                 "<dd><code><a href=\"../pkg1/BaseClass.html#publicMethod--\">" +
                  "publicMethod</a></code>&nbsp;in class&nbsp;<code>" +
                  "<a href=\"../pkg1/BaseClass.html\" title=\"class in pkg1\">BaseClass</a></code></dd>"},
 
         //The package private method should be overriden since the base and sub class are in the same
         //package.
         {BUG_ID + FS + "pkg1" + FS + "SubClass.html",
-         "<dt><span class=\"strong\">Overrides:</span></dt>" + NL +
-                 "<dd><code><a href=\"../pkg1/BaseClass.html#packagePrivateMethod()\">" +
+         "<dt><span class=\"overrideSpecifyLabel\">Overrides:</span></dt>" + NL +
+                 "<dd><code><a href=\"../pkg1/BaseClass.html#packagePrivateMethod--\">" +
                  "packagePrivateMethod</a></code>&nbsp;in class&nbsp;<code>" +
                  "<a href=\"../pkg1/BaseClass.html\" title=\"class in pkg1\">BaseClass</a></code></dd>"}
     };
@@ -65,18 +65,18 @@ public class TestOverridenPrivateMethodsWithPackageFlag extends JavadocTester {
 
         //The private method in should not be overriden
         {BUG_ID + FS + "pkg1" + FS + "SubClass.html",
-         "<dt><span class=\"strong\">Overrides:</span></dt>" + NL +
+         "<dt><span class=\"overrideSpecifyLabel\">Overrides:</span></dt>" + NL +
                  "<dd><code><a href=\"../pkg1/BaseClass.html#privateMethod()\">"},
 
         //The private method in different package should not be overriden
         {BUG_ID + FS + "pkg2" + FS + "SubClass.html",
-         "<dt><span class=\"strong\">Overrides:</span></dt>" + NL +
+         "<dt><span class=\"overrideSpecifyLabel\">Overrides:</span></dt>" + NL +
                  "<dd><code><a href=\"../pkg1/BaseClass.html#privateMethod()\">"},
 
         //The package private method should not be overriden since the base and sub class are in
         //different packages.
         {BUG_ID + FS + "pkg2" + FS + "SubClass.html",
-         "<dt><span class=\"strong\">Overrides:</span></dt>" + NL +
+         "<dt><span class=\"overrideSpecifyLabel\">Overrides:</span></dt>" + NL +
                  "<dd><code><a href=\"../pkg1/BaseClass.html#packagePrivateMethod()\">"},
     };
 

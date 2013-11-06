@@ -33,8 +33,8 @@
 
 void G1CardCounts::clear_range(size_t from_card_num, size_t to_card_num) {
   if (has_count_table()) {
-    check_card_num(from_card_num,
-                   err_msg("from card num out of range: "SIZE_FORMAT, from_card_num));
+    assert(from_card_num >= 0 && from_card_num < _committed_max_card_num,
+           err_msg("from card num out of range: "SIZE_FORMAT, from_card_num));
     assert(from_card_num < to_card_num,
            err_msg("Wrong order? from: " SIZE_FORMAT ", to: "SIZE_FORMAT,
                    from_card_num, to_card_num));
@@ -65,9 +65,7 @@ void G1CardCounts::initialize() {
     // threshold limit is no more than this.
     guarantee(G1ConcRSHotCardLimit <= max_jubyte, "sanity");
 
-    ModRefBarrierSet* bs = _g1h->mr_bs();
-    guarantee(bs->is_a(BarrierSet::CardTableModRef), "Precondition");
-    _ct_bs = (CardTableModRefBS*)bs;
+    _ct_bs = _g1h->g1_barrier_set();
     _ct_bot = _ct_bs->byte_for_const(_g1h->reserved_region().start());
 
     // Allocate/Reserve the counts table

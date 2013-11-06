@@ -30,7 +30,7 @@
  *
  * @ignore  6309226
  * @build Semaphore
- * @run main SynchronizationStatistics
+ * @run main/othervm SynchronizationStatistics
  */
 
 import java.lang.management.*;

@@ -28,7 +28,7 @@ import java.util.Spliterator;
 import java.util.function.IntFunction;
 
 /**
- * Helper class for executing <a href="package-summary.html#StreamPipelines">
+ * Helper class for executing <a href="package-summary.html#StreamOps">
  * stream pipelines</a>, capturing all of the information about a stream
  * pipeline (output shape, intermediate operations, stream flags, parallelism,
  * etc) in one place.

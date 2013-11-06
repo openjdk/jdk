@@ -63,8 +63,8 @@ import sun.awt.AWTAccessor;
  *
  * <p>The following code snippet demonstrates how to access
  * and customize the system tray:
- * <code>
  * <pre>
+ * <code>
  *     {@link TrayIcon} trayIcon = null;
  *     if (SystemTray.isSupported()) {
  *         // get the SystemTray instance
@@ -109,8 +109,8 @@ import sun.awt.AWTAccessor;
  *         trayIcon.{@link TrayIcon#setImage(java.awt.Image) setImage}(updatedImage);
  *     }
  *     // ...
- * </pre>
  * </code>
+ * </pre>
  *
  * @since 1.6
  * @see TrayIcon
@@ -361,7 +361,7 @@ public class SystemTray {
     /**
      * Adds a {@code PropertyChangeListener} to the list of listeners for the
      * specific property. The following properties are currently supported:
-     * <p> </p>
+     * <p>
      * <table border=1 summary="SystemTray properties">
      * <tr>
      *    <th>Property</th>
@@ -384,7 +384,7 @@ public class SystemTray {
      *        The property is accessed by the {@link #getSystemTray} method.</td>
      * </tr>
      * </table>
-     * <p> </p>
+     * <p>
      * The {@code listener} listens to property changes only in this context.
      * <p>
      * If {@code listener} is {@code null}, no exception is thrown

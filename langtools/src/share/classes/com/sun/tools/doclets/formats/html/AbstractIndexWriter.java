@@ -89,10 +89,11 @@ public class AbstractIndexWriter extends HtmlDocletWriter {
      * @param memberlist List of members for the unicode character
      * @param contentTree the content tree to which the information will be added
      */
-    protected void addContents(Character unicode, List<? extends Doc> memberlist,
+    protected void addContents(Character uc, List<? extends Doc> memberlist,
             Content contentTree) {
-        contentTree.addContent(getMarkerAnchor("_" + unicode + "_"));
-        Content headContent = new StringContent(unicode.toString());
+        String unicode = uc.toString();
+        contentTree.addContent(getMarkerAnchorForIndex(unicode));
+        Content headContent = new StringContent(unicode);
         Content heading = HtmlTree.HEADING(HtmlConstants.CONTENT_HEADING, false,
                 HtmlStyle.title, headContent);
         contentTree.addContent(heading);
@@ -175,7 +176,7 @@ public class AbstractIndexWriter extends HtmlDocletWriter {
         String name = (member instanceof ExecutableMemberDoc)?
             member.name() + ((ExecutableMemberDoc)member).flatSignature() :
             member.name();
-        Content span = HtmlTree.SPAN(HtmlStyle.strong,
+        Content span = HtmlTree.SPAN(HtmlStyle.memberNameLink,
                 getDocLink(LinkInfoImpl.Kind.INDEX, member, name));
         Content dt = HtmlTree.DT(span);
         dt.addContent(" - ");
@@ -197,7 +198,7 @@ public class AbstractIndexWriter extends HtmlDocletWriter {
      */
     protected void addComment(ProgramElementDoc element, Content contentTree) {
         Tag[] tags;
-        Content span = HtmlTree.SPAN(HtmlStyle.strong, deprecatedPhrase);
+        Content span = HtmlTree.SPAN(HtmlStyle.deprecatedLabel, deprecatedPhrase);
         HtmlTree div = new HtmlTree(HtmlTag.DIV);
         div.addStyle(HtmlStyle.block);
         if (Util.isDeprecated(element)) {
@@ -252,5 +253,25 @@ public class AbstractIndexWriter extends HtmlDocletWriter {
         }
         addPreQualifiedClassLink(LinkInfoImpl.Kind.INDEX, containing,
                 false, contentTree);
+    }
+
+    /**
+     * Get the marker anchor which will be added to the index documentation tree.
+     *
+     * @param anchorNameForIndex the anchor name attribute for index page
+     * @return a content tree for the marker anchor
+     */
+    public Content getMarkerAnchorForIndex(String anchorNameForIndex) {
+        return getMarkerAnchor(getNameForIndex(anchorNameForIndex), null);
+    }
+
+    /**
+     * Generate a valid HTML name for member index page.
+     *
+     * @param unicode the string that needs to be converted to valid HTML name.
+     * @return a valid HTML name string.
+     */
+    public String getNameForIndex(String unicode) {
+        return "I:" + getName(unicode);
     }
 }

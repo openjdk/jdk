@@ -107,7 +107,8 @@ public class ConstantsSummaryWriterImpl extends HtmlDocletWriter
         //add link to summary
         Content link;
         if (packageName.length() == 0) {
-            link = getHyperLink(DocLink.fragment(DocletConstants.UNNAMED_PACKAGE_ANCHOR),
+            link = getHyperLink(getDocLink(
+                    SectionName.UNNAMED_PACKAGE_ANCHOR),
                     defaultPackageLabel, "", "");
         } else {
             Content packageNameContent = getPackageLabel(parsedPackageName);
@@ -153,7 +154,7 @@ public class ConstantsSummaryWriterImpl extends HtmlDocletWriter
         Content pkgNameContent;
         if (parsedPackageName.length() == 0) {
             summariesTree.addContent(getMarkerAnchor(
-                    DocletConstants.UNNAMED_PACKAGE_ANCHOR));
+                    SectionName.UNNAMED_PACKAGE_ANCHOR));
             pkgNameContent = defaultPackageLabel;
         } else {
             summariesTree.addContent(getMarkerAnchor(
@@ -207,7 +208,7 @@ public class ConstantsSummaryWriterImpl extends HtmlDocletWriter
      * @return the table caption and header
      */
     protected Content getClassName(Content classStr) {
-        Content table = HtmlTree.TABLE(0, 3, 0, constantsTableSummary,
+        Content table = HtmlTree.TABLE(HtmlStyle.constantsSummary, 0, 3, 0, constantsTableSummary,
                 getTableCaption(classStr));
         table.addContent(getSummaryTableHeader(constantsTableHeader, "col"));
         return table;

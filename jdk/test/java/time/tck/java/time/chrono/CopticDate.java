@@ -297,24 +297,18 @@ public final class CopticDate
     }
 
     @Override
-    public long until(Temporal endDateTime, TemporalUnit unit) {
-        if (endDateTime instanceof ChronoLocalDate == false) {
-            throw new DateTimeException("Unable to calculate period between objects of two different types");
-        }
-        ChronoLocalDate end = (ChronoLocalDate) endDateTime;
-        if (getChronology().equals(end.getChronology()) == false) {
-            throw new DateTimeException("Unable to calculate period between two different chronologies");
-        }
+    public long until(Temporal endExclusive, TemporalUnit unit) {
+        CopticDate end = getChronology().date(endExclusive);
         if (unit instanceof ChronoUnit) {
             return LocalDate.from(this).until(end, unit);  // TODO: this is wrong
         }
-        return unit.between(this, endDateTime);
+        return unit.between(this, end);
     }
 
     @Override
     public Period until(ChronoLocalDate endDate) {
         // TODO: untested
-        CopticDate end = (CopticDate) getChronology().date(endDate);
+        CopticDate end = getChronology().date(endDate);
         long totalMonths = (end.prolepticYear - this.prolepticYear) * 13 + (end.month - this.month);  // safe
         int days = end.day - this.day;
         if (totalMonths > 0 && days < 0) {
@@ -354,4 +348,27 @@ public final class CopticDate
                 .append(dom < 10 ? "-0" : "-").append(dom);
         return buf.toString();
     }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (this == obj) {
+            return true;
+        }
+        if (obj instanceof CopticDate) {
+            CopticDate cd = (CopticDate)obj;
+            if (this.prolepticYear == cd.prolepticYear &&
+                    this.month == cd.month &&
+                    this.day == cd.day) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    @Override
+    public int hashCode() {
+        long epDay = toEpochDay();
+        return getChronology().hashCode() ^ ((int) (epDay ^ (epDay >>> 32)));
+    }
+
 }

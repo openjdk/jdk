@@ -36,6 +36,8 @@
 package java.util.concurrent;
 
 import java.io.ObjectStreamField;
+import java.net.NetworkInterface;
+import java.util.Enumeration;
 import java.util.Random;
 import java.util.Spliterator;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -71,7 +73,10 @@ import java.util.stream.StreamSupport;
  *
  * <p>Instances of {@code ThreadLocalRandom} are not cryptographically
  * secure.  Consider instead using {@link java.security.SecureRandom}
- * in security-sensitive applications.
+ * in security-sensitive applications. Additionally,
+ * default-constructed instances do not use a cryptographically random
+ * seed unless the {@linkplain System#getProperty system property}
+ * {@code java.util.secureRandomSeed} is set to {@code true}.
  *
  * @since 1.7
  * @author Doug Lea
@@ -129,9 +134,49 @@ public class ThreadLocalRandom extends Random {
     /**
      * The next seed for default constructors.
      */
-    private static final AtomicLong seeder =
-        new AtomicLong(mix64(System.currentTimeMillis()) ^
-                       mix64(System.nanoTime()));
+    private static final AtomicLong seeder = new AtomicLong(initialSeed());
+
+    private static long initialSeed() {
+        String pp = java.security.AccessController.doPrivileged(
+                new sun.security.action.GetPropertyAction(
+                        "java.util.secureRandomSeed"));
+        if (pp != null && pp.equalsIgnoreCase("true")) {
+            byte[] seedBytes = java.security.SecureRandom.getSeed(8);
+            long s = (long)(seedBytes[0]) & 0xffL;
+            for (int i = 1; i < 8; ++i)
+                s = (s << 8) | ((long)(seedBytes[i]) & 0xffL);
+            return s;
+        }
+        long h = 0L;
+        try {
+            Enumeration<NetworkInterface> ifcs =
+                    NetworkInterface.getNetworkInterfaces();
+            boolean retry = false; // retry once if getHardwareAddress is null
+            while (ifcs.hasMoreElements()) {
+                NetworkInterface ifc = ifcs.nextElement();
+                if (!ifc.isVirtual()) { // skip fake addresses
+                    byte[] bs = ifc.getHardwareAddress();
+                    if (bs != null) {
+                        int n = bs.length;
+                        int m = Math.min(n >>> 1, 4);
+                        for (int i = 0; i < m; ++i)
+                            h = (h << 16) ^ (bs[i] << 8) ^ bs[n-1-i];
+                        if (m < 4)
+                            h = (h << 8) ^ bs[n-1-m];
+                        h = mix64(h);
+                        break;
+                    }
+                    else if (!retry)
+                        retry = true;
+                    else
+                        break;
+                }
+            }
+        } catch (Exception ignore) {
+        }
+        return (h ^ mix64(System.currentTimeMillis()) ^
+                mix64(System.nanoTime()));
+    }
 
     /**
      * The seed increment
@@ -149,8 +194,8 @@ public class ThreadLocalRandom extends Random {
     private static final long SEEDER_INCREMENT = 0xbb67ae8584caa73bL;
 
     // Constants from SplittableRandom
-    private static final double DOUBLE_UNIT = 1.0 / (1L << 53);
-    private static final float  FLOAT_UNIT  = 1.0f / (1 << 24);
+    private static final double DOUBLE_UNIT = 0x1.0p-53;  // 1.0  / (1L << 53)
+    private static final float  FLOAT_UNIT  = 0x1.0p-24f; // 1.0f / (1 << 24)
 
     /** Rarely-used holder for the second of a pair of Gaussians */
     private static final ThreadLocal<Double> nextLocalGaussian =

@@ -336,6 +336,8 @@ Thread::~Thread() {
   // Reclaim the objectmonitors from the omFreeList of the moribund thread.
   ObjectSynchronizer::omFlush (this) ;
 
+  EVENT_THREAD_DESTRUCT(this);
+
   // stack_base can be NULL if the thread is never started or exited before
   // record_stack_base_and_size called. Although, we would like to ensure
   // that all started threads do call record_stack_base_and_size(), there is
@@ -1098,7 +1100,7 @@ static const char* get_java_runtime_version(TRAPS) {
 // General purpose hook into Java code, run once when the VM is initialized.
 // The Java library method itself may be changed independently from the VM.
 static void call_postVMInitHook(TRAPS) {
-  Klass* k = SystemDictionary::PostVMInitHook_klass();
+  Klass* k = SystemDictionary::resolve_or_null(vmSymbols::sun_misc_PostVMInitHook(), THREAD);
   instanceKlassHandle klass (THREAD, k);
   if (klass.not_null()) {
     JavaValue result(T_VOID);
@@ -1445,7 +1447,7 @@ void JavaThread::initialize() {
   _in_deopt_handler = 0;
   _doing_unsafe_access = false;
   _stack_guard_state = stack_guard_unused;
-  _exception_oop = NULL;
+  (void)const_cast<oop&>(_exception_oop = NULL);
   _exception_pc  = 0;
   _exception_handler_pc = 0;
   _is_method_handle_return = 0;
@@ -1455,7 +1457,6 @@ void JavaThread::initialize() {
   _interp_only_mode    = 0;
   _special_runtime_exit_condition = _no_async_condition;
   _pending_async_exception = NULL;
-  _is_compiling = false;
   _thread_stat = NULL;
   _thread_stat = new ThreadStatistics();
   _blocked_on_compilation = false;
@@ -1816,7 +1817,8 @@ void JavaThread::exit(bool destroy_vm, ExitType exit_type) {
     // Call Thread.exit(). We try 3 times in case we got another Thread.stop during
     // the execution of the method. If that is not enough, then we don't really care. Thread.stop
     // is deprecated anyhow.
-    { int count = 3;
+    if (!is_Compiler_thread()) {
+      int count = 3;
       while (java_lang_Thread::threadGroup(threadObj()) != NULL && (count-- > 0)) {
         EXCEPTION_MARK;
         JavaValue result(T_VOID);
@@ -1829,7 +1831,6 @@ void JavaThread::exit(bool destroy_vm, ExitType exit_type) {
         CLEAR_PENDING_EXCEPTION;
       }
     }
-
     // notify JVMTI
     if (JvmtiExport::should_post_thread_life()) {
       JvmtiExport::post_thread_end(this);
@@ -3240,6 +3241,7 @@ CompilerThread::CompilerThread(CompileQueue* queue, CompilerCounters* counters)
   _counters = counters;
   _buffer_blob = NULL;
   _scanned_nmethod = NULL;
+  _compiler = NULL;
 
 #ifndef PRODUCT
   _ideal_graph_printer = NULL;
@@ -3255,6 +3257,7 @@ void CompilerThread::oops_do(OopClosure* f, CLDToOopClosure* cld_f, CodeBlobClos
     cf->do_code_blob(_scanned_nmethod);
   }
 }
+
 
 // ======= Threads ========
 
@@ -3275,8 +3278,6 @@ bool        Threads::_vm_complete = false;
 
 // All JavaThreads
 #define ALL_JAVA_THREADS(X) for (JavaThread* X = _thread_list; X; X = X->next())
-
-void os_stream();
 
 // All JavaThreads + all non-JavaThreads (i.e., every thread in the system)
 void Threads::threads_do(ThreadClosure* tc) {
@@ -3331,6 +3332,11 @@ jint Threads::create_vm(JavaVMInitArgs* args, bool* canTryAgain) {
   // Parse arguments
   jint parse_result = Arguments::parse(args);
   if (parse_result != JNI_OK) return parse_result;
+
+  os::init_before_ergo();
+
+  jint ergo_result = Arguments::apply_ergo();
+  if (ergo_result != JNI_OK) return ergo_result;
 
   if (PauseAtStartup) {
     os::pause();
@@ -3639,6 +3645,16 @@ jint Threads::create_vm(JavaVMInitArgs* args, bool* canTryAgain) {
   CompileBroker::compilation_init();
 #endif
 
+  if (EnableInvokeDynamic) {
+    // Pre-initialize some JSR292 core classes to avoid deadlock during class loading.
+    // It is done after compilers are initialized, because otherwise compilations of
+    // signature polymorphic MH intrinsics can be missed
+    // (see SystemDictionary::find_method_handle_intrinsic).
+    initialize_class(vmSymbols::java_lang_invoke_MethodHandle(), CHECK_0);
+    initialize_class(vmSymbols::java_lang_invoke_MemberName(), CHECK_0);
+    initialize_class(vmSymbols::java_lang_invoke_MethodHandleNatives(), CHECK_0);
+  }
+
 #if INCLUDE_MANAGEMENT
   Management::initialize(THREAD);
 #endif // INCLUDE_MANAGEMENT
@@ -3707,7 +3723,7 @@ static OnLoadEntry_t lookup_on_load(AgentLibrary* agent, const char *on_load_sym
     const char *name = agent->name();
     const char *msg = "Could not find agent library ";
 
-    // First check to see if agent is statcally linked into executable
+    // First check to see if agent is statically linked into executable
     if (os::find_builtin_agent(agent, on_load_symbols, num_symbol_entries)) {
       library = agent->os_lib();
     } else if (agent->is_absolute_path()) {

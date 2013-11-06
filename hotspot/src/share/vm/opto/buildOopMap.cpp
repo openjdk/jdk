@@ -121,8 +121,8 @@ struct OopFlow : public ResourceObj {
 // Given reaching-defs for this block start, compute it for this block end
 void OopFlow::compute_reach( PhaseRegAlloc *regalloc, int max_reg, Dict *safehash ) {
 
-  for( uint i=0; i<_b->_nodes.size(); i++ ) {
-    Node *n = _b->_nodes[i];
+  for( uint i=0; i<_b->number_of_nodes(); i++ ) {
+    Node *n = _b->get_node(i);
 
     if( n->jvms() ) {           // Build an OopMap here?
       JVMState *jvms = n->jvms();
@@ -447,8 +447,8 @@ static void do_liveness(PhaseRegAlloc* regalloc, PhaseCFG* cfg, Block_List* work
       }
 
       // Now walk tmp_live up the block backwards, computing live
-      for( int k=b->_nodes.size()-1; k>=0; k-- ) {
-        Node *n = b->_nodes[k];
+      for( int k=b->number_of_nodes()-1; k>=0; k-- ) {
+        Node *n = b->get_node(k);
         // KILL def'd bits
         int first = regalloc->get_reg_first(n);
         int second = regalloc->get_reg_second(n);
@@ -544,12 +544,12 @@ static void do_liveness(PhaseRegAlloc* regalloc, PhaseCFG* cfg, Block_List* work
     for (i = 1; i < cfg->number_of_blocks(); i++) {
       Block* block = cfg->get_block(i);
       uint j;
-      for (j = 1; j < block->_nodes.size(); j++) {
-        if (block->_nodes[j]->jvms() && (*safehash)[block->_nodes[j]] == NULL) {
+      for (j = 1; j < block->number_of_nodes(); j++) {
+        if (block->get_node(j)->jvms() && (*safehash)[block->get_node(j)] == NULL) {
            break;
         }
       }
-      if (j < block->_nodes.size()) {
+      if (j < block->number_of_nodes()) {
         break;
       }
     }

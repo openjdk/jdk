@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -133,9 +133,9 @@ public final class FontUtilities {
                     debugFonts = true;
                     logger = PlatformLogger.getLogger("sun.java2d");
                     if (debugLevel.equals("warning")) {
-                        logger.setLevel(PlatformLogger.WARNING);
+                        logger.setLevel(PlatformLogger.Level.WARNING);
                     } else if (debugLevel.equals("severe")) {
-                        logger.setLevel(PlatformLogger.SEVERE);
+                        logger.setLevel(PlatformLogger.Level.SEVERE);
                     }
                 }
 

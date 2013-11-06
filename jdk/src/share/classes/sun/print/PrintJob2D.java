@@ -812,7 +812,7 @@ public class PrintJob2D extends PrintJob implements Printable, Runnable {
             currentGraphics.translate(pageFormat.getImageableX(),
                                       pageFormat.getImageableY());
 
-            /* Scale to accomodate AWT's notion of printer resolution */
+            /* Scale to accommodate AWT's notion of printer resolution */
             double awtScale = 72.0/getPageResolutionInternal();
             currentGraphics.scale(awtScale, awtScale);
 

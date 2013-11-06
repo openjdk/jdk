@@ -107,18 +107,13 @@ private:
     add(loader_data, cp, names_count, name, lengths, cp_indices, hashValues, THREAD);
   }
 
-  // Table size
-  enum {
-    symbol_table_size = 20011
-  };
-
   Symbol* lookup(int index, const char* name, int len, unsigned int hash);
 
   SymbolTable()
-    : Hashtable<Symbol*, mtSymbol>(symbol_table_size, sizeof (HashtableEntry<Symbol*, mtSymbol>)) {}
+    : Hashtable<Symbol*, mtSymbol>(SymbolTableSize, sizeof (HashtableEntry<Symbol*, mtSymbol>)) {}
 
   SymbolTable(HashtableBucket<mtSymbol>* t, int number_of_entries)
-    : Hashtable<Symbol*, mtSymbol>(symbol_table_size, sizeof (HashtableEntry<Symbol*, mtSymbol>), t,
+    : Hashtable<Symbol*, mtSymbol>(SymbolTableSize, sizeof (HashtableEntry<Symbol*, mtSymbol>), t,
                 number_of_entries) {}
 
   // Arena for permanent symbols (null class loader) that are never unloaded
@@ -136,6 +131,9 @@ public:
   // The symbol table
   static SymbolTable* the_table() { return _the_table; }
 
+  // Size of one bucket in the string table.  Used when checking for rollover.
+  static uint bucket_size() { return sizeof(HashtableBucket<mtSymbol>); }
+
   static void create_table() {
     assert(_the_table == NULL, "One symbol table allowed.");
     _the_table = new SymbolTable();
@@ -145,8 +143,11 @@ public:
   static void create_table(HashtableBucket<mtSymbol>* t, int length,
                            int number_of_entries) {
     assert(_the_table == NULL, "One symbol table allowed.");
-    assert(length == symbol_table_size * sizeof(HashtableBucket<mtSymbol>),
-           "bad shared symbol size.");
+
+    // If CDS archive used a different symbol table size, use that size instead
+    // which is better than giving an error.
+    SymbolTableSize = length/bucket_size();
+
     _the_table = new SymbolTable(t, number_of_entries);
     // if CDS give symbol table a default arena size since most symbols
     // are already allocated in the shared misc section.
@@ -310,6 +311,26 @@ public:
   // Debugging
   static void verify();
   static void dump(outputStream* st);
+
+  enum VerifyMesgModes {
+    _verify_quietly    = 0,
+    _verify_with_mesgs = 1
+  };
+
+  enum VerifyRetTypes {
+    _verify_pass          = 0,
+    _verify_fail_continue = 1,
+    _verify_fail_done     = 2
+  };
+
+  static VerifyRetTypes compare_entries(int bkt1, int e_cnt1,
+                                        HashtableEntry<oop, mtSymbol>* e_ptr1,
+                                        int bkt2, int e_cnt2,
+                                        HashtableEntry<oop, mtSymbol>* e_ptr2);
+  static VerifyRetTypes verify_entry(int bkt, int e_cnt,
+                                     HashtableEntry<oop, mtSymbol>* e_ptr,
+                                     VerifyMesgModes mesg_mode);
+  static int verify_and_compare_entries();
 
   // Sharing
   static void copy_buckets(char** top, char*end) {

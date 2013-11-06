@@ -41,7 +41,7 @@ import javax.swing.event.*;
  * future Swing releases. The current serialization support is
  * appropriate for short term storage or RMI between applications running
  * the same version of Swing.  As of 1.4, support for long term storage
- * of all JavaBeans<sup><font size="-2">TM</font></sup>
+ * of all JavaBeans&trade;
  * has been added to the <code>java.beans</code> package.
  * Please see {@link java.beans.XMLEncoder}.
  *
@@ -786,7 +786,7 @@ public class DefaultListSelectionModel implements ListSelectionModel, Cloneable,
      * leadIndex and newLeadIndex is the new one.
      * <p>
      * If the value at the anchor index is not selected, do the same thing in
-     * reverse selecting values in the old range and deslecting values in the
+     * reverse selecting values in the old range and deselecting values in the
      * new one.
      * <p>
      * Generate a single event for this change and notify all listeners.

@@ -35,7 +35,7 @@
 
 package java.awt.color;
 
-import java.awt.image.LookupTable;
+import sun.java2d.cmm.Profile;
 import sun.java2d.cmm.ProfileDeferralInfo;
 
 /**
@@ -114,8 +114,8 @@ extends ICC_Profile {
      * @param ID The CMM ID for the profile.
      *
      */
-    ICC_ProfileRGB(long ID) {
-        super(ID);
+    ICC_ProfileRGB(Profile p) {
+        super(p);
     }
 
     /**

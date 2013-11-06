@@ -30,9 +30,9 @@ package com.sun.source.doctree;
  *
  * @since 1.8
  */
-@jdk.Supported
+@jdk.Exported
 public interface DocTree {
-    @jdk.Supported
+    @jdk.Exported
     enum Kind {
         /**
          * Used for instances of {@link AttributeTree}

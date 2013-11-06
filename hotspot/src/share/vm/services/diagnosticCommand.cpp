@@ -48,7 +48,7 @@ void DCmdRegistrant::register_dcmds(){
   DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<SystemGCDCmd>(full_export, true, false));
   DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<RunFinalizationDCmd>(full_export, true, false));
 #if INCLUDE_SERVICES // Heap dumping/inspection supported
-  DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<HeapDumpDCmd>(full_export, true, false));
+  DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<HeapDumpDCmd>(DCmd_Source_Internal | DCmd_Source_AttachAPI, true, false));
   DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<ClassHistogramDCmd>(full_export, true, false));
   DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<ClassStatsDCmd>(full_export, true, false));
 #endif // INCLUDE_SERVICES
@@ -505,7 +505,11 @@ JMXStartRemoteDCmd::JMXStartRemoteDCmd(outputStream *output, bool heap_allocated
 
    _jdp_pause
   ("jdp.pause",
-   "set com.sun.management.jdp.pause", "INT", false)
+   "set com.sun.management.jdp.pause", "INT", false),
+
+   _jdp_name
+  ("jdp.name",
+   "set com.sun.management.jdp.name", "STRING", false)
 
   {
     _dcmdparser.add_dcmd_option(&_config_file);
@@ -527,6 +531,7 @@ JMXStartRemoteDCmd::JMXStartRemoteDCmd(outputStream *output, bool heap_allocated
     _dcmdparser.add_dcmd_option(&_jdp_source_addr);
     _dcmdparser.add_dcmd_option(&_jdp_ttl);
     _dcmdparser.add_dcmd_option(&_jdp_pause);
+    _dcmdparser.add_dcmd_option(&_jdp_name);
 }
 
 
@@ -596,6 +601,7 @@ void JMXStartRemoteDCmd::execute(DCmdSource source, TRAPS) {
     PUT_OPTION(_jdp_source_addr);
     PUT_OPTION(_jdp_ttl);
     PUT_OPTION(_jdp_pause);
+    PUT_OPTION(_jdp_name);
 
 #undef PUT_OPTION
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -144,9 +144,9 @@ class AdaptivePaddedAverage : public AdaptiveWeightedAverage {
     _padded_avg(0.0), _deviation(0.0), _padding(padding) {}
 
   // Placement support
-  void* operator new(size_t ignored, void* p) { return p; }
+  void* operator new(size_t ignored, void* p) throw() { return p; }
   // Allocator
-  void* operator new(size_t size) { return CHeapObj<mtGC>::operator new(size); }
+  void* operator new(size_t size) throw() { return CHeapObj<mtGC>::operator new(size); }
 
   // Accessor
   float padded_average() const         { return _padded_avg; }

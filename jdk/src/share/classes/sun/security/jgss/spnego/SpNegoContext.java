@@ -525,6 +525,10 @@ public class SpNegoContext implements GSSContextSpi {
 
                 // get the mechanism token
                 byte[] mechToken = initToken.getMechToken();
+                if (mechToken == null) {
+                    throw new GSSException(GSSException.FAILURE, -1,
+                            "mechToken is missing");
+                }
 
                 /*
                  * Select the best match between the list of mechs
@@ -537,7 +541,7 @@ public class SpNegoContext implements GSSContextSpi {
                 if (mech_wanted == null) {
                     valid = false;
                 }
-                // save the desired mechansim
+                // save the desired mechanism
                 internal_mech = mech_wanted;
 
                 // get the token for mechanism
@@ -737,7 +741,7 @@ public class SpNegoContext implements GSSContextSpi {
             return null;
         }
 
-        // check if mechansim supports integrity
+        // check if mechanism supports integrity
         if (!mechContext.getIntegState()) {
             if (DEBUG) {
                 System.out.println("SpNegoContext: no MIC token included" +
@@ -779,7 +783,7 @@ public class SpNegoContext implements GSSContextSpi {
             return true;
         }
 
-        // check if mechansim supports integrity
+        // check if mechanism supports integrity
         if (!mechContext.getIntegState()) {
             if (DEBUG) {
                 System.out.println("SpNegoContext: no MIC token validation" +

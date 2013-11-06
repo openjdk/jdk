@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,6 +44,7 @@ class ciSymbol : public ciBaseObject {
   friend class ciInstanceKlass;
   friend class ciSignature;
   friend class ciMethod;
+  friend class ciField;
   friend class ciObjArrayKlass;
 
 private:

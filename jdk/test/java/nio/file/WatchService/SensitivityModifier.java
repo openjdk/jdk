@@ -100,7 +100,7 @@ public class SensitivityModifier {
                     }
                     key.reset();
                     key = watcher.poll(1, TimeUnit.SECONDS);
-                } while (key != null && !eventReceived);
+                } while (key != null);
 
                 // we should have received at least one ENTRY_MODIFY event
                 if (eventReceived) {

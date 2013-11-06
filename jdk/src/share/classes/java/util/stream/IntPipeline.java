@@ -302,10 +302,11 @@ abstract class IntPipeline<E_IN>
 
                     @Override
                     public void accept(int t) {
-                        // We can do better that this too; optimize for depth=0 case and just grab spliterator and forEach it
-                        IntStream result = mapper.apply(t);
-                        if (result != null)
-                            result.sequential().forEach(i -> downstream.accept(i));
+                        try (IntStream result = mapper.apply(t)) {
+                            // We can do better that this too; optimize for depth=0 case and just grab spliterator and forEach it
+                            if (result != null)
+                                result.sequential().forEach(i -> downstream.accept(i));
+                        }
                     }
                 };
             }
@@ -348,8 +349,8 @@ abstract class IntPipeline<E_IN>
     }
 
     @Override
-    public final IntStream peek(IntConsumer consumer) {
-        Objects.requireNonNull(consumer);
+    public final IntStream peek(IntConsumer action) {
+        Objects.requireNonNull(action);
         return new StatelessOp<Integer>(this, StreamShape.INT_VALUE,
                                         0) {
             @Override
@@ -357,7 +358,7 @@ abstract class IntPipeline<E_IN>
                 return new Sink.ChainedInt<Integer>(sink) {
                     @Override
                     public void accept(int t) {
-                        consumer.accept(t);
+                        action.accept(t);
                         downstream.accept(t);
                     }
                 };
@@ -367,32 +368,21 @@ abstract class IntPipeline<E_IN>
 
     // Stateful intermediate ops from IntStream
 
-    private IntStream slice(long skip, long limit) {
-        return SliceOps.makeInt(this, skip, limit);
-    }
-
     @Override
     public final IntStream limit(long maxSize) {
         if (maxSize < 0)
             throw new IllegalArgumentException(Long.toString(maxSize));
-        return slice(0, maxSize);
+        return SliceOps.makeInt(this, 0, maxSize);
     }
 
     @Override
-    public final IntStream substream(long startingOffset) {
-        if (startingOffset < 0)
-            throw new IllegalArgumentException(Long.toString(startingOffset));
-        if (startingOffset == 0)
+    public final IntStream skip(long n) {
+        if (n < 0)
+            throw new IllegalArgumentException(Long.toString(n));
+        if (n == 0)
             return this;
         else
-            return slice(startingOffset, -1);
-    }
-
-    @Override
-    public final IntStream substream(long startingOffset, long endingOffset) {
-        if (startingOffset < 0 || endingOffset < startingOffset)
-            throw new IllegalArgumentException(String.format("substream(%d, %d)", startingOffset, endingOffset));
-        return slice(startingOffset, endingOffset - startingOffset);
+            return SliceOps.makeInt(this, n, -1);
     }
 
     @Override
@@ -472,14 +462,14 @@ abstract class IntPipeline<E_IN>
     }
 
     @Override
-    public final <R> R collect(Supplier<R> resultFactory,
+    public final <R> R collect(Supplier<R> supplier,
                                ObjIntConsumer<R> accumulator,
                                BiConsumer<R, R> combiner) {
         BinaryOperator<R> operator = (left, right) -> {
             combiner.accept(left, right);
             return left;
         };
-        return evaluate(ReduceOps.makeInt(resultFactory, accumulator, operator));
+        return evaluate(ReduceOps.makeInt(supplier, accumulator, operator));
     }
 
     @Override

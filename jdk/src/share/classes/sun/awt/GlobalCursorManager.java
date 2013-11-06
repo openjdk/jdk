@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -134,7 +134,6 @@ public abstract class GlobalCursorManager {
      */
     protected abstract void getCursorPos(Point p);
 
-    protected abstract Component findComponentAt(Container con, int x, int y);
     protected abstract Point getLocationOnScreen(Component com);
 
     /**
@@ -158,7 +157,7 @@ public abstract class GlobalCursorManager {
      *
      * (2) If 'useCache' is true, the native code is free to use a cached
      * value to determine the most specific, visible, enabled heavyweight
-     * because this update is occuring in response to a mouse move. If
+     * because this update is occurring in response to a mouse move. If
      * 'useCache' is false, the native code must perform a new search given
      * the current mouse coordinates.
      *
@@ -190,9 +189,10 @@ public abstract class GlobalCursorManager {
             if (p != null) {
                 queryPos = new Point();
                 getCursorPos(queryPos);
-                Component c = findComponentAt((Container)comp,
-                                              queryPos.x - p.x,
-                                              queryPos.y - p.y);
+                Component c = AWTAccessor.getContainerAccessor().
+                        findComponentAt((Container) comp,
+                        queryPos.x - p.x, queryPos.y - p.y, false);
+
                 // If findComponentAt returns null, then something bad has
                 // happened. For example, the heavyweight Component may
                 // have been hidden or disabled by another thread. In that

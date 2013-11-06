@@ -282,7 +282,7 @@ final class SignatureAndHashAlgorithm {
             } else if ((keySize > 0) && (keySize < 512)) {
                 maxDigestLength = HashAlgorithm.SHA1.length;
             }   // Otherwise, cannot determine the key size, prefer the most
-                // perferable hash algorithm.
+                // preferable hash algorithm.
         }
 
         for (SignatureAndHashAlgorithm algorithm : algorithms) {

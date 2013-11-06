@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -75,7 +75,6 @@ ciField::ciField(ciInstanceKlass* klass, int index): _known_to_link_with_put(NUL
 
   assert(klass->get_instanceKlass()->is_linked(), "must be linked before using its constan-pool");
 
-  _cp_index = index;
   constantPoolHandle cpool(thread, klass->get_instanceKlass()->constants());
 
   // Get the field's name, signature, and type.
@@ -116,7 +115,7 @@ ciField::ciField(ciInstanceKlass* klass, int index): _known_to_link_with_put(NUL
   // The declared holder of this field may not have been loaded.
   // Bail out with partial field information.
   if (!holder_is_accessible) {
-    // _cp_index and _type have already been set.
+    // _type has already been set.
     // The default values for _flags and _constant_value will suffice.
     // We need values for _holder, _offset,  and _is_constant,
     _holder = declared_holder;
@@ -145,8 +144,6 @@ ciField::ciField(ciInstanceKlass* klass, int index): _known_to_link_with_put(NUL
 
 ciField::ciField(fieldDescriptor *fd): _known_to_link_with_put(NULL), _known_to_link_with_get(NULL) {
   ASSERT_IN_VM;
-
-  _cp_index = -1;
 
   // Get the field's name, signature, and type.
   ciEnv* env = CURRENT_ENV;
@@ -189,12 +186,14 @@ void ciField::initialize_from(fieldDescriptor* fd) {
   _holder = CURRENT_ENV->get_instance_klass(fd->field_holder());
 
   // Check to see if the field is constant.
-  if (_holder->is_initialized() && this->is_final()) {
+  bool is_final = this->is_final();
+  bool is_stable = FoldStableValues && this->is_stable();
+  if (_holder->is_initialized() && (is_final || is_stable)) {
     if (!this->is_static()) {
       // A field can be constant if it's a final static field or if
       // it's a final non-static field of a trusted class (classes in
       // java.lang.invoke and sun.invoke packages and subpackages).
-      if (trust_final_non_static_fields(_holder)) {
+      if (is_stable || trust_final_non_static_fields(_holder)) {
         _is_constant = true;
         return;
       }
@@ -227,7 +226,6 @@ void ciField::initialize_from(fieldDescriptor* fd) {
 
     Handle mirror = k->java_mirror();
 
-    _is_constant = true;
     switch(type()->basic_type()) {
     case T_BYTE:
       _constant_value = ciConstant(type()->basic_type(), mirror->byte_field(_offset));
@@ -272,6 +270,12 @@ void ciField::initialize_from(fieldDescriptor* fd) {
           assert(_constant_value.as_object() == CURRENT_ENV->get_object(o), "check interning");
         }
       }
+    }
+    if (is_stable && _constant_value.is_null_or_zero()) {
+      // It is not a constant after all; treat it as uninitialized.
+      _is_constant = false;
+    } else {
+      _is_constant = true;
     }
   } else {
     _is_constant = false;
@@ -344,12 +348,11 @@ bool ciField::will_link(ciInstanceKlass* accessing_klass,
     }
   }
 
-  FieldAccessInfo result;
-  constantPoolHandle c_pool(THREAD,
-                         accessing_klass->get_instanceKlass()->constants());
-  LinkResolver::resolve_field(result, c_pool, _cp_index,
-                              Bytecodes::java_code(bc),
-                              true, false, KILL_COMPILE_ON_FATAL_(false));
+  fieldDescriptor result;
+  LinkResolver::resolve_field(result, _holder->get_instanceKlass(),
+                              _name->get_symbol(), _signature->get_symbol(),
+                              accessing_klass->get_Klass(), bc, true, false,
+                              KILL_COMPILE_ON_FATAL_(false));
 
   // update the hit-cache, unless there is a problem with memory scoping:
   if (accessing_klass->is_shared() || !is_shared()) {
@@ -373,8 +376,11 @@ void ciField::print() {
   tty->print(" signature=");
   _signature->print_symbol();
   tty->print(" offset=%d type=", _offset);
-  if (_type != NULL) _type->print_name();
-  else               tty->print("(reference)");
+  if (_type != NULL)
+    _type->print_name();
+  else
+    tty->print("(reference)");
+  tty->print(" flags=%04x", flags().as_int());
   tty->print(" is_constant=%s", bool_to_str(_is_constant));
   if (_is_constant && is_static()) {
     tty->print(" constant_value=");

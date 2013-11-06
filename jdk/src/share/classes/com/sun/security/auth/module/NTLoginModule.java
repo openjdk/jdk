@@ -57,6 +57,7 @@ import com.sun.security.auth.NTNumericCredential;
  *
  * @see javax.security.auth.spi.LoginModule
  */
+@jdk.Exported
 public class NTLoginModule implements LoginModule {
 
     private NTSystem ntSystem;

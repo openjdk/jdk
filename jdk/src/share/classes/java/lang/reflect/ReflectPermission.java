@@ -31,7 +31,6 @@ package java.lang.reflect;
  * The following table
  * provides a summary description of what the permission allows,
  * and discusses the risks of granting code the permission.
- * <P>
  *
  * <table border=1 cellpadding=5 summary="Table shows permission target name, what the permission allows, and associated risks">
  * <tr>

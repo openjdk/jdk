@@ -24,7 +24,7 @@
 /*
  * @test
  * @bug 8003424
- * @summary Testing UseCompressedKlassPointers with CDS
+ * @summary Testing UseCompressedClassPointers with CDS
  * @library /testlibrary
  * @run main CDSCompressedKPtrs
  */
@@ -36,7 +36,7 @@ public class CDSCompressedKPtrs {
     ProcessBuilder pb;
     if (Platform.is64bit()) {
       pb = ProcessTools.createJavaProcessBuilder(
-        "-XX:+UseCompressedKlassPointers", "-XX:+UseCompressedOops",
+        "-XX:+UseCompressedClassPointers", "-XX:+UseCompressedOops",
         "-XX:+UnlockDiagnosticVMOptions", "-XX:SharedArchiveFile=./sample.jsa", "-Xshare:dump");
       OutputAnalyzer output = new OutputAnalyzer(pb.start());
       try {
@@ -44,16 +44,15 @@ public class CDSCompressedKPtrs {
         output.shouldHaveExitValue(0);
 
         pb = ProcessTools.createJavaProcessBuilder(
-          "-XX:+UseCompressedKlassPointers", "-XX:+UseCompressedOops",
+          "-XX:+UseCompressedClassPointers", "-XX:+UseCompressedOops",
           "-XX:+UnlockDiagnosticVMOptions", "-XX:SharedArchiveFile=./sample.jsa", "-Xshare:on", "-version");
         output = new OutputAnalyzer(pb.start());
         output.shouldContain("sharing");
         output.shouldHaveExitValue(0);
 
       } catch (RuntimeException e) {
-        // Report 'passed' if CDS was turned off because we could not allocate
-        // the klass metaspace at an address that would work with CDS.
-        output.shouldContain("Could not allocate metaspace at a compatible address");
+        // Report 'passed' if CDS was turned off.
+        output.shouldContain("Unable to use shared archive");
         output.shouldHaveExitValue(1);
       }
     }

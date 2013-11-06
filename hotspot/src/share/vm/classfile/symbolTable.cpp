@@ -341,7 +341,7 @@ Symbol* SymbolTable::new_permanent_symbol(const char* name, TRAPS) {
 
 Symbol* SymbolTable::basic_add(int index_arg, u1 *name, int len,
                                unsigned int hashValue_arg, bool c_heap, TRAPS) {
-  assert(!Universe::heap()->is_in_reserved(name) || GC_locker::is_active(),
+  assert(!Universe::heap()->is_in_reserved(name),
          "proposed name of symbol must be stable");
 
   // Don't allow symbols to be created which cannot fit in a Symbol*.
@@ -685,7 +685,7 @@ oop StringTable::intern(Handle string_or_null, jchar* name,
   if (found_string != NULL) return found_string;
 
   debug_only(StableMemoryChecker smc(name, len * sizeof(name[0])));
-  assert(!Universe::heap()->is_in_reserved(name) || GC_locker::is_active(),
+  assert(!Universe::heap()->is_in_reserved(name),
          "proposed name of symbol must be stable");
 
   Handle string;
@@ -807,6 +807,8 @@ void StringTable::possibly_parallel_oops_do(OopClosure* f) {
   }
 }
 
+// This verification is part of Universe::verify() and needs to be quick.
+// See StringTable::verify_and_compare() below for exhaustive verification.
 void StringTable::verify() {
   for (int i = 0; i < the_table()->table_size(); ++i) {
     HashtableEntry<oop, mtSymbol>* p = the_table()->bucket(i);
@@ -825,6 +827,162 @@ void StringTable::dump(outputStream* st) {
   the_table()->dump_table(st, "StringTable");
 }
 
+StringTable::VerifyRetTypes StringTable::compare_entries(
+                                      int bkt1, int e_cnt1,
+                                      HashtableEntry<oop, mtSymbol>* e_ptr1,
+                                      int bkt2, int e_cnt2,
+                                      HashtableEntry<oop, mtSymbol>* e_ptr2) {
+  // These entries are sanity checked by verify_and_compare_entries()
+  // before this function is called.
+  oop str1 = e_ptr1->literal();
+  oop str2 = e_ptr2->literal();
+
+  if (str1 == str2) {
+    tty->print_cr("ERROR: identical oop values (0x" PTR_FORMAT ") "
+                  "in entry @ bucket[%d][%d] and entry @ bucket[%d][%d]",
+                  (void *)str1, bkt1, e_cnt1, bkt2, e_cnt2);
+    return _verify_fail_continue;
+  }
+
+  if (java_lang_String::equals(str1, str2)) {
+    tty->print_cr("ERROR: identical String values in entry @ "
+                  "bucket[%d][%d] and entry @ bucket[%d][%d]",
+                  bkt1, e_cnt1, bkt2, e_cnt2);
+    return _verify_fail_continue;
+  }
+
+  return _verify_pass;
+}
+
+StringTable::VerifyRetTypes StringTable::verify_entry(int bkt, int e_cnt,
+                                      HashtableEntry<oop, mtSymbol>* e_ptr,
+                                      StringTable::VerifyMesgModes mesg_mode) {
+
+  VerifyRetTypes ret = _verify_pass;  // be optimistic
+
+  oop str = e_ptr->literal();
+  if (str == NULL) {
+    if (mesg_mode == _verify_with_mesgs) {
+      tty->print_cr("ERROR: NULL oop value in entry @ bucket[%d][%d]", bkt,
+                    e_cnt);
+    }
+    // NULL oop means no more verifications are possible
+    return _verify_fail_done;
+  }
+
+  if (str->klass() != SystemDictionary::String_klass()) {
+    if (mesg_mode == _verify_with_mesgs) {
+      tty->print_cr("ERROR: oop is not a String in entry @ bucket[%d][%d]",
+                    bkt, e_cnt);
+    }
+    // not a String means no more verifications are possible
+    return _verify_fail_done;
+  }
+
+  unsigned int h = java_lang_String::hash_string(str);
+  if (e_ptr->hash() != h) {
+    if (mesg_mode == _verify_with_mesgs) {
+      tty->print_cr("ERROR: broken hash value in entry @ bucket[%d][%d], "
+                    "bkt_hash=%d, str_hash=%d", bkt, e_cnt, e_ptr->hash(), h);
+    }
+    ret = _verify_fail_continue;
+  }
+
+  if (the_table()->hash_to_index(h) != bkt) {
+    if (mesg_mode == _verify_with_mesgs) {
+      tty->print_cr("ERROR: wrong index value for entry @ bucket[%d][%d], "
+                    "str_hash=%d, hash_to_index=%d", bkt, e_cnt, h,
+                    the_table()->hash_to_index(h));
+    }
+    ret = _verify_fail_continue;
+  }
+
+  return ret;
+}
+
+// See StringTable::verify() above for the quick verification that is
+// part of Universe::verify(). This verification is exhaustive and
+// reports on every issue that is found. StringTable::verify() only
+// reports on the first issue that is found.
+//
+// StringTable::verify_entry() checks:
+// - oop value != NULL (same as verify())
+// - oop value is a String
+// - hash(String) == hash in entry (same as verify())
+// - index for hash == index of entry (same as verify())
+//
+// StringTable::compare_entries() checks:
+// - oops are unique across all entries
+// - String values are unique across all entries
+//
+int StringTable::verify_and_compare_entries() {
+  assert(StringTable_lock->is_locked(), "sanity check");
+
+  int  fail_cnt = 0;
+
+  // first, verify all the entries individually:
+  for (int bkt = 0; bkt < the_table()->table_size(); bkt++) {
+    HashtableEntry<oop, mtSymbol>* e_ptr = the_table()->bucket(bkt);
+    for (int e_cnt = 0; e_ptr != NULL; e_ptr = e_ptr->next(), e_cnt++) {
+      VerifyRetTypes ret = verify_entry(bkt, e_cnt, e_ptr, _verify_with_mesgs);
+      if (ret != _verify_pass) {
+        fail_cnt++;
+      }
+    }
+  }
+
+  // Optimization: if the above check did not find any failures, then
+  // the comparison loop below does not need to call verify_entry()
+  // before calling compare_entries(). If there were failures, then we
+  // have to call verify_entry() to see if the entry can be passed to
+  // compare_entries() safely. When we call verify_entry() in the loop
+  // below, we do so quietly to void duplicate messages and we don't
+  // increment fail_cnt because the failures have already been counted.
+  bool need_entry_verify = (fail_cnt != 0);
+
+  // second, verify all entries relative to each other:
+  for (int bkt1 = 0; bkt1 < the_table()->table_size(); bkt1++) {
+    HashtableEntry<oop, mtSymbol>* e_ptr1 = the_table()->bucket(bkt1);
+    for (int e_cnt1 = 0; e_ptr1 != NULL; e_ptr1 = e_ptr1->next(), e_cnt1++) {
+      if (need_entry_verify) {
+        VerifyRetTypes ret = verify_entry(bkt1, e_cnt1, e_ptr1,
+                                          _verify_quietly);
+        if (ret == _verify_fail_done) {
+          // cannot use the current entry to compare against other entries
+          continue;
+        }
+      }
+
+      for (int bkt2 = bkt1; bkt2 < the_table()->table_size(); bkt2++) {
+        HashtableEntry<oop, mtSymbol>* e_ptr2 = the_table()->bucket(bkt2);
+        int e_cnt2;
+        for (e_cnt2 = 0; e_ptr2 != NULL; e_ptr2 = e_ptr2->next(), e_cnt2++) {
+          if (bkt1 == bkt2 && e_cnt2 <= e_cnt1) {
+            // skip the entries up to and including the one that
+            // we're comparing against
+            continue;
+          }
+
+          if (need_entry_verify) {
+            VerifyRetTypes ret = verify_entry(bkt2, e_cnt2, e_ptr2,
+                                              _verify_quietly);
+            if (ret == _verify_fail_done) {
+              // cannot compare against this entry
+              continue;
+            }
+          }
+
+          // compare two entries, report and count any failures:
+          if (compare_entries(bkt1, e_cnt1, e_ptr1, bkt2, e_cnt2, e_ptr2)
+              != _verify_pass) {
+            fail_cnt++;
+          }
+        }
+      }
+    }
+  }
+  return fail_cnt;
+}
 
 // Create a new table and using alternate hash code, populate the new table
 // with the existing strings.   Set flag to use the alternate hash code afterwards.

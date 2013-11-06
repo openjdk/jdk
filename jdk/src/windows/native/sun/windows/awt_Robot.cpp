@@ -192,15 +192,6 @@ inline jint AwtRobot::WinToJavaPixel(USHORT r, USHORT g, USHORT b)
     return value;
 }
 
-jint AwtRobot::GetRGBPixel( jint x, jint y)
-{
-    HDC hdc = ::CreateDC(TEXT("DISPLAY"), NULL, NULL, NULL);
-    COLORREF ref = ::GetPixel( hdc, x, y );
-    ::DeleteDC(hdc);
-    jint value = WinToJavaPixel(GetRValue(ref), GetGValue(ref), GetBValue(ref));
-    return value;
-}
-
 void AwtRobot::GetRGBPixels(jint x, jint y, jint width, jint height, jintArray pixelArray)
 {
     DASSERT(width > 0 && height > 0);
@@ -403,15 +394,6 @@ JNIEXPORT void JNICALL Java_sun_awt_windows_WRobotPeer_mouseWheel(
     CATCH_BAD_ALLOC;
 }
 
-JNIEXPORT jint JNICALL Java_sun_awt_windows_WRobotPeer_getRGBPixelImpl(
-    JNIEnv * env, jobject self, jint x, jint y)
-{
-    TRY;
-
-    return AwtRobot::GetRobot(self)->GetRGBPixel(x, y);
-
-    CATCH_BAD_ALLOC_RET(0);
-}
 JNIEXPORT void JNICALL Java_sun_awt_windows_WRobotPeer_getRGBPixels(
     JNIEnv *env, jobject self, jint x, jint y, jint width, jint height, jintArray pixelArray)
 {

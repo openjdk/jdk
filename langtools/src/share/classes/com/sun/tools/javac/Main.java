@@ -30,16 +30,8 @@ import java.io.PrintWriter;
 /**
  * The programmatic interface for the Java Programming Language
  * compiler, javac.
- *
- * <p>Except for the two methods
- * {@link #compile(java.lang.String[])}
- * {@link #compile(java.lang.String[],java.io.PrintWriter)},
- * nothing described in this source file is part of any supported
- * API.  If you write code that depends on this, you do so at your own
- * risk.  This code and its internal interfaces are subject to change
- * or deletion without notice.
  */
-@jdk.Supported
+@jdk.Exported
 public class Main {
 
     /** Main entry point for the launcher.

@@ -25,96 +25,139 @@
 
 package sun.java2d.cmm.lcms;
 
+import java.awt.color.CMMException;
 import java.awt.color.ICC_Profile;
-import java.util.Arrays;
-import java.util.HashMap;
 import sun.java2d.cmm.ColorTransform;
 import sun.java2d.cmm.PCMM;
+import sun.java2d.cmm.Profile;
+import sun.java2d.cmm.lcms.LCMSProfile.TagData;
 
 public class LCMS implements PCMM {
 
     /* methods invoked from ICC_Profile */
     @Override
-    public long loadProfile(byte[] data) {
-        long id = loadProfileNative(data);
+    public Profile loadProfile(byte[] data) {
+        final Object disposerRef = new Object();
 
-        if (id != 0L) {
-            if (profiles == null) {
-                profiles = new HashMap<>();
-            }
-            profiles.put(id, new TagCache(id));
+        final long ptr = loadProfileNative(data, disposerRef);
+
+        if (ptr != 0L) {
+            return new LCMSProfile(ptr, disposerRef);
         }
-        return id;
+        return null;
     }
 
-    private native long loadProfileNative(byte[] data);
+    private native long loadProfileNative(byte[] data, Object ref);
 
-    @Override
-    public void freeProfile(long profileID) {
-        TagCache c = profiles.remove(profileID);
-        if (c != null) {
-            c.clear();
+    private LCMSProfile getLcmsProfile(Profile p) {
+        if (p instanceof LCMSProfile) {
+            return (LCMSProfile)p;
         }
-        if (profiles.isEmpty()) {
-            profiles = null;
-        }
-        freeProfileNative(profileID);
+        throw new CMMException("Invalid profile: " + p);
     }
 
-    private native void freeProfileNative(long profileID);
-
-    public native synchronized int getProfileSize(long profileID);
-
-    public native synchronized void getProfileData(long profileID, byte[] data);
 
     @Override
-    public synchronized int getTagSize(long profileID, int tagSignature) {
-        TagCache cache = profiles.get(profileID);
-
-        if (cache ==  null) {
-            cache = new TagCache(profileID);
-            profiles.put(profileID, cache);
-        }
-
-        TagData t = cache.getTag(tagSignature);
-        return t == null ? 0 : t.getSize();
+    public void freeProfile(Profile p) {
+        // we use disposer, so this method does nothing
     }
 
-    private static native byte[] getTagNative(long profileID, int signature);
+    @Override
+    public int getProfileSize(final Profile p) {
+        synchronized (p) {
+            return getProfileSizeNative(getLcmsProfile(p).getLcmsPtr());
+        }
+    }
+
+    private native int getProfileSizeNative(long ptr);
 
     @Override
-    public synchronized void getTagData(long profileID, int tagSignature,
-                                               byte[] data)
+    public void getProfileData(final Profile p, byte[] data) {
+        synchronized (p) {
+            getProfileDataNative(getLcmsProfile(p).getLcmsPtr(), data);
+        }
+    }
+
+    private native void getProfileDataNative(long ptr, byte[] data);
+
+    @Override
+    public int getTagSize(Profile p, int tagSignature) {
+        final LCMSProfile profile = getLcmsProfile(p);
+
+        synchronized (profile) {
+            TagData t = profile.getTag(tagSignature);
+            return t == null ? 0 : t.getSize();
+        }
+    }
+
+    static native byte[] getTagNative(long profileID, int signature);
+
+    @Override
+    public void getTagData(Profile p, int tagSignature, byte[] data)
     {
-        TagCache cache = profiles.get(profileID);
+        final LCMSProfile profile = getLcmsProfile(p);
 
-        if (cache ==  null) {
-            cache = new TagCache(profileID);
-            profiles.put(profileID, cache);
-        }
-
-        TagData t = cache.getTag(tagSignature);
-        if (t != null) {
-            t.copyDataTo(data);
+        synchronized (profile) {
+            TagData t = profile.getTag(tagSignature);
+            if (t != null) {
+                t.copyDataTo(data);
+            }
         }
     }
 
     @Override
-    public synchronized void setTagData(long profileID, int tagSignature, byte[] data) {
-        TagCache cache = profiles.get(profileID);
+    public synchronized void setTagData(Profile p, int tagSignature, byte[] data) {
+        final LCMSProfile profile = getLcmsProfile(p);
 
-        if (cache != null) {
-            cache.clear();
+        synchronized (profile) {
+            profile.clearTagCache();
+
+            // Now we are going to update the profile with new tag data
+            // In some cases, we may change the pointer to the native
+            // profile.
+            //
+            // If we fail to write tag data for any reason, the old pointer
+            // should be used.
+            setTagDataNative(profile.getLcmsPtr(),
+                    tagSignature, data);
         }
-        setTagDataNative(profileID, tagSignature, data);
     }
 
-    private native synchronized void setTagDataNative(long profileID, int tagSignature,
+    /**
+     * Writes supplied data as a tag into the profile.
+     * Destroys old profile, if new one was successfully
+     * created.
+     *
+     * Returns valid pointer to new profile.
+     *
+     * Throws CMMException if operation fails, preserve old profile from
+     * destruction.
+     */
+    private native void setTagDataNative(long ptr, int tagSignature,
                                                byte[] data);
 
-    public static native long getProfileID(ICC_Profile profile);
+    public synchronized static native LCMSProfile getProfileID(ICC_Profile profile);
 
-    public static native long createNativeTransform(
+    /* Helper method used from LCMSColorTransfrom */
+    static long createTransform(
+        LCMSProfile[] profiles, int renderType,
+        int inFormatter, boolean isInIntPacked,
+        int outFormatter, boolean isOutIntPacked,
+        Object disposerRef)
+    {
+        long[] ptrs = new long[profiles.length];
+
+        for (int i = 0; i < profiles.length; i++) {
+            if (profiles[i] == null) throw new CMMException("Unknown profile ID");
+
+            ptrs[i] = profiles[i].getLcmsPtr();
+        }
+
+        return createNativeTransform(ptrs, renderType, inFormatter,
+                isInIntPacked, outFormatter, isOutIntPacked, disposerRef);
+    }
+
+    private static native long createNativeTransform(
         long[] profileIDs, int renderType,
         int inFormatter, boolean isInIntPacked,
         int outFormatter, boolean isOutIntPacked,
@@ -175,59 +218,4 @@ public class LCMS implements PCMM {
 
         return theLcms;
     }
-
-    private static class TagData {
-        private int signature;
-        private byte[] data;
-
-        TagData(int sig, byte[] data) {
-            this.signature = sig;
-            this.data = data;
-        }
-
-        int getSize() {
-            return data.length;
-        }
-
-        byte[] getData() {
-            return Arrays.copyOf(data, data.length);
-        }
-
-        void copyDataTo(byte[] dst) {
-            System.arraycopy(data, 0, dst, 0, data.length);
-        }
-
-        int getSignature() {
-            return signature;
-        }
-    }
-
-    private static class TagCache  {
-        private long profileID;
-        private HashMap<Integer, TagData> tags;
-
-        TagCache(long id) {
-            profileID = id;
-
-            tags = new HashMap<>();
-        }
-
-        TagData getTag(int sig) {
-            TagData t = tags.get(sig);
-            if (t == null) {
-                byte[] tagData = getTagNative(profileID, sig);
-                if (tagData != null) {
-                    t = new TagData(sig, tagData);
-                    tags.put(sig, t);
-                }
-            }
-            return t;
-        }
-
-        void clear() {
-            tags.clear();
-        }
-    }
-
-    private static HashMap<Long, TagCache> profiles;
 }

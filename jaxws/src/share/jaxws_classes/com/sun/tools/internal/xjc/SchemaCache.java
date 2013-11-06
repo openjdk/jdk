@@ -35,7 +35,7 @@ import com.sun.xml.internal.bind.v2.util.XmlFactory;
 import javax.xml.XMLConstants;
 import org.xml.sax.SAXException;
 
-import static com.sun.xml.internal.bind.v2.util.XmlFactory.allowFileAccess;
+import static com.sun.xml.internal.bind.v2.util.XmlFactory.allowExternalAccess;
 
 /**
  * Wraps a JAXP {@link Schema} object and lazily instantiate it.
@@ -61,7 +61,7 @@ public final class SchemaCache {
                 try {
                     // do not disable secure processing - these are well-known schemas
                     SchemaFactory sf = XmlFactory.createSchemaFactory(XMLConstants.W3C_XML_SCHEMA_NS_URI, false);
-                    schema = allowFileAccess(sf, false).newSchema(source);
+                    schema = allowExternalAccess(sf, "file", false).newSchema(source);
                 } catch (SAXException e) {
                     // we make sure that the schema is correct before we ship.
                     throw new AssertionError(e);

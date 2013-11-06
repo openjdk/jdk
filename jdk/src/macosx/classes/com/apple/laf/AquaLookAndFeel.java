@@ -37,8 +37,6 @@ import javax.swing.plaf.basic.BasicLookAndFeel;
 import sun.swing.*;
 import apple.laf.*;
 
-import com.apple.resources.MacOSXResourceBundle;
-
 public class AquaLookAndFeel extends BasicLookAndFeel {
     static final String sOldPropertyPrefix = "com.apple.macos."; // old prefix for things like 'useScreenMenuBar'
     static final String sPropertyPrefix = "apple.laf."; // new prefix for things like 'useScreenMenuBar'
@@ -246,13 +244,13 @@ public class AquaLookAndFeel extends BasicLookAndFeel {
      * used for getting localized defaults.  Also initialize the default
      * locale used when no locale is passed into UIDefaults.get().  The
      * default locale should generally not be relied upon. It is here for
-     * compatability with releases prior to 1.4.
+     * compatibility with releases prior to 1.4.
      */
     private void initResourceBundle(final UIDefaults table) {
         table.setDefaultLocale(Locale.getDefault());
         table.addResourceBundle(PKG_PREFIX + "resources.aqua");
         try {
-            final ResourceBundle aquaProperties = MacOSXResourceBundle.getMacResourceBundle(PKG_PREFIX + "resources.aqua");
+            final ResourceBundle aquaProperties = ResourceBundle.getBundle(PKG_PREFIX + "resources.aqua");
             final Enumeration<String> propertyKeys = aquaProperties.getKeys();
 
             while (propertyKeys.hasMoreElements()) {

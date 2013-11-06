@@ -25,7 +25,6 @@
  * @test
  * @bug 8005698
  * @run main InPlaceOpsCollisions -shortrun
- * @run main/othervm -Djdk.map.randomseed=true InPlaceOpsCollisions -shortrun
  * @summary Ensure overrides of in-place operations in Maps behave well with lots of collisions.
  * @author Brent Christian
  */

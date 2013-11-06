@@ -550,7 +550,7 @@ public interface ImageInputStream extends DataInput, Closeable {
      * the read occurs.
      *
      * @param s an array of shorts to be written to.
-     * @param off the starting position withinb to write to.
+     * @param off the starting position within <code>s</code> to write to.
      * @param len the maximum number of <code>short</code>s to read.
      *
      * @exception IndexOutOfBoundsException if <code>off</code> is
@@ -575,7 +575,7 @@ public interface ImageInputStream extends DataInput, Closeable {
      * the read occurs.
      *
      * @param c an array of chars to be written to.
-     * @param off the starting position withinb to write to.
+     * @param off the starting position within <code>c</code> to write to.
      * @param len the maximum number of <code>char</code>s to read.
      *
      * @exception IndexOutOfBoundsException if <code>off</code> is
@@ -600,7 +600,7 @@ public interface ImageInputStream extends DataInput, Closeable {
      * the read occurs.
      *
      * @param i an array of ints to be written to.
-     * @param off the starting position withinb to write to.
+     * @param off the starting position within <code>i</code> to write to.
      * @param len the maximum number of <code>int</code>s to read.
      *
      * @exception IndexOutOfBoundsException if <code>off</code> is
@@ -625,7 +625,7 @@ public interface ImageInputStream extends DataInput, Closeable {
      * the read occurs.
      *
      * @param l an array of longs to be written to.
-     * @param off the starting position withinb to write to.
+     * @param off the starting position within <code>l</code> to write to.
      * @param len the maximum number of <code>long</code>s to read.
      *
      * @exception IndexOutOfBoundsException if <code>off</code> is
@@ -650,7 +650,7 @@ public interface ImageInputStream extends DataInput, Closeable {
      * the read occurs.
      *
      * @param f an array of floats to be written to.
-     * @param off the starting position withinb to write to.
+     * @param off the starting position within <code>f</code> to write to.
      * @param len the maximum number of <code>float</code>s to read.
      *
      * @exception IndexOutOfBoundsException if <code>off</code> is
@@ -675,7 +675,7 @@ public interface ImageInputStream extends DataInput, Closeable {
      * the read occurs.
      *
      * @param d an array of doubles to be written to.
-     * @param off the starting position withinb to write to.
+     * @param off the starting position within <code>d</code> to write to.
      * @param len the maximum number of <code>double</code>s to read.
      *
      * @exception IndexOutOfBoundsException if <code>off</code> is
@@ -904,7 +904,7 @@ public interface ImageInputStream extends DataInput, Closeable {
 
     /**
      * Discards the initial portion of the stream prior to the
-     * indicated postion.  Attempting to seek to an offset within the
+     * indicated position.  Attempting to seek to an offset within the
      * flushed portion of the stream will result in an
      * <code>IndexOutOfBoundsException</code>.
      *

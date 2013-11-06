@@ -46,9 +46,9 @@ public interface TabableView {
      * along the axis of tab expansion.
      *
      * @param x the position the view would be located
-     *  at for the purpose of tab expansion >= 0.
+     *  at for the purpose of tab expansion &gt;= 0.
      * @param e how to expand the tabs when encountered.
-     * @return the desired span >= 0
+     * @return the desired span &gt;= 0
      */
     float getTabbedSpan(float x, TabExpander e);
 
@@ -62,9 +62,9 @@ public interface TabableView {
      * an assumption that the range given does not
      * contain tabs.
      *
-     * @param p0 the starting location in the text document >= 0
-     * @param p1 the ending location in the text document >= p0
-     * @return the span >= 0
+     * @param p0 the starting location in the text document &gt;= 0
+     * @param p1 the ending location in the text document &gt;= p0
+     * @return the span &gt;= 0
      */
     float getPartialSpan(int p0, int p1);
 }

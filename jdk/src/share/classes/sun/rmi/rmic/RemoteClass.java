@@ -621,7 +621,7 @@ public class RemoteClass implements sun.rmi.rmic.RMIConstants {
 
     /**
      * Sort array of class declarations alphabetically by their mangled
-     * fully-qualfied class name.  This is used to feed a method's exceptions
+     * fully-qualified class name.  This is used to feed a method's exceptions
      * in a canonical order into the digest stream for the interface hash
      * computation.
      */

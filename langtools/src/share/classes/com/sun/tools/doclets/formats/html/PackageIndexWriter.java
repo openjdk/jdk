@@ -130,10 +130,14 @@ public class PackageIndexWriter extends AbstractPackageIndexWriter {
         String profileName;
         for (int i = 1; i < configuration.profiles.getProfileCount(); i++) {
             profileName = Profile.lookup(i).name;
-            Content profileLinkContent = getTargetProfileLink("classFrame",
-                    new StringContent(profileName), profileName);
-            Content li = HtmlTree.LI(profileLinkContent);
-            ul.addContent(li);
+            // If the profile has valid packages to be documented, add it to the
+            // profiles list on overview-summary.html page.
+            if (configuration.shouldDocumentProfile(profileName)) {
+                Content profileLinkContent = getTargetProfileLink("classFrame",
+                        new StringContent(profileName), profileName);
+                Content li = HtmlTree.LI(profileLinkContent);
+                ul.addContent(li);
+            }
         }
         profilesDiv.addContent(ul);
         Content div = HtmlTree.DIV(HtmlStyle.contentContainer, profilesDiv);
@@ -199,8 +203,9 @@ public class PackageIndexWriter extends AbstractPackageIndexWriter {
             Content see = seeLabel;
             see.addContent(" ");
             Content descPara = HtmlTree.P(see);
-            Content descLink = getHyperLink(DocLink.fragment("overview_description"),
-                descriptionLabel, "", "");
+            Content descLink = getHyperLink(getDocLink(
+                    SectionName.OVERVIEW_DESCRIPTION),
+                    descriptionLabel, "", "");
             descPara.addContent(descLink);
             div.addContent(descPara);
             body.addContent(div);
@@ -216,7 +221,8 @@ public class PackageIndexWriter extends AbstractPackageIndexWriter {
      */
     protected void addOverviewComment(Content htmltree) {
         if (root.inlineTags().length > 0) {
-            htmltree.addContent(getMarkerAnchor("overview_description"));
+            htmltree.addContent(
+                    getMarkerAnchor(SectionName.OVERVIEW_DESCRIPTION));
             addInlineComment(root, htmltree);
         }
     }

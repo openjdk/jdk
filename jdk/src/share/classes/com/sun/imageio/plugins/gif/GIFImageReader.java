@@ -115,6 +115,8 @@ public class GIFImageReader extends ImageReader {
     // The current interlace pass, starting with 0.
     int interlacePass = 0;
 
+    private byte[] fallbackColorTable = null;
+
     // End per-stream settings
 
     // Constants used to control interlacing.
@@ -239,8 +241,20 @@ public class GIFImageReader extends ImageReader {
         byte[] colorTable;
         if (imageMetadata.localColorTable != null) {
             colorTable = imageMetadata.localColorTable;
+            fallbackColorTable = imageMetadata.localColorTable;
         } else {
             colorTable = streamMetadata.globalColorTable;
+        }
+
+        if (colorTable == null) {
+            if (fallbackColorTable == null) {
+                this.processWarningOccurred("Use default color table.");
+
+                // no color table, the spec allows to use any palette.
+                fallbackColorTable = getDefaultPalette();
+            }
+
+            colorTable = fallbackColorTable;
         }
 
         // Normalize color table length to 2^1, 2^2, 2^4, or 2^8
@@ -1036,5 +1050,34 @@ public class GIFImageReader extends ImageReader {
         streamY = -1;
         rowsDone = 0;
         interlacePass = 0;
+
+        fallbackColorTable = null;
+    }
+
+    private static byte[] defaultPalette = null;
+
+    private static synchronized byte[] getDefaultPalette() {
+        if (defaultPalette == null) {
+            BufferedImage img = new BufferedImage(1, 1,
+                    BufferedImage.TYPE_BYTE_INDEXED);
+            IndexColorModel icm = (IndexColorModel) img.getColorModel();
+
+            final int size = icm.getMapSize();
+            byte[] r = new byte[size];
+            byte[] g = new byte[size];
+            byte[] b = new byte[size];
+            icm.getReds(r);
+            icm.getGreens(g);
+            icm.getBlues(b);
+
+            defaultPalette = new byte[size * 3];
+
+            for (int i = 0; i < size; i++) {
+                defaultPalette[3 * i + 0] = r[i];
+                defaultPalette[3 * i + 1] = g[i];
+                defaultPalette[3 * i + 2] = b[i];
+            }
+        }
+        return defaultPalette;
     }
 }

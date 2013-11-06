@@ -64,6 +64,7 @@ import static java.time.temporal.ChronoField.YEAR;
 import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
+import java.io.InvalidObjectException;
 import java.io.Serializable;
 import java.time.Clock;
 import java.time.DateTimeException;
@@ -95,7 +96,7 @@ import java.util.Objects;
  * @since 1.8
  */
 public final class MinguoDate
-        extends ChronoDateImpl<MinguoDate>
+        extends ChronoLocalDateImpl<MinguoDate>
         implements ChronoLocalDate, Serializable {
 
     /**
@@ -106,7 +107,7 @@ public final class MinguoDate
     /**
      * The underlying date.
      */
-    private final LocalDate isoDate;
+    private final transient LocalDate isoDate;
 
     //-----------------------------------------------------------------------
     /**
@@ -420,8 +421,9 @@ public final class MinguoDate
     }
 
     @Override
-    public Period until(ChronoLocalDate endDate) {
-        return isoDate.until(endDate);
+    public ChronoPeriod until(ChronoLocalDate endDate) {
+        Period period = isoDate.until(endDate);
+        return getChronology().period(period.getYears(), period.getMonths(), period.getDays());
     }
 
     @Override  // override for performance
@@ -448,6 +450,28 @@ public final class MinguoDate
     }
 
     //-----------------------------------------------------------------------
+    /**
+     * Defend against malicious streams.
+     * @return never
+     * @throws InvalidObjectException always
+     */
+    private Object readResolve() throws InvalidObjectException {
+        throw new InvalidObjectException("Deserialization via serialization delegate");
+    }
+
+    /**
+     * Writes the object using a
+     * <a href="../../../serialized-form.html#java.time.chrono.Ser">dedicated serialized form</a>.
+     * @serialData
+     * <pre>
+     *  out.writeByte(8);                 // identifies a MinguoDate
+     *  out.writeInt(get(YEAR));
+     *  out.writeByte(get(MONTH_OF_YEAR));
+     *  out.writeByte(get(DAY_OF_MONTH));
+     * </pre>
+     *
+     * @return the instance of {@code Ser}, not null
+     */
     private Object writeReplace() {
         return new Ser(Ser.MINGUO_DATE_TYPE, this);
     }

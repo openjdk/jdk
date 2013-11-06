@@ -57,9 +57,9 @@ import java.util.*;
  * and italicized are insignificant.
  * <p>
  * <a name="figure1"></a>
- * <table border=0>
+ * <table border=0 summary="">
  * <tr><td>
- *     <img src="doc-files/UndoManager-1.gif">
+ *     <img src="doc-files/UndoManager-1.gif" alt="">
  * <tr><td align=center>Figure 1
  * </table>
  * <p>
@@ -70,9 +70,9 @@ import java.util.*;
  * figure.
  * <p>
  * <a name="figure2"></a>
- * <table border=0>
+ * <table border=0 summary="">
  * <tr><td>
- *     <img src="doc-files/UndoManager-2.gif">
+ *     <img src="doc-files/UndoManager-2.gif" alt="">
  * <tr><td align=center>Figure 2
  * </table>
  * <p>
@@ -82,9 +82,9 @@ import java.util.*;
  * next edit to 0, as shown in the following figure.
  * <p>
  * <a name="figure3"></a>
- * <table border=0>
+ * <table border=0 summary="">
  * <tr><td>
- *     <img src="doc-files/UndoManager-3.gif">
+ *     <img src="doc-files/UndoManager-3.gif" alt="">
  * <tr><td align=center>Figure 3
  * </table>
  * <p>
@@ -108,9 +108,9 @@ import java.util.*;
  * figure.
  * <p>
  * <a name="figure4"></a>
- * <table border=0>
+ * <table border=0 summary="">
  * <tr><td>
- *     <img src="doc-files/UndoManager-4.gif">
+ *     <img src="doc-files/UndoManager-4.gif" alt="">
  * <tr><td align=center>Figure 4
  * </table>
  * <p>
@@ -126,7 +126,7 @@ import java.util.*;
  * future Swing releases. The current serialization support is
  * appropriate for short term storage or RMI between applications running
  * the same version of Swing.  As of 1.4, support for long term storage
- * of all JavaBeans<sup><font size="-2">TM</font></sup>
+ * of all JavaBeans&trade;
  * has been added to the <code>java.beans</code> package.
  * Please see {@link java.beans.XMLEncoder}.
  *

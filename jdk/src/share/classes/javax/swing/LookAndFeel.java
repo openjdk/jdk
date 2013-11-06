@@ -74,7 +74,7 @@ import java.util.StringTokenizer;
  * BasicLookAndFeel} providing the key-value pair {@code
  * "TreeUI"-"javax.swing.plaf.basic.BasicTreeUI"}, in the
  * {@code UIDefaults} returned from {@code getDefaults}. Refer to
- * {@link UIDefaults#getUI(JComponent)} for defails on how the implementation
+ * {@link UIDefaults#getUI(JComponent)} for details on how the implementation
  * of the {@code ComponentUI} subclass is obtained.
  * <p>
  * When a {@code LookAndFeel} is installed the {@code UIManager} does
@@ -91,7 +91,7 @@ import java.util.StringTokenizer;
  * to provide a specific set of defaults. These are documented in the
  * classes that require the specific default.
  *
- * <h3><a name="#defaultRecommendation">ComponentUIs and defaults</a></h2>
+ * <h3><a name="#defaultRecommendation">ComponentUIs and defaults</a></h3>
  *
  * All {@code ComponentUIs} typically need to set various properties
  * on the {@code JComponent} the {@code ComponentUI} is providing the
@@ -114,7 +114,7 @@ import java.util.StringTokenizer;
  * <p>
  * For primitive values, such as {@code opaque}, the method {@code
  * installProperty} should be invoked.  {@code installProperty} only changes
- * the correspoding property if the value has not been changed by the
+ * the corresponding property if the value has not been changed by the
  * developer.
  * <p>
  * {@code ComponentUI} implementations should use the various install methods
@@ -269,7 +269,7 @@ public abstract class LookAndFeel
      */
     public static void installProperty(JComponent c,
                                        String propertyName, Object propertyValue) {
-        // this is a special case because the JPasswordField's ancestor heirarchy
+        // this is a special case because the JPasswordField's ancestor hierarchy
         // includes a class outside of javax.swing, thus we cannot call setUIProperty
         // directly.
         if (SunToolkit.isInstanceOf(c, "javax.swing.JPasswordField")) {
@@ -590,7 +590,7 @@ public abstract class LookAndFeel
      * Distinct look and feels should have different names, e.g.
      * a subclass of MotifLookAndFeel that changes the way a few components
      * are rendered should be called "CDE/Motif My Way"; something
-     * that would be useful to a user trying to select a L&F from a list
+     * that would be useful to a user trying to select a L&amp;F from a list
      * of names.
      *
      * @return short identifier for the look and feel

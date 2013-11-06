@@ -197,7 +197,7 @@ public class StructuralMostSpecificTest
                           "class Test {\n" +
                           "   void m(SAM1 s) { }\n" +
                           "   void m(SAM2 s) { }\n" +
-                          "   { m(x->{ #LR }); }\n" +
+                          "   { m((#A1 x)->{ #LR }); }\n" +
                           "}\n";
 
         String source;
@@ -236,14 +236,17 @@ public class StructuralMostSpecificTest
     void check() {
         checkCount.incrementAndGet();
 
+        if (ak1 != ak2)
+            return;
+
         if (!lrk.compatibleWith(rt1) || !lrk.compatibleWith(rt2))
             return;
 
         if (lrk.needsConversion(rt1) != lrk.needsConversion(rt2))
             return;
 
-        boolean m1MoreSpecific = moreSpecific(rt1, rt2, ek1, ek2, ak1, ak2);
-        boolean m2MoreSpecific = moreSpecific(rt2, rt1, ek2, ek1, ak2, ak1);
+        boolean m1MoreSpecific = rt1.moreSpecificThan(rt2);
+        boolean m2MoreSpecific = rt2.moreSpecificThan(rt1);
 
         boolean ambiguous = (m1MoreSpecific == m2MoreSpecific);
 
@@ -266,17 +269,6 @@ public class StructuralMostSpecificTest
                 "\nm2 more specific: " + m2MoreSpecific);
             }
         }
-    }
-
-    boolean moreSpecific(RetTypeKind rk1, RetTypeKind rk2, ExceptionKind ek1,
-            ExceptionKind ek2, ArgTypeKind ak1, ArgTypeKind ak2) {
-        if (!rk1.moreSpecificThan(rk2))
-            return false;
-
-        if (ak1 != ak2)
-            return false;
-
-        return true;
     }
 
     static class DiagnosticChecker

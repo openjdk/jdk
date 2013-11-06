@@ -24,19 +24,19 @@
 #
 
 # Locate this Makefile
-ifeq ($(filter /%,$(lastword $(MAKEFILE_LIST))),)
-    makefile_path:=$(CURDIR)/$(lastword $(MAKEFILE_LIST))
+ifeq ($(filter /%, $(lastword $(MAKEFILE_LIST))), )
+  makefile_path := $(CURDIR)/$(lastword $(MAKEFILE_LIST))
 else
-    makefile_path:=$(lastword $(MAKEFILE_LIST))
+  makefile_path := $(lastword $(MAKEFILE_LIST))
 endif
-repo_dir:=$(patsubst %/makefiles/Makefile,%,$(makefile_path))
+repo_dir := $(patsubst %/makefiles/Makefile, %, $(makefile_path))
 
 # What is the name of this subsystem (langtools, corba, etc)?
-subsystem_name:=$(notdir $(repo_dir))
+subsystem_name := $(notdir $(repo_dir))
 
 # Try to locate top-level makefile
-top_level_makefile:=$(repo_dir)/../common/makefiles/Makefile
-ifneq ($(wildcard $(top_level_makefile)),)
+top_level_makefile := $(repo_dir)/../common/makefiles/Makefile
+ifneq ($(wildcard $(top_level_makefile)), )
   $(info Will run $(subsystem_name) target on top-level Makefile)
   $(info WARNING: This is a non-recommended way of building!)
   $(info ===================================================)

@@ -44,7 +44,7 @@ import java.io.IOException;
  * compatibility with the <code>java.awt.TextArea</code> class where it can
  * reasonably do so.
  * You can find information and examples of using all the text components in
- * <a href="http://java.sun.com/docs/books/tutorial/uiswing/components/text.html">Using Text Components</a>,
+ * <a href="http://docs.oracle.com/javase/tutorial/uiswing/components/text.html">Using Text Components</a>,
  * a section in <em>The Java Tutorial.</em>
  *
  * <p>
@@ -112,7 +112,7 @@ import java.io.IOException;
  * future Swing releases. The current serialization support is
  * appropriate for short term storage or RMI between applications running
  * the same version of Swing.  As of 1.4, support for long term storage
- * of all JavaBeans<sup><font size="-2">TM</font></sup>
+ * of all JavaBeans&trade;
  * has been added to the <code>java.beans</code> package.
  * Please see {@link java.beans.XMLEncoder}.
  *
@@ -155,8 +155,8 @@ public class JTextArea extends JTextComponent {
      * rows and columns.  A default model is created, and the initial
      * string is null.
      *
-     * @param rows the number of rows >= 0
-     * @param columns the number of columns >= 0
+     * @param rows the number of rows &gt;= 0
+     * @param columns the number of columns &gt;= 0
      * @exception IllegalArgumentException if the rows or columns
      *  arguments are negative.
      */
@@ -169,8 +169,8 @@ public class JTextArea extends JTextComponent {
      * of rows and columns.  A default model is created.
      *
      * @param text the text to be displayed, or null
-     * @param rows the number of rows >= 0
-     * @param columns the number of columns >= 0
+     * @param rows the number of rows &gt;= 0
+     * @param columns the number of columns &gt;= 0
      * @exception IllegalArgumentException if the rows or columns
      *  arguments are negative.
      */
@@ -195,8 +195,8 @@ public class JTextArea extends JTextComponent {
      *
      * @param doc the model to use, or create a default one if null
      * @param text the text to be displayed, null if none
-     * @param rows the number of rows >= 0
-     * @param columns the number of columns >= 0
+     * @param rows the number of rows &gt;= 0
+     * @param columns the number of columns &gt;= 0
      * @exception IllegalArgumentException if the rows or columns
      *  arguments are negative.
      */
@@ -364,8 +364,8 @@ public class JTextArea extends JTextComponent {
      * Translates an offset into the components text to a
      * line number.
      *
-     * @param offset the offset >= 0
-     * @return the line number >= 0
+     * @param offset the offset &gt;= 0
+     * @return the line number &gt;= 0
      * @exception BadLocationException thrown if the offset is
      *   less than zero or greater than the document length.
      */
@@ -384,7 +384,7 @@ public class JTextArea extends JTextComponent {
     /**
      * Determines the number of lines contained in the area.
      *
-     * @return the number of lines > 0
+     * @return the number of lines &gt; 0
      */
     public int getLineCount() {
         Element map = getDocument().getDefaultRootElement();
@@ -394,8 +394,8 @@ public class JTextArea extends JTextComponent {
     /**
      * Determines the offset of the start of the given line.
      *
-     * @param line  the line number to translate >= 0
-     * @return the offset >= 0
+     * @param line  the line number to translate &gt;= 0
+     * @return the offset &gt;= 0
      * @exception BadLocationException thrown if the line is
      * less than zero or greater or equal to the number of
      * lines contained in the document (as reported by
@@ -417,8 +417,8 @@ public class JTextArea extends JTextComponent {
     /**
      * Determines the offset of the end of the given line.
      *
-     * @param line  the line >= 0
-     * @return the offset >= 0
+     * @param line  the line &gt;= 0
+     * @return the offset &gt;= 0
      * @exception BadLocationException Thrown if the line is
      * less than zero or greater or equal to the number of
      * lines contained in the document (as reported by
@@ -446,7 +446,7 @@ public class JTextArea extends JTextComponent {
      * if the model is null or if the text is null or empty.
      *
      * @param str the text to insert
-     * @param pos the position at which to insert >= 0
+     * @param pos the position at which to insert &gt;= 0
      * @exception IllegalArgumentException  if pos is an
      *  invalid position in the model
      * @see TextComponent#setText
@@ -486,8 +486,8 @@ public class JTextArea extends JTextComponent {
      * does a delete if the new string is null or empty.
      *
      * @param str the text to use as the replacement
-     * @param start the start position >= 0
-     * @param end the end position >= start
+     * @param start the start position &gt;= 0
+     * @param end the end position &gt;= start
      * @exception IllegalArgumentException  if part of the range is an
      *  invalid position in the model
      * @see #insert
@@ -517,7 +517,7 @@ public class JTextArea extends JTextComponent {
     /**
      * Returns the number of rows in the TextArea.
      *
-     * @return the number of rows >= 0
+     * @return the number of rows &gt;= 0
      */
     public int getRows() {
         return rows;
@@ -527,7 +527,7 @@ public class JTextArea extends JTextComponent {
      * Sets the number of rows for this TextArea.  Calls invalidate() after
      * setting the new value.
      *
-     * @param rows the number of rows >= 0
+     * @param rows the number of rows &gt;= 0
      * @exception IllegalArgumentException if rows is less than 0
      * @see #getRows
      * @beaninfo
@@ -548,7 +548,7 @@ public class JTextArea extends JTextComponent {
      * Defines the meaning of the height of a row.  This defaults to
      * the height of the font.
      *
-     * @return the height >= 1
+     * @return the height &gt;= 1
      */
     protected int getRowHeight() {
         if (rowHeight == 0) {
@@ -561,7 +561,7 @@ public class JTextArea extends JTextComponent {
     /**
      * Returns the number of columns in the TextArea.
      *
-     * @return number of columns >= 0
+     * @return number of columns &gt;= 0
      */
     public int getColumns() {
         return columns;
@@ -571,7 +571,7 @@ public class JTextArea extends JTextComponent {
      * Sets the number of columns for this TextArea.  Does an invalidate()
      * after setting the new value.
      *
-     * @param columns the number of columns >= 0
+     * @param columns the number of columns &gt;= 0
      * @exception IllegalArgumentException if columns is less than 0
      * @see #getColumns
      * @beaninfo
@@ -596,7 +596,7 @@ public class JTextArea extends JTextComponent {
      * character <em>m</em> for the font used.  This method can be
      * redefined to be some alternative amount.
      *
-     * @return the column width >= 1
+     * @return the column width &gt;= 1
      */
     protected int getColumnWidth() {
         if (columnWidth == 0) {
@@ -783,7 +783,7 @@ public class JTextArea extends JTextComponent {
      * future Swing releases. The current serialization support is
      * appropriate for short term storage or RMI between applications running
      * the same version of Swing.  As of 1.4, support for long term storage
-     * of all JavaBeans<sup><font size="-2">TM</font></sup>
+     * of all JavaBeans&trade;
      * has been added to the <code>java.beans</code> package.
      * Please see {@link java.beans.XMLEncoder}.
      */

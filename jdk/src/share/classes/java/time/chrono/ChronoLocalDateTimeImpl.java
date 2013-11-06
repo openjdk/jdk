@@ -69,7 +69,6 @@ import java.io.ObjectInput;
 import java.io.ObjectOutput;
 import java.io.ObjectStreamException;
 import java.io.Serializable;
-import java.time.DateTimeException;
 import java.time.LocalTime;
 import java.time.ZoneId;
 import java.time.temporal.ChronoField;
@@ -94,7 +93,7 @@ import java.util.Objects;
  *
  * @implSpec
  * This class is immutable and thread-safe.
- *
+ * @serial
  * @param <D> the concrete type for the date of this date-time
  * @since 1.8
  */
@@ -157,11 +156,11 @@ final class ChronoLocalDateTimeImpl<D extends ChronoLocalDate>
     /**
      * The date part.
      */
-    private final D date;
+    private final transient D date;
     /**
      * The time part.
      */
-    private final LocalTime time;
+    private final transient LocalTime time;
 
     //-----------------------------------------------------------------------
     /**
@@ -187,9 +186,9 @@ final class ChronoLocalDateTimeImpl<D extends ChronoLocalDate>
     static <R extends ChronoLocalDate> ChronoLocalDateTimeImpl<R> ensureValid(Chronology chrono, Temporal temporal) {
         @SuppressWarnings("unchecked")
         ChronoLocalDateTimeImpl<R> other = (ChronoLocalDateTimeImpl<R>) temporal;
-        if (chrono.equals(other.toLocalDate().getChronology()) == false) {
+        if (chrono.equals(other.getChronology()) == false) {
             throw new ClassCastException("Chronology mismatch, required: " + chrono.getId()
-                    + ", actual: " + other.toLocalDate().getChronology().getId());
+                    + ", actual: " + other.getChronology().getId());
         }
         return other;
     }
@@ -220,7 +219,7 @@ final class ChronoLocalDateTimeImpl<D extends ChronoLocalDate>
             return this;
         }
         // Validate that the new Temporal is a ChronoLocalDate (and not something else)
-        D cd = ChronoDateImpl.ensureValid(date.getChronology(), newDate);
+        D cd = ChronoLocalDateImpl.ensureValid(date.getChronology(), newDate);
         return new ChronoLocalDateTimeImpl<>(cd, newTime);
     }
 
@@ -369,15 +368,10 @@ final class ChronoLocalDateTimeImpl<D extends ChronoLocalDate>
 
     //-----------------------------------------------------------------------
     @Override
-    public long until(Temporal endDateTime, TemporalUnit unit) {
-        if (endDateTime instanceof ChronoLocalDateTime == false) {
-            throw new DateTimeException("Unable to calculate amount as objects are of two different types");
-        }
+    public long until(Temporal endExclusive, TemporalUnit unit) {
+        Objects.requireNonNull(endExclusive, "endExclusive");
         @SuppressWarnings("unchecked")
-        ChronoLocalDateTime<D> end = (ChronoLocalDateTime<D>) endDateTime;
-        if (toLocalDate().getChronology().equals(end.toLocalDate().getChronology()) == false) {
-            throw new DateTimeException("Unable to calculate amount as objects have different chronologies");
-        }
+        ChronoLocalDateTime<D> end = (ChronoLocalDateTime<D>) getChronology().localDateTime(endExclusive);
         if (unit instanceof ChronoUnit) {
             if (unit.isTimeBased()) {
                 long amount = end.getLong(EPOCH_DAY) - date.getLong(EPOCH_DAY);
@@ -398,10 +392,23 @@ final class ChronoLocalDateTimeImpl<D extends ChronoLocalDate>
             }
             return date.until(endDate, unit);
         }
-        return unit.between(this, endDateTime);
+        Objects.requireNonNull(unit, "unit");
+        return unit.between(this, end);
     }
 
     //-----------------------------------------------------------------------
+    /**
+     * Writes the ChronoLocalDateTime using a
+     * <a href="../../../serialized-form.html#java.time.chrono.Ser">dedicated serialized form</a>.
+     * @serialData
+     * <pre>
+     *  out.writeByte(2);              // identifies a ChronoLocalDateTime
+     *  out.writeObject(toLocalDate());
+     *  out.witeObject(toLocalTime());
+     * </pre>
+     *
+     * @return the instance of {@code Ser}, not null
+     */
     private Object writeReplace() {
         return new Ser(Ser.CHRONO_LOCAL_DATE_TIME_TYPE, this);
     }
@@ -411,7 +418,7 @@ final class ChronoLocalDateTimeImpl<D extends ChronoLocalDate>
      * @return never
      * @throws InvalidObjectException always
      */
-    private Object readResolve() throws ObjectStreamException {
+    private Object readResolve() throws InvalidObjectException {
         throw new InvalidObjectException("Deserialization via serialization delegate");
     }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug      8002304
+ * @bug      8002304 8024096
  * @summary  Test for various method types in the method summary table
  * @author   Bhavesh Patel
  * @library  ../lib/
@@ -107,7 +107,7 @@ public class TestMethodTypes extends JavadocTester {
             "</caption>"
         },
 
-        {BUG_ID + FS + "pkg" + FS + "D.html",
+        {BUG_ID + FS + "pkg1" + FS + "D.html",
             "<caption><span>Methods</span><span class=\"tabEnd\">&nbsp;</span>" +
             "</caption>"
         },

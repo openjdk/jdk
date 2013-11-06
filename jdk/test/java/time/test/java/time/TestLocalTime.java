@@ -61,7 +61,9 @@ package test.java.time;
 
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertSame;
+import static org.testng.Assert.assertTrue;
 
+import java.time.Clock;
 import java.time.LocalTime;
 
 import org.testng.annotations.Test;
@@ -71,6 +73,9 @@ import org.testng.annotations.Test;
  */
 @Test
 public class TestLocalTime extends AbstractTest {
+    static final long NANOS_PER_SECOND = 1_000_000_000L;
+    static final long NANOS_PER_MINUTE = 60 * NANOS_PER_SECOND;
+    static final long NANOS_PER_DAY = 24 * 60 * NANOS_PER_MINUTE;
 
     //-----------------------------------------------------------------------
     @Test
@@ -174,6 +179,33 @@ public class TestLocalTime extends AbstractTest {
             LocalTime test2 = LocalTime.of(i, 0);
             assertSame(test1, test2);
         }
+    }
+
+    //-----------------------------------------------------------------------
+    // now()
+    //-----------------------------------------------------------------------
+    @Test
+    @SuppressWarnings("unused")
+    public void now() {
+        // Warmup the TimeZone data so the following test does not include
+        // one-time initialization
+        LocalTime.now(Clock.systemDefaultZone());
+
+        long diff = Integer.MAX_VALUE;
+        for (int i = 0; i < 2; i++) {
+            LocalTime expected = LocalTime.now(Clock.systemDefaultZone());
+            LocalTime test = LocalTime.now();
+            diff = test.toNanoOfDay() - expected.toNanoOfDay();
+            // Normalize for wrap-around midnight
+            diff = Math.floorMod(NANOS_PER_DAY + diff, NANOS_PER_DAY);
+            if (diff < 100000000) {
+                break;
+            }
+            // A second iteration may be needed if the clock changed
+            // due to a DST change between the two calls to now.
+        }
+        assertTrue(diff < 100000000,   // less than 0.1 sec
+                "LocalTime.now  vs LocalTime.now(Clock.systemDefaultZone()) not close");
     }
 
 }

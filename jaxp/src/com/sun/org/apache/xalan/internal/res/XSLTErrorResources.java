@@ -471,7 +471,13 @@ public class XSLTErrorResources extends ListResourceBundle
 
   // Error messages...
 
-  private static final Object[][] _contents = new Object[][] {
+  /** Get the lookup table for error messages.
+    *
+    * @return The message lookup table.
+    */
+  public Object[][] getContents()
+  {
+      return new Object[][] {
 
   /** Error message ID that has a null message, but takes in a single object.    */
   {"ER0000" , "{0}" },
@@ -1412,13 +1418,6 @@ public class XSLTErrorResources extends ListResourceBundle
 
   };
 
-  /** Get the lookup table for error messages.
-   *
-   * @return The int to message lookup table.
-   */
-  public Object[][] getContents()
-  {
-      return _contents;
   }
   // ================= INFRASTRUCTURE ======================
 

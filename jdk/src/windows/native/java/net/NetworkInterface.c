@@ -72,8 +72,6 @@ jmethodID ni_ia4Ctor;       /* Inet4Address() */
 
 jclass ni_ia6cls;           /* Inet6Address */
 jmethodID ni_ia6ctrID;      /* Inet6Address() */
-jfieldID ni_ia6ipaddressID;
-jfieldID ni_ia6ipaddressID;
 
 jclass ni_ibcls;            /* InterfaceAddress */
 jmethodID ni_ibctrID;       /* InterfaceAddress() */
@@ -502,33 +500,52 @@ Java_java_net_NetworkInterface_init(JNIEnv *env, jclass cls)
      * Get the various JNI ids that we require
      */
     ni_class = (*env)->NewGlobalRef(env, cls);
+    CHECK_NULL(ni_class);
     ni_nameID = (*env)->GetFieldID(env, ni_class, "name", "Ljava/lang/String;");
+    CHECK_NULL(ni_nameID);
     ni_displayNameID = (*env)->GetFieldID(env, ni_class, "displayName", "Ljava/lang/String;");
+    CHECK_NULL(ni_displayNameID);
     ni_indexID = (*env)->GetFieldID(env, ni_class, "index", "I");
+    CHECK_NULL(ni_indexID);
     ni_addrsID = (*env)->GetFieldID(env, ni_class, "addrs", "[Ljava/net/InetAddress;");
+    CHECK_NULL(ni_addrsID);
     ni_bindsID = (*env)->GetFieldID(env, ni_class, "bindings", "[Ljava/net/InterfaceAddress;");
+    CHECK_NULL(ni_bindsID);
     ni_childsID = (*env)->GetFieldID(env, ni_class, "childs", "[Ljava/net/NetworkInterface;");
+    CHECK_NULL(ni_childsID);
     ni_ctor = (*env)->GetMethodID(env, ni_class, "<init>", "()V");
+    CHECK_NULL(ni_ctor);
 
     ni_iacls = (*env)->FindClass(env, "java/net/InetAddress");
+    CHECK_NULL(ni_iacls);
     ni_iacls = (*env)->NewGlobalRef(env, ni_iacls);
+    CHECK_NULL(ni_iacls);
 
     ni_ia4cls = (*env)->FindClass(env, "java/net/Inet4Address");
+    CHECK_NULL(ni_ia4cls);
     ni_ia4cls = (*env)->NewGlobalRef(env, ni_ia4cls);
+    CHECK_NULL(ni_ia4cls);
     ni_ia4Ctor = (*env)->GetMethodID(env, ni_ia4cls, "<init>", "()V");
+    CHECK_NULL(ni_ia4Ctor);
 
     ni_ia6cls = (*env)->FindClass(env, "java/net/Inet6Address");
+    CHECK_NULL(ni_ia6cls);
     ni_ia6cls = (*env)->NewGlobalRef(env, ni_ia6cls);
+    CHECK_NULL(ni_ia6cls);
     ni_ia6ctrID = (*env)->GetMethodID(env, ni_ia6cls, "<init>", "()V");
-    ni_ia6ipaddressID = (*env)->GetFieldID(env, ni_ia6cls, "ipaddress", "[B");
+    CHECK_NULL(ni_ia6ctrID);
 
     ni_ibcls = (*env)->FindClass(env, "java/net/InterfaceAddress");
+    CHECK_NULL(ni_ibcls);
     ni_ibcls = (*env)->NewGlobalRef(env, ni_ibcls);
+    CHECK_NULL(ni_ibcls);
     ni_ibctrID = (*env)->GetMethodID(env, ni_ibcls, "<init>", "()V");
+    CHECK_NULL(ni_ibctrID);
     ni_ibaddressID = (*env)->GetFieldID(env, ni_ibcls, "address", "Ljava/net/InetAddress;");
+    CHECK_NULL(ni_ibaddressID);
     ni_ibbroadcastID = (*env)->GetFieldID(env, ni_ibcls, "broadcast", "Ljava/net/Inet4Address;");
+    CHECK_NULL(ni_ibbroadcastID);
     ni_ibmaskID = (*env)->GetFieldID(env, ni_ibcls, "maskLength", "S");
-
 }
 
 /*
@@ -621,19 +638,16 @@ jobject createNetworkInterface
             int scope;
             iaObj = (*env)->NewObject(env, ni_ia6cls, ni_ia6ctrID);
             if (iaObj) {
-                jbyteArray ipaddress = (*env)->NewByteArray(env, 16);
-                if (ipaddress == NULL) {
+                int ret = setInet6Address_ipaddress(env, iaObj,  (jbyte *)&(addrs->addr.him6.sin6_addr.s6_addr));
+                if (ret == JNI_FALSE) {
                     return NULL;
                 }
-                (*env)->SetByteArrayRegion(env, ipaddress, 0, 16,
-                    (jbyte *)&(addrs->addr.him6.sin6_addr.s6_addr));
+
                 scope = addrs->addr.him6.sin6_scope_id;
                 if (scope != 0) { /* zero is default value, no need to set */
-                    (*env)->SetIntField(env, iaObj, ia6_scopeidID, scope);
-                    (*env)->SetBooleanField(env, iaObj, ia6_scopeidsetID, JNI_TRUE);
-                    (*env)->SetObjectField(env, iaObj, ia6_scopeifnameID, netifObj);
+                    setInet6Address_scopeid(env, iaObj, scope);
+                    setInet6Address_scopeifname(env, iaObj, netifObj);
                 }
-                (*env)->SetObjectField(env, iaObj, ni_ia6ipaddressID, ipaddress);
                 ibObj = (*env)->NewObject(env, ni_ibcls, ni_ibctrID);
                 if (ibObj == NULL) {
                   free_netaddr(netaddrP);
@@ -900,7 +914,7 @@ JNIEXPORT jboolean JNICALL Java_java_net_NetworkInterface_isUp0
     MIB_IFROW *ifRowP;
     ifRowP = getIF(index);
     if (ifRowP != NULL) {
-      ret = ifRowP->dwAdminStatus == 1 &&
+      ret = ifRowP->dwAdminStatus == MIB_IF_ADMIN_STATUS_UP &&
             (ifRowP->dwOperStatus == MIB_IF_OPER_STATUS_OPERATIONAL ||
              ifRowP->dwOperStatus == MIB_IF_OPER_STATUS_CONNECTED);
       free(ifRowP);

@@ -63,6 +63,8 @@ public class CPlatformWindow extends CFRetainedResource implements PlatformWindo
     private static native void nativeSynthesizeMouseEnteredExitedEvents();
     private static native void nativeDispose(long nsWindowPtr);
     private static native CPlatformWindow nativeGetTopmostPlatformWindowUnderMouse();
+    private static native void nativeEnterFullScreenMode(long nsWindowPtr);
+    private static native void nativeExitFullScreenMode(long nsWindowPtr);
 
     // Loger to report issues happened during execution but that do not affect functionality
     private static final PlatformLogger logger = PlatformLogger.getLogger("sun.lwawt.macosx.CPlatformWindow");
@@ -210,7 +212,6 @@ public class CPlatformWindow extends CFRetainedResource implements PlatformWindo
     private boolean undecorated; // initialized in getInitialStyleBits()
     private Rectangle normalBounds = null; // not-null only for undecorated maximized windows
     private CPlatformResponder responder;
-    private volatile boolean zoomed = false; // from native perspective
 
     public CPlatformWindow() {
         super(0, true);
@@ -231,7 +232,16 @@ public class CPlatformWindow extends CFRetainedResource implements PlatformWindo
         contentView.initialize(peer, responder);
 
         final long ownerPtr = owner != null ? owner.getNSWindowPtr() : 0L;
-        final long nativeWindowPtr = nativeCreateNSWindow(contentView.getAWTView(), ownerPtr, styleBits, 0, 0, 0, 0);
+        Rectangle bounds;
+        if (!IS(DECORATED, styleBits)) {
+            // For undecorated frames the move/resize event does not come if the frame is centered on the screen
+            // so we need to set a stub location to force an initial move/resize. Real bounds would be set later.
+            bounds = new Rectangle(0, 0, 1, 1);
+        } else {
+            bounds = _peer.constrainBounds(_target.getBounds());
+        }
+        final long nativeWindowPtr = nativeCreateNSWindow(contentView.getAWTView(),
+                ownerPtr, styleBits, bounds.x, bounds.y, bounds.width, bounds.height);
         setPtr(nativeWindowPtr);
 
         if (target instanceof javax.swing.RootPaneContainer) {
@@ -432,10 +442,7 @@ public class CPlatformWindow extends CFRetainedResource implements PlatformWindo
 
     @Override // PlatformWindow
     public Insets getInsets() {
-        if (!isFullScreenMode) {
-            return nativeGetNSWindowInsets(getNSWindowPtr());
-        }
-        return new Insets(0, 0, 0, 0);
+        return nativeGetNSWindowInsets(getNSWindowPtr());
     }
 
     @Override // PlatformWindow
@@ -466,7 +473,8 @@ public class CPlatformWindow extends CFRetainedResource implements PlatformWindo
     }
 
     private boolean isMaximized() {
-        return undecorated ? this.normalBounds != null : zoomed;
+        return undecorated ? this.normalBounds != null
+                : CWrapper.NSWindow.isZoomed(getNSWindowPtr());
     }
 
     private void maximize() {
@@ -474,7 +482,6 @@ public class CPlatformWindow extends CFRetainedResource implements PlatformWindo
             return;
         }
         if (!undecorated) {
-            zoomed = true;
             CWrapper.NSWindow.zoom(getNSWindowPtr());
         } else {
             deliverZoom(true);
@@ -496,7 +503,6 @@ public class CPlatformWindow extends CFRetainedResource implements PlatformWindo
             return;
         }
         if (!undecorated) {
-            zoomed = false;
             CWrapper.NSWindow.zoom(getNSWindowPtr());
         } else {
             deliverZoom(false);
@@ -538,6 +544,8 @@ public class CPlatformWindow extends CFRetainedResource implements PlatformWindo
         updateIconImages();
         updateFocusabilityForAutoRequestFocus(false);
 
+        boolean wasMaximized = isMaximized();
+
         // Actually show or hide the window
         LWWindowPeer blocker = (peer == null)? null : peer.getBlocker();
         if (blocker == null || !visible) {
@@ -571,16 +579,21 @@ public class CPlatformWindow extends CFRetainedResource implements PlatformWindo
         if (visible) {
             // Apply the extended state as expected in shared code
             if (target instanceof Frame) {
-                switch (((Frame)target).getExtendedState()) {
-                    case Frame.ICONIFIED:
-                        CWrapper.NSWindow.miniaturize(nsWindowPtr);
-                        break;
-                    case Frame.MAXIMIZED_BOTH:
-                        maximize();
-                        break;
-                    default: // NORMAL
-                        unmaximize(); // in case it was maximized, otherwise this is a no-op
-                        break;
+                if (!wasMaximized && isMaximized()) {
+                    // setVisible could have changed the native maximized state
+                    deliverZoom(true);
+                } else {
+                    switch (((Frame)target).getExtendedState()) {
+                        case Frame.ICONIFIED:
+                            CWrapper.NSWindow.miniaturize(nsWindowPtr);
+                            break;
+                        case Frame.MAXIMIZED_BOTH:
+                            maximize();
+                            break;
+                        default: // NORMAL
+                            unmaximize(); // in case it was maximized, otherwise this is a no-op
+                            break;
+                    }
                 }
             }
         }
@@ -750,18 +763,12 @@ public class CPlatformWindow extends CFRetainedResource implements PlatformWindo
     @Override
     public void enterFullScreenMode() {
         isFullScreenMode = true;
-        contentView.enterFullScreenMode();
-        // the move/size notification from the underlying system comes
-        // but it contains a bounds smaller than the whole screen
-        // and therefore we need to create the synthetic notifications
-        Rectangle screenBounds = getPeer().getGraphicsConfiguration().getBounds();
-        peer.notifyReshape(screenBounds.x, screenBounds.y, screenBounds.width,
-                           screenBounds.height);
+        nativeEnterFullScreenMode(getNSWindowPtr());
     }
 
     @Override
     public void exitFullScreenMode() {
-        contentView.exitFullScreenMode();
+        nativeExitFullScreenMode(getNSWindowPtr());
         isFullScreenMode = false;
     }
 
@@ -820,6 +827,7 @@ public class CPlatformWindow extends CFRetainedResource implements PlatformWindo
         }
 
         nativeSetEnabled(getNSWindowPtr(), !blocked);
+        checkBlockingAndOrder();
     }
 
     public final void invalidateShadow(){
@@ -883,7 +891,7 @@ public class CPlatformWindow extends CFRetainedResource implements PlatformWindo
                         //Posting an empty to flush the EventQueue without blocking the main thread
                     }
                 }, target);
-            } catch (InterruptedException | InvocationTargetException e) {
+            } catch (InvocationTargetException e) {
                 e.printStackTrace();
             }
         }
@@ -918,13 +926,7 @@ public class CPlatformWindow extends CFRetainedResource implements PlatformWindo
 
     protected void deliverMoveResizeEvent(int x, int y, int width, int height,
                                         boolean byUser) {
-        // when the content view enters the full-screen mode, the native
-        // move/resize notifications contain a bounds smaller than
-        // the whole screen and therefore we ignore the native notifications
-        // and the content view itself creates correct synthetic notifications
-        if (isFullScreenMode) {
-            return;
-        }
+        checkZoom();
 
         final Rectangle oldB = nativeBounds;
         nativeBounds = new Rectangle(x, y, width, height);
@@ -956,6 +958,17 @@ public class CPlatformWindow extends CFRetainedResource implements PlatformWindo
         }
     }
 
+    private void checkZoom() {
+        if (target instanceof Frame && isVisible()) {
+            Frame targetFrame = (Frame)target;
+            if (targetFrame.getExtendedState() != Frame.MAXIMIZED_BOTH && isMaximized()) {
+                deliverZoom(true);
+            } else if (targetFrame.getExtendedState() == Frame.MAXIMIZED_BOTH && !isMaximized()) {
+                deliverZoom(false);
+            }
+        }
+    }
+
     private void deliverNCMouseDown() {
         if (peer != null) {
             peer.notifyNCMouseDown();
@@ -984,7 +997,7 @@ public class CPlatformWindow extends CFRetainedResource implements PlatformWindo
         setStyleBits(SHOULD_BECOME_KEY | SHOULD_BECOME_MAIN, isFocusable); // set both bits at once
     }
 
-    private boolean checkBlocking() {
+    private boolean checkBlockingAndOrder() {
         LWWindowPeer blocker = (peer == null)? null : peer.getBlocker();
         if (blocker == null) {
             return false;
@@ -1040,7 +1053,7 @@ public class CPlatformWindow extends CFRetainedResource implements PlatformWindo
     private void windowDidBecomeMain() {
         assert CThreading.assertAppKit();
 
-        if (checkBlocking()) return;
+        if (checkBlockingAndOrder()) return;
         // If it's not blocked, make sure it's above its siblings
         orderAboveSiblings();
     }

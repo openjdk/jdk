@@ -25,7 +25,7 @@
 
 /*
  * @test
- * @bug 6802694
+ * @bug 6802694 8025633 8026567
  * @summary This test verifies deprecation info in serialized-form.html.
  * @author Bhavesh Patel
  * @library ../lib/
@@ -42,29 +42,29 @@ public class TestSerializedFormDeprecationInfo extends JavadocTester {
     // display the inline comments, tags and deprecation information if any.
     private static final String[][] TEST_CMNT_DEPR = {
         {BUG_ID + FS + "serialized-form.html", "<dl>" + NL +
-                 "<dt><span class=\"strong\">Throws:</span></dt>" + NL + "<dd><code>" +
-                 "java.io.IOException</code></dd>"+ NL + "<dt><span class=\"strong\">See Also:</span>" +
-                 "</dt>" + NL + "<dd><a href=\"pkg1/C1.html#setUndecorated(boolean)\">" +
+                 "<dt><span class=\"throwsLabel\">Throws:</span></dt>" + NL + "<dd><code>" +
+                 "java.io.IOException</code></dd>"+ NL + "<dt><span class=\"seeLabel\">See Also:</span>" +
+                 "</dt>" + NL + "<dd><a href=\"pkg1/C1.html#setUndecorated-boolean-\">" +
                  "<code>C1.setUndecorated(boolean)</code></a></dd>" + NL + "</dl>"},
-        {BUG_ID + FS + "serialized-form.html", "<span class=\"strong\">Deprecated.</span>" +
-                 "&nbsp;<span class=\"italic\">As of JDK version 1.5, replaced by" + NL +
-                 " <a href=\"pkg1/C1.html#setUndecorated(boolean)\">" +
+        {BUG_ID + FS + "serialized-form.html", "<span class=\"deprecatedLabel\">Deprecated.</span>" +
+                 "&nbsp;<span class=\"deprecationComment\">As of JDK version 1.5, replaced by" + NL +
+                 " <a href=\"pkg1/C1.html#setUndecorated-boolean-\">" +
                  "<code>setUndecorated(boolean)</code></a>.</span></div>" + NL +
                  "<div class=\"block\">This field indicates whether the C1 " +
                  "is undecorated.</div>" + NL + "&nbsp;" + NL +
-                 "<dl>" + NL + "<dt><span class=\"strong\">Since:</span></dt>" + NL +
-                 "<dd>1.4</dd>" + NL + "<dt><span class=\"strong\">See Also:</span>" +
-                 "</dt>" + NL + "<dd><a href=\"pkg1/C1.html#setUndecorated(boolean)\">" +
+                 "<dl>" + NL + "<dt><span class=\"simpleTagLabel\">Since:</span></dt>" + NL +
+                 "<dd>1.4</dd>" + NL + "<dt><span class=\"seeLabel\">See Also:</span>" +
+                 "</dt>" + NL + "<dd><a href=\"pkg1/C1.html#setUndecorated-boolean-\">" +
                  "<code>C1.setUndecorated(boolean)</code></a></dd>" + NL + "</dl>"},
-        {BUG_ID + FS + "serialized-form.html", "<span class=\"strong\">Deprecated.</span>" +
-                 "&nbsp;<span class=\"italic\">As of JDK version 1.5, replaced by" + NL +
-                 " <a href=\"pkg1/C1.html#setUndecorated(boolean)\">" +
+        {BUG_ID + FS + "serialized-form.html", "<span class=\"deprecatedLabel\">Deprecated.</span>" +
+                 "&nbsp;<span class=\"deprecationComment\">As of JDK version 1.5, replaced by" + NL +
+                 " <a href=\"pkg1/C1.html#setUndecorated-boolean-\">" +
                  "<code>setUndecorated(boolean)</code></a>.</span></div>" + NL +
                  "<div class=\"block\">Reads the object stream.</div>" + NL +
-                 "<dl>" + NL + "<dt><span class=\"strong\">Throws:</span></dt>" + NL + "<dd><code><code>" +
+                 "<dl>" + NL + "<dt><span class=\"throwsLabel\">Throws:</span></dt>" + NL + "<dd><code><code>" +
                  "IOException</code></code></dd>" + NL +
                  "<dd><code>java.io.IOException</code></dd>" + NL + "</dl>"},
-        {BUG_ID + FS + "serialized-form.html", "<span class=\"strong\">Deprecated.</span>" +
+        {BUG_ID + FS + "serialized-form.html", "<span class=\"deprecatedLabel\">Deprecated.</span>" +
                  "&nbsp;</div>" + NL + "<div class=\"block\">" +
                  "The name for this class.</div>"}};
 
@@ -73,14 +73,14 @@ public class TestSerializedFormDeprecationInfo extends JavadocTester {
     // information if any.
     private static final String[][] TEST_NOCMNT = {
         {BUG_ID + FS + "serialized-form.html", "<pre>boolean undecorated</pre>" + NL +
-                 "<div class=\"block\"><span class=\"strong\">Deprecated.</span>&nbsp;<span class=\"italic\">" +
+                 "<div class=\"block\"><span class=\"deprecatedLabel\">Deprecated.</span>&nbsp;<span class=\"deprecationComment\">" +
                  "As of JDK version 1.5, replaced by" + NL +
-                 " <a href=\"pkg1/C1.html#setUndecorated(boolean)\"><code>" +
+                 " <a href=\"pkg1/C1.html#setUndecorated-boolean-\"><code>" +
                  "setUndecorated(boolean)</code></a>.</span></div>" + NL + "</li>"},
-        {BUG_ID + FS + "serialized-form.html", "<span class=\"strong\">" +
-                 "Deprecated.</span>&nbsp;<span class=\"italic\">As of JDK version" +
+        {BUG_ID + FS + "serialized-form.html", "<span class=\"deprecatedLabel\">" +
+                 "Deprecated.</span>&nbsp;<span class=\"deprecationComment\">As of JDK version" +
                  " 1.5, replaced by" + NL +
-                 " <a href=\"pkg1/C1.html#setUndecorated(boolean)\">" +
+                 " <a href=\"pkg1/C1.html#setUndecorated-boolean-\">" +
                  "<code>setUndecorated(boolean)</code></a>.</span></div>" + NL + "</li>"}};
 
     // Test with -nodeprecated option. The serialized-form.html should

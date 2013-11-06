@@ -29,7 +29,7 @@ import javax.xml.transform.Templates;
 import javax.xml.transform.TransformerException;
 import javax.xml.transform.URIResolver;
 import javax.xml.transform.sax.TemplatesHandler;
-
+import com.sun.org.apache.xalan.internal.XalanConstants;
 import com.sun.org.apache.xalan.internal.xsltc.compiler.CompilerException;
 import com.sun.org.apache.xalan.internal.xsltc.compiler.Parser;
 import com.sun.org.apache.xalan.internal.xsltc.compiler.SourceLoader;
@@ -95,7 +95,7 @@ public class TemplatesHandlerImpl
         _tfactory = tfactory;
 
         // Instantiate XSLTC and get reference to parser object
-        XSLTC xsltc = new XSLTC(tfactory.useServicesMechnism());
+        XSLTC xsltc = new XSLTC(tfactory.useServicesMechnism(), tfactory.getFeatureManager());
         if (tfactory.getFeature(XMLConstants.FEATURE_SECURE_PROCESSING))
             xsltc.setSecureProcessing(true);
 
@@ -103,6 +103,8 @@ public class TemplatesHandlerImpl
                 (String)tfactory.getAttribute(XMLConstants.ACCESS_EXTERNAL_STYLESHEET));
         xsltc.setProperty(XMLConstants.ACCESS_EXTERNAL_DTD,
                 (String)tfactory.getAttribute(XMLConstants.ACCESS_EXTERNAL_DTD));
+        xsltc.setProperty(XalanConstants.SECURITY_MANAGER,
+                tfactory.getAttribute(XalanConstants.SECURITY_MANAGER));
 
 
         if ("true".equals(tfactory.getAttribute(TransformerFactoryImpl.ENABLE_INLINING)))

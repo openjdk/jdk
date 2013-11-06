@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,11 +23,12 @@
 
 /*
  * @test
- * @bug 6894643 6913636 8005523
+ * @bug 6894643 6913636 8005523 8025123
  * @summary Test JSSE Kerberos ciphersuite
 
  * @run main/othervm SSL TLS_KRB5_WITH_RC4_128_SHA
  * @run main/othervm SSL TLS_KRB5_WITH_RC4_128_SHA unbound
+ * @run main/othervm SSL TLS_KRB5_WITH_RC4_128_SHA unbound sni
  * @run main/othervm SSL TLS_KRB5_WITH_3DES_EDE_CBC_SHA
  * @run main/othervm SSL TLS_KRB5_WITH_3DES_EDE_CBC_MD5
  * @run main/othervm SSL TLS_KRB5_WITH_DES_CBC_SHA
@@ -44,6 +45,9 @@ import java.security.Permission;
 import javax.net.ssl.*;
 import java.security.Principal;
 import java.util.Date;
+import java.util.List;
+import java.util.ArrayList;
+import java.util.Locale;
 import javax.security.auth.kerberos.ServicePermission;
 import sun.security.jgss.GSSUtil;
 import sun.security.krb5.PrincipalName;
@@ -56,6 +60,8 @@ public class SSL extends SecurityManager {
     private static int loopCount = 0;
     private static volatile String server;
     private static volatile int port;
+    private static String sniHostname = null;
+    private static String sniMatcherPattern = null;
 
     private static String permChecks = "";
 
@@ -84,11 +90,11 @@ public class SSL extends SecurityManager {
         System.setSecurityManager(new SSL());
 
         KDC kdc = KDC.create(OneKDC.REALM);
-        // Run this after KDC, so our own DNS service can be started
-        try {
-            server = InetAddress.getLocalHost().getHostName().toLowerCase();
-        } catch (java.net.UnknownHostException e) {
-            server = "localhost";
+        server = "host." + OneKDC.REALM.toLowerCase(Locale.US);
+
+        if (args.length > 2) {
+            sniHostname = "test." + server;
+            sniMatcherPattern = ".*";
         }
 
         kdc.addPrincipal(OneKDC.USER, OneKDC.PASS);
@@ -98,15 +104,21 @@ public class SSL extends SecurityManager {
 
         // Add 3 versions of keys into keytab
         KeyTab ktab = KeyTab.create(OneKDC.KTAB);
+        String serviceName = null;
+        if (sniHostname != null) {
+            serviceName = "host/" + sniHostname;
+        } else {
+            serviceName = "host/" + server;
+        }
         PrincipalName service = new PrincipalName(
-                "host/" + server, PrincipalName.KRB_NT_SRV_HST);
+            serviceName, PrincipalName.KRB_NT_SRV_HST);
         ktab.addEntry(service, "pass1".toCharArray(), 1, true);
         ktab.addEntry(service, "pass2".toCharArray(), 2, true);
         ktab.addEntry(service, "pass3".toCharArray(), 3, true);
         ktab.save();
 
         // and use the middle one as the real key
-        kdc.addPrincipal("host/" + server, "pass2".toCharArray());
+        kdc.addPrincipal(serviceName, "pass2".toCharArray());
 
 
         // JAAS config entry name ssl
@@ -118,7 +130,7 @@ public class SSL extends SecurityManager {
                 "    com.sun.security.auth.module.Krb5LoginModule required\n" +
                 (unbound ?
                     "    principal=*\n" :
-                    "    principal=\"host/" + server + "\"\n") +
+                    "    principal=\"" + serviceName + "\"\n") +
                 "    useKeyTab=true\n" +
                 "    keyTab=" + OneKDC.KTAB + "\n" +
                 "    isInitiator=false\n" +
@@ -153,7 +165,7 @@ public class SSL extends SecurityManager {
         }
 
         c = Context.fromUserPass(OneKDC.USER, OneKDC.PASS, false);
-        c.startAsClient("host/" + server, GSSUtil.GSS_KRB5_MECH_OID);
+        c.startAsClient(serviceName, GSSUtil.GSS_KRB5_MECH_OID);
         c.doAs(new JsseClientAction(), null);
 
         // Add another version of key, make sure it can be loaded
@@ -161,10 +173,10 @@ public class SSL extends SecurityManager {
         ktab = KeyTab.getInstance(OneKDC.KTAB);
         ktab.addEntry(service, "pass4".toCharArray(), 4, true);
         ktab.save();
-        kdc.addPrincipal("host/" + server, "pass4".toCharArray());
+        kdc.addPrincipal(serviceName, "pass4".toCharArray());
 
         c = Context.fromUserPass(OneKDC.USER, OneKDC.PASS, false);
-        c.startAsClient("host/" + server, GSSUtil.GSS_KRB5_MECH_OID);
+        c.startAsClient(serviceName, GSSUtil.GSS_KRB5_MECH_OID);
         c.doAs(new JsseClientAction(), null);
 
         // Permission checking check. Please note this is highly
@@ -198,6 +210,14 @@ public class SSL extends SecurityManager {
             String enabledSuites[] = {krb5Cipher};
             sslSocket.setEnabledCipherSuites(enabledSuites);
             // Should check for exception if enabledSuites is not supported
+
+            if (sniHostname != null) {
+                List<SNIServerName> serverNames = new ArrayList<>();
+                serverNames.add(new SNIHostName(sniHostname));
+                SSLParameters params = sslSocket.getSSLParameters();
+                params.setServerNames(serverNames);
+                sslSocket.setSSLParameters(params);
+            }
 
             BufferedReader in = new BufferedReader(new InputStreamReader(
                 sslSocket.getInputStream()));
@@ -241,6 +261,14 @@ public class SSL extends SecurityManager {
             String enabledSuites[] = {krb5Cipher};
             sslServerSocket.setEnabledCipherSuites(enabledSuites);
             // Should check for exception if enabledSuites is not supported
+
+            if (sniMatcherPattern != null) {
+                List<SNIMatcher> matchers = new ArrayList<>();
+                matchers.add(SNIHostName.createSNIMatcher(sniMatcherPattern));
+                SSLParameters params = sslServerSocket.getSSLParameters();
+                params.setSNIMatchers(matchers);
+                sslServerSocket.setSSLParameters(params);
+            }
 
             while (loopCount++ < LOOP_LIMIT) {
                 System.out.println("Waiting for incoming connection...");

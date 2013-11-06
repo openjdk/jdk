@@ -31,10 +31,17 @@
 
 #define VM_STRUCTS_G1(nonstatic_field, static_field)                          \
                                                                               \
-  static_field(HeapRegion, GrainBytes, size_t)                                \
+  static_field(HeapRegion, GrainBytes,        size_t)                         \
+  static_field(HeapRegion, LogOfHRGrainBytes, int)                            \
                                                                               \
-  nonstatic_field(HeapRegionSeq,   _regions, HeapRegion**)                    \
-  nonstatic_field(HeapRegionSeq,   _length,  uint)                            \
+  nonstatic_field(G1HeapRegionTable, _base,             address)              \
+  nonstatic_field(G1HeapRegionTable, _length,           size_t)               \
+  nonstatic_field(G1HeapRegionTable, _biased_base,      address)              \
+  nonstatic_field(G1HeapRegionTable, _bias,             size_t)               \
+  nonstatic_field(G1HeapRegionTable, _shift_by,         uint)                 \
+                                                                              \
+  nonstatic_field(HeapRegionSeq,   _regions,            G1HeapRegionTable)    \
+  nonstatic_field(HeapRegionSeq,   _committed_length,   uint)                 \
                                                                               \
   nonstatic_field(G1CollectedHeap, _hrs,                HeapRegionSeq)        \
   nonstatic_field(G1CollectedHeap, _g1_committed,       MemRegion)            \
@@ -56,6 +63,8 @@
 
 
 #define VM_TYPES_G1(declare_type, declare_toplevel_type)                      \
+                                                                              \
+  declare_toplevel_type(G1HeapRegionTable)                                    \
                                                                               \
   declare_type(G1CollectedHeap, SharedHeap)                                   \
                                                                               \

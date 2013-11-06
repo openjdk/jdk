@@ -145,11 +145,6 @@ void JavaCT_DrawGlyphVector
 
     BOOL saved = false;
 
-    /* Save and restore of graphics context is done before the iteration.  
-       This seems to work using our test case (see bug ID 7158350) so we are restoring it at
-       the end of the for loop.  If we find out that save/restore outside the loop
-       doesn't work on all cases then we will move the Save/Restore inside the loop.*/
-    CGContextSaveGState(cgRef);
     CGAffineTransform invTx = CGAffineTransformInvert(strike->fTx);
 
     NSUInteger i;
@@ -226,7 +221,9 @@ void JavaCT_DrawGlyphVector
 
     }
     // reset the font on the context after striking a unicode with CoreText
-    CGContextRestoreGState(cgRef);
+    if (saved) {
+        CGContextRestoreGState(cgRef);
+    }
 }
 
 // Using the Quartz Surface Data context, draw a hot-substituted character run
@@ -325,7 +322,7 @@ static void DrawTextContext
 
     Each stage of the pipeline is responsible for doing only one major thing, like allocating buffers,
     aquiring transform arrays from JNI, filling buffers, or striking glyphs. All resources or memory
-    aquired at a given stage, must be released in that stage. Any error that occurs (like a failed malloc)
+    acquired at a given stage, must be released in that stage. Any error that occurs (like a failed malloc)
     is to be handled in the stage it occurs in, and is to return immediatly after freeing it's resources.
 
 -----------------------------------*/

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -200,7 +200,7 @@ ClassPathDirEntry::ClassPathDirEntry(char* dir) : ClassPathEntry() {
 }
 
 
-ClassFileStream* ClassPathDirEntry::open_stream(const char* name) {
+ClassFileStream* ClassPathDirEntry::open_stream(const char* name, TRAPS) {
   // construct full path name
   char path[JVM_MAXPATHLEN];
   if (jio_snprintf(path, sizeof(path), "%s%s%s", _dir, os::file_separator(), name) == -1) {
@@ -243,7 +243,7 @@ ClassPathZipEntry::~ClassPathZipEntry() {
   FREE_C_HEAP_ARRAY(char, _zip_name, mtClass);
 }
 
-ClassFileStream* ClassPathZipEntry::open_stream(const char* name) {
+ClassFileStream* ClassPathZipEntry::open_stream(const char* name, TRAPS) {
   // enable call to C land
   JavaThread* thread = JavaThread::current();
   ThreadToNativeFromVM ttn(thread);
@@ -287,24 +287,24 @@ void ClassPathZipEntry::contents_do(void f(const char* name, void* context), voi
   }
 }
 
-LazyClassPathEntry::LazyClassPathEntry(char* path, struct stat st) : ClassPathEntry() {
+LazyClassPathEntry::LazyClassPathEntry(char* path, const struct stat* st) : ClassPathEntry() {
   _path = strdup(path);
-  _st = st;
+  _st = *st;
   _meta_index = NULL;
   _resolved_entry = NULL;
+  _has_error = false;
 }
 
 bool LazyClassPathEntry::is_jar_file() {
   return ((_st.st_mode & S_IFREG) == S_IFREG);
 }
 
-ClassPathEntry* LazyClassPathEntry::resolve_entry() {
+ClassPathEntry* LazyClassPathEntry::resolve_entry(TRAPS) {
   if (_resolved_entry != NULL) {
     return (ClassPathEntry*) _resolved_entry;
   }
   ClassPathEntry* new_entry = NULL;
-  ClassLoader::create_class_path_entry(_path, _st, &new_entry, false);
-  assert(new_entry != NULL, "earlier code should have caught this");
+  new_entry = ClassLoader::create_class_path_entry(_path, &_st, false, CHECK_NULL);
   {
     ThreadCritical tc;
     if (_resolved_entry == NULL) {
@@ -317,12 +317,21 @@ ClassPathEntry* LazyClassPathEntry::resolve_entry() {
   return (ClassPathEntry*) _resolved_entry;
 }
 
-ClassFileStream* LazyClassPathEntry::open_stream(const char* name) {
+ClassFileStream* LazyClassPathEntry::open_stream(const char* name, TRAPS) {
   if (_meta_index != NULL &&
       !_meta_index->may_contain(name)) {
     return NULL;
   }
-  return resolve_entry()->open_stream(name);
+  if (_has_error) {
+    return NULL;
+  }
+  ClassPathEntry* cpe = resolve_entry(THREAD);
+  if (cpe == NULL) {
+    _has_error = true;
+    return NULL;
+  } else {
+    return cpe->open_stream(name, THREAD);
+  }
 }
 
 bool LazyClassPathEntry::is_lazy() {
@@ -468,20 +477,19 @@ void ClassLoader::setup_bootstrap_search_path() {
   }
 }
 
-void ClassLoader::create_class_path_entry(char *path, struct stat st, ClassPathEntry **new_entry, bool lazy) {
+ClassPathEntry* ClassLoader::create_class_path_entry(char *path, const struct stat* st, bool lazy, TRAPS) {
   JavaThread* thread = JavaThread::current();
   if (lazy) {
-    *new_entry = new LazyClassPathEntry(path, st);
-    return;
+    return new LazyClassPathEntry(path, st);
   }
-  if ((st.st_mode & S_IFREG) == S_IFREG) {
+  ClassPathEntry* new_entry = NULL;
+  if ((st->st_mode & S_IFREG) == S_IFREG) {
     // Regular file, should be a zip file
     // Canonicalized filename
     char canonical_path[JVM_MAXPATHLEN];
     if (!get_canonical_path(path, canonical_path, JVM_MAXPATHLEN)) {
       // This matches the classic VM
-      EXCEPTION_MARK;
-      THROW_MSG(vmSymbols::java_io_IOException(), "Bad pathname");
+      THROW_MSG_(vmSymbols::java_io_IOException(), "Bad pathname", NULL);
     }
     char* error_msg = NULL;
     jzfile* zip;
@@ -492,7 +500,7 @@ void ClassLoader::create_class_path_entry(char *path, struct stat st, ClassPathE
       zip = (*ZipOpen)(canonical_path, &error_msg);
     }
     if (zip != NULL && error_msg == NULL) {
-      *new_entry = new ClassPathZipEntry(zip, path);
+      new_entry = new ClassPathZipEntry(zip, path);
       if (TraceClassLoading) {
         tty->print_cr("[Opened %s]", path);
       }
@@ -507,16 +515,16 @@ void ClassLoader::create_class_path_entry(char *path, struct stat st, ClassPathE
         msg = NEW_RESOURCE_ARRAY(char, len); ;
         jio_snprintf(msg, len - 1, "error in opening JAR file <%s> %s", error_msg, path);
       }
-      EXCEPTION_MARK;
-      THROW_MSG(vmSymbols::java_lang_ClassNotFoundException(), msg);
+      THROW_MSG_(vmSymbols::java_lang_ClassNotFoundException(), msg, NULL);
     }
   } else {
     // Directory
-    *new_entry = new ClassPathDirEntry(path);
+    new_entry = new ClassPathDirEntry(path);
     if (TraceClassLoading) {
       tty->print_cr("[Path %s]", path);
     }
   }
+  return new_entry;
 }
 
 
@@ -575,13 +583,14 @@ void ClassLoader::add_to_list(ClassPathEntry *new_entry) {
   }
 }
 
-void ClassLoader::update_class_path_entry_list(const char *path,
+void ClassLoader::update_class_path_entry_list(char *path,
                                                bool check_for_duplicates) {
   struct stat st;
-  if (os::stat((char *)path, &st) == 0) {
+  if (os::stat(path, &st) == 0) {
     // File or directory found
     ClassPathEntry* new_entry = NULL;
-    create_class_path_entry((char *)path, st, &new_entry, LazyBootClassLoader);
+    Thread* THREAD = Thread::current();
+    new_entry = create_class_path_entry(path, &st, LazyBootClassLoader, CHECK);
     // The kernel VM adds dynamically to the end of the classloader path and
     // doesn't reorder the bootclasspath which would break java.lang.Package
     // (see PackageInfo).
@@ -900,7 +909,7 @@ instanceKlassHandle ClassLoader::load_classfile(Symbol* h_name, TRAPS) {
                                PerfClassTraceTime::CLASS_LOAD);
     ClassPathEntry* e = _first_entry;
     while (e != NULL) {
-      stream = e->open_stream(name);
+      stream = e->open_stream(name, CHECK_NULL);
       if (stream != NULL) {
         break;
       }
@@ -1260,11 +1269,16 @@ bool ClassPathZipEntry::is_rt_jar12() {
 }
 
 void LazyClassPathEntry::compile_the_world(Handle loader, TRAPS) {
-  resolve_entry()->compile_the_world(loader, CHECK);
+  ClassPathEntry* cpe = resolve_entry(THREAD);
+  if (cpe != NULL) {
+    cpe->compile_the_world(loader, CHECK);
+  }
 }
 
 bool LazyClassPathEntry::is_rt_jar() {
-  return resolve_entry()->is_rt_jar();
+  Thread* THREAD = Thread::current();
+  ClassPathEntry* cpe = resolve_entry(THREAD);
+  return (cpe != NULL) ? cpe->is_jar_file() : false;
 }
 
 void ClassLoader::compile_the_world() {
@@ -1306,6 +1320,25 @@ static void clear_pending_exception_if_not_oom(TRAPS) {
     CLEAR_PENDING_EXCEPTION;
   }
   // The CHECK at the caller will propagate the exception out
+}
+
+/**
+ * Returns if the given method should be compiled when doing compile-the-world.
+ *
+ * TODO:  This should be a private method in a CompileTheWorld class.
+ */
+static bool can_be_compiled(methodHandle m, int comp_level) {
+  assert(CompileTheWorld, "must be");
+
+  // It's not valid to compile a native wrapper for MethodHandle methods
+  // that take a MemberName appendix since the bytecode signature is not
+  // correct.
+  vmIntrinsics::ID iid = m->intrinsic_id();
+  if (MethodHandles::is_signature_polymorphic(iid) && MethodHandles::has_member_arg(iid)) {
+    return false;
+  }
+
+  return CompilationPolicy::can_be_compiled(m, comp_level);
 }
 
 void ClassLoader::compile_the_world_in(char* name, Handle loader, TRAPS) {
@@ -1351,8 +1384,7 @@ void ClassLoader::compile_the_world_in(char* name, Handle loader, TRAPS) {
           int comp_level = CompilationPolicy::policy()->initial_compile_level();
           for (int n = 0; n < k->methods()->length(); n++) {
             methodHandle m (THREAD, k->methods()->at(n));
-            if (CompilationPolicy::can_be_compiled(m, comp_level)) {
-
+            if (can_be_compiled(m, comp_level)) {
               if (++_codecache_sweep_counter == CompileTheWorldSafepointInterval) {
                 // Give sweeper a chance to keep up with CTW
                 VM_ForceSafepoint op;
@@ -1364,7 +1396,7 @@ void ClassLoader::compile_the_world_in(char* name, Handle loader, TRAPS) {
                                             methodHandle(), 0, "CTW", THREAD);
               if (HAS_PENDING_EXCEPTION) {
                 clear_pending_exception_if_not_oom(CHECK);
-                tty->print_cr("CompileTheWorld (%d) : Skipping method: %s", _compile_the_world_class_counter, m->name()->as_C_string());
+                tty->print_cr("CompileTheWorld (%d) : Skipping method: %s", _compile_the_world_class_counter, m->name_and_sig_as_C_string());
               } else {
                 _compile_the_world_method_counter++;
               }
@@ -1380,11 +1412,13 @@ void ClassLoader::compile_the_world_in(char* name, Handle loader, TRAPS) {
                                               methodHandle(), 0, "CTW", THREAD);
                 if (HAS_PENDING_EXCEPTION) {
                   clear_pending_exception_if_not_oom(CHECK);
-                  tty->print_cr("CompileTheWorld (%d) : Skipping method: %s", _compile_the_world_class_counter, m->name()->as_C_string());
+                  tty->print_cr("CompileTheWorld (%d) : Skipping method: %s", _compile_the_world_class_counter, m->name_and_sig_as_C_string());
                 } else {
                   _compile_the_world_method_counter++;
                 }
               }
+            } else {
+              tty->print_cr("CompileTheWorld (%d) : Skipping method: %s", _compile_the_world_class_counter, m->name_and_sig_as_C_string());
             }
 
             nmethod* nm = m->code();

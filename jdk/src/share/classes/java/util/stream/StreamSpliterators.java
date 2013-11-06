@@ -27,6 +27,7 @@ package java.util.stream;
 import java.util.Comparator;
 import java.util.Objects;
 import java.util.Spliterator;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.BooleanSupplier;
 import java.util.function.Consumer;
@@ -1227,6 +1228,88 @@ class StreamSpliterators {
     }
 
     /**
+     * A wrapping spliterator that only reports distinct elements of the
+     * underlying spliterator. Does not preserve size and encounter order.
+     */
+    static final class DistinctSpliterator<T> implements Spliterator<T>, Consumer<T> {
+
+        // The value to represent null in the ConcurrentHashMap
+        private static final Object NULL_VALUE = new Object();
+
+        // The underlying spliterator
+        private final Spliterator<T> s;
+
+        // ConcurrentHashMap holding distinct elements as keys
+        private final ConcurrentHashMap<T, Boolean> seen;
+
+        // Temporary element, only used with tryAdvance
+        private T tmpSlot;
+
+        DistinctSpliterator(Spliterator<T> s) {
+            this(s, new ConcurrentHashMap<>());
+        }
+
+        private DistinctSpliterator(Spliterator<T> s, ConcurrentHashMap<T, Boolean> seen) {
+            this.s = s;
+            this.seen = seen;
+        }
+
+        @Override
+        public void accept(T t) {
+            this.tmpSlot = t;
+        }
+
+        @SuppressWarnings("unchecked")
+        private T mapNull(T t) {
+            return t != null ? t : (T) NULL_VALUE;
+        }
+
+        @Override
+        public boolean tryAdvance(Consumer<? super T> action) {
+            while (s.tryAdvance(this)) {
+                if (seen.putIfAbsent(mapNull(tmpSlot), Boolean.TRUE) == null) {
+                    action.accept(tmpSlot);
+                    tmpSlot = null;
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        @Override
+        public void forEachRemaining(Consumer<? super T> action) {
+            s.forEachRemaining(t -> {
+                if (seen.putIfAbsent(mapNull(t), Boolean.TRUE) == null) {
+                    action.accept(t);
+                }
+            });
+        }
+
+        @Override
+        public Spliterator<T> trySplit() {
+            Spliterator<T> split = s.trySplit();
+            return (split != null) ? new DistinctSpliterator<>(split, seen) : null;
+        }
+
+        @Override
+        public long estimateSize() {
+            return s.estimateSize();
+        }
+
+        @Override
+        public int characteristics() {
+            return (s.characteristics() & ~(Spliterator.SIZED | Spliterator.SUBSIZED |
+                                            Spliterator.SORTED | Spliterator.ORDERED))
+                   | Spliterator.DISTINCT;
+        }
+
+        @Override
+        public Comparator<? super T> getComparator() {
+            return s.getComparator();
+        }
+    }
+
+    /**
      * A Spliterator that infinitely supplies elements in no particular order.
      *
      * <p>Splitting divides the estimated size in two and stops when the
@@ -1457,3 +1540,4 @@ class StreamSpliterators {
         }
     }
 }
+

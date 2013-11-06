@@ -36,7 +36,7 @@ import java.util.*;
 /**
  * A <code>SpringLayout</code> lays out the children of its associated container
  * according to a set of constraints.
- * See <a href="http://java.sun.com/docs/books/tutorial/uiswing/layout/spring.html">How to Use SpringLayout</a>
+ * See <a href="http://docs.oracle.com/javase/tutorial/uiswing/layout/spring.html">How to Use SpringLayout</a>
  * in <em>The Java Tutorial</em> for examples of using
  * <code>SpringLayout</code>.
  *
@@ -172,7 +172,7 @@ import java.util.*;
  * future Swing releases. The current serialization support is
  * appropriate for short term storage or RMI between applications running
  * the same version of Swing.  As of 1.4, support for long term storage
- * of all JavaBeans<sup><font size="-2">TM</font></sup>
+ * of all JavaBeans&trade;
  * has been added to the <code>java.beans</code> package.
  * Please see {@link java.beans.XMLEncoder}.
  *
@@ -286,7 +286,7 @@ public class SpringLayout implements LayoutManager2 {
      * as EAST - WIDTH.
      * <p>
      * [RELATIVE_BASELINE is a private constraint that is set automatically when
-     * the SpringLayout.Constraints(Component) constuctor is called or when
+     * the SpringLayout.Constraints(Component) constructor is called or when
      * a constraints object is registered with a SpringLayout object.]
      * <p>
      * <b>Note</b>: In this document,
@@ -727,7 +727,7 @@ public class SpringLayout implements LayoutManager2 {
         * For any other <code>String</code> value passed as the edge,
         * no action is taken. For a <code>null</code> edge, a
         * <code>NullPointerException</code> is thrown.
-        * <p/>
+        * <p>
         * <b>Note:</b> This method can affect {@code x} and {@code y} values
         * previously set for this {@code Constraints}.
         *
@@ -1167,7 +1167,7 @@ public class SpringLayout implements LayoutManager2 {
      * method, instead of returning the current binding for the
      * edge, returns a proxy that tracks the characteristics
      * of the edge even if the edge is subsequently rebound.
-     * Proxies are intended to be used in builder envonments
+     * Proxies are intended to be used in builder environments
      * where it is useful to allow the user to define the
      * constraints for a layout in any order. Proxies do, however,
      * provide the means to create cyclic dependencies amongst

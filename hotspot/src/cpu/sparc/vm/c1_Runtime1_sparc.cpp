@@ -37,6 +37,9 @@
 #include "runtime/vframeArray.hpp"
 #include "utilities/macros.hpp"
 #include "vmreg_sparc.inline.hpp"
+#if INCLUDE_ALL_GCS
+#include "gc_implementation/g1/g1SATBCardTableModRefBS.hpp"
+#endif
 
 // Implementation of StubAssembler
 
@@ -401,7 +404,9 @@ OopMapSet* Runtime1::generate_code_for(StubID id, StubAssembler* sasm) {
           if (id == fast_new_instance_init_check_id) {
             // make sure the klass is initialized
             __ ldub(G5_klass, in_bytes(InstanceKlass::init_state_offset()), G3_t1);
-            __ cmp_and_br_short(G3_t1, InstanceKlass::fully_initialized, Assembler::notEqual, Assembler::pn, slow_path);
+            __ cmp(G3_t1, InstanceKlass::fully_initialized);
+            __ br(Assembler::notEqual, false, Assembler::pn, slow_path);
+            __ delayed()->nop();
           }
 #ifdef ASSERT
           // assert object can be fast path allocated
@@ -512,7 +517,9 @@ OopMapSet* Runtime1::generate_code_for(StubID id, StubAssembler* sasm) {
 
           // check that array length is small enough for fast path
           __ set(C1_MacroAssembler::max_array_allocation_length, G3_t1);
-          __ cmp_and_br_short(G4_length, G3_t1, Assembler::greaterUnsigned, Assembler::pn, slow_path);
+          __ cmp(G4_length, G3_t1);
+          __ br(Assembler::greaterUnsigned, false, Assembler::pn, slow_path);
+          __ delayed()->nop();
 
           // if we got here then the TLAB allocation failed, so try
           // refilling the TLAB or allocating directly from eden.
@@ -804,6 +811,12 @@ OopMapSet* Runtime1::generate_code_for(StubID id, StubAssembler* sasm) {
       }
       break;
 
+    case load_appendix_patching_id:
+      { __ set_info("load_appendix_patching", dont_gc_arguments);
+        oop_maps = generate_patching(sasm, CAST_FROM_FN_PTR(address, move_appendix_patching));
+      }
+      break;
+
     case dtrace_object_alloc_id:
       { // O0: object
         __ set_info("dtrace_object_alloc", dont_gc_arguments);
@@ -906,7 +919,7 @@ OopMapSet* Runtime1::generate_code_for(StubID id, StubAssembler* sasm) {
         Register tmp2 = G3_scratch;
         jbyte* byte_map_base = ((CardTableModRefBS*)bs)->byte_map_base;
 
-        Label not_already_dirty, restart, refill;
+        Label not_already_dirty, restart, refill, young_card;
 
 #ifdef _LP64
         __ srlx(addr, CardTableModRefBS::card_shift, addr);
@@ -918,9 +931,15 @@ OopMapSet* Runtime1::generate_code_for(StubID id, StubAssembler* sasm) {
         __ set(rs, cardtable);         // cardtable := <card table base>
         __ ldub(addr, cardtable, tmp); // tmp := [addr + cardtable]
 
+        __ cmp_and_br_short(tmp, G1SATBCardTableModRefBS::g1_young_card_val(), Assembler::equal, Assembler::pt, young_card);
+
+        __ membar(Assembler::Membar_mask_bits(Assembler::StoreLoad));
+        __ ldub(addr, cardtable, tmp); // tmp := [addr + cardtable]
+
         assert(CardTableModRefBS::dirty_card_val() == 0, "otherwise check this code");
         __ cmp_and_br_short(tmp, G0, Assembler::notEqual, Assembler::pt, not_already_dirty);
 
+        __ bind(young_card);
         // We didn't take the branch, so we're already dirty: return.
         // Use return-from-leaf
         __ retl();
@@ -1060,6 +1079,25 @@ OopMapSet* Runtime1::generate_handle_exception(StubID id, StubAssembler* sasm) {
   }
 
   __ verify_not_null_oop(Oexception);
+
+#ifdef ASSERT
+  // check that fields in JavaThread for exception oop and issuing pc are
+  // empty before writing to them
+  Label oop_empty;
+  Register scratch = I7;  // We can use I7 here because it's overwritten later anyway.
+  __ ld_ptr(Address(G2_thread, JavaThread::exception_oop_offset()), scratch);
+  __ br_null(scratch, false, Assembler::pt, oop_empty);
+  __ delayed()->nop();
+  __ stop("exception oop already set");
+  __ bind(oop_empty);
+
+  Label pc_empty;
+  __ ld_ptr(Address(G2_thread, JavaThread::exception_pc_offset()), scratch);
+  __ br_null(scratch, false, Assembler::pt, pc_empty);
+  __ delayed()->nop();
+  __ stop("exception pc already set");
+  __ bind(pc_empty);
+#endif
 
   // save the exception and issuing pc in the thread
   __ st_ptr(Oexception,  G2_thread, in_bytes(JavaThread::exception_oop_offset()));

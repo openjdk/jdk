@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 7112427 8012295
+ * @bug 7112427 8012295 8025633 8026567
  * @summary Test of the JavaFX doclet features.
  * @author jvalenta
  * @library ../lib/
@@ -38,32 +38,32 @@ public class TestJavaFX extends JavadocTester {
     private static final String[][] TEST =
         new String[][] {
             {"./" + BUG_ID + "/C.html",
-                "<dt><span class=\"strong\">See Also:</span></dt>" + NL + "<dd><a href=\"C.html#getRate()\"><code>getRate()</code></a>, " + NL +
-                "<a href=\"C.html#setRate(double)\"><code>setRate(double)</code></a></dd>"},
+                "<dt><span class=\"seeLabel\">See Also:</span></dt>" + NL + "<dd><a href=\"C.html#getRate--\"><code>getRate()</code></a>, " + NL +
+                "<a href=\"C.html#setRate-double-\"><code>setRate(double)</code></a></dd>"},
             {"./" + BUG_ID + "/C.html",
                 "<pre>public final&nbsp;void&nbsp;setRate(double&nbsp;value)</pre>" + NL +
                 "<div class=\"block\">Sets the value of the property rate.</div>" + NL +
-                "<dl>" + NL + "<dt><span class=\"strong\">Property description:</span></dt>" },
+                "<dl>" + NL + "<dt><span class=\"simpleTagLabel\">Property description:</span></dt>" },
             {"./" + BUG_ID + "/C.html",
                 "<pre>public final&nbsp;double&nbsp;getRate()</pre>" + NL +
                 "<div class=\"block\">Gets the value of the property rate.</div>" + NL +
-                "<dl>" + NL + "<dt><span class=\"strong\">Property description:</span></dt>" },
+                "<dl>" + NL + "<dt><span class=\"simpleTagLabel\">Property description:</span></dt>" },
             {"./" + BUG_ID + "/C.html",
-                "<td class=\"colLast\"><code><span class=\"strong\"><a href=\"C.html#rateProperty\">rate</a></span></code>" + NL +
+                "<td class=\"colLast\"><code><span class=\"memberNameLink\"><a href=\"C.html#rateProperty\">rate</a></span></code>" + NL +
                 "<div class=\"block\">Defines the direction/speed at which the <code>Timeline</code> is expected to"},
 
             {"./" + BUG_ID + "/C.html",
-                "<span class=\"strong\">Default value:</span>"},
+                "<span class=\"simpleTagLabel\">Default value:</span>"},
             {"./" + BUG_ID + "/C.html",
-                "<span class=\"strong\">Since:</span></dt>" + NL + "<dd>JavaFX 8.0</dd>" },
+                "<span class=\"simpleTagLabel\">Since:</span></dt>" + NL + "<dd>JavaFX 8.0</dd>" },
             {"./" + BUG_ID + "/C.html",
                 "<p>Sets the value of the property <code>Property</code>"},
             {"./" + BUG_ID + "/C.html",
                 "<p>Gets the value of the property <code>Property</code>"},
             {"./" + BUG_ID + "/C.html",
-                "<span class=\"strong\">Property description:</span>"},
+                "<span class=\"simpleTagLabel\">Property description:</span>"},
             {"./" + BUG_ID + "/C.html",
-                "<td class=\"colLast\"><code><span class=\"strong\"><a href=\"C.html#setTestMethodProperty()\">setTestMethodProperty</a></span>()</code>&nbsp;</td>" },
+                "<td class=\"colLast\"><code><span class=\"memberNameLink\"><a href=\"C.html#setTestMethodProperty--\">setTestMethodProperty</a></span>()</code>&nbsp;</td>" },
             {"./" + BUG_ID + "/C.html",
                 "<h4>isPaused</h4>" + NL +
                 "<pre>public final&nbsp;double&nbsp;isPaused()</pre>" + NL +
