@@ -35,7 +35,7 @@ import sun.security.util.DerValue;
  * structure.
  *
  * <p>The ASN.1 definition is as follows:
- * <p><pre>
+ * <pre>
  *   PolicyQualifierInfo ::= SEQUENCE {
  *        policyQualifierId       PolicyQualifierId,
  *        qualifier               ANY DEFINED BY policyQualifierId }

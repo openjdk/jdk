@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -91,6 +91,12 @@ class SSLServerSocketImpl extends SSLServerSocket
     // The server name indication
     Collection<SNIMatcher>      sniMatchers =
                                     Collections.<SNIMatcher>emptyList();
+
+    /*
+     * Whether local cipher suites preference in server side should be
+     * honored during handshaking?
+     */
+    private boolean             preferLocalCipherSuites = false;
 
     /**
      * Create an SSL server socket on a port, using a non-default
@@ -304,6 +310,8 @@ class SSLServerSocketImpl extends SSLServerSocket
         params.setEndpointIdentificationAlgorithm(identificationProtocol);
         params.setAlgorithmConstraints(algorithmConstraints);
         params.setSNIMatchers(sniMatchers);
+        params.setUseCipherSuitesOrder(preferLocalCipherSuites);
+
 
         return params;
     }
@@ -318,6 +326,7 @@ class SSLServerSocketImpl extends SSLServerSocket
         // the super implementation does not handle the following parameters
         identificationProtocol = params.getEndpointIdentificationAlgorithm();
         algorithmConstraints = params.getAlgorithmConstraints();
+        preferLocalCipherSuites = params.getUseCipherSuitesOrder();
         Collection<SNIMatcher> matchers = params.getSNIMatchers();
         if (matchers != null) {
             sniMatchers = params.getSNIMatchers();
@@ -334,7 +343,7 @@ class SSLServerSocketImpl extends SSLServerSocket
         SSLSocketImpl s = new SSLSocketImpl(sslContext, useServerMode,
             enabledCipherSuites, doClientAuth, enableSessionCreation,
             enabledProtocols, identificationProtocol, algorithmConstraints,
-            sniMatchers);
+            sniMatchers, preferLocalCipherSuites);
 
         implAccept(s);
         s.doneConnect();

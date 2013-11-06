@@ -1685,7 +1685,7 @@ public class File
      *           operation will fail if the user does not have permission to
      *           change the access permissions of this abstract pathname.  If
      *           <code>executable</code> is <code>false</code> and the underlying
-     *           file system does not implement an excute permission, then the
+     *           file system does not implement an execute permission, then the
      *           operation will fail.
      *
      * @throws  SecurityException
@@ -1908,10 +1908,18 @@ public class File
             } else {
                 n = Math.abs(n);
             }
+
+            // Use only the file name from the supplied prefix
+            prefix = (new File(prefix)).getName();
+
             String name = prefix + Long.toString(n) + suffix;
             File f = new File(dir, name);
-            if (!name.equals(f.getName()) || f.isInvalid())
-                throw new IOException("Unable to create temporary file");
+            if (!name.equals(f.getName()) || f.isInvalid()) {
+                if (System.getSecurityManager() != null)
+                    throw new IOException("Unable to create temporary file");
+                else
+                    throw new IOException("Unable to create temporary file, " + f);
+            }
             return f;
         }
     }

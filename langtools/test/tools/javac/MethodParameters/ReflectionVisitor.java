@@ -48,6 +48,7 @@ public class ReflectionVisitor extends Tester.Visitor {
     boolean isMember;
     boolean isStatic;
     boolean isPublic;
+    boolean isFinal;
     Class clazz;
     StringBuilder sb;
 
@@ -72,8 +73,8 @@ public class ReflectionVisitor extends Tester.Visitor {
             .append(isPublic ? "public " : "")
             .append(isEnum ? "enum " : isInterface ? "interface " : "class ")
             .append(cl).append(" -- ")
-            .append(isMember? "member " : "" )
-            .append(isLocal? "local " : "" )
+            .append(isMember? "inner" : "" )
+            .append(isLocal? "inner" : "" )
             .append(isAnon ?  "anon" : "")
             .append("\n");
 
@@ -82,7 +83,6 @@ public class ReflectionVisitor extends Tester.Visitor {
         }
 
         for (Method m :clazz.getDeclaredMethods()) {
-
             testMethod(m);
         }
     }
@@ -116,9 +116,15 @@ public class ReflectionVisitor extends Tester.Visitor {
         for (Parameter p : c.getParameters()) {
             i++;
             String pname = p.getName();
+            int pmodifier = p.getModifiers();
+            isFinal = false;
+            if (Modifier.isFinal(pmodifier)) {
+                isFinal = true;
+                pname = "final " + pname;
+            }
             sb.append(sep).append(pname);
-            if (p.isImplicit()) sb.append("!");
-            if (p.isSynthetic()) sb.append("!!");
+            if (p.isImplicit()) sb.append("/*implicit*/");
+            if (p.isSynthetic()) sb.append("/*synthetic*/");
             sep = ", ";
 
             // Set expectations
@@ -135,11 +141,17 @@ public class ReflectionVisitor extends Tester.Visitor {
                 }
             } else if (i == 0) {
                 if (isAnon) {
+                    expect = "this\\$[0-9]+";
                     allowImplicit = true;
+                    if (isFinal)
+                        expect = "final this\\$[0-9]+";
                 } else if (isLocal) {
+                    expect = "this\\$[0-9]+";
                     allowImplicit = true;
-                    expect = "this\\$[0-n]*";
+                    if (isFinal)
+                        expect = "final this\\$[0-9]+";
                 } else if ((isMember && !isStatic)) {
+                    expect = "this\\$[0-9]+";
                     allowImplicit = true;
                     if (!isPublic) {
                         // some but not all non-public inner classes
@@ -147,7 +159,8 @@ public class ReflectionVisitor extends Tester.Visitor {
                         // the test a bit of slack and allow either.
                         allowSynthetic = true;
                     }
-                    expect = "this\\$[0-n]*";
+                    if (isFinal)
+                        expect = "final this\\$[0-9]+";
                 }
             }
 
@@ -201,11 +214,16 @@ public class ReflectionVisitor extends Tester.Visitor {
                 char ch = param.charAt(0);
                 expect =  (++ch) + param;
             }
-
+            if (isFinal && expect != null) {
+                expect = "final " + expect;
+            }
             if (pname != null && fidelity) {
+                if (isFinal) {
+                    param = pname.substring(6);
+                } else {
                 param = pname;
             }
-
+            }
             if (expect != null && !expect.equals(pname)) {
                 error(prefix + "param[" + i + "]='" + pname +
                       "' expected '" + expect + "'");
@@ -213,7 +231,7 @@ public class ReflectionVisitor extends Tester.Visitor {
             }
         }
         if  (c.isSynthetic()) {
-            sb.append(")!!\n");
+            sb.append(")/*synthetic*/\n");
         } else {
             sb.append(")\n");
         }
@@ -240,13 +258,24 @@ public class ReflectionVisitor extends Tester.Visitor {
         // the test-case design pattern, except synthetic methods.
         for (Parameter p : m.getParameters()) {
             i++;
+            isFinal = false;
+            int pmodifier = p.getModifiers();
             if (param == null) {
                 param = p.getName();
+                if (Modifier.isFinal(pmodifier)) {
+                    isFinal = true;
+                    param = "final " + param;
+                }
                 sb.append(sep).append(param);
             } else  {
                 char c = param.charAt(0);
                 String expect =  m.isSynthetic() ? ("arg" + i) : ((++c) + param);
                 param = p.getName();
+                if (Modifier.isFinal(pmodifier)) {
+                    isFinal = true;
+                    expect = "final " + expect;
+                    param = "final " + param;
+                }
                 sb.append(sep).append(param);
                 if (!m.isBridge() && !expect.equals(param)) {
                     error(prefix + "param[" + i + "]='"
@@ -254,10 +283,18 @@ public class ReflectionVisitor extends Tester.Visitor {
                     break;
                 }
             }
+            if(isFinal)
+                param = param.substring(6);
+            if (p.isImplicit()) {
+                sb.append("/*implicit*/");
+            }
+            if (p.isSynthetic()) {
+                sb.append("/*synthetic*/");
+            }
             sep = ", ";
         }
         if  (m.isSynthetic()) {
-            sb.append(")!!\n");
+            sb.append(")/*synthetic*/\n");
         } else {
             sb.append(")\n");
         }

@@ -218,7 +218,7 @@ public final class NimbusStyle extends SynthStyle {
     }
 
     /**
-     * @inheritDoc
+     * {@inheritDoc}
      *
      * Overridden to cause this style to populate itself with data from
      * UIDefaults, if necessary.
@@ -472,7 +472,7 @@ public final class NimbusStyle extends SynthStyle {
     }
 
     /**
-     * @inheritDoc
+     * {@inheritDoc}
      *
      * Overridden to cause this style to populate itself with data from
      * UIDefaults, if necessary.
@@ -519,7 +519,7 @@ public final class NimbusStyle extends SynthStyle {
     }
 
     /**
-     * @inheritDoc
+     * {@inheritDoc}
      *
      * <p>Overridden to cause this style to populate itself with data from
      * UIDefaults, if necessary.</p>
@@ -562,7 +562,7 @@ public final class NimbusStyle extends SynthStyle {
     }
 
     /**
-     * @inheritDoc
+     * {@inheritDoc}
      *
      * Overridden to cause this style to populate itself with data from
      * UIDefaults, if necessary. If a value named "font" is not found in
@@ -590,7 +590,7 @@ public final class NimbusStyle extends SynthStyle {
     }
 
     /**
-     * @inheritDoc
+     * {@inheritDoc}
      *
      * Returns the SynthPainter for this style, which ends up delegating to
      * the Painters installed in this style.
@@ -600,7 +600,7 @@ public final class NimbusStyle extends SynthStyle {
     }
 
     /**
-     * @inheritDoc
+     * {@inheritDoc}
      *
      * Overridden to cause this style to populate itself with data from
      * UIDefaults, if necessary. If opacity is not specified in UI defaults,
@@ -616,7 +616,7 @@ public final class NimbusStyle extends SynthStyle {
     }
 
     /**
-     * @inheritDoc
+     * {@inheritDoc}
      *
      * <p>Overridden to cause this style to populate itself with data from
      * UIDefaults, if necessary.</p>
@@ -628,7 +628,7 @@ public final class NimbusStyle extends SynthStyle {
      * Button.opacity
      * Button.Enabled.foreground
      * Button.Enabled+Selected.background
-     * </pre></p>
+     * </pre>
      *
      * <p>In this example, suppose you were in the Enabled+Selected state and
      * searched for "foreground". In this case, we first check for
@@ -808,7 +808,7 @@ public final class NimbusStyle extends SynthStyle {
     }
 
     /**
-     * Simple utility method that searchs the given array of Strings for the
+     * Simple utility method that searches the given array of Strings for the
      * given string. This method is only called from getExtendedState if
      * the developer has specified a specific state for the component to be
      * in (ie, has "wedged" the component in that state) by specifying
@@ -1010,7 +1010,7 @@ public final class NimbusStyle extends SynthStyle {
     }
 
     /**
-     * Contains values such as the UIDefaults and painters asssociated with
+     * Contains values such as the UIDefaults and painters associated with
      * a state. Whereas <code>State</code> represents a distinct state that a
      * component can be in (such as Enabled), this class represents the colors,
      * fonts, painters, etc associated with some state for this

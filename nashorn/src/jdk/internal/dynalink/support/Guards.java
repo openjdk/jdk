@@ -88,6 +88,7 @@ import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import jdk.internal.dynalink.DynamicLinker;
 import jdk.internal.dynalink.linker.LinkerServices;
 
 /**
@@ -115,11 +116,11 @@ public class Guards {
     public static MethodHandle isOfClass(Class<?> clazz, MethodType type) {
         final Class<?> declaredType = type.parameterType(0);
         if(clazz == declaredType) {
-            LOG.log(Level.WARNING, "isOfClassGuardAlwaysTrue", new Object[] { clazz.getName(), 0, type });
+            LOG.log(Level.WARNING, "isOfClassGuardAlwaysTrue", new Object[] { clazz.getName(), 0, type, DynamicLinker.getLinkedCallSiteLocation() });
             return constantTrue(type);
         }
         if(!declaredType.isAssignableFrom(clazz)) {
-            LOG.log(Level.WARNING, "isOfClassGuardAlwaysFalse", new Object[] { clazz.getName(), 0, type });
+            LOG.log(Level.WARNING, "isOfClassGuardAlwaysFalse", new Object[] { clazz.getName(), 0, type, DynamicLinker.getLinkedCallSiteLocation() });
             return constantFalse(type);
         }
         return getClassBoundArgumentTest(IS_OF_CLASS, clazz, 0, type);
@@ -152,11 +153,11 @@ public class Guards {
     public static MethodHandle isInstance(Class<?> clazz, int pos, MethodType type) {
         final Class<?> declaredType = type.parameterType(pos);
         if(clazz.isAssignableFrom(declaredType)) {
-            LOG.log(Level.WARNING, "isInstanceGuardAlwaysTrue", new Object[] { clazz.getName(), pos, type });
+            LOG.log(Level.WARNING, "isInstanceGuardAlwaysTrue", new Object[] { clazz.getName(), pos, type, DynamicLinker.getLinkedCallSiteLocation() });
             return constantTrue(type);
         }
         if(!declaredType.isAssignableFrom(clazz)) {
-            LOG.log(Level.WARNING, "isInstanceGuardAlwaysFalse", new Object[] { clazz.getName(), pos, type });
+            LOG.log(Level.WARNING, "isInstanceGuardAlwaysFalse", new Object[] { clazz.getName(), pos, type, DynamicLinker.getLinkedCallSiteLocation() });
             return constantFalse(type);
         }
         return getClassBoundArgumentTest(IS_INSTANCE, clazz, pos, type);
@@ -174,11 +175,11 @@ public class Guards {
     public static MethodHandle isArray(int pos, MethodType type) {
         final Class<?> declaredType = type.parameterType(pos);
         if(declaredType.isArray()) {
-            LOG.log(Level.WARNING, "isArrayGuardAlwaysTrue", new Object[] { pos, type });
+            LOG.log(Level.WARNING, "isArrayGuardAlwaysTrue", new Object[] { pos, type, DynamicLinker.getLinkedCallSiteLocation() });
             return constantTrue(type);
         }
         if(!declaredType.isAssignableFrom(Object[].class)) {
-            LOG.log(Level.WARNING, "isArrayGuardAlwaysFalse", new Object[] { pos, type });
+            LOG.log(Level.WARNING, "isArrayGuardAlwaysFalse", new Object[] { pos, type, DynamicLinker.getLinkedCallSiteLocation() });
             return constantFalse(type);
         }
         return asType(IS_ARRAY, pos, type);

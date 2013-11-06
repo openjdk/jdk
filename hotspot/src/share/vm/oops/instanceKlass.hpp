@@ -245,7 +245,6 @@ class InstanceKlass: public Klass {
   MemberNameTable* _member_names;        // Member names
   JNIid*          _jni_ids;              // First JNI identifier for static fields in this class
   jmethodID*      _methods_jmethod_ids;  // jmethodIDs corresponding to method_idnum, or NULL if none
-  int*            _methods_cached_itable_indices;  // itable_index cache for JNI invoke corresponding to methods idnum, or NULL
   nmethodBucket*  _dependencies;         // list of dependent nmethods
   nmethod*        _osr_nmethods_head;    // Head of list of on-stack replacement nmethods for this class
   BreakpointInfo* _breakpoints;          // bpt lists, managed by Method*
@@ -270,12 +269,18 @@ class InstanceKlass: public Klass {
 
   // Method array.
   Array<Method*>* _methods;
+  // Default Method Array, concrete methods inherited from interfaces
+  Array<Method*>* _default_methods;
   // Interface (Klass*s) this class declares locally to implement.
   Array<Klass*>* _local_interfaces;
   // Interface (Klass*s) this class implements transitively.
   Array<Klass*>* _transitive_interfaces;
   // Int array containing the original order of method in the class file (for JVMTI).
   Array<int>*     _method_ordering;
+  // Int array containing the vtable_indices for default_methods
+  // offset matches _default_methods offset
+  Array<int>*     _default_vtable_indices;
+
   // Instance and static variable information, starts with 6-tuples of shorts
   // [access, name index, sig index, initval index, low_offset, high_offset]
   // for all fields, followed by the generic signature data at the end of
@@ -356,6 +361,15 @@ class InstanceKlass: public Klass {
   Array<int>* method_ordering() const     { return _method_ordering; }
   void set_method_ordering(Array<int>* m) { _method_ordering = m; }
   void copy_method_ordering(intArray* m, TRAPS);
+
+  // default_methods
+  Array<Method*>* default_methods() const  { return _default_methods; }
+  void set_default_methods(Array<Method*>* a) { _default_methods = a; }
+
+  // default method vtable_indices
+  Array<int>* default_vtable_indices() const { return _default_vtable_indices; }
+  void set_default_vtable_indices(Array<int>* v) { _default_vtable_indices = v; }
+  Array<int>* create_new_default_vtable_indices(int len, TRAPS);
 
   // interfaces
   Array<Klass*>* local_interfaces() const          { return _local_interfaces; }
@@ -502,12 +516,18 @@ class InstanceKlass: public Klass {
   Method* find_method(Symbol* name, Symbol* signature) const;
   static Method* find_method(Array<Method*>* methods, Symbol* name, Symbol* signature);
 
+  // find a local method index in default_methods (returns -1 if not found)
+  static int find_method_index(Array<Method*>* methods, Symbol* name, Symbol* signature);
+
   // lookup operation (returns NULL if not found)
   Method* uncached_lookup_method(Symbol* name, Symbol* signature) const;
 
   // lookup a method in all the interfaces that this class implements
   // (returns NULL if not found)
   Method* lookup_method_in_all_interfaces(Symbol* name, Symbol* signature) const;
+  // lookup a method in local defaults then in all interfaces
+  // (returns NULL if not found)
+  Method* lookup_method_in_ordered_interfaces(Symbol* name, Symbol* signature) const;
 
   // Find method indices by name.  If a method with the specified name is
   // found the index to the first method is returned, and 'end' is filled in
@@ -689,10 +709,6 @@ class InstanceKlass: public Klass {
   static void get_jmethod_id_length_value(jmethodID* cache, size_t idnum,
                 size_t *length_p, jmethodID* id_p);
   jmethodID jmethod_id_or_null(Method* method);
-
-  // cached itable index support
-  void set_cached_itable_index(size_t idnum, int index);
-  int cached_itable_index(size_t idnum);
 
   // annotations support
   Annotations* annotations() const          { return _annotations; }
@@ -915,6 +931,11 @@ class InstanceKlass: public Klass {
   klassItable* itable() const;        // return new klassItable wrapper
   Method* method_at_itable(Klass* holder, int index, TRAPS);
 
+#if INCLUDE_JVMTI
+  void adjust_default_methods(Method** old_methods, Method** new_methods,
+                              int methods_length, bool* trace_name_printed);
+#endif // INCLUDE_JVMTI
+
   // Garbage collection
   void oop_follow_contents(oop obj);
   int  oop_adjust_pointers(oop obj);
@@ -994,19 +1015,15 @@ private:
   void release_set_methods_jmethod_ids(jmethodID* jmeths)
          { OrderAccess::release_store_ptr(&_methods_jmethod_ids, jmeths); }
 
-  int* methods_cached_itable_indices_acquire() const
-         { return (int*)OrderAccess::load_ptr_acquire(&_methods_cached_itable_indices); }
-  void release_set_methods_cached_itable_indices(int* indices)
-         { OrderAccess::release_store_ptr(&_methods_cached_itable_indices, indices); }
-
   // Lock during initialization
 public:
   // Lock for (1) initialization; (2) access to the ConstantPool of this class.
   // Must be one per class and it has to be a VM internal object so java code
   // cannot lock it (like the mirror).
   // It has to be an object not a Mutex because it's held through java calls.
-  volatile oop init_lock() const;
+  oop init_lock() const;
 private:
+  void fence_and_clear_init_lock();
 
   // Static methods that are used to implement member methods where an exposed this pointer
   // is needed due to possible GCs
@@ -1136,21 +1153,11 @@ class BreakpointInfo;
 
 
 // A collection point for interesting information about the previous
-// version(s) of an InstanceKlass. This class uses weak references to
-// the information so that the information may be collected as needed
-// by the system. If the information is shared, then a regular
-// reference must be used because a weak reference would be seen as
-// collectible. A GrowableArray of PreviousVersionNodes is attached
-// to the InstanceKlass as needed. See PreviousVersionWalker below.
+// version(s) of an InstanceKlass.  A GrowableArray of PreviousVersionNodes
+// is attached to the InstanceKlass as needed. See PreviousVersionWalker below.
 class PreviousVersionNode : public CHeapObj<mtClass> {
  private:
-  // A shared ConstantPool is never collected so we'll always have
-  // a reference to it so we can update items in the cache. We'll
-  // have a weak reference to a non-shared ConstantPool until all
-  // of the methods (EMCP or obsolete) have been collected; the
-  // non-shared ConstantPool becomes collectible at that point.
-  ConstantPool*    _prev_constant_pool;  // regular or weak reference
-  bool    _prev_cp_is_weak;     // true if not a shared ConstantPool
+  ConstantPool*    _prev_constant_pool;
 
   // If the previous version of the InstanceKlass doesn't have any
   // EMCP methods, then _prev_EMCP_methods will be NULL. If all the
@@ -1159,8 +1166,8 @@ class PreviousVersionNode : public CHeapObj<mtClass> {
   GrowableArray<Method*>* _prev_EMCP_methods;
 
 public:
-  PreviousVersionNode(ConstantPool* prev_constant_pool, bool prev_cp_is_weak,
-    GrowableArray<Method*>* prev_EMCP_methods);
+  PreviousVersionNode(ConstantPool* prev_constant_pool,
+                      GrowableArray<Method*>* prev_EMCP_methods);
   ~PreviousVersionNode();
   ConstantPool* prev_constant_pool() const {
     return _prev_constant_pool;
@@ -1171,59 +1178,26 @@ public:
 };
 
 
-// A Handle-ized version of PreviousVersionNode.
-class PreviousVersionInfo : public ResourceObj {
- private:
-  constantPoolHandle   _prev_constant_pool_handle;
-  // If the previous version of the InstanceKlass doesn't have any
-  // EMCP methods, then _prev_EMCP_methods will be NULL. Since the
-  // methods cannot be collected while we hold a handle,
-  // _prev_EMCP_methods should never have a length of zero.
-  GrowableArray<methodHandle>* _prev_EMCP_method_handles;
-
-public:
-  PreviousVersionInfo(PreviousVersionNode *pv_node);
-  ~PreviousVersionInfo();
-  constantPoolHandle prev_constant_pool_handle() const {
-    return _prev_constant_pool_handle;
-  }
-  GrowableArray<methodHandle>* prev_EMCP_method_handles() const {
-    return _prev_EMCP_method_handles;
-  }
-};
-
-
-// Helper object for walking previous versions. This helper cleans up
-// the Handles that it allocates when the helper object is destroyed.
-// The PreviousVersionInfo object returned by next_previous_version()
-// is only valid until a subsequent call to next_previous_version() or
-// the helper object is destroyed.
+// Helper object for walking previous versions.
 class PreviousVersionWalker : public StackObj {
  private:
+  Thread*                               _thread;
   GrowableArray<PreviousVersionNode *>* _previous_versions;
   int                                   _current_index;
-  // Fields for cleaning up when we are done walking the previous versions:
-  // A HandleMark for the PreviousVersionInfo handles:
-  HandleMark                            _hm;
 
-  // It would be nice to have a ResourceMark field in this helper also,
-  // but the ResourceMark code says to be careful to delete handles held
-  // in GrowableArrays _before_ deleting the GrowableArray. Since we
-  // can't guarantee the order in which the fields are destroyed, we
-  // have to let the creator of the PreviousVersionWalker object do
-  // the right thing. Also, adding a ResourceMark here causes an
-  // include loop.
+  // A pointer to the current node object so we can handle the deletes.
+  PreviousVersionNode*                  _current_p;
 
-  // A pointer to the current info object so we can handle the deletes.
-  PreviousVersionInfo *                 _current_p;
+  // The constant pool handle keeps all the methods in this class from being
+  // deallocated from the metaspace during class unloading.
+  constantPoolHandle                    _current_constant_pool_handle;
 
  public:
-  PreviousVersionWalker(InstanceKlass *ik);
-  ~PreviousVersionWalker();
+  PreviousVersionWalker(Thread* thread, InstanceKlass *ik);
 
   // Return the interesting information for the next previous version
   // of the klass. Returns NULL if there are no more previous versions.
-  PreviousVersionInfo* next_previous_version();
+  PreviousVersionNode* next_previous_version();
 };
 
 

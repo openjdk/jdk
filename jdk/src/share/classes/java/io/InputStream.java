@@ -306,8 +306,7 @@ public abstract class InputStream implements Closeable {
      *
      * <p> The general contract of <code>reset</code> is:
      *
-     * <p><ul>
-     *
+     * <ul>
      * <li> If the method <code>markSupported</code> returns
      * <code>true</code>, then:
      *

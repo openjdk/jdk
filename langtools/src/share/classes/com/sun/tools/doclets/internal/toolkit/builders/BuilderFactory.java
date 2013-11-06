@@ -174,10 +174,26 @@ public class BuilderFactory {
     }
 
     /**
+     * Return an instance of the annotation type fields builder for the given
+     * class.
+     *
+     * @return an instance of the annotation type field builder for the given
+     *         annotation type.
+     */
+    public AbstractBuilder getAnnotationTypeFieldsBuilder(
+            AnnotationTypeWriter annotationTypeWriter)
+    throws Exception {
+        return AnnotationTypeFieldBuilder.getInstance(context,
+            annotationTypeWriter.getAnnotationTypeDoc(),
+            writerFactory.getAnnotationTypeFieldWriter(
+                annotationTypeWriter));
+    }
+
+    /**
      * Return an instance of the annotation type member builder for the given
      * class.
      *
-     * @return an instance of the annotation type memebr builder for the given
+     * @return an instance of the annotation type member builder for the given
      *         annotation type.
      */
     public AbstractBuilder getAnnotationTypeOptionalMemberBuilder(
@@ -193,7 +209,7 @@ public class BuilderFactory {
      * Return an instance of the annotation type member builder for the given
      * class.
      *
-     * @return an instance of the annotation type memebr builder for the given
+     * @return an instance of the annotation type member builder for the given
      *         annotation type.
      */
     public AbstractBuilder getAnnotationTypeRequiredMemberBuilder(

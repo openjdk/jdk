@@ -33,9 +33,6 @@ FILES_compiled_properties = \
         sun/util/resources/de/LocaleNames_de.properties \
         sun/util/resources/el/LocaleNames_el.properties \
         sun/util/resources/el/LocaleNames_el_CY.properties \
-        sun/util/resources/en/LocaleNames_en_MT.properties \
-        sun/util/resources/en/LocaleNames_en_PH.properties \
-        sun/util/resources/en/LocaleNames_en_SG.properties \
         sun/util/resources/es/LocaleNames_es.properties \
         sun/util/resources/es/LocaleNames_es_US.properties \
         sun/util/resources/et/LocaleNames_et.properties \
@@ -88,9 +85,6 @@ FILES_compiled_properties = \
         sun/util/resources/de/CalendarData_de.properties \
         sun/util/resources/el/CalendarData_el.properties \
         sun/util/resources/el/CalendarData_el_CY.properties \
-        sun/util/resources/en/CalendarData_en_GB.properties \
-        sun/util/resources/en/CalendarData_en_IE.properties \
-        sun/util/resources/en/CalendarData_en_MT.properties \
         sun/util/resources/es/CalendarData_es.properties \
         sun/util/resources/es/CalendarData_es_ES.properties \
         sun/util/resources/es/CalendarData_es_US.properties \
@@ -164,16 +158,6 @@ FILES_compiled_properties = \
         sun/util/resources/de/CurrencyNames_de_LU.properties \
         sun/util/resources/el/CurrencyNames_el_CY.properties \
         sun/util/resources/el/CurrencyNames_el_GR.properties \
-        sun/util/resources/en/CurrencyNames_en_AU.properties \
-        sun/util/resources/en/CurrencyNames_en_CA.properties \
-        sun/util/resources/en/CurrencyNames_en_GB.properties \
-        sun/util/resources/en/CurrencyNames_en_IE.properties \
-        sun/util/resources/en/CurrencyNames_en_IN.properties \
-        sun/util/resources/en/CurrencyNames_en_MT.properties \
-        sun/util/resources/en/CurrencyNames_en_NZ.properties \
-        sun/util/resources/en/CurrencyNames_en_PH.properties \
-        sun/util/resources/en/CurrencyNames_en_SG.properties \
-        sun/util/resources/en/CurrencyNames_en_ZA.properties \
         sun/util/resources/es/CurrencyNames_es.properties \
         sun/util/resources/es/CurrencyNames_es_AR.properties \
         sun/util/resources/es/CurrencyNames_es_BO.properties \

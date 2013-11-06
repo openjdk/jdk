@@ -42,7 +42,7 @@
 #ifdef __APPLE__
   typedef thread_t thread_id_t;
 #else
-  typedef pthread_t thread_id_t;
+  typedef pid_t thread_id_t;
 #endif
 
   // _pthread_id is the pthread id, which is used by library calls

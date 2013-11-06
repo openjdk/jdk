@@ -23,8 +23,7 @@
  * questions.
  */
 
-// REMIND: import <jawt_md.h>
-#import <JavaVM/jawt_md.h>
+#import <jawt_md.h>
 
 /*
  * The CALayer-based rendering model returns an object conforming

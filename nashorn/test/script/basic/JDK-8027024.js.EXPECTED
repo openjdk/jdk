@@ -1,0 +1,4 @@
+charAt.self.toString
+charAt.pos.valueOf
+charCodeAt.self.toString
+charCodeAt.pos.valueOf

@@ -37,7 +37,7 @@ import java.awt.FontMetrics;
 import java.beans.PropertyChangeEvent;
 
 /**
- * Provides the Synth L&F UI delegate for
+ * Provides the Synth L&amp;F UI delegate for
  * {@link javax.swing.JLabel}.
  *
  * @author Scott Violet
@@ -57,7 +57,7 @@ public class SynthLabelUI extends BasicLabelUI implements SynthUI {
     }
 
     /**
-     * @inheritDoc
+     * {@inheritDoc}
      */
     @Override
     protected void installDefaults(JLabel c) {
@@ -71,7 +71,7 @@ public class SynthLabelUI extends BasicLabelUI implements SynthUI {
     }
 
     /**
-     * @inheritDoc
+     * {@inheritDoc}
      */
     @Override
     protected void uninstallDefaults(JLabel c){
@@ -83,7 +83,7 @@ public class SynthLabelUI extends BasicLabelUI implements SynthUI {
     }
 
     /**
-     * @inheritDoc
+     * {@inheritDoc}
      */
     @Override
     public SynthContext getContext(JComponent c) {
@@ -105,7 +105,7 @@ public class SynthLabelUI extends BasicLabelUI implements SynthUI {
     }
 
     /**
-     * @inheritDoc
+     * {@inheritDoc}
      */
     @Override
     public int getBaseline(JComponent c, int width, int height) {
@@ -218,7 +218,7 @@ public class SynthLabelUI extends BasicLabelUI implements SynthUI {
     }
 
     /**
-     * @inheritDoc
+     * {@inheritDoc}
      */
     @Override
     public void paintBorder(SynthContext context, Graphics g, int x,
@@ -227,7 +227,7 @@ public class SynthLabelUI extends BasicLabelUI implements SynthUI {
     }
 
     /**
-     * @inheritDoc
+     * {@inheritDoc}
      */
     @Override
     public Dimension getPreferredSize(JComponent c) {
@@ -248,7 +248,7 @@ public class SynthLabelUI extends BasicLabelUI implements SynthUI {
     }
 
     /**
-     * @inheritDoc
+     * {@inheritDoc}
      */
     @Override
     public Dimension getMinimumSize(JComponent c) {
@@ -269,7 +269,7 @@ public class SynthLabelUI extends BasicLabelUI implements SynthUI {
     }
 
     /**
-     * @inheritDoc
+     * {@inheritDoc}
      */
     @Override
     public Dimension getMaximumSize(JComponent c) {
@@ -290,7 +290,7 @@ public class SynthLabelUI extends BasicLabelUI implements SynthUI {
     }
 
     /**
-     * @inheritDoc
+     * {@inheritDoc}
      */
     @Override
     public void propertyChange(PropertyChangeEvent e) {

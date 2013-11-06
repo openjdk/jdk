@@ -44,7 +44,7 @@ package java.awt.event;
  *
  * @see ComponentEvent
  * @see ComponentListener
- * @see <a href="http://java.sun.com/docs/books/tutorial/post1.0/ui/componentlistener.html">Tutorial: Writing a Component Listener</a>
+ * @see <a href="http://docs.oracle.com/javase/tutorial/uiswing/events/componentlistener.html">Tutorial: Writing a Component Listener</a>
  *
  * @author Carl Quinn
  * @since 1.1

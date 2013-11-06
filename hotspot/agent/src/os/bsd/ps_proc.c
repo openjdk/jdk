@@ -131,7 +131,7 @@ static bool process_get_lwp_info(struct ps_prochandle *ph, lwpid_t lwp_id, void 
 
 static bool ptrace_continue(pid_t pid, int signal) {
   // pass the signal to the process so we don't swallow it
-  if (ptrace(PTRACE_CONT, pid, NULL, signal) < 0) {
+  if (ptrace(PT_CONTINUE, pid, NULL, signal) < 0) {
     print_debug("ptrace(PTRACE_CONT, ..) failed for %d\n", pid);
     return false;
   }
@@ -434,7 +434,6 @@ static ps_prochandle_ops process_ops = {
 // attach to the process. One and only one exposed stuff
 struct ps_prochandle* Pgrab(pid_t pid) {
   struct ps_prochandle* ph = NULL;
-  thread_info* thr = NULL;
 
   if ( (ph = (struct ps_prochandle*) calloc(1, sizeof(struct ps_prochandle))) == NULL) {
      print_debug("can't allocate memory for ps_prochandle\n");

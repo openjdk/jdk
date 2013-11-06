@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -43,6 +43,7 @@ import java.io.Reader;
 import java.io.Writer;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.EnumSet;
 import java.util.List;
 import java.util.Properties;
 import javax.swing.JButton;
@@ -71,6 +72,32 @@ import org.apache.tools.ant.Task;
  * is invoked to allow the user to set or reset values for use in property mode.
  */
 public class SelectToolTask extends Task {
+
+    enum ToolChoices {
+        NONE(""),
+        JAVAC("javac"),
+        JAVADOC("javadoc"),
+        JAVAH("javah"),
+        JAVAP("javap");
+
+        String toolName;
+        boolean bootstrap;
+
+        ToolChoices(String toolName) {
+            this(toolName, false);
+        }
+
+        ToolChoices(String toolName, boolean bootstrap) {
+            this.toolName = toolName;
+            this.bootstrap = bootstrap;
+        }
+
+        @Override
+        public String toString() {
+            return toolName;
+        }
+    }
+
     /**
      * Set the location of the private properties file used to keep the retain
      * user preferences for this repository.
@@ -97,6 +124,14 @@ public class SelectToolTask extends Task {
     }
 
     /**
+     * Set the name of the property which will be set to the execution args of the
+     * selected tool, if any. The args default to an empty string.
+     */
+    public void setBootstrapProperty(String bootstrapProperty) {
+        this.bootstrapProperty = bootstrapProperty;
+    }
+
+    /**
      * Specify whether or not to pop up a dialog if the user has not specified
      * a default value for a property.
      */
@@ -110,6 +145,7 @@ public class SelectToolTask extends Task {
 
         Properties props = readProperties(propertyFile);
         toolName = props.getProperty("tool.name");
+        toolBootstrap = props.getProperty("tool.bootstrap") != null;
         if (toolName != null) {
             toolArgs = props.getProperty(toolName + ".args", "");
         }
@@ -123,6 +159,8 @@ public class SelectToolTask extends Task {
         // finally, return required values, if any
         if (toolProperty != null && !(toolName == null || toolName.equals(""))) {
             p.setProperty(toolProperty, toolName);
+            if (toolBootstrap)
+                p.setProperty(bootstrapProperty, "true");
 
             if (argsProperty != null && toolArgs != null)
                 p.setProperty(argsProperty, toolArgs);
@@ -134,14 +172,20 @@ public class SelectToolTask extends Task {
         JOptionPane p = createPane(guiProps);
         p.createDialog("Select Tool").setVisible(true);
 
-        toolName = (String) toolChoice.getSelectedItem();
+        toolName = ((ToolChoices)toolChoice.getSelectedItem()).toolName;
         toolArgs = argsField.getText();
-
+        toolBootstrap = bootstrapCheckbox.isSelected();
         if (defaultCheck.isSelected()) {
             if (toolName.equals("")) {
                 fileProps.remove("tool.name");
+                fileProps.remove("tool.bootstrap");
             } else {
                 fileProps.put("tool.name", toolName);
+                if (toolBootstrap) {
+                    fileProps.put("tool.bootstrap", "true");
+                } else {
+                    fileProps.remove("tool.bootstrap");
+                }
                 fileProps.put(toolName + ".args", toolArgs);
             }
             writeProperties(propertyFile, fileProps);
@@ -154,32 +198,38 @@ public class SelectToolTask extends Task {
         lc.insets.right = 10;
         lc.insets.bottom = 3;
         GridBagConstraints fc = new GridBagConstraints();
-        fc.anchor = GridBagConstraints.WEST;
         fc.gridx = 1;
-        fc.gridwidth = GridBagConstraints.REMAINDER;
+        fc.gridwidth = GridBagConstraints.NONE;
         fc.insets.bottom = 3;
+
+        JPanel toolPane = new JPanel(new GridBagLayout());
 
         JLabel toolLabel = new JLabel("Tool:");
         body.add(toolLabel, lc);
-        String[] toolChoices = { "apt", "javac", "javadoc", "javah", "javap" };
-        if (true || toolProperty == null) {
-            // include empty value in setup mode
-            List<String> l = new ArrayList<String>(Arrays.asList(toolChoices));
-            l.add(0, "");
-            toolChoices = l.toArray(new String[l.size()]);
-        }
-        toolChoice = new JComboBox(toolChoices);
+        EnumSet<ToolChoices> toolChoices = toolProperty == null ?
+                EnumSet.allOf(ToolChoices.class) : EnumSet.range(ToolChoices.JAVAC, ToolChoices.JAVAP);
+        toolChoice = new JComboBox(toolChoices.toArray());
         if (toolName != null)
-            toolChoice.setSelectedItem(toolName);
+            toolChoice.setSelectedItem(ToolChoices.valueOf(toolName.toUpperCase()));
         toolChoice.addItemListener(new ItemListener() {
             public void itemStateChanged(ItemEvent e) {
-                String tn = (String) e.getItem();
+                String tn = ((ToolChoices)e.getItem()).toolName;
                 argsField.setText(getDefaultArgsForTool(props, tn));
                 if (toolProperty != null)
                     okButton.setEnabled(!tn.equals(""));
             }
         });
-        body.add(toolChoice, fc);
+        GridBagConstraints checkConstraint = new GridBagConstraints();
+        fc.anchor = GridBagConstraints.EAST;
+
+        GridBagConstraints toolConstraint = new GridBagConstraints();
+        fc.anchor = GridBagConstraints.WEST;
+
+        toolPane.add(toolChoice, toolConstraint);
+        bootstrapCheckbox = new JCheckBox("bootstrap", toolBootstrap);
+        toolPane.add(bootstrapCheckbox, checkConstraint);
+
+        body.add(toolPane, fc);
 
         argsField = new JTextField(getDefaultArgsForTool(props, toolName), 40);
         if (toolProperty == null || argsProperty != null) {
@@ -190,7 +240,7 @@ public class SelectToolTask extends Task {
                 public void focusGained(FocusEvent e) {
                 }
                 public void focusLost(FocusEvent e) {
-                    String toolName = (String) toolChoice.getSelectedItem();
+                    String toolName = ((ToolChoices)toolChoice.getSelectedItem()).toolName;
                     if (toolName.length() > 0)
                         props.put(toolName + ".args", argsField.getText());
                 }
@@ -271,16 +321,19 @@ public class SelectToolTask extends Task {
     // Ant task parameters
     private boolean askIfUnset;
     private String toolProperty;
+    private String bootstrapProperty;
     private String argsProperty;
     private File propertyFile;
 
     // GUI components
     private JComboBox toolChoice;
+    private JCheckBox bootstrapCheckbox;
     private JTextField argsField;
     private JCheckBox defaultCheck;
     private JButton okButton;
 
     // Result values for the client
     private String toolName;
+    private boolean toolBootstrap;
     private String toolArgs;
 }

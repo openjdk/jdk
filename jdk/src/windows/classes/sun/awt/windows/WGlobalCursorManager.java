@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2000, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -48,7 +48,6 @@ public final class WGlobalCursorManager extends GlobalCursorManager {
 
     protected native void setCursor(Component comp, Cursor cursor, boolean u);
     protected native void getCursorPos(Point p);
-    protected native Component findComponentAt(Container con, int x, int y);
     /*
      * two native methods to call corresponding methods in Container and
      * Component

@@ -23,23 +23,8 @@
  * questions.
  */
 
-AudioClip             = Java.type("javafx.scene.media.AudioClip");
-AudioClipBuilder      = Java.type("javafx.scene.media.AudioClipBuilder");
-AudioEqualizer        = Java.type("javafx.scene.media.AudioEqualizer");
-AudioSpectrumListener = Java.type("javafx.scene.media.AudioSpectrumListener");
-AudioTrack            = Java.type("javafx.scene.media.AudioTrack");
-EqualizerBand         = Java.type("javafx.scene.media.EqualizerBand");
-Media                 = Java.type("javafx.scene.media.Media");
-MediaBuilder          = Java.type("javafx.scene.media.MediaBuilder");
-MediaErrorEvent       = Java.type("javafx.scene.media.MediaErrorEvent");
-MediaException        = Java.type("javafx.scene.media.MediaException");
-MediaException$Type   = Java.type("javafx.scene.media.MediaException$Type");
-MediaMarkerEvent      = Java.type("javafx.scene.media.MediaMarkerEvent");
-MediaPlayer           = Java.type("javafx.scene.media.MediaPlayer");
-MediaPlayer$Status    = Java.type("javafx.scene.media.MediaPlayer$Status");
-MediaPlayerBuilder    = Java.type("javafx.scene.media.MediaPlayerBuilder");
-MediaView             = Java.type("javafx.scene.media.MediaView");
-MediaViewBuilder      = Java.type("javafx.scene.media.MediaViewBuilder");
-SubtitleTrack         = Java.type("javafx.scene.media.SubtitleTrack");
-Track                 = Java.type("javafx.scene.media.Track");
-VideoTrack            = Java.type("javafx.scene.media.VideoTrack");
+if (!this.JFX_BASE_CLASSES) {
+    load("fx:base.js")
+}
+
+LOAD_FX_CLASSES(JFX_MEDIA_CLASSES);

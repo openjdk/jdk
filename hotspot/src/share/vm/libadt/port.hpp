@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -163,8 +163,8 @@ extern void  safe_free   (const char *file, unsigned line, void *ptr);
 extern void *safe_calloc (const char *file, unsigned line, unsigned nitems, unsigned size);
 extern void *safe_realloc(const char *file, unsigned line, void *ptr, unsigned size);
 extern char *safe_strdup (const char *file, unsigned line, const char *src);
-inline void *operator new( size_t size ) { return malloc(size); }
-inline void operator delete( void *ptr ) { free(ptr); }
+inline void *operator new( size_t size ) throw() { return malloc(size); }
+inline void operator delete( void *ptr )         { free(ptr); }
 #endif
 
 //-----------------------------------------------------------------------------

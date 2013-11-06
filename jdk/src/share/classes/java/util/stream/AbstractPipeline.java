@@ -71,6 +71,9 @@ import java.util.function.Supplier;
  */
 abstract class AbstractPipeline<E_IN, E_OUT, S extends BaseStream<E_OUT, S>>
         extends PipelineHelper<E_OUT> implements BaseStream<E_OUT, S> {
+    private static final String MSG_STREAM_LINKED = "stream has already been operated upon or closed";
+    private static final String MSG_CONSUMED = "source already consumed or closed";
+
     /**
      * Backlink to the head of the pipeline chain (self if this is the source
      * stage).
@@ -137,6 +140,8 @@ abstract class AbstractPipeline<E_IN, E_OUT, S extends BaseStream<E_OUT, S>>
      */
     private boolean sourceAnyStateful;
 
+    private Runnable sourceCloseAction;
+
     /**
      * True if pipeline is parallel, otherwise the pipeline is sequential; only
      * valid for the source stage.
@@ -195,7 +200,7 @@ abstract class AbstractPipeline<E_IN, E_OUT, S extends BaseStream<E_OUT, S>>
      */
     AbstractPipeline(AbstractPipeline<?, E_IN, ?> previousStage, int opFlags) {
         if (previousStage.linkedOrConsumed)
-            throw new IllegalStateException("stream has already been operated upon");
+            throw new IllegalStateException(MSG_STREAM_LINKED);
         previousStage.linkedOrConsumed = true;
         previousStage.nextStage = this;
 
@@ -221,7 +226,7 @@ abstract class AbstractPipeline<E_IN, E_OUT, S extends BaseStream<E_OUT, S>>
     final <R> R evaluate(TerminalOp<E_OUT, R> terminalOp) {
         assert getOutputShape() == terminalOp.inputShape();
         if (linkedOrConsumed)
-            throw new IllegalStateException("stream has already been operated upon");
+            throw new IllegalStateException(MSG_STREAM_LINKED);
         linkedOrConsumed = true;
 
         return isParallel()
@@ -238,7 +243,7 @@ abstract class AbstractPipeline<E_IN, E_OUT, S extends BaseStream<E_OUT, S>>
     @SuppressWarnings("unchecked")
     final Node<E_OUT> evaluateToArrayNode(IntFunction<E_OUT[]> generator) {
         if (linkedOrConsumed)
-            throw new IllegalStateException("stream has already been operated upon");
+            throw new IllegalStateException(MSG_STREAM_LINKED);
         linkedOrConsumed = true;
 
         // If the last intermediate operation is stateful then
@@ -266,7 +271,7 @@ abstract class AbstractPipeline<E_IN, E_OUT, S extends BaseStream<E_OUT, S>>
             throw new IllegalStateException();
 
         if (linkedOrConsumed)
-            throw new IllegalStateException("stream has already been operated upon");
+            throw new IllegalStateException(MSG_STREAM_LINKED);
         linkedOrConsumed = true;
 
         if (sourceStage.sourceSpliterator != null) {
@@ -282,7 +287,7 @@ abstract class AbstractPipeline<E_IN, E_OUT, S extends BaseStream<E_OUT, S>>
             return s;
         }
         else {
-            throw new IllegalStateException("source already consumed");
+            throw new IllegalStateException(MSG_CONSUMED);
         }
     }
 
@@ -302,12 +307,35 @@ abstract class AbstractPipeline<E_IN, E_OUT, S extends BaseStream<E_OUT, S>>
         return (S) this;
     }
 
+    @Override
+    public void close() {
+        linkedOrConsumed = true;
+        sourceSupplier = null;
+        sourceSpliterator = null;
+        if (sourceStage.sourceCloseAction != null) {
+            Runnable closeAction = sourceStage.sourceCloseAction;
+            sourceStage.sourceCloseAction = null;
+            closeAction.run();
+        }
+    }
+
+    @Override
+    @SuppressWarnings("unchecked")
+    public S onClose(Runnable closeHandler) {
+        Runnable existingHandler = sourceStage.sourceCloseAction;
+        sourceStage.sourceCloseAction =
+                (existingHandler == null)
+                ? closeHandler
+                : Streams.composeWithExceptions(existingHandler, closeHandler);
+        return (S) this;
+    }
+
     // Primitive specialization use co-variant overrides, hence is not final
     @Override
     @SuppressWarnings("unchecked")
     public Spliterator<E_OUT> spliterator() {
         if (linkedOrConsumed)
-            throw new IllegalStateException("stream has already been operated upon");
+            throw new IllegalStateException(MSG_STREAM_LINKED);
         linkedOrConsumed = true;
 
         if (this == sourceStage) {
@@ -324,7 +352,7 @@ abstract class AbstractPipeline<E_IN, E_OUT, S extends BaseStream<E_OUT, S>>
                 return lazySpliterator(s);
             }
             else {
-                throw new IllegalStateException("source already consumed");
+                throw new IllegalStateException(MSG_CONSUMED);
             }
         }
         else {
@@ -424,7 +452,7 @@ abstract class AbstractPipeline<E_IN, E_OUT, S extends BaseStream<E_OUT, S>>
             sourceStage.sourceSupplier = null;
         }
         else {
-            throw new IllegalStateException("source already consumed");
+            throw new IllegalStateException(MSG_CONSUMED);
         }
 
         if (isParallel()) {

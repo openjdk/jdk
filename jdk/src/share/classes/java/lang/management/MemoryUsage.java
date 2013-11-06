@@ -79,7 +79,7 @@ import sun.management.MemoryUsageCompositeData;
  * </table>
  *
  * Below is a picture showing an example of a memory pool:
- * <p>
+ *
  * <pre>
  *        +----------------------------------------------+
  *        +////////////////           |                  +
@@ -250,7 +250,7 @@ public class MemoryUsage {
      * Returns a <tt>MemoryUsage</tt> object represented by the
      * given <tt>CompositeData</tt>. The given <tt>CompositeData</tt>
      * must contain the following attributes:
-     * <p>
+     *
      * <blockquote>
      * <table border summary="The attributes and the types the given CompositeData contains">
      * <tr>

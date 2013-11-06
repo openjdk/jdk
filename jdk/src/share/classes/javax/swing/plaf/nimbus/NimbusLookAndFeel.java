@@ -124,7 +124,7 @@ public class NimbusLookAndFeel extends SynthLookAndFeel {
     }
 
     /**
-     * @inheritDoc
+     * {@inheritDoc}
      */
     @Override public UIDefaults getDefaults() {
         if (uiDefaults == null){
@@ -261,7 +261,7 @@ public class NimbusLookAndFeel extends SynthLookAndFeel {
     }
 
     /**
-     * @inheritDoc
+     * {@inheritDoc}
      * @return {@code true}
      */
     @Override public boolean shouldUpdateStyleOnAncestorChanged() {
@@ -269,7 +269,7 @@ public class NimbusLookAndFeel extends SynthLookAndFeel {
     }
 
     /**
-     * @inheritDoc
+     * {@inheritDoc}
      *
      * <p>Overridden to return {@code true} when one of the following
      * properties change:

@@ -28,9 +28,7 @@ package jdk.nashorn.internal.ir;
 import static jdk.nashorn.internal.codegen.CompilerConstants.__DIR__;
 import static jdk.nashorn.internal.codegen.CompilerConstants.__FILE__;
 import static jdk.nashorn.internal.codegen.CompilerConstants.__LINE__;
-import static jdk.nashorn.internal.codegen.ObjectClassGenerator.DEBUG_FIELDS;
 
-import jdk.nashorn.internal.codegen.ObjectClassGenerator;
 import jdk.nashorn.internal.codegen.types.Type;
 import jdk.nashorn.internal.ir.annotations.Immutable;
 import jdk.nashorn.internal.ir.visitor.NodeVisitor;
@@ -39,10 +37,11 @@ import jdk.nashorn.internal.ir.visitor.NodeVisitor;
  * IR representation for an identifier.
  */
 @Immutable
-public final class IdentNode extends Expression implements PropertyKey, TypeOverride<IdentNode>, FunctionCall {
-    private static final int PROPERTY_NAME    = 1 << 0;
-    private static final int INITIALIZED_HERE = 1 << 1;
-    private static final int FUNCTION         = 1 << 2;
+public final class IdentNode extends Expression implements PropertyKey, FunctionCall {
+    private static final int PROPERTY_NAME     = 1 << 0;
+    private static final int INITIALIZED_HERE  = 1 << 1;
+    private static final int FUNCTION          = 1 << 2;
+    private static final int FUTURESTRICT_NAME = 1 << 3;
 
     /** Identifier. */
     private final String name;
@@ -100,19 +99,6 @@ public final class IdentNode extends Expression implements PropertyKey, TypeOver
         return callSiteType != null;
     }
 
-    @Override
-    public IdentNode setType(final TemporarySymbols ts, final LexicalContext lc, final Type type) {
-        // do NOT, repeat NOT touch the symbol here. it might be a local variable or whatever. This is the override if it isn't
-        if (this.callSiteType == type) {
-            return this;
-        }
-        if (DEBUG_FIELDS && getSymbol() != null && !Type.areEquivalent(getSymbol().getSymbolType(), type)) {
-            ObjectClassGenerator.LOG.info(getClass().getName(), " ", this, " => ", type, " instead of ", getType());
-        }
-
-        return new IdentNode(this, name, type, flags);
-    }
-
     /**
      * Assist in IR navigation.
      *
@@ -152,28 +138,9 @@ public final class IdentNode extends Expression implements PropertyKey, TypeOver
         return getName();
     }
 
-    /**
-     * We can only override type if the symbol lives in the scope, as otherwise
-     * it is strongly determined by the local variable already allocated.
-     *
-     * <p>We also return true if the symbol represents the return value of a function with a
-     * non-generic return type as in this case we need to propagate the type instead of
-     * converting to object, for example if the symbol is used as the left hand side of an
-     * assignment such as in the code below.</p>
-     *
-     * <pre>
-     *   try {
-     *     return 2;
-     *   } finally {
-     *     return 3;
-     *   }
-     * }
-     *
-     * @return true if can have callsite type
-     */
     @Override
-    public boolean canHaveCallSiteType() {
-        return getSymbol() != null && (getSymbol().isScope() || getSymbol().isNonGenericReturn());
+    public boolean isLocal() {
+        return !getSymbol().isScope();
     }
 
     /**
@@ -193,6 +160,25 @@ public final class IdentNode extends Expression implements PropertyKey, TypeOver
             return this;
         }
         return new IdentNode(this, name, callSiteType, flags | PROPERTY_NAME);
+    }
+
+    /**
+     * Check if this IdentNode is a future strict name
+     * @return true if this is a future strict name
+     */
+    public boolean isFutureStrictName() {
+        return (flags & FUTURESTRICT_NAME) != 0;
+    }
+
+    /**
+     * Flag this IdentNode as a future strict name
+     * @return a node equivalent to this one except for the requested change.
+     */
+    public IdentNode setIsFutureStrictName() {
+        if (isFutureStrictName()) {
+            return this;
+        }
+        return new IdentNode(this, name, callSiteType, flags | FUTURESTRICT_NAME);
     }
 
     /**

@@ -126,7 +126,7 @@ AWT_ASSERT_APPKIT_THREAD;
 
     self.cglLayer = nil;
 
-    JNIEnv *env = [ThreadUtilities getJNIEnv];
+    JNIEnv *env = [ThreadUtilities getJNIEnvUncached];
     (*env)->DeleteGlobalRef(env, m_cPlatformView);
     m_cPlatformView = NULL;
 
@@ -272,7 +272,6 @@ AWT_ASSERT_APPKIT_THREAD;
  */
 
 - (void) keyDown: (NSEvent *)event {
-
     fProcessingKeystroke = YES;
     fKeyEventsNeeded = YES;
 
@@ -308,6 +307,23 @@ AWT_ASSERT_APPKIT_THREAD;
 
 - (BOOL) performKeyEquivalent: (NSEvent *) event {
     [self deliverJavaKeyEventHelper: event];
+
+    // Workaround for 8020209: special case for "Cmd =" and "Cmd ." 
+    // because Cocoa calls performKeyEquivalent twice for these keystrokes  
+    NSUInteger modFlags = [event modifierFlags] & 
+        (NSCommandKeyMask | NSAlternateKeyMask | NSShiftKeyMask | NSControlKeyMask);
+    if (modFlags == NSCommandKeyMask) {
+        NSString *eventChars = [event charactersIgnoringModifiers];
+        if ([eventChars length] == 1) {
+            unichar ch = [eventChars characterAtIndex:0];
+            if (ch == '=' || ch == '.') {
+                [[NSApp mainMenu] performKeyEquivalent: event];
+                return YES;
+            }
+        }
+
+    }
+
     return NO;
 }
 
@@ -387,7 +403,7 @@ AWT_ASSERT_APPKIT_THREAD;
         [rolloverTrackingArea release];
     }
 
-    int options = (NSTrackingActiveInActiveApp | NSTrackingMouseEnteredAndExited |
+    int options = (NSTrackingActiveAlways | NSTrackingMouseEnteredAndExited |
                    NSTrackingMouseMoved | NSTrackingEnabledDuringMouseDrag);
 
     rolloverTrackingArea = [[NSTrackingArea alloc] initWithRect:[self visibleRect]
@@ -580,7 +596,7 @@ AWT_ASSERT_APPKIT_THREAD;
 
 // --- Services menu support for lightweights ---
 
-// finds the focused accessable element, and if it's a text element, obtains the text from it
+// finds the focused accessible element, and if it is a text element, obtains the text from it
 - (NSString *)accessibleSelectedText
 {
     id focused = [self accessibilityFocusedUIElement];
@@ -598,7 +614,7 @@ AWT_ASSERT_APPKIT_THREAD;
     return rtfdData;
 }
 
-// finds the focused accessable element, and if it's a text element, sets the text in it
+// finds the focused accessible element, and if it is a text element, sets the text in it
 - (BOOL)replaceAccessibleTextSelection:(NSString *)text
 {
     id focused = [self accessibilityFocusedUIElement];

@@ -43,12 +43,12 @@ class UnixMountEntry {
     }
 
     String name() {
-        return new String(name);
+        return Util.toString(name);
     }
 
     String fstype() {
         if (fstypeAsString == null)
-            fstypeAsString = new String(fstype);
+            fstypeAsString = Util.toString(fstype);
         return fstypeAsString;
     }
 
@@ -65,7 +65,7 @@ class UnixMountEntry {
      */
     boolean hasOption(String requested) {
         if (optionsAsString == null)
-            optionsAsString = new String(opts);
+            optionsAsString = Util.toString(opts);
         for (String opt: Util.split(optionsAsString, ',')) {
             if (opt.equals(requested))
                 return true;

@@ -7,14 +7,6 @@
  */
 public class MethodReference47 {
 
-    static int assertionCount = 0;
-
-    static void assertTrue(boolean cond) {
-        assertionCount++;
-        if (!cond)
-            throw new AssertionError();
-    }
-
     interface SAM1 {
        void m(Integer s);
     }
@@ -34,7 +26,7 @@ public class MethodReference47 {
     static void g2(SAM2 s) { }
 
     public static void main(String[] args) {
-        g1(MethodReference46::m);
-        g2(MethodReference46::m);
+        g1(MethodReference47::m);
+        g2(MethodReference47::m);
     }
 }

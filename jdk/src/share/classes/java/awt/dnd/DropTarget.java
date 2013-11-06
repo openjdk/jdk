@@ -305,7 +305,7 @@ public class DropTarget implements DropTargetListener, Serializable {
      * <P>
      * @param dtl The new <code>DropTargetListener</code>
      * <P>
-     * @throws <code>TooManyListenersException</code> if a
+     * @throws TooManyListenersException if a
      * <code>DropTargetListener</code> is already added to this
      * <code>DropTarget</code>.
      */
@@ -351,6 +351,8 @@ public class DropTarget implements DropTargetListener, Serializable {
      * @see #isActive
      */
     public synchronized void dragEnter(DropTargetDragEvent dtde) {
+        isDraggingInside = true;
+
         if (!active) return;
 
         if (dtListener != null) {
@@ -421,6 +423,8 @@ public class DropTarget implements DropTargetListener, Serializable {
      * @see #isActive
      */
     public synchronized void dragExit(DropTargetEvent dte) {
+        isDraggingInside = false;
+
         if (!active) return;
 
         if (dtListener != null && active) dtListener.dragExit(dte);
@@ -444,6 +448,8 @@ public class DropTarget implements DropTargetListener, Serializable {
      * @see #isActive
      */
     public synchronized void drop(DropTargetDropEvent dtde) {
+        isDraggingInside = false;
+
         clearAutoscroll();
 
         if (dtListener != null && active)
@@ -533,6 +539,12 @@ public class DropTarget implements DropTargetListener, Serializable {
             ((DropTargetPeer)nativePeer).removeDropTarget(this);
 
         componentPeer = nativePeer = null;
+
+        synchronized (this) {
+            if (isDraggingInside) {
+                dragExit(new DropTargetEvent(getDropTargetContext()));
+            }
+        }
     }
 
     /**
@@ -600,7 +612,7 @@ public class DropTarget implements DropTargetListener, Serializable {
             dropTargetContext =
                 (DropTargetContext)f.get("dropTargetContext", null);
         } catch (IllegalArgumentException e) {
-            // Pre-1.4 support. 'dropTargetContext' was previoulsy transient
+            // Pre-1.4 support. 'dropTargetContext' was previously transient
         }
         if (dropTargetContext == null) {
             dropTargetContext = createDropTargetContext();
@@ -777,7 +789,7 @@ public class DropTarget implements DropTargetListener, Serializable {
     }
 
     /**
-     * update autoscrolling with current cursor locn
+     * update autoscrolling with current cursor location
      * <P>
      * @param dragCursorLocn the <code>Point</code>
      */
@@ -832,7 +844,7 @@ public class DropTarget implements DropTargetListener, Serializable {
     int     actions = DnDConstants.ACTION_COPY_OR_MOVE;
 
     /**
-     * <code>true</code> if the DropTarget is accepting Drag & Drop operations.
+     * <code>true</code> if the DropTarget is accepting Drag &amp; Drop operations.
      *
      * @serial
      */
@@ -855,4 +867,9 @@ public class DropTarget implements DropTargetListener, Serializable {
      */
 
     private transient FlavorMap flavorMap;
+
+    /*
+     * If the dragging is currently inside this drop target
+     */
+    private transient boolean isDraggingInside;
 }

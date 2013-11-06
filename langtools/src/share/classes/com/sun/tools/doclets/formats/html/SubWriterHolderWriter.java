@@ -92,7 +92,7 @@ public abstract class SubWriterHolderWriter extends HtmlDocletWriter {
         else {
             caption = getTableCaption(mw.getCaption());
         }
-        Content table = HtmlTree.TABLE(HtmlStyle.overviewSummary, 0, 3, 0,
+        Content table = HtmlTree.TABLE(HtmlStyle.memberSummary, 0, 3, 0,
                 mw.getTableSummary(), caption);
         table.addContent(getSummaryTableHeader(mw.getSummaryTableHeader(cd), "col"));
         for (int i = 0; i < tableContents.size(); i++) {
@@ -175,8 +175,8 @@ public abstract class SubWriterHolderWriter extends HtmlDocletWriter {
         Tag[] deprs = member.tags("deprecated");
         Content div;
         if (Util.isDeprecated((ProgramElementDoc) member)) {
-            Content strong = HtmlTree.SPAN(HtmlStyle.strong, deprecatedPhrase);
-            div = HtmlTree.DIV(HtmlStyle.block, strong);
+            Content deprLabel = HtmlTree.SPAN(HtmlStyle.deprecatedLabel, deprecatedPhrase);
+            div = HtmlTree.DIV(HtmlStyle.block, deprLabel);
             div.addContent(getSpace());
             if (deprs.length > 0) {
                 addInlineDeprecatedComment(member, deprs[0], div);
@@ -186,8 +186,8 @@ public abstract class SubWriterHolderWriter extends HtmlDocletWriter {
         } else {
             ClassDoc cd = ((ProgramElementDoc)member).containingClass();
             if (cd != null && Util.isDeprecated(cd)) {
-                Content strong = HtmlTree.SPAN(HtmlStyle.strong, deprecatedPhrase);
-                div = HtmlTree.DIV(HtmlStyle.block, strong);
+                Content deprLabel = HtmlTree.SPAN(HtmlStyle.deprecatedLabel, deprecatedPhrase);
+                div = HtmlTree.DIV(HtmlStyle.block, deprLabel);
                 div.addContent(getSpace());
                 tdSummary.addContent(div);
             }

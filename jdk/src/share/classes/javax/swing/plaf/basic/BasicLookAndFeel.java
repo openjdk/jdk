@@ -96,7 +96,7 @@ import java.beans.PropertyChangeEvent;
  * future Swing releases. The current serialization support is
  * appropriate for short term storage or RMI between applications running
  * the same version of Swing.  As of 1.4, support for long term storage
- * of all JavaBeans<sup><font size="-2">TM</font></sup>
+ * of all JavaBeans&trade;
  * has been added to the <code>java.beans</code> package.
  * Please see {@link java.beans.XMLEncoder}.
  *
@@ -433,7 +433,7 @@ public abstract class BasicLookAndFeel extends LookAndFeel implements Serializab
      * used for getting localized defaults.  Also initialize the default
      * locale used when no locale is passed into UIDefaults.get().  The
      * default locale should generally not be relied upon. It is here for
-     * compatability with releases prior to 1.4.
+     * compatibility with releases prior to 1.4.
      */
     private void initResourceBundle(UIDefaults table) {
         table.setDefaultLocale( Locale.getDefault() );

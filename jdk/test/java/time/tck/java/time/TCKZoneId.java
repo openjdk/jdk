@@ -76,6 +76,7 @@ import java.time.ZoneOffset;
 import java.time.format.TextStyle;
 import java.time.temporal.TemporalAccessor;
 import java.time.temporal.TemporalField;
+import java.time.temporal.TemporalQueries;
 import java.time.temporal.TemporalQuery;
 import java.time.zone.ZoneRulesException;
 import java.util.HashMap;
@@ -91,151 +92,6 @@ import org.testng.annotations.Test;
  */
 @Test
 public class TCKZoneId extends AbstractTCKTest {
-
-    //-----------------------------------------------------------------------
-    @Test
-    public void test_serialization() throws Exception {
-        assertSerializable(ZoneId.of("Europe/London"));
-        assertSerializable(ZoneId.of("America/Chicago"));
-    }
-
-    @Test
-    public void test_serialization_format() throws Exception {
-        ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        try (DataOutputStream dos = new DataOutputStream(baos) ) {
-            dos.writeByte(7);
-            dos.writeUTF("Europe/London");
-        }
-        byte[] bytes = baos.toByteArray();
-        assertSerializedBySer(ZoneId.of("Europe/London"), bytes);
-    }
-
-    @Test
-    public void test_deserialization_lenient_characters() throws Exception {
-        // an ID can be loaded without validation during deserialization
-        String id = "QWERTYUIOPASDFGHJKLZXCVBNM~/._+-";
-        ZoneId deser = deserialize(id);
-        // getId, equals, hashCode, toString and normalized are OK
-        assertEquals(deser.getId(), id);
-        assertEquals(deser.toString(), id);
-        assertEquals(deser, deser);
-        assertEquals(deser.hashCode(), deser.hashCode());
-        assertEquals(deser.normalized(), deser);
-        // getting the rules is not
-        try {
-            deser.getRules();
-            fail();
-        } catch (ZoneRulesException ex) {
-            // expected
-        }
-    }
-
-    @Test(expectedExceptions=DateTimeException.class)
-    public void test_deserialization_lenient_badCharacters() throws Exception {
-        // an ID can be loaded without validation during deserialization
-        // but there is a check to ensure the ID format is valid
-        deserialize("|!?");
-    }
-
-    @Test(dataProvider="offsetBasedValid")
-    public void test_deserialization_lenient_offsetNotAllowed_noPrefix(String input, String resolvedId) throws Exception {
-        ZoneId deserialized = deserialize(input);
-        assertEquals(deserialized, ZoneId.of(input));
-        assertEquals(deserialized, ZoneId.of(resolvedId));
-    }
-
-    @Test(dataProvider="offsetBasedValidPrefix")
-    public void test_deserialization_lenient_offsetNotAllowed_prefixUTC(String input, String resolvedId, String offsetId) throws Exception {
-        ZoneId deserialized = deserialize("UTC" + input);
-        assertEquals(deserialized, ZoneId.of("UTC" + input));
-        assertEquals(deserialized, ZoneId.of("UTC" + resolvedId));
-    }
-
-    @Test(dataProvider="offsetBasedValidPrefix")
-    public void test_deserialization_lenient_offsetNotAllowed_prefixGMT(String input, String resolvedId, String offsetId) throws Exception {
-        ZoneId deserialized = deserialize("GMT" + input);
-        assertEquals(deserialized, ZoneId.of("GMT" + input));
-        assertEquals(deserialized, ZoneId.of("GMT" + resolvedId));
-    }
-
-    @Test(dataProvider="offsetBasedValidPrefix")
-    public void test_deserialization_lenient_offsetNotAllowed_prefixUT(String input, String resolvedId, String offsetId) throws Exception {
-        ZoneId deserialized = deserialize("UT" + input);
-        assertEquals(deserialized, ZoneId.of("UT" + input));
-        assertEquals(deserialized, ZoneId.of("UT" + resolvedId));
-    }
-
-    private ZoneId deserialize(String id) throws Exception {
-        String serClass = ZoneId.class.getPackage().getName() + ".Ser";
-        Class<?> serCls = Class.forName(serClass);
-        Field field = serCls.getDeclaredField("serialVersionUID");
-        field.setAccessible(true);
-        long serVer = (Long) field.get(null);
-        ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        try (DataOutputStream dos = new DataOutputStream(baos)) {
-            dos.writeShort(ObjectStreamConstants.STREAM_MAGIC);
-            dos.writeShort(ObjectStreamConstants.STREAM_VERSION);
-            dos.writeByte(ObjectStreamConstants.TC_OBJECT);
-            dos.writeByte(ObjectStreamConstants.TC_CLASSDESC);
-            dos.writeUTF(serClass);
-            dos.writeLong(serVer);
-            dos.writeByte(ObjectStreamConstants.SC_EXTERNALIZABLE | ObjectStreamConstants.SC_BLOCK_DATA);
-            dos.writeShort(0);  // number of fields
-            dos.writeByte(ObjectStreamConstants.TC_ENDBLOCKDATA);  // end of classdesc
-            dos.writeByte(ObjectStreamConstants.TC_NULL);  // no superclasses
-            dos.writeByte(ObjectStreamConstants.TC_BLOCKDATA);
-            dos.writeByte(1 + 2 + id.length());  // length of data (1 byte + 2 bytes UTF length + 32 bytes UTF)
-            dos.writeByte(7);  // ZoneId
-            dos.writeUTF(id);
-            dos.writeByte(ObjectStreamConstants.TC_ENDBLOCKDATA);  // end of blockdata
-        }
-        ZoneId deser = null;
-        try (ObjectInputStream ois = new ObjectInputStream(new ByteArrayInputStream(baos.toByteArray()))) {
-            deser = (ZoneId) ois.readObject();
-        }
-        return deser;
-    }
-
-    //-----------------------------------------------------------------------
-    // OLD_SHORT_IDS
-    //-----------------------------------------------------------------------
-    public void test_constant_OLD_IDS_PRE_2005() {
-        Map<String, String> ids = ZoneId.OLD_SHORT_IDS;
-        assertEquals(ids.get("EST"), "America/New_York");
-        assertEquals(ids.get("MST"), "America/Denver");
-        assertEquals(ids.get("HST"), "Pacific/Honolulu");
-        assertEquals(ids.get("ACT"), "Australia/Darwin");
-        assertEquals(ids.get("AET"), "Australia/Sydney");
-        assertEquals(ids.get("AGT"), "America/Argentina/Buenos_Aires");
-        assertEquals(ids.get("ART"), "Africa/Cairo");
-        assertEquals(ids.get("AST"), "America/Anchorage");
-        assertEquals(ids.get("BET"), "America/Sao_Paulo");
-        assertEquals(ids.get("BST"), "Asia/Dhaka");
-        assertEquals(ids.get("CAT"), "Africa/Harare");
-        assertEquals(ids.get("CNT"), "America/St_Johns");
-        assertEquals(ids.get("CST"), "America/Chicago");
-        assertEquals(ids.get("CTT"), "Asia/Shanghai");
-        assertEquals(ids.get("EAT"), "Africa/Addis_Ababa");
-        assertEquals(ids.get("ECT"), "Europe/Paris");
-        assertEquals(ids.get("IET"), "America/Indiana/Indianapolis");
-        assertEquals(ids.get("IST"), "Asia/Kolkata");
-        assertEquals(ids.get("JST"), "Asia/Tokyo");
-        assertEquals(ids.get("MIT"), "Pacific/Apia");
-        assertEquals(ids.get("NET"), "Asia/Yerevan");
-        assertEquals(ids.get("NST"), "Pacific/Auckland");
-        assertEquals(ids.get("PLT"), "Asia/Karachi");
-        assertEquals(ids.get("PNT"), "America/Phoenix");
-        assertEquals(ids.get("PRT"), "America/Puerto_Rico");
-        assertEquals(ids.get("PST"), "America/Los_Angeles");
-        assertEquals(ids.get("SST"), "Pacific/Guadalcanal");
-        assertEquals(ids.get("VST"), "Asia/Ho_Chi_Minh");
-    }
-
-    @Test(expectedExceptions=UnsupportedOperationException.class)
-    public void test_constant_OLD_IDS_PRE_2005_immutable() {
-        Map<String, String> ids = ZoneId.OLD_SHORT_IDS;
-        ids.clear();
-    }
 
     //-----------------------------------------------------------------------
     // SHORT_IDS
@@ -663,7 +519,7 @@ public class TCKZoneId extends AbstractTCKTest {
             @SuppressWarnings("unchecked")
             @Override
             public <R> R query(TemporalQuery<R> query) {
-                if (query == TemporalQuery.zoneId()) {
+                if (query == TemporalQueries.zoneId()) {
                     return (R) ZoneId.of("Europe/Paris");
                 }
                 return TemporalAccessor.super.query(query);

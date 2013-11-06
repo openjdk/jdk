@@ -243,7 +243,7 @@ void AwtChoice::ResetDropDownHeight()
     RECT    rcWindow;
 
     ::GetWindowRect(GetHWnd(), &rcWindow);
-    // resize the drop down to accomodate added/removed items
+    // resize the drop down to accommodate added/removed items
     int     totalHeight = GetTotalHeight();
     ::SetWindowPos(GetHWnd(), NULL,
                     0, 0, rcWindow.right - rcWindow.left, totalHeight,

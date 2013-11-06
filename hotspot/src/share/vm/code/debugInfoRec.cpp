@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,7 +38,7 @@ class DIR_Chunk {
   int  _length; // number of bytes in the stream
   int  _hash;   // hash of stream bytes (for quicker reuse)
 
-  void* operator new(size_t ignore, DebugInformationRecorder* dir) {
+  void* operator new(size_t ignore, DebugInformationRecorder* dir) throw() {
     assert(ignore == sizeof(DIR_Chunk), "");
     if (dir->_next_chunk >= dir->_next_chunk_limit) {
       const int CHUNK = 100;

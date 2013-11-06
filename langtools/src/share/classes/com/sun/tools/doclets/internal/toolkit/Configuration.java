@@ -383,35 +383,52 @@ public abstract class Configuration {
         DocErrorReporter reporter);
 
     private void initProfiles() throws IOException {
-        profiles = Profiles.read(new File(profilespath));
-        // Generate profiles documentation only is profilespath is set and if
-        // profiles is not null and profiles count is 1 or more.
-        showProfiles = (!profilespath.isEmpty() && profiles != null &&
-                profiles.getProfileCount() > 0);
-    }
+        if (profilespath.isEmpty())
+            return;
 
-    private void initProfilePackages() throws IOException {
-        profilePackages = new HashMap<String,PackageDoc[]>();
-        ArrayList<PackageDoc> results;
-        Map<String,PackageDoc> packageIndex = new HashMap<String,PackageDoc>();
-        for (int i = 0; i < packages.length; i++) {
-            PackageDoc pkg = packages[i];
-            packageIndex.put(pkg.name(), pkg);
-        }
-        for (int i = 1; i < profiles.getProfileCount(); i++) {
-            Set<String> profPkgs = profiles.getPackages(i);
-            results = new ArrayList<PackageDoc>();
-            for (String packageName : profPkgs) {
-                packageName = packageName.replace("/", ".");
-                PackageDoc profPkg = packageIndex.get(packageName);
-                if (profPkg != null) {
-                    results.add(profPkg);
-                }
+        profiles = Profiles.read(new File(profilespath));
+
+        // Group the packages to be documented by the lowest profile (if any)
+        // in which each appears
+        Map<Profile, List<PackageDoc>> interimResults =
+                new EnumMap<Profile, List<PackageDoc>>(Profile.class);
+        for (Profile p: Profile.values())
+            interimResults.put(p, new ArrayList<PackageDoc>());
+
+        for (PackageDoc pkg: packages) {
+            if (nodeprecated && Util.isDeprecated(pkg)) {
+                continue;
             }
-            Collections.sort(results);
-            PackageDoc[] profilePkgs = results.toArray(new PackageDoc[]{});
-            profilePackages.put(Profile.lookup(i).name, profilePkgs);
+            // the getProfile method takes a type name, not a package name,
+            // but isn't particularly fussy about the simple name -- so just use *
+            int i = profiles.getProfile(pkg.name().replace(".", "/") + "/*");
+            Profile p = Profile.lookup(i);
+            if (p != null) {
+                List<PackageDoc> pkgs = interimResults.get(p);
+                pkgs.add(pkg);
+            }
         }
+
+        // Build the profilePackages structure used by the doclet
+        profilePackages = new HashMap<String,PackageDoc[]>();
+        List<PackageDoc> prev = Collections.<PackageDoc>emptyList();
+        int size;
+        for (Map.Entry<Profile,List<PackageDoc>> e: interimResults.entrySet()) {
+            Profile p = e.getKey();
+            List<PackageDoc> pkgs =  e.getValue();
+            pkgs.addAll(prev); // each profile contains all lower profiles
+            Collections.sort(pkgs);
+            size = pkgs.size();
+            // For a profile, if there are no packages to be documented, do not add
+            // it to profilePackages map.
+            if (size > 0)
+                profilePackages.put(p.name, pkgs.toArray(new PackageDoc[pkgs.size()]));
+            prev = pkgs;
+        }
+
+        // Generate profiles documentation if any profile contains any
+        // of the packages to be documented.
+        showProfiles = !prev.isEmpty();
     }
 
     private void initPackageArray() {
@@ -534,13 +551,10 @@ public abstract class Configuration {
     public void setOptions() throws Fault {
         initPackageArray();
         setOptions(root.options());
-        if (!profilespath.isEmpty()) {
-            try {
-                initProfiles();
-                initProfilePackages();
-            } catch (Exception e) {
-                throw new DocletAbortException(e);
-            }
+        try {
+            initProfiles();
+        } catch (Exception e) {
+            throw new DocletAbortException(e);
         }
         setSpecificDocletOptions(root.options());
     }
@@ -710,6 +724,17 @@ public abstract class Configuration {
             }
         }
         return true;
+    }
+
+    /**
+     * Check the validity of the given profile. Return false if there are no
+     * valid packages to be documented for the profile.
+     *
+     * @param profileName the profile that needs to be validated.
+     * @return true if the profile has valid packages to be documented.
+     */
+    public boolean shouldDocumentProfile(String profileName) {
+        return profilePackages.containsKey(profileName);
     }
 
     /**

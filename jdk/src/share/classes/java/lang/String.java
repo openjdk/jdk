@@ -47,16 +47,16 @@ import java.util.regex.PatternSyntaxException;
  * Strings are constant; their values cannot be changed after they
  * are created. String buffers support mutable strings.
  * Because String objects are immutable they can be shared. For example:
- * <p><blockquote><pre>
+ * <blockquote><pre>
  *     String str = "abc";
  * </pre></blockquote><p>
  * is equivalent to:
- * <p><blockquote><pre>
+ * <blockquote><pre>
  *     char data[] = {'a', 'b', 'c'};
  *     String str = new String(data);
  * </pre></blockquote><p>
  * Here are some more examples of how strings can be used:
- * <p><blockquote><pre>
+ * <blockquote><pre>
  *     System.out.println("abc");
  *     String cde = "cde";
  *     System.out.println("abc" + cde);
@@ -786,7 +786,7 @@ public final class String
      * {@code srcEnd-srcBegin}). The characters are copied into the
      * subarray of {@code dst} starting at index {@code dstBegin}
      * and ending at index:
-     * <p><blockquote><pre>
+     * <blockquote><pre>
      *     dstbegin + (srcEnd-srcBegin) - 1
      * </pre></blockquote>
      *
@@ -2457,8 +2457,8 @@ public final class String
      *     String message = String.join(" ", strings);
      *     //message returned is: "Java is cool"
      *
-     *     Set<String> strings = new HashSet<>();
-     *     Strings.add("Java"); strings.add("is");
+     *     Set<String> strings = new LinkedHashSet<>();
+     *     strings.add("Java"); strings.add("is");
      *     strings.add("very"); strings.add("cool");
      *     String message = String.join("-", strings);
      *     //message returned is: "Java-is-very-cool"
@@ -2598,21 +2598,14 @@ public final class String
             }
             if (localeDependent || srcChar == '\u03A3') { // GREEK CAPITAL LETTER SIGMA
                 lowerChar = ConditionalSpecialCasing.toLowerCaseEx(this, i, locale);
-            } else if (srcChar == '\u0130') { // LATIN CAPITAL LETTER I DOT
-                lowerChar = Character.ERROR;
             } else {
                 lowerChar = Character.toLowerCase(srcChar);
             }
             if ((lowerChar == Character.ERROR)
                     || (lowerChar >= Character.MIN_SUPPLEMENTARY_CODE_POINT)) {
                 if (lowerChar == Character.ERROR) {
-                    if (!localeDependent && srcChar == '\u0130') {
-                        lowerCharArray =
-                                ConditionalSpecialCasing.toLowerCaseCharArray(this, i, Locale.ENGLISH);
-                    } else {
-                        lowerCharArray =
-                                ConditionalSpecialCasing.toLowerCaseCharArray(this, i, locale);
-                    }
+                    lowerCharArray =
+                            ConditionalSpecialCasing.toLowerCaseCharArray(this, i, locale);
                 } else if (srcCount == 2) {
                     resultOffset += Character.toChars(lowerChar, result, i + resultOffset) - srcCount;
                     continue;
@@ -2652,7 +2645,7 @@ public final class String
      * returns {@code "t\u005Cu0131tle"}, where '\u005Cu0131' is the
      * LATIN SMALL LETTER DOTLESS I character.
      * To obtain correct results for locale insensitive strings, use
-     * {@code toLowerCase(Locale.ENGLISH)}.
+     * {@code toLowerCase(Locale.ROOT)}.
      * <p>
      * @return  the {@code String}, converted to lowercase.
      * @see     java.lang.String#toLowerCase(Locale)
@@ -2669,7 +2662,7 @@ public final class String
      * {@code String} may be a different length than the original {@code String}.
      * <p>
      * Examples of locale-sensitive and 1:M case mappings are in the following table.
-     * <p>
+     *
      * <table border="1" summary="Examples of locale-sensitive and 1:M case mappings. Shows Language code of locale, lower case, upper case, and description.">
      * <tr>
      *   <th>Language Code of Locale</th>
@@ -2815,7 +2808,7 @@ public final class String
      * returns {@code "T\u005Cu0130TLE"}, where '\u005Cu0130' is the
      * LATIN CAPITAL LETTER I WITH DOT ABOVE character.
      * To obtain correct results for locale insensitive strings, use
-     * {@code toUpperCase(Locale.ENGLISH)}.
+     * {@code toUpperCase(Locale.ROOT)}.
      * <p>
      * @return  the {@code String}, converted to uppercase.
      * @see     java.lang.String#toUpperCase(Locale)

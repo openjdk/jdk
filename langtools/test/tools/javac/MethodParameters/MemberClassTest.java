@@ -27,7 +27,7 @@
  * @summary javac should generate method parameters correctly.
  * @build Tester
  * @compile -parameters MemberClassTest.java
- * @run main Tester MemberClassTest
+ * @run main Tester MemberClassTest MemberClassTest.out
  */
 
 class MemberClassTest {

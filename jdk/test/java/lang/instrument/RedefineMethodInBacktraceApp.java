@@ -21,12 +21,17 @@
  * questions.
  */
 
+import com.sun.management.DiagnosticCommandMBean;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.InputStream;
 import java.lang.instrument.ClassDefinition;
+import java.lang.management.ManagementFactory;
+import java.lang.management.ThreadInfo;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.util.concurrent.CountDownLatch;
+import sun.management.ManagementFactoryHelper;
 
 /**
  * When an exception is thrown, the JVM collects just enough information
@@ -49,8 +54,12 @@ public class RedefineMethodInBacktraceApp {
         System.exit(0);
     }
 
+    public static CountDownLatch stop = new CountDownLatch(1);
+    public static CountDownLatch called = new CountDownLatch(1);
+
     private void doTest() throws Exception {
         doMethodInBacktraceTest();
+        doMethodInBacktraceTestB();
     }
 
     private void doMethodInBacktraceTest() throws Exception {
@@ -61,6 +70,36 @@ public class RedefineMethodInBacktraceApp {
         doClassUnloading();
 
         touchRedefinedMethodInBacktrace(t);
+    }
+
+    private void doMethodInBacktraceTestB() throws Exception {
+        // Start a thread which blocks in method
+        Thread t = new Thread(RedefineMethodInBacktraceTargetB::methodToRedefine);
+        t.setDaemon(true);
+        t.start();
+
+        // Wait here until the new thread is in the method we want to redefine
+        called.await();
+
+        // Now redefine the class while the method is still on the stack of the new thread
+        doRedefine(RedefineMethodInBacktraceTargetB.class);
+
+        // Do thread dumps in two different ways (to exercise different code paths)
+        // while the old class is still on the stack
+
+        ThreadInfo[] tis = ManagementFactory.getThreadMXBean().dumpAllThreads(false, false);
+        for(ThreadInfo ti : tis) {
+            System.out.println(ti);
+        }
+
+        String[] threadPrintArgs = {};
+        Object[] dcmdArgs = {threadPrintArgs};
+        String[] signature = {String[].class.getName()};
+        DiagnosticCommandMBean dcmd = ManagementFactoryHelper.getDiagnosticCommandMBean();
+        System.out.println(dcmd.invoke("threadPrint", dcmdArgs, signature));
+
+        // release the thread
+        stop.countDown();
     }
 
     private static Throwable getThrowableFromMethodToRedefine() throws Exception {

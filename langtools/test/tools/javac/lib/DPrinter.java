@@ -49,7 +49,7 @@ import com.sun.source.util.TaskEvent;
 import com.sun.source.util.TaskListener;
 import com.sun.source.util.Trees;
 import com.sun.tools.javac.api.JavacTrees;
-import com.sun.tools.javac.code.Annotations;
+import com.sun.tools.javac.code.SymbolMetadata;
 import com.sun.tools.javac.code.Attribute;
 import com.sun.tools.javac.code.Flags;
 import com.sun.tools.javac.code.Kinds;
@@ -186,21 +186,21 @@ public class DPrinter {
         FULL
     };
 
-    public void printAnnotations(String label, Annotations annotations) {
+    public void printAnnotations(String label, SymbolMetadata annotations) {
         printAnnotations(label, annotations, Details.FULL);
     }
 
-    protected void printAnnotations(String label, Annotations annotations, Details details) {
+    protected void printAnnotations(String label, SymbolMetadata annotations, Details details) {
         if (annotations == null) {
             printNull(label);
         } else {
             // no SUMMARY format currently available to use
 
             // use reflection to get at private fields
-            Object DECL_NOT_STARTED = getField(null, Annotations.class, "DECL_NOT_STARTED");
-            Object DECL_IN_PROGRESS = getField(null, Annotations.class, "DECL_IN_PROGRESS");
-            Object attributes = getField(annotations, Annotations.class, "attributes");
-            Object type_attributes = getField(annotations, Annotations.class, "type_attributes");
+            Object DECL_NOT_STARTED = getField(null, SymbolMetadata.class, "DECL_NOT_STARTED");
+            Object DECL_IN_PROGRESS = getField(null, SymbolMetadata.class, "DECL_IN_PROGRESS");
+            Object attributes = getField(annotations, SymbolMetadata.class, "attributes");
+            Object type_attributes = getField(annotations, SymbolMetadata.class, "type_attributes");
 
             if (!showEmptyItems) {
                 if (attributes instanceof List && ((List) attributes).isEmpty()
@@ -946,8 +946,8 @@ public class DPrinter {
      */
     public class TypeVisitor implements Type.Visitor<Void,Void> {
         public Void visitAnnotatedType(AnnotatedType type, Void ignore) {
-            printList("typeAnnotations", type.typeAnnotations);
-            printType("underlyingType", type.underlyingType, Details.FULL);
+            printList("typeAnnotations", type.getAnnotationMirrors());
+            printType("underlyingType", type.unannotatedType(), Details.FULL);
             return visitType(type, null);
         }
 

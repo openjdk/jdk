@@ -26,9 +26,25 @@
 FILES_compiled_properties = \
         sun/util/resources/LocaleNames.properties \
         sun/util/resources/en/LocaleNames_en.properties \
+        sun/util/resources/en/LocaleNames_en_MT.properties \
+        sun/util/resources/en/LocaleNames_en_PH.properties \
+        sun/util/resources/en/LocaleNames_en_SG.properties \
 	\
         sun/util/resources/CalendarData.properties \
         sun/util/resources/en/CalendarData_en.properties \
+        sun/util/resources/en/CalendarData_en_GB.properties \
+        sun/util/resources/en/CalendarData_en_IE.properties \
+        sun/util/resources/en/CalendarData_en_MT.properties \
 	\
         sun/util/resources/CurrencyNames.properties \
-        sun/util/resources/en/CurrencyNames_en_US.properties
+        sun/util/resources/en/CurrencyNames_en_AU.properties \
+        sun/util/resources/en/CurrencyNames_en_CA.properties \
+        sun/util/resources/en/CurrencyNames_en_GB.properties \
+        sun/util/resources/en/CurrencyNames_en_IE.properties \
+        sun/util/resources/en/CurrencyNames_en_IN.properties \
+        sun/util/resources/en/CurrencyNames_en_MT.properties \
+        sun/util/resources/en/CurrencyNames_en_NZ.properties \
+        sun/util/resources/en/CurrencyNames_en_PH.properties \
+        sun/util/resources/en/CurrencyNames_en_SG.properties \
+        sun/util/resources/en/CurrencyNames_en_US.properties \
+        sun/util/resources/en/CurrencyNames_en_ZA.properties

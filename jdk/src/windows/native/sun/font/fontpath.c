@@ -371,7 +371,7 @@ static int CALLBACK EnumFamilyNamesW(
  * However if a program "installed" a font in the registry the key may
  * not include that. We could also try to "pass" fonts which have no "(..)"
  * at the end. But that turns out to pass a few .FON files that MS supply.
- * If there's no parenthesised type string, we could next try to infer
+ * If there's no parenthesized type string, we could next try to infer
  * the file type from the file name extension. Since the MS entries that
  * have no type string are very few, and have odd names like "MS-DOS CP 437"
  * and would never return a Java Font anyway its currently OK to put these

@@ -142,7 +142,7 @@ public class XRTextRenderer extends GlyphListPipe {
             }
 
             int maskFormat = containsLCDGlyphs ? XRUtils.PictStandardARGB32 : XRUtils.PictStandardA8;
-            maskBuffer.compositeText(x11sd.picture, 0, maskFormat, eltList);
+            maskBuffer.compositeText(x11sd, (int) gl.getX(), (int) gl.getY(), 0, maskFormat, eltList);
 
             eltList.clear();
         } finally {

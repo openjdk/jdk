@@ -98,7 +98,7 @@ import sun.swing.SwingUtilities2;
  * future Swing releases. The current serialization support is
  * appropriate for short term storage or RMI between applications running
  * the same version of Swing.  As of 1.4, support for long term storage
- * of all JavaBeans<sup><font size="-2">TM</font></sup>
+ * of all JavaBeans&trade;
  * has been added to the <code>java.beans</code> package.
  * Please see {@link java.beans.XMLEncoder}.
  *
@@ -237,7 +237,7 @@ public class DefaultCaret extends Rectangle implements Caret, FocusListener, Mou
      * <p>
      * This method is thread safe, although most Swing methods
      * are not. Please see
-     * <A HREF="http://download.oracle.com/javase/tutorial/uiswing/concurrency/index.html">Concurrency
+     * <A HREF="http://docs.oracle.com/javase/tutorial/uiswing/concurrency/index.html">Concurrency
      * in Swing</A> for more information.
      */
     protected final synchronized void repaint() {
@@ -962,8 +962,8 @@ public class DefaultCaret extends Rectangle implements Caret, FocusListener, Mou
         // focus lost notification can come in later after the
         // caret has been deinstalled, in which case the component
         // will be null.
+        active = e;
         if (component != null) {
-            active = e;
             TextUI mapper = component.getUI();
             if (visible != e) {
                 visible = e;
@@ -1211,12 +1211,9 @@ public class DefaultCaret extends Rectangle implements Caret, FocusListener, Mou
 
     boolean isPositionLTR(int position, Position.Bias bias) {
         Document doc = component.getDocument();
-        if(doc instanceof AbstractDocument ) {
-            if(bias == Position.Bias.Backward && --position < 0)
-                position = 0;
-            return ((AbstractDocument)doc).isLeftToRight(position, position);
-        }
-        return true;
+        if(bias == Position.Bias.Backward && --position < 0)
+            position = 0;
+        return AbstractDocument.isLeftToRight(doc, position, position);
     }
 
     Position.Bias guessBiasForOffset(int offset, Position.Bias lastBias,

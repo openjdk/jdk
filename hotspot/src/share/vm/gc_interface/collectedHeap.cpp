@@ -87,15 +87,15 @@ MetaspaceSummary CollectedHeap::create_metaspace_summary() {
   const MetaspaceSizes meta_space(
       MetaspaceAux::allocated_capacity_bytes(),
       MetaspaceAux::allocated_used_bytes(),
-      MetaspaceAux::reserved_in_bytes());
+      MetaspaceAux::reserved_bytes());
   const MetaspaceSizes data_space(
       MetaspaceAux::allocated_capacity_bytes(Metaspace::NonClassType),
       MetaspaceAux::allocated_used_bytes(Metaspace::NonClassType),
-      MetaspaceAux::reserved_in_bytes(Metaspace::NonClassType));
+      MetaspaceAux::reserved_bytes(Metaspace::NonClassType));
   const MetaspaceSizes class_space(
       MetaspaceAux::allocated_capacity_bytes(Metaspace::ClassType),
       MetaspaceAux::allocated_used_bytes(Metaspace::ClassType),
-      MetaspaceAux::reserved_in_bytes(Metaspace::ClassType));
+      MetaspaceAux::reserved_bytes(Metaspace::ClassType));
 
   return MetaspaceSummary(meta_space, data_space, class_space);
 }
@@ -202,12 +202,6 @@ void CollectedHeap::collect_as_vm_thread(GCCause::Cause cause) {
       ShouldNotReachHere(); // Unexpected use of this function
   }
 }
-MetaWord* CollectedHeap::satisfy_failed_metadata_allocation(
-                                              ClassLoaderData* loader_data,
-                                              size_t size, Metaspace::MetadataType mdtype) {
-  return collector_policy()->satisfy_failed_metadata_allocation(loader_data, size, mdtype);
-}
-
 
 void CollectedHeap::pre_initialize() {
   // Used for ReduceInitialCardMarks (when COMPILER2 is used);

@@ -61,6 +61,7 @@
  */
 package java.time.temporal;
 
+import java.io.InvalidObjectException;
 import java.io.Serializable;
 import java.time.DateTimeException;
 
@@ -334,6 +335,21 @@ public final class ValueRange implements Serializable {
             return "Invalid value for " + field + " (valid values " + this + "): " + value;
         } else {
             return "Invalid value (valid values " + this + "): " + value;
+        }
+    }
+
+    /**
+     * Return the ValueRange for the serialized values.
+     * The values are validated according to the constraints of the {@link #of}
+     * factory method.
+     * @return the ValueRange for the serialized fields
+     * @throws InvalidObjectException if the serialized object has invalid values
+     */
+    private Object readResolve() throws InvalidObjectException {
+        try {
+            return of(minSmallest, minLargest, maxSmallest, maxLargest);
+        } catch (IllegalArgumentException iae) {
+            throw new InvalidObjectException("Invalid serialized ValueRange: " + iae.getMessage());
         }
     }
 

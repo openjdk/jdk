@@ -38,7 +38,14 @@ class DirtyCardQueueSet;
 // snapshot-at-the-beginning marking.
 
 class G1SATBCardTableModRefBS: public CardTableModRefBSForCTRS {
+protected:
+  enum G1CardValues {
+    g1_young_gen = CT_MR_BS_last_reserved << 1
+  };
+
 public:
+  static int g1_young_card_val()   { return g1_young_gen; }
+
   // Add "pre_val" to a set of objects that may have been disconnected from the
   // pre-marking object graph.
   static void enqueue(oop pre_val);
@@ -89,6 +96,45 @@ public:
       write_ref_array_pre_work(dst, count);
     }
   }
+
+/*
+   Claimed and deferred bits are used together in G1 during the evacuation
+   pause. These bits can have the following state transitions:
+   1. The claimed bit can be put over any other card state. Except that
+      the "dirty -> dirty and claimed" transition is checked for in
+      G1 code and is not used.
+   2. Deferred bit can be set only if the previous state of the card
+      was either clean or claimed. mark_card_deferred() is wait-free.
+      We do not care if the operation is be successful because if
+      it does not it will only result in duplicate entry in the update
+      buffer because of the "cache-miss". So it's not worth spinning.
+ */
+
+  bool is_card_claimed(size_t card_index) {
+    jbyte val = _byte_map[card_index];
+    return (val & (clean_card_mask_val() | claimed_card_val())) == claimed_card_val();
+  }
+
+  void set_card_claimed(size_t card_index) {
+      jbyte val = _byte_map[card_index];
+      if (val == clean_card_val()) {
+        val = (jbyte)claimed_card_val();
+      } else {
+        val |= (jbyte)claimed_card_val();
+      }
+      _byte_map[card_index] = val;
+  }
+
+  void verify_g1_young_region(MemRegion mr) PRODUCT_RETURN;
+  void g1_mark_as_young(const MemRegion& mr);
+
+  bool mark_card_deferred(size_t card_index);
+
+  bool is_card_deferred(size_t card_index) {
+    jbyte val = _byte_map[card_index];
+    return (val & (clean_card_mask_val() | deferred_card_val())) == deferred_card_val();
+  }
+
 };
 
 // Adds card-table logging to the post-barrier.

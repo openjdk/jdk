@@ -73,6 +73,10 @@
         "Number of bytes used by the InstanceKlass::methods() array") \
     f(method_ordering_bytes, IK_method_ordering, \
         "Number of bytes used by the InstanceKlass::method_ordering() array") \
+    f(default_methods_array_bytes, IK_default_methods, \
+        "Number of bytes used by the InstanceKlass::default_methods() array") \
+    f(default_vtable_indices_bytes, IK_default_vtable_indices, \
+        "Number of bytes used by the InstanceKlass::default_vtable_indices() array") \
     f(local_interfaces_bytes, IK_local_interfaces, \
         "Number of bytes used by the InstanceKlass::local_interfaces() array") \
     f(transitive_interfaces_bytes, IK_transitive_interfaces, \
@@ -150,11 +154,11 @@ public:
   HEAP_INSPECTION_COLUMNS_DO(DECLARE_KLASS_SIZE_STATS_FIELD)
 
   static int count(oop x) {
-    return (HeapWordSize * ((x) ? (x)->size() : 0));
+    return (HeapWordSize * (((x) != NULL) ? (x)->size() : 0));
   }
 
   static int count_array(objArrayOop x) {
-    return (HeapWordSize * ((x) ? (x)->size() : 0));
+    return (HeapWordSize * (((x) != NULL) ? (x)->size() : 0));
   }
 
   template <class T> static int count(T* x) {

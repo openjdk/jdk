@@ -1,2 +1,0 @@
-StaticMethods.java:9:34: compiler.err.non-static.cant.be.ref: kindname.variable, this
-1 error

@@ -30,6 +30,7 @@ import java.util.*;
 import javax.tools.JavaFileManager;
 
 import com.sun.tools.javac.code.*;
+import com.sun.tools.javac.code.Attribute.Compound;
 import com.sun.tools.javac.jvm.*;
 import com.sun.tools.javac.tree.*;
 import com.sun.tools.javac.util.*;
@@ -148,7 +149,7 @@ public class Check {
         sunApiHandler = new MandatoryWarningHandler(log, verboseSunApi,
                 enforceMandatoryWarnings, "sunapi", null);
 
-        deferredLintHandler = DeferredLintHandler.immediateHandler;
+        deferredLintHandler = DeferredLintHandler.instance(context);
     }
 
     /** Switch: generics enabled?
@@ -215,20 +216,6 @@ public class Check {
     Lint setLint(Lint newLint) {
         Lint prev = lint;
         lint = newLint;
-        return prev;
-    }
-
-    /*  This idiom should be used only in cases when it is needed to set the lint
-     *  of an environment that has been created in a phase previous to annotations
-     *  processing.
-     */
-    Lint getLint() {
-        return lint;
-    }
-
-    DeferredLintHandler setDeferredLintHandler(DeferredLintHandler newDeferredLintHandler) {
-        DeferredLintHandler prev = deferredLintHandler;
-        deferredLintHandler = newDeferredLintHandler;
         return prev;
     }
 
@@ -541,7 +528,7 @@ public class Check {
             inferenceContext.addFreeTypeListener(List.of(req), new FreeTypeListener() {
                 @Override
                 public void typesInferred(InferenceContext inferenceContext) {
-                    checkType(pos, found, inferenceContext.asInstType(req), checkContext);
+                    checkType(pos, inferenceContext.asInstType(found), inferenceContext.asInstType(req), checkContext);
                 }
             });
         }
@@ -582,14 +569,19 @@ public class Check {
     /** Check for redundant casts (i.e. where source type is a subtype of target type)
      * The problem should only be reported for non-292 cast
      */
-    public void checkRedundantCast(Env<AttrContext> env, JCTypeCast tree) {
-        if (!tree.type.isErroneous() &&
-                (env.info.lint == null || env.info.lint.isEnabled(Lint.LintCategory.CAST))
+    public void checkRedundantCast(Env<AttrContext> env, final JCTypeCast tree) {
+        if (!tree.type.isErroneous()
                 && types.isSameType(tree.expr.type, tree.clazz.type)
                 && !(ignoreAnnotatedCasts && TreeInfo.containsTypeAnnotation(tree.clazz))
                 && !is292targetTypeCast(tree)) {
-            log.warning(Lint.LintCategory.CAST,
-                    tree.pos(), "redundant.cast", tree.expr.type);
+            deferredLintHandler.report(new DeferredLintHandler.LintLogger() {
+                @Override
+                public void report() {
+                    if (lint.isEnabled(Lint.LintCategory.CAST))
+                        log.warning(Lint.LintCategory.CAST,
+                                tree.pos(), "redundant.cast", tree.expr.type);
+                }
+            });
         }
     }
     //where
@@ -702,6 +694,23 @@ public class Check {
      */
     Type checkClassType(DiagnosticPosition pos, Type t, boolean noBounds) {
         t = checkClassType(pos, t);
+        if (noBounds && t.isParameterized()) {
+            List<Type> args = t.getTypeArguments();
+            while (args.nonEmpty()) {
+                if (args.head.hasTag(WILDCARD))
+                    return typeTagError(pos,
+                                        diags.fragment("type.req.exact"),
+                                        args.head);
+                args = args.tail;
+            }
+        }
+        return t;
+    }
+
+    // Analog of checkClassType that calls checkClassOrArrayType instead
+    Type checkClassOrArrayType(DiagnosticPosition pos,
+                               Type t, boolean noBounds) {
+        t = checkClassOrArrayType(pos, t);
         if (noBounds && t.isParameterized()) {
             List<Type> args = t.getTypeArguments();
             while (args.nonEmpty()) {
@@ -1050,6 +1059,7 @@ public class Check {
     long checkFlags(DiagnosticPosition pos, long flags, Symbol sym, JCTree tree) {
         long mask;
         long implicit = 0;
+
         switch (sym.kind) {
         case VAR:
             if (sym.owner.kind != TYP)
@@ -1070,7 +1080,10 @@ public class Check {
                 } else
                     mask = ConstructorFlags;
             }  else if ((sym.owner.flags_field & INTERFACE) != 0) {
-                if ((flags & (DEFAULT | STATIC)) != 0) {
+                if ((sym.owner.flags_field & ANNOTATION) != 0) {
+                    mask = AnnotationTypeElementMask;
+                    implicit = PUBLIC | ABSTRACT;
+                } else if ((flags & (DEFAULT | STATIC)) != 0) {
                     mask = InterfaceMethodMask;
                     implicit = PUBLIC;
                     if ((flags & DEFAULT) != 0) {
@@ -1079,8 +1092,7 @@ public class Check {
                 } else {
                     mask = implicit = InterfaceMethodFlags;
                 }
-            }
-            else {
+            } else {
                 mask = MethodFlags;
             }
             // Imply STRICTFP if owner has STRICTFP set.
@@ -1251,6 +1263,7 @@ public class Check {
      */
     class Validator extends JCTree.Visitor {
 
+        boolean checkRaw;
         boolean isOuter;
         Env<AttrContext> env;
 
@@ -1260,7 +1273,7 @@ public class Check {
 
         @Override
         public void visitTypeArray(JCArrayTypeTree tree) {
-            tree.elemtype.accept(this);
+            validateTree(tree.elemtype, checkRaw, isOuter);
         }
 
         @Override
@@ -1351,15 +1364,20 @@ public class Check {
         }
 
         public void validateTree(JCTree tree, boolean checkRaw, boolean isOuter) {
-            try {
-                if (tree != null) {
-                    this.isOuter = isOuter;
+            if (tree != null) {
+                boolean prevCheckRaw = this.checkRaw;
+                this.checkRaw = checkRaw;
+                this.isOuter = isOuter;
+
+                try {
                     tree.accept(this);
                     if (checkRaw)
                         checkRaw(tree, env);
+                } catch (CompletionFailure ex) {
+                    completionError(tree.pos(), ex);
+                } finally {
+                    this.checkRaw = prevCheckRaw;
                 }
-            } catch (CompletionFailure ex) {
-                completionError(tree.pos(), ex);
             }
         }
 
@@ -1934,7 +1952,7 @@ public class Check {
      *                      for errors.
      *  @param m            The overriding method.
      */
-    void checkOverride(JCTree tree, MethodSymbol m) {
+    void checkOverride(JCMethodDecl tree, MethodSymbol m) {
         ClassSymbol origin = (ClassSymbol)m.owner;
         if ((origin.flags() & ENUM) != 0 && names.finalize.equals(m.name))
             if (m.overrides(syms.enumFinalFinalize, origin, types, false)) {
@@ -1949,6 +1967,17 @@ public class Check {
             for (Type t2 : types.interfaces(t)) {
                 checkOverride(tree, t2, origin, m);
             }
+        }
+
+        if (m.attribute(syms.overrideType.tsym) != null && !isOverrider(m)) {
+            DiagnosticPosition pos = tree.pos();
+            for (JCAnnotation a : tree.getModifiers().annotations) {
+                if (a.annotationType.type.tsym == syms.overrideType.tsym) {
+                    pos = a.pos();
+                    break;
+                }
+            }
+            log.error(pos, "method.does.not.override.superclass");
         }
     }
 
@@ -2224,6 +2253,9 @@ public class Check {
             seen = seen.prepend(tv);
             for (Type b : types.getBounds(tv))
                 checkNonCyclic1(pos, b, seen);
+        } else if (t.hasTag(ARRAY)) {
+            final ArrayType at = (ArrayType)t.unannotatedType();
+            checkNonCyclic1(pos, at.elemtype, seen);
         }
     }
 
@@ -2367,10 +2399,28 @@ public class Check {
          ClashFilter cf = new ClashFilter(site);
         //for each method m1 that is overridden (directly or indirectly)
         //by method 'sym' in 'site'...
+
+        List<MethodSymbol> potentiallyAmbiguousList = List.nil();
+        boolean overridesAny = false;
         for (Symbol m1 : types.membersClosure(site, false).getElementsByName(sym.name, cf)) {
-            if (!sym.overrides(m1, site.tsym, types, false)) continue;
-             //...check each method m2 that is a member of 'site'
-             for (Symbol m2 : types.membersClosure(site, false).getElementsByName(sym.name, cf)) {
+            if (!sym.overrides(m1, site.tsym, types, false)) {
+                if (m1 == sym) {
+                    continue;
+                }
+
+                if (!overridesAny) {
+                    potentiallyAmbiguousList = potentiallyAmbiguousList.prepend((MethodSymbol)m1);
+                }
+                continue;
+            }
+
+            if (m1 != sym) {
+                overridesAny = true;
+                potentiallyAmbiguousList = List.nil();
+            }
+
+            //...check each method m2 that is a member of 'site'
+            for (Symbol m2 : types.membersClosure(site, false).getElementsByName(sym.name, cf)) {
                 if (m2 == m1) continue;
                 //if (i) the signature of 'sym' is not a subsignature of m1 (seen as
                 //a member of 'site') and (ii) m1 has the same erasure as m2, issue an error
@@ -2389,9 +2439,13 @@ public class Check {
                 }
             }
         }
+
+        if (!overridesAny) {
+            for (MethodSymbol m: potentiallyAmbiguousList) {
+                checkPotentiallyAmbiguousOverloads(pos, site, sym, m);
+            }
+        }
     }
-
-
 
     /** Check that all static methods accessible from 'site' are
      *  mutually compatible (JLS 8.4.8).
@@ -2406,14 +2460,17 @@ public class Check {
         for (Symbol s : types.membersClosure(site, true).getElementsByName(sym.name, cf)) {
             //if (i) the signature of 'sym' is not a subsignature of m1 (seen as
             //a member of 'site') and (ii) 'sym' has the same erasure as m1, issue an error
-            if (!types.isSubSignature(sym.type, types.memberType(site, s), allowStrictMethodClashCheck) &&
-                    types.hasSameArgs(s.erasure(types), sym.erasure(types))) {
-                log.error(pos,
-                        "name.clash.same.erasure.no.hide",
-                        sym, sym.location(),
-                        s, s.location());
-                return;
-             }
+            if (!types.isSubSignature(sym.type, types.memberType(site, s), allowStrictMethodClashCheck)) {
+                if (types.hasSameArgs(s.erasure(types), sym.erasure(types))) {
+                    log.error(pos,
+                            "name.clash.same.erasure.no.hide",
+                            sym, sym.location(),
+                            s, s.location());
+                    return;
+                } else {
+                    checkPotentiallyAmbiguousOverloads(pos, site, sym, (MethodSymbol)s);
+                }
+            }
          }
      }
 
@@ -2446,8 +2503,8 @@ public class Check {
             Assert.check(m.kind == MTH);
             List<MethodSymbol> prov = types.interfaceCandidates(site, (MethodSymbol)m);
             if (prov.size() > 1) {
-                ListBuffer<Symbol> abstracts = ListBuffer.lb();
-                ListBuffer<Symbol> defaults = ListBuffer.lb();
+                ListBuffer<Symbol> abstracts = new ListBuffer<>();
+                ListBuffer<Symbol> defaults = new ListBuffer<>();
                 for (MethodSymbol provSym : prov) {
                     if ((provSym.flags() & DEFAULT) != 0) {
                         defaults = defaults.append(provSym);
@@ -2495,6 +2552,62 @@ public class Check {
                      !s.isConstructor();
          }
      }
+
+    /**
+      * Report warnings for potentially ambiguous method declarations. Two declarations
+      * are potentially ambiguous if they feature two unrelated functional interface
+      * in same argument position (in which case, a call site passing an implicit
+      * lambda would be ambiguous).
+      */
+    void checkPotentiallyAmbiguousOverloads(DiagnosticPosition pos, Type site,
+            MethodSymbol msym1, MethodSymbol msym2) {
+        if (msym1 != msym2 &&
+                allowDefaultMethods &&
+                lint.isEnabled(LintCategory.OVERLOADS) &&
+                (msym1.flags() & POTENTIALLY_AMBIGUOUS) == 0 &&
+                (msym2.flags() & POTENTIALLY_AMBIGUOUS) == 0) {
+            Type mt1 = types.memberType(site, msym1);
+            Type mt2 = types.memberType(site, msym2);
+            //if both generic methods, adjust type variables
+            if (mt1.hasTag(FORALL) && mt2.hasTag(FORALL) &&
+                    types.hasSameBounds((ForAll)mt1, (ForAll)mt2)) {
+                mt2 = types.subst(mt2, ((ForAll)mt2).tvars, ((ForAll)mt1).tvars);
+            }
+            //expand varargs methods if needed
+            int maxLength = Math.max(mt1.getParameterTypes().length(), mt2.getParameterTypes().length());
+            List<Type> args1 = rs.adjustArgs(mt1.getParameterTypes(), msym1, maxLength, true);
+            List<Type> args2 = rs.adjustArgs(mt2.getParameterTypes(), msym2, maxLength, true);
+            //if arities don't match, exit
+            if (args1.length() != args2.length()) return;
+            boolean potentiallyAmbiguous = false;
+            while (args1.nonEmpty() && args2.nonEmpty()) {
+                Type s = args1.head;
+                Type t = args2.head;
+                if (!types.isSubtype(t, s) && !types.isSubtype(s, t)) {
+                    if (types.isFunctionalInterface(s) && types.isFunctionalInterface(t) &&
+                            types.findDescriptorType(s).getParameterTypes().length() > 0 &&
+                            types.findDescriptorType(s).getParameterTypes().length() ==
+                            types.findDescriptorType(t).getParameterTypes().length()) {
+                        potentiallyAmbiguous = true;
+                    } else {
+                        break;
+                    }
+                }
+                args1 = args1.tail;
+                args2 = args2.tail;
+            }
+            if (potentiallyAmbiguous) {
+                //we found two incompatible functional interfaces with same arity
+                //this means a call site passing an implicit lambda would be ambigiuous
+                msym1.flags_field |= POTENTIALLY_AMBIGUOUS;
+                msym2.flags_field |= POTENTIALLY_AMBIGUOUS;
+                log.warning(LintCategory.OVERLOADS, pos, "potentially.ambiguous.overload",
+                            msym1, msym1.location(),
+                            msym2, msym2.location());
+                return;
+            }
+        }
+    }
 
     /** Report a conflict between a user symbol and a synthetic symbol.
      */
@@ -2643,20 +2756,11 @@ public class Check {
         if (!annotationApplicable(a, s))
             log.error(a.pos(), "annotation.type.not.applicable");
 
-        if (a.annotationType.type.tsym == syms.overrideType.tsym) {
-            if (!isOverrider(s))
-                log.error(a.pos(), "method.does.not.override.superclass");
-        }
-
         if (a.annotationType.type.tsym == syms.functionalInterfaceType.tsym) {
             if (s.kind != TYP) {
                 log.error(a.pos(), "bad.functional.intf.anno");
-            } else {
-                try {
-                    types.findDescriptorSymbol((TypeSymbol)s);
-                } catch (Types.FunctionDescriptorLookupError ex) {
-                    log.error(a.pos(), "bad.functional.intf.anno.1", ex.getDiagnostic());
-                }
+            } else if (!s.isInterface() || (s.flags() & ANNOTATION) != 0) {
+                log.error(a.pos(), "bad.functional.intf.anno.1", diags.fragment("not.a.functional.intf", s));
             }
         }
     }
@@ -2665,8 +2769,11 @@ public class Check {
         Assert.checkNonNull(a.type, "annotation tree hasn't been attributed yet: " + a);
         validateAnnotationTree(a);
 
-        if (!isTypeAnnotation(a, isTypeParameter))
+        if (a.hasTag(TYPE_ANNOTATION) &&
+                !a.annotationType.type.isErroneous() &&
+                !isTypeAnnotation(a, isTypeParameter)) {
             log.error(a.pos(), "annotation.type.not.applicable");
+        }
     }
 
     /**
@@ -2871,7 +2978,7 @@ public class Check {
         return false;
     }
 
-    /** Is the annotation applicable to type annotations? */
+    /** Is the annotation applicable to types? */
     protected boolean isTypeAnnotation(JCAnnotation a, boolean isTypeParameter) {
         Attribute.Compound atTarget =
             a.annotationType.type.tsym.attribute(syms.annotationTargetType.tsym);
@@ -2904,7 +3011,6 @@ public class Check {
     boolean annotationApplicable(JCAnnotation a, Symbol s) {
         Attribute.Array arr = getAttributeTargetAttribute(a.annotationType.type.tsym);
         Name[] targets;
-
         if (arr == null) {
             targets = defaultTargetMetaInfo(a, s);
         } else {
@@ -2921,7 +3027,7 @@ public class Check {
         }
         for (Name target : targets) {
             if (target == names.TYPE)
-                { if (s.kind == TYP) return true; }
+                { if (s.kind == TYP && !s.isAnonymous()) return true; }
             else if (target == names.FIELD)
                 { if (s.kind == VAR && s.owner.kind != MTH) return true; }
             else if (target == names.METHOD)
@@ -3275,7 +3381,9 @@ public class Check {
                     (e.sym.flags() & CLASH) == 0 &&
                     sym.kind == e.sym.kind &&
                     sym.name != names.error &&
-                    (sym.kind != MTH || types.hasSameArgs(types.erasure(sym.type), types.erasure(e.sym.type)))) {
+                    (sym.kind != MTH ||
+                     types.hasSameArgs(sym.type, e.sym.type) ||
+                     types.hasSameArgs(types.erasure(sym.type), types.erasure(e.sym.type)))) {
                 if ((sym.flags() & VARARGS) != (e.sym.flags() & VARARGS)) {
                     varargsDuplicateError(pos, sym, e.sym);
                     return true;
@@ -3336,15 +3444,14 @@ public class Check {
                 sym.name != names.error &&
                 (!staticImport || !e.isStaticallyImported())) {
                 if (!e.sym.type.isErroneous()) {
-                    String what = e.sym.toString();
                     if (!isClassDecl) {
                         if (staticImport)
-                            log.error(pos, "already.defined.static.single.import", what);
+                            log.error(pos, "already.defined.static.single.import", e.sym);
                         else
-                        log.error(pos, "already.defined.single.import", what);
+                        log.error(pos, "already.defined.single.import", e.sym);
                     }
                     else if (sym != e.sym)
-                        log.error(pos, "already.defined.this.unit", what);
+                        log.error(pos, "already.defined.this.unit", e.sym);
                 }
                 return false;
             }
@@ -3423,5 +3530,24 @@ public class Check {
 
     public Warner convertWarner(DiagnosticPosition pos, Type found, Type expected) {
         return new ConversionWarner(pos, "unchecked.assign", found, expected);
+    }
+
+    public void checkFunctionalInterface(JCClassDecl tree, ClassSymbol cs) {
+        Compound functionalType = cs.attribute(syms.functionalInterfaceType.tsym);
+
+        if (functionalType != null) {
+            try {
+                types.findDescriptorSymbol((TypeSymbol)cs);
+            } catch (Types.FunctionDescriptorLookupError ex) {
+                DiagnosticPosition pos = tree.pos();
+                for (JCAnnotation a : tree.getModifiers().annotations) {
+                    if (a.annotationType.type.tsym == syms.functionalInterfaceType.tsym) {
+                        pos = a.pos();
+                        break;
+                    }
+                }
+                log.error(pos, "bad.functional.intf.anno.1", ex.getDiagnostic());
+            }
+        }
     }
 }

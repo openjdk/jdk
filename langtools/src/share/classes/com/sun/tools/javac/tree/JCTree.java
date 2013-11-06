@@ -1596,7 +1596,6 @@ public abstract class JCTree implements Tree, Cloneable, DiagnosticPosition {
         public List<JCVariableDecl> params;
         public JCTree body;
         public boolean canCompleteNormally = true;
-        public List<Type> inferredThrownTypes;
         public ParameterKind paramKind;
 
         public JCLambda(List<JCVariableDecl> params,
@@ -1908,6 +1907,7 @@ public abstract class JCTree implements Tree, Cloneable, DiagnosticPosition {
      * Selects a member expression.
      */
     public static class JCMemberReference extends JCFunctionalExpression implements MemberReferenceTree {
+
         public ReferenceMode mode;
         public ReferenceKind kind;
         public Name name;
@@ -1917,6 +1917,12 @@ public abstract class JCTree implements Tree, Cloneable, DiagnosticPosition {
         public Type varargsElement;
         public PolyKind refPolyKind;
         public boolean ownerAccessible;
+        public OverloadKind overloadKind;
+
+        public enum OverloadKind {
+            OVERLOADED,
+            UNOVERLOADED;
+        }
 
         /**
          * Javac-dependent classification for member references, based
@@ -2353,6 +2359,7 @@ public abstract class JCTree implements Tree, Cloneable, DiagnosticPosition {
         public JCExpression underlyingType;
 
         protected JCAnnotatedType(List<JCAnnotation> annotations, JCExpression underlyingType) {
+            Assert.check(annotations != null && annotations.nonEmpty());
             this.annotations = annotations;
             this.underlyingType = underlyingType;
         }

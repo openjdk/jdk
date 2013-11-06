@@ -23,7 +23,7 @@
  */
 
 #include "precompiled.hpp"
-#include "interp_masm_x86_32.hpp"
+#include "interp_masm_x86.hpp"
 #include "interpreter/interpreter.hpp"
 #include "interpreter/interpreterRuntime.hpp"
 #include "oops/arrayOop.hpp"
@@ -1045,7 +1045,6 @@ void InterpreterMacroAssembler::profile_not_taken_branch(Register mdp) {
     bind (profile_continue);
   }
 }
-
 
 void InterpreterMacroAssembler::profile_call(Register mdp) {
   if (ProfileInterpreter) {

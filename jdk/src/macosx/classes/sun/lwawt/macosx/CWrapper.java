@@ -68,6 +68,7 @@ public final class CWrapper {
 
         public static native void miniaturize(long window);
         public static native void deminiaturize(long window);
+        public static native boolean isZoomed(long window);
         public static native void zoom(long window);
 
         public static native void makeFirstResponder(long window, long responder);
@@ -80,9 +81,6 @@ public final class CWrapper {
         public static native void setFrame(long view, int x, int y, int w, int h);
         public static native Rectangle2D frame(long view);
         public static native long window(long view);
-
-        public static native void enterFullScreenMode(long view);
-        public static native void exitFullScreenMode(long view);
 
         public static native void setHidden(long view, boolean hidden);
 

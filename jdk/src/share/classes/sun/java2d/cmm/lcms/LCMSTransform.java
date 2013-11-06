@@ -62,7 +62,7 @@ public class LCMSTransform implements ColorTransform {
     private boolean isOutIntPacked = false;
 
     ICC_Profile[] profiles;
-    long [] profileIDs;
+    LCMSProfile[] lcmsProfiles;
     int renderType;
     int transformType;
 
@@ -84,8 +84,8 @@ public class LCMSTransform implements ColorTransform {
         /* Actually, it is not a complete transform but just part of it */
         profiles = new ICC_Profile[1];
         profiles[0] = profile;
-        profileIDs = new long[1];
-        profileIDs[0] = LCMS.getProfileID(profile);
+        lcmsProfiles = new LCMSProfile[1];
+        lcmsProfiles[0] = LCMS.getProfileID(profile);
         this.renderType = (renderType == ColorTransform.Any)?
                               ICC_Profile.icPerceptual : renderType;
         this.transformType = transformType;
@@ -105,14 +105,14 @@ public class LCMSTransform implements ColorTransform {
             size+=((LCMSTransform)transforms[i]).profiles.length;
         }
         profiles = new ICC_Profile[size];
-        profileIDs = new long[size];
+        lcmsProfiles = new LCMSProfile[size];
         int j = 0;
         for (int i=0; i < transforms.length; i++) {
             LCMSTransform curTrans = (LCMSTransform)transforms[i];
             System.arraycopy(curTrans.profiles, 0, profiles, j,
                              curTrans.profiles.length);
-            System.arraycopy(curTrans.profileIDs, 0, profileIDs, j,
-                             curTrans.profileIDs.length);
+            System.arraycopy(curTrans.lcmsProfiles, 0, lcmsProfiles, j,
+                             curTrans.lcmsProfiles.length);
             j += curTrans.profiles.length;
         }
         renderType = ((LCMSTransform)transforms[0]).renderType;
@@ -152,7 +152,7 @@ public class LCMSTransform implements ColorTransform {
             outFormatter = out.pixelType;
             isOutIntPacked = out.isIntPacked;
 
-            ID = LCMS.createNativeTransform(profileIDs, renderType,
+            ID = LCMS.createTransform(lcmsProfiles, renderType,
                                             inFormatter, isInIntPacked,
                                             outFormatter, isOutIntPacked,
                                             disposerReferent);

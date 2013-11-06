@@ -102,6 +102,8 @@ public abstract class AlgorithmParametersSpi {
      * parameters should be returned in an instance of the
      * {@code DSAParameterSpec} class.
      *
+     * @param <T> the type of the parameter specification to be returned
+     *
      * @param paramSpec the specification class in which
      * the parameters should be returned.
      *

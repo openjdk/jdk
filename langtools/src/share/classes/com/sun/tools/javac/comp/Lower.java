@@ -49,7 +49,6 @@ import static com.sun.tools.javac.code.Kinds.*;
 import static com.sun.tools.javac.code.TypeTag.*;
 import static com.sun.tools.javac.jvm.ByteCodes.*;
 import static com.sun.tools.javac.tree.JCTree.Tag.*;
-import javax.lang.model.type.TypeKind;
 
 /** This pass translates away some syntactic sugar: inner classes,
  *  class literals, assertions, foreach loops, etc.
@@ -1480,7 +1479,12 @@ public class Lower extends TreeTranslator {
      *  @param owner      The class in which the definitions go.
      */
     List<JCVariableDecl> freevarDefs(int pos, List<VarSymbol> freevars, Symbol owner) {
-        long flags = FINAL | SYNTHETIC;
+        return freevarDefs(pos, freevars, owner, 0);
+    }
+
+    List<JCVariableDecl> freevarDefs(int pos, List<VarSymbol> freevars, Symbol owner,
+            long additionalFlags) {
+        long flags = FINAL | SYNTHETIC | additionalFlags;
         if (owner.kind == TYP &&
             target.usePrivateSyntheticFields())
             flags |= PRIVATE;
@@ -1543,7 +1547,7 @@ public class Lower extends TreeTranslator {
             (owner.isConstructor() && c.isInner() &&
              !c.isPrivate() && !c.isStatic());
         long flags =
-            FINAL | (isMandated ? MANDATED : SYNTHETIC);
+            FINAL | (isMandated ? MANDATED : SYNTHETIC) | PARAMETER;
         VarSymbol outerThis = makeOuterThisVarSymbol(owner, flags);
         owner.extraParams = owner.extraParams.prepend(outerThis);
         return makeOuterThisVarDecl(pos, outerThis);
@@ -1627,7 +1631,8 @@ public class Lower extends TreeTranslator {
     JCTree makeTwrTry(JCTry tree) {
         make_at(tree.pos());
         twrVars = twrVars.dup();
-        JCBlock twrBlock = makeTwrBlock(tree.resources, tree.body, 0);
+        JCBlock twrBlock = makeTwrBlock(tree.resources, tree.body,
+                tree.finallyCanCompleteNormally, 0);
         if (tree.catchers.isEmpty() && tree.finalizer == null)
             result = translate(twrBlock);
         else
@@ -1636,7 +1641,8 @@ public class Lower extends TreeTranslator {
         return result;
     }
 
-    private JCBlock makeTwrBlock(List<JCTree> resources, JCBlock block, int depth) {
+    private JCBlock makeTwrBlock(List<JCTree> resources, JCBlock block,
+            boolean finallyCanCompleteNormally, int depth) {
         if (resources.isEmpty())
             return block;
 
@@ -1692,17 +1698,20 @@ public class Lower extends TreeTranslator {
         make.at(TreeInfo.endPos(block));
         JCBlock finallyClause = makeTwrFinallyClause(primaryException, expr);
         make.at(oldPos);
-        JCTry outerTry = make.Try(makeTwrBlock(resources.tail, block, depth + 1),
+        JCTry outerTry = make.Try(makeTwrBlock(resources.tail, block,
+                                    finallyCanCompleteNormally, depth + 1),
                                   List.<JCCatch>of(catchClause),
                                   finallyClause);
+        outerTry.finallyCanCompleteNormally = finallyCanCompleteNormally;
         stats.add(outerTry);
-        return make.Block(0L, stats.toList());
+        JCBlock newBlock = make.Block(0L, stats.toList());
+        return newBlock;
     }
 
     private JCBlock makeTwrFinallyClause(Symbol primaryException, JCExpression resource) {
         // primaryException.addSuppressed(catchException);
         VarSymbol catchException =
-            new VarSymbol(0, make.paramName(2),
+            new VarSymbol(SYNTHETIC, make.paramName(2),
                           syms.throwableType,
                           currentMethodSym);
         JCStatement addSuppressionStatement =
@@ -1717,6 +1726,7 @@ public class Lower extends TreeTranslator {
         JCBlock catchBlock = make.Block(0L, List.<JCStatement>of(addSuppressionStatement));
         List<JCCatch> catchClauses = List.<JCCatch>of(make.Catch(catchExceptionDecl, catchBlock));
         JCTry tryTree = make.Try(tryBlock, catchClauses, null);
+        tryTree.finallyCanCompleteNormally = true;
 
         // if (primaryException != null) {try...} else resourceClose;
         JCIf closeIfStatement = make.If(makeNonNullCheck(make.Ident(primaryException)),
@@ -2017,7 +2027,7 @@ public class Lower extends TreeTranslator {
 
         // catchParam := ClassNotFoundException e1
         VarSymbol catchParam =
-            new VarSymbol(0, make.paramName(1),
+            new VarSymbol(SYNTHETIC, make.paramName(1),
                           syms.classNotFoundExceptionType,
                           classDollarSym);
 
@@ -2162,6 +2172,18 @@ public class Lower extends TreeTranslator {
  * Code for enabling/disabling assertions.
  *************************************************************************/
 
+    private ClassSymbol assertionsDisabledClassCache;
+
+    /**Used to create an auxiliary class to hold $assertionsDisabled for interfaces.
+     */
+    private ClassSymbol assertionsDisabledClass() {
+        if (assertionsDisabledClassCache != null) return assertionsDisabledClassCache;
+
+        assertionsDisabledClassCache = makeEmptyClass(STATIC | SYNTHETIC, outermostClassDef.sym).sym;
+
+        return assertionsDisabledClassCache;
+    }
+
     // This code is not particularly robust if the user has
     // previously declared a member named '$assertionsDisabled'.
     // The same faulty idiom also appears in the translation of
@@ -2172,8 +2194,9 @@ public class Lower extends TreeTranslator {
         // Outermost class may be either true class or an interface.
         ClassSymbol outermostClass = outermostClassDef.sym;
 
-        // note that this is a class, as an interface can't contain a statement.
-        ClassSymbol container = currentClass;
+        //only classes can hold a non-public field, look for a usable one:
+        ClassSymbol container = !currentClass.isInterface() ? currentClass :
+                assertionsDisabledClass();
 
         VarSymbol assertDisabledSym =
             (VarSymbol)lookupSynthetic(dollarAssertionsDisabled,
@@ -2198,6 +2221,16 @@ public class Lower extends TreeTranslator {
             JCVariableDecl assertDisabledDef = make.VarDef(assertDisabledSym,
                                                    notStatus);
             containerDef.defs = containerDef.defs.prepend(assertDisabledDef);
+
+            if (currentClass.isInterface()) {
+                //need to load the assertions enabled/disabled state while
+                //initializing the interface:
+                JCClassDecl currentClassDef = classDef(currentClass);
+                make_at(currentClassDef.pos());
+                JCStatement dummy = make.If(make.QualIdent(assertDisabledSym), make.Skip(), null);
+                JCBlock clinit = make.Block(STATIC, List.<JCStatement>of(dummy));
+                currentClassDef.defs = currentClassDef.defs.prepend(clinit);
+            }
         }
         make_at(pos);
         return makeUnary(NOT, make.Ident(assertDisabledSym));
@@ -2705,7 +2738,7 @@ public class Lower extends TreeTranslator {
             JCVariableDecl otdef = null;
             if (currentClass.hasOuterInstance())
                 otdef = outerThisDef(tree.pos, m);
-            List<JCVariableDecl> fvdefs = freevarDefs(tree.pos, fvs, m);
+            List<JCVariableDecl> fvdefs = freevarDefs(tree.pos, fvs, m, PARAMETER);
 
             // Recursively translate result type, parameters and thrown list.
             tree.restype = translate(tree.restype);
@@ -2801,20 +2834,9 @@ public class Lower extends TreeTranslator {
         tree.underlyingType = translate(tree.underlyingType);
         // but maintain type annotations in the type.
         if (tree.type.isAnnotated()) {
-            if (tree.underlyingType.type.isAnnotated()) {
-                // The erasure of a type variable might be annotated.
-                // Merge all annotations.
-                AnnotatedType newat = (AnnotatedType) tree.underlyingType.type;
-                AnnotatedType at = (AnnotatedType) tree.type;
-                at.underlyingType = newat.underlyingType;
-                newat.typeAnnotations = at.typeAnnotations.appendList(newat.typeAnnotations);
-                tree.type = newat;
-            } else {
-                // Create a new AnnotatedType to have the correct tag.
-                AnnotatedType oldat = (AnnotatedType) tree.type;
-                tree.type = new AnnotatedType(tree.underlyingType.type);
-                ((AnnotatedType) tree.type).typeAnnotations = oldat.typeAnnotations;
-            }
+            tree.type = tree.underlyingType.type.unannotatedType().annotatedType(tree.type.getAnnotationMirrors());
+        } else if (tree.underlyingType.type.isAnnotated()) {
+            tree.type = tree.underlyingType.type;
         }
         result = tree;
     }
@@ -3364,18 +3386,18 @@ public class Lower extends TreeTranslator {
          */
         private void visitArrayForeachLoop(JCEnhancedForLoop tree) {
             make_at(tree.expr.pos());
-            VarSymbol arraycache = new VarSymbol(0,
+            VarSymbol arraycache = new VarSymbol(SYNTHETIC,
                                                  names.fromString("arr" + target.syntheticNameChar()),
                                                  tree.expr.type,
                                                  currentMethodSym);
             JCStatement arraycachedef = make.VarDef(arraycache, tree.expr);
-            VarSymbol lencache = new VarSymbol(0,
+            VarSymbol lencache = new VarSymbol(SYNTHETIC,
                                                names.fromString("len" + target.syntheticNameChar()),
                                                syms.intType,
                                                currentMethodSym);
             JCStatement lencachedef = make.
                 VarDef(lencache, make.Select(make.Ident(arraycache), syms.lengthVar));
-            VarSymbol index = new VarSymbol(0,
+            VarSymbol index = new VarSymbol(SYNTHETIC,
                                             names.fromString("i" + target.syntheticNameChar()),
                                             syms.intType,
                                             currentMethodSym);
@@ -3457,7 +3479,7 @@ public class Lower extends TreeTranslator {
                                            names.iterator,
                                            eType,
                                            List.<Type>nil());
-            VarSymbol itvar = new VarSymbol(0, names.fromString("i" + target.syntheticNameChar()),
+            VarSymbol itvar = new VarSymbol(SYNTHETIC, names.fromString("i" + target.syntheticNameChar()),
                                             types.erasure(types.asSuper(iterator.type.getReturnType(), syms.iteratorType.tsym)),
                                             currentMethodSym);
 
@@ -3715,7 +3737,7 @@ public class Lower extends TreeTranslator {
                 (JCVariableDecl)make.VarDef(dollar_tmp, make.Literal(INT, -1)).setType(dollar_tmp.type);
             dollar_tmp_def.init.type = dollar_tmp.type = syms.intType;
             stmtList.append(dollar_tmp_def);
-            ListBuffer<JCCase> caseBuffer = ListBuffer.lb();
+            ListBuffer<JCCase> caseBuffer = new ListBuffer<>();
             // hashCode will trigger nullcheck on original switch expression
             JCMethodInvocation hashCodeCall = makeCall(make.Ident(dollar_s),
                                                        names.hashCode,
@@ -3739,7 +3761,7 @@ public class Lower extends TreeTranslator {
                                        elsepart);
                 }
 
-                ListBuffer<JCStatement> lb = ListBuffer.lb();
+                ListBuffer<JCStatement> lb = new ListBuffer<>();
                 JCBreak breakStmt = make.Break(null);
                 breakStmt.target = switch1;
                 lb.append(elsepart).append(breakStmt);
@@ -3754,7 +3776,7 @@ public class Lower extends TreeTranslator {
             // with corresponding integer ones from the label to
             // position map.
 
-            ListBuffer<JCCase> lb = ListBuffer.lb();
+            ListBuffer<JCCase> lb = new ListBuffer<>();
             JCSwitch switch2 = make.Switch(make.Ident(dollar_tmp), lb.toList());
             for(JCCase oneCase : caseList ) {
                 // Rewire up old unlabeled break statements to the
@@ -3830,19 +3852,32 @@ public class Lower extends TreeTranslator {
 
     @Override
     public void visitTry(JCTry tree) {
-        /* special case of try without catchers and with finally emtpy.
-         * Don't give it a try, translate only the body.
-         */
-        if (tree.resources.isEmpty()) {
-            if (tree.catchers.isEmpty() &&
-                tree.finalizer.getStatements().isEmpty()) {
-                result = translate(tree.body);
-            } else {
-                super.visitTry(tree);
-            }
-        } else {
+        if (tree.resources.nonEmpty()) {
             result = makeTwrTry(tree);
+            return;
         }
+
+        boolean hasBody = tree.body.getStatements().nonEmpty();
+        boolean hasCatchers = tree.catchers.nonEmpty();
+        boolean hasFinally = tree.finalizer != null &&
+                tree.finalizer.getStatements().nonEmpty();
+
+        if (!hasCatchers && !hasFinally) {
+            result = translate(tree.body);
+            return;
+        }
+
+        if (!hasBody) {
+            if (hasFinally) {
+                result = translate(tree.finalizer);
+            } else {
+                result = translate(tree.body);
+            }
+            return;
+        }
+
+        // no optimizations possible
+        super.visitTry(tree);
     }
 
 /**************************************************************************
@@ -3906,6 +3941,7 @@ public class Lower extends TreeTranslator {
             accessConstrTags = null;
             accessed = null;
             enumSwitchMap.clear();
+            assertionsDisabledClassCache = null;
         }
         return translated.toList();
     }

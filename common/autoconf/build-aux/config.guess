@@ -58,7 +58,7 @@ if test $? = 0; then
       OUT=$REAL_CPU`echo $OUT | sed -e 's/[^-]*//'`
       ;;
   esac
-fi  
+fi
 
 # Test and fix architecture string on AIX
 # On AIX 'config.guess' returns 'powerpc' as architecture but 'powerpc' is

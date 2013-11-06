@@ -104,6 +104,10 @@ Java_sun_font_SunLayoutEngine_initGVIDs
 
 int putGV(JNIEnv* env, jint gmask, jint baseIndex, jobject gvdata, const LayoutEngine* engine, int glyphCount) {
     int count = env->GetIntField(gvdata, gvdCountFID);
+    if (count < 0) {
+      JNU_ThrowInternalError(env, "count negative");
+      return 0;
+    }
 
     jarray glyphArray = (jarray)env->GetObjectField(gvdata, gvdGlyphsFID);
     if (IS_NULL(glyphArray)) {
@@ -179,6 +183,10 @@ JNIEXPORT void JNICALL Java_sun_font_SunLayoutEngine_nativeLayout
   FontInstanceAdapter fia(env, font2d, strike, mat, 72, 72, (le_int32) upem, (TTLayoutTableCache *) layoutTables);
   LEErrorCode success = LE_NO_ERROR;
   LayoutEngine *engine = LayoutEngine::layoutEngineFactory(&fia, script, lang, typo_flags & TYPO_MASK, success);
+  if (engine == NULL) {
+    env->SetIntField(gvdata, gvdCountFID, -1); // flag failure
+    return;
+  }
 
   if (min < 0) min = 0; if (max < min) max = min; /* defensive coding */
   // have to copy, yuck, since code does upcalls now.  this will be soooo slow

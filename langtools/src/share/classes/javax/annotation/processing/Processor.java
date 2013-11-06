@@ -209,11 +209,11 @@ public interface Processor {
      * <dl>
      * <dt><i>SupportedOptionString:</i>
      * <dd><i>Identifiers</i>
-     * <p>
+     *
      * <dt><i>Identifiers:</i>
      * <dd> <i>Identifier</i>
      * <dd> <i>Identifier</i> {@code .} <i>Identifiers</i>
-     * <p>
+     *
      * <dt><i>Identifier:</i>
      * <dd>Syntactic identifier, including keywords and literals
      * </dl>
@@ -250,7 +250,7 @@ public interface Processor {
      * <dt><i>SupportedAnnotationTypeString:</i>
      * <dd><i>TypeName</i> <i>DotStar</i><sub><i>opt</i></sub>
      * <dd><tt>*</tt>
-     * <p>
+     *
      * <dt><i>DotStar:</i>
      * <dd><tt>.</tt> <tt>*</tt>
      * </dl>

@@ -789,18 +789,18 @@ public class Items {
         Chain jumpTrue() {
             if (tree == null) return Code.mergeChains(trueJumps, code.branch(opcode));
             // we should proceed further in -Xjcov mode only
-            int startpc = code.curPc();
+            int startpc = code.curCP();
             Chain c = Code.mergeChains(trueJumps, code.branch(opcode));
-            code.crt.put(tree, CRTable.CRT_BRANCH_TRUE, startpc, code.curPc());
+            code.crt.put(tree, CRTable.CRT_BRANCH_TRUE, startpc, code.curCP());
             return c;
         }
 
         Chain jumpFalse() {
             if (tree == null) return Code.mergeChains(falseJumps, code.branch(Code.negate(opcode)));
             // we should proceed further in -Xjcov mode only
-            int startpc = code.curPc();
+            int startpc = code.curCP();
             Chain c = Code.mergeChains(falseJumps, code.branch(Code.negate(opcode)));
-            code.crt.put(tree, CRTable.CRT_BRANCH_FALSE, startpc, code.curPc());
+            code.crt.put(tree, CRTable.CRT_BRANCH_FALSE, startpc, code.curCP());
             return c;
         }
 

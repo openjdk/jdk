@@ -88,8 +88,13 @@ public class ProfileIndexFrameWriter extends AbstractProfileIndexWriter {
         Content div = HtmlTree.DIV(HtmlStyle.indexContainer, heading);
         HtmlTree ul = new HtmlTree(HtmlTag.UL);
         ul.setTitle(profilesLabel);
+        String profileName;
         for (int i = 1; i < profiles.getProfileCount(); i++) {
-            ul.addContent(getProfile(i));
+            profileName = (Profile.lookup(i)).name;
+            // If the profile has valid packages to be documented, add it to the
+            // left-frame generated for profile index.
+            if (configuration.shouldDocumentProfile(profileName))
+                ul.addContent(getProfile(profileName));
         }
         div.addContent(ul);
         body.addContent(div);
@@ -98,13 +103,12 @@ public class ProfileIndexFrameWriter extends AbstractProfileIndexWriter {
     /**
      * Gets each profile name as a separate link.
      *
-     * @param profile the profile being documented
+     * @param profileName the profile being documented
      * @return content for the profile link
      */
-    protected Content getProfile(int profile) {
+    protected Content getProfile(String profileName) {
         Content profileLinkContent;
         Content profileLabel;
-        String profileName = (Profile.lookup(profile)).name;
         profileLabel = new StringContent(profileName);
         profileLinkContent = getHyperLink(DocPaths.profileFrame(profileName), profileLabel, "",
                     "packageListFrame");

@@ -43,7 +43,7 @@ import java.io.IOException;
  * A component that lets the user switch between a group of components by
  * clicking on a tab with a given title and/or icon.
  * For examples and information on using tabbed panes see
- * <a href="http://java.sun.com/docs/books/tutorial/uiswing/components/tabbedpane.html">How to Use Tabbed Panes</a>,
+ * <a href="http://docs.oracle.com/javase/tutorial/uiswing/components/tabbedpane.html">How to Use Tabbed Panes</a>,
  * a section in <em>The Java Tutorial</em>.
  * <p>
  * Tabs/components are added to a <code>TabbedPane</code> object by using the
@@ -91,7 +91,7 @@ import java.io.IOException;
  * future Swing releases. The current serialization support is
  * appropriate for short term storage or RMI between applications running
  * the same version of Swing.  As of 1.4, support for long term storage
- * of all JavaBeans<sup><font size="-2">TM</font></sup>
+ * of all JavaBeans&trade;
  * has been added to the <code>java.beans</code> package.
  * Please see {@link java.beans.XMLEncoder}.
  *
@@ -207,7 +207,7 @@ public class JTabbedPane extends JComponent
     }
 
     /**
-     * Returns the UI object which implements the L&F for this component.
+     * Returns the UI object which implements the L&amp;F for this component.
      *
      * @return a <code>TabbedPaneUI</code> object
      * @see #setUI
@@ -217,7 +217,7 @@ public class JTabbedPane extends JComponent
     }
 
     /**
-     * Sets the UI object which implements the L&F for this component.
+     * Sets the UI object which implements the L&amp;F for this component.
      *
      * @param ui the new UI object
      * @see UIDefaults#getUI
@@ -250,7 +250,7 @@ public class JTabbedPane extends JComponent
 
     /**
      * Returns the name of the UI class that implements the
-     * L&F for this component.
+     * L&amp;F for this component.
      *
      * @return the string "TabbedPaneUI"
      * @see JComponent#getUIClassID
@@ -576,7 +576,7 @@ public class JTabbedPane extends JComponent
      *
      * @param index  the index to be selected
      * @exception IndexOutOfBoundsException if index is out of range
-     *            (index < -1 || index >= tab count)
+     *            {@code (index < -1 || index >= tab count)}
      *
      * @see #getSelectedIndex
      * @see SingleSelectionModel#setSelectedIndex
@@ -924,7 +924,7 @@ public class JTabbedPane extends JComponent
      * if added to other containers.
      * @param index the index of the tab to be removed
      * @exception IndexOutOfBoundsException if index is out of range
-     *            (index < 0 || index >= tab count)
+     *            {@code (index < 0 || index >= tab count)}
      *
      * @see #addTab
      * @see #insertTab
@@ -1043,7 +1043,7 @@ public class JTabbedPane extends JComponent
      * @param index the index of the component to remove from the
      *          <code>tabbedpane</code>
      * @exception IndexOutOfBoundsException if index is out of range
-     *            (index < 0 || index >= tab count)
+     *            {@code (index < 0 || index >= tab count)}
      * @see #addTab
      * @see #removeTabAt
      */
@@ -1105,7 +1105,7 @@ public class JTabbedPane extends JComponent
      * @param index  the index of the item being queried
      * @return the title at <code>index</code>
      * @exception IndexOutOfBoundsException if index is out of range
-     *            (index < 0 || index >= tab count)
+     *            {@code (index < 0 || index >= tab count)}
      * @see #setTitleAt
      */
     public String getTitleAt(int index) {
@@ -1118,7 +1118,7 @@ public class JTabbedPane extends JComponent
      * @param index  the index of the item being queried
      * @return the icon at <code>index</code>
      * @exception IndexOutOfBoundsException if index is out of range
-     *            (index < 0 || index >= tab count)
+     *            {@code (index < 0 || index >= tab count)}
      *
      * @see #setIconAt
      */
@@ -1137,7 +1137,7 @@ public class JTabbedPane extends JComponent
      * @param index  the index of the item being queried
      * @return the icon at <code>index</code>
      * @exception IndexOutOfBoundsException if index is out of range
-     *            (index < 0 || index >= tab count)
+     *            {@code (index < 0 || index >= tab count)}
      *
      * @see #setDisabledIconAt
      */
@@ -1155,7 +1155,7 @@ public class JTabbedPane extends JComponent
      * @param index  the index of the item being queried
      * @return a string containing the tool tip text at <code>index</code>
      * @exception IndexOutOfBoundsException if index is out of range
-     *            (index < 0 || index >= tab count)
+     *            {@code (index < 0 || index >= tab count)}
      *
      * @see #setToolTipTextAt
      * @since 1.3
@@ -1171,7 +1171,7 @@ public class JTabbedPane extends JComponent
      * @return the <code>Color</code> of the tab background at
      *          <code>index</code>
      * @exception IndexOutOfBoundsException if index is out of range
-     *            (index < 0 || index >= tab count)
+     *            {@code (index < 0 || index >= tab count)}
      *
      * @see #setBackgroundAt
      */
@@ -1186,7 +1186,7 @@ public class JTabbedPane extends JComponent
      * @return the <code>Color</code> of the tab foreground at
      *          <code>index</code>
      * @exception IndexOutOfBoundsException if index is out of range
-     *            (index < 0 || index >= tab count)
+     *            {@code (index < 0 || index >= tab count)}
      *
      * @see #setForegroundAt
      */
@@ -1202,7 +1202,7 @@ public class JTabbedPane extends JComponent
      * @return true if the tab at <code>index</code> is enabled;
      *          false otherwise
      * @exception IndexOutOfBoundsException if index is out of range
-     *            (index < 0 || index >= tab count)
+     *            {@code (index < 0 || index >= tab count)}
      *
      * @see #setEnabledAt
      */
@@ -1216,7 +1216,7 @@ public class JTabbedPane extends JComponent
      * @param index  the index of the item being queried
      * @return the <code>Component</code> at <code>index</code>
      * @exception IndexOutOfBoundsException if index is out of range
-     *            (index < 0 || index >= tab count)
+     *            {@code (index < 0 || index >= tab count)}
      *
      * @see #setComponentAt
      */
@@ -1281,7 +1281,7 @@ public class JTabbedPane extends JComponent
      *          <code>index</code> is not currently visible in the UI,
      *          or if there is no UI set on this <code>tabbedpane</code>
      * @exception IndexOutOfBoundsException if index is out of range
-     *            (index &lt; 0 || index &gt;= tab count)
+     *            {@code (index < 0 || index >= tab count)}
      */
     public Rectangle getBoundsAt(int index) {
         checkIndex(index);
@@ -1303,7 +1303,7 @@ public class JTabbedPane extends JComponent
      * @param index the tab index where the title should be set
      * @param title the title to be displayed in the tab
      * @exception IndexOutOfBoundsException if index is out of range
-     *            (index &lt; 0 || index &gt;= tab count)
+     *            {@code (index < 0 || index >= tab count)}
      *
      * @see #getTitleAt
      * @see #setTabComponentAt
@@ -1345,7 +1345,7 @@ public class JTabbedPane extends JComponent
      * @param index the tab index where the icon should be set
      * @param icon the icon to be displayed in the tab
      * @exception IndexOutOfBoundsException if index is out of range
-     *            (index < 0 || index >= tab count)
+     *            {@code (index < 0 || index >= tab count)}
      *
      * @see #setDisabledIconAt
      * @see #getIconAt
@@ -1389,7 +1389,7 @@ public class JTabbedPane extends JComponent
      * @param index the tab index where the disabled icon should be set
      * @param disabledIcon the icon to be displayed in the tab when disabled
      * @exception IndexOutOfBoundsException if index is out of range
-     *            (index &lt; 0 || index &gt;= tab count)
+     *            {@code (index < 0 || index >= tab count)}
      *
      * @see #getDisabledIconAt
      * @beaninfo
@@ -1414,7 +1414,7 @@ public class JTabbedPane extends JComponent
      * @param index the tab index where the tooltip text should be set
      * @param toolTipText the tooltip text to be displayed for the tab
      * @exception IndexOutOfBoundsException if index is out of range
-     *            (index &lt; 0 || index &gt;= tab count)
+     *            {@code (index < 0 || index >= tab count)}
      *
      * @see #getToolTipTextAt
      * @beaninfo
@@ -1443,14 +1443,14 @@ public class JTabbedPane extends JComponent
      * which can be <code>null</code>, in which case the tab's background color
      * will default to the background color of the <code>tabbedpane</code>.
      * An internal exception is raised if there is no tab at that index.
-     * <p/>
+     * <p>
      * It is up to the look and feel to honor this property, some may
      * choose to ignore it.
      *
      * @param index the tab index where the background should be set
      * @param background the color to be displayed in the tab's background
      * @exception IndexOutOfBoundsException if index is out of range
-     *            (index &lt; 0 || index &gt;= tab count)
+     *            {@code (index < 0 || index >= tab count)}
      *
      * @see #getBackgroundAt
      * @beaninfo
@@ -1476,14 +1476,14 @@ public class JTabbedPane extends JComponent
      * <code>null</code>, in which case the tab's foreground color
      * will default to the foreground color of this <code>tabbedpane</code>.
      * An internal exception is raised if there is no tab at that index.
-     * <p/>
+     * <p>
      * It is up to the look and feel to honor this property, some may
      * choose to ignore it.
      *
      * @param index the tab index where the foreground should be set
      * @param foreground the color to be displayed as the tab's foreground
      * @exception IndexOutOfBoundsException if index is out of range
-     *            (index &lt; 0 || index &gt;= tab count)
+     *            {@code (index < 0 || index >= tab count)}
      *
      * @see #getForegroundAt
      * @beaninfo
@@ -1510,7 +1510,7 @@ public class JTabbedPane extends JComponent
      * @param index the tab index which should be enabled/disabled
      * @param enabled whether or not the tab should be enabled
      * @exception IndexOutOfBoundsException if index is out of range
-     *            (index &lt; 0 || index &gt;= tab count)
+     *            {@code (index < 0 || index >= tab count)}
      *
      * @see #isEnabledAt
      */
@@ -1530,7 +1530,7 @@ public class JTabbedPane extends JComponent
      * @param index the tab index where this component is being placed
      * @param component the component for the tab
      * @exception IndexOutOfBoundsException if index is out of range
-     *            (index &lt; 0 || index &gt;= tab count)
+     *            {@code (index < 0 || index >= tab count)}
      *
      * @see #getComponentAt
      * @beaninfo
@@ -1605,8 +1605,8 @@ public class JTabbedPane extends JComponent
      * @param tabIndex the index of the tab that the mnemonic refers to
      * @param mnemonicIndex index into the <code>String</code> to underline
      * @exception IndexOutOfBoundsException if <code>tabIndex</code> is
-     *            out of range (<code>tabIndex < 0 || tabIndex >= tab
-     *            count</code>)
+     *            out of range ({@code tabIndex < 0 || tabIndex >= tab
+     *            count})
      * @exception IllegalArgumentException will be thrown if
      *            <code>mnemonicIndex</code> is &gt;= length of the tab
      *            title , or &lt; -1
@@ -1649,7 +1649,7 @@ public class JTabbedPane extends JComponent
      * @param tabIndex the index of the tab that the mnemonic refers to
      * @param mnemonic the key code which represents the mnemonic
      * @exception IndexOutOfBoundsException if <code>tabIndex</code> is out
-     *            of range (<code>tabIndex < 0 || tabIndex >= tab count</code>)
+     *            of range ({@code tabIndex < 0 || tabIndex >= tab count})
      * @see #getMnemonicAt(int)
      * @see #setDisplayedMnemonicIndexAt(int,int)
      *
@@ -1885,7 +1885,7 @@ public class JTabbedPane extends JComponent
      * future Swing releases. The current serialization support is
      * appropriate for short term storage or RMI between applications running
      * the same version of Swing.  As of 1.4, support for long term storage
-     * of all JavaBeans<sup><font size="-2">TM</font></sup>
+     * of all JavaBeans&trade;
      * has been added to the <code>java.beans</code> package.
      * Please see {@link java.beans.XMLEncoder}.
      */
@@ -2354,7 +2354,7 @@ public class JTabbedPane extends JComponent
     * @param component the component to render the title for the
     *                  specified tab
     * @exception IndexOutOfBoundsException if index is out of range
-    *            (index < 0 || index >= tab count)
+    *            {@code (index < 0 || index >= tab count)}
     * @exception IllegalArgumentException if component has already been
     *            added to this <code>JTabbedPane</code>
     *
@@ -2386,7 +2386,7 @@ public class JTabbedPane extends JComponent
      * @param index  the index of the item being queried
      * @return the tab component at <code>index</code>
      * @exception IndexOutOfBoundsException if index is out of range
-     *            (index < 0 || index >= tab count)
+     *            {@code (index < 0 || index >= tab count)}
      *
      * @see #setTabComponentAt
      * @since 1.6

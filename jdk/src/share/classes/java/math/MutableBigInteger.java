@@ -1257,14 +1257,14 @@ class MutableBigInteger {
 
             int j = (s+m-1) / m;      // step 2a: j = ceil(s/m)
             int n = j * m;            // step 2b: block length in 32-bit units
-            int n32 = 32 * n;         // block length in bits
-            int sigma = Math.max(0, n32 - b.bitLength());   // step 3: sigma = max{T | (2^T)*B < beta^n}
+            long n32 = 32L * n;         // block length in bits
+            int sigma = (int) Math.max(0, n32 - b.bitLength());   // step 3: sigma = max{T | (2^T)*B < beta^n}
             MutableBigInteger bShifted = new MutableBigInteger(b);
             bShifted.safeLeftShift(sigma);   // step 4a: shift b so its length is a multiple of n
             safeLeftShift(sigma);     // step 4b: shift this by the same amount
 
             // step 5: t is the number of blocks needed to accommodate this plus one additional bit
-            int t = (bitLength()+n32) / n32;
+            int t = (int) ((bitLength()+n32) / n32);
             if (t < 2) {
                 t = 2;
             }
@@ -1421,10 +1421,10 @@ class MutableBigInteger {
     }
 
     /** @see BigInteger#bitLength() */
-    int bitLength() {
+    long bitLength() {
         if (intLen == 0)
             return 0;
-        return intLen*32 - Integer.numberOfLeadingZeros(value[offset]);
+        return intLen*32L - Integer.numberOfLeadingZeros(value[offset]);
     }
 
     /**

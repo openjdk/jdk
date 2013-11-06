@@ -54,7 +54,7 @@ import javax.sql.*;
  * <code>XmlReader</code> object to read data in XML format to populate itself with that
  * data.  It uses the <code>XmlWriter</code> object to write itself to a stream or
  * <code>java.io.Writer</code> object in XML format.
- * <P>
+ *
  * <h3>1.0 Naming Convention for Implementations</h3>
  * As a guide  to naming <code>SyncProvider</code>
  * implementations, the following should be noted:
@@ -129,7 +129,7 @@ import javax.sql.*;
  * registered with the <code>SyncFactory</code> instance, <i>crs</i> will be
  * assigned the default provider in the reference implementation, which is
  * <code>com.sun.rowset.providers.RIOptimisticProvider</code>.
- * <p>
+ *
  * <h3>3.0 Violations and Synchronization Issues</h3>
  * If an update between a disconnected <code>RowSet</code> object
  * and a data source violates
@@ -147,7 +147,7 @@ import javax.sql.*;
  * violation is not handled by the <code>SyncProvider</code> implementation,
  * all <code>SyncProvider</code>
  * objects must throw a <code>SyncProviderException</code>.
- * <p>
+ *
  * <h3>4.0 Updatable SQL VIEWs</h3>
  * It is possible for any disconnected or connected <code>RowSet</code> object to be populated
  * from an SQL query that is formulated originally from an SQL <code>VIEW</code>.
@@ -167,7 +167,7 @@ import javax.sql.*;
  * <P>
  * The default is for a <code>RowSet</code> object not to be updatable if it was
  * populated with data from an SQL <code>VIEW</code>.
- * <P>
+ *
  * <h3>5.0 <code>SyncProvider</code> Constants</h3>
  * The <code>SyncProvider</code> class provides three sets of constants that
  * are used as return values or parameters for <code>SyncProvider</code> methods.

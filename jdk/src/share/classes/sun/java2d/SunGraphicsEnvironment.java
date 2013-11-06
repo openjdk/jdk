@@ -25,6 +25,7 @@
 
 package sun.java2d;
 
+import java.awt.AWTError;
 import java.awt.Color;
 import java.awt.Font;
 import java.awt.Graphics2D;
@@ -165,7 +166,11 @@ public abstract class SunGraphicsEnvironment extends GraphicsEnvironment
      * Returns the default screen graphics device.
      */
     public GraphicsDevice getDefaultScreenDevice() {
-        return getScreenDevices()[0];
+        GraphicsDevice[] screens = getScreenDevices();
+        if (screens.length == 0) {
+            throw new AWTError("no screen devices");
+        }
+        return screens[0];
     }
 
     /**

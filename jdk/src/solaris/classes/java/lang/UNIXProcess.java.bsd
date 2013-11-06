@@ -337,40 +337,54 @@ final class UNIXProcess extends Process {
      * able to read any buffered data lingering in the OS pipe buffer.
      */
     static class ProcessPipeInputStream extends BufferedInputStream {
+        private final Object closeLock = new Object();
+
         ProcessPipeInputStream(int fd) {
             super(new FileInputStream(newFileDescriptor(fd)));
         }
 
-        private static byte[] drainInputStream(InputStream in)
+        private InputStream drainInputStream(InputStream in)
                 throws IOException {
-            if (in == null) return null;
             int n = 0;
             int j;
             byte[] a = null;
-            while ((j = in.available()) > 0) {
-                a = (a == null) ? new byte[j] : Arrays.copyOf(a, n + j);
-                n += in.read(a, n, j);
+            synchronized (closeLock) {
+                if (buf == null) // asynchronous close()?
+                    return null; // discard
+                j = in.available();
             }
-            return (a == null || n == a.length) ? a : Arrays.copyOf(a, n);
+            while (j > 0) {
+                a = (a == null) ? new byte[j] : Arrays.copyOf(a, n + j);
+                synchronized (closeLock) {
+                    if (buf == null) // asynchronous close()?
+                        return null; // discard
+                    n += in.read(a, n, j);
+                    j = in.available();
+                }
+            }
+            return (a == null) ?
+                    ProcessBuilder.NullInputStream.INSTANCE :
+                    new ByteArrayInputStream(n == a.length ? a : Arrays.copyOf(a, n));
         }
 
         /** Called by the process reaper thread when the process exits. */
         synchronized void processExited() {
-            // Most BufferedInputStream methods are synchronized, but close()
-            // is not, and so we have to handle concurrent racing close().
             try {
                 InputStream in = this.in;
                 if (in != null) {
-                    byte[] stragglers = drainInputStream(in);
+                    InputStream stragglers = drainInputStream(in);
                     in.close();
-                    this.in = (stragglers == null) ?
-                        ProcessBuilder.NullInputStream.INSTANCE :
-                        new ByteArrayInputStream(stragglers);
-                    if (buf == null) // asynchronous close()?
-                        this.in = null;
+                    this.in = stragglers;
                 }
-            } catch (IOException ignored) {
-                // probably an asynchronous close().
+            } catch (IOException ignored) { }
+        }
+
+        @Override
+        public void close() throws IOException {
+            // BufferedInputStream#close() is not synchronized unlike most other methods.
+            // Synchronizing helps avoid racing with drainInputStream().
+            synchronized (closeLock) {
+                super.close();
             }
         }
     }

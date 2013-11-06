@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -205,6 +205,9 @@ class MethodHandleNatives {
     static boolean refKindIsMethod(byte refKind) {
         return !refKindIsField(refKind) && (refKind != REF_newInvokeSpecial);
     }
+    static boolean refKindIsConstructor(byte refKind) {
+        return (refKind == REF_newInvokeSpecial);
+    }
     static boolean refKindHasReceiver(byte refKind) {
         assert(refKindIsValid(refKind));
         return (refKind & 1) != 0;
@@ -230,20 +233,19 @@ class MethodHandleNatives {
     }
     static String refKindName(byte refKind) {
         assert(refKindIsValid(refKind));
-        return REFERENCE_KIND_NAME[refKind];
+        switch (refKind) {
+        case REF_getField:          return "getField";
+        case REF_getStatic:         return "getStatic";
+        case REF_putField:          return "putField";
+        case REF_putStatic:         return "putStatic";
+        case REF_invokeVirtual:     return "invokeVirtual";
+        case REF_invokeStatic:      return "invokeStatic";
+        case REF_invokeSpecial:     return "invokeSpecial";
+        case REF_newInvokeSpecial:  return "newInvokeSpecial";
+        case REF_invokeInterface:   return "invokeInterface";
+        default:                    return "REF_???";
+        }
     }
-    private static String[] REFERENCE_KIND_NAME = {
-            null,
-            "getField",
-            "getStatic",
-            "putField",
-            "putStatic",
-            "invokeVirtual",
-            "invokeStatic",
-            "invokeSpecial",
-            "newInvokeSpecial",
-            "invokeInterface"
-    };
 
     private static native int getNamedCon(int which, Object[] name);
     static boolean verifyConstants() {
@@ -291,12 +293,18 @@ class MethodHandleNatives {
         Class<?> caller = (Class<?>)callerObj;
         String name = nameObj.toString().intern();
         MethodType type = (MethodType)typeObj;
-        appendixResult[0] = CallSite.makeSite(bootstrapMethod,
+        CallSite callSite = CallSite.makeSite(bootstrapMethod,
                                               name,
                                               type,
                                               staticArguments,
                                               caller);
-        return Invokers.linkToCallSiteMethod(type);
+        if (callSite instanceof ConstantCallSite) {
+            appendixResult[0] = callSite.dynamicInvoker();
+            return Invokers.linkToTargetMethod(type);
+        } else {
+            appendixResult[0] = callSite;
+            return Invokers.linkToCallSiteMethod(type);
+        }
     }
 
     /**
@@ -313,7 +321,65 @@ class MethodHandleNatives {
      * The method assumes the following arguments on the stack:
      * 0: the method handle being invoked
      * 1-N: the arguments to the method handle invocation
-     * N+1: an implicitly added type argument (the given MethodType)
+     * N+1: an optional, implicitly added argument (typically the given MethodType)
+     * <p>
+     * The nominal method at such a call site is an instance of
+     * a signature-polymorphic method (see @PolymorphicSignature).
+     * Such method instances are user-visible entities which are
+     * "split" from the generic placeholder method in {@code MethodHandle}.
+     * (Note that the placeholder method is not identical with any of
+     * its instances.  If invoked reflectively, is guaranteed to throw an
+     * {@code UnsupportedOperationException}.)
+     * If the signature-polymorphic method instance is ever reified,
+     * it appears as a "copy" of the original placeholder
+     * (a native final member of {@code MethodHandle}) except
+     * that its type descriptor has shape required by the instance,
+     * and the method instance is <em>not</em> varargs.
+     * The method instance is also marked synthetic, since the
+     * method (by definition) does not appear in Java source code.
+     * <p>
+     * The JVM is allowed to reify this method as instance metadata.
+     * For example, {@code invokeBasic} is always reified.
+     * But the JVM may instead call {@code linkMethod}.
+     * If the result is an * ordered pair of a {@code (method, appendix)},
+     * the method gets all the arguments (0..N inclusive)
+     * plus the appendix (N+1), and uses the appendix to complete the call.
+     * In this way, one reusable method (called a "linker method")
+     * can perform the function of any number of polymorphic instance
+     * methods.
+     * <p>
+     * Linker methods are allowed to be weakly typed, with any or
+     * all references rewritten to {@code Object} and any primitives
+     * (except {@code long}/{@code float}/{@code double})
+     * rewritten to {@code int}.
+     * A linker method is trusted to return a strongly typed result,
+     * according to the specific method type descriptor of the
+     * signature-polymorphic instance it is emulating.
+     * This can involve (as necessary) a dynamic check using
+     * data extracted from the appendix argument.
+     * <p>
+     * The JVM does not inspect the appendix, other than to pass
+     * it verbatim to the linker method at every call.
+     * This means that the JDK runtime has wide latitude
+     * for choosing the shape of each linker method and its
+     * corresponding appendix.
+     * Linker methods should be generated from {@code LambdaForm}s
+     * so that they do not become visible on stack traces.
+     * <p>
+     * The {@code linkMethod} call is free to omit the appendix
+     * (returning null) and instead emulate the required function
+     * completely in the linker method.
+     * As a corner case, if N==255, no appendix is possible.
+     * In this case, the method returned must be custom-generated to
+     * to perform any needed type checking.
+     * <p>
+     * If the JVM does not reify a method at a call site, but instead
+     * calls {@code linkMethod}, the corresponding call represented
+     * in the bytecodes may mention a valid method which is not
+     * representable with a {@code MemberName}.
+     * Therefore, use cases for {@code linkMethod} tend to correspond to
+     * special cases in reflective code such as {@code findVirtual}
+     * or {@code revealDirect}.
      */
     static MemberName linkMethod(Class<?> callerClass, int refKind,
                                  Class<?> defc, String name, Object type,
@@ -327,12 +393,7 @@ class MethodHandleNatives {
                                      Object[] appendixResult) {
         try {
             if (defc == MethodHandle.class && refKind == REF_invokeVirtual) {
-                switch (name) {
-                case "invoke":
-                    return Invokers.genericInvokerMethod(fixMethodType(callerClass, type), appendixResult);
-                case "invokeExact":
-                    return Invokers.exactInvokerMethod(fixMethodType(callerClass, type), appendixResult);
-                }
+                return Invokers.methodHandleInvokeLinkerMethod(name, fixMethodType(callerClass, type), appendixResult);
             }
         } catch (Throwable ex) {
             if (ex instanceof LinkageError)
@@ -379,11 +440,36 @@ class MethodHandleNatives {
             Lookup lookup = IMPL_LOOKUP.in(callerClass);
             assert(refKindIsValid(refKind));
             return lookup.linkMethodHandleConstant((byte) refKind, defc, name, type);
+        } catch (IllegalAccessException ex) {
+            Throwable cause = ex.getCause();
+            if (cause instanceof AbstractMethodError) {
+                throw (AbstractMethodError) cause;
+            } else {
+                Error err = new IllegalAccessError(ex.getMessage());
+                throw initCauseFrom(err, ex);
+            }
+        } catch (NoSuchMethodException ex) {
+            Error err = new NoSuchMethodError(ex.getMessage());
+            throw initCauseFrom(err, ex);
+        } catch (NoSuchFieldException ex) {
+            Error err = new NoSuchFieldError(ex.getMessage());
+            throw initCauseFrom(err, ex);
         } catch (ReflectiveOperationException ex) {
             Error err = new IncompatibleClassChangeError();
-            err.initCause(ex);
-            throw err;
+            throw initCauseFrom(err, ex);
         }
+    }
+
+    /**
+     * Use best possible cause for err.initCause(), substituting the
+     * cause for err itself if the cause has the same (or better) type.
+     */
+    static private Error initCauseFrom(Error err, Exception ex) {
+        Throwable th = ex.getCause();
+        if (err.getClass().isInstance(th))
+           return (Error) th;
+        err.initCause(th == null ? ex : th);
+        return err;
     }
 
     /**

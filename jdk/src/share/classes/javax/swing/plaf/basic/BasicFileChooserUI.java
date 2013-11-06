@@ -43,7 +43,7 @@ import sun.swing.*;
 import sun.swing.SwingUtilities2;
 
 /**
- * Basic L&F implementation of a FileChooser.
+ * Basic L&amp;F implementation of a FileChooser.
  *
  * @author Jeff Dinkins
  */
@@ -456,7 +456,7 @@ public class BasicFileChooserUI extends FileChooserUI {
 
         public void mouseClicked(MouseEvent evt) {
             // Note: we can't depend on evt.getSource() because of backward
-            // compatability
+            // compatibility
             if (list != null &&
                 SwingUtilities.isLeftMouseButton(evt) &&
                 (evt.getClickCount()%2 == 0)) {
@@ -565,7 +565,7 @@ public class BasicFileChooserUI extends FileChooserUI {
     }
 
     protected class DoubleClickListener extends MouseAdapter {
-        // NOTE: This class exists only for backward compatability. All
+        // NOTE: This class exists only for backward compatibility. All
         // its functionality has been moved into Handler. If you need to add
         // new functionality add it to the Handler, but make sure this
         // class calls into the Handler.
@@ -591,7 +591,7 @@ public class BasicFileChooserUI extends FileChooserUI {
     }
 
     protected class SelectionListener implements ListSelectionListener {
-        // NOTE: This class exists only for backward compatability. All
+        // NOTE: This class exists only for backward compatibility. All
         // its functionality has been moved into Handler. If you need to add
         // new functionality add it to the Handler, but make sure this
         // class calls into the Handler.

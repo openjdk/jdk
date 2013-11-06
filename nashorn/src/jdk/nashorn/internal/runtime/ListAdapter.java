@@ -32,6 +32,8 @@ import java.util.ListIterator;
 import java.util.NoSuchElementException;
 import java.util.RandomAccess;
 import java.util.concurrent.Callable;
+import jdk.nashorn.api.scripting.JSObject;
+import jdk.nashorn.api.scripting.ScriptObjectMirror;
 import jdk.nashorn.internal.runtime.linker.Bootstrap;
 import jdk.nashorn.internal.runtime.linker.InvokeByName;
 
@@ -48,7 +50,7 @@ import jdk.nashorn.internal.runtime.linker.InvokeByName;
  * operations respectively, while {@link #addLast(Object)} and {@link #removeLast()} will translate to {@code push} and
  * {@code pop}.
  */
-public final class ListAdapter extends AbstractList<Object> implements RandomAccess, Deque<Object> {
+public abstract class ListAdapter extends AbstractList<Object> implements RandomAccess, Deque<Object> {
     // These add to the back and front of the list
     private static final Object PUSH    = new Object();
     private static InvokeByName getPUSH() {
@@ -56,7 +58,7 @@ public final class ListAdapter extends AbstractList<Object> implements RandomAcc
                 new Callable<InvokeByName>() {
                     @Override
                     public InvokeByName call() {
-                        return new InvokeByName("push", ScriptObject.class, void.class, Object.class);
+                        return new InvokeByName("push", Object.class, void.class, Object.class);
                     }
                 });
     }
@@ -67,7 +69,7 @@ public final class ListAdapter extends AbstractList<Object> implements RandomAcc
                 new Callable<InvokeByName>() {
                     @Override
                     public InvokeByName call() {
-                        return new InvokeByName("unshift", ScriptObject.class, void.class, Object.class);
+                        return new InvokeByName("unshift", Object.class, void.class, Object.class);
                     }
                 });
     }
@@ -79,7 +81,7 @@ public final class ListAdapter extends AbstractList<Object> implements RandomAcc
                 new Callable<InvokeByName>() {
                     @Override
                     public InvokeByName call() {
-                        return new InvokeByName("pop", ScriptObject.class, Object.class);
+                        return new InvokeByName("pop", Object.class, Object.class);
                     }
                 });
     }
@@ -90,7 +92,7 @@ public final class ListAdapter extends AbstractList<Object> implements RandomAcc
                 new Callable<InvokeByName>() {
                     @Override
                     public InvokeByName call() {
-                        return new InvokeByName("shift", ScriptObject.class, Object.class);
+                        return new InvokeByName("shift", Object.class, Object.class);
                     }
                 });
     }
@@ -102,7 +104,7 @@ public final class ListAdapter extends AbstractList<Object> implements RandomAcc
                 new Callable<InvokeByName>() {
                     @Override
                     public InvokeByName call() {
-                        return new InvokeByName("splice", ScriptObject.class, void.class, int.class, int.class, Object.class);
+                        return new InvokeByName("splice", Object.class, void.class, int.class, int.class, Object.class);
                     }
                 });
     }
@@ -113,39 +115,63 @@ public final class ListAdapter extends AbstractList<Object> implements RandomAcc
                 new Callable<InvokeByName>() {
                     @Override
                     public InvokeByName call() {
-                        return new InvokeByName("splice", ScriptObject.class, void.class, int.class, int.class);
+                        return new InvokeByName("splice", Object.class, void.class, int.class, int.class);
                     }
                 });
     }
 
-    private final ScriptObject obj;
+    /** wrapped object */
+    protected final Object obj;
 
-    /**
-     * Creates a new list wrapper for the specified script object.
-     * @param obj script the object to wrap
-     */
-    public ListAdapter(ScriptObject obj) {
+    // allow subclasses only in this package
+    ListAdapter(final Object obj) {
         this.obj = obj;
     }
 
-    @Override
-    public int size() {
-        return JSType.toInt32(obj.getLength());
+    /**
+     * Factory to create a ListAdapter for a given script object.
+     *
+     * @param obj script object to wrap as a ListAdapter
+     * @return A ListAdapter wrapper object
+     */
+    public static ListAdapter create(final Object obj) {
+        if (obj instanceof ScriptObject) {
+            final Object mirror = ScriptObjectMirror.wrap(obj, Context.getGlobal());
+            return new JSObjectListAdapter((JSObject)mirror);
+        } else if (obj instanceof JSObject) {
+            return new JSObjectListAdapter((JSObject)obj);
+        } else {
+            throw new IllegalArgumentException("ScriptObject or JSObject expected");
+        }
     }
 
     @Override
-    public Object get(int index) {
+    public final Object get(final int index) {
         checkRange(index);
-        return obj.get(index);
+        return getAt(index);
     }
 
+    /**
+     * Get object at an index
+     * @param index index in list
+     * @return object
+     */
+    protected abstract Object getAt(final int index);
+
     @Override
-    public Object set(int index, Object element) {
+    public Object set(final int index, final Object element) {
         checkRange(index);
-        final Object prevValue = get(index);
-        obj.set(index, element, false);
+        final Object prevValue = getAt(index);
+        setAt(index, element);
         return prevValue;
     }
+
+    /**
+     * Set object at an index
+     * @param index   index in list
+     * @param element element
+     */
+    protected abstract void setAt(final int index, final Object element);
 
     private void checkRange(int index) {
         if(index < 0 || index >= size()) {
@@ -154,18 +180,18 @@ public final class ListAdapter extends AbstractList<Object> implements RandomAcc
     }
 
     @Override
-    public void push(Object e) {
+    public final void push(final Object e) {
         addFirst(e);
     }
 
     @Override
-    public boolean add(Object e) {
+    public final boolean add(final Object e) {
         addLast(e);
         return true;
     }
 
     @Override
-    public void addFirst(Object e) {
+    public final void addFirst(final Object e) {
         try {
             final InvokeByName unshiftInvoker = getUNSHIFT();
             final Object fn = unshiftInvoker.getGetter().invokeExact(obj);
@@ -179,7 +205,7 @@ public final class ListAdapter extends AbstractList<Object> implements RandomAcc
     }
 
     @Override
-    public void addLast(Object e) {
+    public final void addLast(final Object e) {
         try {
             final InvokeByName pushInvoker = getPUSH();
             final Object fn = pushInvoker.getGetter().invokeExact(obj);
@@ -193,7 +219,7 @@ public final class ListAdapter extends AbstractList<Object> implements RandomAcc
     }
 
     @Override
-    public void add(int index, Object e) {
+    public final void add(final int index, final Object e) {
         try {
             if(index < 0) {
                 throw invalidIndex(index);
@@ -212,57 +238,57 @@ public final class ListAdapter extends AbstractList<Object> implements RandomAcc
                     throw invalidIndex(index);
                 }
             }
-        } catch(RuntimeException | Error ex) {
+        } catch(final RuntimeException | Error ex) {
             throw ex;
-        } catch(Throwable t) {
+        } catch(final Throwable t) {
             throw new RuntimeException(t);
         }
     }
-    private static void checkFunction(Object fn, InvokeByName invoke) {
+    private static void checkFunction(final Object fn, final InvokeByName invoke) {
         if(!(Bootstrap.isCallable(fn))) {
             throw new UnsupportedOperationException("The script object doesn't have a function named " + invoke.getName());
         }
     }
 
-    private static IndexOutOfBoundsException invalidIndex(int index) {
+    private static IndexOutOfBoundsException invalidIndex(final int index) {
         return new IndexOutOfBoundsException(String.valueOf(index));
     }
 
     @Override
-    public boolean offer(Object e) {
+    public final boolean offer(final Object e) {
         return offerLast(e);
     }
 
     @Override
-    public boolean offerFirst(Object e) {
+    public final boolean offerFirst(final Object e) {
         addFirst(e);
         return true;
     }
 
     @Override
-    public boolean offerLast(Object e) {
+    public final boolean offerLast(final Object e) {
         addLast(e);
         return true;
     }
 
     @Override
-    public Object pop() {
+    public final Object pop() {
         return removeFirst();
     }
 
     @Override
-    public Object remove() {
+    public final Object remove() {
         return removeFirst();
     }
 
     @Override
-    public Object removeFirst() {
+    public final Object removeFirst() {
         checkNonEmpty();
         return invokeShift();
     }
 
     @Override
-    public Object removeLast() {
+    public final Object removeLast() {
         checkNonEmpty();
         return invokePop();
     }
@@ -274,7 +300,7 @@ public final class ListAdapter extends AbstractList<Object> implements RandomAcc
     }
 
     @Override
-    public Object remove(int index) {
+    public final Object remove(final int index) {
         if(index < 0) {
             throw invalidIndex(index);
         } else if (index == 0) {
@@ -320,11 +346,11 @@ public final class ListAdapter extends AbstractList<Object> implements RandomAcc
     }
 
     @Override
-    protected void removeRange(int fromIndex, int toIndex) {
+    protected final void removeRange(final int fromIndex, final int toIndex) {
         invokeSpliceRemove(fromIndex, toIndex - fromIndex);
     }
 
-    private void invokeSpliceRemove(int fromIndex, int count) {
+    private void invokeSpliceRemove(final int fromIndex, final int count) {
         try {
             final InvokeByName spliceRemoveInvoker = getSPLICE_REMOVE();
             final Object fn = spliceRemoveInvoker.getGetter().invokeExact(obj);
@@ -338,54 +364,54 @@ public final class ListAdapter extends AbstractList<Object> implements RandomAcc
     }
 
     @Override
-    public Object poll() {
+    public final Object poll() {
         return pollFirst();
     }
 
     @Override
-    public Object pollFirst() {
+    public final Object pollFirst() {
         return isEmpty() ? null : invokeShift();
     }
 
     @Override
-    public Object pollLast() {
+    public final Object pollLast() {
         return isEmpty() ? null : invokePop();
     }
 
     @Override
-    public Object peek() {
+    public final Object peek() {
         return peekFirst();
     }
 
     @Override
-    public Object peekFirst() {
+    public final Object peekFirst() {
         return isEmpty() ? null : get(0);
     }
 
     @Override
-    public Object peekLast() {
+    public final Object peekLast() {
         return isEmpty() ? null : get(size() - 1);
     }
 
     @Override
-    public Object element() {
+    public final Object element() {
         return getFirst();
     }
 
     @Override
-    public Object getFirst() {
+    public final Object getFirst() {
         checkNonEmpty();
         return get(0);
     }
 
     @Override
-    public Object getLast() {
+    public final Object getLast() {
         checkNonEmpty();
         return get(size() - 1);
     }
 
     @Override
-    public Iterator<Object> descendingIterator() {
+    public final Iterator<Object> descendingIterator() {
         final ListIterator<Object> it = listIterator(size());
         return new Iterator<Object>() {
             @Override
@@ -406,16 +432,16 @@ public final class ListAdapter extends AbstractList<Object> implements RandomAcc
     }
 
     @Override
-    public boolean removeFirstOccurrence(Object o) {
+    public final boolean removeFirstOccurrence(final Object o) {
         return removeOccurrence(o, iterator());
     }
 
     @Override
-    public boolean removeLastOccurrence(Object o) {
+    public final boolean removeLastOccurrence(final Object o) {
         return removeOccurrence(o, descendingIterator());
     }
 
-    private static boolean removeOccurrence(Object o, Iterator<Object> it) {
+    private static boolean removeOccurrence(final Object o, final Iterator<Object> it) {
         while(it.hasNext()) {
             final Object e = it.next();
             if(o == null ? e == null : o.equals(e)) {

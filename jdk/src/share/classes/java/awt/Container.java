@@ -75,7 +75,7 @@ import sun.security.action.GetBooleanAction;
  * (and hence to the bottom of the stacking order).
  * <p>
  * <b>Note</b>: For details on the focus subsystem, see
- * <a href="http://java.sun.com/docs/books/tutorial/uiswing/misc/focus.html">
+ * <a href="http://docs.oracle.com/javase/tutorial/uiswing/misc/focus.html">
  * How to Use the Focus Subsystem</a>,
  * a section in <em>The Java Tutorial</em>, and the
  * <a href="../../java/awt/doc-files/FocusSpec.html">Focus Specification</a>
@@ -257,6 +257,12 @@ public class Container extends Component {
             @Override
             public void validateUnconditionally(Container cont) {
                 cont.validateUnconditionally();
+            }
+
+            @Override
+            public Component findComponentAt(Container cont, int x, int y,
+                    boolean ignoreEnabled) {
+                return cont.findComponentAt(x, y, ignoreEnabled);
             }
         });
     }
@@ -953,7 +959,7 @@ public class Container extends Component {
      *
      * @param     comp the component to be added
      * @param     constraints an object expressing
-     *                  layout contraints for this component
+     *                  layout constraints for this component
      * @exception NullPointerException if {@code comp} is {@code null}
      * @see #addImpl
      * @see #invalidate
@@ -980,7 +986,7 @@ public class Container extends Component {
      *
      *
      * @param comp the component to be added
-     * @param constraints an object expressing layout contraints for this
+     * @param constraints an object expressing layout constraints for this
      * @param index the position in the container's list at which to insert
      * the component; <code>-1</code> means insert at the end
      * component
@@ -2651,7 +2657,6 @@ public class Container extends Component {
      * behavior. Setting 'ignoreEnabled' to 'false' bypasses disabled
      * Components during the search. This behavior is used by the
      * lightweight cursor support in sun.awt.GlobalCursorManager.
-     * The cursor code calls this function directly via native code.
      *
      * The addition of this feature is temporary, pending the
      * adoption of new, public API which exports this feature.

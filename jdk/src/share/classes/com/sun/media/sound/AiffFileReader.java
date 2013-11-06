@@ -51,15 +51,6 @@ public final class AiffFileReader extends SunFileReader {
 
     private static final int MAX_READ_LENGTH = 8;
 
-    /**
-     * Constructs a new AiffParser object.
-     */
-    public AiffFileReader() {
-    }
-
-
-
-
     // METHODS TO IMPLEMENT AudioFileReader
 
     /**
@@ -292,9 +283,15 @@ public final class AiffFileReader extends SunFileReader {
                     throw new UnsupportedAudioFileException("Invalid AIFF/COMM chunksize");
                 }
                 // Read header info.
-                int channels = dis.readShort();
-                dis.readInt();
-                int sampleSizeInBits = dis.readShort();
+                int channels = dis.readUnsignedShort();
+                if (channels <= 0) {
+                    throw new UnsupportedAudioFileException("Invalid number of channels");
+                }
+                dis.readInt(); // numSampleFrames
+                int sampleSizeInBits = dis.readUnsignedShort();
+                if (sampleSizeInBits < 1 || sampleSizeInBits > 32) {
+                    throw new UnsupportedAudioFileException("Invalid AIFF/COMM sampleSize");
+                }
                 float sampleRate = (float) read_ieee_extended(dis);
                 chunkRead += (2 + 4 + 2 + 10);
 
@@ -438,7 +435,4 @@ public final class AiffFileReader extends SunFileReader {
 
         return f;
     }
-
-
-
 }

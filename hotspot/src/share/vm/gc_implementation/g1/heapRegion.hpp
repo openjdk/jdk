@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -355,13 +355,15 @@ class HeapRegion: public G1OffsetTableContigSpace {
                                       ~((1 << (size_t) LogOfHRGrainBytes) - 1);
   }
 
+  static size_t max_region_size();
+
   // It sets up the heap region size (GrainBytes / GrainWords), as
   // well as other related fields that are based on the heap region
   // size (LogOfHRGrainBytes / LogOfHRGrainWords /
   // CardsPerRegion). All those fields are considered constant
   // throughout the JVM's execution, therefore they should only be set
   // up once during initialization time.
-  static void setup_heap_region_size(uintx min_heap_size);
+  static void setup_heap_region_size(size_t initial_heap_size, size_t max_heap_size);
 
   enum ClaimValues {
     InitialClaimValue          = 0,

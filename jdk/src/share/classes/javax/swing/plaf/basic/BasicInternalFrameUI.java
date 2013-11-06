@@ -35,7 +35,7 @@ import sun.swing.DefaultLookup;
 import sun.swing.UIAction;
 
 /**
- * A basic L&F implementation of JInternalFrame.
+ * A basic L&amp;F implementation of JInternalFrame.
  *
  * @author David Kloba
  * @author Rich Schiavi
@@ -477,7 +477,7 @@ public class BasicInternalFrameUI extends InternalFrameUI
 
     public class InternalFramePropertyChangeListener implements
         PropertyChangeListener {
-        // NOTE: This class exists only for backward compatability. All
+        // NOTE: This class exists only for backward compatibility. All
         // its functionality has been moved into Handler. If you need to add
         // new functionality add it to the Handler, but make sure this
         // class calls into the Handler.
@@ -491,7 +491,7 @@ public class BasicInternalFrameUI extends InternalFrameUI
     }
 
   public class InternalFrameLayout implements LayoutManager {
-    // NOTE: This class exists only for backward compatability. All
+    // NOTE: This class exists only for backward compatibility. All
     // its functionality has been moved into Handler. If you need to add
     // new functionality add it to the Handler, but make sure this
     // class calls into the Handler.
@@ -1093,7 +1093,7 @@ public class BasicInternalFrameUI extends InternalFrameUI
     }    /// End BorderListener Class
 
     protected class ComponentHandler implements ComponentListener {
-      // NOTE: This class exists only for backward compatability. All
+      // NOTE: This class exists only for backward compatibility. All
       // its functionality has been moved into Handler. If you need to add
       // new functionality add it to the Handler, but make sure this
       // class calls into the Handler.
@@ -1119,7 +1119,7 @@ public class BasicInternalFrameUI extends InternalFrameUI
 
 
     protected class GlassPaneDispatcher implements MouseInputListener {
-        // NOTE: This class exists only for backward compatability. All
+        // NOTE: This class exists only for backward compatibility. All
         // its functionality has been moved into Handler. If you need to add
         // new functionality add it to the Handler, but make sure this
         // class calls into the Handler.
@@ -1159,7 +1159,7 @@ public class BasicInternalFrameUI extends InternalFrameUI
 
     protected class BasicInternalFrameListener implements InternalFrameListener
     {
-      // NOTE: This class exists only for backward compatability. All
+      // NOTE: This class exists only for backward compatibility. All
       // its functionality has been moved into Handler. If you need to add
       // new functionality add it to the Handler, but make sure this
       // class calls into the Handler.

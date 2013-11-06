@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -57,6 +57,7 @@ ciInstanceKlass::ciInstanceKlass(KlassHandle h_k) :
   _init_state = ik->init_state();
   _nonstatic_field_size = ik->nonstatic_field_size();
   _has_nonstatic_fields = ik->has_nonstatic_fields();
+  _has_default_methods = ik->has_default_methods();
   _nonstatic_fields = NULL; // initialized lazily by compute_nonstatic_fields:
 
   _implementor = NULL; // we will fill these lazily
@@ -522,8 +523,7 @@ ciInstanceKlass::compute_nonstatic_fields_impl(GrowableArray<ciField*>*
 
   for (JavaFieldStream fs(k); !fs.done(); fs.next()) {
     if (fs.access_flags().is_static())  continue;
-    fieldDescriptor fd;
-    fd.initialize(k, fs.index());
+    fieldDescriptor& fd = fs.field_descriptor();
     ciField* field = new (arena) ciField(&fd);
     fields->append(field);
   }
@@ -672,7 +672,6 @@ class StaticFinalFieldPrinter : public FieldClosure {
 
 
 void ciInstanceKlass::dump_replay_data(outputStream* out) {
-  ASSERT_IN_VM;
   ResourceMark rm;
 
   InstanceKlass* ik = get_instanceKlass();
