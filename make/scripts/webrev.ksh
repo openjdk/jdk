@@ -27,7 +27,7 @@
 # Documentation is available via 'webrev -h'.
 #
 
-WEBREV_UPDATED=24.0-hg+jbs
+WEBREV_UPDATED=25.0-hg+openjdk.java.net
 
 HTML='<?xml version="1.0"?>
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
@@ -39,7 +39,8 @@ FRAMEHTML='<?xml version="1.0"?>
     "http://www.w3.org/TR/xhtml1/DTD/xhtml1-frameset.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">\n'
 
-STDHEAD='<meta http-equiv="cache-control" content="no-cache" />
+STDHEAD='<meta charset="utf-8">
+<meta http-equiv="cache-control" content="no-cache" />
 <meta http-equiv="Pragma" content="no-cache" />
 <meta http-equiv="Expires" content="-1" />
 <!--
@@ -136,7 +137,19 @@ span.new {
 #
 html_quote()
 {
-	sed -e "s/&/\&amp;/g" -e "s/</\&lt;/g" -e "s/>/\&gt;/g" "$@" | expand
+	sed -e "s/&/\&amp;/g" -e "s/&amp;#\([x]*[0-9A-Fa-f]\{2,5\}\);/\&#\1;/g" -e "s/</\&lt;/g" -e "s/>/\&gt;/g" "$@" | expand
+}
+
+#
+# input_cmd | html_quote | output_cmd
+# or
+# html_dequote filename | output_cmd
+#
+# Replace HTML entities with literals
+#
+html_dequote()
+{
+	sed -e "s/&quot;/\"/g" -e "s/&apos;/\'/g" -e "s/&amp;/\&/g" -e "s/&lt;/<'/g" -e "s/&gt;/>/g" "$@" | expand
 }
 
 #
@@ -147,23 +160,6 @@ html_quote()
 bug2url()
 {
 	sed -e 's|[0-9]\{5,\}|<a href=\"'$BUGURL$IDPREFIX'&\">&</a>|g'
-}
-
-#
-# input_cmd | sac2url | output_cmd
-#
-# Scan for ARC cases and insert <a> links to the relevent SAC database.
-# This is slightly complicated because inside the SWAN, SAC cases are
-# grouped by ARC: PSARC/2006/123.  But on OpenSolaris.org, they are
-# referenced as 2006/123 (without labelling the ARC).
-#
-sac2url()
-{
-	if [[ -z $Oflag ]]; then
-	    sed -e 's|\([A-Z]\{1,2\}ARC\)[ /]\([0-9]\{4\}\)/\([0-9]\{3\}\)|<a href=\"'$SACURL'\1/\2/\3\">\1 \2/\3</a>|g'
-	else
-	    sed -e 's|\([A-Z]\{1,2\}ARC\)[ /]\([0-9]\{4\}\)/\([0-9]\{3\}\)|<a href=\"'$SACURL'/\2/\3\">\1 \2/\3</a>|g'
-	fi
 }
 
 #
@@ -230,7 +226,7 @@ strip_unchanged()
 #   $ sdiff_to_html old/usr/src/tools/scripts/webrev.sh \
 #         new/usr/src/tools/scripts/webrev.sh \
 #         webrev.sh usr/src/tools/scripts \
-#         '<a href="https://jbs.oracle.com/bugs/browse/JDK-1234567">
+#         '<a href="https://bugs.openjdk.java.net/browse/JDK-1234567">
 #          JDK-1234567</a> my bugid' > <file>.html
 #
 # framed_sdiff() is then called which creates $2.frames.html
@@ -1055,79 +1051,6 @@ source_to_html()
 	print "</pre></body></html>"
 }
 
-#
-# teamwarecomments {text|html} parent-file child-file
-#
-# Find the first delta in the child that's not in the parent.  Get the
-# newest delta from the parent, get all deltas from the child starting
-# with that delta, and then get all info starting with the second oldest
-# delta in that list (the first delta unique to the child).
-#
-# This code adapted from Bill Shannon's "spc" script
-#
-comments_from_teamware()
-{
-	fmt=$1
-	pfile=$PWS/$2
-	cfile=$CWS/$3
-
-	psid=$($SCCS prs -d:I: $pfile 2>/dev/null)
-	if [[ -z "$psid" ]]; then
-	    psid=1.1
-	fi
-
-	set -A sids $($SCCS prs -l -r$psid -d:I: $cfile 2>/dev/null)
-	N=${#sids[@]}
-
-	nawkprg='
-		/^COMMENTS:/	{p=1; next}
-		/^D [0-9]+\.[0-9]+/ {printf "--- %s ---\n", $2; p=0; }
-		NF == 0u	{ next }
-		{if (p==0) next; print $0 }'
-
-	if [[ $N -ge 2 ]]; then
-		sid1=${sids[$((N-2))]}	# Gets 2nd to last sid
-
-		if [[ $fmt == "text" ]]; then
-			$SCCS prs -l -r$sid1 $cfile  2>/dev/null | \
-			    $AWK "$nawkprg"
-			return
-		fi
-
-		$SCCS prs -l -r$sid1 $cfile  2>/dev/null | \
-		    html_quote | bug2url | sac2url | $AWK "$nawkprg"
-	fi
-}
-
-#
-# wxcomments {text|html} filepath
-#
-# Given the pathname of a file, find its location in a "wx" active file
-# list and print the following sccs comment.  Output is either text or
-# HTML; if the latter, embedded bugids (sequence of 5 or more digits) are
-# turned into URLs.
-#
-comments_from_wx()
-{
-	typeset fmt=$1
-	typeset p=$2
-
-	comm=`$AWK '
-	$1 == "'$p'" {
-		do getline ; while (NF > 0)
-		getline
-		while (NF > 0) { print ; getline }
-		exit
-	}' < $wxfile`
-
-	if [[ $fmt == "text" ]]; then
-		print "$comm"
-		return
-	fi
-
-	print "$comm" | html_quote | bug2url | sac2url
-}
-
 comments_from_mercurial()
 {
 	fmt=$1
@@ -1161,7 +1084,7 @@ comments_from_mercurial()
 	            return
 	        fi
 
-	        print "$comm" | html_quote | bug2url | sac2url
+	        print "$comm" | html_quote | bug2url
                 )
         fi
 }
@@ -1178,15 +1101,7 @@ getcomments()
 	typeset p=$2
 	typeset pp=$3
 
-	if [[ -n $wxfile ]]; then
-		comments_from_wx $fmt $p
-	else
-		if [[ $SCM_MODE == "teamware" ]]; then
-			comments_from_teamware $fmt $pp $p
-		elif [[ $SCM_MODE == "mercurial" ]]; then
-			comments_from_mercurial $fmt $pp $p
-		fi
-	fi
+	comments_from_mercurial $fmt $pp $p
 }
 
 #
@@ -1333,74 +1248,6 @@ function difflines
 	print "</span>"
 }
 
-
-#
-# flist_from_wx
-#
-# Sets up webrev to source its information from a wx-formatted file.
-# Sets the global 'wxfile' variable.
-#
-function flist_from_wx
-{
-	typeset argfile=$1
-	if [[ -n ${argfile%%/*} ]]; then
-		#
-		# If the wx file pathname is relative then make it absolute
-		# because the webrev does a "cd" later on.
-		#
-		wxfile=$PWD/$argfile
-	else
-		wxfile=$argfile
-	fi
-
-	$AWK '{ c = 1; print;
-	  while (getline) {
-		if (NF == 0) { c = -c; continue }
-		if (c > 0) print
-	  }
-	}' $wxfile > $FLIST
-
-	print " Done."
-}
-
-#
-# flist_from_teamware [ <args-to-putback-n> ]
-#
-# Generate the file list by extracting file names from a putback -n.  Some
-# names may come from the "update/create" messages and others from the
-# "currently checked out" warning.  Renames are detected here too.  Extract
-# values for CODEMGR_WS and CODEMGR_PARENT from the output of the putback
-# -n as well, but remove them if they are already defined.
-#
-function flist_from_teamware
-{
-	if [[ -n $codemgr_parent ]]; then
-		if [[ ! -d $codemgr_parent/Codemgr_wsdata ]]; then
-			print -u2 "parent $codemgr_parent doesn't look like a" \
-			    "valid teamware workspace"
-			exit 1
-		fi
-		parent_args="-p $codemgr_parent"
-	fi
-
-	print " File list from: 'putback -n $parent_args $*' ... \c"
-
-	putback -n $parent_args $* 2>&1 |
-	    $AWK '
-		/^update:|^create:/	{print $2}
-		/^Parent workspace:/	{printf("CODEMGR_PARENT=%s\n",$3)}
-		/^Child workspace:/	{printf("CODEMGR_WS=%s\n",$3)}
-		/^The following files are currently checked out/ {p = 1; next}
-		NF == 0			{p=0 ; next}
-		/^rename/		{old=$3}
-		$1 == "to:"		{print $2, old}
-		/^"/			{next}
-		p == 1			{print $1}' |
-	    sort -r -k 1,1 -u | sort > $FLIST
-
-	print " Done."
-}
-
 function outgoing_from_mercurial_forest
 {
     hg foutgoing --template 'rev: {rev}\n' $OUTPWS | $FILTER | $AWK '
@@ -1476,7 +1323,7 @@ function treestatus
     # The first and last are simple addition while the middle one
     # is a move/rename or a copy.  We can't distinguish from a rename vs a copy
     # without also getting the status of removed files.  The middle case above
-    # is a rename if File4 is also shown a being removed.  If File4 is not a 
+    # is a rename if File4 is also shown a being removed.  If File4 is not a
     # removed file, then the middle case is a copy from File4 to subdir/File4
     # FIXME - we're not distinguishing copy from rename
     $HGCMD -aC | $FILTER | while read LINE; do
@@ -1644,7 +1491,7 @@ function flist_from_mercurial
         # The first and last are simple addition while the middle one
         # is a move/rename or a copy.  We can't distinguish from a rename vs a copy
         # without also getting the status of removed files.  The middle case above
-        # is a rename if File4 is also shown a being removed.  If File4 is not a 
+        # is a rename if File4 is also shown a being removed.  If File4 is not a
         # removed file, then the middle case is a copy from File4 to subdir/File4
         # FIXME - we're not distinguishing copy from rename
 
@@ -1710,45 +1557,11 @@ function env_from_flist
 #
 function detect_scm
 {
-	#
-	# If CODEMGR_WS is specified in the flist file, we assume teamware.
-	#
-	if [[ -r $FLIST ]]; then
-		egrep '^CODEMGR_WS=' $FLIST > /dev/null 2>&1
-		if [[ $? -eq 0 ]]; then
-			print "teamware"
-			return
-		fi
-	fi
-
-	#
-	# The presence of $CODEMGR_WS and a Codemgr_wsdata directory
-	# is our clue that this is a teamware workspace.
-	# Same if true if current directory has a Codemgr_wsdata sub-dir
-	#
-	if [[ -z "$CODEMGR_WS" ]]; then
-	    CODEMGR_WS=`workspace name 2>/dev/null`
-	fi
-
-	if [[ -n $CODEMGR_WS && -d "$CODEMGR_WS/Codemgr_wsdata" ]]; then
-		print "teamware"
-	elif [[ -d $PWD/Codemgr_wsdata ]]; then
-		print "teamware"
-	elif hg root >/dev/null ; then
+	if hg root >/dev/null ; then
 		print "mercurial"
 	else
 		print "unknown"
 	fi
-}
-
-#
-# Extract the parent workspace from the Codemgr_wsdata/parent file
-#
-function parent_from_teamware
-{
-    if [[ -f "$1/Codemgr_wsdata/parent" ]]; then
-	tail -1 "$1/Codemgr_wsdata/parent"
-    fi
 }
 
 function look_for_prog
@@ -1774,48 +1587,6 @@ function look_for_prog
 	PATH=$ppath prog=`whence $progname`
 	if [[ -n $prog ]]; then
 		print $prog
-	fi
-}
-
-function build_old_new_teamware
-{
-	# If the child's version doesn't exist then
-	# get a readonly copy.
-
-	if [[ ! -f $F && -f SCCS/s.$F ]]; then
-		$SCCS get -s $F
-	fi
-
-	#
-	# Snag new version of file.
-	#
-	rm -f $newdir/$DIR/$F
-	cp $F $newdir/$DIR/$F
-
-	#
-	# Get the parent's version of the file. First see whether the
-	# child's version is checked out and get the parent's version
-	# with keywords expanded or unexpanded as appropriate.
-	#
-	if [ -f $PWS/$PDIR/SCCS/s.$PF -o \
-	    -f $PWS/$PDIR/SCCS/p.$PF ]; then
-		rm -f $olddir/$PDIR/$PF
-		if [ -f SCCS/p.$F ]; then
-			$SCCS get -s -p -k $PWS/$PDIR/$PF \
-			    > $olddir/$PDIR/$PF
-		else
-			$SCCS get -s -p    $PWS/$PDIR/$PF \
-			    > $olddir/$PDIR/$PF
-		fi
-	else
-		if [[ -f $PWS/$PDIR/$PF ]]; then
-			# Parent is not a real workspace, but just a raw
-			# directory tree - use the file that's there as
-			# the old file.
-
-			rm -f $olddir/$DIR/$F
-			cp $PWS/$PDIR/$PF $olddir/$DIR/$F
-		fi
 	fi
 }
 
@@ -1938,10 +1709,6 @@ function build_old_new_mercurial
 
 function build_old_new
 {
-	if [[ $SCM_MODE == "teamware" ]]; then
-		build_old_new_teamware $@
-	fi
-
 	if [[ $SCM_MODE == "mercurial" ]]; then
 		build_old_new_mercurial $@
 	fi
@@ -1953,37 +1720,31 @@ function build_old_new
 #
 function usage
 {
-	print "Usage:\twebrev [common-options]
-	webrev [common-options] ( <file> | - )
-	webrev [common-options] -w <wx file>
-	webrev [common-options] -l [arguments to 'putback']
+	print "Usage:\twebrev [options]
+	webrev [options] ( <file> | - )
 
 Options:
 	-v: Print the version of this tool.
         -b: Do not ignore changes in the amount of white space.
         -c <CR#>: Include link to CR (aka bugid) in the main page.
-	-O: Print bugids/arc cases suitable for OpenJDK.
 	-i <filename>: Include <filename> in the index.html file.
 	-o <outdir>: Output webrev to specified directory.
 	-p <compare-against>: Use specified parent wkspc or basis for comparison
-	-w <wxfile>: Use specified wx active file.
         -u <username>: Use that username instead of 'guessing' one.
 	-m: Forces the use of Mercurial
-	-t: Forces the use of Teamware
 
 Mercurial only options:
 	-r rev: Compare against a specified revision
 	-N: Skip 'hg outgoing', use only 'hg status'
 	-f: Use the forest extension
 
+Arguments:
+	<file>: Optional file containing list of files to include in webrev
+        -: read list of files to include in webrev from standard input
+
 Environment:
 	WDIR: Control the output directory.
 	WEBREV_BUGURL: Control the URL prefix for bugids.
-	WEBREV_SACURL: Control the URL prefix for ARC cases.
-
-SCM Environment:
-	Teamware: CODEMGR_WS: Workspace location.
-	Teamware: CODEMGR_PARENT: Parent workspace location.
 
 "
 
@@ -2003,7 +1764,6 @@ trap "rm -f /tmp/$$.* ; exit" 0 1 2 3 15
 set +o noclobber
 
 [[ -z $WDIFF ]] && WDIFF=`look_for_prog wdiff`
-[[ -z $WX ]] && WX=`look_for_prog wx`
 [[ -z $CODEREVIEW ]] && CODEREVIEW=`look_for_prog codereview`
 [[ -z $PS2PDF ]] && PS2PDF=`look_for_prog ps2pdf`
 [[ -z $PERL ]] && PERL=`look_for_prog perl`
@@ -2011,7 +1771,6 @@ set +o noclobber
 [[ -z $AWK ]] && AWK=`look_for_prog nawk`
 [[ -z $AWK ]] && AWK=`look_for_prog gawk`
 [[ -z $AWK ]] && AWK=`look_for_prog awk`
-[[ -z $WSPACE ]] && WSPACE=`look_for_prog workspace`
 [[ -z $JAR ]] && JAR=`look_for_prog jar`
 [[ -z $ZIP ]] && ZIP=`look_for_prog zip`
 [[ -z $GETENT ]] && GETENT=`look_for_prog getent`
@@ -2033,8 +1792,6 @@ fi
 
 #
 # These aren't fatal, but we want to note them to the user.
-# We don't warn on the absence of 'wx' until later when we've
-# determined that we actually need to try to invoke it.
 #
 # [[ ! -x $CODEREVIEW ]] && print -u2 "WARNING: codereview(1) not found."
 # [[ ! -x $PS2PDF ]] && print -u2 "WARNING: ps2pdf(1) not found."
@@ -2050,13 +1807,11 @@ iflag=
 oflag=
 pflag=
 uflag=
-lflag=
-wflag=
 Oflag=
 rflag=
 Nflag=
 forestflag=
-while getopts "c:i:o:p:r:u:lmtwONvfb" opt
+while getopts "c:i:o:p:r:u:mONvfb" opt
 do
 	case $opt in
         b)      bflag=1;;
@@ -2081,19 +1836,7 @@ do
 
 	m)	SCM_MODE="mercurial";;
 
-	t)	SCM_MODE="teamware";;
-
-	#
-	# If -l has been specified, we need to abort further options
-	# processing, because subsequent arguments are going to be
-	# arguments to 'putback -n'.
-	#
-	l)	lflag=1
-		break;;
-
-	w)	wflag=1;;
-
-	O)	Oflag=1;;
+	O)	Oflag=1;; # ignored (bugs are now all visible at bugs.openjdk.java.net)
 
 	N)	Nflag=1;;
 
@@ -2112,10 +1855,6 @@ done
 FLIST=/tmp/$$.flist
 HG_LIST_FROM_COMMIT=
 
-if [[ -n $wflag && -n $lflag ]]; then
-	usage
-fi
-
 if [[ -n $forestflag && -n $rflag ]]; then
     print "The -r <rev> flag is incompatible with the use of forests"
     exit 2
@@ -2130,27 +1869,25 @@ if [[ -n $pflag && -d $codemgr_parent/raw_files/new ]]; then
 	codemgr_parent="$codemgr_parent/raw_files/new"
 fi
 
-if [[ -z $wflag && -z $lflag ]]; then
-	shift $(($OPTIND - 1))
+shift $(($OPTIND - 1))
 
-	if [[ $1 == "-" ]]; then
-		cat > $FLIST
-		flist_mode="stdin"
-		flist_done=1
-		shift
-	elif [[ -n $1 ]]; then
-		if [[ ! -r $1 ]]; then
-			print -u2 "$1: no such file or not readable"
-			usage
-		fi
-		cat $1 > $FLIST
-		flist_mode="file"
-		flist_file=$1
-		flist_done=1
-		shift
-	else
-		flist_mode="auto"
+if [[ $1 == "-" ]]; then
+	cat > $FLIST
+	flist_mode="stdin"
+	flist_done=1
+	shift
+elif [[ -n $1 ]]; then
+	if [[ ! -r $1 ]]; then
+		print -u2 "$1: no such file or not readable"
+		usage
 	fi
+	cat $1 > $FLIST
+	flist_mode="file"
+	flist_file=$1
+	flist_done=1
+	shift
+else
+	flist_mode="auto"
 fi
 
 #
@@ -2161,11 +1898,9 @@ if [[ -z $SCM_MODE ]]; then
     SCM_MODE=`detect_scm $FLIST`
 fi
 if [[ $SCM_MODE == "unknown" ]]; then
-	print -u2 "Unable to determine SCM type currently in use."
-	print -u2 "For teamware: webrev looks for \$CODEMGR_WS either in"
-	print -u2 "              the environment or in the file list."
-	print -u2 "For mercurial: webrev runs 'hg root'."
-	exit 1
+       print -u2 "Unable to determine SCM type currently in use."
+       print -u2 "For mercurial: webrev runs 'hg root'."
+       exit 1
 fi
 
 print -u2 "   SCM detected: $SCM_MODE"
@@ -2199,7 +1934,7 @@ if [[ $SCM_MODE == "mercurial" ]]; then
             #
             # for forest we have to rely on properly set default and
             # default-push because they can be different from the top one.
-            # unless of course it was explicitely speficied with -p
+            # unless of course it was explicitly specified with -p
             if [[ -z $pflag ]]; then
                 OUTPWS=
             fi
@@ -2281,46 +2016,7 @@ if [[ $SCM_MODE == "mercurial" ]]; then
     fi
 fi
 
-if [[ -n $lflag ]]; then
-	#
-	# If the -l flag is given instead of the name of a file list,
-	# then generate the file list by extracting file names from a
-	# putback -n.
-	#
-	shift $(($OPTIND - 1))
-	if [[ $SCM_MODE == "teamware" ]]; then
-		flist_from_teamware "$*"
-	elif [[ $SCM_MODE == "mercurial" ]]; then
-		flist_from_mercurial
-	fi
-	flist_done=1
-	shift $#
-
-elif [[ -n $wflag ]]; then
-	#
-	# If the -w is given then assume the file list is in Bonwick's "wx"
-	# command format, i.e.  pathname lines alternating with SCCS comment
-	# lines with blank lines as separators.  Use the SCCS comments later
-	# in building the index.html file.
-	#
-	shift $(($OPTIND - 1))
-	wxfile=$1
-	if [[ -z $wxfile && -n $CODEMGR_WS ]]; then
-		if [[ -r $CODEMGR_WS/wx/active ]]; then
-			wxfile=$CODEMGR_WS/wx/active
-		fi
-	fi
-
-	[[ -z $wxfile ]] && print -u2 "wx file not specified, and could not " \
-	    "be auto-detected (check \$CODEMGR_WS)" && exit 1
-
-	print -u2 " File list from: wx 'active' file '$wxfile' ... \c"
-	flist_from_wx $wxfile
-	flist_done=1
-	if [[ -n "$*" ]]; then
-		shift
-	fi
-elif [[ $flist_mode == "stdin" ]]; then
+if [[ $flist_mode == "stdin" ]]; then
 	print -u2 " File list from: standard input"
 elif [[ $flist_mode == "file" ]]; then
 	print -u2 " File list from: $flist_file"
@@ -2330,110 +2026,7 @@ if [[ $# -gt 0 ]]; then
 	print -u2 "WARNING: unused arguments: $*"
 fi
 
-if [[ $SCM_MODE == "teamware" ]]; then
-	#
-	# Parent (internally $codemgr_parent) and workspace ($codemgr_ws) can
-	# be set in a number of ways, in decreasing precedence:
-	#
-	#      1) on the command line (only for the parent)
-	#      2) in the user environment
-	#      3) in the flist
-	#      4) automatically based on the workspace (only for the parent)
-	#
-
-	#
-	# Here is case (2): the user environment
-	#
-	[[ -z $codemgr_ws && -n $CODEMGR_WS ]] && codemgr_ws=$CODEMGR_WS
-	[[ -z $codemgr_ws && -n $WSPACE ]] && codemgr_ws=`$WSPACE name`
-
-	if [[ -n $codemgr_ws && ! -d $codemgr_ws ]]; then
-		print -u2 "$codemgr_ws: no such workspace"
-		exit 1
-	fi
-
-	[[ -z $codemgr_parent && -n $CODEMGR_PARENT ]] && \
-	    codemgr_parent=$CODEMGR_PARENT
-
-	if [[ -n $codemgr_parent && ! -d $codemgr_parent ]]; then
-		print -u2 "$codemgr_parent: no such directory"
-		exit 1
-	fi
-
-	#
-	# If we're in auto-detect mode and we haven't already gotten the file
-	# list, then see if we can get it by probing for wx.
-	#
-	if [[ -z $flist_done && $flist_mode == "auto" && -n $codemgr_ws ]]; then
-		if [[ ! -x $WX ]]; then
-			print -u2 "WARNING: wx not found!"
-		fi
-
-		#
-		# We need to use wx list -w so that we get renamed files, etc.
-		# but only if a wx active file exists-- otherwise wx will
-		# hang asking us to initialize our wx information.
-		#
-		if [[ -x $WX && -f $codemgr_ws/wx/active ]]; then
-			print -u2 " File list from: 'wx list -w' ... \c"
-			$WX list -w > $FLIST
-			$WX comments > /tmp/$$.wx_comments
-			wxfile=/tmp/$$.wx_comments
-			print -u2 "done"
-			flist_done=1
-		fi
-	fi
-
-	#
-	# If by hook or by crook we've gotten a file list by now (perhaps
-	# from the command line), eval it to extract environment variables from
-	# it: This is step (3).
-	#
-	env_from_flist
-
-	#
-	# Continuing step (3): If we still have no file list, we'll try to get
-	# it from teamware.
-	#
-	if [[ -z $flist_done ]]; then
-		flist_from_teamware
-		env_from_flist
-	fi
-
-	if [[ -z $codemgr_ws && -d $PWD/Codemgr_wsdata ]]; then
-	    codemgr_ws=$PWD
-	fi
-	#
-	# Observe true directory name of CODEMGR_WS, as used later in
-	# webrev title.
-	#
-	if [[ -n $codemgr_ws ]]; then
-	    codemgr_ws=$(cd $codemgr_ws;print $PWD)
-	fi
-
-	if [[ -n $codemgr_parent ]]; then
-	    codemgr_parent=$(cd $codemgr_parent;print $PWD)
-	fi
-
-	#
-	# (4) If we still don't have a value for codemgr_parent, get it
-	# from workspace.
-	#
-	[[ -z $codemgr_parent && -n $WSPACE ]] && codemgr_parent=`$WSPACE parent`
-	[[ -z $codemgr_parent ]] && codemgr_parent=`parent_from_teamware $codemgr_ws`
-
-	if [[ ! -d $codemgr_parent ]]; then
-	    print -u2 "$CODEMGR_PARENT: no such parent workspace"
-	    exit 1
-	fi
-
-	#
-	# Reset CODEMGR_WS to make sure teamware commands are happy.
-	#
-	CODEMGR_WS=$codemgr_ws
-	CWS=$codemgr_ws
-	PWS=$codemgr_parent
-elif [[ $SCM_MODE == "mercurial" ]]; then
+if [[ $SCM_MODE == "mercurial" ]]; then
     if [[ -z $flist_done ]]; then
 	flist_from_mercurial $PWS
     fi
@@ -2527,30 +2120,12 @@ print "      Output to: $WDIR"
 
 #
 #    Bug IDs will be replaced by a URL.  Order of precedence
-#    is: default location, $WEBREV_BUGURL, the -O flag.
+#    is: default location, $WEBREV_BUGURL
 #
-BUGURL='https://jbs.oracle.com/bugs/browse/'
+BUGURL='https://bugs.openjdk.java.net/browse/'
 [[ -n $WEBREV_BUGURL ]] && BUGURL="$WEBREV_BUGURL"
-if [[ -n "$Oflag" ]]; then
-    CRID=`echo $CRID | sed -e 's/JDK-//'`
-    BUGURL='http://bugs.sun.com/bugdatabase/view_bug.do?bug_id='
-    IDPREFIX=''
-else
-    IDPREFIX='JDK-'
-fi
+IDPREFIX='JDK-'
 
-
-#
-#    Likewise, ARC cases will be replaced by a URL.  Order of precedence
-#    is: default, $WEBREV_SACURL, the -O flag.
-#
-#    Note that -O also triggers different substitution behavior for
-#    SACURL.  See sac2url().
-#
-SACURL='http://sac.eng.sun.com'
-[[ -n $WEBREV_SACURL ]] && SACURL="$WEBREV_SACURL"
-[[ -n $Oflag ]] && \
-    SACURL='http://www.opensolaris.org/os/community/arc/caselog'
 
 rm -f $WDIR/$WNAME.patch
 rm -f $WDIR/$WNAME.changeset
@@ -2651,20 +2226,6 @@ do
 	cd $CWS/$DIR
 
 	#
-	# If we're in OpenSolaris mode, we enforce a minor policy:
-	# help to make sure the reviewer doesn't accidentally publish
-	# source which is in usr/closed/*
-	#
-	if [[ -n $Oflag ]]; then
-		pclosed=${P##usr/closed/}
-		if [[ $pclosed != $P ]]; then
-			print "*** Omitting closed source for OpenSolaris" \
-			    "mode review"
-			continue
-		fi
-	fi
-
-	#
 	# We stash old and new files into parallel directories in /tmp
 	# and do our diffs there.  This makes it possible to generate
 	# clean looking diffs which don't have absolute paths present.
@@ -2704,11 +2265,11 @@ do
         rm -f $WDIR/$DIR/$F.html
 
 	its_a_jar=
-	if expr $F : '.*\.jar' >/dev/null; then
+	if expr $F : '.*\.jar' \| $F : '.*\.zip' >/dev/null; then
 	    its_a_jar=1
-	    # It's a JAR file, let's do it differntly
+	    # It's a JAR or ZIP file, let's do it differently
 	    if [[ -z $JAR ]]; then
-		print "No access to jar, so can't produce diffs for jar files"
+		print "No access to jar, so can't produce diffs for jar or zip files"
 	    else
 		if [ -f $ofile ]; then
 		    $JAR -tvf $ofile >"$ofile".lst
@@ -2968,18 +2529,15 @@ print "<h2>Code Review for $WNAME</h2>"
 
 print "<table>"
 
-if [[ -z $uflag ]]
-then
-    if [[ $SCM_MODE == "mercurial" ]]
-    then
+if [[ -z $uflag ]]; then
+    if [[ $SCM_MODE == "mercurial" ]]; then
         #
         # Let's try to extract the user name from the .hgrc file
         #
 	username=`grep '^username' $HOME/.hgrc | sed 's/^username[ ]*=[ ]*\(.*\)/\1/'`
     fi
 
-    if [[ -z $username ]]
-    then
+    if [[ -z $username ]]; then
         #
         # Figure out the username and gcos name.  To maintain compatibility
         # with passwd(4), we must support '&' substitutions.
@@ -3047,27 +2605,21 @@ if [[ -n "$iflag" ]]; then
 	print "</div></td></tr>"
 fi
 # Add links to referenced CRs, if any
-# external URL has a <title> like:
-# <title>Bug ID: 6641309 Wrong Cookie separator used in HttpURLConnection</title>
-# while internal URL has <title> like:
-# <title>[#JDK-6641309] Wrong Cookie separator used in HttpURLConnection</title>
-#
+# URL has a <title> like:
+# <title>[#JDK-8024688] b106-lambda: j.u.Map.merge doesn&#39;t work as specified if contains key:null pair - Java Bug System</title>
+# we format this to:
+# JDK-8024688: b106-lambda: j.u.Map.merge doesn't work as specified if contains key:null pair
 if [[ -n $CRID ]]; then
     for id in $CRID
     do
-        if [[ -z "$Oflag" ]]; then
-            #add "JDK-" to raw bug id for jbs links.
-            id=`echo ${id} | sed 's/^\([0-9]\{5,\}\)$/JDK-\1/'`
-        fi
+        #add "JDK-" to raw bug id for openjdk.java.net links.
+        id=`echo ${id} | sed 's/^\([0-9]\{5,\}\)$/JDK-\1/'`
+
         print "<tr><th>Bug id:</th><td>"
         url="${BUGURL}${id}"
-        if [[ -n "$Oflag" ]]; then
-            cleanup='s/Bug ID: \([0-9]\{5,\}\) \(.*\)/JDK-\1 : \2/'
-        else
-            cleanup='s|\[#\(JDK-[0-9]\{5,\}\)\] \(.*\)|\1 : \2|'
-        fi
+
         if [[ -n $WGET ]]; then
-            msg=`$WGET --timeout=10 --tries=1 -q $url -O - | grep '<title>' | sed 's/<title>\(.*\)<\/title>/\1/' | sed "$cleanup" | html_quote`
+            msg=`$WGET --timeout=10 --tries=1 -q $url -O - | grep '<title>' | sed 's/<title>\[#\(.*\)\] \(.*\) - Java Bug System<\/title>/\1 : \2/' | html_dequote | html_quote`
         fi
         if [[ -z $msg ]]; then
             msg="${id}"
@@ -3183,16 +2735,6 @@ do
         else
 	    print "<b>$P</b> $oldname"
         fi
-
-	#
-	# Check for usr/closed
-	#
-	if [ ! -z "$Oflag" ]; then
-		if [[ $P == usr/closed/* ]]; then
-			print "&nbsp;&nbsp;<i>Closed source: omitted from" \
-			    "this review</i>"
-		fi
-	fi
 
 	print "</p><blockquote>\c"
 	# Insert delta comments if any

@@ -1103,7 +1103,7 @@ void ParNewGeneration::waste_some_time() {
   }
 }
 
-static const oop ClaimedForwardPtr = oop(0x4);
+static const oop ClaimedForwardPtr = cast_to_oop<intptr_t>(0x4);
 
 // Because of concurrency, there are times where an object for which
 // "is_forwarded()" is true contains an "interim" forwarding pointer
@@ -1226,7 +1226,7 @@ oop ParNewGeneration::copy_to_survivor_space_avoiding_promotion_undo(
   if (TraceScavenge) {
     gclog_or_tty->print_cr("{%s %s " PTR_FORMAT " -> " PTR_FORMAT " (%d)}",
        is_in_reserved(new_obj) ? "copying" : "tenuring",
-       new_obj->klass()->internal_name(), old, new_obj, new_obj->size());
+       new_obj->klass()->internal_name(), (void *)old, (void *)new_obj, new_obj->size());
   }
 #endif
 
@@ -1347,7 +1347,7 @@ oop ParNewGeneration::copy_to_survivor_space_with_undo(
   if (TraceScavenge) {
     gclog_or_tty->print_cr("{%s %s " PTR_FORMAT " -> " PTR_FORMAT " (%d)}",
        is_in_reserved(new_obj) ? "copying" : "tenuring",
-       new_obj->klass()->internal_name(), old, new_obj, new_obj->size());
+       new_obj->klass()->internal_name(), (void *)old, (void *)new_obj, new_obj->size());
   }
 #endif
 
@@ -1436,7 +1436,7 @@ bool ParNewGeneration::should_simulate_overflow() {
 // (although some performance comparisons would be useful since
 // single global lists have their own performance disadvantages
 // as we were made painfully aware not long ago, see 6786503).
-#define BUSY (oop(0x1aff1aff))
+#define BUSY (cast_to_oop<intptr_t>(0x1aff1aff))
 void ParNewGeneration::push_on_overflow_list(oop from_space_obj, ParScanThreadState* par_scan_state) {
   assert(is_in_reserved(from_space_obj), "Should be from this generation");
   if (ParGCUseLocalOverflow) {
@@ -1512,7 +1512,7 @@ bool ParNewGeneration::take_from_overflow_list_work(ParScanThreadState* par_scan
   if (_overflow_list == NULL) return false;
 
   // Otherwise, there was something there; try claiming the list.
-  oop prefix = (oop)Atomic::xchg_ptr(BUSY, &_overflow_list);
+  oop prefix = cast_to_oop(Atomic::xchg_ptr(BUSY, &_overflow_list));
   // Trim off a prefix of at most objsFromOverflow items
   Thread* tid = Thread::current();
   size_t spin_count = (size_t)ParallelGCThreads;
@@ -1526,7 +1526,7 @@ bool ParNewGeneration::take_from_overflow_list_work(ParScanThreadState* par_scan
       return false;
     } else if (_overflow_list != BUSY) {
      // try and grab the prefix
-     prefix = (oop)Atomic::xchg_ptr(BUSY, &_overflow_list);
+     prefix = cast_to_oop(Atomic::xchg_ptr(BUSY, &_overflow_list));
     }
   }
   if (prefix == NULL || prefix == BUSY) {

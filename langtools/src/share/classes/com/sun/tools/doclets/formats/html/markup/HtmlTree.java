@@ -28,6 +28,7 @@ package com.sun.tools.doclets.formats.html.markup;
 import java.io.IOException;
 import java.io.Writer;
 import java.util.*;
+import java.nio.charset.*;
 
 import com.sun.tools.doclets.internal.toolkit.Content;
 import com.sun.tools.doclets.internal.toolkit.util.*;
@@ -101,7 +102,12 @@ public class HtmlTree extends Content {
      * @param tagContent tag content to be added
      */
     public void addContent(Content tagContent) {
-        if (tagContent == HtmlTree.EMPTY || tagContent.isValid()) {
+        if (tagContent instanceof ContentBuilder) {
+            for (Content content: ((ContentBuilder)tagContent).contents) {
+                addContent(content);
+            }
+        }
+        else if (tagContent == HtmlTree.EMPTY || tagContent.isValid()) {
             if (content.isEmpty())
                 content = new ArrayList<Content>();
             content.add(tagContent);
@@ -164,6 +170,46 @@ public class HtmlTree extends Content {
     }
 
     /**
+     * A set of ASCII URI characters to be left unencoded.
+     */
+    public static final BitSet NONENCODING_CHARS = new BitSet(256);
+
+    static {
+        // alphabetic characters
+        for (int i = 'a'; i <= 'z'; i++) {
+            NONENCODING_CHARS.set(i);
+        }
+        for (int i = 'A'; i <= 'Z'; i++) {
+            NONENCODING_CHARS.set(i);
+        }
+        // numeric characters
+        for (int i = '0'; i <= '9'; i++) {
+            NONENCODING_CHARS.set(i);
+        }
+        // Reserved characters as per RFC 3986. These are set of delimiting characters.
+        String noEnc = ":/?#[]@!$&'()*+,;=";
+        // Unreserved characters as per RFC 3986 which should not be percent encoded.
+        noEnc += "-._~";
+        for (int i = 0; i < noEnc.length(); i++) {
+            NONENCODING_CHARS.set(noEnc.charAt(i));
+        }
+    }
+
+    private static String encodeURL(String url) {
+        byte[] urlBytes = url.getBytes(Charset.forName("UTF-8"));
+        StringBuilder sb = new StringBuilder();
+        for (int i = 0; i < urlBytes.length; i++) {
+            int c = urlBytes[i];
+            if (NONENCODING_CHARS.get(c & 0xFF)) {
+                sb.append((char) c);
+            } else {
+                sb.append(String.format("%%%02X", c & 0xFF));
+            }
+        }
+        return sb.toString();
+    }
+
+    /**
      * Generates an HTML anchor tag.
      *
      * @param ref reference url for the anchor tag
@@ -172,7 +218,7 @@ public class HtmlTree extends Content {
      */
     public static HtmlTree A(String ref, Content body) {
         HtmlTree htmltree = new HtmlTree(HtmlTag.A, nullCheck(body));
-        htmltree.addAttr(HtmlAttr.HREF, ref);
+        htmltree.addAttr(HtmlAttr.HREF, encodeURL(ref));
         return htmltree;
     }
 
@@ -578,25 +624,6 @@ public class HtmlTree extends Content {
     }
 
     /**
-     * Generates a Table tag with border, width and summary attributes and
-     * some content.
-     *
-     * @param border border for the table
-     * @param width width of the table
-     * @param summary summary for the table
-     * @param body content for the table
-     * @return an HtmlTree object for the TABLE tag
-     */
-    public static HtmlTree TABLE(int border, int width, String summary,
-            Content body) {
-        HtmlTree htmltree = new HtmlTree(HtmlTag.TABLE, nullCheck(body));
-        htmltree.addAttr(HtmlAttr.BORDER, Integer.toString(border));
-        htmltree.addAttr(HtmlAttr.WIDTH, Integer.toString(width));
-        htmltree.addAttr(HtmlAttr.SUMMARY, nullCheck(summary));
-        return htmltree;
-    }
-
-    /**
      * Generates a Table tag with style class, border, cell padding,
      * cellspacing and summary attributes and some content.
      *
@@ -618,22 +645,6 @@ public class HtmlTree extends Content {
         htmltree.addAttr(HtmlAttr.CELLSPACING, Integer.toString(cellSpacing));
         htmltree.addAttr(HtmlAttr.SUMMARY, nullCheck(summary));
         return htmltree;
-    }
-
-    /**
-     * Generates a Table tag with border, cell padding,
-     * cellspacing and summary attributes and some content.
-     *
-     * @param border border for the table
-     * @param cellPadding cell padding for the table
-     * @param cellSpacing cell spacing for the table
-     * @param summary summary for the table
-     * @param body content for the table
-     * @return an HtmlTree object for the TABLE tag
-     */
-    public static HtmlTree TABLE(int border, int cellPadding,
-            int cellSpacing, String summary, Content body) {
-        return TABLE(null, border, cellPadding, cellSpacing, summary, body);
     }
 
     /**

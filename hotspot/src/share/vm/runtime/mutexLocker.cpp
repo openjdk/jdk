@@ -45,7 +45,6 @@ Mutex*   InlineCacheBuffer_lock       = NULL;
 Mutex*   VMStatistic_lock             = NULL;
 Mutex*   JNIGlobalHandle_lock         = NULL;
 Mutex*   JNIHandleBlockFreeList_lock  = NULL;
-Mutex*   JNICachedItableIndex_lock    = NULL;
 Mutex*   MemberNameTable_lock         = NULL;
 Mutex*   JmethodIdCreation_lock       = NULL;
 Mutex*   JfieldIdCreation_lock        = NULL;
@@ -253,7 +252,6 @@ void mutex_init() {
   }
   def(Heap_lock                    , Monitor, nonleaf+1,   false);
   def(JfieldIdCreation_lock        , Mutex  , nonleaf+1,   true ); // jfieldID, Used in VM_Operation
-  def(JNICachedItableIndex_lock    , Mutex  , nonleaf+1,   false); // Used to cache an itable index during JNI invoke
   def(MemberNameTable_lock         , Mutex  , nonleaf+1,   false); // Used to protect MemberNameTable
 
   def(CompiledIC_lock              , Mutex  , nonleaf+2,   false); // locks VtableStubs_lock, InlineCacheBuffer_lock

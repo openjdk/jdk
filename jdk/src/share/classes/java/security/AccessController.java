@@ -39,9 +39,9 @@ import sun.reflect.Reflection;
  * <ul>
  * <li> to decide whether an access to a critical system
  * resource is to be allowed or denied, based on the security policy
- * currently in effect,<p>
+ * currently in effect,
  * <li>to mark code as being "privileged", thus affecting subsequent
- * access determinations, and<p>
+ * access determinations, and
  * <li>to obtain a "snapshot" of the current calling context so
  * access-control decisions from a different context can be made with
  * respect to the saved context. </ul>
@@ -279,6 +279,9 @@ public final class AccessController {
      * <p> Note that any DomainCombiner associated with the current
      * AccessControlContext will be ignored while the action is performed.
      *
+     * @param <T> the type of the value returned by the PrivilegedAction's
+     *                  {@code run} method.
+     *
      * @param action the action to be performed.
      *
      * @return the value returned by the action's {@code run} method.
@@ -304,6 +307,9 @@ public final class AccessController {
      *
      * <p> This method preserves the current AccessControlContext's
      * DomainCombiner (which may be null) while the action is performed.
+     *
+     * @param <T> the type of the value returned by the PrivilegedAction's
+     *                  {@code run} method.
      *
      * @param action the action to be performed.
      *
@@ -338,12 +344,15 @@ public final class AccessController {
      * If the action's {@code run} method throws an (unchecked) exception,
      * it will propagate through this method.
      * <p>
-     * If a security manager is installed and the {@code AccessControlContext}
-     * was not created by system code and the caller's {@code ProtectionDomain}
-     * has not been granted the {@literal "createAccessControlContext"}
+     * If a security manager is installed and the specified
+     * {@code AccessControlContext} was not created by system code and the
+     * caller's {@code ProtectionDomain} has not been granted the
+     * {@literal "createAccessControlContext"}
      * {@link java.security.SecurityPermission}, then the action is performed
      * with no permissions.
      *
+     * @param <T> the type of the value returned by the PrivilegedAction's
+     *                  {@code run} method.
      * @param action the action to be performed.
      * @param context an <i>access control context</i>
      *                representing the restriction to be applied to the
@@ -376,7 +385,16 @@ public final class AccessController {
      * <p>
      * If the action's {@code run} method throws an (unchecked) exception,
      * it will propagate through this method.
+     * <p>
+     * If a security manager is installed and the specified
+     * {@code AccessControlContext} was not created by system code and the
+     * caller's {@code ProtectionDomain} has not been granted the
+     * {@literal "createAccessControlContext"}
+     * {@link java.security.SecurityPermission}, then the action is performed
+     * with no permissions.
      *
+     * @param <T> the type of the value returned by the PrivilegedAction's
+     *                  {@code run} method.
      * @param action the action to be performed.
      * @param context an <i>access control context</i>
      *                representing the restriction to be applied to the
@@ -428,7 +446,16 @@ public final class AccessController {
      *
      * <p> This method preserves the current AccessControlContext's
      * DomainCombiner (which may be null) while the action is performed.
+     * <p>
+     * If a security manager is installed and the specified
+     * {@code AccessControlContext} was not created by system code and the
+     * caller's {@code ProtectionDomain} has not been granted the
+     * {@literal "createAccessControlContext"}
+     * {@link java.security.SecurityPermission}, then the action is performed
+     * with no permissions.
      *
+     * @param <T> the type of the value returned by the PrivilegedAction's
+     *                  {@code run} method.
      * @param action the action to be performed.
      * @param context an <i>access control context</i>
      *                representing the restriction to be applied to the
@@ -479,6 +506,9 @@ public final class AccessController {
      * <p> Note that any DomainCombiner associated with the current
      * AccessControlContext will be ignored while the action is performed.
      *
+     * @param <T> the type of the value returned by the
+     *                  PrivilegedExceptionAction's {@code run} method.
+     *
      * @param action the action to be performed
      *
      * @return the value returned by the action's {@code run} method
@@ -508,6 +538,9 @@ public final class AccessController {
      *
      * <p> This method preserves the current AccessControlContext's
      * DomainCombiner (which may be null) while the action is performed.
+     *
+     * @param <T> the type of the value returned by the
+     *                  PrivilegedExceptionAction's {@code run} method.
      *
      * @param action the action to be performed.
      *
@@ -553,8 +586,18 @@ public final class AccessController {
                       AccessControlContext parent, AccessControlContext context,
                       Permission[] perms)
     {
-        return new AccessControlContext(getCallerPD(caller), combiner, parent,
-                                        context, perms);
+        ProtectionDomain callerPD = getCallerPD(caller);
+        // check if caller is authorized to create context
+        if (context != null && !context.isAuthorized() &&
+            System.getSecurityManager() != null &&
+            !callerPD.impliesCreateAccessControlContext())
+        {
+            ProtectionDomain nullPD = new ProtectionDomain(null, null);
+            return new AccessControlContext(new ProtectionDomain[] { nullPD });
+        } else {
+            return new AccessControlContext(callerPD, combiner, parent,
+                                            context, perms);
+        }
     }
 
     private static ProtectionDomain getCallerPD(final Class <?> caller) {
@@ -579,12 +622,15 @@ public final class AccessController {
      * If the action's {@code run} method throws an <i>unchecked</i>
      * exception, it will propagate through this method.
      * <p>
-     * If a security manager is installed and the {@code AccessControlContext}
-     * was not created by system code and the caller's {@code ProtectionDomain}
-     * has not been granted the {@literal "createAccessControlContext"}
+     * If a security manager is installed and the specified
+     * {@code AccessControlContext} was not created by system code and the
+     * caller's {@code ProtectionDomain} has not been granted the
+     * {@literal "createAccessControlContext"}
      * {@link java.security.SecurityPermission}, then the action is performed
      * with no permissions.
      *
+     * @param <T> the type of the value returned by the
+     *                  PrivilegedExceptionAction's {@code run} method.
      * @param action the action to be performed
      * @param context an <i>access control context</i>
      *                representing the restriction to be applied to the
@@ -621,7 +667,16 @@ public final class AccessController {
      * <p>
      * If the action's {@code run} method throws an (unchecked) exception,
      * it will propagate through this method.
+     * <p>
+     * If a security manager is installed and the specified
+     * {@code AccessControlContext} was not created by system code and the
+     * caller's {@code ProtectionDomain} has not been granted the
+     * {@literal "createAccessControlContext"}
+     * {@link java.security.SecurityPermission}, then the action is performed
+     * with no permissions.
      *
+     * @param <T> the type of the value returned by the
+     *                  PrivilegedExceptionAction's {@code run} method.
      * @param action the action to be performed.
      * @param context an <i>access control context</i>
      *                representing the restriction to be applied to the
@@ -675,7 +730,16 @@ public final class AccessController {
      *
      * <p> This method preserves the current AccessControlContext's
      * DomainCombiner (which may be null) while the action is performed.
+     * <p>
+     * If a security manager is installed and the specified
+     * {@code AccessControlContext} was not created by system code and the
+     * caller's {@code ProtectionDomain} has not been granted the
+     * {@literal "createAccessControlContext"}
+     * {@link java.security.SecurityPermission}, then the action is performed
+     * with no permissions.
      *
+     * @param <T> the type of the value returned by the
+     *                  PrivilegedExceptionAction's {@code run} method.
      * @param action the action to be performed.
      * @param context an <i>access control context</i>
      *                representing the restriction to be applied to the

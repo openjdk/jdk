@@ -1368,7 +1368,7 @@ class JFIFMarkerSegment extends MarkerSegment {
     /**
      * An APP2 marker segment containing an ICC profile.  In the stream
      * a profile larger than 64K is broken up into a series of chunks.
-     * This inner class represents the complete profile as a single objec,
+     * This inner class represents the complete profile as a single object,
      * combining chunks as necessary.
      */
     class ICCMarkerSegment extends MarkerSegment {

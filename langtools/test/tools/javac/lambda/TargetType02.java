@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,18 +27,10 @@
  * @summary Add lambda tests
  *  check overload resolution and target type inference w.r.t. generic methods
  * @author  Maurizio Cimadamore
- * @run main TargetType02
+ * @compile/fail/ref=TargetType02.out -XDrawDiagnostics TargetType02.java
  */
 
 public class TargetType02 {
-
-    static int assertionCount = 0;
-
-    static void assertTrue(boolean cond) {
-        assertionCount++;
-        if (!cond)
-            throw new AssertionError();
-    }
 
     interface S1<X extends Number> {
         X m(Integer x);
@@ -48,15 +40,16 @@ public class TargetType02 {
         abstract X m(Integer x);
     }
 
-    static <Z extends Number> void call(S1<Z> s) { s.m(1); assertTrue(true); }
-    static <Z extends String> void call(S2<Z> s) { s.m(2); assertTrue(false); }
+    static <Z extends Number> void call1(S1<Z> s) { }
+
+    static <Z extends String> void call2(S2<Z> s) { }
+
+    static <Z extends Number> void call3(S1<Z> s) { }
+    static <Z extends String> void call3(S2<Z> s) { }
 
     void test() {
-        call(i -> { toString(); return i; });
-    }
-
-    public static void main(String[] args) {
-        new TargetType02().test();
-        assertTrue(assertionCount == 1);
+        call1(i -> { toString(); return i; });
+        call2(i -> { toString(); return i; });
+        call3(i -> { toString(); return i; });
     }
 }

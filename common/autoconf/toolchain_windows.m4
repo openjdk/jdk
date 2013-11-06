@@ -75,7 +75,7 @@ AC_DEFUN([TOOLCHAIN_FIND_VISUAL_STUDIO_BAT_FILE],
     VCVARSFILE="vc/bin/vcvars32.bat"
   else
     VCVARSFILE="vc/bin/amd64/vcvars64.bat"
-  fi 
+  fi
 
   VS_ENV_CMD=""
   VS_ENV_ARGS=""
@@ -89,7 +89,7 @@ AC_DEFUN([TOOLCHAIN_FIND_VISUAL_STUDIO_BAT_FILE],
     AC_MSG_NOTICE([The path given by --with-tools-dir does not contain a valid Visual Studio installation])
     AC_MSG_NOTICE([Please point to the VC/bin directory within the Visual Studio installation])
     AC_MSG_ERROR([Cannot locate a valid Visual Studio installation])
-  fi  
+  fi
 
   if test "x$VS100COMNTOOLS" != x; then
     TOOLCHAIN_CHECK_POSSIBLE_VISUAL_STUDIO_ROOT([$VS100COMNTOOLS/../..], [VS100COMNTOOLS variable])
@@ -118,7 +118,7 @@ AC_DEFUN([TOOLCHAIN_FIND_VISUAL_STUDIO_BAT_FILE],
 # the set env variables into the spec file.
 AC_DEFUN([TOOLCHAIN_SETUP_VISUAL_STUDIO_ENV],
 [
-  # Store path to cygwin link.exe to help excluding it when searching for 
+  # Store path to cygwin link.exe to help excluding it when searching for
   # VS linker. This must be done before changing the PATH when looking for VS.
   AC_PATH_PROG(CYGWIN_LINK, link)
   if test "x$CYGWIN_LINK" != x; then
@@ -187,7 +187,7 @@ AC_DEFUN([TOOLCHAIN_SETUP_VISUAL_STUDIO_ENV],
       AC_MSG_ERROR([Cannot continue])
     fi
 
-    # Now set all paths and other env variables. This will allow the rest of 
+    # Now set all paths and other env variables. This will allow the rest of
     # the configure script to find and run the compiler in the proper way.
     AC_MSG_NOTICE([Setting extracted environment variables])
     . $OUTPUT_ROOT/localdevenv.sh
@@ -198,7 +198,7 @@ AC_DEFUN([TOOLCHAIN_SETUP_VISUAL_STUDIO_ENV],
 
   # At this point, we should have corrent variables in the environment, or we can't continue.
   AC_MSG_CHECKING([for Visual Studio variables])
-  
+
   if test "x$VCINSTALLDIR" != x || test "x$WindowsSDKDir" != x || test "x$WINDOWSSDKDIR" != x; then
     if test "x$INCLUDE" = x || test "x$LIB" = x; then
       AC_MSG_RESULT([present but broken])
@@ -228,110 +228,113 @@ AC_DEFUN([TOOLCHAIN_SETUP_VISUAL_STUDIO_ENV],
     AC_MSG_NOTICE([or run "bash.exe -l" from a VS command prompt and then run configure from there.])
     AC_MSG_ERROR([Cannot continue])
   fi
-  
-  AC_MSG_CHECKING([for msvcr100.dll])
-  AC_ARG_WITH(msvcr-dll, [AS_HELP_STRING([--with-msvcr-dll],
-      [copy this msvcr100.dll into the built JDK (Windows only) @<:@probed@:>@])])
-  if test "x$with_msvcr_dll" != x; then
-    MSVCR_DLL="$with_msvcr_dll"
-  else
-    if test "x$VCINSTALLDIR" != x; then
-      if test "x$OPENJDK_TARGET_CPU_BITS" = x64; then
-        MSVCR_DLL=`find "$VCINSTALLDIR" -name msvcr100.dll | grep x64 | head --lines 1`
-      else
-        MSVCR_DLL=`find "$VCINSTALLDIR" -name msvcr100.dll | grep x86 | grep -v ia64 | grep -v x64 | head --lines 1`
-        if test "x$MSVCR_DLL" = x; then
-          MSVCR_DLL=`find "$VCINSTALLDIR" -name msvcr100.dll | head --lines 1`
-        fi
-      fi
-      if test "x$MSVCR_DLL" != x; then
-        AC_MSG_NOTICE([msvcr100.dll found in VCINSTALLDIR: $VCINSTALLDIR])
-      else
-        AC_MSG_NOTICE([Warning: msvcr100.dll not found in VCINSTALLDIR: $VCINSTALLDIR])
-      fi
-    fi
-    # Try some fallback alternatives
-    if test "x$MSVCR_DLL" = x; then
-      # If visual studio express is installed, there is usually one with the debugger
-      if test "x$VS100COMNTOOLS" != x; then
-        if test "x$OPENJDK_TARGET_CPU_BITS" = x64; then
-          MSVCR_DLL=`find "$VS100COMNTOOLS/.." -name msvcr100.dll | grep -i x64 | head --lines 1`
-          AC_MSG_NOTICE([msvcr100.dll found in $VS100COMNTOOLS..: $VS100COMNTOOLS..])
-        fi
-      fi
-    fi
-    if test "x$MSVCR_DLL" = x; then
-      if test "x$OPENJDK_TARGET_CPU_BITS" = x32; then
-        # Fallback for 32bit builds, look in the windows directory.
-        if test -f "$SYSTEMROOT/system32/msvcr100.dll"; then
-          AC_MSG_NOTICE([msvcr100.dll found in $SYSTEMROOT/system32])
-          MSVCR_DLL="$SYSTEMROOT/system32/msvcr100.dll"
-        fi
-      fi
-    fi
-  fi
-  if test "x$MSVCR_DLL" = x; then
-    AC_MSG_RESULT([no])
-    AC_MSG_ERROR([Could not find msvcr100.dll !])
-  fi
-  AC_MSG_RESULT([$MSVCR_DLL])
-  BASIC_FIXUP_PATH(MSVCR_DLL)
 ])
 
-
-# Setup the DXSDK paths
-AC_DEFUN([TOOLCHAIN_SETUP_DXSDK],
+AC_DEFUN([TOOLCHAIN_CHECK_POSSIBLE_MSVCR_DLL],
 [
-  AC_ARG_WITH(dxsdk, [AS_HELP_STRING([--with-dxsdk],
-      [the DirectX SDK (Windows only) @<:@probed@:>@])])
-  AC_ARG_WITH(dxsdk-lib, [AS_HELP_STRING([--with-dxsdk-lib],
-      [the DirectX SDK lib directory (Windows only) @<:@probed@:>@])])
-  AC_ARG_WITH(dxsdk-include, [AS_HELP_STRING([--with-dxsdk-include],
-      [the DirectX SDK include directory (Windows only) @<:@probed@:>@])])
-
-  AC_MSG_CHECKING([for DirectX SDK])
-
-  if test "x$with_dxsdk" != x; then
-    dxsdk_path="$with_dxsdk"
-  elif test "x$DXSDK_DIR" != x; then
-    dxsdk_path="$DXSDK_DIR"
-  elif test -d "C:/DXSDK"; then
-    dxsdk_path="C:/DXSDK"
-  else
-    AC_MSG_ERROR([Could not find the DirectX SDK])
+  POSSIBLE_MSVCR_DLL="$1"
+  METHOD="$2"
+  if test -e "$POSSIBLE_MSVCR_DLL"; then
+    AC_MSG_NOTICE([Found msvcr100.dll at $POSSIBLE_MSVCR_DLL using $METHOD])
+    
+    # Need to check if the found msvcr is correct architecture
+    AC_MSG_CHECKING([found msvcr100.dll architecture])
+    MSVCR_DLL_FILETYPE=`$FILE -b "$POSSIBLE_MSVCR_DLL"`
+    if test "x$OPENJDK_TARGET_CPU_BITS" = x32; then
+      CORRECT_MSVCR_ARCH=386
+    else
+      CORRECT_MSVCR_ARCH=x86-64
+    fi
+    if $ECHO "$MSVCR_DLL_FILETYPE" | $GREP $CORRECT_MSVCR_ARCH 2>&1 > /dev/null; then
+      AC_MSG_RESULT([ok])
+      MSVCR_DLL="$POSSIBLE_MSVCR_DLL"
+      AC_MSG_CHECKING([for msvcr100.dll])
+      AC_MSG_RESULT([$MSVCR_DLL])
+    else
+      AC_MSG_RESULT([incorrect, ignoring])
+      AC_MSG_NOTICE([The file type of the located msvcr100.dll is $MSVCR_DLL_FILETYPE])
+    fi
   fi
-  AC_MSG_RESULT([$dxsdk_path])
-  BASIC_FIXUP_PATH(dxsdk_path)
+])
 
-  AC_MSG_CHECKING([for DirectX SDK lib dir])
-  if test "x$with_dxsdk_lib" != x; then
-    DXSDK_LIB_PATH="$with_dxsdk_lib"
-  elif test "x$OPENJDK_TARGET_CPU" = "xx86_64"; then
-    DXSDK_LIB_PATH="$dxsdk_path/Lib/x64"
-  else
-    DXSDK_LIB_PATH="$dxsdk_path/Lib"
-  fi
-  # dsound.lib is linked to in jsoundds
-  if test ! -f "$DXSDK_LIB_PATH/dsound.lib"; then
-    AC_MSG_ERROR([Invalid DirectX SDK lib dir])
-  fi
-  AC_MSG_RESULT([$DXSDK_LIB_PATH])
-  BASIC_FIXUP_PATH(DXSDK_LIB_PATH)
+AC_DEFUN([TOOLCHAIN_SETUP_MSVCR_DLL],
+[
+  AC_ARG_WITH(msvcr-dll, [AS_HELP_STRING([--with-msvcr-dll],
+      [copy this msvcr100.dll into the built JDK (Windows only) @<:@probed@:>@])])
 
-  AC_MSG_CHECKING([for DirectX SDK include dir])
-  if test "x$with_dxsdk_include" != x; then
-    DXSDK_INCLUDE_PATH="$with_dxsdk_include"
-  else
-    DXSDK_INCLUDE_PATH="$dxsdk_path/Include"
+  if test "x$with_msvcr_dll" != x; then
+    # If given explicitely by user, do not probe. If not present, fail directly.
+    TOOLCHAIN_CHECK_POSSIBLE_MSVCR_DLL([$with_msvcr_dll], [--with-msvcr-dll])
+    if test "x$MSVCR_DLL" = x; then
+      AC_MSG_ERROR([Could not find a proper msvcr100.dll as specified by --with-msvcr-dll])
+    fi
   fi
-  # dsound.h is included in jsoundds
-  if test ! -f "$DXSDK_INCLUDE_PATH/dsound.h"; then
-    AC_MSG_ERROR([Invalid DirectX SDK lib dir])
+  
+  if test "x$MSVCR_DLL" = x; then
+    # Probe: Using well-known location from Visual Studio 10.0
+    if test "x$VCINSTALLDIR" != x; then
+      CYGWIN_VC_INSTALL_DIR="$VCINSTALLDIR"
+      BASIC_WINDOWS_REWRITE_AS_UNIX_PATH(CYGWIN_VC_INSTALL_DIR)
+      if test "x$OPENJDK_TARGET_CPU_BITS" = x64; then
+        POSSIBLE_MSVCR_DLL="$CYGWIN_VC_INSTALL_DIR/redist/x64/Microsoft.VC100.CRT/msvcr100.dll"
+      else
+        POSSIBLE_MSVCR_DLL="$CYGWIN_VC_INSTALL_DIR/redist/x86/Microsoft.VC100.CRT/msvcr100.dll"
+      fi
+      TOOLCHAIN_CHECK_POSSIBLE_MSVCR_DLL([$POSSIBLE_MSVCR_DLL], [well-known location in VCINSTALLDIR])
+    fi
   fi
-  AC_MSG_RESULT([$DXSDK_INCLUDE_PATH])
-  BASIC_FIXUP_PATH(DXSDK_INCLUDE_PATH)
 
-  AC_SUBST(DXSDK_LIB_PATH)
-  AC_SUBST(DXSDK_INCLUDE_PATH)
-  LDFLAGS_JDK="$LDFLAGS_JDK -libpath:$DXSDK_LIB_PATH"
+  if test "x$MSVCR_DLL" = x; then
+    # Probe: Check in the Boot JDK directory.
+    POSSIBLE_MSVCR_DLL="$BOOT_JDK/bin/msvcr100.dll"
+    TOOLCHAIN_CHECK_POSSIBLE_MSVCR_DLL([$POSSIBLE_MSVCR_DLL], [well-known location in Boot JDK])
+  fi
+  
+  if test "x$MSVCR_DLL" = x; then
+    # Probe: Look in the Windows system32 directory 
+    CYGWIN_SYSTEMROOT="$SYSTEMROOT"
+    BASIC_WINDOWS_REWRITE_AS_UNIX_PATH(CYGWIN_SYSTEMROOT)
+    POSSIBLE_MSVCR_DLL="$CYGWIN_SYSTEMROOT/system32/msvcr100.dll"
+    TOOLCHAIN_CHECK_POSSIBLE_MSVCR_DLL([$POSSIBLE_MSVCR_DLL], [well-known location in SYSTEMROOT])
+  fi
+
+  if test "x$MSVCR_DLL" = x; then
+    # Probe: If Visual Studio Express is installed, there is usually one with the debugger
+    if test "x$VS100COMNTOOLS" != x; then
+      CYGWIN_VS_TOOLS_DIR="$VS100COMNTOOLS/.."
+      BASIC_WINDOWS_REWRITE_AS_UNIX_PATH(CYGWIN_VS_TOOLS_DIR)
+      if test "x$OPENJDK_TARGET_CPU_BITS" = x64; then
+        POSSIBLE_MSVCR_DLL=`$FIND "$CYGWIN_VS_TOOLS_DIR" -name msvcr100.dll | $GREP -i /x64/ | $HEAD --lines 1`
+      else
+        POSSIBLE_MSVCR_DLL=`$FIND "$CYGWIN_VS_TOOLS_DIR" -name msvcr100.dll | $GREP -i /x86/ | $HEAD --lines 1`
+      fi
+      TOOLCHAIN_CHECK_POSSIBLE_MSVCR_DLL([$POSSIBLE_MSVCR_DLL], [search of VS100COMNTOOLS])
+    fi
+  fi
+      
+  if test "x$MSVCR_DLL" = x; then
+    # Probe: Search wildly in the VCINSTALLDIR. We've probably lost by now.
+    # (This was the original behaviour; kept since it might turn up something)
+    if test "x$CYGWIN_VC_INSTALL_DIR" != x; then
+      if test "x$OPENJDK_TARGET_CPU_BITS" = x64; then
+        POSSIBLE_MSVCR_DLL=`$FIND "$CYGWIN_VC_INSTALL_DIR" -name msvcr100.dll | $GREP x64 | $HEAD --lines 1`
+      else
+        POSSIBLE_MSVCR_DLL=`$FIND "$CYGWIN_VC_INSTALL_DIR" -name msvcr100.dll | $GREP x86 | $GREP -v ia64 | $GREP -v x64 | $HEAD --lines 1`
+        if test "x$POSSIBLE_MSVCR_DLL" = x; then
+          # We're grasping at straws now...
+          POSSIBLE_MSVCR_DLL=`$FIND "$CYGWIN_VC_INSTALL_DIR" -name msvcr100.dll | $HEAD --lines 1`
+        fi
+      fi
+      
+      TOOLCHAIN_CHECK_POSSIBLE_MSVCR_DLL([$POSSIBLE_MSVCR_DLL], [search of VCINSTALLDIR])
+    fi
+  fi
+  
+  if test "x$MSVCR_DLL" = x; then
+    AC_MSG_CHECKING([for msvcr100.dll])
+    AC_MSG_RESULT([no])
+    AC_MSG_ERROR([Could not find msvcr100.dll. Please specify using --with-msvcr-dll.])
+  fi
+
+  BASIC_FIXUP_PATH(MSVCR_DLL)
 ])

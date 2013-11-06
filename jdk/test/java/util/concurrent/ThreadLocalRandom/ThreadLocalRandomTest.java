@@ -33,7 +33,9 @@ import static org.testng.Assert.*;
 
 /**
  * @test
+ * @bug 8024253
  * @run testng ThreadLocalRandomTest
+ * @run testng/othervm -Djava.util.secureRandomSeed=true ThreadLocalRandomTest
  * @summary test methods on ThreadLocalRandom
  */
 @Test

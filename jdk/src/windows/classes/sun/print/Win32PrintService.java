@@ -25,6 +25,8 @@
 
 package sun.print;
 
+import java.awt.Window;
+import java.awt.print.PrinterJob;
 import java.io.File;
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -39,6 +41,7 @@ import javax.print.attribute.AttributeSet;
 import javax.print.attribute.AttributeSetUtilities;
 import javax.print.attribute.EnumSyntax;
 import javax.print.attribute.HashAttributeSet;
+import javax.print.attribute.PrintRequestAttributeSet;
 import javax.print.attribute.PrintServiceAttribute;
 import javax.print.attribute.PrintServiceAttributeSet;
 import javax.print.attribute.HashPrintServiceAttributeSet;
@@ -69,6 +72,7 @@ import javax.print.attribute.standard.PrintQuality;
 import javax.print.attribute.standard.PrinterResolution;
 import javax.print.attribute.standard.SheetCollate;
 import javax.print.event.PrintServiceAttributeListener;
+import sun.awt.windows.WPrinterJob;
 
 public class Win32PrintService implements PrintService, AttributeUpdater,
                                           SunPrinterJobService {
@@ -280,6 +284,22 @@ public class Win32PrintService implements PrintService, AttributeUpdater,
             }
         }
         return 0;
+    }
+
+    public int findTrayID(MediaTray tray) {
+
+        getMediaTrays(); // make sure they are initialised.
+
+        if (tray instanceof Win32MediaTray) {
+            Win32MediaTray winTray = (Win32MediaTray)tray;
+            return winTray.getDMBinID();
+        }
+        for (int id=0; id<dmPaperBinToPrintService.length; id++) {
+            if (tray.equals(dmPaperBinToPrintService[id])) {
+                return id+1; // DMBIN_FIRST = 1;
+            }
+        }
+        return 0; // didn't find the tray
     }
 
     public MediaTray findMediaTray(int dmBin) {
@@ -672,7 +692,6 @@ public class Win32PrintService implements PrintService, AttributeUpdater,
 
         return arr2;
     }
-
 
     private PrinterIsAcceptingJobs getPrinterIsAcceptingJobs() {
         if (getJobStatus(printer, 2) != 1) {
@@ -1596,8 +1615,76 @@ public class Win32PrintService implements PrintService, AttributeUpdater,
         }
     }
 
-    public ServiceUIFactory getServiceUIFactory() {
-        return null;
+    private Win32DocumentPropertiesUI docPropertiesUI = null;
+
+    private static class Win32DocumentPropertiesUI
+        extends DocumentPropertiesUI {
+
+        Win32PrintService service;
+
+        private Win32DocumentPropertiesUI(Win32PrintService s) {
+            service = s;
+        }
+
+        public PrintRequestAttributeSet
+            showDocumentProperties(PrinterJob job,
+                                   Window owner,
+                                   PrintService service,
+                                   PrintRequestAttributeSet aset) {
+
+            if (!(job instanceof WPrinterJob)) {
+                return null;
+            }
+            WPrinterJob wJob = (WPrinterJob)job;
+            return wJob.showDocumentProperties(owner, service, aset);
+        }
+    }
+
+    private synchronized DocumentPropertiesUI getDocumentPropertiesUI() {
+        return new Win32DocumentPropertiesUI(this);
+    }
+
+    private static class Win32ServiceUIFactory extends ServiceUIFactory {
+
+        Win32PrintService service;
+
+        Win32ServiceUIFactory(Win32PrintService s) {
+            service = s;
+        }
+
+        public Object getUI(int role, String ui) {
+            if (role <= ServiceUIFactory.MAIN_UIROLE) {
+                return null;
+            }
+            if (role == DocumentPropertiesUI.DOCUMENTPROPERTIES_ROLE &&
+                DocumentPropertiesUI.DOCPROPERTIESCLASSNAME.equals(ui))
+            {
+                return service.getDocumentPropertiesUI();
+            }
+            throw new IllegalArgumentException("Unsupported role");
+        }
+
+        public String[] getUIClassNamesForRole(int role) {
+
+            if (role <= ServiceUIFactory.MAIN_UIROLE) {
+                return null;
+            }
+            if (role == DocumentPropertiesUI.DOCUMENTPROPERTIES_ROLE) {
+                String[] names = new String[0];
+                names[0] = DocumentPropertiesUI.DOCPROPERTIESCLASSNAME;
+                return names;
+            }
+            throw new IllegalArgumentException("Unsupported role");
+        }
+    }
+
+    private Win32ServiceUIFactory uiFactory = null;
+
+    public synchronized ServiceUIFactory getServiceUIFactory() {
+        if (uiFactory == null) {
+            uiFactory = new Win32ServiceUIFactory(this);
+        }
+        return uiFactory;
     }
 
     public String toString() {

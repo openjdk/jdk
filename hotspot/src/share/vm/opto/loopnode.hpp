@@ -876,13 +876,6 @@ public:
   // Return true if exp is a scaled induction var plus (or minus) constant
   bool is_scaled_iv_plus_offset(Node* exp, Node* iv, int* p_scale, Node** p_offset, int depth = 0);
 
-  // Return true if proj is for "proj->[region->..]call_uct"
-  static bool is_uncommon_trap_proj(ProjNode* proj, Deoptimization::DeoptReason reason);
-  // Return true for    "if(test)-> proj -> ...
-  //                          |
-  //                          V
-  //                      other_proj->[region->..]call_uct"
-  static bool is_uncommon_trap_if_pattern(ProjNode* proj, Deoptimization::DeoptReason reason);
   // Create a new if above the uncommon_trap_if_pattern for the predicate to be promoted
   ProjNode* create_new_if_for_predicate(ProjNode* cont_proj, Node* new_entry,
                                         Deoptimization::DeoptReason reason);

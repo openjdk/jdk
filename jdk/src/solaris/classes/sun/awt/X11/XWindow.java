@@ -32,7 +32,6 @@ import java.awt.image.ColorModel;
 
 import java.lang.ref.WeakReference;
 
-import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 
 import sun.util.logging.PlatformLogger;
@@ -251,7 +250,7 @@ public class XWindow extends XBaseWindow implements X11ComponentPeer {
         if (target != null && (c = target.getBackground()) != null) {
             // We need a version of setBackground that does not call repaint !!
             // and one that does not get overridden. The problem is that in postInit
-            // we call setBackground and we dont have all the stuff initialized to
+            // we call setBackground and we don't have all the stuff initialized to
             // do a full paint for most peers. So we cannot call setBackground in postInit.
             // instead we need to call xSetBackground.
             xSetBackground(c);
@@ -437,7 +436,7 @@ public class XWindow extends XBaseWindow implements X11ComponentPeer {
 
     // We need a version of setBackground that does not call repaint !!
     // and one that does not get overridden. The problem is that in postInit
-    // we call setBackground and we dont have all the stuff initialized to
+    // we call setBackground and we don't have all the stuff initialized to
     // do a full paint for most peers. So we cannot call setBackground in postInit.
     final public void xSetBackground(Color c) {
         XToolkit.awtLock();
@@ -491,33 +490,31 @@ public class XWindow extends XBaseWindow implements X11ComponentPeer {
     public boolean isEmbedded() {
         return embedded;
     }
-    public  void repaint(int x,int y, int width, int height) {
+
+    public final void repaint(int x, int y, int width, int height) {
         if (!isVisible() || getWidth() == 0 || getHeight() == 0) {
             return;
         }
         Graphics g = getGraphics();
         if (g != null) {
             try {
-                g.setClip(x,y,width,height);
-                paint(g);
+                g.setClip(x, y, width, height);
+                if (SunToolkit.isDispatchThreadForAppContext(getTarget())) {
+                    paint(g); // The native and target will be painted in place.
+                } else {
+                    paintPeer(g);
+                    postPaintEvent(target, x, y, width, height);
+                }
             } finally {
                 g.dispose();
             }
         }
     }
+
     void repaint() {
-        if (!isVisible() || getWidth() == 0 || getHeight() == 0) {
-            return;
-        }
-        final Graphics g = getGraphics();
-        if (g != null) {
-            try {
-                paint(g);
-            } finally {
-                g.dispose();
-            }
-        }
+        repaint(0, 0, getWidth(), getHeight());
     }
+
     public void paint(final Graphics g) {
         // paint peer
         paintPeer(g);
@@ -558,11 +555,11 @@ public class XWindow extends XBaseWindow implements X11ComponentPeer {
             && compAccessor.getWidth(target) != 0
             && compAccessor.getHeight(target) != 0)
         {
-            handleExposeEvent(target, x, y, w, h);
+            postPaintEvent(target, x, y, w, h);
         }
     }
 
-    public void handleExposeEvent(Component target, int x, int y, int w, int h) {
+    public void postPaintEvent(Component target, int x, int y, int w, int h) {
         PaintEvent event = PaintEventDispatcher.getPaintEventDispatcher().
             createPaintEvent(target, x, y, w, h);
         if (event != null) {

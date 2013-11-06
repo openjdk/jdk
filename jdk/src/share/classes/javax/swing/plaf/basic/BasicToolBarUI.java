@@ -42,7 +42,7 @@ import sun.swing.UIAction;
 
 
 /**
- * A Basic L&F implementation of ToolBarUI.  This implementation
+ * A Basic L&amp;F implementation of ToolBarUI.  This implementation
  * is a "combined" view/controller.
  * <p>
  *
@@ -583,7 +583,7 @@ public class BasicToolBarUI extends ToolBarUI implements SwingConstants
 
     /**
      * Sets the flag for enabling rollover borders on the toolbar and it will
-     * also install the apropriate border depending on the state of the flag.
+     * also install the appropriate border depending on the state of the flag.
      *
      * @param rollover if true, rollover borders are installed.
      *        Otherwise non-rollover borders are installed
@@ -606,7 +606,7 @@ public class BasicToolBarUI extends ToolBarUI implements SwingConstants
      * This is a convenience method to call <code>setBorderToRollover</code>
      * for each child component.
      *
-     * @param c container which holds the child components (usally a JToolBar)
+     * @param c container which holds the child components (usually a JToolBar)
      * @see #setBorderToRollover
      * @since 1.4
      */
@@ -630,7 +630,7 @@ public class BasicToolBarUI extends ToolBarUI implements SwingConstants
      * This is a convenience method to call <code>setBorderToNonRollover</code>
      * for each child component.
      *
-     * @param c container which holds the child components (usally a JToolBar)
+     * @param c container which holds the child components (usually a JToolBar)
      * @see #setBorderToNonRollover
      * @since 1.4
      */
@@ -654,7 +654,7 @@ public class BasicToolBarUI extends ToolBarUI implements SwingConstants
      * This is a convenience method to call <code>setBorderNormal</code>
      * for each child component.
      *
-     * @param c container which holds the child components (usally a JToolBar)
+     * @param c container which holds the child components (usually a JToolBar)
      * @see #setBorderToNonRollover
      * @since 1.4
      */
@@ -1274,7 +1274,7 @@ public class BasicToolBarUI extends ToolBarUI implements SwingConstants
     }
 
     protected class ToolBarContListener implements ContainerListener {
-        // NOTE: This class exists only for backward compatability. All
+        // NOTE: This class exists only for backward compatibility. All
         // its functionality has been moved into Handler. If you need to add
         // new functionality add it to the Handler, but make sure this
         // class calls into the Handler.
@@ -1289,7 +1289,7 @@ public class BasicToolBarUI extends ToolBarUI implements SwingConstants
     }
 
     protected class ToolBarFocusListener implements FocusListener {
-        // NOTE: This class exists only for backward compatability. All
+        // NOTE: This class exists only for backward compatibility. All
         // its functionality has been moved into Handler. If you need to add
         // new functionality add it to the Handler, but make sure this
         // class calls into the Handler.
@@ -1303,7 +1303,7 @@ public class BasicToolBarUI extends ToolBarUI implements SwingConstants
     }
 
     protected class PropertyListener implements PropertyChangeListener {
-        // NOTE: This class exists only for backward compatability. All
+        // NOTE: This class exists only for backward compatibility. All
         // its functionality has been moved into Handler. If you need to add
         // new functionality add it to the Handler, but make sure this
         // class calls into the Handler.
@@ -1317,7 +1317,7 @@ public class BasicToolBarUI extends ToolBarUI implements SwingConstants
      * Instantiate it only within subclasses of BasicToolBarUI.
      */
     public class DockingListener implements MouseInputListener {
-        // NOTE: This class exists only for backward compatability. All
+        // NOTE: This class exists only for backward compatibility. All
         // its functionality has been moved into Handler. If you need to add
         // new functionality add it to the Handler, but make sure this
         // class calls into the Handler.

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -45,7 +45,7 @@
 oop* HandleArea::allocate_handle(oop obj) {
   assert(_handle_mark_nesting > 1, "memory leak: allocating handle outside HandleMark");
   assert(_no_handle_mark_nesting == 0, "allocating handle inside NoHandleMark");
-  assert(obj->is_oop(), "sanity check");
+  assert(obj->is_oop(), err_msg("not an oop: " INTPTR_FORMAT, (intptr_t*) obj));
   return real_allocate_handle(obj);
 }
 
@@ -179,11 +179,11 @@ HandleMark::~HandleMark() {
   _thread->set_last_handle_mark(previous_handle_mark());
 }
 
-void* HandleMark::operator new(size_t size) {
+void* HandleMark::operator new(size_t size) throw() {
   return AllocateHeap(size, mtThread);
 }
 
-void* HandleMark::operator new [] (size_t size) {
+void* HandleMark::operator new [] (size_t size) throw() {
   return AllocateHeap(size, mtThread);
 }
 

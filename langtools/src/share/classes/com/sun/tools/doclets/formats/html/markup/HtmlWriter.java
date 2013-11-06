@@ -203,27 +203,27 @@ public class HtmlWriter {
         useLabel = getResource("doclet.navClassUse");
         prevLabel = getResource("doclet.Prev");
         nextLabel = getResource("doclet.Next");
-        prevclassLabel = getResource("doclet.Prev_Class");
-        nextclassLabel = getResource("doclet.Next_Class");
+        prevclassLabel = getNonBreakResource("doclet.Prev_Class");
+        nextclassLabel = getNonBreakResource("doclet.Next_Class");
         summaryLabel = getResource("doclet.Summary");
         detailLabel = getResource("doclet.Detail");
         framesLabel = getResource("doclet.Frames");
-        noframesLabel = getResource("doclet.No_Frames");
+        noframesLabel = getNonBreakResource("doclet.No_Frames");
         treeLabel = getResource("doclet.Tree");
         classLabel = getResource("doclet.Class");
         deprecatedLabel = getResource("doclet.navDeprecated");
         deprecatedPhrase = getResource("doclet.Deprecated");
-        allclassesLabel = getResource("doclet.All_Classes");
-        allpackagesLabel = getResource("doclet.All_Packages");
-        allprofilesLabel = getResource("doclet.All_Profiles");
+        allclassesLabel = getNonBreakResource("doclet.All_Classes");
+        allpackagesLabel = getNonBreakResource("doclet.All_Packages");
+        allprofilesLabel = getNonBreakResource("doclet.All_Profiles");
         indexLabel = getResource("doclet.Index");
         helpLabel = getResource("doclet.Help");
         seeLabel = getResource("doclet.See");
         descriptionLabel = getResource("doclet.Description");
-        prevpackageLabel = getResource("doclet.Prev_Package");
-        nextpackageLabel = getResource("doclet.Next_Package");
-        prevprofileLabel = getResource("doclet.Prev_Profile");
-        nextprofileLabel = getResource("doclet.Next_Profile");
+        prevpackageLabel = getNonBreakResource("doclet.Prev_Package");
+        nextpackageLabel = getNonBreakResource("doclet.Next_Package");
+        prevprofileLabel = getNonBreakResource("doclet.Prev_Profile");
+        nextprofileLabel = getNonBreakResource("doclet.Next_Profile");
         packagesLabel = getResource("doclet.Packages");
         profilesLabel = getResource("doclet.Profiles");
         methodDetailsLabel = getResource("doclet.Method_Detail");
@@ -254,6 +254,27 @@ public class HtmlWriter {
      */
     public Content getResource(String key) {
         return configuration.getResource(key);
+    }
+
+    /**
+     * Get the configuration string as a content, replacing spaces
+     * with non-breaking spaces.
+     *
+     * @param key the key to look for in the configuration file
+     * @return a content tree for the text
+     */
+    public Content getNonBreakResource(String key) {
+        String text = configuration.getText(key);
+        Content c = configuration.newContent();
+        int start = 0;
+        int p;
+        while ((p = text.indexOf(" ", start)) != -1) {
+            c.addContent(text.substring(start, p));
+            c.addContent(RawHtml.nbsp);
+            start = p + 1;
+        }
+        c.addContent(text.substring(start));
+        return c;
     }
 
     /**
@@ -289,14 +310,65 @@ public class HtmlWriter {
         if(winTitle != null && winTitle.length() > 0) {
             script.addAttr(HtmlAttr.TYPE, "text/javascript");
             String scriptCode = "<!--" + DocletConstants.NL +
-                    "    if (location.href.indexOf('is-external=true') == -1) {" + DocletConstants.NL +
-                    "        parent.document.title=\"" + winTitle + "\";" + DocletConstants.NL +
+                    "    try {" + DocletConstants.NL +
+                    "        if (location.href.indexOf('is-external=true') == -1) {" + DocletConstants.NL +
+                    "            parent.document.title=\"" + escapeJavaScriptChars(winTitle) + "\";" + DocletConstants.NL +
+                    "        }" + DocletConstants.NL +
+                    "    }" + DocletConstants.NL +
+                    "    catch(err) {" + DocletConstants.NL +
                     "    }" + DocletConstants.NL +
                     "//-->" + DocletConstants.NL;
             RawHtml scriptContent = new RawHtml(scriptCode);
             script.addContent(scriptContent);
         }
         return script;
+    }
+
+    /**
+     * Returns a String with escaped special JavaScript characters.
+     *
+     * @param s String that needs to be escaped
+     * @return a valid escaped JavaScript string
+     */
+    private static String escapeJavaScriptChars(String s) {
+        StringBuilder sb = new StringBuilder();
+        for (int i = 0; i < s.length(); i++) {
+            char ch = s.charAt(i);
+            switch (ch) {
+                case '\b':
+                    sb.append("\\b");
+                    break;
+                case '\t':
+                    sb.append("\\t");
+                    break;
+                case '\n':
+                    sb.append("\\n");
+                    break;
+                case '\f':
+                    sb.append("\\f");
+                    break;
+                case '\r':
+                    sb.append("\\r");
+                    break;
+                case '"':
+                    sb.append("\\\"");
+                    break;
+                case '\'':
+                    sb.append("\\\'");
+                    break;
+                case '\\':
+                    sb.append("\\\\");
+                    break;
+                default:
+                    if (ch < 32 || ch >= 127) {
+                        sb.append(String.format("\\u%04X", (int)ch));
+                    } else {
+                        sb.append(ch);
+                    }
+                    break;
+            }
+        }
+        return sb.toString();
     }
 
     /**
@@ -314,6 +386,12 @@ public class HtmlWriter {
                 "    if (targetPage.indexOf(\":\") != -1 || (targetPage != \"\" && !validURL(targetPage)))" + DocletConstants.NL +
                 "        targetPage = \"undefined\";" + DocletConstants.NL +
                 "    function validURL(url) {" + DocletConstants.NL +
+                "        try {" + DocletConstants.NL +
+                "            url = decodeURIComponent(url);" + DocletConstants.NL +
+                "        }" + DocletConstants.NL +
+                "        catch (error) {" + DocletConstants.NL +
+                "            return false;" + DocletConstants.NL +
+                "        }" + DocletConstants.NL +
                 "        var pos = url.indexOf(\".html\");" + DocletConstants.NL +
                 "        if (pos == -1 || pos != url.length - 5)" + DocletConstants.NL +
                 "            return false;" + DocletConstants.NL +
@@ -325,7 +403,8 @@ public class HtmlWriter {
                 "            if ('a' <= ch && ch <= 'z' ||" + DocletConstants.NL +
                 "                    'A' <= ch && ch <= 'Z' ||" + DocletConstants.NL +
                 "                    ch == '$' ||" + DocletConstants.NL +
-                "                    ch == '_') {" + DocletConstants.NL +
+                "                    ch == '_' ||" + DocletConstants.NL +
+                "                    ch.charCodeAt(0) > 127) {" + DocletConstants.NL +
                 "                allowNumber = true;" + DocletConstants.NL +
                 "                allowSep = true;" + DocletConstants.NL +
                 "            } else if ('0' <= ch && ch <= '9'" + DocletConstants.NL +

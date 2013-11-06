@@ -221,6 +221,13 @@ class Linux {
 
   static jlong fast_thread_cpu_time(clockid_t clockid);
 
+  // pthread_cond clock suppport
+  private:
+  static pthread_condattr_t _condattr[1];
+
+  public:
+  static pthread_condattr_t* condAttr() { return _condattr; }
+
   // Stack repair handling
 
   // none present
@@ -235,6 +242,7 @@ private:
   typedef int (*numa_available_func_t)(void);
   typedef int (*numa_tonode_memory_func_t)(void *start, size_t size, int node);
   typedef void (*numa_interleave_memory_func_t)(void *start, size_t size, unsigned long *nodemask);
+  typedef void (*numa_set_bind_policy_func_t)(int policy);
 
   static sched_getcpu_func_t _sched_getcpu;
   static numa_node_to_cpus_func_t _numa_node_to_cpus;
@@ -242,6 +250,7 @@ private:
   static numa_available_func_t _numa_available;
   static numa_tonode_memory_func_t _numa_tonode_memory;
   static numa_interleave_memory_func_t _numa_interleave_memory;
+  static numa_set_bind_policy_func_t _numa_set_bind_policy;
   static unsigned long* _numa_all_nodes;
 
   static void set_sched_getcpu(sched_getcpu_func_t func) { _sched_getcpu = func; }
@@ -250,6 +259,7 @@ private:
   static void set_numa_available(numa_available_func_t func) { _numa_available = func; }
   static void set_numa_tonode_memory(numa_tonode_memory_func_t func) { _numa_tonode_memory = func; }
   static void set_numa_interleave_memory(numa_interleave_memory_func_t func) { _numa_interleave_memory = func; }
+  static void set_numa_set_bind_policy(numa_set_bind_policy_func_t func) { _numa_set_bind_policy = func; }
   static void set_numa_all_nodes(unsigned long* ptr) { _numa_all_nodes = ptr; }
   static int sched_getcpu_syscall(void);
 public:
@@ -265,6 +275,11 @@ public:
   static void numa_interleave_memory(void *start, size_t size) {
     if (_numa_interleave_memory != NULL && _numa_all_nodes != NULL) {
       _numa_interleave_memory(start, size, _numa_all_nodes);
+    }
+  }
+  static void numa_set_bind_policy(int policy) {
+    if (_numa_set_bind_policy != NULL) {
+      _numa_set_bind_policy(policy);
     }
   }
   static int get_node_by_cpu(int cpu_id);
@@ -287,7 +302,7 @@ class PlatformEvent : public CHeapObj<mtInternal> {
   public:
     PlatformEvent() {
       int status;
-      status = pthread_cond_init (_cond, NULL);
+      status = pthread_cond_init (_cond, os::Linux::condAttr());
       assert_status(status == 0, status, "cond_init");
       status = pthread_mutex_init (_mutex, NULL);
       assert_status(status == 0, status, "mutex_init");
@@ -302,14 +317,19 @@ class PlatformEvent : public CHeapObj<mtInternal> {
     void park () ;
     void unpark () ;
     int  TryPark () ;
-    int  park (jlong millis) ;
+    int  park (jlong millis) ; // relative timed-wait only
     void SetAssociation (Thread * a) { _Assoc = a ; }
 } ;
 
 class PlatformParker : public CHeapObj<mtInternal> {
   protected:
+    enum {
+        REL_INDEX = 0,
+        ABS_INDEX = 1
+    };
+    int _cur_index;  // which cond is in use: -1, 0, 1
     pthread_mutex_t _mutex [1] ;
-    pthread_cond_t  _cond  [1] ;
+    pthread_cond_t  _cond  [2] ; // one for relative times and one for abs.
 
   public:       // TODO-FIXME: make dtor private
     ~PlatformParker() { guarantee (0, "invariant") ; }
@@ -317,10 +337,13 @@ class PlatformParker : public CHeapObj<mtInternal> {
   public:
     PlatformParker() {
       int status;
-      status = pthread_cond_init (_cond, NULL);
-      assert_status(status == 0, status, "cond_init");
+      status = pthread_cond_init (&_cond[REL_INDEX], os::Linux::condAttr());
+      assert_status(status == 0, status, "cond_init rel");
+      status = pthread_cond_init (&_cond[ABS_INDEX], NULL);
+      assert_status(status == 0, status, "cond_init abs");
       status = pthread_mutex_init (_mutex, NULL);
       assert_status(status == 0, status, "mutex_init");
+      _cur_index = -1; // mark as unused
     }
 };
 

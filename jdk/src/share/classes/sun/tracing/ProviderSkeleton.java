@@ -164,7 +164,10 @@ public abstract class ProviderSkeleton implements InvocationHandler, Provider {
                     declaringClass == Object.class) {
                     return method.invoke(this, args);
                 } else {
-                    assert false;
+                    // assert false : "this should never happen"
+                    //    reaching here would indicate a breach
+                    //    in security in the higher layers
+                    throw new SecurityException();
                 }
             } catch (IllegalAccessException e) {
                 assert false;

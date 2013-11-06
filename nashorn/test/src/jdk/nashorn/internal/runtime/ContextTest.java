@@ -64,6 +64,7 @@ public class ContextTest {
         final Options options = new Options("");
         final ErrorManager errors = new ErrorManager();
         final Context cx = new Context(options, errors, Thread.currentThread().getContextClassLoader());
+        final boolean strict = cx.getEnv()._strict;
         final ScriptObject oldGlobal = Context.getGlobal();
         Context.setGlobal(cx.createGlobal());
 
@@ -95,7 +96,7 @@ public class ContextTest {
             assertEquals(sobj.size(), 2);
 
             // add property
-            sobj.put("zee", "hello");
+            sobj.put("zee", "hello", strict);
             assertEquals(sobj.get("zee"), "hello");
             assertEquals(sobj.size(), 3);
 

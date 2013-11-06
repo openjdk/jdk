@@ -286,7 +286,10 @@ int ciMethod::itable_index() {
   check_is_loaded();
   assert(holder()->is_linked(), "must be linked");
   VM_ENTRY_MARK;
-  return klassItable::compute_itable_index(get_Method());
+  Method* m = get_Method();
+  if (!m->has_itable_index())
+    return Method::nonvirtual_vtable_index;
+  return m->itable_index();
 }
 #endif // SHARK
 
@@ -561,6 +564,116 @@ void ciCallProfile::add_receiver(ciKlass* receiver, int receiver_count) {
   _receiver_count[i] = receiver_count;
   if (_limit < MorphismLimit) _limit++;
 }
+
+
+void ciMethod::assert_virtual_call_type_ok(int bci) {
+  assert(java_code_at_bci(bci) == Bytecodes::_invokevirtual ||
+         java_code_at_bci(bci) == Bytecodes::_invokeinterface, err_msg("unexpected bytecode %s", Bytecodes::name(java_code_at_bci(bci))));
+}
+
+void ciMethod::assert_call_type_ok(int bci) {
+  assert(java_code_at_bci(bci) == Bytecodes::_invokestatic ||
+         java_code_at_bci(bci) == Bytecodes::_invokespecial ||
+         java_code_at_bci(bci) == Bytecodes::_invokedynamic, err_msg("unexpected bytecode %s", Bytecodes::name(java_code_at_bci(bci))));
+}
+
+/**
+ * Check whether profiling provides a type for the argument i to the
+ * call at bci bci
+ *
+ * @param bci  bci of the call
+ * @param i    argument number
+ * @return     profiled type
+ *
+ * If the profile reports that the argument may be null, return false
+ * at least for now.
+ */
+ciKlass* ciMethod::argument_profiled_type(int bci, int i) {
+  if (MethodData::profile_parameters() && method_data() != NULL && method_data()->is_mature()) {
+    ciProfileData* data = method_data()->bci_to_data(bci);
+    if (data != NULL) {
+      if (data->is_VirtualCallTypeData()) {
+        assert_virtual_call_type_ok(bci);
+        ciVirtualCallTypeData* call = (ciVirtualCallTypeData*)data->as_VirtualCallTypeData();
+        if (i >= call->number_of_arguments()) {
+          return NULL;
+        }
+        ciKlass* type = call->valid_argument_type(i);
+        if (type != NULL && !call->argument_maybe_null(i)) {
+          return type;
+        }
+      } else if (data->is_CallTypeData()) {
+        assert_call_type_ok(bci);
+        ciCallTypeData* call = (ciCallTypeData*)data->as_CallTypeData();
+        if (i >= call->number_of_arguments()) {
+          return NULL;
+        }
+        ciKlass* type = call->valid_argument_type(i);
+        if (type != NULL && !call->argument_maybe_null(i)) {
+          return type;
+        }
+      }
+    }
+  }
+  return NULL;
+}
+
+/**
+ * Check whether profiling provides a type for the return value from
+ * the call at bci bci
+ *
+ * @param bci  bci of the call
+ * @return     profiled type
+ *
+ * If the profile reports that the argument may be null, return false
+ * at least for now.
+ */
+ciKlass* ciMethod::return_profiled_type(int bci) {
+  if (MethodData::profile_return() && method_data() != NULL && method_data()->is_mature()) {
+    ciProfileData* data = method_data()->bci_to_data(bci);
+    if (data != NULL) {
+      if (data->is_VirtualCallTypeData()) {
+        assert_virtual_call_type_ok(bci);
+        ciVirtualCallTypeData* call = (ciVirtualCallTypeData*)data->as_VirtualCallTypeData();
+        ciKlass* type = call->valid_return_type();
+        if (type != NULL && !call->return_maybe_null()) {
+          return type;
+        }
+      } else if (data->is_CallTypeData()) {
+        assert_call_type_ok(bci);
+        ciCallTypeData* call = (ciCallTypeData*)data->as_CallTypeData();
+        ciKlass* type = call->valid_return_type();
+        if (type != NULL && !call->return_maybe_null()) {
+          return type;
+        }
+      }
+    }
+  }
+  return NULL;
+}
+
+/**
+ * Check whether profiling provides a type for the parameter i
+ *
+ * @param i    parameter number
+ * @return     profiled type
+ *
+ * If the profile reports that the argument may be null, return false
+ * at least for now.
+ */
+ciKlass* ciMethod::parameter_profiled_type(int i) {
+  if (MethodData::profile_parameters() && method_data() != NULL && method_data()->is_mature()) {
+    ciParametersTypeData* parameters = method_data()->parameters_type_data();
+    if (parameters != NULL && i < parameters->number_of_parameters()) {
+      ciKlass* type = parameters->valid_parameter_type(i);
+      if (type != NULL && !parameters->parameter_maybe_null(i)) {
+        return type;
+      }
+    }
+  }
+  return NULL;
+}
+
 
 // ------------------------------------------------------------------
 // ciMethod::find_monomorphic_target
@@ -843,7 +956,9 @@ bool ciMethod::has_member_arg() const {
 // Return true if allocation was successful or no MDO is required.
 bool ciMethod::ensure_method_data(methodHandle h_m) {
   EXCEPTION_CONTEXT;
-  if (is_native() || is_abstract() || h_m()->is_accessor()) return true;
+  if (is_native() || is_abstract() || h_m()->is_accessor()) {
+    return true;
+  }
   if (h_m()->method_data() == NULL) {
     Method::build_interpreter_method_data(h_m, THREAD);
     if (HAS_PENDING_EXCEPTION) {
@@ -900,22 +1015,21 @@ ciMethodData* ciMethod::method_data() {
 // NULL otherwise.
 ciMethodData* ciMethod::method_data_or_null() {
   ciMethodData *md = method_data();
-  if (md->is_empty()) return NULL;
+  if (md->is_empty()) {
+    return NULL;
+  }
   return md;
 }
 
 // ------------------------------------------------------------------
 // ciMethod::ensure_method_counters
 //
-address ciMethod::ensure_method_counters() {
+MethodCounters* ciMethod::ensure_method_counters() {
   check_is_loaded();
   VM_ENTRY_MARK;
   methodHandle mh(THREAD, get_Method());
-  MethodCounters *counter = mh->method_counters();
-  if (counter == NULL) {
-    counter = Method::build_method_counters(mh(), CHECK_AND_CLEAR_NULL);
-  }
-  return (address)counter;
+  MethodCounters* method_counters = mh->get_method_counters(CHECK_NULL);
+  return method_counters;
 }
 
 // ------------------------------------------------------------------
@@ -1137,6 +1251,10 @@ bool ciMethod::is_klass_loaded(int refinfo_index, bool must_be_resolved) const {
 // ------------------------------------------------------------------
 // ciMethod::check_call
 bool ciMethod::check_call(int refinfo_index, bool is_static) const {
+  // This method is used only in C2 from InlineTree::ok_to_inline,
+  // and is only used under -Xcomp or -XX:CompileTheWorld.
+  // It appears to fail when applied to an invokeinterface call site.
+  // FIXME: Remove this method and resolve_method_statically; refactor to use the other LinkResolver entry points.
   VM_ENTRY_MARK;
   {
     EXCEPTION_MARK;
@@ -1240,7 +1358,6 @@ ciMethodBlocks  *ciMethod::get_method_blocks() {
 #undef FETCH_FLAG_FROM_VM
 
 void ciMethod::dump_replay_data(outputStream* st) {
-  ASSERT_IN_VM;
   ResourceMark rm;
   Method* method = get_Method();
   MethodCounters* mcs = method->method_counters();

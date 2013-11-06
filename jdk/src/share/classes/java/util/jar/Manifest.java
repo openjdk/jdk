@@ -63,7 +63,7 @@ public class Manifest implements Cloneable {
      * Constructs a new Manifest from the specified input stream.
      *
      * @param is the input stream containing manifest data
-     * @throws IOException if an I/O error has occured
+     * @throws IOException if an I/O error has occurred
      */
     public Manifest(InputStream is) throws IOException {
         read(is);

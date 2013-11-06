@@ -26,7 +26,7 @@
  * @bug 8003280 8009131
  * @summary Add lambda tests
  *  check nested case of overload resolution and lambda parameter inference
- * @compile TargetType01.java
+ * @compile/fail/ref=TargetType01.out -XDrawDiagnostics TargetType01.java
  */
 
 class TargetType01 {

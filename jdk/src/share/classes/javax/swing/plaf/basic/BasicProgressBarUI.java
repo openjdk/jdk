@@ -38,7 +38,7 @@ import java.io.Serializable;
 import sun.swing.DefaultLookup;
 
 /**
- * A Basic L&F implementation of ProgressBarUI.
+ * A Basic L&amp;F implementation of ProgressBarUI.
  *
  * @author Michael C. Albers
  * @author Kathy Walrath
@@ -335,7 +335,7 @@ public class BasicProgressBarUI extends ProgressBarUI {
 
     /**
      * Returns the width (if HORIZONTAL) or height (if VERTICAL)
-     * of each of the indivdual cells/units to be rendered in the
+     * of each of the individual cells/units to be rendered in the
      * progress bar. However, for text rendering simplification and
      * aesthetic considerations, this function will return 1 when
      * the progress string is being rendered.
@@ -1215,7 +1215,7 @@ public class BasicProgressBarUI extends ProgressBarUI {
      * Instantiate it only within subclasses of {@code BasicProgressBarUI}.
      */
     public class ChangeHandler implements ChangeListener {
-        // NOTE: This class exists only for backward compatability. All
+        // NOTE: This class exists only for backward compatibility. All
         // its functionality has been moved into Handler. If you need to add
         // new functionality add it to the Handler, but make sure this
         // class calls into the Handler.

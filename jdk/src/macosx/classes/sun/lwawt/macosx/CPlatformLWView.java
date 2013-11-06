@@ -54,14 +54,6 @@ public class CPlatformLWView extends CPlatformView {
     }
 
     @Override
-    public void enterFullScreenMode() {
-    }
-
-    @Override
-    public void exitFullScreenMode() {
-    }
-
-    @Override
     public SurfaceData replaceSurfaceData() {
         return null;
     }

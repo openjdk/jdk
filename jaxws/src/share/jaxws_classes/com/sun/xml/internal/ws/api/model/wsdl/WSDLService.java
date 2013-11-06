@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,7 @@
 package com.sun.xml.internal.ws.api.model.wsdl;
 
 import com.sun.istack.internal.NotNull;
+import com.sun.istack.internal.Nullable;
 
 import javax.xml.namespace.QName;
 
@@ -60,6 +61,12 @@ public interface WSDLService extends WSDLObject, WSDLExtensible {
      * Gets the first {@link WSDLPort} if any, or otherwise null.
      */
     WSDLPort getFirstPort();
+
+    /**
+    * Gets the first port in this service which matches the portType
+    */
+    @Nullable
+    WSDLPort getMatchingPort(QName portTypeName);
 
     /**
      * Gives all the {@link WSDLPort} in a wsdl:service {@link WSDLService}

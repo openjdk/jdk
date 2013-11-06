@@ -45,7 +45,7 @@ import java.io.Serializable;
  * future Swing releases. The current serialization support is
  * appropriate for short term storage or RMI between applications running
  * the same version of Swing.  As of 1.4, support for long term storage
- * of all JavaBeans<sup><font size="-2">TM</font></sup>
+ * of all JavaBeans&trade;
  * has been added to the <code>java.beans</code> package.
  * Please see {@link java.beans.XMLEncoder}.
  *
@@ -190,7 +190,7 @@ public class OverlayLayout implements LayoutManager2,Serializable {
      * Returns the alignment along the x axis for the container.
      *
      * @param target the container
-     * @return the alignment >= 0.0f && <= 1.0f
+     * @return the alignment &gt;= 0.0f &amp;&amp; &lt;= 1.0f
      */
     public float getLayoutAlignmentX(Container target) {
         checkContainer(target);
@@ -202,7 +202,7 @@ public class OverlayLayout implements LayoutManager2,Serializable {
      * Returns the alignment along the y axis for the container.
      *
      * @param target the container
-     * @return the alignment >= 0.0f && <= 1.0f
+     * @return the alignment &gt;= 0.0f &amp;&amp; &lt;= 1.0f
      */
     public float getLayoutAlignmentY(Container target) {
         checkContainer(target);

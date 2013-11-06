@@ -78,11 +78,13 @@ enum {
   JVM_ACC_FIELD_ACCESS_WATCHED       = 0x00002000,  // field access is watched by JVMTI
   JVM_ACC_FIELD_MODIFICATION_WATCHED = 0x00008000,  // field modification is watched by JVMTI
   JVM_ACC_FIELD_INTERNAL             = 0x00000400,  // internal field, same as JVM_ACC_ABSTRACT
+  JVM_ACC_FIELD_STABLE               = 0x00000020,  // @Stable field, same as JVM_ACC_SYNCHRONIZED
   JVM_ACC_FIELD_HAS_GENERIC_SIGNATURE = 0x00000800, // field has generic signature
 
   JVM_ACC_FIELD_INTERNAL_FLAGS       = JVM_ACC_FIELD_ACCESS_WATCHED |
                                        JVM_ACC_FIELD_MODIFICATION_WATCHED |
                                        JVM_ACC_FIELD_INTERNAL |
+                                       JVM_ACC_FIELD_STABLE |
                                        JVM_ACC_FIELD_HAS_GENERIC_SIGNATURE,
 
                                                     // flags accepted by set_field_flags()
@@ -148,6 +150,7 @@ class AccessFlags VALUE_OBJ_CLASS_SPEC {
                                         { return (_flags & JVM_ACC_FIELD_MODIFICATION_WATCHED) != 0; }
   bool on_stack() const                 { return (_flags & JVM_ACC_ON_STACK) != 0; }
   bool is_internal() const              { return (_flags & JVM_ACC_FIELD_INTERNAL) != 0; }
+  bool is_stable() const                { return (_flags & JVM_ACC_FIELD_STABLE) != 0; }
   bool field_has_generic_signature() const
                                         { return (_flags & JVM_ACC_FIELD_HAS_GENERIC_SIGNATURE) != 0; }
 

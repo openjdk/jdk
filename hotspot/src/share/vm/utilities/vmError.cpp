@@ -574,6 +574,10 @@ void VMError::report(outputStream* st) {
   STEP(120, "(printing native stack)" )
 
      if (_verbose) {
+     if (os::platform_print_native_stack(st, _context, buf, sizeof(buf))) {
+       // We have printed the native stack in platform-specific code
+       // Windows/x64 needs special handling.
+     } else {
        frame fr = _context ? os::fetch_frame_from_context(_context)
                            : os::current_frame();
 
@@ -604,6 +608,7 @@ void VMError::report(outputStream* st) {
           st->cr();
        }
      }
+   }
 
   STEP(130, "(printing Java stack)" )
 
@@ -1045,7 +1050,7 @@ void VMError::report_and_die() {
         FILE* replay_data_file = os::open(fd, "w");
         if (replay_data_file != NULL) {
           fileStream replay_data_stream(replay_data_file, /*need_close=*/true);
-          env->dump_replay_data(&replay_data_stream);
+          env->dump_replay_data_unsafe(&replay_data_stream);
           out.print_raw("#\n# Compiler replay data is saved as:\n# ");
           out.print_raw_cr(buffer);
         } else {

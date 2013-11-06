@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug      4494033 7028815 7052425 8007338
+ * @bug      4494033 7028815 7052425 8007338 8023608 8008164
  * @summary  Run tests on doclet stylesheet.
  * @author   jamieh
  * @library  ../lib/
@@ -59,10 +59,8 @@ public class TestStylesheet extends JavadocTester {
         {BUG_ID + FS + "stylesheet.css",
             "ul {" + NL + "    list-style-type:disc;" + NL + "}"},
         {BUG_ID + FS + "stylesheet.css",
-            ".overviewSummary caption, .packageSummary caption, " +
-            ".contentContainer ul.blockList li.blockList caption, " +
-            ".summary caption, .classUseContainer caption, " +
-            ".constantValuesContainer caption {" + NL +
+            ".overviewSummary caption, .memberSummary caption, .typeSummary caption," + NL +
+            ".useSummary caption, .constantsSummary caption, .deprecatedSummary caption {" + NL +
             "    position:relative;" + NL +
             "    text-align:left;" + NL +
             "    background-repeat:no-repeat;" + NL +
@@ -72,7 +70,42 @@ public class TestStylesheet extends JavadocTester {
             "    overflow:hidden;" + NL +
             "    padding:0px;" + NL +
             "    margin:0px;" + NL +
-            "    white-space:pre;" + NL +
+            "}"},
+        {BUG_ID + FS + "stylesheet.css",
+            ".overviewSummary caption span, .memberSummary caption span, .typeSummary caption span," + NL +
+            ".useSummary caption span, .constantsSummary caption span, .deprecatedSummary caption span {" + NL +
+            "    white-space:nowrap;" + NL +
+            "    padding-top:8px;" + NL +
+            "    padding-left:8px;" + NL +
+            "    display:inline-block;" + NL +
+            "    float:left;" + NL +
+            "    background-image:url(resources/titlebar.gif);" + NL +
+            "}"},
+        {BUG_ID + FS + "stylesheet.css",
+            ".memberSummary caption span.activeTableTab span {" + NL +
+            "    white-space:nowrap;" + NL +
+            "    padding-top:8px;" + NL +
+            "    padding-left:8px;" + NL +
+            "    display:inline-block;" + NL +
+            "    float:left;" + NL +
+            "    background-image:url(resources/activetitlebar.gif);" + NL +
+            "}"},
+        {BUG_ID + FS + "stylesheet.css",
+            ".memberSummary caption span.tableTab span {" + NL +
+            "    white-space:nowrap;" + NL +
+            "    padding-top:8px;" + NL +
+            "    padding-left:8px;" + NL +
+            "    display:inline-block;" + NL +
+            "    float:left;" + NL +
+            "    background-image:url(resources/titlebar.gif);" + NL +
+            "}"},
+        {BUG_ID + FS + "stylesheet.css",
+            ".memberSummary caption span.tableTab, .memberSummary caption span.activeTableTab {" + NL +
+            "    padding-top:0px;" + NL +
+            "    padding-left:0px;" + NL +
+            "    background-image:none;" + NL +
+            "    float:none;" + NL +
+            "    display:inline-block;" + NL +
             "}"},
         // Test whether a link to the stylesheet file is inserted properly
         // in the class documentation.

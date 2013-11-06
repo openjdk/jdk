@@ -890,7 +890,7 @@ public class TreeMaker implements JCTree.Factory {
     /** Create a value parameter tree from its name, type, and owner.
      */
     public JCVariableDecl Param(Name name, Type argtype, Symbol owner) {
-        return VarDef(new VarSymbol(0, name, argtype, owner), null);
+        return VarDef(new VarSymbol(PARAMETER, name, argtype, owner), null);
     }
 
     /** Create a a list of value parameter trees x0, ..., xn from a list of
@@ -946,6 +946,7 @@ public class TreeMaker implements JCTree.Factory {
     boolean isUnqualifiable(Symbol sym) {
         if (sym.name == names.empty ||
             sym.owner == null ||
+            sym.owner == syms.rootPackage ||
             sym.owner.kind == MTH || sym.owner.kind == VAR) {
             return true;
         } else if (sym.kind == TYP && toplevel != null) {

@@ -45,14 +45,14 @@ import java.util.Vector;
  * If you do not supply a <code>TreeCellEditor</code>,
  * a <code>TextField</code> will be used. Editing is started
  * on a triple mouse click, or after a click, pause, click and
- * a delay of 1200 miliseconds.
+ * a delay of 1200 milliseconds.
  *<p>
  * <strong>Warning:</strong>
  * Serialized objects of this class will not be compatible with
  * future Swing releases. The current serialization support is
  * appropriate for short term storage or RMI between applications running
  * the same version of Swing.  As of 1.4, support for long term storage
- * of all JavaBeans<sup><font size="-2">TM</font></sup>
+ * of all JavaBeans&trade;
  * has been added to the <code>java.beans</code> package.
  * Please see {@link java.beans.XMLEncoder}.
  *
@@ -173,7 +173,7 @@ public class DefaultTreeCellEditor implements ActionListener, TreeCellEditor,
      * Sets the font to edit with. <code>null</code> indicates
      * the renderers font should be used. This will NOT
      * override any font you have set in the editor
-     * the receiver was instantied with. If <code>null</code>
+     * the receiver was instantiated with. If <code>null</code>
      * for an editor was passed in a default editor will be
      * created that will pick up this font.
      *
@@ -216,7 +216,7 @@ public class DefaultTreeCellEditor implements ActionListener, TreeCellEditor,
                                         isSelected, expanded,leaf, row);
 
 
-        // this is kept for backwards compatability but isn't really needed
+        // this is kept for backwards compatibility but isn't really needed
         // with the current BasicTreeUI implementation.
         TreePath        newPath = tree.getPathForRow(row);
 
@@ -430,7 +430,7 @@ public class DefaultTreeCellEditor implements ActionListener, TreeCellEditor,
 
     /**
      * Returns true if <code>event</code> is <code>null</code>,
-     * or it is a <code>MouseEvent</code> with a click count > 2
+     * or it is a <code>MouseEvent</code> with a click count &gt; 2
      * and <code>inHitRegion</code> returns true.
      * @param event the event being studied
      */
@@ -448,7 +448,7 @@ public class DefaultTreeCellEditor implements ActionListener, TreeCellEditor,
     /**
      * Returns true if the passed in location is a valid mouse location
      * to start editing from. This is implemented to return false if
-     * <code>x</code> is <= the width of the icon and icon gap displayed
+     * <code>x</code> is &lt;= the width of the icon and icon gap displayed
      * by the renderer. In other words this returns true if the user
      * clicks over the text part displayed by the renderer, and false
      * otherwise.

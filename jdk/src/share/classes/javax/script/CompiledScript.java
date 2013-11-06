@@ -36,7 +36,7 @@ import java.util.Map;
  * Each <code>CompiledScript</code> is associated with a <code>ScriptEngine</code> -- A call to an  <code>eval</code>
  * method of the <code>CompiledScript</code> causes the execution of the script by the
  * <code>ScriptEngine</code>.  Changes in the state of the <code>ScriptEngine</code> caused by execution
- * of tne <code>CompiledScript</code>  may visible during subsequent executions of scripts by the engine.
+ * of the <code>CompiledScript</code>  may visible during subsequent executions of scripts by the engine.
  *
  * @author Mike Grogan
  * @since 1.6

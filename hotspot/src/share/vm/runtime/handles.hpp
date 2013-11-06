@@ -136,7 +136,7 @@ DEF_HANDLE(typeArray        , is_typeArray        )
 // Specific Handles for different oop types
 #define DEF_METADATA_HANDLE(name, type)          \
   class name##Handle;                            \
-  class name##Handle {                           \
+  class name##Handle : public StackObj {         \
     type*     _value;                            \
     Thread*   _thread;                           \
    protected:                                    \
@@ -175,7 +175,7 @@ DEF_METADATA_HANDLE(constantPool, ConstantPool)
 // Writing this class explicitly, since DEF_METADATA_HANDLE(klass) doesn't
 // provide the necessary Klass* <-> Klass* conversions. This Klass
 // could be removed when we don't have the Klass* typedef anymore.
-class KlassHandle {
+class KlassHandle : public StackObj {
   Klass* _value;
  protected:
    Klass* obj() const          { return _value; }
@@ -309,8 +309,8 @@ class HandleMark {
   // called in the destructor of HandleMarkCleaner
   void pop_and_restore();
   // overloaded operators
-  void* operator new(size_t size);
-  void* operator new [](size_t size);
+  void* operator new(size_t size) throw();
+  void* operator new [](size_t size) throw();
   void operator delete(void* p);
   void operator delete[](void* p);
 };

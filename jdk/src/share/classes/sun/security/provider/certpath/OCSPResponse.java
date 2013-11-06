@@ -385,12 +385,12 @@ public final class OCSPResponse {
         switch (responseStatus) {
             case SUCCESSFUL:
                 break;
-            case UNAUTHORIZED:
             case TRY_LATER:
             case INTERNAL_ERROR:
                 throw new CertPathValidatorException(
                     "OCSP response error: " + responseStatus, null, null, -1,
                     BasicReason.UNDETERMINED_REVOCATION_STATUS);
+            case UNAUTHORIZED:
             default:
                 throw new CertPathValidatorException("OCSP response error: " +
                                                      responseStatus);

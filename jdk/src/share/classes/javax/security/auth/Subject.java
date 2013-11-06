@@ -1186,7 +1186,7 @@ public final class Subject implements java.io.Serializable {
         }
 
         public boolean removeAll(Collection<?> c) {
-
+            Objects.requireNonNull(c);
             boolean modified = false;
             final Iterator<E> e = iterator();
             while (e.hasNext()) {
@@ -1222,7 +1222,7 @@ public final class Subject implements java.io.Serializable {
         }
 
         public boolean retainAll(Collection<?> c) {
-
+            Objects.requireNonNull(c);
             boolean modified = false;
             boolean retain = false;
             final Iterator<E> e = iterator();
@@ -1315,8 +1315,14 @@ public final class Subject implements java.io.Serializable {
         {
             ObjectInputStream.GetField fields = ois.readFields();
             subject = (Subject) fields.get("this$0", null);
-            elements = (LinkedList<E>) fields.get("elements", null);
             which = fields.get("which", 0);
+
+            LinkedList<E> tmp = (LinkedList<E>) fields.get("elements", null);
+            if (tmp.getClass() != LinkedList.class) {
+                elements = new LinkedList<E>(tmp);
+            } else {
+                elements = tmp;
+            }
         }
     }
 

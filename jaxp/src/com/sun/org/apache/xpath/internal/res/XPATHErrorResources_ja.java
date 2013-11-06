@@ -3,7 +3,7 @@
  * DO NOT REMOVE OR ALTER!
  */
 /*
- * Copyright 1999-2004 The Apache Software Foundation.
+ * Copyright 1999-2005 The Apache Software Foundation.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,7 +18,7 @@
  * limitations under the License.
  */
 /*
- * $Id: XPATHErrorResources_ja.java,v 1.2.4.1 2005/09/15 00:39:20 jeffsuttor Exp $
+ * $Id: XPATHErrorResources_ja.java /st_wptg_1.8.0.0.0jdk/2 2013/09/12 17:39:58 gmolloy Exp $
  */
 package com.sun.org.apache.xpath.internal.res;
 
@@ -540,7 +540,7 @@ public static final String ER_IGNORABLE_WHITESPACE_NOT_HANDLED =
       "\u7121\u52B9\u306AUTF-16\u30B5\u30ED\u30B2\u30FC\u30C8\u304C\u691C\u51FA\u3055\u308C\u307E\u3057\u305F: {0}\u3002"},
 
   { ER_OIERROR,
-     "\u5165\u51FA\u529B\u30A8\u30E9\u30FC"},
+     "IO\u30A8\u30E9\u30FC"},
 
   { ER_CANNOT_CREATE_URL,
      "{0}\u306EURL\u3092\u4F5C\u6210\u3067\u304D\u307E\u305B\u3093"},

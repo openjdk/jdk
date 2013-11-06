@@ -22,7 +22,7 @@
 # questions.
 #
 
-# This script is processed by configure before it's usable. It is run from 
+# This script is processed by configure before it's usable. It is run from
 # the root of the build directory.
 
 
@@ -67,14 +67,14 @@ UNZIP="@UNZIP@"
 SRC_ROOT="@SRC_ROOT@"
 
 if [ "$OPENJDK_TARGET_OS" = "windows" ]; then
-    PATH="@VS_PATH@"
+  PATH="@VS_PATH@"
 fi
 
 # Now locate the main script and run it.
 REAL_COMPARE_SCRIPT="$SRC_ROOT/common/bin/compare.sh"
 if [ ! -e "$REAL_COMPARE_SCRIPT" ]; then
-    echo "Error: Cannot locate compare script, it should have been in $REAL_COMPARE_SCRIPT"
-    exit 1
+  echo "Error: Cannot locate compare script, it should have been in $REAL_COMPARE_SCRIPT"
+  exit 1
 fi
 
 . "$REAL_COMPARE_SCRIPT" "$@"

@@ -40,7 +40,7 @@ import com.sun.tools.javac.util.List;
 public class AnnotatedTypeImpl
         extends AbstractTypeImpl implements AnnotatedType {
 
-    AnnotatedTypeImpl(DocEnv env, com.sun.tools.javac.code.Type.AnnotatedType type) {
+    AnnotatedTypeImpl(DocEnv env, com.sun.tools.javac.code.Type type) {
         super(env, type);
     }
 
@@ -50,7 +50,7 @@ public class AnnotatedTypeImpl
      */
     @Override
     public AnnotationDesc[] annotations() {
-        List<TypeCompound> tas = ((com.sun.tools.javac.code.Type.AnnotatedType)type).typeAnnotations;
+        List<? extends TypeCompound> tas = type.getAnnotationMirrors();
         if (tas == null ||
                 tas.isEmpty()) {
             return new AnnotationDesc[0];
@@ -65,7 +65,7 @@ public class AnnotatedTypeImpl
 
     @Override
     public com.sun.javadoc.Type underlyingType() {
-        return TypeMaker.getType(env, ((com.sun.tools.javac.code.Type.AnnotatedType)type).underlyingType, true, false);
+        return TypeMaker.getType(env, type.unannotatedType(), true, false);
     }
 
     @Override

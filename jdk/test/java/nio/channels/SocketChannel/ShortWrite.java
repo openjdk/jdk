@@ -22,7 +22,7 @@
  */
 
 /* @test
- * @bug 7176630
+ * @bug 7176630 7074436
  * @summary Check for short writes on SocketChannels configured in blocking mode
  */
 
@@ -38,11 +38,12 @@ public class ShortWrite {
     static final Random rand = new Random();
 
     /**
-     * Returns a checksum on the remaining bytes in the given buffer.
+     * Returns a checksum on the remaining bytes in the given buffers.
      */
-    static long computeChecksum(ByteBuffer bb) {
+    static long computeChecksum(ByteBuffer... bufs) {
         CRC32 crc32 = new CRC32();
-        crc32.update(bb);
+        for (int i=0; i<bufs.length; i++)
+            crc32.update(bufs[i]);
         return crc32.getValue();
     }
 
@@ -71,15 +72,15 @@ public class ShortWrite {
     }
 
     /**
-     * Run test with a write of the given number of bytes.
+     * Exercise write(ByteBuffer) with given number of bytes.
      */
-    static void test(ExecutorService pool,
-                     SocketChannel source,
-                     SocketChannel sink,
-                     int size)
+    static void test1(ExecutorService pool,
+                      SocketChannel source,
+                      SocketChannel sink,
+                      int size)
         throws Exception
     {
-        System.out.println(size);
+        System.out.println("write(ByteBuffer), size=" + size);
 
         // random bytes in the buffer
         ByteBuffer buf = ByteBuffer.allocate(size);
@@ -101,6 +102,47 @@ public class ShortWrite {
             throw new RuntimeException("Checksum did not match");
     }
 
+    /**
+     * Exercise write(ByteBuffer[]) with buffers of the given sizes.
+     */
+    static void testN(ExecutorService pool,
+                      SocketChannel source,
+                      SocketChannel sink,
+                      int... sizes)
+        throws Exception
+    {
+        System.out.print("write(ByteBuffer[]), sizes=");
+        for (int size: sizes)
+            System.out.print(size + " ");
+        System.out.println();
+
+        int total = 0;
+        int len = sizes.length;
+        ByteBuffer[] bufs = new ByteBuffer[len];
+        for (int i=0; i<len; i++) {
+            int size = sizes[i];
+            ByteBuffer buf = ByteBuffer.allocate(size);
+            rand.nextBytes(buf.array());
+            bufs[i] = buf;
+            total += size;
+        }
+
+        // submit task to read the bytes
+        Future<Long> result = pool.submit(new Reader(sink, total));
+
+        // write the bytes
+        long n = source.write(bufs);
+        if (n != total)
+            throw new RuntimeException("Short write detected");
+
+        // check the bytes that were received match
+        for (int i=0; i<len; i++)
+            bufs[i].rewind();
+        long expected = computeChecksum(bufs);
+        long actual = result.get();
+        if (actual != expected)
+            throw new RuntimeException("Checksum did not match");
+    }
 
     public static void main(String[] args) throws Exception {
         ExecutorService pool = Executors.newSingleThreadExecutor();
@@ -114,17 +156,47 @@ public class ShortWrite {
                 try (SocketChannel source = SocketChannel.open(sa);
                      SocketChannel sink = ssc.accept())
                 {
-                    // run tests on sizes around 128k as that is the problem
-                    // area on Windows.
+                    // Exercise write(BufferBuffer) on sizes around 128k
                     int BOUNDARY = 128 * 1024;
                     for (int size=(BOUNDARY-2); size<=(BOUNDARY+2); size++) {
-                        test(pool, source, sink, size);
+                        test1(pool, source, sink, size);
                     }
 
-                    // run tests on random sizes
+                    // Exercise write(BufferBuffer) on random sizes
                     for (int i=0; i<20; i++) {
                         int size = rand.nextInt(1024*1024);
-                        test(pool, source, sink, size);
+                        test1(pool, source, sink, size);
+                    }
+
+                    // Exercise write(BufferBuffer[]) on sizes around 128k
+                    for (int i=BOUNDARY-2; i<=BOUNDARY+2; i++) {
+                        testN(pool, source, sink, i);
+                        testN(pool, source, sink, 0, i);
+                        testN(pool, source, sink, i, 0);
+                        for (int j=BOUNDARY-2; j<=BOUNDARY+2; j++) {
+                            testN(pool, source, sink, i, j);
+                            testN(pool, source, sink, 0, i, j);
+                            testN(pool, source, sink, i, 0, j);
+                            testN(pool, source, sink, i, j, 0);
+                            for (int k=BOUNDARY-2; k<=BOUNDARY+2; k++) {
+                                testN(pool, source, sink, i, j, k);
+                                testN(pool, source, sink, 0, i, j, k);
+                                testN(pool, source, sink, i, 0, j, k);
+                                testN(pool, source, sink, i, j, 0, k);
+                                testN(pool, source, sink, i, j, k, 0);
+                            }
+                        }
+                    }
+
+                    // Exercise write(BufferBuffer[]) on random sizes
+                    // (assumes IOV_MAX >= 8)
+                    for (int i=0; i<20; i++) {
+                        int n = rand.nextInt(9);
+                        int[] sizes = new int[n];
+                        for (int j=0; j<n; j++) {
+                            sizes[j] = rand.nextInt(1024*1024);
+                        }
+                        testN(pool, source, sink, sizes);
                     }
                 }
             }

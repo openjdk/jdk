@@ -58,12 +58,12 @@ import sun.misc.MessageUtils;
  * space should be used here, but I am using &amp;nbsp to force the space to
  * be displayed):
  * <p>
- * '&lt;b>blah&nbsp;&lt;i>&nbsp;&lt;strike>&nbsp;foo' which can be treated as:
- * '&lt;b>blah&nbsp;&lt;i>&lt;strike>foo'
+ * '&lt;b&gt;blah&nbsp;&lt;i&gt;&nbsp;&lt;strike&gt;&nbsp;foo' which can be treated as:
+ * '&lt;b&gt;blah&nbsp;&lt;i&gt;&lt;strike&gt;foo'
  * <p>as well as:
- * '&lt;p>&lt;a href="xx">&nbsp;&lt;em>Using&lt;/em>&lt;/a>&lt;/p>'
+ * '&lt;p&gt;&lt;a href="xx"&gt;&nbsp;&lt;em&gt;Using&lt;/em&gt;&lt;/a&gt;&lt;/p&gt;'
  * which appears to be treated as:
- * '&lt;p>&lt;a href="xx">&lt;em>Using&lt;/em>&lt;/a>&lt;/p>'
+ * '&lt;p&gt;&lt;a href="xx"&gt;&lt;em&gt;Using&lt;/em&gt;&lt;/a&gt;&lt;/p&gt;'
  * <p>
  * If <code>strict</code> is false, when a tag that breaks flow,
  * (<code>TagElement.breaksFlows</code>) or trailing whitespace is
@@ -547,7 +547,7 @@ class Parser implements DTDConstants {
         // The use of all error recovery strategies are contingent
         // on the value of the strict property.
         //
-        // These are commonly occuring errors.  if insertTag is true,
+        // These are commonly occurring errors.  if insertTag is true,
         // then we want to adopt an error recovery strategy that
         // involves attempting to insert an additional tag to
         // legalize the context.  The two errors addressed here
@@ -606,7 +606,7 @@ class Parser implements DTDConstants {
         // They try to find a legal context by checking if the current
         // tag is valid in an enclosing context.  If so
         // close out the tags by outputing end tags and then
-        // insert the curent tag.  If the tags that are
+        // insert the current tag.  If the tags that are
         // being closed out do not have an optional end tag
         // specification in the DTD then an html error is
         // reported.
@@ -1761,7 +1761,7 @@ class Parser implements DTDConstants {
 
             // find the corresponding start tag
 
-            // A commonly occuring error appears to be the insertion
+            // A commonly occurring error appears to be the insertion
             // of extra end tags in a table.  The intent here is ignore
             // such extra end tags.
             //
@@ -1769,7 +1769,7 @@ class Parser implements DTDConstants {
                 String stackElem = stack.elem.getName();
 
                 if (stackElem.equals("table")) {
-                    // If it isnt a valid end tag ignore it and return
+                    // If it is not a valid end tag ignore it and return
                     //
                     if (!elem.getName().equals(stackElem)) {
                         error("tag.ignore", elem.getName());

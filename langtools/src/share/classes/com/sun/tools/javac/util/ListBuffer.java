@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,10 +39,6 @@ import java.util.NoSuchElementException;
  *  deletion without notice.</b>
  */
 public class ListBuffer<A> extends AbstractQueue<A> {
-
-    public static <T> ListBuffer<T> lb() {
-        return new ListBuffer<T>();
-    }
 
     public static <T> ListBuffer<T> of(T x) {
         ListBuffer<T> lb = new ListBuffer<T>();

@@ -136,6 +136,10 @@ public:
 
   // check to see if fatal error reporting is in progress
   static bool fatal_error_in_progress() { return first_error != NULL; }
+
+  static jlong get_first_error_tid() {
+    return first_error_tid;
+  }
 };
 
 #endif // SHARE_VM_UTILITIES_VMERROR_HPP

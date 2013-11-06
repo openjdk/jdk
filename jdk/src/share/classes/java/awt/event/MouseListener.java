@@ -50,7 +50,7 @@ import java.util.EventListener;
  *
  * @see MouseAdapter
  * @see MouseEvent
- * @see <a href="http://java.sun.com/docs/books/tutorial/post1.0/ui/mouselistener.html">Tutorial: Writing a Mouse Listener</a>
+ * @see <a href="http://docs.oracle.com/javase/tutorial/uiswing/events/mouselistener.html">Tutorial: Writing a Mouse Listener</a>
  *
  * @since 1.1
  */

@@ -27,8 +27,30 @@
 
 // An NmethodSweeper is an incremental cleaner for:
 //    - cleanup inline caches
-//    - reclamation of unreferences zombie nmethods
-//
+//    - reclamation of nmethods
+// Removing nmethods from the code cache includes two operations
+//  1) mark active nmethods
+//     Is done in 'mark_active_nmethods()'. This function is called at a
+//     safepoint and marks all nmethods that are active on a thread's stack.
+//  2) sweep nmethods
+//     Is done in sweep_code_cache(). This function is the only place in the
+//     sweeper where memory is reclaimed. Note that sweep_code_cache() is not
+//     called at a safepoint. However, sweep_code_cache() stops executing if
+//     another thread requests a safepoint. Consequently, 'mark_active_nmethods()'
+//     and sweep_code_cache() cannot execute at the same time.
+//     To reclaim memory, nmethods are first marked as 'not-entrant'. Methods can
+//     be made not-entrant by (i) the sweeper, (ii) deoptimization, (iii) dependency
+//     invalidation, and (iv) being replaced be a different method version (tiered
+//     compilation). Not-entrant nmethod cannot be called by Java threads, but they
+//     can still be active on the stack. To ensure that active nmethod are not reclaimed,
+//     we have to wait until the next marking phase has completed. If a not-entrant
+//     nmethod was NOT marked as active, it can be converted to 'zombie' state. To safely
+//     remove the nmethod, all inline caches (IC) that point to the the nmethod must be
+//     cleared. After that, the nmethod can be evicted from the code cache. Each nmethod's
+//     state change happens during separate sweeps. It may take at least 3 sweeps before an
+//     nmethod's space is freed. Sweeping is currently done by compiler threads between
+//     compilations or at least each 5 sec (NmethodSweepCheckInterval) when the code cache
+//     is full.
 
 class NMethodSweeper : public AllStatic {
   static long      _traversals;      // Stack scan count, also sweep ID.
@@ -41,46 +63,38 @@ class NMethodSweeper : public AllStatic {
   static volatile int  _invocations;   // No. of invocations left until we are completed with this pass
   static volatile int  _sweep_started; // Flag to control conc sweeper
 
-  //The following are reset in scan_stacks and synchronized by the safepoint
-  static bool      _resweep;           // Indicates that a change has happend and we want another sweep,
-                                       // always checked and reset at a safepoint so memory will be in sync.
-  static int       _locked_seen;       // Number of locked nmethods encountered during the scan
+  //The following are reset in mark_active_nmethods and synchronized by the safepoint
+  static bool      _request_mark_phase;        // Indicates that a change has happend and we need another mark pahse,
+                                               // always checked and reset at a safepoint so memory will be in sync.
+  static int       _locked_seen;               // Number of locked nmethods encountered during the scan
   static int       _not_entrant_seen_on_stack; // Number of not entrant nmethod were are still on stack
-  static jint      _flush_token;       // token that guards method flushing, making sure it is executed only once.
-
-  // These are set during a flush, a VM-operation
-  static long      _last_flush_traversal_id; // trav number at last flush unloading
-  static jlong     _last_full_flush_time;    // timestamp of last emergency unloading
-
-  // These are synchronized by the _sweep_started token
-  static int       _highest_marked;   // highest compile id dumped at last emergency unloading
-  static int       _dead_compile_ids; // number of compile ids that where not in the cache last flush
 
   // Stat counters
-  static int       _number_of_flushes;            // Total of full traversals caused by full cache
   static int       _total_nof_methods_reclaimed;  // Accumulated nof methods flushed
   static jlong     _total_time_sweeping;          // Accumulated time sweeping
   static jlong     _total_time_this_sweep;        // Total time this sweep
   static jlong     _peak_sweep_time;              // Peak time for a full sweep
   static jlong     _peak_sweep_fraction_time;     // Peak time sweeping one fraction
-  static jlong     _total_disconnect_time;        // Total time cleaning code mem
-  static jlong     _peak_disconnect_time;         // Peak time cleaning code mem
 
-  static void process_nmethod(nmethod *nm);
+  static int  process_nmethod(nmethod *nm);
   static void release_nmethod(nmethod* nm);
 
-  static void log_sweep(const char* msg, const char* format = NULL, ...);
   static bool sweep_in_progress();
+  static void sweep_code_cache();
+  static void request_nmethod_marking() { _request_mark_phase = true; }
+  static void reset_nmethod_marking()   { _request_mark_phase = false; }
+  static bool need_marking_phase()      { return _request_mark_phase; }
+
+  static int _hotness_counter_reset_val;
 
  public:
   static long traversal_count()              { return _traversals; }
-  static int  number_of_flushes()            { return _number_of_flushes; }
   static int  total_nof_methods_reclaimed()  { return _total_nof_methods_reclaimed; }
   static jlong total_time_sweeping()         { return _total_time_sweeping; }
   static jlong peak_sweep_time()             { return _peak_sweep_time; }
   static jlong peak_sweep_fraction_time()    { return _peak_sweep_fraction_time; }
-  static jlong total_disconnect_time()       { return _total_disconnect_time; }
-  static jlong peak_disconnect_time()        { return _peak_disconnect_time; }
+  static void log_sweep(const char* msg, const char* format = NULL, ...);
+
 
 #ifdef ASSERT
   static bool is_sweeping(nmethod* which) { return _current == which; }
@@ -90,19 +104,18 @@ class NMethodSweeper : public AllStatic {
   static void report_events();
 #endif
 
-  static void scan_stacks();      // Invoked at the end of each safepoint
-  static void sweep_code_cache(); // Concurrent part of sweep job
-  static void possibly_sweep();   // Compiler threads call this to sweep
+  static void mark_active_nmethods();      // Invoked at the end of each safepoint
+  static void possibly_sweep();            // Compiler threads call this to sweep
 
-  static void notify(nmethod* nm) {
+  static int sort_nmethods_by_hotness(nmethod** nm1, nmethod** nm2);
+  static int hotness_counter_reset_val();
+
+  static void notify() {
     // Request a new sweep of the code cache from the beginning. No
     // need to synchronize the setting of this flag since it only
     // changes to false at safepoint so we can never overwrite it with false.
-     _resweep = true;
+     request_nmethod_marking();
   }
-
-  static void handle_full_code_cache(bool is_full); // Called by compilers who fail to allocate
-  static void speculative_disconnect_nmethods(bool was_full);   // Called by vm op to deal with alloc failure
 };
 
 #endif // SHARE_VM_RUNTIME_SWEEPER_HPP

@@ -26,9 +26,9 @@
 package test.java.time.chrono;
 
 import static java.time.temporal.ChronoField.DAY_OF_MONTH;
+import static java.time.temporal.ChronoField.DAY_OF_YEAR;
 import static java.time.temporal.ChronoField.MONTH_OF_YEAR;
 import static java.time.temporal.ChronoField.YEAR;
-import static java.time.temporal.ChronoField.DAY_OF_YEAR;
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertTrue;
 import static org.testng.Assert.fail;
@@ -39,12 +39,12 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.OffsetDateTime;
-import java.time.Period;
 import java.time.ZoneId;
 import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
 import java.time.chrono.ChronoLocalDate;
 import java.time.chrono.ChronoLocalDateTime;
+import java.time.chrono.ChronoPeriod;
 import java.time.chrono.ChronoZonedDateTime;
 import java.time.chrono.Chronology;
 import java.time.chrono.HijrahChronology;
@@ -60,7 +60,7 @@ import java.time.format.FormatStyle;
 import java.time.temporal.ChronoField;
 import java.time.temporal.ChronoUnit;
 import java.time.temporal.TemporalAccessor;
-import java.time.temporal.TemporalAdjuster;
+import java.time.temporal.TemporalAdjusters;
 import java.time.temporal.ValueRange;
 import java.time.temporal.WeekFields;
 import java.util.Locale;
@@ -330,26 +330,26 @@ public class TestUmmAlQuraChronology {
     @DataProvider(name="datesForPeriod")
     Object[][] data_Period() {
         return new Object[][] {
-            {HijrahDate.of(1350, 5, 15), HijrahDate.of(1434, 7, 20), Period.of(84, 2, 5)},
-            {HijrahDate.of(1403, 5, 28), HijrahDate.of(1434, 7, 20), Period.of(31, 1, 22)},
-            {HijrahDate.of(1434, 7, 20), HijrahDate.of(1484, 2, 15), Period.of(49, 6, 24)},
-            {HijrahDate.of(1500, 6, 12), HijrahDate.of(1450, 4, 21), Period.of(-50, -1, -20)},
-            {HijrahDate.of(1549, 3, 11), HijrahDate.of(1550, 3, 10), Period.of(0, 11, 28)},
+            {HijrahDate.of(1350, 5, 15), HijrahDate.of(1434, 7, 20), HijrahChronology.INSTANCE.period(84, 2, 5)},
+            {HijrahDate.of(1403, 5, 28), HijrahDate.of(1434, 7, 20), HijrahChronology.INSTANCE.period(31, 1, 22)},
+            {HijrahDate.of(1434, 7, 20), HijrahDate.of(1484, 2, 15), HijrahChronology.INSTANCE.period(49, 6, 24)},
+            {HijrahDate.of(1500, 6, 12), HijrahDate.of(1450, 4, 21), HijrahChronology.INSTANCE.period(-50, -1, -20)},
+            {HijrahDate.of(1549, 3, 11), HijrahDate.of(1550, 3, 10), HijrahChronology.INSTANCE.period(0, 11, 28)},
         };
     }
 
     // Test to get the Period between two given dates
     @Test(dataProvider="datesForPeriod")
-    public void test_until(HijrahDate h1, HijrahDate h2, Period p) {
-        Period period = h1.until(h2);
+    public void test_until(HijrahDate h1, HijrahDate h2, ChronoPeriod p) {
+        ChronoPeriod period = h1.until(h2);
         assertEquals(period, p);
     }
 
     // Test to get the Period between dates in different chronologies
     @Test(dataProvider="datesForPeriod")
-    public void test_periodUntilDiffChrono(HijrahDate h1, HijrahDate h2, Period p) {
+    public void test_periodUntilDiffChrono(HijrahDate h1, HijrahDate h2, ChronoPeriod p) {
         MinguoDate m = MinguoChronology.INSTANCE.date(h2);
-        Period period = h1.until(m);
+        ChronoPeriod period = h1.until(m);
         assertEquals(period, p);
     }
 
@@ -357,12 +357,12 @@ public class TestUmmAlQuraChronology {
     @Test
     public void test_temporalDayAdjustments() {
         HijrahDate date = HijrahDate.of(1554, 7, 21);
-        assertEquals(date.with(TemporalAdjuster.firstDayOfMonth()), HijrahDate.of(1554, 7, 1));
-        assertEquals(date.with(TemporalAdjuster.lastDayOfMonth()), HijrahDate.of(1554, 7, 29));
-        assertEquals(date.with(TemporalAdjuster.firstDayOfNextMonth()), HijrahDate.of(1554, 8, 1));
-        assertEquals(date.with(TemporalAdjuster.firstDayOfNextYear()), HijrahDate.of(1555, 1, 1));
-        assertEquals(date.with(TemporalAdjuster.firstDayOfYear()), HijrahDate.of(1554, 1, 1));
-        assertEquals(date.with(TemporalAdjuster.lastDayOfYear()), HijrahDate.of(1554, 12, 30));
+        assertEquals(date.with(TemporalAdjusters.firstDayOfMonth()), HijrahDate.of(1554, 7, 1));
+        assertEquals(date.with(TemporalAdjusters.lastDayOfMonth()), HijrahDate.of(1554, 7, 29));
+        assertEquals(date.with(TemporalAdjusters.firstDayOfNextMonth()), HijrahDate.of(1554, 8, 1));
+        assertEquals(date.with(TemporalAdjusters.firstDayOfNextYear()), HijrahDate.of(1555, 1, 1));
+        assertEquals(date.with(TemporalAdjusters.firstDayOfYear()), HijrahDate.of(1554, 1, 1));
+        assertEquals(date.with(TemporalAdjusters.lastDayOfYear()), HijrahDate.of(1554, 12, 30));
     }
 
     // Data provider for string representation of the date instances
@@ -412,7 +412,7 @@ public class TestUmmAlQuraChronology {
     @Test(dataProvider="monthDays")
     public void test_lastDayOfMonth(int year, int month, int numDays) {
         HijrahDate hDate = HijrahChronology.INSTANCE.date(year, month, 1);
-        hDate = hDate.with(TemporalAdjuster.lastDayOfMonth());
+        hDate = hDate.with(TemporalAdjusters.lastDayOfMonth());
         assertEquals(hDate.get(ChronoField.DAY_OF_MONTH), numDays);
     }
 

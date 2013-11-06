@@ -53,6 +53,7 @@ ciMethodData::ciMethodData(MethodData* md) : ciMetadata(md) {
   _hint_di = first_di();
   // Initialize the escape information (to "don't know.");
   _eflags = _arg_local = _arg_stack = _arg_returned = 0;
+  _parameters = NULL;
 }
 
 // ------------------------------------------------------------------
@@ -74,11 +75,14 @@ ciMethodData::ciMethodData() : ciMetadata(NULL) {
   _hint_di = first_di();
   // Initialize the escape information (to "don't know.");
   _eflags = _arg_local = _arg_stack = _arg_returned = 0;
+  _parameters = NULL;
 }
 
 void ciMethodData::load_data() {
   MethodData* mdo = get_MethodData();
-  if (mdo == NULL) return;
+  if (mdo == NULL) {
+    return;
+  }
 
   // To do: don't copy the data if it is not "ripe" -- require a minimum #
   // of invocations.
@@ -106,6 +110,12 @@ void ciMethodData::load_data() {
     ci_data = next_data(ci_data);
     data = mdo->next_data(data);
   }
+  if (mdo->parameters_type_data() != NULL) {
+    _parameters = data_layout_at(mdo->parameters_type_data_di());
+    ciParametersTypeData* parameters = new ciParametersTypeData(_parameters);
+    parameters->translate_from(mdo->parameters_type_data());
+  }
+
   // Note:  Extra data are all BitData, and do not need translation.
   _current_mileage = MethodData::mileage_of(mdo->method());
   _invocation_counter = mdo->invocation_count();
@@ -123,7 +133,7 @@ void ciMethodData::load_data() {
 #endif
 }
 
-void ciReceiverTypeData::translate_receiver_data_from(ProfileData* data) {
+void ciReceiverTypeData::translate_receiver_data_from(const ProfileData* data) {
   for (uint row = 0; row < row_limit(); row++) {
     Klass* k = data->as_ReceiverTypeData()->receiver(row);
     if (k != NULL) {
@@ -133,6 +143,18 @@ void ciReceiverTypeData::translate_receiver_data_from(ProfileData* data) {
   }
 }
 
+
+void ciTypeStackSlotEntries::translate_type_data_from(const TypeStackSlotEntries* entries) {
+  for (int i = 0; i < _number_of_entries; i++) {
+    intptr_t k = entries->type(i);
+    TypeStackSlotEntries::set_type(i, translate_klass(k));
+  }
+}
+
+void ciReturnTypeEntry::translate_type_data_from(const ReturnTypeEntry* ret) {
+  intptr_t k = ret->type();
+  set_type(translate_klass(k));
+}
 
 // Get the data at an arbitrary (sort of) data index.
 ciProfileData* ciMethodData::data_at(int data_index) {
@@ -164,6 +186,12 @@ ciProfileData* ciMethodData::data_at(int data_index) {
     return new ciMultiBranchData(data_layout);
   case DataLayout::arg_info_data_tag:
     return new ciArgInfoData(data_layout);
+  case DataLayout::call_type_data_tag:
+    return new ciCallTypeData(data_layout);
+  case DataLayout::virtual_call_type_data_tag:
+    return new ciVirtualCallTypeData(data_layout);
+  case DataLayout::parameters_type_data_tag:
+    return new ciParametersTypeData(data_layout);
   };
 }
 
@@ -286,6 +314,42 @@ void ciMethodData::set_would_profile(bool p) {
   }
 }
 
+void ciMethodData::set_argument_type(int bci, int i, ciKlass* k) {
+  VM_ENTRY_MARK;
+  MethodData* mdo = get_MethodData();
+  if (mdo != NULL) {
+    ProfileData* data = mdo->bci_to_data(bci);
+    if (data->is_CallTypeData()) {
+      data->as_CallTypeData()->set_argument_type(i, k->get_Klass());
+    } else {
+      assert(data->is_VirtualCallTypeData(), "no arguments!");
+      data->as_VirtualCallTypeData()->set_argument_type(i, k->get_Klass());
+    }
+  }
+}
+
+void ciMethodData::set_parameter_type(int i, ciKlass* k) {
+  VM_ENTRY_MARK;
+  MethodData* mdo = get_MethodData();
+  if (mdo != NULL) {
+    mdo->parameters_type_data()->set_type(i, k->get_Klass());
+  }
+}
+
+void ciMethodData::set_return_type(int bci, ciKlass* k) {
+  VM_ENTRY_MARK;
+  MethodData* mdo = get_MethodData();
+  if (mdo != NULL) {
+    ProfileData* data = mdo->bci_to_data(bci);
+    if (data->is_CallTypeData()) {
+      data->as_CallTypeData()->set_return_type(k->get_Klass());
+    } else {
+      assert(data->is_VirtualCallTypeData(), "no arguments!");
+      data->as_VirtualCallTypeData()->set_return_type(k->get_Klass());
+    }
+  }
+}
+
 bool ciMethodData::has_escape_info() {
   return eflag_set(MethodData::estimated);
 }
@@ -373,7 +437,6 @@ void ciMethodData::print_impl(outputStream* st) {
 }
 
 void ciMethodData::dump_replay_data(outputStream* out) {
-  ASSERT_IN_VM;
   ResourceMark rm;
   MethodData* mdo = get_MethodData();
   Method* method = mdo->method();
@@ -477,7 +540,50 @@ void ciMethodData::print_data_on(outputStream* st) {
   }
 }
 
-void ciReceiverTypeData::print_receiver_data_on(outputStream* st) {
+void ciTypeEntries::print_ciklass(outputStream* st, intptr_t k) {
+  if (TypeEntries::is_type_none(k)) {
+    st->print("none");
+  } else if (TypeEntries::is_type_unknown(k)) {
+    st->print("unknown");
+  } else {
+    valid_ciklass(k)->print_name_on(st);
+  }
+  if (TypeEntries::was_null_seen(k)) {
+    st->print(" (null seen)");
+  }
+}
+
+void ciTypeStackSlotEntries::print_data_on(outputStream* st) const {
+  for (int i = 0; i < _number_of_entries; i++) {
+    _pd->tab(st);
+    st->print("%d: stack (%u) ", i, stack_slot(i));
+    print_ciklass(st, type(i));
+    st->cr();
+  }
+}
+
+void ciReturnTypeEntry::print_data_on(outputStream* st) const {
+  _pd->tab(st);
+  st->print("ret ");
+  print_ciklass(st, type());
+  st->cr();
+}
+
+void ciCallTypeData::print_data_on(outputStream* st) const {
+  print_shared(st, "ciCallTypeData");
+  if (has_arguments()) {
+    tab(st, true);
+    st->print("argument types");
+    args()->print_data_on(st);
+  }
+  if (has_return()) {
+    tab(st, true);
+    st->print("return type");
+    ret()->print_data_on(st);
+  }
+}
+
+void ciReceiverTypeData::print_receiver_data_on(outputStream* st) const {
   uint row;
   int entries = 0;
   for (row = 0; row < row_limit(); row++) {
@@ -493,13 +599,33 @@ void ciReceiverTypeData::print_receiver_data_on(outputStream* st) {
   }
 }
 
-void ciReceiverTypeData::print_data_on(outputStream* st) {
+void ciReceiverTypeData::print_data_on(outputStream* st) const {
   print_shared(st, "ciReceiverTypeData");
   print_receiver_data_on(st);
 }
 
-void ciVirtualCallData::print_data_on(outputStream* st) {
+void ciVirtualCallData::print_data_on(outputStream* st) const {
   print_shared(st, "ciVirtualCallData");
   rtd_super()->print_receiver_data_on(st);
+}
+
+void ciVirtualCallTypeData::print_data_on(outputStream* st) const {
+  print_shared(st, "ciVirtualCallTypeData");
+  rtd_super()->print_receiver_data_on(st);
+  if (has_arguments()) {
+    tab(st, true);
+    st->print("argument types");
+    args()->print_data_on(st);
+  }
+  if (has_return()) {
+    tab(st, true);
+    st->print("return type");
+    ret()->print_data_on(st);
+  }
+}
+
+void ciParametersTypeData::print_data_on(outputStream* st) const {
+  st->print_cr("Parametertypes");
+  parameters()->print_data_on(st);
 }
 #endif

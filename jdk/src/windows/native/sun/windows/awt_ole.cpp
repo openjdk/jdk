@@ -70,7 +70,7 @@ namespace SUN_DBG_NS{
             bErrorReport?_T("Error:"):_T(""),
             szBuffer) < 0)
         {
-            _tcscpy(szBuffer1 + DTRACE_BUF_LEN - 5, _T("...")); //reserver for \n
+            _tcscpy_s(szBuffer1 + DTRACE_BUF_LEN - 5, 5, _T("...")); //reserver for \n
         }
         memcpy(szBuffer1, szTime, iTimeLen*sizeof(TCHAR));
         _tcscat(szBuffer1, _T("\n"));

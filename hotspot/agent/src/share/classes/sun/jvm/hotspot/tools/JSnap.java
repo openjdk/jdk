@@ -64,7 +64,6 @@ public class JSnap extends Tool {
 
     public static void main(String[] args) {
         JSnap js = new JSnap();
-        js.start(args);
-        js.stop();
+        js.execute(args);
     }
 }

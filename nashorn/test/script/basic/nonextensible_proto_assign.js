@@ -28,8 +28,6 @@
  * @run
  */
 
-load("nashorn:mozilla_compat.js")
-
 // check that we cannot assign to __proto__ of a non-extensible object
 try {
     var obj = {}

@@ -537,7 +537,7 @@ public class BasicListUI extends ListUI
      *   <td>JList.VERTICAL_WRAP
      *   <td>If the visible row count is greater than zero, the preferredHeight
      *       is the maximum cell height * visibleRowCount. If the visible row
-     *       count is <= 0, the preferred height is either the current height
+     *       count is &lt;= 0, the preferred height is either the current height
      *       of the list, or the maximum cell height, whichever is
      *       bigger. The preferred width is than the maximum cell width *
      *       number of columns needed. Where the number of columns needs is
@@ -556,7 +556,7 @@ public class BasicListUI extends ListUI
      *       longer need 8 rows to display this, you only need 5, thus
      *       the adjustedRowCount is 5.
      *       <p>If the visible row
-     *       count is <= 0, the preferred height is dictated by the
+     *       count is &lt;= 0, the preferred height is dictated by the
      *       number of columns, which will be as many as can fit in the width
      *       of the <code>JList</code> (width / max cell width), with at
      *       least one column.  The preferred height then becomes the
@@ -1488,7 +1488,7 @@ public class BasicListUI extends ListUI
      * future Swing releases. The current serialization support is
      * appropriate for short term storage or RMI between applications running
      * the same version of Swing.  As of 1.4, support for long term storage
-     * of all JavaBeans<sup><font size="-2">TM</font></sup>
+     * of all JavaBeans&trade;
      * has been added to the <code>java.beans</code> package.
      * Please see {@link java.beans.XMLEncoder}.
      *
@@ -1592,7 +1592,7 @@ public class BasicListUI extends ListUI
      * future Swing releases. The current serialization support is
      * appropriate for short term storage or RMI between applications running
      * the same version of Swing.  As of 1.4, support for long term storage
-     * of all JavaBeans<sup><font size="-2">TM</font></sup>
+     * of all JavaBeans&trade;
      * has been added to the <code>java.beans</code> package.
      * Please see {@link java.beans.XMLEncoder}.
      *
@@ -1650,7 +1650,7 @@ public class BasicListUI extends ListUI
      * future Swing releases. The current serialization support is
      * appropriate for short term storage or RMI between applications running
      * the same version of Swing.  As of 1.4, support for long term storage
-     * of all JavaBeans<sup><font size="-2">TM</font></sup>
+     * of all JavaBeans&trade;
      * has been added to the <code>java.beans</code> package.
      * Please see {@link java.beans.XMLEncoder}.
      *
@@ -1717,7 +1717,7 @@ public class BasicListUI extends ListUI
      * future Swing releases. The current serialization support is
      * appropriate for short term storage or RMI between applications running
      * the same version of Swing.  As of 1.4, support for long term storage
-     * of all JavaBeans<sup><font size="-2">TM</font></sup>
+     * of all JavaBeans&trade;
      * has been added to the <code>java.beans</code> package.
      * Please see {@link java.beans.XMLEncoder}.
      *

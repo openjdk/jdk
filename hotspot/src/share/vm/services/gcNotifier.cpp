@@ -209,7 +209,7 @@ void GCNotifier::sendNotificationInternal(TRAPS) {
   GCNotificationRequest *request = getRequest();
   if (request != NULL) {
     NotificationMark nm(request);
-    Handle objGcInfo = createGcInfo(request->gcManager, request->gcStatInfo, THREAD);
+    Handle objGcInfo = createGcInfo(request->gcManager, request->gcStatInfo, CHECK);
 
     Handle objName = java_lang_String::create_from_str(request->gcManager->name(), CHECK);
     Handle objAction = java_lang_String::create_from_str(request->gcAction, CHECK);

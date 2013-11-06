@@ -1466,9 +1466,22 @@ void GraphBuilder::method_return(Value x) {
     // State at end of inlined method is the state of the caller
     // without the method parameters on stack, including the
     // return value, if any, of the inlined method on operand stack.
+    int invoke_bci = state()->caller_state()->bci();
     set_state(state()->caller_state()->copy_for_parsing());
     if (x != NULL) {
       state()->push(x->type(), x);
+      if (profile_return() && x->type()->is_object_kind()) {
+        ciMethod* caller = state()->scope()->method();
+        ciMethodData* md = caller->method_data_or_null();
+        ciProfileData* data = md->bci_to_data(invoke_bci);
+        if (data->is_CallTypeData() || data->is_VirtualCallTypeData()) {
+          bool has_return = data->is_CallTypeData() ? ((ciCallTypeData*)data)->has_return() : ((ciVirtualCallTypeData*)data)->has_return();
+          // May not be true in case of an inlined call through a method handle intrinsic.
+          if (has_return) {
+            profile_return_type(x, method(), caller, invoke_bci);
+          }
+        }
+      }
     }
     Goto* goto_callee = new Goto(continuation(), false);
 
@@ -1583,7 +1596,7 @@ void GraphBuilder::access_field(Bytecodes::Code code) {
       ObjectType* obj_type = obj->type()->as_ObjectType();
       if (obj_type->is_constant() && !PatchALot) {
         ciObject* const_oop = obj_type->constant_value();
-        if (!const_oop->is_null_object()) {
+        if (!const_oop->is_null_object() && const_oop->is_loaded()) {
           if (field->is_constant()) {
             ciConstant field_val = field->constant_value_of(const_oop);
             BasicType field_type = field_val.basic_type();
@@ -1658,6 +1671,50 @@ Dependencies* GraphBuilder::dependency_recorder() const {
   return compilation()->dependency_recorder();
 }
 
+// How many arguments do we want to profile?
+Values* GraphBuilder::args_list_for_profiling(ciMethod* target, int& start, bool may_have_receiver) {
+  int n = 0;
+  bool has_receiver = may_have_receiver && Bytecodes::has_receiver(method()->java_code_at_bci(bci()));
+  start = has_receiver ? 1 : 0;
+  if (profile_arguments()) {
+    ciProfileData* data = method()->method_data()->bci_to_data(bci());
+    if (data->is_CallTypeData() || data->is_VirtualCallTypeData()) {
+      n = data->is_CallTypeData() ? data->as_CallTypeData()->number_of_arguments() : data->as_VirtualCallTypeData()->number_of_arguments();
+    }
+  }
+  // If we are inlining then we need to collect arguments to profile parameters for the target
+  if (profile_parameters() && target != NULL) {
+    if (target->method_data() != NULL && target->method_data()->parameters_type_data() != NULL) {
+      // The receiver is profiled on method entry so it's included in
+      // the number of parameters but here we're only interested in
+      // actual arguments.
+      n = MAX2(n, target->method_data()->parameters_type_data()->number_of_parameters() - start);
+    }
+  }
+  if (n > 0) {
+    return new Values(n);
+  }
+  return NULL;
+}
+
+// Collect arguments that we want to profile in a list
+Values* GraphBuilder::collect_args_for_profiling(Values* args, ciMethod* target, bool may_have_receiver) {
+  int start = 0;
+  Values* obj_args = args_list_for_profiling(target, start, may_have_receiver);
+  if (obj_args == NULL) {
+    return NULL;
+  }
+  int s = obj_args->size();
+  for (int i = start, j = 0; j < s; i++) {
+    if (args->at(i)->type()->is_object_kind()) {
+      obj_args->push(args->at(i));
+      j++;
+    }
+  }
+  assert(s == obj_args->length(), "missed on arg?");
+  return obj_args;
+}
+
 
 void GraphBuilder::invoke(Bytecodes::Code code) {
   bool will_link;
@@ -1667,9 +1724,8 @@ void GraphBuilder::invoke(Bytecodes::Code code) {
   const Bytecodes::Code bc_raw = stream()->cur_bc_raw();
   assert(declared_signature != NULL, "cannot be null");
 
-  // FIXME bail out for now
-  if (Bytecodes::has_optional_appendix(bc_raw) && !will_link) {
-    BAILOUT("unlinked call site (FIXME needs patching or recompile support)");
+  if (!C1PatchInvokeDynamic && Bytecodes::has_optional_appendix(bc_raw) && !will_link) {
+    BAILOUT("unlinked call site (C1PatchInvokeDynamic is off)");
   }
 
   // we have to make sure the argument size (incl. the receiver)
@@ -1713,10 +1769,23 @@ void GraphBuilder::invoke(Bytecodes::Code code) {
       code = target->is_static() ? Bytecodes::_invokestatic : Bytecodes::_invokespecial;
       break;
     }
+  } else {
+    if (bc_raw == Bytecodes::_invokehandle) {
+      assert(!will_link, "should come here only for unlinked call");
+      code = Bytecodes::_invokespecial;
+    }
   }
 
   // Push appendix argument (MethodType, CallSite, etc.), if one.
-  if (stream()->has_appendix()) {
+  bool patch_for_appendix = false;
+  int patching_appendix_arg = 0;
+  if (C1PatchInvokeDynamic &&
+      (Bytecodes::has_optional_appendix(bc_raw) && (!will_link || PatchALot))) {
+    Value arg = append(new Constant(new ObjectConstant(compilation()->env()->unloaded_ciinstance()), copy_state_before()));
+    apush(arg);
+    patch_for_appendix = true;
+    patching_appendix_arg = (will_link && stream()->has_appendix()) ? 0 : 1;
+  } else if (stream()->has_appendix()) {
     ciObject* appendix = stream()->get_appendix();
     Value arg = append(new Constant(new ObjectConstant(appendix)));
     apush(arg);
@@ -1732,7 +1801,8 @@ void GraphBuilder::invoke(Bytecodes::Code code) {
   if (UseCHA && DeoptC1 && klass->is_loaded() && target->is_loaded() &&
       !(// %%% FIXME: Are both of these relevant?
         target->is_method_handle_intrinsic() ||
-        target->is_compiled_lambda_form())) {
+        target->is_compiled_lambda_form()) &&
+      !patch_for_appendix) {
     Value receiver = NULL;
     ciInstanceKlass* receiver_klass = NULL;
     bool type_is_exact = false;
@@ -1803,7 +1873,7 @@ void GraphBuilder::invoke(Bytecodes::Code code) {
         // number of implementors for decl_interface is 0 or 1. If
         // it's 0 then no class implements decl_interface and there's
         // no point in inlining.
-        if (!holder->is_loaded() || decl_interface->nof_implementors() != 1) {
+        if (!holder->is_loaded() || decl_interface->nof_implementors() != 1 || decl_interface->has_default_methods()) {
           singleton = NULL;
         }
       }
@@ -1850,7 +1920,8 @@ void GraphBuilder::invoke(Bytecodes::Code code) {
   // check if we could do inlining
   if (!PatchALot && Inline && klass->is_loaded() &&
       (klass->is_initialized() || klass->is_interface() && target->holder()->is_initialized())
-      && target->is_loaded()) {
+      && target->is_loaded()
+      && !patch_for_appendix) {
     // callee is known => check if we have static binding
     assert(target->is_loaded(), "callee must be known");
     if (code == Bytecodes::_invokestatic  ||
@@ -1901,7 +1972,7 @@ void GraphBuilder::invoke(Bytecodes::Code code) {
     code == Bytecodes::_invokespecial   ||
     code == Bytecodes::_invokevirtual   ||
     code == Bytecodes::_invokeinterface;
-  Values* args = state()->pop_arguments(target->arg_size_no_receiver());
+  Values* args = state()->pop_arguments(target->arg_size_no_receiver() + patching_appendix_arg);
   Value recv = has_receiver ? apop() : NULL;
   int vtable_index = Method::invalid_vtable_index;
 
@@ -1943,7 +2014,7 @@ void GraphBuilder::invoke(Bytecodes::Code code) {
       } else if (exact_target != NULL) {
         target_klass = exact_target->holder();
       }
-      profile_call(target, recv, target_klass);
+      profile_call(target, recv, target_klass, collect_args_for_profiling(args, NULL, false), false);
     }
   }
 
@@ -1957,6 +2028,9 @@ void GraphBuilder::invoke(Bytecodes::Code code) {
     } else {
       push(result_type, result);
     }
+  }
+  if (profile_return() && result_type->is_object_kind()) {
+    profile_return_type(result, target);
   }
 }
 
@@ -3495,7 +3569,7 @@ bool GraphBuilder::try_inline_intrinsics(ciMethod* callee) {
           recv = args->at(0);
           null_check(recv);
         }
-        profile_call(callee, recv, NULL);
+        profile_call(callee, recv, NULL, collect_args_for_profiling(args, callee, true), true);
       }
     }
   }
@@ -3505,6 +3579,10 @@ bool GraphBuilder::try_inline_intrinsics(ciMethod* callee) {
   // append instruction & push result
   Value value = append_split(result);
   if (result_type != voidType) push(result_type, value);
+
+  if (callee != method() && profile_return() && result_type->is_object_kind()) {
+    profile_return_type(result, callee);
+  }
 
   // done
   return true;
@@ -3690,6 +3768,7 @@ bool GraphBuilder::try_inline_full(ciMethod* callee, bool holder_known, Bytecode
 
   // now perform tests that are based on flag settings
   if (callee->force_inline()) {
+    if (inline_level() > MaxForceInlineLevel) INLINE_BAILOUT("MaxForceInlineLevel");
     print_inlining(callee, "force inline by annotation");
   } else if (callee->should_inline()) {
     print_inlining(callee, "force inline by CompileOracle");
@@ -3749,7 +3828,28 @@ bool GraphBuilder::try_inline_full(ciMethod* callee, bool holder_known, Bytecode
     compilation()->set_would_profile(true);
 
     if (profile_calls()) {
-      profile_call(callee, recv, holder_known ? callee->holder() : NULL);
+      int start = 0;
+      Values* obj_args = args_list_for_profiling(callee, start, has_receiver);
+      if (obj_args != NULL) {
+        int s = obj_args->size();
+        // if called through method handle invoke, some arguments may have been popped
+        for (int i = args_base+start, j = 0; j < obj_args->size() && i < state()->stack_size(); ) {
+          Value v = state()->stack_at_inc(i);
+          if (v->type()->is_object_kind()) {
+            obj_args->push(v);
+            j++;
+          }
+        }
+#ifdef ASSERT
+        {
+          bool ignored_will_link;
+          ciSignature* declared_signature = NULL;
+          ciMethod* real_target = method()->get_method_at_bci(bci(), ignored_will_link, &declared_signature);
+          assert(s == obj_args->length() || real_target->is_method_handle_intrinsic(), "missed on arg?");
+        }
+#endif
+      }
+      profile_call(callee, recv, holder_known ? callee->holder() : NULL, obj_args, true);
     }
   }
 
@@ -4205,7 +4305,9 @@ void GraphBuilder::print_inlining(ciMethod* callee, const char* msg, bool succes
     }
   }
 
-  if (!PrintInlining)  return;
+  if (!PrintInlining && !compilation()->method()->has_option("PrintInlining")) {
+    return;
+  }
   CompileTask::print_inlining(callee, scope()->level(), bci(), msg);
   if (success && CIPrintMethodCodes) {
     callee->print_codes();
@@ -4235,8 +4337,23 @@ void GraphBuilder::print_stats() {
 }
 #endif // PRODUCT
 
-void GraphBuilder::profile_call(ciMethod* callee, Value recv, ciKlass* known_holder) {
-  append(new ProfileCall(method(), bci(), callee, recv, known_holder));
+void GraphBuilder::profile_call(ciMethod* callee, Value recv, ciKlass* known_holder, Values* obj_args, bool inlined) {
+  append(new ProfileCall(method(), bci(), callee, recv, known_holder, obj_args, inlined));
+}
+
+void GraphBuilder::profile_return_type(Value ret, ciMethod* callee, ciMethod* m, int invoke_bci) {
+  assert((m == NULL) == (invoke_bci < 0), "invalid method and invalid bci together");
+  if (m == NULL) {
+    m = method();
+  }
+  if (invoke_bci < 0) {
+    invoke_bci = bci();
+  }
+  ciMethodData* md = m->method_data_or_null();
+  ciProfileData* data = md->bci_to_data(invoke_bci);
+  if (data->is_CallTypeData() || data->is_VirtualCallTypeData()) {
+    append(new ProfileReturnType(m , invoke_bci, callee, ret));
+  }
 }
 
 void GraphBuilder::profile_invocation(ciMethod* callee, ValueStack* state) {

@@ -61,7 +61,7 @@ import java.security.AccessControlException;
  * <p>
  * The default layout for a dialog is <code>BorderLayout</code>.
  * <p>
- * A dialog may have its native decorations (i.e. Frame & Titlebar) turned off
+ * A dialog may have its native decorations (i.e. Frame &amp; Titlebar) turned off
  * with <code>setUndecorated</code>.  This can only be done while the dialog
  * is not {@link Component#isDisplayable() displayable}.
  * <p>
@@ -338,7 +338,7 @@ public class Dialog extends Window {
      *
      * @param owner the owner of the dialog or <code>null</code> if
      *     this dialog has no owner
-     * @param modal specifes whether dialog blocks user input to other top-level
+     * @param modal specifies whether dialog blocks user input to other top-level
      *     windows when shown. If <code>false</code>, the dialog is <code>MODELESS</code>;
      *     if <code>true</code>, the modality type property is set to
      *     <code>DEFAULT_MODALITY_TYPE</code>
@@ -387,7 +387,7 @@ public class Dialog extends Window {
      *     this dialog has no owner
      * @param title the title of the dialog or <code>null</code> if this dialog
      *     has no title
-     * @param modal specifes whether dialog blocks user input to other top-level
+     * @param modal specifies whether dialog blocks user input to other top-level
      *     windows when shown. If <code>false</code>, the dialog is <code>MODELESS</code>;
      *     if <code>true</code>, the modality type property is set to
      *     <code>DEFAULT_MODALITY_TYPE</code>
@@ -416,7 +416,7 @@ public class Dialog extends Window {
      *     has no owner
      * @param title the title of the dialog or <code>null</code> if this dialog
      *     has no title
-     * @param modal specifes whether dialog blocks user input to other top-level
+     * @param modal specifies whether dialog blocks user input to other top-level
      *     windows when shown. If <code>false</code>, the dialog is <code>MODELESS</code>;
      *     if <code>true</code>, the modality type property is set to
      *     <code>DEFAULT_MODALITY_TYPE</code>
@@ -488,7 +488,7 @@ public class Dialog extends Window {
      *     dialog has no owner
      * @param title the title of the dialog or <code>null</code> if this
      *     dialog has no title
-     * @param modal specifes whether dialog blocks user input to other top-level
+     * @param modal specifies whether dialog blocks user input to other top-level
      *     windows when shown. If <code>false</code>, the dialog is <code>MODELESS</code>;
      *     if <code>true</code>, the modality type property is set to
      *     <code>DEFAULT_MODALITY_TYPE</code>
@@ -519,7 +519,7 @@ public class Dialog extends Window {
      *     dialog has no owner
      * @param title the title of the dialog or <code>null</code> if this
      *     dialog has no title
-     * @param modal specifes whether dialog blocks user input to other top-level
+     * @param modal specifies whether dialog blocks user input to other top-level
      *     windows when shown. If <code>false</code>, the dialog is <code>MODELESS</code>;
      *     if <code>true</code>, the modality type property is set to
      *     <code>DEFAULT_MODALITY_TYPE</code>
@@ -764,7 +764,7 @@ public class Dialog extends Window {
     /**
      * Indicates whether the dialog is modal.
      * <p>
-     * This method is obsolete and is kept for backwards compatiblity only.
+     * This method is obsolete and is kept for backwards compatibility only.
      * Use {@link #getModalityType getModalityType()} instead.
      *
      * @return    <code>true</code> if this dialog window is modal;

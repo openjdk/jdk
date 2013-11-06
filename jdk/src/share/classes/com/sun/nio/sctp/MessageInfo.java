@@ -48,7 +48,7 @@ import java.net.SocketAddress;
  * longer required to be sent after the time period expires. It is not a hard
  * timeout and may be influenced by whether the association supports the partial
  * reliability extension, <a href=http://www.ietf.org/rfc/rfc3758.txt>RFC 3758
- * <a>
+ * </a>.
  *
  * <P> {@code MessageInfo} instances are not safe for use by multiple concurrent
  * threads. If a MessageInfo is to be used by more than one thread then access
@@ -56,6 +56,7 @@ import java.net.SocketAddress;
  *
  * @since 1.7
  */
+@jdk.Exported
 public abstract class MessageInfo {
     /**
      * Initializes a new instance of this class.

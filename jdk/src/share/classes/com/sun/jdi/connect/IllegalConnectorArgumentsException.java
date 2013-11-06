@@ -36,8 +36,9 @@ import java.util.Collections;
  * @author Gordon Hirsch
  * @since  1.3
  */
-public class IllegalConnectorArgumentsException extends Exception
-{
+@jdk.Exported
+public class IllegalConnectorArgumentsException extends Exception {
+
     private static final long serialVersionUID = -3042212603611350941L;
     List<String> names;
 

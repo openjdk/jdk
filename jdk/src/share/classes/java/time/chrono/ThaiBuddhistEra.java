@@ -61,9 +61,6 @@
  */
 package java.time.chrono;
 
-import java.io.DataInput;
-import java.io.DataOutput;
-import java.io.IOException;
 import java.time.DateTimeException;
 
 /**
@@ -73,7 +70,7 @@ import java.time.DateTimeException;
  * The current era, for years from 1 onwards, is known as the 'Buddhist' era.
  * All previous years, zero or earlier in the proleptic count or one and greater
  * in the year-of-era count, are part of the 'Before Buddhist' era.
- * <p>
+ *
  * <table summary="Buddhist years and eras" cellpadding="2" cellspacing="3" border="0" >
  * <thead>
  * <tr class="tableSubHeadingColor">
@@ -153,20 +150,6 @@ public enum ThaiBuddhistEra implements Era {
     @Override
     public int getValue() {
         return ordinal();
-    }
-
-    //-----------------------------------------------------------------------
-    private Object writeReplace() {
-        return new Ser(Ser.THAIBUDDHIST_ERA_TYPE, this);
-    }
-
-    void writeExternal(DataOutput out) throws IOException {
-        out.writeByte(this.getValue());
-    }
-
-    static ThaiBuddhistEra readExternal(DataInput in) throws IOException {
-        byte eraValue = in.readByte();
-        return ThaiBuddhistEra.of(eraValue);
     }
 
 }

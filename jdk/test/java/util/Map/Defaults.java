@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8010122 8004518
+ * @bug 8010122 8004518 8024331 8024688
  * @summary Test Map default methods
  * @author Mike Duigou
  * @run testng Defaults
@@ -36,8 +36,8 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.EnumMap;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Hashtable;
+import java.util.HashSet;
 import java.util.IdentityHashMap;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
@@ -155,7 +155,7 @@ public class Defaults {
         assertThrows(
             () -> { map.replaceAll((k,v) -> null); },
             NullPointerException.class,
-            description);
+            description + " should not allow replacement with null value");
     }
 
     @Test(dataProvider = "Map<IntegerEnum,String> rw=true keys=withNull values=withNull")
@@ -194,6 +194,15 @@ public class Defaults {
         assertSame(map.get(null), EXTRA_VALUE);
     }
 
+    @Test(dataProvider = "Map<IntegerEnum,String> rw=true keys=nonNull values=nonNull")
+    public void testReplaceKVNoNulls(String description, Map<IntegerEnum, String> map) {
+        assertTrue(map.containsKey(FIRST_KEY), "expected key missing");
+        assertSame(map.get(FIRST_KEY), FIRST_VALUE, "found wrong value");
+        assertThrows( () -> {map.replace(FIRST_KEY, null);}, NullPointerException.class, description + ": should throw NPE");
+        assertSame(map.replace(FIRST_KEY, EXTRA_VALUE), FIRST_VALUE, description + ": replaced wrong value");
+        assertSame(map.get(FIRST_KEY), EXTRA_VALUE, "found wrong value");
+    }
+
     @Test(dataProvider = "Map<IntegerEnum,String> rw=true keys=all values=all")
     public void testReplaceKV(String description, Map<IntegerEnum, String> map) {
         assertTrue(map.containsKey(KEYS[1]));
@@ -222,6 +231,16 @@ public class Defaults {
         assertSame(map.get(null), EXTRA_VALUE);
         assertTrue(map.replace(null, EXTRA_VALUE, EXTRA_VALUE));
         assertSame(map.get(null), EXTRA_VALUE);
+    }
+
+    @Test(dataProvider = "Map<IntegerEnum,String> rw=true keys=nonNull values=nonNull")
+    public void testReplaceKVVNoNulls(String description, Map<IntegerEnum, String> map) {
+        assertTrue(map.containsKey(FIRST_KEY), "expected key missing");
+        assertSame(map.get(FIRST_KEY), FIRST_VALUE, "found wrong value");
+        assertThrows( () -> {map.replace(FIRST_KEY, FIRST_VALUE, null);}, NullPointerException.class, description + ": should throw NPE");
+        assertThrows( () -> {if (!map.replace(FIRST_KEY, null, EXTRA_VALUE)) throw new NullPointerException("default returns false rather than throwing");}, NullPointerException.class,  description + ": should throw NPE");
+        assertTrue(map.replace(FIRST_KEY, FIRST_VALUE, EXTRA_VALUE), description + ": replaced wrong value");
+        assertSame(map.get(FIRST_KEY), EXTRA_VALUE, "found wrong value");
     }
 
     @Test(dataProvider = "Map<IntegerEnum,String> rw=true keys=all values=all")
@@ -269,6 +288,13 @@ public class Defaults {
         assertSame(map.get(EXTRA_KEY), EXTRA_VALUE);
     }
 
+    @Test(dataProvider = "Map<IntegerEnum,String> rw=true keys=all values=all")
+    public void testComputeIfAbsentNullFunction(String description, Map<IntegerEnum, String> map) {
+        assertThrows( () -> { map.computeIfAbsent(KEYS[1], null);},
+                NullPointerException.class,
+                "Should throw NPE");
+    }
+
     @Test(dataProvider = "Map<IntegerEnum,String> rw=true keys=withNull values=withNull")
     public void testComputeIfPresentNulls(String description, Map<IntegerEnum, String> map) {
         assertTrue(map.containsKey(null), description + ": null key absent");
@@ -309,7 +335,14 @@ public class Defaults {
         assertSame(map.get(EXTRA_KEY), null);
     }
 
-    @Test(dataProvider = "Map<IntegerEnum,String> rw=true keys=withNull values=withNull")
+    @Test(dataProvider = "Map<IntegerEnum,String> rw=true keys=all values=all")
+    public void testComputeIfPresentNullFunction(String description, Map<IntegerEnum, String> map) {
+        assertThrows( () -> { map.computeIfPresent(KEYS[1], null);},
+                NullPointerException.class,
+                "Should throw NPE");
+    }
+
+     @Test(dataProvider = "Map<IntegerEnum,String> rw=true keys=withNull values=withNull")
     public void testComputeNulls(String description, Map<IntegerEnum, String> map) {
         assertTrue(map.containsKey(null), "null key absent");
         assertNull(map.get(null), "value not null");
@@ -395,49 +428,86 @@ public class Defaults {
         assertSame(map.get(EXTRA_KEY), EXTRA_VALUE);
     }
 
+    @Test(dataProvider = "Map<IntegerEnum,String> rw=true keys=all values=all")
+    public void testComputeNullFunction(String description, Map<IntegerEnum, String> map) {
+        assertThrows( () -> { map.compute(KEYS[1], null);},
+                NullPointerException.class,
+                "Should throw NPE");
+    }
 
-    @Test(dataProvider = "Map<IntegerEnum,String> rw=true keys=withNull values=withNull")
-    public void testMergeNulls(String description, Map<IntegerEnum, String> map) {
-        assertTrue(map.containsKey(null), "null key absent");
-        assertNull(map.get(null), "value not null");
-        assertSame(map.merge(null, EXTRA_VALUE, (v, vv) -> {
-            assertNull(v);
-            assertSame(vv, EXTRA_VALUE);
-            return vv;
-        }), EXTRA_VALUE, description);
-        assertTrue(map.containsKey(null));
-        assertSame(map.get(null), EXTRA_VALUE, description);
+    @Test(dataProvider = "MergeCases")
+    private void testMerge(String description, Map<IntegerEnum, String> map, Merging.Value oldValue, Merging.Value newValue, Merging.Merger merger, Merging.Value put, Merging.Value result) {
+            // add and check initial conditions.
+            switch(oldValue) {
+                case ABSENT :
+                    map.remove(EXTRA_KEY);
+                    assertFalse(map.containsKey(EXTRA_KEY), "key not absent");
+                    break;
+                case NULL :
+                    map.put(EXTRA_KEY, null);
+                    assertTrue(map.containsKey(EXTRA_KEY), "key absent");
+                    assertNull(map.get(EXTRA_KEY), "wrong value");
+                    break;
+                case OLDVALUE :
+                    map.put(EXTRA_KEY, VALUES[1]);
+                    assertTrue(map.containsKey(EXTRA_KEY), "key absent");
+                    assertSame(map.get(EXTRA_KEY), VALUES[1], "wrong value");
+                    break;
+                default:
+                    fail("unexpected old value");
+            }
+
+            String returned = map.merge(EXTRA_KEY,
+                newValue == Merging.Value.NULL ? (String) null : VALUES[2],
+                merger
+                );
+
+            // check result
+
+            switch(result) {
+                case NULL :
+                    assertNull(returned, "wrong value");
+                    break;
+                case NEWVALUE :
+                    assertSame(returned, VALUES[2], "wrong value");
+                    break;
+                case RESULT :
+                    assertSame(returned, VALUES[3], "wrong value");
+                    break;
+                default:
+                    fail("unexpected new value");
+            }
+
+            // check map
+            switch(put) {
+                case ABSENT :
+                    assertFalse(map.containsKey(EXTRA_KEY), "key not absent");
+                    break;
+                case NULL :
+                    assertTrue(map.containsKey(EXTRA_KEY), "key absent");
+                    assertNull(map.get(EXTRA_KEY), "wrong value");
+                    break;
+                case NEWVALUE :
+                    assertTrue(map.containsKey(EXTRA_KEY), "key absent");
+                    assertSame(map.get(EXTRA_KEY), VALUES[2], "wrong value");
+                    break;
+                case RESULT :
+                    assertTrue(map.containsKey(EXTRA_KEY), "key absent");
+                    assertSame(map.get(EXTRA_KEY), VALUES[3], "wrong value");
+                    break;
+                default:
+                    fail("unexpected new value");
+            }
     }
 
     @Test(dataProvider = "Map<IntegerEnum,String> rw=true keys=all values=all")
-    public void testMerge(String description, Map<IntegerEnum, String> map) {
-        assertTrue(map.containsKey(KEYS[1]));
-        Object value = map.get(KEYS[1]);
-        assertTrue(null == value || value == VALUES[1], description + String.valueOf(value));
-        assertSame(map.merge(KEYS[1], EXTRA_VALUE, (v, vv) -> {
-            assertSame(v, value);
-            assertSame(vv, EXTRA_VALUE);
-            return vv;
-        }), EXTRA_VALUE, description);
-        assertSame(map.get(KEYS[1]), EXTRA_VALUE, description);
-        assertNull(map.merge(KEYS[1], EXTRA_VALUE, (v, vv) -> {
-            assertSame(v, EXTRA_VALUE);
-            assertSame(vv, EXTRA_VALUE);
-            return null;
-        }), description);
-        assertFalse(map.containsKey(KEYS[1]));
-
-        assertFalse(map.containsKey(EXTRA_KEY));
-        assertSame(map.merge(EXTRA_KEY, EXTRA_VALUE, (v, vv) -> {
-            assertNull(v);
-            assertSame(vv, EXTRA_VALUE);
-            return EXTRA_VALUE;
-        }), EXTRA_VALUE);
-        assertTrue(map.containsKey(EXTRA_KEY));
-        assertSame(map.get(EXTRA_KEY), EXTRA_VALUE);
+    public void testMergeNullMerger(String description, Map<IntegerEnum, String> map) {
+        assertThrows( () -> { map.merge(KEYS[1], VALUES[1], null);},
+                NullPointerException.class,
+                "Should throw NPE");
     }
 
-    enum IntegerEnum {
+    public enum IntegerEnum {
 
         e0, e1, e2, e3, e4, e5, e6, e7, e8, e9,
         e10, e11, e12, e13, e14, e15, e16, e17, e18, e19,
@@ -470,6 +540,9 @@ public class Defaults {
             VALUES[each] = String.valueOf(each);
         }
     }
+
+    private static final IntegerEnum FIRST_KEY = KEYS[0];
+    private static final String FIRST_VALUE = VALUES[0];
     private static final IntegerEnum EXTRA_KEY = IntegerEnum.EXTRA_KEY;
     private static final String EXTRA_VALUE = String.valueOf(TEST_SIZE);
 
@@ -583,6 +656,8 @@ public class Defaults {
         return Arrays.asList(
                 // null key hostile
                 new Object[]{"EnumMap", makeMap(() -> new EnumMap(IntegerEnum.class), false, nulls)},
+                new Object[]{"TreeMap", makeMap(TreeMap::new, false, nulls)},
+                new Object[]{"ExtendsAbstractMap(TreeMap)", makeMap(() -> {return new ExtendsAbstractMap(new TreeMap());}, false, nulls)},
                 new Object[]{"Collections.synchronizedMap(EnumMap)", Collections.synchronizedMap(makeMap(() -> new EnumMap(IntegerEnum.class), false, nulls))}
                 );
     }
@@ -591,10 +666,11 @@ public class Defaults {
         return Arrays.asList(
             // null key and value hostile
             new Object[]{"Hashtable", makeMap(Hashtable::new, false, false)},
-            new Object[]{"TreeMap", makeMap(TreeMap::new, false, false)},
             new Object[]{"ConcurrentHashMap", makeMap(ConcurrentHashMap::new, false, false)},
             new Object[]{"ConcurrentSkipListMap", makeMap(ConcurrentSkipListMap::new, false, false)},
+            new Object[]{"Collections.synchronizedMap(ConcurrentHashMap)", Collections.synchronizedMap(makeMap(ConcurrentHashMap::new, false, false))},
             new Object[]{"Collections.checkedMap(ConcurrentHashMap)", Collections.checkedMap(makeMap(ConcurrentHashMap::new, false, false), IntegerEnum.class, String.class)},
+            new Object[]{"ExtendsAbstractMap(ConcurrentHashMap)", makeMap(() -> {return new ExtendsAbstractMap(new ConcurrentHashMap());}, false, false)},
             new Object[]{"ImplementsConcurrentMap", makeMap(ImplementsConcurrentMap::new, false, false)}
             );
     }
@@ -631,6 +707,89 @@ public class Defaults {
         return result;
     }
 
+    static class Merging {
+        public enum Value {
+            ABSENT,
+            NULL,
+            OLDVALUE,
+            NEWVALUE,
+            RESULT
+        }
+
+        public enum Merger implements BiFunction<String,String,String> {
+            UNUSED {
+                public String apply(String oldValue, String newValue) {
+                    fail("should not be called");
+                    return null;
+                }
+            },
+            NULL {
+                public String apply(String oldValue, String newValue) {
+                    return null;
+                }
+            },
+            RESULT {
+                public String apply(String oldValue, String newValue) {
+                    return VALUES[3];
+                }
+            },
+        }
+    }
+
+    @DataProvider(name = "MergeCases", parallel = true)
+    public Iterator<Object[]> mergeCasesProvider() {
+        Collection<Object[]> cases = new ArrayList<>();
+
+        cases.addAll(makeMergeTestCases());
+        cases.addAll(makeMergeNullValueTestCases());
+
+        return cases.iterator();
+    }
+
+    static Collection<Object[]> makeMergeTestCases() {
+        Collection<Object[]> cases = new ArrayList<>();
+
+        for( Object[] mapParams : makeAllRWMaps() ) {
+            cases.add(new Object[] { mapParams[0], mapParams[1], Merging.Value.ABSENT, Merging.Value.NEWVALUE, Merging.Merger.UNUSED, Merging.Value.NEWVALUE, Merging.Value.NEWVALUE });
+        }
+
+        for( Object[] mapParams : makeAllRWMaps() ) {
+            cases.add(new Object[] { mapParams[0], mapParams[1], Merging.Value.OLDVALUE, Merging.Value.NEWVALUE, Merging.Merger.NULL, Merging.Value.ABSENT, Merging.Value.NULL });
+        }
+
+        for( Object[] mapParams : makeAllRWMaps() ) {
+            cases.add(new Object[] { mapParams[0], mapParams[1], Merging.Value.OLDVALUE, Merging.Value.NEWVALUE, Merging.Merger.RESULT, Merging.Value.RESULT, Merging.Value.RESULT });
+        }
+
+        return cases;
+    }
+
+    static Collection<Object[]> makeMergeNullValueTestCases() {
+        Collection<Object[]> cases = new ArrayList<>();
+
+        for( Object[] mapParams : makeAllRWMapsWithNulls() ) {
+            cases.add(new Object[] { mapParams[0], mapParams[1], Merging.Value.OLDVALUE, Merging.Value.NULL, Merging.Merger.NULL, Merging.Value.ABSENT, Merging.Value.NULL });
+        }
+
+        for( Object[] mapParams : makeAllRWMapsWithNulls() ) {
+            cases.add(new Object[] { mapParams[0], mapParams[1], Merging.Value.OLDVALUE, Merging.Value.NULL, Merging.Merger.RESULT, Merging.Value.RESULT, Merging.Value.RESULT });
+        }
+
+        for( Object[] mapParams : makeAllRWMapsWithNulls() ) {
+            cases.add(new Object[] { mapParams[0], mapParams[1], Merging.Value.ABSENT, Merging.Value.NULL, Merging.Merger.UNUSED, Merging.Value.ABSENT, Merging.Value.NULL });
+        }
+
+        for( Object[] mapParams : makeAllRWMapsWithNulls() ) {
+            cases.add(new Object[] { mapParams[0], mapParams[1], Merging.Value.NULL, Merging.Value.NULL, Merging.Merger.UNUSED, Merging.Value.ABSENT, Merging.Value.NULL });
+        }
+
+        for( Object[] mapParams : makeAllRWMapsWithNulls() ) {
+            cases.add(new Object[] { mapParams[0], mapParams[1], Merging.Value.NULL, Merging.Value.NEWVALUE, Merging.Merger.UNUSED, Merging.Value.NEWVALUE, Merging.Value.NEWVALUE });
+        }
+
+        return cases;
+    }
+
     public interface Thrower<T extends Throwable> {
 
         public void run() throws T;
@@ -641,18 +800,17 @@ public class Defaults {
     }
 
     public static <T extends Throwable> void assertThrows(Thrower<T> thrower, Class<T> throwable, String message) {
-        Throwable result;
+        Throwable thrown;
         try {
             thrower.run();
-            result = null;
+            thrown = null;
         } catch (Throwable caught) {
-            result = caught;
+            thrown = caught;
         }
 
-        assertInstance(result, throwable,
-            (null != message)
-            ? message
-            : "Failed to throw " + throwable.getCanonicalName());
+        assertInstance(thrown, throwable,
+            ((null != message) ? message : "") +
+            " Failed to throw " + throwable.getCanonicalName());
     }
 
     public static <T extends Throwable> void assertThrows(Class<T> throwable, String message, Thrower<T>... throwers) {
@@ -661,11 +819,11 @@ public class Defaults {
         }
     }
 
-    public static <T> void assertInstance(T actual, Class<? extends T> expected) {
+    public static void assertInstance(Object actual, Class<?> expected) {
         assertInstance(expected.isInstance(actual), null);
     }
 
-    public static <T> void assertInstance(T actual, Class<? extends T> expected, String message) {
+    public static void assertInstance(Object actual, Class<?> expected, String message) {
         assertTrue(expected.isInstance(actual), message);
     }
 

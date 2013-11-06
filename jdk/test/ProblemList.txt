@@ -134,6 +134,8 @@ java/lang/management/MemoryMXBean/LowMemoryTest2.sh		generic-all
 # 8021230
 java/lang/ThreadLocal/ThreadLocalSupplierTest.java              generic-all
 
+# 8026502
+java/lang/invoke/MethodHandleConstants.java                     generic-all
 
 ############################################################################
 
@@ -163,8 +165,12 @@ demo/jvmti/compiledMethodLoad/CompiledMethodLoadTest.java	generic-all
 # 7027502
 demo/jvmti/hprof/MonitorTest.java                               generic-all
 
-# 8021186
-jdk/lambda/vm/DefaultMethodsTest.java                           generic-all 
+# 8024423 - JVMTI: GetLoadedClasses doesn't enumerate anonymous classes 
+demo/jvmti/hprof/HeapAllTest.java                               generic-all
+demo/jvmti/hprof/HeapBinaryFormatTest.java                      generic-all
+demo/jvmti/hprof/HeapDumpTest.java                              generic-all
+demo/jvmti/hprof/OptionsTest.java                               generic-all
+demo/jvmti/hprof/StackMapTableTest.java                         generic-all
 
 ############################################################################
 
@@ -175,9 +181,6 @@ com/sun/net/httpserver/bugs/6725892/Test.java                   generic-all
 
 # Filed 7036666
 com/sun/net/httpserver/Test9a.java                              generic-all
-
-# 7079145 java/net/ipv6tests/UdpTest.java hang at IPv6 only data exchange
-java/net/ipv6tests/UdpTest.java                                 linux-all
 
 # 7102670
 java/net/InetAddress/CheckJNI.java                              linux-all
@@ -202,13 +205,6 @@ java/net/DatagramSocket/SendDatagramToBadAddress.java            macosx-all
 
 # 8014719
 sun/net/www/http/HttpClient/ProxyTest.java                       generic-all
-
-############################################################################
-
-# jdk_io
-
-# 7160013
-#java/io/File/MaxPathLength.java                                 windows-all
 
 ############################################################################
 
@@ -270,14 +266,8 @@ sun/security/pkcs11/sslecc/ClientJSSEServerJSSE.java            solaris-all
 sun/security/pkcs11/Secmod/AddPrivateKey.java			linux-all
 sun/security/pkcs11/Secmod/TrustAnchors.java 			linux-all
 
-# 7041639, Solaris DSA keypair generation bug (Note: jdk_util also affected)
+# 7041639, Solaris DSA keypair generation bug
 java/security/KeyPairGenerator/SolarisShortDSA.java             solaris-all
-sun/security/tools/jarsigner/onlymanifest.sh                    solaris-all
-sun/security/tools/jarsigner/ts.sh                              solaris-all
-sun/security/tools/keytool/emptysubject.sh                      solaris-all
-sun/security/tools/keytool/importreadall.sh                     solaris-all
-sun/security/tools/keytool/readjar.sh                           solaris-all
-sun/security/tools/keytool/selfissued.sh                        solaris-all
 sun/security/tools/keytool/standard.sh                          solaris-all
 
 # 8000439: NPG: REGRESSION : sun/security/krb5/auto/MaxRetries.java fails with timeout
@@ -312,10 +302,6 @@ sun/security/krb5/auto/BadKdc4.java                             solaris-sparcv9
 # 6461635
 com/sun/tools/attach/BasicTests.sh                              generic-all
 
-# 7172176
-sun/tools/jconsole/ResourceCheckTest.sh                         generic-all
-sun/tools/jconsole/ImmutableResourceTest.sh                     generic-all
-
 # 7132203
 sun/jvmstat/monitor/MonitoredVm/CR6672135.java                  generic-all
 
@@ -349,7 +335,7 @@ java/util/concurrent/ThreadPoolExecutor/CoreThreadTimeOut.java  generic-all
 # Filed 6772009
 java/util/concurrent/locks/ReentrantLock/CancelledLockLoops.java generic-all
 
-# 7041639, Solaris DSA keypair generation bug
-java/util/TimeZone/TimeZoneDatePermissionCheck.sh               solaris-all
+# 8026772: test/sun/util/resources/TimeZone/Bug6317929.java failing
+sun/util/resources/TimeZone/Bug6317929.java                     generic-all
 
 ############################################################################

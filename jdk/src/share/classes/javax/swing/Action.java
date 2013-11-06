@@ -98,10 +98,10 @@ import java.beans.*;
  *         summary="Supported Action properties"
  *         valign="top" >
  *  <tr valign="top"  align="left">
- *    <th bgcolor="#CCCCFF" align="left">Component Property
- *    <th bgcolor="#CCCCFF" align="left">Components
- *    <th bgcolor="#CCCCFF" align="left">Action Key
- *    <th bgcolor="#CCCCFF" align="left">Notes
+ *    <th style="background-color:#CCCCFF" align="left">Component Property
+ *    <th style="background-color:#CCCCFF" align="left">Components
+ *    <th style="background-color:#CCCCFF" align="left">Action Key
+ *    <th style="background-color:#CCCCFF" align="left">Notes
  *  <tr valign="top"  align="left">
  *      <td><b><code>enabled</code></b>
  *      <td>All

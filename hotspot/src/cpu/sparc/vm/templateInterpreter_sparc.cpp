@@ -153,13 +153,9 @@ address TemplateInterpreterGenerator::generate_StackOverflowError_handler() {
 }
 
 
-address TemplateInterpreterGenerator::generate_return_entry_for(TosState state, int step) {
-  TosState incoming_state = state;
-
-  Label cont;
-  address compiled_entry = __ pc();
-
+address TemplateInterpreterGenerator::generate_return_entry_for(TosState state, int step, size_t index_size) {
   address entry = __ pc();
+
 #if !defined(_LP64) && defined(COMPILER2)
   // All return values are where we want them, except for Longs.  C2 returns
   // longs in G1 in the 32-bit build whereas the interpreter wants them in O0/O1.
@@ -170,13 +166,11 @@ address TemplateInterpreterGenerator::generate_return_entry_for(TosState state, 
   // do this here. Unfortunately if we did a rethrow we'd see an machepilog node
   // first which would move g1 -> O0/O1 and destroy the exception we were throwing.
 
-  if (incoming_state == ltos) {
+  if (state == ltos) {
     __ srl (G1,  0, O1);
     __ srlx(G1, 32, O0);
   }
 #endif // !_LP64 && COMPILER2
-
-  __ bind(cont);
 
   // The callee returns with the stack possibly adjusted by adapter transition
   // We remove that possible adjustment here.
@@ -186,28 +180,17 @@ address TemplateInterpreterGenerator::generate_return_entry_for(TosState state, 
 
   __ mov(Llast_SP, SP);   // Remove any adapter added stack space.
 
-  Label L_got_cache, L_giant_index;
   const Register cache = G3_scratch;
-  const Register size  = G1_scratch;
-  if (EnableInvokeDynamic) {
-    __ ldub(Address(Lbcp, 0), G1_scratch);  // Load current bytecode.
-    __ cmp_and_br_short(G1_scratch, Bytecodes::_invokedynamic, Assembler::equal, Assembler::pn, L_giant_index);
-  }
-  __ get_cache_and_index_at_bcp(cache, G1_scratch, 1);
-  __ bind(L_got_cache);
-  __ ld_ptr(cache, ConstantPoolCache::base_offset() +
-                   ConstantPoolCacheEntry::flags_offset(), size);
-  __ and3(size, 0xFF, size);                   // argument size in words
-  __ sll(size, Interpreter::logStackElementSize, size); // each argument size in bytes
-  __ add(Lesp, size, Lesp);                    // pop arguments
-  __ dispatch_next(state, step);
+  const Register index  = G1_scratch;
+  __ get_cache_and_index_at_bcp(cache, index, 1, index_size);
 
-  // out of the main line of code...
-  if (EnableInvokeDynamic) {
-    __ bind(L_giant_index);
-    __ get_cache_and_index_at_bcp(cache, G1_scratch, 1, sizeof(u4));
-    __ ba_short(L_got_cache);
-  }
+  const Register flags = cache;
+  __ ld_ptr(cache, ConstantPoolCache::base_offset() + ConstantPoolCacheEntry::flags_offset(), flags);
+  const Register parameter_size = flags;
+  __ and3(flags, ConstantPoolCacheEntry::parameter_size_mask, parameter_size);  // argument size in words
+  __ sll(parameter_size, Interpreter::logStackElementSize, parameter_size);     // each argument size in bytes
+  __ add(Lesp, parameter_size, Lesp);                                           // pop arguments
+  __ dispatch_next(state, step);
 
   return entry;
 }

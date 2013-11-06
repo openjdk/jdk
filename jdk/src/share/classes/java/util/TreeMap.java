@@ -1012,7 +1012,7 @@ public class TreeMap<K,V>
         int expectedModCount = modCount;
 
         for (Entry<K, V> e = getFirstEntry(); e != null; e = successor(e)) {
-            e.value = Objects.requireNonNull(function.apply(e.key, e.value));
+            e.value = function.apply(e.key, e.value);
 
             if (expectedModCount != modCount) {
                 throw new ConcurrentModificationException();
@@ -1268,6 +1268,15 @@ public class TreeMap<K,V>
         }
         public K next() {
             return prevEntry().key;
+        }
+        public void remove() {
+            if (lastReturned == null)
+                throw new IllegalStateException();
+            if (modCount != expectedModCount)
+                throw new ConcurrentModificationException();
+            deleteEntry(lastReturned);
+            lastReturned = null;
+            expectedModCount = modCount;
         }
     }
 

@@ -1,7 +1,7 @@
 #!/bin/ksh -p
 
 #
-# Copyright (c) 2005, 2012, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2005, 2013, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -102,28 +102,7 @@ libdir=${TESTCLASSES}
 is_windows=false
 is_cygwin=false
 case `uname -s` in 
-  SunOS)
-    libarch=`uname -p`
-    d64=`echo "${DEBUGGEEFLAGS}" | fgrep -- -d64`
-    case `uname -p` in
-      sparc)
-	if [ "${d64}" != "" ] ; then
-	    libarch=sparcv9
-	fi
-        ;;
-      i386)
-        if [ "${d64}" != "" ] ; then
-	    libarch=amd64
-	fi
-        ;;
-      *)
-        echo "FAILURE:  Unknown uname -p: " `uname -p`
-        exit 1
-        ;;
-    esac
-    libloc=${jreloc}/lib/${libarch}
-    ;;
-  Linux)
+  SunOS|Linux)
     xx=`find ${jreloc}/lib -name libdt_socket.so`
     libloc=`dirname ${xx}`
     ;;

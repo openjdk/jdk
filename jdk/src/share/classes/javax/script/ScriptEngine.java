@@ -114,7 +114,7 @@ public interface ScriptEngine  {
      *
      * @return The value returned from the execution of the script.
      *
-     * @throws ScriptException if an error occurrs in script. ScriptEngines should create and throw
+     * @throws ScriptException if an error occurs in script. ScriptEngines should create and throw
      * <code>ScriptException</code> wrappers for checked Exceptions thrown by underlying scripting
      * implementations.
      * @throws NullPointerException if either argument is null.
@@ -132,7 +132,7 @@ public interface ScriptEngine  {
      *
      * @return The value returned from the execution of the script.
      *
-     * @throws ScriptException if an error occurrs in script.
+     * @throws ScriptException if an error occurs in script.
      * @throws NullPointerException if either argument is null.
      */
     public Object eval(Reader reader , ScriptContext context) throws ScriptException;
@@ -145,7 +145,7 @@ public interface ScriptEngine  {
      *
      * @return The value returned from the execution of the script.
      *
-     * @throws ScriptException if error occurrs in script.
+     * @throws ScriptException if error occurs in script.
      * @throws NullPointerException if the argument is null.
      */
     public Object eval(String script) throws ScriptException;
@@ -158,7 +158,7 @@ public interface ScriptEngine  {
      *
      * @return The value returned by the script.
      *
-     * @throws ScriptException if an error occurrs in script.
+     * @throws ScriptException if an error occurs in script.
      * @throws NullPointerException if the argument is null.
      */
     public Object eval(Reader reader) throws ScriptException;
@@ -177,7 +177,7 @@ public interface ScriptEngine  {
      *
      * @return The value returned by the script.
      *
-     * @throws ScriptException if an error occurrs in script.
+     * @throws ScriptException if an error occurs in script.
      * @throws NullPointerException if either argument is null.
      */
     public Object eval(String script, Bindings n) throws ScriptException;
@@ -191,7 +191,7 @@ public interface ScriptEngine  {
      *
      * @return The value returned by the script.
      *
-     * @throws ScriptException if an error occurrs.
+     * @throws ScriptException if an error occurs.
      * @throws NullPointerException if either argument is null.
      */
     public Object eval(Reader reader , Bindings n) throws ScriptException;

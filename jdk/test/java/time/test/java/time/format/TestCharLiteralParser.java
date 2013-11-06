@@ -66,7 +66,7 @@ import static org.testng.Assert.fail;
 
 import java.text.ParsePosition;
 import java.time.temporal.TemporalAccessor;
-import java.time.temporal.TemporalQuery;
+import java.time.temporal.TemporalQueries;
 
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
@@ -111,8 +111,8 @@ public class TestCharLiteralParser extends AbstractTestPrinterParser {
         } else {
             assertEquals(ppos.getIndex(), expectedPos);
             assertEquals(parsed.isSupported(YEAR), false);
-            assertEquals(parsed.query(TemporalQuery.chronology()), null);
-            assertEquals(parsed.query(TemporalQuery.zoneId()), null);
+            assertEquals(parsed.query(TemporalQueries.chronology()), null);
+            assertEquals(parsed.query(TemporalQueries.zoneId()), null);
         }
     }
 

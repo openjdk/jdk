@@ -1,1 +1,36 @@
-{"type":"Program","rest":null,"body":[{"type":"LabeledStatement","label":{"type":"Identifier","name":"label"},"body":{"type":"BlockStatement","body":[{"type":"WhileStatement","test":{"type":"Literal","value":true},"block":{"type":"BlockStatement","body":[{"type":"BreakStatement","label":"label"}]}}]}}]}
+{
+    "type": "Program",
+    "body": [
+        {
+            "type": "LabeledStatement",
+            "label": {
+                "type": "Identifier",
+                "name": "label"
+            },
+            "body": {
+                "type": "BlockStatement",
+                "body": [
+                    {
+                        "type": "WhileStatement",
+                        "test": {
+                            "type": "Literal",
+                            "value": true
+                        },
+                        "body": {
+                            "type": "BlockStatement",
+                            "body": [
+                                {
+                                    "type": "BreakStatement",
+                                    "label": {
+                                        "type": "Identifier",
+                                        "name": "label"
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                ]
+            }
+        }
+    ]
+}

@@ -406,7 +406,11 @@ public:
   VMOp_Type type() const { return VMOp_GetCurrentContendedMonitor; }
   jvmtiError result() { return _result; }
   void doit() {
-    _result = ((JvmtiEnvBase *)_env)->get_current_contended_monitor(_calling_thread,_java_thread,_owned_monitor_ptr);
+    _result = JVMTI_ERROR_THREAD_NOT_ALIVE;
+    if (Threads::includes(_java_thread) && !_java_thread->is_exiting() &&
+        _java_thread->threadObj() != NULL) {
+      _result = ((JvmtiEnvBase *)_env)->get_current_contended_monitor(_calling_thread,_java_thread,_owned_monitor_ptr);
+    }
   }
 };
 

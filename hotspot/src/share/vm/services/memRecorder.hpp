@@ -53,13 +53,13 @@ template <class E, int SIZE> class FixedSizeMemPointerArray :
     }
   }
 
-  void* operator new(size_t size, const std::nothrow_t& nothrow_constant) {
+  void* operator new(size_t size, const std::nothrow_t& nothrow_constant) throw() {
     // the instance is part of memRecorder, needs to be tagged with 'otNMTRecorder'
     // to avoid recursion
     return os::malloc(size, (mtNMT | otNMTRecorder));
   }
 
-  void* operator new(size_t size) {
+  void* operator new(size_t size) throw() {
     assert(false, "use nothrow version");
     return NULL;
   }

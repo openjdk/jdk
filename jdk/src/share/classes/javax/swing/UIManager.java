@@ -126,7 +126,7 @@ import sun.awt.AWTAccessor;
  *       current look and feel ({@code setLookAndFeel()} is invoked). The
  *       look and feel defaults can be obtained using the {@code
  *       getLookAndFeelDefaults()} method.
- *   <li>Sytem defaults. The system defaults are provided by Swing.
+ *   <li>System defaults. The system defaults are provided by Swing.
  * </ol>
  * Invoking any of the various {@code get} methods
  * results in checking each of the defaults, in order, returning
@@ -152,7 +152,7 @@ import sun.awt.AWTAccessor;
  * and documented by that look and feel. In addition, each look and
  * feel, or {@code ComponentUI} provided by a look and feel, may
  * access the defaults at different times in their life cycle. Some
- * look and feels may agressively look up defaults, so that changing a
+ * look and feels may aggressively look up defaults, so that changing a
  * default may not have an effect after installing the look and feel.
  * Other look and feels may lazily access defaults so that a change to
  * the defaults may effect an existing look and feel. Finally, other look
@@ -167,7 +167,7 @@ import sun.awt.AWTAccessor;
  * future Swing releases. The current serialization support is
  * appropriate for short term storage or RMI between applications running
  * the same version of Swing.  As of 1.4, support for long term storage
- * of all JavaBeans<sup><font size="-2">TM</font></sup>
+ * of all JavaBeans&trade;
  * has been added to the <code>java.beans</code> package.
  * Please see {@link java.beans.XMLEncoder}.
  *
@@ -313,7 +313,7 @@ public class UIManager implements Serializable
          *
          * @param name      a <code>String</code> specifying the name of
          *                      the look and feel
-         * @param className a <code>String</code> specifiying the name of
+         * @param className a <code>String</code> specifying the name of
          *                      the class that implements the look and feel
          */
         public LookAndFeelInfo(String name, String className) {

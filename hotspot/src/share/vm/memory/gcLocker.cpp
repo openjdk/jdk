@@ -122,7 +122,7 @@ void GC_locker::jni_unlock(JavaThread* thread) {
     // strictly needed. It's added here to make it clear that
     // the GC will NOT be performed if any other caller
     // of GC_locker::lock() still needs GC locked.
-    if (!is_active()) {
+    if (!is_active_internal()) {
       _doing_gc = true;
       {
         // Must give up the lock while at a safepoint

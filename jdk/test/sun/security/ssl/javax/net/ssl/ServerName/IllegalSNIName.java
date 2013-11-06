@@ -34,7 +34,7 @@ public class IllegalSNIName {
 
     public static void main(String[] args) throws Exception {
         String[] illegalNames = {
-                "example\u3003\u3002com",
+                "example\u3002\u3002com",
                 "example..com",
                 "com\u3002",
                 "com.",

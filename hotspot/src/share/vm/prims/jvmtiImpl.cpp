@@ -225,18 +225,20 @@ JvmtiBreakpoint::JvmtiBreakpoint() {
   _method = NULL;
   _bci    = 0;
   _class_loader = NULL;
-#ifdef CHECK_UNHANDLED_OOPS
-  // This one is always allocated with new, but check it just in case.
-  Thread *thread = Thread::current();
-  if (thread->is_in_stack((address)&_method)) {
-    thread->allow_unhandled_oop((oop*)&_method);
-  }
-#endif // CHECK_UNHANDLED_OOPS
 }
 
 JvmtiBreakpoint::JvmtiBreakpoint(Method* m_method, jlocation location) {
   _method        = m_method;
   _class_loader  = _method->method_holder()->class_loader_data()->class_loader();
+#ifdef CHECK_UNHANDLED_OOPS
+  // _class_loader can't be wrapped in a Handle, because JvmtiBreakpoint:s are
+  // eventually allocated on the heap.
+  //
+  // The code handling JvmtiBreakpoint:s allocated on the stack can't be
+  // interrupted by a GC until _class_loader is reachable by the GC via the
+  // oops_do method.
+  Thread::current()->allow_unhandled_oop(&_class_loader);
+#endif // CHECK_UNHANDLED_OOPS
   assert(_method != NULL, "_method != NULL");
   _bci           = (int) location;
   assert(_bci >= 0, "_bci >= 0");
@@ -273,59 +275,49 @@ void JvmtiBreakpoint::each_method_version_do(method_action meth_act) {
 
   // add/remove breakpoint to/from versions of the method that
   // are EMCP. Directly or transitively obsolete methods are
-  // not saved in the PreviousVersionInfo.
+  // not saved in the PreviousVersionNodes.
   Thread *thread = Thread::current();
   instanceKlassHandle ikh = instanceKlassHandle(thread, _method->method_holder());
   Symbol* m_name = _method->name();
   Symbol* m_signature = _method->signature();
 
-  {
-    ResourceMark rm(thread);
-    // PreviousVersionInfo objects returned via PreviousVersionWalker
-    // contain a GrowableArray of handles. We have to clean up the
-    // GrowableArray _after_ the PreviousVersionWalker destructor
-    // has destroyed the handles.
-    {
-      // search previous versions if they exist
-      PreviousVersionWalker pvw((InstanceKlass *)ikh());
-      for (PreviousVersionInfo * pv_info = pvw.next_previous_version();
-           pv_info != NULL; pv_info = pvw.next_previous_version()) {
-        GrowableArray<methodHandle>* methods =
-          pv_info->prev_EMCP_method_handles();
+  // search previous versions if they exist
+  PreviousVersionWalker pvw(thread, (InstanceKlass *)ikh());
+  for (PreviousVersionNode * pv_node = pvw.next_previous_version();
+       pv_node != NULL; pv_node = pvw.next_previous_version()) {
+    GrowableArray<Method*>* methods = pv_node->prev_EMCP_methods();
 
-        if (methods == NULL) {
-          // We have run into a PreviousVersion generation where
-          // all methods were made obsolete during that generation's
-          // RedefineClasses() operation. At the time of that
-          // operation, all EMCP methods were flushed so we don't
-          // have to go back any further.
-          //
-          // A NULL methods array is different than an empty methods
-          // array. We cannot infer any optimizations about older
-          // generations from an empty methods array for the current
-          // generation.
-          break;
-        }
+    if (methods == NULL) {
+      // We have run into a PreviousVersion generation where
+      // all methods were made obsolete during that generation's
+      // RedefineClasses() operation. At the time of that
+      // operation, all EMCP methods were flushed so we don't
+      // have to go back any further.
+      //
+      // A NULL methods array is different than an empty methods
+      // array. We cannot infer any optimizations about older
+      // generations from an empty methods array for the current
+      // generation.
+      break;
+    }
 
-        for (int i = methods->length() - 1; i >= 0; i--) {
-          methodHandle method = methods->at(i);
-          // obsolete methods that are running are not deleted from
-          // previous version array, but they are skipped here.
-          if (!method->is_obsolete() &&
-              method->name() == m_name &&
-              method->signature() == m_signature) {
-            RC_TRACE(0x00000800, ("%sing breakpoint in %s(%s)",
-              meth_act == &Method::set_breakpoint ? "sett" : "clear",
-              method->name()->as_C_string(),
-              method->signature()->as_C_string()));
+    for (int i = methods->length() - 1; i >= 0; i--) {
+      Method* method = methods->at(i);
+      // obsolete methods that are running are not deleted from
+      // previous version array, but they are skipped here.
+      if (!method->is_obsolete() &&
+          method->name() == m_name &&
+          method->signature() == m_signature) {
+        RC_TRACE(0x00000800, ("%sing breakpoint in %s(%s)",
+          meth_act == &Method::set_breakpoint ? "sett" : "clear",
+          method->name()->as_C_string(),
+          method->signature()->as_C_string()));
 
-            ((Method*)method()->*meth_act)(_bci);
-            break;
-          }
-        }
+        (method->*meth_act)(_bci);
+        break;
       }
-    } // pvw is cleaned up
-  } // rm is cleaned up
+    }
+  }
 }
 
 void JvmtiBreakpoint::set() {

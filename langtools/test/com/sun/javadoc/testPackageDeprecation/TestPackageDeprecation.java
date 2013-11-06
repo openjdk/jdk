@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug      6492694
+ * @bug      6492694 8026567
  * @summary  Test package deprecation.
  * @author   bpatel
  * @library  ../lib/
@@ -49,8 +49,8 @@ public class TestPackageDeprecation extends JavadocTester {
     //Input for string search tests.
     private static final String[][] TEST1 = {
         {BUG_ID + "-1" + FS + "pkg1" + FS + "package-summary.html",
-            "<div class=\"deprecatedContent\"><span class=\"strong\">Deprecated.</span>" + NL +
-            "<div class=\"block\"><span class=\"italic\">This package is Deprecated." +
+            "<div class=\"deprecatedContent\"><span class=\"deprecatedLabel\">Deprecated.</span>" + NL +
+            "<div class=\"block\"><span class=\"deprecationComment\">This package is Deprecated." +
             "</span></div>"
         },
         {BUG_ID + "-1" + FS + "deprecated-list.html",

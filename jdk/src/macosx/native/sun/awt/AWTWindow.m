@@ -122,6 +122,7 @@ AWT_NS_WINDOW_IMPLEMENTATION
 @synthesize styleBits;
 @synthesize isEnabled;
 @synthesize ownerWindow;
+@synthesize preFullScreenLevel;
 
 - (void) updateMinMaxSize:(BOOL)resizable {
     if (resizable) {
@@ -350,7 +351,7 @@ AWT_ASSERT_APPKIT_THREAD;
 - (void) dealloc {
 AWT_ASSERT_APPKIT_THREAD;
 
-    JNIEnv *env = [ThreadUtilities getJNIEnv];
+    JNIEnv *env = [ThreadUtilities getJNIEnvUncached];
     [self.javaPlatformWindow setJObject:nil withEnv:env];
 
     self.nsWindow = nil;
@@ -366,6 +367,22 @@ AWT_ASSERT_APPKIT_THREAD;
 
 - (BOOL) canBecomeMainWindow {
 AWT_ASSERT_APPKIT_THREAD;
+    if (!self.isEnabled) {
+        // Native system can bring up the NSWindow to
+        // the top even if the window is not main.
+        // We should bring up the modal dialog manually
+        [AWTToolkit eventCountPlusPlus];
+
+        JNIEnv *env = [ThreadUtilities getJNIEnv];
+        jobject platformWindow = [self.javaPlatformWindow jObjectWithEnv:env];
+        if (platformWindow != NULL) {
+            static JNF_MEMBER_CACHE(jm_checkBlockingAndOrder, jc_CPlatformWindow,
+                                    "checkBlockingAndOrder", "()Z");
+            JNFCallBooleanMethod(env, platformWindow, jm_checkBlockingAndOrder);
+            (*env)->DeleteLocalRef(env, platformWindow);
+        }
+    }
+
     return self.isEnabled && IS(self.styleBits, SHOULD_BECOME_MAIN);
 }
 
@@ -483,20 +500,6 @@ AWT_ASSERT_APPKIT_THREAD;
     [AWTToolkit eventCountPlusPlus];
     // TODO: don't see this callback invoked anytime so we track
     // window exposing in _setVisible:(BOOL)
-}
-
-- (BOOL)windowShouldZoom:(NSWindow *)window toFrame:(NSRect)proposedFrame {
-AWT_ASSERT_APPKIT_THREAD;
-
-    [AWTToolkit eventCountPlusPlus];
-    JNIEnv *env = [ThreadUtilities getJNIEnv];
-    jobject platformWindow = [self.javaPlatformWindow jObjectWithEnv:env];
-    if (platformWindow != NULL) {
-        static JNF_MEMBER_CACHE(jm_deliverZoom, jc_CPlatformWindow, "deliverZoom", "(Z)V");
-        JNFCallVoidMethod(env, platformWindow, jm_deliverZoom, ![window isZoomed]);
-        (*env)->DeleteLocalRef(env, platformWindow);
-    }
-    return YES;
 }
 
 - (void) _deliverIconify:(BOOL)iconify {
@@ -1205,6 +1208,61 @@ JNF_COCOA_ENTER(env);
         [nsWindow setDelegate: nil];
 
         [window release];
+    }];
+
+JNF_COCOA_EXIT(env);
+}
+
+JNIEXPORT void JNICALL Java_sun_lwawt_macosx_CPlatformWindow_nativeEnterFullScreenMode
+(JNIEnv *env, jclass clazz, jlong windowPtr)
+{
+JNF_COCOA_ENTER(env);
+
+    NSWindow *nsWindow = OBJC(windowPtr);
+    [ThreadUtilities performOnMainThreadWaiting:NO block:^(){
+        AWTWindow *window = (AWTWindow*)[nsWindow delegate];
+        NSNumber* screenID = [AWTWindow getNSWindowDisplayID_AppKitThread: nsWindow];
+        CGDirectDisplayID aID = [screenID intValue];
+
+        if (CGDisplayCapture(aID) == kCGErrorSuccess) {
+            // remove window decoration
+            NSUInteger styleMask = [AWTWindow styleMaskForStyleBits:window.styleBits];
+            [nsWindow setStyleMask:(styleMask & ~NSTitledWindowMask) | NSBorderlessWindowMask];
+
+            int shieldLevel = CGShieldingWindowLevel();
+            window.preFullScreenLevel = [nsWindow level];
+            [nsWindow setLevel: shieldLevel];
+
+            NSRect screenRect = [[nsWindow screen] frame];
+            [nsWindow setFrame:screenRect display:YES];
+        } else {
+            [JNFException raise:env as:kRuntimeException reason:"Failed to enter full screen."];            
+        }
+    }];
+
+JNF_COCOA_EXIT(env);
+}
+
+JNIEXPORT void JNICALL Java_sun_lwawt_macosx_CPlatformWindow_nativeExitFullScreenMode
+(JNIEnv *env, jclass clazz, jlong windowPtr)
+{
+JNF_COCOA_ENTER(env);
+
+    NSWindow *nsWindow = OBJC(windowPtr);
+    [ThreadUtilities performOnMainThreadWaiting:NO block:^(){
+        AWTWindow *window = (AWTWindow*)[nsWindow delegate];
+        NSNumber* screenID = [AWTWindow getNSWindowDisplayID_AppKitThread: nsWindow];
+        CGDirectDisplayID aID = [screenID intValue];
+
+        if (CGDisplayRelease(aID) == kCGErrorSuccess) {
+            NSUInteger styleMask = [AWTWindow styleMaskForStyleBits:window.styleBits];
+            [nsWindow setStyleMask:styleMask]; 
+            [nsWindow setLevel: window.preFullScreenLevel];
+
+            // GraphicsDevice takes care of restoring pre full screen bounds
+        } else {
+            [JNFException raise:env as:kRuntimeException reason:"Failed to exit full screen."];
+        }
     }];
 
 JNF_COCOA_EXIT(env);

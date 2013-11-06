@@ -23,6 +23,7 @@
 
 package com.sun.org.apache.xalan.internal.xsltc.trax;
 
+import com.sun.org.apache.xalan.internal.XalanConstants;
 import java.io.InputStream;
 import java.io.Reader;
 
@@ -43,6 +44,7 @@ import javax.xml.transform.stax.StAXSource;
 import javax.xml.transform.stream.StreamSource;
 
 import com.sun.org.apache.xalan.internal.utils.FactoryImpl;
+import com.sun.org.apache.xalan.internal.utils.XMLSecurityManager;
 import com.sun.org.apache.xalan.internal.xsltc.compiler.XSLTC;
 import com.sun.org.apache.xalan.internal.xsltc.compiler.util.ErrorMsg;
 
@@ -105,6 +107,13 @@ public final class Util {
                     if (reader == null) {
                        try {
                            reader= XMLReaderFactory.createXMLReader();
+                           try {
+                                reader.setFeature(XMLConstants.FEATURE_SECURE_PROCESSING,
+                                            xsltc.isSecureProcessing());
+                           } catch (SAXNotRecognizedException e) {
+                                System.err.println("Warning:  " + reader.getClass().getName() + ": "
+                                        + e.getMessage());
+                           }
                        } catch (Exception e ) {
                            try {
 
@@ -144,6 +153,22 @@ public final class Util {
                                 + e.getMessage());
                     }
 
+                    try {
+                        XMLSecurityManager securityManager =
+                                (XMLSecurityManager)xsltc.getProperty(XalanConstants.SECURITY_MANAGER);
+                        if (securityManager != null) {
+                            for (XMLSecurityManager.Limit limit : XMLSecurityManager.Limit.values()) {
+                                reader.setProperty(limit.apiProperty(),
+                                        securityManager.getLimitValueAsString(limit));
+                            }
+                            if (securityManager.printEntityCountInfo()) {
+                                reader.setProperty(XalanConstants.JDK_ENTITY_COUNT_INFO, XalanConstants.JDK_YES);
+                            }
+                        }
+                    } catch (SAXException se) {
+                        System.err.println("Warning:  " + reader.getClass().getName() + ": "
+                                    + se.getMessage());
+                    }
                     xsltc.setXMLReader(reader);
                 }catch (SAXNotRecognizedException snre ) {
                   throw new TransformerConfigurationException

@@ -34,7 +34,6 @@ import jdk.nashorn.internal.codegen.ObjectClassGenerator;
 
 /**
  * Responsible for on the fly construction of structure classes.
- *
  */
 final class StructureLoader extends NashornLoader {
     private static final String JS_OBJECT_PREFIX_EXTERNAL = binaryName(SCRIPTS_PACKAGE) + '.' + JS_OBJECT_PREFIX.symbolName();
@@ -42,27 +41,17 @@ final class StructureLoader extends NashornLoader {
     /**
      * Constructor.
      */
-    StructureLoader(final ClassLoader parent, final Context context) {
-        super(parent, context);
+    StructureLoader(final ClassLoader parent) {
+        super(parent);
     }
 
-    @Override
-    protected synchronized Class<?> loadClass(final String name, final boolean resolve) throws ClassNotFoundException {
-        // check the cache first
-        final Class<?> loadedClass = findLoadedClass(name);
-        if (loadedClass != null) {
-            if (resolve) {
-                resolveClass(loadedClass);
-            }
-            return loadedClass;
-        }
-
-        return super.loadClassTrusted(name, resolve);
+    static boolean isStructureClass(final String name) {
+        return name.startsWith(JS_OBJECT_PREFIX_EXTERNAL);
     }
 
     @Override
     protected Class<?> findClass(final String name) throws ClassNotFoundException {
-        if (name.startsWith(JS_OBJECT_PREFIX_EXTERNAL)) {
+        if (isStructureClass(name)) {
             return generateClass(name, name.substring(JS_OBJECT_PREFIX_EXTERNAL.length()));
         }
         return super.findClass(name);
@@ -75,11 +64,7 @@ final class StructureLoader extends NashornLoader {
      * @return Generated class.
      */
     private Class<?> generateClass(final String name, final String descriptor) {
-        Context context = getContext();
-
-        if (context == null) {
-            context = Context.getContextTrusted();
-        }
+        final Context context = Context.getContextTrusted();
 
         final byte[] code = new ObjectClassGenerator(context).generate(descriptor);
         return defineClass(name, code, 0, code.length, new ProtectionDomain(null, getPermissions(null)));

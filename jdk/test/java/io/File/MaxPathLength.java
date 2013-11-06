@@ -22,7 +22,7 @@
  */
 
 /* @test
-   @bug 4759207 4403166 4165006 4403166 6182812 6274272
+   @bug 4759207 4403166 4165006 4403166 6182812 6274272 7160013
    @summary Test to see if win32 path length can be greater than 260
  */
 
@@ -37,6 +37,10 @@ public class MaxPathLength {
                  "areallylongfilenamethatsforsur";
     private static boolean isWindows = false;
 
+    private final static int MAX_LENGTH = 256;
+
+    private static int counter = 0;
+
     public static void main(String[] args) throws Exception {
         String osName = System.getProperty("os.name");
         if (osName.startsWith("Windows")) {
@@ -45,22 +49,28 @@ public class MaxPathLength {
 
         for (int i = 4; i < 7; i++) {
             String name = fileName;
-            while (name.length() < 256) {
+            while (name.length() < MAX_LENGTH) {
                 testLongPath (i, name, false);
                 testLongPath (i, name, true);
-                name += "A";
+                name = getNextName(name);
             }
         }
 
         // test long paths on windows
+        // And these long pathes cannot be handled on Solaris and Mac platforms
         if (isWindows) {
             String name = fileName;
-            while (name.length() < 256) {
+            while (name.length() < MAX_LENGTH) {
                 testLongPath (20, name, false);
                 testLongPath (20, name, true);
-                name += "A";
+                name = getNextName(name);
             }
         }
+    }
+
+    private static String getNextName(String fName) {
+        return (fName.length() < MAX_LENGTH/2) ? fName + fName
+                                               : fName + "A";
     }
 
     static void testLongPath(int max, String fn,
@@ -68,10 +78,10 @@ public class MaxPathLength {
         String[] created = new String[max];
         String pathString = ".";
         for (int i = 0; i < max -1; i++) {
-            pathString = pathString + pathComponent;
+            pathString = pathString + pathComponent + (counter++);
             created[max - 1 -i] = pathString;
-
         }
+
         File dirFile = new File(pathString);
         File f = new File(pathString + sep + fn);
 
@@ -88,9 +98,10 @@ public class MaxPathLength {
             System.err.println("Warning: Test directory structure exists already!");
             return;
         }
-        Files.createDirectories(dirFile.toPath());
 
         try {
+            Files.createDirectories(dirFile.toPath());
+
             if (tryAbsolute)
                 dirFile = new File(dirFile.getCanonicalPath());
             if (!dirFile.isDirectory())
@@ -99,6 +110,7 @@ public class MaxPathLength {
             if (!f.createNewFile()) {
                 throw new RuntimeException ("File.createNewFile() failed");
             }
+
             if (!f.exists())
                 throw new RuntimeException ("File.exists() failed");
             if (!f.isFile())
@@ -107,11 +119,14 @@ public class MaxPathLength {
                 throw new RuntimeException ("File.canRead() failed");
             if (!f.canWrite())
                 throw new RuntimeException ("File.canWrite() failed");
+
             if (!f.delete())
                 throw new RuntimeException ("File.delete() failed");
+
             FileOutputStream fos = new FileOutputStream(f);
             fos.write(1);
             fos.close();
+
             if (f.length() != 1)
                 throw new RuntimeException ("File.length() failed");
             long time = System.currentTimeMillis();
@@ -148,30 +163,26 @@ public class MaxPathLength {
                     throw new RuntimeException ("File.renameTo() failed for lenth="
                                                 + abPath.length());
                 }
-                return;
+            } else {
+                if (!nf.canRead())
+                    throw new RuntimeException ("Renamed file is not readable");
+                if (!nf.canWrite())
+                    throw new RuntimeException ("Renamed file is not writable");
+                if (nf.length() != 1)
+                    throw new RuntimeException ("Renamed file's size is not correct");
+                if (!nf.renameTo(f)) {
+                    created[0] = nf.getPath();
+                }
+                /* add a script to test these two if we got a regression later
+                if (!f.setReadOnly())
+                    throw new RuntimeException ("File.setReadOnly() failed");
+                f.deleteOnExit();
+                */
             }
-            if (!nf.canRead())
-                throw new RuntimeException ("Renamed file is not readable");
-            if (!nf.canWrite())
-                throw new RuntimeException ("Renamed file is not writable");
-            if (nf.length() != 1)
-                throw new RuntimeException ("Renamed file's size is not correct");
-            nf.renameTo(f);
-            /* add a script to test these two if we got a regression later
-            if (!f.setReadOnly())
-                throw new RuntimeException ("File.setReadOnly() failed");
-            f.deleteOnExit();
-            */
         } finally {
             // Clean up
             for (int i = 0; i < max; i++) {
-                pathString = created[i];
-                // Only works with completex canonical paths
-                File df = new File(pathString);
-                pathString = df.getCanonicalPath();
-                df = new File(pathString);
-                if (!df.delete())
-                    System.out.printf("Delete failed->%s\n", pathString);
+                Files.deleteIfExists((new File(created[i])).toPath());
             }
         }
     }

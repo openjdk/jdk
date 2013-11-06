@@ -304,7 +304,7 @@ public class GTKLookAndFeel extends SynthLookAndFeel {
         table.put("Synth.doNotSetTextAA", true);
 
         initResourceBundle(table);
-        // For compatability with apps expecting certain defaults we'll
+        // For compatibility with apps expecting certain defaults we'll
         // populate the table with the values from basic.
         initSystemColorDefaults(table);
         initComponentDefaults(table);
@@ -332,7 +332,7 @@ public class GTKLookAndFeel extends SynthLookAndFeel {
     }
 
     protected void initComponentDefaults(UIDefaults table) {
-        // For compatability with apps expecting certain defaults we'll
+        // For compatibility with apps expecting certain defaults we'll
         // populate the table with the values from basic.
         super.initComponentDefaults(table);
 

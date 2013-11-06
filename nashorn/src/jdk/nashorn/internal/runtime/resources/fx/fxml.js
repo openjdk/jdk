@@ -23,8 +23,8 @@
  * questions.
  */
 
-FXML                 = Java.type("javafx.fxml.FXML");
-FXMLLoader           = Java.type("javafx.fxml.FXMLLoader");
-Initializable        = Java.type("javafx.fxml.Initializable");
-JavaFXBuilderFactory = Java.type("javafx.fxml.JavaFXBuilderFactory");
-LoadException        = Java.type("javafx.fxml.LoadException");
+if (!this.JFX_BASE_CLASSES) {
+    load("fx:base.js")
+}
+
+LOAD_FX_CLASSES(JFX_FXML_CLASSES);

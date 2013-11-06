@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1878,11 +1878,28 @@ LRESULT AwtWindow::WindowProc(UINT message, WPARAM wParam, LPARAM lParam)
                 AwtWindow::sm_resizing = TRUE;
                 mr = WmSysCommand(wParam, GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam));
                 if (mr != mrConsume) {
+                    // Perform size-move loop here
                     AwtWindow::DefWindowProc(message, wParam, lParam);
                 }
                 AwtWindow::sm_resizing = FALSE;
                 if (!AwtToolkit::GetInstance().IsDynamicLayoutActive()) {
                     WindowResized();
+                } else {
+                    /*
+                     * 8016356: check whether window snapping occurred after
+                     * resizing, i.e. GetWindowRect() returns the real
+                     * (snapped) window rectangle, e.g. (179, 0)-(483, 1040),
+                     * but GetWindowPlacement() returns the rectangle of
+                     * normal window position, e.g. (179, 189)-(483, 445) and
+                     * they are different. If so, send ComponentResized event.
+                     */
+                    WINDOWPLACEMENT wp;
+                    ::GetWindowPlacement(GetHWnd(), &wp);
+                    RECT rc;
+                    ::GetWindowRect(GetHWnd(), &rc);
+                    if (!::EqualRect(&rc, &wp.rcNormalPosition)) {
+                        WindowResized();
+                    }
                 }
                 mr = mrConsume;
             }

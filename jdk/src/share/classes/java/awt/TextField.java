@@ -42,7 +42,7 @@ import javax.accessibility.*;
  * display the predefined text <code>"Hello"</code>.
  * <p>
  * <img src="doc-files/TextField-1.gif" alt="The preceding text describes this image."
- * ALIGN=center HSPACE=10 VSPACE=7>
+ * style="float:center; margin: 7px 10px;">
  * <p>
  * Here is the code that produces these four text fields:
  * <p>
@@ -405,7 +405,7 @@ public class TextField extends TextComponent {
     }
 
     /**
-     * Gets the minumum dimensions for a text field with
+     * Gets the minimum dimensions for a text field with
      * the specified number of columns.
      * @param    columns   the number of columns in
      *                          this text field.
@@ -430,7 +430,7 @@ public class TextField extends TextComponent {
     }
 
     /**
-     * Gets the minumum dimensions for this text field.
+     * Gets the minimum dimensions for this text field.
      * @return     the minimum dimensions for
      *                  displaying this text field.
      * @since      JDK1.1
@@ -503,7 +503,7 @@ public class TextField extends TextComponent {
      *
      * @see #addActionListener
      * @see #removeActionListener
-     * @see     java.awt.event#ActionListener
+     * @see java.awt.event.ActionListener
      * @since 1.4
      */
     public synchronized ActionListener[] getActionListeners() {

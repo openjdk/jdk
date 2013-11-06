@@ -1,0 +1,183 @@
+{
+    "type": "Program",
+    "body": [
+        {
+            "type": "ExpressionStatement",
+            "expression": {
+                "type": "AssignmentExpression",
+                "operator": "=",
+                "left": {
+                    "type": "Identifier",
+                    "name": "obj"
+                },
+                "right": {
+                    "type": "ObjectExpression",
+                    "properties": []
+                }
+            }
+        }
+    ]
+}
+{
+    "type": "Program",
+    "body": [
+        {
+            "type": "ExpressionStatement",
+            "expression": {
+                "type": "AssignmentExpression",
+                "operator": "=",
+                "left": {
+                    "type": "Identifier",
+                    "name": "p"
+                },
+                "right": {
+                    "type": "ObjectExpression",
+                    "properties": [
+                        {
+                            "key": {
+                                "type": "Identifier",
+                                "name": "x"
+                            },
+                            "value": {
+                                "type": "Literal",
+                                "value": 10
+                            },
+                            "kind": "init"
+                        },
+                        {
+                            "key": {
+                                "type": "Identifier",
+                                "name": "y"
+                            },
+                            "value": {
+                                "type": "Literal",
+                                "value": 2
+                            },
+                            "kind": "init"
+                        }
+                    ]
+                }
+            }
+        }
+    ]
+}
+{
+    "type": "Program",
+    "body": [
+        {
+            "type": "ExpressionStatement",
+            "expression": {
+                "type": "AssignmentExpression",
+                "operator": "=",
+                "left": {
+                    "type": "Identifier",
+                    "name": "p"
+                },
+                "right": {
+                    "type": "ObjectExpression",
+                    "properties": [
+                        {
+                            "key": {
+                                "type": "Literal",
+                                "value": "x"
+                            },
+                            "value": {
+                                "type": "Literal",
+                                "value": 10
+                            },
+                            "kind": "init"
+                        },
+                        {
+                            "key": {
+                                "type": "Literal",
+                                "value": "y"
+                            },
+                            "value": {
+                                "type": "Literal",
+                                "value": 2
+                            },
+                            "kind": "init"
+                        }
+                    ]
+                }
+            }
+        }
+    ]
+}
+{
+    "type": "Program",
+    "body": [
+        {
+            "type": "ExpressionStatement",
+            "expression": {
+                "type": "AssignmentExpression",
+                "operator": "=",
+                "left": {
+                    "type": "Identifier",
+                    "name": "p"
+                },
+                "right": {
+                    "type": "ObjectExpression",
+                    "properties": [
+                        {
+                            "key": {
+                                "type": "Identifier",
+                                "name": "x"
+                            },
+                            "value": {
+                                "type": "FunctionExpression",
+                                "id": null,
+                                "params": [],
+                                "defaults": [],
+                                "rest": null,
+                                "body": {
+                                    "type": "BlockStatement",
+                                    "body": [
+                                        {
+                                            "type": "ReturnStatement",
+                                            "argument": {
+                                                "type": "Identifier",
+                                                "name": "xValue"
+                                            }
+                                        }
+                                    ]
+                                },
+                                "generator": false,
+                                "expression": false
+                            },
+                            "kind": "get"
+                        },
+                        {
+                            "key": {
+                                "type": "Identifier",
+                                "name": "y"
+                            },
+                            "value": {
+                                "type": "FunctionExpression",
+                                "id": null,
+                                "params": [],
+                                "defaults": [],
+                                "rest": null,
+                                "body": {
+                                    "type": "BlockStatement",
+                                    "body": [
+                                        {
+                                            "type": "ReturnStatement",
+                                            "argument": {
+                                                "type": "Identifier",
+                                                "name": "yValue"
+                                            }
+                                        }
+                                    ]
+                                },
+                                "generator": false,
+                                "expression": false
+                            },
+                            "kind": "get"
+                        }
+                    ]
+                }
+            }
+        }
+    ]
+}

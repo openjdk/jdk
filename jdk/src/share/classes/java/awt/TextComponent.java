@@ -35,6 +35,7 @@ import java.text.BreakIterator;
 import javax.swing.text.AttributeSet;
 import javax.accessibility.*;
 import java.awt.im.InputMethodRequests;
+import sun.security.util.SecurityConstants;
 
 /**
  * The <code>TextComponent</code> class is the superclass of
@@ -728,7 +729,7 @@ public class TextComponent extends Component implements Accessible {
         SecurityManager sm = System.getSecurityManager();
         if (sm == null) return true;
         try {
-            sm.checkSystemClipboardAccess();
+            sm.checkPermission(SecurityConstants.AWT.ACCESS_CLIPBOARD_PERMISSION);
             return true;
         } catch (SecurityException e) {}
         return false;
@@ -820,37 +821,6 @@ public class TextComponent extends Component implements Accessible {
 /////////////////
 // Accessibility support
 ////////////////
-
-
-    /**
-     *
-     */
-    int getIndexAtPoint(Point p) {
-        return -1;
-/* To be fully implemented in a future release
-        if (peer == null) {
-            return -1;
-        }
-        TextComponentPeer peer = (TextComponentPeer)this.peer;
-        return peer.getIndexAtPoint(p.x, p.y);
-*/
-    }
-
-
-    /**
-     *
-     */
-    Rectangle getCharacterBounds(int i) {
-        return null;
-/* To be fully implemented in a future release
-        if (peer == null) {
-            return null;
-        }
-        TextComponentPeer peer = (TextComponentPeer)this.peer;
-        return peer.getCharacterBounds(i);
-*/
-    }
-
 
     /**
      * Gets the AccessibleContext associated with this TextComponent.
@@ -962,7 +932,7 @@ public class TextComponent extends Component implements Accessible {
          * @return the zero-based index of the character under Point p.
          */
         public int getIndexAtPoint(Point p) {
-            return TextComponent.this.getIndexAtPoint(p);
+            return -1;
         }
 
         /**
@@ -971,17 +941,17 @@ public class TextComponent extends Component implements Accessible {
          * coordinates.  If the index is invalid a null rectangle
          * is returned.
          *
-         * @param i the index into the String >= 0
+         * @param i the index into the String &gt;= 0
          * @return the screen coordinates of the character's bounding box
          */
         public Rectangle getCharacterBounds(int i) {
-            return TextComponent.this.getCharacterBounds(i);
+            return null;
         }
 
         /**
          * Returns the number of characters (valid indicies)
          *
-         * @return the number of characters >= 0
+         * @return the number of characters &gt;= 0
          */
         public int getCharCount() {
             return TextComponent.this.getText().length();
@@ -1017,7 +987,7 @@ public class TextComponent extends Component implements Accessible {
          * Return 0 if the text is empty, or the caret position
          * if no selection.
          *
-         * @return the index into the text of the start of the selection >= 0
+         * @return the index into the text of the start of the selection &gt;= 0
          */
         public int getSelectionStart() {
             return TextComponent.this.getSelectionStart();
@@ -1030,7 +1000,7 @@ public class TextComponent extends Component implements Accessible {
          * Return 0 if the text is empty, or the caret position
          * if no selection.
          *
-         * @return the index into teh text of the end of the selection >= 0
+         * @return the index into the text of the end of the selection &gt;= 0
          */
         public int getSelectionEnd() {
             return TextComponent.this.getSelectionEnd();
@@ -1055,7 +1025,7 @@ public class TextComponent extends Component implements Accessible {
          *
          * @param part the AccessibleText.CHARACTER, AccessibleText.WORD,
          * or AccessibleText.SENTENCE to retrieve
-         * @param index an index within the text >= 0
+         * @param index an index within the text &gt;= 0
          * @return the letter, word, or sentence,
          *   null for an invalid index or part
          */
@@ -1121,7 +1091,7 @@ public class TextComponent extends Component implements Accessible {
          *
          * @param part the AccessibleText.CHARACTER, AccessibleText.WORD,
          * or AccessibleText.SENTENCE to retrieve
-         * @param index an index within the text >= 0
+         * @param index an index within the text &gt;= 0
          * @return the letter, word, or sentence, null for an invalid
          *  index or part
          */
@@ -1174,7 +1144,7 @@ public class TextComponent extends Component implements Accessible {
          *
          * @param part the AccessibleText.CHARACTER, AccessibleText.WORD,
          *   or AccessibleText.SENTENCE to retrieve
-         * @param index an index within the text >= 0
+         * @param index an index within the text &gt;= 0
          * @return the letter, word, or sentence, null for an invalid index
          *  or part
          */

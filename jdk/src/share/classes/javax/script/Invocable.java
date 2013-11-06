@@ -51,7 +51,7 @@ public interface Invocable  {
      * @return The value returned by the procedure.  The rules for converting the scripting
      * variable returned by the script method to a Java Object are implementation-specific.
      *
-     * @throws ScriptException if an error occurrs during invocation of the method.
+     * @throws ScriptException if an error occurs during invocation of the method.
      * @throws NoSuchMethodException if method with given name or matching argument types cannot be found.
      * @throws NullPointerException if the method name is null.
      * @throws IllegalArgumentException if the specified thiz is null or the specified Object is
@@ -67,7 +67,7 @@ public interface Invocable  {
      * @param args Arguments to pass to the procedure or function
      * @return The value returned by the procedure or function
      *
-     * @throws ScriptException if an error occurrs during invocation of the method.
+     * @throws ScriptException if an error occurs during invocation of the method.
      * @throws NoSuchMethodException if method with given name or matching argument types cannot be found.
      * @throws NullPointerException if method name is null.
      */
