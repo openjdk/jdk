@@ -145,7 +145,7 @@ class UnixPath
         }
         if (error) {
             throw new InvalidPathException(input,
-                "Malformed input or input contains unmappable chacraters");
+                "Malformed input or input contains unmappable characters");
         }
 
         // trim result to actual length if required
