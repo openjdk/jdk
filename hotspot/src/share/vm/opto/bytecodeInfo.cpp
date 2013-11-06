@@ -123,7 +123,7 @@ bool InlineTree::should_inline(ciMethod* callee_method, ciMethod* caller_method,
   // Allows targeted inlining
   if(callee_method->should_inline()) {
     *wci_result = *(WarmCallInfo::always_hot());
-    if (PrintInlining && Verbose) {
+    if (C->print_inlining() && Verbose) {
       CompileTask::print_inline_indent(inline_level());
       tty->print_cr("Inlined method is hot: ");
     }
@@ -137,7 +137,7 @@ bool InlineTree::should_inline(ciMethod* callee_method, ciMethod* caller_method,
   if(callee_method->interpreter_throwout_count() > InlineThrowCount &&
      size < InlineThrowMaxSize ) {
     wci_result->set_profit(wci_result->profit() * 100);
-    if (PrintInlining && Verbose) {
+    if (C->print_inlining() && Verbose) {
       CompileTask::print_inline_indent(inline_level());
       tty->print_cr("Inlined method with many throws (throws=%d):", callee_method->interpreter_throwout_count());
     }
@@ -197,6 +197,7 @@ bool InlineTree::should_inline(ciMethod* callee_method, ciMethod* caller_method,
 // negative filter: should callee NOT be inlined?
 bool InlineTree::should_not_inline(ciMethod *callee_method,
                                    ciMethod* caller_method,
+                                   JVMState* jvms,
                                    WarmCallInfo* wci_result) {
 
   const char* fail_msg = NULL;
@@ -226,7 +227,7 @@ bool InlineTree::should_not_inline(ciMethod *callee_method,
     // don't inline exception code unless the top method belongs to an
     // exception class
     if (callee_method->holder()->is_subclass_of(C->env()->Throwable_klass())) {
-      ciMethod* top_method = caller_jvms() ? caller_jvms()->of_depth(1)->method() : method();
+      ciMethod* top_method = jvms->caller() != NULL ? jvms->caller()->of_depth(1)->method() : method();
       if (!top_method->holder()->is_subclass_of(C->env()->Throwable_klass())) {
         wci_result->set_profit(wci_result->profit() * 0.1);
       }
@@ -328,7 +329,7 @@ bool InlineTree::should_not_inline(ciMethod *callee_method,
 // return true if ok
 // Relocated from "InliningClosure::try_to_inline"
 bool InlineTree::try_to_inline(ciMethod* callee_method, ciMethod* caller_method,
-                               int caller_bci, ciCallProfile& profile,
+                               int caller_bci, JVMState* jvms, ciCallProfile& profile,
                                WarmCallInfo* wci_result, bool& should_delay) {
 
    // Old algorithm had funny accumulating BC-size counters
@@ -346,7 +347,7 @@ bool InlineTree::try_to_inline(ciMethod* callee_method, ciMethod* caller_method,
                      wci_result)) {
     return false;
   }
-  if (should_not_inline(callee_method, caller_method, wci_result)) {
+  if (should_not_inline(callee_method, caller_method, jvms, wci_result)) {
     return false;
   }
 
@@ -397,24 +398,35 @@ bool InlineTree::try_to_inline(ciMethod* callee_method, ciMethod* caller_method,
   }
 
   // detect direct and indirect recursive inlining
-  if (!callee_method->is_compiled_lambda_form()) {
+  {
     // count the current method and the callee
-    int inline_level = (method() == callee_method) ? 1 : 0;
-    if (inline_level > MaxRecursiveInlineLevel) {
-      set_msg("recursively inlining too deep");
-      return false;
+    const bool is_compiled_lambda_form = callee_method->is_compiled_lambda_form();
+    int inline_level = 0;
+    if (!is_compiled_lambda_form) {
+      if (method() == callee_method) {
+        inline_level++;
+      }
     }
     // count callers of current method and callee
-    JVMState* jvms = caller_jvms();
-    while (jvms != NULL && jvms->has_method()) {
-      if (jvms->method() == callee_method) {
-        inline_level++;
-        if (inline_level > MaxRecursiveInlineLevel) {
-          set_msg("recursively inlining too deep");
-          return false;
+    Node* callee_argument0 = is_compiled_lambda_form ? jvms->map()->argument(jvms, 0)->uncast() : NULL;
+    for (JVMState* j = jvms->caller(); j != NULL && j->has_method(); j = j->caller()) {
+      if (j->method() == callee_method) {
+        if (is_compiled_lambda_form) {
+          // Since compiled lambda forms are heavily reused we allow recursive inlining.  If it is truly
+          // a recursion (using the same "receiver") we limit inlining otherwise we can easily blow the
+          // compiler stack.
+          Node* caller_argument0 = j->map()->argument(j, 0)->uncast();
+          if (caller_argument0 == callee_argument0) {
+            inline_level++;
+          }
+        } else {
+          inline_level++;
         }
       }
-      jvms = jvms->caller();
+    }
+    if (inline_level > MaxRecursiveInlineLevel) {
+      set_msg("recursive inlining is too deep");
+      return false;
     }
   }
 
@@ -491,7 +503,7 @@ void InlineTree::print_inlining(ciMethod* callee_method, int caller_bci,
       C->log()->inline_fail(inline_msg);
     }
   }
-  if (PrintInlining) {
+  if (C->print_inlining()) {
     C->print_inlining(callee_method, inline_level(), caller_bci, inline_msg);
     if (callee_method == NULL) tty->print(" callee not monotonic or profiled");
     if (Verbose && callee_method) {
@@ -536,11 +548,11 @@ WarmCallInfo* InlineTree::ok_to_inline(ciMethod* callee_method, JVMState* jvms, 
   // Check if inlining policy says no.
   WarmCallInfo wci = *(initial_wci);
   bool success = try_to_inline(callee_method, caller_method, caller_bci,
-                               profile, &wci, should_delay);
+                               jvms, profile, &wci, should_delay);
 
 #ifndef PRODUCT
   if (UseOldInlining && InlineWarmCalls
-      && (PrintOpto || PrintOptoInlining || PrintInlining)) {
+      && (PrintOpto || C->print_inlining())) {
     bool cold = wci.is_cold();
     bool hot  = !cold && wci.is_hot();
     bool old_cold = !success;
@@ -617,7 +629,7 @@ InlineTree *InlineTree::build_inline_tree_for_callee( ciMethod* callee_method, J
              callee_method->is_compiled_lambda_form()) {
       max_inline_level_adjust += 1;  // don't count method handle calls from java.lang.invoke implem
     }
-    if (max_inline_level_adjust != 0 && PrintInlining && (Verbose || WizardMode)) {
+    if (max_inline_level_adjust != 0 && C->print_inlining() && (Verbose || WizardMode)) {
       CompileTask::print_inline_indent(inline_level());
       tty->print_cr(" \\-> discounting inline depth");
     }

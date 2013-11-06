@@ -41,7 +41,15 @@ import java.net.*;
  * (due to a firewall), the runtime uses HTTP with the explicit port
  * number of the server.  If the firewall does not allow this type of
  * communication, then HTTP to a cgi-bin script on the server is used
- * to POST the RMI call.
+ * to POST the RMI call. The HTTP tunneling mechanisms are disabled by
+ * default. This behavior is controlled by the {@code java.rmi.server.disableHttp}
+ * property, whose default value is {@code true}. Setting this property's
+ * value to {@code false} will enable the HTTP tunneling mechanisms.
+ *
+ * <p><strong>Deprecated: HTTP Tunneling.</strong> <em>The HTTP tunneling mechanisms
+ * described above, specifically HTTP with an explicit port and HTTP to a
+ * cgi-bin script, are deprecated. These HTTP tunneling mechanisms are
+ * subject to removal in a future release of the platform.</em>
  *
  * <p>The default socket factory implementation creates server sockets that
  * are bound to the wildcard address, which accepts requests from all network

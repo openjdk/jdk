@@ -207,7 +207,12 @@ public class LogParser extends DefaultHandler implements ErrorHandler, Constants
     }
 
     String search(Attributes attr, String name) {
-        return search(attr, name, null);
+        String result = attr.getValue(name);
+        if (result != null) {
+            return result;
+        } else {
+            throw new InternalError("can't find " + name);
+        }
     }
 
     String search(Attributes attr, String name, String defaultValue) {
@@ -215,13 +220,7 @@ public class LogParser extends DefaultHandler implements ErrorHandler, Constants
         if (result != null) {
             return result;
         }
-        if (defaultValue != null) {
-            return defaultValue;
-        }
-        for (int i = 0; i < attr.getLength(); i++) {
-            System.out.println(attr.getQName(i) + " " + attr.getValue(attr.getQName(i)));
-        }
-        throw new InternalError("can't find " + name);
+        return defaultValue;
     }
     int indent = 0;
 
@@ -268,17 +267,18 @@ public class LogParser extends DefaultHandler implements ErrorHandler, Constants
             Phase p = new Phase(search(atts, "name"),
                     Double.parseDouble(search(atts, "stamp")),
                     Integer.parseInt(search(atts, "nodes", "0")),
-                    Integer.parseInt(search(atts, "live")));
+                    Integer.parseInt(search(atts, "live", "0")));
             phaseStack.push(p);
         } else if (qname.equals("phase_done")) {
             Phase p = phaseStack.pop();
-            if (! p.getId().equals(search(atts, "name"))) {
+            String phaseName = search(atts, "name", null);
+            if (phaseName != null && !p.getId().equals(phaseName)) {
                 System.out.println("phase: " + p.getId());
                 throw new InternalError("phase name mismatch");
             }
             p.setEnd(Double.parseDouble(search(atts, "stamp")));
             p.setEndNodes(Integer.parseInt(search(atts, "nodes", "0")));
-            p.setEndLiveNodes(Integer.parseInt(search(atts, "live")));
+            p.setEndLiveNodes(Integer.parseInt(search(atts, "live", "0")));
             compile.getPhases().add(p);
         } else if (qname.equals("task")) {
             compile = new Compilation(Integer.parseInt(search(atts, "compile_id", "-1")));
@@ -413,8 +413,8 @@ public class LogParser extends DefaultHandler implements ErrorHandler, Constants
             }
         } else if (qname.equals("parse_done")) {
             CallSite call = scopes.pop();
-            call.setEndNodes(Integer.parseInt(search(atts, "nodes", "1")));
-            call.setEndLiveNodes(Integer.parseInt(search(atts, "live", "1")));
+            call.setEndNodes(Integer.parseInt(search(atts, "nodes", "0")));
+            call.setEndLiveNodes(Integer.parseInt(search(atts, "live", "0")));
             call.setTimeStamp(Double.parseDouble(search(atts, "stamp")));
             scopes.push(call);
         }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -146,6 +146,11 @@ public:
   // Adaptive size policy
   virtual AdaptiveSizePolicy* size_policy() {
     return gen_policy()->size_policy();
+  }
+
+  // Return the (conservative) maximum heap alignment
+  static size_t conservative_max_heap_alignment() {
+    return Generation::GenGrain;
   }
 
   size_t capacity() const;

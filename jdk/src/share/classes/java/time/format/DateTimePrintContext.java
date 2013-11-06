@@ -75,6 +75,7 @@ import java.time.chrono.IsoChronology;
 import java.time.temporal.ChronoField;
 import java.time.temporal.TemporalAccessor;
 import java.time.temporal.TemporalField;
+import java.time.temporal.TemporalQueries;
 import java.time.temporal.TemporalQuery;
 import java.time.temporal.ValueRange;
 import java.util.Locale;
@@ -128,8 +129,8 @@ final class DateTimePrintContext {
         }
 
         // ensure minimal change (early return is an optimization)
-        Chronology temporalChrono = temporal.query(TemporalQuery.chronology());
-        ZoneId temporalZone = temporal.query(TemporalQuery.zoneId());
+        Chronology temporalChrono = temporal.query(TemporalQueries.chronology());
+        ZoneId temporalZone = temporal.query(TemporalQueries.zoneId());
         if (Objects.equals(overrideChrono, temporalChrono)) {
             overrideChrono = null;
         }
@@ -206,13 +207,13 @@ final class DateTimePrintContext {
             @SuppressWarnings("unchecked")
             @Override
             public <R> R query(TemporalQuery<R> query) {
-                if (query == TemporalQuery.chronology()) {
+                if (query == TemporalQueries.chronology()) {
                     return (R) effectiveChrono;
                 }
-                if (query == TemporalQuery.zoneId()) {
+                if (query == TemporalQueries.zoneId()) {
                     return (R) effectiveZone;
                 }
-                if (query == TemporalQuery.precision()) {
+                if (query == TemporalQueries.precision()) {
                     return temporal.query(query);
                 }
                 return query.queryFrom(this);

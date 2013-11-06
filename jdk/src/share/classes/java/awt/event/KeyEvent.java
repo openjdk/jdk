@@ -133,7 +133,7 @@ import sun.awt.AWTAccessor;
  * WARNING: Aside from those keys that are defined by the Java language
  * (VK_ENTER, VK_BACK_SPACE, and VK_TAB), do not rely on the values of the VK_
  * constants.  Sun reserves the right to change these values as needed
- * to accomodate a wider range of keyboards in the future.
+ * to accommodate a wider range of keyboards in the future.
  * <p>
  * An unspecified behavior will be caused if the {@code id} parameter
  * of any particular {@code KeyEvent} instance is not
@@ -145,7 +145,7 @@ import sun.awt.AWTAccessor;
  *
  * @see KeyAdapter
  * @see KeyListener
- * @see <a href="http://java.sun.com/docs/books/tutorial/post1.0/ui/keylistener.html">Tutorial: Writing a Key Listener</a>
+ * @see <a href="http://docs.oracle.com/javase/tutorial/uiswing/events/keylistener.html">Tutorial: Writing a Key Listener</a>
  *
  * @since 1.1
  */

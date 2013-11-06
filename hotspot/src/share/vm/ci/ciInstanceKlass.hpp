@@ -52,6 +52,7 @@ private:
   bool                   _has_finalizer;
   bool                   _has_subklass;
   bool                   _has_nonstatic_fields;
+  bool                   _has_default_methods;
 
   ciFlags                _flags;
   jint                   _nonstatic_field_size;
@@ -171,6 +172,11 @@ public:
     }
   }
 
+  bool has_default_methods()  {
+    assert(is_loaded(), "must be loaded");
+    return _has_default_methods;
+  }
+
   ciInstanceKlass* get_canonical_holder(int offset);
   ciField* get_field_by_offset(int field_offset, bool is_static);
   ciField* get_field_by_name(ciSymbol* name, ciSymbol* signature, bool is_static);
@@ -234,6 +240,13 @@ public:
   // What kind of ciObject is this?
   bool is_instance_klass() const { return true; }
   bool is_java_klass() const     { return true; }
+
+  virtual ciKlass* exact_klass() {
+    if (is_loaded() && is_final() && !is_interface()) {
+      return this;
+    }
+    return NULL;
+  }
 
   // Dump the current state of this klass for compilation replay.
   virtual void dump_replay_data(outputStream* out);

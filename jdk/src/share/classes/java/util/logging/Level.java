@@ -27,6 +27,7 @@ package java.util.logging;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.ResourceBundle;
 
@@ -63,7 +64,7 @@ import java.util.ResourceBundle;
  */
 
 public class Level implements java.io.Serializable {
-    private static String defaultBundle = "sun.util.logging.resources.logging";
+    private static final String defaultBundle = "sun.util.logging.resources.logging";
 
     /**
      * @serial  The non-localized name of the level.
@@ -81,7 +82,8 @@ public class Level implements java.io.Serializable {
     private final String resourceBundleName;
 
     // localized level name
-    private String localizedLevelName;
+    private transient String localizedLevelName;
+    private transient Locale cachedLocale;
 
     /**
      * OFF is a special level that can be used to turn off logging.
@@ -202,6 +204,12 @@ public class Level implements java.io.Serializable {
      * @throws NullPointerException if the name is null
      */
     protected Level(String name, int value, String resourceBundleName) {
+        this(name, value, resourceBundleName, true);
+    }
+
+    // private constructor to specify whether this instance should be added
+    // to the KnownLevel list from which Level.parse method does its look up
+    private Level(String name, int value, String resourceBundleName, boolean visible) {
         if (name == null) {
             throw new NullPointerException();
         }
@@ -209,7 +217,10 @@ public class Level implements java.io.Serializable {
         this.value = value;
         this.resourceBundleName = resourceBundleName;
         this.localizedLevelName = resourceBundleName == null ? name : null;
-        KnownLevel.add(this);
+        this.cachedLocale = null;
+        if (visible) {
+            KnownLevel.add(this);
+        }
     }
 
     /**
@@ -250,17 +261,71 @@ public class Level implements java.io.Serializable {
         return this.name;
     }
 
-    final synchronized String getLocalizedLevelName() {
+    private String computeLocalizedLevelName(Locale newLocale) {
+        ResourceBundle rb = ResourceBundle.getBundle(resourceBundleName, newLocale);
+        final String localizedName = rb.getString(name);
+
+        final boolean isDefaultBundle = defaultBundle.equals(resourceBundleName);
+        if (!isDefaultBundle) return localizedName;
+
+        // This is a trick to determine whether the name has been translated
+        // or not. If it has not been translated, we need to use Locale.ROOT
+        // when calling toUpperCase().
+        final Locale rbLocale = rb.getLocale();
+        final Locale locale =
+                Locale.ROOT.equals(rbLocale)
+                || name.equals(localizedName.toUpperCase(Locale.ROOT))
+                ? Locale.ROOT : rbLocale;
+
+        // ALL CAPS in a resource bundle's message indicates no translation
+        // needed per Oracle translation guideline.  To workaround this
+        // in Oracle JDK implementation, convert the localized level name
+        // to uppercase for compatibility reason.
+        return Locale.ROOT.equals(locale) ? name : localizedName.toUpperCase(locale);
+    }
+
+    // Avoid looking up the localizedLevelName twice if we already
+    // have it.
+    final String getCachedLocalizedLevelName() {
+
         if (localizedLevelName != null) {
-            return localizedLevelName;
+            if (cachedLocale != null) {
+                if (cachedLocale.equals(Locale.getDefault())) {
+                    // OK: our cached value was looked up with the same
+                    //     locale. We can use it.
+                    return localizedLevelName;
+                }
+            }
         }
 
+        if (resourceBundleName == null) {
+            // No resource bundle: just use the name.
+            return name;
+        }
+
+        // We need to compute the localized name.
+        // Either because it's the first time, or because our cached
+        // value is for a different locale. Just return null.
+        return null;
+    }
+
+    final synchronized String getLocalizedLevelName() {
+
+        // See if we have a cached localized name
+        final String cachedLocalizedName = getCachedLocalizedLevelName();
+        if (cachedLocalizedName != null) {
+            return cachedLocalizedName;
+        }
+
+        // No cached localized name or cache invalid.
+        // Need to compute the localized name.
+        final Locale newLocale = Locale.getDefault();
         try {
-            ResourceBundle rb = ResourceBundle.getBundle(resourceBundleName);
-            localizedLevelName = rb.getString(name);
+            localizedLevelName = computeLocalizedLevelName(newLocale);
         } catch (Exception ex) {
             localizedLevelName = name;
         }
+        cachedLocale = newLocale;
         return localizedLevelName;
     }
 
@@ -318,6 +383,7 @@ public class Level implements java.io.Serializable {
      *
      * @return the non-localized name of the Level, for example "INFO".
      */
+    @Override
     public final String toString() {
         return name;
     }
@@ -407,7 +473,7 @@ public class Level implements java.io.Serializable {
         // Finally, look for a known level with the given localized name,
         // in the current default locale.
         // This is relatively expensive, but not excessively so.
-        level = KnownLevel.findByLocalizedName(name);
+        level = KnownLevel.findByLocalizedLevelName(name);
         if (level != null) {
             return level.levelObject;
         }
@@ -420,6 +486,7 @@ public class Level implements java.io.Serializable {
      * Compare two objects for value equality.
      * @return true if and only if the two objects have the same level value.
      */
+    @Override
     public boolean equals(Object ox) {
         try {
             Level lx = (Level)ox;
@@ -433,6 +500,7 @@ public class Level implements java.io.Serializable {
      * Generate a hashcode.
      * @return a hashcode based on the level value
      */
+    @Override
     public int hashCode() {
         return this.value;
     }
@@ -461,13 +529,14 @@ public class Level implements java.io.Serializable {
         private static Map<String, List<KnownLevel>> nameToLevels = new HashMap<>();
         private static Map<Integer, List<KnownLevel>> intToLevels = new HashMap<>();
         final Level levelObject;     // instance of Level class or Level subclass
-        final Level mirroredLevel;   // instance of Level class
+        final Level mirroredLevel;   // mirror of the custom Level
         KnownLevel(Level l) {
             this.levelObject = l;
             if (l.getClass() == Level.class) {
                 this.mirroredLevel = l;
             } else {
-                this.mirroredLevel = new Level(l.name, l.value, l.resourceBundleName);
+                // this mirrored level object is hidden
+                this.mirroredLevel = new Level(l.name, l.value, l.resourceBundleName, false);
             }
         }
 
@@ -517,20 +586,6 @@ public class Level implements java.io.Serializable {
             for (List<KnownLevel> levels : nameToLevels.values()) {
                 for (KnownLevel l : levels) {
                     String lname = l.levelObject.getLocalizedLevelName();
-                    if (name.equals(lname)) {
-                        return l;
-                    }
-                }
-            }
-            return null;
-        }
-
-        // Returns a KnownLevel with the given localized name matching
-        // by calling the Level.getLocalizedName() method
-        static synchronized KnownLevel findByLocalizedName(String name) {
-            for (List<KnownLevel> levels : nameToLevels.values()) {
-                for (KnownLevel l : levels) {
-                    String lname = l.levelObject.getLocalizedName();
                     if (name.equals(lname)) {
                         return l;
                     }

@@ -55,8 +55,7 @@ FILES_export = \
 LDLIBS += dsound.lib winmm.lib user32.lib ole32.lib
 CPPFLAGS += \
 	-DUSE_DAUDIO=TRUE \
-	-I$(SHARE_SRC)/native/com/sun/media/sound \
-	-I$(DXSDK_INCLUDE_PATH)
+	-I$(SHARE_SRC)/native/com/sun/media/sound
 
 #
 # Add to the ambient VPATH.

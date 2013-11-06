@@ -40,7 +40,7 @@ import java.util.function.LongConsumer;
 @SuppressWarnings({"rawtypes", "unchecked"})
 public enum LongStreamTestScenario implements OpTestCase.BaseStreamTestScenario {
 
-    STREAM_FOR_EACH(false) {
+    STREAM_FOR_EACH_WITH_CLOSE(false) {
         <T, S_IN extends BaseStream<T, S_IN>>
         void _run(TestData<T, S_IN> data, LongConsumer b, Function<S_IN, LongStream> m) {
             LongStream s = m.apply(data.stream());
@@ -48,6 +48,7 @@ public enum LongStreamTestScenario implements OpTestCase.BaseStreamTestScenario 
                 s = s.sequential();
             }
             s.forEach(b);
+            s.close();
         }
     },
 

@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 4886838 4886830
+ * @bug 4886838 4886830 8025204
  * @summary Tests that idle timeouts happen at appropriate times
  * @author Eamonn McManus
  * @run clean IdleTimeoutTest
@@ -278,19 +278,11 @@ public class IdleTimeoutTest {
                 }
 
                 System.out.println("Waiting for id list to drop ours");
-                deadline = System.currentTimeMillis() + timeout*2 + 10000;
-                while (true) {
-                    ids = Arrays.asList(server.getConnectionIds());
-                    if (!ids.contains(connId)
-                        || System.currentTimeMillis() >= deadline)
-                        break;
-                    Thread.sleep(500);
-                }
-                if (ids.contains(connId)) {
-                    System.out.println("Client id still in list after " +
-                                       "deadline: " + ids);
-                    return false;
-                }
+                // pass or timed out by test harness - see 8025204
+                do {
+                   Thread.sleep(100);
+                   ids = Arrays.asList(server.getConnectionIds());
+                } while (ids.contains(connId));
 
                 conn.getDefaultDomain();
                 if (connId.equals(client.getConnectionId())) {

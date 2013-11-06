@@ -107,5 +107,17 @@ FILES_java = \
         sun/text/resources/FormatData.java \
         sun/text/resources/JavaTimeSupplementary.java \
         sun/text/resources/en/FormatData_en.java \
+        sun/text/resources/en/FormatData_en_AU.java \
+        sun/text/resources/en/FormatData_en_CA.java \
+        sun/text/resources/en/FormatData_en_GB.java \
+        sun/text/resources/en/FormatData_en_IE.java \
+        sun/text/resources/en/FormatData_en_IN.java \
+        sun/text/resources/en/FormatData_en_MT.java \
+        sun/text/resources/en/FormatData_en_NZ.java \
+        sun/text/resources/en/FormatData_en_PH.java \
+        sun/text/resources/en/FormatData_en_SG.java \
         sun/text/resources/en/FormatData_en_US.java \
+        sun/text/resources/en/FormatData_en_ZA.java \
         sun/text/resources/en/JavaTimeSupplementary_en.java \
+        sun/text/resources/en/JavaTimeSupplementary_en_GB.java \
+        sun/text/resources/en/JavaTimeSupplementary_en_SG.java

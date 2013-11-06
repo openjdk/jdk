@@ -65,7 +65,7 @@ public class XOMParserTest extends TestBase {
 
             String inFilename = filePath + "/JDK8022548.xml";
             String xslFilename = filePath + "/JDK8022548.xsl";
-            String outFilename = filePath + "/JDK8022548.out";
+            String outFilename = "JDK8022548.out";
 
             StringWriter sw = new StringWriter();
             // Create transformer factory

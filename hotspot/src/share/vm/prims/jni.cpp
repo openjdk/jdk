@@ -1336,6 +1336,7 @@ static void jni_invoke_nonstatic(JNIEnv *env, JavaValue* result, jobject receive
       if (call_type == JNI_VIRTUAL) {
         // jni_GetMethodID makes sure class is linked and initialized
         // so m should have a valid vtable index.
+        assert(!m->has_itable_index(), "");
         int vtbl_index = m->vtable_index();
         if (vtbl_index != Method::nonvirtual_vtable_index) {
           Klass* k = h_recv->klass();
@@ -1355,12 +1356,7 @@ static void jni_invoke_nonstatic(JNIEnv *env, JavaValue* result, jobject receive
       // interface call
       KlassHandle h_holder(THREAD, holder);
 
-      int itbl_index = m->cached_itable_index();
-      if (itbl_index == -1) {
-        itbl_index = klassItable::compute_itable_index(m);
-        m->set_cached_itable_index(itbl_index);
-        // the above may have grabbed a lock, 'm' and anything non-handlized can't be used again
-      }
+      int itbl_index = m->itable_index();
       Klass* k = h_recv->klass();
       selected_method = InstanceKlass::cast(k)->method_at_itable(h_holder(), itbl_index, CHECK);
     }
@@ -1595,10 +1591,8 @@ static jmethodID get_method_id(JNIEnv *env, jclass clazz, const char *name_str,
     }
   } else {
     m = klass->lookup_method(name, signature);
-    // Look up interfaces
-    if (m == NULL && klass->oop_is_instance()) {
-      m = InstanceKlass::cast(klass())->lookup_method_in_all_interfaces(name,
-                                                                   signature);
+    if (m == NULL &&  klass->oop_is_instance()) {
+      m = InstanceKlass::cast(klass())->lookup_method_in_ordered_interfaces(name, signature);
     }
   }
   if (m == NULL || (m->is_static() != is_static)) {
@@ -3214,7 +3208,11 @@ JNI_QUICK_ENTRY(jsize, jni_GetStringLength(JNIEnv *env, jstring string))
   HOTSPOT_JNI_GETSTRINGLENGTH_ENTRY(
                                     env, string);
 #endif /* USDT2 */
-  jsize ret = java_lang_String::length(JNIHandles::resolve_non_null(string));
+  jsize ret = 0;
+  oop s = JNIHandles::resolve_non_null(string);
+  if (java_lang_String::value(s) != NULL) {
+    ret = java_lang_String::length(s);
+  }
 #ifndef USDT2
   DTRACE_PROBE1(hotspot_jni, GetStringLength__return, ret);
 #else /* USDT2 */
@@ -3234,20 +3232,23 @@ JNI_QUICK_ENTRY(const jchar*, jni_GetStringChars(
  HOTSPOT_JNI_GETSTRINGCHARS_ENTRY(
                                   env, string, (uintptr_t *) isCopy);
 #endif /* USDT2 */
+  jchar* buf = NULL;
   oop s = JNIHandles::resolve_non_null(string);
-  int s_len = java_lang_String::length(s);
   typeArrayOop s_value = java_lang_String::value(s);
-  int s_offset = java_lang_String::offset(s);
-  jchar* buf = NEW_C_HEAP_ARRAY_RETURN_NULL(jchar, s_len + 1, mtInternal);  // add one for zero termination
-  /* JNI Specification states return NULL on OOM */
-  if (buf != NULL) {
-    if (s_len > 0) {
-      memcpy(buf, s_value->char_at_addr(s_offset), sizeof(jchar)*s_len);
-    }
-    buf[s_len] = 0;
-    //%note jni_5
-    if (isCopy != NULL) {
-      *isCopy = JNI_TRUE;
+  if (s_value != NULL) {
+    int s_len = java_lang_String::length(s);
+    int s_offset = java_lang_String::offset(s);
+    buf = NEW_C_HEAP_ARRAY_RETURN_NULL(jchar, s_len + 1, mtInternal);  // add one for zero termination
+    /* JNI Specification states return NULL on OOM */
+    if (buf != NULL) {
+      if (s_len > 0) {
+        memcpy(buf, s_value->char_at_addr(s_offset), sizeof(jchar)*s_len);
+      }
+      buf[s_len] = 0;
+      //%note jni_5
+      if (isCopy != NULL) {
+        *isCopy = JNI_TRUE;
+      }
     }
   }
 #ifndef USDT2
@@ -3317,7 +3318,11 @@ JNI_ENTRY(jsize, jni_GetStringUTFLength(JNIEnv *env, jstring string))
  HOTSPOT_JNI_GETSTRINGUTFLENGTH_ENTRY(
                                       env, string);
 #endif /* USDT2 */
-  jsize ret = java_lang_String::utf8_length(JNIHandles::resolve_non_null(string));
+  jsize ret = 0;
+  oop java_string = JNIHandles::resolve_non_null(string);
+  if (java_lang_String::value(java_string) != NULL) {
+    ret = java_lang_String::utf8_length(java_string);
+  }
 #ifndef USDT2
   DTRACE_PROBE1(hotspot_jni, GetStringUTFLength__return, ret);
 #else /* USDT2 */
@@ -3336,14 +3341,17 @@ JNI_ENTRY(const char*, jni_GetStringUTFChars(JNIEnv *env, jstring string, jboole
  HOTSPOT_JNI_GETSTRINGUTFCHARS_ENTRY(
                                      env, string, (uintptr_t *) isCopy);
 #endif /* USDT2 */
+  char* result = NULL;
   oop java_string = JNIHandles::resolve_non_null(string);
-  size_t length = java_lang_String::utf8_length(java_string);
-  /* JNI Specification states return NULL on OOM */
-  char* result = AllocateHeap(length + 1, mtInternal, 0, AllocFailStrategy::RETURN_NULL);
-  if (result != NULL) {
-    java_lang_String::as_utf8_string(java_string, result, (int) length + 1);
-    if (isCopy != NULL) {
-      *isCopy = JNI_TRUE;
+  if (java_lang_String::value(java_string) != NULL) {
+    size_t length = java_lang_String::utf8_length(java_string);
+    /* JNI Specification states return NULL on OOM */
+    result = AllocateHeap(length + 1, mtInternal, 0, AllocFailStrategy::RETURN_NULL);
+    if (result != NULL) {
+      java_lang_String::as_utf8_string(java_string, result, (int) length + 1);
+      if (isCopy != NULL) {
+        *isCopy = JNI_TRUE;
+      }
     }
   }
 #ifndef USDT2
@@ -5037,6 +5045,7 @@ _JNI_IMPORT_OR_EXPORT_ jint JNICALL JNI_GetDefaultJavaVMInitArgs(void *args_) {
 #include "gc_implementation/g1/heapRegionRemSet.hpp"
 #endif
 #include "utilities/quickSort.hpp"
+#include "utilities/ostream.hpp"
 #if INCLUDE_VM_STRUCTS
 #include "runtime/vmStructs.hpp"
 #endif
@@ -5048,22 +5057,35 @@ _JNI_IMPORT_OR_EXPORT_ jint JNICALL JNI_GetDefaultJavaVMInitArgs(void *args_) {
 // Forward declaration
 void TestReservedSpace_test();
 void TestReserveMemorySpecial_test();
+void TestVirtualSpace_test();
+void TestMetaspaceAux_test();
+void TestMetachunk_test();
+void TestVirtualSpaceNode_test();
+#if INCLUDE_ALL_GCS
+void TestG1BiasedArray_test();
+#endif
 
 void execute_internal_vm_tests() {
   if (ExecuteInternalVMTests) {
     tty->print_cr("Running internal VM tests");
     run_unit_test(TestReservedSpace_test());
     run_unit_test(TestReserveMemorySpecial_test());
+    run_unit_test(TestVirtualSpace_test());
+    run_unit_test(TestMetaspaceAux_test());
+    run_unit_test(TestMetachunk_test());
+    run_unit_test(TestVirtualSpaceNode_test());
     run_unit_test(GlobalDefinitions::test_globals());
     run_unit_test(GCTimerAllTest::all());
     run_unit_test(arrayOopDesc::test_max_array_length());
     run_unit_test(CollectedHeap::test_is_in());
     run_unit_test(QuickSort::test_quick_sort());
     run_unit_test(AltHashing::test_alt_hash());
+    run_unit_test(test_loggc_filename());
 #if INCLUDE_VM_STRUCTS
     run_unit_test(VMStructs::test());
 #endif
 #if INCLUDE_ALL_GCS
+    run_unit_test(TestG1BiasedArray_test());
     run_unit_test(HeapRegionRemSet::test_prt());
 #endif
     tty->print_cr("All internal VM tests passed");

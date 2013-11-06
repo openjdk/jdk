@@ -1697,6 +1697,24 @@ int SystemDictionary::calculate_systemdictionary_size(int classcount) {
   return newsize;
 }
 
+#ifdef ASSERT
+class VerifySDReachableAndLiveClosure : public OopClosure {
+private:
+  BoolObjectClosure* _is_alive;
+
+  template <class T> void do_oop_work(T* p) {
+    oop obj = oopDesc::load_decode_heap_oop(p);
+    guarantee(_is_alive->do_object_b(obj), "Oop in system dictionary must be live");
+  }
+
+public:
+  VerifySDReachableAndLiveClosure(BoolObjectClosure* is_alive) : OopClosure(), _is_alive(is_alive) { }
+
+  virtual void do_oop(oop* p)       { do_oop_work(p); }
+  virtual void do_oop(narrowOop* p) { do_oop_work(p); }
+};
+#endif
+
 // Assumes classes in the SystemDictionary are only unloaded at a safepoint
 // Note: anonymous classes are not in the SD.
 bool SystemDictionary::do_unloading(BoolObjectClosure* is_alive) {
@@ -1707,7 +1725,15 @@ bool SystemDictionary::do_unloading(BoolObjectClosure* is_alive) {
     unloading_occurred = dictionary()->do_unloading();
     constraints()->purge_loader_constraints();
     resolution_errors()->purge_resolution_errors();
-}
+  }
+  // Oops referenced by the system dictionary may get unreachable independently
+  // of the class loader (eg. cached protection domain oops). So we need to
+  // explicitly unlink them here instead of in Dictionary::do_unloading.
+  dictionary()->unlink(is_alive);
+#ifdef ASSERT
+  VerifySDReachableAndLiveClosure cl(is_alive);
+  dictionary()->oops_do(&cl);
+#endif
   return unloading_occurred;
 }
 
@@ -2334,6 +2360,11 @@ methodHandle SystemDictionary::find_method_handle_invoker(Symbol* name,
   objArrayHandle appendix_box = oopFactory::new_objArray(SystemDictionary::Object_klass(), 1, CHECK_(empty));
   assert(appendix_box->obj_at(0) == NULL, "");
 
+  // This should not happen.  JDK code should take care of that.
+  if (accessing_klass.is_null() || method_type.is_null()) {
+    THROW_MSG_(vmSymbols::java_lang_InternalError(), "bad invokehandle", empty);
+  }
+
   // call java.lang.invoke.MethodHandleNatives::linkMethod(... String, MethodType) -> MemberName
   JavaCallArguments args;
   args.push_oop(accessing_klass()->java_mirror());
@@ -2459,6 +2490,9 @@ Handle SystemDictionary::link_method_handle_constant(KlassHandle caller,
   Handle type;
   if (signature->utf8_length() > 0 && signature->byte_at(0) == '(') {
     type = find_method_handle_type(signature, caller, CHECK_(empty));
+  } else if (caller.is_null()) {
+    // This should not happen.  JDK code should take care of that.
+    THROW_MSG_(vmSymbols::java_lang_InternalError(), "bad MH constant", empty);
   } else {
     ResourceMark rm(THREAD);
     SignatureStream ss(signature, false);
@@ -2521,6 +2555,11 @@ methodHandle SystemDictionary::find_dynamic_call_site_invoker(KlassHandle caller
 
   Handle method_name = java_lang_String::create_from_symbol(name, CHECK_(empty));
   Handle method_type = find_method_handle_type(type, caller, CHECK_(empty));
+
+  // This should not happen.  JDK code should take care of that.
+  if (caller.is_null() || method_type.is_null()) {
+    THROW_MSG_(vmSymbols::java_lang_InternalError(), "bad invokedynamic", empty);
+  }
 
   objArrayHandle appendix_box = oopFactory::new_objArray(SystemDictionary::Object_klass(), 1, CHECK_(empty));
   assert(appendix_box->obj_at(0) == NULL, "");

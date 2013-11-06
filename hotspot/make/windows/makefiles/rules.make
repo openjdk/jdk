@@ -69,6 +69,13 @@ VcVersion=VC9
 VcVersion=VC10
 ProjectFile=jvm.vcxproj
 
+!elseif "$(MSC_VER)" == "1700"
+# This is VS2012, but it loads VS10 projects just fine (and will
+# upgrade them automatically to VS2012 format).
+
+VcVersion=VC10
+ProjectFile=jvm.vcxproj
+
 !else
 
 VcVersion=VC7

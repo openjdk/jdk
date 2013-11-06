@@ -44,7 +44,7 @@ import sun.swing.SwingUtilities2;
 
 
 /**
- * A Basic L&F implementation of the SplitPaneUI.
+ * A Basic L&amp;F implementation of the SplitPaneUI.
  *
  * @author Scott Violet
  * @author Steve Wilson
@@ -273,7 +273,7 @@ public class BasicSplitPaneUI extends SplitPaneUI
     private Color dividerDraggingColor;
     private boolean rememberPaneSizes;
 
-    // Indicates wether the one of splitpane sides is expanded
+    // Indicates whether the one of splitpane sides is expanded
     private boolean keepHidden = false;
 
     /** Indicates that we have painted once. */
@@ -637,7 +637,7 @@ public class BasicSplitPaneUI extends SplitPaneUI
 
 
     /**
-     * Determines wether the JSplitPane is set to use a continuous layout.
+     * Determines whether the JSplitPane is set to use a continuous layout.
      */
     public boolean isContinuousLayout() {
         return continuousLayout;
@@ -683,7 +683,7 @@ public class BasicSplitPaneUI extends SplitPaneUI
      */
     public class PropertyHandler implements PropertyChangeListener
     {
-        // NOTE: This class exists only for backward compatability. All
+        // NOTE: This class exists only for backward compatibility. All
         // its functionality has been moved into Handler. If you need to add
         // new functionality add it to the Handler, but make sure this
         // class calls into the Handler.
@@ -707,7 +707,7 @@ public class BasicSplitPaneUI extends SplitPaneUI
      */
     public class FocusHandler extends FocusAdapter
     {
-        // NOTE: This class exists only for backward compatability. All
+        // NOTE: This class exists only for backward compatibility. All
         // its functionality has been moved into Handler. If you need to add
         // new functionality add it to the Handler, but make sure this
         // class calls into the Handler.
@@ -1060,7 +1060,7 @@ public class BasicSplitPaneUI extends SplitPaneUI
 
 
     /**
-     * @inheritDoc
+     * {@inheritDoc}
      */
     public void paint(Graphics g, JComponent jc) {
         if (!painted && splitPane.getDividerLocation()<0) {
@@ -1073,7 +1073,7 @@ public class BasicSplitPaneUI extends SplitPaneUI
 
     /**
      * Returns the preferred size for the passed in component,
-     * This is passed off to the current layoutmanager.
+     * This is passed off to the current layout manager.
      */
     public Dimension getPreferredSize(JComponent jc) {
         if(splitPane != null)
@@ -1084,7 +1084,7 @@ public class BasicSplitPaneUI extends SplitPaneUI
 
     /**
      * Returns the minimum size for the passed in component,
-     * This is passed off to the current layoutmanager.
+     * This is passed off to the current layout manager.
      */
     public Dimension getMinimumSize(JComponent jc) {
         if(splitPane != null)
@@ -1095,7 +1095,7 @@ public class BasicSplitPaneUI extends SplitPaneUI
 
     /**
      * Returns the maximum size for the passed in component,
-     * This is passed off to the current layoutmanager.
+     * This is passed off to the current layout manager.
      */
     public Dimension getMaximumSize(JComponent jc) {
         if(splitPane != null)
@@ -1438,8 +1438,8 @@ public class BasicSplitPaneUI extends SplitPaneUI
 
         /**
          * Returns the minimum size needed to contain the children.
-         * The width is the sum of all the childrens min widths and
-         * the height is the largest of the childrens minimum heights.
+         * The width is the sum of all the children's min widths and
+         * the height is the largest of the children's minimum heights.
          */
         public Dimension minimumLayoutSize(Container container) {
             int         minPrimary = 0;
@@ -1471,8 +1471,8 @@ public class BasicSplitPaneUI extends SplitPaneUI
 
         /**
          * Returns the preferred size needed to contain the children.
-         * The width is the sum of all the childrens preferred widths and
-         * the height is the largest of the childrens preferred heights.
+         * The width is the sum of all the preferred widths of the children and
+         * the height is the largest preferred height of the children.
          */
         public Dimension preferredLayoutSize(Container container) {
             int         prePrimary = 0;

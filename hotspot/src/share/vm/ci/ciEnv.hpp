@@ -400,6 +400,7 @@ public:
   static ciInstanceKlass* unloaded_ciinstance_klass() {
     return _unloaded_ciinstance_klass;
   }
+  ciInstance* unloaded_ciinstance();
 
   ciKlass*  find_system_klass(ciSymbol* klass_name);
   // Note:  To find a class from its name string, use ciSymbol::make,
@@ -451,6 +452,7 @@ public:
 
   // Dump the compilation replay data for the ciEnv to the stream.
   void dump_replay_data(outputStream* out);
+  void dump_replay_data_unsafe(outputStream* out);
 };
 
 #endif // SHARE_VM_CI_CIENV_HPP

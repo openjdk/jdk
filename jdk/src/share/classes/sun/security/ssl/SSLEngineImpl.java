@@ -320,6 +320,12 @@ final public class SSLEngineImpl extends SSLEngine {
     private boolean isFirstAppOutputRecord = true;
 
     /*
+     * Whether local cipher suites preference in server side should be
+     * honored during handshaking?
+     */
+    private boolean preferLocalCipherSuites = false;
+
+    /*
      * Class and subclass dynamic debugging support
      */
     private static final Debug debug = Debug.getInstance("ssl");
@@ -470,6 +476,7 @@ final public class SSLEngineImpl extends SSLEngine {
                     protocolVersion, connectionState == cs_HANDSHAKE,
                     secureRenegotiation, clientVerifyData, serverVerifyData);
             handshaker.setSNIMatchers(sniMatchers);
+            handshaker.setUseCipherSuitesOrder(preferLocalCipherSuites);
         } else {
             handshaker = new ClientHandshaker(this, sslContext,
                     enabledProtocols,
@@ -755,7 +762,7 @@ final public class SSLEngineImpl extends SSLEngine {
 
     /**
      * Unwraps a buffer.  Does a variety of checks before grabbing
-     * the unwrapLock, which blocks multiple unwraps from occuring.
+     * the unwrapLock, which blocks multiple unwraps from occurring.
      */
     @Override
     public SSLEngineResult unwrap(ByteBuffer netData, ByteBuffer [] appData,
@@ -1136,7 +1143,7 @@ final public class SSLEngineImpl extends SSLEngine {
 
     /**
      * Wraps a buffer.  Does a variety of checks before grabbing
-     * the wrapLock, which blocks multiple wraps from occuring.
+     * the wrapLock, which blocks multiple wraps from occurring.
      */
     @Override
     public SSLEngineResult wrap(ByteBuffer [] appData,
@@ -2074,6 +2081,7 @@ final public class SSLEngineImpl extends SSLEngine {
         params.setAlgorithmConstraints(algorithmConstraints);
         params.setSNIMatchers(sniMatchers);
         params.setServerNames(serverNames);
+        params.setUseCipherSuitesOrder(preferLocalCipherSuites);
 
         return params;
     }
@@ -2088,6 +2096,7 @@ final public class SSLEngineImpl extends SSLEngine {
         // the super implementation does not handle the following parameters
         identificationProtocol = params.getEndpointIdentificationAlgorithm();
         algorithmConstraints = params.getAlgorithmConstraints();
+        preferLocalCipherSuites = params.getUseCipherSuitesOrder();
 
         List<SNIServerName> sniNames = params.getServerNames();
         if (sniNames != null) {
@@ -2104,6 +2113,7 @@ final public class SSLEngineImpl extends SSLEngine {
             handshaker.setAlgorithmConstraints(algorithmConstraints);
             if (roleIsServer) {
                 handshaker.setSNIMatchers(sniMatchers);
+                handshaker.setUseCipherSuitesOrder(preferLocalCipherSuites);
             } else {
                 handshaker.setSNIServerNames(serverNames);
             }

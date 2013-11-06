@@ -30,6 +30,8 @@ import java.nio.file.attribute.FileTime;
 import java.util.Objects;
 import java.util.concurrent.TimeUnit;
 
+import static java.util.zip.ZipConstants64.*;
+
 /**
  * This class is used to represent a ZIP file entry.
  *

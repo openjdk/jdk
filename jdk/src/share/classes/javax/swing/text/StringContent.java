@@ -44,7 +44,7 @@ import javax.swing.SwingUtilities;
  * future Swing releases. The current serialization support is
  * appropriate for short term storage or RMI between applications running
  * the same version of Swing.  As of 1.4, support for long term storage
- * of all JavaBeans<sup><font size="-2">TM</font></sup>
+ * of all JavaBeans&trade;
  * has been added to the <code>java.beans</code> package.
  * Please see {@link java.beans.XMLEncoder}.
  *
@@ -61,7 +61,7 @@ public final class StringContent implements AbstractDocument.Content, Serializab
 
     /**
      * Creates a new StringContent object, with the initial
-     * size specified.  If the length is < 1, a size of 1 is used.
+     * size specified.  If the length is &lt; 1, a size of 1 is used.
      *
      * @param initialLength the initial size
      */
@@ -77,7 +77,7 @@ public final class StringContent implements AbstractDocument.Content, Serializab
     /**
      * Returns the length of the content.
      *
-     * @return the length >= 1
+     * @return the length &gt;= 1
      * @see AbstractDocument.Content#length
      */
     public int length() {
@@ -87,7 +87,7 @@ public final class StringContent implements AbstractDocument.Content, Serializab
     /**
      * Inserts a string into the content.
      *
-     * @param where the starting position >= 0 && < length()
+     * @param where the starting position &gt;= 0 &amp;&amp; &lt; length()
      * @param str the non-null string to insert
      * @return an UndoableEdit object for undoing
      * @exception BadLocationException if the specified position is invalid
@@ -106,10 +106,10 @@ public final class StringContent implements AbstractDocument.Content, Serializab
     }
 
     /**
-     * Removes part of the content.  where + nitems must be < length().
+     * Removes part of the content.  where + nitems must be &lt; length().
      *
-     * @param where the starting position >= 0
-     * @param nitems the number of characters to remove >= 0
+     * @param where the starting position &gt;= 0
+     * @param nitems the number of characters to remove &gt;= 0
      * @return an UndoableEdit object for undoing
      * @exception BadLocationException if the specified position is invalid
      * @see AbstractDocument.Content#remove
@@ -129,10 +129,10 @@ public final class StringContent implements AbstractDocument.Content, Serializab
     }
 
     /**
-     * Retrieves a portion of the content.  where + len must be <= length().
+     * Retrieves a portion of the content.  where + len must be &lt;= length().
      *
-     * @param where the starting position >= 0
-     * @param len the length to retrieve >= 0
+     * @param where the starting position &gt;= 0
+     * @param len the length to retrieve &gt;= 0
      * @return a string representing the content; may be empty
      * @exception BadLocationException if the specified position is invalid
      * @see AbstractDocument.Content#getString
@@ -145,10 +145,10 @@ public final class StringContent implements AbstractDocument.Content, Serializab
     }
 
     /**
-     * Retrieves a portion of the content.  where + len must be <= length()
+     * Retrieves a portion of the content.  where + len must be &lt;= length()
      *
-     * @param where the starting position >= 0
-     * @param len the number of characters to retrieve >= 0
+     * @param where the starting position &gt;= 0
+     * @param len the number of characters to retrieve &gt;= 0
      * @param chars the Segment object to return the characters in
      * @exception BadLocationException if the specified position is invalid
      * @see AbstractDocument.Content#getChars
@@ -166,7 +166,7 @@ public final class StringContent implements AbstractDocument.Content, Serializab
      * Creates a position within the content that will
      * track change as the content is mutated.
      *
-     * @param offset the offset to create a position for >= 0
+     * @param offset the offset to create a position for &gt;= 0
      * @return the position
      * @exception BadLocationException if the specified position is invalid
      */
@@ -266,8 +266,8 @@ public final class StringContent implements AbstractDocument.Content, Serializab
      * to subclasses.
      *
      * @param v the Vector to use, with a new one created on null
-     * @param offset the starting offset >= 0
-     * @param length the length >= 0
+     * @param offset the starting offset &gt;= 0
+     * @param length the length &gt;= 0
      * @return the set of instances
      */
     protected Vector getPositionsInRange(Vector v, int offset,

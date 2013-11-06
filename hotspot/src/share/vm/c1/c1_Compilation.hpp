@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -238,7 +238,18 @@ class Compilation: public StackObj {
     return env()->comp_level() == CompLevel_full_profile &&
       C1UpdateMethodData && C1ProfileCheckcasts;
   }
-
+  bool profile_parameters() {
+    return env()->comp_level() == CompLevel_full_profile &&
+      C1UpdateMethodData && MethodData::profile_parameters();
+  }
+  bool profile_arguments() {
+    return env()->comp_level() == CompLevel_full_profile &&
+      C1UpdateMethodData && MethodData::profile_arguments();
+  }
+  bool profile_return() {
+    return env()->comp_level() == CompLevel_full_profile &&
+      C1UpdateMethodData && MethodData::profile_return();
+  }
   // will compilation make optimistic assumptions that might lead to
   // deoptimization and that the runtime will account for?
   bool is_optimistic() const                             {
@@ -246,6 +257,8 @@ class Compilation: public StackObj {
       (RangeCheckElimination || UseLoopInvariantCodeMotion) &&
       method()->method_data()->trap_count(Deoptimization::Reason_none) == 0;
   }
+
+  ciKlass* cha_exact_type(ciType* type);
 };
 
 
@@ -279,8 +292,8 @@ class InstructionMark: public StackObj {
 // Base class for objects allocated by the compiler in the compilation arena
 class CompilationResourceObj ALLOCATION_SUPER_CLASS_SPEC {
  public:
-  void* operator new(size_t size) { return Compilation::current()->arena()->Amalloc(size); }
-  void* operator new(size_t size, Arena* arena) {
+  void* operator new(size_t size) throw() { return Compilation::current()->arena()->Amalloc(size); }
+  void* operator new(size_t size, Arena* arena) throw() {
     return arena->Amalloc(size);
   }
   void  operator delete(void* p) {} // nothing to do

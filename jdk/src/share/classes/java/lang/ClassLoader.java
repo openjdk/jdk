@@ -57,6 +57,7 @@ import sun.misc.URLClassPath;
 import sun.misc.VM;
 import sun.reflect.CallerSensitive;
 import sun.reflect.Reflection;
+import sun.reflect.misc.ReflectUtil;
 import sun.security.util.SecurityConstants;
 
 /**
@@ -361,7 +362,7 @@ public abstract class ClassLoader {
      * default implementation of this method searches for classes in the
      * following order:
      *
-     * <p><ol>
+     * <ol>
      *
      *   <li><p> Invoke {@link #findLoadedClass(String)} to check if the class
      *   has already been loaded.  </p></li>
@@ -486,6 +487,13 @@ public abstract class ClassLoader {
     private void checkPackageAccess(Class<?> cls, ProtectionDomain pd) {
         final SecurityManager sm = System.getSecurityManager();
         if (sm != null) {
+            if (ReflectUtil.isNonPublicProxyClass(cls)) {
+                for (Class<?> intf: cls.getInterfaces()) {
+                    checkPackageAccess(intf, pd);
+                }
+                return;
+            }
+
             final String name = cls.getName();
             final int i = name.lastIndexOf('.');
             if (i != -1) {
@@ -1061,6 +1069,10 @@ public abstract class ClassLoader {
      * built-in to the virtual machine is searched.  That failing, this method
      * will invoke {@link #findResource(String)} to find the resource.  </p>
      *
+     * @apiNote When overriding this method it is recommended that an
+     * implementation ensures that any delegation is consistent with the {@link
+     * #getResources(java.lang.String) getResources(String)} method.
+     *
      * @param  name
      *         The resource name
      *
@@ -1093,6 +1105,13 @@ public abstract class ClassLoader {
      *
      * <p> The search order is described in the documentation for {@link
      * #getResource(String)}.  </p>
+     *
+     * @apiNote When overriding this method it is recommended that an
+     * implementation ensures that any delegation is consistent with the {@link
+     * #getResource(java.lang.String) getResource(String)} method. This should
+     * ensure that the first element returned by the Enumeration's
+     * {@code nextElement} method is the same resource that the
+     * {@code getResource(String)} method would return.
      *
      * @param  name
      *         The resource name

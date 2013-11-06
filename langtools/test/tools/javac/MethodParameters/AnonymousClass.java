@@ -27,7 +27,7 @@
  * @summary javac should generate method parameters correctly.
  * @build Tester
  * @compile -parameters AnonymousClass.java
- * @run main Tester AnonymousClass
+ * @run main Tester AnonymousClass AnonymousClass.out
  */
 
 class AnonymousClass {

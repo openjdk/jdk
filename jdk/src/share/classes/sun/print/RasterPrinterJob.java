@@ -118,6 +118,16 @@ public abstract class RasterPrinterJob extends PrinterJob {
     protected static final int STREAM = 2;
 
     /**
+     * Pageable MAX pages
+     */
+    protected static final int MAX_UNKNOWN_PAGES = 9999;
+
+    protected static final int PD_ALLPAGES = 0x00000000;
+    protected static final int PD_SELECTION = 0x00000001;
+    protected static final int PD_PAGENUMS = 0x00000002;
+    protected static final int PD_NOSELECTION = 0x00000004;
+
+    /**
      * Maximum amount of memory in bytes to use for the
      * buffered image "band". 4Mb is a compromise between
      * limiting the number of bands on hi-res printers and
@@ -195,7 +205,7 @@ public abstract class RasterPrinterJob extends PrinterJob {
     /* Instance Variables */
 
     /**
-     * Used to minimise GC & reallocation of band when printing
+     * Used to minimize GC & reallocation of band when printing
      */
     private int cachedBandWidth = 0;
     private int cachedBandHeight = 0;
@@ -800,6 +810,14 @@ public abstract class RasterPrinterJob extends PrinterJob {
         }
    }
 
+   protected PageFormat getPageFormatFromAttributes() {
+       if (attributes == null) {
+            return null;
+        }
+        return attributeToPageFormat(getPrintService(), this.attributes);
+   }
+
+
    /**
      * Presents the user a dialog for changing properties of the
      * print job interactively.
@@ -903,6 +921,9 @@ public abstract class RasterPrinterJob extends PrinterJob {
         int x = bounds.x+bounds.width/3;
         int y = bounds.y+bounds.height/3;
         PrintService newService;
+        // temporarily add an attribute pointing back to this job.
+        PrinterJobWrapper jobWrapper = new PrinterJobWrapper(this);
+        attributes.add(jobWrapper);
         try {
             newService =
             ServiceUI.printDialog(gc, x, y,
@@ -915,6 +936,7 @@ public abstract class RasterPrinterJob extends PrinterJob {
                                   DocFlavor.SERVICE_FORMATTED.PAGEABLE,
                                   attributes);
         }
+        attributes.remove(PrinterJobWrapper.class);
 
         if (newService == null) {
             return false;
@@ -1355,34 +1377,7 @@ public abstract class RasterPrinterJob extends PrinterJob {
             setAttributes(attributes);
             // throw exception for invalid destination
             if (destinationAttr != null) {
-                // destinationAttr is null for Destination(new URI(""))
-                // because isAttributeValueSupported returns false in setAttributes
-
-                // Destination(new URI(" ")) throws URISyntaxException
-                File f = new File(destinationAttr);
-                try {
-                    // check if this is a new file and if filename chars are valid
-                    if (f.createNewFile()) {
-                        f.delete();
-                    }
-                } catch (IOException ioe) {
-                    throw new PrinterException("Cannot write to file:"+
-                                               destinationAttr);
-                } catch (SecurityException se) {
-                    //There is already file read/write access so at this point
-                    // only delete access is denied.  Just ignore it because in
-                    // most cases the file created in createNewFile gets overwritten
-                    // anyway.
-                }
-
-                File pFile = f.getParentFile();
-                if ((f.exists() &&
-                     (!f.isFile() || !f.canWrite())) ||
-                    ((pFile != null) &&
-                     (!pFile.exists() || (pFile.exists() && !pFile.canWrite())))) {
-                    throw new PrinterException("Cannot write to file:"+
-                                               destinationAttr);
-                }
+                validateDestination(destinationAttr);
             }
         } else {
             spoolToService(psvc, attributes);
@@ -1502,6 +1497,40 @@ public abstract class RasterPrinterJob extends PrinterJob {
                 performingPrinting = false;
                 notify();
             }
+        }
+    }
+
+    protected void validateDestination(String dest) throws PrinterException {
+        if (dest == null) {
+            return;
+        }
+        // dest is null for Destination(new URI(""))
+        // because isAttributeValueSupported returns false in setAttributes
+
+        // Destination(new URI(" ")) throws URISyntaxException
+        File f = new File(dest);
+        try {
+            // check if this is a new file and if filename chars are valid
+            if (f.createNewFile()) {
+                f.delete();
+            }
+        } catch (IOException ioe) {
+            throw new PrinterException("Cannot write to file:"+
+                                       dest);
+        } catch (SecurityException se) {
+            //There is already file read/write access so at this point
+            // only delete access is denied.  Just ignore it because in
+            // most cases the file created in createNewFile gets overwritten
+            // anyway.
+        }
+
+        File pFile = f.getParentFile();
+        if ((f.exists() &&
+             (!f.isFile() || !f.canWrite())) ||
+            ((pFile != null) &&
+             (!pFile.exists() || (pFile.exists() && !pFile.canWrite())))) {
+            throw new PrinterException("Cannot write to file:"+
+                                       dest);
         }
     }
 
@@ -1751,6 +1780,78 @@ public abstract class RasterPrinterJob extends PrinterJob {
             return mCollate;
     }
 
+    protected final int getSelectAttrib() {
+        if (attributes != null) {
+            SunPageSelection pages =
+                (SunPageSelection)attributes.get(SunPageSelection.class);
+            if (pages == SunPageSelection.RANGE) {
+                return PD_PAGENUMS;
+            } else if (pages == SunPageSelection.SELECTION) {
+                return PD_SELECTION;
+            } else if (pages ==  SunPageSelection.ALL) {
+                return PD_ALLPAGES;
+            }
+        }
+        return PD_NOSELECTION;
+    }
+
+    //returns 1-based index for "From" page
+    protected final int getFromPageAttrib() {
+        if (attributes != null) {
+            PageRanges pageRangesAttr =
+                (PageRanges)attributes.get(PageRanges.class);
+            if (pageRangesAttr != null) {
+                int[][] range = pageRangesAttr.getMembers();
+                return range[0][0];
+            }
+        }
+        return getMinPageAttrib();
+    }
+
+    //returns 1-based index for "To" page
+    protected final int getToPageAttrib() {
+        if (attributes != null) {
+            PageRanges pageRangesAttr =
+                (PageRanges)attributes.get(PageRanges.class);
+            if (pageRangesAttr != null) {
+                int[][] range = pageRangesAttr.getMembers();
+                return range[range.length-1][1];
+            }
+        }
+        return getMaxPageAttrib();
+    }
+
+    protected final int getMinPageAttrib() {
+        if (attributes != null) {
+            SunMinMaxPage s =
+                (SunMinMaxPage)attributes.get(SunMinMaxPage.class);
+            if (s != null) {
+                return s.getMin();
+            }
+        }
+        return 1;
+    }
+
+    protected final int getMaxPageAttrib() {
+        if (attributes != null) {
+            SunMinMaxPage s =
+                (SunMinMaxPage)attributes.get(SunMinMaxPage.class);
+            if (s != null) {
+                return s.getMax();
+            }
+        }
+
+        Pageable pageable = getPageable();
+        if (pageable != null) {
+            int numPages = pageable.getNumberOfPages();
+            if (numPages <= Pageable.UNKNOWN_NUMBER_OF_PAGES) {
+                numPages = MAX_UNKNOWN_PAGES;
+            }
+            return  ((numPages == 0) ? 1 : numPages);
+        }
+
+        return Integer.MAX_VALUE;
+    }
     /**
      * Called by the print() method at the start of
      * a print job.

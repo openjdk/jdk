@@ -28,6 +28,8 @@ package java.lang.reflect;
 import sun.reflect.CallerSensitive;
 import sun.reflect.ConstructorAccessor;
 import sun.reflect.Reflection;
+import sun.reflect.annotation.TypeAnnotation;
+import sun.reflect.annotation.TypeAnnotationParser;
 import sun.reflect.generics.repository.ConstructorRepository;
 import sun.reflect.generics.factory.CoreReflectionFactory;
 import sun.reflect.generics.factory.GenericsFactory;
@@ -67,8 +69,6 @@ public final class Constructor<T> extends Executable {
     private transient ConstructorRepository genericInfo;
     private byte[]              annotations;
     private byte[]              parameterAnnotations;
-    // This is set by the vm at Constructor creation
-    private byte[]              typeAnnotations;
 
     // Generics infrastructure
     // Accessor for factory
@@ -141,8 +141,6 @@ public final class Constructor<T> extends Executable {
         res.root = this;
         // Might as well eagerly propagate this if already present
         res.constructorAccessor = constructorAccessor;
-
-        res.typeAnnotations = typeAnnotations;
         return res;
     }
 
@@ -154,10 +152,6 @@ public final class Constructor<T> extends Executable {
     @Override
     byte[] getAnnotationBytes() {
         return annotations;
-    }
-    @Override
-    byte[] getTypeAnnotationBytes() {
-        return typeAnnotations;
     }
 
     /**
@@ -541,5 +535,23 @@ public final class Constructor<T> extends Executable {
     @Override
     public AnnotatedType getAnnotatedReturnType() {
         return getAnnotatedReturnType0(getDeclaringClass());
+    }
+
+    /**
+     * {@inheritDoc}
+     * @since 1.8
+     */
+    @Override
+    public AnnotatedType getAnnotatedReceiverType() {
+        if (getDeclaringClass().getEnclosingClass() == null)
+            return super.getAnnotatedReceiverType();
+
+        return TypeAnnotationParser.buildAnnotatedType(getTypeAnnotationBytes0(),
+                sun.misc.SharedSecrets.getJavaLangAccess().
+                        getConstantPool(getDeclaringClass()),
+                this,
+                getDeclaringClass(),
+                getDeclaringClass().getEnclosingClass(),
+                TypeAnnotation.TypeAnnotationTarget.METHOD_RECEIVER);
     }
 }

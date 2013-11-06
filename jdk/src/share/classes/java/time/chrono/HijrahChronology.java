@@ -63,6 +63,8 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.InvalidObjectException;
+import java.io.ObjectStreamException;
 import java.io.Serializable;
 import java.security.AccessController;
 import java.security.PrivilegedActionException;
@@ -212,16 +214,16 @@ import sun.util.logging.PlatformLogger;
  *
  * @since 1.8
  */
-public final class HijrahChronology extends Chronology implements Serializable {
+public final class HijrahChronology extends AbstractChronology implements Serializable {
 
     /**
      * The Hijrah Calendar id.
      */
-    private final String typeId;
+    private final transient String typeId;
     /**
      * The Hijrah calendarType.
      */
-    private transient final String calendarType;
+    private final transient String calendarType;
     /**
      * Serialization version.
      */
@@ -236,7 +238,7 @@ public final class HijrahChronology extends Chronology implements Serializable {
      * Flag to indicate the initialization of configuration data is complete.
      * @see #checkCalendarInit()
      */
-    private volatile boolean initComplete;
+    private transient volatile boolean initComplete;
     /**
      * Array of epoch days indexed by Hijrah Epoch month.
      * Computed by {@link #loadCalendarData}.
@@ -281,7 +283,7 @@ public final class HijrahChronology extends Chronology implements Serializable {
      * A reference to the properties stored in
      * ${java.home}/lib/calendars.properties
      */
-    private transient final static Properties calendarProperties;
+    private final transient static Properties calendarProperties;
 
     /**
      * Prefix of property names for Hijrah calendar variants.
@@ -306,8 +308,8 @@ public final class HijrahChronology extends Chronology implements Serializable {
         try {
             INSTANCE = new HijrahChronology("Hijrah-umalqura");
             // Register it by its aliases
-            Chronology.registerChrono(INSTANCE, "Hijrah");
-            Chronology.registerChrono(INSTANCE, "islamic");
+            AbstractChronology.registerChrono(INSTANCE, "Hijrah");
+            AbstractChronology.registerChrono(INSTANCE, "islamic");
         } catch (DateTimeException ex) {
             // Absence of Hijrah calendar is fatal to initializing this class.
             PlatformLogger logger = PlatformLogger.getLogger("java.time.chrono");
@@ -334,7 +336,7 @@ public final class HijrahChronology extends Chronology implements Serializable {
                 try {
                     // Create and register the variant
                     HijrahChronology chrono = new HijrahChronology(id);
-                    Chronology.registerChrono(chrono);
+                    AbstractChronology.registerChrono(chrono);
                 } catch (DateTimeException ex) {
                     // Log error and continue
                     PlatformLogger logger = PlatformLogger.getLogger("java.time.chrono");
@@ -1072,5 +1074,31 @@ public final class HijrahChronology extends Chronology implements Serializable {
         } catch (NumberFormatException ex) {
             throw new IllegalArgumentException("date must be yyyy-MM-dd", ex);
         }
+    }
+
+    //-----------------------------------------------------------------------
+    /**
+     * Writes the Chronology using a
+     * <a href="../../../serialized-form.html#java.time.chrono.Ser">dedicated serialized form</a>.
+     * @serialData
+     * <pre>
+     *  out.writeByte(1);     // identifies a Chronology
+     *  out.writeUTF(getId());
+     * </pre>
+     *
+     * @return the instance of {@code Ser}, not null
+     */
+    @Override
+    Object writeReplace() {
+        return super.writeReplace();
+    }
+
+    /**
+     * Defend against malicious streams.
+     * @return never
+     * @throws InvalidObjectException always
+     */
+    private Object readResolve() throws InvalidObjectException {
+        throw new InvalidObjectException("Deserialization via serialization delegate");
     }
 }

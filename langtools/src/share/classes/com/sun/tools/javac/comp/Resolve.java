@@ -213,7 +213,7 @@ public class Resolve {
 
         int pos = 0;
         int mostSpecificPos = -1;
-        ListBuffer<JCDiagnostic> subDiags = ListBuffer.lb();
+        ListBuffer<JCDiagnostic> subDiags = new ListBuffer<>();
         for (Candidate c : currentResolutionContext.candidates) {
             if (currentResolutionContext.step != c.step ||
                     (c.isApplicable() && !verboseResolutionMode.contains(VerboseResolutionMode.APPLICABLE)) ||
@@ -424,13 +424,14 @@ public class Resolve {
          */
         private
         boolean isProtectedAccessible(Symbol sym, ClassSymbol c, Type site) {
+            Type newSite = site.hasTag(TYPEVAR) ? site.getUpperBound() : site;
             while (c != null &&
                    !(c.isSubClass(sym.owner, types) &&
                      (c.flags() & INTERFACE) == 0 &&
                      // In JLS 2e 6.6.2.1, the subclass restriction applies
                      // only to instance fields and methods -- types are excluded
                      // regardless of whether they are declared 'static' or not.
-                     ((sym.flags() & STATIC) != 0 || sym.kind == TYP || site.tsym.isSubClass(c, types))))
+                     ((sym.flags() & STATIC) != 0 || sym.kind == TYP || newSite.tsym.isSubClass(c, types))))
                 c = c.owner.enclClass();
             return c != null;
         }
@@ -568,8 +569,10 @@ public class Resolve {
                                     currentResolutionContext,
                                     warn);
 
-        currentResolutionContext.methodCheck.argumentsAcceptable(env, currentResolutionContext.deferredAttrContext(m, infer.emptyContext, resultInfo, warn),
+        DeferredAttr.DeferredAttrContext dc = currentResolutionContext.deferredAttrContext(m, infer.emptyContext, resultInfo, warn);
+        currentResolutionContext.methodCheck.argumentsAcceptable(env, dc,
                                 argtypes, mt.getParameterTypes(), warn);
+        dc.complete();
         return mt;
     }
 
@@ -781,7 +784,7 @@ public class Resolve {
     };
 
     List<Type> dummyArgs(int length) {
-        ListBuffer<Type> buf = ListBuffer.lb();
+        ListBuffer<Type> buf = new ListBuffer<>();
         for (int i = 0 ; i < length ; i++) {
             buf.append(Type.noType);
         }
@@ -1053,7 +1056,8 @@ public class Resolve {
                             DeferredType dt = (DeferredType) actual;
                             DeferredType.SpeculativeCache.Entry e = dt.speculativeCache.get(deferredAttrContext.msym, deferredAttrContext.phase);
                             return (e == null || e.speculativeTree == deferredAttr.stuckTree)
-                                    ? false : mostSpecific(found, req, e.speculativeTree, warn);
+                                    ? super.compatible(found, req, warn) :
+                                      mostSpecific(found, req, e.speculativeTree, warn);
                         default:
                             return standaloneMostSpecific(found, req, actual, warn);
                     }
@@ -1125,13 +1129,15 @@ public class Resolve {
                 @Override
                 public void visitReference(JCMemberReference tree) {
                     if (types.isFunctionalInterface(t.tsym) &&
-                            types.isFunctionalInterface(s.tsym) &&
-                            types.asSuper(t, s.tsym) == null &&
-                            types.asSuper(s, t.tsym) == null) {
+                            types.isFunctionalInterface(s.tsym)) {
                         Type desc_t = types.findDescriptorType(t);
                         Type desc_s = types.findDescriptorType(s);
-                        if (types.isSameTypes(desc_t.getParameterTypes(), desc_s.getParameterTypes())) {
-                            if (!desc_s.getReturnType().hasTag(VOID)) {
+                        if (types.isSameTypes(desc_t.getParameterTypes(),
+                                inferenceContext().asFree(desc_s.getParameterTypes()))) {
+                            if (types.asSuper(t, s.tsym) != null ||
+                                types.asSuper(s, t.tsym) != null) {
+                                result &= MostSpecificCheckContext.super.compatible(t, s, warn);
+                            } else if (!desc_s.getReturnType().hasTag(VOID)) {
                                 //perform structural comparison
                                 Type ret_t = desc_t.getReturnType();
                                 Type ret_s = desc_s.getReturnType();
@@ -1141,25 +1147,24 @@ public class Resolve {
                             } else {
                                 return;
                             }
-                        } else {
-                            result &= false;
                         }
                     } else {
-                        result &= MostSpecificCheckContext.super.compatible(t, s, warn);
+                        result &= false;
                     }
                 }
 
                 @Override
                 public void visitLambda(JCLambda tree) {
                     if (types.isFunctionalInterface(t.tsym) &&
-                            types.isFunctionalInterface(s.tsym) &&
-                            types.asSuper(t, s.tsym) == null &&
-                            types.asSuper(s, t.tsym) == null) {
+                            types.isFunctionalInterface(s.tsym)) {
                         Type desc_t = types.findDescriptorType(t);
                         Type desc_s = types.findDescriptorType(s);
-                        if (tree.paramKind == JCLambda.ParameterKind.EXPLICIT
-                                || types.isSameTypes(desc_t.getParameterTypes(), desc_s.getParameterTypes())) {
-                            if (!desc_s.getReturnType().hasTag(VOID)) {
+                        if (types.isSameTypes(desc_t.getParameterTypes(),
+                                inferenceContext().asFree(desc_s.getParameterTypes()))) {
+                            if (types.asSuper(t, s.tsym) != null ||
+                                types.asSuper(s, t.tsym) != null) {
+                                result &= MostSpecificCheckContext.super.compatible(t, s, warn);
+                            } else if (!desc_s.getReturnType().hasTag(VOID)) {
                                 //perform structural comparison
                                 Type ret_t = desc_t.getReturnType();
                                 Type ret_s = desc_s.getReturnType();
@@ -1167,11 +1172,9 @@ public class Resolve {
                             } else {
                                 return;
                             }
-                        } else {
-                            result &= false;
                         }
                     } else {
-                        result &= MostSpecificCheckContext.super.compatible(t, s, warn);
+                        result &= false;
                     }
                 }
                 //where
@@ -1521,7 +1524,8 @@ public class Resolve {
             currentResolutionContext = prevResolutionContext;
         }
     }
-    private List<Type> adjustArgs(List<Type> args, Symbol msym, int length, boolean allowVarargs) {
+
+    List<Type> adjustArgs(List<Type> args, Symbol msym, int length, boolean allowVarargs) {
         if ((msym.flags() & VARARGS) != 0 && allowVarargs) {
             Type varargsElem = types.elemtype(args.last());
             if (varargsElem == null) {
@@ -2241,32 +2245,32 @@ public class Resolve {
         public List<Type> getArgumentTypes(ResolveError errSym, Symbol accessedSym, Name name, List<Type> argtypes) {
             return (syms.operatorNames.contains(name)) ?
                     argtypes :
-                    Type.map(argtypes, new ResolveDeferredRecoveryMap(accessedSym));
-        }
-
-        class ResolveDeferredRecoveryMap extends DeferredAttr.RecoveryDeferredTypeMap {
-
-            public ResolveDeferredRecoveryMap(Symbol msym) {
-                deferredAttr.super(AttrMode.SPECULATIVE, msym, currentResolutionContext.step);
-            }
-
-            @Override
-            protected Type typeOf(DeferredType dt) {
-                Type res = super.typeOf(dt);
-                if (!res.isErroneous()) {
-                    switch (TreeInfo.skipParens(dt.tree).getTag()) {
-                        case LAMBDA:
-                        case REFERENCE:
-                            return dt;
-                        case CONDEXPR:
-                            return res == Type.recoveryType ?
-                                    dt : res;
-                    }
-                }
-                return res;
-            }
+                    Type.map(argtypes, new ResolveDeferredRecoveryMap(AttrMode.SPECULATIVE, accessedSym, currentResolutionContext.step));
         }
     };
+
+    class ResolveDeferredRecoveryMap extends DeferredAttr.RecoveryDeferredTypeMap {
+
+        public ResolveDeferredRecoveryMap(AttrMode mode, Symbol msym, MethodResolutionPhase step) {
+            deferredAttr.super(mode, msym, step);
+        }
+
+        @Override
+        protected Type typeOf(DeferredType dt) {
+            Type res = super.typeOf(dt);
+            if (!res.isErroneous()) {
+                switch (TreeInfo.skipParens(dt.tree).getTag()) {
+                    case LAMBDA:
+                    case REFERENCE:
+                        return dt;
+                    case CONDEXPR:
+                        return res == Type.recoveryType ?
+                                dt : res;
+                }
+            }
+            return res;
+        }
+    }
 
     /** Check that sym is not an abstract method.
      */
@@ -2543,22 +2547,26 @@ public class Resolve {
                     @Override
                     Symbol access(Env<AttrContext> env, DiagnosticPosition pos, Symbol location, Symbol sym) {
                         if (sym.kind >= AMBIGUOUS) {
-                            final JCDiagnostic details = sym.kind == WRONG_MTH ?
-                                            ((InapplicableSymbolError)sym).errCandidate().snd :
-                                            null;
-                            sym = new InapplicableSymbolError(sym.kind, "diamondError", currentResolutionContext) {
-                                @Override
-                                JCDiagnostic getDiagnostic(DiagnosticType dkind, DiagnosticPosition pos,
-                                        Symbol location, Type site, Name name, List<Type> argtypes, List<Type> typeargtypes) {
-                                    String key = details == null ?
-                                        "cant.apply.diamond" :
-                                        "cant.apply.diamond.1";
-                                    return diags.create(dkind, log.currentSource(), pos, key,
-                                            diags.fragment("diamond", site.tsym), details);
-                                }
-                            };
-                            sym = accessMethod(sym, pos, site, names.init, true, argtypes, typeargtypes);
-                            env.info.pendingResolutionPhase = currentResolutionContext.step;
+                            if (sym.kind != WRONG_MTH && sym.kind != WRONG_MTHS) {
+                                sym = super.access(env, pos, location, sym);
+                            } else {
+                                final JCDiagnostic details = sym.kind == WRONG_MTH ?
+                                                ((InapplicableSymbolError)sym).errCandidate().snd :
+                                                null;
+                                sym = new InapplicableSymbolError(sym.kind, "diamondError", currentResolutionContext) {
+                                    @Override
+                                    JCDiagnostic getDiagnostic(DiagnosticType dkind, DiagnosticPosition pos,
+                                            Symbol location, Type site, Name name, List<Type> argtypes, List<Type> typeargtypes) {
+                                        String key = details == null ?
+                                            "cant.apply.diamond" :
+                                            "cant.apply.diamond.1";
+                                        return diags.create(dkind, log.currentSource(), pos, key,
+                                                diags.fragment("diamond", site.tsym), details);
+                                    }
+                                };
+                                sym = accessMethod(sym, pos, site, names.init, true, argtypes, typeargtypes);
+                                env.info.pendingResolutionPhase = currentResolutionContext.step;
+                            }
                         }
                         return sym;
                     }});
@@ -2702,11 +2710,6 @@ public class Resolve {
                                   MethodCheck methodCheck,
                                   InferenceContext inferenceContext) {
         MethodResolutionPhase maxPhase = boxingAllowed ? VARARITY : BASIC;
-
-        if (site.hasTag(TYPEVAR)) {
-            return resolveMemberReference(pos, env, referenceTree, site.getUpperBound(),
-                    name, argtypes, typeargtypes, boxingAllowed, methodCheck, inferenceContext);
-        }
 
         site = types.capture(site);
 
@@ -3166,7 +3169,7 @@ public class Resolve {
     }
     //where
     private List<Type> pruneInterfaces(Type t) {
-        ListBuffer<Type> result = ListBuffer.lb();
+        ListBuffer<Type> result = new ListBuffer<>();
         for (Type t1 : types.interfaces(t)) {
             boolean shouldAdd = true;
             for (Type t2 : types.interfaces(t)) {
@@ -3279,7 +3282,7 @@ public class Resolve {
         if (argtypes == null || argtypes.isEmpty()) {
             return noArgs;
         } else {
-            ListBuffer<Object> diagArgs = ListBuffer.lb();
+            ListBuffer<Object> diagArgs = new ListBuffer<>();
             for (Type t : argtypes) {
                 if (t.hasTag(DEFERRED)) {
                     diagArgs.append(((DeferredAttr.DeferredType)t).tree);
@@ -3969,16 +3972,6 @@ public class Resolve {
 
         static {
             String argMismatchRegex = MethodCheckDiag.ARG_MISMATCH.regex();
-            rewriters.put(new Template(argMismatchRegex, new Template("(.*)(bad.arg.types.in.lambda)", skip, skip)),
-                    new DiagnosticRewriter() {
-                @Override
-                public JCDiagnostic rewriteDiagnostic(JCDiagnostic.Factory diags,
-                        DiagnosticPosition preferedPos, DiagnosticSource preferredSource,
-                        DiagnosticType preferredKind, JCDiagnostic d) {
-                    return (JCDiagnostic)((JCDiagnostic)d.getArgs()[0]).getArgs()[1];
-                }
-            });
-
             rewriters.put(new Template(argMismatchRegex, skip),
                     new DiagnosticRewriter() {
                 @Override

@@ -56,6 +56,8 @@
  */
 package java.time.chrono;
 
+import java.io.InvalidObjectException;
+import java.io.ObjectStreamException;
 import static java.time.temporal.ChronoField.PROLEPTIC_MONTH;
 import static java.time.temporal.ChronoField.YEAR;
 
@@ -83,7 +85,7 @@ import java.util.Map;
  * Dates are aligned such that {@code 0001-01-01 (Minguo)} is {@code 1912-01-01 (ISO)}.
  * <p>
  * The fields are defined as follows:
- * <p><ul>
+ * <ul>
  * <li>era - There are two eras, the current 'Republic' (ERA_ROC) and the previous era (ERA_BEFORE_ROC).
  * <li>year-of-era - The year-of-era for the current era increases uniformly from the epoch at year one.
  *  For the previous era the year increases from one as time goes backwards.
@@ -96,14 +98,14 @@ import java.util.Map;
  * <li>day-of-year - The Minguo day-of-year exactly matches ISO.
  * <li>leap-year - The Minguo leap-year pattern exactly matches ISO, such that the two calendars
  *  are never out of step.
- * </ul><p>
+ * </ul>
  *
  * @implSpec
  * This class is immutable and thread-safe.
  *
  * @since 1.8
  */
-public final class MinguoChronology extends Chronology implements Serializable {
+public final class MinguoChronology extends AbstractChronology implements Serializable {
 
     /**
      * Singleton instance for the Minguo chronology.
@@ -333,4 +335,29 @@ public final class MinguoChronology extends Chronology implements Serializable {
         return (MinguoDate) super.resolveDate(fieldValues, resolverStyle);
     }
 
+    //-----------------------------------------------------------------------
+    /**
+     * Writes the Chronology using a
+     * <a href="../../../serialized-form.html#java.time.chrono.Ser">dedicated serialized form</a>.
+     * @serialData
+     * <pre>
+     *  out.writeByte(1);     // identifies a Chronology
+     *  out.writeUTF(getId());
+     * </pre>
+     *
+     * @return the instance of {@code Ser}, not null
+     */
+    @Override
+    Object writeReplace() {
+        return super.writeReplace();
+    }
+
+    /**
+     * Defend against malicious streams.
+     * @return never
+     * @throws InvalidObjectException always
+     */
+    private Object readResolve() throws InvalidObjectException {
+        throw new InvalidObjectException("Deserialization via serialization delegate");
+    }
 }

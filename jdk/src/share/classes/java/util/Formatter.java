@@ -56,7 +56,7 @@ import java.time.ZoneId;
 import java.time.ZoneOffset;
 import java.time.temporal.ChronoField;
 import java.time.temporal.TemporalAccessor;
-import java.time.temporal.TemporalQuery;
+import java.time.temporal.TemporalQueries;
 
 import sun.misc.DoubleConsts;
 import sun.misc.FormattedFloatingDecimal;
@@ -131,7 +131,7 @@ import sun.misc.FormattedFloatingDecimal;
  *   import static java.util.Calendar.*;
  *
  *   Calendar c = new GregorianCalendar(1995, MAY, 23);
- *   String s = String.format("Duke's Birthday: %1$tm %1$te,%1$tY", c);
+ *   String s = String.format("Duke's Birthday: %1$tb %1$te, %1$tY", c);
  *   // -&gt; s == "Duke's Birthday: May 23, 1995"
  * </pre></blockquote>
  *
@@ -253,7 +253,7 @@ import sun.misc.FormattedFloatingDecimal;
  * <li> <b>Integral</b> - may be applied to Java integral types: {@code byte},
  * {@link Byte}, {@code short}, {@link Short}, {@code int} and {@link
  * Integer}, {@code long}, {@link Long}, and {@link java.math.BigInteger
- * BigInteger}
+ * BigInteger} (but not {@code char} or {@link Character})
  *
  * <li><b>Floating Point</b> - may be applied to Java floating-point types:
  * {@code float}, {@link Float}, {@code double}, {@link Double}, and {@link
@@ -899,7 +899,7 @@ import sun.misc.FormattedFloatingDecimal;
  * <table cellpadding=5 summary="IntConv">
  *
  * <tr><td valign="top"> {@code 'd'}
- *     <td valign="top"> <tt>'&#92;u0054'</tt>
+ *     <td valign="top"> <tt>'&#92;u0064'</tt>
  *     <td> Formats the argument as a decimal integer. The <a
  *     href="#L10nAlgorithm">localization algorithm</a> is applied.
  *
@@ -1057,7 +1057,7 @@ import sun.misc.FormattedFloatingDecimal;
  * <table cellpadding=5 summary="BIntConv">
  *
  * <tr><td valign="top"> {@code 'd'}
- *     <td valign="top"> <tt>'&#92;u0054'</tt>
+ *     <td valign="top"> <tt>'&#92;u0064'</tt>
  *     <td> Requires the output to be formatted as a decimal integer. The <a
  *     href="#L10nAlgorithm">localization algorithm</a> is applied.
  *
@@ -4153,7 +4153,7 @@ public final class Formatter implements Closeable, Flushable {
                     break;
                 }
                 case DateTime.ZONE:        { // 'Z' (symbol)
-                    ZoneId zid = t.query(TemporalQuery.zone());
+                    ZoneId zid = t.query(TemporalQueries.zone());
                     if (zid == null) {
                         throw new IllegalFormatConversionException(c, t.getClass());
                     }

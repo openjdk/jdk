@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,16 +26,9 @@
  * @bug 8003280
  * @summary Add lambda tests
  *  Structural most specific doesn't handle cases with wildcards in functional interfaces
+ * @compile/fail/ref=MostSpecific04.out -XDrawDiagnostics MostSpecific04.java
  */
 public class MostSpecific04 {
-
-    static int assertionCount = 0;
-
-    static void assertTrue(boolean cond) {
-        assertionCount++;
-        if (!cond)
-            throw new AssertionError();
-    }
 
     interface DoubleMapper<T> {
         double map(T t);
@@ -46,13 +39,13 @@ public class MostSpecific04 {
     }
 
     static class MyList<E> {
-        void map(DoubleMapper<? super E> m) { assertTrue(false); }
-        void map(LongMapper<? super E> m) { assertTrue(true); }
+        void map(DoubleMapper<? super E> m) { }
+        void map(LongMapper<? super E> m) { }
     }
 
     public static void main(String[] args) {
         MyList<String> ls = new MyList<String>();
-        ls.map(e->e.length());
-        assertTrue(assertionCount == 1);
+        ls.map(e->e.length()); //ambiguous - implicit
+        ls.map((String e)->e.length()); //ok
     }
 }

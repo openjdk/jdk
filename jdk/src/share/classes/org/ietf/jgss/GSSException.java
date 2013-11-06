@@ -291,7 +291,7 @@ public class GSSException extends Exception {
      * this exception to be thrown. Major error codes are
      * defined at the mechanism independent GSS-API level in this
      * class. Mechanism specific error codes that might provide more
-     * information aer set as the minor error code.
+     * information are set as the minor error code.
      *
      * @return int the GSS-API level major error code causing this exception
      * @see #getMajorString

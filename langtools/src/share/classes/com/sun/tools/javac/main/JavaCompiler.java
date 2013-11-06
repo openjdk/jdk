@@ -67,7 +67,6 @@ import com.sun.tools.javac.util.Log.WriterKind;
 import static com.sun.tools.javac.code.TypeTag.CLASS;
 import static com.sun.tools.javac.main.Option.*;
 import static com.sun.tools.javac.util.JCDiagnostic.DiagnosticFlag.*;
-import static com.sun.tools.javac.util.ListBuffer.lb;
 
 
 /** This class could be the main entry point for GJC when GJC is used as a
@@ -80,7 +79,7 @@ import static com.sun.tools.javac.util.ListBuffer.lb;
  *  This code and its internal interfaces are subject to change or
  *  deletion without notice.</b>
  */
-public class JavaCompiler implements ClassReader.SourceCompleter {
+public class JavaCompiler {
     /** The context key for the compiler. */
     protected static final Context.Key<JavaCompiler> compilerKey =
         new Context.Key<JavaCompiler>();
@@ -272,10 +271,6 @@ public class JavaCompiler implements ClassReader.SourceCompleter {
      */
     protected TransTypes transTypes;
 
-    /** The lambda translator.
-     */
-    protected LambdaToMethod lambdaToMethod;
-
     /** The syntactic sugar desweetener.
      */
     protected Lower lower;
@@ -309,6 +304,17 @@ public class JavaCompiler implements ClassReader.SourceCompleter {
      * of the compiler to be used for the analyze and generate phases.
      */
     protected JavaCompiler delegateCompiler;
+
+    /**
+     * SourceCompleter that delegates to the complete-method of this class.
+     */
+    protected final ClassReader.SourceCompleter thisCompleter =
+            new ClassReader.SourceCompleter() {
+                @Override
+                public void complete(ClassSymbol sym) throws CompletionFailure {
+                    JavaCompiler.this.complete(sym);
+                }
+            };
 
     /**
      * Command line options.
@@ -374,11 +380,9 @@ public class JavaCompiler implements ClassReader.SourceCompleter {
         types = Types.instance(context);
         taskListener = MultiTaskListener.instance(context);
 
-        reader.sourceCompleter = this;
+        reader.sourceCompleter = thisCompleter;
 
         options = Options.instance(context);
-
-        lambdaToMethod = LambdaToMethod.instance(context);
 
         verbose       = options.isSet(VERBOSE);
         sourceOutput  = options.isSet(PRINTSOURCE); // used to be -s
@@ -575,7 +579,7 @@ public class JavaCompiler implements ClassReader.SourceCompleter {
     }
 
     protected final <T> Queue<T> stopIfError(CompileState cs, Queue<T> queue) {
-        return shouldStop(cs) ? ListBuffer.<T>lb() : queue;
+        return shouldStop(cs) ? new ListBuffer<T>() : queue;
     }
 
     protected final <T> List<T> stopIfError(CompileState cs, List<T> list) {
@@ -941,7 +945,7 @@ public class JavaCompiler implements ClassReader.SourceCompleter {
            return List.nil();
 
         //parse all files
-        ListBuffer<JCCompilationUnit> trees = lb();
+        ListBuffer<JCCompilationUnit> trees = new ListBuffer<>();
         Set<JavaFileObject> filesSoFar = new HashSet<JavaFileObject>();
         for (JavaFileObject fileObject : fileObjects) {
             if (!filesSoFar.contains(fileObject)) {
@@ -991,7 +995,7 @@ public class JavaCompiler implements ClassReader.SourceCompleter {
         // then remember the classes declared in
         // the original compilation units listed on the command line.
         if (needRootClasses || sourceOutput || stubOutput) {
-            ListBuffer<JCClassDecl> cdefs = lb();
+            ListBuffer<JCClassDecl> cdefs = new ListBuffer<>();
             for (JCCompilationUnit unit : roots) {
                 for (List<JCTree> defs = unit.defs;
                      defs.nonEmpty();
@@ -1215,7 +1219,7 @@ public class JavaCompiler implements ClassReader.SourceCompleter {
      * @returns a list of environments for attributd classes.
      */
     public Queue<Env<AttrContext>> attribute(Queue<Env<AttrContext>> envs) {
-        ListBuffer<Env<AttrContext>> results = lb();
+        ListBuffer<Env<AttrContext>> results = new ListBuffer<>();
         while (!envs.isEmpty())
             results.append(attribute(envs.remove()));
         return stopIfError(CompileState.ATTR, results);
@@ -1280,7 +1284,7 @@ public class JavaCompiler implements ClassReader.SourceCompleter {
      * @returns the list of attributed parse trees
      */
     public Queue<Env<AttrContext>> flow(Queue<Env<AttrContext>> envs) {
-        ListBuffer<Env<AttrContext>> results = lb();
+        ListBuffer<Env<AttrContext>> results = new ListBuffer<>();
         for (Env<AttrContext> env: envs) {
             flow(env, results);
         }
@@ -1291,7 +1295,7 @@ public class JavaCompiler implements ClassReader.SourceCompleter {
      * Perform dataflow checks on an attributed parse tree.
      */
     public Queue<Env<AttrContext>> flow(Env<AttrContext> env) {
-        ListBuffer<Env<AttrContext>> results = lb();
+        ListBuffer<Env<AttrContext>> results = new ListBuffer<>();
         flow(env, results);
         return stopIfError(CompileState.FLOW, results);
     }
@@ -1345,7 +1349,7 @@ public class JavaCompiler implements ClassReader.SourceCompleter {
      * @returns a list containing the classes to be generated
      */
     public Queue<Pair<Env<AttrContext>, JCClassDecl>> desugar(Queue<Env<AttrContext>> envs) {
-        ListBuffer<Pair<Env<AttrContext>, JCClassDecl>> results = lb();
+        ListBuffer<Pair<Env<AttrContext>, JCClassDecl>> results = new ListBuffer<>();
         for (Env<AttrContext> env: envs)
             desugar(env, results);
         return stopIfError(CompileState.FLOW, results);
@@ -1383,6 +1387,7 @@ public class JavaCompiler implements ClassReader.SourceCompleter {
          */
         class ScanNested extends TreeScanner {
             Set<Env<AttrContext>> dependencies = new LinkedHashSet<Env<AttrContext>>();
+            protected boolean hasLambdas;
             @Override
             public void visitClassDef(JCClassDecl node) {
                 Type st = types.supertype(node.sym.type);
@@ -1392,13 +1397,34 @@ public class JavaCompiler implements ClassReader.SourceCompleter {
                     Env<AttrContext> stEnv = enter.getEnv(c);
                     if (stEnv != null && env != stEnv) {
                         if (dependencies.add(stEnv)) {
-                            scan(stEnv.tree);
+                            boolean prevHasLambdas = hasLambdas;
+                            try {
+                                scan(stEnv.tree);
+                            } finally {
+                                /*
+                                 * ignore any updates to hasLambdas made during
+                                 * the nested scan, this ensures an initalized
+                                 * LambdaToMethod is available only to those
+                                 * classes that contain lambdas
+                                 */
+                                hasLambdas = prevHasLambdas;
+                            }
                         }
                         envForSuperTypeFound = true;
                     }
                     st = types.supertype(st);
                 }
                 super.visitClassDef(node);
+            }
+            @Override
+            public void visitLambda(JCLambda tree) {
+                hasLambdas = true;
+                super.visitLambda(tree);
+            }
+            @Override
+            public void visitReference(JCMemberReference tree) {
+                hasLambdas = true;
+                super.visitReference(tree);
             }
         }
         ScanNested scanner = new ScanNested();
@@ -1458,11 +1484,11 @@ public class JavaCompiler implements ClassReader.SourceCompleter {
             env.tree = transTypes.translateTopLevelClass(env.tree, localMake);
             compileStates.put(env, CompileState.TRANSTYPES);
 
-            if (source.allowLambda()) {
+            if (source.allowLambda() && scanner.hasLambdas) {
                 if (shouldStop(CompileState.UNLAMBDA))
                     return;
 
-                env.tree = lambdaToMethod.translateTopLevelClass(env, env.tree, localMake);
+                env.tree = LambdaToMethod.instance(context).translateTopLevelClass(env, env.tree, localMake);
                 compileStates.put(env, CompileState.UNLAMBDA);
             }
 
@@ -1594,7 +1620,7 @@ public class JavaCompiler implements ClassReader.SourceCompleter {
                 }
                 @Override
                 public void visitClassDef(JCClassDecl tree) {
-                    ListBuffer<JCTree> newdefs = lb();
+                    ListBuffer<JCTree> newdefs = new ListBuffer<>();
                     for (List<JCTree> it = tree.defs; it.tail != null; it = it.tail) {
                         JCTree t = it.head;
                         switch (t.getTag()) {
@@ -1732,14 +1758,5 @@ public class JavaCompiler implements ClassReader.SourceCompleter {
         prev.closeables = List.nil();
         shouldStopPolicyIfError = prev.shouldStopPolicyIfError;
         shouldStopPolicyIfNoError = prev.shouldStopPolicyIfNoError;
-    }
-
-    public static void enableLogging() {
-        Logger logger = Logger.getLogger(com.sun.tools.javac.Main.class.getPackage().getName());
-        logger.setLevel(Level.ALL);
-        for (Handler h : logger.getParent().getHandlers()) {
-            h.setLevel(Level.ALL);
-       }
-
     }
 }

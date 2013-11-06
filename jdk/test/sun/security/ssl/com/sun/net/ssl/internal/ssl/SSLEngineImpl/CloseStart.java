@@ -21,14 +21,21 @@
  * questions.
  */
 
+//
+// SunJSSE does not support dynamic system properties, no way to re-use
+// system properties in samevm/agentvm mode.
+//
+
 /*
  * @test
  * @bug 5019096
  * @summary Add scatter/gather APIs for SSLEngine
- *
- * Check to see if the args are being parsed properly.
- *
+ * @run main/othervm CloseStart
  */
+
+//
+// Check to see if the args are being parsed properly.
+//
 
 import javax.net.ssl.*;
 import javax.net.ssl.SSLEngineResult.*;

@@ -64,6 +64,7 @@ package java.time.zone;
 import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
+import java.io.InvalidObjectException;
 import java.io.Serializable;
 import java.time.Duration;
 import java.time.Instant;
@@ -145,7 +146,7 @@ public final class ZoneRules implements Serializable {
     /**
      * The map of recent transitions.
      */
-    private final ConcurrentMap<Integer, ZoneOffsetTransition[]> lastRulesCache =
+    private final transient ConcurrentMap<Integer, ZoneOffsetTransition[]> lastRulesCache =
                 new ConcurrentHashMap<Integer, ZoneOffsetTransition[]>();
     /**
      * The zero-length long array.
@@ -315,8 +316,74 @@ public final class ZoneRules implements Serializable {
     }
 
     /**
-     * Uses a serialization delegate.
+     * Defend against malicious streams.
+     * @return never
+     * @throws InvalidObjectException always
+     */
+    private Object readResolve() throws InvalidObjectException {
+        throw new InvalidObjectException("Deserialization via serialization delegate");
+    }
+
+    /**
+     * Writes the object using a
+     * <a href="../../../serialized-form.html#java.time.zone.Ser">dedicated serialized form</a>.
+     * @serialData
+     * <pre style="font-size:1.0em">{@code
      *
+     *   out.writeByte(1);  // identifies a ZoneRules
+     *   out.writeInt(standardTransitions.length);
+     *   for (long trans : standardTransitions) {
+     *       Ser.writeEpochSec(trans, out);
+     *   }
+     *   for (ZoneOffset offset : standardOffsets) {
+     *       Ser.writeOffset(offset, out);
+     *   }
+     *   out.writeInt(savingsInstantTransitions.length);
+     *   for (long trans : savingsInstantTransitions) {
+     *       Ser.writeEpochSec(trans, out);
+     *   }
+     *   for (ZoneOffset offset : wallOffsets) {
+     *       Ser.writeOffset(offset, out);
+     *   }
+     *   out.writeByte(lastRules.length);
+     *   for (ZoneOffsetTransitionRule rule : lastRules) {
+     *       rule.writeExternal(out);
+     *   }
+     * }
+     * </pre>
+     * <p>
+     * Epoch second values used for offsets are encoded in a variable
+     * length form to make the common cases put fewer bytes in the stream.
+     * <pre style="font-size:1.0em">{@code
+     *
+     *  static void writeEpochSec(long epochSec, DataOutput out) throws IOException {
+     *     if (epochSec >= -4575744000L && epochSec < 10413792000L && epochSec % 900 == 0) {  // quarter hours between 1825 and 2300
+     *         int store = (int) ((epochSec + 4575744000L) / 900);
+     *         out.writeByte((store >>> 16) & 255);
+     *         out.writeByte((store >>> 8) & 255);
+     *         out.writeByte(store & 255);
+     *      } else {
+     *          out.writeByte(255);
+     *          out.writeLong(epochSec);
+     *      }
+     *  }
+     * }
+     * </pre>
+     * <p>
+     * ZoneOffset values are encoded in a variable length form so the
+     * common cases put fewer bytes in the stream.
+     * <pre style="font-size:1.0em">{@code
+     *
+     *  static void writeOffset(ZoneOffset offset, DataOutput out) throws IOException {
+     *     final int offsetSecs = offset.getTotalSeconds();
+     *     int offsetByte = offsetSecs % 900 == 0 ? offsetSecs / 900 : 127;  // compress to -72 to +72
+     *     out.writeByte(offsetByte);
+     *     if (offsetByte == 127) {
+     *         out.writeInt(offsetSecs);
+     *     }
+     * }
+     *}
+     * </pre>
      * @return the replacing object, not null
      */
     private Object writeReplace() {
@@ -441,7 +508,7 @@ public final class ZoneRules implements Serializable {
      * <p>
      * The mapping from a local date-time to an offset is not straightforward.
      * There are three cases:
-     * <p><ul>
+     * <ul>
      * <li>Normal, with one valid offset. For the vast majority of the year, the normal
      *  case applies, where there is a single valid offset for the local date-time.</li>
      * <li>Gap, with zero valid offsets. This is when clocks jump forward typically
@@ -450,7 +517,7 @@ public final class ZoneRules implements Serializable {
      * <li>Overlap, with two valid offsets. This is when clocks are set back typically
      *  due to the autumn daylight savings change from "summer" to "winter".
      *  In an overlap there are local date-time values with two valid offsets.</li>
-     * </ul><p>
+     * </ul>
      * Thus, for any given local date-time there can be zero, one or two valid offsets.
      * This method returns the single offset in the Normal case, and in the Gap or Overlap
      * case it returns the offset before the transition.
@@ -477,7 +544,7 @@ public final class ZoneRules implements Serializable {
      * <p>
      * The mapping from a local date-time to an offset is not straightforward.
      * There are three cases:
-     * <p><ul>
+     * <ul>
      * <li>Normal, with one valid offset. For the vast majority of the year, the normal
      *  case applies, where there is a single valid offset for the local date-time.</li>
      * <li>Gap, with zero valid offsets. This is when clocks jump forward typically
@@ -486,7 +553,7 @@ public final class ZoneRules implements Serializable {
      * <li>Overlap, with two valid offsets. This is when clocks are set back typically
      *  due to the autumn daylight savings change from "summer" to "winter".
      *  In an overlap there are local date-time values with two valid offsets.</li>
-     * </ul><p>
+     * </ul>
      * Thus, for any given local date-time there can be zero, one or two valid offsets.
      * This method returns that list of valid offsets, which is a list of size 0, 1 or 2.
      * In the case where there are two offsets, the earlier offset is returned at index 0
@@ -528,7 +595,7 @@ public final class ZoneRules implements Serializable {
      * <p>
      * The mapping from a local date-time to an offset is not straightforward.
      * There are three cases:
-     * <p><ul>
+     * <ul>
      * <li>Normal, with one valid offset. For the vast majority of the year, the normal
      *  case applies, where there is a single valid offset for the local date-time.</li>
      * <li>Gap, with zero valid offsets. This is when clocks jump forward typically
@@ -537,7 +604,7 @@ public final class ZoneRules implements Serializable {
      * <li>Overlap, with two valid offsets. This is when clocks are set back typically
      *  due to the autumn daylight savings change from "summer" to "winter".
      *  In an overlap there are local date-time values with two valid offsets.</li>
-     * </ul><p>
+     * </ul>
      * A transition is used to model the cases of a Gap or Overlap.
      * The Normal case will return null.
      * <p>
@@ -832,7 +899,7 @@ public final class ZoneRules implements Serializable {
                     return transArray[i];
                 }
             }
-            // use last from preceeding year
+            // use last from preceding year
             int lastHistoricYear = findYear(lastHistoric, lastHistoricOffset);
             if (--year > lastHistoricYear) {
                 transArray = findTransitionArray(year);

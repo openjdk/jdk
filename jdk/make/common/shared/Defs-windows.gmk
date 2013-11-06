@@ -79,7 +79,7 @@ override INCREMENTAL_BUILD = false
 #   The ALT values should never really have spaces or use \.
 #   Suspect these environment variables to have spaces and/or \ characters:
 #     SYSTEMROOT, SystemRoot, WINDIR, windir, PROGRAMFILES, ProgramFiles,
-#     DXSDK_DIR, MSTOOLS, Mstools, MSSDK, MSSdk, VCnnCOMNTOOLS, 
+#     MSTOOLS, Mstools, MSSDK, MSSdk, VCnnCOMNTOOLS, 
 #     MSVCDIR, MSVCDir.
 #     So use $(subst \,/,) on them first adding quotes and placing them in
 #         their own variable assigned with :=, then use FullPath.
@@ -253,18 +253,6 @@ else
 endif
 ifneq ($(word 1,$(_program_files)),$(_program_files))
   _program_files:=
-endif
-
-# DirectX SDK
-ifdef ALT_DXSDK_DRIVE
-  _dx_sdk_dir  =$(ALT_DXSDK_DRIVE):/DXSDK
-else
-  ifdef DXSDK_DIR
-    xDXSDK_DIR  :="$(subst \,/,$(DXSDK_DIR))"
-  else
-    xDXSDK_DIR  :="$(_system_drive)/DXSDK"
-  endif
-  _dx_sdk_dir :=$(call FullPath,$(xDXSDK_DIR))
 endif
 
 # Use of the Visual Studio compilers requires certain env variables be set:
@@ -487,39 +475,6 @@ ifeq ($(_NEEDS_MSVCRNN), true)
   endif
   MSVCRNN_DLL_PATH :=$(call AltCheckSpaces,MSVCRNN_DLL_PATH)
   MSVCRNN_DLL_PATH:=$(call AltCheckValue,MSVCRNN_DLL_PATH)
-endif
-
-# DXSDK_PATH: path to Microsoft DirectX SDK Include and Lib
-ifdef ALT_DXSDK_PATH
-  xALT_DXSDK_PATH :="$(subst \,/,$(ALT_DXSDK_PATH))"
-  DXSDK_PATH      :=$(call FullPath,$(xALT_DXSDK_PATH))
-else
-  _DXSDK_PATH1 :=$(_dx_sdk_dir)
-  _DXSDK_PATH2 :=$(JDK_DEVTOOLS_DIR)/windows/dxsdk
-  DXSDK_PATH  :=$(call DirExists,$(_DXSDK_PATH1),$(_DXSDK_PATH2),$(_dx_sdk_dir))
-endif
-DXSDK_PATH :=$(call AltCheckSpaces,DXSDK_PATH)
-DXSDK_PATH:=$(call AltCheckValue,DXSDK_PATH)
-
-# DXSDK_INCLUDE_PATH: path to Microsoft DirectX SDK Include
-ifdef ALT_DXSDK_INCLUDE_PATH
-  xALT_DXSDK_INCLUDE_PATH :="$(subst \,/,$(ALT_DXSDK_INCLUDE_PATH))"
-  DXSDK_INCLUDE_PATH      :=$(call FullPath,$(xALT_DXSDK_INCLUDE_PATH))
-else
-  DXSDK_INCLUDE_PATH =$(subst //,/,$(DXSDK_PATH)/Include)
-endif
-
-# DXSDK_LIB_PATH: path to Microsoft DirectX SDK Lib
-ifdef ALT_DXSDK_LIB_PATH
-  xALT_DXSDK_LIB_PATH :="$(subst \,/,$(ALT_DXSDK_LIB_PATH))"
-  DXSDK_LIB_PATH      :=$(call FullPath,$(xALT_DXSDK_LIB_PATH))
-else
-  ifeq ($(ARCH_DATA_MODEL), 64)
-    # 64bit libs are located in "Lib/x64" subdir
-    DXSDK_LIB_PATH =$(subst //,/,$(DXSDK_PATH)/Lib/x64)
-  else
-    DXSDK_LIB_PATH =$(subst //,/,$(DXSDK_PATH)/Lib)
-  endif
 endif
 
 # DEPLOY_MSSDK: Microsoft SDK for this platform (for deploy)

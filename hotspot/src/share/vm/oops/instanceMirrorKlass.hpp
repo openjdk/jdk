@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -66,7 +66,7 @@ class InstanceMirrorKlass: public InstanceKlass {
   // Static field offset is an offset into the Heap, should be converted by
   // based on UseCompressedOop for traversal
   static HeapWord* start_of_static_fields(oop obj) {
-    return (HeapWord*)((intptr_t)obj + offset_of_static_fields());
+    return (HeapWord*)(cast_from_oop<intptr_t>(obj) + offset_of_static_fields());
   }
 
   static void init_offset_of_static_fields() {

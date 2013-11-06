@@ -28,7 +28,6 @@
 #include "classfile/classLoaderData.hpp"
 #include "classfile/classLoaderData.inline.hpp"
 #include "classfile/defaultMethods.hpp"
-#include "classfile/genericSignatures.hpp"
 #include "classfile/javaClasses.hpp"
 #include "classfile/symbolTable.hpp"
 #include "classfile/systemDictionary.hpp"
@@ -889,6 +888,7 @@ void ClassFileParser::parse_field_attributes(u2 attributes_count,
   int runtime_visible_type_annotations_length = 0;
   u1* runtime_invisible_type_annotations = NULL;
   int runtime_invisible_type_annotations_length = 0;
+  bool runtime_invisible_type_annotations_exists = false;
   while (attributes_count--) {
     cfs->guarantee_more(6, CHECK);  // attribute_name_index, attribute_length
     u2 attribute_name_index = cfs->get_u2_fast();
@@ -947,15 +947,27 @@ void ClassFileParser::parse_field_attributes(u2 attributes_count,
         assert(runtime_invisible_annotations != NULL, "null invisible annotations");
         cfs->skip_u1(runtime_invisible_annotations_length, CHECK);
       } else if (attribute_name == vmSymbols::tag_runtime_visible_type_annotations()) {
+        if (runtime_visible_type_annotations != NULL) {
+          classfile_parse_error(
+            "Multiple RuntimeVisibleTypeAnnotations attributes for field in class file %s", CHECK);
+        }
         runtime_visible_type_annotations_length = attribute_length;
         runtime_visible_type_annotations = cfs->get_u1_buffer();
         assert(runtime_visible_type_annotations != NULL, "null visible type annotations");
         cfs->skip_u1(runtime_visible_type_annotations_length, CHECK);
-      } else if (PreserveAllAnnotations && attribute_name == vmSymbols::tag_runtime_invisible_type_annotations()) {
-        runtime_invisible_type_annotations_length = attribute_length;
-        runtime_invisible_type_annotations = cfs->get_u1_buffer();
-        assert(runtime_invisible_type_annotations != NULL, "null invisible type annotations");
-        cfs->skip_u1(runtime_invisible_type_annotations_length, CHECK);
+      } else if (attribute_name == vmSymbols::tag_runtime_invisible_type_annotations()) {
+        if (runtime_invisible_type_annotations_exists) {
+          classfile_parse_error(
+            "Multiple RuntimeInvisibleTypeAnnotations attributes for field in class file %s", CHECK);
+        } else {
+          runtime_invisible_type_annotations_exists = true;
+        }
+        if (PreserveAllAnnotations) {
+          runtime_invisible_type_annotations_length = attribute_length;
+          runtime_invisible_type_annotations = cfs->get_u1_buffer();
+          assert(runtime_invisible_type_annotations != NULL, "null invisible type annotations");
+        }
+        cfs->skip_u1(attribute_length, CHECK);
       } else {
         cfs->skip_u1(attribute_length, CHECK);  // Skip unknown attributes
       }
@@ -1775,6 +1787,10 @@ ClassFileParser::AnnotationCollector::annotation_index(ClassLoaderData* loader_d
     if (_location != _in_method)  break;  // only allow for methods
     if (!privileged)              break;  // only allow in privileged code
     return _method_LambdaForm_Hidden;
+  case vmSymbols::VM_SYMBOL_ENUM_NAME(java_lang_invoke_Stable_signature):
+    if (_location != _in_field)   break;  // only allow for fields
+    if (!privileged)              break;  // only allow in privileged code
+    return _field_Stable;
   case vmSymbols::VM_SYMBOL_ENUM_NAME(sun_misc_Contended_signature):
     if (_location != _in_field && _location != _in_class)          break;  // only allow for fields and classes
     if (!EnableContended || (RestrictContended && !privileged))    break;  // honor privileges
@@ -1787,6 +1803,8 @@ ClassFileParser::AnnotationCollector::annotation_index(ClassLoaderData* loader_d
 void ClassFileParser::FieldAnnotationCollector::apply_to(FieldInfo* f) {
   if (is_contended())
     f->set_contended_group(contended_group());
+  if (is_stable())
+    f->set_stable(true);
 }
 
 ClassFileParser::FieldAnnotationCollector::~FieldAnnotationCollector() {
@@ -2061,6 +2079,7 @@ methodHandle ClassFileParser::parse_method(bool is_interface,
   int runtime_visible_type_annotations_length = 0;
   u1* runtime_invisible_type_annotations = NULL;
   int runtime_invisible_type_annotations_length = 0;
+  bool runtime_invisible_type_annotations_exists = false;
   u1* annotation_default = NULL;
   int annotation_default_length = 0;
 
@@ -2178,8 +2197,8 @@ methodHandle ClassFileParser::parse_method(bool is_interface,
           }
           if (lvt_cnt == max_lvt_cnt) {
             max_lvt_cnt <<= 1;
-            REALLOC_RESOURCE_ARRAY(u2, localvariable_table_length, lvt_cnt, max_lvt_cnt);
-            REALLOC_RESOURCE_ARRAY(u2*, localvariable_table_start, lvt_cnt, max_lvt_cnt);
+            localvariable_table_length = REALLOC_RESOURCE_ARRAY(u2, localvariable_table_length, lvt_cnt, max_lvt_cnt);
+            localvariable_table_start  = REALLOC_RESOURCE_ARRAY(u2*, localvariable_table_start, lvt_cnt, max_lvt_cnt);
           }
           localvariable_table_start[lvt_cnt] =
             parse_localvariable_table(code_length,
@@ -2207,8 +2226,8 @@ methodHandle ClassFileParser::parse_method(bool is_interface,
           // Parse local variable type table
           if (lvtt_cnt == max_lvtt_cnt) {
             max_lvtt_cnt <<= 1;
-            REALLOC_RESOURCE_ARRAY(u2, localvariable_type_table_length, lvtt_cnt, max_lvtt_cnt);
-            REALLOC_RESOURCE_ARRAY(u2*, localvariable_type_table_start, lvtt_cnt, max_lvtt_cnt);
+            localvariable_type_table_length = REALLOC_RESOURCE_ARRAY(u2, localvariable_type_table_length, lvtt_cnt, max_lvtt_cnt);
+            localvariable_type_table_start  = REALLOC_RESOURCE_ARRAY(u2*, localvariable_type_table_start, lvtt_cnt, max_lvtt_cnt);
           }
           localvariable_type_table_start[lvtt_cnt] =
             parse_localvariable_table(code_length,
@@ -2317,16 +2336,30 @@ methodHandle ClassFileParser::parse_method(bool is_interface,
         assert(annotation_default != NULL, "null annotation default");
         cfs->skip_u1(annotation_default_length, CHECK_(nullHandle));
       } else if (method_attribute_name == vmSymbols::tag_runtime_visible_type_annotations()) {
+        if (runtime_visible_type_annotations != NULL) {
+          classfile_parse_error(
+            "Multiple RuntimeVisibleTypeAnnotations attributes for method in class file %s",
+            CHECK_(nullHandle));
+        }
         runtime_visible_type_annotations_length = method_attribute_length;
         runtime_visible_type_annotations = cfs->get_u1_buffer();
         assert(runtime_visible_type_annotations != NULL, "null visible type annotations");
         // No need for the VM to parse Type annotations
         cfs->skip_u1(runtime_visible_type_annotations_length, CHECK_(nullHandle));
-      } else if (PreserveAllAnnotations && method_attribute_name == vmSymbols::tag_runtime_invisible_type_annotations()) {
-        runtime_invisible_type_annotations_length = method_attribute_length;
-        runtime_invisible_type_annotations = cfs->get_u1_buffer();
-        assert(runtime_invisible_type_annotations != NULL, "null invisible type annotations");
-        cfs->skip_u1(runtime_invisible_type_annotations_length, CHECK_(nullHandle));
+      } else if (method_attribute_name == vmSymbols::tag_runtime_invisible_type_annotations()) {
+        if (runtime_invisible_type_annotations_exists) {
+          classfile_parse_error(
+            "Multiple RuntimeInvisibleTypeAnnotations attributes for method in class file %s",
+            CHECK_(nullHandle));
+        } else {
+          runtime_invisible_type_annotations_exists = true;
+        }
+        if (PreserveAllAnnotations) {
+          runtime_invisible_type_annotations_length = method_attribute_length;
+          runtime_invisible_type_annotations = cfs->get_u1_buffer();
+          assert(runtime_invisible_type_annotations != NULL, "null invisible type annotations");
+        }
+        cfs->skip_u1(method_attribute_length, CHECK_(nullHandle));
       } else {
         // Skip unknown attributes
         cfs->skip_u1(method_attribute_length, CHECK_(nullHandle));
@@ -2512,7 +2545,9 @@ Array<Method*>* ClassFileParser::parse_methods(bool is_interface,
       if (method->is_final()) {
         *has_final_method = true;
       }
-      if (is_interface && !method->is_abstract() && !method->is_static()) {
+      if (is_interface && !(*has_default_methods)
+        && !method->is_abstract() && !method->is_static()
+        && !method->is_private()) {
         // default method
         *has_default_methods = true;
       }
@@ -2819,6 +2854,7 @@ void ClassFileParser::parse_classfile_attributes(ClassFileParser::ClassAnnotatio
   int runtime_visible_type_annotations_length = 0;
   u1* runtime_invisible_type_annotations = NULL;
   int runtime_invisible_type_annotations_length = 0;
+  bool runtime_invisible_type_annotations_exists = false;
   u1* inner_classes_attribute_start = NULL;
   u4  inner_classes_attribute_length = 0;
   u2  enclosing_method_class_index = 0;
@@ -2922,16 +2958,28 @@ void ClassFileParser::parse_classfile_attributes(ClassFileParser::ClassAnnotatio
         parsed_bootstrap_methods_attribute = true;
         parse_classfile_bootstrap_methods_attribute(attribute_length, CHECK);
       } else if (tag == vmSymbols::tag_runtime_visible_type_annotations()) {
+        if (runtime_visible_type_annotations != NULL) {
+          classfile_parse_error(
+            "Multiple RuntimeVisibleTypeAnnotations attributes in class file %s", CHECK);
+        }
         runtime_visible_type_annotations_length = attribute_length;
         runtime_visible_type_annotations = cfs->get_u1_buffer();
         assert(runtime_visible_type_annotations != NULL, "null visible type annotations");
         // No need for the VM to parse Type annotations
         cfs->skip_u1(runtime_visible_type_annotations_length, CHECK);
-      } else if (PreserveAllAnnotations && tag == vmSymbols::tag_runtime_invisible_type_annotations()) {
-        runtime_invisible_type_annotations_length = attribute_length;
-        runtime_invisible_type_annotations = cfs->get_u1_buffer();
-        assert(runtime_invisible_type_annotations != NULL, "null invisible type annotations");
-        cfs->skip_u1(runtime_invisible_type_annotations_length, CHECK);
+      } else if (tag == vmSymbols::tag_runtime_invisible_type_annotations()) {
+        if (runtime_invisible_type_annotations_exists) {
+          classfile_parse_error(
+            "Multiple RuntimeInvisibleTypeAnnotations attributes in class file %s", CHECK);
+        } else {
+          runtime_invisible_type_annotations_exists = true;
+        }
+        if (PreserveAllAnnotations) {
+          runtime_invisible_type_annotations_length = attribute_length;
+          runtime_invisible_type_annotations = cfs->get_u1_buffer();
+          assert(runtime_invisible_type_annotations != NULL, "null invisible type annotations");
+        }
+        cfs->skip_u1(attribute_length, CHECK);
       } else {
         // Unknown attribute
         cfs->skip_u1(attribute_length, CHECK);
@@ -3038,35 +3086,6 @@ AnnotationArray* ClassFileParser::assemble_annotations(u1* runtime_visible_annot
   }
   return annotations;
 }
-
-
-#ifdef ASSERT
-static void parseAndPrintGenericSignatures(
-    instanceKlassHandle this_klass, TRAPS) {
-  assert(ParseAllGenericSignatures == true, "Shouldn't call otherwise");
-  ResourceMark rm;
-
-  if (this_klass->generic_signature() != NULL) {
-    using namespace generic;
-    ClassDescriptor* spec = ClassDescriptor::parse_generic_signature(this_klass(), CHECK);
-
-    tty->print_cr("Parsing %s", this_klass->generic_signature()->as_C_string());
-    spec->print_on(tty);
-
-    for (int i = 0; i < this_klass->methods()->length(); ++i) {
-      Method* m = this_klass->methods()->at(i);
-      MethodDescriptor* method_spec = MethodDescriptor::parse_generic_signature(m, spec);
-      Symbol* sig = m->generic_signature();
-      if (sig == NULL) {
-        sig = m->signature();
-      }
-      tty->print_cr("Parsing %s", sig->as_C_string());
-      method_spec->print_on(tty);
-    }
-  }
-}
-#endif // def ASSERT
-
 
 instanceKlassHandle ClassFileParser::parse_super_class(int super_class_index,
                                                        TRAPS) {
@@ -3978,9 +3997,8 @@ instanceKlassHandle ClassFileParser::parseClassFile(Symbol* name,
       this_klass->set_has_final_method();
     }
     this_klass->copy_method_ordering(method_ordering, CHECK_NULL);
-    // The InstanceKlass::_methods_jmethod_ids cache and the
-    // InstanceKlass::_methods_cached_itable_indices cache are
-    // both managed on the assumption that the initial cache
+    // The InstanceKlass::_methods_jmethod_ids cache
+    // is managed on the assumption that the initial cache
     // size is equal to the number of methods in the class. If
     // that changes, then InstanceKlass::idnum_can_increment()
     // has to be changed accordingly.
@@ -4060,16 +4078,9 @@ instanceKlassHandle ClassFileParser::parseClassFile(Symbol* name,
     java_lang_Class::create_mirror(this_klass, protection_domain, CHECK_(nullHandle));
 
 
-#ifdef ASSERT
-    if (ParseAllGenericSignatures) {
-      parseAndPrintGenericSignatures(this_klass, CHECK_(nullHandle));
-    }
-#endif
-
     // Generate any default methods - default methods are interface methods
     // that have a default implementation.  This is new with Lambda project.
-    if (has_default_methods && !access_flags.is_interface() &&
-        local_interfaces->length() > 0) {
+    if (has_default_methods && !access_flags.is_interface() ) {
       DefaultMethods::generate_default_methods(
           this_klass(), &all_mirandas, CHECK_(nullHandle));
     }
@@ -4472,9 +4483,8 @@ void ClassFileParser::check_final_method_override(instanceKlassHandle this_klass
   for (int index = 0; index < num_methods; index++) {
     Method* m = methods->at(index);
 
-    // skip private, static and <init> methods
-    if ((!m->is_private()) &&
-        (!m->is_static()) &&
+    // skip static and <init> methods
+    if ((!m->is_static()) &&
         (m->name() != vmSymbols::object_initializer_name())) {
 
       Symbol* name = m->name();

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,6 +29,7 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.net.URI;
+import java.nio.file.DirectoryStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Arrays;
@@ -164,11 +165,13 @@ class APITest {
     }
 
     private void listFiles(Path dir, Set<Path> files) throws IOException {
-        for (Path f: Files.newDirectoryStream(dir)) {
-            if (Files.isDirectory(f))
-                listFiles(f, files);
-            else if (Files.isRegularFile(f))
-                files.add(f);
+        try (DirectoryStream<Path> ds = Files.newDirectoryStream(dir)) {
+            for (Path f: ds) {
+                if (Files.isDirectory(f))
+                    listFiles(f, files);
+                else if (Files.isRegularFile(f))
+                    files.add(f);
+            }
         }
     }
 

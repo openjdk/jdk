@@ -74,7 +74,6 @@ import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
 import java.io.InvalidObjectException;
-import java.io.ObjectStreamException;
 import java.io.Serializable;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
@@ -85,6 +84,7 @@ import java.time.temporal.TemporalAccessor;
 import java.time.temporal.TemporalAdjuster;
 import java.time.temporal.TemporalAmount;
 import java.time.temporal.TemporalField;
+import java.time.temporal.TemporalQueries;
 import java.time.temporal.TemporalQuery;
 import java.time.temporal.TemporalUnit;
 import java.time.temporal.UnsupportedTemporalTypeException;
@@ -383,7 +383,7 @@ public final class LocalTime
      * A {@code TemporalAccessor} represents an arbitrary set of date and time information,
      * which this factory converts to an instance of {@code LocalTime}.
      * <p>
-     * The conversion uses the {@link TemporalQuery#localTime()} query, which relies
+     * The conversion uses the {@link TemporalQueries#localTime()} query, which relies
      * on extracting the {@link ChronoField#NANO_OF_DAY NANO_OF_DAY} field.
      * <p>
      * This method matches the signature of the functional interface {@link TemporalQuery}
@@ -394,9 +394,11 @@ public final class LocalTime
      * @throws DateTimeException if unable to convert to a {@code LocalTime}
      */
     public static LocalTime from(TemporalAccessor temporal) {
-        LocalTime time = temporal.query(TemporalQuery.localTime());
+        Objects.requireNonNull(temporal, "temporal");
+        LocalTime time = temporal.query(TemporalQueries.localTime());
         if (time == null) {
-            throw new DateTimeException("Unable to obtain LocalTime from TemporalAccessor: " + temporal.getClass());
+            throw new DateTimeException("Unable to obtain LocalTime from TemporalAccessor: " +
+                    temporal + " of type " + temporal.getClass().getName());
         }
         return time;
     }
@@ -1279,14 +1281,14 @@ public final class LocalTime
     @SuppressWarnings("unchecked")
     @Override
     public <R> R query(TemporalQuery<R> query) {
-        if (query == TemporalQuery.chronology() || query == TemporalQuery.zoneId() ||
-                query == TemporalQuery.zone() || query == TemporalQuery.offset()) {
+        if (query == TemporalQueries.chronology() || query == TemporalQueries.zoneId() ||
+                query == TemporalQueries.zone() || query == TemporalQueries.offset()) {
             return null;
-        } else if (query == TemporalQuery.localTime()) {
+        } else if (query == TemporalQueries.localTime()) {
             return (R) this;
-        } else if (query == TemporalQuery.localDate()) {
+        } else if (query == TemporalQueries.localDate()) {
             return null;
-        } else if (query == TemporalQuery.precision()) {
+        } else if (query == TemporalQueries.precision()) {
             return (R) NANOS;
         }
         // inline TemporalAccessor.super.query(query) as an optimization
@@ -1330,7 +1332,8 @@ public final class LocalTime
      * objects in terms of a single {@code TemporalUnit}.
      * The start and end points are {@code this} and the specified time.
      * The result will be negative if the end is before the start.
-     * The {@code Temporal} passed to this method must be a {@code LocalTime}.
+     * The {@code Temporal} passed to this method is converted to a
+     * {@code LocalTime} using {@link #from(TemporalAccessor)}.
      * For example, the amount in hours between two times can be calculated
      * using {@code startTime.until(endTime, HOURS)}.
      * <p>
@@ -1356,25 +1359,22 @@ public final class LocalTime
      * <p>
      * If the unit is not a {@code ChronoUnit}, then the result of this method
      * is obtained by invoking {@code TemporalUnit.between(Temporal, Temporal)}
-     * passing {@code this} as the first argument and the input temporal as
-     * the second argument.
+     * passing {@code this} as the first argument and the converted input temporal
+     * as the second argument.
      * <p>
      * This instance is immutable and unaffected by this method call.
      *
-     * @param endTime  the end time, which must be a {@code LocalTime}, not null
+     * @param endExclusive  the end time, exclusive, which is converted to a {@code LocalTime}, not null
      * @param unit  the unit to measure the amount in, not null
      * @return the amount of time between this time and the end time
-     * @throws DateTimeException if the amount cannot be calculated
+     * @throws DateTimeException if the amount cannot be calculated, or the end
+     *  temporal cannot be converted to a {@code LocalTime}
      * @throws UnsupportedTemporalTypeException if the unit is not supported
      * @throws ArithmeticException if numeric overflow occurs
      */
     @Override
-    public long until(Temporal endTime, TemporalUnit unit) {
-        if (endTime instanceof LocalTime == false) {
-            Objects.requireNonNull(endTime, "endTime");
-            throw new DateTimeException("Unable to calculate amount as objects are of two different types");
-        }
-        LocalTime end = (LocalTime) endTime;
+    public long until(Temporal endExclusive, TemporalUnit unit) {
+        LocalTime end = LocalTime.from(endExclusive);
         if (unit instanceof ChronoUnit) {
             long nanosUntil = end.toNanoOfDay() - toNanoOfDay();  // no overflow
             switch ((ChronoUnit) unit) {
@@ -1388,7 +1388,7 @@ public final class LocalTime
             }
             throw new UnsupportedTemporalTypeException("Unsupported unit: " + unit);
         }
-        return unit.between(this, endTime);
+        return unit.between(this, end);
     }
 
     /**
@@ -1554,13 +1554,13 @@ public final class LocalTime
      * Outputs this time as a {@code String}, such as {@code 10:15}.
      * <p>
      * The output will be one of the following ISO-8601 formats:
-     * <p><ul>
+     * <ul>
      * <li>{@code HH:mm}</li>
      * <li>{@code HH:mm:ss}</li>
      * <li>{@code HH:mm:ss.SSS}</li>
      * <li>{@code HH:mm:ss.SSSSSS}</li>
      * <li>{@code HH:mm:ss.SSSSSSSSS}</li>
-     * </ul><p>
+     * </ul>
      * The format used will be the shortest that outputs the full value of
      * the time where the omitted parts are implied to be zero.
      *
@@ -1595,8 +1595,11 @@ public final class LocalTime
     /**
      * Writes the object using a
      * <a href="../../serialized-form.html#java.time.Ser">dedicated serialized form</a>.
+     * @serialData
+     * A twos-complement value indicates the remaining values are not in the stream
+     * and should be set to zero.
      * <pre>
-     *  out.writeByte(4);  // identifies this as a LocalTime
+     *  out.writeByte(4);  // identifies a LocalTime
      *  if (nano == 0) {
      *    if (second == 0) {
      *      if (minute == 0) {
@@ -1629,7 +1632,7 @@ public final class LocalTime
      * @return never
      * @throws InvalidObjectException always
      */
-    private Object readResolve() throws ObjectStreamException {
+    private Object readResolve() throws InvalidObjectException {
         throw new InvalidObjectException("Deserialization via serialization delegate");
     }
 

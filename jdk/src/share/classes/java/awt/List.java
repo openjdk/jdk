@@ -61,7 +61,7 @@ import javax.accessibility.*;
  * scrolling list:
  * <p>
  * <img src="doc-files/List-1.gif"
- * alt="Shows a list containing: Venus, Earth, JavaSoft, and Mars. Javasoft is selected." ALIGN=center HSPACE=10 VSPACE=7>
+ * alt="Shows a list containing: Venus, Earth, JavaSoft, and Mars. Javasoft is selected." style="float:center; margin: 7px 10px;">
  * <p>
  * If the List allows multiple selections, then clicking on
  * an item that is already selected deselects it. In the preceding
@@ -797,7 +797,7 @@ public class List extends Component implements ItemSelectable, Accessible {
     }
 
     /**
-     * Gets the minumum dimensions for a list with the specified
+     * Gets the minimum dimensions for a list with the specified
      * number of rows.
      * @param      rows    number of rows in the list
      * @return     the minimum dimensions for displaying this scrolling list
@@ -1164,7 +1164,7 @@ public class List extends Component implements ItemSelectable, Accessible {
 
     /*
      * Serialization support.  Since the value of the selected
-     * field isn't neccessarily up to date we sync it up with the
+     * field isn't necessarily up to date, we sync it up with the
      * peer before serializing.
      */
 

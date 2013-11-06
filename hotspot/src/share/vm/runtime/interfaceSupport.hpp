@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -56,7 +56,7 @@ class HandleMarkCleaner: public StackObj {
   }
 
  private:
-  inline void* operator new(size_t size, void* ptr) {
+  inline void* operator new(size_t size, void* ptr) throw() {
     return ptr;
   }
 };
@@ -470,16 +470,6 @@ class RuntimeHistogramElement : public HistogramElement {
     ThreadInVMfromJavaNoAsyncException __tiv(thread);                \
     VM_ENTRY_BASE(result_type, header, thread)                       \
     debug_only(VMEntryWrapper __vew;)
-
-// Another special case for nmethod_entry_point so the nmethod that the
-// interpreter is about to branch to doesn't get flushed before as we
-// branch to it's interpreter_entry_point.  Skip stress testing here too.
-// Also we don't allow async exceptions because it is just too painful.
-#define IRT_ENTRY_FOR_NMETHOD(result_type, header)                   \
-  result_type header {                                               \
-    nmethodLocker _nmlock(nm);                                       \
-    ThreadInVMfromJavaNoAsyncException __tiv(thread);                                \
-    VM_ENTRY_BASE(result_type, header, thread)
 
 #define IRT_END }
 

@@ -103,6 +103,9 @@ public abstract class PKIXRevocationChecker extends PKIXCertPathChecker {
     private Map<X509Certificate, byte[]> ocspResponses = Collections.emptyMap();
     private Set<Option> options = Collections.emptySet();
 
+    /**
+     * Default constructor.
+     */
     protected PKIXRevocationChecker() {}
 
     /**
@@ -296,12 +299,11 @@ public abstract class PKIXRevocationChecker extends PKIXCertPathChecker {
         /**
          * Allow revocation check to succeed if the revocation status cannot be
          * determined for one of the following reasons:
-         * <p><ul>
+         * <ul>
          *  <li>The CRL or OCSP response cannot be obtained because of a
          *      network error.
          *  <li>The OCSP responder returns one of the following errors
-         *      specified in section 2.3 of RFC 2560: internalError, tryLater,
-         *      or unauthorized.
+         *      specified in section 2.3 of RFC 2560: internalError or tryLater.
          * </ul><br>
          * Note that these conditions apply to both OCSP and CRLs, and unless
          * the {@code NO_FALLBACK} option is set, the revocation check is

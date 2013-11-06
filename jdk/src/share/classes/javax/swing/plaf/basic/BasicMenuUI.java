@@ -39,7 +39,7 @@ import java.util.ArrayList;
 
 
 /**
- * A default L&F implementation of MenuUI.  This implementation
+ * A default L&amp;F implementation of MenuUI.  This implementation
  * is a "combined" view/controller.
  *
  * @author Georges Saab
@@ -322,7 +322,7 @@ public class BasicMenuUI extends BasicMenuItemUI
      * @since 1.4
      */
     protected class MouseInputHandler implements MouseInputListener {
-        // NOTE: This class exists only for backward compatability. All
+        // NOTE: This class exists only for backward compatibility. All
         // its functionality has been moved into Handler. If you need to add
         // new functionality add it to the Handler, but make sure this
         // class calls into the Handler.

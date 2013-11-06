@@ -83,7 +83,7 @@ import javax.accessibility.*;
  * <img src="doc-files/MultiScreen.gif"
  * alt="Diagram of virtual device encompassing three physical screens and one primary physical screen. The primary physical screen
  * shows (0,0) coords while a different physical screen shows (-80,-100) coords."
- * ALIGN=center HSPACE=10 VSPACE=7>
+ * style="float:center; margin: 7px 10px;">
  * <p>
  * In such an environment, when calling <code>setLocation</code>,
  * you must pass a virtual coordinate to this method.  Similarly,
@@ -265,12 +265,12 @@ public class Frame extends Window implements MenuContainer {
      *
      * <p>Note that the correct test for frame being fully maximized is
      * <pre>
-     *     (state & Frame.MAXIMIZED_BOTH) == Frame.MAXIMIZED_BOTH
+     *     (state &amp; Frame.MAXIMIZED_BOTH) == Frame.MAXIMIZED_BOTH
      * </pre>
      *
      * <p>To test is frame is maximized in <em>some</em> direction use
      * <pre>
-     *     (state & Frame.MAXIMIZED_BOTH) != 0
+     *     (state &amp; Frame.MAXIMIZED_BOTH) != 0
      * </pre>
      *
      * @see #setExtendedState(int)

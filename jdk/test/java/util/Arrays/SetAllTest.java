@@ -167,13 +167,13 @@ public class SetAllTest {
     public void testStringSetNulls() {
         String[] ar = new String[2];
         try {
-            Arrays.setAll(null, i -> "X");
+            Arrays.setAll(null, (IntFunction<String>) i -> "X");
             fail("Arrays.setAll(null, foo) should throw NPE");
         } catch (NullPointerException npe) {
             // expected
         }
         try {
-            Arrays.parallelSetAll(null, i -> "X");
+            Arrays.parallelSetAll(null, (IntFunction<String>) i -> "X");
             fail("Arrays.parallelSetAll(null, foo) should throw NPE");
         } catch (NullPointerException npe) {
             // expected

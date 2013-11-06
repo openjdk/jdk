@@ -33,6 +33,18 @@ package com.sun.tools.javac.util;
 public class GraphUtils {
 
     /**
+     * Basic interface for defining various dependency kinds. All dependency kinds
+     * must at least support basic capabilities to tell the DOT engine how to render them.
+     */
+    public interface DependencyKind {
+        /**
+         * Returns the DOT representation (to be used in a {@code style} attribute
+         * that's most suited for this dependency kind.
+         */
+        String getDotStyle();
+    }
+
+    /**
      * This class is a basic abstract class for representing a node.
      * A node is associated with a given data.
      */
@@ -43,9 +55,20 @@ public class GraphUtils {
             this.data = data;
         }
 
-        public abstract Iterable<? extends Node<D>> getDependencies();
+        /**
+         * Get an array of the dependency kinds supported by this node.
+         */
+        public abstract DependencyKind[] getSupportedDependencyKinds();
 
-        public abstract String printDependency(Node<D> to);
+        /**
+         * Get all dependencies, regardless of their kind.
+         */
+        public abstract Iterable<? extends Node<D>> getAllDependencies();
+
+        /**
+         * Get a name for the dependency (of given kind) linking this node to a given node
+         */
+        public abstract String getDependencyName(Node<D> to, DependencyKind dk);
 
         @Override
         public String toString() {
@@ -66,7 +89,9 @@ public class GraphUtils {
             super(data);
         }
 
-        public abstract Iterable<? extends TarjanNode<D>> getDependencies();
+        public abstract Iterable<? extends TarjanNode<D>> getAllDependencies();
+
+        public abstract Iterable<? extends TarjanNode<D>> getDependenciesByKind(DependencyKind dk);
 
         public int compareTo(TarjanNode<D> o) {
             return (index < o.index) ? -1 : (index == o.index) ? 0 : 1;
@@ -78,8 +103,8 @@ public class GraphUtils {
      * directed graph in linear time. Works on TarjanNode.
      */
     public static <D, N extends TarjanNode<D>> List<? extends List<? extends N>> tarjan(Iterable<? extends N> nodes) {
-        ListBuffer<List<N>> cycles = ListBuffer.lb();
-        ListBuffer<N> stack = ListBuffer.lb();
+        ListBuffer<List<N>> cycles = new ListBuffer<>();
+        ListBuffer<N> stack = new ListBuffer<>();
         int index = 0;
         for (N node: nodes) {
             if (node.index == -1) {
@@ -95,7 +120,7 @@ public class GraphUtils {
         index++;
         stack.prepend(v);
         v.active = true;
-        for (TarjanNode<D> nd: v.getDependencies()) {
+        for (TarjanNode<D> nd: v.getAllDependencies()) {
             @SuppressWarnings("unchecked")
             N n = (N)nd;
             if (n.index == -1) {
@@ -107,7 +132,7 @@ public class GraphUtils {
         }
         if (v.lowlink == v.index) {
             N n;
-            ListBuffer<N> cycle = ListBuffer.lb();
+            ListBuffer<N> cycle = new ListBuffer<>();
             do {
                 n = stack.remove();
                 n.active = false;
@@ -134,9 +159,11 @@ public class GraphUtils {
         }
         //dump arcs
         for (TarjanNode<D> from : nodes) {
-            for (TarjanNode<D> to : from.getDependencies()) {
-                buf.append(String.format("%s -> %s [label = \" %s \"];\n",
-                        from.hashCode(), to.hashCode(), from.printDependency(to)));
+            for (DependencyKind dk : from.getSupportedDependencyKinds()) {
+                for (TarjanNode<D> to : from.getDependenciesByKind(dk)) {
+                    buf.append(String.format("%s -> %s [label = \" %s \" style = %s ];\n",
+                            from.hashCode(), to.hashCode(), from.getDependencyName(to, dk), dk.getDotStyle()));
+                }
             }
         }
         buf.append("}\n");

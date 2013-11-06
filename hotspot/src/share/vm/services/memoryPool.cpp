@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -45,7 +45,7 @@ MemoryPool::MemoryPool(const char* name,
   _name = name;
   _initial_size = init_size;
   _max_size = max_size;
-  _memory_pool_obj = NULL;
+  (void)const_cast<instanceOop&>(_memory_pool_obj = NULL);
   _available_for_allocation = true;
   _num_managers = 0;
   _type = type;
@@ -260,10 +260,10 @@ MemoryUsage CodeHeapPool::get_memory_usage() {
 }
 
 MetaspacePool::MetaspacePool() :
-  MemoryPool("Metaspace", NonHeap, capacity_in_bytes(), calculate_max_size(), true, false) { }
+  MemoryPool("Metaspace", NonHeap, 0, calculate_max_size(), true, false) { }
 
 MemoryUsage MetaspacePool::get_memory_usage() {
-  size_t committed = align_size_down_(capacity_in_bytes(), os::vm_page_size());
+  size_t committed = MetaspaceAux::committed_bytes();
   return MemoryUsage(initial_size(), used_in_bytes(), committed, max_size());
 }
 
@@ -271,26 +271,19 @@ size_t MetaspacePool::used_in_bytes() {
   return MetaspaceAux::allocated_used_bytes();
 }
 
-size_t MetaspacePool::capacity_in_bytes() const {
-  return MetaspaceAux::allocated_capacity_bytes();
-}
-
 size_t MetaspacePool::calculate_max_size() const {
-  return FLAG_IS_CMDLINE(MaxMetaspaceSize) ? MaxMetaspaceSize : max_uintx;
+  return FLAG_IS_CMDLINE(MaxMetaspaceSize) ? MaxMetaspaceSize :
+                                             MemoryUsage::undefined_size();
 }
 
 CompressedKlassSpacePool::CompressedKlassSpacePool() :
-  MemoryPool("Compressed Class Space", NonHeap, capacity_in_bytes(), ClassMetaspaceSize, true, false) { }
+  MemoryPool("Compressed Class Space", NonHeap, 0, CompressedClassSpaceSize, true, false) { }
 
 size_t CompressedKlassSpacePool::used_in_bytes() {
   return MetaspaceAux::allocated_used_bytes(Metaspace::ClassType);
 }
 
-size_t CompressedKlassSpacePool::capacity_in_bytes() const {
-  return MetaspaceAux::allocated_capacity_bytes(Metaspace::ClassType);
-}
-
 MemoryUsage CompressedKlassSpacePool::get_memory_usage() {
-  size_t committed = align_size_down_(capacity_in_bytes(), os::vm_page_size());
+  size_t committed = MetaspaceAux::committed_bytes(Metaspace::ClassType);
   return MemoryUsage(initial_size(), used_in_bytes(), committed, max_size());
 }

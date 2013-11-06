@@ -32,6 +32,7 @@ import java.io.IOException;
  * HTTP exchange is handled by one of these handlers.
  * @since 1.6
  */
+@jdk.Exported
 public interface HttpHandler {
     /**
      * Handle the given request and generate an appropriate response.

@@ -25,7 +25,11 @@
 
 package javax.management;
 
+import java.io.IOException;
+import java.io.InvalidObjectException;
+import java.io.ObjectInputStream;
 import java.util.Arrays;
+import java.util.Objects;
 
 /**
  * <p>The <CODE>MBeanNotificationInfo</CODE> class is used to describe the
@@ -67,7 +71,7 @@ public class MBeanNotificationInfo extends MBeanFeatureInfo implements Cloneable
     /**
      * @serial The different types of the notification.
      */
-    private final String[] types;
+    private String[] types;
 
     /** @see MBeanInfo#arrayGettersSafe */
     private final transient boolean arrayGettersSafe;
@@ -114,9 +118,8 @@ public class MBeanNotificationInfo extends MBeanFeatureInfo implements Cloneable
            notifType, though it doesn't explicitly allow it
            either.  */
 
-        if (notifTypes == null)
-            notifTypes = NO_TYPES;
-        this.types = notifTypes;
+        this.types = (notifTypes != null && notifTypes.length > 0) ?
+                        notifTypes.clone() : NO_TYPES;
         this.arrayGettersSafe =
             MBeanInfo.arrayGettersSafe(this.getClass(),
                                        MBeanNotificationInfo.class);
@@ -191,9 +194,9 @@ public class MBeanNotificationInfo extends MBeanFeatureInfo implements Cloneable
         if (!(o instanceof MBeanNotificationInfo))
             return false;
         MBeanNotificationInfo p = (MBeanNotificationInfo) o;
-        return (p.getName().equals(getName()) &&
-                p.getDescription().equals(getDescription()) &&
-                p.getDescriptor().equals(getDescriptor()) &&
+        return (Objects.equals(p.getName(), getName()) &&
+                Objects.equals(p.getDescription(), getDescription()) &&
+                Objects.equals(p.getDescriptor(), getDescriptor()) &&
                 Arrays.equals(p.fastGetNotifTypes(), fastGetNotifTypes()));
     }
 
@@ -202,5 +205,12 @@ public class MBeanNotificationInfo extends MBeanFeatureInfo implements Cloneable
         for (int i = 0; i < types.length; i++)
             hash ^= types[i].hashCode();
         return hash;
+    }
+
+    private void readObject(ObjectInputStream ois) throws IOException, ClassNotFoundException {
+        ObjectInputStream.GetField gf = ois.readFields();
+        String[] t = (String[])gf.get("types", null);
+
+        types = (t != null && t.length != 0) ? t.clone() : NO_TYPES;
     }
 }

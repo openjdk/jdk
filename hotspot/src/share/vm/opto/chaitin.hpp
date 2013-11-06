@@ -52,6 +52,7 @@ class   PhaseChaitin;
 class LRG : public ResourceObj {
   friend class VMStructs;
 public:
+  static const uint AllStack_size = 0xFFFFF; // This mask size is used to tell that the mask of this LRG supports stack positions
   enum { SPILL_REG=29999 };     // Register number of a spilled LRG
 
   double _cost;                 // 2 for loads/1 for stores times block freq
@@ -80,14 +81,21 @@ public:
 private:
   uint _eff_degree;             // Effective degree: Sum of neighbors _num_regs
 public:
-  int degree() const { assert( _degree_valid, "" ); return _eff_degree; }
+  int degree() const { assert( _degree_valid , "" ); return _eff_degree; }
   // Degree starts not valid and any change to the IFG neighbor
   // set makes it not valid.
-  void set_degree( uint degree ) { _eff_degree = degree; debug_only(_degree_valid = 1;) }
+  void set_degree( uint degree ) {
+    _eff_degree = degree;
+    debug_only(_degree_valid = 1;)
+    assert(!_mask.is_AllStack() || (_mask.is_AllStack() && lo_degree()), "_eff_degree can't be bigger than AllStack_size - _num_regs if the mask supports stack registers");
+  }
   // Made a change that hammered degree
   void invalid_degree() { debug_only(_degree_valid=0;) }
   // Incrementally modify degree.  If it was correct, it should remain correct
-  void inc_degree( uint mod ) { _eff_degree += mod; }
+  void inc_degree( uint mod ) {
+    _eff_degree += mod;
+    assert(!_mask.is_AllStack() || (_mask.is_AllStack() && lo_degree()), "_eff_degree can't be bigger than AllStack_size - _num_regs if the mask supports stack registers");
+  }
   // Compute the degree between 2 live ranges
   int compute_degree( LRG &l ) const;
 
@@ -95,9 +103,9 @@ private:
   RegMask _mask;                // Allowed registers for this LRG
   uint _mask_size;              // cache of _mask.Size();
 public:
-  int compute_mask_size() const { return _mask.is_AllStack() ? 65535 : _mask.Size(); }
+  int compute_mask_size() const { return _mask.is_AllStack() ? AllStack_size : _mask.Size(); }
   void set_mask_size( int size ) {
-    assert((size == 65535) || (size == (int)_mask.Size()), "");
+    assert((size == (int)AllStack_size) || (size == (int)_mask.Size()), "");
     _mask_size = size;
 #ifdef ASSERT
     _msize_valid=1;
@@ -283,8 +291,8 @@ private:
 
   // Straight out of Tarjan's union-find algorithm
   uint find_compress(const Node *node) {
-    uint lrg_id = find_compress(_names[node->_idx]);
-    _names.map(node->_idx, lrg_id);
+    uint lrg_id = find_compress(_names.at(node->_idx));
+    _names.at_put(node->_idx, lrg_id);
     return lrg_id;
   }
 
@@ -305,40 +313,40 @@ public:
   }
 
   uint size() const {
-    return _names.Size();
+    return _names.length();
   }
 
   uint live_range_id(uint idx) const {
-    return _names[idx];
+    return _names.at(idx);
   }
 
   uint live_range_id(const Node *node) const {
-    return _names[node->_idx];
+    return _names.at(node->_idx);
   }
 
   uint uf_live_range_id(uint lrg_id) const {
-    return _uf_map[lrg_id];
+    return _uf_map.at(lrg_id);
   }
 
   void map(uint idx, uint lrg_id) {
-    _names.map(idx, lrg_id);
+    _names.at_put(idx, lrg_id);
   }
 
   void uf_map(uint dst_lrg_id, uint src_lrg_id) {
-    _uf_map.map(dst_lrg_id, src_lrg_id);
+    _uf_map.at_put(dst_lrg_id, src_lrg_id);
   }
 
   void extend(uint idx, uint lrg_id) {
-    _names.extend(idx, lrg_id);
+    _names.at_put_grow(idx, lrg_id);
   }
 
   void uf_extend(uint dst_lrg_id, uint src_lrg_id) {
-    _uf_map.extend(dst_lrg_id, src_lrg_id);
+    _uf_map.at_put_grow(dst_lrg_id, src_lrg_id);
   }
 
-  LiveRangeMap(uint unique)
-  : _names(unique)
-  , _uf_map(unique)
+  LiveRangeMap(Arena* arena, uint unique)
+  : _names(arena, unique, unique, 0)
+  , _uf_map(arena, unique, unique, 0)
   , _max_lrg_id(0) {}
 
   uint find_id( const Node *n ) {
@@ -355,14 +363,14 @@ public:
   void compress_uf_map_for_nodes();
 
   uint find(uint lidx) {
-    uint uf_lidx = _uf_map[lidx];
+    uint uf_lidx = _uf_map.at(lidx);
     return (uf_lidx == lidx) ? uf_lidx : find_compress(lidx);
   }
 
   // Convert a Node into a Live Range Index - a lidx
   uint find(const Node *node) {
     uint lidx = live_range_id(node);
-    uint uf_lidx = _uf_map[lidx];
+    uint uf_lidx = _uf_map.at(lidx);
     return (uf_lidx == lidx) ? uf_lidx : find_compress(node);
   }
 
@@ -371,10 +379,10 @@ public:
 
   // Like Find above, but no path compress, so bad asymptotic behavior
   uint find_const(const Node *node) const {
-    if(node->_idx >= _names.Size()) {
+    if(node->_idx >= (uint)_names.length()) {
       return 0; // not mapped, usual for debug dump
     }
-    return find_const(_names[node->_idx]);
+    return find_const(_names.at(node->_idx));
   }
 };
 

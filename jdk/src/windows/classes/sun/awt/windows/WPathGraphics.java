@@ -870,7 +870,7 @@ class WPathGraphics extends PathGraphics {
      * drawn using GDI to the printer context.
      *
      * @param   img     The image to be drawn.
-     * @param   xform   Used to tranform the image before drawing.
+     * @param   xform   Used to transform the image before drawing.
      *                  This can be null.
      * @param   bgcolor This color is drawn where the image has transparent
      *                  pixels. If this parameter is null then the

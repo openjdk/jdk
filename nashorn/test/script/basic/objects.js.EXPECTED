@@ -29,18 +29,18 @@ abc is writable? undefined
 abc is configurable? true
 abc is enumerable? true
 abc's value = undefined
-abc's get = abc() { return "abc"; }
+abc's get = get abc() { return "abc"; }
 abc's set = undefined
 xyz is writable? undefined
 xyz is configurable? true
 xyz is enumerable? true
 xyz's value = undefined
 xyz's get = undefined
-xyz's set = xyz(val) { print(val); }
+xyz's set = set xyz(val) { print(val); }
 hey is writable? undefined
 hey is configurable? true
 hey is enumerable? true
 hey's value = undefined
-hey's get = hey() { return "hey"; }
-hey's set = hey(val) { print(val); }
+hey's get = get hey() { return "hey"; }
+hey's set = set hey(val) { print(val); }
 undefined

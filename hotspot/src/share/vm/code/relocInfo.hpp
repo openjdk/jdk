@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -677,7 +677,7 @@ class Relocation VALUE_OBJ_CLASS_SPEC {
   }
 
  public:
-  void* operator new(size_t size, const RelocationHolder& holder) {
+  void* operator new(size_t size, const RelocationHolder& holder) throw() {
     if (size > sizeof(holder._relocbuf)) guarantee_size();
     assert((void* const *)holder.reloc() == &holder._relocbuf[0], "ptrs must agree");
     return holder.reloc();

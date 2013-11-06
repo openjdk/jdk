@@ -61,6 +61,8 @@
  */
 package java.time.chrono;
 
+import java.io.InvalidObjectException;
+import java.io.ObjectStreamException;
 import static java.time.temporal.ChronoField.DAY_OF_MONTH;
 import static java.time.temporal.ChronoField.ERA;
 import static java.time.temporal.ChronoField.MONTH_OF_YEAR;
@@ -75,6 +77,7 @@ import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.Month;
+import java.time.Period;
 import java.time.Year;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
@@ -97,7 +100,7 @@ import java.util.Objects;
  * <i>de facto</i> world calendar.
  * <p>
  * The fields are defined as follows:
- * <p><ul>
+ * <ul>
  * <li>era - There are two eras, 'Current Era' (CE) and 'Before Current Era' (BCE).
  * <li>year-of-era - The year-of-era is the same as the proleptic-year for the current CE era.
  *  For the BCE era before the ISO epoch the year increases from 1 upwards as time goes backwards.
@@ -110,14 +113,14 @@ import java.util.Objects;
  * <li>day-of-year - There are 365 days in a standard ISO year and 366 in a leap year.
  *  The days are numbered from 1 to 365 or 1 to 366.
  * <li>leap-year - Leap years occur every 4 years, except where the year is divisble by 100 and not divisble by 400.
- * </ul><p>
+ * </ul>
  *
  * @implSpec
  * This class is immutable and thread-safe.
  *
  * @since 1.8
  */
-public final class IsoChronology extends Chronology implements Serializable {
+public final class IsoChronology extends AbstractChronology implements Serializable {
 
     /**
      * Singleton instance of the ISO chronology.
@@ -563,4 +566,47 @@ public final class IsoChronology extends Chronology implements Serializable {
         return field.range();
     }
 
+    //-----------------------------------------------------------------------
+    /**
+     * Obtains a period for this chronology based on years, months and days.
+     * <p>
+     * This returns a period tied to the ISO chronology using the specified
+     * years, months and days. See {@link Period} for further details.
+     *
+     * @param years  the number of years, may be negative
+     * @param months  the number of years, may be negative
+     * @param days  the number of years, may be negative
+     * @return the period in terms of this chronology, not null
+     * @return the ISO period, not null
+     */
+    @Override  // override with covariant return type
+    public Period period(int years, int months, int days) {
+        return Period.of(years, months, days);
+    }
+
+    //-----------------------------------------------------------------------
+    /**
+     * Writes the Chronology using a
+     * <a href="../../../serialized-form.html#java.time.chrono.Ser">dedicated serialized form</a>.
+     * @serialData
+     * <pre>
+     *  out.writeByte(1);     // identifies a Chronology
+     *  out.writeUTF(getId());
+     * </pre>
+     *
+     * @return the instance of {@code Ser}, not null
+     */
+    @Override
+    Object writeReplace() {
+        return super.writeReplace();
+    }
+
+    /**
+     * Defend against malicious streams.
+     * @return never
+     * @throws InvalidObjectException always
+     */
+    private Object readResolve() throws InvalidObjectException {
+        throw new InvalidObjectException("Deserialization via serialization delegate");
+    }
 }

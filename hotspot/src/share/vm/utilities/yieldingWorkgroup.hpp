@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,10 +26,7 @@
 #define SHARE_VM_UTILITIES_YIELDINGWORKGROUP_HPP
 
 #include "utilities/macros.hpp"
-#if INCLUDE_ALL_GCS
 #include "utilities/workgroup.hpp"
-#endif // INCLUDE_ALL_GCS
-
 
 // Forward declarations
 class YieldingFlexibleWorkGang;

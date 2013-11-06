@@ -35,7 +35,7 @@ import java.util.List;
  *
  * @since 1.8
  */
-@jdk.Supported
+@jdk.Exported
 public interface SerialTree extends BlockTagTree {
     List<? extends DocTree> getDescription();
 }

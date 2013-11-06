@@ -86,7 +86,7 @@ public class SQLWarning extends SQLException {
     /**
      * Constructs a <code>SQLWarning</code> object
      * with a given <code>reason</code>. The <code>SQLState</code>
-     * is initialized to <code>null</code> and the vender code is initialized
+     * is initialized to <code>null</code> and the vendor code is initialized
      * to 0.
      *
      * The <code>cause</code> is not initialized, and may subsequently be
@@ -108,7 +108,7 @@ public class SQLWarning extends SQLException {
      * The <code>cause</code> is not initialized, and may subsequently be
      * initialized by a call to the
      * {@link Throwable#initCause(java.lang.Throwable)} method.
-     * <p>
+     *
      */
     public SQLWarning() {
         super();

@@ -176,7 +176,7 @@ public class CompoundScopeTest {
          */
         void checkElems(CompoundScope cs, Filter<Symbol> sf) {
             int count = 0;
-            ListBuffer<Symbol> found = ListBuffer.lb();
+            ListBuffer<Symbol> found = new ListBuffer<>();
             List<Symbol> allSymbols = sf == null ?
                     elems :
                     filter(elems, sf);
@@ -216,7 +216,7 @@ public class CompoundScopeTest {
         }
 
         List<Symbol> filter(List<Symbol> elems, Filter<Symbol> sf) {
-            ListBuffer<Symbol> res = ListBuffer.lb();
+            ListBuffer<Symbol> res = new ListBuffer<>();
             for (Symbol s : elems) {
                 if (sf.accepts(s)) {
                     res.append(s);

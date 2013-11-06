@@ -23,7 +23,8 @@
  * questions.
  */
 
-CustomTransfer        = Java.type("javafx.embed.swt.CustomTransfer");
-//CustomTransferBuilder = Java.type("javafx.embed.swt.CustomTransferBuilder");
-FXCanvas              = Java.type("javafx.embed.swt.FXCanvas");
-SWTFXUtils            = Java.type("javafx.embed.swt.SWTFXUtils");
+if (!this.JFX_BASE_CLASSES) {
+    load("fx:base.js")
+}
+
+LOAD_FX_CLASSES(JFX_SWT_CLASSES);

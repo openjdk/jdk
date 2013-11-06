@@ -99,7 +99,6 @@ COMPILER_PATH.desc         = Compiler install directory
 CACERTS_FILE.desc          = Location of certificates file
 DEVTOOLS_PATH.desc         = Directory containing zip and unzip
 CUPS_HEADERS_PATH.desc     = Include directory location for CUPS header files
-DXSDK_PATH.desc            = Root directory of DirectX SDK
 
 # Make variables to print out (description and value)
 VARIABLE_PRINTVAL_LIST +=       \
@@ -127,17 +126,6 @@ VARIABLE_CHECKDIR_LIST +=       \
 # Make variables that should refer to files that exist
 VARIABLE_CHECKFIL_LIST +=       \
     CACERTS_FILE
-
-# Some are windows specific
-ifeq ($(PLATFORM), windows)
-
-VARIABLE_PRINTVAL_LIST +=       \
-    DXSDK_PATH
-
-VARIABLE_CHECKDIR_LIST +=       \
-    DXSDK_PATH
-
-endif
 
 # For pattern rules below, so all are treated the same
 DO_PRINTVAL_LIST=$(VARIABLE_PRINTVAL_LIST:%=%.printval)

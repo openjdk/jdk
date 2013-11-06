@@ -85,13 +85,13 @@ void PhaseLive::compute(uint maxlrg) {
     IndexSet* def = &_defs[block->_pre_order-1];
     DEBUG_ONLY(IndexSet *def_outside = getfreeset();)
     uint i;
-    for (i = block->_nodes.size(); i > 1; i--) {
-      Node* n = block->_nodes[i-1];
+    for (i = block->number_of_nodes(); i > 1; i--) {
+      Node* n = block->get_node(i-1);
       if (n->is_Phi()) {
         break;
       }
 
-      uint r = _names[n->_idx];
+      uint r = _names.at(n->_idx);
       assert(!def_outside->member(r), "Use of external LRG overlaps the same LRG defined in this block");
       def->insert( r );
       use->remove( r );
@@ -100,7 +100,7 @@ void PhaseLive::compute(uint maxlrg) {
         Node *nk = n->in(k);
         uint nkidx = nk->_idx;
         if (_cfg.get_block_for_node(nk) != block) {
-          uint u = _names[nkidx];
+          uint u = _names.at(nkidx);
           use->insert(u);
           DEBUG_ONLY(def_outside->insert(u);)
         }
@@ -112,7 +112,7 @@ void PhaseLive::compute(uint maxlrg) {
 #endif
     // Remove anything defined by Phis and the block start instruction
     for (uint k = i; k > 0; k--) {
-      uint r = _names[block->_nodes[k - 1]->_idx];
+      uint r = _names.at(block->get_node(k - 1)->_idx);
       def->insert(r);
       use->remove(r);
     }
@@ -124,7 +124,7 @@ void PhaseLive::compute(uint maxlrg) {
 
       // PhiNode uses go in the live-out set of prior blocks.
       for (uint k = i; k > 0; k--) {
-        add_liveout(p, _names[block->_nodes[k-1]->in(l)->_idx], first_pass);
+        add_liveout(p, _names.at(block->get_node(k-1)->in(l)->_idx), first_pass);
       }
     }
     freeset(block);
@@ -254,10 +254,10 @@ void PhaseLive::add_liveout( Block *p, IndexSet *lo, VectorSet &first_pass ) {
 void PhaseLive::dump( const Block *b ) const {
   tty->print("Block %d: ",b->_pre_order);
   tty->print("LiveOut: ");  _live[b->_pre_order-1].dump();
-  uint cnt = b->_nodes.size();
+  uint cnt = b->number_of_nodes();
   for( uint i=0; i<cnt; i++ ) {
-    tty->print("L%d/", _names[b->_nodes[i]->_idx] );
-    b->_nodes[i]->dump();
+    tty->print("L%d/", _names.at(b->get_node(i)->_idx));
+    b->get_node(i)->dump();
   }
   tty->print("\n");
 }
@@ -269,7 +269,7 @@ void PhaseChaitin::verify_base_ptrs( ResourceArea *a ) const {
   for (uint i = 0; i < _cfg.number_of_blocks(); i++) {
     Block* block = _cfg.get_block(i);
     for (uint j = block->end_idx() + 1; j > 1; j--) {
-      Node* n = block->_nodes[j-1];
+      Node* n = block->get_node(j-1);
       if (n->is_Phi()) {
         break;
       }
@@ -321,7 +321,7 @@ void PhaseChaitin::verify_base_ptrs( ResourceArea *a ) const {
 #ifdef _LP64
                       UseCompressedOops && check->as_Mach()->ideal_Opcode() == Op_CastPP ||
                       UseCompressedOops && check->as_Mach()->ideal_Opcode() == Op_DecodeN ||
-                      UseCompressedKlassPointers && check->as_Mach()->ideal_Opcode() == Op_DecodeNKlass ||
+                      UseCompressedClassPointers && check->as_Mach()->ideal_Opcode() == Op_DecodeNKlass ||
 #endif
                       check->as_Mach()->ideal_Opcode() == Op_LoadP ||
                       check->as_Mach()->ideal_Opcode() == Op_LoadKlass)) {

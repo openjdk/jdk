@@ -52,7 +52,7 @@ import java.util.Hashtable;
  * <code>JToolBar</code> provides a component that is useful for
  * displaying commonly used <code>Action</code>s or controls.
  * For examples and information on using tool bars see
- * <a href="http://java.sun.com/docs/books/tutorial/uiswing/components/toolbar.html">How to Use Tool Bars</a>,
+ * <a href="http://docs.oracle.com/javase/tutorial/uiswing/components/toolbar.html">How to Use Tool Bars</a>,
  * a section in <em>The Java Tutorial</em>.
  *
  * <p>
@@ -74,7 +74,7 @@ import java.util.Hashtable;
  * future Swing releases. The current serialization support is
  * appropriate for short term storage or RMI between applications running
  * the same version of Swing.  As of 1.4, support for long term storage
- * of all JavaBeans<sup><font size="-2">TM</font></sup>
+ * of all JavaBeans&trade;
  * has been added to the <code>java.beans</code> package.
  * Please see {@link java.beans.XMLEncoder}.
  *
@@ -167,9 +167,9 @@ public class JToolBar extends JComponent implements SwingConstants, Accessible
     }
 
     /**
-     * Sets the L&F object that renders this component.
+     * Sets the L&amp;F object that renders this component.
      *
-     * @param ui  the <code>ToolBarUI</code> L&F object
+     * @param ui  the <code>ToolBarUI</code> L&amp;F object
      * @see UIDefaults#getUI
      * @beaninfo
      *        bound: true
@@ -182,7 +182,7 @@ public class JToolBar extends JComponent implements SwingConstants, Accessible
     }
 
     /**
-     * Notification from the <code>UIFactory</code> that the L&F has changed.
+     * Notification from the <code>UIFactory</code> that the L&amp;F has changed.
      * Called to replace the UI with the latest version from the
      * <code>UIFactory</code>.
      *
@@ -202,7 +202,7 @@ public class JToolBar extends JComponent implements SwingConstants, Accessible
 
 
     /**
-     * Returns the name of the L&F class that renders this component.
+     * Returns the name of the L&amp;F class that renders this component.
      *
      * @return the string "ToolBarUI"
      * @see JComponent#getUIClassID
@@ -613,7 +613,7 @@ public class JToolBar extends JComponent implements SwingConstants, Accessible
         }
 
         /**
-         * Returns the name of the L&F class that renders this component.
+         * Returns the name of the L&amp;F class that renders this component.
          *
          * @return the string "ToolBarSeparatorUI"
          * @see JComponent#getUIClassID

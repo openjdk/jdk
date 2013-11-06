@@ -263,15 +263,6 @@ final class RegExpScanner extends Scanner {
         }
 
         if (atom()) {
-            // Check for character classes that never or always match
-            if (sb.toString().endsWith("[]")) {
-                sb.setLength(sb.length() - 1);
-                sb.append("^\\s\\S]");
-            } else if (sb.toString().endsWith("[^]")) {
-                sb.setLength(sb.length() - 2);
-                sb.append("\\s\\S]");
-            }
-
             quantifier();
             return true;
         }
@@ -767,7 +758,18 @@ final class RegExpScanner extends Scanner {
 
                 if (classRanges() && ch0 == ']') {
                     pop(']');
-                    return commit(1);
+                    commit(1);
+
+                    // Substitute empty character classes [] and [^] that never or always match
+                    if (position == startIn + 2) {
+                        sb.setLength(sb.length() - 1);
+                        sb.append("^\\s\\S]");
+                    } else if (position == startIn + 3 && inNegativeClass) {
+                        sb.setLength(sb.length() - 2);
+                        sb.append("\\s\\S]");
+                    }
+
+                    return true;
                 }
             } finally {
                 inCharClass = false;  // no nested character classes in JavaScript

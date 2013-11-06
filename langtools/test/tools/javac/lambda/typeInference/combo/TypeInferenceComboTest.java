@@ -227,12 +227,7 @@ public class TypeInferenceComboTest
         }
         else if (lambdaBodyType != LambdaBody.RETURN_ARG)
             return false;
-        if (  genericDeclKind == GenericDeclKind.GENERIC_NOBOUND ||
-                genericDeclKind == GenericDeclKind.GENERIC_BOUND ) {
-            if ( parameterType == TypeKind.GENERIC &&
-                    parameterKind == ParameterKind.IMPLICIT) //cyclic inference
-                return false;
-        }
+
         return true;
     }
 

@@ -97,17 +97,31 @@ oop fieldDescriptor::string_initial_value(TRAPS) const {
   return constants()->uncached_string_at(initial_value_index(), CHECK_0);
 }
 
-void fieldDescriptor::initialize(InstanceKlass* ik, int index) {
-  _cp = ik->constants();
+void fieldDescriptor::reinitialize(InstanceKlass* ik, int index) {
+  if (_cp.is_null() || field_holder() != ik) {
+    _cp = constantPoolHandle(Thread::current(), ik->constants());
+    // _cp should now reference ik's constant pool; i.e., ik is now field_holder.
+    assert(field_holder() == ik, "must be already initialized to this class");
+  }
   FieldInfo* f = ik->field(index);
   assert(!f->is_internal(), "regular Java fields only");
 
   _access_flags = accessFlags_from(f->access_flags());
   guarantee(f->name_index() != 0 && f->signature_index() != 0, "bad constant pool index for fieldDescriptor");
   _index = index;
+  verify();
 }
 
 #ifndef PRODUCT
+
+void fieldDescriptor::verify() const {
+  if (_cp.is_null()) {
+    assert(_index == badInt, "constructor must be called");  // see constructor
+  } else {
+    assert(_index >= 0, "good index");
+    assert(_index < field_holder()->java_fields_count(), "oob");
+  }
+}
 
 void fieldDescriptor::print_on(outputStream* st) const {
   access_flags().print_on(st);

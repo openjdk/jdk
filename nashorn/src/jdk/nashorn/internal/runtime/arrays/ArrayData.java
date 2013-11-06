@@ -26,10 +26,9 @@
 package jdk.nashorn.internal.runtime.arrays;
 
 import java.lang.invoke.MethodHandle;
-import java.lang.reflect.Array;
 import jdk.nashorn.internal.runtime.GlobalObject;
+import jdk.nashorn.internal.runtime.JSType;
 import jdk.nashorn.internal.runtime.PropertyDescriptor;
-import jdk.nashorn.internal.runtime.linker.Bootstrap;
 
 /**
  * ArrayData - abstraction for wrapping array elements
@@ -204,20 +203,7 @@ public abstract class ArrayData {
      * @return and array of the given type
      */
     public Object asArrayOfType(final Class<?> componentType) {
-        final Object[] src = asObjectArray();
-        final int l = src.length;
-        final Object dst = Array.newInstance(componentType, l);
-        final MethodHandle converter = Bootstrap.getLinkerServices().getTypeConverter(Object.class, componentType);
-        try {
-            for (int i = 0; i < src.length; i++) {
-                Array.set(dst, i, invoke(converter, src[i]));
-            }
-        } catch (final RuntimeException | Error e) {
-            throw e;
-        } catch (final Throwable t) {
-            throw new RuntimeException(t);
-        }
-        return dst;
+        return JSType.convertArray(asObjectArray(), componentType);
     }
 
     /**
@@ -475,7 +461,23 @@ public abstract class ArrayData {
      */
     public abstract ArrayData slice(long from, long to);
 
-    private static Class<?> widestType(final Object... items) {
+    /**
+     * Fast splice operation. This just modifies the array according to the number of
+     * elements added and deleted but does not insert the added elements. Throws
+     * {@code UnsupportedOperationException} if fast splice operation is not supported
+     * for this class or arguments.
+     *
+     * @param start start index of splice operation
+     * @param removed number of removed elements
+     * @param added number of added elements
+     * @throws UnsupportedOperationException if fast splice is not supported for the class or arguments.
+     */
+    public ArrayData fastSplice(final int start, final int removed, final int added) throws UnsupportedOperationException {
+        throw new UnsupportedOperationException();
+    }
+
+
+    static Class<?> widestType(final Object... items) {
         assert items.length > 0;
 
         Class<?> widest = Integer.class;

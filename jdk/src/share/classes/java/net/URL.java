@@ -465,7 +465,7 @@ public final class URL implements java.io.Serializable {
      * Otherwise, the path is treated as a relative path and is appended to the
      * context path, as described in RFC2396. Also, in this case,
      * the path is canonicalized through the removal of directory
-     * changes made by occurences of &quot;..&quot; and &quot;.&quot;.
+     * changes made by occurrences of &quot;..&quot; and &quot;.&quot;.
      * <p>
      * For a more detailed description of URL parsing, refer to RFC2396.
      *

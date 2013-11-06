@@ -186,7 +186,7 @@ void C1_MacroAssembler::initialize_header(Register obj, Register klass, Register
     set((intx)markOopDesc::prototype(), t1);
   }
   st_ptr(t1, obj, oopDesc::mark_offset_in_bytes());
-  if (UseCompressedKlassPointers) {
+  if (UseCompressedClassPointers) {
     // Save klass
     mov(klass, t1);
     encode_klass_not_null(t1);
@@ -196,7 +196,7 @@ void C1_MacroAssembler::initialize_header(Register obj, Register klass, Register
   }
   if (len->is_valid()) {
     st(len, obj, arrayOopDesc::length_offset_in_bytes());
-  } else if (UseCompressedKlassPointers) {
+  } else if (UseCompressedClassPointers) {
     // otherwise length is in the class gap
     store_klass_gap(G0, obj);
   }

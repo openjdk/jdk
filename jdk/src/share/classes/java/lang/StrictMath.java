@@ -633,7 +633,7 @@ public final class StrictMath {
 
     /**
      * Returns the closest {@code int} to the argument, with ties
-     * rounding up.
+     * rounding to positive infinity.
      *
      * <p>Special cases:
      * <ul><li>If the argument is NaN, the result is 0.
@@ -656,7 +656,7 @@ public final class StrictMath {
 
     /**
      * Returns the closest {@code long} to the argument, with ties
-     * rounding up.
+     * rounding to positive infinity.
      *
      * <p>Special cases:
      * <ul><li>If the argument is NaN, the result is 0.

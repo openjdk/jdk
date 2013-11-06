@@ -44,7 +44,7 @@ public class AccessControlException extends SecurityException {
 
     private static final long serialVersionUID = 5138225684096988535L;
 
-    // the permission that caused the exeception to be thrown.
+    // the permission that caused the exception to be thrown.
     private Permission perm;
 
     /**
@@ -71,7 +71,7 @@ public class AccessControlException extends SecurityException {
     }
 
     /**
-     * Gets the Permission object associated with this exeception, or
+     * Gets the Permission object associated with this exception, or
      * null if there was no corresponding Permission object.
      *
      * @return the Permission object.

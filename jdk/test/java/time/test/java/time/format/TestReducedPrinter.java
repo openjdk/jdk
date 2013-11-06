@@ -59,19 +59,15 @@
  */
 package test.java.time.format;
 
-import java.text.ParsePosition;
 import static java.time.temporal.ChronoField.YEAR;
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.fail;
 
 import java.time.DateTimeException;
 import java.time.LocalDate;
+import java.time.chrono.MinguoDate;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeFormatterBuilder;
-import static java.time.temporal.ChronoField.DAY_OF_MONTH;
-import static java.time.temporal.ChronoField.MONTH_OF_YEAR;
-import static java.time.temporal.ChronoField.YEAR_OF_ERA;
-import java.time.temporal.TemporalAccessor;
 import java.time.temporal.TemporalField;
 
 import org.testng.annotations.DataProvider;
@@ -85,11 +81,15 @@ import test.java.time.temporal.MockFieldValue;
 public class TestReducedPrinter extends AbstractTestPrinterParser {
 
     private DateTimeFormatter getFormatter0(TemporalField field, int width, int baseValue) {
-        return builder.appendValueReduced(field, width, baseValue).toFormatter(locale).withDecimalStyle(decimalStyle);
+        return builder.appendValueReduced(field, width, width, baseValue).toFormatter(locale).withDecimalStyle(decimalStyle);
     }
 
     private DateTimeFormatter getFormatter0(TemporalField field, int minWidth, int maxWidth, int baseValue) {
         return builder.appendValueReduced(field, minWidth, maxWidth, baseValue).toFormatter(locale).withDecimalStyle(decimalStyle);
+    }
+
+    private DateTimeFormatter getFormatterBaseDate(TemporalField field, int minWidth, int maxWidth, int baseValue) {
+        return builder.appendValueReduced(field, minWidth, maxWidth, LocalDate.of(baseValue, 1, 1)).toFormatter(locale).withDecimalStyle(decimalStyle);
     }
 
     //-----------------------------------------------------------------------
@@ -190,6 +190,58 @@ public class TestReducedPrinter extends AbstractTestPrinterParser {
                 throw ex;
             }
         }
+    }
+
+    @Test(dataProvider="Pivot")
+    public void test_pivot_baseDate(int minWidth, int maxWidth, int baseValue, int value, String result) throws Exception {
+        try {
+            getFormatterBaseDate(YEAR, minWidth, maxWidth, baseValue).formatTo(new MockFieldValue(YEAR, value), buf);
+            if (result == null) {
+                fail("Expected exception");
+            }
+            assertEquals(buf.toString(), result);
+        } catch (DateTimeException ex) {
+            if (result == null || value < 0) {
+                assertEquals(ex.getMessage().contains(YEAR.toString()), true);
+            } else {
+                throw ex;
+            }
+        }
+    }
+
+    //-----------------------------------------------------------------------
+    public void test_minguoChrono_fixedWidth() throws Exception {
+        // ISO 2021 is Minguo 110
+        DateTimeFormatter f = getFormatterBaseDate(YEAR, 2, 2, 2021);
+        MinguoDate date = MinguoDate.of(109, 6, 30);
+        assertEquals(f.format(date), "09");
+        date = MinguoDate.of(110, 6, 30);
+        assertEquals(f.format(date), "10");
+        date = MinguoDate.of(199, 6, 30);
+        assertEquals(f.format(date), "99");
+        date = MinguoDate.of(200, 6, 30);
+        assertEquals(f.format(date), "00");
+        date = MinguoDate.of(209, 6, 30);
+        assertEquals(f.format(date), "09");
+        date = MinguoDate.of(210, 6, 30);
+        assertEquals(f.format(date), "10");
+    }
+
+    public void test_minguoChrono_extendedWidth() throws Exception {
+        // ISO 2021 is Minguo 110
+        DateTimeFormatter f = getFormatterBaseDate(YEAR, 2, 4, 2021);
+        MinguoDate date = MinguoDate.of(109, 6, 30);
+        assertEquals(f.format(date), "109");
+        date = MinguoDate.of(110, 6, 30);
+        assertEquals(f.format(date), "10");
+        date = MinguoDate.of(199, 6, 30);
+        assertEquals(f.format(date), "99");
+        date = MinguoDate.of(200, 6, 30);
+        assertEquals(f.format(date), "00");
+        date = MinguoDate.of(209, 6, 30);
+        assertEquals(f.format(date), "09");
+        date = MinguoDate.of(210, 6, 30);
+        assertEquals(f.format(date), "210");
     }
 
     //-----------------------------------------------------------------------

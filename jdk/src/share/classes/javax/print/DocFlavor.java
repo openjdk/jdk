@@ -53,7 +53,7 @@ import java.io.Serializable;
  * <LI>
  * <B>Representation class name.</B> This specifies the fully-qualified name of
  * the class of the object from which the actual print data comes, as returned
- * by the {@link java.lang.Class#getName() <CODE>Class.getName()</CODE>} method.
+ * by the {@link java.lang.Class#getName() Class.getName()} method.
  * (Thus the class name for <CODE>byte[]</CODE> is <CODE>"[B"</CODE>, for
  * <CODE>char[]</CODE> it is <CODE>"[C"</CODE>.)
  * </UL>
@@ -95,7 +95,7 @@ import java.io.Serializable;
  * <UL>
  * <LI>
  * Character array (<CODE>char[]</CODE>) -- The print data consists of the
- * Unicde characters in the array.
+ * Unicode characters in the array.
  * <P>
  * <LI>
  * <code>String</code>  --
@@ -163,7 +163,7 @@ import java.io.Serializable;
  * Every instance of the Java virtual machine has a default character encoding
  * determined during virtual-machine startup and typically depends upon the
  * locale and charset being used by the underlying operating system.
- * In a distributed environment there is no gurantee that two VM's share
+ * In a distributed environment there is no guarantee that two VM share
  * the same default encoding. Thus clients which want to stream platform
  * encoded text data from the host platform to a Java Print Service instance
  * must explicitly declare the charset and not rely on defaults.
@@ -174,7 +174,7 @@ import java.io.Serializable;
  * platform for data (eg files) stored in that platform's encoding.
  * A CharSet which corresponds to this and is suitable for use in a
  * mime-type for a DocFlavor can be obtained
- * from {@link DocFlavor#hostEncoding <CODE>DocFlavor.hostEncoding</CODE>}
+ * from {@link DocFlavor#hostEncoding DocFlavor.hostEncoding}
  * This may not always be the primary IANA name but is guaranteed to be
  * understood by this VM.
  * For common flavors, the pre-defined *HOST DocFlavors may be used.
@@ -669,7 +669,7 @@ public class DocFlavor implements Serializable, Cloneable {
         /**
          * Doc flavor with MIME type = <CODE>"text/plain"</CODE>,
          * encoded in the host platform encoding.
-         * See {@link DocFlavor#hostEncoding <CODE>hostEncoding</CODE>}
+         * See {@link DocFlavor#hostEncoding hostEncoding}
          * Print data representation class name =
          * <CODE>"[B"</CODE> (byte array).
          */
@@ -728,7 +728,7 @@ public class DocFlavor implements Serializable, Cloneable {
         /**
          * Doc flavor with MIME type = <CODE>"text/html"</CODE>,
          * encoded in the host platform encoding.
-         * See {@link DocFlavor#hostEncoding <CODE>hostEncoding</CODE>}
+         * See {@link DocFlavor#hostEncoding hostEncoding}
          * Print data representation class name =
          * <CODE>"[B"</CODE> (byte array).
          */
@@ -838,7 +838,7 @@ public class DocFlavor implements Serializable, Cloneable {
     /**
      * Class DocFlavor.INPUT_STREAM provides predefined static constant
      * DocFlavor objects for example doc flavors using a byte stream ({@link
-     * java.io.InputStream <CODE>java.io.InputStream</CODE>}) as the print
+     * java.io.InputStream java.io.InputStream}) as the print
      * data representation class.
      * <P>
      *
@@ -868,7 +868,7 @@ public class DocFlavor implements Serializable, Cloneable {
         /**
          * Doc flavor with MIME type = <CODE>"text/plain"</CODE>,
          * encoded in the host platform encoding.
-         * See {@link DocFlavor#hostEncoding <CODE>hostEncoding</CODE>}
+         * See {@link DocFlavor#hostEncoding hostEncoding}
          * Print data representation class name =
          * <CODE>"java.io.InputStream"</CODE> (byte stream).
          */
@@ -925,7 +925,7 @@ public class DocFlavor implements Serializable, Cloneable {
         /**
          * Doc flavor with MIME type = <CODE>"text/html"</CODE>,
          * encoded in the host platform encoding.
-         * See {@link DocFlavor#hostEncoding <CODE>hostEncoding</CODE>}
+         * See {@link DocFlavor#hostEncoding hostEncoding}
          * Print data representation class name =
          * <CODE>"java.io.InputStream"</CODE> (byte stream).
          */
@@ -1041,7 +1041,7 @@ public class DocFlavor implements Serializable, Cloneable {
      * Class DocFlavor.URL provides predefined static constant DocFlavor
      * objects.
      * For example doc flavors using a Uniform Resource Locator ({@link
-     * java.net.URL <CODE>java.net.URL</CODE>}) as the print data
+     * java.net.URL java.net.URL}) as the print data
      * representation  class.
      * <P>
      *
@@ -1068,7 +1068,7 @@ public class DocFlavor implements Serializable, Cloneable {
         /**
          * Doc flavor with MIME type = <CODE>"text/plain"</CODE>,
          * encoded in the host platform encoding.
-         * See {@link DocFlavor#hostEncoding <CODE>hostEncoding</CODE>}
+         * See {@link DocFlavor#hostEncoding hostEncoding}
          * Print data representation class name =
          * <CODE>"java.net.URL"</CODE> (byte stream).
          */
@@ -1125,7 +1125,7 @@ public class DocFlavor implements Serializable, Cloneable {
         /**
          * Doc flavor with MIME type = <CODE>"text/html"</CODE>,
          * encoded in the host platform encoding.
-         * See {@link DocFlavor#hostEncoding <CODE>hostEncoding</CODE>}
+         * See {@link DocFlavor#hostEncoding hostEncoding}
          * Print data representation class name =
          * <CODE>"java.net.URL"</CODE> (byte stream).
          */
@@ -1280,7 +1280,7 @@ public class DocFlavor implements Serializable, Cloneable {
     /**
      * Class DocFlavor.STRING provides predefined static constant DocFlavor
      * objects for example doc flavors using a string ({@link java.lang.String
-     * <CODE>java.lang.String</CODE>}) as the print data representation class.
+     * java.lang.String}) as the print data representation class.
      * As such, the character set is Unicode.
      * <P>
      *
@@ -1328,7 +1328,7 @@ public class DocFlavor implements Serializable, Cloneable {
     /**
      * Class DocFlavor.READER provides predefined static constant DocFlavor
      * objects for example doc flavors using a character stream ({@link
-     * java.io.Reader <CODE>java.io.Reader</CODE>}) as the print data
+     * java.io.Reader java.io.Reader}) as the print data
      * representation class. As such, the character set is Unicode.
      * <P>
      *

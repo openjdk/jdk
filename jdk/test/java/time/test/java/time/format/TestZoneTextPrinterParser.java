@@ -33,7 +33,7 @@ import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeFormatterBuilder;
 import java.time.format.TextStyle;
 import java.time.temporal.ChronoField;
-import java.time.temporal.TemporalQuery;
+import java.time.temporal.TemporalQueries;
 import java.time.zone.ZoneRulesProvider;
 import java.util.Arrays;
 import java.util.Date;
@@ -112,13 +112,13 @@ public class TestZoneTextPrinterParser extends AbstractTestPrinterParser {
     }
 
     private static Set<ZoneId> preferred = new HashSet<>(Arrays.asList(new ZoneId[] {
-        ZoneId.of("EST"),
+        ZoneId.of("EST", ZoneId.SHORT_IDS),
         ZoneId.of("Asia/Taipei"),
         ZoneId.of("CET"),
     }));
 
     private static Set<ZoneId> preferred_s = new HashSet<>(Arrays.asList(new ZoneId[] {
-         ZoneId.of("EST"),
+         ZoneId.of("EST", ZoneId.SHORT_IDS),
          ZoneId.of("CET"),
          ZoneId.of("Australia/South"),
          ZoneId.of("Australia/West"),
@@ -131,7 +131,7 @@ public class TestZoneTextPrinterParser extends AbstractTestPrinterParser {
     Object[][] data_preferredZones() {
         return new Object[][] {
             {"America/New_York", "Eastern Standard Time", none,      Locale.ENGLISH, TextStyle.FULL},
-            {"EST",              "Eastern Standard Time", preferred, Locale.ENGLISH, TextStyle.FULL},
+//          {"EST",              "Eastern Standard Time", preferred, Locale.ENGLISH, TextStyle.FULL},
             {"Europe/Paris",     "Central European Time", none,      Locale.ENGLISH, TextStyle.FULL},
             {"CET",              "Central European Time", preferred, Locale.ENGLISH, TextStyle.FULL},
             {"Asia/Shanghai",    "China Standard Time",   none,      Locale.ENGLISH, TextStyle.FULL},
@@ -150,7 +150,7 @@ public class TestZoneTextPrinterParser extends AbstractTestPrinterParser {
                                                               .toFormatter(locale)
                                                               .withDecimalStyle(DecimalStyle.of(locale));
 
-        String ret = fmt.parse(text, TemporalQuery.zone()).getId();
+        String ret = fmt.parse(text, TemporalQueries.zone()).getId();
 
         System.out.printf("[%-5s %s] %24s -> %s(%s)%n",
                           locale.toString(),
@@ -186,7 +186,7 @@ public class TestZoneTextPrinterParser extends AbstractTestPrinterParser {
         if (ci) {
             text = text.toUpperCase();
         }
-        String ret = fmt.parse(text, TemporalQuery.zone()).getId();
+        String ret = fmt.parse(text, TemporalQueries.zone()).getId();
         // TBD: need an excluding list
         // assertEquals(...);
         if (ret.equals(expected) ||
