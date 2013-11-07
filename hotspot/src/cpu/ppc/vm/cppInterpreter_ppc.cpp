@@ -317,7 +317,7 @@ address CppInterpreterGenerator::generate_stack_to_native_abi_converter(BasicTyp
   return entry;
 }
 
-address CppInterpreter::return_entry(TosState state, int length) {
+address CppInterpreter::return_entry(TosState state, int length, Bytecodes::Code code) {
   assert(interpreter_return_address != NULL, "Not initialized");
   return interpreter_return_address;
 }
