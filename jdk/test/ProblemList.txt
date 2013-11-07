@@ -128,12 +128,6 @@ java/lang/management/ThreadMXBean/ThreadStateTest.java          generic-all
 # 7067973
 java/lang/management/MemoryMXBean/CollectionUsageThreshold.java generic-all
 
-# 8021230
-java/lang/ThreadLocal/ThreadLocalSupplierTest.java              generic-all
-
-# 8026502
-java/lang/invoke/MethodHandleConstants.java                     generic-all
-
 ############################################################################
 
 # jdk_management
@@ -162,12 +156,15 @@ demo/jvmti/compiledMethodLoad/CompiledMethodLoadTest.java	generic-all
 # 7027502
 demo/jvmti/hprof/MonitorTest.java                               generic-all
 
-# 8024423 - JVMTI: GetLoadedClasses doesn't enumerate anonymous classes 
+# 8024423 - JVMTI: GetLoadedClasses doesn't enumerate anonymous classes
 demo/jvmti/hprof/HeapAllTest.java                               generic-all
 demo/jvmti/hprof/HeapBinaryFormatTest.java                      generic-all
 demo/jvmti/hprof/HeapDumpTest.java                              generic-all
 demo/jvmti/hprof/OptionsTest.java                               generic-all
 demo/jvmti/hprof/StackMapTableTest.java                         generic-all
+
+# 8027622
+java/sql/JavatimeTest.java                                      generic-all
 
 ############################################################################
 
@@ -200,9 +197,6 @@ java/net/MulticastSocket/Test.java                               macosx-all
 # 7143960
 java/net/DatagramSocket/SendDatagramToBadAddress.java            macosx-all
 
-# 8014719
-sun/net/www/http/HttpClient/ProxyTest.java                       generic-all
-
 ############################################################################
 
 # jdk_nio
@@ -223,6 +217,9 @@ java/nio/channels/DatagramChannel/ChangingAddress.java          macosx-all
 
 # 7132677
 java/nio/channels/Selector/OutOfBand.java                       macosx-all
+
+# 8027622
+java/nio/file/attribute/FileTime/Basic.java                     generic-all
 
 ############################################################################
 
@@ -259,10 +256,6 @@ sun/security/pkcs11/ec/ReadCertificates.java                    solaris-all
 sun/security/pkcs11/ec/ReadPKCS12.java                          solaris-all
 sun/security/pkcs11/sslecc/ClientJSSEServerJSSE.java            solaris-all
 
-# 8009438
-sun/security/pkcs11/Secmod/AddPrivateKey.java			linux-all
-sun/security/pkcs11/Secmod/TrustAnchors.java 			linux-all
-
 # 7041639, Solaris DSA keypair generation bug
 java/security/KeyPairGenerator/SolarisShortDSA.java             solaris-all
 sun/security/tools/keytool/standard.sh                          solaris-all
@@ -291,6 +284,26 @@ sun/security/krb5/auto/BadKdc4.java                             solaris-sparcv9
 ############################################################################
 
 # jdk_time
+
+# 8027622
+java/time/tck/java/time/TCKClock_Tick.java                      generic-all
+java/time/tck/java/time/TCKDuration.java                        generic-all
+java/time/tck/java/time/TCKInstant.java                         generic-all
+java/time/tck/java/time/TCKLocalDate.java                       generic-all
+java/time/tck/java/time/TCKLocalDateTime.java                   generic-all
+java/time/tck/java/time/TCKLocalTime.java                       generic-all
+java/time/tck/java/time/TCKMonthDay.java                        generic-all
+java/time/tck/java/time/TCKOffsetDateTime.java                  generic-all
+java/time/tck/java/time/TCKOffsetTime.java                      generic-all
+java/time/tck/java/time/TCKYear.java                            generic-all
+java/time/tck/java/time/TCKYearMonth.java                       generic-all
+java/time/tck/java/time/TCKZonedDateTime.java                   generic-all
+java/time/tck/java/time/temporal/TCKWeekFields.java             generic-all
+java/time/test/java/time/TestClock_Fixed.java                   generic-all
+java/time/test/java/time/TestOffsetDateTime_instants.java       generic-all
+java/time/test/java/time/format/TestZoneTextPrinterParser.java  generic-all
+java/time/test/java/time/temporal/TestChronoUnit.java           generic-all
+java/time/test/java/util/TestFormatter.java                     generic-all
 
 ############################################################################
 
@@ -332,7 +345,7 @@ java/util/concurrent/ThreadPoolExecutor/CoreThreadTimeOut.java  generic-all
 # Filed 6772009
 java/util/concurrent/locks/ReentrantLock/CancelledLockLoops.java generic-all
 
-# 8026772: test/sun/util/resources/TimeZone/Bug6317929.java failing
-sun/util/resources/TimeZone/Bug6317929.java                     generic-all
+# 8027622
+java/util/Calendar/JavatimeTest.java                             generic-all
 
 ############################################################################
