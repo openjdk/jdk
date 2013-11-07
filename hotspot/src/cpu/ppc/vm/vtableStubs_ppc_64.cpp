@@ -255,10 +255,11 @@ int VtableStub::pd_code_size_limit(bool is_vtable_stub) {
   if (TraceJumps || DebugVtables || CountCompiledCalls || VerifyOops) {
     return 1000;
   } else {
+    int decode_klass_size = MacroAssembler::instr_size_for_decode_klass_not_null();
     if (is_vtable_stub) {
-      return 20 + 16 + 8;    // Plain + (cOops & Traps) + safety
+      return 20 + decode_klass_size +  8 + 8;   // Plain + cOops + Traps + safety
     } else {
-      return 16 + 96;
+      return 96 + decode_klass_size + 12 + 8;   // Plain + cOops + Traps + safety
     }
   }
 }
