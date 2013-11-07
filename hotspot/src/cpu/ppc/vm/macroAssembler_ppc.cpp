@@ -2391,7 +2391,7 @@ void MacroAssembler::encode_klass_not_null(Register dst, Register src) {
 }
 
 void MacroAssembler::store_klass(Register dst_oop, Register klass, Register ck) {
-  if (UseCompressedKlassPointers) {
+  if (UseCompressedClassPointers) {
     encode_klass_not_null(ck, klass);
     stw(ck, oopDesc::klass_offset_in_bytes(), dst_oop);
   } else {
@@ -2412,7 +2412,7 @@ void MacroAssembler::decode_klass_not_null(Register dst, Register src) {
 }
 
 void MacroAssembler::load_klass(Register dst, Register src) {
-  if (UseCompressedKlassPointers) {
+  if (UseCompressedClassPointers) {
     lwz(dst, oopDesc::klass_offset_in_bytes(), src);
     // Attention: no null check here!
     decode_klass_not_null(dst, dst);
