@@ -25,13 +25,17 @@
 
 package jdk.nashorn.api.scripting;
 
+import java.lang.invoke.MethodHandle;
+import jdk.internal.dynalink.beans.StaticClass;
+import jdk.internal.dynalink.linker.LinkerServices;
+import jdk.nashorn.internal.runtime.linker.Bootstrap;
 import jdk.nashorn.internal.runtime.Context;
 import jdk.nashorn.internal.runtime.ScriptFunction;
 import jdk.nashorn.internal.runtime.ScriptObject;
 import jdk.nashorn.internal.runtime.ScriptRuntime;
 
 /**
- * Utilities that are to be called from script code
+ * Utilities that are to be called from script code.
  */
 public final class ScriptUtils {
     private ScriptUtils() {}
@@ -127,5 +131,42 @@ public final class ScriptUtils {
         }
 
         return ScriptObjectMirror.unwrapArray(args, Context.getGlobal());
+    }
+
+    /**
+     * Convert the given object to the given type.
+     *
+     * @param obj object to be converted
+     * @param type destination type to convert to
+     * @return converted object
+     */
+    public static Object convert(final Object obj, final Object type) {
+        if (obj == null) {
+            return null;
+        }
+
+        final Class<?> clazz;
+        if (type instanceof Class) {
+            clazz = (Class<?>)type;
+        } else if (type instanceof StaticClass) {
+            clazz = ((StaticClass)type).getRepresentedClass();
+        } else {
+            throw new IllegalArgumentException("type expected");
+        }
+
+        final LinkerServices linker = Bootstrap.getLinkerServices();
+        final MethodHandle converter = linker.getTypeConverter(obj.getClass(),  clazz);
+        if (converter == null) {
+            // no supported conversion!
+            throw new UnsupportedOperationException("conversion not supported");
+        }
+
+        try {
+            return converter.invoke(obj);
+        } catch (final RuntimeException | Error e) {
+            throw e;
+        } catch (final Throwable t) {
+            throw new RuntimeException(t);
+        }
     }
 }
