@@ -595,6 +595,21 @@ public final class ScriptObjectMirror extends AbstractJSObject implements Bindin
     }
 
     /**
+     * Utilitity to convert this script object to the given type.
+     *
+     * @param type destination type to convert to
+     * @return converted object
+     */
+    public <T> T to(final Class<T> type) {
+        return inGlobal(new Callable<T>() {
+            @Override
+            public T call() {
+                return type.cast(ScriptUtils.convert(sobj, type));
+            }
+        });
+    }
+
+    /**
      * Make a script object mirror on given object if needed. Also converts ConsString instances to Strings.
      *
      * @param obj object to be wrapped/converted
