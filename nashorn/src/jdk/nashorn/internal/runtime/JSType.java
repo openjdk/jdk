@@ -88,6 +88,9 @@ public enum JSType {
     /** JavaScript compliant conversion function from Object to number */
     public static final Call TO_NUMBER = staticCall(myLookup, JSType.class, "toNumber", double.class, Object.class);
 
+    /** JavaScript compliant conversion function from Object to String */
+    public static final Call TO_STRING = staticCall(myLookup, JSType.class, "toString", String.class, Object.class);
+
     /** JavaScript compliant conversion function from Object to int32 */
     public static final Call TO_INT32 = staticCall(myLookup, JSType.class, "toInt32", int.class, Object.class);
 
