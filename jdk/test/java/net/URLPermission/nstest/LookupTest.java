@@ -21,12 +21,6 @@
  * questions.
  */
 
-/* @test
- * @compile -XDignore.symbol.file=true SimpleNameService.java
- *                                     SimpleNameServiceDescriptor.java
- * @run main/othervm/timeout=200 -Dsun.net.spi.nameservice.provider.1=simple,sun LookupTest
- */
-
 /**
  * This is a simple smoke test of the HttpURLPermission mechanism, which
  * checks for either IOException (due to unknown host) or SecurityException
@@ -35,6 +29,7 @@
 
 import java.net.*;
 import java.io.*;
+import jdk.testlibrary.Utils;
 
 public class LookupTest {
 
@@ -48,12 +43,12 @@ public class LookupTest {
             InputStream is = urlc.getInputStream();
         } catch (SecurityException e) {
             if (!throwsSecException) {
-                throw new RuntimeException ("(1) was not expecting " + e);
+                throw new RuntimeException ("(1) was not expecting ", e);
             }
             return;
         } catch (IOException ioe) {
             if (!throwsIOException) {
-                throw new RuntimeException ("(2) was not expecting " + ioe);
+                throw new RuntimeException ("(2) was not expecting ", ioe);
             }
             return;
         }
@@ -64,31 +59,41 @@ public class LookupTest {
         }
     }
 
+    static int port;
+    static ServerSocket serverSocket;
+
     public static void main(String args[]) throws Exception {
-        SimpleNameService.put("allowedAndFound.com", "127.0.0.1");
-        SimpleNameService.put("notAllowedButFound.com", "99.99.99.99");
-        // name "notAllowedAndNotFound.com" is not in map
-        // name "allowedButNotfound.com" is not in map
-        startServer();
+        String cmd = args[0];
+        if (cmd.equals("-getport")) {
+            port = Utils.getFreePort();
+            System.out.println(port);
+        } else if (cmd.equals("-runtest")) {
+            port = Integer.parseInt(args[1]);
+            SimpleNameService.put("allowedAndFound.com", "127.0.0.1");
+            SimpleNameService.put("notAllowedButFound.com", "99.99.99.99");
+            // name "notAllowedAndNotFound.com" is not in map
+            // name "allowedButNotfound.com" is not in map
+            try {
+                startServer();
 
-        String policyFileName = "file://" + System.getProperty("test.src", ".") + "/policy";
-        System.err.println ("policy = " + policyFileName);
+                System.setSecurityManager(new SecurityManager());
 
-        System.setProperty("java.security.policy", policyFileName);
+                test("http://allowedAndFound.com:" + port + "/foo", false, false);
 
-        System.setSecurityManager(new SecurityManager());
+                test("http://notAllowedButFound.com:" + port + "/foo", true, false);
 
-        test("http://allowedAndFound.com:50100/foo", false, false);
+                test("http://allowedButNotfound.com:" + port + "/foo", false, true);
 
-        test("http://notAllowedButFound.com:50100/foo", true, false);
-
-        test("http://allowedButNotfound.com:50100/foo", false, true);
-
-        test("http://notAllowedAndNotFound.com:50100/foo", true, false);
+                test("http://notAllowedAndNotFound.com:" + port + "/foo", true, false);
+            } finally {
+                serverSocket.close();
+            }
+        } else {
+            throw new RuntimeException("Bad invocation: " + cmd);
+        }
     }
 
     static Thread server;
-    static ServerSocket serverSocket;
 
     static class Server extends Thread {
         public void run() {
@@ -112,11 +117,11 @@ public class LookupTest {
 
     static void startServer() {
         try {
-            serverSocket = new ServerSocket(50100);
+            serverSocket = new ServerSocket(port);
             server = new Server();
             server.start();
         } catch (Exception e) {
-            throw new RuntimeException ("Test failed to initialize");
+            throw new RuntimeException ("Test failed to initialize", e);
         }
     }
 }

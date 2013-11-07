@@ -26,7 +26,7 @@ import java.io.*;
 
 /**
  * @test
- * @bug 8010464 8027570
+ * @bug 8010464 8027570 8027687
  */
 
 public class URLPermissionTest {
