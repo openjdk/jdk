@@ -601,7 +601,9 @@ void HeapRegion::remove_strong_code_root(nmethod* nm) {
 
 void HeapRegion::migrate_strong_code_roots() {
   assert(in_collection_set(), "only collection set regions");
-  assert(!isHumongous(), "not humongous regions");
+  assert(!isHumongous(),
+          err_msg("humongous region "HR_FORMAT" should not have been added to collection set",
+                  HR_FORMAT_PARAMS(this)));
 
   HeapRegionRemSet* hrrs = rem_set();
   hrrs->migrate_strong_code_roots();
@@ -722,12 +724,11 @@ void HeapRegion::verify_strong_code_roots(VerifyOption vo, bool* failures) const
     return;
   }
 
-  // An H-region should have an empty strong code root list
-  if (isHumongous()) {
+  if (continuesHumongous()) {
     if (strong_code_roots_length > 0) {
-      gclog_or_tty->print_cr("region ["PTR_FORMAT","PTR_FORMAT"] is humongous "
-                             "but has "INT32_FORMAT" code root entries",
-                             bottom(), end(), strong_code_roots_length);
+      gclog_or_tty->print_cr("region "HR_FORMAT" is a continuation of a humongous "
+                             "region but has "INT32_FORMAT" code root entries",
+                             HR_FORMAT_PARAMS(this), strong_code_roots_length);
       *failures = true;
     }
     return;
