@@ -551,6 +551,7 @@ class MacroAssembler: public Assembler {
   void load_klass(Register dst, Register src);
   void load_klass_with_trap_null_check(Register dst, Register src);
   void store_klass(Register dst_oop, Register klass, Register tmp = R0);
+  static int instr_size_for_decode_klass_not_null();
   void decode_klass_not_null(Register dst, Register src = noreg);
   void encode_klass_not_null(Register dst, Register src = noreg);
 

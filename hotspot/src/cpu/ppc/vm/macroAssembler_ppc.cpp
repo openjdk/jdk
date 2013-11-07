@@ -2382,10 +2382,12 @@ void MacroAssembler::get_vm_result_2(Register metadata_result) {
 
 void MacroAssembler::encode_klass_not_null(Register dst, Register src) {
   if (src == noreg) src = dst;
-  assert(Universe::narrow_klass_base() != NULL, "Base should be initialized");
-  load_const(R0, Universe::narrow_klass_base());
-  sub(dst, src, R0);
-  if (Universe::narrow_klass_shift() != 0) {
+  if (Universe::narrow_klass_base() != 0) {
+    load_const(R0, Universe::narrow_klass_base());
+    sub(dst, src, R0);
+  }
+  if (Universe::narrow_klass_shift() != 0 ||
+      Universe::narrow_klass_base() == 0 && src != dst) {  // Move required.
     srdi(dst, src, Universe::narrow_klass_shift());
   }
 }
@@ -2399,16 +2401,25 @@ void MacroAssembler::store_klass(Register dst_oop, Register klass, Register ck) 
   }
 }
 
+int MacroAssembler::instr_size_for_decode_klass_not_null() {
+  if (!UseCompressedClassPointers) return 0;
+  int num_instrs = 1;  // shift or move
+  if (Universe::narrow_klass_base() != 0) num_instrs = 7;  // shift + load const + add
+  return num_instrs * BytesPerInstWord;
+}
+
 void MacroAssembler::decode_klass_not_null(Register dst, Register src) {
   if (src == noreg) src = dst;
   Register shifted_src = src;
-  assert(Universe::narrow_klass_base() != NULL, "Base should be initialized");
-  if (Universe::narrow_klass_shift() != 0) {
+  if (Universe::narrow_klass_shift() != 0 ||
+      Universe::narrow_klass_base() == 0 && src != dst) {  // Move required.
     shifted_src = dst;
     sldi(shifted_src, src, Universe::narrow_klass_shift());
   }
-  load_const(R0, Universe::narrow_klass_base());
-  add(dst, shifted_src, R0);
+  if (Universe::narrow_klass_base() != 0) {
+    load_const(R0, Universe::narrow_klass_base());
+    add(dst, shifted_src, R0);
+  }
 }
 
 void MacroAssembler::load_klass(Register dst, Register src) {
