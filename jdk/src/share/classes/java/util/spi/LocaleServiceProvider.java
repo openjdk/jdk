@@ -41,7 +41,7 @@ import java.util.Locale;
  * <code>java.util</code> packages use implementations of the provider
  * interfaces to offer support for locales beyond the set of locales
  * supported by the Java runtime environment itself.
- * <p>
+ *
  * <h3>Packaging of Locale Sensitive Service Provider Implementations</h3>
  * Implementations of these locale sensitive services are packaged using the
  * <a href="../../../../technotes/guides/extensions/index.html">Java Extension Mechanism</a>

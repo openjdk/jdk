@@ -48,7 +48,7 @@ public class SourceModel {
             generate(pw);
             return sw.toString();
         }
-    };
+    }
 
     public static class AccessFlag extends Element {
         private String flag;
@@ -125,6 +125,7 @@ public class SourceModel {
         // (and thus will be present in stubs)
         private Set<Method> methodDependencies;
         private List<Type> typeDependencies;
+        private boolean fullCompilation;
 
         protected Type(String name,
                 List<AccessFlag> flags, List<TypeParameter> params,
@@ -214,6 +215,14 @@ public class SourceModel {
             methodDependencies.add(m);
         }
 
+        public boolean isFullCompilation() {
+            return fullCompilation;
+        }
+
+        public void setFullCompilation(boolean fullCompilation) {
+            this.fullCompilation = fullCompilation;
+        }
+
         // Convenience method for creating an Extends object using this
         // class and specified type arguments.
         public Extends with(String ... args) {
@@ -255,14 +264,23 @@ public class SourceModel {
             pw.println("}");
         }
 
-        public Collection<Type> typeDependencies() {
+        public Collection<Type> typeDependencies(boolean recursive) {
             HashMap<String,Type> dependencies = new HashMap<>();
             Type superclass = getSuperclass();
             if (superclass != null) {
                 dependencies.put(superclass.getName(), superclass);
+                if (recursive) {
+                    for (Type t : superclass.typeDependencies(true))
+                        dependencies.put(t.getName(), t);
+                }
             }
-            for (Extends e : getSupertypes())
+            for (Extends e : getSupertypes()) {
                 dependencies.put(e.getType().getName(), e.getType());
+                if (recursive) {
+                    for (Type t : e.getType().typeDependencies(true))
+                        dependencies.put(t.getName(), t);
+                }
+            }
             // Do these last so that they override
             for (Type t : this.typeDependencies)
                 dependencies.put(t.getName(), t);

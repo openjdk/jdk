@@ -90,6 +90,24 @@ bench("set", function() {
     array[6] = 6;
 });
 
+bench("push", function() {
+    var arr = [1, 2, 3];
+    arr.push(4);
+    arr.push(5);
+    arr.push(6);
+});
+
+bench("pop", function() {
+    var arr = [1, 2, 3];
+    arr.pop();
+    arr.pop();
+    arr.pop();
+});
+
+bench("splice", function() {
+    [1, 2, 3].splice(0, 2, 5, 6, 7);
+});
+
 var all = function(e) { return true; };
 var none = function(e) { return false; };
 

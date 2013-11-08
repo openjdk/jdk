@@ -196,7 +196,7 @@ class DatagramSocket implements java.io.Closeable {
      * socket address.
      * <p>
      * If, if the address is {@code null}, creates an unbound socket.
-     * <p>
+     *
      * <p>If there is a security manager,
      * its {@code checkListen} method is first called
      * with the port from the socket address
@@ -1109,7 +1109,7 @@ class DatagramSocket implements java.io.Closeable {
      * represent the value of the TOS octet in IP packets sent by
      * the socket.
      * RFC 1349 defines the TOS values as follows:
-     * <p>
+     *
      * <UL>
      * <LI><CODE>IPTOS_LOWCOST (0x02)</CODE></LI>
      * <LI><CODE>IPTOS_RELIABILITY (0x04)</CODE></LI>

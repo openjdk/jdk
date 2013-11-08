@@ -498,13 +498,27 @@ objArrayOop InstanceKlass::signers() const {
 
 oop InstanceKlass::init_lock() const {
   // return the init lock from the mirror
-  return java_lang_Class::init_lock(java_mirror());
+  oop lock = java_lang_Class::init_lock(java_mirror());
+  assert((oop)lock != NULL || !is_not_initialized(), // initialized or in_error state
+         "only fully initialized state can have a null lock");
+  return lock;
+}
+
+// Set the initialization lock to null so the object can be GC'ed.  Any racing
+// threads to get this lock will see a null lock and will not lock.
+// That's okay because they all check for initialized state after getting
+// the lock and return.
+void InstanceKlass::fence_and_clear_init_lock() {
+  // make sure previous stores are all done, notably the init_state.
+  OrderAccess::storestore();
+  java_lang_Class::set_init_lock(java_mirror(), NULL);
+  assert(!is_not_initialized(), "class must be initialized now");
 }
 
 void InstanceKlass::eager_initialize_impl(instanceKlassHandle this_oop) {
   EXCEPTION_MARK;
   oop init_lock = this_oop->init_lock();
-  ObjectLocker ol(init_lock, THREAD);
+  ObjectLocker ol(init_lock, THREAD, init_lock != NULL);
 
   // abort if someone beat us to the initialization
   if (!this_oop->is_not_initialized()) return;  // note: not equivalent to is_initialized()
@@ -523,6 +537,7 @@ void InstanceKlass::eager_initialize_impl(instanceKlassHandle this_oop) {
   } else {
     // linking successfull, mark class as initialized
     this_oop->set_init_state (fully_initialized);
+    this_oop->fence_and_clear_init_lock();
     // trace
     if (TraceClassInitialization) {
       ResourceMark rm(THREAD);
@@ -649,7 +664,7 @@ bool InstanceKlass::link_class_impl(
   // verification & rewriting
   {
     oop init_lock = this_oop->init_lock();
-    ObjectLocker ol(init_lock, THREAD);
+    ObjectLocker ol(init_lock, THREAD, init_lock != NULL);
     // rewritten will have been set if loader constraint error found
     // on an earlier link attempt
     // don't verify or rewrite if already rewritten
@@ -772,7 +787,7 @@ void InstanceKlass::initialize_impl(instanceKlassHandle this_oop, TRAPS) {
   // Step 1
   {
     oop init_lock = this_oop->init_lock();
-    ObjectLocker ol(init_lock, THREAD);
+    ObjectLocker ol(init_lock, THREAD, init_lock != NULL);
 
     Thread *self = THREAD; // it's passed the current thread
 
@@ -920,8 +935,9 @@ void InstanceKlass::set_initialization_state_and_notify(ClassState state, TRAPS)
 
 void InstanceKlass::set_initialization_state_and_notify_impl(instanceKlassHandle this_oop, ClassState state, TRAPS) {
   oop init_lock = this_oop->init_lock();
-  ObjectLocker ol(init_lock, THREAD);
+  ObjectLocker ol(init_lock, THREAD, init_lock != NULL);
   this_oop->set_init_state(state);
+  this_oop->fence_and_clear_init_lock();
   ol.notify_all(CHECK);
 }
 
@@ -2377,15 +2393,38 @@ address InstanceKlass::static_field_addr(int offset) {
 
 
 const char* InstanceKlass::signature_name() const {
+  int hash_len = 0;
+  char hash_buf[40];
+
+  // If this is an anonymous class, append a hash to make the name unique
+  if (is_anonymous()) {
+    assert(EnableInvokeDynamic, "EnableInvokeDynamic was not set.");
+    intptr_t hash = (java_mirror() != NULL) ? java_mirror()->identity_hash() : 0;
+    sprintf(hash_buf, "/" UINTX_FORMAT, (uintx)hash);
+    hash_len = (int)strlen(hash_buf);
+  }
+
+  // Get the internal name as a c string
   const char* src = (const char*) (name()->as_C_string());
   const int src_length = (int)strlen(src);
-  char* dest = NEW_RESOURCE_ARRAY(char, src_length + 3);
-  int src_index = 0;
+
+  char* dest = NEW_RESOURCE_ARRAY(char, src_length + hash_len + 3);
+
+  // Add L as type indicator
   int dest_index = 0;
   dest[dest_index++] = 'L';
-  while (src_index < src_length) {
+
+  // Add the actual class name
+  for (int src_index = 0; src_index < src_length; ) {
     dest[dest_index++] = src[src_index++];
   }
+
+  // If we have a hash, append it
+  for (int hash_index = 0; hash_index < hash_len; ) {
+    dest[dest_index++] = hash_buf[hash_index++];
+  }
+
+  // Add the semicolon and the NULL
   dest[dest_index++] = ';';
   dest[dest_index] = '\0';
   return dest;

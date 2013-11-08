@@ -213,13 +213,13 @@ public abstract class ScriptFunctionData {
      */
     public final MethodHandle getGenericInvoker() {
         ensureCodeGenerated();
-        return composeGenericMethod(code.mostGeneric().getInvoker());
+        return code.generic().getInvoker();
     }
 
     final MethodHandle getGenericConstructor() {
         ensureCodeGenerated();
-        ensureConstructor(code.mostGeneric());
-        return composeGenericMethod(code.mostGeneric().getConstructor());
+        ensureConstructor(code.generic());
+        return code.generic().getConstructor();
     }
 
     private CompiledFunction getBest(final MethodType callSiteType) {
@@ -267,18 +267,17 @@ public abstract class ScriptFunctionData {
     }
 
     /**
-     * Compose a constructor given a primordial constructor handle
+     * Compose a constructor given a primordial constructor handle.
      *
-     * @param ctor         primordial constructor handle
-     * @param needsCallee  do we need to pass a callee
-     *
+     * @param ctor primordial constructor handle
      * @return the composed constructor
      */
-    protected MethodHandle composeConstructor(final MethodHandle ctor, final boolean needsCallee) {
+    protected MethodHandle composeConstructor(final MethodHandle ctor) {
         // If it was (callee, this, args...), permute it to (this, callee, args...). We're doing this because having
         // "this" in the first argument position is what allows the elegant folded composition of
         // (newFilter x constructor x allocator) further down below in the code. Also, ensure the composite constructor
         // always returns Object.
+        final boolean needsCallee = needsCallee(ctor);
         MethodHandle composedCtor = needsCallee ? swapCalleeAndThis(ctor) : ctor;
 
         composedCtor = changeReturnTypeToObject(composedCtor);
@@ -472,33 +471,6 @@ public abstract class ScriptFunctionData {
     }
 
     /**
-     * Takes a method handle, and returns a potentially different method handle that can be used in
-     * {@code ScriptFunction#invoke(Object, Object...)} or {code ScriptFunction#construct(Object, Object...)}.
-     * The returned method handle will be sure to return {@code Object}, and will have all its parameters turned into
-     * {@code Object} as well, except for the following ones:
-     * <ul>
-     *   <li>a last parameter of type {@code Object[]} which is used for vararg functions,</li>
-     *   <li>the first argument, which is forced to be {@link ScriptFunction}, in case the function receives itself
-     *   (callee) as an argument.</li>
-     * </ul>
-     *
-     * @param mh the original method handle
-     *
-     * @return the new handle, conforming to the rules above.
-     */
-    protected MethodHandle composeGenericMethod(final MethodHandle mh) {
-        final MethodType type = mh.type();
-        MethodType newType = type.generic();
-        if (isVarArg(mh)) {
-            newType = newType.changeParameterType(type.parameterCount() - 1, Object[].class);
-        }
-        if (needsCallee(mh)) {
-            newType = newType.changeParameterType(0, ScriptFunction.class);
-        }
-        return type.equals(newType) ? mh : mh.asType(newType);
-    }
-
-    /**
      * Execute this script function.
      *
      * @param self  Target object.
@@ -508,10 +480,9 @@ public abstract class ScriptFunctionData {
      * @throws Throwable if there is an exception/error with the invocation or thrown from it
      */
     Object invoke(final ScriptFunction fn, final Object self, final Object... arguments) throws Throwable {
-        final MethodHandle mh = getGenericInvoker();
-
-        final Object       selfObj    = convertThisObject(self);
-        final Object[]     args       = arguments == null ? ScriptRuntime.EMPTY_ARRAY : arguments;
+        final MethodHandle mh  = getGenericInvoker();
+        final Object   selfObj = convertThisObject(self);
+        final Object[] args    = arguments == null ? ScriptRuntime.EMPTY_ARRAY : arguments;
 
         if (isVarArg(mh)) {
             if (needsCallee(mh)) {
@@ -531,6 +502,12 @@ public abstract class ScriptFunctionData {
                 return mh.invokeExact(fn, selfObj, getArg(args, 0), getArg(args, 1));
             case 5:
                 return mh.invokeExact(fn, selfObj, getArg(args, 0), getArg(args, 1), getArg(args, 2));
+            case 6:
+                return mh.invokeExact(fn, selfObj, getArg(args, 0), getArg(args, 1), getArg(args, 2), getArg(args, 3));
+            case 7:
+                return mh.invokeExact(fn, selfObj, getArg(args, 0), getArg(args, 1), getArg(args, 2), getArg(args, 3), getArg(args, 4));
+            case 8:
+                return mh.invokeExact(fn, selfObj, getArg(args, 0), getArg(args, 1), getArg(args, 2), getArg(args, 3), getArg(args, 4), getArg(args, 5));
             default:
                 return mh.invokeWithArguments(withArguments(fn, selfObj, paramCount, args));
             }
@@ -545,15 +522,20 @@ public abstract class ScriptFunctionData {
             return mh.invokeExact(selfObj, getArg(args, 0), getArg(args, 1));
         case 4:
             return mh.invokeExact(selfObj, getArg(args, 0), getArg(args, 1), getArg(args, 2));
+        case 5:
+            return mh.invokeExact(selfObj, getArg(args, 0), getArg(args, 1), getArg(args, 2), getArg(args, 3));
+        case 6:
+            return mh.invokeExact(selfObj, getArg(args, 0), getArg(args, 1), getArg(args, 2), getArg(args, 3), getArg(args, 4));
+        case 7:
+            return mh.invokeExact(selfObj, getArg(args, 0), getArg(args, 1), getArg(args, 2), getArg(args, 3), getArg(args, 4), getArg(args, 5));
         default:
             return mh.invokeWithArguments(withArguments(null, selfObj, paramCount, args));
         }
     }
 
     Object construct(final ScriptFunction fn, final Object... arguments) throws Throwable {
-        final MethodHandle mh = getGenericConstructor();
-
-        final Object[]     args       = arguments == null ? ScriptRuntime.EMPTY_ARRAY : arguments;
+        final MethodHandle mh   = getGenericConstructor();
+        final Object[]     args = arguments == null ? ScriptRuntime.EMPTY_ARRAY : arguments;
 
         if (isVarArg(mh)) {
             if (needsCallee(mh)) {
@@ -573,6 +555,12 @@ public abstract class ScriptFunctionData {
                 return mh.invokeExact(fn, getArg(args, 0), getArg(args, 1));
             case 4:
                 return mh.invokeExact(fn, getArg(args, 0), getArg(args, 1), getArg(args, 2));
+            case 5:
+                return mh.invokeExact(fn, getArg(args, 0), getArg(args, 1), getArg(args, 2), getArg(args, 3));
+            case 6:
+                return mh.invokeExact(fn, getArg(args, 0), getArg(args, 1), getArg(args, 2), getArg(args, 3), getArg(args, 4));
+            case 7:
+                return mh.invokeExact(fn, getArg(args, 0), getArg(args, 1), getArg(args, 2), getArg(args, 3), getArg(args, 4), getArg(args, 5));
             default:
                 return mh.invokeWithArguments(withArguments(fn, paramCount, args));
             }
@@ -587,6 +575,12 @@ public abstract class ScriptFunctionData {
             return mh.invokeExact(getArg(args, 0), getArg(args, 1));
         case 3:
             return mh.invokeExact(getArg(args, 0), getArg(args, 1), getArg(args, 2));
+        case 4:
+            return mh.invokeExact(getArg(args, 0), getArg(args, 1), getArg(args, 2), getArg(args, 3));
+        case 5:
+            return mh.invokeExact(getArg(args, 0), getArg(args, 1), getArg(args, 2), getArg(args, 3), getArg(args, 4));
+        case 6:
+            return mh.invokeExact(getArg(args, 0), getArg(args, 1), getArg(args, 2), getArg(args, 3), getArg(args, 4), getArg(args, 5));
         default:
             return mh.invokeWithArguments(withArguments(null, paramCount, args));
         }
@@ -664,20 +658,21 @@ public abstract class ScriptFunctionData {
      * @return the adapted handle
      */
     private static MethodHandle changeReturnTypeToObject(final MethodHandle mh) {
-        return MH.asType(mh, mh.type().changeReturnType(Object.class));
+        final MethodType type = mh.type();
+        return (type.returnType() == Object.class) ? mh : MH.asType(mh, type.changeReturnType(Object.class));
     }
 
     private void ensureConstructor(final CompiledFunction inv) {
         if (!inv.hasConstructor()) {
-            inv.setConstructor(composeConstructor(inv.getInvoker(), needsCallee(inv.getInvoker())));
+            inv.setConstructor(composeConstructor(inv.getInvoker()));
         }
     }
 
     /**
-     * Heuristic to figure out if the method handle has a callee argument. If it's type is either
-     * {@code (boolean, ScriptFunction, ...)} or {@code (ScriptFunction, ...)}, then we'll assume it has
-     * a callee argument. We need this as the constructor above is not passed this information, and can't just blindly
-     * assume it's false (notably, it's being invoked for creation of new scripts, and scripts have scopes, therefore
+     * Heuristic to figure out if the method handle has a callee argument. If it's type is
+     * {@code (ScriptFunction, ...)}, then we'll assume it has a callee argument. We need this as
+     * the constructor above is not passed this information, and can't just blindly assume it's false
+     * (notably, it's being invoked for creation of new scripts, and scripts have scopes, therefore
      * they also always receive a callee).
      *
      * @param mh the examined method handle
@@ -685,18 +680,8 @@ public abstract class ScriptFunctionData {
      * @return true if the method handle expects a callee, false otherwise
      */
     protected static boolean needsCallee(final MethodHandle mh) {
-        final MethodType type   = mh.type();
-        final int        length = type.parameterCount();
-
-        if (length == 0) {
-            return false;
-        }
-
-        if (type.parameterType(0) == ScriptFunction.class) {
-            return true;
-        }
-
-        return length > 1 && type.parameterType(0) == boolean.class && type.parameterType(1) == ScriptFunction.class;
+        final MethodType type = mh.type();
+        return (type.parameterCount() > 0 && type.parameterType(0) == ScriptFunction.class);
     }
 
     /**

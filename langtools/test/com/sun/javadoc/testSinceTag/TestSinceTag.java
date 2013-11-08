@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug      7180906
+ * @bug      7180906 8026567
  * @summary  Test to make sure that the since tag works correctly
  * @author   Bhavesh Patel
  * @library  ../lib/
@@ -48,11 +48,11 @@ public class TestSinceTag extends JavadocTester {
     //Input for string search tests.
     private static final String[][] TEST = {
         {BUG_ID + FS + "pkg1" + FS + "C1.html",
-            "<dl>" + NL + "<dt><span class=\"strong\">Since:</span></dt>" + NL +
+            "<dl>" + NL + "<dt><span class=\"simpleTagLabel\">Since:</span></dt>" + NL +
             "<dd>JDK1.0</dd>"
         },
         {BUG_ID + FS + "serialized-form.html",
-            "<dl>" + NL + "<dt><span class=\"strong\">Since:</span></dt>" + NL +
+            "<dl>" + NL + "<dt><span class=\"simpleTagLabel\">Since:</span></dt>" + NL +
             "<dd>1.4</dd>"
         }
     };

@@ -55,7 +55,7 @@ public class TestTaglets extends JavadocTester {
 
     //Input for string search tests.
     private static final String[][] TEST_4654308 = new String[][] {
-        {"4654308" + FS + "C.html", "<span class=\"strong\">Foo:</span></dt>" +
+        {"4654308" + FS + "C.html", "<span class=\"simpleTagLabel\">Foo:</span></dt>" +
                  "<dd>my only method is <a href=\"C.html#method--\"><code>here" +
                  "</code></a></dd></dl>"}
     };

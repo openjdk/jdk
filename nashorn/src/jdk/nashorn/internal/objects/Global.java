@@ -1665,9 +1665,9 @@ public final class Global extends ScriptObject implements GlobalObject, Scope {
         final ScriptObject stringPrototype = getStringPrototype();
         stringPrototype.addOwnProperty("length", Attribute.NON_ENUMERABLE_CONSTANT, 0.0);
 
-        // add Array.prototype.length
+        // set isArray flag on Array.prototype
         final ScriptObject arrayPrototype = getArrayPrototype();
-        arrayPrototype.addOwnProperty("length", Attribute.NOT_ENUMERABLE|Attribute.NOT_CONFIGURABLE, 0.0);
+        arrayPrototype.setIsArray();
 
         this.DEFAULT_DATE = new NativeDate(Double.NaN, this);
 

@@ -233,6 +233,10 @@ public class CPrinterJob extends RasterPrinterJob {
 
 
         setAttributes(attributes);
+        // throw exception for invalid destination
+        if (destinationAttr != null) {
+            validateDestination(destinationAttr);
+        }
 
         /* Get the range of pages we are to print. If the
          * last page to print is unknown, then we print to

@@ -78,10 +78,12 @@ import java.time.chrono.IsoChronology;
 import java.time.chrono.JapaneseChronology;
 import java.time.chrono.MinguoChronology;
 import java.time.chrono.ThaiBuddhistChronology;
+import java.time.chrono.ThaiBuddhistDate;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeFormatterBuilder;
 import java.time.temporal.TemporalAccessor;
 import java.time.temporal.TemporalField;
+import java.time.temporal.TemporalQueries;
 
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
@@ -440,6 +442,52 @@ public class TestReducedParser extends AbstractTestPrinterParser {
         assertEquals(actual, expected,
                 String.format("Wrong date parsed, chrono: %s, input: %s",
                 chrono, input));
+
+    }
+
+    @Test
+    public void test_reducedWithLateChronoChange() {
+        ThaiBuddhistDate date = ThaiBuddhistDate.of(2543, 1, 1);
+        DateTimeFormatter df
+                = new DateTimeFormatterBuilder()
+                        .appendValueReduced(YEAR, 2, 2, LocalDate.of(2000, 1, 1))
+                        .appendLiteral(" ")
+                        .appendChronologyId()
+                .toFormatter();
+        int expected = date.get(YEAR);
+        String input = df.format(date);
+
+        ParsePosition pos = new ParsePosition(0);
+        TemporalAccessor parsed = df.parseUnresolved(input, pos);
+        assertEquals(pos.getIndex(), input.length(), "Input not parsed completely");
+        assertEquals(pos.getErrorIndex(), -1, "Error index should be -1 (no-error)");
+        int actual = parsed.get(YEAR);
+        assertEquals(actual, expected,
+                String.format("Wrong date parsed, chrono: %s, input: %s",
+                parsed.query(TemporalQueries.chronology()), input));
+
+    }
+
+    @Test
+    public void test_reducedWithLateChronoChangeTwice() {
+        DateTimeFormatter df
+                = new DateTimeFormatterBuilder()
+                        .appendValueReduced(YEAR, 2, 2, LocalDate.of(2000, 1, 1))
+                        .appendLiteral(" ")
+                        .appendChronologyId()
+                        .appendLiteral(" ")
+                        .appendChronologyId()
+                .toFormatter();
+        int expected = 2044;
+        String input = "44 ThaiBuddhist ISO";
+        ParsePosition pos = new ParsePosition(0);
+        TemporalAccessor parsed = df.parseUnresolved(input, pos);
+        assertEquals(pos.getIndex(), input.length(), "Input not parsed completely: " + pos);
+        assertEquals(pos.getErrorIndex(), -1, "Error index should be -1 (no-error)");
+        int actual = parsed.get(YEAR);
+        assertEquals(actual, expected,
+                String.format("Wrong date parsed, chrono: %s, input: %s",
+                parsed.query(TemporalQueries.chronology()), input));
 
     }
 

@@ -25,7 +25,6 @@ import static com.sun.tools.classfile.TypeAnnotation.TargetType.*;
 
 /*
  * @test
- * @ignore 8008762 Type annotation failures
  * @bug 8006732 8006775
  * @summary Test population of reference info for multicatch exception parameters
  * @author Werner Dietl

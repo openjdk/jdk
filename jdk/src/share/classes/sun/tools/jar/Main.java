@@ -31,6 +31,7 @@ import java.nio.file.Files;
 import java.util.*;
 import java.util.zip.*;
 import java.util.jar.*;
+import java.util.jar.Pack200.*;
 import java.util.jar.Manifest;
 import java.text.MessageFormat;
 import sun.misc.JarIndex;
@@ -72,8 +73,9 @@ class Main {
      * flag0: no zip compression (store only)
      * Mflag: DO NOT generate a manifest file (just ZIP)
      * iflag: generate jar index
+     * nflag: Perform jar normalization at the end
      */
-    boolean cflag, uflag, xflag, tflag, vflag, flag0, Mflag, iflag;
+    boolean cflag, uflag, xflag, tflag, vflag, flag0, Mflag, iflag, nflag;
 
     static final String MANIFEST_DIR = "META-INF/";
     static final String VERSION = "1.0";
@@ -197,12 +199,56 @@ class Main {
                         vflag = false;
                     }
                 }
+                File tmpfile = null;
+                final OutputStream finalout = out;
+                final String tmpbase = (fname == null)
+                        ? "tmpjar"
+                        : fname.substring(fname.indexOf(File.separatorChar) + 1);
+                if (nflag) {
+                    tmpfile = createTemporaryFile(tmpbase, ".jar");
+                    out = new FileOutputStream(tmpfile);
+                }
                 expand(null, files, false);
                 create(new BufferedOutputStream(out, 4096), manifest);
                 if (in != null) {
                     in.close();
                 }
                 out.close();
+                if(nflag) {
+                    JarFile jarFile = null;
+                    File packFile = null;
+                    JarOutputStream jos = null;
+                    try {
+                        Packer packer = Pack200.newPacker();
+                        Map<String, String> p = packer.properties();
+                        p.put(Packer.EFFORT, "1"); // Minimal effort to conserve CPU
+                        jarFile = new JarFile(tmpfile.getCanonicalPath());
+                        packFile = createTemporaryFile(tmpbase, ".pack");
+                        out = new FileOutputStream(packFile);
+                        packer.pack(jarFile, out);
+                        jos = new JarOutputStream(finalout);
+                        Unpacker unpacker = Pack200.newUnpacker();
+                        unpacker.unpack(packFile, jos);
+                    } catch (IOException ioe) {
+                        fatalError(ioe);
+                    } finally {
+                        if (jarFile != null) {
+                            jarFile.close();
+                        }
+                        if (out != null) {
+                            out.close();
+                        }
+                        if (jos != null) {
+                            jos.close();
+                        }
+                        if (tmpfile != null && tmpfile.exists()) {
+                            tmpfile.delete();
+                        }
+                        if (packFile != null && packFile.exists()) {
+                            packFile.delete();
+                        }
+                    }
+                }
             } else if (uflag) {
                 File inputFile = null, tmpFile = null;
                 FileInputStream in;
@@ -357,6 +403,9 @@ class Main {
                     // do not increase the counter, files will contain rootjar
                     rootjar = args[count++];
                     iflag = true;
+                    break;
+                case 'n':
+                    nflag = true;
                     break;
                 case 'e':
                      ename = args[count++];
@@ -1214,5 +1263,35 @@ class Main {
             e.setSize(n);
             e.setCrc(crc.getValue());
         }
+    }
+
+    /**
+     * Attempt to create temporary file in the system-provided temporary folder, if failed attempts
+     * to create it in the same folder as the file in parameter (if any)
+     */
+    private File createTemporaryFile(String tmpbase, String suffix) {
+        File tmpfile = null;
+
+        try {
+            tmpfile = File.createTempFile(tmpbase, suffix);
+        } catch (IOException | SecurityException e) {
+            // Unable to create file due to permission violation or security exception
+        }
+        if (tmpfile == null) {
+            // Were unable to create temporary file, fall back to temporary file in the same folder
+            if (fname != null) {
+                try {
+                    File tmpfolder = new File(fname).getAbsoluteFile().getParentFile();
+                    tmpfile = File.createTempFile(fname, ".tmp" + suffix, tmpfolder);
+                } catch (IOException ioe) {
+                    // Last option failed - fall gracefully
+                    fatalError(ioe);
+                }
+            } else {
+                // No options left - we can not compress to stdout without access to the temporary folder
+                fatalError(new IOException(getMsg("error.create.tempfile")));
+            }
+        }
+        return tmpfile;
     }
 }
