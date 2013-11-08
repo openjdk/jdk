@@ -53,6 +53,8 @@
 #include "compiler/compileBroker.hpp"
 #include "runtime/compilationPolicy.hpp"
 
+#define SIZE_T_MAX_VALUE ((size_t) -1)
+
 bool WhiteBox::_used = false;
 
 WB_ENTRY(jlong, WB_GetObjectAddress(JNIEnv* env, jobject o, jobject obj))
@@ -107,6 +109,112 @@ WB_ENTRY(void, WB_PrintHeapSizes(JNIEnv* env, jobject o)) {
     p->min_heap_byte_size(), p->initial_heap_byte_size(), p->max_heap_byte_size(),
     p->min_alignment(), p->max_alignment());
 }
+WB_END
+
+#ifndef PRODUCT
+// Forward declaration
+void TestReservedSpace_test();
+void TestReserveMemorySpecial_test();
+void TestVirtualSpace_test();
+void TestMetaspaceAux_test();
+#endif
+
+WB_ENTRY(void, WB_RunMemoryUnitTests(JNIEnv* env, jobject o))
+#ifndef PRODUCT
+  TestReservedSpace_test();
+  TestReserveMemorySpecial_test();
+  TestVirtualSpace_test();
+  TestMetaspaceAux_test();
+#endif
+WB_END
+
+WB_ENTRY(void, WB_ReadFromNoaccessArea(JNIEnv* env, jobject o))
+  size_t granularity = os::vm_allocation_granularity();
+  ReservedHeapSpace rhs(100 * granularity, granularity, false, NULL);
+  VirtualSpace vs;
+  vs.initialize(rhs, 50 * granularity);
+
+  //Check if constraints are complied
+  if (!( UseCompressedOops && rhs.base() != NULL &&
+         Universe::narrow_oop_base() != NULL &&
+         Universe::narrow_oop_use_implicit_null_checks() )) {
+    tty->print_cr("WB_ReadFromNoaccessArea method is useless:\n "
+                  "\tUseCompressedOops is %d\n"
+                  "\trhs.base() is "PTR_FORMAT"\n"
+                  "\tUniverse::narrow_oop_base() is "PTR_FORMAT"\n"
+                  "\tUniverse::narrow_oop_use_implicit_null_checks() is %d",
+                  UseCompressedOops,
+                  rhs.base(),
+                  Universe::narrow_oop_base(),
+                  Universe::narrow_oop_use_implicit_null_checks());
+    return;
+  }
+  tty->print_cr("Reading from no access area... ");
+  tty->print_cr("*(vs.low_boundary() - rhs.noaccess_prefix() / 2 ) = %c",
+                *(vs.low_boundary() - rhs.noaccess_prefix() / 2 ));
+WB_END
+
+static jint wb_stress_virtual_space_resize(size_t reserved_space_size,
+                                           size_t magnitude, size_t iterations) {
+  size_t granularity = os::vm_allocation_granularity();
+  ReservedHeapSpace rhs(reserved_space_size * granularity, granularity, false, NULL);
+  VirtualSpace vs;
+  if (!vs.initialize(rhs, 0)) {
+    tty->print_cr("Failed to initialize VirtualSpace. Can't proceed.");
+    return 3;
+  }
+
+  long seed = os::random();
+  tty->print_cr("Random seed is %ld", seed);
+  os::init_random(seed);
+
+  for (size_t i = 0; i < iterations; i++) {
+
+    // Whether we will shrink or grow
+    bool shrink = os::random() % 2L == 0;
+
+    // Get random delta to resize virtual space
+    size_t delta = (size_t)os::random() % magnitude;
+
+    // If we are about to shrink virtual space below zero, then expand instead
+    if (shrink && vs.committed_size() < delta) {
+      shrink = false;
+    }
+
+    // Resizing by delta
+    if (shrink) {
+      vs.shrink_by(delta);
+    } else {
+      // If expanding fails expand_by will silently return false
+      vs.expand_by(delta, true);
+    }
+  }
+  return 0;
+}
+
+WB_ENTRY(jint, WB_StressVirtualSpaceResize(JNIEnv* env, jobject o,
+        jlong reserved_space_size, jlong magnitude, jlong iterations))
+  tty->print_cr("reservedSpaceSize="JLONG_FORMAT", magnitude="JLONG_FORMAT", "
+                "iterations="JLONG_FORMAT"\n", reserved_space_size, magnitude,
+                iterations);
+  if (reserved_space_size < 0 || magnitude < 0 || iterations < 0) {
+    tty->print_cr("One of variables printed above is negative. Can't proceed.\n");
+    return 1;
+  }
+
+  // sizeof(size_t) depends on whether OS is 32bit or 64bit. sizeof(jlong) is
+  // always 8 byte. That's why we should avoid overflow in case of 32bit platform.
+  if (sizeof(size_t) < sizeof(jlong)) {
+    jlong size_t_max_value = (jlong) SIZE_T_MAX_VALUE;
+    if (reserved_space_size > size_t_max_value || magnitude > size_t_max_value
+        || iterations > size_t_max_value) {
+      tty->print_cr("One of variables printed above overflows size_t. Can't proceed.\n");
+      return 2;
+    }
+  }
+
+  return wb_stress_virtual_space_resize((size_t) reserved_space_size,
+                                        (size_t) magnitude, (size_t) iterations);
 WB_END
 
 #if INCLUDE_ALL_GCS
@@ -445,6 +553,9 @@ static JNINativeMethod methods[] = {
   {CC"getCompressedOopsMaxHeapSize", CC"()J",
       (void*)&WB_GetCompressedOopsMaxHeapSize},
   {CC"printHeapSizes",     CC"()V",                   (void*)&WB_PrintHeapSizes    },
+  {CC"runMemoryUnitTests", CC"()V",                   (void*)&WB_RunMemoryUnitTests},
+  {CC"readFromNoaccessArea",CC"()V",                  (void*)&WB_ReadFromNoaccessArea},
+  {CC"stressVirtualSpaceResize",CC"(JJJ)I",           (void*)&WB_StressVirtualSpaceResize},
 #if INCLUDE_ALL_GCS
   {CC"g1InConcurrentMark", CC"()Z",                   (void*)&WB_G1InConcurrentMark},
   {CC"g1IsHumongous",      CC"(Ljava/lang/Object;)Z", (void*)&WB_G1IsHumongous     },
