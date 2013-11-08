@@ -75,6 +75,7 @@ void GenerationSizer::initialize_size_info() {
   size_t new_alignment = round_to(page_sz, _gen_alignment);
   if (new_alignment != _gen_alignment) {
     _gen_alignment = new_alignment;
+    _space_alignment = new_alignment;
     // Redo everything from the start
     initialize_flags();
   }
