@@ -2524,6 +2524,9 @@ void CMSCollector::collect_in_foreground(bool clear_all_soft_refs, GCCause::Caus
   // Snapshot the soft reference policy to be used in this collection cycle.
   ref_processor()->setup_policy(clear_all_soft_refs);
 
+  // Decide if class unloading should be done
+  update_should_unload_classes();
+
   bool init_mark_was_synchronous = false; // until proven otherwise
   while (_collectorState != Idling) {
     if (TraceCMSState) {
