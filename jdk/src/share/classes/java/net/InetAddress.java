@@ -1144,7 +1144,7 @@ class InetAddress implements java.io.Serializable {
                         ifname = host.substring (pos+1);
                     }
                 }
-                if ((addr = IPAddressUtil.textToNumericFormatV6(host)) == null) {
+                if ((addr = IPAddressUtil.textToNumericFormatV6(host)) == null && host.contains(":")) {
                     throw new UnknownHostException(host + ": invalid IPv6 address");
                 }
             } else if (ipv6Expected) {
