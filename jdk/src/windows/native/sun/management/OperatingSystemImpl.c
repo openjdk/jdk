@@ -28,7 +28,7 @@
 #include "jlong.h"
 #include "jvm.h"
 #include "management.h"
-#include "com_sun_management_OperatingSystem.h"
+#include "sun_management_OperatingSystemImpl.h"
 
 #include <psapi.h>
 #include <errno.h>
@@ -77,7 +77,7 @@ static HANDLE main_process;
 int perfiInit(void);
 
 JNIEXPORT void JNICALL
-Java_com_sun_management_OperatingSystem_initialize
+Java_sun_management_OperatingSystemImpl_initialize
   (JNIEnv *env, jclass cls)
 {
     main_process = GetCurrentProcess();
@@ -85,7 +85,7 @@ Java_com_sun_management_OperatingSystem_initialize
 }
 
 JNIEXPORT jlong JNICALL
-Java_com_sun_management_OperatingSystem_getCommittedVirtualMemorySize0
+Java_sun_management_OperatingSystemImpl_getCommittedVirtualMemorySize0
   (JNIEnv *env, jobject mbean)
 {
     PROCESS_MEMORY_COUNTERS pmc;
@@ -97,7 +97,7 @@ Java_com_sun_management_OperatingSystem_getCommittedVirtualMemorySize0
 }
 
 JNIEXPORT jlong JNICALL
-Java_com_sun_management_OperatingSystem_getTotalSwapSpaceSize
+Java_sun_management_OperatingSystemImpl_getTotalSwapSpaceSize
   (JNIEnv *env, jobject mbean)
 {
     MEMORYSTATUSEX ms;
@@ -107,7 +107,7 @@ Java_com_sun_management_OperatingSystem_getTotalSwapSpaceSize
 }
 
 JNIEXPORT jlong JNICALL
-Java_com_sun_management_OperatingSystem_getFreeSwapSpaceSize
+Java_sun_management_OperatingSystemImpl_getFreeSwapSpaceSize
   (JNIEnv *env, jobject mbean)
 {
     MEMORYSTATUSEX ms;
@@ -117,7 +117,7 @@ Java_com_sun_management_OperatingSystem_getFreeSwapSpaceSize
 }
 
 JNIEXPORT jlong JNICALL
-Java_com_sun_management_OperatingSystem_getProcessCpuTime
+Java_sun_management_OperatingSystemImpl_getProcessCpuTime
   (JNIEnv *env, jobject mbean)
 {
 
@@ -136,7 +136,7 @@ Java_com_sun_management_OperatingSystem_getProcessCpuTime
 }
 
 JNIEXPORT jlong JNICALL
-Java_com_sun_management_OperatingSystem_getFreePhysicalMemorySize
+Java_sun_management_OperatingSystemImpl_getFreePhysicalMemorySize
   (JNIEnv *env, jobject mbean)
 {
     MEMORYSTATUSEX ms;
@@ -146,7 +146,7 @@ Java_com_sun_management_OperatingSystem_getFreePhysicalMemorySize
 }
 
 JNIEXPORT jlong JNICALL
-Java_com_sun_management_OperatingSystem_getTotalPhysicalMemorySize
+Java_sun_management_OperatingSystemImpl_getTotalPhysicalMemorySize
   (JNIEnv *env, jobject mbean)
 {
     MEMORYSTATUSEX ms;
@@ -927,14 +927,14 @@ perfInit(void) {
 }
 
 JNIEXPORT jdouble JNICALL
-Java_com_sun_management_OperatingSystem_getSystemCpuLoad
+Java_sun_management_OperatingSystemImpl_getSystemCpuLoad
 (JNIEnv *env, jobject dummy)
 {
     return perfGetCPULoad(-1);
 }
 
 JNIEXPORT jdouble JNICALL
-Java_com_sun_management_OperatingSystem_getProcessCpuLoad
+Java_sun_management_OperatingSystemImpl_getProcessCpuLoad
 (JNIEnv *env, jobject dummy)
 {
     return perfGetProcessLoad();

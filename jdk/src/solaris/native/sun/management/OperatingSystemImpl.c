@@ -28,7 +28,7 @@
 #include "jlong.h"
 #include "jvm.h"
 #include "management.h"
-#include "com_sun_management_UnixOperatingSystem.h"
+#include "sun_management_OperatingSystemImpl.h"
 
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -175,14 +175,14 @@ static jlong get_total_or_available_swap_space_size(JNIEnv* env, jboolean availa
 }
 
 JNIEXPORT void JNICALL
-Java_com_sun_management_UnixOperatingSystem_initialize
+Java_sun_management_OperatingSystemImpl_initialize
   (JNIEnv *env, jclass cls)
 {
     page_size = sysconf(_SC_PAGESIZE);
 }
 
 JNIEXPORT jlong JNICALL
-Java_com_sun_management_UnixOperatingSystem_getCommittedVirtualMemorySize
+Java_sun_management_OperatingSystemImpl_getCommittedVirtualMemorySize
   (JNIEnv *env, jobject mbean)
 {
 #ifdef __solaris__
@@ -249,21 +249,21 @@ Java_com_sun_management_UnixOperatingSystem_getCommittedVirtualMemorySize
 }
 
 JNIEXPORT jlong JNICALL
-Java_com_sun_management_UnixOperatingSystem_getTotalSwapSpaceSize
+Java_sun_management_OperatingSystemImpl_getTotalSwapSpaceSize
   (JNIEnv *env, jobject mbean)
 {
     return get_total_or_available_swap_space_size(env, JNI_FALSE);
 }
 
 JNIEXPORT jlong JNICALL
-Java_com_sun_management_UnixOperatingSystem_getFreeSwapSpaceSize
+Java_sun_management_OperatingSystemImpl_getFreeSwapSpaceSize
   (JNIEnv *env, jobject mbean)
 {
     return get_total_or_available_swap_space_size(env, JNI_TRUE);
 }
 
 JNIEXPORT jlong JNICALL
-Java_com_sun_management_UnixOperatingSystem_getProcessCpuTime
+Java_sun_management_OperatingSystemImpl_getProcessCpuTime
   (JNIEnv *env, jobject mbean)
 {
 #ifdef __APPLE__
@@ -305,7 +305,7 @@ Java_com_sun_management_UnixOperatingSystem_getProcessCpuTime
 }
 
 JNIEXPORT jlong JNICALL
-Java_com_sun_management_UnixOperatingSystem_getFreePhysicalMemorySize
+Java_sun_management_OperatingSystemImpl_getFreePhysicalMemorySize
   (JNIEnv *env, jobject mbean)
 {
 #ifdef __APPLE__
@@ -333,7 +333,7 @@ Java_com_sun_management_UnixOperatingSystem_getFreePhysicalMemorySize
 }
 
 JNIEXPORT jlong JNICALL
-Java_com_sun_management_UnixOperatingSystem_getTotalPhysicalMemorySize
+Java_sun_management_OperatingSystemImpl_getTotalPhysicalMemorySize
   (JNIEnv *env, jobject mbean)
 {
 #ifdef _ALLBSD_SOURCE
@@ -358,7 +358,7 @@ Java_com_sun_management_UnixOperatingSystem_getTotalPhysicalMemorySize
 
 
 JNIEXPORT jlong JNICALL
-Java_com_sun_management_UnixOperatingSystem_getOpenFileDescriptorCount
+Java_sun_management_OperatingSystemImpl_getOpenFileDescriptorCount
   (JNIEnv *env, jobject mbean)
 {
 #ifdef __APPLE__
@@ -438,7 +438,7 @@ Java_com_sun_management_UnixOperatingSystem_getOpenFileDescriptorCount
 }
 
 JNIEXPORT jlong JNICALL
-Java_com_sun_management_UnixOperatingSystem_getMaxFileDescriptorCount
+Java_sun_management_OperatingSystemImpl_getMaxFileDescriptorCount
   (JNIEnv *env, jobject mbean)
 {
     struct rlimit rlp;
