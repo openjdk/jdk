@@ -3019,9 +3019,6 @@ class CommandLineFlags {
   notproduct(intx, ZombieALotInterval,     5,                               \
           "Number of exits until ZombieALot kicks in")                      \
                                                                             \
-  develop(bool, StressNonEntrant, false,                                    \
-          "Mark nmethods non-entrant at registration")                      \
-                                                                            \
   diagnostic(intx, MallocVerifyInterval,     0,                             \
           "If non-zero, verify C heap after every N calls to "              \
           "malloc/realloc/free")                                            \
