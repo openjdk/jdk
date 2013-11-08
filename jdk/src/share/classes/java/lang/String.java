@@ -122,14 +122,9 @@ public final class String
     /**
      * Class String is special cased within the Serialization Stream Protocol.
      *
-     * A String instance is written initially into an ObjectOutputStream in the
-     * following format:
-     * <pre>
-     *      {@code TC_STRING} (utf String)
-     * </pre>
-     * The String is written by method {@code DataOutput.writeUTF}.
-     * A new handle is generated to  refer to all future references to the
-     * string instance within the stream.
+     * A String instance is written into an ObjectOutputStream according to
+     * <a href="{@docroot}../platform/serialization/spec/output.html">
+     * Object Serialization Specification, Section 6.2, "Stream Elements"</a>
      */
     private static final ObjectStreamField[] serialPersistentFields =
         new ObjectStreamField[0];
