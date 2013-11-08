@@ -152,7 +152,9 @@ ifneq ($(OPENJDK_TARGET_OS),aix)
              sun/nio/fs/AixFileStore.java \
              sun/nio/fs/AixFileSystem.java \
              sun/nio/fs/AixFileSystemProvider.java \
-             sun/nio/fs/AixNativeDispatcher.java
+             sun/nio/fs/AixNativeDispatcher.java \
+             sun/tools/attach/AixAttachProvider.java \
+             sun/tools/attach/AixVirtualMachine.java
 endif
 
 # Exclude BreakIterator classes that are just used in compile process to generate
@@ -303,6 +305,11 @@ SECURITY_PKGS := \
     sun/security/pkcs11 \
     #
 
+AIX_SRC_DIRS :=
+ifeq ($(OPENJDK_TARGET_OS),aix)
+     AIX_SRC_DIRS += $(JDK_TOPDIR)/src/aix/classes
+endif
+
 # The exception handling of swing beaninfo
 # These resources violates the convention of having code and resources together under
 # $(JDK_TOPDIR)/src/.../classes directories
@@ -327,6 +334,7 @@ $(eval $(call SetupJavaCompilation,BUILD_JDK,\
     SRC:=$(JDK_TOPDIR)/src/share/classes \
         $(JDK_TOPDIR)/src/$(OPENJDK_TARGET_OS_API_DIR)/classes \
         $(MACOSX_SRC_DIRS) \
+        $(AIX_SRC_DIRS) \
         $(JDK_OUTPUTDIR)/gensrc \
         $(JDK_OUTPUTDIR)/gensrc_no_srczip \
         $(CLOSED_SRC_DIRS),\

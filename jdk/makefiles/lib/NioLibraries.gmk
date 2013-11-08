@@ -112,6 +112,22 @@ ifeq ($(OPENJDK_TARGET_OS), solaris)
       UnixNativeDispatcher.c
 endif
 
+ifeq ($(OPENJDK_TARGET_OS), aix)
+  BUILD_LIBNIO_MAPFILE:=$(JDK_TOPDIR)/makefiles/mapfiles/libnio/mapfile-$(OPENJDK_TARGET_OS)
+  BUILD_LIBNIO_SRC += $(JDK_TOPDIR)/src/aix/native/sun/nio/ch
+  BUILD_LIBNIO_FILES += \
+      AixPollPort.c \
+      InheritedChannel.c \
+      NativeThread.c \
+      PollArrayWrapper.c \
+      UnixAsynchronousServerSocketChannelImpl.c \
+      UnixAsynchronousSocketChannelImpl.c \
+      GnomeFileTypeDetector.c \
+      UnixCopyFile.c \
+      AixNativeDispatcher.c \
+      UnixNativeDispatcher.c
+endif
+
 $(eval $(call SetupNativeCompilation,BUILD_LIBNIO, \
     LIBRARY := nio, \
     OUTPUT_DIR := $(INSTALL_LIBRARIES_HERE), \
@@ -125,6 +141,7 @@ $(eval $(call SetupNativeCompilation,BUILD_LIBNIO, \
     LDFLAGS := $(LDFLAGS_JDKLIB) $(BUILD_LIBNIO_LDFLAGS) \
         $(call SET_SHARED_LIBRARY_ORIGIN), \
     LDFLAGS_SUFFIX_linux := -ljava -lnet -lpthread $(LIBDL), \
+    LDFLAGS_SUFFIX_aix := -ljava -lnet $(LIBDL),\
     LDFLAGS_SUFFIX_solaris := -ljvm -lsocket -lposix4 $(LIBDL) \
         -lsendfile -ljava -lnet -lc, \
     LDFLAGS_SUFFIX_windows := jvm.lib ws2_32.lib $(WIN_JAVA_LIB) \
@@ -148,7 +165,7 @@ $(BUILD_LIBNIO): $(BUILD_LIBNET)
 
 ifeq ($(OPENJDK_TARGET_OS_API), posix)
 
-  ifneq ($(OPENJDK_TARGET_OS), macosx)
+  ifeq (, $(filter $(OPENJDK_TARGET_OS), macosx aix))
 
     # Suppress unused parameters required by exported JNI functions.
     SCTP_WERROR := -Werror -Wno-error=unused-parameter

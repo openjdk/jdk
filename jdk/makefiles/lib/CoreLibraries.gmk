@@ -269,7 +269,7 @@ $(eval $(call SetupNativeCompilation,BUILD_LIBZIP, \
         $(WIN_JAVA_LIB), \
     LDFLAGS_SUFFIX_linux := -ljvm -ljava $(LIBZ), \
     LDFLAGS_SUFFIX_solaris := -ljvm -ljava $(LIBZ) -lc, \
-    LDFLAGS_SUFFIX_aix: = -ljvm -ljava $(LIBZ),\
+    LDFLAGS_SUFFIX_aix := -ljvm -ljava $(LIBZ),\
     LDFLAGS_SUFFIX_macosx := $(LIBZ) -ljava -ljvm, \
     VERSIONINFO_RESOURCE := $(JDK_TOPDIR)/src/windows/resource/version.rc, \
     RC_FLAGS := $(RC_FLAGS) \
@@ -418,6 +418,7 @@ $(eval $(call SetupNativeCompilation,BUILD_LIBJLI, \
     LDFLAGS_macosx := -framework Cocoa -framework Security -framework ApplicationServices, \
     LDFLAGS_SUFFIX_solaris := $(LIBZ) $(LIBDL) -lc, \
     LDFLAGS_SUFFIX_linux := $(LIBZ) $(LIBDL) -lc -lpthread, \
+    LDFLAGS_SUFFIX_aix := $(LIBZ) $(LIBDL),\
     LDFLAGS_SUFFIX_macosx := $(LIBZ), \
     LDFLAGS_SUFFIX_windows := \
         -export:JLI_Launch \
@@ -483,6 +484,22 @@ else ifeq ($(OPENJDK_TARGET_OS), macosx)
 	$(call install-file)
 
   BUILD_LIBRARIES += $(JDK_OUTPUTDIR)/objs/libjli_static.a
+
+else ifeq ($(OPENJDK_TARGET_OS), aix)
+  # AIX also requires a static libjli because the compiler doesn't support '-rpath'
+  $(eval $(call SetupNativeCompilation,BUILD_LIBJLI_STATIC,\
+      STATIC_LIBRARY:=jli_static,\
+      OUTPUT_DIR:=$(JDK_OUTPUTDIR)/objs,\
+      SRC:=$(BUILD_LIBJLI_SRC_DIRS),\
+      INCLUDE_FILES:=$(BUILD_LIBJLI_FILES),\
+      LANG:=C,\
+      OPTIMIZATION:=HIGH, \
+      CFLAGS:=$(STATIC_LIBRARY_FLAGS) $(LIBJLI_CFLAGS),\
+      ARFLAGS:=$(ARFLAGS),\
+      OBJECT_DIR:=$(JDK_OUTPUTDIR)/objs/libjli_static))
+
+  BUILD_LIBRARIES += $(JDK_OUTPUTDIR)/objs/libjli_static.a
+
 endif
 
 ##########################################################################################
