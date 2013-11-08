@@ -25,7 +25,7 @@
 
 /*
  * @test
- * @bug 8026370
+ * @bug 8026370 8026567
  * @summary This test checks the generated tag output.
  * @author Bhavesh Patel
  * @library ../lib/
@@ -38,15 +38,15 @@ public class TestTagOutput extends JavadocTester {
     private static final String BUG_ID = "8026370";
     private static final String[][] TEST = {
         {BUG_ID + FS + "pkg1" + FS + "DeprecatedTag.html",
-            "<div class=\"block\"><span class=\"strong\">Deprecated.</span>&nbsp;</div>"},
+            "<div class=\"block\"><span class=\"deprecatedLabel\">Deprecated.</span>&nbsp;</div>"},
         {BUG_ID + FS + "pkg1" + FS + "DeprecatedTag.html",
-            "<div class=\"block\"><span class=\"strong\">Deprecated.</span>&nbsp;" +
-            "<span class=\"italic\">Do not use this.</span></div>"}};
+            "<div class=\"block\"><span class=\"deprecatedLabel\">Deprecated.</span>&nbsp;" +
+            "<span class=\"deprecationComment\">Do not use this.</span></div>"}};
 
     private static final String[][] NEGATED_TEST = {
         {BUG_ID + FS + "pkg1" + FS + "DeprecatedTag.html",
-            "<div class=\"block\"><span class=\"strong\">Deprecated." +
-            "</span>&nbsp;<span class=\"italic\"></span></div>"}};
+            "<div class=\"block\"><span class=\"deprecatedLabel\">Deprecated." +
+            "</span>&nbsp;<span class=\"deprecationComment\"></span></div>"}};
 
     private static final String[] ARGS =
         new String[] {

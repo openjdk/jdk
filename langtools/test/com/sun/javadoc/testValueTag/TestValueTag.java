@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug      4764045 8004825
+ * @bug      4764045 8004825 8026567
  * @summary  This test ensures that the value tag works in all
  * use cases. The explainations for each test case are written below.
  * @author   jamieh
@@ -94,7 +94,7 @@ public class TestValueTag extends JavadocTester {
             "Result: <a href=\"../pkg2/Class3.html#TEST_17_PASSES\">\"Test 17 passes\"</a>"},
         //Test @value tag used with custom tag.
         {BUG_ID + FS + "pkg1" + FS + "CustomTagUsage.html",
-            "<dt><span class=\"strong\">Todo:</span></dt>" + NL +
+            "<dt><span class=\"simpleTagLabel\">Todo:</span></dt>" + NL +
                 "<dd>the value of this constant is 55.</dd>"},
         //Test @value errors printed dues to invalid use or when used with
         //non-constant or with bad references.

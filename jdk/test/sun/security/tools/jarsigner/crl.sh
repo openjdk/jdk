@@ -45,7 +45,7 @@ esac
 
 KS=crl.jks
 
-KT="$TESTJAVA${FS}bin${FS}keytool -storepass changeit -keypass changeit -keystore $KS"
+KT="$TESTJAVA${FS}bin${FS}keytool -storepass changeit -keypass changeit -keystore $KS -keyalg rsa"
 
 rm $KS 2> /dev/null
 

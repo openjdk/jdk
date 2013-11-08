@@ -129,7 +129,7 @@ public class ScriptObjectMirrorTest {
         final ScriptEngine e = m.getEngineByName("nashorn");
         try {
             e.eval("var obj = { '1': 'world', func: function() { return this.bar; }, bar: 'hello' }");
-            JSObject obj = (JSObject) e.get("obj");
+            ScriptObjectMirror obj = (ScriptObjectMirror) e.get("obj");
 
             // try basic get on existing properties
             if (!obj.getMember("bar").equals("hello")) {

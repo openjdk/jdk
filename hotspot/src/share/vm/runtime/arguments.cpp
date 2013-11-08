@@ -1957,12 +1957,6 @@ bool Arguments::check_gc_consistency() {
                 "please refer to the release notes for the combinations "
                 "allowed\n");
     status = false;
-  } else if (ReservedCodeCacheSize > 2*G) {
-    // Code cache size larger than MAXINT is not supported.
-    jio_fprintf(defaultStream::error_stream(),
-                "Invalid ReservedCodeCacheSize=%dM. Must be at most %uM.\n", ReservedCodeCacheSize/M,
-                (2*G)/M);
-    status = false;
   }
   return status;
 }
@@ -1993,6 +1987,15 @@ void Arguments::check_deprecated_gc_flags() {
   if (FLAG_IS_CMDLINE(DefaultMaxRAMFraction)) {
     warning("DefaultMaxRAMFraction is deprecated and will likely be removed in a future release. "
         "Use MaxRAMFraction instead.");
+  }
+  if (FLAG_IS_CMDLINE(UseCMSCompactAtFullCollection)) {
+    warning("UseCMSCompactAtFullCollection is deprecated and will likely be removed in a future release.");
+  }
+  if (FLAG_IS_CMDLINE(CMSFullGCsBeforeCompaction)) {
+    warning("CMSFullGCsBeforeCompaction is deprecated and will likely be removed in a future release.");
+  }
+  if (FLAG_IS_CMDLINE(UseCMSCollectionPassing)) {
+    warning("UseCMSCollectionPassing is deprecated and will likely be removed in a future release.");
   }
 }
 
@@ -3721,6 +3724,18 @@ jint Arguments::apply_ergo() {
     // incremental inlining: bump MaxNodeLimit
     FLAG_SET_DEFAULT(MaxNodeLimit, (intx)75000);
   }
+  if (!UseTypeSpeculation && FLAG_IS_DEFAULT(TypeProfileLevel)) {
+    // nothing to use the profiling, turn if off
+    FLAG_SET_DEFAULT(TypeProfileLevel, 0);
+  }
+  if (UseTypeSpeculation && FLAG_IS_DEFAULT(ReplaceInParentMaps)) {
+    // Doing the replace in parent maps helps speculation
+    FLAG_SET_DEFAULT(ReplaceInParentMaps, true);
+  }
+#ifndef X86
+  // Only on x86 for now
+  FLAG_SET_DEFAULT(TypeProfileLevel, 0);
+#endif
 #endif
 
   if (PrintAssembly && FLAG_IS_DEFAULT(DebugNonSafepoints)) {

@@ -24,10 +24,6 @@ CantAnnotateStaticClass2.java:57:12: compiler.err.cant.type.annotate.scoping.1: 
 CantAnnotateStaticClass2.java:58:12: compiler.err.cant.type.annotate.scoping.1: @Top.TB
 CantAnnotateStaticClass2.java:65:12: compiler.err.cant.type.annotate.scoping.1: @Top.TB
 CantAnnotateStaticClass2.java:66:12: compiler.err.cant.type.annotate.scoping.1: @Top.TB
-CantAnnotateStaticClass2.java:105:18: compiler.err.cant.type.annotate.scoping.1: @Top.TB
-CantAnnotateStaticClass2.java:107:18: compiler.err.cant.type.annotate.scoping.1: @Top.TB
-CantAnnotateStaticClass2.java:112:18: compiler.err.cant.type.annotate.scoping.1: @Top.TB
-CantAnnotateStaticClass2.java:114:18: compiler.err.cant.type.annotate.scoping.1: @Top.TB
 CantAnnotateStaticClass2.java:120:14: compiler.err.cant.type.annotate.scoping.1: @Top.TB
 CantAnnotateStaticClass2.java:121:14: compiler.err.cant.type.annotate.scoping.1: @Top.TB
 CantAnnotateStaticClass2.java:128:14: compiler.err.cant.type.annotate.scoping.1: @Top.TB
@@ -50,6 +46,10 @@ CantAnnotateStaticClass2.java:165:22: compiler.err.cant.type.annotate.scoping.1:
 CantAnnotateStaticClass2.java:167:22: compiler.err.cant.type.annotate.scoping.1: @Top.TB
 CantAnnotateStaticClass2.java:169:22: compiler.err.cant.type.annotate.scoping.1: @Top.TB
 CantAnnotateStaticClass2.java:171:22: compiler.err.cant.type.annotate.scoping.1: @Top.TB
+CantAnnotateStaticClass2.java:105:18: compiler.err.cant.type.annotate.scoping.1: @Top.TB
+CantAnnotateStaticClass2.java:107:18: compiler.err.cant.type.annotate.scoping.1: @Top.TB
+CantAnnotateStaticClass2.java:112:18: compiler.err.cant.type.annotate.scoping.1: @Top.TB
+CantAnnotateStaticClass2.java:114:18: compiler.err.cant.type.annotate.scoping.1: @Top.TB
 CantAnnotateStaticClass2.java:184:35: compiler.err.cant.type.annotate.scoping.1: @Top.TB
 CantAnnotateStaticClass2.java:186:41: compiler.err.cant.type.annotate.scoping.1: @Top.TB
 CantAnnotateStaticClass2.java:187:41: compiler.err.cant.type.annotate.scoping.1: @Top.TB

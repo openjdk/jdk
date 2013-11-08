@@ -1768,9 +1768,11 @@ public class Infer {
                 public Type apply(Type t) {
                     if (t.hasTag(TYPEVAR)) {
                         TypeVar tv = (TypeVar)t;
-                        return tv.isCaptured() ?
-                                new CapturedUndetVar((CapturedType)tv, types) :
-                                new UndetVar(tv, types);
+                        if (tv.isCaptured()) {
+                            return new CapturedUndetVar((CapturedType)tv, types);
+                        } else {
+                            return new UndetVar(tv, types);
+                        }
                     } else {
                         return t.map(this);
                     }

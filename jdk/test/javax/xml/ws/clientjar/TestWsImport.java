@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8016271
+ * @bug 8016271 8026405
  * @summary wsimport -clientjar does not create portable jar on windows due to hardcoded '\'
  * @run main/othervm TestWsImport
  */
@@ -77,14 +77,14 @@ public class TestWsImport {
             String address = "http://localhost:" + port + "/hello";
 
             Service service = Service.create(new URL(address + "?wsdl"),
-                new QName("http://test/jaxws/sample/",
-                "TestService"));
+                new QName("http://test/jaxws/sample/", "TestService"));
 
             String[] wsargs = {
                 wsimport,
                 "-p",
                 "wstest",
                 "-J-Djavax.xml.accessExternalSchema=all",
+                "-J-Dcom.sun.tools.internal.ws.Invoker.noSystemProxies=true",
                 address + "?wsdl",
                 "-clientjar",
                 "wsjar.jar"

@@ -27,7 +27,6 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
 
 /**
@@ -152,14 +151,14 @@ public class Tester {
             throws FileNotFoundException, IOException {
 
         List<String> refFileList = Files.readAllLines(refFile.toPath(), StandardCharsets.UTF_8);
-        List<String> sbList = Arrays.asList(sb.split(System.getProperty("line.separator")));
+        List<String> sbList = Arrays.asList(sb.split("[\r\n]+"));
         // Check if test output contains unexpected lines or is missing expected lines.
-        List<String> sbOnly = new ArrayList<String>(sbList);
+        List<String> sbOnly = new ArrayList<>(sbList);
         sbOnly.removeAll(refFileList);
         for (String line: sbOnly)
             error("unexpected line found: " + line);
 
-        List<String> refOnly = new ArrayList<String>(refFileList);
+        List<String> refOnly = new ArrayList<>(refFileList);
         refOnly.removeAll(sbList);
         for (String line: refOnly)
             error("expected line not found: " + line);

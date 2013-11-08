@@ -78,6 +78,7 @@ class ClassLoaderDataGraph : public AllStatic {
   static void keep_alive_oops_do(OopClosure* blk, KlassClosure* klass_closure, bool must_claim);
   static void classes_do(KlassClosure* klass_closure);
   static void classes_do(void f(Klass* const));
+  static void loaded_classes_do(KlassClosure* klass_closure);
   static void classes_unloading_do(void f(Klass* const));
   static bool do_unloading(BoolObjectClosure* is_alive);
 
@@ -186,6 +187,7 @@ class ClassLoaderData : public CHeapObj<mtClass> {
   bool keep_alive() const       { return _keep_alive; }
   bool is_alive(BoolObjectClosure* is_alive_closure) const;
   void classes_do(void f(Klass*));
+  void loaded_classes_do(KlassClosure* klass_closure);
   void classes_do(void f(InstanceKlass*));
 
   // Deallocate free list during class unloading.

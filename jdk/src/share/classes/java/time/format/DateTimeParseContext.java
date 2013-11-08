@@ -61,7 +61,6 @@
  */
 package java.time.format;
 
-import java.time.Duration;
 import java.time.ZoneId;
 import java.time.chrono.Chronology;
 import java.time.chrono.IsoChronology;
@@ -69,6 +68,7 @@ import java.time.temporal.TemporalField;
 import java.util.ArrayList;
 import java.util.Locale;
 import java.util.Objects;
+import java.util.function.Consumer;
 
 /**
  * Context object used during date and time parsing.
@@ -105,6 +105,10 @@ final class DateTimeParseContext {
      * The list of parsed data.
      */
     private final ArrayList<Parsed> parsed = new ArrayList<>();
+    /**
+     * List of Consumers<Chronology> to be notified if the Chronology changes.
+     */
+    private ArrayList<Consumer<Chronology>> chronoListeners = null;
 
     /**
      * Creates a new instance of the context.
@@ -354,12 +358,36 @@ final class DateTimeParseContext {
      * <p>
      * This stores the chronology that has been parsed.
      * No validation is performed other than ensuring it is not null.
+     * <p>
+     * The list of listeners is copied and cleared so that each
+     * listener is called only once.  A listener can add itself again
+     * if it needs to be notified of future changes.
      *
      * @param chrono  the parsed chronology, not null
      */
     void setParsed(Chronology chrono) {
         Objects.requireNonNull(chrono, "chrono");
         currentParsed().chrono = chrono;
+        if (chronoListeners != null && !chronoListeners.isEmpty()) {
+            Consumer[] tmp = new Consumer[1];
+            Consumer<Chronology>[] listeners = chronoListeners.toArray(tmp);
+            chronoListeners.clear();
+            for (Consumer<Chronology> l : listeners) {
+                l.accept(chrono);
+            }
+        }
+    }
+
+    /**
+     * Adds a Consumer<Chronology> to the list of listeners to be notified
+     * if the Chronology changes.
+     * @param listener a Consumer<Chronology> to be called when Chronology changes
+     */
+    void addChronoChangedListener(Consumer<Chronology> listener) {
+        if (chronoListeners == null) {
+            chronoListeners = new ArrayList<Consumer<Chronology>>();
+        }
+        chronoListeners.add(listener);
     }
 
     /**

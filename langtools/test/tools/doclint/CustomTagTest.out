@@ -1,0 +1,8 @@
+CustomTagTest.java:14: error: unknown tag: customTag
+ * @customTag Text for a custom tag.
+   ^
+CustomTagTest.java:15: error: unknown tag: unknownTag
+ * @unknownTag Text for an unknown tag.
+   ^
+2 errors
+

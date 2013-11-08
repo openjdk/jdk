@@ -172,7 +172,7 @@ interface TestIF8<E> {
 
 @MethodDesc(name = "defaultMethod", retval = "TestIF8.TestClass8", mod = DEFAULT, declared = NO)
 class TestClass8<T> implements TestIF8<T> {
-};
+}
 
 @MethodDesc(name = "defaultMethod", retval = "TestIF9.defaultMethod", mod = DEFAULT, declared = YES)
 interface TestIF9 extends TestIF1 {
@@ -218,7 +218,6 @@ class TestClass11 implements TestIF11 {
 }
 
 @MethodDesc(name = "defaultMethod", retval = "TestIF12.defaultMethod", mod = DEFAULT, declared = YES)
-@MethodDesc(name = "staticMethod", retval = "TestIF2.staticMethod", mod = STATIC, declared = NO)
 interface TestIF12 extends TestIF2 {
 
     default String defaultMethod() {
@@ -299,7 +298,7 @@ interface TestIF16 {
 
 @MethodDesc(name = "defaultMethod", retval = "TestIF16.defaultMethod", mod = DEFAULT, declared = NO)
 class TestClass16 implements TestIF16 {
-};
+}
 
 @MethodDesc(name = "defaultMethod", retval = "TestIF17.defaultMethod", mod = DEFAULT, declared = YES)
 @MethodDesc(name = "staticMethod", retval = "TestIF17.staticMethod", mod = STATIC, declared = YES)
@@ -318,6 +317,12 @@ interface TestIF17 {
 class TestClass17 implements TestIF17 {
 }
 
+
+@MethodDesc(name = "defaultMethod", retval = "TestIF17.defaultMethod", mod = DEFAULT, declared = NO)
+class TestClass18 extends TestClass17 {
+}
+
+
 @Retention(RetentionPolicy.RUNTIME)
 @Repeatable(MethodDescs.class)
 @interface MethodDesc {
@@ -332,6 +337,41 @@ class TestClass17 implements TestIF17 {
     MethodDesc[] value();
 }
 
+//Diamond Case for static method
+@MethodDesc(name = "staticMethod", retval = "TestIF2A.staticMethod", mod = STATIC, declared = YES)
+interface TestIF2A extends TestIF2 {
+    static String staticMethod() {
+        return "TestIF2A.staticMethod";
+    }
+}
+
+@MethodDesc(name = "method", retval = "", mod = ABSTRACT, declared = YES)
+interface TestIF2B extends TestIF2 {
+    String method();
+}
+
+@MethodDesc(name = "method", retval = "", mod = ABSTRACT, declared = YES)
+interface TestIF18 extends TestIF10, TestIF2A {
+    String method();
+}
+
+@MethodDesc(name = "method", retval = "", mod = ABSTRACT, declared = NO)
+@MethodDesc(name = "defaultMethod", retval = "TestIF12.defaultMethod", mod = DEFAULT, declared = NO)
+interface TestIF19 extends TestIF12, TestIF2B {
+}
+
+@MethodDesc(name = "staticMethod", retval = "TestIF20.staticMethod", mod = STATIC, declared = YES)
+@MethodDesc(name = "defaultMethod", retval = "TestIF12.defaultMethod", mod = DEFAULT, declared = NO)
+interface TestIF20 extends TestIF12, TestIF2A {
+    static String staticMethod() {
+        return "TestIF20.staticMethod";
+    }
+}
+
+@MethodDesc(name = "method", retval = "", mod = ABSTRACT, declared = NO)
+interface TestIF21 extends TestIF2A, TestIF2B {
+}
+
 public class DefaultStaticTestData {
 
     /**
@@ -343,22 +383,23 @@ public class DefaultStaticTestData {
     static Object[][] testClasses() {
         return new Object[][]{
             {"TestClass1", null},
-            //{"TestClass2", null}, @ignore due to JDK-8009411
+            {"TestClass2", null},
             {"TestClass3", null},
-            //{"TestClass4", null}, @ignore due to JDK-8009411
-            //{"TestClass5", null}, @ignore due to JDK-8009411
-            //{"TestClass6", null}, @ignore due to JDK-8009411
+            {"TestClass4", null},
+            {"TestClass5", null},
+            {"TestClass6", null},
             {"TestClass7", "TestIF7.TestClass7"},
             {"TestClass8", "TestIF8.TestClass8"},
             {"TestClass9", null},
             {"TestClass91", null},
-            //{"TestClass11", null}, @ignore due to JDK-8009411
-            //{"TestClass12", null}, @ignore due to JDK-8009411
+            {"TestClass11", null},
+            {"TestClass12", null},
             {"TestClass13", null},
             {"TestClass14", null},
             {"TestClass15", null},
-            {"TestClass16", null}
-        //{"TestClass17", null} @ignore due to JDK-8009411
+            {"TestClass16", null},
+            {"TestClass17", null},
+            {"TestClass18", null},
         };
     }
 
@@ -372,6 +413,8 @@ public class DefaultStaticTestData {
         return new Object[][]{
             {"TestIF1", null},
             {"TestIF2", null},
+            {"TestIF2A", null},
+            {"TestIF2B", null},
             {"TestIF3", null},
             {"TestIF4", null},
             {"TestIF5", null},
@@ -388,7 +431,12 @@ public class DefaultStaticTestData {
             {"TestIF1D", null},
             {"TestIF15", null},
             {"TestIF16", null},
-            {"TestIF17", null},};
+            {"TestIF17", null},
+            {"TestIF18", null},
+            {"TestIF19", null},
+            {"TestIF20", null},
+            {"TestIF21", null},
+        };
     }
 
     @DataProvider

@@ -176,7 +176,7 @@ public class AbstractIndexWriter extends HtmlDocletWriter {
         String name = (member instanceof ExecutableMemberDoc)?
             member.name() + ((ExecutableMemberDoc)member).flatSignature() :
             member.name();
-        Content span = HtmlTree.SPAN(HtmlStyle.strong,
+        Content span = HtmlTree.SPAN(HtmlStyle.memberNameLink,
                 getDocLink(LinkInfoImpl.Kind.INDEX, member, name));
         Content dt = HtmlTree.DT(span);
         dt.addContent(" - ");
@@ -198,7 +198,7 @@ public class AbstractIndexWriter extends HtmlDocletWriter {
      */
     protected void addComment(ProgramElementDoc element, Content contentTree) {
         Tag[] tags;
-        Content span = HtmlTree.SPAN(HtmlStyle.strong, deprecatedPhrase);
+        Content span = HtmlTree.SPAN(HtmlStyle.deprecatedLabel, deprecatedPhrase);
         HtmlTree div = new HtmlTree(HtmlTag.DIV);
         div.addStyle(HtmlStyle.block);
         if (Util.isDeprecated(element)) {
