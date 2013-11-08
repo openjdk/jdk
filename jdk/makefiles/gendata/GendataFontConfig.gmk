@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2012, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2013, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -68,7 +68,7 @@ endif
 
 ifeq ($(OPENJDK_TARGET_OS), aix)
   GENDATA_FONT_CONFIG_SRC_DIR    := \
-      $(JDK_TOPDIR)/src/solaris/classes/sun/awt/fontconfigs
+      $(JDK_TOPDIR)/src/aix/classes/sun/awt/fontconfigs
   GENDATA_FONT_CONFIG_SRC_FILES  := fontconfig.properties
   GENDATA_FONT_CONFIG_SRC_PREFIX := aix.
 endif
