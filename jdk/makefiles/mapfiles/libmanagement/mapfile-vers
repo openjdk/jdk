@@ -27,17 +27,17 @@
 
 SUNWprivate_1.1 {
 	global:
-	    Java_com_sun_management_UnixOperatingSystem_getCommittedVirtualMemorySize;
-	    Java_com_sun_management_UnixOperatingSystem_getFreePhysicalMemorySize;
-	    Java_com_sun_management_UnixOperatingSystem_getFreeSwapSpaceSize;
-	    Java_com_sun_management_UnixOperatingSystem_getMaxFileDescriptorCount;
-	    Java_com_sun_management_UnixOperatingSystem_getOpenFileDescriptorCount;
-	    Java_com_sun_management_UnixOperatingSystem_getProcessCpuLoad;
-	    Java_com_sun_management_UnixOperatingSystem_getProcessCpuTime;
-	    Java_com_sun_management_UnixOperatingSystem_getSystemCpuLoad;
-	    Java_com_sun_management_UnixOperatingSystem_getTotalPhysicalMemorySize;
-	    Java_com_sun_management_UnixOperatingSystem_getTotalSwapSpaceSize;
-	    Java_com_sun_management_UnixOperatingSystem_initialize;
+	    Java_sun_management_OperatingSystemImpl_getCommittedVirtualMemorySize;
+	    Java_sun_management_OperatingSystemImpl_getFreePhysicalMemorySize;
+	    Java_sun_management_OperatingSystemImpl_getFreeSwapSpaceSize;
+	    Java_sun_management_OperatingSystemImpl_getMaxFileDescriptorCount;
+	    Java_sun_management_OperatingSystemImpl_getOpenFileDescriptorCount;
+	    Java_sun_management_OperatingSystemImpl_getProcessCpuLoad;
+	    Java_sun_management_OperatingSystemImpl_getProcessCpuTime;
+	    Java_sun_management_OperatingSystemImpl_getSystemCpuLoad;
+	    Java_sun_management_OperatingSystemImpl_getTotalPhysicalMemorySize;
+	    Java_sun_management_OperatingSystemImpl_getTotalSwapSpaceSize;
+	    Java_sun_management_OperatingSystemImpl_initialize;
 	    Java_sun_management_ClassLoadingImpl_setVerboseClass;
             Java_sun_management_DiagnosticCommandImpl_executeDiagnosticCommand;
             Java_sun_management_DiagnosticCommandImpl_getDiagnosticCommands;
