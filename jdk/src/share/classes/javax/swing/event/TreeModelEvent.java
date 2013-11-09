@@ -89,7 +89,7 @@ public class TreeModelEvent extends EventObject {
      * before the deletes have occurred. Since the indexes must be specified in
      * order, the most natural processing methodology is to use a delete-counter.
      * Start by initializing the counter to zero and start work through the
-     * list from lowest to higest. Every time you do a delete, add the current
+     * list from lowest to highest. Every time you do a delete, add the current
      * value of the delete-counter to the index-position where the delete occurred,
      * and append the result to a Vector of delete-locations, using
      * <code>addElement()</code>. Then increment the delete-counter. The index

@@ -87,7 +87,7 @@ void getAudioDevices(AudioDevicePath* adPath, int* count);
 
 /*
  * fills adDesc from the audio device given in path
- * returns 0 if an error occured
+ * returns 0 if an error occurred
  * if getNames is 0, only path and pathctl are filled
  */
 int getAudioDeviceDescription(char* path, AudioDeviceDescription* adDesc, int getNames);

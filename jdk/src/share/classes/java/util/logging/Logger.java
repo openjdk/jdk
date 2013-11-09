@@ -150,7 +150,7 @@ import sun.reflect.Reflection;
  * has or inherited a resource bundle name, then that resource bundle name
  * will be mapped to a {@code ResourceBundle} object, using the default Locale
  * at the time of logging.
- * <br><a name="ResourceBundleMapping"/>When mapping resource bundle names to
+ * <br id="ResourceBundleMapping">When mapping resource bundle names to
  * {@code ResourceBundle} objects, the logger will first try to use the
  * Thread's {@linkplain java.lang.Thread#getContextClassLoader() context class
  * loader} to map the given resource bundle name to a {@code ResourceBundle}.
@@ -555,7 +555,9 @@ public class Logger {
      * Even although the new logger is anonymous, it is configured
      * to have the root logger ("") as its parent.  This means that
      * by default it inherits its effective level and handlers
-     * from the root logger.
+     * from the root logger. Changing its parent via the
+     * {@link #setParent(java.util.logging.Logger) setParent} method
+     * will still require the security permission specified by that method.
      * <p>
      *
      * @return a newly created private Logger
@@ -579,7 +581,9 @@ public class Logger {
      * Even although the new logger is anonymous, it is configured
      * to have the root logger ("") as its parent.  This means that
      * by default it inherits its effective level and handlers
-     * from the root logger.
+     * from the root logger.  Changing its parent via the
+     * {@link #setParent(java.util.logging.Logger) setParent} method
+     * will still require the security permission specified by that method.
      * <p>
      * @param   resourceBundleName  name of ResourceBundle to be used for localizing
      *                          messages for this logger.
@@ -648,8 +652,9 @@ public class Logger {
      * be published.
      *
      * @param   newFilter  a filter object (may be null)
-     * @exception  SecurityException  if a security manager exists and if
-     *             the caller does not have LoggingPermission("control").
+     * @throws  SecurityException if a security manager exists,
+     *          this logger is not anonymous, and the caller
+     *          does not have LoggingPermission("control").
      */
     public void setFilter(Filter newFilter) throws SecurityException {
         checkPermission();
@@ -1629,8 +1634,9 @@ public class Logger {
      * (non-null) level value.
      *
      * @param newLevel   the new value for the log level (may be null)
-     * @exception  SecurityException  if a security manager exists and if
-     *             the caller does not have LoggingPermission("control").
+     * @throws  SecurityException if a security manager exists,
+     *          this logger is not anonymous, and the caller
+     *          does not have LoggingPermission("control").
      */
     public void setLevel(Level newLevel) throws SecurityException {
         checkPermission();
@@ -1638,6 +1644,10 @@ public class Logger {
             levelObject = newLevel;
             updateEffectiveLevel();
         }
+    }
+
+    final boolean isLevelInitialized() {
+        return levelObject != null;
     }
 
     /**
@@ -1682,8 +1692,9 @@ public class Logger {
      * that essentially act as default handlers for all loggers.
      *
      * @param   handler a logging Handler
-     * @exception  SecurityException  if a security manager exists and if
-     *             the caller does not have LoggingPermission("control").
+     * @throws  SecurityException if a security manager exists,
+     *          this logger is not anonymous, and the caller
+     *          does not have LoggingPermission("control").
      */
     public void addHandler(Handler handler) throws SecurityException {
         // Check for null handler
@@ -1698,8 +1709,9 @@ public class Logger {
      * Returns silently if the given Handler is not found or is null
      *
      * @param   handler a logging Handler
-     * @exception  SecurityException  if a security manager exists and if
-     *             the caller does not have LoggingPermission("control").
+     * @throws  SecurityException if a security manager exists,
+     *          this logger is not anonymous, and the caller
+     *          does not have LoggingPermission("control").
      */
     public void removeHandler(Handler handler) throws SecurityException {
         checkPermission();
@@ -1726,8 +1738,9 @@ public class Logger {
      *
      * @param useParentHandlers   true if output is to be sent to the
      *          logger's parent.
-     * @exception  SecurityException  if a security manager exists and if
-     *             the caller does not have LoggingPermission("control").
+     * @throws  SecurityException if a security manager exists,
+     *          this logger is not anonymous, and the caller
+     *          does not have LoggingPermission("control").
      */
     public void setUseParentHandlers(boolean useParentHandlers) {
         checkPermission();
@@ -1890,8 +1903,9 @@ public class Logger {
      *         {@linkplain ResourceBundle#getBaseBundleName base name},
      *         or if this logger already has a resource bundle set but
      *         the given bundle has a different base name.
-     * @throws SecurityException  if a security manager exists and if
-     *         the caller does not have LoggingPermission("control").
+     * @throws SecurityException if a security manager exists,
+     *         this logger is not anonymous, and the caller
+     *         does not have LoggingPermission("control").
      * @since 1.8
      */
     public void setResourceBundle(ResourceBundle bundle) {
@@ -1948,14 +1962,20 @@ public class Logger {
      * It should not be called from application code.
      * <p>
      * @param  parent   the new parent logger
-     * @exception  SecurityException  if a security manager exists and if
-     *             the caller does not have LoggingPermission("control").
+     * @throws  SecurityException  if a security manager exists and if
+     *          the caller does not have LoggingPermission("control").
      */
     public void setParent(Logger parent) {
         if (parent == null) {
             throw new NullPointerException();
         }
-        checkPermission();
+
+        // check permission for all loggers, including anonymous loggers
+        if (manager == null) {
+            manager = LogManager.getLogManager();
+        }
+        manager.checkPermission();
+
         doSetParent(parent);
     }
 

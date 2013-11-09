@@ -1660,12 +1660,16 @@ void MachUEPNode::format( PhaseRegAlloc *ra_, outputStream *st ) const {
   if (UseCompressedClassPointers) {
     assert(Universe::heap() != NULL, "java heap should be initialized");
     st->print_cr("\tLDUW   [R_O0 + oopDesc::klass_offset_in_bytes],R_G5\t! Inline cache check - compressed klass");
-    st->print_cr("\tSET    Universe::narrow_klass_base,R_G6_heap_base");
-    if (Universe::narrow_klass_shift() != 0) {
-      st->print_cr("\tSLL    R_G5,3,R_G5");
+    if (Universe::narrow_klass_base() != 0) {
+      st->print_cr("\tSET    Universe::narrow_klass_base,R_G6_heap_base");
+      if (Universe::narrow_klass_shift() != 0) {
+        st->print_cr("\tSLL    R_G5,Universe::narrow_klass_shift,R_G5");
+      }
+      st->print_cr("\tADD    R_G5,R_G6_heap_base,R_G5");
+      st->print_cr("\tSET    Universe::narrow_ptrs_base,R_G6_heap_base");
+    } else {
+      st->print_cr("\tSLL    R_G5,Universe::narrow_klass_shift,R_G5");
     }
-    st->print_cr("\tADD    R_G5,R_G6_heap_base,R_G5");
-    st->print_cr("\tSET    Universe::narrow_ptrs_base,R_G6_heap_base");
   } else {
     st->print_cr("\tLDX    [R_O0 + oopDesc::klass_offset_in_bytes],R_G5\t! Inline cache check");
   }
@@ -2912,6 +2916,9 @@ enc_class Fast_Unlock(iRegP oop, iRegP box, o7RegP scratch, iRegP scratch2) %{
       __ bind(LSkip2);
     }
 
+    // We have no guarantee that on 64 bit the higher half of limit_reg is 0
+    __ signx(limit_reg);
+
     __ subcc(limit_reg, 1 * sizeof(jchar), chr1_reg);
     __ br(Assembler::equal, true, Assembler::pn, Ldone);
     __ delayed()->mov(O7, result_reg);  // result is difference in lengths
@@ -2968,6 +2975,9 @@ enc_class enc_String_Equals(o0RegP str1, o1RegP str2, g3RegI cnt, notemp_iRegI r
     Register limit_reg =    cnt_reg;
     Register  chr1_reg = result_reg;
     Register  chr2_reg =   tmp1_reg;
+
+    // We have no guarantee that on 64 bit the higher half of limit_reg is 0
+    __ signx(limit_reg);
 
     //check for alignment and position the pointers to the ends
     __ or3(str1_reg, str2_reg, chr1_reg);

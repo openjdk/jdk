@@ -290,7 +290,7 @@ public class DuctusRenderingEngine extends RenderingEngine {
                  * and Infinity values. Ignoring current path segment in case
                  * of invalid endpoints's data. Equivalent to the SEG_LINETO
                  * if endpoint coordinates are valid but there are invalid data
-                 * amoung other coordinates
+                 * among other coordinates
                  */
                 if (point[2] < UPPER_BND && point[2] > LOWER_BND &&
                     point[3] < UPPER_BND && point[3] > LOWER_BND)
@@ -319,7 +319,7 @@ public class DuctusRenderingEngine extends RenderingEngine {
                  * and Infinity values. Ignoring current path segment in case
                  * of invalid endpoints's data. Equivalent to the SEG_LINETO
                  * if endpoint coordinates are valid but there are invalid data
-                 * amoung other coordinates
+                 * among other coordinates
                  */
                 if (point[4] < UPPER_BND && point[4] > LOWER_BND &&
                     point[5] < UPPER_BND && point[5] > LOWER_BND)
@@ -545,7 +545,7 @@ public class DuctusRenderingEngine extends RenderingEngine {
                      * NaN and Infinity values. Ignoring current path segment
                      * in case of invalid endpoints's data. Equivalent to the
                      * SEG_LINETO if endpoint coordinates are valid but there
-                     * are invalid data amoung other coordinates
+                     * are invalid data among other coordinates
                      */
                     if (point[2] < UPPER_BND && point[2] > LOWER_BND &&
                         point[3] < UPPER_BND && point[3] > LOWER_BND)
@@ -574,7 +574,7 @@ public class DuctusRenderingEngine extends RenderingEngine {
                      * NaN and Infinity values. Ignoring  current path segment
                      * in case of invalid endpoints's data. Equivalent to the
                      * SEG_LINETO if endpoint coordinates are valid but there
-                     * are invalid data amoung other coordinates
+                     * are invalid data among other coordinates
                      */
 
                     if (point[4] < UPPER_BND && point[4] > LOWER_BND &&

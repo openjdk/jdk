@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2003, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,35 +28,38 @@ package java.rmi;
 import java.security.*;
 
 /**
- * A subclass of {@link SecurityManager} used by RMI applications that use
- * downloaded code.  RMI's class loader will not download any classes from
- * remote locations if no security manager has been set.
- * <code>RMISecurityManager</code> does not apply to applets, which run
- * under the protection of their browser's security manager.
+ * {@code RMISecurityManager} implements a policy identical to the policy
+ * implemented by {@link SecurityManager}. RMI applications
+ * should use the {@code SecurityManager} class or another appropriate
+ * {@code SecurityManager} implementation instead of this class. RMI's class
+ * loader will download classes from remote locations only if a security
+ * manager has been set.
  *
- * <code>RMISecurityManager</code> implements a policy that
- * is no different than the policy implemented by {@link SecurityManager}.
- * Therefore an RMI application should use the <code>SecurityManager</code>
- * class or another application-specific <code>SecurityManager</code>
- * implementation instead of this class.
+ * @implNote
+ * <p>Applets typically run in a container that already has a security
+ * manager, so there is generally no need for applets to set a security
+ * manager. If you have a standalone application, you might need to set a
+ * {@code SecurityManager} in order to enable class downloading. This can be
+ * done by adding the following to your code. (It needs to be executed before
+ * RMI can download code from remote hosts, so it most likely needs to appear
+ * in the {@code main} method of your application.)
  *
- * <p>To use a <code>SecurityManager</code> in your application, add
- * the following statement to your code (it needs to be executed before RMI
- * can download code from remote hosts, so it most likely needs to appear
- * in the <code>main</code> method of your application):
- *
- * <pre>
- * System.setSecurityManager(new SecurityManager());
- * </pre>
+ * <pre>{@code
+ *    if (System.getSecurityManager() == null) {
+ *        System.setSecurityManager(new SecurityManager());
+ *    }
+ * }</pre>
  *
  * @author  Roger Riggs
  * @author  Peter Jones
  * @since JDK1.1
- **/
+ * @deprecated Use {@link SecurityManager} instead.
+ */
+@Deprecated
 public class RMISecurityManager extends SecurityManager {
 
     /**
-     * Constructs a new <code>RMISecurityManager</code>.
+     * Constructs a new {@code RMISecurityManager}.
      * @since JDK1.1
      */
     public RMISecurityManager() {

@@ -359,7 +359,7 @@ HBITMAP BitmapUtil::BlendCopy(HBITMAP hSrcBitmap, COLORREF blendColor,
 
 /**
  * Creates a 32 bit ARGB bitmap. Returns the bitmap handle. The *bitmapBits
- * contains the pointer to the bitmap data or NULL if an error occured.
+ * contains the pointer to the bitmap data or NULL if an error occurred.
  */
 HBITMAP BitmapUtil::CreateARGBBitmap(int width, int height, void ** bitmapBitsPtr)
 {

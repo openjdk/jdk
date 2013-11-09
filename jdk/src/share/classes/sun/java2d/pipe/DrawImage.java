@@ -128,7 +128,7 @@ public class DrawImage implements DrawImagePipe
 
     /*
      * This method is only called in those circumstances where the
-     * operation has a non-null secondary transform specfied.  Its
+     * operation has a non-null secondary transform specified.  Its
      * role is to check for various optimizations based on the types
      * of both the secondary and SG2D transforms and to do some
      * quick calculations to avoid having to combine the transforms

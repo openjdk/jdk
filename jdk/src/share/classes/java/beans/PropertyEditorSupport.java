@@ -30,7 +30,7 @@ import java.beans.*;
 /**
  * This is a support class to help build property editors.
  * <p>
- * It can be used either as a base class or as a delagatee.
+ * It can be used either as a base class or as a delegate.
  */
 
 public class PropertyEditorSupport implements PropertyEditor {

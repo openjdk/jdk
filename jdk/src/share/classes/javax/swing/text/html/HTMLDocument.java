@@ -184,7 +184,6 @@ import static sun.swing.SwingUtilities2.IMPLIED_CR;
  * of various methods described above.</p>
  *
  * <table border=1 cellspacing=0>
- *   <caption></caption>
  *   <tr>
  *     <th>Example</th>
  *     <th><code>insertAfterStart</code></th>
@@ -262,8 +261,8 @@ import static sun.swing.SwingUtilities2.IMPLIED_CR;
  * not be compatible with future Swing releases. The current
  * serialization support is appropriate for short term storage or RMI
  * between applications running the same version of Swing.  As of 1.4,
- * support for long term storage of all JavaBeans<sup><font
- * size="-2">TM</font></sup> has been added to the
+ * support for long term storage of all JavaBeans&trade;
+ * has been added to the
  * <code>java.beans</code> package.  Please see {@link
  * java.beans.XMLEncoder}.</p>
  *
@@ -1012,7 +1011,7 @@ public class HTMLDocument extends DefaultStyledDocument {
      * If either <code>elem</code> or <code>htmlText</code> parameter
      * is <code>null</code>, no changes are made to the document.</p>
      *
-     * <p>For this to work correcty, the document must have an
+     * <p>For this to work correctly, the document must have an
      * <code>HTMLEditorKit.Parser</code> set. This will be the case
      * if the document was created from an HTMLEditorKit via the
      * <code>createDefaultDocument</code> method.</p>
@@ -1054,7 +1053,7 @@ public class HTMLDocument extends DefaultStyledDocument {
      * a newline present if one is needed. This may result in an additional
      * element being inserted. Consider, if you were to replace a character
      * element that contained a newline with &lt;img&gt; this would create
-     * two elements, one for the image, ane one for the newline.</p>
+     * two elements, one for the image, and one for the newline.</p>
      *
      * <p>If you try to replace the element at length you will most
      * likely end up with two elements, eg
@@ -1090,7 +1089,7 @@ public class HTMLDocument extends DefaultStyledDocument {
      * parameter is <code>null</code>, no changes are made to the
      * document.</p>
      *
-     * <p>For this to work correcty, the document must have an
+     * <p>For this to work correctly, the document must have an
      * HTMLEditorKit.Parser set. This will be the case if the document
      * was created from an HTMLEditorKit via the
      * <code>createDefaultDocument</code> method.</p>
@@ -1167,7 +1166,7 @@ public class HTMLDocument extends DefaultStyledDocument {
      * If either <code>elem</code> or <code>htmlText</code> parameter
      * is <code>null</code>, no changes are made to the document.</p>
      *
-     * <p>For this to work correcty, the document must have an
+     * <p>For this to work correctly, the document must have an
      * <code>HTMLEditorKit.Parser</code> set. This will be the case
      * if the document was created from an HTMLEditorKit via the
      * <code>createDefaultDocument</code> method.</p>
@@ -1237,7 +1236,7 @@ public class HTMLDocument extends DefaultStyledDocument {
      * If either <code>elem</code> or <code>htmlText</code> parameter
      * is <code>null</code>, no changes are made to the document.</p>
      *
-     * <p>For this to work correcty, the document must have an
+     * <p>For this to work correctly, the document must have an
      * <code>HTMLEditorKit.Parser</code> set. This will be the case
      * if the document was created from an HTMLEditorKit via the
      * <code>createDefaultDocument</code> method.</p>
@@ -1301,7 +1300,7 @@ public class HTMLDocument extends DefaultStyledDocument {
      * parameter is <code>null</code>, no changes are made to the
      * document.</p>
      *
-     * <p>For this to work correcty, the document must have an
+     * <p>For this to work correctly, the document must have an
      * <code>HTMLEditorKit.Parser</code> set. This will be the case
      * if the document was created from an HTMLEditorKit via the
      * <code>createDefaultDocument</code> method.</p>
@@ -1359,7 +1358,7 @@ public class HTMLDocument extends DefaultStyledDocument {
      * parameter is <code>null</code>, no changes are made to the
      * document.</p>
      *
-     * <p>For this to work correcty, the document must have an
+     * <p>For this to work correctly, the document must have an
      * <code>HTMLEditorKit.Parser</code> set. This will be the case
      * if the document was created from an HTMLEditorKit via the
      * <code>createDefaultDocument</code> method.</p>
@@ -3345,7 +3344,7 @@ public class HTMLDocument extends DefaultStyledDocument {
                     String type = (String)
                         attr.getAttribute(HTML.Attribute.TYPE);
                     /*
-                     * if type is not defined teh default is
+                     * if type is not defined the default is
                      * assumed to be text.
                      */
                     if (type == null) {
@@ -3735,7 +3734,7 @@ public class HTMLDocument extends DefaultStyledDocument {
             int size = parseBuffer.size();
             if (insertTagDepthDelta < 0) {
                 // When inserting via an insertTag, the depths (of the tree
-                // being read in, and existing hiearchy) may not match up.
+                // being read in, and existing hierarchy) may not match up.
                 // This attemps to clean it up.
                 int removeCounter = insertTagDepthDelta;
                 while (removeCounter < 0 && size >= 0 &&
@@ -3974,7 +3973,7 @@ public class HTMLDocument extends DefaultStyledDocument {
         private boolean receivedEndHTML;
         /** Number of times <code>flushBuffer</code> has been invoked. */
         private int flushCount;
-        /** If true, behavior is similiar to insertTag, but instead of
+        /** If true, behavior is similar to insertTag, but instead of
          * waiting for insertTag will wait for first Element without
          * an 'implied' attribute and begin inserting then. */
         private boolean insertAfterImplied;

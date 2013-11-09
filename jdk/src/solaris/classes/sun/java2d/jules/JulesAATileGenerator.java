@@ -212,9 +212,9 @@ public class JulesAATileGenerator implements AATileGenerator {
 
     /*
      * Optimization for large fills. Foutunatly cairo does generate an y-sorted
-     * list of trapezoids. This makes it quite simple to check wether a tile is
-     * fully covered by traps by: - Checking wether the tile is fully covered by
-     * traps vertically (trap 2 starts where trap 1 ended) - Checking wether all
+     * list of trapezoids. This makes it quite simple to check whether a tile is
+     * fully covered by traps by: - Checking whether the tile is fully covered by
+     * traps vertically (trap 2 starts where trap 1 ended) - Checking whether all
      * traps cover the tile horizontally This also works, when a single tile
      * coveres the whole tile.
      */
@@ -231,7 +231,7 @@ public class JulesAATileGenerator implements AATileGenerator {
         int tileEndX = tileStartX + TILE_SIZE_FP;
         int tileEndY = tileStartY + TILE_SIZE_FP;
 
-        // Check wether first tile covers the beginning of the tile vertically
+        // Check whether first tile covers the beginning of the tile vertically
         int firstTop = traps.getTop(trapList.getInt(0));
         int firstBottom = traps.getBottom(trapList.getInt(0));
         if (firstTop > tileStartY || firstBottom < tileStartY) {

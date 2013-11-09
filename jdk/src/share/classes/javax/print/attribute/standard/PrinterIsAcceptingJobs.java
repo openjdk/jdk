@@ -39,7 +39,7 @@ import javax.print.attribute.PrintServiceAttribute;
  * will accept jobs even when the {@link PrinterState PrinterState} is STOPPED.
  * <P>
  * <B>IPP Compatibility:</B> The IPP boolean value is "true" for ACCEPTING_JOBS
- * and "false" for NOT_ACCEPTING_JOBS. TThe category name returned by
+ * and "false" for NOT_ACCEPTING_JOBS. The category name returned by
  * <CODE>getName()</CODE> is the IPP attribute name.  The enumeration's
  * integer value is the IPP enum value.  The <code>toString()</code> method
  * returns the IPP string representation of the attribute value.
@@ -59,7 +59,7 @@ public final class PrinterIsAcceptingJobs extends EnumSyntax
         NOT_ACCEPTING_JOBS = new PrinterIsAcceptingJobs(0);
 
     /**
-     * The printer is currently acccepting jobs.
+     * The printer is currently accepting jobs.
      */
     public static final PrinterIsAcceptingJobs
         ACCEPTING_JOBS = new PrinterIsAcceptingJobs(1);

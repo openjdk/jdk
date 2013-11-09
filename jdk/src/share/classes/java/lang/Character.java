@@ -5394,7 +5394,7 @@ class Character implements java.io.Serializable, Comparable<Character> {
      * Other_Lowercase as defined by the Unicode Standard.
      * <p>
      * The following are examples of lowercase characters:
-     * <p><blockquote><pre>
+     * <blockquote><pre>
      * a b c d e f g h i j k l m n o p q r s t u v w x y z
      * '&#92;u00DF' '&#92;u00E0' '&#92;u00E1' '&#92;u00E2' '&#92;u00E3' '&#92;u00E4' '&#92;u00E5' '&#92;u00E6'
      * '&#92;u00E7' '&#92;u00E8' '&#92;u00E9' '&#92;u00EA' '&#92;u00EB' '&#92;u00EC' '&#92;u00ED' '&#92;u00EE'
@@ -5430,7 +5430,7 @@ class Character implements java.io.Serializable, Comparable<Character> {
      * Other_Lowercase as defined by the Unicode Standard.
      * <p>
      * The following are examples of lowercase characters:
-     * <p><blockquote><pre>
+     * <blockquote><pre>
      * a b c d e f g h i j k l m n o p q r s t u v w x y z
      * '&#92;u00DF' '&#92;u00E0' '&#92;u00E1' '&#92;u00E2' '&#92;u00E3' '&#92;u00E4' '&#92;u00E5' '&#92;u00E6'
      * '&#92;u00E7' '&#92;u00E8' '&#92;u00E9' '&#92;u00EA' '&#92;u00EB' '&#92;u00EC' '&#92;u00ED' '&#92;u00EE'
@@ -5461,14 +5461,14 @@ class Character implements java.io.Serializable, Comparable<Character> {
      * or it has contributory property Other_Uppercase as defined by the Unicode Standard.
      * <p>
      * The following are examples of uppercase characters:
-     * <p><blockquote><pre>
+     * <blockquote><pre>
      * A B C D E F G H I J K L M N O P Q R S T U V W X Y Z
      * '&#92;u00C0' '&#92;u00C1' '&#92;u00C2' '&#92;u00C3' '&#92;u00C4' '&#92;u00C5' '&#92;u00C6' '&#92;u00C7'
      * '&#92;u00C8' '&#92;u00C9' '&#92;u00CA' '&#92;u00CB' '&#92;u00CC' '&#92;u00CD' '&#92;u00CE' '&#92;u00CF'
      * '&#92;u00D0' '&#92;u00D1' '&#92;u00D2' '&#92;u00D3' '&#92;u00D4' '&#92;u00D5' '&#92;u00D6' '&#92;u00D8'
      * '&#92;u00D9' '&#92;u00DA' '&#92;u00DB' '&#92;u00DC' '&#92;u00DD' '&#92;u00DE'
      * </pre></blockquote>
-     * <p> Many other Unicode characters are uppercase too.<p>
+     * <p> Many other Unicode characters are uppercase too.
      *
      * <p><b>Note:</b> This method cannot handle <a
      * href="#supplementary"> supplementary characters</a>. To support
@@ -5496,7 +5496,7 @@ class Character implements java.io.Serializable, Comparable<Character> {
      * or it has contributory property Other_Uppercase as defined by the Unicode Standard.
      * <p>
      * The following are examples of uppercase characters:
-     * <p><blockquote><pre>
+     * <blockquote><pre>
      * A B C D E F G H I J K L M N O P Q R S T U V W X Y Z
      * '&#92;u00C0' '&#92;u00C1' '&#92;u00C2' '&#92;u00C3' '&#92;u00C4' '&#92;u00C5' '&#92;u00C6' '&#92;u00C7'
      * '&#92;u00C8' '&#92;u00C9' '&#92;u00CA' '&#92;u00CB' '&#92;u00CC' '&#92;u00CD' '&#92;u00CE' '&#92;u00CF'
@@ -5540,7 +5540,7 @@ class Character implements java.io.Serializable, Comparable<Character> {
      * <li>{@code LATIN CAPITAL LETTER N WITH SMALL LETTER J}
      * <li>{@code LATIN CAPITAL LETTER D WITH SMALL LETTER Z}
      * </ul>
-     * <p> Many other Unicode characters are titlecase too.<p>
+     * <p> Many other Unicode characters are titlecase too.
      *
      * <p><b>Note:</b> This method cannot handle <a
      * href="#supplementary"> supplementary characters</a>. To support

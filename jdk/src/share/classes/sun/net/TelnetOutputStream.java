@@ -81,7 +81,7 @@ public class TelnetOutputStream extends BufferedOutputStream {
     }
 
     /**
-     * set the stickyCRLF flag. Tells wether the terminal considers CRLF as a single
+     * set the stickyCRLF flag. Tells whether the terminal considers CRLF as a single
      * char.
      *
      * @param   on      the <code>boolean</code> to set the flag to.

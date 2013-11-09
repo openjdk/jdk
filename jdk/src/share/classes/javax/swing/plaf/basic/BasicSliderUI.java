@@ -743,7 +743,7 @@ public class BasicSliderUI extends SliderUI{
     }
 
     public class PropertyChangeHandler implements PropertyChangeListener {
-        // NOTE: This class exists only for backward compatability. All
+        // NOTE: This class exists only for backward compatibility. All
         // its functionality has been moved into Handler. If you need to add
         // new functionality add it to the Handler, but make sure this
         // class calls into the Handler.
@@ -1545,7 +1545,7 @@ public class BasicSliderUI extends SliderUI{
      * Instantiate it only within subclasses of <code>Foo</code>.
      */
     public class ChangeHandler implements ChangeListener {
-        // NOTE: This class exists only for backward compatability. All
+        // NOTE: This class exists only for backward compatibility. All
         // its functionality has been moved into Handler. If you need to add
         // new functionality add it to the Handler, but make sure this
         // class calls into the Handler.
@@ -1852,7 +1852,7 @@ public class BasicSliderUI extends SliderUI{
      * Instantiate it only within subclasses of <code>Foo</code>.
      */
     public class ComponentHandler extends ComponentAdapter {
-        // NOTE: This class exists only for backward compatability. All
+        // NOTE: This class exists only for backward compatibility. All
         // its functionality has been moved into Handler. If you need to add
         // new functionality add it to the Handler, but make sure this
         // class calls into the Handler.
@@ -1868,7 +1868,7 @@ public class BasicSliderUI extends SliderUI{
      * Instantiate it only within subclasses of <code>Foo</code>.
      */
     public class FocusHandler implements FocusListener {
-        // NOTE: This class exists only for backward compatability. All
+        // NOTE: This class exists only for backward compatibility. All
         // its functionality has been moved into Handler. If you need to add
         // new functionality add it to the Handler, but make sure this
         // class calls into the Handler.
@@ -1895,7 +1895,7 @@ public class BasicSliderUI extends SliderUI{
      * Instantiate it only within subclasses of <code>Foo</code>.
      */
     public class ActionScroller extends AbstractAction {
-        // NOTE: This class exists only for backward compatability. All
+        // NOTE: This class exists only for backward compatibility. All
         // its functionality has been moved into Actions. If you need to add
         // new functionality add it to the Actions, but make sure this
         // class calls into the Actions.
@@ -1928,7 +1928,7 @@ public class BasicSliderUI extends SliderUI{
      * A static version of the above.
      */
     static class SharedActionScroller extends AbstractAction {
-        // NOTE: This class exists only for backward compatability. All
+        // NOTE: This class exists only for backward compatibility. All
         // its functionality has been moved into Actions. If you need to add
         // new functionality add it to the Actions, but make sure this
         // class calls into the Actions.

@@ -209,18 +209,13 @@ class MethodExitReturnValuesTarg {
 
 
 public class MethodExitReturnValuesTest extends TestScaffold {
-
-    /*
-     * Class patterns for which we don't want events (copied
-     * from the "Trace.java" example):
-     *     http://java.sun.com/javase/technologies/core/toolsapis/jpda/
-     */
-    private String[] excludes = {
-        "javax.*",
-        "sun.*",
-        "com.sun.*",
-        "com.oracle.*",
-        "oracle.*"};
+    // Classes which we are interested in
+    private List includes = Arrays.asList(new String[] {
+        "MethodExitReturnValuesTarg",
+        "java.lang.reflect.Array",
+        "java.lang.StrictMath",
+        "java.lang.String"
+    });
 
     static VirtualMachineManager vmm ;
     ClassType targetClass;
@@ -487,6 +482,11 @@ public class MethodExitReturnValuesTest extends TestScaffold {
     // This is the MethodExitEvent handler.
     public void methodExited(MethodExitEvent event) {
         String origMethodName = event.method().name();
+
+        if (!includes.contains(event.method().declaringType().name())) {
+            return;
+        }
+
         if (vmm.majorInterfaceVersion() >= 1 &&
             vmm.minorInterfaceVersion() >= 6 &&
             vm().canGetMethodReturnValues()) {
@@ -560,10 +560,8 @@ public class MethodExitReturnValuesTest extends TestScaffold {
          */
         MethodExitRequest exitRequest =
             eventRequestManager().createMethodExitRequest();
+        exitRequest.addThreadFilter(mainThread);
 
-        for (int i=0; i<excludes.length; ++i) {
-            exitRequest.addClassExclusionFilter(excludes[i]);
-        }
         int sessionSuspendPolicy = EventRequest.SUSPEND_ALL;
         //sessionSuspendPolicy = EventRequest.SUSPEND_EVENT_THREAD;
         //sessionSuspendPolicy = EventRequest.SUSPEND_NONE;
