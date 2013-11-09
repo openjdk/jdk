@@ -569,31 +569,12 @@ public class XMLDocumentFragmentScannerImpl
 
         // xerces features
         fReportCdataEvent = componentManager.getFeature(Constants.STAX_REPORT_CDATA_EVENT, true);
-
         fSecurityManager = (XMLSecurityManager)componentManager.getProperty(Constants.SECURITY_MANAGER, null);
-        fLimitAnalyzer = fSecurityManager.getLimitAnalyzer();
-
-        fElementAttributeLimit = (fSecurityManager != null)?
-                fSecurityManager.getLimit(XMLSecurityManager.Limit.ELEMENT_ATTRIBUTE_LIMIT):0;
-
         fNotifyBuiltInRefs = componentManager.getFeature(NOTIFY_BUILTIN_REFS, false);
 
         Object resolver = componentManager.getProperty(ENTITY_RESOLVER, null);
         fExternalSubsetResolver = (resolver instanceof ExternalSubsetResolver) ?
                 (ExternalSubsetResolver) resolver : null;
-
-        // initialize vars
-        fMarkupDepth = 0;
-        fCurrentElement = null;
-        fElementStack.clear();
-        fHasExternalDTD = false;
-        fStandaloneSet = false;
-        fStandalone = false;
-        fInScanContent = false;
-        //skipping algorithm
-        fShouldSkip = false;
-        fAdd = false;
-        fSkip = false;
 
         //attribute
         fReadingAttributes = false;
@@ -606,9 +587,6 @@ public class XMLDocumentFragmentScannerImpl
         // setup Driver
         setScannerState(SCANNER_STATE_CONTENT);
         setDriver(fContentDriver);
-        fEntityStore = fEntityManager.getEntityStore();
-
-        dtdGrammarUtil = null;
 
         // JAXP 1.5 features and properties
         XMLSecurityPropertyManager spm = (XMLSecurityPropertyManager)
@@ -617,6 +595,7 @@ public class XMLDocumentFragmentScannerImpl
 
         fStrictURI = componentManager.getFeature(STANDARD_URI_CONFORMANT, false);
 
+        resetCommon();
         //fEntityManager.test();
     } // reset(XMLComponentManager)
 
@@ -630,17 +609,7 @@ public class XMLDocumentFragmentScannerImpl
         fNamespaces = ((Boolean)propertyManager.getProperty(XMLInputFactory.IS_NAMESPACE_AWARE)).booleanValue();
         fNotifyBuiltInRefs = false ;
 
-        // initialize vars
-        fMarkupDepth = 0;
-        fCurrentElement = null;
-        fShouldSkip = false;
-        fAdd = false;
-        fSkip = false;
-        fElementStack.clear();
         //fElementStack2.clear();
-        fHasExternalDTD = false;
-        fStandaloneSet = false;
-        fStandalone = false;
         //fReplaceEntityReferences = true;
         //fSupportExternalEntities = true;
         Boolean bo = (Boolean)propertyManager.getProperty(XMLInputFactoryImpl.IS_REPLACING_ENTITY_REFERENCES);
@@ -661,10 +630,7 @@ public class XMLDocumentFragmentScannerImpl
         //we dont need to do this -- nb.
         //setScannerState(SCANNER_STATE_CONTENT);
         //setDriver(fContentDriver);
-        fEntityStore = fEntityManager.getEntityStore();
         //fEntityManager.test();
-
-        dtdGrammarUtil = null;
 
          // JAXP 1.5 features and properties
         XMLSecurityPropertyManager spm = (XMLSecurityPropertyManager)
@@ -672,8 +638,34 @@ public class XMLDocumentFragmentScannerImpl
         fAccessExternalDTD = spm.getValue(XMLSecurityPropertyManager.Property.ACCESS_EXTERNAL_DTD);
 
         fSecurityManager = (XMLSecurityManager)propertyManager.getProperty(Constants.SECURITY_MANAGER);
-        fLimitAnalyzer = fSecurityManager.getLimitAnalyzer();
+        resetCommon();
     } // reset(XMLComponentManager)
+
+    void resetCommon() {
+        // initialize vars
+        fMarkupDepth = 0;
+        fCurrentElement = null;
+        fElementStack.clear();
+        fHasExternalDTD = false;
+        fStandaloneSet = false;
+        fStandalone = false;
+        fInScanContent = false;
+        //skipping algorithm
+        fShouldSkip = false;
+        fAdd = false;
+        fSkip = false;
+
+        fEntityStore = fEntityManager.getEntityStore();
+        dtdGrammarUtil = null;
+
+        if (fSecurityManager != null) {
+            fLimitAnalyzer = fSecurityManager.getLimitAnalyzer();
+            fElementAttributeLimit = fSecurityManager.getLimit(XMLSecurityManager.Limit.ELEMENT_ATTRIBUTE_LIMIT);
+        } else {
+            fLimitAnalyzer = null;
+            fElementAttributeLimit = 0;
+        }
+    }
 
     /**
      * Returns a list of feature identifiers that are recognized by
@@ -1328,7 +1320,7 @@ public class XMLDocumentFragmentScannerImpl
                         fAttributes.getLength() > fElementAttributeLimit){
                     fErrorReporter.reportError(XMLMessageFormatter.XML_DOMAIN,
                                                  "ElementAttributeLimit",
-                                                 new Object[]{rawname, new Integer(fAttributes.getLength()) },
+                                                 new Object[]{rawname, fElementAttributeLimit },
                                                  XMLErrorReporter.SEVERITY_FATAL_ERROR );
                 }
 

@@ -154,7 +154,7 @@ class FieldExpression extends UnaryExpression {
                 return t;
             }
 
-            // These were ommitted earlier in calls to 'toType', but I can't
+            // These were omitted earlier in calls to 'toType', but I can't
             // see any reason for that.  I think it was an oversight.  See
             // 'checkCommon' and 'checkInnerClass'.
             innerClass.noteUsedBy(ctxClass, where, env);
@@ -1121,7 +1121,7 @@ class FieldExpression extends UnaryExpression {
         // either.
         //
         // However, NullPointerException can't happen and initialization must
-        // already have occured if you are dotting into 'this'.  So
+        // already have occurred if you are dotting into 'this'.  So
         // allow fields of 'this' to be eliminated as a special case.
         Expression e = inlineValue(env, ctx);
         if (e instanceof FieldExpression) {

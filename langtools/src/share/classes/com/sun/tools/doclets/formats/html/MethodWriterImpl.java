@@ -160,11 +160,11 @@ public class MethodWriterImpl extends AbstractExecutableMemberWriter
                             holder.typeName() : holder.qualifiedTypeName(),
                             false);
                 Content codelLink = HtmlTree.CODE(link);
-                Content strong = HtmlTree.SPAN(HtmlStyle.strong, holder.asClassDoc().isClass()?
+                Content descfrmLabel = HtmlTree.SPAN(HtmlStyle.descfrmTypeLabel, holder.asClassDoc().isClass()?
                     writer.descfrmClassLabel : writer.descfrmInterfaceLabel);
-                strong.addContent(writer.getSpace());
-                strong.addContent(codelLink);
-                methodDocTree.addContent(HtmlTree.DIV(HtmlStyle.block, strong));
+                descfrmLabel.addContent(writer.getSpace());
+                descfrmLabel.addContent(codelLink);
+                methodDocTree.addContent(HtmlTree.DIV(HtmlStyle.block, descfrmLabel));
                 writer.addInlineComment(method, methodDocTree);
             }
         }
@@ -310,7 +310,7 @@ public class MethodWriterImpl extends AbstractExecutableMemberWriter
                 label = writer.specifiedByLabel;
                 context = LinkInfoImpl.Kind.METHOD_SPECIFIED_BY;
             }
-            Content dt = HtmlTree.DT(HtmlTree.SPAN(HtmlStyle.strong, label));
+            Content dt = HtmlTree.DT(HtmlTree.SPAN(HtmlStyle.overrideSpecifyLabel, label));
             dl.addContent(dt);
             Content overriddenTypeLink =
                     writer.getLink(new LinkInfoImpl(writer.configuration, context, overriddenType));
@@ -365,7 +365,7 @@ public class MethodWriterImpl extends AbstractExecutableMemberWriter
             Content intfaclink = writer.getLink(new LinkInfoImpl(
                     writer.configuration, LinkInfoImpl.Kind.METHOD_SPECIFIED_BY, intfac));
             Content codeIntfacLink = HtmlTree.CODE(intfaclink);
-            Content dt = HtmlTree.DT(HtmlTree.SPAN(HtmlStyle.strong, writer.specifiedByLabel));
+            Content dt = HtmlTree.DT(HtmlTree.SPAN(HtmlStyle.overrideSpecifyLabel, writer.specifiedByLabel));
             dl.addContent(dt);
             Content methlink = writer.getDocLink(
                     LinkInfoImpl.Kind.MEMBER, implementedMeth,

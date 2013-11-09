@@ -545,7 +545,7 @@ public class JSpinner extends JComponent implements Accessible
      * call if forwarded to the editor, otherwise this does nothing.
      *
      * @throws ParseException if the currently edited value couldn't
-     *         be commited.
+     *         be committed.
      */
     public void commitEdit() throws ParseException {
         JComponent editor = getEditor();
@@ -1462,7 +1462,7 @@ public class JSpinner extends JComponent implements Accessible
          * a set of predefined roles.  This enables assistive technologies to
          * provide a consistent interface to various tweaked subclasses of
          * components (e.g., use AccessibleRole.PUSH_BUTTON for all components
-         * that act like a push button) as well as distinguish between sublasses
+         * that act like a push button) as well as distinguish between subclasses
          * that behave differently (e.g., AccessibleRole.CHECK_BOX for check boxes
          * and AccessibleRole.RADIO_BUTTON for radio buttons).
          * <p>Note that the AccessibleRole class is also extensible, so
@@ -1889,7 +1889,7 @@ public class JSpinner extends JComponent implements Accessible
          * If there is no selection, but there is
          * a caret, the start and end offsets will be the same.
          *
-         * @return the index into teh text of the end of the selection
+         * @return the index into the text of the end of the selection
          */
         public int getSelectionEnd() {
             AccessibleText at = getEditorAccessibleText();

@@ -945,17 +945,15 @@ extern "C" Thread* get_thread() {
 // Used by VMSelfDestructTimer and the MemProfiler.
 double os::elapsedTime() {
 
-  return (double)(os::elapsed_counter()) * 0.000001;
+  return ((double)os::elapsed_counter()) / os::elapsed_frequency();
 }
 
 jlong os::elapsed_counter() {
-  timeval time;
-  int status = gettimeofday(&time, NULL);
-  return jlong(time.tv_sec) * 1000 * 1000 + jlong(time.tv_usec) - initial_time_count;
+  return javaTimeNanos() - initial_time_count;
 }
 
 jlong os::elapsed_frequency() {
-  return (1000 * 1000);
+  return NANOSECS_PER_SEC; // nanosecond resolution
 }
 
 bool os::supports_vtime() { return true; }
@@ -3582,7 +3580,7 @@ void os::init(void) {
   Bsd::_main_thread = pthread_self();
 
   Bsd::clock_init();
-  initial_time_count = os::elapsed_counter();
+  initial_time_count = javaTimeNanos();
 
 #ifdef __APPLE__
   // XXXDARWIN

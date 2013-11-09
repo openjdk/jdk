@@ -54,7 +54,7 @@ public class SQLSyntaxErrorException extends SQLNonTransientException {
         /**
          * Constructs a <code>SQLSyntaxErrorException</code> object
          * with a given <code>reason</code>. The <code>SQLState</code>
-         * is initialized to <code>null</code> and the vender code is initialized
+         * is initialized to <code>null</code> and the vendor code is initialized
          * to 0.
          *
          * The <code>cause</code> is not initialized, and may subsequently be
@@ -112,7 +112,7 @@ public class SQLSyntaxErrorException extends SQLNonTransientException {
      * <code>cause==null</code> or to <code>cause.toString()</code> if
      * <code>cause!=null</code>.
      * <p>
-     * @param cause the underlying reason for this <code>SQLException</code> (which is saved for later retrieval bythe <code>getCause()</code> method); may be null indicating
+     * @param cause the underlying reason for this <code>SQLException</code> (which is saved for later retrieval by the <code>getCause()</code> method); may be null indicating
      *     the cause is non-existent or unknown.
      * @since 1.6
      */

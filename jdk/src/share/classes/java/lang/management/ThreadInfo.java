@@ -492,7 +492,7 @@ public class ThreadInfo {
      * @return the thread ID of the owner thread of the object
      * this thread is blocked on;
      * <tt>-1</tt> if this thread is not blocked
-     * or if the object lis not owned by any thread.
+     * or if the object is not owned by any thread.
      *
      * @see #getLockInfo
      */

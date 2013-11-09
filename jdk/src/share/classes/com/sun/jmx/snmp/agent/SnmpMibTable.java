@@ -435,7 +435,7 @@ public abstract class SnmpMibTable extends SnmpMibNode
      * If the entry is going to be registered, or if ObjectName's are
      * required, then
      * {@link com.sun.jmx.snmp.agent.SnmpMibTable#addEntry(SnmpOid,
-     * ObjectName, Object)} should be prefered.
+     * ObjectName, Object)} should be preferred.
      * <br> This function is mainly provided for backward compatibility.
      *
      * <p>
@@ -1088,7 +1088,7 @@ public abstract class SnmpMibTable extends SnmpMibNode
      * @return <code>true</code> if the row can be placed in
      *         <i>notInService</i> state.
      *
-     * @exception SnmpStatusException An error occured while trying
+     * @exception SnmpStatusException An error occurred while trying
      *            to retrieve the row status, and the operation should
      *            be aborted.
      *
@@ -2444,7 +2444,7 @@ public abstract class SnmpMibTable extends SnmpMibNode
                                                l1+1,l2);
 
             } else if (pos < tablecount) {
-                // Vector is large enough to accomodate one additional
+                // Vector is large enough to accommodate one additional
                 // entry.
                 //
                 // Shift vector, making an empty room at `pos'

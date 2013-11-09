@@ -170,31 +170,56 @@ static int    getMacFromDevice(JNIEnv *env, const char* ifname, unsigned char* r
 JNIEXPORT void JNICALL
 Java_java_net_NetworkInterface_init(JNIEnv *env, jclass cls) {
     ni_class = (*env)->FindClass(env,"java/net/NetworkInterface");
+    CHECK_NULL(ni_class);
     ni_class = (*env)->NewGlobalRef(env, ni_class);
+    CHECK_NULL(ni_class);
     ni_nameID = (*env)->GetFieldID(env, ni_class,"name", "Ljava/lang/String;");
+    CHECK_NULL(ni_nameID);
     ni_indexID = (*env)->GetFieldID(env, ni_class, "index", "I");
+    CHECK_NULL(ni_indexID);
     ni_addrsID = (*env)->GetFieldID(env, ni_class, "addrs", "[Ljava/net/InetAddress;");
+    CHECK_NULL(ni_addrsID);
     ni_bindsID = (*env)->GetFieldID(env, ni_class, "bindings", "[Ljava/net/InterfaceAddress;");
+    CHECK_NULL(ni_bindsID);
     ni_descID = (*env)->GetFieldID(env, ni_class, "displayName", "Ljava/lang/String;");
+    CHECK_NULL(ni_descID);
     ni_virutalID = (*env)->GetFieldID(env, ni_class, "virtual", "Z");
+    CHECK_NULL(ni_virutalID);
     ni_childsID = (*env)->GetFieldID(env, ni_class, "childs", "[Ljava/net/NetworkInterface;");
+    CHECK_NULL(ni_childsID);
     ni_parentID = (*env)->GetFieldID(env, ni_class, "parent", "Ljava/net/NetworkInterface;");
+    CHECK_NULL(ni_parentID);
     ni_ctrID = (*env)->GetMethodID(env, ni_class, "<init>", "()V");
+    CHECK_NULL(ni_ctrID);
 
     ni_iacls = (*env)->FindClass(env, "java/net/InetAddress");
+    CHECK_NULL(ni_iacls);
     ni_iacls = (*env)->NewGlobalRef(env, ni_iacls);
+    CHECK_NULL(ni_iacls);
     ni_ia4cls = (*env)->FindClass(env, "java/net/Inet4Address");
+    CHECK_NULL(ni_ia4cls);
     ni_ia4cls = (*env)->NewGlobalRef(env, ni_ia4cls);
+    CHECK_NULL(ni_ia4cls);
     ni_ia6cls = (*env)->FindClass(env, "java/net/Inet6Address");
+    CHECK_NULL(ni_ia6cls);
     ni_ia6cls = (*env)->NewGlobalRef(env, ni_ia6cls);
+    CHECK_NULL(ni_ia6cls);
     ni_ibcls = (*env)->FindClass(env, "java/net/InterfaceAddress");
+    CHECK_NULL(ni_ibcls);
     ni_ibcls = (*env)->NewGlobalRef(env, ni_ibcls);
+    CHECK_NULL(ni_ibcls);
     ni_ia4ctrID = (*env)->GetMethodID(env, ni_ia4cls, "<init>", "()V");
+    CHECK_NULL(ni_ia4ctrID);
     ni_ia6ctrID = (*env)->GetMethodID(env, ni_ia6cls, "<init>", "()V");
+    CHECK_NULL(ni_ia6ctrID);
     ni_ibctrID = (*env)->GetMethodID(env, ni_ibcls, "<init>", "()V");
+    CHECK_NULL(ni_ibctrID);
     ni_ibaddressID = (*env)->GetFieldID(env, ni_ibcls, "address", "Ljava/net/InetAddress;");
+    CHECK_NULL(ni_ibaddressID);
     ni_ib4broadcastID = (*env)->GetFieldID(env, ni_ibcls, "broadcast", "Ljava/net/Inet4Address;");
+    CHECK_NULL(ni_ib4broadcastID);
     ni_ib4maskID = (*env)->GetFieldID(env, ni_ibcls, "maskLength", "S");
+    CHECK_NULL(ni_ib4maskID);
     ni_defaultIndexID = (*env)->GetStaticFieldID(env, ni_class, "defaultIndex", "I");
 }
 

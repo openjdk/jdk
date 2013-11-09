@@ -316,7 +316,7 @@ public abstract class JComponent extends Container implements Serializable,
 
     /**
      * <code>JPopupMenu</code> assigned to this component
-     * and all of its childrens
+     * and all of its children
      */
     private JPopupMenu popupMenu;
 
@@ -2020,7 +2020,7 @@ public abstract class JComponent extends Container implements Serializable,
     /**
      * This method is now obsolete, please use a combination of
      * <code>getActionMap()</code> and <code>getInputMap()</code> for
-     * similiar behavior. For example, to bind the <code>KeyStroke</code>
+     * similar behavior. For example, to bind the <code>KeyStroke</code>
      * <code>aKeyStroke</code> to the <code>Action</code> <code>anAction</code>
      * now use:
      * <pre>
@@ -2207,7 +2207,7 @@ public abstract class JComponent extends Container implements Serializable,
     /**
      * This method is now obsolete, please use a combination of
      * <code>getActionMap()</code> and <code>getInputMap()</code> for
-     * similiar behavior.
+     * similar behavior.
      */
     public void registerKeyboardAction(ActionListener anAction,KeyStroke aKeyStroke,int aCondition) {
         registerKeyboardAction(anAction,null,aKeyStroke,aCondition);
@@ -5236,7 +5236,7 @@ public abstract class JComponent extends Container implements Serializable,
      *
      * @return NOT_OBSCURED if non of the siblings above the Component obscure
      *         it, COMPLETELY_OBSCURED if one of the siblings completely
-     *         obscures the Component or PARTIALLY_OBSCURED if the Comonent is
+     *         obscures the Component or PARTIALLY_OBSCURED if the Component is
      *         only partially obscured.
      */
     private int getObscuredState(int compIndex, int x, int y, int width,

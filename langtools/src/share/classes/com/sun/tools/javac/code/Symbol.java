@@ -100,7 +100,7 @@ public abstract class Symbol extends AnnoConstruct implements Element {
     /** The attributes of this symbol are contained in this
      * SymbolMetadata. The SymbolMetadata instance is NOT immutable.
      */
-    protected SymbolMetadata annotations;
+    protected SymbolMetadata metadata;
 
 
     /** An accessor method for the attributes of this symbol.
@@ -108,9 +108,9 @@ public abstract class Symbol extends AnnoConstruct implements Element {
      *  method to make sure that the class symbol is loaded.
      */
     public List<Attribute.Compound> getRawAttributes() {
-        return (annotations == null)
+        return (metadata == null)
                 ? List.<Attribute.Compound>nil()
-                : annotations.getDeclarationAttributes();
+                : metadata.getDeclarationAttributes();
     }
 
     /** An accessor method for the type attributes of this symbol.
@@ -118,9 +118,9 @@ public abstract class Symbol extends AnnoConstruct implements Element {
      *  method to make sure that the class symbol is loaded.
      */
     public List<Attribute.TypeCompound> getRawTypeAttributes() {
-        return (annotations == null)
+        return (metadata == null)
                 ? List.<Attribute.TypeCompound>nil()
-                : annotations.getTypeAttributes();
+                : metadata.getTypeAttributes();
     }
 
     /** Fetch a particular annotation from a symbol. */
@@ -132,106 +132,106 @@ public abstract class Symbol extends AnnoConstruct implements Element {
     }
 
     public boolean annotationsPendingCompletion() {
-        return annotations == null ? false : annotations.pendingCompletion();
+        return metadata == null ? false : metadata.pendingCompletion();
     }
 
     public void appendAttributes(List<Attribute.Compound> l) {
         if (l.nonEmpty()) {
-            initedAnnos().append(l);
+            initedMetadata().append(l);
         }
     }
 
     public void appendClassInitTypeAttributes(List<Attribute.TypeCompound> l) {
         if (l.nonEmpty()) {
-            initedAnnos().appendClassInitTypeAttributes(l);
+            initedMetadata().appendClassInitTypeAttributes(l);
         }
     }
 
     public void appendInitTypeAttributes(List<Attribute.TypeCompound> l) {
         if (l.nonEmpty()) {
-            initedAnnos().appendInitTypeAttributes(l);
+            initedMetadata().appendInitTypeAttributes(l);
         }
     }
 
     public void appendTypeAttributesWithCompletion(final Annotate.AnnotateRepeatedContext<Attribute.TypeCompound> ctx) {
-        initedAnnos().appendTypeAttributesWithCompletion(ctx);
+        initedMetadata().appendTypeAttributesWithCompletion(ctx);
     }
 
     public void appendUniqueTypeAttributes(List<Attribute.TypeCompound> l) {
         if (l.nonEmpty()) {
-            initedAnnos().appendUniqueTypes(l);
+            initedMetadata().appendUniqueTypes(l);
         }
     }
 
     public List<Attribute.TypeCompound> getClassInitTypeAttributes() {
-        return (annotations == null)
+        return (metadata == null)
                 ? List.<Attribute.TypeCompound>nil()
-                : annotations.getClassInitTypeAttributes();
+                : metadata.getClassInitTypeAttributes();
     }
 
     public List<Attribute.TypeCompound> getInitTypeAttributes() {
-        return (annotations == null)
+        return (metadata == null)
                 ? List.<Attribute.TypeCompound>nil()
-                : annotations.getInitTypeAttributes();
+                : metadata.getInitTypeAttributes();
     }
 
     public List<Attribute.Compound> getDeclarationAttributes() {
-        return (annotations == null)
+        return (metadata == null)
                 ? List.<Attribute.Compound>nil()
-                : annotations.getDeclarationAttributes();
+                : metadata.getDeclarationAttributes();
     }
 
     public boolean hasAnnotations() {
-        return (annotations != null && !annotations.isEmpty());
+        return (metadata != null && !metadata.isEmpty());
     }
 
     public boolean hasTypeAnnotations() {
-        return (annotations != null && !annotations.isTypesEmpty());
+        return (metadata != null && !metadata.isTypesEmpty());
     }
 
     public void prependAttributes(List<Attribute.Compound> l) {
         if (l.nonEmpty()) {
-            initedAnnos().prepend(l);
+            initedMetadata().prepend(l);
         }
     }
 
     public void resetAnnotations() {
-        initedAnnos().reset();
+        initedMetadata().reset();
     }
 
     public void setAttributes(Symbol other) {
-        if (annotations != null || other.annotations != null) {
-            initedAnnos().setAttributes(other.annotations);
+        if (metadata != null || other.metadata != null) {
+            initedMetadata().setAttributes(other.metadata);
         }
     }
 
     public void setDeclarationAttributes(List<Attribute.Compound> a) {
-        if (annotations != null || a.nonEmpty()) {
-            initedAnnos().setDeclarationAttributes(a);
+        if (metadata != null || a.nonEmpty()) {
+            initedMetadata().setDeclarationAttributes(a);
         }
     }
 
     public void setDeclarationAttributesWithCompletion(final Annotate.AnnotateRepeatedContext<Attribute.Compound> ctx) {
-        initedAnnos().setDeclarationAttributesWithCompletion(ctx);
+        initedMetadata().setDeclarationAttributesWithCompletion(ctx);
     }
 
     public void setTypeAttributes(List<Attribute.TypeCompound> a) {
-        if (annotations != null || a.nonEmpty()) {
-            if (annotations == null)
-                annotations = new SymbolMetadata(this);
-            annotations.setTypeAttributes(a);
+        if (metadata != null || a.nonEmpty()) {
+            if (metadata == null)
+                metadata = new SymbolMetadata(this);
+            metadata.setTypeAttributes(a);
         }
     }
 
-    private SymbolMetadata initedAnnos() {
-        if (annotations == null)
-            annotations = new SymbolMetadata(this);
-        return annotations;
+    private SymbolMetadata initedMetadata() {
+        if (metadata == null)
+            metadata = new SymbolMetadata(this);
+        return metadata;
     }
 
     /** This method is intended for debugging only. */
-    public SymbolMetadata getAnnotations() {
-        return annotations;
+    public SymbolMetadata getMetadata() {
+        return metadata;
     }
 
     // </editor-fold>
@@ -862,10 +862,10 @@ public abstract class Symbol extends AnnoConstruct implements Element {
         }
 
         private void mergeAttributes() {
-            if (annotations == null &&
-                package_info.annotations != null) {
-                annotations = new SymbolMetadata(this);
-                annotations.setAttributes(package_info.annotations);
+            if (metadata == null &&
+                package_info.metadata != null) {
+                metadata = new SymbolMetadata(this);
+                metadata.setAttributes(package_info.metadata);
             }
         }
 

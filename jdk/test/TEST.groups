@@ -325,7 +325,8 @@ needs_jdk = \
   jdk/lambda/separate/Compiler.java \
   sun/management/jdp/JdpTest.sh \
   sun/management/jmxremote/bootstrap/JvmstatCountersTest.java \
-  sun/management/jmxremote/bootstrap/LocalManagementTest.sh \
+  sun/management/jmxremote/bootstrap/LocalManagementTest.java \
+  sun/management/jmxremote/bootstrap/CustomLauncherTest.java \
   sun/misc/JarIndex/metaInfFilenames/Basic.java \
   sun/misc/JarIndex/JarIndexMergeForClassLoaderTest.java \
   sun/reflect/CallerSensitive/CallerSensitiveFinder.java \

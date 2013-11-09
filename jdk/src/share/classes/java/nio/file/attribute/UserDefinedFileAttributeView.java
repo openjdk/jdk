@@ -81,7 +81,7 @@ public interface UserDefinedFileAttributeView
     /**
      * Returns a list containing the names of the user-defined attributes.
      *
-     * @return  An unmodifiable list continaing the names of the file's
+     * @return  An unmodifiable list containing the names of the file's
      *          user-defined
      *
      * @throws  IOException
@@ -179,7 +179,7 @@ public interface UserDefinedFileAttributeView
      * <p> If an attribute of the given name already exists then its value is
      * replaced. If the attribute does not exist then it is created. If it
      * implementation specific if a test to check for the existence of the
-     * attribute and the creation of attribute are atomic with repect to other
+     * attribute and the creation of attribute are atomic with respect to other
      * file system activities.
      *
      * <p> Where there is insufficient space to store the attribute, or the

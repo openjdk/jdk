@@ -34,7 +34,7 @@ import java.io.*;
 
 /**
  * Concrete implementation of the AbstractMonitoredVm class for the
- * <em>file:</em> protcol for the HotSpot PerfData monitoring implementation.
+ * <em>file:</em> protocol for the HotSpot PerfData monitoring implementation.
  * <p>
  * This class provides the ability to attach to the instrumentation buffer
  * (saved or live) of a target Java Virtual Machine by providing a

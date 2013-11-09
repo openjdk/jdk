@@ -48,7 +48,7 @@ import sun.security.provider.certpath.AlgorithmChecker;
  *    CallbackHandler) or to have keys within one KeyStore protected by
  *    different keys.
  *  . it can use multiple KeyStores at the same time.
- *  . it is explicitly designed to accomodate KeyStores that change over
+ *  . it is explicitly designed to accommodate KeyStores that change over
  *    the lifetime of the process.
  *  . it makes an effort to choose the key that matches best, i.e. one that
  *    is not expired and has the appropriate certificate extensions.

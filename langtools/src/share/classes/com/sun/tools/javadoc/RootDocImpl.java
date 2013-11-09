@@ -377,8 +377,8 @@ public class RootDocImpl extends DocImpl implements RootDoc {
         return env.fileManager;
     }
 
-    public void initDocLint(Collection<String> opts) {
-        env.initDoclint(opts);
+    public void initDocLint(Collection<String> opts, Collection<String> customTagNames) {
+        env.initDoclint(opts, customTagNames);
     }
 
     public boolean showTagMessages() {

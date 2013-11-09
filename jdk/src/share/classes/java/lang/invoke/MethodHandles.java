@@ -1716,6 +1716,13 @@ return mh1;
                 checkSymbolicClass(defc);
                 return mh;
             }
+            // Treat MethodHandle.invoke and invokeExact specially.
+            if (defc == MethodHandle.class && refKind == REF_invokeVirtual) {
+                mh = findVirtualForMH(member.getName(), member.getMethodType());
+                if (mh != null) {
+                    return mh;
+                }
+            }
             MemberName resolved = resolveOrFail(refKind, member);
             mh = getDirectMethodForConstant(refKind, defc, resolved);
             if (mh instanceof DirectMethodHandle
@@ -1768,12 +1775,6 @@ return mh1;
             if (MethodHandleNatives.refKindIsField(refKind)) {
                 return getDirectFieldNoSecurityManager(refKind, defc, member);
             } else if (MethodHandleNatives.refKindIsMethod(refKind)) {
-                if (defc == MethodHandle.class && refKind == REF_invokeVirtual) {
-                    MethodHandle mh = findVirtualForMH(member.getName(), member.getMethodType());
-                    if (mh != null) {
-                        return mh;
-                    }
-                }
                 return getDirectMethodNoSecurityManager(refKind, defc, member, lookupClass);
             } else if (refKind == REF_newInvokeSpecial) {
                 return getDirectConstructorNoSecurityManager(defc, member);

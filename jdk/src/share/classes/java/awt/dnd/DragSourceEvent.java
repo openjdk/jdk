@@ -38,7 +38,7 @@ import java.util.EventObject;
  * over, or exits a drop site, when the drop action changes, and when the drag
  * ends. The location for the generated <code>DragSourceEvent</code> specifies
  * the mouse cursor location in screen coordinates at the moment this event
- * occured.
+ * occurred.
  * <p>
  * In a multi-screen environment without a virtual device, the cursor location is
  * specified in the coordinate system of the <i>initiator</i>
@@ -71,7 +71,7 @@ public class DragSourceEvent extends EventObject {
 
     /**
      * The horizontal coordinate for the cursor location at the moment this
-     * event occured if the cursor location is specified for this event;
+     * event occurred if the cursor location is specified for this event;
      * otherwise zero.
      *
      * @serial
@@ -80,7 +80,7 @@ public class DragSourceEvent extends EventObject {
 
     /**
      * The vertical coordinate for the cursor location at the moment this event
-     * occured if the cursor location is specified for this event;
+     * occurred if the cursor location is specified for this event;
      * otherwise zero.
      *
      * @serial
@@ -141,7 +141,7 @@ public class DragSourceEvent extends EventObject {
 
     /**
      * This method returns a <code>Point</code> indicating the cursor
-     * location in screen coordinates at the moment this event occured, or
+     * location in screen coordinates at the moment this event occurred, or
      * <code>null</code> if the cursor location is not specified for this
      * event.
      *
@@ -159,7 +159,7 @@ public class DragSourceEvent extends EventObject {
 
     /**
      * This method returns the horizontal coordinate of the cursor location in
-     * screen coordinates at the moment this event occured, or zero if the
+     * screen coordinates at the moment this event occurred, or zero if the
      * cursor location is not specified for this event.
      *
      * @return an integer indicating the horizontal coordinate of the cursor
@@ -172,7 +172,7 @@ public class DragSourceEvent extends EventObject {
 
     /**
      * This method returns the vertical coordinate of the cursor location in
-     * screen coordinates at the moment this event occured, or zero if the
+     * screen coordinates at the moment this event occurred, or zero if the
      * cursor location is not specified for this event.
      *
      * @return an integer indicating the vertical coordinate of the cursor

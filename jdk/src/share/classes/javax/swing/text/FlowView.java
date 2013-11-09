@@ -171,7 +171,7 @@ public abstract class FlowView extends BoxView {
      * the layout along the box axis.  The FlowStrategy.layout
      * method will be called to rebuild the flow rows as
      * appropriate.  If the height of this view changes
-     * (determined by the perferred size along the box axis),
+     * (determined by the preferred size along the box axis),
      * a preferenceChanged is called.  Following all of that,
      * the normal box layout of the superclass is performed.
      *
@@ -221,7 +221,7 @@ public abstract class FlowView extends BoxView {
     }
 
     /**
-     * Calculate equirements along the minor axis.  This
+     * Calculate requirements along the minor axis.  This
      * is implemented to forward the request to the logical
      * view by calling getMinimumSpan, getPreferredSpan, and
      * getMaximumSpan on it.
@@ -328,7 +328,7 @@ public abstract class FlowView extends BoxView {
      * entire flow if the layout is invalid on the
      * given FlowView.  Alternative strategies can
      * be implemented by subclassing, and might
-     * perform incrementatal repair to the layout
+     * perform incremental repair to the layout
      * or alternative breaking behavior.
      * @since 1.3
      */
@@ -491,7 +491,7 @@ public abstract class FlowView extends BoxView {
          * This is implemented to fill the row by repeatedly calling
          * the createView method until the available span has been
          * exhausted, a forced break was encountered, or the createView
-         * method returned null.  If the remaining span was exhaused,
+         * method returned null.  If the remaining span was exhausted,
          * the adjustRow method will be called to perform adjustments
          * to the row to try and make it fit into the given span.
          *

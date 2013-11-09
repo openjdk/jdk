@@ -112,7 +112,7 @@ public abstract class SunJSSE extends java.security.Provider {
         registerAlgorithms(false);
     }
 
-    // prefered constructor to enable FIPS mode at runtime
+    // preferred constructor to enable FIPS mode at runtime
     protected SunJSSE(java.security.Provider cryptoProvider){
         this(checkNull(cryptoProvider), cryptoProvider.getName());
     }

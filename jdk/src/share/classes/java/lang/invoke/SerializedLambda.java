@@ -32,9 +32,26 @@ import java.security.PrivilegedExceptionAction;
 import java.util.Objects;
 
 /**
- * Serialized form of a lambda expression.  The properties of this class represent the information that is present
- * at the lambda factory site, including the identity of the primary functional interface method, the identity of the
- * implementation method, and any variables captured from the local environment at the time of lambda capture.
+ * Serialized form of a lambda expression.  The properties of this class
+ * represent the information that is present at the lambda factory site, including
+ * static metafactory arguments such as the identity of the primary functional
+ * interface method and the identity of the implementation method, as well as
+ * dynamic metafactory arguments such as values captured from the lexical scope
+ * at the time of lambda capture.
+ *
+ * <p>Implementors of serializable lambdas, such as compilers or language
+ * runtime libraries, are expected to ensure that instances deserialize properly.
+ * One means to do so is to ensure that the {@code writeReplace} method returns
+ * an instance of {@code SerializedLambda}, rather than allowing default
+ * serialization to proceed.
+ *
+ * <p>{@code SerializedLambda} has a {@code readResolve} method that looks for
+ * a (possibly private) static method called
+ * {@code $deserializeLambda$(SerializedLambda)} in the capturing class, invokes
+ * that with itself as the first argument, and returns the result.  Lambda classes
+ * implementing {@code $deserializeLambda$} are responsible for validating
+ * that the properties of the {@code SerializedLambda} are consistent with a
+ * lambda actually captured by that class.
  *
  * @see LambdaMetafactory
  */

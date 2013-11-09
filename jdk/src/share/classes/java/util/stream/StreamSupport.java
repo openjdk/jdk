@@ -96,7 +96,8 @@ public final class StreamSupport {
      * @param supplier a {@code Supplier} of a {@code Spliterator}
      * @param characteristics Spliterator characteristics of the supplied
      *        {@code Spliterator}.  The characteristics must be equal to
-     *        {@code supplier.get().characteristics()}.
+     *        {@code supplier.get().characteristics()}, otherwise undefined
+     *        behavior may occur when terminal operation commences.
      * @param parallel if {@code true} then the returned stream is a parallel
      *        stream; if {@code false} the returned stream is a sequential
      *        stream.
@@ -163,7 +164,8 @@ public final class StreamSupport {
      * @param supplier a {@code Supplier} of a {@code Spliterator.OfInt}
      * @param characteristics Spliterator characteristics of the supplied
      *        {@code Spliterator.OfInt}.  The characteristics must be equal to
-     *        {@code supplier.get().characteristics()}
+     *        {@code supplier.get().characteristics()}, otherwise undefined
+     *        behavior may occur when terminal operation commences.
      * @param parallel if {@code true} then the returned stream is a parallel
      *        stream; if {@code false} the returned stream is a sequential
      *        stream.
@@ -230,7 +232,8 @@ public final class StreamSupport {
      * @param supplier a {@code Supplier} of a {@code Spliterator.OfLong}
      * @param characteristics Spliterator characteristics of the supplied
      *        {@code Spliterator.OfLong}.  The characteristics must be equal to
-     *        {@code supplier.get().characteristics()}
+     *        {@code supplier.get().characteristics()}, otherwise undefined
+     *        behavior may occur when terminal operation commences.
      * @param parallel if {@code true} then the returned stream is a parallel
      *        stream; if {@code false} the returned stream is a sequential
      *        stream.
@@ -297,7 +300,8 @@ public final class StreamSupport {
      * @param supplier A {@code Supplier} of a {@code Spliterator.OfDouble}
      * @param characteristics Spliterator characteristics of the supplied
      *        {@code Spliterator.OfDouble}.  The characteristics must be equal to
-     *        {@code supplier.get().characteristics()}
+     *        {@code supplier.get().characteristics()}, otherwise undefined
+     *        behavior may occur when terminal operation commences.
      * @param parallel if {@code true} then the returned stream is a parallel
      *        stream; if {@code false} the returned stream is a sequential
      *        stream.
