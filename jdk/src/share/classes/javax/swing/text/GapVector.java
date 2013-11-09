@@ -36,7 +36,7 @@ import javax.swing.undo.UndoableEdit;
  * to take advantage of common behavior where most changes occur
  * in the same location.  Changes that occur at a gap boundary are
  * generally cheap and moving the gap is generally cheaper than
- * moving the array contents directly to accomodate the change.
+ * moving the array contents directly to accommodate the change.
  *
  * @author  Timothy Prinzing
  * @see GapContent

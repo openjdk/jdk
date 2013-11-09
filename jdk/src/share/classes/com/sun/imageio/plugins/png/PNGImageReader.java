@@ -688,6 +688,21 @@ public class PNGImageReader extends ImageReader {
             loop: while (true) {
                 int chunkLength = stream.readInt();
                 int chunkType = stream.readInt();
+                int chunkCRC;
+
+                // verify the chunk length
+                if (chunkLength < 0) {
+                    throw new IIOException("Invalid chunk lenght " + chunkLength);
+                };
+
+                try {
+                    stream.mark();
+                    stream.seek(stream.getStreamPosition() + chunkLength);
+                    chunkCRC = stream.readInt();
+                    stream.reset();
+                } catch (IOException e) {
+                    throw new IIOException("Invalid chunk length " + chunkLength);
+                }
 
                 switch (chunkType) {
                 case IDAT_TYPE:
@@ -762,7 +777,11 @@ public class PNGImageReader extends ImageReader {
                     break;
                 }
 
-                int chunkCRC = stream.readInt();
+                // double check whether all chunk data were consumed
+                if (chunkCRC != stream.readInt()) {
+                    throw new IIOException("Failed to read a chunk of type " +
+                            chunkType);
+                }
                 stream.flushBefore(stream.getStreamPosition());
             }
         } catch (IOException e) {
@@ -1277,6 +1296,16 @@ public class PNGImageReader extends ImageReader {
             is = new BufferedInputStream(is);
             this.pixelStream = new DataInputStream(is);
 
+            /*
+             * NB: the PNG spec declares that valid range for width
+             * and height is [1, 2^31-1], so here we may fail to allocate
+             * a buffer for destination image due to memory limitation.
+             *
+             * However, the recovery strategy for this case should be
+             * defined on the level of application, so we will not
+             * try to estimate the required amount of the memory and/or
+             * handle OOM in any way.
+             */
             theImage = getDestination(param,
                                       getImageTypes(0),
                                       width,

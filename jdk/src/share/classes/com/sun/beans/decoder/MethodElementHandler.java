@@ -43,7 +43,7 @@ import sun.reflect.misc.MethodUtil;
  *     &lt;string&gt;10&lt;/string&gt;
  * &lt;/method&gt;</pre>
  * is equivalent to {@code Long.valueOf("10")} in Java code.
- * <p>The following atributes are supported:
+ * <p>The following attributes are supported:
  * <dl>
  * <dt>name
  * <dd>the method name
@@ -62,7 +62,7 @@ final class MethodElementHandler extends NewElementHandler {
 
     /**
      * Parses attributes of the element.
-     * The following atributes are supported:
+     * The following attributes are supported:
      * <dl>
      * <dt>name
      * <dd>the method name

@@ -38,7 +38,7 @@ import static sun.security.pkcs11.wrapper.PKCS11Constants.*;
 import sun.security.rsa.RSAKeyFactory;
 
 /**
- * RSA KeyFactory implemenation.
+ * RSA KeyFactory implementation.
  *
  * @author  Andreas Sterbenz
  * @since   1.5

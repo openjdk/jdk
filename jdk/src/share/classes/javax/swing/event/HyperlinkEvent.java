@@ -158,7 +158,7 @@ public class HyperlinkEvent extends EventObject {
     /**
      * Returns the <code>Element</code> that corresponds to the source of the
      * event. This will typically be an <code>Element</code> representing
-     * an anchor. If a constructur that is used that does not specify a source
+     * an anchor. If a constructor that is used that does not specify a source
      * <code>Element</code>, or null was specified as the source
      * <code>Element</code>, this will return null.
      *

@@ -405,7 +405,7 @@ public class TextField extends TextComponent {
     }
 
     /**
-     * Gets the minumum dimensions for a text field with
+     * Gets the minimum dimensions for a text field with
      * the specified number of columns.
      * @param    columns   the number of columns in
      *                          this text field.
@@ -430,7 +430,7 @@ public class TextField extends TextComponent {
     }
 
     /**
-     * Gets the minumum dimensions for this text field.
+     * Gets the minimum dimensions for this text field.
      * @return     the minimum dimensions for
      *                  displaying this text field.
      * @since      JDK1.1

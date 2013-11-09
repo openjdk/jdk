@@ -80,8 +80,20 @@ public class ImageIcon implements Icon, Serializable, Accessible {
     ImageObserver imageObserver;
     String description = null;
 
-    // Fields for twisted backward compatibility only. DO NOT USE.
+    /**
+     * Do not use this shared component, which is used to track image loading.
+     * It is left for backward compatibility only.
+     * @deprecated since 1.8
+     */
+    @Deprecated
     protected final static Component component;
+
+    /**
+     * Do not use this shared media tracker, which is used to load images.
+     * It is left for backward compatibility only.
+     * @deprecated since 1.8
+     */
+    @Deprecated
     protected final static MediaTracker tracker;
 
     static {

@@ -117,7 +117,7 @@ public interface MultiDoc {
      * @return  Current doc object.
      *
      * @exception  IOException
-     *     Thrown if a error ocurred reading the document.
+     *     Thrown if a error occurred reading the document.
      */
     public Doc getDoc() throws IOException;
 

@@ -188,6 +188,19 @@ public final class XalanConstants {
             ORACLE_JAXP_PROPERTY_PREFIX + "xmlSecurityPropertyManager";
 
     /**
+     * Feature enableExtensionFunctions
+     */
+    public static final String ORACLE_ENABLE_EXTENSION_FUNCTION =
+            ORACLE_JAXP_PROPERTY_PREFIX + "enableExtensionFunctions";
+    public static final String SP_ORACLE_ENABLE_EXTENSION_FUNCTION = "javax.xml.enableExtensionFunctions";
+
+    /**
+     * Values for a feature
+     */
+    public static final String FEATURE_TRUE = "true";
+    public static final String FEATURE_FALSE = "false";
+
+    /**
      * Check if we're in jdk8 or above
      */
     public static final boolean IS_JDK8_OR_ABOVE = isJavaVersionAtLeast(8);

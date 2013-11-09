@@ -140,7 +140,7 @@ class MulticastSocket extends DatagramSocket {
      * Create a MulticastSocket bound to the specified socket address.
      * <p>
      * Or, if the address is {@code null}, create an unbound socket.
-     * <p>
+     *
      * <p>If there is a security manager,
      * its {@code checkListen} method is first called
      * with the SocketAddress port as its argument to ensure the operation is allowed.

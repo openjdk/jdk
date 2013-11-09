@@ -362,7 +362,7 @@ public interface SQLXML
    *
    * @param <T> the type of the class modeled by this Class object
    * @param sourceClass The class of the source, or null.
-   * If the class is null, a vendor specifc Source implementation will be returned.
+   * If the class is null, a vendor specific Source implementation will be returned.
    * The following classes are supported at a minimum:
    * <pre>
    *   javax.xml.transform.dom.DOMSource - returns a DOMSource

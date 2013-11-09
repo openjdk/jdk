@@ -41,7 +41,7 @@ import sun.swing.UIAction;
 /**
  * Basic UI implementation for JComboBox.
  * <p>
- * The combo box is a compound component which means that it is an agregate of
+ * The combo box is a compound component which means that it is an aggregate of
  * many simpler components. This class creates and manages the listeners
  * on the combo box and the combo box model. These listeners update the user
  * interface in response to changes in the properties and state of the combo box.
@@ -705,7 +705,7 @@ public class BasicComboBoxUI extends ComboBoxUI {
     }
 
     /**
-     * The aggregate components which compise the combo box are
+     * The aggregate components which comprise the combo box are
      * unregistered and uninitialized. This method is called as part of the
      * UI uninstallation process.
      */
@@ -911,7 +911,7 @@ public class BasicComboBoxUI extends ComboBoxUI {
     }
 
     /**
-     * The minumum size is the size of the display area plus insets plus the button.
+     * The minimum size is the size of the display area plus insets plus the button.
      */
     @Override
     public Dimension getMinimumSize( JComponent c ) {

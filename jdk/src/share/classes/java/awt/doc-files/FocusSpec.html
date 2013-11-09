@@ -27,7 +27,7 @@
 
 <html>
     <head>
-       <title align=center>The AWT Focus Subsystem</title>
+       <title>The AWT Focus Subsystem</title>
     </head>
 
     <body bgcolor="white">
@@ -660,16 +660,16 @@ All other applications, including pure AWT applications, will use
   FocusTraversalPolicy of its own. To do so, one needs to set Container's focus
   traversal policy provider property to <code>true</code> with the call to
 
-  <ul>
+  <blockquote>
     <code>Container.setFocusTraversalPolicyProvider(boolean)</code>
-  </ul>
+  </blockquote>
 
   To determine whether a Container is a focus traversal policy provider, the
   following method should be used:
 
-  <ul>
+  <blockquote>
     <code>Container.isFocusTraversalPolicyProvider()</code>
-  </ul>
+  </blockquote>
 
   If focus traversal policy provider property is set on a focus cycle root, it
   isn't considered a focus traversal policy provider and behaves just like any
@@ -750,10 +750,10 @@ traversals. The preferred way to initiate a programmatic traversal is
 to use one of the following methods on <code>KeyboardFocusManager</code>:
 
   <ul>
-    <code>KeyboardFocusManager.focusNextComponent()</code>
-    <code>KeyboardFocusManager.focusPreviousComponent()</code>
-    <code>KeyboardFocusManager.upFocusCycle()</code>
-    <code>KeyboardFocusManager.downFocusCycle()</code>
+    <li><code>KeyboardFocusManager.focusNextComponent()</code>
+    <li><code>KeyboardFocusManager.focusPreviousComponent()</code>
+    <li><code>KeyboardFocusManager.upFocusCycle()</code>
+    <li><code>KeyboardFocusManager.downFocusCycle()</code>
   </ul>
 
 <p>
@@ -1149,7 +1149,7 @@ Microsoft Windows and Solaris is as follows:
         <b>Microsoft Windows</b>: The Window is moved to front and becomes the focused
         Window.
       <br>
-        </b>Solaris</b>: The Window is moved to front. In a point-to-focus focus
+        <b>Solaris</b>: The Window is moved to front. In a point-to-focus focus
         window manager, the Window will be focused if it is now the
         top-most Window under the cursor. In a click-to-focus window
         manager, the Window will become the focused Window.

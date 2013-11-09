@@ -233,7 +233,7 @@ public final class UUID implements java.io.Serializable, Comparable<UUID> {
      * number describes how this {@code UUID} was generated.
      *
      * The version number has the following meaning:
-     * <p><ul>
+     * <ul>
      * <li>1    Time-based UUID
      * <li>2    DCE security UUID
      * <li>3    Name-based UUID
@@ -252,7 +252,7 @@ public final class UUID implements java.io.Serializable, Comparable<UUID> {
      * number describes the layout of the {@code UUID}.
      *
      * The variant number has the following meaning:
-     * <p><ul>
+     * <ul>
      * <li>0    Reserved for NCS backward compatibility
      * <li>2    <a href="http://www.ietf.org/rfc/rfc4122.txt">IETF&nbsp;RFC&nbsp;4122</a>
      * (Leach-Salz), used by this class

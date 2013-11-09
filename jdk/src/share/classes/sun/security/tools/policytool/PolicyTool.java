@@ -1092,19 +1092,19 @@ class ToolWindow extends JFrame {
         JMenu menu = new JMenu();
         configureButton(menu, "File");
         ActionListener actionListener = new FileMenuListener(tool, this);
-        addMenuItem(menu, NEW_POLICY_FILE, actionListener);
-        addMenuItem(menu, OPEN_POLICY_FILE, actionListener);
-        addMenuItem(menu, SAVE_POLICY_FILE, actionListener);
-        addMenuItem(menu, SAVE_AS_POLICY_FILE, actionListener);
-        addMenuItem(menu, VIEW_WARNINGS, actionListener);
-        addMenuItem(menu, QUIT, actionListener);
+        addMenuItem(menu, NEW_POLICY_FILE, actionListener, "N");
+        addMenuItem(menu, OPEN_POLICY_FILE, actionListener, "O");
+        addMenuItem(menu, SAVE_POLICY_FILE, actionListener, "S");
+        addMenuItem(menu, SAVE_AS_POLICY_FILE, actionListener, null);
+        addMenuItem(menu, VIEW_WARNINGS, actionListener, null);
+        addMenuItem(menu, QUIT, actionListener, null);
         menuBar.add(menu);
 
         // create a KeyStore menu
         menu = new JMenu();
         configureButton(menu, "KeyStore");
         actionListener = new MainWindowListener(tool, this);
-        addMenuItem(menu, EDIT_KEYSTORE, actionListener);
+        addMenuItem(menu, EDIT_KEYSTORE, actionListener, null);
         menuBar.add(menu);
         setJMenuBar(menuBar);
 
@@ -1220,23 +1220,24 @@ class ToolWindow extends JFrame {
     // Platform specific modifier (control / command).
     private int shortCutModifier = Toolkit.getDefaultToolkit().getMenuShortcutKeyMask();
 
-    private void addMenuItem(JMenu menu, String key, ActionListener actionListener) {
+    private void addMenuItem(JMenu menu, String key, ActionListener actionListener, String accelerator) {
         JMenuItem menuItem = new JMenuItem();
         configureButton(menuItem, key);
 
         if (PolicyTool.rb.containsKey(key + ".accelerator")) {
-            String accelerator = PolicyTool.getMessage(key + ".accelerator");
-            if (accelerator != null && !accelerator.isEmpty()) {
-                KeyStroke keyStroke;
-                if (accelerator.matches("^control .$")) {
-                    // Map "control" key to "command" on MacOS
-                    keyStroke = KeyStroke.getKeyStroke(KeyEvent.getExtendedKeyCodeForChar(accelerator.charAt(8)),
-                                                       shortCutModifier);
-                } else {
-                    keyStroke = KeyStroke.getKeyStroke(accelerator);
-                }
-                menuItem.setAccelerator(keyStroke);
+            // Accelerator from resources takes precedence
+            accelerator = PolicyTool.getMessage(key + ".accelerator");
+        }
+
+        if (accelerator != null && !accelerator.isEmpty()) {
+            KeyStroke keyStroke;
+            if (accelerator.length() == 1) {
+                keyStroke = KeyStroke.getKeyStroke(KeyEvent.getExtendedKeyCodeForChar(accelerator.charAt(0)),
+                                                   shortCutModifier);
+            } else {
+                keyStroke = KeyStroke.getKeyStroke(accelerator);
             }
+            menuItem.setAccelerator(keyStroke);
         }
 
         menuItem.addActionListener(actionListener);
