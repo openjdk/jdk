@@ -34,7 +34,7 @@ import java.io.*;
  * A representation of a content model. A content model is
  * basically a restricted BNF expression. It is restricted in
  * the sense that it must be deterministic. This means that you
- * don't have to represent it as a finite state automata.<p>
+ * don't have to represent it as a finite state automaton.<p>
  * See Annex H on page 556 of the SGML handbook for more information.
  *
  * @author   Arthur van Hoff

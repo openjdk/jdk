@@ -682,7 +682,7 @@ public class MetalRootPaneUI extends BasicRootPaneUI
         private boolean isMovingWindow;
 
         /**
-         * Used to determine the corner the resize is occuring from.
+         * Used to determine the corner the resize is occurring from.
          */
         private int dragCursor;
 

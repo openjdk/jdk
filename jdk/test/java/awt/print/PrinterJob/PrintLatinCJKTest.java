@@ -23,7 +23,7 @@
 
 /**
  * @test
- * @bug 800535
+ * @bug 800535 8022536
  * @summary JDK7 Printing: CJK and Latin Text in string overlap
  * @run main/manual=yesno PrintLatinCJKTest
  */
@@ -49,6 +49,8 @@ public class PrintLatinCJKTest implements Printable, ActionListener {
     private PageFormat pf;
 
     static String info =
+       "To test 8022536, if a remote printer is the system default,"+
+       "it should show in the dialog as the selected printer.\n"+
        "You need a printer for this test. If you have none, let "+
        "the test pass. If there is a printer, press Print, send "+
        "the output to the printer, and examine it. It should have "+

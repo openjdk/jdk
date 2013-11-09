@@ -158,7 +158,7 @@ public interface ChronoZonedDateTime<D extends ChronoLocalDate>
      * This method matches the signature of the functional interface {@link TemporalQuery}
      * allowing it to be used as a query via method reference, {@code ChronoZonedDateTime::from}.
      *
-     * @param temporal  the temporal objec t to convert, not null
+     * @param temporal  the temporal object to convert, not null
      * @return the date-time, not null
      * @throws DateTimeException if unable to convert to a {@code ChronoZonedDateTime}
      * @see Chronology#zonedDateTime(TemporalAccessor)

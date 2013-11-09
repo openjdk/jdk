@@ -31,6 +31,7 @@ import java.awt.*;
 import java.awt.KeyboardFocusManager;
 import java.awt.DefaultKeyboardFocusManager;
 import java.awt.event.InputEvent;
+import java.awt.event.InvocationEvent;
 import java.awt.event.KeyEvent;
 import java.awt.geom.Point2D;
 import java.awt.peer.ComponentPeer;
@@ -721,6 +722,13 @@ public final class AWTAccessor {
     }
 
     /*
+     * An accessor object for the InvocationEvent class
+     */
+    public interface InvocationEventAccessor {
+        void dispose(InvocationEvent event);
+    }
+
+    /*
      * Accessor instances are initialized in the static initializers of
      * corresponding AWT classes by using setters defined below.
      */
@@ -748,6 +756,7 @@ public final class AWTAccessor {
     private static DefaultKeyboardFocusManagerAccessor defaultKeyboardFocusManagerAccessor;
     private static SequencedEventAccessor sequencedEventAccessor;
     private static ToolkitAccessor toolkitAccessor;
+    private static InvocationEventAccessor invocationEventAccessor;
 
     /*
      * Set an accessor object for the java.awt.Component class.
@@ -1158,5 +1167,19 @@ public final class AWTAccessor {
         }
 
         return toolkitAccessor;
+    }
+
+    /*
+     * Get the accessor object for the java.awt.event.InvocationEvent class.
+     */
+    public static void setInvocationEventAccessor(InvocationEventAccessor invocationEventAccessor) {
+        AWTAccessor.invocationEventAccessor = invocationEventAccessor;
+    }
+
+    /*
+     * Set the accessor object for the java.awt.event.InvocationEvent class.
+     */
+    public static InvocationEventAccessor getInvocationEventAccessor() {
+        return invocationEventAccessor;
     }
 }

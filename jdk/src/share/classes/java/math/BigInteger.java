@@ -97,6 +97,21 @@ import sun.misc.FloatConsts;
  * {@code NullPointerException} when passed
  * a null object reference for any input parameter.
  *
+ * BigInteger must support values in the range
+ * -2<sup>{@code Integer.MAX_VALUE}</sup> (exclusive) to
+ * +2<sup>{@code Integer.MAX_VALUE}</sup> (exclusive)
+ * and may support values outside of that range.
+ *
+ * The range of probable prime values is limited and may be less than
+ * the full supported positive range of {@code BigInteger}.
+ * The range must be at least 1 to 2<sup>500000000</sup>.
+ *
+ * @implNote
+ * BigInteger constructors and operations throw {@code ArithmeticException} when
+ * the result is out of the supported range of
+ * -2<sup>{@code Integer.MAX_VALUE}</sup> (exclusive) to
+ * +2<sup>{@code Integer.MAX_VALUE}</sup> (exclusive).
+ *
  * @see     BigDecimal
  * @author  Josh Bloch
  * @author  Michael McCloskey
@@ -183,6 +198,18 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
     final static long LONG_MASK = 0xffffffffL;
 
     /**
+     * This constant limits {@code mag.length} of BigIntegers to the supported
+     * range.
+     */
+    private static final int MAX_MAG_LENGTH = Integer.MAX_VALUE / Integer.SIZE + 1; // (1 << 26)
+
+    /**
+     * Bit lengths larger than this constant can cause overflow in searchLen
+     * calculation and in BitSieve.singleSearch method.
+     */
+    private static final  int PRIME_SEARCH_BIT_LENGTH_LIMIT = 500000000;
+
+    /**
      * The threshold value for using Karatsuba multiplication.  If the number
      * of ints in both mag arrays are greater than this number, then
      * Karatsuba multiplication will be used.   This value is found
@@ -256,6 +283,9 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
             mag = stripLeadingZeroBytes(val);
             signum = (mag.length == 0 ? 0 : 1);
         }
+        if (mag.length >= MAX_MAG_LENGTH) {
+            checkRange();
+        }
     }
 
     /**
@@ -274,6 +304,9 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
         } else {
             mag = trustedStripLeadingZeroInts(val);
             signum = (mag.length == 0 ? 0 : 1);
+        }
+        if (mag.length >= MAX_MAG_LENGTH) {
+            checkRange();
         }
     }
 
@@ -306,6 +339,9 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
                 throw(new NumberFormatException("signum-magnitude mismatch"));
             this.signum = signum;
         }
+        if (mag.length >= MAX_MAG_LENGTH) {
+            checkRange();
+        }
     }
 
     /**
@@ -326,6 +362,9 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
             if (signum == 0)
                 throw(new NumberFormatException("signum-magnitude mismatch"));
             this.signum = signum;
+        }
+        if (mag.length >= MAX_MAG_LENGTH) {
+            checkRange();
         }
     }
 
@@ -359,17 +398,20 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
         int sign = 1;
         int index1 = val.lastIndexOf('-');
         int index2 = val.lastIndexOf('+');
-        if ((index1 + index2) <= -1) {
-            // No leading sign character or at most one leading sign character
-            if (index1 == 0 || index2 == 0) {
-                cursor = 1;
-                if (len == 1)
-                    throw new NumberFormatException("Zero length BigInteger");
+        if (index1 >= 0) {
+            if (index1 != 0 || index2 >= 0) {
+                throw new NumberFormatException("Illegal embedded sign character");
             }
-            if (index1 == 0)
-                sign = -1;
-        } else
-            throw new NumberFormatException("Illegal embedded sign character");
+            sign = -1;
+            cursor = 1;
+        } else if (index2 >= 0) {
+            if (index2 != 0) {
+                throw new NumberFormatException("Illegal embedded sign character");
+            }
+            cursor = 1;
+        }
+        if (cursor == len)
+            throw new NumberFormatException("Zero length BigInteger");
 
         // Skip leading zeros and compute number of digits in magnitude
         while (cursor < len &&
@@ -388,8 +430,11 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
 
         // Pre-allocate array of expected size. May be too large but can
         // never be too small. Typically exact.
-        int numBits = (int)(((numDigits * bitsPerDigit[radix]) >>> 10) + 1);
-        int numWords = (numBits + 31) >>> 5;
+        long numBits = ((numDigits * bitsPerDigit[radix]) >>> 10) + 1;
+        if (numBits + 31 >= (1L << 32)) {
+            reportOverflow();
+        }
+        int numWords = (int) (numBits + 31) >>> 5;
         int[] magnitude = new int[numWords];
 
         // Process first (potentially short) digit group
@@ -413,6 +458,9 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
         }
         // Required for cases where the array was overallocated.
         mag = trustedStripLeadingZeroInts(magnitude);
+        if (mag.length >= MAX_MAG_LENGTH) {
+            checkRange();
+        }
     }
 
     /*
@@ -439,8 +487,11 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
         if (len < 10) {
             numWords = 1;
         } else {
-            int numBits = (int)(((numDigits * bitsPerDigit[10]) >>> 10) + 1);
-            numWords = (numBits + 31) >>> 5;
+            long numBits = ((numDigits * bitsPerDigit[10]) >>> 10) + 1;
+            if (numBits + 31 >= (1L << 32)) {
+                reportOverflow();
+            }
+            numWords = (int) (numBits + 31) >>> 5;
         }
         int[] magnitude = new int[numWords];
 
@@ -456,6 +507,9 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
             destructiveMulAdd(magnitude, intRadix[10], groupVal);
         }
         mag = trustedStripLeadingZeroInts(magnitude);
+        if (mag.length >= MAX_MAG_LENGTH) {
+            checkRange();
+        }
     }
 
     // Create an integer with the digits between the two indexes
@@ -575,7 +629,7 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
      *         this constructor is proportional to the value of this parameter.
      * @param  rnd source of random bits used to select candidates to be
      *         tested for primality.
-     * @throws ArithmeticException {@code bitLength < 2}.
+     * @throws ArithmeticException {@code bitLength < 2} or {@code bitLength} is too large.
      * @see    #bitLength()
      */
     public BigInteger(int bitLength, int certainty, Random rnd) {
@@ -607,7 +661,7 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
      * @param  rnd source of random bits used to select candidates to be
      *         tested for primality.
      * @return a BigInteger of {@code bitLength} bits that is probably prime
-     * @throws ArithmeticException {@code bitLength < 2}.
+     * @throws ArithmeticException {@code bitLength < 2} or {@code bitLength} is too large.
      * @see    #bitLength()
      * @since 1.4
      */
@@ -677,7 +731,7 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
         p.mag[p.mag.length-1] &= 0xfffffffe;
 
         // Use a sieve length likely to contain the next prime number
-        int searchLen = (bitLength / 20) * 64;
+        int searchLen = getPrimeSearchLen(bitLength);
         BitSieve searchSieve = new BitSieve(p, searchLen);
         BigInteger candidate = searchSieve.retrieve(p, certainty, rnd);
 
@@ -701,7 +755,7 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
     *
     * @return the first integer greater than this {@code BigInteger} that
     *         is probably prime.
-    * @throws ArithmeticException {@code this < 0}.
+    * @throws ArithmeticException {@code this < 0} or {@code this} is too large.
     * @since 1.5
     */
     public BigInteger nextProbablePrime() {
@@ -750,7 +804,7 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
             result = result.subtract(ONE);
 
         // Looking for the next large prime
-        int searchLen = (result.bitLength() / 20) * 64;
+        int searchLen = getPrimeSearchLen(result.bitLength());
 
         while (true) {
            BitSieve searchSieve = new BitSieve(result, searchLen);
@@ -760,6 +814,13 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
                return candidate;
            result = result.add(BigInteger.valueOf(2 * searchLen));
         }
+    }
+
+    private static int getPrimeSearchLen(int bitLength) {
+        if (bitLength > PRIME_SEARCH_BIT_LENGTH_LIMIT + 1) {
+            throw new ArithmeticException("Prime search implementation restriction on bitLength");
+        }
+        return bitLength / 20 * 64;
     }
 
     /**
@@ -965,6 +1026,9 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
     BigInteger(int[] magnitude, int signum) {
         this.signum = (magnitude.length == 0 ? 0 : signum);
         this.mag = magnitude;
+        if (mag.length >= MAX_MAG_LENGTH) {
+            checkRange();
+        }
     }
 
     /**
@@ -974,6 +1038,25 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
     private BigInteger(byte[] magnitude, int signum) {
         this.signum = (magnitude.length == 0 ? 0 : signum);
         this.mag = stripLeadingZeroBytes(magnitude);
+        if (mag.length >= MAX_MAG_LENGTH) {
+            checkRange();
+        }
+    }
+
+    /**
+     * Throws an {@code ArithmeticException} if the {@code BigInteger} would be
+     * out of the supported range.
+     *
+     * @throws ArithmeticException if {@code this} exceeds the supported range.
+     */
+    private void checkRange() {
+        if (mag.length > MAX_MAG_LENGTH || mag.length == MAX_MAG_LENGTH && mag[0] < 0) {
+            reportOverflow();
+        }
+    }
+
+    private static void reportOverflow() {
+        throw new ArithmeticException("BigInteger would overflow supported range");
     }
 
     //Static Factory Methods
@@ -2073,6 +2156,10 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
         // The remaining part can then be exponentiated faster.  The
         // powers of two will be multiplied back at the end.
         int powersOfTwo = partToSquare.getLowestSetBit();
+        long bitsToShift = (long)powersOfTwo * exponent;
+        if (bitsToShift > Integer.MAX_VALUE) {
+            reportOverflow();
+        }
 
         int remainingBits;
 
@@ -2126,11 +2213,10 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
 
             // Multiply back the powers of two (quickly, by shifting left)
             if (powersOfTwo > 0) {
-                int bitsToShift = powersOfTwo*exponent;
                 if (bitsToShift + scaleFactor <= 62) { // Fits in long?
                     return valueOf((result << bitsToShift) * newSign);
                 } else {
-                    return valueOf(result*newSign).shiftLeft(bitsToShift);
+                    return valueOf(result*newSign).shiftLeft((int) bitsToShift);
                 }
             }
             else {
@@ -2375,8 +2461,17 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
             BigInteger y1 = m2.modInverse(m1);
             BigInteger y2 = m1.modInverse(m2);
 
-            result = a1.multiply(m2).multiply(y1).add
-                     (a2.multiply(m1).multiply(y2)).mod(m);
+            if (m.mag.length < MAX_MAG_LENGTH / 2) {
+                result = a1.multiply(m2).multiply(y1).add(a2.multiply(m1).multiply(y2)).mod(m);
+            } else {
+                MutableBigInteger t1 = new MutableBigInteger();
+                new MutableBigInteger(a1.multiply(m2)).multiply(new MutableBigInteger(y1), t1);
+                MutableBigInteger t2 = new MutableBigInteger();
+                new MutableBigInteger(a2.multiply(m1)).multiply(new MutableBigInteger(y2), t2);
+                t1.add(t2);
+                MutableBigInteger q = new MutableBigInteger();
+                result = t1.divide(new MutableBigInteger(m), q).toBigInteger();
+            }
         }
 
         return (invertResult ? result.modInverse(m) : result);
@@ -2797,27 +2892,31 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
      *
      * @param  n shift distance, in bits.
      * @return {@code this << n}
-     * @throws ArithmeticException if the shift distance is {@code
-     *         Integer.MIN_VALUE}.
      * @see #shiftRight
      */
     public BigInteger shiftLeft(int n) {
         if (signum == 0)
             return ZERO;
-        if (n == 0)
+        if (n > 0) {
+            return new BigInteger(shiftLeft(mag, n), signum);
+        } else if (n == 0) {
             return this;
-        if (n < 0) {
-            if (n == Integer.MIN_VALUE) {
-                throw new ArithmeticException("Shift distance of Integer.MIN_VALUE not supported.");
-            } else {
-                return shiftRight(-n);
-            }
+        } else {
+            // Possible int overflow in (-n) is not a trouble,
+            // because shiftRightImpl considers its argument unsigned
+            return shiftRightImpl(-n);
         }
-        int[] newMag = shiftLeft(mag, n);
-
-        return new BigInteger(newMag, signum);
     }
 
+    /**
+     * Returns a magnitude array whose value is {@code (mag << n)}.
+     * The shift distance, {@code n}, is considered unnsigned.
+     * (Computes <tt>this * 2<sup>n</sup></tt>.)
+     *
+     * @param mag magnitude, the most-significant int ({@code mag[0]}) must be non-zero.
+     * @param  n unsigned shift distance, in bits.
+     * @return {@code mag << n}
+     */
     private static int[] shiftLeft(int[] mag, int n) {
         int nInts = n >>> 5;
         int nBits = n & 0x1f;
@@ -2853,21 +2952,31 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
      *
      * @param  n shift distance, in bits.
      * @return {@code this >> n}
-     * @throws ArithmeticException if the shift distance is {@code
-     *         Integer.MIN_VALUE}.
      * @see #shiftLeft
      */
     public BigInteger shiftRight(int n) {
-        if (n == 0)
+        if (signum == 0)
+            return ZERO;
+        if (n > 0) {
+            return shiftRightImpl(n);
+        } else if (n == 0) {
             return this;
-        if (n < 0) {
-            if (n == Integer.MIN_VALUE) {
-                throw new ArithmeticException("Shift distance of Integer.MIN_VALUE not supported.");
-            } else {
-                return shiftLeft(-n);
-            }
+        } else {
+            // Possible int overflow in {@code -n} is not a trouble,
+            // because shiftLeft considers its argument unsigned
+            return new BigInteger(shiftLeft(mag, -n), signum);
         }
+    }
 
+    /**
+     * Returns a BigInteger whose value is {@code (this >> n)}. The shift
+     * distance, {@code n}, is considered unsigned.
+     * (Computes <tt>floor(this * 2<sup>-n</sup>)</tt>.)
+     *
+     * @param  n unsigned shift distance, in bits.
+     * @return {@code this >> n}
+     */
+    private BigInteger shiftRightImpl(int n) {
         int nInts = n >>> 5;
         int nBits = n & 0x1f;
         int magLen = mag.length;
@@ -3899,7 +4008,7 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
             ;
 
         int extraByte = (k == byteLength) ? 1 : 0;
-        int intLength = ((byteLength - keep + extraByte) + 3)/4;
+        int intLength = ((byteLength - keep + extraByte) + 3) >>> 2;
         int result[] = new int[intLength];
 
         /* Copy one's complement of input into output, leaving extra
@@ -4135,7 +4244,8 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
                 message = "BigInteger: Signum not present in stream";
             throw new java.io.StreamCorruptedException(message);
         }
-        if ((magnitude.length == 0) != (sign == 0)) {
+        int[] mag = stripLeadingZeroBytes(magnitude);
+        if ((mag.length == 0) != (sign == 0)) {
             String message = "BigInteger: signum-magnitude mismatch";
             if (fields.defaulted("magnitude"))
                 message = "BigInteger: Magnitude not present in stream";
@@ -4146,7 +4256,14 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
         UnsafeHolder.putSign(this, sign);
 
         // Calculate mag field from magnitude and discard magnitude
-        UnsafeHolder.putMag(this, stripLeadingZeroBytes(magnitude));
+        UnsafeHolder.putMag(this, mag);
+        if (mag.length >= MAX_MAG_LENGTH) {
+            try {
+                checkRange();
+            } catch (ArithmeticException e) {
+                throw new java.io.StreamCorruptedException("BigInteger: Out of the supported range");
+            }
+        }
     }
 
     // Support for resetting final fields while deserializing

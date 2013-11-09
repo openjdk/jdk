@@ -45,7 +45,7 @@ import java.util.Vector;
  * If you do not supply a <code>TreeCellEditor</code>,
  * a <code>TextField</code> will be used. Editing is started
  * on a triple mouse click, or after a click, pause, click and
- * a delay of 1200 miliseconds.
+ * a delay of 1200 milliseconds.
  *<p>
  * <strong>Warning:</strong>
  * Serialized objects of this class will not be compatible with
@@ -173,7 +173,7 @@ public class DefaultTreeCellEditor implements ActionListener, TreeCellEditor,
      * Sets the font to edit with. <code>null</code> indicates
      * the renderers font should be used. This will NOT
      * override any font you have set in the editor
-     * the receiver was instantied with. If <code>null</code>
+     * the receiver was instantiated with. If <code>null</code>
      * for an editor was passed in a default editor will be
      * created that will pick up this font.
      *
@@ -216,7 +216,7 @@ public class DefaultTreeCellEditor implements ActionListener, TreeCellEditor,
                                         isSelected, expanded,leaf, row);
 
 
-        // this is kept for backwards compatability but isn't really needed
+        // this is kept for backwards compatibility but isn't really needed
         // with the current BasicTreeUI implementation.
         TreePath        newPath = tree.getPathForRow(row);
 

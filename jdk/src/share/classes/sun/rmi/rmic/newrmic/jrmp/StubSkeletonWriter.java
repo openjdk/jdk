@@ -53,7 +53,7 @@ class StubSkeletonWriter {
     /** rmic environment for this object */
     private final BatchEnvironment env;
 
-    /** the remote implemention class to generate code for */
+    /** the remote implementation class to generate code for */
     private final RemoteClass remoteClass;
 
     /** version of the JRMP stub protocol to generate code for */

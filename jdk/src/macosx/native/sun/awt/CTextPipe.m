@@ -322,7 +322,7 @@ static void DrawTextContext
 
     Each stage of the pipeline is responsible for doing only one major thing, like allocating buffers,
     aquiring transform arrays from JNI, filling buffers, or striking glyphs. All resources or memory
-    aquired at a given stage, must be released in that stage. Any error that occurs (like a failed malloc)
+    acquired at a given stage, must be released in that stage. Any error that occurs (like a failed malloc)
     is to be handled in the stage it occurs in, and is to return immediatly after freeing it's resources.
 
 -----------------------------------*/

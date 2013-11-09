@@ -93,7 +93,6 @@ import java.util.*;
  * @see java.util.Comparator
  * @since 1.2
  */
-@FunctionalInterface
 public interface Comparable<T> {
     /**
      * Compares this object with the specified object for order.  Returns a

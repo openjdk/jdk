@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug     7154390 8005712 8007278
+ * @bug     7154390 8005712 8007278 8004912
  * @summary Unit test for repeated annotation reflection
  *
  * @compile RepeatedUnitTest.java subpackage/package-info.java subpackage/Container.java subpackage/Containee.java subpackage/NonRepeated.java subpackage/InheritedContainee.java subpackage/InheritedContainer.java subpackage/InheritedNonRepeated.java
@@ -50,6 +50,12 @@ public class RepeatedUnitTest {
         inheritedMe2();
         inheritedMe3();
         inheritedMe4();
+
+        inheritedMe5();    // ContainerOnSuperSingleOnSub
+        inheritedMe6();    // RepeatableOnSuperSingleOnSub
+        inheritedMe7();    // SingleAnnoOnSuperContainerOnSub
+        inheritedMe8();    // SingleOnSuperRepeatableOnSub
+
 
         // CONSTRUCTOR
         checkMultiplier(Me1.class.getConstructor(new Class[0]), 10);
@@ -159,6 +165,30 @@ public class RepeatedUnitTest {
         check(e.getAnnotationsByType(NonRepeated.class)[0].value() == 1000);
     }
 
+    static void inheritedMe5() {
+        AnnotatedElement e = Me5.class;
+        check(2 == e.getAnnotations().length);
+        check(1 == countAnnotation(e, InheritedContainee.class));
+    }
+
+    static void inheritedMe6() {
+        AnnotatedElement e = Me6.class;
+        check(2 == e.getAnnotations().length);
+        check(1 == countAnnotation(e, InheritedContainee.class));
+    }
+
+    static void inheritedMe7() {
+        AnnotatedElement e = Me7.class;
+        check(2 == e.getAnnotations().length);
+        check(2 == countAnnotation(e, InheritedContainee.class));
+    }
+
+    static void inheritedMe8() {
+        AnnotatedElement e = Me8.class;
+        check(2 == e.getAnnotations().length);
+        check(2 == countAnnotation(e, InheritedContainee.class));
+    }
+
     static void checkMultiplier(AnnotatedElement e, int m) {
         // Basic sanity of non-repeating getAnnotation(Class)
         check(e.getAnnotation(NonRepeated.class).value() == 5 * m);
@@ -252,3 +282,31 @@ class Me3 extends Father {}
 @InheritedContainee(1000) @InheritedContainee(2000) @InheritedContainee(3000) @InheritedContainee(4000)
 @Containee(1000) @Containee(2000) @Containee(3000) @Containee(4000)
 class Me4 extends Father {}
+
+
+@InheritedContainer({@InheritedContainee(1), @InheritedContainee(2)})
+class SuperOf5 {}
+
+@InheritedContainee(3)
+class Me5 extends SuperOf5{}
+
+
+@InheritedContainee(1) @InheritedContainee(2)
+class SuperOf6 {}
+
+@InheritedContainee(3)
+class Me6 extends SuperOf6 {}
+
+
+@InheritedContainee(1)
+class SuperOf7 {}
+
+@InheritedContainer({@InheritedContainee(2), @InheritedContainee(3)})
+class Me7 extends SuperOf7 {}
+
+
+@InheritedContainee(1)
+class SuperOf8 {}
+
+@InheritedContainee(2) @InheritedContainee(3)
+class Me8 extends SuperOf8 {}

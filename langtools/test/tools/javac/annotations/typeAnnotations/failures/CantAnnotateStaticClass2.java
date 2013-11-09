@@ -3,7 +3,6 @@
  * @bug 8006733 8006775
  * @summary Ensure behavior for nested types is correct.
  * @author Werner Dietl
- * @ignore
  * @compile/fail/ref=CantAnnotateStaticClass2.out -XDrawDiagnostics CantAnnotateStaticClass2.java
  */
 

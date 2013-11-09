@@ -596,7 +596,7 @@ abstract class MessageToken extends Krb5Token {
          * Constructs a MessageTokenHeader for the specified token type with
          * appropriate checksum and encryption algorithms fields.
          *
-         * @param tokenId the token id for this mesage token
+         * @param tokenId the token id for this message token
          * @param conf true if confidentiality will be resuested with this
          * message token, false otherwise.
          * @param qop the value of the quality of protection that will be

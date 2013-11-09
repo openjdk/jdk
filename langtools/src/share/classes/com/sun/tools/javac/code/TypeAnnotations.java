@@ -323,7 +323,16 @@ public class TypeAnnotations {
             if (type == null) {
                 // When type is null, put the type annotations to the symbol.
                 // This is used for constructor return annotations, for which
-                // no appropriate type exists.
+                // we use the type of the enclosing class.
+                type = sym.getEnclosingElement().asType();
+
+                // Declaration annotations are always allowed on constructor returns.
+                // Therefore, use typeAnnotations instead of onlyTypeAnnos.
+                type = typeWithAnnotations(typetree, type, typeAnnotations, typeAnnotations);
+                // Note that we don't use the result, the call to
+                // typeWithAnnotations side-effects the type annotation positions.
+                // This is important for constructors of nested classes.
+
                 sym.appendUniqueTypeAttributes(typeAnnotations);
                 return;
             }
@@ -361,9 +370,9 @@ public class TypeAnnotations {
             sym.appendUniqueTypeAttributes(typeAnnotations);
 
             if (sym.getKind() == ElementKind.PARAMETER ||
-                    sym.getKind() == ElementKind.LOCAL_VARIABLE ||
-                    sym.getKind() == ElementKind.RESOURCE_VARIABLE ||
-                    sym.getKind() == ElementKind.EXCEPTION_PARAMETER) {
+                sym.getKind() == ElementKind.LOCAL_VARIABLE ||
+                sym.getKind() == ElementKind.RESOURCE_VARIABLE ||
+                sym.getKind() == ElementKind.EXCEPTION_PARAMETER) {
                 // Make sure all type annotations from the symbol are also
                 // on the owner.
                 sym.owner.appendUniqueTypeAttributes(sym.getRawTypeAttributes());
@@ -404,11 +413,11 @@ public class TypeAnnotations {
                 depth = depth.append(TypePathEntry.ARRAY);
                 while (arType.elemtype.hasTag(TypeTag.ARRAY)) {
                     if (arType.elemtype.isAnnotated()) {
-                        Type.AnnotatedType aelemtype = (Type.AnnotatedType) arType.elemtype;
+                        Type aelemtype = arType.elemtype;
                         arType = (Type.ArrayType) aelemtype.unannotatedType();
                         ArrayType prevToMod = tomodify;
                         tomodify = new Type.ArrayType(null, arType.tsym);
-                        prevToMod.elemtype = (Type.AnnotatedType) tomodify.annotatedType(arType.elemtype.getAnnotationMirrors());
+                        prevToMod.elemtype = tomodify.annotatedType(arType.elemtype.getAnnotationMirrors());
                     } else {
                         arType = (Type.ArrayType) arType.elemtype;
                         tomodify.elemtype = new Type.ArrayType(null, arType.tsym);
@@ -1212,6 +1221,22 @@ public class TypeAnnotations {
             super.visitTypeParameter(tree);
         }
 
+        private void copyNewClassAnnotationsToOwner(JCNewClass tree) {
+            Symbol sym = tree.def.sym;
+            TypeAnnotationPosition pos = new TypeAnnotationPosition();
+            ListBuffer<Attribute.TypeCompound> newattrs =
+                new ListBuffer<Attribute.TypeCompound>();
+
+            for (Attribute.TypeCompound old : sym.getRawTypeAttributes()) {
+                newattrs.append(new Attribute.TypeCompound(old.type, old.values,
+                                                           pos));
+            }
+
+            pos.type = TargetType.NEW;
+            pos.pos = tree.pos;
+            sym.owner.appendUniqueTypeAttributes(newattrs.toList());
+        }
+
         @Override
         public void visitNewClass(JCNewClass tree) {
             if (tree.def != null &&
@@ -1230,7 +1255,7 @@ public class TypeAnnotations {
                 }
                 Type before = classdecl.sym.type;
                 separateAnnotationsKinds(classdecl, tree.clazz.type, classdecl.sym, pos);
-
+                copyNewClassAnnotationsToOwner(tree);
                 // classdecl.sym.type now contains an annotated type, which
                 // is not what we want there.
                 // TODO: should we put this type somewhere in the superclass/interface?

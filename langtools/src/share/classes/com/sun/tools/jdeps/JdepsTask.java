@@ -190,6 +190,11 @@ class JdepsTask {
                 task.options.fullVersion = true;
             }
         },
+        new HiddenOption(false, "-showlabel") {
+            void process(JdepsTask task, String opt, String arg) {
+                task.options.showLabel = true;
+            }
+        },
         new HiddenOption(true, "-depth") {
             void process(JdepsTask task, String opt, String arg) throws BadArgs {
                 try {
@@ -279,12 +284,21 @@ class JdepsTask {
 
     private void generateDotFiles(Path dir, Analyzer analyzer) throws IOException {
         Path summary = dir.resolve("summary.dot");
-        try (PrintWriter sw = new PrintWriter(Files.newOutputStream(summary));
-             DotFileFormatter formatter = new DotFileFormatter(sw, "summary")) {
-            for (Archive archive : sourceLocations) {
-                 analyzer.visitArchiveDependences(archive, formatter);
+        boolean verbose = options.verbose == Analyzer.Type.VERBOSE;
+        DotGraph<?> graph = verbose ? new DotSummaryForPackage()
+                                    : new DotSummaryForArchive();
+        for (Archive archive : sourceLocations) {
+            analyzer.visitArchiveDependences(archive, graph);
+            if (verbose || options.showLabel) {
+                // traverse detailed dependences to generate package-level
+                // summary or build labels for edges
+                analyzer.visitDependences(archive, graph);
             }
         }
+        try (PrintWriter sw = new PrintWriter(Files.newOutputStream(summary))) {
+            graph.writeTo(sw);
+        }
+        // output individual .dot file for each archive
         if (options.verbose != Analyzer.Type.SUMMARY) {
             for (Archive archive : sourceLocations) {
                 if (analyzer.hasDependences(archive)) {
@@ -365,17 +379,16 @@ class JdepsTask {
                 }
             }
         }
+        sourceLocations.addAll(archives);
 
         List<Archive> classpaths = new ArrayList<>(); // for class file lookup
+        classpaths.addAll(getClassPathArchives(options.classpath));
         if (options.includePattern != null) {
-            archives.addAll(getClassPathArchives(options.classpath));
-        } else {
-            classpaths.addAll(getClassPathArchives(options.classpath));
+            archives.addAll(classpaths);
         }
         classpaths.addAll(PlatformClassPath.getArchives());
 
-        // add all archives to the source locations for reporting
-        sourceLocations.addAll(archives);
+        // add all classpath archives to the source locations for reporting
         sourceLocations.addAll(classpaths);
 
         // Work queue of names of classfiles to be searched.
@@ -557,6 +570,7 @@ class JdepsTask {
         boolean showSummary;
         boolean wildcard;
         boolean apiOnly;
+        boolean showLabel;
         String dotOutputDir;
         String classpath = "";
         int depth = 1;
@@ -627,16 +641,34 @@ class JdepsTask {
         return result;
     }
 
+    /**
+     * If the given archive is JDK archive and non-null Profile,
+     * this method returns the profile name only if -profile option is specified;
+     * a null profile indicates it accesses a private JDK API and this method
+     * will return "JDK internal API".
+     *
+     * For non-JDK archives, this method returns the file name of the archive.
+     */
+    private String getProfileArchiveInfo(Archive source, Profile profile) {
+        if (options.showProfile && profile != null)
+            return profile.toString();
+
+        if (source instanceof JDKArchive) {
+            return profile == null ? "JDK internal API (" + source.getFileName() + ")" : "";
+        }
+        return source.getFileName();
+    }
 
     /**
-     * Returns the file name of the archive for non-JRE class or
-     * internal JRE classes.  It returns empty string for SE API.
+     * Returns the profile name or "JDK internal API" for JDK archive;
+     * otherwise empty string.
      */
-    private static String getArchiveName(Archive source, String profile) {
-        String name = source.getFileName();
-        if (source instanceof JDKArchive)
-            return profile.isEmpty() ? "JDK internal API (" + name + ")" : "";
-        return name;
+    private String profileName(Archive archive, Profile profile) {
+        if (archive instanceof JDKArchive) {
+            return Objects.toString(profile, "JDK internal API");
+        } else {
+            return "";
+        }
     }
 
     class RawOutputFormatter implements Analyzer.Visitor {
@@ -648,21 +680,18 @@ class JdepsTask {
         private String pkg = "";
         @Override
         public void visitDependence(String origin, Archive source,
-                                    String target, Archive archive, String profile) {
+                                    String target, Archive archive, Profile profile) {
             if (!origin.equals(pkg)) {
                 pkg = origin;
                 writer.format("   %s (%s)%n", origin, source.getFileName());
             }
-            String name = (options.showProfile && !profile.isEmpty())
-                                ? profile
-                                : getArchiveName(archive, profile);
-            writer.format("      -> %-50s %s%n", target, name);
+            writer.format("      -> %-50s %s%n", target, getProfileArchiveInfo(archive, profile));
         }
 
         @Override
-        public void visitArchiveDependence(Archive origin, Archive target, String profile) {
-            writer.format("%s -> %s", origin, target);
-            if (options.showProfile && !profile.isEmpty()) {
+        public void visitArchiveDependence(Archive origin, Archive target, Profile profile) {
+            writer.format("%s -> %s", origin.getPathName(), target.getPathName());
+            if (options.showProfile && profile != null) {
                 writer.format(" (%s)%n", profile);
             } else {
                 writer.format("%n");
@@ -670,19 +699,14 @@ class JdepsTask {
         }
     }
 
-    class DotFileFormatter implements Analyzer.Visitor, AutoCloseable {
+    class DotFileFormatter extends DotGraph<String> implements AutoCloseable {
         private final PrintWriter writer;
         private final String name;
-        DotFileFormatter(PrintWriter writer, String name) {
-            this.writer = writer;
-            this.name = name;
-            writer.format("digraph \"%s\" {%n", name);
-        }
         DotFileFormatter(PrintWriter writer, Archive archive) {
             this.writer = writer;
             this.name = archive.getFileName();
             writer.format("digraph \"%s\" {%n", name);
-            writer.format("    // Path: %s%n", archive.toString());
+            writer.format("    // Path: %s%n", archive.getPathName());
         }
 
         @Override
@@ -690,39 +714,169 @@ class JdepsTask {
             writer.println("}");
         }
 
-        private final Set<String> edges = new HashSet<>();
-        private String node = "";
         @Override
         public void visitDependence(String origin, Archive source,
-                                    String target, Archive archive, String profile) {
-            if (!node.equals(origin)) {
-                edges.clear();
-                node = origin;
-            }
+                                    String target, Archive archive, Profile profile) {
             // if -P option is specified, package name -> profile will
             // be shown and filter out multiple same edges.
-            if (!edges.contains(target)) {
-                StringBuilder sb = new StringBuilder();
-                String name = options.showProfile && !profile.isEmpty()
-                                  ? profile
-                                  : getArchiveName(archive, profile);
-                writer.format("   %-50s -> %s;%n",
-                                 String.format("\"%s\"", origin),
-                                 name.isEmpty() ? String.format("\"%s\"", target)
-                                                :  String.format("\"%s (%s)\"", target, name));
-                edges.add(target);
+            String name = getProfileArchiveInfo(archive, profile);
+            writeEdge(writer, new Edge(origin, target, getProfileArchiveInfo(archive, profile)));
+        }
+        @Override
+        public void visitArchiveDependence(Archive origin, Archive target, Profile profile) {
+            throw new UnsupportedOperationException();
+        }
+    }
+
+    class DotSummaryForArchive extends DotGraph<Archive> {
+        @Override
+        public void visitDependence(String origin, Archive source,
+                                    String target, Archive archive, Profile profile) {
+            Edge e = findEdge(source, archive);
+            assert e != null;
+            // add the dependency to the label if enabled and not compact1
+            if (profile == Profile.COMPACT1) {
+                return;
+            }
+            e.addLabel(origin, target, profileName(archive, profile));
+        }
+        @Override
+        public void visitArchiveDependence(Archive origin, Archive target, Profile profile) {
+            // add an edge with the archive's name with no tag
+            // so that there is only one node for each JDK archive
+            // while there may be edges to different profiles
+            Edge e = addEdge(origin, target, "");
+            if (target instanceof JDKArchive) {
+                // add a label to print the profile
+                if (profile == null) {
+                    e.addLabel("JDK internal API");
+                } else if (options.showProfile && !options.showLabel) {
+                    e.addLabel(profile.toString());
+                }
             }
         }
+    }
 
+    // DotSummaryForPackage generates the summary.dot file for verbose mode
+    // (-v or -verbose option) that includes all class dependencies.
+    // The summary.dot file shows package-level dependencies.
+    class DotSummaryForPackage extends DotGraph<String> {
+        private String packageOf(String cn) {
+            int i = cn.lastIndexOf('.');
+            return i > 0 ? cn.substring(0, i) : "<unnamed>";
+        }
         @Override
-        public void visitArchiveDependence(Archive origin, Archive target, String profile) {
-             String name = options.showProfile && !profile.isEmpty()
-                                ? profile : "";
-             writer.format("   %-30s -> \"%s\";%n",
-                           String.format("\"%s\"", origin.getFileName()),
-                           name.isEmpty()
-                               ? target.getFileName()
-                               : String.format("%s (%s)", target.getFileName(), name));
+        public void visitDependence(String origin, Archive source,
+                                    String target, Archive archive, Profile profile) {
+            // add a package dependency edge
+            String from = packageOf(origin);
+            String to = packageOf(target);
+            Edge e = addEdge(from, to, getProfileArchiveInfo(archive, profile));
+
+            // add the dependency to the label if enabled and not compact1
+            if (!options.showLabel || profile == Profile.COMPACT1) {
+                return;
+            }
+
+            // trim the package name of origin to shorten the label
+            int i = origin.lastIndexOf('.');
+            String n1 = i < 0 ? origin : origin.substring(i+1);
+            e.addLabel(n1, target, profileName(archive, profile));
+        }
+        @Override
+        public void visitArchiveDependence(Archive origin, Archive target, Profile profile) {
+            // nop
+        }
+    }
+    abstract class DotGraph<T> implements Analyzer.Visitor  {
+        private final Set<Edge> edges = new LinkedHashSet<>();
+        private Edge curEdge;
+        public void writeTo(PrintWriter writer) {
+            writer.format("digraph \"summary\" {%n");
+            for (Edge e: edges) {
+                writeEdge(writer, e);
+            }
+            writer.println("}");
+        }
+
+        void writeEdge(PrintWriter writer, Edge e) {
+            writer.format("   %-50s -> \"%s\"%s;%n",
+                          String.format("\"%s\"", e.from.toString()),
+                          e.tag.isEmpty() ? e.to
+                                          : String.format("%s (%s)", e.to, e.tag),
+                          getLabel(e));
+        }
+
+        Edge addEdge(T origin, T target, String tag) {
+            Edge e = new Edge(origin, target, tag);
+            if (e.equals(curEdge)) {
+                return curEdge;
+            }
+
+            if (edges.contains(e)) {
+                for (Edge e1 : edges) {
+                   if (e.equals(e1)) {
+                       curEdge = e1;
+                   }
+                }
+            } else {
+                edges.add(e);
+                curEdge = e;
+            }
+            return curEdge;
+        }
+
+        Edge findEdge(T origin, T target) {
+            for (Edge e : edges) {
+                if (e.from.equals(origin) && e.to.equals(target)) {
+                    return e;
+                }
+            }
+            return null;
+        }
+
+        String getLabel(Edge e) {
+            String label = e.label.toString();
+            return label.isEmpty() ? "" : String.format("[label=\"%s\",fontsize=9]", label);
+        }
+
+        class Edge {
+            final T from;
+            final T to;
+            final String tag;  // optional tag
+            final StringBuilder label = new StringBuilder();
+            Edge(T from, T to, String tag) {
+                this.from = from;
+                this.to = to;
+                this.tag = tag;
+            }
+            void addLabel(String s) {
+                label.append(s).append("\\n");
+            }
+            void addLabel(String origin, String target, String profile) {
+                label.append(origin).append(" -> ").append(target);
+                if (!profile.isEmpty()) {
+                    label.append(" (" + profile + ")");
+                }
+                label.append("\\n");
+            }
+            @Override @SuppressWarnings("unchecked")
+            public boolean equals(Object o) {
+                if (o instanceof DotGraph<?>.Edge) {
+                    DotGraph<?>.Edge e = (DotGraph<?>.Edge)o;
+                    return this.from.equals(e.from) &&
+                           this.to.equals(e.to) &&
+                           this.tag.equals(e.tag);
+                }
+                return false;
+            }
+            @Override
+            public int hashCode() {
+                int hash = 7;
+                hash = 67 * hash + Objects.hashCode(this.from) +
+                       Objects.hashCode(this.to) + Objects.hashCode(this.tag);
+                return hash;
+            }
         }
     }
 }

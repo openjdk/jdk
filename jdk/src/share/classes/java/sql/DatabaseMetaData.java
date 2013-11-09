@@ -1701,7 +1701,7 @@ public interface DatabaseMetaData extends Wrapper {
      * <P>Only privileges matching the column name criteria are
      * returned.  They are ordered by COLUMN_NAME and PRIVILEGE.
      *
-     * <P>Each privilige description has the following columns:
+     * <P>Each privilege description has the following columns:
      *  <OL>
      *  <LI><B>TABLE_CAT</B> String {@code =>} table catalog (may be <code>null</code>)
      *  <LI><B>TABLE_SCHEM</B> String {@code =>} table schema (may be <code>null</code>)
@@ -1747,7 +1747,7 @@ public interface DatabaseMetaData extends Wrapper {
      * <code>TABLE_SCHEM</code>, <code>TABLE_NAME</code>,
      * and <code>PRIVILEGE</code>.
      *
-     * <P>Each privilige description has the following columns:
+     * <P>Each privilege description has the following columns:
      *  <OL>
      *  <LI><B>TABLE_CAT</B> String {@code =>} table catalog (may be <code>null</code>)
      *  <LI><B>TABLE_SCHEM</B> String {@code =>} table schema (may be <code>null</code>)
@@ -3257,7 +3257,7 @@ public interface DatabaseMetaData extends Wrapper {
     boolean supportsStoredFunctionsUsingCallSyntax() throws SQLException;
 
     /**
-     * Retrieves whether a <code>SQLException</code> while autoCommit is <code>true</code> inidcates
+     * Retrieves whether a <code>SQLException</code> while autoCommit is <code>true</code> indicates
      * that all open ResultSets are closed, even ones that are holdable.  When a <code>SQLException</code> occurs while
      * autocommit is <code>true</code>, it is vendor specific whether the JDBC driver responds with a commit operation, a
      * rollback operation, or by doing neither a commit nor a rollback.  A potential result of this difference

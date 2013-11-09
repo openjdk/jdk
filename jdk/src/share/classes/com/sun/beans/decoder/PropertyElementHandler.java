@@ -63,7 +63,7 @@ import sun.reflect.misc.MethodUtil;
  *     &lt;int&gt;0&lt;/int&gt;
  * &lt;/method&gt;</pre>
  * which is equivalent to {@code set(0)} in Java code.
- * <p>The following atributes are supported:
+ * <p>The following attributes are supported:
  * <dl>
  * <dt>name
  * <dd>the property name
@@ -85,7 +85,7 @@ final class PropertyElementHandler extends AccessorElementHandler {
 
     /**
      * Parses attributes of the element.
-     * The following atributes are supported:
+     * The following attributes are supported:
      * <dl>
      * <dt>name
      * <dd>the property name

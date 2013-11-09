@@ -618,6 +618,11 @@ public final class TzdbZoneRulesCompiler {
         // remove ROC, which is not supported in j.u.tz
         builtZones.remove("ROC");
         links.remove("ROC");
+        // remove EST, HST and MST. They are supported via
+        // the short-id mapping
+        builtZones.remove("EST");
+        builtZones.remove("HST");
+        builtZones.remove("MST");
     }
 
     /**

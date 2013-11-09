@@ -67,6 +67,7 @@ public class Archive {
             deps.put(origin, set);
         }
     }
+
     public void addClass(Location origin, Location target) {
         Set<Location> set = deps.get(origin);
         if (set == null) {
@@ -76,21 +77,27 @@ public class Archive {
         set.add(target);
     }
 
-    public void visit(Visitor v) {
+    public Set<Location> getClasses() {
+        return deps.keySet();
+    }
+
+    public void visitDependences(Visitor v) {
         for (Map.Entry<Location,Set<Location>> e: deps.entrySet()) {
-            v.visit(e.getKey());
             for (Location target : e.getValue()) {
                 v.visit(e.getKey(), target);
             }
         }
     }
 
-    public String toString() {
+    public String getPathName() {
         return path != null ? path.toString() : filename;
     }
 
+    public String toString() {
+        return filename;
+    }
+
     interface Visitor {
-        void visit(Location loc);
         void visit(Location origin, Location target);
     }
 }

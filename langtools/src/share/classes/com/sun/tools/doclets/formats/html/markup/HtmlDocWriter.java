@@ -236,7 +236,7 @@ public abstract class HtmlDocWriter extends HtmlWriter {
                                String stylename, String title, String target) {
         Content body = label;
         if (strong) {
-            body = HtmlTree.SPAN(HtmlStyle.strong, body);
+            body = HtmlTree.SPAN(HtmlStyle.typeNameLink, body);
         }
         if (stylename != null && stylename.length() != 0) {
             HtmlTree t = new HtmlTree(HtmlTag.FONT, body);

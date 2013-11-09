@@ -58,7 +58,7 @@ public class SocketListeningConnector extends GenericListeningConnector {
 
         transport = new Transport() {
             public String name() {
-                return "dt_socket";     // for compatability reasons
+                return "dt_socket";     // for compatibility reasons
             }
         };
     }

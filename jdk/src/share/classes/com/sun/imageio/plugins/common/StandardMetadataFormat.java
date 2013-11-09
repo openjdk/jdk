@@ -32,7 +32,7 @@ import javax.imageio.metadata.IIOMetadataFormatImpl;
 
 public class StandardMetadataFormat extends IIOMetadataFormatImpl {
 
-    // Utility method for nodes with a single atttribute named "value"
+    // Utility method for nodes with a single attribute named "value"
     private void addSingleAttributeElement(String elementName,
                                            String parentName,
                                            int dataType) {

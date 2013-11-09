@@ -43,7 +43,7 @@ esac
 
 rm trystore.jks 2> /dev/null
 
-KEYTOOL="${TESTJAVA}${FS}bin${FS}keytool -storetype jks -keystore trystore.jks"
+KEYTOOL="${TESTJAVA}${FS}bin${FS}keytool -storetype jks -keystore trystore.jks -keyalg rsa"
 $KEYTOOL -genkeypair -alias a -dname CN=A -storepass changeit -keypass changeit
 $KEYTOOL -genkeypair -alias b -dname CN=B -storepass changeit -keypass changeit
 

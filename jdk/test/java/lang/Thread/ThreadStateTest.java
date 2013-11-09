@@ -30,7 +30,7 @@
  * @author  Mandy Chung
  *
  * @build ThreadStateTest
- * @run main ThreadStateTest
+ * @run main/othervm -Xmixed ThreadStateTest
  */
 
 import java.util.concurrent.locks.LockSupport;

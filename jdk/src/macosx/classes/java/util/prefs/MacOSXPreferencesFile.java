@@ -122,7 +122,7 @@ class MacOSXPreferencesFile {
     long user() { return user; }
     long host() { return host; }
 
-    // private contructor - use factory method getFile() instead
+    // private constructor - use factory method getFile() instead
     private MacOSXPreferencesFile(String newName, long newUser, long newHost)
     {
         appName = newName;

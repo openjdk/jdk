@@ -198,7 +198,7 @@ public class TypeVariableImpl<D extends GenericDeclaration>
     @Override
     public <T extends Annotation> T[] getAnnotationsByType(Class<T> annotationClass) {
         Objects.requireNonNull(annotationClass);
-        return AnnotationSupport.getMultipleAnnotations(mapAnnotations(getAnnotations()), annotationClass);
+        return AnnotationSupport.getDirectlyAndIndirectlyPresent(mapAnnotations(getAnnotations()), annotationClass);
     }
 
     @Override

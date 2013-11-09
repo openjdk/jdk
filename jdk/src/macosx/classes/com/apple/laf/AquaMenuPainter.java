@@ -406,7 +406,7 @@ public class AquaMenuPainter {
     }
 
     /** Draw a string with the graphics g at location (x,y) just like g.drawString() would.
-     *  The first occurence of underlineChar in text will be underlined. The matching is
+     *  The first occurrence of underlineChar in text will be underlined. The matching is
      *  not case sensitive.
      */
     public void drawString(final Graphics g, final JComponent c, final String text, final int underlinedChar, final int x, final int y, final boolean isEnabled, final boolean isSelected) {

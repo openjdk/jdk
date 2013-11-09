@@ -107,7 +107,7 @@ public class SaslException extends IOException {
     /**
      * Returns the string representation of this exception.
      * The string representation contains
-     * this exception's class name, its detailed messsage, and if
+     * this exception's class name, its detailed message, and if
      * it has a root exception, the string representation of the root
      * exception. This string representation
      * is meant for debugging and not meant to be interpreted

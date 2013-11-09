@@ -49,7 +49,7 @@ import javax.swing.text.*;
  * CSS attributes to determine how they will render. This also defines
  * methods to map between CSS/HTML/StyleConstants. Any shorthand
  * properties, such as font, are mapped to the intrinsic properties.
- * <p>The following describes the CSS properties that are suppored by the
+ * <p>The following describes the CSS properties that are supported by the
  * rendering engine:
  * <ul><li>font-family
  *   <li>font-style
@@ -3070,7 +3070,7 @@ public class CSS implements Serializable {
                     }
                 }
                 if (!valid) {
-                    // Part is non-parseable or occured more than once.
+                    // Part is non-parseable or occurred more than once.
                     return;
                 }
             }
