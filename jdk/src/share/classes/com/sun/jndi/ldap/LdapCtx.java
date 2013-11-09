@@ -176,7 +176,7 @@ final public class LdapCtx extends ComponentDirContext
         "com.sun.jndi.ldap.netscape.schemaBugs";
     // deprecated
     private static final String OLD_NETSCAPE_SCHEMA_BUG =
-        "com.sun.naming.netscape.schemaBugs";   // for backward compatability
+        "com.sun.naming.netscape.schemaBugs";   // for backward compatibility
 
     // Timeout for socket connect
     private static final String CONNECT_TIMEOUT =

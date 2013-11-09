@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug      4632553 4973607
+ * @bug      4632553 4973607 8026567
  * @summary  No need to include type name (class, interface, etc.) before
  *           every single type in class tree.
  *           Make sure class tree includes heirarchy for enums and annotation
@@ -49,12 +49,12 @@ public class TestClassTree extends JavadocTester {
     private static final String[][] TEST = {
         {BUG_ID + FS + "pkg" + FS + "package-tree.html",
             "<ul>" + NL + "<li type=\"circle\">pkg.<a href=\"../pkg/ParentClass.html\" " +
-            "title=\"class in pkg\"><span class=\"strong\">ParentClass</span></a>"},
+            "title=\"class in pkg\"><span class=\"typeNameLink\">ParentClass</span></a>"},
 
         {BUG_ID + FS + "pkg" + FS + "package-tree.html",
             "<h2 title=\"Annotation Type Hierarchy\">Annotation Type Hierarchy</h2>" + NL +
             "<ul>" + NL + "<li type=\"circle\">pkg.<a href=\"../pkg/AnnotationType.html\" " +
-            "title=\"annotation in pkg\"><span class=\"strong\">AnnotationType</span></a> " +
+            "title=\"annotation in pkg\"><span class=\"typeNameLink\">AnnotationType</span></a> " +
             "(implements java.lang.annotation.Annotation)</li>" + NL + "</ul>"},
 
         {BUG_ID + FS + "pkg" + FS + "package-tree.html",
@@ -63,14 +63,14 @@ public class TestClassTree extends JavadocTester {
             "<li type=\"circle\">java.lang.Enum&lt;E&gt; (implements java.lang." +
             "Comparable&lt;T&gt;, java.io.Serializable)" + NL + "<ul>" + NL +
             "<li type=\"circle\">pkg.<a href=\"../pkg/Coin.html\" " +
-            "title=\"enum in pkg\"><span class=\"strong\">Coin</span></a></li>" + NL +
+            "title=\"enum in pkg\"><span class=\"typeNameLink\">Coin</span></a></li>" + NL +
             "</ul>" + NL + "</li>" + NL + "</ul>" + NL + "</li>" + NL + "</ul>"
         },
     };
     private static final String[][] NEGATED_TEST = {
         {BUG_ID + FS + "pkg" + FS + "package-tree.html",
             "<li type=\"circle\">class pkg.<a href=\"../pkg/ParentClass.html\" " +
-            "title=\"class in pkg\"><span class=\"strong\">ParentClass</span></a></li>"}
+            "title=\"class in pkg\"><span class=\"typeNameLink\">ParentClass</span></a></li>"}
         };
 
     /**

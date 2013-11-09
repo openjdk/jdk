@@ -646,7 +646,7 @@ public interface ThreadMXBean extends PlatformManagedObject {
      *         exists and the caller does not have
      *         ManagementPermission("monitor").
      * @throws java.lang.UnsupportedOperationException if the Java virtual
-     * machine does not support monitoriing of ownable synchronizer usage.
+     * machine does not support monitoring of ownable synchronizer usage.
      *
      * @see #isSynchronizerUsageSupported
      * @see #findMonitorDeadlockedThreads

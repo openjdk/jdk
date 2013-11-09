@@ -80,14 +80,16 @@ import java.beans.ConstructorProperties;
  * from the focus point. The following figure shows that the distance AB
  * is equal to the distance BC, and the distance AD is equal to the distance DE.
  * <center>
- * <img src = "doc-files/RadialGradientPaint-3.png" alt="RadialGradientPaint-3">
+ * <img src = "doc-files/RadialGradientPaint-3.png" alt="image showing the
+ * distance AB=BC, and AD=DE">
  * </center>
  * If the gradient and graphics rendering transforms are uniformly scaled and
  * the user sets the focus so that it coincides with the center of the circle,
  * the gradient color proportions are equal for any line drawn from the center.
  * The following figure shows the distances AB, BC, AD, and DE. They are all equal.
  * <center>
- * <img src = "doc-files/RadialGradientPaint-4.png" alt="RadialGradientPaint-4">
+ * <img src = "doc-files/RadialGradientPaint-4.png" alt="image showing the
+ * distance of AB, BC, AD, and DE are all equal">
  * </center>
  * Note that some minor variations in distances may occur due to sampling at
  * the granularity of a pixel.
@@ -117,7 +119,8 @@ import java.beans.ConstructorProperties;
  * (centered) focus for each of the three cycle methods:
  * <p>
  * <center>
- * <img src = "doc-files/RadialGradientPaint-1.png" alt="RadialGradientPaint-1">
+ * <img src = "doc-files/RadialGradientPaint-1.png" alt="image showing the
+ * output of the sameple code">
  * </center>
  *
  * <p>
@@ -141,7 +144,8 @@ import java.beans.ConstructorProperties;
  * focus for each of the three cycle methods:
  * <p>
  * <center>
- * <img src = "doc-files/RadialGradientPaint-2.png" alt="RadialGradientPaint-2">
+ * <img src = "doc-files/RadialGradientPaint-2.png" alt="image showing the
+ * output of the sample code">
  * </center>
  *
  * @see java.awt.Paint

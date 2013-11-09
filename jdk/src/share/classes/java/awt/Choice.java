@@ -418,7 +418,7 @@ public class Choice extends Component implements ItemSelectable, Accessible {
      * an <code>ItemEvent</code>.  The only way to trigger an
      * <code>ItemEvent</code> is by user interaction.
      *
-     * @param      pos      the positon of the selected item
+     * @param      pos      the position of the selected item
      * @exception  IllegalArgumentException if the specified
      *                            position is greater than the
      *                            number of items or less than zero

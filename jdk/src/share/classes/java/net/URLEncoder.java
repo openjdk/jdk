@@ -185,7 +185,7 @@ public class URLEncoder {
      * "http://www.w3.org/TR/html40/appendix/notes.html#non-ascii-chars">
      * World Wide Web Consortium Recommendation</a> states that
      * UTF-8 should be used. Not doing so may introduce
-     * incompatibilites.</em>
+     * incompatibilities.</em>
      *
      * @param   s   {@code String} to be translated.
      * @param   enc   The name of a supported

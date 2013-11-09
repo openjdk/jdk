@@ -5049,25 +5049,32 @@ void  MacroAssembler::decode_heap_oop_not_null(Register dst, Register src) {
 }
 
 void MacroAssembler::encode_klass_not_null(Register r) {
-  assert(Universe::narrow_klass_base() != NULL, "Base should be initialized");
-  // Use r12 as a scratch register in which to temporarily load the narrow_klass_base.
-  assert(r != r12_heapbase, "Encoding a klass in r12");
-  mov64(r12_heapbase, (int64_t)Universe::narrow_klass_base());
-  subq(r, r12_heapbase);
+  if (Universe::narrow_klass_base() != NULL) {
+    // Use r12 as a scratch register in which to temporarily load the narrow_klass_base.
+    assert(r != r12_heapbase, "Encoding a klass in r12");
+    mov64(r12_heapbase, (int64_t)Universe::narrow_klass_base());
+    subq(r, r12_heapbase);
+  }
   if (Universe::narrow_klass_shift() != 0) {
     assert (LogKlassAlignmentInBytes == Universe::narrow_klass_shift(), "decode alg wrong");
     shrq(r, LogKlassAlignmentInBytes);
   }
-  reinit_heapbase();
+  if (Universe::narrow_klass_base() != NULL) {
+    reinit_heapbase();
+  }
 }
 
 void MacroAssembler::encode_klass_not_null(Register dst, Register src) {
   if (dst == src) {
     encode_klass_not_null(src);
   } else {
-    mov64(dst, (int64_t)Universe::narrow_klass_base());
-    negq(dst);
-    addq(dst, src);
+    if (Universe::narrow_klass_base() != NULL) {
+      mov64(dst, (int64_t)Universe::narrow_klass_base());
+      negq(dst);
+      addq(dst, src);
+    } else {
+      movptr(dst, src);
+    }
     if (Universe::narrow_klass_shift() != 0) {
       assert (LogKlassAlignmentInBytes == Universe::narrow_klass_shift(), "decode alg wrong");
       shrq(dst, LogKlassAlignmentInBytes);
@@ -5081,15 +5088,19 @@ void MacroAssembler::encode_klass_not_null(Register dst, Register src) {
 // generate change, then this method needs to be updated.
 int MacroAssembler::instr_size_for_decode_klass_not_null() {
   assert (UseCompressedClassPointers, "only for compressed klass ptrs");
-  // mov64 + addq + shlq? + mov64  (for reinit_heapbase()).
-  return (Universe::narrow_klass_shift() == 0 ? 20 : 24);
+  if (Universe::narrow_klass_base() != NULL) {
+    // mov64 + addq + shlq? + mov64  (for reinit_heapbase()).
+    return (Universe::narrow_klass_shift() == 0 ? 20 : 24);
+  } else {
+    // longest load decode klass function, mov64, leaq
+    return 16;
+  }
 }
 
 // !!! If the instructions that get generated here change then function
 // instr_size_for_decode_klass_not_null() needs to get updated.
 void  MacroAssembler::decode_klass_not_null(Register r) {
   // Note: it will change flags
-  assert(Universe::narrow_klass_base() != NULL, "Base should be initialized");
   assert (UseCompressedClassPointers, "should only be used for compressed headers");
   assert(r != r12_heapbase, "Decoding a klass in r12");
   // Cannot assert, unverified entry point counts instructions (see .ad file)
@@ -5100,14 +5111,15 @@ void  MacroAssembler::decode_klass_not_null(Register r) {
     shlq(r, LogKlassAlignmentInBytes);
   }
   // Use r12 as a scratch register in which to temporarily load the narrow_klass_base.
-  mov64(r12_heapbase, (int64_t)Universe::narrow_klass_base());
-  addq(r, r12_heapbase);
-  reinit_heapbase();
+  if (Universe::narrow_klass_base() != NULL) {
+    mov64(r12_heapbase, (int64_t)Universe::narrow_klass_base());
+    addq(r, r12_heapbase);
+    reinit_heapbase();
+  }
 }
 
 void  MacroAssembler::decode_klass_not_null(Register dst, Register src) {
   // Note: it will change flags
-  assert(Universe::narrow_klass_base() != NULL, "Base should be initialized");
   assert (UseCompressedClassPointers, "should only be used for compressed headers");
   if (dst == src) {
     decode_klass_not_null(dst);
@@ -5115,7 +5127,6 @@ void  MacroAssembler::decode_klass_not_null(Register dst, Register src) {
     // Cannot assert, unverified entry point counts instructions (see .ad file)
     // vtableStubs also counts instructions in pd_code_size_limit.
     // Also do not verify_oop as this is called by verify_oop.
-
     mov64(dst, (int64_t)Universe::narrow_klass_base());
     if (Universe::narrow_klass_shift() != 0) {
       assert(LogKlassAlignmentInBytes == Universe::narrow_klass_shift(), "decode alg wrong");

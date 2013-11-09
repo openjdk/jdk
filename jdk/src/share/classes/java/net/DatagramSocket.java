@@ -640,7 +640,7 @@ class DatagramSocket implements java.io.Closeable {
                 SecurityManager security = System.getSecurityManager();
 
                 // The reason you want to synchronize on datagram packet
-                // is because you dont want an applet to change the address
+                // is because you don't want an applet to change the address
                 // while you are trying to send the packet for example
                 // after the security check but before the send.
                 if (security != null) {

@@ -102,7 +102,7 @@ interface Record {
      * this is the amount OpenSSL is using.
      */
     static final int    maxLargeRecordSize =
-                maxRecordSize   // Max size with a conforming implemenation
+                maxRecordSize   // Max size with a conforming implementation
               + maxDataSize;    // extra 2^14 bytes for large data packets.
 
 

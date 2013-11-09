@@ -105,7 +105,7 @@ public abstract class Graphics {
 
     /**
      * Constructs a new <code>Graphics</code> object.
-     * This constructor is the default contructor for a graphics
+     * This constructor is the default constructor for a graphics
      * context.
      * <p>
      * Since <code>Graphics</code> is an abstract class, applications

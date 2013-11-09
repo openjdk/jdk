@@ -1195,7 +1195,7 @@ PNG_EXTERN void png_formatted_warning(png_structp png_ptr,
     png_warning_parameters p, png_const_charp message);
     /* 'message' follows the X/Open approach of using @1, @2 to insert
      * parameters previously supplied using the above functions.  Errors in
-     * specifying the paramters will simple result in garbage substitutions.
+     * specifying the parameters will simple result in garbage substitutions.
      */
 #endif
 

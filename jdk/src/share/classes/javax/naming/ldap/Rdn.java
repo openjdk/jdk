@@ -116,7 +116,7 @@ public class Rdn implements Serializable, Comparable<Object> {
      * Constructs an Rdn from the given attribute set. See
      * {@link javax.naming.directory.Attributes Attributes}.
      * <p>
-     * The string attribute values are not interpretted as
+     * The string attribute values are not interpreted as
      * <a href="http://www.ietf.org/rfc/rfc2253.txt">RFC 2253</a>
      * formatted RDN strings. That is, the values are used
      * literally (not parsed) and assumed to be unescaped.
@@ -179,7 +179,7 @@ public class Rdn implements Serializable, Comparable<Object> {
     /**
      * Constructs an Rdn from the given attribute type and
      * value.
-     * The string attribute values are not interpretted as
+     * The string attribute values are not interpreted as
      * <a href="http://www.ietf.org/rfc/rfc2253.txt">RFC 2253</a>
      * formatted RDN strings. That is, the values are used
      * literally (not parsed) and assumed to be unescaped.
@@ -215,7 +215,7 @@ public class Rdn implements Serializable, Comparable<Object> {
 
     /*
      * Adds the given attribute type and value to this Rdn.
-     * The string attribute values are not interpretted as
+     * The string attribute values are not interpreted as
      * <a href="http://www.ietf.org/rfc/rfc2253.txt">RFC 2253</a>
      * formatted RDN strings. That is the values are used
      * literally (not parsed) and assumed to be unescaped.
@@ -343,7 +343,7 @@ public class Rdn implements Serializable, Comparable<Object> {
      * components in multi-valued Rdns (such as "ou=Sales+cn=Bob") is not
      * significant.
      * <p>
-     * Type and value equalilty matching is done as below:
+     * Type and value equality matching is done as below:
      * <ul>
      * <li> The types are compared for equality with their case ignored.
      * <li> String values with different but equivalent usage of quoting,
@@ -605,7 +605,7 @@ public class Rdn implements Serializable, Comparable<Object> {
                 --end;
             }
 
-            // Add back the trailing whitespace with a preceeding '\'
+            // Add back the trailing whitespace with a preceding '\'
             // (escaped or unescaped) that was taken off in the above
             // loop. Whether or not to retain this whitespace is decided below.
             if (end != chars.length &&
@@ -662,7 +662,7 @@ public class Rdn implements Serializable, Comparable<Object> {
             }
 
             // Get rid of the unescaped trailing whitespace with the
-            // preceeding '\' character that was previously added back.
+            // preceding '\' character that was previously added back.
             int len = builder.length();
             if (isWhitespace(builder.charAt(len - 1)) && esc != (end - 1)) {
                 builder.setLength(len - 1);

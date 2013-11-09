@@ -2268,7 +2268,7 @@ public class HttpURLConnection extends java.net.HttpURLConnection {
      * Gets the authentication for an HTTP server, and applies it to
      * the connection.
      * @param authHdr the AuthenticationHeader which tells what auth scheme is
-     * prefered.
+     * preferred.
      */
     @SuppressWarnings("fallthrough")
     private AuthenticationInfo getServerAuthentication (AuthenticationHeader authhdr) {

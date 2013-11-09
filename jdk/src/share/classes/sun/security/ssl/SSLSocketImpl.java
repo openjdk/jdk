@@ -1727,7 +1727,7 @@ final public class SSLSocketImpl extends BaseSSLSocketImpl {
 
             while (((state = getConnectionState()) != cs_CLOSED) &&
                    (state != cs_ERROR) && (state != cs_APP_CLOSED)) {
-                // create the InputRecord if it isn't intialized.
+                // create the InputRecord if it isn't initialized.
                 if (inrec == null) {
                     inrec = new InputRecord();
                 }

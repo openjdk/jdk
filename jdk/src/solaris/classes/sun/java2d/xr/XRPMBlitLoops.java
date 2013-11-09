@@ -178,9 +178,6 @@ class XRPMScaledBlit extends ScaledBlit {
         super(srcType, CompositeType.AnyAlpha, dstType);
     }
 
-    /*
-     * TODO: This breaks scales with non-integer coordinates!?!?!
-     */
     public void Scale(SurfaceData src, SurfaceData dst, Composite comp, Region clip, int sx1, int sy1, int sx2, int sy2, double dx1, double dy1,
             double dx2, double dy2) {
         try {
@@ -199,19 +196,14 @@ class XRPMScaledBlit extends ScaledBlit {
             sy1 *= yScale;
             sy2 *= yScale;
 
+            dx1 = Math.ceil(dx1 - 0.5);
+            dy1 = Math.ceil(dy1 - 0.5);
+            dx2 = Math.ceil(dx2 - 0.5);
+            dy2 = Math.ceil(dy2 - 0.5);
+
             AffineTransform xForm = AffineTransform.getScaleInstance(1 / xScale, 1 / yScale);
 
-            x11sdSrc.validateAsSource(xForm, XRUtils.RepeatNone, XRUtils.FAST); /*
-                                                                                 * TODO:
-                                                                                 * padded
-                                                                                 * blit
-                                                                                 * required
-                                                                                 * :
-                                                                                 * -
-                                                                                 * /
-                                                                                 * ?
-                                                                                 * ?
-                                                                                 */
+            x11sdSrc.validateAsSource(xForm, XRUtils.RepeatNone, XRUtils.FAST);
             x11sdDst.maskBuffer.compositeBlit(x11sdSrc, x11sdDst, (int) sx1, (int) sy1, (int) dx1, (int) dy1, (int) (dx2 - dx1), (int) (dy2 - dy1));
         } finally {
             SunToolkit.awtUnlock();
@@ -234,43 +226,55 @@ class XRPMTransformedBlit extends TransformBlit {
     }
 
     /*
-     * Calculates the composite-rectangle required for transformed blits. This
-     * method is functionally equal to: Shape shp =
-     * xform.createTransformedShape(rect); Rectangle bounds = shp.getBounds();
-     * but performs significantly better.
-     * Returns true if the destination shape is parallel to x/y axis
+     * Calculates the composition-rectangle required for transformed blits.
+     * For composite operations where the composition-rectangle defines
+     * the modified destination area, coordinates are rounded.
+     * Otherwise the composition window rectangle is sized large enough
+     * to not clip away any pixels.
      */
-    protected boolean adjustCompositeBounds(AffineTransform tr, int dstx, int dsty, int width, int height) {
+    protected void adjustCompositeBounds(boolean isQuadrantRotated, AffineTransform tr,
+            int dstx, int dsty, int width, int height) {
         srcCoords[0] = dstx;
         srcCoords[1] = dsty;
         srcCoords[2] = dstx + width;
-        srcCoords[3] = dsty;
-        srcCoords[4] = dstx + width;
-        srcCoords[5] = dsty + height;
-        srcCoords[6] = dstx;
-        srcCoords[7] = dsty + height;
+        srcCoords[3] = dsty + height;
 
-        tr.transform(srcCoords, 0, dstCoords, 0, 4);
+        double minX, minY, maxX, maxY;
+        if (isQuadrantRotated) {
+            tr.transform(srcCoords, 0, dstCoords, 0, 2);
 
-        double minX = Math.min(dstCoords[0], Math.min(dstCoords[2], Math.min(dstCoords[4], dstCoords[6])));
-        double minY = Math.min(dstCoords[1], Math.min(dstCoords[3], Math.min(dstCoords[5], dstCoords[7])));
-        double maxX = Math.max(dstCoords[0], Math.max(dstCoords[2], Math.max(dstCoords[4], dstCoords[6])));
-        double maxY = Math.max(dstCoords[1], Math.max(dstCoords[3], Math.max(dstCoords[5], dstCoords[7])));
+            minX = Math.min(dstCoords[0], dstCoords[2]);
+            minY = Math.min(dstCoords[1], dstCoords[3]);
+            maxX = Math.max(dstCoords[0], dstCoords[2]);
+            maxY = Math.max(dstCoords[1], dstCoords[3]);
 
-        minX = Math.round(minX);
-        minY = Math.round(minY);
-        maxX = Math.round(maxX);
-        maxY = Math.round(maxY);
+            minX = Math.ceil(minX - 0.5);
+            minY = Math.ceil(minY - 0.5);
+            maxX = Math.ceil(maxX - 0.5);
+            maxY = Math.ceil(maxY - 0.5);
+        } else {
+            srcCoords[4] = dstx;
+            srcCoords[5] = dsty + height;
+            srcCoords[6] = dstx + width;
+            srcCoords[7] = dsty;
+
+            tr.transform(srcCoords, 0, dstCoords, 0, 4);
+
+            minX = Math.min(dstCoords[0], Math.min(dstCoords[2], Math.min(dstCoords[4], dstCoords[6])));
+            minY = Math.min(dstCoords[1], Math.min(dstCoords[3], Math.min(dstCoords[5], dstCoords[7])));
+            maxX = Math.max(dstCoords[0], Math.max(dstCoords[2], Math.max(dstCoords[4], dstCoords[6])));
+            maxY = Math.max(dstCoords[1], Math.max(dstCoords[3], Math.max(dstCoords[5], dstCoords[7])));
+
+            minX = Math.floor(minX);
+            minY = Math.floor(minY);
+            maxX = Math.ceil(maxX);
+            maxY = Math.ceil(maxY);
+        }
 
         compositeBounds.x = (int) minX;
         compositeBounds.y = (int) minY;
         compositeBounds.width = (int) (maxX - minX);
         compositeBounds.height = (int) (maxY - minY);
-
-        boolean is0or180 = (dstCoords[1] == dstCoords[3]) && (dstCoords[2] == dstCoords[4]);
-        boolean is90or270 = (dstCoords[0] == dstCoords[2]) && (dstCoords[3] == dstCoords[5]);
-
-        return is0or180 || is90or270;
     }
 
     public void Transform(SurfaceData src, SurfaceData dst, Composite comp, Region clip, AffineTransform xform,
@@ -280,9 +284,13 @@ class XRPMTransformedBlit extends TransformBlit {
 
             XRSurfaceData x11sdDst = (XRSurfaceData) dst;
             XRSurfaceData x11sdSrc = (XRSurfaceData) src;
+            XRCompositeManager xrMgr = XRCompositeManager.getInstance(x11sdSrc);
 
+            float extraAlpha = ((AlphaComposite) comp).getAlpha();
             int filter = XRUtils.ATransOpToXRQuality(hint);
-            boolean isAxisAligned = adjustCompositeBounds(xform, dstx, dsty, width, height);
+            boolean isQuadrantRotated = XRUtils.isTransformQuadrantRotated(xform);
+
+            adjustCompositeBounds(isQuadrantRotated, xform, dstx, dsty, width, height);
 
             x11sdDst.validateAsDestination(null, clip);
             x11sdDst.maskBuffer.validateCompositeState(comp, null, null, null);
@@ -298,21 +306,26 @@ class XRPMTransformedBlit extends TransformBlit {
                 trx.setToIdentity();
             }
 
-            boolean omitMask = (filter == XRUtils.FAST)
-                    || (isAxisAligned && ((AlphaComposite) comp).getAlpha() == 1.0f);
-
-            if (!omitMask) {
+            if (filter != XRUtils.FAST && (!isQuadrantRotated || extraAlpha != 1.0f)) {
                 XRMaskImage mask = x11sdSrc.maskBuffer.getMaskImage();
 
+                // For quadrant-transformed blits geometry is not stored inside the mask
+                // therefore we can use a repeating 1x1 mask for applying extra alpha.
+                int maskPicture = isQuadrantRotated ? xrMgr.getExtraAlphaMask()
+                        : mask.prepareBlitMask(x11sdDst, maskTX, width, height);
+
                 x11sdSrc.validateAsSource(trx, XRUtils.RepeatPad, filter);
-                int maskPicture = mask.prepareBlitMask(x11sdDst, maskTX, width, height);
-                x11sdDst.maskBuffer.con.renderComposite(XRCompositeManager.getInstance(x11sdSrc).getCompRule(), x11sdSrc.picture, maskPicture, x11sdDst.picture,
-                        0, 0, 0, 0, compositeBounds.x, compositeBounds.y, compositeBounds.width, compositeBounds.height);
+                x11sdDst.maskBuffer.con.renderComposite(xrMgr.getCompRule(), x11sdSrc.picture,
+                        maskPicture, x11sdDst.picture, 0, 0, 0, 0, compositeBounds.x, compositeBounds.y,
+                        compositeBounds.width, compositeBounds.height);
             } else {
                 int repeat = filter == XRUtils.FAST ? XRUtils.RepeatNone : XRUtils.RepeatPad;
 
                 x11sdSrc.validateAsSource(trx, repeat, filter);
-                x11sdDst.maskBuffer.compositeBlit(x11sdSrc, x11sdDst, 0, 0, compositeBounds.x, compositeBounds.y, compositeBounds.width, compositeBounds.height);
+
+                // compositeBlit takes care of extra alpha
+                x11sdDst.maskBuffer.compositeBlit(x11sdSrc, x11sdDst, 0, 0, compositeBounds.x,
+                        compositeBounds.y, compositeBounds.width, compositeBounds.height);
             }
         } finally {
             SunToolkit.awtUnlock();
@@ -329,9 +342,7 @@ class XrSwToPMBlit extends Blit {
     }
 
     public void Blit(SurfaceData src, SurfaceData dst, Composite comp, Region clip, int sx, int sy, int dx, int dy, int w, int h) {
-        /*
-         * If the blit is write-only (putimge), no need for a temporary VI.
-         */
+        // If the blit is write-only (putimge), no need for a temporary VI.
         if (CompositeType.SrcOverNoEa.equals(comp) && (src.getTransparency() == Transparency.OPAQUE)) {
             Blit opaqueSwToSurfaceBlit = Blit.getFromCache(src.getSurfaceType(), CompositeType.SrcNoEa, dst.getSurfaceType());
             opaqueSwToSurfaceBlit.Blit(src, dst, comp, clip, sx, sy, dx, dy, w, h);

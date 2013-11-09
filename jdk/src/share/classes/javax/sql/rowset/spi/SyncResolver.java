@@ -264,10 +264,10 @@ public interface SyncResolver extends RowSet {
     public static int INSERT_ROW_CONFLICT = 2;
 
     /**
-     * Indicates that <b>no</b> conflict occured while the <code>RowSet</code> object
+     * Indicates that <b>no</b> conflict occurred while the <code>RowSet</code> object
      * was attempting to update, delete or insert a row in the data source. The values in
      * the <code>SyncResolver</code> will contain <code>null</code> values only as an indication
-     * that no information in pertitent to the conflict resolution in this row.
+     * that no information in pertinent to the conflict resolution in this row.
      */
     public static int NO_ROW_CONFLICT = 3;
 

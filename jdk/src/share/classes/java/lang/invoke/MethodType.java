@@ -823,7 +823,7 @@ class MethodType implements java.io.Serializable {
      * So this method returns {@link #parameterCount() parameterCount} plus the
      * number of long and double parameters (if any).
      * <p>
-     * This method is included for the benfit of applications that must
+     * This method is included for the benefit of applications that must
      * generate bytecodes that process method handles and invokedynamic.
      * @return the number of JVM stack slots for this type's parameters
      */
@@ -854,7 +854,7 @@ class MethodType implements java.io.Serializable {
      * <em>plus</em> the number of long or double arguments
      * at or after after the argument for the given parameter.
      * <p>
-     * This method is included for the benfit of applications that must
+     * This method is included for the benefit of applications that must
      * generate bytecodes that process method handles and invokedynamic.
      * @param num an index (zero-based, inclusive) within the parameter types
      * @return the index of the (shallowest) JVM stack slot transmitting the
@@ -872,7 +872,7 @@ class MethodType implements java.io.Serializable {
      * If the {@link #returnType() return type} is void, it will be zero,
      * else if the return type is long or double, it will be two, else one.
      * <p>
-     * This method is included for the benfit of applications that must
+     * This method is included for the benefit of applications that must
      * generate bytecodes that process method handles and invokedynamic.
      * @return the number of JVM stack slots (0, 1, or 2) for this type's return value
      * Will be removed for PFD.
@@ -892,7 +892,7 @@ class MethodType implements java.io.Serializable {
      * constructed by this method, because their component types are
      * not all reachable from a common class loader.
      * <p>
-     * This method is included for the benfit of applications that must
+     * This method is included for the benefit of applications that must
      * generate bytecodes that process method handles and {@code invokedynamic}.
      * @param descriptor a bytecode-level type descriptor string "(T...)T"
      * @param loader the class loader in which to look up the types
@@ -922,7 +922,7 @@ class MethodType implements java.io.Serializable {
      * Two distinct classes which share a common name but have different class loaders
      * will appear identical when viewed within descriptor strings.
      * <p>
-     * This method is included for the benfit of applications that must
+     * This method is included for the benefit of applications that must
      * generate bytecodes that process method handles and {@code invokedynamic}.
      * {@link #fromMethodDescriptorString(java.lang.String, java.lang.ClassLoader) fromMethodDescriptorString},
      * because the latter requires a suitable class loader argument.

@@ -172,7 +172,7 @@ public class Sasl {
      *
      * Mechanism implementations that support reuse might allow customization
      * of its implementation, for factors such as cache size, timeouts, and
-     * criteria for reuseability. Such customizations are
+     * criteria for reusability. Such customizations are
      * implementation-dependent.
      */
      public static final String REUSE = "javax.security.sasl.reuse";

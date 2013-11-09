@@ -1738,7 +1738,7 @@ public class MetalLookAndFeel extends BasicLookAndFeel
     public static FontUIResource getControlTextFont() { return getCurrentTheme().getControlTextFont();}
 
     /**
-     * Returns the sytem text font of the current theme. This is a
+     * Returns the system text font of the current theme. This is a
      * cover method for {@code getCurrentTheme().getSystemTextFont()}.
      *
      * @return the system text font

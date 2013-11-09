@@ -190,7 +190,7 @@ class NativeUnpack {
 
         copyInOption(Utils.DEBUG_VERBOSE);
         copyInOption(Pack200.Unpacker.DEFLATE_HINT);
-        if (modtime == Constants.NO_MODTIME)  // Dont pass KEEP && NOW
+        if (modtime == Constants.NO_MODTIME)  // Don't pass KEEP && NOW
             copyInOption(Utils.UNPACK_MODIFICATION_TIME);
         updateProgress();  // reset progress bar
         for (;;) {

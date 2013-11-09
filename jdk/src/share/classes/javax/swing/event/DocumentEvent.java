@@ -79,7 +79,7 @@ public interface DocumentEvent {
      * This method is for observers to discover the structural
      * changes that were made.  This means that only elements
      * that existed prior to the mutation (and still exist after
-     * the mutatino) need to have ElementChange records.
+     * the mutation) need to have ElementChange records.
      * The changes made available need not be recursive.
      * <p>
      * For example, if the an element is removed from it's

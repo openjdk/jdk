@@ -371,7 +371,7 @@ public abstract class URLConnection {
      * java.net.SocketTimeoutException is raised. A timeout of zero is
      * interpreted as an infinite timeout.
 
-     * <p> Some non-standard implmentation of this method may ignore
+     * <p> Some non-standard implementation of this method may ignore
      * the specified timeout. To see the connect timeout set, please
      * call getConnectTimeout().
      *
@@ -1059,7 +1059,7 @@ public abstract class URLConnection {
      *
      * <p> NOTE: HTTP requires all request properties which can
      * legally have multiple instances with the same key
-     * to use a comma-seperated list syntax which enables multiple
+     * to use a comma-separated list syntax which enables multiple
      * properties to be appended into a single property.
      *
      * @param   key     the keyword by which the request is known

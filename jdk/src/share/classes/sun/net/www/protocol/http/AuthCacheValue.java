@@ -29,7 +29,7 @@ import java.io.Serializable;
 import java.net.PasswordAuthentication;
 
 /**
- * AuthCacheValue: interface to minimise exposure to authentication cache
+ * AuthCacheValue: interface to minimize exposure to authentication cache
  * for external users (ie. plugin)
  *
  * @author Michael McMahon
