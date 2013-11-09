@@ -633,7 +633,7 @@ typedef char            FAR * FAR * FAR * png_charppp;
 #  else
      /* This is an attempt to detect an old Windows system where (int) is
       * actually 16 bits, in that case png_malloc must have an argument with a
-      * bigger size to accomodate the requirements of the library.
+      * bigger size to accommodate the requirements of the library.
       */
 #    if (defined(_Windows) || defined(_WINDOWS) || defined(_WINDOWS_)) && \
         (!defined(INT_MAX) || INT_MAX <= 0x7ffffffeL)

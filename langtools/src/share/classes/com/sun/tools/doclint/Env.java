@@ -27,6 +27,7 @@ package com.sun.tools.doclint;
 
 
 import java.util.Set;
+import java.util.LinkedHashSet;
 
 import javax.lang.model.element.Element;
 import javax.lang.model.element.ElementKind;
@@ -86,6 +87,8 @@ public class Env {
 
     int implicitHeaderLevel = 0;
 
+    Set<String> customTags;
+
     // Utility classes
     DocTrees trees;
     Elements elements;
@@ -133,6 +136,14 @@ public class Env {
 
     void setImplicitHeaders(int n) {
         implicitHeaderLevel = n;
+    }
+
+    void setCustomTags(String cTags) {
+        customTags = new LinkedHashSet<String>();
+        for (String s : cTags.split(DocLint.TAGS_SEPARATOR)) {
+            if (!s.isEmpty())
+                customTags.add(s);
+        }
     }
 
     /** Set the current declaration and its doc comment. */

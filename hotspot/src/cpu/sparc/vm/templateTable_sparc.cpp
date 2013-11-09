@@ -2932,9 +2932,7 @@ void TemplateTable::prepare_invoke(int byte_no,
   ConstantPoolCacheEntry::verify_tos_state_shift();
   // load return address
   {
-    const address table_addr = (is_invokeinterface || is_invokedynamic) ?
-        (address)Interpreter::return_5_addrs_by_index_table() :
-        (address)Interpreter::return_3_addrs_by_index_table();
+    const address table_addr = (address) Interpreter::invoke_return_entry_table_for(code);
     AddressLiteral table(table_addr);
     __ set(table, temp);
     __ sll(ra, LogBytesPerWord, ra);
@@ -2984,7 +2982,7 @@ void TemplateTable::invokevirtual(int byte_no) {
   __ verify_oop(O0_recv);
 
   // get return address
-  AddressLiteral table(Interpreter::return_3_addrs_by_index_table());
+  AddressLiteral table(Interpreter::invoke_return_entry_table());
   __ set(table, Rtemp);
   __ srl(Rret, ConstantPoolCacheEntry::tos_state_shift, Rret);          // get return type
   // Make sure we don't need to mask Rret after the above shift
@@ -3026,7 +3024,7 @@ void TemplateTable::invokevfinal_helper(Register Rscratch, Register Rret) {
   __ profile_final_call(O4);
 
   // get return address
-  AddressLiteral table(Interpreter::return_3_addrs_by_index_table());
+  AddressLiteral table(Interpreter::invoke_return_entry_table());
   __ set(table, Rtemp);
   __ srl(Rret, ConstantPoolCacheEntry::tos_state_shift, Rret);          // get return type
   // Make sure we don't need to mask Rret after the above shift

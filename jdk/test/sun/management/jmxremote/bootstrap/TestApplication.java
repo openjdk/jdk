@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,13 +24,17 @@
 /*
  *
  *
- * A test "application" used by unit test LocalManagementTest.sh. This
- * application binds to some random port, prints the port number to
- * standard output, waits for somebody to connect, and then shuts down.
+ * A test "application" used by unit tests -
+ *   LocalManagementTest.java, CustomLauncherTest.java.
+ * This application binds to some random port, prints its pid and
+ * the port number to standard output, waits for somebody to connect,
+ * and then shuts down.
  */
 import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
+
+import jdk.testlibrary.ProcessTools;
 
 public class TestApplication {
     public static void main(String[] args) throws IOException {
@@ -43,8 +47,17 @@ public class TestApplication {
         ServerSocket ss = new ServerSocket(0);
         int port = ss.getLocalPort();
 
-        // signal test that we are started - do not remove this line!!
-        System.out.println(port);
+        int pid = -1;
+        try {
+            pid = ProcessTools.getProcessId();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        // signal test that we are started - do not remove these lines!!
+        System.out.println("port:" + port);
+        System.out.println("pid:" + pid);
+        System.out.println("waiting for the manager ...");
         System.out.flush();
 
         // wait for manager to connect

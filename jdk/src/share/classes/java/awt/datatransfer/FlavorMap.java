@@ -30,7 +30,7 @@ import java.util.Map;
 
 /**
  * A two-way Map between "natives" (Strings), which correspond to platform-
- * specfic data formats, and "flavors" (DataFlavors), which corerspond to
+ * specific data formats, and "flavors" (DataFlavors), which correspond to
  * platform-independent MIME types. FlavorMaps need not be symmetric, but
  * typically are.
  *

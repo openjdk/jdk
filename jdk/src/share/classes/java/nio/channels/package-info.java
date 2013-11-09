@@ -269,7 +269,7 @@
  * own asynchronous channel groups or configure the {@code ExecutorService}
  * that will be used for the default group.
  *
- * <p> As with selectors, the implementatin of asynchronous channels can be
+ * <p> As with selectors, the implementation of asynchronous channels can be
  * replaced by "plugging in" an alternative definition or instance of the {@link
  * java.nio.channels.spi.AsynchronousChannelProvider} class defined in the
  * <tt>{@link java.nio.channels.spi}</tt> package.  It is not expected that many

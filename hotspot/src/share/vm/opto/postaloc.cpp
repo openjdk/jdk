@@ -97,7 +97,8 @@ int PhaseChaitin::yank( Node *old, Block *current_block, Node_List *value, Node_
 static bool expected_yanked_node(Node *old, Node *orig_old) {
   // This code is expected only next original nodes:
   // - load from constant table node which may have next data input nodes:
-  //     MachConstantBase, Phi, MachTemp, MachSpillCopy
+  //     MachConstantBase, MachTemp, MachSpillCopy
+  // - Phi nodes that are considered Junk
   // - load constant node which may have next data input nodes:
   //     MachTemp, MachSpillCopy
   // - MachSpillCopy
@@ -112,7 +113,9 @@ static bool expected_yanked_node(Node *old, Node *orig_old) {
     return (old == orig_old);
   } else if (old->is_MachTemp()) {
     return orig_old->is_Con();
-  } else if (old->is_Phi() || old->is_MachConstantBase()) {
+  } else if (old->is_Phi()) { // Junk phi's
+    return true;
+  } else if (old->is_MachConstantBase()) {
     return (orig_old->is_Con() && orig_old->is_MachConstant());
   }
   return false;
@@ -522,11 +525,9 @@ void PhaseChaitin::post_allocate_copy_removal() {
           u = u ? NodeSentinel : x; // Capture unique input, or NodeSentinel for 2nd input
       }
       if (u != NodeSentinel) {    // Junk Phi.  Remove
-        block->remove_node(j--);
-        phi_dex--;
-        _cfg.unmap_node_from_block(phi);
         phi->replace_by(u);
-        phi->disconnect_inputs(NULL, C);
+        j -= yank_if_dead(phi, block, &value, &regnd);
+        phi_dex--;
         continue;
       }
       // Note that if value[pidx] exists, then we merged no new values here

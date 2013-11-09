@@ -1468,19 +1468,18 @@ void LIRGenerator::do_UnsafeGetAndSetObject(UnsafeGetAndSetObject* x) {
     addr = new LIR_Address(src.result(), offset, type);
   }
 
-  if (data != dst) {
-    __ move(data, dst);
-    data = dst;
-  }
+  // Because we want a 2-arg form of xchg and xadd
+  __ move(data, dst);
+
   if (x->is_add()) {
-    __ xadd(LIR_OprFact::address(addr), data, dst, LIR_OprFact::illegalOpr);
+    __ xadd(LIR_OprFact::address(addr), dst, dst, LIR_OprFact::illegalOpr);
   } else {
     if (is_obj) {
       // Do the pre-write barrier, if any.
       pre_barrier(LIR_OprFact::address(addr), LIR_OprFact::illegalOpr /* pre_val */,
                   true /* do_load */, false /* patch */, NULL);
     }
-    __ xchg(LIR_OprFact::address(addr), data, dst, LIR_OprFact::illegalOpr);
+    __ xchg(LIR_OprFact::address(addr), dst, dst, LIR_OprFact::illegalOpr);
     if (is_obj) {
       // Seems to be a precise address
       post_barrier(LIR_OprFact::address(addr), data);

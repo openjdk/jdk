@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 4720957 5020118
+ * @bug 4720957 5020118 8026567
  * @summary Test to make sure that -link and -linkoffline link to
  * right files.
  * @author jamieh
@@ -61,7 +61,7 @@ public class TestLinkOption extends JavadocTester {
                                 "Object</a>&nbsp;p3)"
         },
         {BUG_ID + "-1" + FS + "java" + FS + "lang" + FS + "StringBuilderChild.html",
-                "<pre>public abstract class <span class=\"strong\">StringBuilderChild</span>" + NL +
+                "<pre>public abstract class <span class=\"typeNameLabel\">StringBuilderChild</span>" + NL +
                 "extends <a href=\"http://java.sun.com/j2se/1.4/docs/api/java/lang/Object.html?is-external=true\" " +
                 "title=\"class or interface in java.lang\">Object</a></pre>"
         },

@@ -62,7 +62,7 @@ public interface SnmpMibAgentMBean {
      *            be retrieved. This list is composed of
      *            <CODE>SnmpVarBind</CODE> objects.
      *
-     * @exception SnmpStatusException An error occured during the operation.
+     * @exception SnmpStatusException An error occurred during the operation.
      * @see SnmpMibAgent#get(SnmpMibRequest)
      */
     public void get(SnmpMibRequest req) throws SnmpStatusException;
@@ -75,7 +75,7 @@ public interface SnmpMibAgentMBean {
      *            be retrieved. This list is composed of
      *            <CODE>SnmpVarBind</CODE> objects.
      *
-     * @exception SnmpStatusException An error occured during the operation.
+     * @exception SnmpStatusException An error occurred during the operation.
      * @see SnmpMibAgent#getNext(SnmpMibRequest)
      */
     public void getNext(SnmpMibRequest req) throws SnmpStatusException;
@@ -97,7 +97,7 @@ public interface SnmpMibAgentMBean {
      *    following the first <CODE>nonRepeat</CODE> variables for which
      *    multiple lexicographic successors are requested.
      *
-     * @exception SnmpStatusException An error occured during the operation.
+     * @exception SnmpStatusException An error occurred during the operation.
      * @see SnmpMibAgent#getBulk(SnmpMibRequest,int,int)
      */
     public void getBulk(SnmpMibRequest req, int nonRepeat, int maxRepeat)
@@ -111,7 +111,7 @@ public interface SnmpMibAgentMBean {
      *            be set. This list is composed of
      *            <CODE>SnmpVarBind</CODE> objects.
      *
-     * @exception SnmpStatusException An error occured during the operation.
+     * @exception SnmpStatusException An error occurred during the operation.
      * @see SnmpMibAgent#set(SnmpMibRequest)
      */
     public void set(SnmpMibRequest req) throws SnmpStatusException;

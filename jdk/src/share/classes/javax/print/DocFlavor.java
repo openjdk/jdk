@@ -95,7 +95,7 @@ import java.io.Serializable;
  * <UL>
  * <LI>
  * Character array (<CODE>char[]</CODE>) -- The print data consists of the
- * Unicde characters in the array.
+ * Unicode characters in the array.
  * <P>
  * <LI>
  * <code>String</code>  --
@@ -163,7 +163,7 @@ import java.io.Serializable;
  * Every instance of the Java virtual machine has a default character encoding
  * determined during virtual-machine startup and typically depends upon the
  * locale and charset being used by the underlying operating system.
- * In a distributed environment there is no gurantee that two VM's share
+ * In a distributed environment there is no guarantee that two VM share
  * the same default encoding. Thus clients which want to stream platform
  * encoded text data from the host platform to a Java Print Service instance
  * must explicitly declare the charset and not rely on defaults.

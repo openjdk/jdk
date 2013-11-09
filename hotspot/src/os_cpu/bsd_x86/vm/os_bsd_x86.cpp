@@ -79,6 +79,15 @@
 # include <pthread_np.h>
 #endif
 
+// needed by current_stack_region() workaround for Mavericks
+#if defined(__APPLE__)
+# include <errno.h>
+# include <sys/types.h>
+# include <sys/sysctl.h>
+# define DEFAULT_MAIN_THREAD_STACK_PAGES 2048
+# define OS_X_10_9_0_KERNEL_MAJOR_VERSION 13
+#endif
+
 #ifdef AMD64
 #define SPELL_REG_SP "rsp"
 #define SPELL_REG_FP "rbp"
@@ -828,6 +837,21 @@ static void current_stack_region(address * bottom, size_t * size) {
   pthread_t self = pthread_self();
   void *stacktop = pthread_get_stackaddr_np(self);
   *size = pthread_get_stacksize_np(self);
+  // workaround for OS X 10.9.0 (Mavericks)
+  // pthread_get_stacksize_np returns 128 pages even though the actual size is 2048 pages
+  if (pthread_main_np() == 1) {
+    if ((*size) < (DEFAULT_MAIN_THREAD_STACK_PAGES * (size_t)getpagesize())) {
+      char kern_osrelease[256];
+      size_t kern_osrelease_size = sizeof(kern_osrelease);
+      int ret = sysctlbyname("kern.osrelease", kern_osrelease, &kern_osrelease_size, NULL, 0);
+      if (ret == 0) {
+        // get the major number, atoi will ignore the minor amd micro portions of the version string
+        if (atoi(kern_osrelease) >= OS_X_10_9_0_KERNEL_MAJOR_VERSION) {
+          *size = (DEFAULT_MAIN_THREAD_STACK_PAGES*getpagesize());
+        }
+      }
+    }
+  }
   *bottom = (address) stacktop - *size;
 #elif defined(__OpenBSD__)
   stack_t ss;

@@ -40,7 +40,7 @@ import javax.imageio.ImageTypeSpecifier;
  *
  * <p> N.B: classes that implement this interface should contain a
  * method declared as <code>public static getInstance()</code> which
- * returns an instance of the class.  Commonly, an implentation will
+ * returns an instance of the class.  Commonly, an implementation will
  * construct only a single instance and cache it for future
  * invocations of <code>getInstance</code>.
  *
@@ -307,7 +307,7 @@ public interface IIOMetadataFormat {
      * with child policy <code>CHILD_POLICY_REPEAT</code>.  For
      * example, an element representing color primary information
      * might be required to have at least 3 children, one for each
-     * primay.
+     * primary.
      *
      * @param elementName the name of the element being queried.
      *
@@ -343,7 +343,7 @@ public interface IIOMetadataFormat {
 
     /**
      * Returns a <code>String</code> containing a description of the
-     * named element, or <code>null</code>.  The desciption will be
+     * named element, or <code>null</code>.  The description will be
      * localized for the supplied <code>Locale</code> if possible.
      *
      * <p> If <code>locale</code> is <code>null</code>, the current
@@ -434,8 +434,8 @@ public interface IIOMetadataFormat {
     /**
      * Returns one of the constants starting with
      * <code>DATATYPE_</code>, indicating the format and
-     * interpretation of the value of the given attribute within th
-     * enamed element.  If <code>getAttributeValueType</code> returns
+     * interpretation of the value of the given attribute within the
+     * named element.  If <code>getAttributeValueType</code> returns
      * <code>VALUE_LIST</code>, then the legal value is a
      * whitespace-spearated list of values of the returned datatype.
      *
@@ -460,7 +460,7 @@ public interface IIOMetadataFormat {
      * @param elementName the name of the element being queried.
      * @param attrName the name of the attribute being queried.
      *
-     * @return <code>true</code> if the attribut must be present.
+     * @return <code>true</code> if the attribute must be present.
      *
      * @exception IllegalArgumentException if <code>elementName</code>
      * is <code>null</code> or is not a legal element name for this
@@ -473,7 +473,7 @@ public interface IIOMetadataFormat {
 
     /**
      * Returns the default value of the named attribute, if it is not
-     * explictly present within the named element, as a
+     * explicitly present within the named element, as a
      * <code>String</code>, or <code>null</code> if no default value
      * is available.
      *
@@ -624,7 +624,7 @@ public interface IIOMetadataFormat {
 
     /**
      * Returns a <code>String</code> containing a description of the
-     * named attribute, or <code>null</code>.  The desciption will be
+     * named attribute, or <code>null</code>.  The description will be
      * localized for the supplied <code>Locale</code> if possible.
      *
      * <p> If <code>locale</code> is <code>null</code>, the current
@@ -725,7 +725,7 @@ public interface IIOMetadataFormat {
      * <code>VALUE_ENUMERATION</code>.
      *
      * <p> The <code>Object</code> associated with a node that accepts
-     * emuerated values must be equal to one of the values returned by
+     * enumerated values must be equal to one of the values returned by
      * this method, as defined by the <code>==</code> operator (as
      * opposed to the <code>Object.equals</code> method).
      *

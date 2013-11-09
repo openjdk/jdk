@@ -23,7 +23,7 @@
 
 /**
  * @test 4235519 8004212 8005394 8007298 8006295 8006315 8006530 8007379 8008925
- *       8014217
+ *       8014217 8025003
  * @summary tests java.util.Base64
  */
 
@@ -60,13 +60,13 @@ public class TestBase64 {
         byte[] nl_3 = new byte[] {'\n', '\r', '\n'};
         for (int i = 0; i < 10; i++) {
             int len = rnd.nextInt(200) + 4;
-            test(Base64.getEncoder(len, nl_1),
+            test(Base64.getMimeEncoder(len, nl_1),
                  Base64.getMimeDecoder(),
                  numRuns, numBytes);
-            test(Base64.getEncoder(len, nl_2),
+            test(Base64.getMimeEncoder(len, nl_2),
                  Base64.getMimeDecoder(),
                  numRuns, numBytes);
-            test(Base64.getEncoder(len, nl_3),
+            test(Base64.getMimeEncoder(len, nl_3),
                  Base64.getMimeDecoder(),
                  numRuns, numBytes);
         }
@@ -74,16 +74,16 @@ public class TestBase64 {
         testNull(Base64.getEncoder());
         testNull(Base64.getUrlEncoder());
         testNull(Base64.getMimeEncoder());
-        testNull(Base64.getEncoder(10, new byte[]{'\n'}));
+        testNull(Base64.getMimeEncoder(10, new byte[]{'\n'}));
         testNull(Base64.getDecoder());
         testNull(Base64.getUrlDecoder());
         testNull(Base64.getMimeDecoder());
-        checkNull(new Runnable() { public void run() { Base64.getEncoder(10, null); }});
+        checkNull(new Runnable() { public void run() { Base64.getMimeEncoder(10, null); }});
 
         testIOE(Base64.getEncoder());
         testIOE(Base64.getUrlEncoder());
         testIOE(Base64.getMimeEncoder());
-        testIOE(Base64.getEncoder(10, new byte[]{'\n'}));
+        testIOE(Base64.getMimeEncoder(10, new byte[]{'\n'}));
 
         byte[] src = new byte[1024];
         new Random().nextBytes(src);
@@ -93,7 +93,7 @@ public class TestBase64 {
         testIOE(Base64.getUrlDecoder(), Base64.getUrlEncoder().encode(src));
 
         // illegal line separator
-        checkIAE(new Runnable() { public void run() { Base64.getEncoder(10, new byte[]{'\r', 'N'}); }});
+        checkIAE(new Runnable() { public void run() { Base64.getMimeEncoder(10, new byte[]{'\r', 'N'}); }});
 
         // illegal base64 character
         decoded[2] = (byte)0xe0;
@@ -109,8 +109,6 @@ public class TestBase64 {
             Base64.getDecoder().decode(ByteBuffer.wrap(decoded), ByteBuffer.allocateDirect(1024)); }});
 
         // illegal ending unit
-        checkIAE(new Runnable() { public void run() { Base64.getMimeDecoder().decode("$=#"); }});
-
         checkIOE(new Testable() { public void test() throws IOException {
                                      byte[] bytes = "AA=".getBytes("ASCII");
                                      try (InputStream stream =
@@ -129,6 +127,10 @@ public class TestBase64 {
         testDecodeUnpadded();
         // test mime decoding with ignored character after padding
         testDecodeIgnoredAfterPadding();
+
+        // lenient mode for ending unit
+        testLenientPadding();
+
     }
 
     private static sun.misc.BASE64Encoder sunmisc = new sun.misc.BASE64Encoder();
@@ -433,6 +435,48 @@ public class TestBase64 {
                     throw new RuntimeException("No IAE for non-base64 char");
                 } catch (IllegalArgumentException iae) {}
             }
+        }
+    }
+
+    private static void testLenientPadding() throws Throwable {
+        String[] data = new String[] {
+            "=",         "",        // unnecessary padding
+            "QUJD=",     "ABC",     //"ABC".encode() -> "QUJD"
+
+            "QQ=",       "A",       // incomplete padding
+            "QQ=N",      "A",       // incorrect padding
+            "QQ=?",      "A",
+            "QUJDQQ=",   "ABCA",
+            "QUJDQQ=N",  "ABCA",
+            "QUJDQQ=?",  "ABCA",
+
+            "QUI=X",     "AB",      // incorrect padding
+            "QUI=?",     "AB",      // incorrect padding
+        };
+        Base64.Decoder dec = Base64.getMimeDecoder();
+
+        for (int i = 0; i < data.length; i += 2) {
+            byte[] src = data[i].getBytes("ASCII");
+            byte[] expected = data[i + 1].getBytes("ASCII");
+            // decode(byte[])
+            byte[] ret = dec.decode(src);
+            checkEqual(ret, expected, "lenient padding decoding failed!");
+
+            // decode(String)
+            ret = dec.decode(data[i]);
+            checkEqual(ret, expected, "lenient padding decoding failed!");
+
+            // decode(ByteBuffer)
+            ByteBuffer srcBB = ByteBuffer.wrap(src);
+            ByteBuffer retBB = dec.decode(srcBB);
+            checkEqual(srcBB.remaining(), 0, "lenient padding decoding failed!");
+            checkEqual(Arrays.copyOf(retBB.array(), retBB.remaining()),
+                       expected, "lenient padding decoding failed!");
+
+            // wrap.decode(byte[])
+            ret = new byte[10];
+            int n = dec.wrap(new ByteArrayInputStream(src)).read(ret);
+            checkEqual(Arrays.copyOf(ret, n), expected, "lenient padding decoding failed!");
         }
     }
 

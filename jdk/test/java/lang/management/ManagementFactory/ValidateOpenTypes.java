@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,7 +24,7 @@
 /*
  * @test
  * @bug     5024531
- * @summary Validata open types mapped for the MXBeans in the platform
+ * @summary Validate open types mapped for the MXBeans in the platform
  *          MBeanServer.
  * @author  Mandy Chung
  *
@@ -38,7 +38,6 @@ import javax.management.openmbean.TabularData;
 import static java.lang.management.ManagementFactory.*;
 import java.util.List;
 import java.util.Map;
-import java.util.Properties;
 import com.sun.management.GcInfo;
 
 public class ValidateOpenTypes {
@@ -178,23 +177,23 @@ public class ValidateOpenTypes {
     }
 
     private static void checkMemoryUsage() throws Exception {
-        // sanity check to have non-zero usage
+        // sanity check to have non-negative usage
         Object u1 = server.getAttribute(memory, "HeapMemoryUsage");
         Object u2 = server.getAttribute(memory, "NonHeapMemoryUsage");
         Object u3 = server.getAttribute(heapPool, "Usage");
         Object u4 = server.getAttribute(nonHeapPool, "Usage");
-        if (getCommitted(u1) <= 0 ||
-            getCommitted(u2) <= 0 ||
-            getCommitted(u3) <= 0 ||
-            getCommitted(u4) <= 0) {
+        if (getCommitted(u1) < 0 ||
+            getCommitted(u2) < 0 ||
+            getCommitted(u3) < 0 ||
+            getCommitted(u4) < 0) {
             throw new RuntimeException("TEST FAILED: " +
-                " expected non-zero committed usage");
+                " expected non-negative committed usage");
         }
         server.invoke(memory, "gc", new Object[0], new String[0]);
         Object u5 = server.getAttribute(heapPool, "CollectionUsage");
-        if (getCommitted(u5) <= 0) {
+        if (getCommitted(u5) < 0) {
             throw new RuntimeException("TEST FAILED: " +
-                " expected non-zero committed collected usage");
+                " expected non-negative committed collected usage");
         }
     }
 

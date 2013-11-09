@@ -47,7 +47,7 @@ KS=jvindex.jks
 JFILE=jvindex.jar
 
 KT="$TESTJAVA${FS}bin${FS}keytool -storepass changeit -keypass changeit \
-        -keystore $KS"
+        -keystore $KS -keyalg rsa"
 JAR=$TESTJAVA${FS}bin${FS}jar
 JARSIGNER="$TESTJAVA${FS}bin${FS}jarsigner -keystore $KS -storepass changeit"
 

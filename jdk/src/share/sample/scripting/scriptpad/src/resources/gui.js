@@ -124,7 +124,7 @@ fileDialog.docString = "show a file dialog box";
  *
  * @param title of the dialog box [optional]
  * @param color default color [optional]
- * @return choosen color or default color
+ * @return chosen color or default color
  */
 function colorDialog(title, color) {
     var result;

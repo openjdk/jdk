@@ -1104,7 +1104,7 @@ public class JPopupMenu extends JComponent implements Accessible,MenuElement {
 
     /**
      * Returns the margin, in pixels, between the popup menu's border and
-     * its containees.
+     * its containers.
      *
      * @return an <code>Insets</code> object containing the margin values.
      */

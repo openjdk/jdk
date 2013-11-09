@@ -392,10 +392,16 @@ class MethodFamily : public ResourceObj {
     }
 
     GrowableArray<Method*> qualified_methods;
+    int num_defaults = 0;
+    int default_index = -1;
     for (int i = 0; i < _members.length(); ++i) {
       Pair<Method*,QualifiedState> entry = _members.at(i);
       if (entry.second == QUALIFIED) {
         qualified_methods.append(entry.first);
+        default_index++;
+        if (entry.first->is_default_method()) {
+          num_defaults++;
+        }
       }
     }
 
@@ -408,6 +414,9 @@ class MethodFamily : public ResourceObj {
       if (!method->is_abstract()) {
         _selected_target = qualified_methods.at(0);
       }
+      // If only one qualified method is default, select that
+    } else if (num_defaults == 1) {
+        _selected_target = qualified_methods.at(default_index);
     } else {
       _exception_message = generate_conflicts_message(&qualified_methods,CHECK);
       _exception_name = vmSymbols::java_lang_IncompatibleClassChangeError();

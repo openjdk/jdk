@@ -37,7 +37,7 @@ import java.beans.PropertyChangeListener;
 
 /**
  *  A <code>TableColumn</code> represents all the attributes of a column in a
- *  <code>JTable</code>, such as width, resizibility, minimum and maximum width.
+ *  <code>JTable</code>, such as width, resizability, minimum and maximum width.
  *  In addition, the <code>TableColumn</code> provides slots for a renderer and
  *  an editor that can be used to display and edit the values in this column.
  *  <p>

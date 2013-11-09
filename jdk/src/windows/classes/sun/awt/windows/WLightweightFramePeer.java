@@ -90,4 +90,8 @@ public class WLightweightFramePeer extends WFramePeer {
     public void updateCursorImmediately() {
         SwingAccessor.getJLightweightFrameAccessor().updateCursor((JLightweightFrame)getLwTarget());
     }
+
+    public boolean isLightweightFramePeer() {
+        return true;
+    }
 }

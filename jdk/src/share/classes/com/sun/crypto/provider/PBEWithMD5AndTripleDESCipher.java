@@ -317,7 +317,7 @@ public final class PBEWithMD5AndTripleDESCipher extends CipherSpi {
      * no padding has been requested (only in encryption mode), and the total
      * input length of the data processed by this cipher is not a multiple of
      * block size
-     * @exception BadPaddingException if decrypting and padding is choosen,
+     * @exception BadPaddingException if decrypting and padding is chosen,
      * but the last input data does not have proper padding bytes.
      */
     protected byte[] engineDoFinal(byte[] input, int inputOffset, int inputLen)
@@ -358,7 +358,7 @@ public final class PBEWithMD5AndTripleDESCipher extends CipherSpi {
      * block size
      * @exception ShortBufferException if the given output buffer is too small
      * to hold the result
-     * @exception BadPaddingException if decrypting and padding is choosen,
+     * @exception BadPaddingException if decrypting and padding is chosen,
      * but the last input data does not have proper padding bytes.
      */
     protected int engineDoFinal(byte[] input, int inputOffset, int inputLen,

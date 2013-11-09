@@ -253,7 +253,7 @@ public class ImageWriteParam extends IIOParam {
      * <code>false</code>.  Subclasses must set the value manually.
      *
      * <p> Subclasses that do not support writing tiles, or that
-     * supprt writing but not offsetting tiles must ensure that this
+     * support writing but not offsetting tiles must ensure that this
      * value is set to <code>false</code>.
      */
     protected boolean canOffsetTiles = false;
@@ -803,7 +803,7 @@ public class ImageWriteParam extends IIOParam {
      *
      * <ul>
      *   <li><code>MODE_DISABLED</code> - No progression.  Use this to
-     *   turn off progession.
+     *   turn off progression.
      *
      *   <li><code>MODE_COPY_FROM_METADATA</code> - The output image
      *   will use whatever progression parameters are found in the

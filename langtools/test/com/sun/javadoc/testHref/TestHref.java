@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug      4663254 8016328 8025633
+ * @bug      4663254 8016328 8025633 8026567
  * @summary  Verify that spaces do not appear in hrefs and anchors.
  * @author   jamieh
  * @library  ../lib/
@@ -80,7 +80,7 @@ public class TestHref extends JavadocTester {
 
         //Signature does not link to the page itself.
         {BUG_ID + FS + "pkg" + FS + "C4.html",
-            "public abstract class <span class=\"strong\">C4&lt;E extends C4&lt;E&gt;&gt;</span>"
+            "public abstract class <span class=\"typeNameLabel\">C4&lt;E extends C4&lt;E&gt;&gt;</span>"
         },
     };
     private static final String[][] NEGATED_TEST =
