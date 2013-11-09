@@ -513,7 +513,7 @@ public class FileCredentialsCache extends CredentialsCache
                         }
                     });
             if (p == null) {
-                // exception occured in execing the command
+                // exception occurred during executing the command
                 return null;
             }
 

@@ -28,7 +28,7 @@ package sun.net.smtp;
 import java.io.IOException;
 
 /**
- * This exeception is thrown when unexpected results are returned during
+ * This exception is thrown when unexpected results are returned during
  * an SMTP session.
  */
 public class SmtpProtocolException extends IOException {

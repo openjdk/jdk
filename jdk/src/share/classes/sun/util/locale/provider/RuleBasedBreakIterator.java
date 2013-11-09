@@ -822,7 +822,7 @@ class RuleBasedBreakIterator extends BreakIterator {
     }
 
     /**
-     * Returns true if the specfied position is a boundary position.  As a side
+     * Returns true if the specified position is a boundary position.  As a side
      * effect, leaves the iterator pointing to the first boundary position at
      * or after "offset".
      * @param offset the offset to check.

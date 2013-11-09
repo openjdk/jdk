@@ -869,7 +869,7 @@ public class JTableHeader extends JComponent implements TableColumnModelListener
 
       /**
        * This class provides an implementation of the Java Accessibility
-       * API appropropriate for JTableHeader entries.
+       * API appropriate for JTableHeader entries.
        */
         protected class AccessibleJTableHeaderEntry extends AccessibleContext
             implements Accessible, AccessibleComponent  {

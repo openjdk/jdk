@@ -2064,7 +2064,7 @@ public abstract class Path2D implements Shape, Cloneable {
      * @param w the width of the specified rectangular area
      * @param h the height of the specified rectangular area
      * @return {@code true} if the specified {@code PathIterator} contains
-     *         the specified rectangluar area; {@code false} otherwise.
+     *         the specified rectangular area; {@code false} otherwise.
      * @since 1.6
      */
     public static boolean contains(PathIterator pi,

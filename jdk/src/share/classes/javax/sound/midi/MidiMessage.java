@@ -59,7 +59,7 @@ package javax.sound.midi;
  * <p>
  * If you simply need to pass a known MIDI byte value as a method parameter,
  * it can be expressed directly as an integer, using (for example) decimal or
- * hexidecimal notation.  For instance, to pass the "active sensing" status byte
+ * hexadecimal notation.  For instance, to pass the "active sensing" status byte
  * as the first argument to ShortMessage's
  * {@link ShortMessage#setMessage(int) setMessage(int)}
  * method, you can express it as 254 or 0xFE.

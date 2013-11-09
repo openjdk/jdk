@@ -123,7 +123,7 @@ public abstract interface SaslClient {
      * @param challenge The non-null challenge sent from the server.
      * The challenge array may have zero length.
      *
-     * @return The possibly null reponse to send to the server.
+     * @return The possibly null response to send to the server.
      * It is null if the challenge accompanied a "SUCCESS" status and the challenge
      * only contains data for the client to update its state and no response
      * needs to be sent to the server. The response is a zero-length byte

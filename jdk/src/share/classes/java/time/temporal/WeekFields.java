@@ -245,15 +245,15 @@ public final class WeekFields implements Serializable {
     /**
      * The field used to access the computed DayOfWeek.
      */
-    private transient final TemporalField dayOfWeek = ComputedDayOfField.ofDayOfWeekField(this);
+    private final transient TemporalField dayOfWeek = ComputedDayOfField.ofDayOfWeekField(this);
     /**
      * The field used to access the computed WeekOfMonth.
      */
-    private transient final TemporalField weekOfMonth = ComputedDayOfField.ofWeekOfMonthField(this);
+    private final transient TemporalField weekOfMonth = ComputedDayOfField.ofWeekOfMonthField(this);
     /**
      * The field used to access the computed WeekOfYear.
      */
-    private transient final TemporalField weekOfYear = ComputedDayOfField.ofWeekOfYearField(this);
+    private final transient TemporalField weekOfYear = ComputedDayOfField.ofWeekOfYearField(this);
     /**
      * The field that represents the week-of-week-based-year.
      * <p>
@@ -261,7 +261,7 @@ public final class WeekFields implements Serializable {
      * <p>
      * This unit is an immutable and thread-safe singleton.
      */
-    private transient final TemporalField weekOfWeekBasedYear = ComputedDayOfField.ofWeekOfWeekBasedYearField(this);
+    private final transient TemporalField weekOfWeekBasedYear = ComputedDayOfField.ofWeekOfWeekBasedYearField(this);
     /**
      * The field that represents the week-based-year.
      * <p>
@@ -269,7 +269,7 @@ public final class WeekFields implements Serializable {
      * <p>
      * This unit is an immutable and thread-safe singleton.
      */
-    private transient final TemporalField weekBasedYear = ComputedDayOfField.ofWeekBasedYearField(this);
+    private final transient TemporalField weekBasedYear = ComputedDayOfField.ofWeekBasedYearField(this);
 
     //-----------------------------------------------------------------------
     /**

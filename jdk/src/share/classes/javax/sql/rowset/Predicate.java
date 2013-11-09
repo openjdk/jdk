@@ -131,7 +131,7 @@ public interface Predicate {
      *        SQL index of a column in this <code>RowSet</code> object. This must
      *        have been passed to <code>Predicate</code> as one of the columns
      *        for filtering while initializing a <code>Predicate</code>
-     * @return <code>true</code> ifrow value lies within the filter;
+     * @return <code>true</code> if row value lies within the filter;
      *     <code>false</code> otherwise
      * @throws SQLException if the column is not part of filtering criteria
      */

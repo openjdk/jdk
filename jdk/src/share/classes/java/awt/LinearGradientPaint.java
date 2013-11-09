@@ -94,7 +94,8 @@ import java.beans.ConstructorProperties;
  * of the three cycle methods:
  * <p>
  * <center>
- * <img src = "doc-files/LinearGradientPaint.png" alt="LinearGradientPaint">
+ * <img src = "doc-files/LinearGradientPaint.png"
+ * alt="image showing the output of the example code">
  * </center>
  *
  * @see java.awt.Paint

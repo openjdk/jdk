@@ -1,6 +1,6 @@
 #!/bin/sh -x
 
-# Copyright (c) 2011, 2012, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2013, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -56,7 +56,7 @@ _do_compile(){
 
     if [ ! -d ${_testclasses} ]
     then
-	  mkdir -p ${_testclasses}
+       mkdir -p ${_testclasses}
     fi
 
     rm -f ${_testclasses}/*.class
@@ -64,7 +64,7 @@ _do_compile(){
     # Compile testcase
     ${COMPILEJAVA}/bin/javac -XDignore.symbol.file -d ${_testclasses} \
                                              JdpUnitTest.java \
-                                             JdpDoSomething.java  \
+                                             JdpDoSomething.java \
                                              JdpClient.java
 
 
@@ -84,10 +84,10 @@ _app_start(){
   ${TESTJAVA}/bin/java -server $* -cp ${_testclasses} ${testappname}  >> ${_logname} 2>&1 &
  _last_pid=$!
 
-# wait until VM is actually starts. 
+# wait until VM is actually starts.
 # please note, if vm doesn't start for some reason
 # jtreg kills the test by timeout. Don't file a bug.
-  cnt=1 
+  cnt=1
   while true
   do
     npid=`_get_pid`
@@ -135,7 +135,6 @@ _testme(){
     -Dcom.sun.management.jdp.port=${_port} \
     -Dcom.sun.management.jdp.address=${_ip} \
   JdpClient
-
 }
 
 
@@ -156,18 +155,20 @@ test_01(){
     _echo "**** Test one ****"
 
     _app_start JdpUnitTest \
-    -Dcom.sun.management.jdp.port=${_port} \
-    -Dcom.sun.management.jdp.address=${_ip} \
-    -Dcom.sun.management.jdp.pause=5
+        -Dcom.sun.management.jdp.port=${_port} \
+        -Dcom.sun.management.jdp.address=${_ip} \
+        -Dcom.sun.management.jdp.name=testme \
+        -Djava.rmi.server.hostname=localhost \
+        -Dcom.sun.management.jdp.pause=5
 
     res=`_testme`
 
     case "${res}" in
      OK*)
-	_echo "Passed"
+        _echo "Passed"
      ;;
      *)
-	_echo "Failed!"
+        _echo "Failed!"
      ;;
     esac
 
@@ -179,21 +180,23 @@ test_02(){
     _echo "**** Test two ****"
 
     _app_start JdpDoSomething \
-     -Dcom.sun.management.jdp.port=${_port} \
-     -Dcom.sun.management.jdp.address=${_ip} \
-     -Dcom.sun.management.jdp.pause=5 \
-     -Dcom.sun.management.jmxremote.port=${_jmxport} \
-     -Dcom.sun.management.jmxremote.authenticate=false \
-     -Dcom.sun.management.jmxremote.ssl=false
+        -Dcom.sun.management.jdp.port=${_port} \
+        -Dcom.sun.management.jdp.address=${_ip} \
+        -Dcom.sun.management.jdp.pause=5 \
+        -Dcom.sun.management.jdp.name=testme \
+        -Djava.rmi.server.hostname=localhost \
+        -Dcom.sun.management.jmxremote.port=${_jmxport} \
+        -Dcom.sun.management.jmxremote.authenticate=false \
+        -Dcom.sun.management.jmxremote.ssl=false
 
     res=`_testme`
 
     case "${res}" in
      OK*)
-	_echo "Passed"
+        _echo "Passed"
      ;;
      *)
-	_echo "Failed!"
+        _echo "Failed!"
      ;;
     esac
 
@@ -210,6 +213,7 @@ test_03(){
                 jdp.port=${_port} \
                 jdp.address=${_ip} \
                 jdp.pause=5 \
+                jdp.name=jcmdtest \
                 jmxremote.port=${_jmxport} \
                 jmxremote.authenticate=false \
                 jmxremote.ssl=false
@@ -218,10 +222,10 @@ test_03(){
 
     case "${res}" in
      OK*)
-	_echo "Passed"
+        _echo "Passed"
      ;;
      *)
-	_echo "Failed!"
+        _echo "Failed!"
      ;;
     esac
 
@@ -233,19 +237,21 @@ test_04(){
     _echo "**** Test four ****"
 
     _app_start JdpDoSomething \
-     -Dcom.sun.management.jmxremote.autodiscovery=true \
-     -Dcom.sun.management.jmxremote.port=${_jmxport} \
-     -Dcom.sun.management.jmxremote.authenticate=false \
-     -Dcom.sun.management.jmxremote.ssl=false
+        -Dcom.sun.management.jmxremote.autodiscovery=true \
+        -Dcom.sun.management.jdp.name=testme \
+        -Djava.rmi.server.hostname=localhost \
+        -Dcom.sun.management.jmxremote.port=${_jmxport} \
+        -Dcom.sun.management.jmxremote.authenticate=false \
+        -Dcom.sun.management.jmxremote.ssl=false
 
     res=`_testme`
 
     case "${res}" in
      OK*)
-	_echo "Passed"
+        _echo "Passed"
      ;;
      *)
-	_echo "Failed!"
+        _echo "Failed!"
      ;;
     esac
 
@@ -269,10 +275,10 @@ test_05(){
 
     case "${res}" in
      OK*)
-	_echo "Passed"
+        _echo "Passed"
      ;;
      *)
-	_echo "Failed!"
+        _echo "Failed!"
      ;;
     esac
 
@@ -300,28 +306,28 @@ fi
 
 for parm in "$@"
 do
-   case $parm in
-  --verbose)      _verbose=yes  ;;
-  --jtreg)        _jtreg=yes    ;;
-  --no-compile)   _compile=no   ;;
-  --testsuite=*)  _testsuite=`_echo $parm | sed "s,^--.*=\(.*\),\1,"`  ;;
-  *)
-     echo "Undefined parameter $parm. Try --help for help"
-     exit
-   ;;
- esac
+  case $parm in
+      --verbose)      _verbose=yes  ;;
+      --jtreg)        _jtreg=yes    ;;
+      --no-compile)   _compile=no   ;;
+      --testsuite=*)  _testsuite=`_echo $parm | sed "s,^--.*=\(.*\),\1,"`  ;;
+      *)
+        echo "Undefined parameter $parm. Try --help for help"
+        exit
+      ;;
+  esac
 done
 
 if [ "${_compile}" = "yes" ]
 then
- _do_compile
+  _do_compile
 fi
 
 if [ "${_jtreg}" = "yes" ]
 then
- _testclasses=${TESTCLASSES}
- _testsrc=${TESTSRC}
- _logname="output.txt"
+  _testclasses=${TESTCLASSES}
+  _testsrc=${TESTSRC}
+  _logname="output.txt"
 fi
 
 # Make sure _tesclasses is absolute path

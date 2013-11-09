@@ -37,7 +37,7 @@ import java.awt.*;
  * hide. Consider a component that has a different tooltip based on where
  * the mouse is, such as JTree. When the mouse moves into the JTree and
  * over a region that has a valid tooltip, the tooltip will become
- * visibile after <code>initialDelay</code> milliseconds. After
+ * visible after <code>initialDelay</code> milliseconds. After
  * <code>dismissDelay</code> milliseconds the tooltip will be hidden. If
  * the mouse is over a region that has a valid tooltip, and the tooltip
  * is currently visible, when the mouse moves to a region that doesn't have

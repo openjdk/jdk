@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,8 +29,9 @@ import java.util.Enumeration;
 import java.util.Collections;
 import java.io.IOException;
 import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
 import java.io.Serializable;
+import java.util.AbstractMap;
+import java.util.LinkedHashMap;
 
 /**
  * A straightforward implementation of MutableAttributeSet using a
@@ -56,7 +57,7 @@ public class SimpleAttributeSet implements MutableAttributeSet, Serializable, Cl
      */
     public static final AttributeSet EMPTY = new EmptyAttributeSet();
 
-    private transient Hashtable<Object, Object> table = new Hashtable<Object, Object>(3);
+    private transient LinkedHashMap<Object, Object> table = new LinkedHashMap<>(3);
 
     /**
      * Creates a new attribute set.
@@ -71,10 +72,6 @@ public class SimpleAttributeSet implements MutableAttributeSet, Serializable, Cl
      */
     public SimpleAttributeSet(AttributeSet source) {
         addAttributes(source);
-    }
-
-    private SimpleAttributeSet(Hashtable<Object, Object> table) {
-        this.table = table;
     }
 
     /**
@@ -132,7 +129,7 @@ public class SimpleAttributeSet implements MutableAttributeSet, Serializable, Cl
      * @return the names as an <code>Enumeration</code>
      */
     public Enumeration<?> getAttributeNames() {
-        return table.keys();
+        return Collections.enumeration(table.keySet());
     }
 
     /**
@@ -278,7 +275,7 @@ public class SimpleAttributeSet implements MutableAttributeSet, Serializable, Cl
         SimpleAttributeSet attr;
         try {
             attr = (SimpleAttributeSet) super.clone();
-            attr.table = (Hashtable) table.clone();
+            attr.table = (LinkedHashMap) table.clone();
         } catch (CloneNotSupportedException cnse) {
             attr = null;
         }
@@ -341,7 +338,7 @@ public class SimpleAttributeSet implements MutableAttributeSet, Serializable, Cl
     private void readObject(ObjectInputStream s)
       throws ClassNotFoundException, IOException {
         s.defaultReadObject();
-        table = new Hashtable<Object, Object>(3);
+        table = new LinkedHashMap<>(3);
         StyleContext.readAttributeSet(s, this);
     }
 

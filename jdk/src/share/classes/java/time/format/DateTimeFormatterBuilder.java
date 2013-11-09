@@ -557,12 +557,13 @@ public final class DateTimeFormatterBuilder {
      * a two digit year parse will be in the range 1950-01-01 to 2049-12-31.
      * Only the year would be extracted from the date, thus a base date of
      * 1950-08-25 would also parse to the range 1950-01-01 to 2049-12-31.
-     * This behaviour is necessary to support fields such as week-based-year
+     * This behavior is necessary to support fields such as week-based-year
      * or other calendar systems where the parsed value does not align with
      * standard ISO years.
      * <p>
      * The exact behavior is as follows. Parse the full set of fields and
-     * determine the effective chronology. Then convert the base date to the
+     * determine the effective chronology using the last chronology if
+     * it appears more than once. Then convert the base date to the
      * effective chronology. Then extract the specified field from the
      * chronology-specific base date and use it to determine the
      * {@code baseValue} used below.
@@ -2809,9 +2810,19 @@ public final class DateTimeFormatterBuilder {
         int setValue(DateTimeParseContext context, long value, int errorPos, int successPos) {
             int baseValue = this.baseValue;
             if (baseDate != null) {
-                // TODO: effective chrono is inaccurate at this point
                 Chronology chrono = context.getEffectiveChronology();
                 baseValue = chrono.date(baseDate).get(field);
+
+                // In case the Chronology is changed later, add a callback when/if it changes
+                final long initialValue = value;
+                context.addChronoChangedListener(
+                        (_unused) ->  {
+                            /* Repeat the set of the field using the current Chronology
+                             * The success/error position is ignored because the value is
+                             * intentionally being overwritten.
+                             */
+                            setValue(context, initialValue, errorPos, successPos);
+                        });
             }
             int parseLen = successPos - errorPos;
             if (parseLen == minWidth && value >= 0) {

@@ -134,11 +134,11 @@ interface DataOutput {
      * Writes two bytes to the output
      * stream to represent the value of the argument.
      * The byte values to be written, in the  order
-     * shown, are: <p>
-     * <pre><code>
-     * (byte)(0xff &amp; (v &gt;&gt; 8))
-     * (byte)(0xff &amp; v)
-     * </code> </pre> <p>
+     * shown, are:
+     * <pre>{@code
+     * (byte)(0xff & (v >> 8))
+     * (byte)(0xff & v)
+     * }</pre> <p>
      * The bytes written by this method may be
      * read by the <code>readShort</code> method
      * of interface <code>DataInput</code> , which
@@ -156,10 +156,10 @@ interface DataOutput {
      * output stream.
      * The byte values to be written, in the  order
      * shown, are:
-     * <p><pre><code>
-     * (byte)(0xff &amp; (v &gt;&gt; 8))
-     * (byte)(0xff &amp; v)
-     * </code></pre><p>
+     * <pre>{@code
+     * (byte)(0xff & (v >> 8))
+     * (byte)(0xff & v)
+     * }</pre><p>
      * The bytes written by this method may be
      * read by the <code>readChar</code> method
      * of interface <code>DataInput</code> , which
@@ -176,12 +176,12 @@ interface DataOutput {
      * comprised of four bytes, to the output stream.
      * The byte values to be written, in the  order
      * shown, are:
-     * <p><pre><code>
-     * (byte)(0xff &amp; (v &gt;&gt; 24))
-     * (byte)(0xff &amp; (v &gt;&gt; 16))
-     * (byte)(0xff &amp; (v &gt;&gt; &#32; &#32;8))
-     * (byte)(0xff &amp; v)
-     * </code></pre><p>
+     * <pre>{@code
+     * (byte)(0xff & (v >> 24))
+     * (byte)(0xff & (v >> 16))
+     * (byte)(0xff & (v >>  8))
+     * (byte)(0xff & v)
+     * }</pre><p>
      * The bytes written by this method may be read
      * by the <code>readInt</code> method of interface
      * <code>DataInput</code> , which will then
@@ -197,16 +197,16 @@ interface DataOutput {
      * comprised of eight bytes, to the output stream.
      * The byte values to be written, in the  order
      * shown, are:
-     * <p><pre><code>
-     * (byte)(0xff &amp; (v &gt;&gt; 56))
-     * (byte)(0xff &amp; (v &gt;&gt; 48))
-     * (byte)(0xff &amp; (v &gt;&gt; 40))
-     * (byte)(0xff &amp; (v &gt;&gt; 32))
-     * (byte)(0xff &amp; (v &gt;&gt; 24))
-     * (byte)(0xff &amp; (v &gt;&gt; 16))
-     * (byte)(0xff &amp; (v &gt;&gt;  8))
-     * (byte)(0xff &amp; v)
-     * </code></pre><p>
+     * <pre>{@code
+     * (byte)(0xff & (v >> 56))
+     * (byte)(0xff & (v >> 48))
+     * (byte)(0xff & (v >> 40))
+     * (byte)(0xff & (v >> 32))
+     * (byte)(0xff & (v >> 24))
+     * (byte)(0xff & (v >> 16))
+     * (byte)(0xff & (v >>  8))
+     * (byte)(0xff & v)
+     * }</pre><p>
      * The bytes written by this method may be
      * read by the <code>readLong</code> method
      * of interface <code>DataInput</code> , which
@@ -314,24 +314,24 @@ interface DataOutput {
      * If a character <code>c</code>
      * is in the range <code>&#92;u0001</code> through
      * <code>&#92;u007f</code>, it is represented
-     * by one byte:<p>
+     * by one byte:
      * <pre>(byte)c </pre>  <p>
      * If a character <code>c</code> is <code>&#92;u0000</code>
      * or is in the range <code>&#92;u0080</code>
      * through <code>&#92;u07ff</code>, then it is
      * represented by two bytes, to be written
-     * in the order shown:<p> <pre><code>
-     * (byte)(0xc0 | (0x1f &amp; (c &gt;&gt; 6)))
-     * (byte)(0x80 | (0x3f &amp; c))
-     *  </code></pre>  <p> If a character
+     * in the order shown: <pre>{@code
+     * (byte)(0xc0 | (0x1f & (c >> 6)))
+     * (byte)(0x80 | (0x3f & c))
+     * }</pre> <p> If a character
      * <code>c</code> is in the range <code>&#92;u0800</code>
      * through <code>uffff</code>, then it is
      * represented by three bytes, to be written
-     * in the order shown:<p> <pre><code>
-     * (byte)(0xe0 | (0x0f &amp; (c &gt;&gt; 12)))
-     * (byte)(0x80 | (0x3f &amp; (c &gt;&gt;  6)))
-     * (byte)(0x80 | (0x3f &amp; c))
-     *  </code></pre>  <p> First,
+     * in the order shown: <pre>{@code
+     * (byte)(0xe0 | (0x0f & (c >> 12)))
+     * (byte)(0x80 | (0x3f & (c >>  6)))
+     * (byte)(0x80 | (0x3f & c))
+     * }</pre>  <p> First,
      * the total number of bytes needed to represent
      * all the characters of <code>s</code> is
      * calculated. If this number is larger than

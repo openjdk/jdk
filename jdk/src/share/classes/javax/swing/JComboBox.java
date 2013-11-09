@@ -2143,7 +2143,7 @@ implements ItemSelectable,ListDataListener,ActionListener, Accessible {
              * a set of predefined roles.  This enables assistive technologies to
              * provide a consistent interface to various tweaked subclasses of
              * components (e.g., use AccessibleRole.PUSH_BUTTON for all components
-             * that act like a push button) as well as distinguish between sublasses
+             * that act like a push button) as well as distinguish between subclasses
              * that behave differently (e.g., AccessibleRole.CHECK_BOX for check boxes
              * and AccessibleRole.RADIO_BUTTON for radio buttons).
              * <p>Note that the AccessibleRole class is also extensible, so
