@@ -699,7 +699,7 @@ public interface RelationServiceMBean {
      * <P>Will check the role according to its corresponding role definition
      * provided in relation's relation type
      * <P>The Relation Service will keep track of the change to keep the
-     * consistency of relations by handling referenced MBean unregistrations.
+     * consistency of relations by handling referenced MBean deregistrations.
      *
      * @param relationId  relation id
      * @param role  role to be set (name and new value)
@@ -742,7 +742,7 @@ public interface RelationServiceMBean {
      * <P>Will check the role according to its corresponding role definition
      * provided in relation's relation type
      * <P>The Relation Service keeps track of the changes to keep the
-     * consistency of relations by handling referenced MBean unregistrations.
+     * consistency of relations by handling referenced MBean deregistrations.
      *
      * @param relationId  relation id
      * @param roleList  list of roles to be set

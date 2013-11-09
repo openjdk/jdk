@@ -37,7 +37,7 @@ import java.io.Writer;
  * This class is intended to be a central place for the jdk to
  * log timing events of interest.  There is pre-defined event
  * of startTime, as well as a general
- * mechanism of setting aribtrary times in an array.
+ * mechanism of setting arbitrary times in an array.
  * All unreserved times in the array can be used by callers
  * in application-defined situations.  The caller is responsible
  * for setting and getting all times and for doing whatever

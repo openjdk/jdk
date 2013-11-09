@@ -33,7 +33,7 @@ var hatPkg = Packages.com.sun.tools.hat.internal;
 
 /**
  * This is JavaScript interface for heap analysis using HAT
- * (Heap Analysis Tool). HAT classes are refered from
+ * (Heap Analysis Tool). HAT classes are referred from
  * this file. In particular, refer to classes in hat.model 
  * package.
  * 

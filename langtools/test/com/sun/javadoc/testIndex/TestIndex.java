@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug      4852280 4517115 4973608 4994589
+ * @bug      4852280 4517115 4973608 4994589 8026567
  * @summary  Perform tests on index.html file.
  *           Also test that index-all.html has the appropriate output.
  *           Test for unnamed package in index.
@@ -53,27 +53,27 @@ public class TestIndex extends JavadocTester {
 
         //Test index-all.html
         {BUG_ID + FS + "index-all.html",
-            "<a href=\"pkg/C.html\" title=\"class in pkg\"><span class=\"strong\">C</span></a>" +
+            "<a href=\"pkg/C.html\" title=\"class in pkg\"><span class=\"typeNameLink\">C</span></a>" +
             " - Class in <a href=\"pkg/package-summary.html\">pkg</a>"},
         {BUG_ID + FS + "index-all.html",
             "<a href=\"pkg/Interface.html\" title=\"interface in pkg\">" +
-            "<span class=\"strong\">Interface</span></a> - Interface in " +
+            "<span class=\"typeNameLink\">Interface</span></a> - Interface in " +
             "<a href=\"pkg/package-summary.html\">pkg</a>"},
         {BUG_ID + FS + "index-all.html",
             "<a href=\"pkg/AnnotationType.html\" title=\"annotation in pkg\">" +
-            "<span class=\"strong\">AnnotationType</span></a> - Annotation Type in " +
+            "<span class=\"typeNameLink\">AnnotationType</span></a> - Annotation Type in " +
             "<a href=\"pkg/package-summary.html\">pkg</a>"},
         {BUG_ID + FS + "index-all.html",
             "<a href=\"pkg/Coin.html\" title=\"enum in pkg\">" +
-            "<span class=\"strong\">Coin</span></a> - Enum in " +
+            "<span class=\"typeNameLink\">Coin</span></a> - Enum in " +
             "<a href=\"pkg/package-summary.html\">pkg</a>"},
         {BUG_ID + FS + "index-all.html",
             "Class in <a href=\"package-summary.html\">&lt;Unnamed&gt;</a>"},
         {BUG_ID + FS + "index-all.html",
-            "<dl>" + NL + "<dt><span class=\"strong\"><a href=\"pkg/C.html#Java\">" +
+            "<dl>" + NL + "<dt><span class=\"memberNameLink\"><a href=\"pkg/C.html#Java\">" +
             "Java</a></span> - Static variable in class pkg.<a href=\"pkg/C.html\" " +
             "title=\"class in pkg\">C</a></dt>" + NL + "<dd>&nbsp;</dd>" + NL +
-            "<dt><span class=\"strong\"><a href=\"pkg/C.html#JDK\">JDK</a></span> " +
+            "<dt><span class=\"memberNameLink\"><a href=\"pkg/C.html#JDK\">JDK</a></span> " +
             "- Static variable in class pkg.<a href=\"pkg/C.html\" title=\"class in pkg\">" +
             "C</a></dt>" + NL + "<dd>&nbsp;</dd>" + NL + "</dl>"},
     };

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,7 +29,6 @@
  *          consistently w.r.t. local inner classes
  */
 
-import com.sun.source.util.JavacTask;
 import java.net.URI;
 import java.util.Arrays;
 import javax.tools.Diagnostic;
@@ -38,6 +37,7 @@ import javax.tools.JavaFileObject;
 import javax.tools.SimpleJavaFileObject;
 import javax.tools.StandardJavaFileManager;
 import javax.tools.ToolProvider;
+import com.sun.source.util.JavacTask;
 
 public class TestSelfRef {
 
@@ -176,10 +176,16 @@ public class TestSelfRef {
         check();
     }
 
-    void check() {
+    boolean isErrorExpected() {
         //illegal forward ref
-        boolean errorExpected = ik.inMethodContext(sk) &&
-                (rk.selfRef || rk.forwardRef);
+        boolean result = ik.inMethodContext(sk) && (rk.selfRef || rk.forwardRef);
+        result |= (rk == RefKind.SELF_LAMBDA || rk == RefKind.FORWARD_LAMBDA);
+        return result;
+    }
+
+    void check() {
+        checkCount++;
+        boolean errorExpected = isErrorExpected();
         if (diagChecker.errorFound != errorExpected) {
             throw new Error("invalid diagnostics for source:\n" +
                 source.getCharContent(true) +

@@ -2,7 +2,7 @@
 <html>
   <head>
     <title>Synth File Format</title>
-  <style>
+  <style type="text/css">
 div.dtd-fragment {
     width: 100%;
     border: none;
@@ -24,7 +24,7 @@ div.example {
       Synth's file format (<a href="synth.dtd">dtd</a>)
       allows for specifying all the pieces
       necessary to create your own look and feel. A synth file is
-      loaded by way of the <A HREF="../../../../../javax/swing/plaf/synth/SynthLookAndFeel.html#load(java.io.InputStream, java.lang.Class)">SynthLookAndFeel.load(InputStream, Class)</a> or
+      loaded by way of the <A HREF="../../../../../javax/swing/plaf/synth/SynthLookAndFeel.html#load(java.io.InputStream,%20java.lang.Class)">SynthLookAndFeel.load(InputStream, Class)</a> or
       <a href="../../../../../javax/swing/plaf/synth/SynthLookAndFeel.html#load(java.net.URL)">SynthLookAndFeel.load(URL)</a> methods.
       The following example uses the <code>load</code> method to configure 
       a <code>SynthLookAndFeel</code> and sets it as the current look
@@ -110,7 +110,7 @@ div.example {
 	    style.</dd>
     </dl>
     <p>
-      A <a name="e.style">style</a> element corresponds to a
+      A style element corresponds to a
       <code>SynthStyle</code>, with the child elements specifying
       properties that apply to all states or state elements which
       contain properties specific to a particular state. The following
@@ -216,7 +216,6 @@ div.example {
       contains at least SELECTED and PRESSED, state <code>one</code> will be
       chosen, otherwise if the state is SELECTED, but not does not
       contain PRESSED, state <code>two</code> will be used.
-    <p>
 
     <h3>The font element</h3>
 <div class="dtd-fragment">
@@ -461,7 +460,6 @@ div.example {
 	be the top, left, bottom and right separated by a space and
 	for idref properties this will be the unique id of a
 	previously defined object.</dd>
-    </dl>
     </dl>
     <p>
       <a href="#e.defaultsProperty">DefaultsProperty</a> elements are
@@ -738,7 +736,7 @@ div.example {
   &lt;state value="SELECTED">
     &lt;painter idref="stateFallbackPainter"/>
     &lt;painter idref="stateButtonBackgroundPainter" method="buttonBackground"/>
-  &lt/state>
+  &lt;/state>
 &lt;/style>
       </pre>
     </div>      

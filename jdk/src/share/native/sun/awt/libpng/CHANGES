@@ -2126,7 +2126,7 @@ Version 1.4.0beta24 [July 25, 2008]
     png_decompress_chunk(), and remove "chunkdata" from parameter list.
   Put a call to png_check_chunk_name() in png_read_chunk_header().
   Revised png_check_chunk_name() to reject a name with a lowercase 3rd byte.
-  Removed two calls to png_check_chunk_name() occuring later in the process.
+  Removed two calls to png_check_chunk_name() occurring later in the process.
   Define PNG_NO_ERROR_NUMBERS by default in pngconf.h
 
 Version 1.4.0beta25 [July 30, 2008]

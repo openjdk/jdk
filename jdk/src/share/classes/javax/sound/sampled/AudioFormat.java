@@ -31,7 +31,7 @@ import java.util.Map;
 
 /**
  * <code>AudioFormat</code> is the class that specifies a particular arrangement of data in a sound stream.
- * By examing the information stored in the audio format, you can discover how to interpret the bits in the
+ * By examining the information stored in the audio format, you can discover how to interpret the bits in the
  * binary sound data.
  * <p>
  * Every data line has an audio format associated with its data stream. The audio format of a source (playback) data line indicates

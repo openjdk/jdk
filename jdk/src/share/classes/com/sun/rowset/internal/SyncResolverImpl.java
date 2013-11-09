@@ -4109,7 +4109,7 @@ public class SyncResolverImpl extends CachedRowSetImpl implements SyncResolver {
     /**
      * Returns a result set containing the original value of the rowset. The
      * original value is the state of the <code>CachedRowSetImpl</code> after the
-     * last population or synchronization (whichever occured most recently) with
+     * last population or synchronization (whichever occurred most recently) with
      * the data source.
      * <p>
      * The cursor is positioned before the first row in the result set.
@@ -4128,7 +4128,7 @@ public class SyncResolverImpl extends CachedRowSetImpl implements SyncResolver {
      * Returns a result set containing the original value of the current
      * row only.
      * The original value is the state of the <code>CachedRowSetImpl</code> after
-     * the last population or synchronization (whichever occured most recently)
+     * the last population or synchronization (whichever occurred most recently)
      * with the data source.
      *
      * @return the original result set of the row

@@ -359,7 +359,7 @@ public interface JoinRowSet extends WebRowSet {
      * <code>RowSet</code> objects that have been added to this
      * <code>JoinRowSet</code> object.
      * This should return the 'n' number of RowSet contained
-     * within the <code>JOIN</code> and maintain any updates that have occured while in
+     * within the <code>JOIN</code> and maintain any updates that have occurred while in
      * this union.
      *
      * @return a <code>Collection</code> object consisting of the

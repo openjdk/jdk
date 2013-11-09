@@ -126,7 +126,7 @@ public class Check implements Taglet {
      * @param tag the tag representation of this custom tag.
      */
     public String toString(Tag tag) {
-        return "<dt><span class=\"strong\">" + TAG_HEADER + ":</span></dt><dd>" + tag.text() +
+        return "<dt><span class=\"simpleTagLabel\">" + TAG_HEADER + ":</span></dt><dd>" + tag.text() +
                 "</dd>\n";
     }
 

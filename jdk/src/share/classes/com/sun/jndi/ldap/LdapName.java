@@ -862,7 +862,7 @@ public final class LdapName implements Name {
                 --end;
             }
 
-            // Add back the trailing whitespace with a preceeding '\'
+            // Add back the trailing whitespace with a preceding '\'
             // (escaped or unescaped) that was taken off in the above
             // loop. Whether or not to retain this whitespace is
             // decided below.
@@ -918,7 +918,7 @@ public final class LdapName implements Name {
             }
 
             // Get rid of the unescaped trailing whitespace with the
-            // preceeding '\' character that was previously added back.
+            // preceding '\' character that was previously added back.
             int len = buf.length();
             if (isWhitespace(buf.charAt(len - 1)) && esc != (end - 1)) {
                 buf.setLength(len - 1);

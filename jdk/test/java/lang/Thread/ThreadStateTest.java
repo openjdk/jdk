@@ -31,7 +31,7 @@ import static java.lang.Thread.State.*;
  *
  * @author  Mandy Chung
  * @build ThreadStateTest ThreadStateController
- * @run main ThreadStateTest
+ * @run main/othervm -Xmixed ThreadStateTest
  */
 
 public class ThreadStateTest {

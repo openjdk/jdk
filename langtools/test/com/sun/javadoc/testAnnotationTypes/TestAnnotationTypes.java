@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug      4973609 8015249 8025633
+ * @bug      4973609 8015249 8025633 8026567
  * @summary  Make sure that annotation types with 0 members does not have
  *           extra HR tags.
  * @author   jamieh
@@ -55,7 +55,7 @@ public class TestAnnotationTypes extends JavadocTester {
         {BUG_ID + FS + "pkg" + FS + "AnnotationTypeField.html",
             "<h3>Field Summary</h3>"},
         {BUG_ID + FS + "pkg" + FS + "AnnotationTypeField.html",
-            "<td class=\"colLast\"><code><span class=\"strong\"><a href=\"../" +
+            "<td class=\"colLast\"><code><span class=\"memberNameLink\"><a href=\"../" +
             "pkg/AnnotationTypeField.html#DEFAULT_NAME\">DEFAULT_NAME</a></span>" +
             "</code>&nbsp;</td>"},
         {BUG_ID + FS + "pkg" + FS + "AnnotationTypeField.html",

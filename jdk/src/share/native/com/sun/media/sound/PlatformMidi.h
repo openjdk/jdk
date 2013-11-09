@@ -222,7 +222,7 @@ INT32 MIDI_IN_StopDevice(MidiDeviceHandle* handle);
 
 /*
  * Return the current time stamp in microseconds.
- * If not supported, or problem occured, returns -1
+ * If not supported, or problem occurred, returns -1
  */
 INT64 MIDI_IN_GetTimeStamp(MidiDeviceHandle* handle);
 
@@ -311,7 +311,7 @@ INT32 MIDI_OUT_CloseDevice(MidiDeviceHandle* handle);
 /*
  * Return the current time stamp in microseconds (the time since the device
  * was opened).
- * If not supported, or problem occured, returns -1
+ * If not supported, or problem occurred, returns -1
  */
 INT64 MIDI_OUT_GetTimeStamp(MidiDeviceHandle* handle);
 

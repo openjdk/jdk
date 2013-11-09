@@ -55,7 +55,7 @@ public class MediaTray extends Media implements Attribute {
     public static final MediaTray TOP = new MediaTray(0);
 
     /**
-     * The middle input tray in the printe.
+     * The middle input tray in the printer.
      */
     public static final MediaTray MIDDLE = new MediaTray(1);
 

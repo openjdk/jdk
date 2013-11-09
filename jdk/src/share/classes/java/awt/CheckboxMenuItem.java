@@ -180,7 +180,7 @@ public class CheckboxMenuItem extends MenuItem implements ItemSelectable, Access
     }
 
     /**
-     * Sets this check box menu item to the specifed state.
+     * Sets this check box menu item to the specified state.
      * The boolean value <code>true</code> indicates "on" while
      * <code>false</code> indicates "off."
      *

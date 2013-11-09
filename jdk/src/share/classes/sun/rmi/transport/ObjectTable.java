@@ -223,7 +223,7 @@ public final class ObjectTable {
 
     /**
      * Process client VM signalling reference for given ObjID: forward to
-     * correspoding Target entry.  If ObjID is not found in table,
+     * corresponding Target entry.  If ObjID is not found in table,
      * no action is taken.
      */
     static void referenced(ObjID id, long sequenceNum, VMID vmid) {
@@ -239,7 +239,7 @@ public final class ObjectTable {
 
     /**
      * Process client VM dropping reference for given ObjID: forward to
-     * correspoding Target entry.  If ObjID is not found in table,
+     * corresponding Target entry.  If ObjID is not found in table,
      * no action is taken.
      */
     static void unreferenced(ObjID id, long sequenceNum, VMID vmid,
