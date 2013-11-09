@@ -744,8 +744,11 @@ import static java.lang.invoke.MethodHandles.Lookup.IMPL_LOOKUP;
             MethodHandle ginvoker = GuardWithCatch.INVOKES[nargs].bindReceiver(gguard);
             return makePairwiseConvert(ginvoker, type, 2);
         } else {
+            target = target.asType(type.changeReturnType(Object.class));
             MethodHandle gtarget = makeSpreadArguments(target, Object[].class, 0, nargs);
-            catcher = catcher.asType(ctype.changeParameterType(0, Throwable.class));
+            MethodType catcherType = ctype.changeParameterType(0, Throwable.class)
+                                          .changeReturnType(Object.class);
+            catcher = catcher.asType(catcherType);
             MethodHandle gcatcher = makeSpreadArguments(catcher, Object[].class, 1, nargs);
             GuardWithCatch gguard = new GuardWithCatch(gtarget, exType, gcatcher);
             if (gtarget == null || gcatcher == null)  throw new InternalError();
