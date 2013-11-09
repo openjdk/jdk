@@ -621,7 +621,7 @@ void TwoGenerationCollectorPolicy::initialize_size_info() {
 
   // Write back to flags if necessary
   if (NewSize != _initial_gen0_size) {
-    FLAG_SET_ERGO(uintx, NewSize, _max_gen0_size);
+    FLAG_SET_ERGO(uintx, NewSize, _initial_gen0_size);
   }
 
   if (MaxNewSize != _max_gen0_size) {
