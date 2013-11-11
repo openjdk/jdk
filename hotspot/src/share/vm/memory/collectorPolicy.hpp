@@ -336,9 +336,9 @@ class TwoGenerationCollectorPolicy : public GenCollectorPolicy {
     return CollectorPolicy::TwoGenerationCollectorPolicyKind;
   }
 
-  // Returns true is gen0 sizes were adjusted
+  // Returns true if gen0 sizes were adjusted
   bool adjust_gen0_sizes(size_t* gen0_size_ptr, size_t* gen1_size_ptr,
-                         const size_t heap_size, const size_t min_gen1_size);
+                         const size_t heap_size);
 };
 
 class MarkSweepPolicy : public TwoGenerationCollectorPolicy {

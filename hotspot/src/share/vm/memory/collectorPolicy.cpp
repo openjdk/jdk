@@ -523,17 +523,15 @@ void GenCollectorPolicy::initialize_size_info() {
 // keeping it simple also seems a worthwhile goal.
 bool TwoGenerationCollectorPolicy::adjust_gen0_sizes(size_t* gen0_size_ptr,
                                                      size_t* gen1_size_ptr,
-                                                     const size_t heap_size,
-                                                     const size_t min_gen1_size) {
+                                                     const size_t heap_size) {
   bool result = false;
 
-  if ((*gen1_size_ptr + *gen0_size_ptr) > heap_size) {
+  if ((*gen0_size_ptr + *gen1_size_ptr) > heap_size) {
     uintx smallest_new_size = young_gen_size_lower_bound();
-    if ((heap_size < (*gen0_size_ptr + min_gen1_size)) &&
-        (heap_size >= min_gen1_size + smallest_new_size)) {
-      // Adjust gen0 down to accommodate min_gen1_size
-      *gen0_size_ptr = align_size_down_bounded(heap_size - min_gen1_size, _gen_alignment);
-      assert(*gen0_size_ptr > 0, "Min gen0 is too large");
+    if ((heap_size < (*gen0_size_ptr + _min_gen1_size)) &&
+        (heap_size >= _min_gen1_size + smallest_new_size)) {
+      // Adjust gen0 down to accommodate _min_gen1_size
+      *gen0_size_ptr = align_size_down_bounded(heap_size - _min_gen1_size, _gen_alignment);
       result = true;
     } else {
       *gen1_size_ptr = align_size_down_bounded(heap_size - *gen0_size_ptr, _gen_alignment);
@@ -594,8 +592,7 @@ void TwoGenerationCollectorPolicy::initialize_size_info() {
     }
     // If there is an inconsistency between the OldSize and the minimum and/or
     // initial size of gen0, since OldSize was explicitly set, OldSize wins.
-    if (adjust_gen0_sizes(&_min_gen0_size, &_min_gen1_size,
-                          _min_heap_byte_size, _min_gen1_size)) {
+    if (adjust_gen0_sizes(&_min_gen0_size, &_min_gen1_size, _min_heap_byte_size)) {
       if (PrintGCDetails && Verbose) {
         gclog_or_tty->print_cr("2: Minimum gen0 " SIZE_FORMAT "  Initial gen0 "
               SIZE_FORMAT "  Maximum gen0 " SIZE_FORMAT,
@@ -604,7 +601,7 @@ void TwoGenerationCollectorPolicy::initialize_size_info() {
     }
     // Initial size
     if (adjust_gen0_sizes(&_initial_gen0_size, &_initial_gen1_size,
-                          _initial_heap_byte_size, _initial_gen1_size)) {
+                          _initial_heap_byte_size)) {
       if (PrintGCDetails && Verbose) {
         gclog_or_tty->print_cr("3: Minimum gen0 " SIZE_FORMAT "  Initial gen0 "
           SIZE_FORMAT "  Maximum gen0 " SIZE_FORMAT,
