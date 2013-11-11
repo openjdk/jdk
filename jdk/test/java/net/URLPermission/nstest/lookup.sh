@@ -1,5 +1,4 @@
 #!/bin/sh
-
 #
 # Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -29,7 +28,19 @@
 #            LookupTest.java SimpleNameServiceDescriptor.java
 # @run shell/timeout=50 lookup.sh
 #
-DIR=`pwd`
+
+OS=`uname -s`
+case ${OS} in
+Windows_* | CYGWIN*)
+    PS=";"
+    FS="\\"
+    ;;
+*)
+    PS=":"
+    FS="/"
+    ;;
+esac
+
 
 port=`${TESTJAVA}/bin/java -cp ${TESTCLASSES} LookupTest -getport`
 
@@ -45,4 +56,4 @@ grant {
 };
 POLICY
 
-${TESTJAVA}/bin/java -Djava.security.policy=file://${DIR}/policy -Dsun.net.spi.nameservice.provider.1=simple,sun -cp ${TESTCLASSES}:${TESTSRC} LookupTest -runtest $port
+${TESTJAVA}/bin/java -Djava.security.policy=file:./policy -Dsun.net.spi.nameservice.provider.1=simple,sun -cp ${TESTCLASSES}${PS}${TESTSRC} LookupTest -runtest ${port}

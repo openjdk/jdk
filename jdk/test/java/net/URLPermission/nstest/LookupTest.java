@@ -66,7 +66,7 @@ public class LookupTest {
         String cmd = args[0];
         if (cmd.equals("-getport")) {
             port = Utils.getFreePort();
-            System.out.println(port);
+            System.out.print(port);
         } else if (cmd.equals("-runtest")) {
             port = Integer.parseInt(args[1]);
             SimpleNameService.put("allowedAndFound.com", "127.0.0.1");
