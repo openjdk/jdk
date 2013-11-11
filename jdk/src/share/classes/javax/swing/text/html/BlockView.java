@@ -106,7 +106,7 @@ public class BlockView extends BoxView  {
 
     /**
      * Calculate the requirements of the block along the minor
-     * axis (i.e. the axis orthoginal to the axis along with it tiles).
+     * axis (i.e. the axis orthogonal to the axis along with it tiles).
      * This is implemented
      * to provide the superclass behavior and then adjust it if the
      * CSS width or height attribute is specified and applicable to
@@ -218,13 +218,13 @@ public class BlockView extends BoxView  {
 
     /**
      * Performs layout for the minor axis of the box (i.e. the
-     * axis orthoginal to the axis that it represents). The results
+     * axis orthogonal to the axis that it represents). The results
      * of the layout (the offset and span for each children) are
      * placed in the given arrays which represent the allocations to
      * the children along the minor axis.
      *
      * @param targetSpan the total span given to the view, which
-     *  whould be used to layout the childre.
+     *  would be used to layout the children.
      * @param axis the axis being layed out
      * @param offsets the offsets from the origin of the view for
      *  each of the child views; this is a return value and is

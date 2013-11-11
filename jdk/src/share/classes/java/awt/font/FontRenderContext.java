@@ -126,7 +126,7 @@ public class FontRenderContext {
      * anti-aliasing or fractional metrics.
      * @param tx the transform which is used to scale typographical points
      * to pixels in this <code>FontRenderContext</code>.  If null, an
-     * identity tranform is used.
+     * identity transform is used.
      * @param aaHint - one of the text antialiasing rendering hint values
      * defined in {@link java.awt.RenderingHints java.awt.RenderingHints}.
      * Any other value will throw <code>IllegalArgumentException</code>.

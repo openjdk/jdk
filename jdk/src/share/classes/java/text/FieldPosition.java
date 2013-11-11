@@ -136,7 +136,7 @@ public class FieldPosition {
      * constant, <code>fieldID</code> should be -1.
      *
      * @param attribute Format.Field constant identifying a field
-     * @param fieldID integer constantce identifying a field
+     * @param fieldID integer constant identifying a field
      * @since 1.4
      */
     public FieldPosition(Format.Field attribute, int fieldID) {

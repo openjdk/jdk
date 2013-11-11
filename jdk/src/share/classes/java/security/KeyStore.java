@@ -98,7 +98,6 @@ import javax.security.auth.callback.*;
  *    KeyStore ks = KeyStore.getInstance(KeyStore.getDefaultType());
  * </pre>
  * The system will return a keystore implementation for the default type.
- * <p>
  *
  * <li>To provide a specific keystore type:
  * <pre>
@@ -1612,7 +1611,7 @@ public class KeyStore {
          * Returns the KeyStore described by this object.
          *
          * @return the {@code KeyStore} described by this object
-         * @exception KeyStoreException if an error occured during the
+         * @exception KeyStoreException if an error occurred during the
          *   operation, for example if the KeyStore could not be
          *   instantiated or loaded
          */
@@ -1628,7 +1627,7 @@ public class KeyStore {
          *   the {@link KeyStore.Entry Entry} with the given alias.
          * @param alias the alias of the KeyStore entry
          * @throws NullPointerException if alias is null
-         * @throws KeyStoreException if an error occured during the
+         * @throws KeyStoreException if an error occurred during the
          *   operation
          * @throws IllegalStateException if the getKeyStore method has
          *   not been invoked prior to calling this method

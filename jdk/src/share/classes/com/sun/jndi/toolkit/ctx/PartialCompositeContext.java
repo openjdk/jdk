@@ -109,7 +109,7 @@ public abstract class PartialCompositeContext implements Context, Resolver {
 
     /**
      * A cheap way of getting the environment.
-     * Default implemenation is NOT cheap because it simply calls
+     * Default implementation is NOT cheap because it simply calls
      * getEnvironment(), which most implementations clone before returning.
      * Subclass should ALWAYS override this with the cheapest possible way.
      * The toolkit knows to clone when necessary.

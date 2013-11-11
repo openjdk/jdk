@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1674,6 +1674,15 @@ search:
                 theObject = translateStream(bais, flavor, format, localeTransferable);
             }
 
+        } else if (flavor.isRepresentationClassRemote()) {
+            try (ByteArrayInputStream bais = new ByteArrayInputStream(bytes);
+                 ObjectInputStream ois = new ObjectInputStream(bais))
+            {
+                theObject = RMI.getMarshalledObject(ois.readObject());
+            } catch (Exception e) {
+                throw new IOException(e.getMessage());
+            }
+
             // Target data is Serializable
         } else if (flavor.isRepresentationClassSerializable()) {
 
@@ -1730,6 +1739,14 @@ search:
                 }
             }
             theObject = files;
+
+        // Target data is a String. Strip terminating NUL bytes. Decode bytes
+        // into characters. Search-and-replace EOLN.
+        } else if (String.class.equals(flavor.getRepresentationClass()) &&
+                   isFlavorCharsetTextType(flavor) && isTextFormat(format)) {
+
+            return translateBytesToString(inputStreamToByteArray(str),
+                format, localeTransferable);
 
             // Special hack to maintain backwards-compatibility with the brokenness
             // of StringSelection. Return a StringReader instead of an InputStream.

@@ -36,7 +36,7 @@ import sun.tools.attach.HotSpotVirtualMachine;
 
 /*
  * This class is the main class for the JMap utility. It parses its arguments
- * and decides if the command should be satisifed using the VM attach mechanism
+ * and decides if the command should be satisfied using the VM attach mechanism
  * or an SA tool. At this time the only option that uses the VM attach mechanism
  * is the -dump option to get a heap dump of a running application. All other
  * options are mapped to SA tools.

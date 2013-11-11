@@ -27,7 +27,7 @@
 # Documentation is available via 'webrev -h'.
 #
 
-WEBREV_UPDATED=25.0-hg+openjdk.java.net
+WEBREV_UPDATED=25.1-hg+openjdk.java.net
 
 HTML='<?xml version="1.0"?>
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
@@ -1686,19 +1686,20 @@ function build_old_new_mercurial
 	    # It's a rename (or a move), or a copy, so let's make sure we move
 	    # to the right directory first, then restore it once done
 	    current_dir=`pwd`
-	    cd $CWS/$PDIR
+	    hg_root=`hg root`
+	    cd $CWS
 	    if [ -n "$rflag" ]; then
 		parentrev=$PARENT_REV
 	    elif [ "$HG_LIST_FROM_COMMIT" -eq 1 ]; then
                 parentrev=$OUTREV
 	    fi
 	    if [ -z "$parentrev" ]; then
-		parentrev=`hg log -l1 $PF | $AWK -F: '/changeset/ {print $2}'`
+		parentrev=`hg log -l1 $PDIR/$PF | $AWK -F: '/changeset/ {print $2}'`
 	    fi
 	    if [ -n "$parentrev" ]; then
 		mkdir -p $olddir/$PDIR
 		if [ -z "$parent" ]; then
-		    hg cat --rev $parentrev --output $olddir/$PDIR/$PF $PF 2>/dev/null
+		    hg cat -R $hg_root --rev $parentrev --output $olddir/$PDIR/$PF $PDIR/$PF 2>/dev/null
 		else
 		    $parent cat --rev $parentrev --output $olddir/$PDIR/$PF $PDIR/$PF 2>/dev/null
 		fi

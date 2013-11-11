@@ -426,7 +426,7 @@ public final class KdcComm {
     }
 
     /**
-     * Returns krb5.conf setting of {@code key} for a specfic realm,
+     * Returns krb5.conf setting of {@code key} for a specific realm,
      * which can be:
      * 1. defined in the sub-stanza for the given realm inside [realms], or
      * 2. defined in [libdefaults], or

@@ -88,12 +88,12 @@ final class Lower extends NodeOperatorVisitor<BlockLexicalContext> {
     private static final DebugLogger LOG = new DebugLogger("lower");
 
     // needed only to get unique eval id
-    private final CodeInstaller installer;
+    private final CodeInstaller<?> installer;
 
     /**
      * Constructor.
      */
-    Lower(final CodeInstaller installer) {
+    Lower(final CodeInstaller<?> installer) {
         super(new BlockLexicalContext() {
 
             @Override

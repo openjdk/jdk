@@ -1,0 +1,3 @@
+SelfInitializerInLambdaTestb.java:35:49: compiler.err.var.might.not.have.been.initialized: r1
+SelfInitializerInLambdaTestb.java:38:37: compiler.err.var.might.not.have.been.initialized: r1
+2 errors

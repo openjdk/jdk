@@ -513,7 +513,7 @@ class CSSParser {
      * hit.
      */
     // NOTE: this could be combined with readTill, as they contain somewhat
-    // similiar functionality.
+    // similar functionality.
     private boolean getIdentifier(char stopChar) throws IOException {
         boolean lastWasEscape = false;
         boolean done = false;

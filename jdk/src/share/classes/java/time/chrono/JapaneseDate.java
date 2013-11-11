@@ -140,7 +140,7 @@ public final class JapaneseDate
     /**
      * The first day supported by the JapaneseChronology is Meiji 6, January 1st.
      */
-    final static LocalDate MEIJI_6_ISODATE = LocalDate.of(1873, 1, 1);
+    static final LocalDate MEIJI_6_ISODATE = LocalDate.of(1873, 1, 1);
 
     //-----------------------------------------------------------------------
     /**

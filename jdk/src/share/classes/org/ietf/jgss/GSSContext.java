@@ -1094,7 +1094,7 @@ public interface GSSContext {
      * side  and it has to be done prior to the first call to
      * <code>initSecContext</code>.<p>
      *
-     * The actual lifetime of the context will depend on the capabilites of
+     * The actual lifetime of the context will depend on the capabilities of
      * the underlying mechanism and the application should call the {@link
      * #getLifetime() getLifetime} method to determine this.<p>
      *

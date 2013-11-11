@@ -573,45 +573,51 @@ public class MemberEnter extends JCTree.Visitor implements Completer {
 
         Env<AttrContext> localEnv = methodEnv(tree, env);
 
-        DiagnosticPosition prevLintPos = deferredLintHandler.setPos(tree.pos());
+        annotate.enterStart();
         try {
-            // Compute the method type
-            m.type = signature(m, tree.typarams, tree.params,
-                               tree.restype, tree.recvparam,
-                               tree.thrown,
-                               localEnv);
-        } finally {
-            deferredLintHandler.setPos(prevLintPos);
-        }
+            DiagnosticPosition prevLintPos = deferredLintHandler.setPos(tree.pos());
+            try {
+                // Compute the method type
+                m.type = signature(m, tree.typarams, tree.params,
+                                   tree.restype, tree.recvparam,
+                                   tree.thrown,
+                                   localEnv);
+            } finally {
+                deferredLintHandler.setPos(prevLintPos);
+            }
 
-        if (types.isSignaturePolymorphic(m)) {
-            m.flags_field |= SIGNATURE_POLYMORPHIC;
-        }
+            if (types.isSignaturePolymorphic(m)) {
+                m.flags_field |= SIGNATURE_POLYMORPHIC;
+            }
 
-        // Set m.params
-        ListBuffer<VarSymbol> params = new ListBuffer<VarSymbol>();
-        JCVariableDecl lastParam = null;
-        for (List<JCVariableDecl> l = tree.params; l.nonEmpty(); l = l.tail) {
-            JCVariableDecl param = lastParam = l.head;
-            params.append(Assert.checkNonNull(param.sym));
-        }
-        m.params = params.toList();
+            // Set m.params
+            ListBuffer<VarSymbol> params = new ListBuffer<VarSymbol>();
+            JCVariableDecl lastParam = null;
+            for (List<JCVariableDecl> l = tree.params; l.nonEmpty(); l = l.tail) {
+                JCVariableDecl param = lastParam = l.head;
+                params.append(Assert.checkNonNull(param.sym));
+            }
+            m.params = params.toList();
 
-        // mark the method varargs, if necessary
-        if (lastParam != null && (lastParam.mods.flags & Flags.VARARGS) != 0)
-            m.flags_field |= Flags.VARARGS;
+            // mark the method varargs, if necessary
+            if (lastParam != null && (lastParam.mods.flags & Flags.VARARGS) != 0)
+                m.flags_field |= Flags.VARARGS;
 
-        localEnv.info.scope.leave();
-        if (chk.checkUnique(tree.pos(), m, enclScope)) {
+            localEnv.info.scope.leave();
+            if (chk.checkUnique(tree.pos(), m, enclScope)) {
             enclScope.enter(m);
-        }
-        annotateLater(tree.mods.annotations, localEnv, m, tree.pos());
-        // Visit the signature of the method. Note that
-        // TypeAnnotate doesn't descend into the body.
-        typeAnnotate(tree, localEnv, m, tree.pos());
+            }
 
-        if (tree.defaultValue != null)
-            annotateDefaultValueLater(tree.defaultValue, localEnv, m);
+            annotateLater(tree.mods.annotations, localEnv, m, tree.pos());
+            // Visit the signature of the method. Note that
+            // TypeAnnotate doesn't descend into the body.
+            typeAnnotate(tree, localEnv, m, tree.pos());
+
+            if (tree.defaultValue != null)
+                annotateDefaultValueLater(tree.defaultValue, localEnv, m);
+        } finally {
+            annotate.enterDone();
+        }
     }
 
     /** Create a fresh environment for method bodies.
@@ -639,61 +645,68 @@ public class MemberEnter extends JCTree.Visitor implements Completer {
             localEnv.info.staticLevel++;
         }
         DiagnosticPosition prevLintPos = deferredLintHandler.setPos(tree.pos());
+        annotate.enterStart();
         try {
-            if (TreeInfo.isEnumInit(tree)) {
-                attr.attribIdentAsEnumType(localEnv, (JCIdent)tree.vartype);
-            } else {
-                attr.attribType(tree.vartype, localEnv);
-                if (tree.nameexpr != null) {
-                    attr.attribExpr(tree.nameexpr, localEnv);
-                    MethodSymbol m = localEnv.enclMethod.sym;
-                    if (m.isConstructor()) {
-                        Type outertype = m.owner.owner.type;
-                        if (outertype.hasTag(TypeTag.CLASS)) {
-                            checkType(tree.vartype, outertype, "incorrect.constructor.receiver.type");
-                            checkType(tree.nameexpr, outertype, "incorrect.constructor.receiver.name");
+            try {
+                if (TreeInfo.isEnumInit(tree)) {
+                    attr.attribIdentAsEnumType(localEnv, (JCIdent)tree.vartype);
+                } else {
+                    attr.attribType(tree.vartype, localEnv);
+                    if (tree.nameexpr != null) {
+                        attr.attribExpr(tree.nameexpr, localEnv);
+                        MethodSymbol m = localEnv.enclMethod.sym;
+                        if (m.isConstructor()) {
+                            Type outertype = m.owner.owner.type;
+                            if (outertype.hasTag(TypeTag.CLASS)) {
+                                checkType(tree.vartype, outertype, "incorrect.constructor.receiver.type");
+                                checkType(tree.nameexpr, outertype, "incorrect.constructor.receiver.name");
+                            } else {
+                                log.error(tree, "receiver.parameter.not.applicable.constructor.toplevel.class");
+                            }
                         } else {
-                            log.error(tree, "receiver.parameter.not.applicable.constructor.toplevel.class");
+                            checkType(tree.vartype, m.owner.type, "incorrect.receiver.type");
+                            checkType(tree.nameexpr, m.owner.type, "incorrect.receiver.name");
                         }
-                    } else {
-                        checkType(tree.vartype, m.owner.type, "incorrect.receiver.type");
-                        checkType(tree.nameexpr, m.owner.type, "incorrect.receiver.name");
                     }
                 }
+            } finally {
+                deferredLintHandler.setPos(prevLintPos);
             }
-        } finally {
-            deferredLintHandler.setPos(prevLintPos);
-        }
 
-        if ((tree.mods.flags & VARARGS) != 0) {
-            //if we are entering a varargs parameter, we need to replace its type
-            //(a plain array type) with the more precise VarargsType --- we need
-            //to do it this way because varargs is represented in the tree as a modifier
-            //on the parameter declaration, and not as a distinct type of array node.
-            ArrayType atype = (ArrayType)tree.vartype.type.unannotatedType();
-            tree.vartype.type = atype.makeVarargs();
-        }
-        Scope enclScope = enter.enterScope(env);
-        VarSymbol v =
-            new VarSymbol(0, tree.name, tree.vartype.type, enclScope.owner);
-        v.flags_field = chk.checkFlags(tree.pos(), tree.mods.flags, v, tree);
-        tree.sym = v;
-        if (tree.init != null) {
-            v.flags_field |= HASINIT;
-            if ((v.flags_field & FINAL) != 0 &&
-                needsLazyConstValue(tree.init)) {
-                Env<AttrContext> initEnv = getInitEnv(tree, env);
-                initEnv.info.enclVar = v;
-                v.setLazyConstValue(initEnv(tree, initEnv), attr, tree);
+            if ((tree.mods.flags & VARARGS) != 0) {
+                //if we are entering a varargs parameter, we need to
+                //replace its type (a plain array type) with the more
+                //precise VarargsType --- we need to do it this way
+                //because varargs is represented in the tree as a
+                //modifier on the parameter declaration, and not as a
+                //distinct type of array node.
+                ArrayType atype = (ArrayType)tree.vartype.type.unannotatedType();
+                tree.vartype.type = atype.makeVarargs();
             }
+            Scope enclScope = enter.enterScope(env);
+            VarSymbol v =
+                new VarSymbol(0, tree.name, tree.vartype.type, enclScope.owner);
+            v.flags_field = chk.checkFlags(tree.pos(), tree.mods.flags, v, tree);
+            tree.sym = v;
+            if (tree.init != null) {
+                v.flags_field |= HASINIT;
+                if ((v.flags_field & FINAL) != 0 &&
+                    needsLazyConstValue(tree.init)) {
+                    Env<AttrContext> initEnv = getInitEnv(tree, env);
+                    initEnv.info.enclVar = v;
+                    v.setLazyConstValue(initEnv(tree, initEnv), attr, tree);
+                }
+            }
+            if (chk.checkUnique(tree.pos(), v, enclScope)) {
+                chk.checkTransparentVar(tree.pos(), v, enclScope);
+                enclScope.enter(v);
+            }
+            annotateLater(tree.mods.annotations, localEnv, v, tree.pos());
+            typeAnnotate(tree.vartype, env, v, tree.pos());
+            v.pos = tree.pos;
+        } finally {
+            annotate.enterDone();
         }
-        if (chk.checkUnique(tree.pos(), v, enclScope)) {
-            chk.checkTransparentVar(tree.pos(), v, enclScope);
-            enclScope.enter(v);
-        }
-        annotateLater(tree.mods.annotations, localEnv, v, tree.pos());
-        typeAnnotate(tree.vartype, env, v, tree.pos());
-        v.pos = tree.pos;
     }
     // where
     void checkType(JCTree tree, Type type, String diag) {

@@ -81,8 +81,12 @@ enum Profile {
     }
 
     static class PackageToProfile {
+        static String[] JAVAX_CRYPTO_PKGS = new String[] {
+            "javax.crypto",
+            "javax.crypto.interfaces",
+            "javax.crypto.spec"
+        };
         static Map<String, Profile> map = initProfiles();
-
         private static Map<String, Profile> initProfiles() {
             try {
                 String profilesProps = System.getProperty("jdeps.profiles");
@@ -103,6 +107,9 @@ enum Profile {
                                 findProfile(cf);
                             }
                         }
+                        // special case for javax.crypto.* classes that are not
+                        // included in ct.sym since they are in jce.jar
+                        Collections.addAll(Profile.COMPACT1.packages, JAVAX_CRYPTO_PKGS);
                     }
                 }
             } catch (IOException | ConstantPoolException e) {

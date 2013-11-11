@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug      4927552
+ * @bug      4927552 8026567
  * @summary  <DESC>
  * @author   jamieh
  * @library  ../lib/
@@ -76,20 +76,20 @@ public class TestDeprecatedDocs extends JavadocTester {
         {TARGET_FILE, "pkg.DeprecatedClassByAnnotation.field"},
 
         {TARGET_FILE2, "<pre>@Deprecated" + NL +
-                 "public class <span class=\"strong\">DeprecatedClassByAnnotation</span>" + NL +
+                 "public class <span class=\"typeNameLabel\">DeprecatedClassByAnnotation</span>" + NL +
                  "extends java.lang.Object</pre>"},
 
         {TARGET_FILE2, "<pre>@Deprecated" + NL +
                  "public&nbsp;int field</pre>" + NL +
-                 "<div class=\"block\"><span class=\"strong\">Deprecated.</span>&nbsp;</div>"},
+                 "<div class=\"block\"><span class=\"deprecatedLabel\">Deprecated.</span>&nbsp;</div>"},
 
         {TARGET_FILE2, "<pre>@Deprecated" + NL +
                  "public&nbsp;DeprecatedClassByAnnotation()</pre>" + NL +
-                 "<div class=\"block\"><span class=\"strong\">Deprecated.</span>&nbsp;</div>"},
+                 "<div class=\"block\"><span class=\"deprecatedLabel\">Deprecated.</span>&nbsp;</div>"},
 
         {TARGET_FILE2, "<pre>@Deprecated" + NL +
                  "public&nbsp;void&nbsp;method()</pre>" + NL +
-                 "<div class=\"block\"><span class=\"strong\">Deprecated.</span>&nbsp;</div>"},
+                 "<div class=\"block\"><span class=\"deprecatedLabel\">Deprecated.</span>&nbsp;</div>"},
     };
 
     private static final String[][] NEGATED_TEST = NO_TEST;

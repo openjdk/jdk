@@ -88,7 +88,7 @@ import java.lang.annotation.Native;
  * but also by the transform attribute of the
  * <code>Graphics2D</code> object.  Consider this code:
  * <blockquote><tt>
- *      // sets the Graphics2D object's Tranform attribute
+ *      // sets the Graphics2D object's Transform attribute
  *      g2d.scale(10, 10);
  *      // sets the Graphics2D object's Stroke attribute
  *      g2d.setStroke(new BasicStroke(1.5f));

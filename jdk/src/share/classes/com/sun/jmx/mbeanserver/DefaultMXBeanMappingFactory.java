@@ -1291,7 +1291,7 @@ public class DefaultMXBeanMappingFactory extends MXBeanMappingFactory {
              * ambiguous set.  If this set itself corresponds to a constructor,
              * there is no ambiguity for that pair.  In the usual case, one
              * of the constructors is a superset of the other so the union is
-             * just the bigger constuctor.
+             * just the bigger constructor.
              *
              * The algorithm here is quadratic in the number of constructors
              * with a @ConstructorProperties annotation.  Typically this corresponds

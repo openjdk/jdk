@@ -184,7 +184,7 @@ public interface ResultSet extends Wrapper, AutoCloseable {
      * <P>The closing of a <code>ResultSet</code> object does <strong>not</strong> close the <code>Blob</code>,
      * <code>Clob</code> or <code>NClob</code> objects created by the <code>ResultSet</code>. <code>Blob</code>,
      * <code>Clob</code> or <code>NClob</code> objects remain valid for at least the duration of the
-     * transaction in which they are creataed, unless their <code>free</code> method is invoked.
+     * transaction in which they are created, unless their <code>free</code> method is invoked.
      *<p>
      * When a <code>ResultSet</code> is closed, any <code>ResultSetMetaData</code>
      * instances that were created by calling the  <code>getMetaData</code>
@@ -2423,7 +2423,7 @@ public interface ResultSet extends Wrapper, AutoCloseable {
      * <code>DatabaseMetaData</code> method, this method  may return
      * <code>null</code>.
      *
-     * @return the <code>Statment</code> object that produced
+     * @return the <code>Statement</code> object that produced
      * this <code>ResultSet</code> object or <code>null</code>
      * if the result set was produced some other way
      * @exception SQLException if a database access error occurs
@@ -2749,7 +2749,7 @@ public interface ResultSet extends Wrapper, AutoCloseable {
 
     /**
      * The constant indicating that open <code>ResultSet</code> objects with this
-     * holdability will remain open when the current transaction is commited.
+     * holdability will remain open when the current transaction is committed.
      *
      * @since 1.4
      */
@@ -2757,7 +2757,7 @@ public interface ResultSet extends Wrapper, AutoCloseable {
 
     /**
      * The constant indicating that open <code>ResultSet</code> objects with this
-     * holdability will be closed when the current transaction is commited.
+     * holdability will be closed when the current transaction is committed.
      *
      * @since 1.4
      */

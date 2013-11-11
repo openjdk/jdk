@@ -63,7 +63,7 @@ public class Config {
     private static Config singleton = null;
 
     /*
-     * Hashtable used to store configuration infomation.
+     * Hashtable used to store configuration information.
      */
     private Hashtable<String,Object> stanzaTable = new Hashtable<>();
 

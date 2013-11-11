@@ -46,7 +46,7 @@ public class Compiler {
         USECACHE // Keeps results around for reuse.  Only use this is
                  // you're sure that each compilation name maps to the
                  // same source code
-    };
+    }
 
     private static final AtomicInteger counter = new AtomicInteger();
     private static final String targetDir = "gen-separate";
@@ -85,7 +85,7 @@ public class Compiler {
     }
 
     public void setFlags(Flags ... flags) {
-        this.flags = new HashSet<Flags>(Arrays.asList(flags));
+        this.flags = new HashSet<>(Arrays.asList(flags));
     }
 
     public void addPostprocessor(ClassFilePreprocessor cfp) {
@@ -131,17 +131,10 @@ public class Compiler {
         outputDirs.put(type.getName(), outDir);
 
         Class superClass = type.getSuperclass();
-        if (superClass != null) {
-            for( Map.Entry<String,File> each : compileHierarchy(superClass).entrySet()) {
-                outputDirs.put(each.getKey(), each.getValue());
-            }
-        }
-        for (Extends ext : type.getSupertypes()) {
-            Type iface = ext.getType();
-            for( Map.Entry<String,File> each : compileHierarchy(iface).entrySet()) {
-                outputDirs.put(each.getKey(), each.getValue());
-            }
-        }
+        if (superClass != null)
+            outputDirs.putAll(compileHierarchy(superClass));
+        for (Extends ext : type.getSupertypes())
+            outputDirs.putAll(compileHierarchy(ext.getType()));
 
         return outputDirs;
     }
@@ -157,8 +150,12 @@ public class Compiler {
         SourceProcessor accum =
             (name, src) -> { files.add(new SourceFile(name, src)); };
 
-        for (Type dep : type.typeDependencies()) {
-            dep.generateAsDependency(accum, type.methodDependencies());
+        Collection<Type> deps = type.typeDependencies(type.isFullCompilation());
+        for (Type dep : deps) {
+            if (type.isFullCompilation())
+                dep.generate(accum);
+            else
+                dep.generateAsDependency(accum, type.methodDependencies());
         }
 
         type.generate(accum);
@@ -185,7 +182,7 @@ public class Compiler {
                 StandardLocation.CLASS_OUTPUT, Arrays.asList(destDir));
         } catch (IOException e) {
             throw new RuntimeException(
-                "IOException encountered during compilation");
+                "IOException encountered during compilation", e);
         }
         Boolean result = ct.call();
         if (result == Boolean.FALSE) {

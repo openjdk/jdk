@@ -50,7 +50,7 @@ public class Foo extends BaseTaglet {
      */
     public Content getTagletOutput(Tag tag, TagletWriter writer) {
         ArrayList inlineTags = new ArrayList();
-        inlineTags.add(new TextTag(tag.holder(), "<dt><span class=\"strong\">Foo:</span></dt><dd>"));
+        inlineTags.add(new TextTag(tag.holder(), "<dt><span class=\"simpleTagLabel\">Foo:</span></dt><dd>"));
         inlineTags.addAll(Arrays.asList(tag.inlineTags()));
         inlineTags.add(new TextTag(tag.holder(), "</dd>"));
         return writer.commentTagsToOutput(tag,

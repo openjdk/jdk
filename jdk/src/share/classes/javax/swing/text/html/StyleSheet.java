@@ -105,7 +105,7 @@ import javax.swing.text.*;
  * background. But if the html file also contains the CSS rule
  * <code>body { background: blue }</code> it becomes less clear as to
  * what color the background of the body should be. The current
- * implemention gives visual attributes defined in the element the
+ * implementation gives visual attributes defined in the element the
  * highest precedence, that is they are always checked before any styles.
  * Therefore, in the previous example the background would have a
  * red color as the body element defines the background color to be red.
@@ -938,7 +938,7 @@ public class StyleSheet extends StyleContext {
     /**
      * Sets the base font size from the passed in String. The string
      * can either identify a specific font size, with legal values between
-     * 1 and 7, or identifiy a relative font size such as +1 or -2.
+     * 1 and 7, or identify a relative font size such as +1 or -2.
      */
     public void setBaseFontSize(String size) {
         css.setBaseFontSize(size);
@@ -1035,7 +1035,7 @@ public class StyleSheet extends StyleContext {
     }
 
     //
-    // The following gaggle of methods is used in maintaing the rules from
+    // The following gaggle of methods is used in maintaining the rules from
     // the sheet.
     //
 
@@ -2959,13 +2959,13 @@ public class StyleSheet extends StyleContext {
                 return true;
             }
             if (thisDotIndex != -1) {
-                // Reciever references a class, just check element name.
+                // Receiver references a class, just check element name.
                 return (((thisDotIndex - thisCurrent) == (sLast - sCurrent)) &&
                         selector.regionMatches(sCurrent, name, thisCurrent,
                                                thisDotIndex - thisCurrent));
             }
             if (thisPoundIndex != -1) {
-                // Reciever references an id, just check element name.
+                // Receiver references an id, just check element name.
                 return (((thisPoundIndex - thisCurrent) ==(sLast - sCurrent))&&
                         selector.regionMatches(sCurrent, name, thisCurrent,
                                                thisPoundIndex - thisCurrent));
@@ -2977,7 +2977,7 @@ public class StyleSheet extends StyleContext {
         }
 
         /**
-         * Similiar to String.indexOf, but allows an upper bound
+         * Similar to String.indexOf, but allows an upper bound
          * (this is slower in that it will still check string starting at
          * start.
          */

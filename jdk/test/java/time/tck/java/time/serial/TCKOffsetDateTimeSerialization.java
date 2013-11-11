@@ -59,15 +59,16 @@
  */
 package tck.java.time.serial;
 
-import org.testng.annotations.BeforeMethod;
-import org.testng.annotations.Test;
-import tck.java.time.AbstractTCKTest;
 
 import java.io.ByteArrayOutputStream;
 import java.io.DataOutputStream;
 import java.time.LocalDateTime;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
+
+import org.testng.annotations.BeforeMethod;
+import org.testng.annotations.Test;
+import tck.java.time.AbstractTCKTest;
 
 /**
  * Test OffsetDateTime serialization.
@@ -96,11 +97,6 @@ public class TCKOffsetDateTimeSerialization extends AbstractTCKTest {
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         try (DataOutputStream dos = new DataOutputStream(baos) ) {
             dos.writeByte(10);       // java.time.Ser.OFFSET_DATE_TIME_TYPE
-        }
-        byte[] bytes = baos.toByteArray();
-        ByteArrayOutputStream baosDateTime = new ByteArrayOutputStream();
-        try (DataOutputStream dos = new DataOutputStream(baosDateTime) ) {
-            dos.writeByte(5);
             dos.writeInt(2012);
             dos.writeByte(9);
             dos.writeByte(16);
@@ -108,17 +104,11 @@ public class TCKOffsetDateTimeSerialization extends AbstractTCKTest {
             dos.writeByte(17);
             dos.writeByte(59);
             dos.writeInt(464_000_000);
-        }
-        byte[] bytesDateTime = baosDateTime.toByteArray();
-        ByteArrayOutputStream baosOffset = new ByteArrayOutputStream();
-        try (DataOutputStream dos = new DataOutputStream(baosOffset) ) {
-            dos.writeByte(8);
             dos.writeByte(4);  // quarter hours stored: 3600 / 900
         }
-        byte[] bytesOffset = baosOffset.toByteArray();
+        byte[] bytes = baos.toByteArray();
         LocalDateTime ldt = LocalDateTime.of(2012, 9, 16, 22, 17, 59, 464_000_000);
-        assertSerializedBySer(OffsetDateTime.of(ldt, ZoneOffset.ofHours(1)), bytes, bytesDateTime, bytesOffset);
+        assertSerializedBySer(OffsetDateTime.of(ldt, ZoneOffset.ofHours(1)), bytes);
     }
-
 
 }
