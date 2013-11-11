@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2012, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2012, 2013, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -48,8 +48,10 @@ include MakeBase.gmk
 # be built, signed, and then the resulting jar files MUST BE CHECKED
 # INTO THE CLOSED PART OF THE WORKSPACE*. This separate step *MUST NOT
 # BE FORGOTTEN*, otherwise a bug fixed in the source code will not be
-# reflected in the shipped binaries. The "sign-jars" target in the top
-# level Makefile should be used to generate the required files.
+# reflected in the shipped binaries.
+#
+# Please consult with Release Engineering, which is responsible for
+# creating the final JCE builds suitable for checkin.
 #
 
 # Default target
@@ -58,7 +60,7 @@ all:
 ifndef OPENJDK
 
 README-MAKEFILE_WARNING := \
-    "\nPlease read makefiles/SignJars.gmk for further build instructions.\n"
+    "\nPlease read jdk/makefiles/SignJars.gmk for further build instructions.\n"
 
 #
 # Location for JCE codesigning key.
@@ -84,20 +86,34 @@ $(JCE_OUTPUTDIR)/%: $(JDK_OUTPUTDIR)/unsigned/%
 	    $@ $(SIGNING_ALIAS) < $(SIGNING_PASSPHRASE)
 	@$(PRINTF) "\nJar codesigning finished.\n"
 
-JAR_LIST := jce.jar \
+JAR_LIST := \
+    jce.jar \
     local_policy.jar \
     sunec.jar \
     sunjce_provider.jar \
     sunpkcs11.jar \
-    US_export_policy.jar
+    US_export_policy.jar \
+    sunmscapi.jar \
+    ucrypto.jar \
+    #
 
-SIGNED_JARS := $(addprefix $(JCE_OUTPUTDIR)/,$(JAR_LIST))
+UNSIGNED_JARS := $(wildcard $(addprefix $(JDK_OUTPUTDIR)/unsigned/, $(JAR_LIST)))
+
+ifeq ($(UNSIGNED_JARS), )
+  $(error No jars found in $(JDK_OUTPUTDIR)/unsigned/)
+endif
+
+SIGNED_JARS := $(patsubst $(JDK_OUTPUTDIR)/unsigned/%,$(JCE_OUTPUTDIR)/%, $(UNSIGNED_JARS))
 
 $(SIGNED_JARS): check-keystore
 
 all: $(SIGNED_JARS)
-	@$(PRINTF) "\n***The jar files built by the 'jar-sign' target must***"
-	@$(PRINTF) "\n***still be checked into the closed workspace!***"
+	@$(PRINTF) "\n*** The jar files built by the 'sign-jars' target are developer      ***"
+	@$(PRINTF) "\n*** builds only and *MUST NOT* be checked into the closed workspace. ***"
+	@$(PRINTF) "\n***                                                                  ***"
+	@$(PRINTF) "\n*** Please consult with Release Engineering: they will generate      ***"
+	@$(PRINTF) "\n*** the proper binaries for the closed workspace.                    ***"
+	@$(PRINTF) "\n"
 	@$(PRINTF) $(README-MAKEFILE_WARNING)
 
 endif # !OPENJDK
