@@ -64,7 +64,7 @@ UNAME_S := $(shell $(UNAME) -s | $(CUT) -f1 -d_)
 ifeq ($(UNAME_S), CYGWIN)
   # Location of developer shared files
   SLASH_JAVA = J:
-  GETMIXEDPATH = cygpath -m -s
+  GETMIXEDPATH = cygpath -m
 else
   # Location of developer shared files
   SLASH_JAVA = /java
