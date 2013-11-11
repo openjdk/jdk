@@ -25,7 +25,7 @@
 
 package sun.management;
 
-import java.lang.management.OperatingSystemMXBean;
+import com.sun.management.OperatingSystemMXBean;
 
 /**
  * Implementation class for the operating system.
