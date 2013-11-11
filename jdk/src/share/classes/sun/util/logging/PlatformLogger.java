@@ -135,7 +135,7 @@ public class PlatformLogger {
 
         static Level valueOf(int level) {
             switch (level) {
-                // ordering per the highest occurences in the jdk source
+                // ordering per the highest occurrences in the jdk source
                 // finest, fine, finer, info first
                 case PlatformLogger.FINEST  : return Level.FINEST;
                 case PlatformLogger.FINE    : return Level.FINE;

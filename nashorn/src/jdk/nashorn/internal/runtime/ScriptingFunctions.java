@@ -190,7 +190,7 @@ public final class ScriptingFunctions {
                 char buffer[] = new char[1024];
                 try (final InputStreamReader inputStream = new InputStreamReader(process.getErrorStream())) {
                     for (int length; (length = inputStream.read(buffer, 0, buffer.length)) != -1; ) {
-                        outBuffer.append(buffer, 0, length);
+                        errBuffer.append(buffer, 0, length);
                     }
                 } catch (IOException ex) {
                     exception[1] = ex;

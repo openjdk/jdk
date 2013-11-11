@@ -480,7 +480,7 @@ public abstract class AbstractMemberWriter {
                 if (cd != null && !(pgmdoc instanceof ConstructorDoc)
                         && !(pgmdoc instanceof ClassDoc)) {
                     HtmlTree name = new HtmlTree(HtmlTag.SPAN);
-                    name.addStyle(HtmlStyle.strong);
+                    name.addStyle(HtmlStyle.typeNameLabel);
                     name.addContent(cd.name() + ".");
                     tdLast.addContent(name);
                 }

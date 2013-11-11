@@ -77,7 +77,6 @@ import sun.security.jca.GetInstance.Instance;
  * providers might have precomputed parameter sets for more than just the
  * three modulus sizes mentioned above. Still others might not have a list of
  * precomputed parameters at all and instead always create new parameter sets.
- * <p>
  *
  * <li><b>Algorithm-Specific Initialization</b>
  * <p>For situations where a set of algorithm-specific parameters already

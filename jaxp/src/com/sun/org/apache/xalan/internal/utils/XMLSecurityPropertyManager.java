@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,20 +33,10 @@ import javax.xml.XMLConstants;
  * This class manages security related properties
  *
  */
-public final class XMLSecurityPropertyManager {
+public final class XMLSecurityPropertyManager extends FeaturePropertyBase {
 
     /**
-     * States of the settings of a property, in the order: default value, value
-     * set by FEATURE_SECURE_PROCESSING, jaxp.properties file, jaxp system
-     * properties, and jaxp api properties
-     */
-    public static enum State {
-        //this order reflects the overriding order
-        DEFAULT, FSP, JAXPDOTPROPERTIES, SYSTEMPROPERTY, APIPROPERTY
-    }
-
-    /**
-     * Limits managed by the security manager
+     * Properties managed by the security property manager
      */
     public static enum Property {
         ACCESS_EXTERNAL_DTD(XMLConstants.ACCESS_EXTERNAL_DTD,
@@ -73,15 +63,6 @@ public final class XMLSecurityPropertyManager {
 
 
     /**
-     * Values of the properties as defined in enum Properties
-     */
-    private final String[] values;
-    /**
-     * States of the settings for each property in Properties above
-     */
-    private State[] states = {State.DEFAULT, State.DEFAULT};
-
-    /**
      * Default constructor. Establishes default values
      */
     public XMLSecurityPropertyManager() {
@@ -91,86 +72,6 @@ public final class XMLSecurityPropertyManager {
         }
         //read system properties or jaxp.properties
         readSystemProperties();
-    }
-
-    /**
-     * Set limit by property name and state
-     * @param propertyName property name
-     * @param state the state of the property
-     * @param value the value of the property
-     * @return true if the property is managed by the security property manager;
-     *         false if otherwise.
-     */
-    public boolean setValue(String propertyName, State state, Object value) {
-        int index = getIndex(propertyName);
-        if (index > -1) {
-            setValue(index, state, (String)value);
-            return true;
-        }
-        return false;
-    }
-
-    /**
-     * Set the value for a specific property.
-     *
-     * @param property the property
-     * @param state the state of the property
-     * @param value the value of the property
-     */
-    public void setValue(Property property, State state, String value) {
-        //only update if it shall override
-        if (state.compareTo(states[property.ordinal()]) >= 0) {
-            values[property.ordinal()] = value;
-            states[property.ordinal()] = state;
-        }
-    }
-
-    /**
-     * Set the value of a property by its index
-     * @param index the index of the property
-     * @param state the state of the property
-     * @param value the value of the property
-     */
-    public void setValue(int index, State state, String value) {
-        //only update if it shall override
-        if (state.compareTo(states[index]) >= 0) {
-            values[index] = value;
-            states[index] = state;
-        }
-    }
-
-    /**
-     * Return the value of the specified property
-     *
-     * @param propertyName the property name
-     * @return the value of the property as a string
-     */
-    public String getValue(String propertyName) {
-        int index = getIndex(propertyName);
-        if (index > -1) {
-            return getValueByIndex(index);
-        }
-
-        return null;
-    }
-
-    /**
-     * Return the value of the specified property
-     *
-     * @param property the property
-     * @return the value of the property
-     */
-    public String getValue(Property property) {
-        return values[property.ordinal()];
-    }
-
-    /**
-     * Return the value of a property by its ordinal
-     * @param index the index of a property
-     * @return value of a property
-     */
-    public String getValueByIndex(int index) {
-        return values[index];
     }
 
     /**
@@ -198,28 +99,4 @@ public final class XMLSecurityPropertyManager {
                 XalanConstants.SP_ACCESS_EXTERNAL_STYLESHEET);
     }
 
-    /**
-     * Read from system properties, or those in jaxp.properties
-     *
-     * @param property the property
-     * @param systemProperty the name of the system property
-     */
-    private void getSystemProperty(Property property, String systemProperty) {
-        try {
-            String value = SecuritySupport.getSystemProperty(systemProperty);
-            if (value != null) {
-                values[property.ordinal()] = value;
-                states[property.ordinal()] = State.SYSTEMPROPERTY;
-                return;
-            }
-
-            value = SecuritySupport.readJAXPProperty(systemProperty);
-            if (value != null) {
-                values[property.ordinal()] = value;
-                states[property.ordinal()] = State.JAXPDOTPROPERTIES;
-            }
-        } catch (NumberFormatException e) {
-            //invalid setting ignored
-        }
-    }
 }

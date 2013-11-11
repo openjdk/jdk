@@ -840,7 +840,15 @@ public class FileChannelImpl
             ti = threads.add();
             if (!isOpen())
                 return null;
-            if (size() < position + size) { // Extend file size
+
+            long filesize;
+            do {
+                filesize = nd.size(fd);
+            } while ((filesize == IOStatus.INTERRUPTED) && isOpen());
+            if (!isOpen())
+                return null;
+
+            if (filesize < position + size) { // Extend file size
                 if (!writable) {
                     throw new IOException("Channel not open for writing " +
                         "- cannot extend file to required size");
@@ -849,6 +857,8 @@ public class FileChannelImpl
                 do {
                     rv = nd.truncate(fd, position + size);
                 } while ((rv == IOStatus.INTERRUPTED) && isOpen());
+                if (!isOpen())
+                    return null;
             }
             if (size == 0) {
                 addr = 0;

@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 4651598
+ * @bug 4651598 8026567
  * @summary Javadoc wrongly inserts </DD> tags when using multiple @author tags
  * @author dkramer
  * @run main AuthorDD
@@ -86,12 +86,12 @@ public class AuthorDD
 
              // Test single @since tag:
 
-            { "<dt><span class=\"strong\">Since:</span></dt>"+NL+"<dd>JDK 1.0</dd>",
+            { "<dt><span class=\"simpleTagLabel\">Since:</span></dt>"+NL+"<dd>JDK 1.0</dd>",
                                   BUGID + FS + "p1" + FS + "C1.html" },
 
             // Test multiple @author tags:
 
-            { "<dt><span class=\"strong\">Author:</span></dt>"+NL+"<dd>Doug Kramer, Jamie, Neal</dd>",
+            { "<dt><span class=\"simpleTagLabel\">Author:</span></dt>"+NL+"<dd>Doug Kramer, Jamie, Neal</dd>",
                                   BUGID + FS + "p1" + FS + "C1.html" },
 
         };

@@ -122,7 +122,7 @@ public abstract class CardChannel {
 
     /**
      * Transmits the command APDU stored in the command ByteBuffer and receives
-     * the reponse APDU in the response ByteBuffer.
+     * the response APDU in the response ByteBuffer.
      *
      * <p>The command buffer must contain valid command APDU data starting
      * at <code>command.position()</code> and the APDU must be

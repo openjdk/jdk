@@ -51,11 +51,10 @@ import sun.security.util.SecurityConstants;
  * signify a wildcard match. For example: "java.*" and "*" signify a wildcard
  * match, while "*java" and "a*b" do not.
  * <P>
- * <P>
  * The actions to be granted are passed to the constructor in a string containing
  * a list of one or more comma-separated keywords. The possible keywords are
  * "read" and "write". Their meaning is defined as follows:
- * <P>
+ *
  * <DL>
  *    <DT> read
  *    <DD> read permission. Allows <code>System.getProperty</code> to
@@ -166,11 +165,11 @@ public final class PropertyPermission extends BasicPermission {
      * Checks if this PropertyPermission object "implies" the specified
      * permission.
      * <P>
-     * More specifically, this method returns true if:<p>
+     * More specifically, this method returns true if:
      * <ul>
-     * <li> <i>p</i> is an instanceof PropertyPermission,<p>
+     * <li> <i>p</i> is an instanceof PropertyPermission,
      * <li> <i>p</i>'s actions are a subset of this
-     * object's actions, and <p>
+     * object's actions, and
      * <li> <i>p</i>'s name is implied by this object's
      *      name. For example, "java.*" implies "java.home".
      * </ul>

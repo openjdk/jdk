@@ -40,7 +40,7 @@ package com.sun.beans.decoder;
  * &lt;string&gt;
  *     &lt;true&gt;
  * &lt;/string&gt;</pre>
- * <p>The following atribute is supported:
+ * <p>The following attribute is supported:
  * <dl>
  * <dt>id
  * <dd>the identifier of the variable that is intended to store the result

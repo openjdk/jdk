@@ -759,7 +759,7 @@ public class TransferHandler implements Serializable {
      * returns. Should the clipboard be unavailable when attempting to place
      * data on it, the <code>IllegalStateException</code> thrown by
      * {@link Clipboard#setContents(Transferable, ClipboardOwner)} will
-     * be propogated through this method. However,
+     * be propagated through this method. However,
      * <code>exportDone</code> will first be called with an action
      * of <code>NONE</code> for consistency.
      *

@@ -409,7 +409,7 @@ public class ChoiceFormat extends NumberFormat {
      * @param status an input-output parameter.  On input, the
      * status.index field indicates the first character of the
      * source text that should be parsed.  On exit, if no error
-     * occured, status.index is set to the first unparsed character
+     * occurred, status.index is set to the first unparsed character
      * in the source text.  On exit, if an error did occur,
      * status.index is unchanged and status.errorIndex is set to the
      * first index of the character that caused the parse to fail.

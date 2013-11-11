@@ -611,7 +611,7 @@ public class EventHandler implements InvocationHandler {
      * the empty string.
      * The format of the <code>eventPropertyName</code> string is a sequence of
      * methods or properties where each method or
-     * property is applied to the value returned by the preceeding method
+     * property is applied to the value returned by the preceding method
      * starting from the incoming event object.
      * The syntax is: <code>propertyName{.propertyName}*</code>
      * where <code>propertyName</code> matches a method or

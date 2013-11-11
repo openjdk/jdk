@@ -338,7 +338,7 @@ public class BoxLayout implements LayoutManager2, Serializable {
      * to lay out the components it contains.
      *
      * @param target  the container that needs to be laid out
-     * @return the dimenions >= 0 && <= Integer.MAX_VALUE
+     * @return the dimensions >= 0 && <= Integer.MAX_VALUE
      * @exception AWTError  if the target isn't the container specified to the
      *                      BoxLayout constructor
      * @see #preferredLayoutSize

@@ -47,7 +47,7 @@ name(PacketInputStream *in, PacketOutputStream *out)
 
         (void)memset(&info, 0, sizeof(info));
         threadGroupInfo(group, &info);
-        (void)outStream_writeString(out, info.name);
+        (void)outStream_writeString(out, info.name == NULL ? "" : info.name);
         if ( info.name != NULL )
             jvmtiDeallocate(info.name);
 

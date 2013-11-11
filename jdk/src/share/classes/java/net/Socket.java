@@ -1230,13 +1230,13 @@ class Socket implements java.io.Closeable {
      * Generally, the window size can be modified at any time when a socket is
      * connected. However, if a receive window larger than 64K is required then
      * this must be requested <B>before</B> the socket is connected to the
-     * remote peer. There are two cases to be aware of:<p>
+     * remote peer. There are two cases to be aware of:
      * <ol>
      * <li>For sockets accepted from a ServerSocket, this must be done by calling
      * {@link ServerSocket#setReceiveBufferSize(int)} before the ServerSocket
      * is bound to a local address.<p></li>
      * <li>For client sockets, setReceiveBufferSize() must be called before
-     * connecting the socket to its remote peer.<p></li></ol>
+     * connecting the socket to its remote peer.</li></ol>
      * @param size the size to which to set the receive buffer
      * size. This value must be greater than 0.
      *
@@ -1329,7 +1329,7 @@ class Socket implements java.io.Closeable {
      * represent the value of the TOS octet in IP packets sent by
      * the socket.
      * RFC 1349 defines the TOS values as follows:
-     * <p>
+     *
      * <UL>
      * <LI><CODE>IPTOS_LOWCOST (0x02)</CODE></LI>
      * <LI><CODE>IPTOS_RELIABILITY (0x04)</CODE></LI>

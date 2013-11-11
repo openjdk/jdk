@@ -33,7 +33,7 @@ package com.sun.beans.decoder;
  * For example:<pre>
  * &lt;char&gt;X&lt;/char&gt;</pre>
  * which is equivalent to {@code Character.valueOf('X')} in Java code.
- * <p>The following atributes are supported:
+ * <p>The following attributes are supported:
  * <dl>
  * <dt>code
  * <dd>this attribute specifies character code
@@ -52,7 +52,7 @@ final class CharElementHandler extends StringElementHandler {
 
     /**
      * Parses attributes of the element.
-     * The following atributes are supported:
+     * The following attributes are supported:
      * <dl>
      * <dt>code
      * <dd>this attribute specifies character code

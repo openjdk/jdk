@@ -86,19 +86,19 @@ public class MotifInternalFrameTitlePane
 
     protected void assembleSystemMenu() {
         systemMenu = new JPopupMenu();
-        JMenuItem mi = systemMenu.add(new JMenuItem(restoreAction));
-        mi.setMnemonic('R');
-        mi = systemMenu.add(new JMenuItem(moveAction));
-        mi.setMnemonic('M');
-        mi = systemMenu.add(new JMenuItem(sizeAction));
-        mi.setMnemonic('S');
-        mi = systemMenu.add(new JMenuItem(iconifyAction));
-        mi.setMnemonic('n');
-        mi = systemMenu.add(new JMenuItem(maximizeAction));
-        mi.setMnemonic('x');
+        JMenuItem mi = systemMenu.add(restoreAction);
+        mi.setMnemonic(getButtonMnemonic("restore"));
+        mi = systemMenu.add(moveAction);
+        mi.setMnemonic(getButtonMnemonic("move"));
+        mi = systemMenu.add(sizeAction);
+        mi.setMnemonic(getButtonMnemonic("size"));
+        mi = systemMenu.add(iconifyAction);
+        mi.setMnemonic(getButtonMnemonic("minimize"));
+        mi = systemMenu.add(maximizeAction);
+        mi.setMnemonic(getButtonMnemonic("maximize"));
         systemMenu.add(new JSeparator());
-        mi = systemMenu.add(new JMenuItem(closeAction));
-        mi.setMnemonic('C');
+        mi = systemMenu.add(closeAction);
+        mi.setMnemonic(getButtonMnemonic("close"));
 
         systemButton = new SystemButton();
         systemButton.addActionListener(new ActionListener() {
@@ -124,6 +124,14 @@ public class MotifInternalFrameTitlePane
         });
     }
 
+    private static int getButtonMnemonic(String button) {
+        try {
+            return Integer.parseInt(UIManager.getString(
+                    "InternalFrameTitlePane." + button + "Button.mnemonic"));
+        } catch (NumberFormatException e) {
+            return -1;
+        }
+    }
 
     protected void createButtons() {
         minimizeButton = new MinimizeButton();

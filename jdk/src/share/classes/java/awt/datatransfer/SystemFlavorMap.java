@@ -1324,7 +1324,7 @@ public final class SystemFlavorMap implements FlavorMap, FlavorTable {
         List<String> retval = null;
         for (DataFlavor dataFlavor : convertMimeTypeToDataFlavors(type)) {
             List<String> natives = getFlavorToNative().get(dataFlavor);
-            if (!natives.isEmpty()) {
+            if (natives != null && !natives.isEmpty()) {
                 if (retval == null) {
                     retval = new ArrayList<>();
                 }

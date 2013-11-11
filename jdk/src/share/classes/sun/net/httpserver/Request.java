@@ -222,7 +222,7 @@ class Request {
         ByteBuffer chanbuf;
         byte[] one;
         private boolean closed = false, eof = false;
-        ByteBuffer markBuf; /* reads may be satisifed from this buffer */
+        ByteBuffer markBuf; /* reads may be satisfied from this buffer */
         boolean marked;
         boolean reset;
         int readlimit;

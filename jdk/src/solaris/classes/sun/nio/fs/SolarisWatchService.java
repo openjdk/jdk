@@ -668,7 +668,7 @@ class SolarisWatchService
                     }
                 }
 
-                // an error occured
+                // an error occurred
                 if (ex != null) {
                     releaseChildren(key);
                     throw ex;

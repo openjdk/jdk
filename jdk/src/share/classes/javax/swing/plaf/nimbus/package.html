@@ -25,7 +25,7 @@ Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
 or visit www.oracle.com if you need additional information or have any
 questions.
 -->
-
+<title></title>
 </head>
 <body bgcolor="white">
 
@@ -39,11 +39,11 @@ component states.
 
 <p>Nimbus allows customizing many of its properties, including painters, by
 altering the {@link javax.swing.UIDefaults} table. Here's an example:
-<code><pre>
+<pre>
     UIManager.put("ProgressBar.tileWidth", myTileWidth);
     UIManager.put("ProgressBar[Enabled].backgroundPainter", myBgPainter);
     UIManager.put("ProgressBar[Enabled].foregroundPainter", myFgPainter);
-</pre></code>
+</pre>
 
 <p>Per-component customization is also possible. When rendering a component,
 Nimbus checks its client property named "Nimbus.Overrides". The value of this
@@ -53,14 +53,14 @@ only. An optional client property, "Nimbus.Overrides.InheritDefaults" of type
 Boolean, specifies whether the overriding settings should be merged with
 default ones ({@code true}), or replace them ({@code false}). By default they
 are merged:
-<code><pre>
+<pre>
     JProgressBar bar = new JProgressBar();
     UIDefaults overrides = new UIDefaults();
     overrides.put("ProgressBar.cycleTime", 330);
     ...
     bar.putClientProperty("Nimbus.Overrides", overrides);
     bar.putClientProperty("Nimbus.Overrides.InheritDefaults", false);
-</pre></code>
+</pre>
 
 <p>Colors in Nimbus are derived from a core set of
 <a href="doc-files/properties.html#primaryColors">primary colors</a>. There are also

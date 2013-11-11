@@ -515,7 +515,7 @@ class ConnectionAcceptor implements Runnable {
     }
 
     /**
-     * Give transport next accepted conection, when available.
+     * Give transport next accepted connection, when available.
      */
     public void run() {
         Connection conn;

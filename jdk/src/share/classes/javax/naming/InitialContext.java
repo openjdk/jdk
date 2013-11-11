@@ -361,7 +361,7 @@ public class InitialContext implements Context {
      * follows.
      * Define a new method that uses this method to get an initial
      * context of the desired subclass.
-     * <p><blockquote><pre>
+     * <blockquote><pre>
      * protected XXXContext getURLOrDefaultInitXXXCtx(Name name)
      * throws NamingException {
      *  Context answer = getURLOrDefaultInitCtx(name);
@@ -377,7 +377,7 @@ public class InitialContext implements Context {
      * </pre></blockquote>
      * When providing implementations for the new methods in the subclass,
      * use this newly defined method to get the initial context.
-     * <p><blockquote><pre>
+     * <blockquote><pre>
      * public Object XXXMethod1(Name name, ...) {
      *  throws NamingException {
      *    return getURLOrDefaultInitXXXCtx(name).XXXMethod1(name, ...);

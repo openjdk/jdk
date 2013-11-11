@@ -197,7 +197,7 @@ import sun.java2d.SunCompositeContext;
  * <h3>Performance Considerations</h3>
  *
  * <p>
- * For performance reasons, it is preferrable that
+ * For performance reasons, it is preferable that
  * <code>Raster</code> objects passed to the <code>compose</code>
  * method of a {@link CompositeContext} object created by the
  * <code>AlphaComposite</code> class have premultiplied data.

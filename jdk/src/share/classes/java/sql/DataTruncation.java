@@ -30,7 +30,7 @@ package java.sql;
  * (on writes) or reported as a
  * <code>DataTruncation</code> warning (on reads)
  *  when a data values is unexpectedly truncated for reasons other than its having
- *  execeeded <code>MaxFieldSize</code>.
+ *  exceeded <code>MaxFieldSize</code>.
  *
  * <P>The SQLstate for a <code>DataTruncation</code> during read is <code>01004</code>.
  * <P>The SQLstate for a <code>DataTruncation</code> during write is <code>22001</code>.
@@ -107,7 +107,7 @@ public class DataTruncation extends SQLWarning {
      * <P>This may be -1 if the column or parameter index is unknown, in
      * which case the <code>parameter</code> and <code>read</code> fields should be ignored.
      *
-     * @return the index of the truncated paramter or column value
+     * @return the index of the truncated parameter or column value
      */
     public int getIndex() {
         return index;

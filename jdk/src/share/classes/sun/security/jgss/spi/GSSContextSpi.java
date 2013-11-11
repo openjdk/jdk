@@ -232,7 +232,7 @@ public interface GSSContextSpi {
                         throws GSSException;
 
     /**
-     * Queries the context for largest data size to accomodate
+     * Queries the context for largest data size to accommodate
      * the specified protection and for the token to remain less then
      * maxTokSize.
      *
@@ -313,7 +313,7 @@ public interface GSSContextSpi {
                         MessageProp msgProp) throws GSSException;
 
     /**
-     * For apps that want simplicity and dont care about buffer copies.
+     * For apps that want simplicity and don't care about buffer copies.
      */
     public byte[] unwrap(byte inBuf[], int offset, int len,
                          MessageProp msgProp) throws GSSException;

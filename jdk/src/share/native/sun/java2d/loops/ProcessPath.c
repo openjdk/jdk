@@ -641,7 +641,7 @@ static void DrawMonotonicQuad(ProcessHandler* hnd,
 
         /* Checking that we are not running out of the endpoint and bounding
          * violating coordinate.  The check is pretty simple because the curve
-         * passed to the DrawMonotonicQuad already splitted into the monotonic
+         * passed to the DrawMonotonicQuad already split into the monotonic
          * in X and Y pieces
          */
 
@@ -1129,7 +1129,7 @@ static void DrawMonotonicCubic(ProcessHandler* hnd,
             /* Checking that we are not running out of the endpoint and
              * bounding violating coordinate.  The check is pretty simple
              * because the curve passed to the DrawMonotonicCubic already
-             * splitted into the monotonic in X and Y pieces
+             * split into the monotonic in X and Y pieces
              */
 
             /* Bounding x2 by xe */
