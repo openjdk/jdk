@@ -204,9 +204,6 @@ java/net/DatagramSocket/SendDatagramToBadAddress.java            macosx-all
 # 6963118
 java/nio/channels/Selector/Wakeup.java                          windows-all
 
-# 7052549
-java/nio/channels/FileChannel/ReleaseOnCloseDeadlock.java 	windows-all
-
 # 7133499, 7133497
 java/nio/channels/AsyncCloseAndInterrupt.java                   macosx-all
 java/nio/channels/AsynchronousFileChannel/Lock.java             macosx-all
