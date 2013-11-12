@@ -3286,7 +3286,7 @@ class CommandLineFlags {
           "Exit the VM if we fill the code cache")                          \
                                                                             \
   product(bool, UseCodeCacheFlushing, true,                                 \
-          "Attempt to clean the code cache before shutting off compiler")   \
+          "Remove cold/old nmethods from the code cache")                   \
                                                                             \
   /* interpreter debugging */                                               \
   develop(intx, BinarySwitchThreshold, 5,                                   \
