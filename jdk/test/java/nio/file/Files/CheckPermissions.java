@@ -22,7 +22,7 @@
  */
 
 /* @test
- * @bug 6866804 7006126
+ * @bug 6866804 7006126 8028270
  * @summary Unit test for java.nio.file.Files
  * @library ..
  * @build CheckPermissions
@@ -73,14 +73,9 @@ public class CheckPermissions {
         myChecks.set(new Checks());
     }
 
-    static void assertCheckPermission(Class<? extends Permission> type,
-                                      String name)
-    {
-        for (Permission perm: myChecks.get().permissionsChecked()) {
-            if (type.isInstance(perm) && perm.getName().equals(name))
-                return;
-        }
-        throw new RuntimeException(type.getName() + "(\"" + name + "\") not checked");
+    static void assertCheckPermission(Permission expected) {
+        if (!myChecks.get().permissionsChecked().contains(expected))
+          throw new RuntimeException(expected + " not checked");
     }
 
     static void assertCheckPropertyAccess(String key) {
@@ -191,22 +186,22 @@ public class CheckPermissions {
         prepare();
         PosixFileAttributes attrs = view.readAttributes();
         assertCheckRead(file);
-        assertCheckPermission(RuntimePermission.class, "accessUserInformation");
+        assertCheckPermission(new RuntimePermission("accessUserInformation"));
 
         prepare();
         view.setPermissions(attrs.permissions());
         assertCheckWrite(file);
-        assertCheckPermission(RuntimePermission.class, "accessUserInformation");
+        assertCheckPermission(new RuntimePermission("accessUserInformation"));
 
         prepare();
         view.setOwner(attrs.owner());
         assertCheckWrite(file);
-        assertCheckPermission(RuntimePermission.class, "accessUserInformation");
+        assertCheckPermission(new RuntimePermission("accessUserInformation"));
 
         prepare();
         view.setOwner(attrs.owner());
         assertCheckWrite(file);
-        assertCheckPermission(RuntimePermission.class, "accessUserInformation");
+        assertCheckPermission(new RuntimePermission("accessUserInformation"));
     }
 
     public static void main(String[] args) throws IOException {
@@ -256,10 +251,14 @@ public class CheckPermissions {
                     try {
                         assertCheckRead(link);
                         assertCheckWrite(target);
-                        assertCheckPermission(LinkPermission.class, "symbolic");
+                        assertCheckPermission(new LinkPermission("symbolic"));
                     } finally {
                         delete(target);
                     }
+
+                    prepare();
+                    readSymbolicLink(link);
+                    assertCheckPermission(new FilePermission(link.toString(), "readlink"));
                 } finally {
                     delete(link);
                 }
@@ -295,7 +294,7 @@ public class CheckPermissions {
                 createSymbolicLink(link, file);
                 try {
                     assertCheckWrite(link);
-                    assertCheckPermission(LinkPermission.class, "symbolic");
+                    assertCheckPermission(new LinkPermission("symbolic"));
                 } finally {
                     delete(link);
                 }
@@ -309,7 +308,7 @@ public class CheckPermissions {
                 createLink(link, file);
                 try {
                     assertCheckWrite(link);
-                    assertCheckPermission(LinkPermission.class, "hard");
+                    assertCheckPermission(new LinkPermission("hard"));
                 } finally {
                     delete(link);
                 }
@@ -382,7 +381,7 @@ public class CheckPermissions {
             prepare();
             getFileStore(file);
             assertCheckRead(file);
-            assertCheckPermission(RuntimePermission.class, "getFileStoreAttributes");
+            assertCheckPermission(new RuntimePermission("getFileStoreAttributes"));
 
             // -- isSameFile --
 
@@ -620,12 +619,12 @@ public class CheckPermissions {
                     prepare();
                     UserPrincipal owner = view.getOwner();
                     assertCheckRead(file);
-                    assertCheckPermission(RuntimePermission.class, "accessUserInformation");
+                    assertCheckPermission(new RuntimePermission("accessUserInformation"));
 
                     prepare();
                     view.setOwner(owner);
                     assertCheckWrite(file);
-                    assertCheckPermission(RuntimePermission.class, "accessUserInformation");
+                    assertCheckPermission(new RuntimePermission("accessUserInformation"));
 
                 } else {
                     System.out.println("FileOwnerAttributeView not tested");
@@ -643,32 +642,27 @@ public class CheckPermissions {
                     prepare();
                     view.write("test", ByteBuffer.wrap(new byte[100]));
                     assertCheckWrite(file);
-                    assertCheckPermission(RuntimePermission.class,
-                                               "accessUserDefinedAttributes");
+                    assertCheckPermission(new RuntimePermission("accessUserDefinedAttributes"));
 
                     prepare();
                     view.read("test", ByteBuffer.allocate(100));
                     assertCheckRead(file);
-                    assertCheckPermission(RuntimePermission.class,
-                                               "accessUserDefinedAttributes");
+                    assertCheckPermission(new RuntimePermission("accessUserDefinedAttributes"));
 
                     prepare();
                     view.size("test");
                     assertCheckRead(file);
-                    assertCheckPermission(RuntimePermission.class,
-                                               "accessUserDefinedAttributes");
+                    assertCheckPermission(new RuntimePermission("accessUserDefinedAttributes"));
 
                     prepare();
                     view.list();
                     assertCheckRead(file);
-                    assertCheckPermission(RuntimePermission.class,
-                                               "accessUserDefinedAttributes");
+                    assertCheckPermission(new RuntimePermission("accessUserDefinedAttributes"));
 
                     prepare();
                     view.delete("test");
                     assertCheckWrite(file);
-                    assertCheckPermission(RuntimePermission.class,
-                                               "accessUserDefinedAttributes");
+                    assertCheckPermission(new RuntimePermission("accessUserDefinedAttributes"));
                 } else {
                     System.out.println("UserDefinedFileAttributeView not tested");
                 }
@@ -684,11 +678,11 @@ public class CheckPermissions {
                     prepare();
                     List<AclEntry> acl = view.getAcl();
                     assertCheckRead(file);
-                    assertCheckPermission(RuntimePermission.class, "accessUserInformation");
+                    assertCheckPermission(new RuntimePermission("accessUserInformation"));
                     prepare();
                     view.setAcl(acl);
                     assertCheckWrite(file);
-                    assertCheckPermission(RuntimePermission.class, "accessUserInformation");
+                    assertCheckPermission(new RuntimePermission("accessUserInformation"));
                 } else {
                     System.out.println("AclFileAttributeView not tested");
                 }
@@ -702,15 +696,13 @@ public class CheckPermissions {
 
             prepare();
             lookupService.lookupPrincipalByName(owner.getName());
-            assertCheckPermission(RuntimePermission.class,
-                                       "lookupUserInformation");
+            assertCheckPermission(new RuntimePermission("lookupUserInformation"));
 
             try {
                 UserPrincipal group = readAttributes(file, PosixFileAttributes.class).group();
                 prepare();
                 lookupService.lookupPrincipalByGroupName(group.getName());
-                assertCheckPermission(RuntimePermission.class,
-                                           "lookupUserInformation");
+                assertCheckPermission(new RuntimePermission("lookupUserInformation"));
             } catch (UnsupportedOperationException ignore) {
                 System.out.println("lookupPrincipalByGroupName not tested");
             }
