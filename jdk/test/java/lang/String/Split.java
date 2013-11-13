@@ -23,7 +23,7 @@
 
 /**
  * @test
- * @bug 6840246
+ * @bug 6840246 6559590
  * @summary test String.split()
  */
 import java.util.Arrays;
@@ -78,12 +78,11 @@ public class Split {
                 throw new RuntimeException("String.split failure 7");
         }
         // Check the case for limit == 0, source = "";
+        // split() now returns 0-length for empty source "" see #6559590
         source = "";
         String[] result = source.split("e", 0);
-        if (result.length != 1)
+        if (result.length != 0)
             throw new RuntimeException("String.split failure 8");
-        if (!result[0].equals(source))
-            throw new RuntimeException("String.split failure 9");
 
         // check fastpath of String.split()
         source = "0123456789abcdefgABCDEFG";

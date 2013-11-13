@@ -2235,7 +2235,13 @@ public final class String
      * expression or is terminated by the end of the string.  The substrings in
      * the array are in the order in which they occur in this string.  If the
      * expression does not match any part of the input then the resulting array
-     * has just one element, namely this string.
+     * has just one element, namely this string. A zero-length input sequence
+     * always results zero-length resulting array.
+     *
+     * <p> When there is a positive-width match at the beginning of this
+     * string then an empty leading substring is included at the beginning
+     * of the resulting array. A zero-width match at the beginning however
+     * never produces such empty leading substring.
      *
      * <p> The {@code limit} parameter controls the number of times the
      * pattern is applied and therefore affects the length of the resulting
@@ -2325,6 +2331,8 @@ public final class String
             (ch < Character.MIN_HIGH_SURROGATE ||
              ch > Character.MAX_LOW_SURROGATE))
         {
+            if (value.length == 0)
+                return new String[0];
             int off = 0;
             int next = 0;
             boolean limited = limit > 0;
