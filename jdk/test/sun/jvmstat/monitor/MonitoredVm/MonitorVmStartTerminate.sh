@@ -38,6 +38,6 @@ setup
 verify_os
 
 JAVA="${TESTJAVA}/bin/java"
-CP=${TESTJAVA}${FS}lib${FS}tools.jar${PS}${TESTCLASSES}
+CP=${TESTJAVA}${FS}lib${FS}tools.jar${PS}${TESTCLASSES}${PS}${TESTCLASSES}${FS}..${FS}..${FS}testlibrary
 
 ${JAVA} ${TESTVMOPTS} -classpath ${CP} MonitorVmStartTerminate
