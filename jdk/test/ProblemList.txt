@@ -139,9 +139,6 @@ sun/management/HotspotRuntimeMBean/GetSafepointSyncTime.java	macosx-all
 
 # jdk_jmx
 
-# 6959636
-javax/management/loading/LibraryLoader/LibraryLoaderTest.java	windows-all
-
 ############################################################################
 
 # jdk_math
