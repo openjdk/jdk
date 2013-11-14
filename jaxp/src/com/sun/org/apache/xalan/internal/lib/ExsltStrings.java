@@ -227,7 +227,7 @@ public class ExsltStrings extends ExsltBase
         token = str.substring(fromIndex);
       }
 
-      Document doc = DocumentHolder.m_doc;
+      Document doc = getDocument();
       synchronized (doc)
       {
         Element element = doc.createElement("token");
@@ -291,7 +291,7 @@ public class ExsltStrings extends ExsltBase
     {
       StringTokenizer lTokenizer = new StringTokenizer(toTokenize, delims);
 
-      Document doc = DocumentHolder.m_doc;
+      Document doc = getDocument();
       synchronized (doc)
       {
         while (lTokenizer.hasMoreTokens())
@@ -307,7 +307,7 @@ public class ExsltStrings extends ExsltBase
     else
     {
 
-      Document doc = DocumentHolder.m_doc;
+      Document doc = getDocument();
       synchronized (doc)
       {
         for (int i = 0; i < toTokenize.length(); i++)
@@ -329,35 +329,23 @@ public class ExsltStrings extends ExsltBase
   {
     return tokenize(toTokenize, " \t\n\r");
   }
+
     /**
-     * This class is not loaded until first referenced (see Java Language
-     * Specification by Gosling/Joy/Steele, section 12.4.1)
-     *
-     * The static members are created when this class is first referenced, as a
-     * lazy initialization not needing checking against null or any
-     * synchronization.
-     *
+   * @return an instance of DOM Document
      */
-    private static class DocumentHolder
-    {
-        // Reuse the Document object to reduce memory usage.
-        private static final Document m_doc;
-        static {
-            try
-            {
-                if (System.getSecurityManager() == null) {
-                    m_doc = DocumentBuilderFactory.newInstance().newDocumentBuilder().newDocument();
-                } else {
-                    m_doc = DocumentBuilderFactory.newInstance(JDK_DEFAULT_DOM, null).newDocumentBuilder().newDocument();
-                }
+   private static Document getDocument()
+   {
+        try
+        {
+            if (System.getSecurityManager() == null) {
+                return DocumentBuilderFactory.newInstance().newDocumentBuilder().newDocument();
+            } else {
+                return DocumentBuilderFactory.newInstance(JDK_DEFAULT_DOM, null).newDocumentBuilder().newDocument();
             }
-
-            catch(ParserConfigurationException pce)
-            {
-                  throw new com.sun.org.apache.xml.internal.utils.WrappedRuntimeException(pce);
-            }
-
+        }
+        catch(ParserConfigurationException pce)
+        {
+            throw new com.sun.org.apache.xml.internal.utils.WrappedRuntimeException(pce);
         }
     }
-
 }
