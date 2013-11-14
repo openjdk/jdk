@@ -29,7 +29,7 @@
 include $(SPEC)
 
 # Load the vital tools for all the makefiles.
-include $(SRC_ROOT)/common/makefiles/MakeBase.gmk
+include $(SRC_ROOT)/make/common/MakeBase.gmk
 
 # Include the corresponding custom file, if present.
 -include $(CUSTOM_MAKE_DIR)/Main.gmk
@@ -81,51 +81,51 @@ start-make: $(SPEC)
 langtools: langtools-only
 langtools-only: start-make
 	@$(call TargetEnter)
-	@($(CD) $(LANGTOOLS_TOPDIR)/makefiles && $(BUILD_LOG_WRAPPER) $(MAKE) $(MAKE_ARGS) -f BuildLangtools.gmk)
+	@($(CD) $(LANGTOOLS_TOPDIR)/make && $(BUILD_LOG_WRAPPER) $(MAKE) $(MAKE_ARGS) -f BuildLangtools.gmk)
 	@$(call TargetExit)
 
 corba: langtools corba-only
 corba-only: start-make
 	@$(call TargetEnter)
-	@($(CD) $(CORBA_TOPDIR)/makefiles && $(BUILD_LOG_WRAPPER) $(MAKE) $(MAKE_ARGS) -f BuildCorba.gmk)
+	@($(CD) $(CORBA_TOPDIR)/make && $(BUILD_LOG_WRAPPER) $(MAKE) $(MAKE_ARGS) -f BuildCorba.gmk)
 	@$(call TargetExit)
 
 jaxp: langtools jaxp-only
 jaxp-only: start-make
 	@$(call TargetEnter)
-	@($(CD) $(JAXP_TOPDIR)/makefiles && $(BUILD_LOG_WRAPPER) $(MAKE) $(MAKE_ARGS) -f BuildJaxp.gmk)
+	@($(CD) $(JAXP_TOPDIR)/make && $(BUILD_LOG_WRAPPER) $(MAKE) $(MAKE_ARGS) -f BuildJaxp.gmk)
 	@$(call TargetExit)
 
 jaxws: langtools jaxp jaxws-only
 jaxws-only: start-make
 	@$(call TargetEnter)
-	@($(CD) $(JAXWS_TOPDIR)/makefiles && $(BUILD_LOG_WRAPPER) $(MAKE) $(MAKE_ARGS) -f BuildJaxws.gmk)
+	@($(CD) $(JAXWS_TOPDIR)/make && $(BUILD_LOG_WRAPPER) $(MAKE) $(MAKE_ARGS) -f BuildJaxws.gmk)
 	@$(call TargetExit)
 
 ifeq ($(BUILD_HOTSPOT),true)
   hotspot: hotspot-only
   hotspot-only: start-make
 	@$(call TargetEnter)
-	@($(CD) $(SRC_ROOT)/common/makefiles && $(BUILD_LOG_WRAPPER) $(MAKE) $(MAKE_ARGS) -f HotspotWrapper.gmk)
+	@($(CD) $(SRC_ROOT)/make && $(BUILD_LOG_WRAPPER) $(MAKE) $(MAKE_ARGS) -f HotspotWrapper.gmk)
 	@$(call TargetExit)
 endif
 
 jdk: langtools hotspot corba jaxp jaxws jdk-only
 jdk-only: start-make
 	@$(call TargetEnter)
-	@($(CD) $(JDK_TOPDIR)/makefiles && $(BUILD_LOG_WRAPPER) $(MAKE) $(MAKE_ARGS) -f BuildJdk.gmk $(JDK_TARGET))
+	@($(CD) $(JDK_TOPDIR)/make && $(BUILD_LOG_WRAPPER) $(MAKE) $(MAKE_ARGS) -f BuildJdk.gmk $(JDK_TARGET))
 	@$(call TargetExit)
 
 nashorn: jdk nashorn-only
 nashorn-only: start-make
 	@$(call TargetEnter)
-	@($(CD) $(NASHORN_TOPDIR)/makefiles && $(BUILD_LOG_WRAPPER) $(MAKE) $(MAKE_ARGS) -f BuildNashorn.gmk)
+	@($(CD) $(NASHORN_TOPDIR)/make && $(BUILD_LOG_WRAPPER) $(MAKE) $(MAKE_ARGS) -f BuildNashorn.gmk)
 	@$(call TargetExit)
 
 demos: jdk demos-only
 demos-only: start-make
 	@$(call TargetEnter)
-	@($(CD) $(JDK_TOPDIR)/makefiles && $(BUILD_LOG_WRAPPER) $(MAKE) $(MAKE_ARGS) -f BuildJdk.gmk demos)
+	@($(CD) $(JDK_TOPDIR)/make && $(BUILD_LOG_WRAPPER) $(MAKE) $(MAKE_ARGS) -f BuildJdk.gmk demos)
 	@$(call TargetExit)
 
 # Note: This double-colon rule is intentional, to support
@@ -133,19 +133,19 @@ demos-only: start-make
 images:: source-tips demos nashorn images-only
 images-only: start-make
 	@$(call TargetEnter)
-	@($(CD) $(JDK_TOPDIR)/makefiles && $(BUILD_LOG_WRAPPER) $(MAKE) $(MAKE_ARGS) -f BuildJdk.gmk images)
+	@($(CD) $(JDK_TOPDIR)/make && $(BUILD_LOG_WRAPPER) $(MAKE) $(MAKE_ARGS) -f BuildJdk.gmk images)
 	@$(call TargetExit)
 
 overlay-images: source-tips demos overlay-images-only
 overlay-images-only: start-make
 	@$(call TargetEnter)
-	@($(CD) $(JDK_TOPDIR)/makefiles && $(BUILD_LOG_WRAPPER) $(MAKE) $(MAKE_ARGS) -f BuildJdk.gmk overlay-images)
+	@($(CD) $(JDK_TOPDIR)/make && $(BUILD_LOG_WRAPPER) $(MAKE) $(MAKE_ARGS) -f BuildJdk.gmk overlay-images)
 	@$(call TargetExit)
 
 profiles: profiles-oscheck source-tips jdk hotspot profiles-only
 profiles-only: start-make
 	@$(call TargetEnter)
-	@($(CD) $(JDK_TOPDIR)/makefiles && $(BUILD_LOG_WRAPPER) $(MAKE) $(MAKE_ARGS) -f BuildJdk.gmk profiles)
+	@($(CD) $(JDK_TOPDIR)/make && $(BUILD_LOG_WRAPPER) $(MAKE) $(MAKE_ARGS) -f BuildJdk.gmk profiles)
 	@$(call TargetExit)
 
 profiles-oscheck:
@@ -156,25 +156,25 @@ profiles-oscheck:
 install: images install-only
 install-only: start-make
 	@$(call TargetEnter)
-	@($(CD) $(JDK_TOPDIR)/makefiles && $(BUILD_LOG_WRAPPER) $(MAKE) $(MAKE_ARGS) -f BuildJdk.gmk install)
+	@($(CD) $(JDK_TOPDIR)/make && $(BUILD_LOG_WRAPPER) $(MAKE) $(MAKE_ARGS) -f BuildJdk.gmk install)
 	@$(call TargetExit)
 
 docs: jdk docs-only
 docs-only: start-make
 	@$(call TargetEnter)
-	@($(CD) $(SRC_ROOT)/common/makefiles/javadoc && $(BUILD_LOG_WRAPPER) $(MAKE) $(MAKE_ARGS) -f Javadoc.gmk docs)
+	@($(CD) $(SRC_ROOT)/make && $(BUILD_LOG_WRAPPER) $(MAKE) $(MAKE_ARGS) -f Javadoc.gmk docs)
 	@$(call TargetExit)
 
 sign-jars: jdk sign-jars-only
 sign-jars-only: start-make
 	@$(call TargetEnter)
-	@($(CD) $(JDK_TOPDIR)/makefiles && $(BUILD_LOG_WRAPPER) $(MAKE) $(MAKE_ARGS) -f BuildJdk.gmk sign-jars)
+	@($(CD) $(JDK_TOPDIR)/make && $(BUILD_LOG_WRAPPER) $(MAKE) $(MAKE_ARGS) -f BuildJdk.gmk sign-jars)
 	@$(call TargetExit)
 
 bootcycle-images: images bootcycle-images-only
 bootcycle-images-only: start-make
 	@$(ECHO) Boot cycle build step 2: Building a new JDK image using previously built image
-	@($(CD) $(SRC_ROOT)/common/makefiles && $(BUILD_LOG_WRAPPER) $(MAKE) SPEC=$(dir $(SPEC))bootcycle-spec.gmk images)
+	@($(CD) $(SRC_ROOT) && $(BUILD_LOG_WRAPPER) $(MAKE) SPEC=$(dir $(SPEC))bootcycle-spec.gmk images)
 
 test: images test-only
 test-only: start-make

@@ -80,32 +80,25 @@ AC_DEFUN_ONCE([SRCDIRS_SETUP_ALTERNATIVE_TOPDIRS],
     cd "$CURDIR"
     # Verify that the addon source root does not have any root makefiles.
     # If it does, then it is usually an error, prevent this.
-    if test -f $with_add_source_root/langtools/makefiles/Makefile || \
-      test -f $with_add_source_root/langtools/make/Makefile; then
+    if test -f $with_add_source_root/langtools/make/Makefile; then
       AC_MSG_ERROR([Your add source root seems to contain a full langtools repo! An add source root should only contain additional sources.])
     fi
-    if test -f $with_add_source_root/corba/makefiles/Makefile || \
-      test -f $with_add_source_root/corba/make/Makefile; then
+    if test -f $with_add_source_root/corba/make/Makefile; then
       AC_MSG_ERROR([Your add source root seems to contain a full corba repo! An add source root should only contain additional sources.])
     fi
-    if test -f $with_add_source_root/jaxp/makefiles/Makefile || \
-      test -f $with_add_source_root/jaxp/make/Makefile; then
+    if test -f $with_add_source_root/jaxp/make/Makefile; then
       AC_MSG_ERROR([Your add source root seems to contain a full jaxp repo! An add source root should only contain additional sources.])
     fi
-    if test -f $with_add_source_root/jaxws/makefiles/Makefile || \
-      test -f $with_add_source_root/jaxws/make/Makefile; then
+    if test -f $with_add_source_root/jaxws/make/Makefile; then
       AC_MSG_ERROR([Your add source root seems to contain a full jaxws repo! An add source root should only contain additional sources.])
     fi
-    if test -f $with_add_source_root/hotspot/makefiles/Makefile || \
-      test -f $with_add_source_root/hotspot/make/Makefile; then
+    if test -f $with_add_source_root/hotspot/make/Makefile; then
       AC_MSG_ERROR([Your add source root seems to contain a full hotspot repo! An add source root should only contain additional sources.])
     fi
-    if test -f $with_add_source_root/nashorn/makefiles/Makefile || \
-      test -f $with_add_source_root/nashorn/make/Makefile; then
+    if test -f $with_add_source_root/nashorn/make/Makefile; then
       AC_MSG_ERROR([Your add source root seems to contain a full nashorn repo! An add source root should only contain additional sources.])
     fi
-    if test -f $with_add_source_root/jdk/makefiles/Makefile || \
-      test -f $with_add_source_root/jdk/make/Makefile; then
+    if test -f $with_add_source_root/jdk/make/Makefile; then
       AC_MSG_ERROR([Your add source root seems to contain a full JDK repo! An add source root should only contain additional sources.])
     fi
   fi
@@ -119,32 +112,25 @@ AC_DEFUN_ONCE([SRCDIRS_SETUP_ALTERNATIVE_TOPDIRS],
     cd "$with_override_source_root"
     OVERRIDE_SRC_ROOT="`pwd`"
     cd "$CURDIR"
-    if test -f $with_override_source_root/langtools/makefiles/Makefile || \
-      test -f $with_override_source_root/langtools/make/Makefile; then
+    if test -f $with_override_source_root/langtools/make/Makefile; then
       AC_MSG_ERROR([Your override source root seems to contain a full langtools repo! An override source root should only contain sources that override.])
     fi
-    if test -f $with_override_source_root/corba/makefiles/Makefile || \
-      test -f $with_override_source_root/corba/make/Makefile; then
+    if test -f $with_override_source_root/corba/make/Makefile; then
       AC_MSG_ERROR([Your override source root seems to contain a full corba repo! An override source root should only contain sources that override.])
     fi
-    if test -f $with_override_source_root/jaxp/makefiles/Makefile || \
-      test -f $with_override_source_root/jaxp/make/Makefile; then
+    if test -f $with_override_source_root/jaxp/make/Makefile; then
       AC_MSG_ERROR([Your override source root seems to contain a full jaxp repo! An override source root should only contain sources that override.])
     fi
-    if test -f $with_override_source_root/jaxws/makefiles/Makefile || \
-      test -f $with_override_source_root/jaxws/make/Makefile; then
+    if test -f $with_override_source_root/jaxws/make/Makefile; then
       AC_MSG_ERROR([Your override source root seems to contain a full jaxws repo! An override source root should only contain sources that override.])
     fi
-    if test -f $with_override_source_root/hotspot/makefiles/Makefile || \
-      test -f $with_override_source_root/hotspot/make/Makefile; then
+    if test -f $with_override_source_root/hotspot/make/Makefile; then
       AC_MSG_ERROR([Your override source root seems to contain a full hotspot repo! An override source root should only contain sources that override.])
     fi
-    if test -f $with_override_source_root/nashorn/makefiles/Makefile || \
-      test -f $with_override_source_root/nashorn/make/Makefile; then
+    if test -f $with_override_source_root/nashorn/make/Makefile; then
       AC_MSG_ERROR([Your override source root seems to contain a full nashorn repo! An override source root should only contain sources that override.])
     fi
-    if test -f $with_override_source_root/jdk/makefiles/Makefile || \
-      test -f $with_override_source_root/jdk/make/Makefile; then
+    if test -f $with_override_source_root/jdk/make/Makefile; then
       AC_MSG_ERROR([Your override source root seems to contain a full JDK repo! An override source root should only contain sources that override.])
     fi
   fi
@@ -195,7 +181,7 @@ AC_DEFUN_ONCE([SRCDIRS_SETUP_ALTERNATIVE_TOPDIRS],
     cd "$with_override_langtools"
     LANGTOOLS_TOPDIR="`pwd`"
     cd "$CURDIR"
-    if ! test -f $LANGTOOLS_TOPDIR/makefiles/Makefile; then
+    if ! test -f $LANGTOOLS_TOPDIR/make/Makefile; then
       AC_MSG_ERROR([You have to override langtools with a full langtools repo!])
     fi
     AC_MSG_CHECKING([if langtools should be overridden])
@@ -206,7 +192,7 @@ AC_DEFUN_ONCE([SRCDIRS_SETUP_ALTERNATIVE_TOPDIRS],
     cd "$with_override_corba"
     CORBA_TOPDIR="`pwd`"
     cd "$CURDIR"
-    if ! test -f $CORBA_TOPDIR/makefiles/Makefile; then
+    if ! test -f $CORBA_TOPDIR/make/Makefile; then
       AC_MSG_ERROR([You have to override corba with a full corba repo!])
     fi
     AC_MSG_CHECKING([if corba should be overridden])
@@ -217,7 +203,7 @@ AC_DEFUN_ONCE([SRCDIRS_SETUP_ALTERNATIVE_TOPDIRS],
     cd "$with_override_jaxp"
     JAXP_TOPDIR="`pwd`"
     cd "$CURDIR"
-    if ! test -f $JAXP_TOPDIR/makefiles/Makefile; then
+    if ! test -f $JAXP_TOPDIR/make/Makefile; then
       AC_MSG_ERROR([You have to override jaxp with a full jaxp repo!])
     fi
     AC_MSG_CHECKING([if jaxp should be overridden])
@@ -228,7 +214,7 @@ AC_DEFUN_ONCE([SRCDIRS_SETUP_ALTERNATIVE_TOPDIRS],
     cd "$with_override_jaxws"
     JAXWS_TOPDIR="`pwd`"
     cd "$CURDIR"
-    if ! test -f $JAXWS_TOPDIR/makefiles/Makefile; then
+    if ! test -f $JAXWS_TOPDIR/make/Makefile; then
       AC_MSG_ERROR([You have to override jaxws with a full jaxws repo!])
     fi
     AC_MSG_CHECKING([if jaxws should be overridden])
@@ -239,8 +225,7 @@ AC_DEFUN_ONCE([SRCDIRS_SETUP_ALTERNATIVE_TOPDIRS],
     cd "$with_override_hotspot"
     HOTSPOT_TOPDIR="`pwd`"
     cd "$CURDIR"
-    if ! test -f $HOTSPOT_TOPDIR/make/Makefile && \
-        ! test -f $HOTSPOT_TOPDIR/makefiles/Makefile; then
+    if ! test -f $HOTSPOT_TOPDIR/make/Makefile; then
       AC_MSG_ERROR([You have to override hotspot with a full hotspot repo!])
     fi
     AC_MSG_CHECKING([if hotspot should be overridden])
@@ -251,7 +236,7 @@ AC_DEFUN_ONCE([SRCDIRS_SETUP_ALTERNATIVE_TOPDIRS],
     cd "$with_override_nashorn"
     NASHORN_TOPDIR="`pwd`"
     cd "$CURDIR"
-    if ! test -f $NASHORN_TOPDIR/makefiles/Makefile; then
+    if ! test -f $NASHORN_TOPDIR/make/Makefile; then
       AC_MSG_ERROR([You have to override nashorn with a full nashorn repo!])
     fi
     AC_MSG_CHECKING([if nashorn should be overridden])
@@ -262,7 +247,7 @@ AC_DEFUN_ONCE([SRCDIRS_SETUP_ALTERNATIVE_TOPDIRS],
     cd "$with_override_jdk"
     JDK_TOPDIR="`pwd`"
     cd "$CURDIR"
-    if ! test -f $JDK_TOPDIR/makefiles/Makefile; then
+    if ! test -f $JDK_TOPDIR/make/Makefile; then
       AC_MSG_ERROR([You have to override JDK with a full JDK repo!])
     fi
     AC_MSG_CHECKING([if JDK should be overridden])
