@@ -1781,7 +1781,9 @@ public class RegExTest {
         // split() now returns 0-length for empty source "" see #6559590
         source = "";
         result = source.split("e", 0);
-        if (result.length != 0)
+        if (result.length != 1)
+            failCount++;
+        if (!result[0].equals(source))
             failCount++;
 
         // Check both split() and splitAsStraem(), especially for zero-lenth
@@ -1817,8 +1819,8 @@ public class RegExTest {
             { "Abc", "Efg", "Hij" },
             { "Abc", "Efg" },
             { "Abc" },
-            {},
-            {},
+            { "" },
+            { "" },
 
             { "awgqwefg1fefw", "vssv1vvv1" },
             { "afbfq", "bgwgb", "wngnwggw", "", "hjrnhneerh" },
@@ -1826,7 +1828,7 @@ public class RegExTest {
             { "a\u4ebafg", "fefw\u4eba4\u9f9cvssv\u9f9c", "v\u672c\u672cvv" },
             { "1", "23", "456", "7890" },
             { "1", "23\u9f9c\u672c\u672c", "456", "\u9f9c\u672c7890" },
-            {},
+            { "" },
             { "This", "is", "testing", "", "with", "different", "separators" },
             { "b", "", ":and:f" },
             { "b", "", "", "", "", ":and:f" },
@@ -1834,11 +1836,15 @@ public class RegExTest {
         };
         for (int i = 0; i < input.length; i++) {
             pattern = Pattern.compile(input[i][0]);
-            if (!Arrays.equals(pattern.split(input[i][1]), expected[i]))
+            if (!Arrays.equals(pattern.split(input[i][1]), expected[i])) {
                 failCount++;
-            if (!Arrays.equals(pattern.splitAsStream(input[i][1]).toArray(),
-                               expected[i]))
+            }
+            if (input[i][1].length() > 0 &&  // splitAsStream() return empty resulting
+                                             // array for zero-length input for now
+                !Arrays.equals(pattern.splitAsStream(input[i][1]).toArray(),
+                               expected[i])) {
                 failCount++;
+            }
         }
         report("Split");
     }

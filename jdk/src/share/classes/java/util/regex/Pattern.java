@@ -1144,8 +1144,7 @@ public final class Pattern
      * substrings in the array are in the order in which they occur in the
      * input. If this pattern does not match any subsequence of the input then
      * the resulting array has just one element, namely the input sequence in
-     * string form. A zero-length input sequence always results zero-length
-     * resulting array.
+     * string form.
      *
      * <p> When there is a positive-width match at the beginning of the input
      * sequence then an empty leading substring is included at the beginning
@@ -1201,8 +1200,6 @@ public final class Pattern
      *          around matches of this pattern
      */
     public String[] split(CharSequence input, int limit) {
-        if (input.length() == 0)
-            return new String[0];
         int index = 0;
         boolean matchLimited = limit > 0;
         ArrayList<String> matchList = new ArrayList<>();
@@ -5767,14 +5764,12 @@ NEXT:       while (i <= last) {
      * input sequence that is terminated by another subsequence that matches
      * this pattern or is terminated by the end of the input sequence.  The
      * substrings in the stream are in the order in which they occur in the
-     * input.  Trailing empty strings will be discarded and not encountered in
+     * input. Trailing empty strings will be discarded and not encountered in
      * the stream.
      *
      * <p> If this pattern does not match any subsequence of the input then
      * the resulting stream has just one element, namely the input sequence in
      * string form.
-     *
-     * <p> A zero-length input sequence always results an empty stream.
      *
      * <p> When there is a positive-width match at the beginning of the input
      * sequence then an empty leading substring is included at the beginning

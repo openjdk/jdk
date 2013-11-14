@@ -81,8 +81,10 @@ public class Split {
         // split() now returns 0-length for empty source "" see #6559590
         source = "";
         String[] result = source.split("e", 0);
-        if (result.length != 0)
+        if (result.length != 1)
             throw new RuntimeException("String.split failure 8");
+        if (!result[0].equals(source))
+            throw new RuntimeException("String.split failure 9");
 
         // check fastpath of String.split()
         source = "0123456789abcdefgABCDEFG";
