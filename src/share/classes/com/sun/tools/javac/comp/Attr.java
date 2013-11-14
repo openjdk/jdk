@@ -4602,9 +4602,8 @@ public class Attr extends JCTree.Visitor {
                         validateAnnotatedType(t, t.type);
                     }
                     repeat = false;
-                } else if (enclTr.getKind() == JCTree.Kind.PRIMITIVE_TYPE) {
-                    // This happens in test TargetTypeTest52.java
-                    // Is there anything to do?
+                } else if (enclTr.getKind() == JCTree.Kind.PRIMITIVE_TYPE ||
+                           enclTr.getKind() == JCTree.Kind.ERRONEOUS) {
                     repeat = false;
                 } else {
                     Assert.error("Unexpected tree: " + enclTr + " with kind: " + enclTr.getKind() +
