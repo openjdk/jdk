@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2012, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2012, 2013, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -23,27 +23,19 @@
 # questions.
 #
 
-# Locate this Makefile
-ifeq ($(filter /%, $(lastword $(MAKEFILE_LIST))), )
-  makefile_path := $(CURDIR)/$(lastword $(MAKEFILE_LIST))
-else
-  makefile_path := $(lastword $(MAKEFILE_LIST))
-endif
-repo_dir := $(patsubst %/make/Makefile, %, $(makefile_path))
+GENDATA_TZDB :=
 
-# What is the name of this subsystem (langtools, corba, etc)?
-subsystem_name := $(notdir $(repo_dir))
+#
+# Time zone data file creation
+#
+TZDATA_DIR := $(JDK_TOPDIR)/make/data/tzdata
+TZDATA_TZFILE := africa antarctica asia australasia europe northamerica pacificnew southamerica backward etcetera gmt jdk11_backward
+TZDATA_TZFILES := $(addprefix $(TZDATA_DIR)/,$(TZDATA_TZFILE))
 
-# Try to locate top-level makefile
-top_level_makefile := $(repo_dir)/../Makefile
-ifneq ($(wildcard $(top_level_makefile)), )
-  $(info Will run $(subsystem_name) target on top-level Makefile)
-  $(info WARNING: This is a non-recommended way of building!)
-  $(info ===================================================)
-else
-  $(info Cannot locate top-level Makefile. Is this repo not checked out as part of a complete forest?)
-  $(error Build from top-level Makefile instead)
-endif
+GENDATA_TZDB_DAT := $(JDK_OUTPUTDIR)/lib/tzdb.dat
 
-all:
-	@$(MAKE) -f $(top_level_makefile) $(subsystem_name)
+$(GENDATA_TZDB_DAT): $(TZDATA_TZFILES)
+	$(RM) $(GENDATA_TZDB_DAT)
+	$(TOOL_TZDB) -srcdir $(TZDATA_DIR) -dstfile $(GENDATA_TZDB_DAT) $(TZDATA_TZFILE)
+
+GENDATA_TZDB += $(GENDATA_TZDB_DAT)
