@@ -30,6 +30,7 @@
  * @compile -XDignore.symbol.file ManyNewInstanceAnonTest.java
  * @run main ClassFileInstaller ManyNewInstanceAnonTest
  * @run main/othervm -Xbootclasspath/a:. -Xverify:all ManyNewInstanceAnonTest
+ * @run main/othervm -Xbootclasspath/a:. -Xverify:all -Dsun.reflection.noInflation=true ManyNewInstanceAnonTest
  */
 import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
