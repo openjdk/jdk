@@ -266,7 +266,7 @@ COMMON_JAVADOCFLAGS = \
     -use \
     -keywords \
     -Xdoclint:none \
-    -Xprofilespath $(JDK_TOPDIR)/makefiles/profile-rtjar-includes.txt \
+    -Xprofilespath $(JDK_TOPDIR)/make/profile-rtjar-includes.txt \
     $(ADDITIONAL_JAVADOCFLAGS)
 
 ifdef OPENJDK
@@ -1158,6 +1158,28 @@ $(DIRECTORY_CACHE): $(ALL_EXISTING_SOURCE_DIRS)
 
 #############################################################
 #release version of core packages ########
+
+# The rel-coredocs and rel-docs targets were added by Eric Armstrong. rel-coredocs
+# assumes the kind of large, 32-bit machine used in the javapubs group's docs-release
+# process. It specifies memory settings accordingly to maximize performance.
+#
+# The performance settings, like the sanity check, are most important for the core
+# docs--the platform APIs. Running javadoc on those APIs takes a significant amount
+# of time and memory. Setting the initial heap size as large as possible is important
+# to prevent thrashing as the heap grows. Setting the maximum as large as necessary
+# is also important to keep the job from failing.
+#
+#    -J-Xmx512 sets a maximum of 512, which became necessary in 6.0
+#    -J-Xms256 sets starting size to 256 (default is 8)
+#
+# rel-coredocs also includes a sanity check to help ensure that BUILD_NUMBER and
+# MILESTONE are specified properly when docs are built outside of the normal release
+# engineering process, with the intention of releasing them on the web or in a downloaded
+# docs bundle. (When invoked in release engineering's control build, the values are always
+# set properly. But when the targets are run by themselves, they default to b00 and
+# "internal"--which silently sabotage the result of a build that can take many hours
+# to complete.
+
 # Maximize performance and ensure that build number & milestone are set.
 
 rel-coredocs: sanitycheckcoredocs

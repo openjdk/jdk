@@ -339,7 +339,7 @@ define add_file_to_copy_and_clean
   $$($1_BIN)$$($2_TARGET) : $2
 	$(MKDIR) -p $$(@D)
 	$(CAT) $$< | $(SED) -e 's/\([^\\]\):/\1\\:/g' -e 's/\([^\\]\)=/\1\\=/g' -e 's/#.*/#/g' \
-	    | $(SED) -f "$(SRC_ROOT)/common/makefiles/support/unicode2x.sed" \
+	    | $(SED) -f "$(SRC_ROOT)/make/common/support/unicode2x.sed" \
 	    | $(SED) -e '/^#/d' -e '/^$$$$/d' \
 	        -e :a -e '/\\$$$$/N; s/\\\n//; ta' \
 	        -e 's/^[ \t]*//;s/[ \t]*$$$$//' \
