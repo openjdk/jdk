@@ -115,23 +115,14 @@ public class Extensions
 
       // This no longer will work right since the DTM.
       // Document myDoc = myProcessor.getContextNode().getOwnerDocument();
-      try
-      {
-        DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
-        DocumentBuilder db = dbf.newDocumentBuilder();
-        Document myDoc = db.newDocument();
+      Document myDoc = getDocument();
 
         Text textNode = myDoc.createTextNode(textNodeValue);
         DocumentFragment docFrag = myDoc.createDocumentFragment();
 
         docFrag.appendChild(textNode);
 
-        return new NodeSet(docFrag);
-      }
-      catch(ParserConfigurationException pce)
-      {
-        throw new com.sun.org.apache.xml.internal.utils.WrappedRuntimeException(pce);
-      }
+      return new NodeSet(docFrag);
     }
   }
 
@@ -250,8 +241,7 @@ public class Extensions
   public static NodeList tokenize(String toTokenize, String delims)
   {
 
-    Document doc = DocumentHolder.m_doc;
-
+    Document doc = getDocument();
 
     StringTokenizer lTokenizer = new StringTokenizer(toTokenize, delims);
     NodeSet resultSet = new NodeSet();
@@ -309,17 +299,7 @@ public class Extensions
   public static Node checkEnvironment(ExpressionContext myContext)
   {
 
-    Document factoryDocument;
-    try
-    {
-      DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
-      DocumentBuilder db = dbf.newDocumentBuilder();
-      factoryDocument = db.newDocument();
-    }
-    catch(ParserConfigurationException pce)
-    {
-      throw new com.sun.org.apache.xml.internal.utils.WrappedRuntimeException(pce);
-    }
+    Document factoryDocument = getDocument();
 
     Node resultNode = null;
     try
@@ -392,34 +372,21 @@ public class Extensions
   }
 
     /**
-     * This class is not loaded until first referenced (see Java Language
-     * Specification by Gosling/Joy/Steele, section 12.4.1)
-     *
-     * The static members are created when this class is first referenced, as a
-     * lazy initialization not needing checking against null or any
-     * synchronization.
-     *
+   * @return an instance of DOM Document
      */
-    private static class DocumentHolder
-    {
-        // Reuse the Document object to reduce memory usage.
-        private static final Document m_doc;
-        static
+   private static Document getDocument()
+   {
+        try
         {
-            try
-            {
-                if (System.getSecurityManager() == null) {
-                    m_doc = DocumentBuilderFactory.newInstance().newDocumentBuilder().newDocument();
-                } else {
-                    m_doc = DocumentBuilderFactory.newInstance(JDK_DEFAULT_DOM, null).newDocumentBuilder().newDocument();
-                }
+            if (System.getSecurityManager() == null) {
+                return DocumentBuilderFactory.newInstance().newDocumentBuilder().newDocument();
+            } else {
+                return DocumentBuilderFactory.newInstance(JDK_DEFAULT_DOM, null).newDocumentBuilder().newDocument();
             }
-
-            catch(ParserConfigurationException pce)
-            {
-                  throw new com.sun.org.apache.xml.internal.utils.WrappedRuntimeException(pce);
-            }
-
+        }
+        catch(ParserConfigurationException pce)
+        {
+            throw new com.sun.org.apache.xml.internal.utils.WrappedRuntimeException(pce);
         }
     }
 }
