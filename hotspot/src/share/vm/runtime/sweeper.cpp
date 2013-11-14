@@ -231,7 +231,8 @@ void NMethodSweeper::mark_active_nmethods() {
  */
 void NMethodSweeper::possibly_sweep() {
   assert(JavaThread::current()->thread_state() == _thread_in_vm, "must run in vm mode");
-  if (!MethodFlushing || !sweep_in_progress()) {
+  // Only compiler threads are allowed to sweep
+  if (!MethodFlushing || !sweep_in_progress() || !Thread::current()->is_Compiler_thread()) {
     return;
   }
 
