@@ -27,6 +27,7 @@
  * @summary Lambda serialization fails once reflection proxy generation kicks in
  * @author  Robert Field
  * @run main/othervm RepetitiveLambdaSerialization
+ * @run main/othervm -Dsun.reflect.noInflation=true RepetitiveLambdaSerialization
  */
 
 import java.io.*;
