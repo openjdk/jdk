@@ -2954,6 +2954,9 @@ class CommandLineFlags {
   product(intx, MaxRecursiveInlineLevel, 1,                                 \
           "maximum number of nested recursive calls that are inlined")      \
                                                                             \
+  develop(intx, MaxForceInlineLevel, 100,                                   \
+          "maximum number of nested @ForceInline calls that are inlined")   \
+                                                                            \
   product_pd(intx, InlineSmallCode,                                         \
           "Only inline already compiled methods if their code size is "     \
           "less than this")                                                 \
