@@ -135,6 +135,9 @@ java/lang/management/MemoryMXBean/CollectionUsageThreshold.java generic-all
 # 8010897
 sun/management/HotspotRuntimeMBean/GetSafepointSyncTime.java	macosx-all
 
+# 8028150
+sun/management/jmxremote/bootstrap/RmiSslBootstrapTest.sh	windows-all
+
 ############################################################################
 
 # jdk_jmx
@@ -160,8 +163,8 @@ demo/jvmti/hprof/HeapDumpTest.java                              generic-all
 demo/jvmti/hprof/OptionsTest.java                               generic-all
 demo/jvmti/hprof/StackMapTableTest.java                         generic-all
 
-# 8027622
-java/sql/JavatimeTest.java                                      generic-all
+# 8027973
+javax/xml/jaxp/transform/jdk8004476/XSLTExFuncTest.java		windows-all
 
 ############################################################################
 
@@ -212,8 +215,9 @@ java/nio/channels/DatagramChannel/ChangingAddress.java          macosx-all
 # 7132677
 java/nio/channels/Selector/OutOfBand.java                       macosx-all
 
-# 8027622
-java/nio/file/attribute/FileTime/Basic.java                     generic-all
+# 7158947, Solaris 11
+java/nio/file/WatchService/Basic.java				solaris-all
+java/nio/file/WatchService/LotsOfEvents.java			solaris-all
 
 ############################################################################
 
@@ -279,26 +283,6 @@ sun/security/krb5/auto/BadKdc4.java                             solaris-sparcv9
 
 # jdk_time
 
-# 8027622
-java/time/tck/java/time/TCKClock_Tick.java                      generic-all
-java/time/tck/java/time/TCKDuration.java                        generic-all
-java/time/tck/java/time/TCKInstant.java                         generic-all
-java/time/tck/java/time/TCKLocalDate.java                       generic-all
-java/time/tck/java/time/TCKLocalDateTime.java                   generic-all
-java/time/tck/java/time/TCKLocalTime.java                       generic-all
-java/time/tck/java/time/TCKMonthDay.java                        generic-all
-java/time/tck/java/time/TCKOffsetDateTime.java                  generic-all
-java/time/tck/java/time/TCKOffsetTime.java                      generic-all
-java/time/tck/java/time/TCKYear.java                            generic-all
-java/time/tck/java/time/TCKYearMonth.java                       generic-all
-java/time/tck/java/time/TCKZonedDateTime.java                   generic-all
-java/time/tck/java/time/temporal/TCKWeekFields.java             generic-all
-java/time/test/java/time/TestClock_Fixed.java                   generic-all
-java/time/test/java/time/TestOffsetDateTime_instants.java       generic-all
-java/time/test/java/time/format/TestZoneTextPrinterParser.java  generic-all
-java/time/test/java/time/temporal/TestChronoUnit.java           generic-all
-java/time/test/java/util/TestFormatter.java                     generic-all
-
 ############################################################################
 
 # jdk_tools
@@ -338,8 +322,5 @@ java/util/concurrent/ThreadPoolExecutor/CoreThreadTimeOut.java  generic-all
 
 # Filed 6772009
 java/util/concurrent/locks/ReentrantLock/CancelledLockLoops.java generic-all
-
-# 8027622
-java/util/Calendar/JavatimeTest.java                             generic-all
 
 ############################################################################
