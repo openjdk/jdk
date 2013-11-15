@@ -144,6 +144,10 @@ void Block::find_remove( const Node *n ) {
   remove_node(find_node(n));
 }
 
+bool Block::contains(const Node *n) const {
+  return _nodes.contains(n);
+}
+
 // Return empty status of a block.  Empty blocks contain only the head, other
 // ideal nodes, and an optional trailing goto.
 int Block::is_Empty() const {
@@ -699,7 +703,7 @@ void PhaseCFG::remove_empty_blocks() {
 // Fix up the final control flow for basic blocks.
 void PhaseCFG::fixup_flow() {
   // Fixup final control flow for the blocks.  Remove jump-to-next
-  // block.  If neither arm of a IF follows the conditional branch, we
+  // block. If neither arm of an IF follows the conditional branch, we
   // have to add a second jump after the conditional.  We place the
   // TRUE branch target in succs[0] for both GOTOs and IFs.
   for (uint i = 0; i < number_of_blocks(); i++) {
@@ -844,6 +848,228 @@ void PhaseCFG::fixup_flow() {
 }
 
 
+// postalloc_expand: Expand nodes after register allocation.
+//
+// postalloc_expand has to be called after register allocation, just
+// before output (i.e. scheduling). It only gets called if
+// Matcher::require_postalloc_expand is true.
+//
+// Background:
+//
+// Nodes that are expandend (one compound node requiring several
+// assembler instructions to be implemented split into two or more
+// non-compound nodes) after register allocation are not as nice as
+// the ones expanded before register allocation - they don't
+// participate in optimizations as global code motion. But after
+// register allocation we can expand nodes that use registers which
+// are not spillable or registers that are not allocated, because the
+// old compound node is simply replaced (in its location in the basic
+// block) by a new subgraph which does not contain compound nodes any
+// more. The scheduler called during output can later on process these
+// non-compound nodes.
+//
+// Implementation:
+//
+// Nodes requiring postalloc expand are specified in the ad file by using
+// a postalloc_expand statement instead of ins_encode. A postalloc_expand
+// contains a single call to an encoding, as does an ins_encode
+// statement. Instead of an emit() function a postalloc_expand() function
+// is generated that doesn't emit assembler but creates a new
+// subgraph. The code below calls this postalloc_expand function for each
+// node with the appropriate attribute. This function returns the new
+// nodes generated in an array passed in the call. The old node,
+// potential MachTemps before and potential Projs after it then get
+// disconnected and replaced by the new nodes. The instruction
+// generating the result has to be the last one in the array. In
+// general it is assumed that Projs after the node expanded are
+// kills. These kills are not required any more after expanding as
+// there are now explicitly visible def-use chains and the Projs are
+// removed. This does not hold for calls: They do not only have
+// kill-Projs but also Projs defining values. Therefore Projs after
+// the node expanded are removed for all but for calls. If a node is
+// to be reused, it must be added to the nodes list returned, and it
+// will be added again.
+//
+// Implementing the postalloc_expand function for a node in an enc_class
+// is rather tedious. It requires knowledge about many node details, as
+// the nodes and the subgraph must be hand crafted. To simplify this,
+// adlc generates some utility variables into the postalloc_expand function,
+// e.g., holding the operands as specified by the postalloc_expand encoding
+// specification, e.g.:
+//  * unsigned idx_<par_name>  holding the index of the node in the ins
+//  * Node *n_<par_name>       holding the node loaded from the ins
+//  * MachOpnd *op_<par_name>  holding the corresponding operand
+//
+// The ordering of operands can not be determined by looking at a
+// rule. Especially if a match rule matches several different trees,
+// several nodes are generated from one instruct specification with
+// different operand orderings. In this case the adlc generated
+// variables are the only way to access the ins and operands
+// deterministically.
+//
+// If assigning a register to a node that contains an oop, don't
+// forget to call ra_->set_oop() for the node.
+void PhaseCFG::postalloc_expand(PhaseRegAlloc* _ra) {
+  GrowableArray <Node *> new_nodes(32); // Array with new nodes filled by postalloc_expand function of node.
+  GrowableArray <Node *> remove(32);
+  GrowableArray <Node *> succs(32);
+  unsigned int max_idx = C->unique();   // Remember to distinguish new from old nodes.
+  DEBUG_ONLY(bool foundNode = false);
+
+  // for all blocks
+  for (uint i = 0; i < number_of_blocks(); i++) {
+    Block *b = _blocks[i];
+    // For all instructions in the current block.
+    for (uint j = 0; j < b->number_of_nodes(); j++) {
+      Node *n = b->get_node(j);
+      if (n->is_Mach() && n->as_Mach()->requires_postalloc_expand()) {
+#ifdef ASSERT
+        if (TracePostallocExpand) {
+          if (!foundNode) {
+            foundNode = true;
+            tty->print("POSTALLOC EXPANDING %d %s\n", C->compile_id(),
+                       C->method() ? C->method()->name()->as_utf8() : C->stub_name());
+          }
+          tty->print("  postalloc expanding "); n->dump();
+          if (Verbose) {
+            tty->print("    with ins:\n");
+            for (uint k = 0; k < n->len(); ++k) {
+              if (n->in(k)) { tty->print("        "); n->in(k)->dump(); }
+            }
+          }
+        }
+#endif
+        new_nodes.clear();
+        // Collect nodes that have to be removed from the block later on.
+        uint req = n->req();
+        remove.clear();
+        for (uint k = 0; k < req; ++k) {
+          if (n->in(k) && n->in(k)->is_MachTemp()) {
+            remove.push(n->in(k)); // MachTemps which are inputs to the old node have to be removed.
+            n->in(k)->del_req(0);
+            j--;
+          }
+        }
+
+        // Check whether we can allocate enough nodes. We set a fix limit for
+        // the size of postalloc expands with this.
+        uint unique_limit = C->unique() + 40;
+        if (unique_limit >= _ra->node_regs_max_index()) {
+          Compile::current()->record_failure("out of nodes in postalloc expand");
+          return;
+        }
+
+        // Emit (i.e. generate new nodes).
+        n->as_Mach()->postalloc_expand(&new_nodes, _ra);
+
+        assert(C->unique() < unique_limit, "You allocated too many nodes in your postalloc expand.");
+
+        // Disconnect the inputs of the old node.
+        //
+        // We reuse MachSpillCopy nodes. If we need to expand them, there
+        // are many, so reusing pays off. If reused, the node already
+        // has the new ins. n must be the last node on new_nodes list.
+        if (!n->is_MachSpillCopy()) {
+          for (int k = req - 1; k >= 0; --k) {
+            n->del_req(k);
+          }
+        }
+
+#ifdef ASSERT
+        // Check that all nodes have proper operands.
+        for (int k = 0; k < new_nodes.length(); ++k) {
+          if (new_nodes.at(k)->_idx < max_idx || !new_nodes.at(k)->is_Mach()) continue; // old node, Proj ...
+          MachNode *m = new_nodes.at(k)->as_Mach();
+          for (unsigned int l = 0; l < m->num_opnds(); ++l) {
+            if (MachOper::notAnOper(m->_opnds[l])) {
+              outputStream *os = tty;
+              os->print("Node %s ", m->Name());
+              os->print("has invalid opnd %d: %p\n", l, m->_opnds[l]);
+              assert(0, "Invalid operands, see inline trace in hs_err_pid file.");
+            }
+          }
+        }
+#endif
+
+        // Collect succs of old node in remove (for projections) and in succs (for
+        // all other nodes) do _not_ collect projections in remove (but in succs)
+        // in case the node is a call. We need the projections for calls as they are
+        // associated with registes (i.e. they are defs).
+        succs.clear();
+        for (DUIterator k = n->outs(); n->has_out(k); k++) {
+          if (n->out(k)->is_Proj() && !n->is_MachCall() && !n->is_MachBranch()) {
+            remove.push(n->out(k));
+          } else {
+            succs.push(n->out(k));
+          }
+        }
+        // Replace old node n as input of its succs by last of the new nodes.
+        for (int k = 0; k < succs.length(); ++k) {
+          Node *succ = succs.at(k);
+          for (uint l = 0; l < succ->req(); ++l) {
+            if (succ->in(l) == n) {
+              succ->set_req(l, new_nodes.at(new_nodes.length() - 1));
+            }
+          }
+          for (uint l = succ->req(); l < succ->len(); ++l) {
+            if (succ->in(l) == n) {
+              succ->set_prec(l, new_nodes.at(new_nodes.length() - 1));
+            }
+          }
+        }
+
+        // Index of old node in block.
+        uint index = b->find_node(n);
+        // Insert new nodes into block and map them in nodes->blocks array
+        // and remember last node in n2.
+        Node *n2 = NULL;
+        for (int k = 0; k < new_nodes.length(); ++k) {
+          n2 = new_nodes.at(k);
+          b->insert_node(n2, ++index);
+          map_node_to_block(n2, b);
+        }
+
+        // Add old node n to remove and remove them all from block.
+        remove.push(n);
+        j--;
+#ifdef ASSERT
+        if (TracePostallocExpand && Verbose) {
+          tty->print("    removing:\n");
+          for (int k = 0; k < remove.length(); ++k) {
+            tty->print("        "); remove.at(k)->dump();
+          }
+          tty->print("    inserting:\n");
+          for (int k = 0; k < new_nodes.length(); ++k) {
+            tty->print("        "); new_nodes.at(k)->dump();
+          }
+        }
+#endif
+        for (int k = 0; k < remove.length(); ++k) {
+          if (b->contains(remove.at(k))) {
+            b->find_remove(remove.at(k));
+          } else {
+            assert(remove.at(k)->is_Proj() && (remove.at(k)->in(0)->is_MachBranch()), "");
+          }
+        }
+        // If anything has been inserted (n2 != NULL), continue after last node inserted.
+        // This does not always work. Some postalloc expands don't insert any nodes, if they
+        // do optimizations (e.g., max(x,x)). In this case we decrement j accordingly.
+        j = n2 ? b->find_node(n2) : j;
+      }
+    }
+  }
+
+#ifdef ASSERT
+  if (foundNode) {
+    tty->print("FINISHED %d %s\n", C->compile_id(),
+               C->method() ? C->method()->name()->as_utf8() : C->stub_name());
+    tty->flush();
+  }
+#endif
+}
+
+
+//------------------------------dump-------------------------------------------
 #ifndef PRODUCT
 void PhaseCFG::_dump_cfg( const Node *end, VectorSet &visited  ) const {
   const Node *x = end->is_block_proj();

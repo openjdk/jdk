@@ -2488,7 +2488,113 @@ void ArchDesc::defineSize(FILE *fp, InstructForm &inst) {
   fprintf(fp, "  return (VerifyOops ? MachNode::size(ra_) : %s);\n", inst._size);
 
   // (3) and (4)
-  fprintf(fp,"}\n");
+  fprintf(fp,"}\n\n");
+}
+
+// Emit late expand function.
+void ArchDesc::define_postalloc_expand(FILE *fp, InstructForm &inst) {
+  InsEncode *ins_encode = inst._insencode;
+
+  // Output instruction's postalloc_expand prototype.
+  fprintf(fp, "void  %sNode::postalloc_expand(GrowableArray <Node *> *nodes, PhaseRegAlloc *ra_) {\n",
+          inst._ident);
+
+  assert((_encode != NULL) && (ins_encode != NULL), "You must define an encode section.");
+
+  // Output each operand's offset into the array of registers.
+  inst.index_temps(fp, _globalNames);
+
+  // Output variables "unsigned idx_<par_name>", Node *n_<par_name> and "MachOpnd *op_<par_name>"
+  // for each parameter <par_name> specified in the encoding.
+  ins_encode->reset();
+  const char *ec_name = ins_encode->encode_class_iter();
+  assert(ec_name != NULL, "late expand must specify an encoding");
+
+  EncClass *encoding = _encode->encClass(ec_name);
+  if (encoding == NULL) {
+    fprintf(stderr, "User did not define contents of this encode_class: %s\n", ec_name);
+    abort();
+  }
+  if (ins_encode->current_encoding_num_args() != encoding->num_args()) {
+    globalAD->syntax_err(ins_encode->_linenum, "In %s: passing %d arguments to %s but expecting %d",
+                         inst._ident, ins_encode->current_encoding_num_args(),
+                         ec_name, encoding->num_args());
+  }
+
+  fprintf(fp, "  // Access to ins and operands for late expand.\n");
+  const int buflen = 2000;
+  char idxbuf[buflen]; char *ib = idxbuf; sprintf(ib, "");
+  char nbuf  [buflen]; char *nb = nbuf;   sprintf(nb, "");
+  char opbuf [buflen]; char *ob = opbuf;  sprintf(ob, "");
+
+  encoding->_parameter_type.reset();
+  encoding->_parameter_name.reset();
+  const char *type = encoding->_parameter_type.iter();
+  const char *name = encoding->_parameter_name.iter();
+  int param_no = 0;
+  for (; (type != NULL) && (name != NULL);
+       (type = encoding->_parameter_type.iter()), (name = encoding->_parameter_name.iter())) {
+    const char* arg_name = ins_encode->rep_var_name(inst, param_no);
+    int idx = inst.operand_position_format(arg_name);
+    if (strcmp(arg_name, "constanttablebase") == 0) {
+      ib += sprintf(ib, "  unsigned idx_%-5s = mach_constant_base_node_input(); \t// %s, \t%s\n",
+                    name, type, arg_name);
+      nb += sprintf(nb, "  Node    *n_%-7s = lookup(idx_%s);\n", name, name);
+      // There is no operand for the constanttablebase.
+    } else if (inst.is_noninput_operand(idx)) {
+      globalAD->syntax_err(inst._linenum,
+                           "In %s: you can not pass the non-input %s to a late expand encoding.\n",
+                           inst._ident, arg_name);
+    } else {
+      ib += sprintf(ib, "  unsigned idx_%-5s = idx%d; \t// %s, \t%s\n",
+                    name, idx, type, arg_name);
+      nb += sprintf(nb, "  Node    *n_%-7s = lookup(idx_%s);\n", name, name);
+      ob += sprintf(ob, "  %sOper *op_%s = (%sOper *)opnd_array(%d);\n", type, name, type, idx);
+    }
+    param_no++;
+  }
+  assert(ib < &idxbuf[buflen-1] && nb < &nbuf[buflen-1] && ob < &opbuf[buflen-1], "buffer overflow");
+
+  fprintf(fp, "%s", idxbuf);
+  fprintf(fp, "  Node    *n_region  = lookup(0);\n");
+  fprintf(fp, "%s%s", nbuf, opbuf);
+  fprintf(fp, "  Compile *C = ra_->C;\n");
+
+  // Output this instruction's encodings.
+  fprintf(fp, "  {");
+  const char *ec_code    = NULL;
+  const char *ec_rep_var = NULL;
+  assert(encoding == _encode->encClass(ec_name), "");
+
+  DefineEmitState pending(fp, *this, *encoding, *ins_encode, inst);
+  encoding->_code.reset();
+  encoding->_rep_vars.reset();
+  // Process list of user-defined strings,
+  // and occurrences of replacement variables.
+  // Replacement Vars are pushed into a list and then output.
+  while ((ec_code = encoding->_code.iter()) != NULL) {
+    if (! encoding->_code.is_signal(ec_code)) {
+      // Emit pending code.
+      pending.emit();
+      pending.clear();
+      // Emit this code section.
+      fprintf(fp, "%s", ec_code);
+    } else {
+      // A replacement variable or one of its subfields.
+      // Obtain replacement variable from list.
+      ec_rep_var = encoding->_rep_vars.iter();
+      pending.add_rep_var(ec_rep_var);
+    }
+  }
+  // Emit pending code.
+  pending.emit();
+  pending.clear();
+  fprintf(fp, "  }\n");
+
+  fprintf(fp, "}\n\n");
+
+  ec_name = ins_encode->encode_class_iter();
+  assert(ec_name == NULL, "Late expand may only have one encoding.");
 }
 
 // defineEmit -----------------------------------------------------------------
@@ -2841,7 +2947,7 @@ void ArchDesc::define_oper_interface(FILE *fp, OperandForm &oper, FormDict &glob
   } else if ( (strcmp(name,"disp") == 0) ) {
     fprintf(fp,"(PhaseRegAlloc *ra_, const Node *node, int idx) const { \n");
   } else {
-    fprintf(fp,"() const { \n");
+    fprintf(fp, "() const {\n");
   }
 
   // Check for hexadecimal value OR replacement variable
@@ -2891,6 +2997,8 @@ void ArchDesc::define_oper_interface(FILE *fp, OperandForm &oper, FormDict &glob
     // Hex value
     fprintf(fp,"    return %s;\n", encoding);
   } else {
+    globalAD->syntax_err(oper._linenum, "In operand %s: Do not support this encode constant: '%s' for %s.",
+                         oper._ident, encoding, name);
     assert( false, "Do not support octal or decimal encode constants");
   }
   fprintf(fp,"  }\n");
@@ -3142,7 +3250,15 @@ void ArchDesc::defineClasses(FILE *fp) {
     // Ensure this is a machine-world instruction
     if ( instr->ideal_only() ) continue;
 
-    if (instr->_insencode)         defineEmit        (fp, *instr);
+    if (instr->_insencode) {
+      if (instr->postalloc_expands()) {
+        // Don't write this to _CPP_EXPAND_file, as the code generated calls C-code
+        // from code sections in ad file that is dumped to fp.
+        define_postalloc_expand(fp, *instr);
+      } else {
+        defineEmit(fp, *instr);
+      }
+    }
     if (instr->is_mach_constant()) defineEvalConstant(fp, *instr);
     if (instr->_size)              defineSize        (fp, *instr);
 
