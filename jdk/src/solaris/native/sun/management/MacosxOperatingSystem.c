@@ -23,7 +23,7 @@
  * questions.
  */
 
-#include "com_sun_management_UnixOperatingSystem.h"
+#include "sun_management_OperatingSystemImpl.h"
 
 #include <sys/time.h>
 #include <mach/mach.h>
@@ -31,7 +31,7 @@
 
 
 JNIEXPORT jdouble JNICALL
-Java_com_sun_management_UnixOperatingSystem_getSystemCpuLoad
+Java_sun_management_OperatingSystemImpl_getSystemCpuLoad
 (JNIEnv *env, jobject dummy)
 {
     // This code is influenced by the darwin top source
@@ -83,7 +83,7 @@ Java_com_sun_management_UnixOperatingSystem_getSystemCpuLoad
 
 
 JNIEXPORT jdouble JNICALL
-Java_com_sun_management_UnixOperatingSystem_getProcessCpuLoad
+Java_sun_management_OperatingSystemImpl_getProcessCpuLoad
 (JNIEnv *env, jobject dummy)
 {
     // This code is influenced by the darwin top source

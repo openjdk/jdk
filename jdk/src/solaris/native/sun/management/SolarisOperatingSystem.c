@@ -38,7 +38,7 @@
 #include <sys/loadavg.h>
 #include <jni.h>
 #include "jvm.h"
-#include "com_sun_management_UnixOperatingSystem.h"
+#include "sun_management_OperatingSystemImpl.h"
 
 typedef struct {
     kstat_t *kstat;
@@ -226,14 +226,14 @@ double get_process_load(void) {
 }
 
 JNIEXPORT jdouble JNICALL
-Java_com_sun_management_UnixOperatingSystem_getSystemCpuLoad
+Java_sun_management_OperatingSystemImpl_getSystemCpuLoad
 (JNIEnv *env, jobject dummy)
 {
     return get_cpu_load(-1);
 }
 
 JNIEXPORT jdouble JNICALL
-Java_com_sun_management_UnixOperatingSystem_getProcessCpuLoad
+Java_sun_management_OperatingSystemImpl_getProcessCpuLoad
 (JNIEnv *env, jobject dummy)
 {
     return get_process_load();

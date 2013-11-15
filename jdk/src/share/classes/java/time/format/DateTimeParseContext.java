@@ -369,7 +369,8 @@ final class DateTimeParseContext {
         Objects.requireNonNull(chrono, "chrono");
         currentParsed().chrono = chrono;
         if (chronoListeners != null && !chronoListeners.isEmpty()) {
-            Consumer[] tmp = new Consumer[1];
+            @SuppressWarnings({"rawtypes", "unchecked"})
+            Consumer<Chronology>[] tmp = new Consumer[1];
             Consumer<Chronology>[] listeners = chronoListeners.toArray(tmp);
             chronoListeners.clear();
             for (Consumer<Chronology> l : listeners) {

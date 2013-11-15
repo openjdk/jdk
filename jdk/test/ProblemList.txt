@@ -126,15 +126,6 @@ java/lang/management/ThreadMXBean/ThreadStateTest.java          generic-all
 # 7067973
 java/lang/management/MemoryMXBean/CollectionUsageThreshold.java generic-all
 
-# 7196801
-java/lang/management/MemoryMXBean/LowMemoryTest2.sh		generic-all
-
-# 8021230
-java/lang/ThreadLocal/ThreadLocalSupplierTest.java              generic-all
-
-# 8026502
-java/lang/invoke/MethodHandleConstants.java                     generic-all
-
 ############################################################################
 
 # jdk_management
@@ -142,12 +133,12 @@ java/lang/invoke/MethodHandleConstants.java                     generic-all
 # 8010897
 sun/management/HotspotRuntimeMBean/GetSafepointSyncTime.java	macosx-all
 
+# 8028150
+sun/management/jmxremote/bootstrap/RmiSslBootstrapTest.sh	windows-all
+
 ############################################################################
 
 # jdk_jmx
-
-# 6959636
-javax/management/loading/LibraryLoader/LibraryLoaderTest.java	windows-all
 
 ############################################################################
 
@@ -163,12 +154,15 @@ demo/jvmti/compiledMethodLoad/CompiledMethodLoadTest.java	generic-all
 # 7027502
 demo/jvmti/hprof/MonitorTest.java                               generic-all
 
-# 8024423 - JVMTI: GetLoadedClasses doesn't enumerate anonymous classes 
+# 8024423 - JVMTI: GetLoadedClasses doesn't enumerate anonymous classes
 demo/jvmti/hprof/HeapAllTest.java                               generic-all
 demo/jvmti/hprof/HeapBinaryFormatTest.java                      generic-all
 demo/jvmti/hprof/HeapDumpTest.java                              generic-all
 demo/jvmti/hprof/OptionsTest.java                               generic-all
 demo/jvmti/hprof/StackMapTableTest.java                         generic-all
+
+# 8027973
+javax/xml/jaxp/transform/jdk8004476/XSLTExFuncTest.java		windows-all
 
 ############################################################################
 
@@ -201,18 +195,12 @@ java/net/MulticastSocket/Test.java                               macosx-all
 # 7143960
 java/net/DatagramSocket/SendDatagramToBadAddress.java            macosx-all
 
-# 8014719
-sun/net/www/http/HttpClient/ProxyTest.java                       generic-all
-
 ############################################################################
 
 # jdk_nio
 
 # 6963118
 java/nio/channels/Selector/Wakeup.java                          windows-all
-
-# 7052549
-java/nio/channels/FileChannel/ReleaseOnCloseDeadlock.java 	windows-all
 
 # 7133499, 7133497
 java/nio/channels/AsyncCloseAndInterrupt.java                   macosx-all
@@ -224,6 +212,10 @@ java/nio/channels/DatagramChannel/ChangingAddress.java          macosx-all
 
 # 7132677
 java/nio/channels/Selector/OutOfBand.java                       macosx-all
+
+# 7158947, Solaris 11
+java/nio/file/WatchService/Basic.java				solaris-all
+java/nio/file/WatchService/LotsOfEvents.java			solaris-all
 
 ############################################################################
 
@@ -259,10 +251,6 @@ sun/security/pkcs11/Secmod/AddPrivateKey.java                   solaris-all
 sun/security/pkcs11/ec/ReadCertificates.java                    solaris-all
 sun/security/pkcs11/ec/ReadPKCS12.java                          solaris-all
 sun/security/pkcs11/sslecc/ClientJSSEServerJSSE.java            solaris-all
-
-# 8009438
-sun/security/pkcs11/Secmod/AddPrivateKey.java			linux-all
-sun/security/pkcs11/Secmod/TrustAnchors.java 			linux-all
 
 # 7041639, Solaris DSA keypair generation bug
 java/security/KeyPairGenerator/SolarisShortDSA.java             solaris-all
@@ -332,8 +320,5 @@ java/util/concurrent/ThreadPoolExecutor/CoreThreadTimeOut.java  generic-all
 
 # Filed 6772009
 java/util/concurrent/locks/ReentrantLock/CancelledLockLoops.java generic-all
-
-# 8026772: test/sun/util/resources/TimeZone/Bug6317929.java failing
-sun/util/resources/TimeZone/Bug6317929.java                     generic-all
 
 ############################################################################

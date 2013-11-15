@@ -42,7 +42,7 @@ import sun.tools.attach.HotSpotVirtualMachine;
 public class JStack {
     public static void main(String[] args) throws Exception {
         if (args.length == 0) {
-            usage(); // no arguments
+            usage(1); // no arguments
         }
 
         boolean useSA = false;
@@ -56,16 +56,20 @@ public class JStack {
             if (!arg.startsWith("-")) {
                 break;
             }
-            if (arg.equals("-F")) {
+            if (arg.equals("-help") || arg.equals("-h")) {
+                usage(0);
+            }
+            else if (arg.equals("-F")) {
                 useSA = true;
-            } else {
+            }
+            else {
                 if (arg.equals("-m")) {
                     mixed = true;
                 } else {
                     if (arg.equals("-l")) {
                        locks = true;
                     } else {
-                        usage();
+                        usage(1);
                     }
                 }
             }
@@ -81,7 +85,7 @@ public class JStack {
         // we assume core file and executable so we use SA.
         int paramCount = args.length - optionCount;
         if (paramCount == 0 || paramCount > 2) {
-            usage();
+            usage(1);
         }
         if (paramCount == 2) {
             useSA = true;
@@ -118,7 +122,7 @@ public class JStack {
     private static void runJStackTool(boolean mixed, boolean locks, String args[]) throws Exception {
         Class<?> cl = loadSAClass();
         if (cl == null) {
-            usage();            // SA not available
+            usage(1);            // SA not available
         }
 
         // JStack tool also takes -m and -l arguments
@@ -199,31 +203,31 @@ public class JStack {
     }
 
     // print usage message
-    private static void usage() {
-        System.out.println("Usage:");
-        System.out.println("    jstack [-l] <pid>");
-        System.out.println("        (to connect to running process)");
+    private static void usage(int exit) {
+        System.err.println("Usage:");
+        System.err.println("    jstack [-l] <pid>");
+        System.err.println("        (to connect to running process)");
 
         if (loadSAClass() != null) {
-            System.out.println("    jstack -F [-m] [-l] <pid>");
-            System.out.println("        (to connect to a hung process)");
-            System.out.println("    jstack [-m] [-l] <executable> <core>");
-            System.out.println("        (to connect to a core file)");
-            System.out.println("    jstack [-m] [-l] [server_id@]<remote server IP or hostname>");
-            System.out.println("        (to connect to a remote debug server)");
+            System.err.println("    jstack -F [-m] [-l] <pid>");
+            System.err.println("        (to connect to a hung process)");
+            System.err.println("    jstack [-m] [-l] <executable> <core>");
+            System.err.println("        (to connect to a core file)");
+            System.err.println("    jstack [-m] [-l] [server_id@]<remote server IP or hostname>");
+            System.err.println("        (to connect to a remote debug server)");
         }
 
-        System.out.println("");
-        System.out.println("Options:");
+        System.err.println("");
+        System.err.println("Options:");
 
         if (loadSAClass() != null) {
-            System.out.println("    -F  to force a thread dump. Use when jstack <pid> does not respond" +
+            System.err.println("    -F  to force a thread dump. Use when jstack <pid> does not respond" +
                 " (process is hung)");
-            System.out.println("    -m  to print both java and native frames (mixed mode)");
+            System.err.println("    -m  to print both java and native frames (mixed mode)");
         }
 
-        System.out.println("    -l  long listing. Prints additional information about locks");
-        System.out.println("    -h or -help to print this help message");
-        System.exit(1);
+        System.err.println("    -l  long listing. Prints additional information about locks");
+        System.err.println("    -h or -help to print this help message");
+        System.exit(exit);
     }
 }

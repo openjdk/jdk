@@ -37,14 +37,14 @@ import sun.misc.Unsafe;
  * ManagementFactory.getOperatingSystemMXBean() returns an instance
  * of this class.
  */
-public class OperatingSystemImpl implements OperatingSystemMXBean {
+public class BaseOperatingSystemImpl implements OperatingSystemMXBean {
 
     private final VMManagement jvm;
 
     /**
-     * Constructor of OperatingSystemImpl class.
+     * Constructor of BaseOperatingSystemImpl class.
      */
-    protected OperatingSystemImpl(VMManagement vm) {
+    protected BaseOperatingSystemImpl(VMManagement vm) {
         this.jvm = vm;
     }
 

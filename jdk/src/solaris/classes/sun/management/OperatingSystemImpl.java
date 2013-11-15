@@ -23,9 +23,7 @@
  * questions.
  */
 
-package com.sun.management;
-
-import sun.management.VMManagement;
+package sun.management;
 
 /**
  * Implementation class for the operating system.
@@ -34,30 +32,21 @@ import sun.management.VMManagement;
  * ManagementFactory.getOperatingSystemMXBean() returns an instance
  * of this class.
  */
-class OperatingSystem
-    extends    sun.management.OperatingSystemImpl
-    implements OperatingSystemMXBean {
+class OperatingSystemImpl extends BaseOperatingSystemImpl
+    implements com.sun.management.UnixOperatingSystemMXBean {
 
-    // psapiLock is a lock to make sure only one thread loading
-    // PSAPI DLL.
-    private static Object psapiLock = new Object();
-
-    OperatingSystem(VMManagement vm) {
+    OperatingSystemImpl(VMManagement vm) {
         super(vm);
     }
 
-    public long getCommittedVirtualMemorySize() {
-        synchronized (psapiLock) {
-            return getCommittedVirtualMemorySize0();
-        }
-    }
-    private native long getCommittedVirtualMemorySize0();
-
+    public native long getCommittedVirtualMemorySize();
     public native long getTotalSwapSpaceSize();
     public native long getFreeSwapSpaceSize();
     public native long getProcessCpuTime();
     public native long getFreePhysicalMemorySize();
     public native long getTotalPhysicalMemorySize();
+    public native long getOpenFileDescriptorCount();
+    public native long getMaxFileDescriptorCount();
     public native double getSystemCpuLoad();
     public native double getProcessCpuLoad();
 

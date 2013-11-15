@@ -148,6 +148,7 @@ public class VM {
 
 
     private static volatile boolean booted = false;
+    private static final Object lock = new Object();
 
     // Invoked by by System.initializeSystemClass just before returning.
     // Subsystems that are invoked during initialization can check this
@@ -155,11 +156,25 @@ public class VM {
     // application class loader has been set up.
     //
     public static void booted() {
-        booted = true;
+        synchronized (lock) {
+            booted = true;
+            lock.notifyAll();
+        }
     }
 
     public static boolean isBooted() {
         return booted;
+    }
+
+    // Waits until VM completes initialization
+    //
+    // This method is invoked by the Finalizer thread
+    public static void awaitBooted() throws InterruptedException {
+        synchronized (lock) {
+            while (!booted) {
+                lock.wait();
+            }
+        }
     }
 
     // A user-settable upper limit on the maximum amount of allocatable direct

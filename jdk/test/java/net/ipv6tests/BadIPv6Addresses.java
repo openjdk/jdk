@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 4742177
+ * @bug 4742177 8019834
  * @summary Re-test IPv6 (and specifically MulticastSocket) with latest Linux & USAGI code
  */
 import java.net.*;

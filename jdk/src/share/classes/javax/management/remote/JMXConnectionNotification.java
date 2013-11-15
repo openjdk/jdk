@@ -40,7 +40,7 @@ import javax.management.ObjectName;
  *
  * <p>The notification type is one of the following:</p>
  *
- * <table>
+ * <table summary="JMXConnectionNotification Types">
  *
  * <tr>
  * <th align=left>Type</th>
