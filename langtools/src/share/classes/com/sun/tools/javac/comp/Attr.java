@@ -2697,9 +2697,10 @@ public class Attr extends JCTree.Visitor {
             Pair<Symbol, Resolve.ReferenceLookupHelper> refResult = null;
             List<Type> saved_undet = resultInfo.checkContext.inferenceContext().save();
             try {
-                refResult = rs.resolveMemberReference(that.pos(), localEnv, that, that.expr.type,
-                        that.name, argtypes, typeargtypes, true, referenceCheck,
-                        resultInfo.checkContext.inferenceContext());
+                refResult = rs.resolveMemberReference(localEnv, that, that.expr.type,
+                        that.name, argtypes, typeargtypes, referenceCheck,
+                        resultInfo.checkContext.inferenceContext(),
+                        resultInfo.checkContext.deferredAttrContext().mode);
             } finally {
                 resultInfo.checkContext.inferenceContext().rollback(saved_undet);
             }
@@ -2719,6 +2720,7 @@ public class Attr extends JCTree.Visitor {
                     case HIDDEN:
                     case STATICERR:
                     case MISSING_ENCL:
+                    case WRONG_STATICNESS:
                         targetError = true;
                         break;
                     default:
@@ -2768,26 +2770,6 @@ public class Attr extends JCTree.Visitor {
                         that.kind.isUnbound() &&
                         !desc.getParameterTypes().head.isParameterized()) {
                     chk.checkRaw(that.expr, localEnv);
-                }
-
-                if (!that.kind.isUnbound() &&
-                        that.getMode() == ReferenceMode.INVOKE &&
-                        TreeInfo.isStaticSelector(that.expr, names) &&
-                        !that.sym.isStatic()) {
-                    log.error(that.expr.pos(), "invalid.mref", Kinds.kindName(that.getMode()),
-                            diags.fragment("non-static.cant.be.ref", Kinds.kindName(refSym), refSym));
-                    result = that.type = types.createErrorType(target);
-                    return;
-                }
-
-                if (that.kind.isUnbound() &&
-                        that.getMode() == ReferenceMode.INVOKE &&
-                        TreeInfo.isStaticSelector(that.expr, names) &&
-                        that.sym.isStatic()) {
-                    log.error(that.expr.pos(), "invalid.mref", Kinds.kindName(that.getMode()),
-                            diags.fragment("static.method.in.unbound.lookup", Kinds.kindName(refSym), refSym));
-                    result = that.type = types.createErrorType(target);
-                    return;
                 }
 
                 if (that.sym.isStatic() && TreeInfo.isStaticSelector(that.expr, names) &&
