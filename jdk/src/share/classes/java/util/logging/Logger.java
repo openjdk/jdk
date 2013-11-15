@@ -351,7 +351,7 @@ public class Logger {
                                          ? caller.getClassLoader()
                                          : null);
         if (callersClassLoader != null) {
-            this.callersClassLoaderRef = new WeakReference(callersClassLoader);
+            this.callersClassLoaderRef = new WeakReference<>(callersClassLoader);
         }
     }
 

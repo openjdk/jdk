@@ -35,7 +35,7 @@
 #include <stdlib.h>
 #include <dlfcn.h>
 #include <pthread.h>
-#include "com_sun_management_UnixOperatingSystem.h"
+#include "sun_management_OperatingSystemImpl.h"
 
 struct ticks {
     uint64_t  used;
@@ -310,7 +310,7 @@ double get_process_load() {
 }
 
 JNIEXPORT jdouble JNICALL
-Java_com_sun_management_UnixOperatingSystem_getSystemCpuLoad
+Java_sun_management_OperatingSystemImpl_getSystemCpuLoad
 (JNIEnv *env, jobject dummy)
 {
     if(perfInit() == 0) {
@@ -321,7 +321,7 @@ Java_com_sun_management_UnixOperatingSystem_getSystemCpuLoad
 }
 
 JNIEXPORT jdouble JNICALL
-Java_com_sun_management_UnixOperatingSystem_getProcessCpuLoad
+Java_sun_management_OperatingSystemImpl_getProcessCpuLoad
 (JNIEnv *env, jobject dummy)
 {
     if(perfInit() == 0) {

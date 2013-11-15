@@ -1,5 +1,6 @@
 ^build/
 ^dist/
+^testoutput/
 /nbproject/private/
 ^make/netbeans/.*/build/
 ^make/netbeans/.*/dist/

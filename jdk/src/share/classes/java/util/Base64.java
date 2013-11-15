@@ -138,7 +138,7 @@ public class Base64 {
          if (lineLength <= 0) {
              return Encoder.RFC4648;
          }
-         return new Encoder(false, lineSeparator, lineLength >> 2 << 2);
+         return new Encoder(false, lineSeparator, lineLength >> 2 << 2, true);
     }
 
     /**
@@ -192,11 +192,13 @@ public class Base64 {
         private final byte[] newline;
         private final int linemax;
         private final boolean isURL;
+        private final boolean doPadding;
 
-        private Encoder(boolean isURL, byte[] newline, int linemax) {
+        private Encoder(boolean isURL, byte[] newline, int linemax, boolean doPadding) {
             this.isURL = isURL;
             this.newline = newline;
             this.linemax = linemax;
+            this.doPadding = doPadding;
         }
 
         /**
@@ -228,9 +230,22 @@ public class Base64 {
         private static final int MIMELINEMAX = 76;
         private static final byte[] CRLF = new byte[] {'\r', '\n'};
 
-        static final Encoder RFC4648 = new Encoder(false, null, -1);
-        static final Encoder RFC4648_URLSAFE = new Encoder(true, null, -1);
-        static final Encoder RFC2045 = new Encoder(false, CRLF, MIMELINEMAX);
+        static final Encoder RFC4648 = new Encoder(false, null, -1, true);
+        static final Encoder RFC4648_URLSAFE = new Encoder(true, null, -1, true);
+        static final Encoder RFC2045 = new Encoder(false, CRLF, MIMELINEMAX, true);
+
+        private final int outLength(int srclen) {
+            int len = 0;
+            if (doPadding) {
+                len = 4 * ((srclen + 2) / 3);
+            } else {
+                int n = srclen % 3;
+                len = 4 * (srclen / 3) + (n == 0 ? 0 : n + 1);
+            }
+            if (linemax > 0)                                  // line separators
+                len += (len - 1) / linemax * newline.length;
+            return len;
+        }
 
         /**
          * Encodes all bytes from the specified byte array into a newly-allocated
@@ -243,9 +258,7 @@ public class Base64 {
          *          encoded bytes.
          */
         public byte[] encode(byte[] src) {
-            int len = 4 * ((src.length + 2) / 3);    // dst array size
-            if (linemax > 0)                          // line separators
-                len += (len - 1) / linemax * newline.length;
+            int len = outLength(src.length);          // dst array size
             byte[] dst = new byte[len];
             int ret = encode0(src, 0, src.length, dst);
             if (ret != dst.length)
@@ -273,10 +286,7 @@ public class Base64 {
          *          space for encoding all input bytes.
          */
         public int encode(byte[] src, byte[] dst) {
-            int len = 4 * ((src.length + 2) / 3);    // dst array size
-            if (linemax > 0) {
-                len += (len - 1) / linemax * newline.length;
-            }
+            int len = outLength(src.length);         // dst array size
             if (dst.length < len)
                 throw new IllegalArgumentException(
                     "Output byte array is too small for encoding all input bytes");
@@ -321,9 +331,7 @@ public class Base64 {
          * @return  A newly-allocated byte buffer containing the encoded bytes.
          */
         public ByteBuffer encode(ByteBuffer buffer) {
-            int len = 4 * ((buffer.remaining() + 2) / 3);
-            if (linemax > 0)
-                len += (len - 1) / linemax * newline.length;
+            int len = outLength(buffer.remaining());
             byte[] dst = new byte[len];
             int ret = 0;
             if (buffer.hasArray()) {
@@ -415,7 +423,25 @@ public class Base64 {
         public OutputStream wrap(OutputStream os) {
             Objects.requireNonNull(os);
             return new EncOutputStream(os, isURL ? toBase64URL : toBase64,
-                                       newline, linemax);
+                                       newline, linemax, doPadding);
+        }
+
+        /**
+         * Returns an encoder instance that encodes equivalently to this one,
+         * but without adding any padding character at the end of the encoded
+         * byte data.
+         *
+         * <p> The encoding scheme of this encoder instance is unaffected by
+         * this invocation. The returned encoder instance should be used for
+         * non-padding encoding operation.
+         *
+         * @return an equivalent encoder that encodes without adding any
+         *         padding character at the end
+         */
+        public Encoder withoutPadding() {
+            if (!doPadding)
+                return this;
+            return new Encoder(isURL, newline, linemax, false);
         }
 
         private int encodeArray(ByteBuffer src, ByteBuffer dst, int bytesOut) {
@@ -476,13 +502,17 @@ public class Base64 {
                     da[dp++] = (byte)base64[b0 >> 2];
                     if (sp == sl) {
                         da[dp++] = (byte)base64[(b0 << 4) & 0x3f];
-                        da[dp++] = '=';
-                        da[dp++] = '=';
+                        if (doPadding) {
+                            da[dp++] = '=';
+                            da[dp++] = '=';
+                        }
                     } else {
                         int b1 = sa[sp++] & 0xff;
                         da[dp++] = (byte)base64[(b0 << 4) & 0x3f | (b1 >> 4)];
                         da[dp++] = (byte)base64[(b1 << 2) & 0x3f];
-                        da[dp++] = '=';
+                        if (doPadding) {
+                            da[dp++] = '=';
+                        }
                     }
                 }
                 return dp - dp00 + bytesOut;
@@ -548,13 +578,17 @@ public class Base64 {
                     dst.put(dp++, (byte)base64[b0 >> 2]);
                     if (sp == src.limit()) {
                         dst.put(dp++, (byte)base64[(b0 << 4) & 0x3f]);
-                        dst.put(dp++, (byte)'=');
-                        dst.put(dp++, (byte)'=');
+                        if (doPadding) {
+                            dst.put(dp++, (byte)'=');
+                            dst.put(dp++, (byte)'=');
+                        }
                     } else {
                         int b1 = src.get(sp++) & 0xff;
                         dst.put(dp++, (byte)base64[(b0 << 4) & 0x3f | (b1 >> 4)]);
                         dst.put(dp++, (byte)base64[(b1 << 2) & 0x3f]);
-                        dst.put(dp++, (byte)'=');
+                        if (doPadding) {
+                            dst.put(dp++, (byte)'=');
+                        }
                     }
                 }
                 return dp - dp00 + bytesOut;
@@ -597,13 +631,17 @@ public class Base64 {
                 dst[dp++] = (byte)base64[b0 >> 2];
                 if (sp == end) {
                     dst[dp++] = (byte)base64[(b0 << 4) & 0x3f];
-                    dst[dp++] = '=';
-                    dst[dp++] = '=';
+                    if (doPadding) {
+                        dst[dp++] = '=';
+                        dst[dp++] = '=';
+                    }
                 } else {
                     int b1 = src[sp++] & 0xff;
                     dst[dp++] = (byte)base64[(b0 << 4) & 0x3f | (b1 >> 4)];
                     dst[dp++] = (byte)base64[(b1 << 2) & 0x3f];
-                    dst[dp++] = '=';
+                    if (doPadding) {
+                        dst[dp++] = '=';
+                    }
                 }
             }
             return dp;
@@ -1149,14 +1187,16 @@ public class Base64 {
         private final char[] base64;    // byte->base64 mapping
         private final byte[] newline;   // line separator, if needed
         private final int linemax;
+        private final boolean doPadding;// whether or not to pad
         private int linepos = 0;
 
-        EncOutputStream(OutputStream os,
-                        char[] base64, byte[] newline, int linemax) {
+        EncOutputStream(OutputStream os, char[] base64,
+                        byte[] newline, int linemax, boolean doPadding) {
             super(os);
             this.base64 = base64;
             this.newline = newline;
             this.linemax = linemax;
+            this.doPadding = doPadding;
         }
 
         @Override
@@ -1228,14 +1268,18 @@ public class Base64 {
                     checkNewline();
                     out.write(base64[b0 >> 2]);
                     out.write(base64[(b0 << 4) & 0x3f]);
-                    out.write('=');
-                    out.write('=');
+                    if (doPadding) {
+                        out.write('=');
+                        out.write('=');
+                    }
                 } else if (leftover == 2) {
                     checkNewline();
                     out.write(base64[b0 >> 2]);
                     out.write(base64[(b0 << 4) & 0x3f | (b1 >> 4)]);
                     out.write(base64[(b1 << 2) & 0x3f]);
-                    out.write('=');
+                    if (doPadding) {
+                       out.write('=');
+                    }
                 }
                 leftover = 0;
                 out.close();
