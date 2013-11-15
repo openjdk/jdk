@@ -463,6 +463,9 @@
   experimental(bool, AggressiveUnboxing, false,                             \
           "Control optimizations for aggressive boxing elimination")        \
                                                                             \
+  develop(bool, TracePostallocExpand, false, "Trace expanding nodes after"  \
+          " register allocation.")                                          \
+                                                                            \
   product(bool, DoEscapeAnalysis, true,                                     \
           "Perform escape analysis")                                        \
                                                                             \

@@ -311,6 +311,8 @@ public:
   void defineEvalConstant(FILE *fp, InstructForm &node);
   // Generator for Emit methods for instructions
   void defineEmit        (FILE *fp, InstructForm &node);
+  // Generator for postalloc_expand methods for instructions.
+  void define_postalloc_expand(FILE *fp, InstructForm &node);
 
   // Define a MachOper encode method
   void define_oper_interface(FILE *fp, OperandForm &oper, FormDict &globals,

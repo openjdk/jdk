@@ -134,6 +134,10 @@ void MachNode::emit(CodeBuffer &cbuf, PhaseRegAlloc *ra_) const {
   ShouldNotCallThis();
 }
 
+//---------------------------postalloc_expand----------------------------------
+// Expand node after register allocation.
+void MachNode::postalloc_expand(GrowableArray <Node *> *nodes, PhaseRegAlloc *ra_) {}
+
 //------------------------------size-------------------------------------------
 // Size of instruction in bytes
 uint MachNode::size(PhaseRegAlloc *ra_) const {
