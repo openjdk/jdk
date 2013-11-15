@@ -505,6 +505,9 @@ int MachConstantNode::constant_offset() {
   return _constant.offset();
 }
 
+int MachConstantNode::constant_offset_unchecked() const {
+  return _constant.offset();
+}
 
 //=============================================================================
 #ifndef PRODUCT

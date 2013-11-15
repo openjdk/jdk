@@ -1276,11 +1276,11 @@ void InstructForm::rep_var_format(FILE *fp, const char *rep_var) {
     return;
   }
   if (strcmp(rep_var, "constantoffset") == 0) {
-    fprintf(fp, "st->print(\"#%%d\", constant_offset());\n");
+    fprintf(fp, "st->print(\"#%%d\", constant_offset_unchecked());\n");
     return;
   }
   if (strcmp(rep_var, "constantaddress") == 0) {
-    fprintf(fp, "st->print(\"constant table base + #%%d\", constant_offset());\n");
+    fprintf(fp, "st->print(\"constant table base + #%%d\", constant_offset_unchecked());\n");
     return;
   }
 

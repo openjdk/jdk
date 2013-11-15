@@ -1570,6 +1570,13 @@ void ArchDesc::defineExpand(FILE *fp, InstructForm *node) {
       new_id = expand_instr->name();
 
       InstructForm* expand_instruction = (InstructForm*)globalAD->globalNames()[new_id];
+
+      if (!expand_instruction) {
+        globalAD->syntax_err(node->_linenum, "In %s: instruction %s used in expand not declared\n",
+                             node->_ident, new_id);
+        continue;
+      }
+
       if (expand_instruction->has_temps()) {
         globalAD->syntax_err(node->_linenum, "In %s: expand rules using instructs with TEMPs aren't supported: %s",
                              node->_ident, new_id);
@@ -1628,6 +1635,13 @@ void ArchDesc::defineExpand(FILE *fp, InstructForm *node) {
         // Use 'parameter' at current position in list of new instruction's formals
         // instead of 'opid' when looking up info internal to new_inst
         const char *parameter = formal_lst->iter();
+        if (!parameter) {
+          globalAD->syntax_err(node->_linenum, "Operand %s of expand instruction %s has"
+                               " no equivalent in new instruction %s.",
+                               opid, node->_ident, new_inst->_ident);
+          assert(0, "Wrong expand");
+        }
+
         // Check for an operand which is created in the expand rule
         if ((exp_pos = node->_exprule->_newopers.index(opid)) != -1) {
           new_pos = new_inst->operand_position(parameter,Component::USE);
@@ -2103,16 +2117,21 @@ public:
         if (strcmp(rep_var,"$reg") == 0 || reg_conversion(rep_var) != NULL) {
           _reg_status  = LITERAL_ACCESSED;
         } else {
+          _AD.syntax_err(_encoding._linenum,
+                         "Invalid access to literal register parameter '%s' in %s.\n",
+                         rep_var, _encoding._name);
           assert( false, "invalid access to literal register parameter");
         }
       }
       // literal constant parameters must be accessed as a 'constant' field
-      if ( _constant_status != LITERAL_NOT_SEEN ) {
-        assert( _constant_status == LITERAL_SEEN, "Must have seen constant literal before now");
-        if( strcmp(rep_var,"$constant") == 0 ) {
-          _constant_status  = LITERAL_ACCESSED;
+      if (_constant_status != LITERAL_NOT_SEEN) {
+        assert(_constant_status == LITERAL_SEEN, "Must have seen constant literal before now");
+        if (strcmp(rep_var,"$constant") == 0) {
+          _constant_status = LITERAL_ACCESSED;
         } else {
-          assert( false, "invalid access to literal constant parameter");
+          _AD.syntax_err(_encoding._linenum,
+                         "Invalid access to literal constant parameter '%s' in %s.\n",
+                         rep_var, _encoding._name);
         }
       }
     } // end replacement and/or subfield
