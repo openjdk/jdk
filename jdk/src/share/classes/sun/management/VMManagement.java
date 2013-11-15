@@ -71,6 +71,7 @@ public interface VMManagement {
     public String  getBootClassPath();
     public List<String> getVmArguments();
     public long    getStartupTime();
+    public long    getUptime();
     public int     getAvailableProcessors();
 
     // Compilation Subsystem

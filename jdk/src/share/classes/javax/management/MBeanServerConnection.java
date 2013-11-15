@@ -627,7 +627,7 @@ public interface MBeanServerConnection {
      * for that attribute, although this is not guaranteed to work.  (For
      * example, the values of two attributes may have been rejected because
      * they were inconsistent with each other.  Setting one of them alone might
-     * be allowed.)<p>
+     * be allowed.)
      *
      * <p>Here is an example of calling this method and checking that it
      * succeeded in setting all the requested attributes:</p>

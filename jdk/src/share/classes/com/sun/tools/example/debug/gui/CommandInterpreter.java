@@ -377,7 +377,7 @@ public class CommandInterpreter {
                     env.failure("Attempt to launch main class \"" + clname + "\" failed.");
                 }
             } else {
-                env.failure("No main class specifed and no current default defined.");
+                env.failure("No main class specified and no current default defined.");
             }
         } else {
             clname = t.nextToken();
@@ -428,7 +428,7 @@ public class CommandInterpreter {
                     env.failure("Attempt to attach to port \"" + portName + "\" failed.");
                 }
             } else {
-                env.failure("No port specifed and no current default defined.");
+                env.failure("No port specified and no current default defined.");
             }
         } else {
             portName = t.nextToken();
