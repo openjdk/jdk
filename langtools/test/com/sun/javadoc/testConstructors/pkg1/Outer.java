@@ -21,8 +21,55 @@
  * questions.
  */
 
-// key: compiler.err.intf.or.array.expected.here
+package pkg1;
 
-import java.util.List;
+public class Outer {
 
-class InterfaceExpected<T extends List & String> { }
+    /**
+     * An outer constructor.
+     */
+    public Outer() {
+    }
+
+    /**
+     * Another outer constructor.
+     */
+    public Outer(int i) {
+    }
+
+    /**
+     * A nested class.
+     */
+    public class Inner {
+
+        /**
+         * An inner constructor.
+         */
+        public Inner() {
+        }
+
+        /**
+         * Another inner constructor.
+         */
+        public Inner(int i) {
+        }
+
+        /**
+         * A nested inner class.
+         */
+        public class NestedInner {
+
+            /**
+             * A nested inner constructor.
+             */
+            public NestedInner() {
+            }
+
+            /**
+             * Another nested inner constructor.
+             */
+            public NestedInner(int i) {
+            }
+        }
+    }
+}
