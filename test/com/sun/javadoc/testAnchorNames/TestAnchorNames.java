@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8025633
+ * @bug 8025633 8025524
  * @summary Test for valid name attribute in HTML anchors.
  * @author Bhavesh Patel
  * @library ../lib/
@@ -196,10 +196,10 @@ public class TestAnchorNames extends JavadocTester {
         //Test nested class
 
         {BUG_ID + FS + "pkg1" + FS + "RegClass._NestedClas$.html",
-            "<a name=\"RegClass._NestedClas:D--\">"
+            "<a name=\"Z:Z_NestedClas:D--\">"
         },
         {BUG_ID + FS + "pkg1" + FS + "RegClass._NestedClas$.html",
-            "<a href=\"../pkg1/RegClass._NestedClas$.html#RegClass._NestedClas:D--\">"
+            "<a href=\"../pkg1/RegClass._NestedClas$.html#Z:Z_NestedClas:D--\">"
         },
 
         //Test class use page
