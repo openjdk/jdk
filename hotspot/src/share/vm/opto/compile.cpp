@@ -2250,6 +2250,12 @@ void Compile::Code_Gen() {
     peep.do_transform();
   }
 
+  // Do late expand if CPU requires this.
+  if (Matcher::require_postalloc_expand) {
+    NOT_PRODUCT(TracePhase t2c("postalloc_expand", &_t_postalloc_expand, true));
+    cfg.postalloc_expand(_regalloc);
+  }
+
   // Convert Nodes to instruction bits in a buffer
   {
     // %%%% workspace merge brought two timers together for one job
