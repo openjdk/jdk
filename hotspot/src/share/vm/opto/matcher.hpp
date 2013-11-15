@@ -449,6 +449,10 @@ public:
   // aligned.
   static const bool misaligned_doubles_ok;
 
+  // Does the CPU require postalloc expand (see block.cpp for description of
+  // postalloc expand)?
+  static const bool require_postalloc_expand;
+
   // Perform a platform dependent implicit null fixup.  This is needed
   // on windows95 to take care of some unusual register constraints.
   void pd_implicit_null_fixup(MachNode *load, uint idx);

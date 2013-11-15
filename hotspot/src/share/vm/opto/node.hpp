@@ -357,6 +357,8 @@ protected:
 
   // Reference to the i'th input Node.  Error if out of bounds.
   Node* in(uint i) const { assert(i < _max, err_msg_res("oob: i=%d, _max=%d", i, _max)); return _in[i]; }
+  // Reference to the i'th input Node.  NULL if out of bounds.
+  Node* lookup(uint i) const { return ((i < _max) ? _in[i] : NULL); }
   // Reference to the i'th output Node.  Error if out of bounds.
   // Use this accessor sparingly.  We are going trying to use iterators instead.
   Node* raw_out(uint i) const { assert(i < _outcnt,"oob"); return _out[i]; }
@@ -384,6 +386,10 @@ protected:
 
   // Set a required input edge, also updates corresponding output edge
   void add_req( Node *n ); // Append a NEW required input
+  void add_req( Node *n0, Node *n1 ) {
+    add_req(n0); add_req(n1); }
+  void add_req( Node *n0, Node *n1, Node *n2 ) {
+    add_req(n0); add_req(n1); add_req(n2); }
   void add_req_batch( Node* n, uint m ); // Append m NEW required inputs (all n).
   void del_req( uint idx ); // Delete required edge & compact
   void del_req_ordered( uint idx ); // Delete required edge & compact with preserved order
@@ -1350,7 +1356,7 @@ class Node_List : public Node_Array {
 public:
   Node_List() : Node_Array(Thread::current()->resource_area()), _cnt(0) {}
   Node_List(Arena *a) : Node_Array(a), _cnt(0) {}
-  bool contains(Node* n) {
+  bool contains(const Node* n) const {
     for (uint e = 0; e < size(); e++) {
       if (at(e) == n) return true;
     }

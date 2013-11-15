@@ -1633,7 +1633,12 @@ void ArchDesc::declareClasses(FILE *fp) {
     // Output the opcode function and the encode function here using the
     // encoding class information in the _insencode slot.
     if ( instr->_insencode ) {
-      fprintf(fp,"  virtual void           emit(CodeBuffer &cbuf, PhaseRegAlloc *ra_) const;\n");
+      if (instr->postalloc_expands()) {
+        fprintf(fp,"  virtual bool           requires_postalloc_expand() const { return true; }\n");
+        fprintf(fp,"  virtual void           postalloc_expand(GrowableArray <Node *> *nodes, PhaseRegAlloc *ra_);\n");
+      } else {
+        fprintf(fp,"  virtual void           emit(CodeBuffer &cbuf, PhaseRegAlloc *ra_) const;\n");
+      }
     }
 
     // virtual function for getting the size of an instruction
