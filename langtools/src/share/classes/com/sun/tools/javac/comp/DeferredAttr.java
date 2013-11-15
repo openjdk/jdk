@@ -643,15 +643,16 @@ public class DeferredAttr extends JCTree.Visitor {
                     }
                     JCMemberReference mref2 = new TreeCopier<Void>(make).copy(tree);
                     mref2.expr = exprTree;
-                    Pair<Symbol, ?> lookupRes =
-                            rs.resolveMemberReference(tree, localEnv, mref2, exprTree.type,
-                                tree.name, argtypes.toList(), null, true, rs.arityMethodCheck, inferenceContext);
-                    switch (lookupRes.fst.kind) {
+                    Symbol lookupSym =
+                            rs.resolveMemberReferenceByArity(localEnv, mref2, exprTree.type,
+                                tree.name, argtypes.toList(), inferenceContext);
+                    switch (lookupSym.kind) {
                         //note: as argtypes are erroneous types, type-errors must
                         //have been caused by arity mismatch
                         case Kinds.ABSENT_MTH:
                         case Kinds.WRONG_MTH:
                         case Kinds.WRONG_MTHS:
+                        case Kinds.WRONG_STATICNESS:
                            checkContext.report(tree, diags.fragment("incompatible.arg.types.in.mref"));
                     }
                 }
@@ -1037,11 +1038,10 @@ public class DeferredAttr extends JCTree.Visitor {
                     attr.memberReferenceQualifierResult(tree));
             JCMemberReference mref2 = new TreeCopier<Void>(make).copy(tree);
             mref2.expr = exprTree;
-            Pair<Symbol, ReferenceLookupHelper> lookupRes =
-                    rs.resolveMemberReference(tree, localEnv, mref2, exprTree.type,
-                        tree.name, List.<Type>nil(), null, true, rs.nilMethodCheck,
-                        infer.emptyContext);
-            Symbol res = tree.sym = lookupRes.fst;
+            Symbol res =
+                    rs.getMemberReference(tree, localEnv, mref2,
+                        exprTree.type, tree.name);
+            tree.sym = res;
             if (res.kind >= Kinds.ERRONEOUS ||
                     res.type.hasTag(FORALL) ||
                     (res.flags() & Flags.VARARGS) != 0 ||
