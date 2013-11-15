@@ -28,6 +28,7 @@
 #include "gc_implementation/parallelScavenge/adjoiningVirtualSpaces.hpp"
 #include "gc_implementation/parallelScavenge/asPSOldGen.hpp"
 #include "gc_implementation/parallelScavenge/asPSYoungGen.hpp"
+#include "gc_implementation/parallelScavenge/generationSizer.hpp"
 
 
 // Contains two generations that both use an AdjoiningVirtualSpaces.
@@ -56,14 +57,7 @@ class AdjoiningGenerations : public CHeapObj<mtGC> {
   bool request_young_gen_expansion(size_t desired_change_in_bytes);
 
  public:
-  AdjoiningGenerations(ReservedSpace rs,
-                       size_t init_low_byte_size,
-                       size_t min_low_byte_size,
-                       size_t max_low_byte_size,
-                       size_t init_high_byte_size,
-                       size_t min_high_byte_size,
-                       size_t max_high_bytes_size,
-                       size_t alignment);
+  AdjoiningGenerations(ReservedSpace rs, GenerationSizer* policy, size_t alignment);
 
   // Accessors
   PSYoungGen* young_gen() { return _young_gen; }

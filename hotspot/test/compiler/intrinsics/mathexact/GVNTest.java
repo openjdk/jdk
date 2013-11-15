@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -19,29 +19,42 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
+ */
+
+/*
+ * @test
+ * @bug 8028207
+ * @summary Verify that GVN doesn't mess up the two addExacts
+ * @compile GVNTest.java
+ * @run main GVNTest
  *
  */
 
-#ifndef SHARE_VM_GC_IMPLEMENTATION_PARALLELSCAVENGE_GENERATIONSIZER_HPP
-#define SHARE_VM_GC_IMPLEMENTATION_PARALLELSCAVENGE_GENERATIONSIZER_HPP
+public class GVNTest {
+  public static int result = 0;
+  public static int value = 93;
+  public static void main(String[] args) {
+    for (int i = 0; i < 50000; ++i) {
+      result = runTest(value + i);
+      result = runTest(value + i);
+      result = runTest(value + i);
+      result = runTest(value + i);
+      result = runTest(value + i);
+    }
+  }
 
-#include "memory/collectorPolicy.hpp"
-
-// There is a nice batch of tested generation sizing code in
-// TwoGenerationCollectorPolicy. Lets reuse it!
-
-class GenerationSizer : public TwoGenerationCollectorPolicy {
- private:
-
-  void trace_gen_sizes(const char* const str);
-
-  // The alignment used for boundary between young gen and old gen
-  static size_t default_gen_alignment() { return 64 * K * HeapWordSize; }
-
- protected:
-
-  void initialize_alignments();
-  void initialize_flags();
-  void initialize_size_info();
-};
-#endif // SHARE_VM_GC_IMPLEMENTATION_PARALLELSCAVENGE_GENERATIONSIZER_HPP
+  public static int runTest(int value) {
+    int v = value + value;
+    int sum = 0;
+    if (v < 4032) {
+      for (int i = 0; i < 1023; ++i) {
+        sum += Math.addExact(value, value);
+      }
+    } else {
+      for (int i = 0; i < 321; ++i) {
+        sum += Math.addExact(value, value);
+      }
+    }
+    return sum + v;
+  }
+}
