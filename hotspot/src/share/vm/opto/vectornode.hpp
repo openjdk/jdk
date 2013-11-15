@@ -356,7 +356,7 @@ class XorVNode : public VectorNode {
 class LoadVectorNode : public LoadNode {
  public:
   LoadVectorNode(Node* c, Node* mem, Node* adr, const TypePtr* at, const TypeVect* vt)
-    : LoadNode(c, mem, adr, at, vt) {
+    : LoadNode(c, mem, adr, at, vt, MemNode::unordered) {
     init_class_id(Class_LoadVector);
   }
 
@@ -380,7 +380,7 @@ class LoadVectorNode : public LoadNode {
 class StoreVectorNode : public StoreNode {
  public:
   StoreVectorNode(Node* c, Node* mem, Node* adr, const TypePtr* at, Node* val)
-    : StoreNode(c, mem, adr, at, val) {
+    : StoreNode(c, mem, adr, at, val, MemNode::unordered) {
     assert(val->is_Vector() || val->is_LoadVector(), "sanity");
     init_class_id(Class_StoreVector);
   }

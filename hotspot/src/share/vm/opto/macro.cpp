@@ -1084,7 +1084,7 @@ void PhaseMacroExpand::set_eden_pointers(Node* &eden_top_adr, Node* &eden_end_ad
 Node* PhaseMacroExpand::make_load(Node* ctl, Node* mem, Node* base, int offset, const Type* value_type, BasicType bt) {
   Node* adr = basic_plus_adr(base, offset);
   const TypePtr* adr_type = adr->bottom_type()->is_ptr();
-  Node* value = LoadNode::make(_igvn, ctl, mem, adr, adr_type, value_type, bt);
+  Node* value = LoadNode::make(_igvn, ctl, mem, adr, adr_type, value_type, bt, MemNode::unordered);
   transform_later(value);
   return value;
 }
@@ -1092,7 +1092,7 @@ Node* PhaseMacroExpand::make_load(Node* ctl, Node* mem, Node* base, int offset, 
 
 Node* PhaseMacroExpand::make_store(Node* ctl, Node* mem, Node* base, int offset, Node* value, BasicType bt) {
   Node* adr = basic_plus_adr(base, offset);
-  mem = StoreNode::make(_igvn, ctl, mem, adr, NULL, value, bt);
+  mem = StoreNode::make(_igvn, ctl, mem, adr, NULL, value, bt, MemNode::unordered);
   transform_later(mem);
   return mem;
 }
@@ -1272,8 +1272,8 @@ void PhaseMacroExpand::expand_allocate_common(
     // Load(-locked) the heap top.
     // See note above concerning the control input when using a TLAB
     Node *old_eden_top = UseTLAB
-      ? new (C) LoadPNode      (ctrl, contended_phi_rawmem, eden_top_adr, TypeRawPtr::BOTTOM, TypeRawPtr::BOTTOM)
-      : new (C) LoadPLockedNode(contended_region, contended_phi_rawmem, eden_top_adr);
+      ? new (C) LoadPNode      (ctrl, contended_phi_rawmem, eden_top_adr, TypeRawPtr::BOTTOM, TypeRawPtr::BOTTOM, MemNode::unordered)
+      : new (C) LoadPLockedNode(contended_region, contended_phi_rawmem, eden_top_adr, MemNode::acquire);
 
     transform_later(old_eden_top);
     // Add to heap top to get a new heap top
@@ -1320,7 +1320,7 @@ void PhaseMacroExpand::expand_allocate_common(
     if (UseTLAB) {
       Node* store_eden_top =
         new (C) StorePNode(needgc_false, contended_phi_rawmem, eden_top_adr,
-                              TypeRawPtr::BOTTOM, new_eden_top);
+                              TypeRawPtr::BOTTOM, new_eden_top, MemNode::unordered);
       transform_later(store_eden_top);
       fast_oop_ctrl = needgc_false; // No contention, so this is the fast path
       fast_oop_rawmem = store_eden_top;
@@ -1700,9 +1700,10 @@ Node* PhaseMacroExpand::prefetch_allocation(Node* i_o, Node*& needgc_false,
                    _igvn.MakeConX(in_bytes(JavaThread::tlab_pf_top_offset())) );
       transform_later(eden_pf_adr);
 
-      Node *old_pf_wm = new (C) LoadPNode( needgc_false,
+      Node *old_pf_wm = new (C) LoadPNode(needgc_false,
                                    contended_phi_rawmem, eden_pf_adr,
-                                   TypeRawPtr::BOTTOM, TypeRawPtr::BOTTOM );
+                                   TypeRawPtr::BOTTOM, TypeRawPtr::BOTTOM,
+                                   MemNode::unordered);
       transform_later(old_pf_wm);
 
       // check against new_eden_top
@@ -1726,9 +1727,10 @@ Node* PhaseMacroExpand::prefetch_allocation(Node* i_o, Node*& needgc_false,
       transform_later(new_pf_wmt );
       new_pf_wmt->set_req(0, need_pf_true);
 
-      Node *store_new_wmt = new (C) StorePNode( need_pf_true,
+      Node *store_new_wmt = new (C) StorePNode(need_pf_true,
                                        contended_phi_rawmem, eden_pf_adr,
-                                       TypeRawPtr::BOTTOM, new_pf_wmt );
+                                       TypeRawPtr::BOTTOM, new_pf_wmt,
+                                       MemNode::unordered);
       transform_later(store_new_wmt);
 
       // adding prefetches
