@@ -416,6 +416,8 @@ public:
 
   int  constant_offset();
   int  constant_offset() const { return ((MachConstantNode*) this)->constant_offset(); }
+  // Unchecked version to avoid assertions in debug output.
+  int  constant_offset_unchecked() const;
 };
 
 //------------------------------MachUEPNode-----------------------------------

@@ -3996,13 +3996,11 @@ void ADLParser::effect_parse(InstructForm *instr) {
 //------------------------------expand_parse-----------------------------------
 ExpandRule* ADLParser::expand_parse(InstructForm *instr) {
   char         *ident, *ident2;
-  OperandForm  *oper;
-  InstructForm *ins;
   NameAndList  *instr_and_operands = NULL;
   ExpandRule   *exp = new ExpandRule();
 
-  // Expand is a block containing an ordered list of instructions, each of
-  // which has an ordered list of operands.
+  // Expand is a block containing an ordered list of operands with initializers,
+  // or instructions, each of which has an ordered list of operands.
   // Check for block delimiter
   skipws();                        // Skip leading whitespace
   if ((_curchar != '%')
@@ -4016,12 +4014,30 @@ ExpandRule* ADLParser::expand_parse(InstructForm *instr) {
     if (ident == NULL) {
       parse_err(SYNERR, "identifier expected at %c\n", _curchar);
       continue;
-    }                              // Check that you have a valid instruction
+    }
+
+    // Check whether we should parse an instruction or operand.
     const Form *form = _globalNames[ident];
-    ins = form ? form->is_instruction() : NULL;
-    if (ins == NULL) {
+    bool parse_oper = false;
+    bool parse_ins  = false;
+    if (form == NULL) {
+      skipws();
+      // Check whether this looks like an instruction specification.  If so,
+      // just parse the instruction.  The declaration of the instruction is
+      // not needed here.
+      if (_curchar == '(') parse_ins = true;
+    } else if (form->is_instruction()) {
+      parse_ins = true;
+    } else if (form->is_operand()) {
+      parse_oper = true;
+    } else {
+      parse_err(SYNERR, "instruction/operand name expected at %s\n", ident);
+      continue;
+    }
+
+    if (parse_oper) {
       // This is a new operand
-      oper = form ? form->is_operand() : NULL;
+      OperandForm *oper = form->is_operand();
       if (oper == NULL) {
         parse_err(SYNERR, "instruction/operand name expected at %s\n", ident);
         continue;
@@ -4056,6 +4072,7 @@ ExpandRule* ADLParser::expand_parse(InstructForm *instr) {
       skipws();
     }
     else {
+      assert(parse_ins, "sanity");
       // Add instruction to list
       instr_and_operands = new NameAndList(ident);
       // Grab operands, build nameList of them, and then put into dictionary
@@ -4079,7 +4096,7 @@ ExpandRule* ADLParser::expand_parse(InstructForm *instr) {
           parse_err(SYNERR, "operand name expected at %s\n", ident2);
           continue;
         }
-        oper = form2->is_operand();
+        OperandForm *oper = form2->is_operand();
         if (oper == NULL && !form2->is_opclass()) {
           parse_err(SYNERR, "operand name expected at %s\n", ident2);
           continue;
