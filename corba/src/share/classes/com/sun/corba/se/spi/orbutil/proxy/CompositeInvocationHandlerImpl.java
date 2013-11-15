@@ -89,4 +89,6 @@ public class CompositeInvocationHandlerImpl implements
             sm.checkPermission(perm);
 }
     }
+
+    private static final long serialVersionUID = 4571178305984833743L;
 }

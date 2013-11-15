@@ -88,6 +88,9 @@ public enum JSType {
     /** JavaScript compliant conversion function from Object to number */
     public static final Call TO_NUMBER = staticCall(myLookup, JSType.class, "toNumber", double.class, Object.class);
 
+    /** JavaScript compliant conversion function from Object to String */
+    public static final Call TO_STRING = staticCall(myLookup, JSType.class, "toString", String.class, Object.class);
+
     /** JavaScript compliant conversion function from Object to int32 */
     public static final Call TO_INT32 = staticCall(myLookup, JSType.class, "toInt32", int.class, Object.class);
 
@@ -883,7 +886,7 @@ public enum JSType {
      */
     public static Object toJavaArray(final Object obj, final Class<?> componentType) {
         if (obj instanceof ScriptObject) {
-            return convertArray(((ScriptObject)obj).getArray().asObjectArray(), componentType);
+            return ((ScriptObject)obj).getArray().asArrayOfType(componentType);
         } else if (obj instanceof JSObject) {
             final ArrayLikeIterator<?> itr = ArrayLikeIterator.arrayLikeIterator(obj);
             final int len = (int) itr.getLength();
@@ -908,6 +911,15 @@ public enum JSType {
      * @return converted Java array
      */
     public static Object convertArray(final Object[] src, final Class<?> componentType) {
+        if(componentType == Object.class) {
+            for(int i = 0; i < src.length; ++i) {
+                final Object e = src[i];
+                if(e instanceof ConsString) {
+                    src[i] = e.toString();
+                }
+            }
+        }
+
         final int l = src.length;
         final Object dst = Array.newInstance(componentType, l);
         final MethodHandle converter = Bootstrap.getLinkerServices().getTypeConverter(Object.class, componentType);

@@ -25,7 +25,7 @@
 
 /*
  * @test
- * @bug 8019486 8026861
+ * @bug 8019486 8026861 8027142
  * @summary javac, generates erroneous LVT for a test case with lambda code
  * @library /tools/javac/lib
  * @build ToolBox
@@ -68,7 +68,14 @@ public class WrongLNTForLambdaTest {
     /* 22 */        "        Runnable r4 = super :: notify;\n" +
     /* 23 */        "    }\n" +
     /* 24 */        "    private void foo() {}\n" +
-    /* 25 */        "}";
+    /* 25 */        "    void assignLambda() {\n" +
+    /* 26 */        "        Runnable r = () -> { };\n" +
+    /* 27 */        "    }\n" +
+    /* 28 */        "    void callLambda(int i, Runnable r) {\n" +
+    /* 29 */        "        callLambda(0,\n" +
+    /* 30 */        "                   () -> { });\n" +
+    /* 31 */        "    }\n" +
+    /* 32 */        "}";
 
     static final int[][] simpleLambdaExpectedLNT = {
     //  {line-number, start-pc},
@@ -102,6 +109,18 @@ public class WrongLNTForLambdaTest {
         {22,           0},       //number -> number / 1
     };
 
+    static final int[][] assignmentExpectedLNT = {
+    //  {line-number, start-pc},
+        {26,           0},       //number -> number / 1
+        {27,           6},       //number -> number / 1
+    };
+
+    static final int[][] callExpectedLNT = {
+    //  {line-number, start-pc},
+        {29,           0},       //number -> number / 1
+        {31,           10},       //number -> number / 1
+    };
+
     public static void main(String[] args) throws Exception {
         new WrongLNTForLambdaTest().run();
     }
@@ -120,6 +139,10 @@ public class WrongLNTForLambdaTest {
                 "Foo.class").toUri()), "$deserializeLambda$", deserializeExpectedLNT);
         checkClassFile(new File(Paths.get(System.getProperty("user.dir"),
                 "Foo.class").toUri()), "lambda$MR$variablesInLambdas$notify$8bc4f5bd$1", lambdaBridgeExpectedLNT);
+        checkClassFile(new File(Paths.get(System.getProperty("user.dir"),
+                "Foo.class").toUri()), "assignLambda", assignmentExpectedLNT);
+        checkClassFile(new File(Paths.get(System.getProperty("user.dir"),
+                "Foo.class").toUri()), "callLambda", callExpectedLNT);
     }
 
     void compileTestClass() throws Exception {

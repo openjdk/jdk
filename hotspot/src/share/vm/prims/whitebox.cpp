@@ -107,7 +107,7 @@ WB_ENTRY(void, WB_PrintHeapSizes(JNIEnv* env, jobject o)) {
   gclog_or_tty->print_cr("Minimum heap "SIZE_FORMAT" Initial heap "
     SIZE_FORMAT" Maximum heap "SIZE_FORMAT" Min alignment "SIZE_FORMAT" Max alignment "SIZE_FORMAT,
     p->min_heap_byte_size(), p->initial_heap_byte_size(), p->max_heap_byte_size(),
-    p->min_alignment(), p->max_alignment());
+    p->space_alignment(), p->heap_alignment());
 }
 WB_END
 

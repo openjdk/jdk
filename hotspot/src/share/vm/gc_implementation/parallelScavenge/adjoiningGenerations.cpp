@@ -25,6 +25,7 @@
 #include "precompiled.hpp"
 #include "gc_implementation/parallelScavenge/adjoiningGenerations.hpp"
 #include "gc_implementation/parallelScavenge/adjoiningVirtualSpaces.hpp"
+#include "gc_implementation/parallelScavenge/generationSizer.hpp"
 #include "gc_implementation/parallelScavenge/parallelScavengeHeap.hpp"
 
 // If boundary moving is being used, create the young gen and old
@@ -32,15 +33,17 @@
 // the old behavior otherwise (with PSYoungGen and PSOldGen).
 
 AdjoiningGenerations::AdjoiningGenerations(ReservedSpace old_young_rs,
-                                           size_t init_low_byte_size,
-                                           size_t min_low_byte_size,
-                                           size_t max_low_byte_size,
-                                           size_t init_high_byte_size,
-                                           size_t min_high_byte_size,
-                                           size_t max_high_byte_size,
+                                           GenerationSizer* policy,
                                            size_t alignment) :
-  _virtual_spaces(old_young_rs, min_low_byte_size,
-                  min_high_byte_size, alignment) {
+  _virtual_spaces(old_young_rs, policy->min_gen1_size(),
+                  policy->min_gen0_size(), alignment) {
+  size_t init_low_byte_size = policy->initial_gen1_size();
+  size_t min_low_byte_size = policy->min_gen1_size();
+  size_t max_low_byte_size = policy->max_gen1_size();
+  size_t init_high_byte_size = policy->initial_gen0_size();
+  size_t min_high_byte_size = policy->min_gen0_size();
+  size_t max_high_byte_size = policy->max_gen0_size();
+
   assert(min_low_byte_size <= init_low_byte_size &&
          init_low_byte_size <= max_low_byte_size, "Parameter check");
   assert(min_high_byte_size <= init_high_byte_size &&

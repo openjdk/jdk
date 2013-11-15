@@ -315,6 +315,8 @@ class CompileBroker: AllStatic {
   static int _sum_nmethod_code_size;
   static long _peak_compilation_time;
 
+  static volatile jint _print_compilation_warning;
+
   static CompilerThread* make_compiler_thread(const char* name, CompileQueue* queue, CompilerCounters* counters, AbstractCompiler* comp, TRAPS);
   static void init_compiler_threads(int c1_compiler_count, int c2_compiler_count);
   static bool compilation_is_complete  (methodHandle method, int osr_bci, int comp_level);
@@ -418,7 +420,11 @@ class CompileBroker: AllStatic {
     return _should_compile_new_jobs == shutdown_compilaton;
   }
   static void handle_full_code_cache();
-
+  // Ensures that warning is only printed once.
+  static bool should_print_compiler_warning() {
+    jint old = Atomic::cmpxchg(1, &_print_compilation_warning, 0);
+    return old == 0;
+  }
   // Return total compilation ticks
   static jlong total_compilation_ticks() {
     return _perf_total_compilation != NULL ? _perf_total_compilation->get_value() : 0;

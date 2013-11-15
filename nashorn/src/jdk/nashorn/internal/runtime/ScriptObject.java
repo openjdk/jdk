@@ -226,13 +226,22 @@ public abstract class ScriptObject extends PropertyListenerManager implements Pr
 
         for (final Property property : properties) {
             final String key = property.getKey();
-
-            if (newMap.findProperty(key) == null) {
+            final Property oldProp = newMap.findProperty(key);
+            if (oldProp == null) {
                 if (property instanceof UserAccessorProperty) {
                     final UserAccessorProperty prop = this.newUserAccessors(key, property.getFlags(), property.getGetterFunction(source), property.getSetterFunction(source));
                     newMap = newMap.addProperty(prop);
                 } else {
                     newMap = newMap.addPropertyBind((AccessorProperty)property, source);
+                }
+            } else {
+                // See ECMA section 10.5 Declaration Binding Instantiation
+                // step 5 processing each function declaration.
+                if (property.isFunctionDeclaration() && !oldProp.isConfigurable()) {
+                     if (oldProp instanceof UserAccessorProperty ||
+                         !(oldProp.isWritable() && oldProp.isEnumerable())) {
+                         throw typeError("cant.redefine.property", key, ScriptRuntime.safeToString(this));
+                     }
                 }
             }
         }

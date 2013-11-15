@@ -111,16 +111,16 @@ public class OpenMBeanParameterInfoSupport
     }
 
     /**
-     * <p>Constructs an {@code OpenMBeanParameterInfoSupport} instance,
+     * Constructs an {@code OpenMBeanParameterInfoSupport} instance,
      * which describes the parameter used in one or more operations or
      * constructors of a class of open MBeans, with the specified
      * {@code name}, {@code openType}, {@code description},
-     * and {@code descriptor}.</p>
+     * and {@code descriptor}.
      *
      * <p>The {@code descriptor} can contain entries that will define
      * the values returned by certain methods of this class, as
-     * explained in the {@link <a href="package-summary.html#constraints">
-     * package description</a>}.
+     * explained in the <a href="package-summary.html#constraints">
+     * package description</a>.
      *
      * @param name  cannot be a null or empty string.
      *
@@ -134,8 +134,8 @@ public class OpenMBeanParameterInfoSupport
      * @throws IllegalArgumentException if {@code name} or {@code
      * description} are null or empty string, or {@code openType} is
      * null, or the descriptor entries are invalid as described in the
-     * {@link <a href="package-summary.html#constraints">package
-     * description</a>}.
+     * <a href="package-summary.html#constraints">package
+     * description</a>.
      *
      * @since 1.6
      */
