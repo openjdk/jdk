@@ -532,6 +532,9 @@ void os::Linux::signal_sets_init() {
   sigaddset(&unblocked_sigs, SIGSEGV);
   sigaddset(&unblocked_sigs, SIGBUS);
   sigaddset(&unblocked_sigs, SIGFPE);
+#if defined(PPC64)
+  sigaddset(&unblocked_sigs, SIGTRAP);
+#endif
   sigaddset(&unblocked_sigs, SR_signum);
 
   if (!ReduceSignalUsage) {
@@ -2294,6 +2297,9 @@ void os::print_signal_handlers(outputStream* st, char* buf, size_t buflen) {
   print_signal_handler(st, SHUTDOWN2_SIGNAL , buf, buflen);
   print_signal_handler(st, SHUTDOWN3_SIGNAL , buf, buflen);
   print_signal_handler(st, BREAK_SIGNAL, buf, buflen);
+#if defined(PPC64)
+  print_signal_handler(st, SIGTRAP, buf, buflen);
+#endif
 }
 
 static char saved_jvm_path[MAXPATHLEN] = {0};
@@ -4423,6 +4429,9 @@ void os::Linux::install_signal_handlers() {
     set_signal_handler(SIGBUS, true);
     set_signal_handler(SIGILL, true);
     set_signal_handler(SIGFPE, true);
+#if defined(PPC64)
+    set_signal_handler(SIGTRAP, true);
+#endif
     set_signal_handler(SIGXFSZ, true);
 
     if (libjsig_is_loaded) {
@@ -4565,7 +4574,9 @@ void os::run_periodic_checks() {
   DO_SIGNAL_CHECK(SIGBUS);
   DO_SIGNAL_CHECK(SIGPIPE);
   DO_SIGNAL_CHECK(SIGXFSZ);
-
+#if defined(PPC64)
+  DO_SIGNAL_CHECK(SIGTRAP);
+#endif
 
   // ReduceSignalUsage allows the user to override these handlers
   // see comments at the very top and jvm_solaris.h
