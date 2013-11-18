@@ -794,18 +794,13 @@ abstract class AppletPanel extends Panel implements AppletStub, Runnable {
             doInit = true;
         } else {
             // serName is not null;
-            InputStream is = (InputStream)
-                java.security.AccessController.doPrivileged(
-                                                            new java.security.PrivilegedAction() {
-                                                                public Object run() {
-                                                                    return loader.getResourceAsStream(serName);
-                                                                }
-                                                            });
-            ObjectInputStream ois =
-                new AppletObjectInputStream(is, loader);
-            Object serObject = ois.readObject();
-            applet = (Applet) serObject;
-            doInit = false; // skip over the first init
+            try (InputStream is = AccessController.doPrivileged(
+                    (PrivilegedAction<InputStream>)() -> loader.getResourceAsStream(serName));
+                 ObjectInputStream ois = new AppletObjectInputStream(is, loader)) {
+
+                applet = (Applet) ois.readObject();
+                doInit = false; // skip over the first init
+            }
         }
 
         // Determine the JDK level that the applet targets.
@@ -1239,20 +1234,13 @@ abstract class AppletPanel extends Panel implements AppletStub, Runnable {
             // append .class
             final String resourceName = name + ".class";
 
-            InputStream is = null;
             byte[] classHeader = new byte[8];
 
-            try {
-                is = (InputStream) java.security.AccessController.doPrivileged(
-                    new java.security.PrivilegedAction() {
-                        public Object run() {
-                            return loader.getResourceAsStream(resourceName);
-                        }
-                    });
+            try (InputStream is = AccessController.doPrivileged(
+                    (PrivilegedAction<InputStream>) () -> loader.getResourceAsStream(resourceName))) {
 
                 // Read the first 8 bytes of the class file
                 int byteRead = is.read(classHeader, 0, 8);
-                is.close();
 
                 // return if the header is not read in entirely
                 // for some reasons.
