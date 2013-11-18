@@ -25,7 +25,11 @@ import java.io.File;
 import java.nio.file.FileSystem;
 import java.nio.file.FileSystems;
 import java.nio.file.Files;
+import java.nio.file.LinkOption;
 import java.nio.file.Path;
+import java.nio.file.attribute.PosixFilePermission;
+import java.util.HashSet;
+import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -36,7 +40,7 @@ import jdk.testlibrary.ProcessTools;
  * @bug 6434402 8004926
  * @library /lib/testlibrary
  * @build TestManager TestApplication CustomLauncherTest
- * @run main CustomLauncherTest
+ * @run main/othervm CustomLauncherTest
  * @author Jaroslav Bachorik
  */
 public class CustomLauncherTest {
@@ -67,6 +71,9 @@ public class CustomLauncherTest {
                 ARCH = "amd64";
                 break;
             }
+            case "sparc":
+                ARCH = "sparcv9";
+                break;
             default: {
                 ARCH = osarch;
             }
@@ -101,7 +108,10 @@ public class CustomLauncherTest {
                           File.separator + "launcher";
 
         final FileSystem FS = FileSystems.getDefault();
-        final boolean hasLauncher = Files.isExecutable(FS.getPath(LAUNCHER));
+        Path launcherPath = FS.getPath(LAUNCHER);
+
+        final boolean hasLauncher = Files.isRegularFile(launcherPath, LinkOption.NOFOLLOW_LINKS)&&
+                                    Files.isReadable(launcherPath);
         if (!hasLauncher) {
             System.out.println("Launcher [" + LAUNCHER + "] does not exist. Skipping the test.");
             return;
@@ -114,7 +124,17 @@ public class CustomLauncherTest {
 
         Process serverPrc = null, clientPrc = null;
 
+        final Set<PosixFilePermission> launcherOrigPerms =
+            Files.getPosixFilePermissions(launcherPath, LinkOption.NOFOLLOW_LINKS);
         try {
+            // It is impossible to store an executable file in the source control
+            // We need to set the executable flag here
+            if (!Files.isExecutable(launcherPath)) {
+                Set<PosixFilePermission> perms = new HashSet<>(launcherOrigPerms);
+                perms.add(PosixFilePermission.OWNER_EXECUTE);
+                Files.setPosixFilePermissions(launcherPath, perms);
+            }
+
             System.out.println("Starting custom launcher:");
             System.out.println("=========================");
             System.out.println("  launcher  : " + LAUNCHER);
@@ -177,6 +197,8 @@ public class CustomLauncherTest {
                 throw new Error("Test failed");
             }
         } finally {
+            // Let's restore the original launcher permissions
+            Files.setPosixFilePermissions(launcherPath, launcherOrigPerms);
             if (clientPrc != null) {
                 clientPrc.destroy();
                 clientPrc.waitFor();

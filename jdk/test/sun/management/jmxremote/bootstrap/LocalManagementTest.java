@@ -42,7 +42,7 @@ import java.util.concurrent.atomic.AtomicReference;
  *          TestManager will attempt a connection to the address obtained from
  *          both agent properties and jvmstat buffer.
  * @build TestManager TestApplication
- * @run main/timeout=300 LocalManagementTest
+ * @run main/othervm/timeout=300 LocalManagementTest
  */
 
 import jdk.testlibrary.ProcessTools;
@@ -77,14 +77,14 @@ public class LocalManagementTest {
     }
 
     private static boolean test1() throws Exception {
-        return doTest("-Dcom.sun.management.jmxremote");
+        return doTest("1", "-Dcom.sun.management.jmxremote");
     }
 
     private static boolean test2() throws Exception {
         Path agentPath = findAgent();
         if (agentPath != null) {
             String agent = agentPath.toString();
-            return doTest("-javaagent:" + agent);
+            return doTest("2", "-javaagent:" + agent);
         } else {
             return false;
         }
@@ -94,7 +94,7 @@ public class LocalManagementTest {
      * no args (blank) - manager should attach and start agent
      */
     private static boolean test3() throws Exception {
-        return doTest(null);
+        return doTest("3", null);
     }
 
     /**
@@ -136,7 +136,7 @@ public class LocalManagementTest {
      * use DNS-only name service
      */
     private static boolean test5() throws Exception {
-        return doTest("-Dsun.net.spi.namservice.provider.1=\"dns,sun\"");
+        return doTest("5", "-Dsun.net.spi.namservice.provider.1=\"dns,sun\"");
     }
 
     private static Path findAgent() {
@@ -160,7 +160,7 @@ public class LocalManagementTest {
         return Files.isRegularFile(path) && Files.isReadable(path);
     }
 
-    private static boolean doTest(String arg) throws Exception {
+    private static boolean doTest(String testId, String arg) throws Exception {
         List<String> args = new ArrayList<>();
         args.add("-cp");
         args.add(TEST_CLASSES);
@@ -179,7 +179,7 @@ public class LocalManagementTest {
             final AtomicReference<String> pid = new AtomicReference<>();
 
             serverPrc = ProcessTools.startProcess(
-                "TestApplication",
+                "TestApplication(" + testId + ")",
                 server,
                 (String line) -> {
                     if (line.startsWith("port:")) {
