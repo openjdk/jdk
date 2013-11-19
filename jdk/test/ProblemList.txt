@@ -176,9 +176,6 @@ com/sun/net/httpserver/bugs/6725892/Test.java                   generic-all
 # Filed 7036666
 com/sun/net/httpserver/Test9a.java                              generic-all
 
-# 7102670
-java/net/InetAddress/CheckJNI.java                              linux-all
-
 # failing on vista 32/64 on nightly
 # 7102702
 java/net/PortUnreachableException/OneExceptionOnly.java         windows-all
