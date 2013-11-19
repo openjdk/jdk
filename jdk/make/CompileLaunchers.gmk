@@ -385,7 +385,7 @@ $(eval $(call SetupLauncher,tnameserv, \
         "com.sun.corba.se.impl.naming.cosnaming.TransientNameServer"$(COMMA) }'))
 
 $(eval $(call SetupLauncher,pack200, \
-    -DJAVA_ARGS='{ "-J-ms8m"$(COMMA) "com.sun.java.util.jar.pack.Driver"$(COMMA) "--pack" }'))
+    -DJAVA_ARGS='{ "-J-ms8m"$(COMMA) "com.sun.java.util.jar.pack.Driver"$(COMMA) }'))
 
 $(eval $(call SetupLauncher,rmid, \
     -DJAVA_ARGS='{ "-J-ms8m"$(COMMA) "sun.rmi.server.Activation"$(COMMA) }'))
