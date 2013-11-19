@@ -250,7 +250,7 @@ endef
 
 # ------------------------------------------------------------------
 
-jdk_%:
+jdk_% core_% svc_%:
 	$(ECHO) "Running tests: $@"
 	for each in $@; do \
 	        $(MAKE) -j 1 TEST_SELECTION=":$$each" UNIQUE_DIR=$$each jtreg_tests; \
