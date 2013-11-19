@@ -81,6 +81,7 @@ $(LANGTOOLS_OUTPUTDIR)/gensrc/_the_props.d: $(PROPSOURCES) $(BUILD_TOOLS)
 	$(PRINTF) "jdk=$(JDK_VERSION)\nfull=$(FULL_VERSION)\nrelease=$(RELEASE)\n" > $(LANGTOOLS_OUTPUTDIR)/gensrc/com/sun/tools/javap/resources/version.properties
 	$(PRINTF) "jdk=$(JDK_VERSION)\nfull=$(FULL_VERSION)\nrelease=$(RELEASE)\n" > $(LANGTOOLS_OUTPUTDIR)/gensrc/com/sun/tools/javac/resources/version.properties
 	$(PRINTF) "jdk=$(JDK_VERSION)\nfull=$(FULL_VERSION)\nrelease=$(RELEASE)\n" > $(LANGTOOLS_OUTPUTDIR)/gensrc/com/sun/tools/jdeps/resources/version.properties
+	$(PRINTF) "jdk=$(JDK_VERSION)\nfull=$(FULL_VERSION)\nrelease=$(RELEASE)\n" > $(LANGTOOLS_OUTPUTDIR)/gensrc/com/sun/tools/javadoc/resources/version.properties
 	$(ECHO) Compiling $(words $(PROPSOURCES) v1 v2 v3) properties into resource bundles
 	$(TOOL_COMPILEPROPS_CMD) $(PROPCMDLINE) \
 	    -compile $(LANGTOOLS_OUTPUTDIR)/gensrc/com/sun/tools/javah/resources/version.properties \
@@ -94,6 +95,9 @@ $(LANGTOOLS_OUTPUTDIR)/gensrc/_the_props.d: $(PROPSOURCES) $(BUILD_TOOLS)
 	        java.util.ListResourceBundle \
 	    -compile $(LANGTOOLS_OUTPUTDIR)/gensrc/com/sun/tools/jdeps/resources/version.properties \
 	        $(LANGTOOLS_OUTPUTDIR)/gensrc/com/sun/tools/jdeps/resources/version.java \
+	        java.util.ListResourceBundle \
+	    -compile $(LANGTOOLS_OUTPUTDIR)/gensrc/com/sun/tools/javadoc/resources/version.properties \
+	        $(LANGTOOLS_OUTPUTDIR)/gensrc/com/sun/tools/javadoc/resources/version.java \
 	        java.util.ListResourceBundle
 	$(ECHO) PROPS_ARE_CREATED = yes > $@
 
