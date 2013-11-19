@@ -176,9 +176,6 @@ com/sun/net/httpserver/bugs/6725892/Test.java                   generic-all
 # Filed 7036666
 com/sun/net/httpserver/Test9a.java                              generic-all
 
-# 7102670
-java/net/InetAddress/CheckJNI.java                              linux-all
-
 # failing on vista 32/64 on nightly
 # 7102702
 java/net/PortUnreachableException/OneExceptionOnly.java         windows-all
@@ -292,6 +289,9 @@ com/sun/tools/attach/BasicTests.sh                              generic-all
 
 # 7132203
 sun/jvmstat/monitor/MonitoredVm/CR6672135.java                  generic-all
+
+# 8028474
+sun/jvmstat/monitor/MonitoredVm/MonitorVmStartTerminate.sh      generic-all
 
 # Tests take too long, on sparcs see 7143279
 tools/pack200/CommandLineTests.java                             solaris-all, macosx-all
