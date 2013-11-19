@@ -41,6 +41,7 @@ import java.util.concurrent.atomic.AtomicReference;
  *          without connection or username/password details.
  *          TestManager will attempt a connection to the address obtained from
  *          both agent properties and jvmstat buffer.
+ * @build jdk.testlibrary.ProcessTools
  * @build TestManager TestApplication
  * @run main/othervm/timeout=300 LocalManagementTest
  */
@@ -48,7 +49,7 @@ import java.util.concurrent.atomic.AtomicReference;
 import jdk.testlibrary.ProcessTools;
 
 public class LocalManagementTest {
-    private static final  String TEST_CLASSES = System.getProperty("test.classes");
+    private static final  String TEST_CLASSPATH = System.getProperty("test.class.path");
     private static final  String TEST_JDK = System.getProperty("test.jdk");
 
     public static void main(String[] args) throws Exception {
@@ -109,7 +110,7 @@ public class LocalManagementTest {
                 "com.sun.management.jmxremote.authenticate=false," +
                 "com.sun.management.jmxremote.ssl=false",
                 "-cp",
-                TEST_CLASSES,
+                TEST_CLASSPATH,
                 "TestApplication",
                 "-exit"
             );
@@ -163,7 +164,7 @@ public class LocalManagementTest {
     private static boolean doTest(String testId, String arg) throws Exception {
         List<String> args = new ArrayList<>();
         args.add("-cp");
-        args.add(TEST_CLASSES);
+        args.add(TEST_CLASSPATH);
 
         if (arg != null) {
             args.add(arg);
@@ -202,7 +203,7 @@ public class LocalManagementTest {
 
             ProcessBuilder client = ProcessTools.createJavaProcessBuilder(
                 "-cp",
-                TEST_CLASSES +
+                TEST_CLASSPATH +
                     File.pathSeparator +
                     TEST_JDK +
                     File.separator +

@@ -39,12 +39,13 @@ import jdk.testlibrary.ProcessTools;
  * @test
  * @bug 6434402 8004926
  * @library /lib/testlibrary
+ * @build jdk.testlibrary.ProcessTools
  * @build TestManager TestApplication CustomLauncherTest
  * @run main/othervm CustomLauncherTest
  * @author Jaroslav Bachorik
  */
 public class CustomLauncherTest {
-    private static final  String TEST_CLASSES = System.getProperty("test.classes");
+    private static final  String TEST_CLASSPATH = System.getProperty("test.class.path");
     private static final  String TEST_JDK = System.getProperty("test.jdk");
 
     private static final  String TEST_SRC = System.getProperty("test.src");
@@ -82,7 +83,7 @@ public class CustomLauncherTest {
     }
 
     public static void main(String[] args) throws Exception {
-        if (TEST_CLASSES == null || TEST_CLASSES.isEmpty()) {
+        if (TEST_CLASSPATH == null || TEST_CLASSPATH.isEmpty()) {
             System.out.println("Test is designed to be run from jtreg only");
             return;
         }
@@ -139,8 +140,8 @@ public class CustomLauncherTest {
             System.out.println("=========================");
             System.out.println("  launcher  : " + LAUNCHER);
             System.out.println("  libjvm    : " + libjvmPath.toString());
-            System.out.println("  classpath : " + TEST_CLASSES);
-            ProcessBuilder server = new ProcessBuilder(LAUNCHER, libjvmPath.toString(), TEST_CLASSES, "TestApplication");
+            System.out.println("  classpath : " + TEST_CLASSPATH);
+            ProcessBuilder server = new ProcessBuilder(LAUNCHER, libjvmPath.toString(), TEST_CLASSPATH, "TestApplication");
 
             final AtomicReference<String> port = new AtomicReference<>();
             final AtomicReference<String> pid = new AtomicReference<>();
@@ -169,7 +170,7 @@ public class CustomLauncherTest {
 
             ProcessBuilder client = ProcessTools.createJavaProcessBuilder(
                 "-cp",
-                TEST_CLASSES +
+                TEST_CLASSPATH +
                     File.pathSeparator +
                     TEST_JDK +
                     File.separator +
