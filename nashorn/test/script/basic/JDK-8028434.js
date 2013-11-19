@@ -38,7 +38,7 @@ try {
     if (st.length != 1) {
 	print("erroneous stacktrace length " + s.length);
     }
-    if (st[0].lineNumber !== 32) {
+    if (st[0].lineNumber !== 33) {
 	print("erroneous stacktrace element, lineNumber=" + st[0].lineNumber + " elem=" + st);
     }
 }
@@ -52,7 +52,7 @@ try {
     if (st.length != 1) {
 	print("erroneous stacktrace length " + s.length);
     }
-    if (st[0].lineNumber !== 48) {
+    if (st[0].lineNumber !== 49) {
 	print("erroneous stacktrace element, lineNumber= " + st[0].lineNumber + " elem=" + st);
     }
 }
