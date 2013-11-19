@@ -59,7 +59,7 @@ all: jdk_all langtools_all
 langtools_% :
 	@$(NO_STOPPING)$(call SUBDIR_TEST, $(LANGTOOLS_DIR), JT_JAVA=$(PRODUCT_HOME) JTREG_HOME=$(JT_HOME) TEST="$(subst langtools_,,$@)" $(subst langtools_,,$@))
 
-jdk_% :
+jdk_% core_%s svc_%:
 	@$(NO_STOPPING)$(call SUBDIR_TEST, $(JDK_DIR), TEST="$@" $@)
 
 ################################################################
