@@ -122,9 +122,6 @@
 
 # jdk_lang
 
-# 6944188
-java/lang/management/ThreadMXBean/ThreadStateTest.java          generic-all
-
 # 7067973
 java/lang/management/MemoryMXBean/CollectionUsageThreshold.java generic-all
 
