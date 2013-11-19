@@ -188,7 +188,7 @@ BasicType frame::interpreter_frame_result(oop* oop_result, jvalue* value_result)
       case T_OBJECT:
       case T_ARRAY: {
         oop* obj_p = *(oop**)lresult;
-        oop obj = (obj_p == NULL) ? NULL : *obj_p;
+        oop obj = (obj_p == NULL) ? (oop)NULL : *obj_p;
         assert(obj == NULL || Universe::heap()->is_in(obj), "sanity check");
         *oop_result = obj;
         break;

@@ -1810,7 +1810,7 @@ run:
             // Profile checkcast with null_seen and receiver.
             BI_PROFILE_UPDATE_CHECKCAST(/*null_seen=*/true, NULL);
           }
-          ((objArrayOopDesc *) arrObj)->obj_at_put(index, rhsObject);
+          ((objArrayOop) arrObj)->obj_at_put(index, rhsObject);
           UPDATE_PC_AND_TOS_AND_CONTINUE(1, -3);
       }
       CASE(_bastore):
@@ -2828,7 +2828,7 @@ run:
       if (TraceExceptions) {
         ttyLocker ttyl;
         ResourceMark rm;
-        tty->print_cr("Exception <%s> (" INTPTR_FORMAT ")", except_oop->print_value_string(), except_oop());
+        tty->print_cr("Exception <%s> (" INTPTR_FORMAT ")", except_oop->print_value_string(), (void*)except_oop());
         tty->print_cr(" thrown in interpreter method <%s>", METHOD->print_value_string());
         tty->print_cr(" at bci %d, continuing at %d for thread " INTPTR_FORMAT,
                       istate->bcp() - (intptr_t)METHOD->code_base(),
@@ -2844,7 +2844,7 @@ run:
     if (TraceExceptions) {
       ttyLocker ttyl;
       ResourceMark rm;
-      tty->print_cr("Exception <%s> (" INTPTR_FORMAT ")", except_oop->print_value_string(), except_oop());
+      tty->print_cr("Exception <%s> (" INTPTR_FORMAT ")", except_oop->print_value_string(), (void*)except_oop());
       tty->print_cr(" thrown in interpreter method <%s>", METHOD->print_value_string());
       tty->print_cr(" at bci %d, unwinding for thread " INTPTR_FORMAT,
                     istate->bcp() - (intptr_t)METHOD->code_base(),
@@ -3213,7 +3213,7 @@ jfloat BytecodeInterpreter::stack_float(intptr_t *tos, int offset) {
 }
 
 oop BytecodeInterpreter::stack_object(intptr_t *tos, int offset) {
-  return (oop)tos [Interpreter::expr_index_at(-offset)];
+  return cast_to_oop(tos [Interpreter::expr_index_at(-offset)]);
 }
 
 jdouble BytecodeInterpreter::stack_double(intptr_t *tos, int offset) {
@@ -3282,7 +3282,7 @@ jfloat BytecodeInterpreter::locals_float(intptr_t* locals, int offset) {
   return (jfloat)locals[Interpreter::local_index_at(-offset)];
 }
 oop BytecodeInterpreter::locals_object(intptr_t* locals, int offset) {
-  return (oop)locals[Interpreter::local_index_at(-offset)];
+  return cast_to_oop(locals[Interpreter::local_index_at(-offset)]);
 }
 jdouble BytecodeInterpreter::locals_double(intptr_t* locals, int offset) {
   return ((VMJavaVal64*)&locals[Interpreter::local_index_at(-(offset+1))])->d;
@@ -3441,7 +3441,7 @@ BytecodeInterpreter::print() {
   tty->print_cr("osr._osr_buf: " INTPTR_FORMAT, (uintptr_t) this->_result._osr._osr_buf);
   tty->print_cr("osr._osr_entry: " INTPTR_FORMAT, (uintptr_t) this->_result._osr._osr_entry);
   tty->print_cr("prev_link: " INTPTR_FORMAT, (uintptr_t) this->_prev_link);
-  tty->print_cr("native_mirror: " INTPTR_FORMAT, (uintptr_t) this->_oop_temp);
+  tty->print_cr("native_mirror: " INTPTR_FORMAT, (void*) this->_oop_temp);
   tty->print_cr("stack_base: " INTPTR_FORMAT, (uintptr_t) this->_stack_base);
   tty->print_cr("stack_limit: " INTPTR_FORMAT, (uintptr_t) this->_stack_limit);
   tty->print_cr("monitor_base: " INTPTR_FORMAT, (uintptr_t) this->_monitor_base);

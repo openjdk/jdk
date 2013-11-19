@@ -395,7 +395,7 @@ protected:
   }
 
   static oop oop_at(DataLayout* layout, int index) {
-    return (oop)layout->cell_at(index);
+    return cast_to_oop(layout->cell_at(index));
   }
 
   static void set_intptr_at(DataLayout* layout, int index, intptr_t value) {
@@ -1248,8 +1248,8 @@ public:
   }
 
   static Klass *receiver_unchecked(DataLayout* layout, uint row) {
-    oop recv = oop_at(layout, receiver_cell_index(row));
-    return (Klass *)recv;
+    Klass* recv = (Klass*)layout->cell_at(receiver_cell_index(row));
+    return recv;
   }
 
   static void increment_receiver_count_no_overflow(DataLayout* layout, Klass *rcvr) {
