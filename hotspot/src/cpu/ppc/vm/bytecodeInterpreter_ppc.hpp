@@ -91,7 +91,7 @@ public:
 #define LOCALS_SLOT(offset)    ((intptr_t*)&locals[-(offset)])
 #define LOCALS_ADDR(offset)    ((address)locals[-(offset)])
 #define LOCALS_INT(offset)     (*(jint*)&(locals[-(offset)]))
-#define LOCALS_OBJECT(offset)  ((oop)locals[-(offset)])
+#define LOCALS_OBJECT(offset)  (cast_to_oop(locals[-(offset)]))
 #define LOCALS_LONG_AT(offset) (((address)&locals[-((offset) + 1)]))
 #define LOCALS_DOUBLE_AT(offset) (((address)&locals[-((offset) + 1)]))
 

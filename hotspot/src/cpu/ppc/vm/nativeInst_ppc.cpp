@@ -188,7 +188,7 @@ intptr_t NativeMovConstReg::data() const {
     return MacroAssembler::get_const(addr);
   } else if (MacroAssembler::is_set_narrow_oop(addr, cb->content_begin())) {
     narrowOop no = (narrowOop)MacroAssembler::get_narrow_oop(addr, cb->content_begin());
-    return (intptr_t)oopDesc::decode_heap_oop(no);
+    return cast_from_oop<intptr_t>(oopDesc::decode_heap_oop(no));
   } else {
     assert(MacroAssembler::is_load_const_from_method_toc_at(addr), "must be load_const_from_pool");
 
@@ -258,7 +258,7 @@ void NativeMovConstReg::set_data(intptr_t data) {
         oop_Relocation *r = iter.oop_reloc();
         if (oop_addr == NULL) {
           oop_addr = r->oop_addr();
-          *oop_addr = (oop)data;
+          *oop_addr = cast_to_oop(data);
         } else {
           assert(oop_addr == r->oop_addr(), "must be only one set-oop here") ;
         }
