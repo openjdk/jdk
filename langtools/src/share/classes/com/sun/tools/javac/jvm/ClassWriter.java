@@ -1174,9 +1174,8 @@ public class ClassWriter extends ClassFile {
         }
 
         // counter for number of generic local variables
-        int nGenericVars = 0;
-
-        if (code.varBufferSize > 0) {
+        if (code.varDebugInfo && code.varBufferSize > 0) {
+            int nGenericVars = 0;
             int alenIdx = writeAttr(names.LocalVariableTable);
             databuf.appendChar(code.getLVTSize());
             for (int i=0; i<code.varBufferSize; i++) {
@@ -1195,37 +1194,38 @@ public class ClassWriter extends ClassFile {
                     Type vartype = sym.erasure(types);
                     databuf.appendChar(pool.put(typeSig(vartype)));
                     databuf.appendChar(var.reg);
-                    if (needsLocalVariableTypeEntry(var.sym.type))
+                    if (needsLocalVariableTypeEntry(var.sym.type)) {
                         nGenericVars++;
+                    }
                 }
             }
             endAttr(alenIdx);
             acount++;
-        }
 
-        if (nGenericVars > 0) {
-            int alenIdx = writeAttr(names.LocalVariableTypeTable);
-            databuf.appendChar(nGenericVars);
-            int count = 0;
+            if (nGenericVars > 0) {
+                alenIdx = writeAttr(names.LocalVariableTypeTable);
+                databuf.appendChar(nGenericVars);
+                int count = 0;
 
-            for (int i=0; i<code.varBufferSize; i++) {
-                Code.LocalVar var = code.varBuffer[i];
-                VarSymbol sym = var.sym;
-                if (!needsLocalVariableTypeEntry(sym.type))
-                    continue;
-                for (Code.LocalVar.Range r : var.aliveRanges) {
-                    // write variable info
-                    databuf.appendChar(r.start_pc);
-                    databuf.appendChar(r.length);
-                    databuf.appendChar(pool.put(sym.name));
-                    databuf.appendChar(pool.put(typeSig(sym.type)));
-                    databuf.appendChar(var.reg);
-                    count++;
+                for (int i=0; i<code.varBufferSize; i++) {
+                    Code.LocalVar var = code.varBuffer[i];
+                    VarSymbol sym = var.sym;
+                    if (!needsLocalVariableTypeEntry(sym.type))
+                        continue;
+                    for (Code.LocalVar.Range r : var.aliveRanges) {
+                        // write variable info
+                        databuf.appendChar(r.start_pc);
+                        databuf.appendChar(r.length);
+                        databuf.appendChar(pool.put(sym.name));
+                        databuf.appendChar(pool.put(typeSig(sym.type)));
+                        databuf.appendChar(var.reg);
+                        count++;
+                    }
                 }
+                Assert.check(count == nGenericVars);
+                endAttr(alenIdx);
+                acount++;
             }
-            Assert.check(count == nGenericVars);
-            endAttr(alenIdx);
-            acount++;
         }
 
         if (code.stackMapBufferSize > 0) {
