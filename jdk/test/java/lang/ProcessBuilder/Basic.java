@@ -2245,7 +2245,7 @@ public class Basic {
                     try {
                         try {
                             latch.countDown();
-                            p.waitFor(10000, TimeUnit.MILLISECONDS);
+                            p.waitFor(30000, TimeUnit.MILLISECONDS);
                         } catch (InterruptedException e) {
                             return;
                         }
