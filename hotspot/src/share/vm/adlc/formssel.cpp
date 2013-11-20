@@ -32,6 +32,7 @@ InstructForm::InstructForm(const char *id, bool ideal_only)
     _localNames(cmpstr, hashstr, Form::arena),
     _effects(cmpstr, hashstr, Form::arena),
     _is_mach_constant(false),
+    _needs_constant_base(false),
     _has_call(false)
 {
       _ftype = Form::INS;
@@ -65,6 +66,7 @@ InstructForm::InstructForm(const char *id, InstructForm *instr, MatchRule *rule)
     _localNames(instr->_localNames),
     _effects(instr->_effects),
     _is_mach_constant(false),
+    _needs_constant_base(false),
     _has_call(false)
 {
       _ftype = Form::INS;

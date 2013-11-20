@@ -648,10 +648,15 @@ bool MachCallNode::return_value_is_used() const {
 
 
 //------------------------------Registers--------------------------------------
-const RegMask &MachCallNode::in_RegMask( uint idx ) const {
+const RegMask &MachCallNode::in_RegMask(uint idx) const {
   // Values in the domain use the users calling convention, embodied in the
   // _in_rms array of RegMasks.
-  if (idx < tf()->domain()->cnt())  return _in_rms[idx];
+  if (idx < tf()->domain()->cnt()) {
+    return _in_rms[idx];
+  }
+  if (idx == mach_constant_base_node_input()) {
+    return MachConstantBaseNode::static_out_RegMask();
+  }
   // Values outside the domain represent debug info
   return *Compile::current()->matcher()->idealreg2debugmask[in(idx)->ideal_reg()];
 }
@@ -678,7 +683,12 @@ void MachCallJavaNode::dump_spec(outputStream *st) const {
 const RegMask &MachCallJavaNode::in_RegMask(uint idx) const {
   // Values in the domain use the users calling convention, embodied in the
   // _in_rms array of RegMasks.
-  if (idx < tf()->domain()->cnt())  return _in_rms[idx];
+  if (idx < tf()->domain()->cnt()) {
+    return _in_rms[idx];
+  }
+  if (idx == mach_constant_base_node_input()) {
+    return MachConstantBaseNode::static_out_RegMask();
+  }
   // Values outside the domain represent debug info
   Matcher* m = Compile::current()->matcher();
   // If this call is a MethodHandle invoke we have to use a different
