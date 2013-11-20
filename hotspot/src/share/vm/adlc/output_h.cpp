@@ -1614,7 +1614,7 @@ void ArchDesc::declareClasses(FILE *fp) {
       if (strcmp (attr->_ident,"ins_cost") &&
           strncmp(attr->_ident,"ins_field_", 10) != 0 &&
           strcmp (attr->_ident,"ins_short_branch")) {
-        fprintf(fp,"          int            %s() const { return %s; }\n",
+        fprintf(fp,"  virtual int            %s() const { return %s; }\n",
                 attr->_ident, attr->_val);
       }
       // Check value for ins_avoid_back_to_back, and if it is true (1), set the flag
@@ -1653,6 +1653,11 @@ void ArchDesc::declareClasses(FILE *fp) {
          strcmp("MachNode", instr->mach_base_class(_globalNames)) != 0 ) {
       fprintf(fp,"  virtual int            ideal_Opcode() const { return Op_%s; }\n",
             instr->ideal_Opcode(_globalNames) );
+    }
+
+    if (instr->needs_constant_base() &&
+        !instr->is_mach_constant()) {  // These inherit the funcion from MachConstantNode.
+      fprintf(fp,"  virtual uint           mach_constant_base_node_input() const { return req()-1; }\n");
     }
 
     // Allow machine-independent optimization, invert the sense of the IF test
@@ -1823,6 +1828,7 @@ void ArchDesc::declareClasses(FILE *fp) {
     if( instr->expands() || instr->needs_projections() ||
         instr->has_temps() ||
         instr->is_mach_constant() ||
+        instr->needs_constant_base() ||
         instr->_matrule != NULL &&
         instr->num_opnds() != instr->num_unique_opnds() ) {
       fprintf(fp,"  virtual MachNode      *Expand(State *state, Node_List &proj_list, Node* mem);\n");

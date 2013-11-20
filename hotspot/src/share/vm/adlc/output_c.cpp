@@ -1839,7 +1839,9 @@ void ArchDesc::defineExpand(FILE *fp, InstructForm *node) {
 
   // If the node is a MachConstantNode, insert the MachConstantBaseNode edge.
   // NOTE: this edge must be the last input (see MachConstantNode::mach_constant_base_node_input).
-  if (node->is_mach_constant()) {
+  // There are nodes that don't use $constantablebase, but still require that it
+  // is an input to the node. Example: divF_reg_immN, Repl32B_imm on x86_64.
+  if (node->is_mach_constant() || node->needs_constant_base()) {
     fprintf(fp,"  add_req(C->mach_constant_base_node());\n");
   }
 
@@ -1952,9 +1954,9 @@ public:
       else if ((strcmp(rep_var, "constanttablebase") == 0) ||
                (strcmp(rep_var, "constantoffset")    == 0) ||
                (strcmp(rep_var, "constantaddress")   == 0)) {
-        if (!_inst.is_mach_constant()) {
+        if (!(_inst.is_mach_constant() || _inst.needs_constant_base())) {
           _AD.syntax_err(_encoding._linenum,
-                         "Replacement variable %s not allowed in instruct %s (only in MachConstantNode).\n",
+                         "Replacement variable %s not allowed in instruct %s (only in MachConstantNode or MachCall).\n",
                          rep_var, _encoding._name);
         }
       }
@@ -3182,6 +3184,7 @@ void ArchDesc::defineClasses(FILE *fp) {
     if( instr->expands() || instr->needs_projections() ||
         instr->has_temps() ||
         instr->is_mach_constant() ||
+        instr->needs_constant_base() ||
         instr->_matrule != NULL &&
         instr->num_opnds() != instr->num_unique_opnds() )
       defineExpand(_CPP_EXPAND_file._fp, instr);
@@ -3954,8 +3957,10 @@ void ArchDesc::buildMachNode(FILE *fp_cpp, InstructForm *inst, const char *inden
   }
 
   // Fill in the bottom_type where requested
-  if ( inst->captures_bottom_type(_globalNames) ) {
-    fprintf(fp_cpp, "%s node->_bottom_type = _leaf->bottom_type();\n", indent);
+  if (inst->captures_bottom_type(_globalNames)) {
+    if (strncmp("MachCall", inst->mach_base_class(_globalNames), strlen("MachCall"))) {
+      fprintf(fp_cpp, "%s node->_bottom_type = _leaf->bottom_type();\n", indent);
+    }
   }
   if( inst->is_ideal_if() ) {
     fprintf(fp_cpp, "%s node->_prob = _leaf->as_If()->_prob;\n", indent);

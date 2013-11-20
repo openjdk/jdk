@@ -1083,6 +1083,7 @@ CodeBuffer* Compile::init_buffer(uint* blk_starts) {
   assert(_frame_slots >= 0 && _frame_slots < 1000000, "sanity check");
 
   if (has_mach_constant_base_node()) {
+    uint add_size = 0;
     // Fill the constant table.
     // Note:  This must happen before shorten_branches.
     for (uint i = 0; i < _cfg->number_of_blocks(); i++) {
@@ -1096,6 +1097,9 @@ CodeBuffer* Compile::init_buffer(uint* blk_starts) {
         if (n->is_MachConstant()) {
           MachConstantNode* machcon = n->as_MachConstant();
           machcon->eval_constant(C);
+        } else if (n->is_Mach()) {
+          // On Power there are more nodes that issue constants.
+          add_size += (n->as_Mach()->ins_num_consts() * 8);
         }
       }
     }
@@ -1103,7 +1107,7 @@ CodeBuffer* Compile::init_buffer(uint* blk_starts) {
     // Calculate the offsets of the constants and the size of the
     // constant table (including the padding to the next section).
     constant_table().calculate_offsets_and_size();
-    const_req = constant_table().size();
+    const_req = constant_table().size() + add_size;
   }
 
   // Initialize the space for the BufferBlob used to find and verify
@@ -1374,7 +1378,7 @@ void Compile::fill_buffer(CodeBuffer* cb, uint* blk_starts) {
             int offset = blk_starts[block_num] - current_offset;
             if (block_num >= i) {
               // Current and following block's offset are not
-              // finilized yet, adjust distance by the difference
+              // finalized yet, adjust distance by the difference
               // between calculated and final offsets of current block.
               offset -= (blk_starts[i] - blk_offset);
             }

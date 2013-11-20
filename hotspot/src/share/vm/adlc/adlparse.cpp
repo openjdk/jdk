@@ -2863,7 +2863,10 @@ void ADLParser::ins_encode_parse_block_impl(InstructForm& inst, EncClass* encodi
       // Check if this instruct is a MachConstantNode.
       if (strcmp(rep_var, "constanttablebase") == 0) {
         // This instruct is a MachConstantNode.
-        inst.set_is_mach_constant(true);
+        inst.set_needs_constant_base(true);
+        if (strncmp("MachCall", inst.mach_base_class(_globalNames), strlen("MachCall")) != 0 ) {
+          inst.set_is_mach_constant(true);
+        }
 
         if (_curchar == '(')  {
           parse_err(SYNERR, "constanttablebase in instruct %s cannot have an argument "
@@ -2965,18 +2968,34 @@ void ADLParser::ins_encode_parse(InstructForm& inst) {
       while (_curchar != ')') {
         char *param = get_ident_or_literal_constant("encoding operand");
         if ( param != NULL ) {
-          // Found a parameter:
-          // Check it is a local name, add it to the list, then check for more
-          // New: allow hex constants as parameters to an encode method.
-          // New: allow parenthesized expressions as parameters.
-          // New: allow "primary", "secondary", "tertiary" as parameters.
-          // New: allow user-defined register name as parameter
-          if ( (inst._localNames[param] == NULL) &&
-               !ADLParser::is_literal_constant(param) &&
-               (Opcode::as_opcode_type(param) == Opcode::NOT_AN_OPCODE) &&
-               ((_AD._register == NULL ) || (_AD._register->getRegDef(param) == NULL)) ) {
-            parse_err(SYNERR, "Using non-locally defined parameter %s for encoding %s.\n", param, ec_name);
-            return;
+
+          // Check if this instruct is a MachConstantNode.
+          if (strcmp(param, "constanttablebase") == 0) {
+            // This instruct is a MachConstantNode.
+            inst.set_needs_constant_base(true);
+            if (strncmp("MachCall", inst.mach_base_class(_globalNames), strlen("MachCall")) != 0 ) {
+              inst.set_is_mach_constant(true);
+            }
+
+            if (_curchar == '(')  {
+              parse_err(SYNERR, "constanttablebase in instruct %s cannot have an argument "
+                        "(only constantaddress and constantoffset)", ec_name);
+              return;
+            }
+          } else {
+            // Found a parameter:
+            // Check it is a local name, add it to the list, then check for more
+            // New: allow hex constants as parameters to an encode method.
+            // New: allow parenthesized expressions as parameters.
+            // New: allow "primary", "secondary", "tertiary" as parameters.
+            // New: allow user-defined register name as parameter
+            if ( (inst._localNames[param] == NULL) &&
+                 !ADLParser::is_literal_constant(param) &&
+                 (Opcode::as_opcode_type(param) == Opcode::NOT_AN_OPCODE) &&
+                 ((_AD._register == NULL ) || (_AD._register->getRegDef(param) == NULL)) ) {
+              parse_err(SYNERR, "Using non-locally defined parameter %s for encoding %s.\n", param, ec_name);
+              return;
+            }
           }
           params->add_entry(param);
 
@@ -3122,7 +3141,10 @@ void ADLParser::postalloc_expand_parse(InstructForm& inst) {
           // Check if this instruct is a MachConstantNode.
           if (strcmp(param, "constanttablebase") == 0) {
             // This instruct is a MachConstantNode.
-            inst.set_is_mach_constant(true);
+            inst.set_needs_constant_base(true);
+            if (strncmp("MachCall", inst.mach_base_class(_globalNames), strlen("MachCall")) != 0 ) {
+              inst.set_is_mach_constant(true);
+            }
 
             if (_curchar == '(') {
               parse_err(SYNERR, "constanttablebase in instruct %s cannot have an argument "

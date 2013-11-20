@@ -83,7 +83,8 @@ private:
   const char    *_cisc_reg_mask_name;
   InstructForm  *_short_branch_form;
   bool           _is_short_branch;
-  bool           _is_mach_constant;   // true if Node is a MachConstantNode
+  bool           _is_mach_constant;    // True if Node is a MachConstantNode.
+  bool           _needs_constant_base; // True if Node needs the mach_constant_base input.
   uint           _alignment;
 
 public:
@@ -262,6 +263,8 @@ public:
 
   bool                    is_mach_constant() const { return _is_mach_constant;     }
   void                set_is_mach_constant(bool x) {        _is_mach_constant = x; }
+  bool                    needs_constant_base() const { return _needs_constant_base;     }
+  void                set_needs_constant_base(bool x) {        _needs_constant_base = x; }
 
   InstructForm       *short_branch_form() { return _short_branch_form; }
   bool                has_short_branch_form() { return _short_branch_form != NULL; }

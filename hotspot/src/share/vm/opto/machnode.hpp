@@ -181,6 +181,9 @@ public:
   // Number of inputs which come before the first operand.
   // Generally at least 1, to skip the Control input
   virtual uint oper_input_base() const { return 1; }
+  // Position of constant base node in node's inputs. -1 if
+  // no constant base node input.
+  virtual uint mach_constant_base_node_input() const { return (uint)-1; }
 
   // Copy inputs and operands to new node of instruction.
   // Called from cisc_version() and short_branch_version().
@@ -249,6 +252,9 @@ public:
 
   // Return number of relocatable values contained in this instruction
   virtual int   reloc() const { return 0; }
+
+  // Return number of words used for double constants in this instruction
+  virtual int   ins_num_consts() const { return 0; }
 
   // Hash and compare over operands.  Used to do GVN on machine Nodes.
   virtual uint  hash() const;
@@ -412,7 +418,7 @@ public:
   }
 
   // Input edge of MachConstantBaseNode.
-  uint mach_constant_base_node_input() const { return req() - 1; }
+  virtual uint mach_constant_base_node_input() const { return req() - 1; }
 
   int  constant_offset();
   int  constant_offset() const { return ((MachConstantNode*) this)->constant_offset(); }
