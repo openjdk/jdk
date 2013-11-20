@@ -129,9 +129,6 @@ java/lang/management/MemoryMXBean/CollectionUsageThreshold.java generic-all
 
 # jdk_management
 
-# 8010897
-sun/management/HotspotRuntimeMBean/GetSafepointSyncTime.java	macosx-all
-
 # 8028150
 sun/management/jmxremote/bootstrap/RmiSslBootstrapTest.sh	windows-all
 
