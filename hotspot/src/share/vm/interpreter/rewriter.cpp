@@ -70,21 +70,21 @@ void Rewriter::compute_index_maps() {
 }
 
 // Unrewrite the bytecodes if an error occurs.
-void Rewriter::restore_bytecodes() {
+void Rewriter::restore_bytecodes(TRAPS) {
   int len = _methods->length();
 
   for (int i = len-1; i >= 0; i--) {
     Method* method = _methods->at(i);
-    scan_method(method, true);
+    scan_method(method, true, CHECK);
   }
 }
 
 // Creates a constant pool cache given a CPC map
 void Rewriter::make_constant_pool_cache(TRAPS) {
-  const int length = _cp_cache_map.length();
   ClassLoaderData* loader_data = _pool->pool_holder()->class_loader_data();
   ConstantPoolCache* cache =
-      ConstantPoolCache::allocate(loader_data, length, _cp_cache_map,
+      ConstantPoolCache::allocate(loader_data, _cp_cache_map,
+                                  _invokedynamic_cp_cache_map,
                                   _invokedynamic_references_map, CHECK);
 
   // initialize object cache in constant pool
@@ -154,6 +154,31 @@ void Rewriter::rewrite_member_reference(address bcp, int offset, bool reverse) {
   }
 }
 
+// If the constant pool entry for invokespecial is InterfaceMethodref,
+// we need to add a separate cpCache entry for its resolution, because it is
+// different than the resolution for invokeinterface with InterfaceMethodref.
+// These cannot share cpCache entries.  It's unclear if all invokespecial to
+// InterfaceMethodrefs would resolve to the same thing so a new cpCache entry
+// is created for each one.  This was added with lambda.
+void Rewriter::rewrite_invokespecial(address bcp, int offset, bool reverse, TRAPS) {
+  static int count = 0;
+  address p = bcp + offset;
+  if (!reverse) {
+    int cp_index = Bytes::get_Java_u2(p);
+    int cache_index = add_invokespecial_cp_cache_entry(cp_index);
+    if (cache_index != (int)(jushort) cache_index) {
+      THROW_MSG(vmSymbols::java_lang_InternalError(),
+                "This classfile overflows invokespecial for interfaces "
+                "and cannot be loaded");
+    }
+    Bytes::put_native_u2(p, cache_index);
+  } else {
+    int cache_index = Bytes::get_native_u2(p);
+    int cp_index = cp_cache_entry_pool_index(cache_index);
+    Bytes::put_Java_u2(p, cp_index);
+  }
+}
+
 
 // Adjust the invocation bytecode for a signature-polymorphic method (MethodHandle.invoke, etc.)
 void Rewriter::maybe_rewrite_invokehandle(address opc, int cp_index, int cache_index, bool reverse) {
@@ -203,7 +228,7 @@ void Rewriter::rewrite_invokedynamic(address bcp, int offset, bool reverse) {
   if (!reverse) {
     int cp_index = Bytes::get_Java_u2(p);
     int cache_index = add_invokedynamic_cp_cache_entry(cp_index);
-    add_invokedynamic_resolved_references_entries(cp_index, cache_index);
+    int resolved_index = add_invokedynamic_resolved_references_entries(cp_index, cache_index);
     // Replace the trailing four bytes with a CPC index for the dynamic
     // call site.  Unlike other CPC entries, there is one per bytecode,
     // not just one per distinct CP entry.  In other words, the
@@ -212,17 +237,52 @@ void Rewriter::rewrite_invokedynamic(address bcp, int offset, bool reverse) {
     // all these entries.  That is the main reason invokedynamic
     // must have a five-byte instruction format.  (Of course, other JVM
     // implementations can use the bytes for other purposes.)
-    Bytes::put_native_u4(p, ConstantPool::encode_invokedynamic_index(cache_index));
     // Note: We use native_u4 format exclusively for 4-byte indexes.
+    Bytes::put_native_u4(p, ConstantPool::encode_invokedynamic_index(cache_index));
+    // add the bcp in case we need to patch this bytecode if we also find a
+    // invokespecial/InterfaceMethodref in the bytecode stream
+    _patch_invokedynamic_bcps->push(p);
+    _patch_invokedynamic_refs->push(resolved_index);
   } else {
-    // callsite index
     int cache_index = ConstantPool::decode_invokedynamic_index(
                         Bytes::get_native_u4(p));
-    int cp_index = cp_cache_entry_pool_index(cache_index);
+    // We will reverse the bytecode rewriting _after_ adjusting them.
+    // Adjust the cache index by offset to the invokedynamic entries in the
+    // cpCache plus the delta if the invokedynamic bytecodes were adjusted.
+    cache_index = cp_cache_delta() + _first_iteration_cp_cache_limit;
+    int cp_index = invokedynamic_cp_cache_entry_pool_index(cache_index);
     assert(_pool->tag_at(cp_index).is_invoke_dynamic(), "wrong index");
     // zero out 4 bytes
     Bytes::put_Java_u4(p, 0);
     Bytes::put_Java_u2(p, cp_index);
+  }
+}
+
+void Rewriter::patch_invokedynamic_bytecodes() {
+  // If the end of the cp_cache is the same as after initializing with the
+  // cpool, nothing needs to be done.  Invokedynamic bytecodes are at the
+  // correct offsets. ie. no invokespecials added
+  int delta = cp_cache_delta();
+  if (delta > 0) {
+    int length = _patch_invokedynamic_bcps->length();
+    assert(length == _patch_invokedynamic_refs->length(),
+           "lengths should match");
+    for (int i = 0; i < length; i++) {
+      address p = _patch_invokedynamic_bcps->at(i);
+      int cache_index = ConstantPool::decode_invokedynamic_index(
+                          Bytes::get_native_u4(p));
+      Bytes::put_native_u4(p, ConstantPool::encode_invokedynamic_index(cache_index + delta));
+
+      // invokedynamic resolved references map also points to cp cache and must
+      // add delta to each.
+      int resolved_index = _patch_invokedynamic_refs->at(i);
+      for (int entry = 0; entry < ConstantPoolCacheEntry::_indy_resolved_references_entries; entry++) {
+        assert(_invokedynamic_references_map[resolved_index+entry] == cache_index,
+             "should be the same index");
+        _invokedynamic_references_map.at_put(resolved_index+entry,
+                                             cache_index + delta);
+      }
+    }
   }
 }
 
@@ -269,7 +329,7 @@ void Rewriter::maybe_rewrite_ldc(address bcp, int offset, bool is_wide,
 
 
 // Rewrites a method given the index_map information
-void Rewriter::scan_method(Method* method, bool reverse) {
+void Rewriter::scan_method(Method* method, bool reverse, TRAPS) {
 
   int nof_jsrs = 0;
   bool has_monitor_bytecodes = false;
@@ -329,12 +389,25 @@ void Rewriter::scan_method(Method* method, bool reverse) {
 #endif
           break;
         }
+
+        case Bytecodes::_invokespecial  : {
+          int offset = prefix_length + 1;
+          address p = bcp + offset;
+          int cp_index = Bytes::get_Java_u2(p);
+          // InterfaceMethodref
+          if (_pool->tag_at(cp_index).is_interface_method()) {
+            rewrite_invokespecial(bcp, offset, reverse, CHECK);
+          } else {
+            rewrite_member_reference(bcp, offset, reverse);
+          }
+          break;
+        }
+
         case Bytecodes::_getstatic      : // fall through
         case Bytecodes::_putstatic      : // fall through
         case Bytecodes::_getfield       : // fall through
         case Bytecodes::_putfield       : // fall through
         case Bytecodes::_invokevirtual  : // fall through
-        case Bytecodes::_invokespecial  : // fall through
         case Bytecodes::_invokestatic   :
         case Bytecodes::_invokeinterface:
         case Bytecodes::_invokehandle   : // if reverse=true
@@ -426,8 +499,13 @@ Rewriter::Rewriter(instanceKlassHandle klass, constantPoolHandle cpool, Array<Me
 
   for (int i = len-1; i >= 0; i--) {
     Method* method = _methods->at(i);
-    scan_method(method);
+    scan_method(method, false, CHECK);  // If you get an error here,
+                                        // there is no reversing bytecodes
   }
+
+  // May have to fix invokedynamic bytecodes if invokestatic/InterfaceMethodref
+  // entries had to be added.
+  patch_invokedynamic_bytecodes();
 
   // allocate constant pool cache, now that we've seen all the bytecodes
   make_constant_pool_cache(THREAD);
@@ -435,7 +513,7 @@ Rewriter::Rewriter(instanceKlassHandle klass, constantPoolHandle cpool, Array<Me
   // Restore bytecodes to their unrewritten state if there are exceptions
   // rewriting bytecodes or allocating the cpCache
   if (HAS_PENDING_EXCEPTION) {
-    restore_bytecodes();
+    restore_bytecodes(CATCH);
     return;
   }
 
@@ -452,7 +530,7 @@ Rewriter::Rewriter(instanceKlassHandle klass, constantPoolHandle cpool, Array<Me
       // relocating bytecodes.  If some are relocated, that is ok because that
       // doesn't affect constant pool to cpCache rewriting.
       if (HAS_PENDING_EXCEPTION) {
-        restore_bytecodes();
+        restore_bytecodes(CATCH);
         return;
       }
       // Method might have gotten rewritten.

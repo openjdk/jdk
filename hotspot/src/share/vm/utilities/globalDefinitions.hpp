@@ -459,6 +459,13 @@ inline void* align_pointer_up(const void* addr, size_t size) {
   return (void*) align_size_up_((uintptr_t)addr, size);
 }
 
+// Align down with a lower bound. If the aligning results in 0, return 'alignment'.
+
+inline size_t align_size_down_bounded(size_t size, size_t alignment) {
+  size_t aligned_size = align_size_down_(size, alignment);
+  return aligned_size > 0 ? aligned_size : alignment;
+}
+
 // Clamp an address to be within a specific page
 // 1. If addr is on the page it is returned as is
 // 2. If addr is above the page_address the start of the *next* page will be returned
