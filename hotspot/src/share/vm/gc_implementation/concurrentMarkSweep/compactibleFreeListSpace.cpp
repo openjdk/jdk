@@ -2734,10 +2734,12 @@ void CFLS_LAB::retire(int tid) {
   }
 }
 
-void CompactibleFreeListSpace:: par_get_chunk_of_blocks(size_t word_sz, size_t n, AdaptiveFreeList<FreeChunk>* fl) {
-  assert(fl->count() == 0, "Precondition.");
-  assert(word_sz < CompactibleFreeListSpace::IndexSetSize,
-         "Precondition");
+// Used by par_get_chunk_of_blocks() for the chunks from the
+// indexed_free_lists.  Looks for a chunk with size that is a multiple
+// of "word_sz" and if found, splits it into "word_sz" chunks and add
+// to the free list "fl".  "n" is the maximum number of chunks to
+// be added to "fl".
+bool CompactibleFreeListSpace:: par_get_chunk_of_blocks_IFL(size_t word_sz, size_t n, AdaptiveFreeList<FreeChunk>* fl) {
 
   // We'll try all multiples of word_sz in the indexed set, starting with
   // word_sz itself and, if CMSSplitIndexedFreeListBlocks, try larger multiples,
@@ -2818,11 +2820,15 @@ void CompactibleFreeListSpace:: par_get_chunk_of_blocks(size_t word_sz, size_t n
                         Mutex::_no_safepoint_check_flag);
         ssize_t births = _indexedFreeList[word_sz].split_births() + num;
         _indexedFreeList[word_sz].set_split_births(births);
-        return;
+        return true;
       }
     }
+    return found;
   }
-  // Otherwise, we'll split a block from the dictionary.
+}
+
+FreeChunk* CompactibleFreeListSpace::get_n_way_chunk_to_split(size_t word_sz, size_t n) {
+
   FreeChunk* fc = NULL;
   FreeChunk* rem_fc = NULL;
   size_t rem;
@@ -2833,16 +2839,12 @@ void CompactibleFreeListSpace:: par_get_chunk_of_blocks(size_t word_sz, size_t n
       fc = dictionary()->get_chunk(MAX2(n * word_sz, _dictionary->min_size()),
                                   FreeBlockDictionary<FreeChunk>::atLeast);
       if (fc != NULL) {
-        _bt.allocated((HeapWord*)fc, fc->size(), true /* reducing */);  // update _unallocated_blk
-        dictionary()->dict_census_update(fc->size(),
-                                       true /*split*/,
-                                       false /*birth*/);
         break;
       } else {
         n--;
       }
     }
-    if (fc == NULL) return;
+    if (fc == NULL) return NULL;
     // Otherwise, split up that block.
     assert((ssize_t)n >= 1, "Control point invariant");
     assert(fc->is_free(), "Error: should be a free block");
@@ -2864,9 +2866,13 @@ void CompactibleFreeListSpace:: par_get_chunk_of_blocks(size_t word_sz, size_t n
     // dictionary and return, leaving "fl" empty.
     if (n == 0) {
       returnChunkToDictionary(fc);
-      assert(fl->count() == 0, "We never allocated any blocks");
-      return;
+      return NULL;
     }
+
+    _bt.allocated((HeapWord*)fc, fc->size(), true /* reducing */);  // update _unallocated_blk
+    dictionary()->dict_census_update(fc->size(),
+                                     true /*split*/,
+                                     false /*birth*/);
 
     // First return the remainder, if any.
     // Note that we hold the lock until we decide if we're going to give
@@ -2900,7 +2906,24 @@ void CompactibleFreeListSpace:: par_get_chunk_of_blocks(size_t word_sz, size_t n
     _indexedFreeList[rem].return_chunk_at_head(rem_fc);
     smallSplitBirth(rem);
   }
-  assert((ssize_t)n > 0 && fc != NULL, "Consistency");
+  assert(n * word_sz == fc->size(),
+    err_msg("Chunk size " SIZE_FORMAT " is not exactly splittable by "
+    SIZE_FORMAT " sized chunks of size " SIZE_FORMAT,
+    fc->size(), n, word_sz));
+  return fc;
+}
+
+void CompactibleFreeListSpace:: par_get_chunk_of_blocks_dictionary(size_t word_sz, size_t targetted_number_of_chunks, AdaptiveFreeList<FreeChunk>* fl) {
+
+  FreeChunk* fc = get_n_way_chunk_to_split(word_sz, targetted_number_of_chunks);
+
+  if (fc == NULL) {
+    return;
+  }
+
+  size_t n = fc->size() / word_sz;
+
+  assert((ssize_t)n > 0, "Consistency");
   // Now do the splitting up.
   // Must do this in reverse order, so that anybody attempting to
   // access the main chunk sees it as a single free block until we
@@ -2946,6 +2969,20 @@ void CompactibleFreeListSpace:: par_get_chunk_of_blocks(size_t word_sz, size_t n
 
   // TRAP
   assert(fl->tail()->next() == NULL, "List invariant.");
+}
+
+void CompactibleFreeListSpace:: par_get_chunk_of_blocks(size_t word_sz, size_t n, AdaptiveFreeList<FreeChunk>* fl) {
+  assert(fl->count() == 0, "Precondition.");
+  assert(word_sz < CompactibleFreeListSpace::IndexSetSize,
+         "Precondition");
+
+  if (par_get_chunk_of_blocks_IFL(word_sz, n, fl)) {
+    // Got it
+    return;
+  }
+
+  // Otherwise, we'll split a block from the dictionary.
+  par_get_chunk_of_blocks_dictionary(word_sz, n, fl);
 }
 
 // Set up the space's par_seq_tasks structure for work claiming
