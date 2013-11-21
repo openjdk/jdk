@@ -160,9 +160,6 @@ javax/xml/jaxp/transform/jdk8004476/XSLTExFuncTest.java		windows-all
 # Filed 7052625
 com/sun/net/httpserver/bugs/6725892/Test.java                   generic-all
 
-# Filed 7036666
-com/sun/net/httpserver/Test9a.java                              generic-all
-
 # failing on vista 32/64 on nightly
 # 7102702
 java/net/PortUnreachableException/OneExceptionOnly.java         windows-all
