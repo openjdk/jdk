@@ -36,6 +36,7 @@ import java.nio.channels.Selector;
 import java.util.Collections;
 import java.util.Enumeration;
 import java.util.Map;
+
 import sun.management.jdp.JdpException;
 import sun.management.jdp.JdpJmxPacket;
 import sun.management.jdp.JdpPacketReader;
@@ -49,21 +50,21 @@ public class JdpClient {
         private static int maxPacketCount = 1;
         private static int maxEmptyPacketCount = 10;
 
-        private void get(Map<?,?> map, String key)
-            throws JdpException {
+        private void get(Map<?, ?> map, String key)
+                throws JdpException {
 
             if (map.get(key) == null) {
-                  throw new JdpException("Test failed, packet field " + key + " missed");
+                throw new JdpException("Test failed, packet field " + key + " missed");
             }
         }
 
         private void checkFieldPresence(JdpJmxPacket p)
-            throws IOException, JdpException {
+                throws IOException, JdpException {
 
             byte[] b = p.getPacketData();
 
             JdpPacketReader reader = new JdpPacketReader(b);
-            Map<String,String> pMap = reader.getDiscoveryDataAsMap();
+            Map<String, String> pMap = reader.getDiscoveryDataAsMap();
 
             get(pMap, JdpJmxPacket.UUID_KEY);
             get(pMap, JdpJmxPacket.MAIN_CLASS_KEY);
@@ -102,11 +103,11 @@ public class JdpClient {
                         sel.select(10 * 1000);
                         channel.receive(buf);
 
-                        if (buf.position() == 0 ){
-                            if (JdpDoSomething.getVerbose()){
+                        if (buf.position() == 0) {
+                            if (JdpDoSomething.getVerbose()) {
                                 System.err.println("Empty packet received");
                             }
-                            if (++emptyPacketsCount > maxEmptyPacketCount){
+                            if (++emptyPacketsCount > maxEmptyPacketCount) {
                                 throw new RuntimeException("Test failed, maxEmptyPacketCount reached");
                             }
 
@@ -120,8 +121,8 @@ public class JdpClient {
                             JdpJmxPacket packet = new JdpJmxPacket(dgramData);
                             JdpDoSomething.printJdpPacket(packet);
                             checkFieldPresence(packet);
-                            if(++count > maxPacketCount){
-                                   break;
+                            if (++count > maxPacketCount) {
+                                break;
                             }
                         } catch (JdpException e) {
                             e.printStackTrace();
@@ -179,7 +180,7 @@ public class JdpClient {
             PacketListener listener = new PacketListener(channel);
             new Thread(listener, "Jdp Client").start();
 
-        } catch (RuntimeException e){
+        } catch (RuntimeException e) {
             System.out.println("Test failed.");
         } catch (Exception e) {
             e.printStackTrace();

@@ -336,7 +336,7 @@ public class Klist {
         System.out.println("   name\t name of credentials cache or " +
                            " keytab with the prefix. File-based cache or "
                            + "keytab's prefix is FILE:.");
-        System.out.println("   -c specifes that credential cache is to be " +
+        System.out.println("   -c specifies that credential cache is to be " +
                            "listed");
         System.out.println("   -k specifies that key tab is to be listed");
         System.out.println("   options for credentials caches:");

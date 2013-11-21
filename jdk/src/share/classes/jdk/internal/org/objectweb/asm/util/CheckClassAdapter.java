@@ -246,7 +246,7 @@ public class CheckClassAdapter extends ClassVisitor {
 
         List<Type> interfaces = new ArrayList<Type>();
         for (Iterator<String> i = cn.interfaces.iterator(); i.hasNext();) {
-            interfaces.add(Type.getObjectType(i.next().toString()));
+            interfaces.add(Type.getObjectType(i.next()));
         }
 
         for (int i = 0; i < methods.size(); ++i) {
@@ -359,9 +359,14 @@ public class CheckClassAdapter extends ClassVisitor {
      *            <tt>false</tt> to not perform any data flow check (see
      *            {@link CheckMethodAdapter}). This option requires valid
      *            maxLocals and maxStack values.
+     * @throws IllegalStateException
+     *             If a subclass calls this constructor.
      */
     public CheckClassAdapter(final ClassVisitor cv, final boolean checkDataFlow) {
         this(Opcodes.ASM5, cv, checkDataFlow);
+        if (getClass() != CheckClassAdapter.class) {
+            throw new IllegalStateException();
+        }
     }
 
     /**
@@ -471,7 +476,15 @@ public class CheckClassAdapter extends ClassVisitor {
             CheckMethodAdapter.checkInternalName(outerName, "outer class name");
         }
         if (innerName != null) {
-            CheckMethodAdapter.checkIdentifier(innerName, "inner class name");
+            int start = 0;
+            while (start < innerName.length()
+                    && Character.isDigit(innerName.charAt(start))) {
+                start++;
+            }
+            if (start == 0 || start < innerName.length()) {
+                CheckMethodAdapter.checkIdentifier(innerName, start, -1,
+                        "inner class name");
+            }
         }
         checkAccess(access, Opcodes.ACC_PUBLIC + Opcodes.ACC_PRIVATE
                 + Opcodes.ACC_PROTECTED + Opcodes.ACC_STATIC

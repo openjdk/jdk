@@ -86,10 +86,6 @@ public:
   NOT_PRODUCT(static size_t _skip_header_HeapWords;)
 
 protected:
-  // Directs each generation up to and including "collectedGen" to recompute
-  // its desired size.
-  void compute_new_generation_sizes(int collectedGen);
-
   // Helper functions for allocation
   HeapWord* attempt_allocation(size_t size,
                                bool   is_tlab,

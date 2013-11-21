@@ -112,7 +112,7 @@ class NumericValueExp extends QueryEval implements ValueExp {
     public NumericValueExp() {
     }
 
-    /** Creates a new NumericValue representing the numeric literal <val>.*/
+    /** Creates a new NumericValue representing the numeric literal @{code val}.*/
     NumericValueExp(Number val)
     {
       this.val = val;

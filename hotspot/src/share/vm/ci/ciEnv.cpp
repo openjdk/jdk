@@ -935,7 +935,9 @@ void ciEnv::register_method(ciMethod* target,
 
     // Prevent SystemDictionary::add_to_hierarchy from running
     // and invalidating our dependencies until we install this method.
+    // No safepoints are allowed. Otherwise, class redefinition can occur in between.
     MutexLocker ml(Compile_lock);
+    No_Safepoint_Verifier nsv;
 
     // Change in Jvmti state may invalidate compilation.
     if (!failing() &&
@@ -1001,31 +1003,15 @@ void ciEnv::register_method(ciMethod* target,
     // Free codeBlobs
     code_buffer->free_blob();
 
-    // stress test 6243940 by immediately making the method
-    // non-entrant behind the system's back. This has serious
-    // side effects on the code cache and is not meant for
-    // general stress testing
-    if (nm != NULL && StressNonEntrant) {
-      MutexLockerEx pl(Patching_lock, Mutex::_no_safepoint_check_flag);
-      NativeJump::patch_verified_entry(nm->entry_point(), nm->verified_entry_point(),
-                  SharedRuntime::get_handle_wrong_method_stub());
-    }
-
-    if (nm == NULL) {
-      // The CodeCache is full.  Print out warning and disable compilation.
-      record_failure("code cache is full");
-      {
-        MutexUnlocker ml(Compile_lock);
-        MutexUnlocker locker(MethodCompileQueue_lock);
-        CompileBroker::handle_full_code_cache();
-      }
-    } else {
+    if (nm != NULL) {
       nm->set_has_unsafe_access(has_unsafe_access);
       nm->set_has_wide_vectors(has_wide_vectors);
 
       // Record successful registration.
       // (Put nm into the task handle *before* publishing to the Java heap.)
-      if (task() != NULL)  task()->set_code(nm);
+      if (task() != NULL) {
+        task()->set_code(nm);
+      }
 
       if (entry_bci == InvocationEntryBci) {
         if (TieredCompilation) {
@@ -1036,11 +1022,11 @@ void ciEnv::register_method(ciMethod* target,
             char *method_name = method->name_and_sig_as_C_string();
             tty->print_cr("Replacing method %s", method_name);
           }
-          if (old != NULL ) {
+          if (old != NULL) {
             old->make_not_entrant();
           }
         }
-        if (TraceNMethodInstalls ) {
+        if (TraceNMethodInstalls) {
           ResourceMark rm;
           char *method_name = method->name_and_sig_as_C_string();
           ttyLocker ttyl;
@@ -1051,7 +1037,7 @@ void ciEnv::register_method(ciMethod* target,
         // Allow the code to be executed
         method->set_code(method, nm);
       } else {
-        if (TraceNMethodInstalls ) {
+        if (TraceNMethodInstalls) {
           ResourceMark rm;
           char *method_name = method->name_and_sig_as_C_string();
           ttyLocker ttyl;
@@ -1061,15 +1047,18 @@ void ciEnv::register_method(ciMethod* target,
                         entry_bci);
         }
         method->method_holder()->add_osr_nmethod(nm);
-
       }
     }
-  }
-  // JVMTI -- compiled method notification (must be done outside lock)
-  if (nm != NULL) {
-    nm->post_compiled_method_load_event();
-  }
+  }  // safepoints are allowed again
 
+  if (nm != NULL) {
+    // JVMTI -- compiled method notification (must be done outside lock)
+    nm->post_compiled_method_load_event();
+  } else {
+    // The CodeCache is full. Print out warning and disable compilation.
+    record_failure("code cache is full");
+    CompileBroker::handle_full_code_cache();
+  }
 }
 
 

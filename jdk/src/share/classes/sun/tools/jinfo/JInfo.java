@@ -26,7 +26,6 @@
 package sun.tools.jinfo;
 
 import java.lang.reflect.Method;
-import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 
@@ -44,7 +43,7 @@ public class JInfo {
 
     public static void main(String[] args) throws Exception {
         if (args.length == 0) {
-            usage(); // no arguments
+            usage(1); // no arguments
         }
 
         boolean useSA = true;
@@ -56,14 +55,20 @@ public class JInfo {
                 // (<executable> and <code file>). So, total
                 // argument count including option has to 2 or 3.
                 if (args.length != 2 && args.length != 3) {
-                    usage();
+                    usage(1);
                 }
             } else if (arg1.equals("-flag")) {
                 // do not use SA, use attach-on-demand
                 useSA = false;
             } else {
                 // unknown option or -h or -help, print help
-                usage();
+                int exit;
+                if (arg1.equals("-help") || arg1.equals("-h")) {
+                    exit = 0;
+                } else {
+                    exit = 1;
+                }
+                usage(exit);
             }
         }
 
@@ -75,7 +80,13 @@ public class JInfo {
                 String option = args[1];
                 flag(pid, option);
             } else {
-                usage();
+                int exit;
+                if (arg1.equals("-help") || arg1.equals("-h")) {
+                    exit = 0;
+                } else {
+                    exit = 1;
+                }
+                usage(exit);
             }
         }
     }
@@ -86,7 +97,7 @@ public class JInfo {
         // Tool not available on this  platform.
         Class<?> c = loadClass(tool);
         if (c == null) {
-            usage();
+            usage(1);
         }
 
         // invoke the main method with the arguments
@@ -176,39 +187,39 @@ public class JInfo {
 
 
     // print usage message
-    private static void usage() {
+    private static void usage(int exit) {
 
         Class<?> c = loadClass("sun.jvm.hotspot.tools.JInfo");
         boolean usageSA = (c != null);
 
-        System.out.println("Usage:");
+        System.err.println("Usage:");
         if (usageSA) {
-            System.out.println("    jinfo [option] <pid>");
-            System.out.println("        (to connect to running process)");
-            System.out.println("    jinfo [option] <executable <core>");
-            System.out.println("        (to connect to a core file)");
-            System.out.println("    jinfo [option] [server_id@]<remote server IP or hostname>");
-            System.out.println("        (to connect to remote debug server)");
-            System.out.println("");
-            System.out.println("where <option> is one of:");
-            System.out.println("    -flag <name>         to print the value of the named VM flag");
-            System.out.println("    -flag [+|-]<name>    to enable or disable the named VM flag");
-            System.out.println("    -flag <name>=<value> to set the named VM flag to the given value");
-            System.out.println("    -flags               to print VM flags");
-            System.out.println("    -sysprops            to print Java system properties");
-            System.out.println("    <no option>          to print both of the above");
-            System.out.println("    -h | -help           to print this help message");
+            System.err.println("    jinfo [option] <pid>");
+            System.err.println("        (to connect to running process)");
+            System.err.println("    jinfo [option] <executable <core>");
+            System.err.println("        (to connect to a core file)");
+            System.err.println("    jinfo [option] [server_id@]<remote server IP or hostname>");
+            System.err.println("        (to connect to remote debug server)");
+            System.err.println("");
+            System.err.println("where <option> is one of:");
+            System.err.println("    -flag <name>         to print the value of the named VM flag");
+            System.err.println("    -flag [+|-]<name>    to enable or disable the named VM flag");
+            System.err.println("    -flag <name>=<value> to set the named VM flag to the given value");
+            System.err.println("    -flags               to print VM flags");
+            System.err.println("    -sysprops            to print Java system properties");
+            System.err.println("    <no option>          to print both of the above");
+            System.err.println("    -h | -help           to print this help message");
         } else {
-            System.out.println("    jinfo <option> <pid>");
-            System.out.println("       (to connect to a running process)");
-            System.out.println("");
-            System.out.println("where <option> is one of:");
-            System.out.println("    -flag <name>         to print the value of the named VM flag");
-            System.out.println("    -flag [+|-]<name>    to enable or disable the named VM flag");
-            System.out.println("    -flag <name>=<value> to set the named VM flag to the given value");
-            System.out.println("    -h | -help           to print this help message");
+            System.err.println("    jinfo <option> <pid>");
+            System.err.println("       (to connect to a running process)");
+            System.err.println("");
+            System.err.println("where <option> is one of:");
+            System.err.println("    -flag <name>         to print the value of the named VM flag");
+            System.err.println("    -flag [+|-]<name>    to enable or disable the named VM flag");
+            System.err.println("    -flag <name>=<value> to set the named VM flag to the given value");
+            System.err.println("    -h | -help           to print this help message");
         }
 
-        System.exit(1);
+        System.exit(exit);
     }
 }

@@ -171,8 +171,12 @@ class HierarchyVisitor : StackObj {
   }
   bool is_cancelled() const { return _cancelled; }
 
+  // This code used to skip interface classes because their only
+  // superclass was j.l.Object which would be also covered by class
+  // superclass hierarchy walks. Now that the starting point can be
+  // an interface, we must ensure we catch j.l.Object as the super.
   static bool has_super(InstanceKlass* cls) {
-    return cls->super() != NULL && !cls->is_interface();
+    return cls->super() != NULL;
   }
 
   Node* node_at_depth(int i) const {
@@ -391,24 +395,32 @@ class MethodFamily : public ResourceObj {
       return;
     }
 
+    // Qualified methods are maximally-specific methods
+    // These include public, instance concrete (=default) and abstract methods
     GrowableArray<Method*> qualified_methods;
+    int num_defaults = 0;
+    int default_index = -1;
+    int qualified_index = -1;
     for (int i = 0; i < _members.length(); ++i) {
       Pair<Method*,QualifiedState> entry = _members.at(i);
       if (entry.second == QUALIFIED) {
         qualified_methods.append(entry.first);
+        qualified_index++;
+        if (entry.first->is_default_method()) {
+          num_defaults++;
+          default_index = qualified_index;
+
+        }
       }
     }
 
     if (qualified_methods.length() == 0) {
       _exception_message = generate_no_defaults_message(CHECK);
       _exception_name = vmSymbols::java_lang_AbstractMethodError();
-    } else if (qualified_methods.length() == 1) {
-      // leave abstract methods alone, they will be found via normal search path
-      Method* method = qualified_methods.at(0);
-      if (!method->is_abstract()) {
-        _selected_target = qualified_methods.at(0);
-      }
-    } else {
+    // If only one qualified method is default, select that
+    } else if (num_defaults == 1) {
+        _selected_target = qualified_methods.at(default_index);
+    } else if (num_defaults > 1) {
       _exception_message = generate_conflicts_message(&qualified_methods,CHECK);
       _exception_name = vmSymbols::java_lang_IncompatibleClassChangeError();
       if (TraceDefaultMethods) {
@@ -416,6 +428,7 @@ class MethodFamily : public ResourceObj {
         tty->print_cr("");
       }
     }
+    // leave abstract methods alone, they will be found via normal search path
   }
 
   bool contains_signature(Symbol* query) {
@@ -695,8 +708,10 @@ class FindMethodsByErasedSig : public HierarchyVisitor<FindMethodsByErasedSig> {
     Method* m = iklass->find_method(_method_name, _method_signature);
     // private interface methods are not candidates for default methods
     // invokespecial to private interface methods doesn't use default method logic
+    // The overpasses are your supertypes' errors, we do not include them
     // future: take access controls into account for superclass methods
-    if (m != NULL && !m->is_static() && (!iklass->is_interface() || m->is_public())) {
+    if (m != NULL && !m->is_static() && !m->is_overpass() &&
+         (!iklass->is_interface() || m->is_public())) {
       if (_family == NULL) {
         _family = new StatefulMethodFamily();
       }
@@ -772,7 +787,8 @@ void DefaultMethods::generate_default_methods(
 #ifndef PRODUCT
   if (TraceDefaultMethods) {
     ResourceMark rm;  // be careful with these!
-    tty->print_cr("Class %s requires default method processing",
+    tty->print_cr("%s %s requires default method processing",
+        klass->is_interface() ? "Interface" : "Class",
         klass->name()->as_klass_external_name());
     PrintHierarchy printer;
     printer.run(klass);
@@ -797,7 +813,7 @@ void DefaultMethods::generate_default_methods(
  }
 #ifndef PRODUCT
   if (TraceDefaultMethods) {
-    tty->print_cr("Creating overpasses...");
+    tty->print_cr("Creating defaults and overpasses...");
   }
 #endif // ndef PRODUCT
 
@@ -1067,7 +1083,9 @@ static void merge_in_new_methods(InstanceKlass* klass,
   klass->set_initial_method_idnum(new_size);
 
   ClassLoaderData* cld = klass->class_loader_data();
-  MetadataFactory::free_array(cld, original_methods);
+  if (original_methods ->length() > 0) {
+    MetadataFactory::free_array(cld, original_methods);
+  }
   if (original_ordering->length() > 0) {
     klass->set_method_ordering(merged_ordering);
     MetadataFactory::free_array(cld, original_ordering);
