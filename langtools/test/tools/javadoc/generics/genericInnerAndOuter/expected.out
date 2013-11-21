@@ -16,7 +16,7 @@ class pkg1.O<T>.I<S>
   superclass:
     java.lang.Object
   constructors:
-    O.I()
+    I()
   methods:
     void m1(O<String>.I<Number>)
 
@@ -36,7 +36,7 @@ class pkg1.X<T>.Y
   superclass:
     java.lang.Object
   constructors:
-    X.Y()
+    Y()
 
 class pkg1.X<T>.Y.Z<S>
   name: Z / X.Y.Z / pkg1.X.Y.Z
@@ -47,7 +47,7 @@ class pkg1.X<T>.Y.Z<S>
   superclass:
     java.lang.Object
   constructors:
-    X.Y.Z()
+    Z()
   methods:
     void m1(X<String>.Y.Z<Number>)
 
