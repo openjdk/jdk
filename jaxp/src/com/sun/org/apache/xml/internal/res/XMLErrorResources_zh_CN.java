@@ -18,7 +18,7 @@
  * limitations under the License.
  */
 /*
- * $Id: XMLErrorResources_zh_CN.java /st_wptg_1.8.0.0.0jdk/2 2013/09/16 04:44:25 gmolloy Exp $
+ * $Id: XMLErrorResources_zh_CN.java /st_wptg_1.8.0.0.0jdk/3 2013/11/11 11:39:28 gmolloy Exp $
  */
 package com.sun.org.apache.xml.internal.res;
 
@@ -212,10 +212,10 @@ public class XMLErrorResources_zh_CN extends ListResourceBundle
       "Coroutine \u53C2\u6570\u9519\u8BEF ({0})"},
 
     { ER_PARSER_DOTERMINATE_ANSWERS,
-      "\n\u610F\u5916: \u8BED\u6CD5\u5206\u6790\u5668\u5BF9\u7B54\u590D{0}\u6267\u884C doTerminate"},
+      "\n\u610F\u5916: \u89E3\u6790\u5668\u5BF9\u7B54\u590D{0}\u6267\u884C doTerminate"},
 
     { ER_NO_PARSE_CALL_WHILE_PARSING,
-      "\u65E0\u6CD5\u5728\u6267\u884C\u8BED\u6CD5\u5206\u6790\u65F6\u8C03\u7528 parse"},
+      "\u65E0\u6CD5\u5728\u89E3\u6790\u65F6\u8C03\u7528 parse"},
 
     { ER_TYPED_ITERATOR_AXIS_NOT_IMPLEMENTED,
       "\u9519\u8BEF: \u672A\u5B9E\u73B0\u8F74{0}\u7684\u7C7B\u578B\u5316\u8FED\u4EE3\u5668"},
@@ -245,13 +245,13 @@ public class XMLErrorResources_zh_CN extends ListResourceBundle
       "\u65E0\u6CD5\u5C06\u8282\u70B9\u89E3\u6790\u4E3A\u53E5\u67C4"},
 
     { ER_STARTPARSE_WHILE_PARSING,
-       "\u65E0\u6CD5\u5728\u6267\u884C\u8BED\u6CD5\u5206\u6790\u65F6\u8C03\u7528 startParse"},
+       "\u65E0\u6CD5\u5728\u89E3\u6790\u65F6\u8C03\u7528 startParse"},
 
     { ER_STARTPARSE_NEEDS_SAXPARSER,
        "startParse \u9700\u8981\u975E\u7A7A SAXParser"},
 
     { ER_COULD_NOT_INIT_PARSER,
-       "\u65E0\u6CD5\u4F7F\u7528\u4EE5\u4E0B\u5BF9\u8C61\u521D\u59CB\u5316\u8BED\u6CD5\u5206\u6790\u5668"},
+       "\u65E0\u6CD5\u4F7F\u7528\u4EE5\u4E0B\u5BF9\u8C61\u521D\u59CB\u5316\u89E3\u6790\u5668"},
 
     { ER_EXCEPTION_CREATING_POOL,
        "\u4E3A\u6C60\u521B\u5EFA\u65B0\u5B9E\u4F8B\u65F6\u51FA\u73B0\u5F02\u5E38\u9519\u8BEF"},
@@ -296,10 +296,10 @@ public class XMLErrorResources_zh_CN extends ListResourceBundle
        "\u7247\u6BB5\u5305\u542B\u65E0\u6548\u7684\u5B57\u7B26"},
 
     { ER_PARSER_IN_USE,
-      "\u8BED\u6CD5\u5206\u6790\u5668\u5DF2\u5728\u4F7F\u7528"},
+      "\u89E3\u6790\u5668\u5DF2\u5728\u4F7F\u7528"},
 
     { ER_CANNOT_CHANGE_WHILE_PARSING,
-      "\u65E0\u6CD5\u5728\u8FDB\u884C\u8BED\u6CD5\u5206\u6790\u65F6\u66F4\u6539{0} {1}"},
+      "\u65E0\u6CD5\u5728\u89E3\u6790\u65F6\u66F4\u6539{0} {1}"},
 
     { ER_SELF_CAUSATION_NOT_PERMITTED,
       "\u4E0D\u5141\u8BB8\u4F7F\u7528\u81EA\u56E0"},
