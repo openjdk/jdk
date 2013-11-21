@@ -304,9 +304,6 @@ com/sun/jdi/SuspendThreadTest.java                              generic-all
 # Filed 6653793
 com/sun/jdi/RedefineCrossEvent.java                             generic-all
 
-# Filed 6402201
-com/sun/jdi/ProcessAttachTest.sh                                generic-all
-
 ############################################################################
 
 # jdk_util
