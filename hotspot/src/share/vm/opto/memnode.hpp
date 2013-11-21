@@ -220,6 +220,17 @@ public:
 protected:
   const Type* load_array_final_field(const TypeKlassPtr *tkls,
                                      ciKlass* klass) const;
+  // depends_only_on_test is almost always true, and needs to be almost always
+  // true to enable key hoisting & commoning optimizations.  However, for the
+  // special case of RawPtr loads from TLS top & end, and other loads performed by
+  // GC barriers, the control edge carries the dependence preventing hoisting past
+  // a Safepoint instead of the memory edge.  (An unfortunate consequence of having
+  // Safepoints not set Raw Memory; itself an unfortunate consequence of having Nodes
+  // which produce results (new raw memory state) inside of loops preventing all
+  // manner of other optimizations).  Basically, it's ugly but so is the alternative.
+  // See comment in macro.cpp, around line 125 expand_allocate_common().
+  virtual bool depends_only_on_test() const { return adr_type() != TypeRawPtr::BOTTOM; }
+
 };
 
 //------------------------------LoadBNode--------------------------------------
@@ -384,16 +395,6 @@ public:
   virtual uint ideal_reg() const { return Op_RegP; }
   virtual int store_Opcode() const { return Op_StoreP; }
   virtual BasicType memory_type() const { return T_ADDRESS; }
-  // depends_only_on_test is almost always true, and needs to be almost always
-  // true to enable key hoisting & commoning optimizations.  However, for the
-  // special case of RawPtr loads from TLS top & end, the control edge carries
-  // the dependence preventing hoisting past a Safepoint instead of the memory
-  // edge.  (An unfortunate consequence of having Safepoints not set Raw
-  // Memory; itself an unfortunate consequence of having Nodes which produce
-  // results (new raw memory state) inside of loops preventing all manner of
-  // other optimizations).  Basically, it's ugly but so is the alternative.
-  // See comment in macro.cpp, around line 125 expand_allocate_common().
-  virtual bool depends_only_on_test() const { return adr_type() != TypeRawPtr::BOTTOM; }
 };
 
 
@@ -407,16 +408,6 @@ public:
   virtual uint ideal_reg() const { return Op_RegN; }
   virtual int store_Opcode() const { return Op_StoreN; }
   virtual BasicType memory_type() const { return T_NARROWOOP; }
-  // depends_only_on_test is almost always true, and needs to be almost always
-  // true to enable key hoisting & commoning optimizations.  However, for the
-  // special case of RawPtr loads from TLS top & end, the control edge carries
-  // the dependence preventing hoisting past a Safepoint instead of the memory
-  // edge.  (An unfortunate consequence of having Safepoints not set Raw
-  // Memory; itself an unfortunate consequence of having Nodes which produce
-  // results (new raw memory state) inside of loops preventing all manner of
-  // other optimizations).  Basically, it's ugly but so is the alternative.
-  // See comment in macro.cpp, around line 125 expand_allocate_common().
-  virtual bool depends_only_on_test() const { return adr_type() != TypeRawPtr::BOTTOM; }
 };
 
 //------------------------------LoadKlassNode----------------------------------

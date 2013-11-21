@@ -50,7 +50,7 @@ public interface JMXConnectorProvider {
      * @param environment a read-only Map containing named attributes
      * to determine how the connection is made.  Keys in this map must
      * be Strings.  The appropriate type of each associated value
-     * depends on the attribute.</p>
+     * depends on the attribute.
      *
      * @return a <code>JMXConnector</code> representing the new
      * connector client.  Each successful call to this method produces
