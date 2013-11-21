@@ -474,6 +474,14 @@ Zone	Africa/Monrovia	-0:43:08 -	LMT	1882
 # (either two days before them or five days after them, so as to fall on
 # lastFri instead of lastSun).
 
+# From Even Scharning (2013-10-25):
+# The scheduled end of DST in Libya on Friday, October 25, 2013 was
+# cancelled yesterday....
+# http://www.libyaherald.com/2013/10/24/correction-no-time-change-tomorrow/
+#
+# From Paul Eggert (2013-10-25):
+# For now, assume they're reverting to the pre-2012 rules of permanent UTC+2.
+
 # Rule	NAME	FROM	TO	TYPE	IN	ON	AT	SAVE	LETTER/S
 Rule	Libya	1951	only	-	Oct	14	2:00	1:00	S
 Rule	Libya	1952	only	-	Jan	 1	0:00	0	-
@@ -490,19 +498,21 @@ Rule	Libya	1987	1989	-	Apr	 1	0:00	1:00	S
 Rule	Libya	1987	1989	-	Oct	 1	0:00	0	-
 Rule	Libya	1997	only	-	Apr	 4	0:00	1:00	S
 Rule	Libya	1997	only	-	Oct	 4	0:00	0	-
-Rule	Libya	2013	max	-	Mar	lastFri	1:00	1:00	S
-Rule	Libya	2013	max	-	Oct	lastFri	2:00	0	-
+Rule	Libya	2013	only	-	Mar	lastFri	1:00	1:00	S
+Rule	Libya	2013	only	-	Oct	lastFri	2:00	0	-
+
+# The 1996 and 1997 entries are from Shanks & Pottenger;
+# the IATA SSIM data contain some obvious errors.
 # Zone	NAME		GMTOFF	RULES	FORMAT	[UNTIL]
 Zone	Africa/Tripoli	0:52:44 -	LMT	1920
 			1:00	Libya	CE%sT	1959
 			2:00	-	EET	1982
 			1:00	Libya	CE%sT	1990 May  4
-# The 1996 and 1997 entries are from Shanks & Pottenger;
-# the IATA SSIM data contain some obvious errors.
 			2:00	-	EET	1996 Sep 30
 			1:00	Libya	CE%sT	1997 Oct  4
 			2:00	-	EET	2012 Nov 10 2:00
-			1:00	Libya	CE%sT
+			1:00	Libya	CE%sT	2013 Oct 25 2:00
+			2:00	-	EET
 
 # Madagascar
 # Zone	NAME		GMTOFF	RULES	FORMAT	[UNTIL]
@@ -707,15 +717,6 @@ Zone	Indian/Mayotte	3:00:56 -	LMT	1911 Jul	# Mamoutzou
 # http://www.google.com/search?hl=en&q=Conseil+de+gouvernement+maroc+heure+avance&btnG=Search
 # </a>
 
-# From Alex Krivenyshev (2008-05-09):
-# Is Western Sahara (part which administrated by Morocco) going to follow
-# Morocco DST changes?  Any information?  What about other part of
-# Western Sahara - under administration of POLISARIO Front (also named
-# SADR Saharawi Arab Democratic Republic)?
-
-# From Arthur David Olson (2008-05-09):
-# XXX--guess that it is only Morocco for now; guess only 2008 for now.
-
 # From Steffen Thorsen (2008-08-27):
 # Morocco will change the clocks back on the midnight between August 31
 # and September 1. They originally planned to observe DST to near the end
@@ -891,13 +892,13 @@ Zone	Indian/Mayotte	3:00:56 -	LMT	1911 Jul	# Mamoutzou
 # Another source (specifying the time for start and end in the decree):
 # http://www.lemag.ma/Heure-d-ete-au-Maroc-jusqu-au-27-octobre_a75620.html
 
-# From Paul Eggert (2013-09-30):
+# From Paul Eggert (2013-10-03):
 # To estimate what the Moroccan government will do in future years,
-# transition dates for 2014 through 2037 were determined by running
+# transition dates for 2014 through 2038 were determined by running
 # the following program under GNU Emacs 24.3:
 #
 # (let ((islamic-year 1435))
-#   (while (< islamic-year 1460)
+#   (while (< islamic-year 1461)
 #     (let ((a
 #	     (calendar-gregorian-from-absolute
 #	      (calendar-islamic-to-absolute (list 9 1 islamic-year))))
@@ -917,9 +918,13 @@ Zone	Indian/Mayotte	3:00:56 -	LMT	1911 Jul	# Mamoutzou
 # all transitions removed for 2026-2035, where the estimated Ramadan
 # falls entirely outside daylight-saving time; and with fall-back
 # transitions removed for 2036-2037, where the normal fall-back
-# date falls during the estimated Ramadan.  Problems continue after that,
-# but 32-bit time_t values roll around in 2038 so for now do not worry
-# about dates after 2037.
+# date falls during the estimated Ramadan.  Normally, the table would
+# stop after 2037 because 32-bit time_t values roll around early in 2038,
+# but that would imply a prediction of perpetual DST after March 2038
+# due to the year-2037 glitches.  So, this table instead stops after
+# 2038, the first non-glitchy year after the 32-bit rollover.
+# An advantage of stopping after 2038 is that it lets zic guess
+# TZ='WET0WEST,M3.5.0,M10.5.0/3' for time stamps far in the future.
 
 # RULE	NAME	FROM	TO	TYPE	IN	ON	AT	SAVE	LETTER/S
 
@@ -987,10 +992,21 @@ Zone Africa/Casablanca	-0:30:20 -	LMT	1913 Oct 26
 			 0:00	Morocco	WE%sT	1984 Mar 16
 			 1:00	-	CET	1986
 			 0:00	Morocco	WE%sT
+
 # Western Sahara
+#
+# From Gwillim Law (2013-10-22):
+# A correspondent who is usually well informed about time zone matters
+# ... says that Western Sahara observes daylight saving time, just as
+# Morocco does.
+#
+# From Paul Eggert (2013-10-23):
+# Assume that this has been true since Western Sahara switched to GMT,
+# since most of it was then controlled by Morocco.
+
 Zone Africa/El_Aaiun	-0:52:48 -	LMT	1934 Jan
 			-1:00	-	WAT	1976 Apr 14
-			 0:00	-	WET
+			 0:00	Morocco	WE%sT
 
 # Mozambique
 # Zone	NAME		GMTOFF	RULES	FORMAT	[UNTIL]

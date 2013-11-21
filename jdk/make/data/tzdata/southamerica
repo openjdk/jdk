@@ -874,6 +874,15 @@ Zone	America/La_Paz	-4:32:36 -	LMT	1890
 # We will keep this article updated when this is confirmed:
 # http://www.timeanddate.com/news/time/brazil-starts-dst-2013.html
 
+# From Steffen Thorsen (2013-10-17):
+# http://www.timeanddate.com/news/time/acre-amazonas-change-time-zone.html
+# Senator Jorge Viana announced that Acre will change time zone on November 10.
+# He did not specify the time of the change, nor if western parts of Amazonas
+# will change as well.
+#
+# From Paul Eggert (2013-10-17):
+# For now, assume western Amazonas will change as well.
+
 # Rule	NAME	FROM	TO	TYPE	IN	ON	AT	SAVE	LETTER/S
 # Decree <a href="http://pcdsh01.on.br/HV20466.htm">20,466</a> (1931-10-01)
 # Decree <a href="http://pcdsh01.on.br/HV21896.htm">21,896</a> (1932-01-10)
@@ -1162,13 +1171,15 @@ Zone America/Eirunepe	-4:39:28 -	LMT	1914
 			-5:00	-	ACT	1993 Sep 28
 			-5:00	Brazil	AC%sT	1994 Sep 22
 			-5:00	-	ACT	2008 Jun 24 00:00
-			-4:00	-	AMT
+			-4:00	-	AMT	2013 Nov 10
+			-5:00	-	ACT
 #
 # Acre (AC)
 Zone America/Rio_Branco	-4:31:12 -	LMT	1914
 			-5:00	Brazil	AC%sT	1988 Sep 12
 			-5:00	-	ACT	2008 Jun 24 00:00
-			-4:00	-	AMT
+			-4:00	-	AMT	2013 Nov 10
+			-5:00	-	ACT
 
 # Chile
 
