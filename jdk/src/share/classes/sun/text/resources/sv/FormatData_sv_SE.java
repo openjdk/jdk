@@ -52,7 +52,7 @@ public class FormatData_sv_SE extends ParallelListResourceBundle {
                 new String[] {
                     "#,##0.###;-#,##0.###", // decimal pattern
                     "#,##0.00 \u00A4;-#,##0.00 \u00A4", // currency pattern
-                    "#,##0%" // percent pattern
+                    "#,##0 %" // percent pattern
                 }
             },
         };

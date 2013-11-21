@@ -116,7 +116,6 @@ BUILD_LIBRARIES += $(BUILD_LIBVERIFY)
 
 LIBJAVA_SRC_DIRS := $(JDK_TOPDIR)/src/$(OPENJDK_TARGET_OS_API_DIR)/native/java/lang \
     $(JDK_TOPDIR)/src/share/native/java/lang \
-    $(JDK_TOPDIR)/src/share/native/java/lang/ref \
     $(JDK_TOPDIR)/src/share/native/java/lang/reflect \
     $(JDK_TOPDIR)/src/share/native/java/io \
     $(JDK_TOPDIR)/src/$(OPENJDK_TARGET_OS_API_DIR)/native/java/io \
