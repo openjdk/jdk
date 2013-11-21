@@ -32,6 +32,8 @@ import java.lang.invoke.MethodHandles;
 import java.lang.reflect.Modifier;
 import java.util.Deque;
 import java.util.List;
+import java.util.Map;
+import javax.script.Bindings;
 import jdk.internal.dynalink.CallSiteDescriptor;
 import jdk.internal.dynalink.linker.ConversionComparator;
 import jdk.internal.dynalink.linker.GuardedInvocation;
@@ -40,7 +42,11 @@ import jdk.internal.dynalink.linker.LinkRequest;
 import jdk.internal.dynalink.linker.LinkerServices;
 import jdk.internal.dynalink.linker.TypeBasedGuardingDynamicLinker;
 import jdk.internal.dynalink.support.Guards;
+import jdk.nashorn.api.scripting.JSObject;
+import jdk.nashorn.api.scripting.ScriptObjectMirror;
+import jdk.nashorn.api.scripting.ScriptUtils;
 import jdk.nashorn.internal.objects.NativeArray;
+import jdk.nashorn.internal.runtime.Context;
 import jdk.nashorn.internal.runtime.JSType;
 import jdk.nashorn.internal.runtime.ScriptFunction;
 import jdk.nashorn.internal.runtime.ScriptObject;
@@ -115,9 +121,14 @@ final class NashornLinker implements TypeBasedGuardingDynamicLinker, GuardingTyp
             return new GuardedInvocation(mh, canLinkTypeStatic(sourceType) ? null : IS_NASHORN_OR_UNDEFINED_TYPE);
         }
 
-        GuardedInvocation inv = getArrayConverter(sourceType, targetType);
-        if(inv != null) {
-            return inv;
+        final GuardedInvocation arrayConverter = getArrayConverter(sourceType, targetType);
+        if(arrayConverter != null) {
+            return arrayConverter;
+        }
+
+        final GuardedInvocation mirrorConverter = getMirrorConverter(sourceType, targetType);
+        if(mirrorConverter != null) {
+            return mirrorConverter;
         }
 
         return getSamTypeConverter(sourceType, targetType);
@@ -181,6 +192,18 @@ final class NashornLinker implements TypeBasedGuardingDynamicLinker, GuardingTyp
         return MH.asType(converter, converter.type().changeReturnType(type));
     }
 
+    private static GuardedInvocation getMirrorConverter(Class<?> sourceType, Class<?> targetType) {
+        // Could've also used (targetType.isAssignableFrom(ScriptObjectMirror.class) && targetType != Object.class) but
+        // it's probably better to explicitly spell out the supported target types
+        if (targetType == Map.class || targetType == Bindings.class || targetType == JSObject.class || targetType == ScriptObjectMirror.class) {
+            if(ScriptObject.class.isAssignableFrom(sourceType)) {
+                return new GuardedInvocation(CREATE_MIRROR, null);
+            }
+            return new GuardedInvocation(CREATE_MIRROR, IS_SCRIPT_OBJECT);
+        }
+        return null;
+    }
+
     private static boolean isAutoConvertibleFromFunction(final Class<?> clazz) {
         return isAbstractClass(clazz) && !ScriptObject.class.isAssignableFrom(clazz) &&
                 JavaAdapterFactory.isAutoConvertibleFromFunction(clazz);
@@ -235,15 +258,21 @@ final class NashornLinker implements TypeBasedGuardingDynamicLinker, GuardingTyp
         return clazz == List.class || clazz == Deque.class;
     }
 
+    private static final MethodHandle IS_SCRIPT_OBJECT = Guards.isInstance(ScriptObject.class, MH.type(Boolean.TYPE, Object.class));
     private static final MethodHandle IS_SCRIPT_FUNCTION = Guards.isInstance(ScriptFunction.class, MH.type(Boolean.TYPE, Object.class));
     private static final MethodHandle IS_NATIVE_ARRAY = Guards.isOfClass(NativeArray.class, MH.type(Boolean.TYPE, Object.class));
 
-    private static final MethodHandle IS_NASHORN_OR_UNDEFINED_TYPE = findOwnMH("isNashornTypeOrUndefined",
-            Boolean.TYPE, Object.class);
+    private static final MethodHandle IS_NASHORN_OR_UNDEFINED_TYPE = findOwnMH("isNashornTypeOrUndefined", Boolean.TYPE, Object.class);
+    private static final MethodHandle CREATE_MIRROR = findOwnMH("createMirror", Object.class, Object.class);
 
     @SuppressWarnings("unused")
     private static boolean isNashornTypeOrUndefined(final Object obj) {
         return obj instanceof ScriptObject || obj instanceof Undefined;
+    }
+
+    @SuppressWarnings("unused")
+    private static Object createMirror(final Object obj) {
+        return ScriptUtils.wrap(obj);
     }
 
     private static MethodHandle findOwnMH(final String name, final Class<?> rtype, final Class<?>... types) {

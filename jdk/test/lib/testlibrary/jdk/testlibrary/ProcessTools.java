@@ -25,10 +25,7 @@ package jdk.testlibrary;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.io.OutputStream;
-import java.io.OutputStreamWriter;
 import java.io.PrintStream;
-import java.io.PrintWriter;
 import java.lang.management.ManagementFactory;
 import java.lang.management.RuntimeMXBean;
 import java.lang.reflect.Field;
@@ -237,15 +234,20 @@ public final class ProcessTools {
      */
     public static ProcessBuilder createJavaProcessBuilder(String... command)
             throws Exception {
-        String javapath = JdkFinder.getJavaLauncher(false);
+        String javapath = JDKToolFinder.getJDKTool("java");
 
         ArrayList<String> args = new ArrayList<>();
         args.add(javapath);
         Collections.addAll(args, getPlatformSpecificVMArgs());
         Collections.addAll(args, command);
 
-        return new ProcessBuilder(args.toArray(new String[args.size()]));
+        // Reporting
+        StringBuilder cmdLine = new StringBuilder();
+        for (String cmd : args)
+            cmdLine.append(cmd).append(' ');
+        System.out.println("Command line: [" + cmdLine.toString() + "]");
 
+        return new ProcessBuilder(args.toArray(new String[args.size()]));
     }
 
 }

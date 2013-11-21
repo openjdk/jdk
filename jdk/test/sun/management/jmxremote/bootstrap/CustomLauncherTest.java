@@ -29,7 +29,6 @@ import java.nio.file.Path;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 
-import jdk.testlibrary.JdkFinder;
 import jdk.testlibrary.ProcessTools;
 
 /**
