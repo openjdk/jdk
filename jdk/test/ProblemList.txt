@@ -129,9 +129,6 @@ java/lang/management/MemoryMXBean/CollectionUsageThreshold.java generic-all
 
 # jdk_management
 
-# 8010897
-sun/management/HotspotRuntimeMBean/GetSafepointSyncTime.java	macosx-all
-
 # 8028150
 sun/management/jmxremote/bootstrap/RmiSslBootstrapTest.sh	windows-all
 
@@ -153,13 +150,6 @@ demo/jvmti/compiledMethodLoad/CompiledMethodLoadTest.java	generic-all
 # 7027502
 demo/jvmti/hprof/MonitorTest.java                               generic-all
 
-# 8024423 - JVMTI: GetLoadedClasses doesn't enumerate anonymous classes
-demo/jvmti/hprof/HeapAllTest.java                               generic-all
-demo/jvmti/hprof/HeapBinaryFormatTest.java                      generic-all
-demo/jvmti/hprof/HeapDumpTest.java                              generic-all
-demo/jvmti/hprof/OptionsTest.java                               generic-all
-demo/jvmti/hprof/StackMapTableTest.java                         generic-all
-
 # 8027973
 javax/xml/jaxp/transform/jdk8004476/XSLTExFuncTest.java		windows-all
 
@@ -169,9 +159,6 @@ javax/xml/jaxp/transform/jdk8004476/XSLTExFuncTest.java		windows-all
 
 # Filed 7052625
 com/sun/net/httpserver/bugs/6725892/Test.java                   generic-all
-
-# Filed 7036666
-com/sun/net/httpserver/Test9a.java                              generic-all
 
 # failing on vista 32/64 on nightly
 # 7102702
@@ -306,9 +293,6 @@ com/sun/jdi/SuspendThreadTest.java                              generic-all
 
 # Filed 6653793
 com/sun/jdi/RedefineCrossEvent.java                             generic-all
-
-# Filed 6402201
-com/sun/jdi/ProcessAttachTest.sh                                generic-all
 
 ############################################################################
 
