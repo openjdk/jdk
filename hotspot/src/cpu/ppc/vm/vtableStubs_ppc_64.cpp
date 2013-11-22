@@ -221,7 +221,7 @@ VtableStub* VtableStubs::create_itable_stub(int vtable_index) {
 
   // Must do an explicit check if implicit checks are disabled.
   assert(!MacroAssembler::needs_explicit_null_check(in_bytes(Method::from_compiled_offset())), "sanity");
-  if (!ImplicitNullChecks NOT_LINUX(|| true) /*!os::zero_page_read_protected()*/) {
+  if (!ImplicitNullChecks || !os::zero_page_read_protected()) {
     if (TrapBasedNullChecks) {
       __ trap_null_check(R19_method);
     } else {

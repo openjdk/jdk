@@ -269,7 +269,7 @@ inline void MacroAssembler::trap_ic_miss_check(Register a, Register b) {
 // No support for compressed oops (base page of heap).  Does not distinguish
 // loads and stores.
 inline void MacroAssembler::null_check_throw(Register a, int offset, Register temp_reg, address exception_entry) {
-  if (!ImplicitNullChecks || needs_explicit_null_check(offset) NOT_LINUX(|| true) /*!os::zero_page_read_protected()*/) {
+  if (!ImplicitNullChecks || needs_explicit_null_check(offset) || !os::zero_page_read_protected()) {
     if (TrapBasedNullChecks) {
       assert(UseSIGTRAP, "sanity");
       trap_null_check(a);
@@ -286,7 +286,7 @@ inline void MacroAssembler::null_check_throw(Register a, int offset, Register te
 }
 
 inline void MacroAssembler::ld_with_trap_null_check(Register d, int si16, Register s1) {
-  if ( NOT_LINUX(true) LINUX_ONLY(false)/*!os::zero_page_read_protected()*/) {
+  if (!os::zero_page_read_protected()) {
     if (TrapBasedNullChecks) {
       trap_null_check(s1);
     }
@@ -297,7 +297,7 @@ inline void MacroAssembler::ld_with_trap_null_check(Register d, int si16, Regist
 // Attention: No null check for loaded uncompressed OOP. Can be used for loading klass field.
 inline void MacroAssembler::load_heap_oop_with_trap_null_check(Register d, RegisterOrConstant si16,
                                                                    Register s1) {
-  if ( NOT_LINUX(true)LINUX_ONLY(false) /*!os::zero_page_read_protected()*/) {
+  if ( !os::zero_page_read_protected()) {
     if (TrapBasedNullChecks) {
       trap_null_check(s1);
     }

@@ -201,7 +201,7 @@ JVMState* VirtualCallGenerator::generate(JVMState* jvms, Parse* parent_parser) {
   // Block::implicit_null_check() only looks for loads and stores, not calls.
   ciMethod *caller = kit.method();
   ciMethodData *caller_md = (caller == NULL) ? NULL : caller->method_data();
-  if (!UseInlineCaches || !ImplicitNullChecks ||
+  if (!UseInlineCaches || !ImplicitNullChecks || !os::zero_page_read_protected() ||
        ((ImplicitNullCheckThreshold > 0) && caller_md &&
        (caller_md->trap_count(Deoptimization::Reason_null_check)
        >= (uint)ImplicitNullCheckThreshold))) {
