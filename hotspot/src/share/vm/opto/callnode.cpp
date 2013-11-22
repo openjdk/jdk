@@ -342,7 +342,7 @@ static void format_helper( PhaseRegAlloc *regalloc, outputStream* st, Node *n, c
       st->print(" %s%d]=#"INT32_FORMAT,msg,i,t->is_int()->get_con());
       break;
     case Type::AnyPtr:
-      assert( t == TypePtr::NULL_PTR, "" );
+      assert( t == TypePtr::NULL_PTR || n->in_dump(), "" );
       st->print(" %s%d]=#NULL",msg,i);
       break;
     case Type::AryPtr:
@@ -887,7 +887,7 @@ int CallStaticJavaNode::extract_uncommon_trap_request(const Node* call) {
   if (!(call->req() > TypeFunc::Parms &&
         call->in(TypeFunc::Parms) != NULL &&
         call->in(TypeFunc::Parms)->is_Con())) {
-    assert(_in_dump_cnt != 0, "OK if dumping");
+    assert(in_dump() != 0, "OK if dumping");
     tty->print("[bad uncommon trap]");
     return 0;
   }

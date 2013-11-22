@@ -591,6 +591,7 @@ class Compile : public Phase {
   bool          trace_opto_output() const       { return _trace_opto_output; }
   bool              parsed_irreducible_loop() const { return _parsed_irreducible_loop; }
   void          set_parsed_irreducible_loop(bool z) { _parsed_irreducible_loop = z; }
+  int _in_dump_cnt;  // Required for dumping ir nodes.
 #endif
 
   // JSR 292
