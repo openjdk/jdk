@@ -28,6 +28,7 @@ package jdk.nashorn.internal.ir.debug;
 import java.util.List;
 import jdk.nashorn.internal.ir.BinaryNode;
 import jdk.nashorn.internal.ir.Block;
+import jdk.nashorn.internal.ir.BlockStatement;
 import jdk.nashorn.internal.ir.CaseNode;
 import jdk.nashorn.internal.ir.CatchNode;
 import jdk.nashorn.internal.ir.ExpressionStatement;
@@ -141,7 +142,6 @@ public final class PrintVisitor extends NodeVisitor<LexicalContext> {
     @Override
     public boolean enterBlock(final Block block) {
         sb.append(' ');
-        //sb.append(Debug.id(block));
         sb.append('{');
 
         indent += TABWIDTH;
@@ -190,8 +190,13 @@ public final class PrintVisitor extends NodeVisitor<LexicalContext> {
         sb.append(EOLN);
         indent();
         sb.append('}');
-       // sb.append(Debug.id(block));
 
+        return false;
+    }
+
+    @Override
+    public boolean enterBlockStatement(final BlockStatement statement) {
+        statement.getBlock().accept(this);
         return false;
     }
 
@@ -233,7 +238,6 @@ public final class PrintVisitor extends NodeVisitor<LexicalContext> {
     public boolean enterFunctionNode(final FunctionNode functionNode) {
         functionNode.toString(sb);
         enterBlock(functionNode.getBody());
-        //sb.append(EOLN);
         return false;
     }
 
