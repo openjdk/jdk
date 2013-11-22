@@ -1128,7 +1128,7 @@ AdapterHandlerEntry* SharedRuntime::generate_i2c2i_adapters(MacroAssembler *masm
   assert(!MacroAssembler::needs_explicit_null_check(oopDesc::klass_offset_in_bytes()),
          "klass offset should reach into any page");
   // Check for NULL argument if we don't have implicit null checks.
-  if (!ImplicitNullChecks NOT_LINUX(|| true) /*!os::zero_page_read_protected()*/) {
+  if (!ImplicitNullChecks || !os::zero_page_read_protected()) {
     if (TrapBasedNullChecks) {
       __ trap_null_check(R3_ARG1);
     } else {

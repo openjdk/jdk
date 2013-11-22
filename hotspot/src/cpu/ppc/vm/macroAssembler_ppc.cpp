@@ -2433,7 +2433,7 @@ void MacroAssembler::load_klass(Register dst, Register src) {
 }
 
 void MacroAssembler::load_klass_with_trap_null_check(Register dst, Register src) {
-  if (false  NOT_LINUX(|| true) /*!os::zero_page_read_protected()*/) {
+  if (!os::zero_page_read_protected()) {
     if (TrapBasedNullChecks) {
       trap_null_check(src);
     }

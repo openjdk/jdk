@@ -92,7 +92,7 @@ define_pd_global(uintx, TypeProfileLevel, 0);
   /* Trap based checks use the ppc trap instructions to check certain */    \
   /* conditions. This instruction raises a SIGTRAP caught by the      */    \
   /* exception handler of the VM.                                     */    \
-  product(bool, UseSIGTRAP, false,                                          \
+  product(bool, UseSIGTRAP, true,                                           \
           "Allow trap instructions that make use of SIGTRAP. Use this to "  \
           "switch off all optimizations requiring SIGTRAP.")                \
   product(bool, TrapBasedICMissChecks, true,                                \
