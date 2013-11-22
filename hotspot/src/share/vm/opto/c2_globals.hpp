@@ -229,7 +229,8 @@
   diagnostic(bool, UnrollLimitCheck, true,                                  \
           "Additional overflow checks during loop unroll")                  \
                                                                             \
-  product(bool, OptimizeFill, true,                                         \
+  /* OptimizeFill not yet supported on PowerPC. */                          \
+  product(bool, OptimizeFill, true PPC64_ONLY(&& false),                    \
           "convert fill/copy loops into intrinsic")                         \
                                                                             \
   develop(bool, TraceOptimizeFill, false,                                   \

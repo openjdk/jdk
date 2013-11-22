@@ -117,9 +117,12 @@ class Metaspace : public CHeapObj<mtClass> {
   // Aligned size of the metaspace.
   static size_t _compressed_class_space_size;
 
+ public:
   static size_t compressed_class_space_size() {
     return _compressed_class_space_size;
   }
+
+ private:
   static void set_compressed_class_space_size(size_t size) {
     _compressed_class_space_size = size;
   }

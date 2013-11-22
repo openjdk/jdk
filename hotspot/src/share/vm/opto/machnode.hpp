@@ -31,6 +31,7 @@
 #include "opto/node.hpp"
 #include "opto/regmask.hpp"
 
+class BiasedLockingCounters;
 class BufferBlob;
 class CodeBuffer;
 class JVMState;
@@ -206,6 +207,7 @@ public:
 
   // First index in _in[] corresponding to operand, or -1 if there is none
   int  operand_index(uint operand) const;
+  int  operand_index(const MachOper *oper) const;
 
   // Register class input is expected in
   virtual const RegMask &in_RegMask(uint) const;
