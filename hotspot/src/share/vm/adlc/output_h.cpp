@@ -26,7 +26,11 @@
 #include "adlc.hpp"
 
 // The comment delimiter used in format statements after assembler instructions.
+#if defined(PPC64)
+#define commentSeperator "\t//"
+#else
 #define commentSeperator "!"
+#endif
 
 // Generate the #define that describes the number of registers.
 static void defineRegCount(FILE *fp, RegisterForm *registers) {
