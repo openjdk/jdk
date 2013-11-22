@@ -24,8 +24,9 @@
 
 package sun.jvm.hotspot.tools;
 
-import sun.jvm.hotspot.runtime.*;
 import sun.jvm.hotspot.debugger.JVMDebugger;
+import sun.jvm.hotspot.runtime.Arguments;
+import sun.jvm.hotspot.runtime.VM;
 
 public class JInfo extends Tool {
     public JInfo() {
@@ -138,14 +139,33 @@ public class JInfo extends Tool {
     }
 
     private void printVMFlags() {
+        VM.Flag[] flags = VM.getVM().getCommandLineFlags();
+        System.out.print("Non-default VM flags: ");
+        for (VM.Flag flag : flags) {
+            if (flag.getOrigin() == 0) {
+                // only print flags which aren't their defaults
+                continue;
+            }
+            if (flag.isBool()) {
+                String onoff = flag.getBool() ? "+" : "-";
+                System.out.print("-XX:" + onoff + flag.getName() + " ");
+            } else {
+                System.out.print("-XX:" + flag.getName() + "="
+                        + flag.getValue() + " ");
+            }
+        }
+        System.out.println();
+
+        System.out.print("Command line: ");
         String str = Arguments.getJVMFlags();
         if (str != null) {
-            System.out.println(str);
+            System.out.print(str + " ");
         }
         str = Arguments.getJVMArgs();
         if (str != null) {
-            System.out.println(str);
+            System.out.print(str);
         }
+        System.out.println();
     }
 
     private int mode;
