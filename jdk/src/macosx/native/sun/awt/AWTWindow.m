@@ -468,8 +468,6 @@ AWT_ASSERT_APPKIT_THREAD;
         // TODO: create generic AWT assert
     }
 
-    [AWTWindow synthesizeMouseEnteredExitedEventsForAllWindows];
-
     NSRect frame = ConvertNSScreenRect(env, [self.nsWindow frame]);
 
     static JNF_MEMBER_CACHE(jm_deliverMoveResizeEvent, jc_CPlatformWindow, "deliverMoveResizeEvent", "(IIIIZ)V");
@@ -480,6 +478,8 @@ AWT_ASSERT_APPKIT_THREAD;
                       (jint)frame.size.height,
                       (jboolean)[self.nsWindow inLiveResize]);
     (*env)->DeleteLocalRef(env, platformWindow);
+
+    [AWTWindow synthesizeMouseEnteredExitedEventsForAllWindows];
 }
 
 - (void)windowDidMove:(NSNotification *)notification {
