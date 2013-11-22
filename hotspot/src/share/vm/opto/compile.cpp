@@ -647,6 +647,7 @@ Compile::Compile( ciEnv* ci_env, C2Compiler* compiler, ciMethod* target, int osr
                   _dead_node_count(0),
 #ifndef PRODUCT
                   _trace_opto_output(TraceOptoOutput || method()->has_option("TraceOptoOutput")),
+                  _in_dump_cnt(0),
                   _printer(IdealGraphPrinter::printer()),
 #endif
                   _congraph(NULL),
@@ -936,6 +937,7 @@ Compile::Compile( ciEnv* ci_env,
     _inner_loops(0),
 #ifndef PRODUCT
     _trace_opto_output(TraceOptoOutput),
+    _in_dump_cnt(0),
     _printer(NULL),
 #endif
     _dead_node_list(comp_arena()),

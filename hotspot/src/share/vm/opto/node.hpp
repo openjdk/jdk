@@ -1033,8 +1033,7 @@ public:
   // RegMask Print Functions
   void dump_in_regmask(int idx) { in_RegMask(idx).dump(); }
   void dump_out_regmask() { out_RegMask().dump(); }
-  static int _in_dump_cnt;
-  static bool in_dump() { return _in_dump_cnt > 0; }
+  static bool in_dump() { return Compile::current()->_in_dump_cnt > 0; }
   void fast_dump() const {
     tty->print("%4d: %-17s", _idx, Name());
     for (uint i = 0; i < len(); i++)
