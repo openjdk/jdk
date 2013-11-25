@@ -93,7 +93,7 @@ final class NashornStaticClassLinker implements TypeBasedGuardingDynamicLinker {
     }
 
     private static GuardedInvocation delegate(LinkerServices linkerServices, final LinkRequest request) throws Exception {
-        return staticClassLinker.getGuardedInvocation(request, linkerServices);
+        return NashornBeansLinker.getGuardedInvocation(staticClassLinker, request, linkerServices);
     }
 
     private static GuardedInvocation checkNullConstructor(final GuardedInvocation ctorInvocation, final Class<?> receiverClass) {

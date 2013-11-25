@@ -554,24 +554,37 @@ void ConstantPoolCacheEntry::verify(outputStream* st) const {
 // Implementation of ConstantPoolCache
 
 ConstantPoolCache* ConstantPoolCache::allocate(ClassLoaderData* loader_data,
-                                     int length,
                                      const intStack& index_map,
+                                     const intStack& invokedynamic_index_map,
                                      const intStack& invokedynamic_map, TRAPS) {
+
+  const int length = index_map.length() + invokedynamic_index_map.length();
   int size = ConstantPoolCache::size(length);
 
   return new (loader_data, size, false, MetaspaceObj::ConstantPoolCacheType, THREAD)
-    ConstantPoolCache(length, index_map, invokedynamic_map);
+    ConstantPoolCache(length, index_map, invokedynamic_index_map, invokedynamic_map);
 }
 
 void ConstantPoolCache::initialize(const intArray& inverse_index_map,
+                                   const intArray& invokedynamic_inverse_index_map,
                                    const intArray& invokedynamic_references_map) {
-  assert(inverse_index_map.length() == length(), "inverse index map must have same length as cache");
-  for (int i = 0; i < length(); i++) {
+  for (int i = 0; i < inverse_index_map.length(); i++) {
     ConstantPoolCacheEntry* e = entry_at(i);
     int original_index = inverse_index_map[i];
     e->initialize_entry(original_index);
     assert(entry_at(i) == e, "sanity");
   }
+
+  // Append invokedynamic entries at the end
+  int invokedynamic_offset = inverse_index_map.length();
+  for (int i = 0; i < invokedynamic_inverse_index_map.length(); i++) {
+    int offset = i + invokedynamic_offset;
+    ConstantPoolCacheEntry* e = entry_at(offset);
+    int original_index = invokedynamic_inverse_index_map[i];
+    e->initialize_entry(original_index);
+    assert(entry_at(offset) == e, "sanity");
+  }
+
   for (int ref = 0; ref < invokedynamic_references_map.length(); ref++) {
     const int cpci = invokedynamic_references_map[ref];
     if (cpci >= 0) {
