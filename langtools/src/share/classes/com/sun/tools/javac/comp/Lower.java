@@ -1378,7 +1378,11 @@ public class Lower extends TreeTranslator {
             ref = make.Ident(sym);
             args = make.Idents(md.params);
         } else {
-            ref = make.Select(make.Ident(md.params.head), sym);
+            Symbol msym = sym;
+            if (sym.owner.isInterface()) {
+                msym = msym.clone(types.supertype(accessor.owner.type).tsym);
+            }
+            ref = make.Select(make.Ident(md.params.head), msym);
             args = make.Idents(md.params.tail);
         }
         JCStatement stat;          // The statement accessing the private symbol.

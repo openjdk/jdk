@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -152,12 +152,9 @@ public class DisabledShortRSAKeys {
         serverReady = true;
 
         try (SSLSocket sslSocket = (SSLSocket)sslServerSocket.accept()) {
-            InputStream sslIS = sslSocket.getInputStream();
-            OutputStream sslOS = sslSocket.getOutputStream();
-
-            sslIS.read();
-            sslOS.write('A');
-            sslOS.flush();
+            try (InputStream sslIS = sslSocket.getInputStream()) {
+                sslIS.read();
+            }
 
             throw new Exception(
                     "RSA keys shorter than 1024 bits should be disabled");
@@ -194,12 +191,10 @@ public class DisabledShortRSAKeys {
             sslSocket.setEnabledCipherSuites(
                 new String[] {"TLS_DHE_RSA_WITH_AES_128_CBC_SHA"});
 
-            InputStream sslIS = sslSocket.getInputStream();
-            OutputStream sslOS = sslSocket.getOutputStream();
-
-            sslOS.write('B');
-            sslOS.flush();
-            sslIS.read();
+            try (OutputStream sslOS = sslSocket.getOutputStream()) {
+                sslOS.write('B');
+                sslOS.flush();
+            }
 
             throw new Exception(
                     "RSA keys shorter than 1024 bits should be disabled");
@@ -317,6 +312,7 @@ public class DisabledShortRSAKeys {
      * Fork off the other side, then do your work.
      */
     DisabledShortRSAKeys() throws Exception {
+        Exception startException = null;
         try {
             if (separateServerThread) {
                 startServer(true);
@@ -326,16 +322,20 @@ public class DisabledShortRSAKeys {
                 startServer(false);
             }
         } catch (Exception e) {
-            // swallow for now.  Show later
+            startException = e;
         }
 
         /*
          * Wait for other side to close down.
          */
         if (separateServerThread) {
-            serverThread.join();
+            if (serverThread != null) {
+                serverThread.join();
+            }
         } else {
-            clientThread.join();
+            if (clientThread != null) {
+                clientThread.join();
+            }
         }
 
         /*
@@ -344,36 +344,44 @@ public class DisabledShortRSAKeys {
          */
         Exception local;
         Exception remote;
-        String whichRemote;
 
         if (separateServerThread) {
             remote = serverException;
             local = clientException;
-            whichRemote = "server";
         } else {
             remote = clientException;
             local = serverException;
-            whichRemote = "client";
+        }
+
+        Exception exception = null;
+
+        /*
+         * Check various exception conditions.
+         */
+        if ((local != null) && (remote != null)) {
+            // If both failed, return the curthread's exception.
+            local.initCause(remote);
+            exception = local;
+        } else if (local != null) {
+            exception = local;
+        } else if (remote != null) {
+            exception = remote;
+        } else if (startException != null) {
+            exception = startException;
         }
 
         /*
-         * If both failed, return the curthread's exception, but also
-         * print the remote side Exception
+         * If there was an exception *AND* a startException,
+         * output it.
          */
-        if ((local != null) && (remote != null)) {
-            System.out.println(whichRemote + " also threw:");
-            remote.printStackTrace();
-            System.out.println();
-            throw local;
+        if (exception != null) {
+            if (exception != startException && startException != null) {
+                exception.addSuppressed(startException);
+            }
+            throw exception;
         }
 
-        if (remote != null) {
-            throw remote;
-        }
-
-        if (local != null) {
-            throw local;
-        }
+        // Fall-through: no exception to throw!
     }
 
     void startServer(boolean newThread) throws Exception {

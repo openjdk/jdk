@@ -1,2 +1,3 @@
 MethodReference68.java:21:10: compiler.err.cant.apply.symbol: kindname.method, g, MethodReference68.F<Z>,Z[], @493,int, kindname.class, MethodReference68, (compiler.misc.inferred.do.not.conform.to.upper.bounds: java.lang.Integer, MethodReference68.Foo,java.lang.Object)
-1 error
+MethodReference68.java:21:12: compiler.err.invalid.mref: kindname.method, (compiler.misc.non-static.cant.be.ref: kindname.method, getName())
+2 errors

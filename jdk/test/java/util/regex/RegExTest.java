@@ -31,7 +31,8 @@
  * 5013885 5003322 4988891 5098443 5110268 6173522 4829857 5027748 6376940
  * 6358731 6178785 6284152 6231989 6497148 6486934 6233084 6504326 6635133
  * 6350801 6676425 6878475 6919132 6931676 6948903 6990617 7014645 7039066
- * 7067045 7014640 7189363 8007395 8013252 8013254 8012646 8023647
+ * 7067045 7014640 7189363 8007395 8013252 8013254 8012646 8023647 6559590
+ * 8027645
  */
 
 import java.util.regex.*;
@@ -146,6 +147,7 @@ public class RegExTest {
         groupCurlyNotFoundSuppTest();
         groupCurlyBackoffTest();
         patternAsPredicate();
+
         if (failure) {
             throw new
                 RuntimeException("RegExTest failed, 1st failure: " +
@@ -1774,6 +1776,7 @@ public class RegExTest {
                 failCount++;
         }
         // Check the case for limit == 0, source = "";
+        // split() now returns 0-length for empty source "" see #6559590
         source = "";
         result = source.split("e", 0);
         if (result.length != 1)
@@ -1781,6 +1784,66 @@ public class RegExTest {
         if (!result[0].equals(source))
             failCount++;
 
+        // Check both split() and splitAsStraem(), especially for zero-lenth
+        // input and zero-lenth match cases
+        String[][] input = new String[][] {
+            { " ",           "Abc Efg Hij" },   // normal non-zero-match
+            { " ",           " Abc Efg Hij" },  // leading empty str for non-zero-match
+            { " ",           "Abc  Efg Hij" },  // non-zero-match in the middle
+            { "(?=\\p{Lu})", "AbcEfgHij" },     // no leading empty str for zero-match
+            { "(?=\\p{Lu})", "AbcEfg" },
+            { "(?=\\p{Lu})", "Abc" },
+            { " ",           "" },              // zero-length input
+            { ".*",          "" },
+
+            // some tests from PatternStreamTest.java
+            { "4",       "awgqwefg1fefw4vssv1vvv1" },
+            { "\u00a3a", "afbfq\u00a3abgwgb\u00a3awngnwggw\u00a3a\u00a3ahjrnhneerh" },
+            { "1",       "awgqwefg1fefw4vssv1vvv1" },
+            { "1",       "a\u4ebafg1fefw\u4eba4\u9f9cvssv\u9f9c1v\u672c\u672cvv" },
+            { "\u56da",  "1\u56da23\u56da456\u56da7890" },
+            { "\u56da",  "1\u56da23\u9f9c\u672c\u672c\u56da456\u56da\u9f9c\u672c7890" },
+            { "\u56da",  "" },
+            { "[ \t,:.]","This is,testing: with\tdifferent separators." }, //multiple septs
+            { "o",       "boo:and:foo" },
+            { "o",       "booooo:and:fooooo" },
+            { "o",       "fooooo:" },
+        };
+
+        String[][] expected = new String[][] {
+            { "Abc", "Efg", "Hij" },
+            { "", "Abc", "Efg", "Hij" },
+            { "Abc", "", "Efg", "Hij" },
+            { "Abc", "Efg", "Hij" },
+            { "Abc", "Efg" },
+            { "Abc" },
+            { "" },
+            { "" },
+
+            { "awgqwefg1fefw", "vssv1vvv1" },
+            { "afbfq", "bgwgb", "wngnwggw", "", "hjrnhneerh" },
+            { "awgqwefg", "fefw4vssv", "vvv" },
+            { "a\u4ebafg", "fefw\u4eba4\u9f9cvssv\u9f9c", "v\u672c\u672cvv" },
+            { "1", "23", "456", "7890" },
+            { "1", "23\u9f9c\u672c\u672c", "456", "\u9f9c\u672c7890" },
+            { "" },
+            { "This", "is", "testing", "", "with", "different", "separators" },
+            { "b", "", ":and:f" },
+            { "b", "", "", "", "", ":and:f" },
+            { "f", "", "", "", "", ":" },
+        };
+        for (int i = 0; i < input.length; i++) {
+            pattern = Pattern.compile(input[i][0]);
+            if (!Arrays.equals(pattern.split(input[i][1]), expected[i])) {
+                failCount++;
+            }
+            if (input[i][1].length() > 0 &&  // splitAsStream() return empty resulting
+                                             // array for zero-length input for now
+                !Arrays.equals(pattern.splitAsStream(input[i][1]).toArray(),
+                               expected[i])) {
+                failCount++;
+            }
+        }
         report("Split");
     }
 

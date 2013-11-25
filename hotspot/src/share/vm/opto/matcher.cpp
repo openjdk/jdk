@@ -464,17 +464,17 @@ void Matcher::init_first_stack_mask() {
   C->FIRST_STACK_mask().Clear();
 
   // Add in the incoming argument area
-  OptoReg::Name init = OptoReg::add(_old_SP, C->out_preserve_stack_slots());
-  for (i = init; i < _in_arg_limit; i = OptoReg::add(i,1))
+  OptoReg::Name init_in = OptoReg::add(_old_SP, C->out_preserve_stack_slots());
+  for (i = init_in; i < _in_arg_limit; i = OptoReg::add(i,1)) {
     C->FIRST_STACK_mask().Insert(i);
-
+  }
   // Add in all bits past the outgoing argument area
   guarantee(RegMask::can_represent_arg(OptoReg::add(_out_arg_limit,-1)),
             "must be able to represent all call arguments in reg mask");
-  init = _out_arg_limit;
-  for (i = init; RegMask::can_represent(i); i = OptoReg::add(i,1))
+  OptoReg::Name init = _out_arg_limit;
+  for (i = init; RegMask::can_represent(i); i = OptoReg::add(i,1)) {
     C->FIRST_STACK_mask().Insert(i);
-
+  }
   // Finally, set the "infinite stack" bit.
   C->FIRST_STACK_mask().set_AllStack();
 
@@ -506,16 +506,36 @@ void Matcher::init_first_stack_mask() {
      idealreg2spillmask[Op_VecS]->OR(C->FIRST_STACK_mask());
   }
   if (Matcher::vector_size_supported(T_FLOAT,2)) {
+    // For VecD we need dual alignment and 8 bytes (2 slots) for spills.
+    // RA guarantees such alignment since it is needed for Double and Long values.
     *idealreg2spillmask[Op_VecD] = *idealreg2regmask[Op_VecD];
      idealreg2spillmask[Op_VecD]->OR(aligned_stack_mask);
   }
   if (Matcher::vector_size_supported(T_FLOAT,4)) {
+    // For VecX we need quadro alignment and 16 bytes (4 slots) for spills.
+    //
+    // RA can use input arguments stack slots for spills but until RA
+    // we don't know frame size and offset of input arg stack slots.
+    //
+    // Exclude last input arg stack slots to avoid spilling vectors there
+    // otherwise vector spills could stomp over stack slots in caller frame.
+    OptoReg::Name in = OptoReg::add(_in_arg_limit, -1);
+    for (int k = 1; (in >= init_in) && (k < RegMask::SlotsPerVecX); k++) {
+      aligned_stack_mask.Remove(in);
+      in = OptoReg::add(in, -1);
+    }
      aligned_stack_mask.clear_to_sets(RegMask::SlotsPerVecX);
      assert(aligned_stack_mask.is_AllStack(), "should be infinite stack");
     *idealreg2spillmask[Op_VecX] = *idealreg2regmask[Op_VecX];
      idealreg2spillmask[Op_VecX]->OR(aligned_stack_mask);
   }
   if (Matcher::vector_size_supported(T_FLOAT,8)) {
+    // For VecY we need octo alignment and 32 bytes (8 slots) for spills.
+    OptoReg::Name in = OptoReg::add(_in_arg_limit, -1);
+    for (int k = 1; (in >= init_in) && (k < RegMask::SlotsPerVecY); k++) {
+      aligned_stack_mask.Remove(in);
+      in = OptoReg::add(in, -1);
+    }
      aligned_stack_mask.clear_to_sets(RegMask::SlotsPerVecY);
      assert(aligned_stack_mask.is_AllStack(), "should be infinite stack");
     *idealreg2spillmask[Op_VecY] = *idealreg2regmask[Op_VecY];
