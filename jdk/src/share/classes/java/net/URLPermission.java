@@ -426,7 +426,10 @@ public final class URLPermission extends Permission {
         this.ssp = url.substring(delim + 1);
 
         if (!ssp.startsWith("//")) {
-            this.authority = new Authority(scheme, ssp.toLowerCase());
+            if (!ssp.equals("*")) {
+                throw new IllegalArgumentException("invalid URL string");
+            }
+            this.authority = new Authority(scheme, "*");
             return;
         }
         String authpath = ssp.substring(2);

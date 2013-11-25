@@ -152,11 +152,13 @@ CallInfo::CallInfo(Method* resolved_method, Klass* resolved_klass) {
     // Could be an Object method inherited into an interface, but still a vtable call.
     kind = CallInfo::vtable_call;
   } else if (!resolved_klass->is_interface()) {
-    // A miranda method.  Compute the vtable index.
+    // A default or miranda method.  Compute the vtable index.
     ResourceMark rm;
     klassVtable* vt = InstanceKlass::cast(resolved_klass)->vtable();
-    index = vt->index_of_miranda(resolved_method->name(),
-                                 resolved_method->signature());
+    index = LinkResolver::vtable_index_of_interface_method(resolved_klass,
+                           resolved_method);
+    assert(index >= 0 , "we should have valid vtable index at this point");
+
     kind = CallInfo::vtable_call;
   } else if (resolved_method->has_vtable_index()) {
     // Can occur if an interface redeclares a method of Object.
@@ -279,7 +281,7 @@ void LinkResolver::lookup_instance_method_in_klasses(methodHandle& result, Klass
 }
 
 int LinkResolver::vtable_index_of_interface_method(KlassHandle klass,
-                                          methodHandle resolved_method, TRAPS) {
+                                          methodHandle resolved_method) {
 
   int vtable_index = Method::invalid_vtable_index;
   Symbol* name = resolved_method->name();
@@ -295,7 +297,7 @@ int LinkResolver::vtable_index_of_interface_method(KlassHandle klass,
   }
   if (vtable_index == Method::invalid_vtable_index) {
     // get vtable_index for miranda methods
-    ResourceMark rm(THREAD);
+    ResourceMark rm;
     klassVtable *vt = InstanceKlass::cast(klass())->vtable();
     vtable_index = vt->index_of_miranda(name, signature);
   }
@@ -691,7 +693,7 @@ void LinkResolver::resolve_interface_method(methodHandle& resolved_method,
                   );
     resolved_method->access_flags().print_on(tty);
     if (resolved_method->is_default_method()) {
-      tty->print("default");
+      tty->print("default ");
     }
     if (resolved_method->is_overpass()) {
       tty->print("overpass");
@@ -937,7 +939,7 @@ void LinkResolver::linktime_resolve_special_method(methodHandle& resolved_method
                );
     resolved_method->access_flags().print_on(tty);
     if (resolved_method->is_default_method()) {
-      tty->print("default");
+      tty->print("default ");
     }
     if (resolved_method->is_overpass()) {
       tty->print("overpass");
@@ -1017,7 +1019,7 @@ void LinkResolver::runtime_resolve_special_method(CallInfo& result, methodHandle
                 );
     sel_method->access_flags().print_on(tty);
     if (sel_method->is_default_method()) {
-      tty->print("default");
+      tty->print("default ");
     }
     if (sel_method->is_overpass()) {
       tty->print("overpass");
@@ -1081,7 +1083,7 @@ void LinkResolver::linktime_resolve_virtual_method(methodHandle &resolved_method
                   );
     resolved_method->access_flags().print_on(tty);
     if (resolved_method->is_default_method()) {
-      tty->print("default");
+      tty->print("default ");
     }
     if (resolved_method->is_overpass()) {
       tty->print("overpass");
@@ -1118,7 +1120,7 @@ void LinkResolver::runtime_resolve_virtual_method(CallInfo& result,
   // do lookup based on receiver klass using the vtable index
   if (resolved_method->method_holder()->is_interface()) { // miranda method
     vtable_index = vtable_index_of_interface_method(resolved_klass,
-                           resolved_method, CHECK);
+                           resolved_method);
     assert(vtable_index >= 0 , "we should have valid vtable index at this point");
 
     InstanceKlass* inst = InstanceKlass::cast(recv_klass());
@@ -1175,7 +1177,7 @@ void LinkResolver::runtime_resolve_virtual_method(CallInfo& result,
                   );
     selected_method->access_flags().print_on(tty);
     if (selected_method->is_default_method()) {
-      tty->print("default");
+      tty->print("default ");
     }
     if (selected_method->is_overpass()) {
       tty->print("overpass");
@@ -1268,14 +1270,6 @@ void LinkResolver::runtime_resolve_interface_method(CallInfo& result, methodHand
                                                       sel_method->name(),
                                                       sel_method->signature()));
   }
-  // setup result
-  if (!resolved_method->has_itable_index()) {
-    int vtable_index = resolved_method->vtable_index();
-    assert(vtable_index == sel_method->vtable_index(), "sanity check");
-    result.set_virtual(resolved_klass, recv_klass, resolved_method, sel_method, vtable_index, CHECK);
-    return;
-  }
-  int itable_index = resolved_method()->itable_index();
 
   if (TraceItables && Verbose) {
     ResourceMark rm(THREAD);
@@ -1289,14 +1283,22 @@ void LinkResolver::runtime_resolve_interface_method(CallInfo& result, methodHand
                   );
     sel_method->access_flags().print_on(tty);
     if (sel_method->is_default_method()) {
-      tty->print("default");
+      tty->print("default ");
     }
     if (sel_method->is_overpass()) {
       tty->print("overpass");
     }
     tty->cr();
   }
-  result.set_interface(resolved_klass, recv_klass, resolved_method, sel_method, itable_index, CHECK);
+  // setup result
+  if (!resolved_method->has_itable_index()) {
+    int vtable_index = resolved_method->vtable_index();
+    assert(vtable_index == sel_method->vtable_index(), "sanity check");
+    result.set_virtual(resolved_klass, recv_klass, resolved_method, sel_method, vtable_index, CHECK);
+  } else {
+    int itable_index = resolved_method()->itable_index();
+    result.set_interface(resolved_klass, recv_klass, resolved_method, sel_method, itable_index, CHECK);
+  }
 }
 
 

@@ -271,6 +271,7 @@ final class Attr extends NodeOperatorVisitor<LexicalContext> {
                     functionNode.addDeclaredSymbol(symbol);
                     if (varNode.isFunctionDeclaration()) {
                         newType(symbol, FunctionNode.FUNCTION_TYPE);
+                        symbol.setIsFunctionDeclaration();
                     }
                     return varNode.setName((IdentNode)ident.setSymbol(lc, symbol));
                 }
@@ -1264,12 +1265,17 @@ final class Attr extends NodeOperatorVisitor<LexicalContext> {
 
     @Override
     public Node leaveCOMMARIGHT(final BinaryNode binaryNode) {
-        return end(ensureSymbol(binaryNode.rhs().getType(), binaryNode));
+        return leaveComma(binaryNode, binaryNode.rhs());
     }
 
     @Override
     public Node leaveCOMMALEFT(final BinaryNode binaryNode) {
-        return end(ensureSymbol(binaryNode.lhs().getType(), binaryNode));
+        return leaveComma(binaryNode, binaryNode.lhs());
+    }
+
+    private Node leaveComma(final BinaryNode commaNode, final Expression effectiveExpr) {
+        ensureTypeNotUnknown(effectiveExpr);
+        return end(ensureSymbol(effectiveExpr.getType(), commaNode));
     }
 
     @Override

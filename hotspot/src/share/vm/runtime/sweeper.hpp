@@ -53,22 +53,22 @@
 //     is full.
 
 class NMethodSweeper : public AllStatic {
-  static long      _traversals;      // Stack scan count, also sweep ID.
-  static nmethod*  _current;         // Current nmethod
-  static int       _seen;            // Nof. nmethod we have currently processed in current pass of CodeCache
-  static int       _flushed_count;   // Nof. nmethods flushed in current sweep
-  static int       _zombified_count; // Nof. nmethods made zombie in current sweep
-  static int       _marked_count;    // Nof. nmethods marked for reclaim in current sweep
+  static long      _traversals;                   // Stack scan count, also sweep ID.
+  static long      _time_counter;                 // Virtual time used to periodically invoke sweeper
+  static long      _last_sweep;                   // Value of _time_counter when the last sweep happened
+  static nmethod*  _current;                      // Current nmethod
+  static int       _seen;                         // Nof. nmethod we have currently processed in current pass of CodeCache
+  static int       _flushed_count;                // Nof. nmethods flushed in current sweep
+  static int       _zombified_count;              // Nof. nmethods made zombie in current sweep
+  static int       _marked_for_reclamation_count; // Nof. nmethods marked for reclaim in current sweep
 
-  static volatile int  _invocations;   // No. of invocations left until we are completed with this pass
-  static volatile int  _sweep_started; // Flag to control conc sweeper
-
-  //The following are reset in mark_active_nmethods and synchronized by the safepoint
-  static bool      _request_mark_phase;        // Indicates that a change has happend and we need another mark pahse,
-                                               // always checked and reset at a safepoint so memory will be in sync.
-  static int       _locked_seen;               // Number of locked nmethods encountered during the scan
-  static int       _not_entrant_seen_on_stack; // Number of not entrant nmethod were are still on stack
-
+  static volatile int  _sweep_fractions_left;     // Nof. invocations left until we are completed with this pass
+  static volatile int  _sweep_started;            // Flag to control conc sweeper
+  static volatile bool _should_sweep;             // Indicates if we should invoke the sweeper
+  static volatile int _bytes_changed;             // Counts the total nmethod size if the nmethod changed from:
+                                                  //   1) alive       -> not_entrant
+                                                  //   2) not_entrant -> zombie
+                                                  //   3) zombie      -> marked_for_reclamation
   // Stat counters
   static int       _total_nof_methods_reclaimed;  // Accumulated nof methods flushed
   static jlong     _total_time_sweeping;          // Accumulated time sweeping
@@ -81,9 +81,6 @@ class NMethodSweeper : public AllStatic {
 
   static bool sweep_in_progress();
   static void sweep_code_cache();
-  static void request_nmethod_marking() { _request_mark_phase = true; }
-  static void reset_nmethod_marking()   { _request_mark_phase = false; }
-  static bool need_marking_phase()      { return _request_mark_phase; }
 
   static int _hotness_counter_reset_val;
 
@@ -109,13 +106,8 @@ class NMethodSweeper : public AllStatic {
 
   static int sort_nmethods_by_hotness(nmethod** nm1, nmethod** nm2);
   static int hotness_counter_reset_val();
-
-  static void notify() {
-    // Request a new sweep of the code cache from the beginning. No
-    // need to synchronize the setting of this flag since it only
-    // changes to false at safepoint so we can never overwrite it with false.
-     request_nmethod_marking();
-  }
+  static void report_state_change(nmethod* nm);
+  static void possibly_enable_sweeper();
 };
 
 #endif // SHARE_VM_RUNTIME_SWEEPER_HPP

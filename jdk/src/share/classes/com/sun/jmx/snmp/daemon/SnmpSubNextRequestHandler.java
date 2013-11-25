@@ -127,7 +127,7 @@ class SnmpSubNextRequestHandler extends SnmpSubRequestHandler {
             if (SNMP_ADAPTOR_LOGGER.isLoggable(Level.FINEST)) {
                 SNMP_ADAPTOR_LOGGER.logp(Level.FINEST, SnmpSubRequestHandler.class.getName(),
                     "run", "[" + Thread.currentThread() +
-                      "]:an Snmp error occured during the operation", x);
+                      "]:an Snmp error occurred during the operation", x);
             }
         }
         catch(Exception x) {
@@ -135,7 +135,7 @@ class SnmpSubNextRequestHandler extends SnmpSubRequestHandler {
             if (SNMP_ADAPTOR_LOGGER.isLoggable(Level.FINEST)) {
                 SNMP_ADAPTOR_LOGGER.logp(Level.FINEST, SnmpSubRequestHandler.class.getName(),
                     "run", "[" + Thread.currentThread() +
-                      "]:a generic error occured during the operation", x);
+                      "]:a generic error occurred during the operation", x);
             }
         }
         if (SNMP_ADAPTOR_LOGGER.isLoggable(Level.FINER)) {
