@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -494,9 +494,10 @@ public class Proxy implements java.io.Serializable {
         private final int hash;
         private final WeakReference<Class<?>>[] refs;
 
+        @SuppressWarnings("unchecked")
         KeyX(Class<?>[] interfaces) {
             hash = Arrays.hashCode(interfaces);
-            refs = new WeakReference[interfaces.length];
+            refs = (WeakReference<Class<?>>[])new WeakReference<?>[interfaces.length];
             for (int i = 0; i < interfaces.length; i++) {
                 refs[i] = new WeakReference<>(interfaces[i]);
             }

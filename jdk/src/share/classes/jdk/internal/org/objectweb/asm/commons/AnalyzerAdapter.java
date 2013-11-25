@@ -165,10 +165,15 @@ public class AnalyzerAdapter extends MethodVisitor {
      * @param mv
      *            the method visitor to which this adapter delegates calls. May
      *            be <tt>null</tt>.
+     * @throws IllegalStateException
+     *             If a subclass calls this constructor.
      */
     public AnalyzerAdapter(final String owner, final int access,
             final String name, final String desc, final MethodVisitor mv) {
         this(Opcodes.ASM5, owner, access, name, desc, mv);
+        if (getClass() != AnalyzerAdapter.class) {
+            throw new IllegalStateException();
+        }
     }
 
     /**
@@ -331,11 +336,32 @@ public class AnalyzerAdapter extends MethodVisitor {
         execute(opcode, 0, desc);
     }
 
+    @Deprecated
     @Override
     public void visitMethodInsn(final int opcode, final String owner,
             final String name, final String desc) {
+        if (api >= Opcodes.ASM5) {
+            super.visitMethodInsn(opcode, owner, name, desc);
+            return;
+        }
+        doVisitMethodInsn(opcode, owner, name, desc,
+                opcode == Opcodes.INVOKEINTERFACE);
+    }
+
+    @Override
+    public void visitMethodInsn(final int opcode, final String owner,
+            final String name, final String desc, final boolean itf) {
+        if (api < Opcodes.ASM5) {
+            super.visitMethodInsn(opcode, owner, name, desc, itf);
+            return;
+        }
+        doVisitMethodInsn(opcode, owner, name, desc, itf);
+    }
+
+    private void doVisitMethodInsn(int opcode, final String owner,
+            final String name, final String desc, final boolean itf) {
         if (mv != null) {
-            mv.visitMethodInsn(opcode, owner, name, desc);
+            mv.visitMethodInsn(opcode, owner, name, desc, itf);
         }
         if (this.locals == null) {
             labels = null;

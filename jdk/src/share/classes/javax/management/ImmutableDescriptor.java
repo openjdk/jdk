@@ -344,7 +344,7 @@ public class ImmutableDescriptor implements Descriptor {
      * the given object is also a Descriptor, and if the two Descriptors have
      * the same field names (possibly differing in case) and the same
      * associated values.  The respective values for a field in the two
-     * Descriptors are equal if the following conditions hold:</p>
+     * Descriptors are equal if the following conditions hold:
      *
      * <ul>
      * <li>If one value is null then the other must be too.</li>

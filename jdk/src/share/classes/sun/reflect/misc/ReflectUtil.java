@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -297,5 +297,14 @@ public final class ReflectUtil {
             }
         }
         return false;
+    }
+
+    /**
+     * Checks if {@code Class cls} is a VM-anonymous class
+     * as defined by {@link sun.misc.Unsafe#defineAnonymousClass}
+     * (not to be confused with a Java Language anonymous inner class).
+     */
+    public static boolean isVMAnonymousClass(Class<?> cls) {
+        return cls.getName().indexOf("/") > -1;
     }
 }
