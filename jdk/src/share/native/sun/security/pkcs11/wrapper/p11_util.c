@@ -598,16 +598,16 @@ void jAttributeArrayToCKAttributeArray(JNIEnv *env, jobjectArray jArray, CK_ATTR
         throwOutOfMemoryError(env, 0);
         return;
     }
-    TRACE1(", converting %d attibutes", jLength);
+    TRACE1(", converting %d attributes", jLength);
     for (i=0; i<(*ckpLength); i++) {
-        TRACE1(", getting %d. attibute", i);
+        TRACE1(", getting %d. attribute", i);
         jAttribute = (*env)->GetObjectArrayElement(env, jArray, i);
         if ((*env)->ExceptionCheck(env)) {
             freeCKAttributeArray(*ckpArray, i);
             return;
         }
         TRACE1(", jAttribute = %d", jAttribute);
-        TRACE1(", converting %d. attibute", i);
+        TRACE1(", converting %d. attribute", i);
         (*ckpArray)[i] = jAttributeToCKAttribute(env, jAttribute);
         if ((*env)->ExceptionCheck(env)) {
             freeCKAttributeArray(*ckpArray, i);

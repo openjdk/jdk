@@ -29,7 +29,7 @@ import java.util.ResourceBundle;
 
 /**
  * @test
- * @bug 4814565
+ * @bug 4814565 8027930
  * @summary tests ResourceBundle.getBaseBundleName();
  * @build TestGetBaseBundleName resources.ListBundle resources.ListBundle_fr
  * @run main TestGetBaseBundleName
@@ -52,18 +52,20 @@ public class TestGetBaseBundleName {
                     PROPERTY_BUNDLE_NAME,
                     LIST_BUNDLE_NAME
         }) {
-            ResourceBundle bundle = ResourceBundle.getBundle(baseName);
-            System.out.println(getBaseName(bundle));
-            if (!Locale.ROOT.equals(bundle.getLocale())) {
-                throw new RuntimeException("Unexpected locale: "
-                        + bundle.getLocale());
-            }
-            if (!baseName.equals(getBaseName(bundle))) {
-                throw new RuntimeException("Unexpected base name: "
-                        + getBaseName(bundle));
-            }
-            Locale.setDefault(Locale.FRENCH);
             try {
+                Locale.setDefault(Locale.US);
+                ResourceBundle bundle = ResourceBundle.getBundle(baseName);
+                System.out.println(getBaseName(bundle));
+                if (!Locale.ROOT.equals(bundle.getLocale())) {
+                    throw new RuntimeException("Unexpected locale: "
+                            + bundle.getLocale());
+                }
+                if (!baseName.equals(getBaseName(bundle))) {
+                    throw new RuntimeException("Unexpected base name: "
+                            + getBaseName(bundle));
+                }
+
+                Locale.setDefault(Locale.FRENCH);
                 ResourceBundle bundle_fr = ResourceBundle.getBundle(baseName);
                 if (!Locale.FRENCH.equals(bundle_fr.getLocale())) {
                     throw new RuntimeException("Unexpected locale: "
