@@ -684,8 +684,7 @@ public class Introspector {
                     ipd = (IndexedPropertyDescriptor)pd;
                     if (ipd.getIndexedWriteMethod() != null) {
                         if (igpd != null) {
-                            if (igpd.getIndexedPropertyType()
-                                == ipd.getIndexedPropertyType()) {
+                            if (isAssignable(igpd.getIndexedPropertyType(), ipd.getIndexedPropertyType())) {
                                 if (ispd != null) {
                                     ispd = new IndexedPropertyDescriptor(ispd, ipd);
                                 } else {
@@ -703,7 +702,7 @@ public class Introspector {
                 } else {
                     if (pd.getWriteMethod() != null) {
                         if (gpd != null) {
-                            if (gpd.getPropertyType() == pd.getPropertyType()) {
+                            if (isAssignable(gpd.getPropertyType(), pd.getPropertyType())) {
                                 if (spd != null) {
                                     spd = new PropertyDescriptor(spd, pd);
                                 } else {
@@ -804,6 +803,10 @@ public class Introspector {
                 properties.put(pd.getName(), pd);
             }
         }
+    }
+
+    private static boolean isAssignable(Class<?> current, Class<?> candidate) {
+        return current == null ? candidate == null : current.isAssignableFrom(candidate);
     }
 
     /**

@@ -430,7 +430,7 @@ public final class AppContext {
                     try {
                         w.dispose();
                     } catch (Throwable t) {
-                        log.finer("exception occured while disposing app context", t);
+                        log.finer("exception occurred while disposing app context", t);
                     }
                 }
                 AccessController.doPrivileged(new PrivilegedAction<Void>() {
@@ -820,30 +820,6 @@ public final class AppContext {
     // Set up JavaAWTAccess in SharedSecrets
     static {
         sun.misc.SharedSecrets.setJavaAWTAccess(new sun.misc.JavaAWTAccess() {
-            public Object get(Object key) {
-                AppContext ac = getAppContext();
-                return (ac == null) ? null : ac.get(key);
-            }
-            public void put(Object key, Object value) {
-                AppContext ac = getAppContext();
-                if (ac != null) {
-                    ac.put(key, value);
-                }
-            }
-            public void remove(Object key) {
-                AppContext ac = getAppContext();
-                if (ac != null) {
-                    ac.remove(key);
-                }
-            }
-            public boolean isDisposed() {
-                AppContext ac = getAppContext();
-                return (ac == null) ? true : ac.isDisposed();
-            }
-            public boolean isMainAppContext() {
-                return (numAppContexts.get() == 1 && mainAppContext != null);
-            }
-
             private boolean hasRootThreadGroup(final AppContext ecx) {
                 return AccessController.doPrivileged(new PrivilegedAction<Boolean>() {
                     @Override

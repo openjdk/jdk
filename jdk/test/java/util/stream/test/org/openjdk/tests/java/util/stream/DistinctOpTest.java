@@ -54,10 +54,14 @@ public class DistinctOpTest extends OpTestCase {
         // These tests should short-circuit, otherwise will fail with a time-out
         // or an OOME
 
-        Integer one = Stream.iterate(1, i -> i + 1).unordered().parallel().distinct().findAny().get();
-        assertEquals(one.intValue(), 1);
+        // Note that since the streams are unordered and any element is requested
+        // (a non-deterministic process) the only assertion that can be made is
+        // that an element should be found
 
-        Optional<Integer> oi = ThreadLocalRandom.current().ints().boxed().parallel().distinct().findAny();
+        Optional<Integer> oi = Stream.iterate(1, i -> i + 1).unordered().parallel().distinct().findAny();
+        assertTrue(oi.isPresent());
+
+        oi = ThreadLocalRandom.current().ints().boxed().parallel().distinct().findAny();
         assertTrue(oi.isPresent());
     }
 

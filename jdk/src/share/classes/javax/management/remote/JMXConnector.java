@@ -76,7 +76,7 @@ public interface JMXConnector extends Closeable {
      * <p>If <code>connect</code> has already been called successfully
      * on this object, calling it again has no effect.  If, however,
      * {@link #close} was called after <code>connect</code>, the new
-     * <code>connect</code> will throw an <code>IOException</code>.<p>
+     * <code>connect</code> will throw an <code>IOException</code>.
      *
      * <p>Otherwise, either <code>connect</code> has never been called
      * on this object, or it has been called but produced an

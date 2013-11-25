@@ -31,15 +31,6 @@
 
 TESTNAME = "flyingimage";
 
-var Image                = Java.type("javafx.scene.image.Image");
-var Color                = Java.type("javafx.scene.paint.Color");
-var Canvas               = Java.type("javafx.scene.canvas.Canvas");
-var BorderPane           = Java.type("javafx.scene.layout.BorderPane");
-var StackPane            = Java.type("javafx.scene.layout.StackPane");
-var Font                 = Java.type("javafx.scene.text.Font");
-var FontSmoothingType    = Java.type("javafx.scene.text.FontSmoothingType");
-var Text                 = Java.type("javafx.scene.text.Text");
-
 var WIDTH = 800;
 var HEIGHT = 600;
 var canvas = new Canvas(WIDTH, HEIGHT);
@@ -48,10 +39,9 @@ function fileToURL(file) {
 }
 var imageUrl = fileToURL(__DIR__ + "flyingimage/flyingimage.png");
 var img = new Image(imageUrl);
-var font = new Font("Arial", 16);
-var t = 0;
 var isFrameRendered = false;
 function renderFrame() {
+    var t = frame;
     var gc = canvas.graphicsContext2D;
     gc.setFill(Color.web("#cccccc"));
     gc.fillRect(0, 0, WIDTH, HEIGHT);
@@ -61,7 +51,7 @@ function renderFrame() {
     var c = 200;
     var msc= 0.5 * HEIGHT / img.height;
     var sp0 = 0.003;
-    for (var h = 0; h < c; h++, t++) {
+    for (var h = 0; h < c; h++) {
         gc.setTransform(1, 0, 0, 1, 0, 0);
         var yh = h / (c - 1);
         gc.translate((0.5 + Math.sin(t * sp0 + h * 0.1) / 3) * WIDTH, 25 + (HEIGHT * 3 / 4 - 40) * (yh * yh));
@@ -69,15 +59,26 @@ function renderFrame() {
         gc.rotate(90 * Math.sin(t * sp0 + h * 0.1 + Math.PI));
         gc.scale(sc, sc);
         gc.drawImage(img, -img.width / 2, -img.height / 2);
-     }
+    }
     gc.setTransform(1, 0, 0, 1, 0, 0);
     isFrameRendered = true;
 }
 var stack = new StackPane();
 var pane = new BorderPane();
-
 pane.setCenter(canvas);
 stack.getChildren().add(pane);
 $STAGE.scene = new Scene(stack);
-renderFrame();
-checkImageAndExit();
+var frame = 0;
+var timer = new AnimationTimerExtend() {
+    handle: function handle(now) {
+        if (frame < 200) {
+            renderFrame();
+            frame++;
+        } else {
+            checkImageAndExit();        
+            timer.stop();
+        }
+    }
+};
+timer.start();
+ 
