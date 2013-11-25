@@ -483,17 +483,8 @@ public class Code {
     /** Emit an invokedynamic instruction.
      */
     public void emitInvokedynamic(int desc, Type mtype) {
-        // N.B. this format is under consideration by the JSR 292 EG
         int argsize = width(mtype.getParameterTypes());
-        int prevPos = pendingStatPos;
-        try {
-            //disable line number generation (we could have used 'emit1', that
-            //bypasses stackmap generation - which is needed for indy calls)
-            pendingStatPos = Position.NOPOS;
-            emitop(invokedynamic);
-        } finally {
-            pendingStatPos = prevPos;
-        }
+        emitop(invokedynamic);
         if (!alive) return;
         emit2(desc);
         emit2(0);
@@ -1790,8 +1781,9 @@ public class Code {
 
         void markInitialized(UninitializedType old) {
             Type newtype = old.initializedType();
-            for (int i=0; i<stacksize; i++)
+            for (int i=0; i<stacksize; i++) {
                 if (stack[i] == old) stack[i] = newtype;
+            }
             for (int i=0; i<lvar.length; i++) {
                 LocalVar lv = lvar[i];
                 if (lv != null && lv.sym.type == old) {
@@ -2112,7 +2104,6 @@ public class Code {
     private void endScope(int adr) {
         LocalVar v = lvar[adr];
         if (v != null) {
-            lvar[adr] = null;
             if (v.isLastRangeInitialized()) {
                 char length = (char)(curCP() - v.lastRange().start_pc);
                 if (length < Character.MAX_VALUE) {
@@ -2121,6 +2112,12 @@ public class Code {
                     fillLocalVarPosition(v);
                 }
             }
+            /** the call to curCP() can implicitly adjust the current cp, if so
+             * the alive range of local variables may be modified. Thus we need
+             * all of them. For this reason assigning null to the given address
+             * should be the last action to do.
+             */
+            lvar[adr] = null;
         }
         state.defined.excl(adr);
     }

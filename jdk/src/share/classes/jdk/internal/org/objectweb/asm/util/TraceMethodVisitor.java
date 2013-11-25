@@ -176,11 +176,31 @@ public final class TraceMethodVisitor extends MethodVisitor {
         super.visitFieldInsn(opcode, owner, name, desc);
     }
 
+    @Deprecated
     @Override
-    public void visitMethodInsn(final int opcode, final String owner,
-            final String name, final String desc) {
+    public void visitMethodInsn(int opcode, String owner, String name,
+            String desc) {
+        if (api >= Opcodes.ASM5) {
+            super.visitMethodInsn(opcode, owner, name, desc);
+            return;
+        }
         p.visitMethodInsn(opcode, owner, name, desc);
-        super.visitMethodInsn(opcode, owner, name, desc);
+        if (mv != null) {
+            mv.visitMethodInsn(opcode, owner, name, desc);
+        }
+    }
+
+    @Override
+    public void visitMethodInsn(int opcode, String owner, String name,
+            String desc, boolean itf) {
+        if (api < Opcodes.ASM5) {
+            super.visitMethodInsn(opcode, owner, name, desc, itf);
+            return;
+        }
+        p.visitMethodInsn(opcode, owner, name, desc, itf);
+        if (mv != null) {
+            mv.visitMethodInsn(opcode, owner, name, desc, itf);
+        }
     }
 
     @Override

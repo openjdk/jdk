@@ -1688,17 +1688,17 @@ public class RMIConnector implements JMXConnector, Serializable, JMXAddressable 
      * this method will attempt to connect the stub to an ORB as
      * follows:
      * <ul>
-     * <p>This method looks in the provided <var>environment</var> for
+     * <li>This method looks in the provided <var>environment</var> for
      * the "java.naming.corba.orb" property. If it is found, the
      * referenced object (an {@link org.omg.CORBA.ORB ORB}) is used to
      * connect the stub. Otherwise, a new org.omg.CORBA.ORB is created
      * by calling {@link
      * org.omg.CORBA.ORB#init(String[], Properties)
-     * org.omg.CORBA.ORB.init((String[])null,(Properties)null)}
-     * <p>The new created ORB is kept in a static
+     * org.omg.CORBA.ORB.init((String[])null,(Properties)null)}</li>
+     * <li>The new created ORB is kept in a static
      * {@link WeakReference} and can be reused for connecting other
      * stubs. However, no reference is ever kept on the ORB provided
-     * in the <var>environment</var> map, if any.
+     * in the <var>environment</var> map, if any.</li>
      * </ul>
      * @param rmiServer A RMI Server Stub.
      * @param environment An environment map, possibly containing an ORB.
