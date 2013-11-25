@@ -46,5 +46,4 @@ Java_java_net_Inet4Address_init(JNIEnv *env, jclass cls) {
     ia4_class = (*env)->NewGlobalRef(env, c);
     CHECK_NULL(ia4_class);
     ia4_ctrID = (*env)->GetMethodID(env, ia4_class, "<init>", "()V");
-    CHECK_NULL(ia4_ctrID);
 }

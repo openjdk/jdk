@@ -1,147 +1,133 @@
-." Copyright (c) 2004, 2011, Oracle and/or its affiliates. All rights reserved.
-." DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
-."
-." This code is free software; you can redistribute it and/or modify it
-." under the terms of the GNU General Public License version 2 only, as
-." published by the Free Software Foundation.
-."
-." This code is distributed in the hope that it will be useful, but WITHOUT
-." ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
-." FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
-." version 2 for more details (a copy is included in the LICENSE file that
-." accompanied this code).
-."
-." You should have received a copy of the GNU General Public License version
-." 2 along with this work; if not, write to the Free Software Foundation,
-." Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
-."
-." Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
-." or visit www.oracle.com if you need additional information or have any
-." questions.
-."
-.TH jinfo 1 "10 May 2011"
+'\" t
+.\"  Copyright (c) 2004, 2013, Oracle and/or its affiliates. All rights reserved.
+.\"
+.\" DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+.\"
+.\" This code is free software; you can redistribute it and/or modify it
+.\" under the terms of the GNU General Public License version 2 only, as
+.\" published by the Free Software Foundation.
+.\"
+.\" This code is distributed in the hope that it will be useful, but WITHOUT
+.\" ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+.\" FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License
+.\" version 2 for more details (a copy is included in the LICENSE file that
+.\" accompanied this code).
+.\"
+.\" You should have received a copy of the GNU General Public License version
+.\" 2 along with this work; if not, write to the Free Software Foundation,
+.\" Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+.\"
+.\" Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+.\" or visit www.oracle.com if you need additional information or have any
+.\" questions.
+.\"
+.\"     Arch: generic
+.\"     Software: JDK 8
+.\"     Date: 21 November 2013
+.\"     SectDesc: Troubleshooting Tools
+.\"     Title: jinfo.1
+.\"
+.if n .pl 99999
+.TH jinfo 1 "21 November 2013" "JDK 8" "Troubleshooting Tools"
+.\" -----------------------------------------------------------------
+.\" * Define some portability stuff
+.\" -----------------------------------------------------------------
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.\" http://bugs.debian.org/507673
+.\" http://lists.gnu.org/archive/html/groff/2009-02/msg00013.html
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.ie \n(.g .ds Aq \(aq
+.el       .ds Aq '
+.\" -----------------------------------------------------------------
+.\" * set default formatting
+.\" -----------------------------------------------------------------
+.\" disable hyphenation
+.nh
+.\" disable justification (adjust text to left margin only)
+.ad l
+.\" -----------------------------------------------------------------
+.\" * MAIN CONTENT STARTS HERE *
+.\" -----------------------------------------------------------------
 
-.LP
-.SH "Name"
-jinfo \- Configuration Info
-.LP
-.SH "SYNOPSIS"
-.LP
-.nf
-\f3
-.fl
-\fP\f3jinfo\fP [ option ] pid
-.fl
-\f3jinfo\fP [ option ] executable core
-.fl
-\f3jinfo\fP [ option ] [server\-id@]remote\-hostname\-or\-IP 
-.fl
-.fi
+.SH NAME    
+jinfo \- Generates configuration information\&. This command is experimental and unsupported\&.
+.SH SYNOPSIS    
+.sp     
+.nf     
 
-.LP
-.SH "PARAMETERS"
-.LP
-.RS 3
-.TP 3
-option 
-Options are mutually exclusive. Option, if used, should follow immediately after the command name. 
-.RE
+\fBjinfo\fR [ \fIoption\fR ] \fIpid\fR
+.fi     
+.nf     
 
-.LP
-.RS 3
-.TP 3
-pid 
-process id for which the configuration info is to be printed. The process must be a Java process. To get a list of Java processes running on a machine, jps(1) may be used. 
-.RE
+\fBjinfo\fR [ \fIoption \fR] \fIexecutable core\fR
+.fi     
+.nf     
 
-.LP
-.RS 3
-.TP 3
-executable 
-Java executable from which the core dump was produced. 
-.RE
-
-.LP
-.RS 3
-.TP 3
-core 
-core file for which the configuration info is to be printed. 
-.RE
-
-.LP
-.RS 3
-.TP 3
-remote\-hostname\-or\-IP 
-remote debug server's (see jsadebugd(1)) hostname or IP address. 
-.RE
-
-.LP
-.RS 3
-.TP 3
-server\-id 
-optional unique id, if multiple debug servers are running on the same remote host. 
-.RE
-
-.LP
-.SH "DESCRIPTION"
-.LP
-.LP
-\f3jinfo\fP prints Java configuration information for a given Java process or core file or a remote debug server. Configuration information includes Java System properties and Java virtual machine command line flags. If the given process is running on a 64\-bit VM, you may need to specify the \f2\-J\-d64\fP option, e.g.:
+\fBjinfo\fR [ \fIoption \fR] \fI[ servier\-id ] remote\-hostname\-or\-IP\fR
+.fi     
+.sp     
+.TP     
+\fIoption\fR
+The command-line options\&. See Options\&.
+.TP     
+\fIpid\fR
+The process ID for which the configuration information is to be printed\&. The process must be a Java process\&. To get a list of Java processes running on a machine, use the jps(1) command\&.
+.TP     
+\fIexecutable\fR
+The Java executable from which the core dump was produced\&.
+.TP     
+\fIcore\fR
+The core file for which the configuration information is to be printed\&.
+.TP     
+\fIremote-hostname-or-IP\fR
+The remote debug server \f3hostname\fR or \f3IP\fR address\&. See jsadebugd(1)\&.
+.TP     
+\fIserver-id\fR
+An optional unique ID to use when multiple debug servers are running on the same remote host\&.
+.SH DESCRIPTION    
+The \f3jinfo\fR command prints Java configuration information for a specified Java process or core file or a remote debug server\&. The configuration information includes Java system properties and Java Virtual Machine (JVM) command-line flags\&. If the specified process is running on a 64-bit JVM, then you might need to specify the \f3-J-d64\fR option, for example: \f3jinfo\fR\f3-J-d64 -sysprops pid\fR\&.
+.PP
+This utility is unsupported and might not be available in future releases of the JDK\&. In Windows Systems where \f3dbgeng\&.dll\fR is not present, Debugging Tools For Windows must be installed to have these tools working\&. The \f3PATH\fR environment variable should contain the location of the jvm\&.dll that is used by the target process or the location from which the crash dump file was produced\&. For example, \f3set PATH=%JDK_HOME%\ejre\ebin\eclient;%PATH%\fR \&.
+.SH OPTIONS    
+.TP     
+no-option
+Prints both command-line flags and system property name-value pairs\&.
+.TP
+-flag \fIname\fR
 .br
-jinfo \-J\-d64 \-sysprops pid
-.LP
-.LP
-\f3NOTE \- This utility is unsupported and may or may not be available in future versions of the JDK. In Windows Systems where dbgeng.dll is not present, 'Debugging Tools For Windows' need to be installed to have these tools working. Also, \fP\f4PATH\fP\f3 environment variable should contain the location of \fP\f4jvm.dll\fP\f3 used by the target process or the location from which the Crash Dump file was produced.\fP
-.LP
-.LP
-\f3For example, \fP\f4set PATH=<jdk>\\jre\\bin\\client;%PATH%\fP
-.LP
-.SH "OPTIONS"
-.LP
-.RS 3
-.TP 3
-<no option> 
-prints both command line flags as well as System properties name, value pairs.
+Prints the name and value of the specified command-line flag\&.
+.TP
+-flag \fI[+|-]name\fR
 .br
-.TP 3
-\-flag name 
-prints the name and value of the given command line flag.
+enables or disables the specified Boolean command-line flag\&.
+.TP
+-flag \fIname=value\fR
 .br
-.TP 3
-\-flag [+|\-]name 
-enables or disables the given boolean command line flag.
+Sets the specified command-line flag to the specified value\&.
+.TP
+-flags
 .br
-.TP 3
-\-flag name=value 
-sets the given command line flag to the specified value.
+Prints command-line flags passed to the JVM\&.
+.TP
+-sysprops
 .br
-.TP 3
-\-flags 
-prints command line flags passed to the JVM. pairs.
+Prints Java system properties as name-value pairs\&.
+.TP
+-h
 .br
-.TP 3
-\-sysprops 
-prints Java System properties as name, value pairs.
+Prints a help message\&.
+.TP
+-help
 .br
-.TP 3
-\-h 
-prints a help message 
-.TP 3
-\-help 
-prints a help message 
+Prints a help message\&.
+.SH SEE\ ALSO    
+.TP 0.2i    
+\(bu
+jps(1)
+.TP 0.2i    
+\(bu
+jsadebugd(1)
 .RE
-
-.LP
-.SH "SEE ALSO"
-.LP
-.RS 3
-.TP 2
-o
-jps(1) 
-.TP 2
-o
-jsadebugd(1) 
-.RE
-
-.LP
- 
+.br
+'pl 8.5i
+'bp
