@@ -31,41 +31,17 @@
 // TwoGenerationCollectorPolicy. Lets reuse it!
 
 class GenerationSizer : public TwoGenerationCollectorPolicy {
- public:
-  GenerationSizer() {
-    // Partial init only!
-    initialize_flags();
-    initialize_size_info();
-  }
+ private:
 
-  void initialize_flags() {
-    // Do basic sizing work
-    TwoGenerationCollectorPolicy::initialize_flags();
+  void trace_gen_sizes(const char* const str);
 
-    assert(UseSerialGC ||
-           !FLAG_IS_DEFAULT(ParallelGCThreads) ||
-           (ParallelGCThreads > 0),
-           "ParallelGCThreads should be set before flag initialization");
+  // The alignment used for boundary between young gen and old gen
+  static size_t default_gen_alignment() { return 64 * K * HeapWordSize; }
 
-    // The survivor ratio's are calculated "raw", unlike the
-    // default gc, which adds 2 to the ratio value. We need to
-    // make sure the values are valid before using them.
-    if (MinSurvivorRatio < 3) {
-      MinSurvivorRatio = 3;
-    }
+ protected:
 
-    if (InitialSurvivorRatio < 3) {
-      InitialSurvivorRatio = 3;
-    }
-  }
-
-  size_t min_young_gen_size() { return _min_gen0_size; }
-  size_t young_gen_size()     { return _initial_gen0_size; }
-  size_t max_young_gen_size() { return _max_gen0_size; }
-
-  size_t min_old_gen_size()   { return _min_gen1_size; }
-  size_t old_gen_size()       { return _initial_gen1_size; }
-  size_t max_old_gen_size()   { return _max_gen1_size; }
+  void initialize_alignments();
+  void initialize_flags();
+  void initialize_size_info();
 };
-
 #endif // SHARE_VM_GC_IMPLEMENTATION_PARALLELSCAVENGE_GENERATIONSIZER_HPP

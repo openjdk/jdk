@@ -120,10 +120,15 @@ public class LocalVariablesSorter extends MethodVisitor {
      *            the method's descriptor (see {@link Type Type}).
      * @param mv
      *            the method visitor to which this adapter delegates calls.
+     * @throws IllegalStateException
+     *             If a subclass calls this constructor.
      */
     public LocalVariablesSorter(final int access, final String desc,
             final MethodVisitor mv) {
         this(Opcodes.ASM5, access, desc, mv);
+        if (getClass() != LocalVariablesSorter.class) {
+            throw new IllegalStateException();
+        }
     }
 
     /**
@@ -323,6 +328,7 @@ public class LocalVariablesSorter extends MethodVisitor {
         int local = newLocalMapping(type);
         setLocalType(local, type);
         setFrameLocal(local, t);
+        changed = true;
         return local;
     }
 
