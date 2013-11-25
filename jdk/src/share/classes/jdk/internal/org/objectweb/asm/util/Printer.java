@@ -401,8 +401,33 @@ public abstract class Printer {
      * Method instruction. See
      * {@link jdk.internal.org.objectweb.asm.MethodVisitor#visitMethodInsn}.
      */
-    public abstract void visitMethodInsn(final int opcode, final String owner,
-            final String name, final String desc);
+    @Deprecated
+    public void visitMethodInsn(final int opcode, final String owner,
+            final String name, final String desc) {
+        if (api >= Opcodes.ASM5) {
+            boolean itf = opcode == Opcodes.INVOKEINTERFACE;
+            visitMethodInsn(opcode, owner, name, desc, itf);
+            return;
+        }
+        throw new RuntimeException("Must be overriden");
+    }
+
+    /**
+     * Method instruction. See
+     * {@link jdk.internal.org.objectweb.asm.MethodVisitor#visitMethodInsn}.
+     */
+    public void visitMethodInsn(final int opcode, final String owner,
+            final String name, final String desc, final boolean itf) {
+        if (api < Opcodes.ASM5) {
+            if (itf != (opcode == Opcodes.INVOKEINTERFACE)) {
+                throw new IllegalArgumentException(
+                        "INVOKESPECIAL/STATIC on interfaces require ASM 5");
+            }
+            visitMethodInsn(opcode, owner, name, desc);
+            return;
+        }
+        throw new RuntimeException("Must be overriden");
+    }
 
     /**
      * Method instruction. See

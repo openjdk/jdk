@@ -130,9 +130,9 @@ public class JMenuBar extends JComponent implements Accessible,MenuElement
     }
 
     /**
-     * Sets the L&F object that renders this component.
+     * Sets the L&amp;F object that renders this component.
      *
-     * @param ui the new MenuBarUI L&F object
+     * @param ui the new MenuBarUI L&amp;F object
      * @see UIDefaults#getUI
      * @beaninfo
      *        bound: true
@@ -155,7 +155,7 @@ public class JMenuBar extends JComponent implements Accessible,MenuElement
 
 
     /**
-     * Returns the name of the L&F class that renders this component.
+     * Returns the name of the L&amp;F class that renders this component.
      *
      * @return the string "MenuBarUI"
      * @see JComponent#getUIClassID

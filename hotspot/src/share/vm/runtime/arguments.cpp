@@ -1132,9 +1132,6 @@ void Arguments::set_tiered_flags() {
     Tier3InvokeNotifyFreqLog = 0;
     Tier4InvocationThreshold = 0;
   }
-  if (FLAG_IS_DEFAULT(NmethodSweepFraction)) {
-    FLAG_SET_DEFAULT(NmethodSweepFraction, 1 + ReservedCodeCacheSize / (16 * M));
-  }
 }
 
 #if INCLUDE_ALL_GCS
@@ -1408,7 +1405,7 @@ uintx Arguments::max_heap_for_compressed_oops() {
   // NULL page is located before the heap, we pad the NULL page to the conservative
   // maximum alignment that the GC may ever impose upon the heap.
   size_t displacement_due_to_null_page = align_size_up_(os::vm_page_size(),
-    Arguments::conservative_max_heap_alignment());
+                                                        _conservative_max_heap_alignment);
 
   LP64_ONLY(return OopEncodingHeapMax - displacement_due_to_null_page);
   NOT_LP64(ShouldNotReachHere(); return 0);
@@ -1505,7 +1502,7 @@ void Arguments::set_conservative_max_heap_alignment() {
   }
 #endif // INCLUDE_ALL_GCS
   _conservative_max_heap_alignment = MAX3(heap_alignment, os::max_page_size(),
-    CollectorPolicy::compute_max_alignment());
+    CollectorPolicy::compute_heap_alignment());
 }
 
 void Arguments::set_ergonomics_flags() {
@@ -2165,6 +2162,10 @@ bool Arguments::check_vm_args_consistency() {
 
 #if INCLUDE_ALL_GCS
   if (UseG1GC) {
+    status = status && verify_percentage(G1NewSizePercent, "G1NewSizePercent");
+    status = status && verify_percentage(G1MaxNewSizePercent, "G1MaxNewSizePercent");
+    status = status && verify_interval(G1NewSizePercent, 0, G1MaxNewSizePercent, "G1NewSizePercent");
+
     status = status && verify_percentage(InitiatingHeapOccupancyPercent,
                                          "InitiatingHeapOccupancyPercent");
     status = status && verify_min_value(G1RefProcDrainInterval, 1,
@@ -2681,9 +2682,10 @@ jint Arguments::parse_each_vm_init_arg(const JavaVMInitArgs* args,
         describe_range_error(errcode);
         return JNI_EINVAL;
       }
-      FLAG_SET_CMDLINE(uintx, InitialHeapSize, (uintx)long_initial_heap_size);
+      set_min_heap_size((uintx)long_initial_heap_size);
       // Currently the minimum size and the initial heap sizes are the same.
-      set_min_heap_size(InitialHeapSize);
+      // Can be overridden with -XX:InitialHeapSize.
+      FLAG_SET_CMDLINE(uintx, InitialHeapSize, (uintx)long_initial_heap_size);
     // -Xmx
     } else if (match_option(option, "-Xmx", &tail) || match_option(option, "-XX:MaxHeapSize=", &tail)) {
       julong long_max_heap_size = 0;
@@ -3643,6 +3645,11 @@ jint Arguments::apply_ergo() {
         "Incompatible compilation policy selected", NULL);
     }
   }
+  // Set NmethodSweepFraction after the size of the code cache is adapted (in case of tiered)
+  if (FLAG_IS_DEFAULT(NmethodSweepFraction)) {
+    FLAG_SET_DEFAULT(NmethodSweepFraction, 1 + ReservedCodeCacheSize / (16 * M));
+  }
+
 
   // Set heap size based on available physical memory
   set_heap_size();

@@ -244,7 +244,6 @@ import javax.management.loading.ClassLoaderRepository;
  * the caller's permissions must imply {@link
  * MBeanPermission#MBeanPermission(String,String,ObjectName,String)
  * MBeanPermission(className, null, name, "unregisterMBean")}.</p>
- * </p>
  *
  * </ul>
  *

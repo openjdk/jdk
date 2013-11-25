@@ -1132,7 +1132,7 @@ public class RMIGenerator implements RMIConstants, Generator {
         throws IOException
     {
         if (types.length != names.length) {
-            throw new Error("paramter type and name arrays different sizes");
+            throw new Error("parameter type and name arrays different sizes");
         }
 
         for (int i = 0; i < types.length; i++) {
@@ -1213,7 +1213,7 @@ public class RMIGenerator implements RMIConstants, Generator {
         throws IOException
     {
         if (types.length != names.length) {
-            throw new Error("paramter type and name arrays different sizes");
+            throw new Error("parameter type and name arrays different sizes");
         }
 
         boolean readObject = false;

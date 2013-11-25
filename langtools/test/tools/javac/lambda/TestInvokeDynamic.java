@@ -356,7 +356,7 @@ public class TestInvokeDynamic
             if (lnt == null) {
                 throw new Error("No LineNumberTable attribute");
             }
-            if (lnt.line_number_table_length != 2) {
+            if (lnt.line_number_table_length != 3) {
                 throw new Error("Wrong number of entries in LineNumberTable");
             }
         } catch (Exception e) {
