@@ -228,6 +228,49 @@ getMlibEdgeHint(jint edgeHint) {
     }
 }
 
+/*
+ * We have to make sure that awt_setPixels can be safely applied to the given pair of
+ * raster and mlib image.
+ *
+ * In particular, make sure that
+ *  - dimension is the same
+ *  - number of channels in mlib image corresponds to the number of bands in the raster
+ *  - sample size in image and raster are the same.
+ *
+ * Returns:
+ *  -1 to indicate failure,
+ *   1 to indicate success
+ */
+static int setPixelsFormMlibImage(JNIEnv *env, RasterS_t *rasterP, mlib_image* img) {
+    if (rasterP->width != img->width || rasterP->height != img->height) {
+        /* dimension does not match */
+        return -1;
+    }
+
+    if (rasterP->numBands != img->channels) {
+        /* number of bands does not match */
+        return -1;
+    }
+
+    switch (rasterP->dataType) {
+    case BYTE_DATA_TYPE:
+        if (img->type != MLIB_BYTE) {
+            return -1;
+        }
+        break;
+    case SHORT_DATA_TYPE:
+        if (img->type != MLIB_SHORT && img->type != MLIB_USHORT) {
+            return -1;
+        }
+        break;
+    default:
+        /* awt_setPixels does not support such rasters */
+        return -1;
+    }
+
+    return awt_setPixels(env, rasterP, mlib_ImageGetData(img));
+}
+
 /***************************************************************************
  *                          External Functions                             *
  ***************************************************************************/
@@ -700,7 +743,9 @@ Java_sun_awt_image_ImagingLib_convolveRaster(JNIEnv *env, jobject this,
 
     /* Means that we couldn't write directly into the destination buffer */
     if (ddata == NULL) {
-        retStatus = awt_setPixels(env, dstRasterP, mlib_ImageGetData(dst));
+        if (storeRasterArray(env, srcRasterP, dstRasterP, dst) < 0) {
+            retStatus = setPixelsFormMlibImage(env, dstRasterP, dst);
+        }
     }
 
     /* Release the pinned memory */
@@ -1107,7 +1152,7 @@ fprintf(stderr,"Flags   : %d\n",dst->flags);
         /* Need to store it back into the array */
         if (storeRasterArray(env, srcRasterP, dstRasterP, dst) < 0) {
             (*env)->ExceptionClear(env); // Could not store the array, try another way
-            retStatus = awt_setPixels(env, dstRasterP, mlib_ImageGetData(dst));
+            retStatus = setPixelsFormMlibImage(env, dstRasterP, dst);
         }
     }
 
@@ -1433,6 +1478,14 @@ Java_sun_awt_image_ImagingLib_lookupByteBI(JNIEnv *env, jobject thisLib,
         retStatus = 0;
     }
 
+   /* Release the LUT */
+    for (i=0; i < lut_nbands; i++) {
+        (*env)->ReleasePrimitiveArrayCritical(env, jtable[i].jArray,
+            (jbyte *) jtable[i].table, JNI_ABORT);
+    }
+    free ((void *) jtable);
+    free ((void *) tbl);
+
     /*
      * Means that we couldn't write directly into
      * the destination buffer
@@ -1446,13 +1499,6 @@ Java_sun_awt_image_ImagingLib_lookupByteBI(JNIEnv *env, jobject thisLib,
         }
     }
 
-    /* Release the LUT */
-    for (i=0; i < lut_nbands; i++) {
-        (*env)->ReleasePrimitiveArrayCritical(env, jtable[i].jArray,
-            (jbyte *) jtable[i].table, JNI_ABORT);
-    }
-    free ((void *) jtable);
-    free ((void *) tbl);
 
     /* Release the pinned memory */
     freeArray(env, srcImageP, src, sdata, dstImageP, dst, ddata);
@@ -1670,18 +1716,20 @@ Java_sun_awt_image_ImagingLib_lookupByteRaster(JNIEnv *env,
         retStatus = 0;
     }
 
+    /* Release the LUT */
+    for (i=0; i < lut_nbands; i++) {
+        (*env)->ReleasePrimitiveArrayCritical(env, jtable[i].jArray,
+                                              (jbyte *) jtable[i].table, JNI_ABORT);
+    }
+
     /*
      * Means that we couldn't write directly into
      * the destination buffer
      */
     if (ddata == NULL) {
-        retStatus = awt_setPixels(env, dstRasterP, mlib_ImageGetData(dst));
-    }
-
-    /* Release the LUT */
-    for (i=0; i < lut_nbands; i++) {
-        (*env)->ReleasePrimitiveArrayCritical(env, jtable[i].jArray,
-                                              (jbyte *) jtable[i].table, JNI_ABORT);
+        if (storeRasterArray(env, srcRasterP, dstRasterP, dst) < 0) {
+            retStatus = setPixelsFormMlibImage(env, dstRasterP, dst);
+        }
     }
 
     /* Release the pinned memory */
@@ -2643,7 +2691,7 @@ storeImageArray(JNIEnv *env, BufImageS_t *srcP, BufImageS_t *dstP,
             }
         }
         else if (mlibImP->type == MLIB_SHORT) {
-            return awt_setPixels(env, rasterP, mlibImP->data);
+            return setPixelsFormMlibImage(env, rasterP, mlibImP);
         }
     }
     else {
