@@ -567,6 +567,7 @@ class Method : public Metadata {
   // checks method and its method holder
   bool is_final_method() const;
   bool is_final_method(AccessFlags class_access_flags) const;
+  bool is_default_method() const;
 
   // true if method needs no dynamic dispatch (final and/or no vtable entry)
   bool can_be_statically_bound() const;
@@ -804,6 +805,7 @@ class Method : public Metadata {
  private:
   void print_made_not_compilable(int comp_level, bool is_osr, bool report, const char* reason);
 
+ public:
   MethodCounters* get_method_counters(TRAPS) {
     if (_method_counters == NULL) {
       build_method_counters(this, CHECK_AND_CLEAR_NULL);
@@ -811,7 +813,6 @@ class Method : public Metadata {
     return _method_counters;
   }
 
- public:
   bool   is_not_c1_compilable() const         { return access_flags().is_not_c1_compilable();  }
   void  set_not_c1_compilable()               {       _access_flags.set_not_c1_compilable();   }
   void clear_not_c1_compilable()              {       _access_flags.clear_not_c1_compilable(); }
@@ -846,7 +847,7 @@ class Method : public Metadata {
 #endif
 
   // Helper routine used for method sorting
-  static void sort_methods(Array<Method*>* methods, bool idempotent = false);
+  static void sort_methods(Array<Method*>* methods, bool idempotent = false, bool set_idnums = true);
 
   // Deallocation function for redefine classes or if an error occurs
   void deallocate_contents(ClassLoaderData* loader_data);

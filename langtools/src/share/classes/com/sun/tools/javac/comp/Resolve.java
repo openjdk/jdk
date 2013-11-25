@@ -213,7 +213,7 @@ public class Resolve {
 
         int pos = 0;
         int mostSpecificPos = -1;
-        ListBuffer<JCDiagnostic> subDiags = ListBuffer.lb();
+        ListBuffer<JCDiagnostic> subDiags = new ListBuffer<>();
         for (Candidate c : currentResolutionContext.candidates) {
             if (currentResolutionContext.step != c.step ||
                     (c.isApplicable() && !verboseResolutionMode.contains(VerboseResolutionMode.APPLICABLE)) ||
@@ -424,13 +424,14 @@ public class Resolve {
          */
         private
         boolean isProtectedAccessible(Symbol sym, ClassSymbol c, Type site) {
+            Type newSite = site.hasTag(TYPEVAR) ? site.getUpperBound() : site;
             while (c != null &&
                    !(c.isSubClass(sym.owner, types) &&
                      (c.flags() & INTERFACE) == 0 &&
                      // In JLS 2e 6.6.2.1, the subclass restriction applies
                      // only to instance fields and methods -- types are excluded
                      // regardless of whether they are declared 'static' or not.
-                     ((sym.flags() & STATIC) != 0 || sym.kind == TYP || site.tsym.isSubClass(c, types))))
+                     ((sym.flags() & STATIC) != 0 || sym.kind == TYP || newSite.tsym.isSubClass(c, types))))
                 c = c.owner.enclClass();
             return c != null;
         }
@@ -783,7 +784,7 @@ public class Resolve {
     };
 
     List<Type> dummyArgs(int length) {
-        ListBuffer<Type> buf = ListBuffer.lb();
+        ListBuffer<Type> buf = new ListBuffer<>();
         for (int i = 0 ; i < length ; i++) {
             buf.append(Type.noType);
         }
@@ -2710,11 +2711,6 @@ public class Resolve {
                                   InferenceContext inferenceContext) {
         MethodResolutionPhase maxPhase = boxingAllowed ? VARARITY : BASIC;
 
-        if (site.hasTag(TYPEVAR)) {
-            return resolveMemberReference(pos, env, referenceTree, site.getUpperBound(),
-                    name, argtypes, typeargtypes, boxingAllowed, methodCheck, inferenceContext);
-        }
-
         site = types.capture(site);
 
         ReferenceLookupHelper boundLookupHelper;
@@ -3173,7 +3169,7 @@ public class Resolve {
     }
     //where
     private List<Type> pruneInterfaces(Type t) {
-        ListBuffer<Type> result = ListBuffer.lb();
+        ListBuffer<Type> result = new ListBuffer<>();
         for (Type t1 : types.interfaces(t)) {
             boolean shouldAdd = true;
             for (Type t2 : types.interfaces(t)) {
@@ -3286,7 +3282,7 @@ public class Resolve {
         if (argtypes == null || argtypes.isEmpty()) {
             return noArgs;
         } else {
-            ListBuffer<Object> diagArgs = ListBuffer.lb();
+            ListBuffer<Object> diagArgs = new ListBuffer<>();
             for (Type t : argtypes) {
                 if (t.hasTag(DEFERRED)) {
                     diagArgs.append(((DeferredAttr.DeferredType)t).tree);

@@ -96,7 +96,6 @@ import javax.print.attribute.standard.PrinterName;
 import javax.print.attribute.standard.JobMediaSheetsSupported;
 import javax.print.attribute.standard.PageRanges;
 import javax.print.attribute.Size2DSyntax;
-import javax.print.StreamPrintService;
 
 import sun.awt.Win32FontManager;
 
@@ -184,10 +183,6 @@ public class WPrinterJob extends RasterPrinterJob implements DisposerTarget {
     /**
      * Values must match those defined in wingdi.h & commdlg.h
      */
-    private static final int PD_ALLPAGES = 0x00000000;
-    private static final int PD_SELECTION = 0x00000001;
-    private static final int PD_PAGENUMS = 0x00000002;
-    private static final int PD_NOSELECTION = 0x00000004;
     private static final int PD_COLLATE = 0x00000010;
     private static final int PD_PRINTTOFILE = 0x00000020;
     private static final int DM_ORIENTATION   = 0x00000001;
@@ -440,7 +435,7 @@ public class WPrinterJob extends RasterPrinterJob implements DisposerTarget {
             throw new HeadlessException();
         }
 
-        if (getPrintService() instanceof StreamPrintService) {
+        if (!(getPrintService() instanceof Win32PrintService)) {
             return super.pageDialog(page);
         }
 
@@ -586,7 +581,7 @@ public class WPrinterJob extends RasterPrinterJob implements DisposerTarget {
             attributes = new HashPrintRequestAttributeSet();
         }
 
-        if (getPrintService() instanceof StreamPrintService) {
+        if (!(getPrintService() instanceof Win32PrintService)) {
             return super.printDialog(attributes);
         }
 
@@ -611,7 +606,7 @@ public class WPrinterJob extends RasterPrinterJob implements DisposerTarget {
     public void setPrintService(PrintService service)
         throws PrinterException {
         super.setPrintService(service);
-        if (service instanceof StreamPrintService) {
+        if (!(service instanceof Win32PrintService)) {
             return;
         }
         driverDoesMultipleCopies = false;
@@ -648,7 +643,7 @@ public class WPrinterJob extends RasterPrinterJob implements DisposerTarget {
             }
 
             myService = PrintServiceLookup.lookupDefaultPrintService();
-            if (myService != null) {
+            if (myService instanceof Win32PrintService) {
                 try {
                     setNativePrintServiceIfNeeded(myService.getName());
                 } catch (Exception e) {
@@ -1640,63 +1635,7 @@ public class WPrinterJob extends RasterPrinterJob implements DisposerTarget {
         }
     }
 
-    //returns 1-based index for "From" page
-    private final int getFromPageAttrib() {
-        if (attributes != null) {
-            PageRanges pageRangesAttr =
-                (PageRanges)attributes.get(PageRanges.class);
-            if (pageRangesAttr != null) {
-                int[][] range = pageRangesAttr.getMembers();
-                return range[0][0];
-            }
-        }
-        return getMinPageAttrib();
-    }
 
-    //returns 1-based index for "To" page
-    private final int getToPageAttrib() {
-        if (attributes != null) {
-            PageRanges pageRangesAttr =
-                (PageRanges)attributes.get(PageRanges.class);
-            if (pageRangesAttr != null) {
-                int[][] range = pageRangesAttr.getMembers();
-                return range[range.length-1][1];
-            }
-        }
-        return getMaxPageAttrib();
-    }
-
-    private final int getMinPageAttrib() {
-        if (attributes != null) {
-            SunMinMaxPage s =
-                (SunMinMaxPage)attributes.get(SunMinMaxPage.class);
-            if (s != null) {
-                return s.getMin();
-            }
-        }
-        return 1;
-    }
-
-    private final int getMaxPageAttrib() {
-        if (attributes != null) {
-            SunMinMaxPage s =
-                (SunMinMaxPage)attributes.get(SunMinMaxPage.class);
-            if (s != null) {
-                return s.getMax();
-            }
-        }
-
-        Pageable pageable = getPageable();
-        if (pageable != null) {
-            int numPages = pageable.getNumberOfPages();
-            if (numPages <= Pageable.UNKNOWN_NUMBER_OF_PAGES) {
-                numPages = MAX_UNKNOWN_PAGES;
-            }
-            return  ((numPages == 0) ? 1 : numPages);
-        }
-
-        return Integer.MAX_VALUE;
-    }
 
     private final boolean getDestAttrib() {
         return (mDestination != null);
@@ -1848,20 +1787,7 @@ public class WPrinterJob extends RasterPrinterJob implements DisposerTarget {
         return mAttMediaTray;
     }
 
-    private final int getSelectAttrib() {
-        if (attributes != null) {
-            SunPageSelection pages =
-                (SunPageSelection)attributes.get(SunPageSelection.class);
-            if (pages == SunPageSelection.RANGE) {
-                return PD_PAGENUMS;
-            } else if (pages == SunPageSelection.SELECTION) {
-                return PD_SELECTION;
-            } else if (pages ==  SunPageSelection.ALL) {
-                return PD_ALLPAGES;
-            }
-        }
-        return PD_NOSELECTION;
-    }
+
 
     private final boolean getPrintToFileEnabled() {
         SecurityManager security = System.getSecurityManager();

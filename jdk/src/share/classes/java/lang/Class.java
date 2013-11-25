@@ -48,6 +48,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Set;
 import java.util.Map;
@@ -90,7 +91,7 @@ import sun.reflect.misc.ReflectUtil;
  * <p> The following example uses a {@code Class} object to print the
  * class name of an object:
  *
- * <p> <blockquote><pre>
+ * <blockquote><pre>
  *     void printClassName(Object obj) {
  *         System.out.println("The class of " + obj +
  *                            " is " + obj.getClass().getName());
@@ -102,7 +103,7 @@ import sun.reflect.misc.ReflectUtil;
  * <cite>The Java&trade; Language Specification</cite>.
  * For example:
  *
- * <p> <blockquote>
+ * <blockquote>
  *     {@code System.out.println("The name of class Foo is: "+Foo.class.getName());}
  * </blockquote>
  *
@@ -1208,9 +1209,25 @@ public final class Class<T> implements java.io.Serializable,
      * type, or void,then this method returns null.
      *
      * @return the declaring class for this class
+     * @throws SecurityException
+     *         If a security manager, <i>s</i>, is present and the caller's
+     *         class loader is not the same as or an ancestor of the class
+     *         loader for the declaring class and invocation of {@link
+     *         SecurityManager#checkPackageAccess s.checkPackageAccess()}
+     *         denies access to the package of the declaring class
      * @since JDK1.1
      */
-    public native Class<?> getDeclaringClass();
+    @CallerSensitive
+    public Class<?> getDeclaringClass() throws SecurityException {
+        final Class<?> candidate = getDeclaringClass0();
+
+        if (candidate != null)
+            candidate.checkPackageAccess(
+                    ClassLoader.getClassLoader(Reflection.getCallerClass()), true);
+        return candidate;
+    }
+
+    private native Class<?> getDeclaringClass0();
 
 
     /**
@@ -1554,6 +1571,10 @@ public final class Class<T> implements java.io.Serializable,
      * <p> If this {@code Class} object represents a primitive type or void,
      * then the returned array has length 0.
      *
+     * <p> Static methods declared in superinterfaces of the class or interface
+     * represented by this {@code Class} object are not considered members of
+     * the class or interface.
+     *
      * <p> The elements in the returned array are not sorted and are not in any
      * particular order.
      *
@@ -1712,6 +1733,10 @@ public final class Class<T> implements java.io.Serializable,
      * <p> If this {@code Class} object represents an array type, then this
      * method does not find the {@code clone()} method.
      *
+     * <p> Static methods declared in superinterfaces of the class or interface
+     * represented by this {@code Class} object are not considered members of
+     * the class or interface.
+     *
      * @param name the name of the method
      * @param parameterTypes the list of parameters
      * @return the {@code Method} object that matches the specified
@@ -1735,7 +1760,7 @@ public final class Class<T> implements java.io.Serializable,
     public Method getMethod(String name, Class<?>... parameterTypes)
         throws NoSuchMethodException, SecurityException {
         checkMemberAccess(Member.PUBLIC, Reflection.getCallerClass(), true);
-        Method method = getMethod0(name, parameterTypes);
+        Method method = getMethod0(name, parameterTypes, true);
         if (method == null) {
             throw new NoSuchMethodException(getName() + "." + name + argumentTypesToString(parameterTypes));
         }
@@ -2370,11 +2395,14 @@ public final class Class<T> implements java.io.Serializable,
         private static final long reflectionDataOffset;
         // offset of Class.annotationType instance field
         private static final long annotationTypeOffset;
+        // offset of Class.annotationData instance field
+        private static final long annotationDataOffset;
 
         static {
             Field[] fields = Class.class.getDeclaredFields0(false); // bypass caches
             reflectionDataOffset = objectFieldOffset(fields, "reflectionData");
             annotationTypeOffset = objectFieldOffset(fields, "annotationType");
+            annotationDataOffset = objectFieldOffset(fields, "annotationData");
         }
 
         private static long objectFieldOffset(Field[] fields, String fieldName) {
@@ -2396,6 +2424,12 @@ public final class Class<T> implements java.io.Serializable,
                                              AnnotationType newType) {
             return unsafe.compareAndSwapObject(clazz, annotationTypeOffset, oldType, newType);
         }
+
+        static <T> boolean casAnnotationData(Class<?> clazz,
+                                             AnnotationData oldData,
+                                             AnnotationData newData) {
+            return unsafe.compareAndSwapObject(clazz, annotationDataOffset, oldData, newData);
+        }
     }
 
     /**
@@ -2406,7 +2440,7 @@ public final class Class<T> implements java.io.Serializable,
     private static boolean useCaches = true;
 
     // reflection data that might get invalidated when JVM TI RedefineClasses() is called
-    static class ReflectionData<T> {
+    private static class ReflectionData<T> {
         volatile Field[] declaredFields;
         volatile Field[] publicFields;
         volatile Method[] declaredMethods;
@@ -2701,6 +2735,14 @@ public final class Class<T> implements java.io.Serializable,
             }
         }
 
+        void addAllNonStatic(Method[] methods) {
+            for (Method candidate : methods) {
+                if (!Modifier.isStatic(candidate.getModifiers())) {
+                    add(candidate);
+                }
+            }
+        }
+
         int length() {
             return length;
         }
@@ -2771,7 +2813,7 @@ public final class Class<T> implements java.io.Serializable,
         MethodArray inheritedMethods = new MethodArray();
         Class<?>[] interfaces = getInterfaces();
         for (int i = 0; i < interfaces.length; i++) {
-            inheritedMethods.addAll(interfaces[i].privateGetPublicMethods());
+            inheritedMethods.addAllNonStatic(interfaces[i].privateGetPublicMethods());
         }
         if (!isInterface()) {
             Class<?> c = getSuperclass();
@@ -2874,7 +2916,7 @@ public final class Class<T> implements java.io.Serializable,
     }
 
 
-    private Method getMethod0(String name, Class<?>[] parameterTypes) {
+    private Method getMethod0(String name, Class<?>[] parameterTypes, boolean includeStaticMethods) {
         // Note: the intent is that the search algorithm this routine
         // uses be equivalent to the ordering imposed by
         // privateGetPublicMethods(). It fetches only the declared
@@ -2887,25 +2929,23 @@ public final class Class<T> implements java.io.Serializable,
         if ((res = searchMethods(privateGetDeclaredMethods(true),
                                  name,
                                  parameterTypes)) != null) {
-            return res;
+            if (includeStaticMethods || !Modifier.isStatic(res.getModifiers()))
+                return res;
         }
         // Search superclass's methods
         if (!isInterface()) {
             Class<? super T> c = getSuperclass();
             if (c != null) {
-                if ((res = c.getMethod0(name, parameterTypes)) != null) {
+                if ((res = c.getMethod0(name, parameterTypes, true)) != null) {
                     return res;
                 }
             }
         }
         // Search superinterfaces' methods
         Class<?>[] interfaces = getInterfaces();
-        for (int i = 0; i < interfaces.length; i++) {
-            Class<?> c = interfaces[i];
-            if ((res = c.getMethod0(name, parameterTypes)) != null) {
+        for (Class<?> c : interfaces)
+            if ((res = c.getMethod0(name, parameterTypes, false)) != null)
                 return res;
-            }
-        }
         // Not found
         return null;
     }
@@ -3253,8 +3293,7 @@ public final class Class<T> implements java.io.Serializable,
     public <A extends Annotation> A getAnnotation(Class<A> annotationClass) {
         Objects.requireNonNull(annotationClass);
 
-        initAnnotationsIfNecessary();
-        return (A) annotations.get(annotationClass);
+        return (A) annotationData().annotations.get(annotationClass);
     }
 
     /**
@@ -3275,16 +3314,17 @@ public final class Class<T> implements java.io.Serializable,
     public <A extends Annotation> A[] getAnnotationsByType(Class<A> annotationClass) {
         Objects.requireNonNull(annotationClass);
 
-        initAnnotationsIfNecessary();
-        return AnnotationSupport.getMultipleAnnotations(annotations, annotationClass);
+        AnnotationData annotationData = annotationData();
+        return AnnotationSupport.getAssociatedAnnotations(annotationData.declaredAnnotations,
+                                                          this,
+                                                          annotationClass);
     }
 
     /**
      * @since 1.5
      */
     public Annotation[] getAnnotations() {
-        initAnnotationsIfNecessary();
-        return AnnotationParser.toArray(annotations);
+        return AnnotationParser.toArray(annotationData().annotations);
     }
 
     /**
@@ -3296,8 +3336,7 @@ public final class Class<T> implements java.io.Serializable,
     public <A extends Annotation> A getDeclaredAnnotation(Class<A> annotationClass) {
         Objects.requireNonNull(annotationClass);
 
-        initAnnotationsIfNecessary();
-        return (A) declaredAnnotations.get(annotationClass);
+        return (A) annotationData().declaredAnnotations.get(annotationClass);
     }
 
     /**
@@ -3308,52 +3347,86 @@ public final class Class<T> implements java.io.Serializable,
     public <A extends Annotation> A[] getDeclaredAnnotationsByType(Class<A> annotationClass) {
         Objects.requireNonNull(annotationClass);
 
-        initAnnotationsIfNecessary();
-        return AnnotationSupport.getMultipleAnnotations(declaredAnnotations, annotationClass);
+        return AnnotationSupport.getDirectlyAndIndirectlyPresent(annotationData().declaredAnnotations,
+                                                                 annotationClass);
     }
 
     /**
      * @since 1.5
      */
     public Annotation[] getDeclaredAnnotations()  {
-        initAnnotationsIfNecessary();
-        return AnnotationParser.toArray(declaredAnnotations);
+        return AnnotationParser.toArray(annotationData().declaredAnnotations);
+    }
+
+    // annotation data that might get invalidated when JVM TI RedefineClasses() is called
+    private static class AnnotationData {
+        final Map<Class<? extends Annotation>, Annotation> annotations;
+        final Map<Class<? extends Annotation>, Annotation> declaredAnnotations;
+
+        // Value of classRedefinedCount when we created this AnnotationData instance
+        final int redefinedCount;
+
+        AnnotationData(Map<Class<? extends Annotation>, Annotation> annotations,
+                       Map<Class<? extends Annotation>, Annotation> declaredAnnotations,
+                       int redefinedCount) {
+            this.annotations = annotations;
+            this.declaredAnnotations = declaredAnnotations;
+            this.redefinedCount = redefinedCount;
+        }
     }
 
     // Annotations cache
-    private transient Map<Class<? extends Annotation>, Annotation> annotations;
-    private transient Map<Class<? extends Annotation>, Annotation> declaredAnnotations;
-    // Value of classRedefinedCount when we last cleared the cached annotations and declaredAnnotations fields
-    private  transient int lastAnnotationsRedefinedCount = 0;
+    @SuppressWarnings("UnusedDeclaration")
+    private volatile transient AnnotationData annotationData;
 
-    // Clears cached values that might possibly have been obsoleted by
-    // a class redefinition.
-    private void clearAnnotationCachesOnClassRedefinition() {
-        if (lastAnnotationsRedefinedCount != classRedefinedCount) {
-            annotations = declaredAnnotations = null;
-            lastAnnotationsRedefinedCount = classRedefinedCount;
+    private AnnotationData annotationData() {
+        while (true) { // retry loop
+            AnnotationData annotationData = this.annotationData;
+            int classRedefinedCount = this.classRedefinedCount;
+            if (annotationData != null &&
+                annotationData.redefinedCount == classRedefinedCount) {
+                return annotationData;
+            }
+            // null or stale annotationData -> optimistically create new instance
+            AnnotationData newAnnotationData = createAnnotationData(classRedefinedCount);
+            // try to install it
+            if (Atomic.casAnnotationData(this, annotationData, newAnnotationData)) {
+                // successfully installed new AnnotationData
+                return newAnnotationData;
+            }
         }
     }
 
-    private synchronized void initAnnotationsIfNecessary() {
-        clearAnnotationCachesOnClassRedefinition();
-        if (annotations != null)
-            return;
-        declaredAnnotations = AnnotationParser.parseAnnotations(
-            getRawAnnotations(), getConstantPool(), this);
+    private AnnotationData createAnnotationData(int classRedefinedCount) {
+        Map<Class<? extends Annotation>, Annotation> declaredAnnotations =
+            AnnotationParser.parseAnnotations(getRawAnnotations(), getConstantPool(), this);
         Class<?> superClass = getSuperclass();
-        if (superClass == null) {
+        Map<Class<? extends Annotation>, Annotation> annotations = null;
+        if (superClass != null) {
+            Map<Class<? extends Annotation>, Annotation> superAnnotations =
+                superClass.annotationData().annotations;
+            for (Map.Entry<Class<? extends Annotation>, Annotation> e : superAnnotations.entrySet()) {
+                Class<? extends Annotation> annotationClass = e.getKey();
+                if (AnnotationType.getInstance(annotationClass).isInherited()) {
+                    if (annotations == null) { // lazy construction
+                        annotations = new LinkedHashMap<>((Math.max(
+                                declaredAnnotations.size(),
+                                Math.min(12, declaredAnnotations.size() + superAnnotations.size())
+                            ) * 4 + 2) / 3
+                        );
+                    }
+                    annotations.put(annotationClass, e.getValue());
+                }
+            }
+        }
+        if (annotations == null) {
+            // no inherited annotations -> share the Map with declaredAnnotations
             annotations = declaredAnnotations;
         } else {
-            annotations = new HashMap<>();
-            superClass.initAnnotationsIfNecessary();
-            for (Map.Entry<Class<? extends Annotation>, Annotation> e : superClass.annotations.entrySet()) {
-                Class<? extends Annotation> annotationClass = e.getKey();
-                if (AnnotationType.getInstance(annotationClass).isInherited())
-                    annotations.put(annotationClass, e.getValue());
-            }
+            // at least one inherited annotation -> declared may override inherited
             annotations.putAll(declaredAnnotations);
         }
+        return new AnnotationData(annotations, declaredAnnotations, classRedefinedCount);
     }
 
     // Annotation types cache their internal (AnnotationType) form
@@ -3369,22 +3442,30 @@ public final class Class<T> implements java.io.Serializable,
         return annotationType;
     }
 
+    Map<Class<? extends Annotation>, Annotation> getDeclaredAnnotationMap() {
+        return annotationData().declaredAnnotations;
+    }
+
     /* Backing store of user-defined values pertaining to this class.
      * Maintained by the ClassValue class.
      */
     transient ClassValue.ClassValueMap classValueMap;
 
     /**
-     * Returns an AnnotatedType object that represents the use of a type to specify
-     * the superclass of the entity represented by this Class. (The <em>use</em> of type
-     * Foo to specify the superclass in '... extends Foo' is distinct from the
-     * <em>declaration</em> of type Foo.)
+     * Returns an {@code AnnotatedType} object that represents the use of a
+     * type to specify the superclass of the entity represented by this {@code
+     * Class} object. (The <em>use</em> of type Foo to specify the superclass
+     * in '...  extends Foo' is distinct from the <em>declaration</em> of type
+     * Foo.)
      *
-     * If this Class represents a class type whose declaration does not explicitly
-     * indicate an annotated superclass, the return value is null.
+     * <p> If this {@code Class} object represents a type whose declaration
+     * does not explicitly indicate an annotated superclass, then the return
+     * value is an {@code AnnotatedType} object representing an element with no
+     * annotations.
      *
-     * If this Class represents either the Object class, an interface type, an
-     * array type, a primitive type, or void, the return value is null.
+     * <p> If this {@code Class} represents either the {@code Object} class, an
+     * interface type, an array type, a primitive type, or void, the return
+     * value is {@code null}.
      *
      * @return an object representing the superclass
      * @since 1.8
@@ -3402,29 +3483,32 @@ public final class Class<T> implements java.io.Serializable,
     }
 
     /**
-     * Returns an array of AnnotatedType objects that represent the use of types to
-     * specify superinterfaces of the entity represented by this Class. (The <em>use</em>
-     * of type Foo to specify a superinterface in '... implements Foo' is
-     * distinct from the <em>declaration</em> of type Foo.)
+     * Returns an array of {@code AnnotatedType} objects that represent the use
+     * of types to specify superinterfaces of the entity represented by this
+     * {@code Class} object. (The <em>use</em> of type Foo to specify a
+     * superinterface in '... implements Foo' is distinct from the
+     * <em>declaration</em> of type Foo.)
      *
-     * If this Class represents a class, the return value is an array
-     * containing objects representing the uses of interface types to specify
-     * interfaces implemented by the class. The order of the objects in the
-     * array corresponds to the order of the interface types used in the
-     * 'implements' clause of the declaration of this Class.
-     *
-     * If this Class represents an interface, the return value is an array
-     * containing objects representing the uses of interface types to specify
-     * interfaces directly extended by the interface. The order of the objects in
+     * <p> If this {@code Class} object represents a class, the return value is
+     * an array containing objects representing the uses of interface types to
+     * specify interfaces implemented by the class. The order of the objects in
      * the array corresponds to the order of the interface types used in the
-     * 'extends' clause of the declaration of this Class.
+     * 'implements' clause of the declaration of this {@code Class} object.
      *
-     * If this Class represents a class or interface whose declaration does not
-     * explicitly indicate any annotated superinterfaces, the return value is an
+     * <p> If this {@code Class} object represents an interface, the return
+     * value is an array containing objects representing the uses of interface
+     * types to specify interfaces directly extended by the interface. The
+     * order of the objects in the array corresponds to the order of the
+     * interface types used in the 'extends' clause of the declaration of this
+     * {@code Class} object.
+     *
+     * <p> If this {@code Class} object represents a class or interface whose
+     * declaration does not explicitly indicate any annotated superinterfaces,
+     * the return value is an array of length 0.
+     *
+     * <p> If this {@code Class} object represents either the {@code Object}
+     * class, an array type, a primitive type, or void, the return value is an
      * array of length 0.
-     *
-     * If this Class represents either the Object class, an array type, a
-     * primitive type, or void, the return value is an array of length 0.
      *
      * @return an array representing the superinterfaces
      * @since 1.8

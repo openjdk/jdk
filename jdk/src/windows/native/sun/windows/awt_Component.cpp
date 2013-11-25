@@ -281,7 +281,7 @@ AwtComponent::~AwtComponent()
 void AwtComponent::Dispose()
 {
     // NOTE: in case the component/toplevel was focused, Java should
-    // have already taken care of proper transfering it or clearing.
+    // have already taken care of proper transferring it or clearing.
 
     if (m_hdwp != NULL) {
     // end any deferred window positioning, regardless
@@ -2164,7 +2164,7 @@ void AwtComponent::PaintUpdateRgn(const RECT *insets)
     // Fix 4530093: Don't Validate if can't actually paint
     if (m_peerObject == NULL || !m_callbacksEnabled) {
 
-        // Fix 4745222: If we dont ValidateRgn,  windows will keep sending
+        // Fix 4745222: If we don't ValidateRgn,  windows will keep sending
         // WM_PAINT messages until we do. This causes java to go into
         // a tight loop that increases CPU to 100% and starves main
         // thread which needs to complete initialization, but cant.

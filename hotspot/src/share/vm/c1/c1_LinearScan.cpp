@@ -75,9 +75,9 @@
 
 // Map BasicType to spill size in 32-bit words, matching VMReg's notion of words
 #ifdef _LP64
-static int type2spill_size[T_CONFLICT+1]={ -1, 0, 0, 0, 1, 1, 1, 2, 1, 1, 1, 2, 2, 2, 0, 1, -1};
+static int type2spill_size[T_CONFLICT+1]={ -1, 0, 0, 0, 1, 1, 1, 2, 1, 1, 1, 2, 2, 2, 0, 2,  1, 2, 1, -1};
 #else
-static int type2spill_size[T_CONFLICT+1]={ -1, 0, 0, 0, 1, 1, 1, 2, 1, 1, 1, 2, 1, 1, 0, 1, -1};
+static int type2spill_size[T_CONFLICT+1]={ -1, 0, 0, 0, 1, 1, 1, 2, 1, 1, 1, 2, 1, 1, 0, 1, -1, 1, 1, -1};
 #endif
 
 
@@ -1138,8 +1138,10 @@ IntervalUseKind LinearScan::use_kind_of_input_operand(LIR_Op* op, LIR_Opr opr) {
         }
       }
     }
-
-  } else if (opr_type != T_LONG) {
+    // We want to sometimes use logical operations on pointers, in particular in GC barriers.
+    // Since 64bit logical operations do not current support operands on stack, we have to make sure
+    // T_OBJECT doesn't get spilled along with T_LONG.
+  } else if (opr_type != T_LONG LP64_ONLY(&& opr_type != T_OBJECT)) {
     // integer instruction (note: long operands must always be in register)
     switch (op->code()) {
       case lir_cmp:

@@ -32,6 +32,7 @@ import org.ietf.jgss.*;
  * functionalities not defined by {@code org.ietf.jgss.GSSCredential}.
  * @since 1.8
  */
+@jdk.Exported
 public interface ExtendedGSSCredential extends GSSCredential {
     /**
      * Impersonates a principal. In Kerberos, this can be implemented

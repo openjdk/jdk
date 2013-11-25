@@ -106,7 +106,7 @@ HS_DTRACE_PROBE_DECL5(hotspot, class__initialization__end,
       len = name->utf8_length();                                 \
     }                                                            \
     HS_DTRACE_PROBE4(hotspot, class__initialization__##type,     \
-      data, len, (clss)->class_loader(), thread_type);           \
+      data, len, SOLARIS_ONLY((void *))(clss)->class_loader(), thread_type);           \
   }
 
 #define DTRACE_CLASSINIT_PROBE_WAIT(type, clss, thread_type, wait) \
@@ -119,7 +119,7 @@ HS_DTRACE_PROBE_DECL5(hotspot, class__initialization__end,
       len = name->utf8_length();                                 \
     }                                                            \
     HS_DTRACE_PROBE5(hotspot, class__initialization__##type,     \
-      data, len, (clss)->class_loader(), thread_type, wait);     \
+      data, len, SOLARIS_ONLY((void *))(clss)->class_loader(), thread_type, wait);     \
   }
 #else /* USDT2 */
 
@@ -238,6 +238,13 @@ void InstanceKlass::copy_method_ordering(intArray* m, TRAPS) {
   }
 }
 
+// create a new array of vtable_indices for default methods
+Array<int>* InstanceKlass::create_new_default_vtable_indices(int len, TRAPS) {
+  Array<int>* vtable_indices = MetadataFactory::new_array<int>(class_loader_data(), len, CHECK_NULL);
+  assert(default_vtable_indices() == NULL, "only create once");
+  set_default_vtable_indices(vtable_indices);
+  return vtable_indices;
+}
 
 InstanceKlass::InstanceKlass(int vtable_len,
                              int itable_len,
@@ -263,6 +270,8 @@ InstanceKlass::InstanceKlass(int vtable_len,
   set_array_klasses(NULL);
   set_methods(NULL);
   set_method_ordering(NULL);
+  set_default_methods(NULL);
+  set_default_vtable_indices(NULL);
   set_local_interfaces(NULL);
   set_transitive_interfaces(NULL);
   init_implementor();
@@ -311,7 +320,8 @@ InstanceKlass::InstanceKlass(int vtable_len,
 
 void InstanceKlass::deallocate_methods(ClassLoaderData* loader_data,
                                        Array<Method*>* methods) {
-  if (methods != NULL && methods != Universe::the_empty_method_array()) {
+  if (methods != NULL && methods != Universe::the_empty_method_array() &&
+      !methods->is_shared()) {
     for (int i = 0; i < methods->length(); i++) {
       Method* method = methods->at(i);
       if (method == NULL) continue;  // maybe null if error processing
@@ -335,13 +345,14 @@ void InstanceKlass::deallocate_interfaces(ClassLoaderData* loader_data,
     // check that the interfaces don't come from super class
     Array<Klass*>* sti = (super_klass == NULL) ? NULL :
                     InstanceKlass::cast(super_klass)->transitive_interfaces();
-    if (ti != sti) {
+    if (ti != sti && ti != NULL && !ti->is_shared()) {
       MetadataFactory::free_array<Klass*>(loader_data, ti);
     }
   }
 
   // local interfaces can be empty
-  if (local_interfaces != Universe::the_empty_klass_array()) {
+  if (local_interfaces != Universe::the_empty_klass_array() &&
+      local_interfaces != NULL && !local_interfaces->is_shared()) {
     MetadataFactory::free_array<Klass*>(loader_data, local_interfaces);
   }
 }
@@ -371,16 +382,37 @@ void InstanceKlass::deallocate_contents(ClassLoaderData* loader_data) {
   deallocate_methods(loader_data, methods());
   set_methods(NULL);
 
-  if (method_ordering() != Universe::the_empty_int_array()) {
+  if (method_ordering() != NULL &&
+      method_ordering() != Universe::the_empty_int_array() &&
+      !method_ordering()->is_shared()) {
     MetadataFactory::free_array<int>(loader_data, method_ordering());
   }
   set_method_ordering(NULL);
 
+  // default methods can be empty
+  if (default_methods() != NULL &&
+      default_methods() != Universe::the_empty_method_array() &&
+      !default_methods()->is_shared()) {
+    MetadataFactory::free_array<Method*>(loader_data, default_methods());
+  }
+  // Do NOT deallocate the default methods, they are owned by superinterfaces.
+  set_default_methods(NULL);
+
+  // default methods vtable indices can be empty
+  if (default_vtable_indices() != NULL &&
+      !default_vtable_indices()->is_shared()) {
+    MetadataFactory::free_array<int>(loader_data, default_vtable_indices());
+  }
+  set_default_vtable_indices(NULL);
+
+
   // This array is in Klass, but remove it with the InstanceKlass since
   // this place would be the only caller and it can share memory with transitive
   // interfaces.
-  if (secondary_supers() != Universe::the_empty_klass_array() &&
-      secondary_supers() != transitive_interfaces()) {
+  if (secondary_supers() != NULL &&
+      secondary_supers() != Universe::the_empty_klass_array() &&
+      secondary_supers() != transitive_interfaces() &&
+      !secondary_supers()->is_shared()) {
     MetadataFactory::free_array<Klass*>(loader_data, secondary_supers());
   }
   set_secondary_supers(NULL);
@@ -389,24 +421,32 @@ void InstanceKlass::deallocate_contents(ClassLoaderData* loader_data) {
   set_transitive_interfaces(NULL);
   set_local_interfaces(NULL);
 
-  MetadataFactory::free_array<jushort>(loader_data, fields());
+  if (fields() != NULL && !fields()->is_shared()) {
+    MetadataFactory::free_array<jushort>(loader_data, fields());
+  }
   set_fields(NULL, 0);
 
   // If a method from a redefined class is using this constant pool, don't
   // delete it, yet.  The new class's previous version will point to this.
   if (constants() != NULL) {
     assert (!constants()->on_stack(), "shouldn't be called if anything is onstack");
-    MetadataFactory::free_metadata(loader_data, constants());
+    if (!constants()->is_shared()) {
+      MetadataFactory::free_metadata(loader_data, constants());
+    }
     set_constants(NULL);
   }
 
-  if (inner_classes() != Universe::the_empty_short_array()) {
+  if (inner_classes() != NULL &&
+      inner_classes() != Universe::the_empty_short_array() &&
+      !inner_classes()->is_shared()) {
     MetadataFactory::free_array<jushort>(loader_data, inner_classes());
   }
   set_inner_classes(NULL);
 
-  // We should deallocate the Annotations instance
-  MetadataFactory::free_metadata(loader_data, annotations());
+  // We should deallocate the Annotations instance if it's not in shared spaces.
+  if (annotations() != NULL && !annotations()->is_shared()) {
+    MetadataFactory::free_metadata(loader_data, annotations());
+  }
   set_annotations(NULL);
 }
 
@@ -456,15 +496,29 @@ objArrayOop InstanceKlass::signers() const {
   return java_lang_Class::signers(java_mirror());
 }
 
-volatile oop InstanceKlass::init_lock() const {
+oop InstanceKlass::init_lock() const {
   // return the init lock from the mirror
-  return java_lang_Class::init_lock(java_mirror());
+  oop lock = java_lang_Class::init_lock(java_mirror());
+  assert((oop)lock != NULL || !is_not_initialized(), // initialized or in_error state
+         "only fully initialized state can have a null lock");
+  return lock;
+}
+
+// Set the initialization lock to null so the object can be GC'ed.  Any racing
+// threads to get this lock will see a null lock and will not lock.
+// That's okay because they all check for initialized state after getting
+// the lock and return.
+void InstanceKlass::fence_and_clear_init_lock() {
+  // make sure previous stores are all done, notably the init_state.
+  OrderAccess::storestore();
+  java_lang_Class::set_init_lock(java_mirror(), NULL);
+  assert(!is_not_initialized(), "class must be initialized now");
 }
 
 void InstanceKlass::eager_initialize_impl(instanceKlassHandle this_oop) {
   EXCEPTION_MARK;
-  volatile oop init_lock = this_oop->init_lock();
-  ObjectLocker ol(init_lock, THREAD);
+  oop init_lock = this_oop->init_lock();
+  ObjectLocker ol(init_lock, THREAD, init_lock != NULL);
 
   // abort if someone beat us to the initialization
   if (!this_oop->is_not_initialized()) return;  // note: not equivalent to is_initialized()
@@ -483,6 +537,7 @@ void InstanceKlass::eager_initialize_impl(instanceKlassHandle this_oop) {
   } else {
     // linking successfull, mark class as initialized
     this_oop->set_init_state (fully_initialized);
+    this_oop->fence_and_clear_init_lock();
     // trace
     if (TraceClassInitialization) {
       ResourceMark rm(THREAD);
@@ -608,8 +663,8 @@ bool InstanceKlass::link_class_impl(
 
   // verification & rewriting
   {
-    volatile oop init_lock = this_oop->init_lock();
-    ObjectLocker ol(init_lock, THREAD);
+    oop init_lock = this_oop->init_lock();
+    ObjectLocker ol(init_lock, THREAD, init_lock != NULL);
     // rewritten will have been set if loader constraint error found
     // on an earlier link attempt
     // don't verify or rewrite if already rewritten
@@ -731,8 +786,8 @@ void InstanceKlass::initialize_impl(instanceKlassHandle this_oop, TRAPS) {
   // refer to the JVM book page 47 for description of steps
   // Step 1
   {
-    volatile oop init_lock = this_oop->init_lock();
-    ObjectLocker ol(init_lock, THREAD);
+    oop init_lock = this_oop->init_lock();
+    ObjectLocker ol(init_lock, THREAD, init_lock != NULL);
 
     Thread *self = THREAD; // it's passed the current thread
 
@@ -879,9 +934,10 @@ void InstanceKlass::set_initialization_state_and_notify(ClassState state, TRAPS)
 }
 
 void InstanceKlass::set_initialization_state_and_notify_impl(instanceKlassHandle this_oop, ClassState state, TRAPS) {
-  volatile oop init_lock = this_oop->init_lock();
-  ObjectLocker ol(init_lock, THREAD);
+  oop init_lock = this_oop->init_lock();
+  ObjectLocker ol(init_lock, THREAD, init_lock != NULL);
   this_oop->set_init_state(state);
+  this_oop->fence_and_clear_init_lock();
   ol.notify_all(CHECK);
 }
 
@@ -1354,32 +1410,44 @@ static int binary_search(Array<Method*>* methods, Symbol* name) {
   return -1;
 }
 
+// find_method looks up the name/signature in the local methods array
 Method* InstanceKlass::find_method(Symbol* name, Symbol* signature) const {
   return InstanceKlass::find_method(methods(), name, signature);
 }
 
+// find_method looks up the name/signature in the local methods array
 Method* InstanceKlass::find_method(
+    Array<Method*>* methods, Symbol* name, Symbol* signature) {
+  int hit = find_method_index(methods, name, signature);
+  return hit >= 0 ? methods->at(hit): NULL;
+}
+
+// Used directly for default_methods to find the index into the
+// default_vtable_indices, and indirectly by find_method
+// find_method_index looks in the local methods array to return the index
+// of the matching name/signature
+int InstanceKlass::find_method_index(
     Array<Method*>* methods, Symbol* name, Symbol* signature) {
   int hit = binary_search(methods, name);
   if (hit != -1) {
     Method* m = methods->at(hit);
     // Do linear search to find matching signature.  First, quick check
     // for common case
-    if (m->signature() == signature) return m;
+    if (m->signature() == signature) return hit;
     // search downwards through overloaded methods
     int i;
     for (i = hit - 1; i >= 0; --i) {
         Method* m = methods->at(i);
         assert(m->is_method(), "must be method");
         if (m->name() != name) break;
-        if (m->signature() == signature) return m;
+        if (m->signature() == signature) return i;
     }
     // search upwards
     for (i = hit + 1; i < methods->length(); ++i) {
         Method* m = methods->at(i);
         assert(m->is_method(), "must be method");
         if (m->name() != name) break;
-        if (m->signature() == signature) return m;
+        if (m->signature() == signature) return i;
     }
     // not found
 #ifdef ASSERT
@@ -1387,9 +1455,8 @@ Method* InstanceKlass::find_method(
     assert(index == -1, err_msg("binary search should have found entry %d", index));
 #endif
   }
-  return NULL;
+  return -1;
 }
-
 int InstanceKlass::find_method_by_name(Symbol* name, int* end) {
   return find_method_by_name(methods(), name, end);
 }
@@ -1408,6 +1475,7 @@ int InstanceKlass::find_method_by_name(
   return -1;
 }
 
+// lookup_method searches both the local methods array and all superclasses methods arrays
 Method* InstanceKlass::uncached_lookup_method(Symbol* name, Symbol* signature) const {
   Klass* klass = const_cast<InstanceKlass*>(this);
   while (klass != NULL) {
@@ -1418,7 +1486,24 @@ Method* InstanceKlass::uncached_lookup_method(Symbol* name, Symbol* signature) c
   return NULL;
 }
 
+// lookup a method in the default methods list then in all transitive interfaces
+// Do NOT return private or static methods
+Method* InstanceKlass::lookup_method_in_ordered_interfaces(Symbol* name,
+                                                         Symbol* signature) const {
+  Method* m = NULL;
+  if (default_methods() != NULL) {
+    m = find_method(default_methods(), name, signature);
+  }
+  // Look up interfaces
+  if (m == NULL) {
+    m = lookup_method_in_all_interfaces(name, signature);
+  }
+  return m;
+}
+
 // lookup a method in all the interfaces that this class implements
+// Do NOT return private or static methods, new in JDK8 which are not externally visible
+// They should only be found in the initial InterfaceMethodRef
 Method* InstanceKlass::lookup_method_in_all_interfaces(Symbol* name,
                                                          Symbol* signature) const {
   Array<Klass*>* all_ifs = transitive_interfaces();
@@ -1427,7 +1512,7 @@ Method* InstanceKlass::lookup_method_in_all_interfaces(Symbol* name,
   for (int i = 0; i < num_ifs; i++) {
     ik = InstanceKlass::cast(all_ifs->at(i));
     Method* m = ik->lookup_method(name, signature);
-    if (m != NULL) {
+    if (m != NULL && m->is_public() && !m->is_static()) {
       return m;
     }
   }
@@ -2303,20 +2388,43 @@ void InstanceKlass::set_source_debug_extension(char* array, int length) {
 }
 
 address InstanceKlass::static_field_addr(int offset) {
-  return (address)(offset + InstanceMirrorKlass::offset_of_static_fields() + (intptr_t)java_mirror());
+  return (address)(offset + InstanceMirrorKlass::offset_of_static_fields() + cast_from_oop<intptr_t>(java_mirror()));
 }
 
 
 const char* InstanceKlass::signature_name() const {
+  int hash_len = 0;
+  char hash_buf[40];
+
+  // If this is an anonymous class, append a hash to make the name unique
+  if (is_anonymous()) {
+    assert(EnableInvokeDynamic, "EnableInvokeDynamic was not set.");
+    intptr_t hash = (java_mirror() != NULL) ? java_mirror()->identity_hash() : 0;
+    sprintf(hash_buf, "/" UINTX_FORMAT, (uintx)hash);
+    hash_len = (int)strlen(hash_buf);
+  }
+
+  // Get the internal name as a c string
   const char* src = (const char*) (name()->as_C_string());
   const int src_length = (int)strlen(src);
-  char* dest = NEW_RESOURCE_ARRAY(char, src_length + 3);
-  int src_index = 0;
+
+  char* dest = NEW_RESOURCE_ARRAY(char, src_length + hash_len + 3);
+
+  // Add L as type indicator
   int dest_index = 0;
   dest[dest_index++] = 'L';
-  while (src_index < src_length) {
+
+  // Add the actual class name
+  for (int src_index = 0; src_index < src_length; ) {
     dest[dest_index++] = src[src_index++];
   }
+
+  // If we have a hash, append it
+  for (int hash_index = 0; hash_index < hash_len; ) {
+    dest[dest_index++] = hash_buf[hash_index++];
+  }
+
+  // Add the semicolon and the NULL
   dest[dest_index++] = ';';
   dest[dest_index] = '\0';
   return dest;
@@ -2546,6 +2654,42 @@ Method* InstanceKlass::method_at_itable(Klass* holder, int index, TRAPS) {
   return m;
 }
 
+
+#if INCLUDE_JVMTI
+// update default_methods for redefineclasses for methods that are
+// not yet in the vtable due to concurrent subclass define and superinterface
+// redefinition
+// Note: those in the vtable, should have been updated via adjust_method_entries
+void InstanceKlass::adjust_default_methods(Method** old_methods, Method** new_methods,
+                                           int methods_length, bool* trace_name_printed) {
+  // search the default_methods for uses of either obsolete or EMCP methods
+  if (default_methods() != NULL) {
+    for (int j = 0; j < methods_length; j++) {
+      Method* old_method = old_methods[j];
+      Method* new_method = new_methods[j];
+
+      for (int index = 0; index < default_methods()->length(); index ++) {
+        if (default_methods()->at(index) == old_method) {
+          default_methods()->at_put(index, new_method);
+          if (RC_TRACE_IN_RANGE(0x00100000, 0x00400000)) {
+            if (!(*trace_name_printed)) {
+              // RC_TRACE_MESG macro has an embedded ResourceMark
+              RC_TRACE_MESG(("adjust: klassname=%s default methods from name=%s",
+                             external_name(),
+                             old_method->method_holder()->external_name()));
+              *trace_name_printed = true;
+            }
+            RC_TRACE(0x00100000, ("default method update: %s(%s) ",
+                                  new_method->name()->as_C_string(),
+                                  new_method->signature()->as_C_string()));
+          }
+        }
+      }
+    }
+  }
+}
+#endif // INCLUDE_JVMTI
+
 // On-stack replacement stuff
 void InstanceKlass::add_osr_nmethod(nmethod* n) {
   // only one compilation can be active
@@ -2740,11 +2884,21 @@ void InstanceKlass::print_on(outputStream* st) const {
   st->print(BULLET"methods:           "); methods()->print_value_on(st);                  st->cr();
   if (Verbose || WizardMode) {
     Array<Method*>* method_array = methods();
-    for(int i = 0; i < method_array->length(); i++) {
+    for (int i = 0; i < method_array->length(); i++) {
       st->print("%d : ", i); method_array->at(i)->print_value(); st->cr();
     }
   }
-  st->print(BULLET"method ordering:   "); method_ordering()->print_value_on(st);       st->cr();
+  st->print(BULLET"method ordering:   "); method_ordering()->print_value_on(st);      st->cr();
+  st->print(BULLET"default_methods:   "); default_methods()->print_value_on(st);      st->cr();
+  if (Verbose && default_methods() != NULL) {
+    Array<Method*>* method_array = default_methods();
+    for (int i = 0; i < method_array->length(); i++) {
+      st->print("%d : ", i); method_array->at(i)->print_value(); st->cr();
+    }
+  }
+  if (default_vtable_indices() != NULL) {
+    st->print(BULLET"default vtable indices:   "); default_vtable_indices()->print_value_on(st);       st->cr();
+  }
   st->print(BULLET"local interfaces:  "); local_interfaces()->print_value_on(st);      st->cr();
   st->print(BULLET"trans. interfaces: "); transitive_interfaces()->print_value_on(st); st->cr();
   st->print(BULLET"constants:         "); constants()->print_value_on(st);         st->cr();
@@ -2769,24 +2923,17 @@ void InstanceKlass::print_on(outputStream* st) const {
   st->print(BULLET"field annotations:       "); fields_annotations()->print_value_on(st); st->cr();
   st->print(BULLET"field type annotations:  "); fields_type_annotations()->print_value_on(st); st->cr();
   {
-    ResourceMark rm;
-    // PreviousVersionInfo objects returned via PreviousVersionWalker
-    // contain a GrowableArray of handles. We have to clean up the
-    // GrowableArray _after_ the PreviousVersionWalker destructor
-    // has destroyed the handles.
-    {
-      bool have_pv = false;
-      PreviousVersionWalker pvw((InstanceKlass*)this);
-      for (PreviousVersionInfo * pv_info = pvw.next_previous_version();
-           pv_info != NULL; pv_info = pvw.next_previous_version()) {
-        if (!have_pv)
-          st->print(BULLET"previous version:  ");
-        have_pv = true;
-        pv_info->prev_constant_pool_handle()()->print_value_on(st);
-      }
-      if (have_pv)  st->cr();
-    } // pvw is cleaned up
-  } // rm is cleaned up
+    bool have_pv = false;
+    PreviousVersionWalker pvw(Thread::current(), (InstanceKlass*)this);
+    for (PreviousVersionNode * pv_node = pvw.next_previous_version();
+         pv_node != NULL; pv_node = pvw.next_previous_version()) {
+      if (!have_pv)
+        st->print(BULLET"previous version:  ");
+      have_pv = true;
+      pv_node->prev_constant_pool()->print_value_on(st);
+    }
+    if (have_pv) st->cr();
+  } // pvw is cleaned up
 
   if (generic_signature() != NULL) {
     st->print(BULLET"generic signature: ");
@@ -3104,6 +3251,19 @@ void InstanceKlass::verify_on(outputStream* st, bool check_dictionary) {
     }
   }
 
+  // Verify default methods
+  if (default_methods() != NULL) {
+    Array<Method*>* methods = this->default_methods();
+    for (int j = 0; j < methods->length(); j++) {
+      guarantee(methods->at(j)->is_method(), "non-method in methods array");
+    }
+    for (int j = 0; j < methods->length() - 1; j++) {
+      Method* m1 = methods->at(j);
+      Method* m2 = methods->at(j + 1);
+      guarantee(m1->name()->fast_compare(m2->name()) <= 0, "methods not sorted correctly");
+    }
+  }
+
   // Verify JNI static field identifiers
   if (jni_ids() != NULL) {
     jni_ids()->verify(this);
@@ -3317,34 +3477,34 @@ void InstanceKlass::add_previous_version(instanceKlassHandle ikh,
   Array<Method*>* old_methods = ikh->methods();
 
   if (cp_ref->on_stack()) {
-  PreviousVersionNode * pv_node = NULL;
-  if (emcp_method_count == 0) {
+    PreviousVersionNode * pv_node = NULL;
+    if (emcp_method_count == 0) {
       // non-shared ConstantPool gets a reference
-      pv_node = new PreviousVersionNode(cp_ref, !cp_ref->is_shared(), NULL);
-    RC_TRACE(0x00000400,
-        ("add: all methods are obsolete; flushing any EMCP refs"));
-  } else {
-    int local_count = 0;
+      pv_node = new PreviousVersionNode(cp_ref, NULL);
+      RC_TRACE(0x00000400,
+          ("add: all methods are obsolete; flushing any EMCP refs"));
+    } else {
+      int local_count = 0;
       GrowableArray<Method*>* method_refs = new (ResourceObj::C_HEAP, mtClass)
-        GrowableArray<Method*>(emcp_method_count, true);
-    for (int i = 0; i < old_methods->length(); i++) {
-      if (emcp_methods->at(i)) {
-          // this old method is EMCP. Save it only if it's on the stack
-          Method* old_method = old_methods->at(i);
-          if (old_method->on_stack()) {
-            method_refs->append(old_method);
+          GrowableArray<Method*>(emcp_method_count, true);
+      for (int i = 0; i < old_methods->length(); i++) {
+        if (emcp_methods->at(i)) {
+            // this old method is EMCP. Save it only if it's on the stack
+            Method* old_method = old_methods->at(i);
+            if (old_method->on_stack()) {
+              method_refs->append(old_method);
+            }
+          if (++local_count >= emcp_method_count) {
+            // no more EMCP methods so bail out now
+            break;
           }
-        if (++local_count >= emcp_method_count) {
-          // no more EMCP methods so bail out now
-          break;
         }
       }
-    }
       // non-shared ConstantPool gets a reference
-      pv_node = new PreviousVersionNode(cp_ref, !cp_ref->is_shared(), method_refs);
+      pv_node = new PreviousVersionNode(cp_ref, method_refs);
     }
     // append new previous version.
-  _previous_versions->append(pv_node);
+    _previous_versions->append(pv_node);
   }
 
   // Since the caller is the VMThread and we are at a safepoint, this
@@ -3445,6 +3605,8 @@ Method* InstanceKlass::method_with_idnum(int idnum) {
         return m;
       }
     }
+    // None found, return null for the caller to handle.
+    return NULL;
   }
   return m;
 }
@@ -3461,10 +3623,9 @@ unsigned char * InstanceKlass::get_cached_class_file_bytes() {
 // Construct a PreviousVersionNode entry for the array hung off
 // the InstanceKlass.
 PreviousVersionNode::PreviousVersionNode(ConstantPool* prev_constant_pool,
-  bool prev_cp_is_weak, GrowableArray<Method*>* prev_EMCP_methods) {
+  GrowableArray<Method*>* prev_EMCP_methods) {
 
   _prev_constant_pool = prev_constant_pool;
-  _prev_cp_is_weak = prev_cp_is_weak;
   _prev_EMCP_methods = prev_EMCP_methods;
 }
 
@@ -3480,99 +3641,38 @@ PreviousVersionNode::~PreviousVersionNode() {
   }
 }
 
-
-// Construct a PreviousVersionInfo entry
-PreviousVersionInfo::PreviousVersionInfo(PreviousVersionNode *pv_node) {
-  _prev_constant_pool_handle = constantPoolHandle();  // NULL handle
-  _prev_EMCP_method_handles = NULL;
-
-  ConstantPool* cp = pv_node->prev_constant_pool();
-  assert(cp != NULL, "constant pool ref was unexpectedly cleared");
-  if (cp == NULL) {
-    return;  // robustness
-  }
-
-  // make the ConstantPool* safe to return
-  _prev_constant_pool_handle = constantPoolHandle(cp);
-
-  GrowableArray<Method*>* method_refs = pv_node->prev_EMCP_methods();
-  if (method_refs == NULL) {
-    // the InstanceKlass did not have any EMCP methods
-    return;
-  }
-
-  _prev_EMCP_method_handles = new GrowableArray<methodHandle>(10);
-
-  int n_methods = method_refs->length();
-  for (int i = 0; i < n_methods; i++) {
-    Method* method = method_refs->at(i);
-    assert (method != NULL, "method has been cleared");
-    if (method == NULL) {
-      continue;  // robustness
-    }
-    // make the Method* safe to return
-    _prev_EMCP_method_handles->append(methodHandle(method));
-  }
-}
-
-
-// Destroy a PreviousVersionInfo
-PreviousVersionInfo::~PreviousVersionInfo() {
-  // Since _prev_EMCP_method_handles is not C-heap allocated, we
-  // don't have to delete it.
-}
-
-
 // Construct a helper for walking the previous versions array
-PreviousVersionWalker::PreviousVersionWalker(InstanceKlass *ik) {
+PreviousVersionWalker::PreviousVersionWalker(Thread* thread, InstanceKlass *ik) {
+  _thread = thread;
   _previous_versions = ik->previous_versions();
   _current_index = 0;
-  // _hm needs no initialization
   _current_p = NULL;
-}
-
-
-// Destroy a PreviousVersionWalker
-PreviousVersionWalker::~PreviousVersionWalker() {
-  // Delete the current info just in case the caller didn't walk to
-  // the end of the previous versions list. No harm if _current_p is
-  // already NULL.
-  delete _current_p;
-
-  // When _hm is destroyed, all the Handles returned in
-  // PreviousVersionInfo objects will be destroyed.
-  // Also, after this destructor is finished it will be
-  // safe to delete the GrowableArray allocated in the
-  // PreviousVersionInfo objects.
+  _current_constant_pool_handle = constantPoolHandle(thread, ik->constants());
 }
 
 
 // Return the interesting information for the next previous version
 // of the klass. Returns NULL if there are no more previous versions.
-PreviousVersionInfo* PreviousVersionWalker::next_previous_version() {
+PreviousVersionNode* PreviousVersionWalker::next_previous_version() {
   if (_previous_versions == NULL) {
     // no previous versions so nothing to return
     return NULL;
   }
 
-  delete _current_p;  // cleanup the previous info for the caller
-  _current_p = NULL;  // reset to NULL so we don't delete same object twice
+  _current_p = NULL;  // reset to NULL
+  _current_constant_pool_handle = NULL;
 
   int length = _previous_versions->length();
 
   while (_current_index < length) {
     PreviousVersionNode * pv_node = _previous_versions->at(_current_index++);
-    PreviousVersionInfo * pv_info = new (ResourceObj::C_HEAP, mtClass)
-                                          PreviousVersionInfo(pv_node);
 
-    constantPoolHandle cp_h = pv_info->prev_constant_pool_handle();
-    assert (!cp_h.is_null(), "null cp found in previous version");
-
-    // The caller will need to delete pv_info when they are done with it.
-    _current_p = pv_info;
-    return pv_info;
+    // Save a handle to the constant pool for this previous version,
+    // which keeps all the methods from being deallocated.
+    _current_constant_pool_handle = constantPoolHandle(_thread, pv_node->prev_constant_pool());
+    _current_p = pv_node;
+    return pv_node;
   }
 
-  // all of the underlying nodes' info has been deleted
   return NULL;
 } // end next_previous_version()

@@ -85,6 +85,11 @@ public class HtmlDocletWriter extends HtmlDocWriter {
     protected boolean printedAnnotationHeading = false;
 
     /**
+     * To check whether annotation field heading is printed or not.
+     */
+    protected boolean printedAnnotationFieldHeading = false;
+
+    /**
      * To check whether the repeated annotations is documented or not.
      */
     private boolean isAnnotationDocumented = false;
@@ -351,7 +356,7 @@ public class HtmlDocletWriter extends HtmlDocWriter {
         if(classes.length > 0) {
             Arrays.sort(classes);
             Content caption = getTableCaption(new RawHtml(label));
-            Content table = HtmlTree.TABLE(HtmlStyle.packageSummary, 0, 3, 0,
+            Content table = HtmlTree.TABLE(HtmlStyle.typeSummary, 0, 3, 0,
                     tableSummary, caption);
             table.addContent(getSummaryTableHeader(tableHeader, "col"));
             Content tbody = new HtmlTree(HtmlTag.TBODY);
@@ -386,8 +391,7 @@ public class HtmlDocletWriter extends HtmlDocWriter {
                 tbody.addContent(tr);
             }
             table.addContent(tbody);
-            Content li = HtmlTree.LI(HtmlStyle.blockList, table);
-            summaryContentTree.addContent(li);
+            summaryContentTree.addContent(table);
         }
     }
 
@@ -504,28 +508,28 @@ public class HtmlDocletWriter extends HtmlDocWriter {
                 body.addContent(HtmlConstants.START_OF_TOP_NAVBAR);
                 navDiv.addStyle(HtmlStyle.topNav);
                 allClassesId += "navbar_top";
-                Content a = getMarkerAnchor("navbar_top");
+                Content a = getMarkerAnchor(SectionName.NAVBAR_TOP);
                 //WCAG - Hyperlinks should contain text or an image with alt text - for AT tools
                 navDiv.addContent(a);
                 Content skipLinkContent = HtmlTree.DIV(HtmlStyle.skipNav, getHyperLink(
-                    DocLink.fragment("skip-navbar_top"), skipNavLinks,
+                    getDocLink(SectionName.SKIP_NAVBAR_TOP), skipNavLinks,
                     skipNavLinks.toString(), ""));
                 navDiv.addContent(skipLinkContent);
             } else {
                 body.addContent(HtmlConstants.START_OF_BOTTOM_NAVBAR);
                 navDiv.addStyle(HtmlStyle.bottomNav);
                 allClassesId += "navbar_bottom";
-                Content a = getMarkerAnchor("navbar_bottom");
+                Content a = getMarkerAnchor(SectionName.NAVBAR_BOTTOM);
                 navDiv.addContent(a);
                 Content skipLinkContent = HtmlTree.DIV(HtmlStyle.skipNav, getHyperLink(
-                    DocLink.fragment("skip-navbar_bottom"), skipNavLinks,
+                    getDocLink(SectionName.SKIP_NAVBAR_BOTTOM), skipNavLinks,
                     skipNavLinks.toString(), ""));
                 navDiv.addContent(skipLinkContent);
             }
             if (header) {
-                navDiv.addContent(getMarkerAnchor("navbar_top_firstrow"));
+                navDiv.addContent(getMarkerAnchor(SectionName.NAVBAR_TOP_FIRSTROW));
             } else {
-                navDiv.addContent(getMarkerAnchor("navbar_bottom_firstrow"));
+                navDiv.addContent(getMarkerAnchor(SectionName.NAVBAR_BOTTOM_FIRSTROW));
             }
             HtmlTree navList = new HtmlTree(HtmlTag.UL);
             navList.addStyle(HtmlStyle.navList);
@@ -572,11 +576,11 @@ public class HtmlDocletWriter extends HtmlDocWriter {
             subDiv.addContent(getAllClassesLinkScript(allClassesId.toString()));
             addSummaryDetailLinks(subDiv);
             if (header) {
-                subDiv.addContent(getMarkerAnchor("skip-navbar_top"));
+                subDiv.addContent(getMarkerAnchor(SectionName.SKIP_NAVBAR_TOP));
                 body.addContent(subDiv);
                 body.addContent(HtmlConstants.END_OF_TOP_NAVBAR);
             } else {
-                subDiv.addContent(getMarkerAnchor("skip-navbar_bottom"));
+                subDiv.addContent(getMarkerAnchor(SectionName.SKIP_NAVBAR_BOTTOM));
                 body.addContent(subDiv);
                 body.addContent(HtmlConstants.END_OF_BOTTOM_NAVBAR);
             }
@@ -881,7 +885,28 @@ public class HtmlDocletWriter extends HtmlDocWriter {
      * @return a content tree for the marker anchor
      */
     public Content getMarkerAnchor(String anchorName) {
-        return getMarkerAnchor(anchorName, null);
+        return getMarkerAnchor(getName(anchorName), null);
+    }
+
+    /**
+     * Get the marker anchor which will be added to the documentation tree.
+     *
+     * @param sectionName the section name anchor attribute for page
+     * @return a content tree for the marker anchor
+     */
+    public Content getMarkerAnchor(SectionName sectionName) {
+        return getMarkerAnchor(sectionName.getName(), null);
+    }
+
+    /**
+     * Get the marker anchor which will be added to the documentation tree.
+     *
+     * @param sectionName the section name anchor attribute for page
+     * @param anchorName the anchor name combined with section name attribute for the page
+     * @return a content tree for the marker anchor
+     */
+    public Content getMarkerAnchor(SectionName sectionName, String anchorName) {
+        return getMarkerAnchor(sectionName.getName() + getName(anchorName), null);
     }
 
     /**
@@ -932,7 +957,7 @@ public class HtmlDocletWriter extends HtmlDocWriter {
     protected void addPackageDeprecatedAPI(List<Doc> deprPkgs, String headingKey,
             String tableSummary, String[] tableHeader, Content contentTree) {
         if (deprPkgs.size() > 0) {
-            Content table = HtmlTree.TABLE(0, 3, 0, tableSummary,
+            Content table = HtmlTree.TABLE(HtmlStyle.deprecatedSummary, 0, 3, 0, tableSummary,
                     getTableCaption(configuration.getResource(headingKey)));
             table.addContent(getSummaryTableHeader(tableHeader, "col"));
             Content tbody = new HtmlTree(HtmlTag.TBODY);
@@ -1025,7 +1050,7 @@ public class HtmlDocletWriter extends HtmlDocWriter {
 
     public Content italicsClassName(ClassDoc cd, boolean qual) {
         Content name = new StringContent((qual)? cd.qualifiedName(): cd.name());
-        return (cd.isInterface())?  HtmlTree.SPAN(HtmlStyle.italic, name): name;
+        return (cd.isInterface())?  HtmlTree.SPAN(HtmlStyle.interfaceName, name): name;
     }
 
     /**
@@ -1286,10 +1311,10 @@ public class HtmlDocletWriter extends HtmlDocWriter {
         } else if (doc instanceof ExecutableMemberDoc) {
             ExecutableMemberDoc emd = (ExecutableMemberDoc)doc;
             return getLink(new LinkInfoImpl(configuration, context, classDoc)
-                .label(label).where(getAnchor(emd, isProperty)).strong(strong));
+                .label(label).where(getName(getAnchor(emd, isProperty))).strong(strong));
         } else if (doc instanceof MemberDoc) {
             return getLink(new LinkInfoImpl(configuration, context, classDoc)
-                .label(label).where(doc.name()).strong(strong));
+                .label(label).where(getName(doc.name())).strong(strong));
         } else {
             return label;
         }
@@ -1314,10 +1339,10 @@ public class HtmlDocletWriter extends HtmlDocWriter {
         } else if (doc instanceof ExecutableMemberDoc) {
             ExecutableMemberDoc emd = (ExecutableMemberDoc) doc;
             return getLink(new LinkInfoImpl(configuration, context, classDoc)
-                .label(label).where(getAnchor(emd)));
+                .label(label).where(getName(getAnchor(emd))));
         } else if (doc instanceof MemberDoc) {
             return getLink(new LinkInfoImpl(configuration, context, classDoc)
-                .label(label).where(doc.name()));
+                .label(label).where(getName(doc.name())));
         } else {
             return label;
         }
@@ -1541,7 +1566,7 @@ public class HtmlDocletWriter extends HtmlDocWriter {
         Content div;
         Content result = commentTagsToContent(null, doc, tags, first);
         if (depr) {
-            Content italic = HtmlTree.SPAN(HtmlStyle.italic, result);
+            Content italic = HtmlTree.SPAN(HtmlStyle.deprecationComment, result);
             div = HtmlTree.DIV(HtmlStyle.block, italic);
             htmltree.addContent(div);
         }

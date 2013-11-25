@@ -312,6 +312,8 @@ class Compile : public Phase {
   bool                  _do_method_data_update; // True if we generate code to update MethodData*s
   int                   _AliasLevel;            // Locally-adjusted version of AliasLevel flag.
   bool                  _print_assembly;        // True if we should dump assembly code for this compilation
+  bool                  _print_inlining;        // True if we should print inlining for this compilation
+  bool                  _print_intrinsics;      // True if we should print intrinsics for this compilation
 #ifndef PRODUCT
   bool                  _trace_opto_output;
   bool                  _parsed_irreducible_loop; // True if ciTypeFlow detected irreducible loops during parsing
@@ -414,7 +416,7 @@ class Compile : public Phase {
   };
 
   GrowableArray<PrintInliningBuffer>* _print_inlining_list;
-  int _print_inlining;
+  int _print_inlining_idx;
 
   // Only keep nodes in the expensive node list that need to be optimized
   void cleanup_expensive_nodes(PhaseIterGVN &igvn);
@@ -422,28 +424,33 @@ class Compile : public Phase {
   static int cmp_expensive_nodes(Node** n1, Node** n2);
   // Expensive nodes list already sorted?
   bool expensive_nodes_sorted() const;
+  // Remove the speculative part of types and clean up the graph
+  void remove_speculative_types(PhaseIterGVN &igvn);
+
+  // Are we within a PreserveJVMState block?
+  int _preserve_jvm_state;
 
  public:
 
   outputStream* print_inlining_stream() const {
-    return _print_inlining_list->at(_print_inlining).ss();
+    return _print_inlining_list->adr_at(_print_inlining_idx)->ss();
   }
 
   void print_inlining_skip(CallGenerator* cg) {
-    if (PrintInlining) {
-      _print_inlining_list->at(_print_inlining).set_cg(cg);
-      _print_inlining++;
-      _print_inlining_list->insert_before(_print_inlining, PrintInliningBuffer());
+    if (_print_inlining) {
+      _print_inlining_list->adr_at(_print_inlining_idx)->set_cg(cg);
+      _print_inlining_idx++;
+      _print_inlining_list->insert_before(_print_inlining_idx, PrintInliningBuffer());
     }
   }
 
   void print_inlining_insert(CallGenerator* cg) {
-    if (PrintInlining) {
+    if (_print_inlining) {
       for (int i = 0; i < _print_inlining_list->length(); i++) {
-        if (_print_inlining_list->at(i).cg() == cg) {
+        if (_print_inlining_list->adr_at(i)->cg() == cg) {
           _print_inlining_list->insert_before(i+1, PrintInliningBuffer());
-          _print_inlining = i+1;
-          _print_inlining_list->at(i).set_cg(NULL);
+          _print_inlining_idx = i+1;
+          _print_inlining_list->adr_at(i)->set_cg(NULL);
           return;
         }
       }
@@ -572,6 +579,10 @@ class Compile : public Phase {
   int               AliasLevel() const          { return _AliasLevel; }
   bool              print_assembly() const       { return _print_assembly; }
   void          set_print_assembly(bool z)       { _print_assembly = z; }
+  bool              print_inlining() const       { return _print_inlining; }
+  void          set_print_inlining(bool z)       { _print_inlining = z; }
+  bool              print_intrinsics() const     { return _print_intrinsics; }
+  void          set_print_intrinsics(bool z)     { _print_intrinsics = z; }
   // check the CompilerOracle for special behaviours for this compile
   bool          method_has_option(const char * option) {
     return method() != NULL && method()->has_option(option);
@@ -814,7 +825,9 @@ class Compile : public Phase {
 
   // Decide how to build a call.
   // The profile factor is a discount to apply to this site's interp. profile.
-  CallGenerator*    call_generator(ciMethod* call_method, int vtable_index, bool call_does_dispatch, JVMState* jvms, bool allow_inline, float profile_factor, bool allow_intrinsics = true, bool delayed_forbidden = false);
+  CallGenerator*    call_generator(ciMethod* call_method, int vtable_index, bool call_does_dispatch,
+                                   JVMState* jvms, bool allow_inline, float profile_factor, ciKlass* speculative_receiver_type = NULL,
+                                   bool allow_intrinsics = true, bool delayed_forbidden = false);
   bool should_delay_inlining(ciMethod* call_method, JVMState* jvms) {
     return should_delay_string_inlining(call_method, jvms) ||
            should_delay_boxing_inlining(call_method, jvms);
@@ -1135,6 +1148,9 @@ class Compile : public Phase {
   // graph is strongly connected from root in both directions.
   void verify_graph_edges(bool no_dead_code = false) PRODUCT_RETURN;
 
+  // Verify GC barrier patterns
+  void verify_barriers() PRODUCT_RETURN;
+
   // End-of-run dumps.
   static void print_statistics() PRODUCT_RETURN;
 
@@ -1150,6 +1166,21 @@ class Compile : public Phase {
 
   // Auxiliary method for randomized fuzzing/stressing
   static bool randomized_select(int count);
+
+  // enter a PreserveJVMState block
+  void inc_preserve_jvm_state() {
+    _preserve_jvm_state++;
+  }
+
+  // exit a PreserveJVMState block
+  void dec_preserve_jvm_state() {
+    _preserve_jvm_state--;
+    assert(_preserve_jvm_state >= 0, "_preserve_jvm_state shouldn't be negative");
+  }
+
+  bool has_preserve_jvm_state() const {
+    return _preserve_jvm_state > 0;
+  }
 };
 
 #endif // SHARE_VM_OPTO_COMPILE_HPP

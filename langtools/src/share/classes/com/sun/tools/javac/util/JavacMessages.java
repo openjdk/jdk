@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -184,19 +184,19 @@ public class JavacMessages implements Messages {
                                              String key,
                                              Object... args) {
        String msg = null;
-        for (List<ResourceBundle> l = bundles; l.nonEmpty() && msg == null; l = l.tail) {
-            ResourceBundle rb = l.head;
-            try {
-                msg = rb.getString(key);
-            }
-            catch (MissingResourceException e) {
-                // ignore, try other bundles in list
-            }
-        }
-        if (msg == null) {
-            msg = "compiler message file broken: key=" + key +
-                " arguments={0}, {1}, {2}, {3}, {4}, {5}, {6}, {7}";
-        }
-        return MessageFormat.format(msg, args);
+       for (List<ResourceBundle> l = bundles; l.nonEmpty() && msg == null; l = l.tail) {
+           ResourceBundle rb = l.head;
+           try {
+               msg = rb.getString(key);
+           }
+           catch (MissingResourceException e) {
+               // ignore, try other bundles in list
+           }
+       }
+       if (msg == null) {
+           msg = "compiler message file broken: key=" + key +
+               " arguments={0}, {1}, {2}, {3}, {4}, {5}, {6}, {7}";
+       }
+       return MessageFormat.format(msg, args);
     }
 }

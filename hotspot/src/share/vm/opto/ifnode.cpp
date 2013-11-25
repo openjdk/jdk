@@ -76,6 +76,7 @@ static Node* split_if(IfNode *iff, PhaseIterGVN *igvn) {
   if( !i1->is_Bool() ) return NULL;
   BoolNode *b = i1->as_Bool();
   Node *cmp = b->in(1);
+  if( cmp->is_FlagsProj() ) return NULL;
   if( !cmp->is_Cmp() ) return NULL;
   i1 = cmp->in(1);
   if( i1 == NULL || !i1->is_Phi() ) return NULL;
@@ -688,6 +689,7 @@ Node* IfNode::fold_compares(PhaseGVN* phase) {
         ctrl->in(0)->in(1)->is_Bool() &&
         ctrl->in(0)->in(1)->in(1)->Opcode() == Op_CmpI &&
         ctrl->in(0)->in(1)->in(1)->in(2)->is_Con() &&
+        ctrl->in(0)->in(1)->in(1)->in(2) != phase->C->top() &&
         ctrl->in(0)->in(1)->in(1)->in(1) == n) {
       IfNode* dom_iff = ctrl->in(0)->as_If();
       Node* otherproj = dom_iff->proj_out(!ctrl->as_Proj()->_con);
@@ -1017,7 +1019,7 @@ void IfNode::dominated_by( Node *prev_dom, PhaseIterGVN *igvn ) {
   // be skipped. For example, range check predicate has two checks
   // for lower and upper bounds.
   ProjNode* unc_proj = proj_out(1 - prev_dom->as_Proj()->_con)->as_Proj();
-  if (PhaseIdealLoop::is_uncommon_trap_proj(unc_proj, Deoptimization::Reason_predicate))
+  if (unc_proj->is_uncommon_trap_proj(Deoptimization::Reason_predicate))
     prev_dom = idom;
 
   // Now walk the current IfNode's projections.

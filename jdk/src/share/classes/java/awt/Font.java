@@ -127,7 +127,7 @@ import static sun.font.EAttribute.*;
  * <p>
  * For a discussion of the relative advantages and disadvantages of using
  * physical or logical fonts, see the
- * <a href="http://java.sun.com/j2se/corejava/intl/reference/faqs/index.html#desktop-rendering">Internationalization FAQ</a>
+ * <a href="http://www.oracle.com/technetwork/java/javase/tech/faq-jsp-138165.html">Internationalization FAQ</a>
  * document.
  *
  * <h4>Font Faces and Names</h4>
@@ -1334,7 +1334,7 @@ public class Font implements java.io.Serializable
      * Indicates whether or not this <code>Font</code> object's style is
      * PLAIN.
      * @return    <code>true</code> if this <code>Font</code> has a
-     *            PLAIN sytle;
+     *            PLAIN style;
      *            <code>false</code> otherwise.
      * @see       java.awt.Font#getStyle
      * @since     JDK1.0

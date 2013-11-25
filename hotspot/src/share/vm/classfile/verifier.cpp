@@ -2439,8 +2439,14 @@ void ClassVerifier::verify_invoke_instructions(
              && !ref_class_type.equals(current_type())
              && !ref_class_type.equals(VerificationType::reference_type(
                   current_class()->super()->name()))) {
-    bool subtype = ref_class_type.is_assignable_from(
-      current_type(), this, CHECK_VERIFY(this));
+    bool subtype = false;
+    if (!current_class()->is_anonymous()) {
+      subtype = ref_class_type.is_assignable_from(
+                 current_type(), this, CHECK_VERIFY(this));
+    } else {
+      subtype = ref_class_type.is_assignable_from(VerificationType::reference_type(
+                 current_class()->host_klass()->name()), this, CHECK_VERIFY(this));
+    }
     if (!subtype) {
       verify_error(ErrorContext::bad_code(bci),
           "Bad invokespecial instruction: "
@@ -2461,7 +2467,24 @@ void ClassVerifier::verify_invoke_instructions(
     } else {   // other methods
       // Ensures that target class is assignable to method class.
       if (opcode == Bytecodes::_invokespecial) {
-        current_frame->pop_stack(current_type(), CHECK_VERIFY(this));
+        if (!current_class()->is_anonymous()) {
+          current_frame->pop_stack(current_type(), CHECK_VERIFY(this));
+        } else {
+          // anonymous class invokespecial calls: check if the
+          // objectref is a subtype of the host_klass of the current class
+          // to allow an anonymous class to reference methods in the host_klass
+          VerificationType top = current_frame->pop_stack(CHECK_VERIFY(this));
+          VerificationType hosttype =
+            VerificationType::reference_type(current_class()->host_klass()->name());
+          bool subtype = hosttype.is_assignable_from(top, this, CHECK_VERIFY(this));
+          if (!subtype) {
+            verify_error( ErrorContext::bad_type(current_frame->offset(),
+              current_frame->stack_top_ctx(),
+              TypeOrigin::implicit(top)),
+              "Bad type on operand stack");
+            return;
+          }
+        }
       } else if (opcode == Bytecodes::_invokevirtual) {
         VerificationType stack_object_type =
           current_frame->pop_stack(ref_class_type, CHECK_VERIFY(this));

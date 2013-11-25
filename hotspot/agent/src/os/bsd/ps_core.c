@@ -44,6 +44,7 @@
 // close all file descriptors
 static void close_files(struct ps_prochandle* ph) {
   lib_info* lib = NULL;
+
   // close core file descriptor
   if (ph->core->core_fd >= 0)
     close(ph->core->core_fd);
@@ -149,8 +150,7 @@ static map_info* add_class_share_map_info(struct ps_prochandle* ph, off_t offset
 
 // Return the map_info for the given virtual address.  We keep a sorted
 // array of pointers in ph->map_array, so we can binary search.
-static map_info* core_lookup(struct ps_prochandle *ph, uintptr_t addr)
-{
+static map_info* core_lookup(struct ps_prochandle *ph, uintptr_t addr) {
   int mid, lo = 0, hi = ph->core->num_maps - 1;
   map_info *mp;
 
@@ -230,9 +230,9 @@ struct FileMapHeader {
     size_t _used;            // for setting space top on read
 
     // 4991491 NOTICE These are C++ bool's in filemap.hpp and must match up with
-    // the C type matching the C++ bool type on any given platform. For
-    // Hotspot on BSD we assume the corresponding C type is char but
-    // licensees on BSD versions may need to adjust the type of these fields.
+    // the C type matching the C++ bool type on any given platform.
+    // We assume the corresponding C type is char but licensees
+    // may need to adjust the type of these fields.
     char   _read_only;       // read only space?
     char   _allow_exec;      // executable code in space?
 
@@ -286,10 +286,12 @@ static bool read_string(struct ps_prochandle* ph, uintptr_t addr, char* buf, siz
 #define USE_SHARED_SPACES_SYM "_UseSharedSpaces"
 // mangled name of Arguments::SharedArchivePath
 #define SHARED_ARCHIVE_PATH_SYM "_ZN9Arguments17SharedArchivePathE"
+#define LIBJVM_NAME "/libjvm.dylib"
 #else
 #define USE_SHARED_SPACES_SYM "UseSharedSpaces"
 // mangled name of Arguments::SharedArchivePath
 #define SHARED_ARCHIVE_PATH_SYM "__ZN9Arguments17SharedArchivePathE"
+#define LIBJVM_NAME "/libjvm.so"
 #endif // __APPLE_
 
 static bool init_classsharing_workaround(struct ps_prochandle* ph) {
@@ -300,12 +302,7 @@ static bool init_classsharing_workaround(struct ps_prochandle* ph) {
     // we are iterating over shared objects from the core dump. look for
     // libjvm.so.
     const char *jvm_name = 0;
-#ifdef __APPLE__
-    if ((jvm_name = strstr(lib->name, "/libjvm.dylib")) != 0)
-#else
-    if ((jvm_name = strstr(lib->name, "/libjvm.so")) != 0)
-#endif // __APPLE__
-    {
+    if ((jvm_name = strstr(lib->name, LIBJVM_NAME)) != 0) {
       char classes_jsa[PATH_MAX];
       struct FileMapHeader header;
       int fd = -1;
@@ -399,8 +396,8 @@ static bool init_classsharing_workaround(struct ps_prochandle* ph) {
         }
       }
       return true;
-    }
-    lib = lib->next;
+   }
+   lib = lib->next;
   }
   return true;
 }
@@ -432,8 +429,8 @@ static bool sort_map_array(struct ps_prochandle* ph) {
   // allocate map_array
   map_info** array;
   if ( (array = (map_info**) malloc(sizeof(map_info*) * num_maps)) == NULL) {
-     print_debug("can't allocate memory for map array\n");
-     return false;
+    print_debug("can't allocate memory for map array\n");
+    return false;
   }
 
   // add maps to array
@@ -450,7 +447,7 @@ static bool sort_map_array(struct ps_prochandle* ph) {
   ph->core->map_array = array;
   // sort the map_info array by base virtual address.
   qsort(ph->core->map_array, ph->core->num_maps, sizeof (map_info*),
-           core_cmp_mapping);
+        core_cmp_mapping);
 
   // print map
   if (is_debug()) {
@@ -458,7 +455,7 @@ static bool sort_map_array(struct ps_prochandle* ph) {
     print_debug("---- sorted virtual address map ----\n");
     for (j = 0; j < ph->core->num_maps; j++) {
       print_debug("base = 0x%lx\tsize = %d\n", ph->core->map_array[j]->vaddr,
-                                       ph->core->map_array[j]->memsz);
+                  ph->core->map_array[j]->memsz);
     }
   }
 
@@ -1091,9 +1088,9 @@ static bool core_handle_note(struct ps_prochandle* ph, ELF_PHDR* note_phdr) {
                                    notep->n_type, notep->n_descsz);
 
       if (notep->n_type == NT_PRSTATUS) {
-         if (core_handle_prstatus(ph, descdata, notep->n_descsz) != true) {
-            return false;
-         }
+        if (core_handle_prstatus(ph, descdata, notep->n_descsz) != true) {
+          return false;
+        }
       }
       p = descdata + ROUNDUP(notep->n_descsz, 4);
    }
@@ -1121,7 +1118,7 @@ static bool read_core_segments(struct ps_prochandle* ph, ELF_EHDR* core_ehdr) {
     * contains a set of saved /proc structures), and PT_LOAD (which
     * represents a memory mapping from the process's address space).
     *
-    * Difference b/w Solaris PT_NOTE and BSD PT_NOTE:
+    * Difference b/w Solaris PT_NOTE and Linux/BSD PT_NOTE:
     *
     *     In Solaris there are two PT_NOTE segments the first PT_NOTE (if present)
     *     contains /proc structs in the pre-2.6 unstructured /proc format. the last
@@ -1167,32 +1164,61 @@ err:
 
 // read segments of a shared object
 static bool read_lib_segments(struct ps_prochandle* ph, int lib_fd, ELF_EHDR* lib_ehdr, uintptr_t lib_base) {
-   int i = 0;
-   ELF_PHDR* phbuf;
-   ELF_PHDR* lib_php = NULL;
+  int i = 0;
+  ELF_PHDR* phbuf;
+  ELF_PHDR* lib_php = NULL;
 
-   if ((phbuf = read_program_header_table(lib_fd, lib_ehdr)) == NULL)
-      return false;
+  int page_size=sysconf(_SC_PAGE_SIZE);
 
-   // we want to process only PT_LOAD segments that are not writable.
-   // i.e., text segments. The read/write/exec (data) segments would
-   // have been already added from core file segments.
-   for (lib_php = phbuf, i = 0; i < lib_ehdr->e_phnum; i++) {
-      if ((lib_php->p_type == PT_LOAD) && !(lib_php->p_flags & PF_W) && (lib_php->p_filesz != 0)) {
-         if (add_map_info(ph, lib_fd, lib_php->p_offset, lib_php->p_vaddr + lib_base, lib_php->p_filesz) == NULL)
-            goto err;
+  if ((phbuf = read_program_header_table(lib_fd, lib_ehdr)) == NULL) {
+    return false;
+  }
+
+  // we want to process only PT_LOAD segments that are not writable.
+  // i.e., text segments. The read/write/exec (data) segments would
+  // have been already added from core file segments.
+  for (lib_php = phbuf, i = 0; i < lib_ehdr->e_phnum; i++) {
+    if ((lib_php->p_type == PT_LOAD) && !(lib_php->p_flags & PF_W) && (lib_php->p_filesz != 0)) {
+
+      uintptr_t target_vaddr = lib_php->p_vaddr + lib_base;
+      map_info *existing_map = core_lookup(ph, target_vaddr);
+
+      if (existing_map == NULL){
+        if (add_map_info(ph, lib_fd, lib_php->p_offset,
+                          target_vaddr, lib_php->p_filesz) == NULL) {
+          goto err;
+        }
+      } else {
+        if ((existing_map->memsz != page_size) &&
+            (existing_map->fd != lib_fd) &&
+            (existing_map->memsz != lib_php->p_filesz)){
+
+          print_debug("address conflict @ 0x%lx (size = %ld, flags = %d\n)",
+                        target_vaddr, lib_php->p_filesz, lib_php->p_flags);
+          goto err;
+        }
+
+        /* replace PT_LOAD segment with library segment */
+        print_debug("overwrote with new address mapping (memsz %ld -> %ld)\n",
+                     existing_map->memsz, lib_php->p_filesz);
+
+        existing_map->fd = lib_fd;
+        existing_map->offset = lib_php->p_offset;
+        existing_map->memsz = lib_php->p_filesz;
       }
-      lib_php++;
-   }
+    }
 
-   free(phbuf);
-   return true;
+    lib_php++;
+  }
+
+  free(phbuf);
+  return true;
 err:
-   free(phbuf);
-   return false;
+  free(phbuf);
+  return false;
 }
 
-// process segments from interpreter (ld-elf.so.1)
+// process segments from interpreter (ld.so or ld-linux.so or ld-elf.so)
 static bool read_interp_segments(struct ps_prochandle* ph) {
    ELF_EHDR interp_ehdr;
 
@@ -1303,32 +1329,34 @@ static bool read_shared_lib_info(struct ps_prochandle* ph) {
   debug_base = dyn.d_un.d_ptr;
   // at debug_base we have struct r_debug. This has first link map in r_map field
   if (ps_pread(ph, (psaddr_t) debug_base + FIRST_LINK_MAP_OFFSET,
-                  &first_link_map_addr, sizeof(uintptr_t)) != PS_OK) {
+                 &first_link_map_addr, sizeof(uintptr_t)) != PS_OK) {
     print_debug("can't read first link map address\n");
     return false;
   }
 
   // read ld_base address from struct r_debug
-  // XXX: There is no r_ldbase member on BSD
-  /*
+#if 0  // There is no r_ldbase member on BSD
   if (ps_pread(ph, (psaddr_t) debug_base + LD_BASE_OFFSET, &ld_base_addr,
                   sizeof(uintptr_t)) != PS_OK) {
     print_debug("can't read ld base address\n");
     return false;
   }
   ph->core->ld_base_addr = ld_base_addr;
-  */
+#else
   ph->core->ld_base_addr = 0;
+#endif
 
   print_debug("interpreter base address is 0x%lx\n", ld_base_addr);
 
-  // now read segments from interp (i.e ld-elf.so.1)
-  if (read_interp_segments(ph) != true)
+  // now read segments from interp (i.e ld.so or ld-linux.so or ld-elf.so)
+  if (read_interp_segments(ph) != true) {
     return false;
+  }
 
   // after adding interpreter (ld.so) mappings sort again
-  if (sort_map_array(ph) != true)
+  if (sort_map_array(ph) != true) {
     return false;
+  }
 
   print_debug("first link map is at 0x%lx\n", first_link_map_addr);
 
@@ -1380,8 +1408,9 @@ static bool read_shared_lib_info(struct ps_prochandle* ph) {
           add_lib_info_fd(ph, lib_name, lib_fd, lib_base);
           // Map info is added for the library (lib_name) so
           // we need to re-sort it before calling the p_pdread.
-          if (sort_map_array(ph) != true)
+          if (sort_map_array(ph) != true) {
             return false;
+          }
         } else {
           print_debug("can't read ELF header for shared object %s\n", lib_name);
           close(lib_fd);
@@ -1392,7 +1421,7 @@ static bool read_shared_lib_info(struct ps_prochandle* ph) {
 
     // read next link_map address
     if (ps_pread(ph, (psaddr_t) link_map_addr + LINK_MAP_NEXT_OFFSET,
-                 &link_map_addr, sizeof(uintptr_t)) != PS_OK) {
+                  &link_map_addr, sizeof(uintptr_t)) != PS_OK) {
       print_debug("can't read next link in link_map\n");
       return false;
     }
@@ -1408,7 +1437,7 @@ struct ps_prochandle* Pgrab_core(const char* exec_file, const char* core_file) {
 
   struct ps_prochandle* ph = (struct ps_prochandle*) calloc(1, sizeof(struct ps_prochandle));
   if (ph == NULL) {
-    print_debug("cant allocate ps_prochandle\n");
+    print_debug("can't allocate ps_prochandle\n");
     return NULL;
   }
 
@@ -1444,38 +1473,45 @@ struct ps_prochandle* Pgrab_core(const char* exec_file, const char* core_file) {
   }
 
   if (read_elf_header(ph->core->exec_fd, &exec_ehdr) != true || exec_ehdr.e_type != ET_EXEC) {
-     print_debug("executable file is not a valid ELF ET_EXEC file\n");
-     goto err;
+    print_debug("executable file is not a valid ELF ET_EXEC file\n");
+    goto err;
   }
 
   // process core file segments
-  if (read_core_segments(ph, &core_ehdr) != true)
-     goto err;
+  if (read_core_segments(ph, &core_ehdr) != true) {
+    goto err;
+  }
 
   // process exec file segments
-  if (read_exec_segments(ph, &exec_ehdr) != true)
-     goto err;
+  if (read_exec_segments(ph, &exec_ehdr) != true) {
+    goto err;
+  }
 
   // exec file is also treated like a shared object for symbol search
   if (add_lib_info_fd(ph, exec_file, ph->core->exec_fd,
-                      (uintptr_t)0 + find_base_address(ph->core->exec_fd, &exec_ehdr)) == NULL)
-     goto err;
+                      (uintptr_t)0 + find_base_address(ph->core->exec_fd, &exec_ehdr)) == NULL) {
+    goto err;
+  }
 
   // allocate and sort maps into map_array, we need to do this
   // here because read_shared_lib_info needs to read from debuggee
   // address space
-  if (sort_map_array(ph) != true)
+  if (sort_map_array(ph) != true) {
     goto err;
+  }
 
-  if (read_shared_lib_info(ph) != true)
+  if (read_shared_lib_info(ph) != true) {
     goto err;
+  }
 
   // sort again because we have added more mappings from shared objects
-  if (sort_map_array(ph) != true)
+  if (sort_map_array(ph) != true) {
     goto err;
+  }
 
-  if (init_classsharing_workaround(ph) != true)
+  if (init_classsharing_workaround(ph) != true) {
     goto err;
+  }
 
   print_debug("Leave Pgrab_core\n");
   return ph;

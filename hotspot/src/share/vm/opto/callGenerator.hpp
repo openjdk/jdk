@@ -31,6 +31,8 @@
 #include "opto/type.hpp"
 #include "runtime/deoptimization.hpp"
 
+class Parse;
+
 //---------------------------CallGenerator-------------------------------------
 // The subclasses of this class handle generation of ideal nodes for
 // call sites and method entry points.
@@ -65,11 +67,14 @@ class CallGenerator : public ResourceObj {
   virtual bool      is_predicted() const        { return false; }
   // is_trap: Does not return to the caller.  (E.g., uncommon trap.)
   virtual bool      is_trap() const             { return false; }
+  // does_virtual_dispatch: Should try inlining as normal method first.
+  virtual bool      does_virtual_dispatch() const     { return false; }
 
   // is_late_inline: supports conversion of call into an inline
   virtual bool      is_late_inline() const      { return false; }
   // same but for method handle calls
   virtual bool      is_mh_late_inline() const   { return false; }
+  virtual bool      is_string_late_inline() const{ return false; }
 
   // for method handle calls: have we tried inlinining the call already?
   virtual bool      already_attempted() const   { ShouldNotReachHere(); return false; }
@@ -106,7 +111,7 @@ class CallGenerator : public ResourceObj {
   //
   // If the result is NULL, it means that this CallGenerator was unable
   // to handle the given call, and another CallGenerator should be consulted.
-  virtual JVMState* generate(JVMState* jvms) = 0;
+  virtual JVMState* generate(JVMState* jvms, Parse* parent_parser) = 0;
 
   // How to generate a call site that is inlined:
   static CallGenerator* for_inline(ciMethod* m, float expected_uses = -1);
@@ -159,8 +164,9 @@ class CallGenerator : public ResourceObj {
   virtual void print_inlining_late(const char* msg) { ShouldNotReachHere(); }
 
   static void print_inlining(Compile* C, ciMethod* callee, int inline_level, int bci, const char* msg) {
-    if (PrintInlining)
+    if (C->print_inlining()) {
       C->print_inlining(callee, inline_level, bci, msg);
+    }
   }
 };
 

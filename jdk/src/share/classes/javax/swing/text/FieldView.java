@@ -200,7 +200,7 @@ public class FieldView extends PlainView {
      * axis.
      *
      * @param axis may be either View.X_AXIS or View.Y_AXIS
-     * @return   the span the view would like to be rendered into >= 0.
+     * @return   the span the view would like to be rendered into &gt;= 0.
      *           Typically the view is told to render into the span
      *           that is returned, although there is no guarantee.
      *           The parent may choose to resize or break the view.
@@ -241,7 +241,7 @@ public class FieldView extends PlainView {
      * given axis.  A value of 0 or less is not resizable.
      *
      * @param axis View.X_AXIS or View.Y_AXIS
-     * @return the weight -> 1 for View.X_AXIS, else 0
+     * @return the weight -&gt; 1 for View.X_AXIS, else 0
      */
     public int getResizeWeight(int axis) {
         if (axis == View.X_AXIS) {
@@ -254,7 +254,7 @@ public class FieldView extends PlainView {
      * Provides a mapping from the document model coordinate space
      * to the coordinate space of the view mapped to it.
      *
-     * @param pos the position to convert >= 0
+     * @param pos the position to convert &gt;= 0
      * @param a the allocated region to render into
      * @return the bounding box of the given position
      * @exception BadLocationException  if the given position does not
@@ -269,8 +269,8 @@ public class FieldView extends PlainView {
      * Provides a mapping from the view coordinate space to the logical
      * coordinate space of the model.
      *
-     * @param fx the X coordinate >= 0.0f
-     * @param fy the Y coordinate >= 0.0f
+     * @param fx the X coordinate &gt;= 0.0f
+     * @param fy the Y coordinate &gt;= 0.0f
      * @param a the allocated region to render into
      * @return the location within the model that best represents the
      *  given point in the view

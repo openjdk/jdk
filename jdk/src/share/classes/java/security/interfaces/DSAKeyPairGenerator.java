@@ -43,11 +43,11 @@ import java.security.*;
  *
  * <li>Get a key pair generator for the DSA algorithm by calling the
  * KeyPairGenerator {@code getInstance} method with "DSA"
- * as its argument.<p>
+ * as its argument.
  *
  * <li>Initialize the generator by casting the result to a DSAKeyPairGenerator
  * and calling one of the
- * {@code initialize} methods from this DSAKeyPairGenerator interface.<p>
+ * {@code initialize} methods from this DSAKeyPairGenerator interface.
  *
  * <li>Generate a key pair by calling the {@code generateKeyPair}
  * method from the KeyPairGenerator class.

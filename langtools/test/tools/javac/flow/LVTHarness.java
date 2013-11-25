@@ -64,6 +64,7 @@ import com.sun.tools.classfile.Method;
 
 import static javax.tools.StandardLocation.*;
 import static com.sun.tools.classfile.LocalVariableTable_attribute.Entry;
+import static javax.tools.JavaFileObject.Kind.SOURCE;
 
 public class LVTHarness {
 
@@ -73,10 +74,14 @@ public class LVTHarness {
     static final StandardJavaFileManager fm = comp.getStandardFileManager(null, null, null);
 
     public static void main(String[] args) throws Exception {
-        fm.setLocation(SOURCE_PATH,
-                Arrays.asList(new File(System.getProperty("test.src"), "tests")));
-        for (JavaFileObject jfo : fm.list(SOURCE_PATH, "",
-                Collections.singleton(JavaFileObject.Kind.SOURCE), true)) {
+
+        String testDir = System.getProperty("test.src");
+        fm.setLocation(SOURCE_PATH, Arrays.asList(new File(testDir, "tests")));
+
+        // Make sure classes are written to scratch dir.
+        fm.setLocation(CLASS_OUTPUT, Arrays.asList(new File(".")));
+
+        for (JavaFileObject jfo : fm.list(SOURCE_PATH, "", Collections.singleton(SOURCE), true)) {
             new LVTHarness(jfo).check();
         }
         if (nerrors > 0) {
@@ -86,8 +91,7 @@ public class LVTHarness {
 
 
     JavaFileObject jfo;
-    Map<ElementKey, AliveRanges> aliveRangeMap =
-            new HashMap<ElementKey, AliveRanges>();
+    Map<ElementKey, AliveRanges> aliveRangeMap = new HashMap<>();
     Set<String> declaredKeys = new HashSet<>();
     List<ElementKey> seenAliveRanges = new ArrayList<>();
 
@@ -96,15 +100,19 @@ public class LVTHarness {
     }
 
     protected void check() throws Exception {
-        JavacTask ct = (JavacTask)comp.getTask(null, fm, null, Arrays.asList("-g"),
-                null, Arrays.asList(jfo));
-        System.err.println("compiling code " + jfo.toString());
+
+        JavacTask ct = (JavacTask) comp.getTask(null, fm, null, Arrays.asList("-g"),
+                                                null, Arrays.asList(jfo));
+        System.err.println("compiling code " + jfo);
         ct.setProcessors(Collections.singleton(new AliveRangeFinder()));
         if (!ct.call()) {
             throw new AssertionError("Error during compilation");
         }
 
-        checkClassFile(new File(jfo.getName().replace(".java", ".class")));
+
+        File javaFile = new File(jfo.getName());
+        File classFile = new File(javaFile.getName().replace(".java", ".class"));
+        checkClassFile(classFile);
 
         //check all candidates have been used up
         for (Map.Entry<ElementKey, AliveRanges> entry : aliveRangeMap.entrySet()) {

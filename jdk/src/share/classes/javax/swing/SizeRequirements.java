@@ -81,7 +81,7 @@ import java.io.Serializable;
  * future Swing releases. The current serialization support is
  * appropriate for short term storage or RMI between applications running
  * the same version of Swing.  As of 1.4, support for long term storage
- * of all JavaBeans<sup><font size="-2">TM</font></sup>
+ * of all JavaBeans&trade;
  * has been added to the <code>java.beans</code> package.
  * Please see {@link java.beans.XMLEncoder}.
  *
@@ -142,10 +142,10 @@ public class SizeRequirements implements Serializable {
      * Creates a SizeRequirements object with the specified minimum, preferred,
      * and maximum sizes and the specified alignment.
      *
-     * @param min the minimum size >= 0
-     * @param pref the preferred size >= 0
-     * @param max the maximum size >= 0
-     * @param a the alignment >= 0.0f && <= 1.0f
+     * @param min the minimum size &gt;= 0
+     * @param pref the preferred size &gt;= 0
+     * @param max the maximum size &gt;= 0
+     * @param a the alignment &gt;= 0.0f &amp;&amp; &lt;= 1.0f
      */
     public SizeRequirements(int min, int pref, int max, float a) {
         minimum = min;
@@ -246,7 +246,7 @@ public class SizeRequirements implements Serializable {
      * by invoking the getTiledSizeRequirements method.  The components
      * will be tiled in the forward direction with offsets increasing from 0.
      *
-     * @param allocated the total span to be allocated >= 0.
+     * @param allocated the total span to be allocated &gt;= 0.
      * @param total     the total of the children requests.  This argument
      *  is optional and may be null.
      * @param children  the size requirements for each component.
@@ -282,7 +282,7 @@ public class SizeRequirements implements Serializable {
      * reverse direction represents components tiled from right to left
      * or bottom to top.
      *
-     * @param allocated the total span to be allocated >= 0.
+     * @param allocated the total span to be allocated &gt;= 0.
      * @param total     the total of the children requests.  This argument
      *  is optional and may be null.
      * @param children  the size requirements for each component.
@@ -405,7 +405,7 @@ public class SizeRequirements implements Serializable {
      * Normal alignment will be done with an alignment value of 0.0f
      * representing the left/top edge of a component.
      *
-     * @param allocated the total span to be allocated >= 0.
+     * @param allocated the total span to be allocated &gt;= 0.
      * @param total     the total of the children requests.
      * @param children  the size requirements for each component.
      * @param offsets   the offset from 0 for each child where
@@ -441,7 +441,7 @@ public class SizeRequirements implements Serializable {
      * to be aligned.  With reverse alignment, 0.0f represents the
      * right/bottom edge.
      *
-     * @param allocated the total span to be allocated >= 0.
+     * @param allocated the total span to be allocated &gt;= 0.
      * @param total     the total of the children requests.
      * @param children  the size requirements for each component.
      * @param offsets   the offset from 0 for each child where

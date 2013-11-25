@@ -36,7 +36,7 @@ import javax.swing.JComboBox;
 public abstract class ComboBoxUI extends ComponentUI {
 
     /**
-     * Set the visiblity of the popup
+     * Set the visibility of the popup
      */
     public abstract void setPopupVisible( JComboBox c, boolean v );
 

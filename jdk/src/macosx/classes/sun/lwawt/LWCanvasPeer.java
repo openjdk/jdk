@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,6 +33,10 @@ import java.awt.peer.CanvasPeer;
 
 import javax.swing.JComponent;
 
+/**
+ * Lightweight implementation of {@link CanvasPeer}. This peer is empty, because
+ * all the components in lwawt use graphic object from the top level window.
+ */
 class LWCanvasPeer<T extends Component, D extends JComponent>
         extends LWComponentPeer<T, D> implements CanvasPeer {
 

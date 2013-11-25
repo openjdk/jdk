@@ -54,7 +54,7 @@ public class SQLTransactionRollbackException extends SQLTransientException {
         /**
          * Constructs a <code>SQLTransactionRollbackException</code> object
          * with a given <code>reason</code>. The <code>SQLState</code>
-         * is initialized to <code>null</code> and the vender code is initialized
+         * is initialized to <code>null</code> and the vendor code is initialized
          * to 0.
          *
          * The <code>cause</code> is not initialized, and may subsequently be

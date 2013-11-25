@@ -227,7 +227,7 @@ public class AnnotationTypeWriterImpl extends SubWriterHolderWriter
             addSrcLink(annotationType, annotationName, pre);
             pre.addContent(parameterLinks);
         } else {
-            Content span = HtmlTree.SPAN(HtmlStyle.strong, annotationName);
+            Content span = HtmlTree.SPAN(HtmlStyle.memberNameLabel, annotationName);
             span.addContent(parameterLinks);
             pre.addContent(span);
         }
@@ -262,8 +262,8 @@ public class AnnotationTypeWriterImpl extends SubWriterHolderWriter
         annotationInfoTree.addContent(hr);
         Tag[] deprs = annotationType.tags("deprecated");
         if (Util.isDeprecated(annotationType)) {
-            Content strong = HtmlTree.SPAN(HtmlStyle.strong, deprecatedPhrase);
-            Content div = HtmlTree.DIV(HtmlStyle.block, strong);
+            Content deprLabel = HtmlTree.SPAN(HtmlStyle.deprecatedLabel, deprecatedPhrase);
+            Content div = HtmlTree.DIV(HtmlStyle.block, deprLabel);
             if (deprs.length > 0) {
                 Tag[] commentTags = deprs[0].inlineTags();
                 if (commentTags.length > 0) {
@@ -273,13 +273,6 @@ public class AnnotationTypeWriterImpl extends SubWriterHolderWriter
             }
             annotationInfoTree.addContent(div);
         }
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    public void addAnnotationDetailsMarker(Content memberDetails) {
-        memberDetails.addContent(HtmlConstants.START_OF_ANNOTATION_TYPE_DETAILS);
     }
 
     /**
@@ -319,6 +312,12 @@ public class AnnotationTypeWriterImpl extends SubWriterHolderWriter
         Content ulNav = HtmlTree.UL(HtmlStyle.subNavList, li);
         MemberSummaryBuilder memberSummaryBuilder = (MemberSummaryBuilder)
                 configuration.getBuilderFactory().getMemberSummaryBuilder(this);
+        Content liNavField = new HtmlTree(HtmlTag.LI);
+        addNavSummaryLink(memberSummaryBuilder,
+                "doclet.navField",
+                VisibleMemberMap.ANNOTATION_TYPE_FIELDS, liNavField);
+        addNavGap(liNavField);
+        ulNav.addContent(liNavField);
         Content liNavReq = new HtmlTree(HtmlTag.LI);
         addNavSummaryLink(memberSummaryBuilder,
                 "doclet.navAnnotationTypeRequiredMember",
@@ -364,12 +363,23 @@ public class AnnotationTypeWriterImpl extends SubWriterHolderWriter
         Content ulNav = HtmlTree.UL(HtmlStyle.subNavList, li);
         MemberSummaryBuilder memberSummaryBuilder = (MemberSummaryBuilder)
                 configuration.getBuilderFactory().getMemberSummaryBuilder(this);
+        AbstractMemberWriter writerField =
+                ((AbstractMemberWriter) memberSummaryBuilder.
+                getMemberSummaryWriter(VisibleMemberMap.ANNOTATION_TYPE_FIELDS));
         AbstractMemberWriter writerOptional =
                 ((AbstractMemberWriter) memberSummaryBuilder.
                 getMemberSummaryWriter(VisibleMemberMap.ANNOTATION_TYPE_MEMBER_OPTIONAL));
         AbstractMemberWriter writerRequired =
                 ((AbstractMemberWriter) memberSummaryBuilder.
                 getMemberSummaryWriter(VisibleMemberMap.ANNOTATION_TYPE_MEMBER_REQUIRED));
+        Content liNavField = new HtmlTree(HtmlTag.LI);
+        if (writerField != null){
+            writerField.addNavDetailLink(annotationType.fields().length > 0, liNavField);
+        } else {
+            liNavField.addContent(getResource("doclet.navField"));
+        }
+        addNavGap(liNavField);
+        ulNav.addContent(liNavField);
         if (writerOptional != null){
             Content liNavOpt = new HtmlTree(HtmlTag.LI);
             writerOptional.addNavDetailLink(annotationType.elements().length > 0, liNavOpt);

@@ -29,7 +29,7 @@ package com.sun.beans.decoder;
  * This element looks like &lt;object&gt; element,
  * but its value is not used as an argument for element
  * that contains this one.
- * <p>The following atributes are supported:
+ * <p>The following attributes are supported:
  * <dl>
  * <dt>class
  * <dd>the type is used for static methods and fields

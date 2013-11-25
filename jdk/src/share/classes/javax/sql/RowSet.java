@@ -206,7 +206,7 @@ public interface RowSet extends ResultSet {
   int getTransactionIsolation();
 
   /**
-   * Sets the transaction isolation level for this <code>RowSet</code> obejct.
+   * Sets the transaction isolation level for this <code>RowSet</code> object.
    *
    * @param level the transaction isolation level; one of
    *      <code>Connection.TRANSACTION_READ_UNCOMMITTED</code>,
@@ -1214,7 +1214,7 @@ public interface RowSet extends ResultSet {
    *  <code>Struct</code>, <code>java.net.URL</code>,
    * or <code>Array</code>, the driver should pass it to the database as a
    * value of the corresponding SQL type.
-   * <P>
+   *
    *
    * <p>Note that this method may be used to pass datatabase-specific
    * abstract data types.
@@ -1384,7 +1384,7 @@ public interface RowSet extends ResultSet {
    *  <code>Struct</code>, <code>java.net.URL</code>,
    * or <code>Array</code>, the driver should pass it to the database as a
    * value of the corresponding SQL type.
-   * <P>
+   *
    * <P>
    * An exception is thrown if there is an ambiguity, for example, if the
    * object is of a class implementing more than one of these interfaces.
@@ -1438,7 +1438,7 @@ public interface RowSet extends ResultSet {
      * if parameterIndex does not correspond
      * to a parameter marker in the SQL statement,  if the length specified
      * is less than zero or if the number of bytes in the inputstream does not match
-     * the specfied length.
+     * the specified length.
      * @throws SQLFeatureNotSupportedException  if the JDBC driver does not support this method
      *
      * @since 1.6
@@ -1492,7 +1492,7 @@ public interface RowSet extends ResultSet {
      * @throws SQLException  if parameterIndex does not correspond
      * to a parameter marker in the SQL statement,  or if the length specified
      * is less than zero; if the number of bytes in the inputstream does not match
-     * the specfied length; if a database access error occurs or
+     * the specified length; if a database access error occurs or
      * this method is called on a closed <code>CallableStatement</code>
      * @exception SQLFeatureNotSupportedException if the JDBC driver does not support
      * this method
@@ -1956,7 +1956,7 @@ public interface RowSet extends ResultSet {
    void setRowId(String parameterName, RowId x) throws SQLException;
 
     /**
-     * Sets the designated paramter to the given <code>String</code> object.
+     * Sets the designated parameter to the given <code>String</code> object.
      * The driver converts this to a SQL <code>NCHAR</code> or
      * <code>NVARCHAR</code> or <code>LONGNVARCHAR</code> value
      * (depending on the argument's
@@ -1973,7 +1973,7 @@ public interface RowSet extends ResultSet {
      void setNString(int parameterIndex, String value) throws SQLException;
 
     /**
-     * Sets the designated paramter to the given <code>String</code> object.
+     * Sets the designated parameter to the given <code>String</code> object.
      * The driver converts this to a SQL <code>NCHAR</code> or
      * <code>NVARCHAR</code> or <code>LONGNVARCHAR</code>
      * @param parameterName the name of the column to be set

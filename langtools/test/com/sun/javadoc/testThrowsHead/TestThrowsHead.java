@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /**
  * @test
- * @bug 4530727
+ * @bug 4530727 8026567
  * @summary When an exception is declared in the method signature but
  * not documented with a throws tag, we generate a link to it in the
  * throws section.  Make sure that the link is below a Throws heading.
@@ -38,7 +38,7 @@ public class TestThrowsHead extends JavadocTester {
 
     private static final String BUG_ID = "4530727";
     private static final String[][] TEST = {
-        {BUG_ID + FS + "C.html", "<dt><span class=\"strong\">Throws:</span>"}
+        {BUG_ID + FS + "C.html", "<dt><span class=\"throwsLabel\">Throws:</span>"}
     };
     private static final String[][] NEGATED_TEST = NO_TEST;
     private static final String[] ARGS = new String[] {

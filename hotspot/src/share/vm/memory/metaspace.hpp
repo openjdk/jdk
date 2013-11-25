@@ -56,12 +56,15 @@
 //                       +-------------------+
 //
 
+class ChunkManager;
 class ClassLoaderData;
 class Metablock;
+class Metachunk;
 class MetaWord;
 class Mutex;
 class outputStream;
 class SpaceManager;
+class VirtualSpaceList;
 
 // Metaspaces each have a  SpaceManager and allocations
 // are done by the SpaceManager.  Allocations are done
@@ -76,8 +79,6 @@ class SpaceManager;
 // allocate() method returns a block for use as a
 // quantum of metadata.
 
-class VirtualSpaceList;
-
 class Metaspace : public CHeapObj<mtClass> {
   friend class VMStructs;
   friend class SpaceManager;
@@ -86,9 +87,10 @@ class Metaspace : public CHeapObj<mtClass> {
   friend class MetaspaceAux;
 
  public:
-  enum MetadataType {ClassType = 0,
-                     NonClassType = ClassType + 1,
-                     MetadataTypeCount = ClassType + 2
+  enum MetadataType {
+    ClassType,
+    NonClassType,
+    MetadataTypeCount
   };
   enum MetaspaceType {
     StandardMetaspaceType,
@@ -102,21 +104,31 @@ class Metaspace : public CHeapObj<mtClass> {
  private:
   void initialize(Mutex* lock, MetaspaceType type);
 
+  // Get the first chunk for a Metaspace.  Used for
+  // special cases such as the boot class loader, reflection
+  // class loader and anonymous class loader.
+  Metachunk* get_initialization_chunk(MetadataType mdtype,
+                                      size_t chunk_word_size,
+                                      size_t chunk_bunch);
+
   // Align up the word size to the allocation word size
   static size_t align_word_size_up(size_t);
 
   // Aligned size of the metaspace.
-  static size_t _class_metaspace_size;
+  static size_t _compressed_class_space_size;
 
-  static size_t class_metaspace_size() {
-    return _class_metaspace_size;
+  static size_t compressed_class_space_size() {
+    return _compressed_class_space_size;
   }
-  static void set_class_metaspace_size(size_t metaspace_size) {
-    _class_metaspace_size = metaspace_size;
+  static void set_compressed_class_space_size(size_t size) {
+    _compressed_class_space_size = size;
   }
 
   static size_t _first_chunk_word_size;
   static size_t _first_class_chunk_word_size;
+
+  static size_t _commit_alignment;
+  static size_t _reserve_alignment;
 
   SpaceManager* _vsm;
   SpaceManager* vsm() const { return _vsm; }
@@ -127,13 +139,16 @@ class Metaspace : public CHeapObj<mtClass> {
   // Allocate space for metadata of type mdtype. This is space
   // within a Metachunk and is used by
   //   allocate(ClassLoaderData*, size_t, bool, MetadataType, TRAPS)
-  // which returns a Metablock.
   MetaWord* allocate(size_t word_size, MetadataType mdtype);
 
   // Virtual Space lists for both classes and other metadata
   static VirtualSpaceList* _space_list;
   static VirtualSpaceList* _class_space_list;
 
+  static ChunkManager* _chunk_manager_metadata;
+  static ChunkManager* _chunk_manager_class;
+
+ public:
   static VirtualSpaceList* space_list()       { return _space_list; }
   static VirtualSpaceList* class_space_list() { return _class_space_list; }
   static VirtualSpaceList* get_space_list(MetadataType mdtype) {
@@ -141,6 +156,14 @@ class Metaspace : public CHeapObj<mtClass> {
     return mdtype == ClassType ? class_space_list() : space_list();
   }
 
+  static ChunkManager* chunk_manager_metadata() { return _chunk_manager_metadata; }
+  static ChunkManager* chunk_manager_class()    { return _chunk_manager_class; }
+  static ChunkManager* get_chunk_manager(MetadataType mdtype) {
+    assert(mdtype != MetadataTypeCount, "MetadaTypeCount can't be used as mdtype");
+    return mdtype == ClassType ? chunk_manager_class() : chunk_manager_metadata();
+  }
+
+ private:
   // This is used by DumpSharedSpaces only, where only _vsm is used. So we will
   // maintain a single list for now.
   void record_allocation(void* ptr, MetaspaceObj::Type type, size_t word_size);
@@ -169,16 +192,23 @@ class Metaspace : public CHeapObj<mtClass> {
   AllocRecord * _alloc_record_head;
   AllocRecord * _alloc_record_tail;
 
+  size_t class_chunk_size(size_t word_size);
+
  public:
 
   Metaspace(Mutex* lock, MetaspaceType type);
   ~Metaspace();
 
-  // Initialize globals for Metaspace
+  static void ergo_initialize();
   static void global_initialize();
 
   static size_t first_chunk_word_size() { return _first_chunk_word_size; }
   static size_t first_class_chunk_word_size() { return _first_class_chunk_word_size; }
+
+  static size_t reserve_alignment()       { return _reserve_alignment; }
+  static size_t reserve_alignment_words() { return _reserve_alignment / BytesPerWord; }
+  static size_t commit_alignment()        { return _commit_alignment; }
+  static size_t commit_alignment_words()  { return _commit_alignment / BytesPerWord; }
 
   char*  bottom() const;
   size_t used_words_slow(MetadataType mdtype) const;
@@ -188,8 +218,8 @@ class Metaspace : public CHeapObj<mtClass> {
   size_t used_bytes_slow(MetadataType mdtype) const;
   size_t capacity_bytes_slow(MetadataType mdtype) const;
 
-  static Metablock* allocate(ClassLoaderData* loader_data, size_t word_size,
-                             bool read_only, MetaspaceObj::Type type, TRAPS);
+  static MetaWord* allocate(ClassLoaderData* loader_data, size_t word_size,
+                            bool read_only, MetaspaceObj::Type type, TRAPS);
   void deallocate(MetaWord* ptr, size_t byte_size, bool is_class);
 
   MetaWord* expand_and_allocate(size_t size,
@@ -199,7 +229,11 @@ class Metaspace : public CHeapObj<mtClass> {
   void dump(outputStream* const out) const;
 
   // Free empty virtualspaces
+  static void purge(MetadataType mdtype);
   static void purge();
+
+  static void report_metadata_oome(ClassLoaderData* loader_data, size_t word_size,
+                                   MetadataType mdtype, TRAPS);
 
   void print_on(outputStream* st) const;
   // Debugging support
@@ -215,6 +249,10 @@ class Metaspace : public CHeapObj<mtClass> {
   // Return TRUE only if UseCompressedClassPointers is True and DumpSharedSpaces is False.
   static bool using_class_space() {
     return NOT_LP64(false) LP64_ONLY(UseCompressedClassPointers && !DumpSharedSpaces);
+  }
+
+  static bool is_class_space_allocation(MetadataType mdType) {
+    return mdType == ClassType && using_class_space();
   }
 
 };
@@ -331,17 +369,10 @@ class MetaspaceAux : AllStatic {
 
 class MetaspaceGC : AllStatic {
 
-  // The current high-water-mark for inducing a GC.  When
-  // the capacity of all space in the virtual lists reaches this value,
-  // a GC is induced and the value is increased.  This should be changed
-  // to the space actually used for allocations to avoid affects of
-  // fragmentation losses to partially used chunks.  Size is in words.
-  static size_t _capacity_until_GC;
-
-  // After a GC is done any allocation that fails should try to expand
-  // the capacity of the Metaspaces.  This flag is set during attempts
-  // to allocate in the VMGCOperation that does the GC.
-  static bool _expand_after_GC;
+  // The current high-water-mark for inducing a GC.
+  // When committed memory of all metaspaces reaches this value,
+  // a GC is induced and the value is increased. Size is in bytes.
+  static volatile intptr_t _capacity_until_GC;
 
   // For a CMS collection, signal that a concurrent collection should
   // be started.
@@ -349,20 +380,16 @@ class MetaspaceGC : AllStatic {
 
   static uint _shrink_factor;
 
-  static void set_capacity_until_GC(size_t v) { _capacity_until_GC = v; }
-
   static size_t shrink_factor() { return _shrink_factor; }
   void set_shrink_factor(uint v) { _shrink_factor = v; }
 
  public:
 
-  static size_t capacity_until_GC() { return _capacity_until_GC; }
-  static void inc_capacity_until_GC(size_t v) { _capacity_until_GC += v; }
-  static void dec_capacity_until_GC(size_t v) {
-    _capacity_until_GC = _capacity_until_GC > v ? _capacity_until_GC - v : 0;
-  }
-  static bool expand_after_GC()           { return _expand_after_GC; }
-  static void set_expand_after_GC(bool v) { _expand_after_GC = v; }
+  static void initialize() { _capacity_until_GC = MetaspaceSize; }
+
+  static size_t capacity_until_GC();
+  static size_t inc_capacity_until_GC(size_t v);
+  static size_t dec_capacity_until_GC(size_t v);
 
   static bool should_concurrent_collect() { return _should_concurrent_collect; }
   static void set_should_concurrent_collect(bool v) {
@@ -370,11 +397,14 @@ class MetaspaceGC : AllStatic {
   }
 
   // The amount to increase the high-water-mark (_capacity_until_GC)
-  static size_t delta_capacity_until_GC(size_t word_size);
+  static size_t delta_capacity_until_GC(size_t bytes);
 
-  // It is expected that this will be called when the current capacity
-  // has been used and a GC should be considered.
-  static bool should_expand(VirtualSpaceList* vsl, size_t word_size);
+  // Tells if we have can expand metaspace without hitting set limits.
+  static bool can_expand(size_t words, bool is_class);
+
+  // Returns amount that we can expand without hitting a GC,
+  // measured in words.
+  static size_t allowed_expansion();
 
   // Calculate the new high-water mark at which to induce
   // a GC.

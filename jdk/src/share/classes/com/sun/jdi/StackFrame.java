@@ -58,8 +58,9 @@ import java.util.Map;
  * @author James McIlree
  * @since  1.3
  */
-public interface StackFrame extends Mirror, Locatable
-{
+@jdk.Exported
+public interface StackFrame extends Mirror, Locatable {
+
     /**
      * Returns the {@link Location} of the current instruction in the frame.
      * The method for which this frame was created can also be accessed

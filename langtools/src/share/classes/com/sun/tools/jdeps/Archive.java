@@ -25,7 +25,7 @@
 package com.sun.tools.jdeps;
 
 import com.sun.tools.classfile.Dependency.Location;
-import java.io.File;
+import java.nio.file.Path;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
@@ -35,21 +35,20 @@ import java.util.Set;
  * Represents the source of the class files.
  */
 public class Archive {
-    private final File file;
+    private final Path path;
     private final String filename;
     private final ClassFileReader reader;
-    private final Map<Location, Set<Location>> deps
-        = new HashMap<Location, Set<Location>>();
+    private final Map<Location, Set<Location>> deps = new HashMap<>();
 
     public Archive(String name) {
-        this.file = null;
+        this.path = null;
         this.filename = name;
         this.reader = null;
     }
 
-    public Archive(File f, ClassFileReader reader) {
-        this.file = f;
-        this.filename = f.getName();
+    public Archive(Path p, ClassFileReader reader) {
+        this.path = p;
+        this.filename = path.getFileName().toString();
         this.reader = reader;
     }
 
@@ -64,34 +63,41 @@ public class Archive {
     public void addClass(Location origin) {
         Set<Location> set = deps.get(origin);
         if (set == null) {
-            set = new HashSet<Location>();
+            set = new HashSet<>();
             deps.put(origin, set);
         }
     }
+
     public void addClass(Location origin, Location target) {
         Set<Location> set = deps.get(origin);
         if (set == null) {
-            set = new HashSet<Location>();
+            set = new HashSet<>();
             deps.put(origin, set);
         }
         set.add(target);
     }
 
-    public void visit(Visitor v) {
+    public Set<Location> getClasses() {
+        return deps.keySet();
+    }
+
+    public void visitDependences(Visitor v) {
         for (Map.Entry<Location,Set<Location>> e: deps.entrySet()) {
-            v.visit(e.getKey());
             for (Location target : e.getValue()) {
                 v.visit(e.getKey(), target);
             }
         }
     }
 
+    public String getPathName() {
+        return path != null ? path.toString() : filename;
+    }
+
     public String toString() {
-        return file != null ? file.getPath() : filename;
+        return filename;
     }
 
     interface Visitor {
-        void visit(Location loc);
         void visit(Location origin, Location target);
     }
 }

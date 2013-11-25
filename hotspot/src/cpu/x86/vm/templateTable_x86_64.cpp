@@ -568,7 +568,7 @@ void TemplateTable::aload() {
 }
 
 void TemplateTable::locals_index_wide(Register reg) {
-  __ movl(reg, at_bcp(2));
+  __ load_unsigned_short(reg, at_bcp(2));
   __ bswapl(reg);
   __ shrl(reg, 16);
   __ negptr(reg);
@@ -1575,7 +1575,11 @@ void TemplateTable::branch(bool is_jsr, bool is_wide) {
                               InvocationCounter::counter_offset();
 
   // Load up edx with the branch displacement
-  __ movl(rdx, at_bcp(1));
+  if (is_wide) {
+    __ movl(rdx, at_bcp(1));
+  } else {
+    __ load_signed_short(rdx, at_bcp(1));
+  }
   __ bswapl(rdx);
 
   if (!is_wide) {
@@ -2980,9 +2984,7 @@ void TemplateTable::prepare_invoke(int byte_no,
   ConstantPoolCacheEntry::verify_tos_state_shift();
   // load return address
   {
-    const address table_addr = (is_invokeinterface || is_invokedynamic) ?
-        (address)Interpreter::return_5_addrs_by_index_table() :
-        (address)Interpreter::return_3_addrs_by_index_table();
+    const address table_addr = (address) Interpreter::invoke_return_entry_table_for(code);
     ExternalAddress table(table_addr);
     __ lea(rscratch1, table);
     __ movptr(flags, Address(rscratch1, flags, Address::times_ptr));
@@ -3026,6 +3028,7 @@ void TemplateTable::invokevirtual_helper(Register index,
 
   // profile this call
   __ profile_final_call(rax);
+  __ profile_arguments_type(rax, method, r13, true);
 
   __ jump_from_interpreted(method, rax);
 
@@ -3040,6 +3043,7 @@ void TemplateTable::invokevirtual_helper(Register index,
 
   // get target Method* & entry point
   __ lookup_virtual_method(rax, index, method);
+  __ profile_arguments_type(rdx, method, r13, true);
   __ jump_from_interpreted(method, rdx);
 }
 
@@ -3069,6 +3073,7 @@ void TemplateTable::invokespecial(int byte_no) {
   __ null_check(rcx);
   // do the call
   __ profile_call(rax);
+  __ profile_arguments_type(rax, rbx, r13, false);
   __ jump_from_interpreted(rbx, rax);
 }
 
@@ -3079,6 +3084,7 @@ void TemplateTable::invokestatic(int byte_no) {
   prepare_invoke(byte_no, rbx);  // get f1 Method*
   // do the call
   __ profile_call(rax);
+  __ profile_arguments_type(rax, rbx, r13, false);
   __ jump_from_interpreted(rbx, rax);
 }
 
@@ -3135,6 +3141,8 @@ void TemplateTable::invokeinterface(int byte_no) {
   //       method.
   __ testptr(rbx, rbx);
   __ jcc(Assembler::zero, no_such_method);
+
+  __ profile_arguments_type(rdx, rbx, r13, true);
 
   // do the call
   // rcx: receiver
@@ -3193,6 +3201,7 @@ void TemplateTable::invokehandle(int byte_no) {
 
   // FIXME: profile the LambdaForm also
   __ profile_final_call(rax);
+  __ profile_arguments_type(rdx, rbx_method, r13, true);
 
   __ jump_from_interpreted(rbx_method, rdx);
 }
@@ -3226,6 +3235,7 @@ void TemplateTable::invokedynamic(int byte_no) {
   // %%% should make a type profile for any invokedynamic that takes a ref argument
   // profile this call
   __ profile_call(r13);
+  __ profile_arguments_type(rdx, rbx_method, r13, false);
 
   __ verify_oop(rax_callsite);
 

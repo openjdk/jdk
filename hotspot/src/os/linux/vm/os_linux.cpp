@@ -1333,17 +1333,15 @@ void os::Linux::capture_initial_stack(size_t max_size) {
 // Used by VMSelfDestructTimer and the MemProfiler.
 double os::elapsedTime() {
 
-  return (double)(os::elapsed_counter()) * 0.000001;
+  return ((double)os::elapsed_counter()) / os::elapsed_frequency(); // nanosecond resolution
 }
 
 jlong os::elapsed_counter() {
-  timeval time;
-  int status = gettimeofday(&time, NULL);
-  return jlong(time.tv_sec) * 1000 * 1000 + jlong(time.tv_usec) - initial_time_count;
+  return javaTimeNanos() - initial_time_count;
 }
 
 jlong os::elapsed_frequency() {
-  return (1000 * 1000);
+  return NANOSECS_PER_SEC; // nanosecond resolution
 }
 
 bool os::supports_vtime() { return true; }
@@ -3361,13 +3359,15 @@ bool os::Linux::setup_large_page_type(size_t page_size) {
   if (FLAG_IS_DEFAULT(UseHugeTLBFS) &&
       FLAG_IS_DEFAULT(UseSHM) &&
       FLAG_IS_DEFAULT(UseTransparentHugePages)) {
-    // If UseLargePages is specified on the command line try all methods,
-    // if it's default, then try only UseTransparentHugePages.
-    if (FLAG_IS_DEFAULT(UseLargePages)) {
-      UseTransparentHugePages = true;
-    } else {
-      UseHugeTLBFS = UseTransparentHugePages = UseSHM = true;
-    }
+
+    // The type of large pages has not been specified by the user.
+
+    // Try UseHugeTLBFS and then UseSHM.
+    UseHugeTLBFS = UseSHM = true;
+
+    // Don't try UseTransparentHugePages since there are known
+    // performance issues with it turned on. This might change in the future.
+    UseTransparentHugePages = false;
   }
 
   if (UseTransparentHugePages) {
@@ -3393,9 +3393,19 @@ bool os::Linux::setup_large_page_type(size_t page_size) {
 }
 
 void os::large_page_init() {
-  if (!UseLargePages) {
-    UseHugeTLBFS = false;
+  if (!UseLargePages &&
+      !UseTransparentHugePages &&
+      !UseHugeTLBFS &&
+      !UseSHM) {
+    // Not using large pages.
+    return;
+  }
+
+  if (!FLAG_IS_DEFAULT(UseLargePages) && !UseLargePages) {
+    // The user explicitly turned off large pages.
+    // Ignore the rest of the large pages flags.
     UseTransparentHugePages = false;
+    UseHugeTLBFS = false;
     UseSHM = false;
     return;
   }
@@ -4738,7 +4748,7 @@ void os::init(void) {
   Linux::_main_thread = pthread_self();
 
   Linux::clock_init();
-  initial_time_count = os::elapsed_counter();
+  initial_time_count = javaTimeNanos();
 
   // pthread_condattr initialization for monotonic clock
   int status;
@@ -4838,6 +4848,10 @@ jint os::init_2(void)
         vm_page_size()));
 
   Linux::capture_initial_stack(JavaThread::stack_size_at_create());
+
+#if defined(IA32)
+  workaround_expand_exec_shield_cs_limit();
+#endif
 
   Linux::libpthread_init();
   if (PrintMiscellaneous && (Verbose || WizardMode)) {

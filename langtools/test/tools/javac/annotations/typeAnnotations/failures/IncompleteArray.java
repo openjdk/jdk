@@ -5,8 +5,11 @@
  * @author Mahmood Ali
  * @compile/fail/ref=IncompleteArray.out -XDrawDiagnostics IncompleteArray.java
  */
+import java.lang.annotation.*;
+
 class IncompleteArray {
   int @A [] @A var;
 }
 
+@Target(ElementType.TYPE_USE)
 @interface A { }

@@ -73,6 +73,7 @@ import java.time.temporal.Temporal;
 import java.time.temporal.TemporalAccessor;
 import java.time.temporal.TemporalAdjuster;
 import java.time.temporal.TemporalField;
+import java.time.temporal.TemporalQueries;
 import java.time.temporal.TemporalQuery;
 import java.time.temporal.ValueRange;
 import java.util.Locale;
@@ -110,11 +111,11 @@ public interface Era extends TemporalAccessor, TemporalAdjuster {
      * All fields, including eras, have an associated numeric value.
      * The meaning of the numeric value for era is determined by the chronology
      * according to these principles:
-     * <p><ul>
+     * <ul>
      * <li>The era in use at the epoch 1970-01-01 (ISO) has the value 1.
      * <li>Later eras have sequentially higher values.
      * <li>Earlier eras have sequentially lower values, which may be negative.
-     * </ul><p>
+     * </ul>
      *
      * @return the numeric era value
      */
@@ -265,7 +266,7 @@ public interface Era extends TemporalAccessor, TemporalAdjuster {
     @SuppressWarnings("unchecked")
     @Override
     default <R> R query(TemporalQuery<R> query) {
-        if (query == TemporalQuery.precision()) {
+        if (query == TemporalQueries.precision()) {
             return (R) ERAS;
         }
         return TemporalAccessor.super.query(query);

@@ -81,6 +81,7 @@ import java.time.temporal.ChronoField;
 import java.time.temporal.JulianFields;
 import java.time.temporal.TemporalAccessor;
 import java.time.temporal.TemporalField;
+import java.time.temporal.TemporalQueries;
 import java.time.temporal.TemporalQuery;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -118,46 +119,6 @@ public class TCKZoneOffset extends AbstractDateTimeTest {
         list.add(JulianFields.MODIFIED_JULIAN_DAY);
         list.add(JulianFields.RATA_DIE);
         return list;
-    }
-
-    //-----------------------------------------------------------------------
-    @Test
-    public void test_serialization() throws Exception {
-        assertSerializable(ZoneOffset.of("+01:30"));
-    }
-
-    @Test
-    public void test_serialization_format_quarterPositive() throws Exception {
-        ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        try (DataOutputStream dos = new DataOutputStream(baos) ) {
-            dos.writeByte(8);
-            dos.writeByte(6);  // stored as quarter hours
-        }
-        byte[] bytes = baos.toByteArray();
-        assertSerializedBySer(ZoneOffset.ofHoursMinutes(1, 30), bytes);
-    }
-
-    @Test
-    public void test_serialization_format_quarterNegative() throws Exception {
-        ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        try (DataOutputStream dos = new DataOutputStream(baos) ) {
-            dos.writeByte(8);
-            dos.writeByte(-10);  // stored as quarter hours
-        }
-        byte[] bytes = baos.toByteArray();
-        assertSerializedBySer(ZoneOffset.ofHoursMinutes(-2, -30), bytes);
-    }
-
-    @Test
-    public void test_serialization_format_full() throws Exception {
-        ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        try (DataOutputStream dos = new DataOutputStream(baos) ) {
-            dos.writeByte(8);
-            dos.writeByte(127);
-            dos.writeInt(53265);
-        }
-        byte[] bytes = baos.toByteArray();
-        assertSerializedBySer(ZoneOffset.ofTotalSeconds(53265), bytes);
     }
 
     //-----------------------------------------------------------------------
@@ -563,13 +524,13 @@ public class TCKZoneOffset extends AbstractDateTimeTest {
     @DataProvider(name="query")
     Object[][] data_query() {
         return new Object[][] {
-                {ZoneOffset.UTC, TemporalQuery.chronology(), null},
-                {ZoneOffset.UTC, TemporalQuery.zoneId(), null},
-                {ZoneOffset.UTC, TemporalQuery.precision(), null},
-                {ZoneOffset.UTC, TemporalQuery.zone(), ZoneOffset.UTC},
-                {ZoneOffset.UTC, TemporalQuery.offset(), ZoneOffset.UTC},
-                {ZoneOffset.UTC, TemporalQuery.localDate(), null},
-                {ZoneOffset.UTC, TemporalQuery.localTime(), null},
+                {ZoneOffset.UTC, TemporalQueries.chronology(), null},
+                {ZoneOffset.UTC, TemporalQueries.zoneId(), null},
+                {ZoneOffset.UTC, TemporalQueries.precision(), null},
+                {ZoneOffset.UTC, TemporalQueries.zone(), ZoneOffset.UTC},
+                {ZoneOffset.UTC, TemporalQueries.offset(), ZoneOffset.UTC},
+                {ZoneOffset.UTC, TemporalQueries.localDate(), null},
+                {ZoneOffset.UTC, TemporalQueries.localTime(), null},
         };
     }
 

@@ -42,7 +42,7 @@ import sun.swing.SwingUtilities2;
  * future Swing releases. The current serialization support is
  * appropriate for short term storage or RMI between applications running
  * the same version of Swing.  As of 1.4, support for long term storage
- * of all JavaBeans<sup><font size="-2">TM</font></sup>
+ * of all JavaBeans&trade;
  * has been added to the <code>java.beans</code> package.
  * Please see {@link java.beans.XMLEncoder}.
  *
@@ -936,7 +936,7 @@ public class FixedHeightLayoutCache extends AbstractLayoutCache {
         }
 
         /**
-         * Recreates the receivers path, and all its childrens paths.
+         * Recreates the receivers path, and all its children's paths.
          */
         protected void resetChildrenPaths(TreePath parentPath) {
             removeMapping(this);
@@ -1079,7 +1079,7 @@ public class FixedHeightLayoutCache extends AbstractLayoutCache {
         }
 
         /**
-         * Resets the receivers childrens rows. Starting with the child
+         * Resets the receivers children's rows. Starting with the child
          * at <code>childIndex</code> (and <code>modelIndex</code>) to
          * <code>newRow</code>. This uses <code>setRowAndChildren</code>
          * to recursively descend children, and uses
@@ -1346,7 +1346,7 @@ public class FixedHeightLayoutCache extends AbstractLayoutCache {
                         return true;
                     }
                     else {
-                        // May have been in last childs bounds.
+                        // May have been in last child's bounds.
                         int          lastChildEndRow = 1 + child.row -
                                      (child.childIndex - lastChild.childIndex);
 
@@ -1474,7 +1474,7 @@ public class FixedHeightLayoutCache extends AbstractLayoutCache {
     /**
      * An enumerator to iterate through visible nodes.
      */
-    // This is very similiar to
+    // This is very similar to
     // VariableHeightTreeState.VisibleTreeStateNodeEnumeration
     private class VisibleFHTreeStateNodeEnumeration
         implements Enumeration<TreePath>

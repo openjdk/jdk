@@ -1248,7 +1248,7 @@ public abstract class CommunicatorServer
                      "of this CommunicatorServer instance has changed.");
         }
 
-        return notifInfos;
+        return notifInfos.clone();
     }
 
     /**

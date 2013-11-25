@@ -713,6 +713,10 @@ bool IdealLoopTree::policy_unroll( PhaseIdealLoop *phase ) const {
       case Op_ModL: body_size += 30; break;
       case Op_DivL: body_size += 30; break;
       case Op_MulL: body_size += 10; break;
+      case Op_FlagsProj:
+        // Can't handle unrolling of loops containing
+        // nodes that generate a FlagsProj at the moment
+        return false;
       case Op_StrComp:
       case Op_StrEquals:
       case Op_StrIndexOf:
@@ -776,6 +780,9 @@ bool IdealLoopTree::policy_range_check( PhaseIdealLoop *phase ) const {
         continue; // not RC
 
       Node *cmp = bol->in(1);
+      if (cmp->is_FlagsProj()) {
+        continue;
+      }
 
       Node *rc_exp = cmp->in(1);
       Node *limit = cmp->in(2);
@@ -1957,7 +1964,7 @@ void PhaseIdealLoop::do_range_check( IdealLoopTree *loop, Node_List &old_new ) {
       // Find loads off the surviving projection; remove their control edge
       for (DUIterator_Fast imax, i = dp->fast_outs(imax); i < imax; i++) {
         Node* cd = dp->fast_out(i); // Control-dependent node
-        if( cd->is_Load() ) {   // Loads can now float around in the loop
+        if (cd->is_Load() && cd->depends_only_on_test()) {   // Loads can now float around in the loop
           // Allow the load to float around in the loop, or before it
           // but NOT before the pre-loop.
           _igvn.replace_input_of(cd, 0, ctrl); // ctrl, not NULL

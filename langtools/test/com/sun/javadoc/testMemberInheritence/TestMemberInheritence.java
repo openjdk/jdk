@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 4638588 4635809 6256068 6270645
+ * @bug 4638588 4635809 6256068 6270645 8025633 8026567
  * @summary Test to make sure that members are inherited properly in the Javadoc.
  *          Verify that inheritence labels are correct.
  * @author jamieh
@@ -44,7 +44,7 @@ public class TestMemberInheritence extends JavadocTester {
 
         //Public method should be inherited
         {BUG_ID + FS + "pkg" + FS + "SubClass.html",
-         "<a href=\"../pkg/BaseClass.html#pubMethod()\">"},
+         "<a href=\"../pkg/BaseClass.html#pubMethod--\">"},
 
         //Public inner class should be inherited.
         {BUG_ID + FS + "pkg" + FS + "SubClass.html",
@@ -56,7 +56,7 @@ public class TestMemberInheritence extends JavadocTester {
 
         //Protected method should be inherited
         {BUG_ID + FS + "pkg" + FS + "SubClass.html",
-         "<a href=\"../pkg/BaseClass.html#proMethod()\">"},
+         "<a href=\"../pkg/BaseClass.html#proMethod--\">"},
 
         //Protected inner class should be inherited.
         {BUG_ID + FS + "pkg" + FS + "SubClass.html",
@@ -72,15 +72,15 @@ public class TestMemberInheritence extends JavadocTester {
 
          // Test overriding/implementing methods with generic parameters.
                  {BUG_ID + FS + "pkg" + FS + "BaseClass.html",
-         "<dl>" + NL + "<dt><span class=\"strong\">Specified by:</span></dt>" + NL +
-                          "<dd><code><a href=\"../pkg/BaseInterface.html#getAnnotation(java.lang.Class)\">" +
+         "<dl>" + NL + "<dt><span class=\"overrideSpecifyLabel\">Specified by:</span></dt>" + NL +
+                          "<dd><code><a href=\"../pkg/BaseInterface.html#getAnnotation-java.lang.Class-\">" +
                           "getAnnotation</a></code>&nbsp;in interface&nbsp;<code>" +
                           "<a href=\"../pkg/BaseInterface.html\" title=\"interface in pkg\">" +
                           "BaseInterface</a></code></dd>" + NL + "</dl>"},
 
          // Test diamond inheritence member summary (6256068)
                  {BUG_ID + FS + "diamond" + FS + "Z.html",
-                 "<code><a href=\"../diamond/A.html#aMethod()\">aMethod</a></code>"},
+                 "<code><a href=\"../diamond/A.html#aMethod--\">aMethod</a></code>"},
 
          // Test that doc is inherited from closed parent (6270645)
                  {BUG_ID + FS + "inheritDist" + FS + "C.html",
@@ -90,7 +90,7 @@ public class TestMemberInheritence extends JavadocTester {
 
     private static final String[][] NEGATED_TEST = {
         {BUG_ID + FS + "pkg" + FS + "SubClass.html",
-        "<a href=\"../pkg/BaseClass.html#staticMethod()\">staticMethod</a></code>"},
+        "<a href=\"../pkg/BaseClass.html#staticMethod--\">staticMethod</a></code>"},
     };
     private static final String[] ARGS =
         new String[] {

@@ -42,7 +42,7 @@ import sun.swing.UIAction;
 import sun.awt.AppContext;
 
 /**
- * Basic L&F for a desktop.
+ * Basic L&amp;F for a desktop.
  *
  * @author Steve Wilson
  */

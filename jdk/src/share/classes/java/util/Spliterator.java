@@ -414,12 +414,18 @@ public interface Spliterator<T> {
      * #ORDERED}, {@link #DISTINCT}, {@link #SORTED}, {@link #SIZED},
      * {@link #NONNULL}, {@link #IMMUTABLE}, {@link #CONCURRENT},
      * {@link #SUBSIZED}.  Repeated calls to {@code characteristics()} on
-     * a given spliterator should always return the same result.
+     * a given spliterator, prior to or in-between calls to {@code trySplit},
+     * should always return the same result.
      *
      * <p>If a Spliterator reports an inconsistent set of
      * characteristics (either those returned from a single invocation
      * or across multiple invocations), no guarantees can be made
      * about any computation using this Spliterator.
+     *
+     * @apiNote The characteristics of a given spliterator before splitting
+     * may differ from the characteristics after splitting.  For specific
+     * examples see the characteristic values {@link #SIZED}, {@link #SUBSIZED}
+     * and {@link #CONCURRENT}.
      *
      * @return a representation of characteristics
      */
@@ -539,7 +545,7 @@ public interface Spliterator<T> {
      * Spliterator is expected to have a documented policy concerning the impact
      * of modifications during traversal.
      *
-     * <p>A top-level Spliterator should not report {@code CONCURRENT} and
+     * <p>A top-level Spliterator should not report both {@code CONCURRENT} and
      * {@code SIZED}, since the finite size, if known, may change if the source
      * is concurrently modified during traversal. Such a Spliterator is
      * inconsistent and no guarantees can be made about any computation using
@@ -607,6 +613,7 @@ public interface Spliterator<T> {
          * upon entry to this method, else {@code true}.
          * @throws NullPointerException if the specified action is null
          */
+        @SuppressWarnings("overloads")
         boolean tryAdvance(T_CONS action);
 
         /**
@@ -624,6 +631,7 @@ public interface Spliterator<T> {
          * @param action The action
          * @throws NullPointerException if the specified action is null
          */
+        @SuppressWarnings("overloads")
         default void forEachRemaining(T_CONS action) {
             do { } while (tryAdvance(action));
         }

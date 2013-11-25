@@ -147,7 +147,7 @@ package java.lang.management;
  *       by calling either the {@link #getUsage} method for all
  *       memory pools or the {@link #isUsageThresholdExceeded} method
  *       for those memory pools that support a usage threshold.
- *       Below is example code that has a thread delicated for
+ *       Below is example code that has a thread dedicated for
  *       task distribution and processing.  At every interval,
  *       it will determine if it should receive and process new tasks based
  *       on its memory usage.  If the memory usage exceeds its usage threshold,
@@ -191,7 +191,7 @@ package java.lang.management;
  * <hr>
  *       The above example does not differentiate the case where
  *       the memory usage has temporarily dropped below the usage threshold
- *       from the case where the memory usage remains above the threshould
+ *       from the case where the memory usage remains above the threshold
  *       between two iterations.  The usage threshold count returned by
  *       the {@link #getUsageThresholdCount} method
  *       can be used to determine

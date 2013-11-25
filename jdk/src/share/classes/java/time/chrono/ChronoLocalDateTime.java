@@ -80,6 +80,7 @@ import java.time.temporal.TemporalAccessor;
 import java.time.temporal.TemporalAdjuster;
 import java.time.temporal.TemporalAmount;
 import java.time.temporal.TemporalField;
+import java.time.temporal.TemporalQueries;
 import java.time.temporal.TemporalQuery;
 import java.time.temporal.TemporalUnit;
 import java.time.zone.ZoneRules;
@@ -136,7 +137,7 @@ public interface ChronoLocalDateTime<D extends ChronoLocalDate>
      * @see #isEqual
      */
     static Comparator<ChronoLocalDateTime<?>> timeLineOrder() {
-        return Chronology.DATE_TIME_ORDER;
+        return AbstractChronology.DATE_TIME_ORDER;
     }
 
     //-----------------------------------------------------------------------
@@ -165,7 +166,8 @@ public interface ChronoLocalDateTime<D extends ChronoLocalDate>
         if (temporal instanceof ChronoLocalDateTime) {
             return (ChronoLocalDateTime<?>) temporal;
         }
-        Chronology chrono = temporal.query(TemporalQuery.chronology());
+        Objects.requireNonNull(temporal, "temporal");
+        Chronology chrono = temporal.query(TemporalQueries.chronology());
         if (chrono == null) {
             throw new DateTimeException("Unable to obtain ChronoLocalDateTime from TemporalAccessor: " + temporal.getClass());
         }
@@ -173,6 +175,18 @@ public interface ChronoLocalDateTime<D extends ChronoLocalDate>
     }
 
     //-----------------------------------------------------------------------
+    /**
+     * Gets the chronology of this date-time.
+     * <p>
+     * The {@code Chronology} represents the calendar system in use.
+     * The era and other fields in {@link ChronoField} are defined by the chronology.
+     *
+     * @return the chronology, not null
+     */
+    default Chronology getChronology() {
+        return toLocalDate().getChronology();
+    }
+
     /**
      * Gets the local date part of this date-time.
      * <p>
@@ -250,7 +264,7 @@ public interface ChronoLocalDateTime<D extends ChronoLocalDate>
      */
     @Override
     default ChronoLocalDateTime<D> with(TemporalAdjuster adjuster) {
-        return ChronoLocalDateTimeImpl.ensureValid(toLocalDate().getChronology(), Temporal.super.with(adjuster));
+        return ChronoLocalDateTimeImpl.ensureValid(getChronology(), Temporal.super.with(adjuster));
     }
 
     /**
@@ -268,7 +282,7 @@ public interface ChronoLocalDateTime<D extends ChronoLocalDate>
      */
     @Override
     default ChronoLocalDateTime<D> plus(TemporalAmount amount) {
-        return ChronoLocalDateTimeImpl.ensureValid(toLocalDate().getChronology(), Temporal.super.plus(amount));
+        return ChronoLocalDateTimeImpl.ensureValid(getChronology(), Temporal.super.plus(amount));
     }
 
     /**
@@ -286,7 +300,7 @@ public interface ChronoLocalDateTime<D extends ChronoLocalDate>
      */
     @Override
     default ChronoLocalDateTime<D> minus(TemporalAmount amount) {
-        return ChronoLocalDateTimeImpl.ensureValid(toLocalDate().getChronology(), Temporal.super.minus(amount));
+        return ChronoLocalDateTimeImpl.ensureValid(getChronology(), Temporal.super.minus(amount));
     }
 
     /**
@@ -296,7 +310,7 @@ public interface ChronoLocalDateTime<D extends ChronoLocalDate>
      */
     @Override
     default ChronoLocalDateTime<D> minus(long amountToSubtract, TemporalUnit unit) {
-        return ChronoLocalDateTimeImpl.ensureValid(toLocalDate().getChronology(), Temporal.super.minus(amountToSubtract, unit));
+        return ChronoLocalDateTimeImpl.ensureValid(getChronology(), Temporal.super.minus(amountToSubtract, unit));
     }
 
     //-----------------------------------------------------------------------
@@ -321,13 +335,13 @@ public interface ChronoLocalDateTime<D extends ChronoLocalDate>
     @SuppressWarnings("unchecked")
     @Override
     default <R> R query(TemporalQuery<R> query) {
-        if (query == TemporalQuery.zoneId() || query == TemporalQuery.zone() || query == TemporalQuery.offset()) {
+        if (query == TemporalQueries.zoneId() || query == TemporalQueries.zone() || query == TemporalQueries.offset()) {
             return null;
-        } else if (query == TemporalQuery.localTime()) {
+        } else if (query == TemporalQueries.localTime()) {
             return (R) toLocalTime();
-        } else if (query == TemporalQuery.chronology()) {
-            return (R) toLocalDate().getChronology();
-        } else if (query == TemporalQuery.precision()) {
+        } else if (query == TemporalQueries.chronology()) {
+            return (R) getChronology();
+        } else if (query == TemporalQueries.precision()) {
             return (R) NANOS;
         }
         // inline TemporalAccessor.super.query(query) as an optimization
@@ -488,7 +502,7 @@ public interface ChronoLocalDateTime<D extends ChronoLocalDate>
         if (cmp == 0) {
             cmp = toLocalTime().compareTo(other.toLocalTime());
             if (cmp == 0) {
-                cmp = toLocalDate().getChronology().compareTo(other.toLocalDate().getChronology());
+                cmp = getChronology().compareTo(other.getChronology());
             }
         }
         return cmp;

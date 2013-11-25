@@ -23,7 +23,7 @@
  */
 
 #include "precompiled.hpp"
-#include "interp_masm_x86_64.hpp"
+#include "interp_masm_x86.hpp"
 #include "interpreter/interpreter.hpp"
 #include "interpreter/interpreterRuntime.hpp"
 #include "oops/arrayOop.hpp"
@@ -192,7 +192,7 @@ void InterpreterMacroAssembler::get_unsigned_2_byte_index_at_bcp(
   Register reg,
   int bcp_offset) {
   assert(bcp_offset >= 0, "bcp is still pointing to start of bytecode");
-  movl(reg, Address(r13, bcp_offset));
+  load_unsigned_short(reg, Address(r13, bcp_offset));
   bswapl(reg);
   shrl(reg, 16);
 }
@@ -1066,7 +1066,6 @@ void InterpreterMacroAssembler::profile_not_taken_branch(Register mdp) {
     bind(profile_continue);
   }
 }
-
 
 void InterpreterMacroAssembler::profile_call(Register mdp) {
   if (ProfileInterpreter) {

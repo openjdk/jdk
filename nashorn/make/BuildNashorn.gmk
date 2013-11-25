@@ -1,0 +1,112 @@
+#
+# Copyright (c) 2010, 2013, Oracle and/or its affiliates. All rights reserved.
+# DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+#
+# This code is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License version 2 only, as
+# published by the Free Software Foundation.  Oracle designates this
+# particular file as subject to the "Classpath" exception as provided
+# by Oracle in the LICENSE file that accompanied this code.
+#
+# This code is distributed in the hope that it will be useful, but WITHOUT
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+# FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+# version 2 for more details (a copy is included in the LICENSE file that
+# accompanied this code).
+#
+# You should have received a copy of the GNU General Public License version
+# 2 along with this work; if not, write to the Free Software Foundation,
+# Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+#
+# Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+# or visit www.oracle.com if you need additional information or have any
+# questions.
+#
+
+# This must be the first rule
+default: all
+
+-include $(SPEC)
+include MakeBase.gmk
+include JavaCompilation.gmk
+
+JDK_CLASSES := $(JDK_OUTPUTDIR)/classes
+
+NASHORN_JAR := $(NASHORN_DIST)/nashorn.jar
+NASHORN_VERSION := $(JDK_VERSION)
+NASHORN_FULL_VERSION := $(FULL_VERSION)
+
+ifdef MILESTONE
+  ifeq ($(MILESTONE), internal)
+    NASHORN_VERSION = $(FULL_VERSION)
+  endif
+endif
+
+# Need to use source and target 7 for nasgen to work.
+$(eval $(call SetupJavaCompiler,GENERATE_NEWBYTECODE_DEBUG, \
+    JVM := $(JAVA), \
+    JAVAC := $(NEW_JAVAC), \
+    FLAGS := -g -source 7 -target 7 -bootclasspath $(JDK_CLASSES), \
+    SERVER_DIR := $(SJAVAC_SERVER_DIR), \
+    SERVER_JVM := $(SJAVAC_SERVER_JAVA)))
+
+# Build nashorn into intermediate directory
+$(eval $(call SetupJavaCompilation,BUILD_NASHORN, \
+    SETUP := GENERATE_NEWBYTECODE_DEBUG, \
+    SRC := $(NASHORN_TOPDIR)/src, \
+    COPY := .properties .js, \
+    BIN := $(NASHORN_OUTPUTDIR)/nashorn_classes))
+
+NASGEN_SRC := $(NASHORN_TOPDIR)/buildtools/nasgen/src
+ASM_SRC := $(JDK_TOPDIR)/src/share/classes/jdk/internal/org/objectweb/asm
+
+# Build nasgen
+$(eval $(call SetupJavaCompilation,BUILD_NASGEN, \
+    SETUP := GENERATE_NEWBYTECODE_DEBUG, \
+    SRC := $(NASGEN_SRC) $(ASM_SRC), \
+    BIN := $(NASHORN_OUTPUTDIR)/nasgen_classes, \
+    ADD_JAVAC_FLAGS := -cp $(NASHORN_OUTPUTDIR)/nashorn_classes))
+
+# Nasgen needs nashorn classes
+$(BUILD_NASGEN): $(BUILD_NASHORN)
+
+# Copy classes to final classes dir and run nasgen to modify classes in jdk.nashorn.internal.objects package
+$(NASHORN_OUTPUTDIR)/classes/_the.nasgen.run: $(BUILD_NASGEN)
+	$(ECHO) Running nasgen
+	$(MKDIR) -p $(@D)
+	$(RM) -rf $(@D)/jdk $(@D)/netscape
+	$(CP) -R -p $(NASHORN_OUTPUTDIR)/nashorn_classes/* $(@D)/
+	$(FIXPATH) $(JAVA) \
+	    -cp "$(NASHORN_OUTPUTDIR)/nasgen_classes$(PATH_SEP)$(NASHORN_OUTPUTDIR)/nashorn_classes" \
+	    jdk.nashorn.internal.tools.nasgen.Main $(@D) jdk.nashorn.internal.objects $(@D)
+	$(TOUCH) $@
+
+# Version file needs to be processed with version numbers
+VERSION_FILE := $(NASHORN_OUTPUTDIR)/classes/jdk/nashorn/internal/runtime/resources/version.properties
+
+# Needs to happen after nasgen run since nasgen run deletes it
+$(VERSION_FILE): $(NASHORN_OUTPUTDIR)/classes/_the.nasgen.run
+$(VERSION_FILE): $(NASHORN_TOPDIR)/src/jdk/nashorn/internal/runtime/resources/version.properties-template
+	$(ECHO) Creating version.properties
+	$(MKDIR) -p $(@D)
+	$(CAT) $< | $(SED) -e 's/$$(FULL_VERSION)/$(NASHORN_FULL_VERSION)/g' \
+	    -e 's/$$(RELEASE)/$(NASHORN_VERSION)/g' \
+	    -e '/^#.*$$/d' -e '/^$$/d'  > $@
+
+
+MANIFEST_ATTRIBUTES := Name: jdk/nashorn/\nImplementation-Title: Oracle Nashorn\nImplementation-Version: $(NASHORN_FULL_VERSION)
+
+# Create nashorn.jar from the final classes dir
+$(eval $(call SetupArchive,BUILD_NASHORN_JAR, \
+    $(NASHORN_OUTPUTDIR)/classes/_the.nasgen.run \
+    $(VERSION_FILE), \
+    SRCS := $(NASHORN_OUTPUTDIR)/classes, \
+    SUFFIXES := .class .js .properties Factory, \
+    MANIFEST := $(NASHORN_TOPDIR)/src/META-INF/MANIFEST.MF, \
+    EXTRA_MANIFEST_ATTR := $(MANIFEST_ATTRIBUTES), \
+    SKIP_METAINF := true, \
+    JAR := $(NASHORN_JAR)))
+
+all: $(NASHORN_JAR)
+
+.PHONY: all

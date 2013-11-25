@@ -136,7 +136,7 @@ public class AdaptDatagramSocket {
                                         echoServer.getPort());
             test(address, 0, false, false);
             test(address, 0, false, true);
-            test(address, 5000, false, false);
+            test(address, 15000, false, false);
         }
         try (TestServers.UdpDiscardServer discardServer
                 = TestServers.UdpDiscardServer.startNewServer()) {

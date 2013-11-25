@@ -52,7 +52,7 @@ import javax.accessibility.*;
  * it appears as follows in its normal state:
  * <p>
  * <img src="doc-files/Choice-1.gif" alt="The following text describes the graphic"
- * ALIGN=center HSPACE=10 VSPACE=7>
+ * style="float:center; margin: 7px 10px;">
  * <p>
  * In the picture, <code>"Green"</code> is the current choice.
  * Pushing the mouse button down on the object causes a menu to
@@ -418,7 +418,7 @@ public class Choice extends Component implements ItemSelectable, Accessible {
      * an <code>ItemEvent</code>.  The only way to trigger an
      * <code>ItemEvent</code> is by user interaction.
      *
-     * @param      pos      the positon of the selected item
+     * @param      pos      the position of the selected item
      * @exception  IllegalArgumentException if the specified
      *                            position is greater than the
      *                            number of items or less than zero

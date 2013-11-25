@@ -53,7 +53,7 @@ fi
 JAR="${TESTJAVA}${FS}bin${FS}jar"
 JAVA="${TESTJAVA}${FS}bin${FS}java"
 JAVAC="${TESTJAVA}${FS}bin${FS}javac"
-KT="${TESTJAVA}${FS}bin${FS}keytool -keystore tsks -storepass changeit -keypass changeit"
+KT="${TESTJAVA}${FS}bin${FS}keytool -keystore tsks -storepass changeit -keypass changeit -keyalg rsa"
 
 rm tsks
 echo Nothing > A

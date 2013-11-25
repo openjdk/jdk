@@ -107,21 +107,21 @@ import static sun.swing.SwingUtilities2.IMPLIED_CR;
  * <p>With the following HTML content:</p>
  *
  * <pre>
- * &lt;html>
- *   &lt;head>
- *     &lt;title>An example HTMLDocument&lt;/title>
- *     &lt;style type="text/css">
+ * &lt;html&gt;
+ *   &lt;head&gt;
+ *     &lt;title&gt;An example HTMLDocument&lt;/title&gt;
+ *     &lt;style type="text/css"&gt;
  *       div { background-color: silver; }
  *       ul { color: red; }
- *     &lt;/style>
- *   &lt;/head>
- *   &lt;body>
- *     &lt;div id="BOX">
- *       &lt;p>Paragraph 1&lt;/p>
- *       &lt;p>Paragraph 2&lt;/p>
- *     &lt;/div>
- *   &lt;/body>
- * &lt;/html>
+ *     &lt;/style&gt;
+ *   &lt;/head&gt;
+ *   &lt;body&gt;
+ *     &lt;div id="BOX"&gt;
+ *       &lt;p&gt;Paragraph 1&lt;/p&gt;
+ *       &lt;p&gt;Paragraph 2&lt;/p&gt;
+ *     &lt;/div&gt;
+ *   &lt;/body&gt;
+ * &lt;/html&gt;
  * </pre>
  *
  * <p>All the methods for modifying an HTML document require an {@link
@@ -149,10 +149,10 @@ import static sun.swing.SwingUtilities2.IMPLIED_CR;
  * of any non-leaf element by using the methods
  * <code>insertAfterStart</code> and <code>insertBeforeEnd</code>.
  * For example, if <code>e</code> is the <code>DIV</code> element,
- * <code>d.insertAfterStart(e, "&lt;ul>&lt;li>List
- * Item&lt;/li>&lt;/ul>")</code> inserts the list before the first
- * paragraph, and <code>d.insertBeforeEnd(e, "&lt;ul>&lt;li>List
- * Item&lt;/li>&lt;/ul>")</code> inserts the list after the last
+ * <code>d.insertAfterStart(e, "&lt;ul&gt;&lt;li&gt;List
+ * Item&lt;/li&gt;&lt;/ul&gt;")</code> inserts the list before the first
+ * paragraph, and <code>d.insertBeforeEnd(e, "&lt;ul&gt;&lt;li&gt;List
+ * Item&lt;/li&gt;&lt;/ul&gt;")</code> inserts the list after the last
  * paragraph.  The <code>DIV</code> block becomes the parent of the
  * newly inserted elements.</p>
  *
@@ -160,9 +160,9 @@ import static sun.swing.SwingUtilities2.IMPLIED_CR;
  * using the methods <code>insertBeforeStart</code> and
  * <code>insertAfterEnd</code>.  For example, if <code>e</code> is the
  * <code>DIV</code> element, <code>d.insertBeforeStart(e,
- * "&lt;ul>&lt;li>List Item&lt;/li>&lt;/ul>")</code> inserts the list
+ * "&lt;ul&gt;&lt;li&gt;List Item&lt;/li&gt;&lt;/ul&gt;")</code> inserts the list
  * before the <code>DIV</code> element, and <code>d.insertAfterEnd(e,
- * "&lt;ul>&lt;li>List Item&lt;/li>&lt;/ul>")</code> inserts the list
+ * "&lt;ul&gt;&lt;li&gt;List Item&lt;/li&gt;&lt;/ul&gt;")</code> inserts the list
  * after the <code>DIV</code> element.  The newly inserted elements
  * become siblings of the <code>DIV</code> element.</p>
  *
@@ -171,10 +171,10 @@ import static sun.swing.SwingUtilities2.IMPLIED_CR;
  * <p>Elements and all their descendants can be replaced by using the
  * methods <code>setInnerHTML</code> and <code>setOuterHTML</code>.
  * For example, if <code>e</code> is the <code>DIV</code> element,
- * <code>d.setInnerHTML(e, "&lt;ul>&lt;li>List
- * Item&lt;/li>&lt;/ul>")</code> replaces all children paragraphs with
- * the list, and <code>d.setOuterHTML(e, "&lt;ul>&lt;li>List
- * Item&lt;/li>&lt;/ul>")</code> replaces the <code>DIV</code> element
+ * <code>d.setInnerHTML(e, "&lt;ul&gt;&lt;li&gt;List
+ * Item&lt;/li&gt;&lt;/ul&gt;")</code> replaces all children paragraphs with
+ * the list, and <code>d.setOuterHTML(e, "&lt;ul&gt;&lt;li&gt;List
+ * Item&lt;/li&gt;&lt;/ul&gt;")</code> replaces the <code>DIV</code> element
  * itself.  In latter case the parent of the list is the
  * <code>BODY</code> element.
  *
@@ -194,14 +194,14 @@ import static sun.swing.SwingUtilities2.IMPLIED_CR;
  *     <th><code>setOuterHTML</code></th>
  *   </tr>
  *   <tr valign="top">
- *     <td nowrap="nowrap">
+ *     <td style="white-space:nowrap">
  *       <div style="background-color: silver;">
  *         <p>Paragraph 1</p>
  *         <p>Paragraph 2</p>
  *       </div>
  *     </td>
  * <!--insertAfterStart-->
- *     <td nowrap="nowrap">
+ *     <td style="white-space:nowrap">
  *       <div style="background-color: silver;">
  *         <ul style="color: red;">
  *           <li>List Item</li>
@@ -211,7 +211,7 @@ import static sun.swing.SwingUtilities2.IMPLIED_CR;
  *       </div>
  *     </td>
  * <!--insertBeforeEnd-->
- *     <td nowrap="nowrap">
+ *     <td style="white-space:nowrap">
  *       <div style="background-color: silver;">
  *         <p>Paragraph 1</p>
  *         <p>Paragraph 2</p>
@@ -221,7 +221,7 @@ import static sun.swing.SwingUtilities2.IMPLIED_CR;
  *       </div>
  *     </td>
  * <!--insertBeforeStart-->
- *     <td nowrap="nowrap">
+ *     <td style="white-space:nowrap">
  *       <ul style="color: red;">
  *         <li>List Item</li>
  *       </ul>
@@ -231,7 +231,7 @@ import static sun.swing.SwingUtilities2.IMPLIED_CR;
  *       </div>
  *     </td>
  * <!--insertAfterEnd-->
- *     <td nowrap="nowrap">
+ *     <td style="white-space:nowrap">
  *       <div style="background-color: silver;">
  *         <p>Paragraph 1</p>
  *         <p>Paragraph 2</p>
@@ -241,7 +241,7 @@ import static sun.swing.SwingUtilities2.IMPLIED_CR;
  *       </ul>
  *     </td>
  * <!--setInnerHTML-->
- *     <td nowrap="nowrap">
+ *     <td style="white-space:nowrap">
  *       <div style="background-color: silver;">
  *         <ul style="color: red;">
  *           <li>List Item</li>
@@ -249,7 +249,7 @@ import static sun.swing.SwingUtilities2.IMPLIED_CR;
  *       </div>
  *     </td>
  * <!--setOuterHTML-->
- *     <td nowrap="nowrap">
+ *     <td style="white-space:nowrap">
  *       <ul style="color: red;">
  *         <li>List Item</li>
  *       </ul>
@@ -261,8 +261,8 @@ import static sun.swing.SwingUtilities2.IMPLIED_CR;
  * not be compatible with future Swing releases. The current
  * serialization support is appropriate for short term storage or RMI
  * between applications running the same version of Swing.  As of 1.4,
- * support for long term storage of all JavaBeans<sup><font
- * size="-2">TM</font></sup> has been added to the
+ * support for long term storage of all JavaBeans&trade;
+ * has been added to the
  * <code>java.beans</code> package.  Please see {@link
  * java.beans.XMLEncoder}.</p>
  *
@@ -474,7 +474,7 @@ public class HTMLDocument extends DefaultStyledDocument {
      * <p>
      * This method is thread safe, although most Swing methods
      * are not. Please see
-     * <A HREF="http://download.oracle.com/javase/tutorial/uiswing/concurrency/index.html">Concurrency
+     * <A HREF="http://docs.oracle.com/javase/tutorial/uiswing/concurrency/index.html">Concurrency
      * in Swing</A> for more information.
      *
      * @param offset the offset into the paragraph (must be at least 0)
@@ -985,25 +985,25 @@ public class HTMLDocument extends DefaultStyledDocument {
      * parameter is <b>in bold</b>).</p>
      *
      * <pre>
-     *     &lt;body>
+     *     &lt;body&gt;
      *       |
-     *     <b>&lt;div></b>
+     *     <b>&lt;div&gt;</b>
      *      /  \
-     *    &lt;p>   &lt;p>
+     *    &lt;p&gt;   &lt;p&gt;
      * </pre>
      *
-     * <p>Invoking <code>setInnerHTML(elem, "&lt;ul>&lt;li>")</code>
+     * <p>Invoking <code>setInnerHTML(elem, "&lt;ul&gt;&lt;li&gt;")</code>
      * results in the following structure (new elements are <font
      * color="red">in red</font>).</p>
      *
      * <pre>
-     *     &lt;body>
+     *     &lt;body&gt;
      *       |
-     *     <b>&lt;div></b>
+     *     <b>&lt;div&gt;</b>
      *         \
-     *         <font color="red">&lt;ul></font>
+     *         <font color="red">&lt;ul&gt;</font>
      *           \
-     *           <font color="red">&lt;li></font>
+     *           <font color="red">&lt;li&gt;</font>
      * </pre>
      *
      * <p>Parameter <code>elem</code> must not be a leaf element,
@@ -1011,7 +1011,7 @@ public class HTMLDocument extends DefaultStyledDocument {
      * If either <code>elem</code> or <code>htmlText</code> parameter
      * is <code>null</code>, no changes are made to the document.</p>
      *
-     * <p>For this to work correcty, the document must have an
+     * <p>For this to work correctly, the document must have an
      * <code>HTMLEditorKit.Parser</code> set. This will be the case
      * if the document was created from an HTMLEditorKit via the
      * <code>createDefaultDocument</code> method.</p>
@@ -1053,7 +1053,7 @@ public class HTMLDocument extends DefaultStyledDocument {
      * a newline present if one is needed. This may result in an additional
      * element being inserted. Consider, if you were to replace a character
      * element that contained a newline with &lt;img&gt; this would create
-     * two elements, one for the image, ane one for the newline.</p>
+     * two elements, one for the image, and one for the newline.</p>
      *
      * <p>If you try to replace the element at length you will most
      * likely end up with two elements, eg
@@ -1066,30 +1066,30 @@ public class HTMLDocument extends DefaultStyledDocument {
      * parameter is <b>in bold</b>).</p>
      *
      * <pre>
-     *     &lt;body>
+     *     &lt;body&gt;
      *       |
-     *     <b>&lt;div></b>
+     *     <b>&lt;div&gt;</b>
      *      /  \
-     *    &lt;p>   &lt;p>
+     *    &lt;p&gt;   &lt;p&gt;
      * </pre>
      *
-     * <p>Invoking <code>setOuterHTML(elem, "&lt;ul>&lt;li>")</code>
+     * <p>Invoking <code>setOuterHTML(elem, "&lt;ul&gt;&lt;li&gt;")</code>
      * results in the following structure (new elements are <font
      * color="red">in red</font>).</p>
      *
      * <pre>
-     *    &lt;body>
+     *    &lt;body&gt;
      *      |
-     *     <font color="red">&lt;ul></font>
+     *     <font color="red">&lt;ul&gt;</font>
      *       \
-     *       <font color="red">&lt;li></font>
+     *       <font color="red">&lt;li&gt;</font>
      * </pre>
      *
      * <p>If either <code>elem</code> or <code>htmlText</code>
      * parameter is <code>null</code>, no changes are made to the
      * document.</p>
      *
-     * <p>For this to work correcty, the document must have an
+     * <p>For this to work correctly, the document must have an
      * HTMLEditorKit.Parser set. This will be the case if the document
      * was created from an HTMLEditorKit via the
      * <code>createDefaultDocument</code> method.</p>
@@ -1136,25 +1136,25 @@ public class HTMLDocument extends DefaultStyledDocument {
      * parameter is <b>in bold</b>).</p>
      *
      * <pre>
-     *     &lt;body>
+     *     &lt;body&gt;
      *       |
-     *     <b>&lt;div></b>
+     *     <b>&lt;div&gt;</b>
      *      /  \
-     *    &lt;p>   &lt;p>
+     *    &lt;p&gt;   &lt;p&gt;
      * </pre>
      *
      * <p>Invoking <code>insertAfterStart(elem,
-     * "&lt;ul>&lt;li>")</code> results in the following structure
+     * "&lt;ul&gt;&lt;li&gt;")</code> results in the following structure
      * (new elements are <font color="red">in red</font>).</p>
      *
      * <pre>
-     *        &lt;body>
+     *        &lt;body&gt;
      *          |
-     *        <b>&lt;div></b>
+     *        <b>&lt;div&gt;</b>
      *       /  |  \
-     *    <font color="red">&lt;ul></font> &lt;p> &lt;p>
+     *    <font color="red">&lt;ul&gt;</font> &lt;p&gt; &lt;p&gt;
      *     /
-     *  <font color="red">&lt;li></font>
+     *  <font color="red">&lt;li&gt;</font>
      * </pre>
      *
      * <p>Unlike the <code>insertBeforeStart</code> method, new
@@ -1166,7 +1166,7 @@ public class HTMLDocument extends DefaultStyledDocument {
      * If either <code>elem</code> or <code>htmlText</code> parameter
      * is <code>null</code>, no changes are made to the document.</p>
      *
-     * <p>For this to work correcty, the document must have an
+     * <p>For this to work correctly, the document must have an
      * <code>HTMLEditorKit.Parser</code> set. This will be the case
      * if the document was created from an HTMLEditorKit via the
      * <code>createDefaultDocument</code> method.</p>
@@ -1206,25 +1206,25 @@ public class HTMLDocument extends DefaultStyledDocument {
      * parameter is <b>in bold</b>).</p>
      *
      * <pre>
-     *     &lt;body>
+     *     &lt;body&gt;
      *       |
-     *     <b>&lt;div></b>
+     *     <b>&lt;div&gt;</b>
      *      /  \
-     *    &lt;p>   &lt;p>
+     *    &lt;p&gt;   &lt;p&gt;
      * </pre>
      *
-     * <p>Invoking <code>insertBeforeEnd(elem, "&lt;ul>&lt;li>")</code>
+     * <p>Invoking <code>insertBeforeEnd(elem, "&lt;ul&gt;&lt;li&gt;")</code>
      * results in the following structure (new elements are <font
      * color="red">in red</font>).</p>
      *
      * <pre>
-     *        &lt;body>
+     *        &lt;body&gt;
      *          |
-     *        <b>&lt;div></b>
+     *        <b>&lt;div&gt;</b>
      *       /  |  \
-     *     &lt;p> &lt;p> <font color="red">&lt;ul></font>
+     *     &lt;p&gt; &lt;p&gt; <font color="red">&lt;ul&gt;</font>
      *               \
-     *               <font color="red">&lt;li></font>
+     *               <font color="red">&lt;li&gt;</font>
      * </pre>
      *
      * <p>Unlike the <code>insertAfterEnd</code> method, new elements
@@ -1236,7 +1236,7 @@ public class HTMLDocument extends DefaultStyledDocument {
      * If either <code>elem</code> or <code>htmlText</code> parameter
      * is <code>null</code>, no changes are made to the document.</p>
      *
-     * <p>For this to work correcty, the document must have an
+     * <p>For this to work correctly, the document must have an
      * <code>HTMLEditorKit.Parser</code> set. This will be the case
      * if the document was created from an HTMLEditorKit via the
      * <code>createDefaultDocument</code> method.</p>
@@ -1273,23 +1273,23 @@ public class HTMLDocument extends DefaultStyledDocument {
      * parameter is <b>in bold</b>).</p>
      *
      * <pre>
-     *     &lt;body>
+     *     &lt;body&gt;
      *       |
-     *     <b>&lt;div></b>
+     *     <b>&lt;div&gt;</b>
      *      /  \
-     *    &lt;p>   &lt;p>
+     *    &lt;p&gt;   &lt;p&gt;
      * </pre>
      *
      * <p>Invoking <code>insertBeforeStart(elem,
-     * "&lt;ul>&lt;li>")</code> results in the following structure
+     * "&lt;ul&gt;&lt;li&gt;")</code> results in the following structure
      * (new elements are <font color="red">in red</font>).</p>
      *
      * <pre>
-     *        &lt;body>
+     *        &lt;body&gt;
      *         /  \
-     *      <font color="red">&lt;ul></font> <b>&lt;div></b>
+     *      <font color="red">&lt;ul&gt;</font> <b>&lt;div&gt;</b>
      *       /    /  \
-     *     <font color="red">&lt;li></font> &lt;p>  &lt;p>
+     *     <font color="red">&lt;li&gt;</font> &lt;p&gt;  &lt;p&gt;
      * </pre>
      *
      * <p>Unlike the <code>insertAfterStart</code> method, new
@@ -1300,7 +1300,7 @@ public class HTMLDocument extends DefaultStyledDocument {
      * parameter is <code>null</code>, no changes are made to the
      * document.</p>
      *
-     * <p>For this to work correcty, the document must have an
+     * <p>For this to work correctly, the document must have an
      * <code>HTMLEditorKit.Parser</code> set. This will be the case
      * if the document was created from an HTMLEditorKit via the
      * <code>createDefaultDocument</code> method.</p>
@@ -1331,23 +1331,23 @@ public class HTMLDocument extends DefaultStyledDocument {
      * parameter is <b>in bold</b>).</p>
      *
      * <pre>
-     *     &lt;body>
+     *     &lt;body&gt;
      *       |
-     *     <b>&lt;div></b>
+     *     <b>&lt;div&gt;</b>
      *      /  \
-     *    &lt;p>   &lt;p>
+     *    &lt;p&gt;   &lt;p&gt;
      * </pre>
      *
-     * <p>Invoking <code>insertAfterEnd(elem, "&lt;ul>&lt;li>")</code>
+     * <p>Invoking <code>insertAfterEnd(elem, "&lt;ul&gt;&lt;li&gt;")</code>
      * results in the following structure (new elements are <font
      * color="red">in red</font>).</p>
      *
      * <pre>
-     *        &lt;body>
+     *        &lt;body&gt;
      *         /  \
-     *      <b>&lt;div></b> <font color="red">&lt;ul></font>
+     *      <b>&lt;div&gt;</b> <font color="red">&lt;ul&gt;</font>
      *       / \    \
-     *     &lt;p> &lt;p>  <font color="red">&lt;li></font>
+     *     &lt;p&gt; &lt;p&gt;  <font color="red">&lt;li&gt;</font>
      * </pre>
      *
      * <p>Unlike the <code>insertBeforeEnd</code> method, new elements
@@ -1358,7 +1358,7 @@ public class HTMLDocument extends DefaultStyledDocument {
      * parameter is <code>null</code>, no changes are made to the
      * document.</p>
      *
-     * <p>For this to work correcty, the document must have an
+     * <p>For this to work correctly, the document must have an
      * <code>HTMLEditorKit.Parser</code> set. This will be the case
      * if the document was created from an HTMLEditorKit via the
      * <code>createDefaultDocument</code> method.</p>
@@ -2166,7 +2166,7 @@ public class HTMLDocument extends DefaultStyledDocument {
      * <tr><td><code>HTML.Tag.VAR</code>       <td>CharacterAction
      * </table>
      * <p>
-     * Once &lt;/html> is encountered, the Actions are no longer notified.
+     * Once &lt;/html&gt; is encountered, the Actions are no longer notified.
      */
     public class HTMLReader extends HTMLEditorKit.ParserCallback {
 
@@ -3344,7 +3344,7 @@ public class HTMLDocument extends DefaultStyledDocument {
                     String type = (String)
                         attr.getAttribute(HTML.Attribute.TYPE);
                     /*
-                     * if type is not defined teh default is
+                     * if type is not defined the default is
                      * assumed to be text.
                      */
                     if (type == null) {
@@ -3734,7 +3734,7 @@ public class HTMLDocument extends DefaultStyledDocument {
             int size = parseBuffer.size();
             if (insertTagDepthDelta < 0) {
                 // When inserting via an insertTag, the depths (of the tree
-                // being read in, and existing hiearchy) may not match up.
+                // being read in, and existing hierarchy) may not match up.
                 // This attemps to clean it up.
                 int removeCounter = insertTagDepthDelta;
                 while (removeCounter < 0 && size >= 0 &&
@@ -3973,7 +3973,7 @@ public class HTMLDocument extends DefaultStyledDocument {
         private boolean receivedEndHTML;
         /** Number of times <code>flushBuffer</code> has been invoked. */
         private int flushCount;
-        /** If true, behavior is similiar to insertTag, but instead of
+        /** If true, behavior is similar to insertTag, but instead of
          * waiting for insertTag will wait for first Element without
          * an 'implied' attribute and begin inserting then. */
         private boolean insertAfterImplied;

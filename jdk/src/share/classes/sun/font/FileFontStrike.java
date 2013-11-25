@@ -189,7 +189,7 @@ public class FileFontStrike extends PhysicalStrike {
 
         /* Always segment for fonts with > 256 glyphs, but also for smaller
          * fonts with non-typical sizes and transforms.
-         * Segmenting for all non-typical pt sizes helps to minimise memory
+         * Segmenting for all non-typical pt sizes helps to minimize memory
          * usage when very many distinct strikes are created.
          * The size range of 0->5 and 37->INF for segmenting is arbitrary
          * but the intention is that typical GUI integer point sizes (6->36)

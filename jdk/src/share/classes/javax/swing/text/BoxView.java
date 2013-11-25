@@ -38,7 +38,7 @@ import javax.swing.SizeRequirements;
  * This is a building block that might be useful to represent
  * things like a collection of lines, paragraphs,
  * lists, columns, pages, etc.  The axis along which the children are tiled is
- * considered the major axis.  The orthoginal axis is the minor axis.
+ * considered the major axis.  The orthogonal axis is the minor axis.
  * <p>
  * Layout for each axis is handled separately by the methods
  * <code>layoutMajorAxis</code> and <code>layoutMinorAxis</code>.
@@ -154,7 +154,7 @@ public class BoxView extends CompositeView {
      *
      * @param g the graphics context
      * @param alloc the allocated region to paint into
-     * @param index the child index, >= 0 && < getViewCount()
+     * @param index the child index, &gt;= 0 &amp;&amp; &lt; getViewCount()
      */
     protected void paintChild(Graphics g, Rectangle alloc, int index) {
         View child = getView(index);
@@ -170,9 +170,9 @@ public class BoxView extends CompositeView {
      * will have an offset and span of 0.
      *
      * @param index the starting index into the child views to insert
-     *   the new views; this should be a value >= 0 and <= getViewCount
+     *   the new views; this should be a value &gt;= 0 and &lt;= getViewCount
      * @param length the number of existing child views to remove;
-     *   This should be a value >= 0 and <= (getViewCount() - offset)
+     *   This should be a value &gt;= 0 and &lt;= (getViewCount() - offset)
      * @param elems the child views to add; this value can be
      *   <code>null</code>to indicate no children are being added
      *   (useful to remove)
@@ -390,8 +390,8 @@ public class BoxView extends CompositeView {
      * information.  This is implemented to call the
      * layout method with the sizes inside of the insets.
      *
-     * @param width the width >= 0
-     * @param height the height >= 0
+     * @param width the width &gt;= 0
+     * @param height the height &gt;= 0
      */
     public void setSize(float width, float height) {
         layout(Math.max(0, (int)(width - getLeftInset() - getRightInset())),
@@ -442,7 +442,7 @@ public class BoxView extends CompositeView {
      * <code>null</code> if the layout is invalid,
      * otherwise the superclass behavior is executed.
      *
-     * @param index the index of the child, >= 0 && < getViewCount()
+     * @param index the index of the child, &gt;= 0 &amp;&amp; &gt; getViewCount()
      * @param a  the allocation to this view
      * @return the allocation to the child; or <code>null</code>
      *          if <code>a</code> is <code>null</code>;
@@ -469,7 +469,7 @@ public class BoxView extends CompositeView {
      * to the coordinate space of the view mapped to it.  This makes
      * sure the allocation is valid before calling the superclass.
      *
-     * @param pos the position to convert >= 0
+     * @param pos the position to convert &gt;= 0
      * @param a the allocated region to render into
      * @return the bounding box of the given position
      * @exception BadLocationException  if the given position does
@@ -488,11 +488,11 @@ public class BoxView extends CompositeView {
      * Provides a mapping from the view coordinate space to the logical
      * coordinate space of the model.
      *
-     * @param x   x coordinate of the view location to convert >= 0
-     * @param y   y coordinate of the view location to convert >= 0
+     * @param x   x coordinate of the view location to convert &gt;= 0
+     * @param y   y coordinate of the view location to convert &gt;= 0
      * @param a the allocated region to render into
      * @return the location within the model that best represents the
-     *  given point in the view >= 0
+     *  given point in the view &gt;= 0
      * @see View#viewToModel
      */
     public int viewToModel(float x, float y, Shape a, Position.Bias[] bias) {
@@ -507,13 +507,13 @@ public class BoxView extends CompositeView {
      * Determines the desired alignment for this view along an
      * axis.  This is implemented to give the total alignment
      * needed to position the children with the alignment points
-     * lined up along the axis orthoginal to the axis that is
+     * lined up along the axis orthogonal to the axis that is
      * being tiled.  The axis being tiled will request to be
      * centered (i.e. 0.5f).
      *
      * @param axis may be either <code>View.X_AXIS</code>
      *   or <code>View.Y_AXIS</code>
-     * @return the desired alignment >= 0.0f && <= 1.0f; this should
+     * @return the desired alignment &gt;= 0.0f &amp;&amp; &lt;= 1.0f; this should
      *   be a value between 0.0 and 1.0 where 0 indicates alignment at the
      *   origin and 1.0 indicates alignment to the full span
      *   away from the origin; an alignment of 0.5 would be the
@@ -535,7 +535,7 @@ public class BoxView extends CompositeView {
      *
      * @param axis may be either <code>View.X_AXIS</code>
      *           or <code>View.Y_AXIS</code>
-     * @return   the span the view would like to be rendered into >= 0;
+     * @return   the span the view would like to be rendered into &gt;= 0;
      *           typically the view is told to render into the span
      *           that is returned, although there is no guarantee;
      *           the parent may choose to resize or break the view
@@ -558,7 +558,7 @@ public class BoxView extends CompositeView {
      *
      * @param axis may be either <code>View.X_AXIS</code>
      *           or <code>View.Y_AXIS</code>
-     * @return  the span the view would like to be rendered into >= 0;
+     * @return  the span the view would like to be rendered into &gt;= 0;
      *           typically the view is told to render into the span
      *           that is returned, although there is no guarantee;
      *           the parent may choose to resize or break the view
@@ -581,7 +581,7 @@ public class BoxView extends CompositeView {
      *
      * @param axis may be either <code>View.X_AXIS</code>
      *           or <code>View.Y_AXIS</code>
-     * @return   the span the view would like to be rendered into >= 0;
+     * @return   the span the view would like to be rendered into &gt;= 0;
      *           typically the view is told to render into the span
      *           that is returned, although there is no guarantee;
      *           the parent may choose to resize or break the view
@@ -613,8 +613,8 @@ public class BoxView extends CompositeView {
     /**
      * Determines if a point falls before an allocated region.
      *
-     * @param x the X coordinate >= 0
-     * @param y the Y coordinate >= 0
+     * @param x the X coordinate &gt;= 0
+     * @param y the Y coordinate &gt;= 0
      * @param innerAlloc the allocated region; this is the area
      *   inside of the insets
      * @return true if the point lies before the region else false
@@ -630,8 +630,8 @@ public class BoxView extends CompositeView {
     /**
      * Determines if a point falls after an allocated region.
      *
-     * @param x the X coordinate >= 0
-     * @param y the Y coordinate >= 0
+     * @param x the X coordinate &gt;= 0
+     * @param y the Y coordinate &gt;= 0
      * @param innerAlloc the allocated region; this is the area
      *   inside of the insets
      * @return true if the point lies after the region else false
@@ -647,10 +647,10 @@ public class BoxView extends CompositeView {
     /**
      * Fetches the child view at the given coordinates.
      *
-     * @param x the X coordinate >= 0
-     * @param y the Y coordinate >= 0
+     * @param x the X coordinate &gt;= 0
+     * @param y the Y coordinate &gt;= 0
      * @param alloc the parents inner allocation on entry, which should
-     *   be changed to the childs allocation on exit
+     *   be changed to the child's allocation on exit
      * @return the view
      */
     protected View getViewAtPoint(int x, int y, Rectangle alloc) {
@@ -688,7 +688,7 @@ public class BoxView extends CompositeView {
      * Allocates a region for a child view.
      *
      * @param index the index of the child view to
-     *   allocate, >= 0 && < getViewCount()
+     *   allocate, &gt;= 0 &amp;&amp; &lt; getViewCount()
      * @param alloc the allocated region
      */
     protected void childAllocation(int index, Rectangle alloc) {
@@ -701,8 +701,8 @@ public class BoxView extends CompositeView {
     /**
      * Perform layout on the box
      *
-     * @param width the width (inside of the insets) >= 0
-     * @param height the height (inside of the insets) >= 0
+     * @param width the width (inside of the insets) &gt;= 0
+     * @param height the height (inside of the insets) &gt;= 0
      */
     protected void layout(int width, int height) {
         setSpanOnAxis(X_AXIS, width);
@@ -816,7 +816,7 @@ public class BoxView extends CompositeView {
 
     /**
      * Performs layout for the minor axis of the box (i.e. the
-     * axis orthoginal to the axis that it represents). The results
+     * axis orthogonal to the axis that it represents). The results
      * of the layout (the offset and span for each children) are
      * placed in the given arrays which represent the allocations to
      * the children along the minor axis.
@@ -1102,7 +1102,7 @@ public class BoxView extends CompositeView {
     }
 
     /**
-     * Fetches the span of a particular childs current layout.
+     * Fetches the span of a particular child's current layout.
      * @param axis the axis being studied
      * @param childIndex the index of the requested child
      * @return the span (width or height) of the specified child

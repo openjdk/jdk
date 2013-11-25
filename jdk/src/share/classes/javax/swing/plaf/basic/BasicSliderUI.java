@@ -39,7 +39,7 @@ import sun.swing.UIAction;
 
 
 /**
- * A Basic L&F implementation of SliderUI.
+ * A Basic L&amp;F implementation of SliderUI.
  *
  * @author Tom Santos
  */
@@ -743,7 +743,7 @@ public class BasicSliderUI extends SliderUI{
     }
 
     public class PropertyChangeHandler implements PropertyChangeListener {
-        // NOTE: This class exists only for backward compatability. All
+        // NOTE: This class exists only for backward compatibility. All
         // its functionality has been moved into Handler. If you need to add
         // new functionality add it to the Handler, but make sure this
         // class calls into the Handler.
@@ -1542,10 +1542,10 @@ public class BasicSliderUI extends SliderUI{
      * Data model listener.
      *
      * This class should be treated as a &quot;protected&quot; inner class.
-     * Instantiate it only within subclasses of <Foo>.
+     * Instantiate it only within subclasses of <code>Foo</code>.
      */
     public class ChangeHandler implements ChangeListener {
-        // NOTE: This class exists only for backward compatability. All
+        // NOTE: This class exists only for backward compatibility. All
         // its functionality has been moved into Handler. If you need to add
         // new functionality add it to the Handler, but make sure this
         // class calls into the Handler.
@@ -1561,7 +1561,7 @@ public class BasicSliderUI extends SliderUI{
      * Track mouse movements.
      *
      * This class should be treated as a &quot;protected&quot; inner class.
-     * Instantiate it only within subclasses of <Foo>.
+     * Instantiate it only within subclasses of <code>Foo</code>.
      */
     public class TrackListener extends MouseInputAdapter {
         protected transient int offset;
@@ -1805,7 +1805,7 @@ public class BasicSliderUI extends SliderUI{
      * Scroll-event listener.
      *
      * This class should be treated as a &quot;protected&quot; inner class.
-     * Instantiate it only within subclasses of <Foo>.
+     * Instantiate it only within subclasses of <code>Foo</code>.
      */
     public class ScrollListener implements ActionListener {
         // changed this class to public to avoid bogus IllegalAccessException
@@ -1849,10 +1849,10 @@ public class BasicSliderUI extends SliderUI{
      * Listener for resizing events.
      * <p>
      * This class should be treated as a &quot;protected&quot; inner class.
-     * Instantiate it only within subclasses of <Foo>.
+     * Instantiate it only within subclasses of <code>Foo</code>.
      */
     public class ComponentHandler extends ComponentAdapter {
-        // NOTE: This class exists only for backward compatability. All
+        // NOTE: This class exists only for backward compatibility. All
         // its functionality has been moved into Handler. If you need to add
         // new functionality add it to the Handler, but make sure this
         // class calls into the Handler.
@@ -1865,10 +1865,10 @@ public class BasicSliderUI extends SliderUI{
      * Focus-change listener.
      * <p>
      * This class should be treated as a &quot;protected&quot; inner class.
-     * Instantiate it only within subclasses of <Foo>.
+     * Instantiate it only within subclasses of <code>Foo</code>.
      */
     public class FocusHandler implements FocusListener {
-        // NOTE: This class exists only for backward compatability. All
+        // NOTE: This class exists only for backward compatibility. All
         // its functionality has been moved into Handler. If you need to add
         // new functionality add it to the Handler, but make sure this
         // class calls into the Handler.
@@ -1892,10 +1892,10 @@ public class BasicSliderUI extends SliderUI{
      * Please refer to the key bindings specification for further details.
      * <p>
      * This class should be treated as a &quot;protected&quot; inner class.
-     * Instantiate it only within subclasses of <Foo>.
+     * Instantiate it only within subclasses of <code>Foo</code>.
      */
     public class ActionScroller extends AbstractAction {
-        // NOTE: This class exists only for backward compatability. All
+        // NOTE: This class exists only for backward compatibility. All
         // its functionality has been moved into Actions. If you need to add
         // new functionality add it to the Actions, but make sure this
         // class calls into the Actions.
@@ -1928,7 +1928,7 @@ public class BasicSliderUI extends SliderUI{
      * A static version of the above.
      */
     static class SharedActionScroller extends AbstractAction {
-        // NOTE: This class exists only for backward compatability. All
+        // NOTE: This class exists only for backward compatibility. All
         // its functionality has been moved into Actions. If you need to add
         // new functionality add it to the Actions, but make sure this
         // class calls into the Actions.
