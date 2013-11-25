@@ -590,7 +590,7 @@ public class RelationSupport
      * Retrieves MBeans referenced in the various roles of the relation.
      *
      * @return a HashMap mapping:
-     * <P> ObjectName -> ArrayList of String (role names)
+     * <P> ObjectName {@literal ->} ArrayList of String (role names)
      */
     public Map<ObjectName,List<String>> getReferencedMBeans() {
 

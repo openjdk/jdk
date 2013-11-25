@@ -162,7 +162,7 @@ public class MBeanFeatureInfo implements Serializable, DescriptorRead {
      * Serializes an {@link MBeanFeatureInfo} to an {@link ObjectOutputStream}.
      * @serialData
      * For compatibility reasons, an object of this class is serialized as follows.
-     * <ul>
+     * <p>
      * The method {@link ObjectOutputStream#defaultWriteObject defaultWriteObject()}
      * is called first to serialize the object except the field {@code descriptor}
      * which is declared as transient. The field {@code descriptor} is serialized
@@ -180,7 +180,7 @@ public class MBeanFeatureInfo implements Serializable, DescriptorRead {
      * {@link ObjectOutputStream#writeObject writeObject(Object obj)} is called
      * to serialize directly the field {@code descriptor}.
      *     </ul>
-     * </ul>
+     *
      * @since 1.6
      */
     private void writeObject(ObjectOutputStream out) throws IOException {
@@ -206,7 +206,7 @@ public class MBeanFeatureInfo implements Serializable, DescriptorRead {
      * Deserializes an {@link MBeanFeatureInfo} from an {@link ObjectInputStream}.
      * @serialData
      * For compatibility reasons, an object of this class is deserialized as follows.
-     * <ul>
+     * <p>
      * The method {@link ObjectInputStream#defaultReadObject defaultReadObject()}
      * is called first to deserialize the object except the field
      * {@code descriptor}, which is not serialized in the default way. Then the method
@@ -228,7 +228,7 @@ public class MBeanFeatureInfo implements Serializable, DescriptorRead {
      *       to {@link ImmutableDescriptor#EMPTY_DESCRIPTOR EMPTY_DESCRIPTOR}</li>
      *    <li>Any other value. A {@link StreamCorruptedException} is thrown.</li>
      *    </ul>
-     * </ul>
+     *
      * @since 1.6
      */
     private void readObject(ObjectInputStream in)
