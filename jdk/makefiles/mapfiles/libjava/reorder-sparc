@@ -88,7 +88,6 @@ text: .text%Java_java_lang_Throwable_getStackTraceElement;
 text: .text%throwFileNotFoundException;
 text: .text%JNU_NotifyAll;
 # Test LoadFrame
-text: .text%Java_java_lang_ref_Finalizer_invokeFinalizeMethod;
 text: .text%JNU_CallMethodByName;
 text: .text%JNU_CallMethodByNameV;
 text: .text%Java_java_io_UnixFileSystem_createDirectory;

@@ -36,11 +36,11 @@ class TestMethodReference51 {
 
 
     static void test() {
-        IntSam s1 = MethodReference51::unknown; //method not found
-        IntSam s2 = MethodReference51::f; //inapplicable method
-        IntSam s3 = MethodReference51::g; //inapplicable methods
-        IntegerIntegerSam s4 = MethodReference51::g; //ambiguous
-        IntSam s5 = MethodReference51::h; //static error
-        IntSam s6 = MethodReference51.foo::j; //inaccessible method
+        IntSam s1 = MethodReference51::unknown; //fail
+        IntSam s2 = MethodReference51::f; //fail
+        IntSam s3 = MethodReference51::g; //fail
+        IntegerIntegerSam s4 = MethodReference51::g; //fail
+        IntSam s5 = MethodReference51::h; //fail
+        IntSam s6 = MethodReference51.foo::j; //fail
     }
 }

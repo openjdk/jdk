@@ -78,7 +78,6 @@ text: .text%writeBytes;
 text: .text%Java_java_security_AccessController_doPrivileged__Ljava_security_PrivilegedAction_2Ljava_security_AccessControlContext_2;
 text: .text%JNU_GetEnv;
 text: .text%Java_java_io_UnixFileSystem_checkAccess;
-text: .text%Java_java_lang_ref_Finalizer_invokeFinalizeMethod;
 text: .text%Java_java_lang_reflect_Array_newArray;
 text: .text%Java_java_lang_Throwable_getStackTraceDepth;
 text: .text%Java_java_lang_Throwable_getStackTraceElement;

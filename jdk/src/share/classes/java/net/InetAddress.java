@@ -1135,7 +1135,7 @@ class InetAddress implements java.io.Serializable {
             // see if it is IPv4 address
             addr = IPAddressUtil.textToNumericFormatV4(host);
             if (addr == null) {
-                // see if it is IPv6 address
+                // This is supposed to be an IPv6 literal
                 // Check if a numeric or string zone id is present
                 int pos;
                 if ((pos=host.indexOf ("%")) != -1) {
@@ -1144,7 +1144,9 @@ class InetAddress implements java.io.Serializable {
                         ifname = host.substring (pos+1);
                     }
                 }
-                addr = IPAddressUtil.textToNumericFormatV6(host);
+                if ((addr = IPAddressUtil.textToNumericFormatV6(host)) == null && host.contains(":")) {
+                    throw new UnknownHostException(host + ": invalid IPv6 address");
+                }
             } else if (ipv6Expected) {
                 // Means an IPv4 litteral between brackets!
                 throw new UnknownHostException("["+host+"]");
@@ -1162,10 +1164,10 @@ class InetAddress implements java.io.Serializable {
                 }
                 return ret;
             }
-            } else if (ipv6Expected) {
-                // We were expecting an IPv6 Litteral, but got something else
-                throw new UnknownHostException("["+host+"]");
-            }
+        } else if (ipv6Expected) {
+            // We were expecting an IPv6 Litteral, but got something else
+            throw new UnknownHostException("["+host+"]");
+        }
         return getAllByName0(host, reqAddr, true);
     }
 

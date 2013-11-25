@@ -69,7 +69,7 @@ import java.beans.*;
  * are desired, and use simple <code>ActionListener</code>s elsewhere.
  * <p>
  *
- * <h4><a name="buttonActions"></a>Swing Components Supporting <code>Action</code></h4>
+ * <h3><a name="buttonActions"></a>Swing Components Supporting <code>Action</code></h3>
  * <p>
  * Many of Swing's components have an <code>Action</code> property.  When
  * an <code>Action</code> is set on a component, the following things
@@ -95,8 +95,7 @@ import java.beans.*;
  * button's corresponding property being set to <code>null</code>.
  * <p>
  * <table border="1" cellpadding="1" cellspacing="0"
- *         summary="Supported Action properties"
- *         valign="top" >
+ *         summary="Supported Action properties">
  *  <tr valign="top"  align="left">
  *    <th style="background-color:#CCCCFF" align="left">Component Property
  *    <th style="background-color:#CCCCFF" align="left">Components

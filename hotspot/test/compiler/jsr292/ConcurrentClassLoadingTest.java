@@ -172,7 +172,6 @@ public class ConcurrentClassLoadingTest {
             "java.lang.invoke.LambdaConversionException",
             "java.lang.invoke.LambdaForm",
             "java.lang.invoke.LambdaMetafactory",
-            "java.lang.invoke.MagicLambdaImpl",
             "java.lang.invoke.MemberName",
             "java.lang.invoke.MethodHandle",
             "java.lang.invoke.MethodHandleImpl",

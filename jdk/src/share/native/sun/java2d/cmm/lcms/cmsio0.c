@@ -1077,7 +1077,13 @@ cmsHPROFILE CMSEXPORT cmsOpenProfileFromMem(const void* MemPtr, cmsUInt32Number 
 static
 cmsBool SanityCheck(_cmsICCPROFILE* profile)
 {
-    cmsIOHANDLER* io = profile->IOhandler;
+    cmsIOHANDLER* io;
+
+    if (!profile) {
+        return FALSE;
+    }
+
+    io = profile->IOhandler;
     if (!io) {
         return FALSE;
     }
@@ -1108,8 +1114,6 @@ cmsBool SaveTags(_cmsICCPROFILE* Icc, _cmsICCPROFILE* FileOrig)
     cmsTagTypeSignature TypeBase;
     cmsTagTypeHandler* TypeHandler;
 
-    if (!SanityCheck(FileOrig)) return FALSE;
-
     for (i=0; i < Icc -> TagCount; i++) {
 
 
@@ -1126,7 +1130,7 @@ cmsBool SaveTags(_cmsICCPROFILE* Icc, _cmsICCPROFILE* FileOrig)
 
             // Reach here if we are copying a tag from a disk-based ICC profile which has not been modified by user.
             // In this case a blind copy of the block data is performed
-            if (FileOrig != NULL && Icc -> TagOffsets[i]) {
+            if (SanityCheck(FileOrig) && Icc -> TagOffsets[i]) {
 
                 cmsUInt32Number TagSize   = FileOrig -> TagSizes[i];
                 cmsUInt32Number TagOffset = FileOrig -> TagOffsets[i];
