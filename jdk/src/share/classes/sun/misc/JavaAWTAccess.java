@@ -33,12 +33,4 @@ public interface JavaAWTAccess {
     // or running in the main app context, returns null.
     // Otherwise, returns the AppContext of the calling applet.
     public Object getAppletContext();
-
-    // convenience methods to cache objects in the current thread group's
-    // AppContext
-    public Object get(Object key);
-    public void put(Object key, Object value);
-    public void remove(Object key);
-    public boolean isDisposed();
-    public boolean isMainAppContext();
 }

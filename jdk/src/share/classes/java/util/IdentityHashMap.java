@@ -1243,7 +1243,7 @@ public class IdentityHashMap<K,V>
                     if (ti >= size) {
                         throw new ConcurrentModificationException();
                     }
-                    a[ti++] = (T) new AbstractMap.SimpleEntry(unmaskNull(key), tab[si + 1]);
+                    a[ti++] = (T) new AbstractMap.SimpleEntry<>(unmaskNull(key), tab[si + 1]);
                 }
             }
             // fewer elements than expected or concurrent modification from other thread detected

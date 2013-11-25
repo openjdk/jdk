@@ -1381,8 +1381,12 @@ void MacroAssembler::bang_stack_size(Register size, Register tmp) {
   jcc(Assembler::greater, loop);
 
   // Bang down shadow pages too.
-  // The -1 because we already subtracted 1 page.
-  for (int i = 0; i< StackShadowPages-1; i++) {
+  // At this point, (tmp-0) is the last address touched, so don't
+  // touch it again.  (It was touched as (tmp-pagesize) but then tmp
+  // was post-decremented.)  Skip this address by starting at i=1, and
+  // touch a few more pages below.  N.B.  It is important to touch all
+  // the way down to and including i=StackShadowPages.
+  for (int i = 1; i <= StackShadowPages; i++) {
     // this could be any sized move but this is can be a debugging crumb
     // so the bigger the better.
     movptr(Address(tmp, (-i*os::vm_page_size())), size );

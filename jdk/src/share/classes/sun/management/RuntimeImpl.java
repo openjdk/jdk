@@ -110,12 +110,7 @@ class RuntimeImpl implements RuntimeMXBean {
     }
 
     public long getUptime() {
-        long current = System.currentTimeMillis();
-
-        // TODO: If called from client side when we support
-        // MBean proxy to read performance counters from shared memory,
-        // need to check if the monitored VM exitd.
-        return (current - vmStartupTime);
+        return jvm.getUptime();
     }
 
     public long getStartTime() {
