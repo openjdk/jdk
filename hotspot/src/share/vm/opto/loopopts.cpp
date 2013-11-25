@@ -42,6 +42,13 @@ Node *PhaseIdealLoop::split_thru_phi( Node *n, Node *region, int policy ) {
     // so disable this for now
     return NULL;
   }
+
+  if (n->is_MathExact()) {
+    // MathExact has projections that are not correctly handled in the code
+    // below.
+    return NULL;
+  }
+
   int wins = 0;
   assert(!n->is_CFG(), "");
   assert(region->is_Region(), "");

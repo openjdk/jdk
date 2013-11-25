@@ -360,7 +360,7 @@ public class RequiredModelMBean
                 MODELMBEAN_LOGGER.logp(Level.FINER,
                         RequiredModelMBean.class.getName(),
                     "setManagedResource(Object,String)",
-                    "Managed Resouce Type is not supported: " + mr_type);
+                    "Managed Resource Type is not supported: " + mr_type);
             }
             throw new InvalidTargetObjectTypeException(mr_type);
         }
@@ -369,7 +369,7 @@ public class RequiredModelMBean
             MODELMBEAN_LOGGER.logp(Level.FINER,
                     RequiredModelMBean.class.getName(),
                 "setManagedResource(Object,String)",
-                "Managed Resouce is valid");
+                "Managed Resource is valid");
         }
         managedResource = mr;
 

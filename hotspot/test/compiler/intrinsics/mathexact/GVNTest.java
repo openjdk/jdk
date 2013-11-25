@@ -23,16 +23,38 @@
 
 /*
  * @test
- * @bug 8021339
- * @summary Allow arrays in intersection types
- * @compile -doe -XDrawDiagnostics InferArraysInIntersections.java
+ * @bug 8028207
+ * @summary Verify that GVN doesn't mess up the two addExacts
+ * @compile GVNTest.java
+ * @run main GVNTest
+ *
  */
-import java.util.*;
 
-class InferArraysInIntersections {
-   <T> T m(List<? super T> t) { return null; }
+public class GVNTest {
+  public static int result = 0;
+  public static int value = 93;
+  public static void main(String[] args) {
+    for (int i = 0; i < 50000; ++i) {
+      result = runTest(value + i);
+      result = runTest(value + i);
+      result = runTest(value + i);
+      result = runTest(value + i);
+      result = runTest(value + i);
+    }
+  }
 
-   void test(List<char[]> lc) {
-      Runnable r = m(lc); //inference fails here
-   }
+  public static int runTest(int value) {
+    int v = value + value;
+    int sum = 0;
+    if (v < 4032) {
+      for (int i = 0; i < 1023; ++i) {
+        sum += Math.addExact(value, value);
+      }
+    } else {
+      for (int i = 0; i < 321; ++i) {
+        sum += Math.addExact(value, value);
+      }
+    }
+    return sum + v;
+  }
 }
