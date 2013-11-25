@@ -34,7 +34,7 @@ STATUS=0
 for P in "JRE,SPI" "CLDR"
 do
     echo "Locale providers: $P"
-    if ! ${TESTJAVA}/bin/java -esa -cp "${TESTCLASSES}" -Djava.locale.providers="${P}" NarrowNamesTest; then
+    if ! ${TESTJAVA}/bin/java -esa ${TESTVMOPTS} -cp "${TESTCLASSES}" -Djava.locale.providers="${P}" NarrowNamesTest; then
         STATUS=1
     fi
 done

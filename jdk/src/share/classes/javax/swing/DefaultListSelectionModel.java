@@ -637,7 +637,7 @@ public class DefaultListSelectionModel implements ListSelectionModel, Cloneable,
      * Remove the indices in the interval index0,index1 (inclusive) from
      * the selection model.  This is typically called to sync the selection
      * model width a corresponding change in the data model.  Note
-     * that (as always) index0 need not be <= index1.
+     * that (as always) index0 need not be &lt;= index1.
      */
     public void removeIndexInterval(int index0, int index1)
     {

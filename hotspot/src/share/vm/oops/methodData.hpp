@@ -690,7 +690,6 @@ public:
   // recorded type: cell without bit 0 and 1
   static intptr_t klass_part(intptr_t v) {
     intptr_t r = v & type_klass_mask;
-    assert (r != 0, "invalid");
     return r;
   }
 
@@ -698,7 +697,9 @@ public:
   static Klass* valid_klass(intptr_t k) {
     if (!is_type_none(k) &&
         !is_type_unknown(k)) {
-      return (Klass*)klass_part(k);
+      Klass* res = (Klass*)klass_part(k);
+      assert(res != NULL, "invalid");
+      return res;
     } else {
       return NULL;
     }
