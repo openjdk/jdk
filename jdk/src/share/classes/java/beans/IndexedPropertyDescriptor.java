@@ -373,12 +373,13 @@ public class IndexedPropertyDescriptor extends PropertyDescriptor {
             if (params[0] != Integer.TYPE) {
                 throw new IntrospectionException("non int index to indexed write method");
             }
-            if (indexedPropertyType != null && indexedPropertyType != params[1]) {
+            if (indexedPropertyType == null || params[1].isAssignableFrom(indexedPropertyType)) {
+                indexedPropertyType = params[1];
+            } else if (!indexedPropertyType.isAssignableFrom(params[1])) {
                 throw new IntrospectionException(
                                                  "type mismatch between indexed read and indexed write methods: "
                                                  + getName());
             }
-            indexedPropertyType = params[1];
         }
         Class<?> propertyType = getPropertyType();
         if (propertyType != null && (!propertyType.isArray() ||

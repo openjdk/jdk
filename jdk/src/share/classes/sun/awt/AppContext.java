@@ -430,7 +430,7 @@ public final class AppContext {
                     try {
                         w.dispose();
                     } catch (Throwable t) {
-                        log.finer("exception occured while disposing app context", t);
+                        log.finer("exception occurred while disposing app context", t);
                     }
                 }
                 AccessController.doPrivileged(new PrivilegedAction<Void>() {

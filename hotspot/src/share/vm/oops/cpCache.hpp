@@ -31,6 +31,10 @@
 
 class PSPromotionManager;
 
+// The ConstantPoolCache is not a cache! It is the resolution table that the
+// interpreter uses to avoid going into the runtime and a way to access resolved
+// values.
+
 // A ConstantPoolCacheEntry describes an individual entry of the constant
 // pool cache. There's 2 principal kinds of entries: field entries for in-
 // stance & static field access, and method entries for invokes. Some of
@@ -392,26 +396,33 @@ class ConstantPoolCache: public MetaspaceObj {
   friend class MetadataFactory;
  private:
   int             _length;
-  ConstantPool* _constant_pool;                // the corresponding constant pool
+  ConstantPool*   _constant_pool;          // the corresponding constant pool
 
   // Sizing
   debug_only(friend class ClassVerifier;)
 
   // Constructor
-  ConstantPoolCache(int length, const intStack& inverse_index_map,
+  ConstantPoolCache(int length,
+                    const intStack& inverse_index_map,
+                    const intStack& invokedynamic_inverse_index_map,
                     const intStack& invokedynamic_references_map) :
-                                        _length(length), _constant_pool(NULL) {
-    initialize(inverse_index_map, invokedynamic_references_map);
+                          _length(length),
+                          _constant_pool(NULL) {
+    initialize(inverse_index_map, invokedynamic_inverse_index_map,
+               invokedynamic_references_map);
     for (int i = 0; i < length; i++) {
       assert(entry_at(i)->is_f1_null(), "Failed to clear?");
     }
   }
 
   // Initialization
-  void initialize(const intArray& inverse_index_map, const intArray& invokedynamic_references_map);
+  void initialize(const intArray& inverse_index_map,
+                  const intArray& invokedynamic_inverse_index_map,
+                  const intArray& invokedynamic_references_map);
  public:
-  static ConstantPoolCache* allocate(ClassLoaderData* loader_data, int length,
-                                     const intStack& inverse_index_map,
+  static ConstantPoolCache* allocate(ClassLoaderData* loader_data,
+                                     const intStack& cp_cache_map,
+                                     const intStack& invokedynamic_cp_cache_map,
                                      const intStack& invokedynamic_references_map, TRAPS);
   bool is_constantPoolCache() const { return true; }
 

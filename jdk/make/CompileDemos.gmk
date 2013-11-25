@@ -157,8 +157,8 @@ $(JDK_OUTPUTDIR)/demo/jfc/CodePointIM/_the.services: \
 
 BUILD_DEMOS += $(JDK_OUTPUTDIR)/demo/jfc/CodePointIM/_the.services
 
-$(eval $(call SetupDemo,MoleculeViewer,applets,,XYZChemModel,,,example*.html XYZApp.java))
-$(eval $(call SetupDemo,WireFrame,applets,,ThreeD,,,example*.html ThreeD.java))
+$(eval $(call SetupDemo,MoleculeViewer,applets,,XYZChemModel,,,example*.html *.java))
+$(eval $(call SetupDemo,WireFrame,applets,,ThreeD,,,example*.html *.java))
 $(eval $(call SetupDemo,FileChooserDemo,jfc,,FileChooserDemo,,,README*))
 $(eval $(call SetupDemo,Font2DTest,jfc,,Font2DTest,,,*.html *.txt))
 $(eval $(call SetupDemo,Metalworks,jfc,,Metalworks,,,README*))
