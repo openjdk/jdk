@@ -56,13 +56,16 @@
     <condition property="exclude.list" value="./exclude/exclude_list_cc.txt" else="./exclude/exclude_list.txt">
       <istrue value="${make.code.coverage}" />
     </condition>
+
+    <condition property="jfr.options" value="${run.test.jvmargs.jfr}" else="">
+      <istrue value="${jfr}"/>
+    </condition>
   </target>
 
   <target name="init" depends="init-conditions, init-cc">
-
     <!-- extends jvm args -->
-    <property name="run.test.jvmargs" value="${run.test.jvmargs.main}  ${run.test.cc.jvmargs}"/>
-    <property name="run.test.jvmargs.octane" value="${run.test.jvmargs.octane.main}  ${run.test.cc.jvmargs}" />
+    <property name="run.test.jvmargs" value="${run.test.jvmargs.main} ${run.test.cc.jvmargs} ${jfr.options}"/>
+    <property name="run.test.jvmargs.octane" value="${run.test.jvmargs.octane.main} ${run.test.cc.jvmargs} ${jfr.options}"/>
 
     <echo message="run.test.jvmargs=${run.test.jvmargs}"/>
     <echo message="run.test.jvmargs.octane=${run.test.jvmargs.octane}"/>
@@ -329,6 +332,9 @@ grant codeBase "file:/${basedir}/test/script/basic/classloader.js" {
       <jvmarg line="${ext.class.path}"/>
       <jvmarg line="${run.test.jvmargs} -Xmx${run.test.xmx} ${run.test.jvmsecurityargs}"/>
       <propertyset>
+        <propertyref prefix="nashorn."/>
+      </propertyset>
+      <propertyset>
         <propertyref prefix="test-sys-prop."/>
         <mapper from="test-sys-prop.*" to="*" type="glob"/>
       </propertyset>
@@ -360,6 +366,9 @@ grant codeBase "file:/${basedir}/test/script/basic/classloader.js" {
        verbose="${testng.verbose}" haltonfailure="true" useDefaultListeners="false" listeners="${testng.listeners}" workingDir="${basedir}">
       <jvmarg line="${ext.class.path}"/>
       <jvmarg line="${run.test.jvmargs} -Xmx${run.test.xmx} ${run.test.jvmsecurityargs}"/>
+      <propertyset>
+        <propertyref prefix="nashorn."/>
+      </propertyset>
       <propertyset>
         <propertyref prefix="test262-test-sys-prop."/>
         <mapper from="test262-test-sys-prop.*" to="*" type="glob"/>
