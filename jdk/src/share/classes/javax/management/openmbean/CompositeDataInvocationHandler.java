@@ -80,7 +80,7 @@ import java.lang.reflect.Proxy;
    </pre>
    </blockquote>
 
-   A call to {@code nn.getNumber()} will then return <b>5</b>.</p>
+   A call to {@code nn.getNumber()} will then return <b>5</b>.
 
    <p>If the first letter of the property defined by a getter is a
    capital, then this handler will look first for an item in the

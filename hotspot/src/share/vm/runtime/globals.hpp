@@ -2954,6 +2954,9 @@ class CommandLineFlags {
   product(intx, MaxRecursiveInlineLevel, 1,                                 \
           "maximum number of nested recursive calls that are inlined")      \
                                                                             \
+  develop(intx, MaxForceInlineLevel, 100,                                   \
+          "maximum number of nested @ForceInline calls that are inlined")   \
+                                                                            \
   product_pd(intx, InlineSmallCode,                                         \
           "Only inline already compiled methods if their code size is "     \
           "less than this")                                                 \
@@ -3018,9 +3021,6 @@ class CommandLineFlags {
                                                                             \
   notproduct(intx, ZombieALotInterval,     5,                               \
           "Number of exits until ZombieALot kicks in")                      \
-                                                                            \
-  develop(bool, StressNonEntrant, false,                                    \
-          "Mark nmethods non-entrant at registration")                      \
                                                                             \
   diagnostic(intx, MallocVerifyInterval,     0,                             \
           "If non-zero, verify C heap after every N calls to "              \
@@ -3289,7 +3289,7 @@ class CommandLineFlags {
           "Exit the VM if we fill the code cache")                          \
                                                                             \
   product(bool, UseCodeCacheFlushing, true,                                 \
-          "Attempt to clean the code cache before shutting off compiler")   \
+          "Remove cold/old nmethods from the code cache")                   \
                                                                             \
   /* interpreter debugging */                                               \
   develop(intx, BinarySwitchThreshold, 5,                                   \

@@ -163,6 +163,15 @@ public class Frame<V extends Value> {
     }
 
     /**
+     * Returns the maximum stack size of this frame.
+     *
+     * @return the maximum stack size of this frame.
+     */
+    public int getMaxStackSize() {
+        return values.length - locals;
+    }
+
+    /**
      * Returns the value of the given local variable.
      *
      * @param i

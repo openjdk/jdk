@@ -103,6 +103,7 @@ SUNWprivate_1.1 {
 	    Java_sun_management_VMManagementImpl_getSafepointCount;
 	    Java_sun_management_VMManagementImpl_getSafepointSyncTime;
 	    Java_sun_management_VMManagementImpl_getStartupTime;
+	    Java_sun_management_VMManagementImpl_getUptime0;
 	    Java_sun_management_VMManagementImpl_getTotalApplicationNonStoppedTime;
 	    Java_sun_management_VMManagementImpl_getTotalClassCount;
 	    Java_sun_management_VMManagementImpl_getTotalCompileTime;

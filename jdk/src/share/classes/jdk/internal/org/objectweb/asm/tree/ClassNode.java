@@ -216,9 +216,15 @@ public class ClassNode extends ClassVisitor {
      * Constructs a new {@link ClassNode}. <i>Subclasses must not use this
      * constructor</i>. Instead, they must use the {@link #ClassNode(int)}
      * version.
+     *
+     * @throws IllegalStateException
+     *             If a subclass calls this constructor.
      */
     public ClassNode() {
         this(Opcodes.ASM5);
+        if (getClass() != ClassNode.class) {
+            throw new IllegalStateException();
+        }
     }
 
     /**
