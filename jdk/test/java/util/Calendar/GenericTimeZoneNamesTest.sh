@@ -35,12 +35,12 @@ echo "Locale providers: default"
 # TODO: The purpose of ja-JP is to make sure the fallback for generic
 # names works. Remove ja-JP when adding generic names to localized
 # resources.
-if ! ${TESTJAVA}/bin/java -esa -cp "${TESTCLASSES}" GenericTimeZoneNamesTest en-US ja-JP; then
+if ! ${TESTJAVA}/bin/java -esa ${TESTVMOPTS} -cp "${TESTCLASSES}" GenericTimeZoneNamesTest en-US ja-JP; then
     STATUS=1
 fi
 
 echo "Locale providers: CLDR"
-if ! ${TESTJAVA}/bin/java -esa -cp "${TESTCLASSES}" -Djava.locale.providers=CLDR GenericTimeZoneNamesTest en-US; then
+if ! ${TESTJAVA}/bin/java -esa ${TESTVMOPTS} -cp "${TESTCLASSES}" -Djava.locale.providers=CLDR GenericTimeZoneNamesTest en-US; then
    STATUS=1
 fi
 exit ${STATUS}

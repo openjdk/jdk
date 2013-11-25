@@ -299,7 +299,7 @@ public class UnicastServerRef extends UnicastRef
             logCall(obj, method);
 
             // unmarshal parameters
-            Class[] types = method.getParameterTypes();
+            Class<?>[] types = method.getParameterTypes();
             Object[] params = new Object[types.length];
 
             try {

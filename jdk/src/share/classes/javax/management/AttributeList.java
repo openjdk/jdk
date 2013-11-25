@@ -178,8 +178,8 @@ public class AttributeList extends ArrayList<Object> {
     /**
      * Inserts the attribute specified as an element at the position specified.
      * Elements with an index greater than or equal to the current position are
-     * shifted up. If the index is out of range (index < 0 || index >
-     * size()) a RuntimeOperationsException should be raised, wrapping the
+     * shifted up. If the index is out of range {@literal (index < 0 || index >
+     * size())} a RuntimeOperationsException should be raised, wrapping the
      * java.lang.IndexOutOfBoundsException thrown.
      *
      * @param object  The <CODE>Attribute</CODE> object to be inserted.
@@ -199,7 +199,7 @@ public class AttributeList extends ArrayList<Object> {
     /**
      * Sets the element at the position specified to be the attribute specified.
      * The previous element at that position is discarded. If the index is
-     * out of range (index < 0 || index > size() a RuntimeOperationsException
+     * out of range {@literal (index < 0 || index > size())} a RuntimeOperationsException
      * should be raised, wrapping the java.lang.IndexOutOfBoundsException thrown.
      *
      * @param object  The value to which the attribute element should be set.
@@ -234,7 +234,7 @@ public class AttributeList extends ArrayList<Object> {
      * Inserts all of the elements in the <CODE>AttributeList</CODE> specified
      * into this list, starting at the specified position, in the order in which
      * they are returned by the Iterator of the {@code AttributeList} specified.
-     * If the index is out of range (index < 0 || index > size() a
+     * If the index is out of range {@literal (index < 0 || index > size())} a
      * RuntimeOperationsException should be raised, wrapping the
      * java.lang.IndexOutOfBoundsException thrown.
      *

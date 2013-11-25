@@ -111,7 +111,7 @@ jint GenCollectedHeap::initialize() {
   int n_covered_regions = 0;
   ReservedSpace heap_rs;
 
-  size_t heap_alignment = collector_policy()->max_alignment();
+  size_t heap_alignment = collector_policy()->heap_alignment();
 
   heap_address = allocate(heap_alignment, &total_reserved,
                           &n_covered_regions, &heap_rs);
@@ -1050,12 +1050,6 @@ bool GenCollectedHeap::is_maximal_no_gc() const {
 void GenCollectedHeap::save_marks() {
   for (int i = 0; i < _n_gens; i++) {
     _gens[i]->save_marks();
-  }
-}
-
-void GenCollectedHeap::compute_new_generation_sizes(int collectedGen) {
-  for (int i = 0; i <= collectedGen; i++) {
-    _gens[i]->compute_new_size();
   }
 }
 
