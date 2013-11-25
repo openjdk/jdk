@@ -79,6 +79,7 @@ import java.time.Year;
 import java.time.ZoneId;
 import java.time.ZoneOffset;
 import java.time.chrono.ChronoLocalDate;
+import java.time.chrono.ChronoPeriod;
 import java.time.chrono.Chronology;
 import java.time.chrono.Era;
 import java.time.chrono.IsoChronology;
@@ -87,13 +88,13 @@ import java.time.chrono.JapaneseDate;
 import java.time.chrono.JapaneseEra;
 import java.time.chrono.MinguoChronology;
 import java.time.chrono.MinguoDate;
+import java.time.chrono.ThaiBuddhistChronology;
 import java.time.format.ResolverStyle;
 import java.time.temporal.ChronoField;
 import java.time.temporal.ChronoUnit;
-import java.time.temporal.Temporal;
-import java.time.temporal.TemporalAdjuster;
+import java.time.temporal.TemporalAdjusters;
 import java.time.temporal.TemporalField;
-import java.time.temporal.TemporalQuery;
+import java.time.temporal.TemporalQueries;
 import java.time.temporal.ValueRange;
 
 import java.util.HashMap;
@@ -227,7 +228,7 @@ public class TCKJapaneseChronology {
     @Test(dataProvider="createByEra")
     public void test_createByEra_query(JapaneseEra era, int yoe, int moy, int dom, int doy, LocalDate iso) {
         JapaneseDate test = JapaneseDate.of(era, yoe, moy, dom);
-        assertEquals(test.query(TemporalQuery.localDate()), iso);
+        assertEquals(test.query(TemporalQueries.localDate()), iso);
     }
 
     @Test(dataProvider="createByEra")
@@ -295,7 +296,7 @@ public class TCKJapaneseChronology {
     @Test(dataProvider="createByProleptic")
     public void test_createByProleptic_query(int y, int moy, int dom, int doy, LocalDate iso) {
         JapaneseDate test = JapaneseDate.of(y, moy, dom);
-        assertEquals(test.query(TemporalQuery.localDate()), iso);
+        assertEquals(test.query(TemporalQueries.localDate()), iso);
     }
 
     @Test(dataProvider="createByProleptic")
@@ -493,14 +494,14 @@ public class TCKJapaneseChronology {
     @Test
     public void test_adjust1() {
         JapaneseDate base = JapaneseChronology.INSTANCE.date(1928, 10, 29);
-        JapaneseDate test = base.with(TemporalAdjuster.lastDayOfMonth());
+        JapaneseDate test = base.with(TemporalAdjusters.lastDayOfMonth());
         assertEquals(test, JapaneseChronology.INSTANCE.date(1928, 10, 31));
     }
 
     @Test
     public void test_adjust2() {
         JapaneseDate base = JapaneseChronology.INSTANCE.date(1928, 12, 2);
-        JapaneseDate test = base.with(TemporalAdjuster.lastDayOfMonth());
+        JapaneseDate test = base.with(TemporalAdjusters.lastDayOfMonth());
         assertEquals(test, JapaneseChronology.INSTANCE.date(1928, 12, 31));
     }
 
@@ -615,8 +616,8 @@ public class TCKJapaneseChronology {
     public void test_periodUntilDate() {
         JapaneseDate mdate1 = JapaneseDate.of(1970, 1, 1);
         JapaneseDate mdate2 = JapaneseDate.of(1971, 2, 2);
-        Period period = mdate1.until(mdate2);
-        assertEquals(period, Period.of(1, 1, 1));
+        ChronoPeriod period = mdate1.until(mdate2);
+        assertEquals(period, JapaneseChronology.INSTANCE.period(1, 1, 1));
     }
 
     @Test
@@ -632,8 +633,8 @@ public class TCKJapaneseChronology {
         JapaneseDate mdate1 = JapaneseDate.of(1970, 1, 1);
         JapaneseDate mdate2 = JapaneseDate.of(1971, 2, 2);
         MinguoDate ldate2 = MinguoChronology.INSTANCE.date(mdate2);
-        Period period = mdate1.until(ldate2);
-        assertEquals(period, Period.of(1, 1, 1));
+        ChronoPeriod period = mdate1.until(ldate2);
+        assertEquals(period, JapaneseChronology.INSTANCE.period(1, 1, 1));
     }
 
     //-----------------------------------------------------------------------

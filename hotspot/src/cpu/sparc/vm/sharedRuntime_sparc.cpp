@@ -3581,6 +3581,7 @@ void SharedRuntime::generate_deopt_blob() {
   // the pending exception will be picked up the interpreter.
   __ ld_ptr(G2_thread, in_bytes(JavaThread::exception_oop_offset()), Oexception);
   __ st_ptr(G0, G2_thread, in_bytes(JavaThread::exception_oop_offset()));
+  __ st_ptr(G0, G2_thread, in_bytes(JavaThread::exception_pc_offset()));
   __ bind(noException);
 
   // deallocate the deoptimization frame taking care to preserve the return values

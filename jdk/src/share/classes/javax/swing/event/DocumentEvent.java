@@ -45,14 +45,14 @@ public interface DocumentEvent {
      * Returns the offset within the document of the start
      * of the change.
      *
-     * @return the offset >= 0
+     * @return the offset &gt;= 0
      */
     public int getOffset();
 
     /**
      * Returns the length of the change.
      *
-     * @return the length >= 0
+     * @return the length &gt;= 0
      */
     public int getLength();
 
@@ -79,7 +79,7 @@ public interface DocumentEvent {
      * This method is for observers to discover the structural
      * changes that were made.  This means that only elements
      * that existed prior to the mutation (and still exist after
-     * the mutatino) need to have ElementChange records.
+     * the mutation) need to have ElementChange records.
      * The changes made available need not be recursive.
      * <p>
      * For example, if the an element is removed from it's
@@ -155,7 +155,7 @@ public interface DocumentEvent {
          * This is the location that children were added
          * and/or removed.
          *
-         * @return the index >= 0
+         * @return the index &gt;= 0
          */
         public int getIndex();
 

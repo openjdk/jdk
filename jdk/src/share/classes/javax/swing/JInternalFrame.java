@@ -50,7 +50,7 @@ import sun.swing.SwingUtilities2;
  * resizing, title display, and support for a menu bar.
  * For task-oriented documentation and examples of using internal frames,
  * see <a
- href="http://java.sun.com/docs/books/tutorial/uiswing/components/internalframe.html" target="_top">How to Use Internal Frames</a>,
+ href="http://docs.oracle.com/javase/tutorial/uiswing/components/internalframe.html" target="_top">How to Use Internal Frames</a>,
  * a section in <em>The Java Tutorial</em>.
  *
  * <p>
@@ -63,9 +63,10 @@ import sun.swing.SwingUtilities2;
  * <p>
  * The <code>JInternalFrame</code> content pane
  * is where you add child components.
- * As a conveniance <code>add</code> and its variants, <code>remove</code> and
- * <code>setLayout</code> have been overridden to forward to the
- * <code>contentPane</code> as necessary. This means you can write:
+ * As a convenience, the {@code add}, {@code remove}, and {@code setLayout}
+ * methods of this class are overridden, so that they delegate calls
+ * to the corresponding methods of the {@code ContentPane}.
+ * For example, you can add a child component to an internal frame as follows:
  * <pre>
  *       internalFrame.add(child);
  * </pre>
@@ -90,7 +91,7 @@ import sun.swing.SwingUtilities2;
  * future Swing releases. The current serialization support is
  * appropriate for short term storage or RMI between applications running
  * the same version of Swing.  As of 1.4, support for long term storage
- * of all JavaBeans<sup><font size="-2">TM</font></sup>
+ * of all JavaBeans&trade;
  * has been added to the <code>java.beans</code> package.
  * Please see {@link java.beans.XMLEncoder}.
  *
@@ -445,7 +446,7 @@ public class JInternalFrame extends JComponent implements
      * <code>setLayout</code> are forwarded to the <code>contentPane</code>.
      *
      * @return true if <code>add</code> and <code>setLayout</code>
-     *         are fowarded; false otherwise
+     *         are forwarded; false otherwise
      *
      * @see #addImpl
      * @see #setLayout
@@ -2029,7 +2030,7 @@ public class JInternalFrame extends JComponent implements
      * future Swing releases. The current serialization support is
      * appropriate for short term storage or RMI between applications running
      * the same version of Swing.  As of 1.4, support for long term storage
-     * of all JavaBeans<sup><font size="-2">TM</font></sup>
+     * of all JavaBeans&trade;
      * has been added to the <code>java.beans</code> package.
      * Please see {@link java.beans.XMLEncoder}.
      */
@@ -2144,7 +2145,7 @@ public class JInternalFrame extends JComponent implements
      * future Swing releases. The current serialization support is
      * appropriate for short term storage or RMI between applications running
      * the same version of Swing.  As of 1.4, support for long term storage
-     * of all JavaBeans<sup><font size="-2">TM</font></sup>
+     * of all JavaBeans&trade;
      * has been added to the <code>java.beans</code> package.
      * Please see {@link java.beans.XMLEncoder}.
      *
@@ -2318,7 +2319,7 @@ public class JInternalFrame extends JComponent implements
          * future Swing releases. The current serialization support is
          * appropriate for short term storage or RMI between applications running
          * the same version of Swing.  As of 1.4, support for long term storage
-         * of all JavaBeans<sup><font size="-2">TM</font></sup>
+         * of all JavaBeans&trade;
          * has been added to the <code>java.beans</code> package.
          * Please see {@link java.beans.XMLEncoder}.
          */

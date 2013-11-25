@@ -191,7 +191,7 @@ public final class ZoneOffsetTransition
      *   out.writeByte(2);                // identifies a ZoneOffsetTransition
      *   out.writeEpochSec(toEpochSecond);
      *   out.writeOffset(offsetBefore);
-     *   out.writeOfset(offsetAfter);
+     *   out.writeOffset(offsetAfter);
      * }
      * </pre>
      * @return the replacing object, not null

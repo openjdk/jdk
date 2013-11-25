@@ -305,6 +305,7 @@ SUNWprivate_1.1 {
         Java_sun_awt_X11_XlibWrapper_XkbGetUpdatedMap;
         Java_sun_awt_X11_XlibWrapper_XkbFreeKeyboard;
         Java_sun_awt_X11_XlibWrapper_XkbTranslateKeyCode;
+        Java_sun_awt_X11_XlibWrapper_XkbSetDetectableAutoRepeat;
         Java_sun_awt_X11_XlibWrapper_XGetModifierMapping;
         Java_sun_awt_X11_XlibWrapper_XFreeModifiermap;
         Java_sun_awt_X11_XlibWrapper_XRefreshKeyboardMapping;
@@ -438,7 +439,7 @@ SUNWprivate_1.1 {
 	Java_sun_print_CUPSPrinter_initIDs;
 	Java_sun_print_CUPSPrinter_getCupsServer;
 	Java_sun_print_CUPSPrinter_getCupsPort;
-	Java_sun_print_CUPSPrinter_canConnect;	
+	Java_sun_print_CUPSPrinter_canConnect;
 	Java_sun_print_CUPSPrinter_getMedia;
 	Java_sun_print_CUPSPrinter_getPageSizes;
 

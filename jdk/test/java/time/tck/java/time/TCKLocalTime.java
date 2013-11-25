@@ -116,6 +116,7 @@ import java.time.temporal.TemporalAccessor;
 import java.time.temporal.TemporalAdjuster;
 import java.time.temporal.TemporalAmount;
 import java.time.temporal.TemporalField;
+import java.time.temporal.TemporalQueries;
 import java.time.temporal.TemporalQuery;
 import java.time.temporal.TemporalUnit;
 import java.time.temporal.UnsupportedTemporalTypeException;
@@ -143,7 +144,7 @@ public class TCKLocalTime extends AbstractDateTimeTest {
     private static final TemporalUnit[] INVALID_UNITS;
     static {
         EnumSet<ChronoUnit> set = EnumSet.range(DAYS, FOREVER);
-        INVALID_UNITS = (TemporalUnit[]) set.toArray(new TemporalUnit[set.size()]);
+        INVALID_UNITS = set.toArray(new TemporalUnit[set.size()]);
     }
 
     @BeforeMethod
@@ -191,64 +192,7 @@ public class TCKLocalTime extends AbstractDateTimeTest {
     }
 
     //-----------------------------------------------------------------------
-    @Test
-    public void test_serialization() throws Exception {
-        assertSerializable(TEST_12_30_40_987654321);
-        assertSerializable(LocalTime.MIN);
-        assertSerializable(LocalTime.MAX);
-    }
 
-    @Test
-    public void test_serialization_format_h() throws Exception {
-        ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        try (DataOutputStream dos = new DataOutputStream(baos) ) {
-            dos.writeByte(4);
-            dos.writeByte(-1 - 22);
-        }
-        byte[] bytes = baos.toByteArray();
-        assertSerializedBySer(LocalTime.of(22, 0), bytes);
-    }
-
-    @Test
-    public void test_serialization_format_hm() throws Exception {
-        ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        try (DataOutputStream dos = new DataOutputStream(baos) ) {
-            dos.writeByte(4);
-            dos.writeByte(22);
-            dos.writeByte(-1 - 17);
-        }
-        byte[] bytes = baos.toByteArray();
-        assertSerializedBySer(LocalTime.of(22, 17), bytes);
-    }
-
-    @Test
-    public void test_serialization_format_hms() throws Exception {
-        ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        try (DataOutputStream dos = new DataOutputStream(baos) ) {
-            dos.writeByte(4);
-            dos.writeByte(22);
-            dos.writeByte(17);
-            dos.writeByte(-1 - 59);
-        }
-        byte[] bytes = baos.toByteArray();
-        assertSerializedBySer(LocalTime.of(22, 17, 59), bytes);
-    }
-
-    @Test
-    public void test_serialization_format_hmsn() throws Exception {
-        ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        try (DataOutputStream dos = new DataOutputStream(baos) ) {
-            dos.writeByte(4);
-            dos.writeByte(22);
-            dos.writeByte(17);
-            dos.writeByte(59);
-            dos.writeInt(459_000_000);
-        }
-        byte[] bytes = baos.toByteArray();
-        assertSerializedBySer(LocalTime.of(22, 17, 59, 459_000_000), bytes);
-    }
-
-    //-----------------------------------------------------------------------
     private void check(LocalTime test, int h, int m, int s, int n) {
         assertEquals(test.getHour(), h);
         assertEquals(test.getMinute(), m);
@@ -711,13 +655,13 @@ public class TCKLocalTime extends AbstractDateTimeTest {
     @DataProvider(name="query")
     Object[][] data_query() {
         return new Object[][] {
-                {TEST_12_30_40_987654321, TemporalQuery.chronology(), null},
-                {TEST_12_30_40_987654321, TemporalQuery.zoneId(), null},
-                {TEST_12_30_40_987654321, TemporalQuery.precision(), ChronoUnit.NANOS},
-                {TEST_12_30_40_987654321, TemporalQuery.zone(), null},
-                {TEST_12_30_40_987654321, TemporalQuery.offset(), null},
-                {TEST_12_30_40_987654321, TemporalQuery.localDate(), null},
-                {TEST_12_30_40_987654321, TemporalQuery.localTime(), TEST_12_30_40_987654321},
+                {TEST_12_30_40_987654321, TemporalQueries.chronology(), null},
+                {TEST_12_30_40_987654321, TemporalQueries.zoneId(), null},
+                {TEST_12_30_40_987654321, TemporalQueries.precision(), ChronoUnit.NANOS},
+                {TEST_12_30_40_987654321, TemporalQueries.zone(), null},
+                {TEST_12_30_40_987654321, TemporalQueries.offset(), null},
+                {TEST_12_30_40_987654321, TemporalQueries.localDate(), null},
+                {TEST_12_30_40_987654321, TemporalQueries.localTime(), TEST_12_30_40_987654321},
         };
     }
 
@@ -2028,29 +1972,48 @@ public class TCKLocalTime extends AbstractDateTimeTest {
     }
 
     @Test(dataProvider="periodUntilUnit")
-    public void test_periodUntil_TemporalUnit(LocalTime time1, LocalTime time2, TemporalUnit unit, long expected) {
+    public void test_until_TemporalUnit(LocalTime time1, LocalTime time2, TemporalUnit unit, long expected) {
         long amount = time1.until(time2, unit);
         assertEquals(amount, expected);
     }
 
     @Test(dataProvider="periodUntilUnit")
-    public void test_periodUntil_TemporalUnit_negated(LocalTime time1, LocalTime time2, TemporalUnit unit, long expected) {
+    public void test_until_TemporalUnit_negated(LocalTime time1, LocalTime time2, TemporalUnit unit, long expected) {
         long amount = time2.until(time1, unit);
         assertEquals(amount, -expected);
     }
 
+    @Test(dataProvider="periodUntilUnit")
+    public void test_until_TemporalUnit_between(LocalTime time1, LocalTime time2, TemporalUnit unit, long expected) {
+        long amount = unit.between(time1, time2);
+        assertEquals(amount, expected);
+    }
+
+    @Test
+    public void test_until_convertedType() {
+        LocalTime start = LocalTime.of(11, 30);
+        LocalDateTime end = start.plusSeconds(2).atDate(LocalDate.of(2010, 6, 30));
+        assertEquals(start.until(end, SECONDS), 2);
+    }
+
+    @Test(expectedExceptions=DateTimeException.class)
+    public void test_until_invalidType() {
+        LocalTime start = LocalTime.of(11, 30);
+        start.until(LocalDate.of(2010, 6, 30), SECONDS);
+    }
+
     @Test(expectedExceptions = UnsupportedTemporalTypeException.class)
-    public void test_periodUntil_TemporalUnit_unsupportedUnit() {
+    public void test_until_TemporalUnit_unsupportedUnit() {
         TEST_12_30_40_987654321.until(TEST_12_30_40_987654321, DAYS);
     }
 
     @Test(expectedExceptions = NullPointerException.class)
-    public void test_periodUntil_TemporalUnit_nullEnd() {
+    public void test_until_TemporalUnit_nullEnd() {
         TEST_12_30_40_987654321.until(null, HOURS);
     }
 
     @Test(expectedExceptions = NullPointerException.class)
-    public void test_periodUntil_TemporalUnit_nullUnit() {
+    public void test_until_TemporalUnit_nullUnit() {
         TEST_12_30_40_987654321.until(TEST_12_30_40_987654321, null);
     }
 

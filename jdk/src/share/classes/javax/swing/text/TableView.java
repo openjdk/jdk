@@ -308,7 +308,7 @@ public abstract class TableView extends BoxView {
 
     /**
      * Perform layout for the minor axis of the box (i.e. the
-     * axis orthoginal to the axis that it represents).  The results
+     * axis orthogonal to the axis that it represents).  The results
      * of the layout should be placed in the given arrays which represent
      * the allocations to the children along the minor axis.  This
      * is called by the superclass whenever the layout needs to be
@@ -320,7 +320,7 @@ public abstract class TableView extends BoxView {
      * of the tables rows.
      *
      * @param targetSpan the total span given to the view, which
-     *  whould be used to layout the children.
+     *  would be used to layout the children.
      * @param axis the axis being layed out.
      * @param offsets the offsets from the origin of the view for
      *  each of the child views.  This is a return value and is
@@ -542,7 +542,7 @@ public abstract class TableView extends BoxView {
      * view the children do not necessarily have a one to one mapping
      * with the child elements.
      *
-     * @param pos  the search position >= 0
+     * @param pos  the search position &gt;= 0
      * @param a  the allocation to the table on entry, and the
      *   allocation of the view containing the position on exit
      * @return  the view representing the given position, or
@@ -657,7 +657,7 @@ public abstract class TableView extends BoxView {
          * the multi-column span.
          *
          * @param targetSpan the total span given to the view, which
-         *  whould be used to layout the children.
+         *  would be used to layout the children.
          * @param axis the axis being layed out.
          * @param offsets the offsets from the origin of the view for
          *  each of the child views.  This is a return value and is
@@ -691,7 +691,7 @@ public abstract class TableView extends BoxView {
 
         /**
          * Perform layout for the minor axis of the box (i.e. the
-         * axis orthoginal to the axis that it represents).  The results
+         * axis orthogonal to the axis that it represents).  The results
          * of the layout should be placed in the given arrays which represent
          * the allocations to the children along the minor axis.  This
          * is called by the superclass whenever the layout needs to be
@@ -701,7 +701,7 @@ public abstract class TableView extends BoxView {
          * the span for any cell that spans multiple rows.
          *
          * @param targetSpan the total span given to the view, which
-         *  whould be used to layout the children.
+         *  would be used to layout the children.
          * @param axis the axis being layed out.
          * @param offsets the offsets from the origin of the view for
          *  each of the child views.  This is a return value and is
@@ -755,7 +755,7 @@ public abstract class TableView extends BoxView {
          * view the children do not necessarily have a one to one mapping
          * with the child elements.
          *
-         * @param pos  the search position >= 0
+         * @param pos  the search position &gt;= 0
          * @param a  the allocation to the table on entry, and the
          *   allocation of the view containing the position on exit
          * @return  the view representing the given position, or
@@ -833,8 +833,8 @@ public abstract class TableView extends BoxView {
         /**
          * Sets the grid location.
          *
-         * @param row the row >= 0
-         * @param col the column >= 0
+         * @param row the row &gt;= 0
+         * @param col the column &gt;= 0
          */
         public void setGridLocation(int row, int col) {
             this.row = row;
@@ -871,8 +871,8 @@ public abstract class TableView extends BoxView {
         /**
          * Sets the grid location.
          *
-         * @param row the row >= 0
-         * @param col the column >= 0
+         * @param row the row &gt;= 0
+         * @param col the column &gt;= 0
          */
         public void setGridLocation(int row, int col);
 

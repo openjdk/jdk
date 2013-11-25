@@ -38,7 +38,7 @@ import java.util.Properties;
  * This range may be written as [0,N).
  * The most significant component is at index 0.
  * An empty compound name has no components.
- *<p>
+ *
  * <h1>Compound Name Syntax</h1>
  * The syntax of a compound name is specified using a set of properties:
  *<dl>
@@ -135,7 +135,7 @@ import java.util.Properties;
  * applied (e.g. embedded separators are escaped or quoted)
  * so that when the same string is parsed, it will yield the same components
  * of the original compound name.
- *<p>
+ *
  *<h1>Multithreaded Access</h1>
  * A <tt>CompoundName</tt> instance is not synchronized against concurrent
  * multithreaded access. Multiple threads trying to access and modify a

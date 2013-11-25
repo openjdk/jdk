@@ -983,7 +983,7 @@ imageio_fill_input_buffer(j_decompress_ptr cinfo)
  * buffer filling be done at the top application level, using this
  * function.  Due to the way that backtracking works, this procedure
  * saves all of the data that was left in the buffer when suspension
- * occured and read new data only at the end.
+ * occurred and read new data only at the end.
  */
 
 GLOBAL(void)
@@ -2704,6 +2704,15 @@ Java_com_sun_imageio_plugins_jpeg_JPEGImageWriter_writeImage
     }
 
     bandSize = (*env)->GetIntArrayElements(env, bandSizes, NULL);
+
+    for (i = 0; i < numBands; i++) {
+        if (bandSize[i] <= 0 || bandSize[i] > JPEG_BAND_SIZE) {
+            (*env)->ReleaseIntArrayElements(env, bandSizes,
+                                            bandSize, JNI_ABORT);
+            JNU_ThrowByName(env, "javax/imageio/IIOException", "Invalid Image");
+            return JNI_FALSE;;
+        }
+    }
 
     for (i = 0; i < numBands; i++) {
         if (bandSize[i] != JPEG_BAND_SIZE) {

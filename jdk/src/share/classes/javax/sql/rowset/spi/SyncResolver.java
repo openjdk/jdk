@@ -41,7 +41,7 @@ import java.sql.SQLException;
  * the data source row has been modified since the last synchronization. Note also that
  * a <code>RowSet</code> object's original values are the values it had just prior to the
  * the last synchronization, which are not necessarily its initial values.
- * <p>
+ *
  *
  * <H2>Description of a <code>SyncResolver</code> Object</H2>
  *
@@ -68,7 +68,7 @@ import java.sql.SQLException;
  * <code>SyncResolver</code> object contains the values from the data source that caused
  * the conflict(s) and <code>null</code> for all other values.
  * In addition, it contains information about each conflict.
- * <P>
+ *
  *
  * <H2>Getting and Using a <code>SyncResolver</code> Object</H2>
  *
@@ -99,7 +99,7 @@ import java.sql.SQLException;
  * <P>
  * The following kinds of information can be obtained from a <code>SyncResolver</code>
  * object:
- * <P>
+ *
  *    <h3>What operation was being attempted when a conflict occurred</h3>
  * The <code>SyncProvider</code> interface defines four constants
  * describing states that may occur. Three
@@ -111,7 +111,7 @@ import java.sql.SQLException;
  * <PRE>
  *     {@code int operation = resolver.getStatus(); }
  * </PRE>
- * <P>
+ *
  *    <h3>The value in the data source that caused a conflict</h3>
  * A conflict exists when a value that a <code>RowSet</code> object has changed
  * and is attempting to write to the data source
@@ -142,7 +142,7 @@ import java.sql.SQLException;
  * An application calls the method <code>setResolvedValue</code> after it has
  * resolved all of the conflicts in the current conflict row and repeats this process
  * for each conflict row in the <code>SyncResolver</code> object.
- * <P>
+ *
  *
  * <H2>Navigating a <code>SyncResolver</code> Object</H2>
  *
@@ -264,10 +264,10 @@ public interface SyncResolver extends RowSet {
     public static int INSERT_ROW_CONFLICT = 2;
 
     /**
-     * Indicates that <b>no</b> conflict occured while the <code>RowSet</code> object
+     * Indicates that <b>no</b> conflict occurred while the <code>RowSet</code> object
      * was attempting to update, delete or insert a row in the data source. The values in
      * the <code>SyncResolver</code> will contain <code>null</code> values only as an indication
-     * that no information in pertitent to the conflict resolution in this row.
+     * that no information in pertinent to the conflict resolution in this row.
      */
     public static int NO_ROW_CONFLICT = 3;
 

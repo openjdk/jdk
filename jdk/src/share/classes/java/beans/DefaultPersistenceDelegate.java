@@ -149,6 +149,7 @@ public class DefaultPersistenceDelegate extends PersistenceDelegate {
      * @return An expression whose value is <code>oldInstance</code>.
      *
      * @throws NullPointerException if {@code out} is {@code null}
+     *                              and this value is used in the method
      *
      * @see #DefaultPersistenceDelegate(String[])
      */
@@ -221,6 +222,9 @@ public class DefaultPersistenceDelegate extends PersistenceDelegate {
     // Write out the properties of this instance.
     private void initBean(Class<?> type, Object oldInstance, Object newInstance, Encoder out) {
         for (Field field : type.getFields()) {
+            if (!ReflectUtil.isPackageAccessible(field.getDeclaringClass())) {
+                continue;
+            }
             int mod = field.getModifiers();
             if (Modifier.isFinal(mod) || Modifier.isStatic(mod) || Modifier.isTransient(mod)) {
                 continue;
@@ -269,7 +273,7 @@ public class DefaultPersistenceDelegate extends PersistenceDelegate {
         TableModelListener (the JTable itself in this case) to the supplied
         table model.
 
-        We do not need to explictly add these listeners to the model in an
+        We do not need to explicitly add these listeners to the model in an
         archive as they will be added automatically by, in the above case,
         the JTable's "setModel" method. In some cases, we must specifically
         avoid trying to do this since the listener may be an inner class

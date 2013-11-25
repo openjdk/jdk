@@ -228,7 +228,7 @@ BOOL AwtToolkit::activateKeyboardLayout(HKL hkl) {
         // create input locale string, e.g., "00000409", from hkl.
         TCHAR inputLocale[9];
         TCHAR buf[9];
-        _tcscpy(inputLocale, TEXT("00000000"));
+        _tcscpy_s(inputLocale, 9, TEXT("00000000"));
 
     // 64-bit: ::LoadKeyboardLayout() is such a weird API - a string of
     // the hex value you want?!  Here we're converting our HKL value to
@@ -1516,10 +1516,19 @@ BOOL AwtToolkit::PreProcessMouseMsg(AwtComponent* p, MSG& msg)
      * the mouse, not the Component with the input focus.
      */
 
-    if (msg.message == WM_MOUSEWHEEL &&
-        AwtToolkit::MainThread() == ::GetWindowThreadProcessId(hWndForWheel, NULL)) {
+    if (msg.message == WM_MOUSEWHEEL) {
             //i.e. mouse is over client area for this window
-            msg.hwnd = hWndForWheel;
+            DWORD hWndForWheelProcess;
+            DWORD hWndForWheelThread = ::GetWindowThreadProcessId(hWndForWheel, &hWndForWheelProcess);
+            if (::GetCurrentProcessId() == hWndForWheelProcess) {
+                if (AwtToolkit::MainThread() == hWndForWheelThread) {
+                    msg.hwnd = hWndForWheel;
+                } else {
+                    // Interop mode, redispatch the event to another toolkit.
+                    ::SendMessage(hWndForWheel, msg.message, mouseWParam, mouseLParam);
+                    return TRUE;
+                }
+            }
     }
 
     /*

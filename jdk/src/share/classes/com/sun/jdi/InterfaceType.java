@@ -43,6 +43,7 @@ import java.util.List;
  * @author James McIlree
  * @since  1.3
  */
+@jdk.Exported
 public interface InterfaceType extends ReferenceType {
     /**
      * Gets the interfaces directly extended by this interface.

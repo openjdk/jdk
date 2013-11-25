@@ -58,6 +58,8 @@ public class DocLintTester {
                 badArgs = true;
             } else if (arg.startsWith("-Xmsgs")) {
                 opts.add(arg);
+            } else if (arg.startsWith("-XcustomTags")) {
+                opts.add(arg);
             } else if (arg.startsWith("-")) {
                 opts.add(arg);
                 if (i < args.length - 1 && !args[i+1].startsWith("-"))

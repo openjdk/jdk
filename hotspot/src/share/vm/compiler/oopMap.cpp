@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -628,7 +628,7 @@ void DerivedPointerTable::clear() {
 
 
 // Returns value of location as an int
-intptr_t value_of_loc(oop *pointer) { return (intptr_t)(*pointer); }
+intptr_t value_of_loc(oop *pointer) { return cast_from_oop<intptr_t>((*pointer)); }
 
 
 void DerivedPointerTable::add(oop *derived_loc, oop *base_loc) {

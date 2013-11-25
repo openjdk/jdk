@@ -69,6 +69,7 @@ public class SchemaConstraintChecker {
         boolean hadErrors = false;
 
         SchemaFactory sf = XmlFactory.createSchemaFactory(W3C_XML_SCHEMA_NS_URI, disableXmlSecurity);
+        XmlFactory.allowExternalAccess(sf, "all", disableXmlSecurity);
         sf.setErrorHandler(errorFilter);
         if( entityResolver != null ) {
             sf.setResourceResolver(new LSResourceResolver() {
@@ -91,6 +92,7 @@ public class SchemaConstraintChecker {
         }
 
         try {
+            XmlFactory.allowExternalDTDAccess(sf, "all", disableXmlSecurity);
             sf.newSchema(getSchemaSource(schemas, entityResolver));
         } catch (SAXException e) {
             // TODO: we haven't thrown exceptions from here before. should we just trap them and return false?

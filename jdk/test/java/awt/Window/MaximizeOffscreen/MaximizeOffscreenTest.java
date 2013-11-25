@@ -23,6 +23,7 @@
 
 /**
  * @test @summary JVM crash if the frame maximized from offscreen
+ * @bug 8020210
  * @author Petr Pchelko
  * @library ../../regtesthelpers
  * @build Util

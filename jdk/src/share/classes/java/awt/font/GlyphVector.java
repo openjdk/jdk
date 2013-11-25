@@ -395,7 +395,7 @@ public abstract class GlyphVector implements Cloneable {
      * indicates that no special transform is applied for the specified
      * glyph.
      * This method can be used to rotate, mirror, translate and scale the
-     * glyph.  Adding a transform can result in signifant performance changes.
+     * glyph.  Adding a transform can result in significant performance changes.
      * @param glyphIndex the index into this <code>GlyphVector</code>
      * @param newTX the new transform of the glyph at <code>glyphIndex</code>
      * @throws IndexOutOfBoundsException if <code>glyphIndex</code>

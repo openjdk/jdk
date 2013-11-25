@@ -214,7 +214,7 @@ public abstract class GSSManager {
      * the namespace type parameter indicates NT_EXPORT_NAME or when the
      * GSS-API implementation is not multi-mechanism. It is
      * not recommended to use this method with a NT_EXPORT_NAME type because
-     * representing a previously exported name consisting of abitrary bytes
+     * representing a previously exported name consisting of arbitrary bytes
      * as a String might cause problems with character encoding schemes. In
      * such cases it is recommended that the bytes be passed in directly to
      * the overloaded form of this method {@link #createName(byte[],

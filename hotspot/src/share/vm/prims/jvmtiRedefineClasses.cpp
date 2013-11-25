@@ -2755,13 +2755,26 @@ void VM_RedefineClasses::AdjustCpoolCacheAndVtable::do_klass(Klass* k) {
     // InstanceKlass around to hold obsolete methods so we don't have
     // any other InstanceKlass embedded vtables to update. The vtable
     // holds the Method*s for virtual (but not final) methods.
-    if (ik->vtable_length() > 0 && ik->is_subtype_of(_the_class_oop)) {
+    // Default methods, or concrete methods in interfaces are stored
+    // in the vtable, so if an interface changes we need to check
+    // adjust_method_entries() for every InstanceKlass, which will also
+    // adjust the default method vtable indices.
+    // We also need to adjust any default method entries that are
+    // not yet in the vtable, because the vtable setup is in progress.
+    // This must be done after we adjust the default_methods and
+    // default_vtable_indices for methods already in the vtable.
+    if (ik->vtable_length() > 0 && (_the_class_oop->is_interface()
+        || ik->is_subtype_of(_the_class_oop))) {
       // ik->vtable() creates a wrapper object; rm cleans it up
       ResourceMark rm(_thread);
       ik->vtable()->adjust_method_entries(_matching_old_methods,
                                           _matching_new_methods,
                                           _matching_methods_length,
                                           &trace_name_printed);
+      ik->adjust_default_methods(_matching_old_methods,
+                                 _matching_new_methods,
+                                 _matching_methods_length,
+                                 &trace_name_printed);
     }
 
     // If the current class has an itable and we are either redefining an
@@ -2807,28 +2820,20 @@ void VM_RedefineClasses::AdjustCpoolCacheAndVtable::do_klass(Klass* k) {
                                         &trace_name_printed);
       }
     }
-    {
-      ResourceMark rm(_thread);
-      // PreviousVersionInfo objects returned via PreviousVersionWalker
-      // contain a GrowableArray of handles. We have to clean up the
-      // GrowableArray _after_ the PreviousVersionWalker destructor
-      // has destroyed the handles.
-      {
-        // the previous versions' constant pool caches may need adjustment
-        PreviousVersionWalker pvw(ik);
-        for (PreviousVersionInfo * pv_info = pvw.next_previous_version();
-             pv_info != NULL; pv_info = pvw.next_previous_version()) {
-          other_cp = pv_info->prev_constant_pool_handle();
-          cp_cache = other_cp->cache();
-          if (cp_cache != NULL) {
-            cp_cache->adjust_method_entries(_matching_old_methods,
-                                            _matching_new_methods,
-                                            _matching_methods_length,
-                                            &trace_name_printed);
-          }
-        }
-      } // pvw is cleaned up
-    } // rm is cleaned up
+
+    // the previous versions' constant pool caches may need adjustment
+    PreviousVersionWalker pvw(_thread, ik);
+    for (PreviousVersionNode * pv_node = pvw.next_previous_version();
+         pv_node != NULL; pv_node = pvw.next_previous_version()) {
+      other_cp = pv_node->prev_constant_pool();
+      cp_cache = other_cp->cache();
+      if (cp_cache != NULL) {
+        cp_cache->adjust_method_entries(_matching_old_methods,
+                                        _matching_new_methods,
+                                        _matching_methods_length,
+                                        &trace_name_printed);
+      }
+    }
   }
 }
 
@@ -2939,13 +2944,13 @@ void VM_RedefineClasses::check_methods_and_mark_as_obsolete(
       old_method->set_is_obsolete();
       obsolete_count++;
 
-      // obsolete methods need a unique idnum
+      // obsolete methods need a unique idnum so they become new entries in
+      // the jmethodID cache in InstanceKlass
       u2 num = InstanceKlass::cast(_the_class_oop)->next_method_idnum();
       if (num != ConstMethod::UNSET_IDNUM) {
-//      u2 old_num = old_method->method_idnum();
         old_method->set_method_idnum(num);
-// TO DO: attach obsolete annotations to obsolete method's new idnum
       }
+
       // With tracing we try not to "yack" too much. The position of
       // this trace assumes there are fewer obsolete methods than
       // EMCP methods.

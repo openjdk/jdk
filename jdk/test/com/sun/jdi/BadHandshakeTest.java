@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -108,16 +108,7 @@ public class BadHandshakeTest {
      */
     private static Process launch(String address, String class_name) throws IOException {
         String exe =   System.getProperty("java.home")
-                     + File.separator + "bin" + File.separator;
-        String arch = System.getProperty("os.arch");
-        String osname = System.getProperty("os.name");
-        if (osname.equals("SunOS") && arch.equals("sparcv9")) {
-            exe += "sparcv9/java";
-        } else if (osname.equals("SunOS") && arch.equals("amd64")) {
-            exe += "amd64/java";
-        } else {
-            exe += "java";
-        }
+                     + File.separator + "bin" + File.separator + "java";
         String cmd = exe + " " + VMConnection.getDebuggeeVMOptions() +
             " -agentlib:jdwp=transport=dt_socket" +
             ",server=y" + ",suspend=y" + ",address=" + address +

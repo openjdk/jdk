@@ -335,14 +335,6 @@ abstract class Handshaker {
         }
     }
 
-    boolean isLoopbackSE() {
-        if (conn != null) {
-            return conn.getInetAddress().isLoopbackAddress();
-        } else {
-            return false;
-        }
-    }
-
     int getPortSE() {
         if (conn != null) {
             return conn.getPort();
@@ -910,7 +902,7 @@ abstract class Handshaker {
             }
 
             /*
-             * Process the messsage.  We require
+             * Process the message.  We require
              * that processMessage() consumes the entire message.  In
              * lieu of explicit error checks (how?!) we assume that the
              * data will look like garbage on encoding/processing errors,

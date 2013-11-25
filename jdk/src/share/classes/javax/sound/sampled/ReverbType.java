@@ -42,7 +42,7 @@ package javax.sound.sampled;
  * intensity of late reflections, and an overall decay time.
  * Early reflections are the initial individual low-order reflections of the
  * direct signal off the surfaces in the room.
- * The late Relections are the dense, high-order reflections that characterize
+ * The late Reflections are the dense, high-order reflections that characterize
  * the room's reverberation.
  * The delay times for the start of these two reflection types give the listener
  * a sense of the overall size and complexity of the room's shape and contents.

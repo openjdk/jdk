@@ -887,7 +887,7 @@ public class TransTypes extends TreeTranslator {
 
     private List<JCTree> addOverrideBridgesIfNeeded(DiagnosticPosition pos,
                                     final ClassSymbol c) {
-        ListBuffer<JCTree> buf = ListBuffer.lb();
+        ListBuffer<JCTree> buf = new ListBuffer<>();
         if (c.isInterface() || !boundsRestricted(c))
             return buf.toList();
         Type t = types.supertype(c.type);

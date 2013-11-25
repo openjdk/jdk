@@ -76,7 +76,6 @@ import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
 import java.io.InvalidObjectException;
-import java.io.InvalidObjectException;
 import java.io.Serializable;
 import java.time.chrono.ChronoLocalDateTime;
 import java.time.format.DateTimeFormatter;
@@ -88,6 +87,7 @@ import java.time.temporal.TemporalAccessor;
 import java.time.temporal.TemporalAdjuster;
 import java.time.temporal.TemporalAmount;
 import java.time.temporal.TemporalField;
+import java.time.temporal.TemporalQueries;
 import java.time.temporal.TemporalQuery;
 import java.time.temporal.TemporalUnit;
 import java.time.temporal.UnsupportedTemporalTypeException;
@@ -449,7 +449,8 @@ public final class LocalDateTime
             LocalTime time = LocalTime.from(temporal);
             return new LocalDateTime(date, time);
         } catch (DateTimeException ex) {
-            throw new DateTimeException("Unable to obtain LocalDateTime from TemporalAccessor: " + temporal.getClass(), ex);
+            throw new DateTimeException("Unable to obtain LocalDateTime from TemporalAccessor: " +
+                    temporal + " of type " + temporal.getClass().getName(), ex);
         }
     }
 
@@ -1129,6 +1130,11 @@ public final class LocalDateTime
      */
     @Override
     public LocalDateTime plus(TemporalAmount amountToAdd) {
+        if (amountToAdd instanceof Period) {
+            Period periodToAdd = (Period) amountToAdd;
+            return with(date.plus(periodToAdd), time);
+        }
+        Objects.requireNonNull(amountToAdd, "amountToAdd");
         return (LocalDateTime) amountToAdd.addTo(this);
     }
 
@@ -1343,6 +1349,11 @@ public final class LocalDateTime
      */
     @Override
     public LocalDateTime minus(TemporalAmount amountToSubtract) {
+        if (amountToSubtract instanceof Period) {
+            Period periodToSubtract = (Period) amountToSubtract;
+            return with(date.minus(periodToSubtract), time);
+        }
+        Objects.requireNonNull(amountToSubtract, "amountToSubtract");
         return (LocalDateTime) amountToSubtract.subtractFrom(this);
     }
 
@@ -1568,7 +1579,7 @@ public final class LocalDateTime
     @SuppressWarnings("unchecked")
     @Override  // override for Javadoc
     public <R> R query(TemporalQuery<R> query) {
-        if (query == TemporalQuery.localDate()) {
+        if (query == TemporalQueries.localDate()) {
             return (R) date;
         }
         return ChronoLocalDateTime.super.query(query);
@@ -1611,7 +1622,8 @@ public final class LocalDateTime
      * objects in terms of a single {@code TemporalUnit}.
      * The start and end points are {@code this} and the specified date-time.
      * The result will be negative if the end is before the start.
-     * The {@code Temporal} passed to this method must be a {@code LocalDateTime}.
+     * The {@code Temporal} passed to this method is converted to a
+     * {@code LocalDateTime} using {@link #from(TemporalAccessor)}.
      * For example, the amount in days between two date-times can be calculated
      * using {@code startDateTime.until(endDateTime, DAYS)}.
      * <p>
@@ -1639,25 +1651,22 @@ public final class LocalDateTime
      * <p>
      * If the unit is not a {@code ChronoUnit}, then the result of this method
      * is obtained by invoking {@code TemporalUnit.between(Temporal, Temporal)}
-     * passing {@code this} as the first argument and the input temporal as
-     * the second argument.
+     * passing {@code this} as the first argument and the converted input temporal
+     * as the second argument.
      * <p>
      * This instance is immutable and unaffected by this method call.
      *
-     * @param endDateTime  the end date-time, which must be a {@code LocalDateTime}, not null
+     * @param endExclusive  the end date, exclusive, which is converted to a {@code LocalDateTime}, not null
      * @param unit  the unit to measure the amount in, not null
      * @return the amount of time between this date-time and the end date-time
-     * @throws DateTimeException if the amount cannot be calculated
+     * @throws DateTimeException if the amount cannot be calculated, or the end
+     *  temporal cannot be converted to a {@code LocalDateTime}
      * @throws UnsupportedTemporalTypeException if the unit is not supported
      * @throws ArithmeticException if numeric overflow occurs
      */
     @Override
-    public long until(Temporal endDateTime, TemporalUnit unit) {
-        if (endDateTime instanceof LocalDateTime == false) {
-            Objects.requireNonNull(endDateTime, "endDateTime");
-            throw new DateTimeException("Unable to calculate amount as objects are of two different types");
-        }
-        LocalDateTime end = (LocalDateTime) endDateTime;
+    public long until(Temporal endExclusive, TemporalUnit unit) {
+        LocalDateTime end = LocalDateTime.from(endExclusive);
         if (unit instanceof ChronoUnit) {
             if (unit.isTimeBased()) {
                 long amount = date.daysUntil(end.date);
@@ -1711,7 +1720,7 @@ public final class LocalDateTime
             }
             return date.until(endDate, unit);
         }
-        return unit.between(this, endDateTime);
+        return unit.between(this, end);
     }
 
     /**
@@ -1932,13 +1941,13 @@ public final class LocalDateTime
      * Outputs this date-time as a {@code String}, such as {@code 2007-12-03T10:15:30}.
      * <p>
      * The output will be one of the following ISO-8601 formats:
-     * <p><ul>
+     * <ul>
      * <li>{@code uuuu-MM-dd'T'HH:mm}</li>
      * <li>{@code uuuu-MM-dd'T'HH:mm:ss}</li>
      * <li>{@code uuuu-MM-dd'T'HH:mm:ss.SSS}</li>
      * <li>{@code uuuu-MM-dd'T'HH:mm:ss.SSSSSS}</li>
      * <li>{@code uuuu-MM-dd'T'HH:mm:ss.SSSSSSSSS}</li>
-     * </ul><p>
+     * </ul>
      * The format used will be the shortest that outputs the full value of
      * the time where the omitted parts are implied to be zero.
      *

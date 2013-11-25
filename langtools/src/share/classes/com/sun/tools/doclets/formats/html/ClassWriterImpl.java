@@ -254,7 +254,7 @@ public class ClassWriterImpl extends SubWriterHolderWriter
             addSrcLink(classDoc, className, pre);
             pre.addContent(parameterLinks);
         } else {
-            Content span = HtmlTree.SPAN(HtmlStyle.strong, className);
+            Content span = HtmlTree.SPAN(HtmlStyle.typeNameLabel, className);
             span.addContent(parameterLinks);
             pre.addContent(span);
         }
@@ -547,8 +547,8 @@ public class ClassWriterImpl extends SubWriterHolderWriter
         classInfoTree.addContent(hr);
         Tag[] deprs = classDoc.tags("deprecated");
         if (Util.isDeprecated(classDoc)) {
-            Content strong = HtmlTree.SPAN(HtmlStyle.strong, deprecatedPhrase);
-            Content div = HtmlTree.DIV(HtmlStyle.block, strong);
+            Content deprLabel = HtmlTree.SPAN(HtmlStyle.deprecatedLabel, deprecatedPhrase);
+            Content div = HtmlTree.DIV(HtmlStyle.block, deprLabel);
             if (deprs.length > 0) {
                 Tag[] commentTags = deprs[0].inlineTags();
                 if (commentTags.length > 0) {

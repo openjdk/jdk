@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug      8006124 8009684 8015663 8015496
+ * @bug      8006124 8009684 8015663 8015496 8026567
  * @summary  Test javadoc options support for profiles.
  * @author   Evgeniya Stepanova
  * @library  ../lib/
@@ -87,7 +87,7 @@ public class TestProfilesConfiguration extends JavadocTester {
         {PROFILE_CONFIGURATION_BUG_ID + FS + "compact1-summary.html",
             "<h3><a href=\"pkgDeprecated/compact1-package-summary.html\" target=\"" +
             "classFrame\">pkgDeprecated</a></h3>" + NL + "<div class=\"deprecatedContent\">" +
-            "<span class=\"strong\">Deprecated.</span></div>"
+            "<span class=\"deprecatedLabel\">Deprecated.</span></div>"
         }
     };
     private static final String[][] PROFILES_CONFIGURATION_NEGATED_TEST = {

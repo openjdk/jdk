@@ -95,6 +95,8 @@ public class AnnotatedTypeFactory {
             Class<?> clz = (Class)type;
             if (clz.getEnclosingClass() == null)
                 return addTo;
+            if (Modifier.isStatic(clz.getModifiers()))
+                return addNesting(clz.getEnclosingClass(), addTo);
             return addNesting(clz.getEnclosingClass(), addTo.pushInner());
         } else if (type instanceof ParameterizedType) {
             ParameterizedType t = (ParameterizedType)type;
@@ -118,6 +120,7 @@ public class AnnotatedTypeFactory {
 
     static final AnnotatedType EMPTY_ANNOTATED_TYPE = new AnnotatedTypeBaseImpl(null, LocationInfo.BASE_LOCATION,
                                                             new TypeAnnotation[0], new TypeAnnotation[0], null);
+    static final AnnotatedType[] EMPTY_ANNOTATED_TYPE_ARRAY = new AnnotatedType[0];
 
     private static class AnnotatedTypeBaseImpl implements AnnotatedType {
         private final Type type;
@@ -165,7 +168,7 @@ public class AnnotatedTypeFactory {
 
         @Override
         public <T extends Annotation> T[] getDeclaredAnnotationsByType(Class<T> annotation) {
-            return AnnotationSupport.getMultipleAnnotations(annotations, annotation);
+            return AnnotationSupport.getDirectlyAndIndirectlyPresent(annotations, annotation);
         }
 
         // AnnotatedType

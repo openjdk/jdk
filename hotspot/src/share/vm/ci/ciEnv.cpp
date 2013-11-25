@@ -483,8 +483,7 @@ ciKlass* ciEnv::get_klass_by_index_impl(constantPoolHandle cpool,
     {
       // We have to lock the cpool to keep the oop from being resolved
       // while we are accessing it.
-      oop cplock = cpool->lock();
-      ObjectLocker ol(cplock, THREAD, cplock != NULL);
+        MonitorLockerEx ml(cpool->lock());
       constantTag tag = cpool->tag_at(index);
       if (tag.is_klass()) {
         // The klass has been inserted into the constant pool
@@ -1154,9 +1153,12 @@ ciInstance* ciEnv::unloaded_ciinstance() {
   GUARDED_VM_ENTRY(return _factory->get_unloaded_object_constant();)
 }
 
-void ciEnv::dump_replay_data(outputStream* out) {
-  VM_ENTRY_MARK;
-  MutexLocker ml(Compile_lock);
+// ------------------------------------------------------------------
+// ciEnv::dump_replay_data*
+
+// Don't change thread state and acquire any locks.
+// Safe to call from VM error reporter.
+void ciEnv::dump_replay_data_unsafe(outputStream* out) {
   ResourceMark rm;
 #if INCLUDE_JVMTI
   out->print_cr("JvmtiExport can_access_local_variables %d",     _jvmti_can_access_local_variables);
@@ -1180,4 +1182,11 @@ void ciEnv::dump_replay_data(outputStream* out) {
                 method->signature()->as_quoted_ascii(),
                 entry_bci, comp_level);
   out->flush();
+}
+
+void ciEnv::dump_replay_data(outputStream* out) {
+  GUARDED_VM_ENTRY(
+    MutexLocker ml(Compile_lock);
+    dump_replay_data_unsafe(out);
+  )
 }

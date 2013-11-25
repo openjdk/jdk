@@ -100,6 +100,7 @@
 # include <stdint.h>
 # include <inttypes.h>
 # include <sys/ioctl.h>
+# include <sys/syscall.h>
 
 #if defined(__FreeBSD__) || defined(__NetBSD__)
 # include <elf.h>
@@ -152,14 +153,27 @@ sigset_t SR_sigset;
 // utility functions
 
 static int SR_initialize();
+static void unpackTime(timespec* absTime, bool isAbsolute, jlong time);
 
 julong os::available_memory() {
   return Bsd::available_memory();
 }
 
+// available here means free
 julong os::Bsd::available_memory() {
-  // XXXBSD: this is just a stopgap implementation
-  return physical_memory() >> 2;
+  uint64_t available = physical_memory() >> 2;
+#ifdef __APPLE__
+  mach_msg_type_number_t count = HOST_VM_INFO64_COUNT;
+  vm_statistics64_data_t vmstat;
+  kern_return_t kerr = host_statistics64(mach_host_self(), HOST_VM_INFO64,
+                                         (host_info64_t)&vmstat, &count);
+  assert(kerr == KERN_SUCCESS,
+         "host_statistics64 failed - check mach_host_self() and count");
+  if (kerr == KERN_SUCCESS) {
+    available = vmstat.free_count * os::vm_page_size();
+  }
+#endif
+  return available;
 }
 
 julong os::physical_memory() {
@@ -247,7 +261,17 @@ void os::Bsd::initialize_system_info() {
    * since it returns a 64 bit value)
    */
   mib[0] = CTL_HW;
+
+#if defined (HW_MEMSIZE) // Apple
   mib[1] = HW_MEMSIZE;
+#elif defined(HW_PHYSMEM) // Most of BSD
+  mib[1] = HW_PHYSMEM;
+#elif defined(HW_REALMEM) // Old FreeBSD
+  mib[1] = HW_REALMEM;
+#else
+  #error No ways to get physmem
+#endif
+
   len = sizeof(mem_val);
   if (sysctl(mib, 2, &mem_val, &len, NULL, 0) != -1) {
        assert(len == sizeof(mem_val), "unexpected data size");
@@ -679,18 +703,12 @@ static void *java_start(Thread *thread) {
     return NULL;
   }
 
-#ifdef __APPLE__
-  // thread_id is mach thread on macos, which pthreads graciously caches and provides for us
-  mach_port_t thread_id = ::pthread_mach_thread_np(::pthread_self());
-  guarantee(thread_id != 0, "thread id missing from pthreads");
-  osthread->set_thread_id(thread_id);
+  osthread->set_thread_id(os::Bsd::gettid());
 
-  uint64_t unique_thread_id = locate_unique_thread_id(thread_id);
+#ifdef __APPLE__
+  uint64_t unique_thread_id = locate_unique_thread_id(osthread->thread_id());
   guarantee(unique_thread_id != 0, "unique thread id was not found");
   osthread->set_unique_thread_id(unique_thread_id);
-#else
-  // thread_id is pthread_id on BSD
-  osthread->set_thread_id(::pthread_self());
 #endif
   // initialize signal mask for this thread
   os::Bsd::hotspot_sigmask(thread);
@@ -847,18 +865,13 @@ bool os::create_attached_thread(JavaThread* thread) {
     return false;
   }
 
+  osthread->set_thread_id(os::Bsd::gettid());
+
   // Store pthread info into the OSThread
 #ifdef __APPLE__
-  // thread_id is mach thread on macos, which pthreads graciously caches and provides for us
-  mach_port_t thread_id = ::pthread_mach_thread_np(::pthread_self());
-  guarantee(thread_id != 0, "just checking");
-  osthread->set_thread_id(thread_id);
-
-  uint64_t unique_thread_id = locate_unique_thread_id(thread_id);
+  uint64_t unique_thread_id = locate_unique_thread_id(osthread->thread_id());
   guarantee(unique_thread_id != 0, "just checking");
   osthread->set_unique_thread_id(unique_thread_id);
-#else
-  osthread->set_thread_id(::pthread_self());
 #endif
   osthread->set_pthread_id(::pthread_self());
 
@@ -932,17 +945,15 @@ extern "C" Thread* get_thread() {
 // Used by VMSelfDestructTimer and the MemProfiler.
 double os::elapsedTime() {
 
-  return (double)(os::elapsed_counter()) * 0.000001;
+  return ((double)os::elapsed_counter()) / os::elapsed_frequency();
 }
 
 jlong os::elapsed_counter() {
-  timeval time;
-  int status = gettimeofday(&time, NULL);
-  return jlong(time.tv_sec) * 1000 * 1000 + jlong(time.tv_usec) - initial_time_count;
+  return javaTimeNanos() - initial_time_count;
 }
 
 jlong os::elapsed_frequency() {
-  return (1000 * 1000);
+  return NANOSECS_PER_SEC; // nanosecond resolution
 }
 
 bool os::supports_vtime() { return true; }
@@ -1125,6 +1136,30 @@ size_t os::lasterror(char *buf, size_t len) {
   return n;
 }
 
+// Information of current thread in variety of formats
+pid_t os::Bsd::gettid() {
+  int retval = -1;
+
+#ifdef __APPLE__ //XNU kernel
+  // despite the fact mach port is actually not a thread id use it
+  // instead of syscall(SYS_thread_selfid) as it certainly fits to u4
+  retval = ::pthread_mach_thread_np(::pthread_self());
+  guarantee(retval != 0, "just checking");
+  return retval;
+
+#elif __FreeBSD__
+  retval = syscall(SYS_thr_self);
+#elif __OpenBSD__
+  retval = syscall(SYS_getthrid);
+#elif __NetBSD__
+  retval = (pid_t) syscall(SYS__lwp_self);
+#endif
+
+  if (retval == -1) {
+    return getpid();
+  }
+}
+
 intx os::current_thread_id() {
 #ifdef __APPLE__
   return (intx)::pthread_mach_thread_np(::pthread_self());
@@ -1132,6 +1167,7 @@ intx os::current_thread_id() {
   return (intx)::pthread_self();
 #endif
 }
+
 int os::current_process_id() {
 
   // Under the old bsd thread library, bsd gives each thread
@@ -1904,7 +1940,7 @@ class Semaphore : public StackObj {
     bool timedwait(unsigned int sec, int nsec);
   private:
     jlong currenttime() const;
-    semaphore_t _semaphore;
+    os_semaphore_t _semaphore;
 };
 
 Semaphore::Semaphore() : _semaphore(0) {
@@ -1972,7 +2008,7 @@ bool Semaphore::trywait() {
 
 bool Semaphore::timedwait(unsigned int sec, int nsec) {
   struct timespec ts;
-  jlong endtime = unpackTime(&ts, false, (sec * NANOSECS_PER_SEC) + nsec);
+  unpackTime(&ts, false, (sec * NANOSECS_PER_SEC) + nsec);
 
   while (1) {
     int result = sem_timedwait(&_semaphore, &ts);
@@ -3544,7 +3580,7 @@ void os::init(void) {
   Bsd::_main_thread = pthread_self();
 
   Bsd::clock_init();
-  initial_time_count = os::elapsed_counter();
+  initial_time_count = javaTimeNanos();
 
 #ifdef __APPLE__
   // XXXDARWIN
@@ -4708,6 +4744,10 @@ int os::fork_and_exec(char* cmd) {
 // as libawt.so, and renamed libawt_xawt.so
 //
 bool os::is_headless_jre() {
+#ifdef __APPLE__
+    // We no longer build headless-only on Mac OS X
+    return false;
+#else
     struct stat statbuf;
     char buf[MAXPATHLEN];
     char libmawtpath[MAXPATHLEN];
@@ -4739,6 +4779,7 @@ bool os::is_headless_jre() {
     if (::stat(libmawtpath, &statbuf) == 0) return false;
 
     return true;
+#endif
 }
 
 // Get the default path to the core file

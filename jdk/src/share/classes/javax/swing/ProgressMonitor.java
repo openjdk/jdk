@@ -71,7 +71,7 @@ import javax.swing.text.*;
  *
  * For further documentation and examples see
  * <a
- href="http://java.sun.com/docs/books/tutorial/uiswing/components/progress.html">How to Monitor Progress</a>,
+ href="http://docs.oracle.com/javase/tutorial/uiswing/components/progress.html">How to Monitor Progress</a>,
  * a section in <em>The Java Tutorial.</em>
  *
  * @see ProgressMonitorInputStream
@@ -251,7 +251,7 @@ public class ProgressMonitor implements Accessible
 
     /**
      * Indicate the progress of the operation being monitored.
-     * If the specified value is >= the maximum, the progress
+     * If the specified value is &gt;= the maximum, the progress
      * monitor is closed.
      * @param nv an int specifying the current value, between the
      *        maximum and minimum specified for this component
@@ -302,7 +302,7 @@ public class ProgressMonitor implements Accessible
 
     /**
      * Indicate that the operation is complete.  This happens automatically
-     * when the value set by setProgress is >= max, but it may be called
+     * when the value set by setProgress is &gt;= max, but it may be called
      * earlier if the operation ends early.
      */
     public void close() {
@@ -650,7 +650,7 @@ public class ProgressMonitor implements Accessible
          * a set of predefined roles.  This enables assistive technologies to
          * provide a consistent interface to various tweaked subclasses of
          * components (e.g., use AccessibleRole.PUSH_BUTTON for all components
-         * that act like a push button) as well as distinguish between sublasses
+         * that act like a push button) as well as distinguish between subclasses
          * that behave differently (e.g., AccessibleRole.CHECK_BOX for check boxes
          * and AccessibleRole.RADIO_BUTTON for radio buttons).
          * <p>Note that the AccessibleRole class is also extensible, so
@@ -1017,7 +1017,7 @@ public class ProgressMonitor implements Accessible
          * If there is no selection, but there is
          * a caret, the start and end offsets will be the same.
          *
-         * @return the index into teh text of the end of the selection
+         * @return the index into the text of the end of the selection
          */
         public int getSelectionEnd() {
             AccessibleText at = getNoteLabelAccessibleText();

@@ -129,7 +129,7 @@ public class CertificateRevokedException extends CertificateException {
     }
 
     /**
-     * Returns the invalidity date, as specifed in the Invalidity Date
+     * Returns the invalidity date, as specified in the Invalidity Date
      * extension of this {@code CertificateRevokedException}. The
      * invalidity date is the date on which it is known or suspected that the
      * private key was compromised or that the certificate otherwise became

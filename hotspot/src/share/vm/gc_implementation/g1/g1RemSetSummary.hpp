@@ -84,7 +84,7 @@ public:
   void subtract_from(G1RemSetSummary* other);
 
   // initialize and get the first sampling
-  void initialize(G1RemSet* remset, uint num_workers);
+  void initialize(G1RemSet* remset);
 
   void print_on(outputStream* out);
 

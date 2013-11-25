@@ -396,7 +396,7 @@ public abstract class AbstractWriter {
     }
 
     /**
-     * Sets the String used to reprsent newlines. This is initialized
+     * Sets the String used to represent newlines. This is initialized
      * in the constructor from either the Document, or the System property
      * line.separator.
      *
@@ -417,7 +417,7 @@ public abstract class AbstractWriter {
 
     /**
      * Increments the indent level. If indenting would cause
-     * <code>getIndentSpace()</code> *<code>getIndentLevel()</code> to be >
+     * <code>getIndentSpace()</code> *<code>getIndentLevel()</code> to be &gt;
      * than <code>getLineLength()</code> this will not cause an indent.
      */
     protected void incrIndent() {
@@ -663,7 +663,7 @@ public abstract class AbstractWriter {
     }
 
     /**
-     * Writes out the set of attributes as " <name>=<value>"
+     * Writes out the set of attributes as " &lt;name&gt;=&lt;value&gt;"
      * pairs. It throws an IOException when encountered.
      *
      * @param     attr an AttributeSet.
@@ -698,7 +698,7 @@ public abstract class AbstractWriter {
     }
 
     /**
-     * Support method to locate an occurence of a particular character.
+     * Support method to locate an occurrence of a particular character.
      */
     private int indexOf(char[] chars, char sChar, int startIndex,
                         int endIndex) {

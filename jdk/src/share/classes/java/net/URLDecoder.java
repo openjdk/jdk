@@ -43,7 +43,7 @@ import java.io.*;
  * as the start of a special escaped sequence.
  * <p>
  * The following rules are applied in the conversion:
- * <p>
+ *
  * <ul>
  * <li>The alphanumeric characters &quot;{@code a}&quot; through
  *     &quot;{@code z}&quot;, &quot;{@code A}&quot; through
@@ -116,7 +116,7 @@ public class URLDecoder {
      * "http://www.w3.org/TR/html40/appendix/notes.html#non-ascii-chars">
      * World Wide Web Consortium Recommendation</a> states that
      * UTF-8 should be used. Not doing so may introduce
-     * incompatibilites.</em>
+     * incompatibilities.</em>
      *
      * @param s the {@code String} to decode
      * @param enc   The name of a supported

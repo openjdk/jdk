@@ -79,7 +79,13 @@ public class ErrorMessages_sk extends ListResourceBundle {
  */
 
     // These message should be read from a locale-specific resource bundle
-    private static final Object[][] _contents =  new Object[][] {
+    /** Get the lookup table for error messages.
+     *
+     * @return The message lookup table.
+     */
+    public Object[][] getContents()
+    {
+        return new Object[][] {
 
         /*
          * Note to translators:  the substitution text in the following message
@@ -223,13 +229,6 @@ public class ErrorMessages_sk extends ListResourceBundle {
         "Nebolo mo\u017en\u00e9 rozl\u00ed\u0161i\u0165 referenciu URI ''{0}''."}
     };
 
-    /** Get the lookup table for error messages.
-     *
-     * @return The message lookup table.
-     */
-    public Object[][] getContents()
-    {
-      return _contents;
     }
 
 }

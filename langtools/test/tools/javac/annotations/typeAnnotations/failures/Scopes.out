@@ -1,3 +1,4 @@
-Scopes.java:8:25: compiler.err.cant.resolve: kindname.class, UniqueInner, , 
-Scopes.java:8:24: compiler.err.annotation.type.not.applicable
-2 errors
+Scopes.java:10:2: compiler.err.cant.resolve: kindname.class, InnerTA, , 
+Scopes.java:11:34: compiler.err.cant.resolve: kindname.class, InnerTA, , 
+Scopes.java:11:15: compiler.err.cant.resolve: kindname.class, InnerTA, , 
+3 errors

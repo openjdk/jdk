@@ -103,7 +103,7 @@ public abstract class MembershipKey {
      * multicast datagrams from the given source address. If the given source
      * address is already blocked then this method has no effect.
      * After a source address is blocked it may still be possible to receive
-     * datagams from that source. This can arise when datagrams are waiting to
+     * datagrams from that source. This can arise when datagrams are waiting to
      * be received in the socket's receive buffer.
      *
      * @param   source

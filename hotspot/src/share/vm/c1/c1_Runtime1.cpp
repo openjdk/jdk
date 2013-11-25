@@ -542,8 +542,7 @@ JRT_ENTRY_NO_ASYNC(static address, exception_handler_for_pc_helper(JavaThread* t
     // exception handler can cause class loading, which might throw an
     // exception and those fields are expected to be clear during
     // normal bytecode execution.
-    thread->set_exception_oop(NULL);
-    thread->set_exception_pc(NULL);
+    thread->clear_exception_oop_and_pc();
 
     continuation = SharedRuntime::compute_compiled_exc_handler(nm, pc, exception, false, false);
     // If an exception was thrown during exception dispatch, the exception oop may have changed
@@ -1019,7 +1018,7 @@ JRT_ENTRY(void, Runtime1::patch_code(JavaThread* thread, Runtime1::StubID stub_i
               n_copy->set_data((intx) (load_klass()));
             } else {
               assert(mirror() != NULL, "klass not set");
-              n_copy->set_data((intx) (mirror()));
+              n_copy->set_data(cast_from_oop<intx>(mirror()));
             }
 
             if (TracePatching) {
@@ -1031,7 +1030,7 @@ JRT_ENTRY(void, Runtime1::patch_code(JavaThread* thread, Runtime1::StubID stub_i
           assert(n_copy->data() == 0 ||
                  n_copy->data() == (intptr_t)Universe::non_oop_word(),
                  "illegal init value");
-          n_copy->set_data((intx) (appendix()));
+          n_copy->set_data(cast_from_oop<intx>(appendix()));
 
           if (TracePatching) {
             Disassembler::decode(copy_buff, copy_buff + *byte_count, tty);
@@ -1078,14 +1077,17 @@ JRT_ENTRY(void, Runtime1::patch_code(JavaThread* thread, Runtime1::StubID stub_i
           // replace instructions
           // first replace the tail, then the call
 #ifdef ARM
-          if(load_klass_or_mirror_patch_id && !VM_Version::supports_movw()) {
+          if((load_klass_or_mirror_patch_id ||
+              stub_id == Runtime1::load_appendix_patching_id) &&
+             !VM_Version::supports_movw()) {
             nmethod* nm = CodeCache::find_nmethod(instr_pc);
             address addr = NULL;
             assert(nm != NULL, "invalid nmethod_pc");
             RelocIterator mds(nm, copy_buff, copy_buff + 1);
             while (mds.next()) {
               if (mds.type() == relocInfo::oop_type) {
-                assert(stub_id == Runtime1::load_mirror_patching_id, "wrong stub id");
+                assert(stub_id == Runtime1::load_mirror_patching_id ||
+                       stub_id == Runtime1::load_appendix_patching_id, "wrong stub id");
                 oop_Relocation* r = mds.oop_reloc();
                 addr = (address)r->oop_addr();
                 break;

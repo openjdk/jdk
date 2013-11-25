@@ -189,6 +189,10 @@ const jlong max_jlong = CONST64(0x7fffffffffffffff);
 #pragma warning( disable : 4201 ) // nonstandard extension used : nameless struct/union (needed in windows.h)
 #pragma warning( disable : 4511 ) // copy constructor could not be generated
 #pragma warning( disable : 4291 ) // no matching operator delete found; memory will not be freed if initialization thows an exception
+#ifdef CHECK_UNHANDLED_OOPS
+#pragma warning( disable : 4521 ) // class has multiple copy ctors of a single type
+#pragma warning( disable : 4522 ) // class has multiple assignment operators of a single type
+#endif // CHECK_UNHANDLED_OOPS
 #if _MSC_VER >= 1400
 #pragma warning( disable : 4996 ) // unsafe string functions. Same as define _CRT_SECURE_NO_WARNINGS/_CRT_SECURE_NO_DEPRICATE
 #endif

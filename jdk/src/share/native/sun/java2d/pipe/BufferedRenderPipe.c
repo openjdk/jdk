@@ -53,6 +53,7 @@ Java_sun_java2d_pipe_BufferedRenderPipe_fillSpans
     unsigned char *bbuf;
     jint *ibuf;
     jint ipos;
+    jboolean hasException;
 
     J2dTraceLn2(J2D_TRACE_INFO,
                 "BufferedRenderPipe_fillSpans: bpos=%d limit=%d",
@@ -104,7 +105,10 @@ Java_sun_java2d_pipe_BufferedRenderPipe_fillSpans
             ibuf[1] = spanCount;
 
             // flush the queue
-            JNU_CallMethodByName(env, NULL, rq, "flushNow", "(I)V", bpos);
+            JNU_CallMethodByName(env, &hasException, rq, "flushNow", "(I)V", bpos);
+            if (hasException) {
+                break;
+            }
 
             // now start a new operation
             ibuf = (jint *)bbuf;

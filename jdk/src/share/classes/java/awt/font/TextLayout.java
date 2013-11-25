@@ -223,7 +223,7 @@ import sun.text.CodePointIterator;
  * baseline-relative coordinates map the 'x' coordinate to the
  * distance along the baseline, (positive x is forward along the
  * baseline), and the 'y' coordinate to a distance along the
- * perpendicular to the baseline at 'x' (postitive y is 90 degrees
+ * perpendicular to the baseline at 'x' (positive y is 90 degrees
  * clockwise from the baseline vector).  Values in standard
  * coordinates are measured along the x and y axes, with 0,0 at the
  * origin of the TextLayout.  Documentation for each relevant API
@@ -337,7 +337,7 @@ public final class TextLayout implements Cloneable {
                                           TextHitInfo hit2,
                                           TextLayout layout) {
 
-            // default implmentation just calls private method on layout
+            // default implementation just calls private method on layout
             return layout.getStrongHit(hit1, hit2);
         }
     }
@@ -912,7 +912,7 @@ public final class TextLayout implements Cloneable {
      * The ascent is the distance from the top (right) of the
      * <code>TextLayout</code> to the baseline.  It is always either
      * positive or zero.  The ascent is sufficient to
-     * accomodate superscripted text and is the maximum of the sum of the
+     * accommodate superscripted text and is the maximum of the sum of the
      * ascent, offset, and baseline of each glyph.  The ascent is
      * the maximum ascent from the baseline of all the text in the
      * TextLayout.  It is in baseline-relative coordinates.
@@ -927,7 +927,7 @@ public final class TextLayout implements Cloneable {
      * Returns the descent of this <code>TextLayout</code>.
      * The descent is the distance from the baseline to the bottom (left) of
      * the <code>TextLayout</code>.  It is always either positive or zero.
-     * The descent is sufficient to accomodate subscripted text and is the
+     * The descent is sufficient to accommodate subscripted text and is the
      * maximum of the sum of the descent, offset, and baseline of each glyph.
      * This is the maximum descent from the baseline of all the text in
      * the TextLayout.  It is in baseline-relative coordinates.

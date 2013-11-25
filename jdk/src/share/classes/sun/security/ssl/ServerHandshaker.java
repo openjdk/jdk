@@ -40,6 +40,8 @@ import javax.net.ssl.*;
 
 import javax.security.auth.Subject;
 
+import sun.security.util.KeyUtil;
+import sun.security.action.GetPropertyAction;
 import sun.security.ssl.HandshakeMessage.*;
 import sun.security.ssl.CipherSuite.*;
 import sun.security.ssl.SignatureAndHashAlgorithm.*;
@@ -92,6 +94,50 @@ final class ServerHandshaker extends Handshaker {
 
     // the preferable signature algorithm used by ServerKeyExchange message
     SignatureAndHashAlgorithm preferableSignatureAlgorithm;
+
+    // Flag to use smart ephemeral DH key which size matches the corresponding
+    // authentication key
+    private static final boolean useSmartEphemeralDHKeys;
+
+    // Flag to use legacy ephemeral DH key which size is 512 bits for
+    // exportable cipher suites, and 768 bits for others
+    private static final boolean useLegacyEphemeralDHKeys;
+
+    // The customized ephemeral DH key size for non-exportable cipher suites.
+    private static final int customizedDHKeySize;
+
+    static {
+        String property = AccessController.doPrivileged(
+                    new GetPropertyAction("jdk.tls.ephemeralDHKeySize"));
+        if (property == null || property.length() == 0) {
+            useLegacyEphemeralDHKeys = false;
+            useSmartEphemeralDHKeys = false;
+            customizedDHKeySize = -1;
+        } else if ("matched".equals(property)) {
+            useLegacyEphemeralDHKeys = false;
+            useSmartEphemeralDHKeys = true;
+            customizedDHKeySize = -1;
+        } else if ("legacy".equals(property)) {
+            useLegacyEphemeralDHKeys = true;
+            useSmartEphemeralDHKeys = false;
+            customizedDHKeySize = -1;
+        } else {
+            useLegacyEphemeralDHKeys = false;
+            useSmartEphemeralDHKeys = false;
+
+            try {
+                customizedDHKeySize = Integer.parseUnsignedInt(property);
+                if (customizedDHKeySize < 1024 || customizedDHKeySize > 2048) {
+                    throw new IllegalArgumentException(
+                        "Customized DH key size should be positive integer " +
+                        "between 1024 and 2048 bits, inclusive");
+                }
+            } catch (NumberFormatException nfe) {
+                throw new IllegalArgumentException(
+                        "Invalid system property jdk.tls.ephemeralDHKeySize");
+            }
+        }
+    }
 
     /*
      * Constructor ... use the keys found in the auth context.
@@ -1107,7 +1153,7 @@ final class ServerHandshaker extends Handshaker {
                 }
             }
 
-            setupEphemeralDHKeys(suite.exportable);
+            setupEphemeralDHKeys(suite.exportable, privateKey);
             break;
         case K_ECDHE_RSA:
             // need RSA certs for authentication
@@ -1144,7 +1190,8 @@ final class ServerHandshaker extends Handshaker {
             if (setupPrivateKeyAndChain("DSA") == false) {
                 return false;
             }
-            setupEphemeralDHKeys(suite.exportable);
+
+            setupEphemeralDHKeys(suite.exportable, privateKey);
             break;
         case K_ECDHE_ECDSA:
             // get preferable peer signature algorithm for server key exchange
@@ -1188,7 +1235,7 @@ final class ServerHandshaker extends Handshaker {
             break;
         case K_DH_ANON:
             // no certs needed for anonymous
-            setupEphemeralDHKeys(suite.exportable);
+            setupEphemeralDHKeys(suite.exportable, null);
             break;
         case K_ECDH_ANON:
             // no certs needed for anonymous
@@ -1237,15 +1284,70 @@ final class ServerHandshaker extends Handshaker {
      * Acquire some "ephemeral" Diffie-Hellman  keys for this handshake.
      * We don't reuse these, for improved forward secrecy.
      */
-    private void setupEphemeralDHKeys(boolean export) {
+    private void setupEphemeralDHKeys(boolean export, Key key) {
         /*
-         * Diffie-Hellman keys ... we use 768 bit private keys due
-         * to the "use twice as many key bits as bits you want secret"
-         * rule of thumb, assuming we want the same size premaster
-         * secret with Diffie-Hellman and RSA key exchanges.  Except
-         * that exportable ciphers max out at 512 bits modulus values.
+         * 768 bits ephemeral DH private keys were used to be used in
+         * ServerKeyExchange except that exportable ciphers max out at 512
+         * bits modulus values. We still adhere to this behavior in legacy
+         * mode (system property "jdk.tls.ephemeralDHKeySize" is defined
+         * as "legacy").
+         *
+         * Old JDK (JDK 7 and previous) releases don't support DH keys bigger
+         * than 1024 bits. We have to consider the compatibility requirement.
+         * 1024 bits DH key is always used for non-exportable cipher suites
+         * in default mode (system property "jdk.tls.ephemeralDHKeySize"
+         * is not defined).
+         *
+         * However, if applications want more stronger strength, setting
+         * system property "jdk.tls.ephemeralDHKeySize" to "matched"
+         * is a workaround to use ephemeral DH key which size matches the
+         * corresponding authentication key. For example, if the public key
+         * size of an authentication certificate is 2048 bits, then the
+         * ephemeral DH key size should be 2048 bits accordingly unless
+         * the cipher suite is exportable.  This key sizing scheme keeps
+         * the cryptographic strength consistent between authentication
+         * keys and key-exchange keys.
+         *
+         * Applications may also want to customize the ephemeral DH key size
+         * to a fixed length for non-exportable cipher suites. This can be
+         * approached by setting system property "jdk.tls.ephemeralDHKeySize"
+         * to a valid positive integer between 1024 and 2048 bits, inclusive.
+         *
+         * Note that the minimum acceptable key size is 1024 bits except
+         * exportable cipher suites or legacy mode.
+         *
+         * Note that the maximum acceptable key size is 2048 bits because
+         * DH keys bigger than 2048 are not always supported by underlying
+         * JCE providers.
+         *
+         * Note that per RFC 2246, the key size limit of DH is 512 bits for
+         * exportable cipher suites.  Because of the weakness, exportable
+         * cipher suites are deprecated since TLS v1.1 and they are not
+         * enabled by default in Oracle provider. The legacy behavior is
+         * reserved and 512 bits DH key is always used for exportable
+         * cipher suites.
          */
-        dh = new DHCrypt((export ? 512 : 768), sslContext.getSecureRandom());
+        int keySize = export ? 512 : 1024;           // default mode
+        if (!export) {
+            if (useLegacyEphemeralDHKeys) {          // legacy mode
+                keySize = 768;
+            } else if (useSmartEphemeralDHKeys) {    // matched mode
+                if (key != null) {
+                    int ks = KeyUtil.getKeySize(key);
+                    // Note that SunJCE provider only supports 2048 bits DH
+                    // keys bigger than 1024.  Please DON'T use value other
+                    // than 1024 and 2048 at present.  We may improve the
+                    // underlying providers and key size here in the future.
+                    //
+                    // keySize = ks <= 1024 ? 1024 : (ks >= 2048 ? 2048 : ks);
+                    keySize = ks <= 1024 ? 1024 : 2048;
+                } // Otherwise, anonymous cipher suites, 1024-bit is used.
+            } else if (customizedDHKeySize > 0) {    // customized mode
+                keySize = customizedDHKeySize;
+            }
+        }
+
+        dh = new DHCrypt(keySize, sslContext.getSecureRandom());
     }
 
     // Setup the ephemeral ECDH parameters.

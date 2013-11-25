@@ -113,6 +113,7 @@ import java.time.temporal.Temporal;
 import java.time.temporal.TemporalAccessor;
 import java.time.temporal.TemporalAdjuster;
 import java.time.temporal.TemporalField;
+import java.time.temporal.TemporalQueries;
 import java.time.temporal.TemporalQuery;
 import java.time.temporal.TemporalUnit;
 import java.time.temporal.UnsupportedTemporalTypeException;
@@ -194,28 +195,6 @@ public class TCKLocalDate extends AbstractDateTimeTest {
         List<TemporalField> list = new ArrayList<>(Arrays.<TemporalField>asList(ChronoField.values()));
         list.removeAll(validFields());
         return list;
-    }
-
-
-    //-----------------------------------------------------------------------
-    @Test
-    public void test_serialization() throws Exception {
-        assertSerializable(TEST_2007_07_15);
-        assertSerializable(LocalDate.MIN);
-        assertSerializable(LocalDate.MAX);
-    }
-
-    @Test
-    public void test_serialization_format() throws Exception {
-        ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        try (DataOutputStream dos = new DataOutputStream(baos) ) {
-            dos.writeByte(3);
-            dos.writeInt(2012);
-            dos.writeByte(9);
-            dos.writeByte(16);
-        }
-        byte[] bytes = baos.toByteArray();
-        assertSerializedBySer(LocalDate.of(2012, 9, 16), bytes);
     }
 
     //-----------------------------------------------------------------------
@@ -715,13 +694,13 @@ public class TCKLocalDate extends AbstractDateTimeTest {
     @DataProvider(name="query")
     Object[][] data_query() {
         return new Object[][] {
-                {TEST_2007_07_15, TemporalQuery.chronology(), IsoChronology.INSTANCE},
-                {TEST_2007_07_15, TemporalQuery.zoneId(), null},
-                {TEST_2007_07_15, TemporalQuery.precision(), ChronoUnit.DAYS},
-                {TEST_2007_07_15, TemporalQuery.zone(), null},
-                {TEST_2007_07_15, TemporalQuery.offset(), null},
-                {TEST_2007_07_15, TemporalQuery.localDate(), TEST_2007_07_15},
-                {TEST_2007_07_15, TemporalQuery.localTime(), null},
+                {TEST_2007_07_15, TemporalQueries.chronology(), IsoChronology.INSTANCE},
+                {TEST_2007_07_15, TemporalQueries.zoneId(), null},
+                {TEST_2007_07_15, TemporalQueries.precision(), ChronoUnit.DAYS},
+                {TEST_2007_07_15, TemporalQueries.zone(), null},
+                {TEST_2007_07_15, TemporalQueries.offset(), null},
+                {TEST_2007_07_15, TemporalQueries.localDate(), TEST_2007_07_15},
+                {TEST_2007_07_15, TemporalQueries.localTime(), null},
         };
     }
 
@@ -1745,29 +1724,48 @@ public class TCKLocalDate extends AbstractDateTimeTest {
     }
 
     @Test(dataProvider="periodUntilUnit")
-    public void test_periodUntil_TemporalUnit(LocalDate date1, LocalDate date2, TemporalUnit unit, long expected) {
+    public void test_until_TemporalUnit(LocalDate date1, LocalDate date2, TemporalUnit unit, long expected) {
         long amount = date1.until(date2, unit);
         assertEquals(amount, expected);
     }
 
     @Test(dataProvider="periodUntilUnit")
-    public void test_periodUntil_TemporalUnit_negated(LocalDate date1, LocalDate date2, TemporalUnit unit, long expected) {
+    public void test_until_TemporalUnit_negated(LocalDate date1, LocalDate date2, TemporalUnit unit, long expected) {
         long amount = date2.until(date1, unit);
         assertEquals(amount, -expected);
     }
 
+    @Test(dataProvider="periodUntilUnit")
+    public void test_until_TemporalUnit_between(LocalDate date1, LocalDate date2, TemporalUnit unit, long expected) {
+        long amount = unit.between(date1, date2);
+        assertEquals(amount, expected);
+    }
+
+    @Test
+    public void test_until_convertedType() {
+        LocalDate start = LocalDate.of(2010, 6, 30);
+        OffsetDateTime end = start.plusDays(2).atStartOfDay().atOffset(OFFSET_PONE);
+        assertEquals(start.until(end, DAYS), 2);
+    }
+
+    @Test(expectedExceptions=DateTimeException.class)
+    public void test_until_invalidType() {
+        LocalDate start = LocalDate.of(2010, 6, 30);
+        start.until(LocalTime.of(11, 30), DAYS);
+    }
+
     @Test(expectedExceptions = UnsupportedTemporalTypeException.class)
-    public void test_periodUntil_TemporalUnit_unsupportedUnit() {
+    public void test_until_TemporalUnit_unsupportedUnit() {
         TEST_2007_07_15.until(TEST_2007_07_15, HOURS);
     }
 
     @Test(expectedExceptions = NullPointerException.class)
-    public void test_periodUntil_TemporalUnit_nullEnd() {
+    public void test_until_TemporalUnit_nullEnd() {
         TEST_2007_07_15.until(null, DAYS);
     }
 
     @Test(expectedExceptions = NullPointerException.class)
-    public void test_periodUntil_TemporalUnit_nullUnit() {
+    public void test_until_TemporalUnit_nullUnit() {
         TEST_2007_07_15.until(TEST_2007_07_15, null);
     }
 

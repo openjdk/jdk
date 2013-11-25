@@ -93,9 +93,9 @@ final class ScreenMenuItemCheckbox extends CheckboxMenuItem implements ActionLis
         }
 
         if (fMenuItem instanceof JCheckBoxMenuItem) {
-            setState(((JCheckBoxMenuItem)fMenuItem).isSelected());
+            forceSetState(fMenuItem.isSelected());
         } else {
-            setState(fMenuItem.getModel().isSelected());
+            forceSetState(fMenuItem.getModel().isSelected());
         }
     }
 
@@ -196,10 +196,10 @@ final class ScreenMenuItemCheckbox extends CheckboxMenuItem implements ActionLis
 
             switch (e.getStateChange()) {
                 case ItemEvent.SELECTED:
-                    setState(true);
+                    forceSetState(true);
                     break;
                 case ItemEvent.DESELECTED:
-                    setState(false);
+                    forceSetState(false);
                     break;
             }
         }
@@ -209,5 +209,21 @@ final class ScreenMenuItemCheckbox extends CheckboxMenuItem implements ActionLis
         if (peer instanceof CCheckboxMenuItem) {
             ((CCheckboxMenuItem)peer).setIsIndeterminate(indeterminate);
         }
+    }
+
+    /*
+     * The CCheckboxMenuItem peer is calling setState unconditionally every time user clicks the menu
+     * However for Swing controls in the screen menu bar it is wrong - the state should be changed only
+     * in response to the ITEM_STATE_CHANGED event. So the setState is overridden to no-op and all the
+     * correct state changes are made with forceSetState
+     */
+
+    @Override
+    public synchronized void setState(boolean b) {
+        // No Op
+    }
+
+    private void forceSetState(boolean b) {
+        super.setState(b);
     }
 }

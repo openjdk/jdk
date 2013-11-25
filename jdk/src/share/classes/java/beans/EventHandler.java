@@ -33,6 +33,7 @@ import java.security.AccessController;
 import java.security.PrivilegedAction;
 
 import sun.reflect.misc.MethodUtil;
+import sun.reflect.misc.ReflectUtil;
 
 /**
  * The <code>EventHandler</code> class provides
@@ -610,7 +611,7 @@ public class EventHandler implements InvocationHandler {
      * the empty string.
      * The format of the <code>eventPropertyName</code> string is a sequence of
      * methods or properties where each method or
-     * property is applied to the value returned by the preceeding method
+     * property is applied to the value returned by the preceding method
      * starting from the incoming event object.
      * The syntax is: <code>propertyName{.propertyName}*</code>
      * where <code>propertyName</code> matches a method or
@@ -677,22 +678,38 @@ public class EventHandler implements InvocationHandler {
      *
      * @see EventHandler
      */
-    @SuppressWarnings("unchecked")
     public static <T> T create(Class<T> listenerInterface,
                                Object target, String action,
                                String eventPropertyName,
                                String listenerMethodName)
     {
         // Create this first to verify target/action are non-null
-        EventHandler eventHandler = new EventHandler(target, action,
+        final EventHandler handler = new EventHandler(target, action,
                                                      eventPropertyName,
                                                      listenerMethodName);
         if (listenerInterface == null) {
             throw new NullPointerException(
                           "listenerInterface must be non-null");
         }
-        return (T)Proxy.newProxyInstance(target.getClass().getClassLoader(),
-                                         new Class<?>[] {listenerInterface},
-                                         eventHandler);
+        final ClassLoader loader = getClassLoader(listenerInterface);
+        final Class<?>[] interfaces = {listenerInterface};
+        return AccessController.doPrivileged(new PrivilegedAction<T>() {
+            @SuppressWarnings("unchecked")
+            public T run() {
+                return (T) Proxy.newProxyInstance(loader, interfaces, handler);
+            }
+        });
+    }
+
+    private static ClassLoader getClassLoader(Class<?> type) {
+        ReflectUtil.checkPackageAccess(type);
+        ClassLoader loader = type.getClassLoader();
+        if (loader == null) {
+            loader = Thread.currentThread().getContextClassLoader(); // avoid use of BCP
+            if (loader == null) {
+                loader = ClassLoader.getSystemClassLoader();
+            }
+        }
+        return loader;
     }
 }

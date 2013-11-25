@@ -5,10 +5,13 @@
  * @author Werner Dietl
  * @compile/fail/ref=BadCast.out -XDrawDiagnostics BadCast.java
  */
+import java.lang.annotation.*;
+
 class BadCast {
   static void main() {
     Object o = (@A) "";
   }
 }
 
+@Target(ElementType.TYPE_USE)
 @interface A { }

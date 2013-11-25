@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug     6882376 6985460 8010309
+ * @bug     6882376 6985460 8010309 8011638
  * @summary Test if java.util.logging.Logger is created before and after
  *          logging is enabled.  Also validate some basic PlatformLogger
  *          operations.  othervm mode to make sure java.util.logging
@@ -34,8 +34,10 @@
  */
 
 import java.lang.reflect.Field;
+import java.lang.reflect.Modifier;
 import java.util.logging.*;
 import sun.util.logging.PlatformLogger;
+import sun.util.logging.LoggingSupport;
 import static sun.util.logging.PlatformLogger.Level.*;
 
 public class PlatformLoggerTest {
@@ -104,28 +106,12 @@ public class PlatformLoggerTest {
             throw new RuntimeException("logger " + logger.getName() + ": " + level +
                 (expected ? " not loggable" : " loggable"));
         }
-
-        if (logger.isLoggable(level.intValue()) != expected) {
-            throw new RuntimeException("logger " + logger.getName() + ": " + level.intValue() +
-                (expected ? " not loggable" : " loggable"));
-        }
-
-        int value = level.intValue() + 5; // custom level value
-        if (expected && !logger.isLoggable(value)) {
-            throw new RuntimeException("logger " + logger.getName() + ": " + value +
-                " not loggable");
-        }
     }
 
     private static void checkLevel(PlatformLogger logger, PlatformLogger.Level level) {
         if (logger.level() != level) {
             throw new RuntimeException("Invalid level for logger " +
                 logger.getName() + ": " + logger.level() + " != " + level);
-        }
-
-        if (logger.getLevel() != level.intValue()) {
-            throw new RuntimeException("Invalid level for logger " +
-                logger.getName() + ": " + logger.getLevel() + " != " + level.intValue());
         }
     }
 
@@ -177,6 +163,11 @@ public class PlatformLoggerTest {
                 checkLoggerLevel(logger, Level.ALL);
             }
         }
+
+        Logger javaLogger = Logger.getLogger("foo.bar.baz");
+        for (Level level : levels) {
+            checkJavaLoggerLevel(javaLogger, level);
+        }
     }
 
     private static void checkLoggerLevel(PlatformLogger logger, Level level) {
@@ -196,6 +187,50 @@ public class PlatformLoggerTest {
         }
     }
 
+    private static void checkJavaLoggerLevel(Logger logger, Level level) {
+        // This method exercise the mapping of java level to platform level
+        // when the java level is not one of the standard levels...
+
+        System.out.println("Testing Java Level with: " + level.getName());
+
+        // create a brand new java logger
+        Logger javaLogger = (Logger) LoggingSupport.getLogger(logger.getName()+"."+level.getName());
+
+        // Set a non standard java.util.logging.Level on the java logger
+        // (except for OFF & ALL - which will remain unchanged)
+        int intValue = level.intValue();
+        if (level != Level.ALL && level != Level.OFF) {
+            intValue -= 7;
+        }
+        javaLogger.setLevel(Level.parse(String.valueOf(intValue)));
+
+        // check the level set in java.util.logging.Logger
+        Level effectiveLevel = javaLogger.getLevel();
+        System.out.println("Effective Java Level used is: " + effectiveLevel);
+
+        if (effectiveLevel.intValue() != intValue) {
+            throw new RuntimeException("Retrieved backing java.util.logging.Logger level.intValue() "
+                    + effectiveLevel.intValue() + " is not the expected " + intValue);
+        }
+        if (intValue != level.intValue() && javaLogger.getLevel() == level) {
+            throw new RuntimeException("Retrieved backing java.util.logging.Logger level "
+                    + effectiveLevel + " is " + level);
+        }
+        if (intValue == level.intValue() && javaLogger.getLevel() != level) {
+            throw new RuntimeException("Retrieved backing java.util.logging.Logger level "
+                    + effectiveLevel + " is not " + level);
+        }
+
+        // check the level set in the PlatformLogger
+        PlatformLogger plogger = PlatformLogger.getLogger(javaLogger.getName());
+        PlatformLogger.Level expected = PlatformLogger.Level.valueOf(level.getName());
+        if (plogger.level() != expected) {
+            throw new RuntimeException("Retrieved backing PlatformLogger level "
+                    + plogger.level() + " is not the expected " + expected);
+
+        }
+    }
+
     private static void checkPlatformLoggerLevelMapping(Level level) {
         // map the given level to PlatformLogger.Level of the same name and value
         PlatformLogger.Level platformLevel = PlatformLogger.Level.valueOf(level.getName());
@@ -203,26 +238,10 @@ public class PlatformLoggerTest {
             throw new RuntimeException("Mismatched level: " + level
                     + " PlatformLogger.Level" + platformLevel);
         }
-
-        try {
-            // validate if there is a public static final field in PlatformLogger
-            Field constantField = PlatformLogger.class.getField(level.getName());
-            int l = (int) constantField.get(null);
-            if (l != platformLevel.intValue()) {
-                throw new RuntimeException("static final " + level.getName() + " (" +
-                    l + ") != " + platformLevel.intValue());
-            }
-        } catch (Exception e) {
-            throw new RuntimeException("No public static PlatformLogger." + level.getName() +
-                                       " field", e);
-        }
-        if (!platformLevel.name().equals(level.getName()))
+        if (!platformLevel.name().equals(level.getName())) {
             throw new RuntimeException("The value of PlatformLogger." + level.getName() + ".name() is "
                                        + platformLevel.name() + " but expected " + level.getName());
-
-        if (platformLevel.intValue() != level.intValue())
-            throw new RuntimeException("The value of PlatformLogger." + level.intValue() + ".intValue() is "
-                                       + platformLevel.intValue() + " but expected " + level.intValue());
+        }
     }
 
     static Point[] getPoints() {

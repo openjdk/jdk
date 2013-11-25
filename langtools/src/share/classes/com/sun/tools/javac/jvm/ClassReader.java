@@ -56,6 +56,7 @@ import com.sun.tools.javac.util.JCDiagnostic.DiagnosticPosition;
 import static com.sun.tools.javac.code.Flags.*;
 import static com.sun.tools.javac.code.Kinds.*;
 import static com.sun.tools.javac.code.TypeTag.CLASS;
+import static com.sun.tools.javac.code.TypeTag.TYPEVAR;
 import static com.sun.tools.javac.jvm.ClassFile.*;
 import static com.sun.tools.javac.jvm.ClassFile.Version.*;
 
@@ -702,6 +703,12 @@ public class ClassReader {
             while (signature[sigp] == '^') {
                 sigp++;
                 thrown = thrown.prepend(sigToType());
+            }
+            // if there is a typevar in the throws clause we should state it.
+            for (List<Type> l = thrown; l.nonEmpty(); l = l.tail) {
+                if (l.head.hasTag(TYPEVAR)) {
+                    l.head.tsym.flags_field |= THROWS;
+                }
             }
             return new MethodType(argtypes,
                                   restype,
@@ -1439,8 +1446,7 @@ public class ClassReader {
     void attachTypeAnnotations(final Symbol sym) {
         int numAttributes = nextChar();
         if (numAttributes != 0) {
-            ListBuffer<TypeAnnotationProxy> proxies =
-                ListBuffer.lb();
+            ListBuffer<TypeAnnotationProxy> proxies = new ListBuffer<>();
             for (int i = 0; i < numAttributes; i++)
                 proxies.append(readTypeAnnotation());
             annotate.normal(new TypeAnnotationCompleter(sym, proxies.toList()));
@@ -1589,7 +1595,7 @@ public class ClassReader {
 
         { // See whether there is location info and read it
             int len = nextByte();
-            ListBuffer<Integer> loc = ListBuffer.lb();
+            ListBuffer<Integer> loc = new ListBuffer<>();
             for (int i = 0; i < len * TypeAnnotationPosition.TypePathEntry.bytesPerEntry; ++i)
                 loc = loc.append(nextByte());
             position.location = TypeAnnotationPosition.getTypePathFromBinary(loc.toList());
@@ -1871,7 +1877,7 @@ public class ClassReader {
         }
     }
 
-    class AnnotationDefaultCompleter extends AnnotationDeproxy implements Annotate.Annotator {
+    class AnnotationDefaultCompleter extends AnnotationDeproxy implements Annotate.Worker {
         final MethodSymbol sym;
         final Attribute value;
         final JavaFileObject classFile = currentClassFile;
@@ -1883,8 +1889,8 @@ public class ClassReader {
             this.sym = sym;
             this.value = value;
         }
-        // implement Annotate.Annotator.enterAnnotation()
-        public void enterAnnotation() {
+        // implement Annotate.Worker.run()
+        public void run() {
             JavaFileObject previousClassFile = currentClassFile;
             try {
                 // Reset the interim value set earlier in
@@ -1898,7 +1904,7 @@ public class ClassReader {
         }
     }
 
-    class AnnotationCompleter extends AnnotationDeproxy implements Annotate.Annotator {
+    class AnnotationCompleter extends AnnotationDeproxy implements Annotate.Worker {
         final Symbol sym;
         final List<CompoundAnnotationProxy> l;
         final JavaFileObject classFile;
@@ -1911,8 +1917,8 @@ public class ClassReader {
             this.l = l;
             this.classFile = currentClassFile;
         }
-        // implement Annotate.Annotator.enterAnnotation()
-        public void enterAnnotation() {
+        // implement Annotate.Worker.run()
+        public void run() {
             JavaFileObject previousClassFile = currentClassFile;
             try {
                 currentClassFile = classFile;
@@ -1939,7 +1945,7 @@ public class ClassReader {
         }
 
         List<Attribute.TypeCompound> deproxyTypeCompoundList(List<TypeAnnotationProxy> proxies) {
-            ListBuffer<Attribute.TypeCompound> buf = ListBuffer.lb();
+            ListBuffer<Attribute.TypeCompound> buf = new ListBuffer<>();
             for (TypeAnnotationProxy proxy: proxies) {
                 Attribute.Compound compound = deproxyCompound(proxy.compound);
                 Attribute.TypeCompound typeCompound = new Attribute.TypeCompound(compound, proxy.position);
@@ -1949,7 +1955,7 @@ public class ClassReader {
         }
 
         @Override
-        public void enterAnnotation() {
+        public void run() {
             JavaFileObject previousClassFile = currentClassFile;
             try {
                 currentClassFile = classFile;
@@ -1987,11 +1993,15 @@ public class ClassReader {
                 (flags & ABSTRACT) == 0 && !name.equals(names.clinit)) {
             if (majorVersion > Target.JDK1_8.majorVersion ||
                     (majorVersion == Target.JDK1_8.majorVersion && minorVersion >= Target.JDK1_8.minorVersion)) {
-                currentOwner.flags_field |= DEFAULT;
-                flags |= DEFAULT | ABSTRACT;
+                if ((flags & STATIC) == 0) {
+                    currentOwner.flags_field |= DEFAULT;
+                    flags |= DEFAULT | ABSTRACT;
+                }
             } else {
                 //protect against ill-formed classfiles
-                throw new CompletionFailure(currentOwner, "default method found in pre JDK 8 classfile");
+                throw badClassFile((flags & STATIC) == 0 ? "invalid.default.interface" : "invalid.static.interface",
+                                   Integer.toString(majorVersion),
+                                   Integer.toString(minorVersion));
             }
         }
         if (name == names.init && currentOwner.hasOuterInstance()) {
@@ -2026,7 +2036,7 @@ public class ClassReader {
         boolean isVarargs = (flags & VARARGS) != 0;
         if (isVarargs) {
             Type varargsElem = args.last();
-            ListBuffer<Type> adjustedArgs = ListBuffer.lb();
+            ListBuffer<Type> adjustedArgs = new ListBuffer<>();
             for (Type t : args) {
                 adjustedArgs.append(t != varargsElem ?
                     t :
@@ -2395,8 +2405,6 @@ public class ClassReader {
             return c;
     }
 
-    private boolean suppressFlush = false;
-
     /** Completion for classes to be loaded. Before a class is loaded
      *  we make sure its enclosing class (if any) is loaded.
      */
@@ -2404,13 +2412,14 @@ public class ClassReader {
         if (sym.kind == TYP) {
             ClassSymbol c = (ClassSymbol)sym;
             c.members_field = new Scope.ErrorScope(c); // make sure it's always defined
-            boolean saveSuppressFlush = suppressFlush;
-            suppressFlush = true;
+            annotate.enterStart();
             try {
                 completeOwners(c.owner);
                 completeEnclosing(c);
             } finally {
-                suppressFlush = saveSuppressFlush;
+                // The flush needs to happen only after annotations
+                // are filled in.
+                annotate.enterDoneWithoutFlush();
             }
             fillIn(c);
         } else if (sym.kind == PCK) {
@@ -2421,7 +2430,7 @@ public class ClassReader {
                 throw new CompletionFailure(sym, ex.getLocalizedMessage()).initCause(ex);
             }
         }
-        if (!filling && !suppressFlush)
+        if (!filling)
             annotate.flush(); // finish attaching annotations
     }
 

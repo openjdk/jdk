@@ -44,9 +44,6 @@ public final class TimeZoneNames extends TimeZoneNamesBundle {
 
     protected final Object[][] getContents() {
         // Note: generic names came from CLDR with some adjustments.
-        String ACT[] = new String[] {"Acre Time", "ACT",
-                                     "Acre Summer Time", "ACST",
-                                     "Acre Time", "ACT"};
         String ADELAIDE[] = new String[] {"Central Standard Time (South Australia)", "CST",
                                           "Central Summer Time (South Australia)", "CST",
                                           "Central Time (South Australia)", "CT"};
@@ -95,9 +92,9 @@ public final class TimeZoneNames extends TimeZoneNamesBundle {
         String CHUT[] = new String[] {"Chuuk Time", "CHUT",
                                       "Chuuk Summer Time", "CHUST",
                                       "Chuuk Time", "CHUT"};
-        String CIT[] = new String[] {"Central Indonesia Time", "CIT",
+        String CIT[] = new String[] {"Central Indonesia Time", "WITA",
                                      "Central Indonesia Summer Time", "CIST",
-                                     "Central Indonesia Time", "CIT"};
+                                     "Central Indonesia Time", "WITA"};
         String CLT[] = new String[] {"Chile Time", "CLT",
                                      "Chile Summer Time", "CLST",
                                      "Chile Time", "CLT"};
@@ -251,9 +248,9 @@ public final class TimeZoneNames extends TimeZoneNamesBundle {
         String WET[] = new String[] {"Western European Time", "WET",
                                      "Western European Summer Time", "WEST",
                                      "Western European Time", "WET"};
-        String WIT[] = new String[] {"West Indonesia Time", "WIT",
+        String WIT[] = new String[] {"West Indonesia Time", "WIB",
                                      "West Indonesia Summer Time", "WIST",
-                                     "West Indonesia Time", "WIT"};
+                                     "West Indonesia Time", "WIB"};
         String WST_AUS[] = new String[] {"Western Standard Time (Australia)", "WST",
                                          "Western Summer Time (Australia)", "WST",
                                          "Western Time (Australia)", "WT"};
@@ -382,7 +379,7 @@ public final class TimeZoneNames extends TimeZoneNamesBundle {
             {"America/Argentina/Rio_Gallegos", AGT},
             {"America/Argentina/Salta", AGT},
             {"America/Argentina/San_Juan", AGT},
-            {"America/Argentina/San_Luis", WART},
+            {"America/Argentina/San_Luis", AGT},
             {"America/Argentina/Tucuman", AGT},
             {"America/Argentina/Ushuaia", AGT},
             {"America/Aruba", AST},
@@ -578,7 +575,7 @@ public final class TimeZoneNames extends TimeZoneNamesBundle {
             {"Asia/Almaty", new String[] {"Alma-Ata Time", "ALMT",
                                           "Alma-Ata Summer Time", "ALMST",
                                           "Alma-Ata Time", "ALMT"}},
-            {"Asia/Amman", EET},
+            {"Asia/Amman", ARAST},
             {"Asia/Anadyr", new String[] {"Anadyr Time", "ANAT",
                                           "Anadyr Summer Time", "ANAST",
                                           "Anadyr Time", "ANAT"}},
@@ -633,9 +630,9 @@ public final class TimeZoneNames extends TimeZoneNamesBundle {
                                            "Irkutsk Time", "IRKT"}},
             {"Asia/Istanbul", EET},
             {"Asia/Jakarta", WIT},
-            {"Asia/Jayapura", new String[] {"East Indonesia Time", "EIT",
+            {"Asia/Jayapura", new String[] {"East Indonesia Time", "WIT",
                                             "East Indonesia Summer Time", "EIST",
-                                            "East Indonesia Time", "EIT"}},
+                                            "East Indonesia Time", "WIT"}},
             {"Asia/Kabul", new String[] {"Afghanistan Time", "AFT",
                                          "Afghanistan Summer Time", "AFST",
                                          "Afghanistan Time", "AFT"}},
@@ -806,6 +803,7 @@ public final class TimeZoneNames extends TimeZoneNamesBundle {
             {"Europe/Bratislava", CET},
             {"Europe/Brussels", CET},
             {"Europe/Budapest", CET},
+            {"Europe/Busingen", CET},
             {"Europe/Chisinau", EET},
             {"Europe/Copenhagen", CET},
             {"Europe/Dublin", DUBLIN},

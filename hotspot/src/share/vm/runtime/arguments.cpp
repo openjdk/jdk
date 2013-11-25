@@ -625,11 +625,11 @@ void Arguments::describe_range_error(ArgsRange errcode) {
   }
 }
 
-static bool set_bool_flag(char* name, bool value, FlagValueOrigin origin) {
+static bool set_bool_flag(char* name, bool value, Flag::Flags origin) {
   return CommandLineFlags::boolAtPut(name, &value, origin);
 }
 
-static bool set_fp_numeric_flag(char* name, char* value, FlagValueOrigin origin) {
+static bool set_fp_numeric_flag(char* name, char* value, Flag::Flags origin) {
   double v;
   if (sscanf(value, "%lf", &v) != 1) {
     return false;
@@ -641,7 +641,7 @@ static bool set_fp_numeric_flag(char* name, char* value, FlagValueOrigin origin)
   return false;
 }
 
-static bool set_numeric_flag(char* name, char* value, FlagValueOrigin origin) {
+static bool set_numeric_flag(char* name, char* value, Flag::Flags origin) {
   julong v;
   intx intx_v;
   bool is_neg = false;
@@ -674,14 +674,14 @@ static bool set_numeric_flag(char* name, char* value, FlagValueOrigin origin) {
   return false;
 }
 
-static bool set_string_flag(char* name, const char* value, FlagValueOrigin origin) {
+static bool set_string_flag(char* name, const char* value, Flag::Flags origin) {
   if (!CommandLineFlags::ccstrAtPut(name, &value, origin))  return false;
   // Contract:  CommandLineFlags always returns a pointer that needs freeing.
   FREE_C_HEAP_ARRAY(char, value, mtInternal);
   return true;
 }
 
-static bool append_to_string_flag(char* name, const char* new_value, FlagValueOrigin origin) {
+static bool append_to_string_flag(char* name, const char* new_value, Flag::Flags origin) {
   const char* old_value = "";
   if (!CommandLineFlags::ccstrAt(name, &old_value))  return false;
   size_t old_len = old_value != NULL ? strlen(old_value) : 0;
@@ -709,7 +709,7 @@ static bool append_to_string_flag(char* name, const char* new_value, FlagValueOr
   return true;
 }
 
-bool Arguments::parse_argument(const char* arg, FlagValueOrigin origin) {
+bool Arguments::parse_argument(const char* arg, Flag::Flags origin) {
 
   // range of acceptable characters spelled out for portability reasons
 #define NAME_RANGE  "[abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_]"
@@ -850,7 +850,7 @@ void Arguments::print_jvm_args_on(outputStream* st) {
 }
 
 bool Arguments::process_argument(const char* arg,
-    jboolean ignore_unrecognized, FlagValueOrigin origin) {
+    jboolean ignore_unrecognized, Flag::Flags origin) {
 
   JDK_Version since = JDK_Version();
 
@@ -904,7 +904,7 @@ bool Arguments::process_argument(const char* arg,
       jio_fprintf(defaultStream::error_stream(),
                   "Did you mean '%s%s%s'?\n",
                   (fuzzy_matched->is_bool()) ? "(+/-)" : "",
-                  fuzzy_matched->name,
+                  fuzzy_matched->_name,
                   (fuzzy_matched->is_bool()) ? "" : "=<value>");
     }
   }
@@ -952,7 +952,7 @@ bool Arguments::process_settings_file(const char* file_name, bool should_exist, 
         // this allows a way to include spaces in string-valued options
         token[pos] = '\0';
         logOption(token);
-        result &= process_argument(token, ignore_unrecognized, CONFIG_FILE);
+        result &= process_argument(token, ignore_unrecognized, Flag::CONFIG_FILE);
         build_jvm_flags(token);
         pos = 0;
         in_white_space = true;
@@ -970,7 +970,7 @@ bool Arguments::process_settings_file(const char* file_name, bool should_exist, 
   }
   if (pos > 0) {
     token[pos] = '\0';
-    result &= process_argument(token, ignore_unrecognized, CONFIG_FILE);
+    result &= process_argument(token, ignore_unrecognized, Flag::CONFIG_FILE);
     build_jvm_flags(token);
   }
   fclose(stream);
@@ -1100,6 +1100,7 @@ void Arguments::set_mode_flags(Mode mode) {
   }
 }
 
+#if defined(COMPILER2) || defined(_LP64) || !INCLUDE_CDS
 // Conflict: required to use shared spaces (-Xshare:on), but
 // incompatible command line options were chosen.
 
@@ -1112,6 +1113,7 @@ static void no_shared_spaces() {
     FLAG_SET_DEFAULT(UseSharedSpaces, false);
   }
 }
+#endif
 
 void Arguments::set_tiered_flags() {
   // With tiered, set default policy to AdvancedThresholdPolicy, which is 3.
@@ -1129,6 +1131,9 @@ void Arguments::set_tiered_flags() {
   if (!UseInterpreter) { // -Xcomp
     Tier3InvokeNotifyFreqLog = 0;
     Tier4InvocationThreshold = 0;
+  }
+  if (FLAG_IS_DEFAULT(NmethodSweepFraction)) {
+    FLAG_SET_DEFAULT(NmethodSweepFraction, 1 + ReservedCodeCacheSize / (16 * M));
   }
 }
 
@@ -1520,16 +1525,18 @@ void Arguments::set_ergonomics_flags() {
         FLAG_SET_ERGO(bool, UseParallelGC, true);
       }
     }
-    // Shared spaces work fine with other GCs but causes bytecode rewriting
-    // to be disabled, which hurts interpreter performance and decreases
-    // server performance.   On server class machines, keep the default
-    // off unless it is asked for.  Future work: either add bytecode rewriting
-    // at link time, or rewrite bytecodes in non-shared methods.
-    if (!DumpSharedSpaces && !RequireSharedSpaces &&
-        (FLAG_IS_DEFAULT(UseSharedSpaces) || !UseSharedSpaces)) {
-      no_shared_spaces();
-    }
   }
+#ifdef COMPILER2
+  // Shared spaces work fine with other GCs but causes bytecode rewriting
+  // to be disabled, which hurts interpreter performance and decreases
+  // server performance.  When -server is specified, keep the default off
+  // unless it is asked for.  Future work: either add bytecode rewriting
+  // at link time, or rewrite bytecodes in non-shared methods.
+  if (!DumpSharedSpaces && !RequireSharedSpaces &&
+      (FLAG_IS_DEFAULT(UseSharedSpaces) || !UseSharedSpaces)) {
+    no_shared_spaces();
+  }
+#endif
 
   set_conservative_max_heap_alignment();
 
@@ -1950,12 +1957,6 @@ bool Arguments::check_gc_consistency() {
                 "please refer to the release notes for the combinations "
                 "allowed\n");
     status = false;
-  } else if (ReservedCodeCacheSize > 2*G) {
-    // Code cache size larger than MAXINT is not supported.
-    jio_fprintf(defaultStream::error_stream(),
-                "Invalid ReservedCodeCacheSize=%dM. Must be at most %uM.\n", ReservedCodeCacheSize/M,
-                (2*G)/M);
-    status = false;
   }
   return status;
 }
@@ -1986,6 +1987,15 @@ void Arguments::check_deprecated_gc_flags() {
   if (FLAG_IS_CMDLINE(DefaultMaxRAMFraction)) {
     warning("DefaultMaxRAMFraction is deprecated and will likely be removed in a future release. "
         "Use MaxRAMFraction instead.");
+  }
+  if (FLAG_IS_CMDLINE(UseCMSCompactAtFullCollection)) {
+    warning("UseCMSCompactAtFullCollection is deprecated and will likely be removed in a future release.");
+  }
+  if (FLAG_IS_CMDLINE(CMSFullGCsBeforeCompaction)) {
+    warning("CMSFullGCsBeforeCompaction is deprecated and will likely be removed in a future release.");
+  }
+  if (FLAG_IS_CMDLINE(UseCMSCollectionPassing)) {
+    warning("UseCMSCollectionPassing is deprecated and will likely be removed in a future release.");
   }
 }
 
@@ -2037,6 +2047,9 @@ bool Arguments::check_vm_args_consistency() {
   // calculating amount of memory needed to be allocated for the String table.
   status = status && verify_interval(StringTableSize, minimumStringTableSize,
     (max_uintx / StringTable::bucket_size()), "StringTable size");
+
+  status = status && verify_interval(SymbolTableSize, minimumSymbolTableSize,
+    (max_uintx / SymbolTable::bucket_size()), "SymbolTable size");
 
   if (MinHeapFreeRatio > MaxHeapFreeRatio) {
     jio_fprintf(defaultStream::error_stream(),
@@ -2333,6 +2346,10 @@ bool Arguments::check_vm_args_consistency() {
                 (2*G)/M);
     status = false;
   }
+
+  status &= verify_interval(NmethodSweepFraction, 1, ReservedCodeCacheSize/K, "NmethodSweepFraction");
+  status &= verify_interval(NmethodSweepActivity, 0, 2000, "NmethodSweepActivity");
+
   return status;
 }
 
@@ -2434,24 +2451,9 @@ jint Arguments::parse_vm_init_args(const JavaVMInitArgs* args) {
   }
 
   // Parse JavaVMInitArgs structure passed in
-  result = parse_each_vm_init_arg(args, &scp, &scp_assembly_required, COMMAND_LINE);
+  result = parse_each_vm_init_arg(args, &scp, &scp_assembly_required, Flag::COMMAND_LINE);
   if (result != JNI_OK) {
     return result;
-  }
-
-  if (AggressiveOpts) {
-    // Insert alt-rt.jar between user-specified bootclasspath
-    // prefix and the default bootclasspath.  os::set_boot_path()
-    // uses meta_index_dir as the default bootclasspath directory.
-    const char* altclasses_jar = "alt-rt.jar";
-    size_t altclasses_path_len = strlen(get_meta_index_dir()) + 1 +
-                                 strlen(altclasses_jar);
-    char* altclasses_path = NEW_C_HEAP_ARRAY(char, altclasses_path_len, mtInternal);
-    strcpy(altclasses_path, get_meta_index_dir());
-    strcat(altclasses_path, altclasses_jar);
-    scp.add_suffix_to_prefix(altclasses_path);
-    scp_assembly_required = true;
-    FREE_C_HEAP_ARRAY(char, altclasses_path, mtInternal);
   }
 
   // Parse _JAVA_OPTIONS environment variable (if present) (mimics classic VM)
@@ -2521,7 +2523,7 @@ bool valid_hprof_or_jdwp_agent(char *name, bool is_path) {
 jint Arguments::parse_each_vm_init_arg(const JavaVMInitArgs* args,
                                        SysClassPath* scp_p,
                                        bool* scp_assembly_required_p,
-                                       FlagValueOrigin origin) {
+                                       Flag::Flags origin) {
   // Remaining part of option string
   const char* tail;
 
@@ -2658,16 +2660,16 @@ jint Arguments::parse_each_vm_init_arg(const JavaVMInitArgs* args,
       FLAG_SET_CMDLINE(bool, BackgroundCompilation, false);
     // -Xmn for compatibility with other JVM vendors
     } else if (match_option(option, "-Xmn", &tail)) {
-      julong long_initial_eden_size = 0;
-      ArgsRange errcode = parse_memory_size(tail, &long_initial_eden_size, 1);
+      julong long_initial_young_size = 0;
+      ArgsRange errcode = parse_memory_size(tail, &long_initial_young_size, 1);
       if (errcode != arg_in_range) {
         jio_fprintf(defaultStream::error_stream(),
-                    "Invalid initial eden size: %s\n", option->optionString);
+                    "Invalid initial young generation size: %s\n", option->optionString);
         describe_range_error(errcode);
         return JNI_EINVAL;
       }
-      FLAG_SET_CMDLINE(uintx, MaxNewSize, (uintx)long_initial_eden_size);
-      FLAG_SET_CMDLINE(uintx, NewSize, (uintx)long_initial_eden_size);
+      FLAG_SET_CMDLINE(uintx, MaxNewSize, (uintx)long_initial_young_size);
+      FLAG_SET_CMDLINE(uintx, NewSize, (uintx)long_initial_young_size);
     // -Xms
     } else if (match_option(option, "-Xms", &tail)) {
       julong long_initial_heap_size = 0;
@@ -2695,8 +2697,9 @@ jint Arguments::parse_each_vm_init_arg(const JavaVMInitArgs* args,
       FLAG_SET_CMDLINE(uintx, MaxHeapSize, (uintx)long_max_heap_size);
     // Xmaxf
     } else if (match_option(option, "-Xmaxf", &tail)) {
-      int maxf = (int)(atof(tail) * 100);
-      if (maxf < 0 || maxf > 100) {
+      char* err;
+      int maxf = (int)(strtod(tail, &err) * 100);
+      if (*err != '\0' || maxf < 0 || maxf > 100) {
         jio_fprintf(defaultStream::error_stream(),
                     "Bad max heap free percentage size: %s\n",
                     option->optionString);
@@ -2706,8 +2709,9 @@ jint Arguments::parse_each_vm_init_arg(const JavaVMInitArgs* args,
       }
     // Xminf
     } else if (match_option(option, "-Xminf", &tail)) {
-      int minf = (int)(atof(tail) * 100);
-      if (minf < 0 || minf > 100) {
+      char* err;
+      int minf = (int)(strtod(tail, &err) * 100);
+      if (*err != '\0' || minf < 0 || minf > 100) {
         jio_fprintf(defaultStream::error_stream(),
                     "Bad min heap free percentage size: %s\n",
                     option->optionString);
@@ -3344,7 +3348,7 @@ jint Arguments::parse_options_environment_variable(const char* name, SysClassPat
       }
     }
 
-    return(parse_each_vm_init_arg(&vm_args, scp_p, scp_assembly_required_p, ENVIRON_VAR));
+    return(parse_each_vm_init_arg(&vm_args, scp_p, scp_assembly_required_p, Flag::ENVIRON_VAR));
   }
   return JNI_OK;
 }
@@ -3667,6 +3671,9 @@ jint Arguments::apply_ergo() {
   assert(verify_serial_gc_flags(), "SerialGC unset");
 #endif // INCLUDE_ALL_GCS
 
+  // Initialize Metaspace flags and alignments.
+  Metaspace::ergo_initialize();
+
   // Set bytecode rewriting flags
   set_bytecode_flags();
 
@@ -3717,6 +3724,18 @@ jint Arguments::apply_ergo() {
     // incremental inlining: bump MaxNodeLimit
     FLAG_SET_DEFAULT(MaxNodeLimit, (intx)75000);
   }
+  if (!UseTypeSpeculation && FLAG_IS_DEFAULT(TypeProfileLevel)) {
+    // nothing to use the profiling, turn if off
+    FLAG_SET_DEFAULT(TypeProfileLevel, 0);
+  }
+  if (UseTypeSpeculation && FLAG_IS_DEFAULT(ReplaceInParentMaps)) {
+    // Doing the replace in parent maps helps speculation
+    FLAG_SET_DEFAULT(ReplaceInParentMaps, true);
+  }
+#ifndef X86
+  // Only on x86 for now
+  FLAG_SET_DEFAULT(TypeProfileLevel, 0);
+#endif
 #endif
 
   if (PrintAssembly && FLAG_IS_DEFAULT(DebugNonSafepoints)) {

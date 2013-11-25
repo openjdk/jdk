@@ -3333,7 +3333,8 @@ void MacroAssembler::tlab_refill(Label& retry, Label& try_eden, Label& slow_case
 
   if (CMSIncrementalMode || !Universe::heap()->supports_inline_contig_alloc()) {
     // No allocation in the shared eden.
-    ba_short(slow_case);
+    ba(slow_case);
+    delayed()->nop();
   }
 
   ld_ptr(G2_thread, in_bytes(JavaThread::tlab_top_offset()), top);
@@ -3358,7 +3359,8 @@ void MacroAssembler::tlab_refill(Label& retry, Label& try_eden, Label& slow_case
     add(t2, 1, t2);
     stw(t2, G2_thread, in_bytes(JavaThread::tlab_slow_allocations_offset()));
   }
-  ba_short(try_eden);
+  ba(try_eden);
+  delayed()->nop();
 
   bind(discard_tlab);
   if (TLABStats) {
@@ -3420,7 +3422,8 @@ void MacroAssembler::tlab_refill(Label& retry, Label& try_eden, Label& slow_case
   sub(top, ThreadLocalAllocBuffer::alignment_reserve_in_bytes(), top);
   st_ptr(top, G2_thread, in_bytes(JavaThread::tlab_end_offset()));
   verify_tlab();
-  ba_short(retry);
+  ba(retry);
+  delayed()->nop();
 }
 
 void MacroAssembler::incr_allocated_bytes(RegisterOrConstant size_in_bytes,
@@ -3523,8 +3526,12 @@ void MacroAssembler::bang_stack_size(Register Rsize, Register Rtsp,
   delayed()->sub(Rtsp, Roffset, Rtsp);
 
   // Bang down shadow pages too.
-  // The -1 because we already subtracted 1 page.
-  for (int i = 0; i< StackShadowPages-1; i++) {
+  // At this point, (tmp-0) is the last address touched, so don't
+  // touch it again.  (It was touched as (tmp-pagesize) but then tmp
+  // was post-decremented.)  Skip this address by starting at i=1, and
+  // touch a few more pages below.  N.B.  It is important to touch all
+  // the way down to and including i=StackShadowPages.
+  for (int i = 1; i <= StackShadowPages; i++) {
     set((-i*offset)+STACK_BIAS, Rscratch);
     st(G0, Rtsp, Rscratch);
   }
@@ -3752,7 +3759,7 @@ static void generate_dirty_card_log_enqueue(jbyte* byte_map_base) {
 #define __ masm.
   address start = __ pc();
 
-  Label not_already_dirty, restart, refill;
+  Label not_already_dirty, restart, refill, young_card;
 
 #ifdef _LP64
   __ srlx(O0, CardTableModRefBS::card_shift, O0);
@@ -3763,9 +3770,15 @@ static void generate_dirty_card_log_enqueue(jbyte* byte_map_base) {
   __ set(addrlit, O1); // O1 := <card table base>
   __ ldub(O0, O1, O2); // O2 := [O0 + O1]
 
+  __ cmp_and_br_short(O2, G1SATBCardTableModRefBS::g1_young_card_val(), Assembler::equal, Assembler::pt, young_card);
+
+  __ membar(Assembler::Membar_mask_bits(Assembler::StoreLoad));
+  __ ldub(O0, O1, O2); // O2 := [O0 + O1]
+
   assert(CardTableModRefBS::dirty_card_val() == 0, "otherwise check this code");
   __ cmp_and_br_short(O2, G0, Assembler::notEqual, Assembler::pt, not_already_dirty);
 
+  __ bind(young_card);
   // We didn't take the branch, so we're already dirty: return.
   // Use return-from-leaf
   __ retl();
@@ -4090,15 +4103,19 @@ void  MacroAssembler::decode_heap_oop_not_null(Register src, Register dst) {
 
 void MacroAssembler::encode_klass_not_null(Register r) {
   assert (UseCompressedClassPointers, "must be compressed");
-  assert(Universe::narrow_klass_base() != NULL, "narrow_klass_base should be initialized");
-  assert(r != G6_heapbase, "bad register choice");
-  set((intptr_t)Universe::narrow_klass_base(), G6_heapbase);
-  sub(r, G6_heapbase, r);
-  if (Universe::narrow_klass_shift() != 0) {
-    assert (LogKlassAlignmentInBytes == Universe::narrow_klass_shift(), "decode alg wrong");
-    srlx(r, LogKlassAlignmentInBytes, r);
+  if (Universe::narrow_klass_base() != NULL) {
+    assert(r != G6_heapbase, "bad register choice");
+    set((intptr_t)Universe::narrow_klass_base(), G6_heapbase);
+    sub(r, G6_heapbase, r);
+    if (Universe::narrow_klass_shift() != 0) {
+      assert (LogKlassAlignmentInBytes == Universe::narrow_klass_shift(), "decode alg wrong");
+      srlx(r, LogKlassAlignmentInBytes, r);
+    }
+    reinit_heapbase();
+  } else {
+    assert (LogKlassAlignmentInBytes == Universe::narrow_klass_shift() || Universe::narrow_klass_shift() == 0, "decode alg wrong");
+    srlx(r, Universe::narrow_klass_shift(), r);
   }
-  reinit_heapbase();
 }
 
 void MacroAssembler::encode_klass_not_null(Register src, Register dst) {
@@ -4106,11 +4123,16 @@ void MacroAssembler::encode_klass_not_null(Register src, Register dst) {
     encode_klass_not_null(src);
   } else {
     assert (UseCompressedClassPointers, "must be compressed");
-    assert(Universe::narrow_klass_base() != NULL, "narrow_klass_base should be initialized");
-    set((intptr_t)Universe::narrow_klass_base(), dst);
-    sub(src, dst, dst);
-    if (Universe::narrow_klass_shift() != 0) {
-      srlx(dst, LogKlassAlignmentInBytes, dst);
+    if (Universe::narrow_klass_base() != NULL) {
+      set((intptr_t)Universe::narrow_klass_base(), dst);
+      sub(src, dst, dst);
+      if (Universe::narrow_klass_shift() != 0) {
+        srlx(dst, LogKlassAlignmentInBytes, dst);
+      }
+    } else {
+      // shift src into dst
+      assert (LogKlassAlignmentInBytes == Universe::narrow_klass_shift() || Universe::narrow_klass_shift() == 0, "decode alg wrong");
+      srlx(src, Universe::narrow_klass_shift(), dst);
     }
   }
 }
@@ -4120,14 +4142,16 @@ void MacroAssembler::encode_klass_not_null(Register src, Register dst) {
 // the instructions they generate change, then this method needs to be updated.
 int MacroAssembler::instr_size_for_decode_klass_not_null() {
   assert (UseCompressedClassPointers, "only for compressed klass ptrs");
-  // set + add + set
-  int num_instrs = insts_for_internal_set((intptr_t)Universe::narrow_klass_base()) + 1 +
-    insts_for_internal_set((intptr_t)Universe::narrow_ptrs_base());
-  if (Universe::narrow_klass_shift() == 0) {
-    return num_instrs * BytesPerInstWord;
-  } else { // sllx
-    return (num_instrs + 1) * BytesPerInstWord;
+  int num_instrs = 1;  // shift src,dst or add
+  if (Universe::narrow_klass_base() != NULL) {
+    // set + add + set
+    num_instrs += insts_for_internal_set((intptr_t)Universe::narrow_klass_base()) +
+                  insts_for_internal_set((intptr_t)Universe::narrow_ptrs_base());
+    if (Universe::narrow_klass_shift() != 0) {
+      num_instrs += 1;  // sllx
+    }
   }
+  return num_instrs * BytesPerInstWord;
 }
 
 // !!! If the instructions that get generated here change then function
@@ -4136,13 +4160,17 @@ void  MacroAssembler::decode_klass_not_null(Register r) {
   // Do not add assert code to this unless you change vtableStubs_sparc.cpp
   // pd_code_size_limit.
   assert (UseCompressedClassPointers, "must be compressed");
-  assert(Universe::narrow_klass_base() != NULL, "narrow_klass_base should be initialized");
-  assert(r != G6_heapbase, "bad register choice");
-  set((intptr_t)Universe::narrow_klass_base(), G6_heapbase);
-  if (Universe::narrow_klass_shift() != 0)
-    sllx(r, LogKlassAlignmentInBytes, r);
-  add(r, G6_heapbase, r);
-  reinit_heapbase();
+  if (Universe::narrow_klass_base() != NULL) {
+    assert(r != G6_heapbase, "bad register choice");
+    set((intptr_t)Universe::narrow_klass_base(), G6_heapbase);
+    if (Universe::narrow_klass_shift() != 0)
+      sllx(r, LogKlassAlignmentInBytes, r);
+    add(r, G6_heapbase, r);
+    reinit_heapbase();
+  } else {
+    assert (LogKlassAlignmentInBytes == Universe::narrow_klass_shift() || Universe::narrow_klass_shift() == 0, "decode alg wrong");
+    sllx(r, Universe::narrow_klass_shift(), r);
+  }
 }
 
 void  MacroAssembler::decode_klass_not_null(Register src, Register dst) {
@@ -4152,16 +4180,21 @@ void  MacroAssembler::decode_klass_not_null(Register src, Register dst) {
     // Do not add assert code to this unless you change vtableStubs_sparc.cpp
     // pd_code_size_limit.
     assert (UseCompressedClassPointers, "must be compressed");
-    assert(Universe::narrow_klass_base() != NULL, "narrow_klass_base should be initialized");
-    if (Universe::narrow_klass_shift() != 0) {
-      assert((src != G6_heapbase) && (dst != G6_heapbase), "bad register choice");
-      set((intptr_t)Universe::narrow_klass_base(), G6_heapbase);
-      sllx(src, LogKlassAlignmentInBytes, dst);
-      add(dst, G6_heapbase, dst);
-      reinit_heapbase();
+    if (Universe::narrow_klass_base() != NULL) {
+      if (Universe::narrow_klass_shift() != 0) {
+        assert((src != G6_heapbase) && (dst != G6_heapbase), "bad register choice");
+        set((intptr_t)Universe::narrow_klass_base(), G6_heapbase);
+        sllx(src, LogKlassAlignmentInBytes, dst);
+        add(dst, G6_heapbase, dst);
+        reinit_heapbase();
+      } else {
+        set((intptr_t)Universe::narrow_klass_base(), dst);
+        add(src, dst, dst);
+      }
     } else {
-      set((intptr_t)Universe::narrow_klass_base(), dst);
-      add(src, dst, dst);
+      // shift/mov src into dst.
+      assert (LogKlassAlignmentInBytes == Universe::narrow_klass_shift() || Universe::narrow_klass_shift() == 0, "decode alg wrong");
+      sllx(src, Universe::narrow_klass_shift(), dst);
     }
   }
 }

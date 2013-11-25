@@ -39,6 +39,7 @@ import com.sun.jdi.*;
  * @author Robert Field
  * @since  1.3
  */
+@jdk.Exported
 public interface ClassUnloadEvent extends Event {
     /**
      * Returns the name of the class that has been unloaded.

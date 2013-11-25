@@ -284,8 +284,7 @@ void ConstantPoolCacheEntry::set_method_handle_common(constantPoolHandle cpool,
   // the lock, so that when the losing writer returns, he can use the linked
   // cache entry.
 
-  oop cplock = cpool->lock();
-  ObjectLocker ol(cplock, Thread::current(), cplock != NULL);
+  MonitorLockerEx ml(cpool->lock());
   if (!is_f1_null()) {
     return;
   }
@@ -306,8 +305,8 @@ void ConstantPoolCacheEntry::set_method_handle_common(constantPoolHandle cpool,
   if (TraceInvokeDynamic) {
     tty->print_cr("set_method_handle bc=%d appendix="PTR_FORMAT"%s method_type="PTR_FORMAT"%s method="PTR_FORMAT" ",
                   invoke_code,
-                  (intptr_t)appendix(),    (has_appendix    ? "" : " (unused)"),
-                  (intptr_t)method_type(), (has_method_type ? "" : " (unused)"),
+                  (void *)appendix(),    (has_appendix    ? "" : " (unused)"),
+                  (void *)method_type(), (has_method_type ? "" : " (unused)"),
                   (intptr_t)adapter());
     adapter->print();
     if (has_appendix)  appendix()->print();

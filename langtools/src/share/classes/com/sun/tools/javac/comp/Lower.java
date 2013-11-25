@@ -2172,6 +2172,18 @@ public class Lower extends TreeTranslator {
  * Code for enabling/disabling assertions.
  *************************************************************************/
 
+    private ClassSymbol assertionsDisabledClassCache;
+
+    /**Used to create an auxiliary class to hold $assertionsDisabled for interfaces.
+     */
+    private ClassSymbol assertionsDisabledClass() {
+        if (assertionsDisabledClassCache != null) return assertionsDisabledClassCache;
+
+        assertionsDisabledClassCache = makeEmptyClass(STATIC | SYNTHETIC, outermostClassDef.sym).sym;
+
+        return assertionsDisabledClassCache;
+    }
+
     // This code is not particularly robust if the user has
     // previously declared a member named '$assertionsDisabled'.
     // The same faulty idiom also appears in the translation of
@@ -2182,8 +2194,9 @@ public class Lower extends TreeTranslator {
         // Outermost class may be either true class or an interface.
         ClassSymbol outermostClass = outermostClassDef.sym;
 
-        // note that this is a class, as an interface can't contain a statement.
-        ClassSymbol container = currentClass;
+        //only classes can hold a non-public field, look for a usable one:
+        ClassSymbol container = !currentClass.isInterface() ? currentClass :
+                assertionsDisabledClass();
 
         VarSymbol assertDisabledSym =
             (VarSymbol)lookupSynthetic(dollarAssertionsDisabled,
@@ -2208,6 +2221,16 @@ public class Lower extends TreeTranslator {
             JCVariableDecl assertDisabledDef = make.VarDef(assertDisabledSym,
                                                    notStatus);
             containerDef.defs = containerDef.defs.prepend(assertDisabledDef);
+
+            if (currentClass.isInterface()) {
+                //need to load the assertions enabled/disabled state while
+                //initializing the interface:
+                JCClassDecl currentClassDef = classDef(currentClass);
+                make_at(currentClassDef.pos());
+                JCStatement dummy = make.If(make.QualIdent(assertDisabledSym), make.Skip(), null);
+                JCBlock clinit = make.Block(STATIC, List.<JCStatement>of(dummy));
+                currentClassDef.defs = currentClassDef.defs.prepend(clinit);
+            }
         }
         make_at(pos);
         return makeUnary(NOT, make.Ident(assertDisabledSym));
@@ -2811,20 +2834,9 @@ public class Lower extends TreeTranslator {
         tree.underlyingType = translate(tree.underlyingType);
         // but maintain type annotations in the type.
         if (tree.type.isAnnotated()) {
-            if (tree.underlyingType.type.isAnnotated()) {
-                // The erasure of a type variable might be annotated.
-                // Merge all annotations.
-                AnnotatedType newat = (AnnotatedType) tree.underlyingType.type;
-                AnnotatedType at = (AnnotatedType) tree.type;
-                at.underlyingType = newat.underlyingType;
-                newat.typeAnnotations = at.typeAnnotations.appendList(newat.typeAnnotations);
-                tree.type = newat;
-            } else {
-                // Create a new AnnotatedType to have the correct tag.
-                AnnotatedType oldat = (AnnotatedType) tree.type;
-                tree.type = new AnnotatedType(tree.underlyingType.type);
-                ((AnnotatedType) tree.type).typeAnnotations = oldat.typeAnnotations;
-            }
+            tree.type = tree.underlyingType.type.unannotatedType().annotatedType(tree.type.getAnnotationMirrors());
+        } else if (tree.underlyingType.type.isAnnotated()) {
+            tree.type = tree.underlyingType.type;
         }
         result = tree;
     }
@@ -3725,7 +3737,7 @@ public class Lower extends TreeTranslator {
                 (JCVariableDecl)make.VarDef(dollar_tmp, make.Literal(INT, -1)).setType(dollar_tmp.type);
             dollar_tmp_def.init.type = dollar_tmp.type = syms.intType;
             stmtList.append(dollar_tmp_def);
-            ListBuffer<JCCase> caseBuffer = ListBuffer.lb();
+            ListBuffer<JCCase> caseBuffer = new ListBuffer<>();
             // hashCode will trigger nullcheck on original switch expression
             JCMethodInvocation hashCodeCall = makeCall(make.Ident(dollar_s),
                                                        names.hashCode,
@@ -3749,7 +3761,7 @@ public class Lower extends TreeTranslator {
                                        elsepart);
                 }
 
-                ListBuffer<JCStatement> lb = ListBuffer.lb();
+                ListBuffer<JCStatement> lb = new ListBuffer<>();
                 JCBreak breakStmt = make.Break(null);
                 breakStmt.target = switch1;
                 lb.append(elsepart).append(breakStmt);
@@ -3764,7 +3776,7 @@ public class Lower extends TreeTranslator {
             // with corresponding integer ones from the label to
             // position map.
 
-            ListBuffer<JCCase> lb = ListBuffer.lb();
+            ListBuffer<JCCase> lb = new ListBuffer<>();
             JCSwitch switch2 = make.Switch(make.Ident(dollar_tmp), lb.toList());
             for(JCCase oneCase : caseList ) {
                 // Rewire up old unlabeled break statements to the
@@ -3929,6 +3941,7 @@ public class Lower extends TreeTranslator {
             accessConstrTags = null;
             accessed = null;
             enumSwitchMap.clear();
+            assertionsDisabledClassCache = null;
         }
         return translated.toList();
     }

@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug      4802275 4967243
+ * @bug      4802275 4967243 8026567
  * @summary  Make sure param tags are still printed even though they do not
  *           match up with a real parameters.
  *           Make sure inheritDoc cannot be used in an invalid param tag.
@@ -48,12 +48,12 @@ public class TestParamTaglet extends JavadocTester {
     private static final String[][] TEST = {
         //Regular param tags.
         {BUG_ID + FS + "pkg" + FS + "C.html",
-            "<span class=\"strong\">Parameters:</span></dt>" + NL + "<dd><code>param1</code> - testing 1 2 3.</dd>" +
+            "<span class=\"paramLabel\">Parameters:</span></dt>" + NL + "<dd><code>param1</code> - testing 1 2 3.</dd>" +
                 NL + "<dd><code>param2</code> - testing 1 2 3."
         },
         //Param tags that don't match with any real parameters.
         {BUG_ID + FS + "pkg" + FS + "C.html",
-            "<span class=\"strong\">Parameters:</span></dt>" + NL + "<dd><code><I>p1</I></code> - testing 1 2 3.</dd>" +
+            "<span class=\"paramLabel\">Parameters:</span></dt>" + NL + "<dd><code><I>p1</I></code> - testing 1 2 3.</dd>" +
                 NL + "<dd><code><I>p2</I></code> - testing 1 2 3."
         },
         //{@inherit} doc misuse does not cause doclet to throw exception.

@@ -265,7 +265,7 @@ public class ConcurrentSkipListMap<K,V> extends AbstractMap<K,V>
      * highly contended cases.
      *
      * Unlike most skip-list implementations, index insertion and
-     * deletion here require a separate traversal pass occuring after
+     * deletion here require a separate traversal pass occurring after
      * the base-level action, to add or remove index nodes.  This adds
      * to single-threaded overhead, but improves contended
      * multithreaded performance by narrowing interference windows,
