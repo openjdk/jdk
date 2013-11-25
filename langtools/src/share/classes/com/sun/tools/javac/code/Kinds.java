@@ -87,16 +87,17 @@ public class Kinds {
 
     /** Kinds for erroneous symbols that complement the above
      */
-    public static final int ERRONEOUS = 1 << 7;
-    public static final int AMBIGUOUS    = ERRONEOUS+1; // ambiguous reference
-    public static final int HIDDEN       = ERRONEOUS+2; // hidden method or field
-    public static final int STATICERR    = ERRONEOUS+3; // nonstatic member from static context
-    public static final int MISSING_ENCL = ERRONEOUS+4; // missing enclosing class
-    public static final int ABSENT_VAR   = ERRONEOUS+5; // missing variable
-    public static final int WRONG_MTHS   = ERRONEOUS+6; // methods with wrong arguments
-    public static final int WRONG_MTH    = ERRONEOUS+7; // one method with wrong arguments
-    public static final int ABSENT_MTH   = ERRONEOUS+8; // missing method
-    public static final int ABSENT_TYP   = ERRONEOUS+9; // missing type
+    public static final int ERRONEOUS           = 1 << 7;
+    public static final int AMBIGUOUS           = ERRONEOUS + 1;  // ambiguous reference
+    public static final int HIDDEN              = ERRONEOUS + 2;  // hidden method or field
+    public static final int STATICERR           = ERRONEOUS + 3;  // nonstatic member from static context
+    public static final int MISSING_ENCL        = ERRONEOUS + 4;  // missing enclosing class
+    public static final int ABSENT_VAR          = ERRONEOUS + 5;  // missing variable
+    public static final int WRONG_MTHS          = ERRONEOUS + 6;  // methods with wrong arguments
+    public static final int WRONG_MTH           = ERRONEOUS + 7;  // one method with wrong arguments
+    public static final int ABSENT_MTH          = ERRONEOUS + 8;  // missing method
+    public static final int ABSENT_TYP          = ERRONEOUS + 9;  // missing type
+    public static final int WRONG_STATICNESS    = ERRONEOUS + 10; // wrong staticness for method references
 
     public enum KindName implements Formattable {
         ANNOTATION("kindname.annotation"),
@@ -231,14 +232,14 @@ public class Kinds {
             return KindName.CLASS;
     }
 
-    /** A KindName representing the kind of a a missing symbol, given an
+    /** A KindName representing the kind of a missing symbol, given an
      *  error kind.
      * */
     public static KindName absentKind(int kind) {
         switch (kind) {
         case ABSENT_VAR:
             return KindName.VAR;
-        case WRONG_MTHS: case WRONG_MTH: case ABSENT_MTH:
+        case WRONG_MTHS: case WRONG_MTH: case ABSENT_MTH: case WRONG_STATICNESS:
             return KindName.METHOD;
         case ABSENT_TYP:
             return KindName.CLASS;

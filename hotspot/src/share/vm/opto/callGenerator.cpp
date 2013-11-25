@@ -776,7 +776,7 @@ CallGenerator* CallGenerator::for_method_handle_inline(JVMState* jvms, ciMethod*
         guarantee(!target->is_method_handle_intrinsic(), "should not happen");  // XXX remove
         const int vtable_index = Method::invalid_vtable_index;
         CallGenerator* cg = C->call_generator(target, vtable_index, false, jvms, true, PROB_ALWAYS, NULL, true, true);
-        assert(!cg->is_late_inline() || cg->is_mh_late_inline(), "no late inline here");
+        assert(cg == NULL || !cg->is_late_inline() || cg->is_mh_late_inline(), "no late inline here");
         if (cg != NULL && cg->is_inline())
           return cg;
       }
@@ -846,7 +846,7 @@ CallGenerator* CallGenerator::for_method_handle_inline(JVMState* jvms, ciMethod*
         }
 
         CallGenerator* cg = C->call_generator(target, vtable_index, call_does_dispatch, jvms, true, PROB_ALWAYS, speculative_receiver_type, true, true);
-        assert(!cg->is_late_inline() || cg->is_mh_late_inline(), "no late inline here");
+        assert(cg == NULL || !cg->is_late_inline() || cg->is_mh_late_inline(), "no late inline here");
         if (cg != NULL && cg->is_inline())
           return cg;
       }

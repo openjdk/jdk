@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -55,11 +55,11 @@ class Logging implements LoggingMXBean {
     }
 
     public List<String> getLoggerNames() {
-        Enumeration loggers = logManager.getLoggerNames();
+        Enumeration<String> loggers = logManager.getLoggerNames();
         ArrayList<String> array = new ArrayList<>();
 
         for (; loggers.hasMoreElements();) {
-            array.add((String) loggers.nextElement());
+            array.add(loggers.nextElement());
         }
         return array;
     }

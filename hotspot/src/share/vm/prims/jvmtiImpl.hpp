@@ -69,6 +69,7 @@ public:
   virtual bool lessThan(GrowableElement *e)=0;
   virtual GrowableElement *clone()         =0;
   virtual void oops_do(OopClosure* f)      =0;
+  virtual void metadata_do(void f(Metadata*)) =0;
 };
 
 class GrowableCache VALUE_OBJ_CLASS_SPEC {
@@ -115,6 +116,8 @@ public:
   void clear();
   // apply f to every element and update the cache
   void oops_do(OopClosure* f);
+  // walk metadata to preserve for RedefineClasses
+  void metadata_do(void f(Metadata*));
   // update the cache after a full gc
   void gc_epilogue();
 };
@@ -148,6 +151,7 @@ public:
   void remove (int index)               { _cache.remove(index); }
   void clear()                          { _cache.clear(); }
   void oops_do(OopClosure* f)           { _cache.oops_do(f); }
+  void metadata_do(void f(Metadata*))   { _cache.metadata_do(f); }
   void gc_epilogue()                    { _cache.gc_epilogue(); }
 };
 
@@ -169,7 +173,7 @@ private:
   Method*               _method;
   int                   _bci;
   Bytecodes::Code       _orig_bytecode;
-  oop                   _class_loader;
+  oop                   _class_holder;  // keeps _method memory from being deallocated
 
 public:
   JvmtiBreakpoint();
@@ -191,9 +195,15 @@ public:
   bool lessThan(GrowableElement* e) { Unimplemented(); return false; }
   bool equals(GrowableElement* e) { return equals((JvmtiBreakpoint&) *e); }
   void oops_do(OopClosure* f)     {
-    // Mark the method loader as live
-    f->do_oop(&_class_loader);
+    // Mark the method loader as live so the Method* class loader doesn't get
+    // unloaded and Method* memory reclaimed.
+    f->do_oop(&_class_holder);
   }
+  void metadata_do(void f(Metadata*)) {
+    // walk metadata to preserve for RedefineClasses
+    f(_method);
+  }
+
   GrowableElement *clone()        {
     JvmtiBreakpoint *bp = new JvmtiBreakpoint();
     bp->copy(*this);
@@ -239,6 +249,7 @@ public:
 
   int length();
   void oops_do(OopClosure* f);
+  void metadata_do(void f(Metadata*));
   void print();
 
   int  set(JvmtiBreakpoint& bp);
@@ -288,6 +299,7 @@ public:
   static inline bool is_breakpoint(address bcp);
 
   static void oops_do(OopClosure* f);
+  static void metadata_do(void f(Metadata*));
   static void gc_epilogue();
 };
 
@@ -332,6 +344,7 @@ public:
   VMOp_Type type() const { return VMOp_ChangeBreakpoints; }
   void doit();
   void oops_do(OopClosure* f);
+  void metadata_do(void f(Metadata*));
 };
 
 
