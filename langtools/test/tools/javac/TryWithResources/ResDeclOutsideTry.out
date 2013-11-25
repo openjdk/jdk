@@ -1,0 +1,3 @@
+ResDeclOutsideTry.java:14:17: compiler.err.expected: token.identifier
+ResDeclOutsideTry.java:14:48: compiler.err.expected: token.identifier
+2 errors

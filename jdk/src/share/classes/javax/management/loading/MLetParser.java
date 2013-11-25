@@ -149,7 +149,7 @@ class MLetParser {
     }
 
     /**
-     * Scan an html file for <mlet> tags
+     * Scan an html file for {@literal <mlet>} tags.
      */
     public List<MLetContent> parse(URL url) throws IOException {
         String mth = "parse";

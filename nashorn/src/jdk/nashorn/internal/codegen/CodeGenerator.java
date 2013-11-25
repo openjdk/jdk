@@ -412,6 +412,8 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
             return method;
         }
 
+        assert !type.isUnknown();
+
         /*
          * The load may be of type IdentNode, e.g. "x", AccessNode, e.g. "x.y"
          * or IndexNode e.g. "x[y]". Both AccessNodes and IndexNodes are

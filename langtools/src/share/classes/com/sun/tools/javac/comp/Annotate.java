@@ -255,6 +255,9 @@ public class Annotate {
                   : attr.attribType(a.annotationType, env));
         a.type = chk.checkType(a.annotationType.pos(), at, expected);
         if (a.type.isErroneous()) {
+            // Need to make sure nested (anno)trees does not have null as .type
+            attr.postAttr(a);
+
             if (typeAnnotation) {
                 return new Attribute.TypeCompound(a.type, List.<Pair<MethodSymbol,Attribute>>nil(),
                         new TypeAnnotationPosition());
@@ -265,6 +268,10 @@ public class Annotate {
         if ((a.type.tsym.flags() & Flags.ANNOTATION) == 0) {
             log.error(a.annotationType.pos(),
                       "not.annotation.type", a.type.toString());
+
+            // Need to make sure nested (anno)trees does not have null as .type
+            attr.postAttr(a);
+
             if (typeAnnotation) {
                 return new Attribute.TypeCompound(a.type, List.<Pair<MethodSymbol,Attribute>>nil(), null);
             } else {
@@ -278,7 +285,7 @@ public class Annotate {
                 Assign(make.Ident(names.value), args.head);
         }
         ListBuffer<Pair<MethodSymbol,Attribute>> buf =
-            new ListBuffer<Pair<MethodSymbol,Attribute>>();
+            new ListBuffer<>();
         for (List<JCExpression> tl = args; tl.nonEmpty(); tl = tl.tail) {
             JCExpression t = tl.head;
             if (!t.hasTag(ASSIGN)) {
@@ -304,8 +311,7 @@ public class Annotate {
             Type result = method.type.getReturnType();
             Attribute value = enterAttributeValue(result, assign.rhs, env);
             if (!method.type.isErroneous())
-                buf.append(new Pair<MethodSymbol,Attribute>
-                           ((MethodSymbol)method, value));
+                buf.append(new Pair<>((MethodSymbol)method, value));
             t.type = result;
         }
         if (typeAnnotation) {

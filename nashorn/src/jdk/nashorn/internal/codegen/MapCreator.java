@@ -134,6 +134,10 @@ public class MapCreator {
             flags |= Property.CAN_BE_UNDEFINED;
         }
 
+        if (symbol.isFunctionDeclaration()) {
+            flags |= Property.IS_FUNCTION_DECLARATION;
+        }
+
         return flags;
     }
 

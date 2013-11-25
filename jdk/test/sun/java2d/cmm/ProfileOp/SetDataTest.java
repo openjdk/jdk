@@ -23,7 +23,7 @@
 
 /**
  * @test
- * @bug     7042594
+ * @bug     7042594 8028206
  * @summary Test verifies that ICC_Profile.setData() conforms the spec.
  *
  * @run     main SetDataTest

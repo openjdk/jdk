@@ -26,6 +26,7 @@
 package javax.swing.tree;
    // ISSUE: this class depends on nothing in AWT -- move to java.util?
 
+import java.beans.Transient;
 import java.io.*;
 import java.util.*;
 
@@ -215,6 +216,7 @@ public class DefaultMutableTreeNode implements Cloneable,
      *
      * @param   newParent       this node's new parent
      */
+    @Transient
     public void setParent(MutableTreeNode newParent) {
         parent = newParent;
     }

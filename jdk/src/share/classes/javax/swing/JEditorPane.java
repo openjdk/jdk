@@ -103,7 +103,7 @@ import javax.accessibility.*;
  * fragment is a possible hyperlink listener implementation, that treats
  * HTML frame events specially, and simply displays any other activated
  * hyperlinks.
- * <code><pre>
+ * <pre>
 
 &nbsp;    class Hyperactive implements HyperlinkListener {
 &nbsp;
@@ -125,7 +125,7 @@ import javax.accessibility.*;
 &nbsp;        }
 &nbsp;    }
 
- * </pre></code>
+ * </pre>
  * <p>
  * For information on customizing how <b>text/html</b> is rendered please see
  * {@link #W3C_LENGTH_UNITS} and {@link #HONOR_DISPLAY_PROPERTIES}
