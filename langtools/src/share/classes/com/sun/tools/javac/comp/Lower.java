@@ -1378,11 +1378,14 @@ public class Lower extends TreeTranslator {
             ref = make.Ident(sym);
             args = make.Idents(md.params);
         } else {
-            Symbol msym = sym;
-            if (sym.owner.isInterface()) {
-                msym = msym.clone(types.supertype(accessor.owner.type).tsym);
+            JCExpression site = make.Ident(md.params.head);
+            if (acode % 2 != 0) {
+                //odd access codes represent qualified super accesses - need to
+                //emit reference to the direct superclass, even if the refered
+                //member is from an indirect superclass (JLS 13.1)
+                site.setType(types.erasure(types.supertype(vsym.owner.enclClass().type)));
             }
-            ref = make.Select(make.Ident(md.params.head), msym);
+            ref = make.Select(site, sym);
             args = make.Idents(md.params.tail);
         }
         JCStatement stat;          // The statement accessing the private symbol.
