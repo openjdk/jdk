@@ -66,10 +66,10 @@ public class XSLTExFuncTest extends TestBase {
         xslFile = filepath + "/tokenize.xsl";
 
         /**
-         * if (isWindows) { xslFile = "/" + xslFile; }
-         *
+         * On Windows platform it needs triple '/' for valid URL while double '/' is enough on Linux or Solaris.
+         * Here use file:/// directly to make it work on Windows and it will not impact other platforms.
          */
-        xslFileId = "file://" + xslFile;
+        xslFileId = "file:///" + xslFile;
     }
 
     /**
