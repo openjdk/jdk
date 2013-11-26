@@ -2157,7 +2157,6 @@ int InstanceKlass::oop_adjust_pointers(oop obj) {
     obj, \
     MarkSweep::adjust_pointer(p), \
     assert_is_in)
-  MarkSweep::adjust_klass(obj->klass());
   return size;
 }
 
