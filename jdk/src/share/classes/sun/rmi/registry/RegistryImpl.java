@@ -119,8 +119,23 @@ public class RegistryImpl extends java.rmi.server.RemoteServer
     public RegistryImpl(int port)
         throws RemoteException
     {
-        LiveRef lref = new LiveRef(id, port);
-        setup(new UnicastServerRef(lref));
+        if (port == Registry.REGISTRY_PORT && System.getSecurityManager() != null) {
+            // grant permission for default port only.
+            try {
+                AccessController.doPrivileged(new PrivilegedExceptionAction<Void>() {
+                    public Void run() throws RemoteException {
+                        LiveRef lref = new LiveRef(id, port);
+                        setup(new UnicastServerRef(lref));
+                        return null;
+                    }
+                }, null, new SocketPermission("localhost:"+port, "listen,accept"));
+            } catch (PrivilegedActionException pae) {
+                throw (RemoteException)pae.getException();
+            }
+        } else {
+            LiveRef lref = new LiveRef(id, port);
+            setup(new UnicastServerRef(lref));
+        }
     }
 
     /*
@@ -419,7 +434,7 @@ public class RegistryImpl extends java.rmi.server.RemoteServer
          * related classes themselves are more tightly limited by RMI.
          */
         perms.add(new SocketPermission("*", "connect,accept"));
-            perms.add(new SocketPermission("localhost:"+port, "listen,accept"));
+        perms.add(new SocketPermission("localhost:"+port, "listen,accept"));
 
         perms.add(new RuntimePermission("accessClassInPackage.sun.jvmstat.*"));
         perms.add(new RuntimePermission("accessClassInPackage.sun.jvm.hotspot.*"));
