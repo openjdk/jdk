@@ -1,66 +1,90 @@
-." Copyright (c) 1995, 2011, Oracle and/or its affiliates. All rights reserved.
-." DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
-."
-." This code is free software; you can redistribute it and/or modify it
-." under the terms of the GNU General Public License version 2 only, as
-." published by the Free Software Foundation.
-."
-." This code is distributed in the hope that it will be useful, but WITHOUT
-." ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
-." FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
-." version 2 for more details (a copy is included in the LICENSE file that
-." accompanied this code).
-."
-." You should have received a copy of the GNU General Public License version
-." 2 along with this work; if not, write to the Free Software Foundation,
-." Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
-."
-." Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
-." or visit www.oracle.com if you need additional information or have any
-." questions.
-."
-.TH appletviewer 1 "10 May 2011"
+'\" t
+.\"  Copyright (c) 1995, 2013, Oracle and/or its affiliates. All rights reserved.
+.\"
+.\" DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+.\"
+.\" This code is free software; you can redistribute it and/or modify it
+.\" under the terms of the GNU General Public License version 2 only, as
+.\" published by the Free Software Foundation.
+.\"
+.\" This code is distributed in the hope that it will be useful, but WITHOUT
+.\" ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+.\" FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License
+.\" version 2 for more details (a copy is included in the LICENSE file that
+.\" accompanied this code).
+.\"
+.\" You should have received a copy of the GNU General Public License version
+.\" 2 along with this work; if not, write to the Free Software Foundation,
+.\" Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+.\"
+.\" Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+.\" or visit www.oracle.com if you need additional information or have any
+.\" questions.
+.\"
+.\"     Arch: generic
+.\"     Software: JDK 8
+.\"     Date: 21 November 2013
+.\"     SectDesc: Basic Tools
+.\"     Title: appletviewer.1
+.\"
+.if n .pl 99999
+.TH appletviewer 1 "21 November 2013" "JDK 8" "Basic Tools"
+.\" -----------------------------------------------------------------
+.\" * Define some portability stuff
+.\" -----------------------------------------------------------------
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.\" http://bugs.debian.org/507673
+.\" http://lists.gnu.org/archive/html/groff/2009-02/msg00013.html
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.ie \n(.g .ds Aq \(aq
+.el       .ds Aq '
+.\" -----------------------------------------------------------------
+.\" * set default formatting
+.\" -----------------------------------------------------------------
+.\" disable hyphenation
+.nh
+.\" disable justification (adjust text to left margin only)
+.ad l
+.\" -----------------------------------------------------------------
+.\" * MAIN CONTENT STARTS HERE *
+.\" -----------------------------------------------------------------
 
-.LP
-.SH "Name"
-appletviewer \- The Java Applet Viewer.
-.LP
-.LP
-The \f3appletviewer\fP command allows you to run applets outside of a web browser.
-.LP
-.SH "SYNOPSIS"
-.LP
-.LP
-\f4appletviewer\fP \f2[\fP \f2options\fP \f2] \fP\f2urls\fP ...
-.LP
-.SH "DESCRIPTION"
-.LP
-.LP
-The \f3appletviewer\fP command connects to the documents or resources designated by \f2urls\fP and displays each applet referenced by the documents in its own window. Note: if the documents referred to by \f2urls\fP do not reference any applets with the \f2OBJECT\fP, \f2EMBED\fP, or \f2APPLET\fP tag, then \f3appletviewer\fP does nothing. For details on the HTML tags that \f3appletviewer\fP supports, see 
-.na
-\f2AppletViewer Tags\fP @
-.fi
-http://download.oracle.com/javase/7/docs/technotes/tools/appletviewertags.html.
-.LP
-.LP
-\f3Note:\fP The \f3appletviewer\fP requires encoded URLs according to the escaping mechanism defined in RFC2396. Only encoded URLs are supported. However, file names must be unencoded, as specified in RFC2396.
-.LP
-.SH "OPTIONS"
-.LP
-.RS 3
-.TP 3
-\-debug 
-Starts the applet viewer in the Java debugger, jdb(1), thus allowing you to debug the applets in the document. 
-.TP 3
-\-encoding \  \ encoding name 
-Specify the input HTML file encoding name. 
-.TP 3
-\-Jjavaoption 
-Passes through the string \f2javaoption\fP as a single argument to the Java interpreter which runs the appletviewer. The argument should not contain spaces. Multiple argument words must all begin with the prefix \f3\-J\fP, which is stripped. This is useful for adjusting the compiler's execution environment or memory usage. 
+.SH NAME    
+appletviewer \- Runs applets outside of a web browser\&.
+.SH SYNOPSIS    
+.sp     
+.nf     
+
+\fBappletviewer\fR [\fIoptions\fR] \fIurl\fR\&.\&.\&.
+.fi     
+.sp     
+.TP     
+\fIoptions\fR
+The command-line options separated by spaces\&. See Options\&.
+.TP     
+\fIurl\fR
+The location of the documents or resources to be displayed\&. You can specify multiple URLs separated by spaces\&.
+.SH DESCRIPTION    
+The \f3appletviewer\fR command connects to the documents or resources designated by \fIurls\fR and displays each applet referenced by the documents in its own window\&. If the documents referred to by urls do not reference any applets with the \f3OBJECT\fR, \f3EMBED\fR, or \f3APPLET\fR tag, then the \f3appletviewer\fR command does nothing\&. For details about the HTML tags that the \f3appletviewer\fR command supports, see AppletViewer Tags at http://docs\&.oracle\&.com/javase/8/docs/technotes/tools/appletviewertags\&.html
+.PP
+The \f3appletviewer\fR command requires encoded URLs according to the escaping mechanism defined in RFC2396\&. Only encoded URLs are supported\&. However, file names must be unencoded, as specified in RFC2396\&.
+.PP
+\fINote:\fR The \f3appletviewer\fR command is intended for development purposes only\&. For more information, see About Sample/Test Applications and Code at http://docs\&.oracle\&.com/javase/8/docs/technotes/samples/aboutCodeSamples\&.html
+.SH OPTIONS    
+.TP
+-debug
+.br
+Starts the Applet Viewer in the Java debugger with the \f3jdb\fR command to debug the applets in the document\&.
+.TP
+-encoding \fIencoding-name\fR
+.br
+Specifies the input HTML file encoding name\&.
+.TP
+-J\fIjavaoption\fR
+.br
+Passes the string \f3javaoption\fR as a single argument to the Java interpreter, which runs the Applet Viewer\&. The argument should not contain spaces\&. Multiple argument words must all begin with the prefix \f3-J\fR\&. This is useful for adjusting the compiler\&'s execution environment or memory usage\&.
+.PP
 .RE
-
-.LP
-.LP
-
-.LP
- 
+.br
+'pl 8.5i
+'bp
