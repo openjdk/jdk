@@ -155,7 +155,13 @@ void InstanceMirrorKlass::oop_follow_contents(oop obj) {
   // Follow the klass field in the mirror.
   Klass* klass = java_lang_Class::as_Klass(obj);
   if (klass != NULL) {
-    MarkSweep::follow_klass(klass);
+    // For anonymous classes we need to handle the class loader data,
+    // otherwise it won't be claimed and can be unloaded.
+    if (klass->oop_is_instance() && InstanceKlass::cast(klass)->is_anonymous()) {
+      MarkSweep::follow_class_loader(klass->class_loader_data());
+    } else {
+      MarkSweep::follow_klass(klass);
+    }
   } else {
     // If klass is NULL then this a mirror for a primitive type.
     // We don't have to follow them, since they are handled as strong
@@ -195,17 +201,6 @@ void InstanceMirrorKlass::oop_follow_contents(ParCompactionManager* cm,
 int InstanceMirrorKlass::oop_adjust_pointers(oop obj) {
   int size = oop_size(obj);
   InstanceKlass::oop_adjust_pointers(obj);
-
-  // Follow the klass field in the mirror.
-  Klass* klass = java_lang_Class::as_Klass(obj);
-  if (klass != NULL) {
-    MarkSweep::adjust_klass(klass);
-  } else {
-    // If klass is NULL then this a mirror for a primitive type.
-    // We don't have to follow them, since they are handled as strong
-    // roots in Universe::oops_do.
-    assert(java_lang_Class::is_primitive(obj), "Sanity check");
-  }
 
   InstanceMirrorKlass_OOP_ITERATE(                                                    \
     start_of_static_fields(obj), java_lang_Class::static_oop_field_count(obj),        \
