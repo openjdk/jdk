@@ -738,14 +738,23 @@ static int getLocalScopeID (char *addr) {
     return 0;
 }
 
-void initLocalAddrTable () {
+void platformInit () {
     initLoopbackRoutes();
     initLocalIfs();
 }
 
+#elif defined(_AIX)
+
+/* Initialize stubs for blocking I/O workarounds (see src/solaris/native/java/net/linux_close.c) */
+extern void aix_close_init();
+
+void platformInit () {
+    aix_close_init();
+}
+
 #else
 
-void initLocalAddrTable () {}
+void platformInit () {}
 
 #endif
 
@@ -987,7 +996,11 @@ NET_MapSocketOption(jint cmd, int *level, int *optname) {
         { java_net_SocketOptions_SO_SNDBUF,             SOL_SOCKET,     SO_SNDBUF },
         { java_net_SocketOptions_SO_RCVBUF,             SOL_SOCKET,     SO_RCVBUF },
         { java_net_SocketOptions_SO_KEEPALIVE,          SOL_SOCKET,     SO_KEEPALIVE },
+#if defined(_AIX)
+        { java_net_SocketOptions_SO_REUSEADDR,          SOL_SOCKET,     SO_REUSEPORT },
+#else
         { java_net_SocketOptions_SO_REUSEADDR,          SOL_SOCKET,     SO_REUSEADDR },
+#endif
         { java_net_SocketOptions_SO_BROADCAST,          SOL_SOCKET,     SO_BROADCAST },
         { java_net_SocketOptions_IP_TOS,                IPPROTO_IP,     IP_TOS },
         { java_net_SocketOptions_IP_MULTICAST_IF,       IPPROTO_IP,     IP_MULTICAST_IF },
@@ -1382,6 +1395,29 @@ NET_SetSockOpt(int fd, int level, int  opt, const void *arg,
             bufsize = (int *)arg;
             if (*bufsize > maxbuf) {
                 *bufsize = maxbuf;
+            }
+        }
+    }
+#endif
+
+#ifdef _AIX
+    if (level == SOL_SOCKET) {
+        if (opt == SO_SNDBUF || opt == SO_RCVBUF) {
+            /*
+             * Just try to set the requested size. If it fails we will leave the
+             * socket option as is. Setting the buffer size means only a hint in
+             * the jse2/java software layer, see javadoc. In the previous
+             * solution the buffer has always been truncated to a length of
+             * 0x100000 Byte, even if the technical limit has not been reached.
+             * This kind of absolute truncation was unexpected in the jck tests.
+             */
+            int ret = setsockopt(fd, level, opt, arg, len);
+            if ((ret == 0) || (ret == -1 && errno == ENOBUFS)) {
+                // Accept failure because of insufficient buffer memory resources.
+                return 0;
+            } else {
+                // Deliver all other kinds of errors.
+                return ret;
             }
         }
     }

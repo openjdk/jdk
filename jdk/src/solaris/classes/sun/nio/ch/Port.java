@@ -77,10 +77,20 @@ abstract class Port extends AsynchronousChannelGroupImpl {
     }
 
     /**
+     * Callback method for implementations that need special handling when fd is
+     * removed (currently only needed in the AIX-Port - see AixPollPort.java).
+     */
+    protected void preUnregister(int fd) {
+        // Do nothing by default.
+    }
+
+    /**
      * Unregister channel identified by its file descriptor
      */
     final void unregister(int fd) {
         boolean checkForShutdown = false;
+
+        preUnregister(fd);
 
         fdToChannelLock.writeLock().lock();
         try {

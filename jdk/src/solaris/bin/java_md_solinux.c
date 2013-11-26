@@ -41,7 +41,11 @@
 
 #define JVM_DLL "libjvm.so"
 #define JAVA_DLL "libjava.so"
+#ifdef AIX
+#define LD_LIBRARY_PATH "LIBPATH"
+#else
 #define LD_LIBRARY_PATH "LD_LIBRARY_PATH"
+#endif
 
 /* help jettison the LD_LIBRARY_PATH settings in the future */
 #ifndef SETENV_REQUIRED
@@ -286,6 +290,11 @@ RequiresSetenv(int wanted, const char *jvmpath) {
     char *llp;
     char *dmllp = NULL;
     char *p; /* a utility pointer */
+
+#ifdef AIX
+    /* We always have to set the LIBPATH on AIX because ld doesn't support $ORIGIN. */
+    return JNI_TRUE;
+#endif
 
     llp = getenv("LD_LIBRARY_PATH");
 #ifdef __solaris__
@@ -598,7 +607,7 @@ CreateExecutionEnvironment(int *pargc, char ***pargv,
              * If not on Solaris, assume only a single LD_LIBRARY_PATH
              * variable.
              */
-            runpath = getenv("LD_LIBRARY_PATH");
+            runpath = getenv(LD_LIBRARY_PATH);
 #endif /* __solaris__ */
 
             /* runpath contains current effective LD_LIBRARY_PATH setting */
@@ -606,8 +615,12 @@ CreateExecutionEnvironment(int *pargc, char ***pargv,
             jvmpath = JLI_StringDup(jvmpath);
             new_runpath = JLI_MemAlloc(((runpath != NULL) ? JLI_StrLen(runpath) : 0) +
                     2 * JLI_StrLen(jrepath) + 2 * JLI_StrLen(arch) +
+#ifdef AIX
+                    /* On AIX we additionally need 'jli' in the path because ld doesn't support $ORIGIN. */
+                    JLI_StrLen(jrepath) + JLI_StrLen(arch) + JLI_StrLen("/lib//jli:") +
+#endif
                     JLI_StrLen(jvmpath) + 52);
-            newpath = new_runpath + JLI_StrLen("LD_LIBRARY_PATH=");
+            newpath = new_runpath + JLI_StrLen(LD_LIBRARY_PATH "=");
 
 
             /*
@@ -619,9 +632,12 @@ CreateExecutionEnvironment(int *pargc, char ***pargv,
                 if (lastslash)
                     *lastslash = '\0';
 
-                sprintf(new_runpath, "LD_LIBRARY_PATH="
+                sprintf(new_runpath, LD_LIBRARY_PATH "="
                         "%s:"
                         "%s/lib/%s:"
+#ifdef AIX
+                        "%s/lib/%s/jli:" /* Needed on AIX because ld doesn't support $ORIGIN. */
+#endif
                         "%s/../lib/%s",
                         jvmpath,
 #ifdef DUAL_MODE
@@ -629,6 +645,9 @@ CreateExecutionEnvironment(int *pargc, char ***pargv,
                         jrepath, GetArchPath(wanted)
 #else /* !DUAL_MODE */
                         jrepath, arch,
+#ifdef AIX
+                        jrepath, arch,
+#endif
                         jrepath, arch
 #endif /* DUAL_MODE */
                         );
@@ -1000,7 +1019,7 @@ void SplashFreeLibrary() {
 int
 ContinueInNewThread0(int (JNICALL *continuation)(void *), jlong stack_size, void * args) {
     int rslt;
-#ifdef __linux__
+#ifndef __solaris__
     pthread_t tid;
     pthread_attr_t attr;
     pthread_attr_init(&attr);
@@ -1025,7 +1044,7 @@ ContinueInNewThread0(int (JNICALL *continuation)(void *), jlong stack_size, void
     }
 
     pthread_attr_destroy(&attr);
-#else /* ! __linux__ */
+#else /* __solaris__ */
     thread_t tid;
     long flags = 0;
     if (thr_create(NULL, stack_size, (void *(*)(void *))continuation, args, flags, &tid) == 0) {
@@ -1036,7 +1055,7 @@ ContinueInNewThread0(int (JNICALL *continuation)(void *), jlong stack_size, void
       /* See above. Continue in current thread if thr_create() failed */
       rslt = continuation(args);
     }
-#endif /* __linux__ */
+#endif /* !__solaris__ */
     return rslt;
 }
 

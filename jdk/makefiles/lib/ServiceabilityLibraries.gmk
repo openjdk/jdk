@@ -344,6 +344,11 @@ BUILD_LIBHPROF_CFLAGS := -I$(JDK_TOPDIR)/src/share/demo/jvmti/hprof \
     -I$(JDK_TOPDIR)/src/$(OPENJDK_TARGET_OS_API_DIR)/npt \
     -I$(JDK_TOPDIR)/src/share/demo/jvmti/java_crw_demo
 
+ifeq ($(OPENJDK_TARGET_OS), aix)
+  BUILD_LIBHPROF_SRC += $(JDK_TOPDIR)/src/aix/porting
+  BUILD_LIBHPROF_CFLAGS += -I$(JDK_TOPDIR)/src/aix/porting
+endif
+
 BUILD_LIBHPROF_LDFLAGS :=
 
 LIBHPROF_OPTIMIZATION := HIGHEST
