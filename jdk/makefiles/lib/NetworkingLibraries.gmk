@@ -37,12 +37,16 @@ endif
 LIBNET_CFLAGS := $(foreach dir, $(LIBNET_SRC_DIRS), -I$(dir))
 
 LIBNET_EXCLUDE_FILES :=
-ifeq (, $(filter $(OPENJDK_TARGET_OS), linux aix))
+ifneq ($(OPENJDK_TARGET_OS), linux)
   LIBNET_EXCLUDE_FILES += linux_close.c
 endif
 
 ifneq ($(OPENJDK_TARGET_OS), macosx)
   LIBNET_EXCLUDE_FILES += bsd_close.c
+endif
+
+ifeq ($(OPENJDK_TARGET_OS), aix)
+  LIBNET_SRC_DIRS += $(JDK_TOPDIR)/src/aix/native/java/net/
 endif
 
 ifeq ($(OPENJDK_TARGET_OS), windows)

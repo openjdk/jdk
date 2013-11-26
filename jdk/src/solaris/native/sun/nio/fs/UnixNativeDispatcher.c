@@ -42,7 +42,7 @@
 #include <strings.h>
 #endif
 
-#ifdef __linux__
+#if defined(__linux__) || defined(_AIX)
 #include <string.h>
 #endif
 
@@ -294,7 +294,13 @@ Java_sun_nio_fs_UnixNativeDispatcher_strerror(JNIEnv* env, jclass this, jint err
     jsize len;
     jbyteArray bytes;
 
+#ifdef _AIX
+    /* strerror() is not thread-safe on AIX so we have to use strerror_r() */
+    char buffer[256];
+    msg = (strerror_r((int)error, buffer, 256) == 0) ? buffer : "Error while calling strerror_r";
+#else
     msg = strerror((int)error);
+#endif
     len = strlen(msg);
     bytes = (*env)->NewByteArray(env, len);
     if (bytes != NULL) {
@@ -674,6 +680,15 @@ Java_sun_nio_fs_UnixNativeDispatcher_readdir(JNIEnv* env, jclass this, jlong val
     /* EINTR not listed as a possible error */
     /* TDB: reentrant version probably not required here */
     res = readdir64_r(dirp, ptr, &result);
+
+#ifdef _AIX
+    /* On AIX, readdir_r() returns EBADF (i.e. '9') and sets 'result' to NULL for the */
+    /* directory stream end. Otherwise, 'errno' will contain the error code. */
+    if (res != 0) {
+        res = (result == NULL && res == EBADF) ? 0 : errno;
+    }
+#endif
+
     if (res != 0) {
         throwUnixException(env, res);
         return NULL;
@@ -877,6 +892,18 @@ Java_sun_nio_fs_UnixNativeDispatcher_statvfs0(JNIEnv* env, jclass this,
     if (err == -1) {
         throwUnixException(env, errno);
     } else {
+#ifdef _AIX
+        /* AIX returns ULONG_MAX in buf.f_blocks for the /proc file system. */
+        /* This is too big for a Java signed long and fools various tests.  */
+        if (buf.f_blocks == ULONG_MAX) {
+            buf.f_blocks = 0;
+        }
+        /* The number of free or available blocks can never exceed the total number of blocks */
+        if (buf.f_blocks == 0) {
+            buf.f_bfree = 0;
+            buf.f_bavail = 0;
+        }
+#endif
         (*env)->SetLongField(env, attrs, attrs_f_frsize, long_to_jlong(buf.f_frsize));
         (*env)->SetLongField(env, attrs, attrs_f_blocks, long_to_jlong(buf.f_blocks));
         (*env)->SetLongField(env, attrs, attrs_f_bfree,  long_to_jlong(buf.f_bfree));

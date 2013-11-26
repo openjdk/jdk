@@ -114,7 +114,9 @@ endif
 
 ifeq ($(OPENJDK_TARGET_OS), aix)
   BUILD_LIBNIO_MAPFILE:=$(JDK_TOPDIR)/makefiles/mapfiles/libnio/mapfile-$(OPENJDK_TARGET_OS)
-  BUILD_LIBNIO_SRC += $(JDK_TOPDIR)/src/aix/native/sun/nio/ch
+  BUILD_LIBNIO_SRC += \
+      $(JDK_TOPDIR)/src/aix/native/sun/nio/ch \
+      $(JDK_TOPDIR)/src/aix/native/sun/nio/fs
   BUILD_LIBNIO_FILES += \
       AixPollPort.c \
       InheritedChannel.c \

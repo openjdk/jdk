@@ -140,7 +140,7 @@ NET_InetAddressToSockaddr(JNIEnv *env, jobject iaObj, int port, struct sockaddr 
 JNIEXPORT jobject JNICALL
 NET_SockaddrToInetAddress(JNIEnv *env, struct sockaddr *him, int *port);
 
-void initLocalAddrTable ();
+void platformInit();
 void parseExclusiveBindProperty(JNIEnv *env);
 
 void

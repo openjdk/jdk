@@ -56,8 +56,8 @@ typedef struct _X11RIPrivate {
     int                 x, y;
 } X11RIPrivate;
 
-#define MAX(a,b) ((a) > (b) ? (a) : (b))
-#define MIN(a,b) ((a) < (b) ? (a) : (b))
+#define XSD_MAX(a,b) ((a) > (b) ? (a) : (b))
+#define XSD_MIN(a,b) ((a) < (b) ? (a) : (b))
 
 static LockFunc X11SD_Lock;
 static GetRasInfoFunc X11SD_GetRasInfo;
@@ -1090,10 +1090,10 @@ X11SD_ClipToRoot(SurfaceDataBounds *b, SurfaceDataBounds *bounds,
     x2 = x1 + DisplayWidth(awt_display, xsdo->configData->awt_visInfo.screen);
     y2 = y1 + DisplayHeight(awt_display, xsdo->configData->awt_visInfo.screen);
 
-    x1 = MAX(bounds->x1, x1);
-    y1 = MAX(bounds->y1, y1);
-    x2 = MIN(bounds->x2, x2);
-    y2 = MIN(bounds->y2, y2);
+    x1 = XSD_MAX(bounds->x1, x1);
+    y1 = XSD_MAX(bounds->y1, y1);
+    x2 = XSD_MIN(bounds->x2, x2);
+    y2 = XSD_MIN(bounds->y2, y2);
     if ((x1 >= x2) || (y1 >= y2)) {
         return FALSE;
     }
