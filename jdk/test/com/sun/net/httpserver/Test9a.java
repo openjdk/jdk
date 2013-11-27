@@ -40,8 +40,9 @@ import javax.net.ssl.*;
 
 public class Test9a extends Test {
 
-    static SSLContext serverCtx, clientCtx;
-    static boolean error = false;
+    static SSLContext serverCtx;
+    static volatile SSLContext clientCtx = null;
+    static volatile boolean error = false;
 
     public static void main (String[] args) throws Exception {
         HttpsServer server = null;
@@ -176,6 +177,7 @@ public class Test9a extends Test {
                 compare (new File(orig), temp);
                 temp.delete();
             } catch (IOException e) {
+                e.printStackTrace();
                 error = true;
             }
         }
