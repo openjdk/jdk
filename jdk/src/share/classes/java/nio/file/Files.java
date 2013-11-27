@@ -284,7 +284,7 @@ public final class Files {
      *   written synchronously to the underlying storage device. (see <a
      *   href="package-summary.html#integrity"> Synchronized I/O file
      *   integrity</a>). </td>
-     * <tr>
+     * </tr>
      * <tr>
      *   <td> {@link StandardOpenOption#DSYNC DSYNC} </td>
      *   <td> Requires that every update to the file's content be written

@@ -120,18 +120,12 @@
 
 # jdk_lang
 
-# 6944188
-java/lang/management/ThreadMXBean/ThreadStateTest.java          generic-all
-
 # 7067973
 java/lang/management/MemoryMXBean/CollectionUsageThreshold.java generic-all
 
 ############################################################################
 
 # jdk_management
-
-# 8010897
-sun/management/HotspotRuntimeMBean/GetSafepointSyncTime.java	macosx-all
 
 # 8028150
 sun/management/jmxremote/bootstrap/RmiSslBootstrapTest.sh	windows-all
@@ -154,13 +148,6 @@ demo/jvmti/compiledMethodLoad/CompiledMethodLoadTest.java	generic-all
 # 7027502
 demo/jvmti/hprof/MonitorTest.java                               generic-all
 
-# 8024423 - JVMTI: GetLoadedClasses doesn't enumerate anonymous classes
-demo/jvmti/hprof/HeapAllTest.java                               generic-all
-demo/jvmti/hprof/HeapBinaryFormatTest.java                      generic-all
-demo/jvmti/hprof/HeapDumpTest.java                              generic-all
-demo/jvmti/hprof/OptionsTest.java                               generic-all
-demo/jvmti/hprof/StackMapTableTest.java                         generic-all
-
 # 8027973
 javax/xml/jaxp/transform/jdk8004476/XSLTExFuncTest.java		windows-all
 
@@ -170,12 +157,6 @@ javax/xml/jaxp/transform/jdk8004476/XSLTExFuncTest.java		windows-all
 
 # Filed 7052625
 com/sun/net/httpserver/bugs/6725892/Test.java                   generic-all
-
-# Filed 7036666
-com/sun/net/httpserver/Test9a.java                              generic-all
-
-# 7102670
-java/net/InetAddress/CheckJNI.java                              linux-all
 
 # failing on vista 32/64 on nightly
 # 7102702
@@ -291,6 +272,9 @@ com/sun/tools/attach/BasicTests.sh                              generic-all
 # 7132203
 sun/jvmstat/monitor/MonitoredVm/CR6672135.java                  generic-all
 
+# 8028474
+sun/jvmstat/monitor/MonitoredVm/MonitorVmStartTerminate.sh      generic-all
+
 # Tests take too long, on sparcs see 7143279
 tools/pack200/CommandLineTests.java                             solaris-all, macosx-all
 tools/pack200/Pack200Test.java                                  solaris-all, macosx-all
@@ -307,9 +291,6 @@ com/sun/jdi/SuspendThreadTest.java                              generic-all
 
 # Filed 6653793
 com/sun/jdi/RedefineCrossEvent.java                             generic-all
-
-# Filed 6402201
-com/sun/jdi/ProcessAttachTest.sh                                generic-all
 
 ############################################################################
 
