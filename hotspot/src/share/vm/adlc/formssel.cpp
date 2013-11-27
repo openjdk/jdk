@@ -648,6 +648,8 @@ bool InstructForm::is_wide_memory_kill(FormDict &globals) const {
   if( strcmp(_matrule->_opType,"MemBarReleaseLock") == 0 ) return true;
   if( strcmp(_matrule->_opType,"MemBarAcquireLock") == 0 ) return true;
   if( strcmp(_matrule->_opType,"MemBarStoreStore") == 0 ) return true;
+  if( strcmp(_matrule->_opType,"StoreFence") == 0 ) return true;
+  if( strcmp(_matrule->_opType,"LoadFence") == 0 ) return true;
 
   return false;
 }
@@ -4054,13 +4056,15 @@ bool MatchRule::is_ideal_fastlock() const {
 bool MatchRule::is_ideal_membar() const {
   if( !_opType ) return false;
   return
-    !strcmp(_opType,"MemBarAcquire"  ) ||
-    !strcmp(_opType,"MemBarRelease"  ) ||
+    !strcmp(_opType,"MemBarAcquire") ||
+    !strcmp(_opType,"MemBarRelease") ||
     !strcmp(_opType,"MemBarAcquireLock") ||
     !strcmp(_opType,"MemBarReleaseLock") ||
-    !strcmp(_opType,"MemBarVolatile" ) ||
-    !strcmp(_opType,"MemBarCPUOrder" ) ||
-    !strcmp(_opType,"MemBarStoreStore" );
+    !strcmp(_opType,"LoadFence" ) ||
+    !strcmp(_opType,"StoreFence") ||
+    !strcmp(_opType,"MemBarVolatile") ||
+    !strcmp(_opType,"MemBarCPUOrder") ||
+    !strcmp(_opType,"MemBarStoreStore");
 }
 
 bool MatchRule::is_ideal_loadPC() const {

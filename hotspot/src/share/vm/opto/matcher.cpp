@@ -2333,7 +2333,7 @@ void Matcher::validate_null_checks( ) {
 bool Matcher::post_store_load_barrier(const Node* vmb) {
   Compile* C = Compile::current();
   assert(vmb->is_MemBar(), "");
-  assert(vmb->Opcode() != Op_MemBarAcquire, "");
+  assert(vmb->Opcode() != Op_MemBarAcquire && vmb->Opcode() != Op_LoadFence, "");
   const MemBarNode* membar = vmb->as_MemBar();
 
   // Get the Ideal Proj node, ctrl, that can be used to iterate forward
@@ -2378,7 +2378,7 @@ bool Matcher::post_store_load_barrier(const Node* vmb) {
     if (x->is_MemBar()) {
       // We must retain this membar if there is an upcoming volatile
       // load, which will be followed by acquire membar.
-      if (xop == Op_MemBarAcquire) {
+      if (xop == Op_MemBarAcquire || xop == Op_LoadFence) {
         return false;
       } else {
         // For other kinds of barriers, check by pretending we

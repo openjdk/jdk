@@ -3105,10 +3105,10 @@ bool LibraryCallKit::inline_unsafe_fence(vmIntrinsics::ID id) {
   insert_mem_bar(Op_MemBarCPUOrder);
   switch(id) {
     case vmIntrinsics::_loadFence:
-      insert_mem_bar(Op_MemBarAcquire);
+      insert_mem_bar(Op_LoadFence);
       return true;
     case vmIntrinsics::_storeFence:
-      insert_mem_bar(Op_MemBarRelease);
+      insert_mem_bar(Op_StoreFence);
       return true;
     case vmIntrinsics::_fullFence:
       insert_mem_bar(Op_MemBarVolatile);

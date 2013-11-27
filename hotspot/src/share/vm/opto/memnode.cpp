@@ -1002,9 +1002,13 @@ Node* MemNode::can_see_stored_value(Node* st, PhaseTransform* phase) const {
     // a synchronized region.
     while (current->is_Proj()) {
       int opc = current->in(0)->Opcode();
-      if ((final && (opc == Op_MemBarAcquire || opc == Op_MemBarAcquireLock)) ||
-          opc == Op_MemBarRelease || opc == Op_MemBarCPUOrder ||
-          opc == Op_MemBarReleaseLock) {
+      if ((final && (opc == Op_MemBarAcquire ||
+                     opc == Op_MemBarAcquireLock ||
+                     opc == Op_LoadFence)) ||
+          opc == Op_MemBarRelease ||
+          opc == Op_StoreFence ||
+          opc == Op_MemBarReleaseLock ||
+          opc == Op_MemBarCPUOrder) {
         Node* mem = current->in(0)->in(TypeFunc::Memory);
         if (mem->is_MergeMem()) {
           MergeMemNode* merge = mem->as_MergeMem();
@@ -2973,15 +2977,17 @@ uint MemBarNode::cmp( const Node &n ) const {
 //------------------------------make-------------------------------------------
 MemBarNode* MemBarNode::make(Compile* C, int opcode, int atp, Node* pn) {
   switch (opcode) {
-  case Op_MemBarAcquire:   return new(C) MemBarAcquireNode(C,  atp, pn);
-  case Op_MemBarRelease:   return new(C) MemBarReleaseNode(C,  atp, pn);
-  case Op_MemBarAcquireLock: return new(C) MemBarAcquireLockNode(C,  atp, pn);
-  case Op_MemBarReleaseLock: return new(C) MemBarReleaseLockNode(C,  atp, pn);
-  case Op_MemBarVolatile:  return new(C) MemBarVolatileNode(C, atp, pn);
-  case Op_MemBarCPUOrder:  return new(C) MemBarCPUOrderNode(C, atp, pn);
-  case Op_Initialize:      return new(C) InitializeNode(C,     atp, pn);
-  case Op_MemBarStoreStore: return new(C) MemBarStoreStoreNode(C,  atp, pn);
-  default:                 ShouldNotReachHere(); return NULL;
+  case Op_MemBarAcquire:     return new(C) MemBarAcquireNode(C, atp, pn);
+  case Op_LoadFence:         return new(C) LoadFenceNode(C, atp, pn);
+  case Op_MemBarRelease:     return new(C) MemBarReleaseNode(C, atp, pn);
+  case Op_StoreFence:        return new(C) StoreFenceNode(C, atp, pn);
+  case Op_MemBarAcquireLock: return new(C) MemBarAcquireLockNode(C, atp, pn);
+  case Op_MemBarReleaseLock: return new(C) MemBarReleaseLockNode(C, atp, pn);
+  case Op_MemBarVolatile:    return new(C) MemBarVolatileNode(C, atp, pn);
+  case Op_MemBarCPUOrder:    return new(C) MemBarCPUOrderNode(C, atp, pn);
+  case Op_Initialize:        return new(C) InitializeNode(C, atp, pn);
+  case Op_MemBarStoreStore:  return new(C) MemBarStoreStoreNode(C, atp, pn);
+  default: ShouldNotReachHere(); return NULL;
   }
 }
 

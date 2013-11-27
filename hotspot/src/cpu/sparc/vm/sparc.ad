@@ -6651,6 +6651,7 @@ instruct decodeKlass_not_null(iRegP dst, iRegN src) %{
 
 instruct membar_acquire() %{
   match(MemBarAcquire);
+  match(LoadFence);
   ins_cost(4*MEMORY_REF_COST);
 
   size(0);
@@ -6671,6 +6672,7 @@ instruct membar_acquire_lock() %{
 
 instruct membar_release() %{
   match(MemBarRelease);
+  match(StoreFence);
   ins_cost(4*MEMORY_REF_COST);
 
   size(0);
