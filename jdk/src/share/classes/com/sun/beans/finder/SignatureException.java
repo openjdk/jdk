@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,25 +22,20 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+package com.sun.beans.finder;
 
-#import <AppKit/AppKit.h>
-#import "jni.h"
+final class SignatureException extends RuntimeException {
+    SignatureException(Throwable cause) {
+        super(cause);
+    }
 
-@interface CClipboard : NSObject {
-    jobject fClipboardOwner;
-
-    // Track pasteboard changes. Initialized once at the start, and then updated
-    // on an application resume event.  If it's different than the last time we claimed
-    // the clipboard that means we lost the clipboard to someone else.
-    NSInteger fChangeCount;
+    NoSuchMethodException toNoSuchMethodException(String message) {
+        Throwable throwable = getCause();
+        if (throwable instanceof NoSuchMethodException) {
+            return (NoSuchMethodException) throwable;
+        }
+        NoSuchMethodException exception = new NoSuchMethodException(message);
+        exception.initCause(throwable);
+        return exception;
+    }
 }
-
-+ (CClipboard *) sharedClipboard;
-
-- (void) javaDeclareTypes:(NSArray *)inTypes withOwner:(jobject)inClipboard jniEnv:(JNIEnv *)inEnv;
-- (void) javaSetData:(NSData *)inData forType:(NSString *) inFormat;
-
-- (NSArray *) javaGetTypes;
-- (NSData *) javaGetDataForType:(NSString *)inFormat;
-
-@end
