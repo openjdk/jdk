@@ -994,12 +994,34 @@ public:
   virtual int Opcode() const;
 };
 
+// "Acquire" - no following ref can move before (but earlier refs can
+// follow, like an early Load stalled in cache).  Requires multi-cpu
+// visibility.  Inserted independ of any load, as required
+// for intrinsic sun.misc.Unsafe.loadFence().
+class LoadFenceNode: public MemBarNode {
+public:
+  LoadFenceNode(Compile* C, int alias_idx, Node* precedent)
+    : MemBarNode(C, alias_idx, precedent) {}
+  virtual int Opcode() const;
+};
+
 // "Release" - no earlier ref can move after (but later refs can move
 // up, like a speculative pipelined cache-hitting Load).  Requires
 // multi-cpu visibility.  Inserted before a volatile store.
 class MemBarReleaseNode: public MemBarNode {
 public:
   MemBarReleaseNode(Compile* C, int alias_idx, Node* precedent)
+    : MemBarNode(C, alias_idx, precedent) {}
+  virtual int Opcode() const;
+};
+
+// "Release" - no earlier ref can move after (but later refs can move
+// up, like a speculative pipelined cache-hitting Load).  Requires
+// multi-cpu visibility.  Inserted independent of any store, as required
+// for intrinsic sun.misc.Unsafe.storeFence().
+class StoreFenceNode: public MemBarNode {
+public:
+  StoreFenceNode(Compile* C, int alias_idx, Node* precedent)
     : MemBarNode(C, alias_idx, precedent) {}
   virtual int Opcode() const;
 };

@@ -6345,6 +6345,7 @@ instruct popCountL_mem(rRegI dst, memory mem, rFlagsReg cr) %{
 instruct membar_acquire()
 %{
   match(MemBarAcquire);
+  match(LoadFence);
   ins_cost(0);
 
   size(0);
@@ -6367,6 +6368,7 @@ instruct membar_acquire_lock()
 instruct membar_release()
 %{
   match(MemBarRelease);
+  match(StoreFence);
   ins_cost(0);
 
   size(0);
