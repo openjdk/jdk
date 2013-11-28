@@ -76,11 +76,13 @@ class NativeInstruction VALUE_OBJ_CLASS_SPEC {
   }
   static bool is_sigill_zombie_not_entrant_at(address addr);
 
+#ifdef COMPILER2
   // SIGTRAP-based implicit range checks
   bool is_sigtrap_range_check() {
     assert(UseSIGTRAP && TrapBasedRangeChecks, "precondition");
     return MacroAssembler::is_trap_range_check(long_at(0));
   }
+#endif
 
   // 'should not reach here'.
   bool is_sigtrap_should_not_reach_here() {

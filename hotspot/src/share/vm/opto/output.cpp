@@ -1459,6 +1459,12 @@ void Compile::fill_buffer(CodeBuffer* cb, uint* blk_starts) {
           // Intel all the time, with add-to-memory kind of opcodes.
           previous_offset = current_offset;
         }
+
+        // Not an else-if!
+        // If this is a trap based cmp then add its offset to the list.
+        if (mach->is_TrapBasedCheckNode()) {
+          inct_starts[inct_cnt++] = current_offset;
+        }
       }
 
       // Verify that there is sufficient space remaining
@@ -1721,6 +1727,12 @@ void Compile::FillExceptionTables(uint cnt, uint *call_returns, uint *inct_start
 
     // Handle implicit null exception table updates
     if (n->is_MachNullCheck()) {
+      uint block_num = block->non_connector_successor(0)->_pre_order;
+      _inc_table.append(inct_starts[inct_cnt++], blk_labels[block_num].loc_pos());
+      continue;
+    }
+    // Handle implicit exception table updates: trap instructions.
+    if (n->is_Mach() && n->as_Mach()->is_TrapBasedCheckNode()) {
       uint block_num = block->non_connector_successor(0)->_pre_order;
       _inc_table.append(inct_starts[inct_cnt++], blk_labels[block_num].loc_pos());
       continue;

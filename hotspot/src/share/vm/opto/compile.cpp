@@ -860,6 +860,10 @@ Compile::Compile( ciEnv* ci_env, C2Compiler* compiler, ciMethod* target, int osr
   int next_slot = _orig_pc_slot + (sizeof(address) / VMRegImpl::stack_slot_size);
   set_fixed_slots(next_slot);
 
+  // Compute when to use implicit null checks. Used by matching trap based
+  // nodes and NullCheck optimization.
+  set_allowed_deopt_reasons();
+
   // Now generate code
   Code_Gen();
   if (failing())  return;
@@ -948,7 +952,8 @@ Compile::Compile( ciEnv* ci_env,
     _inlining_incrementally(false),
     _print_inlining_list(NULL),
     _print_inlining_idx(0),
-    _preserve_jvm_state(0) {
+    _preserve_jvm_state(0),
+    _allowed_reasons(0) {
   C = this;
 
 #ifndef PRODUCT
@@ -3350,6 +3355,19 @@ bool Compile::too_many_recompiles(ciMethod* method,
   }
 }
 
+// Compute when not to trap. Used by matching trap based nodes and
+// NullCheck optimization.
+void Compile::set_allowed_deopt_reasons() {
+  _allowed_reasons = 0;
+  if (is_method_compilation()) {
+    for (int rs = (int)Deoptimization::Reason_none+1; rs < Compile::trapHistLength; rs++) {
+      assert(rs < BitsPerInt, "recode bit map");
+      if (!too_many_traps((Deoptimization::DeoptReason) rs)) {
+        _allowed_reasons |= nth_bit(rs);
+      }
+    }
+  }
+}
 
 #ifndef PRODUCT
 //------------------------------verify_graph_edges---------------------------

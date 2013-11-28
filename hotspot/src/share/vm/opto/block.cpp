@@ -530,18 +530,27 @@ void PhaseCFG::insert_goto_at(uint block_no, uint succ_no) {
 
 // Does this block end in a multiway branch that cannot have the default case
 // flipped for another case?
-static bool no_flip_branch( Block *b ) {
+static bool no_flip_branch(Block *b) {
   int branch_idx = b->number_of_nodes() - b->_num_succs-1;
-  if( branch_idx < 1 ) return false;
-  Node *bra = b->get_node(branch_idx);
-  if( bra->is_Catch() )
+  if (branch_idx < 1) {
+    return false;
+  }
+  Node *branch = b->get_node(branch_idx);
+  if (branch->is_Catch()) {
     return true;
-  if( bra->is_Mach() ) {
-    if( bra->is_MachNullCheck() )
+  }
+  if (branch->is_Mach()) {
+    if (branch->is_MachNullCheck()) {
       return true;
-    int iop = bra->as_Mach()->ideal_Opcode();
-    if( iop == Op_FastLock || iop == Op_FastUnlock )
+    }
+    int iop = branch->as_Mach()->ideal_Opcode();
+    if (iop == Op_FastLock || iop == Op_FastUnlock) {
       return true;
+    }
+    // Don't flip if branch has an implicit check.
+    if (branch->as_Mach()->is_TrapBasedCheckNode()) {
+      return true;
+    }
   }
   return false;
 }
@@ -700,6 +709,57 @@ void PhaseCFG::remove_empty_blocks() {
   } // End of for all blocks
 }
 
+Block *PhaseCFG::fixup_trap_based_check(Node *branch, Block *block, int block_pos, Block *bnext) {
+  // Trap based checks must fall through to the successor with
+  // PROB_ALWAYS.
+  // They should be an If with 2 successors.
+  assert(branch->is_MachIf(),   "must be If");
+  assert(block->_num_succs == 2, "must have 2 successors");
+
+  // Get the If node and the projection for the first successor.
+  MachIfNode *iff   = block->get_node(block->number_of_nodes()-3)->as_MachIf();
+  ProjNode   *proj0 = block->get_node(block->number_of_nodes()-2)->as_Proj();
+  ProjNode   *proj1 = block->get_node(block->number_of_nodes()-1)->as_Proj();
+  ProjNode   *projt = (proj0->Opcode() == Op_IfTrue)  ? proj0 : proj1;
+  ProjNode   *projf = (proj0->Opcode() == Op_IfFalse) ? proj0 : proj1;
+
+  // Assert that proj0 and succs[0] match up. Similarly for proj1 and succs[1].
+  assert(proj0->raw_out(0) == block->_succs[0]->head(), "Mismatch successor 0");
+  assert(proj1->raw_out(0) == block->_succs[1]->head(), "Mismatch successor 1");
+
+  ProjNode *proj_always;
+  ProjNode *proj_never;
+  // We must negate the branch if the implicit check doesn't follow
+  // the branch's TRUE path. Then, the new TRUE branch target will
+  // be the old FALSE branch target.
+  if (iff->_prob <= 2*PROB_NEVER) {   // There are small rounding errors.
+    proj_never  = projt;
+    proj_always = projf;
+  } else {
+    // We must negate the branch if the trap doesn't follow the
+    // branch's TRUE path. Then, the new TRUE branch target will
+    // be the old FALSE branch target.
+    proj_never  = projf;
+    proj_always = projt;
+    iff->negate();
+  }
+  assert(iff->_prob <= 2*PROB_NEVER, "Trap based checks are expected to trap never!");
+  // Map the successors properly
+  block->_succs.map(0, get_block_for_node(proj_never ->raw_out(0)));   // The target of the trap.
+  block->_succs.map(1, get_block_for_node(proj_always->raw_out(0)));   // The fall through target.
+
+  // Place the fall through block after this block.
+  Block *bs1 = block->non_connector_successor(1);
+  if (bs1 != bnext && move_to_next(bs1, block_pos)) {
+    bnext = bs1;
+  }
+  // If the fall through block still is not the next block, insert a goto.
+  if (bs1 != bnext) {
+    insert_goto_at(block_pos, 1);
+  }
+  return bnext;
+}
+
 // Fix up the final control flow for basic blocks.
 void PhaseCFG::fixup_flow() {
   // Fixup final control flow for the blocks.  Remove jump-to-next
@@ -723,25 +783,39 @@ void PhaseCFG::fixup_flow() {
     // Check for multi-way branches where I cannot negate the test to
     // exchange the true and false targets.
     if (no_flip_branch(block)) {
-      // Find fall through case - if must fall into its target
+      // Find fall through case - if must fall into its target.
+      // Get the index of the branch's first successor.
       int branch_idx = block->number_of_nodes() - block->_num_succs;
-      for (uint j2 = 0; j2 < block->_num_succs; j2++) {
-        const ProjNode* p = block->get_node(branch_idx + j2)->as_Proj();
-        if (p->_con == 0) {
-          // successor j2 is fall through case
-          if (block->non_connector_successor(j2) != bnext) {
-            // but it is not the next block => insert a goto
-            insert_goto_at(i, j2);
+
+      // The branch is 1 before the branch's first successor.
+      Node *branch = block->get_node(branch_idx-1);
+
+      // Handle no-flip branches which have implicit checks and which require
+      // special block ordering and individual semantics of the 'fall through
+      // case'.
+      if ((TrapBasedNullChecks || TrapBasedRangeChecks) &&
+          branch->is_Mach() && branch->as_Mach()->is_TrapBasedCheckNode()) {
+        bnext = fixup_trap_based_check(branch, block, i, bnext);
+      } else {
+        // Else, default handling for no-flip branches
+        for (uint j2 = 0; j2 < block->_num_succs; j2++) {
+          const ProjNode* p = block->get_node(branch_idx + j2)->as_Proj();
+          if (p->_con == 0) {
+            // successor j2 is fall through case
+            if (block->non_connector_successor(j2) != bnext) {
+              // but it is not the next block => insert a goto
+              insert_goto_at(i, j2);
+            }
+            // Put taken branch in slot 0
+            if (j2 == 0 && block->_num_succs == 2) {
+              // Flip targets in succs map
+              Block *tbs0 = block->_succs[0];
+              Block *tbs1 = block->_succs[1];
+              block->_succs.map(0, tbs1);
+              block->_succs.map(1, tbs0);
+            }
+            break;
           }
-          // Put taken branch in slot 0
-          if (j2 == 0 && block->_num_succs == 2) {
-            // Flip targets in succs map
-            Block *tbs0 = block->_succs[0];
-            Block *tbs1 = block->_succs[1];
-            block->_succs.map(0, tbs1);
-            block->_succs.map(1, tbs0);
-          }
-          break;
         }
       }
 

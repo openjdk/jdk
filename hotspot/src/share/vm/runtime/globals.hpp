@@ -2500,6 +2500,12 @@ class CommandLineFlags {
   develop_pd(bool, ImplicitNullChecks,                                      \
           "Generate code for implicit null checks")                         \
                                                                             \
+  product_pd(bool, TrapBasedNullChecks,                                     \
+          "Generate code for null checks that uses a cmp and trap "         \
+          "instruction raising SIGTRAP.  This is only used if an access to" \
+          "null (+offset) will not raise a SIGSEGV, i.e.,"                  \
+          "ImplicitNullChecks don't work (PPC64).")                         \
+                                                                            \
   product(bool, PrintSafepointStatistics, false,                            \
           "Print statistics about safepoint synchronization")               \
                                                                             \

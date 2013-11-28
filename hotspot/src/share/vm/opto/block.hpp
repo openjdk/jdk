@@ -590,6 +590,7 @@ class PhaseCFG : public Phase {
 
   // Remove empty basic blocks
   void remove_empty_blocks();
+  Block *fixup_trap_based_check(Node *branch, Block *block, int block_pos, Block *bnext);
   void fixup_flow();
 
   // Insert a node into a block at index and map the node to the block

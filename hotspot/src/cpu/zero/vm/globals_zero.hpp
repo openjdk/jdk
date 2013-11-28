@@ -38,6 +38,7 @@ define_pd_global(bool,  CountInterpCalls,     true);
 define_pd_global(bool,  NeedsDeoptSuspend,    false);
 
 define_pd_global(bool,  ImplicitNullChecks,   true);
+define_pd_global(bool,  TrapBasedNullChecks,  false);
 define_pd_global(bool,  UncommonNullCast,     true);
 
 define_pd_global(intx,  CodeEntryAlignment,   32);
