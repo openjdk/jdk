@@ -485,6 +485,8 @@ public:
   // retain the Node to act as a compiler ordering barrier.
   static bool post_store_load_barrier(const Node* mb);
 
+  // Does n lead to an uncommon trap that can cause deoptimization?
+  static bool branches_to_uncommon_trap(const Node *n);
 
 #ifdef ASSERT
   void dump_old2new_map();      // machine-independent to machine-dependent

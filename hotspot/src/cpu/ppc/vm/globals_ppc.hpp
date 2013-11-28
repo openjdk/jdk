@@ -38,6 +38,7 @@ define_pd_global(bool, NeedsDeoptSuspend,     false); // Only register window ma
 
 
 define_pd_global(bool, ImplicitNullChecks,    true);  // Generate code for implicit null checks.
+define_pd_global(bool, TrapBasedNullChecks,   true);
 define_pd_global(bool, UncommonNullCast,      true);  // Uncommon-trap NULLs passed to check cast.
 
 // Use large code-entry alignment.
@@ -100,12 +101,6 @@ define_pd_global(uintx, TypeProfileLevel, 0);
   product(bool, TrapBasedNotEntrantChecks, true,                            \
           "Raise and handle SIGTRAP if calling not entrant or zombie"       \
           " method.")                                                       \
-  product(bool, TrapBasedNullChecks, true,                                  \
-          "Generate code for null checks that uses a cmp and trap "         \
-          "instruction raising SIGTRAP.  This is only used if an access to" \
-          "null (+offset) will not raise a SIGSEGV.")                       \
-  product(bool, TrapBasedRangeChecks, true,                                 \
-          "Raise and handle SIGTRAP if array out of bounds check fails.")   \
   product(bool, TraceTraps, false, "Trace all traps the signal handler"     \
           "handles.")                                                       \
                                                                             \

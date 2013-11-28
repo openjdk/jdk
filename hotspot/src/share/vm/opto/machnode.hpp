@@ -315,6 +315,9 @@ public:
   static const Pipeline *pipeline_class();
   virtual const Pipeline *pipeline() const;
 
+  // Returns true if this node is a check that can be implemented with a trap.
+  virtual bool is_TrapBasedCheckNode() const { return false; }
+
 #ifndef PRODUCT
   virtual const char *Name() const = 0; // Machine-specific name
   virtual void dump_spec(outputStream *st) const; // Print per-node info

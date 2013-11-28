@@ -77,14 +77,17 @@ void VM_Version::initialize() {
     MSG(TrapBasedICMissChecks);
     MSG(TrapBasedNotEntrantChecks);
     MSG(TrapBasedNullChecks);
-    MSG(TrapBasedRangeChecks);
     FLAG_SET_ERGO(bool, TrapBasedNotEntrantChecks, false);
     FLAG_SET_ERGO(bool, TrapBasedNullChecks,       false);
     FLAG_SET_ERGO(bool, TrapBasedICMissChecks,     false);
-    FLAG_SET_ERGO(bool, TrapBasedRangeChecks,      false);
   }
 
 #ifdef COMPILER2
+  if (!UseSIGTRAP) {
+    MSG(TrapBasedRangeChecks);
+    FLAG_SET_ERGO(bool, TrapBasedRangeChecks, false);
+  }
+
   // On Power6 test for section size.
   if (PowerArchitecturePPC64 == 6)
     determine_section_size();
