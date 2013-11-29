@@ -19,34 +19,13 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
+ *
  */
+package p;
 
-/*
- * @ignore 8028095
- * @test
- * @key regression
- * @bug 8020675
- * @summary make sure there is no fatal error if a class is loaded from an invalid jar file which is in the bootclasspath
- * @library /testlibrary
- * @build TestForName
- * @build LoadClassNegative
- * @run main LoadClassNegative
+/**
+ * Test class -- implements I, extends E, both define m, so all should be well.
  */
+public class Dok extends p.E {
 
-import java.io.File;
-import com.oracle.java.testlibrary.*;
-
-public class LoadClassNegative {
-
-  public static void main(String args[]) throws Exception {
-    String bootCP = "-Xbootclasspath/a:" + System.getProperty("test.src")
-                       + File.separator + "dummy.jar";
-    ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
-        bootCP,
-        "TestForName");
-
-    OutputAnalyzer output = new OutputAnalyzer(pb.start());
-    output.shouldContain("ClassNotFoundException");
-    output.shouldHaveExitValue(0);
-  }
 }
