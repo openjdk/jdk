@@ -296,9 +296,6 @@ com/sun/jdi/RedefineCrossEvent.java                             generic-all
 
 # jdk_util
 
-# Filed 6933803
-java/util/concurrent/ThreadPoolExecutor/CoreThreadTimeOut.java  generic-all
-
 # Filed 6772009
 java/util/concurrent/locks/ReentrantLock/CancelledLockLoops.java generic-all
 
