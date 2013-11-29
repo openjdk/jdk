@@ -19,34 +19,17 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
+ *
  */
 
-/*
- * @ignore 8028095
- * @test
- * @key regression
- * @bug 8020675
- * @summary make sure there is no fatal error if a class is loaded from an invalid jar file which is in the bootclasspath
- * @library /testlibrary
- * @build TestForName
- * @build LoadClassNegative
- * @run main LoadClassNegative
+package p;
+
+/**
+ * Test class -- implements I, which provides default for m, but this class
+ * declares it abstract which (should) hide the interface default, and throw
+ * an abstract method error if called.
+ *
  */
-
-import java.io.File;
-import com.oracle.java.testlibrary.*;
-
-public class LoadClassNegative {
-
-  public static void main(String args[]) throws Exception {
-    String bootCP = "-Xbootclasspath/a:" + System.getProperty("test.src")
-                       + File.separator + "dummy.jar";
-    ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
-        bootCP,
-        "TestForName");
-
-    OutputAnalyzer output = new OutputAnalyzer(pb.start());
-    output.shouldContain("ClassNotFoundException");
-    output.shouldHaveExitValue(0);
-  }
+public abstract class C implements p.I {
+       public abstract int m();
 }

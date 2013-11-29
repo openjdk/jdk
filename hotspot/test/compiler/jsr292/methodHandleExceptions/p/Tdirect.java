@@ -22,12 +22,26 @@
  *
  */
 
+package p;
+
 /**
- * Test class -- implements I, which provides default for m, but this class
- * declares it abstract which (should) hide the interface default, and throw
- * an abstract method error if it is called (calling it requires bytecode hacking
- * or inconsistent compilation).
+ * Invokes I.m directly using invokeInterface bytecodes.
  */
-public abstract class C implements I {
-       public abstract int m();
+public class Tdirect {
+     public static int test(p.I i) {
+         int accum = 0;
+         for (int j = 0; j < 100000; j++) {
+             accum += i.m();
+         }
+        return accum;
+    }
+
+     public static int test(p.I ii, byte b, char c, short s, int i, long l,
+             Object o1, Object o2, Object o3, Object o4, Object o5, Object o6) {
+         int accum = 0;
+         for (int j = 0; j < 100000; j++) {
+           accum += ii.m(b,c,s,i,l,o1,o2,o3,o4,o5,o6);
+         }
+         return accum;
+     }
 }
