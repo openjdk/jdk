@@ -35,6 +35,7 @@
 #include "gc_implementation/g1/g1YCTypes.hpp"
 #endif
 #include "utilities/macros.hpp"
+#include "utilities/ticks.hpp"
 
 typedef uint GCId;
 
@@ -47,8 +48,6 @@ class TimePartitions;
 class BoolObjectClosure;
 
 class SharedGCInfo VALUE_OBJ_CLASS_SPEC {
-  static const jlong UNSET_TIMESTAMP = -1;
-
  public:
   static const GCId UNSET_GCID = (GCId)-1;
 
@@ -56,23 +55,30 @@ class SharedGCInfo VALUE_OBJ_CLASS_SPEC {
   GCId _id;
   GCName _name;
   GCCause::Cause _cause;
-  jlong _start_timestamp;
-  jlong _end_timestamp;
-  jlong _sum_of_pauses;
-  jlong _longest_pause;
+  Ticks     _start_timestamp;
+  Ticks     _end_timestamp;
+  Tickspan  _sum_of_pauses;
+  Tickspan  _longest_pause;
 
  public:
-  SharedGCInfo(GCName name) : _id(UNSET_GCID), _name(name), _cause(GCCause::_last_gc_cause),
-      _start_timestamp(UNSET_TIMESTAMP), _end_timestamp(UNSET_TIMESTAMP), _sum_of_pauses(0), _longest_pause(0) {}
+  SharedGCInfo(GCName name) :
+    _id(UNSET_GCID),
+    _name(name),
+    _cause(GCCause::_last_gc_cause),
+    _start_timestamp(),
+    _end_timestamp(),
+    _sum_of_pauses(),
+    _longest_pause() {
+  }
 
   void set_id(GCId id) { _id = id; }
   GCId id() const { return _id; }
 
-  void set_start_timestamp(jlong timestamp) { _start_timestamp = timestamp; }
-  jlong start_timestamp() const { return _start_timestamp; }
+  void set_start_timestamp(const Ticks& timestamp) { _start_timestamp = timestamp; }
+  const Ticks start_timestamp() const { return _start_timestamp; }
 
-  void set_end_timestamp(jlong timestamp) { _end_timestamp = timestamp; }
-  jlong end_timestamp() const { return _end_timestamp; }
+  void set_end_timestamp(const Ticks& timestamp) { _end_timestamp = timestamp; }
+  const Ticks end_timestamp() const { return _end_timestamp; }
 
   void set_name(GCName name) { _name = name; }
   GCName name() const { return _name; }
@@ -80,11 +86,11 @@ class SharedGCInfo VALUE_OBJ_CLASS_SPEC {
   void set_cause(GCCause::Cause cause) { _cause = cause; }
   GCCause::Cause cause() const { return _cause; }
 
-  void set_sum_of_pauses(jlong duration) { _sum_of_pauses = duration; }
-  jlong sum_of_pauses() const { return _sum_of_pauses; }
+  void set_sum_of_pauses(const Tickspan& duration) { _sum_of_pauses = duration; }
+  const Tickspan sum_of_pauses() const { return _sum_of_pauses; }
 
-  void set_longest_pause(jlong duration) { _longest_pause = duration; }
-  jlong longest_pause() const { return _longest_pause; }
+  void set_longest_pause(const Tickspan& duration) { _longest_pause = duration; }
+  const Tickspan longest_pause() const { return _longest_pause; }
 };
 
 class ParallelOldGCInfo VALUE_OBJ_CLASS_SPEC {
@@ -116,8 +122,8 @@ class GCTracer : public ResourceObj {
   SharedGCInfo _shared_gc_info;
 
  public:
-  void report_gc_start(GCCause::Cause cause, jlong timestamp);
-  void report_gc_end(jlong timestamp, TimePartitions* time_partitions);
+  void report_gc_start(GCCause::Cause cause, const Ticks& timestamp);
+  void report_gc_end(const Ticks& timestamp, TimePartitions* time_partitions);
   void report_gc_heap_summary(GCWhen::Type when, const GCHeapSummary& heap_summary, const MetaspaceSummary& meta_space_summary) const;
   void report_gc_reference_stats(const ReferenceProcessorStats& rp) const;
   void report_object_count_after_gc(BoolObjectClosure* object_filter) NOT_SERVICES_RETURN;
@@ -125,8 +131,8 @@ class GCTracer : public ResourceObj {
 
  protected:
   GCTracer(GCName name) : _shared_gc_info(name) {}
-  virtual void report_gc_start_impl(GCCause::Cause cause, jlong timestamp);
-  virtual void report_gc_end_impl(jlong timestamp, TimePartitions* time_partitions);
+  virtual void report_gc_start_impl(GCCause::Cause cause, const Ticks& timestamp);
+  virtual void report_gc_end_impl(const Ticks& timestamp, TimePartitions* time_partitions);
 
  private:
   void send_garbage_collection_event() const;
@@ -143,7 +149,7 @@ class YoungGCTracer : public GCTracer {
 
  protected:
   YoungGCTracer(GCName name) : GCTracer(name), _tenuring_threshold(UNSET_TENURING_THRESHOLD) {}
-  virtual void report_gc_end_impl(jlong timestamp, TimePartitions* time_partitions);
+  virtual void report_gc_end_impl(const Ticks& timestamp, TimePartitions* time_partitions);
 
  public:
   void report_promotion_failed(const PromotionFailedInfo& pf_info);
@@ -157,7 +163,7 @@ class YoungGCTracer : public GCTracer {
 class OldGCTracer : public GCTracer {
  protected:
   OldGCTracer(GCName name) : GCTracer(name) {}
-  virtual void report_gc_end_impl(jlong timestamp, TimePartitions* time_partitions);
+  virtual void report_gc_end_impl(const Ticks& timestamp, TimePartitions* time_partitions);
 
  public:
   void report_concurrent_mode_failure();
@@ -175,7 +181,7 @@ class ParallelOldTracer : public OldGCTracer {
   void report_dense_prefix(void* dense_prefix);
 
  protected:
-  void report_gc_end_impl(jlong timestamp, TimePartitions* time_partitions);
+  void report_gc_end_impl(const Ticks& timestamp, TimePartitions* time_partitions);
 
  private:
   void send_parallel_old_event() const;
@@ -209,7 +215,7 @@ class G1NewTracer : public YoungGCTracer {
   G1NewTracer() : YoungGCTracer(G1New) {}
 
   void report_yc_type(G1YCType type);
-  void report_gc_end_impl(jlong timestamp, TimePartitions* time_partitions);
+  void report_gc_end_impl(const Ticks& timestamp, TimePartitions* time_partitions);
   void report_evacuation_info(EvacuationInfo* info);
   void report_evacuation_failed(EvacuationFailedInfo& ef_info);
 

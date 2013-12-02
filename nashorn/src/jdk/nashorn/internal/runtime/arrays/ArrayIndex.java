@@ -27,6 +27,7 @@ package jdk.nashorn.internal.runtime.arrays;
 
 import jdk.nashorn.internal.runtime.ConsString;
 import jdk.nashorn.internal.runtime.JSType;
+import jdk.nashorn.internal.runtime.ScriptObject;
 
 /**
  * Array index computation helpers. that both throw exceptions or return
@@ -80,7 +81,12 @@ public final class ArrayIndex {
      * Returns a valid array index in an int, if the object represents one. This
      * routine needs to perform quickly since all keys are tested with it.
      *
-     * @param  key key to check for array index
+     * <p>The {@code key} parameter must be a JavaScript primitive type, i.e. one of
+     * {@code String}, {@code Number}, {@code Boolean}, {@code null}, or {@code undefined}.
+     * {@code ScriptObject} instances should be converted to primitive with
+     * {@code String.class} hint before being passed to this method.</p>
+     *
+     * @param  key key to check for array index.
      * @return the array index, or {@code -1} if {@code key} does not represent a valid index.
      *         Note that negative return values other than {@code -1} are considered valid and can be converted to
      *         the actual index using {@link #toLongIndex(int)}.
@@ -88,15 +94,28 @@ public final class ArrayIndex {
     public static int getArrayIndex(final Object key) {
         if (key instanceof Integer) {
             return getArrayIndex(((Integer) key).intValue());
-        } else if (key instanceof Number) {
-            return getArrayIndex(((Number) key).doubleValue());
+        } else if (key instanceof Double) {
+            return getArrayIndex(((Double) key).doubleValue());
         } else if (key instanceof String) {
             return (int)fromString((String) key);
+        } else if (key instanceof Long) {
+            return getArrayIndex(((Long) key).longValue());
         } else if (key instanceof ConsString) {
             return (int)fromString(key.toString());
         }
 
+        assert !(key instanceof ScriptObject);
         return INVALID_ARRAY_INDEX;
+    }
+
+    /**
+     * Returns a valid array index in an int, if {@code key} represents one.
+     *
+     * @param key key to check
+     * @return the array index, or {@code -1} if {@code key} is not a valid array index.
+     */
+    public static int getArrayIndex(final int key) {
+        return (key >= 0) ? key : INVALID_ARRAY_INDEX;
     }
 
     /**
@@ -129,10 +148,7 @@ public final class ArrayIndex {
      */
     public static int getArrayIndex(final double key) {
         if (JSType.isRepresentableAsInt(key)) {
-            final int intKey = (int)key;
-            if (intKey >= 0) {
-                return intKey;
-            }
+            return getArrayIndex((int) key);
         } else if (JSType.isRepresentableAsLong(key)) {
             return getArrayIndex((long) key);
         }
@@ -175,6 +191,17 @@ public final class ArrayIndex {
      */
     public static long toLongIndex(final int index) {
         return index & JSType.MAX_UINT;
+    }
+
+    /**
+     * Convert an index to a key string. This is the same as calling {@link #toLongIndex(int)}
+     * and converting the result to String.
+     *
+     * @param index index to convert
+     * @return index as string
+     */
+    public static String toKey(final int index) {
+        return Long.toString(index & JSType.MAX_UINT);
     }
 
 }

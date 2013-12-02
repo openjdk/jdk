@@ -33,6 +33,8 @@
 
 import java.awt.*;
 import java.awt.event.*;
+
+import sun.awt.OSInfo;
 import test.java.awt.regtesthelpers.Util;
 
 public class OpensWithNoGrab
@@ -49,8 +51,8 @@ public class OpensWithNoGrab
         Sysout.createDialog( );
         Sysout.printInstructions( instructions );
 
-        String toolkit = Toolkit.getDefaultToolkit().getClass().getName();
-        if (toolkit.equals("sun.awt.windows.WToolkit")){
+        if (!(OSInfo.getOSType().equals(OSInfo.OSType.LINUX)
+                || OSInfo.getOSType().equals(OSInfo.OSType.SOLARIS))) {
             System.out.println("This test is for XAWT/Motif only");
             OpensWithNoGrab.pass();
         }

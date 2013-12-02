@@ -31,6 +31,8 @@ import java.net.ServerSocket;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Arrays;
+import java.util.Collections;
 
 /**
  * Common library for various test helper functions.
@@ -45,7 +47,12 @@ public final class Utils {
     /**
      * Returns the value of 'test.vm.opts'system property.
      */
-    public static final String VM_OPTIONS = System.getProperty("test.vm.opts", "");
+    public static final String VM_OPTIONS = System.getProperty("test.vm.opts", "").trim();
+
+    /**
+     * Returns the value of 'test.java.opts'system property.
+     */
+    public static final String JAVA_OPTIONS = System.getProperty("test.java.opts", "").trim();
 
 
     private Utils() {
@@ -58,7 +65,7 @@ public final class Utils {
      * @return List of VM options
      */
     public static List<String> getVmOptions() {
-        return getVmOptions(false);
+        return Arrays.asList(safeSplitString(VM_OPTIONS));
     }
 
     /**
@@ -67,24 +74,58 @@ public final class Utils {
      * @return The list of VM options with -J prefix
      */
     public static List<String> getForwardVmOptions() {
-        return getVmOptions(true);
+        String[] opts = safeSplitString(VM_OPTIONS);
+        for (int i = 0; i < opts.length; i++) {
+            opts[i] = "-J" + opts[i];
+        }
+        return Arrays.asList(opts);
     }
 
-    private static List<String> getVmOptions(boolean forward) {
-        List<String> optionsList = new ArrayList<>();
-        String options = VM_OPTIONS.trim();
-        if (!options.isEmpty()) {
-            options = options.replaceAll("\\s+", " ");
-            for (String option : options.split(" ")) {
-                if (forward) {
-                    optionsList.add("-J" + option);
-                } else {
-                    optionsList.add(option);
-                }
-            }
-        }
+    /**
+     * Returns the default JTReg arguments for a jvm running a test.
+     * This is the combination of JTReg arguments test.vm.opts and test.java.opts.
+     * @return An array of options, or an empty array if no opptions.
+     */
+    public static String[] getTestJavaOpts() {
+        List<String> opts = new ArrayList<String>();
+        Collections.addAll(opts, safeSplitString(VM_OPTIONS));
+        Collections.addAll(opts, safeSplitString(JAVA_OPTIONS));
+        return opts.toArray(new String[0]);
+    }
 
-        return optionsList;
+    /**
+     * Combines given arguments with default JTReg arguments for a jvm running a test.
+     * This is the combination of JTReg arguments test.vm.opts and test.java.opts
+     * @return The combination of JTReg test java options and user args.
+     */
+    public static String[] addTestJavaOpts(String... userArgs) {
+        List<String> opts = new ArrayList<String>();
+        Collections.addAll(opts, getTestJavaOpts());
+        Collections.addAll(opts, userArgs);
+        return opts.toArray(new String[0]);
+    }
+
+    /**
+     * Splits a string by white space.
+     * Works like String.split(), but returns an empty array
+     * if the string is null or empty.
+     */
+    private static String[] safeSplitString(String s) {
+        if (s == null || s.trim().isEmpty()) {
+            return new String[] {};
+        }
+        return s.trim().split("\\s+");
+    }
+
+    /**
+     * @return The full command line for the ProcessBuilder.
+     */
+    public static String getCommandLine(ProcessBuilder pb) {
+        StringBuilder cmd = new StringBuilder();
+        for (String s : pb.command()) {
+            cmd.append(s).append(" ");
+        }
+        return cmd.toString();
     }
 
     /**

@@ -35,6 +35,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.BitSet;
 import jdk.nashorn.internal.runtime.AccessorProperty;
+import jdk.nashorn.internal.runtime.JSType;
 import jdk.nashorn.internal.runtime.Property;
 import jdk.nashorn.internal.runtime.PropertyDescriptor;
 import jdk.nashorn.internal.runtime.PropertyMap;
@@ -140,8 +141,9 @@ public final class NativeArguments extends ScriptObject {
 
     @Override
     public boolean delete(final Object key, final boolean strict) {
-        final int index = ArrayIndex.getArrayIndex(key);
-        return isMapped(index) ? deleteMapped(index, strict) : super.delete(key, strict);
+        final Object primitiveKey = JSType.toPrimitive(key, String.class);
+        final int index = ArrayIndex.getArrayIndex(primitiveKey);
+        return isMapped(index) ? deleteMapped(index, strict) : super.delete(primitiveKey, strict);
     }
 
     /**

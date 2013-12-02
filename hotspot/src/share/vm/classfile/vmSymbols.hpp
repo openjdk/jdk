@@ -331,6 +331,7 @@
   template(findNative_name,                           "findNative")                               \
   template(deadChild_name,                            "deadChild")                                \
   template(addClass_name,                             "addClass")                                 \
+  template(throwIllegalAccessError_name,              "throwIllegalAccessError")                  \
   template(getFromClass_name,                         "getFromClass")                             \
   template(dispatch_name,                             "dispatch")                                 \
   template(getSystemClassLoader_name,                 "getSystemClassLoader")                     \

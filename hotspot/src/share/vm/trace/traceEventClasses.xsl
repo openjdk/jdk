@@ -40,6 +40,7 @@
 #include "tracefiles/traceTypes.hpp"
 #include "trace/traceEvent.hpp"
 #include "utilities/macros.hpp"
+#include "utilities/ticks.hpp"
 
 #if INCLUDE_TRACE
 
@@ -55,8 +56,8 @@
 class TraceEvent {
 public:
   TraceEvent() {}
-  void set_starttime(jlong time) const {}
-  void set_endtime(jlong time) const {}
+  void set_starttime(const Ticks&amp; time) {}
+  void set_endtime(const Ticks&amp; time) {}
   bool should_commit() const { return false; }
   void commit() const {}
 };
@@ -170,22 +171,22 @@ public:
   </xsl:if>
 </xsl:template>
 
-
 <xsl:template match="value[@type='TICKS']" mode="write-setters">
 #if INCLUDE_TRACE
-  <xsl:value-of select="concat('void set_', @field, '(jlong time) { _', @field, ' = time; }')"/>
+<xsl:value-of select="concat('  void set_', @field, '(const Ticks&amp; time) { _', @field, ' = time; }')"/>
 #else
-  <xsl:value-of select="concat('void set_', @field, '(jlong ignore) {}')"/>
+<xsl:value-of select="concat('  void set_', @field, '(const Ticks&amp; ignore) {}')"/>
 #endif
 </xsl:template>
 
-<xsl:template match="value[@type='RELATIVE_TICKS']" mode="write-setters">
+<xsl:template match="value[@type='TICKSPAN']" mode="write-setters">
 #if INCLUDE_TRACE
-  <xsl:value-of select="concat('void set_', @field, '(jlong time) { _', @field, ' = time; }')"/>
+  <xsl:value-of select="concat('  void set_', @field, '(const Tickspan&amp; time) { _', @field, ' = time; }')"/>
 #else
-  <xsl:value-of select="concat('void set_', @field, '(jlong ignore) {}')"/>
+  <xsl:value-of select="concat('  void set_', @field, '(const Tickspan&amp; ignore) {}')"/>
 #endif
 </xsl:template>
+
 
 <xsl:template match="value" mode="write-fields">
   <xsl:variable name="type" select="@type"/>
@@ -226,7 +227,17 @@ public:
 <xsl:template match="value" mode="write-data">
   <xsl:variable name="type" select="@type"/>
   <xsl:variable name="wt" select="//primary_type[@symbol=$type]/@writetype"/>
-  <xsl:value-of select="concat('    ts.print_val(&quot;', @label, '&quot;, _', @field, ');')"/>
+  <xsl:choose>
+    <xsl:when test="@type='TICKSPAN'">
+      <xsl:value-of select="concat('    ts.print_val(&quot;', @label, '&quot;, _', @field, '.value());')"/>
+    </xsl:when>
+    <xsl:when test="@type='TICKS'">
+      <xsl:value-of select="concat('    ts.print_val(&quot;', @label, '&quot;, _', @field, '.value());')"/>
+    </xsl:when>
+    <xsl:otherwise>
+      <xsl:value-of select="concat('    ts.print_val(&quot;', @label, '&quot;, _', @field, ');')"/>
+    </xsl:otherwise>
+  </xsl:choose>
   <xsl:if test="position() != last()">
     <xsl:text>
     ts.print(", ");
