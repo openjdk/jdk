@@ -25,9 +25,7 @@
 #define SHARE_VM_TRACE_NOTRACEBACKEND_HPP
 
 #include "prims/jni.h"
-
-typedef jlong TracingTime;
-typedef jlong RelativeTracingTime;
+#include "trace/traceTime.hpp"
 
 class NoTraceBackend {
 public:
@@ -44,5 +42,3 @@ public:
 typedef NoTraceBackend Tracing;
 
 #endif
-
-

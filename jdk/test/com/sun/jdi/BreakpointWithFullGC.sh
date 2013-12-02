@@ -60,7 +60,7 @@ public class $1 {
     public static void main(String[] args) {
         for (int i = 0; i < 10; i++) {
             System.out.println("top of loop");     // @1 breakpoint
-            init(1000000);
+            init(500000);
             objList.clear();
             System.gc();
             System.out.println("bottom of loop");  // @1 breakpoint

@@ -39,11 +39,13 @@ public class InternationalBAT {
 
     public static void main(String[] args) {
         boolean pass = true;
-        if (!testRequiredLocales()) {
-            pass = false;
-        }
-        if (!testRequiredEncodings()) {
-            pass = false;
+
+        TimeZone tz = TimeZone.getDefault();
+        try {
+            pass &= testRequiredLocales();
+            pass &= testRequiredEncodings();
+        } finally {
+            TimeZone.setDefault(tz);
         }
 
         if (!pass) {

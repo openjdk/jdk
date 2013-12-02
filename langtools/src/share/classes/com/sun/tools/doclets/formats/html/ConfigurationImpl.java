@@ -204,12 +204,27 @@ public class ConfigurationImpl extends Configuration {
             "com.sun.tools.doclets.formats.html.resources.standard");
     }
 
+    private final String versionRBName = "com.sun.tools.javadoc.resources.version";
+    private ResourceBundle versionRB;
+
     /**
      * Return the build date for the doclet.
      */
     @Override
     public String getDocletSpecificBuildDate() {
-        return BUILD_DATE;
+        if (versionRB == null) {
+            try {
+                versionRB = ResourceBundle.getBundle(versionRBName);
+            } catch (MissingResourceException e) {
+                return BUILD_DATE;
+            }
+        }
+
+        try {
+            return versionRB.getString("release");
+        } catch (MissingResourceException e) {
+            return BUILD_DATE;
+        }
     }
 
     /**
