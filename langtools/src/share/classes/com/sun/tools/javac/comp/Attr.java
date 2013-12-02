@@ -933,7 +933,8 @@ public class Attr extends JCTree.Visitor {
             chk.validate(tree.typarams, localEnv);
 
             // Check that result type is well-formed.
-            chk.validate(tree.restype, localEnv);
+            if (tree.restype != null && !tree.restype.type.hasTag(VOID))
+                chk.validate(tree.restype, localEnv);
 
             // Check that receiver type is well-formed.
             if (tree.recvparam != null) {
@@ -3982,10 +3983,6 @@ public class Attr extends JCTree.Visitor {
             return bounds.head.type;
         } else {
             Type owntype = types.makeCompoundType(TreeInfo.types(bounds));
-            if (tree.hasTag(TYPEINTERSECTION)) {
-                ((IntersectionClassType)owntype).intersectionKind =
-                        IntersectionClassType.IntersectionKind.EXPLICIT;
-            }
             // ... the variable's bound is a class type flagged COMPOUND
             // (see comment for TypeVar.bound).
             // In this case, generate a class tree that represents the
