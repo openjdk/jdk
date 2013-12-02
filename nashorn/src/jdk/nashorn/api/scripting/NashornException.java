@@ -29,6 +29,7 @@ import java.util.ArrayList;
 import java.util.List;
 import jdk.nashorn.internal.codegen.CompilerConstants;
 import jdk.nashorn.internal.runtime.ECMAErrors;
+import jdk.nashorn.internal.runtime.ScriptObject;
 
 /**
  * This is base exception for all Nashorn exceptions. These originate from
@@ -49,6 +50,8 @@ public abstract class NashornException extends RuntimeException {
     private final int line;
     // script column number
     private final int column;
+    // underlying ECMA error object - lazily initialized
+    private Object ecmaError;
 
     /** script source name used for "engine.js" */
     public static final String ENGINE_SCRIPT_SOURCE_NAME = "nashorn:engine/resources/engine.js";
@@ -187,5 +190,34 @@ public abstract class NashornException extends RuntimeException {
             buf.deleteCharAt(len - 1);
         }
         return buf.toString();
+    }
+
+    protected Object getThrown() {
+        return null;
+    }
+
+    protected NashornException initEcmaError(final ScriptObject global) {
+        if (ecmaError != null) {
+            return this; // initialized already!
+        }
+
+        final Object thrown = getThrown();
+        if (thrown instanceof ScriptObject) {
+            ecmaError = ScriptObjectMirror.wrap(thrown, global);
+        } else {
+            ecmaError = thrown;
+        }
+
+        return this;
+    }
+
+    /**
+     * Return the underlying ECMA error object, if available.
+     *
+     * @return underlying ECMA Error object's mirror or whatever was thrown
+     *         from script such as a String, Number or a Boolean.
+     */
+    public Object getEcmaError() {
+        return ecmaError;
     }
 }
