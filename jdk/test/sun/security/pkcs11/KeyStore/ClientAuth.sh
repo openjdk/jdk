@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2003, 2012, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -128,7 +128,8 @@ ${CHMOD} +w ${TESTCLASSES}${FS}key3.db
 ${COMPILEJAVA}${FS}bin${FS}javac ${TESTJAVACOPTS} ${TESTTOOLVMOPTS} \
 	-classpath ${TESTSRC}${FS}..${PS}${TESTSRC}${FS}loader.jar \
 	-d ${TESTCLASSES} \
-	${TESTSRC}${FS}ClientAuth.java
+	${TESTSRC}${FS}ClientAuth.java \
+	${TESTSRC}${FS}..${FS}PKCS11Test.java
 
 # run test
 echo "Run ClientAuth ..."
