@@ -1044,8 +1044,14 @@ class JavaThread: public Thread {
   address last_Java_pc(void)                         { return _anchor.last_Java_pc(); }
 
   // Safepoint support
-  JavaThreadState thread_state() const           { return _thread_state; }
-  void set_thread_state(JavaThreadState s)       { _thread_state=s;      }
+  // Use membars when accessing volatile _thread_state. See
+  // Threads::create_vm() for size checks.
+  JavaThreadState thread_state() const           {
+    return (JavaThreadState) OrderAccess::load_acquire((volatile jint*)&_thread_state);
+  }
+  void set_thread_state(JavaThreadState s)       {
+    OrderAccess::release_store((volatile jint*)&_thread_state, (jint)s);
+  }
   ThreadSafepointState *safepoint_state() const  { return _safepoint_state;  }
   void set_safepoint_state(ThreadSafepointState *state) { _safepoint_state = state; }
   bool is_at_poll_safepoint()                    { return _safepoint_state->is_at_poll_safepoint(); }
