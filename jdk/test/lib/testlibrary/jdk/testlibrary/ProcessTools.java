@@ -32,6 +32,7 @@ import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Map;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.concurrent.Phaser;
@@ -131,6 +132,10 @@ public final class ProcessTools {
                 phs.awaitAdvanceInterruptibly(0, timeout, unit);
             }
         } catch (TimeoutException | InterruptedException e) {
+            System.err.println("Failed to start a process (thread dump follows)");
+            for(Map.Entry<Thread, StackTraceElement[]> s : Thread.getAllStackTraces().entrySet()) {
+                printStack(s.getKey(), s.getValue());
+            }
             stdoutTask.cancel(true);
             stderrTask.cancel(true);
             throw e;
@@ -248,6 +253,17 @@ public final class ProcessTools {
         System.out.println("Command line: [" + cmdLine.toString() + "]");
 
         return new ProcessBuilder(args.toArray(new String[args.size()]));
+    }
+
+    private static void printStack(Thread t, StackTraceElement[] stack) {
+        System.out.println("\t" +  t +
+                           " stack: (length = " + stack.length + ")");
+        if (t != null) {
+            for (StackTraceElement stack1 : stack) {
+                System.out.println("\t" + stack1);
+            }
+            System.out.println();
+        }
     }
 
 }

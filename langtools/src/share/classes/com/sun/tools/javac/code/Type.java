@@ -970,13 +970,6 @@ public abstract class Type extends AnnoConstruct implements TypeMirror {
 
         public boolean allInterfaces;
 
-        public enum IntersectionKind {
-            EXPLICIT,
-            IMPLICT;
-        }
-
-        public IntersectionKind intersectionKind;
-
         public IntersectionClassType(List<Type> bounds, ClassSymbol csym, boolean allInterfaces) {
             super(Type.noType, List.<Type>nil(), csym);
             this.allInterfaces = allInterfaces;
@@ -1008,9 +1001,7 @@ public abstract class Type extends AnnoConstruct implements TypeMirror {
 
         @Override
         public <R, P> R accept(TypeVisitor<R, P> v, P p) {
-            return intersectionKind == IntersectionKind.EXPLICIT ?
-                v.visitIntersection(this, p) :
-                v.visitDeclared(this, p);
+            return v.visitIntersection(this, p);
         }
     }
 

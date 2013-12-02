@@ -149,6 +149,8 @@ class Universe: AllStatic {
   static LatestMethodCache* _loader_addClass_cache;    // method for registering loaded classes in class loader vector
   static LatestMethodCache* _pd_implies_cache;         // method for checking protection domain attributes
 
+  static Method* _throw_illegal_access_error;
+
   // preallocated error objects (no backtrace)
   static oop          _out_of_memory_error_java_heap;
   static oop          _out_of_memory_error_metaspace;
@@ -305,6 +307,7 @@ class Universe: AllStatic {
   static oop          arithmetic_exception_instance() { return _arithmetic_exception_instance; }
   static oop          virtual_machine_error_instance() { return _virtual_machine_error_instance; }
   static oop          vm_exception()                  { return _vm_exception; }
+  static Method*      throw_illegal_access_error()    { return _throw_illegal_access_error; }
 
   static Array<int>*       the_empty_int_array()    { return _the_empty_int_array; }
   static Array<u2>*        the_empty_short_array()  { return _the_empty_short_array; }
