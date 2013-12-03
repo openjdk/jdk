@@ -49,7 +49,7 @@ public:
   virtual Node* Identity(PhaseTransform* phase) { return this; }
   virtual Node* Ideal(PhaseGVN* phase, bool can_reshape) { return NULL; }
   virtual const Type* Value(PhaseTransform* phase) const { return bottom_type(); }
-  virtual uint hash() const { return Node::hash(); }
+  virtual uint hash() const { return NO_HASH; }
   virtual bool is_CFG() const { return false; }
   virtual uint ideal_reg() const { return NotAMachineReg; }
 

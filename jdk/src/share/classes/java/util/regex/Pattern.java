@@ -1142,9 +1142,14 @@ public final class Pattern
      * input sequence that is terminated by another subsequence that matches
      * this pattern or is terminated by the end of the input sequence.  The
      * substrings in the array are in the order in which they occur in the
-     * input.  If this pattern does not match any subsequence of the input then
+     * input. If this pattern does not match any subsequence of the input then
      * the resulting array has just one element, namely the input sequence in
      * string form.
+     *
+     * <p> When there is a positive-width match at the beginning of the input
+     * sequence then an empty leading substring is included at the beginning
+     * of the resulting array. A zero-width match at the beginning however
+     * never produces such empty leading substring.
      *
      * <p> The <tt>limit</tt> parameter controls the number of times the
      * pattern is applied and therefore affects the length of the resulting
@@ -1185,7 +1190,6 @@ public final class Pattern
      *     <td><tt>{ "b", "", ":and:f" }</tt></td></tr>
      * </table></blockquote>
      *
-     *
      * @param  input
      *         The character sequence to be split
      *
@@ -1204,6 +1208,11 @@ public final class Pattern
         // Add segments before each match found
         while(m.find()) {
             if (!matchLimited || matchList.size() < limit - 1) {
+                if (index == 0 && index == m.start() && m.start() == m.end()) {
+                    // no empty leading substring included for zero-width match
+                    // at the beginning of the input char sequence.
+                    continue;
+                }
                 String match = input.subSequence(index, m.start()).toString();
                 matchList.add(match);
                 index = m.end();
@@ -5755,12 +5764,17 @@ NEXT:       while (i <= last) {
      * input sequence that is terminated by another subsequence that matches
      * this pattern or is terminated by the end of the input sequence.  The
      * substrings in the stream are in the order in which they occur in the
-     * input.  Trailing empty strings will be discarded and not encountered in
+     * input. Trailing empty strings will be discarded and not encountered in
      * the stream.
      *
      * <p> If this pattern does not match any subsequence of the input then
      * the resulting stream has just one element, namely the input sequence in
      * string form.
+     *
+     * <p> When there is a positive-width match at the beginning of the input
+     * sequence then an empty leading substring is included at the beginning
+     * of the stream. A zero-width match at the beginning however never produces
+     * such empty leading substring.
      *
      * <p> If the input sequence is mutable, it must remain constant during the
      * execution of the terminal stream operation.  Otherwise, the result of the
@@ -5817,7 +5831,8 @@ NEXT:       while (i <= last) {
                     current = matcher.end();
                     if (!nextElement.isEmpty()) {
                         return true;
-                    } else {
+                    } else if (current > 0) { // no empty leading substring for zero-width
+                                              // match at the beginning of the input
                         emptyElementCount++;
                     }
                 }
