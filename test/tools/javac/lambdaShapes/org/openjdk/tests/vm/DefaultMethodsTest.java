@@ -25,18 +25,22 @@
 
 package org.openjdk.tests.vm;
 
-import java.lang.reflect.*;
-import java.util.*;
-import java.io.File;
-import java.io.IOException;
-
-import org.testng.annotations.Test;
-import org.openjdk.tests.separate.*;
 import org.openjdk.tests.separate.Compiler;
+import org.openjdk.tests.separate.TestHarness;
+import org.testng.annotations.Test;
 
-import static org.testng.Assert.*;
-import static org.openjdk.tests.separate.SourceModel.*;
+import static org.openjdk.tests.separate.SourceModel.AbstractMethod;
+import static org.openjdk.tests.separate.SourceModel.AccessFlag;
 import static org.openjdk.tests.separate.SourceModel.Class;
+import static org.openjdk.tests.separate.SourceModel.ConcreteMethod;
+import static org.openjdk.tests.separate.SourceModel.DefaultMethod;
+import static org.openjdk.tests.separate.SourceModel.Extends;
+import static org.openjdk.tests.separate.SourceModel.Interface;
+import static org.openjdk.tests.separate.SourceModel.MethodParameter;
+import static org.openjdk.tests.separate.SourceModel.TypeParameter;
+import static org.testng.Assert.assertEquals;
+import static org.testng.Assert.assertNotNull;
+import static org.testng.Assert.fail;
 
 @Test(groups = "vm")
 public class DefaultMethodsTest extends TestHarness {
@@ -186,7 +190,7 @@ public class DefaultMethodsTest extends TestHarness {
      * TEST: D d = new D(); d.m() == 22;
      * TEST: I i = new D(); i.m() == 22;
      */
-    void testExistingInheritedOverride() {
+    public void testExistingInheritedOverride() {
         Interface I = new Interface("I", DefaultMethod.std("99"));
         Class C = new Class("C", I, ConcreteMethod.std("11"));
         Class D = new Class("D", C, ConcreteMethod.std("22"));
@@ -258,7 +262,6 @@ public class DefaultMethodsTest extends TestHarness {
      * TEST: C c = new C(); c.m() throws ICCE
      */
     public void testConflict() {
-        // debugTest();
         Interface I = new Interface("I", DefaultMethod.std("99"));
         Interface J = new Interface("J", DefaultMethod.std("88"));
         Class C = new Class("C", I, J);
@@ -390,18 +393,15 @@ public class DefaultMethodsTest extends TestHarness {
 
     /**
      * interface I<T> { default int m(T t) { return 99; } }
-     * Class C implements I<String> { public int m() { return 88; } }
+     * Class C implements I<String> { public int m(String s) { return 88; } }
      *
-     * TEST: C c = new C(); c.m() == 88;
-     * TEST: I i = new C(); i.m() == 88;
+     * TEST: C c = new C(); c.m("string") == 88;
+     * TEST: I i = new C(); i.m("string") == 88;
      */
-    @Test(enabled=false)
     public void testSelfFill() {
         // This test ensures that a concrete method overrides a default method
         // that matches at the language-level, but has a different method
         // signature due to erasure.
-
-        // debugTest();
 
         DefaultMethod dm = new DefaultMethod(
             "int", "m", "return 99;", new MethodParameter("T", "t"));
@@ -415,9 +415,11 @@ public class DefaultMethodsTest extends TestHarness {
         AbstractMethod pm = new AbstractMethod(
             "int", "m", new MethodParameter("T", "t"));
 
-        assertInvokeVirtualEquals(new Integer(88), C, cm, "-1", "\"string\"");
-        assertInvokeInterfaceEquals(
-            new Integer(88), C, I.with("String"), pm, "\"string\"");
+        assertInvokeVirtualEquals(88, C, cm, "-1", "\"string\"");
+        assertInvokeInterfaceEquals(99, C, I.with("String"), pm, "\"string\"");
+
+        C.setFullCompilation(true); // Force full bridge generation
+        assertInvokeInterfaceEquals(88, C, I.with("String"), pm, "\"string\"");
     }
 
     /**
@@ -485,7 +487,6 @@ public class DefaultMethodsTest extends TestHarness {
      * TEST: J<String,String> j = new C(); j.m("A","B","C") == 88;
      * TEST: K<String> k = new C(); k.m("A","B","C") == 88;
      */
-    @Test(enabled=false)
     public void testBridges() {
         DefaultMethod dm = new DefaultMethod("int", stdMethodName, "return 99;",
             new MethodParameter("T", "t"), new MethodParameter("V", "v"),
@@ -518,13 +519,17 @@ public class DefaultMethodsTest extends TestHarness {
             J.with("String", "T"), pm2);
         Class C = new Class("C", K.with("String"), cm);
 
+        // First, without compiler bridges
         String[] args = new String[] { "\"A\"", "\"B\"", "\"C\"" };
-        assertInvokeInterfaceEquals(new Integer(88), C,
-            I.with("String", "String", "String"), pm0, args);
-        assertInvokeInterfaceEquals(new Integer(88), C,
-            J.with("String", "String"), pm1, args);
-        assertInvokeInterfaceEquals(new Integer(88), C,
-            K.with("String"), pm2, args);
+        assertInvokeInterfaceEquals(99, C, I.with("String", "String", "String"), pm0, args);
+        assertInvokeInterfaceThrows(AbstractMethodError.class, C, J.with("String", "String"), pm1, args);
+        assertInvokeInterfaceThrows(AbstractMethodError.class, C, K.with("String"), pm2, args);
+
+        // Then with compiler bridges
+        C.setFullCompilation(true);
+        assertInvokeInterfaceEquals(88, C, I.with("String", "String", "String"), pm0, args);
+        assertInvokeInterfaceEquals(88, C, J.with("String", "String"), pm1, args);
+        assertInvokeInterfaceEquals(88, C, K.with("String"), pm2, args);
     }
 
     /**
@@ -536,8 +541,6 @@ public class DefaultMethodsTest extends TestHarness {
      * TEST: I i = new C(); i.m() == 88;
      */
     public void testSuperBasic() {
-        // debugTest();
-
         Interface J = new Interface("J", DefaultMethod.std("88"));
         Interface I = new Interface("I", J, new DefaultMethod(
             "int", stdMethodName, "return J.super.m();"));
@@ -559,8 +562,6 @@ public class DefaultMethodsTest extends TestHarness {
      * TODO: add case for K k = new C(); k.m() throws ICCE
      */
     public void testSuperConflict() {
-        // debugTest();
-
         Interface K = new Interface("K", DefaultMethod.std("99"));
         Interface L = new Interface("L", DefaultMethod.std("101"));
         Interface J = new Interface("J", K, L);
@@ -635,8 +636,7 @@ public class DefaultMethodsTest extends TestHarness {
         AbstractMethod pm = new AbstractMethod("int", stdMethodName,
             new MethodParameter("String", "s"));
 
-        assertInvokeInterfaceEquals(
-            new Integer(88), C, new Extends(I), pm, "\"\"");
+        assertInvokeInterfaceEquals(88, C, new Extends(I), pm, "\"\"");
     }
 
     /**
@@ -674,7 +674,6 @@ public class DefaultMethodsTest extends TestHarness {
      * class S { Object foo() { return (new D()).m(); } // link sig: ()LInteger;
      * TEST: S s = new S(); s.foo() == new Integer(99)
      */
-    @Test(enabled=false)
     public void testCovarBridge() {
         Interface I = new Interface("I", new DefaultMethod(
             "Integer", "m", "return new Integer(88);"));
@@ -692,7 +691,8 @@ public class DefaultMethodsTest extends TestHarness {
         S.addCompilationDependency(Dstub);
         S.addCompilationDependency(DstubMethod);
 
-        assertInvokeVirtualEquals(new Integer(99), S, toCall, "null");
+        // NEGATIVE test for separate compilation -- dispatches to I, not C
+        assertInvokeVirtualEquals(88, S, toCall, "null");
     }
 
     /**
@@ -719,7 +719,7 @@ public class DefaultMethodsTest extends TestHarness {
         S.addCompilationDependency(Dstub);
         S.addCompilationDependency(DstubMethod);
 
-        assertInvokeVirtualEquals(new Integer(88), S, toCall, "null");
+        assertInvokeVirtualEquals(88, S, toCall, "null");
     }
 
     /**
@@ -757,7 +757,6 @@ public class DefaultMethodsTest extends TestHarness {
      * Test that a erased-signature-matching method does not implement
      * non-language-level matching methods
      */
-    @Test(enabled=false)
     public void testNonConcreteFill() {
         AbstractMethod ipm = new AbstractMethod("int", "m",
             new MethodParameter("T", "t"),
@@ -781,13 +780,14 @@ public class DefaultMethodsTest extends TestHarness {
             new MethodParameter("T", "t"),
             new MethodParameter("String", "s"),
             new MethodParameter("String", "w"));
+        DefaultMethod kdm = new DefaultMethod("int", "m", "return 99;",
+                                              new MethodParameter("T", "t"),
+                                              new MethodParameter("String", "v"),
+                                              new MethodParameter("String", "w"));
         Interface K = new Interface("K",
             new TypeParameter("T"),
             J.with("T", "String"),
-            new DefaultMethod("int", "m", "return 99;",
-                new MethodParameter("T", "t"),
-                new MethodParameter("String", "v"),
-                new MethodParameter("String", "w")));
+            kdm);
 
         Class C = new Class("C",
             K.with("String"),
@@ -797,13 +797,18 @@ public class DefaultMethodsTest extends TestHarness {
                 new MethodParameter("Object", "v"),
                 new MethodParameter("String", "w")));
 
+        // First, without compiler bridges
         String a = "\"\"";
-        assertInvokeInterfaceEquals(99, C,
-            K.with("String"), kpm, a, a, a);
-        assertInvokeInterfaceEquals(77, C,
-            J.with("String", "String"), jpm, a, a, a);
-        assertInvokeInterfaceEquals(99, C,
-            I.with("String", "String", "String"), ipm, a, a, a);
+        assertInvokeInterfaceEquals(99, C, K.with("String"), kpm, a, a, a);
+        assertInvokeInterfaceEquals(77, C, J.with("String", "String"), jpm, a, a, a);
+        assertInvokeInterfaceThrows(AbstractMethodError.class, C, I.with("String", "String", "String"), ipm, a, a, a);
+
+        // Now, with bridges
+        J.setFullCompilation(true);
+        K.setFullCompilation(true);
+        assertInvokeInterfaceEquals(99, C, K.with("String"), kpm, a, a, a);
+        assertInvokeInterfaceEquals(77, C, J.with("String", "String"), jpm, a, a, a);
+        assertInvokeInterfaceEquals(99, C, I.with("String", "String", "String"), ipm, a, a, a);
     }
 
     public void testStrictfpDefault() {

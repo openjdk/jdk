@@ -21,8 +21,10 @@
  * questions.
  */
 
-// key: compiler.err.intf.or.array.expected.here
+package javax.activity;
 
-import java.util.List;
-
-class InterfaceExpected<T extends List & String> { }
+public class NotCompactProfile {
+    public static String name() {
+        return "not Java SE API";
+    }
+}

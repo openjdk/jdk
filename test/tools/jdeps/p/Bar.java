@@ -21,19 +21,13 @@
  * questions.
  */
 
-/*
- * @test
- * @bug 8021339
- * @summary Allow arrays in intersection types
- * @compile ArraysInIntersections.java
- */
+package p;
 
-import java.io.Serializable;
-
-public class ArraysInIntersections<T extends Serializable & Integer[]> {
-
-    public <S extends Serializable & Integer[]> Object m() {
-        return (Serializable & Integer[]) new Integer[1];
+public class Bar extends javax.activity.NotCompactProfile {
+    public String bar() {
+        return "bar";
     }
-
+    public javax.crypto.Cipher getCiper() {
+        return null;
+    }
 }

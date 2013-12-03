@@ -21,18 +21,55 @@
  * questions.
  */
 
-/*
- * @test
- * @bug 8021339
- * @summary Allow arrays in intersection types
- * @compile -doe -XDrawDiagnostics InferArraysInIntersections.java
- */
-import java.util.*;
+package pkg1;
 
-class InferArraysInIntersections {
-   <T> T m(List<? super T> t) { return null; }
+public class Outer {
 
-   void test(List<char[]> lc) {
-      Runnable r = m(lc); //inference fails here
-   }
+    /**
+     * An outer constructor.
+     */
+    public Outer() {
+    }
+
+    /**
+     * Another outer constructor.
+     */
+    public Outer(int i) {
+    }
+
+    /**
+     * A nested class.
+     */
+    public class Inner {
+
+        /**
+         * An inner constructor.
+         */
+        public Inner() {
+        }
+
+        /**
+         * Another inner constructor.
+         */
+        public Inner(int i) {
+        }
+
+        /**
+         * A nested inner class.
+         */
+        public class NestedInner {
+
+            /**
+             * A nested inner constructor.
+             */
+            public NestedInner() {
+            }
+
+            /**
+             * Another nested inner constructor.
+             */
+            public NestedInner(int i) {
+            }
+        }
+    }
 }
