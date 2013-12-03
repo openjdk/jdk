@@ -72,6 +72,7 @@ class G1NewTracer;
 class G1OldTracer;
 class EvacuationFailedInfo;
 class nmethod;
+class Ticks;
 
 typedef OverflowTaskQueue<StarTask, mtGC>         RefToScanQueue;
 typedef GenericTaskQueueSet<RefToScanQueue, mtGC> RefToScanQueueSet;
@@ -746,7 +747,7 @@ public:
     return _old_marking_cycles_completed;
   }
 
-  void register_concurrent_cycle_start(jlong start_time);
+  void register_concurrent_cycle_start(const Ticks& start_time);
   void register_concurrent_cycle_end();
   void trace_heap_after_concurrent_cycle();
 

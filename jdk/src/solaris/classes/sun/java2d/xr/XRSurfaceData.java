@@ -245,7 +245,17 @@ public abstract class XRSurfaceData extends XSurfaceData {
                                                  ColorModel cm, Image image,
                                                  long drawable,
                                                  int transparency) {
-        int depth = transparency > Transparency.OPAQUE ? 32 : 24;
+        int depth;
+        // If we have a 32 bit color model for the window it needs
+        // alpha to support translucency of the window so we need
+        //  to upgrade what was requested for the surface.
+        if (gc.getColorModel().getPixelSize() == 32) {
+           depth = 32;
+           transparency = Transparency.TRANSLUCENT;
+        } else {
+            depth = transparency > Transparency.OPAQUE ? 32 : 24;
+        }
+
         if (depth == 24) {
             cm = new DirectColorModel(depth,
                                       0x00FF0000, 0x0000FF00, 0x000000FF);

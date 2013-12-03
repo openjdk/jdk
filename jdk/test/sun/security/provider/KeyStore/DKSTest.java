@@ -38,6 +38,7 @@ import java.util.*;
 public class DKSTest {
 
     private static final String TEST_SRC = System.getProperty("test.src");
+    private static final String USER_DIR = System.getProperty("user.dir");
     private static final String CERT = TEST_SRC + "/../../pkcs12/trusted.pem";
     private static final String CONFIG = "file://" + TEST_SRC + "/domains.cfg";
     private static final Map<String, KeyStore.ProtectionParameter> PASSWORDS =
@@ -60,19 +61,6 @@ public class DKSTest {
         }};
 
     public static void main(String[] args) throws Exception {
-        try {
-            main0();
-        } finally {
-            // cleanup
-            new File(TEST_SRC + "/empty.jks").delete();
-            new File(TEST_SRC + "/Alias.keystore_tmp").delete();
-            new File(TEST_SRC + "/pw.jks_tmp").delete();
-            new File(TEST_SRC + "/secp256r1server-secp384r1ca.p12_tmp").delete();
-            new File(TEST_SRC + "/sect193r1server-rsa1024ca.p12_tmp").delete();
-        }
-    }
-
-    private static void main0() throws Exception {
         /*
          * domain keystore: system
          */
@@ -120,7 +108,7 @@ public class DKSTest {
         empty.load(null, null);
 
         try (OutputStream outStream =
-            new FileOutputStream(TEST_SRC + "/empty.jks")) {
+            new FileOutputStream(new File(USER_DIR, "empty.jks"))) {
             empty.store(outStream, "passphrase".toCharArray());
         }
         config = new URI(CONFIG + "#empty");

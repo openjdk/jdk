@@ -2420,7 +2420,7 @@ public class Gen extends JCTree.Visitor {
             if (isInvokeDynamic(sym)) {
                 result = items.makeDynamicItem(sym);
                 return;
-            } else if (!accessSuper) {
+            } else {
                 sym = binaryQualifier(sym, tree.selected.type);
             }
             if ((sym.flags() & STATIC) != 0) {

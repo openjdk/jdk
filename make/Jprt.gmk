@@ -1,0 +1,248 @@
+#
+# Copyright (c) 2012, 2013, Oracle and/or its affiliates. All rights reserved.
+# DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+#
+# This code is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License version 2 only, as
+# published by the Free Software Foundation.  Oracle designates this
+# particular file as subject to the "Classpath" exception as provided
+# by Oracle in the LICENSE file that accompanied this code.
+#
+# This code is distributed in the hope that it will be useful, but WITHOUT
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+# FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+# version 2 for more details (a copy is included in the LICENSE file that
+# accompanied this code).
+#
+# You should have received a copy of the GNU General Public License version
+# 2 along with this work; if not, write to the Free Software Foundation,
+# Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+#
+# Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+# or visit www.oracle.com if you need additional information or have any
+# questions.
+#
+
+# This file is included by the root NewerMakefile and contains targets
+# and utilities needed by JPRT.
+
+# Utilities used in this Makefile. Most of this makefile executes without
+# the context of a spec file from configure.
+CAT=cat
+CMP=cmp
+CP=cp
+ECHO=echo
+MKDIR=mkdir
+PRINTF=printf
+PWD=pwd
+# Insure we have a path that looks like it came from pwd
+# (This is mostly for Windows sake and drive letters)
+define UnixPath # path
+$(shell (cd "$1" && $(PWD)))
+endef
+
+BUILD_DIR_ROOT:=$(root_dir)/build
+
+ifdef OPENJDK
+  OPEN_BUILD=true
+else
+  OPEN_BUILD := $(if $(or $(wildcard $(root_dir)/jdk/src/closed), \
+      $(wildcard $(root_dir)/jdk/make/closed), \
+      $(wildcard $(root_dir)/jdk/test/closed), \
+      $(wildcard $(root_dir)/hotspot/src/closed), \
+      $(wildcard $(root_dir)/hotspot/make/closed), \
+      $(wildcard $(root_dir)/hotspot/test/closed)), \
+      false,true)
+endif
+
+HOTSPOT_AVAILABLE := $(if $(wildcard $(root_dir)/hotspot),true,false)
+
+###########################################################################
+# To help in adoption of the new configure&&make build process, a bridge
+# build will use the old settings to run configure and do the build.
+
+# Build with the configure bridge. After running configure, restart make
+# to parse the new spec file.
+BRIDGE_TARGETS := all
+# Add bootcycle-images target if legacy variable is set.
+ifeq ($(SKIP_BOOT_CYCLE),false)
+  BRIDGE_TARGETS += bootcycle-images
+endif
+bridgeBuild: bridge2configure
+	@cd $(root_dir) && $(MAKE) -f Makefile $(BRIDGE_TARGETS)
+
+# Bridge from old Makefile ALT settings to configure options
+bridge2configure: $(BUILD_DIR_ROOT)/.bridge2configureOpts
+	bash ./configure $(strip $(shell $(CAT) $<))
+
+# Create a file with configure options created from old Makefile mechanisms.
+$(BUILD_DIR_ROOT)/.bridge2configureOpts: $(BUILD_DIR_ROOT)/.bridge2configureOptsLatest
+	$(RM) $@
+	$(CP) $< $@
+
+# Use this file to only change when obvious things have changed
+$(BUILD_DIR_ROOT)/.bridge2configureOptsLatest: FRC
+	$(RM) $@.tmp
+	$(MKDIR) -p $(BUILD_DIR_ROOT)
+	@$(ECHO) " --with-debug-level=$(if $(DEBUG_LEVEL),$(DEBUG_LEVEL),release) " >> $@.tmp
+        ifdef ARCH_DATA_MODEL
+	  @$(ECHO) " --with-target-bits=$(ARCH_DATA_MODEL) " >> $@.tmp
+        endif
+        ifeq ($(ARCH_DATA_MODEL),32)
+	  @$(ECHO) " --with-jvm-variants=client,server " >> $@.tmp
+        endif
+        ifdef ALT_PARALLEL_COMPILE_JOBS
+	  @$(ECHO) " --with-num-cores=$(ALT_PARALLEL_COMPILE_JOBS) " >> $@.tmp
+        endif
+        ifdef ALT_BOOTDIR
+	  @$(ECHO) " --with-boot-jdk=$(call UnixPath,$(ALT_BOOTDIR)) " >> $@.tmp
+        endif
+        ifdef ALT_CUPS_HEADERS_PATH
+	  @$(ECHO) " --with-cups-include=$(call UnixPath,$(ALT_CUPS_HEADERS_PATH)) " >> $@.tmp
+        endif
+        ifdef ALT_FREETYPE_HEADERS_PATH
+	  @$(ECHO) " --with-freetype=$(call UnixPath,$(ALT_FREETYPE_HEADERS_PATH)/..) " >> $@.tmp
+        endif
+        ifdef ENABLE_SJAVAC
+	  @$(ECHO) " --enable-sjavac" >> $@.tmp
+        endif
+        ifeq ($(HOTSPOT_AVAILABLE),false)
+          ifdef ALT_JDK_IMPORT_PATH
+	    @$(ECHO) " --with-import-hotspot=$(call UnixPath,$(ALT_JDK_IMPORT_PATH)) " >> $@.tmp
+          endif
+        endif
+        ifeq ($(OPEN_BUILD),true)
+	  @$(ECHO) " --enable-openjdk-only " >> $@.tmp
+        else
+#         Todo: move to closed?
+          ifdef ALT_MOZILLA_HEADERS_PATH
+	    @$(ECHO) " --with-mozilla-headers=$(call UnixPath,$(ALT_MOZILLA_HEADERS_PATH)) " >> $@.tmp
+          endif
+          ifdef ALT_JUNIT_DIR
+	    @$(ECHO) " --with-junit-dir=$(call UnixPath,$(ALT_JUNIT_DIR)) " >> $@.tmp
+          endif
+          ifdef ANT_HOME
+	    @$(ECHO) " --with-ant-home=$(call UnixPath,$(ANT_HOME)) " >> $@.tmp
+          endif
+          ifdef ALT_JAVAFX_ZIP_DIR
+	    @$(ECHO) " --with-javafx-zip-dir=$(call UnixPath,$(ALT_JAVAFX_ZIP_DIR)) " >> $@.tmp
+          endif
+          ifdef ALT_JMC_ZIP_DIR
+	    @$(ECHO) " --with-jmc-zip-dir=$(call UnixPath,$(ALT_JMC_ZIP_DIR)) " >> $@.tmp
+          endif
+          ifdef ALT_WIXDIR
+	    @$(ECHO) " --with-wix=$(call UnixPath,$(ALT_WIXDIR)) " >> $@.tmp
+          endif
+          ifdef ALT_INSTALL_LZMA_PATH
+	    @$(ECHO) " --with-lzma-path=$(call UnixPath,$(ALT_INSTALL_LZMA_PATH)) " >> $@.tmp
+          endif
+          ifdef ALT_INSTALL_UPX_PATH
+	    @$(ECHO) " --with-upx-path=$(call UnixPath,$(ALT_INSTALL_UPX_PATH)) " >> $@.tmp
+          endif
+          ifdef ALT_INSTALL_UPX_FILENAME
+	    @$(ECHO) " --with-upx-filename=$(call UnixPath,$(ALT_INSTALL_UPX_FILENAME)) " >> $@.tmp
+          endif
+          ifdef ALT_CCSS_SIGNING_DIR
+	    @$(ECHO) " --with-ccss-signing=$(call UnixPath,$(ALT_CCSS_SIGNING_DIR)) " >> $@.tmp
+          endif
+          ifdef ALT_SLASH_JAVA
+	    @$(ECHO) " --with-java-devtools=$(call UnixPath,$(ALT_SLASH_JAVA)/devtools) " >> $@.tmp
+          endif
+          ifdef ALT_SPARKLE_FRAMEWORK_DIR
+	    @$(ECHO) " --with-sparkle-framework=$(call UnixPath,$(ALT_SPARKLE_FRAMEWORK_DIR)) " >> $@.tmp
+          endif
+        endif
+	@if [ -f $@ ] ; then \
+	  if ! $(CMP) $@ $@.tmp > /dev/null ; then \
+	    $(CP) $@.tmp $@ ; \
+	  fi ; \
+	else \
+	  $(CP) $@.tmp $@ ; \
+	fi
+	$(RM) $@.tmp
+
+PHONY_LIST += bridge2configure bridgeBuild
+
+###########################################################################
+# JPRT targets
+
+ifndef JPRT_ARCHIVE_BUNDLE
+  JPRT_ARCHIVE_BUNDLE=/tmp/jprt_bundles/j2sdk-image.zip
+endif
+ifndef JPRT_ARCHIVE_INSTALL_BUNDLE
+  JPRT_ARCHIVE_INSTALL_BUNDLE=/tmp/jprt_bundles/product-install.zip
+endif
+
+# These targets execute in a SPEC free context, before calling bridgeBuild
+# to generate the SPEC.
+jprt_build_product: DEBUG_LEVEL=release
+jprt_build_product: BUILD_DIRNAME=*-release
+jprt_build_product: jprt_build_generic
+
+jprt_build_fastdebug: DEBUG_LEVEL=fastdebug
+jprt_build_fastdebug: BUILD_DIRNAME=*-fastdebug
+jprt_build_fastdebug: jprt_build_generic
+
+jprt_build_debug: DEBUG_LEVEL=slowdebug
+jprt_build_debug: BUILD_DIRNAME=*-debug
+jprt_build_debug: jprt_build_generic
+
+jprt_build_generic: BRIDGE_TARGETS+=jprt_bundle
+jprt_build_generic: bridgeBuild
+
+# This target must be called in the context of a SPEC file
+jprt_bundle: $(JPRT_ARCHIVE_BUNDLE)
+	@$(call CheckIfMakeAtEnd)
+
+# This target must be called in the context of a SPEC file
+$(JPRT_ARCHIVE_BUNDLE): bundles
+	$(MKDIR) -p $(@D)
+	$(RM) $@
+	$(CP) $(BUILD_OUTPUT)/bundles/$(JDK_IMAGE_SUBDIR).zip $@
+
+SRC_JDK_IMAGE_DIR := $(JDK_IMAGE_DIR)
+SRC_JRE_IMAGE_DIR := $(JRE_IMAGE_DIR)
+SRC_JDK_BUNDLE_DIR := $(JDK_BUNDLE_DIR)
+SRC_JRE_BUNDLE_DIR := $(JRE_BUNDLE_DIR)
+
+# Bundle up the images
+bundles: all bundles-only
+bundles-only: start-make
+	@$(call TargetEnter)
+	$(MKDIR) -p $(BUILD_OUTPUT)/bundles
+	$(CD) $(SRC_JDK_IMAGE_DIR) && $(ZIP) -y -q -r $(BUILD_OUTPUT)/bundles/$(JDK_IMAGE_SUBDIR).zip .
+	$(CD) $(SRC_JRE_IMAGE_DIR) && $(ZIP) -y -q -r $(BUILD_OUTPUT)/bundles/$(JRE_IMAGE_SUBDIR).zip .
+	if [ -d $(BUILD_OUTPUT)/install/bundles ] ; then \
+	  $(CD) $(BUILD_OUTPUT)/install/bundles && $(ZIP) -y -q -r $(JPRT_ARCHIVE_INSTALL_BUNDLE) . ; \
+	fi
+	@$(call TargetExit)
+
+# Copy images to one unified location regardless of platform etc.
+final-images: all final-images-only
+final-images-only: start-make
+	@$(call TargetEnter)
+	$(RM) -r $(BUILD_OUTPUT)/final-images
+	$(MKDIR) -p $(BUILD_OUTPUT)/final-images/$(JDK_IMAGE_SUBDIR)
+	$(MKDIR) -p $(BUILD_OUTPUT)/final-images/$(JRE_IMAGE_SUBDIR)
+	$(CP) -R -P $(SRC_JDK_IMAGE_DIR)/* $(BUILD_OUTPUT)/final-images/$(JDK_IMAGE_SUBDIR)/
+	$(CP) -R -P $(SRC_JRE_IMAGE_DIR)/* $(BUILD_OUTPUT)/final-images/$(JRE_IMAGE_SUBDIR)/
+        ifeq ($(OPENJDK_TARGET_OS),macosx)
+	  $(MKDIR) -p $(BUILD_OUTPUT)/final-images/$(JDK_BUNDLE_SUBDIR)
+	  $(MKDIR) -p $(BUILD_OUTPUT)/final-images/$(JRE_BUNDLE_SUBDIR)
+	  $(CP) -R -P $(SRC_JDK_BUNDLE_DIR)/* $(BUILD_OUTPUT)/final-images/$(JDK_BUNDLE_SUBDIR)/
+	  $(CP) -R -P $(SRC_JRE_BUNDLE_DIR)/* $(BUILD_OUTPUT)/final-images/$(JRE_BUNDLE_SUBDIR)/
+        endif
+	@$(call TargetExit)
+
+
+# Keep track of phony targets
+PHONY_LIST += jprt_build_product jprt_build_fastdebug jprt_build_debug \
+    jprt_build_generic bundles jprt_bundle \
+    final-images final-images-only
+
+###########################################################################
+# Phony targets
+.PHONY: $(PHONY_LIST)
+
+# Force target
+FRC:

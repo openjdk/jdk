@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -48,14 +48,6 @@ import javax.lang.model.util.Types;
  * type may be found using the {@link
  * Types#directSupertypes(TypeMirror)} method.  This returns the
  * supertypes with any type arguments substituted in.
- *
- * <p> This interface is also used to represent intersection types.
- * An intersection type is implicit in a program rather than being
- * explictly declared.  For example, the bound of the type parameter
- * {@code <T extends Number & Runnable>}
- * is an intersection type.  It is represented by a {@code DeclaredType}
- * with {@code Number} as its superclass and {@code Runnable} as its
- * lone superinterface.
  *
  * @author Joseph D. Darcy
  * @author Scott Seligman
