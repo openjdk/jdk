@@ -163,7 +163,7 @@ NSString *GetJavaRoot(NSDictionary *jvmInfoDict) {
     if ([[jvmInfo objectForKey:@"StartOnFirstThread"] boolValue]) {
         self.startOnFirstThread = YES;
     } else if ([[jvmInfo objectForKey:@"StartOnMainThread"] boolValue]) {
-        // for key compatability with the Apple JavaApplicationStub's 'Java' dictionary
+        // for key compatibility with the Apple JavaApplicationStub's 'Java' dictionary
         self.startOnFirstThread = YES;
     }
 

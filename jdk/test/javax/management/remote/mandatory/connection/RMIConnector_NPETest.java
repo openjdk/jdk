@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2013 Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,49 +25,48 @@
  * @test
  * @summary NPE IN RMIConnector.connect
  * @bug 6984520
+ * @library /java/rmi/testlibrary
  * @run clean RMIConnector_NPETest
+ * @run build TestLibrary RMID
  * @run build RMIConnector_NPETest
  * @run main RMIConnector_NPETest
  */
-
-import java.io.*;
-import java.lang.management.*;
-import java.rmi.registry.*;
+import java.io.IOException;
 import javax.management.*;
-import javax.management.remote.*;
 import javax.management.remote.rmi.*;
 
-public class RMIConnector_NPETest  {
-
+public class RMIConnector_NPETest {
     public static void main(String argv[]) throws Exception {
-        boolean testFailed = false;
-        String rmidCmd = System.getProperty("java.home") + File.separator +
-            "bin" + File.separator + "rmid -port 3333";
-        String stopRmidCmd = System.getProperty("java.home") + File.separator +
-                "bin" + File.separator + "rmid -stop -port 3333";
-    try {
-        //start an rmid daemon and give it some time
-        System.out.println("Starting rmid");
-        Runtime.getRuntime().exec(rmidCmd);
-        Thread.sleep(5000);
+        RMID rmid = RMID.createRMID();
+        rmid.start();
+        int rmidPort = rmid.getPort();
+        Exception failureCause = null;
+        RMIConnector agent = null;
 
-        MBeanServer mbs = MBeanServerFactory.createMBeanServer();
-        RMIJRMPServerImpl rmiserver = new RMIJRMPServerImpl(3333, null, null, null);
-        rmiserver.setMBeanServer(mbs);
-        RMIConnector agent = new RMIConnector(rmiserver, null);
-        agent.connect();
-    } catch(NullPointerException npe) {
-        npe.printStackTrace();
-        testFailed = true;
-    } catch (Exception e) {
-        // OK
-    } finally {
-        System.out.println("Stopping rmid");
-        Runtime.getRuntime().exec(stopRmidCmd);
+        try {
+            MBeanServer mbs = MBeanServerFactory.createMBeanServer();
+            RMIJRMPServerImpl rmiserver = new RMIJRMPServerImpl(rmidPort, null, null, null);
+            rmiserver.setMBeanServer(mbs);
+            agent = new RMIConnector(rmiserver, null);
+            agent.connect();
+        } catch (NullPointerException npe) {
+            failureCause = npe;
+        } catch (Exception e) {
+            // OK
+        } finally {
+            if (agent != null) {
+                try {
+                    agent.close();
+                } catch (IOException e) {
+                    // ignore
+                }
+            }
+            rmid.shutdown(rmidPort);
         }
 
-    if(testFailed)
-        throw new Exception("Test failed");
+        if (failureCause != null) {
+            TestLibrary.bomb("Test failed", failureCause);
+        }
 
     }
 }

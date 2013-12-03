@@ -281,7 +281,7 @@ public abstract class Format implements Serializable, Cloneable {
     }
 
     /**
-     * Creates an <code>AttributedCharacterIterator</code> containg the
+     * Creates an <code>AttributedCharacterIterator</code> containing the
      * concatenated contents of the passed in
      * <code>AttributedCharacterIterator</code>s.
      *

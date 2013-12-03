@@ -49,7 +49,7 @@ public class SharedMemoryListeningConnector extends GenericListeningConnector {
 
         transport = new Transport() {
             public String name() {
-                return "dt_shmem";              // compatability
+                return "dt_shmem";              // compatibility
             }
         };
     }

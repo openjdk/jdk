@@ -43,7 +43,7 @@ import static sun.reflect.annotation.TypeAnnotation.*;
  * TypeAnnotationParser implements the logic needed to parse
  * TypeAnnotations from an array of bytes.
  */
-public class TypeAnnotationParser {
+public final class TypeAnnotationParser {
     private static final TypeAnnotation[] EMPTY_TYPE_ANNOTATION_ARRAY = new TypeAnnotation[0];
 
     /**
@@ -54,7 +54,7 @@ public class TypeAnnotationParser {
      *
      * @param rawAnnotations the byte[] encoding of all type annotations on this declaration
      * @param cp the ConstantPool needed to parse the embedded Annotation
-     * @param decl the dclaration this type annotation is on
+     * @param decl the declaration this type annotation is on
      * @param container the Class this type annotation is on (may be the same as decl)
      * @param type the type the AnnotatedType corresponds to
      * @param filter the type annotation targets included in this AnnotatedType
@@ -237,7 +237,7 @@ public class TypeAnnotationParser {
         return parseAnnotatedBounds(bounds, decl, typeVarIndex, LocationInfo.BASE_LOCATION);
     }
     //helper for above
-    static <D extends GenericDeclaration> AnnotatedType[] parseAnnotatedBounds(Type[] bounds,
+    private static <D extends GenericDeclaration> AnnotatedType[] parseAnnotatedBounds(Type[] bounds,
             D decl,
             int typeVarIndex,
             LocationInfo loc) {

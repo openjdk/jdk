@@ -126,6 +126,7 @@ HS_DTRACE_PROBE_DECL9(hotspot, method__compile__end,
 
 bool CompileBroker::_initialized = false;
 volatile bool CompileBroker::_should_block = false;
+volatile jint CompileBroker::_print_compilation_warning = 0;
 volatile jint CompileBroker::_should_compile_new_jobs = run_compilation;
 
 // The installed compiler(s)
@@ -780,6 +781,10 @@ CompilerCounters::CompilerCounters(const char* thread_name, int instance, TRAPS)
 void CompileBroker::compilation_init() {
   _last_method_compiled[0] = '\0';
 
+  // No need to initialize compilation system if we do not use it.
+  if (!UseCompiler) {
+    return;
+  }
 #ifndef SHARK
   // Set the interface to the current compiler(s).
   int c1_count = CompilationPolicy::policy()->compiler_count(CompLevel_simple);
@@ -2023,11 +2028,10 @@ void CompileBroker::invoke_compiler_on_method(CompileTask* task) {
 #endif
 }
 
-// ------------------------------------------------------------------
-// CompileBroker::handle_full_code_cache
-//
-// The CodeCache is full.  Print out warning and disable compilation or
-// try code cache cleaning so compilation can continue later.
+/**
+ * The CodeCache is full.  Print out warning and disable compilation
+ * or try code cache cleaning so compilation can continue later.
+ */
 void CompileBroker::handle_full_code_cache() {
   UseInterpreter = true;
   if (UseCompiler || AlwaysCompileLoopMethods ) {
@@ -2044,11 +2048,8 @@ void CompileBroker::handle_full_code_cache() {
       xtty->stamp();
       xtty->end_elem();
     }
-    warning("CodeCache is full. Compiler has been disabled.");
-    warning("Try increasing the code cache size using -XX:ReservedCodeCacheSize=");
 
     CodeCache::report_codemem_full();
-
 
 #ifndef PRODUCT
     if (CompileTheWorld || ExitOnFullCodeCache) {
@@ -2062,17 +2063,22 @@ void CompileBroker::handle_full_code_cache() {
       // Since code cache is full, immediately stop new compiles
       if (CompileBroker::set_should_compile_new_jobs(CompileBroker::stop_compilation)) {
         NMethodSweeper::log_sweep("disable_compiler");
-
-        // Switch to 'vm_state'. This ensures that possibly_sweep() can be called
-        // without having to consider the state in which the current thread is.
-        ThreadInVMfromUnknown in_vm;
-        NMethodSweeper::possibly_sweep();
       }
+      // Switch to 'vm_state'. This ensures that possibly_sweep() can be called
+      // without having to consider the state in which the current thread is.
+      ThreadInVMfromUnknown in_vm;
+      NMethodSweeper::possibly_sweep();
     } else {
       disable_compilation_forever();
     }
+
+    // Print warning only once
+    if (should_print_compiler_warning()) {
+      warning("CodeCache is full. Compiler has been disabled.");
+      warning("Try increasing the code cache size using -XX:ReservedCodeCacheSize=");
+      codecache_print(/* detailed= */ true);
+    }
   }
-  codecache_print(/* detailed= */ true);
 }
 
 // ------------------------------------------------------------------

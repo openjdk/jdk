@@ -7681,3 +7681,12 @@ FormatData/pt/MonthAbbreviations/11=dez
 
 # bug 8021121
 CurrencyNames/lv_LV/EUR=\u20AC
+
+# bug # 6192407
+LocaleNames/ko/PT=\ud3ec\ub974\ud22c\uce7c
+
+# bug 6931564
+LocaleNames/sv/ZA=Sydafrika
+
+# bug 8027695
+FormatData/sv_SE/NumberPatterns/2=#,##0 %

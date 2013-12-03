@@ -21,14 +21,16 @@
  * questions.
  */
 
-import static com.sun.tools.classfile.TypeAnnotation.TargetType.*;
-
 /*
  * @test
+ * @bug 8026791
  * @summary Test population of reference info for constructor results
  * @compile -g Driver.java ReferenceInfoUtil.java Constructors.java
  * @run main Driver Constructors
  */
+
+import static com.sun.tools.classfile.TypeAnnotation.TargetType.*;
+
 public class Constructors {
 
     @TADescriptions({
@@ -42,8 +44,8 @@ public class Constructors {
     }
 
     @TADescriptions({
-        @TADescription(annotation = "TA", type = METHOD_RETURN),
-        @TADescription(annotation = "TB", type = METHOD_RETURN),
+        @TADescription(annotation = "TA", type = METHOD_RETURN, genericLocation = {1, 0}),
+        @TADescription(annotation = "TB", type = METHOD_RETURN, genericLocation = {1, 0}),
         @TADescription(annotation = "TC", type = METHOD_FORMAL_PARAMETER, paramIndex = 0)
     })
     @TestClass("Test$Inner")
@@ -56,9 +58,9 @@ public class Constructors {
 
     @TADescriptions({
         @TADescription(annotation = "TA", type = METHOD_RECEIVER),
-        @TADescription(annotation = "TB", type = METHOD_RETURN),
+        @TADescription(annotation = "TB", type = METHOD_RETURN, genericLocation = {1, 0}),
         @TADescription(annotation = "TC", type = METHOD_RECEIVER),
-        @TADescription(annotation = "TD", type = METHOD_RETURN),
+        @TADescription(annotation = "TD", type = METHOD_RETURN, genericLocation = {1, 0}),
         @TADescription(annotation = "TE", type = METHOD_FORMAL_PARAMETER, paramIndex = 0)
     })
     @TestClass("Test$Inner")
@@ -72,9 +74,9 @@ public class Constructors {
     @TADescriptions({
         @TADescription(annotation = "TA", type = METHOD_RECEIVER),
         @TADescription(annotation = "TB", type = METHOD_RECEIVER, genericLocation = {1, 0}),
-        @TADescription(annotation = "TC", type = METHOD_RETURN),
+        @TADescription(annotation = "TC", type = METHOD_RETURN, genericLocation = {1, 0, 1, 0}),
         @TADescription(annotation = "TD", type = METHOD_RECEIVER, genericLocation = {1, 0}),
-        @TADescription(annotation = "TE", type = METHOD_RETURN),
+        @TADescription(annotation = "TE", type = METHOD_RETURN, genericLocation = {1, 0, 1, 0}),
         @TADescription(annotation = "TF", type = METHOD_FORMAL_PARAMETER, paramIndex = 0)
     })
     @TestClass("Outer$Middle$Inner")

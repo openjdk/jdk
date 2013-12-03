@@ -240,6 +240,7 @@ public abstract class Executable extends AccessibleObject
      * declared or implicitly declared or neither) for the executable
      * represented by this object.
      *
+     * @since 1.8
      * @return The number of formal parameters for the executable this
      * object represents
      */
@@ -290,6 +291,7 @@ public abstract class Executable extends AccessibleObject
      * have unique names, or names that are legal identifiers in the
      * Java programming language (JLS 3.8).
      *
+     * @since 1.8
      * @throws MalformedParametersException if the class file contains
      * a MethodParameters attribute that is improperly formatted.
      * @return an array of {@code Parameter} objects representing all
@@ -383,7 +385,7 @@ public abstract class Executable extends AccessibleObject
     private transient volatile Parameter[] parameters;
 
     private native Parameter[] getParameters0();
-    private native byte[] getTypeAnnotationBytes0();
+    native byte[] getTypeAnnotationBytes0();
 
     // Needed by reflectaccess
     byte[] getTypeAnnotationBytes() {
@@ -527,7 +529,7 @@ public abstract class Executable extends AccessibleObject
     public <T extends Annotation> T[] getAnnotationsByType(Class<T> annotationClass) {
         Objects.requireNonNull(annotationClass);
 
-        return AnnotationSupport.getMultipleAnnotations(declaredAnnotations(), annotationClass);
+        return AnnotationSupport.getDirectlyAndIndirectlyPresent(declaredAnnotations(), annotationClass);
     }
 
     /**

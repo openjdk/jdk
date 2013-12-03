@@ -132,7 +132,7 @@ public class RelationService extends NotificationBroadcasterSupport
     private MBeanServer myMBeanServer = null;
 
     // Filter registered in the MBean Server with the Relation Service to be
-    // informed of referenced MBean unregistrations
+    // informed of referenced MBean deregistrations
     private MBeanServerNotificationFilter myUnregNtfFilter = null;
 
     // List of unregistration notifications received (storage used if purge
@@ -2108,7 +2108,7 @@ public class RelationService extends NotificationBroadcasterSupport
      * <P>Will check the role according to its corresponding role definition
      * provided in relation's relation type
      * <P>The Relation Service will keep track of the change to keep the
-     * consistency of relations by handling referenced MBean unregistrations.
+     * consistency of relations by handling referenced MBean deregistrations.
      *
      * @param relationId  relation id
      * @param role  role to be set (name and new value)
@@ -2220,7 +2220,7 @@ public class RelationService extends NotificationBroadcasterSupport
      * <P>Will check the role according to its corresponding role definition
      * provided in relation's relation type
      * <P>The Relation Service keeps track of the changes to keep the
-     * consistency of relations by handling referenced MBean unregistrations.
+     * consistency of relations by handling referenced MBean deregistrations.
      *
      * @param relationId  relation id
      * @param roleList  list of roles to be set
@@ -2306,8 +2306,7 @@ public class RelationService extends NotificationBroadcasterSupport
      * @param relationId  relation id
      *
      * @return a HashMap mapping:
-     * <P> ObjectName -> ArrayList of String (role
-     * names)
+     * <P> ObjectName {@literal ->} ArrayList of String (role names)
      *
      * @exception IllegalArgumentException  if null parameter
      * @exception RelationNotFoundException  if no relation for given
@@ -2831,7 +2830,7 @@ public class RelationService extends NotificationBroadcasterSupport
     }
 
     // Updates the listener registered to the MBean Server to be informed of
-    // referenced MBean unregistrations
+    // referenced MBean deregistrations
     //
     // -param newRefList  ArrayList of ObjectNames for new references done
     //  to MBeans (can be null)

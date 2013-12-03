@@ -29,14 +29,14 @@ import java.io.*;
 
 /**
  * <b>NOTE:</b> The <code>Event</code> class is obsolete and is
- * available only for backwards compatilibility.  It has been replaced
+ * available only for backwards compatibility.  It has been replaced
  * by the <code>AWTEvent</code> class and its subclasses.
  * <p>
  * <code>Event</code> is a platform-independent class that
  * encapsulates events from the platform's Graphical User
  * Interface in the Java&nbsp;1.0 event model. In Java&nbsp;1.1
  * and later versions, the <code>Event</code> class is maintained
- * only for backwards compatibilty. The information in this
+ * only for backwards compatibility. The information in this
  * class description is provided to assist programmers in
  * converting Java&nbsp;1.0 programs to the new event model.
  * <p>
@@ -390,7 +390,7 @@ public class Event implements java.io.Serializable {
     /**
      * The user has moved the bubble (thumb) in a scroll bar,
      * moving to an "absolute" position, rather than to
-     * an offset from the last postion.
+     * an offset from the last position.
      */
     public static final int SCROLL_ABSOLUTE     = 5 + SCROLL_EVENT;
 
@@ -609,7 +609,7 @@ public class Event implements java.io.Serializable {
 
     /**
      * <b>NOTE:</b> The <code>Event</code> class is obsolete and is
-     * available only for backwards compatilibility.  It has been replaced
+     * available only for backwards compatibility.  It has been replaced
      * by the <code>AWTEvent</code> class and its subclasses.
      * <p>
      * Creates an instance of <code>Event</code> with the specified target
@@ -660,7 +660,7 @@ public class Event implements java.io.Serializable {
 
     /**
      * <b>NOTE:</b> The <code>Event</code> class is obsolete and is
-     * available only for backwards compatilibility.  It has been replaced
+     * available only for backwards compatibility.  It has been replaced
      * by the <code>AWTEvent</code> class and its subclasses.
      * <p>
      * Creates an instance of <code>Event</code>, with the specified target
@@ -681,7 +681,7 @@ public class Event implements java.io.Serializable {
 
     /**
      * <b>NOTE:</b> The <code>Event</code> class is obsolete and is
-     * available only for backwards compatilibility.  It has been replaced
+     * available only for backwards compatibility.  It has been replaced
      * by the <code>AWTEvent</code> class and its subclasses.
      * <p>
      * Creates an instance of <code>Event</code> with the specified
@@ -696,7 +696,7 @@ public class Event implements java.io.Serializable {
 
     /**
      * <b>NOTE:</b> The <code>Event</code> class is obsolete and is
-     * available only for backwards compatilibility.  It has been replaced
+     * available only for backwards compatibility.  It has been replaced
      * by the <code>AWTEvent</code> class and its subclasses.
      * <p>
      * Translates this event so that its <i>x</i> and <i>y</i>
@@ -717,7 +717,7 @@ public class Event implements java.io.Serializable {
 
     /**
      * <b>NOTE:</b> The <code>Event</code> class is obsolete and is
-     * available only for backwards compatilibility.  It has been replaced
+     * available only for backwards compatibility.  It has been replaced
      * by the <code>AWTEvent</code> class and its subclasses.
      * <p>
      * Checks if the Shift key is down.
@@ -733,7 +733,7 @@ public class Event implements java.io.Serializable {
 
     /**
      * <b>NOTE:</b> The <code>Event</code> class is obsolete and is
-     * available only for backwards compatilibility.  It has been replaced
+     * available only for backwards compatibility.  It has been replaced
      * by the <code>AWTEvent</code> class and its subclasses.
      * <p>
      * Checks if the Control key is down.
@@ -749,7 +749,7 @@ public class Event implements java.io.Serializable {
 
     /**
      * <b>NOTE:</b> The <code>Event</code> class is obsolete and is
-     * available only for backwards compatilibility.  It has been replaced
+     * available only for backwards compatibility.  It has been replaced
      * by the <code>AWTEvent</code> class and its subclasses.
      * <p>
      * Checks if the Meta key is down.
@@ -766,7 +766,7 @@ public class Event implements java.io.Serializable {
 
     /**
      * <b>NOTE:</b> The <code>Event</code> class is obsolete and is
-     * available only for backwards compatilibility.  It has been replaced
+     * available only for backwards compatibility.  It has been replaced
      * by the <code>AWTEvent</code> class and its subclasses.
      */
     void consume() {
@@ -784,7 +784,7 @@ public class Event implements java.io.Serializable {
 
     /**
      * <b>NOTE:</b> The <code>Event</code> class is obsolete and is
-     * available only for backwards compatilibility.  It has been replaced
+     * available only for backwards compatibility.  It has been replaced
      * by the <code>AWTEvent</code> class and its subclasses.
      */
     boolean isConsumed() {
@@ -793,7 +793,7 @@ public class Event implements java.io.Serializable {
 
     /*
      * <b>NOTE:</b> The <code>Event</code> class is obsolete and is
-     * available only for backwards compatilibility.  It has been replaced
+     * available only for backwards compatibility.  It has been replaced
      * by the <code>AWTEvent</code> class and its subclasses.
      * <p>
      * Returns the integer key-code associated with the key in this event,
@@ -811,7 +811,7 @@ public class Event implements java.io.Serializable {
 
     /*
      * <b>NOTE:</b> The <code>Event</code> class is obsolete and is
-     * available only for backwards compatilibility.  It has been replaced
+     * available only for backwards compatibility.  It has been replaced
      * by the <code>AWTEvent</code> class and its subclasses.
      * <p>
      * Returns a new KeyEvent char which corresponds to the int key
@@ -828,7 +828,7 @@ public class Event implements java.io.Serializable {
 
     /**
      * <b>NOTE:</b> The <code>Event</code> class is obsolete and is
-     * available only for backwards compatilibility.  It has been replaced
+     * available only for backwards compatibility.  It has been replaced
      * by the <code>AWTEvent</code> class and its subclasses.
      * <p>
      * Returns a string representing the state of this <code>Event</code>.
@@ -864,7 +864,7 @@ public class Event implements java.io.Serializable {
 
     /**
      * <b>NOTE:</b> The <code>Event</code> class is obsolete and is
-     * available only for backwards compatilibility.  It has been replaced
+     * available only for backwards compatibility.  It has been replaced
      * by the <code>AWTEvent</code> class and its subclasses.
      * <p>
      * Returns a representation of this event's values as a string.

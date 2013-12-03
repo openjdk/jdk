@@ -37,10 +37,10 @@ import java.sql.Savepoint;
  * <code>SyncProvider</code> abstract class so that it has finer grained
  * transaction control.
  * <p>
- * If one or more disconnected <code>RowSet</code> objects are particating
+ * If one or more disconnected <code>RowSet</code> objects are participating
  * in a global transaction, they may wish to coordinate their synchronization
  * commits to preserve data integrity and reduce the number of
- * sychronization exceptions. If this is the case, an application should set
+ * synchronization exceptions. If this is the case, an application should set
  * the <code>CachedRowSet</code> constant <code>COMMIT_ON_ACCEPT_CHANGES</code>
  * to <code>false</code> and use the <code>commit</code> and <code>rollback</code>
  * methods defined in this interface to manage transaction boundaries.

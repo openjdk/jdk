@@ -221,18 +221,70 @@ public class LongAccumulator extends Striped64 implements Serializable {
         return (double)get();
     }
 
-    private void writeObject(java.io.ObjectOutputStream s)
-        throws java.io.IOException {
-        s.defaultWriteObject();
-        s.writeLong(get());
+    /**
+     * Serialization proxy, used to avoid reference to the non-public
+     * Striped64 superclass in serialized forms.
+     * @serial include
+     */
+    private static class SerializationProxy implements Serializable {
+        private static final long serialVersionUID = 7249069246863182397L;
+
+        /**
+         * The current value returned by get().
+         * @serial
+         */
+        private final long value;
+        /**
+         * The function used for updates.
+         * @serial
+         */
+        private final LongBinaryOperator function;
+        /**
+         * The identity value
+         * @serial
+         */
+        private final long identity;
+
+        SerializationProxy(LongAccumulator a) {
+            function = a.function;
+            identity = a.identity;
+            value = a.get();
+        }
+
+        /**
+         * Returns a {@code LongAccumulator} object with initial state
+         * held by this proxy.
+         *
+         * @return a {@code LongAccumulator} object with initial state
+         * held by this proxy.
+         */
+        private Object readResolve() {
+            LongAccumulator a = new LongAccumulator(function, identity);
+            a.base = value;
+            return a;
+        }
     }
 
+    /**
+     * Returns a
+     * <a href="../../../../serialized-form.html#java.util.concurrent.atomic.LongAccumulator.SerializationProxy">
+     * SerializationProxy</a>
+     * representing the state of this instance.
+     *
+     * @return a {@link SerializationProxy}
+     * representing the state of this instance
+     */
+    private Object writeReplace() {
+        return new SerializationProxy(this);
+    }
+
+    /**
+     * @param s the stream
+     * @throws java.io.InvalidObjectException always
+     */
     private void readObject(java.io.ObjectInputStream s)
-        throws java.io.IOException, ClassNotFoundException {
-        s.defaultReadObject();
-        cellsBusy = 0;
-        cells = null;
-        base = s.readLong();
+        throws java.io.InvalidObjectException {
+        throw new java.io.InvalidObjectException("Proxy required");
     }
 
 }

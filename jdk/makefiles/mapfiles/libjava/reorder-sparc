@@ -27,7 +27,8 @@ text: .text%Java_java_io_FileInputStream_initIDs;
 text: .text%Java_java_io_FileDescriptor_initIDs;
 text: .text%Java_java_io_FileOutputStream_initIDs;
 text: .text%Java_java_lang_System_setIn0;
-text: .text%Java_sun_reflect_Reflection_getCallerClass;
+text: .text%Java_sun_reflect_Reflection_getCallerClass__;
+text: .text%Java_sun_reflect_Reflection_getCallerClass__I;
 text: .text%Java_java_lang_Class_forName0;
 text: .text%Java_java_lang_Object_getClass;
 text: .text%Java_sun_reflect_Reflection_getClassAccessFlags;
@@ -87,7 +88,6 @@ text: .text%Java_java_lang_Throwable_getStackTraceElement;
 text: .text%throwFileNotFoundException;
 text: .text%JNU_NotifyAll;
 # Test LoadFrame
-text: .text%Java_java_lang_ref_Finalizer_invokeFinalizeMethod;
 text: .text%JNU_CallMethodByName;
 text: .text%JNU_CallMethodByNameV;
 text: .text%Java_java_io_UnixFileSystem_createDirectory;

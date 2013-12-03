@@ -528,7 +528,7 @@ public class Check {
             inferenceContext.addFreeTypeListener(List.of(req), new FreeTypeListener() {
                 @Override
                 public void typesInferred(InferenceContext inferenceContext) {
-                    checkType(pos, found, inferenceContext.asInstType(req), checkContext);
+                    checkType(pos, inferenceContext.asInstType(found), inferenceContext.asInstType(req), checkContext);
                 }
             });
         }
@@ -705,37 +705,6 @@ public class Check {
             }
         }
         return t;
-    }
-
-    // Analog of checkClassType that calls checkClassOrArrayType instead
-    Type checkClassOrArrayType(DiagnosticPosition pos,
-                               Type t, boolean noBounds) {
-        t = checkClassOrArrayType(pos, t);
-        if (noBounds && t.isParameterized()) {
-            List<Type> args = t.getTypeArguments();
-            while (args.nonEmpty()) {
-                if (args.head.hasTag(WILDCARD))
-                    return typeTagError(pos,
-                                        diags.fragment("type.req.exact"),
-                                        args.head);
-                args = args.tail;
-            }
-        }
-        return t;
-    }
-
-    /** Check that type is a reifiable class, interface or array type.
-     *  @param pos           Position to be used for error reporting.
-     *  @param t             The type to be checked.
-     */
-    Type checkReifiableReferenceType(DiagnosticPosition pos, Type t) {
-        t = checkClassOrArrayType(pos, t);
-        if (!t.isErroneous() && !types.isReifiable(t)) {
-            log.error(pos, "illegal.generic.type.for.instof");
-            return types.createErrorType(t);
-        } else {
-            return t;
-        }
     }
 
     /** Check that type is a reference type, i.e. a class, interface or array type
@@ -2253,9 +2222,6 @@ public class Check {
             seen = seen.prepend(tv);
             for (Type b : types.getBounds(tv))
                 checkNonCyclic1(pos, b, seen);
-        } else if (t.hasTag(ARRAY)) {
-            final ArrayType at = (ArrayType)t.unannotatedType();
-            checkNonCyclic1(pos, at.elemtype, seen);
         }
     }
 
@@ -3011,7 +2977,6 @@ public class Check {
     boolean annotationApplicable(JCAnnotation a, Symbol s) {
         Attribute.Array arr = getAttributeTargetAttribute(a.annotationType.type.tsym);
         Name[] targets;
-
         if (arr == null) {
             targets = defaultTargetMetaInfo(a, s);
         } else {
@@ -3028,7 +2993,7 @@ public class Check {
         }
         for (Name target : targets) {
             if (target == names.TYPE)
-                { if (s.kind == TYP) return true; }
+                { if (s.kind == TYP && !s.isAnonymous()) return true; }
             else if (target == names.FIELD)
                 { if (s.kind == VAR && s.owner.kind != MTH) return true; }
             else if (target == names.METHOD)

@@ -104,7 +104,7 @@ final class ChronoPeriodImpl
     /**
      * The set of supported units.
      */
-    private final static List<TemporalUnit> SUPPORTED_UNITS =
+    private static final List<TemporalUnit> SUPPORTED_UNITS =
             Collections.unmodifiableList(Arrays.<TemporalUnit>asList(YEARS, MONTHS, DAYS));
 
     /**

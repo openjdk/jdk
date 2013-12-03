@@ -559,7 +559,7 @@ class SnmpRequestHandler extends ClientHandler implements SnmpDefinitions {
         //
         SnmpPduPacket result= executeSubRequest(req,userData);
         if (result != null)
-            // It means that an error occured. The error is already
+            // It means that an error occurred. The error is already
             // formatted by the executeSubRequest
             // method.
             return result;

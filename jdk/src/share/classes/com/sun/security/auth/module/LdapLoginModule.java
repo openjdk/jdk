@@ -153,7 +153,7 @@ import com.sun.security.auth.UserPrincipal;
  *      If the attribute cannot be found then the option is ignored.
  *      When this option is supplied and the user has been successfully
  *      authenticated then an additional {@link UserPrincipal}
- *      is created using the authorization identity and it is assocated with
+ *      is created using the authorization identity and it is associated with
  *      the current {@link Subject}. </dd>
  *
  * <dt> <code>useSSL</code> </dt>

@@ -120,6 +120,7 @@ class NoCallStackClassLoader extends ClassLoader {
      */
     @Override
     protected Class<?> findClass(String name) throws ClassNotFoundException {
+        // Note: classNames is guaranteed by the constructor to be non-null.
         for (int i = 0; i < classNames.length; i++) {
             if (name.equals(classNames[i])) {
                 return defineClass(classNames[i], byteCodes[i], 0,

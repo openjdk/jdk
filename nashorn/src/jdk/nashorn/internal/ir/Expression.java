@@ -96,4 +96,16 @@ public abstract class Expression extends Node {
         assert hasType() : this + " has no type";
         return symbol.getSymbolType();
     }
+
+    /**
+     * Returns {@code true} if this expression depends exclusively on state that is constant
+     * or local to the currently running function and thus inaccessible to other functions.
+     * This implies that a local expression must not call any other functions (neither directly
+     * nor implicitly through a getter, setter, or object-to-primitive type conversion).
+     *
+     * @return true if this expression does not depend on state shared with other functions.
+     */
+    public boolean isLocal() {
+        return false;
+    }
 }

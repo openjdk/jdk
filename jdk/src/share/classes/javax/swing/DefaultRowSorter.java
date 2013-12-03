@@ -53,7 +53,7 @@ import javax.swing.SortOrder;
  * <code>Collator.getInstance()</code> is used on the results of
  * calling <code>toString</code> on the underlying objects.  The
  * <code>Comparator</code> is never passed <code>null</code>.  A
- * <code>null</code> value is treated as occuring before a
+ * <code>null</code> value is treated as occurring before a
  * non-<code>null</code> value, and two <code>null</code> values are
  * considered equal.
  * <p>

@@ -28,8 +28,10 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Optional;
 import java.util.Spliterator;
 import java.util.Spliterators;
+import java.util.concurrent.ThreadLocalRandom;
 import java.util.stream.*;
 
 import static java.util.stream.LambdaTestHelpers.*;
@@ -46,6 +48,21 @@ public class DistinctOpTest extends OpTestCase {
         assertCountSum(countTo(0).stream().distinct(), 0, 0);
         assertCountSum(countTo(10).stream().distinct(), 10, 55);
         assertCountSum(countTo(10).stream().distinct(), 10, 55);
+    }
+
+    public void testWithUnorderedInfiniteStream() {
+        // These tests should short-circuit, otherwise will fail with a time-out
+        // or an OOME
+
+        // Note that since the streams are unordered and any element is requested
+        // (a non-deterministic process) the only assertion that can be made is
+        // that an element should be found
+
+        Optional<Integer> oi = Stream.iterate(1, i -> i + 1).unordered().parallel().distinct().findAny();
+        assertTrue(oi.isPresent());
+
+        oi = ThreadLocalRandom.current().ints().boxed().parallel().distinct().findAny();
+        assertTrue(oi.isPresent());
     }
 
     @Test(dataProvider = "StreamTestData<Integer>", dataProviderClass = StreamTestDataProvider.class)

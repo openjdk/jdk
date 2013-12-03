@@ -69,7 +69,7 @@ import java.net.*;
  * a String value of 'neat' and the String key 'foo' with a String value of
  * 'bar'.
  * <p>The position argument will indicate the start of the tag, comment
- * or text. Similiar to arrays, the first character in the stream has a
+ * or text. Similar to arrays, the first character in the stream has a
  * position of 0. For tags that are
  * implied the position will indicate
  * the location of the next encountered tag. In the first example,

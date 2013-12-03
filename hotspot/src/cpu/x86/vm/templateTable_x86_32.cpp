@@ -558,7 +558,7 @@ void TemplateTable::aload() {
 
 
 void TemplateTable::locals_index_wide(Register reg) {
-  __ movl(reg, at_bcp(2));
+  __ load_unsigned_short(reg, at_bcp(2));
   __ bswapl(reg);
   __ shrl(reg, 16);
   __ negptr(reg);
@@ -1552,7 +1552,11 @@ void TemplateTable::branch(bool is_jsr, bool is_wide) {
                               InvocationCounter::counter_offset();
 
   // Load up EDX with the branch displacement
-  __ movl(rdx, at_bcp(1));
+  if (is_wide) {
+    __ movl(rdx, at_bcp(1));
+  } else {
+    __ load_signed_short(rdx, at_bcp(1));
+  }
   __ bswapl(rdx);
   if (!is_wide) __ sarl(rdx, 16);
   LP64_ONLY(__ movslq(rdx, rdx));
@@ -2925,9 +2929,7 @@ void TemplateTable::prepare_invoke(int byte_no,
   ConstantPoolCacheEntry::verify_tos_state_shift();
   // load return address
   {
-    const address table_addr = (is_invokeinterface || is_invokedynamic) ?
-        (address)Interpreter::return_5_addrs_by_index_table() :
-        (address)Interpreter::return_3_addrs_by_index_table();
+    const address table_addr = (address) Interpreter::invoke_return_entry_table_for(code);
     ExternalAddress table(table_addr);
     __ movptr(flags, ArrayAddress(table, Address(noreg, flags, Address::times_ptr)));
   }

@@ -36,7 +36,7 @@ import sun.tools.attach.HotSpotVirtualMachine;
 
 /*
  * This class is the main class for the JMap utility. It parses its arguments
- * and decides if the command should be satisifed using the VM attach mechanism
+ * and decides if the command should be satisfied using the VM attach mechanism
  * or an SA tool. At this time the only option that uses the VM attach mechanism
  * is the -dump option to get a heap dump of a running application. All other
  * options are mapped to SA tools.
@@ -60,7 +60,7 @@ public class JMap {
 
     public static void main(String[] args) throws Exception {
         if (args.length == 0) {
-            usage(); // no arguments
+            usage(1); // no arguments
         }
 
         // used to indicate if we should use SA
@@ -77,11 +77,13 @@ public class JMap {
             if (!arg.startsWith("-")) {
                 break;
             }
-            if (arg.equals(FORCE_SA_OPTION)) {
+            if (arg.equals("-help") || arg.equals("-h")) {
+                usage(0);
+            } else if (arg.equals(FORCE_SA_OPTION)) {
                 useSA = true;
             } else {
                 if (option != null) {
-                    usage();  // option already specified
+                    usage(1);  // option already specified
                 }
                 option = arg;
             }
@@ -101,7 +103,7 @@ public class JMap {
         // only one parameter (the process-id)
         int paramCount = args.length - optionCount;
         if (paramCount == 0 || paramCount > 2) {
-            usage();
+            usage(1);
         }
 
         if (optionCount == 0 || paramCount != 1) {
@@ -139,7 +141,7 @@ public class JMap {
             } else if (option.startsWith(DUMP_OPTION_PREFIX)) {
                 dump(pid, option);
             } else {
-                usage();
+                usage(1);
             }
         }
     }
@@ -161,7 +163,9 @@ public class JMap {
         if (option.startsWith(DUMP_OPTION_PREFIX)) {
             // first check that the option can be parsed
             String fn = parseDumpOptions(option);
-            if (fn == null) usage();
+            if (fn == null) {
+                usage(1);
+            }
 
             // tool for heap dumping
             tool = "sun.jvm.hotspot.tools.HeapDumper";
@@ -180,13 +184,13 @@ public class JMap {
             }
         }
         if (tool == null) {
-            usage();   // no mapping to tool
+            usage(1);   // no mapping to tool
         }
 
         // Tool not available on this  platform.
         Class<?> c = loadClass(tool);
         if (c == null) {
-            usage();
+            usage(1);
         }
 
         // invoke the main method with the arguments
@@ -225,7 +229,7 @@ public class JMap {
         // parse the options to get the dump filename
         String filename = parseDumpOptions(options);
         if (filename == null) {
-            usage();  // invalid options or no filename
+            usage(1);  // invalid options or no filename
         }
 
         // get the canonical path - important to avoid just passing
@@ -341,49 +345,49 @@ public class JMap {
     }
 
     // print usage message
-    private static void usage() {
-        System.out.println("Usage:");
+    private static void usage(int exit) {
+        System.err.println("Usage:");
         if (haveSA()) {
-            System.out.println("    jmap [option] <pid>");
-            System.out.println("        (to connect to running process)");
-            System.out.println("    jmap [option] <executable <core>");
-            System.out.println("        (to connect to a core file)");
-            System.out.println("    jmap [option] [server_id@]<remote server IP or hostname>");
-            System.out.println("        (to connect to remote debug server)");
-            System.out.println("");
-            System.out.println("where <option> is one of:");
-            System.out.println("    <none>               to print same info as Solaris pmap");
-            System.out.println("    -heap                to print java heap summary");
-            System.out.println("    -histo[:live]        to print histogram of java object heap; if the \"live\"");
-            System.out.println("                         suboption is specified, only count live objects");
-            System.out.println("    -clstats             to print class loader statistics");
-            System.out.println("    -finalizerinfo       to print information on objects awaiting finalization");
-            System.out.println("    -dump:<dump-options> to dump java heap in hprof binary format");
-            System.out.println("                         dump-options:");
-            System.out.println("                           live         dump only live objects; if not specified,");
-            System.out.println("                                        all objects in the heap are dumped.");
-            System.out.println("                           format=b     binary format");
-            System.out.println("                           file=<file>  dump heap to <file>");
-            System.out.println("                         Example: jmap -dump:live,format=b,file=heap.bin <pid>");
-            System.out.println("    -F                   force. Use with -dump:<dump-options> <pid> or -histo");
-            System.out.println("                         to force a heap dump or histogram when <pid> does not");
-            System.out.println("                         respond. The \"live\" suboption is not supported");
-            System.out.println("                         in this mode.");
-            System.out.println("    -h | -help           to print this help message");
-            System.out.println("    -J<flag>             to pass <flag> directly to the runtime system");
+            System.err.println("    jmap [option] <pid>");
+            System.err.println("        (to connect to running process)");
+            System.err.println("    jmap [option] <executable <core>");
+            System.err.println("        (to connect to a core file)");
+            System.err.println("    jmap [option] [server_id@]<remote server IP or hostname>");
+            System.err.println("        (to connect to remote debug server)");
+            System.err.println("");
+            System.err.println("where <option> is one of:");
+            System.err.println("    <none>               to print same info as Solaris pmap");
+            System.err.println("    -heap                to print java heap summary");
+            System.err.println("    -histo[:live]        to print histogram of java object heap; if the \"live\"");
+            System.err.println("                         suboption is specified, only count live objects");
+            System.err.println("    -clstats             to print class loader statistics");
+            System.err.println("    -finalizerinfo       to print information on objects awaiting finalization");
+            System.err.println("    -dump:<dump-options> to dump java heap in hprof binary format");
+            System.err.println("                         dump-options:");
+            System.err.println("                           live         dump only live objects; if not specified,");
+            System.err.println("                                        all objects in the heap are dumped.");
+            System.err.println("                           format=b     binary format");
+            System.err.println("                           file=<file>  dump heap to <file>");
+            System.err.println("                         Example: jmap -dump:live,format=b,file=heap.bin <pid>");
+            System.err.println("    -F                   force. Use with -dump:<dump-options> <pid> or -histo");
+            System.err.println("                         to force a heap dump or histogram when <pid> does not");
+            System.err.println("                         respond. The \"live\" suboption is not supported");
+            System.err.println("                         in this mode.");
+            System.err.println("    -h | -help           to print this help message");
+            System.err.println("    -J<flag>             to pass <flag> directly to the runtime system");
         } else {
-            System.out.println("    jmap -histo <pid>");
-            System.out.println("      (to connect to running process and print histogram of java object heap");
-            System.out.println("    jmap -dump:<dump-options> <pid>");
-            System.out.println("      (to connect to running process and dump java heap)");
-            System.out.println("");
-            System.out.println("    dump-options:");
-            System.out.println("      format=b     binary default");
-            System.out.println("      file=<file>  dump heap to <file>");
-            System.out.println("");
-            System.out.println("    Example:       jmap -dump:format=b,file=heap.bin <pid>");
+            System.err.println("    jmap -histo <pid>");
+            System.err.println("      (to connect to running process and print histogram of java object heap");
+            System.err.println("    jmap -dump:<dump-options> <pid>");
+            System.err.println("      (to connect to running process and dump java heap)");
+            System.err.println("");
+            System.err.println("    dump-options:");
+            System.err.println("      format=b     binary default");
+            System.err.println("      file=<file>  dump heap to <file>");
+            System.err.println("");
+            System.err.println("    Example:       jmap -dump:format=b,file=heap.bin <pid>");
         }
 
-        System.exit(1);
+        System.exit(exit);
     }
 }

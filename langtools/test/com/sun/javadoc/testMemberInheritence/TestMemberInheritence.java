@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 4638588 4635809 6256068 6270645 8025633
+ * @bug 4638588 4635809 6256068 6270645 8025633 8026567
  * @summary Test to make sure that members are inherited properly in the Javadoc.
  *          Verify that inheritence labels are correct.
  * @author jamieh
@@ -72,7 +72,7 @@ public class TestMemberInheritence extends JavadocTester {
 
          // Test overriding/implementing methods with generic parameters.
                  {BUG_ID + FS + "pkg" + FS + "BaseClass.html",
-         "<dl>" + NL + "<dt><span class=\"strong\">Specified by:</span></dt>" + NL +
+         "<dl>" + NL + "<dt><span class=\"overrideSpecifyLabel\">Specified by:</span></dt>" + NL +
                           "<dd><code><a href=\"../pkg/BaseInterface.html#getAnnotation-java.lang.Class-\">" +
                           "getAnnotation</a></code>&nbsp;in interface&nbsp;<code>" +
                           "<a href=\"../pkg/BaseInterface.html\" title=\"interface in pkg\">" +

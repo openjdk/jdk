@@ -761,7 +761,7 @@ public final class HttpCookie implements Cloneable {
     // from RFC 2068, token special case characters
     //
     // private static final String tspecials = "()<>@,;:\\\"/[]?={} \t";
-    private static final String tspecials = ",;";
+    private static final String tspecials = ",; ";  // deliberately includes space
 
     /*
      * Tests a string and returns true if the string counts as a token.

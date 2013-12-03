@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,9 +32,9 @@ import sun.management.jdp.JdpException;
 public class JdpDoSomething {
 
     private static final String lockFileName = "JdpDoSomething.lck";
-    private static final boolean verbose=false;
+    private static final boolean verbose = false;
 
-    public static boolean getVerbose(){
+    public static boolean getVerbose() {
         return verbose;
     }
 
@@ -52,13 +52,16 @@ public class JdpDoSomething {
             System.out.println("Jmx: " + p.getJmxServiceUrl());
             System.out.println("Main: " + p.getMainClass());
             System.out.println("InstanceName: " + p.getInstanceName());
+            System.out.println("ProccessId: " + p.getProcessId());
+            System.out.println("BroadcastInterval: " + p.getBroadcastInterval());
+            System.out.println("Rmi Hostname: " + p.getRmiHostname());
 
             System.out.flush();
         }
     }
 
     public static void compaireJdpPacketEx(JdpJmxPacket p1, JdpJmxPacket p2)
-    throws JdpException {
+            throws JdpException {
 
         if (!Objects.equals(p1, p1)) {
             throw new JdpException("Packet mismatch error");

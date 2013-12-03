@@ -523,12 +523,10 @@ JNIEXPORT jint JNICALL
 Java_sun_java2d_xr_XRBackendNative_XRCreateLinearGradientPaintNative
     (JNIEnv *env, jclass xsd, jfloatArray fractionsArray,
      jshortArray pixelsArray, jint x1, jint y1, jint x2, jint y2,
-     jint numStops, jint repeat,
-     jint m00, jint m01, jint m02, jint m10, jint m11, jint m12) {
+     jint numStops, jint repeat) {
    jint i;
    jshort* pixels;
    jfloat* fractions;
-   XTransform tr;
    XRenderPictureAttributes pict_attr;
    Picture gradient = 0;
    XRenderColor *colors;
@@ -594,8 +592,6 @@ Java_sun_java2d_xr_XRBackendNative_XRCreateLinearGradientPaintNative
    (*env)->ReleasePrimitiveArrayCritical(env, fractionsArray, fractions, JNI_ABORT);
 
     if (gradient != 0) {
-        BUILD_TRANSFORM_MATRIX(tr, m00, m01, m02, m10, m11, m12);
-        XRenderSetPictureTransform (awt_display, gradient, &tr);
         pict_attr.repeat = repeat;
         XRenderChangePicture (awt_display, gradient, CPRepeat, &pict_attr);
     }
@@ -608,12 +604,11 @@ JNIEXPORT jint JNICALL
 Java_sun_java2d_xr_XRBackendNative_XRCreateRadialGradientPaintNative
     (JNIEnv *env, jclass xsd, jfloatArray fractionsArray,
      jshortArray pixelsArray, jint numStops,
-     jint innerRadius, jint outerRadius, jint repeat,
-     jint m00, jint m01, jint m02, jint m10, jint m11, jint m12) {
+     jint centerX, jint centerY,
+     jint innerRadius, jint outerRadius, jint repeat) {
    jint i;
    jshort* pixels;
    jfloat* fractions;
-   XTransform tr;
    XRenderPictureAttributes pict_attr;
    Picture gradient = 0;
    XRenderColor *colors;
@@ -637,11 +632,11 @@ Java_sun_java2d_xr_XRBackendNative_XRCreateRadialGradientPaintNative
        return -1; //TODO release pixels first
    }
 
-    grad.inner.x = 0;
-    grad.inner.y = 0;
+    grad.inner.x = centerX;
+    grad.inner.y = centerY;
     grad.inner.radius = innerRadius;
-    grad.outer.x = 0;
-    grad.outer.y = 0;
+    grad.outer.x = centerX;
+    grad.outer.y = centerY;
     grad.outer.radius = outerRadius;
 
     /*TODO optimized & malloc check*/
@@ -682,8 +677,6 @@ Java_sun_java2d_xr_XRBackendNative_XRCreateRadialGradientPaintNative
 
 
     if (gradient != 0) {
-        BUILD_TRANSFORM_MATRIX(tr, m00, m01, m02, m10, m11, m12);
-        XRenderSetPictureTransform (awt_display, gradient, &tr);
         pict_attr.repeat = repeat;
         XRenderChangePicture (awt_display, gradient, CPRepeat, &pict_attr);
     }

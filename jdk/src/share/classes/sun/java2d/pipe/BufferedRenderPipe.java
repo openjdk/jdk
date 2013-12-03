@@ -224,7 +224,7 @@ public abstract class BufferedRenderPipe
                 buf.put(xPoints, 0, nPoints);
                 buf.put(yPoints, 0, nPoints);
             } else {
-                // queue is too small to accomodate all points; perform the
+                // queue is too small to accommodate all points; perform the
                 // operation directly on the queue flushing thread
                 rq.flushAndInvokeNow(new Runnable() {
                     public void run() {

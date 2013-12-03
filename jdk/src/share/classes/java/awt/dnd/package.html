@@ -25,6 +25,7 @@
 
 <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2 Final//EN">
 <html>
+<head><title></title></head>
 <body bgcolor="white">
 
 Drag and Drop is a direct manipulation gesture found in many Graphical
@@ -51,18 +52,18 @@ states (not entirely sequentially):
 associated with some presentation
 element (<code>Component</code>) in the GUI, to initiate a Drag and Drop of
 some potentially <code>Transferable</code> data. 
-<P>
+<br><br>
 <LI>1 or more <code>DropTarget</code>(s) come into/go out of 
 existence, associated
 with presentation elements in the GUI (Components), potentially
 capable of consuming <code>Transferable</code> data types. 
-<P>
+<br><br>
 <LI> A <code>DragGestureRecognizer</code> is 
 obtained from the <code>DragSource</code> and is
 associated with a <code>Component</code> in order 
 to track and identify any Drag
 initiating gesture by the user over the <code>Component</code>. 
-<P>
+<br><br>
 <LI> A user makes a Drag gesture over the <code>Component</code>, 
 which the registered
 <code>DragGestureRecognizer</code> detects, and notifies its
@@ -76,13 +77,13 @@ contains the abstract class <code>MouseDragGestureRecognizer</code> for
 recognizing mouse device gestures. Other abstract subclasses may be
 provided by the platform to support other input devices or
 particular <code>Component</code> class semantics. 
-    <P>
+<br><br>
 <LI> The <code>DragGestureListener</code> causes the 
 <code>DragSource</code> to initiate the Drag
 and Drop operation on behalf of the user, perhaps animating the
 GUI Cursor and/or rendering an <code>Image</code> of the item(s) that are the
 subject of the operation.
-<P>
+<br><br>
 <LI> As the user gestures navigate over <code>Component</code>(s) 
 in the GUI with
 associated <code>DropTarget</code>(s), the <code>DragSource</code> 
@@ -111,11 +112,11 @@ as follows:
 <UL>
 <LI> By the transfer "operation" selected by the user, and supported by
 both the <code>DragSource</code> and <code>DropTarget</code>: Copy, Move or Reference(link). 
-<P>
+<br><br>
 <LI> By the intersection of the set of data types provided by the
 <code>DragSource</code> and the set of data types comprehensible by the 
 <code>DropTarget</code>. 
-<P>
+<br><br>
 <LI>When the user terminates the drag operation, normally resulting in a
 successful Drop, both the <code>DragSource</code> and <code>DropTarget</code>
 receive

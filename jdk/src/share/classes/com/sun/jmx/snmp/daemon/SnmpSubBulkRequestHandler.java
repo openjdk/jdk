@@ -52,7 +52,7 @@ class SnmpSubBulkRequestHandler extends SnmpSubRequestHandler {
     private SnmpAdaptorServer server = null;
 
     /**
-     * The constuctor initialize the subrequest with the whole varbind list contained
+     * The constructor initialize the subrequest with the whole varbind list contained
      * in the original request.
      */
     protected SnmpSubBulkRequestHandler(SnmpEngine engine,
@@ -68,7 +68,7 @@ class SnmpSubBulkRequestHandler extends SnmpSubRequestHandler {
     }
 
     /**
-     * The constuctor initialize the subrequest with the whole varbind list contained
+     * The constructor initialize the subrequest with the whole varbind list contained
      * in the original request.
      */
     protected SnmpSubBulkRequestHandler(SnmpAdaptorServer server,
@@ -111,7 +111,7 @@ class SnmpSubBulkRequestHandler extends SnmpSubRequestHandler {
             if (SNMP_ADAPTOR_LOGGER.isLoggable(Level.FINEST)) {
                 SNMP_ADAPTOR_LOGGER.logp(Level.FINEST, SnmpSubRequestHandler.class.getName(),
                     "run", "[" + Thread.currentThread() +
-                    "]:an Snmp error occured during the operation", x);
+                    "]:an Snmp error occurred during the operation", x);
             }
         }
         catch(Exception x) {
@@ -119,7 +119,7 @@ class SnmpSubBulkRequestHandler extends SnmpSubRequestHandler {
             if (SNMP_ADAPTOR_LOGGER.isLoggable(Level.FINEST)) {
                 SNMP_ADAPTOR_LOGGER.logp(Level.FINEST, SnmpSubRequestHandler.class.getName(),
                     "run", "[" + Thread.currentThread() +
-                    "]:a generic error occured during the operation", x);
+                    "]:a generic error occurred during the operation", x);
             }
         }
         if (SNMP_ADAPTOR_LOGGER.isLoggable(Level.FINER)) {

@@ -474,7 +474,7 @@ public class DragSourceContext
 
     protected synchronized void updateCurrentCursor(int sourceAct, int targetAct, int status) {
 
-        // if the cursor has been previously set then dont do any defaults
+        // if the cursor has been previously set then don't do any defaults
         // processing.
 
         if (useCustomCursor) {
