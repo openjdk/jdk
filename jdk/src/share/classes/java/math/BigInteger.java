@@ -215,7 +215,7 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
      * Karatsuba multiplication will be used.   This value is found
      * experimentally to work well.
      */
-    private static final int KARATSUBA_THRESHOLD = 50;
+    private static final int KARATSUBA_THRESHOLD = 80;
 
     /**
      * The threshold value for using 3-way Toom-Cook multiplication.
@@ -224,7 +224,7 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
      * the mag arrays is greater than this threshold, then Toom-Cook
      * multiplication will be used.
      */
-    private static final int TOOM_COOK_THRESHOLD = 75;
+    private static final int TOOM_COOK_THRESHOLD = 240;
 
     /**
      * The threshold value for using Karatsuba squaring.  If the number
@@ -232,7 +232,7 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
      * Karatsuba squaring will be used.   This value is found
      * experimentally to work well.
      */
-    private static final int KARATSUBA_SQUARE_THRESHOLD = 90;
+    private static final int KARATSUBA_SQUARE_THRESHOLD = 128;
 
     /**
      * The threshold value for using Toom-Cook squaring.  If the number
@@ -240,7 +240,7 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
      * Toom-Cook squaring will be used.   This value is found
      * experimentally to work well.
      */
-    private static final int TOOM_COOK_SQUARE_THRESHOLD = 140;
+    private static final int TOOM_COOK_SQUARE_THRESHOLD = 216;
 
     /**
      * The threshold value for using Burnikel-Ziegler division.  If the number
@@ -248,7 +248,7 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
      * Burnikel-Ziegler division will be used.   This value is found
      * experimentally to work well.
      */
-    static final int BURNIKEL_ZIEGLER_THRESHOLD = 50;
+    static final int BURNIKEL_ZIEGLER_THRESHOLD = 80;
 
     /**
      * The threshold value for using Schoenhage recursive base conversion. If
@@ -258,7 +258,7 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
      * relatively flat for thresholds between 2-25, so this choice may be
      * varied within this range for very small effect.
      */
-    private static final int SCHOENHAGE_BASE_CONVERSION_THRESHOLD = 8;
+    private static final int SCHOENHAGE_BASE_CONVERSION_THRESHOLD = 20;
 
     //Constructors
 
