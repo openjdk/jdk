@@ -33,7 +33,7 @@ import java.lang.reflect.Array;
  * all <i>open data</i> values which are n-dimensional arrays of <i>open data</i> values.
  * <p>
  * Examples of valid {@code ArrayType} instances are:
- * <pre>
+ * <pre>{@code
  * // 2-dimension array of java.lang.String
  * ArrayType<String[][]> a1 = new ArrayType<String[][]>(2, SimpleType.STRING);
  *
@@ -90,7 +90,7 @@ import java.lang.reflect.Array;
  *
  * // 3-dimension array of java.lang.String
  * ArrayType<String[][][]> a19 = new ArrayType<String[][][]>(1, a18);
- * </pre>
+ * }</pre>
  *
  *
  * @since 1.5
@@ -241,23 +241,23 @@ public class ArrayType<T> extends OpenType<T> {
      * </ul>
      * <p>
      * As an example, the following piece of code:
-     * <pre>
+     * <pre>{@code
      * ArrayType<String[][][]> t = new ArrayType<String[][][]>(3, SimpleType.STRING);
      * System.out.println("array class name       = " + t.getClassName());
      * System.out.println("element class name     = " + t.getElementOpenType().getClassName());
      * System.out.println("array type name        = " + t.getTypeName());
      * System.out.println("array type description = " + t.getDescription());
-     * </pre>
+     * }</pre>
      * would produce the following output:
-     * <pre>
+     * <pre>{@code
      * array class name       = [[[Ljava.lang.String;
      * element class name     = java.lang.String
      * array type name        = [[[Ljava.lang.String;
      * array type description = 3-dimension array of java.lang.String
-     * </pre>
+     * }</pre>
      * And the following piece of code which is equivalent to the one listed
      * above would also produce the same output:
-     * <pre>
+     * <pre>{@code
      * ArrayType<String[]> t1 = new ArrayType<String[]>(1, SimpleType.STRING);
      * ArrayType<String[][]> t2 = new ArrayType<String[][]>(1, t1);
      * ArrayType<String[][][]> t3 = new ArrayType<String[][][]>(1, t2);
@@ -265,7 +265,7 @@ public class ArrayType<T> extends OpenType<T> {
      * System.out.println("element class name     = " + t3.getElementOpenType().getClassName());
      * System.out.println("array type name        = " + t3.getTypeName());
      * System.out.println("array type description = " + t3.getDescription());
-     * </pre>
+     * }</pre>
      *
      * @param  dimension  the dimension of arrays described by this <tt>ArrayType</tt> instance;
      *                    must be greater than or equal to 1.
@@ -334,20 +334,20 @@ public class ArrayType<T> extends OpenType<T> {
      * </ul>
      * <p>
      * As an example, the following piece of code:
-     * <pre>
+     * <pre>{@code
      * ArrayType<int[]> t = new ArrayType<int[]>(SimpleType.INTEGER, true);
      * System.out.println("array class name       = " + t.getClassName());
      * System.out.println("element class name     = " + t.getElementOpenType().getClassName());
      * System.out.println("array type name        = " + t.getTypeName());
      * System.out.println("array type description = " + t.getDescription());
-     * </pre>
+     * }</pre>
      * would produce the following output:
-     * <pre>
+     * <pre>{@code
      * array class name       = [I
      * element class name     = java.lang.Integer
      * array type name        = [I
      * array type description = 1-dimension array of int
-     * </pre>
+     * }</pre>
      *
      * @param elementType the {@code SimpleType} of the element values
      *                    contained in the arrays described by this
@@ -533,7 +533,7 @@ public class ArrayType<T> extends OpenType<T> {
      * <li>if this <code>ArrayType</code> instance describes an array of
      * classes implementing the {@code TabularData} interface or the
      * {@code CompositeData} interface, <var>obj</var> is assignable to
-     * such a declared array, and each element contained in <var>obj</var>
+     * such a declared array, and each element contained in {<var>obj</var>
      * is either null or a valid value for the element's open type specified
      * by this <code>ArrayType</code> instance.</li>
      * </ul>
@@ -776,7 +776,7 @@ public class ArrayType<T> extends OpenType<T> {
      * object or two equal but not identical objects.
      * <p>
      * As an example, the following piece of code:
-     * <pre>
+     * <pre>{@code
      * ArrayType<String[]> t1 = ArrayType.getArrayType(SimpleType.STRING);
      * ArrayType<String[][]> t2 = ArrayType.getArrayType(t1);
      * ArrayType<String[][][]> t3 = ArrayType.getArrayType(t2);
@@ -784,14 +784,14 @@ public class ArrayType<T> extends OpenType<T> {
      * System.out.println("element class name     = " + t3.getElementOpenType().getClassName());
      * System.out.println("array type name        = " + t3.getTypeName());
      * System.out.println("array type description = " + t3.getDescription());
-     * </pre>
+     * }</pre>
      * would produce the following output:
-     * <pre>
+     * <pre>{@code
      * array class name       = [[[Ljava.lang.String;
      * element class name     = java.lang.String
      * array type name        = [[[Ljava.lang.String;
      * array type description = 3-dimension array of java.lang.String
-     * </pre>
+     * }</pre>
      *
      * @param  elementType  the <i>open type</i> of element values contained
      *                      in the arrays described by this <tt>ArrayType</tt>
@@ -819,20 +819,20 @@ public class ArrayType<T> extends OpenType<T> {
      * same object or two equal but not identical objects.
      * <p>
      * As an example, the following piece of code:
-     * <pre>
+     * <pre>{@code
      * ArrayType<int[][][]> t = ArrayType.getPrimitiveArrayType(int[][][].class);
      * System.out.println("array class name       = " + t.getClassName());
      * System.out.println("element class name     = " + t.getElementOpenType().getClassName());
      * System.out.println("array type name        = " + t.getTypeName());
      * System.out.println("array type description = " + t.getDescription());
-     * </pre>
+     * }</pre>
      * would produce the following output:
-     * <pre>
+     * <pre>{@code
      * array class name       = [[[I
      * element class name     = java.lang.Integer
      * array type name        = [[[I
      * array type description = 3-dimension array of int
-     * </pre>
+     * }</pre>
      *
      * @param arrayClass a primitive array class such as {@code int[].class},
      *                   {@code boolean[][].class}, etc. The {@link

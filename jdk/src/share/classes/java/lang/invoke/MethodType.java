@@ -32,6 +32,7 @@ import java.lang.ref.ReferenceQueue;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.Objects;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ConcurrentHashMap;
 import sun.invoke.util.BytecodeDescriptor;
@@ -98,13 +99,25 @@ class MethodType implements java.io.Serializable {
     private @Stable MethodTypeForm form; // erased form, plus cached data about primitives
     private @Stable MethodType wrapAlt;  // alternative wrapped/unwrapped version
     private @Stable Invokers invokers;   // cache of handy higher-order adapters
+    private @Stable String methodDescriptor;  // cache for toMethodDescriptorString
 
     /**
      * Check the given parameters for validity and store them into the final fields.
      */
-    private MethodType(Class<?> rtype, Class<?>[] ptypes) {
+    private MethodType(Class<?> rtype, Class<?>[] ptypes, boolean trusted) {
         checkRtype(rtype);
         checkPtypes(ptypes);
+        this.rtype = rtype;
+        // defensively copy the array passed in by the user
+        this.ptypes = trusted ? ptypes : Arrays.copyOf(ptypes, ptypes.length);
+    }
+
+    /**
+     * Construct a temporary unchecked instance of MethodType for use only as a key to the intern table.
+     * Does not check the given parameters for validity, and must be discarded after it is used as a searching key.
+     * The parameters are reversed for this constructor, so that is is not accidentally used.
+     */
+    private MethodType(Class<?>[] ptypes, Class<?> rtype) {
         this.rtype = rtype;
         this.ptypes = ptypes;
     }
@@ -146,20 +159,21 @@ class MethodType implements java.io.Serializable {
     /*non-public*/ static final int MAX_MH_INVOKER_ARITY = MAX_MH_ARITY-1;  // deduct one more for invoker
 
     private static void checkRtype(Class<?> rtype) {
-        rtype.equals(rtype);  // null check
+        Objects.requireNonNull(rtype);
     }
-    private static int checkPtype(Class<?> ptype) {
-        ptype.getClass();  //NPE
+    private static void checkPtype(Class<?> ptype) {
+        Objects.requireNonNull(ptype);
         if (ptype == void.class)
             throw newIllegalArgumentException("parameter type cannot be void");
-        if (ptype == double.class || ptype == long.class)  return 1;
-        return 0;
     }
     /** Return number of extra slots (count of long/double args). */
     private static int checkPtypes(Class<?>[] ptypes) {
         int slots = 0;
         for (Class<?> ptype : ptypes) {
-            slots += checkPtype(ptype);
+            checkPtype(ptype);
+            if (ptype == double.class || ptype == long.class) {
+                slots++;
+            }
         }
         checkSlotCount(ptypes.length + slots);
         return slots;
@@ -284,20 +298,16 @@ class MethodType implements java.io.Serializable {
      */
     /*trusted*/ static
     MethodType makeImpl(Class<?> rtype, Class<?>[] ptypes, boolean trusted) {
+        MethodType mt = internTable.get(new MethodType(ptypes, rtype));
+        if (mt != null)
+            return mt;
         if (ptypes.length == 0) {
             ptypes = NO_PTYPES; trusted = true;
         }
-        MethodType mt1 = new MethodType(rtype, ptypes);
-        MethodType mt0 = internTable.get(mt1);
-        if (mt0 != null)
-            return mt0;
-        if (!trusted)
-            // defensively copy the array passed in by the user
-            mt1 = new MethodType(rtype, ptypes.clone());
+        mt = new MethodType(rtype, ptypes, trusted);
         // promote the object to the Real Thing, and reprobe
-        MethodTypeForm form = MethodTypeForm.findForm(mt1);
-        mt1.form = form;
-        return internTable.add(mt1);
+        mt.form = MethodTypeForm.findForm(mt);
+        return internTable.add(mt);
     }
     private static final MethodType[] objectOnlyTypes = new MethodType[20];
 
@@ -813,7 +823,7 @@ class MethodType implements java.io.Serializable {
      * So this method returns {@link #parameterCount() parameterCount} plus the
      * number of long and double parameters (if any).
      * <p>
-     * This method is included for the benfit of applications that must
+     * This method is included for the benefit of applications that must
      * generate bytecodes that process method handles and invokedynamic.
      * @return the number of JVM stack slots for this type's parameters
      */
@@ -844,7 +854,7 @@ class MethodType implements java.io.Serializable {
      * <em>plus</em> the number of long or double arguments
      * at or after after the argument for the given parameter.
      * <p>
-     * This method is included for the benfit of applications that must
+     * This method is included for the benefit of applications that must
      * generate bytecodes that process method handles and invokedynamic.
      * @param num an index (zero-based, inclusive) within the parameter types
      * @return the index of the (shallowest) JVM stack slot transmitting the
@@ -862,7 +872,7 @@ class MethodType implements java.io.Serializable {
      * If the {@link #returnType() return type} is void, it will be zero,
      * else if the return type is long or double, it will be two, else one.
      * <p>
-     * This method is included for the benfit of applications that must
+     * This method is included for the benefit of applications that must
      * generate bytecodes that process method handles and invokedynamic.
      * @return the number of JVM stack slots (0, 1, or 2) for this type's return value
      * Will be removed for PFD.
@@ -882,7 +892,7 @@ class MethodType implements java.io.Serializable {
      * constructed by this method, because their component types are
      * not all reachable from a common class loader.
      * <p>
-     * This method is included for the benfit of applications that must
+     * This method is included for the benefit of applications that must
      * generate bytecodes that process method handles and {@code invokedynamic}.
      * @param descriptor a bytecode-level type descriptor string "(T...)T"
      * @param loader the class loader in which to look up the types
@@ -912,14 +922,19 @@ class MethodType implements java.io.Serializable {
      * Two distinct classes which share a common name but have different class loaders
      * will appear identical when viewed within descriptor strings.
      * <p>
-     * This method is included for the benfit of applications that must
+     * This method is included for the benefit of applications that must
      * generate bytecodes that process method handles and {@code invokedynamic}.
      * {@link #fromMethodDescriptorString(java.lang.String, java.lang.ClassLoader) fromMethodDescriptorString},
      * because the latter requires a suitable class loader argument.
      * @return the bytecode type descriptor representation
      */
     public String toMethodDescriptorString() {
-        return BytecodeDescriptor.unparse(this);
+        String desc = methodDescriptor;
+        if (desc == null) {
+            desc = BytecodeDescriptor.unparse(this);
+            methodDescriptor = desc;
+        }
+        return desc;
     }
 
     /*non-public*/ static String toFieldDescriptorString(Class<?> cls) {

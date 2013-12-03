@@ -400,7 +400,7 @@ public class Realm implements Cloneable {
     }
 
     /**
-     * Creates a realm name using components from the given postion.
+     * Creates a realm name using components from the given position.
      * For example, subStringFrom({"A", "B", "C"}, 1) is "B.C".
      */
     private static String subStringFrom(String[] components, int from) {

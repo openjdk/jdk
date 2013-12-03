@@ -33,7 +33,7 @@ import java.util.*;
  * {@link java.lang.String},{@link java.util.List}&lt;{@link java.lang.String}&gt;&gt;.
  * The keys are case-insensitive Strings representing the header names and
  * the value associated with each key is a {@link List}&lt;{@link String}&gt; with one
- * element for each occurence of the header name in the request or response.
+ * element for each occurrence of the header name in the request or response.
  * <p>
  * For example, if a response header instance contains one key "HeaderName" with two values "value1 and value2"
  * then this object is output as two header lines:

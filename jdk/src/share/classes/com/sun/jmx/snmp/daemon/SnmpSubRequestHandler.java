@@ -99,7 +99,7 @@ class SnmpSubRequestHandler implements SnmpDefinitions, Runnable {
     }
 
     /**
-     * SNMP V1/V2 The constuctor initialize the subrequest with the whole varbind list contained
+     * SNMP V1/V2 The constructor initialize the subrequest with the whole varbind list contained
      * in the original request.
      */
     @SuppressWarnings("unchecked")  // cast to NonSyncVector<SnmpVarBind>
@@ -231,7 +231,7 @@ class SnmpSubRequestHandler implements SnmpDefinitions, Runnable {
             if (SNMP_ADAPTOR_LOGGER.isLoggable(Level.FINEST)) {
                 SNMP_ADAPTOR_LOGGER.logp(Level.FINEST, SnmpSubRequestHandler.class.getName(),
                     "run", "[" + Thread.currentThread() +
-                      "]:an Snmp error occured during the operation", x);
+                      "]:an Snmp error occurred during the operation", x);
             }
         }
         catch(Exception x) {
@@ -239,7 +239,7 @@ class SnmpSubRequestHandler implements SnmpDefinitions, Runnable {
             if (SNMP_ADAPTOR_LOGGER.isLoggable(Level.FINEST)) {
                 SNMP_ADAPTOR_LOGGER.logp(Level.FINEST, SnmpSubRequestHandler.class.getName(),
                     "run", "[" + Thread.currentThread() +
-                      "]:a generic error occured during the operation", x);
+                      "]:a generic error occurred during the operation", x);
             }
         }
         if (SNMP_ADAPTOR_LOGGER.isLoggable(Level.FINER)) {

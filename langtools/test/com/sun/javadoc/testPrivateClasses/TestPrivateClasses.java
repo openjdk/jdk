@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug      4780441 4874845 4978816 8014017 8016328 8025633
+ * @bug      4780441 4874845 4978816 8014017 8016328 8025633 8026567
  * @summary  Make sure that when the -private flag is not used, members
  *           inherited from package private class are documented in the child.
  *
@@ -112,12 +112,12 @@ public class TestPrivateClasses extends JavadocTester {
     private static final String[][] NEGATED_TEST1 = {
        // Should not document that a method overrides method from private class.
       {BUG_ID + "-1" + FS + "pkg" + FS + "PublicChild.html",
-        "<span class=\"strong\">Overrides:</span>"},
+        "<span class=\"overrideSpecifyLabel\">Overrides:</span>"},
       // Should not document that a method specified by private interface.
       {BUG_ID + "-1" + FS + "pkg" + FS + "PublicChild.html",
-        "<span class=\"strong\">Specified by:</span>"},
+        "<span class=\"overrideSpecifyLabel\">Specified by:</span>"},
       {BUG_ID + "-1" + FS + "pkg" + FS + "PublicInterface.html",
-        "<span class=\"strong\">Specified by:</span>"},
+        "<span class=\"overrideSpecifyLabel\">Specified by:</span>"},
       // Should not mention that any documentation was copied.
       {BUG_ID + "-1" + FS + "pkg" + FS + "PublicChild.html",
         "Description copied from"},
@@ -139,7 +139,7 @@ public class TestPrivateClasses extends JavadocTester {
         //Do not inherit private interface method with generic parameters.
         //This method has been implemented.
         {BUG_ID + "-1" + FS + "pkg2" + FS + "C.html",
-            "<span class=\"strong\"><a href=\"../pkg2/I.html#hello-T-\">hello</a></span>"},
+            "<span class=\"memberNameLink\"><a href=\"../pkg2/I.html#hello-T-\">hello</a></span>"},
     };
 
     // Test output when -private flag is used.
@@ -176,14 +176,14 @@ public class TestPrivateClasses extends JavadocTester {
         },
         // Should document that a method overrides method from private class.
        {BUG_ID + "-2" + FS + "pkg" + FS + "PublicChild.html",
-            "<dt><span class=\"strong\">Overrides:</span></dt>" + NL +
+            "<dt><span class=\"overrideSpecifyLabel\">Overrides:</span></dt>" + NL +
             "<dd><code><a href=\"../pkg/PrivateParent.html#methodOverridenFromParent-char:A-int-T-V-java.util.List-\">" +
             "methodOverridenFromParent</a></code>&nbsp;in class&nbsp;<code>" +
             "<a href=\"../pkg/PrivateParent.html\" title=\"class in pkg\">" +
             "PrivateParent</a></code></dd>"},
        // Should document that a method is specified by private interface.
        {BUG_ID + "-2" + FS + "pkg" + FS + "PublicChild.html",
-            "<dt><span class=\"strong\">Specified by:</span></dt>" + NL +
+            "<dt><span class=\"overrideSpecifyLabel\">Specified by:</span></dt>" + NL +
             "<dd><code><a href=\"../pkg/PrivateInterface.html#methodInterface-int-\">" +
             "methodInterface</a></code>&nbsp;in interface&nbsp;<code>" +
             "<a href=\"../pkg/PrivateInterface.html\" title=\"interface in pkg\">" +
@@ -227,11 +227,11 @@ public class TestPrivateClasses extends JavadocTester {
       //Since private flag is used, we can document that private interface method
       //with generic parameters has been implemented.
       {BUG_ID + "-2" + FS + "pkg2" + FS + "C.html",
-            "<span class=\"strong\">Description copied from interface:&nbsp;<code>" +
+            "<span class=\"descfrmTypeLabel\">Description copied from interface:&nbsp;<code>" +
             "<a href=\"../pkg2/I.html#hello-T-\">I</a></code></span>"},
 
       {BUG_ID + "-2" + FS + "pkg2" + FS + "C.html",
-            "<dt><span class=\"strong\">Specified by:</span></dt>" + NL +
+            "<dt><span class=\"overrideSpecifyLabel\">Specified by:</span></dt>" + NL +
             "<dd><code><a href=\"../pkg2/I.html#hello-T-\">hello</a></code>" +
             "&nbsp;in interface&nbsp;<code>" +
             "<a href=\"../pkg2/I.html\" title=\"interface in pkg2\">I</a>" +
@@ -240,14 +240,14 @@ public class TestPrivateClasses extends JavadocTester {
       //Make sure when no modifier appear in the class signature, the
       //signature is displayed correctly without extra space at the beginning.
       {BUG_ID + "-2" + FS + "pkg" + FS + "PrivateParent.html",
-            "<pre>class <span class=\"strong\">PrivateParent</span>"},
+            "<pre>class <span class=\"typeNameLabel\">PrivateParent</span>"},
 
       {BUG_ID + "-2" + FS + "pkg" + FS + "PublicChild.html",
-            "<pre>public class <span class=\"strong\">PublicChild</span>"},
+            "<pre>public class <span class=\"typeNameLabel\">PublicChild</span>"},
     };
     private static final String[][] NEGATED_TEST2 = {
         {BUG_ID + "-2" + FS + "pkg" + FS + "PrivateParent.html",
-            "<pre> class <span class=\"strong\">PrivateParent</span>"},
+            "<pre> class <span class=\"typeNameLabel\">PrivateParent</span>"},
     };
 
     /**

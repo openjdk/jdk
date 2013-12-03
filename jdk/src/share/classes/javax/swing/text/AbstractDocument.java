@@ -48,7 +48,7 @@ import sun.swing.SwingUtilities2;
  * all observers of the document have been notified of a previous
  * change before beginning another mutation to the document.  The
  * read lock is acquired and released using the <code>render</code>
- * method.  A write lock is aquired by the methods that mutate the
+ * method.  A write lock is acquired by the methods that mutate the
  * document, and are held for the duration of the method call.
  * Notification is done on the thread that produced the mutation,
  * and the thread has full read access to the document for the
@@ -391,7 +391,7 @@ public abstract class AbstractDocument implements Document, Serializable {
      * is being executed.  The runnable itself may <em>not</em>
      * make any mutations.
      * <p>
-     * This is implemented to aquire a read lock for the duration
+     * This is implemented to acquire a read lock for the duration
      * of the runnables execution.  There may be multiple runnables
      * executing at the same time, and all writers will be blocked
      * while there are active rendering runnables.  If the runnable
@@ -1367,13 +1367,13 @@ public abstract class AbstractDocument implements Document, Serializable {
             currWriter = Thread.currentThread();
             numWriters = 1;
         } catch (InterruptedException e) {
-            throw new Error("Interrupted attempt to aquire write lock");
+            throw new Error("Interrupted attempt to acquire write lock");
         }
     }
 
     /**
      * Releases a write lock previously obtained via <code>writeLock</code>.
-     * After decrementing the lock count if there are no oustanding locks
+     * After decrementing the lock count if there are no outstanding locks
      * this will allow a new writer, or readers.
      *
      * @see #writeLock
@@ -1409,7 +1409,7 @@ public abstract class AbstractDocument implements Document, Serializable {
             }
             numReaders += 1;
         } catch (InterruptedException e) {
-            throw new Error("Interrupted attempt to aquire read lock");
+            throw new Error("Interrupted attempt to acquire read lock");
         }
     }
 
@@ -1642,7 +1642,7 @@ public abstract class AbstractDocument implements Document, Serializable {
          * @param where   The offset into the sequence to make the
          *   insertion &gt;= 0.
          * @param nitems  The number of items in the sequence to remove &gt;= 0.
-         * @return  If the implementation supports a history mechansim,
+         * @return  If the implementation supports a history mechanism,
          *    a reference to an Edit implementation will be returned,
          *    otherwise null.
          * @exception BadLocationException  Thrown if the area covered by

@@ -38,7 +38,7 @@ import javax.sql.rowset.*;
  * <p>
  * <code>SyncProvider</code>  implementations that supply XML data writer
  * capabilities such as output XML stream capabilities can implement this
- * interface to provider standard <code>XmlWriter</code> objects to
+ * interface to provide standard <code>XmlWriter</code> objects to
  * <code>WebRowSet</code> implementations.
  * <P>
  * Writing a <code>WebRowSet</code> object includes printing the

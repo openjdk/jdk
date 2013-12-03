@@ -124,25 +124,35 @@ static jmethodID ni_ia4ctrID;
 static jmethodID ni_ia6ctrID;
 static jboolean preferIPv6Address;
 
-static void initializeInetClasses(JNIEnv *env)
+static jboolean initializeInetClasses(JNIEnv *env)
 {
     jfieldID ni_preferIPv6AddressID;
     static int initialized = 0;
     if (!initialized) {
         ni_iacls = (*env)->FindClass(env, "java/net/InetAddress");
+        CHECK_NULL_RETURN(ni_iacls, JNI_FALSE);
         ni_iacls = (*env)->NewGlobalRef(env, ni_iacls);
+        CHECK_NULL_RETURN(ni_iacls, JNI_FALSE);
         ni_ia4cls = (*env)->FindClass(env, "java/net/Inet4Address");
+        CHECK_NULL_RETURN(ni_ia4cls, JNI_FALSE);
         ni_ia4cls = (*env)->NewGlobalRef(env, ni_ia4cls);
+        CHECK_NULL_RETURN(ni_ia4cls, JNI_FALSE);
         ni_ia6cls = (*env)->FindClass(env, "java/net/Inet6Address");
+        CHECK_NULL_RETURN(ni_ia6cls, JNI_FALSE);
         ni_ia6cls = (*env)->NewGlobalRef(env, ni_ia6cls);
+        CHECK_NULL_RETURN(ni_ia6cls, JNI_FALSE);
         ni_ia4ctrID = (*env)->GetMethodID(env, ni_ia4cls, "<init>", "()V");
+        CHECK_NULL_RETURN(ni_ia4ctrID, JNI_FALSE);
         ni_ia6ctrID = (*env)->GetMethodID(env, ni_ia6cls, "<init>", "()V");
+        CHECK_NULL_RETURN(ni_ia6ctrID, JNI_FALSE);
         ni_preferIPv6AddressID =
             (*env)->GetStaticFieldID(env, ni_iacls, "preferIPv6Address", "Z");
+        CHECK_NULL_RETURN(ni_preferIPv6AddressID, JNI_FALSE);
         preferIPv6Address =
             (*env)->GetStaticBooleanField(env, ia_class, ia_preferIPv6AddressID);
         initialized = 1;
     }
+    return JNI_TRUE;
 }
 
 #ifdef MACOSX
@@ -160,7 +170,8 @@ lookupIfLocalhost(JNIEnv *env, const char *hostname, jboolean includeV6)
     jobject name;
 
     // Make sure static variables we need are set.
-    initializeInetClasses(env);
+    if (!initializeInetClasses(env))
+        return NULL;
 
     /* If the requested name matches this host's hostname, return IP addresses
      * from all attached interfaces. (#2844683 et al) This prevents undesired
@@ -286,7 +297,8 @@ Java_java_net_Inet6AddressImpl_lookupAllHostAddr(JNIEnv *env, jobject this,
     struct addrinfo hints, *res, *resNew = NULL;
 #endif /* AF_INET6 */
 
-    initializeInetClasses(env);
+    if (!initializeInetClasses(env))
+        return NULL;
 
     if (IS_NULL(host)) {
         JNU_ThrowNullPointerException(env, "host is null");

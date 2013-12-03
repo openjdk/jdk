@@ -55,7 +55,7 @@ import java.io.IOException;
  *
  * <p>Many SAX applications will not need to implement this interface,
  * but it will be especially useful for applications that build
- * XML documents from databases or other specialised input sources,
+ * XML documents from databases or other specialized input sources,
  * or for applications that use URI types other than URLs.</p>
  *
  * <p>The following resolver would provide the application

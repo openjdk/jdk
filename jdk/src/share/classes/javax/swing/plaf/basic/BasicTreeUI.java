@@ -140,7 +140,7 @@ public class BasicTreeUI extends TreeUI
     /** Used to determine what to display. */
     protected TreeModel         treeModel;
 
-    /** Model maintaing the selection. */
+    /** Model maintaining the selection. */
     protected TreeSelectionModel treeSelectionModel;
 
     /** How much the depth should be offset to properly calculate
@@ -1275,7 +1275,7 @@ public class BasicTreeUI extends TreeUI
     }
 
     /**
-     * Returns a ubounding box for the drop line.
+     * Returns a unbounding box for the drop line.
      *
      * @param loc a {@code DropLocation}
      * @return bounding box for the drop line
@@ -2525,7 +2525,7 @@ public class BasicTreeUI extends TreeUI
      * Updates the TreeState in response to nodes expanding/collapsing.
      */
     public class TreeExpansionHandler implements TreeExpansionListener {
-        // NOTE: This class exists only for backward compatability. All
+        // NOTE: This class exists only for backward compatibility. All
         // its functionality has been moved into Handler. If you need to add
         // new functionality add it to the Handler, but make sure this
         // class calls into the Handler.
@@ -2627,7 +2627,7 @@ public class BasicTreeUI extends TreeUI
      */
     public class TreeModelHandler implements TreeModelListener {
 
-        // NOTE: This class exists only for backward compatability. All
+        // NOTE: This class exists only for backward compatibility. All
         // its functionality has been moved into Handler. If you need to add
         // new functionality add it to the Handler, but make sure this
         // class calls into the Handler.
@@ -2656,7 +2656,7 @@ public class BasicTreeUI extends TreeUI
      */
     public class TreeSelectionHandler implements TreeSelectionListener {
 
-        // NOTE: This class exists only for backward compatability. All
+        // NOTE: This class exists only for backward compatibility. All
         // its functionality has been moved into Handler. If you need to add
         // new functionality add it to the Handler, but make sure this
         // class calls into the Handler.
@@ -2677,7 +2677,7 @@ public class BasicTreeUI extends TreeUI
      */
     public class CellEditorHandler implements CellEditorListener {
 
-        // NOTE: This class exists only for backward compatability. All
+        // NOTE: This class exists only for backward compatibility. All
         // its functionality has been moved into Handler. If you need to add
         // new functionality add it to the Handler, but make sure this
         // class calls into the Handler.
@@ -2695,12 +2695,12 @@ public class BasicTreeUI extends TreeUI
 
 
     /**
-     * This is used to get mutliple key down events to appropriately generate
+     * This is used to get multiple key down events to appropriately generate
      * events.
      */
     public class KeyHandler extends KeyAdapter {
 
-        // NOTE: This class exists only for backward compatability. All
+        // NOTE: This class exists only for backward compatibility. All
         // its functionality has been moved into Handler. If you need to add
         // new functionality add it to the Handler, but make sure this
         // class calls into the Handler.
@@ -2742,7 +2742,7 @@ public class BasicTreeUI extends TreeUI
      * Repaints the lead selection row when focus is lost/gained.
      */
     public class FocusHandler implements FocusListener {
-        // NOTE: This class exists only for backward compatability. All
+        // NOTE: This class exists only for backward compatibility. All
         // its functionality has been moved into Handler. If you need to add
         // new functionality add it to the Handler, but make sure this
         // class calls into the Handler.
@@ -2844,7 +2844,7 @@ public class BasicTreeUI extends TreeUI
      */
     public class MouseHandler extends MouseAdapter implements MouseMotionListener
  {
-        // NOTE: This class exists only for backward compatability. All
+        // NOTE: This class exists only for backward compatibility. All
         // its functionality has been moved into Handler. If you need to add
         // new functionality add it to the Handler, but make sure this
         // class calls into the Handler.
@@ -2877,12 +2877,12 @@ public class BasicTreeUI extends TreeUI
 
     /**
      * PropertyChangeListener for the tree. Updates the appropriate
-     * varaible, or TreeState, based on what changes.
+     * variable, or TreeState, based on what changes.
      */
     public class PropertyChangeHandler implements
                        PropertyChangeListener {
 
-        // NOTE: This class exists only for backward compatability. All
+        // NOTE: This class exists only for backward compatibility. All
         // its functionality has been moved into Handler. If you need to add
         // new functionality add it to the Handler, but make sure this
         // class calls into the Handler.
@@ -2900,7 +2900,7 @@ public class BasicTreeUI extends TreeUI
     public class SelectionModelPropertyChangeHandler implements
                       PropertyChangeListener {
 
-        // NOTE: This class exists only for backward compatability. All
+        // NOTE: This class exists only for backward compatibility. All
         // its functionality has been moved into Handler. If you need to add
         // new functionality add it to the Handler, but make sure this
         // class calls into the Handler.

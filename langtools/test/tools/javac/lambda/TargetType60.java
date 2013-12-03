@@ -57,7 +57,7 @@ class TargetType60 {
 
     static void testUnbound() {
         TargetType60 s1 = u(TargetType60::n0); //ok - resolves to u(Sam1)
-        TargetType60 s2 = u(TargetType60::n1); //ambiguous (u(Sam1), u(Sam2) apply)
+        TargetType60 s2 = u(TargetType60::n1); //ok - resolves to u(Sam2)
         TargetType60 s3 = u(TargetType60::n2); //none is applicable
         TargetType60 s4 = u(TargetType60::n01);//ambiguous (u(Sam1), u(Sam2) apply)
         TargetType60 s5 = u(TargetType60::n012);//ambiguous (u(Sam1), u(Sam2) apply)

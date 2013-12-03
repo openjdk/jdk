@@ -23,6 +23,7 @@
 
 /* @test
  * @bug 8006884 8019526
+ * @library ..
  * @build PassThroughFileSystem FaultyFileSystem
  * @run testng StreamTest
  * @summary Unit test for java.nio.file.Files methods that return a Stream

@@ -692,7 +692,7 @@ public final class LoaderHandler {
      * Define a proxy class in the given class loader.  The proxy
      * class will implement the given interfaces Classes.
      */
-    private static Class<?> loadProxyClass(ClassLoader loader, Class[] interfaces)
+    private static Class<?> loadProxyClass(ClassLoader loader, Class<?>[] interfaces)
         throws ClassNotFoundException
     {
         try {
@@ -719,7 +719,7 @@ public final class LoaderHandler {
      */
     private static ClassLoader loadProxyInterfaces(String[] interfaces,
                                                    ClassLoader loader,
-                                                   Class[] classObjs,
+                                                   Class<?>[] classObjs,
                                                    boolean[] nonpublic)
         throws ClassNotFoundException
     {

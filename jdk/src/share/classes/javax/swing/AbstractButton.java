@@ -330,7 +330,7 @@ public abstract class AbstractButton extends JComponent implements ItemSelectabl
     /**
      * Sets the state of the button. Note that this method does not
      * trigger an <code>actionEvent</code>.
-     * Call <code>doClick</code> to perform a programatic action change.
+     * Call <code>doClick</code> to perform a programmatic action change.
      *
      * @param b  true if the button is selected, otherwise false
      */
@@ -1381,7 +1381,7 @@ public abstract class AbstractButton extends JComponent implements ItemSelectabl
      * If <code>true</code> and the button has a border,
      * the border is painted. The default value for the
      * <code>borderPainted</code> property is <code>true</code>.
-     * <p/>
+     * <p>
      * Some look and feels might not support
      * the <code>borderPainted</code> property,
      * in which case they ignore this.
@@ -1476,7 +1476,7 @@ public abstract class AbstractButton extends JComponent implements ItemSelectabl
      * This function may cause the component's opaque property to change.
      * <p>
      * The exact behavior of calling this function varies on a
-     * component-by-component and L&F-by-L&F basis.
+     * component-by-component and L&amp;F-by-L&amp;F basis.
      *
      * @param b if true, the content should be filled; if false
      *          the content area is not filled
@@ -1702,7 +1702,7 @@ public abstract class AbstractButton extends JComponent implements ItemSelectabl
      * @see #getMultiClickThreshhold
      * @param threshhold the amount of time required between mouse
      *        press events to generate corresponding action events
-     * @exception   IllegalArgumentException if threshhold < 0
+     * @exception   IllegalArgumentException if threshhold &lt; 0
      * @since 1.4
      */
     public void setMultiClickThreshhold(long threshhold) {
@@ -1787,7 +1787,7 @@ public abstract class AbstractButton extends JComponent implements ItemSelectabl
 
 
     /**
-     * Returns the L&F object that renders this component.
+     * Returns the L&amp;F object that renders this component.
      * @return the ButtonUI object
      * @see #setUI
      */
@@ -1797,8 +1797,8 @@ public abstract class AbstractButton extends JComponent implements ItemSelectabl
 
 
     /**
-     * Sets the L&F object that renders this component.
-     * @param ui the <code>ButtonUI</code> L&F object
+     * Sets the L&amp;F object that renders this component.
+     * @param ui the <code>ButtonUI</code> L&amp;F object
      * @see #getUI
      * @beaninfo
      *        bound: true
@@ -2722,7 +2722,7 @@ public abstract class AbstractButton extends JComponent implements ItemSelectabl
          *
          * @param part the AccessibleText.CHARACTER, AccessibleText.WORD,
          * or AccessibleText.SENTENCE to retrieve
-         * @param index an index within the text >= 0
+         * @param index an index within the text &gt;= 0
          * @return the letter, word, or sentence,
          *   null for an invalid index or part
          * @since 1.3
@@ -2769,7 +2769,7 @@ public abstract class AbstractButton extends JComponent implements ItemSelectabl
          *
          * @param part the AccessibleText.CHARACTER, AccessibleText.WORD,
          * or AccessibleText.SENTENCE to retrieve
-         * @param index an index within the text >= 0
+         * @param index an index within the text &gt;= 0
          * @return the letter, word, or sentence, null for an invalid
          *  index or part
          * @since 1.3
@@ -2833,7 +2833,7 @@ public abstract class AbstractButton extends JComponent implements ItemSelectabl
          *
          * @param part the AccessibleText.CHARACTER, AccessibleText.WORD,
          *   or AccessibleText.SENTENCE to retrieve
-         * @param index an index within the text >= 0
+         * @param index an index within the text &gt;= 0
          * @return the letter, word, or sentence, null for an invalid index
          *  or part
          * @since 1.3
@@ -2928,7 +2928,7 @@ public abstract class AbstractButton extends JComponent implements ItemSelectabl
          * If there is no selection, but there is
          * a caret, the start and end offsets will be the same.
          *
-         * @return the index into teh text of the end of the selection
+         * @return the index into the text of the end of the selection
          * @since 1.3
          */
         public int getSelectionEnd() {

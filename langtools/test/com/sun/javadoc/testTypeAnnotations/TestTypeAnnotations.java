@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug      8005091 8009686 8025633
+ * @bug      8005091 8009686 8025633 8026567
  * @summary  Make sure that type annotations are displayed correctly
  * @author   Bhavesh Patel
  * @library  ../lib/
@@ -74,12 +74,12 @@ public class TestTypeAnnotations extends JavadocTester {
 
         // Test for type annotations on Class Parameters (ClassParameters.java).
         {BUG_ID + FS + "typeannos" + FS + "ExtendsBound.html",
-            "class <span class=\"strong\">ExtendsBound&lt;K extends <a " +
+            "class <span class=\"typeNameLabel\">ExtendsBound&lt;K extends <a " +
             "href=\"../typeannos/ClassParamA.html\" title=\"annotation in " +
             "typeannos\">@ClassParamA</a> java.lang.String&gt;</span>"
         },
         {BUG_ID + FS + "typeannos" + FS + "ExtendsGeneric.html",
-            "<pre>class <span class=\"strong\">ExtendsGeneric&lt;K extends " +
+            "<pre>class <span class=\"typeNameLabel\">ExtendsGeneric&lt;K extends " +
             "<a href=\"../typeannos/ClassParamA.html\" title=\"annotation in " +
             "typeannos\">@ClassParamA</a> <a href=\"../typeannos/Unannotated.html\" " +
             "title=\"class in typeannos\">Unannotated</a>&lt;<a href=\"" +
@@ -87,24 +87,24 @@ public class TestTypeAnnotations extends JavadocTester {
             "@ClassParamB</a> java.lang.String&gt;&gt;</span>"
         },
         {BUG_ID + FS + "typeannos" + FS + "TwoBounds.html",
-            "<pre>class <span class=\"strong\">TwoBounds&lt;K extends <a href=\"" +
+            "<pre>class <span class=\"typeNameLabel\">TwoBounds&lt;K extends <a href=\"" +
             "../typeannos/ClassParamA.html\" title=\"annotation in typeannos\">" +
             "@ClassParamA</a> java.lang.String,V extends <a href=\"../typeannos/" +
             "ClassParamB.html\" title=\"annotation in typeannos\">@ClassParamB" +
             "</a> java.lang.String&gt;</span>"
         },
         {BUG_ID + FS + "typeannos" + FS + "Complex1.html",
-            "class <span class=\"strong\">Complex1&lt;K extends <a href=\"../" +
+            "class <span class=\"typeNameLabel\">Complex1&lt;K extends <a href=\"../" +
             "typeannos/ClassParamA.html\" title=\"annotation in typeannos\">" +
             "@ClassParamA</a> java.lang.String &amp; java.lang.Runnable&gt;</span>"
         },
         {BUG_ID + FS + "typeannos" + FS + "Complex2.html",
-            "class <span class=\"strong\">Complex2&lt;K extends java.lang." +
+            "class <span class=\"typeNameLabel\">Complex2&lt;K extends java.lang." +
             "String &amp; <a href=\"../typeannos/ClassParamB.html\" title=\"" +
             "annotation in typeannos\">@ClassParamB</a> java.lang.Runnable&gt;</span>"
         },
         {BUG_ID + FS + "typeannos" + FS + "ComplexBoth.html",
-            "class <span class=\"strong\">ComplexBoth&lt;K extends <a href=\"" +
+            "class <span class=\"typeNameLabel\">ComplexBoth&lt;K extends <a href=\"" +
             "../typeannos/ClassParamA.html\" title=\"annotation in typeannos\"" +
             ">@ClassParamA</a> java.lang.String &amp; <a href=\"../typeannos/" +
             "ClassParamA.html\" title=\"annotation in typeannos\">@ClassParamA" +

@@ -1212,7 +1212,7 @@ public final class NumericShaper implements java.io.Serializable {
      * For example, to check if a shaper shapes to Arabic, you would use the
      * following:
      * <blockquote>
-     *   <code>if ((shaper.getRanges() & shaper.ARABIC) != 0) { ... </code>
+     *   <code>if ((shaper.getRanges() &amp; shaper.ARABIC) != 0) { ... </code>
      * </blockquote>
      *
      * <p>Note that this method supports only the bit mask-based

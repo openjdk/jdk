@@ -1334,7 +1334,7 @@ public class Font implements java.io.Serializable
      * Indicates whether or not this <code>Font</code> object's style is
      * PLAIN.
      * @return    <code>true</code> if this <code>Font</code> has a
-     *            PLAIN sytle;
+     *            PLAIN style;
      *            <code>false</code> otherwise.
      * @see       java.awt.Font#getStyle
      * @since     JDK1.0

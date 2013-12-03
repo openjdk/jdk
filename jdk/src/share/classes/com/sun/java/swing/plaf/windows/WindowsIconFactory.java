@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -174,7 +174,7 @@ public class WindowsIconFactory implements Serializable
             XPStyle xp = XPStyle.getXP();
             if (xp != null) {
                 Skin skin = xp.getSkin(c, part);
-                JButton b = (JButton)c;
+                AbstractButton b = (AbstractButton)c;
                 ButtonModel model = b.getModel();
 
                 // Find out if frame is inactive

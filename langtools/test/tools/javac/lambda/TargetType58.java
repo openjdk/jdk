@@ -35,7 +35,7 @@ import java.util.stream.*;
 class TargetType58 {
 
     void test(List<Integer> li) {
-        g(li, s -> s.substream(200), Collections.emptyList());
+        g(li, s -> s.skip(200), Collections.emptyList());
     }
 
     <T, U, S_OUT extends Stream<U>,

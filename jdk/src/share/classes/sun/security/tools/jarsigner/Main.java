@@ -682,7 +682,7 @@ public class Main {
 
                         // The label finally contains 2 parts separated by '|':
                         // The legend displayed before the entry names, and
-                        // the cert info (if -certs specfied).
+                        // the cert info (if -certs specified).
 
                         if (!output.containsKey(label)) {
                             output.put(label, new ArrayList<String>());
@@ -1781,14 +1781,14 @@ public class Main {
         try {
             java.security.cert.Certificate[] cs = null;
             if (altCertChain != null) {
-                try {
+                try (FileInputStream fis = new FileInputStream(altCertChain)) {
                     cs = CertificateFactory.getInstance("X.509").
-                            generateCertificates(new FileInputStream(altCertChain)).
+                            generateCertificates(fis).
                             toArray(new Certificate[0]);
-                } catch (CertificateException ex) {
-                    error(rb.getString("Cannot.restore.certchain.from.file.specified"));
                 } catch (FileNotFoundException ex) {
                     error(rb.getString("File.specified.by.certchain.does.not.exist"));
+                } catch (CertificateException | IOException ex) {
+                    error(rb.getString("Cannot.restore.certchain.from.file.specified"));
                 }
             } else {
                 try {

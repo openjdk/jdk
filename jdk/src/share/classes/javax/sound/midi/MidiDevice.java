@@ -60,7 +60,7 @@ import java.util.List;
  * <code>Receiver</code> or <code>Transmitter</code> that resulted in
  * opening it. If more than one implicitly opening
  * <code>Receiver</code> or <code>Transmitter</code> were obtained by
- * the application, the decive is closed after the last
+ * the application, the device is closed after the last
  * <code>Receiver</code> or <code>Transmitter</code> has been
  * closed. On the other hand, calling <code>getReceiver</code> or
  * <code>getTransmitter</code> on the device instance directly does

@@ -3471,6 +3471,10 @@ void SharedRuntime::generate_deopt_blob() {
 
   // rsp should be pointing at the return address to the caller (3)
 
+  // Pick up the initial fp we should save
+  // restore rbp before stack bang because if stack overflow is thrown it needs to be pushed (and preserved)
+  __ movptr(rbp, Address(rdi, Deoptimization::UnrollBlock::initial_info_offset_in_bytes()));
+
   // Stack bang to make sure there's enough room for these interpreter frames.
   if (UseStackBanging) {
     __ movl(rbx, Address(rdi, Deoptimization::UnrollBlock::total_frame_sizes_offset_in_bytes()));
@@ -3488,9 +3492,6 @@ void SharedRuntime::generate_deopt_blob() {
 
   // Load counter into rdx
   __ movl(rdx, Address(rdi, Deoptimization::UnrollBlock::number_of_frames_offset_in_bytes()));
-
-  // Pick up the initial fp we should save
-  __ movptr(rbp, Address(rdi, Deoptimization::UnrollBlock::initial_info_offset_in_bytes()));
 
   // Now adjust the caller's stack to make up for the extra locals
   // but record the original sp so that we can save it in the skeletal interpreter
@@ -3663,6 +3664,10 @@ void SharedRuntime::generate_uncommon_trap_blob() {
 
   // rsp should be pointing at the return address to the caller (3)
 
+  // Pick up the initial fp we should save
+  // restore rbp before stack bang because if stack overflow is thrown it needs to be pushed (and preserved)
+  __ movptr(rbp, Address(rdi, Deoptimization::UnrollBlock::initial_info_offset_in_bytes()));
+
   // Stack bang to make sure there's enough room for these interpreter frames.
   if (UseStackBanging) {
     __ movl(rbx, Address(rdi ,Deoptimization::UnrollBlock::total_frame_sizes_offset_in_bytes()));
@@ -3670,27 +3675,16 @@ void SharedRuntime::generate_uncommon_trap_blob() {
   }
 
   // Load address of array of frame pcs into rcx (address*)
-  __ movptr(rcx,
-            Address(rdi,
-                    Deoptimization::UnrollBlock::frame_pcs_offset_in_bytes()));
+  __ movptr(rcx, Address(rdi, Deoptimization::UnrollBlock::frame_pcs_offset_in_bytes()));
 
   // Trash the return pc
   __ addptr(rsp, wordSize);
 
   // Load address of array of frame sizes into rsi (intptr_t*)
-  __ movptr(rsi, Address(rdi,
-                         Deoptimization::UnrollBlock::
-                         frame_sizes_offset_in_bytes()));
+  __ movptr(rsi, Address(rdi, Deoptimization::UnrollBlock:: frame_sizes_offset_in_bytes()));
 
   // Counter
-  __ movl(rdx, Address(rdi,
-                       Deoptimization::UnrollBlock::
-                       number_of_frames_offset_in_bytes())); // (int)
-
-  // Pick up the initial fp we should save
-  __ movptr(rbp,
-            Address(rdi,
-                    Deoptimization::UnrollBlock::initial_info_offset_in_bytes()));
+  __ movl(rdx, Address(rdi, Deoptimization::UnrollBlock:: number_of_frames_offset_in_bytes())); // (int)
 
   // Now adjust the caller's stack to make up for the extra locals but
   // record the original sp so that we can save it in the skeletal
@@ -3700,9 +3694,7 @@ void SharedRuntime::generate_uncommon_trap_blob() {
   const Register sender_sp = r8;
 
   __ mov(sender_sp, rsp);
-  __ movl(rbx, Address(rdi,
-                       Deoptimization::UnrollBlock::
-                       caller_adjustment_offset_in_bytes())); // (int)
+  __ movl(rbx, Address(rdi, Deoptimization::UnrollBlock:: caller_adjustment_offset_in_bytes())); // (int)
   __ subptr(rsp, rbx);
 
   // Push interpreter frames in a loop

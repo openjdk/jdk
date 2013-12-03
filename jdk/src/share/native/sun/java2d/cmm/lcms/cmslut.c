@@ -1266,7 +1266,7 @@ cmsStage* CMSEXPORT cmsStageDup(cmsStage* mpe)
 static
 void BlessLUT(cmsPipeline* lut)
 {
-    // We can set the input/ouput channels only if we have elements.
+    // We can set the input/output channels only if we have elements.
     if (lut ->Elements != NULL) {
 
         cmsStage *First, *Last;

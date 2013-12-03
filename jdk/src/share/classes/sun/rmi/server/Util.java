@@ -87,7 +87,7 @@ public final class Util {
         Collections.synchronizedMap(new WeakHashMap<Class<?>, Void>(11));
 
     /** parameter types for stub constructor */
-    private static final Class[] stubConsParamTypes = { RemoteRef.class };
+    private static final Class<?>[] stubConsParamTypes = { RemoteRef.class };
 
     private Util() {
     }
@@ -143,7 +143,7 @@ public final class Util {
         }
 
         final ClassLoader loader = implClass.getClassLoader();
-        final Class[] interfaces = getRemoteInterfaces(implClass);
+        final Class<?>[] interfaces = getRemoteInterfaces(implClass);
         final InvocationHandler handler =
             new RemoteObjectInvocationHandler(clientRef);
 

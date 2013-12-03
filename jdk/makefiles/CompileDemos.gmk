@@ -1,6 +1,6 @@
 
 #
-# Copyright (c) 2011, 2012, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2013, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -56,25 +56,27 @@ define SetupAppletDemo
       BUILD_DEMOS += $$(BUILD_DEMO_APPLET_$1)
 endef
 
-$(eval $(call SetupAppletDemo,ArcTest))
-$(eval $(call SetupAppletDemo,BarChart))
-$(eval $(call SetupAppletDemo,Blink))
-$(eval $(call SetupAppletDemo,CardTest))
-$(eval $(call SetupAppletDemo,Clock))
-$(eval $(call SetupAppletDemo,DitherTest))
-$(eval $(call SetupAppletDemo,DrawTest))
-$(eval $(call SetupAppletDemo,Fractal))
-$(eval $(call SetupAppletDemo,GraphicsTest))
-$(eval $(call SetupAppletDemo,NervousText))
-$(eval $(call SetupAppletDemo,SimpleGraph))
-$(eval $(call SetupAppletDemo,SortDemo))
-$(eval $(call SetupAppletDemo,SpreadSheet))
+ifneq ($(OPENJDK_TARGET_OS), solaris)
+  $(eval $(call SetupAppletDemo,ArcTest))
+  $(eval $(call SetupAppletDemo,BarChart))
+  $(eval $(call SetupAppletDemo,Blink))
+  $(eval $(call SetupAppletDemo,CardTest))
+  $(eval $(call SetupAppletDemo,Clock))
+  $(eval $(call SetupAppletDemo,DitherTest))
+  $(eval $(call SetupAppletDemo,DrawTest))
+  $(eval $(call SetupAppletDemo,Fractal))
+  $(eval $(call SetupAppletDemo,GraphicsTest))
+  $(eval $(call SetupAppletDemo,NervousText))
+  $(eval $(call SetupAppletDemo,SimpleGraph))
+  $(eval $(call SetupAppletDemo,SortDemo))
+  $(eval $(call SetupAppletDemo,SpreadSheet))
 
-ifndef OPENJDK
-  $(eval $(call SetupAppletDemo,Animator,,closed/))
-  $(eval $(call SetupAppletDemo,GraphLayout,true,closed/))
-  $(eval $(call SetupAppletDemo,JumpingBox,,closed/))
-  $(eval $(call SetupAppletDemo,TicTacToe,,closed/))
+  ifndef OPENJDK
+    $(eval $(call SetupAppletDemo,Animator,,closed/))
+    $(eval $(call SetupAppletDemo,GraphLayout,true,closed/))
+    $(eval $(call SetupAppletDemo,JumpingBox,,closed/))
+    $(eval $(call SetupAppletDemo,TicTacToe,,closed/))
+  endif
 endif
 
 ##################################################################################################
@@ -157,14 +159,16 @@ $(JDK_OUTPUTDIR)/demo/jfc/CodePointIM/_the.services: \
 
 BUILD_DEMOS += $(JDK_OUTPUTDIR)/demo/jfc/CodePointIM/_the.services
 
-$(eval $(call SetupDemo,MoleculeViewer,applets,,XYZChemModel,,,example*.html XYZApp.java))
-$(eval $(call SetupDemo,WireFrame,applets,,ThreeD,,,example*.html ThreeD.java))
+ifneq ($(OPENJDK_TARGET_OS), solaris)
+  $(eval $(call SetupDemo,MoleculeViewer,applets,,XYZChemModel,,,example*.html *.java))
+  $(eval $(call SetupDemo,WireFrame,applets,,ThreeD,,,example*.html *.java))
+  $(eval $(call SetupDemo,SwingApplet,jfc,,SwingApplet,,,README* *.html))
+endif
 $(eval $(call SetupDemo,FileChooserDemo,jfc,,FileChooserDemo,,,README*))
 $(eval $(call SetupDemo,Font2DTest,jfc,,Font2DTest,,,*.html *.txt))
 $(eval $(call SetupDemo,Metalworks,jfc,,Metalworks,,,README*))
 $(eval $(call SetupDemo,Notepad,jfc,,Notepad,,,README*))
 $(eval $(call SetupDemo,SampleTree,jfc,,SampleTree,,,README*))
-$(eval $(call SetupDemo,SwingApplet,jfc,,SwingApplet,,,README* *.html))
 $(eval $(call SetupDemo,TableExample,jfc,,TableExample,,,README*))
 $(eval $(call SetupDemo,TransparentRuler,jfc,,transparentruler.Ruler,,,README*))
 $(eval $(call SetupDemo,jconsole-plugin,scripting,,,,,*.xml *.txt,,,,Main-Class: \n))
@@ -180,7 +184,7 @@ ifndef OPENJDK
 
   $(eval $(call SetupDemo,Java2D,jfc,,java2d.Java2Demo,,closed/,*.html README*,Java2Demo))
   $(eval $(call SetupDemo,Stylepad,jfc,,Stylepad, \
-      $(JDK_TOPDIR)/src/share/demo/jfc/Notepad,closed/,*.txt,,$(JDK_TOPDIR)/src/share/demo/jfc/Notepad/README.txt))
+  $(JDK_TOPDIR)/src/share/demo/jfc/Notepad,closed/,*.txt,,$(JDK_TOPDIR)/src/share/demo/jfc/Notepad/README.txt))
   $(eval $(call SetupDemo,SwingSet2,jfc,,SwingSet2,,closed/,README* *.html,,,.java COPYRIGHT, \
       SplashScreen-Image: resources/images/splash.png,true))
 
@@ -191,6 +195,9 @@ ifndef OPENJDK
   $(JDK_OUTPUTDIR)/demo/nbproject/%: $(JDK_TOPDIR)/src/closed/share/demo/nbproject/%
 	$(call install-file)
 	$(CHMOD) -f ug+w $@
+    ifeq ($(OPENJDK_TARGET_OS), solaris)
+	  $(RM) -r $(JDK_OUTPUTDIR)/demo/nbproject/jfc/SwingApplet
+    endif
 endif
 
 ##################################################################################################

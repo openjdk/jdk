@@ -1337,7 +1337,7 @@ public class SwingUtilities implements SwingConstants
      * <code>java.awt.EventQueue.invokeAndWait()</code>.
      *
      * @exception  InterruptedException if we're interrupted while waiting for
-     *             the event dispatching thread to finish excecuting
+     *             the event dispatching thread to finish executing
      *             <code>doRun.run()</code>
      * @exception  InvocationTargetException  if an exception is thrown
      *             while running <code>doRun</code>

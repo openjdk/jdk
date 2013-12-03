@@ -1004,7 +1004,9 @@ public:
 
 void HeapRegionRemSet::migrate_strong_code_roots() {
   assert(hr()->in_collection_set(), "only collection set regions");
-  assert(!hr()->isHumongous(), "not humongous regions");
+  assert(!hr()->isHumongous(),
+         err_msg("humongous region "HR_FORMAT" should not have been added to the collection set",
+                 HR_FORMAT_PARAMS(hr())));
 
   ResourceMark rm;
 

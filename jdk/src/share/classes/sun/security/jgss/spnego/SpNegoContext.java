@@ -360,7 +360,7 @@ public class SpNegoContext implements GSSContextSpi {
                 if (internal_mech == null) {
                     // return wth failure
                     throw new GSSException(errorCode, -1,
-                                "supported mechansim from server is null");
+                                "supported mechanism from server is null");
                 }
 
                 // get the negotiated result
@@ -541,7 +541,7 @@ public class SpNegoContext implements GSSContextSpi {
                 if (mech_wanted == null) {
                     valid = false;
                 }
-                // save the desired mechansim
+                // save the desired mechanism
                 internal_mech = mech_wanted;
 
                 // get the token for mechanism
@@ -741,7 +741,7 @@ public class SpNegoContext implements GSSContextSpi {
             return null;
         }
 
-        // check if mechansim supports integrity
+        // check if mechanism supports integrity
         if (!mechContext.getIntegState()) {
             if (DEBUG) {
                 System.out.println("SpNegoContext: no MIC token included" +
@@ -783,7 +783,7 @@ public class SpNegoContext implements GSSContextSpi {
             return true;
         }
 
-        // check if mechansim supports integrity
+        // check if mechanism supports integrity
         if (!mechContext.getIntegState()) {
             if (DEBUG) {
                 System.out.println("SpNegoContext: no MIC token validation" +
@@ -911,7 +911,7 @@ public class SpNegoContext implements GSSContextSpi {
             return mechContext.isEstablished();
         } else {
             if (DEBUG) {
-                System.out.println("The underlying mechansim context has " +
+                System.out.println("The underlying mechanism context has " +
                                         "not been initialized");
             }
             return false;
@@ -1024,7 +1024,7 @@ public class SpNegoContext implements GSSContextSpi {
             return peerName;
         } else {
             if (DEBUG) {
-                System.out.println("The underlying mechansim context has " +
+                System.out.println("The underlying mechanism context has " +
                                         "not been initialized");
             }
             return null;
@@ -1040,7 +1040,7 @@ public class SpNegoContext implements GSSContextSpi {
             return myName;
         } else {
             if (DEBUG) {
-                System.out.println("The underlying mechansim context has " +
+                System.out.println("The underlying mechanism context has " +
                                         "not been initialized");
             }
             return null;
