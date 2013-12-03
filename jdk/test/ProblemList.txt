@@ -205,9 +205,6 @@ java/nio/file/WatchService/LotsOfEvents.java			solaris-all
 # 7146541
 java/rmi/transport/rapidExportUnexport/RapidExportUnexport.java	linux-all
 
-# 7190106
-java/rmi/reliability/benchmark/runRmiBench.sh                   generic-all
-
 # 7191877
 java/rmi/transport/checkLeaseInfoLeak/CheckLeaseLeak.java       generic-all
 
