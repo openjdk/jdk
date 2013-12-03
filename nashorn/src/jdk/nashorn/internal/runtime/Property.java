@@ -56,33 +56,36 @@ public abstract class Property {
     public static final int WRITABLE_ENUMERABLE_CONFIGURABLE = 0b0000_0000_0000;
 
     /** ECMA 8.6.1 - Is this property not writable? */
-    public static final int NOT_WRITABLE     = 0b0000_0000_0001;
+    public static final int NOT_WRITABLE     = 1 << 0;
 
     /** ECMA 8.6.1 - Is this property not enumerable? */
-    public static final int NOT_ENUMERABLE   = 0b0000_0000_0010;
+    public static final int NOT_ENUMERABLE   = 1 << 1;
 
     /** ECMA 8.6.1 - Is this property not configurable? */
-    public static final int NOT_CONFIGURABLE = 0b0000_0000_0100;
+    public static final int NOT_CONFIGURABLE = 1 << 2;
 
-    private static final int MODIFY_MASK     = 0b0000_0000_1111;
+    private static final int MODIFY_MASK     = (NOT_WRITABLE | NOT_ENUMERABLE | NOT_CONFIGURABLE);
 
     /** Is this a spill property? See {@link AccessorProperty} */
-    public static final int IS_SPILL         = 0b0000_0001_0000;
+    public static final int IS_SPILL         = 1 << 3;
 
     /** Is this a function parameter? */
-    public static final int IS_PARAMETER     = 0b0000_0010_0000;
+    public static final int IS_PARAMETER     = 1 << 4;
 
     /** Is parameter accessed thru arguments? */
-    public static final int HAS_ARGUMENTS    = 0b0000_0100_0000;
+    public static final int HAS_ARGUMENTS    = 1 << 5;
 
     /** Is this property always represented as an Object? See {@link ObjectClassGenerator} and dual fields flag. */
-    public static final int IS_ALWAYS_OBJECT = 0b0000_1000_0000;
+    public static final int IS_ALWAYS_OBJECT = 1 << 6;
 
     /** Can this property be primitive? */
-    public static final int CAN_BE_PRIMITIVE = 0b0001_0000_0000;
+    public static final int CAN_BE_PRIMITIVE = 1 << 7;
 
     /** Can this property be undefined? */
-    public static final int CAN_BE_UNDEFINED = 0b0010_0000_0000;
+    public static final int CAN_BE_UNDEFINED = 1 << 8;
+
+    /* Is this a function declaration property ? */
+    public static final int IS_FUNCTION_DECLARATION = 1 << 9;
 
     /** Property key. */
     private final String key;
@@ -521,5 +524,13 @@ public abstract class Property {
      */
     public boolean canBeUndefined() {
         return (flags & CAN_BE_UNDEFINED) == CAN_BE_UNDEFINED;
+    }
+
+    /**
+     * Check whether this property represents a function declaration.
+     * @return whether this property is a function declaration or not.
+     */
+    public boolean isFunctionDeclaration() {
+        return (flags & IS_FUNCTION_DECLARATION) == IS_FUNCTION_DECLARATION;
     }
 }
