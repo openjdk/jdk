@@ -1,0 +1,245 @@
+#
+# Copyright (c) 2011, 2013, Oracle and/or its affiliates. All rights reserved.
+# DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+#
+# This code is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License version 2 only, as
+# published by the Free Software Foundation.  Oracle designates this
+# particular file as subject to the "Classpath" exception as provided
+# by Oracle in the LICENSE file that accompanied this code.
+#
+# This code is distributed in the hope that it will be useful, but WITHOUT
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+# FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+# version 2 for more details (a copy is included in the LICENSE file that
+# accompanied this code).
+#
+# You should have received a copy of the GNU General Public License version
+# 2 along with this work; if not, write to the Free Software Foundation,
+# Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+#
+# Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+# or visit www.oracle.com if you need additional information or have any
+# questions.
+#
+
+### This is the main part of the Makefile, for the normal case with SPEC specifying a single existing spec.gmk file.
+
+# Now load the spec
+include $(SPEC)
+
+# Load the vital tools for all the makefiles.
+include $(SRC_ROOT)/make/common/MakeBase.gmk
+
+# Include the corresponding custom file, if present.
+-include $(CUSTOM_MAKE_DIR)/Main.gmk
+
+### Clean up from previous run
+
+# Remove any build.log from a previous run, if they exist
+ifneq (,$(BUILD_LOG))
+  ifneq (,$(BUILD_LOG_PREVIOUS))
+    # Rotate old log
+    $(shell $(RM) $(BUILD_LOG_PREVIOUS) 2> /dev/null)
+    $(shell $(MV) $(BUILD_LOG) $(BUILD_LOG_PREVIOUS) 2> /dev/null)
+  else
+    $(shell $(RM) $(BUILD_LOG) 2> /dev/null)
+  endif
+  $(shell $(RM) $(OUTPUT_ROOT)/build-trace-time.log 2> /dev/null)
+endif
+# Remove any javac server logs and port files. This
+# prevents a new make run to reuse the previous servers.
+ifneq (,$(SJAVAC_SERVER_DIR))
+  $(shell $(MKDIR) -p $(SJAVAC_SERVER_DIR) && $(RM) -rf $(SJAVAC_SERVER_DIR)/*)
+endif
+
+# Reset the build timers.
+$(eval $(call ResetAllTimers))
+
+# Setup number of jobs to use. -jN is unfortunately not available for us to parse from the command line,
+# hence this workaround.
+MAKE_ARGS:=$(MAKE_ARGS) -j$(JOBS)
+
+### Main targets
+
+default: jdk
+	@$(call CheckIfMakeAtEnd)
+
+all: images docs
+	@$(call CheckIfMakeAtEnd)
+
+# Setup a rule for SPEC file that fails if executed. This check makes sure the configuration
+# is up to date after changes to configure
+$(SPEC): $(wildcard $(SRC_ROOT)/common/autoconf/*)
+	@$(ECHO) ERROR: $(SPEC) is not up to date
+	@$(ECHO) Please rerun configure!
+	@if test "x$(IGNORE_OLD_CONFIG)" != "xtrue"; then exit 1; fi
+
+start-make: $(SPEC)
+	@$(call AtMakeStart)
+
+langtools: langtools-only
+langtools-only: start-make
+	@$(call TargetEnter)
+	@($(CD) $(LANGTOOLS_TOPDIR)/make && $(BUILD_LOG_WRAPPER) $(MAKE) $(MAKE_ARGS) -f BuildLangtools.gmk)
+	@$(call TargetExit)
+
+corba: langtools corba-only
+corba-only: start-make
+	@$(call TargetEnter)
+	@($(CD) $(CORBA_TOPDIR)/make && $(BUILD_LOG_WRAPPER) $(MAKE) $(MAKE_ARGS) -f BuildCorba.gmk)
+	@$(call TargetExit)
+
+jaxp: langtools jaxp-only
+jaxp-only: start-make
+	@$(call TargetEnter)
+	@($(CD) $(JAXP_TOPDIR)/make && $(BUILD_LOG_WRAPPER) $(MAKE) $(MAKE_ARGS) -f BuildJaxp.gmk)
+	@$(call TargetExit)
+
+jaxws: langtools jaxp jaxws-only
+jaxws-only: start-make
+	@$(call TargetEnter)
+	@($(CD) $(JAXWS_TOPDIR)/make && $(BUILD_LOG_WRAPPER) $(MAKE) $(MAKE_ARGS) -f BuildJaxws.gmk)
+	@$(call TargetExit)
+
+ifeq ($(BUILD_HOTSPOT),true)
+  hotspot: hotspot-only
+  hotspot-only: start-make
+	@$(call TargetEnter)
+	@($(CD) $(SRC_ROOT)/make && $(BUILD_LOG_WRAPPER) $(MAKE) $(MAKE_ARGS) -f HotspotWrapper.gmk)
+	@$(call TargetExit)
+endif
+
+jdk: langtools hotspot corba jaxp jaxws jdk-only
+jdk-only: start-make
+	@$(call TargetEnter)
+	@($(CD) $(JDK_TOPDIR)/make && $(BUILD_LOG_WRAPPER) $(MAKE) $(MAKE_ARGS) -f BuildJdk.gmk $(JDK_TARGET))
+	@$(call TargetExit)
+
+nashorn: jdk nashorn-only
+nashorn-only: start-make
+	@$(call TargetEnter)
+	@($(CD) $(NASHORN_TOPDIR)/make && $(BUILD_LOG_WRAPPER) $(MAKE) $(MAKE_ARGS) -f BuildNashorn.gmk)
+	@$(call TargetExit)
+
+demos: jdk demos-only
+demos-only: start-make
+	@$(call TargetEnter)
+	@($(CD) $(JDK_TOPDIR)/make && $(BUILD_LOG_WRAPPER) $(MAKE) $(MAKE_ARGS) -f BuildJdk.gmk demos)
+	@$(call TargetExit)
+
+# Note: This double-colon rule is intentional, to support
+# custom make file integration.
+images:: source-tips demos nashorn images-only
+images-only: start-make
+	@$(call TargetEnter)
+	@($(CD) $(JDK_TOPDIR)/make && $(BUILD_LOG_WRAPPER) $(MAKE) $(MAKE_ARGS) -f BuildJdk.gmk images)
+	@$(call TargetExit)
+
+overlay-images: source-tips demos overlay-images-only
+overlay-images-only: start-make
+	@$(call TargetEnter)
+	@($(CD) $(JDK_TOPDIR)/make && $(BUILD_LOG_WRAPPER) $(MAKE) $(MAKE_ARGS) -f BuildJdk.gmk overlay-images)
+	@$(call TargetExit)
+
+profiles: profiles-oscheck source-tips jdk hotspot profiles-only
+profiles-only: start-make
+	@$(call TargetEnter)
+	@($(CD) $(JDK_TOPDIR)/make && $(BUILD_LOG_WRAPPER) $(MAKE) $(MAKE_ARGS) -f BuildJdk.gmk profiles)
+	@$(call TargetExit)
+
+profiles-oscheck:
+        ifneq ($(OPENJDK_TARGET_OS), linux)
+	  @echo "Error: The Java SE 8 Compact Profiles are only implemented for Linux at this time" && exit 1
+        endif
+
+install: images install-only
+install-only: start-make
+	@$(call TargetEnter)
+	@($(CD) $(JDK_TOPDIR)/make && $(BUILD_LOG_WRAPPER) $(MAKE) $(MAKE_ARGS) -f BuildJdk.gmk install)
+	@$(call TargetExit)
+
+docs: jdk docs-only
+docs-only: start-make
+	@$(call TargetEnter)
+	@($(CD) $(SRC_ROOT)/make && $(BUILD_LOG_WRAPPER) $(MAKE) $(MAKE_ARGS) -f Javadoc.gmk docs)
+	@$(call TargetExit)
+
+sign-jars: jdk sign-jars-only
+sign-jars-only: start-make
+	@$(call TargetEnter)
+	@($(CD) $(JDK_TOPDIR)/make && $(BUILD_LOG_WRAPPER) $(MAKE) $(MAKE_ARGS) -f BuildJdk.gmk sign-jars)
+	@$(call TargetExit)
+
+bootcycle-images: images bootcycle-images-only
+bootcycle-images-only: start-make
+	@$(ECHO) Boot cycle build step 2: Building a new JDK image using previously built image
+	@($(CD) $(SRC_ROOT) && $(BUILD_LOG_WRAPPER) $(MAKE) SPEC=$(dir $(SPEC))bootcycle-spec.gmk images)
+
+test: images test-only
+test-only: start-make
+	@$(call TargetEnter)
+	@($(CD) $(SRC_ROOT)/test && $(BUILD_LOG_WRAPPER) $(MAKE) -j1 -k MAKEFLAGS= JT_HOME=$(JT_HOME) PRODUCT_HOME=$(JDK_IMAGE_DIR) ALT_OUTPUTDIR=$(OUTPUT_ROOT) CONCURRENCY=$(JOBS) $(TEST)) || true
+	@$(call TargetExit)
+
+# Stores the tips for each repository. This file is be used when constructing the jdk image and can be
+# used to track the exact sources used to build that image.
+source-tips: $(OUTPUT_ROOT)/source_tips
+$(OUTPUT_ROOT)/source_tips: FRC
+	@$(MKDIR) -p $(@D)
+	@$(RM) $@
+	@$(call GetSourceTips)
+
+
+# Remove everything, except the output from configure.
+clean: clean-langtools clean-corba clean-jaxp clean-jaxws clean-hotspot clean-jdk clean-nashorn clean-images clean-overlay-images clean-bootcycle-build clean-docs clean-test
+	@($(CD) $(OUTPUT_ROOT) && $(RM) -r tmp source_tips build.log* build-trace*.log*)
+	@$(ECHO) Cleaned all build artifacts.
+
+# Remove everything, including configure configuration.
+# If the output directory was created by configure and now becomes empty, remove it as well.
+# FIXME: tmp should not be here, fix ResetTimers instead. And remove spec.sh!
+dist-clean: clean
+	@($(CD) $(OUTPUT_ROOT) && $(RM) -r *spec.gmk config.* configure-arguments Makefile compare.sh spec.sh tmp javacservers)
+	@$(if $(filter $(CONF_NAME),$(notdir $(OUTPUT_ROOT))), \
+	  if test "x`$(LS) $(OUTPUT_ROOT)`" != x; then \
+	    $(ECHO) "Warning: Not removing non-empty configuration directory for '$(CONF_NAME)'" ; \
+	  else \
+	    ($(CD) $(SRC_ROOT) && $(ECHO) "Removing configuration directory for '$(CONF_NAME)'" && $(RM) -r $(OUTPUT_ROOT)) \
+	  fi \
+	)
+	@$(ECHO) Cleaned everything, you will have to re-run configure.
+
+clean-langtools:
+	$(call CleanComponent,langtools)
+clean-corba:
+	$(call CleanComponent,corba)
+clean-jaxp:
+	$(call CleanComponent,jaxp)
+clean-jaxws:
+	$(call CleanComponent,jaxws)
+clean-hotspot:
+	$(call CleanComponent,hotspot)
+clean-jdk:
+	$(call CleanComponent,jdk)
+clean-nashorn:
+	$(call CleanComponent,nashorn)
+clean-images:
+	$(call CleanComponent,images)
+clean-overlay-images:
+	$(call CleanComponent,overlay-images)
+clean-bootcycle-build:
+	$(call CleanComponent,bootcycle-build)
+clean-docs:
+	$(call CleanComponent,docs)
+	$(call CleanComponent,docstemp)
+clean-test:
+	$(call CleanComponent,testoutput)
+
+.PHONY: langtools corba jaxp jaxws hotspot jdk nashorn images overlay-images install test docs
+.PHONY: langtools-only corba-only jaxp-only jaxws-only hotspot-only jdk-only nashorn-only images-only overlay-images-only install-only test-only docs-only
+.PHONY: default all clean dist-clean bootcycle-images start-make
+.PHONY: clean-langtools clean-corba clean-jaxp clean-jaxws clean-hotspot clean-jdk clean-nashorn clean-images clean-docs clean-test clean-overlay-images clean-bootcycle-build
+.PHONY: profiles profiles-only profiles-oscheck
+
+FRC: # Force target

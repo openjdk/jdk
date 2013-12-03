@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2007, 2010, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2012, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -23,199 +23,27 @@
 # questions.
 #
 
-# Makefile for langtools: wrapper around Ant build.xml file
-
-#
-# On Solaris, the standard 'make' utility will not work with these makefiles.
-#    This little rule is only understood by Solaris make, and is harmless
-#    when seen by the GNU make tool. If using Solaris make, this causes the
-#    make command to fail.
-#
-SUN_MAKE_TEST:sh = @echo "ERROR: PLEASE USE GNU VERSION OF MAKE"; exit 33
-
-#
-# Minimal platform defs
-# Need FullPath because we can't rely on gnumake abspath, until we use v3.81
-#
-
-SYSTEM_UNAME := $(shell uname)
-
-# Where is unwanted output to be delivered?
-# On Windows, MKS uses the special file "NUL", cygwin uses the customary unix file.
-ifeq ($(SYSTEM_UNAME), Windows_NT)
-DEV_NULL = NUL
+# Locate this Makefile
+ifeq ($(filter /%, $(lastword $(MAKEFILE_LIST))), )
+  makefile_path := $(CURDIR)/$(lastword $(MAKEFILE_LIST))
 else
-DEV_NULL = /dev/null 
+  makefile_path := $(lastword $(MAKEFILE_LIST))
 endif
+repo_dir := $(patsubst %/make/Makefile, %, $(makefile_path))
 
-ifneq (,$(findstring CYGWIN,$(SYSTEM_UNAME)))
-USING_CYGWIN = true
-endif
+# What is the name of this subsystem (langtools, corba, etc)?
+subsystem_name := $(notdir $(repo_dir))
 
-ifdef USING_CYGWIN
-define FullPath
-$(shell cygpath -a -s -m $1 2> $(DEV_NULL))
-endef
+# Try to locate top-level makefile
+top_level_makefile := $(repo_dir)/../Makefile
+ifneq ($(wildcard $(top_level_makefile)), )
+  $(info Will run $(subsystem_name) target on top-level Makefile)
+  $(info WARNING: This is a non-recommended way of building!)
+  $(info ===================================================)
 else
-define FullPath
-$(shell cd $1 2> $(DEV_NULL) && pwd)
-endef
+  $(info Cannot locate top-level Makefile. Is this repo not checked out as part of a complete forest?)
+  $(error Build from top-level Makefile instead)
 endif
 
-#
-# Makefile args
-#
-
-ifdef QUIET
-  ANT_OPTIONS += -quiet
-endif
-
-ifdef VERBOSE
-  ANT_OPTIONS += -verbose -debug
-endif
-
-ifdef JDK_VERSION
-  ANT_OPTIONS += -Djdk.version=$(JDK_VERSION)
-endif 
-
-ifdef FULL_VERSION
-  ANT_OPTIONS += -Dfull.version='$(FULL_VERSION)' # will contain spaces
-endif 
-
-ifdef MILESTONE
-ifneq ($(MILESTONE),fcs)
-  ANT_OPTIONS += -Dmilestone=$(MILESTONE)
-else
-  ANT_OPTIONS += -Drelease=$(JDK_VERSION)
-endif
-endif
-
-ifdef BUILD_NUMBER
-  ANT_OPTIONS += -Dbuild.number=$(BUILD_NUMBER)
-else
-  ifdef JDK_BUILD_NUMBER
-    ANT_OPTIONS += -Dbuild.number=$(JDK_BUILD_NUMBER)
-  endif
-endif
-
-ifeq ($(VARIANT), DBG)
-  ANT_OPTIONS += -Djavac.debug=true
-else
-  ifeq ($(VARIANT), OPT)
-    ANT_OPTIONS += -Djavac.debug=false
-  endif
-endif
-
-ifeq ($(DEBUG_CLASSFILES), true)
-  ANT_OPTIONS += -Djavac.debug=true
-  ANT_OPTIONS += -Ddebug.classfiles=true
-endif
-
-# Note: jdk/make/common/Defs.gmk uses LANGUAGE_VERSION (-source NN)
-# and the somewhat misnamed CLASS_VERSION (-target NN)
-ifdef TARGET_CLASS_VERSION
-  ANT_OPTIONS += -Djavac.target=$(TARGET_CLASS_VERSION)
-else
-  ifdef JAVAC_TARGET_ARG 
-    ANT_OPTIONS += -Djavac.target=$(JAVAC_TARGET_ARG)
-  endif
-endif 
-
-ifdef SOURCE_LANGUAGE_VERSION
-  ANT_OPTIONS += -Djavac.source=$(SOURCE_LANGUAGE_VERSION)
-else
-  ifdef JAVAC_SOURCE_ARG 
-    ANT_OPTIONS += -Djavac.source=$(JAVAC_SOURCE_ARG)
-  endif
-endif 
-
-ifdef ALT_BOOTDIR
-  ANT_OPTIONS += -Dboot.java.home=$(ALT_BOOTDIR)
-  ANT_JAVA_HOME = JAVA_HOME=$(ALT_BOOTDIR)
-endif
-
-# To facilitate bootstrapping, much of langtools can be compiled with (just)
-# a boot JDK. However, some source files need to be compiled against 
-# new JDK API. In a bootstrap build, an import JDK may not be available,
-# so build.xml can also build against the source files in a jdk repo,
-# in which case it will automatically generate stub files for the new JDK API.
-ifdef JDK_TOPDIR
-  ANT_OPTIONS += -Dimport.jdk=$(JDK_TOPDIR)
-else 
-  ifdef ALT_JDK_TOPDIR
-    ANT_OPTIONS += -Dimport.jdk=$(ALT_JDK_TOPDIR)
-  else 
-    ifdef ALT_JDK_IMPORT_PATH
-      ANT_OPTIONS += -Dimport.jdk=$(ALT_JDK_IMPORT_PATH)
-    endif
-  endif
-endif
-
-ifdef ALT_OUTPUTDIR
-  OUTPUTDIR = $(ALT_OUTPUTDIR)
-  ANT_OPTIONS += -Dbuild.dir=$(ALT_OUTPUTDIR)/build
-  ANT_OPTIONS += -Ddist.dir=$(ALT_OUTPUTDIR)/dist
-else
-  OUTPUTDIR = ..
-endif
-#ABS_OUTPUTDIR = $(abspath $(OUTPUTDIR))
-ABS_OUTPUTDIR = $(call FullPath,$(OUTPUTDIR))
-
-ANT_TMPDIR = $(ABS_OUTPUTDIR)/build/ant-tmp
-ANT_OPTS = ANT_OPTS=-Djava.io.tmpdir='$(ANT_TMPDIR)'
-
-ifdef FINDBUGS_HOME
-  ANT_OPTIONS += -Dfindbugs.home=$(FINDBUGS_HOME)
-endif
-
-ifdef ANT_HOME
-  ANT = $(ANT_HOME)/bin/ant
-  ifneq ($(shell test -x $(ANT) && echo OK), OK)
-    $(error $(ANT) not found -- please update ANT_HOME)
-  endif
-else
-  ANT = ant
-  ifneq ($(shell test -x "`which $(ANT)`" && echo OK), OK)
-    $(error 'ant' not found -- please set ANT_HOME or put 'ant' on your PATH)
-  endif
-endif
-
-# Default target and expected 'do everything' target
-all: build
-
-# Standard make clobber target
-clobber: clean
-
-# All ant targets of interest
-ANT_TARGETS = build clean sanity post-sanity diagnostics build-all-tools  # for now
-
-# Create diagnostics log (careful, ant 1.8.0 -diagnostics always does an exit 1)
-$(OUTPUTDIR)/build/ant-diagnostics.log:
-	@mkdir -p $(OUTPUTDIR)/build $(ANT_TMPDIR)
-	@$(RM) $@
-	$(ANT_JAVA_HOME) $(ANT_OPTS) $(ANT) -diagnostics > $@ ; \
-	  $(ANT_JAVA_HOME) $(ANT_OPTS) $(ANT) -version >> $@
-
-# Create a make target for each
-$(ANT_TARGETS): $(OUTPUTDIR)/build/ant-diagnostics.log
-	@ mkdir -p $(OUTPUTDIR)/build $(ANT_TMPDIR)
-	$(ANT_JAVA_HOME) $(ANT_OPTS) $(ANT) $(ANT_OPTIONS) $@
-
-#-------------------------------------------------------------------
-#
-# Targets for Oracle's internal JPRT build system
-
-CD = cd
-ZIP = zip
-
-JPRT_ARCHIVE_BUNDLE=$(ABS_OUTPUTDIR)/$(JPRT_BUILD_FLAVOR)-bundle.zip
-
-jprt_build_product jprt_build_debug jprt_build_fastdebug: all
-	( $(CD) $(OUTPUTDIR) && \
-	  $(ZIP) -q -r $(JPRT_ARCHIVE_BUNDLE) build dist )
-
-#-------------------------------------------------------------------
-
-# Declare these phony (not filenames)
-.PHONY: $(ANT_TARGETS) all clobber \
-	jprt_build_product jprt_build_debug jprt_build_fastdebug
+all:
+	@$(MAKE) -f $(top_level_makefile) $(subsystem_name)

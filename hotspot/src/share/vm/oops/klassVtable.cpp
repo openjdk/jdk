@@ -1076,7 +1076,12 @@ void klassItable::initialize_itable_for_interface(int method_table_offset, Klass
       LinkResolver::lookup_instance_method_in_klasses(target, _klass, m->name(), m->signature(), CHECK);
     }
     if (target == NULL || !target->is_public() || target->is_abstract()) {
-      // Entry do not resolve. Leave it empty
+      // Entry does not resolve. Leave it empty for AbstractMethodError.
+        if (!(target == NULL) && !target->is_public()) {
+          // Stuff an IllegalAccessError throwing method in there instead.
+          itableOffsetEntry::method_entry(_klass(), method_table_offset)[m->itable_index()].
+              initialize(Universe::throw_illegal_access_error());
+        }
     } else {
       // Entry did resolve, check loader constraints before initializing
       // if checkconstraints requested
