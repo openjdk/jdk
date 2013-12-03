@@ -186,7 +186,7 @@ public class Container extends Component {
      * the method can return the Container on which it is originally called
      * in case if none of its children are the current mouse event targets.
      *
-     * @see #getMouseEventTarget(int, int, boolean, boolean, boolean)
+     * @see #getMouseEventTarget(int, int, boolean)
      */
     static final boolean INCLUDE_SELF = true;
 
@@ -195,7 +195,7 @@ public class Container extends Component {
      * of <code>getMouseEventTarget</code>. It is used to specify whether
      * the method should search only lightweight components.
      *
-     * @see #getMouseEventTarget(int, int, boolean, boolean, boolean)
+     * @see #getMouseEventTarget(int, int, boolean)
      */
     static final boolean SEARCH_HEAVYWEIGHTS = true;
 
@@ -1037,7 +1037,7 @@ public class Container extends Component {
      * every add request to a container as all other add methods defer
      * to this one. An overriding method should
      * usually include a call to the superclass's version of the method:
-     * <p>
+     *
      * <blockquote>
      * <code>super.addImpl(comp, constraints, index)</code>
      * </blockquote>

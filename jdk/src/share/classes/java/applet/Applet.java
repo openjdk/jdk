@@ -392,7 +392,7 @@ public class Applet extends Panel {
      * Each element of the array should be a set of three
      * <code>Strings</code> containing the name, the type, and a
      * description. For example:
-     * <p><blockquote><pre>
+     * <blockquote><pre>
      * String pinfo[][] = {
      *   {"fps",    "1-10",    "frames per second"},
      *   {"repeat", "boolean", "repeat image loop"},
