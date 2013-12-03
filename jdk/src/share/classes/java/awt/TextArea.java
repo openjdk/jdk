@@ -45,7 +45,7 @@ import javax.accessibility.*;
  * style="float:center; margin: 7px 10px;">
  * <p>
  * This text area could be created by the following line of code:
- * <p>
+ *
  * <hr><blockquote><pre>
  * new TextArea("Hello", 5, 40);
  * </pre></blockquote><hr>
