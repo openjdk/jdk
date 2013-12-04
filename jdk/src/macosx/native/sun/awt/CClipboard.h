@@ -43,6 +43,4 @@
 - (NSArray *) javaGetTypes;
 - (NSData *) javaGetDataForType:(NSString *)inFormat;
 
-- (void) pasteboardChangedOwner:(NSPasteboard *)sender;
-
 @end

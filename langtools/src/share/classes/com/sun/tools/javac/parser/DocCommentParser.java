@@ -280,7 +280,7 @@ public class DocCommentParser {
         try {
             nextChar();
             if (isIdentifierStart(ch)) {
-                Name name = readIdentifier();
+                Name name = readTagName();
                 TagParser tp = tagParsers.get(name);
                 if (tp == null) {
                     List<DCTree> content = blockContent();
@@ -329,7 +329,7 @@ public class DocCommentParser {
         try {
             nextChar();
             if (isIdentifierStart(ch)) {
-                Name name = readIdentifier();
+                Name name = readTagName();
                 skipWhitespace();
 
                 TagParser tp = tagParsers.get(name);
@@ -901,6 +901,14 @@ public class DocCommentParser {
         int start = bp;
         nextChar();
         while (bp < buflen && Character.isUnicodeIdentifierPart(ch))
+            nextChar();
+        return names.fromChars(buf, start, bp - start);
+    }
+
+    protected Name readTagName() {
+        int start = bp;
+        nextChar();
+        while (bp < buflen && (Character.isUnicodeIdentifierPart(ch) || ch == '.'))
             nextChar();
         return names.fromChars(buf, start, bp - start);
     }

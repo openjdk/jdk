@@ -25,6 +25,7 @@
 #ifndef SHARE_VM_RUNTIME_SWEEPER_HPP
 #define SHARE_VM_RUNTIME_SWEEPER_HPP
 
+#include "utilities/ticks.hpp"
 // An NmethodSweeper is an incremental cleaner for:
 //    - cleanup inline caches
 //    - reclamation of nmethods
@@ -71,10 +72,10 @@ class NMethodSweeper : public AllStatic {
                                                   //   3) zombie      -> marked_for_reclamation
   // Stat counters
   static int       _total_nof_methods_reclaimed;  // Accumulated nof methods flushed
-  static jlong     _total_time_sweeping;          // Accumulated time sweeping
-  static jlong     _total_time_this_sweep;        // Total time this sweep
-  static jlong     _peak_sweep_time;              // Peak time for a full sweep
-  static jlong     _peak_sweep_fraction_time;     // Peak time sweeping one fraction
+  static Tickspan  _total_time_sweeping;          // Accumulated time sweeping
+  static Tickspan  _total_time_this_sweep;        // Total time this sweep
+  static Tickspan  _peak_sweep_time;              // Peak time for a full sweep
+  static Tickspan  _peak_sweep_fraction_time;     // Peak time sweeping one fraction
 
   static int  process_nmethod(nmethod *nm);
   static void release_nmethod(nmethod* nm);
@@ -87,9 +88,9 @@ class NMethodSweeper : public AllStatic {
  public:
   static long traversal_count()              { return _traversals; }
   static int  total_nof_methods_reclaimed()  { return _total_nof_methods_reclaimed; }
-  static jlong total_time_sweeping()         { return _total_time_sweeping; }
-  static jlong peak_sweep_time()             { return _peak_sweep_time; }
-  static jlong peak_sweep_fraction_time()    { return _peak_sweep_fraction_time; }
+  static const Tickspan total_time_sweeping()      { return _total_time_sweeping; }
+  static const Tickspan peak_sweep_time()          { return _peak_sweep_time; }
+  static const Tickspan peak_sweep_fraction_time() { return _peak_sweep_fraction_time; }
   static void log_sweep(const char* msg, const char* format = NULL, ...);
 
 

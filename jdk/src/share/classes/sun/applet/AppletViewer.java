@@ -668,11 +668,11 @@ public class AppletViewer extends Frame implements AppletContext,
                 String dname = fd.getDirectory();
                 File file = new File(dname, fname);
 
-                try {
-                    BufferedOutputStream s = new BufferedOutputStream(new FileOutputStream(file));
-                    ObjectOutputStream os = new ObjectOutputStream(s);
-                    showStatus(amh.getMessage("appletsave.err1",
-                                              panel.applet.toString(), file.toString()));
+                try (FileOutputStream fos = new FileOutputStream(file);
+                     BufferedOutputStream bos = new BufferedOutputStream(fos);
+                     ObjectOutputStream os = new ObjectOutputStream(bos)) {
+
+                    showStatus(amh.getMessage("appletsave.err1", panel.applet.toString(), file.toString()));
                     os.writeObject(panel.applet);
                 } catch (IOException ex) {
                     System.err.println(amh.getMessage("appletsave.err2", ex));
