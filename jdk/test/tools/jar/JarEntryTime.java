@@ -29,10 +29,15 @@
 
 import java.io.File;
 import java.io.PrintWriter;
-import java.util.Date;
+import java.nio.file.attribute.FileTime;
 import sun.tools.jar.Main;
 
 public class JarEntryTime {
+
+    // ZipEntry's mod date has 2 seconds precision: give extra time to
+    // allow for e.g. rounding/truncation and networked/samba drives.
+    static final long PRECISION = 10000L;
+
     static boolean cleanup(File dir) throws Throwable {
         boolean rc = true;
         File[] x = dir.listFiles();
@@ -88,9 +93,9 @@ public class JarEntryTime {
         check(dirOuter.mkdir());
         check(dirInner.mkdir());
         File fileInner = new File(dirInner, "foo.txt");
-        PrintWriter pw = new PrintWriter(fileInner);
-        pw.println("hello, world");
-        pw.close();
+        try (PrintWriter pw = new PrintWriter(fileInner)) {
+            pw.println("hello, world");
+        }
 
         // Get the "now" from the "last-modified-time" of the last file we
         // just created, instead of the "System.currentTimeMillis()", to
@@ -98,13 +103,10 @@ public class JarEntryTime {
         final long now = fileInner.lastModified();
         final long earlier = now - (60L * 60L * 6L * 1000L);
         final long yesterday = now - (60L * 60L * 24L * 1000L);
-        // ZipEntry's mod date has 2 seconds precision: give extra time to
-        // allow for e.g. rounding/truncation and networked/samba drives.
-        final long PRECISION = 10000L;
 
-        dirOuter.setLastModified(now);
-        dirInner.setLastModified(yesterday);
-        fileInner.setLastModified(earlier);
+        check(dirOuter.setLastModified(now));
+        check(dirInner.setLastModified(yesterday));
+        check(fileInner.setLastModified(earlier));
 
         // Make a jar file from that directory structure
         Main jartool = new Main(System.out, System.err, "jar");
@@ -122,9 +124,9 @@ public class JarEntryTime {
         check(dirOuter.exists());
         check(dirInner.exists());
         check(fileInner.exists());
-        check(Math.abs(dirOuter.lastModified() - now) <= PRECISION);
-        check(Math.abs(dirInner.lastModified() - yesterday) <= PRECISION);
-        check(Math.abs(fileInner.lastModified() - earlier) <= PRECISION);
+        checkFileTime(dirOuter.lastModified(), now);
+        checkFileTime(dirInner.lastModified(), yesterday);
+        checkFileTime(fileInner.lastModified(), earlier);
 
         check(cleanup(dirInner));
         check(cleanup(dirOuter));
@@ -135,14 +137,22 @@ public class JarEntryTime {
         check(dirOuter.exists());
         check(dirInner.exists());
         check(fileInner.exists());
-        check(Math.abs(dirOuter.lastModified() - now) <= PRECISION);
-        check(Math.abs(dirInner.lastModified() - now) <= PRECISION);
-        check(Math.abs(fileInner.lastModified() - now) <= PRECISION);
+        checkFileTime(dirOuter.lastModified(), now);
+        checkFileTime(dirInner.lastModified(), now);
+        checkFileTime(fileInner.lastModified(), now);
 
         check(cleanup(dirInner));
         check(cleanup(dirOuter));
 
         check(jarFile.delete());
+    }
+
+    static void checkFileTime(long now, long original) {
+        if (Math.abs(now - original) > PRECISION) {
+            System.out.format("Extracted to %s, expected to be close to %s%n",
+                FileTime.fromMillis(now), FileTime.fromMillis(original));
+            fail();
+        }
     }
 
     //--------------------- Infrastructure ---------------------------

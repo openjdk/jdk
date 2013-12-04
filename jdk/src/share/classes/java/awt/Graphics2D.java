@@ -78,7 +78,7 @@ import java.util.Map;
  * <p>
  * When creating a <code>Graphics2D</code> object,  the
  * <code>GraphicsConfiguration</code>
- * specifies the <a name="#deftransform">default transform</a> for
+ * specifies the <a name="deftransform">default transform</a> for
  * the target of the <code>Graphics2D</code> (a
  * {@link Component} or {@link Image}).  This default transform maps the
  * user space coordinate system to screen and printer device coordinates
@@ -1103,7 +1103,7 @@ public abstract class Graphics2D extends Graphics {
      * method is intended only for restoring the original
      * <code>Graphics2D</code> transform after rendering, as shown in this
      * example:
-     * <pre><blockquote>
+     * <pre>
      * // Get the current transform
      * AffineTransform saveAT = g2.getTransform();
      * // Perform transformation
@@ -1112,7 +1112,7 @@ public abstract class Graphics2D extends Graphics {
      * g2d.draw(...);
      * // Restore original transform
      * g2d.setTransform(saveAT);
-     * </blockquote></pre>
+     * </pre>
      *
      * @param Tx the <code>AffineTransform</code> that was retrieved
      *           from the <code>getTransform</code> method

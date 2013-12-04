@@ -50,7 +50,7 @@ import org.testng.annotations.Test;
  *
  * @test
  * @build jdk.nashorn.api.scripting.Window jdk.nashorn.api.scripting.WindowEventHandler jdk.nashorn.api.scripting.VariableArityTestInterface jdk.nashorn.api.scripting.ScriptEngineTest
- * @run testng jdk.nashorn.api.scripting.ScriptEngineTest
+ * @run testng/othervm jdk.nashorn.api.scripting.ScriptEngineTest
  */
 public class ScriptEngineTest {
 
