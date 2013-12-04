@@ -3354,6 +3354,8 @@ void MacroAssembler::g1_write_barrier_post(Register store_addr,
 
   BarrierSet* bs = Universe::heap()->barrier_set();
   CardTableModRefBS* ct = (CardTableModRefBS*)bs;
+  assert(sizeof(*ct->byte_map_base) == sizeof(jbyte), "adjust this code");
+
   Label done;
   Label runtime;
 
@@ -3371,28 +3373,16 @@ void MacroAssembler::g1_write_barrier_post(Register store_addr,
 
   // storing region crossing non-NULL, is card already dirty?
 
-  ExternalAddress cardtable((address) ct->byte_map_base);
-  assert(sizeof(*ct->byte_map_base) == sizeof(jbyte), "adjust this code");
-#ifdef _LP64
   const Register card_addr = tmp;
+  const Register cardtable = tmp2;
 
-  movq(card_addr, store_addr);
-  shrq(card_addr, CardTableModRefBS::card_shift);
+  movptr(card_addr, store_addr);
+  shrptr(card_addr, CardTableModRefBS::card_shift);
+  // Do not use ExternalAddress to load 'byte_map_base', since 'byte_map_base' is NOT
+  // a valid address and therefore is not properly handled by the relocation code.
+  movptr(cardtable, (intptr_t)ct->byte_map_base);
+  addptr(card_addr, cardtable);
 
-  lea(tmp2, cardtable);
-
-  // get the address of the card
-  addq(card_addr, tmp2);
-#else
-  const Register card_index = tmp;
-
-  movl(card_index, store_addr);
-  shrl(card_index, CardTableModRefBS::card_shift);
-
-  Address index(noreg, card_index, Address::times_1);
-  const Register card_addr = tmp;
-  lea(card_addr, as_Address(ArrayAddress(cardtable, index)));
-#endif
   cmpb(Address(card_addr, 0), (int)G1SATBCardTableModRefBS::g1_young_card_val());
   jcc(Assembler::equal, done);
 
@@ -3416,7 +3406,7 @@ void MacroAssembler::g1_write_barrier_post(Register store_addr,
   movq(Address(tmp2, 0), card_addr);
 #else
   addl(tmp2, queue_index);
-  movl(Address(tmp2, 0), card_index);
+  movl(Address(tmp2, 0), card_addr);
 #endif
   jmp(done);
 
@@ -3468,25 +3458,19 @@ void MacroAssembler::store_check_part_2(Register obj) {
 
   // The calculation for byte_map_base is as follows:
   // byte_map_base = _byte_map - (uintptr_t(low_bound) >> card_shift);
-  // So this essentially converts an address to a displacement and
-  // it will never need to be relocated. On 64bit however the value may be too
-  // large for a 32bit displacement
-
+  // So this essentially converts an address to a displacement and it will
+  // never need to be relocated. On 64bit however the value may be too
+  // large for a 32bit displacement.
   intptr_t disp = (intptr_t) ct->byte_map_base;
   if (is_simm32(disp)) {
     Address cardtable(noreg, obj, Address::times_1, disp);
     movb(cardtable, 0);
   } else {
-    // By doing it as an ExternalAddress disp could be converted to a rip-relative
-    // displacement and done in a single instruction given favorable mapping and
-    // a smarter version of as_Address. Worst case it is two instructions which
-    // is no worse off then loading disp into a register and doing as a simple
-    // Address() as above.
-    // We can't do as ExternalAddress as the only style since if disp == 0 we'll
-    // assert since NULL isn't acceptable in a reloci (see 6644928). In any case
-    // in some cases we'll get a single instruction version.
-
-    ExternalAddress cardtable((address)disp);
+    // By doing it as an ExternalAddress 'disp' could be converted to a rip-relative
+    // displacement and done in a single instruction given favorable mapping and a
+    // smarter version of as_Address. However, 'ExternalAddress' generates a relocation
+    // entry and that entry is not properly handled by the relocation code.
+    AddressLiteral cardtable((address)ct->byte_map_base, relocInfo::none);
     Address index(noreg, obj, Address::times_1);
     movb(as_Address(ArrayAddress(cardtable, index)), 0);
   }
