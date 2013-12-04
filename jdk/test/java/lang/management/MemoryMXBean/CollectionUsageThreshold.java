@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,44 +31,45 @@
  * @author  Mandy Chung
  *
  * @build CollectionUsageThreshold MemoryUtil
- * @run main/timeout=300 CollectionUsageThreshold
+ * @run main/othervm/timeout=300 -XX:+PrintGCDetails -XX:+UseSerialGC CollectionUsageThreshold
+ * @run main/othervm/timeout=300 -XX:+PrintGCDetails -XX:+UseParallelGC CollectionUsageThreshold
+ * @run main/othervm/timeout=300 -XX:+PrintGCDetails -XX:+UseG1GC CollectionUsageThreshold
+ * @run main/othervm/timeout=300 -XX:+PrintGCDetails -XX:+UseConcMarkSweepGC CollectionUsageThreshold
  */
 
-import java.lang.Thread.*;
-import java.lang.management.*;
 import java.util.*;
 import java.util.concurrent.*;
+import java.util.concurrent.atomic.AtomicInteger;
 import javax.management.*;
 import javax.management.openmbean.CompositeData;
+import java.lang.management.*;
+import static java.lang.management.MemoryNotificationInfo.*;;
+import static java.lang.management.ManagementFactory.*;
 
 public class CollectionUsageThreshold {
-    private static MemoryMXBean mm = ManagementFactory.getMemoryMXBean();
-    private static List<MemoryPoolMXBean> pools = ManagementFactory.getMemoryPoolMXBeans();
-    private static List<MemoryManagerMXBean> managers = ManagementFactory.getMemoryManagerMXBeans();
-    private static Map<String, PoolRecord> result = new HashMap<>();
+    private static final MemoryMXBean mm = getMemoryMXBean();
+    private static final Map<String, PoolRecord> result = new HashMap<>();
     private static boolean trace = false;
-    private static boolean testFailed = false;
-    private static int numMemoryPools = 1;
+    private static volatile int numMemoryPools = 1;
     private static final int NUM_GCS = 3;
     private static final int THRESHOLD = 10;
-    private static Checker checker;
-    private static int numGCs = 0;
+    private static volatile int numGCs = 0;
 
     // semaphore to signal the arrival of a low memory notification
-    private static Semaphore signals = new Semaphore(0);
+    private static final Semaphore signals = new Semaphore(0);
     // barrier for the main thread to wait until the checker thread
     // finishes checking the low memory notification result
-    private static CyclicBarrier barrier = new CyclicBarrier(2);
+    private static final CyclicBarrier barrier = new CyclicBarrier(2);
 
     static class PoolRecord {
-        private MemoryPoolMXBean pool;
-        private int listenerInvoked = 0;
-        private long notifCount = 0;
+        private final MemoryPoolMXBean pool;
+        private final AtomicInteger listenerInvoked = new AtomicInteger(0);
+        private volatile long notifCount = 0;
         PoolRecord(MemoryPoolMXBean p) {
             this.pool = p;
         }
         int getListenerInvokedCount() {
-            return listenerInvoked;
+            return listenerInvoked.get();
         }
         long getNotifCount() {
             return notifCount;
@@ -77,18 +78,17 @@ public class CollectionUsageThreshold {
             return pool;
         }
         void addNotification(MemoryNotificationInfo minfo) {
-            listenerInvoked++;
+            listenerInvoked.incrementAndGet();
             notifCount = minfo.getCount();
         }
     }
 
     static class SensorListener implements NotificationListener {
-        private int numNotifs = 0;
+        @Override
         public void handleNotification(Notification notif, Object handback) {
             String type = notif.getType();
-            if (type.equals(MemoryNotificationInfo.MEMORY_THRESHOLD_EXCEEDED) ||
-                type.equals(MemoryNotificationInfo.
-                    MEMORY_COLLECTION_THRESHOLD_EXCEEDED)) {
+            if (MEMORY_THRESHOLD_EXCEEDED.equals(type) ||
+                MEMORY_COLLECTION_THRESHOLD_EXCEEDED.equals(type)) {
                 MemoryNotificationInfo minfo = MemoryNotificationInfo.
                     from((CompositeData) notif.getUserData());
 
@@ -98,27 +98,25 @@ public class CollectionUsageThreshold {
                     throw new RuntimeException("Pool " + minfo.getPoolName() +
                         " is not selected");
                 }
-                if (type != MemoryNotificationInfo.
-                        MEMORY_COLLECTION_THRESHOLD_EXCEEDED) {
+                if (!MEMORY_COLLECTION_THRESHOLD_EXCEEDED.equals(type)) {
                     throw new RuntimeException("Pool " + minfo.getPoolName() +
                         " got unexpected notification type: " +
                         type);
                 }
                 pr.addNotification(minfo);
-                synchronized (this) {
-                    System.out.println("notifying the checker thread to check result");
-                    numNotifs++;
-                    signals.release();
-                }
+                System.out.println("notifying the checker thread to check result");
+                signals.release();
             }
         }
     }
 
-    private static long newThreshold;
     public static void main(String args[]) throws Exception {
         if (args.length > 0 && args[0].equals("trace")) {
             trace = true;
         }
+
+        List<MemoryPoolMXBean> pools = getMemoryPoolMXBeans();
+        List<MemoryManagerMXBean> managers = getMemoryManagerMXBeans();
 
         if (trace) {
             MemoryUtil.printMemoryPools(pools);
@@ -127,7 +125,6 @@ public class CollectionUsageThreshold {
 
         // Find the Old generation which supports low memory detection
         for (MemoryPoolMXBean p : pools) {
-            MemoryUsage u = p.getUsage();
             if (p.isUsageThresholdSupported() && p.isCollectionUsageThresholdSupported()) {
                 if (p.getName().toLowerCase().contains("perm")) {
                     // if we have a "perm gen" pool increase the number of expected
@@ -149,7 +146,7 @@ public class CollectionUsageThreshold {
             // This test creates a checker thread responsible for checking
             // the low memory notifications.  It blocks until a permit
             // from the signals semaphore is available.
-            checker = new Checker("Checker thread");
+            Checker checker = new Checker("Checker thread");
             checker.setDaemon(true);
             checker.start();
 
@@ -182,12 +179,7 @@ public class CollectionUsageThreshold {
                 pr.getPool().setCollectionUsageThreshold(0);
             }
         }
-
-        if (testFailed)
-            throw new RuntimeException("TEST FAILED.");
-
         System.out.println("Test passed.");
-
     }
 
 
@@ -205,20 +197,16 @@ public class CollectionUsageThreshold {
     }
 
     static class Checker extends Thread {
-        private boolean checkerReady = false;
-        private int waiters = 0;
-        private boolean readyToCheck = false;
         Checker(String name) {
             super(name);
         };
+        @Override
         public void run() {
             while (true) {
                 try {
                     signals.acquire(numMemoryPools);
                     checkResult();
-                } catch (InterruptedException e) {
-                    throw new RuntimeException(e);
-                } catch (BrokenBarrierException e) {
+                } catch (InterruptedException | BrokenBarrierException e) {
                     throw new RuntimeException(e);
                 }
             }
