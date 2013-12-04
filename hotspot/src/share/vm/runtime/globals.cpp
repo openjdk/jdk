@@ -321,6 +321,8 @@ void Flag::print_kind(outputStream* st) {
       { KIND_PRODUCT, "product" },
       { KIND_MANAGEABLE, "manageable" },
       { KIND_DIAGNOSTIC, "diagnostic" },
+      { KIND_EXPERIMENTAL, "experimental" },
+      { KIND_COMMERCIAL, "commercial" },
       { KIND_NOT_PRODUCT, "notproduct" },
       { KIND_DEVELOP, "develop" },
       { KIND_LP64_PRODUCT, "lp64_product" },

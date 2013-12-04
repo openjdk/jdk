@@ -620,7 +620,7 @@ public class UnixPrintServiceLookup extends PrintServiceLookup
             if (CUPSPrinter.isCupsRunning()) {
                 try {
                     PrintService defaultPS;
-                    if (psuri != null) {
+                    if ((psuri != null) && !psuri.startsWith("file")) {
                         defaultPS = new IPPPrintService(defaultPrinter,
                                                         psuri, true);
                     } else {

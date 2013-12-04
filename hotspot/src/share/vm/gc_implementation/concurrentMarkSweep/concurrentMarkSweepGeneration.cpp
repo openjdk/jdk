@@ -1993,7 +1993,7 @@ void CMSCollector::do_compaction_work(bool clear_all_soft_refs) {
   GenCollectedHeap* gch = GenCollectedHeap::heap();
 
   STWGCTimer* gc_timer = GenMarkSweep::gc_timer();
-  gc_timer->register_gc_start(os::elapsed_counter());
+  gc_timer->register_gc_start();
 
   SerialOldTracer* gc_tracer = GenMarkSweep::gc_tracer();
   gc_tracer->report_gc_start(gch->gc_cause(), gc_timer->gc_start());
@@ -2089,7 +2089,7 @@ void CMSCollector::do_compaction_work(bool clear_all_soft_refs) {
     size_policy()->msc_collection_end(gch->gc_cause());
   }
 
-  gc_timer->register_gc_end(os::elapsed_counter());
+  gc_timer->register_gc_end();
 
   gc_tracer->report_gc_end(gc_timer->gc_end(), gc_timer->time_partitions());
 
@@ -2475,7 +2475,7 @@ void CMSCollector::register_foreground_gc_start(GCCause::Cause cause) {
 
 void CMSCollector::register_gc_start(GCCause::Cause cause) {
   _cms_start_registered = true;
-  _gc_timer_cm->register_gc_start(os::elapsed_counter());
+  _gc_timer_cm->register_gc_start();
   _gc_tracer_cm->report_gc_start(cause, _gc_timer_cm->gc_start());
 }
 
@@ -2483,7 +2483,7 @@ void CMSCollector::register_gc_end() {
   if (_cms_start_registered) {
     report_heap_summary(GCWhen::AfterGC);
 
-    _gc_timer_cm->register_gc_end(os::elapsed_counter());
+    _gc_timer_cm->register_gc_end();
     _gc_tracer_cm->report_gc_end(_gc_timer_cm->gc_end(), _gc_timer_cm->time_partitions());
     _cms_start_registered = false;
   }

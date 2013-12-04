@@ -123,6 +123,9 @@
 # 7067973
 java/lang/management/MemoryMXBean/CollectionUsageThreshold.java generic-all
 
+# 8029415
+java/lang/reflect/Method/invoke/TestPrivateInterfaceMethodReflect.java generic-all
+
 ############################################################################
 
 # jdk_management
