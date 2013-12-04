@@ -26,6 +26,7 @@
 #define SHARE_VM_GC_IMPLEMENTATION_SHARED_GCTRACETIME_HPP
 
 #include "prims/jni_md.h"
+#include "utilities/ticks.hpp"
 
 class GCTimer;
 
@@ -34,7 +35,7 @@ class GCTraceTime {
   bool _doit;
   bool _print_cr;
   GCTimer* _timer;
-  jlong _start_counter;
+  Ticks _start_counter;
 
  public:
   GCTraceTime(const char* title, bool doit, bool print_cr, GCTimer* timer);

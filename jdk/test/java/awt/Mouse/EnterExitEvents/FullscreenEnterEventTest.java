@@ -61,6 +61,12 @@ public class FullscreenEnterEventTest {
             return;
         }
 
+        //Move the mouse out, because it could interfere with the test.
+        Robot r = Util.createRobot();
+        Util.waitForIdle(r);
+        r.mouseMove(0, 0);
+        Util.waitForIdle(r);
+
         SwingUtilities.invokeAndWait(new Runnable() {
             @Override
             public void run() {
@@ -69,7 +75,6 @@ public class FullscreenEnterEventTest {
         });
 
         //Move the mouse away from the frame and check the View-base full screen mode
-        Robot r = Util.createRobot();
         Util.waitForIdle(r);
         r.mouseMove(500, 500);
         Util.waitForIdle(r);
@@ -92,6 +97,7 @@ public class FullscreenEnterEventTest {
         });
 
         //Test native full screen support
+        Util.waitForIdle(r);
         Point fullScreenButtonPos = frame.getLocation();
         fullScreenButtonPos.translate(frame.getWidth() - 10, 10);
         r.mouseMove(fullScreenButtonPos.x, fullScreenButtonPos.y);

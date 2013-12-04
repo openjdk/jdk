@@ -394,20 +394,25 @@ public final class TypeAnnotationParser {
             ConstantPool cp,
             AnnotatedElement baseDecl,
             Class<?> container) {
-        TypeAnnotationTargetInfo ti = parseTargetInfo(buf);
-        LocationInfo locationInfo = LocationInfo.parseLocationInfo(buf);
-        Annotation a = AnnotationParser.parseAnnotation(buf, cp, container, false);
-        if (ti == null) // Inside a method for example
-            return null;
-        return new TypeAnnotation(ti, locationInfo, a, baseDecl);
+        try {
+            TypeAnnotationTargetInfo ti = parseTargetInfo(buf);
+            LocationInfo locationInfo = LocationInfo.parseLocationInfo(buf);
+            Annotation a = AnnotationParser.parseAnnotation(buf, cp, container, false);
+            if (ti == null) // Inside a method for example
+                return null;
+            return new TypeAnnotation(ti, locationInfo, a, baseDecl);
+        } catch (IllegalArgumentException | // Bad type in const pool at specified index
+                BufferUnderflowException e) {
+            throw new AnnotationFormatError(e);
+        }
     }
 
     private static TypeAnnotationTargetInfo parseTargetInfo(ByteBuffer buf) {
-        byte posCode = buf.get();
+        int posCode = buf.get() & 0xFF;
         switch(posCode) {
         case CLASS_TYPE_PARAMETER:
         case METHOD_TYPE_PARAMETER: {
-            byte index = buf.get();
+            int index = buf.get() & 0xFF;
             TypeAnnotationTargetInfo res;
             if (posCode == CLASS_TYPE_PARAMETER)
                 res = new TypeAnnotationTargetInfo(TypeAnnotationTarget.CLASS_TYPE_PARAMETER,
@@ -418,7 +423,7 @@ public final class TypeAnnotationParser {
             return res;
             } // unreachable break;
         case CLASS_EXTENDS: {
-            short index = buf.getShort();
+            short index = buf.getShort(); //needs to be signed
             if (index == -1) {
                 return new TypeAnnotationTargetInfo(TypeAnnotationTarget.CLASS_EXTENDS);
             } else if (index >= 0) {
@@ -437,7 +442,7 @@ public final class TypeAnnotationParser {
         case METHOD_RECEIVER:
             return new TypeAnnotationTargetInfo(TypeAnnotationTarget.METHOD_RECEIVER);
         case METHOD_FORMAL_PARAMETER: {
-            byte index = buf.get();
+            int index = buf.get() & 0xFF;
             return new TypeAnnotationTargetInfo(TypeAnnotationTarget.METHOD_FORMAL_PARAMETER,
                     index);
             } //unreachable break;
@@ -486,12 +491,12 @@ public final class TypeAnnotationParser {
     }
 
     private static TypeAnnotationTargetInfo parseShortTarget(TypeAnnotationTarget target, ByteBuffer buf) {
-        short index = buf.getShort();
+        int index = buf.getShort() & 0xFFFF;
         return new TypeAnnotationTargetInfo(target, index);
     }
     private static TypeAnnotationTargetInfo parse2ByteTarget(TypeAnnotationTarget target, ByteBuffer buf) {
-        byte count = buf.get();
-        byte secondaryIndex = buf.get();
+        int count = buf.get() & 0xFF;
+        int secondaryIndex = buf.get() & 0xFF;
         return new TypeAnnotationTargetInfo(target,
                                             count,
                                             secondaryIndex);
