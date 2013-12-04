@@ -109,6 +109,6 @@ public class ThreadLocalAllocBuffer extends VMObject {
 
   public void printOn(PrintStream tty) {
     tty.println(" [" + start() + "," +
-                top() + "," + end() + ")");
+                top() + "," + end() + ",{" + hardEnd() + "})");
   }
 }
