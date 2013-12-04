@@ -1565,8 +1565,12 @@ public final class Class<T> implements java.io.Serializable,
      * methods inherited by the array type from {@code Object}. It does not
      * contain a {@code Method} object for {@code clone()}.
      *
-     * <p> If this {@code Class} object represents a class or interface with no
-     * public methods, then the returned array has length 0.
+     * <p> If this {@code Class} object represents an interface then the
+     * returned array does not contain any implicitly declared methods from
+     * {@code Object}. Therefore, if no methods are explicitly declared in
+     * this interface or any of its superinterfaces then the returned array
+     * has length 0. (Note that a {@code Class} object which represents a class
+     * always has public methods, inherited from {@code Object}.)
      *
      * <p> If this {@code Class} object represents a primitive type or void,
      * then the returned array has length 0.
@@ -1699,25 +1703,29 @@ public final class Class<T> implements java.io.Serializable,
      * order. If {@code parameterTypes} is {@code null}, it is
      * treated as if it were an empty array.
      *
-     * <p> If the {@code name} is "{@code <init>};"or "{@code <clinit>}" a
+     * <p> If the {@code name} is "{@code <init>}" or "{@code <clinit>}" a
      * {@code NoSuchMethodException} is raised. Otherwise, the method to
      * be reflected is determined by the algorithm that follows.  Let C be the
-     * class represented by this object:
+     * class or interface represented by this object:
      * <OL>
-     * <LI> C is searched for any <I>matching methods</I>. If no matching
-     *      method is found, the algorithm of step 1 is invoked recursively on
-     *      the superclass of C.</LI>
-     * <LI> If no method was found in step 1 above, the superinterfaces of C
-     *      are searched for a matching method. If any such method is found, it
-     *      is reflected.</LI>
+     * <LI> C is searched for a <I>matching method</I>, as defined below. If a
+     *      matching method is found, it is reflected.</LI>
+     * <LI> If no matching method is found by step 1 then:
+     *   <OL TYPE="a">
+     *   <LI> If C is a class other than {@code Object}, then this algorithm is
+     *        invoked recursively on the superclass of C.</LI>
+     *   <LI> If C is the class {@code Object}, or if C is an interface, then
+     *        the superinterfaces of C (if any) are searched for a matching
+     *        method. If any such method is found, it is reflected.</LI>
+     *   </OL></LI>
      * </OL>
      *
-     * To find a matching method in a class C:&nbsp; If C declares exactly one
-     * public method with the specified name and exactly the same formal
-     * parameter types, that is the method reflected. If more than one such
-     * method is found in C, and one of these methods has a return type that is
-     * more specific than any of the others, that method is reflected;
-     * otherwise one of the methods is chosen arbitrarily.
+     * <p> To find a matching method in a class or interface C:&nbsp; If C
+     * declares exactly one public method with the specified name and exactly
+     * the same formal parameter types, that is the method reflected. If more
+     * than one such method is found in C, and one of these methods has a
+     * return type that is more specific than any of the others, that method is
+     * reflected; otherwise one of the methods is chosen arbitrarily.
      *
      * <p>Note that there may be more than one matching method in a
      * class because while the Java language forbids a class to
