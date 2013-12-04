@@ -403,12 +403,12 @@ public interface Stream<T> extends BaseStream<T, Stream<T>> {
      * @apiNote This method exists mainly to support debugging, where you want
      * to see the elements as they flow past a certain point in a pipeline:
      * <pre>{@code
-     *     list.stream()
-     *         .filter(filteringFunction)
-     *         .peek(e -> System.out.println("Filtered value: " + e));
-     *         .map(mappingFunction)
-     *         .peek(e -> System.out.println("Mapped value: " + e));
-     *         .collect(Collectors.intoList());
+     *     Stream.of("one", "two", "three", "four")
+     *         .filter(e -> e.length() > 3)
+     *         .peek(e -> System.out.println("Filtered value: " + e))
+     *         .map(String::toUpperCase)
+     *         .peek(e -> System.out.println("Mapped value: " + e))
+     *         .collect(Collectors.toList());
      * }</pre>
      *
      * @param action a <a href="package-summary.html#NonInterference">

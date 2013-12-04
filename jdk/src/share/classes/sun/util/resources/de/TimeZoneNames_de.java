@@ -45,6 +45,8 @@ import sun.util.resources.TimeZoneNamesBundle;
 public final class TimeZoneNames_de extends TimeZoneNamesBundle {
 
     protected final Object[][] getContents() {
+        String ACT[] = new String[] {"Acre Normalzeit", "ACT",
+                                     "Acre Sommerzeit", "ACST"};
         String ADELAIDE[] = new String[] {"Zentrale Normalzeit (S\u00FCdaustralien)", "CST",
                                           "Zentrale Sommerzeit (S\u00FCdaustralien)", "CST"};
         String AGT[] = new String[] {"Argentinische Zeit", "ART",
@@ -287,7 +289,7 @@ public final class TimeZoneNames_de extends TimeZoneNamesBundle {
             {"Africa/Porto-Novo", WAT},
             {"Africa/Sao_Tome", GMT},
             {"Africa/Timbuktu", GMT},
-            {"Africa/Tripoli", CET},
+            {"Africa/Tripoli", EET},
             {"Africa/Tunis", CET},
             {"Africa/Windhoek", WAT},
             {"America/Adak", HAST},
@@ -345,7 +347,7 @@ public final class TimeZoneNames_de extends TimeZoneNamesBundle {
             {"America/Detroit", EST},
             {"America/Dominica", AST},
             {"America/Edmonton", MST},
-            {"America/Eirunepe", AMT},
+            {"America/Eirunepe", ACT},
             {"America/El_Salvador", CST},
             {"America/Ensenada", PST},
             {"America/Fort_Wayne", EST},
@@ -422,7 +424,7 @@ public final class TimeZoneNames_de extends TimeZoneNamesBundle {
                                                  "Suriname Sommerzeit", "SRST"}},
             {"America/Port-au-Prince", EST},
             {"America/Port_of_Spain", AST},
-            {"America/Porto_Acre", AMT},
+            {"America/Porto_Acre", ACT},
             {"America/Porto_Velho", AMT},
             {"America/Puerto_Rico", AST},
             {"America/Rainy_River", CST},
@@ -430,7 +432,7 @@ public final class TimeZoneNames_de extends TimeZoneNamesBundle {
             {"America/Recife", BRT},
             {"America/Regina", CST},
             {"America/Resolute", CST},
-            {"America/Rio_Branco", AMT},
+            {"America/Rio_Branco", ACT},
             {"America/Rosario", AGT},
             {"America/Santa_Isabel", PST},
             {"America/Santarem", BRT},
@@ -635,7 +637,7 @@ public final class TimeZoneNames_de extends TimeZoneNamesBundle {
             {"Australia/Yancowinna", BROKEN_HILL},
             {"BET", BRT},
             {"BST", BDT},
-            {"Brazil/Acre", AMT},
+            {"Brazil/Acre", ACT},
             {"Brazil/DeNoronha", NORONHA},
             {"Brazil/East", BRT},
             {"Brazil/West", AMT},
@@ -753,7 +755,7 @@ public final class TimeZoneNames_de extends TimeZoneNamesBundle {
             {"Jamaica", EST},
             {"Japan", JST},
             {"Kwajalein", MHT},
-            {"Libya", CET},
+            {"Libya", EET},
             {"MET", new String[] {"Zentraleurop\u00e4ische Zeit", "MET",
                                   "Zentraleurop\u00e4ische Sommerzeit", "MEST"}},
             {"Mexico/BajaNorte", PST},

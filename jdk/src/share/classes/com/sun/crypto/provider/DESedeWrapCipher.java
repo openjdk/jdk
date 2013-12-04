@@ -50,6 +50,9 @@ public final class DESedeWrapCipher extends CipherSpi {
         (byte) 0x79, (byte) 0xe8, (byte) 0x21, (byte) 0x05
     };
 
+    private static final int CHECKSUM_LEN = 8;
+    private static final int IV_LEN = 8;
+
     /*
      * internal cipher object which does the real work.
      */
@@ -135,7 +138,7 @@ public final class DESedeWrapCipher extends CipherSpi {
         // can only return an upper-limit if not initialized yet.
         int result = 0;
         if (decrypting) {
-            result = inputLen - 16;
+            result = inputLen - 16; // CHECKSUM_LEN + IV_LEN;
         } else {
             result = inputLen + 16;
         }
@@ -215,7 +218,7 @@ public final class DESedeWrapCipher extends CipherSpi {
         if (opmode == Cipher.WRAP_MODE) {
             decrypting = false;
             if (params == null) {
-                iv = new byte[8];
+                iv = new byte[IV_LEN];
                 if (random == null) {
                     random = SunJCE.getRandom();
                 }
@@ -449,14 +452,15 @@ public final class DESedeWrapCipher extends CipherSpi {
         }
 
         byte[] cks = getChecksum(keyVal);
-        byte[] out = new byte[iv.length + keyVal.length + cks.length];
+        byte[] in = new byte[keyVal.length + CHECKSUM_LEN];
+        System.arraycopy(keyVal, 0, in, 0, keyVal.length);
+        System.arraycopy(cks, 0, in, keyVal.length, CHECKSUM_LEN);
 
-        System.arraycopy(keyVal, 0, out, iv.length, keyVal.length);
-        System.arraycopy(cks, 0, out, iv.length+keyVal.length, cks.length);
-        cipher.encrypt(out, iv.length, keyVal.length+cks.length,
-                       out, iv.length);
-
+        byte[] out = new byte[iv.length + in.length];
         System.arraycopy(iv, 0, out, 0, iv.length);
+
+        cipher.encrypt(in, 0, in.length, out, iv.length);
+
         // reverse the array content
         for (int i = 0; i < out.length/2; i++) {
             byte temp = out[i];
@@ -470,7 +474,8 @@ public final class DESedeWrapCipher extends CipherSpi {
             // should never happen
             throw new RuntimeException("Internal cipher key is corrupted");
         }
-        cipher.encrypt(out, 0, out.length, out, 0);
+        byte[] out2 = new byte[out.length];
+        cipher.encrypt(out, 0, out.length, out2, 0);
 
         // restore cipher state to prior to this call
         try {
@@ -480,7 +485,7 @@ public final class DESedeWrapCipher extends CipherSpi {
             // should never happen
             throw new RuntimeException("Internal cipher key is corrupted");
         }
-        return out;
+        return out2;
     }
 
     /**
@@ -520,25 +525,26 @@ public final class DESedeWrapCipher extends CipherSpi {
             buffer[i] = buffer[buffer.length-1-i];
             buffer[buffer.length-1-i] = temp;
         }
-        iv = new byte[IV2.length];
+        iv = new byte[IV_LEN];
         System.arraycopy(buffer, 0, iv, 0, iv.length);
         cipher.init(true, cipherKey.getAlgorithm(), cipherKey.getEncoded(),
                     iv);
-        cipher.decrypt(buffer, iv.length, buffer.length-iv.length,
-                       buffer, iv.length);
-        int origLen = buffer.length - iv.length - 8;
-        byte[] cks = getChecksum(buffer, iv.length, origLen);
-        int offset = iv.length + origLen;
-        for (int i = 0; i < cks.length; i++) {
-            if (buffer[offset + i] != cks[i]) {
+        byte[] buffer2 = new byte[buffer.length - iv.length];
+        cipher.decrypt(buffer, iv.length, buffer2.length,
+                       buffer2, 0);
+        int keyValLen = buffer2.length - CHECKSUM_LEN;
+        byte[] cks = getChecksum(buffer2, 0, keyValLen);
+        int offset = keyValLen;
+        for (int i = 0; i < CHECKSUM_LEN; i++) {
+            if (buffer2[offset + i] != cks[i]) {
                 throw new InvalidKeyException("Checksum comparison failed");
             }
         }
         // restore cipher state to prior to this call
         cipher.init(decrypting, cipherKey.getAlgorithm(),
                     cipherKey.getEncoded(), IV2);
-        byte[] out = new byte[origLen];
-        System.arraycopy(buffer, iv.length, out, 0, out.length);
+        byte[] out = new byte[keyValLen];
+        System.arraycopy(buffer2, 0, out, 0, keyValLen);
         return ConstructKeys.constructKey(out, wrappedKeyAlgorithm,
                                           wrappedKeyType);
     }
@@ -554,7 +560,7 @@ public final class DESedeWrapCipher extends CipherSpi {
             throw new RuntimeException("SHA1 message digest not available");
         }
         md.update(in, offset, len);
-        byte[] cks = new byte[8];
+        byte[] cks = new byte[CHECKSUM_LEN];
         System.arraycopy(md.digest(), 0, cks, 0, cks.length);
         return cks;
     }

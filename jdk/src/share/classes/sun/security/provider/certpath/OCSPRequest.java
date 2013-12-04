@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -76,7 +76,8 @@ import sun.security.util.*;
 
 class OCSPRequest {
 
-    private static final boolean dump = false;
+    private static final Debug debug = Debug.getInstance("certpath");
+    private static final boolean dump = debug != null && Debug.isOn("ocsp");
 
     // List of request CertIds
     private final List<CertId> certIds;
@@ -138,8 +139,8 @@ class OCSPRequest {
 
         if (dump) {
             HexDumpEncoder hexEnc = new HexDumpEncoder();
-            System.out.println("OCSPRequest bytes are... ");
-            System.out.println(hexEnc.encode(bytes));
+            debug.println("OCSPRequest bytes...\n\n" +
+                hexEnc.encode(bytes) + "\n");
         }
 
         return bytes;
