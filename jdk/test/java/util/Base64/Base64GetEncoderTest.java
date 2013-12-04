@@ -51,30 +51,6 @@ public class Base64GetEncoderTest {
 
         testWrapEncode2(encoder);
 
-        testEncodeWithByteBuffer(encoder);
-
-    }
-
-    private static void testEncodeWithByteBuffer(final Base64.Encoder encoder) {
-        System.err.println("\n\nEncoder.encode with ByteBuffer test  ");
-        final byte[] secondTestBuffer =
-                "api/java_util/Base64/index.html#GetEncoderMimeCustom[noLineSeparatorInEncodedString]"
-                .getBytes(US_ASCII);
-        String base64EncodedString;
-        ByteBuffer srcData = ByteBuffer.wrap(secondTestBuffer);
-        ByteBuffer dstData = ByteBuffer.allocate(secondTestBuffer.length * 2);
-
-        encoder.encode(srcData, dstData, 0);
-        dstData.flip();
-        if (dstData.hasArray()) {
-            System.err.println("\nByteBuffer test dstData is Base64 encoding = "
-                    + new String(dstData.array(), US_ASCII) + "\n");
-        }
-
-        base64EncodedString = new String(dstData.array(), US_ASCII);
-        if (base64EncodedString.contains("$$$")) {
-            throw new RuntimeException("Base64 encoding contains line separator after Encoder.encode ByteBuffer ... \n");
-        }
     }
 
     private static void testWrapEncode2(final Base64.Encoder encoder)
