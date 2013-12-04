@@ -1003,21 +1003,15 @@ void ciEnv::register_method(ciMethod* target,
     // Free codeBlobs
     code_buffer->free_blob();
 
-    if (nm == NULL) {
-      // The CodeCache is full.  Print out warning and disable compilation.
-      record_failure("code cache is full");
-      {
-        MutexUnlocker ml(Compile_lock);
-        MutexUnlocker locker(MethodCompileQueue_lock);
-        CompileBroker::handle_full_code_cache();
-      }
-    } else {
+    if (nm != NULL) {
       nm->set_has_unsafe_access(has_unsafe_access);
       nm->set_has_wide_vectors(has_wide_vectors);
 
       // Record successful registration.
       // (Put nm into the task handle *before* publishing to the Java heap.)
-      if (task() != NULL)  task()->set_code(nm);
+      if (task() != NULL) {
+        task()->set_code(nm);
+      }
 
       if (entry_bci == InvocationEntryBci) {
         if (TieredCompilation) {
@@ -1055,12 +1049,16 @@ void ciEnv::register_method(ciMethod* target,
         method->method_holder()->add_osr_nmethod(nm);
       }
     }
-  }
-  // JVMTI -- compiled method notification (must be done outside lock)
-  if (nm != NULL) {
-    nm->post_compiled_method_load_event();
-  }
+  }  // safepoints are allowed again
 
+  if (nm != NULL) {
+    // JVMTI -- compiled method notification (must be done outside lock)
+    nm->post_compiled_method_load_event();
+  } else {
+    // The CodeCache is full. Print out warning and disable compilation.
+    record_failure("code cache is full");
+    CompileBroker::handle_full_code_cache();
+  }
 }
 
 

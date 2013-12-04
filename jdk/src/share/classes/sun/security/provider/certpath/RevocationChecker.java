@@ -668,9 +668,6 @@ class RevocationChecker extends PKIXRevocationChecker {
             throw new CertPathValidatorException(ce);
         }
 
-        X509Certificate respCert = (responderCert == null) ? issuerCert
-                                                           : responderCert;
-
         // The algorithm constraints of the OCSP trusted responder certificate
         // does not need to be checked in this code. The constraints will be
         // checked when the responder's certificate is validated.
@@ -702,8 +699,8 @@ class RevocationChecker extends PKIXRevocationChecker {
                         nonce = ext.getValue();
                     }
                 }
-                response.verify(Collections.singletonList(certId), respCert,
-                                params.date(), nonce);
+                response.verify(Collections.singletonList(certId), issuerCert,
+                                responderCert, params.date(), nonce);
 
             } else {
                 URI responderURI = (this.responderURI != null)
@@ -716,8 +713,8 @@ class RevocationChecker extends PKIXRevocationChecker {
                 }
 
                 response = OCSP.check(Collections.singletonList(certId),
-                                      responderURI, respCert, null,
-                                      ocspExtensions);
+                                      responderURI, issuerCert, responderCert,
+                                      null, ocspExtensions);
             }
         } catch (IOException e) {
             throw new CertPathValidatorException(
@@ -733,7 +730,7 @@ class RevocationChecker extends PKIXRevocationChecker {
             if (revocationTime.before(params.date())) {
                 Throwable t = new CertificateRevokedException(
                     revocationTime, rs.getRevocationReason(),
-                    respCert.getSubjectX500Principal(),
+                    response.getSignerCertificate().getSubjectX500Principal(),
                     rs.getSingleExtensions());
                 throw new CertPathValidatorException(t.getMessage(), t, null,
                                                      -1, BasicReason.REVOKED);

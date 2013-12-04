@@ -32,9 +32,11 @@
 #ifndef TRACEFILES_JFRTYPES_HPP
 #define TRACEFILES_JFRTYPES_HPP
 
+#include "oops/symbol.hpp"
 #include "trace/traceDataTypes.hpp"
 #include "utilities/globalDefinitions.hpp"
-#include "oops/symbol.hpp"
+#include "utilities/ticks.hpp"
+
 
 enum JVMContentType {
   _not_a_content_type = (JVM_CONTENT_TYPES_START - 1),

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -62,10 +62,9 @@ public interface TypeVariable extends ReferenceType {
      * <p> If this type variable was declared with no explicit
      * upper bounds, the result is {@code java.lang.Object}.
      * If it was declared with multiple upper bounds,
-     * the result is an intersection type (modeled as a
-     * {@link DeclaredType}).
-     * Individual bounds can be found by examining the result's
-     * {@linkplain Types#directSupertypes(TypeMirror) supertypes}.
+     * the result is an {@linkplain IntersectionType intersection type};
+     * individual bounds can be found by examining the result's
+     * {@linkplain IntersectionType#getBounds() bounds}.
      *
      * @return the upper bound of this type variable
      */
