@@ -244,11 +244,19 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
 
     /**
      * The threshold value for using Burnikel-Ziegler division.  If the number
-     * of ints in the number are larger than this value,
-     * Burnikel-Ziegler division will be used.   This value is found
-     * experimentally to work well.
+     * of ints in the divisor are larger than this value, Burnikel-Ziegler
+     * division may be used.  This value is found experimentally to work well.
      */
     static final int BURNIKEL_ZIEGLER_THRESHOLD = 80;
+
+    /**
+     * The offset value for using Burnikel-Ziegler division.  If the number
+     * of ints in the divisor exceeds the Burnikel-Ziegler threshold, and the
+     * number of ints in the dividend is greater than the number of ints in the
+     * divisor plus this value, Burnikel-Ziegler division will be used.  This
+     * value is found experimentally to work well.
+     */
+    static final int BURNIKEL_ZIEGLER_OFFSET = 40;
 
     /**
      * The threshold value for using Schoenhage recursive base conversion. If
@@ -2017,8 +2025,8 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
      * @throws ArithmeticException if {@code val} is zero.
      */
     public BigInteger divide(BigInteger val) {
-        if (mag.length < BURNIKEL_ZIEGLER_THRESHOLD ||
-                val.mag.length < BURNIKEL_ZIEGLER_THRESHOLD) {
+        if (val.mag.length < BURNIKEL_ZIEGLER_THRESHOLD ||
+                mag.length - val.mag.length < BURNIKEL_ZIEGLER_OFFSET) {
             return divideKnuth(val);
         } else {
             return divideBurnikelZiegler(val);
@@ -2054,8 +2062,8 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
      * @throws ArithmeticException if {@code val} is zero.
      */
     public BigInteger[] divideAndRemainder(BigInteger val) {
-        if (mag.length < BURNIKEL_ZIEGLER_THRESHOLD ||
-                val.mag.length < BURNIKEL_ZIEGLER_THRESHOLD) {
+        if (val.mag.length < BURNIKEL_ZIEGLER_THRESHOLD ||
+                mag.length - val.mag.length < BURNIKEL_ZIEGLER_OFFSET) {
             return divideAndRemainderKnuth(val);
         } else {
             return divideAndRemainderBurnikelZiegler(val);
@@ -2083,8 +2091,8 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
      * @throws ArithmeticException if {@code val} is zero.
      */
     public BigInteger remainder(BigInteger val) {
-        if (mag.length < BURNIKEL_ZIEGLER_THRESHOLD ||
-                val.mag.length < BURNIKEL_ZIEGLER_THRESHOLD) {
+        if (val.mag.length < BURNIKEL_ZIEGLER_THRESHOLD ||
+                mag.length - val.mag.length < BURNIKEL_ZIEGLER_OFFSET) {
             return remainderKnuth(val);
         } else {
             return remainderBurnikelZiegler(val);
