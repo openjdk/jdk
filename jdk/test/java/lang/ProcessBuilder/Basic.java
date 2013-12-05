@@ -58,6 +58,15 @@ public class Basic {
     /* used for Mac OS X only */
     static final String cfUserTextEncoding = System.getenv("__CF_USER_TEXT_ENCODING");
 
+    /**
+     * Returns the number of milliseconds since time given by
+     * startNanoTime, which must have been previously returned from a
+     * call to {@link System.nanoTime()}.
+     */
+    private static long millisElapsedSince(long startNanoTime) {
+        return TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - startNanoTime);
+    }
+
     private static String commandOutput(Reader r) throws Throwable {
         StringBuilder sb = new StringBuilder();
         int c;
@@ -2232,40 +2241,66 @@ public class Basic {
 
         //----------------------------------------------------------------
         // Check that Process.waitFor(timeout, TimeUnit.MILLISECONDS)
-        // interrupt works as expected.
+        // interrupt works as expected, if interrupted while waiting.
         //----------------------------------------------------------------
         try {
             List<String> childArgs = new ArrayList<String>(javaChildArgs);
             childArgs.add("sleep");
             final Process p = new ProcessBuilder(childArgs).start();
             final long start = System.nanoTime();
-            final CountDownLatch ready = new CountDownLatch(1);
-            final CountDownLatch done = new CountDownLatch(1);
+            final CountDownLatch aboutToWaitFor = new CountDownLatch(1);
 
             final Thread thread = new Thread() {
                 public void run() {
                     try {
-                        final boolean result;
-                        try {
-                            ready.countDown();
-                            result = p.waitFor(30000, TimeUnit.MILLISECONDS);
-                        } catch (InterruptedException e) {
-                            return;
-                        }
+                        aboutToWaitFor.countDown();
+                        boolean result = p.waitFor(30L * 1000L, TimeUnit.MILLISECONDS);
                         fail("waitFor() wasn't interrupted, its return value was: " + result);
-                    } catch (Throwable t) {
-                        unexpected(t);
-                    } finally {
-                        done.countDown();
-                    }
+                    } catch (InterruptedException success) {
+                    } catch (Throwable t) { unexpected(t); }
                 }
             };
 
             thread.start();
-            ready.await();
+            aboutToWaitFor.await();
             Thread.sleep(1000);
             thread.interrupt();
-            done.await();
+            thread.join(10L * 1000L);
+            check(millisElapsedSince(start) < 10L * 1000L);
+            check(!thread.isAlive());
+            p.destroy();
+        } catch (Throwable t) { unexpected(t); }
+
+        //----------------------------------------------------------------
+        // Check that Process.waitFor(timeout, TimeUnit.MILLISECONDS)
+        // interrupt works as expected, if interrupted before waiting.
+        //----------------------------------------------------------------
+        try {
+            List<String> childArgs = new ArrayList<String>(javaChildArgs);
+            childArgs.add("sleep");
+            final Process p = new ProcessBuilder(childArgs).start();
+            final long start = System.nanoTime();
+            final CountDownLatch threadStarted = new CountDownLatch(1);
+
+            final Thread thread = new Thread() {
+                public void run() {
+                    try {
+                        threadStarted.countDown();
+                        do { Thread.yield(); }
+                        while (!Thread.currentThread().isInterrupted());
+                        boolean result = p.waitFor(30L * 1000L, TimeUnit.MILLISECONDS);
+                        fail("waitFor() wasn't interrupted, its return value was: " + result);
+                    } catch (InterruptedException success) {
+                    } catch (Throwable t) { unexpected(t); }
+                }
+            };
+
+            thread.start();
+            threadStarted.await();
+            thread.interrupt();
+            thread.join(10L * 1000L);
+            check(millisElapsedSince(start) < 10L * 1000L);
+            check(!thread.isAlive());
             p.destroy();
         } catch (Throwable t) { unexpected(t); }
 
