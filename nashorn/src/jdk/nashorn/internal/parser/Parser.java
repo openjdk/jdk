@@ -1210,21 +1210,24 @@ loop:
      */
     private void whileStatement() {
         // Capture WHILE token.
-        final int  whileLine  = line;
         final long whileToken = token;
         // WHILE tested in caller.
         next();
 
         // Construct WHILE node.
-        WhileNode whileNode = new WhileNode(whileLine, whileToken, Token.descPosition(whileToken), false);
+        WhileNode whileNode = new WhileNode(line, whileToken, Token.descPosition(whileToken), false);
         lc.push(whileNode);
 
         try {
             expect(LPAREN);
-            whileNode = whileNode.setTest(lc, expression());
+            final int whileLine = line;
+            final Expression test = expression();
             expect(RPAREN);
-            whileNode = whileNode.setBody(lc, getStatement());
-            appendStatement(whileNode);
+            final Block body = getStatement();
+            appendStatement(whileNode =
+                new WhileNode(whileLine, whileToken, finish, false).
+                    setTest(lc, test).
+                    setBody(lc, body));
         } finally {
             lc.pop(whileNode);
         }
@@ -1242,28 +1245,33 @@ loop:
      */
     private void doStatement() {
         // Capture DO token.
-        final int  doLine  = line;
         final long doToken = token;
         // DO tested in the caller.
         next();
 
-        WhileNode doWhileNode = new WhileNode(doLine, doToken, Token.descPosition(doToken), true);
+        WhileNode doWhileNode = new WhileNode(-1, doToken, Token.descPosition(doToken), true);
         lc.push(doWhileNode);
 
         try {
            // Get DO body.
-            doWhileNode = doWhileNode.setBody(lc, getStatement());
+            final Block body = getStatement();
 
             expect(WHILE);
             expect(LPAREN);
-            doWhileNode = doWhileNode.setTest(lc, expression());
+            final int doLine = line;
+            final Expression test = expression();
             expect(RPAREN);
 
             if (type == SEMICOLON) {
                 endOfLine();
             }
             doWhileNode.setFinish(finish);
-            appendStatement(doWhileNode);
+
+            //line number is last
+            appendStatement(doWhileNode =
+                new WhileNode(doLine, doToken, finish, true).
+                    setBody(lc, body).
+                    setTest(lc, test));
         } finally {
             lc.pop(doWhileNode);
         }
