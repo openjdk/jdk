@@ -26,7 +26,7 @@
  * @bug 8024924
  * @summary Test non constant addExact
  * @compile AddExactICondTest.java
- * @run main AddExactICondTest
+ * @run main AddExactICondTest -XX:+IgnoreUnrecognizedVMOptions -XX:+UnlockExperimentalVMOptions -XX:+UseMathExactIntrinsics
  *
  */
 
