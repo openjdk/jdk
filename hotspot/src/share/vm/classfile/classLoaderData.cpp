@@ -62,12 +62,12 @@
 #include "runtime/safepoint.hpp"
 #include "runtime/synchronizer.hpp"
 #include "utilities/growableArray.hpp"
+#include "utilities/macros.hpp"
 #include "utilities/ostream.hpp"
 
 #if INCLUDE_TRACE
  #include "trace/tracing.hpp"
 #endif
-
 
 ClassLoaderData * ClassLoaderData::_the_null_class_loader_data = NULL;
 
@@ -754,7 +754,7 @@ void ClassLoaderDataGraph::post_class_unload_events(void) {
   if (Tracing::enabled()) {
     if (Tracing::is_event_enabled(TraceClassUnloadEvent)) {
       assert(_unloading != NULL, "need class loader data unload list!");
-      _class_unload_time = Tracing::time();
+      _class_unload_time = Ticks::now();
       classes_unloading_do(&class_unload_event);
     }
     Tracing::on_unloading_classes();
@@ -832,7 +832,7 @@ void ClassLoaderData::print_value_on(outputStream* out) const {
 
 #if INCLUDE_TRACE
 
-TracingTime ClassLoaderDataGraph::_class_unload_time;
+Ticks ClassLoaderDataGraph::_class_unload_time;
 
 void ClassLoaderDataGraph::class_unload_event(Klass* const k) {
 

@@ -293,7 +293,7 @@ public class Flags {
         ExtendedStandardFlags       = (long)StandardFlags | DEFAULT,
         ModifierFlags               = ((long)StandardFlags & ~INTERFACE) | DEFAULT,
         InterfaceMethodMask         = ABSTRACT | STATIC | PUBLIC | STRICTFP | DEFAULT,
-        AnnotationTypeElementMask   = FINAL | ABSTRACT | PUBLIC | STRICTFP,
+        AnnotationTypeElementMask   = ABSTRACT | PUBLIC,
         LocalVarFlags               = FINAL | PARAMETER;
 
 

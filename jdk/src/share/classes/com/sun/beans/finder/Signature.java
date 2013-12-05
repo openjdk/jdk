@@ -62,6 +62,18 @@ final class Signature {
         this.args = args;
     }
 
+    Class<?> getType() {
+        return this.type;
+    }
+
+    String getName() {
+        return this.name;
+    }
+
+    Class<?>[] getArgs() {
+        return this.args;
+    }
+
     /**
      * Indicates whether some other object is "equal to" this one.
      *
