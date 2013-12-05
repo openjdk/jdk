@@ -1815,7 +1815,7 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
         int len = mag.length;
 
         if (len <= n) {
-            return this;
+            return abs();
         }
 
         int lowerInts[] = new int[n];
