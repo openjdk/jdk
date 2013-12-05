@@ -31,26 +31,27 @@
  */
 
 import com.sun.source.util.*;
-import com.sun.tools.javac.api.*;
-import com.sun.tools.javac.file.*;
+import com.sun.tools.javac.util.Assert;
 import javax.annotation.processing.*;
-import javax.lang.model.SourceVersion;
 import javax.lang.model.type.*;
 import javax.lang.model.util.ElementFilter;
 import javax.lang.model.element.*;
 import javax.tools.*;
 import java.util.*;
 import java.io.*;
+import javax.lang.model.util.Types;
 
 public class IntersectionPropertiesTest {
 
     private int errors = 0;
     private static final String Intersection_name = "IntersectionTest.java";
     private static final String Intersection_contents =
+        "import java.util.AbstractList;\n" +
         "import java.util.List;\n" +
         "import java.io.Serializable;\t" +
-        "public class IntersectionTest<S extends List & Serializable> {\n" +
-        "  void method(S s) { }\n" +
+        "public class IntersectionTest<S extends List & Serializable, One extends AbstractList & Runnable & Serializable, Two extends AbstractList & Serializable & Runnable> {\n" +
+        "  void method(S s, One o, Two t) { }\n" +
+        "  public static abstract class SubType extends AbstractList implements Runnable, Serializable { } \n" +
         "}";
 
     private static final File classesdir = new File("intersectionproperties");
@@ -116,7 +117,8 @@ public class IntersectionPropertiesTest {
 
             TypeParameterElement typeParameterElement = ((TypeParameterElement) typeVariable.asElement());
             final List<? extends TypeMirror> bounds = typeParameterElement.getBounds();
-            final HashSet<TypeMirror> actual = new HashSet<TypeMirror>(processingEnv.getTypeUtils().directSupertypes(upperBound));
+            Types types = processingEnv.getTypeUtils();
+            final HashSet<TypeMirror> actual = new HashSet<TypeMirror>(types.directSupertypes(upperBound));
             final HashSet<TypeMirror> expected = new HashSet<TypeMirror>(bounds);
             if (!expected.equals(actual)) {
                 System.err.println("Mismatched expected and actual bounds.");
@@ -128,6 +130,40 @@ public class IntersectionPropertiesTest {
                     System.err.println("  " + tm);
                 errors++;
             }
+
+            TypeVariable oneTypeVariable = (TypeVariable) method.getParameters().get(1).asType();
+            TypeMirror oneUpperBound = oneTypeVariable.getUpperBound();
+            TypeVariable twoTypeVariable = (TypeVariable) method.getParameters().get(2).asType();
+            TypeMirror twoUpperBound = twoTypeVariable.getUpperBound();
+            TypeElement oneUpperBoundElement = (TypeElement) types.asElement(oneUpperBound);
+
+            Assert.checkNonNull(oneUpperBoundElement);
+
+            Assert.check("java.util.AbstractList".equals(oneUpperBoundElement.getSuperclass().toString()),
+                         oneUpperBoundElement.getSuperclass().toString());
+
+            List<String> superInterfaces = new java.util.ArrayList<>();
+
+            for (TypeMirror tm : oneUpperBoundElement.getInterfaces()) {
+                superInterfaces.add(tm.toString());
+            }
+
+            Assert.check(java.util.Arrays.asList("java.lang.Runnable",
+                                                 "java.io.Serializable").equals(superInterfaces),
+                         superInterfaces);
+
+            Assert.check(types.isSameType(upperBound, types.capture(upperBound)));
+            Assert.check(types.isSameType(types.erasure(typeVariable), types.erasure(upperBound)));
+
+            TypeElement subTypeClass = processingEnv.getElementUtils().getTypeElement("IntersectionTest.SubType");
+
+            Assert.checkNonNull(subTypeClass);
+
+            Assert.check(types.isAssignable(subTypeClass.asType(), oneUpperBound));
+            Assert.check(types.isSameType(oneUpperBound, twoUpperBound));
+            Assert.check(!types.isSameType(upperBound, twoUpperBound));
+            Assert.check(types.isSubtype(subTypeClass.asType(), oneUpperBound));
+            Assert.check(types.isSubtype(oneUpperBound, upperBound));
         }
 
     }
