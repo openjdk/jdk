@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,16 +21,36 @@
  * questions.
  */
 
-package pkg2;
-
-/**
- * Class 2. This is a test.
- * Refer <a href="{@docRoot}/../technotes/guides/index.html">Here</a> should be
- * replaced with an absolute link.
- * This <a href="{@docRoot}/pkg1/C1.html">Here</a> should not be replaced
- * with an absolute link.
- * Testing <a href="{@docRoot}/technotes/guides/index.html">Link 1</a> and
- * <a href="{@docRoot}/pkg1/C1.html">Link 2</a>. Both should not be replaced with
- * an absolute link.
+/*
+ * @test
+ * @bug 8029179
+ * @summary javac produces a compile error for valid boolean expressions
+ * @compile CompileErrorForValidBooleanExpTest.java
  */
-public class C2 {}
+
+public class CompileErrorForValidBooleanExpTest {
+    static int a, b, c, d;
+
+    static void m() {
+        boolean cond1 = (a < b & c > d);
+        boolean cond2 = (f1() < f2() & c > d);
+        boolean cond3 = (f1() < b & f3() > d);
+        boolean cond4 = (f1() < b & f3() > 1);
+    }
+
+    static int f1() {
+        return 0;
+    }
+
+    static int f2() {
+        return 0;
+    }
+
+    static int f3() {
+        return 0;
+    }
+
+    static int f4() {
+        return 0;
+    }
+}
