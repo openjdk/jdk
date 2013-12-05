@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2013 Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,20 +31,17 @@
 import java.net.InetAddress;
 import java.net.DatagramSocket;
 import java.net.DatagramPacket;
-import java.io.InterruptedIOException;
 
-public class PortUnreachable implements Runnable {
+public class PortUnreachable {
 
     DatagramSocket clientSock;
     int serverPort;
     int clientPort;
 
-    public void run() {
+    public void serverSend() {
         try {
             InetAddress addr = InetAddress.getLocalHost();
-
-            Thread.currentThread().sleep(2000);
-
+            Thread.currentThread().sleep(1000);
             // send a delayed packet which should mean a delayed icmp
             // port unreachable
             byte b[] = "A late msg".getBytes();
@@ -52,11 +49,8 @@ public class PortUnreachable implements Runnable {
                                                        serverPort);
             clientSock.send(packet);
 
-            // wait before bringing the server up
-            Thread.currentThread().sleep(5000);
-
             DatagramSocket sock = new DatagramSocket(serverPort);
-            b = "Grettings from the server".getBytes();
+            b = "Greetings from the server".getBytes();
             packet = new DatagramPacket(b, b.length, addr, clientPort);
             sock.send(packet);
             sock.close();
@@ -70,10 +64,13 @@ public class PortUnreachable implements Runnable {
         clientSock = new DatagramSocket();
         clientPort = clientSock.getLocalPort();
 
+    }
+
+    void execute () throws Exception{
+
         // pick a port for the server
         DatagramSocket sock2 = new DatagramSocket();
         serverPort = sock2.getLocalPort();
-        sock2.close();
 
         // send a burst of packets to the unbound port - we should get back
         // icmp port unreachable messages
@@ -82,23 +79,26 @@ public class PortUnreachable implements Runnable {
         byte b[] = "Hello me".getBytes();
         DatagramPacket packet = new DatagramPacket(b, b.length, addr,
                                                    serverPort);
+        //close just before sending
+        sock2.close();
         for (int i=0; i<100; i++)
             clientSock.send(packet);
 
-        // start the server thread
-        Thread thr = new Thread(this);
-        thr.start();
-
+        serverSend();
         // try to receive
+        b = new byte[25];
+        packet = new DatagramPacket(b, b.length, addr, serverPort);
         clientSock.setSoTimeout(10000);
         clientSock.receive(packet);
+        System.out.println("client received data packet " + new String(packet.getData()));
 
         // done
         clientSock.close();
     }
 
     public static void main(String[] args) throws Exception {
-        new PortUnreachable();
+        PortUnreachable test = new PortUnreachable();
+        test.execute();
     }
 
 }

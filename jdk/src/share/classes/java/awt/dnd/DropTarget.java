@@ -197,7 +197,7 @@ public class DropTarget implements DropTargetListener, Serializable {
      * <P>
      * The Component will receive drops only if it is enabled.
      * @param c The new <code>Component</code> this <code>DropTarget</code>
-     * is to be associated with.<P>
+     * is to be associated with.
      */
 
     public synchronized void setComponent(Component c) {
@@ -246,7 +246,6 @@ public class DropTarget implements DropTargetListener, Serializable {
      * Sets the default acceptable actions for this <code>DropTarget</code>
      * <P>
      * @param ops the default actions
-     * <P>
      * @see java.awt.dnd.DnDConstants
      */
 
