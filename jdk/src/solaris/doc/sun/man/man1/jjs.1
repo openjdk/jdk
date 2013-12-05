@@ -1,0 +1,352 @@
+'\" t
+.\"  Copyright (c) 1994, 2013, Oracle and/or its affiliates. All rights reserved.
+.\"
+.\" DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+.\"
+.\" This code is free software; you can redistribute it and/or modify it
+.\" under the terms of the GNU General Public License version 2 only, as
+.\" published by the Free Software Foundation.
+.\"
+.\" This code is distributed in the hope that it will be useful, but WITHOUT
+.\" ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+.\" FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License
+.\" version 2 for more details (a copy is included in the LICENSE file that
+.\" accompanied this code).
+.\"
+.\" You should have received a copy of the GNU General Public License version
+.\" 2 along with this work; if not, write to the Free Software Foundation,
+.\" Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+.\"
+.\" Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+.\" or visit www.oracle.com if you need additional information or have any
+.\" questions.
+.\"
+.\"     Arch: generic
+.\"     Software: JDK 8
+.\"     Date: 21 November 2013
+.\"     SectDesc: Basic Tools
+.\"     Title: jjs.1
+.\"
+.if n .pl 99999
+.TH jjs 1 "21 November 2013" "JDK 8" "Basic Tools"
+.\" -----------------------------------------------------------------
+.\" * Define some portability stuff
+.\" -----------------------------------------------------------------
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.\" http://bugs.debian.org/507673
+.\" http://lists.gnu.org/archive/html/groff/2009-02/msg00013.html
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.ie \n(.g .ds Aq \(aq
+.el       .ds Aq '
+.\" -----------------------------------------------------------------
+.\" * set default formatting
+.\" -----------------------------------------------------------------
+.\" disable hyphenation
+.nh
+.\" disable justification (adjust text to left margin only)
+.ad l
+.\" -----------------------------------------------------------------
+.\" * MAIN CONTENT STARTS HERE *
+.\" -----------------------------------------------------------------
+
+.SH NAME    
+jjs \- Invokes the Nashorn engine\&.
+.SH SYNOPSIS    
+.sp     
+.nf     
+\f3\fBjjs\fR [\fIoptions\fR] [\fIscript\-files\fR] [\-\- \fIarguments\fR]\fP
+.fi     
+.sp     
+.TP     
+\fIoptions\fR
+One or more options of the \f3jjs\fR command, separated by spaces\&. For more information, see Options\&.
+.TP     
+\fIscript-files\fR
+One or more script files which you want to interpret using Nashorn, separated by spaces\&. If no files are specified, an interactive shell is started\&.
+.TP     
+\fIarguments\fR
+All values after the double hyphen marker (\f3--\fR) are passed through to the script or the interactive shell as arguments\&. These values can be accessed by using the \f3arguments\fR property (see )\&.
+.SH DESCRIPTION    
+The \f3jjs\fR command-line tool is used to invoke the Nashorn engine\&. You can use it to interpret one or several script files, or to run an interactive shell\&.
+.SH OPTIONS    
+The options of the \f3jjs\fR command control the conditions under which scripts are interpreted by Nashorn\&.
+.TP
+-ccs=\fIsize\fR , --class-cache-size=\fIsize\fR
+.br
+Sets the class cache size (in bytes)\&. Append the letter \f3k\fR or \f3K\fR to indicate kilobytes (KB), \f3m\fR or \f3M\fR to indicate megabytes (MB), \f3g\fR or \f3G\fR to indicate gigabytes (GB)\&. By default, the class cache size is set to 50 bytes\&. The following example shows how to set it to 1024 bytes (1 KB):
+.sp     
+.nf     
+\f3\-css=100\fP
+.fi     
+.nf     
+\f3\-css=1k\fP
+.fi     
+.nf     
+\f3\fR
+.fi     
+.sp     
+
+.TP
+-co, --compile-only
+.br
+Compiles the script without running it\&.
+.TP
+-cp \fIpath\fR , --classpath \fIpath\fR
+.br
+Specifies the path to the supporting class files To set multiple paths, the option can be repeated, or you can separate each path with a colon (:)\&.
+.TP
+-D\fIname\fR=\fIvalue\fR
+.br
+Sets a system property to be passed to the script by assigning a value to a property name\&. The following example shows how to invoke Nashorn in interactive mode and assign \f3myValue\fR to the property named \f3myKey\fR:
+.sp     
+.nf     
+\f3>> \fIjjs \-DmyKey=myValue\fR\fP
+.fi     
+.nf     
+\f3jjs> \fIjava\&.lang\&.System\&.getProperty("myKey")\fR\fP
+.fi     
+.nf     
+\f3myValue\fP
+.fi     
+.nf     
+\f3jjs>\fP
+.fi     
+.nf     
+\f3\fR
+.fi     
+.sp     
+
+
+This option can be repeated to set multiple properties\&.
+.TP
+-d=\fIpath\fR , --dump-debug-dir=\fIpath\fR
+.br
+Specifies the path to the directory where class files are dumped\&.
+.TP
+--debug-lines
+.br
+Generates a line number table in the class file\&. By default, this option is enabled\&. To disable it, specify \f3--debug-lines=false\fR\&.
+.TP
+--debug-locals
+.br
+Generates a local variable table in the class file\&.
+.TP
+-doe, --dump-on-error
+.br
+Provides a full stack trace when an arror occurs\&. By default, only a brief error message is printed\&.
+.TP
+--early-lvalue-error
+.br
+Reports invalid lvalue expressions as early errors (that is, when the code is parsed)\&. By default, this option is enabled\&. To disable it, specify \f3--early-lvalue-error=false\fR\&. When disabled, invalid lvalue expressions will not be reported until the code is executed\&.
+.TP
+--empty-statements
+.br
+Preserves empty statements in the Java abstract syntax tree\&.
+.TP
+-fv, --fullversion
+.br
+Prints the full Nashorn version string\&.
+.TP
+--function-statement-error
+.br
+Prints an error message when a function declaration is used as a statement\&.
+.TP
+--function-statement-warning
+.br
+Prints a warning message when a function declaration is used as a statement\&.
+.TP
+-fx
+.br
+Launches the script as a JavaFX application\&.
+.TP
+-h, -help
+.br
+Prints the list of options and their descriptions\&.
+.TP
+-J\fIoption\fR
+.br
+Passes the specified \f3java\fR launcher option to the JVM\&. The following example shows how to invoke Nashorn in interactive mode and set the maximum memory used by the JVM to 4 GB:
+.sp     
+.nf     
+\f3>> \fIjjs \-J\-Xmx4g\fR\fP
+.fi     
+.nf     
+\f3jjs> \fIjava\&.lang\&.Runtime\&.getRuntime()\&.maxMemory()\fR\fP
+.fi     
+.nf     
+\f33817799680\fP
+.fi     
+.nf     
+\f3jjs>\fP
+.fi     
+.nf     
+\f3\fR
+.fi     
+.sp     
+
+
+This option can be repeated to pass multiple \f3java\fR command options\&.
+.TP
+--lazy-compilation
+.br
+Enables lazy code generation strategies (that is, the entire script is not compiled at once)\&. This option is experimental\&.
+.TP
+--loader-per-compile
+.br
+Creates a new class loader per compile\&. By default, this option is enabled\&. To disable it, specify \f3--loader-per-compile=false\fR\&.
+.TP
+--log=\fIsubsystem\fR:\fIlevel\fR
+.br
+Performs logging at a given level for the specified subsystems\&. You can specify logging levels for multiple subsystems separating them with commas\&. For example:
+.sp     
+.nf     
+\f3\-\-log=fields:finest,codegen:info\fP
+.fi     
+.nf     
+\f3\fR
+.fi     
+.sp     
+
+.TP
+--package=\fIname\fR
+.br
+Specifies the package to which generated class files are added\&.
+.TP
+--parse-only
+.br
+Parses the code without compiling\&.
+.TP
+--print-ast
+.br
+Prints the abstract syntax tree\&.
+.TP
+--print-code
+.br
+Prints bytecode\&.
+.TP
+--print-lower-ast
+.br
+Prints the lowered abstract syntax tree\&.
+.TP
+--print-lower-parse
+.br
+Prints the lowered parse tree\&.
+.TP
+--print-no-newline
+.br
+Forces other \f3--print*\fR options to print the output on one line\&.
+.TP
+--print-parse
+.br
+Prints the parse tree\&.
+.TP
+--print-symbols
+.br
+Prints the symbol table\&.
+.TP
+-pcs, --profile-callsites
+.br
+Dumps callsite profile data\&.
+.TP
+-scripting
+.br
+Enables shell scripting features\&.
+.TP
+--stderr=\fIfilename\fR|\fIstream\fR|\fItty\fR
+.br
+Redirects the standard error stream to the specified file, stream (for example, to \f3stdout\fR), or text terminal\&.
+.TP
+--stdout=\fIfilename\fR|\fIstream\fR|\fItty\fR
+.br
+Redirects the standard output stream to the specified file, stream (for example, to \f3stderr\fR), or text terminal\&.
+.TP
+-strict
+.br
+Enables strict mode, which enforces stronger adherence to the standard (ECMAScript Edition 5\&.1), making it easier to detect common coding errors\&.
+.TP
+-t=\fIzone\fR , -timezone=\fIzone\fR
+.br
+Sets the specified time zone for script execution\&. It overrides the time zone set in the OS and used by the \f3Date\fR object\&.
+.TP
+-tcs=\fIparameter\fR , --trace-callsites=\fIparameter\fR
+.br
+Enables callsite trace mode\&. Possible parameters are the following:
+.RS     
+.TP     
+miss
+Trace callsite misses\&.
+.TP     
+enterexit
+Trace callsite enter/exit\&.
+.TP     
+objects
+Print object properties\&.
+.RE     
+
+.TP
+--verify-code
+.br
+Verifies bytecode before running\&.
+.TP
+-v, -version
+.br
+Prints the Nashorn version string\&.
+.TP
+-xhelp
+.br
+Prints extended help for command-line options\&.
+.SH EXAMPLES    
+\f3Example 1 Running a Script with Nashorn\fR
+.sp     
+.nf     
+\f3jjs script\&.js\fP
+.fi     
+.nf     
+\f3\fR
+.fi     
+.sp     
+\f3Example 2 Running Nashorn in Interactive Mode\fR
+.sp     
+.nf     
+\f3>> \fIjjs\fR\fP
+.fi     
+.nf     
+\f3jjs> \fIprintln("Hello, World!")\fR\fP
+.fi     
+.nf     
+\f3Hello, World!\fP
+.fi     
+.nf     
+\f3jjs> \fIquit()\fR\fP
+.fi     
+.nf     
+\f3>>\fP
+.fi     
+.nf     
+\f3\fR
+.fi     
+.sp     
+\f3Example 3 Passing Arguments to Nashorn\fR
+.sp     
+.nf     
+\f3>> \fIjjs \-\- a b c\fR\fP
+.fi     
+.nf     
+\f3jjs> \fIarguments\&.join(", ")\fR\fP
+.fi     
+.nf     
+\f3a, b, c\fP
+.fi     
+.nf     
+\f3jjs>\fP
+.fi     
+.nf     
+\f3\fR
+.fi     
+.sp     
+.SH SEE\ ALSO    
+\f3jrunscript\fR
+.RE
+.br
+'pl 8.5i
+'bp

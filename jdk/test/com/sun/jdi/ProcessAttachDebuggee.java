@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,6 +29,9 @@
  */
 import java.net.Socket;
 import java.net.ServerSocket;
+import java.nio.file.CopyOption;
+import java.nio.file.Files;
+import java.nio.file.StandardCopyOption;
 import java.io.File;
 import java.io.FileOutputStream;
 
@@ -39,10 +42,12 @@ public class ProcessAttachDebuggee {
         int port = ss.getLocalPort();
 
         // Write the port number to the given file
-        File f = new File(args[0]);
-        FileOutputStream fos = new FileOutputStream(f);
-        fos.write( Integer.toString(port).getBytes("UTF-8") );
-        fos.close();
+        File partial = new File(args[0] + ".partial");
+        File portFile = new File(args[0]);
+        try (FileOutputStream fos = new FileOutputStream(partial)) {
+            fos.write( Integer.toString(port).getBytes("UTF-8") );
+        }
+        Files.move(partial.toPath(), portFile.toPath(), StandardCopyOption.ATOMIC_MOVE);
 
         System.out.println("Debuggee bound to port: " + port);
         System.out.flush();

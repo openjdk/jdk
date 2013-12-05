@@ -44,6 +44,7 @@ import javax.print.event.PrintServiceAttributeListener;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
+import java.net.URLConnection;
 import java.net.HttpURLConnection;
 import java.io.File;
 import java.io.InputStream;
@@ -1607,14 +1608,16 @@ public class IPPPrintService implements PrintService, SunPrinterJobService {
 
     public static HttpURLConnection getIPPConnection(URL url) {
         HttpURLConnection connection;
+        URLConnection urlc;
         try {
-            connection = (HttpURLConnection)url.openConnection();
+            urlc = url.openConnection();
         } catch (java.io.IOException ioe) {
             return null;
         }
-        if (!(connection instanceof HttpURLConnection)) {
+        if (!(urlc instanceof HttpURLConnection)) {
             return null;
         }
+        connection = (HttpURLConnection)urlc;
         connection.setUseCaches(false);
         connection.setDefaultUseCaches(false);
         connection.setDoInput(true);
