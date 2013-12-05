@@ -218,12 +218,46 @@ import sun.reflect.Reflection;
 public class Logger {
     private static final Handler emptyHandlers[] = new Handler[0];
     private static final int offValue = Level.OFF.intValue();
-    private LogManager manager;
+
+    static final String SYSTEM_LOGGER_RB_NAME = "sun.util.logging.resources.logging";
+
+    // This class is immutable and it is important that it remains so.
+    private static final class LoggerBundle {
+        final String resourceBundleName; // Base name of the bundle.
+        final ResourceBundle userBundle; // Bundle set through setResourceBundle.
+        private LoggerBundle(String resourceBundleName, ResourceBundle bundle) {
+            this.resourceBundleName = resourceBundleName;
+            this.userBundle = bundle;
+        }
+        boolean isSystemBundle() {
+            return SYSTEM_LOGGER_RB_NAME.equals(resourceBundleName);
+        }
+        static LoggerBundle get(String name, ResourceBundle bundle) {
+            if (name == null && bundle == null) {
+                return NO_RESOURCE_BUNDLE;
+            } else if (SYSTEM_LOGGER_RB_NAME.equals(name) && bundle == null) {
+                return SYSTEM_BUNDLE;
+            } else {
+                return new LoggerBundle(name, bundle);
+            }
+        }
+    }
+
+    // This instance will be shared by all loggers created by the system
+    // code
+    private static final LoggerBundle SYSTEM_BUNDLE =
+            new LoggerBundle(SYSTEM_LOGGER_RB_NAME, null);
+
+    // This instance indicates that no resource bundle has been specified yet,
+    // and it will be shared by all loggers which have no resource bundle.
+    private static final LoggerBundle NO_RESOURCE_BUNDLE =
+            new LoggerBundle(null, null);
+
+    private volatile LogManager manager;
     private String name;
     private final CopyOnWriteArrayList<Handler> handlers =
         new CopyOnWriteArrayList<>();
-    private String resourceBundleName;  // Base name of the bundle.
-    private ResourceBundle userBundle;  // Bundle set through setResourceBundle.
+    private volatile LoggerBundle loggerBundle = NO_RESOURCE_BUNDLE;
     private volatile boolean useParentHandlers = true;
     private volatile Filter filter;
     private boolean anonymous;
@@ -641,7 +675,7 @@ public class Logger {
      * @return localization bundle name (may be {@code null})
      */
     public String getResourceBundleName() {
-        return resourceBundleName;
+        return loggerBundle.resourceBundleName;
     }
 
     /**
@@ -710,8 +744,9 @@ public class Logger {
     // resource bundle and then call "void log(LogRecord)".
     private void doLog(LogRecord lr) {
         lr.setLoggerName(name);
-        final ResourceBundle bundle = getEffectiveResourceBundle();
-        final String ebname = getEffectiveResourceBundleName();
+        final LoggerBundle lb = getEffectiveLoggerBundle();
+        final ResourceBundle  bundle = lb.userBundle;
+        final String ebname = lb.resourceBundleName;
         if (ebname != null && bundle != null) {
             lr.setResourceBundleName(ebname);
             lr.setResourceBundle(bundle);
@@ -1757,8 +1792,6 @@ public class Logger {
         return useParentHandlers;
     }
 
-    static final String SYSTEM_LOGGER_RB_NAME = "sun.util.logging.resources.logging";
-
     private static ResourceBundle findSystemResourceBundle(final Locale locale) {
         // the resource bundle is in a restricted package
         return AccessController.doPrivileged(new PrivilegedAction<ResourceBundle>() {
@@ -1801,11 +1834,12 @@ public class Logger {
         }
 
         Locale currentLocale = Locale.getDefault();
+        final LoggerBundle lb = loggerBundle;
 
         // Normally we should hit on our simple one entry cache.
-        if (userBundle != null &&
-                name.equals(resourceBundleName)) {
-            return userBundle;
+        if (lb.userBundle != null &&
+                name.equals(lb.resourceBundleName)) {
+            return lb.userBundle;
         } else if (catalog != null && currentLocale.equals(catalogLocale)
                 && name.equals(catalogName)) {
             return catalog;
@@ -1864,17 +1898,18 @@ public class Logger {
     // Synchronized to prevent races in setting the fields.
     private synchronized void setupResourceInfo(String name,
                                                 Class<?> callersClass) {
-        if (resourceBundleName != null) {
+        final LoggerBundle lb = loggerBundle;
+        if (lb.resourceBundleName != null) {
             // this Logger already has a ResourceBundle
 
-            if (resourceBundleName.equals(name)) {
+            if (lb.resourceBundleName.equals(name)) {
                 // the names match so there is nothing more to do
                 return;
             }
 
             // cannot change ResourceBundles once they are set
             throw new IllegalArgumentException(
-                resourceBundleName + " != " + name);
+                lb.resourceBundleName + " != " + name);
         }
 
         if (name == null) {
@@ -1890,7 +1925,10 @@ public class Logger {
             throw new MissingResourceException("Can't find " + name + " bundle",
                                                 name, "");
         }
-        resourceBundleName = name;
+
+        // if lb.userBundle is not null we won't reach this line.
+        assert lb.userBundle == null;
+        loggerBundle = LoggerBundle.get(name, null);
     }
 
     /**
@@ -1920,16 +1958,16 @@ public class Logger {
         }
 
         synchronized (this) {
-            final boolean canReplaceResourceBundle = resourceBundleName == null
-                    || resourceBundleName.equals(baseName);
+            LoggerBundle lb = loggerBundle;
+            final boolean canReplaceResourceBundle = lb.resourceBundleName == null
+                    || lb.resourceBundleName.equals(baseName);
 
             if (!canReplaceResourceBundle) {
                 throw new IllegalArgumentException("can't replace resource bundle");
             }
 
 
-            userBundle = bundle;
-            resourceBundleName = baseName;
+            loggerBundle = LoggerBundle.get(baseName, bundle);
         }
     }
 
@@ -2082,45 +2120,44 @@ public class Logger {
 
 
     // Private method to get the potentially inherited
-    // resource bundle name for this Logger.
-    // May return null
-    private String getEffectiveResourceBundleName() {
-        Logger target = this;
+    // resource bundle and resource bundle name for this Logger.
+    // This method never returns null.
+    private LoggerBundle getEffectiveLoggerBundle() {
+        final LoggerBundle lb = loggerBundle;
+        if (lb.isSystemBundle()) {
+            return SYSTEM_BUNDLE;
+        }
+
+        // first take care of this logger
+        final ResourceBundle b = getResourceBundle();
+        if (b != null && b == lb.userBundle) {
+            return lb;
+        } else if (b != null) {
+            // either lb.userBundle is null or getResourceBundle() is
+            // overriden
+            final String rbName = getResourceBundleName();
+            return LoggerBundle.get(rbName, b);
+        }
+
+        // no resource bundle was specified on this logger, look up the
+        // parent stack.
+        Logger target = this.parent;
         while (target != null) {
-            String rbn = target.getResourceBundleName();
-            if (rbn != null) {
-                return rbn;
+            final LoggerBundle trb = target.loggerBundle;
+            if (trb.isSystemBundle()) {
+                return SYSTEM_BUNDLE;
+            }
+            if (trb.userBundle != null) {
+                return trb;
+            }
+            final String rbName = target.getResourceBundleName();
+            if (rbName != null) {
+                return LoggerBundle.get(rbName,
+                            findResourceBundle(rbName, true));
             }
             target = target.getParent();
         }
-        return null;
-    }
-
-
-    private ResourceBundle getEffectiveResourceBundle() {
-        Logger target = this;
-        if (SYSTEM_LOGGER_RB_NAME.equals(resourceBundleName)) return null;
-        ResourceBundle localRB = getResourceBundle();
-        if (localRB != null) {
-            return localRB;
-        }
-
-        while (target != null) {
-            final ResourceBundle rb = target.userBundle;
-            if (rb != null) {
-                return rb;
-            }
-            final String rbn = target.getResourceBundleName();
-            if (rbn != null) {
-                if (!SYSTEM_LOGGER_RB_NAME.equals(rbn)) {
-                    return findResourceBundle(rbn, true);
-                } else {
-                    return null;
-                }
-            }
-            target = target.getParent();
-        }
-        return null;
+        return NO_RESOURCE_BUNDLE;
     }
 
 }

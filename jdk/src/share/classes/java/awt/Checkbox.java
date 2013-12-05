@@ -41,7 +41,7 @@ import javax.accessibility.*;
  * <p>
  * The following code example creates a set of check boxes in
  * a grid layout:
- * <p>
+ *
  * <hr><blockquote><pre>
  * setLayout(new GridLayout(3, 1));
  * add(new Checkbox("one", null, true));
@@ -558,7 +558,7 @@ public class Checkbox extends Component implements ItemSelectable, Accessible {
      * This method is not called unless item events are
      * enabled for this component. Item events are enabled
      * when one of the following occurs:
-     * <p><ul>
+     * <ul>
      * <li>An <code>ItemListener</code> object is registered
      * via <code>addItemListener</code>.
      * <li>Item events are enabled via <code>enableEvents</code>.

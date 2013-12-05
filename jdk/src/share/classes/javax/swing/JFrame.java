@@ -324,7 +324,7 @@ public class JFrame  extends Frame implements WindowConstants,
      * Sets the operation that will happen by default when
      * the user initiates a "close" on this frame.
      * You must specify one of the following choices:
-     * <p>
+     * <br><br>
      * <ul>
      * <li><code>DO_NOTHING_ON_CLOSE</code>
      * (defined in <code>WindowConstants</code>):

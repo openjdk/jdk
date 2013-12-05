@@ -1,0 +1,372 @@
+#
+# Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+# DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+#
+# This code is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License version 2 only, as
+# published by the Free Software Foundation.  Oracle designates this
+# particular file as subject to the "Classpath" exception as provided
+# by Oracle in the LICENSE file that accompanied this code.
+#
+# This code is distributed in the hope that it will be useful, but WITHOUT
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+# FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+# version 2 for more details (a copy is included in the LICENSE file that
+# accompanied this code).
+#
+# You should have received a copy of the GNU General Public License version
+# 2 along with this work; if not, write to the Free Software Foundation,
+# Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+#
+# Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+# or visit www.oracle.com if you need additional information or have any
+# questions.
+#
+
+default: all
+
+include $(SPEC)
+include MakeBase.gmk
+include JavaCompilation.gmk
+include Setup.gmk
+
+# The jars created in this file are required for the exploded jdk image to function and
+# cannot wait to be built in the images target.
+
+##########################################################################################
+# Create manifest for security jars
+#
+# Include these extra attributes for now, should probably take out.
+#
+MAINMANIFEST := $(JDK_TOPDIR)/make/data/mainmanifest/manifest.mf
+JCE_MANIFEST := $(JDK_OUTPUTDIR)/lib/_the.security.manifest.mf
+
+$(JCE_MANIFEST): $(MAINMANIFEST)
+	$(MKDIR) -p $(@D)
+	$(RM) $@ $@.tmp
+	$(SED) -e "s#@@RELEASE@@#$(JDK_VERSION)#" \
+	    -e "s#@@COMPANY_NAME@@#$(COMPANY_NAME)#" \
+	    $(MAINMANIFEST) >> $@.tmp
+	$(ECHO) "Extension-Name: javax.crypto" >> $@.tmp
+	$(ECHO) "Implementation-Vendor-Id: com.sun" >> $@.tmp
+	$(MV) $@.tmp $@
+
+##########################################################################################
+# For security and crypto jars, always build the jar, but for closed, install the prebuilt
+# signed version instead of the newly built jar. Unsigned jars are treated as intermediate
+# targets and explicitly added to the TARGETS list. For open, signing is not needed. See
+# SignJars.gmk for more information.
+#
+# The source for the crypto jars is not available for all licensees. The BUILD_CRYPTO
+# variable is set to no if these jars can't be built to skip that step of the build.
+# Note that for OPENJDK, the build will fail if BUILD_CRYPTO=no since then there is no
+# other way to get the jars than to build them.
+
+SUNPKCS11_JAR_DST := $(JDK_OUTPUTDIR)/lib/ext/sunpkcs11.jar
+SUNPKCS11_JAR_UNSIGNED := $(JDK_OUTPUTDIR)/jce/unsigned/sunpkcs11.jar
+
+$(eval $(call SetupArchive,BUILD_SUNPKCS11_JAR, , \
+    SRCS := $(JDK_OUTPUTDIR)/classes_security, \
+    SUFFIXES := .class, \
+    INCLUDES := sun/security/pkcs11, \
+    JAR := $(SUNPKCS11_JAR_UNSIGNED), \
+    MANIFEST := $(JCE_MANIFEST), \
+    SKIP_METAINF := true))
+
+$(SUNPKCS11_JAR_UNSIGNED): $(JCE_MANIFEST)
+
+ifndef OPENJDK
+  SUNPKCS11_JAR_SRC := $(JDK_TOPDIR)/make/closed/tools/crypto/pkcs11/sunpkcs11.jar
+  $(SUNPKCS11_JAR_DST): $(SUNPKCS11_JAR_SRC)
+	@$(ECHO) $(LOG_INFO) Copying prebuilt $(@F)
+	$(install-file)
+else
+  $(SUNPKCS11_JAR_DST): $(SUNPKCS11_JAR_UNSIGNED)
+	$(install-file)
+endif
+
+TARGETS += $(SUNPKCS11_JAR_UNSIGNED) $(SUNPKCS11_JAR_DST)
+
+##########################################################################################
+
+SUNEC_JAR_DST := $(JDK_OUTPUTDIR)/lib/ext/sunec.jar
+SUNEC_JAR_UNSIGNED := $(JDK_OUTPUTDIR)/jce/unsigned/sunec.jar
+
+$(eval $(call SetupArchive,BUILD_SUNEC_JAR, , \
+    SRCS := $(JDK_OUTPUTDIR)/classes_security, \
+    SUFFIXES := .class, \
+    INCLUDES := sun/security/ec, \
+    JAR := $(SUNEC_JAR_UNSIGNED), \
+    MANIFEST := $(JCE_MANIFEST), \
+    SKIP_METAINF := true))
+
+$(SUNEC_JAR_UNSIGNED): $(JCE_MANIFEST)
+
+ifndef OPENJDK
+  SUNEC_JAR_SRC := $(JDK_TOPDIR)/make/closed/tools/crypto/ec/sunec.jar
+  $(SUNEC_JAR_DST): $(SUNEC_JAR_SRC)
+	@$(ECHO) $(LOG_INFO) Copying prebuilt $(@F)
+	$(install-file)
+else
+  $(SUNEC_JAR_DST): $(SUNEC_JAR_UNSIGNED)
+	$(install-file)
+endif
+
+TARGETS += $(SUNEC_JAR_UNSIGNED) $(SUNEC_JAR_DST)
+
+##########################################################################################
+
+SUNJCE_PROVIDER_JAR_DST := $(JDK_OUTPUTDIR)/lib/ext/sunjce_provider.jar
+SUNJCE_PROVIDER_JAR_UNSIGNED := $(JDK_OUTPUTDIR)/jce/unsigned/sunjce_provider.jar
+
+ifneq ($(BUILD_CRYPTO), no)
+  $(eval $(call SetupArchive,BUILD_SUNJCE_PROVIDER_JAR, , \
+      SRCS := $(JDK_OUTPUTDIR)/classes_security, \
+      SUFFIXES := .class, \
+      INCLUDES := com/sun/crypto/provider, \
+      JAR := $(SUNJCE_PROVIDER_JAR_UNSIGNED), \
+      MANIFEST := $(JCE_MANIFEST), \
+      SKIP_METAINF := true))
+
+  $(SUNJCE_PROVIDER_JAR_UNSIGNED): $(JCE_MANIFEST)
+
+  TARGETS += $(SUNJCE_PROVIDER_JAR_UNSIGNED)
+endif
+
+ifndef OPENJDK
+  SUNJCE_PROVIDER_JAR_SRC := $(JDK_TOPDIR)/make/closed/tools/crypto/jce/sunjce_provider.jar
+  $(SUNJCE_PROVIDER_JAR_DST): $(SUNJCE_PROVIDER_JAR_SRC)
+	@$(ECHO) $(LOG_INFO) Copying prebuilt $(@F)
+	$(install-file)
+else
+  $(SUNJCE_PROVIDER_JAR_DST): $(SUNJCE_PROVIDER_JAR_UNSIGNED)
+	$(install-file)
+endif
+
+TARGETS += $(SUNJCE_PROVIDER_JAR_DST)
+
+##########################################################################################
+
+JCE_JAR_DST := $(JDK_OUTPUTDIR)/lib/jce.jar
+JCE_JAR_UNSIGNED := $(JDK_OUTPUTDIR)/jce/unsigned/jce.jar
+
+ifneq ($(BUILD_CRYPTO), no)
+  $(eval $(call SetupArchive,BUILD_JCE_JAR, , \
+      SRCS := $(JDK_OUTPUTDIR)/classes_security, \
+      SUFFIXES := .class, \
+      INCLUDES := javax/crypto sun/security/internal, \
+      JAR := $(JCE_JAR_UNSIGNED), \
+      MANIFEST := $(JCE_MANIFEST), \
+      SKIP_METAINF := true))
+
+  $(JCE_JAR_UNSIGNED): $(JCE_MANIFEST)
+
+  TARGETS += $(JCE_JAR_UNSIGNED)
+endif
+
+ifndef OPENJDK
+  JCE_JAR_SRC := $(JDK_TOPDIR)/make/closed/tools/crypto/jce/jce.jar
+  $(JCE_JAR_DST): $(JCE_JAR_SRC)
+	@$(ECHO) $(LOG_INFO) Copying prebuilt $(@F)
+	$(install-file)
+else
+  $(JCE_JAR_DST): $(JCE_JAR_UNSIGNED)
+	$(install-file)
+endif
+
+TARGETS += $(JCE_JAR_DST)
+
+##########################################################################################
+
+US_EXPORT_POLICY_JAR_DST := $(JDK_OUTPUTDIR)/lib/security/US_export_policy.jar
+
+ifneq ($(BUILD_CRYPTO), no)
+
+  US_EXPORT_POLICY_JAR_LIMITED_UNSIGNED := \
+      $(JDK_OUTPUTDIR)/jce/unsigned/policy/limited/US_export_policy.jar
+  US_EXPORT_POLICY_JAR_UNLIMITED_UNSIGNED := \
+      $(JDK_OUTPUTDIR)/jce/unsigned/policy/unlimited/US_export_policy.jar
+
+  #
+  # TODO fix so that SetupArchive does not write files into SRCS
+  # then we don't need this extra copying
+  #
+  # NOTE: We currently do not place restrictions on our limited export
+  # policy. This was not a typo. This means we are shipping the same file
+  # for both limimted and unlimited US_export_policy.jar.
+  #
+  US_EXPORT_POLICY_JAR_SRC_DIR := $(JDK_TOPDIR)/make/data/cryptopolicy/unlimited
+  US_EXPORT_POLICY_JAR_TMP := \
+      $(JDK_OUTPUTDIR)/jce/unsigned/policy/unlimited/US_export_policy_jar.tmp
+
+  $(US_EXPORT_POLICY_JAR_TMP)/%: $(US_EXPORT_POLICY_JAR_SRC_DIR)/%
+	$(install-file)
+
+  US_EXPORT_POLICY_JAR_DEPS := $(US_EXPORT_POLICY_JAR_TMP)/default_US_export.policy
+
+  $(eval $(call SetupArchive,BUILD_US_EXPORT_POLICY_JAR, $(US_EXPORT_POLICY_JAR_DEPS), \
+      SRCS := $(US_EXPORT_POLICY_JAR_TMP), \
+      SUFFIXES := .policy, \
+      JAR := $(US_EXPORT_POLICY_JAR_UNLIMITED_UNSIGNED), \
+      EXTRA_MANIFEST_ATTR := Crypto-Strength: unlimited, \
+      SKIP_METAINF := true))
+
+  $(US_EXPORT_POLICY_JAR_LIMITED_UNSIGNED): $(US_EXPORT_POLICY_JAR_UNLIMITED_UNSIGNED)
+	$(ECHO) $(LOG_INFO) Copying unlimited $(patsubst $(OUTPUT_ROOT)/%,%,$@)
+	$(install-file)
+
+  TARGETS += $(US_EXPORT_POLICY_JAR_LIMITED_UNSIGNED) \
+      $(US_EXPORT_POLICY_JAR_UNLIMITED_UNSIGNED)
+endif
+
+ifndef OPENJDK
+  ifeq ($(UNLIMITED_CRYPTO), true)
+    $(error No prebuilt unlimited crypto jars available)
+  endif
+  $(US_EXPORT_POLICY_JAR_DST): $(JDK_TOPDIR)/make/closed/tools/crypto/jce/US_export_policy.jar
+	$(ECHO) $(LOG_INFO) Copying prebuilt $(@F)
+	$(install-file)
+else
+  ifeq ($(UNLIMITED_CRYPTO), true)
+    $(US_EXPORT_POLICY_JAR_DST): $(US_EXPORT_POLICY_JAR_UNLIMITED_UNSIGNED)
+	$(install-file)
+  else
+    $(US_EXPORT_POLICY_JAR_DST): $(US_EXPORT_POLICY_JAR_LIMITED_UNSIGNED)
+	$(install-file)
+  endif
+endif
+
+TARGETS += $(US_EXPORT_POLICY_JAR_DST)
+
+##########################################################################################
+
+LOCAL_POLICY_JAR_DST := $(JDK_OUTPUTDIR)/lib/security/local_policy.jar
+
+ifneq ($(BUILD_CRYPTO), no)
+
+  LOCAL_POLICY_JAR_LIMITED_UNSIGNED := \
+      $(JDK_OUTPUTDIR)/jce/unsigned/policy/limited/local_policy.jar
+  LOCAL_POLICY_JAR_UNLIMITED_UNSIGNED := \
+      $(JDK_OUTPUTDIR)/jce/unsigned/policy/unlimited/local_policy.jar
+
+  #
+  # TODO fix so that SetupArchive does not write files into SRCS
+  # then we don't need this extra copying
+  #
+  LOCAL_POLICY_JAR_LIMITED_TMP := \
+      $(JDK_OUTPUTDIR)/jce/unsigned/policy/limited/local_policy_jar.tmp
+  LOCAL_POLICY_JAR_UNLIMITED_TMP := \
+      $(JDK_OUTPUTDIR)/jce/unsigned/policy/unlimited/local_policy_jar.tmp
+
+  $(LOCAL_POLICY_JAR_LIMITED_TMP)/%: $(JDK_TOPDIR)/make/data/cryptopolicy/limited/%
+	$(install-file)
+
+  $(LOCAL_POLICY_JAR_UNLIMITED_TMP)/%: $(JDK_TOPDIR)/make/data/cryptopolicy/unlimited/%
+	$(install-file)
+
+  $(eval $(call SetupArchive,BUILD_LOCAL_POLICY_JAR_LIMITED, \
+      $(LOCAL_POLICY_JAR_LIMITED_TMP)/exempt_local.policy \
+      $(LOCAL_POLICY_JAR_LIMITED_TMP)/default_local.policy, \
+      SRCS := $(LOCAL_POLICY_JAR_LIMITED_TMP), \
+      SUFFIXES := .policy, \
+      JAR := $(LOCAL_POLICY_JAR_LIMITED_UNSIGNED), \
+      EXTRA_MANIFEST_ATTR := Crypto-Strength: limited, \
+      SKIP_METAINF := true))
+
+  $(eval $(call SetupArchive,BUILD_LOCAL_POLICY_JAR_UNLIMITED, \
+      $(LOCAL_POLICY_JAR_UNLIMITED_TMP)/default_local.policy, \
+      SRCS := $(LOCAL_POLICY_JAR_UNLIMITED_TMP), \
+      SUFFIXES := .policy, \
+      JAR := $(LOCAL_POLICY_JAR_UNLIMITED_UNSIGNED), \
+      EXTRA_MANIFEST_ATTR := Crypto-Strength: unlimited, \
+      SKIP_METAINF := true))
+
+  TARGETS += $(LOCAL_POLICY_JAR_LIMITED_UNSIGNED) $(LOCAL_POLICY_JAR_UNLIMITED_UNSIGNED)
+
+  ifndef OPENJDK
+    $(JDK_OUTPUTDIR)/jce/unsigned/policy/unlimited/README.txt: \
+        $(JDK_TOPDIR)/make/closed/javax/crypto/doc/README.txt
+		$(install-file)
+
+    TARGETS += $(JDK_OUTPUTDIR)/jce/unsigned/policy/unlimited/README.txt
+  endif
+endif
+
+ifndef OPENJDK
+  $(LOCAL_POLICY_JAR_DST): $(JDK_TOPDIR)/make/closed/tools/crypto/jce/local_policy.jar
+	$(ECHO) $(LOG_INFO) Copying prebuilt $(@F)
+	$(install-file)
+else
+  ifeq ($(UNLIMITED_CRYPTO), true)
+    $(LOCAL_POLICY_JAR_DST): $(LOCAL_POLICY_JAR_UNLIMITED_UNSIGNED)
+	$(install-file)
+  else
+    $(LOCAL_POLICY_JAR_DST): $(LOCAL_POLICY_JAR_LIMITED_UNSIGNED)
+	$(install-file)
+  endif
+endif
+
+TARGETS += $(LOCAL_POLICY_JAR_DST)
+
+##########################################################################################
+
+ifeq ($(OPENJDK_TARGET_OS), windows)
+
+  SUNMSCAPI_JAR_DST := $(JDK_OUTPUTDIR)/lib/ext/sunmscapi.jar
+  SUNMSCAPI_JAR_UNSIGNED := $(JDK_OUTPUTDIR)/jce/unsigned/sunmscapi.jar
+
+  $(eval $(call SetupArchive,BUILD_SUNMSCAPI_JAR, , \
+      SRCS := $(JDK_OUTPUTDIR)/classes_security, \
+      SUFFIXES := .class, \
+      INCLUDES := sun/security/mscapi, \
+      JAR := $(SUNMSCAPI_JAR_UNSIGNED), \
+      MANIFEST := $(JCE_MANIFEST), \
+      SKIP_METAINF := true))
+
+  $(SUNMSCAPI_JAR_UNSIGNED): $(JCE_MANIFEST)
+
+  ifndef OPENJDK
+    SUNMSCAPI_JAR_SRC := $(JDK_TOPDIR)/make/closed/tools/crypto/mscapi/sunmscapi.jar
+    $(SUNMSCAPI_JAR_DST): $(SUNMSCAPI_JAR_SRC)
+	@$(ECHO) $(LOG_INFO) Copying prebuilt $(@F)
+	$(install-file)
+  else
+    $(SUNMSCAPI_JAR_DST): $(SUNMSCAPI_JAR_UNSIGNED)
+	$(install-file)
+  endif
+
+  TARGETS += $(SUNMSCAPI_JAR_UNSIGNED) $(SUNMSCAPI_JAR_DST)
+
+endif
+
+##########################################################################################
+
+ifeq ($(OPENJDK_TARGET_OS), solaris)
+  ifndef OPENJDK
+
+    UCRYPTO_JAR_DST := $(JDK_OUTPUTDIR)/lib/ext/ucrypto.jar
+    UCRYPTO_JAR_UNSIGNED := $(JDK_OUTPUTDIR)/jce/unsigned/ucrypto.jar
+    UCRYPTO_JAR_SRC := $(JDK_TOPDIR)/make/closed/tools/crypto/ucrypto/ucrypto.jar
+
+    $(eval $(call SetupArchive,BUILD_UCRYPTO_JAR, , \
+        SRCS := $(JDK_OUTPUTDIR)/classes_security, \
+        SUFFIXES := .class, \
+        INCLUDES := com/oracle/security/ucrypto, \
+        JAR := $(UCRYPTO_JAR_UNSIGNED), \
+        MANIFEST := $(JCE_MANIFEST), \
+        SKIP_METAINF := true))
+
+    $(UCRYPTO_JAR_UNSIGNED): $(JCE_MANIFEST)
+
+    $(UCRYPTO_JAR_DST): $(UCRYPTO_JAR_SRC)
+	@$(ECHO) $(LOG_INFO) Copying prebuilt $(@F)
+	$(install-file)
+
+    TARGETS += $(UCRYPTO_JAR_UNSIGNED) $(UCRYPTO_JAR_DST)
+
+  endif
+endif
+
+all: $(TARGETS)
+
+.PHONY: default all

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -43,7 +43,6 @@ import java.security.*;
  * The following table lists all the possible SSLPermission target names,
  * and for each provides a description of what the permission allows
  * and a discussion of the risks of granting code the permission.
- * <P>
  *
  * <table border=1 cellpadding=5
  *  summary="permission name, what it allows, and associated risks">

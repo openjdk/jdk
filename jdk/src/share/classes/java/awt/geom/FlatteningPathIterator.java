@@ -109,7 +109,7 @@ public class FlatteningPathIterator implements PathIterator {
      * control points and the flattened curve
      * @param limit the maximum number of recursive subdivisions
      * allowed for any curved segment
-     * @exception <code>IllegalArgumentException</code> if
+     * @exception IllegalArgumentException if
      *          <code>flatness</code> or <code>limit</code>
      *          is less than zero
      */
@@ -336,7 +336,7 @@ public class FlatteningPathIterator implements PathIterator {
      * @param coords an array that holds the data returned from
      * this method
      * @return the path segment type of the current path segment.
-     * @exception <code>NoSuchElementException</code> if there
+     * @exception NoSuchElementException if there
      *          are no more elements in the flattening path to be
      *          returned.
      * @see PathIterator#SEG_MOVETO
@@ -371,7 +371,7 @@ public class FlatteningPathIterator implements PathIterator {
      * @param coords an array that holds the data returned from
      * this method
      * @return the path segment type of the current path segment.
-     * @exception <code>NoSuchElementException</code> if there
+     * @exception NoSuchElementException if there
      *          are no more elements in the flattening path to be
      *          returned.
      * @see PathIterator#SEG_MOVETO

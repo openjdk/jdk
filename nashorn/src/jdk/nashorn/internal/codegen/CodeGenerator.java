@@ -2186,15 +2186,14 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
 
     @Override
     public boolean enterWhileNode(final WhileNode whileNode) {
-        lineNumber(whileNode);
-
         final Expression test          = whileNode.getTest();
         final Block      body          = whileNode.getBody();
         final Label      breakLabel    = whileNode.getBreakLabel();
         final Label      continueLabel = whileNode.getContinueLabel();
+        final boolean    isDoWhile     = whileNode.isDoWhile();
         final Label      loopLabel     = new Label("loop");
 
-        if (!whileNode.isDoWhile()) {
+        if (!isDoWhile) {
             method._goto(continueLabel);
         }
 
@@ -2202,6 +2201,7 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
         body.accept(this);
         if (!whileNode.isTerminal()) {
             method.label(continueLabel);
+            lineNumber(whileNode);
             new BranchOptimizer(this, method).execute(test, loopLabel, true);
             method.label(breakLabel);
         }

@@ -22,7 +22,7 @@
  */
 
 /* @test
-   @bug 8001633
+   @bug 8001633 8028271
    @summary Wrong alt processing during switching between windows
    @author mikhail.cherkasov@oracle.com
    @run main WrongAltProcessing
@@ -44,16 +44,27 @@ public class WrongAltProcessing {
     private static JTextField mainFrameTf2;
     private static JTextField secondFrameTf;
 
-    public static void main(String[] args) throws AWTException {
+    public static void main(String[] args) throws Exception {
         try {
             UIManager.setLookAndFeel("com.sun.java.swing.plaf.windows.WindowsLookAndFeel");
         } catch (Exception e) {
             return;// miss unsupported platforms.
         }
-        createWindows();
+        SwingUtilities.invokeAndWait(new Runnable() {
+            @Override
+            public void run() {
+                createWindows();
+            }
+        });
+        sync();
         initRobot();
         runScript();
-        verify();
+        SwingUtilities.invokeLater(new Runnable() {
+            @Override
+            public void run() {
+                verify();
+            }
+        });
     }
 
     private static void verify() {
@@ -76,7 +87,7 @@ public class WrongAltProcessing {
 
     private static void clickWindowsTitle(JFrame frame) {
         Point point = frame.getLocationOnScreen();
-        robot.mouseMove(point.x + (frame.getWidth() / 2), point.y + 5);
+        robot.mouseMove(point.x + (frame.getWidth() / 2), point.y + frame.getInsets().top / 2);
         robot.mousePress(InputEvent.BUTTON1_MASK);
         robot.mouseRelease(InputEvent.BUTTON1_MASK);
     }
@@ -112,6 +123,7 @@ public class WrongAltProcessing {
     public static void createWindows() {
         firstFrame = new JFrame("Frame");
         firstFrame.setLayout(new FlowLayout());
+        firstFrame.setPreferredSize(new Dimension(600,100));
 
         JMenuBar bar = new JMenuBar();
         JMenu menu = new JMenu("File");
@@ -146,24 +158,16 @@ public class WrongAltProcessing {
         firstFrame.pack();
 
         secondFrame = new JFrame("Frame 2");
+        secondFrame.setPreferredSize(new Dimension(600,100));
         secondFrame.setLocation(0, 150);
         secondFrameTf = new JTextField(20);
         secondFrame.add(secondFrameTf);
         secondFrame.pack();
-        SwingUtilities.invokeLater(new Runnable() {
-            @Override
-            public void run() {
-                secondFrame.setVisible(true);
-            }
-        });
-        SwingUtilities.invokeLater(new Runnable() {
-            @Override
-            public void run() {
-                firstFrame.setVisible(true);
-            }
-        });
+
+        secondFrame.setVisible(true);
+
+        firstFrame.setVisible(true);
 
         mainFrameTf1.requestFocus();
-        sync();
     }
 }

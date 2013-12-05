@@ -515,6 +515,7 @@ class InstanceKlass: public Klass {
   // find a local method (returns NULL if not found)
   Method* find_method(Symbol* name, Symbol* signature) const;
   static Method* find_method(Array<Method*>* methods, Symbol* name, Symbol* signature);
+  static Method* find_instance_method(Array<Method*>* methods, Symbol* name, Symbol* signature);
 
   // find a local method index in default_methods (returns -1 if not found)
   static int find_method_index(Array<Method*>* methods, Symbol* name, Symbol* signature);
@@ -777,6 +778,7 @@ class InstanceKlass: public Klass {
 
   // subclass/subinterface checks
   bool implements_interface(Klass* k) const;
+  bool is_same_or_direct_interface(Klass* k) const;
 
   // Access to the implementor of an interface.
   Klass* implementor() const

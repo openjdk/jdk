@@ -1051,6 +1051,18 @@ bool InstanceKlass::implements_interface(Klass* k) const {
   return false;
 }
 
+bool InstanceKlass::is_same_or_direct_interface(Klass *k) const {
+  // Verify direct super interface
+  if (this == k) return true;
+  assert(k->is_interface(), "should be an interface class");
+  for (int i = 0; i < local_interfaces()->length(); i++) {
+    if (local_interfaces()->at(i) == k) {
+      return true;
+    }
+  }
+  return false;
+}
+
 objArrayOop InstanceKlass::allocate_objArray(int n, int length, TRAPS) {
   if (length < 0) THROW_0(vmSymbols::java_lang_NegativeArraySizeException());
   if (length > arrayOopDesc::max_array_length(T_OBJECT)) {
@@ -1413,6 +1425,17 @@ static int binary_search(Array<Method*>* methods, Symbol* name) {
 // find_method looks up the name/signature in the local methods array
 Method* InstanceKlass::find_method(Symbol* name, Symbol* signature) const {
   return InstanceKlass::find_method(methods(), name, signature);
+}
+
+// find_instance_method looks up the name/signature in the local methods array
+// and skips over static methods
+Method* InstanceKlass::find_instance_method(
+    Array<Method*>* methods, Symbol* name, Symbol* signature) {
+  Method* meth = InstanceKlass::find_method(methods, name, signature);
+  if (meth != NULL && meth->is_static()) {
+      meth = NULL;
+  }
+  return meth;
 }
 
 // find_method looks up the name/signature in the local methods array
@@ -2157,7 +2180,6 @@ int InstanceKlass::oop_adjust_pointers(oop obj) {
     obj, \
     MarkSweep::adjust_pointer(p), \
     assert_is_in)
-  MarkSweep::adjust_klass(obj->klass());
   return size;
 }
 
