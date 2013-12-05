@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,9 +30,15 @@ import java.util.List;
 /**
  * Represents an intersection type.
  *
- * As of the {@link javax.lang.model.SourceVersion#RELEASE_8
- * RELEASE_8} source version, intersection types can appear as the target type
- * of a cast expression.
+ * <p>An intersection type can be either implicitly or explicitly
+ * declared in a program. For example, the bound of the type parameter
+ * {@code <T extends Number & Runnable>} is an (implicit) intersection
+ * type.  As of {@link javax.lang.model.SourceVersion#RELEASE_8
+ * RELEASE_8}, this is represented by an {@code IntersectionType} with
+ * {@code Number} and {@code Runnable} as its bounds.  Also as of the
+ * {@link javax.lang.model.SourceVersion#RELEASE_8 RELEASE_8},
+ * intersection types can explicitly appear as the target type of a
+ * cast expression.
  *
  * @since 1.8
  */

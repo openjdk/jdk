@@ -357,9 +357,11 @@ public class LambdaToMethod extends TreeTranslator {
 
         //first determine the method symbol to be used to generate the sam instance
         //this is either the method reference symbol, or the bridged reference symbol
-        Symbol refSym = localContext.needsBridge() ?
-            localContext.bridgeSym :
-            tree.sym;
+        Symbol refSym = localContext.needsBridge()
+                ? localContext.bridgeSym
+                : localContext.isSignaturePolymorphic()
+                ? localContext.sigPolySym
+                : tree.sym;
 
         //build the bridge method, if needed
         if (localContext.needsBridge()) {
@@ -1995,6 +1997,7 @@ public class LambdaToMethod extends TreeTranslator {
 
             final boolean isSuper;
             final Symbol bridgeSym;
+            final Symbol sigPolySym;
 
             ReferenceTranslationContext(JCMemberReference tree) {
                 super(tree);
@@ -2003,6 +2006,12 @@ public class LambdaToMethod extends TreeTranslator {
                         ? makePrivateSyntheticMethod(isSuper ? 0 : STATIC,
                                               referenceBridgeName(), null,
                                               owner.enclClass())
+                        : null;
+                this.sigPolySym = isSignaturePolymorphic()
+                        ? makePrivateSyntheticMethod(tree.sym.flags(),
+                                              tree.sym.name,
+                                              bridgedRefSig(),
+                                              tree.sym.enclClass())
                         : null;
                 if (dumpLambdaToMethodStats) {
                     String key = bridgeSym == null ?
@@ -2103,6 +2112,15 @@ public class LambdaToMethod extends TreeTranslator {
                         !types.isSameType(
                               types.erasure(tree.sym.enclClass().asType()),
                               types.erasure(owner.enclClass().asType()));
+            }
+
+            /**
+             * Signature polymorphic methods need special handling.
+             * e.g. MethodHandle.invoke() MethodHandle.invokeExact()
+             */
+            final boolean isSignaturePolymorphic() {
+                return  tree.sym.kind == MTH &&
+                        types.isSignaturePolymorphic((MethodSymbol)tree.sym);
             }
 
             /**

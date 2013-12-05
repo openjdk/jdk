@@ -58,7 +58,7 @@ public class CloseServerSocket implements Remote {
         verifyPortInUse(PORT);
         UnicastRemoteObject.unexportObject(registry, true);
         System.err.println("- unexported registry");
-        Thread.sleep(1);        // work around BindException (bug?)
+        Thread.sleep(1000);        // work around BindException (bug?)
         verifyPortFree(PORT);
 
         /*

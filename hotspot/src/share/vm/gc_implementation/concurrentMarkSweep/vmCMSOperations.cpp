@@ -145,7 +145,7 @@ void VM_CMS_Initial_Mark::doit() {
                                 );
 #endif /* USDT2 */
 
-  _collector->_gc_timer_cm->register_gc_pause_start("Initial Mark", os::elapsed_counter());
+  _collector->_gc_timer_cm->register_gc_pause_start("Initial Mark");
 
   GenCollectedHeap* gch = GenCollectedHeap::heap();
   GCCauseSetter gccs(gch, GCCause::_cms_initial_mark);
@@ -157,7 +157,7 @@ void VM_CMS_Initial_Mark::doit() {
 
   VM_CMS_Operation::verify_after_gc();
 
-  _collector->_gc_timer_cm->register_gc_pause_end(os::elapsed_counter());
+  _collector->_gc_timer_cm->register_gc_pause_end();
 
 #ifndef USDT2
   HS_DTRACE_PROBE(hs_private, cms__initmark__end);
@@ -182,7 +182,7 @@ void VM_CMS_Final_Remark::doit() {
                                 );
 #endif /* USDT2 */
 
-  _collector->_gc_timer_cm->register_gc_pause_start("Final Mark", os::elapsed_counter());
+  _collector->_gc_timer_cm->register_gc_pause_start("Final Mark");
 
   GenCollectedHeap* gch = GenCollectedHeap::heap();
   GCCauseSetter gccs(gch, GCCause::_cms_final_remark);
@@ -195,7 +195,7 @@ void VM_CMS_Final_Remark::doit() {
   VM_CMS_Operation::verify_after_gc();
 
   _collector->save_heap_summary();
-  _collector->_gc_timer_cm->register_gc_pause_end(os::elapsed_counter());
+  _collector->_gc_timer_cm->register_gc_pause_end();
 
 #ifndef USDT2
   HS_DTRACE_PROBE(hs_private, cms__remark__end);

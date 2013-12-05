@@ -915,6 +915,25 @@ void LinkResolver::linktime_resolve_special_method(methodHandle& resolved_method
     return;
   }
 
+  // check if invokespecial's interface method reference is in an indirect superinterface
+  if (!current_klass.is_null() && resolved_klass->is_interface()) {
+    Klass *klass_to_check = !InstanceKlass::cast(current_klass())->is_anonymous() ?
+                                  current_klass() :
+                                  InstanceKlass::cast(current_klass())->host_klass();
+
+    if (!InstanceKlass::cast(klass_to_check)->is_same_or_direct_interface(resolved_klass())) {
+      ResourceMark rm(THREAD);
+      char buf[200];
+      jio_snprintf(buf, sizeof(buf),
+                   "Interface method reference: %s, is in an indirect superinterface of %s",
+                   Method::name_and_sig_as_C_string(resolved_klass(),
+                                                         resolved_method->name(),
+                                                         resolved_method->signature()),
+                   current_klass->external_name());
+      THROW_MSG(vmSymbols::java_lang_IncompatibleClassChangeError(), buf);
+    }
+  }
+
   // check if not static
   if (resolved_method->is_static()) {
     ResourceMark rm(THREAD);

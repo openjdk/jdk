@@ -999,15 +999,15 @@ public class RenderingHints
     }
 
     /**
-     * Returns <code>true</code> if this <code>RenderingHints</code>
+     * Returns {@code true} if this {@code RenderingHints}
      *  contains a mapping for the specified key.
      *
      * @param key key whose presence in this
-     * <code>RenderingHints</code> is to be tested.
-     * @return <code>true</code> if this <code>RenderingHints</code>
+     * {@code RenderingHints} is to be tested.
+     * @return {@code true} if this {@code RenderingHints}
      *          contains a mapping for the specified key.
-     * @exception <code>ClassCastException</code> if the key can not
-     *            be cast to <code>RenderingHints.Key</code>
+     * @exception ClassCastException if the key can not
+     *            be cast to {@code RenderingHints.Key}
      */
     public boolean containsKey(Object key) {
         return hintmap.containsKey((Key) key);
@@ -1039,10 +1039,10 @@ public class RenderingHints
      * Returns the value to which the specified key is mapped.
      * @param   key   a rendering hint key
      * @return  the value to which the key is mapped in this object or
-     *          <code>null</code> if the key is not mapped to any value in
+     *          {@code null} if the key is not mapped to any value in
      *          this object.
-     * @exception <code>ClassCastException</code> if the key can not
-     *            be cast to <code>RenderingHints.Key</code>
+     * @exception ClassCastException if the key can not
+     *            be cast to {@code RenderingHints.Key}
      * @see     #put(Object, Object)
      */
     public Object get(Object key) {
@@ -1050,20 +1050,20 @@ public class RenderingHints
     }
 
     /**
-     * Maps the specified <code>key</code> to the specified
-     * <code>value</code> in this <code>RenderingHints</code> object.
-     * Neither the key nor the value can be <code>null</code>.
-     * The value can be retrieved by calling the <code>get</code> method
+     * Maps the specified {@code key} to the specified
+     * {@code value} in this {@code RenderingHints} object.
+     * Neither the key nor the value can be {@code null}.
+     * The value can be retrieved by calling the {@code get} method
      * with a key that is equal to the original key.
      * @param      key     the rendering hint key.
      * @param      value   the rendering hint value.
      * @return     the previous value of the specified key in this object
-     *             or <code>null</code> if it did not have one.
-     * @exception <code>NullPointerException</code> if the key is
-     *            <code>null</code>.
-     * @exception <code>ClassCastException</code> if the key can not
-     *            be cast to <code>RenderingHints.Key</code>
-     * @exception <code>IllegalArgumentException</code> if the
+     *             or {@code null} if it did not have one.
+     * @exception NullPointerException if the key is
+     *            {@code null}.
+     * @exception ClassCastException if the key can not
+     *            be cast to {@code RenderingHints.Key}
+     * @exception IllegalArgumentException if the
      *            {@link Key#isCompatibleValue(java.lang.Object)
      *                   Key.isCompatibleValue()}
      *            method of the specified key returns false for the
@@ -1102,13 +1102,13 @@ public class RenderingHints
 
     /**
      * Removes the key and its corresponding value from this
-     * <code>RenderingHints</code> object. This method does nothing if the
-     * key is not in this <code>RenderingHints</code> object.
+     * {@code RenderingHints} object. This method does nothing if the
+     * key is not in this {@code RenderingHints} object.
      * @param   key   the rendering hints key that needs to be removed
-     * @exception <code>ClassCastException</code> if the key can not
-     *            be cast to <code>RenderingHints.Key</code>
+     * @exception ClassCastException if the key can not
+     *            be cast to {@code RenderingHints.Key}
      * @return  the value to which the key had previously been mapped in this
-     *          <code>RenderingHints</code> object, or <code>null</code>
+     *          {@code RenderingHints} object, or {@code null}
      *          if the key did not have a mapping.
      */
     public Object remove(Object key) {
@@ -1116,18 +1116,18 @@ public class RenderingHints
     }
 
     /**
-     * Copies all of the mappings from the specified <code>Map</code>
-     * to this <code>RenderingHints</code>.  These mappings replace
-     * any mappings that this <code>RenderingHints</code> had for any
-     * of the keys currently in the specified <code>Map</code>.
-     * @param m the specified <code>Map</code>
-     * @exception <code>ClassCastException</code> class of a key or value
-     *          in the specified <code>Map</code> prevents it from being
-     *          stored in this <code>RenderingHints</code>.
-     * @exception <code>IllegalArgumentException</code> some aspect
-     *          of a key or value in the specified <code>Map</code>
+     * Copies all of the mappings from the specified {@code Map}
+     * to this {@code RenderingHints}.  These mappings replace
+     * any mappings that this {@code RenderingHints} had for any
+     * of the keys currently in the specified {@code Map}.
+     * @param m the specified {@code Map}
+     * @exception ClassCastException class of a key or value
+     *          in the specified {@code Map} prevents it from being
+     *          stored in this {@code RenderingHints}.
+     * @exception IllegalArgumentException some aspect
+     *          of a key or value in the specified {@code Map}
      *           prevents it from being stored in
-     *            this <code>RenderingHints</code>.
+     *            this {@code RenderingHints}.
      */
     public void putAll(Map<?,?> m) {
         // ## javac bug?

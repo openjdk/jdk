@@ -568,9 +568,10 @@ public class Basic {
         System.getProperty("java.class.path");
 
     private static final List<String> javaChildArgs =
-        Arrays.asList(new String[]
-            { javaExe, "-classpath", absolutifyPath(classpath),
-              "Basic$JavaChild"});
+        Arrays.asList(javaExe,
+                      "-XX:+DisplayVMOutputToStderr",
+                      "-classpath", absolutifyPath(classpath),
+                      "Basic$JavaChild");
 
     private static void testEncoding(String encoding, String tested) {
         try {
@@ -1655,8 +1656,8 @@ public class Basic {
                                       javaExe));
             list.add("ArrayOOME");
             ProcessResults r = run(new ProcessBuilder(list));
-            check(r.out().contains("java.lang.OutOfMemoryError:"));
-            check(r.out().contains(javaExe));
+            check(r.err().contains("java.lang.OutOfMemoryError:"));
+            check(r.err().contains(javaExe));
             check(r.err().contains(System.getProperty("java.version")));
             equal(r.exitValue(), 1);
         } catch (Throwable t) { unexpected(t); }
@@ -2058,6 +2059,7 @@ public class Basic {
                 // avoid polluting the process space with useless processes.
                 // Running the grandchild for 60s should be more than enough.
                 final String[] cmd = { "/bin/bash", "-c", "(/bin/sleep 60)" };
+                final String[] cmdkill = { "/bin/bash", "-c", "(/usr/bin/pkill -f \"sleep 60\")" };
                 final ProcessBuilder pb = new ProcessBuilder(cmd);
                 final Process p = pb.start();
                 final InputStream stdout = p.getInputStream();
@@ -2097,6 +2099,7 @@ public class Basic {
                 stdout.close();
                 stderr.close();
                 stdin.close();
+                new ProcessBuilder(cmdkill).start();
                 // All streams successfully closed so we can cancel the timer.
                 t.cancel();
                 //----------------------------------------------------------
@@ -2300,7 +2303,7 @@ public class Basic {
                     try {
                         try {
                             latch.countDown();
-                            p.waitFor(10000, TimeUnit.MILLISECONDS);
+                            p.waitFor(30000, TimeUnit.MILLISECONDS);
                         } catch (InterruptedException e) {
                             return;
                         }

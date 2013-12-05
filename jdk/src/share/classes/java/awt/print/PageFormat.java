@@ -286,7 +286,7 @@ public class PageFormat implements Cloneable
      * <code>PageFormat</code>.
      * @param paper the <code>Paper</code> object to which to set
      * the <code>Paper</code> object for this <code>PageFormat</code>.
-     * @exception <code>NullPointerException</code>
+     * @exception NullPointerException
      *              a null paper instance was passed as a parameter.
      * @see #getPaper
      */

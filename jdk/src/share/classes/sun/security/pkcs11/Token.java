@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,7 @@
 package sun.security.pkcs11;
 
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 import java.io.*;
 import java.lang.ref.*;
 
@@ -151,8 +152,8 @@ class Token implements Serializable {
         privateCache = new KeyCache();
         templateManager = config.getTemplateManager();
         explicitCancel = config.getExplicitCancel();
-        mechInfoMap = Collections.synchronizedMap
-            (new HashMap<Long, CK_MECHANISM_INFO>(10));
+        mechInfoMap =
+            new ConcurrentHashMap<Long, CK_MECHANISM_INFO>(10);
     }
 
     boolean isWriteProtected() {
