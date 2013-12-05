@@ -1326,6 +1326,14 @@ public class Check {
             tree.underlyingType.accept(this);
         }
 
+        @Override
+        public void visitTypeIdent(JCPrimitiveTypeTree that) {
+            if (that.type.hasTag(TypeTag.VOID)) {
+                log.error(that.pos(), "void.not.allowed.here");
+            }
+            super.visitTypeIdent(that);
+        }
+
         /** Default visitor method: do nothing.
          */
         @Override

@@ -21,6 +21,7 @@
 # or visit www.oracle.com if you need additional information or have any
 # questions.
 
+# @ignore 8029139
 # @test testme.sh
 # @bug 8009062
 # @summary Poor performance of JNI AttachCurrentThread after fix for 7017193

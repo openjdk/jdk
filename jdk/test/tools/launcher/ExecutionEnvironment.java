@@ -89,10 +89,6 @@ public class ExecutionEnvironment extends TestHelper {
 
     static final File testJarFile = new File("EcoFriendly.jar");
 
-    static final String LIBJVM = TestHelper.isWindows
-            ? "jvm.dll"
-            : "libjvm" + (TestHelper.isMacOSX ? ".dylib" : ".so");
-
     public ExecutionEnvironment() {
         createTestJar();
     }
@@ -192,7 +188,7 @@ public class ExecutionEnvironment extends TestHelper {
 
             tr = doExec(env, javaCmd, "-jar", testJarFile.getAbsolutePath());
             verifyJavaLibraryPathGeneric(tr);
-        } else {
+        } else { // Solaris
             // no override
             env.clear();
             env.put(LD_LIBRARY_PATH, LD_LIBRARY_PATH_VALUE);
@@ -236,23 +232,24 @@ public class ExecutionEnvironment extends TestHelper {
     }
 
     /*
-     * ensures we have indeed exec'ed the correct vm of choice, all VMs support
-     * -server, however 32-bit VMs support -client and -server.
+     * ensures we have indeed exec'ed the correct vm of choice if it exists
      */
     @Test
     void testVmSelection() {
 
         TestResult tr = null;
 
-        if (is32Bit) {
+        if (haveClientVM) {
             tr = doExec(javaCmd, "-client", "-version");
             if (!tr.matches(".*Client VM.*")) {
                 flagError(tr, "the expected vm -client did not launch");
             }
         }
-        tr = doExec(javaCmd, "-server", "-version");
-        if (!tr.matches(".*Server VM.*")) {
-            flagError(tr, "the expected vm -server did not launch");
+        if (haveServerVM) {
+            tr = doExec(javaCmd, "-server", "-version");
+            if (!tr.matches(".*Server VM.*")) {
+                flagError(tr, "the expected vm -server did not launch");
+            }
         }
     }
 

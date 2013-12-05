@@ -47,29 +47,24 @@ public class GeneralWin32 extends General {
     private static final String EXISTENT_UNC_SHARE = "pcdist";
     private static final String NONEXISTENT_UNC_HOST = "non-existent-unc-host";
     private static final String NONEXISTENT_UNC_SHARE = "bogus-share";
-    private static final int DEPTH = 2;
-    private static String baseDir = null;
-    private static String userDir = null;
-    private static String relative = null;
 
     /* Pathnames relative to working directory */
 
     private static void checkCaseLookup() throws IOException {
         /* Use long names here to avoid 8.3 format, which Samba servers often
            force to lowercase */
-        File d1 = new File(relative, "XyZzY0123");
-        File d2 = new File(d1, "FOO_bar_BAZ");
-        File f = new File(d2, "GLORPified");
+        File d = new File("XyZzY0123", "FOO_bar_BAZ");
+        File f = new File(d, "GLORPified");
         if (!f.exists()) {
-            if (!d2.exists()) {
-                if (!d2.mkdirs()) {
-                    throw new RuntimeException("Can't create directory " + d2);
+            if (!d.exists()) {
+                if (!d.mkdirs()) {
+                    throw new RuntimeException("Can't create directory " + d);
                 }
             }
             OutputStream o = new FileOutputStream(f);
             o.close();
         }
-        File f2 = new File(d2.getParent(), "mumble"); /* For later ud tests */
+        File f2 = new File(d.getParent(), "mumble"); /* For later ud tests */
         if (!f2.exists()) {
             OutputStream o = new FileOutputStream(f2);
             o.close();
@@ -79,9 +74,9 @@ public class GeneralWin32 extends General {
            case of filenames, rather than just using the input case */
         File y = new File(userDir, f.getPath());
         String ans = y.getPath();
-        check(ans, relative + "XyZzY0123\\FOO_bar_BAZ\\GLORPified");
-        check(ans, relative + "xyzzy0123\\foo_bar_baz\\glorpified");
-        check(ans, relative + "XYZZY0123\\FOO_BAR_BAZ\\GLORPIFIED");
+        check(ans, "XyZzY0123\\FOO_bar_BAZ\\GLORPified");
+        check(ans, "xyzzy0123\\foo_bar_baz\\glorpified");
+        check(ans, "XYZZY0123\\FOO_BAR_BAZ\\GLORPIFIED");
     }
 
     private static void checkWild(File f) throws Exception {
@@ -94,16 +89,19 @@ public class GeneralWin32 extends General {
     }
 
     private static void checkWildCards() throws Exception {
-        File d = new File(baseDir).getCanonicalFile();
+        File d = new File(userDir).getCanonicalFile();
         checkWild(new File(d, "*.*"));
         checkWild(new File(d, "*.???"));
         checkWild(new File(new File(d, "*.*"), "foo"));
     }
 
-    private static void checkRelativePaths() throws Exception {
+    private static void checkRelativePaths(int depth) throws Exception {
         checkCaseLookup();
         checkWildCards();
-        checkNames(3, true, baseDir, relative);
+        // Make sure that an empty relative path is tested
+        checkNames(1, true, userDir + File.separator, "");
+        checkNames(depth, true, baseDir + File.separator,
+                   relative + File.separator);
     }
 
 
@@ -135,22 +133,22 @@ public class GeneralWin32 extends General {
         String ans = exists ? df.getAbsolutePath() : d;
         if (!ans.endsWith("\\"))
             ans = ans + "\\";
-        checkNames(depth, false, ans + relative, d + relative);
+        checkNames(depth, false, ans, d);
     }
 
-    private static void checkDrivePaths() throws Exception {
-        checkDrive(2, findActiveDrive(), true);
-        checkDrive(2, findInactiveDrive(), false);
+    private static void checkDrivePaths(int depth) throws Exception {
+        checkDrive(depth, findActiveDrive(), true);
+        checkDrive(depth, findInactiveDrive(), false);
     }
 
 
     /* UNC pathnames */
 
-    private static void checkUncPaths() throws Exception {
+    private static void checkUncPaths(int depth) throws Exception {
         String s = ("\\\\" + NONEXISTENT_UNC_HOST
                     + "\\" + NONEXISTENT_UNC_SHARE);
         ensureNon(s);
-        checkSlashes(DEPTH, false, s, s);
+        checkSlashes(depth, false, s, s);
 
         s = "\\\\" + EXISTENT_UNC_HOST + "\\" + EXISTENT_UNC_SHARE;
         if (!(new File(s)).exists()) {
@@ -159,7 +157,7 @@ public class GeneralWin32 extends General {
             return;
         }
 
-        checkSlashes(DEPTH, false, s, s);
+        checkSlashes(depth, false, s, s);
     }
 
 
@@ -169,34 +167,11 @@ public class GeneralWin32 extends General {
             return;
         }
         if (args.length > 0) debug = true;
-        userDir = System.getProperty("user.dir") + '\\';
-        baseDir = initTestData(6) + '\\';
-        relative = baseDir.substring(userDir.length());
-        checkRelativePaths();
-        checkDrivePaths();
-        checkUncPaths();
-    }
 
-    private static String initTestData(int maxDepth) throws IOException {
-        File parent = new File(userDir);
-        String baseDir = null;
-        maxDepth = maxDepth < DEPTH + 2 ? DEPTH + 2 : maxDepth;
-        for (int i = 0; i < maxDepth; i ++) {
-            File dir1 = new File(parent, gensym());
-            dir1.mkdir();
-            if (i != 0) {
-                File dir2 = new File(parent, gensym());
-                dir2.mkdir();
-                File f1 = new File(parent, gensym());
-                f1.createNewFile();
-                File f2 = new File(parent, gensym());
-                f2.createNewFile();
-            }
-            if (i == DEPTH + 1) {
-                baseDir = dir1.getAbsolutePath();
-            }
-            parent = dir1;
-        }
-        return baseDir;
+        initTestData(3);
+
+        checkRelativePaths(3);
+        checkDrivePaths(2);
+        checkUncPaths(2);
     }
 }

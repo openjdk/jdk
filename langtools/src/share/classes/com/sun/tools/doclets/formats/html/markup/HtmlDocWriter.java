@@ -331,7 +331,7 @@ public abstract class HtmlDocWriter extends HtmlWriter {
         if (timestamp) {
             Calendar calendar = new GregorianCalendar(TimeZone.getDefault());
             Date today = calendar.getTime();
-            text += " ("+ ConfigurationImpl.BUILD_DATE + ") on " + today;
+            text += " ("+ configuration.getDocletSpecificBuildDate() + ") on " + today;
         }
         return new Comment(text);
     }
