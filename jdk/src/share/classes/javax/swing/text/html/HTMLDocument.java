@@ -2089,7 +2089,7 @@ public class HTMLDocument extends DefaultStyledDocument {
      *
      * <p>
      * The assignment of the actions described is shown in the
-     * following table for the tags defined in <code>HTML.Tag</code>.<P>
+     * following table for the tags defined in <code>HTML.Tag</code>.
      * <table border=1 summary="HTML tags and assigned actions">
      * <tr><th>Tag</th><th>Action</th></tr>
      * <tr><td><code>HTML.Tag.A</code>         <td>CharacterAction
@@ -3968,7 +3968,7 @@ public class HTMLDocument extends DefaultStyledDocument {
         }
 
         /**
-         * This is set to true when and end is invoked for <html>.
+         * This is set to true when and end is invoked for {@literal <html>}.
          */
         private boolean receivedEndHTML;
         /** Number of times <code>flushBuffer</code> has been invoked. */
@@ -3990,7 +3990,7 @@ public class HTMLDocument extends DefaultStyledDocument {
         boolean inTitle = false;
         boolean lastWasNewline = true;
         boolean emptyAnchor;
-        /** True if (!emptyDocument && insertTag == null), this is used so
+        /** True if (!emptyDocument &amp;&amp; insertTag == null), this is used so
          * much it is cached. */
         boolean midInsert;
         /** True when the body has been encountered. */
