@@ -336,6 +336,8 @@ public abstract class Provider extends Properties {
      *          if a security manager exists and its {@link
      *          java.lang.SecurityManager#checkSecurityAccess} method
      *          denies access to set property values.
+     *
+     * @since 1.8
      */
     @Override
     public synchronized Object putIfAbsent(Object key, Object value) {
@@ -385,6 +387,8 @@ public abstract class Provider extends Properties {
      *          if a security manager exists and its {@link
      *          java.lang.SecurityManager#checkSecurityAccess} method
      *          denies access to remove this provider's properties.
+     *
+     * @since 1.8
      */
     @Override
     public synchronized boolean remove(Object key, Object value) {
@@ -408,6 +412,8 @@ public abstract class Provider extends Properties {
      *          if a security manager exists and its {@link
      *          java.lang.SecurityManager#checkSecurityAccess} method
      *          denies access to set property values.
+     *
+     * @since 1.8
      */
     @Override
     public synchronized boolean replace(Object key, Object oldValue,
@@ -433,6 +439,8 @@ public abstract class Provider extends Properties {
      *          if a security manager exists and its {@link
      *          java.lang.SecurityManager#checkSecurityAccess} method
      *          denies access to set property values.
+     *
+     * @since 1.8
      */
     @Override
     public synchronized Object replace(Object key, Object value) {
@@ -459,6 +467,8 @@ public abstract class Provider extends Properties {
      *          if a security manager exists and its {@link
      *          java.lang.SecurityManager#checkSecurityAccess} method
      *          denies access to set property values.
+     *
+     * @since 1.8
      */
     @Override
     public synchronized void replaceAll(BiFunction<? super Object, ? super Object, ? extends Object> function) {
@@ -485,6 +495,8 @@ public abstract class Provider extends Properties {
      *          if a security manager exists and its {@link
      *          java.lang.SecurityManager#checkSecurityAccess} method
      *          denies access to set property values or remove properties.
+     *
+     * @since 1.8
      */
     @Override
     public synchronized Object compute(Object key,
@@ -514,6 +526,8 @@ public abstract class Provider extends Properties {
      *          if a security manager exists and its {@link
      *          java.lang.SecurityManager#checkSecurityAccess} method
      *          denies access to set property values and remove properties.
+     *
+     * @since 1.8
      */
     @Override
     public synchronized Object computeIfAbsent(Object key, Function<? super Object, ? extends Object> mappingFunction) {
@@ -541,6 +555,8 @@ public abstract class Provider extends Properties {
      *          if a security manager exists and its {@link
      *          java.lang.SecurityManager#checkSecurityAccess} method
      *          denies access to set property values or remove properties.
+     *
+     * @since 1.8
      */
     @Override
     public synchronized Object computeIfPresent(Object key, BiFunction<? super Object, ? super Object, ? extends Object> remappingFunction) {
@@ -571,6 +587,8 @@ public abstract class Provider extends Properties {
      *          if a security manager exists and its {@link
      *          java.lang.SecurityManager#checkSecurityAccess} method
      *          denies access to set property values or remove properties.
+     *
+     * @since 1.8
      */
     @Override
     public synchronized Object merge(Object key, Object value,  BiFunction<? super Object, ? super Object, ? extends Object>  remappingFunction) {
@@ -589,13 +607,18 @@ public abstract class Provider extends Properties {
         checkInitialized();
         return super.get(key);
     }
-
+    /**
+     * @since 1.8
+     */
     @Override
     public synchronized Object getOrDefault(Object key, Object defaultValue) {
         checkInitialized();
         return super.getOrDefault(key, defaultValue);
     }
 
+    /**
+     * @since 1.8
+     */
     @Override
     public synchronized void forEach(BiConsumer<? super Object, ? super Object> action) {
         checkInitialized();
