@@ -66,28 +66,9 @@ void MarkSweep::AdjustKlassClosure::do_klass(Klass* klass) {
   klass->oops_do(&MarkSweep::adjust_pointer_closure);
 }
 
-void MarkSweep::follow_klass(Klass* klass) {
-  ClassLoaderData* cld = klass->class_loader_data();
-  // The actual processing of the klass is done when we
-  // traverse the list of Klasses in the class loader data.
-  MarkSweep::follow_class_loader(cld);
-}
-
-void MarkSweep::adjust_klass(Klass* klass) {
-  ClassLoaderData* cld = klass->class_loader_data();
-  // The actual processing of the klass is done when we
-  // traverse the list of Klasses in the class loader data.
-  MarkSweep::adjust_class_loader(cld);
-}
-
 void MarkSweep::follow_class_loader(ClassLoaderData* cld) {
   cld->oops_do(&MarkSweep::mark_and_push_closure, &MarkSweep::follow_klass_closure, true);
 }
-
-void MarkSweep::adjust_class_loader(ClassLoaderData* cld) {
-  cld->oops_do(&MarkSweep::adjust_pointer_closure, &MarkSweep::adjust_klass_closure, true);
-}
-
 
 void MarkSweep::follow_stack() {
   do {
