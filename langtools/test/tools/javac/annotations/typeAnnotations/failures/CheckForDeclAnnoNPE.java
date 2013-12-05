@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,16 +21,23 @@
  * questions.
  */
 
-package pkg2;
-
-/**
- * Class 2. This is a test.
- * Refer <a href="{@docRoot}/../technotes/guides/index.html">Here</a> should be
- * replaced with an absolute link.
- * This <a href="{@docRoot}/pkg1/C1.html">Here</a> should not be replaced
- * with an absolute link.
- * Testing <a href="{@docRoot}/technotes/guides/index.html">Link 1</a> and
- * <a href="{@docRoot}/pkg1/C1.html">Link 2</a>. Both should not be replaced with
- * an absolute link.
+/*
+ * @test
+ * @bug 8028699
+ * @summary Ensure there is no NPE in checking for decl. annotations in this example
+ * @author Werner Dietl
+ * @compile -doe CheckForDeclAnnoNPE.java
  */
-public class C2 {}
+
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Target;
+
+
+class CheckForDeclAnnoNPE {
+    void test(String s) {
+        test(new @TA String().toString());
+    }
+}
+
+@Target(ElementType.TYPE_USE)
+@interface TA {}
