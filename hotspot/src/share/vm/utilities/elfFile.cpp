@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,6 +34,7 @@
 #include "memory/allocation.inline.hpp"
 #include "utilities/decoder.hpp"
 #include "utilities/elfFile.hpp"
+#include "utilities/elfFuncDescTable.hpp"
 #include "utilities/elfStringTable.hpp"
 #include "utilities/elfSymbolTable.hpp"
 
@@ -43,6 +44,7 @@ ElfFile::ElfFile(const char* filepath) {
   memset(&m_elfHdr, 0, sizeof(m_elfHdr));
   m_string_tables = NULL;
   m_symbol_tables = NULL;
+  m_funcDesc_table = NULL;
   m_next = NULL;
   m_status = NullDecoder::no_error;
 
@@ -119,8 +121,8 @@ bool ElfFile::load_tables() {
         m_status = NullDecoder::file_invalid;
         return false;
       }
-      // string table
       if (shdr.sh_type == SHT_STRTAB) {
+        // string tables
         ElfStringTable* table = new (std::nothrow) ElfStringTable(m_file, shdr, index);
         if (table == NULL) {
           m_status = NullDecoder::out_of_memory;
@@ -128,6 +130,7 @@ bool ElfFile::load_tables() {
         }
         add_string_table(table);
       } else if (shdr.sh_type == SHT_SYMTAB || shdr.sh_type == SHT_DYNSYM) {
+        // symbol tables
         ElfSymbolTable* table = new (std::nothrow) ElfSymbolTable(m_file, shdr);
         if (table == NULL) {
           m_status = NullDecoder::out_of_memory;
@@ -136,6 +139,46 @@ bool ElfFile::load_tables() {
         add_symbol_table(table);
       }
     }
+
+#if defined(PPC64)
+    // Now read the .opd section wich contains the PPC64 function descriptor table.
+    // The .opd section is only available on PPC64 (see for example:
+    // http://refspecs.linuxfoundation.org/LSB_3.1.1/LSB-Core-PPC64/LSB-Core-PPC64/specialsections.html)
+    // so this code should do no harm on other platforms but because of performance reasons we only
+    // execute it on PPC64 platforms.
+    // Notice that we can only find the .opd section after we have successfully read in the string
+    // tables in the previous loop, because we need to query the name of each section which is
+    // contained in one of the string tables (i.e. the one with the index m_elfHdr.e_shstrndx).
+
+    // Reset the file pointer
+    if (fseek(m_file, m_elfHdr.e_shoff, SEEK_SET)) {
+      m_status = NullDecoder::file_invalid;
+      return false;
+    }
+    for (int index = 0; index < m_elfHdr.e_shnum; index ++) {
+      if (fread((void*)&shdr, sizeof(Elf_Shdr), 1, m_file) != 1) {
+        m_status = NullDecoder::file_invalid;
+        return false;
+      }
+      if (m_elfHdr.e_shstrndx != SHN_UNDEF && shdr.sh_type == SHT_PROGBITS) {
+        ElfStringTable* string_table = get_string_table(m_elfHdr.e_shstrndx);
+        if (string_table == NULL) {
+          m_status = NullDecoder::file_invalid;
+          return false;
+        }
+        char buf[8]; // '8' is enough because we only want to read ".opd"
+        if (string_table->string_at(shdr.sh_name, buf, sizeof(buf)) && !strncmp(".opd", buf, 4)) {
+          m_funcDesc_table = new (std::nothrow) ElfFuncDescTable(m_file, shdr, index);
+          if (m_funcDesc_table == NULL) {
+            m_status = NullDecoder::out_of_memory;
+            return false;
+          }
+          break;
+        }
+      }
+    }
+#endif
+
   }
   return true;
 }
@@ -151,8 +194,9 @@ bool ElfFile::decode(address addr, char* buf, int buflen, int* offset) {
   int off = INT_MAX;
   bool found_symbol = false;
   while (symbol_table != NULL) {
-    if (symbol_table->lookup(addr, &string_table_index, &pos_in_string_table, &off)) {
+    if (symbol_table->lookup(addr, &string_table_index, &pos_in_string_table, &off, m_funcDesc_table)) {
       found_symbol = true;
+      break;
     }
     symbol_table = symbol_table->m_next;
   }
@@ -221,4 +265,4 @@ bool ElfFile::specifies_noexecstack() {
 }
 #endif
 
-#endif // _WINDOWS
+#endif // !_WINDOWS && !__APPLE__
