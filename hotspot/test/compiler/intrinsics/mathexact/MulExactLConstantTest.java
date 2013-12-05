@@ -26,7 +26,7 @@
  * @bug 8026844
  * @summary Test constant mulExact
  * @compile MulExactLConstantTest.java Verify.java
- * @run main MulExactLConstantTest
+ * @run main MulExactLConstantTest -XX:+IgnoreUnrecognizedVMOptions -XX:+UnlockExperimentalVMOptions -XX:+UseMathExactIntrinsics
  *
  */
 

@@ -208,6 +208,10 @@ public class Test7029048 extends TestHelper {
             System.out.println("Note: applicable on neither Windows nor MacOSX");
             return;
         }
+        if (!TestHelper.haveServerVM) {
+            System.out.println("Note: test relies on server vm, not found, exiting");
+            return;
+        }
         // create our test jar first
         ExecutionEnvironment.createTestJar();
 

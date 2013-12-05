@@ -63,6 +63,7 @@ import java.util.stream.Collector;
 public class DoubleSummaryStatistics implements DoubleConsumer {
     private long count;
     private double sum;
+    private double sumCompensation; // Low order bits of sum
     private double min = Double.POSITIVE_INFINITY;
     private double max = Double.NEGATIVE_INFINITY;
 
@@ -81,7 +82,7 @@ public class DoubleSummaryStatistics implements DoubleConsumer {
     @Override
     public void accept(double value) {
         ++count;
-        sum += value;
+        sumWithCompensation(value);
         min = Math.min(min, value);
         max = Math.max(max, value);
     }
@@ -95,9 +96,21 @@ public class DoubleSummaryStatistics implements DoubleConsumer {
      */
     public void combine(DoubleSummaryStatistics other) {
         count += other.count;
-        sum += other.sum;
+        sumWithCompensation(other.sum);
+        sumWithCompensation(other.sumCompensation);
         min = Math.min(min, other.min);
         max = Math.max(max, other.max);
+    }
+
+    /**
+     * Incorporate a new double value using Kahan summation /
+     * compensated summation.
+     */
+    private void sumWithCompensation(double value) {
+        double tmp = value - sumCompensation;
+        double velvel = sum + tmp; // Little wolf of rounding error
+        sumCompensation = (velvel - sum) - tmp;
+        sum = velvel;
     }
 
     /**
@@ -133,7 +146,8 @@ public class DoubleSummaryStatistics implements DoubleConsumer {
      * @return the sum of values, or zero if none
      */
     public final double getSum() {
-        return sum;
+        // Better error bounds to add both terms as the final sum
+        return sum + sumCompensation;
     }
 
     /**

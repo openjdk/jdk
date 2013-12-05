@@ -212,7 +212,7 @@ public class Window extends Container implements Accessible {
      *
      * @serial
      * @see #getIconImages
-     * @see #setIconImages(List<? extends Image>)
+     * @see #setIconImages
      */
     transient java.util.List<Image> icons;
 

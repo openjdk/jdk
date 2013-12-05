@@ -665,6 +665,11 @@ bool klassVtable::is_miranda_entry_at(int i) {
 
 // check if a method is a miranda method, given a class's methods table,
 // its default_method table  and its super
+// Miranda methods are calculated twice:
+// first: before vtable size calculation: including abstract and default
+// This is seen by default method creation
+// Second: recalculated during vtable initialization: only abstract
+// This is seen by link resolution and selection.
 // "miranda" means not static, not defined by this class.
 // private methods in interfaces do not belong in the miranda list.
 // the caller must make sure that the method belongs to an interface implemented by the class
@@ -678,7 +683,8 @@ bool klassVtable::is_miranda(Method* m, Array<Method*>* class_methods,
   }
   Symbol* name = m->name();
   Symbol* signature = m->signature();
-  if (InstanceKlass::find_method(class_methods, name, signature) == NULL) {
+
+  if (InstanceKlass::find_instance_method(class_methods, name, signature) == NULL) {
     // did not find it in the method table of the current class
     if ((default_methods == NULL) ||
         InstanceKlass::find_method(default_methods, name, signature) == NULL) {
@@ -688,6 +694,12 @@ bool klassVtable::is_miranda(Method* m, Array<Method*>* class_methods,
       }
 
       Method* mo = InstanceKlass::cast(super)->lookup_method(name, signature);
+      while (mo != NULL && mo->access_flags().is_static()
+             && mo->method_holder() != NULL
+             && mo->method_holder()->super() != NULL)
+      {
+         mo = mo->method_holder()->super()->uncached_lookup_method(name, signature);
+      }
       if (mo == NULL || mo->access_flags().is_private() ) {
         // super class hierarchy does not implement it or protection is different
         return true;
@@ -1076,7 +1088,12 @@ void klassItable::initialize_itable_for_interface(int method_table_offset, Klass
       LinkResolver::lookup_instance_method_in_klasses(target, _klass, m->name(), m->signature(), CHECK);
     }
     if (target == NULL || !target->is_public() || target->is_abstract()) {
-      // Entry do not resolve. Leave it empty
+      // Entry does not resolve. Leave it empty for AbstractMethodError.
+        if (!(target == NULL) && !target->is_public()) {
+          // Stuff an IllegalAccessError throwing method in there instead.
+          itableOffsetEntry::method_entry(_klass(), method_table_offset)[m->itable_index()].
+              initialize(Universe::throw_illegal_access_error());
+        }
     } else {
       // Entry did resolve, check loader constraints before initializing
       // if checkconstraints requested

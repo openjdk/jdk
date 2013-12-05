@@ -55,12 +55,12 @@
 #include "runtime/signature.hpp"
 #include "services/classLoadingService.hpp"
 #include "services/threadService.hpp"
+#include "utilities/macros.hpp"
+#include "utilities/ticks.hpp"
 
 #if INCLUDE_TRACE
  #include "trace/tracing.hpp"
- #include "trace/traceMacros.hpp"
 #endif
-
 
 Dictionary*            SystemDictionary::_dictionary          = NULL;
 PlaceholderTable*      SystemDictionary::_placeholders        = NULL;
@@ -598,7 +598,7 @@ Klass* SystemDictionary::resolve_instance_class_or_null(Symbol* name,
   assert(name != NULL && !FieldType::is_array(name) &&
          !FieldType::is_obj(name), "invalid class name");
 
-  TracingTime class_load_start_time = Tracing::time();
+  Ticks class_load_start_time = Ticks::now();
 
   // UseNewReflection
   // Fix for 4474172; see evaluation for more details
@@ -1006,7 +1006,7 @@ Klass* SystemDictionary::parse_stream(Symbol* class_name,
                                       TRAPS) {
   TempNewSymbol parsed_name = NULL;
 
-  TracingTime class_load_start_time = Tracing::time();
+  Ticks class_load_start_time = Ticks::now();
 
   ClassLoaderData* loader_data;
   if (host_klass.not_null()) {
@@ -2665,13 +2665,12 @@ void SystemDictionary::verify_obj_klass_present(Symbol* class_name,
 }
 
 // utility function for class load event
-void SystemDictionary::post_class_load_event(TracingTime start_time,
+void SystemDictionary::post_class_load_event(const Ticks& start_time,
                                              instanceKlassHandle k,
                                              Handle initiating_loader) {
 #if INCLUDE_TRACE
   EventClassLoad event(UNTIMED);
   if (event.should_commit()) {
-    event.set_endtime(Tracing::time());
     event.set_starttime(start_time);
     event.set_loadedClass(k());
     oop defining_class_loader = k->class_loader();

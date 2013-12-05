@@ -65,8 +65,8 @@ ifeq (,$(findstring -R,$(MAKE)))
 endif
 
 # Specify where the common include directory for makefiles is.
-ifeq (,$(findstring -I @SRC_ROOT@/common/makefiles,$(MAKE)))
-  MAKE:=$(MAKE) -I @SRC_ROOT@/common/makefiles
+ifeq (,$(findstring -I @SRC_ROOT@/make/common,$(MAKE)))
+  MAKE:=$(MAKE) -I @SRC_ROOT@/make/common
 endif
 
 # The "human readable" name of this configuration
@@ -236,7 +236,6 @@ HOTSPOT_OUTPUTDIR=$(BUILD_OUTPUT)/hotspot
 JDK_OUTPUTDIR=$(BUILD_OUTPUT)/jdk
 NASHORN_OUTPUTDIR=$(BUILD_OUTPUT)/nashorn
 IMAGES_OUTPUTDIR=$(BUILD_OUTPUT)/images
-JCE_OUTPUTDIR=$(BUILD_OUTPUT)/jce-release
 
 LANGTOOLS_DIST=$(LANGTOOLS_OUTPUTDIR)/dist
 CORBA_DIST=$(CORBA_OUTPUTDIR)/dist

@@ -91,7 +91,7 @@ class WaitDispatchSupport implements SecondaryLoop {
      *
      * @param dispatchThread An event dispatch thread that
      *        should not stop dispatching events while waiting
-     * @param extCondition A conditional object used to determine
+     * @param extCond A conditional object used to determine
      *        if the loop should be terminated
      *
      * @since 1.7
@@ -161,7 +161,7 @@ class WaitDispatchSupport implements SecondaryLoop {
     }
 
     /**
-     * @inheritDoc
+     * {@inheritDoc}
      */
     @Override
     public boolean enter() {
@@ -281,7 +281,7 @@ class WaitDispatchSupport implements SecondaryLoop {
     }
 
     /**
-     * @inheritDoc
+     * {@inheritDoc}
      */
     public boolean exit() {
         if (log.isLoggable(PlatformLogger.Level.FINE)) {

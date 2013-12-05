@@ -354,7 +354,7 @@ public interface Document {
      * returns will give better performance for situations where large
      * parts of the document are being scanned.  The following is an example
      * of using the partial return to access the entire document:
-     * <p>
+     *
      * <pre><code>
      *
      * &nbsp; int nleft = doc.getDocumentLength();

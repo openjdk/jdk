@@ -62,17 +62,17 @@ import sun.security.jca.*;
  * algorithm (e.g., <i>DES</i>), and may be followed by a feedback mode and
  * padding scheme.
  *
- * <p> A transformation is of the form:<p>
+ * <p> A transformation is of the form:
  *
  * <ul>
  * <li>"<i>algorithm/mode/padding</i>" or
- * <p>
+ *
  * <li>"<i>algorithm</i>"
  * </ul>
  *
  * <P> (in the latter case,
  * provider-specific default values for the mode and padding scheme are used).
- * For example, the following is a valid transformation:<p>
+ * For example, the following is a valid transformation:
  *
  * <pre>
  *     Cipher c = Cipher.getInstance("<i>DES/CBC/PKCS5Padding</i>");

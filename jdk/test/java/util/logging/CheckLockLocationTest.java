@@ -33,7 +33,10 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.AccessDeniedException;
 import java.nio.file.FileSystemException;
+import java.nio.file.Files;
 import java.nio.file.NoSuchFileException;
+import java.nio.file.Path;
+import java.nio.file.attribute.UserPrincipal;
 import java.util.logging.FileHandler;
 public class CheckLockLocationTest {
 
@@ -169,14 +172,19 @@ public class CheckLockLocationTest {
         nonWritableDir.deleteOnExit();
 
         // make it non-writable
-        if (nonWritableDir.setWritable(false)) {
+        Path path = nonWritableDir.toPath();
+        final boolean nonWritable = nonWritableDir.setWritable(false);
+        final boolean isWritable = Files.isWritable(path);
+        if (nonWritable && !isWritable) {
             runNonWritableDirTest = true;
+            System.out.println("Created non writable dir for "
+                    + getOwner(path) + " at: " + path.toString());
         } else {
             runNonWritableDirTest = false;
             System.out.println( "Test Setup WARNING: unable to make"
                     + " working directory " + nonWritableDir.getAbsolutePath()
-                    + " non-writable on platform " + System.getProperty("os.name"));
-
+                    + "\n\t non-writable for " + getOwner(path)
+                    +  " on platform " + System.getProperty("os.name"));
         }
 
         // make sure non-existent directory really doesn't exist
@@ -184,7 +192,19 @@ public class CheckLockLocationTest {
         if (nonExistentDir.exists()) {
             nonExistentDir.delete();
         }
+        System.out.println("Setup completed - writableDir is: " + writableDir.getPath());
         return writableDir;
+    }
+
+    private static String getOwner(Path path) {
+        UserPrincipal user = null;
+        try {
+            user = Files.getOwner(path);
+        } catch (Exception x) {
+            System.err.println("Failed to get owner of: " + path);
+            System.err.println("\terror is: " + x);
+        }
+        return user == null ? "???" : user.getName();
     }
 
     /**

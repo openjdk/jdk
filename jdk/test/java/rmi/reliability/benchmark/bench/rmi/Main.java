@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,8 +21,27 @@
  * questions.
  */
 
-/*
- *
+/**
+ * @test
+ * @summary The RMI benchmark test. This java class is used to run the test
+ *          under JTREG.
+ * @library ../../../../testlibrary ../../
+ * @build TestLibrary bench.BenchInfo bench.HtmlReporter bench.Util
+ * bench.Benchmark bench.Reporter bench.XmlReporter bench.ConfigFormatException
+ * bench.Harness bench.TextReporter bench.rmi.BenchServer
+ * bench.rmi.DoubleArrayCalls bench.rmi.LongCalls bench.rmi.ShortCalls
+ * bench.rmi.BenchServerImpl bench.rmi.DoubleCalls bench.rmi.Main
+ * bench.rmi.SmallObjTreeCalls bench.rmi.BooleanArrayCalls
+ * bench.rmi.ExceptionCalls bench.rmi.NullCalls bench.rmi.BooleanCalls
+ * bench.rmi.ExportObjs bench.rmi.ObjArrayCalls bench.rmi.ByteArrayCalls
+ * bench.rmi.FloatArrayCalls bench.rmi.ObjTreeCalls bench.rmi.ByteCalls
+ * bench.rmi.FloatCalls bench.rmi.ProxyArrayCalls bench.rmi.CharArrayCalls
+ * bench.rmi.IntArrayCalls bench.rmi.RemoteObjArrayCalls bench.rmi.CharCalls
+ * bench.rmi.IntCalls bench.rmi.ClassLoading bench.rmi.LongArrayCalls
+ * bench.rmi.ShortArrayCalls
+ * bench.rmi.altroot.Node
+ * @run main/othervm/policy=policy.all/timeout=1800 bench.rmi.Main -server -c config
+ * @author Mike Warres, Nigel Daley
  */
 
 package bench.rmi;
@@ -33,21 +52,27 @@ import bench.HtmlReporter;
 import bench.Reporter;
 import bench.TextReporter;
 import bench.XmlReporter;
+import static bench.rmi.Main.OutputFormat.*;
+import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.InputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.PrintStream;
+import java.rmi.AlreadyBoundException;
+import java.rmi.NotBoundException;
 import java.rmi.RemoteException;
-import java.rmi.RMISecurityManager;
 import java.rmi.registry.LocateRegistry;
 import java.rmi.registry.Registry;
 import java.rmi.server.RemoteObject;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Timer;
 import java.util.TimerTask;
 
-/*
+/**
  * RMI/Serialization benchmark tests.
  */
 public class Main {
@@ -66,19 +91,20 @@ public class Main {
         /**
          * Cleanup both client and server side in between each benchmark.
          */
+        @Override
         protected void cleanup() {
             System.gc();
             if (Main.runmode == CLIENT) {
                 try {
                     Main.server.gc();
-                } catch (Exception e) {
+                } catch (RemoteException e) {
                     System.err.println("Warning: server gc failed: " + e);
                 }
             }
         }
     }
 
-    static final String CONFFILE = "/bench/rmi/config";
+    static final String CONFFILE = "config";
     static final String VERSION = "1.3";
     static final String REGNAME = "server";
 
@@ -86,9 +112,32 @@ public class Main {
     static final int CLIENT = 1;
     static final int SERVER = 2;
 
-    static final int TEXT = 0;
-    static final int HTML = 1;
-    static final int XML = 2;
+    static enum OutputFormat {
+
+        TEXT {
+            @Override
+            Reporter getReport(String title) {
+                return new TextReporter(repstr, title);
+            }
+        },
+        HTML {
+
+            @Override
+            Reporter getReport(String title) {
+                return new HtmlReporter(repstr, title);
+            }
+        },
+        XML {
+            @Override
+            Reporter getReport(String title) {
+                return new XmlReporter(repstr, title);
+            }
+        };
+
+        abstract Reporter getReport(String title);
+    };
+
+    static final String TEST_SRC_PATH = System.getProperty("test.src") + File.separator;
 
     static boolean verbose;
     static boolean list;
@@ -96,9 +145,11 @@ public class Main {
     static int testDurationSeconds;
     static volatile boolean exitRequested;
     static Timer timer;
-    static int format = TEXT;
+    static OutputFormat format = TEXT;
     static int runmode;
+    static String confFile;
     static InputStream confstr;
+    static String repFile;
     static OutputStream repstr;
     static String host;
     static int port;
@@ -109,6 +160,8 @@ public class Main {
 
     /**
      * Returns reference to benchmark server.
+     *
+     * @return a benchmark server
      */
     public static BenchServer getBenchServer() {
         return server;
@@ -126,44 +179,29 @@ public class Main {
         p.println("  -l                   list configuration file");
         p.println("  -t <num hours>       repeat benchmarks for specified number of hours");
         p.println("  -o <file>            specify output file");
-        p.println("  -c <file>            specify (non-default) " +
-                "configuration file");
-        p.println("  -html                format output as html " +
-                "(default is text)");
+        p.println("  -c <file>            specify (non-default) "
+                + "configuration file");
+        p.println("  -html                format output as html "
+                + "(default is text)");
         p.println("  -xml                 format output as xml");
-        p.println("  -client <host:port>  run benchmark client using server " +
-                "on specified host/port");
-        p.println("  -server <port>       run benchmark server on given port");
+        p.println("  -server              run benchmark server ");
+        p.println("  -client <host:port>  run benchmark client using server "
+                + "on specified host/port");
     }
 
     /**
-     * Print error message and exit.
+     * Throw RuntimeException that wrap message.
+     *
+     * @param mesg a message will be wrapped in the RuntimeException.
      */
     static void die(String mesg) {
-        System.err.println(mesg);
-        System.exit(1);
-    }
-
-    /**
-     * Stop server and exit.
-     */
-    public static void exit() {
-        switch (runmode) {
-            case CLIENT:
-                if (server != null) {
-                    try {
-                        server.terminate(0);
-                    } catch (RemoteException re) {
-                        // ignore
-                    }
-                }
-            default:
-                System.exit(0);
-        }
+        throw new RuntimeException(mesg);
     }
 
     /**
      * Benchmark mainline.
+     *
+     * @param args
      */
     public static void main(String[] args) {
         setupSecurity();
@@ -173,21 +211,78 @@ public class Main {
             listConfig();
         } else {
             setupServer();
-            if (runmode != SERVER) {
-                setupHarness();
-                setupReporter();
-                if (exitOnTimer) {
-                    setupTimer(testDurationSeconds);
-                    while (true) {
+            switch (runmode) {
+                case SAMEVM:
+                case CLIENT:
+                    setupHarness();
+                    setupReporter();
+                    if (exitOnTimer) {
+                        setupTimer(testDurationSeconds);
+                        do {
+                            runBenchmarks();
+                        } while (!exitRequested);
+                    } else {
                         runBenchmarks();
-                        if (exitRequested) {
-                            exit();
-                        }
                     }
-                } else {
-                    runBenchmarks();
-                    exit();
-                }
+                    break;
+                case SERVER:
+                    //Setup for client mode, server will fork client process
+                    //after its initiation.
+                    List<String> clientProcessStr = new ArrayList<>();
+                    clientProcessStr.add(System.getProperty("test.jdk") +
+                            File.separator + "bin" + File.separator + "java");
+                    String classpath = System.getProperty("java.class.path");
+                    if (classpath != null) {
+                        clientProcessStr.add("-cp");
+                        clientProcessStr.add(classpath);
+                    }
+                    clientProcessStr.add("-Djava.security.policy=" + TEST_SRC_PATH + "policy.all");
+                    clientProcessStr.add("-Dtest.src=" + TEST_SRC_PATH);
+                    clientProcessStr.add("bench.rmi.Main"); //Client mode
+                    if (verbose) {
+                        clientProcessStr.add("-v");
+                    }
+                    if (list) {
+                        clientProcessStr.add("-l");
+                    }
+                    clientProcessStr.add("-client");
+                    clientProcessStr.add("localhost:" + port);
+
+                    if (exitOnTimer) {
+                        clientProcessStr.add("-t");
+                        clientProcessStr.add(String.valueOf(testDurationSeconds / 3600));
+                    }
+                    if (repFile != null) {
+                        clientProcessStr.add("-o");
+                        clientProcessStr.add(repFile);
+                    }
+                    if (confFile != null) {
+                        clientProcessStr.add("-c");
+                        clientProcessStr.add(confFile);
+                    }
+                    switch (format) {
+                        case HTML:
+                            clientProcessStr.add("-html");
+                            break;
+                        case XML:
+                            clientProcessStr.add("-xml");
+                            break;
+                    }
+
+                    try {
+                        Process client = new ProcessBuilder(clientProcessStr).
+                                inheritIO().start();
+                        client.waitFor();
+                        int exitValue = client.exitValue();
+                        if (0 != exitValue) {
+                            die("Error: error happened in client process, exitValue = " + exitValue);
+                        }
+                    } catch (IOException ex) {
+                        die("Error: Unable start client process, ex=" + ex.getMessage());
+                    } catch (InterruptedException ex) {
+                        die("Error: Error happening to client process, ex=" + ex.getMessage());
+                    }
+                    break;
             }
         }
     }
@@ -197,78 +292,107 @@ public class Main {
      */
     static void parseArgs(String[] args) {
         for (int i = 0; i < args.length; i++) {
-            if (args[i].equals("-h")) {
-                usage();
-                System.exit(0);
-            } else if (args[i].equals("-v")) {
-                verbose = true;
-            } else if (args[i].equals("-l")) {
-                list = true;
-            } else if (args[i].equals("-t")) {
-                if (++i >= args.length)
-                    die("Error: no timeout value specified");
-                try {
-                    exitOnTimer = true;
-                    testDurationSeconds = Integer.parseInt(args[i]) * 3600;
-                } catch (Exception e) {
-                    die("Error: unable to determine timeout value");
-                }
-            } else if (args[i].equals("-o")) {
-                if (++i >= args.length)
-                    die("Error: no output file specified");
-                try {
-                    repstr = new FileOutputStream(args[i]);
-                } catch (IOException e) {
-                    die("Error: unable to open \"" + args[i] + "\"");
-                }
-            } else if (args[i].equals("-c")) {
-                if (++i >= args.length)
-                    die("Error: no config file specified");
-                try {
-                    confstr = new FileInputStream(args[i]);
-                } catch (IOException e) {
-                    die("Error: unable to open \"" + args[i] + "\"");
-                }
-            } else if (args[i].equals("-html")) {
-                if (format != TEXT)
-                    die("Error: conflicting formats");
-                format = HTML;
-            } else if (args[i].equals("-xml")) {
-                if (format != TEXT)
-                    die("Error: conflicting formats");
-                format = XML;
-            } else if (args[i].equals("-client")) {
-                if (runmode == CLIENT)
-                    die("Error: multiple -client options");
-                if (runmode == SERVER)
-                    die("Error: -client and -server options conflict");
-                if (++i >= args.length)
-                    die("Error: -client missing host/port");
-                try {
-                    int sepi = args[i].indexOf(':');
-                    host = args[i].substring(0, sepi);
-                    port = Integer.parseInt(args[i].substring(sepi + 1));
-                } catch (Exception e) {
-                    die("Error: illegal host/port specified for -client");
-                }
-                runmode = CLIENT;
-            } else if (args[i].equals("-server")) {
-                if (runmode == CLIENT)
-                    die("Error: -client and -server options conflict");
-                if (runmode == SERVER)
-                    die("Error: multiple -server options");
-                if (++i >= args.length)
-                    die("Error: -server missing port");
-                try {
-                    port = Integer.parseInt(args[i]);
-                } catch (Exception e) {
-                    die("Error: illegal port specified for -server");
-                }
-                runmode = SERVER;
-            } else {
-                System.err.println("Illegal option: \"" + args[i] + "\"");
-                usage();
-                System.exit(1);
+            switch (args[i]) {
+                case "-h":
+                    usage();
+                    System.exit(0);
+                    break;
+                case "-v":
+                    verbose = true;
+                    break;
+                case "-l":
+                    list = true;
+                    break;
+                case "-t":
+                    if (++i >= args.length) {
+                        die("Error: no timeout value specified");
+                    }
+                    try {
+                        exitOnTimer = true;
+                        testDurationSeconds = Integer.parseInt(args[i]) * 3600;
+                    } catch (NumberFormatException e) {
+                        die("Error: unable to determine timeout value");
+                    }
+                    break;
+                case "-o":
+                    if (++i >= args.length) {
+                        die("Error: no output file specified");
+                    }
+                    try {
+                        repFile = args[i];
+                        repstr = new FileOutputStream(repFile);
+                    } catch (FileNotFoundException e) {
+                        die("Error: unable to open \"" + args[i] + "\"");
+                    }
+                    break;
+                case "-c":
+                    if (++i >= args.length) {
+                        die("Error: no config file specified");
+                    }
+                    confFile = args[i];
+                    String confFullPath = TEST_SRC_PATH + confFile;
+                    try {
+                        confstr = new FileInputStream(confFullPath);
+                    } catch (FileNotFoundException e) {
+                        die("Error: unable to open \"" + confFullPath + "\"");
+                    }
+                    break;
+                case "-html":
+                    if (format != TEXT) {
+                        die("Error: conflicting formats");
+                    }
+                    format = HTML;
+                    break;
+                case "-xml":
+                    if (format != TEXT) {
+                        die("Error: conflicting formats");
+                    }
+                    format = XML;
+                    break;
+                case "-client":
+                    if (runmode == CLIENT) {
+                        die("Error: multiple -client options");
+                    }
+                    if (runmode == SERVER) {
+                        die("Error: -client and -server options conflict");
+                    }
+                    if (++i >= args.length) {
+                        die("Error: -client missing host/port");
+                    }
+                    try {
+                        String[] hostAndPort = args[i].split(":");
+                        if (hostAndPort.length != 2) {
+                            die("Error: Invalid format host/port:" + args[i]);
+                        }
+                        host = hostAndPort[0];
+                        port = Integer.parseInt(hostAndPort[1]);
+                    } catch (NumberFormatException e) {
+                        die("Error: illegal host/port specified for -client");
+                    }
+                    runmode = CLIENT;
+                    break;
+                case "-server":
+                    if (runmode == CLIENT) {
+                        die("Error: -client and -server options conflict");
+                    }
+                    if (runmode == SERVER) {
+                        die("Error: multiple -server options");
+                    }
+                    try {
+                        //This is the hack code because named package class has
+                        //difficulty in accessing unamed package class. This
+                        //should be removed ater JDK-8003358 is finished.
+                        port = (int) Class.forName("TestLibrary")
+                                .getMethod("getUnusedRandomPort")
+                                .invoke(null);
+                    } catch (ReflectiveOperationException ex) {
+                        die("Error: can't get a free port " + ex);
+                    }
+                    runmode = SERVER;
+                    break;
+                default:
+                    usage();
+                    die("Illegal option: \"" + args[i] + "\"");
             }
         }
     }
@@ -277,27 +401,31 @@ public class Main {
      * Set up security manager and policy, if not set already.
      */
     static void setupSecurity() {
-        if (System.getSecurityManager() != null)
+        if (System.getSecurityManager() != null) {
             return;
+        }
 
         /* As of 1.4, it is too late to set the security policy
          * file at this point so these line have been commented out.
          */
         //System.setProperty("java.security.policy",
         //      Main.class.getResource("/bench/rmi/policy.all").toString());
-        System.setSecurityManager(new RMISecurityManager());
+        System.setSecurityManager(new SecurityManager());
     }
 
     /**
      * Set up configuration file and report streams, if not set already.
      */
     static void setupStreams() {
-        if (repstr == null)
+        if (repstr == null) {
             repstr = System.out;
-        if (confstr == null)
-            confstr = (new Main()).getClass().getResourceAsStream(CONFFILE);
-        if (confstr == null)
+        }
+        if (confstr == null) {
+            confstr = Main.class.getResourceAsStream(TEST_SRC_PATH + CONFFILE);
+        }
+        if (confstr == null) {
             die("Error: unable to find default config file");
+        }
     }
 
     /**
@@ -323,7 +451,7 @@ public class Main {
                 try {
                     serverImpl = new BenchServerImpl();
                     server = (BenchServer) RemoteObject.toStub(serverImpl);
-                } catch (Exception e) {
+                } catch (RemoteException e) {
                     die("Error: failed to create local server: " + e);
                 }
                 if (verbose)
@@ -334,7 +462,7 @@ public class Main {
                 try {
                     Registry reg = LocateRegistry.getRegistry(host, port);
                     server = (BenchServer) reg.lookup(REGNAME);
-                } catch (Exception e) {
+                } catch (NotBoundException | RemoteException e) {
                     die("Error: failed to connect to server: " + e);
                 }
                 if (server == null) {
@@ -351,7 +479,7 @@ public class Main {
                     Registry reg = LocateRegistry.createRegistry(port);
                     serverImpl = new BenchServerImpl();
                     reg.bind(REGNAME, serverImpl);
-                } catch (Exception e) {
+                } catch (AlreadyBoundException | RemoteException e) {
                     die("Error: failed to initialize server: " + e);
                 }
                 if (verbose) {
@@ -368,18 +496,19 @@ public class Main {
     /**
      * Set up the timer to end the test.
      *
-     * @param delay the amount of delay, in seconds, before requesting
-     * the process exit
+     * @param delay the amount of delay, in seconds, before requesting the
+     * process exit
      */
     static void setupTimer(int delay) {
         timer = new Timer(true);
         timer.schedule(
-            new TimerTask() {
-                public void run() {
-                    exitRequested = true;
-                }
-            },
-            delay * 1000);
+                new TimerTask() {
+                    @Override
+                    public void run() {
+                        exitRequested = true;
+                    }
+                },
+                delay * 1000);
     }
 
     /**
@@ -404,23 +533,7 @@ public class Main {
      * Setup benchmark reporter.
      */
     static void setupReporter() {
-        String title = "RMI Benchmark, v" + VERSION;
-        switch (format) {
-            case TEXT:
-                reporter = new TextReporter(repstr, title);
-                break;
-
-            case HTML:
-                reporter = new HtmlReporter(repstr, title);
-                break;
-
-            case XML:
-                reporter = new XmlReporter(repstr, title);
-                break;
-
-            default:
-                die("Error: unrecognized format type");
-        }
+        reporter = format.getReport("RMI Benchmark, v" + VERSION);
     }
 
     /**
