@@ -3865,7 +3865,7 @@ fi
 #CUSTOM_AUTOCONF_INCLUDE
 
 # Do not change or remove the following line, it is needed for consistency checks:
-DATE_WHEN_GENERATED=1383151988
+DATE_WHEN_GENERATED=1384422786
 
 ###############################################################################
 #
@@ -8042,7 +8042,7 @@ fi
   # Test from where we are running configure, in or outside of src root.
   if test "x$CURDIR" = "x$SRC_ROOT" || test "x$CURDIR" = "x$SRC_ROOT/common" \
       || test "x$CURDIR" = "x$SRC_ROOT/common/autoconf" \
-      || test "x$CURDIR" = "x$SRC_ROOT/common/makefiles" ; then
+      || test "x$CURDIR" = "x$SRC_ROOT/make" ; then
     # We are running configure from the src root.
     # Create a default ./build/target-variant-debuglevel output root.
     if test "x${CONF_NAME}" = x; then
@@ -16201,32 +16201,25 @@ fi
     cd "$CURDIR"
     # Verify that the addon source root does not have any root makefiles.
     # If it does, then it is usually an error, prevent this.
-    if test -f $with_add_source_root/langtools/makefiles/Makefile || \
-      test -f $with_add_source_root/langtools/make/Makefile; then
+    if test -f $with_add_source_root/langtools/make/Makefile; then
       as_fn_error $? "Your add source root seems to contain a full langtools repo! An add source root should only contain additional sources." "$LINENO" 5
     fi
-    if test -f $with_add_source_root/corba/makefiles/Makefile || \
-      test -f $with_add_source_root/corba/make/Makefile; then
+    if test -f $with_add_source_root/corba/make/Makefile; then
       as_fn_error $? "Your add source root seems to contain a full corba repo! An add source root should only contain additional sources." "$LINENO" 5
     fi
-    if test -f $with_add_source_root/jaxp/makefiles/Makefile || \
-      test -f $with_add_source_root/jaxp/make/Makefile; then
+    if test -f $with_add_source_root/jaxp/make/Makefile; then
       as_fn_error $? "Your add source root seems to contain a full jaxp repo! An add source root should only contain additional sources." "$LINENO" 5
     fi
-    if test -f $with_add_source_root/jaxws/makefiles/Makefile || \
-      test -f $with_add_source_root/jaxws/make/Makefile; then
+    if test -f $with_add_source_root/jaxws/make/Makefile; then
       as_fn_error $? "Your add source root seems to contain a full jaxws repo! An add source root should only contain additional sources." "$LINENO" 5
     fi
-    if test -f $with_add_source_root/hotspot/makefiles/Makefile || \
-      test -f $with_add_source_root/hotspot/make/Makefile; then
+    if test -f $with_add_source_root/hotspot/make/Makefile; then
       as_fn_error $? "Your add source root seems to contain a full hotspot repo! An add source root should only contain additional sources." "$LINENO" 5
     fi
-    if test -f $with_add_source_root/nashorn/makefiles/Makefile || \
-      test -f $with_add_source_root/nashorn/make/Makefile; then
+    if test -f $with_add_source_root/nashorn/make/Makefile; then
       as_fn_error $? "Your add source root seems to contain a full nashorn repo! An add source root should only contain additional sources." "$LINENO" 5
     fi
-    if test -f $with_add_source_root/jdk/makefiles/Makefile || \
-      test -f $with_add_source_root/jdk/make/Makefile; then
+    if test -f $with_add_source_root/jdk/make/Makefile; then
       as_fn_error $? "Your add source root seems to contain a full JDK repo! An add source root should only contain additional sources." "$LINENO" 5
     fi
   fi
@@ -16240,32 +16233,25 @@ fi
     cd "$with_override_source_root"
     OVERRIDE_SRC_ROOT="`pwd`"
     cd "$CURDIR"
-    if test -f $with_override_source_root/langtools/makefiles/Makefile || \
-      test -f $with_override_source_root/langtools/make/Makefile; then
+    if test -f $with_override_source_root/langtools/make/Makefile; then
       as_fn_error $? "Your override source root seems to contain a full langtools repo! An override source root should only contain sources that override." "$LINENO" 5
     fi
-    if test -f $with_override_source_root/corba/makefiles/Makefile || \
-      test -f $with_override_source_root/corba/make/Makefile; then
+    if test -f $with_override_source_root/corba/make/Makefile; then
       as_fn_error $? "Your override source root seems to contain a full corba repo! An override source root should only contain sources that override." "$LINENO" 5
     fi
-    if test -f $with_override_source_root/jaxp/makefiles/Makefile || \
-      test -f $with_override_source_root/jaxp/make/Makefile; then
+    if test -f $with_override_source_root/jaxp/make/Makefile; then
       as_fn_error $? "Your override source root seems to contain a full jaxp repo! An override source root should only contain sources that override." "$LINENO" 5
     fi
-    if test -f $with_override_source_root/jaxws/makefiles/Makefile || \
-      test -f $with_override_source_root/jaxws/make/Makefile; then
+    if test -f $with_override_source_root/jaxws/make/Makefile; then
       as_fn_error $? "Your override source root seems to contain a full jaxws repo! An override source root should only contain sources that override." "$LINENO" 5
     fi
-    if test -f $with_override_source_root/hotspot/makefiles/Makefile || \
-      test -f $with_override_source_root/hotspot/make/Makefile; then
+    if test -f $with_override_source_root/hotspot/make/Makefile; then
       as_fn_error $? "Your override source root seems to contain a full hotspot repo! An override source root should only contain sources that override." "$LINENO" 5
     fi
-    if test -f $with_override_source_root/nashorn/makefiles/Makefile || \
-      test -f $with_override_source_root/nashorn/make/Makefile; then
+    if test -f $with_override_source_root/nashorn/make/Makefile; then
       as_fn_error $? "Your override source root seems to contain a full nashorn repo! An override source root should only contain sources that override." "$LINENO" 5
     fi
-    if test -f $with_override_source_root/jdk/makefiles/Makefile || \
-      test -f $with_override_source_root/jdk/make/Makefile; then
+    if test -f $with_override_source_root/jdk/make/Makefile; then
       as_fn_error $? "Your override source root seems to contain a full JDK repo! An override source root should only contain sources that override." "$LINENO" 5
     fi
   fi
@@ -16344,7 +16330,7 @@ fi
     cd "$with_override_langtools"
     LANGTOOLS_TOPDIR="`pwd`"
     cd "$CURDIR"
-    if ! test -f $LANGTOOLS_TOPDIR/makefiles/Makefile; then
+    if ! test -f $LANGTOOLS_TOPDIR/make/Makefile; then
       as_fn_error $? "You have to override langtools with a full langtools repo!" "$LINENO" 5
     fi
     { $as_echo "$as_me:${as_lineno-$LINENO}: checking if langtools should be overridden" >&5
@@ -16357,7 +16343,7 @@ $as_echo "yes with $LANGTOOLS_TOPDIR" >&6; }
     cd "$with_override_corba"
     CORBA_TOPDIR="`pwd`"
     cd "$CURDIR"
-    if ! test -f $CORBA_TOPDIR/makefiles/Makefile; then
+    if ! test -f $CORBA_TOPDIR/make/Makefile; then
       as_fn_error $? "You have to override corba with a full corba repo!" "$LINENO" 5
     fi
     { $as_echo "$as_me:${as_lineno-$LINENO}: checking if corba should be overridden" >&5
@@ -16370,7 +16356,7 @@ $as_echo "yes with $CORBA_TOPDIR" >&6; }
     cd "$with_override_jaxp"
     JAXP_TOPDIR="`pwd`"
     cd "$CURDIR"
-    if ! test -f $JAXP_TOPDIR/makefiles/Makefile; then
+    if ! test -f $JAXP_TOPDIR/make/Makefile; then
       as_fn_error $? "You have to override jaxp with a full jaxp repo!" "$LINENO" 5
     fi
     { $as_echo "$as_me:${as_lineno-$LINENO}: checking if jaxp should be overridden" >&5
@@ -16383,7 +16369,7 @@ $as_echo "yes with $JAXP_TOPDIR" >&6; }
     cd "$with_override_jaxws"
     JAXWS_TOPDIR="`pwd`"
     cd "$CURDIR"
-    if ! test -f $JAXWS_TOPDIR/makefiles/Makefile; then
+    if ! test -f $JAXWS_TOPDIR/make/Makefile; then
       as_fn_error $? "You have to override jaxws with a full jaxws repo!" "$LINENO" 5
     fi
     { $as_echo "$as_me:${as_lineno-$LINENO}: checking if jaxws should be overridden" >&5
@@ -16396,8 +16382,7 @@ $as_echo "yes with $JAXWS_TOPDIR" >&6; }
     cd "$with_override_hotspot"
     HOTSPOT_TOPDIR="`pwd`"
     cd "$CURDIR"
-    if ! test -f $HOTSPOT_TOPDIR/make/Makefile && \
-        ! test -f $HOTSPOT_TOPDIR/makefiles/Makefile; then
+    if ! test -f $HOTSPOT_TOPDIR/make/Makefile; then
       as_fn_error $? "You have to override hotspot with a full hotspot repo!" "$LINENO" 5
     fi
     { $as_echo "$as_me:${as_lineno-$LINENO}: checking if hotspot should be overridden" >&5
@@ -16410,7 +16395,7 @@ $as_echo "yes with $HOTSPOT_TOPDIR" >&6; }
     cd "$with_override_nashorn"
     NASHORN_TOPDIR="`pwd`"
     cd "$CURDIR"
-    if ! test -f $NASHORN_TOPDIR/makefiles/Makefile; then
+    if ! test -f $NASHORN_TOPDIR/make/Makefile; then
       as_fn_error $? "You have to override nashorn with a full nashorn repo!" "$LINENO" 5
     fi
     { $as_echo "$as_me:${as_lineno-$LINENO}: checking if nashorn should be overridden" >&5
@@ -16423,7 +16408,7 @@ $as_echo "yes with $NASHORN_TOPDIR" >&6; }
     cd "$with_override_jdk"
     JDK_TOPDIR="`pwd`"
     cd "$CURDIR"
-    if ! test -f $JDK_TOPDIR/makefiles/Makefile; then
+    if ! test -f $JDK_TOPDIR/make/Makefile; then
       as_fn_error $? "You have to override JDK with a full JDK repo!" "$LINENO" 5
     fi
     { $as_echo "$as_me:${as_lineno-$LINENO}: checking if JDK should be overridden" >&5

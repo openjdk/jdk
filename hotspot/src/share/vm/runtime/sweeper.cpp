@@ -38,6 +38,7 @@
 #include "runtime/vm_operations.hpp"
 #include "trace/tracing.hpp"
 #include "utilities/events.hpp"
+#include "utilities/ticks.inline.hpp"
 #include "utilities/xmlstream.hpp"
 
 #ifdef ASSERT
@@ -144,10 +145,10 @@ volatile int  NMethodSweeper::_bytes_changed           = 0;    // Counts the tot
                                                                //   3) zombie      -> marked_for_reclamation
 
 int   NMethodSweeper::_total_nof_methods_reclaimed     = 0;    // Accumulated nof methods flushed
-jlong NMethodSweeper::_total_time_sweeping             = 0;    // Accumulated time sweeping
-jlong NMethodSweeper::_total_time_this_sweep           = 0;    // Total time this sweep
-jlong NMethodSweeper::_peak_sweep_time                 = 0;    // Peak time for a full sweep
-jlong NMethodSweeper::_peak_sweep_fraction_time        = 0;    // Peak time sweeping one fraction
+Tickspan NMethodSweeper::_total_time_sweeping;                 // Accumulated time sweeping
+Tickspan NMethodSweeper::_total_time_this_sweep;               // Total time this sweep
+Tickspan NMethodSweeper::_peak_sweep_time;                     // Peak time for a full sweep
+Tickspan NMethodSweeper::_peak_sweep_fraction_time;            // Peak time sweeping one fraction
 int   NMethodSweeper::_hotness_counter_reset_val       = 0;
 
 
@@ -209,7 +210,7 @@ void NMethodSweeper::mark_active_nmethods() {
     _sweep_fractions_left = NmethodSweepFraction;
     _current = CodeCache::first_nmethod();
     _traversals += 1;
-    _total_time_this_sweep = 0;
+    _total_time_this_sweep = Tickspan();
 
     if (PrintMethodFlushing) {
       tty->print_cr("### Sweep: stack traversal %d", _traversals);
@@ -303,7 +304,7 @@ void NMethodSweeper::possibly_sweep() {
 }
 
 void NMethodSweeper::sweep_code_cache() {
-  jlong sweep_start_counter = os::elapsed_counter();
+  Ticks sweep_start_counter = Ticks::now();
 
   _flushed_count                = 0;
   _zombified_count              = 0;
@@ -367,8 +368,8 @@ void NMethodSweeper::sweep_code_cache() {
 
   assert(_sweep_fractions_left > 1 || _current == NULL, "must have scanned the whole cache");
 
-  jlong sweep_end_counter = os::elapsed_counter();
-  jlong sweep_time = sweep_end_counter - sweep_start_counter;
+  const Ticks sweep_end_counter = Ticks::now();
+  const Tickspan sweep_time = sweep_end_counter - sweep_start_counter;
   _total_time_sweeping  += sweep_time;
   _total_time_this_sweep += sweep_time;
   _peak_sweep_fraction_time = MAX2(sweep_time, _peak_sweep_fraction_time);
@@ -389,7 +390,8 @@ void NMethodSweeper::sweep_code_cache() {
 
 #ifdef ASSERT
   if(PrintMethodFlushing) {
-    tty->print_cr("### sweeper:      sweep time(%d): " INT64_FORMAT, _sweep_fractions_left, (jlong)sweep_time);
+    tty->print_cr("### sweeper:      sweep time(%d): "
+      INT64_FORMAT, _sweep_fractions_left, (jlong)sweep_time.value());
   }
 #endif
 

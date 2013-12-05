@@ -66,7 +66,6 @@ import java.util.concurrent.TimeUnit;
  *     <th>Description</th>
  *   </tr>
  *   <tr>
- *   <tr>
  *     <td> {@code java.nio.channels.DefaultThreadPool.threadFactory} </td>
  *     <td> The value of this property is taken to be the fully-qualified name
  *     of a concrete {@link java.util.concurrent.ThreadFactory ThreadFactory}
