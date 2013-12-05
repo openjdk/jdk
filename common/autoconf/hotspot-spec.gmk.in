@@ -129,4 +129,4 @@ endif
 
 # Sneak this in via the spec.gmk file, since we don't want to mess around too much with the Hotspot make files.
 # This is needed to get the LOG setting to work properly.
-include $(SRC_ROOT)/common/makefiles/MakeBase.gmk
+include $(SRC_ROOT)/make/common/MakeBase.gmk

@@ -30,6 +30,8 @@
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.InvalidPathException;
+import java.nio.charset.UnmappableCharacterException;
 import java.util.ArrayList;
 import java.util.HashMap;
 
@@ -46,6 +48,13 @@ public class DiacriticTest extends TestHelper {
             return;
         }
 
+        String lang = System.getenv("LANG");
+        if (lang != null && !lang.contains("UTF-8")) {
+            System.out.println("LANG variable set to the language that " +
+                               "does not support unicode, test passes vacuously");
+            return;
+        }
+
         File sourceFile = new File(NAME_NFC + ".java");
         String source = "public class " + NAME_NFC + " { " +
                 "    public static void main(String args[]) {\n" +
@@ -56,7 +65,7 @@ public class DiacriticTest extends TestHelper {
         content.add(source);
         try {
             createFile(sourceFile, content);
-        } catch (java.nio.file.InvalidPathException ipe) {
+        } catch (UnmappableCharacterException | InvalidPathException ipe) {
             System.out.println("The locale or file system is configured in a way " +
                                "that prevents file creation. Real testing impossible.");
             return;

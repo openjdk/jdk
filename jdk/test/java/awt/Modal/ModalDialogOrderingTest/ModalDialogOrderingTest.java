@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,15 +28,16 @@ import java.awt.Rectangle;
 import java.awt.Robot;
 import java.awt.Toolkit;
 import java.awt.event.InputEvent;
+
 import sun.awt.SunToolkit;
-/*
+
+/**
  * @test
  * @bug 8008728
  * @summary [macosx] Swing. JDialog. Modal dialog goes to background
  * @author Alexandr Scherbatiy
  * @run main ModalDialogOrderingTest
  */
-
 public class ModalDialogOrderingTest {
 
     private static final Color DIALOG_COLOR = Color.GREEN;
@@ -45,13 +46,13 @@ public class ModalDialogOrderingTest {
     public static void main(String[] args) {
 
         final Frame frame = new Frame("Test");
-        frame.setSize(100, 100);
+        frame.setSize(400, 400);
         frame.setBackground(FRAME_COLOR);
         frame.setVisible(true);
 
-        final Dialog modalDialog = new Dialog((Frame) null, true);
+        final Dialog modalDialog = new Dialog(null, true);
         modalDialog.setTitle("Modal Dialog");
-        modalDialog.setSize(50, 50);
+        modalDialog.setSize(400, 200);
         modalDialog.setBackground(DIALOG_COLOR);
         modalDialog.setModal(true);
 
@@ -68,40 +69,35 @@ public class ModalDialogOrderingTest {
 
     private static void runTest(Dialog dialog, Frame frame) {
         try {
-            SunToolkit toolkit = (SunToolkit) Toolkit.getDefaultToolkit();
             Robot robot = new Robot();
-            robot.setAutoDelay(15);
+            robot.setAutoDelay(50);
             robot.mouseMove(300, 300);
 
             while (!dialog.isVisible()) {
-                toolkit.realSync();
+                sleep();
             }
 
             Rectangle dialogBounds = dialog.getBounds();
             Rectangle frameBounds = frame.getBounds();
 
-            double x0 = dialogBounds.getX();
-            double y0 = dialogBounds.getY();
-            double x1 = dialogBounds.getX() + dialogBounds.getWidth();
-            double y1 = dialogBounds.getY() + dialogBounds.getHeight();
-            double x2 = frameBounds.getX() + frameBounds.getWidth();
-            double y2 = frameBounds.getY() + frameBounds.getHeight();
+            int y1 = dialogBounds.y + dialogBounds.height;
+            int y2 = frameBounds.y + frameBounds.height;
 
-            int clickX = (int) ((x2 + x1) / 2);
-            int clickY = (int) ((y2 + y1) / 2);
+            int clickX = frameBounds.x + frameBounds.width / 2;
+            int clickY = y1 + (y2 - y1) / 2;
 
             robot.mouseMove(clickX, clickY);
             robot.mousePress(InputEvent.BUTTON1_MASK);
             robot.mouseRelease(InputEvent.BUTTON1_MASK);
-            toolkit.realSync();
+            sleep();
 
-            int colorX = (int) ((x0 + x1) / 2);
-            int colorY = (int) ((y0 + y1) / 2);
+            int colorX = dialogBounds.x + dialogBounds.width / 2;
+            int colorY = dialogBounds.y + dialogBounds.height / 2;
 
             Color color = robot.getPixelColor(colorX, colorY);
 
-            dialog.setVisible(false);
-            frame.setVisible(false);
+            dialog.dispose();
+            frame.dispose();
 
             if (!DIALOG_COLOR.equals(color)) {
                 throw new RuntimeException("The frame is on top"
@@ -110,5 +106,13 @@ public class ModalDialogOrderingTest {
         } catch (Exception ex) {
             throw new RuntimeException(ex);
         }
+    }
+
+    private static void sleep() {
+        try {
+            Thread.sleep(1000);
+        } catch (InterruptedException ignored) {
+        }
+        ((SunToolkit) Toolkit.getDefaultToolkit()).realSync();
     }
 }

@@ -1,7 +1,7 @@
 #!/bin/sh
 
 #
-# Copyright (c) 2005, 2010, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2005, 2013, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -158,7 +158,17 @@ $JAVA -classpath "${TESTCLASSES}${PS}${TESTJAVA}/lib/tools.jar" \
 # The debuggee is suspended and doesn't run until the debugger
 # disconnects.  We have to give it time to write the port number
 # to ${PORTFILE}
-sleep 10
+
+echo "Waiting for port file to be written..."
+attempts=0
+while true; do
+  sleep 1
+  attempts=`expr $attempts + 1`
+  if [ -f  ${PORTFILE} ]; then
+    break
+  fi
+  echo "Waiting $attempts second(s) ..."
+done
 
 if [ $? != 0 ]; then failures=`expr $failures + 1`; fi
 stopDebuggee "${PORTFILE}"

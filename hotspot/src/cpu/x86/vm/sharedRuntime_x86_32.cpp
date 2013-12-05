@@ -3003,6 +3003,10 @@ void SharedRuntime::generate_deopt_blob() {
 
   // sp should be pointing at the return address to the caller (3)
 
+  // Pick up the initial fp we should save
+  // restore rbp before stack bang because if stack overflow is thrown it needs to be pushed (and preserved)
+  __ movptr(rbp, Address(rdi, Deoptimization::UnrollBlock::initial_info_offset_in_bytes()));
+
   // Stack bang to make sure there's enough room for these interpreter frames.
   if (UseStackBanging) {
     __ movl(rbx, Address(rdi ,Deoptimization::UnrollBlock::total_frame_sizes_offset_in_bytes()));
@@ -3021,9 +3025,6 @@ void SharedRuntime::generate_deopt_blob() {
 
   __ movl(rbx, Address(rdi, Deoptimization::UnrollBlock::number_of_frames_offset_in_bytes()));
   __ movl(counter, rbx);
-
-  // Pick up the initial fp we should save
-  __ movptr(rbp, Address(rdi, Deoptimization::UnrollBlock::initial_info_offset_in_bytes()));
 
   // Now adjust the caller's stack to make up for the extra locals
   // but record the original sp so that we can save it in the skeletal interpreter
@@ -3222,6 +3223,10 @@ void SharedRuntime::generate_uncommon_trap_blob() {
 
   // sp should be pointing at the return address to the caller (3)
 
+  // Pick up the initial fp we should save
+  // restore rbp before stack bang because if stack overflow is thrown it needs to be pushed (and preserved)
+  __ movptr(rbp, Address(rdi, Deoptimization::UnrollBlock::initial_info_offset_in_bytes()));
+
   // Stack bang to make sure there's enough room for these interpreter frames.
   if (UseStackBanging) {
     __ movl(rbx, Address(rdi ,Deoptimization::UnrollBlock::total_frame_sizes_offset_in_bytes()));
@@ -3241,9 +3246,6 @@ void SharedRuntime::generate_uncommon_trap_blob() {
 
   __ movl(rbx, Address(rdi, Deoptimization::UnrollBlock::number_of_frames_offset_in_bytes()));
   __ movl(counter, rbx);
-
-  // Pick up the initial fp we should save
-  __ movptr(rbp, Address(rdi, Deoptimization::UnrollBlock::initial_info_offset_in_bytes()));
 
   // Now adjust the caller's stack to make up for the extra locals
   // but record the original sp so that we can save it in the skeletal interpreter

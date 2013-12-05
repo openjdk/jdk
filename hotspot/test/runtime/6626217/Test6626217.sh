@@ -21,7 +21,8 @@
 #  questions.
 # 
 
- 
+
+# @ignore 8028733
 # @test @(#)Test6626217.sh
 # @bug 6626217
 # @summary Loader-constraint table allows arrays instead of only the base-classes

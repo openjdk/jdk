@@ -28,6 +28,7 @@
 #include "memory/allocation.hpp"
 #include "prims/jni_md.h"
 #include "utilities/macros.hpp"
+#include "utilities/ticks.hpp"
 
 class ConcurrentPhase;
 class GCPhase;
@@ -45,21 +46,21 @@ class PhaseVisitor {
 class GCPhase {
   const char* _name;
   int _level;
-  jlong _start;
-  jlong _end;
+  Ticks _start;
+  Ticks _end;
 
  public:
   void set_name(const char* name) { _name = name; }
-  const char* name() { return _name; }
+  const char* name() const { return _name; }
 
-  int level() { return _level; }
+  int level() const { return _level; }
   void set_level(int level) { _level = level; }
 
-  jlong start() { return _start; }
-  void set_start(jlong time) { _start = time; }
+  const Ticks start() const { return _start; }
+  void set_start(const Ticks& time) { _start = time; }
 
-  jlong end() { return _end; }
-  void set_end(jlong time) { _end = time; }
+  const Ticks end() const { return _end; }
+  void set_end(const Ticks& time) { _end = time; }
 
   virtual void accept(PhaseVisitor* visitor) = 0;
 };
@@ -102,22 +103,22 @@ class TimePartitions {
   GrowableArray<PausePhase>* _phases;
   PhasesStack _active_phases;
 
-  jlong _sum_of_pauses;
-  jlong _longest_pause;
+  Tickspan _sum_of_pauses;
+  Tickspan _longest_pause;
 
  public:
   TimePartitions();
   ~TimePartitions();
   void clear();
 
-  void report_gc_phase_start(const char* name, jlong time);
-  void report_gc_phase_end(jlong time);
+  void report_gc_phase_start(const char* name, const Ticks& time);
+  void report_gc_phase_end(const Ticks& time);
 
   int num_phases() const;
   GCPhase* phase_at(int index) const;
 
-  jlong sum_of_pauses();
-  jlong longest_pause();
+  const Tickspan sum_of_pauses() const { return _sum_of_pauses; }
+  const Tickspan longest_pause() const { return _longest_pause; }
 
   bool has_active_phases();
  private:
@@ -133,40 +134,37 @@ class PhasesIterator {
 class GCTimer : public ResourceObj {
   NOT_PRODUCT(friend class GCTimerTest;)
  protected:
-  jlong _gc_start;
-  jlong _gc_end;
+  Ticks _gc_start;
+  Ticks _gc_end;
   TimePartitions _time_partitions;
 
  public:
-  virtual void register_gc_start(jlong time);
-  virtual void register_gc_end(jlong time);
+  virtual void register_gc_start(const Ticks& time = Ticks::now());
+  virtual void register_gc_end(const Ticks& time = Ticks::now());
 
-  void register_gc_phase_start(const char* name, jlong time);
-  void register_gc_phase_end(jlong time);
+  void register_gc_phase_start(const char* name, const Ticks& time);
+  void register_gc_phase_end(const Ticks& time);
 
-  jlong gc_start() { return _gc_start; }
-  jlong gc_end() { return _gc_end; }
+  const Ticks gc_start() const { return _gc_start; }
+  const Ticks gc_end() const { return _gc_end; }
 
   TimePartitions* time_partitions() { return &_time_partitions; }
 
-  long longest_pause();
-  long sum_of_pauses();
-
  protected:
-  void register_gc_pause_start(const char* name, jlong time);
-  void register_gc_pause_end(jlong time);
+  void register_gc_pause_start(const char* name, const Ticks& time = Ticks::now());
+  void register_gc_pause_end(const Ticks& time = Ticks::now());
 };
 
 class STWGCTimer : public GCTimer {
  public:
-  virtual void register_gc_start(jlong time);
-  virtual void register_gc_end(jlong time);
+  virtual void register_gc_start(const Ticks& time = Ticks::now());
+  virtual void register_gc_end(const Ticks& time = Ticks::now());
 };
 
 class ConcurrentGCTimer : public GCTimer {
  public:
-  void register_gc_pause_start(const char* name, jlong time);
-  void register_gc_pause_end(jlong time);
+  void register_gc_pause_start(const char* name);
+  void register_gc_pause_end();
 };
 
 class TimePartitionPhasesIterator {
