@@ -68,6 +68,31 @@ public final class FileUtils {
         }
     }
 
+    /**
+     * Deletes a file, retrying if necessary.
+     * No exception thrown if file doesn't exist.
+     *
+     * @param path  the file to delete
+     *
+     * @throws NoSuchFileException
+     *         if the file does not exist (optional specific exception)
+     * @throws DirectoryNotEmptyException
+     *         if the file is a directory and could not otherwise be deleted
+     *         because the directory is not empty (optional specific exception)
+     * @throws IOException
+     *         if an I/O error occurs
+     */
+    public static void deleteFileIfExistsWithRetry(Path path)
+        throws IOException
+    {
+        try {
+            if(Files.exists(path))
+                deleteFileWithRetry0(path);
+        } catch (InterruptedException x) {
+            throw new IOException("Interrupted while deleting.", x);
+        }
+    }
+
     private static void deleteFileWithRetry0(Path path)
         throws IOException, InterruptedException
     {

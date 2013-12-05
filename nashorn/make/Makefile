@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2010, 2013, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2012, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -23,37 +23,27 @@
 # questions.
 #
 
-#
-# On Solaris, the standard 'make' utility will not work with these makefiles.
-#    This little rule is only understood by Solaris make, and is harmless
-#    when seen by the GNU make tool. If using Solaris make, this causes the
-#    make command to fail.
-#
-SUN_MAKE_TEST:sh = @echo "ERROR: PLEASE USE GNU VERSION OF MAKE"; exit 33
+# Locate this Makefile
+ifeq ($(filter /%, $(lastword $(MAKEFILE_LIST))), )
+  makefile_path := $(CURDIR)/$(lastword $(MAKEFILE_LIST))
+else
+  makefile_path := $(lastword $(MAKEFILE_LIST))
+endif
+repo_dir := $(patsubst %/make/Makefile, %, $(makefile_path))
 
+# What is the name of this subsystem (langtools, corba, etc)?
+subsystem_name := $(notdir $(repo_dir))
 
-# Default target and expected 'do everything' target
+# Try to locate top-level makefile
+top_level_makefile := $(repo_dir)/../Makefile
+ifneq ($(wildcard $(top_level_makefile)), )
+  $(info Will run $(subsystem_name) target on top-level Makefile)
+  $(info WARNING: This is a non-recommended way of building!)
+  $(info ===================================================)
+else
+  $(info Cannot locate top-level Makefile. Is this repo not checked out as part of a complete forest?)
+  $(error Build from top-level Makefile instead)
+endif
+
 all:
-	echo Nashorn can only be built with NEWBUILD=true
-
-# Standard make clobber target
-clobber:
-
-#-------------------------------------------------------------------
-#
-# Targets for Oracle's internal JPRT build system
-
-CD = cd
-ZIP = zip
-
-JPRT_ARCHIVE_BUNDLE=$(ABS_OUTPUTDIR)/$(JPRT_BUILD_FLAVOR)-bundle.zip
-
-jprt_build_product jprt_build_debug jprt_build_fastdebug: all
-	( $(CD) $(OUTPUTDIR) && \
-	  $(ZIP) -q -r $(JPRT_ARCHIVE_BUNDLE) build dist )
-
-#-------------------------------------------------------------------
-
-# Declare these phony (not filenames)
-.PHONY: $(ANT_TARGETS) all clobber \
-	jprt_build_product jprt_build_debug jprt_build_fastdebug
+	@$(MAKE) -f $(top_level_makefile) $(subsystem_name)

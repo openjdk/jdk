@@ -76,19 +76,19 @@ import java.beans.Transient;
  * negative width and height or it should use the first point in the set
  * to construct the {@code Rectangle}.
  * For example:
- * <pre>
+ * <pre>{@code
  *     Rectangle bounds = new Rectangle(0, 0, -1, -1);
  *     for (int i = 0; i < points.length; i++) {
  *         bounds.add(points[i]);
  *     }
- * </pre>
+ * }</pre>
  * or if we know that the points array contains at least one point:
- * <pre>
+ * <pre>{@code
  *     Rectangle bounds = new Rectangle(points[0]);
  *     for (int i = 1; i < points.length; i++) {
  *         bounds.add(points[i]);
  *     }
- * </pre>
+ * }</pre>
  * <p>
  * This class uses 32-bit integers to store its location and dimensions.
  * Frequently operations may produce a result that exceeds the range of

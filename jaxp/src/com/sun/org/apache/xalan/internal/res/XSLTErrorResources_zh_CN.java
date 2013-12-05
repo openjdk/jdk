@@ -18,7 +18,7 @@
  * limitations under the License.
  */
 /*
- * $Id: XSLTErrorResources_zh_CN.java /st_wptg_1.8.0.0.0jdk/2 2013/09/16 04:44:25 gmolloy Exp $
+ * $Id: XSLTErrorResources_zh_CN.java /st_wptg_1.8.0.0.0jdk/3 2013/11/11 11:39:28 gmolloy Exp $
  */
 package com.sun.org.apache.xalan.internal.res;
 
@@ -630,7 +630,7 @@ public class XSLTErrorResources_zh_CN extends ListResourceBundle
       "\u65E0\u6CD5\u5904\u7406\u6837\u5F0F\u8868!"},
 
     { ER_COULDNT_PARSE_DOC,
-     "\u65E0\u6CD5\u5BF9{0}\u6587\u6863\u8FDB\u884C\u8BED\u6CD5\u5206\u6790!"},
+     "\u65E0\u6CD5\u89E3\u6790{0}\u6587\u6863!"},
 
     { ER_COULDNT_FIND_FRAGMENT,
      "\u627E\u4E0D\u5230\u7247\u6BB5: {0}"},
@@ -968,7 +968,7 @@ public class XSLTErrorResources_zh_CN extends ListResourceBundle
   //in locale specific files like XSLTErrorResources_de.java, XSLTErrorResources_fr.java etc.
   //NOTE: Not only the key name but message has also been changed.
     { ER_VALUE_SHOULD_BE_NUMBER,
-        "{0}\u7684\u503C\u5E94\u5305\u542B\u53EF\u8BED\u6CD5\u5206\u6790\u7684\u6570\u5B57"},
+        "{0}\u7684\u503C\u5E94\u5305\u542B\u53EF\u89E3\u6790\u7684\u6570\u5B57"},
 
     { ER_VALUE_SHOULD_EQUAL,
         "{0}\u7684\u503C\u5E94\u7B49\u4E8E\u201C\u662F\u201D\u6216\u201C\u5426\u201D"},
@@ -1016,7 +1016,7 @@ public class XSLTErrorResources_zh_CN extends ListResourceBundle
      "\u672A\u6307\u5B9A\u7CFB\u7EDF\u5C5E\u6027 org.xml.sax.parser"},
 
     { ER_PARSER_ARG_CANNOT_BE_NULL,
-     "\u8BED\u6CD5\u5206\u6790\u5668\u53C2\u6570\u4E0D\u80FD\u4E3A\u7A7A\u503C"},
+     "\u89E3\u6790\u5668\u53C2\u6570\u4E0D\u80FD\u4E3A\u7A7A\u503C"},
 
     { ER_FEATURE,
      "\u529F\u80FD: {0}"},
@@ -1253,7 +1253,7 @@ public class XSLTErrorResources_zh_CN extends ListResourceBundle
       "\u53D1\u73B0\u7279\u5F81\u51B2\u7A81: \u5C06\u4F7F\u7528\u4E0A\u6B21\u5728\u6837\u5F0F\u8868\u4E2D\u627E\u5230\u7684{0}\u3002"},
 
     { WG_PARSING_AND_PREPARING,
-      "========= \u8BED\u6CD5\u5206\u6790\u548C\u51C6\u5907{0} =========="},
+      "========= \u89E3\u6790\u548C\u51C6\u5907{0} =========="},
 
     { WG_ATTR_TEMPLATE,
      "\u5C5E\u6027\u6A21\u677F{0}"},
@@ -1379,7 +1379,7 @@ public class XSLTErrorResources_zh_CN extends ListResourceBundle
   {  "optionHTML", "   [-HTML (\u4F7F\u7528 HTML \u683C\u5F0F\u8BBE\u7F6E\u5DE5\u5177\u3002)]"},
   {  "optionPARAM", "   [-PARAM \u540D\u79F0\u8868\u8FBE\u5F0F (\u8BBE\u7F6E\u6837\u5F0F\u8868\u53C2\u6570)]"},
   {  "noParsermsg1", "XSL \u8FDB\u7A0B\u672A\u6210\u529F\u3002"},
-  {  "noParsermsg2", "** \u627E\u4E0D\u5230\u8BED\u6CD5\u5206\u6790\u5668 **"},
+  {  "noParsermsg2", "** \u627E\u4E0D\u5230\u89E3\u6790\u5668 **"},
   { "noParsermsg3",  "\u8BF7\u68C0\u67E5\u60A8\u7684\u7C7B\u8DEF\u5F84\u3002"},
   { "noParsermsg4", "\u5982\u679C\u6CA1\u6709 IBM \u63D0\u4F9B\u7684 XML Parser for Java, \u5219\u53EF\u4EE5\u4ECE"},
   { "noParsermsg5", "IBM AlphaWorks \u8FDB\u884C\u4E0B\u8F7D, \u7F51\u5740\u4E3A: http://www.alphaworks.ibm.com/formula/xml"},

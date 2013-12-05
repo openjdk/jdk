@@ -187,55 +187,55 @@ public final class PageAttributes implements Cloneable {
         };
 
         /**
-         * The MediaType instance for ISO/DIN & JIS 4A0, 1682 x 2378 mm.
+         * The MediaType instance for ISO/DIN and JIS 4A0, 1682 x 2378 mm.
          */
         public static final MediaType ISO_4A0 = new MediaType(I_ISO_4A0);
         /**
-         * The MediaType instance for ISO/DIN & JIS 2A0, 1189 x 1682 mm.
+         * The MediaType instance for ISO/DIN and JIS 2A0, 1189 x 1682 mm.
          */
         public static final MediaType ISO_2A0 = new MediaType(I_ISO_2A0);
         /**
-         * The MediaType instance for ISO/DIN & JIS A0, 841 x 1189 mm.
+         * The MediaType instance for ISO/DIN and JIS A0, 841 x 1189 mm.
          */
         public static final MediaType ISO_A0 = new MediaType(I_ISO_A0);
         /**
-         * The MediaType instance for ISO/DIN & JIS A1, 594 x 841 mm.
+         * The MediaType instance for ISO/DIN and JIS A1, 594 x 841 mm.
          */
         public static final MediaType ISO_A1 = new MediaType(I_ISO_A1);
         /**
-         * The MediaType instance for ISO/DIN & JIS A2, 420 x 594 mm.
+         * The MediaType instance for ISO/DIN and JIS A2, 420 x 594 mm.
          */
         public static final MediaType ISO_A2 = new MediaType(I_ISO_A2);
         /**
-         * The MediaType instance for ISO/DIN & JIS A3, 297 x 420 mm.
+         * The MediaType instance for ISO/DIN and JIS A3, 297 x 420 mm.
          */
         public static final MediaType ISO_A3 = new MediaType(I_ISO_A3);
         /**
-         * The MediaType instance for ISO/DIN & JIS A4, 210 x 297 mm.
+         * The MediaType instance for ISO/DIN and JIS A4, 210 x 297 mm.
          */
         public static final MediaType ISO_A4 = new MediaType(I_ISO_A4);
         /**
-         * The MediaType instance for ISO/DIN & JIS A5, 148 x 210 mm.
+         * The MediaType instance for ISO/DIN and JIS A5, 148 x 210 mm.
          */
         public static final MediaType ISO_A5 = new MediaType(I_ISO_A5);
         /**
-         * The MediaType instance for ISO/DIN & JIS A6, 105 x 148 mm.
+         * The MediaType instance for ISO/DIN and JIS A6, 105 x 148 mm.
          */
         public static final MediaType ISO_A6 = new MediaType(I_ISO_A6);
         /**
-         * The MediaType instance for ISO/DIN & JIS A7, 74 x 105 mm.
+         * The MediaType instance for ISO/DIN and JIS A7, 74 x 105 mm.
          */
         public static final MediaType ISO_A7 = new MediaType(I_ISO_A7);
         /**
-         * The MediaType instance for ISO/DIN & JIS A8, 52 x 74 mm.
+         * The MediaType instance for ISO/DIN and JIS A8, 52 x 74 mm.
          */
         public static final MediaType ISO_A8 = new MediaType(I_ISO_A8);
         /**
-         * The MediaType instance for ISO/DIN & JIS A9, 37 x 52 mm.
+         * The MediaType instance for ISO/DIN and JIS A9, 37 x 52 mm.
          */
         public static final MediaType ISO_A9 = new MediaType(I_ISO_A9);
         /**
-         * The MediaType instance for ISO/DIN & JIS A10, 26 x 37 mm.
+         * The MediaType instance for ISO/DIN and JIS A10, 26 x 37 mm.
          */
         public static final MediaType ISO_A10 = new MediaType(I_ISO_A10);
         /**
