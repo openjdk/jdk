@@ -202,8 +202,8 @@ Src_Files_EXCLUDE/SHARK     := $(COMPILER1_SPECIFIC_FILES) $(COMPILER2_SPECIFIC_
 
 Src_Files_EXCLUDE +=  $(Src_Files_EXCLUDE/$(TYPE))
 
-# Disable 155427 on aix.
-Src_Files_EXCLUDE += decoder_elf.cpp elfFile.cpp elfStringTable.cpp elfSymbolTable.cpp
+# Disable ELF decoder on AIX (AIX uses XCOFF).
+Src_Files_EXCLUDE += decoder_elf.cpp elfFile.cpp elfStringTable.cpp elfSymbolTable.cpp elfFuncDescTable.cpp
 
 # Special handling of arch model.
 ifeq ($(Platform_arch_model), x86_32)
