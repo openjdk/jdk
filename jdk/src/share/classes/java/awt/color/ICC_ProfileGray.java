@@ -23,7 +23,8 @@
  * questions.
  */
 
-/**********************************************************************
+/*
+ **********************************************************************
  **********************************************************************
  **********************************************************************
  *** COPYRIGHT (c) Eastman Kodak Company, 1997                      ***
@@ -63,7 +64,6 @@ import sun.java2d.cmm.ProfileDeferralInfo;
 </pre>
  * The inverse transform is done by converting the PCS Y components to
  * device Gray via the inverse of the grayTRC.
- * <p>
  */
 
 

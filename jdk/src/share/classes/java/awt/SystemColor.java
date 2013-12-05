@@ -463,7 +463,7 @@ public final class SystemColor extends Color implements java.io.Serializable {
     }
 
     /**
-     * Called from <init> & toolkit to update the above systemColors cache.
+     * Called from {@code <init>} and toolkit to update the above systemColors cache.
      */
     private static void updateSystemColors() {
         if (!GraphicsEnvironment.isHeadless()) {

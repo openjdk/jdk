@@ -122,7 +122,7 @@ public final class SQLPermission extends BasicPermission {
      *
      * @param name the name of this <code>SQLPermission</code> object, which must
      * be either {@code  setLog}, {@code callAbort}, {@code setSyncFactory},
-     *  or {@code setNetworkTimeout}
+     *  {@code deregisterDriver}, or {@code setNetworkTimeout}
      * @throws NullPointerException if <code>name</code> is <code>null</code>.
      * @throws IllegalArgumentException if <code>name</code> is empty.
 
@@ -140,7 +140,7 @@ public final class SQLPermission extends BasicPermission {
      *
      * @param name the name of this <code>SQLPermission</code> object, which must
      * be either {@code  setLog}, {@code callAbort}, {@code setSyncFactory},
-     *  or {@code setNetworkTimeout}
+     *  {@code deregisterDriver}, or {@code setNetworkTimeout}
      * @param actions should be <code>null</code>
      * @throws NullPointerException if <code>name</code> is <code>null</code>.
      * @throws IllegalArgumentException if <code>name</code> is empty.

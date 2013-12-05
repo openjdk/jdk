@@ -361,7 +361,7 @@ public class SystemTray {
     /**
      * Adds a {@code PropertyChangeListener} to the list of listeners for the
      * specific property. The following properties are currently supported:
-     * <p>
+     *
      * <table border=1 summary="SystemTray properties">
      * <tr>
      *    <th>Property</th>
