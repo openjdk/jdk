@@ -172,10 +172,8 @@ class MarkSweep : AllStatic {
   static void follow_stack();   // Empty marking stack.
 
   static void follow_klass(Klass* klass);
-  static void adjust_klass(Klass* klass);
 
   static void follow_class_loader(ClassLoaderData* cld);
-  static void adjust_class_loader(ClassLoaderData* cld);
 
   static void preserve_mark(oop p, markOop mark);
                                 // Save the mark word so it can be restored later
