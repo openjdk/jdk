@@ -26,7 +26,7 @@
  * @bug 8026844
  * @summary Test negExact
  * @compile NegExactILoadTest.java Verify.java
- * @run main NegExactILoadTest
+ * @run main NegExactILoadTest -XX:+IgnoreUnrecognizedVMOptions -XX:+UnlockExperimentalVMOptions -XX:+UseMathExactIntrinsics
  *
  */
 
