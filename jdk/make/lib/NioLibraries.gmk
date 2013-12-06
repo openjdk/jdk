@@ -113,7 +113,7 @@ ifeq ($(OPENJDK_TARGET_OS), solaris)
 endif
 
 ifeq ($(OPENJDK_TARGET_OS), aix)
-  BUILD_LIBNIO_MAPFILE:=$(JDK_TOPDIR)/makefiles/mapfiles/libnio/mapfile-$(OPENJDK_TARGET_OS)
+  BUILD_LIBNIO_MAPFILE:=$(JDK_TOPDIR)/make/mapfiles/libnio/mapfile-$(OPENJDK_TARGET_OS)
   BUILD_LIBNIO_SRC += \
       $(JDK_TOPDIR)/src/aix/native/sun/nio/ch \
       $(JDK_TOPDIR)/src/aix/native/sun/nio/fs
