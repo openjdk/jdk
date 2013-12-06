@@ -459,7 +459,7 @@ const char* nmethod::compile_kind() const {
 
 // Fill in default values for various flag fields
 void nmethod::init_defaults() {
-  _state                      = alive;
+  _state                      = in_use;
   _marked_for_reclamation     = 0;
   _has_flushed_dependencies   = 0;
   _has_unsafe_access          = 0;
@@ -1660,8 +1660,8 @@ void nmethod::do_unloading(BoolObjectClosure* is_alive, bool unloading_occurred)
           CompiledICHolder* cichk_oop = ic->cached_icholder();
           if (cichk_oop->holder_method()->method_holder()->is_loader_alive(is_alive) &&
               cichk_oop->holder_klass()->is_loader_alive(is_alive)) {
-              continue;
-            }
+            continue;
+          }
         } else {
           Metadata* ic_oop = ic->cached_metadata();
           if (ic_oop != NULL) {
@@ -1677,8 +1677,8 @@ void nmethod::do_unloading(BoolObjectClosure* is_alive, bool unloading_occurred)
               ShouldNotReachHere();
             }
           }
-          }
-          ic->set_to_clean();
+        }
+        ic->set_to_clean();
       }
     }
   }
@@ -2393,8 +2393,8 @@ void nmethod::verify() {
 
 void nmethod::verify_interrupt_point(address call_site) {
   // Verify IC only when nmethod installation is finished.
-  bool is_installed = (method()->code() == this) // nmethod is in state 'alive' and installed
-                      || !this->is_in_use();     // nmethod is installed, but not in 'alive' state
+  bool is_installed = (method()->code() == this) // nmethod is in state 'in_use' and installed
+                      || !this->is_in_use();     // nmethod is installed, but not in 'in_use' state
   if (is_installed) {
     Thread *cur = Thread::current();
     if (CompiledIC_lock->owner() == cur ||
