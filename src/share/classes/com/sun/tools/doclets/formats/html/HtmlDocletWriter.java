@@ -1363,7 +1363,7 @@ public class HtmlDocletWriter extends HtmlDocWriter {
             return new ContentBuilder();
         }
 
-        String seetext = replaceDocRootDir(see.text());
+        String seetext = replaceDocRootDir(Util.normalizeNewlines(see.text()));
 
         //Check if @see is an href or "string"
         if (seetext.startsWith("<") || seetext.startsWith("\"")) {
