@@ -2071,6 +2071,11 @@ const Type *LoadNode::klass_value_common( PhaseTransform *phase ) const {
       if (t != NULL) {
         // constant oop => constant klass
         if (offset == java_lang_Class::array_klass_offset_in_bytes()) {
+          if (t->is_void()) {
+            // We cannot create a void array.  Since void is a primitive type return null
+            // klass.  Users of this result need to do a null check on the returned klass.
+            return TypePtr::NULL_PTR;
+          }
           return TypeKlassPtr::make(ciArrayKlass::make(t));
         }
         if (!t->is_klass()) {
