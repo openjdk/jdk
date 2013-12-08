@@ -123,7 +123,7 @@ le_uint32 GlyphSubstitutionLookupProcessor::applySubtable(const LEReferenceTo<Lo
     {
         const LEReferenceTo<ContextualSubstitutionSubtable> subtable(lookupSubtable, success);
 
-        delta = subtable->process(this, glyphIterator, fontInstance, success);
+        delta = subtable->process(subtable, this, glyphIterator, fontInstance, success);
         break;
     }
 
@@ -131,7 +131,7 @@ le_uint32 GlyphSubstitutionLookupProcessor::applySubtable(const LEReferenceTo<Lo
     {
         const LEReferenceTo<ChainingContextualSubstitutionSubtable> subtable(lookupSubtable, success);
 
-        delta = subtable->process(this, glyphIterator, fontInstance, success);
+        delta = subtable->process(subtable, this, glyphIterator, fontInstance, success);
         break;
     }
 
