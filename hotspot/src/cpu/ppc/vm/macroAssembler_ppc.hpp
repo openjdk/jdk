@@ -58,9 +58,24 @@ class MacroAssembler: public Assembler {
 
   // Move register if destination register and target register are different
   inline void mr_if_needed(Register rd, Register rs);
+  inline void fmr_if_needed(FloatRegister rd, FloatRegister rs);
+  // This is dedicated for emitting scheduled mach nodes. For better
+  // readability of the ad file I put it here.
+  // Endgroups are not needed if
+  //  - the scheduler is off
+  //  - the scheduler found that there is a natural group end, in that
+  //    case it reduced the size of the instruction used in the test
+  //    yielding 'needed'.
+  inline void endgroup_if_needed(bool needed);
+
+  // Memory barriers.
+  inline void membar(int bits);
+  inline void release();
+  inline void acquire();
+  inline void fence();
 
   // nop padding
-  void align(int modulus);
+  void align(int modulus, int max = 252, int rem = 0);
 
   //
   // Constants, loading constants, TOC support
@@ -295,6 +310,8 @@ class MacroAssembler: public Assembler {
   // Call a C function via a function descriptor and use full C
   // calling conventions. Updates and returns _last_calls_return_pc.
   address call_c(Register function_descriptor);
+  // For tail calls: only branch, don't link, so callee returns to caller of this function.
+  address call_c_and_return_to_caller(Register function_descriptor);
   address call_c(const FunctionDescriptor* function_descriptor, relocInfo::relocType rt);
   address call_c_using_toc(const FunctionDescriptor* function_descriptor, relocInfo::relocType rt,
                            Register toc);
@@ -320,7 +337,7 @@ class MacroAssembler: public Assembler {
     // the entry point
     address         entry_point,
     // flag which indicates if exception should be checked
-    bool            check_exception=true
+    bool            check_exception = true
   );
 
   // Support for VM calls. This is the base routine called by the
@@ -530,9 +547,7 @@ class MacroAssembler: public Assembler {
   inline void null_check_throw(Register a, int offset, Register temp_reg, address exception_entry);
 
   // Check accessed object for null. Use SIGTRAP-based null checks on AIX.
-  inline void ld_with_trap_null_check(Register d, int si16, Register s1);
-  // Variant for heap OOPs including decompression of compressed OOPs.
-  inline void load_heap_oop_with_trap_null_check(Register d, RegisterOrConstant offs, Register s1);
+  inline void load_with_trap_null_check(Register d, int si16, Register s1);
 
   // Load heap oop and decompress. Loaded oop may not be null.
   inline void load_heap_oop_not_null(Register d, RegisterOrConstant offs, Register s1 = noreg);
@@ -584,6 +599,8 @@ class MacroAssembler: public Assembler {
            is_trap_range_check_g(x) || is_trap_range_check_ge(x);
   }
 
+  void clear_memory_doubleword(Register base_ptr, Register cnt_dwords, Register tmp = R0);
+
   // Needle of length 1.
   void string_indexof_1(Register result, Register haystack, Register haycnt,
                         Register needle, jchar needleChar,
@@ -630,7 +647,7 @@ class MacroAssembler: public Assembler {
 
   // TODO: verify method and klass metadata (compare against vptr?)
   void _verify_method_ptr(Register reg, const char * msg, const char * file, int line) {}
-  void _verify_klass_ptr(Register reg, const char * msg, const char * file, int line){}
+  void _verify_klass_ptr(Register reg, const char * msg, const char * file, int line) {}
 
 #define verify_method_ptr(reg) _verify_method_ptr(reg, "broken method " #reg, __FILE__, __LINE__)
 #define verify_klass_ptr(reg) _verify_klass_ptr(reg, "broken klass " #reg, __FILE__, __LINE__)

@@ -30,12 +30,20 @@
 #include "interp_masm_ppc_64.hpp"
 #include "interpreter/interpreterRuntime.hpp"
 
-
 #ifdef PRODUCT
 #define BLOCK_COMMENT(str) // nothing
 #else
 #define BLOCK_COMMENT(str) block_comment(str)
 #endif
+
+void InterpreterMacroAssembler::null_check_throw(Register a, int offset, Register temp_reg) {
+#ifdef CC_INTERP
+  address exception_entry = StubRoutines::throw_NullPointerException_at_call_entry();
+#else
+  address exception_entry = Interpreter::throw_NullPointerException_entry();
+#endif
+  MacroAssembler::null_check_throw(a, offset, temp_reg, exception_entry);
+}
 
 // Lock object
 //
@@ -47,7 +55,7 @@
 void InterpreterMacroAssembler::lock_object(Register monitor, Register object) {
   if (UseHeavyMonitors) {
     call_VM(noreg, CAST_FROM_FN_PTR(address, InterpreterRuntime::monitorenter),
-            monitor, /*check_for_exceptions=*/false);
+            monitor, /*check_for_exceptions=*/true CC_INTERP_ONLY(&& false));
   } else {
     // template code:
     //
@@ -69,7 +77,7 @@ void InterpreterMacroAssembler::lock_object(Register monitor, Register object) {
     const Register tmp              = R10_ARG8;
 
     Label done;
-    Label slow_case;
+    Label cas_failed, slow_case;
 
     assert_different_registers(displaced_header, object_mark_addr, current_header, tmp);
 
@@ -91,7 +99,7 @@ void InterpreterMacroAssembler::lock_object(Register monitor, Register object) {
 
     // Initialize the box (Must happen before we update the object mark!).
     std(displaced_header, BasicObjectLock::lock_offset_in_bytes() +
-            BasicLock::displaced_header_offset_in_bytes(), monitor);
+        BasicLock::displaced_header_offset_in_bytes(), monitor);
 
     // if (Atomic::cmpxchg_ptr(/*ex=*/monitor, /*addr*/obj->mark_addr(), /*cmp*/displaced_header) == displaced_header) {
 
@@ -106,12 +114,14 @@ void InterpreterMacroAssembler::lock_object(Register monitor, Register object) {
              /*compare_value=*/displaced_header, /*exchange_value=*/monitor,
              /*where=*/object_mark_addr,
              MacroAssembler::MemBarRel | MacroAssembler::MemBarAcq,
-             MacroAssembler::cmpxchgx_hint_acquire_lock());
+             MacroAssembler::cmpxchgx_hint_acquire_lock(),
+             noreg,
+             &cas_failed);
 
     // If the compare-and-exchange succeeded, then we found an unlocked
     // object and we have now locked it.
-    beq(CCR0, done);
-
+    b(done);
+    bind(cas_failed);
 
     // } else if (THREAD->is_lock_owned((address)displaced_header))
     //   // Simple recursive case.
@@ -134,7 +144,7 @@ void InterpreterMacroAssembler::lock_object(Register monitor, Register object) {
     bne(CCR0, slow_case);
     release();
     std(R0/*==0!*/, BasicObjectLock::lock_offset_in_bytes() +
-            BasicLock::displaced_header_offset_in_bytes(), monitor);
+        BasicLock::displaced_header_offset_in_bytes(), monitor);
     b(done);
 
 
@@ -146,7 +156,7 @@ void InterpreterMacroAssembler::lock_object(Register monitor, Register object) {
     // slow case of monitor enter.
     bind(slow_case);
     call_VM(noreg, CAST_FROM_FN_PTR(address, InterpreterRuntime::monitorenter),
-            monitor, /*check_for_exceptions=*/false);
+            monitor, /*check_for_exceptions=*/true CC_INTERP_ONLY(&& false));
     // }
 
     bind(done);
@@ -160,7 +170,7 @@ void InterpreterMacroAssembler::lock_object(Register monitor, Register object) {
 //             which must be initialized with the object to lock.
 //
 // Throw IllegalMonitorException if object is not locked by current thread.
-void InterpreterMacroAssembler::unlock_object(Register monitor) {
+void InterpreterMacroAssembler::unlock_object(Register monitor, bool check_for_exceptions) {
   if (UseHeavyMonitors) {
     call_VM(noreg, CAST_FROM_FN_PTR(address, InterpreterRuntime::monitorexit),
             monitor, /*check_for_exceptions=*/false);
@@ -184,9 +194,8 @@ void InterpreterMacroAssembler::unlock_object(Register monitor) {
     const Register object_mark_addr = R9_ARG7;
     const Register current_header   = R10_ARG8;
 
-    Label no_recursive_unlock;
+    Label free_slot;
     Label slow_case;
-    Label done;
 
     assert_different_registers(object, displaced_header, object_mark_addr, current_header);
 
@@ -194,7 +203,7 @@ void InterpreterMacroAssembler::unlock_object(Register monitor) {
       // The object address from the monitor is in object.
       ld(object, BasicObjectLock::obj_offset_in_bytes(), monitor);
       assert(oopDesc::mark_offset_in_bytes() == 0, "offset of _mark is not 0");
-      biased_locking_exit(CCR0, object, displaced_header, done);
+      biased_locking_exit(CCR0, object, displaced_header, free_slot);
     }
 
     // Test first if we are in the fast recursive case.
@@ -203,13 +212,7 @@ void InterpreterMacroAssembler::unlock_object(Register monitor) {
 
     // If the displaced header is zero, we have a recursive unlock.
     cmpdi(CCR0, displaced_header, 0);
-    bne(CCR0, no_recursive_unlock);
-    // Release in recursive unlock is not necessary.
-    // release();
-    std(displaced_header/*==0!*/, BasicObjectLock::obj_offset_in_bytes(), monitor);
-    b(done);
-
-    bind(no_recursive_unlock);
+    beq(CCR0, free_slot); // recursive unlock
 
     // } else if (Atomic::cmpxchg_ptr(displaced_header, obj->mark_addr(), monitor) == monitor) {
     //   // We swapped the unlocked mark in displaced_header into the object's mark word.
@@ -218,7 +221,7 @@ void InterpreterMacroAssembler::unlock_object(Register monitor) {
     // If we still have a lightweight lock, unlock the object and be done.
 
     // The object address from the monitor is in object.
-    ld(object, BasicObjectLock::obj_offset_in_bytes(), monitor);
+    if (!UseBiasedLocking) ld(object, BasicObjectLock::obj_offset_in_bytes(), monitor);
     addi(object_mark_addr, object, oopDesc::mark_offset_in_bytes());
 
     // We have the displaced header in displaced_header. If the lock is still
@@ -229,17 +232,11 @@ void InterpreterMacroAssembler::unlock_object(Register monitor) {
              /*current_value=*/current_header,
              /*compare_value=*/monitor, /*exchange_value=*/displaced_header,
              /*where=*/object_mark_addr,
-             MacroAssembler::MemBarRel | MacroAssembler::MemBarAcq,
-             MacroAssembler::cmpxchgx_hint_release_lock());
-    bne(CCR0, slow_case);
-
-    // Exchange worked, do monitor->set_obj(NULL).
-    li(R0, 0);
-    // Must realease earlier (see cmpxchgd above).
-    // release();
-    std(R0, BasicObjectLock::obj_offset_in_bytes(), monitor);
-    b(done);
-
+             MacroAssembler::MemBarRel,
+             MacroAssembler::cmpxchgx_hint_release_lock(),
+             noreg,
+             &slow_case);
+    b(free_slot);
 
     // } else {
     //   // Slow path.
@@ -249,9 +246,17 @@ void InterpreterMacroAssembler::unlock_object(Register monitor) {
     // we need to get into the slow case.
     bind(slow_case);
     call_VM(noreg, CAST_FROM_FN_PTR(address, InterpreterRuntime::monitorexit),
-            monitor, /*check_for_exceptions=*/false);
+            monitor, check_for_exceptions CC_INTERP_ONLY(&& false));
     // }
 
+    Label done;
+    b(done); // Monitor register may be overwritten! Runtime has already freed the slot.
+
+    // Exchange worked, do monitor->set_obj(NULL);
+    align(32, 12);
+    bind(free_slot);
+    li(R0, 0);
+    std(R0, BasicObjectLock::obj_offset_in_bytes(), monitor);
     bind(done);
   }
 }
@@ -375,6 +380,7 @@ void InterpreterMacroAssembler::notify_method_exit(bool is_native_method, TosSta
     call_VM(noreg, CAST_FROM_FN_PTR(address, InterpreterRuntime::post_method_exit),
             /*check_exceptions=*/false);
 
+    align(32, 12);
     bind(jvmti_post_done);
   }
 }

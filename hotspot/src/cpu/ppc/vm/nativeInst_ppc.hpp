@@ -132,7 +132,7 @@ inline NativeInstruction* nativeInstruction_at(address address) {
 class NativeCall: public NativeInstruction {
  public:
 
-  enum specific_constants {
+  enum ppc_specific_constants {
     load_const_instruction_size                 = 28,
     load_const_from_method_toc_instruction_size = 16,
     instruction_size                            = 16 // Used in shared code for calls with reloc_info.
@@ -240,7 +240,7 @@ inline NativeFarCall* nativeFarCall_at(address instr) {
 class NativeMovConstReg: public NativeInstruction {
  public:
 
-  enum specific_constants {
+  enum ppc_specific_constants {
     load_const_instruction_size                 = 20,
     load_const_from_method_toc_instruction_size =  8,
     instruction_size                            =  8 // Used in shared code for calls with reloc_info.
@@ -279,7 +279,7 @@ class NativeJump: public NativeInstruction {
   // We use MacroAssembler::b64_patchable() for implementing a
   // jump-anywhere instruction.
 
-  enum specific_constants {
+  enum ppc_specific_constants {
     instruction_size = MacroAssembler::b64_patchable_size
   };
 
@@ -383,7 +383,6 @@ class NativeCallTrampolineStub : public NativeInstruction {
 
   void set_destination(address new_destination);
 };
-
 
 inline bool is_NativeCallTrampolineStub_at(address address) {
   int first_instr = *(int*)address;

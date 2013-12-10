@@ -118,7 +118,7 @@ void NativeCall::set_destination_mt_safe(address dest, bool assert_lock) {
 
     a->bl(trampoline_stub_addr);
   }
-  ICache::invalidate_range(addr_call, code_size);
+  ICache::ppc64_flush_icache_bytes(addr_call, code_size);
 }
 
 address NativeCall::get_trampoline() {
@@ -182,11 +182,13 @@ address NativeMovConstReg::next_instruction_address() const {
 
 intptr_t NativeMovConstReg::data() const {
   address   addr = addr_at(0);
-  CodeBlob* cb = CodeCache::find_blob_unsafe(addr);
 
   if (MacroAssembler::is_load_const_at(addr)) {
     return MacroAssembler::get_const(addr);
-  } else if (MacroAssembler::is_set_narrow_oop(addr, cb->content_begin())) {
+  }
+
+  CodeBlob* cb = CodeCache::find_blob_unsafe(addr);
+  if (MacroAssembler::is_set_narrow_oop(addr, cb->content_begin())) {
     narrowOop no = (narrowOop)MacroAssembler::get_narrow_oop(addr, cb->content_begin());
     return cast_from_oop<intptr_t>(oopDesc::decode_heap_oop(no));
   } else {
@@ -213,19 +215,24 @@ address NativeMovConstReg::set_data_plain(intptr_t data, CodeBlob *cb) {
   } else if (cb != NULL &&
              MacroAssembler::is_calculate_address_from_global_toc_at(addr, cb->content_begin())) {
     // A calculation relative to the global TOC.
-    const int invalidated_range =
-      MacroAssembler::patch_calculate_address_from_global_toc_at(addr, cb->content_begin(),
-                                                                 (address)data);
-    const address start = invalidated_range < 0 ? addr + invalidated_range : addr;
-    // FIXME:
-    const int range = invalidated_range < 0 ? 4 - invalidated_range : 8;
-    ICache::invalidate_range(start, range);
+    if (MacroAssembler::get_address_of_calculate_address_from_global_toc_at(addr, cb->content_begin()) !=
+        (address)data) {
+      const int invalidated_range =
+        MacroAssembler::patch_calculate_address_from_global_toc_at(addr, cb->content_begin(),
+                                                                   (address)data);
+      const address start = invalidated_range < 0 ? addr + invalidated_range : addr;
+      // FIXME:
+      const int range = invalidated_range < 0 ? 4 - invalidated_range : 8;
+      ICache::ppc64_flush_icache_bytes(start, range);
+    }
     next_address = addr + 1 * BytesPerInstWord;
   } else if (MacroAssembler::is_load_const_at(addr)) {
     // A normal 5 instruction load_const code sequence.
-    // This is not mt safe, ok in methods like CodeBuffer::copy_code().
-    MacroAssembler::patch_const(addr, (long)data);
-    ICache::invalidate_range(addr, load_const_instruction_size);
+    if (MacroAssembler::get_const(addr) != (long)data) {
+      // This is not mt safe, ok in methods like CodeBuffer::copy_code().
+      MacroAssembler::patch_const(addr, (long)data);
+      ICache::ppc64_flush_icache_bytes(addr, load_const_instruction_size);
+    }
     next_address = addr + 5 * BytesPerInstWord;
   } else if (MacroAssembler::is_bl(* (int*) addr)) {
     // A single branch-and-link instruction.
@@ -234,7 +241,7 @@ address NativeMovConstReg::set_data_plain(intptr_t data, CodeBlob *cb) {
     CodeBuffer cb(addr, code_size + 1);
     MacroAssembler* a = new MacroAssembler(&cb);
     a->bl((address) data);
-    ICache::invalidate_range(addr, code_size);
+    ICache::ppc64_flush_icache_bytes(addr, code_size);
     next_address = addr + code_size;
   } else {
     ShouldNotReachHere();
@@ -279,12 +286,13 @@ void NativeMovConstReg::set_data(intptr_t data) {
 void NativeMovConstReg::set_narrow_oop(narrowOop data, CodeBlob *code /* = NULL */) {
   address   addr = addr_at(0);
   CodeBlob* cb = (code) ? code : CodeCache::find_blob(instruction_address());
+  if (MacroAssembler::get_narrow_oop(addr, cb->content_begin()) == (long)data) return;
   const int invalidated_range =
     MacroAssembler::patch_set_narrow_oop(addr, cb->content_begin(), (long)data);
   const address start = invalidated_range < 0 ? addr + invalidated_range : addr;
   // FIXME:
   const int range = invalidated_range < 0 ? 4 - invalidated_range : 8;
-  ICache::invalidate_range(start, range);
+  ICache::ppc64_flush_icache_bytes(start, range);
 }
 
 // Do not use an assertion here. Let clients decide whether they only
@@ -292,15 +300,16 @@ void NativeMovConstReg::set_narrow_oop(narrowOop data, CodeBlob *code /* = NULL 
 #ifdef ASSERT
 void NativeMovConstReg::verify() {
   address   addr = addr_at(0);
-  CodeBlob* cb = CodeCache::find_blob_unsafe(addr);   // find_nmethod() asserts if nmethod is zombie.
   if (! MacroAssembler::is_load_const_at(addr) &&
-      ! MacroAssembler::is_load_const_from_method_toc_at(addr) &&
-      ! (cb != NULL && MacroAssembler::is_calculate_address_from_global_toc_at(addr, cb->content_begin())) &&
-      ! (cb != NULL && MacroAssembler::is_set_narrow_oop(addr, cb->content_begin())) &&
-      ! MacroAssembler::is_bl(*((int*) addr))) {
-    tty->print_cr("not a NativeMovConstReg at " PTR_FORMAT, addr);
-    // TODO: PPC port Disassembler::decode(addr, 20, 20, tty);
-    fatal(err_msg("not a NativeMovConstReg at " PTR_FORMAT, addr));
+      ! MacroAssembler::is_load_const_from_method_toc_at(addr)) {
+    CodeBlob* cb = CodeCache::find_blob_unsafe(addr);   // find_nmethod() asserts if nmethod is zombie.
+    if (! (cb != NULL && MacroAssembler::is_calculate_address_from_global_toc_at(addr, cb->content_begin())) &&
+        ! (cb != NULL && MacroAssembler::is_set_narrow_oop(addr, cb->content_begin())) &&
+        ! MacroAssembler::is_bl(*((int*) addr))) {
+      tty->print_cr("not a NativeMovConstReg at " PTR_FORMAT, addr);
+      // TODO: PPC port: Disassembler::decode(addr, 20, 20, tty);
+      fatal(err_msg("not a NativeMovConstReg at " PTR_FORMAT, addr));
+    }
   }
 }
 #endif // ASSERT
@@ -326,7 +335,7 @@ void NativeJump::patch_verified_entry(address entry, address verified_entry, add
       a->illtrap();
     }
   }
-  ICache::invalidate_range(verified_entry, code_size);
+  ICache::ppc64_flush_icache_bytes(verified_entry, code_size);
 }
 
 #ifdef ASSERT

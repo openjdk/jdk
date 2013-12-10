@@ -28,17 +28,17 @@
 #include "runtime/icache.hpp"
 
 // Use inline assembler to implement icache flush.
-int ppc64_flush_icache(address start, int lines, int magic){
+int ICache::ppc64_flush_icache(address start, int lines, int magic) {
   address end = start + (unsigned int)lines*ICache::line_size;
   assert(start <= end, "flush_icache parms");
 
   // store modified cache lines from data cache
-  for (address a=start; a<end; a+=ICache::line_size) {
+  for (address a = start; a < end; a += ICache::line_size) {
     __asm__ __volatile__(
-       "dcbst 0, %0  \n"
-       :
-       : "r" (a)
-       : "memory");
+     "dcbst 0, %0  \n"
+     :
+     : "r" (a)
+     : "memory");
   }
 
   // sync instruction
@@ -49,20 +49,20 @@ int ppc64_flush_icache(address start, int lines, int magic){
      : "memory");
 
   // invalidate respective cache lines in instruction cache
-  for (address a=start; a<end; a+=ICache::line_size) {
+  for (address a = start; a < end; a += ICache::line_size) {
     __asm__ __volatile__(
-       "icbi 0, %0   \n"
-       :
-       : "r" (a)
-       : "memory");
+     "icbi 0, %0   \n"
+     :
+     : "r" (a)
+     : "memory");
   }
 
   // discard fetched instructions
   __asm__ __volatile__(
-                 "isync \n"
-                 :
-                 :
-                 : "memory");
+     "isync \n"
+     :
+     :
+     : "memory");
 
   return magic;
 }
@@ -70,7 +70,7 @@ int ppc64_flush_icache(address start, int lines, int magic){
 void ICacheStubGenerator::generate_icache_flush(ICache::flush_icache_stub_t* flush_icache_stub) {
   StubCodeMark mark(this, "ICache", "flush_icache_stub");
 
-  *flush_icache_stub = (ICache::flush_icache_stub_t)ppc64_flush_icache;
+  *flush_icache_stub = (ICache::flush_icache_stub_t)ICache::ppc64_flush_icache;
 
   // First call to flush itself
   ICache::invalidate_range((address)(*flush_icache_stub), 0);

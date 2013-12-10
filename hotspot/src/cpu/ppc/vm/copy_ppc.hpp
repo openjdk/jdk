@@ -105,10 +105,12 @@ static void copy_conjoint_atomic(T* from, T* to, size_t count) {
 }
 
 static void pd_conjoint_jshorts_atomic(jshort* from, jshort* to, size_t count) {
+  // TODO: contribute optimized version.
   copy_conjoint_atomic<jshort>(from, to, count);
 }
 
 static void pd_conjoint_jints_atomic(jint* from, jint* to, size_t count) {
+  // TODO: contribute optimized version.
   copy_conjoint_atomic<jint>(from, to, count);
 }
 
@@ -125,10 +127,12 @@ static void pd_arrayof_conjoint_bytes(HeapWord* from, HeapWord* to, size_t count
 }
 
 static void pd_arrayof_conjoint_jshorts(HeapWord* from, HeapWord* to, size_t count) {
+  // TODO: contribute optimized version.
   pd_conjoint_jshorts_atomic((jshort*)from, (jshort*)to, count);
 }
 
 static void pd_arrayof_conjoint_jints(HeapWord* from, HeapWord* to, size_t count) {
+  // TODO: contribute optimized version.
   pd_conjoint_jints_atomic((jint*)from, (jint*)to, count);
 }
 

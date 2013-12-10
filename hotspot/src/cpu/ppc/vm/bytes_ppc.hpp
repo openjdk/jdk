@@ -33,7 +33,7 @@ class Bytes: AllStatic {
   // Efficient reading and writing of unaligned unsigned data in platform-specific byte ordering
   // PowerPC needs to check for alignment.
 
-  // can I count on address always being a pointer to an unsigned char? Yes
+  // Can I count on address always being a pointer to an unsigned char? Yes.
 
   // Returns true, if the byte ordering used by Java is different from the nativ byte ordering
   // of the underlying machine. For example, true for Intel x86, False, for Solaris on Sparc.
@@ -140,7 +140,6 @@ class Bytes: AllStatic {
              ((u1*)p)[7] = x;
     }
   }
-
 
   // Efficient reading and writing of unaligned unsigned data in Java byte ordering (i.e. big-endian ordering)
   // (no byte-order reversal is needed since Power CPUs are big-endian oriented).

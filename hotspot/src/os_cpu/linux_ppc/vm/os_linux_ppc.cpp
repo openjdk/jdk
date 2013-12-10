@@ -284,16 +284,18 @@ JVM_handle_linux_signal(int sig,
       // in the zero page, because it is filled with 0x0. We ignore
       // explicit SIGILLs in the zero page.
       if (sig == SIGILL && (pc < (address) 0x200)) {
-        if (TraceTraps)
+        if (TraceTraps) {
           tty->print_raw_cr("SIGILL happened inside zero page.");
+        }
         goto report_and_die;
       }
 
       // Handle signal from NativeJump::patch_verified_entry().
       if (( TrapBasedNotEntrantChecks && sig == SIGTRAP && nativeInstruction_at(pc)->is_sigtrap_zombie_not_entrant()) ||
           (!TrapBasedNotEntrantChecks && sig == SIGILL  && nativeInstruction_at(pc)->is_sigill_zombie_not_entrant())) {
-        if (TraceTraps)
+        if (TraceTraps) {
           tty->print_cr("trap: zombie_not_entrant (%s)", (sig == SIGTRAP) ? "SIGTRAP" : "SIGILL");
+        }
         stub = SharedRuntime::get_handle_wrong_method_stub();
       }
 
@@ -304,24 +306,27 @@ JVM_handle_linux_signal(int sig,
                //   (address)info->si_addr == os::get_standard_polling_page()
                // doesn't work for us. We use:
                ((NativeInstruction*)pc)->is_safepoint_poll()) {
-        if (TraceTraps)
+        if (TraceTraps) {
           tty->print_cr("trap: safepoint_poll at " INTPTR_FORMAT " (SIGSEGV)", pc);
+        }
         stub = SharedRuntime::get_poll_stub(pc);
       }
 
       // SIGTRAP-based ic miss check in compiled code.
       else if (sig == SIGTRAP && TrapBasedICMissChecks &&
                nativeInstruction_at(pc)->is_sigtrap_ic_miss_check()) {
-        if (TraceTraps)
+        if (TraceTraps) {
           tty->print_cr("trap: ic_miss_check at " INTPTR_FORMAT " (SIGTRAP)", pc);
+        }
         stub = SharedRuntime::get_ic_miss_stub();
       }
 
       // SIGTRAP-based implicit null check in compiled code.
       else if (sig == SIGTRAP && TrapBasedNullChecks &&
                nativeInstruction_at(pc)->is_sigtrap_null_check()) {
-        if (TraceTraps)
+        if (TraceTraps) {
           tty->print_cr("trap: null_check at " INTPTR_FORMAT " (SIGTRAP)", pc);
+        }
         stub = SharedRuntime::continuation_for_implicit_exception(thread, pc, SharedRuntime::IMPLICIT_NULL);
       }
 
@@ -329,8 +334,9 @@ JVM_handle_linux_signal(int sig,
       else if (sig == SIGSEGV && ImplicitNullChecks &&
                CodeCache::contains((void*) pc) &&
                !MacroAssembler::needs_explicit_null_check((intptr_t) info->si_addr)) {
-        if (TraceTraps)
+        if (TraceTraps) {
           tty->print_cr("trap: null_check at " INTPTR_FORMAT " (SIGSEGV)", pc);
+        }
         stub = SharedRuntime::continuation_for_implicit_exception(thread, pc, SharedRuntime::IMPLICIT_NULL);
       }
 
@@ -338,8 +344,9 @@ JVM_handle_linux_signal(int sig,
       // SIGTRAP-based implicit range check in compiled code.
       else if (sig == SIGTRAP && TrapBasedRangeChecks &&
                nativeInstruction_at(pc)->is_sigtrap_range_check()) {
-        if (TraceTraps)
+        if (TraceTraps) {
           tty->print_cr("trap: range_check at " INTPTR_FORMAT " (SIGTRAP)", pc);
+        }
         stub = SharedRuntime::continuation_for_implicit_exception(thread, pc, SharedRuntime::IMPLICIT_NULL);
       }
 #endif

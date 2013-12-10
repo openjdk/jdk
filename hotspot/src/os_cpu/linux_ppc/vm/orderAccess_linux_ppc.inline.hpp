@@ -40,26 +40,26 @@
 //
 // - sync            Two-way memory barrier, aka fence.
 // - lwsync          orders  Store|Store,
-//                                Load|Store,
-//                                Load|Load,
-//                       but not Store|Load
+//                            Load|Store,
+//                            Load|Load,
+//                   but not Store|Load
 // - eieio           orders  Store|Store
 // - isync           Invalidates speculatively executed instructions,
-//                       but isync may complete before storage accesses
-//                       associated with instructions preceding isync have
-//                       been performed.
+//                   but isync may complete before storage accesses
+//                   associated with instructions preceding isync have
+//                   been performed.
 //
 // Semantic barrier instructions:
 // (as defined in orderAccess.hpp)
 //
 // - release         orders Store|Store,       (maps to lwsync)
-//                               Load|Store
+//                           Load|Store
 // - acquire         orders  Load|Store,       (maps to lwsync)
-//                               Load|Load
+//                           Load|Load
 // - fence           orders Store|Store,       (maps to sync)
-//                               Load|Store,
-//                               Load|Load,
-//                              Store|Load
+//                           Load|Store,
+//                           Load|Load,
+//                          Store|Load
 //
 
 #define inlasm_sync()     __asm__ __volatile__ ("sync"   : : : "memory");

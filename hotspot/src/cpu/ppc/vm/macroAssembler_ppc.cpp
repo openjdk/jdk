@@ -97,8 +97,10 @@ void MacroAssembler::store_sized_value(Register dst, RegisterOrConstant offs, Re
   }
 }
 
-void MacroAssembler::align(int modulus) {
-  while (offset() % modulus != 0) nop();
+void MacroAssembler::align(int modulus, int max, int rem) {
+  int padding = (rem + modulus - (offset() % modulus)) % modulus;
+  if (padding > max) return;
+  for (int c = (padding >> 2); c > 0; --c) { nop(); }
 }
 
 // Issue instructions that calculate given TOC from global TOC.
@@ -186,16 +188,25 @@ address MacroAssembler::get_address_of_calculate_address_from_global_toc_at(addr
 
 #ifdef _LP64
 // Patch compressed oops or klass constants.
+// Assembler sequence is
+// 1) compressed oops:
+//    lis  rx = const.hi
+//    ori rx = rx | const.lo
+// 2) compressed klass:
+//    lis  rx = const.hi
+//    clrldi rx = rx & 0xFFFFffff // clearMS32b, optional
+//    ori rx = rx | const.lo
+// Clrldi will be passed by.
 int MacroAssembler::patch_set_narrow_oop(address a, address bound, narrowOop data) {
   assert(UseCompressedOops, "Should only patch compressed oops");
 
   const address inst2_addr = a;
   const int inst2 = *(int *)inst2_addr;
 
-  // The relocation points to the second instruction, the addi,
-  // and the addi reads and writes the same register dst.
-  const int dst = inv_rt_field(inst2);
-  assert(is_addi(inst2) && inv_ra_field(inst2) == dst, "must be addi reading and writing dst");
+  // The relocation points to the second instruction, the ori,
+  // and the ori reads and writes the same register dst.
+  const int dst = inv_rta_field(inst2);
+  assert(is_ori(inst2) && inv_rs_field(inst2) == dst, "must be addi reading and writing dst");
   // Now, find the preceding addis which writes to dst.
   int inst1 = 0;
   address inst1_addr = inst2_addr - BytesPerInstWord;
@@ -210,8 +221,9 @@ int MacroAssembler::patch_set_narrow_oop(address a, address bound, narrowOop dat
   int xc = (data >> 16) & 0xffff;
   int xd = (data >>  0) & 0xffff;
 
-  set_imm((int *)inst1_addr,((short)(xc + ((xd & 0x8000) != 0 ? 1 : 0)))); // see enc_load_con_narrow1/2
+  set_imm((int *)inst1_addr, (short)(xc)); // see enc_load_con_narrow_hi/_lo
   set_imm((int *)inst2_addr, (short)(xd));
+
   return (int)((intptr_t)inst2_addr - (intptr_t)inst1_addr);
 }
 
@@ -222,10 +234,10 @@ narrowOop MacroAssembler::get_narrow_oop(address a, address bound) {
   const address inst2_addr = a;
   const int inst2 = *(int *)inst2_addr;
 
-  // The relocation points to the second instruction, the addi,
-  // and the addi reads and writes the same register dst.
-  const int dst = inv_rt_field(inst2);
-  assert(is_addi(inst2) && inv_ra_field(inst2) == dst, "must be addi reading and writing dst");
+  // The relocation points to the second instruction, the ori,
+  // and the ori reads and writes the same register dst.
+  const int dst = inv_rta_field(inst2);
+  assert(is_ori(inst2) && inv_rs_field(inst2) == dst, "must be addi reading and writing dst");
   // Now, find the preceding lis which writes to dst.
   int inst1 = 0;
   address inst1_addr = inst2_addr - BytesPerInstWord;
@@ -238,8 +250,9 @@ narrowOop MacroAssembler::get_narrow_oop(address a, address bound) {
   }
   assert(inst1_found, "inst is not lis");
 
-  uint xl = ((unsigned int) (get_imm(inst2_addr,0) & 0xffff));
-  uint xh = (((((xl & 0x8000) != 0 ? -1 : 0) + get_imm(inst1_addr,0)) & 0xffff) << 16);
+  uint xl = ((unsigned int) (get_imm(inst2_addr, 0) & 0xffff));
+  uint xh = (((get_imm(inst1_addr, 0)) & 0xffff) << 16);
+
   return (int) (xl | xh);
 }
 #endif // _LP64
@@ -252,13 +265,10 @@ void MacroAssembler::load_const_from_method_toc(Register dst, AddressLiteral& a,
   // FIXME: We should insert relocation information for oops at the constant
   // pool entries instead of inserting it at the loads; patching of a constant
   // pool entry should be less expensive.
-  Unimplemented();
-  if (false) {
-    address oop_address = address_constant((address)a.value(), RelocationHolder::none);
-    // Relocate at the pc of the load.
-    relocate(a.rspec());
-    toc_offset = (int)(oop_address - code()->consts()->start());
-  }
+  address oop_address = address_constant((address)a.value(), RelocationHolder::none);
+  // Relocate at the pc of the load.
+  relocate(a.rspec());
+  toc_offset = (int)(oop_address - code()->consts()->start());
   ld_largeoffset_unchecked(dst, toc_offset, toc, true);
 }
 
@@ -532,7 +542,7 @@ void MacroAssembler::set_dest_of_bc_far_at(address instruction_addr, address des
       masm.b(dest);
     }
   }
-  ICache::invalidate_range(instruction_addr, code_size);
+  ICache::ppc64_flush_icache_bytes(instruction_addr, code_size);
 }
 
 // Emit a NOT mt-safe patchable 64 bit absolute call/jump.
@@ -673,7 +683,7 @@ void MacroAssembler::set_dest_of_bxx64_patchable_at(address instruction_addr, ad
   CodeBuffer buf(instruction_addr, code_size);
   MacroAssembler masm(&buf);
   masm.bxx64_patchable(dest, relocInfo::none, link);
-  ICache::invalidate_range(instruction_addr, code_size);
+  ICache::ppc64_flush_icache_bytes(instruction_addr, code_size);
 }
 
 // Get dest address of a bxx64_patchable instruction.
@@ -958,6 +968,14 @@ address MacroAssembler::branch_to(Register function_descriptor, bool and_link, b
 // and restore its value.
 address MacroAssembler::call_c(Register fd) {
   return branch_to(fd, /*and_link=*/true,
+                       /*save toc=*/false,
+                       /*restore toc=*/false,
+                       /*load toc=*/true,
+                       /*load env=*/true);
+}
+
+address MacroAssembler::call_c_and_return_to_caller(Register fd) {
+  return branch_to(fd, /*and_link=*/false,
                        /*save toc=*/false,
                        /*restore toc=*/false,
                        /*load toc=*/true,
@@ -2315,7 +2333,7 @@ void MacroAssembler::set_last_Java_frame(Register last_Java_sp, Register last_Ja
   if (last_Java_pc != noreg)
     std(last_Java_pc, in_bytes(JavaThread::last_Java_pc_offset()), R16_thread);
 
-  // set last_Java_sp last
+  // Set last_Java_sp last.
   std(last_Java_sp, in_bytes(JavaThread::last_Java_sp_offset()), R16_thread);
 }
 
@@ -2452,6 +2470,57 @@ void MacroAssembler::reinit_heapbase(Register d, Register tmp) {
     load_const(R30, Universe::narrow_ptrs_base_addr(), tmp);
     ld(R30, 0, R30);
   }
+}
+
+// Clear Array
+// Kills both input registers. tmp == R0 is allowed.
+void MacroAssembler::clear_memory_doubleword(Register base_ptr, Register cnt_dwords, Register tmp) {
+  // Procedure for large arrays (uses data cache block zero instruction).
+    Label startloop, fast, fastloop, small_rest, restloop, done;
+    const int cl_size         = VM_Version::get_cache_line_size(),
+              cl_dwords       = cl_size>>3,
+              cl_dw_addr_bits = exact_log2(cl_dwords),
+              dcbz_min        = 1;                     // Min count of dcbz executions, needs to be >0.
+
+//2:
+    cmpdi(CCR1, cnt_dwords, ((dcbz_min+1)<<cl_dw_addr_bits)-1); // Big enough? (ensure >=dcbz_min lines included).
+    blt(CCR1, small_rest);                                      // Too small.
+    rldicl_(tmp, base_ptr, 64-3, 64-cl_dw_addr_bits);           // Extract dword offset within first cache line.
+    beq(CCR0, fast);                                            // Already 128byte aligned.
+
+    subfic(tmp, tmp, cl_dwords);
+    mtctr(tmp);                        // Set ctr to hit 128byte boundary (0<ctr<cl_dwords).
+    subf(cnt_dwords, tmp, cnt_dwords); // rest.
+    li(tmp, 0);
+//10:
+  bind(startloop);                     // Clear at the beginning to reach 128byte boundary.
+    std(tmp, 0, base_ptr);             // Clear 8byte aligned block.
+    addi(base_ptr, base_ptr, 8);
+    bdnz(startloop);
+//13:
+  bind(fast);                                  // Clear 128byte blocks.
+    srdi(tmp, cnt_dwords, cl_dw_addr_bits);    // Loop count for 128byte loop (>0).
+    andi(cnt_dwords, cnt_dwords, cl_dwords-1); // Rest in dwords.
+    mtctr(tmp);                                // Load counter.
+//16:
+  bind(fastloop);
+    dcbz(base_ptr);                    // Clear 128byte aligned block.
+    addi(base_ptr, base_ptr, cl_size);
+    bdnz(fastloop);
+    if (InsertEndGroupPPC64) { endgroup(); } else { nop(); }
+//20:
+  bind(small_rest);
+    cmpdi(CCR0, cnt_dwords, 0);        // size 0?
+    beq(CCR0, done);                   // rest == 0
+    li(tmp, 0);
+    mtctr(cnt_dwords);                 // Load counter.
+//24:
+  bind(restloop);                      // Clear rest.
+    std(tmp, 0, base_ptr);             // Clear 8byte aligned block.
+    addi(base_ptr, base_ptr, 8);
+    bdnz(restloop);
+//27:
+  bind(done);
 }
 
 /////////////////////////////////////////// String intrinsics ////////////////////////////////////////////
@@ -2926,12 +2995,11 @@ void MacroAssembler::verify_oop(Register oop, const char* msg) {
   if (!VerifyOops) {
     return;
   }
-  // will be preserved.
+  // Will be preserved.
   Register tmp = R11;
   assert(oop != tmp, "precondition");
   unsigned int nbytes_save = 10*8; // 10 volatile gprs
-  address/* FunctionDescriptor** */fd =
-    StubRoutines::verify_oop_subroutine_entry_address();
+  address/* FunctionDescriptor** */fd = StubRoutines::verify_oop_subroutine_entry_address();
   // save tmp
   mr(R0, tmp);
   // kill tmp

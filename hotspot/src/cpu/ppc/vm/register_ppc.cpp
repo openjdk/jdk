@@ -44,7 +44,7 @@ const char* RegisterImpl::name() const {
 
 const char* ConditionRegisterImpl::name() const {
   const char* names[number_of_registers] = {
-    "CR0",  "CR1",  "CR2",  "CR3",  "CCR4",  "CCR5",  "CCR6",  "CCR7"
+    "CR0",  "CR1",  "CR2",  "CR3",  "CR4",  "CR5",  "CR6",  "CR7"
   };
   return is_valid() ? names[encoding()] : "cnoreg";
 }
@@ -61,7 +61,7 @@ const char* FloatRegisterImpl::name() const {
 
 const char* SpecialRegisterImpl::name() const {
   const char* names[number_of_registers] = {
-    "SR_XER",  "SR_LR",   "SR_CTR",  "SR_VRSAVE",   "R1_SPEFSCR",  "SR_PPR"
+    "SR_XER", "SR_LR", "SR_CTR", "SR_VRSAVE", "SR_SPEFSCR", "SR_PPR"
   };
   return is_valid() ? names[encoding()] : "snoreg";
 }

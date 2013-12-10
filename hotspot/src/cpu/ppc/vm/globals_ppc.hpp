@@ -62,6 +62,13 @@ define_pd_global(uintx, TypeProfileLevel, 0);
 
 // Platform dependent flag handling: flags only defined on this platform.
 #define ARCH_FLAGS(develop, product, diagnostic, experimental, notproduct)  \
+                                                                            \
+  /* Load poll address from thread. This is used to implement per-thread */ \
+  /* safepoints on platforms != IA64. */                                    \
+  product(bool, LoadPollAddressFromThread, false,                           \
+          "Load polling page address from thread object (required for "     \
+          "per-thread safepoints on platforms != IA64)")                    \
+                                                                            \
   product(uintx, PowerArchitecturePPC64, 0,                                 \
           "CPU Version: x for PowerX. Currently recognizes Power5 to "      \
           "Power7. Default is 0. CPUs newer than Power7 will be "           \
@@ -88,6 +95,14 @@ define_pd_global(uintx, TypeProfileLevel, 0);
                                                                             \
   product(bool, UseStaticBranchPredictionInCompareAndSwapPPC64, true,       \
           "Use static branch prediction hints in CAS operations.")          \
+  product(bool, UseStaticBranchPredictionForUncommonPathsPPC64, false,      \
+          "Use static branch prediction hints for uncommon paths.")         \
+                                                                            \
+  product(bool, UsePower6SchedulerPPC64, false,                             \
+          "Use Power6 Scheduler.")                                          \
+                                                                            \
+  product(bool, InsertEndGroupPPC64, false,                                 \
+          "Insert EndGroup instructions to optimize for Power6.")           \
                                                                             \
   /* Trap based checks. */                                                  \
   /* Trap based checks use the ppc trap instructions to check certain */    \
@@ -106,7 +121,6 @@ define_pd_global(uintx, TypeProfileLevel, 0);
                                                                             \
   product(bool, ZapMemory, false, "Write 0x0101... to empty memory."        \
           " Use this to ease debugging.")                                   \
-
 
 
 #endif // CPU_PPC_VM_GLOBALS_PPC_HPP

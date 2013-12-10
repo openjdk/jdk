@@ -146,14 +146,14 @@ class StubGenerator: public StubCodeGenerator {
       // FIXME: use round_to() here
       __ andi_(r_frame_alignment_in_bytes, r_arg_argument_count, 1);
       __ sldi(r_frame_alignment_in_bytes,
-                  r_frame_alignment_in_bytes, Interpreter::logStackElementSize);
+              r_frame_alignment_in_bytes, Interpreter::logStackElementSize);
 
       // size = unaligned size of arguments + top abi's size
       __ addi(r_frame_size, r_argument_size_in_bytes,
               frame::top_ijava_frame_abi_size);
       // size += arguments alignment
       __ add(r_frame_size,
-                 r_frame_size, r_frame_alignment_in_bytes);
+             r_frame_size, r_frame_alignment_in_bytes);
       // size += size of call_stub locals
       __ addi(r_frame_size,
               r_frame_size, frame::entry_frame_locals_size);
@@ -179,7 +179,7 @@ class StubGenerator: public StubCodeGenerator {
       __ addi(r_top_of_arguments_addr,
               R1_SP, frame::top_ijava_frame_abi_size);
       __ add(r_top_of_arguments_addr,
-                 r_top_of_arguments_addr, r_frame_alignment_in_bytes);
+             r_top_of_arguments_addr, r_frame_alignment_in_bytes);
 
       // any arguments to copy?
       __ cmpdi(CCR0, r_arg_argument_count, 0);
@@ -229,22 +229,23 @@ class StubGenerator: public StubCodeGenerator {
 
       // Register state on entry to frame manager / native entry:
       //
-      //   R17_tos     -  intptr_t*    sender tos (prepushed) Lesp = (SP) + copied_arguments_offset - 8
+      //   tos         -  intptr_t*    sender tos (prepushed) Lesp = (SP) + copied_arguments_offset - 8
       //   R19_method  -  Method
       //   R16_thread  -  JavaThread*
 
-      // R17_tos must point to last argument - element_size.
-      __ addi(R17_tos, r_top_of_arguments_addr, -Interpreter::stackElementSize);
+      // Tos must point to last argument - element_size.
+      const Register tos = R17_tos;
+      __ addi(tos, r_top_of_arguments_addr, -Interpreter::stackElementSize);
 
       // initialize call_stub locals (step 2)
-      // now save R17_tos as arguments_tos_address
-      __ std(R17_tos, _entry_frame_locals_neg(arguments_tos_address), r_entryframe_fp);
+      // now save tos as arguments_tos_address
+      __ std(tos, _entry_frame_locals_neg(arguments_tos_address), r_entryframe_fp);
 
       // load argument registers for call
       __ mr(R19_method, r_arg_method);
       __ mr(R16_thread, r_arg_thread);
-      assert(R17_tos != r_arg_method, "trashed r_arg_method");
-      assert(R17_tos != r_arg_thread && R19_method != r_arg_thread, "trashed r_arg_thread");
+      assert(tos != r_arg_method, "trashed r_arg_method");
+      assert(tos != r_arg_thread && R19_method != r_arg_thread, "trashed r_arg_thread");
 
       // Set R15_prev_state to 0 for simplifying checks in callee.
       __ li(R15_prev_state, 0);
@@ -274,7 +275,7 @@ class StubGenerator: public StubCodeGenerator {
       // Do a light-weight C-call here, r_new_arg_entry holds the address
       // of the interpreter entry point (frame manager or native entry)
       // and save runtime-value of LR in return_address.
-      assert(r_new_arg_entry != R17_tos && r_new_arg_entry != R19_method && r_new_arg_entry != R16_thread,
+      assert(r_new_arg_entry != tos && r_new_arg_entry != R19_method && r_new_arg_entry != R16_thread,
              "trashed r_new_arg_entry");
       return_address = __ call_stub(r_new_arg_entry);
     }
@@ -326,8 +327,8 @@ class StubGenerator: public StubCodeGenerator {
       // T_OBJECT, T_LONG, T_FLOAT, or T_DOUBLE is treated as T_INT.
       __ cmpwi(CCR0, r_arg_result_type, T_OBJECT);
       __ cmpwi(CCR1, r_arg_result_type, T_LONG);
-      __ cmpwi(CCR5,  r_arg_result_type, T_FLOAT);
-      __ cmpwi(CCR6,  r_arg_result_type, T_DOUBLE);
+      __ cmpwi(CCR5, r_arg_result_type, T_FLOAT);
+      __ cmpwi(CCR6, r_arg_result_type, T_DOUBLE);
 
       // restore non-volatile registers
       __ restore_nonvolatile_gprs(R1_SP, _spill_nonvolatiles_neg(r14));
@@ -345,8 +346,8 @@ class StubGenerator: public StubCodeGenerator {
 
       __ beq(CCR0, ret_is_object);
       __ beq(CCR1, ret_is_long);
-      __ beq(CCR5,  ret_is_float);
-      __ beq(CCR6,  ret_is_double);
+      __ beq(CCR5, ret_is_float);
+      __ beq(CCR6, ret_is_double);
 
       // default:
       __ stw(R3_RET, 0, r_arg_result_addr);
@@ -614,6 +615,17 @@ class StubGenerator: public StubCodeGenerator {
         if (!dest_uninitialized) {
           const int spill_slots = 4 * wordSize;
           const int frame_size  = frame::abi_112_size + spill_slots;
+          Label filtered;
+
+          // Is marking active?
+          if (in_bytes(PtrQueue::byte_width_of_active()) == 4) {
+            __ lwz(Rtmp1, in_bytes(JavaThread::satb_mark_queue_offset() + PtrQueue::byte_offset_of_active()), R16_thread);
+          } else {
+            guarantee(in_bytes(PtrQueue::byte_width_of_active()) == 1, "Assumption");
+            __ lbz(Rtmp1, in_bytes(JavaThread::satb_mark_queue_offset() + PtrQueue::byte_offset_of_active()), R16_thread);
+          }
+          __ cmpdi(CCR0, Rtmp1, 0);
+          __ beq(CCR0, filtered);
 
           __ save_LR_CR(R0);
           __ push_frame_abi112(spill_slots, R0);
@@ -628,6 +640,8 @@ class StubGenerator: public StubCodeGenerator {
           __ ld(count, frame_size - 3 * wordSize, R1_SP);
           __ pop_frame();
           __ restore_LR_CR(R0);
+
+          __ bind(filtered);
         }
         break;
       case BarrierSet::CardTableModRef:
@@ -648,21 +662,28 @@ class StubGenerator: public StubCodeGenerator {
   //
   //  The input registers and R0 are overwritten.
   //
-  void gen_write_ref_array_post_barrier(Register addr, Register count, Register tmp) {
+  void gen_write_ref_array_post_barrier(Register addr, Register count, Register tmp, bool branchToEnd) {
     BarrierSet* const bs = Universe::heap()->barrier_set();
 
     switch (bs->kind()) {
       case BarrierSet::G1SATBCT:
       case BarrierSet::G1SATBCTLogging:
         {
-          __ save_LR_CR(R0);
-          // We need this frame only that the callee can spill LR/CR.
-          __ push_frame_abi112(0, R0);
-
-          __ call_VM_leaf(CAST_FROM_FN_PTR(address, BarrierSet::static_write_ref_array_post), addr, count);
-
-          __ pop_frame();
-          __ restore_LR_CR(R0);
+          if (branchToEnd) {
+            __ save_LR_CR(R0);
+            // We need this frame only to spill LR.
+            __ push_frame_abi112(0, R0);
+            __ call_VM_leaf(CAST_FROM_FN_PTR(address, BarrierSet::static_write_ref_array_post), addr, count);
+            __ pop_frame();
+            __ restore_LR_CR(R0);
+          } else {
+            // Tail call: fake call from stub caller by branching without linking.
+            address entry_point = (address)CAST_FROM_FN_PTR(address, BarrierSet::static_write_ref_array_post);
+            __ mr_if_needed(R3_ARG1, addr);
+            __ mr_if_needed(R4_ARG2, count);
+            __ load_const(R11, entry_point, R0);
+            __ call_c_and_return_to_caller(R11);
+          }
         }
         break;
       case BarrierSet::CardTableModRef:
@@ -697,9 +718,12 @@ class StubGenerator: public StubCodeGenerator {
           __ addi(addr, addr, 1);
           __ bdnz(Lstore_loop);
           __ bind(Lskip_loop);
+
+          if (!branchToEnd) __ blr();
         }
       break;
       case BarrierSet::ModRef:
+        if (!branchToEnd) __ blr();
         break;
       default:
         ShouldNotReachHere();
@@ -847,30 +871,28 @@ class StubGenerator: public StubCodeGenerator {
   // The code is implemented(ported from sparc) as we believe it benefits JVM98, however
   // tracing(-XX:+TraceOptimizeFill) shows the intrinsic replacement doesn't happen at all!
   //
-  // Source code in function is_range_check_if() shows OptimizeFill relaxed the condition
+  // Source code in function is_range_check_if() shows that OptimizeFill relaxed the condition
   // for turning on loop predication optimization, and hence the behavior of "array range check"
   // and "loop invariant check" could be influenced, which potentially boosted JVM98.
   //
-  // We leave the code here and see if Oracle has updates in later releases(later than HS20).
-  //
-  //  Generate stub for disjoint short fill.  If "aligned" is true, the
-  //  "to" address is assumed to be heapword aligned.
+  // Generate stub for disjoint short fill. If "aligned" is true, the
+  // "to" address is assumed to be heapword aligned.
   //
   // Arguments for generated stub:
-  //      to:    R3_ARG1
-  //      value: R4_ARG2
-  //      count: R5_ARG3 treated as signed
+  //   to:    R3_ARG1
+  //   value: R4_ARG2
+  //   count: R5_ARG3 treated as signed
   //
   address generate_fill(BasicType t, bool aligned, const char* name) {
     StubCodeMark mark(this, "StubRoutines", name);
     address start = __ emit_fd();
 
-    const Register to        = R3_ARG1;   // source array address
-    const Register value     = R4_ARG2;   // fill value
-    const Register count     = R5_ARG3;   // elements count
-    const Register temp      = R6_ARG4;   // temp register
+    const Register to    = R3_ARG1;   // source array address
+    const Register value = R4_ARG2;   // fill value
+    const Register count = R5_ARG3;   // elements count
+    const Register temp  = R6_ARG4;   // temp register
 
-    //assert_clean_int(count, O3);     // Make sure 'count' is clean int.
+    //assert_clean_int(count, O3);    // Make sure 'count' is clean int.
 
     Label L_exit, L_skip_align1, L_skip_align2, L_fill_byte;
     Label L_fill_2_bytes, L_fill_4_bytes, L_fill_elements, L_fill_32_bytes;
@@ -879,31 +901,31 @@ class StubGenerator: public StubCodeGenerator {
     switch (t) {
        case T_BYTE:
         shift = 2;
-        // clone bytes (zero extend not needed because store instructions below ignore high order bytes)
+        // Clone bytes (zero extend not needed because store instructions below ignore high order bytes).
         __ rldimi(value, value, 8, 48);     // 8 bit -> 16 bit
-        __ cmpdi(CCR0, count, 2<<shift);    // Short arrays (< 8 bytes) fill by element
+        __ cmpdi(CCR0, count, 2<<shift);    // Short arrays (< 8 bytes) fill by element.
         __ blt(CCR0, L_fill_elements);
         __ rldimi(value, value, 16, 32);    // 16 bit -> 32 bit
         break;
        case T_SHORT:
         shift = 1;
-        // clone bytes (zero extend not needed because store instructions below ignore high order bytes)
+        // Clone bytes (zero extend not needed because store instructions below ignore high order bytes).
         __ rldimi(value, value, 16, 32);    // 16 bit -> 32 bit
-        __ cmpdi(CCR0, count, 2<<shift);    // Short arrays (< 8 bytes) fill by element
+        __ cmpdi(CCR0, count, 2<<shift);    // Short arrays (< 8 bytes) fill by element.
         __ blt(CCR0, L_fill_elements);
         break;
       case T_INT:
         shift = 0;
-        __ cmpdi(CCR0, count, 2<<shift);    // Short arrays (< 8 bytes) fill by element
+        __ cmpdi(CCR0, count, 2<<shift);    // Short arrays (< 8 bytes) fill by element.
         __ blt(CCR0, L_fill_4_bytes);
         break;
       default: ShouldNotReachHere();
     }
 
     if (!aligned && (t == T_BYTE || t == T_SHORT)) {
-      // align source address at 4 bytes address boundary
+      // Align source address at 4 bytes address boundary.
       if (t == T_BYTE) {
-        // One byte misalignment happens only for byte arrays
+        // One byte misalignment happens only for byte arrays.
         __ andi_(temp, to, 1);
         __ beq(CCR0, L_skip_align1);
         __ stb(value, 0, to);
@@ -930,12 +952,12 @@ class StubGenerator: public StubCodeGenerator {
       __ bind(L_fill_32_bytes);
     }
 
-    __ li(temp, 8<<shift);              // prepare for 32 byte loop
-    // clone bytes int->long as above
-    __ rldimi(value, value, 32, 0);     // 32 bit -> 64 bit
+    __ li(temp, 8<<shift);                  // Prepare for 32 byte loop.
+    // Clone bytes int->long as above.
+    __ rldimi(value, value, 32, 0);         // 32 bit -> 64 bit
 
     Label L_check_fill_8_bytes;
-    // Fill 32-byte chunks
+    // Fill 32-byte chunks.
     __ subf_(count, temp, count);
     __ blt(CCR0, L_check_fill_8_bytes);
 
@@ -945,7 +967,7 @@ class StubGenerator: public StubCodeGenerator {
 
     __ std(value, 0, to);
     __ std(value, 8, to);
-    __ subf_(count, temp, count); // update count
+    __ subf_(count, temp, count);           // Update count.
     __ std(value, 16, to);
     __ std(value, 24, to);
 
@@ -968,7 +990,7 @@ class StubGenerator: public StubCodeGenerator {
     __ addi(to, to, 8);
     __ bge(CCR0, L_fill_8_bytes_loop);
 
-    // fill trailing 4 bytes
+    // Fill trailing 4 bytes.
     __ bind(L_fill_4_bytes);
     __ andi_(temp, count, 1<<shift);
     __ beq(CCR0, L_fill_2_bytes);
@@ -976,14 +998,14 @@ class StubGenerator: public StubCodeGenerator {
     __ stw(value, 0, to);
     if (t == T_BYTE || t == T_SHORT) {
       __ addi(to, to, 4);
-      // fill trailing 2 bytes
+      // Fill trailing 2 bytes.
       __ bind(L_fill_2_bytes);
       __ andi_(temp, count, 1<<(shift-1));
       __ beq(CCR0, L_fill_byte);
       __ sth(value, 0, to);
       if (t == T_BYTE) {
         __ addi(to, to, 2);
-        // fill trailing byte
+        // Fill trailing byte.
         __ bind(L_fill_byte);
         __ andi_(count, count, 1);
         __ beq(CCR0, L_exit);
@@ -997,7 +1019,7 @@ class StubGenerator: public StubCodeGenerator {
     __ bind(L_exit);
     __ blr();
 
-    // Handle copies less than 8 bytes.  Int is handled elsewhere.
+    // Handle copies less than 8 bytes. Int is handled elsewhere.
     if (t == T_BYTE) {
       __ bind(L_fill_elements);
       Label L_fill_2, L_fill_4;
@@ -1039,7 +1061,7 @@ class StubGenerator: public StubCodeGenerator {
   }
 
 
-  // Generate overlap test for array copy stubs
+  // Generate overlap test for array copy stubs.
   //
   // Input:
   //   R3_ARG1    -  from
@@ -1873,10 +1895,7 @@ class StubGenerator: public StubCodeGenerator {
       generate_conjoint_long_copy_core(aligned);
     }
 
-    gen_write_ref_array_post_barrier(R9_ARG7, R10_ARG8, R11_scratch1);
-
-    __ blr();
-
+    gen_write_ref_array_post_barrier(R9_ARG7, R10_ARG8, R11_scratch1, /*branchToEnd*/ false);
     return start;
   }
 
@@ -1906,9 +1925,7 @@ class StubGenerator: public StubCodeGenerator {
       generate_disjoint_long_copy_core(aligned);
     }
 
-    gen_write_ref_array_post_barrier(R9_ARG7, R10_ARG8, R11_scratch1);
-
-    __ blr();
+    gen_write_ref_array_post_barrier(R9_ARG7, R10_ARG8, R11_scratch1, /*branchToEnd*/ false);
 
     return start;
   }

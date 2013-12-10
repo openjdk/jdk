@@ -58,8 +58,25 @@ inline void MacroAssembler::round_to(Register r, int modulus) {
 
 // Move register if destination register and target register are different.
 inline void MacroAssembler::mr_if_needed(Register rd, Register rs) {
-  if(rs !=rd) mr(rd, rs);
+  if (rs != rd) mr(rd, rs);
 }
+inline void MacroAssembler::fmr_if_needed(FloatRegister rd, FloatRegister rs) {
+  if (rs != rd) fmr(rd, rs);
+}
+inline void MacroAssembler::endgroup_if_needed(bool needed) {
+  if (needed) {
+    endgroup();
+  }
+}
+
+inline void MacroAssembler::membar(int bits) {
+  // TODO: use elemental_membar(bits) for Power 8 and disable optimization of acquire-release
+  // (Matcher::post_membar_release where we use PPC64_ONLY(xop == Op_MemBarRelease ||))
+  if (bits & StoreLoad) sync(); else lwsync();
+}
+inline void MacroAssembler::release() { membar(LoadStore | StoreStore); }
+inline void MacroAssembler::acquire() { membar(LoadLoad | LoadStore); }
+inline void MacroAssembler::fence()   { membar(LoadLoad | LoadStore | StoreLoad | StoreStore); }
 
 // Address of the global TOC.
 inline address MacroAssembler::global_toc() {
@@ -117,13 +134,12 @@ inline bool MacroAssembler::is_calculate_address_from_global_toc_at(address a, a
 inline bool MacroAssembler::is_set_narrow_oop(address a, address bound) {
   const address inst2_addr = a;
   const int inst2 = *(int *)a;
+  // The relocation points to the second instruction, the ori.
+  if (!is_ori(inst2)) return false;
 
-  // The relocation points to the second instruction, the addi.
-  if (!is_addi(inst2)) return false;
-
-  // The addi reads and writes the same register dst.
-  const int dst = inv_rt_field(inst2);
-  if (inv_ra_field(inst2) != dst) return false;
+  // The ori reads and writes the same register dst.
+  const int dst = inv_rta_field(inst2);
+  if (inv_rs_field(inst2) != dst) return false;
 
   // Now, find the preceding addis which writes to dst.
   int inst1 = 0;
@@ -266,9 +282,10 @@ inline void MacroAssembler::trap_ic_miss_check(Register a, Register b) {
 // Do an explicit null check if access to a+offset will not raise a SIGSEGV.
 // Either issue a trap instruction that raises SIGTRAP, or do a compare that
 // branches to exception_entry.
-// No support for compressed oops (base page of heap).  Does not distinguish
+// No support for compressed oops (base page of heap). Does not distinguish
 // loads and stores.
-inline void MacroAssembler::null_check_throw(Register a, int offset, Register temp_reg, address exception_entry) {
+inline void MacroAssembler::null_check_throw(Register a, int offset, Register temp_reg,
+                                             address exception_entry) {
   if (!ImplicitNullChecks || needs_explicit_null_check(offset) || !os::zero_page_read_protected()) {
     if (TrapBasedNullChecks) {
       assert(UseSIGTRAP, "sanity");
@@ -285,24 +302,13 @@ inline void MacroAssembler::null_check_throw(Register a, int offset, Register te
   }
 }
 
-inline void MacroAssembler::ld_with_trap_null_check(Register d, int si16, Register s1) {
+inline void MacroAssembler::load_with_trap_null_check(Register d, int si16, Register s1) {
   if (!os::zero_page_read_protected()) {
     if (TrapBasedNullChecks) {
       trap_null_check(s1);
     }
   }
   ld(d, si16, s1);
-}
-
-// Attention: No null check for loaded uncompressed OOP. Can be used for loading klass field.
-inline void MacroAssembler::load_heap_oop_with_trap_null_check(Register d, RegisterOrConstant si16,
-                                                                   Register s1) {
-  if ( !os::zero_page_read_protected()) {
-    if (TrapBasedNullChecks) {
-      trap_null_check(s1);
-    }
-  }
-  load_heap_oop_not_null(d, si16, s1);
 }
 
 inline void MacroAssembler::load_heap_oop_not_null(Register d, RegisterOrConstant offs, Register s1) {

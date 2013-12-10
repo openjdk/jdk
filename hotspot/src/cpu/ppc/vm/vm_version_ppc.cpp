@@ -89,16 +89,17 @@ void VM_Version::initialize() {
   }
 
   // On Power6 test for section size.
-  if (PowerArchitecturePPC64 == 6)
+  if (PowerArchitecturePPC64 == 6) {
     determine_section_size();
-  // TODO: PPC port else
+  // TODO: PPC port } else {
   // TODO: PPC port PdScheduling::power6SectorSize = 0x20;
+  }
 
   MaxVectorSize = 8;
 #endif
 
   // Create and print feature-string.
-  char buf[(num_features+1) * 16]; // max 16 chars per feature
+  char buf[(num_features+1) * 16]; // Max 16 chars per feature.
   jio_snprintf(buf, sizeof(buf),
                "ppc64%s%s%s%s%s%s%s%s",
                (has_fsqrt()   ? " fsqrt"   : ""),
@@ -127,21 +128,21 @@ void VM_Version::initialize() {
   if (FLAG_IS_DEFAULT(AllocatePrefetchStyle)) AllocatePrefetchStyle = 1;
 
   if (AllocatePrefetchStyle == 4) {
-    AllocatePrefetchStepSize = cache_line_size; // need exact value
-    if (FLAG_IS_DEFAULT(AllocatePrefetchLines)) AllocatePrefetchLines = 12; // use larger blocks by default
-    if (AllocatePrefetchDistance < 0) AllocatePrefetchDistance = 2*cache_line_size; // default is not defined ?
+    AllocatePrefetchStepSize = cache_line_size; // Need exact value.
+    if (FLAG_IS_DEFAULT(AllocatePrefetchLines)) AllocatePrefetchLines = 12; // Use larger blocks by default.
+    if (AllocatePrefetchDistance < 0) AllocatePrefetchDistance = 2*cache_line_size; // Default is not defined?
   } else {
     if (cache_line_size > AllocatePrefetchStepSize) AllocatePrefetchStepSize = cache_line_size;
-    if (FLAG_IS_DEFAULT(AllocatePrefetchLines)) AllocatePrefetchLines = 3; // Optimistic value
-    if (AllocatePrefetchDistance < 0) AllocatePrefetchDistance = 3*cache_line_size; // default is not defined ?
+    if (FLAG_IS_DEFAULT(AllocatePrefetchLines)) AllocatePrefetchLines = 3; // Optimistic value.
+    if (AllocatePrefetchDistance < 0) AllocatePrefetchDistance = 3*cache_line_size; // Default is not defined?
   }
 
   assert(AllocatePrefetchLines > 0, "invalid value");
   if (AllocatePrefetchLines < 1) // Set valid value in product VM.
-    AllocatePrefetchLines = 1; // Conservative value
+    AllocatePrefetchLines = 1; // Conservative value.
 
   if (AllocatePrefetchStyle == 3 && AllocatePrefetchDistance < cache_line_size)
-    AllocatePrefetchStyle = 1; // fall back if inappropriate
+    AllocatePrefetchStyle = 1; // Fall back if inappropriate.
 
   assert(AllocatePrefetchStyle >= 0, "AllocatePrefetchStyle should be positive");
 }
@@ -160,13 +161,13 @@ void VM_Version::determine_section_size() {
 
   const int code_size = (2* unroll * 32 + 100)*BytesPerInstWord;
 
-  // Allocate space for the code
+  // Allocate space for the code.
   ResourceMark rm;
   CodeBuffer cb("detect_section_size", code_size, 0);
   MacroAssembler* a = new MacroAssembler(&cb);
 
   uint32_t *code = (uint32_t *)a->pc();
-  // emit code.
+  // Emit code.
   void (*test1)() = (void(*)())(void *)a->emit_fd();
 
   Label l1;
@@ -189,58 +190,58 @@ void VM_Version::determine_section_size() {
 
     // ;;  1
     a->nop();                   // 5
-    a->fmr(F6, F6);     // 6
-    a->fmr(F7, F7);     // 7
+    a->fmr(F6, F6);             // 6
+    a->fmr(F7, F7);             // 7
     a->endgroup();              // 8
     // ------- sector 8 ------------
 
     // ;;  2
     a->nop();                   // 9
     a->nop();                   // 10
-    a->fmr(F8, F8);     // 11
-    a->fmr(F9, F9);     // 12
+    a->fmr(F8, F8);             // 11
+    a->fmr(F9, F9);             // 12
 
     // ;;  3
     a->nop();                   // 13
-    a->fmr(F10, F10);   // 14
-    a->fmr(F11, F11);   // 15
+    a->fmr(F10, F10);           // 14
+    a->fmr(F11, F11);           // 15
     a->endgroup();              // 16
     // -------- sector 16 -------------
 
     // ;;  4
     a->nop();                   // 17
     a->nop();                   // 18
-    a->fmr(F15, F15);   // 19
-    a->fmr(F16, F16);   // 20
+    a->fmr(F15, F15);           // 19
+    a->fmr(F16, F16);           // 20
 
     // ;;  5
     a->nop();                   // 21
-    a->fmr(F17, F17);   // 22
-    a->fmr(F18, F18);   // 23
+    a->fmr(F17, F17);           // 22
+    a->fmr(F18, F18);           // 23
     a->endgroup();              // 24
     // ------- sector 24  ------------
 
     // ;;  6
     a->nop();                   // 25
     a->nop();                   // 26
-    a->fmr(F19, F19);     // 27
-    a->fmr(F20, F20);     // 28
+    a->fmr(F19, F19);           // 27
+    a->fmr(F20, F20);           // 28
 
     // ;;  7
     a->nop();                   // 29
-    a->fmr(F21, F21);   // 30
-    a->fmr(F22, F22);   // 31
+    a->fmr(F21, F21);           // 30
+    a->fmr(F22, F22);           // 31
     a->brnop0();                // 32
 
     // ------- sector 32 ------------
   }
 
   // ;; 8
-  a->cmpdi(CCR0, R4, unroll);// 33
-  a->bge(CCR0, l1);         // 34
+  a->cmpdi(CCR0, R4, unroll);   // 33
+  a->bge(CCR0, l1);             // 34
   a->blr();
 
-  // emit code.
+  // Emit code.
   void (*test2)() = (void(*)())(void *)a->emit_fd();
   // uint32_t *code = (uint32_t *)a->pc();
 
@@ -382,39 +383,40 @@ void VM_Version::determine_section_size() {
 #endif // COMPILER2
 
 void VM_Version::determine_features() {
-  const int code_size = (num_features+1+2*7)*BytesPerInstWord; // 7 InstWords for each call (function descriptor + blr instruction)
+  // 7 InstWords for each call (function descriptor + blr instruction).
+  const int code_size = (num_features+1+2*7)*BytesPerInstWord;
   int features = 0;
 
   // create test area
-  enum { BUFFER_SIZE = 2*4*K }; // needs to be >=2* max cache line size (cache line size can't exceed min page size)
+  enum { BUFFER_SIZE = 2*4*K }; // Needs to be >=2* max cache line size (cache line size can't exceed min page size).
   char test_area[BUFFER_SIZE];
   char *mid_of_test_area = &test_area[BUFFER_SIZE>>1];
 
-  // Allocate space for the code
+  // Allocate space for the code.
   ResourceMark rm;
   CodeBuffer cb("detect_cpu_features", code_size, 0);
   MacroAssembler* a = new MacroAssembler(&cb);
 
-  // emit code.
+  // Emit code.
   void (*test)(address addr, uint64_t offset)=(void(*)(address addr, uint64_t offset))(void *)a->emit_fd();
   uint32_t *code = (uint32_t *)a->pc();
   // Don't use R0 in ldarx.
-  // keep R3_ARG1 = R3 unmodified, it contains &field (see below)
-  // keep R4_ARG2 = R4 unmodified, it contains offset = 0 (see below)
-  a->fsqrt(F3, F4);                         // code[0] -> fsqrt_m
-  a->isel(R7, R5, R6, 0);                   // code[1] -> isel_m
-  a->ldarx_unchecked(R7, R3_ARG1, R4_ARG2, 1);// code[2] -> lxarx_m
-  a->cmpb(R7, R5, R6);                      // code[3] -> bcmp
-  //a->mftgpr(R7, F3);                      // code[4] -> mftgpr
-  a->popcntb(R7, R5);                       // code[5] -> popcntb
-  a->popcntw(R7, R5);                       // code[6] -> popcntw
-  a->fcfids(F3, F4);                        // code[7] -> fcfids
-  a->vand(VR0, VR0, VR0);                   // code[8] -> vand
+  // Keep R3_ARG1 unmodified, it contains &field (see below).
+  // Keep R4_ARG2 unmodified, it contains offset = 0 (see below).
+  a->fsqrt(F3, F4);                            // code[0] -> fsqrt_m
+  a->isel(R7, R5, R6, 0);                      // code[1] -> isel_m
+  a->ldarx_unchecked(R7, R3_ARG1, R4_ARG2, 1); // code[2] -> lxarx_m
+  a->cmpb(R7, R5, R6);                         // code[3] -> bcmp
+  //a->mftgpr(R7, F3);                         // code[4] -> mftgpr
+  a->popcntb(R7, R5);                          // code[5] -> popcntb
+  a->popcntw(R7, R5);                          // code[6] -> popcntw
+  a->fcfids(F3, F4);                           // code[7] -> fcfids
+  a->vand(VR0, VR0, VR0);                      // code[8] -> vand
   a->blr();
 
-  // Emit function to set one cache line to zero
-  void (*zero_cacheline_func_ptr)(char*) = (void(*)(char*))(void *)a->emit_fd(); // emit function descriptor and get pointer to it
-  a->dcbz(R3_ARG1); // R3_ARG1 = R3 = addr
+  // Emit function to set one cache line to zero. Emit function descriptor and get pointer to it.
+  void (*zero_cacheline_func_ptr)(char*) = (void(*)(char*))(void *)a->emit_fd();
+  a->dcbz(R3_ARG1); // R3_ARG1 = addr
   a->blr();
 
   uint32_t *code_end = (uint32_t *)a->pc();
@@ -428,8 +430,8 @@ void VM_Version::determine_features() {
   }
 
   // Measure cache line size.
-  memset(test_area, 0xFF, BUFFER_SIZE); // fill test area with 0xFF
-  (*zero_cacheline_func_ptr)(mid_of_test_area); // call function which executes dcbz to the middle
+  memset(test_area, 0xFF, BUFFER_SIZE); // Fill test area with 0xFF.
+  (*zero_cacheline_func_ptr)(mid_of_test_area); // Call function which executes dcbz to the middle.
   int count = 0; // count zeroed bytes
   for (int i = 0; i < BUFFER_SIZE; i++) if (test_area[i] == 0) count++;
   guarantee(is_power_of_2(count), "cache line size needs to be a power of 2");

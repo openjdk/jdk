@@ -31,12 +31,16 @@
 
 #define __ _masm->
 
+#ifdef CC_INTERP
+#define EXCEPTION_ENTRY StubRoutines::throw_NullPointerException_at_call_entry()
+#else
+#define EXCEPTION_ENTRY Interpreter::throw_NullPointerException_entry()
+#endif
+
 #ifdef PRODUCT
 #define BLOCK_COMMENT(str) // nothing
-#define STOP(error) stop(error)
 #else
 #define BLOCK_COMMENT(str) __ block_comment(str)
-#define STOP(error) block_comment(error); __ stop(error)
 #endif
 
 #define BIND(label) bind(label); BLOCK_COMMENT(#label ":")
@@ -167,7 +171,7 @@ void MethodHandles::jump_to_lambda_form(MacroAssembler* _masm,
                         sizeof(u2), /*is_signed*/ false);
     // assert(sizeof(u2) == sizeof(ConstMethod::_size_of_parameters), "");
     Label L;
-    __ ld(temp2, __ argument_offset(temp2, temp2, 0), R17_tos);
+    __ ld(temp2, __ argument_offset(temp2, temp2, 0), CC_INTERP_ONLY(R17_tos) NOT_CC_INTERP(R15_esp));
     __ cmpd(CCR1, temp2, recv);
     __ beq(CCR1, L);
     __ stop("receiver not on stack");
@@ -194,7 +198,7 @@ address MethodHandles::generate_method_handle_interpreter_entry(MacroAssembler* 
     return NULL;
   }
 
-  Register argbase    = R17_tos; // parameter (preserved)
+  Register argbase    = CC_INTERP_ONLY(R17_tos) NOT_CC_INTERP(R15_esp); // parameter (preserved)
   Register argslot    = R3;
   Register temp1      = R6;
   Register param_size = R7;
@@ -271,7 +275,7 @@ void MethodHandles::generate_method_handle_dispatch(MacroAssembler* _masm,
                                                     Register member_reg,
                                                     bool for_compiler_entry) {
   assert(is_signature_polymorphic(iid), "expected invoke iid");
-  Register temp1 = (for_compiler_entry ? R21_tmp1 : R7);
+  Register temp1 = (for_compiler_entry ? R25_tmp5 : R7);
   Register temp2 = (for_compiler_entry ? R22_tmp2 : R8);
   Register temp3 = (for_compiler_entry ? R23_tmp3 : R9);
   Register temp4 = (for_compiler_entry ? R24_tmp4 : R10);
@@ -295,11 +299,10 @@ void MethodHandles::generate_method_handle_dispatch(MacroAssembler* _masm,
       __ verify_oop(receiver_reg);
       if (iid == vmIntrinsics::_linkToSpecial) {
         // Don't actually load the klass; just null-check the receiver.
-        __ null_check_throw(receiver_reg, 0, temp1, StubRoutines::throw_NullPointerException_at_call_entry());
+        __ null_check_throw(receiver_reg, -1, temp1, EXCEPTION_ENTRY);
       } else {
         // load receiver klass itself
-        __ null_check_throw(receiver_reg, oopDesc::klass_offset_in_bytes(),
-                                temp1, StubRoutines::throw_NullPointerException_at_call_entry());
+        __ null_check_throw(receiver_reg, oopDesc::klass_offset_in_bytes(), temp1, EXCEPTION_ENTRY);
         __ load_klass(temp1_recv_klass, receiver_reg);
         __ verify_klass_ptr(temp1_recv_klass);
       }
@@ -451,7 +454,7 @@ void trace_method_handle_stub(const char* adaptername,
   if (Verbose) {
     tty->print_cr("Registers:");
     const int abi_offset = frame::abi_112_size / 8;
-    for (int i = R3->encoding(); i <= R13->encoding(); i++) {
+    for (int i = R3->encoding(); i <= R12->encoding(); i++) {
       Register r = as_Register(i);
       int count = i - R3->encoding();
       // The registers are stored in reverse order on the stack (by save_volatile_gprs(R1_SP, abi_112_size)).
@@ -490,7 +493,7 @@ void trace_method_handle_stub(const char* adaptername,
         trace_calling_frame = os::get_sender_for_C_frame(&trace_calling_frame);
       }
 
-      // safely create a frame and call frame::describe
+      // Safely create a frame and call frame::describe.
       intptr_t *dump_sp = trace_calling_frame.sender_sp();
 
       frame dump_frame = frame(dump_sp);
@@ -531,7 +534,7 @@ void MethodHandles::trace_method_handle(MacroAssembler* _masm, const char* adapt
   __ mr(R6_ARG4, R1_SP);
   __ call_VM_leaf(CAST_FROM_FN_PTR(address, trace_method_handle_stub));
 
-  __ restore_volatile_gprs(R1_SP, 112); // except R0
+  __ restore_volatile_gprs(R1_SP, 112); // Except R0.
   __ pop_frame();
   __ restore_LR_CR(R0);
 
