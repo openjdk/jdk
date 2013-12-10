@@ -80,8 +80,4 @@ inline oop oopDesc::forward_to_atomic(oop p) {
   return forwardee();
 }
 
-inline void oopDesc::update_header(ParCompactionManager* cm) {
-  PSParallelCompact::adjust_klass(cm, klass());
-}
-
 #endif // SHARE_VM_OOPS_OOP_PCGC_INLINE_HPP
