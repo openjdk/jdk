@@ -242,8 +242,20 @@ void LinkResolver::resolve_klass(KlassHandle& result, constantPoolHandle pool, i
 
 // Look up method in klasses, including static methods
 // Then look up local default methods
-void LinkResolver::lookup_method_in_klasses(methodHandle& result, KlassHandle klass, Symbol* name, Symbol* signature, bool checkpolymorphism, TRAPS) {
+void LinkResolver::lookup_method_in_klasses(methodHandle& result, KlassHandle klass, Symbol* name, Symbol* signature, bool checkpolymorphism, bool in_imethod_resolve, TRAPS) {
   Method* result_oop = klass->uncached_lookup_method(name, signature);
+
+  // JDK 8, JVMS 5.4.3.4: Interface method resolution should
+  // ignore static and non-public methods of java.lang.Object,
+  // like clone, finalize, registerNatives.
+  if (in_imethod_resolve &&
+      result_oop != NULL &&
+      klass->is_interface() &&
+      (result_oop->is_static() || !result_oop->is_public()) &&
+      result_oop->method_holder() == SystemDictionary::Object_klass()) {
+    result_oop = NULL;
+  }
+
   if (result_oop == NULL) {
     Array<Method*>* default_methods = InstanceKlass::cast(klass())->default_methods();
     if (default_methods != NULL) {
@@ -420,28 +432,18 @@ void LinkResolver::check_method_accessability(KlassHandle ref_klass,
 
   AccessFlags flags = sel_method->access_flags();
 
-  // Special case #1:  arrays always override "clone". JVMS 2.15.
+  // Special case:  arrays always override "clone". JVMS 2.15.
   // If the resolved klass is an array class, and the declaring class
   // is java.lang.Object and the method is "clone", set the flags
   // to public.
-  // Special case #2:  If the resolved klass is an interface, and
-  // the declaring class is java.lang.Object, and the method is
-  // "clone" or "finalize", set the flags to public. If the
-  // resolved interface does not contain "clone" or "finalize"
-  // methods, the method/interface method resolution looks to
-  // the interface's super class, java.lang.Object.  With JDK 8
-  // interface accessability check requirement, special casing
-  // this scenario is necessary to avoid an IAE.
   //
-  // We'll check for each method name first and then java.lang.Object
-  // to best short-circuit out of these tests.
-  if (((sel_method->name() == vmSymbols::clone_name() &&
-        (resolved_klass->oop_is_array() || resolved_klass->is_interface())) ||
-       (sel_method->name() == vmSymbols::finalize_method_name() &&
-        resolved_klass->is_interface())) &&
-      sel_klass() == SystemDictionary::Object_klass()) {
+  // We'll check for the method name first, as that's most likely
+  // to be false (so we'll short-circuit out of these tests).
+  if (sel_method->name() == vmSymbols::clone_name() &&
+      sel_klass() == SystemDictionary::Object_klass() &&
+      resolved_klass->oop_is_array()) {
     // We need to change "protected" to "public".
-    assert(flags.is_protected(), "clone or finalize not protected?");
+    assert(flags.is_protected(), "clone not protected?");
     jint new_flags = flags.as_int();
     new_flags = new_flags & (~JVM_ACC_PROTECTED);
     new_flags = new_flags | JVM_ACC_PUBLIC;
@@ -531,7 +533,7 @@ void LinkResolver::resolve_method(methodHandle& resolved_method, KlassHandle res
   }
 
   // 2. lookup method in resolved klass and its super klasses
-  lookup_method_in_klasses(resolved_method, resolved_klass, method_name, method_signature, true, CHECK);
+  lookup_method_in_klasses(resolved_method, resolved_klass, method_name, method_signature, true, false, CHECK);
 
   if (resolved_method.is_null()) { // not found in the class hierarchy
     // 3. lookup method in all the interfaces implemented by the resolved klass
@@ -628,7 +630,7 @@ void LinkResolver::resolve_interface_method(methodHandle& resolved_method,
 
   // lookup method in this interface or its super, java.lang.Object
   // JDK8: also look for static methods
-  lookup_method_in_klasses(resolved_method, resolved_klass, method_name, method_signature, false, CHECK);
+  lookup_method_in_klasses(resolved_method, resolved_klass, method_name, method_signature, false, true, CHECK);
 
   if (resolved_method.is_null()) {
     // lookup method in all the super-interfaces
