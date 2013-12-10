@@ -62,7 +62,7 @@ void ReferenceProcessor::init_statics() {
   }
   guarantee(RefDiscoveryPolicy == ReferenceBasedDiscovery ||
             RefDiscoveryPolicy == ReferentBasedDiscovery,
-            "Unrecongnized RefDiscoveryPolicy");
+            "Unrecognized RefDiscoveryPolicy");
   _pending_list_uses_discovered_field = JDK_Version::current().pending_list_uses_discovered_field();
 }
 

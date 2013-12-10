@@ -1197,7 +1197,7 @@ char* os::format_boot_path(const char* format_string,
                            char fileSep,
                            char pathSep) {
     assert((fileSep == '/' && pathSep == ':') ||
-           (fileSep == '\\' && pathSep == ';'), "unexpected seperator chars");
+           (fileSep == '\\' && pathSep == ';'), "unexpected separator chars");
 
     // Scan the format string to determine the length of the actual
     // boot classpath, and handle platform dependencies as well.

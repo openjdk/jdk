@@ -1352,7 +1352,7 @@ void BinaryTreeDictionary<Chunk_t, FreeList_t>::print_free_lists(outputStream* s
 template <class Chunk_t, template <class> class FreeList_t>
 void BinaryTreeDictionary<Chunk_t, FreeList_t>::verify_tree() const {
   guarantee(root() == NULL || total_free_blocks() == 0 ||
-    total_size() != 0, "_total_size should't be 0?");
+    total_size() != 0, "_total_size shouldn't be 0?");
   guarantee(root() == NULL || root()->parent() == NULL, "_root shouldn't have parent");
   verify_tree_helper(root());
 }
