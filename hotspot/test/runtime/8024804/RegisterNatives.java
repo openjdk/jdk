@@ -22,10 +22,10 @@
  */
 
 /*
- * @ignore 8028741
  * @test
  * @bug 8024804
- * @summary registerNatives() interface resolution should receive IAE
+ * @bug 8028741
+ * @summary interface method resolution should skip finding j.l.Object's registerNatives() and succeed in selecting class B's registerNatives()
  * @run main RegisterNatives
  */
 public class RegisterNatives {
@@ -38,10 +38,10 @@ public class RegisterNatives {
     try {
       val.registerNatives();
     } catch (IllegalAccessError e) {
-      System.out.println("TEST PASSES - according to current JVM spec, IAE expected\n");
-      return;
+      System.out.println("TEST FAILS - JDK 8 JVMS, static and non-public methods of j.l.Object should be ignored during interface method resolution\n");
+      e.printStackTrace();
+      throw e;
     }
-    System.out.println("TEST FAILS - no IAE resulted\n");
-    System.exit(1);
+    System.out.println("TEST PASSES - no IAE resulted\n");
   }
 }
