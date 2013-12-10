@@ -30,15 +30,23 @@
 // code, part of the processor instruction cache potentially has to be flushed.
 
 class ICache : public AbstractICache {
+  friend class ICacheStubGenerator;
+  static int ppc64_flush_icache(address start, int lines, int magic);
+
  public:
   enum {
-    // On PowerPC the cache line size is 32 bytes.
-    stub_size      = 160, // Size of the icache flush stub in bytes.
-    line_size      = 32,  // Flush instruction affects 32 bytes.
-    log2_line_size = 5    // log2(line_size)
+    // Actually, cache line size is 64, but keeping it as it is to be
+    // on the safe side on ALL PPC64 implementations.
+    log2_line_size = 5,
+    line_size      = 1 << log2_line_size
   };
 
-  // Use default implementation
+  static void ppc64_flush_icache_bytes(address start, int bytes) {
+    // Align start address to an icache line boundary and transform
+    // nbytes to an icache line count.
+    const uint line_offset = mask_address_bits(start, line_size - 1);
+    ppc64_flush_icache(start - line_offset, (bytes + line_offset + line_size - 1) >> log2_line_size, 0);
+  }
 };
 
 #endif // CPU_PPC_VM_ICACHE_PPC_HPP

@@ -421,7 +421,7 @@
 #ifdef CC_INTERP
   // Additional interface for interpreter frames:
   inline interpreterState get_interpreterState() const;
-#endif
+#endif // CC_INTERP
 
   // Size of a monitor in bytes.
   static int interpreter_frame_monitor_size_in_bytes();
@@ -431,7 +431,6 @@
 
  private:
 
-  // PPC port: permgen stuff
   ConstantPoolCache** interpreter_frame_cpoolcache_addr() const;
 
  public:

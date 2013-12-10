@@ -1981,8 +1981,7 @@ address CppInterpreterGenerator::generate_normal_entry(void) {
 
   // Restore R14_state.
   __ ld(R14_state, 0, R1_SP);
-  __ addi(R14_state, R14_state,
-              -frame::interpreter_frame_cinterpreterstate_size_in_bytes());
+  __ addi(R14_state, R14_state, -frame::interpreter_frame_cinterpreterstate_size_in_bytes());
 
   //
   // Registers alive

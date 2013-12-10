@@ -60,8 +60,8 @@ typedef VMRegImpl* VMReg;
 //  FPSCR     Floating point status and control register (volatile)
 //
 //  CR0-CR1   Condition code fields (volatile)
-//  CR2-CCR4   Condition code fields (nonvolatile)
-//  CCR5-CCR7   Condition code fields (volatile)
+//  CR2-CR4   Condition code fields (nonvolatile)
+//  CR5-CR7   Condition code fields (volatile)
 //
 //  ----------------------------------------------
 //  On processors with the VMX feature:
@@ -531,7 +531,7 @@ REGISTER_DECLARATION(Register,      R7_ARG5,    R7);  // volatile
 REGISTER_DECLARATION(Register,      R8_ARG6,    R8);  // volatile
 REGISTER_DECLARATION(Register,      R9_ARG7,    R9);  // volatile
 REGISTER_DECLARATION(Register,      R10_ARG8,   R10); // volatile
-REGISTER_DECLARATION(FloatRegister, FO_SCRATCH, F0);  // volatile
+REGISTER_DECLARATION(FloatRegister, F0_SCRATCH, F0);  // volatile
 REGISTER_DECLARATION(FloatRegister, F1_RET,     F1);  // volatile
 REGISTER_DECLARATION(FloatRegister, F1_ARG1,    F1);  // volatile
 REGISTER_DECLARATION(FloatRegister, F2_ARG2,    F2);  // volatile
@@ -560,7 +560,7 @@ REGISTER_DECLARATION(FloatRegister, F13_ARG13,  F13); // volatile
 #define R8_ARG6            AS_REGISTER(Register, R8)
 #define R9_ARG7            AS_REGISTER(Register, R9)
 #define R10_ARG8           AS_REGISTER(Register, R10)
-#define FO_SCRATCH         AS_REGISTER(FloatRegister, F0)
+#define F0_SCRATCH         AS_REGISTER(FloatRegister, F0)
 #define F1_RET             AS_REGISTER(FloatRegister, F1)
 #define F1_ARG1            AS_REGISTER(FloatRegister, F1)
 #define F2_ARG2            AS_REGISTER(FloatRegister, F2)
@@ -608,7 +608,6 @@ REGISTER_DECLARATION(Register, R26_tmp6, R26);
 REGISTER_DECLARATION(Register, R27_tmp7, R27);
 REGISTER_DECLARATION(Register, R28_tmp8, R28);
 REGISTER_DECLARATION(Register, R29_tmp9, R29);
-REGISTER_DECLARATION(Register, R30_polling_page, R30);
 #ifndef DONT_USE_REGISTER_DEFINES
 #define R21_tmp1         AS_REGISTER(Register, R21)
 #define R22_tmp2         AS_REGISTER(Register, R22)
@@ -619,7 +618,6 @@ REGISTER_DECLARATION(Register, R30_polling_page, R30);
 #define R27_tmp7         AS_REGISTER(Register, R27)
 #define R28_tmp8         AS_REGISTER(Register, R28)
 #define R29_tmp9         AS_REGISTER(Register, R29)
-#define R30_polling_page AS_REGISTER(Register, R30)
 
 #define CCR4_is_synced AS_REGISTER(ConditionRegister, CCR4)
 #endif

@@ -113,7 +113,7 @@ VtableStub* VtableStubs::create_vtable_stub(int vtable_index) {
   // If the vtable entry is null, the method is abstract.
   address ame_addr = __ pc(); // ame = abstract method error
 
-  __ ld_with_trap_null_check(R12_scratch2, in_bytes(Method::from_compiled_offset()), R19_method);
+  __ load_with_trap_null_check(R12_scratch2, in_bytes(Method::from_compiled_offset()), R19_method);
   __ mtctr(R12_scratch2);
   __ bctr();
   masm->flush();
@@ -147,7 +147,7 @@ VtableStub* VtableStubs::create_itable_stub(int vtable_index) {
 
   // Entry arguments:
   //  R19_method: Interface
-  //  R3_ARG1: Receiver
+  //  R3_ARG1:    Receiver
   //
 
   const Register rcvr_klass = R11_scratch1;

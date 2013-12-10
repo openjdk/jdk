@@ -37,6 +37,8 @@ class InterpreterMacroAssembler: public MacroAssembler {
  public:
   InterpreterMacroAssembler(CodeBuffer* code) : MacroAssembler(code) {}
 
+  void null_check_throw(Register a, int offset, Register temp_reg);
+
   // Handy address generation macros
 #define thread_(field_name) in_bytes(JavaThread::field_name ## _offset()), R16_thread
 #define method_(field_name) in_bytes(Method::field_name ## _offset()), R19_method
@@ -51,15 +53,16 @@ class InterpreterMacroAssembler: public MacroAssembler {
 
   // Object locking
   void lock_object  (Register lock_reg, Register obj_reg);
-  void unlock_object(Register lock_reg);
+  void unlock_object(Register lock_reg, bool check_for_exceptions = true);
 
   // Debugging
   void verify_oop(Register reg, TosState state = atos);    // only if +VerifyOops && state == atos
 
   // support for jvmdi/jvmpi
   void notify_method_entry();
-  void notify_method_exit(bool save_result, TosState state);
+  void notify_method_exit(bool is_native_method, TosState state);
 
+#ifdef CC_INTERP
   // Convert the current TOP_IJAVA_FRAME into a PARENT_IJAVA_FRAME
   // (using parent_frame_resize) and push a new interpreter
   // TOP_IJAVA_FRAME (using frame_size).
@@ -84,6 +87,7 @@ class InterpreterMacroAssembler: public MacroAssembler {
   void pop_interpreter_state(bool prev_state_may_be_0);
 
   void restore_prev_state();
+#endif
 };
 
 #endif // CPU_PPC_VM_INTERP_MASM_PPC_64_HPP

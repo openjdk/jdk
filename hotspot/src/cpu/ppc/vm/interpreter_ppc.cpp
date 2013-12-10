@@ -396,18 +396,14 @@ address AbstractInterpreterGenerator::generate_result_handler_for(BasicType type
   //
 
   Label done;
-  Label is_false;
-
   address entry = __ pc();
 
   switch (type) {
   case T_BOOLEAN:
-    __ cmpwi(CCR0, R3_RET, 0);
-    __ beq(CCR0, is_false);
-    __ li(R3_RET, 1);
-    __ b(done);
-    __ bind(is_false);
-    __ li(R3_RET, 0);
+    // convert !=0 to 1
+    __ neg(R0, R3_RET);
+    __ orr(R0, R3_RET, R0);
+    __ srwi(R3_RET, R0, 31);
     break;
   case T_BYTE:
      // sign extend 8 bits
@@ -478,7 +474,7 @@ address InterpreterGenerator::generate_abstract_entry(void) {
 
   // Push a new C frame and save LR.
   __ save_LR_CR(R0);
-  __ push_frame_abi112_nonvolatiles(0, R11_scratch1);
+  __ push_frame_abi112(0, R11_scratch1);
 
   // This is not a leaf but we have a JavaFrameAnchor now and we will
   // check (create) exceptions afterward so this is ok.
@@ -491,8 +487,12 @@ address InterpreterGenerator::generate_abstract_entry(void) {
   // Reset JavaFrameAnchor from call_VM_leaf above.
   __ reset_last_Java_frame();
 
+#ifdef CC_INTERP
   // Return to frame manager, it will handle the pending exception.
   __ blr();
+#else
+  Unimplemented();
+#endif
 
   return entry;
 }
@@ -503,16 +503,20 @@ address InterpreterGenerator::generate_accessor_entry(void) {
   if(!UseFastAccessorMethods && (!FLAG_IS_ERGO(UseFastAccessorMethods)))
     return NULL;
 
-  Label Ldone, Lslow_path;
+  Label Lslow_path, Lacquire;
 
-  const Register Rthis = R3_ARG1,
+  const Register
+         Rclass_or_obj = R3_ARG1,
          Rconst_method = R4_ARG2,
          Rcodes        = Rconst_method,
          Rcpool_cache  = R5_ARG3,
          Rscratch      = R11_scratch1,
          Rjvmti_mode   = Rscratch,
          Roffset       = R12_scratch2,
-         Rflags        = R6_ARG4;
+         Rflags        = R6_ARG4,
+         Rbtable       = R7_ARG5;
+
+  static address branch_table[number_of_states];
 
   address entry = __ pc();
 
@@ -521,13 +525,9 @@ address InterpreterGenerator::generate_accessor_entry(void) {
 
   // Also check for JVMTI mode
   // Check for null obj, take slow path if so.
-#ifdef CC_INTERP
-  __ ld(Rthis, Interpreter::stackElementSize, R17_tos);
-#else
-  Unimplemented()
-#endif
+  __ ld(Rclass_or_obj, Interpreter::stackElementSize, CC_INTERP_ONLY(R17_tos) NOT_CC_INTERP(R15_esp));
   __ lwz(Rjvmti_mode, thread_(interp_only_mode));
-  __ cmpdi(CCR1, Rthis, 0);
+  __ cmpdi(CCR1, Rclass_or_obj, 0);
   __ cmpwi(CCR0, Rjvmti_mode, 0);
   __ crorc(/*CCR0 eq*/2, /*CCR1 eq*/4+2, /*CCR0 eq*/2);
   __ beq(CCR0, Lslow_path); // this==null or jvmti_mode!=0
@@ -560,58 +560,127 @@ address InterpreterGenerator::generate_accessor_entry(void) {
   __ ld(Rflags, in_bytes(cp_base_offset) + in_bytes(ConstantPoolCacheEntry::flags_offset()), Rcpool_cache);
   __ ld(Roffset, in_bytes(cp_base_offset) + in_bytes(ConstantPoolCacheEntry::f2_offset()), Rcpool_cache);
 
-  // Get field type.
-  // (Rflags>>ConstantPoolCacheEntry::tos_state_shift)&((1<<ConstantPoolCacheEntry::tos_state_bits)-1)
+  // Following code is from templateTable::getfield_or_static
+  // Load pointer to branch table
+  __ load_const_optimized(Rbtable, (address)branch_table, Rscratch);
+
+  // Get volatile flag
+  __ rldicl(Rscratch, Rflags, 64-ConstantPoolCacheEntry::is_volatile_shift, 63); // extract volatile bit
+  // note: sync is needed before volatile load on PPC64
+
+  // Check field type
   __ rldicl(Rflags, Rflags, 64-ConstantPoolCacheEntry::tos_state_shift, 64-ConstantPoolCacheEntry::tos_state_bits);
 
 #ifdef ASSERT
-    __ ld(R9_ARG7, 0, R1_SP);
-    __ ld(R10_ARG8, 0, R21_sender_SP);
-    __ cmpd(CCR0, R9_ARG7, R10_ARG8);
-    __ asm_assert_eq("backlink", 0x543);
+  Label LFlagInvalid;
+  __ cmpldi(CCR0, Rflags, number_of_states);
+  __ bge(CCR0, LFlagInvalid);
+
+  __ ld(R9_ARG7, 0, R1_SP);
+  __ ld(R10_ARG8, 0, R21_sender_SP);
+  __ cmpd(CCR0, R9_ARG7, R10_ARG8);
+  __ asm_assert_eq("backlink", 0x543);
 #endif // ASSERT
   __ mr(R1_SP, R21_sender_SP); // Cut the stack back to where the caller started.
 
-  // Load the return value according to field type.
-  Label Litos, Lltos, Lbtos, Lctos, Lstos;
-  __ cmpdi(CCR1, Rflags, itos);
-  __ cmpdi(CCR0, Rflags, ltos);
-  __ beq(CCR1, Litos);
-  __ beq(CCR0, Lltos);
-  __ cmpdi(CCR1, Rflags, btos);
-  __ cmpdi(CCR0, Rflags, ctos);
-  __ beq(CCR1, Lbtos);
-  __ beq(CCR0, Lctos);
-  __ cmpdi(CCR1, Rflags, stos);
-  __ beq(CCR1, Lstos);
+  // Load from branch table and dispatch (volatile case: one instruction ahead)
+  __ sldi(Rflags, Rflags, LogBytesPerWord);
+  __ cmpwi(CCR6, Rscratch, 1); // volatile?
+  __ sldi(Rscratch, Rscratch, exact_log2(BytesPerInstWord)); // volatile ? size of 1 instruction : 0
+  __ ldx(Rbtable, Rbtable, Rflags);
+
+  __ subf(Rbtable, Rscratch, Rbtable); // point to volatile/non-volatile entry point
+  __ mtctr(Rbtable);
+  __ bctr();
+
 #ifdef ASSERT
-  __ cmpdi(CCR0, Rflags, atos);
-  __ asm_assert_eq("what type is this?", 0x432);
+  __ bind(LFlagInvalid);
+  __ stop("got invalid flag", 0x6541);
+
+  bool all_uninitialized = true,
+       all_initialized   = true;
+  for (int i = 0; i<number_of_states; ++i) {
+    all_uninitialized = all_uninitialized && (branch_table[i] == NULL);
+    all_initialized   = all_initialized   && (branch_table[i] != NULL);
+  }
+  assert(all_uninitialized != all_initialized, "consistency"); // either or
+
+  __ sync(); // volatile entry point (one instruction before non-volatile_entry point)
+  if (branch_table[vtos] == 0) branch_table[vtos] = __ pc(); // non-volatile_entry point
+  if (branch_table[dtos] == 0) branch_table[dtos] = __ pc(); // non-volatile_entry point
+  if (branch_table[ftos] == 0) branch_table[ftos] = __ pc(); // non-volatile_entry point
+  __ stop("unexpected type", 0x6551);
 #endif
-  // fallthru: __ bind(Latos);
-  __ load_heap_oop(R3_RET, (RegisterOrConstant)Roffset, Rthis);
+
+  if (branch_table[itos] == 0) { // generate only once
+    __ align(32, 28, 28); // align load
+    __ sync(); // volatile entry point (one instruction before non-volatile_entry point)
+    branch_table[itos] = __ pc(); // non-volatile_entry point
+    __ lwax(R3_RET, Rclass_or_obj, Roffset);
+    __ beq(CCR6, Lacquire);
+    __ blr();
+  }
+
+  if (branch_table[ltos] == 0) { // generate only once
+    __ align(32, 28, 28); // align load
+    __ sync(); // volatile entry point (one instruction before non-volatile_entry point)
+    branch_table[ltos] = __ pc(); // non-volatile_entry point
+    __ ldx(R3_RET, Rclass_or_obj, Roffset);
+    __ beq(CCR6, Lacquire);
+    __ blr();
+  }
+
+  if (branch_table[btos] == 0) { // generate only once
+    __ align(32, 28, 28); // align load
+    __ sync(); // volatile entry point (one instruction before non-volatile_entry point)
+    branch_table[btos] = __ pc(); // non-volatile_entry point
+    __ lbzx(R3_RET, Rclass_or_obj, Roffset);
+    __ extsb(R3_RET, R3_RET);
+    __ beq(CCR6, Lacquire);
+    __ blr();
+  }
+
+  if (branch_table[ctos] == 0) { // generate only once
+    __ align(32, 28, 28); // align load
+    __ sync(); // volatile entry point (one instruction before non-volatile_entry point)
+    branch_table[ctos] = __ pc(); // non-volatile_entry point
+    __ lhzx(R3_RET, Rclass_or_obj, Roffset);
+    __ beq(CCR6, Lacquire);
+    __ blr();
+  }
+
+  if (branch_table[stos] == 0) { // generate only once
+    __ align(32, 28, 28); // align load
+    __ sync(); // volatile entry point (one instruction before non-volatile_entry point)
+    branch_table[stos] = __ pc(); // non-volatile_entry point
+    __ lhax(R3_RET, Rclass_or_obj, Roffset);
+    __ beq(CCR6, Lacquire);
+    __ blr();
+  }
+
+  if (branch_table[atos] == 0) { // generate only once
+    __ align(32, 28, 28); // align load
+    __ sync(); // volatile entry point (one instruction before non-volatile_entry point)
+    branch_table[atos] = __ pc(); // non-volatile_entry point
+    __ load_heap_oop(R3_RET, (RegisterOrConstant)Roffset, Rclass_or_obj);
+    __ verify_oop(R3_RET);
+    //__ dcbt(R3_RET); // prefetch
+    __ beq(CCR6, Lacquire);
+    __ blr();
+  }
+
+  __ align(32, 12);
+  __ bind(Lacquire);
+  __ twi_0(R3_RET);
+  __ isync(); // acquire
   __ blr();
 
-  __ bind(Litos);
-  __ lwax(R3_RET, Rthis, Roffset);
-  __ blr();
-
-  __ bind(Lltos);
-  __ ldx(R3_RET, Rthis, Roffset);
-  __ blr();
-
-  __ bind(Lbtos);
-  __ lbzx(R3_RET, Rthis, Roffset);
-  __ extsb(R3_RET, R3_RET);
-  __ blr();
-
-  __ bind(Lctos);
-  __ lhzx(R3_RET, Rthis, Roffset);
-  __ blr();
-
-  __ bind(Lstos);
-  __ lhax(R3_RET, Rthis, Roffset);
-  __ blr();
+#ifdef ASSERT
+  for (int i = 0; i<number_of_states; ++i) {
+    assert(branch_table[i], "accessor_entry initialization");
+    //tty->print_cr("accessor_entry: branch_table[%d] = 0x%llx (opcode 0x%llx)", i, branch_table[i], *((unsigned int*)branch_table[i]));
+  }
+#endif
 
   __ bind(Lslow_path);
   assert(Interpreter::entry_for_kind(Interpreter::zerolocals), "Normal entry must have been generated by now");
@@ -670,18 +739,14 @@ address InterpreterGenerator::generate_Reference_get_entry(void) {
     // continue and the thread will safepoint at the next bytecode dispatch.
 
     // If the receiver is null then it is OK to jump to the slow path.
-#ifdef CC_INTERP
-     __ ld(R3_RET, Interpreter::stackElementSize, R17_tos); // get receiver
-#else
-     Unimplemented();
-#endif
+    __ ld(R3_RET, Interpreter::stackElementSize, CC_INTERP_ONLY(R17_tos) NOT_CC_INTERP(R15_esp)); // get receiver
 
     // Check if receiver == NULL and go the slow path.
     __ cmpdi(CCR0, R3_RET, 0);
     __ beq(CCR0, slow_path);
 
     // Load the value of the referent field.
-    __ load_heap_oop_not_null(R3_RET, referent_offset, R3_RET);
+    __ load_heap_oop(R3_RET, referent_offset, R3_RET);
 
     // Generate the G1 pre-barrier code to log the value of
     // the referent field in an SATB buffer. Note with

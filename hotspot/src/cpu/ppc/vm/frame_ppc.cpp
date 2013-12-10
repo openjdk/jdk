@@ -176,13 +176,14 @@ BasicType frame::interpreter_frame_result(oop* oop_result, jvalue* value_result)
   Method* method = interpreter_frame_method();
   BasicType type = method->result_type();
 
-#ifdef CC_INTERP
   if (method->is_native()) {
     // Prior to calling into the runtime to notify the method exit the possible
     // result value is saved into the interpreter frame.
+#ifdef CC_INTERP
     interpreterState istate = get_interpreterState();
     address lresult = (address)istate + in_bytes(BytecodeInterpreter::native_lresult_offset());
     address fresult = (address)istate + in_bytes(BytecodeInterpreter::native_fresult_offset());
+#endif
 
     switch (method->result_type()) {
       case T_OBJECT:
@@ -226,9 +227,6 @@ BasicType frame::interpreter_frame_result(oop* oop_result, jvalue* value_result)
       default        : ShouldNotReachHere();
     }
   }
-#else
-  Unimplemented();
-#endif
   return type;
 }
 

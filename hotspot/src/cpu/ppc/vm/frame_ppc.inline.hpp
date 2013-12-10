@@ -78,11 +78,8 @@ inline frame::frame(intptr_t* sp, address pc, intptr_t* unextended_sp) : _sp(sp)
 // can distinguish identity and younger/older relationship. NULL
 // represents an invalid (incomparable) frame.
 inline intptr_t* frame::id(void) const {
-  // Use the _unextended_pc as the frame's ID. Because we have no
-  // adapters, but resized compiled frames, some of the new code
-  // (e.g. JVMTI) wouldn't work if we return the (current) SP of the
-  // frame.
-  return _unextended_sp;
+  // Use _fp. _sp or _unextended_sp wouldn't be correct due to resizing.
+  return _fp;
 }
 
 // Return true if this frame is older (less recent activation) than

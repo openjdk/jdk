@@ -98,7 +98,17 @@ class Argument VALUE_OBJ_CLASS_SPEC {
     // Only 8 registers may contain integer parameters.
     n_register_parameters = 8,
     // Can have up to 8 floating registers.
-    n_float_register_parameters = 8
+    n_float_register_parameters = 8,
+
+    // PPC C calling conventions.
+    // The first eight arguments are passed in int regs if they are int.
+    n_int_register_parameters_c = 8,
+    // The first thirteen float arguments are passed in float regs.
+    n_float_register_parameters_c = 13,
+    // Only the first 8 parameters are not placed on the stack. Aix disassembly
+    // shows that xlC places all float args after argument 8 on the stack AND
+    // in a register. This is not documented, but we follow this convention, too.
+    n_regs_not_on_stack_c = 8,
   };
   // creation
   Argument(int number) : _number(number) {}
@@ -662,6 +672,14 @@ class Assembler : public AbstractAssembler {
     bcondCRbiIs1_bhintIsTaken    = bcondCRbiIs1 | bhintatIsTaken,
   };
 
+  // Elemental Memory Barriers (>=Power 8)
+  enum Elemental_Membar_mask_bits {
+    StoreStore = 1 << 0,
+    StoreLoad  = 1 << 1,
+    LoadStore  = 1 << 2,
+    LoadLoad   = 1 << 3
+  };
+
   // Branch prediction hints.
   inline static int add_bhint_to_boint(const int bhint, const int boint) {
     switch (boint) {
@@ -752,17 +770,6 @@ class Assembler : public AbstractAssembler {
   // Helper functions for groups of instructions
 
   enum Predict { pt = 1, pn = 0 }; // pt = predict taken
-
-  enum Membar_mask_bits { // page 184, v9
-    StoreStore = 1 << 3,
-    LoadStore  = 1 << 2,
-    StoreLoad  = 1 << 1,
-    LoadLoad   = 1 << 0,
-
-    Sync       = 1 << 6,
-    MemIssue   = 1 << 5,
-    Lookaside  = 1 << 4
-  };
 
   // instruction must start at passed address
   static int instr_len(unsigned char *instr) { return BytesPerInstWord; }
@@ -875,19 +882,20 @@ class Assembler : public AbstractAssembler {
   #define inv_opp_s_field(x, hi_bit, lo_bit) inv_s_field_ppc(x, 31-(lo_bit), 31-(hi_bit))
   // Extract instruction fields from instruction words.
  public:
-  static int inv_ra_field(int x) { return inv_opp_u_field(x, 15, 11); }
-  static int inv_rb_field(int x) { return inv_opp_u_field(x, 20, 16); }
-  static int inv_rt_field(int x) { return inv_opp_u_field(x, 10,  6); }
-  static int inv_rs_field(int x) { return inv_opp_u_field(x, 10,  6); }
+  static int inv_ra_field(int x)  { return inv_opp_u_field(x, 15, 11); }
+  static int inv_rb_field(int x)  { return inv_opp_u_field(x, 20, 16); }
+  static int inv_rt_field(int x)  { return inv_opp_u_field(x, 10,  6); }
+  static int inv_rta_field(int x) { return inv_opp_u_field(x, 15, 11); }
+  static int inv_rs_field(int x)  { return inv_opp_u_field(x, 10,  6); }
   // Ds uses opp_s_field(x, 31, 16), but lowest 2 bits must be 0.
   // Inv_ds_field uses range (x, 29, 16) but shifts by 2 to ensure that lowest bits are 0.
-  static int inv_ds_field(int x) { return inv_opp_s_field(x, 29, 16) << 2; }
-  static int inv_d1_field(int x) { return inv_opp_s_field(x, 31, 16); }
-  static int inv_si_field(int x) { return inv_opp_s_field(x, 31, 16); }
-  static int inv_to_field(int x) { return inv_opp_u_field(x, 10, 6);  }
-  static int inv_lk_field(int x) { return inv_opp_u_field(x, 31, 31); }
-  static int inv_bo_field(int x) { return inv_opp_u_field(x, 10,  6); }
-  static int inv_bi_field(int x) { return inv_opp_u_field(x, 15, 11); }
+  static int inv_ds_field(int x)  { return inv_opp_s_field(x, 29, 16) << 2; }
+  static int inv_d1_field(int x)  { return inv_opp_s_field(x, 31, 16); }
+  static int inv_si_field(int x)  { return inv_opp_s_field(x, 31, 16); }
+  static int inv_to_field(int x)  { return inv_opp_u_field(x, 10, 6);  }
+  static int inv_lk_field(int x)  { return inv_opp_u_field(x, 31, 31); }
+  static int inv_bo_field(int x)  { return inv_opp_u_field(x, 10,  6); }
+  static int inv_bi_field(int x)  { return inv_opp_u_field(x, 15, 11); }
 
   #define opp_u_field(x, hi_bit, lo_bit) u_field(x, 31-(lo_bit), 31-(hi_bit))
   #define opp_s_field(x, hi_bit, lo_bit) s_field(x, 31-(lo_bit), 31-(hi_bit))
@@ -925,6 +933,7 @@ class Assembler : public AbstractAssembler {
   static int l10(      int         x)  { return  opp_u_field(x,             10, 10); }
   static int l15(      int         x)  { return  opp_u_field(x,             15, 15); }
   static int l910(     int         x)  { return  opp_u_field(x,             10,  9); }
+  static int e1215(    int         x)  { return  opp_u_field(x,             15, 12); }
   static int lev(      int         x)  { return  opp_u_field(x,             26, 20); }
   static int li(       int         x)  { return  opp_s_field(x,             29,  6); }
   static int lk(       int         x)  { return  opp_u_field(x,             31, 31); }
@@ -960,13 +969,13 @@ class Assembler : public AbstractAssembler {
   static int sr(       int         x)  { return  opp_u_field(x,             15, 12); }
   static int tbr(      int         x)  { return  opp_u_field(x,             20, 11); }
   static int th(       int         x)  { return  opp_u_field(x,             10,  7); }
-  static int thct(     int         x)  { assert((x&8)==0, "must be valid cache specification");  return th(x); }
-  static int thds(     int         x)  { assert((x&8)==8, "must be valid stream specification"); return th(x); }
+  static int thct(     int         x)  { assert((x&8) == 0, "must be valid cache specification");  return th(x); }
+  static int thds(     int         x)  { assert((x&8) == 8, "must be valid stream specification"); return th(x); }
   static int to(       int         x)  { return  opp_u_field(x,             10,  6); }
   static int u(        int         x)  { return  opp_u_field(x,             19, 16); }
   static int ui(       int         x)  { return  opp_u_field(x,             31, 16); }
 
-  // support vector instructions for >= Power6
+  // Support vector instructions for >= Power6.
   static int vra(      int         x)  { return  opp_u_field(x,             15, 11); }
   static int vrb(      int         x)  { return  opp_u_field(x,             20, 16); }
   static int vrc(      int         x)  { return  opp_u_field(x,             25, 21); }
@@ -1090,8 +1099,8 @@ class Assembler : public AbstractAssembler {
   inline void subfic( Register d, Register a, int si16);
   inline void add(    Register d, Register a, Register b);
   inline void add_(   Register d, Register a, Register b);
-  inline void subf(   Register d, Register a, Register b);
-  inline void sub(    Register d, Register a, Register b);
+  inline void subf(   Register d, Register a, Register b);  // d = b - a    "Sub_from", as in ppc spec.
+  inline void sub(    Register d, Register a, Register b);  // d = a - b    Swap operands of subf for readability.
   inline void subf_(  Register d, Register a, Register b);
   inline void addc(   Register d, Register a, Register b);
   inline void addc_(  Register d, Register a, Register b);
@@ -1204,7 +1213,7 @@ class Assembler : public AbstractAssembler {
   }
   // endgroup opcode for Power6
   static bool is_endgroup(int x) {
-    return is_ori(x) && inv_ra_field(x)==1 && inv_rs_field(x)==1 && inv_d1_field(x)==0;
+    return is_ori(x) && inv_ra_field(x) == 1 && inv_rs_field(x) == 1 && inv_d1_field(x) == 0;
   }
 
 
@@ -1227,9 +1236,13 @@ class Assembler : public AbstractAssembler {
   inline void cmpld( ConditionRegister crx, Register a, Register b);
 
   inline void isel(   Register d, Register a, Register b, int bc);
+  // Convenient version which takes: Condition register, Condition code and invert flag. Omit b to keep old value.
+  inline void isel(   Register d, ConditionRegister cr, Condition cc, bool inv, Register a, Register b = noreg);
+  // Set d = 0 if (cr.cc) equals 1, otherwise b.
+  inline void isel_0( Register d, ConditionRegister cr, Condition cc, Register b = noreg);
 
   // PPC 1, section 3.3.11, Fixed-Point Logical Instructions
-         void andi(   Register a, Register s, int ui16);    // optimized version
+         void andi(   Register a, Register s, int ui16);   // optimized version
   inline void andi_(  Register a, Register s, int ui16);
   inline void andis_( Register a, Register s, int ui16);
   inline void ori(    Register a, Register s, int ui16);
@@ -1553,10 +1566,7 @@ class Assembler : public AbstractAssembler {
   inline void ptesync();
   inline void eieio();
   inline void isync();
-
-  inline void release();
-  inline void acquire();
-  inline void fence();
+  inline void elemental_membar(int e); // Elemental Memory Barriers (>=Power 8)
 
   // atomics
   inline void lwarx_unchecked(Register d, Register a, Register b, int eh1 = 0);
@@ -1938,7 +1948,7 @@ class Assembler : public AbstractAssembler {
   inline void load_const(Register d, AddressLiteral& a, Register tmp = noreg);
 
   // Load a 64 bit constant, optimized, not identifyable.
-  // Tmp can be used to increase ILP. Set return_simm16_rest=true to get a
+  // Tmp can be used to increase ILP. Set return_simm16_rest = true to get a
   // 16 bit immediate offset. This is useful if the offset can be encoded in
   // a succeeding instruction.
          int load_const_optimized(Register d, long a,  Register tmp = noreg, bool return_simm16_rest = false);

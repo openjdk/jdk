@@ -67,7 +67,7 @@ address os::current_stack_pointer() {
   address csp;
 
 #if !defined(USE_XLC_BUILTINS)
-  // inline assembly for `ppc_mr regno(csp), PPC_SP':
+  // inline assembly for `mr regno(csp), R1_SP':
   __asm__ __volatile__ ("mr %0, 1":"=r"(csp):);
 #else
   csp = (address) __builtin_frame_address(0);
@@ -263,7 +263,7 @@ JVM_handle_aix_signal(int sig, siginfo_t* info, void* ucVoid, int abort_if_unrec
         tty->print_raw_cr("An irrecoverable stack overflow has occurred.");
         goto report_and_die;
       } else {
-        // this means a segv happened inside our stack, but not in
+        // This means a segv happened inside our stack, but not in
         // the guarded zone. I'd like to know when this happens,
         tty->print_raw_cr("SIGSEGV happened inside stack but outside yellow and red zone.");
         goto report_and_die;
@@ -312,53 +312,57 @@ JVM_handle_aix_signal(int sig, siginfo_t* info, void* ucVoid, int abort_if_unrec
       // in the zero page, because it is filled with 0x0. We ignore
       // explicit SIGILLs in the zero page.
       if (sig == SIGILL && (pc < (address) 0x200)) {
-        if (TraceTraps)
+        if (TraceTraps) {
           tty->print_raw_cr("SIGILL happened inside zero page.");
+        }
         goto report_and_die;
       }
 
       // Handle signal from NativeJump::patch_verified_entry().
       if (( TrapBasedNotEntrantChecks && sig == SIGTRAP && nativeInstruction_at(pc)->is_sigtrap_zombie_not_entrant()) ||
           (!TrapBasedNotEntrantChecks && sig == SIGILL  && nativeInstruction_at(pc)->is_sigill_zombie_not_entrant())) {
-        if (TraceTraps)
+        if (TraceTraps) {
           tty->print_cr("trap: zombie_not_entrant (%s)", (sig == SIGTRAP) ? "SIGTRAP" : "SIGILL");
+        }
         stub = SharedRuntime::get_handle_wrong_method_stub();
         goto run_stub;
       }
 
       else if (sig == SIGSEGV && os::is_poll_address(addr)) {
-        if (TraceTraps)
+        if (TraceTraps) {
           tty->print_cr("trap: safepoint_poll at " INTPTR_FORMAT " (SIGSEGV)", pc);
+        }
         stub = SharedRuntime::get_poll_stub(pc);
         goto run_stub;
       }
 
-      // SIGTRAP-based ic miss check in compiled code
+      // SIGTRAP-based ic miss check in compiled code.
       else if (sig == SIGTRAP && TrapBasedICMissChecks &&
                nativeInstruction_at(pc)->is_sigtrap_ic_miss_check()) {
-        if (TraceTraps)
+        if (TraceTraps) {
           tty->print_cr("trap: ic_miss_check at " INTPTR_FORMAT " (SIGTRAP)", pc);
+        }
         stub = SharedRuntime::get_ic_miss_stub();
         goto run_stub;
       }
 
-#ifdef COMPILER2
       // SIGTRAP-based implicit null check in compiled code.
       else if (sig == SIGTRAP && TrapBasedNullChecks &&
                nativeInstruction_at(pc)->is_sigtrap_null_check()) {
-        if (TraceTraps)
+        if (TraceTraps) {
           tty->print_cr("trap: null_check at " INTPTR_FORMAT " (SIGTRAP)", pc);
+        }
         stub = SharedRuntime::continuation_for_implicit_exception(thread, pc, SharedRuntime::IMPLICIT_NULL);
         goto run_stub;
       }
-#endif
 
       // SIGSEGV-based implicit null check in compiled code.
       else if (sig == SIGSEGV && ImplicitNullChecks &&
                CodeCache::contains((void*) pc) &&
                !MacroAssembler::needs_explicit_null_check((intptr_t) info->si_addr)) {
-        if (TraceTraps)
+        if (TraceTraps) {
           tty->print_cr("trap: null_check at " INTPTR_FORMAT " (SIGSEGV)", pc);
+        }
         stub = SharedRuntime::continuation_for_implicit_exception(thread, pc, SharedRuntime::IMPLICIT_NULL);
       }
 
@@ -366,8 +370,9 @@ JVM_handle_aix_signal(int sig, siginfo_t* info, void* ucVoid, int abort_if_unrec
       // SIGTRAP-based implicit range check in compiled code.
       else if (sig == SIGTRAP && TrapBasedRangeChecks &&
                nativeInstruction_at(pc)->is_sigtrap_range_check()) {
-        if (TraceTraps)
+        if (TraceTraps) {
           tty->print_cr("trap: range_check at " INTPTR_FORMAT " (SIGTRAP)", pc);
+        }
         stub = SharedRuntime::continuation_for_implicit_exception(thread, pc, SharedRuntime::IMPLICIT_NULL);
         goto run_stub;
       }

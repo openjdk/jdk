@@ -100,6 +100,7 @@ public:
 #define SET_LOCALS_DOUBLE(value, offset)  (((VMJavaVal64*)&locals[-((offset)+1)])->d = (value))
 #define SET_LOCALS_LONG(value, offset)    (((VMJavaVal64*)&locals[-((offset)+1)])->l = (value))
 #define SET_LOCALS_DOUBLE_FROM_ADDR(addr, offset) (((VMJavaVal64*)&locals[-((offset)+1)])->d = \
+                                                  ((VMJavaVal64*)(addr))->d)
 
 
 #endif // CPU_PPC_VM_BYTECODEINTERPRETER_PPC_PP

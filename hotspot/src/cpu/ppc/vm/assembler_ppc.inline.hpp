@@ -224,8 +224,12 @@ inline void Assembler::clrlsldi_(Register a, Register s, int clrl6, int shl6) { 
 inline void Assembler::extrdi(  Register a, Register s, int n, int b){ Assembler::rldicl(a, s, b+n, 64-n); }
 // testbit with condition register.
 inline void Assembler::testbitdi(ConditionRegister cr, Register a, Register s, int ui6) {
-  Assembler::rldicr(a, s, 63-ui6, 0);
-  Assembler::cmpdi(cr, a, 0);
+  if (cr == CCR0) {
+    Assembler::rldicr_(a, s, 63-ui6, 0);
+  } else {
+    Assembler::rldicr(a, s, 63-ui6, 0);
+    Assembler::cmpdi(cr, a, 0);
+  }
 }
 
 // rotate instructions
@@ -423,6 +427,27 @@ inline void Assembler::creqv( int d, int s1, int s2) { emit_int32(CREQV_OPCODE  
 inline void Assembler::crandc(int d, int s1, int s2) { emit_int32(CRANDC_OPCODE | bt(d) | ba(s1) | bb(s2)); }
 inline void Assembler::crorc( int d, int s1, int s2) { emit_int32(CRORC_OPCODE  | bt(d) | ba(s1) | bb(s2)); }
 
+// Conditional move (>= Power7)
+inline void Assembler::isel(Register d, ConditionRegister cr, Condition cc, bool inv, Register a, Register b) {
+  if (b == noreg) {
+    b = d; // Can be omitted if old value should be kept in "else" case.
+  }
+  Register first = a;
+  Register second = b;
+  if (inv) {
+    first = b;
+    second = a; // exchange
+  }
+  assert(first != R0, "r0 not allowed");
+  isel(d, first, second, bi0(cr, cc));
+}
+inline void Assembler::isel_0(Register d, ConditionRegister cr, Condition cc, Register b) {
+  if (b == noreg) {
+    b = d; // Can be omitted if old value should be kept in "else" case.
+  }
+  isel(d, R0, b, bi0(cr, cc));
+}
+
 // PPC 2, section 3.2.1 Instruction Cache Instructions
 inline void Assembler::icbi(    Register s1, Register s2)         { emit_int32( ICBI_OPCODE   | ra0mem(s1) | rb(s2)           ); }
 // PPC 2, section 3.2.2 Data Cache Instructions
@@ -445,10 +470,7 @@ inline void Assembler::lwsync()    { Assembler::sync(1); }
 inline void Assembler::ptesync()   { Assembler::sync(2); }
 inline void Assembler::eieio()     { emit_int32( EIEIO_OPCODE); }
 inline void Assembler::isync()     { emit_int32( ISYNC_OPCODE); }
-
-inline void Assembler::release()   { Assembler::lwsync(); }
-inline void Assembler::acquire()   { Assembler::lwsync(); }
-inline void Assembler::fence()     { Assembler::sync(); }
+inline void Assembler::elemental_membar(int e) { assert(0 < e && e < 16, "invalid encoding"); emit_int32( SYNC_OPCODE | e1215(e)); }
 
 // atomics
 // Use ra0mem to disallow R0 as base.
@@ -766,7 +788,6 @@ inline void Assembler::stvx(  VectorRegister d, Register s2) { emit_int32( STVX_
 inline void Assembler::stvxl( VectorRegister d, Register s2) { emit_int32( STVXL_OPCODE  | vrt(d) | rb(s2)); }
 inline void Assembler::lvsl(  VectorRegister d, Register s2) { emit_int32( LVSL_OPCODE   | vrt(d) | rb(s2)); }
 inline void Assembler::lvsr(  VectorRegister d, Register s2) { emit_int32( LVSR_OPCODE   | vrt(d) | rb(s2)); }
-
 
 inline void Assembler::load_const(Register d, void* x, Register tmp) {
    load_const(d, (long)x, tmp);

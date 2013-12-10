@@ -687,17 +687,9 @@ int SharedRuntime::c_calling_convention(const BasicType *sig_bt,
     F13->as_VMReg()
   };
 
-  const int num_iarg_registers = sizeof(iarg_reg) / sizeof(iarg_reg[0]);
-  const int num_farg_registers = sizeof(farg_reg) / sizeof(farg_reg[0]);
-
-  // The first 8 arguments are not passed on the stack.
-  const int num_args_in_regs = 8;
-#define put_arg_in_reg(arg) ((arg) < num_args_in_regs)
-
   // Check calling conventions consistency.
-  assert(num_iarg_registers == num_args_in_regs
-         && num_iarg_registers == 8
-         && num_farg_registers == 13,
+  assert(sizeof(iarg_reg) / sizeof(iarg_reg[0]) == Argument::n_int_register_parameters_c &&
+         sizeof(farg_reg) / sizeof(farg_reg[0]) == Argument::n_float_register_parameters_c,
          "consistency");
 
   // `Stk' counts stack slots. Due to alignment, 32 bit values occupy
@@ -705,8 +697,6 @@ int SharedRuntime::c_calling_convention(const BasicType *sig_bt,
   const int inc_stk_for_intfloat   = 2; // 2 slots for ints and floats
   const int inc_stk_for_longdouble = 2; // 2 slots for longs and doubles
 
-  int ill_i = 0;
-  int ill_t = 0;
   int i;
   VMReg reg;
   // Leave room for C-compatible ABI_112.
@@ -726,6 +716,11 @@ int SharedRuntime::c_calling_convention(const BasicType *sig_bt,
     if (regs2 != NULL) regs2[i].set_bad();
 
     switch(sig_bt[i]) {
+
+    //
+    // If arguments 0-7 are integers, they are passed in integer registers.
+    // Argument i is placed in iarg_reg[i].
+    //
     case T_BOOLEAN:
     case T_CHAR:
     case T_BYTE:
@@ -754,7 +749,7 @@ int SharedRuntime::c_calling_convention(const BasicType *sig_bt,
     case T_ADDRESS:
     case T_METADATA:
       // Oops are already boxed if required (JNI).
-      if (put_arg_in_reg(arg)) {
+      if (arg < Argument::n_int_register_parameters_c) {
         reg = iarg_reg[arg];
       } else {
         reg = VMRegImpl::stack2reg(stk);
@@ -762,57 +757,66 @@ int SharedRuntime::c_calling_convention(const BasicType *sig_bt,
       }
       regs[i].set2(reg);
       break;
+
+    //
+    // Floats are treated differently from int regs:  The first 13 float arguments
+    // are passed in registers (not the float args among the first 13 args).
+    // Thus argument i is NOT passed in farg_reg[i] if it is float.  It is passed
+    // in farg_reg[j] if argument i is the j-th float argument of this call.
+    //
     case T_FLOAT:
-      if (put_arg_in_reg(arg)) {
+      if (freg < Argument::n_float_register_parameters_c) {
+        // Put float in register ...
         reg = farg_reg[freg];
+        ++freg;
+
+        // Argument i for i > 8 is placed on the stack even if it's
+        // placed in a register (if it's a float arg). Aix disassembly
+        // shows that xlC places these float args on the stack AND in
+        // a register. This is not documented, but we follow this
+        // convention, too.
+        if (arg >= Argument::n_regs_not_on_stack_c) {
+          // ... and on the stack.
+          guarantee(regs2 != NULL, "must pass float in register and stack slot");
+          VMReg reg2 = VMRegImpl::stack2reg(stk LINUX_ONLY(+1));
+          regs2[i].set1(reg2);
+          stk += inc_stk_for_intfloat;
+        }
+
       } else {
-        // Put float on stack
-#       if defined(LINUX)
-        reg = VMRegImpl::stack2reg(stk+1);
-#       elif defined(AIX)
-        reg = VMRegImpl::stack2reg(stk);
-#       else
-#       error "unknown OS"
-#       endif
+        // Put float on stack.
+        reg = VMRegImpl::stack2reg(stk LINUX_ONLY(+1));
         stk += inc_stk_for_intfloat;
       }
-
-      if (freg < num_farg_registers) {
-        // There are still some float argument registers left. Put the
-        // float in a register if not already done.
-        if (reg != farg_reg[freg]) {
-          guarantee(regs2 != NULL, "must pass float in register and stack slot");
-          VMReg reg2 = farg_reg[freg];
-          regs2[i].set1(reg2);
-        }
-        ++freg;
-      }
-
       regs[i].set1(reg);
       break;
     case T_DOUBLE:
       assert(sig_bt[i+1] == T_VOID, "expecting half");
-      if (put_arg_in_reg(arg)) {
+      if (freg < Argument::n_float_register_parameters_c) {
+        // Put double in register ...
         reg = farg_reg[freg];
+        ++freg;
+
+        // Argument i for i > 8 is placed on the stack even if it's
+        // placed in a register (if it's a double arg). Aix disassembly
+        // shows that xlC places these float args on the stack AND in
+        // a register. This is not documented, but we follow this
+        // convention, too.
+        if (arg >= Argument::n_regs_not_on_stack_c) {
+          // ... and on the stack.
+          guarantee(regs2 != NULL, "must pass float in register and stack slot");
+          VMReg reg2 = VMRegImpl::stack2reg(stk);
+          regs2[i].set2(reg2);
+          stk += inc_stk_for_longdouble;
+        }
       } else {
         // Put double on stack.
         reg = VMRegImpl::stack2reg(stk);
         stk += inc_stk_for_longdouble;
       }
-
-      if (freg < num_farg_registers) {
-        // There are still some float argument registers left. Put the
-        // float in a register if not already done.
-        if (reg != farg_reg[freg]) {
-          guarantee(regs2 != NULL, "must pass float in register and stack slot");
-          VMReg reg2 = farg_reg[freg];
-          regs2[i].set2(reg2);
-        }
-        ++freg;
-      }
-
       regs[i].set2(reg);
       break;
+
     case T_VOID:
       // Do not count halves.
       regs[i].set_bad();
@@ -877,7 +881,7 @@ static address gen_c2i_adapter(MacroAssembler *masm,
   __ mtlr(return_pc);
 
 
-  // call the interpreter
+  // Call the interpreter.
   __ BIND(call_interpreter);
   __ mtctr(ientry);
 
@@ -947,8 +951,12 @@ static address gen_c2i_adapter(MacroAssembler *masm,
 
   // Jump to the interpreter just as if interpreter was doing it.
 
+#ifdef CC_INTERP
+  const Register tos = R17_tos;
+#endif
+
   // load TOS
-  __ addi(R17_tos, R1_SP, st_off);
+  __ addi(tos, R1_SP, st_off);
 
   // Frame_manager expects initial_caller_sp (= SP without resize by c2i) in R21_tmp1.
   assert(sender_SP == R21_sender_SP, "passing initial caller's SP in wrong register");
@@ -982,7 +990,9 @@ static void gen_i2c_adapter(MacroAssembler *masm,
   // save code can segv when fxsave instructions find improperly
   // aligned stack pointer.
 
+#ifdef CC_INTERP
   const Register ld_ptr = R17_tos;
+#endif
   const Register value_regs[] = { R22_tmp2, R23_tmp3, R24_tmp4, R25_tmp5, R26_tmp6 };
   const int num_value_regs = sizeof(value_regs) / sizeof(Register);
   int value_regs_index = 0;
@@ -1137,7 +1147,7 @@ AdapterHandlerEntry* SharedRuntime::generate_i2c2i_adapters(MacroAssembler *masm
       __ bne_predict_taken(CCR0, valid);
       // We have a null argument, branch to ic_miss_stub.
       __ b64_patchable((address)SharedRuntime::get_ic_miss_stub(),
-                           relocInfo::runtime_call_type);
+                       relocInfo::runtime_call_type);
       __ BIND(valid);
     }
   }
@@ -1154,7 +1164,7 @@ AdapterHandlerEntry* SharedRuntime::generate_i2c2i_adapters(MacroAssembler *masm
     __ beq_predict_taken(CCR0, valid);
     // We have an unexpected klass, branch to ic_miss_stub.
     __ b64_patchable((address)SharedRuntime::get_ic_miss_stub(),
-                         relocInfo::runtime_call_type);
+                     relocInfo::runtime_call_type);
     __ BIND(valid);
   }
 
@@ -1170,8 +1180,7 @@ AdapterHandlerEntry* SharedRuntime::generate_i2c2i_adapters(MacroAssembler *masm
   __ beq_predict_taken(CCR0, call_interpreter);
 
   // Branch to ic_miss_stub.
-  __ b64_patchable((address)SharedRuntime::get_ic_miss_stub(),
-                       relocInfo::runtime_call_type);
+  __ b64_patchable((address)SharedRuntime::get_ic_miss_stub(), relocInfo::runtime_call_type);
 
   // entry: c2i
 
@@ -2594,7 +2603,11 @@ static void push_skeleton_frame(MacroAssembler* masm, bool deopt,
   __ ld(frame_size_reg, 0, frame_sizes_reg);
   __ std(pc_reg, _abi(lr), R1_SP);
   __ push_frame(frame_size_reg, R0/*tmp*/);
+#ifdef CC_INTERP
   __ std(R1_SP, _parent_ijava_frame_abi(initial_caller_sp), R1_SP);
+#else
+  Unimplemented();
+#endif
   __ addi(number_of_frames_reg, number_of_frames_reg, -1);
   __ addi(frame_sizes_reg, frame_sizes_reg, wordSize);
   __ addi(pcs_reg, pcs_reg, wordSize);
@@ -2693,7 +2706,9 @@ static void push_skeleton_frames(MacroAssembler* masm, bool deopt,
   // Store it in the top interpreter frame.
   __ std(R0, _abi(lr), R1_SP);
   // Initialize frame_manager_lr of interpreter top frame.
+#ifdef CC_INTERP
   __ std(R0, _top_ijava_frame_abi(frame_manager_lr), R1_SP);
+#endif
 }
 #endif
 
@@ -2886,8 +2901,7 @@ void SharedRuntime::generate_deopt_blob() {
 
   // Initialize R14_state.
   __ ld(R14_state, 0, R1_SP);
-  __ addi(R14_state, R14_state,
-              -frame::interpreter_frame_cinterpreterstate_size_in_bytes());
+  __ addi(R14_state, R14_state, -frame::interpreter_frame_cinterpreterstate_size_in_bytes());
   // Also inititialize R15_prev_state.
   __ restore_prev_state();
 
@@ -3010,8 +3024,7 @@ void SharedRuntime::generate_uncommon_trap_blob() {
 
   // Initialize R14_state, ...
   __ ld(R11_scratch1, 0, R1_SP);
-  __ addi(R14_state, R11_scratch1,
-              -frame::interpreter_frame_cinterpreterstate_size_in_bytes());
+  __ addi(R14_state, R11_scratch1, -frame::interpreter_frame_cinterpreterstate_size_in_bytes());
   // also initialize R15_prev_state.
   __ restore_prev_state();
   // Return to the interpreter entry point.

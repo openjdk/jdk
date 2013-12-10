@@ -40,8 +40,10 @@
   #define JNIIMPORT
 #endif
 
-  #define JNICALL
-  typedef int jint;
+#define JNICALL
+
+typedef int jint;
+
 #if defined(_LP64)
   typedef long jlong;
 #else

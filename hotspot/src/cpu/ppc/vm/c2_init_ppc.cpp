@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2013, Oracle and/or its affiliates. All rights reserved.
  * Copyright 2012, 2013 SAP AG. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -23,20 +23,26 @@
  *
  */
 
-// make sure the defines don't screw up the declarations later on in this file
-#define DONT_USE_REGISTER_DEFINES
-
 #include "precompiled.hpp"
-#include "asm/macroAssembler.hpp"
-#include "asm/register.hpp"
-#include "register_ppc.hpp"
-#ifdef TARGET_ARCH_MODEL_ppc_32
-# include "interp_masm_ppc_32.hpp"
-#endif
-#ifdef TARGET_ARCH_MODEL_ppc_64
-# include "interp_masm_ppc_64.hpp"
-#endif
+#include "opto/compile.hpp"
+#include "opto/node.hpp"
+#include "runtime/globals.hpp"
+#include "utilities/debug.hpp"
 
-REGISTER_DEFINITION(Register, noreg);
+// processor dependent initialization for ppc
 
-REGISTER_DEFINITION(FloatRegister, fnoreg);
+void Compile::pd_compiler2_init() {
+
+  // Power7 and later
+  if (PowerArchitecturePPC64 > 6) {
+    if (FLAG_IS_DEFAULT(UsePopCountInstruction)) {
+      FLAG_SET_ERGO(bool, UsePopCountInstruction, true);
+    }
+  }
+
+  if (PowerArchitecturePPC64 == 6) {
+    if (FLAG_IS_DEFAULT(InsertEndGroupPPC64)) {
+      FLAG_SET_ERGO(bool, InsertEndGroupPPC64, true);
+    }
+  }
+}
