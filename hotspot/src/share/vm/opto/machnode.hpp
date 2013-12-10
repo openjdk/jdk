@@ -103,6 +103,15 @@ public:
     return ::as_XMMRegister(reg(ra_, node, idx));
   }
 #endif
+  // CondRegister reg converter
+#if defined(PPC64)
+  ConditionRegister as_ConditionRegister(PhaseRegAlloc *ra_, const Node *node) const {
+    return ::as_ConditionRegister(reg(ra_, node));
+  }
+  ConditionRegister as_ConditionRegister(PhaseRegAlloc *ra_, const Node *node, int idx) const {
+    return ::as_ConditionRegister(reg(ra_, node, idx));
+  }
+#endif
 
   virtual intptr_t  constant() const;
   virtual relocInfo::relocType constant_reloc() const;

@@ -2315,6 +2315,7 @@ private:
 #if defined(IA32) || defined(AMD64)
     if (strcmp(rep_var,"$XMMRegister") == 0)   return "as_XMMRegister";
 #endif
+    if (strcmp(rep_var,"$CondRegister") == 0)  return "as_ConditionRegister";
     return NULL;
   }
 
