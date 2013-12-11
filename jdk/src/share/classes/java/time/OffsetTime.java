@@ -103,6 +103,13 @@ import java.util.Objects;
  * For example, the value "13:45.30.123456789+02:00" can be stored
  * in an {@code OffsetTime}.
  *
+ * <p>
+ * This is a <a href="{@docRoot}/java/lang/doc-files/ValueBased.html">value-based</a>
+ * class; use of identity-sensitive operations (including reference equality
+ * ({@code ==}), identity hash code, or synchronization) on instances of
+ * {@code OffsetTime} may have unpredictable results and should be avoided.
+ * The {@code equals} method should be used for comparisons.
+ *
  * @implSpec
  * This class is immutable and thread-safe.
  *

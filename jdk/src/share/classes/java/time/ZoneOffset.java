@@ -115,6 +115,13 @@ import java.util.concurrent.ConcurrentMap;
  * Implementations may choose to cache certain common offsets, however
  * applications must not rely on such caching.
  *
+ * <p>
+ * This is a <a href="{@docRoot}/java/lang/doc-files/ValueBased.html">value-based</a>
+ * class; use of identity-sensitive operations (including reference equality
+ * ({@code ==}), identity hash code, or synchronization) on instances of
+ * {@code ZoneOffset} may have unpredictable results and should be avoided.
+ * The {@code equals} method should be used for comparisons.
+ *
  * @implSpec
  * This class is immutable and thread-safe.
  *

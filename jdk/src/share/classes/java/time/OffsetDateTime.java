@@ -113,6 +113,13 @@ import java.util.Objects;
  * in simpler applications. This class may be used when modeling date-time concepts in
  * more detail, or when communicating to a database or in a network protocol.
  *
+ * <p>
+ * This is a <a href="{@docRoot}/java/lang/doc-files/ValueBased.html">value-based</a>
+ * class; use of identity-sensitive operations (including reference equality
+ * ({@code ==}), identity hash code, or synchronization) on instances of
+ * {@code OffsetDateTime} may have unpredictable results and should be avoided.
+ * The {@code equals} method should be used for comparisons.
+ *
  * @implSpec
  * This class is immutable and thread-safe.
  *
