@@ -586,7 +586,7 @@ public class TransTypes extends TreeTranslator {
         try {
             currentMethod = null;
             tree.params = translate(tree.params);
-            tree.body = translate(tree.body, null);
+            tree.body = translate(tree.body, tree.body.type==null? null : erasure(tree.body.type));
             tree.type = erasure(tree.type);
             result = tree;
         }
