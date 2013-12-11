@@ -103,6 +103,14 @@ import java.time.temporal.ValueRange;
  * to create new HijrahDate instances.
  * Alternatively, the {@link #withVariant} method can be used to convert
  * to a new HijrahChronology.
+ *
+ * <p>
+ * This is a <a href="{@docRoot}/java/lang/doc-files/ValueBased.html">value-based</a>
+ * class; use of identity-sensitive operations (including reference equality
+ * ({@code ==}), identity hash code, or synchronization) on instances of
+ * {@code HijrahDate} may have unpredictable results and should be avoided.
+ * The {@code equals} method should be used for comparisons.
+ *
  * @implSpec
  * This class is immutable and thread-safe.
  *

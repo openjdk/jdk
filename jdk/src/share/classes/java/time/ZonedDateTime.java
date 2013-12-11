@@ -142,6 +142,13 @@ import java.util.Objects;
  * a vital, but secondary, piece of information, used to ensure that the class
  * represents an instant, especially during a daylight savings overlap.
  *
+ * <p>
+ * This is a <a href="{@docRoot}/java/lang/doc-files/ValueBased.html">value-based</a>
+ * class; use of identity-sensitive operations (including reference equality
+ * ({@code ==}), identity hash code, or synchronization) on instances of
+ * {@code ZonedDateTime} may have unpredictable results and should be avoided.
+ * The {@code equals} method should be used for comparisons.
+ *
  * @implSpec
  * A {@code ZonedDateTime} holds state equivalent to three separate objects,
  * a {@code LocalDateTime}, a {@code ZoneId} and the resolved {@code ZoneOffset}.

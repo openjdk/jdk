@@ -118,6 +118,13 @@ import java.util.regex.Pattern;
  * most applications.
  * See {@link Instant} for a discussion as to the meaning of the second and time-scales.
  *
+ * <p>
+ * This is a <a href="{@docRoot}/java/lang/doc-files/ValueBased.html">value-based</a>
+ * class; use of identity-sensitive operations (including reference equality
+ * ({@code ==}), identity hash code, or synchronization) on instances of
+ * {@code Duration} may have unpredictable results and should be avoided.
+ * The {@code equals} method should be used for comparisons.
+ *
  * @implSpec
  * This class is immutable and thread-safe.
  *
