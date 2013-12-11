@@ -2240,6 +2240,9 @@ run:
               }
               result->set_klass_gap(0);
               result->set_klass(k_entry);
+              // Must prevent reordering of stores for object initialization
+              // with stores that publish the new object.
+              OrderAccess::storestore();
               SET_STACK_OBJECT(result, 0);
               UPDATE_PC_AND_TOS_AND_CONTINUE(3, 1);
             }
@@ -2248,6 +2251,9 @@ run:
         // Slow case allocation
         CALL_VM(InterpreterRuntime::_new(THREAD, METHOD->constants(), index),
                 handle_exception);
+        // Must prevent reordering of stores for object initialization
+        // with stores that publish the new object.
+        OrderAccess::storestore();
         SET_STACK_OBJECT(THREAD->vm_result(), 0);
         THREAD->set_vm_result(NULL);
         UPDATE_PC_AND_TOS_AND_CONTINUE(3, 1);
@@ -2257,6 +2263,9 @@ run:
         jint size = STACK_INT(-1);
         CALL_VM(InterpreterRuntime::anewarray(THREAD, METHOD->constants(), index, size),
                 handle_exception);
+        // Must prevent reordering of stores for object initialization
+        // with stores that publish the new object.
+        OrderAccess::storestore();
         SET_STACK_OBJECT(THREAD->vm_result(), -1);
         THREAD->set_vm_result(NULL);
         UPDATE_PC_AND_CONTINUE(3);
@@ -2271,6 +2280,9 @@ run:
         //adjust pointer to start of stack element
         CALL_VM(InterpreterRuntime::multianewarray(THREAD, dimarray),
                 handle_exception);
+        // Must prevent reordering of stores for object initialization
+        // with stores that publish the new object.
+        OrderAccess::storestore();
         SET_STACK_OBJECT(THREAD->vm_result(), -dims);
         THREAD->set_vm_result(NULL);
         UPDATE_PC_AND_TOS_AND_CONTINUE(4, -(dims-1));
@@ -2693,6 +2705,9 @@ run:
         jint size = STACK_INT(-1);
         CALL_VM(InterpreterRuntime::newarray(THREAD, atype, size),
                 handle_exception);
+        // Must prevent reordering of stores for object initialization
+        // with stores that publish the new object.
+        OrderAccess::storestore();
         SET_STACK_OBJECT(THREAD->vm_result(), -1);
         THREAD->set_vm_result(NULL);
 
@@ -2926,6 +2941,12 @@ run:
   } // handle_Early_Return
 
   handle_return: {
+    // A storestore barrier is required to order initialization of
+    // final fields with publishing the reference to the object that
+    // holds the field. Without the barrier the value of final fields
+    // can be observed to change.
+    OrderAccess::storestore();
+
     DECACHE_STATE();
 
     bool suppress_error = istate->msg() == popping_frame || istate->msg() == early_return;
