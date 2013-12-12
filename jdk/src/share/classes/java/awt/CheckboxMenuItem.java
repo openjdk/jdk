@@ -367,7 +367,7 @@ public class CheckboxMenuItem extends MenuItem implements ItemSelectable, Access
      * This method is not called unless item events are
      * enabled for this menu item. Item events are enabled
      * when one of the following occurs:
-     * <p><ul>
+     * <ul>
      * <li>An <code>ItemListener</code> object is registered
      * via <code>addItemListener</code>.
      * <li>Item events are enabled via <code>enableEvents</code>.

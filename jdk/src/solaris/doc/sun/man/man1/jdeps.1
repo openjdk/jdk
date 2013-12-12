@@ -62,7 +62,7 @@ jdeps \- Java class dependency analyzer\&.
 \fIoptions\fR
 Command-line options\&. See Options\&.
 .TP     
-\fIclass\fR\fIes\fR
+\fIclasses\fR
 Name of the classes to analyze\&. You can specify a class that can be found in the class path, by its file name, a directory, or a JAR file\&.
 .SH DESCRIPTION    
 The \fI\fR\f3jdeps\fR command shows the package-level or class-level dependencies of Java class files\&. The input class can be a path name to a \f3\&.class\fR file, a directory, a JAR file, or it can be a fully qualified class name to analyze all class files\&. The options determine the output\&. By default, \f3jdeps\fR outputs the dependencies to the system output\&. It can generate the dependencies in DOT language (see the \f3-dotoutput\fR option)\&.
@@ -105,6 +105,12 @@ Finds dependencies in packages matching the specified regular expression pattern
 -include <\fIregex\fR>
 .br
 Restricts analysis to classes matching pattern\&. This option filters the list of classes to be analyzed\&. It can be used together with \f3-p\fR and \f3-e\fR which apply pattern to the dependencies\&.
+.TP
+-jdkinternals
+.br
+Finds class-level dependences in JDK internal APIs\&. By default, it analyzes all classes specified in the \f3-classpath\fR option and in input files unless you specified the \f3-include\fR option\&. You cannot use this option with the \f3-p\fR, \f3-e\fR, and \f3-s\fR options\&.
+
+\fIWarning\fR: JDK internal APIs may not be accessible in upcoming releases\&.
 .TP
 -P, -profile
 .br

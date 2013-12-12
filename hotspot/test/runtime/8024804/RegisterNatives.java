@@ -22,6 +22,7 @@
  */
 
 /*
+ * @ignore 8028741
  * @test
  * @bug 8024804
  * @summary registerNatives() interface resolution should receive IAE

@@ -23,7 +23,8 @@
  * questions.
  */
 
-/**********************************************************************
+/*
+ **********************************************************************
  **********************************************************************
  **********************************************************************
  *** COPYRIGHT (c) Eastman Kodak Company, 1997                      ***
@@ -64,7 +65,6 @@ import java.awt.RenderingHints;
  * color conversion.
  * <p>
  * Note that Source and Destination may be the same object.
- * <p>
  * @see java.awt.RenderingHints#KEY_COLOR_RENDERING
  * @see java.awt.RenderingHints#KEY_DITHERING
  */

@@ -1047,7 +1047,7 @@ public abstract class QuadCurve2D implements Shape, Cloneable {
     /**
      * Evaluate the t values in the first num slots of the vals[] array
      * and place the evaluated values back into the same array.  Only
-     * evaluate t values that are within the range <0, 1>, including
+     * evaluate t values that are within the range &lt;0, 1&gt;, including
      * the 0 and 1 ends of the range iff the include0 or include1
      * booleans are true.  If an "inflection" equation is handed in,
      * then any points which represent a point of inflection for that
@@ -1081,7 +1081,7 @@ public abstract class QuadCurve2D implements Shape, Cloneable {
 
     /**
      * Determine where coord lies with respect to the range from
-     * low to high.  It is assumed that low <= high.  The return
+     * low to high.  It is assumed that low &lt;= high.  The return
      * value is one of the 5 values BELOW, LOWEDGE, INSIDE, HIGHEDGE,
      * or ABOVE.
      */

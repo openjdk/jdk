@@ -4827,7 +4827,6 @@ public abstract class JComponent extends Container implements Serializable,
      * updating differs from the AWT because programs generally no
      * longer need to invoke <code>validate</code> to get the contents of the
      * GUI to update.
-     * <p>
      *
      * @see java.awt.Component#invalidate
      * @see java.awt.Container#validate
