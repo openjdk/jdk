@@ -505,12 +505,41 @@ public final class Collectors {
      */
     public static <T> Collector<T, ?, Double>
     summingDouble(ToDoubleFunction<? super T> mapper) {
+        /*
+         * In the arrays allocated for the collect operation, index 0
+         * holds the high-order bits of the running sum and index 1
+         * holds the low-order bits of the sum computed via
+         * compensated summation.
+         */
         return new CollectorImpl<>(
-                () -> new double[1],
-                (a, t) -> { a[0] += mapper.applyAsDouble(t); },
-                (a, b) -> { a[0] += b[0]; return a; },
-                a -> a[0], CH_NOID);
+                () -> new double[2],
+                (a, t) -> { sumWithCompensation(a, mapper.applyAsDouble(t)); },
+                (a, b) -> { sumWithCompensation(a, b[0]); return sumWithCompensation(a, b[1]); },
+                // Better error bounds to add both terms as the final sum
+                a -> a[0] + a[1],
+                CH_NOID);
     }
+
+    /**
+     * Incorporate a new double value using Kahan summation /
+     * compensation summation.
+     *
+     * High-order bits of the sum are in intermediateSum[0], low-order
+     * bits of the sum are in intermediateSum[1], any additional
+     * elements are application-specific.
+     *
+     * @param intermediateSum the high-order and low-order words of the intermediate sum
+     * @param value the name value to be included in the running sum
+     */
+    static double[] sumWithCompensation(double[] intermediateSum, double value) {
+        double tmp = value - intermediateSum[1];
+        double sum = intermediateSum[0];
+        double velvel = sum + tmp; // Little wolf of rounding error
+        intermediateSum[1] = (velvel - sum) - tmp;
+        intermediateSum[0] = velvel;
+        return intermediateSum;
+    }
+
 
     /**
      * Returns a {@code Collector} that produces the arithmetic mean of an integer-valued
@@ -560,17 +589,31 @@ public final class Collectors {
      * value is a {@code NaN} or the sum is at any point a {@code NaN} then the
      * average will be {@code NaN}.
      *
+     * @implNote The {@code double} format can represent all
+     * consecutive integers in the range -2<sup>53</sup> to
+     * 2<sup>53</sup>. If the pipeline has more than 2<sup>53</sup>
+     * values, the divisor in the average computation will saturate at
+     * 2<sup>53</sup>, leading to additional numerical errors.
+     *
      * @param <T> the type of the input elements
      * @param mapper a function extracting the property to be summed
      * @return a {@code Collector} that produces the sum of a derived property
      */
     public static <T> Collector<T, ?, Double>
     averagingDouble(ToDoubleFunction<? super T> mapper) {
+        /*
+         * In the arrays allocated for the collect operation, index 0
+         * holds the high-order bits of the running sum, index 1 holds
+         * the low-order bits of the sum computed via compensated
+         * summation, and index 2 holds the number of values seen.
+         */
         return new CollectorImpl<>(
-                () -> new double[2],
-                (a, t) -> { a[0] += mapper.applyAsDouble(t); a[1]++; },
-                (a, b) -> { a[0] += b[0]; a[1] += b[1]; return a; },
-                a -> (a[1] == 0) ? 0.0d : a[0] / a[1], CH_NOID);
+                () -> new double[3],
+                (a, t) -> { sumWithCompensation(a, mapper.applyAsDouble(t)); a[2]++; },
+                (a, b) -> { sumWithCompensation(a, b[0]); sumWithCompensation(a, b[1]); a[2] += b[2]; return a; },
+                // Better error bounds to add both terms as the final sum to compute average
+                a -> (a[2] == 0) ? 0.0d : ((a[0] + a[1]) / a[2]),
+                CH_NOID);
     }
 
     /**

@@ -80,9 +80,7 @@ public class TagletWriterImpl extends TagletWriter {
      */
     public Content getDocRootOutput() {
         String path;
-        if (configuration.docrootparent.length() > 0)
-            path = configuration.docrootparent;
-        else if (htmlWriter.pathToRoot.isEmpty())
+        if (htmlWriter.pathToRoot.isEmpty())
             path = ".";
         else
             path = htmlWriter.pathToRoot.getPath();

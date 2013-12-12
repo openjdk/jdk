@@ -23,7 +23,7 @@
 
 /**
  * @test 4235519 8004212 8005394 8007298 8006295 8006315 8006530 8007379 8008925
- *       8014217 8025003 8026330
+ *       8014217 8025003 8026330 8028397
  * @summary tests java.util.Base64
  */
 
@@ -92,6 +92,9 @@ public class TestBase64 {
         // illegal line separator
         checkIAE(new Runnable() { public void run() { Base64.getMimeEncoder(10, new byte[]{'\r', 'N'}); }});
 
+        // malformed padding/ending
+        testMalformedPadding();
+
         // illegal base64 character
         decoded[2] = (byte)0xe0;
         checkIAE(new Runnable() {
@@ -100,34 +103,15 @@ public class TestBase64 {
             public void run() { Base64.getDecoder().decode(decoded, new byte[1024]); }});
         checkIAE(new Runnable() { public void run() {
             Base64.getDecoder().decode(ByteBuffer.wrap(decoded)); }});
-        checkIAE(new Runnable() { public void run() {
-            Base64.getDecoder().decode(ByteBuffer.wrap(decoded), ByteBuffer.allocate(1024)); }});
-        checkIAE(new Runnable() { public void run() {
-            Base64.getDecoder().decode(ByteBuffer.wrap(decoded), ByteBuffer.allocateDirect(1024)); }});
-
-        // illegal ending unit
-        checkIOE(new Testable() { public void test() throws IOException {
-                                     byte[] bytes = "AA=".getBytes("ASCII");
-                                     try (InputStream stream =
-                                              Base64.getDecoder().wrap(new ByteArrayInputStream(bytes))) {
-                                         while (stream.read() != -1);
-                                     }
-        }});
-
-        // test return value from decode(ByteBuffer, ByteBuffer)
-        testDecBufRet();
 
         // test single-non-base64 character for mime decoding
         testSingleNonBase64MimeDec();
 
         // test decoding of unpadded data
         testDecodeUnpadded();
+
         // test mime decoding with ignored character after padding
         testDecodeIgnoredAfterPadding();
-
-        // lenient mode for ending unit
-        testLenientPadding();
-
     }
 
     private static sun.misc.BASE64Encoder sunmisc = new sun.misc.BASE64Encoder();
@@ -201,24 +185,6 @@ public class TestBase64 {
 
                     if (encoded2 != null)
                         testDecode(dec, ByteBuffer.wrap(encoded2), orig);
-
-                    // -------- testing encode(Buffer, Buffer)--------
-                    testEncode(enc, encoded,
-                               ByteBuffer.wrap(orig),
-                               ByteBuffer.allocate(encoded.length + 10));
-
-                    testEncode(enc, encoded,
-                               ByteBuffer.wrap(orig),
-                               ByteBuffer.allocateDirect(encoded.length + 10));
-
-                    // --------testing decode(Buffer, Buffer);--------
-                    testDecode(dec, orig,
-                               ByteBuffer.wrap(encoded),
-                               ByteBuffer.allocate(orig.length + 10));
-
-                    testDecode(dec, orig,
-                               ByteBuffer.wrap(encoded),
-                               ByteBuffer.allocateDirect(orig.length + 10));
 
                     // --------testing decode.wrap(input stream)--------
                     // 1) random buf length
@@ -322,9 +288,7 @@ public class TestBase64 {
         checkNull(new Runnable() { public void run() { enc.encode(ba_null, new byte[10]); }});
         checkNull(new Runnable() { public void run() { enc.encode(new byte[10], ba_null); }});
         checkNull(new Runnable() { public void run() { enc.encode(bb_null); }});
-        checkNull(new Runnable() { public void run() { enc.encode(bb_null, ByteBuffer.allocate(10), 0); }});
-        checkNull(new Runnable() { public void run() { enc.encode(ByteBuffer.allocate(10), bb_null, 0); }});
-        checkNull(new Runnable() { public void run() { enc.wrap(null); }});
+        checkNull(new Runnable() { public void run() { enc.wrap((OutputStream)null); }});
     }
 
     private static void testNull(final Base64.Decoder dec) {
@@ -333,9 +297,7 @@ public class TestBase64 {
         checkNull(new Runnable() { public void run() { dec.decode(ba_null, new byte[10]); }});
         checkNull(new Runnable() { public void run() { dec.decode(new byte[10], ba_null); }});
         checkNull(new Runnable() { public void run() { dec.decode(bb_null); }});
-        checkNull(new Runnable() { public void run() { dec.decode(bb_null, ByteBuffer.allocate(10)); }});
-        checkNull(new Runnable() { public void run() { dec.decode(ByteBuffer.allocate(10), bb_null); }});
-        checkNull(new Runnable() { public void run() { dec.wrap(null); }});
+        checkNull(new Runnable() { public void run() { dec.wrap((InputStream)null); }});
     }
 
     private static interface Testable {
@@ -412,78 +374,63 @@ public class TestBase64 {
                     dec.decode(encoded);
                     throw new RuntimeException("No IAE for non-base64 char");
                 } catch (IllegalArgumentException iae) {}
-
-                // decode(ByteBuffer[], ByteBuffer[])
-                ByteBuffer encodedBB = ByteBuffer.wrap(encoded);
-                ByteBuffer decodedBB = ByteBuffer.allocate(100);
-                int ret = decM.decode(encodedBB, decodedBB);
-                byte[] buf = new byte[ret];
-                decodedBB.flip();
-                decodedBB.get(buf);
-                checkEqual(buf, src[i], "Non-base64 char is not ignored");
-                try {
-                    encodedBB.rewind();
-                    decodedBB.clear();
-                    dec.decode(encodedBB, decodedBB);
-                    throw new RuntimeException("No IAE for non-base64 char");
-                } catch (IllegalArgumentException iae) {}
-                // direct
-                encodedBB.rewind();
-                decodedBB = ByteBuffer.allocateDirect(100);
-                ret = decM.decode(encodedBB, decodedBB);
-                buf = new byte[ret];
-                decodedBB.flip();
-                decodedBB.get(buf);
-                checkEqual(buf, src[i], "Non-base64 char is not ignored");
-                try {
-                    encodedBB.rewind();
-                    decodedBB.clear();
-                    dec.decode(encodedBB, decodedBB);
-                    throw new RuntimeException("No IAE for non-base64 char");
-                } catch (IllegalArgumentException iae) {}
             }
         }
     }
 
-    private static void testLenientPadding() throws Throwable {
-        String[] data = new String[] {
-            "=",         "",        // unnecessary padding
-            "QUJD=",     "ABC",     //"ABC".encode() -> "QUJD"
+    private static void testMalformedPadding() throws Throwable {
+        Object[] data = new Object[] {
+            "$=#",       "",      0,      // illegal ending unit
+            "A",         "",      0,      // dangling single byte
+            "A=",        "",      0,
+            "A==",       "",      0,
+            "QUJDA",     "ABC",   4,
+            "QUJDA=",    "ABC",   4,
+            "QUJDA==",   "ABC",   4,
 
-            "QQ=",       "A",       // incomplete padding
-            "QQ=N",      "A",       // incorrect padding
-            "QQ=?",      "A",
-            "QUJDQQ=",   "ABCA",
-            "QUJDQQ=N",  "ABCA",
-            "QUJDQQ=?",  "ABCA",
+            "=",         "",      0,      // unnecessary padding
+            "QUJD=",     "ABC",   4,      //"ABC".encode() -> "QUJD"
 
-            "QUI=X",     "AB",      // incorrect padding
-            "QUI=?",     "AB",      // incorrect padding
+            "AA=",       "",      0,      // incomplete padding
+            "QQ=",       "",      0,
+            "QQ=N",      "",      0,      // incorrect padding
+            "QQ=?",      "",      0,
+            "QUJDQQ=",   "ABC",   4,
+            "QUJDQQ=N",  "ABC",   4,
+            "QUJDQQ=?",  "ABC",   4,
         };
-        Base64.Decoder dec = Base64.getMimeDecoder();
 
-        for (int i = 0; i < data.length; i += 2) {
-            byte[] src = data[i].getBytes("ASCII");
-            byte[] expected = data[i + 1].getBytes("ASCII");
-            // decode(byte[])
-            byte[] ret = dec.decode(src);
-            checkEqual(ret, expected, "lenient padding decoding failed!");
+        Base64.Decoder[] decs = new Base64.Decoder[] {
+            Base64.getDecoder(),
+            Base64.getUrlDecoder(),
+            Base64.getMimeDecoder()
+        };
 
-            // decode(String)
-            ret = dec.decode(data[i]);
-            checkEqual(ret, expected, "lenient padding decoding failed!");
+        for (Base64.Decoder dec : decs) {
+            for (int i = 0; i < data.length; i += 3) {
+                final String srcStr = (String)data[i];
+                final byte[] srcBytes = srcStr.getBytes("ASCII");
+                final ByteBuffer srcBB = ByteBuffer.wrap(srcBytes);
+                byte[] expected = ((String)data[i + 1]).getBytes("ASCII");
+                int pos = (Integer)data[i + 2];
 
-            // decode(ByteBuffer)
-            ByteBuffer srcBB = ByteBuffer.wrap(src);
-            ByteBuffer retBB = dec.decode(srcBB);
-            checkEqual(srcBB.remaining(), 0, "lenient padding decoding failed!");
-            checkEqual(Arrays.copyOf(retBB.array(), retBB.remaining()),
-                       expected, "lenient padding decoding failed!");
+                // decode(byte[])
+                checkIAE(new Runnable() { public void run() { dec.decode(srcBytes); }});
 
-            // wrap.decode(byte[])
-            ret = new byte[10];
-            int n = dec.wrap(new ByteArrayInputStream(src)).read(ret);
-            checkEqual(Arrays.copyOf(ret, n), expected, "lenient padding decoding failed!");
+                // decode(String)
+                checkIAE(new Runnable() { public void run() { dec.decode(srcStr); }});
+
+                // decode(ByteBuffer)
+                checkIAE(new Runnable() { public void run() { dec.decode(srcBB); }});
+
+                // wrap stream
+                checkIOE(new Testable() {
+                    public void test() throws IOException {
+                        try (InputStream is = dec.wrap(new ByteArrayInputStream(srcBytes))) {
+                            while (is.read() != -1);
+                        }
+                }});
+            }
         }
     }
 
@@ -520,51 +467,6 @@ public class TestBase64 {
         }
     }
 
-    private static void testDecBufRet() throws Throwable {
-        Random rnd = new java.util.Random();
-        Base64.Encoder encoder = Base64.getEncoder();
-        Base64.Decoder decoder = Base64.getDecoder();
-        //                src   pos, len  expected
-        int[][] tests = { { 6,    3,   3,   3},   // xxx xxx    -> yyyy yyyy
-                          { 6,    3,   4,   3},
-                          { 6,    3,   5,   3},
-                          { 6,    3,   6,   6},
-                          { 6,   11,   4,   3},
-                          { 6,   11,   4,   3},
-                          { 6,   11,   5,   3},
-                          { 6,   11,   6,   6},
-                          { 7,    3,   6,   6},   // xxx xxx x  -> yyyy yyyy yy==
-                          { 7,    3,   7,   7},
-                          { 7,   11,   6,   6},
-                          { 7,   11,   7,   7},
-                          { 8,    3,   6,   6},   // xxx xxx xx -> yyyy yyyy yyy=
-                          { 8,    3,   7,   6},
-                          { 8,    3,   8,   8},
-                          { 8,   13,   6,   6},
-                          { 8,   13,   7,   6},
-                          { 8,   13,   8,   8},
-
-        };
-        ByteBuffer dstBuf = ByteBuffer.allocate(100);
-        for (boolean direct : new boolean[] { false, true}) {
-            for (int[] test : tests) {
-                byte[] src = new byte[test[0]];
-                rnd.nextBytes(src);
-                ByteBuffer srcBuf = direct ? ByteBuffer.allocate(100)
-                                           : ByteBuffer.allocateDirect(100);
-                srcBuf.put(encoder.encode(src)).flip();
-                dstBuf.clear().position(test[1]).limit(test[1]+ test[2]);
-                int ret = decoder.decode(srcBuf, dstBuf);
-                if (ret != test[3]) {
-                    System.out.printf(" [%6s] src=%d, pos=%d, len=%d, expected=%d, ret=%d%n",
-                                      direct?"direct":"",
-                                      test[0], test[1], test[2], test[3], ret);
-                    throw new RuntimeException("ret != expected");
-                }
-            }
-        }
-    }
-
     private static final void testEncode(Base64.Encoder enc, ByteBuffer bin, byte[] expected)
         throws Throwable {
 
@@ -585,71 +487,6 @@ public class TestBase64 {
         byte[] buf = new byte[bout.remaining()];
         bout.get(buf);
         checkEqual(buf, expected, "Base64 dec.decode(bf) failed!");
-    }
-
-    private static final void testEncode(Base64.Encoder enc, byte[] expected,
-                                         ByteBuffer ibb, ByteBuffer obb)
-        throws Throwable {
-        Random rnd = new Random();
-        int bytesOut = enc.encode(ibb, obb, 0);
-        if (ibb.hasRemaining()) {
-            throw new RuntimeException(
-                "Base64 enc.encode(bf, bf) failed with wrong return!");
-        }
-        obb.flip();
-        byte[] buf = new byte[obb.remaining()];
-        obb.get(buf);
-        checkEqual(buf, expected, "Base64 enc.encode(bf, bf) failed!");
-        ibb.rewind();
-        obb.position(0);
-        obb.limit(0);
-        bytesOut = 0;
-
-        do {  // increase the "limit" incrementally & randomly
-            int n = rnd.nextInt(expected.length - obb.position());
-            if (n == 0)
-                n = 1;
-            obb.limit(obb.limit() + n);
-            //obb.limit(Math.min(obb.limit() + n, expected.length));
-            bytesOut = enc.encode(ibb, obb, bytesOut);
-        } while (ibb.hasRemaining());
-        obb.flip();
-        buf = new byte[obb.remaining()];
-        obb.get(buf);
-        checkEqual(buf, expected, "Base64 enc.encode(bf, bf) failed!");
-    }
-
-    private static final void testDecode(Base64.Decoder dec, byte[] expected,
-                                         ByteBuffer ibb, ByteBuffer obb)
-        throws Throwable {
-        Random rnd = new Random();
-
-        dec.decode(ibb, obb);
-        if (ibb.hasRemaining()) {
-            throw new RuntimeException(
-                "Base64 dec.decode(bf, bf) failed with un-decoded ibb!");
-        }
-        obb.flip();
-        byte[] buf = new byte[obb.remaining()];
-        obb.get(buf);
-        checkEqual(buf, expected, "Base64 dec.decode(bf, bf) failed!");
-
-        ibb.rewind();
-        obb.position(0);
-        obb.limit(0);
-        do {  // increase the "limit" incrementally & randomly
-            int n = rnd.nextInt(expected.length - obb.position());
-            if (n == 0)
-                n = 1;
-            obb.limit(obb.limit() + n);
-            dec.decode(ibb, obb);
-         } while (ibb.hasRemaining());
-
-
-        obb.flip();
-        buf = new byte[obb.remaining()];
-        obb.get(buf);
-        checkEqual(buf, expected, "Base64 dec.decode(bf, bf) failed!");
     }
 
     private static final void checkEqual(int v1, int v2, String msg)

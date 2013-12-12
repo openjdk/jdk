@@ -377,8 +377,23 @@ abstract class DoublePipeline<E_IN>
 
     @Override
     public final double sum() {
-        // TODO: better algorithm to compensate for errors
-        return reduce(0.0, Double::sum);
+        /*
+         * In the arrays allocated for the collect operation, index 0
+         * holds the high-order bits of the running sum and index 1
+         * holds the low-order bits of the sum computed via
+         * compensated summation.
+         */
+        double[] summation = collect(() -> new double[2],
+                               (ll, d) -> {
+                                   Collectors.sumWithCompensation(ll, d);
+                               },
+                               (ll, rr) -> {
+                                   Collectors.sumWithCompensation(ll, rr[0]);
+                                   Collectors.sumWithCompensation(ll, rr[1]);
+                               });
+
+        // Better error bounds to add both terms as the final sum
+        return summation[0] + summation[1];
     }
 
     @Override
@@ -391,20 +406,37 @@ abstract class DoublePipeline<E_IN>
         return reduce(Math::max);
     }
 
+    /**
+     * {@inheritDoc}
+     *
+     * @implNote The {@code double} format can represent all
+     * consecutive integers in the range -2<sup>53</sup> to
+     * 2<sup>53</sup>. If the pipeline has more than 2<sup>53</sup>
+     * values, the divisor in the average computation will saturate at
+     * 2<sup>53</sup>, leading to additional numerical errors.
+     */
     @Override
     public final OptionalDouble average() {
-        double[] avg = collect(() -> new double[2],
-                               (ll, i) -> {
-                                   ll[0]++;
-                                   ll[1] += i;
+        /*
+         * In the arrays allocated for the collect operation, index 0
+         * holds the high-order bits of the running sum, index 1 holds
+         * the low-order bits of the sum computed via compensated
+         * summation, and index 2 holds the number of values seen.
+         */
+        double[] avg = collect(() -> new double[3],
+                               (ll, d) -> {
+                                   ll[2]++;
+                                   Collectors.sumWithCompensation(ll, d);
                                },
                                (ll, rr) -> {
-                                   ll[0] += rr[0];
-                                   ll[1] += rr[1];
+                                   Collectors.sumWithCompensation(ll, rr[0]);
+                                   Collectors.sumWithCompensation(ll, rr[1]);
+                                   ll[2] += rr[2];
                                });
-        return avg[0] > 0
-               ? OptionalDouble.of(avg[1] / avg[0])
-               : OptionalDouble.empty();
+        return avg[2] > 0
+            // Better error bounds to add both terms as the final sum to compute average
+            ? OptionalDouble.of((avg[0] + avg[1]) / avg[2])
+            : OptionalDouble.empty();
     }
 
     @Override

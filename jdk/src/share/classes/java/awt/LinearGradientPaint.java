@@ -75,7 +75,6 @@ import java.beans.ConstructorProperties;
  * <p>
  * The following code demonstrates typical usage of
  * {@code LinearGradientPaint}:
- * <p>
  * <pre>
  *     Point2D start = new Point2D.Float(0, 0);
  *     Point2D end = new Point2D.Float(50, 50);
@@ -92,7 +91,6 @@ import java.beans.ConstructorProperties;
  * <p>
  * This image demonstrates the example code above for each
  * of the three cycle methods:
- * <p>
  * <center>
  * <img src = "doc-files/LinearGradientPaint.png"
  * alt="image showing the output of the example code">

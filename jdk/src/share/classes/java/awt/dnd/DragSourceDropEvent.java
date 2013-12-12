@@ -37,7 +37,6 @@ package java.awt.dnd;
  * to provide appropriate feedback to the end user
  * when the operation completes.
  * <P>
- * <P>
  * @since 1.2
  */
 
