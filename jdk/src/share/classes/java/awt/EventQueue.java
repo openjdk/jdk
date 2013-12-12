@@ -652,7 +652,7 @@ public class EventQueue {
      * Dispatches an event. The manner in which the event is
      * dispatched depends upon the type of the event and the
      * type of the event's source object:
-     * <p>
+     *
      * <table border=1 summary="Event types, source types, and dispatch methods">
      * <tr>
      *     <th>Event Type</th>

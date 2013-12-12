@@ -180,6 +180,15 @@ class JdepsTask {
                 task.options.depth = 0;
             }
         },
+        new Option(false, "-jdkinternals") {
+            void process(JdepsTask task, String opt, String arg) {
+                task.options.findJDKInternals = true;
+                task.options.verbose = Analyzer.Type.CLASS;
+                if (task.options.includePattern == null) {
+                    task.options.includePattern = Pattern.compile(".*");
+                }
+            }
+        },
         new Option(false, "-version") {
             void process(JdepsTask task, String opt, String arg) {
                 task.options.version = true;
@@ -245,6 +254,11 @@ class JdepsTask {
                 }
             }
             if (options.regex != null && options.packageNames.size() > 0) {
+                showHelp();
+                return EXIT_CMDERR;
+            }
+            if (options.findJDKInternals &&
+                   (options.regex != null || options.packageNames.size() > 0 || options.showSummary)) {
                 showHelp();
                 return EXIT_CMDERR;
             }
@@ -571,6 +585,7 @@ class JdepsTask {
         boolean wildcard;
         boolean apiOnly;
         boolean showLabel;
+        boolean findJDKInternals;
         String dotOutputDir;
         String classpath = "";
         int depth = 1;
@@ -681,11 +696,22 @@ class JdepsTask {
         @Override
         public void visitDependence(String origin, Archive source,
                                     String target, Archive archive, Profile profile) {
-            if (!origin.equals(pkg)) {
-                pkg = origin;
-                writer.format("   %s (%s)%n", origin, source.getFileName());
+            if (options.findJDKInternals &&
+                    !(archive instanceof JDKArchive && profile == null)) {
+                // filter dependences other than JDK internal APIs
+                return;
             }
-            writer.format("      -> %-50s %s%n", target, getProfileArchiveInfo(archive, profile));
+            if (options.verbose == Analyzer.Type.VERBOSE) {
+                writer.format("   %-50s -> %-50s %s%n",
+                              origin, target, getProfileArchiveInfo(archive, profile));
+            } else {
+                if (!origin.equals(pkg)) {
+                    pkg = origin;
+                    writer.format("   %s (%s)%n", origin, source.getFileName());
+                }
+                writer.format("      -> %-50s %s%n",
+                              target, getProfileArchiveInfo(archive, profile));
+            }
         }
 
         @Override
@@ -717,6 +743,11 @@ class JdepsTask {
         @Override
         public void visitDependence(String origin, Archive source,
                                     String target, Archive archive, Profile profile) {
+            if (options.findJDKInternals &&
+                    !(archive instanceof JDKArchive && profile == null)) {
+                // filter dependences other than JDK internal APIs
+                return;
+            }
             // if -P option is specified, package name -> profile will
             // be shown and filter out multiple same edges.
             String name = getProfileArchiveInfo(archive, profile);

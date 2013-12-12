@@ -218,8 +218,8 @@ public enum JDBCType implements SQLType {
     }
 
     /**
-     * Returns the name of the data type.
-     * @return The name of the data type.
+     *{@inheritDoc }
+     * @return The name of this {@code SQLType}.
      */
     public String getName() {
         return name();

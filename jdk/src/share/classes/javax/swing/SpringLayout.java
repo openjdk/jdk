@@ -297,7 +297,7 @@ public class SpringLayout implements LayoutManager2 {
      * and "a - b" is equal to
      * <code>Spring.sum(a, Spring.minus(b))</code>.
      * See the
-     * {@link Spring <code>Spring</code> API documentation}
+     * {@link Spring Spring API documentation}
      * for further details
      * of spring arithmetic.
      *
