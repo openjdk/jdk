@@ -93,7 +93,7 @@ import java.io.IOException;
  *    JTextArea myArea = ??;
  *    myArea.getDocument().addDocumentListener(myListener);
  * </pre>
- * <p>
+ *
  * <dl>
  * <dt><b><font size=+1>Newlines</font></b>
  * <dd>

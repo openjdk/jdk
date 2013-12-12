@@ -1719,10 +1719,12 @@ OopMapSet* Runtime1::generate_code_for(StubID id, StubAssembler* sasm) {
 
         BarrierSet* bs = Universe::heap()->barrier_set();
         CardTableModRefBS* ct = (CardTableModRefBS*)bs;
+        assert(sizeof(*ct->byte_map_base) == sizeof(jbyte), "adjust this code");
+
         Label done;
         Label runtime;
 
-        // At this point we know new_value is non-NULL and the new_value crosses regsion.
+        // At this point we know new_value is non-NULL and the new_value crosses regions.
         // Must check to see if card is already dirty
 
         const Register thread = NOT_LP64(rax) LP64_ONLY(r15_thread);
@@ -1735,26 +1737,17 @@ OopMapSet* Runtime1::generate_code_for(StubID id, StubAssembler* sasm) {
         __ push(rax);
         __ push(rcx);
 
-        NOT_LP64(__ get_thread(thread);)
-        ExternalAddress cardtable((address)ct->byte_map_base);
-        assert(sizeof(*ct->byte_map_base) == sizeof(jbyte), "adjust this code");
-
+        const Register cardtable = rax;
         const Register card_addr = rcx;
-#ifdef _LP64
-        const Register tmp = rscratch1;
-        f.load_argument(0, card_addr);
-        __ shrq(card_addr, CardTableModRefBS::card_shift);
-        __ lea(tmp, cardtable);
-        // get the address of the card
-        __ addq(card_addr, tmp);
-#else
-        const Register card_index = rcx;
-        f.load_argument(0, card_index);
-        __ shrl(card_index, CardTableModRefBS::card_shift);
 
-        Address index(noreg, card_index, Address::times_1);
-        __ leal(card_addr, __ as_Address(ArrayAddress(cardtable, index)));
-#endif
+        f.load_argument(0, card_addr);
+        __ shrptr(card_addr, CardTableModRefBS::card_shift);
+        // Do not use ExternalAddress to load 'byte_map_base', since 'byte_map_base' is NOT
+        // a valid address and therefore is not properly handled by the relocation code.
+        __ movptr(cardtable, (intptr_t)ct->byte_map_base);
+        __ addptr(card_addr, cardtable);
+
+        NOT_LP64(__ get_thread(thread);)
 
         __ cmpb(Address(card_addr, 0), (int)G1SATBCardTableModRefBS::g1_young_card_val());
         __ jcc(Assembler::equal, done);

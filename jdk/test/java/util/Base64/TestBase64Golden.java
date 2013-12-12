@@ -55,7 +55,6 @@ public class TestBase64Golden {
         test0(Base64Type.MIME, Base64.getMimeEncoder(), Base64.getMimeDecoder(),
               "plain.txt", "mimeEncode.txt");
         test1();
-        test2();
     }
 
     public static void test0(Base64Type type, Encoder encoder, Decoder decoder,
@@ -113,28 +112,6 @@ public class TestBase64Golden {
             assertEqual(resBuf, encodedBuf);
             srcBuf.rewind(); // reset for next test
 
-            // test encode(ByteBuffer, ByteBuffer, bytesOut)
-            resBuf.clear();
-            len = encoder.encode(srcBuf, resBuf, 0);
-            assertEqual(len, encodedArr.length);
-            assertEqual(srcBuf.position(), limit);
-            assertEqual(srcBuf.limit(), limit);
-            assertEqual(resBuf.position(), len);
-            resBuf.flip();
-            assertEqual(resBuf, encodedBuf);
-            srcBuf.rewind();
-
-            // test encode(ByteBuffer, ByteBuffer, bytesOut)[direct]
-            ByteBuffer resBuf_d = ByteBuffer.allocateDirect(encodedArr.length);
-            len = encoder.encode(srcBuf, resBuf_d, 0);
-            assertEqual(len, encodedArr.length);
-            assertEqual(srcBuf.position(), limit);
-            assertEqual(srcBuf.limit(), limit);
-            assertEqual(resBuf_d.position(), len);
-            resBuf_d.flip();
-            assertEqual(resBuf_d, encodedBuf);
-            srcBuf.rewind();
-
             // test String encodeToString(byte[])
             String resEncodeStr = encoder.encodeToString(srcArr);
             assertEqual(resEncodeStr, encodedStr);
@@ -157,28 +134,6 @@ public class TestBase64Golden {
             assertEqual(resBuf, srcBuf);
             encodedBuf.rewind(); // reset for next test
 
-            // test int decode(ByteBuffer, ByteBuffer)
-            resBuf.clear();
-            len = decoder.decode(encodedBuf, resBuf);
-            assertEqual(len, srcArr.length);
-            assertEqual(encodedBuf.position(), limit);
-            assertEqual(encodedBuf.limit(), limit);
-            assertEqual(resBuf.position(), len);
-            resBuf.flip();
-            assertEqual(resBuf, srcBuf);
-            encodedBuf.rewind(); // reset for next test
-
-            // test int decode(ByteBuffer, ByteBuffer)[direct]
-            resBuf_d = ByteBuffer.allocateDirect(srcArr.length);
-            len = decoder.decode(encodedBuf, resBuf_d);
-            assertEqual(len, srcArr.length);
-            assertEqual(encodedBuf.position(), limit);
-            assertEqual(encodedBuf.limit(), limit);
-            assertEqual(resBuf_d.position(), len);
-            resBuf_d.flip();
-            assertEqual(resBuf_d, srcBuf);
-            encodedBuf.rewind(); // reset for next test
-
             // test byte[] decode(String)
             resArr = decoder.decode(encodedStr);
             assertEqual(resArr, srcArr);
@@ -197,35 +152,6 @@ public class TestBase64Golden {
     }
 
     private static void test1() throws Exception {
-        byte[] src = new byte[6];
-        new Random().nextBytes(src);
-
-        ByteBuffer srcBuf = ByteBuffer.allocate(10);
-        srcBuf.position(2);
-        srcBuf.mark();
-        srcBuf.limit(8);
-        srcBuf.put(src);
-        srcBuf.reset();
-
-        ByteBuffer dstBuf = ByteBuffer.allocate((src.length + 2) / 3 * 4);
-        Base64.getEncoder().encode(srcBuf, dstBuf, 0);
-        dstBuf.rewind();
-        byte[] dst = new byte[dstBuf.limit()];
-        dstBuf.get(dst);
-        System.out.printf("%n    src[%d]: %s%n", src.length, new String(src));
-        System.out.printf("encoded[%d]: %s%n",   dst.length, new String(dst));
-        assertEqual(src, Base64.getDecoder().decode(dst));
-
-        dstBuf = ByteBuffer.allocateDirect((src.length + 2) / 3 * 4);
-        srcBuf.reset();
-        Base64.getEncoder().encode(srcBuf, dstBuf, 0);
-        dstBuf.rewind();
-        dst = new byte[dstBuf.limit()];
-        dstBuf.get(dst);
-        assertEqual(src, Base64.getDecoder().decode(dst));
-    }
-
-    private static void test2() throws Exception {
         byte[] src = new byte[] {
             46, -97, -35, -44, 127, -60, -39, -4, -112, 34, -57, 47, -14, 67,
             40, 18, 90, -59, 68, 112, 23, 121, -91, 94, 35, 49, 104, 17, 30,

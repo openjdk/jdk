@@ -26,7 +26,7 @@
  * @bug 8026844
  * @summary Test multiplyExact as condition
  * @compile MulExactICondTest.java
- * @run main MulExactICondTest
+ * @run main MulExactICondTest -XX:+IgnoreUnrecognizedVMOptions -XX:+UnlockExperimentalVMOptions -XX:+UseMathExactIntrinsics
  *
  */
 

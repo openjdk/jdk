@@ -37,39 +37,21 @@ public class ProcessThread extends TestThread {
     /**
      * Creates a new {@code ProcessThread} object.
      *
-     * @param cmd The list of program and its arguments to pass to {@link ProcessBuilder}
-     */
-    public ProcessThread(List<String> cmd) {
-        super(new ProcessRunnable(cmd));
-    }
-
-    /**
-     * Creates a new {@code ProcessThread} object.
-     *
-     * @param cmd The string array of program and its arguments to pass to {@link ProcessBuilder}
-     */
-    public ProcessThread(String... cmd) {
-        super(new ProcessRunnable(cmd));
-    }
-
-    /**
-     * Creates a new {@code ProcessThread} object.
-     *
-     * @param threadName The name of thread
-     * @param cmd The list of program and its arguments to pass to {@link ProcessBuilder}
-     */
-    public ProcessThread(String threadName, List<String> cmd) {
-        super(new ProcessRunnable(cmd), threadName);
-    }
-
-    /**
-     * Creates a new {@code ProcessThread} object.
-     *
      * @param threadName The name of thread
      * @param cmd The string array of program and its arguments to pass to {@link ProcessBuilder}
      */
     public ProcessThread(String threadName, String... cmd) {
-        super(new ProcessRunnable(cmd), threadName);
+        super(new ProcessRunnable(new ProcessBuilder(cmd)), threadName);
+    }
+
+    /**
+     * Creates a new {@code ProcessThread} object.
+     *
+     * @param threadName The name of thread.
+     * @param pb The ProcessBuilder to execute.
+     */
+    public ProcessThread(String threadName, ProcessBuilder pb) {
+        super(new ProcessRunnable(pb), threadName);
     }
 
     /**
@@ -82,6 +64,13 @@ public class ProcessThread extends TestThread {
     }
 
     /**
+     * @return The process output, or null if the process has not yet completed.
+     */
+    public OutputAnalyzer getOutput() {
+        return ((ProcessRunnable) getRunnable()).getOutput();
+    }
+
+    /**
      * {@link Runnable} interface for starting and stopping {@link Process}.
      */
     static class ProcessRunnable extends XRun {
@@ -89,26 +78,16 @@ public class ProcessThread extends TestThread {
         private final ProcessBuilder processBuilder;
         private final CountDownLatch latch;
         private volatile Process process;
+        private volatile OutputAnalyzer output;
 
         /**
          * Creates a new {@code ProcessRunnable} object.
          *
-         * @param cmd The list of program and its arguments to to pass to {@link ProcessBuilder}
+         * @param pb The {@link ProcessBuilder} to run.
          */
-        public ProcessRunnable(List<String> cmd) {
+        public ProcessRunnable(ProcessBuilder pb) {
             super();
-            this.processBuilder = new ProcessBuilder(cmd);
-            this.latch = new CountDownLatch(1);
-        }
-
-        /**
-         * Creates a new {@code ProcessRunnable} object.
-         *
-         * @param cmd The string array of program and its arguments to to pass to {@link ProcessBuilder}
-         */
-        public ProcessRunnable(String... cmd) {
-            super();
-            this.processBuilder = new ProcessBuilder(cmd);
+            this.processBuilder = pb;
             this.latch = new CountDownLatch(1);
         }
 
@@ -125,12 +104,16 @@ public class ProcessThread extends TestThread {
             latch.countDown();
 
             // Will block...
-            OutputAnalyzer output = new OutputAnalyzer(this.process);
-
-            assertTrue(output.getOutput().isEmpty(), "Should get an empty output, got: "
-                        + Utils.NEW_LINE + output.getOutput());
-            assertNotEquals(output.getExitValue(), 0,
-                    "Process exited with unexpected exit code");
+            try {
+                output = new OutputAnalyzer(this.process);
+            } catch (Throwable t) {
+                String name = Thread.currentThread().getName();
+                System.out.println(String.format("ProcessThread[%s] failed: %s", name, t.toString()));
+                throw t;
+            } finally {
+                String logMsg = ProcessTools.getProcessLog(processBuilder, output);
+                System.out.println(logMsg);
+            }
         }
 
         /**
@@ -142,10 +125,19 @@ public class ProcessThread extends TestThread {
             // Wait until process is started
             latch.await();
             if (this.process != null) {
+                System.out.println("ProcessThread.stopProcess() will kill process");
                 this.process.destroy();
             }
         }
 
+        /**
+         * Returns the OutputAnalyzer with stdout/stderr from the process.
+         * @return The process output, or null if process not completed.
+         * @throws InterruptedException
+         */
+        public OutputAnalyzer getOutput() {
+            return output;
+        }
     }
 
 }

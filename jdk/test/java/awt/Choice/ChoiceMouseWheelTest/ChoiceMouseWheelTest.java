@@ -25,7 +25,9 @@
   @test
   @bug 7050935
   @summary closed/java/awt/Choice/WheelEventsConsumed/WheelEventsConsumed.html fails on win32
+  @library ../../regtesthelpers
   @author Oleg Pekhovskiy: area=awt-choice
+  @build Util
   @run main ChoiceMouseWheelTest
 */
 
@@ -142,8 +144,7 @@ public class ChoiceMouseWheelTest extends Frame {
                 throw new RuntimeException("Mouse Wheel scroll position error!");
             }
 
-            System.exit(0);
-
+            dispose();
         } catch (AWTException e) {
             throw new RuntimeException("AWTException occurred - problem creating robot!");
         }

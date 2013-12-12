@@ -625,13 +625,13 @@ static GrowableArray<EmptyVtableSlot*>* find_empty_vtable_slots(
   while (super != NULL) {
     for (int i = 0; i < super->methods()->length(); ++i) {
       Method* m = super->methods()->at(i);
-      if (m->is_overpass()) {
+      if (m->is_overpass() || m->is_static()) {
         // m is a method that would have been a miranda if not for the
         // default method processing that occurred on behalf of our superclass,
         // so it's a method we want to re-examine in this new context.  That is,
         // unless we have a real implementation of it in the current class.
         Method* impl = klass->lookup_method(m->name(), m->signature());
-        if (impl == NULL || impl->is_overpass()) {
+        if (impl == NULL || impl->is_overpass() || impl->is_static()) {
           if (!already_in_vtable_slots(slots, m)) {
             slots->append(new EmptyVtableSlot(m));
           }
@@ -648,7 +648,7 @@ static GrowableArray<EmptyVtableSlot*>* find_empty_vtable_slots(
         // so it's a method we want to re-examine in this new context.  That is,
         // unless we have a real implementation of it in the current class.
         Method* impl = klass->lookup_method(m->name(), m->signature());
-        if (impl == NULL || impl->is_overpass()) {
+        if (impl == NULL || impl->is_overpass() || impl->is_static()) {
           if (!already_in_vtable_slots(slots, m)) {
             slots->append(new EmptyVtableSlot(m));
           }
