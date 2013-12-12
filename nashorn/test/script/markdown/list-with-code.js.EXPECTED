@@ -1,0 +1,6 @@
+<ul>
+<li><p>A list item with code:</p>
+
+<pre><code>alert('Hello world!');
+</code></pre></li>
+</ul>
