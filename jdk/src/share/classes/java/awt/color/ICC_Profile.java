@@ -23,7 +23,8 @@
  * questions.
  */
 
-/**********************************************************************
+/*
+ **********************************************************************
  **********************************************************************
  **********************************************************************
  *** COPYRIGHT (c) Eastman Kodak Company, 1997                      ***
@@ -86,7 +87,6 @@ import java.security.PrivilegedAction;
  * ICC Profile Format Specification.  Most profiles of interest
  * either have invertible transformations or explicitly specify
  * transformations going both directions.
- * <p>
  * @see ICC_ColorSpace
  */
 

@@ -94,7 +94,13 @@ protected:
   static bool is_M_family(int features) { return (features & M_family_m) != 0; }
   static bool is_T_family(int features) { return (features & T_family_m) != 0; }
   static bool is_niagara() { return is_T_family(_features); }
-  DEBUG_ONLY( static bool is_niagara(int features)  { return (features & sun4v_m) != 0; } )
+#ifdef ASSERT
+  static bool is_niagara(int features)  {
+    // 'sun4v_m' may be defined on both Sun/Oracle Sparc CPUs as well as
+    // on Fujitsu Sparc64 CPUs, but only Sun/Oracle Sparcs can be 'niagaras'.
+    return (features & sun4v_m) != 0 && (features & sparc64_family_m) == 0;
+  }
+#endif
 
   // Returns true if it is niagara1 (T1).
   static bool is_T1_model(int features) { return is_T_family(features) && ((features & T1_model_m) != 0); }

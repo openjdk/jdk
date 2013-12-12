@@ -62,7 +62,7 @@ import java.io.IOException;
  * Authentication Service exchange.
  * <p>
  * The possible actions are:
- * <p>
+ *
  * <pre>
  *    initiate -              allow the caller to use the credential to
  *                            initiate a security context with a service
@@ -75,7 +75,7 @@ import java.io.IOException;
  *
  * For example, to specify the permission to access to the TGT to
  * initiate a security context the permission is constructed as follows:
- * <p>
+ *
  * <pre>
  *     ServicePermission("krbtgt/EXAMPLE.COM@EXAMPLE.COM", "initiate");
  * </pre>
@@ -89,7 +89,7 @@ import java.io.IOException;
  * For a Kerberized server the action is "accept". For example, the permission
  * necessary to access and use the secret key of the  Kerberized "host"
  * service (telnet and the likes)  would be constructed as follows:
- * <p>
+ *
  * <pre>
  *     ServicePermission("host/foo.example.com@EXAMPLE.COM", "accept");
  * </pre>

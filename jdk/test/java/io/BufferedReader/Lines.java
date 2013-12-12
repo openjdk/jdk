@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8003258
+ * @bug 8003258 8029434
  * @run testng Lines
  */
 
@@ -38,6 +38,7 @@ import java.util.Map;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.NoSuchElementException;
+import java.util.Spliterator;
 import java.util.stream.Stream;
 import java.util.concurrent.atomic.AtomicInteger;
 import org.testng.annotations.Test;
@@ -280,5 +281,16 @@ public class Lines {
         br.lines().forEach(l -> assertEquals(l, "Line " + line_no.getAndIncrement()));
         // Read after EOL
         assertFalse(it.hasNext());
+    }
+
+    public void testCharacteristics() {
+        try (BufferedReader br = new BufferedReader(
+                                    new StringReader(""))) {
+            Spliterator<String> instance = br.lines().spliterator();
+            assertTrue(instance.hasCharacteristics(Spliterator.NONNULL));
+            assertTrue(instance.hasCharacteristics(Spliterator.ORDERED));
+        } catch (IOException ioe) {
+            fail("Should not have any exception.");
+        }
     }
 }
