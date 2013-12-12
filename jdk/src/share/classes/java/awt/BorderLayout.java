@@ -99,7 +99,7 @@ import java.util.Hashtable;
  * style="float:center; margin: 7px 10px;">
  * <p>
  * The code for this applet is as follows:
- * <p>
+ *
  * <hr><blockquote><pre>
  * import java.awt.*;
  * import java.applet.Applet;

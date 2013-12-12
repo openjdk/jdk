@@ -1958,7 +1958,7 @@ public final class String
     }
 
     /**
-     * Returns a new character sequence that is a subsequence of this sequence.
+     * Returns a character sequence that is a subsequence of this sequence.
      *
      * <p> An invocation of this method of the form
      *

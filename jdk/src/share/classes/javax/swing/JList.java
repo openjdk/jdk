@@ -950,7 +950,7 @@ public class JList<E> extends JComponent implements Scrollable, Accessible
     /**
      * Defines the way list cells are layed out. Consider a {@code JList}
      * with five cells. Cells can be layed out in one of the following ways:
-     * <p>
+     *
      * <pre>
      * VERTICAL:          0
      *                    1

@@ -2296,24 +2296,33 @@ public class Basic {
             childArgs.add("sleep");
             final Process p = new ProcessBuilder(childArgs).start();
             final long start = System.nanoTime();
-            final CountDownLatch latch = new CountDownLatch(1);
+            final CountDownLatch ready = new CountDownLatch(1);
+            final CountDownLatch done = new CountDownLatch(1);
 
             final Thread thread = new Thread() {
                 public void run() {
                     try {
+                        final boolean result;
                         try {
-                            latch.countDown();
-                            p.waitFor(30000, TimeUnit.MILLISECONDS);
+                            ready.countDown();
+                            result = p.waitFor(30000, TimeUnit.MILLISECONDS);
                         } catch (InterruptedException e) {
                             return;
                         }
-                        fail("waitFor() wasn't interrupted");
-                    } catch (Throwable t) { unexpected(t); }}};
+                        fail("waitFor() wasn't interrupted, its return value was: " + result);
+                    } catch (Throwable t) {
+                        unexpected(t);
+                    } finally {
+                        done.countDown();
+                    }
+                }
+            };
 
             thread.start();
-            latch.await();
+            ready.await();
             Thread.sleep(1000);
             thread.interrupt();
+            done.await();
             p.destroy();
         } catch (Throwable t) { unexpected(t); }
 

@@ -66,12 +66,12 @@ else
     # First, find out the valid targets
     # Run the makefile with an arbitrary SPEC using -p -q (quiet dry-run and dump rules) to find
     # available PHONY targets. Use this list as valid targets to pass on to the repeated calls.
-    all_phony_targets=$(filter-out $(global_targets) bundles-only, $(strip $(shell \
-        $(MAKE) -p -q -f make/Main.gmk FRC SPEC=$(firstword $(SPEC)) | \
+    all_phony_targets=$(filter-out $(global_targets) bundles bundles-only final-images-only, $(strip $(shell \
+        cd $(root_dir) && $(MAKE) -p -q FRC SPEC=$(firstword $(SPEC)) | \
         grep ^.PHONY: | head -n 1 | cut -d " " -f 2-)))
 
     $(all_phony_targets):
-	@$(foreach spec,$(SPEC),($(MAKE) -f NewMakefile.gmk SPEC=$(spec) \
+	@$(foreach spec,$(SPEC),(cd $(root_dir) && $(MAKE) SPEC=$(spec) \
 	    $(VERBOSE) VERBOSE=$(VERBOSE) LOG_LEVEL=$(LOG_LEVEL) $@) &&) true
 
     .PHONY: $(all_phony_targets)
