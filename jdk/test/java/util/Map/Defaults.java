@@ -767,7 +767,6 @@ public class Defaults {
         Collection<Object[]> cases = new ArrayList<>();
 
         cases.addAll(makeMergeTestCases());
-        cases.addAll(makeMergeNullValueTestCases());
 
         return cases.iterator();
     }
@@ -785,32 +784,6 @@ public class Defaults {
 
         for( Object[] mapParams : makeAllRWMaps() ) {
             cases.add(new Object[] { mapParams[0], mapParams[1], Merging.Value.OLDVALUE, Merging.Value.NEWVALUE, Merging.Merger.RESULT, Merging.Value.RESULT, Merging.Value.RESULT });
-        }
-
-        return cases;
-    }
-
-    static Collection<Object[]> makeMergeNullValueTestCases() {
-        Collection<Object[]> cases = new ArrayList<>();
-
-        for( Object[] mapParams : makeAllRWMapsWithNulls() ) {
-            cases.add(new Object[] { mapParams[0], mapParams[1], Merging.Value.OLDVALUE, Merging.Value.NULL, Merging.Merger.NULL, Merging.Value.ABSENT, Merging.Value.NULL });
-        }
-
-        for( Object[] mapParams : makeAllRWMapsWithNulls() ) {
-            cases.add(new Object[] { mapParams[0], mapParams[1], Merging.Value.OLDVALUE, Merging.Value.NULL, Merging.Merger.RESULT, Merging.Value.RESULT, Merging.Value.RESULT });
-        }
-
-        for( Object[] mapParams : makeAllRWMapsWithNulls() ) {
-            cases.add(new Object[] { mapParams[0], mapParams[1], Merging.Value.ABSENT, Merging.Value.NULL, Merging.Merger.UNUSED, Merging.Value.ABSENT, Merging.Value.NULL });
-        }
-
-        for( Object[] mapParams : makeAllRWMapsWithNulls() ) {
-            cases.add(new Object[] { mapParams[0], mapParams[1], Merging.Value.NULL, Merging.Value.NULL, Merging.Merger.UNUSED, Merging.Value.ABSENT, Merging.Value.NULL });
-        }
-
-        for( Object[] mapParams : makeAllRWMapsWithNulls() ) {
-            cases.add(new Object[] { mapParams[0], mapParams[1], Merging.Value.NULL, Merging.Value.NEWVALUE, Merging.Merger.UNUSED, Merging.Value.NEWVALUE, Merging.Value.NEWVALUE });
         }
 
         return cases;

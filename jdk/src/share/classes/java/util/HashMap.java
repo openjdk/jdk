@@ -1212,6 +1212,8 @@ public class HashMap<K,V> extends AbstractMap<K,V>
     @Override
     public V merge(K key, V value,
                    BiFunction<? super V, ? super V, ? extends V> remappingFunction) {
+        if (value == null)
+            throw new NullPointerException();
         if (remappingFunction == null)
             throw new NullPointerException();
         int hash = hash(key);
