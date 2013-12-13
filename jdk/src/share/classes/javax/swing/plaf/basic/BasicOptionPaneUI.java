@@ -48,7 +48,7 @@ import sun.security.action.GetPropertyAction;
  * Provides the basic look and feel for a <code>JOptionPane</code>.
  * <code>BasicMessagePaneUI</code> provides a means to place an icon,
  * message and buttons into a <code>Container</code>.
- * Generally, the layout will look like:<p>
+ * Generally, the layout will look like:
  * <pre>
  *        ------------------
  *        | i | message    |

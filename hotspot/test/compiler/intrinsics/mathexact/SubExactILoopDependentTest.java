@@ -26,7 +26,7 @@
  * @bug 8026844
  * @summary Test non constant subtractExact
  * @compile SubExactILoopDependentTest.java Verify.java
- * @run main SubExactILoopDependentTest
+ * @run main SubExactILoopDependentTest -XX:+IgnoreUnrecognizedVMOptions -XX:+UnlockExperimentalVMOptions -XX:+UseMathExactIntrinsics
  *
  */
 

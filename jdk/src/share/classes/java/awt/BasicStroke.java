@@ -39,7 +39,7 @@ import java.lang.annotation.Native;
  * {@link Shape} and the decorations applied at the ends and joins of
  * path segments of the <code>Shape</code>.
  * These rendering attributes include:
- * <dl compact>
+ * <dl>
  * <dt><i>width</i>
  * <dd>The pen width, measured perpendicularly to the pen trajectory.
  * <dt><i>end caps</i>

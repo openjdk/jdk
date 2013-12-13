@@ -41,6 +41,7 @@
 #include <sizecalc.h>
 
 #include <awt.h>
+#include <awt_util.h>
 #include <jvm.h>
 
 #include <Region.h>
@@ -1266,6 +1267,10 @@ JNIEXPORT jboolean JNICALL Java_sun_awt_X11_XlibWrapper_IsKanaKeyboard
 JavaVM* jvm = NULL;
 static int ToolkitErrorHandler(Display * dpy, XErrorEvent * event) {
     JNIEnv * env;
+    // First call the native synthetic error handler declared in "awt_util.h" file.
+    if (current_native_xerror_handler != NULL) {
+        current_native_xerror_handler(dpy, event);
+    }
     if (jvm != NULL) {
         env = (JNIEnv *)JNU_GetEnv(jvm, JNI_VERSION_1_2);
         if (env) {

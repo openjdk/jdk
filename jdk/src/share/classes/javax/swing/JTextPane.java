@@ -49,7 +49,7 @@ import javax.swing.plaf.*;
  * the default attributes to use if not overridden by attributes set
  * on the paragraph or character run.  Components and images may
  * be embedded in the flow of text.
- * <p>
+ *
  * <dl>
  * <dt><b><font size=+1>Newlines</font></b>
  * <dd>

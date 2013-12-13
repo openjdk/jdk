@@ -120,9 +120,6 @@
 
 # jdk_lang
 
-# 7067973
-java/lang/management/MemoryMXBean/CollectionUsageThreshold.java generic-all
-
 # 8029415
 java/lang/reflect/Method/invoke/TestPrivateInterfaceMethodReflect.java generic-all
 
@@ -208,9 +205,6 @@ java/nio/file/WatchService/LotsOfEvents.java			solaris-all
 # 7146541
 java/rmi/transport/rapidExportUnexport/RapidExportUnexport.java	linux-all
 
-# 7190106
-java/rmi/reliability/benchmark/runRmiBench.sh                   generic-all
-
 # 7191877
 java/rmi/transport/checkLeaseInfoLeak/CheckLeaseLeak.java       generic-all
 
@@ -269,9 +263,6 @@ sun/security/krb5/auto/BadKdc4.java                             solaris-sparcv9
 
 # jdk_tools
 
-# 6461635
-com/sun/tools/attach/BasicTests.sh                              generic-all
-
 # 7132203
 sun/jvmstat/monitor/MonitoredVm/CR6672135.java                  generic-all
 
@@ -298,9 +289,6 @@ com/sun/jdi/RedefineCrossEvent.java                             generic-all
 ############################################################################
 
 # jdk_util
-
-# Filed 6933803
-java/util/concurrent/ThreadPoolExecutor/CoreThreadTimeOut.java  generic-all
 
 # Filed 6772009
 java/util/concurrent/locks/ReentrantLock/CancelledLockLoops.java generic-all

@@ -29,6 +29,8 @@ import java.util.*;
 import java.lang.reflect.*;
 
 import java.security.*;
+import java.security.spec.ECGenParameterSpec;
+import java.security.spec.ECParameterSpec;
 
 public abstract class PKCS11Test {
 
@@ -357,6 +359,93 @@ public abstract class PKCS11Test {
         test.premain(p);
     }
 
+    // Generate a vector of supported elliptic curves of a given provider
+    static Vector<ECParameterSpec> getKnownCurves(Provider p) throws Exception {
+        int index;
+        int begin;
+        int end;
+        String curve;
+        KeyPair kp = null;
+
+        Vector<ECParameterSpec> results = new Vector<ECParameterSpec>();
+        // Get Curves to test from SunEC.
+        String kcProp = Security.getProvider("SunEC").
+                getProperty("AlgorithmParameters.EC SupportedCurves");
+
+        if (kcProp == null) {
+            throw new RuntimeException(
+            "\"AlgorithmParameters.EC SupportedCurves property\" not found");
+        }
+
+        System.out.println("Finding supported curves using list from SunEC\n");
+        index = 0;
+        for (;;) {
+            // Each set of curve names is enclosed with brackets.
+            begin = kcProp.indexOf('[', index);
+            end = kcProp.indexOf(']', index);
+            if (begin == -1 || end == -1) {
+                break;
+            }
+
+            /*
+             * Each name is separated by a comma.
+             * Just get the first name in the set.
+             */
+            index = end + 1;
+            begin++;
+            end = kcProp.indexOf(',', begin);
+            if (end == -1) {
+                // Only one name in the set.
+                end = index -1;
+            }
+
+            curve = kcProp.substring(begin, end);
+            ECParameterSpec e = getECParameterSpec(p, curve);
+            System.out.print("\t "+ curve + ": ");
+            try {
+                KeyPairGenerator kpg = KeyPairGenerator.getInstance("EC", p);
+                kpg.initialize(e);
+                kp = kpg.generateKeyPair();
+                results.add(e);
+                System.out.println("Supported");
+            } catch (ProviderException ex) {
+                System.out.println("Unsupported: PKCS11: " +
+                        ex.getCause().getMessage());
+            } catch (InvalidAlgorithmParameterException ex) {
+                System.out.println("Unsupported: Key Length: " +
+                        ex.getMessage());
+            }
+        }
+
+        if (results.size() == 0) {
+            throw new RuntimeException("No supported EC curves found");
+        }
+
+        return results;
+    }
+
+    private static ECParameterSpec getECParameterSpec(Provider p, String name)
+            throws Exception {
+
+        AlgorithmParameters parameters =
+            AlgorithmParameters.getInstance("EC", p);
+
+        parameters.init(new ECGenParameterSpec(name));
+
+        return parameters.getParameterSpec(ECParameterSpec.class);
+    }
+
+    // Check support for a curve with a provided Vector of EC support
+    boolean checkSupport(Vector<ECParameterSpec> supportedEC,
+            ECParameterSpec curve) {
+        boolean found = false;
+        for (ECParameterSpec ec: supportedEC) {
+            if (ec.equals(curve)) {
+                return true;
+            }
+        }
+        return false;
+    }
 
     private static final Map<String,String[]> osMap;
 
