@@ -1474,12 +1474,27 @@ public class LambdaToMethod extends TreeTranslator {
         private Symbol initSym(ClassSymbol csym, long flags) {
             boolean isStatic = (flags & STATIC) != 0;
             if (isStatic) {
-                //static clinits are generated in Gen - so we need to fake them
-                Symbol clinit = clinits.get(csym);
+                /* static clinits are generated in Gen, so we need to use a fake
+                 * one. Attr creates a fake clinit method while attributing
+                 * lambda expressions used as initializers of static fields, so
+                 * let's use that one.
+                 */
+                MethodSymbol clinit = attr.removeClinit(csym);
+                if (clinit != null) {
+                    clinits.put(csym, clinit);
+                    return clinit;
+                }
+
+                /* if no clinit is found at Attr, then let's try at clinits.
+                 */
+                clinit = (MethodSymbol)clinits.get(csym);
                 if (clinit == null) {
+                    /* no luck, let's create a new one
+                     */
                     clinit = makePrivateSyntheticMethod(STATIC,
                             names.clinit,
-                            new MethodType(List.<Type>nil(), syms.voidType, List.<Type>nil(), syms.methodClass),
+                            new MethodType(List.<Type>nil(), syms.voidType,
+                                List.<Type>nil(), syms.methodClass),
                             csym);
                     clinits.put(csym, clinit);
                 }
