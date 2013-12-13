@@ -1116,13 +1116,13 @@ public class HashMap<K,V> extends AbstractMap<K,V>
             }
         }
         V v = mappingFunction.apply(key);
-        if (old != null) {
+        if (v == null) {
+            return null;
+        } else if (old != null) {
             old.value = v;
             afterNodeAccess(old);
             return v;
         }
-        else if (v == null)
-            return null;
         else if (t != null)
             t.putTreeVal(this, tab, hash, key, v);
         else {
