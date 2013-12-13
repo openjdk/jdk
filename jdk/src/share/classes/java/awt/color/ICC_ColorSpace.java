@@ -23,7 +23,8 @@
  * questions.
  */
 
-/**********************************************************************
+/*
+ **********************************************************************
  **********************************************************************
  **********************************************************************
  *** COPYRIGHT (c) Eastman Kodak Company, 1997                      ***
@@ -77,7 +78,6 @@ import sun.java2d.cmm.PCMM;
  * imported images with a known color space.  At most, such applets
  * would need to get one of the default color spaces via
  * ColorSpace.getInstance().
- * <p>
  * @see ColorSpace
  * @see ICC_Profile
  */
@@ -480,7 +480,6 @@ public class ICC_ColorSpace extends ColorSpace {
      * will result in a measured device XYZ value of D65.  This will not
      * be the same as the media white point tag XYZ value in the ICC
      * profile for an sRGB device.
-     * <p>
      * <p>
      * @param colorvalue a float array with length of at least 3.
      * @return a float array with length equal to the number of

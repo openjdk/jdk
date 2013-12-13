@@ -906,6 +906,20 @@ Java_sun_awt_X11GraphicsDevice_getDisplay(JNIEnv *env, jobject this)
 
 static jint canUseShmExt = UNSET_MITSHM;
 static jint canUseShmExtPixmaps = UNSET_MITSHM;
+static jboolean xshmAttachFailed = JNI_FALSE;
+
+int XShmAttachXErrHandler(Display *display, XErrorEvent *xerr) {
+    if (xerr->minor_code == X_ShmAttach) {
+        xshmAttachFailed = JNI_TRUE;
+    }
+    return 0;
+}
+jboolean isXShmAttachFailed() {
+    return xshmAttachFailed;
+}
+void resetXShmAttachFailed() {
+    xshmAttachFailed = JNI_FALSE;
+}
 
 extern int mitShmPermissionMask;
 
@@ -913,7 +927,6 @@ void TryInitMITShm(JNIEnv *env, jint *shmExt, jint *shmPixmaps) {
     XShmSegmentInfo shminfo;
     int XShmMajor, XShmMinor;
     int a, b, c;
-    jboolean xShmAttachResult;
 
     AWT_LOCK();
     if (canUseShmExt != UNSET_MITSHM) {
@@ -957,14 +970,21 @@ void TryInitMITShm(JNIEnv *env, jint *shmExt, jint *shmPixmaps) {
         }
         shminfo.readOnly = True;
 
-        xShmAttachResult = TryXShmAttach(env, awt_display, &shminfo);
+        resetXShmAttachFailed();
+        /**
+         * The J2DXErrHandler handler will set xshmAttachFailed
+         * to JNI_TRUE if any Shm error has occured.
+         */
+        EXEC_WITH_XERROR_HANDLER(XShmAttachXErrHandler,
+                                 XShmAttach(awt_display, &shminfo));
+
         /**
          * Get rid of the id now to reduce chances of leaking
          * system resources.
          */
         shmctl(shminfo.shmid, IPC_RMID, 0);
 
-        if (xShmAttachResult == JNI_TRUE) {
+        if (isXShmAttachFailed() == JNI_FALSE) {
             canUseShmExt = CAN_USE_MITSHM;
             /* check if we can use shared pixmaps */
             XShmQueryVersion(awt_display, &XShmMajor, &XShmMinor,
@@ -978,23 +998,6 @@ void TryInitMITShm(JNIEnv *env, jint *shmExt, jint *shmPixmaps) {
         *shmPixmaps = canUseShmExtPixmaps;
     }
     AWT_UNLOCK();
-}
-
-/*
- * Must be called with the acquired AWT lock.
- */
-jboolean TryXShmAttach(JNIEnv *env, Display *display, XShmSegmentInfo *shminfo) {
-    jboolean errorOccurredFlag = JNI_FALSE;
-    jobject errorHandlerRef;
-
-    /*
-     * XShmAttachHandler will set its internal flag to JNI_TRUE, if any Shm error occurs.
-     */
-    EXEC_WITH_XERROR_HANDLER(env, "sun/awt/X11/XErrorHandler$XShmAttachHandler",
-        "()Lsun/awt/X11/XErrorHandler$XShmAttachHandler;", JNI_TRUE,
-        errorHandlerRef, errorOccurredFlag,
-        XShmAttach(display, shminfo));
-    return errorOccurredFlag == JNI_FALSE ? JNI_TRUE : JNI_FALSE;
 }
 #endif /* MITSHM */
 

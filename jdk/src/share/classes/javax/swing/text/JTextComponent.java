@@ -87,7 +87,6 @@ import sun.swing.SwingAccessor;
  * <a href="http://docs.oracle.com/javase/tutorial/uiswing/components/generaltext.html">General Rules for Using Text Components</a>,
  * a section in <em>The Java Tutorial.</em>
  *
- * <p>
  * <dl>
  * <dt><b><font size=+1>Caret Changes</font></b>
  * <dd>
@@ -108,7 +107,6 @@ import sun.swing.SwingAccessor;
  * <b>Note</b>: Non-editable text components also have a caret though
  * it may not be painted.
  *
- * <p>
  * <dt><b><font size=+1>Commands</font></b>
  * <dd>
  * Text components provide a number of commands that can be used
@@ -120,7 +118,6 @@ import sun.swing.SwingAccessor;
  * found with the {@link #getActions} method.  These actions
  * can be bound to key events, fired from buttons, etc.
  *
- * <p>
  * <dt><b><font size=+1>Text Input</font></b>
  * <dd>
  * The text components support flexible and internationalized text input, using
@@ -206,7 +203,6 @@ import sun.swing.SwingAccessor;
  * <li>caret movement forward and backward
  * </ul>
  *
- * <p>
  * <dt><b><font size=+1>Model/View Split</font></b>
  * <dd>
  * The text components have a model-view split.  A text component pulls
@@ -231,14 +227,12 @@ import sun.swing.SwingAccessor;
  * {@link DocumentListener}
  * interface and registered interest with the model being observed.
  *
- * <p>
  * <dt><b><font size=+1>Location Information</font></b>
  * <dd>
  * The capability of determining the location of text in
  * the view is provided.  There are two methods, {@link #modelToView}
  * and {@link #viewToModel} for determining this information.
  *
- * <p>
  * <dt><b><font size=+1>Undo/Redo support</font></b>
  * <dd>
  * Support for an edit history mechanism is provided to allow
@@ -249,7 +243,6 @@ import sun.swing.SwingAccessor;
  * The support is provided by the Document model, which allows
  * one to attach UndoableEditListener implementations.
  *
- * <p>
  * <dt><b><font size=+1>Thread Safety</font></b>
  * <dd>
  * The swing text components provide some support of thread
@@ -261,13 +254,12 @@ import sun.swing.SwingAccessor;
  * The methods that are safe to call asynchronously are marked
  * with comments.
  *
- * <p>
  * <dt><b><font size=+1>Newlines</font></b>
  * <dd>
  * For a discussion on how newlines are handled, see
  * <a href="DefaultEditorKit.html">DefaultEditorKit</a>.
  *
- * <p>
+ *
  * <dt><b><font size=+1>Printing support</font></b>
  * <dd>
  * Several {@link #print print} methods are provided for basic
