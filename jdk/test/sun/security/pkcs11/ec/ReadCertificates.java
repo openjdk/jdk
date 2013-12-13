@@ -37,6 +37,7 @@ import java.util.*;
 import java.security.cert.*;
 import java.security.*;
 import java.security.interfaces.*;
+import java.security.spec.ECParameterSpec;
 
 import javax.security.auth.x500.X500Principal;
 
@@ -101,33 +102,44 @@ public class ReadCertificates extends PKCS11Test {
         }
         System.out.println("OK: " + certs.size() + " certificates.");
 
+        // Get supported curves
+        Vector<ECParameterSpec> supportedEC = getKnownCurves(p);
+
+        System.out.println("Test Certs:\n");
         for (X509Certificate cert : certs.values()) {
             X509Certificate issuer = certs.get(cert.getIssuerX500Principal());
-            System.out.println("Verifying " + cert.getSubjectX500Principal() + "...");
+            System.out.print("Verifying " + cert.getSubjectX500Principal() +
+                    "...  ");
             PublicKey key = issuer.getPublicKey();
-            // First try the provider under test (if it does not support the
-            // necessary algorithm then try any registered provider).
-            try {
-                cert.verify(key, p.getName());
-            } catch (NoSuchAlgorithmException e) {
-                System.out.println("Warning: " + e.getMessage() +
-                ". Trying another provider...");
-                cert.verify(key);
-            } catch (InvalidKeyException e) {
-                // The root cause of the exception might be NSS not having
-                // "ECC Extended" support curves.  If so, we can ignore it.
-                Throwable t = e;
-                while (t.getCause() != null) {
-                    t = t.getCause();
-                }
-                if (t instanceof sun.security.pkcs11.wrapper.PKCS11Exception &&
-                        t.getMessage().equals("CKR_DOMAIN_PARAMS_INVALID") &&
-                        isNSS(p) && getNSSECC() == ECCState.Basic) {
-                    System.out.println("Failed as expected. NSS Basic ECC.");
+            // Check if curve is supported
+            if (issuer.getPublicKey() instanceof ECPublicKey) {
+                if (!checkSupport(supportedEC,
+                        ((ECPublicKey)key).getParams())) {
+                    System.out.println("Curve not found. Skipped.");
                     continue;
                 }
-                throw e;
             }
+
+           try {
+               cert.verify(key, p.getName());
+               System.out.println("Pass.");
+           } catch (NoSuchAlgorithmException e) {
+               System.out.println("Warning: " + e.getMessage() +
+                   ". Trying another provider...");
+               cert.verify(key);
+           } catch (Exception e) {
+               System.out.println(e.getMessage());
+               if (key instanceof ECPublicKey) {
+                   System.out.println("Failed.\n\tCurve: " +
+                           ((ECPublicKey)key).getParams() +
+                           "\n\tSignature Alg: " + cert.getSigAlgName());
+               } else {
+                   System.out.println("Key: "+key.toString());
+               }
+
+               System.err.println("Verifying " + cert.getSubjectX500Principal());
+               e.printStackTrace();
+           }
         }
 
         // try some random invalid signatures to make sure we get the correct

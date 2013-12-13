@@ -45,7 +45,7 @@ import javax.accessibility.*;
  * style="float:center; margin: 7px 10px;">
  * <p>
  * Here is the code that produces these four text fields:
- * <p>
+ *
  * <hr><blockquote><pre>
  * TextField tf1, tf2, tf3, tf4;
  * // a blank text field
@@ -596,7 +596,7 @@ public class TextField extends TextComponent {
      * This method is not called unless action events are
      * enabled for this component. Action events are enabled
      * when one of the following occurs:
-     * <p><ul>
+     * <ul>
      * <li>An <code>ActionListener</code> object is registered
      * via <code>addActionListener</code>.
      * <li>Action events are enabled via <code>enableEvents</code>.

@@ -26,7 +26,7 @@
  * @bug 8026844
  * @summary Test loop dependent multiplyExact
  * @compile MulExactILoopDependentTest.java Verify.java
- * @run main MulExactILoopDependentTest
+ * @run main MulExactILoopDependentTest -XX:+IgnoreUnrecognizedVMOptions -XX:+UnlockExperimentalVMOptions -XX:+UseMathExactIntrinsics
  *
  */
 public class MulExactILoopDependentTest {

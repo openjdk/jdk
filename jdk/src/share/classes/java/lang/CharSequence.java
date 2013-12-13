@@ -87,7 +87,7 @@ public interface CharSequence {
     char charAt(int index);
 
     /**
-     * Returns a new <code>CharSequence</code> that is a subsequence of this sequence.
+     * Returns a <code>CharSequence</code> that is a subsequence of this sequence.
      * The subsequence starts with the <code>char</code> value at the specified index and
      * ends with the <code>char</code> value at index <tt>end - 1</tt>.  The length
      * (in <code>char</code>s) of the

@@ -1148,8 +1148,8 @@ class MutableBigInteger {
     }
 
     MutableBigInteger divide(MutableBigInteger b, MutableBigInteger quotient, boolean needRemainder) {
-        if (intLen < BigInteger.BURNIKEL_ZIEGLER_THRESHOLD ||
-                b.intLen < BigInteger.BURNIKEL_ZIEGLER_THRESHOLD) {
+        if (b.intLen < BigInteger.BURNIKEL_ZIEGLER_THRESHOLD ||
+                intLen - b.intLen < BigInteger.BURNIKEL_ZIEGLER_OFFSET) {
             return divideKnuth(b, quotient, needRemainder);
         } else {
             return divideAndRemainderBurnikelZiegler(b, quotient);

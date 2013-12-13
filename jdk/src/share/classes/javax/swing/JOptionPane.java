@@ -106,7 +106,6 @@ import static javax.swing.ClientPropertyKey.PopupFactory_FORCE_HEAVYWEIGHT_POPUP
  * <p>
  * All dialogs are modal. Each <code>showXxxDialog</code> method blocks
  * the caller until the user's interaction is complete.
- * <p>
  *
  * <table cellspacing=6 cellpadding=4 border=0 style="float:right" summary="layout">
  * <tr>
@@ -143,7 +142,7 @@ import static javax.swing.ClientPropertyKey.PopupFactory_FORCE_HEAVYWEIGHT_POPUP
  * just below the component. This parameter may be <code>null</code>,
  * in which case a default <code>Frame</code> is used as the parent,
  * and the dialog will be
- * centered on the screen (depending on the L&F).
+ * centered on the screen (depending on the {@literal L&F}).
  * <dt><a name=message>message</a><dd>
  * A descriptive message to be placed in the dialog box.
  * In the most common usage, message is just a <code>String</code> or
@@ -225,42 +224,42 @@ import static javax.swing.ClientPropertyKey.PopupFactory_FORCE_HEAVYWEIGHT_POPUP
  * <dt>Show an error dialog that displays the message, 'alert':
  * <dd><code>
  * JOptionPane.showMessageDialog(null, "alert", "alert", JOptionPane.ERROR_MESSAGE);
- * </code><p>
+ * </code>
  * <dt>Show an internal information dialog with the message, 'information':
- * <dd><code>
- * JOptionPane.showInternalMessageDialog(frame, "information",<br>
- *             <ul><ul>"information", JOptionPane.INFORMATION_MESSAGE);</ul></ul>
- * </code><p>
+ * <dd><pre>
+ * JOptionPane.showInternalMessageDialog(frame, "information",
+ *             "information", JOptionPane.INFORMATION_MESSAGE);
+ * </pre>
  * <dt>Show an information panel with the options yes/no and message 'choose one':
- * <dd><code>JOptionPane.showConfirmDialog(null,
- *             <ul><ul>"choose one", "choose one", JOptionPane.YES_NO_OPTION);</ul></ul>
- * </code><p>
+ * <dd><pre>JOptionPane.showConfirmDialog(null,
+ *             "choose one", "choose one", JOptionPane.YES_NO_OPTION);
+ * </pre>
  * <dt>Show an internal information dialog with the options yes/no/cancel and
  * message 'please choose one' and title information:
- * <dd><code>JOptionPane.showInternalConfirmDialog(frame,
- *             <ul><ul>"please choose one", "information",</ul></ul>
- *             <ul><ul>JOptionPane.YES_NO_CANCEL_OPTION, JOptionPane.INFORMATION_MESSAGE);</ul></ul>
- * </code><p>
+ * <dd><pre>JOptionPane.showInternalConfirmDialog(frame,
+ *             "please choose one", "information",
+ *             JOptionPane.YES_NO_CANCEL_OPTION, JOptionPane.INFORMATION_MESSAGE);
+ * </pre>
  * <dt>Show a warning dialog with the options OK, CANCEL, title 'Warning', and
  * message 'Click OK to continue':
- * <dd><code>
- * Object[] options = { "OK", "CANCEL" };<br>
+ * <dd><pre>
+ * Object[] options = { "OK", "CANCEL" };
  * JOptionPane.showOptionDialog(null, "Click OK to continue", "Warning",
- *             <ul><ul>JOptionPane.DEFAULT_OPTION, JOptionPane.WARNING_MESSAGE,</ul></ul>
- *             <ul><ul>null, options, options[0]);</ul></ul>
- * </code><p>
+ *             JOptionPane.DEFAULT_OPTION, JOptionPane.WARNING_MESSAGE,
+ *             null, options, options[0]);
+ * </pre>
  * <dt>Show a dialog asking the user to type in a String:
  * <dd><code>
  * String inputValue = JOptionPane.showInputDialog("Please input a value");
- * </code><p>
+ * </code>
  * <dt>Show a dialog asking the user to select a String:
- * <dd><code>
+ * <dd><pre>
  * Object[] possibleValues = { "First", "Second", "Third" };<br>
  * Object selectedValue = JOptionPane.showInputDialog(null,
- *             <ul><ul>"Choose one", "Input",</ul></ul>
- *             <ul><ul>JOptionPane.INFORMATION_MESSAGE, null,</ul></ul>
- *             <ul><ul>possibleValues, possibleValues[0]);</ul></ul>
- * </code><p>
+ *             "Choose one", "Input",
+ *             JOptionPane.INFORMATION_MESSAGE, null,
+ *             possibleValues, possibleValues[0]);
+ * </pre><p>
  * </dl>
  * <b>Direct Use:</b><br>
  * To create and use an <code>JOptionPane</code> directly, the
@@ -281,7 +280,7 @@ import static javax.swing.ClientPropertyKey.PopupFactory_FORCE_HEAVYWEIGHT_POPUP
  *     }
  *     <i>//If there is an array of option buttons:</i>
  *     for(int counter = 0, maxCounter = options.length;
- *        counter < maxCounter; counter++) {
+ *        counter &lt; maxCounter; counter++) {
  *        if(options[counter].equals(selectedValue))
  *        return counter;
  *     }
@@ -1847,9 +1846,9 @@ public class JOptionPane extends JComponent implements Accessible
     }
 
     /**
-     * Sets the UI object which implements the L&F for this component.
+     * Sets the UI object which implements the {@literal L&F} for this component.
      *
-     * @param ui  the <code>OptionPaneUI</code> L&F object
+     * @param ui  the <code>OptionPaneUI</code> {@literal L&F} object
      * @see UIDefaults#getUI
      * @beaninfo
      *       bound: true
@@ -1864,7 +1863,7 @@ public class JOptionPane extends JComponent implements Accessible
     }
 
     /**
-     * Returns the UI object which implements the L&F for this component.
+     * Returns the UI object which implements the {@literal L&F} for this component.
      *
      * @return the <code>OptionPaneUI</code> object
      */
@@ -1873,7 +1872,7 @@ public class JOptionPane extends JComponent implements Accessible
     }
 
     /**
-     * Notification from the <code>UIManager</code> that the L&F has changed.
+     * Notification from the <code>UIManager</code> that the {@literal L&F} has changed.
      * Replaces the current UI object with the latest version from the
      * <code>UIManager</code>.
      *
@@ -1886,7 +1885,7 @@ public class JOptionPane extends JComponent implements Accessible
 
     /**
      * Returns the name of the UI class that implements the
-     * L&F for this component.
+     * {@literal L&F} for this component.
      *
      * @return the string "OptionPaneUI"
      * @see JComponent#getUIClassID
@@ -2103,7 +2102,7 @@ public class JOptionPane extends JComponent implements Accessible
      * Sets the options to display.
      * The option type is used by the Look and Feel to
      * determine what buttons to show (unless options are supplied).
-     * @param newType an integer specifying the options the L&F is to display:
+     * @param newType an integer specifying the options the {@literal L&F} is to display:
      *                  <code>DEFAULT_OPTION</code>,
      *                  <code>YES_NO_OPTION</code>,
      *                  <code>YES_NO_CANCEL_OPTION</code>,

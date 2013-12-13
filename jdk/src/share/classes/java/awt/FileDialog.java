@@ -439,7 +439,6 @@ public class FileDialog extends Dialog {
      * Note that the method is private and it's intended to be used
      * by the peers through the AWTAccessor API.
      *
-     * @param directory the current directory
      * @param files     the array that contains the short names of
      *                  all the files that the user selects.
      *

@@ -49,7 +49,7 @@ package java.awt.event;
  * methods.
  * The relevant method in the listener object is invoked  and the {@code MouseEvent}
  * or {@code MouseWheelEvent}  is passed to it in following cases:
- * <p><ul>
+ * <ul>
  * <li>when a mouse button is pressed, released, or clicked (pressed and  released)
  * <li>when the mouse cursor enters or exits the component
  * <li>when the mouse wheel rotated, or mouse moved or dragged

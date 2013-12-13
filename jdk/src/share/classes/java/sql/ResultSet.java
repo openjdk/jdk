@@ -4178,7 +4178,7 @@ public interface ResultSet extends Wrapper, AutoCloseable {
      * the result set concurrency is {@code CONCUR_READ_ONLY}
      * or this method is called on a closed result set
      * @exception SQLFeatureNotSupportedException if the JDBC driver does not
-     * support this method; if the JDBC driver does not support this data type
+     * support this method; if the JDBC driver does not support the specified targetSqlType
      * @see JDBCType
      * @see SQLType
      * @since 1.8
@@ -4221,7 +4221,7 @@ public interface ResultSet extends Wrapper, AutoCloseable {
      * the result set concurrency is {@code CONCUR_READ_ONLY}
      * or this method is called on a closed result set
      * @exception SQLFeatureNotSupportedException if the JDBC driver does not
-     * support this method; if the JDBC driver does not support this data type
+     * support this method; if the JDBC driver does not support the specified targetSqlType
      * @see JDBCType
      * @see SQLType
      * @since 1.8
@@ -4249,7 +4249,7 @@ public interface ResultSet extends Wrapper, AutoCloseable {
      * the result set concurrency is {@code CONCUR_READ_ONLY}
      * or this method is called on a closed result set
      * @exception SQLFeatureNotSupportedException if the JDBC driver does not
-     * support this method; if the JDBC driver does not support this data type
+     * support this method; if the JDBC driver does not support the specified targetSqlType
      * @see JDBCType
      * @see SQLType
      * @since 1.8
@@ -4279,7 +4279,7 @@ public interface ResultSet extends Wrapper, AutoCloseable {
      * the result set concurrency is {@code CONCUR_READ_ONLY}
      * or this method is called on a closed result set
      * @exception SQLFeatureNotSupportedException if the JDBC driver does not
-     * support this method; if the JDBC driver does not support this data type
+     * support this method; if the JDBC driver does not support the specified targetSqlType
      * @see JDBCType
      * @see SQLType
      * @since 1.8
