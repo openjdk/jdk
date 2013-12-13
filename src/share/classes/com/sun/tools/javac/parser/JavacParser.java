@@ -1596,6 +1596,7 @@ public class JavacParser implements Parser {
                         // Identifier, ')' '->' -> implicit lambda
                         return ParensResult.IMPLICIT_LAMBDA;
                     }
+                    type = false;
                     break;
                 case FINAL:
                 case ELLIPSIS:
