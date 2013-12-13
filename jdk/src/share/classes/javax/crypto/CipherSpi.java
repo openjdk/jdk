@@ -62,17 +62,17 @@ import java.nio.ByteBuffer;
  * algorithm (e.g., <i>DES</i>), and may be followed by a feedback mode and
  * padding scheme.
  *
- * <p> A transformation is of the form:<p>
+ * <p> A transformation is of the form:
  *
  * <ul>
  * <li>"<i>algorithm/mode/padding</i>" or
- * <p>
+ *
  * <li>"<i>algorithm</i>"
  * </ul>
  *
  * <P> (in the latter case,
  * provider-specific default values for the mode and padding scheme are used).
- * For example, the following is a valid transformation:<p>
+ * For example, the following is a valid transformation:
  *
  * <pre>
  *     Cipher c = Cipher.getInstance("<i>DES/CBC/PKCS5Padding</i>");
@@ -129,7 +129,7 @@ import java.nio.ByteBuffer;
  * <i>DES/CBC/PKCS5Padding</i>, one that implements
  * <i>DES/CFB/PKCS5Padding</i>, and yet another one that implements
  * <i>DES/OFB/PKCS5Padding</i>. That provider would have the following
- * <code>Cipher</code> properties in its master class:<p>
+ * <code>Cipher</code> properties in its master class:
  *
  * <ul>
  *
@@ -160,7 +160,7 @@ import java.nio.ByteBuffer;
  * and one for <i>OFB</i>), one class for <i>PKCS5Padding</i>,
  * and a generic <i>DES</i> class that subclasses from <code>CipherSpi</code>.
  * That provider would have the following
- * <code>Cipher</code> properties in its master class:<p>
+ * <code>Cipher</code> properties in its master class:
  *
  * <ul>
  *
@@ -197,20 +197,20 @@ import java.nio.ByteBuffer;
  * Check if the provider has registered a subclass of <code>CipherSpi</code>
  * for the specified "<i>algorithm/mode/padding</i>" transformation.
  * <p>If the answer is YES, instantiate it.
- * <p>If the answer is NO, go to the next step.<p>
+ * <p>If the answer is NO, go to the next step.
  * <li>
  * Check if the provider has registered a subclass of <code>CipherSpi</code>
  * for the sub-transformation "<i>algorithm/mode</i>".
  * <p>If the answer is YES, instantiate it, and call
  * <code>engineSetPadding(<i>padding</i>)</code> on the new instance.
- * <p>If the answer is NO, go to the next step.<p>
+ * <p>If the answer is NO, go to the next step.
  * <li>
  * Check if the provider has registered a subclass of <code>CipherSpi</code>
  * for the sub-transformation "<i>algorithm//padding</i>" (note the double
  * slashes).
  * <p>If the answer is YES, instantiate it, and call
  * <code>engineSetMode(<i>mode</i>)</code> on the new instance.
- * <p>If the answer is NO, go to the next step.<p>
+ * <p>If the answer is NO, go to the next step.
  * <li>
  * Check if the provider has registered a subclass of <code>CipherSpi</code>
  * for the sub-transformation "<i>algorithm</i>".

@@ -148,43 +148,28 @@ public class HtmlDocletWriter extends HtmlDocWriter {
         StringBuilder buf = new StringBuilder();
         int previndex = 0;
         while (true) {
-            if (configuration.docrootparent.length() > 0) {
-                final String docroot_parent = "{@docroot}/..";
-                // Search for lowercase version of {@docRoot}/..
-                index = lowerHtml.indexOf(docroot_parent, previndex);
-                // If next {@docRoot}/.. pattern not found, append rest of htmlstr and exit loop
-                if (index < 0) {
-                    buf.append(htmlstr.substring(previndex));
-                    break;
-                }
-                // If next {@docroot}/.. pattern found, append htmlstr up to start of tag
-                buf.append(htmlstr.substring(previndex, index));
-                previndex = index + docroot_parent.length();
-                // Insert docrootparent absolute path where {@docRoot}/.. was located
-
+            final String docroot = "{@docroot}";
+            // Search for lowercase version of {@docRoot}
+            index = lowerHtml.indexOf(docroot, previndex);
+            // If next {@docRoot} tag not found, append rest of htmlstr and exit loop
+            if (index < 0) {
+                buf.append(htmlstr.substring(previndex));
+                break;
+            }
+            // If next {@docroot} tag found, append htmlstr up to start of tag
+            buf.append(htmlstr.substring(previndex, index));
+            previndex = index + docroot.length();
+            if (configuration.docrootparent.length() > 0 && htmlstr.startsWith("/..", previndex)) {
+                // Insert the absolute link if {@docRoot} is followed by "/..".
                 buf.append(configuration.docrootparent);
-                // Append slash if next character is not a slash
-                if (previndex < htmlstr.length() && htmlstr.charAt(previndex) != '/') {
-                    buf.append('/');
-                }
+                previndex += 3;
             } else {
-                final String docroot = "{@docroot}";
-                // Search for lowercase version of {@docRoot}
-                index = lowerHtml.indexOf(docroot, previndex);
-                // If next {@docRoot} tag not found, append rest of htmlstr and exit loop
-                if (index < 0) {
-                    buf.append(htmlstr.substring(previndex));
-                    break;
-                }
-                // If next {@docroot} tag found, append htmlstr up to start of tag
-                buf.append(htmlstr.substring(previndex, index));
-                previndex = index + docroot.length();
                 // Insert relative path where {@docRoot} was located
                 buf.append(pathToRoot.isEmpty() ? "." : pathToRoot.getPath());
-                // Append slash if next character is not a slash
-                if (previndex < htmlstr.length() && htmlstr.charAt(previndex) != '/') {
-                    buf.append('/');
-                }
+            }
+            // Append slash if next character is not a slash
+            if (previndex < htmlstr.length() && htmlstr.charAt(previndex) != '/') {
+                buf.append('/');
             }
         }
         return buf.toString();
@@ -1604,26 +1589,30 @@ public class HtmlDocletWriter extends HtmlDocWriter {
                 result.addContent(seeTagToContent((SeeTag) tagelem));
             } else if (! tagName.equals("Text")) {
                 boolean wasEmpty = result.isEmpty();
-                Content output = TagletWriter.getInlineTagOuput(
-                    configuration.tagletManager, holderTag,
-                    tagelem, getTagletWriterInstance(isFirstSentence));
+                Content output;
+                if (configuration.docrootparent.length() > 0
+                        && tagelem.name().equals("@docRoot")
+                        && ((tags[i + 1]).text()).startsWith("/..")) {
+                    // If Xdocrootparent switch ON, set the flag to remove the /.. occurrence after
+                    // {@docRoot} tag in the very next Text tag.
+                    textTagChange = true;
+                    // Replace the occurrence of {@docRoot}/.. with the absolute link.
+                    output = new StringContent(configuration.docrootparent);
+                } else {
+                    output = TagletWriter.getInlineTagOuput(
+                            configuration.tagletManager, holderTag,
+                            tagelem, getTagletWriterInstance(isFirstSentence));
+                }
                 if (output != null)
                     result.addContent(output);
                 if (wasEmpty && isFirstSentence && tagelem.name().equals("@inheritDoc") && !result.isEmpty()) {
                     break;
-                } else if (configuration.docrootparent.length() > 0 &&
-                        tagelem.name().equals("@docRoot") &&
-                        ((tags[i + 1]).text()).startsWith("/..")) {
-                    //If Xdocrootparent switch ON, set the flag to remove the /.. occurance after
-                    //{@docRoot} tag in the very next Text tag.
-                    textTagChange = true;
-                    continue;
                 } else {
                     continue;
                 }
             } else {
                 String text = tagelem.text();
-                //If Xdocrootparent switch ON, remove the /.. occurance after {@docRoot} tag.
+                //If Xdocrootparent switch ON, remove the /.. occurrence after {@docRoot} tag.
                 if (textTagChange) {
                     text = text.replaceFirst("/..", "");
                     textTagChange = false;

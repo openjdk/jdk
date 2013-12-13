@@ -41,7 +41,7 @@ public interface CheckboxPeer extends ComponentPeer {
      * Sets the state of the checkbox to be checked ({@code true}) or
      * unchecked ({@code false}).
      *
-     * @param t the state to set on the checkbox
+     * @param state the state to set on the checkbox
      *
      * @see Checkbox#setState(boolean)
      */

@@ -23,8 +23,8 @@
 
 /*
  * @test
- * @bug 8015912
- * @summary find API dependencies
+ * @bug 8015912 8029216
+ * @summary Test -apionly and -jdkinternals options
  * @build m.Bar m.Foo m.Gee b.B c.C c.I d.D e.E f.F g.G
  * @run main APIDeps
  */
@@ -88,6 +88,19 @@ public class APIDeps {
              new String[] {"g.G", "sun.misc.Lock"},
              new String[] {testDirBasename, "JDK internal API"},
              new String[] {"-classpath", testDir.getPath(), "-verbose"});
+
+        // -jdkinternals
+        test(new File(mDir, "Gee.class"),
+             new String[] {"sun.misc.Lock"},
+             new String[] {"JDK internal API"},
+             new String[] {"-jdkinternals"});
+        // -jdkinternals parses all classes on -classpath and the input arguments
+        test(new File(mDir, "Gee.class"),
+             new String[] {"sun.misc.Lock", "sun.misc.Unsafe"},
+             new String[] {"JDK internal API"},
+             new String[] {"-classpath", testDir.getPath(), "-jdkinternals"});
+
+        // parse only APIs
         // parse only APIs
         test(mDir,
              new String[] {"java.lang.Object", "java.lang.String",

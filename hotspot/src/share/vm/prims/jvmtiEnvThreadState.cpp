@@ -269,11 +269,20 @@ class VM_GetCurrentLocation : public VM_Operation {
   void doit() {
     ResourceMark rmark; // _thread != Thread::current()
     RegisterMap rm(_thread, false);
-    javaVFrame* vf = _thread->last_java_vframe(&rm);
-    assert(vf != NULL, "must have last java frame");
-    Method* method = vf->method();
-    _method_id = method->jmethod_id();
-    _bci = vf->bci();
+    // There can be a race condition between a VM_Operation reaching a safepoint
+    // and the target thread exiting from Java execution.
+    // We must recheck the last Java frame still exists.
+    if (_thread->has_last_Java_frame()) {
+      javaVFrame* vf = _thread->last_java_vframe(&rm);
+      assert(vf != NULL, "must have last java frame");
+      Method* method = vf->method();
+      _method_id = method->jmethod_id();
+      _bci = vf->bci();
+    } else {
+      // Clear current location as the target thread has no Java frames anymore.
+      _method_id = (jmethodID)NULL;
+      _bci = 0;
+    }
   }
   void get_current_location(jmethodID *method_id, int *bci) {
     *method_id = _method_id;
