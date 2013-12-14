@@ -28,60 +28,62 @@
  * @author kladko
  */
 
-import java.net.*;
-import java.nio.*;
-import java.nio.channels.*;
+import java.nio.ByteBuffer;
+import java.nio.channels.Selector;
+import java.nio.channels.SelectionKey;
+import java.nio.channels.SocketChannel;
 
 public class SelectAfterRead {
 
-    final static int TIMEOUT = 1000;
+    private static final int TIMEOUT = 1000;
 
     public static void main(String[] argv) throws Exception {
-        InetAddress lh = InetAddress.getByName(ByteServer.LOCALHOST);
 
         // server: accept connection and write one byte
-        ByteServer server = new ByteServer(1);
-        server.start();
-        Selector sel = Selector.open();
-        SocketChannel sc = SocketChannel.open();
-        sc.connect(new InetSocketAddress(lh, server.port()));
-        sc.read(ByteBuffer.allocate(1));
-        sc.configureBlocking(false);
-        sc.register(sel, SelectionKey.OP_READ);
-        // previously on Windows select would select channel here, although there was
-        // nothing to read
-        if (sel.selectNow() != 0)
-            throw new Exception("Select returned nonzero value");
-        sc.close();
-        sel.close();
-        server.exit();
+        try (ByteServer server = new ByteServer();
+             SocketChannel sc = SocketChannel.open(server.address())) {
+
+            server.acceptConnection();
+            server.write(1);
+
+            try (Selector sel = Selector.open()) {
+                sc.read(ByteBuffer.allocate(1));
+                sc.configureBlocking(false);
+                sc.register(sel, SelectionKey.OP_READ);
+                // previously on Windows select would select channel here, although there was
+                // nothing to read
+                if (sel.selectNow() != 0)
+                    throw new Exception("Select returned nonzero value");
+            }
+        }
 
         // Now we will test a two reads combination
         // server: accept connection and write two bytes
-        server = new ByteServer(2);
-        server.start();
-        sc = SocketChannel.open();
-        sc.connect(new InetSocketAddress(lh, server.port()));
-        sc.configureBlocking(false);
-        sel = Selector.open();
-        sc.register(sel, SelectionKey.OP_READ);
-        if (sel.select(TIMEOUT) != 1)
-            throw new Exception("One selected key expected");
-        sel.selectedKeys().clear();
-        // previously on Windows a channel would get selected only once
-        if (sel.selectNow() != 1)
-            throw new Exception("One selected key expected");
-        // Previously on Windows two consequent reads would cause select()
-        // to select a channel, although there was nothing remaining to
-        // read in the channel
-        if (sc.read(ByteBuffer.allocate(1)) != 1)
-            throw new Exception("One byte expected");
-        if (sc.read(ByteBuffer.allocate(1)) != 1)
-            throw new Exception("One byte expected");
-        if (sel.selectNow() != 0)
-            throw new Exception("Select returned nonzero value");
-        sc.close();
-        sel.close();
-        server.exit();
+        try (ByteServer server = new ByteServer();
+             SocketChannel sc = SocketChannel.open(server.address())) {
+
+            server.acceptConnection();
+            server.write(2);
+
+            try (Selector sel = Selector.open()) {
+                sc.configureBlocking(false);
+                sc.register(sel, SelectionKey.OP_READ);
+                if (sel.select(TIMEOUT) != 1)
+                    throw new Exception("One selected key expected");
+                sel.selectedKeys().clear();
+                // previously on Windows a channel would get selected only once
+                if (sel.selectNow() != 1)
+                    throw new Exception("One selected key expected");
+                // Previously on Windows two consequent reads would cause select()
+                // to select a channel, although there was nothing remaining to
+                // read in the channel
+                if (sc.read(ByteBuffer.allocate(1)) != 1)
+                    throw new Exception("One byte expected");
+                if (sc.read(ByteBuffer.allocate(1)) != 1)
+                    throw new Exception("One byte expected");
+                if (sel.selectNow() != 0)
+                    throw new Exception("Select returned nonzero value");
+            }
+        }
     }
 }
