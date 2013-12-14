@@ -268,7 +268,15 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
      */
     private static final int SCHOENHAGE_BASE_CONVERSION_THRESHOLD = 20;
 
-    //Constructors
+    /**
+     * The threshold value for using squaring code to perform multiplication
+     * of a {@code BigInteger} instance by itself.  If the number of ints in
+     * the number are larger than this value, {@code multiply(this)} will
+     * return {@code square()}.
+     */
+    private static final int MULTIPLY_SQUARE_THRESHOLD = 20;
+
+    // Constructors
 
     /**
      * Translates a byte array containing the two's-complement binary
@@ -1458,6 +1466,9 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
     /**
      * Returns a BigInteger whose value is {@code (this * val)}.
      *
+     * @implNote An implementation may offer better algorithmic
+     * performance when {@code val == this}.
+     *
      * @param  val value to be multiplied by this BigInteger.
      * @return {@code this * val}
      */
@@ -1466,6 +1477,11 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
             return ZERO;
 
         int xlen = mag.length;
+
+        if (val == this && xlen > MULTIPLY_SQUARE_THRESHOLD) {
+            return square();
+        }
+
         int ylen = val.mag.length;
 
         if ((xlen < KARATSUBA_THRESHOLD) || (ylen < KARATSUBA_THRESHOLD)) {
