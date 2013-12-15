@@ -40,9 +40,6 @@ import java.util.Set;
 import java.util.SortedMap;
 import java.util.TreeMap;
 import java.util.jar.Pack200;
-import java.lang.reflect.Constructor;
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
 
 /**
  * Control block for publishing Pack200 options to the other classes.
@@ -51,30 +48,9 @@ import java.lang.reflect.Method;
 final class PropMap implements SortedMap<String, String>  {
     private final TreeMap<String, String> theMap = new TreeMap<>();;
 
-    // type is erased, elements are of type java.beans.PropertyChangeListener
-    private final List<Object> listenerList = new ArrayList<>(1);
-
-    void addListener(Object listener) {
-        assert Beans.isPropertyChangeListener(listener);
-        listenerList.add(listener);
-    }
-
-    void removeListener(Object listener) {
-        assert Beans.isPropertyChangeListener(listener);
-        listenerList.remove(listener);
-    }
-
     // Override:
     public String put(String key, String value) {
         String oldValue = theMap.put(key, value);
-        if (value != oldValue && !listenerList.isEmpty()) {
-            assert Beans.isBeansPresent();
-            // Post the property change event.
-            Object event = Beans.newPropertyChangeEvent(this, key, oldValue, value);
-            for (Object listener : listenerList) {
-                Beans.invokePropertyChange(listener, event);
-            }
-        }
         return oldValue;
     }
 
@@ -340,114 +316,5 @@ final class PropMap implements SortedMap<String, String>  {
     @Override
     public String lastKey() {
        return theMap.lastKey();
-    }
-
-    /**
-     * A class that provides access to the java.beans.PropertyChangeListener
-     * and java.beans.PropertyChangeEvent without creating a static dependency
-     * on java.beans. This class can be removed once the addPropertyChangeListener
-     * and removePropertyChangeListener methods are removed from Packer and
-     * Unpacker.
-     */
-    private static class Beans {
-        private static final Class<?> propertyChangeListenerClass =
-            getClass("java.beans.PropertyChangeListener");
-
-        private static final Class<?> propertyChangeEventClass =
-            getClass("java.beans.PropertyChangeEvent");
-
-        private static final Method propertyChangeMethod =
-            getMethod(propertyChangeListenerClass,
-                      "propertyChange",
-                      propertyChangeEventClass);
-
-        private static final Constructor<?> propertyEventCtor =
-            getConstructor(propertyChangeEventClass,
-                           Object.class,
-                           String.class,
-                           Object.class,
-                           Object.class);
-
-        private static Class<?> getClass(String name) {
-            try {
-                return Class.forName(name, true, Beans.class.getClassLoader());
-            } catch (ClassNotFoundException e) {
-                return null;
-            }
-        }
-        private static Constructor<?> getConstructor(Class<?> c, Class<?>... types) {
-            try {
-                return (c == null) ? null : c.getDeclaredConstructor(types);
-            } catch (NoSuchMethodException x) {
-                throw new AssertionError(x);
-            }
-        }
-
-        private static Method getMethod(Class<?> c, String name, Class<?>... types) {
-            try {
-                return (c == null) ? null : c.getMethod(name, types);
-            } catch (NoSuchMethodException e) {
-                throw new AssertionError(e);
-            }
-        }
-
-        /**
-         * Returns {@code true} if java.beans is present.
-         */
-        static boolean isBeansPresent() {
-            return propertyChangeListenerClass != null &&
-                   propertyChangeEventClass != null;
-        }
-
-        /**
-         * Returns {@code true} if the given object is a PropertyChangeListener
-         */
-        static boolean isPropertyChangeListener(Object obj) {
-            if (propertyChangeListenerClass == null) {
-                return false;
-            } else {
-                return propertyChangeListenerClass.isInstance(obj);
-            }
-        }
-
-        /**
-         * Returns a new PropertyChangeEvent with the given source, property
-         * name, old and new values.
-         */
-        static Object newPropertyChangeEvent(Object source, String prop,
-                                             Object oldValue, Object newValue)
-        {
-            try {
-                return propertyEventCtor.newInstance(source, prop, oldValue, newValue);
-            } catch (InstantiationException | IllegalAccessException x) {
-                throw new AssertionError(x);
-            } catch (InvocationTargetException x) {
-                Throwable cause = x.getCause();
-                if (cause instanceof Error)
-                    throw (Error)cause;
-                if (cause instanceof RuntimeException)
-                    throw (RuntimeException)cause;
-                throw new AssertionError(x);
-            }
-        }
-
-        /**
-         * Invokes the given PropertyChangeListener's propertyChange method
-         * with the given event.
-         */
-        static void invokePropertyChange(Object listener, Object ev) {
-            try {
-                propertyChangeMethod.invoke(listener, ev);
-            } catch (IllegalAccessException x) {
-                throw new AssertionError(x);
-            } catch (InvocationTargetException x) {
-                Throwable cause = x.getCause();
-                if (cause instanceof Error)
-                    throw (Error)cause;
-                if (cause instanceof RuntimeException)
-                    throw (RuntimeException)cause;
-                throw new AssertionError(x);
-            }
-        }
     }
 }
