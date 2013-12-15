@@ -37,6 +37,9 @@ import com.sun.xml.internal.ws.client.HandlerConfiguration;
 import com.sun.xml.internal.ws.developer.MemberSubmissionAddressingFeature;
 import com.sun.xml.internal.ws.developer.BindingTypeFeature;
 
+import javax.activation.CommandInfo;
+import javax.activation.CommandMap;
+import javax.activation.MailcapCommandMap;
 import javax.xml.namespace.QName;
 import javax.xml.ws.Service;
 import javax.xml.ws.WebServiceFeature;
@@ -151,10 +154,59 @@ public abstract class BindingImpl implements WSBinding {
         return addressingVersion;
     }
 
-    public final
     @NotNull
-    Codec createCodec() {
+    public final Codec createCodec() {
+
+        // initialization from here should cover most of cases;
+        // if not, it would be necessary to call
+        //   BindingImpl.initializeJavaActivationHandlers()
+        // explicitly by programmer
+        initializeJavaActivationHandlers();
+
         return bindingId.createEncoder(this);
+    }
+
+    public static void initializeJavaActivationHandlers() {
+        // DataHandler.writeTo() may search for DCH. So adding some default ones.
+        try {
+            CommandMap map = CommandMap.getDefaultCommandMap();
+            if (map instanceof MailcapCommandMap) {
+                MailcapCommandMap mailMap = (MailcapCommandMap) map;
+
+                // registering our DCH since javamail's DCH doesn't handle
+                if (!cmdMapInitialized(mailMap)) {
+                    mailMap.addMailcap("text/xml;;x-java-content-handler=com.sun.xml.internal.ws.encoding.XmlDataContentHandler");
+                    mailMap.addMailcap("application/xml;;x-java-content-handler=com.sun.xml.internal.ws.encoding.XmlDataContentHandler");
+                    mailMap.addMailcap("image/*;;x-java-content-handler=com.sun.xml.internal.ws.encoding.ImageDataContentHandler");
+                    mailMap.addMailcap("text/plain;;x-java-content-handler=com.sun.xml.internal.ws.encoding.StringDataContentHandler");
+                }
+            }
+        } catch (Throwable t) {
+            // ignore the exception.
+        }
+    }
+
+    private static boolean cmdMapInitialized(MailcapCommandMap mailMap) {
+        CommandInfo[] commands = mailMap.getAllCommands("text/xml");
+        if (commands == null || commands.length == 0) {
+            return false;
+        }
+
+        // SAAJ RI implements it's own DataHandlers which can be used for JAX-WS too;
+        // see com.sun.xml.internal.messaging.saaj.soap.AttachmentPartImpl#initializeJavaActivationHandlers
+        // so if found any of SAAJ or our own handler registered, we are ok; anyway using SAAJ directly here
+        // is not good idea since we don't want standalone JAX-WS to depend on specific SAAJ impl.
+        // This is also reason for duplication of Handler's code by JAX-WS
+        String saajClassName = "com.sun.xml.internal.messaging.saaj.soap.XmlDataContentHandler";
+        String jaxwsClassName = "com.sun.xml.internal.ws.encoding.XmlDataContentHandler";
+        for (CommandInfo command : commands) {
+            String commandClass = command.getCommandClass();
+            if (saajClassName.equals(commandClass) ||
+                    jaxwsClassName.equals(commandClass)) {
+                return true;
+            }
+        }
+        return false;
     }
 
     public static BindingImpl create(@NotNull BindingID bindingId) {
