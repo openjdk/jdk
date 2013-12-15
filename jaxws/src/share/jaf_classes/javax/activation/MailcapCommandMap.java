@@ -120,11 +120,7 @@ import com.sun.activation.registries.LogSupport;
 public class MailcapCommandMap extends CommandMap {
     /*
      * We manage a collection of databases, searched in order.
-     * The default database is shared between all instances
-     * of this class.
-     * XXX - Can we safely share more databases between instances?
      */
-    private static MailcapFile defDB = null;
     private MailcapFile[] DB;
     private static final int PROG = 0;  // programmatically added entries
 
@@ -164,14 +160,10 @@ public class MailcapCommandMap extends CommandMap {
         loadAllResources(dbv, "META-INF/mailcap");
 
         LogSupport.log("MailcapCommandMap: load DEF");
-        synchronized (MailcapCommandMap.class) {
-            // see if another instance has created this yet.
-            if (defDB == null)
-                defDB = loadResource("/META-INF/mailcap.default");
-        }
+        mf = loadResource("/META-INF/mailcap.default");
 
-        if (defDB != null)
-            dbv.add(defDB);
+        if (mf != null)
+            dbv.add(mf);
 
         DB = new MailcapFile[dbv.size()];
         DB = (MailcapFile[])dbv.toArray(DB);
