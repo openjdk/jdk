@@ -1498,13 +1498,18 @@ int InstanceKlass::find_method_by_name(
   return -1;
 }
 
-// lookup_method searches both the local methods array and all superclasses methods arrays
+// uncached_lookup_method searches both the local class methods array and all
+// superclasses methods arrays, skipping any overpass methods in superclasses.
 Method* InstanceKlass::uncached_lookup_method(Symbol* name, Symbol* signature) const {
   Klass* klass = const_cast<InstanceKlass*>(this);
+  bool dont_ignore_overpasses = true;  // For the class being searched, find its overpasses.
   while (klass != NULL) {
     Method* method = InstanceKlass::cast(klass)->find_method(name, signature);
-    if (method != NULL) return method;
+    if ((method != NULL) && (dont_ignore_overpasses || !method->is_overpass())) {
+      return method;
+    }
     klass = InstanceKlass::cast(klass)->super();
+    dont_ignore_overpasses = false;  // Ignore overpass methods in all superclasses.
   }
   return NULL;
 }
@@ -1519,7 +1524,7 @@ Method* InstanceKlass::lookup_method_in_ordered_interfaces(Symbol* name,
   }
   // Look up interfaces
   if (m == NULL) {
-    m = lookup_method_in_all_interfaces(name, signature);
+    m = lookup_method_in_all_interfaces(name, signature, false);
   }
   return m;
 }
@@ -1528,14 +1533,16 @@ Method* InstanceKlass::lookup_method_in_ordered_interfaces(Symbol* name,
 // Do NOT return private or static methods, new in JDK8 which are not externally visible
 // They should only be found in the initial InterfaceMethodRef
 Method* InstanceKlass::lookup_method_in_all_interfaces(Symbol* name,
-                                                         Symbol* signature) const {
+                                                       Symbol* signature,
+                                                       bool skip_default_methods) const {
   Array<Klass*>* all_ifs = transitive_interfaces();
   int num_ifs = all_ifs->length();
   InstanceKlass *ik = NULL;
   for (int i = 0; i < num_ifs; i++) {
     ik = InstanceKlass::cast(all_ifs->at(i));
     Method* m = ik->lookup_method(name, signature);
-    if (m != NULL && m->is_public() && !m->is_static()) {
+    if (m != NULL && m->is_public() && !m->is_static() &&
+        (!skip_default_methods || !m->is_default_method())) {
       return m;
     }
   }
