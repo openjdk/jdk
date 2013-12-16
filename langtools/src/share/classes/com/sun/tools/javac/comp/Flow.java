@@ -1461,19 +1461,9 @@ public class Flow {
             this.names = names;
         }
 
-        boolean isInitialConstructor = false;
-
         @Override
         protected void markDead(JCTree tree) {
-            if (!isInitialConstructor) {
-                inits.inclRange(returnadr, nextadr);
-            } else {
-                for (int address = returnadr; address < nextadr; address++) {
-                    if (!(isFinalUninitializedStaticField(vardecls[address].sym))) {
-                        inits.incl(address);
-                    }
-                }
-            }
+            inits.inclRange(returnadr, nextadr);
             uninits.inclRange(returnadr, nextadr);
         }
 
@@ -1486,16 +1476,8 @@ public class Flow {
             return
                 sym.pos >= startPos &&
                 ((sym.owner.kind == MTH ||
-                isFinalUninitializedField(sym)));
-        }
-
-        boolean isFinalUninitializedField(VarSymbol sym) {
-            return ((sym.flags() & (FINAL | HASINIT | PARAMETER)) == FINAL &&
-                  classDef.sym.isEnclosedBy((ClassSymbol)sym.owner));
-        }
-
-        boolean isFinalUninitializedStaticField(VarSymbol sym) {
-            return isFinalUninitializedField(sym) && sym.isStatic();
+                 ((sym.flags() & (FINAL | HASINIT | PARAMETER)) == FINAL &&
+                  classDef.sym.isEnclosedBy((ClassSymbol)sym.owner))));
         }
 
         /** Initialize new trackable variable by setting its address field
@@ -1751,7 +1733,8 @@ public class Flow {
             Assert.check(pendingExits.isEmpty());
 
             try {
-                isInitialConstructor = TreeInfo.isInitialConstructor(tree);
+                boolean isInitialConstructor =
+                    TreeInfo.isInitialConstructor(tree);
 
                 if (!isInitialConstructor) {
                     firstadr = nextadr;
@@ -1806,7 +1789,6 @@ public class Flow {
                 nextadr = nextadrPrev;
                 firstadr = firstadrPrev;
                 returnadr = returnadrPrev;
-                isInitialConstructor = false;
             }
         }
 
