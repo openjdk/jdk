@@ -295,7 +295,7 @@ void Flag::print_on(outputStream* st, bool withComments) {
     else st->print("%-16s", "");
   }
 
-  st->print("%-20");
+  st->print("%-20s", " ");
   print_kind(st);
 
   if (withComments) {
