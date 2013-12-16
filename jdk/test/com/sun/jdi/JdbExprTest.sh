@@ -45,9 +45,9 @@ import java.net.URL;
 
 class $classname {
 
-	static long aLong;
-	static int anInt;
-	static boolean aBoolean;
+    static long aLong;
+    static int anInt;
+    static boolean aBoolean;
 
     public static void bkpt() {
        int i = 0;     //@1 breakpoint
@@ -67,70 +67,70 @@ dojdbCmds()
     setBkpts @1
     runToBkpt @1
 
-	cmd print java.lang.Long.MAX_VALUE
-	jdbFailIfNotPresent " \= 9223372036854775807" 3
+    cmd print java.lang.Long.MAX_VALUE
+    jdbFailIfNotPresent " \= 9223372036854775807" 3
 
-	cmd print java.lang.Long.MIN_VALUE
-	jdbFailIfNotPresent " \= \-9223372036854775808" 3
-	
-	cmd print 9223372036854775807L
-	jdbFailIfNotPresent "9223372036854775807L = 9223372036854775807" 3
-	cmd print 9223372036854775807
-	jdbFailIfNotPresent "9223372036854775807 = 9223372036854775807" 3
+    cmd print java.lang.Long.MIN_VALUE
+    jdbFailIfNotPresent " \= \-9223372036854775808" 3
+    
+    cmd print 9223372036854775807L
+    jdbFailIfNotPresent "9223372036854775807L = 9223372036854775807" 3
+    cmd print 9223372036854775807
+    jdbFailIfNotPresent "9223372036854775807 = 9223372036854775807" 3
 
-	cmd print -9223372036854775807L
-	jdbFailIfNotPresent "\-9223372036854775807L = \-9223372036854775807" 3
-	cmd print -9223372036854775807
-	jdbFailIfNotPresent "\-9223372036854775807 = \-9223372036854775807" 3
-	
-	cmd print -1
-	jdbFailIfNotPresent "\-1 = \-1" 3
-	cmd print 1L
-	jdbFailIfNotPresent "1L = 1" 3
-	cmd print -1L
-	jdbFailIfNotPresent "\-1L = \-1" 3
-	cmd print 0x1
-	jdbFailIfNotPresent "0x1 = 1" 3
-	
-	cmd set $classname.aLong = 9223372036854775807L
-	cmd print $classname.aLong
-	jdbFailIfNotPresent "$classname.aLong = 9223372036854775807" 3
+    cmd print -9223372036854775807L
+    jdbFailIfNotPresent "\-9223372036854775807L = \-9223372036854775807" 3
+    cmd print -9223372036854775807
+    jdbFailIfNotPresent "\-9223372036854775807 = \-9223372036854775807" 3
+    
+    cmd print -1
+    jdbFailIfNotPresent "\-1 = \-1" 3
+    cmd print 1L
+    jdbFailIfNotPresent "1L = 1" 3
+    cmd print -1L
+    jdbFailIfNotPresent "\-1L = \-1" 3
+    cmd print 0x1
+    jdbFailIfNotPresent "0x1 = 1" 3
+    
+    cmd set $classname.aLong = 9223372036854775807L
+    cmd print $classname.aLong
+    jdbFailIfNotPresent "$classname.aLong = 9223372036854775807" 3
 
-	cmd set $classname.anInt = java.lang.Integer.MAX_VALUE + 1
-	cmd print $classname.anInt
-	jdbFailIfNotPresent "$classname.anInt = \-2147483648" 3
+    cmd set $classname.anInt = java.lang.Integer.MAX_VALUE + 1
+    cmd print $classname.anInt
+    jdbFailIfNotPresent "$classname.anInt = \-2147483648" 3
 
-	cmd set $classname.aLong = java.lang.Integer.MAX_VALUE + 1L
-	cmd print $classname.aLong
-	jdbFailIfNotPresent "$classname.aLong = 2147483648" 3
+    cmd set $classname.aLong = java.lang.Integer.MAX_VALUE + 1L
+    cmd print $classname.aLong
+    jdbFailIfNotPresent "$classname.aLong = 2147483648" 3
 
-	cmd set $classname.anInt = 0x80000000
-	jdbFailIfNotPresent	"Can\'t convert 2147483648 to int" 3
-	cmd set $classname.anInt = 0x8000000000000000L
-	jdbFailIfNotPresent	"java.lang.NumberFormatException: For input string: \"8000000000000000\"" 3
+    cmd set $classname.anInt = 0x80000000
+    jdbFailIfNotPresent "InvalidTypeException: .* convert 2147483648 to int" 3
+    cmd set $classname.anInt = 0x8000000000000000L
+    jdbFailIfNotPresent "java.lang.NumberFormatException: For input string: \"8000000000000000\"" 3
 
-	cmd set $classname.anInt = 0x7fffffff
-	jdbFailIfNotPresent "0x7fffffff = 2147483647" 3
-	cmd set $classname.aLong = 0x7fffffffffffffff
-	jdbFailIfNotPresent "0x7fffffffffffffff = 9223372036854775807" 3
+    cmd set $classname.anInt = 0x7fffffff
+    jdbFailIfNotPresent "0x7fffffff = 2147483647" 3
+    cmd set $classname.aLong = 0x7fffffffffffffff
+    jdbFailIfNotPresent "0x7fffffffffffffff = 9223372036854775807" 3
 
-	cmd print 3.1415
-	jdbFailIfNotPresent "3.1415 = 3.1415" 3
-	cmd print -3.1415
-	jdbFailIfNotPresent "\-3.1415 = \-3.1415" 3
-	cmd print 011
-	jdbFailIfNotPresent "011 = 9" 3
+    cmd print 3.1415
+    jdbFailIfNotPresent "3.1415 = 3.1415" 3
+    cmd print -3.1415
+    jdbFailIfNotPresent "\-3.1415 = \-3.1415" 3
+    cmd print 011
+    jdbFailIfNotPresent "011 = 9" 3
 
-	cmd set $classname.aBoolean = false
-	jdbFailIfNotPresent "JdbExprTest.aBoolean = false = false" 3
-	cmd print $classname.aBoolean
-	jdbFailIfNotPresent "JdbExprTest.aBoolean = false" 3
-	cmd print !$classname.aBoolean
-	jdbFailIfNotPresent "JdbExprTest.aBoolean = true" 3
+    cmd set $classname.aBoolean = false
+    jdbFailIfNotPresent "JdbExprTest.aBoolean = false = false" 3
+    cmd print $classname.aBoolean
+    jdbFailIfNotPresent "JdbExprTest.aBoolean = false" 3
+    cmd print !$classname.aBoolean
+    jdbFailIfNotPresent "JdbExprTest.aBoolean = true" 3
 
-	cmd print ~1
-	jdbFailIfNotPresent "~1 = -2" 3
-	
+    cmd print ~1
+    jdbFailIfNotPresent "~1 = -2" 3
+    
     cmd quit
 }
 
