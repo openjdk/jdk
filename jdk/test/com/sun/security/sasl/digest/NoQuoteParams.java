@@ -43,8 +43,6 @@ import javax.security.sasl.SaslClient;
 import javax.security.sasl.SaslException;
 import javax.security.sasl.SaslServer;
 import javax.security.auth.callback.CallbackHandler;
-import com.sun.security.auth.callback.DialogCallbackHandler;
-import com.sun.security.auth.callback.TextCallbackHandler;
 
 /*
  * According to RFC 2831, DIGEST-MD5 servers must generate challenge strings
