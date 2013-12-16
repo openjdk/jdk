@@ -282,6 +282,7 @@ LookupProcessor::LookupProcessor(const LETableReference &baseAddress,
 
             for (le_uint16 feature = 0; feature < featureCount; feature += 1) {
               LEReferenceToArrayOf<le_uint16> featureIndexArray(langSysTable, success, langSysTable->featureIndexArray, featureCount);
+              if (LE_FAILURE(success)) { continue; }
               le_uint16 featureIndex = SWAPW(featureIndexArray.getObject(feature,success));
 
                 // don't add the required feature to the list more than once...
