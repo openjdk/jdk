@@ -263,9 +263,6 @@ sun/security/krb5/auto/BadKdc4.java                             solaris-sparcv9
 
 # jdk_tools
 
-# 7132203
-sun/jvmstat/monitor/MonitoredVm/CR6672135.java                  generic-all
-
 # 8028474
 sun/jvmstat/monitor/MonitoredVm/MonitorVmStartTerminate.sh      generic-all
 
@@ -279,12 +276,6 @@ tools/launcher/FXLauncherTest.java                              linux-all
 ############################################################################
 
 # jdk_jdi
-
-# Filed 6952105
-com/sun/jdi/SuspendThreadTest.java                              generic-all
-
-# Filed 6653793
-com/sun/jdi/RedefineCrossEvent.java                             generic-all
 
 ############################################################################
 
