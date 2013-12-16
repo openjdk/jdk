@@ -349,6 +349,7 @@ class MethodFamily : public ResourceObj {
   }
 
   Symbol* generate_no_defaults_message(TRAPS) const;
+  Symbol* generate_method_message(Symbol *klass_name, Method* method, TRAPS) const;
   Symbol* generate_conflicts_message(GrowableArray<Method*>* methods, TRAPS) const;
 
  public:
@@ -414,21 +415,25 @@ class MethodFamily : public ResourceObj {
       }
     }
 
-    if (qualified_methods.length() == 0) {
-      _exception_message = generate_no_defaults_message(CHECK);
+    if (num_defaults == 0) {
+      if (qualified_methods.length() == 0) {
+        _exception_message = generate_no_defaults_message(CHECK);
+      } else {
+        assert(root != NULL, "Null root class");
+        _exception_message = generate_method_message(root->name(), qualified_methods.at(0), CHECK);
+      }
       _exception_name = vmSymbols::java_lang_AbstractMethodError();
     // If only one qualified method is default, select that
     } else if (num_defaults == 1) {
         _selected_target = qualified_methods.at(default_index);
     } else if (num_defaults > 1) {
-      _exception_message = generate_conflicts_message(&qualified_methods,CHECK);
-      _exception_name = vmSymbols::java_lang_IncompatibleClassChangeError();
+       _exception_message = generate_conflicts_message(&qualified_methods,CHECK);
+       _exception_name = vmSymbols::java_lang_IncompatibleClassChangeError();
       if (TraceDefaultMethods) {
         _exception_message->print_value_on(tty);
         tty->print_cr("");
       }
     }
-    // leave abstract methods alone, they will be found via normal search path
   }
 
   bool contains_signature(Symbol* query) {
@@ -484,6 +489,19 @@ class MethodFamily : public ResourceObj {
 
 Symbol* MethodFamily::generate_no_defaults_message(TRAPS) const {
   return SymbolTable::new_symbol("No qualifying defaults found", CHECK_NULL);
+}
+
+Symbol* MethodFamily::generate_method_message(Symbol *klass_name, Method* method, TRAPS) const {
+  stringStream ss;
+  ss.print("Method ");
+  Symbol* name = method->name();
+  Symbol* signature = method->signature();
+  ss.write((const char*)klass_name->bytes(), klass_name->utf8_length());
+  ss.print(".");
+  ss.write((const char*)name->bytes(), name->utf8_length());
+  ss.write((const char*)signature->bytes(), signature->utf8_length());
+  ss.print(" is abstract");
+  return SymbolTable::new_symbol(ss.base(), (int)ss.size(), CHECK_NULL);
 }
 
 Symbol* MethodFamily::generate_conflicts_message(GrowableArray<Method*>* methods, TRAPS) const {
