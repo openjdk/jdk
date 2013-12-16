@@ -242,6 +242,7 @@ public class XDataTransferer extends DataTransferer {
         }
     }
 
+    @Override
     protected String[] dragQueryFile(byte[] bytes) {
         XToolkit.awtLock();
         try {
@@ -252,8 +253,8 @@ public class XDataTransferer extends DataTransferer {
         }
     }
 
+    @Override
     protected URI[] dragQueryURIs(InputStream stream,
-                                  byte[] bytes,
                                   long format,
                                   Transferable localeTransferable)
       throws IOException {

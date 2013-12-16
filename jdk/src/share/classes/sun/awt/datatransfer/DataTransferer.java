@@ -1598,6 +1598,30 @@ search:
             // Turn the list of Files into a List and return
             theObject = Arrays.asList(files);
 
+            // Source data is a URI list. Convert to DataFlavor.javaFileListFlavor
+            // where possible.
+        } else if (isURIListFormat(format)
+                    && DataFlavor.javaFileListFlavor.equals(flavor)) {
+
+            try (ByteArrayInputStream str = new ByteArrayInputStream(bytes))  {
+
+                URI uris[] = dragQueryURIs(str, format, localeTransferable);
+                if (uris == null) {
+                    return null;
+                }
+                List<File> files = new ArrayList<>();
+                for (URI uri : uris) {
+                    try {
+                        files.add(new File(uri));
+                    } catch (IllegalArgumentException illegalArg) {
+                        // When converting from URIs to less generic files,
+                        // common practice (Wine, SWT) seems to be to
+                        // silently drop the URIs that aren't local files.
+                    }
+                }
+                theObject = files;
+            }
+
             // Target data is a String. Strip terminating NUL bytes. Decode bytes
             // into characters. Search-and-replace EOLN.
         } else if (String.class.equals(flavor.getRepresentationClass()) &&
