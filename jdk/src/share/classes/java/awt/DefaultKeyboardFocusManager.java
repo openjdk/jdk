@@ -287,7 +287,7 @@ public class DefaultKeyboardFocusManager extends KeyboardFocusManager {
         synchronized (this) {
             KeyEvent ke = enqueuedKeyEvents.isEmpty() ? null : enqueuedKeyEvents.getFirst();
             if (ke != null && time >= ke.getWhen()) {
-                TypeAheadMarker marker = typeAheadMarkers.getFirst();
+                TypeAheadMarker marker = typeAheadMarkers.isEmpty() ? null : typeAheadMarkers.getFirst();
                 if (marker != null) {
                     Window toplevel = marker.untilFocused.getContainingWindow();
                     // Check that the component awaiting focus belongs to
