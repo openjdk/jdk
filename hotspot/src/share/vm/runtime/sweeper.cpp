@@ -257,9 +257,14 @@ void NMethodSweeper::possibly_sweep() {
   // Large ReservedCodeCacheSize:   (e.g., 256M + code Cache is 90% full). The formula
   //                                              computes: (256 / 16) - 10 = 6.
   if (!_should_sweep) {
-    int time_since_last_sweep = _time_counter - _last_sweep;
-    double wait_until_next_sweep = (ReservedCodeCacheSize / (16 * M)) - time_since_last_sweep -
-                                CodeCache::reverse_free_ratio();
+    const int time_since_last_sweep = _time_counter - _last_sweep;
+    // ReservedCodeCacheSize has an 'unsigned' type. We need a 'signed' type for max_wait_time,
+    // since 'time_since_last_sweep' can be larger than 'max_wait_time'. If that happens using
+    // an unsigned type would cause an underflow (wait_until_next_sweep becomes a large positive
+    // value) that disables the intended periodic sweeps.
+    const int max_wait_time = ReservedCodeCacheSize / (16 * M);
+    double wait_until_next_sweep = max_wait_time - time_since_last_sweep - CodeCache::reverse_free_ratio();
+    assert(wait_until_next_sweep <= (double)max_wait_time, "Calculation of code cache sweeper interval is incorrect");
 
     if ((wait_until_next_sweep <= 0.0) || !CompileBroker::should_compile_new_jobs()) {
       _should_sweep = true;
