@@ -49,6 +49,7 @@ import javax.tools.StandardJavaFileManager;
 import com.sun.tools.javac.util.Context;
 import com.sun.tools.javac.util.Log;
 import com.sun.tools.javac.util.BaseFileManager;
+import com.sun.tools.javac.util.StringUtils;
 import com.sun.tools.sjavac.comp.Dependencies;
 import com.sun.tools.sjavac.comp.JavaCompilerWithDeps;
 import com.sun.tools.sjavac.comp.SmartFileManager;
@@ -256,7 +257,7 @@ public class CompilerThread implements Runnable {
             // Load visible sources
             Set<URI> visibleSources = new HashSet<URI>();
             boolean fix_drive_letter_case =
-                System.getProperty("os.name").toLowerCase().startsWith("windows");
+                StringUtils.toLowerCase(System.getProperty("os.name")).startsWith("windows");
             for (;;) {
                 String l = in.readLine();
                 if (l == null)

@@ -384,13 +384,13 @@ public class MemberSummaryBuilder extends AbstractMemberBuilder {
                 commentTextBuilder.append(
                         MessageFormat.format(
                                 configuration.getText("doclet.PropertySetterWithName"),
-                                Util.propertyNameFromMethodName(member.name())));
+                                Util.propertyNameFromMethodName(configuration, member.name())));
             }
             if (isGetter) {
                 commentTextBuilder.append(
                         MessageFormat.format(
                                 configuration.getText("doclet.PropertyGetterWithName"),
-                                Util.propertyNameFromMethodName(member.name())));
+                                Util.propertyNameFromMethodName(configuration, member.name())));
             }
             if (propertyDoc.commentText() != null
                         && !propertyDoc.commentText().isEmpty()) {

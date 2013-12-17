@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,6 +36,7 @@ import javax.lang.model.util.*;
 import java.io.PrintWriter;
 import java.io.Writer;
 import java.util.*;
+import com.sun.tools.javac.util.StringUtils;
 
 /**
  * A processor which prints out elements.  Used to implement the
@@ -202,7 +203,7 @@ public class PrintingProcessor extends AbstractProcessor {
                     writer.print("@interface");
                     break;
                 default:
-                    writer.print(kind.toString().toLowerCase());
+                    writer.print(StringUtils.toLowerCase(kind.toString()));
                 }
                 writer.print(" ");
                 writer.print(e.getSimpleName());

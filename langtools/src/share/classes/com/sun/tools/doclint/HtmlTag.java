@@ -36,6 +36,7 @@ import java.util.Map;
 import javax.lang.model.element.Name;
 
 import static com.sun.tools.doclint.HtmlTag.Attr.*;
+import com.sun.tools.javac.util.StringUtils;
 
 /**
  * Enum representing HTML tags.
@@ -352,7 +353,7 @@ public enum HtmlTag {
         WIDTH;
 
         public String getText() {
-            return toLowerCase(name());
+            return StringUtils.toLowerCase(name());
         }
 
         static final Map<String,Attr> index = new HashMap<String,Attr>();
@@ -431,11 +432,11 @@ public enum HtmlTag {
     }
 
     public String getText() {
-        return toLowerCase(name());
+        return StringUtils.toLowerCase(name());
     }
 
     public Attr getAttr(Name attrName) {
-        return Attr.index.get(toLowerCase(attrName.toString()));
+        return Attr.index.get(StringUtils.toLowerCase(attrName.toString()));
     }
 
     public AttrKind getAttrKind(Name attrName) {
@@ -457,10 +458,7 @@ public enum HtmlTag {
     }
 
     static HtmlTag get(Name tagName) {
-        return index.get(toLowerCase(tagName.toString()));
+        return index.get(StringUtils.toLowerCase(tagName.toString()));
     }
 
-    private static String toLowerCase(String s) {
-        return s.toLowerCase(Locale.US);
-    }
 }

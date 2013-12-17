@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -51,6 +51,7 @@ import com.sun.tools.javac.main.Option;
 import com.sun.tools.javac.util.ListBuffer;
 import com.sun.tools.javac.util.Log;
 import com.sun.tools.javac.util.Options;
+import com.sun.tools.javac.util.StringUtils;
 
 import javax.tools.JavaFileManager;
 import javax.tools.StandardJavaFileManager;
@@ -717,7 +718,7 @@ public class Locations {
 
     /** Is this the name of an archive file? */
     private boolean isArchive(File file) {
-        String n = file.getName().toLowerCase();
+        String n = StringUtils.toLowerCase(file.getName());
         return fsInfo.isFile(file)
             && (n.endsWith(".jar") || n.endsWith(".zip"));
     }

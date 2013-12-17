@@ -702,7 +702,7 @@ public class VisibleMemberMap {
         private boolean isPropertyGetterOrSetter(MethodDoc[] members,
                                                  MethodDoc methodDoc) {
             boolean found = false;
-            String propertyName = Util.propertyNameFromMethodName(methodDoc.name());
+            String propertyName = Util.propertyNameFromMethodName(configuration, methodDoc.name());
             if (!propertyName.isEmpty()) {
                 String propertyMethodName = propertyName + "Property";
                 for (MethodDoc member: members) {

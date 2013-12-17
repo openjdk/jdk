@@ -44,6 +44,7 @@ import com.sun.source.util.SourcePositions;
 import com.sun.source.util.TreePath;
 import com.sun.tools.javac.model.JavacTypes;
 import com.sun.tools.javac.tree.JCTree;
+import com.sun.tools.javac.util.StringUtils;
 
 /**
  * Utility container for current execution environment,
@@ -66,7 +67,7 @@ public class Env {
 
         static boolean accepts(String opt) {
             for (AccessKind g: values())
-                if (opt.equals(g.name().toLowerCase())) return true;
+                if (opt.equals(StringUtils.toLowerCase(g.name()))) return true;
             return false;
         }
 

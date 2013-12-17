@@ -62,6 +62,7 @@ import com.sun.tools.classfile.StackMap_attribute;
 import com.sun.tools.classfile.Synthetic_attribute;
 
 import static com.sun.tools.classfile.AccessFlags.*;
+import com.sun.tools.javac.util.StringUtils;
 
 /*
  *  A writer for writing Attributes as text.
@@ -717,14 +718,14 @@ public class AttributeWriter extends BasicWriter
     }
 
     static String toHex(int i) {
-        return Integer.toString(i, 16).toUpperCase();
+        return StringUtils.toUpperCase(Integer.toString(i, 16));
     }
 
     static String toHex(int i, int w) {
-        String s = Integer.toHexString(i).toUpperCase();
+        String s = StringUtils.toUpperCase(Integer.toHexString(i));
         while (s.length() < w)
             s = "0" + s;
-        return s.toUpperCase();
+        return StringUtils.toUpperCase(s);
     }
 
     private AnnotationWriter annotationWriter;

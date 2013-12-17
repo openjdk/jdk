@@ -31,6 +31,7 @@ import com.sun.javadoc.*;
 import com.sun.tools.doclets.formats.html.markup.*;
 import com.sun.tools.doclets.internal.toolkit.*;
 import com.sun.tools.doclets.internal.toolkit.util.*;
+import com.sun.tools.javac.util.StringUtils;
 
 /**
  * Writes method documentation in HTML format.
@@ -338,7 +339,7 @@ public class MethodWriterImpl extends AbstractExecutableMemberWriter
             return "";
         }
 
-        String lc = tag.toLowerCase();
+        String lc = StringUtils.toLowerCase(tag);
         int begin = lc.indexOf("<code>");
         int end = lc.indexOf("</code>");
         if(begin == -1 || end == -1 || end <= begin){

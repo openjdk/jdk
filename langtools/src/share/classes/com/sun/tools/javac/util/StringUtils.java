@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,57 +23,31 @@
  * questions.
  */
 
-package com.sun.tools.doclets.formats.html.markup;
+package com.sun.tools.javac.util;
 
-import com.sun.tools.javac.util.StringUtils;
+import java.util.Locale;
 
-/**
- * Enum representing HTML tag attributes.
+/** A collection of utilities for String manipulation.
  *
  *  <p><b>This is NOT part of any supported API.
  *  If you write code that depends on this, you do so at your own risk.
  *  This code and its internal interfaces are subject to change or
  *  deletion without notice.</b>
- *
- * @author Bhavesh Patel
  */
-public enum HtmlAttr {
-    ALT,
-    BORDER,
-    CELLPADDING,
-    CELLSPACING,
-    CLASS,
-    CLEAR,
-    COLS,
-    CONTENT,
-    HREF,
-    HTTP_EQUIV("http-equiv"),
-    ID,
-    LANG,
-    NAME,
-    ONLOAD,
-    REL,
-    ROWS,
-    SCOPE,
-    SCROLLING,
-    SRC,
-    SUMMARY,
-    TARGET,
-    TITLE,
-    TYPE,
-    WIDTH;
+public class StringUtils {
 
-    private final String value;
-
-    HtmlAttr() {
-        this.value = StringUtils.toLowerCase(name());
+    /**Converts the given String to lower case using the {@link Locale#US US Locale}. The result
+     * is independent of the default Locale in the current JVM instance.
+     */
+    public static String toLowerCase(String source) {
+        return source.toLowerCase(Locale.US);
     }
 
-    HtmlAttr(String name) {
-        this.value = name;
+    /**Converts the given String to upper case using the {@link Locale#US US Locale}. The result
+     * is independent of the default Locale in the current JVM instance.
+     */
+    public static String toUpperCase(String source) {
+        return source.toUpperCase(Locale.US);
     }
 
-    public String toString() {
-        return value;
-    }
 }
