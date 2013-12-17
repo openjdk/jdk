@@ -757,7 +757,7 @@ public class TreeMaker implements JCTree.Factory {
                 setType(syms.byteType.constType(value));
         } else if (value instanceof Character) {
             int v = (int) (((Character) value).toString().charAt(0));
-            result = Literal(CHAR, value).
+            result = Literal(CHAR, v).
                 setType(syms.charType.constType(v));
         } else if (value instanceof Double) {
             result = Literal(DOUBLE, value).
