@@ -35,10 +35,12 @@ import java.util.List;
  * {@code <T extends Number & Runnable>} is an (implicit) intersection
  * type.  As of {@link javax.lang.model.SourceVersion#RELEASE_8
  * RELEASE_8}, this is represented by an {@code IntersectionType} with
- * {@code Number} and {@code Runnable} as its bounds.  Also as of the
- * {@link javax.lang.model.SourceVersion#RELEASE_8 RELEASE_8},
- * intersection types can explicitly appear as the target type of a
- * cast expression.
+ * {@code Number} and {@code Runnable} as its bounds.
+ *
+ * @implNote Also as of {@link
+ * javax.lang.model.SourceVersion#RELEASE_8 RELEASE_8}, in the
+ * reference implementation an {@code IntersectionType} is used to
+ * model the explicit target type of a cast expression.
  *
  * @since 1.8
  */
