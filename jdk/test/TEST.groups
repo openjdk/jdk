@@ -267,6 +267,24 @@ jdk_desktop = \
     :jdk_sound \
     :jdk_imageio
 
+#############################
+#
+# Stable test groups
+#
+
+jdk_stable = \
+    :jdk_core \
+    :jdk_svc \
+    :jdk_beans \
+    :jdk_imageio \
+    :jdk_sound \
+    :jdk_sctp \
+    javax/accessibility \
+    com/sun/java/swing \
+    sun/pisces \
+    com/sun/awt  
+
+
 ###############################################################################
 # Profile-based Test Group Definitions
 #
