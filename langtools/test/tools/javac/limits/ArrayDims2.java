@@ -27,7 +27,7 @@
  * @summary Compiler silently generates bytecode that exceeds VM limits
  * @author gafter
  *
- * @compile/fail ArrayDims2.java
+ * @compile/fail/ref=ArrayDims2.out -XDrawDiagnostics ArrayDims2.java
  */
 
 class ArrayDims2 {
