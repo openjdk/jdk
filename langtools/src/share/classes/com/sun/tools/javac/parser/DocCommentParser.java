@@ -57,6 +57,7 @@ import com.sun.tools.javac.util.Name;
 import com.sun.tools.javac.util.Names;
 import com.sun.tools.javac.util.Options;
 import com.sun.tools.javac.util.Position;
+import com.sun.tools.javac.util.StringUtils;
 import static com.sun.tools.javac.util.LayoutCharacters.*;
 
 /**
@@ -993,7 +994,7 @@ public class DocCommentParser {
                     "h1", "h2", "h3", "h4", "h5", "h6", "p", "pre"));
 
     protected boolean isSentenceBreak(Name n) {
-        return htmlBlockTags.contains(n.toString().toLowerCase());
+        return htmlBlockTags.contains(StringUtils.toLowerCase(n.toString()));
     }
 
     protected boolean isSentenceBreak(DCTree t) {

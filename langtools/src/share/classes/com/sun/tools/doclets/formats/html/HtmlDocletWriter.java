@@ -34,6 +34,7 @@ import com.sun.tools.doclets.formats.html.markup.*;
 import com.sun.tools.doclets.internal.toolkit.*;
 import com.sun.tools.doclets.internal.toolkit.taglets.*;
 import com.sun.tools.doclets.internal.toolkit.util.*;
+import com.sun.tools.javac.util.StringUtils;
 
 /**
  * Class for the Html Format Code Generation specific to JavaDoc.
@@ -138,17 +139,17 @@ public class HtmlDocletWriter extends HtmlDocWriter {
         if (index < 0) {
             return htmlstr;
         }
-        String lowerHtml = htmlstr.toLowerCase();
+        String lowerHtml = StringUtils.toLowerCase(htmlstr);
+        final String docroot = "{@docroot}";
         // Return index of first occurrence of {@docroot}
         // Note: {@docRoot} is not case sensitive when passed in w/command line option
-        index = lowerHtml.indexOf("{@docroot}", index);
+        index = lowerHtml.indexOf(docroot, index);
         if (index < 0) {
             return htmlstr;
         }
         StringBuilder buf = new StringBuilder();
         int previndex = 0;
         while (true) {
-            final String docroot = "{@docroot}";
             // Search for lowercase version of {@docRoot}
             index = lowerHtml.indexOf(docroot, previndex);
             // If next {@docRoot} tag not found, append rest of htmlstr and exit loop
@@ -1689,13 +1690,13 @@ public class HtmlDocletWriter extends HtmlDocWriter {
         }
 
         //Redirect all relative links.
-        int end, begin = text.toLowerCase().indexOf("<a");
+        int end, begin = StringUtils.toLowerCase(text).indexOf("<a");
         if(begin >= 0){
             StringBuilder textBuff = new StringBuilder(text);
 
             while(begin >=0){
                 if (textBuff.length() > begin + 2 && ! Character.isWhitespace(textBuff.charAt(begin+2))) {
-                    begin = textBuff.toString().toLowerCase().indexOf("<a", begin + 1);
+                    begin = StringUtils.toLowerCase(textBuff.toString()).indexOf("<a", begin + 1);
                     continue;
                 }
 
@@ -1722,15 +1723,16 @@ public class HtmlDocletWriter extends HtmlDocWriter {
                     }
                 }
                 String relativeLink = textBuff.substring(begin, end);
-                if (!(relativeLink.toLowerCase().startsWith("mailto:") ||
-                        relativeLink.toLowerCase().startsWith("http:") ||
-                        relativeLink.toLowerCase().startsWith("https:") ||
-                        relativeLink.toLowerCase().startsWith("file:"))) {
+                String relativeLinkLowerCase = StringUtils.toLowerCase(relativeLink);
+                if (!(relativeLinkLowerCase.startsWith("mailto:") ||
+                        relativeLinkLowerCase.startsWith("http:") ||
+                        relativeLinkLowerCase.startsWith("https:") ||
+                        relativeLinkLowerCase.startsWith("file:"))) {
                     relativeLink = "{@"+(new DocRootTaglet()).getName() + "}/"
                         + redirectPathFromRoot.resolve(relativeLink).getPath();
                     textBuff.replace(begin, end, relativeLink);
                 }
-                begin = textBuff.toString().toLowerCase().indexOf("<a", begin + 1);
+                begin = StringUtils.toLowerCase(textBuff.toString()).indexOf("<a", begin + 1);
             }
             return textBuff.toString();
         }
@@ -1771,7 +1773,7 @@ public class HtmlDocletWriter extends HtmlDocWriter {
                     break main;
                 ch = text.charAt(currPos);
             }
-            if (ch == '>' && blockTags.contains(text.substring(tagPos, currPos).toLowerCase())) {
+            if (ch == '>' && blockTags.contains(StringUtils.toLowerCase(text.substring(tagPos, currPos)))) {
                 result.append(text, startPos, lessThanPos);
                 startPos = currPos + 1;
             }

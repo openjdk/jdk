@@ -28,11 +28,12 @@ package com.sun.tools.doclets.internal.toolkit.util;
 import java.io.*;
 import java.lang.annotation.ElementType;
 import java.util.*;
+import javax.tools.StandardLocation;
 
 import com.sun.javadoc.*;
 import com.sun.javadoc.AnnotationDesc.ElementValuePair;
 import com.sun.tools.doclets.internal.toolkit.*;
-import javax.tools.StandardLocation;
+import com.sun.tools.javac.util.StringUtils;
 
 /**
  * Utilities Class for Doclets.
@@ -253,8 +254,8 @@ public class Util {
      */
     private static class TypeComparator implements Comparator<Type> {
         public int compare(Type type1, Type type2) {
-            return type1.qualifiedTypeName().toLowerCase().compareTo(
-                type2.qualifiedTypeName().toLowerCase());
+            return type1.qualifiedTypeName().compareToIgnoreCase(
+                type2.qualifiedTypeName());
         }
     }
 
@@ -589,7 +590,7 @@ public class Util {
             typeName = "doclet.Enum";
         }
         return config.getText(
-            lowerCaseOnly ? typeName.toLowerCase() : typeName);
+            lowerCaseOnly ? StringUtils.toLowerCase(typeName) : typeName);
     }
 
     /**
@@ -724,7 +725,7 @@ public class Util {
      * @param name name of the getter or setter method.
      * @return the name of the property of the given setter of getter.
      */
-    public static String propertyNameFromMethodName(String name) {
+    public static String propertyNameFromMethodName(Configuration configuration, String name) {
         String propertyName = null;
         if (name.startsWith("get") || name.startsWith("set")) {
             propertyName = name.substring(3);
@@ -734,7 +735,7 @@ public class Util {
         if ((propertyName == null) || propertyName.isEmpty()){
             return "";
         }
-        return propertyName.substring(0, 1).toLowerCase()
+        return propertyName.substring(0, 1).toLowerCase(configuration.getLocale())
                 + propertyName.substring(1);
     }
 

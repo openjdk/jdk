@@ -47,6 +47,7 @@ import com.sun.tools.javac.util.Log;
 import com.sun.tools.javac.util.Log.PrefixKind;
 import com.sun.tools.javac.util.Log.WriterKind;
 import com.sun.tools.javac.util.Options;
+import com.sun.tools.javac.util.StringUtils;
 import static com.sun.tools.javac.main.Option.ChoiceKind.*;
 import static com.sun.tools.javac.main.Option.OptionGroup.*;
 import static com.sun.tools.javac.main.Option.OptionKind.*;
@@ -713,7 +714,7 @@ public enum Option {
             String v = options.get(XPKGINFO);
             return (v == null
                     ? PkgInfo.LEGACY
-                    : PkgInfo.valueOf(v.toUpperCase()));
+                    : PkgInfo.valueOf(StringUtils.toUpperCase(v)));
         }
     }
 

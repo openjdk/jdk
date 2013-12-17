@@ -31,6 +31,7 @@ import java.util.*;
 import com.sun.javadoc.*;
 import com.sun.tools.doclets.internal.toolkit.*;
 import com.sun.tools.doclets.internal.toolkit.util.*;
+import com.sun.tools.javac.util.StringUtils;
 
 /**
  * Builds the serialized form.
@@ -567,7 +568,7 @@ public class SerializedFormBuilder extends AbstractBuilder {
         }
         Tag[] serial = doc.tags("serial");
         if (serial.length > 0) {
-            String serialtext = serial[0].text().toLowerCase();
+            String serialtext = StringUtils.toLowerCase(serial[0].text());
             if (serialtext.indexOf("exclude") >= 0) {
                 return false;
             } else if (serialtext.indexOf("include") >= 0) {

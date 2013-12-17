@@ -33,6 +33,7 @@ import java.util.Set;
 import javax.lang.model.element.Modifier;
 
 import com.sun.tools.javac.util.Assert;
+import com.sun.tools.javac.util.StringUtils;
 
 /** Access flags and other modifiers for Java classes and members.
  *
@@ -388,7 +389,7 @@ public class Flags {
 
         Flag(long flag) {
             this.value = flag;
-            this.lowercaseName = name().toLowerCase();
+            this.lowercaseName = StringUtils.toLowerCase(name());
         }
 
         @Override
