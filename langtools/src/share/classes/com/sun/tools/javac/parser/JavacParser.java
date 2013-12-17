@@ -1547,7 +1547,7 @@ public class JavacParser implements Parser {
                     }
                     break;
                 case BYTE: case SHORT: case INT: case LONG: case FLOAT:
-                case DOUBLE: case BOOLEAN: case CHAR:
+                case DOUBLE: case BOOLEAN: case CHAR: case VOID:
                     if (peekToken(lookahead, RPAREN)) {
                         //Type, ')' -> cast
                         return ParensResult.CAST;
