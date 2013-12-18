@@ -37,6 +37,7 @@ import java.beans.PropertyChangeListener;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
 import sun.awt.AWTAutoShutdown;
+import sun.awt.AWTPermissions;
 import sun.awt.LightweightFrame;
 import sun.awt.SunToolkit;
 import sun.awt.Win32GraphicsDevice;
@@ -64,7 +65,6 @@ import sun.font.FontManagerFactory;
 import sun.font.SunFontManager;
 import sun.misc.PerformanceLogger;
 import sun.util.logging.PlatformLogger;
-import sun.security.util.SecurityConstants;
 
 public class WToolkit extends SunToolkit implements Runnable {
 
@@ -682,7 +682,7 @@ public class WToolkit extends SunToolkit implements Runnable {
     public Clipboard getSystemClipboard() {
         SecurityManager security = System.getSecurityManager();
         if (security != null) {
-            security.checkPermission(SecurityConstants.AWT.ACCESS_CLIPBOARD_PERMISSION);
+            security.checkPermission(AWTPermissions.ACCESS_CLIPBOARD_PERMISSION);
         }
         synchronized (this) {
             if (clipboard == null) {

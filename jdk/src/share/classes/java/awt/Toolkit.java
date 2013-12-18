@@ -57,7 +57,7 @@ import sun.awt.NullComponentPeer;
 import sun.awt.PeerEvent;
 import sun.awt.SunToolkit;
 import sun.awt.AWTAccessor;
-import sun.security.util.SecurityConstants;
+import sun.awt.AWTPermissions;
 
 import sun.util.CoreResourceBundleControl;
 
@@ -1731,7 +1731,7 @@ public abstract class Toolkit {
     public final EventQueue getSystemEventQueue() {
         SecurityManager security = System.getSecurityManager();
         if (security != null) {
-            security.checkPermission(SecurityConstants.AWT.CHECK_AWT_EVENTQUEUE_PERMISSION);
+            security.checkPermission(AWTPermissions.CHECK_AWT_EVENTQUEUE_PERMISSION);
         }
         return getSystemEventQueueImpl();
     }
@@ -2063,7 +2063,7 @@ public abstract class Toolkit {
         }
         SecurityManager security = System.getSecurityManager();
         if (security != null) {
-          security.checkPermission(SecurityConstants.AWT.ALL_AWT_EVENTS_PERMISSION);
+          security.checkPermission(AWTPermissions.ALL_AWT_EVENTS_PERMISSION);
         }
         synchronized (this) {
             SelectiveAWTEventListener selectiveListener =
@@ -2132,7 +2132,7 @@ public abstract class Toolkit {
         }
         SecurityManager security = System.getSecurityManager();
         if (security != null) {
-            security.checkPermission(SecurityConstants.AWT.ALL_AWT_EVENTS_PERMISSION);
+            security.checkPermission(AWTPermissions.ALL_AWT_EVENTS_PERMISSION);
         }
 
         synchronized (this) {
@@ -2197,7 +2197,7 @@ public abstract class Toolkit {
     public AWTEventListener[] getAWTEventListeners() {
         SecurityManager security = System.getSecurityManager();
         if (security != null) {
-            security.checkPermission(SecurityConstants.AWT.ALL_AWT_EVENTS_PERMISSION);
+            security.checkPermission(AWTPermissions.ALL_AWT_EVENTS_PERMISSION);
         }
         synchronized (this) {
             EventListener[] la = ToolkitEventMulticaster.getListeners(eventListener,AWTEventListener.class);
@@ -2249,7 +2249,7 @@ public abstract class Toolkit {
     public AWTEventListener[] getAWTEventListeners(long eventMask) {
         SecurityManager security = System.getSecurityManager();
         if (security != null) {
-            security.checkPermission(SecurityConstants.AWT.ALL_AWT_EVENTS_PERMISSION);
+            security.checkPermission(AWTPermissions.ALL_AWT_EVENTS_PERMISSION);
         }
         synchronized (this) {
             EventListener[] la = ToolkitEventMulticaster.getListeners(eventListener,AWTEventListener.class);

@@ -51,6 +51,7 @@ import java.util.Vector;
 import java.util.concurrent.atomic.AtomicBoolean;
 import javax.accessibility.*;
 import sun.awt.AWTAccessor;
+import sun.awt.AWTPermissions;
 import sun.awt.AppContext;
 import sun.awt.CausedFocusEvent;
 import sun.awt.SunToolkit;
@@ -58,7 +59,6 @@ import sun.awt.util.IdentityArrayList;
 import sun.java2d.Disposer;
 import sun.java2d.pipe.Region;
 import sun.security.action.GetPropertyAction;
-import sun.security.util.SecurityConstants;
 import sun.util.logging.PlatformLogger;
 
 /**
@@ -1386,7 +1386,7 @@ public class Window extends Container implements Accessible {
         SecurityManager sm = System.getSecurityManager();
         if (sm != null) {
             try {
-                sm.checkPermission(SecurityConstants.AWT.TOPLEVEL_WINDOW_PERMISSION);
+                sm.checkPermission(AWTPermissions.TOPLEVEL_WINDOW_PERMISSION);
             } catch (SecurityException se) {
                 // make sure the privileged action is only
                 // for getting the property! We don't want the
@@ -1680,7 +1680,7 @@ public class Window extends Container implements Accessible {
         if (exclusionType == Dialog.ModalExclusionType.TOOLKIT_EXCLUDE) {
             SecurityManager sm = System.getSecurityManager();
             if (sm != null) {
-                sm.checkPermission(SecurityConstants.AWT.TOOLKIT_MODALITY_PERMISSION);
+                sm.checkPermission(AWTPermissions.TOOLKIT_MODALITY_PERMISSION);
             }
         }
         modalExclusionType = exclusionType;
@@ -2228,7 +2228,7 @@ public class Window extends Container implements Accessible {
     public final void setAlwaysOnTop(boolean alwaysOnTop) throws SecurityException {
         SecurityManager security = System.getSecurityManager();
         if (security != null) {
-            security.checkPermission(SecurityConstants.AWT.SET_WINDOW_ALWAYS_ON_TOP_PERMISSION);
+            security.checkPermission(AWTPermissions.SET_WINDOW_ALWAYS_ON_TOP_PERMISSION);
         }
 
         boolean oldAlwaysOnTop;

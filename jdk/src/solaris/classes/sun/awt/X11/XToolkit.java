@@ -54,7 +54,6 @@ import sun.print.PrintJob2D;
 import sun.security.action.GetPropertyAction;
 import sun.security.action.GetBooleanAction;
 import sun.util.logging.PlatformLogger;
-import sun.security.util.SecurityConstants;
 
 public final class XToolkit extends UNIXToolkit implements Runnable {
     private static final PlatformLogger log = PlatformLogger.getLogger("sun.awt.X11.XToolkit");
@@ -1158,7 +1157,7 @@ public final class XToolkit extends UNIXToolkit implements Runnable {
     public  Clipboard getSystemClipboard() {
         SecurityManager security = System.getSecurityManager();
         if (security != null) {
-            security.checkPermission(SecurityConstants.AWT.ACCESS_CLIPBOARD_PERMISSION);
+            security.checkPermission(AWTPermissions.ACCESS_CLIPBOARD_PERMISSION);
         }
         synchronized (this) {
             if (clipboard == null) {
@@ -1171,7 +1170,7 @@ public final class XToolkit extends UNIXToolkit implements Runnable {
     public Clipboard getSystemSelection() {
         SecurityManager security = System.getSecurityManager();
         if (security != null) {
-            security.checkPermission(SecurityConstants.AWT.ACCESS_CLIPBOARD_PERMISSION);
+            security.checkPermission(AWTPermissions.ACCESS_CLIPBOARD_PERMISSION);
         }
         synchronized (this) {
             if (selection == null) {

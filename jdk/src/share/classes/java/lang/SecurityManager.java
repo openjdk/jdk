@@ -29,7 +29,6 @@ import java.security.*;
 import java.io.FileDescriptor;
 import java.io.File;
 import java.io.FilePermission;
-import java.awt.AWTPermission;
 import java.util.PropertyPermission;
 import java.lang.RuntimePermission;
 import java.net.SocketPermission;
@@ -67,9 +66,7 @@ import sun.security.util.SecurityConstants;
  * completion of the operation by throwing an exception. A security
  * manager routine simply returns if the operation is permitted, but
  * throws a <code>SecurityException</code> if the operation is not
- * permitted. The only exception to this convention is
- * <code>checkTopLevelWindow</code>, which returns a
- * <code>boolean</code> value.
+ * permitted.
  * <p>
  * The current security manager is set by the
  * <code>setSecurityManager</code> method in class
@@ -202,8 +199,6 @@ import sun.security.util.SecurityConstants;
  *
  * @see     java.lang.ClassLoader
  * @see     java.lang.SecurityException
- * @see     java.lang.SecurityManager#checkTopLevelWindow(java.lang.Object)
- *  checkTopLevelWindow
  * @see     java.lang.System#getSecurityManager() getSecurityManager
  * @see     java.lang.System#setSecurityManager(java.lang.SecurityManager)
  *  setSecurityManager
@@ -246,8 +241,7 @@ class SecurityManager {
     /**
      * returns true if the current context has been granted AllPermission
      */
-    private boolean hasAllPermission()
-    {
+    private boolean hasAllPermission() {
         try {
             checkPermission(SecurityConstants.ALL_PERMISSION);
             return true;
@@ -352,8 +346,7 @@ class SecurityManager {
      * @see  #checkPermission(java.security.Permission) checkPermission
      */
     @Deprecated
-    protected ClassLoader currentClassLoader()
-    {
+    protected ClassLoader currentClassLoader() {
         ClassLoader cl = currentClassLoader0();
         if ((cl != null) && hasAllPermission())
             cl = null;
@@ -457,8 +450,7 @@ class SecurityManager {
      * @see   #checkPermission(java.security.Permission) checkPermission
      */
     @Deprecated
-    protected int classLoaderDepth()
-    {
+    protected int classLoaderDepth() {
         int depth = classLoaderDepth0();
         if (depth != -1) {
             if (hasAllPermission())
@@ -1303,45 +1295,16 @@ class SecurityManager {
     }
 
     /**
-     * Returns <code>false</code> if the calling
-     * thread is not trusted to bring up the top-level window indicated
-     * by the <code>window</code> argument. In this case, the caller can
-     * still decide to show the window, but the window should include
-     * some sort of visual warning. If the method returns
-     * <code>true</code>, then the window can be shown without any
-     * special restrictions.
-     * <p>
-     * See class <code>Window</code> for more information on trusted and
-     * untrusted windows.
-     * <p>
-     * This method calls
-     * <code>checkPermission</code> with the
-     * <code>AWTPermission("showWindowWithoutWarningBanner")</code> permission,
-     * and returns <code>true</code> if a SecurityException is not thrown,
-     * otherwise it returns <code>false</code>.
-     * In the case of subset Profiles of Java SE that do not include the
-     * {@code java.awt} package, {@code checkPermission} is instead called
-     * to check the permission {@code java.security.AllPermission}.
-     * <p>
-     * If you override this method, then you should make a call to
-     * <code>super.checkTopLevelWindow</code>
-     * at the point the overridden method would normally return
-     * <code>false</code>, and the value of
-     * <code>super.checkTopLevelWindow</code> should
-     * be returned.
+     * Returns {@code true} if the calling thread has {@code AllPermission}.
      *
-     * @param      window   the new window that is being created.
-     * @return     <code>true</code> if the calling thread is trusted to put up
-     *             top-level windows; <code>false</code> otherwise.
-     * @exception  NullPointerException if the <code>window</code> argument is
-     *             <code>null</code>.
-     * @deprecated The dependency on {@code AWTPermission} creates an
-     *             impediment to future modularization of the Java platform.
-     *             Users of this method should instead invoke
-     *             {@link #checkPermission} directly.
-     *             This method will be changed in a future release to check
-     *             the permission {@code java.security.AllPermission}.
-     * @see        java.awt.Window
+     * @param      window   not used except to check if it is {@code null}.
+     * @return     {@code true} if the calling thread has {@code AllPermission}.
+     * @exception  NullPointerException if the {@code window} argument is
+     *             {@code null}.
+     * @deprecated This method was originally used to check if the calling thread
+     *             was trusted to bring up a top-level window. The method has been
+     *             obsoleted and code should instead use {@link #checkPermission}
+     *             to check {@code AWTPermission("showWindowWithoutWarningBanner")}.
      * @see        #checkPermission(java.security.Permission) checkPermission
      */
     @Deprecated
@@ -1349,17 +1312,7 @@ class SecurityManager {
         if (window == null) {
             throw new NullPointerException("window can't be null");
         }
-        Permission perm = SecurityConstants.AWT.TOPLEVEL_WINDOW_PERMISSION;
-        if (perm == null) {
-            perm = SecurityConstants.ALL_PERMISSION;
-        }
-        try {
-            checkPermission(perm);
-            return true;
-        } catch (SecurityException se) {
-            // just return false
-        }
-        return false;
+        return hasAllPermission();
     }
 
     /**
@@ -1386,75 +1339,39 @@ class SecurityManager {
     }
 
     /**
-     * Throws a <code>SecurityException</code> if the
-     * calling thread is not allowed to access the system clipboard.
-     * <p>
-     * This method calls <code>checkPermission</code> with the
-     * <code>AWTPermission("accessClipboard")</code>
-     * permission.
-     * In the case of subset Profiles of Java SE that do not include the
-     * {@code java.awt} package, {@code checkPermission} is instead called
-     * to check the permission {@code java.security.AllPermission}.
-     * <p>
-     * If you override this method, then you should make a call to
-     * <code>super.checkSystemClipboardAccess</code>
-     * at the point the overridden method would normally throw an
-     * exception.
+     * Throws {@code SecurityException} if the calling thread does
+     * not have {@code AllPermission}.
      *
      * @since   JDK1.1
      * @exception  SecurityException  if the calling thread does not have
-     *             permission to access the system clipboard.
-     * @deprecated The dependency on {@code AWTPermission} creates an
-     *             impediment to future modularization of the Java platform.
-     *             Users of this method should instead invoke
-     *             {@link #checkPermission} directly.
-     *             This method will be changed in a future release to check
-     *             the permission {@code java.security.AllPermission}.
+     *             {@code AllPermission}
+     * @deprecated This method was originally used to check if the calling
+     *             thread could access the system clipboard. The method has been
+     *             obsoleted and code should instead use {@link #checkPermission}
+     *             to check {@code AWTPermission("accessClipboard")}.
      * @see        #checkPermission(java.security.Permission) checkPermission
      */
     @Deprecated
     public void checkSystemClipboardAccess() {
-        Permission perm = SecurityConstants.AWT.ACCESS_CLIPBOARD_PERMISSION;
-        if (perm == null) {
-            perm = SecurityConstants.ALL_PERMISSION;
-        }
-        checkPermission(perm);
+        checkPermission(SecurityConstants.ALL_PERMISSION);
     }
 
     /**
-     * Throws a <code>SecurityException</code> if the
-     * calling thread is not allowed to access the AWT event queue.
-     * <p>
-     * This method calls <code>checkPermission</code> with the
-     * <code>AWTPermission("accessEventQueue")</code> permission.
-     * In the case of subset Profiles of Java SE that do not include the
-     * {@code java.awt} package, {@code checkPermission} is instead called
-     * to check the permission {@code java.security.AllPermission}.
-     *
-     * <p>
-     * If you override this method, then you should make a call to
-     * <code>super.checkAwtEventQueueAccess</code>
-     * at the point the overridden method would normally throw an
-     * exception.
+     * Throws {@code SecurityException} if the calling thread does
+     * not have {@code AllPermission}.
      *
      * @since   JDK1.1
      * @exception  SecurityException  if the calling thread does not have
-     *             permission to access the AWT event queue.
-     * @deprecated The dependency on {@code AWTPermission} creates an
-     *             impediment to future modularization of the Java platform.
-     *             Users of this method should instead invoke
-     *             {@link #checkPermission} directly.
-     *             This method will be changed in a future release to check
-     *             the permission {@code java.security.AllPermission}.
+     *             {@code AllPermission}
+     * @deprecated This method was originally used to check if the calling
+     *             thread could access the AWT event queue. The method has been
+     *             obsoleted and code should instead use {@link #checkPermission}
+     *             to check {@code AWTPermission("accessEventQueue")}.
      * @see        #checkPermission(java.security.Permission) checkPermission
      */
     @Deprecated
     public void checkAwtEventQueueAccess() {
-        Permission perm = SecurityConstants.AWT.CHECK_AWT_EVENTQUEUE_PERMISSION;
-        if (perm == null) {
-            perm = SecurityConstants.ALL_PERMISSION;
-        }
-        checkPermission(perm);
+        checkPermission(SecurityConstants.ALL_PERMISSION);
     }
 
     /*

@@ -43,7 +43,6 @@ import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
-import sun.security.util.SecurityConstants;
 import sun.util.logging.PlatformLogger;
 import sun.misc.SoftCache;
 import sun.font.FontDesignMetrics;
@@ -1049,8 +1048,7 @@ public abstract class SunToolkit extends Toolkit
         try {
             SecurityManager sm = System.getSecurityManager();
             if (sm != null) {
-                sm.checkPermission(
-                        SecurityConstants.AWT.SET_WINDOW_ALWAYS_ON_TOP_PERMISSION);
+                sm.checkPermission(AWTPermissions.SET_WINDOW_ALWAYS_ON_TOP_PERMISSION);
             }
         } catch (SecurityException se) {
             // There is no permission to show popups over the task bar
