@@ -270,6 +270,7 @@ typedef enum
 /* We define all structure pointers to be void* */
 typedef void GError;
 typedef void GMainContext;
+typedef void GVfs;
 
 typedef struct _GSList GSList;
 struct _GSList
@@ -689,7 +690,7 @@ gboolean gtk2_load(JNIEnv *env);
  * gtk2_load, so it must be invoked only after a successful gtk2_load
  * invocation
  */
-gboolean gtk2_show_uri_load();
+gboolean gtk2_show_uri_load(JNIEnv *env);
 
 /*
  * Unload the gtk2 library.  If the library is already unloaded this method has
