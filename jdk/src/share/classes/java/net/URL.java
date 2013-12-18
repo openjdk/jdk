@@ -978,8 +978,8 @@ public final class URL implements java.io.Serializable {
      * support proxing will ignore the proxy parameter and make a
      * normal connection.
      *
-     * Invoking this method preempts the system's default ProxySelector
-     * settings.
+     * Invoking this method preempts the system's default
+     * {@link java.net.ProxySelector ProxySelector} settings.
      *
      * @param      proxy the Proxy through which this connection
      *             will be made. If direct connection is desired,
