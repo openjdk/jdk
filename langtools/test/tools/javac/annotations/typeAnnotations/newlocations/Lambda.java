@@ -23,8 +23,9 @@
 
 /*
  * @test
- * @bug 8008077
+ * @bug 8008077 8029721
  * @summary new type annotation location: lambda expressions
+ * javac crash for annotated parameter type of lambda in a field
  * @compile Lambda.java
  * @author Werner Dietl
  */
@@ -56,6 +57,14 @@ public class Lambda {
 
     LambdaInt2 getLambda() {
         return (@TA Object x, @TB Object y) -> { @TA Object l = null; System.out.println("We have: " + (@TB Object) x); };
+    }
+
+    java.util.function.IntUnaryOperator x = (@TA int y) -> 1;
+
+    static java.util.function.IntUnaryOperator xx = (@TA int y) -> 1;
+
+    java.util.function.IntUnaryOperator foo() {
+        return (@TA int y) -> 2;
     }
 }
 
