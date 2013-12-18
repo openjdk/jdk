@@ -533,7 +533,10 @@ gboolean gtk2_load(JNIEnv *env)
         }
 
         /* GLib */
-        fp_glib_check_version = dl_symbol("glib_check_version");
+        fp_glib_check_version = dlsym(gtk2_libhandle, "glib_check_version");
+        if (!fp_glib_check_version) {
+            dlerror();
+        }
         fp_g_free = dl_symbol("g_free");
         fp_g_object_unref = dl_symbol("g_object_unref");
 
@@ -709,7 +712,7 @@ gboolean gtk2_load(JNIEnv *env)
         /**
          * GLib thread system
          */
-        if (fp_glib_check_version(2, 20, 0) == NULL) {
+        if (GLIB_CHECK_VERSION(2, 20, 0)) {
             fp_g_thread_get_initialized = dl_symbol_gthread("g_thread_get_initialized");
         }
         fp_g_thread_init = dl_symbol_gthread("g_thread_init");
@@ -827,7 +830,7 @@ gboolean gtk2_load(JNIEnv *env)
         // We can use g_thread_get_initialized () but it is available only for
         // GLib >= 2.20. We rely on GThreadHelper for GLib < 2.20.
         gboolean is_g_thread_get_initialized = FALSE;
-        if (fp_glib_check_version(2, 20, 0) == NULL) {
+        if (GLIB_CHECK_VERSION(2, 20, 0)) {
             is_g_thread_get_initialized = fp_g_thread_get_initialized();
         }
 
