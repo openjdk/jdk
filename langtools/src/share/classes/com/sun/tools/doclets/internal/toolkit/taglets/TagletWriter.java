@@ -204,30 +204,30 @@ public abstract class TagletWriter {
         tagletManager.checkTags(doc, doc.tags(), false);
         tagletManager.checkTags(doc, doc.inlineTags(), true);
         Content currentOutput = null;
-        for (int i = 0; i < taglets.length; i++) {
+        for (Taglet taglet : taglets) {
             currentOutput = null;
-            if (doc instanceof ClassDoc && taglets[i] instanceof ParamTaglet) {
+            if (doc instanceof ClassDoc && taglet instanceof ParamTaglet) {
                 //The type parameters are documented in a special section away
                 //from the tag info, so skip here.
                 continue;
             }
-            if (taglets[i] instanceof DeprecatedTaglet) {
+            if (taglet instanceof DeprecatedTaglet) {
                 //Deprecated information is documented "inline", not in tag info
                 //section.
                 continue;
             }
             try {
-                currentOutput = taglets[i].getTagletOutput(doc, writer);
+                currentOutput = taglet.getTagletOutput(doc, writer);
             } catch (IllegalArgumentException e) {
                 //The taglet does not take a member as an argument.  Let's try
                 //a single tag.
-                Tag[] tags = doc.tags(taglets[i].getName());
+                Tag[] tags = doc.tags(taglet.getName());
                 if (tags.length > 0) {
-                    currentOutput = taglets[i].getTagletOutput(tags[0], writer);
+                    currentOutput = taglet.getTagletOutput(tags[0], writer);
                 }
             }
             if (currentOutput != null) {
-                tagletManager.seenCustomTag(taglets[i].getName());
+                tagletManager.seenCustomTag(taglet.getName());
                 output.addContent(currentOutput);
             }
         }
@@ -246,15 +246,15 @@ public abstract class TagletWriter {
             Tag holderTag, Tag inlineTag, TagletWriter tagletWriter) {
         Taglet[] definedTags = tagletManager.getInlineCustomTaglets();
         //This is a custom inline tag.
-        for (int j = 0; j < definedTags.length; j++) {
-            if (("@"+definedTags[j].getName()).equals(inlineTag.name())) {
+        for (Taglet definedTag : definedTags) {
+            if (("@" + definedTag.getName()).equals(inlineTag.name())) {
                 //Given a name of a seen custom tag, remove it from the
                 // set of unseen custom tags.
-                tagletManager.seenCustomTag(definedTags[j].getName());
-                Content output = definedTags[j].getTagletOutput(
-                    holderTag != null &&
-                        definedTags[j].getName().equals("inheritDoc") ?
-                            holderTag : inlineTag, tagletWriter);
+                tagletManager.seenCustomTag(definedTag.getName());
+                Content output = definedTag.getTagletOutput(
+                        holderTag != null &&
+                        definedTag.getName().equals("inheritDoc") ?
+                        holderTag : inlineTag, tagletWriter);
                 return output;
             }
         }

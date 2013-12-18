@@ -89,8 +89,7 @@ public class ImplementedMethods {
      */
     private void buildImplementedMethodList(boolean sort) {
         List<Type> intfacs = Util.getAllInterfaces(classdoc, configuration, sort);
-        for (Iterator<Type> iter = intfacs.iterator(); iter.hasNext(); ) {
-            Type interfaceType = iter.next();
+        for (Type interfaceType : intfacs) {
             MethodDoc found = Util.findMethod(interfaceType.asClassDoc(), method);
             if (found != null) {
                 removeOverriddenMethod(found);
@@ -132,8 +131,7 @@ public class ImplementedMethods {
      */
     private boolean overridingMethodFound(MethodDoc method) {
         ClassDoc containingClass = method.containingClass();
-        for (int i = 0; i < methlist.size(); i++) {
-            MethodDoc listmethod = methlist.get(i);
+        for (MethodDoc listmethod : methlist) {
             if (containingClass == listmethod.containingClass()) {
                 // it's the same method.
                 return true;

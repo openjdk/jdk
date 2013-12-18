@@ -69,30 +69,24 @@ public abstract class Profiles {
             }
 
             for (int i = 1; i <= 4; i++) {
-                BufferedWriter out = new BufferedWriter(new FileWriter(i + ".txt"));
-                try {
-                    for (String type: lists.get(i)) {
+                try (BufferedWriter out = new BufferedWriter(new FileWriter(i + ".txt"))) {
+                    for (String type : lists.get(i)) {
                         out.write(type);
                         out.newLine();
                     }
-                } finally {
-                    out.close();
                 }
             }
         }
     }
 
     public static Profiles read(File file) throws IOException {
-        BufferedInputStream in = new BufferedInputStream(new FileInputStream(file));
-        try {
+        try (BufferedInputStream in = new BufferedInputStream(new FileInputStream(file))) {
             Properties p = new Properties();
             p.load(in);
             if (p.containsKey("java/lang/Object"))
                 return new SimpleProfiles(p);
             else
                 return new MakefileProfiles(p);
-        } finally {
-            in.close();
         }
     }
 

@@ -339,38 +339,39 @@ public abstract class Configuration {
      */
     public int optionLength(String option) {
         option = StringUtils.toLowerCase(option);
-        if (option.equals("-author") ||
-            option.equals("-docfilessubdirs") ||
-            option.equals("-javafx") ||
-            option.equals("-keywords") ||
-            option.equals("-linksource") ||
-            option.equals("-nocomment") ||
-            option.equals("-nodeprecated") ||
-            option.equals("-nosince") ||
-            option.equals("-notimestamp") ||
-            option.equals("-quiet") ||
-            option.equals("-xnodate") ||
-            option.equals("-version")) {
-            return 1;
-        } else if (option.equals("-d") ||
-                   option.equals("-docencoding") ||
-                   option.equals("-encoding") ||
-                   option.equals("-excludedocfilessubdir") ||
-                   option.equals("-link") ||
-                   option.equals("-sourcetab") ||
-                   option.equals("-noqualifier") ||
-                   option.equals("-output") ||
-                   option.equals("-sourcepath") ||
-                   option.equals("-tag") ||
-                   option.equals("-taglet") ||
-                   option.equals("-tagletpath") ||
-                   option.equals("-xprofilespath")) {
-            return 2;
-        } else if (option.equals("-group") ||
-                   option.equals("-linkoffline")) {
-            return 3;
-        } else {
-            return -1;  // indicate we don't know about it
+        switch (option) {
+            case "-author":
+            case "-docfilessubdirs":
+            case "-javafx":
+            case "-keywords":
+            case "-linksource":
+            case "-nocomment":
+            case "-nodeprecated":
+            case "-nosince":
+            case "-notimestamp":
+            case "-quiet":
+            case "-xnodate":
+            case "-version":
+                return 1;
+            case "-d":
+            case "-docencoding":
+            case "-encoding":
+            case "-excludedocfilessubdir":
+            case "-link":
+            case "-sourcetab":
+            case "-noqualifier":
+            case "-output":
+            case "-sourcepath":
+            case "-tag":
+            case "-taglet":
+            case "-tagletpath":
+            case "-xprofilespath":
+                return 2;
+            case "-group":
+            case "-linkoffline":
+                return 3;
+            default:
+                return -1;  // indicate we don't know about it
         }
     }
 
@@ -434,9 +435,8 @@ public abstract class Configuration {
 
     private void initPackageArray() {
         Set<PackageDoc> set = new HashSet<PackageDoc>(Arrays.asList(root.specifiedPackages()));
-        ClassDoc[] classes = root.specifiedClasses();
-        for (int i = 0; i < classes.length; i++) {
-            set.add(classes[i].containingPackage());
+        for (ClassDoc aClass : root.specifiedClasses()) {
+            set.add(aClass.containingPackage());
         }
         ArrayList<PackageDoc> results = new ArrayList<PackageDoc>(set);
         Collections.sort(results);
@@ -453,8 +453,7 @@ public abstract class Configuration {
 
         // Some options, specifically -link and -linkoffline, require that
         // the output directory has already been created: so do that first.
-        for (int oi = 0; oi < options.length; ++oi) {
-            String[] os = options[oi];
+        for (String[] os : options) {
             String opt = StringUtils.toLowerCase(os[0]);
             if (opt.equals("-d")) {
                 destDirName = addTrailingFileSep(os[1]);
@@ -464,8 +463,7 @@ public abstract class Configuration {
             }
         }
 
-        for (int oi = 0; oi < options.length; ++oi) {
-            String[] os = options[oi];
+        for (String[] os : options) {
             String opt = StringUtils.toLowerCase(os[0]);
             if (opt.equals("-docfilessubdirs")) {
                 copydocfilesubdirs = true;
@@ -588,15 +586,13 @@ public abstract class Configuration {
         tagletManager = tagletManager == null ?
             new TagletManager(nosince, showversion, showauthor, javafx, message) :
             tagletManager;
-        String[] args;
-        for (Iterator<String[]> it = customTagStrs.iterator(); it.hasNext(); ) {
-            args = it.next();
+        for (String[] args : customTagStrs) {
             if (args[0].equals("-taglet")) {
                 tagletManager.addCustomTag(args[1], getFileManager(), tagletpath);
                 continue;
             }
             String[] tokens = tokenize(args[1],
-                TagletManager.SIMPLE_TAGLET_OPT_SEPARATOR, 3);
+                                       TagletManager.SIMPLE_TAGLET_OPT_SEPARATOR, 3);
             if (tokens.length == 1) {
                 String tagName = args[1];
                 if (tagletManager.isKnownCustomTag(tagName)) {

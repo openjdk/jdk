@@ -458,10 +458,8 @@ public class Main {
                     pluginsToCall.add(List.from(plugin.split("\\s+")));
                 }
                 JavacTask task = null;
-                Iterator<Plugin> iter = sl.iterator();
-                while (iter.hasNext()) {
-                    Plugin plugin = iter.next();
-                    for (List<String> p: pluginsToCall) {
+                for (Plugin plugin : sl) {
+                    for (List<String> p : pluginsToCall) {
                         if (plugin.getName().equals(p.head)) {
                             pluginsToCall.remove(p);
                             try {
@@ -640,14 +638,11 @@ public class Main {
                 final String algorithm = "MD5";
                 byte[] digest;
                 MessageDigest md = MessageDigest.getInstance(algorithm);
-                DigestInputStream in = new DigestInputStream(url.openStream(), md);
-                try {
+                try (DigestInputStream in = new DigestInputStream(url.openStream(), md)) {
                     byte[] buf = new byte[8192];
                     int n;
                     do { n = in.read(buf); } while (n > 0);
                     digest = md.digest();
-                } finally {
-                    in.close();
                 }
                 StringBuilder sb = new StringBuilder();
                 for (byte b: digest)

@@ -85,16 +85,12 @@ public class DeprecatedAPIListBuilder {
      */
     private void buildDeprecatedAPIInfo(Configuration configuration) {
         PackageDoc[] packages = configuration.packages;
-        PackageDoc pkg;
-        for (int c = 0; c < packages.length; c++) {
-            pkg = packages[c];
+        for (PackageDoc pkg : packages) {
             if (Util.isDeprecated(pkg)) {
                 getList(PACKAGE).add(pkg);
             }
         }
-        ClassDoc[] classes = configuration.root.classes();
-        for (int i = 0; i < classes.length; i++) {
-            ClassDoc cd = classes[i];
+        for (ClassDoc cd : configuration.root.classes()) {
             if (Util.isDeprecated(cd)) {
                 if (cd.isOrdinaryClass()) {
                     getList(CLASS).add(cd);
@@ -118,7 +114,7 @@ public class DeprecatedAPIListBuilder {
             }
             if (cd.isAnnotationType()) {
                 composeDeprecatedList(getList(ANNOTATION_TYPE_MEMBER),
-                        ((AnnotationTypeDoc) cd).elements());
+                                      ((AnnotationTypeDoc) cd).elements());
             }
         }
         sortDeprecatedLists();
@@ -131,9 +127,9 @@ public class DeprecatedAPIListBuilder {
      * @param members members to be added in the list.
      */
     private void composeDeprecatedList(List<Doc> list, MemberDoc[] members) {
-        for (int i = 0; i < members.length; i++) {
-            if (Util.isDeprecated(members[i])) {
-                list.add(members[i]);
+        for (MemberDoc member : members) {
+            if (Util.isDeprecated(member)) {
+                list.add(member);
             }
         }
     }

@@ -409,8 +409,8 @@ public class HtmlDocletWriter extends HtmlDocWriter {
             head.addContent(meta);
         }
         if (metakeywords != null) {
-            for (int i=0; i < metakeywords.length; i++) {
-                Content meta = HtmlTree.META("keywords", metakeywords[i]);
+            for (String metakeyword : metakeywords) {
+                Content meta = HtmlTree.META("keywords", metakeyword);
                 head.addContent(meta);
             }
         }
@@ -1013,9 +1013,8 @@ public class HtmlDocletWriter extends HtmlDocWriter {
     public Content getPackageLink(PackageDoc pkg, Content label) {
         boolean included = pkg != null && pkg.isIncluded();
         if (! included) {
-            PackageDoc[] packages = configuration.packages;
-            for (int i = 0; i < packages.length; i++) {
-                if (packages[i].equals(pkg)) {
+            for (PackageDoc p : configuration.packages) {
+                if (p.equals(pkg)) {
                     included = true;
                     break;
                 }
@@ -1714,7 +1713,7 @@ public class HtmlDocletWriter extends HtmlDocWriter {
                     //might be missing '>' character because the href has an inline tag.
                     break;
                 }
-                if (textBuff.substring(begin, end).indexOf("\"") != -1){
+                if (textBuff.substring(begin, end).contains("\"")){
                     begin = textBuff.indexOf("\"", begin) + 1;
                     end = textBuff.indexOf("\"", begin +1);
                     if (begin == 0 || end == -1){
@@ -1947,15 +1946,15 @@ public class HtmlDocletWriter extends HtmlDocWriter {
             boolean isJava5DeclarationLocation) {
         List<Content> results = new ArrayList<Content>();
         ContentBuilder annotation;
-        for (int i = 0; i < descList.length; i++) {
-            AnnotationTypeDoc annotationDoc = descList[i].annotationType();
+        for (AnnotationDesc aDesc : descList) {
+            AnnotationTypeDoc annotationDoc = aDesc.annotationType();
             // If an annotation is not documented, do not add it to the list. If
             // the annotation is of a repeatable type, and if it is not documented
             // and also if its container annotation is not documented, do not add it
             // to the list. If an annotation of a repeatable type is not documented
             // but its container is documented, it will be added to the list.
-            if (! Util.isDocumentedAnnotation(annotationDoc) &&
-                    (!isAnnotationDocumented && !isContainerDocumented)) {
+            if (!Util.isDocumentedAnnotation(annotationDoc) &&
+                (!isAnnotationDocumented && !isContainerDocumented)) {
                 continue;
             }
             /* TODO: check logic here to correctly handle declaration
@@ -1966,12 +1965,12 @@ public class HtmlDocletWriter extends HtmlDocWriter {
             annotation = new ContentBuilder();
             isAnnotationDocumented = false;
             LinkInfoImpl linkInfo = new LinkInfoImpl(configuration,
-                LinkInfoImpl.Kind.ANNOTATION, annotationDoc);
-            AnnotationDesc.ElementValuePair[] pairs = descList[i].elementValues();
+                                                     LinkInfoImpl.Kind.ANNOTATION, annotationDoc);
+            AnnotationDesc.ElementValuePair[] pairs = aDesc.elementValues();
             // If the annotation is synthesized, do not print the container.
-            if (descList[i].isSynthesized()) {
-                for (int j = 0; j < pairs.length; j++) {
-                    AnnotationValue annotationValue = pairs[j].value();
+            if (aDesc.isSynthesized()) {
+                for (AnnotationDesc.ElementValuePair pair : pairs) {
+                    AnnotationValue annotationValue = pair.value();
                     List<AnnotationValue> annotationTypeValues = new ArrayList<AnnotationValue>();
                     if (annotationValue.value() instanceof AnnotationValue[]) {
                         AnnotationValue[] annotationArray =
@@ -2008,12 +2007,12 @@ public class HtmlDocletWriter extends HtmlDocWriter {
                 // repeatable type annotation is not documented, print the container.
                 else {
                     addAnnotations(annotationDoc, linkInfo, annotation, pairs,
-                        indent, false);
+                                   indent, false);
                 }
             }
             else {
                 addAnnotations(annotationDoc, linkInfo, annotation, pairs,
-                        indent, linkBreak);
+                               indent, linkBreak);
             }
             annotation.addContent(linkBreak ? DocletConstants.NL : "");
             results.add(annotation);
@@ -2085,8 +2084,8 @@ public class HtmlDocletWriter extends HtmlDocWriter {
      */
     private boolean isAnnotationArray(AnnotationDesc.ElementValuePair[] pairs) {
         AnnotationValue annotationValue;
-        for (int j = 0; j < pairs.length; j++) {
-            annotationValue = pairs[j].value();
+        for (AnnotationDesc.ElementValuePair pair : pairs) {
+            annotationValue = pair.value();
             if (annotationValue.value() instanceof AnnotationValue[]) {
                 AnnotationValue[] annotationArray =
                         (AnnotationValue[]) annotationValue.value();

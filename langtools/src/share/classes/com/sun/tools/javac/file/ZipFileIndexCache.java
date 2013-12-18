@@ -113,14 +113,12 @@ public class ZipFileIndexCache {
     }
 
     public synchronized void clearCache(long timeNotUsed) {
-        Iterator<File> cachedFileIterator = map.keySet().iterator();
-        while (cachedFileIterator.hasNext()) {
-            File cachedFile = cachedFileIterator.next();
+        for (File cachedFile : map.keySet()) {
             ZipFileIndex cachedZipIndex = map.get(cachedFile);
             if (cachedZipIndex != null) {
                 long timeToTest = cachedZipIndex.lastReferenceTimeStamp + timeNotUsed;
                 if (timeToTest < cachedZipIndex.lastReferenceTimeStamp || // Overflow...
-                        System.currentTimeMillis() > timeToTest) {
+                    System.currentTimeMillis() > timeToTest) {
                     map.remove(cachedFile);
                 }
             }

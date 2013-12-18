@@ -185,8 +185,7 @@ public class Group {
         if (!groupList.contains(defaultGroupName)) {
             groupList.add(defaultGroupName);
         }
-        for (int i = 0; i < packages.length; i++) {
-            PackageDoc pkg = packages[i];
+        for (PackageDoc pkg : packages) {
             String pkgName = pkg.name();
             String groupName = pkgNameGroupMap.get(pkgName);
             // if this package is not explicitly assigned to a group,
@@ -212,8 +211,7 @@ public class Group {
      * expression list.
      */
     String regExpGroupName(String pkgName) {
-        for (int j = 0; j < sortedRegExpList.size(); j++) {
-            String regexp = sortedRegExpList.get(j);
+        for (String regexp : sortedRegExpList) {
             if (pkgName.startsWith(regexp)) {
                 return regExpGroupMap.get(regexp);
             }

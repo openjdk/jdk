@@ -147,10 +147,9 @@ public class MetaKeywords {
     protected ArrayList<String> getMemberKeywords(MemberDoc[] memberdocs) {
         ArrayList<String> results = new ArrayList<String>();
         String membername;
-        for (int i=0; i < memberdocs.length; i++) {
-            membername = memberdocs[i].name()
-                             + (memberdocs[i].isMethod() ? "()" : "");
-            if ( ! results.contains(membername) ) {
+        for (MemberDoc memberdoc : memberdocs) {
+            membername = memberdoc.name() + (memberdoc.isMethod() ? "()" : "");
+            if (!results.contains(membername)) {
                 results.add(membername);
             }
         }

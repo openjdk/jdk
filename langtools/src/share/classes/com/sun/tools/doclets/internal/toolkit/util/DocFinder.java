@@ -220,8 +220,8 @@ public class DocFinder {
             //       appropriate element here.
             MethodDoc[] implementedMethods =
                 (new ImplementedMethods((MethodDoc) input.element, null)).build(false);
-            for (int i = 0; i < implementedMethods.length; i++) {
-                inheritedSearchInput.element = implementedMethods[i];
+            for (MethodDoc implementedMethod : implementedMethods) {
+                inheritedSearchInput.element = implementedMethod;
                 output = search(inheritedSearchInput);
                 output.isValidInheritDocTag = true;
                 if (output.inlineTags.length > 0) {

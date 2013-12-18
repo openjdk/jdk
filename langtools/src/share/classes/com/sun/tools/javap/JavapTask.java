@@ -758,8 +758,7 @@ public class JavapTask implements DisassemblerTool.DisassemblerTask, Messages {
                     }
 
                 };
-            } catch (URISyntaxException ignore) {
-            } catch (IOException ignore) {
+            } catch (URISyntaxException | IOException ignore) {
             }
         }
 

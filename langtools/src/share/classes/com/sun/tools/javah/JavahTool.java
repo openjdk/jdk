@@ -74,10 +74,9 @@ public class JavahTool implements NativeHeaderTool {
     }
 
     public int isSupportedOption(String option) {
-        JavahTask.Option[] options = JavahTask.recognizedOptions;
-        for (int i = 0; i < options.length; i++) {
-            if (options[i].matches(option))
-                return (options[i].hasArg ? 1 : 0);
+        for (JavahTask.Option opt : JavahTask.recognizedOptions) {
+            if (opt.matches(option))
+                return (opt.hasArg ? 1 : 0);
         }
         return -1;
     }

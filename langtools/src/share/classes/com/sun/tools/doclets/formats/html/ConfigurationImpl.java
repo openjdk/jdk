@@ -289,9 +289,9 @@ public class ConfigurationImpl extends Configuration {
             Map<String,PackageDoc> map = new HashMap<String,PackageDoc>();
             PackageDoc pd;
             ClassDoc[] classes = root.classes();
-            for (int i = 0; i < classes.length; i++) {
-                pd = classes[i].containingPackage();
-                if(! map.containsKey(pd.name())) {
+            for (ClassDoc aClass : classes) {
+                pd = aClass.containingPackage();
+                if (!map.containsKey(pd.name())) {
                     map.put(pd.name(), pd);
                 }
             }
@@ -512,18 +512,17 @@ public class ConfigurationImpl extends Configuration {
         if (!nodeprecated) {
             return classarr[0];
         }
-        for (int i = 0; i < classarr.length; i++) {
-            if (classarr[i].tags("deprecated").length == 0) {
-                return classarr[i];
+        for (ClassDoc cd : classarr) {
+            if (cd.tags("deprecated").length == 0) {
+                return cd;
             }
         }
         return null;
     }
 
     protected boolean checkForDeprecation(RootDoc root) {
-        ClassDoc[] classarr = root.classes();
-        for (int i = 0; i < classarr.length; i++) {
-            if (isGeneratedDoc(classarr[i])) {
+        for (ClassDoc cd : root.classes()) {
+            if (isGeneratedDoc(cd)) {
                 return true;
             }
         }

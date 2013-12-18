@@ -137,7 +137,7 @@ public class BasicDiagnosticFormatter extends AbstractDiagnosticFormatter {
             BasicConfiguration conf = getConfiguration();
             int indentSource = conf.getIndentation(DiagnosticPart.SOURCE);
             String sourceLine = "\n" + formatSourceLine(d, indentSource);
-            boolean singleLine = msg.indexOf("\n") == -1;
+            boolean singleLine = !msg.contains("\n");
             if (singleLine || getConfiguration().getSourcePosition() == SourcePosition.BOTTOM)
                 return msg + sourceLine;
             else

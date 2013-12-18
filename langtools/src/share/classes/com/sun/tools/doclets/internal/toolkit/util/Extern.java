@@ -234,11 +234,10 @@ public class Extern {
         try {
             URL link = pkglisturlpath.toURI().resolve(DocPaths.PACKAGE_LIST.getPath()).toURL();
             readPackageList(link.openStream(), urlpath, false);
-        } catch (URISyntaxException exc) {
+        } catch (URISyntaxException | MalformedURLException exc) {
             throw new Fault(configuration.getText("doclet.MalformedURL", pkglisturlpath.toString()), exc);
-        } catch (MalformedURLException exc) {
-            throw new Fault(configuration.getText("doclet.MalformedURL", pkglisturlpath.toString()), exc);
-        } catch (IOException exc) {
+        }
+        catch (IOException exc) {
             throw new Fault(configuration.getText("doclet.URL_error", pkglisturlpath.toString()), exc);
         }
     }

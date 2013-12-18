@@ -112,7 +112,7 @@ public class SimpleTaglet extends BaseTaglet implements InheritableTaglet {
         this.tagName = tagName;
         this.header = header;
         locations = StringUtils.toLowerCase(locations);
-        if (locations.indexOf(ALL) != -1 && locations.indexOf(EXCLUDED) == -1) {
+        if (locations.contains(ALL) && !locations.contains(EXCLUDED)) {
             this.locations = PACKAGE + TYPE + FIELD + METHOD + CONSTRUCTOR + OVERVIEW;
         } else {
             this.locations = locations;
@@ -134,7 +134,7 @@ public class SimpleTaglet extends BaseTaglet implements InheritableTaglet {
      * otherwise.
      */
     public boolean inConstructor() {
-        return locations.indexOf(CONSTRUCTOR) != -1 && locations.indexOf(EXCLUDED) == -1;
+        return locations.contains(CONSTRUCTOR) && !locations.contains(EXCLUDED);
     }
 
     /**
@@ -145,7 +145,7 @@ public class SimpleTaglet extends BaseTaglet implements InheritableTaglet {
      * otherwise.
      */
     public boolean inField() {
-        return locations.indexOf(FIELD) != -1 && locations.indexOf(EXCLUDED) == -1;
+        return locations.contains(FIELD) && !locations.contains(EXCLUDED);
     }
 
     /**
@@ -156,7 +156,7 @@ public class SimpleTaglet extends BaseTaglet implements InheritableTaglet {
      * otherwise.
      */
     public boolean inMethod() {
-        return locations.indexOf(METHOD) != -1 && locations.indexOf(EXCLUDED) == -1;
+        return locations.contains(METHOD) && !locations.contains(EXCLUDED);
     }
 
     /**
@@ -167,7 +167,7 @@ public class SimpleTaglet extends BaseTaglet implements InheritableTaglet {
      * otherwise.
      */
     public boolean inOverview() {
-        return locations.indexOf(OVERVIEW) != -1 && locations.indexOf(EXCLUDED) == -1;
+        return locations.contains(OVERVIEW) && !locations.contains(EXCLUDED);
     }
 
     /**
@@ -178,7 +178,7 @@ public class SimpleTaglet extends BaseTaglet implements InheritableTaglet {
      * otherwise.
      */
     public boolean inPackage() {
-        return locations.indexOf(PACKAGE) != -1 && locations.indexOf(EXCLUDED) == -1;
+        return locations.contains(PACKAGE) && !locations.contains(EXCLUDED);
     }
 
     /**
@@ -189,7 +189,7 @@ public class SimpleTaglet extends BaseTaglet implements InheritableTaglet {
      * otherwise.
      */
     public boolean inType() {
-        return locations.indexOf(TYPE) != -1&& locations.indexOf(EXCLUDED) == -1;
+        return locations.contains(TYPE) && !locations.contains(EXCLUDED);
     }
 
     /**

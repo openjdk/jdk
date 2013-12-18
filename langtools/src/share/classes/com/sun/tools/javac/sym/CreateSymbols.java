@@ -265,9 +265,7 @@ public class CreateSymbols extends AbstractProcessor {
                     writeClass(pool, nestedClass, writer);
                 }
             }
-        } catch (ClassWriter.StringOverflow ex) {
-            throw new RuntimeException(ex);
-        } catch (ClassWriter.PoolOverflow ex) {
+        } catch (ClassWriter.StringOverflow | ClassWriter.PoolOverflow ex) {
             throw new RuntimeException(ex);
         }
     }

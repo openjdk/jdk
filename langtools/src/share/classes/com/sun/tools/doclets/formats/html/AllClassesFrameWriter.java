@@ -150,9 +150,9 @@ public class AllClassesFrameWriter extends HtmlDocletWriter {
      * @param content HtmlTree content to which the links will be added
      */
     protected void addContents(List<Doc> classlist, boolean wantFrames,
-            Content content) {
-        for (int i = 0; i < classlist.size(); i++) {
-            ClassDoc cd = (ClassDoc)classlist.get(i);
+                               Content content) {
+        for (Doc doc : classlist) {
+            ClassDoc cd = (ClassDoc) doc;
             if (!Util.isCoreClass(cd)) {
                 continue;
             }
@@ -160,7 +160,7 @@ public class AllClassesFrameWriter extends HtmlDocletWriter {
             Content linkContent;
             if (wantFrames) {
                 linkContent = getLink(new LinkInfoImpl(configuration,
-                        LinkInfoImpl.Kind.ALL_CLASSES_FRAME, cd).label(label).target("classFrame"));
+                                                       LinkInfoImpl.Kind.ALL_CLASSES_FRAME, cd).label(label).target("classFrame"));
             } else {
                 linkContent = getLink(new LinkInfoImpl(configuration, LinkInfoImpl.Kind.DEFAULT, cd).label(label));
             }

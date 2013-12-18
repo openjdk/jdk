@@ -109,13 +109,12 @@ public class PackageIndexWriter extends AbstractPackageIndexWriter {
      * @param body the documentation tree to which the index will be added
      */
     protected void addIndex(Content body) {
-        for (int i = 0; i < groupList.size(); i++) {
-        String groupname = groupList.get(i);
-        List<PackageDoc> list = groupPackageMap.get(groupname);
+        for (String groupname : groupList) {
+            List<PackageDoc> list = groupPackageMap.get(groupname);
             if (list != null && list.size() > 0) {
                 addIndexContents(list.toArray(new PackageDoc[list.size()]),
-                        groupname, configuration.getText("doclet.Member_Table_Summary",
-                        groupname, configuration.getText("doclet.packages")), body);
+                                 groupname, configuration.getText("doclet.Member_Table_Summary",
+                                                                  groupname, configuration.getText("doclet.packages")), body);
             }
         }
     }

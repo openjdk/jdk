@@ -360,8 +360,7 @@ public class MethodWriterImpl extends AbstractExecutableMemberWriter
         ImplementedMethods implementedMethodsFinder =
                 new ImplementedMethods(method, writer.configuration);
         MethodDoc[] implementedMethods = implementedMethodsFinder.build();
-        for (int i = 0; i < implementedMethods.length; i++) {
-            MethodDoc implementedMeth = implementedMethods[i];
+        for (MethodDoc implementedMeth : implementedMethods) {
             Type intfac = implementedMethodsFinder.getMethodHolder(implementedMeth);
             Content intfaclink = writer.getLink(new LinkInfoImpl(
                     writer.configuration, LinkInfoImpl.Kind.METHOD_SPECIFIED_BY, intfac));

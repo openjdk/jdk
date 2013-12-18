@@ -475,11 +475,9 @@ public class MemberSummaryBuilder extends AbstractMemberBuilder {
      */
     private void buildInheritedSummary(MemberSummaryWriter writer,
             VisibleMemberMap visibleMemberMap, LinkedList<Content> summaryTreeList) {
-        for (Iterator<ClassDoc> iter = visibleMemberMap.getVisibleClassesList().iterator();
-                iter.hasNext();) {
-            ClassDoc inhclass = iter.next();
-            if (! (inhclass.isPublic() ||
-                    Util.isLinkable(inhclass, configuration))) {
+        for (ClassDoc inhclass : visibleMemberMap.getVisibleClassesList()) {
+            if (!(inhclass.isPublic() ||
+                  Util.isLinkable(inhclass, configuration))) {
                 continue;
             }
             if (inhclass == classDoc) {
@@ -493,7 +491,7 @@ public class MemberSummaryBuilder extends AbstractMemberBuilder {
                 for (int j = 0; j < inhmembers.size(); ++j) {
                     writer.addInheritedMemberSummary(
                             inhclass.isPackagePrivate() &&
-                            ! Util.isLinkable(inhclass, configuration) ?
+                            !Util.isLinkable(inhclass, configuration) ?
                             classDoc : inhclass,
                             inhmembers.get(j),
                             j == 0,
@@ -523,8 +521,8 @@ public class MemberSummaryBuilder extends AbstractMemberBuilder {
         if (!summaryTreeList.isEmpty()) {
             Content memberTree = writer.getMemberSummaryHeader(
                     classDoc, memberSummaryTree);
-            for (int i = 0; i < summaryTreeList.size(); i++) {
-                memberTree.addContent(summaryTreeList.get(i));
+            for (Content aSummaryTreeList : summaryTreeList) {
+                memberTree.addContent(aSummaryTreeList);
             }
             memberSummaryTree.addContent(writer.getMemberTree(memberTree));
         }
