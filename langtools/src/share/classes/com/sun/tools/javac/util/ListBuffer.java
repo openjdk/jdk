@@ -156,8 +156,8 @@ public class ListBuffer<A> extends AbstractQueue<A> {
     /** Append all elements in an array to buffer.
      */
     public ListBuffer<A> appendArray(A[] xs) {
-        for (int i = 0; i < xs.length; i++) {
-            append(xs[i]);
+        for (A x : xs) {
+            append(x);
         }
         return this;
     }

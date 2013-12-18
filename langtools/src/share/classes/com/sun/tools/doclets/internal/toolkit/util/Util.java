@@ -26,7 +26,9 @@
 package com.sun.tools.doclets.internal.toolkit.util;
 
 import java.io.*;
+import java.lang.annotation.Documented;
 import java.lang.annotation.ElementType;
+import java.lang.annotation.Target;
 import java.util.*;
 import javax.tools.StandardLocation;
 
@@ -75,9 +77,9 @@ public class Util {
     public static List<ProgramElementDoc> excludeDeprecatedMembersAsList(
         ProgramElementDoc[] members) {
         List<ProgramElementDoc> list = new ArrayList<ProgramElementDoc>();
-        for (int i = 0; i < members.length; i++) {
-            if (members[i].tags("deprecated").length == 0) {
-                list.add(members[i]);
+        for (ProgramElementDoc member : members) {
+            if (member.tags("deprecated").length == 0) {
+                list.add(member);
             }
         }
         Collections.sort(list);
@@ -102,8 +104,8 @@ public class Util {
      * @return boolean True if non-public member found, false otherwise.
      */
     public static boolean nonPublicMemberFound(ProgramElementDoc[] members) {
-        for (int i = 0; i < members.length; i++) {
-            if (!members[i].isPublic()) {
+        for (ProgramElementDoc member : members) {
+            if (!member.isPublic()) {
                 return true;
             }
         }
@@ -119,9 +121,9 @@ public class Util {
      */
     public static MethodDoc findMethod(ClassDoc cd, MethodDoc method) {
         MethodDoc[] methods = cd.methods();
-        for (int i = 0; i < methods.length; i++) {
-            if (executableMembersEqual(method, methods[i])) {
-                return methods[i];
+        for (MethodDoc m : methods) {
+            if (executableMembersEqual(method, m)) {
+                return m;
 
             }
         }
@@ -241,9 +243,7 @@ public class Util {
 
                 first = false;
             }
-        } catch (SecurityException exc) {
-            throw new DocletAbortException(exc);
-        } catch (IOException exc) {
+        } catch (SecurityException | IOException exc) {
             throw new DocletAbortException(exc);
         }
     }
@@ -287,18 +287,15 @@ public class Util {
             superType = type.asClassDoc().superclassType();
         }
 
-        for (int i = 0; i < interfaceTypes.length; i++) {
-            Type interfaceType = interfaceTypes[i];
+        for (Type interfaceType : interfaceTypes) {
             ClassDoc interfaceClassDoc = interfaceType.asClassDoc();
-            if (! (interfaceClassDoc.isPublic() ||
-                (configuration == null ||
-                isLinkable(interfaceClassDoc, configuration)))) {
+            if (!(interfaceClassDoc.isPublic() ||
+                  (configuration == null ||
+                   isLinkable(interfaceClassDoc, configuration)))) {
                 continue;
             }
             results.put(interfaceClassDoc, interfaceType);
-            List<Type> superInterfaces = getAllInterfaces(interfaceType, configuration, sort);
-            for (Iterator<Type> iter = superInterfaces.iterator(); iter.hasNext(); ) {
-                Type t = iter.next();
+            for (Type t : getAllInterfaces(interfaceType, configuration, sort)) {
                 results.put(t.asClassDoc(), t);
             }
         }
@@ -351,20 +348,18 @@ public class Util {
     private static void addAllInterfaceTypes(Map<ClassDoc,Type> results, Type type,
             Type[] interfaceTypes, boolean raw,
             Configuration configuration) {
-        for (int i = 0; i < interfaceTypes.length; i++) {
-            Type interfaceType = interfaceTypes[i];
+        for (Type interfaceType : interfaceTypes) {
             ClassDoc interfaceClassDoc = interfaceType.asClassDoc();
-            if (! (interfaceClassDoc.isPublic() ||
-                (configuration != null &&
-                isLinkable(interfaceClassDoc, configuration)))) {
+            if (!(interfaceClassDoc.isPublic() ||
+                  (configuration != null &&
+                   isLinkable(interfaceClassDoc, configuration)))) {
                 continue;
             }
             if (raw)
                 interfaceType = interfaceType.asClassDoc();
             results.put(interfaceClassDoc, interfaceType);
             List<Type> superInterfaces = getAllInterfaces(interfaceType, configuration);
-            for (Iterator<Type> iter = superInterfaces.iterator(); iter.hasNext(); ) {
-                Type superInterface = iter.next();
+            for (Type superInterface : superInterfaces) {
                 results.put(superInterface.asClassDoc(), superInterface);
             }
         }
@@ -429,10 +424,9 @@ public class Util {
      * @return true return true if it should be documented and false otherwise.
      */
     public static boolean isDocumentedAnnotation(AnnotationTypeDoc annotationDoc) {
-        AnnotationDesc[] annotationDescList = annotationDoc.annotations();
-        for (int i = 0; i < annotationDescList.length; i++) {
-            if (annotationDescList[i].annotationType().qualifiedName().equals(
-                   java.lang.annotation.Documented.class.getName())){
+        for (AnnotationDesc anno : annotationDoc.annotations()) {
+            if (anno.annotationType().qualifiedName().equals(
+                    Documented.class.getName())) {
                 return true;
             }
         }
@@ -448,13 +442,12 @@ public class Util {
             || !(elems[0].value().value() instanceof AnnotationValue[]))
             return true;    // error recovery
 
-        AnnotationValue[] values = (AnnotationValue[])elems[0].value().value();
-        for (int i = 0; i < values.length; i++) {
-            Object value = values[i].value();
+        for (AnnotationValue aValue : (AnnotationValue[])elems[0].value().value()) {
+            Object value = aValue.value();
             if (!(value instanceof FieldDoc))
                 return true; // error recovery
 
-            FieldDoc eValue = (FieldDoc)value;
+            FieldDoc eValue = (FieldDoc) value;
             if (Util.isJava5DeclarationElementType(eValue)) {
                 return true;
             }
@@ -480,10 +473,10 @@ public class Util {
         // Annotations with no target are treated as declaration as well
         if (annotationDescList.length==0)
             return true;
-        for (int i = 0; i < annotationDescList.length; i++) {
-            if (annotationDescList[i].annotationType().qualifiedName().equals(
-                    java.lang.annotation.Target.class.getName())) {
-                if (isDeclarationTarget(annotationDescList[i]))
+        for (AnnotationDesc anno : annotationDescList) {
+            if (anno.annotationType().qualifiedName().equals(
+                    Target.class.getName())) {
+                if (isDeclarationTarget(anno))
                     return true;
             }
         }
@@ -602,7 +595,7 @@ public class Util {
      * @return the text with all tabs expanded
      */
     public static String replaceTabs(Configuration configuration, String text) {
-        if (text.indexOf("\t") == -1)
+        if (!text.contains("\t"))
             return text;
 
         final int tabLength = configuration.sourcetab;
@@ -664,32 +657,30 @@ public class Util {
      */
     public static void setEnumDocumentation(Configuration configuration,
             ClassDoc classDoc) {
-        MethodDoc[] methods = classDoc.methods();
-        for (int j = 0; j < methods.length; j++) {
-            MethodDoc currentMethod = methods[j];
+        for (MethodDoc currentMethod : classDoc.methods()) {
             if (currentMethod.name().equals("values") &&
-                    currentMethod.parameters().length == 0) {
+                currentMethod.parameters().length == 0) {
                 StringBuilder sb = new StringBuilder();
                 sb.append(configuration.getText("doclet.enum_values_doc.main", classDoc.name()));
                 sb.append("\n@return ");
                 sb.append(configuration.getText("doclet.enum_values_doc.return"));
                 currentMethod.setRawCommentText(sb.toString());
             } else if (currentMethod.name().equals("valueOf") &&
-                    currentMethod.parameters().length == 1) {
+                     currentMethod.parameters().length == 1) {
                 Type paramType = currentMethod.parameters()[0].type();
                 if (paramType != null &&
-                        paramType.qualifiedTypeName().equals(String.class.getName())) {
-                StringBuilder sb = new StringBuilder();
-                sb.append(configuration.getText("doclet.enum_valueof_doc.main", classDoc.name()));
-                sb.append("\n@param name ");
-                sb.append(configuration.getText("doclet.enum_valueof_doc.param_name"));
-                sb.append("\n@return ");
-                sb.append(configuration.getText("doclet.enum_valueof_doc.return"));
-                sb.append("\n@throws IllegalArgumentException ");
-                sb.append(configuration.getText("doclet.enum_valueof_doc.throws_ila"));
-                sb.append("\n@throws NullPointerException ");
-                sb.append(configuration.getText("doclet.enum_valueof_doc.throws_npe"));
-                currentMethod.setRawCommentText(sb.toString());
+                    paramType.qualifiedTypeName().equals(String.class.getName())) {
+                    StringBuilder sb = new StringBuilder();
+                    sb.append(configuration.getText("doclet.enum_valueof_doc.main", classDoc.name()));
+                    sb.append("\n@param name ");
+                    sb.append(configuration.getText("doclet.enum_valueof_doc.param_name"));
+                    sb.append("\n@return ");
+                    sb.append(configuration.getText("doclet.enum_valueof_doc.return"));
+                    sb.append("\n@throws IllegalArgumentException ");
+                    sb.append(configuration.getText("doclet.enum_valueof_doc.throws_ila"));
+                    sb.append("\n@throws NullPointerException ");
+                    sb.append(configuration.getText("doclet.enum_valueof_doc.throws_npe"));
+                    currentMethod.setRawCommentText(sb.toString());
                 }
             }
         }
@@ -710,9 +701,9 @@ public class Util {
             annotationDescList = ((PackageDoc)doc).annotations();
         else
             annotationDescList = ((ProgramElementDoc)doc).annotations();
-        for (int i = 0; i < annotationDescList.length; i++) {
-            if (annotationDescList[i].annotationType().qualifiedName().equals(
-                   java.lang.Deprecated.class.getName())){
+        for (AnnotationDesc anno : annotationDescList) {
+            if (anno.annotationType().qualifiedName().equals(
+                    Deprecated.class.getName())) {
                 return true;
             }
         }

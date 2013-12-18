@@ -370,37 +370,37 @@ public class TagletManager {
             return;
         }
         Taglet taglet;
-        for (int i = 0; i < tags.length; i++) {
-            String name = tags[i].name();
+        for (Tag tag : tags) {
+            String name = tag.name();
             if (name.length() > 0 && name.charAt(0) == '@') {
                 name = name.substring(1, name.length());
             }
             if (! (standardTags.contains(name) || customTags.containsKey(name))) {
                 if (standardTagsLowercase.contains(StringUtils.toLowerCase(name))) {
-                    message.warning(tags[i].position(), "doclet.UnknownTagLowercase", tags[i].name());
+                    message.warning(tag.position(), "doclet.UnknownTagLowercase", tag.name());
                     continue;
                 } else {
-                    message.warning(tags[i].position(), "doclet.UnknownTag", tags[i].name());
+                    message.warning(tag.position(), "doclet.UnknownTag", tag.name());
                     continue;
                 }
             }
             //Check if this tag is being used in the wrong location.
             if ((taglet = customTags.get(name)) != null) {
                 if (areInlineTags && ! taglet.isInlineTag()) {
-                    printTagMisuseWarn(taglet, tags[i], "inline");
+                    printTagMisuseWarn(taglet, tag, "inline");
                 }
                 if ((doc instanceof RootDoc) && ! taglet.inOverview()) {
-                    printTagMisuseWarn(taglet, tags[i], "overview");
+                    printTagMisuseWarn(taglet, tag, "overview");
                 } else if ((doc instanceof PackageDoc) && ! taglet.inPackage()) {
-                    printTagMisuseWarn(taglet, tags[i], "package");
+                    printTagMisuseWarn(taglet, tag, "package");
                 } else if ((doc instanceof ClassDoc) && ! taglet.inType()) {
-                    printTagMisuseWarn(taglet, tags[i], "class");
+                    printTagMisuseWarn(taglet, tag, "class");
                 } else if ((doc instanceof ConstructorDoc) && ! taglet.inConstructor()) {
-                    printTagMisuseWarn(taglet, tags[i], "constructor");
+                    printTagMisuseWarn(taglet, tag, "constructor");
                 } else if ((doc instanceof FieldDoc) && ! taglet.inField()) {
-                    printTagMisuseWarn(taglet, tags[i], "field");
+                    printTagMisuseWarn(taglet, tag, "field");
                 } else if ((doc instanceof MethodDoc) && ! taglet.inMethod()) {
-                    printTagMisuseWarn(taglet, tags[i], "method");
+                    printTagMisuseWarn(taglet, tag, "method");
                 }
             }
         }
@@ -707,9 +707,8 @@ public class TagletManager {
      * Initialize lowercase version of standard Javadoc tags.
      */
     private void initStandardTagsLowercase() {
-        Iterator<String> it = standardTags.iterator();
-        while (it.hasNext()) {
-            standardTagsLowercase.add(StringUtils.toLowerCase(it.next()));
+        for (String standardTag : standardTags) {
+            standardTagsLowercase.add(StringUtils.toLowerCase(standardTag));
         }
     }
 

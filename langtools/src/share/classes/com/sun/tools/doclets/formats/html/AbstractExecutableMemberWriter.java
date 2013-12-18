@@ -268,13 +268,13 @@ public abstract class AbstractExecutableMemberWriter extends AbstractMemberWrite
 
     protected ClassDoc implementsMethodInIntfac(MethodDoc method,
                                                 ClassDoc[] intfacs) {
-        for (int i = 0; i < intfacs.length; i++) {
-            MethodDoc[] methods = intfacs[i].methods();
+        for (ClassDoc intf : intfacs) {
+            MethodDoc[] methods = intf.methods();
             if (methods.length > 0) {
-                for (int j = 0; j < methods.length; j++) {
-                    if (methods[j].name().equals(method.name()) &&
-                          methods[j].signature().equals(method.signature())) {
-                        return intfacs[i];
+                for (MethodDoc md : methods) {
+                    if (md.name().equals(method.name()) &&
+                        md.signature().equals(method.signature())) {
+                        return intf;
                     }
                 }
             }

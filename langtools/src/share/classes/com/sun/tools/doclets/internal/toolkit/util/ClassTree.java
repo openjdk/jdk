@@ -123,43 +123,43 @@ public class ClassTree {
      * @param configuration the current configuration of the doclet.
      */
     private void buildTree(ClassDoc[] classes, Configuration configuration) {
-        for (int i = 0; i < classes.length; i++) {
+        for (ClassDoc aClass : classes) {
             // In the tree page (e.g overview-tree.html) do not include
             // information of classes which are deprecated or are a part of a
             // deprecated package.
             if (configuration.nodeprecated &&
-                    (Util.isDeprecated(classes[i]) ||
-                    Util.isDeprecated(classes[i].containingPackage()))) {
+                    (Util.isDeprecated(aClass) ||
+                    Util.isDeprecated(aClass.containingPackage()))) {
                 continue;
             }
 
             if (configuration.javafx
-                    && classes[i].tags("treatAsPrivate").length > 0) {
+                    && aClass.tags("treatAsPrivate").length > 0) {
                 continue;
             }
 
-            if (classes[i].isEnum()) {
-                processType(classes[i], configuration, baseEnums, subEnums);
-            } else if (classes[i].isClass()) {
-                processType(classes[i], configuration, baseclasses, subclasses);
-            } else if (classes[i].isInterface()) {
-                processInterface(classes[i]);
-                List<ClassDoc> list = implementingclasses.get(classes[i]);
+            if (aClass.isEnum()) {
+                processType(aClass, configuration, baseEnums, subEnums);
+            } else if (aClass.isClass()) {
+                processType(aClass, configuration, baseclasses, subclasses);
+            } else if (aClass.isInterface()) {
+                processInterface(aClass);
+                List<ClassDoc> list = implementingclasses.get(aClass);
                 if (list != null) {
                     Collections.sort(list);
                 }
-            } else if (classes[i].isAnnotationType()) {
-                processType(classes[i], configuration, baseAnnotationTypes,
+            } else if (aClass.isAnnotationType()) {
+                processType(aClass, configuration, baseAnnotationTypes,
                     subAnnotationTypes);
             }
         }
 
         Collections.sort(baseinterfaces);
-        for (Iterator<List<ClassDoc>> it = subinterfaces.values().iterator(); it.hasNext(); ) {
-            Collections.sort(it.next());
+        for (List<ClassDoc> docs : subinterfaces.values()) {
+            Collections.sort(docs);
         }
-        for (Iterator<List<ClassDoc>> it = subclasses.values().iterator(); it.hasNext(); ) {
-            Collections.sort(it.next());
+        for (List<ClassDoc> docs : subclasses.values()) {
+            Collections.sort(docs);
         }
     }
 
@@ -190,8 +190,8 @@ public class ClassTree {
             }
         }
         List<Type> intfacs = Util.getAllInterfaces(cd, configuration);
-        for (Iterator<Type> iter = intfacs.iterator(); iter.hasNext();) {
-            add(implementingclasses, iter.next().asClassDoc(), cd);
+        for (Type intfac : intfacs) {
+            add(implementingclasses, intfac.asClassDoc(), cd);
         }
     }
 
@@ -206,11 +206,11 @@ public class ClassTree {
     private void processInterface(ClassDoc cd) {
         ClassDoc[] intfacs = cd.interfaces();
         if (intfacs.length > 0) {
-            for (int i = 0; i < intfacs.length; i++) {
-                if (!add(subinterfaces, intfacs[i], cd)) {
+            for (ClassDoc intfac : intfacs) {
+                if (!add(subinterfaces, intfac, cd)) {
                     return;
                 } else {
-                    processInterface(intfacs[i]);   // Recurse
+                    processInterface(intfac);   // Recurse
                 }
             }
         } else {
@@ -341,8 +341,7 @@ public class ClassTree {
         for (int i = 0; i < list.size(); i++) {
             cd = list.get(i);
             List<ClassDoc> tlist = subs(cd, isEnum);
-            for (int j = 0; j < tlist.size(); j++) {
-                ClassDoc tcd = tlist.get(j);
+            for (ClassDoc tcd : tlist) {
                 if (!list.contains(tcd)) {
                     list.add(tcd);
                 }

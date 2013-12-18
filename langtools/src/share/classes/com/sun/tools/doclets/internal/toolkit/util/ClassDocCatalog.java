@@ -100,8 +100,8 @@ import com.sun.tools.doclets.internal.toolkit.Configuration;
      public ClassDocCatalog (ClassDoc[] classdocs, Configuration config) {
          init();
          this.configuration = config;
-         for (int i = 0; i < classdocs.length; i++) {
-             addClassDoc(classdocs[i]);
+         for (ClassDoc classdoc : classdocs) {
+             addClassDoc(classdoc);
          }
      }
 

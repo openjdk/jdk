@@ -158,12 +158,14 @@ public enum SourceVersion {
         try {
             String specVersion = System.getProperty("java.specification.version");
 
-            if ("1.8".equals(specVersion))
-                return RELEASE_8;
-            else if("1.7".equals(specVersion))
-                return RELEASE_7;
-            else if("1.6".equals(specVersion))
-                return RELEASE_6;
+            switch (specVersion) {
+                case "1.8":
+                    return RELEASE_8;
+                case "1.7":
+                    return RELEASE_7;
+                case "1.6":
+                    return RELEASE_6;
+            }
         } catch (SecurityException se) {}
 
         return RELEASE_5;

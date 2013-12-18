@@ -64,8 +64,7 @@ public class FSInfo {
 
     public List<File> getJarClassPath(File file) throws IOException {
         String parent = file.getParent();
-        JarFile jarFile = new JarFile(file);
-        try {
+        try (JarFile jarFile = new JarFile(file)) {
             Manifest man = jarFile.getManifest();
             if (man == null)
                 return Collections.emptyList();
@@ -80,15 +79,14 @@ public class FSInfo {
 
             List<File> list = new ArrayList<File>();
 
-            for (StringTokenizer st = new StringTokenizer(path); st.hasMoreTokens(); ) {
+            for (StringTokenizer st = new StringTokenizer(path);
+                 st.hasMoreTokens(); ) {
                 String elt = st.nextToken();
                 File f = (parent == null ? new File(elt) : new File(parent, elt));
                 list.add(f);
             }
 
             return list;
-        } finally {
-            jarFile.close();
         }
     }
 }

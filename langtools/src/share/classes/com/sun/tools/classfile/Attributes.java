@@ -56,8 +56,7 @@ public class Attributes implements Iterable<Attribute> {
     public Attributes(ConstantPool constant_pool, Attribute[] attrs) {
         this.attrs = attrs;
         map = new HashMap<String,Attribute>();
-        for (int i = 0; i < attrs.length; i++) {
-            Attribute attr = attrs[i];
+        for (Attribute attr : attrs) {
             try {
                 map.put(attr.getName(constant_pool), attr);
             } catch (ConstantPoolException e) {

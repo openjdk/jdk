@@ -186,44 +186,42 @@ public class ClassUseMapper {
         this.classtree = classtree;
 
         // Map subclassing, subinterfacing implementing, ...
-        for (Iterator<ClassDoc> it = classtree.baseclasses().iterator(); it.hasNext();) {
-            subclasses(it.next());
+        for (ClassDoc doc : classtree.baseclasses()) {
+            subclasses(doc);
         }
-        for (Iterator<ClassDoc> it = classtree.baseinterfaces().iterator(); it.hasNext();) {
+        for (ClassDoc doc : classtree.baseinterfaces()) {
             // does subinterfacing as side-effect
-            implementingClasses(it.next());
+            implementingClasses(doc);
         }
         // Map methods, fields, constructors using a class.
         ClassDoc[] classes = root.classes();
-        for (int i = 0; i < classes.length; i++) {
-            PackageDoc pkg = classes[i].containingPackage();
+        for (ClassDoc aClass : classes) {
+            PackageDoc pkg = aClass.containingPackage();
             mapAnnotations(classToPackageAnnotations, pkg, pkg);
-            ClassDoc cd = classes[i];
+            ClassDoc cd = aClass;
             mapTypeParameters(classToClassTypeParam, cd, cd);
             mapAnnotations(classToClassAnnotations, cd, cd);
             FieldDoc[] fields = cd.fields();
-            for (int j = 0; j < fields.length; j++) {
-                FieldDoc fd = fields[j];
+            for (FieldDoc fd : fields) {
                 mapTypeParameters(classToFieldDocTypeParam, fd, fd);
                 mapAnnotations(annotationToFieldDoc, fd, fd);
-                if (! fd.type().isPrimitive()) {
+                if (!fd.type().isPrimitive()) {
                     add(classToField, fd.type().asClassDoc(), fd);
                 }
             }
             ConstructorDoc[] cons = cd.constructors();
-            for (int j = 0; j < cons.length; j++) {
-                mapAnnotations(classToConstructorAnnotations, cons[j], cons[j]);
-                mapExecutable(cons[j]);
+            for (ConstructorDoc con : cons) {
+                mapAnnotations(classToConstructorAnnotations, con, con);
+                mapExecutable(con);
             }
             MethodDoc[] meths = cd.methods();
-            for (int j = 0; j < meths.length; j++) {
-                MethodDoc md = meths[j];
+            for (MethodDoc md : meths) {
                 mapExecutable(md);
                 mapTypeParameters(classToExecMemberDocTypeParam, md, md);
                 mapAnnotations(classToExecMemberDocAnnotations, md, md);
-                if (! (md.returnType().isPrimitive() || md.returnType() instanceof TypeVariable)) {
+                if (!(md.returnType().isPrimitive() || md.returnType() instanceof TypeVariable)) {
                     mapTypeParameters(classToExecMemberDocReturnTypeParam,
-                        md.returnType(), md);
+                                      md.returnType(), md);
                     add(classToMethodReturn, md.returnType().asClassDoc(), md);
                 }
             }
@@ -240,8 +238,8 @@ public class ClassUseMapper {
             List<ClassDoc> subs = classtree.subclasses(cd);
             if (subs != null) {
                 ret.addAll(subs);
-                for (Iterator<ClassDoc> it = subs.iterator(); it.hasNext();) {
-                    ret.addAll(subclasses(it.next()));
+                for (ClassDoc sub : subs) {
+                    ret.addAll(subclasses(sub));
                 }
             }
             addAll(classToSubclass, cd, ret);
@@ -259,8 +257,8 @@ public class ClassUseMapper {
             List<ClassDoc> subs = classtree.subinterfaces(cd);
             if (subs != null) {
                 ret.addAll(subs);
-                for (Iterator<ClassDoc> it = subs.iterator(); it.hasNext();) {
-                    ret.addAll(subinterfaces(it.next()));
+                for (ClassDoc sub : subs) {
+                    ret.addAll(subinterfaces(sub));
                 }
             }
             addAll(classToSubinterface, cd, ret);
@@ -281,12 +279,12 @@ public class ClassUseMapper {
             List<ClassDoc> impl = classtree.implementingclasses(cd);
             if (impl != null) {
                 ret.addAll(impl);
-                for (Iterator<ClassDoc> it = impl.iterator(); it.hasNext();) {
-                    ret.addAll(subclasses(it.next()));
+                for (ClassDoc anImpl : impl) {
+                    ret.addAll(subclasses(anImpl));
                 }
             }
-            for (Iterator<ClassDoc> it = subinterfaces(cd).iterator(); it.hasNext();) {
-                ret.addAll(implementingClasses(it.next()));
+            for (ClassDoc doc : subinterfaces(cd)) {
+                ret.addAll(implementingClasses(doc));
             }
             addAll(classToImplementingClass, cd, ret);
         }
@@ -298,32 +296,30 @@ public class ClassUseMapper {
      * inverse mapped.
      */
     private void mapExecutable(ExecutableMemberDoc em) {
-        Parameter[] params = em.parameters();
         boolean isConstructor = em.isConstructor();
         List<Type> classArgs = new ArrayList<Type>();
-        for (int k = 0; k < params.length; k++) {
-            Type pcd = params[k].type();
+        for (Parameter param : em.parameters()) {
+            Type pcd = param.type();
             // primitives don't get mapped, also avoid dups
-            if ((! params[k].type().isPrimitive()) &&
-                 ! classArgs.contains(pcd) &&
-                 ! (pcd instanceof TypeVariable)) {
-                add(isConstructor? classToConstructorArgs :classToMethodArgs,
-                        pcd.asClassDoc(), em);
+            if ((!param.type().isPrimitive()) &&
+                !classArgs.contains(pcd) &&
+                !(pcd instanceof TypeVariable)) {
+                add(isConstructor ? classToConstructorArgs : classToMethodArgs,
+                    pcd.asClassDoc(), em);
                 classArgs.add(pcd);
-                mapTypeParameters(isConstructor?
-                   classToConstructorDocArgTypeParam : classToExecMemberDocArgTypeParam,
-                   pcd, em);
+                mapTypeParameters(isConstructor ?
+                                  classToConstructorDocArgTypeParam : classToExecMemberDocArgTypeParam,
+                                  pcd, em);
             }
             mapAnnotations(
-                isConstructor ?
+                    isConstructor ?
                     classToConstructorParamAnnotation :
                     classToExecMemberDocParamAnnotation,
-                params[k], em);
+                    param, em);
         }
-        ClassDoc[] thr = em.thrownExceptions();
-        for (int k = 0; k < thr.length; k++) {
-            add(isConstructor? classToConstructorThrows : classToMethodThrows,
-                    thr[k], em);
+        for (ClassDoc anException : em.thrownExceptions()) {
+            add(isConstructor ? classToConstructorThrows : classToMethodThrows,
+                anException, em);
         }
     }
 
@@ -378,8 +374,7 @@ public class ClassUseMapper {
         Set<PackageDoc> pkgSet = packageSet(cd);
         Set<ClassDoc> clsSet = classSet(cd);
         // add ref's package to package map and class map
-        for (Iterator<ClassDoc> it = refs.iterator(); it.hasNext();) {
-            ClassDoc cls = it.next();
+        for (ClassDoc cls : refs) {
             pkgSet.add(cls.containingPackage());
             clsSet.add(cls);
 
@@ -400,19 +395,16 @@ public class ClassUseMapper {
         if (doc instanceof ClassDoc) {
             typeVariables = ((ClassDoc) doc).typeParameters();
         } else if (doc instanceof WildcardType) {
-            Type[] extendsBounds = ((WildcardType) doc).extendsBounds();
-            for (int k = 0; k < extendsBounds.length; k++) {
-                addTypeParameterToMap(map, extendsBounds[k], holder);
+            for (Type extendsBound : ((WildcardType) doc).extendsBounds()) {
+                addTypeParameterToMap(map, extendsBound, holder);
             }
-            Type[] superBounds = ((WildcardType) doc).superBounds();
-            for (int k = 0; k < superBounds.length; k++) {
-                addTypeParameterToMap(map, superBounds[k], holder);
+            for (Type superBound : ((WildcardType) doc).superBounds()) {
+                addTypeParameterToMap(map, superBound, holder);
             }
             return;
         } else if (doc instanceof ParameterizedType) {
-            Type[] typeArguments = ((ParameterizedType) doc).typeArguments();
-            for (int k = 0; k < typeArguments.length; k++) {
-                addTypeParameterToMap(map, typeArguments[k], holder);
+            for (Type typeArgument : ((ParameterizedType) doc).typeArguments()) {
+                addTypeParameterToMap(map, typeArgument, holder);
             }
             return;
         } else if (doc instanceof ExecutableMemberDoc) {
@@ -424,10 +416,9 @@ public class ClassUseMapper {
         } else {
             return;
         }
-        for (int i = 0; i < typeVariables.length; i++) {
-            Type[] bounds = typeVariables[i].bounds();
-            for (int j = 0; j < bounds.length; j++) {
-                addTypeParameterToMap(map, bounds[j], holder);
+        for (TypeVariable typeVariable : typeVariables) {
+            for (Type bound : typeVariable.bounds()) {
+                addTypeParameterToMap(map, bound, holder);
             }
         }
     }
@@ -454,8 +445,8 @@ public class ClassUseMapper {
         } else {
             throw new DocletAbortException("should not happen");
         }
-        for (int i = 0; i < annotations.length; i++) {
-            AnnotationTypeDoc annotationDoc = annotations[i].annotationType();
+        for (AnnotationDesc annotation : annotations) {
+            AnnotationTypeDoc annotationDoc = annotation.annotationType();
             if (isPackage)
                 refList(map, annotationDoc).add(holder);
             else
@@ -474,10 +465,8 @@ public class ClassUseMapper {
      */
     private <T extends PackageDoc> void mapAnnotations(Map<String,List<T>> map, PackageDoc doc,
             T holder) {
-        AnnotationDesc[] annotations;
-        annotations = doc.annotations();
-        for (int i = 0; i < annotations.length; i++) {
-            AnnotationTypeDoc annotationDoc = annotations[i].annotationType();
+        for (AnnotationDesc annotation : doc.annotations()) {
+            AnnotationTypeDoc annotationDoc = annotation.annotationType();
             refList(map, annotationDoc).add(holder);
         }
     }

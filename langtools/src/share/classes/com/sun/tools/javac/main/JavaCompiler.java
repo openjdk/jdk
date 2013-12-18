@@ -726,13 +726,10 @@ public class JavaCompiler {
             log.error(cdef.pos(), "source.cant.overwrite.input.file", outFile);
             return null;
         } else {
-            BufferedWriter out = new BufferedWriter(outFile.openWriter());
-            try {
+            try (BufferedWriter out = new BufferedWriter(outFile.openWriter())) {
                 new Pretty(out, true).printUnit(env.toplevel, cdef);
                 if (verbose)
                     log.printVerbose("wrote.file", outFile);
-            } finally {
-                out.close();
             }
             return outFile;
         }

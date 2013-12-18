@@ -151,29 +151,39 @@ class Comment {
                     text = tx;
                 } else {
                     TagImpl tag;
-                    if (tagName.equals("@exception") || tagName.equals("@throws")) {
-                        warnIfEmpty(tagName, tx);
-                        tag = new ThrowsTagImpl(holder, tagName, tx);
-                    } else if (tagName.equals("@param")) {
-                        warnIfEmpty(tagName, tx);
-                        tag = new ParamTagImpl(holder, tagName, tx);
-                    } else if (tagName.equals("@see")) {
-                        warnIfEmpty(tagName, tx);
-                        tag = new SeeTagImpl(holder, tagName, tx);
-                    } else if (tagName.equals("@serialField")) {
-                        warnIfEmpty(tagName, tx);
-                        tag = new SerialFieldTagImpl(holder, tagName, tx);
-                    } else if (tagName.equals("@return")) {
-                        warnIfEmpty(tagName, tx);
-                        tag = new TagImpl(holder, tagName, tx);
-                    } else if (tagName.equals("@author")) {
-                        warnIfEmpty(tagName, tx);
-                        tag = new TagImpl(holder, tagName, tx);
-                    } else if (tagName.equals("@version")) {
-                        warnIfEmpty(tagName, tx);
-                        tag = new TagImpl(holder, tagName, tx);
-                    } else {
-                        tag = new TagImpl(holder, tagName, tx);
+                    switch (tagName) {
+                        case "@exception":
+                        case "@throws":
+                            warnIfEmpty(tagName, tx);
+                            tag = new ThrowsTagImpl(holder, tagName, tx);
+                            break;
+                        case "@param":
+                            warnIfEmpty(tagName, tx);
+                            tag = new ParamTagImpl(holder, tagName, tx);
+                            break;
+                        case "@see":
+                            warnIfEmpty(tagName, tx);
+                            tag = new SeeTagImpl(holder, tagName, tx);
+                            break;
+                        case "@serialField":
+                            warnIfEmpty(tagName, tx);
+                            tag = new SerialFieldTagImpl(holder, tagName, tx);
+                            break;
+                        case "@return":
+                            warnIfEmpty(tagName, tx);
+                            tag = new TagImpl(holder, tagName, tx);
+                            break;
+                        case "@author":
+                            warnIfEmpty(tagName, tx);
+                            tag = new TagImpl(holder, tagName, tx);
+                            break;
+                        case "@version":
+                            warnIfEmpty(tagName, tx);
+                            tag = new TagImpl(holder, tagName, tx);
+                            break;
+                        default:
+                            tag = new TagImpl(holder, tagName, tx);
+                            break;
                     }
                     tagList.append(tag);
                 }

@@ -151,13 +151,12 @@ public class ConstantsSummaryBuilder extends AbstractBuilder {
      */
     public void buildContents(XMLNode node, Content contentTree) {
         Content contentListTree = writer.getContentsHeader();
-        PackageDoc[] packages = configuration.packages;
         printedPackageHeaders = new HashSet<String>();
-        for (int i = 0; i < packages.length; i++) {
-            if (hasConstantField(packages[i]) && ! hasPrintedPackageIndex(packages[i].name())) {
-                writer.addLinkToPackageContent(packages[i],
-                    parsePackageName(packages[i].name()),
-                    printedPackageHeaders, contentListTree);
+        for (PackageDoc pkg : configuration.packages) {
+            if (hasConstantField(pkg) && !hasPrintedPackageIndex(pkg.name())) {
+                writer.addLinkToPackageContent(pkg,
+                                               parsePackageName(pkg.name()),
+                                               printedPackageHeaders, contentListTree);
             }
         }
         contentTree.addContent(writer.getContentsList(contentListTree));
@@ -170,12 +169,11 @@ public class ConstantsSummaryBuilder extends AbstractBuilder {
      * @param contentTree the tree to which the summaries will be added
      */
     public void buildConstantSummaries(XMLNode node, Content contentTree) {
-        PackageDoc[] packages = configuration.packages;
         printedPackageHeaders = new HashSet<String>();
         Content summariesTree = writer.getConstantSummaries();
-        for (int i = 0; i < packages.length; i++) {
-            if (hasConstantField(packages[i])) {
-                currentPackage = packages[i];
+        for (PackageDoc aPackage : configuration.packages) {
+            if (hasConstantField(aPackage)) {
+                currentPackage = aPackage;
                 //Build the documentation for the current package.
                 buildChildren(node, summariesTree);
             }
@@ -211,12 +209,12 @@ public class ConstantsSummaryBuilder extends AbstractBuilder {
                 DocletConstants.DEFAULT_PACKAGE_NAME);
         Arrays.sort(classes);
         Content classConstantTree = writer.getClassConstantHeader();
-        for (int i = 0; i < classes.length; i++) {
-            if (! classDocsWithConstFields.contains(classes[i]) ||
-                ! classes[i].isIncluded()) {
+        for (ClassDoc doc : classes) {
+            if (!classDocsWithConstFields.contains(doc) ||
+                !doc.isIncluded()) {
                 continue;
             }
-            currentClass = classes[i];
+            currentClass = doc;
             //Build the documentation for the current class.
             buildChildren(node, classConstantTree);
         }
@@ -241,16 +239,13 @@ public class ConstantsSummaryBuilder extends AbstractBuilder {
      * @return true if the given package has constant fields to document.
      */
     private boolean hasConstantField(PackageDoc pkg) {
-        ClassDoc[] classes;
-        if (pkg.name().length() > 0) {
-            classes = pkg.allClasses();
-        } else {
-            classes = configuration.classDocCatalog.allClasses(
-                DocletConstants.DEFAULT_PACKAGE_NAME);
-        }
+        ClassDoc[] classes
+                = (pkg.name().length() > 0)
+                  ? pkg.allClasses()
+                  : configuration.classDocCatalog.allClasses(DocletConstants.DEFAULT_PACKAGE_NAME);
         boolean found = false;
-        for (int j = 0; j < classes.length; j++){
-            if (classes[j].isIncluded() && hasConstantField(classes[j])) {
+        for (ClassDoc doc : classes) {
+            if (doc.isIncluded() && hasConstantField(doc)) {
                 found = true;
             }
         }
@@ -267,8 +262,8 @@ public class ConstantsSummaryBuilder extends AbstractBuilder {
         VisibleMemberMap visibleMemberMapFields = new VisibleMemberMap(classDoc,
             VisibleMemberMap.FIELDS, configuration);
         List<?> fields = visibleMemberMapFields.getLeafClassMembers(configuration);
-        for (Iterator<?> iter = fields.iterator(); iter.hasNext(); ) {
-            FieldDoc field = (FieldDoc) iter.next();
+        for (Object f : fields) {
+            FieldDoc field = (FieldDoc) f;
             if (field.constantValueExpression() != null) {
                 classDocsWithConstFields.add(classDoc);
                 return true;
@@ -285,8 +280,8 @@ public class ConstantsSummaryBuilder extends AbstractBuilder {
      */
     private boolean hasPrintedPackageIndex(String pkgname) {
         String[] list = printedPackageHeaders.toArray(new String[] {});
-        for (int i = 0; i < list.length; i++) {
-            if (pkgname.startsWith(list[i])) {
+        for (String packageHeader : list) {
+            if (pkgname.startsWith(packageHeader)) {
                 return true;
             }
         }

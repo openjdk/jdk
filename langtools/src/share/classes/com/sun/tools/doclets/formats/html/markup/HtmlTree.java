@@ -196,10 +196,8 @@ public class HtmlTree extends Content {
     }
 
     private static String encodeURL(String url) {
-        byte[] urlBytes = url.getBytes(Charset.forName("UTF-8"));
         StringBuilder sb = new StringBuilder();
-        for (int i = 0; i < urlBytes.length; i++) {
-            int c = urlBytes[i];
+        for (byte c : url.getBytes(Charset.forName("UTF-8"))) {
             if (NONENCODING_CHARS.get(c & 0xFF)) {
                 sb.append((char) c);
             } else {

@@ -749,8 +749,9 @@ public class Main {
      * Look for a specific switch, return true if found.
      */
     public static boolean findBooleanOption(String[] args, String option) {
-        for (int i = 0; i<args.length; ++i) {
-            if (args[i].equals(option)) return true;
+        for (String arg : args) {
+            if (arg.equals(option))
+                return true;
         }
         return false;
     }

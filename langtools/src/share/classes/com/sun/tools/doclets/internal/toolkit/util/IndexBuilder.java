@@ -132,8 +132,8 @@ public class IndexBuilder {
      * sort each element which is a list.
      */
     protected void sortIndexMap() {
-        for (Iterator<List<Doc>> it = indexmap.values().iterator(); it.hasNext(); ) {
-            Collections.sort(it.next(), new DocComparator());
+        for (List<Doc> docs : indexmap.values()) {
+            Collections.sort(docs, new DocComparator());
         }
     }
 
@@ -150,9 +150,8 @@ public class IndexBuilder {
         if (!classesOnly) {
             if (packages.length == 0) {
                 Set<PackageDoc> set = new HashSet<PackageDoc>();
-                PackageDoc pd;
-                for (int i = 0; i < classes.length; i++) {
-                    pd = classes[i].containingPackage();
+                for (ClassDoc aClass : classes) {
+                    PackageDoc pd = aClass.containingPackage();
                     if (pd != null && pd.name().length() > 0) {
                         set.add(pd);
                     }
@@ -164,9 +163,9 @@ public class IndexBuilder {
         }
         adjustIndexMap(classes);
         if (!classesOnly) {
-            for (int i = 0; i < classes.length; i++) {
-                if (shouldAddToIndexMap(classes[i])) {
-                    putMembersInIndexMap(classes[i]);
+            for (ClassDoc aClass : classes) {
+                if (shouldAddToIndexMap(aClass)) {
+                    putMembersInIndexMap(aClass);
                 }
             }
         }
@@ -194,19 +193,19 @@ public class IndexBuilder {
      * @param elements Array of members.
      */
     protected void adjustIndexMap(Doc[] elements) {
-        for (int i = 0; i < elements.length; i++) {
-            if (shouldAddToIndexMap(elements[i])) {
-                String name = elements[i].name();
-                char ch = (name.length()==0)?
-                    '*' :
-                    Character.toUpperCase(name.charAt(0));
-                Character unicode = new Character(ch);
+        for (Doc element : elements) {
+            if (shouldAddToIndexMap(element)) {
+                String name = element.name();
+                char ch = (name.length() == 0) ?
+                          '*' :
+                          Character.toUpperCase(name.charAt(0));
+                Character unicode = ch;
                 List<Doc> list = indexmap.get(unicode);
                 if (list == null) {
                     list = new ArrayList<Doc>();
                     indexmap.put(unicode, list);
                 }
-                list.add(elements[i]);
+                list.add(element);
             }
         }
     }
