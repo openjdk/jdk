@@ -402,7 +402,8 @@ ifndef OPENJDK
           SETUP := GENERATE_JDKBYTECODE, \
           JAVAC_FLAGS := -cp $(JDK_OUTPUTDIR)/classes, \
           SRC := $(JDK_OUTPUTDIR)/gensrc_ab/32bit, \
-          BIN := $(JDK_OUTPUTDIR)/classes_ab/32bit))
+          BIN := $(JDK_OUTPUTDIR)/classes_ab/32bit, \
+          HEADERS := $(JDK_OUTPUTDIR)/gensrc_headers))
 
       $(BUILD_ACCESSBRIDGE_32): $(BUILD_JDK)
 
@@ -410,7 +411,8 @@ ifndef OPENJDK
           SETUP := GENERATE_JDKBYTECODE, \
           JAVAC_FLAGS := -cp $(JDK_OUTPUTDIR)/classes, \
           SRC := $(JDK_OUTPUTDIR)/gensrc_ab/legacy, \
-          BIN := $(JDK_OUTPUTDIR)/classes_ab/legacy))
+          BIN := $(JDK_OUTPUTDIR)/classes_ab/legacy, \
+          HEADERS := $(JDK_OUTPUTDIR)/gensrc_headers))
 
       $(BUILD_ACCESSBRIDGE_LEGACY): $(BUILD_JDK)
 
@@ -420,7 +422,8 @@ ifndef OPENJDK
           SETUP := GENERATE_JDKBYTECODE, \
           JAVAC_FLAGS := -cp $(JDK_OUTPUTDIR)/classes, \
           SRC := $(JDK_OUTPUTDIR)/gensrc_ab/64bit, \
-          BIN := $(JDK_OUTPUTDIR)/classes_ab/64bit))
+          BIN := $(JDK_OUTPUTDIR)/classes_ab/64bit, \
+          HEADERS := $(JDK_OUTPUTDIR)/gensrc_headers))
 
       $(BUILD_ACCESSBRIDGE_64): $(BUILD_JDK)
 
