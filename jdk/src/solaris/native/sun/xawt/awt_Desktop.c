@@ -42,7 +42,7 @@ JNIEXPORT jboolean JNICALL Java_sun_awt_X11_XDesktopPeer_init
         return JNI_TRUE;
     }
 
-    if (gtk2_load(env) && gtk2_show_uri_load()) {
+    if (gtk2_load(env) && gtk2_show_uri_load(env)) {
         gtk_has_been_loaded = TRUE;
         return JNI_TRUE;
     } else if (gnome_load()) {

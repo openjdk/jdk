@@ -438,10 +438,76 @@ gboolean gtk2_check_version()
     }
 }
 
+#define ADD_SUPPORTED_ACTION(actionStr) \
+do { \
+    jfieldID fld_action = (*env)->GetStaticFieldID(env, cls_action, actionStr, "Ljava/awt/Desktop$Action;"); \
+    if (!(*env)->ExceptionCheck(env)) { \
+        jobject action = (*env)->GetStaticObjectField(env, cls_action, fld_action); \
+        (*env)->CallBooleanMethod(env, supportedActions, mid_arrayListAdd, action); \
+    } else { \
+        (*env)->ExceptionClear(env); \
+    } \
+} while(0);
+
+
+void update_supported_actions(JNIEnv *env) {
+    GVfs * (*fp_g_vfs_get_default) (void);
+    const gchar * const * (*fp_g_vfs_get_supported_uri_schemes) (GVfs * vfs);
+    const gchar * const * schemes = NULL;
+
+    jclass cls_action = (*env)->FindClass(env, "java/awt/Desktop$Action");
+    jclass cls_xDesktopPeer = (*env)->FindClass(env, "sun/awt/X11/XDesktopPeer");
+    jfieldID fld_supportedActions = (*env)->GetStaticFieldID(env, cls_xDesktopPeer, "supportedActions", "Ljava/util/List;");
+    jobject supportedActions = (*env)->GetStaticObjectField(env, cls_xDesktopPeer, fld_supportedActions);
+
+    jclass cls_arrayList = (*env)->FindClass(env, "java/util/ArrayList");
+    jmethodID mid_arrayListAdd = (*env)->GetMethodID(env, cls_arrayList, "add", "(Ljava/lang/Object;)Z");
+    jmethodID mid_arrayListClear = (*env)->GetMethodID(env, cls_arrayList, "clear", "()V");
+
+    (*env)->CallVoidMethod(env, supportedActions, mid_arrayListClear);
+
+    ADD_SUPPORTED_ACTION("OPEN");
+
+    /**
+     * gtk_show_uri() documentation says:
+     *
+     * > you need to install gvfs to get support for uri schemes such as http://
+     * > or ftp://, as only local files are handled by GIO itself.
+     *
+     * So OPEN action was safely added here.
+     * However, it looks like Solaris 11 have gvfs support only for 32-bit
+     * applications only by default.
+     */
+
+    fp_g_vfs_get_default = dl_symbol("g_vfs_get_default");
+    fp_g_vfs_get_supported_uri_schemes = dl_symbol("g_vfs_get_supported_uri_schemes");
+    dlerror();
+
+    if (fp_g_vfs_get_default && fp_g_vfs_get_supported_uri_schemes) {
+        GVfs * vfs = fp_g_vfs_get_default();
+        schemes = vfs ? fp_g_vfs_get_supported_uri_schemes(vfs) : NULL;
+        if (schemes) {
+            int i = 0;
+            while (schemes[i]) {
+                if (strcmp(schemes[i], "http") == 0) {
+                    ADD_SUPPORTED_ACTION("BROWSE");
+                    ADD_SUPPORTED_ACTION("MAIL");
+                    break;
+                }
+                i++;
+            }
+        }
+    } else {
+#ifdef INTERNAL_BUILD
+        fprintf(stderr, "Cannot load g_vfs_get_supported_uri_schemes\n");
+#endif /* INTERNAL_BUILD */
+    }
+
+}
 /**
  * Functions for awt_Desktop.c
  */
-gboolean gtk2_show_uri_load() {
+gboolean gtk2_show_uri_load(JNIEnv *env) {
      gboolean success = FALSE;
      dlerror();
      const char *gtk_version = fp_gtk_check_version(2, 14, 0);
@@ -464,9 +530,12 @@ gboolean gtk2_show_uri_load() {
 #ifdef INTERNAL_BUILD
              fprintf(stderr, "dlsym(gtk_show_uri) returned NULL\n");
 #endif /* INTERNAL_BUILD */
-         } else {
-             success = TRUE;
-         }
+        } else {
+#ifdef __solaris__
+            update_supported_actions(env);
+#endif
+            success = TRUE;
+        }
      }
      return success;
 }
