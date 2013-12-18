@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1056,7 +1056,7 @@ class ToolWindow extends JFrame {
     public static final int MW_POLICY_LIST              = 3; // follows MW_PANEL
 
     /* The preferred height of JTextField should match JComboBox. */
-    static final int TEXTFIELD_HEIGHT = new JComboBox().getPreferredSize().height;
+    static final int TEXTFIELD_HEIGHT = new JComboBox<>().getPreferredSize().height;
 
     private PolicyTool tool;
 
@@ -1169,8 +1169,8 @@ class ToolWindow extends JFrame {
             tool.openPolicy(policyFile);
 
             // display the policy entries via the policy list textarea
-            DefaultListModel listModel = new DefaultListModel();
-            JList list = new JList(listModel);
+            DefaultListModel<String> listModel = new DefaultListModel<>();
+            JList<String> list = new JList<>(listModel);
             list.setVisibleRowCount(15);
             list.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
             list.addMouseListener(new PolicyListListener(tool, this));
@@ -1187,7 +1187,7 @@ class ToolWindow extends JFrame {
 
         } catch (FileNotFoundException fnfe) {
             // add blank policy listing
-            JList list = new JList(new DefaultListModel());
+            JList<String> list = new JList<>(new DefaultListModel<>());
             list.setVisibleRowCount(15);
             list.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
             list.addMouseListener(new PolicyListListener(tool, this));
@@ -1200,7 +1200,7 @@ class ToolWindow extends JFrame {
 
         } catch (Exception e) {
             // add blank policy listing
-            JList list = new JList(new DefaultListModel());
+            JList<String> list = new JList<>(new DefaultListModel<>());
             list.setVisibleRowCount(15);
             list.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
             list.addMouseListener(new PolicyListListener(tool, this));
@@ -1316,7 +1316,7 @@ class ToolWindow extends JFrame {
      * Init the policy_entry_list TEXTAREA component in the
      * PolicyTool window
      */
-    void initPolicyList(JList policyList) {
+    void initPolicyList(JList<String> policyList) {
 
         // add the policy list to the window
         //policyList.setPreferredSize(new Dimension(500, 350));
@@ -1329,11 +1329,12 @@ class ToolWindow extends JFrame {
      * Replace the policy_entry_list TEXTAREA component in the
      * PolicyTool window with an updated one.
      */
-    void replacePolicyList(JList policyList) {
+    void replacePolicyList(JList<String> policyList) {
 
         // remove the original list of Policy Entries
         // and add the new list of entries
-        JList list = (JList)getComponent(MW_POLICY_LIST);
+        @SuppressWarnings("unchecked")
+        JList<String> list = (JList<String>)getComponent(MW_POLICY_LIST);
         list.setModel(policyList.getModel());
     }
 
@@ -1668,7 +1669,7 @@ class ToolDialog extends JDialog {
     private static final int PRINCIPAL_NAME             = 5;
 
     /* The preferred height of JTextField should match JComboBox. */
-    static final int TEXTFIELD_HEIGHT = new JComboBox().getPreferredSize().height;
+    static final int TEXTFIELD_HEIGHT = new JComboBox<>().getPreferredSize().height;
 
     public static java.util.ArrayList<Perm> PERM_ARRAY;
     public static java.util.ArrayList<Prin> PRIN_ARRAY;
@@ -1811,7 +1812,8 @@ class ToolDialog extends JDialog {
         if (edit) {
             // get the selected item
             entries = tool.getEntry();
-            JList policyList = (JList)tw.getComponent(ToolWindow.MW_POLICY_LIST);
+            @SuppressWarnings("unchecked")
+            JList<String> policyList = (JList<String>)tw.getComponent(ToolWindow.MW_POLICY_LIST);
             listIndex = policyList.getSelectedIndex();
 
             // get principal list
@@ -2155,7 +2157,7 @@ class ToolDialog extends JDialog {
                            ToolWindow.TOP_BOTTOM_PADDING);
 
         // principal choice
-        JComboBox choice = new JComboBox();
+        JComboBox<String> choice = new JComboBox<>();
         choice.addItem(PRIN_TYPE);
         choice.getAccessibleContext().setAccessibleName(PRIN_TYPE);
         for (int i = 0; i < PRIN_ARRAY.size(); i++) {
@@ -2271,7 +2273,7 @@ class ToolDialog extends JDialog {
                            ToolWindow.TOP_BOTTOM_PADDING);
 
         // permission choice (added in alphabetical order)
-        JComboBox choice = new JComboBox();
+        JComboBox<String> choice = new JComboBox<>();
         choice.addItem(PERM);
         choice.getAccessibleContext().setAccessibleName(PERM);
         for (int i = 0; i < PERM_ARRAY.size(); i++) {
@@ -2299,7 +2301,7 @@ class ToolDialog extends JDialog {
         choice.addItemListener(new PermissionMenuListener(newTD));
 
         // name label and textfield
-        choice = new JComboBox();
+        choice = new JComboBox<>();
         choice.addItem(PERM_NAME);
         choice.getAccessibleContext().setAccessibleName(PERM_NAME);
         tf = (edit ? new JTextField(editMe.name, 40) : new JTextField(40));
@@ -2317,7 +2319,7 @@ class ToolDialog extends JDialog {
         choice.addItemListener(new PermissionNameMenuListener(newTD));
 
         // actions label and textfield
-        choice = new JComboBox();
+        choice = new JComboBox<>();
         choice.addItem(PERM_ACTIONS);
         choice.getAccessibleContext().setAccessibleName(PERM_ACTIONS);
         tf = (edit ? new JTextField(editMe.action, 40) : new JTextField(40));
@@ -2514,7 +2516,8 @@ class ToolDialog extends JDialog {
     void displayConfirmRemovePolicyEntry() {
 
         // find the entry to be removed
-        JList list = (JList)tw.getComponent(ToolWindow.MW_POLICY_LIST);
+        @SuppressWarnings("unchecked")
+        JList<String> list = (JList<String>)tw.getComponent(ToolWindow.MW_POLICY_LIST);
         int index = list.getSelectedIndex();
         PolicyEntry entries[] = tool.getEntry();
 
@@ -2734,7 +2737,7 @@ class ToolDialog extends JDialog {
             }
 
             // display the policy entries via the policy list textarea
-            JList list = new JList(new DefaultListModel());
+            JList<String> list = new JList<>(new DefaultListModel<>());
             list.setVisibleRowCount(15);
             list.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
             list.addMouseListener(new PolicyListListener(tool, tw));
@@ -2772,8 +2775,8 @@ class ToolDialog extends JDialog {
                 tool.openPolicy(policyFile);
 
                 // display the policy entries via the policy list textarea
-                DefaultListModel listModel = new DefaultListModel();
-                list = new JList(listModel);
+                DefaultListModel<String> listModel = new DefaultListModel<>();
+                list = new JList<>(listModel);
                 list.setVisibleRowCount(15);
                 list.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
                 list.addMouseListener(new PolicyListListener(tool, tw));
@@ -2800,7 +2803,7 @@ class ToolDialog extends JDialog {
 
             } catch (Exception e) {
                 // add blank policy listing
-                list = new JList(new DefaultListModel());
+                list = new JList<>(new DefaultListModel<>());
                 list.setVisibleRowCount(15);
                 list.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
                 list.addMouseListener(new PolicyListListener(tool, tw));
@@ -2835,7 +2838,7 @@ class ToolDialog extends JDialog {
      * (user must enter them by hand) then the TARGETS array may be empty
      * (and of course non-null).
      */
-    void setPermissionNames(Perm inputPerm, JComboBox names, JTextField field) {
+    void setPermissionNames(Perm inputPerm, JComboBox<String> names, JTextField field) {
         names.removeAllItems();
         names.addItem(PERM_NAME);
 
@@ -2865,7 +2868,7 @@ class ToolDialog extends JDialog {
      * (user must enter them by hand) then the ACTIONS array may be empty
      * (and of course non-null).
      */
-    void setPermissionActions(Perm inputPerm, JComboBox actions, JTextField field) {
+    void setPermissionActions(Perm inputPerm, JComboBox<String> actions, JTextField field) {
         actions.removeAllItems();
         actions.addItem(PERM_ACTIONS);
 
@@ -3104,7 +3107,8 @@ class MainWindowListener implements ActionListener {
                                ToolWindow.REMOVE_POLICY_ENTRY) == 0) {
 
             // get the selected entry
-            JList list = (JList)tw.getComponent(ToolWindow.MW_POLICY_LIST);
+            @SuppressWarnings("unchecked")
+            JList<String> list = (JList<String>)tw.getComponent(ToolWindow.MW_POLICY_LIST);
             int index = list.getSelectedIndex();
             if (index < 0) {
                 tw.displayErrorDialog(null, new Exception
@@ -3121,7 +3125,8 @@ class MainWindowListener implements ActionListener {
                                  ToolWindow.EDIT_POLICY_ENTRY) == 0) {
 
             // get the selected entry
-            JList list = (JList)tw.getComponent(ToolWindow.MW_POLICY_LIST);
+            @SuppressWarnings("unchecked")
+            JList<String> list = (JList<String>)tw.getComponent(ToolWindow.MW_POLICY_LIST);
             int index = list.getSelectedIndex();
             if (index < 0) {
                 tw.displayErrorDialog(null, new Exception
@@ -3192,7 +3197,8 @@ class AddEntryDoneButtonListener implements ActionListener {
             }
 
             // add the entry
-            JList policyList = (JList)tw.getComponent(ToolWindow.MW_POLICY_LIST);
+            @SuppressWarnings("unchecked")
+            JList<String> policyList = (JList<String>)tw.getComponent(ToolWindow.MW_POLICY_LIST);
             if (edit) {
                 int listIndex = policyList.getSelectedIndex();
                 tool.addEntry(newEntry, listIndex);
@@ -3200,10 +3206,10 @@ class AddEntryDoneButtonListener implements ActionListener {
                 if (PolicyTool.collator.compare
                         (newCodeBaseStr, policyList.getModel().getElementAt(listIndex)) != 0)
                     tool.modified = true;
-                ((DefaultListModel)policyList.getModel()).set(listIndex, newCodeBaseStr);
+                ((DefaultListModel<String>)policyList.getModel()).set(listIndex, newCodeBaseStr);
             } else {
                 tool.addEntry(newEntry, -1);
-                ((DefaultListModel)policyList.getModel()).addElement(newEntry.headerToString());
+                ((DefaultListModel<String>)policyList.getModel()).addElement(newEntry.headerToString());
                 tool.modified = true;
             }
             td.setVisible(false);
@@ -3581,7 +3587,8 @@ class EditPermButtonListener extends MouseAdapter implements ActionListener {
     public void actionPerformed(ActionEvent e) {
 
         // get the Permission selected from the Permission List
-        JList list = (JList)td.getComponent(ToolDialog.PE_PERM_LIST);
+        @SuppressWarnings("unchecked")
+        JList<String> list = (JList<String>)td.getComponent(ToolDialog.PE_PERM_LIST);
         int permIndex = list.getSelectedIndex();
 
         if (permIndex < 0) {
@@ -3616,7 +3623,8 @@ class PrincipalTypeMenuListener implements ItemListener {
             return;
         }
 
-        JComboBox prin = (JComboBox)td.getComponent(ToolDialog.PRD_PRIN_CHOICE);
+        @SuppressWarnings("unchecked")
+        JComboBox<String> prin = (JComboBox<String>)td.getComponent(ToolDialog.PRD_PRIN_CHOICE);
         JTextField prinField = (JTextField)td.getComponent(
                 ToolDialog.PRD_PRIN_TEXTFIELD);
         JTextField nameField = (JTextField)td.getComponent(
@@ -3666,11 +3674,14 @@ class PermissionMenuListener implements ItemListener {
             return;
         }
 
-        JComboBox perms = (JComboBox)td.getComponent(
+        @SuppressWarnings("unchecked")
+        JComboBox<String> perms = (JComboBox<String>)td.getComponent(
                 ToolDialog.PD_PERM_CHOICE);
-        JComboBox names = (JComboBox)td.getComponent(
+        @SuppressWarnings("unchecked")
+        JComboBox<String> names = (JComboBox<String>)td.getComponent(
                 ToolDialog.PD_NAME_CHOICE);
-        JComboBox actions = (JComboBox)td.getComponent(
+        @SuppressWarnings("unchecked")
+        JComboBox<String> actions = (JComboBox<String>)td.getComponent(
                 ToolDialog.PD_ACTIONS_CHOICE);
         JTextField nameField = (JTextField)td.getComponent(
                 ToolDialog.PD_NAME_TEXTFIELD);
@@ -3737,7 +3748,8 @@ class PermissionNameMenuListener implements ItemListener {
             return;
         }
 
-        JComboBox names = (JComboBox)td.getComponent(ToolDialog.PD_NAME_CHOICE);
+        @SuppressWarnings("unchecked")
+        JComboBox<String> names = (JComboBox<String>)td.getComponent(ToolDialog.PD_NAME_CHOICE);
         names.getAccessibleContext().setAccessibleName(
             PolicyTool.splitToWords((String)e.getItem()));
 
@@ -3766,7 +3778,8 @@ class PermissionActionsMenuListener implements ItemListener {
             return;
         }
 
-        JComboBox actions = (JComboBox)td.getComponent(
+        @SuppressWarnings("unchecked")
+        JComboBox<String> actions = (JComboBox<String>)td.getComponent(
                 ToolDialog.PD_ACTIONS_CHOICE);
         actions.getAccessibleContext().setAccessibleName((String)e.getItem());
 
@@ -3991,14 +4004,15 @@ class ConfirmRemovePolicyEntryOKButtonListener implements ActionListener {
 
     public void actionPerformed(ActionEvent e) {
         // remove the entry
-        JList list = (JList)tw.getComponent(ToolWindow.MW_POLICY_LIST);
+        @SuppressWarnings("unchecked")
+        JList<String> list = (JList<String>)tw.getComponent(ToolWindow.MW_POLICY_LIST);
         int index = list.getSelectedIndex();
         PolicyEntry entries[] = tool.getEntry();
         tool.removeEntry(entries[index]);
 
         // redraw the window listing
-        DefaultListModel listModel = new DefaultListModel();
-        list = new JList(listModel);
+        DefaultListModel<String> listModel = new DefaultListModel<>();
+        list = new JList<>(listModel);
         list.setVisibleRowCount(15);
         list.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
         list.addMouseListener(new PolicyListListener(tool, tw));
@@ -4025,12 +4039,12 @@ class NoDisplayException extends RuntimeException {
 /**
  * This is a java.awt.List that bind an Object to each String it holds.
  */
-class TaggedList extends JList {
+class TaggedList extends JList<String> {
     private static final long serialVersionUID = -5676238110427785853L;
 
     private java.util.List<Object> data = new LinkedList<>();
     public TaggedList(int i, boolean b) {
-        super(new DefaultListModel());
+        super(new DefaultListModel<>());
         setVisibleRowCount(i);
         setSelectionMode(b ? ListSelectionModel.MULTIPLE_INTERVAL_SELECTION : ListSelectionModel.SINGLE_SELECTION);
     }
@@ -4040,17 +4054,17 @@ class TaggedList extends JList {
     }
 
     public void addTaggedItem(String string, Object object) {
-        ((DefaultListModel)getModel()).addElement(string);
+        ((DefaultListModel<String>)getModel()).addElement(string);
         data.add(object);
     }
 
     public void replaceTaggedItem(String string, Object object, int index) {
-        ((DefaultListModel)getModel()).set(index, string);
+        ((DefaultListModel<String>)getModel()).set(index, string);
         data.set(index, object);
     }
 
     public void removeTaggedItem(int index) {
-        ((DefaultListModel)getModel()).remove(index);
+        ((DefaultListModel<String>)getModel()).remove(index);
         data.remove(index);
     }
 }
