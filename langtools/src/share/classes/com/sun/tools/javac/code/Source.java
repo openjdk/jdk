@@ -73,8 +73,7 @@ public enum Source {
     /** 1.9 covers the to be determined language features that will be added in JDK 9. */
     JDK1_9("1.9");
 
-    private static final Context.Key<Source> sourceKey
-        = new Context.Key<Source>();
+    private static final Context.Key<Source> sourceKey = new Context.Key<>();
 
     public static Source instance(Context context) {
         Source instance = context.get(sourceKey);

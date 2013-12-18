@@ -63,8 +63,7 @@ public enum Target {
     /** JDK 9, initially an alias for 8. */
     JDK1_9("1.9", 52, 0);
 
-    private static final Context.Key<Target> targetKey =
-        new Context.Key<Target>();
+    private static final Context.Key<Target> targetKey = new Context.Key<>();
 
     public static Target instance(Context context) {
         Target instance = context.get(targetKey);

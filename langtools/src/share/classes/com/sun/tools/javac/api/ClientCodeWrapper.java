@@ -107,7 +107,7 @@ public class ClientCodeWrapper {
     Map<Class<?>, Boolean> trustedClasses;
 
     protected ClientCodeWrapper(Context context) {
-        trustedClasses = new HashMap<Class<?>, Boolean>();
+        trustedClasses = new HashMap<>();
     }
 
     public JavaFileManager wrap(JavaFileManager fm) {
@@ -136,7 +136,7 @@ public class ClientCodeWrapper {
     }
 
     public Iterable<JavaFileObject> wrapJavaFileObjects(Iterable<? extends JavaFileObject> list) {
-        List<JavaFileObject> wrapped = new ArrayList<JavaFileObject>();
+        List<JavaFileObject> wrapped = new ArrayList<>();
         for (JavaFileObject fo : list)
             wrapped.add(wrap(fo));
         return Collections.unmodifiableList(wrapped);
@@ -152,7 +152,7 @@ public class ClientCodeWrapper {
     public <T /*super JavaFileOject*/> DiagnosticListener<T> wrap(DiagnosticListener<T> dl) {
         if (isTrusted(dl))
             return dl;
-        return new WrappedDiagnosticListener<T>(dl);
+        return new WrappedDiagnosticListener<>(dl);
     }
 
     TaskListener wrap(TaskListener tl) {
@@ -169,7 +169,7 @@ public class ClientCodeWrapper {
     }
 
     Collection<TaskListener> unwrap(Collection<? extends TaskListener> listeners) {
-        Collection<TaskListener> c = new ArrayList<TaskListener>(listeners.size());
+        Collection<TaskListener> c = new ArrayList<>(listeners.size());
         for (TaskListener l: listeners)
             c.add(unwrap(l));
         return c;

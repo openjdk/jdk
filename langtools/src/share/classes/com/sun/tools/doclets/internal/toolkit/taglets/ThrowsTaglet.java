@@ -113,7 +113,7 @@ public class ThrowsTaglet extends BaseExecutableMemberTaglet
             TagletWriter writer) {
         Content result = writer.getOutputInstance();
         if (holder instanceof MethodDoc) {
-            Set<Tag> declaredExceptionTags = new LinkedHashSet<Tag>();
+            Set<Tag> declaredExceptionTags = new LinkedHashSet<>();
             for (Type declaredExceptionType : declaredExceptionTypes) {
                 DocFinder.Output inheritedDoc =
                         DocFinder.search(new DocFinder.Input((MethodDoc) holder, this,
@@ -139,7 +139,7 @@ public class ThrowsTaglet extends BaseExecutableMemberTaglet
         ExecutableMemberDoc execHolder = (ExecutableMemberDoc) holder;
         ThrowsTag[] tags = execHolder.throwsTags();
         Content result = writer.getOutputInstance();
-        HashSet<String> alreadyDocumented = new HashSet<String>();
+        HashSet<String> alreadyDocumented = new HashSet<>();
         if (tags.length > 0) {
             result.addContent(throwsTagsOutput(
                 execHolder.throwsTags(), writer, alreadyDocumented, true));

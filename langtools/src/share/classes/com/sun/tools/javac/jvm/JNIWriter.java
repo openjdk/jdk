@@ -78,8 +78,7 @@ import static com.sun.tools.javac.main.Option.*;
  *  deletion without notice.</b>
  */
 public class JNIWriter {
-    protected static final Context.Key<JNIWriter> jniWriterKey =
-        new Context.Key<JNIWriter>();
+    protected static final Context.Key<JNIWriter> jniWriterKey = new Context.Key<>();
 
     /** Access to files. */
     private final JavaFileManager fileManager;
@@ -240,9 +239,9 @@ public class JNIWriter {
      * Including super class fields.
      */
     List<VariableElement> getAllFields(TypeElement subclazz) {
-        List<VariableElement> fields = new ArrayList<VariableElement>();
+        List<VariableElement> fields = new ArrayList<>();
         TypeElement cd = null;
-        Stack<TypeElement> s = new Stack<TypeElement>();
+        Stack<TypeElement> s = new Stack<>();
 
         cd = subclazz;
         while (true) {
@@ -355,7 +354,7 @@ public class JNIWriter {
                                                Mangle.Type.METHOD_JNI_SHORT));
                 print(out, "  (JNIEnv *, ");
                 List<? extends VariableElement> paramargs = md.getParameters();
-                List<TypeMirror> args = new ArrayList<TypeMirror>();
+                List<TypeMirror> args = new ArrayList<>();
                 for (VariableElement p: paramargs) {
                     args.add(types.erasure(p.asType()));
                 }
@@ -493,7 +492,7 @@ public class JNIWriter {
             public static final int METHOD_JDK_1     = 6;
             public static final int METHOD_JNI_SHORT = 7;
             public static final int METHOD_JNI_LONG  = 8;
-        };
+        }
 
         private Elements elems;
         private Types types;
@@ -671,7 +670,7 @@ public class JNIWriter {
                 throws SignatureException {
             String signature = null; //Java type signature.
             String typeSignature = null; //Internal type signature.
-            List<String> params = new ArrayList<String>(); //List of parameters.
+            List<String> params = new ArrayList<>(); //List of parameters.
             String paramsig = null; //Java parameter signature.
             String paramJVMSig = null; //Internal parameter signature.
             String returnSig = null; //Java return type signature.

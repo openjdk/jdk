@@ -85,7 +85,7 @@ public class CopyFile implements Transformer {
 
                 Set<URI> as = packageArtifacts.get(pkgName);
                 if (as == null) {
-                    as = new HashSet<URI>();
+                    as = new HashSet<>();
                     packageArtifacts.put(pkgName, as);
                 }
                 as.add(dest.toURI());

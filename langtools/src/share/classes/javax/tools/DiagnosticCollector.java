@@ -39,8 +39,7 @@ import java.util.List;
  * @since 1.6
  */
 public final class DiagnosticCollector<S> implements DiagnosticListener<S> {
-    private List<Diagnostic<? extends S>> diagnostics =
-        Collections.synchronizedList(new ArrayList<Diagnostic<? extends S>>());
+    private List<Diagnostic<? extends S>> diagnostics = Collections.synchronizedList(new ArrayList<>());
 
     public void report(Diagnostic<? extends S> diagnostic) {
         diagnostic.getClass(); // null check

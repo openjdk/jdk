@@ -54,7 +54,7 @@ public class CommandLine {
     public static String[] parse(String[] args)
         throws IOException
     {
-        ListBuffer<String> newArgs = new ListBuffer<String>();
+        ListBuffer<String> newArgs = new ListBuffer<>();
         for (String arg : args) {
             if (arg.length() > 1 && arg.charAt(0) == '@') {
                 arg = arg.substring(1);

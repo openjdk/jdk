@@ -49,8 +49,7 @@ import static com.sun.tools.javac.tree.JCTree.Tag.SYNCHRONIZED;
  *  deletion without notice.</b>
  */
 public class TreeInfo {
-    protected static final Context.Key<TreeInfo> treeInfoKey =
-        new Context.Key<TreeInfo>();
+    protected static final Context.Key<TreeInfo> treeInfoKey = new Context.Key<>();
 
     public static TreeInfo instance(Context context) {
         TreeInfo instance = context.get(treeInfoKey);
@@ -727,7 +726,7 @@ public class TreeInfo {
     /** Return the types of a list of trees.
      */
     public static List<Type> types(List<? extends JCTree> trees) {
-        ListBuffer<Type> ts = new ListBuffer<Type>();
+        ListBuffer<Type> ts = new ListBuffer<>();
         for (List<? extends JCTree> l = trees; l.nonEmpty(); l = l.tail)
             ts.append(l.head.type);
         return ts.toList();

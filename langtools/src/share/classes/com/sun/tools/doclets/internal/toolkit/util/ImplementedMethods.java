@@ -43,8 +43,8 @@ import com.sun.tools.doclets.internal.toolkit.Configuration;
  */
 public class ImplementedMethods {
 
-    private Map<MethodDoc,Type> interfaces = new HashMap<MethodDoc,Type>();
-    private List<MethodDoc> methlist = new ArrayList<MethodDoc>();
+    private Map<MethodDoc,Type> interfaces = new HashMap<>();
+    private List<MethodDoc> methlist = new ArrayList<>();
     private Configuration configuration;
     private final ClassDoc classdoc;
     private final MethodDoc method;

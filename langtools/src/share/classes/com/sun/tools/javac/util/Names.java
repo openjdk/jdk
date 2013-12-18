@@ -36,7 +36,7 @@ package com.sun.tools.javac.util;
  */
 public class Names {
 
-    public static final Context.Key<Names> namesKey = new Context.Key<Names>();
+    public static final Context.Key<Names> namesKey = new Context.Key<>();
 
     public static Names instance(Context context) {
         Names instance = context.get(namesKey);

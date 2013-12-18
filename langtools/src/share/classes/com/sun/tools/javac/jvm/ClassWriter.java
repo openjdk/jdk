@@ -63,8 +63,7 @@ import static javax.tools.StandardLocation.CLASS_OUTPUT;
  *  deletion without notice.</b>
  */
 public class ClassWriter extends ClassFile {
-    protected static final Context.Key<ClassWriter> classWriterKey =
-        new Context.Key<ClassWriter>();
+    protected static final Context.Key<ClassWriter> classWriterKey = new Context.Key<>();
 
     private final Options options;
 
@@ -683,7 +682,7 @@ public class ClassWriter extends ClassFile {
                     case SOURCE: break;
                     case CLASS: hasInvisible = true; break;
                     case RUNTIME: hasVisible = true; break;
-                    default: ;// /* fail soft */ throw new AssertionError(vis);
+                    default: // /* fail soft */ throw new AssertionError(vis);
                     }
                 }
             }
@@ -694,7 +693,7 @@ public class ClassWriter extends ClassFile {
             int attrIndex = writeAttr(names.RuntimeVisibleParameterAnnotations);
             databuf.appendByte(m.params.length());
             for (VarSymbol s : m.params) {
-                ListBuffer<Attribute.Compound> buf = new ListBuffer<Attribute.Compound>();
+                ListBuffer<Attribute.Compound> buf = new ListBuffer<>();
                 for (Attribute.Compound a : s.getRawAttributes())
                     if (types.getRetention(a) == RetentionPolicy.RUNTIME)
                         buf.append(a);
@@ -709,7 +708,7 @@ public class ClassWriter extends ClassFile {
             int attrIndex = writeAttr(names.RuntimeInvisibleParameterAnnotations);
             databuf.appendByte(m.params.length());
             for (VarSymbol s : m.params) {
-                ListBuffer<Attribute.Compound> buf = new ListBuffer<Attribute.Compound>();
+                ListBuffer<Attribute.Compound> buf = new ListBuffer<>();
                 for (Attribute.Compound a : s.getRawAttributes())
                     if (types.getRetention(a) == RetentionPolicy.CLASS)
                         buf.append(a);
@@ -732,14 +731,14 @@ public class ClassWriter extends ClassFile {
      */
     int writeJavaAnnotations(List<Attribute.Compound> attrs) {
         if (attrs.isEmpty()) return 0;
-        ListBuffer<Attribute.Compound> visibles = new ListBuffer<Attribute.Compound>();
-        ListBuffer<Attribute.Compound> invisibles = new ListBuffer<Attribute.Compound>();
+        ListBuffer<Attribute.Compound> visibles = new ListBuffer<>();
+        ListBuffer<Attribute.Compound> invisibles = new ListBuffer<>();
         for (Attribute.Compound a : attrs) {
             switch (types.getRetention(a)) {
             case SOURCE: break;
             case CLASS: invisibles.append(a); break;
             case RUNTIME: visibles.append(a); break;
-            default: ;// /* fail soft */ throw new AssertionError(vis);
+            default: // /* fail soft */ throw new AssertionError(vis);
             }
         }
 
@@ -793,7 +792,7 @@ public class ClassWriter extends ClassFile {
             case SOURCE: break;
             case CLASS: invisibles.append(tc); break;
             case RUNTIME: visibles.append(tc); break;
-            default: ;// /* fail soft */ throw new AssertionError(vis);
+            default: // /* fail soft */ throw new AssertionError(vis);
             }
         }
 
@@ -1009,8 +1008,8 @@ public class ClassWriter extends ClassFile {
             if (c.name != names.empty)
                 pool.put(c.name);
             if (innerClasses == null) {
-                innerClasses = new HashSet<ClassSymbol>();
-                innerClassesQueue = new ListBuffer<ClassSymbol>();
+                innerClasses = new HashSet<>();
+                innerClassesQueue = new ListBuffer<>();
                 pool.put(names.InnerClasses);
             }
             innerClasses.add(c);
@@ -1644,7 +1643,7 @@ public class ClassWriter extends ClassFile {
         pool = c.pool;
         innerClasses = null;
         innerClassesQueue = null;
-        bootstrapMethods = new LinkedHashMap<DynamicMethod, MethodHandle>();
+        bootstrapMethods = new LinkedHashMap<>();
 
         Type supertype = types.supertype(c.type);
         List<Type> interfaces = types.interfaces(c.type);

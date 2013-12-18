@@ -50,7 +50,7 @@ class Comment {
     /**
      * sorted comments with different tags.
      */
-    private final ListBuffer<Tag> tagList = new ListBuffer<Tag>();
+    private final ListBuffer<Tag> tagList = new ListBuffer<>();
 
     /**
      * text minus any tags.
@@ -218,7 +218,7 @@ class Comment {
      * Return tags of the specified kind in this comment.
      */
     Tag[] tags(String tagname) {
-        ListBuffer<Tag> found = new ListBuffer<Tag>();
+        ListBuffer<Tag> found = new ListBuffer<>();
         String target = tagname;
         if (target.charAt(0) != '@') {
             target = "@" + target;
@@ -235,7 +235,7 @@ class Comment {
      * Return throws tags in this comment.
      */
     ThrowsTag[] throwsTags() {
-        ListBuffer<ThrowsTag> found = new ListBuffer<ThrowsTag>();
+        ListBuffer<ThrowsTag> found = new ListBuffer<>();
         for (Tag next : tagList) {
             if (next instanceof ThrowsTag) {
                 found.append((ThrowsTag)next);
@@ -264,7 +264,7 @@ class Comment {
      * param tags.
      */
     private ParamTag[] paramTags(boolean typeParams) {
-        ListBuffer<ParamTag> found = new ListBuffer<ParamTag>();
+        ListBuffer<ParamTag> found = new ListBuffer<>();
         for (Tag next : tagList) {
             if (next instanceof ParamTag) {
                 ParamTag p = (ParamTag)next;
@@ -280,7 +280,7 @@ class Comment {
      * Return see also tags in this comment.
      */
     SeeTag[] seeTags() {
-        ListBuffer<SeeTag> found = new ListBuffer<SeeTag>();
+        ListBuffer<SeeTag> found = new ListBuffer<>();
         for (Tag next : tagList) {
             if (next instanceof SeeTag) {
                 found.append((SeeTag)next);
@@ -293,7 +293,7 @@ class Comment {
      * Return serialField tags in this comment.
      */
     SerialFieldTag[] serialFieldTags() {
-        ListBuffer<SerialFieldTag> found = new ListBuffer<SerialFieldTag>();
+        ListBuffer<SerialFieldTag> found = new ListBuffer<>();
         for (Tag next : tagList) {
             if (next instanceof SerialFieldTag) {
                 found.append((SerialFieldTag)next);
@@ -306,7 +306,7 @@ class Comment {
      * Return array of tags with text and inline See Tags for a Doc comment.
      */
     static Tag[] getInlineTags(DocImpl holder, String inlinetext) {
-        ListBuffer<Tag> taglist = new ListBuffer<Tag>();
+        ListBuffer<Tag> taglist = new ListBuffer<>();
         int delimend = 0, textstart = 0, len = inlinetext.length();
         boolean inPre = false;
         DocEnv docenv = holder.env;

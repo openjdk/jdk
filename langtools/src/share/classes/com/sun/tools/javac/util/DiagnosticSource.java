@@ -191,7 +191,7 @@ public class DiagnosticSource {
             buf = cs.toString().toCharArray();
             bufLen = buf.length;
         }
-        refBuf = new SoftReference<char[]>(buf);
+        refBuf = new SoftReference<>(buf);
         return buf;
     }
 

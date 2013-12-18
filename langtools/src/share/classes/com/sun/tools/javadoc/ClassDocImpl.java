@@ -545,7 +545,7 @@ public class ClassDocImpl extends ProgramElementDocImpl implements ClassDoc {
      * Return an empty array if there are no interfaces.
      */
     public ClassDoc[] interfaces() {
-        ListBuffer<ClassDocImpl> ta = new ListBuffer<ClassDocImpl>();
+        ListBuffer<ClassDocImpl> ta = new ListBuffer<>();
         for (Type t : env.types.interfaces(type)) {
             ta.append(env.getClassDoc((ClassSymbol)t.tsym));
         }
@@ -716,7 +716,7 @@ public class ClassDocImpl extends ProgramElementDocImpl implements ClassDoc {
      * are not included.
      */
     public ClassDoc[] innerClasses(boolean filter) {
-        ListBuffer<ClassDocImpl> innerClasses = new ListBuffer<ClassDocImpl>();
+        ListBuffer<ClassDocImpl> innerClasses = new ListBuffer<>();
         for (Scope.Entry e = tsym.members().elems; e != null; e = e.sibling) {
             if (e.sym != null && e.sym.kind == Kinds.TYP) {
                 ClassSymbol s = (ClassSymbol)e.sym;
@@ -883,7 +883,7 @@ public class ClassDocImpl extends ProgramElementDocImpl implements ClassDoc {
     public MethodDocImpl findMethod(String methodName, String[] paramTypes) {
         // Use hash table 'searched' to avoid searching same class twice.
         //### It is not clear how this could happen.
-        return searchMethod(methodName, paramTypes, new HashSet<ClassDocImpl>());
+        return searchMethod(methodName, paramTypes, new HashSet<>());
     }
 
     private MethodDocImpl searchMethod(String methodName,
@@ -1041,7 +1041,7 @@ public class ClassDocImpl extends ProgramElementDocImpl implements ClassDoc {
      * @return the first FieldDocImpl which matches, null if not found.
      */
     public FieldDoc findField(String fieldName) {
-        return searchField(fieldName, new HashSet<ClassDocImpl>());
+        return searchField(fieldName, new HashSet<>());
     }
 
     private FieldDocImpl searchField(String fieldName, Set<ClassDocImpl> searched) {
@@ -1106,7 +1106,7 @@ public class ClassDocImpl extends ProgramElementDocImpl implements ClassDoc {
         // information is not available for binary classfiles
         if (tsym.sourcefile == null) return new ClassDoc[0];
 
-        ListBuffer<ClassDocImpl> importedClasses = new ListBuffer<ClassDocImpl>();
+        ListBuffer<ClassDocImpl> importedClasses = new ListBuffer<>();
 
         Env<AttrContext> compenv = env.enter.getEnv(tsym);
         if (compenv == null) return new ClassDocImpl[0];
@@ -1144,7 +1144,7 @@ public class ClassDocImpl extends ProgramElementDocImpl implements ClassDoc {
         // information is not available for binary classfiles
         if (tsym.sourcefile == null) return new PackageDoc[0];
 
-        ListBuffer<PackageDocImpl> importedPackages = new ListBuffer<PackageDocImpl>();
+        ListBuffer<PackageDocImpl> importedPackages = new ListBuffer<>();
 
         //### Add the implicit "import java.lang.*" to the result
         Names names = tsym.name.table.names;

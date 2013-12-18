@@ -330,11 +330,11 @@ public class MemberSummaryBuilder extends AbstractMemberBuilder {
      */
     private void buildSummary(MemberSummaryWriter writer,
             VisibleMemberMap visibleMemberMap, LinkedList<Content> summaryTreeList) {
-        List<ProgramElementDoc> members = new ArrayList<ProgramElementDoc>(visibleMemberMap.getLeafClassMembers(
+        List<ProgramElementDoc> members = new ArrayList<>(visibleMemberMap.getLeafClassMembers(
                 configuration));
         if (members.size() > 0) {
             Collections.sort(members);
-            List<Content> tableContents = new LinkedList<Content>();
+            List<Content> tableContents = new LinkedList<>();
             for (int i = 0; i < members.size(); i++) {
                 ProgramElementDoc member = members.get(i);
                 final ProgramElementDoc propertyDoc =
@@ -400,7 +400,7 @@ public class MemberSummaryBuilder extends AbstractMemberBuilder {
         commentTextBuilder.append(propertyDoc.commentText());
 
         // copy certain tags
-        List<Tag> allTags = new LinkedList<Tag>();
+        List<Tag> allTags = new LinkedList<>();
         String[] tagNames = {"@defaultValue", "@since"};
         for (String tagName: tagNames) {
             Tag[] tags = propertyDoc.tags(tagName);
@@ -514,7 +514,7 @@ public class MemberSummaryBuilder extends AbstractMemberBuilder {
     private void addSummary(MemberSummaryWriter writer,
             VisibleMemberMap visibleMemberMap, boolean showInheritedSummary,
             Content memberSummaryTree) {
-        LinkedList<Content> summaryTreeList = new LinkedList<Content>();
+        LinkedList<Content> summaryTreeList = new LinkedList<>();
         buildSummary(writer, visibleMemberMap, summaryTreeList);
         if (showInheritedSummary)
             buildInheritedSummary(writer, visibleMemberMap, summaryTreeList);

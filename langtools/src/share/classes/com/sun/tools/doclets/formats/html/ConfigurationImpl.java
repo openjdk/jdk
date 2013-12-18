@@ -178,7 +178,7 @@ public class ConfigurationImpl extends Configuration {
     /**
      * Collected set of doclint options
      */
-    public Set<String> doclintOpts = new LinkedHashSet<String>();
+    public Set<String> doclintOpts = new LinkedHashSet<>();
 
     /**
      * Unique Resource Handler for this package.
@@ -286,7 +286,7 @@ public class ConfigurationImpl extends Configuration {
             }
         }
         if (root.specifiedClasses().length > 0) {
-            Map<String,PackageDoc> map = new HashMap<String,PackageDoc>();
+            Map<String,PackageDoc> map = new HashMap<>();
             PackageDoc pd;
             ClassDoc[] classes = root.classes();
             for (ClassDoc aClass : classes) {

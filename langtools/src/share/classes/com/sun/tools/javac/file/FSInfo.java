@@ -77,7 +77,7 @@ public class FSInfo {
             if (path == null)
                 return Collections.emptyList();
 
-            List<File> list = new ArrayList<File>();
+            List<File> list = new ArrayList<>();
 
             for (StringTokenizer st = new StringTokenizer(path);
                  st.hasMoreTokens(); ) {

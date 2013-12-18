@@ -71,7 +71,7 @@ public class Pool {
         this.pp = pp;
         this.pool = pool;
         this.types = types;
-        this.indices = new HashMap<Object,Integer>(pool.length);
+        this.indices = new HashMap<>(pool.length);
         for (int i = 1; i < pp; i++) {
             if (pool[i] != null) indices.put(pool[i], i);
         }

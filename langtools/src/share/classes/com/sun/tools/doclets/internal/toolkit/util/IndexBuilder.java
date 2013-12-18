@@ -51,7 +51,7 @@ public class IndexBuilder {
      * Mapping of each Unicode Character with the member list containing
      * members with names starting with it.
      */
-    private Map<Character,List<Doc>> indexmap = new HashMap<Character,List<Doc>>();
+    private Map<Character,List<Doc>> indexmap = new HashMap<>();
 
     /**
      * Don't generate deprecated information if true.
@@ -149,7 +149,7 @@ public class IndexBuilder {
         ClassDoc[] classes = root.classes();
         if (!classesOnly) {
             if (packages.length == 0) {
-                Set<PackageDoc> set = new HashSet<PackageDoc>();
+                Set<PackageDoc> set = new HashSet<>();
                 for (ClassDoc aClass : classes) {
                     PackageDoc pd = aClass.containingPackage();
                     if (pd != null && pd.name().length() > 0) {
@@ -202,7 +202,7 @@ public class IndexBuilder {
                 Character unicode = ch;
                 List<Doc> list = indexmap.get(unicode);
                 if (list == null) {
-                    list = new ArrayList<Doc>();
+                    list = new ArrayList<>();
                     indexmap.put(unicode, list);
                 }
                 list.add(element);

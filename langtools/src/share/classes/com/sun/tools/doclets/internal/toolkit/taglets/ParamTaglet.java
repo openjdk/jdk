@@ -63,7 +63,7 @@ public class ParamTaglet extends BaseTaglet implements InheritableTaglet {
         if (params == null) {
             return null;
         }
-        HashMap<String,String> result = new HashMap<String,String>();
+        HashMap<String,String> result = new HashMap<>();
         for (int i = 0; i < params.length; i++) {
             String name = params[i] instanceof Parameter ?
                 ((Parameter) params[i]).name() :
@@ -195,7 +195,7 @@ public class ParamTaglet extends BaseTaglet implements InheritableTaglet {
     private Content getTagletOutput(boolean isNonTypeParams, Doc holder,
             TagletWriter writer, Object[] formalParameters, ParamTag[] paramTags) {
         Content result = writer.getOutputInstance();
-        Set<String> alreadyDocumented = new HashSet<String>();
+        Set<String> alreadyDocumented = new HashSet<>();
         if (paramTags.length > 0) {
             result.addContent(
                 processParamTags(isNonTypeParams, paramTags,

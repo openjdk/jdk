@@ -95,7 +95,7 @@ public class StackMapWriter extends InstructionDetailWriter {
                     new CustomVerificationTypeInfo(args[i].replace(".", "/"));
         }
 
-        map = new HashMap<Integer, StackMap>();
+        map = new HashMap<>();
         StackMapBuilder builder = new StackMapBuilder();
 
         // using -1 as the pc for the initial frame effectively compensates for

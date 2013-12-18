@@ -189,7 +189,7 @@ public class ClassFileReader {
         }
 
         private List<Path> walkTree(Path dir) throws IOException {
-            final List<Path> files = new ArrayList<Path>();
+            final List<Path> files = new ArrayList<>();
             Files.walkFileTree(dir, new SimpleFileVisitor<Path>() {
                 public FileVisitResult visitFile(Path file, BasicFileAttributes attrs)
                         throws IOException {

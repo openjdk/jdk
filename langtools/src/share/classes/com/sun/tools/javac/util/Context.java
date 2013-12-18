@@ -109,7 +109,7 @@ public class Context {
      */
     public static interface Factory<T> {
         T make(Context c);
-    };
+    }
 
     /**
      * The underlying map storing the data.
@@ -119,7 +119,7 @@ public class Context {
      * or
      * {@literal Key<T> -> Factory<T> }
      */
-    private Map<Key<?>,Object> ht = new HashMap<Key<?>,Object>();
+    private Map<Key<?>,Object> ht = new HashMap<>();
 
     /** Set the factory for the key in this context. */
     public <T> void put(Key<T> key, Factory<T> fac) {
@@ -166,7 +166,7 @@ public class Context {
     /**
      * The table of preregistered factories.
      */
-    private Map<Key<?>,Factory<?>> ft = new HashMap<Key<?>,Factory<?>>();
+    private Map<Key<?>,Factory<?>> ft = new HashMap<>();
 
     public Context(Context prev) {
         kt.putAll(prev.kt);     // retain all implicit keys
@@ -177,13 +177,13 @@ public class Context {
     /*
      * The key table, providing a unique Key<T> for each Class<T>.
      */
-    private Map<Class<?>, Key<?>> kt = new HashMap<Class<?>, Key<?>>();
+    private Map<Class<?>, Key<?>> kt = new HashMap<>();
 
     private <T> Key<T> key(Class<T> clss) {
         checkState(kt);
         Key<T> k = uncheckedCast(kt.get(clss));
         if (k == null) {
-            k = new Key<T>();
+            k = new Key<>();
             kt.put(clss, k);
         }
         return k;

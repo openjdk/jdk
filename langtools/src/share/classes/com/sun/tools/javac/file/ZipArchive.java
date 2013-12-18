@@ -65,7 +65,7 @@ public class ZipArchive implements Archive {
     protected ZipArchive(JavacFileManager fm, ZipFile zfile, boolean initMap) throws IOException {
         this.fileManager = fm;
         this.zfile = zfile;
-        this.map = new HashMap<RelativeDirectory,List<String>>();
+        this.map = new HashMap<>();
         if (initMap)
             initMap();
     }
@@ -133,7 +133,7 @@ public class ZipArchive implements Archive {
         File absFile = (absFileRef == null ? null : absFileRef.get());
         if (absFile == null) {
             absFile = new File(zfile.getName()).getAbsoluteFile();
-            absFileRef = new SoftReference<File>(absFile);
+            absFileRef = new SoftReference<>(absFile);
         }
         return absFile;
     }

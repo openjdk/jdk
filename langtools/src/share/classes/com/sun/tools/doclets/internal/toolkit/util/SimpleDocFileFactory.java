@@ -83,7 +83,7 @@ class SimpleDocFileFactory extends DocFileFactory {
         if (location != StandardLocation.SOURCE_PATH)
             throw new IllegalArgumentException();
 
-        Set<DocFile> files = new LinkedHashSet<DocFile>();
+        Set<DocFile> files = new LinkedHashSet<>();
         for (String s : configuration.sourcepath.split(File.pathSeparator)) {
             if (s.isEmpty())
                 continue;
@@ -206,7 +206,7 @@ class SimpleDocFileFactory extends DocFileFactory {
 
         /** If the file is a directory, list its contents. */
         public Iterable<DocFile> list() {
-            List<DocFile> files = new ArrayList<DocFile>();
+            List<DocFile> files = new ArrayList<>();
             for (File f: file.listFiles()) {
                 files.add(new SimpleDocFile(f));
             }

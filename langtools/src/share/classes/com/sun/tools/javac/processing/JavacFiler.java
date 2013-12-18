@@ -359,16 +359,16 @@ public class JavacFiler implements Filer, Closeable {
 
         log = Log.instance(context);
 
-        fileObjectHistory = synchronizedSet(new LinkedHashSet<FileObject>());
-        generatedSourceNames = synchronizedSet(new LinkedHashSet<String>());
-        generatedSourceFileObjects = synchronizedSet(new LinkedHashSet<JavaFileObject>());
+        fileObjectHistory = synchronizedSet(new LinkedHashSet<>());
+        generatedSourceNames = synchronizedSet(new LinkedHashSet<>());
+        generatedSourceFileObjects = synchronizedSet(new LinkedHashSet<>());
 
-        generatedClasses = synchronizedMap(new LinkedHashMap<String, JavaFileObject>());
+        generatedClasses = synchronizedMap(new LinkedHashMap<>());
 
-        openTypeNames  = synchronizedSet(new LinkedHashSet<String>());
+        openTypeNames  = synchronizedSet(new LinkedHashSet<>());
 
-        aggregateGeneratedSourceNames = new LinkedHashSet<String>();
-        aggregateGeneratedClassNames  = new LinkedHashSet<String>();
+        aggregateGeneratedSourceNames = new LinkedHashSet<>();
+        aggregateGeneratedClassNames  = new LinkedHashSet<>();
 
         lint = (Lint.instance(context)).isEnabled(PROCESSING);
     }

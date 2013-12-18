@@ -65,7 +65,7 @@ public class TreeCopier<P> implements TreeVisitor<JCTree,P> {
     public <T extends JCTree> List<T> copy(List<T> trees, P p) {
         if (trees == null)
             return null;
-        ListBuffer<T> lb = new ListBuffer<T>();
+        ListBuffer<T> lb = new ListBuffer<>();
         for (T tree: trees)
             lb.append(copy(tree, p));
         return lb.toList();

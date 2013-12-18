@@ -1738,7 +1738,7 @@ public class HtmlDocletWriter extends HtmlDocWriter {
         return text;
     }
 
-    static final Set<String> blockTags = new HashSet<String>();
+    static final Set<String> blockTags = new HashSet<>();
     static {
         for (HtmlTag t: HtmlTag.values()) {
             if (t.blockType == HtmlTag.BlockType.BLOCK)
@@ -1944,7 +1944,7 @@ public class HtmlDocletWriter extends HtmlDocWriter {
      */
     public List<Content> getAnnotations(int indent, AnnotationDesc[] descList, boolean linkBreak,
             boolean isJava5DeclarationLocation) {
-        List<Content> results = new ArrayList<Content>();
+        List<Content> results = new ArrayList<>();
         ContentBuilder annotation;
         for (AnnotationDesc aDesc : descList) {
             AnnotationTypeDoc annotationDoc = aDesc.annotationType();
@@ -1971,7 +1971,7 @@ public class HtmlDocletWriter extends HtmlDocWriter {
             if (aDesc.isSynthesized()) {
                 for (AnnotationDesc.ElementValuePair pair : pairs) {
                     AnnotationValue annotationValue = pair.value();
-                    List<AnnotationValue> annotationTypeValues = new ArrayList<AnnotationValue>();
+                    List<AnnotationValue> annotationTypeValues = new ArrayList<>();
                     if (annotationValue.value() instanceof AnnotationValue[]) {
                         AnnotationValue[] annotationArray =
                                 (AnnotationValue[]) annotationValue.value();
@@ -1994,7 +1994,7 @@ public class HtmlDocletWriter extends HtmlDocWriter {
                 if (pairs.length == 1 && isAnnotationDocumented) {
                     AnnotationValue[] annotationArray =
                             (AnnotationValue[]) (pairs[0].value()).value();
-                    List<AnnotationValue> annotationTypeValues = new ArrayList<AnnotationValue>();
+                    List<AnnotationValue> annotationTypeValues = new ArrayList<>();
                     annotationTypeValues.addAll(Arrays.asList(annotationArray));
                     String sep = "";
                     for (AnnotationValue av : annotationTypeValues) {
@@ -2052,7 +2052,7 @@ public class HtmlDocletWriter extends HtmlDocWriter {
                         pairs[j].element(), pairs[j].element().name(), false));
                 annotation.addContent("=");
                 AnnotationValue annotationValue = pairs[j].value();
-                List<AnnotationValue> annotationTypeValues = new ArrayList<AnnotationValue>();
+                List<AnnotationValue> annotationTypeValues = new ArrayList<>();
                 if (annotationValue.value() instanceof AnnotationValue[]) {
                     AnnotationValue[] annotationArray =
                             (AnnotationValue[]) annotationValue.value();

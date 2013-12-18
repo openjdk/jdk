@@ -90,7 +90,7 @@ public abstract class Attribute {
                     try {
                         Class<?>[] constrArgTypes = {ClassReader.class, int.class, int.class};
                         Constructor<? extends Attribute> constr = attrClass.getDeclaredConstructor(constrArgTypes);
-                        return constr.newInstance(new Object[] { cr, name_index, data.length });
+                        return constr.newInstance(cr, name_index, data.length);
                     } catch (Throwable t) {
                         reasonForDefaultAttr = t.toString();
                         // fall through and use DefaultAttribute
@@ -107,7 +107,7 @@ public abstract class Attribute {
         }
 
         protected void init() {
-            standardAttributes = new HashMap<String,Class<? extends Attribute>>();
+            standardAttributes = new HashMap<>();
             standardAttributes.put(AnnotationDefault, AnnotationDefault_attribute.class);
             standardAttributes.put(BootstrapMethods, BootstrapMethods_attribute.class);
             standardAttributes.put(CharacterRangeTable, CharacterRangeTable_attribute.class);

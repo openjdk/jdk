@@ -103,9 +103,9 @@ public class ClassUseWriter extends SubWriterHolderWriter {
         super(configuration, filename);
         this.classdoc = classdoc;
         if (mapper.classToPackageAnnotations.containsKey(classdoc.qualifiedName()))
-                pkgToPackageAnnotations = new TreeSet<PackageDoc>(mapper.classToPackageAnnotations.get(classdoc.qualifiedName()));
+                pkgToPackageAnnotations = new TreeSet<>(mapper.classToPackageAnnotations.get(classdoc.qualifiedName()));
         configuration.currentcd = classdoc;
-        this.pkgSet = new TreeSet<PackageDoc>();
+        this.pkgSet = new TreeSet<>();
         this.pkgToClassTypeParameter = pkgDivide(mapper.classToClassTypeParam);
         this.pkgToClassAnnotations = pkgDivide(mapper.classToClassAnnotations);
         this.pkgToMethodTypeParameter = pkgDivide(mapper.classToExecMemberDocTypeParam);
@@ -177,7 +177,7 @@ public class ClassUseWriter extends SubWriterHolderWriter {
     }
 
     private Map<String,List<ProgramElementDoc>> pkgDivide(Map<String,? extends List<? extends ProgramElementDoc>> classMap) {
-        Map<String,List<ProgramElementDoc>> map = new HashMap<String,List<ProgramElementDoc>>();
+        Map<String,List<ProgramElementDoc>> map = new HashMap<>();
         List<? extends ProgramElementDoc> list= classMap.get(classdoc.qualifiedName());
         if (list != null) {
             Collections.sort(list);
@@ -186,7 +186,7 @@ public class ClassUseWriter extends SubWriterHolderWriter {
                 pkgSet.add(pkg);
                 List<ProgramElementDoc> inPkg = map.get(pkg.name());
                 if (inPkg == null) {
-                    inPkg = new ArrayList<ProgramElementDoc>();
+                    inPkg = new ArrayList<>();
                     map.put(pkg.name(), inPkg);
                 }
                 inPkg.add(doc);

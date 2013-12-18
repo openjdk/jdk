@@ -50,7 +50,7 @@ public class Analyzer {
         PACKAGE,
         CLASS,
         VERBOSE
-    };
+    }
 
     private final Type type;
     private final Map<Archive, ArchiveDeps> results = new HashMap<>();

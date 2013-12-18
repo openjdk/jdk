@@ -78,8 +78,7 @@ import static com.sun.tools.javac.tree.JCTree.Tag.*;
  *  deletion without notice.</b>
  */
 public class Resolve {
-    protected static final Context.Key<Resolve> resolveKey =
-        new Context.Key<Resolve>();
+    protected static final Context.Key<Resolve> resolveKey = new Context.Key<>();
 
     Names names;
     Log log;
@@ -918,7 +917,7 @@ public class Resolve {
         public MethodCheck mostSpecificCheck(List<Type> actuals, boolean strict) {
             return new MostSpecificCheck(strict, actuals);
         }
-    };
+    }
 
     /**
      * Check context to be used during method applicability checks. A method check
@@ -1616,7 +1615,7 @@ public class Resolve {
                         (flags & DEFAULT) != 0 ||
                         (flags & ABSTRACT) == 0);
             }
-        };
+        }
 
     /** Find best qualified method matching given name, type and value
      *  arguments.
@@ -3780,7 +3779,7 @@ public class Resolve {
                 bestSoFar = c;
             }
             Assert.checkNonNull(bestSoFar);
-            return new Pair<Symbol, JCDiagnostic>(bestSoFar.sym, bestSoFar.details);
+            return new Pair<>(bestSoFar.sym, bestSoFar.details);
         }
     }
 
@@ -3827,7 +3826,7 @@ public class Resolve {
             } else if (filteredCandidates.size() == 1) {
                 Map.Entry<Symbol, JCDiagnostic> _e =
                                 filteredCandidates.entrySet().iterator().next();
-                final Pair<Symbol, JCDiagnostic> p = new Pair<Symbol, JCDiagnostic>(_e.getKey(), _e.getValue());
+                final Pair<Symbol, JCDiagnostic> p = new Pair<>(_e.getKey(), _e.getValue());
                 JCDiagnostic d = new InapplicableSymbolError(resolveContext) {
                     @Override
                     protected Pair<Symbol, JCDiagnostic> errCandidate() {
@@ -3846,7 +3845,7 @@ public class Resolve {
         }
         //where
             private Map<Symbol, JCDiagnostic> mapCandidates() {
-                Map<Symbol, JCDiagnostic> candidates = new LinkedHashMap<Symbol, JCDiagnostic>();
+                Map<Symbol, JCDiagnostic> candidates = new LinkedHashMap<>();
                 for (Candidate c : resolveContext.candidates) {
                     if (c.isApplicable()) continue;
                     candidates.put(c.sym, c.details);
@@ -3855,7 +3854,7 @@ public class Resolve {
             }
 
             Map<Symbol, JCDiagnostic> filterCandidates(Map<Symbol, JCDiagnostic> candidatesMap) {
-                Map<Symbol, JCDiagnostic> candidates = new LinkedHashMap<Symbol, JCDiagnostic>();
+                Map<Symbol, JCDiagnostic> candidates = new LinkedHashMap<>();
                 for (Map.Entry<Symbol, JCDiagnostic> _entry : candidatesMap.entrySet()) {
                     JCDiagnostic d = _entry.getValue();
                     if (!new Template(MethodCheckDiag.ARITY_MISMATCH.regex()).matches(d)) {
@@ -4175,8 +4174,7 @@ public class Resolve {
         };
 
         /** rewriter map used for method resolution simplification */
-        static final Map<Template, DiagnosticRewriter> rewriters =
-                new LinkedHashMap<Template, DiagnosticRewriter>();
+        static final Map<Template, DiagnosticRewriter> rewriters = new LinkedHashMap<>();
 
         static {
             String argMismatchRegex = MethodCheckDiag.ARG_MISMATCH.regex();

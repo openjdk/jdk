@@ -76,7 +76,7 @@ public class Messages {
                 if (opt.equals(g.optName())) return true;
             return false;
         }
-    };
+    }
 
     private final Options options;
     private final Stats stats;
@@ -154,7 +154,7 @@ public class Messages {
      * Handler for (sub)options specific to message handling.
      */
     static class Options {
-        Map<String, Env.AccessKind> map = new HashMap<String, Env.AccessKind>();
+        Map<String, Env.AccessKind> map = new HashMap<>();
         private final Stats stats;
 
         static boolean isValidOptions(String opts) {
@@ -256,7 +256,7 @@ public class Messages {
             if (b) {
                 groupCounts = new int[Messages.Group.values().length];
                 dkindCounts = new int[Diagnostic.Kind.values().length];
-                codeCounts = new HashMap<String, Integer>();
+                codeCounts = new HashMap<>();
             } else {
                 groupCounts = null;
                 dkindCounts = null;
@@ -321,7 +321,7 @@ public class Messages {
                     return o2.compareTo(o1);
                 }
             };
-            private final TreeMap<Integer, Set<String>> map = new TreeMap<Integer, Set<String>>(DECREASING);
+            private final TreeMap<Integer, Set<String>> map = new TreeMap<>(DECREASING);
 
             void put(String label, int n) {
                 if (n == 0) {
@@ -329,7 +329,7 @@ public class Messages {
                 }
                 Set<String> labels = map.get(n);
                 if (labels == null) {
-                    map.put(n, labels = new TreeSet<String>());
+                    map.put(n, labels = new TreeSet<>());
                 }
                 labels.add(label);
             }

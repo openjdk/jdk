@@ -51,35 +51,35 @@ public class ClassTree {
      * List of baseclasses. Contains only java.lang.Object. Can be used to get
      * the mapped listing of sub-classes.
      */
-    private List<ClassDoc> baseclasses = new ArrayList<ClassDoc>();
+    private List<ClassDoc> baseclasses = new ArrayList<>();
 
     /**
     * Mapping for each Class with their SubClasses
     */
-    private Map<ClassDoc,List<ClassDoc>> subclasses = new HashMap<ClassDoc,List<ClassDoc>>();
+    private Map<ClassDoc,List<ClassDoc>> subclasses = new HashMap<>();
 
     /**
      * List of base-interfaces. Contains list of all the interfaces who do not
      * have super-interfaces. Can be used to get the mapped listing of
      * sub-interfaces.
      */
-    private List<ClassDoc> baseinterfaces = new ArrayList<ClassDoc>();
+    private List<ClassDoc> baseinterfaces = new ArrayList<>();
 
     /**
     * Mapping for each Interface with their SubInterfaces
     */
-    private Map<ClassDoc,List<ClassDoc>> subinterfaces = new HashMap<ClassDoc,List<ClassDoc>>();
+    private Map<ClassDoc,List<ClassDoc>> subinterfaces = new HashMap<>();
 
-    private List<ClassDoc> baseEnums = new ArrayList<ClassDoc>();
-    private Map<ClassDoc,List<ClassDoc>> subEnums = new HashMap<ClassDoc,List<ClassDoc>>();
+    private List<ClassDoc> baseEnums = new ArrayList<>();
+    private Map<ClassDoc,List<ClassDoc>> subEnums = new HashMap<>();
 
-    private List<ClassDoc> baseAnnotationTypes = new ArrayList<ClassDoc>();
-    private Map<ClassDoc,List<ClassDoc>> subAnnotationTypes = new HashMap<ClassDoc,List<ClassDoc>>();
+    private List<ClassDoc> baseAnnotationTypes = new ArrayList<>();
+    private Map<ClassDoc,List<ClassDoc>> subAnnotationTypes = new HashMap<>();
 
     /**
     * Mapping for each Interface with classes who implement it.
     */
-    private Map<ClassDoc,List<ClassDoc>> implementingclasses = new HashMap<ClassDoc,List<ClassDoc>>();
+    private Map<ClassDoc,List<ClassDoc>> implementingclasses = new HashMap<>();
 
     /**
      * Constructor. Build the Tree using the Root of this Javadoc run.
@@ -234,7 +234,7 @@ public class ClassTree {
     private boolean add(Map<ClassDoc,List<ClassDoc>> map, ClassDoc superclass, ClassDoc cd) {
         List<ClassDoc> list = map.get(superclass);
         if (list == null) {
-            list = new ArrayList<ClassDoc>();
+            list = new ArrayList<>();
             map.put(superclass, list);
         }
         if (list.contains(cd)) {
@@ -256,7 +256,7 @@ public class ClassTree {
     private List<ClassDoc> get(Map<ClassDoc,List<ClassDoc>> map, ClassDoc cd) {
         List<ClassDoc> list = map.get(cd);
         if (list == null) {
-            return new ArrayList<ClassDoc>();
+            return new ArrayList<>();
         }
         return list;
     }

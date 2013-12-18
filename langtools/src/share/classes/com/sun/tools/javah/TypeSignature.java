@@ -95,7 +95,7 @@ public class TypeSignature {
             throws SignatureException {
         String signature = null; //Java type signature.
         String typeSignature = null; //Internal type signature.
-        List<String> params = new ArrayList<String>(); //List of parameters.
+        List<String> params = new ArrayList<>(); //List of parameters.
         String paramsig = null; //Java parameter signature.
         String paramJVMSig = null; //Internal parameter signature.
         String returnSig = null; //Java return type signature.
