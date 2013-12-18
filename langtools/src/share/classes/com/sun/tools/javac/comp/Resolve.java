@@ -1503,7 +1503,7 @@ public class Resolve {
             return ambiguityError(m1, m2);
         case AMBIGUOUS:
             //check if m1 is more specific than all ambiguous methods in m2
-            AmbiguityError e = (AmbiguityError)m2;
+            AmbiguityError e = (AmbiguityError)m2.baseSymbol();
             for (Symbol s : e.ambiguousSyms) {
                 if (mostSpecific(argtypes, m1, s, env, site, allowBoxing, useVarargs) != m1) {
                     return e.addAmbiguousSymbol(m1);
@@ -3055,7 +3055,7 @@ public class Resolve {
         final Symbol lookup(Env<AttrContext> env, MethodResolutionPhase phase) {
             Symbol sym = doLookup(env, phase);
             if (sym.kind == AMBIGUOUS) {
-                AmbiguityError a_err = (AmbiguityError)sym;
+                AmbiguityError a_err = (AmbiguityError)sym.baseSymbol();
                 sym = a_err.mergeAbstracts(site);
             }
             return sym;
@@ -3125,7 +3125,7 @@ public class Resolve {
 
         Symbol access(Env<AttrContext> env, DiagnosticPosition pos, Symbol location, Symbol sym) {
             if (sym.kind == AMBIGUOUS) {
-                AmbiguityError a_err = (AmbiguityError)sym;
+                AmbiguityError a_err = (AmbiguityError)sym.baseSymbol();
                 sym = a_err.mergeAbstracts(site);
             }
             //skip error reporting
@@ -3992,7 +3992,7 @@ public class Resolve {
 
         private List<Symbol> flatten(Symbol sym) {
             if (sym.kind == AMBIGUOUS) {
-                return ((AmbiguityError)sym).ambiguousSyms;
+                return ((AmbiguityError)sym.baseSymbol()).ambiguousSyms;
             } else {
                 return List.of(sym);
             }
