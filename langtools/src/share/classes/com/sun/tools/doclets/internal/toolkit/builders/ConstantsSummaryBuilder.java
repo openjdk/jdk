@@ -97,7 +97,7 @@ public class ConstantsSummaryBuilder extends AbstractBuilder {
             ConstantsSummaryWriter writer) {
         super(context);
         this.writer = writer;
-        this.classDocsWithConstFields = new HashSet<ClassDoc>();
+        this.classDocsWithConstFields = new HashSet<>();
     }
 
     /**
@@ -151,7 +151,7 @@ public class ConstantsSummaryBuilder extends AbstractBuilder {
      */
     public void buildContents(XMLNode node, Content contentTree) {
         Content contentListTree = writer.getContentsHeader();
-        printedPackageHeaders = new HashSet<String>();
+        printedPackageHeaders = new HashSet<>();
         for (PackageDoc pkg : configuration.packages) {
             if (hasConstantField(pkg) && !hasPrintedPackageIndex(pkg.name())) {
                 writer.addLinkToPackageContent(pkg,
@@ -169,7 +169,7 @@ public class ConstantsSummaryBuilder extends AbstractBuilder {
      * @param contentTree the tree to which the summaries will be added
      */
     public void buildConstantSummaries(XMLNode node, Content contentTree) {
-        printedPackageHeaders = new HashSet<String>();
+        printedPackageHeaders = new HashSet<>();
         Content summariesTree = writer.getConstantSummaries();
         for (PackageDoc aPackage : configuration.packages) {
             if (hasConstantField(aPackage)) {
@@ -331,7 +331,7 @@ public class ConstantsSummaryBuilder extends AbstractBuilder {
          *                          will be added
          */
         protected void buildMembersSummary(XMLNode node, Content classConstantTree) {
-            List<FieldDoc> members = new ArrayList<FieldDoc>(members());
+            List<FieldDoc> members = new ArrayList<>(members());
             if (members.size() > 0) {
                 Collections.sort(members);
                 writer.addConstantMembers(classdoc, members, classConstantTree);
@@ -352,7 +352,7 @@ public class ConstantsSummaryBuilder extends AbstractBuilder {
             } else {
                 return null;
             }
-            List<FieldDoc> inclList = new LinkedList<FieldDoc>();
+            List<FieldDoc> inclList = new LinkedList<>();
             FieldDoc member;
             while(iter.hasNext()){
                 member = (FieldDoc)iter.next();

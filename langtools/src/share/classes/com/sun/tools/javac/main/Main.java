@@ -393,8 +393,8 @@ public class Main {
         if (options == null)
             options = Options.instance(context); // creates a new one
 
-        filenames = new LinkedHashSet<File>();
-        classnames = new ListBuffer<String>();
+        filenames = new LinkedHashSet<>();
+        classnames = new ListBuffer<>();
         JavaCompiler comp = null;
         /*
          * TODO: Logic below about what is an acceptable command line
@@ -453,7 +453,7 @@ public class Main {
                 JavacProcessingEnvironment pEnv = JavacProcessingEnvironment.instance(context);
                 ClassLoader cl = pEnv.getProcessorClassLoader();
                 ServiceLoader<Plugin> sl = ServiceLoader.load(Plugin.class, cl);
-                Set<List<String>> pluginsToCall = new LinkedHashSet<List<String>>();
+                Set<List<String>> pluginsToCall = new LinkedHashSet<>();
                 for (String plugin: plugins.split("\\x00")) {
                     pluginsToCall.add(List.from(plugin.split("\\s+")));
                 }
@@ -486,7 +486,7 @@ public class Main {
             String xdoclint = options.get(XDOCLINT);
             String xdoclintCustom = options.get(XDOCLINT_CUSTOM);
             if (xdoclint != null || xdoclintCustom != null) {
-                Set<String> doclintOpts = new LinkedHashSet<String>();
+                Set<String> doclintOpts = new LinkedHashSet<>();
                 if (xdoclint != null)
                     doclintOpts.add(DocLint.XMSGS_OPTION);
                 if (xdoclintCustom != null) {

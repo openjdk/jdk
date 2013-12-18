@@ -306,7 +306,7 @@ public class DocLint implements Plugin {
                     }
                 }
 
-                Queue<CompilationUnitTree> todo = new LinkedList<CompilationUnitTree>();
+                Queue<CompilationUnitTree> todo = new LinkedList<>();
             };
 
             task.addTaskListener(tl);

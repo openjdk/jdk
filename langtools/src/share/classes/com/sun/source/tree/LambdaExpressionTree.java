@@ -49,7 +49,7 @@ public interface LambdaExpressionTree extends ExpressionTree {
         /** enum constant for expression lambdas */
         EXPRESSION,
         /** enum constant for statement lambdas */
-        STATEMENT;
+        STATEMENT
     }
 
     List<? extends VariableTree> getParameters();

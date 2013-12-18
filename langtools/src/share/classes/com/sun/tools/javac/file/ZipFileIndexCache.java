@@ -39,8 +39,7 @@ import java.util.Map;
 /** A cache for ZipFileIndex objects. */
 public class ZipFileIndexCache {
 
-    private final Map<File, ZipFileIndex> map =
-            new HashMap<File, ZipFileIndex>();
+    private final Map<File, ZipFileIndex> map = new HashMap<>();
 
     /** Get a shared instance of the cache. */
     private static ZipFileIndexCache sharedInstance;
@@ -75,7 +74,7 @@ public class ZipFileIndexCache {
      * @return A list of ZipFileIndex entries, or an empty list
      */
     public synchronized List<ZipFileIndex> getZipFileIndexes(boolean openedOnly) {
-        List<ZipFileIndex> zipFileIndexes = new ArrayList<ZipFileIndex>();
+        List<ZipFileIndex> zipFileIndexes = new ArrayList<>();
 
         zipFileIndexes.addAll(map.values());
 

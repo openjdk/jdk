@@ -1010,8 +1010,8 @@ public class JavacParser implements Parser {
         /** optimization: To save allocating a new operand/operator stack
          *  for every binary operation, we use supplys.
          */
-        ArrayList<JCExpression[]> odStackSupply = new ArrayList<JCExpression[]>();
-        ArrayList<Token[]> opStackSupply = new ArrayList<Token[]>();
+        ArrayList<JCExpression[]> odStackSupply = new ArrayList<>();
+        ArrayList<Token[]> opStackSupply = new ArrayList<>();
 
         private JCExpression[] newOdStack() {
             if (odStackSupply.isEmpty())
@@ -1314,7 +1314,7 @@ public class JavacParser implements Parser {
                             //is a generic type i.e. A<S>::m
                             int pos1 = token.pos;
                             accept(LT);
-                            ListBuffer<JCExpression> args = new ListBuffer<JCExpression>();
+                            ListBuffer<JCExpression> args = new ListBuffer<>();
                             args.append(typeArgument());
                             while (token.kind == COMMA) {
                                 nextToken();
@@ -1696,7 +1696,7 @@ public class JavacParser implements Parser {
         CAST,
         EXPLICIT_LAMBDA,
         IMPLICIT_LAMBDA,
-        PARENS;
+        PARENS
     }
 
     JCExpression lambdaExpressionOrStatement(boolean hasParens, boolean explicitParams, int pos) {
@@ -2172,7 +2172,7 @@ public class JavacParser implements Parser {
                 return syntaxError(token.pos, List.<JCTree>of(t), "array.dimension.missing");
             }
         } else {
-            ListBuffer<JCExpression> dims = new ListBuffer<JCExpression>();
+            ListBuffer<JCExpression> dims = new ListBuffer<>();
 
             // maintain array dimension type annotations
             ListBuffer<List<JCAnnotation>> dimAnnotations = new ListBuffer<>();
@@ -2226,7 +2226,7 @@ public class JavacParser implements Parser {
      */
     JCExpression arrayInitializer(int newpos, JCExpression t) {
         accept(LBRACE);
-        ListBuffer<JCExpression> elems = new ListBuffer<JCExpression>();
+        ListBuffer<JCExpression> elems = new ListBuffer<>();
         if (token.kind == COMMA) {
             nextToken();
         } else if (token.kind != RBRACE) {
@@ -2288,7 +2288,7 @@ public class JavacParser implements Parser {
     @SuppressWarnings("fallthrough")
     List<JCStatement> blockStatements() {
         //todo: skip to anchor on error(?)
-        ListBuffer<JCStatement> stats = new ListBuffer<JCStatement>();
+        ListBuffer<JCStatement> stats = new ListBuffer<>();
         while (true) {
             List<JCStatement> stat = blockStatement();
             if (stat.isEmpty()) {
@@ -2356,7 +2356,7 @@ public class JavacParser implements Parser {
             } else {
                 JCExpression t = parseType();
                 ListBuffer<JCStatement> stats =
-                        variableDeclarators(mods, t, new ListBuffer<JCStatement>());
+                        variableDeclarators(mods, t, new ListBuffer<>());
                 // A "LocalVariableDeclarationStatement" subsumes the terminating semicolon
                 storeEnd(stats.last(), token.endPos);
                 accept(SEMI);
@@ -2394,7 +2394,7 @@ public class JavacParser implements Parser {
                 JCModifiers mods = F.at(Position.NOPOS).Modifiers(0);
                 F.at(pos);
                 ListBuffer<JCStatement> stats =
-                        variableDeclarators(mods, t, new ListBuffer<JCStatement>());
+                        variableDeclarators(mods, t, new ListBuffer<>());
                 // A "LocalVariableDeclarationStatement" subsumes the terminating semicolon
                 storeEnd(stats.last(), token.endPos);
                 accept(SEMI);
@@ -2495,7 +2495,7 @@ public class JavacParser implements Parser {
                 accept(RPAREN);
             }
             JCBlock body = block();
-            ListBuffer<JCCatch> catchers = new ListBuffer<JCCatch>();
+            ListBuffer<JCCatch> catchers = new ListBuffer<>();
             JCBlock finalizer = null;
             if (token.kind == CATCH || token.kind == FINALLY) {
                 while (token.kind == CATCH) catchers.append(catchClause());
@@ -2643,7 +2643,7 @@ public class JavacParser implements Parser {
      *  SwitchLabel = CASE ConstantExpression ":" | DEFAULT ":"
      */
     List<JCCase> switchBlockStatementGroups() {
-        ListBuffer<JCCase> cases = new ListBuffer<JCCase>();
+        ListBuffer<JCCase> cases = new ListBuffer<>();
         while (true) {
             int pos = token.pos;
             switch (token.kind) {
@@ -2730,7 +2730,7 @@ public class JavacParser implements Parser {
     List<JCExpressionStatement> forUpdate() {
         return moreStatementExpressions(token.pos,
                                         parseExpression(),
-                                        new ListBuffer<JCExpressionStatement>()).toList();
+                                        new ListBuffer<>()).toList();
     }
 
     /** AnnotationsOpt = { '@' Annotation }
@@ -2739,7 +2739,7 @@ public class JavacParser implements Parser {
      */
     List<JCAnnotation> annotationsOpt(Tag kind) {
         if (token.kind != MONKEYS_AT) return List.nil(); // optimization
-        ListBuffer<JCAnnotation> buf = new ListBuffer<JCAnnotation>();
+        ListBuffer<JCAnnotation> buf = new ListBuffer<>();
         int prevmode = mode;
         while (token.kind == MONKEYS_AT) {
             int pos = token.pos;
@@ -2768,7 +2768,7 @@ public class JavacParser implements Parser {
     }
     protected JCModifiers modifiersOpt(JCModifiers partial) {
         long flags;
-        ListBuffer<JCAnnotation> annotations = new ListBuffer<JCAnnotation>();
+        ListBuffer<JCAnnotation> annotations = new ListBuffer<>();
         int pos;
         if (partial == null) {
             flags = 0;
@@ -2868,7 +2868,7 @@ public class JavacParser implements Parser {
     /** AnnotationFieldValues   = "(" [ AnnotationFieldValue { "," AnnotationFieldValue } ] ")" */
     List<JCExpression> annotationFieldValues() {
         accept(LPAREN);
-        ListBuffer<JCExpression> buf = new ListBuffer<JCExpression>();
+        ListBuffer<JCExpression> buf = new ListBuffer<>();
         if (token.kind != RPAREN) {
             buf.append(annotationFieldValue());
             while (token.kind == COMMA) {
@@ -2913,7 +2913,7 @@ public class JavacParser implements Parser {
         case LBRACE:
             pos = token.pos;
             accept(LBRACE);
-            ListBuffer<JCExpression> buf = new ListBuffer<JCExpression>();
+            ListBuffer<JCExpression> buf = new ListBuffer<>();
             if (token.kind == COMMA) {
                 nextToken();
             } else if (token.kind != RBRACE) {
@@ -3035,7 +3035,7 @@ public class JavacParser implements Parser {
     /** Resources = Resource { ";" Resources }
      */
     List<JCTree> resources() {
-        ListBuffer<JCTree> defs = new ListBuffer<JCTree>();
+        ListBuffer<JCTree> defs = new ListBuffer<>();
         defs.append(resource());
         while (token.kind == SEMI) {
             // All but last of multiple declarators must subsume a semicolon
@@ -3085,7 +3085,7 @@ public class JavacParser implements Parser {
             pid = qualident(false);
             accept(SEMI);
         }
-        ListBuffer<JCTree> defs = new ListBuffer<JCTree>();
+        ListBuffer<JCTree> defs = new ListBuffer<>();
         boolean checkForImports = true;
         boolean firstTypeDecl = true;
         while (token.kind != EOF) {
@@ -3294,7 +3294,7 @@ public class JavacParser implements Parser {
      */
     List<JCTree> enumBody(Name enumName) {
         accept(LBRACE);
-        ListBuffer<JCTree> defs = new ListBuffer<JCTree>();
+        ListBuffer<JCTree> defs = new ListBuffer<>();
         if (token.kind == COMMA) {
             nextToken();
         } else if (token.kind != RBRACE && token.kind != SEMI) {
@@ -3363,7 +3363,7 @@ public class JavacParser implements Parser {
     /** TypeList = Type {"," Type}
      */
     List<JCExpression> typeList() {
-        ListBuffer<JCExpression> ts = new ListBuffer<JCExpression>();
+        ListBuffer<JCExpression> ts = new ListBuffer<>();
         ts.append(parseType());
         while (token.kind == COMMA) {
             nextToken();
@@ -3383,7 +3383,7 @@ public class JavacParser implements Parser {
             if (token.kind == LBRACE)
                 nextToken();
         }
-        ListBuffer<JCTree> defs = new ListBuffer<JCTree>();
+        ListBuffer<JCTree> defs = new ListBuffer<>();
         while (token.kind != RBRACE && token.kind != EOF) {
             defs.appendList(classOrInterfaceBodyDeclaration(className, isInterface));
             if (token.pos <= endPosTable.errorEndPos) {
@@ -3558,7 +3558,7 @@ public class JavacParser implements Parser {
     /** QualidentList = [Annotations] Qualident {"," [Annotations] Qualident}
      */
     List<JCExpression> qualidentList() {
-        ListBuffer<JCExpression> ts = new ListBuffer<JCExpression>();
+        ListBuffer<JCExpression> ts = new ListBuffer<>();
 
         List<JCAnnotation> typeAnnos = typeAnnotationsOpt();
         JCExpression qi = qualident(true);
@@ -3591,7 +3591,7 @@ public class JavacParser implements Parser {
     List<JCTypeParameter> typeParametersOpt() {
         if (token.kind == LT) {
             checkGenerics();
-            ListBuffer<JCTypeParameter> typarams = new ListBuffer<JCTypeParameter>();
+            ListBuffer<JCTypeParameter> typarams = new ListBuffer<>();
             nextToken();
             typarams.append(typeParameter());
             while (token.kind == COMMA) {
@@ -3616,7 +3616,7 @@ public class JavacParser implements Parser {
         int pos = token.pos;
         List<JCAnnotation> annos = typeAnnotationsOpt();
         Name name = ident();
-        ListBuffer<JCExpression> bounds = new ListBuffer<JCExpression>();
+        ListBuffer<JCExpression> bounds = new ListBuffer<>();
         if (token.kind == EXTENDS) {
             nextToken();
             bounds.append(parseType());
@@ -3636,7 +3636,7 @@ public class JavacParser implements Parser {
         return formalParameters(false);
     }
     List<JCVariableDecl> formalParameters(boolean lambdaParameters) {
-        ListBuffer<JCVariableDecl> params = new ListBuffer<JCVariableDecl>();
+        ListBuffer<JCVariableDecl> params = new ListBuffer<>();
         JCVariableDecl lastParam;
         accept(LPAREN);
         if (token.kind != RPAREN) {
@@ -3661,7 +3661,7 @@ public class JavacParser implements Parser {
         if (hasParens) {
             accept(LPAREN);
         }
-        ListBuffer<JCVariableDecl> params = new ListBuffer<JCVariableDecl>();
+        ListBuffer<JCVariableDecl> params = new ListBuffer<>();
         if (token.kind != RPAREN && token.kind != ARROW) {
             params.append(implicitParameter());
             while (token.kind == COMMA) {
@@ -4051,7 +4051,7 @@ public class JavacParser implements Parser {
 
         SimpleEndPosTable(JavacParser parser) {
             super(parser);
-            endPosMap = new HashMap<JCTree, Integer>();
+            endPosMap = new HashMap<>();
         }
 
         public void storeEnd(JCTree tree, int endpos) {

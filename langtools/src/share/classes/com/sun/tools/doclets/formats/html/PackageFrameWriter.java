@@ -76,7 +76,7 @@ public class PackageFrameWriter extends HtmlDocletWriter {
         super(configuration, DocPath.forPackage(packageDoc).resolve(DocPaths.PACKAGE_FRAME));
         this.packageDoc = packageDoc;
         if (configuration.root.specifiedPackages().length == 0) {
-            documentedClasses = new HashSet<ClassDoc>(Arrays.asList(configuration.root.classes()));
+            documentedClasses = new HashSet<>(Arrays.asList(configuration.root.classes()));
         }
     }
 

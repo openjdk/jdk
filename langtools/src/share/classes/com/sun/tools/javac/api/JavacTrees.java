@@ -398,7 +398,7 @@ public class JavacTrees extends DocTrees {
             if (ref.paramTypes == null)
                 paramTypes = null;
             else {
-                ListBuffer<Type> lb = new ListBuffer<Type>();
+                ListBuffer<Type> lb = new ListBuffer<>();
                 for (List<JCTree> l = ref.paramTypes; l.nonEmpty(); l = l.tail) {
                     JCTree tree = l.head;
                     Type t = attr.attribType(tree, env);
@@ -459,7 +459,7 @@ public class JavacTrees extends DocTrees {
 
     /** @see com.sun.tools.javadoc.ClassDocImpl#findField */
     private VarSymbol findField(ClassSymbol tsym, Name fieldName) {
-        return searchField(tsym, fieldName, new HashSet<ClassSymbol>());
+        return searchField(tsym, fieldName, new HashSet<>());
     }
 
     /** @see com.sun.tools.javadoc.ClassDocImpl#searchField */
@@ -525,7 +525,7 @@ public class JavacTrees extends DocTrees {
 
     /** @see com.sun.tools.javadoc.ClassDocImpl#findMethod */
     private MethodSymbol findMethod(ClassSymbol tsym, Name methodName, List<Type> paramTypes) {
-        return searchMethod(tsym, methodName, paramTypes, new HashSet<ClassSymbol>());
+        return searchMethod(tsym, methodName, paramTypes, new HashSet<>());
     }
 
     /** @see com.sun.tools.javadoc.ClassDocImpl#searchMethod */

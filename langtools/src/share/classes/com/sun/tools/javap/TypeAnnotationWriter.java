@@ -48,7 +48,8 @@ import com.sun.tools.javac.util.StringUtils;
  *  deletion without notice.</b>
  */
 public class TypeAnnotationWriter extends InstructionDetailWriter {
-    public enum NoteKind { VISIBLE, INVISIBLE };
+    public enum NoteKind { VISIBLE, INVISIBLE }
+
     public static class Note {
         Note(NoteKind kind, TypeAnnotation anno) {
             this.kind = kind;
@@ -74,7 +75,7 @@ public class TypeAnnotationWriter extends InstructionDetailWriter {
 
     public void reset(Code_attribute attr) {
         Method m = classWriter.getMethod();
-        pcMap = new HashMap<Integer, List<Note>>();
+        pcMap = new HashMap<>();
         check(NoteKind.VISIBLE, (RuntimeVisibleTypeAnnotations_attribute) m.attributes.get(Attribute.RuntimeVisibleTypeAnnotations));
         check(NoteKind.INVISIBLE, (RuntimeInvisibleTypeAnnotations_attribute) m.attributes.get(Attribute.RuntimeInvisibleTypeAnnotations));
     }
@@ -101,7 +102,7 @@ public class TypeAnnotationWriter extends InstructionDetailWriter {
     private void addNote(int pc, Note note) {
         List<Note> list = pcMap.get(pc);
         if (list == null)
-            pcMap.put(pc, list = new ArrayList<Note>());
+            pcMap.put(pc, list = new ArrayList<>());
         list.add(note);
     }
 

@@ -145,7 +145,7 @@ public class ToolProvider {
 
     // Cache for tool classes.
     // Use weak references to avoid keeping classes around unnecessarily
-    private Map<String, Reference<Class<?>>> toolClasses = new HashMap<String, Reference<Class<?>>>();
+    private Map<String, Reference<Class<?>>> toolClasses = new HashMap<>();
 
     // Cache for tool classloader.
     // Use a weak reference to avoid keeping it around unnecessarily
@@ -173,7 +173,7 @@ public class ToolProvider {
             } catch (Throwable e) {
                 return trace(WARNING, e);
             }
-            toolClasses.put(name, new WeakReference<Class<?>>(c));
+            toolClasses.put(name, new WeakReference<>(c));
         }
         return c.asSubclass(clazz);
     }
@@ -207,7 +207,7 @@ public class ToolProvider {
                 trace(FINE, urls[0].toString());
 
                 cl = URLClassLoader.newInstance(urls);
-                refToolClassLoader = new WeakReference<ClassLoader>(cl);
+                refToolClassLoader = new WeakReference<>(cl);
             }
 
             return Class.forName(toolClassName, false, cl);

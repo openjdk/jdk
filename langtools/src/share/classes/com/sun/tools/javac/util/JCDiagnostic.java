@@ -50,8 +50,7 @@ public class JCDiagnostic implements Diagnostic<JavaFileObject> {
     /** A factory for creating diagnostic objects. */
     public static class Factory {
         /** The context key for the diagnostic factory. */
-        protected static final Context.Key<JCDiagnostic.Factory> diagnosticFactoryKey =
-            new Context.Key<JCDiagnostic.Factory>();
+        protected static final Context.Key<JCDiagnostic.Factory> diagnosticFactoryKey = new Context.Key<>();
 
         /** Get the Factory instance for this context. */
         public static Factory instance(Context context) {
@@ -292,7 +291,7 @@ public class JCDiagnostic implements Diagnostic<JavaFileObject> {
         DiagnosticType(String key) {
             this.key = key;
         }
-    };
+    }
 
     /**
      * A DiagnosticPosition provides information about the positions in a file

@@ -307,8 +307,8 @@ public abstract class Configuration {
         message =
             new MessageRetriever(this,
             "com.sun.tools.doclets.internal.toolkit.resources.doclets");
-        excludedDocFileDirs = new HashSet<String>();
-        excludedQualifiers = new HashSet<String>();
+        excludedDocFileDirs = new HashSet<>();
+        excludedQualifiers = new HashSet<>();
         setTabWidth(DocletConstants.DEFAULT_TAB_STOP_LENGTH);
     }
 
@@ -392,10 +392,9 @@ public abstract class Configuration {
 
         // Group the packages to be documented by the lowest profile (if any)
         // in which each appears
-        Map<Profile, List<PackageDoc>> interimResults =
-                new EnumMap<Profile, List<PackageDoc>>(Profile.class);
+        Map<Profile, List<PackageDoc>> interimResults = new EnumMap<>(Profile.class);
         for (Profile p: Profile.values())
-            interimResults.put(p, new ArrayList<PackageDoc>());
+            interimResults.put(p, new ArrayList<>());
 
         for (PackageDoc pkg: packages) {
             if (nodeprecated && Util.isDeprecated(pkg)) {
@@ -412,7 +411,7 @@ public abstract class Configuration {
         }
 
         // Build the profilePackages structure used by the doclet
-        profilePackages = new HashMap<String,PackageDoc[]>();
+        profilePackages = new HashMap<>();
         List<PackageDoc> prev = Collections.<PackageDoc>emptyList();
         int size;
         for (Map.Entry<Profile,List<PackageDoc>> e: interimResults.entrySet()) {
@@ -434,11 +433,11 @@ public abstract class Configuration {
     }
 
     private void initPackageArray() {
-        Set<PackageDoc> set = new HashSet<PackageDoc>(Arrays.asList(root.specifiedPackages()));
+        Set<PackageDoc> set = new HashSet<>(Arrays.asList(root.specifiedPackages()));
         for (ClassDoc aClass : root.specifiedClasses()) {
             set.add(aClass.containingPackage());
         }
-        ArrayList<PackageDoc> results = new ArrayList<PackageDoc>(set);
+        ArrayList<PackageDoc> results = new ArrayList<>(set);
         Collections.sort(results);
         packages = results.toArray(new PackageDoc[] {});
     }
@@ -449,7 +448,7 @@ public abstract class Configuration {
      * @param options the two dimensional array of options.
      */
     public void setOptions(String[][] options) throws Fault {
-        LinkedHashSet<String[]> customTagStrs = new LinkedHashSet<String[]>();
+        LinkedHashSet<String[]> customTagStrs = new LinkedHashSet<>();
 
         // Some options, specifically -link and -linkoffline, require that
         // the output directory has already been created: so do that first.
@@ -629,7 +628,7 @@ public abstract class Configuration {
      * @return an array of tokens.
      */
     private String[] tokenize(String s, char separator, int maxTokens) {
-        List<String> tokens = new ArrayList<String>();
+        List<String> tokens = new ArrayList<>();
         StringBuilder  token = new StringBuilder ();
         boolean prevIsEscapeChar = false;
         for (int i = 0; i < s.length(); i += Character.charCount(i)) {

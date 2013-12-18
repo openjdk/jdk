@@ -103,7 +103,7 @@ public abstract class Type {
             return primitiveTypes.contains(name);
         }
         // where
-        private static final Set<String> primitiveTypes = new HashSet<String>(Arrays.asList(
+        private static final Set<String> primitiveTypes = new HashSet<>(Arrays.asList(
             "boolean", "byte", "char", "double", "float", "int", "long", "short", "void"));
 
         @Override
@@ -344,7 +344,8 @@ public abstract class Type {
      *          {@code -}
      */
     public static class WildcardType extends Type {
-        public enum Kind { UNBOUNDED, EXTENDS, SUPER };
+        public enum Kind { UNBOUNDED, EXTENDS, SUPER }
+
         public WildcardType() {
             this(Kind.UNBOUNDED, null);
         }

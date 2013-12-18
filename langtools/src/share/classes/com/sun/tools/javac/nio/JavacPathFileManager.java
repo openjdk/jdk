@@ -113,8 +113,8 @@ public class JavacPathFileManager extends BaseFileManager implements PathFileMan
         super(charset);
         if (register)
             context.put(JavaFileManager.class, this);
-        pathsForLocation = new HashMap<Location, PathsForLocation>();
-        fileSystems = new HashMap<Path,FileSystem>();
+        pathsForLocation = new HashMap<>();
+        fileSystems = new HashMap<>();
         setContext(context);
     }
 
@@ -155,7 +155,7 @@ public class JavacPathFileManager extends BaseFileManager implements PathFileMan
         Iterable<? extends Path> path = getLocation(location);
         if (path == null)
             return null;
-        ListBuffer<URL> lb = new ListBuffer<URL>();
+        ListBuffer<URL> lb = new ListBuffer<>();
         for (Path p: path) {
             try {
                 lb.append(p.toUri().toURL());
@@ -308,7 +308,7 @@ public class JavacPathFileManager extends BaseFileManager implements PathFileMan
         Iterable<? extends Path> paths = getLocation(location);
         if (paths == null)
             return List.nil();
-        ListBuffer<JavaFileObject> results = new ListBuffer<JavaFileObject>();
+        ListBuffer<JavaFileObject> results = new ListBuffer<>();
 
         for (Path path : paths)
             list(path, packageName, kinds, recurse, results);
@@ -394,9 +394,9 @@ public class JavacPathFileManager extends BaseFileManager implements PathFileMan
         Iterable<? extends Path> paths) {
         ArrayList<PathFileObject> result;
         if (paths instanceof Collection<?>)
-            result = new ArrayList<PathFileObject>(((Collection<?>)paths).size());
+            result = new ArrayList<>(((Collection<?>)paths).size());
         else
-            result = new ArrayList<PathFileObject>();
+            result = new ArrayList<>();
         for (Path p: paths)
             result.add(PathFileObject.createSimplePathFileObject(this, nullCheck(p)));
         return result;

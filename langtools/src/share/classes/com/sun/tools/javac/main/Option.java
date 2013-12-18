@@ -564,7 +564,7 @@ public enum Option {
     }
     // where
         private static Map<String,Boolean> createChoices(String... choices) {
-            Map<String,Boolean> map = new LinkedHashMap<String,Boolean>();
+            Map<String,Boolean> map = new LinkedHashMap<>();
             for (String c: choices)
                 map.put(c, false);
             return map;
@@ -719,7 +719,7 @@ public enum Option {
     }
 
     private static Map<String,Boolean> getXLintChoices() {
-        Map<String,Boolean> choices = new LinkedHashMap<String,Boolean>();
+        Map<String,Boolean> choices = new LinkedHashMap<>();
         choices.put("all", false);
         for (Lint.LintCategory c : Lint.LintCategory.values())
             choices.put(c.option, c.hidden);

@@ -47,7 +47,7 @@ import com.sun.tools.doclets.internal.toolkit.util.*;
 public class PackageUseWriter extends SubWriterHolderWriter {
 
     final PackageDoc pkgdoc;
-    final SortedMap<String,Set<ClassDoc>> usingPackageToUsedClasses = new TreeMap<String,Set<ClassDoc>>();
+    final SortedMap<String,Set<ClassDoc>> usingPackageToUsedClasses = new TreeMap<>();
 
     /**
      * Constructor.
@@ -73,7 +73,7 @@ public class PackageUseWriter extends SubWriterHolderWriter {
                     Set<ClassDoc> usedClasses = usingPackageToUsedClasses
                             .get(usingPackage.name());
                     if (usedClasses == null) {
-                        usedClasses = new TreeSet<ClassDoc>();
+                        usedClasses = new TreeSet<>();
                         usingPackageToUsedClasses.put(Util.getPackageName(usingPackage),
                                                       usedClasses);
                     }

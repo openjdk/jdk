@@ -68,14 +68,14 @@ import com.sun.tools.javac.util.Names;
  * @author Neal Gafter (rewrite but not too proud)
  */
 class SerializedForm {
-    ListBuffer<MethodDoc> methods = new ListBuffer<MethodDoc>();
+    ListBuffer<MethodDoc> methods = new ListBuffer<>();
 
     /* List of FieldDocImpl - Serializable fields.
      * Singleton list if class defines Serializable fields explicitly.
      * Otherwise, list of default serializable fields.
      * 0 length list for Externalizable.
      */
-    private final ListBuffer<FieldDocImpl> fields = new ListBuffer<FieldDocImpl>();
+    private final ListBuffer<FieldDocImpl> fields = new ListBuffer<>();
 
     /* True if class specifies serializable fields explicitly.
      * using special static member, serialPersistentFields.

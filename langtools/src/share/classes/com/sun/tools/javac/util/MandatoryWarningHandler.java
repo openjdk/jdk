@@ -126,7 +126,7 @@ public class MandatoryWarningHandler {
 
         if (verbose) {
             if (sourcesWithReportedWarnings == null)
-                sourcesWithReportedWarnings = new HashSet<JavaFileObject>();
+                sourcesWithReportedWarnings = new HashSet<>();
 
             if (log.nwarnings < log.MaxWarnings) {
                 // generate message and remember the source file

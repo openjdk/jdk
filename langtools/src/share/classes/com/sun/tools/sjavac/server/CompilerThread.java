@@ -47,6 +47,7 @@ import javax.tools.JavaFileObject;
 import javax.tools.StandardJavaFileManager;
 
 import com.sun.tools.javac.util.Context;
+import com.sun.tools.javac.util.ListBuffer;
 import com.sun.tools.javac.util.Log;
 import com.sun.tools.javac.util.BaseFileManager;
 import com.sun.tools.javac.util.StringUtils;
@@ -131,7 +132,7 @@ public class CompilerThread implements Runnable {
         context.put(JavaFileManager.class, smartFileManager);
         ResolveWithDeps.preRegister(context);
         JavaCompilerWithDeps.preRegister(context, this);
-        subTasks = new ArrayList<Future<?>>();
+        subTasks = new ArrayList<>();
     }
 
     /**
@@ -218,8 +219,8 @@ public class CompilerThread implements Runnable {
             if (!expect(in, JavacServer.PROTOCOL_ARGS)) {
                 return;
             }
-            ArrayList<String> the_options = new ArrayList<String>();
-            ArrayList<File> the_classes = new ArrayList<File>();
+            ArrayList<String> the_options = new ArrayList<>();
+            ArrayList<File> the_classes = new ArrayList<>();
             Iterable<File> path = Arrays.<File> asList(new File(cwd));
 
             for (;;) {
@@ -240,7 +241,7 @@ public class CompilerThread implements Runnable {
             }
 
             // Load sources to compile
-            Set<URI> sourcesToCompile = new HashSet<URI>();
+            Set<URI> sourcesToCompile = new HashSet<>();
             for (;;) {
                 String l = in.readLine();
                 if (l == null)
@@ -255,7 +256,7 @@ public class CompilerThread implements Runnable {
                 }
             }
             // Load visible sources
-            Set<URI> visibleSources = new HashSet<URI>();
+            Set<URI> visibleSources = new HashSet<>();
             boolean fix_drive_letter_case =
                 StringUtils.toLowerCase(System.getProperty("os.name")).startsWith("windows");
             for (;;) {
@@ -284,14 +285,12 @@ public class CompilerThread implements Runnable {
 
             // Now setup the actual compilation....
             // First deal with explicit source files on cmdline and in at file.
-            com.sun.tools.javac.util.ListBuffer<JavaFileObject> compilationUnits =
-                new com.sun.tools.javac.util.ListBuffer<JavaFileObject>();
+            ListBuffer<JavaFileObject> compilationUnits = new ListBuffer<>();
             for (JavaFileObject i : fileManager.getJavaFileObjectsFromFiles(the_classes)) {
                 compilationUnits.append(i);
             }
             // Now deal with sources supplied as source_to_compile.
-            com.sun.tools.javac.util.ListBuffer<File> sourcesToCompileFiles =
-                new com.sun.tools.javac.util.ListBuffer<File>();
+            ListBuffer<File> sourcesToCompileFiles = new ListBuffer<>();
             for (URI u : sourcesToCompile) {
                 sourcesToCompileFiles.append(new File(u));
             }

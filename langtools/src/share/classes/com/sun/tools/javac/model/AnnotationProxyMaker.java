@@ -94,7 +94,7 @@ public class AnnotationProxyMaker {
      * defaulted.
      */
     private Map<String, Object> getAllReflectedValues() {
-        Map<String, Object> res = new LinkedHashMap<String, Object>();
+        Map<String, Object> res = new LinkedHashMap<>();
 
         for (Map.Entry<MethodSymbol, Attribute> entry :
                                                   getAllValues().entrySet()) {
@@ -115,8 +115,7 @@ public class AnnotationProxyMaker {
      * Includes all elements, whether explicit or defaulted.
      */
     private Map<MethodSymbol, Attribute> getAllValues() {
-        Map<MethodSymbol, Attribute> res =
-            new LinkedHashMap<MethodSymbol, Attribute>();
+        Map<MethodSymbol, Attribute> res = new LinkedHashMap<>();
 
         // First find the default values.
         ClassSymbol sym = (ClassSymbol) anno.type.tsym;
@@ -186,7 +185,7 @@ public class AnnotationProxyMaker {
 
             if (elemName.equals(elemName.table.names.java_lang_Class)) {   // Class[]
                 // Construct a proxy for a MirroredTypesException
-                ListBuffer<TypeMirror> elems = new ListBuffer<TypeMirror>();
+                ListBuffer<TypeMirror> elems = new ListBuffer<>();
                 for (Attribute value : a.values) {
                     Type elem = ((Attribute.Class) value).classType;
                     elems.append(elem);

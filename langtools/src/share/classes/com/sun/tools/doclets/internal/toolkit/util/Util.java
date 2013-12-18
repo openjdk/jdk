@@ -76,7 +76,7 @@ public class Util {
      */
     public static List<ProgramElementDoc> excludeDeprecatedMembersAsList(
         ProgramElementDoc[] members) {
-        List<ProgramElementDoc> list = new ArrayList<ProgramElementDoc>();
+        List<ProgramElementDoc> list = new ArrayList<>();
         for (ProgramElementDoc member : members) {
             if (member.tags("deprecated").length == 0) {
                 list.add(member);
@@ -273,7 +273,7 @@ public class Util {
      */
     public static List<Type> getAllInterfaces(Type type,
             Configuration configuration, boolean sort) {
-        Map<ClassDoc,Type> results = sort ? new TreeMap<ClassDoc,Type>() : new LinkedHashMap<ClassDoc,Type>();
+        Map<ClassDoc,Type> results = sort ? new TreeMap<>() : new LinkedHashMap<>();
         Type[] interfaceTypes = null;
         Type superType = null;
         if (type instanceof ParameterizedType) {
@@ -300,13 +300,13 @@ public class Util {
             }
         }
         if (superType == null)
-            return new ArrayList<Type>(results.values());
+            return new ArrayList<>(results.values());
         //Try walking the tree.
         addAllInterfaceTypes(results,
             superType,
             interfaceTypesOf(superType),
             false, configuration);
-        List<Type> resultsList = new ArrayList<Type>(results.values());
+        List<Type> resultsList = new ArrayList<>(results.values());
         if (sort) {
                 Collections.sort(resultsList, new TypeComparator());
         }
@@ -744,8 +744,7 @@ public class Util {
         if (!javafx) {
             return classes;
         }
-        final List<ClassDoc> filteredOutClasses =
-                new ArrayList<ClassDoc>(classes.length);
+        final List<ClassDoc> filteredOutClasses = new ArrayList<>(classes.length);
         for (ClassDoc classDoc : classes) {
             if (classDoc.isPrivate() || classDoc.isPackagePrivate()) {
                 continue;

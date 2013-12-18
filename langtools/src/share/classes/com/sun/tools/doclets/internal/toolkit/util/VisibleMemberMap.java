@@ -70,19 +70,19 @@ public class VisibleMemberMap {
     /**
      * List of ClassDoc objects for which ClassMembers objects are built.
      */
-    private final List<ClassDoc> visibleClasses = new ArrayList<ClassDoc>();
+    private final List<ClassDoc> visibleClasses = new ArrayList<>();
 
     /**
      * Map for each member name on to a map which contains members with same
      * name-signature. The mapped map will contain mapping for each MemberDoc
      * onto it's respecive level string.
      */
-    private final Map<Object,Map<ProgramElementDoc,String>> memberNameMap = new HashMap<Object,Map<ProgramElementDoc,String>>();
+    private final Map<Object,Map<ProgramElementDoc,String>> memberNameMap = new HashMap<>();
 
     /**
      * Map of class and it's ClassMembers object.
      */
-    private final Map<ClassDoc,ClassMembers> classMap = new HashMap<ClassDoc,ClassMembers>();
+    private final Map<ClassDoc,ClassMembers> classMap = new HashMap<>();
 
     /**
      * Type whose visible members are requested.  This is the leaf of
@@ -100,12 +100,9 @@ public class VisibleMemberMap {
      */
     private final Configuration configuration;
 
-    private static final Map<ClassDoc, ProgramElementDoc[]> propertiesCache =
-            new HashMap<ClassDoc, ProgramElementDoc[]>();
-    private static final Map<ProgramElementDoc, ProgramElementDoc> classPropertiesMap =
-            new HashMap<ProgramElementDoc, ProgramElementDoc>();
-    private static final Map<ProgramElementDoc, GetterSetter> getterSetterMap =
-            new HashMap<ProgramElementDoc, GetterSetter>();
+    private static final Map<ClassDoc, ProgramElementDoc[]> propertiesCache = new HashMap<>();
+    private static final Map<ProgramElementDoc, ProgramElementDoc> classPropertiesMap = new HashMap<>();
+    private static final Map<ProgramElementDoc, GetterSetter> getterSetterMap = new HashMap<>();
 
     /**
      * Construct a VisibleMemberMap of the given type for the given
@@ -172,7 +169,7 @@ public class VisibleMemberMap {
      * @return the package private members inherited by the class.
      */
     private List<ProgramElementDoc> getInheritedPackagePrivateMethods(Configuration configuration) {
-        List<ProgramElementDoc> results = new ArrayList<ProgramElementDoc>();
+        List<ProgramElementDoc> results = new ArrayList<>();
         for (ClassDoc currentClass : visibleClasses) {
             if (currentClass != classdoc &&
                 currentClass.isPackagePrivate() &&
@@ -208,7 +205,7 @@ public class VisibleMemberMap {
     public List<ProgramElementDoc> getMembersFor(ClassDoc cd) {
         ClassMembers clmembers = classMap.get(cd);
         if (clmembers == null) {
-            return new ArrayList<ProgramElementDoc>();
+            return new ArrayList<>();
         }
         return clmembers.getMembers();
     }
@@ -218,8 +215,8 @@ public class VisibleMemberMap {
      * classes followed by interfaces traversed. Don't sort alphabetically.
      */
     private void sort(List<ClassDoc> list) {
-        List<ClassDoc> classes = new ArrayList<ClassDoc>();
-        List<ClassDoc> interfaces = new ArrayList<ClassDoc>();
+        List<ClassDoc> classes = new ArrayList<>();
+        List<ClassDoc> interfaces = new ArrayList<>();
         for (ClassDoc cd : list) {
             if (cd.isClass()) {
                 classes.add(cd);
@@ -238,7 +235,7 @@ public class VisibleMemberMap {
             Object key = getMemberKey(element);
             Map<ProgramElementDoc, String> memberLevelMap = memberNameMap.get(key);
             if (memberLevelMap == null) {
-                memberLevelMap = new HashMap<ProgramElementDoc, String>();
+                memberLevelMap = new HashMap<>();
                 memberNameMap.put(key, memberLevelMap);
             }
             memberLevelMap.put(element, level);
@@ -263,7 +260,7 @@ public class VisibleMemberMap {
         private Set<ProgramElementDoc> members;
 
         public ClassMember(ProgramElementDoc programElementDoc) {
-            members = new HashSet<ProgramElementDoc>();
+            members = new HashSet<>();
             members.add(programElementDoc);
         }
 
@@ -297,7 +294,7 @@ public class VisibleMemberMap {
         /**
          * List of inherited members from the mapping class.
          */
-        private List<ProgramElementDoc> members = new ArrayList<ProgramElementDoc>();
+        private List<ProgramElementDoc> members = new ArrayList<>();
 
         /**
          * Level/Depth of inheritance.
@@ -368,7 +365,7 @@ public class VisibleMemberMap {
          */
         private void addMembers(ClassDoc fromClass) {
             List<ProgramElementDoc> cdmembers = getClassMembers(fromClass, true);
-            List<ProgramElementDoc> incllist = new ArrayList<ProgramElementDoc>();
+            List<ProgramElementDoc> incllist = new ArrayList<>();
             for (ProgramElementDoc pgmelem : cdmembers) {
                 if (!found(members, pgmelem) &&
                     memberIsVisible(pgmelem) &&
@@ -487,7 +484,7 @@ public class VisibleMemberMap {
         private AnnotationTypeElementDoc[] filter(AnnotationTypeDoc doc,
             boolean required) {
             AnnotationTypeElementDoc[] members = doc.elements();
-            List<AnnotationTypeElementDoc> targetMembers = new ArrayList<AnnotationTypeElementDoc>();
+            List<AnnotationTypeElementDoc> targetMembers = new ArrayList<>();
             for (AnnotationTypeElementDoc member : members) {
                 if ((required && member.defaultValue() == null) ||
                     ((!required) && member.defaultValue() != null)) {
@@ -534,7 +531,7 @@ public class VisibleMemberMap {
                 return propertiesCache.get(cd);
             }
 
-            final List<MethodDoc> result = new ArrayList<MethodDoc>();
+            final List<MethodDoc> result = new ArrayList<>();
 
             for (final MethodDoc propertyMethod : allMethods) {
 

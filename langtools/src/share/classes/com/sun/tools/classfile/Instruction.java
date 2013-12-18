@@ -93,7 +93,7 @@ public class Instruction {
         /** The length, in bytes, of this kind of instruction, or -1 is the
          *  length depends on the specific instruction. */
         public final int length;
-    };
+    }
 
     /** A utility visitor to help decode the operands of an instruction.
      *  @see Instruction#accept */

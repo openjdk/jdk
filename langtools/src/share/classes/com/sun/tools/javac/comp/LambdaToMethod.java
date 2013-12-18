@@ -106,8 +106,7 @@ public class LambdaToMethod extends TreeTranslator {
     public static final int FLAG_BRIDGES = 1 << 2;
 
     // <editor-fold defaultstate="collapsed" desc="Instantiating">
-    protected static final Context.Key<LambdaToMethod> unlambdaKey =
-            new Context.Key<LambdaToMethod>();
+    protected static final Context.Key<LambdaToMethod> unlambdaKey = new Context.Key<>();
 
     public static LambdaToMethod instance(Context context) {
         LambdaToMethod instance = context.get(unlambdaKey);
@@ -161,7 +160,7 @@ public class LambdaToMethod extends TreeTranslator {
         private KlassInfo(JCClassDecl clazz) {
             this.clazz = clazz;
             appendedMethodList = new ListBuffer<>();
-            deserializeCases = new HashMap<String, ListBuffer<JCStatement>>();
+            deserializeCases = new HashMap<>();
             MethodType type = new MethodType(List.of(syms.serializedLambdaType), syms.objectType,
                     List.<Type>nil(), syms.methodClass);
             deserMethodSym = makePrivateSyntheticMethod(STATIC, names.deserializeLambda, type, clazz.sym);
@@ -204,7 +203,7 @@ public class LambdaToMethod extends TreeTranslator {
         this.make = make;
         this.attrEnv = env;
         this.context = null;
-        this.contextMap = new HashMap<JCTree, TranslationContext<?>>();
+        this.contextMap = new HashMap<>();
         return translate(cdef);
     }
     // </editor-fold>
@@ -261,8 +260,8 @@ public class LambdaToMethod extends TreeTranslator {
 
         {
             Symbol owner = localContext.owner;
-            ListBuffer<Attribute.TypeCompound> ownerTypeAnnos = new ListBuffer<Attribute.TypeCompound>();
-            ListBuffer<Attribute.TypeCompound> lambdaTypeAnnos = new ListBuffer<Attribute.TypeCompound>();
+            ListBuffer<Attribute.TypeCompound> ownerTypeAnnos = new ListBuffer<>();
+            ListBuffer<Attribute.TypeCompound> lambdaTypeAnnos = new ListBuffer<>();
 
             for (Attribute.TypeCompound tc : owner.getRawTypeAttributes()) {
                 if (tc.position.onLambda == tree) {
@@ -1147,12 +1146,11 @@ public class LambdaToMethod extends TreeTranslator {
          * maps for fake clinit symbols to be used as owners of lambda occurring in
          * a static var init context
          */
-        private Map<ClassSymbol, Symbol> clinits =
-                new HashMap<ClassSymbol, Symbol>();
+        private Map<ClassSymbol, Symbol> clinits = new HashMap<>();
 
         private JCClassDecl analyzeAndPreprocessClass(JCClassDecl tree) {
             frameStack = List.nil();
-            localClassDefs = new HashMap<Symbol, JCClassDecl>();
+            localClassDefs = new HashMap<>();
             return translate(tree);
         }
 
@@ -1180,7 +1178,7 @@ public class LambdaToMethod extends TreeTranslator {
             try {
                 log.useSource(tree.sym.sourcefile);
                 syntheticMethodNameCounts = new SyntheticMethodNameCounter();
-                prevClinits = new HashMap<ClassSymbol, Symbol>();
+                prevClinits = new HashMap<>();
                 if (tree.sym.owner.kind == MTH) {
                     localClassDefs.put(tree.sym, tree);
                 }
@@ -1352,7 +1350,7 @@ public class LambdaToMethod extends TreeTranslator {
                 // Build lambda parameters
                 // partially cloned from TreeMaker.Params until 8014021 is fixed
                 Symbol owner = owner();
-                ListBuffer<JCVariableDecl> paramBuff = new ListBuffer<JCVariableDecl>();
+                ListBuffer<JCVariableDecl> paramBuff = new ListBuffer<>();
                 int i = 0;
                 for (List<Type> l = ptypes; l.nonEmpty(); l = l.tail) {
                     JCVariableDecl param = make.Param(make.paramName(i++), l.head, owner);
@@ -1773,11 +1771,11 @@ public class LambdaToMethod extends TreeTranslator {
                 }
                 translatedSymbols = new EnumMap<>(LambdaSymbolKind.class);
 
-                translatedSymbols.put(PARAM, new LinkedHashMap<Symbol, Symbol>());
-                translatedSymbols.put(LOCAL_VAR, new LinkedHashMap<Symbol, Symbol>());
-                translatedSymbols.put(CAPTURED_VAR, new LinkedHashMap<Symbol, Symbol>());
-                translatedSymbols.put(CAPTURED_THIS, new LinkedHashMap<Symbol, Symbol>());
-                translatedSymbols.put(TYPE_VAR, new LinkedHashMap<Symbol, Symbol>());
+                translatedSymbols.put(PARAM, new LinkedHashMap<>());
+                translatedSymbols.put(LOCAL_VAR, new LinkedHashMap<>());
+                translatedSymbols.put(CAPTURED_VAR, new LinkedHashMap<>());
+                translatedSymbols.put(CAPTURED_THIS, new LinkedHashMap<>());
+                translatedSymbols.put(TYPE_VAR, new LinkedHashMap<>());
             }
 
              /**
@@ -2168,7 +2166,7 @@ public class LambdaToMethod extends TreeTranslator {
         LOCAL_VAR,      // original to translated lambda locals
         CAPTURED_VAR,   // variables in enclosing scope to translated synthetic parameters
         CAPTURED_THIS,  // class symbols to translated synthetic parameters (for captured member access)
-        TYPE_VAR;       // original to translated lambda type variables
+        TYPE_VAR       // original to translated lambda type variables
     }
 
     /**

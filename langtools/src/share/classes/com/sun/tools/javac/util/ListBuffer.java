@@ -41,7 +41,7 @@ import java.util.NoSuchElementException;
 public class ListBuffer<A> extends AbstractQueue<A> {
 
     public static <T> ListBuffer<T> of(T x) {
-        ListBuffer<T> lb = new ListBuffer<T>();
+        ListBuffer<T> lb = new ListBuffer<>();
         lb.add(x);
         return lb;
     }

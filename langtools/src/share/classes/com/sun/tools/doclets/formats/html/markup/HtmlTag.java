@@ -99,7 +99,7 @@ public enum HtmlTag {
     public static enum BlockType {
         BLOCK,
         INLINE,
-        OTHER;
+        OTHER
     }
 
     /**
@@ -107,7 +107,7 @@ public enum HtmlTag {
      */
     public static enum EndTag {
         END,
-        NOEND;
+        NOEND
     }
 
     HtmlTag() {

@@ -71,7 +71,7 @@ public class MetaKeywords {
      * definitions are on separate pages.
      */
     public String[] getMetaKeywords(ClassDoc classdoc) {
-        ArrayList<String> results = new ArrayList<String>();
+        ArrayList<String> results = new ArrayList<>();
 
         // Add field and method keywords only if -keywords option is used
         if( configuration.keywords ) {
@@ -88,7 +88,7 @@ public class MetaKeywords {
      */
     protected ArrayList<String> getClassKeyword(ClassDoc classdoc) {
         String cltypelower = classdoc.isInterface() ? "interface" : "class";
-        ArrayList<String> metakeywords = new ArrayList<String>(1);
+        ArrayList<String> metakeywords = new ArrayList<>(1);
         metakeywords.add(classdoc.qualifiedName() + " " + cltypelower);
         return metakeywords;
     }
@@ -145,7 +145,7 @@ public class MetaKeywords {
      * @param memberdocs  array of MemberDoc objects to be added to keywords
      */
     protected ArrayList<String> getMemberKeywords(MemberDoc[] memberdocs) {
-        ArrayList<String> results = new ArrayList<String>();
+        ArrayList<String> results = new ArrayList<>();
         String membername;
         for (MemberDoc memberdoc : memberdocs) {
             membername = memberdoc.name() + (memberdoc.isMethod() ? "()" : "");

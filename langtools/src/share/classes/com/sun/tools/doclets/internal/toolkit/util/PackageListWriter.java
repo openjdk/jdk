@@ -76,7 +76,7 @@ public class PackageListWriter extends PrintWriter {
     }
 
     protected void generatePackageListFile(RootDoc root) {
-        ArrayList<String> names = new ArrayList<String>();
+        ArrayList<String> names = new ArrayList<>();
         for (PackageDoc pkg : configuration.packages) {
             // if the -nodeprecated option is set and the package is marked as
             // deprecated, do not include it in the packages list.

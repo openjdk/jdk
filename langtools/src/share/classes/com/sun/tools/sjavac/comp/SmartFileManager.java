@@ -54,9 +54,9 @@ import javax.tools.JavaFileObject.Kind;
 public class SmartFileManager extends ForwardingJavaFileManager<JavaFileManager> {
 
     // Set of sources that can be seen by javac.
-    Set<URI> visibleSources = new HashSet<URI>();
+    Set<URI> visibleSources = new HashSet<>();
     // Map from modulename:packagename to artifacts.
-    Map<String,Set<URI>> packageArtifacts = new HashMap<String,Set<URI>>();
+    Map<String,Set<URI>> packageArtifacts = new HashMap<>();
     // Where to print informational messages.
     PrintWriter stdout;
 
@@ -69,7 +69,7 @@ public class SmartFileManager extends ForwardingJavaFileManager<JavaFileManager>
     }
 
     public void cleanArtifacts() {
-        packageArtifacts = new HashMap<String,Set<URI>>();
+        packageArtifacts = new HashMap<>();
     }
 
     public void setLog(PrintWriter pw) {
@@ -93,7 +93,7 @@ public class SmartFileManager extends ForwardingJavaFileManager<JavaFileManager>
             return files;
         }
         // Now filter!
-        ListBuffer<JavaFileObject> filteredFiles = new ListBuffer<JavaFileObject>();
+        ListBuffer<JavaFileObject> filteredFiles = new ListBuffer<>();
         for (JavaFileObject f : files) {
             URI uri = f.toUri();
             String t = uri.toString();
@@ -213,7 +213,7 @@ public class SmartFileManager extends ForwardingJavaFileManager<JavaFileManager>
     void addArtifact(String pkgName, URI art) {
         Set<URI> s = packageArtifacts.get(pkgName);
         if (s == null) {
-            s = new HashSet<URI>();
+            s = new HashSet<>();
             packageArtifacts.put(pkgName, s);
         }
         s.add(art);

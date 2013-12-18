@@ -426,7 +426,7 @@ class SeeTagImpl extends TagImpl implements SeeTag, LayoutCharacters {
 
         ParameterParseMachine(String parameters) {
             this.parameters = parameters;
-            this.paramList = new ListBuffer<String>();
+            this.paramList = new ListBuffer<>();
             typeId = new StringBuilder();
         }
 

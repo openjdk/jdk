@@ -73,8 +73,7 @@ import static com.sun.tools.javac.tree.JCTree.Tag.*;
  *  deletion without notice.</b>
  */
 public class Attr extends JCTree.Visitor {
-    protected static final Context.Key<Attr> attrKey =
-        new Context.Key<Attr>();
+    protected static final Context.Key<Attr> attrKey = new Context.Key<>();
 
     final Names names;
     final Log log;
@@ -668,7 +667,7 @@ public class Attr extends JCTree.Visitor {
     /** Attribute a list of expressions, returning a list of types.
      */
     List<Type> attribExprs(List<JCExpression> trees, Env<AttrContext> env, Type pt) {
-        ListBuffer<Type> ts = new ListBuffer<Type>();
+        ListBuffer<Type> ts = new ListBuffer<>();
         for (List<JCExpression> l = trees; l.nonEmpty(); l = l.tail)
             ts.append(attribExpr(l.head, env, pt));
         return ts.toList();
@@ -702,7 +701,7 @@ public class Attr extends JCTree.Visitor {
      *  Caller is responsible for calling checkRefTypes.
      */
     List<Type> attribAnyTypes(List<JCExpression> trees, Env<AttrContext> env) {
-        ListBuffer<Type> argtypes = new ListBuffer<Type>();
+        ListBuffer<Type> argtypes = new ListBuffer<>();
         for (List<JCExpression> l = trees; l.nonEmpty(); l = l.tail)
             argtypes.append(attribType(l.head, env));
         return argtypes.toList();
@@ -1238,7 +1237,7 @@ public class Attr extends JCTree.Visitor {
 
             // Attribute all cases and
             // check that there are no duplicate case labels or default clauses.
-            Set<Object> labels = new HashSet<Object>(); // The set of case labels.
+            Set<Object> labels = new HashSet<>(); // The set of case labels.
             boolean hasDefault = false;      // Is there a default label?
             for (List<JCCase> l = tree.cases; l.nonEmpty(); l = l.tail) {
                 JCCase c = l.head;
@@ -3815,7 +3814,7 @@ public class Attr extends JCTree.Visitor {
             Resolve.InapplicableSymbolError errSym = rs.new InapplicableSymbolError(null) {
                 @Override
                 protected Pair<Symbol, JCDiagnostic> errCandidate() {
-                    return new Pair<Symbol, JCDiagnostic>(sym, diag);
+                    return new Pair<>(sym, diag);
                 }
             };
             List<Type> argtypes2 = Type.map(argtypes,
@@ -3968,7 +3967,7 @@ public class Attr extends JCTree.Visitor {
     }
 
     Type checkIntersection(JCTree tree, List<JCExpression> bounds) {
-        Set<Type> boundSet = new HashSet<Type>();
+        Set<Type> boundSet = new HashSet<>();
         if (bounds.nonEmpty()) {
             // accept class or interface or typevar as first bound.
             bounds.head.type = checkBase(bounds.head.type, bounds.head, env, false, false, false);
@@ -4573,7 +4572,7 @@ public class Attr extends JCTree.Visitor {
                         if (at.getAnnotations().size() == 1) {
                             log.error(at.underlyingType.pos(), "cant.type.annotate.scoping.1", at.getAnnotations().head.attribute);
                         } else {
-                            ListBuffer<Attribute.Compound> comps = new ListBuffer<Attribute.Compound>();
+                            ListBuffer<Attribute.Compound> comps = new ListBuffer<>();
                             for (JCAnnotation an : at.getAnnotations()) {
                                 comps.add(an.attribute);
                             }
@@ -4634,7 +4633,7 @@ public class Attr extends JCTree.Visitor {
                 }
             }
         }
-    };
+    }
 
     // <editor-fold desc="post-attribution visitor">
 

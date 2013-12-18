@@ -50,8 +50,7 @@ public enum Profile {
         }
     };
 
-    private static final Context.Key<Profile> profileKey =
-        new Context.Key<Profile>();
+    private static final Context.Key<Profile> profileKey = new Context.Key<>();
 
     public static Profile instance(Context context) {
         Profile instance = context.get(profileKey);

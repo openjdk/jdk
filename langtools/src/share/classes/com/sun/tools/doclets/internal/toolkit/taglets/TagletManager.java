@@ -173,12 +173,12 @@ public class TagletManager {
     public TagletManager(boolean nosince, boolean showversion,
                          boolean showauthor, boolean javafx,
                          MessageRetriever message) {
-        overridenStandardTags = new HashSet<String>();
-        potentiallyConflictingTags = new HashSet<String>();
-        standardTags = new HashSet<String>();
-        standardTagsLowercase = new HashSet<String>();
-        unseenCustomTags = new HashSet<String>();
-        customTags = new LinkedHashMap<String,Taglet>();
+        overridenStandardTags = new HashSet<>();
+        potentiallyConflictingTags = new HashSet<>();
+        standardTags = new HashSet<>();
+        standardTagsLowercase = new HashSet<>();
+        unseenCustomTags = new HashSet<>();
+        customTags = new LinkedHashMap<>();
         this.nosince = nosince;
         this.showversion = showversion;
         this.showauthor = showauthor;
@@ -235,11 +235,11 @@ public class TagletManager {
 
             customTagClass = tagClassLoader.loadClass(classname);
             Method meth = customTagClass.getMethod("register",
-                                                   new Class<?>[] {java.util.Map.class});
+                                                   Map.class);
             Object[] list = customTags.values().toArray();
             Taglet lastTag = (list != null && list.length > 0)
                 ? (Taglet) list[list.length-1] : null;
-            meth.invoke(null, new Object[] {customTags});
+            meth.invoke(null, customTags);
             list = customTags.values().toArray();
             Object newLastTag = (list != null&& list.length > 0)
                 ? list[list.length-1] : null;
@@ -276,7 +276,7 @@ public class TagletManager {
      * @return the resulting array of directory and JAR file URLs
      */
     private URL[] pathToURLs(String path) {
-        Set<URL> urls = new LinkedHashSet<URL>();
+        Set<URL> urls = new LinkedHashSet<>();
         for (String s: path.split(File.pathSeparator)) {
             if (s.isEmpty()) continue;
             try {
@@ -414,7 +414,7 @@ public class TagletManager {
      * @param holderType the type of documentation that the misused tag was found in.
      */
     private void printTagMisuseWarn(Taglet taglet, Tag tag, String holderType) {
-        Set<String> locationsSet = new LinkedHashSet<String>();
+        Set<String> locationsSet = new LinkedHashSet<>();
         if (taglet.inOverview()) {
             locationsSet.add("overview");
         }
@@ -582,14 +582,14 @@ public class TagletManager {
      */
     private void initCustomTagletArrays() {
         Iterator<Taglet> it = customTags.values().iterator();
-        ArrayList<Taglet> pTags = new ArrayList<Taglet>(customTags.size());
-        ArrayList<Taglet> tTags = new ArrayList<Taglet>(customTags.size());
-        ArrayList<Taglet> fTags = new ArrayList<Taglet>(customTags.size());
-        ArrayList<Taglet> cTags = new ArrayList<Taglet>(customTags.size());
-        ArrayList<Taglet> mTags = new ArrayList<Taglet>(customTags.size());
-        ArrayList<Taglet> iTags = new ArrayList<Taglet>(customTags.size());
-        ArrayList<Taglet> oTags = new ArrayList<Taglet>(customTags.size());
-        ArrayList<Taglet> sTags = new ArrayList<Taglet>();
+        ArrayList<Taglet> pTags = new ArrayList<>(customTags.size());
+        ArrayList<Taglet> tTags = new ArrayList<>(customTags.size());
+        ArrayList<Taglet> fTags = new ArrayList<>(customTags.size());
+        ArrayList<Taglet> cTags = new ArrayList<>(customTags.size());
+        ArrayList<Taglet> mTags = new ArrayList<>(customTags.size());
+        ArrayList<Taglet> iTags = new ArrayList<>(customTags.size());
+        ArrayList<Taglet> oTags = new ArrayList<>(customTags.size());
+        ArrayList<Taglet> sTags = new ArrayList<>();
         Taglet current;
         while (it.hasNext()) {
             current = it.next();

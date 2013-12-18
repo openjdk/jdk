@@ -104,7 +104,7 @@ public class Extern {
             this.path = path;
             this.relative = relative;
             if (packageToItemMap == null) {
-                packageToItemMap = new HashMap<String,Item>();
+                packageToItemMap = new HashMap<>();
             }
             if (!packageToItemMap.containsKey(packageName)) { // save the previous
                 packageToItemMap.put(packageName, this);        // mapped location

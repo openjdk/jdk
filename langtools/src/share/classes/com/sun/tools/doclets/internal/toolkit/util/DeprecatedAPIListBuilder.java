@@ -69,9 +69,9 @@ public class DeprecatedAPIListBuilder {
      * @param configuration the current configuration of the doclet
      */
     public DeprecatedAPIListBuilder(Configuration configuration) {
-        deprecatedLists = new ArrayList<List<Doc>>();
+        deprecatedLists = new ArrayList<>();
         for (int i = 0; i < NUM_TYPES; i++) {
-            deprecatedLists.add(i, new ArrayList<Doc>());
+            deprecatedLists.add(i, new ArrayList<>());
         }
         buildDeprecatedAPIInfo(configuration);
     }

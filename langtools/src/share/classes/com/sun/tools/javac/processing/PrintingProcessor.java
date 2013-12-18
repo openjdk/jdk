@@ -227,10 +227,9 @@ public class PrintingProcessor extends AbstractProcessor {
             indentation++;
 
             if (kind == ENUM) {
-                List<Element> enclosedElements =
-                    new ArrayList<Element>(e.getEnclosedElements());
+                List<Element> enclosedElements = new ArrayList<>(e.getEnclosedElements());
                 // Handle any enum constants specially before other entities.
-                List<Element> enumConstants = new ArrayList<Element>();
+                List<Element> enumConstants = new ArrayList<>();
                 for(Element element : enclosedElements) {
                     if (element.getKind() == ENUM_CONSTANT)
                         enumConstants.add(element);
@@ -333,7 +332,7 @@ public class PrintingProcessor extends AbstractProcessor {
             if (kind == ENUM_CONSTANT)
                 return;
 
-            Set<Modifier> modifiers = new LinkedHashSet<Modifier>();
+            Set<Modifier> modifiers = new LinkedHashSet<>();
             modifiers.addAll(e.getModifiers());
 
             switch (kind) {

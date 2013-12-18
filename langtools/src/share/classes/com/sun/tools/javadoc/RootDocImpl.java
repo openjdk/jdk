@@ -97,7 +97,7 @@ public class RootDocImpl extends DocImpl implements RootDoc {
         super(env, null);
         this.options = options;
         cmdLinePackages = List.nil();
-        ListBuffer<ClassDocImpl> classList = new ListBuffer<ClassDocImpl>();
+        ListBuffer<ClassDocImpl> classList = new ListBuffer<>();
         for (String className : classes) {
             ClassDocImpl c = env.loadClass(className);
             if (c == null)
@@ -116,7 +116,7 @@ public class RootDocImpl extends DocImpl implements RootDoc {
      * @param classes a list of ClassDeclaration
      */
     private void setClasses(DocEnv env, List<JCClassDecl> classes) {
-        ListBuffer<ClassDocImpl> result = new ListBuffer<ClassDocImpl>();
+        ListBuffer<ClassDocImpl> result = new ListBuffer<>();
         for (JCClassDecl def : classes) {
             //### Do we want modifier check here?
             if (env.shouldDocument(def.sym)) {
@@ -137,7 +137,7 @@ public class RootDocImpl extends DocImpl implements RootDoc {
      * @param packages a list of package names (String)
      */
     private void setPackages(DocEnv env, List<String> packages) {
-        ListBuffer<PackageDocImpl> packlist = new ListBuffer<PackageDocImpl>();
+        ListBuffer<PackageDocImpl> packlist = new ListBuffer<>();
         for (String name : packages) {
             PackageDocImpl pkg = env.lookupPackage(name);
             if (pkg != null) {
@@ -183,7 +183,7 @@ public class RootDocImpl extends DocImpl implements RootDoc {
      * Classes and interfaces specified on the command line.
      */
     public ClassDoc[] specifiedClasses() {
-        ListBuffer<ClassDocImpl> classesToDocument = new ListBuffer<ClassDocImpl>();
+        ListBuffer<ClassDocImpl> classesToDocument = new ListBuffer<>();
         for (ClassDocImpl cd : cmdLineClasses) {
             cd.addAllClasses(classesToDocument, true);
         }
@@ -195,7 +195,7 @@ public class RootDocImpl extends DocImpl implements RootDoc {
      * packages) to be documented.
      */
     public ClassDoc[] classes() {
-        ListBuffer<ClassDocImpl> classesToDocument = new ListBuffer<ClassDocImpl>();
+        ListBuffer<ClassDocImpl> classesToDocument = new ListBuffer<>();
         for (ClassDocImpl cd : cmdLineClasses) {
             cd.addAllClasses(classesToDocument, true);
         }
