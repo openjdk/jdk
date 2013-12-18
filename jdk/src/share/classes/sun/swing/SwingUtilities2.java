@@ -53,7 +53,6 @@ import sun.swing.ImageIconUIResource;
 import sun.print.ProxyPrintGraphics;
 import sun.awt.*;
 import sun.security.action.GetPropertyAction;
-import sun.security.util.SecurityConstants;
 import java.io.*;
 import java.util.*;
 import sun.font.FontDesignMetrics;
@@ -1232,7 +1231,7 @@ public class SwingUtilities2 {
                canAccess = true;
            } else {
                try {
-                   sm.checkPermission(SecurityConstants.AWT.ACCESS_CLIPBOARD_PERMISSION);
+                   sm.checkPermission(AWTPermissions.ACCESS_CLIPBOARD_PERMISSION);
                    canAccess = true;
                } catch (SecurityException e) {
                }

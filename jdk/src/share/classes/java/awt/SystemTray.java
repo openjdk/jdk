@@ -32,8 +32,8 @@ import java.beans.PropertyChangeSupport;
 import sun.awt.AppContext;
 import sun.awt.SunToolkit;
 import sun.awt.HeadlessToolkit;
-import sun.security.util.SecurityConstants;
 import sun.awt.AWTAccessor;
+import sun.awt.AWTPermissions;
 
 /**
  * The <code>SystemTray</code> class represents the system tray for a
@@ -503,7 +503,7 @@ public class SystemTray {
     static void checkSystemTrayAllowed() {
         SecurityManager security = System.getSecurityManager();
         if (security != null) {
-            security.checkPermission(SecurityConstants.AWT.ACCESS_SYSTEM_TRAY_PERMISSION);
+            security.checkPermission(AWTPermissions.ACCESS_SYSTEM_TRAY_PERMISSION);
         }
     }
 

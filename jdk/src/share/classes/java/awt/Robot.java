@@ -34,10 +34,10 @@ import java.awt.image.Raster;
 import java.awt.image.WritableRaster;
 import java.awt.peer.RobotPeer;
 import java.lang.reflect.InvocationTargetException;
+import sun.awt.AWTPermissions;
 import sun.awt.ComponentFactory;
 import sun.awt.SunToolkit;
 import sun.awt.image.SunWritableRaster;
-import sun.security.util.SecurityConstants;
 
 /**
  * This class is used to generate native system input events
@@ -167,7 +167,7 @@ public class Robot {
     private void checkRobotAllowed() {
         SecurityManager security = System.getSecurityManager();
         if (security != null) {
-            security.checkPermission(SecurityConstants.AWT.CREATE_ROBOT_PERMISSION);
+            security.checkPermission(AWTPermissions.CREATE_ROBOT_PERMISSION);
         }
     }
 
@@ -465,8 +465,7 @@ public class Robot {
     private static void checkScreenCaptureAllowed() {
         SecurityManager security = System.getSecurityManager();
         if (security != null) {
-            security.checkPermission(
-                SecurityConstants.AWT.READ_DISPLAY_PIXELS_PERMISSION);
+            security.checkPermission(AWTPermissions.READ_DISPLAY_PIXELS_PERMISSION);
         }
     }
 
