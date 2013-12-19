@@ -49,6 +49,9 @@ import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.RunnableFuture;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.TimeUnit;
+import java.security.AccessControlContext;
+import java.security.ProtectionDomain;
+import java.security.Permissions;
 
 /**
  * An {@link ExecutorService} for running {@link ForkJoinTask}s.
@@ -140,6 +143,9 @@ import java.util.concurrent.TimeUnit;
  * <li>{@code java.util.concurrent.ForkJoinPool.common.exceptionHandler}
  * - the class name of a {@link UncaughtExceptionHandler}
  * </ul>
+ * If a {@link SecurityManager} is present and no factory is
+ * specified, then the default pool uses a factory supplying
+ * threads that have no {@link Permissions} enabled.
  * The system class loader is used to load these classes.
  * Upon any error in establishing these settings, default parameters
  * are used. It is possible to disable or limit the use of threads in
@@ -500,6 +506,16 @@ public class ForkJoinPool extends AbstractExecutorService {
      * for completion, so the extra effort (with liberally sprinkled
      * task status checks) in inapplicable cases amounts to an odd
      * form of limited spin-wait before blocking in ForkJoinTask.join.
+     *
+     * As a more appropriate default in managed environments, unless
+     * overridden by system properties, we use workers of subclass
+     * InnocuousForkJoinWorkerThread when there is a SecurityManager
+     * present. These workers have no permissions set, do not belong
+     * to any user-defined ThreadGroup, and erase all ThreadLocals
+     * after executing any top-level task (see WorkQueue.runTask). The
+     * associated mechanics (mainly in ForkJoinWorkerThread) may be
+     * JVM-dependent and must access particular Thread class fields to
+     * achieve this effect.
      *
      * Style notes
      * ===========
@@ -882,6 +898,7 @@ public class ForkJoinPool extends AbstractExecutorService {
          */
         final void runTask(ForkJoinTask<?> task) {
             if ((currentSteal = task) != null) {
+                ForkJoinWorkerThread thread;
                 task.doExec();
                 ForkJoinTask<?>[] a = array;
                 int md = mode;
@@ -899,6 +916,8 @@ public class ForkJoinPool extends AbstractExecutorService {
                         t.doExec();
                     }
                 }
+                if ((thread = owner) != null) // no need to do in finally clause
+                    thread.afterTopLevelExec();
             }
         }
 
@@ -1155,7 +1174,7 @@ public class ForkJoinPool extends AbstractExecutorService {
      * Increment for seed generators. See class ThreadLocal for
      * explanation.
      */
-    private static final int SEED_INCREMENT = 0x61c88647;
+    private static final int SEED_INCREMENT = 0x9e3779b9;
 
     /*
      * Bits and masks for control variables
@@ -2084,12 +2103,10 @@ public class ForkJoinPool extends AbstractExecutorService {
                                   ((c & ~AC_MASK) |
                                    ((c & AC_MASK) + AC_UNIT))));
                 }
-                if ((b = q.base) - q.top < 0 && (t = q.pollAt(b)) != null) {
-                    (w.currentSteal = t).doExec();
-                    w.currentSteal = ps;
-                }
+                if ((b = q.base) - q.top < 0 && (t = q.pollAt(b)) != null)
+                    w.runTask(t);
             }
-            else if (active) {       // decrement active count without queuing
+            else if (active) {      // decrement active count without queuing
                 long nc = ((c = ctl) & ~AC_MASK) | ((c & AC_MASK) - AC_UNIT);
                 if ((int)(nc >> AC_SHIFT) + parallelism == 0)
                     break;          // bypass decrement-then-increment
@@ -3282,8 +3299,7 @@ public class ForkJoinPool extends AbstractExecutorService {
      */
     private static ForkJoinPool makeCommonPool() {
         int parallelism = -1;
-        ForkJoinWorkerThreadFactory factory
-            = defaultForkJoinWorkerThreadFactory;
+        ForkJoinWorkerThreadFactory factory = null;
         UncaughtExceptionHandler handler = null;
         try {  // ignore exceptions in accessing/parsing properties
             String pp = System.getProperty
@@ -3302,7 +3318,12 @@ public class ForkJoinPool extends AbstractExecutorService {
                            getSystemClassLoader().loadClass(hp).newInstance());
         } catch (Exception ignore) {
         }
-
+        if (factory == null) {
+            if (System.getSecurityManager() == null)
+                factory = defaultForkJoinWorkerThreadFactory;
+            else // use security-managed default
+                factory = new InnocuousForkJoinWorkerThreadFactory();
+        }
         if (parallelism < 0 && // default 1 less than #cores
             (parallelism = Runtime.getRuntime().availableProcessors() - 1) <= 0)
             parallelism = 1;
@@ -3310,6 +3331,40 @@ public class ForkJoinPool extends AbstractExecutorService {
             parallelism = MAX_CAP;
         return new ForkJoinPool(parallelism, factory, handler, LIFO_QUEUE,
                                 "ForkJoinPool.commonPool-worker-");
+    }
+
+    /**
+     * Factory for innocuous worker threads
+     */
+    static final class InnocuousForkJoinWorkerThreadFactory
+        implements ForkJoinWorkerThreadFactory {
+
+        /**
+         * An ACC to restrict permissions for the factory itself.
+         * The constructed workers have no permissions set.
+         */
+        private static final AccessControlContext innocuousAcc;
+        static {
+            Permissions innocuousPerms = new Permissions();
+            innocuousPerms.add(modifyThreadPermission);
+            innocuousPerms.add(new RuntimePermission(
+                                   "enableContextClassLoaderOverride"));
+            innocuousPerms.add(new RuntimePermission(
+                                   "modifyThreadGroup"));
+            innocuousAcc = new AccessControlContext(new ProtectionDomain[] {
+                    new ProtectionDomain(null, innocuousPerms)
+                });
+        }
+
+        public final ForkJoinWorkerThread newThread(ForkJoinPool pool) {
+            return (ForkJoinWorkerThread.InnocuousForkJoinWorkerThread)
+                java.security.AccessController.doPrivileged(
+                    new java.security.PrivilegedAction<ForkJoinWorkerThread>() {
+                    public ForkJoinWorkerThread run() {
+                        return new ForkJoinWorkerThread.
+                            InnocuousForkJoinWorkerThread(pool);
+                    }}, innocuousAcc);
+        }
     }
 
 }
