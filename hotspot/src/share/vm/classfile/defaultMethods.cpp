@@ -1044,7 +1044,8 @@ static void merge_in_new_methods(InstanceKlass* klass,
   Array<Method*>* merged_methods = MetadataFactory::new_array<Method*>(
       klass->class_loader_data(), new_size, NULL, CHECK);
 
-  if (original_ordering != NULL && original_ordering->length() > 0) {
+  // original_ordering might be empty if this class has no methods of its own
+  if (JvmtiExport::can_maintain_original_method_order() || DumpSharedSpaces) {
     merged_ordering = MetadataFactory::new_array<int>(
         klass->class_loader_data(), new_size, CHECK);
   }
@@ -1071,6 +1072,8 @@ static void merge_in_new_methods(InstanceKlass* klass,
       merged_methods->at_put(i, orig_method);
       original_methods->at_put(orig_idx, NULL);
       if (merged_ordering->length() > 0) {
+        assert(original_ordering != NULL && original_ordering->length() > 0,
+               "should have original order information for this method");
         merged_ordering->at_put(i, original_ordering->at(orig_idx));
       }
       ++orig_idx;
@@ -1099,13 +1102,14 @@ static void merge_in_new_methods(InstanceKlass* klass,
   // Replace klass methods with new merged lists
   klass->set_methods(merged_methods);
   klass->set_initial_method_idnum(new_size);
+  klass->set_method_ordering(merged_ordering);
 
+  // Free metadata
   ClassLoaderData* cld = klass->class_loader_data();
-  if (original_methods ->length() > 0) {
+  if (original_methods->length() > 0) {
     MetadataFactory::free_array(cld, original_methods);
   }
-  if (original_ordering->length() > 0) {
-    klass->set_method_ordering(merged_ordering);
+  if (original_ordering != NULL && original_ordering->length() > 0) {
     MetadataFactory::free_array(cld, original_ordering);
   }
 }
