@@ -122,9 +122,7 @@ public class DocPaths {
     /** The name of the file for the overview frame. */
     public static final DocPath PROFILE_OVERVIEW_FRAME = DocPath.create("profile-overview-frame.html");
 
-    /** The name of the directory in which resources are generated.
-     *  Also the name of the sub-package from which resources are read.
-     */
+    /** The name of the sub-package from which resources are read. */
     public static final DocPath RESOURCES = DocPath.create("resources");
 
     /** The name of the file for the serialized form info. */
