@@ -26,7 +26,7 @@
 package jdk.nashorn.internal.parser;
 
 import static jdk.nashorn.internal.codegen.CompilerConstants.EVAL;
-import static jdk.nashorn.internal.codegen.CompilerConstants.FUNCTION_PREFIX;
+import static jdk.nashorn.internal.codegen.CompilerConstants.ANON_FUNCTION_PREFIX;
 import static jdk.nashorn.internal.codegen.CompilerConstants.RUN_SCRIPT;
 import static jdk.nashorn.internal.parser.TokenType.ASSIGN;
 import static jdk.nashorn.internal.parser.TokenType.CASE;
@@ -389,7 +389,9 @@ loop:
             sb.append(parentFunction.getName()).append('$');
         }
 
-        sb.append(ident != null ? ident.getName() : FUNCTION_PREFIX.symbolName());
+        assert ident.getName() != null;
+        sb.append(ident.getName());
+
         final String name = namespace.uniqueName(sb.toString());
         assert parentFunction != null || name.equals(RUN_SCRIPT.symbolName())  : "name = " + name;// must not rename runScript().
 
@@ -2448,7 +2450,7 @@ loop:
         // name is null, generate anonymous name
         boolean isAnonymous = false;
         if (name == null) {
-            final String tmpName = "_L" + functionLine;
+            final String tmpName = ANON_FUNCTION_PREFIX.symbolName() + functionLine;
             name = new IdentNode(functionToken, Token.descPosition(functionToken), tmpName);
             isAnonymous = true;
         }

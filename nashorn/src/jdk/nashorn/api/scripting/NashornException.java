@@ -158,6 +158,11 @@ public abstract class NashornException extends RuntimeException {
                 if (methodName.equals(CompilerConstants.RUN_SCRIPT.symbolName())) {
                     methodName = "<program>";
                 }
+
+                if (methodName.contains(CompilerConstants.ANON_FUNCTION_PREFIX.symbolName())) {
+                    methodName = "<anonymous>";
+                }
+
                 filtered.add(new StackTraceElement(className, methodName,
                         st.getFileName(), st.getLineNumber()));
             }
