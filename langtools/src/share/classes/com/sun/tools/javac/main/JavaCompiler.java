@@ -578,7 +578,7 @@ public class JavaCompiler {
     }
 
     protected final <T> Queue<T> stopIfError(CompileState cs, Queue<T> queue) {
-        return shouldStop(cs) ? new ListBuffer<>() : queue;
+        return shouldStop(cs) ? new ListBuffer<T>() : queue;
     }
 
     protected final <T> List<T> stopIfError(CompileState cs, List<T> list) {

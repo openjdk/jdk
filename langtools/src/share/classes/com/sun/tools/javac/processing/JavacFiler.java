@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -359,13 +359,13 @@ public class JavacFiler implements Filer, Closeable {
 
         log = Log.instance(context);
 
-        fileObjectHistory = synchronizedSet(new LinkedHashSet<>());
-        generatedSourceNames = synchronizedSet(new LinkedHashSet<>());
-        generatedSourceFileObjects = synchronizedSet(new LinkedHashSet<>());
+        fileObjectHistory = synchronizedSet(new LinkedHashSet<FileObject>());
+        generatedSourceNames = synchronizedSet(new LinkedHashSet<String>());
+        generatedSourceFileObjects = synchronizedSet(new LinkedHashSet<JavaFileObject>());
 
-        generatedClasses = synchronizedMap(new LinkedHashMap<>());
+        generatedClasses = synchronizedMap(new LinkedHashMap<String, JavaFileObject>());
 
-        openTypeNames  = synchronizedSet(new LinkedHashSet<>());
+        openTypeNames  = synchronizedSet(new LinkedHashSet<String>());
 
         aggregateGeneratedSourceNames = new LinkedHashSet<>();
         aggregateGeneratedClassNames  = new LinkedHashSet<>();

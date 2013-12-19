@@ -883,7 +883,7 @@ public class ClassDocImpl extends ProgramElementDocImpl implements ClassDoc {
     public MethodDocImpl findMethod(String methodName, String[] paramTypes) {
         // Use hash table 'searched' to avoid searching same class twice.
         //### It is not clear how this could happen.
-        return searchMethod(methodName, paramTypes, new HashSet<>());
+        return searchMethod(methodName, paramTypes, new HashSet<ClassDocImpl>());
     }
 
     private MethodDocImpl searchMethod(String methodName,
@@ -1041,7 +1041,7 @@ public class ClassDocImpl extends ProgramElementDocImpl implements ClassDoc {
      * @return the first FieldDocImpl which matches, null if not found.
      */
     public FieldDoc findField(String fieldName) {
-        return searchField(fieldName, new HashSet<>());
+        return searchField(fieldName, new HashSet<ClassDocImpl>());
     }
 
     private FieldDocImpl searchField(String fieldName, Set<ClassDocImpl> searched) {

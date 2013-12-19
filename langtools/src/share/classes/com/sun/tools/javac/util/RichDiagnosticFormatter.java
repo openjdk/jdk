@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -100,7 +100,7 @@ public class RichDiagnosticFormatter extends
         whereClauses = new EnumMap<>(WhereClauseKind.class);
         configuration = new RichConfiguration(Options.instance(context), formatter);
         for (WhereClauseKind kind : WhereClauseKind.values())
-            whereClauses.put(kind, new LinkedHashMap<>());
+            whereClauses.put(kind, new LinkedHashMap<Type, JCDiagnostic>());
     }
 
     @Override
