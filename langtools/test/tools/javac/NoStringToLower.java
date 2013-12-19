@@ -61,7 +61,15 @@ public class NoStringToLower {
             "javax.lang.model",
             "javax.tools",
             "com.sun.source",
-            "com.sun.tools"
+            "com.sun.tools.classfile",
+            "com.sun.tools.doclet",
+            "com.sun.tools.doclint",
+            "com.sun.tools.javac",
+            "com.sun.tools.javadoc",
+            "com.sun.tools.javah",
+            "com.sun.tools.javap",
+            "com.sun.tools.jdeps",
+            "com.sun.tools.sjavac"
         };
         for (String pkg: pkgs) {
             for (JavaFileObject fo: fm.list(javacLoc,
