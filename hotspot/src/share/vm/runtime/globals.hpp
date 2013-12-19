@@ -2531,6 +2531,9 @@ class CommandLineFlags {
   develop(bool, PrintMethodFlushing, false,                                 \
           "Print the nmethods being flushed")                               \
                                                                             \
+  diagnostic(bool, PrintMethodFlushingStatistics, false,                    \
+          "print statistics about method flushing")                         \
+                                                                            \
   develop(bool, UseRelocIndex, false,                                       \
           "Use an index to speed random access to relocations")             \
                                                                             \
