@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -288,7 +288,7 @@ public class JavacState
             b.append("R ").append(theArgs).append("\n");
 
             // Copy over the javac_state for the packages that did not need recompilation.
-            now.copyPackagesExcept(prev, recompiledPackages, new HashSet<>());
+            now.copyPackagesExcept(prev, recompiledPackages, new HashSet<String>());
             // Save the packages, ie package names, dependencies, pubapis and artifacts!
             // I.e. the lot.
             Module.saveModules(now.modules(), b);
@@ -712,9 +712,12 @@ public class JavacState
             Transformer t = e.getKey();
             Map<String,Set<URI>> srcs = e.getValue();
             // These maps need to be synchronized since multiple threads will be writing results into them.
-            Map<String,Set<URI>> packageArtifacts = Collections.synchronizedMap(new HashMap<>());
-            Map<String,Set<String>> packageDependencies = Collections.synchronizedMap(new HashMap<>());
-            Map<String,String> packagePublicApis = Collections.synchronizedMap(new HashMap<>());
+            Map<String,Set<URI>> packageArtifacts =
+                    Collections.synchronizedMap(new HashMap<String,Set<URI>>());
+            Map<String,Set<String>> packageDependencies =
+                    Collections.synchronizedMap(new HashMap<String,Set<String>>());
+            Map<String,String> packagePublicApis =
+                    Collections.synchronizedMap(new HashMap<String, String>());
 
             boolean  r = t.transform(srcs,
                                      visibleSrcs,

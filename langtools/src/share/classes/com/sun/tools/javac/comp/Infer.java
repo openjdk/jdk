@@ -2013,7 +2013,7 @@ public class Infer {
         }
 
         private void solve(GraphStrategy ss, Warner warn) {
-            solve(ss, new HashMap<>(), warn);
+            solve(ss, new HashMap<Type, Set<Type>>(), warn);
         }
 
         /**

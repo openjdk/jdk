@@ -508,7 +508,7 @@ public class Annotate {
             repeated = repeated.reverse();
             TreeMaker m = make.at(ctx.pos.get(firstOccurrence));
             Pair<MethodSymbol, Attribute> p =
-                    new Pair<>(containerValueSymbol,
+                    new Pair<MethodSymbol, Attribute>(containerValueSymbol,
                                new Attribute.Array(arrayOfOrigAnnoType, repeated));
             if (ctx.isTypeCompound) {
                 /* TODO: the following code would be cleaner:

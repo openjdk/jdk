@@ -1771,11 +1771,11 @@ public class LambdaToMethod extends TreeTranslator {
                 }
                 translatedSymbols = new EnumMap<>(LambdaSymbolKind.class);
 
-                translatedSymbols.put(PARAM, new LinkedHashMap<>());
-                translatedSymbols.put(LOCAL_VAR, new LinkedHashMap<>());
-                translatedSymbols.put(CAPTURED_VAR, new LinkedHashMap<>());
-                translatedSymbols.put(CAPTURED_THIS, new LinkedHashMap<>());
-                translatedSymbols.put(TYPE_VAR, new LinkedHashMap<>());
+                translatedSymbols.put(PARAM, new LinkedHashMap<Symbol, Symbol>());
+                translatedSymbols.put(LOCAL_VAR, new LinkedHashMap<Symbol, Symbol>());
+                translatedSymbols.put(CAPTURED_VAR, new LinkedHashMap<Symbol, Symbol>());
+                translatedSymbols.put(CAPTURED_THIS, new LinkedHashMap<Symbol, Symbol>());
+                translatedSymbols.put(TYPE_VAR, new LinkedHashMap<Symbol, Symbol>());
             }
 
              /**

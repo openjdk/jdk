@@ -394,7 +394,7 @@ public abstract class Configuration {
         // in which each appears
         Map<Profile, List<PackageDoc>> interimResults = new EnumMap<>(Profile.class);
         for (Profile p: Profile.values())
-            interimResults.put(p, new ArrayList<>());
+            interimResults.put(p, new ArrayList<PackageDoc>());
 
         for (PackageDoc pkg: packages) {
             if (nodeprecated && Util.isDeprecated(pkg)) {

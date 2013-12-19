@@ -459,7 +459,7 @@ public class JavacTrees extends DocTrees {
 
     /** @see com.sun.tools.javadoc.ClassDocImpl#findField */
     private VarSymbol findField(ClassSymbol tsym, Name fieldName) {
-        return searchField(tsym, fieldName, new HashSet<>());
+        return searchField(tsym, fieldName, new HashSet<ClassSymbol>());
     }
 
     /** @see com.sun.tools.javadoc.ClassDocImpl#searchField */
@@ -525,7 +525,7 @@ public class JavacTrees extends DocTrees {
 
     /** @see com.sun.tools.javadoc.ClassDocImpl#findMethod */
     private MethodSymbol findMethod(ClassSymbol tsym, Name methodName, List<Type> paramTypes) {
-        return searchMethod(tsym, methodName, paramTypes, new HashSet<>());
+        return searchMethod(tsym, methodName, paramTypes, new HashSet<ClassSymbol>());
     }
 
     /** @see com.sun.tools.javadoc.ClassDocImpl#searchMethod */

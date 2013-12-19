@@ -192,7 +192,9 @@ public class CreateSymbols extends AbstractProcessor {
         Symbol.MethodSymbol profileValue = (MethodSymbol) syms.profileType.tsym.members().lookup(names.value).sym;
         for (int i = 1; i < profileAnnos.length; i++) {
             profileAnnos[i] = new Attribute.Compound(syms.profileType,
-                    List.<Pair<Symbol.MethodSymbol, Attribute>>of(new Pair<>(profileValue, new Attribute.Constant(syms.intType, i))));
+                    List.<Pair<Symbol.MethodSymbol, Attribute>>of(
+                        new Pair<Symbol.MethodSymbol, Attribute>(profileValue,
+                        new Attribute.Constant(syms.intType, i))));
         }
 
         Type.moreInfo = true;

@@ -2356,7 +2356,7 @@ public class JavacParser implements Parser {
             } else {
                 JCExpression t = parseType();
                 ListBuffer<JCStatement> stats =
-                        variableDeclarators(mods, t, new ListBuffer<>());
+                        variableDeclarators(mods, t, new ListBuffer<JCStatement>());
                 // A "LocalVariableDeclarationStatement" subsumes the terminating semicolon
                 storeEnd(stats.last(), token.endPos);
                 accept(SEMI);
@@ -2394,7 +2394,7 @@ public class JavacParser implements Parser {
                 JCModifiers mods = F.at(Position.NOPOS).Modifiers(0);
                 F.at(pos);
                 ListBuffer<JCStatement> stats =
-                        variableDeclarators(mods, t, new ListBuffer<>());
+                        variableDeclarators(mods, t, new ListBuffer<JCStatement>());
                 // A "LocalVariableDeclarationStatement" subsumes the terminating semicolon
                 storeEnd(stats.last(), token.endPos);
                 accept(SEMI);
@@ -2730,7 +2730,7 @@ public class JavacParser implements Parser {
     List<JCExpressionStatement> forUpdate() {
         return moreStatementExpressions(token.pos,
                                         parseExpression(),
-                                        new ListBuffer<>()).toList();
+                                        new ListBuffer<JCExpressionStatement>()).toList();
     }
 
     /** AnnotationsOpt = { '@' Annotation }

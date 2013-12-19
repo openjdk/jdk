@@ -273,7 +273,9 @@ public class Util {
      */
     public static List<Type> getAllInterfaces(Type type,
             Configuration configuration, boolean sort) {
-        Map<ClassDoc,Type> results = sort ? new TreeMap<>() : new LinkedHashMap<>();
+        Map<ClassDoc,Type> results = sort ?
+                new TreeMap<ClassDoc,Type>() :
+                new LinkedHashMap<ClassDoc,Type>();
         Type[] interfaceTypes = null;
         Type superType = null;
         if (type instanceof ParameterizedType) {

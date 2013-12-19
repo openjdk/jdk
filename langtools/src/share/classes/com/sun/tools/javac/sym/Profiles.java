@@ -56,7 +56,7 @@ public abstract class Profiles {
         if (args.length >= 2) {
             Map<Integer,Set<String>> lists = new TreeMap<>();
             for (int i = 1; i <= 4; i++)
-                lists.put(i, new TreeSet<>());
+                lists.put(i, new TreeSet<String>());
 
             File rt_jar_lst = new File(args[1]);
             for (String line: Files.readAllLines(rt_jar_lst.toPath(), Charset.defaultCharset())) {

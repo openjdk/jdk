@@ -2601,7 +2601,7 @@ public class Check {
      *  @param type         The type whose interfaces are checked.
      */
     void checkClassBounds(DiagnosticPosition pos, Type type) {
-        checkClassBounds(pos, new HashMap<>(), type);
+        checkClassBounds(pos, new HashMap<TypeSymbol,Type>(), type);
     }
 //where
         /** Enter all interfaces of type `type' into the hash table `seensofar'

@@ -372,7 +372,7 @@ public class Flow {
 
         /** Resolve all continues of this statement. */
         boolean resolveContinues(JCTree tree) {
-            return resolveJump(tree, new ListBuffer<>(), JumpKind.CONTINUE);
+            return resolveJump(tree, new ListBuffer<P>(), JumpKind.CONTINUE);
         }
 
         /** Resolve all breaks of this statement. */
