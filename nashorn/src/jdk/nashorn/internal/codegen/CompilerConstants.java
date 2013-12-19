@@ -76,7 +76,7 @@ public enum CompilerConstants {
     DEFAULT_SCRIPT_NAME("Script"),
 
     /** function prefix for anonymous functions */
-    FUNCTION_PREFIX(":function$"),
+    ANON_FUNCTION_PREFIX("L:"),
 
     /** method name for Java method that is script entry point */
     RUN_SCRIPT("runScript"),
