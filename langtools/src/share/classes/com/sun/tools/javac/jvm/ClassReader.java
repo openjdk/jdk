@@ -115,10 +115,6 @@ public class ClassReader {
      */
     boolean lintClassfile;
 
-    /** Switch: allow default methods
-     */
-    boolean allowDefaultMethods;
-
     /** Switch: preserve parameter names from the variable table.
      */
     public boolean saveParameterNames;
@@ -306,7 +302,6 @@ public class ClassReader {
         allowVarargs     = source.allowVarargs();
         allowAnnotations = source.allowAnnotations();
         allowSimplifiedVarargs = source.allowSimplifiedVarargs();
-        allowDefaultMethods = source.allowDefaultMethods();
 
         saveParameterNames = options.isSet("save-parameter-names");
         cacheCompletionFailure = options.isUnset("dev");
