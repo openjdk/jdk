@@ -252,6 +252,7 @@ public final class Method extends Executable {
 
     /**
      * {@inheritDoc}
+     * @since 1.8
      */
     public int getParameterCount() { return parameterTypes.length; }
 
