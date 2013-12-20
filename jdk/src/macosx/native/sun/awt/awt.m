@@ -434,6 +434,15 @@ JNF_COCOA_ENTER(env);
         forceEmbeddedMode = YES;
     }
 
+    JNIEnv* env = [ThreadUtilities getJNIEnvUncached];
+    jclass jc_SunToolkit = (*env)->FindClass(env, "sun/awt/SunToolkit");
+    jmethodID sjm_getRootThreadGroup = (*env)->GetStaticMethodID(env, jc_SunToolkit, "getRootThreadGroup", "()Ljava/lang/ThreadGroup;");
+    jobject rootThreadGroup = (*env)->CallStaticObjectMethod(env, jc_SunToolkit, sjm_getRootThreadGroup);
+    appkitThreadGroup = (*env)->NewGlobalRef(env, rootThreadGroup);
+    // The current thread was attached in getJNIEnvUnchached.
+    // Detach it back. It will be reattached later if needed with a proper TG
+    [ThreadUtilities detachCurrentThread];
+
     BOOL headless = isHeadless(env);
 
     // We need to let Foundation know that this is a multithreaded application, if it isn't already.

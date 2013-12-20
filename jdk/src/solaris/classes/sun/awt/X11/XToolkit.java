@@ -256,13 +256,7 @@ public final class XToolkit extends UNIXToolkit implements Runnable {
         }
         PrivilegedAction<Void> a = new PrivilegedAction<Void>() {
             public Void run() {
-                ThreadGroup mainTG = Thread.currentThread().getThreadGroup();
-                ThreadGroup parentTG = mainTG.getParent();
-                while (parentTG != null) {
-                    mainTG = parentTG;
-                    parentTG = mainTG.getParent();
-                }
-                Thread shutdownThread = new Thread(mainTG, "XToolkt-Shutdown-Thread") {
+                Thread shutdownThread = new Thread(getRootThreadGroup(), "XToolkt-Shutdown-Thread") {
                         public void run() {
                             XSystemTrayPeer peer = XSystemTrayPeer.getPeerInstance();
                             if (peer != null) {
@@ -324,13 +318,8 @@ public final class XToolkit extends UNIXToolkit implements Runnable {
 
             PrivilegedAction<Thread> action = new PrivilegedAction() {
                 public Thread run() {
-                    ThreadGroup currentTG = Thread.currentThread().getThreadGroup();
-                    ThreadGroup parentTG = currentTG.getParent();
-                    while (parentTG != null) {
-                        currentTG = parentTG;
-                        parentTG = currentTG.getParent();
-                    }
-                    Thread thread = new Thread(currentTG, XToolkit.this, "AWT-XAWT");
+                    Thread thread = new Thread(getRootThreadGroup(), XToolkit.this, "AWT-XAWT");
+                    thread.setContextClassLoader(null);
                     thread.setPriority(Thread.NORM_PRIORITY + 1);
                     thread.setDaemon(true);
                     return thread;

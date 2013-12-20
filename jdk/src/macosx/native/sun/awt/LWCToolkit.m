@@ -226,10 +226,10 @@ Java_sun_lwawt_macosx_LWCToolkit_initIDs
 
         JNIEnv *env = [ThreadUtilities getJNIEnv];
         static JNF_CLASS_CACHE(jc_LWCToolkit, "sun/lwawt/macosx/LWCToolkit");
-        static JNF_STATIC_MEMBER_CACHE(jsm_installToolkitThreadNameInJava, jc_LWCToolkit, "installToolkitThreadNameInJava", "()V");
-        JNFCallStaticVoidMethod(env, jsm_installToolkitThreadNameInJava);
+        static JNF_STATIC_MEMBER_CACHE(jsm_installToolkitThreadInJava, jc_LWCToolkit, "installToolkitThreadInJava", "()V");
+        JNFCallStaticVoidMethod(env, jsm_installToolkitThreadInJava);
     });
-
+    
     gNumberOfButtons = sun_lwawt_macosx_LWCToolkit_BUTTONS;
 
     jclass inputEventClazz = (*env)->FindClass(env, "java/awt/event/InputEvent");
