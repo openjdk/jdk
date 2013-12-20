@@ -851,8 +851,7 @@ public class LogManager {
             @Override
             public Object run() {
                 String names[] = parseClassNames(handlersPropertyName);
-                for (int i = 0; i < names.length; i++) {
-                    String word = names[i];
+                for (String word : names) {
                     try {
                         Class<?> clz = ClassLoader.getSystemClassLoader().loadClass(word);
                         Handler hdl = (Handler) clz.newInstance();
@@ -1231,8 +1230,7 @@ public class LogManager {
     private void resetLogger(Logger logger) {
         // Close all the Logger's handlers.
         Handler[] targets = logger.getHandlers();
-        for (int i = 0; i < targets.length; i++) {
-            Handler h = targets[i];
+        for (Handler h : targets) {
             logger.removeHandler(h);
             try {
                 h.close();
@@ -1302,8 +1300,7 @@ public class LogManager {
         // Instantiate new configuration objects.
         String names[] = parseClassNames("config");
 
-        for (int i = 0; i < names.length; i++) {
-            String word = names[i];
+        for (String word : names) {
             try {
                 Class<?> clz = ClassLoader.getSystemClassLoader().loadClass(word);
                 clz.newInstance();
@@ -1489,9 +1486,7 @@ public class LogManager {
             if (children == null) {
                 return;
             }
-            Iterator<LogNode> values = children.values().iterator();
-            while (values.hasNext()) {
-                LogNode node = values.next();
+            for (LogNode node : children.values()) {
                 LoggerWeakRef ref = node.loggerRef;
                 Logger logger = (ref == null) ? null : ref.get();
                 if (logger == null) {

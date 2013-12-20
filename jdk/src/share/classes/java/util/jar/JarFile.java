@@ -324,8 +324,8 @@ class JarFile extends ZipFile {
         if (verify) {
             String[] names = getMetaInfEntryNames();
             if (names != null) {
-                for (int i = 0; i < names.length; i++) {
-                    String name = names[i].toUpperCase(Locale.ENGLISH);
+                for (String nameLower : names) {
+                    String name = nameLower.toUpperCase(Locale.ENGLISH);
                     if (name.endsWith(".DSA") ||
                         name.endsWith(".RSA") ||
                         name.endsWith(".EC") ||
@@ -356,8 +356,8 @@ class JarFile extends ZipFile {
         try {
             String[] names = getMetaInfEntryNames();
             if (names != null) {
-                for (int i = 0; i < names.length; i++) {
-                    JarEntry e = getJarEntry(names[i]);
+                for (String name : names) {
+                    JarEntry e = getJarEntry(name);
                     if (e == null) {
                         throw new JarException("corrupted jar file");
                     }
@@ -487,10 +487,9 @@ class JarFile extends ZipFile {
                 // entries to find a match.
                 String[] names = getMetaInfEntryNames();
                 if (names != null) {
-                    for (int i = 0; i < names.length; i++) {
-                        if (MANIFEST_NAME.equals(
-                                                 names[i].toUpperCase(Locale.ENGLISH))) {
-                            manEntry = getJarEntry(names[i]);
+                    for (String name : names) {
+                        if (MANIFEST_NAME.equals(name.toUpperCase(Locale.ENGLISH))) {
+                            manEntry = getJarEntry(name);
                             break;
                         }
                     }
@@ -580,11 +579,10 @@ class JarFile extends ZipFile {
         }
 
         String name = getName();
-        String localJavaHome = javaHome;
-        if (name.startsWith(localJavaHome)) {
+        if (name.startsWith(javaHome)) {
             String[] names = jarNames;
-            for (int i = 0; i < names.length; i++) {
-                if (name.endsWith(names[i])) {
+            for (String jarName : names) {
+                if (name.endsWith(jarName)) {
                     return true;
                 }
             }
@@ -619,8 +617,8 @@ class JarFile extends ZipFile {
          * code source?
          */
         boolean includeUnsigned = false;
-        for (int i = 0; i < cs.length; i++) {
-            if (cs[i].getCodeSigners() == null) {
+        for (CodeSource c : cs) {
+            if (c.getCodeSigners() == null) {
                 includeUnsigned = true;
                 break;
             }
@@ -776,6 +774,6 @@ class JarFile extends ZipFile {
         if (jv != null) {
             return jv.getManifestDigests();
         }
-        return new ArrayList<Object>();
+        return new ArrayList<>();
     }
 }
