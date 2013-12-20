@@ -204,6 +204,7 @@ public final class Constructor<T> extends Executable {
 
     /**
      * {@inheritDoc}
+     * @since 1.8
      */
     public int getParameterCount() { return parameterTypes.length; }
 
