@@ -2499,8 +2499,7 @@ public final class Formatter implements Closeable, Flushable {
         int lasto = -1;
 
         FormatString[] fsa = parse(format);
-        for (int i = 0; i < fsa.length; i++) {
-            FormatString fs = fsa[i];
+        for (FormatString fs : fsa) {
             int index = fs.index();
             try {
                 switch (index) {
@@ -2992,9 +2991,9 @@ public final class Formatter implements Closeable, Flushable {
         }
 
         private void checkBadFlags(Flags ... badFlags) {
-            for (int i = 0; i < badFlags.length; i++)
-                if (f.contains(badFlags[i]))
-                    failMismatch(badFlags[i], c);
+            for (Flags badFlag : badFlags)
+                if (f.contains(badFlag))
+                    failMismatch(badFlag, c);
         }
 
         private void checkFloat() {
@@ -4437,8 +4436,8 @@ public final class Formatter implements Closeable, Flushable {
         public static Flags parse(String s) {
             char[] ca = s.toCharArray();
             Flags f = new Flags(0);
-            for (int i = 0; i < ca.length; i++) {
-                Flags v = parse(ca[i]);
+            for (char c : ca) {
+                Flags v = parse(c);
                 if (f.contains(v))
                     throw new DuplicateFormatFlagsException(v.toString());
                 f.add(v);

@@ -142,9 +142,9 @@ class ArrayPrefixHelpers {
                     if (lt == null) {                // first pass
                         int mid = (l + h) >>> 1;
                         f = rt = t.right =
-                                new CumulateTask<T>(t, fn, a, org, fnc, th, mid, h);
+                                new CumulateTask<>(t, fn, a, org, fnc, th, mid, h);
                         t = lt = t.left  =
-                                new CumulateTask<T>(t, fn, a, org, fnc, th, l, mid);
+                                new CumulateTask<>(t, fn, a, org, fnc, th, l, mid);
                     }
                     else {                           // possibly refork
                         T pin = t.in;
