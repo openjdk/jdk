@@ -34,6 +34,10 @@ package java.lang.annotation;
  * More information about annotation types can be found in section 9.6 of
  * <cite>The Java&trade; Language Specification</cite>.
  *
+ * The {@link java.lang.reflect.AnnotatedElement} interface discusses
+ * compatibility concerns when evolving an annotation type from being
+ * non-repeatable to being repeatable.
+ *
  * @author  Josh Bloch
  * @since   1.5
  */
