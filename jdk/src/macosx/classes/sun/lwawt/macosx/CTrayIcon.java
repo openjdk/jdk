@@ -76,8 +76,9 @@ public class CTrayIcon extends CFRetainedResource implements TrayIconPeer {
                 menuPeer = (CPopupMenu)popup.getPeer();
                 if (menuPeer == null) {
                     popup.addNotify();
+                    menuPeer = (CPopupMenu)popup.getPeer();
                 }
-            }catch (Exception e){
+            } catch (Exception e) {
                 e.printStackTrace();
             }
         }
@@ -97,7 +98,12 @@ public class CTrayIcon extends CFRetainedResource implements TrayIconPeer {
     //invocation from the AWTTrayIcon.m
     public long getPopupMenuModel(){
         if(popup == null) {
-            return 0L;
+            PopupMenu popupMenu = target.getPopupMenu();
+            if (popupMenu != null) {
+                popup = popupMenu;
+            } else {
+                return 0L;
+            }
         }
         return checkAndCreatePopupPeer().getModel();
     }
@@ -133,6 +139,10 @@ public class CTrayIcon extends CFRetainedResource implements TrayIconPeer {
         }
 
         dummyFrame.dispose();
+
+        if (popup != null) {
+            popup.removeNotify();
+        }
 
         LWCToolkit.targetDisposedPeer(target, this);
         target = null;
