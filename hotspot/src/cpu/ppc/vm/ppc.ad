@@ -3563,9 +3563,6 @@ encode %{
 
   // postalloc expand emitter for virtual calls.
   enc_class postalloc_expand_java_dynamic_call_sched(method meth, iRegLdst toc) %{
-    // Toc is in return address field, though not accessible via postalloc_expand
-    // functionaliy.
-    Node *toc = in(TypeFunc::ReturnAdr);
 
     // Create the nodes for loading the IC from the TOC.
     loadConLNodesTuple loadConLNodes_IC =
@@ -3592,23 +3589,21 @@ encode %{
     // New call needs all inputs of old call.
     // Req...
     for (uint i = 0; i < req(); ++i) {
-      if (i != TypeFunc::ReturnAdr) {
-        call->add_req(in(i));
+      // The expanded node does not need toc any more.
+      // Add the inline cache constant here instead.  This expresses the 
+      // register of the inline cache must be live at the call.
+      // Else we would have to adapt JVMState by -1.
+      if (i == mach_constant_base_node_input()) {
+        call->add_req(loadConLNodes_IC._last);        
       } else {
-        // The expanded node does not need toc any more.
-        call->add_req(C->top());
+        call->add_req(in(i));
       }
     }
     // ...as well as prec
-    for (uint i = req(); i < len() ; ++i) {
+    for (uint i = req(); i < len(); ++i) {
       call->add_prec(in(i));
     }
 
-    // The cache must come before the call, but it's not a req edge.
-    // GL: actually it should be a req edge to express that the
-    // register must be live in the Call. But as R19 is declared to be
-    // the inline_cache_reg that's fine.
-    call->add_prec(loadConLNodes_IC._last);
     // Remember nodes loading the inline cache into r19.
     call->_load_ic_hi_node = loadConLNodes_IC._large_hi;
     call->_load_ic_node    = loadConLNodes_IC._small;
@@ -3638,13 +3633,13 @@ encode %{
       // Must be invalid_vtable_index, not nonvirtual_vtable_index.
       assert(_vtable_index == Method::invalid_vtable_index, "correct sentinel value");
       Register ic_reg = as_Register(Matcher::inline_cache_reg_encode());
-      AddressLiteral oop = __ allocate_metadata_address((Metadata *)Universe::non_oop_word());
+      AddressLiteral meta = __ allocate_metadata_address((Metadata *)Universe::non_oop_word());
 
-      address virtual_call_oop_addr = __ pc();
-      __ load_const_from_method_toc(ic_reg, oop, Rtoc);
+      address virtual_call_meta_addr = __ pc();
+      __ load_const_from_method_toc(ic_reg, meta, Rtoc);
       // CALL to fixup routine.  Fixup routine uses ScopeDesc info
       // to determine who we intended to call.
-      __ relocate(virtual_call_Relocation::spec(virtual_call_oop_addr));
+      __ relocate(virtual_call_Relocation::spec(virtual_call_meta_addr));
       emit_call_with_trampoline_stub(_masm, (address)$meth$$method, relocInfo::none);
       assert(((MachCallDynamicJavaNode*)this)->ret_addr_offset() == __ offset() - start_offset,
              "Fix constant in ret_addr_offset()");
@@ -3674,6 +3669,7 @@ encode %{
              "Fix constant in ret_addr_offset()");
     }
 #endif
+    guarantee(0, "Fix handling of toc edge: messes up derived/base pairs.");
     Unimplemented();  // ret_addr_offset not yet fixed. Depends on compressed oops (load klass!).
   %}
 
@@ -3775,16 +3771,14 @@ encode %{
     // New call needs all inputs of old call.
     // Req...
     for (uint i = 0; i < req(); ++i) {
-      if (i != TypeFunc::ReturnAdr) {
+      if (i != mach_constant_base_node_input()) {
         call->add_req(in(i));
-      } else {
-        // put the mtctr where ReturnAdr would be
-        call->add_req(mtctr);
       }
     }
 
     // These must be reqired edges, as the registers are live up to
     // the call. Else the constants are handled as kills.
+    call->add_req(mtctr);
     call->add_req(loadConLNodes_Env._last);
     call->add_req(loadConLNodes_Toc._last);
 
@@ -3818,7 +3812,7 @@ frame %{
   // These two registers define part of the calling convention between
   // compiled code and the interpreter.
 
-  // Inline Cache Register or methodOop for I2C.
+  // Inline Cache Register or method for I2C.
   inline_cache_reg(R19); // R19_method
 
   // Method Oop Register when calling interpreter.
@@ -6149,8 +6143,8 @@ instruct loadConP_lo(iRegPdst dst, immP_NM src, iRegLdst base) %{
   size(4);
   ins_encode %{
     // TODO: PPC port $archOpcode(ppc64Opcode_ld);
-    int offset = ra_->C->in_scratch_emit_size() ? 0 : MacroAssembler::largeoffset_si16_si16_lo(_const_toc_offset_hi_node->_const_toc_offset);
-    __ ld($dst$$Register, offset, $base$$Register);
+    int offset = ra_->C->in_scratch_emit_size() ? 0 : _const_toc_offset_hi_node->_const_toc_offset;
+    __ ld($dst$$Register, MacroAssembler::largeoffset_si16_si16_lo(offset), $base$$Register);
   %}
   ins_pipe(pipe_class_memory);
 %}
@@ -6784,7 +6778,7 @@ instruct cond_add_base(iRegPdst dst, flagsReg crx, iRegPsrc src1) %{
     Label done;
     __ beq($crx$$CondRegister, done);
     __ add($dst$$Register, $src1$$Register, R30);
-    // TODO PPC port __ endgroup_if_needed(_size == 12);
+    // TODO PPC port  __ endgroup_if_needed(_size == 12);
     __ bind(done);
   %}
   ins_pipe(pipe_class_default);

@@ -306,6 +306,7 @@ int main(int argc, char *argv[])
   AD.buildInstructMatchCheck(AD._CPP_file._fp);  // .cpp
   // define methods for machine dependent frame management
   AD.buildFrameMethods(AD._CPP_file._fp);         // .cpp
+  AD.generate_needs_clone_jvms(AD._CPP_file._fp);
 
   // do this last:
   AD.addPreprocessorChecks(AD._CPP_file._fp);     // .cpp

@@ -1665,7 +1665,15 @@ void ArchDesc::declareClasses(FILE *fp) {
 
     if (instr->needs_constant_base() &&
         !instr->is_mach_constant()) {  // These inherit the funcion from MachConstantNode.
-      fprintf(fp,"  virtual uint           mach_constant_base_node_input() const { return req()-1; }\n");
+      fprintf(fp,"  virtual uint           mach_constant_base_node_input() const { ");
+      if (instr->is_ideal_call() != Form::invalid_type &&
+          instr->is_ideal_call() != Form::JAVA_LEAF) {
+        // MachConstantBase goes behind arguments, but before jvms.
+        fprintf(fp,"assert(tf() && tf()->domain(), \"\"); return tf()->domain()->cnt();");
+      } else {
+        fprintf(fp,"return req()-1;");
+      }
+      fprintf(fp," }\n");
     }
 
     // Allow machine-independent optimization, invert the sense of the IF test

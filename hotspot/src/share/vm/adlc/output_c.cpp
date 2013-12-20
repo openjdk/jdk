@@ -1842,17 +1842,23 @@ void ArchDesc::defineExpand(FILE *fp, InstructForm *node) {
   // There are nodes that don't use $constantablebase, but still require that it
   // is an input to the node. Example: divF_reg_immN, Repl32B_imm on x86_64.
   if (node->is_mach_constant() || node->needs_constant_base()) {
-    fprintf(fp,"  add_req(C->mach_constant_base_node());\n");
+    if (node->is_ideal_call() != Form::invalid_type &&
+        node->is_ideal_call() != Form::JAVA_LEAF) {
+      fprintf(fp, "  // MachConstantBaseNode added in matcher.\n");
+      _needs_clone_jvms = true;
+    } else {
+      fprintf(fp, "  add_req(C->mach_constant_base_node());\n");
+    }
   }
 
-  fprintf(fp,"\n");
-  if( node->expands() ) {
-    fprintf(fp,"  return result;\n");
+  fprintf(fp, "\n");
+  if (node->expands()) {
+    fprintf(fp, "  return result;\n");
   } else {
-    fprintf(fp,"  return this;\n");
+    fprintf(fp, "  return this;\n");
   }
-  fprintf(fp,"}\n");
-  fprintf(fp,"\n");
+  fprintf(fp, "}\n");
+  fprintf(fp, "\n");
 }
 
 
@@ -3640,6 +3646,11 @@ char reg_save_policy(const char *calling_convention) {
   else                                         callconv = 'Z';
 
   return callconv;
+}
+
+void ArchDesc::generate_needs_clone_jvms(FILE *fp_cpp) {
+  fprintf(fp_cpp, "bool Compile::needs_clone_jvms() { return %s; }\n\n",
+          _needs_clone_jvms ? "true" : "false");
 }
 
 //---------------------------generate_assertion_checks-------------------

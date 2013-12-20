@@ -1338,11 +1338,23 @@ MachNode *Matcher::match_sfpt( SafePointNode *sfpt ) {
   }
 
   // Debug inputs begin just after the last incoming parameter
-  assert( (mcall == NULL) || (mcall->jvms() == NULL) ||
-          (mcall->jvms()->debug_start() + mcall->_jvmadj == mcall->tf()->domain()->cnt()), "" );
+  assert((mcall == NULL) || (mcall->jvms() == NULL) ||
+         (mcall->jvms()->debug_start() + mcall->_jvmadj == mcall->tf()->domain()->cnt()), "");
 
   // Move the OopMap
   msfpt->_oop_map = sfpt->_oop_map;
+
+  // Add additional edges.
+  if (msfpt->mach_constant_base_node_input() != (uint)-1 && !msfpt->is_MachCallLeaf()) {
+    // For these calls we can not add MachConstantBase in expand(), as the
+    // ins are not complete then.
+    msfpt->ins_req(msfpt->mach_constant_base_node_input(), C->mach_constant_base_node());
+    if (msfpt->jvms() &&
+        msfpt->mach_constant_base_node_input() <= msfpt->jvms()->debug_start() + msfpt->_jvmadj) {
+      // We added an edge before jvms, so we must adapt the position of the ins.
+      msfpt->jvms()->adapt_position(+1);
+    }
+  }
 
   // Registers killed by the call are set in the local scheduling pass
   // of Global Code Motion.
