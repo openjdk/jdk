@@ -595,6 +595,18 @@ void JVMState::set_map_deep(SafePointNode* map) {
   }
 }
 
+// Adapt offsets in in-array after adding or removing an edge.
+// Prerequisite is that the JVMState is used by only one node.
+void JVMState::adapt_position(int delta) {
+  for (JVMState* jvms = this; jvms != NULL; jvms = jvms->caller()) {
+    jvms->set_locoff(jvms->locoff() + delta);
+    jvms->set_stkoff(jvms->stkoff() + delta);
+    jvms->set_monoff(jvms->monoff() + delta);
+    jvms->set_scloff(jvms->scloff() + delta);
+    jvms->set_endoff(jvms->endoff() + delta);
+  }
+}
+
 //=============================================================================
 uint CallNode::cmp( const Node &n ) const
 { return _tf == ((CallNode&)n)._tf && _jvms == ((CallNode&)n)._jvms; }
