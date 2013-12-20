@@ -433,6 +433,18 @@ public final class MinguoDate
     }
 
     //-------------------------------------------------------------------------
+    /**
+     * Compares this date to another date, including the chronology.
+     * <p>
+     * Compares this {@code MinguoDate} with another ensuring that the date is the same.
+     * <p>
+     * Only objects of type {@code MinguoDate} are compared, other types return false.
+     * To compare the dates of two {@code TemporalAccessor} instances, including dates
+     * in two different chronologies, use {@link ChronoField#EPOCH_DAY} as a comparator.
+     *
+     * @param obj  the object to check, null returns false
+     * @return true if this is equal to the other date
+     */
     @Override  // override for performance
     public boolean equals(Object obj) {
         if (this == obj) {
@@ -445,6 +457,11 @@ public final class MinguoDate
         return false;
     }
 
+    /**
+     * A hash code for this date.
+     *
+     * @return a suitable hash code based only on the Chronology and the date
+     */
     @Override  // override for performance
     public int hashCode() {
         return getChronology().getId().hashCode() ^ isoDate.hashCode();
