@@ -600,6 +600,48 @@ public final class HijrahDate
         return getChronology().period(Math.toIntExact(years), months, days);
     }
 
+    //-------------------------------------------------------------------------
+    /**
+     * Compares this date to another date, including the chronology.
+     * <p>
+     * Compares this {@code HijrahDate} with another ensuring that the date is the same.
+     * <p>
+     * Only objects of type {@code HijrahDate} are compared, other types return false.
+     * To compare the dates of two {@code TemporalAccessor} instances, including dates
+     * in two different chronologies, use {@link ChronoField#EPOCH_DAY} as a comparator.
+     *
+     * @param obj  the object to check, null returns false
+     * @return true if this is equal to the other date and the Chronologies are equal
+     */
+    @Override  // override for performance
+    public boolean equals(Object obj) {
+        if (this == obj) {
+            return true;
+        }
+        if (obj instanceof HijrahDate) {
+            HijrahDate otherDate = (HijrahDate) obj;
+            return prolepticYear == otherDate.prolepticYear
+                && this.monthOfYear == otherDate.monthOfYear
+                && this.dayOfMonth == otherDate.dayOfMonth
+                && getChronology().equals(otherDate.getChronology());
+        }
+        return false;
+    }
+
+    /**
+     * A hash code for this date.
+     *
+     * @return a suitable hash code based only on the Chronology and the date
+     */
+    @Override  // override for performance
+    public int hashCode() {
+        int yearValue = prolepticYear;
+        int monthValue = monthOfYear;
+        int dayValue = dayOfMonth;
+        return getChronology().getId().hashCode() ^ (yearValue & 0xFFFFF800)
+                ^ ((yearValue << 11) + (monthValue << 6) + (dayValue));
+    }
+
     //-----------------------------------------------------------------------
     /**
      * Defend against malicious streams.
