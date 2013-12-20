@@ -64,6 +64,7 @@ package java.time;
 import java.io.DataOutput;
 import java.io.IOException;
 import java.io.InvalidObjectException;
+import java.io.ObjectInputStream;
 import java.io.Serializable;
 import java.time.format.DateTimeFormatterBuilder;
 import java.time.format.TextStyle;
@@ -615,10 +616,10 @@ public abstract class ZoneId implements Serializable {
     //-----------------------------------------------------------------------
     /**
      * Defend against malicious streams.
-     * @return never
+     *
      * @throws InvalidObjectException always
      */
-    private Object readResolve() throws InvalidObjectException {
+    private void readObject(ObjectInputStream s) throws InvalidObjectException {
         throw new InvalidObjectException("Deserialization via serialization delegate");
     }
 
