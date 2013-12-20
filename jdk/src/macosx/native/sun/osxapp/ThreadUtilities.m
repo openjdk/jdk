@@ -33,21 +33,38 @@
 // The following must be named "jvm", as there are extern references to it in AWT
 JavaVM *jvm = NULL;
 static JNIEnv *appKitEnv = NULL;
+jobject appkitThreadGroup = NULL;
+
+inline void attachCurrentThread(void** env) {
+    JavaVMAttachArgs args;
+    args.version = JNI_VERSION_1_2;
+    args.name = NULL; // Set from LWCToolkit
+    if ([NSThread isMainThread]) {
+        args.group = appkitThreadGroup;
+    } else {
+        args.group = NULL;
+    }
+    (*jvm)->AttachCurrentThreadAsDaemon(jvm, env, &args);
+}
 
 @implementation ThreadUtilities
 
 + (JNIEnv*)getJNIEnv {
 AWT_ASSERT_APPKIT_THREAD;
     if (appKitEnv == NULL) {
-        (*jvm)->AttachCurrentThreadAsDaemon(jvm, (void **)&appKitEnv, NULL);
+        attachCurrentThread((void **)&appKitEnv);
     }
     return appKitEnv;
 }
 
 + (JNIEnv*)getJNIEnvUncached {
     JNIEnv *env = NULL;
-    (*jvm)->AttachCurrentThreadAsDaemon(jvm, (void **)&env, nil);
+    attachCurrentThread((void **)&env);
     return env;
+}
+
++ (void)detachCurrentThread {
+    (*jvm)->DetachCurrentThread(jvm);
 }
 
 + (void)performOnMainThreadWaiting:(BOOL)wait block:(void (^)())block {
