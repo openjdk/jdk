@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 4636667 7052425
+ * @bug 4636667 7052425 8016549
  * @summary  Use <H1, <H2>, and <H3> in proper sequence for accessibility
  * @author dkramer
  * @run main AccessH1
@@ -85,7 +85,7 @@ public class AccessH1 {
     private static final String[][] testArray = {
         // Test the style sheet
         {
-            "h1 {" + LS + "    font-size:1.8em;" + LS +
+            "h1 {" + LS + "    font-size:20px;" + LS +
             "}",
             TMPDEST_DIR1 + "stylesheet.css"
         },
