@@ -702,8 +702,6 @@ bool CommandLineFlags::ccstrAt(char* name, size_t len, ccstr* value) {
   return true;
 }
 
-// Contract:  Flag will make private copy of the incoming value.
-// Outgoing value is always malloc-ed, and caller MUST call free.
 bool CommandLineFlags::ccstrAtPut(char* name, size_t len, ccstr* value, Flag::Flags origin) {
   Flag* result = Flag::find_flag(name, len);
   if (result == NULL) return false;
@@ -726,7 +724,6 @@ bool CommandLineFlags::ccstrAtPut(char* name, size_t len, ccstr* value, Flag::Fl
   return true;
 }
 
-// Contract:  Flag will make private copy of the incoming value.
 void CommandLineFlagsEx::ccstrAtPut(CommandLineFlagWithType flag, ccstr value, Flag::Flags origin) {
   Flag* faddr = address_of_flag(flag);
   guarantee(faddr != NULL && faddr->is_ccstr(), "wrong flag type");
