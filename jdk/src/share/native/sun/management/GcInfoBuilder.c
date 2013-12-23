@@ -59,12 +59,12 @@ JNIEXPORT void JNICALL Java_sun_management_GcInfoBuilder_fillGcAttributeInfo
         return;
     }
 
-    if (num_attributes == 0) {
+    if (num_attributes <= 0) {
         JNU_ThrowIllegalArgumentException(env, "Invalid num_attributes");
         return;
     }
 
-    ext_att_info = (jmmExtAttributeInfo*) malloc(num_attributes *
+    ext_att_info = (jmmExtAttributeInfo*) malloc((size_t)num_attributes *
                                                  sizeof(jmmExtAttributeInfo));
     if (ext_att_info == NULL) {
         JNU_ThrowOutOfMemoryError(env, 0);
@@ -78,7 +78,7 @@ JNIEXPORT void JNICALL Java_sun_management_GcInfoBuilder_fillGcAttributeInfo
         return;
     }
 
-    nativeTypes = (jchar*) malloc(num_attributes * sizeof(jchar));
+    nativeTypes = (jchar*) malloc((size_t)num_attributes * sizeof(jchar));
     if (nativeTypes == NULL) {
         free(ext_att_info);
         JNU_ThrowOutOfMemoryError(env, 0);
@@ -188,11 +188,16 @@ JNIEXPORT jobject JNICALL Java_sun_management_GcInfoBuilder_getLastGcInfo0
         return 0;
     }
 
+    if (ext_att_count <= 0) {
+        JNU_ThrowIllegalArgumentException(env, "Invalid ext_att_count");
+        return;
+    }
+
     gc_stat.usage_before_gc = usageBeforeGC;
     gc_stat.usage_after_gc = usageAfterGC;
     gc_stat.gc_ext_attribute_values_size = ext_att_count;
     if (ext_att_count > 0) {
-        gc_stat.gc_ext_attribute_values = (jvalue*) malloc(ext_att_count *
+        gc_stat.gc_ext_attribute_values = (jvalue*) malloc((size_t)ext_att_count *
                                                            sizeof(jvalue));
         if (gc_stat.gc_ext_attribute_values == NULL) {
             JNU_ThrowOutOfMemoryError(env, 0);
@@ -212,7 +217,7 @@ JNIEXPORT jobject JNICALL Java_sun_management_GcInfoBuilder_getLastGcInfo0
     }
 
     // convert the ext_att_types to native types
-    nativeTypes = (jchar*) malloc(ext_att_count * sizeof(jchar));
+    nativeTypes = (jchar*) malloc((size_t)ext_att_count * sizeof(jchar));
     if (nativeTypes == NULL) {
         if (gc_stat.gc_ext_attribute_values != NULL) {
             free(gc_stat.gc_ext_attribute_values);
