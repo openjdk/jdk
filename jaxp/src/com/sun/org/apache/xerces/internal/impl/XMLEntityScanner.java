@@ -1142,7 +1142,7 @@ public class XMLEntityScanner implements XMLLocator  {
             int i=0;
             for ( i = offset; i < fCurrentEntity.position; i++) {
                 fCurrentEntity.ch[i] = '\n';
-                whiteSpaceLookup[whiteSpaceLen++]=i;
+                storeWhiteSpace(i);
             }
 
             int length = fCurrentEntity.position - offset;
@@ -1163,27 +1163,18 @@ public class XMLEntityScanner implements XMLLocator  {
         }
 
         // scan literal value
-        while (fCurrentEntity.position < fCurrentEntity.count) {
-            c = fCurrentEntity.ch[fCurrentEntity.position++];
+        for (; fCurrentEntity.position<fCurrentEntity.count; fCurrentEntity.position++) {
+            c = fCurrentEntity.ch[fCurrentEntity.position];
             if ((c == quote &&
-                 (!fCurrentEntity.literal || isExternal))
-                || c == '%' || !XMLChar.isContent(c)) {
-                fCurrentEntity.position--;
+                    (!fCurrentEntity.literal || isExternal)) ||
+                    c == '%' || !XMLChar.isContent(c)) {
                 break;
             }
-            if(whiteSpaceInfoNeeded){
-                if(c == 0x20 || c == 0x9){
-                    if(whiteSpaceLen < whiteSpaceLookup.length){
-                        whiteSpaceLookup[whiteSpaceLen++]= fCurrentEntity.position-1;
-                    }else{
-                        int [] tmp = new int[whiteSpaceLookup.length*2];
-                        System.arraycopy(whiteSpaceLookup,0,tmp,0,whiteSpaceLookup.length);
-                        whiteSpaceLookup = tmp;
-                        whiteSpaceLookup[whiteSpaceLen++]= fCurrentEntity.position - 1;
-                    }
-                }
+            if (whiteSpaceInfoNeeded && c == '\t') {
+                storeWhiteSpace(fCurrentEntity.position);
             }
         }
+
         int length = fCurrentEntity.position - offset;
         fCurrentEntity.columnNumber += length - newlines;
         content.setValues(fCurrentEntity.ch, offset, length);
@@ -1208,6 +1199,24 @@ public class XMLEntityScanner implements XMLLocator  {
         return c;
 
     } // scanLiteral(int,XMLString):int
+
+    /**
+     * Save whitespace information. Increase the whitespace buffer by 100
+     * when needed.
+     *
+     * For XML 1.0, legal characters below 0x20 are 0x09 (TAB), 0x0A (LF) and 0x0D (CR).
+     *
+     * @param whiteSpacePos position of a whitespace in the scanner entity buffer
+     */
+    private void storeWhiteSpace(int whiteSpacePos) {
+        if (whiteSpaceLen >= whiteSpaceLookup.length) {
+            int [] tmp = new int[whiteSpaceLookup.length + 100];
+            System.arraycopy(whiteSpaceLookup, 0, tmp, 0, whiteSpaceLookup.length);
+            whiteSpaceLookup = tmp;
+        }
+
+        whiteSpaceLookup[whiteSpaceLen++] = whiteSpacePos;
+    }
 
     //CHANGED:
     /**
