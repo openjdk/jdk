@@ -44,6 +44,7 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentHashMap;
 import jdk.internal.dynalink.linker.GuardedInvocation;
 import jdk.internal.dynalink.linker.LinkRequest;
+import jdk.nashorn.internal.lookup.Lookup;
 import jdk.nashorn.internal.objects.annotations.Attribute;
 import jdk.nashorn.internal.objects.annotations.Property;
 import jdk.nashorn.internal.objects.annotations.ScriptClass;
@@ -363,6 +364,11 @@ public final class Global extends ScriptObject implements GlobalObject, Scope {
     private ScriptObject   builtinUint32Array;
     private ScriptObject   builtinFloat32Array;
     private ScriptObject   builtinFloat64Array;
+
+    /*
+     * ECMA section 13.2.3 The [[ThrowTypeError]] Function Object
+     */
+    private ScriptFunction typeErrorThrower;
 
     private PropertyMap    accessorPropertyDescriptorMap;
     private PropertyMap    arrayBufferViewMap;
@@ -1112,6 +1118,10 @@ public final class Global extends ScriptObject implements GlobalObject, Scope {
 
     private ScriptFunction getBuiltinArray() {
         return builtinArray;
+    }
+
+    ScriptFunction getTypeErrorThrower() {
+        return typeErrorThrower;
     }
 
     /**
@@ -1999,6 +2009,13 @@ public final class Global extends ScriptObject implements GlobalObject, Scope {
         builtinFunction.setPrototype(anon);
         anon.set("constructor", builtinFunction, false);
         anon.deleteOwnProperty(anon.getMap().findProperty("prototype"));
+
+        // use "getter" so that [[ThrowTypeError]] function's arity is 0 - as specified in step 10 of section 13.2.3
+        this.typeErrorThrower = new ScriptFunctionImpl("TypeErrorThrower", Lookup.TYPE_ERROR_THROWER_GETTER, null, null, false, false, false);
+        typeErrorThrower.setPrototype(UNDEFINED);
+        // Non-constructor built-in functions do not have "prototype" property
+        typeErrorThrower.deleteOwnProperty(typeErrorThrower.getMap().findProperty("prototype"));
+        typeErrorThrower.preventExtensions();
 
         // now initialize Object
         this.builtinObject = (ScriptFunction)initConstructor("Object");
