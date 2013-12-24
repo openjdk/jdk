@@ -608,9 +608,7 @@ public class CPlatformWindow extends CFRetainedResource implements PlatformWindo
             // Add myself as a child
             if (owner != null && owner.isVisible()) {
                 CWrapper.NSWindow.addChildWindow(owner.getNSWindowPtr(), nsWindowPtr, CWrapper.NSWindow.NSWindowAbove);
-                if (target.isAlwaysOnTop()) {
-                    CWrapper.NSWindow.setLevel(nsWindowPtr, CWrapper.NSWindow.NSFloatingWindowLevel);
-                }
+                applyWindowLevel(target);
             }
 
             // Add my own children to myself
@@ -620,9 +618,7 @@ public class CPlatformWindow extends CFRetainedResource implements PlatformWindo
                     CPlatformWindow pw = (CPlatformWindow)((LWWindowPeer)p).getPlatformWindow();
                     if (pw != null && pw.isVisible()) {
                         CWrapper.NSWindow.addChildWindow(nsWindowPtr, pw.getNSWindowPtr(), CWrapper.NSWindow.NSWindowAbove);
-                        if (w.isAlwaysOnTop()) {
-                            CWrapper.NSWindow.setLevel(pw.getNSWindowPtr(), CWrapper.NSWindow.NSFloatingWindowLevel);
-                        }
+                        pw.applyWindowLevel(w);
                     }
                 }
             }
@@ -1041,8 +1037,14 @@ public class CPlatformWindow extends CFRetainedResource implements PlatformWindo
             CWrapper.NSWindow.addChildWindow(nsWindowOwnerPtr, nsWindowSelfPtr, CWrapper.NSWindow.NSWindowAbove);
         }
 
-        if (target.isAlwaysOnTop()) {
+        applyWindowLevel(target);
+    }
+
+    protected void applyWindowLevel(Window target) {
+        if (target.isAlwaysOnTop() && target.getType() != Window.Type.POPUP) {
             CWrapper.NSWindow.setLevel(getNSWindowPtr(), CWrapper.NSWindow.NSFloatingWindowLevel);
+        } else if (target.getType() == Window.Type.POPUP) {
+            CWrapper.NSWindow.setLevel(getNSWindowPtr(), CWrapper.NSWindow.NSPopUpMenuWindowLevel);
         }
     }
 

@@ -249,6 +249,7 @@ static void initLevels()
     dispatch_once(&pred, ^{
         LEVELS[sun_lwawt_macosx_CWrapper_NSWindow_NSNormalWindowLevel] = NSNormalWindowLevel;
         LEVELS[sun_lwawt_macosx_CWrapper_NSWindow_NSFloatingWindowLevel] = NSFloatingWindowLevel;
+        LEVELS[sun_lwawt_macosx_CWrapper_NSWindow_NSPopUpMenuWindowLevel] = NSPopUpMenuWindowLevel;
     });
 }
 
