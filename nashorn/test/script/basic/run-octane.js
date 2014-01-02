@@ -26,19 +26,22 @@
  */
 
 var tests = [
-    {file:"box2d",suite:"Box2DBenchmark"},
-    {file:"code-load",suite:"CodeLoad"},
-    {file:"crypto",suite:"Crypto"},
-    {file:"deltablue",suite:"DeltaBlue"},
-    {file:"earley-boyer", suite:"EarleyBoyer"},
-    {file:"gbemu", suite:"GameboyBenchmark"},
-    {file:"mandreel", suite:"MandreelBenchmark"},
-    {file:"navier-stokes", suite:"NavierStokes"},
-    {file:"pdfjs", suite:"PdfJS"},
-    {file:"raytrace", suite:"RayTrace"},
-    {file:"regexp", suite:"RegExpSuite"},
-    {file:"richards", suite:"Richards"},
-    {file:"splay", suite:"Splay"}
+    {name:"box2d",         files:["box2d.js"],                         suite:"Box2DBenchmark"},
+    {name:"code-load",     files:["code-load.js"],                     suite:"CodeLoad"},
+    {name:"crypto",        files:["crypto.js"],                        suite:"Crypto"},
+    {name:"deltablue",     files:["deltablue.js"],                     suite:"DeltaBlue"},
+    {name:"earley-boyer",  files:["earley-boyer.js"],                  suite:"EarleyBoyer"},
+    {name:"gbemu",         files:["gbemu-part1.js", "gbemu-part2.js"], suite:"GameboyBenchmark"},
+    {name:"mandreel",      files:["mandreel.js"],                      suite:"MandreelBenchmark"},
+    {name:"navier-stokes", files:["navier-stokes.js"],                 suite:"NavierStokes"},
+    {name:"pdfjs",         files:["pdfjs.js"],                         suite:"PdfJS"},
+    {name:"raytrace",      files:["raytrace.js"],                      suite:"RayTrace"},
+    {name:"regexp",        files:["regexp.js"],                        suite:"RegExpSuite"},
+    {name:"richards",      files:["richards.js"],                      suite:"Richards"},
+    {name:"splay",         files:["splay.js"],                         suite:"Splay"},
+    {name:"typescript",    files:["typescript.js", "typescript-input.js", "typescript-compiler.js"], suite:"typescript"}
+    //zlib currently disabled - requires read
+    //    {name:"zlib",          files:["zlib.js", "zlib-data.js"], suite:"zlib"},
 ];
 var dir = (typeof(__DIR__) == 'undefined') ? "test/script/basic/" : __DIR__;
 
@@ -58,26 +61,36 @@ function should_compile_only(name) {
     return (typeof compile_only !== 'undefined')
 }
 
-function run_one_benchmark(arg, iters) {
-    var file_name;
-    var file = (arg.file + ".js").split('/');
+function load_bench(arg) {
+
+    for (var idx = 0; idx < arg.files.length; idx++) {
+	var f = arg.files[idx];
+	var file = f.split('/');
+	var file_name = path + file[file.length - 1];
     
-    file_name = path + file[file.length - 1];
-    
-    var compile_and_return = should_compile_only(file_name);
-    if (compile_and_return) {
-	if (typeof compile_only === 'undefined') { //for a run, skip compile onlies, don't even compile them
-	    return;
+	var compile_and_return = should_compile_only(file_name);
+	if (compile_and_return) {
+	    if (typeof compile_only === 'undefined') { //for a run, skip compile onlies, don't even compile them
+		return true;
+	    }
 	}
+	
+	print_verbose(arg, "loading '" + arg.name + "' [" + f + "]...");
+	load(file_name); 
     }
-    
-    print_verbose("Loading... " + file_name);
-    load(file_name);
-    
+
     if (compile_and_return) {
-	print_always("Compiled OK: " + arg.file);
-	return;
+	print_always(arg, "Compiled OK");
     }
+    return !compile_and_return;
+
+}
+
+function run_one_benchmark(arg, iters) {
+
+    if (!load_bench(arg)) {
+	return;
+    }    
     
     var success = true;
     var current_name;
@@ -95,9 +108,13 @@ function run_one_benchmark(arg, iters) {
 
     try {
 	for (var x = 0; x < benchmarks.length ; x++) { 
+	    //do warmup run
+	    //reset random number generator needed as of octane 9 before each run
+	    BenchmarkSuite.ResetRNG();
 	    benchmarks[x].Setup();
 	}
-	print_verbose("Running '" + arg.file + "' for " + iters + " iterations of no less than " + min_time + " seconds (" + runtime + ")");
+	BenchmarkSuite.ResetRNG();
+	print_verbose(arg, "running '" + arg.name + "' for " + iters + " iterations of no less than " + min_time + " seconds (" + runtime + ")");
 	
 	var scores = [];
 	
@@ -112,6 +129,9 @@ function run_one_benchmark(arg, iters) {
 	    do {
 		for (var i = 0; i < len; i++) {
 		    benchmarks[i].run();
+		    //important - no timing here like elapsed = new Date() - start, as in the 
+		    //original harness. This will make timing very non-deterministic.
+		    //NOTHING else must live in this loop
 		}	    
 		ops += len;
 		elapsed = new Date - start;
@@ -120,7 +140,7 @@ function run_one_benchmark(arg, iters) {
 	    var score = ops / elapsed * 1000 * 60;
 	    scores.push(score);
 	    var name = it == 0 ? "warmup" : "iteration " + it;   
-	    print_verbose("[" + arg.file + "] " + name + " finished " + score.toFixed(0) + " ops/minute");
+	    print_verbose(arg, name + " finished " + score.toFixed(0) + " ops/minute");
 	}
 
 	for (var x = 0; x < benchmarks.length ; x++) { 
@@ -140,20 +160,20 @@ function run_one_benchmark(arg, iters) {
 	scores = [0];
     }
 
-    var res = "[" + arg.file + "] " + mean_score.toFixed(0);
+    var res = mean_score.toFixed(0);
     if (verbose) {
 	res += " ops/minute (" + min_score.toFixed(0) + "-" + max_score.toFixed(0) + "), warmup=" + scores[0].toFixed(0);
     }
-    print_always(res);
+    print_always(arg, res);
 }
 
-function print_always(x) {
-    print(x);
+function print_always(arg, x) {
+    print("[" + arg.name + "] " + x);
 }
 
-function print_verbose(x) {
+function print_verbose(arg, x) {
     if (verbose) {
-	print(x);
+	print_always(arg, x)
     }
 }
 
@@ -209,7 +229,7 @@ for (var i = 0; i < args.length; i++) {
     } else {
 	var found = false;
 	for (j in tests) {
-	    if (tests[j].file === arg) {
+	    if (tests[j].name === arg) {
 		tests_found.push(tests[j]);
 		found = true;
 		break;
@@ -221,7 +241,7 @@ for (var i = 0; i < args.length; i++) {
 		if (j != 0) {
 		    str += ", ";
 		}
-		str += "'" + tests[j].file + "'";
+		str += "'" + tests[j].name + "'";
 	    }
 	    throw str;
 	}
