@@ -381,6 +381,11 @@ public class RootDocImpl extends DocImpl implements RootDoc {
         env.initDoclint(opts, customTagNames);
     }
 
+    public boolean isFunctionalInterface(AnnotationDesc annotationDesc) {
+        return annotationDesc.annotationType().qualifiedName().equals(
+                env.syms.functionalInterfaceType.toString()) && env.source.allowLambda();
+    }
+
     public boolean showTagMessages() {
         return env.showTagMessages();
     }
