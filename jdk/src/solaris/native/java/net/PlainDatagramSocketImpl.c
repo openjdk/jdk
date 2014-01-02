@@ -1202,6 +1202,9 @@ static void setMulticastInterface(JNIEnv *env, jobject this, int fd,
 #ifdef __linux__
         mcast_set_if_by_addr_v4(env, this, fd, value);
         if (ipv6_available()) {
+            if ((*env)->ExceptionCheck(env)){
+                (*env)->ExceptionClear(env);
+            }
             mcast_set_if_by_addr_v6(env, this, fd, value);
         }
 #else  /* __linux__ not defined */
@@ -1224,6 +1227,9 @@ static void setMulticastInterface(JNIEnv *env, jobject this, int fd,
 #ifdef __linux__
         mcast_set_if_by_if_v4(env, this, fd, value);
         if (ipv6_available()) {
+            if ((*env)->ExceptionCheck(env)){
+                (*env)->ExceptionClear(env);
+            }
             mcast_set_if_by_if_v6(env, this, fd, value);
         }
 #else  /* __linux__ not defined */
@@ -1297,6 +1303,9 @@ static void setMulticastLoopbackMode(JNIEnv *env, jobject this, int fd,
 #ifdef __linux__
     mcast_set_loop_v4(env, this, fd, value);
     if (ipv6_available()) {
+        if ((*env)->ExceptionCheck(env)){
+            (*env)->ExceptionClear(env);
+        }
         mcast_set_loop_v6(env, this, fd, value);
     }
 #else  /* __linux__ not defined */
