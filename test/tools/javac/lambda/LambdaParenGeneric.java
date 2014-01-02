@@ -1,12 +1,10 @@
 /*
- * Copyright (c) 2012, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.  Oracle designates this
- * particular file as subject to the "Classpath" exception as provided
- * by Oracle in the LICENSE file that accompanied this code.
+ * published by the Free Software Foundation.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -23,23 +21,28 @@
  * questions.
  */
 
-/**
- * A utility class used to report information about the system
- * where the javac server is running.
- *
- * <p><b>This is NOT part of any supported API.
- * If you write code that depends on this, you do so at your own
- * risk.  This code and its internal interfaces are subject to change
- * or deletion without notice.</b></p>
+/*
+ * @test
+ * @bug 8029558
+ * @summary VerifyError lambda body is parenthesized generic value
+ * @author  Robert Field
+ * @run main LambdaParenGeneric
  */
-package com.sun.tools.sjavac.server;
 
-public class SysInfo {
-    public int numCores;
-    public long maxMemory;
+public class LambdaParenGeneric {
 
-    public SysInfo(int nc, long mm) {
-        numCores = nc;
-        maxMemory = mm;
+    @FunctionalInterface
+    public interface FI {
+        Integer apply();
+    }
+
+    public static class Val<A> {
+        A value;
+        Val(A v) { value = v; }
+    }
+
+    public static void main(String[] args) {
+        FI inc = () -> (new Val<Integer>(77).value);
+        System.out.println(inc.apply());
     }
 }
