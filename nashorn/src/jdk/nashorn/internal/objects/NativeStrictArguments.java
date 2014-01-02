@@ -76,7 +76,7 @@ public final class NativeStrictArguments extends ScriptObject {
         super(proto, map);
         setIsArguments();
 
-        final ScriptFunction func = ScriptFunctionImpl.getTypeErrorThrower();
+        final ScriptFunction func = Global.instance().getTypeErrorThrower();
         // We have to fill user accessor functions late as these are stored
         // in this object rather than in the PropertyMap of this object.
         setUserAccessors("caller", func, func);
