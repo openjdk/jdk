@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -71,9 +71,9 @@ import sun.security.jca.GetInstance.Instance;
  * <code>TransformService</code> implementations that support the DOM
  * mechanism type must abide by the DOM interoperability requirements defined
  * in the
- * <a href="../../../../../technotes/guides/security/xmldsig/overview.html#DOM Mechanism Requirements">
+ * <a href="../../../../../technotes/guides/security/xmldsig/overview.html#DOM%20Mechanism%20Requirements">
  * DOM Mechanism Requirements</a> section of the API overview. See the
- * <a href="../../../../../technotes/guides/security/xmldsig/overview.html#Service Provider">
+ * <a href="../../../../../technotes/guides/security/xmldsig/overview.html#Service%20Provider">
  * Service Providers</a> section of the API overview for a list of standard
  * mechanism types.
  * <p>
