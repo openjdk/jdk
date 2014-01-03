@@ -136,7 +136,7 @@ public class GroupOfOne {
 
         // clean-up
         group.shutdown();
-        boolean terminated = group.awaitTermination(5, TimeUnit.SECONDS);
+        boolean terminated = group.awaitTermination(20, TimeUnit.SECONDS);
         if (!terminated)
             throw new RuntimeException("Group did not terminate");
 
