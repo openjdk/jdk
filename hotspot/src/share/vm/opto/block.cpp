@@ -748,6 +748,11 @@ Block *PhaseCFG::fixup_trap_based_check(Node *branch, Block *block, int block_po
   block->_succs.map(0, get_block_for_node(proj_never ->raw_out(0)));   // The target of the trap.
   block->_succs.map(1, get_block_for_node(proj_always->raw_out(0)));   // The fall through target.
 
+  if (block->get_node(block->number_of_nodes() - block->_num_succs + 1) != proj_always) {
+    block->map_node(proj_never,  block->number_of_nodes() - block->_num_succs + 0);
+    block->map_node(proj_always, block->number_of_nodes() - block->_num_succs + 1);
+  }
+
   // Place the fall through block after this block.
   Block *bs1 = block->non_connector_successor(1);
   if (bs1 != bnext && move_to_next(bs1, block_pos)) {
