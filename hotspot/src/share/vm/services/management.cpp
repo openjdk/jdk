@@ -1724,6 +1724,9 @@ bool add_global_entry(JNIEnv* env, Handle name, jmmVMGlobal *global, Flag *flag,
     case Flag::ERGONOMIC:
       global->origin = JMM_VMGLOBAL_ORIGIN_ERGONOMIC;
       break;
+    case Flag::ATTACH_ON_DEMAND:
+      global->origin = JMM_VMGLOBAL_ORIGIN_ATTACH_ON_DEMAND;
+      break;
     default:
       global->origin = JMM_VMGLOBAL_ORIGIN_OTHER;
   }
