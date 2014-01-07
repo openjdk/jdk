@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -760,7 +760,7 @@ public abstract class URLConnection {
      * @see        java.net.URLConnection#setContentHandlerFactory(java.net.ContentHandlerFactory)
      * @since 1.3
      */
-    public Object getContent(Class[] classes) throws IOException {
+    public Object getContent(Class<?>[] classes) throws IOException {
         // Must call getInputStream before GetHeaderField gets called
         // so that FileNotFoundException has a chance to be thrown up
         // from here without being caught.
