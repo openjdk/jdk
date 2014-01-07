@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -466,10 +466,12 @@ bool PSScavenge::invoke_no_policy() {
       }
     }
 
-    GCTraceTime tm("StringTable", false, false, &_gc_timer);
-    // Unlink any dead interned Strings and process the remaining live ones.
-    PSScavengeRootsClosure root_closure(promotion_manager);
-    StringTable::unlink_or_oops_do(&_is_alive_closure, &root_closure);
+    {
+      GCTraceTime tm("StringTable", false, false, &_gc_timer);
+      // Unlink any dead interned Strings and process the remaining live ones.
+      PSScavengeRootsClosure root_closure(promotion_manager);
+      StringTable::unlink_or_oops_do(&_is_alive_closure, &root_closure);
+    }
 
     // Finally, flush the promotion_manager's labs, and deallocate its stacks.
     promotion_failure_occurred = PSPromotionManager::post_scavenge(_gc_tracer);
