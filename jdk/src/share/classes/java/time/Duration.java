@@ -1112,29 +1112,29 @@ public final class Duration
 
     //-----------------------------------------------------------------------
     /**
-     * Gets the number of minutes in this duration.
+     * Gets the number of days in this duration.
      * <p>
-     * This returns the total number of minutes in the duration by dividing the
+     * This returns the total number of days in the duration by dividing the
      * number of seconds by 86400.
      * This is based on the standard definition of a day as 24 hours.
      * <p>
      * This instance is immutable and unaffected by this method call.
      *
-     * @return the number of minutes in the duration, may be negative
+     * @return the number of days in the duration, may be negative
      */
     public long toDays() {
         return seconds / SECONDS_PER_DAY;
     }
 
     /**
-     * Gets the number of minutes in this duration.
+     * Gets the number of hours in this duration.
      * <p>
-     * This returns the total number of minutes in the duration by dividing the
+     * This returns the total number of hours in the duration by dividing the
      * number of seconds by 3600.
      * <p>
      * This instance is immutable and unaffected by this method call.
      *
-     * @return the number of minutes in the duration, may be negative
+     * @return the number of hours in the duration, may be negative
      */
     public long toHours() {
         return seconds / SECONDS_PER_HOUR;
