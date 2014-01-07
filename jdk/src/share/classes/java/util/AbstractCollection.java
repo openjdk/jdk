@@ -80,7 +80,8 @@ public abstract class AbstractCollection<E> implements Collection<E> {
     /**
      * {@inheritDoc}
      *
-     * <p>This implementation returns <tt>size() == 0</tt>.
+     * @implSpec
+     * This implementation returns <tt>size() == 0</tt>.
      */
     public boolean isEmpty() {
         return size() == 0;
@@ -89,7 +90,8 @@ public abstract class AbstractCollection<E> implements Collection<E> {
     /**
      * {@inheritDoc}
      *
-     * <p>This implementation iterates over the elements in the collection,
+     * @implSpec
+     * This implementation iterates over the elements in the collection,
      * checking each element in turn for equality with the specified element.
      *
      * @throws ClassCastException   {@inheritDoc}
@@ -112,7 +114,8 @@ public abstract class AbstractCollection<E> implements Collection<E> {
     /**
      * {@inheritDoc}
      *
-     * <p>This implementation returns an array containing all the elements
+     * @implSpec
+     * This implementation returns an array containing all the elements
      * returned by this collection's iterator, in the same order, stored in
      * consecutive elements of the array, starting with index {@code 0}.
      * The length of the returned array is equal to the number of elements
@@ -146,7 +149,8 @@ public abstract class AbstractCollection<E> implements Collection<E> {
     /**
      * {@inheritDoc}
      *
-     * <p>This implementation returns an array containing all the elements
+     * @implSpec
+     * This implementation returns an array containing all the elements
      * returned by this collection's iterator in the same order, stored in
      * consecutive elements of the array, starting with index {@code 0}.
      * If the number of elements returned by the iterator is too large to
@@ -249,7 +253,8 @@ public abstract class AbstractCollection<E> implements Collection<E> {
     /**
      * {@inheritDoc}
      *
-     * <p>This implementation always throws an
+     * @implSpec
+     * This implementation always throws an
      * <tt>UnsupportedOperationException</tt>.
      *
      * @throws UnsupportedOperationException {@inheritDoc}
@@ -265,7 +270,8 @@ public abstract class AbstractCollection<E> implements Collection<E> {
     /**
      * {@inheritDoc}
      *
-     * <p>This implementation iterates over the collection looking for the
+     * @implSpec
+     * This implementation iterates over the collection looking for the
      * specified element.  If it finds the element, it removes the element
      * from the collection using the iterator's remove method.
      *
@@ -304,7 +310,8 @@ public abstract class AbstractCollection<E> implements Collection<E> {
     /**
      * {@inheritDoc}
      *
-     * <p>This implementation iterates over the specified collection,
+     * @implSpec
+     * This implementation iterates over the specified collection,
      * checking each element returned by the iterator in turn to see
      * if it's contained in this collection.  If all elements are so
      * contained <tt>true</tt> is returned, otherwise <tt>false</tt>.
@@ -323,7 +330,8 @@ public abstract class AbstractCollection<E> implements Collection<E> {
     /**
      * {@inheritDoc}
      *
-     * <p>This implementation iterates over the specified collection, and adds
+     * @implSpec
+     * This implementation iterates over the specified collection, and adds
      * each object returned by the iterator to this collection, in turn.
      *
      * <p>Note that this implementation will throw an
@@ -349,7 +357,8 @@ public abstract class AbstractCollection<E> implements Collection<E> {
     /**
      * {@inheritDoc}
      *
-     * <p>This implementation iterates over this collection, checking each
+     * @implSpec
+     * This implementation iterates over this collection, checking each
      * element returned by the iterator in turn to see if it's contained
      * in the specified collection.  If it's so contained, it's removed from
      * this collection with the iterator's <tt>remove</tt> method.
@@ -383,7 +392,8 @@ public abstract class AbstractCollection<E> implements Collection<E> {
     /**
      * {@inheritDoc}
      *
-     * <p>This implementation iterates over this collection, checking each
+     * @implSpec
+     * This implementation iterates over this collection, checking each
      * element returned by the iterator in turn to see if it's contained
      * in the specified collection.  If it's not so contained, it's removed
      * from this collection with the iterator's <tt>remove</tt> method.
@@ -417,7 +427,8 @@ public abstract class AbstractCollection<E> implements Collection<E> {
     /**
      * {@inheritDoc}
      *
-     * <p>This implementation iterates over this collection, removing each
+     * @implSpec
+     * This implementation iterates over this collection, removing each
      * element using the <tt>Iterator.remove</tt> operation.  Most
      * implementations will probably choose to override this method for
      * efficiency.
