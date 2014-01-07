@@ -24,6 +24,7 @@
 /*
  * @test
  * @bug 8015701
+ * @ignore 8030656 Bad version check for parameter information in src/share/vm/classfile/javaClasses.cpp
  * @summary Test method parameter attribute generation with captured locals.
  * @compile -parameters CaptureTest.java
  * @run main CaptureTest
