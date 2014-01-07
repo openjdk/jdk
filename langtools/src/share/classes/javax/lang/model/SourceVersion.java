@@ -55,6 +55,7 @@ public enum SourceVersion {
      * 1.6: no changes
      * 1.7: diamond syntax, try-with-resources, etc.
      * 1.8: lambda expressions and default methods
+     * 1.9: To be determined
      */
 
     /**
@@ -138,7 +139,15 @@ public enum SourceVersion {
      * Additions in this release include lambda expressions and default methods.
      * @since 1.8
      */
-    RELEASE_8;
+    RELEASE_8,
+
+    /**
+     * The version recognized by the Java Platform, Standard Edition
+     * 9.
+     *
+     * @since 1.9
+     */
+     RELEASE_9;
 
     // Note that when adding constants for newer releases, the
     // behavior of latest() and latestSupported() must be updated too.
@@ -149,7 +158,7 @@ public enum SourceVersion {
      * @return the latest source version that can be modeled
      */
     public static SourceVersion latest() {
-        return RELEASE_8;
+        return RELEASE_9;
     }
 
     private static final SourceVersion latestSupported = getLatestSupported();
@@ -159,6 +168,8 @@ public enum SourceVersion {
             String specVersion = System.getProperty("java.specification.version");
 
             switch (specVersion) {
+                case "1.9":
+                    return RELEASE_9;
                 case "1.8":
                     return RELEASE_8;
                 case "1.7":
@@ -271,7 +282,6 @@ public enum SourceVersion {
      * @return {@code true} if {@code s} is a keyword or literal, {@code false} otherwise.
      */
     public static boolean isKeyword(CharSequence s) {
-        String keywordOrLiteral = s.toString();
-        return keywords.contains(keywordOrLiteral);
+        return keywords.contains(s.toString());
     }
 }
