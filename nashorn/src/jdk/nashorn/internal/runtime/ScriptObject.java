@@ -1888,7 +1888,9 @@ public abstract class ScriptObject extends PropertyListenerManager implements Pr
         final ScriptObject obj = (ScriptObject)self;
         final boolean isStrict = NashornCallSiteDescriptor.isStrict(desc);
         if (!obj.isExtensible()) {
-            throw typeError("object.non.extensible", desc.getNameToken(2), ScriptRuntime.safeToString(obj));
+            if (isStrict) {
+                throw typeError("object.non.extensible", desc.getNameToken(2), ScriptRuntime.safeToString(obj));
+            }
         } else if (obj.compareAndSetMap(oldMap, newMap)) {
             setter.invokeExact(self, value);
         } else {
