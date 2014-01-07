@@ -634,7 +634,6 @@ reg_class bits64_reg_leaf_call(
   R31_H, R31
 );
 
-// 64 bit registers used excluding r19.
 // Used to hold the TOC to avoid collisions with expanded DynamicCall
 // which uses r19 as inline cache internally and expanded LeafCall which uses
 // r2, r11 and r12 internally.
@@ -1421,13 +1420,11 @@ void MachPrologNode::emit(CodeBuffer &cbuf, PhaseRegAlloc *ra_) const {
 
   // Optimized version for most common case.
   if (UsePower6SchedulerPPC64 &&
-      !method_is_frameless && Assembler::is_simm((int)(-(_abi(lr) + offset)), 16) &&
+      !method_is_frameless && Assembler::is_simm((int)(-offset), 16) &&
       !(false /* ConstantsALot TODO: PPC port*/)) {
     ___(or) mr(callers_sp, R1_SP);
-    ___(addi) addi(R1_SP, R1_SP, -offset);
-    ___stop; // Emulator won't recognize dependency.
-    ___(std) std(return_pc, _abi(lr) + offset, R1_SP);
-    ___(std) std(callers_sp, 0, R1_SP);
+    ___(std) std(return_pc, _abi(lr), R1_SP);
+    ___(stdu) stdu(R1_SP, -offset, R1_SP);
     return;
   }
 
@@ -1472,6 +1469,7 @@ void MachPrologNode::emit(CodeBuffer &cbuf, PhaseRegAlloc *ra_) const {
 }
 #undef ___
 #undef ___stop
+#undef ___advance
 
 uint MachPrologNode::size(PhaseRegAlloc *ra_) const {
   // Variable size. determine dynamically.
@@ -2853,7 +2851,7 @@ encode %{
     // StoreStore barrier conditionally.
     __ lwz(R0, 0, $releaseFieldAddr$$Register);
     __ cmpwi(CCR0, R0, 0);
-    __ beq_predict_taken(CCR0, skip_release);
+    __ beq_predict_taken(CCR0, skip_storestore);
 #endif
     __ li(R0, 0);
     __ membar(Assembler::StoreStore);
@@ -3518,8 +3516,9 @@ encode %{
 #endif
     // If fails should store backlink before unextending.
 
-    if (ra_->C->env()->failing())
+    if (ra_->C->env()->failing()) {
       return;
+    }
   %}
 
   // Second node of expanded dynamic call - the call.
@@ -3940,11 +3939,6 @@ ins_attrib ins_cost(DEFAULT_COST);
 // long branch? Not required.
 ins_attrib ins_short_branch(0);
 
-// This instruction does implicit checks at the given machine-instruction offset
-// (optional attribute).
-ins_attrib ins_implicit_check_offset(-1);  // TODO: PPC port
-
-ins_attrib ins_implicit_check_follows_matched_true_path(true);
 ins_attrib ins_is_TrapBasedCheckNode(true);
 
 // Number of constants.

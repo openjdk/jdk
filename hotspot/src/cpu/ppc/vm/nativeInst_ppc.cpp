@@ -71,7 +71,7 @@ address NativeCall::destination() const {
   if (nm->stub_contains(destination) && is_NativeCallTrampolineStub_at(destination)) {
     // Yes we do, so get the destination from the trampoline stub.
     const address trampoline_stub_addr = destination;
-    destination = NativeCallTrampolineStub_at(trampoline_stub_addr)->destination();
+    destination = NativeCallTrampolineStub_at(trampoline_stub_addr)->destination(nm);
   }
 
   return destination;
@@ -371,8 +371,8 @@ address NativeCallTrampolineStub::encoded_destination_addr() const {
   return instruction_addr;
 }
 
-address NativeCallTrampolineStub::destination() const {
-  CodeBlob* cb = CodeCache::find_blob(addr_at(0));
+address NativeCallTrampolineStub::destination(nmethod *nm) const {
+  CodeBlob* cb = nm ? nm : CodeCache::find_blob_unsafe(addr_at(0));
   address ctable = cb->content_begin();
 
   return *(address*)(ctable + destination_toc_offset());

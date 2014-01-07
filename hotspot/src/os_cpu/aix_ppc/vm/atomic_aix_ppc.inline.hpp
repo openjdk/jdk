@@ -53,62 +53,62 @@ inline void Atomic::store_ptr(void*    store_value, volatile void*     dest) { *
 
 inline jlong Atomic::load(volatile jlong* src) { return *src; }
 
-/*
-  machine barrier instructions:
+//
+//   machine barrier instructions:
+//
+//   - ppc_sync            two-way memory barrier, aka fence
+//   - ppc_lwsync          orders  Store|Store,
+//                                  Load|Store,
+//                                  Load|Load,
+//                         but not Store|Load
+//   - ppc_eieio           orders memory accesses for device memory (only)
+//   - ppc_isync           invalidates speculatively executed instructions
+//                         From the POWER ISA 2.06 documentation:
+//                          "[...] an isync instruction prevents the execution of
+//                         instructions following the isync until instructions
+//                         preceding the isync have completed, [...]"
+//                         From IBM's AIX assembler reference:
+//                          "The isync [...] instructions causes the processor to
+//                         refetch any instructions that might have been fetched
+//                         prior to the isync instruction. The instruction isync
+//                         causes the processor to wait for all previous instructions
+//                         to complete. Then any instructions already fetched are
+//                         discarded and instruction processing continues in the
+//                         environment established by the previous instructions."
+//
+//   semantic barrier instructions:
+//   (as defined in orderAccess.hpp)
+//
+//   - ppc_release         orders Store|Store,       (maps to ppc_lwsync)
+//                                 Load|Store
+//   - ppc_acquire         orders  Load|Store,       (maps to ppc_lwsync)
+//                                 Load|Load
+//   - ppc_fence           orders Store|Store,       (maps to ppc_sync)
+//                                 Load|Store,
+//                                 Load|Load,
+//                                Store|Load
+//
 
-  - ppc_sync            two-way memory barrier, aka fence
-  - ppc_lwsync          orders  Store|Store,
-                                 Load|Store,
-                                 Load|Load,
-                        but not Store|Load
-  - ppc_eieio           orders memory accesses for device memory (only)
-  - ppc_isync           invalidates speculatively executed instructions
-                        From the POWER ISA 2.06 documentation:
-                         "[...] an isync instruction prevents the execution of
-                        instructions following the isync until instructions
-                        preceding the isync have completed, [...]"
-                        From IBM's AIX assembler reference:
-                         "The isync [...] instructions causes the processor to
-                        refetch any instructions that might have been fetched
-                        prior to the isync instruction. The instruction isync
-                        causes the processor to wait for all previous instructions
-                        to complete. Then any instructions already fetched are
-                        discarded and instruction processing continues in the
-                        environment established by the previous instructions."
-
-  semantic barrier instructions:
-  (as defined in orderAccess.hpp)
-
-  - ppc_release         orders Store|Store,       (maps to ppc_lwsync)
-                                Load|Store
-  - ppc_acquire         orders  Load|Store,       (maps to ppc_lwsync)
-                                Load|Load
-  - ppc_fence           orders Store|Store,       (maps to ppc_sync)
-                                Load|Store,
-                                Load|Load,
-                               Store|Load
-*/
-
-#define strasm_ppc_sync                       "\n  sync    \n"
-#define strasm_ppc_lwsync                     "\n  lwsync  \n"
-#define strasm_ppc_isync                      "\n  isync   \n"
-#define strasm_ppc_release                    strasm_ppc_lwsync
-#define strasm_ppc_acquire                    strasm_ppc_lwsync
-#define strasm_ppc_fence                      strasm_ppc_sync
-#define strasm_ppc_nobarrier                  ""
-#define strasm_ppc_nobarrier_clobber_memory   ""
+#define strasm_sync                       "\n  sync    \n"
+#define strasm_lwsync                     "\n  lwsync  \n"
+#define strasm_isync                      "\n  isync   \n"
+#define strasm_release                    strasm_lwsync
+#define strasm_acquire                    strasm_lwsync
+#define strasm_fence                      strasm_sync
+#define strasm_nobarrier                  ""
+#define strasm_nobarrier_clobber_memory   ""
 
 inline jint     Atomic::add    (jint     add_value, volatile jint*     dest) {
 
   unsigned int result;
 
   __asm__ __volatile__ (
-    strasm_ppc_lwsync
+    strasm_lwsync
     "1: lwarx   %0,  0, %2    \n"
     "   add     %0, %0, %1    \n"
     "   stwcx.  %0,  0, %2    \n"
     "   bne-    1b            \n"
-    strasm_ppc_isync
+    strasm_isync
     : /*%0*/"=&r" (result)
     : /*%1*/"r" (add_value), /*%2*/"r" (dest)
     : "cc", "memory" );
@@ -122,12 +122,12 @@ inline intptr_t Atomic::add_ptr(intptr_t add_value, volatile intptr_t* dest) {
   long result;
 
   __asm__ __volatile__ (
-    strasm_ppc_lwsync
+    strasm_lwsync
     "1: ldarx   %0,  0, %2    \n"
     "   add     %0, %0, %1    \n"
     "   stdcx.  %0,  0, %2    \n"
     "   bne-    1b            \n"
-    strasm_ppc_isync
+    strasm_isync
     : /*%0*/"=&r" (result)
     : /*%1*/"r" (add_value), /*%2*/"r" (dest)
     : "cc", "memory" );
@@ -145,15 +145,15 @@ inline void Atomic::inc    (volatile jint*     dest) {
   unsigned int temp;
 
   __asm__ __volatile__ (
-    strasm_ppc_nobarrier
+    strasm_nobarrier
     "1: lwarx   %0,  0, %2    \n"
     "   addic   %0, %0,  1    \n"
     "   stwcx.  %0,  0, %2    \n"
     "   bne-    1b            \n"
-    strasm_ppc_nobarrier
+    strasm_nobarrier
     : /*%0*/"=&r" (temp), "=m" (*dest)
     : /*%2*/"r" (dest), "m" (*dest)
-    : "cc" strasm_ppc_nobarrier_clobber_memory);
+    : "cc" strasm_nobarrier_clobber_memory);
 
 }
 
@@ -162,15 +162,15 @@ inline void Atomic::inc_ptr(volatile intptr_t* dest) {
   long temp;
 
   __asm__ __volatile__ (
-    strasm_ppc_nobarrier
+    strasm_nobarrier
     "1: ldarx   %0,  0, %2    \n"
     "   addic   %0, %0,  1    \n"
     "   stdcx.  %0,  0, %2    \n"
     "   bne-    1b            \n"
-    strasm_ppc_nobarrier
+    strasm_nobarrier
     : /*%0*/"=&r" (temp), "=m" (*dest)
     : /*%2*/"r" (dest), "m" (*dest)
-    : "cc" strasm_ppc_nobarrier_clobber_memory);
+    : "cc" strasm_nobarrier_clobber_memory);
 
 }
 
@@ -184,15 +184,15 @@ inline void Atomic::dec    (volatile jint*     dest) {
   unsigned int temp;
 
   __asm__ __volatile__ (
-    strasm_ppc_nobarrier
+    strasm_nobarrier
     "1: lwarx   %0,  0, %2    \n"
     "   addic   %0, %0, -1    \n"
     "   stwcx.  %0,  0, %2    \n"
     "   bne-    1b            \n"
-    strasm_ppc_nobarrier
+    strasm_nobarrier
     : /*%0*/"=&r" (temp), "=m" (*dest)
     : /*%2*/"r" (dest), "m" (*dest)
-    : "cc" strasm_ppc_nobarrier_clobber_memory);
+    : "cc" strasm_nobarrier_clobber_memory);
 
 }
 
@@ -201,15 +201,15 @@ inline void Atomic::dec_ptr(volatile intptr_t* dest) {
   long temp;
 
   __asm__ __volatile__ (
-    strasm_ppc_nobarrier
+    strasm_nobarrier
     "1: ldarx   %0,  0, %2    \n"
     "   addic   %0, %0, -1    \n"
     "   stdcx.  %0,  0, %2    \n"
     "   bne-    1b            \n"
-    strasm_ppc_nobarrier
+    strasm_nobarrier
     : /*%0*/"=&r" (temp), "=m" (*dest)
     : /*%2*/"r" (dest), "m" (*dest)
-    : "cc" strasm_ppc_nobarrier_clobber_memory);
+    : "cc" strasm_nobarrier_clobber_memory);
 
 }
 
@@ -227,14 +227,14 @@ inline jint Atomic::xchg(jint exchange_value, volatile jint* dest) {
 
   __asm__ __volatile__ (
     /* lwsync */
-    strasm_ppc_lwsync
+    strasm_lwsync
     /* atomic loop */
     "1:                                                 \n"
     "   lwarx   %[old_value], %[dest], %[zero]          \n"
     "   stwcx.  %[exchange_value], %[dest], %[zero]     \n"
     "   bne-    1b                                      \n"
     /* isync */
-    strasm_ppc_sync
+    strasm_sync
     /* exit */
     "2:                                                 \n"
     /* out */
@@ -263,14 +263,14 @@ inline intptr_t Atomic::xchg_ptr(intptr_t exchange_value, volatile intptr_t* des
 
   __asm__ __volatile__ (
     /* lwsync */
-    strasm_ppc_lwsync
+    strasm_lwsync
     /* atomic loop */
     "1:                                                 \n"
     "   ldarx   %[old_value], %[dest], %[zero]          \n"
     "   stdcx.  %[exchange_value], %[dest], %[zero]     \n"
     "   bne-    1b                                      \n"
     /* isync */
-    strasm_ppc_sync
+    strasm_sync
     /* exit */
     "2:                                                 \n"
     /* out */
@@ -304,7 +304,7 @@ inline jint Atomic::cmpxchg(jint exchange_value, volatile jint* dest, jint compa
 
   __asm__ __volatile__ (
     /* fence */
-    strasm_ppc_sync
+    strasm_sync
     /* simple guard */
     "   lwz     %[old_value], 0(%[dest])                \n"
     "   cmpw    %[compare_value], %[old_value]          \n"
@@ -317,7 +317,7 @@ inline jint Atomic::cmpxchg(jint exchange_value, volatile jint* dest, jint compa
     "   stwcx.  %[exchange_value], %[dest], %[zero]     \n"
     "   bne-    1b                                      \n"
     /* acquire */
-    strasm_ppc_sync
+    strasm_sync
     /* exit */
     "2:                                                 \n"
     /* out */
@@ -348,7 +348,7 @@ inline jlong Atomic::cmpxchg(jlong exchange_value, volatile jlong* dest, jlong c
 
   __asm__ __volatile__ (
     /* fence */
-    strasm_ppc_sync
+    strasm_sync
     /* simple guard */
     "   ld      %[old_value], 0(%[dest])                \n"
     "   cmpd    %[compare_value], %[old_value]          \n"
@@ -361,7 +361,7 @@ inline jlong Atomic::cmpxchg(jlong exchange_value, volatile jlong* dest, jlong c
     "   stdcx.  %[exchange_value], %[dest], %[zero]     \n"
     "   bne-    1b                                      \n"
     /* acquire */
-    strasm_ppc_sync
+    strasm_sync
     /* exit */
     "2:                                                 \n"
     /* out */
@@ -389,13 +389,13 @@ inline void* Atomic::cmpxchg_ptr(void* exchange_value, volatile void* dest, void
   return (void*)cmpxchg((jlong)exchange_value, (volatile jlong*)dest, (jlong)compare_value);
 }
 
-#undef strasm_ppc_sync
-#undef strasm_ppc_lwsync
-#undef strasm_ppc_isync
-#undef strasm_ppc_release
-#undef strasm_ppc_acquire
-#undef strasm_ppc_fence
-#undef strasm_ppc_nobarrier
-#undef strasm_ppc_nobarrier_clobber_memory
+#undef strasm_sync
+#undef strasm_lwsync
+#undef strasm_isync
+#undef strasm_release
+#undef strasm_acquire
+#undef strasm_fence
+#undef strasm_nobarrier
+#undef strasm_nobarrier_clobber_memory
 
 #endif // OS_CPU_AIX_OJDKPPC_VM_ATOMIC_AIX_PPC_INLINE_HPP
