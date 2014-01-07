@@ -378,7 +378,7 @@ class NativeCallTrampolineStub : public NativeInstruction {
 
  public:
 
-  address destination() const;
+  address destination(nmethod *nm = NULL) const;
   int destination_toc_offset() const;
 
   void set_destination(address new_destination);

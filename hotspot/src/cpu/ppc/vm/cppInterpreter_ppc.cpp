@@ -1513,6 +1513,7 @@ address CppInterpreterGenerator::generate_native_entry(void) {
   // Resize frame to get rid of a potential extension.
   __ resize_frame_to_initial_caller(R11_scratch1, R12_scratch2);
 
+  assert(StubRoutines::throw_StackOverflowError_entry() != NULL, "generated in wrong order");
   // Load target address of the runtime stub.
   __ load_const(R12_scratch2, (StubRoutines::throw_StackOverflowError_entry()));
   __ mtctr(R12_scratch2);
@@ -2150,6 +2151,7 @@ address CppInterpreterGenerator::generate_normal_entry(void) {
   //      Since we restored the caller SP above, the rethrow_excp_entry can restore the original interpreter state
   //      registers using the stack and resume the calling method with a pending excp.
 
+  assert(StubRoutines::throw_StackOverflowError_entry() != NULL, "generated in wrong order");
   __ load_const(R3_ARG1, (StubRoutines::throw_StackOverflowError_entry()));
   __ mtctr(R3_ARG1);
   __ bctr();

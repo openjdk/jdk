@@ -206,7 +206,7 @@ int MacroAssembler::patch_set_narrow_oop(address a, address bound, narrowOop dat
   // The relocation points to the second instruction, the ori,
   // and the ori reads and writes the same register dst.
   const int dst = inv_rta_field(inst2);
-  assert(is_ori(inst2) && inv_rs_field(inst2) == dst, "must be addi reading and writing dst");
+  assert(is_ori(inst2) && inv_rs_field(inst2) == dst, "must be ori reading and writing dst");
   // Now, find the preceding addis which writes to dst.
   int inst1 = 0;
   address inst1_addr = inst2_addr - BytesPerInstWord;
@@ -222,8 +222,7 @@ int MacroAssembler::patch_set_narrow_oop(address a, address bound, narrowOop dat
   int xd = (data >>  0) & 0xffff;
 
   set_imm((int *)inst1_addr, (short)(xc)); // see enc_load_con_narrow_hi/_lo
-  set_imm((int *)inst2_addr, (short)(xd));
-
+  set_imm((int *)inst2_addr,        (xd)); // unsigned int
   return (int)((intptr_t)inst2_addr - (intptr_t)inst1_addr);
 }
 
@@ -237,7 +236,7 @@ narrowOop MacroAssembler::get_narrow_oop(address a, address bound) {
   // The relocation points to the second instruction, the ori,
   // and the ori reads and writes the same register dst.
   const int dst = inv_rta_field(inst2);
-  assert(is_ori(inst2) && inv_rs_field(inst2) == dst, "must be addi reading and writing dst");
+  assert(is_ori(inst2) && inv_rs_field(inst2) == dst, "must be ori reading and writing dst");
   // Now, find the preceding lis which writes to dst.
   int inst1 = 0;
   address inst1_addr = inst2_addr - BytesPerInstWord;
@@ -996,10 +995,10 @@ address MacroAssembler::call_c(const FunctionDescriptor* fd, relocInfo::relocTyp
 
       bool has_env = (fd != NULL && fd->env() != NULL);
       return branch_to(R11, /*and_link=*/true,
-                                /*save toc=*/false,
-                                /*restore toc=*/false,
-                                /*load toc=*/true,
-                                /*load env=*/has_env);
+                            /*save toc=*/false,
+                            /*restore toc=*/false,
+                            /*load toc=*/true,
+                            /*load env=*/has_env);
     } else {
       // It's a friend function. Load the entry point and don't care about
       // toc and env. Use an optimizable call instruction, but ensure the
@@ -1020,10 +1019,10 @@ address MacroAssembler::call_c(const FunctionDescriptor* fd, relocInfo::relocTyp
       // so do a full call-c here.
       load_const(R11, (address)fd, R0);
       return branch_to(R11, /*and_link=*/true,
-                                /*save toc=*/false,
-                                /*restore toc=*/false,
-                                /*load toc=*/true,
-                                /*load env=*/true);
+                            /*save toc=*/false,
+                            /*restore toc=*/false,
+                            /*load toc=*/true,
+                            /*load env=*/true);
     } else {
       // it's a friend function, load the entry point and don't care about
       // toc and env.
@@ -1967,12 +1966,13 @@ void MacroAssembler::compiler_fast_lock_object(ConditionRegister flag, Register 
   // Must fence, otherwise, preceding store(s) may float below cmpxchg.
   // Compare object markOop with mark and if equal exchange scratch1 with object markOop.
   // CmpxchgX sets cr_reg to cmpX(current, displaced).
+  membar(Assembler::StoreStore);
   cmpxchgd(/*flag=*/flag,
            /*current_value=*/current_header,
            /*compare_value=*/displaced_header,
            /*exchange_value=*/box,
            /*where=*/oop,
-           MacroAssembler::MemBarRel | MacroAssembler::MemBarAcq,
+           MacroAssembler::MemBarAcq,
            MacroAssembler::cmpxchgx_hint_acquire_lock(),
            noreg,
            &cas_failed);
@@ -2158,7 +2158,7 @@ void MacroAssembler::card_table_write(jbyte* byte_map_base, Register Rtmp, Regis
   load_const_optimized(Rtmp, (address)byte_map_base, R0);
   srdi(Robj, Robj, CardTableModRefBS::card_shift);
   li(R0, 0); // dirty
-  if (UseConcMarkSweepGC) release();
+  if (UseConcMarkSweepGC) membar(Assembler::StoreStore);
   stbx(R0, Rtmp, Robj);
 }
 
@@ -2399,15 +2399,17 @@ void MacroAssembler::get_vm_result_2(Register metadata_result) {
 
 
 void MacroAssembler::encode_klass_not_null(Register dst, Register src) {
-  if (src == noreg) src = dst;
+  Register current = (src != noreg) ? src : dst; // Klass is in dst if no src provided.
   if (Universe::narrow_klass_base() != 0) {
-    load_const(R0, Universe::narrow_klass_base());
-    sub(dst, src, R0);
+    load_const(R0, Universe::narrow_klass_base(), (dst != current) ? dst : noreg); // Use dst as temp if it is free.
+    sub(dst, current, R0);
+    current = dst;
   }
-  if (Universe::narrow_klass_shift() != 0 ||
-      Universe::narrow_klass_base() == 0 && src != dst) {  // Move required.
-    srdi(dst, src, Universe::narrow_klass_shift());
+  if (Universe::narrow_klass_shift() != 0) {
+    srdi(dst, current, Universe::narrow_klass_shift());
+    current = dst;
   }
+  mr_if_needed(dst, current); // Move may be required.
 }
 
 void MacroAssembler::store_klass(Register dst_oop, Register klass, Register ck) {

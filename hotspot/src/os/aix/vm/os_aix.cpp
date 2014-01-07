@@ -1152,8 +1152,19 @@ void os::javaTimeNanos_info(jvmtiTimerInfo *info_ptr) {
 bool os::getTimesSecs(double* process_real_time,
                       double* process_user_time,
                       double* process_system_time) {
-  Unimplemented();
-  return false;
+  struct tms ticks;
+  clock_t real_ticks = times(&ticks);
+
+  if (real_ticks == (clock_t) (-1)) {
+    return false;
+  } else {
+    double ticks_per_second = (double) clock_tics_per_sec;
+    *process_user_time = ((double) ticks.tms_utime) / ticks_per_second;
+    *process_system_time = ((double) ticks.tms_stime) / ticks_per_second;
+    *process_real_time = ((double) real_ticks) / ticks_per_second;
+
+    return true;
+  }
 }
 
 
@@ -2440,7 +2451,7 @@ cleanup_shm:
   // trace
   if (Verbose && !addr) {
     if (requested_addr != NULL) {
-      warning("failed to shm-allocate 0x%llX bytes at with address 0x%p.", size, requested_addr);
+      warning("failed to shm-allocate 0x%llX bytes at wish address 0x%p.", size, requested_addr);
     } else {
       warning("failed to shm-allocate 0x%llX bytes at any address.", size);
     }
@@ -2521,16 +2532,17 @@ static char* reserve_mmaped_memory(size_t bytes, char* requested_addr) {
 
 cleanup_mmap:
 
-  if (addr) {
-    if (Verbose) {
+  // trace
+  if (Verbose) {
+    if (addr) {
       fprintf(stderr, "mmap-allocated 0x%p .. 0x%p (0x%llX bytes)\n", addr, addr + bytes, bytes);
     }
-  }
-  else {
-    if (requested_addr != NULL) {
-      warning("failed to mmap-allocate 0x%llX bytes at wish address 0x%p.", bytes, requested_addr);
-    } else {
-      warning("failed to mmap-allocate 0x%llX bytes at any address.", bytes);
+    else {
+      if (requested_addr != NULL) {
+        warning("failed to mmap-allocate 0x%llX bytes at wish address 0x%p.", bytes, requested_addr);
+      } else {
+        warning("failed to mmap-allocate 0x%llX bytes at any address.", bytes);
+      }
     }
   }
 
@@ -3359,7 +3371,46 @@ struct sigaction* os::Aix::get_chained_signal_action(int sig) {
 
 static bool call_chained_handler(struct sigaction *actp, int sig,
                                  siginfo_t *siginfo, void *context) {
-  Unimplemented();
+  // Call the old signal handler
+  if (actp->sa_handler == SIG_DFL) {
+    // It's more reasonable to let jvm treat it as an unexpected exception
+    // instead of taking the default action.
+    return false;
+  } else if (actp->sa_handler != SIG_IGN) {
+    if ((actp->sa_flags & SA_NODEFER) == 0) {
+      // automaticlly block the signal
+      sigaddset(&(actp->sa_mask), sig);
+    }
+
+    sa_handler_t hand = NULL;
+    sa_sigaction_t sa = NULL;
+    bool siginfo_flag_set = (actp->sa_flags & SA_SIGINFO) != 0;
+    // retrieve the chained handler
+    if (siginfo_flag_set) {
+      sa = actp->sa_sigaction;
+    } else {
+      hand = actp->sa_handler;
+    }
+
+    if ((actp->sa_flags & SA_RESETHAND) != 0) {
+      actp->sa_handler = SIG_DFL;
+    }
+
+    // try to honor the signal mask
+    sigset_t oset;
+    pthread_sigmask(SIG_SETMASK, &(actp->sa_mask), &oset);
+
+    // call into the chained handler
+    if (siginfo_flag_set) {
+      (*sa)(sig, siginfo, context);
+    } else {
+      (*hand)(sig);
+    }
+
+    // restore the signal mask
+    pthread_sigmask(SIG_SETMASK, &oset, 0);
+  }
+  // Tell jvm's signal handler the signal is taken care of.
   return true;
 }
 
@@ -4041,7 +4092,23 @@ static address same_page(address x, address y) {
 }
 
 bool os::find(address addr, outputStream* st) {
-  Unimplemented();
+
+  st->print(PTR_FORMAT ": ", addr);
+
+  const LoadedLibraryModule* lib = LoadedLibraries::find_for_text_address(addr);
+  if (lib) {
+    lib->print(st);
+    return true;
+  } else {
+    lib = LoadedLibraries::find_for_data_address(addr);
+    if (lib) {
+      lib->print(st);
+      return true;
+    } else {
+      st->print_cr("(outside any module)");
+    }
+  }
+
   return false;
 }
 
@@ -4099,8 +4166,22 @@ bool os::check_heap(bool force) {
 
 // Is a (classpath) directory empty?
 bool os::dir_is_empty(const char* path) {
-  Unimplemented();
-  return false;
+  DIR *dir = NULL;
+  struct dirent *ptr;
+
+  dir = opendir(path);
+  if (dir == NULL) return true;
+
+  /* Scan the directory */
+  bool result = true;
+  char buf[sizeof(struct dirent) + MAX_PATH];
+  while (result && (ptr = ::readdir(dir)) != NULL) {
+    if (strcmp(ptr->d_name, ".") != 0 && strcmp(ptr->d_name, "..") != 0) {
+      result = false;
+    }
+  }
+  closedir(dir);
+  return result;
 }
 
 // This code originates from JDK's sysOpen and open64_w
@@ -4127,7 +4208,7 @@ int os::open(const char *path, int oflag, int mode) {
   fd = ::open64(path, oflag, mode);
   if (fd == -1) return -1;
 
-  //If the open succeeded, the file might still be a directory
+  // If the open succeeded, the file might still be a directory.
   {
     struct stat64 buf64;
     int ret = ::fstat64(fd, &buf64);
@@ -4182,8 +4263,11 @@ int os::open(const char *path, int oflag, int mode) {
 
 // create binary file, rewriting existing file if required
 int os::create_binary_file(const char* path, bool rewrite_existing) {
-  Unimplemented();
-  return 0;
+  int oflags = O_WRONLY | O_CREAT;
+  if (!rewrite_existing) {
+    oflags |= O_EXCL;
+  }
+  return ::open64(path, oflags, S_IREAD | S_IWRITE);
 }
 
 // return current position of file pointer
