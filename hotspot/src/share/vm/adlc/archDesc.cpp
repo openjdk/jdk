@@ -43,32 +43,6 @@ char *toUpper(const char *str) {
   return result;
 }
 
-// Utilities to characterize effect statements
-static bool is_def(int usedef) {
-  switch(usedef) {
-  case Component::DEF:
-  case Component::USE_DEF: return true; break;
-  }
-  return false;
-}
-
-static bool is_use(int usedef) {
-  switch(usedef) {
-  case Component::USE:
-  case Component::USE_DEF:
-  case Component::USE_KILL: return true; break;
-  }
-  return false;
-}
-
-static bool is_kill(int usedef) {
-  switch(usedef) {
-  case Component::KILL:
-  case Component::USE_KILL: return true; break;
-  }
-  return false;
-}
-
 //---------------------------ChainList Methods-------------------------------
 ChainList::ChainList() {
 }
