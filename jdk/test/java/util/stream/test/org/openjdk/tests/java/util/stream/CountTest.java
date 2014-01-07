@@ -24,7 +24,7 @@
 /**
  * @test
  * @summary Tests counting of streams
- * @bug 8020016
+ * @bug 8031187
  */
 
 package org.openjdk.tests.java.util.stream;
