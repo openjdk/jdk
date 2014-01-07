@@ -1449,7 +1449,7 @@ public class LogManager {
         loadLoggerHandlers(rootLogger, null, "handlers");
     }
 
-    private final Permission controlPermission = new LoggingPermission("control", null);
+    static final Permission controlPermission = new LoggingPermission("control", null);
 
     void checkPermission() {
         SecurityManager sm = System.getSecurityManager();
