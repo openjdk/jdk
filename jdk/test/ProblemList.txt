@@ -123,6 +123,11 @@
 # 8029415
 java/lang/reflect/Method/invoke/TestPrivateInterfaceMethodReflect.java generic-all
 
+# 8030656
+java/lang/reflect/Parameter/GetAnnotatedTypeTest.java generic-all
+java/lang/reflect/Parameter/WithParameters.java generic-all
+java/lang/reflect/Parameter/BadClassFiles.java generic-all
+
 ############################################################################
 
 # jdk_management
