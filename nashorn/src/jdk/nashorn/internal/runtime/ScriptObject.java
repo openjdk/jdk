@@ -143,6 +143,8 @@ public abstract class ScriptObject extends PropertyListenerManager implements Pr
     private static final MethodHandle TRUNCATINGFILTER   = findOwnMH("truncatingFilter", Object[].class, int.class, Object[].class);
     private static final MethodHandle KNOWNFUNCPROPGUARD = findOwnMH("knownFunctionPropertyGuard", boolean.class, Object.class, PropertyMap.class, MethodHandle.class, Object.class, ScriptFunction.class);
 
+    private static final ArrayList<MethodHandle> protoFilters = new ArrayList<>();
+
     /** Method handle for getting a function argument at a given index. Used from MapCreator */
     public static final Call GET_ARGUMENT       = virtualCall(MethodHandles.lookup(), ScriptObject.class, "getArgument", Object.class, int.class);
 
@@ -1712,6 +1714,44 @@ public abstract class ScriptObject extends PropertyListenerManager implements Pr
     }
 
     /**
+     * Test whether this object contains in its prototype chain or is itself a with-object.
+     * @return true if a with-object was found
+     */
+    final boolean hasWithScope() {
+        if (isScope()) {
+            for (ScriptObject obj = this; obj != null; obj = obj.getProto()) {
+                if (obj instanceof WithObject) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
+    /**
+     * Add a filter to the first argument of {@code methodHandle} that calls its {@link #getProto()} method
+     * {@code depth} times.
+     * @param methodHandle a method handle
+     * @param depth        distance to target prototype
+     * @return the filtered method handle
+     */
+    static MethodHandle addProtoFilter(final MethodHandle methodHandle, final int depth) {
+        if (depth == 0) {
+            return methodHandle;
+        }
+        final int listIndex = depth - 1; // We don't need 0-deep walker
+        MethodHandle filter = listIndex < protoFilters.size() ? protoFilters.get(listIndex) : null;
+
+        if(filter == null) {
+            filter = addProtoFilter(GETPROTO, depth - 1);
+            protoFilters.add(null);
+            protoFilters.set(listIndex, filter);
+        }
+
+        return MH.filterArguments(methodHandle, 0, filter.asType(filter.type().changeReturnType(methodHandle.type().parameterType(0))));
+    }
+
+    /**
      * Find the appropriate GET method for an invoke dynamic call.
      *
      * @param desc     the call site descriptor
@@ -1722,7 +1762,7 @@ public abstract class ScriptObject extends PropertyListenerManager implements Pr
      */
     protected GuardedInvocation findGetMethod(final CallSiteDescriptor desc, final LinkRequest request, final String operator) {
         final String name = desc.getNameToken(CallSiteDescriptor.NAME_OPERAND);
-        if (request.isCallSiteUnstable()) {
+        if (request.isCallSiteUnstable() || hasWithScope()) {
             return findMegaMorphicGetMethod(desc, name, "getMethod".equals(operator));
         }
 
@@ -1748,22 +1788,24 @@ public abstract class ScriptObject extends PropertyListenerManager implements Pr
         final Property property = find.getProperty();
         methodHandle = find.getGetter(returnType);
 
+        final boolean noGuard = ObjectClassGenerator.OBJECT_FIELDS_ONLY && NashornCallSiteDescriptor.isFastScope(desc) && !property.canChangeType();
         // getMap() is fine as we have the prototype switchpoint depending on where the property was found
-        final MethodHandle guard = NashornGuards.getMapGuard(getMap());
+        final MethodHandle guard = noGuard ? null : NashornGuards.getMapGuard(getMap());
 
         if (methodHandle != null) {
             assert methodHandle.type().returnType().equals(returnType);
             if (find.isSelf()) {
-                return new GuardedInvocation(methodHandle, ObjectClassGenerator.OBJECT_FIELDS_ONLY &&
-                        NashornCallSiteDescriptor.isFastScope(desc) && !property.canChangeType() ? null : guard);
+                return new GuardedInvocation(methodHandle, guard);
             }
 
-            final ScriptObject prototype = find.getOwner();
-
-            if (!property.hasGetterFunction(prototype)) {
-                methodHandle = bindTo(methodHandle, prototype);
+            if (!property.hasGetterFunction(find.getOwner())) {
+                // If not a scope bind to actual prototype as changing prototype will change the property map.
+                // For scopes we install a filter that replaces the self object with the prototype owning the property.
+                methodHandle = isScope() ?
+                        addProtoFilter(methodHandle, find.getProtoChainLength()) :
+                        bindTo(methodHandle, find.getOwner());
             }
-            return new GuardedInvocation(methodHandle, getMap().getProtoGetSwitchPoint(proto, name), guard);
+            return new GuardedInvocation(methodHandle, noGuard ? null : getMap().getProtoGetSwitchPoint(proto, name), guard);
         }
 
         assert !NashornCallSiteDescriptor.isFastScope(desc);
@@ -1833,7 +1875,7 @@ public abstract class ScriptObject extends PropertyListenerManager implements Pr
      */
     protected GuardedInvocation findSetMethod(final CallSiteDescriptor desc, final LinkRequest request) {
         final String name = desc.getNameToken(CallSiteDescriptor.NAME_OPERAND);
-        if (request.isCallSiteUnstable()) {
+        if (request.isCallSiteUnstable() || hasWithScope()) {
             return findMegaMorphicSetMethod(desc, name);
         }
 
@@ -2761,7 +2803,8 @@ public abstract class ScriptObject extends PropertyListenerManager implements Pr
     public final void setObject(final FindProperty find, final boolean strict, final String key, final Object value) {
         FindProperty f = find;
 
-        if (f != null && f.isInherited() && !(f.getProperty() instanceof UserAccessorProperty)) {
+        if (f != null && f.isInherited() && !(f.getProperty() instanceof UserAccessorProperty) && !isScope()) {
+            // Setting a property should not modify the property in prototype unless this is a scope object.
             f = null;
         }
 
