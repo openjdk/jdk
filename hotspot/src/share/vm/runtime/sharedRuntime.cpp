@@ -494,6 +494,13 @@ address SharedRuntime::raw_exception_handler_for_return_address(JavaThread* thre
     assert(!nm->is_native_method(), "no exception handler");
     assert(nm->header_begin() != nm->exception_begin(), "no exception handler");
     if (nm->is_deopt_pc(return_address)) {
+      // If we come here because of a stack overflow, the stack may be
+      // unguarded. Reguard the stack otherwise if we return to the
+      // deopt blob and the stack bang causes a stack overflow we
+      // crash.
+      bool guard_pages_enabled = thread->stack_yellow_zone_enabled();
+      if (!guard_pages_enabled) guard_pages_enabled = thread->reguard_stack();
+      assert(guard_pages_enabled, "stack banging in deopt blob may cause crash");
       return SharedRuntime::deopt_blob()->unpack_with_exception();
     } else {
       return nm->exception_begin();
