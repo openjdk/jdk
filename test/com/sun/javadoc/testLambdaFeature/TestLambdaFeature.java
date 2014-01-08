@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug      8004893 8022738
+ * @bug      8004893 8022738 8029143
  * @summary  Make sure that the lambda feature changes work fine in
  *           javadoc.
  * @author   bpatel
@@ -81,6 +81,11 @@ public class TestLambdaFeature extends JavadocTester {
             "<pre>default&nbsp;default&nbsp;void&nbsp;defaultMethod()</pre>"},
         {BUG_ID + FS + "pkg" + FS + "B.html",
             "<td class=\"colFirst\"><code>default void</code></td>"},
+        {BUG_ID + FS + "pkg1" + FS + "NotAFuncInf.html",
+            "<dl>" + NL + "<dt>Functional Interface:</dt>" + NL +
+            "<dd>This is a functional interface and can therefore be used as " +
+            "the assignment target for a lambda expression or method " +
+            "reference.</dd>" + NL + "</dl>"},
         {BUG_ID + FS + "pkg" + FS + "B.html",
             "<dl>" + NL + "<dt>Functional Interface:</dt>"}
     };
