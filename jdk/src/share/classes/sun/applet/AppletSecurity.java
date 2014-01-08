@@ -42,6 +42,7 @@ import java.security.*;
 import java.lang.reflect.*;
 import sun.awt.AWTSecurityManager;
 import sun.awt.AppContext;
+import sun.awt.AWTPermissions;
 import sun.security.provider.*;
 import sun.security.util.SecurityConstants;
 
@@ -314,7 +315,7 @@ class AppletSecurity extends AWTSecurityManager {
             // If we're about to allow access to the main EventQueue,
             // and anything untrusted is on the class context stack,
             // disallow access.
-            super.checkPermission(SecurityConstants.AWT.CHECK_AWT_EVENTQUEUE_PERMISSION);
+            super.checkPermission(AWTPermissions.CHECK_AWT_EVENTQUEUE_PERMISSION);
         }
     } // checkAwtEventQueueAccess()
 

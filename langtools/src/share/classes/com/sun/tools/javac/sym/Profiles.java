@@ -54,7 +54,7 @@ public abstract class Profiles {
     public static void main(String[] args) throws IOException {
         Profiles p = Profiles.read(new File(args[0]));
         if (args.length >= 2) {
-            Map<Integer,Set<String>> lists = new TreeMap<Integer,Set<String>>();
+            Map<Integer,Set<String>> lists = new TreeMap<>();
             for (int i = 1; i <= 4; i++)
                 lists.put(i, new TreeSet<String>());
 
@@ -69,30 +69,24 @@ public abstract class Profiles {
             }
 
             for (int i = 1; i <= 4; i++) {
-                BufferedWriter out = new BufferedWriter(new FileWriter(i + ".txt"));
-                try {
-                    for (String type: lists.get(i)) {
+                try (BufferedWriter out = new BufferedWriter(new FileWriter(i + ".txt"))) {
+                    for (String type : lists.get(i)) {
                         out.write(type);
                         out.newLine();
                     }
-                } finally {
-                    out.close();
                 }
             }
         }
     }
 
     public static Profiles read(File file) throws IOException {
-        BufferedInputStream in = new BufferedInputStream(new FileInputStream(file));
-        try {
+        try (BufferedInputStream in = new BufferedInputStream(new FileInputStream(file))) {
             Properties p = new Properties();
             p.load(in);
             if (p.containsKey("java/lang/Object"))
                 return new SimpleProfiles(p);
             else
                 return new MakefileProfiles(p);
-        } finally {
-            in.close();
         }
     }
 
@@ -107,11 +101,11 @@ public abstract class Profiles {
             final Package parent;
             final String name;
 
-            Map<String, Package> subpackages = new TreeMap<String, Package>();
+            Map<String, Package> subpackages = new TreeMap<>();
 
             int profile;
-            Map<String, Integer> includedTypes = new TreeMap<String,Integer>();
-            Map<String, Integer> excludedTypes = new TreeMap<String,Integer>();
+            Map<String, Integer> includedTypes = new TreeMap<>();
+            Map<String, Integer> excludedTypes = new TreeMap<>();
 
             Package(Package parent, String name) {
                 this.parent = parent;
@@ -148,7 +142,7 @@ public abstract class Profiles {
             }
         }
 
-        final Map<String, Package> packages = new TreeMap<String, Package>();
+        final Map<String, Package> packages = new TreeMap<>();
 
         final int maxProfile = 4;  // Three compact profiles plus full JRE
 
@@ -197,7 +191,7 @@ public abstract class Profiles {
 
         @Override
         public Set<String> getPackages(int profile) {
-            Set<String> results = new TreeSet<String>();
+            Set<String> results = new TreeSet<>();
             for (Package p: packages.values())
                 p.getPackages(profile, results);
             return results;
@@ -261,7 +255,7 @@ public abstract class Profiles {
 
         SimpleProfiles(Properties p) {
             int max = 0;
-            map = new HashMap<String, Integer>();
+            map = new HashMap<>();
             for (Map.Entry<Object,Object> e: p.entrySet()) {
                 String typeName = (String) e.getKey();
                 int profile = Integer.valueOf((String) e.getValue());
@@ -283,7 +277,7 @@ public abstract class Profiles {
 
         @Override
         public Set<String> getPackages(int profile) {
-            Set<String> results = new TreeSet<String>();
+            Set<String> results = new TreeSet<>();
             for (Map.Entry<String,Integer> e: map.entrySet()) {
                 String tn = e.getKey();
                 int prf = e.getValue();

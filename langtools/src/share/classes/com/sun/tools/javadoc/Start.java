@@ -207,7 +207,7 @@ public class Start extends ToolOption.Helper {
     }
 
     public boolean begin(Class<?> docletClass, Iterable<String> options, Iterable<? extends JavaFileObject> fileObjects) {
-        Collection<String> opts = new ArrayList<String>();
+        Collection<String> opts = new ArrayList<>();
         for (String opt: options) opts.add(opt);
         return begin(docletClass, opts.toArray(new String[opts.size()]), fileObjects);
     }
@@ -251,7 +251,7 @@ public class Start extends ToolOption.Helper {
             Iterable<? extends JavaFileObject> fileObjects) throws IOException {
         long tm = System.currentTimeMillis();
 
-        ListBuffer<String> javaNames = new ListBuffer<String>();
+        ListBuffer<String> javaNames = new ListBuffer<>();
 
         // Preprocess @file arguments
         try {
@@ -314,7 +314,7 @@ public class Start extends ToolOption.Helper {
                     if ((i + optionLength) > argv.length) {
                         usageError("main.requires_argument", arg);
                     }
-                    ListBuffer<String> args = new ListBuffer<String>();
+                    ListBuffer<String> args = new ListBuffer<>();
                     for (int j = 0; j < optionLength-1; ++j) {
                         args.append(argv[++i]);
                     }

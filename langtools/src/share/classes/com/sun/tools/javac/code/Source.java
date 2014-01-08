@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -67,11 +67,13 @@ public enum Source {
     /** 1.7 introduced try-with-resources, multi-catch, string switch, etc. */
     JDK1_7("1.7"),
 
-    /** 1.8 covers the to be determined language features that will be added in JDK 8. */
-    JDK1_8("1.8");
+    /** 1.8 lambda expressions and default methods. */
+    JDK1_8("1.8"),
 
-    private static final Context.Key<Source> sourceKey
-        = new Context.Key<Source>();
+    /** 1.9 covers the to be determined language features that will be added in JDK 9. */
+    JDK1_9("1.9");
+
+    private static final Context.Key<Source> sourceKey = new Context.Key<>();
 
     public static Source instance(Context context) {
         Source instance = context.get(sourceKey);
@@ -87,7 +89,7 @@ public enum Source {
 
     public final String name;
 
-    private static final Map<String,Source> tab = new HashMap<String,Source>();
+    private static final Map<String,Source> tab = new HashMap<>();
     static {
         for (Source s : values()) {
             tab.put(s.name, s);
@@ -96,19 +98,21 @@ public enum Source {
         tab.put("6", JDK1_6); // Make 6 an alias for 1.6
         tab.put("7", JDK1_7); // Make 7 an alias for 1.7
         tab.put("8", JDK1_8); // Make 8 an alias for 1.8
+        tab.put("9", JDK1_9); // Make 9 an alias for 1.9
     }
 
     private Source(String name) {
         this.name = name;
     }
 
-    public static final Source DEFAULT = JDK1_8;
+    public static final Source DEFAULT = JDK1_9;
 
     public static Source lookup(String name) {
         return tab.get(name);
     }
 
     public Target requiredTarget() {
+        if (this.compareTo(JDK1_9) >= 0) return Target.JDK1_9;
         if (this.compareTo(JDK1_8) >= 0) return Target.JDK1_8;
         if (this.compareTo(JDK1_7) >= 0) return Target.JDK1_7;
         if (this.compareTo(JDK1_6) >= 0) return Target.JDK1_6;
@@ -203,6 +207,9 @@ public enum Source {
     public boolean allowDefaultMethods() {
         return compareTo(JDK1_8) >= 0;
     }
+    public boolean allowDefaultMethodsResolution() {
+        return compareTo(JDK1_7) >= 0;
+    }
     public boolean allowStaticInterfaceMethods() {
         return compareTo(JDK1_8) >= 0;
     }
@@ -243,6 +250,8 @@ public enum Source {
             return RELEASE_7;
         case JDK1_8:
             return RELEASE_8;
+        case JDK1_9:
+            return RELEASE_9;
         default:
             return null;
         }

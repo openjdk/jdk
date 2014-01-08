@@ -600,7 +600,7 @@ public interface Map<K,V> {
      * @implSpec
      * The default implementation is equivalent to, for this {@code map}:
      * <pre> {@code
-     * for ((Map.Entry<K, V> entry : map.entrySet())
+     * for (Map.Entry<K, V> entry : map.entrySet())
      *     action.accept(entry.getKey(), entry.getValue());
      * }</pre>
      *
@@ -640,7 +640,7 @@ public interface Map<K,V> {
      * @implSpec
      * <p>The default implementation is equivalent to, for this {@code map}:
      * <pre> {@code
-     * for ((Map.Entry<K, V> entry : map.entrySet())
+     * for (Map.Entry<K, V> entry : map.entrySet())
      *     entry.setValue(function.apply(entry.getKey(), entry.getValue()));
      * }</pre>
      *
@@ -1110,8 +1110,8 @@ public interface Map<K,V> {
 
     /**
      * If the specified key is not already associated with a value or is
-     * associated with null, associates it with the given value.
-     * Otherwise, replaces the value with the results of the given
+     * associated with null, associates it with the given non-null value.
+     * Otherwise, replaces the associated value with the results of the given
      * remapping function, or removes if the result is {@code null}. This
      * method may be of use when combining multiple mapped values for a key.
      * For example, to either create or append a {@code String msg} to a
@@ -1121,23 +1121,20 @@ public interface Map<K,V> {
      * map.merge(key, msg, String::concat)
      * }</pre>
      *
-     * <p>If the function returns {@code null}, the mapping is removed (or
-     * remains absent if initially absent).  If the function itself throws an
-     * (unchecked) exception, the exception is rethrown, and the current mapping
-     * is left unchanged.
+     * <p>If the function returns {@code null} the mapping is removed.  If the
+     * function itself throws an (unchecked) exception, the exception is
+     * rethrown, and the current mapping is left unchanged.
      *
      * @implSpec
-     * The default implementation is equivalent to performing the
-     * following steps for this {@code map}, then returning the
-     * current value or {@code null} if absent:
+     * The default implementation is equivalent to performing the following
+     * steps for this {@code map}, then returning the current value or
+     * {@code null} if absent:
      *
      * <pre> {@code
      * V oldValue = map.get(key);
      * V newValue = (oldValue == null) ? value :
      *              remappingFunction.apply(oldValue, value);
      * if (newValue == null)
-     *     map.remove(key);
-     * else if (oldValue == null)
      *     map.remove(key);
      * else
      *     map.put(key, newValue);
@@ -1151,42 +1148,36 @@ public interface Map<K,V> {
      * whether the function is applied once atomically only if the value is not
      * present.
      *
-     * @param key key with which the specified value is to be associated
-     * @param value the value to use if absent
+     * @param key key with which the resulting value is to be associated
+     * @param value the non-null value to be merged with the existing value
+     *        associated with the key or, if no existing value or a null value
+     *        is associated with the key, to be associated with the key
      * @param remappingFunction the function to recompute a value if present
-     * @return the new value associated with the specified key, or null if none
+     * @return the new value associated with the specified key, or null if no
+     *         value is associated with the key
      * @throws UnsupportedOperationException if the {@code put} operation
      *         is not supported by this map
      *         (<a href="Collection.html#optional-restrictions">optional</a>)
      * @throws ClassCastException if the class of the specified key or value
      *         prevents it from being stored in this map
      *         (<a href="Collection.html#optional-restrictions">optional</a>)
-     * @throws NullPointerException if the specified key is null and
-     *         this map does not support null keys, or the remappingFunction
-     *         is null
+     * @throws NullPointerException if the specified key is null and this map
+     *         does not support null keys or the value or remappingFunction is
+     *         null
      * @since 1.8
      */
     default V merge(K key, V value,
             BiFunction<? super V, ? super V, ? extends V> remappingFunction) {
         Objects.requireNonNull(remappingFunction);
+        Objects.requireNonNull(value);
         V oldValue = get(key);
-        if (oldValue != null) {
-            V newValue = remappingFunction.apply(oldValue, value);
-            if (newValue != null) {
-                put(key, newValue);
-                return newValue;
-            } else {
-                remove(key);
-                return null;
-            }
+        V newValue = (oldValue == null) ? value :
+                   remappingFunction.apply(oldValue, value);
+        if(newValue == null) {
+            remove(key);
         } else {
-            if (value == null) {
-                remove(key);
-                return null;
-            } else {
-                put(key, value);
-                return value;
-            }
+            put(key, newValue);
         }
+        return newValue;
     }
 }

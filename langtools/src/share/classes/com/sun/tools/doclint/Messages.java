@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,6 +42,7 @@ import javax.tools.Diagnostic;
 import com.sun.source.doctree.DocTree;
 import com.sun.source.tree.Tree;
 import com.sun.tools.doclint.Env.AccessKind;
+import com.sun.tools.javac.util.StringUtils;
 
 /**
  * Message reporting for DocLint.
@@ -67,7 +68,7 @@ public class Messages {
         SYNTAX,
         REFERENCE;
 
-        String optName() { return name().toLowerCase(); }
+        String optName() { return StringUtils.toLowerCase(name()); }
         String notOptName() { return "-" + optName(); }
 
         static boolean accepts(String opt) {
@@ -75,7 +76,7 @@ public class Messages {
                 if (opt.equals(g.optName())) return true;
             return false;
         }
-    };
+    }
 
     private final Options options;
     private final Stats stats;
@@ -153,12 +154,12 @@ public class Messages {
      * Handler for (sub)options specific to message handling.
      */
     static class Options {
-        Map<String, Env.AccessKind> map = new HashMap<String, Env.AccessKind>();
+        Map<String, Env.AccessKind> map = new HashMap<>();
         private final Stats stats;
 
         static boolean isValidOptions(String opts) {
             for (String opt: opts.split(",")) {
-                if (!isValidOption(opt.trim().toLowerCase()))
+                if (!isValidOption(StringUtils.toLowerCase(opt.trim())))
                     return false;
             }
             return true;
@@ -203,7 +204,7 @@ public class Messages {
                 setOption(ALL, Env.AccessKind.PRIVATE);
             else {
                 for (String opt: opts.split(","))
-                    setOption(opt.trim().toLowerCase());
+                    setOption(StringUtils.toLowerCase(opt.trim()));
             }
         }
 
@@ -215,7 +216,7 @@ public class Messages {
 
             int sep = arg.indexOf("/");
             if (sep > 0) {
-                Env.AccessKind ak = Env.AccessKind.valueOf(arg.substring(sep + 1).toUpperCase());
+                Env.AccessKind ak = Env.AccessKind.valueOf(StringUtils.toUpperCase(arg.substring(sep + 1)));
                 setOption(arg.substring(0, sep), ak);
             } else {
                 setOption(arg, null);
@@ -255,7 +256,7 @@ public class Messages {
             if (b) {
                 groupCounts = new int[Messages.Group.values().length];
                 dkindCounts = new int[Diagnostic.Kind.values().length];
-                codeCounts = new HashMap<String, Integer>();
+                codeCounts = new HashMap<>();
             } else {
                 groupCounts = null;
                 dkindCounts = null;
@@ -290,7 +291,7 @@ public class Messages {
             out.println("By diagnostic kind...");
             Table dkindTable = new Table();
             for (Diagnostic.Kind k : Diagnostic.Kind.values()) {
-                dkindTable.put(k.toString().toLowerCase(), dkindCounts[k.ordinal()]);
+                dkindTable.put(StringUtils.toLowerCase(k.toString()), dkindCounts[k.ordinal()]);
             }
             dkindTable.print(out);
             out.println();
@@ -320,7 +321,7 @@ public class Messages {
                     return o2.compareTo(o1);
                 }
             };
-            private final TreeMap<Integer, Set<String>> map = new TreeMap<Integer, Set<String>>(DECREASING);
+            private final TreeMap<Integer, Set<String>> map = new TreeMap<>(DECREASING);
 
             void put(String label, int n) {
                 if (n == 0) {
@@ -328,7 +329,7 @@ public class Messages {
                 }
                 Set<String> labels = map.get(n);
                 if (labels == null) {
-                    map.put(n, labels = new TreeSet<String>());
+                    map.put(n, labels = new TreeSet<>());
                 }
                 labels.add(label);
             }

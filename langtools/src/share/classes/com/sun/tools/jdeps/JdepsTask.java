@@ -217,7 +217,7 @@ class JdepsTask {
 
     private static final String PROGNAME = "jdeps";
     private final Options options = new Options();
-    private final List<String> classes = new ArrayList<String>();
+    private final List<String> classes = new ArrayList<>();
 
     private PrintWriter log;
     void setLog(PrintWriter out) {
@@ -614,7 +614,7 @@ class JdepsTask {
     }
 
     private List<Archive> getArchives(List<String> filenames) throws IOException {
-        List<Archive> result = new ArrayList<Archive>();
+        List<Archive> result = new ArrayList<>();
         for (String s : filenames) {
             Path p = Paths.get(s);
             if (Files.exists(p)) {

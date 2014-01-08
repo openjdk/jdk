@@ -37,8 +37,11 @@ import java.util.Map;
  *  deletion without notice.</b>
  */
 public class Context {
+
+    Map<Class<?>, Object> map;
+
     public Context() {
-       map = new HashMap<Class<?>, Object>();
+       map = new HashMap<>();
     }
 
     @SuppressWarnings("unchecked")
@@ -50,6 +53,4 @@ public class Context {
     public <T> T put(Class<T> key, T value) {
         return (T) map.put(key, value);
     }
-
-    Map<Class<?>, Object> map;
 }

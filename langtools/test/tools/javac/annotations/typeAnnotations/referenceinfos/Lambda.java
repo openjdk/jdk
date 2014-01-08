@@ -23,8 +23,9 @@
 
 /*
  * @test
- * @bug 8008077
+ * @bug 8008077 8029721
  * @summary Test population of reference info for lambda expressions
+ * javac crash for annotated parameter type of lambda in a field
  * @compile -g Driver.java ReferenceInfoUtil.java Lambda.java
  * @run main Driver Lambda
  * @author Werner Dietl
@@ -284,5 +285,25 @@ public class Lambda {
                 "    return (@TA Object x, @TB List<@TC Object> y) -> { @TD Object l = null; System.out.println((@TE Object) l); };" +
                 "  }" +
                 "}";
+    }
+
+    @TADescriptions({
+        @TADescription(annotation = "TA", type = METHOD_FORMAL_PARAMETER,
+            paramIndex = 0)})
+    public String lambdaField1() {
+        return
+            "class Test {" +
+                " java.util.function.IntUnaryOperator field = (@TA int y) -> 1;" +
+            "}";
+    }
+
+    @TADescriptions({
+        @TADescription(annotation = "TA", type = METHOD_FORMAL_PARAMETER,
+            paramIndex = 0)})
+    public String lambdaField2() {
+        return
+            "class Test {" +
+                " static java.util.function.IntUnaryOperator field = (@TA int y) -> 1;" +
+            "}";
     }
 }

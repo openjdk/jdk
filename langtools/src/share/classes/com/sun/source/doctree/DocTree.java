@@ -236,7 +236,7 @@ public interface DocTree {
         Kind(String tagName) {
             this.tagName = tagName;
         }
-    };
+    }
 
     /**
      * Gets the kind of this tree.

@@ -49,8 +49,7 @@ import javax.lang.model.type.ErrorType;
  *  deletion without notice.</b>
  */
 public class Annotate {
-    protected static final Context.Key<Annotate> annotateKey =
-        new Context.Key<Annotate>();
+    protected static final Context.Key<Annotate> annotateKey = new Context.Key<>();
 
     public static Annotate instance(Context context) {
         Annotate instance = context.get(annotateKey);
@@ -88,11 +87,11 @@ public class Annotate {
 
     private int enterCount = 0;
 
-    ListBuffer<Worker> q = new ListBuffer<Worker>();
-    ListBuffer<Worker> typesQ = new ListBuffer<Worker>();
-    ListBuffer<Worker> repeatedQ = new ListBuffer<Worker>();
-    ListBuffer<Worker> afterRepeatedQ = new ListBuffer<Worker>();
-    ListBuffer<Worker> validateQ = new ListBuffer<Worker>();
+    ListBuffer<Worker> q = new ListBuffer<>();
+    ListBuffer<Worker> typesQ = new ListBuffer<>();
+    ListBuffer<Worker> repeatedQ = new ListBuffer<>();
+    ListBuffer<Worker> afterRepeatedQ = new ListBuffer<>();
+    ListBuffer<Worker> validateQ = new ListBuffer<>();
 
     public void earlier(Worker a) {
         q.prepend(a);
@@ -352,7 +351,7 @@ public class Annotate {
             if (na.elemtype != null) {
                 log.error(na.elemtype.pos(), "new.not.allowed.in.annotation");
             }
-            ListBuffer<Attribute> buf = new ListBuffer<Attribute>();
+            ListBuffer<Attribute> buf = new ListBuffer<>();
             for (List<JCExpression> l = na.elems; l.nonEmpty(); l=l.tail) {
                 buf.append(enterAttributeValue(types.elemtype(expected),
                                                l.head,
@@ -510,7 +509,7 @@ public class Annotate {
             TreeMaker m = make.at(ctx.pos.get(firstOccurrence));
             Pair<MethodSymbol, Attribute> p =
                     new Pair<MethodSymbol, Attribute>(containerValueSymbol,
-                                                      new Attribute.Array(arrayOfOrigAnnoType, repeated));
+                               new Attribute.Array(arrayOfOrigAnnoType, repeated));
             if (ctx.isTypeCompound) {
                 /* TODO: the following code would be cleaner:
                 Attribute.TypeCompound at = new Attribute.TypeCompound(targetContainerType, List.of(p),

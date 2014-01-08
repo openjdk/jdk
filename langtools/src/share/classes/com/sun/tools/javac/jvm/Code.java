@@ -112,7 +112,7 @@ public class Code {
     /** A buffer for expression catch data. Each enter is a vector
      *  of four unsigned shorts.
      */
-    ListBuffer<char[]> catchInfo = new ListBuffer<char[]>();
+    ListBuffer<char[]> catchInfo = new ListBuffer<>();
 
     /** A buffer for line number information. Each entry is a vector
      *  of two unsigned shorts.
@@ -1988,7 +1988,7 @@ public class Code {
             }
          }
 
-    };
+    }
 
     /** Local variables, indexed by register. */
     LocalVar[] lvar;

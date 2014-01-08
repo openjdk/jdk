@@ -213,9 +213,8 @@ public abstract class AbstractSequentialList<E> extends AbstractList<E> {
         try {
             boolean modified = false;
             ListIterator<E> e1 = listIterator(index);
-            Iterator<? extends E> e2 = c.iterator();
-            while (e2.hasNext()) {
-                e1.add(e2.next());
+            for (E e : c) {
+                e1.add(e);
                 modified = true;
             }
             return modified;

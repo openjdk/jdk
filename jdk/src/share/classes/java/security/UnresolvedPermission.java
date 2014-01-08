@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -216,9 +216,9 @@ implements java.io.Serializable
     }
 
 
-    private static final Class[] PARAMS0 = { };
-    private static final Class[] PARAMS1 = { String.class };
-    private static final Class[] PARAMS2 = { String.class, String.class };
+    private static final Class<?>[] PARAMS0 = { };
+    private static final Class<?>[] PARAMS1 = { String.class };
+    private static final Class<?>[] PARAMS2 = { String.class, String.class };
 
     /**
      * try and resolve this permission using the class loader of the permission

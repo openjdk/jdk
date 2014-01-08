@@ -89,9 +89,7 @@ public class FieldBuilder extends AbstractMemberBuilder {
                 classDoc,
                 VisibleMemberMap.FIELDS,
                 configuration);
-        fields =
-                new ArrayList<ProgramElementDoc>(visibleMemberMap.getLeafClassMembers(
-                configuration));
+        fields = new ArrayList<>(visibleMemberMap.getLeafClassMembers(configuration));
         if (configuration.getMemberComparator() != null) {
             Collections.sort(fields, configuration.getMemberComparator());
         }

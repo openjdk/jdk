@@ -62,8 +62,7 @@ public class Tokens {
      */
     private Name[] tokenName = new Name[TokenKind.values().length];
 
-    public static final Context.Key<Tokens> tokensKey =
-        new Context.Key<Tokens>();
+    public static final Context.Key<Tokens> tokensKey = new Context.Key<>();
 
     public static Tokens instance(Context context) {
         Tokens instance = context.get(tokensKey);
@@ -316,7 +315,7 @@ public class Tokens {
             DEFAULT,
             NAMED,
             STRING,
-            NUMERIC;
+            NUMERIC
         }
 
         /** The token kind */

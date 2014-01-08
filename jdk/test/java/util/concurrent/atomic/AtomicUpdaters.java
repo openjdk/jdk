@@ -33,7 +33,7 @@
  */
 import java.util.concurrent.atomic.*;
 import java.lang.reflect.*;
-import java.security.AccessControlException;
+import java.security.*;
 
 public class  AtomicUpdaters {
     enum TYPE { INT, LONG, REF }
@@ -102,6 +102,8 @@ public class  AtomicUpdaters {
                 verbose = true;
             }
             else if ("UseSM".equals(arg)) {
+                // Ensure that the test is not influenced by the default users policy.
+                Policy.setPolicy(new NoPermissionsPolicy());
                 SecurityManager m = System.getSecurityManager();
                 if (m != null)
                     throw new RuntimeException("No security manager should initially be installed");
@@ -184,6 +186,26 @@ public class  AtomicUpdaters {
 
         if (failures > 0) {
             throw new Error("Some tests failed - see previous stacktraces");
+        }
+    }
+
+    /**
+     * Policy with no permissions.
+     */
+    private static class NoPermissionsPolicy extends Policy {
+        @Override
+        public PermissionCollection getPermissions(CodeSource cs) {
+            return Policy.UNSUPPORTED_EMPTY_COLLECTION;
+        }
+
+        @Override
+        public PermissionCollection getPermissions(ProtectionDomain pd) {
+            return Policy.UNSUPPORTED_EMPTY_COLLECTION;
+        }
+
+        @Override
+        public boolean implies(ProtectionDomain pd, Permission p) {
+            return Policy.UNSUPPORTED_EMPTY_COLLECTION.implies(p);
         }
     }
 }

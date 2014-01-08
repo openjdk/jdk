@@ -547,7 +547,7 @@ public class JavacElements implements Elements {
         JCTree tree = TreeInfo.declarationFor(sym, enterEnv.tree);
         if (tree == null || enterEnv.toplevel == null)
             return null;
-        return new Pair<JCTree,JCCompilationUnit>(tree, enterEnv.toplevel);
+        return new Pair<>(tree, enterEnv.toplevel);
     }
 
     /**
@@ -578,7 +578,7 @@ public class JavacElements implements Elements {
         // 6388543: if v != null, we should search within annoTree to find
         // the tree matching v. For now, we ignore v and return the tree of
         // the annotation.
-        return new Pair<JCTree, JCCompilationUnit>(annoTree, elemTreeTop.snd);
+        return new Pair<>(annoTree, elemTreeTop.snd);
     }
 
     /**

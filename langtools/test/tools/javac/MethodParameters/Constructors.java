@@ -24,6 +24,7 @@
 /*
  * @test
  * @bug 8006582
+ * @ignore 8030656 Bad version check for parameter information in src/share/vm/classfile/javaClasses.cpp
  * @summary javac should generate method parameters correctly.
  * @build Tester
  * @compile -parameters Constructors.java

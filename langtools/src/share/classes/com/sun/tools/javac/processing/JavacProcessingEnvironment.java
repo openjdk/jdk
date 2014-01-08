@@ -201,7 +201,7 @@ public class JavacProcessingEnvironment implements ProcessingEnvironment, Closea
     }
 
     private Set<String> initPlatformAnnotations() {
-        Set<String> platformAnnotations = new HashSet<String>();
+        Set<String> platformAnnotations = new HashSet<>();
         platformAnnotations.add("java.lang.Deprecated");
         platformAnnotations.add("java.lang.Override");
         platformAnnotations.add("java.lang.SuppressWarnings");
@@ -374,7 +374,7 @@ public class JavacProcessingEnvironment implements ProcessingEnvironment, Closea
                 try {
                     loader.reload();
                 } catch(Exception e) {
-                    ; // Ignore problems during a call to reload.
+                    // Ignore problems during a call to reload.
                 }
             }
         }
@@ -450,7 +450,7 @@ public class JavacProcessingEnvironment implements ProcessingEnvironment, Closea
     private Map<String, String> initProcessorOptions(Context context) {
         Options options = Options.instance(context);
         Set<String> keySet = options.keySet();
-        Map<String, String> tempOptions = new LinkedHashMap<String, String>();
+        Map<String, String> tempOptions = new LinkedHashMap<>();
 
         for(String key : keySet) {
             if (key.startsWith("-A") && key.length() > 2) {
@@ -473,7 +473,7 @@ public class JavacProcessingEnvironment implements ProcessingEnvironment, Closea
     }
 
     private Set<String> initUnmatchedProcessorOptions() {
-        Set<String> unmatchedProcessorOptions = new HashSet<String>();
+        Set<String> unmatchedProcessorOptions = new HashSet<>();
         unmatchedProcessorOptions.addAll(processorOptions.keySet());
         return unmatchedProcessorOptions;
     }
@@ -501,14 +501,14 @@ public class JavacProcessingEnvironment implements ProcessingEnvironment, Closea
 
                 checkSourceVersionCompatibility(source, log);
 
-                supportedAnnotationPatterns = new ArrayList<Pattern>();
+                supportedAnnotationPatterns = new ArrayList<>();
                 for (String importString : processor.getSupportedAnnotationTypes()) {
                     supportedAnnotationPatterns.add(importStringToPattern(importString,
                                                                           processor,
                                                                           log));
                 }
 
-                supportedOptionNames = new ArrayList<String>();
+                supportedOptionNames = new ArrayList<>();
                 for (String optionName : processor.getSupportedOptions() ) {
                     if (checkOptionName(optionName, log))
                         supportedOptionNames.add(optionName);
@@ -639,7 +639,7 @@ public class JavacProcessingEnvironment implements ProcessingEnvironment, Closea
 
         DiscoveredProcessors(Iterator<? extends Processor> processorIterator) {
             this.processorIterator = processorIterator;
-            this.procStateList = new ArrayList<ProcessorState>();
+            this.procStateList = new ArrayList<>();
         }
 
         /**
@@ -657,8 +657,7 @@ public class JavacProcessingEnvironment implements ProcessingEnvironment, Closea
                                      Set<TypeElement> annotationsPresent,
                                      List<ClassSymbol> topLevelClasses,
                                      List<PackageSymbol> packageInfoFiles) {
-        Map<String, TypeElement> unmatchedAnnotations =
-            new HashMap<String, TypeElement>(annotationsPresent.size());
+        Map<String, TypeElement> unmatchedAnnotations = new HashMap<>(annotationsPresent.size());
 
         for(TypeElement a  : annotationsPresent) {
                 unmatchedAnnotations.put(a.getQualifiedName().toString(),
@@ -676,7 +675,7 @@ public class JavacProcessingEnvironment implements ProcessingEnvironment, Closea
         // were parse errors on the initial source files; however, we
         // are not doing processing in that case.
 
-        Set<Element> rootElements = new LinkedHashSet<Element>();
+        Set<Element> rootElements = new LinkedHashSet<>();
         rootElements.addAll(topLevelClasses);
         rootElements.addAll(packageInfoFiles);
         rootElements = Collections.unmodifiableSet(rootElements);
@@ -688,8 +687,8 @@ public class JavacProcessingEnvironment implements ProcessingEnvironment, Closea
 
         while(unmatchedAnnotations.size() > 0 && psi.hasNext() ) {
             ProcessorState ps = psi.next();
-            Set<String>  matchedNames = new HashSet<String>();
-            Set<TypeElement> typeElements = new LinkedHashSet<TypeElement>();
+            Set<String>  matchedNames = new HashSet<>();
+            Set<TypeElement> typeElements = new LinkedHashSet<>();
 
             for (Map.Entry<String, TypeElement> entry: unmatchedAnnotations.entrySet()) {
                 String unmatchedAnnotationName = entry.getKey();
@@ -864,7 +863,7 @@ public class JavacProcessingEnvironment implements ProcessingEnvironment, Closea
                 Log.DeferredDiagnosticHandler deferredDiagnosticHandler) {
             this(context, 1, 0, 0, deferredDiagnosticHandler);
             this.roots = roots;
-            genClassFiles = new HashMap<String,JavaFileObject>();
+            genClassFiles = new HashMap<>();
 
             compiler.todo.clear(); // free the compiler's resources
 
@@ -976,7 +975,7 @@ public class JavacProcessingEnvironment implements ProcessingEnvironment, Closea
         void findAnnotationsPresent() {
             ComputeAnnotationSet annotationComputer = new ComputeAnnotationSet(elementUtils);
             // Use annotation processing to compute the set of annotations present
-            annotationsPresent = new LinkedHashSet<TypeElement>();
+            annotationsPresent = new LinkedHashSet<>();
             for (ClassSymbol classSym : topLevelClasses)
                 annotationComputer.scan(classSym, annotationsPresent);
             for (PackageSymbol pkgSym : packageInfoFiles)
@@ -1162,7 +1161,7 @@ public class JavacProcessingEnvironment implements ProcessingEnvironment, Closea
                                      Log.DeferredDiagnosticHandler deferredDiagnosticHandler) {
         log = Log.instance(context);
 
-        Set<PackageSymbol> specifiedPackages = new LinkedHashSet<PackageSymbol>();
+        Set<PackageSymbol> specifiedPackages = new LinkedHashSet<>();
         for (PackageSymbol psym : pckSymbols)
             specifiedPackages.add(psym);
         this.specifiedPackages = Collections.unmodifiableSet(specifiedPackages);
@@ -1185,8 +1184,8 @@ public class JavacProcessingEnvironment implements ProcessingEnvironment, Closea
             // Set up next round.
             // Copy mutable collections returned from filer.
             round = round.next(
-                    new LinkedHashSet<JavaFileObject>(filer.getGeneratedSourceFileObjects()),
-                    new LinkedHashMap<String,JavaFileObject>(filer.getGeneratedClasses()));
+                    new LinkedHashSet<>(filer.getGeneratedSourceFileObjects()),
+                    new LinkedHashMap<>(filer.getGeneratedClasses()));
 
              // Check for errors during setup.
             if (round.unrecoverableError())
@@ -1217,7 +1216,7 @@ public class JavacProcessingEnvironment implements ProcessingEnvironment, Closea
             errorStatus = true;
 
         Set<JavaFileObject> newSourceFiles =
-                new LinkedHashSet<JavaFileObject>(filer.getGeneratedSourceFileObjects());
+                new LinkedHashSet<>(filer.getGeneratedSourceFileObjects());
         roots = cleanTrees(round.roots);
 
         JavaCompiler compiler = round.finalCompiler();

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,24 +21,28 @@
  * questions.
  */
 
+// SunJSSE does not support dynamic system properties, no way to re-use
+// system properties in samevm/agentvm mode.
+
 /*
  * @test
  * @bug 6976117
  * @summary SSLContext.getInstance("TLSv1.1") returns SSLEngines/SSLSockets
  *          without TLSv1.1 enabled
+ * @run main/othervm SSLContextVersion
  */
 
 import javax.net.ssl.*;
 
 public class SSLContextVersion {
     static enum ContextVersion {
-        TLS_CV_01("SSL", "TLSv1", "TLSv1.2"),
-        TLS_CV_02("TLS", "TLSv1", "TLSv1.2"),
+        TLS_CV_01("SSL", "TLSv1.2", "TLSv1.2"),
+        TLS_CV_02("TLS", "TLSv1.2", "TLSv1.2"),
         TLS_CV_03("SSLv3", "TLSv1", "TLSv1.2"),
         TLS_CV_04("TLSv1", "TLSv1", "TLSv1.2"),
         TLS_CV_05("TLSv1.1", "TLSv1.1", "TLSv1.2"),
         TLS_CV_06("TLSv1.2", "TLSv1.2", "TLSv1.2"),
-        TLS_CV_07("Default", "TLSv1", "TLSv1.2");
+        TLS_CV_07("Default", "TLSv1.2", "TLSv1.2");
 
         final String contextVersion;
         final String defaultProtocolVersion;

@@ -38,8 +38,12 @@ import java.util.Map;
  *  deletion without notice.</b>
  */
 public class Attributes implements Iterable<Attribute> {
+
+    public final Attribute[] attrs;
+    public final Map<String, Attribute> map;
+
     Attributes(ClassReader cr) throws IOException {
-        map = new HashMap<String,Attribute>();
+        map = new HashMap<>();
         int attrs_count = cr.readUnsignedShort();
         attrs = new Attribute[attrs_count];
         for (int i = 0; i < attrs_count; i++) {
@@ -55,9 +59,8 @@ public class Attributes implements Iterable<Attribute> {
 
     public Attributes(ConstantPool constant_pool, Attribute[] attrs) {
         this.attrs = attrs;
-        map = new HashMap<String,Attribute>();
-        for (int i = 0; i < attrs.length; i++) {
-            Attribute attr = attrs[i];
+        map = new HashMap<>();
+        for (Attribute attr : attrs) {
             try {
                 map.put(attr.getName(constant_pool), attr);
             } catch (ConstantPoolException e) {
@@ -101,7 +104,4 @@ public class Attributes implements Iterable<Attribute> {
             length += a.byteLength();
         return length;
     }
-
-    public final Attribute[] attrs;
-    public final Map<String, Attribute> map;
 }

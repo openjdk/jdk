@@ -43,8 +43,7 @@ import com.sun.tools.javac.util.ListBuffer;
  * deletion without notice.</b>
  */
 public class DeferredLintHandler {
-    protected static final Context.Key<DeferredLintHandler> deferredLintHandlerKey =
-        new Context.Key<DeferredLintHandler>();
+    protected static final Context.Key<DeferredLintHandler> deferredLintHandlerKey = new Context.Key<>();
 
     public static DeferredLintHandler instance(Context context) {
         DeferredLintHandler instance = context.get(deferredLintHandlerKey);
@@ -67,7 +66,7 @@ public class DeferredLintHandler {
     }
 
     private DiagnosticPosition currentPos;
-    private Map<DiagnosticPosition, ListBuffer<LintLogger>> loggersQueue = new HashMap<DiagnosticPosition, ListBuffer<LintLogger>>();
+    private Map<DiagnosticPosition, ListBuffer<LintLogger>> loggersQueue = new HashMap<>();
 
     /**Associate the given logger with the current position as set by {@link #setPos(DiagnosticPosition) }.
      * Will be invoked when {@link #flush(DiagnosticPosition) } will be invoked with the same position.

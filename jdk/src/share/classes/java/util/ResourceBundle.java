@@ -1494,19 +1494,15 @@ public abstract class ResourceBundle {
         Locale targetLocale = cacheKey.getLocale();
 
         ResourceBundle bundle = null;
-        int size = formats.size();
-        for (int i = 0; i < size; i++) {
-            String format = formats.get(i);
+        for (String format : formats) {
             try {
                 bundle = control.newBundle(cacheKey.getName(), targetLocale, format,
                                            cacheKey.getLoader(), reload);
-            } catch (LinkageError error) {
+            } catch (LinkageError | Exception error) {
                 // We need to handle the LinkageError case due to
                 // inconsistent case-sensitivity in ClassLoader.
                 // See 6572242 for details.
                 cacheKey.setCause(error);
-            } catch (Exception cause) {
-                cacheKey.setCause(cause);
             }
             if (bundle != null) {
                 // Set the format in the cache key so that it can be

@@ -63,8 +63,8 @@ public class Convert {
             char[] cs = s.toCharArray();
             int limit = Integer.MAX_VALUE / (radix/2);
             int n = 0;
-            for (int i = 0; i < cs.length; i++) {
-                int d = Character.digit(cs[i], radix);
+            for (char c : cs) {
+                int d = Character.digit(c, radix);
                 if (n < 0 ||
                     n > limit ||
                     n * radix > Integer.MAX_VALUE - d)
@@ -85,8 +85,8 @@ public class Convert {
             char[] cs = s.toCharArray();
             long limit = Long.MAX_VALUE / (radix/2);
             long n = 0;
-            for (int i = 0; i < cs.length; i++) {
-                int d = Character.digit(cs[i], radix);
+            for (char c : cs) {
+                int d = Character.digit(c, radix);
                 if (n < 0 ||
                     n > limit ||
                     n * radix > Long.MAX_VALUE - d)

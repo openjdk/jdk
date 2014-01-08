@@ -89,7 +89,7 @@ public class LLNI extends Gen {
     protected void generateDeclsForClass(PrintWriter pw,
             TypeElement clazz, String cname)
             throws TypeSignature.SignatureException, Util.Exit {
-        doneHandleTypes  = new HashSet<String>();
+        doneHandleTypes  = new HashSet<>();
         /* The following handle types are predefined in "typedefs.h". Suppress
            inclusion in the output by generating them "into the blue" here. */
         genHandleType(null, "java.lang.Class");
@@ -453,7 +453,7 @@ public class LLNI extends Gen {
         res = "JNIEXPORT " + jniType(retType) + " JNICALL" + lineSep + jniMethodName(method, cname, longName)
             + "(JNIEnv *, " + cRcvrDecl(method, cname);
         List<? extends VariableElement> params = method.getParameters();
-        List<TypeMirror> argTypes = new ArrayList<TypeMirror>();
+        List<TypeMirror> argTypes = new ArrayList<>();
         for (VariableElement p: params){
             argTypes.add(types.erasure(p.asType()));
         }
@@ -488,7 +488,7 @@ public class LLNI extends Gen {
         if (longName) {
             TypeMirror mType =  types.erasure(method.getReturnType());
             List<? extends VariableElement> params = method.getParameters();
-            List<TypeMirror> argTypes = new ArrayList<TypeMirror>();
+            List<TypeMirror> argTypes = new ArrayList<>();
             for (VariableElement param: params) {
                 argTypes.add(types.erasure(param.asType()));
             }

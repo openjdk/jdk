@@ -59,7 +59,7 @@ public class LazyDocCommentTable implements DocCommentTable {
     LazyDocCommentTable(ParserFactory fac) {
         this.fac = fac;
         diagSource = fac.log.currentSource();
-        table = new HashMap<JCTree, Entry>();
+        table = new HashMap<>();
     }
 
     public boolean hasComment(JCTree tree) {

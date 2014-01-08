@@ -112,7 +112,7 @@ public class CacheFSInfo extends FSInfo {
     }
 
     // could also be a Map<File,SoftReference<Entry>> ?
-    private Map<File,Entry> cache = new ConcurrentHashMap<File,Entry>();
+    private Map<File,Entry> cache = new ConcurrentHashMap<>();
 
     private static class Entry {
         File canonicalFile;

@@ -42,8 +42,7 @@ import com.sun.tools.javac.util.Context;
  */
 public class MultiTaskListener implements TaskListener {
     /** The context key for the MultiTaskListener. */
-    public static final Context.Key<MultiTaskListener> taskListenerKey =
-        new Context.Key<MultiTaskListener>();
+    public static final Context.Key<MultiTaskListener> taskListenerKey = new Context.Key<>();
 
     /** Get the MultiTaskListener instance for this context. */
     public static MultiTaskListener instance(Context context) {

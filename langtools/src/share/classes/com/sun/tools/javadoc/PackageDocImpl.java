@@ -145,7 +145,7 @@ public class PackageDocImpl extends DocImpl implements PackageDoc {
         if (allClassesFiltered != null && filtered) {
             return allClassesFiltered;
         }
-        ListBuffer<ClassDocImpl> classes = new ListBuffer<ClassDocImpl>();
+        ListBuffer<ClassDocImpl> classes = new ListBuffer<>();
         for (Scope.Entry e = sym.members().elems; e != null; e = e.sibling) {
             if (e.sym != null) {
                 ClassSymbol s = (ClassSymbol)e.sym;
@@ -198,7 +198,7 @@ public class PackageDocImpl extends DocImpl implements PackageDoc {
      * @return included ordinary classes in this package.
      */
     public ClassDoc[] ordinaryClasses() {
-        ListBuffer<ClassDocImpl> ret = new ListBuffer<ClassDocImpl>();
+        ListBuffer<ClassDocImpl> ret = new ListBuffer<>();
         for (ClassDocImpl c : getClasses(true)) {
             if (c.isOrdinaryClass()) {
                 ret.append(c);
@@ -213,7 +213,7 @@ public class PackageDocImpl extends DocImpl implements PackageDoc {
      * @return included Exceptions in this package.
      */
     public ClassDoc[] exceptions() {
-        ListBuffer<ClassDocImpl> ret = new ListBuffer<ClassDocImpl>();
+        ListBuffer<ClassDocImpl> ret = new ListBuffer<>();
         for (ClassDocImpl c : getClasses(true)) {
             if (c.isException()) {
                 ret.append(c);
@@ -228,7 +228,7 @@ public class PackageDocImpl extends DocImpl implements PackageDoc {
      * @return included Errors in this package.
      */
     public ClassDoc[] errors() {
-        ListBuffer<ClassDocImpl> ret = new ListBuffer<ClassDocImpl>();
+        ListBuffer<ClassDocImpl> ret = new ListBuffer<>();
         for (ClassDocImpl c : getClasses(true)) {
             if (c.isError()) {
                 ret.append(c);
@@ -243,7 +243,7 @@ public class PackageDocImpl extends DocImpl implements PackageDoc {
      * @return included enum types in this package.
      */
     public ClassDoc[] enums() {
-        ListBuffer<ClassDocImpl> ret = new ListBuffer<ClassDocImpl>();
+        ListBuffer<ClassDocImpl> ret = new ListBuffer<>();
         for (ClassDocImpl c : getClasses(true)) {
             if (c.isEnum()) {
                 ret.append(c);
@@ -258,7 +258,7 @@ public class PackageDocImpl extends DocImpl implements PackageDoc {
      * @return included interfaces in this package.
      */
     public ClassDoc[] interfaces() {
-        ListBuffer<ClassDocImpl> ret = new ListBuffer<ClassDocImpl>();
+        ListBuffer<ClassDocImpl> ret = new ListBuffer<>();
         for (ClassDocImpl c : getClasses(true)) {
             if (c.isInterface()) {
                 ret.append(c);
@@ -273,8 +273,7 @@ public class PackageDocImpl extends DocImpl implements PackageDoc {
      * @return included annotation types in this package.
      */
     public AnnotationTypeDoc[] annotationTypes() {
-        ListBuffer<AnnotationTypeDocImpl> ret =
-            new ListBuffer<AnnotationTypeDocImpl>();
+        ListBuffer<AnnotationTypeDocImpl> ret = new ListBuffer<>();
         for (ClassDocImpl c : getClasses(true)) {
             if (c.isAnnotationType()) {
                 ret.append((AnnotationTypeDocImpl)c);

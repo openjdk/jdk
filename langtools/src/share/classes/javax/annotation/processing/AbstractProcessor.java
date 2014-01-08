@@ -187,7 +187,7 @@ public abstract class AbstractProcessor implements Processor {
 
     private static Set<String> arrayToSet(String[] array) {
         assert array != null;
-        Set<String> set = new HashSet<String>(array.length);
+        Set<String> set = new HashSet<>(array.length);
         for (String s : array)
             set.add(s);
         return Collections.unmodifiableSet(set);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -740,7 +740,30 @@ abstract class LValue {
     }
 
     static LValue makeInteger(VirtualMachine vm, Token token) {
-        return make(vm, Integer.parseInt(token.image));
+        String image = token.image;
+
+        // Here we have to deal with the fact that an INTEGER_LITERAL
+        // can be DECIMAL_LITERAL, HEX_LITERAL or OCTAL_LITERAL. All of these
+        // can have an optional "L" or "l" at the end signifying that it is
+        // a long value. Otherwise, we treat values that are in range for an
+        // int as int and anything else as long.
+
+        if (image.endsWith("L") || image.endsWith("l")) {
+          // This is a long without doubt - drop the final "Ll" and decode
+          image = image.substring(0, image.length() - 1);
+          return make(vm, Long.decode(image));
+        }
+
+        long longValue = Long.decode(image);
+        int intValue = (int) longValue;
+        if (intValue == longValue) {
+          // the value fits in an integer, lets return it as an integer
+          return make(vm, intValue);
+        }
+        else {
+          // otherwise treat it as a long
+          return make(vm, longValue);
+        }
     }
 
     static LValue makeShort(VirtualMachine vm, Token token) {
@@ -1056,6 +1079,78 @@ abstract class LValue {
                 res = rr * ll;
             } else if (op.equals("/")) {
                 res = rr / ll;
+            } else {
+                throw new ParseException("Unknown operation: " + op);
+            }
+            return make(vm, res);
+        }
+    }
+
+    static LValue operation(VirtualMachine vm, Token token, LValue rightL,
+            ExpressionParser.GetFrame frameGetter)
+            throws ParseException {
+        String op = token.image;
+        Value right = rightL.interiorGetValue();
+        if (right instanceof ObjectReference) {
+            throw new ParseException("Invalid operation '" + op
+                    + "' on an Object");
+        }
+        if (right instanceof BooleanValue) {
+            if (op.equals("!")) {
+                boolean rr = ((BooleanValue) right).value();
+                return make(vm, !rr);
+            }
+            throw new ParseException("Invalid operation '" + op
+                    + "' on a Boolean");
+        }
+        // from here on, we know it is a integer kind of type
+        PrimitiveValue primRight = (PrimitiveValue) right;
+        if (primRight instanceof DoubleValue) {
+            double rr = primRight.doubleValue();
+            double res;
+            if (op.equals("+")) {
+                res = rr;
+            } else if (op.equals("-")) {
+                res = -rr;
+            } else {
+                throw new ParseException("Unknown operation: " + op);
+            }
+            return make(vm, res);
+        }
+        if (primRight instanceof FloatValue) {
+            float rr = primRight.floatValue();
+            float res;
+            if (op.equals("+")) {
+                res = rr;
+            } else if (op.equals("-")) {
+                res = -rr;
+            } else {
+                throw new ParseException("Unknown operation: " + op);
+            }
+            return make(vm, res);
+        }
+        if (primRight instanceof LongValue) {
+            long rr = primRight.longValue();
+            long res;
+            if (op.equals("+")) {
+                res = rr;
+            } else if (op.equals("-")) {
+                res = -rr;
+            } else if (op.equals("~")) {
+                res = ~rr;
+            } else {
+                throw new ParseException("Unknown operation: " + op);
+            }
+            return make(vm, res);
+        } else {
+            int rr = primRight.intValue();
+            int res;
+            if (op.equals("+")) {
+                res = rr;
+            } else if (op.equals("-")) {
+                res = -rr;
+            } else if (op.equals("~")) {
+                res = ~rr;
             } else {
                 throw new ParseException("Unknown operation: " + op);
             }

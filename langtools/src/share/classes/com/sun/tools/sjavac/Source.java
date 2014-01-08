@@ -165,7 +165,7 @@ public class Source implements Comparable<Source> {
     }
 
     public static void saveSources(Map<String,Source> sources, StringBuilder b) {
-        List<String> sorted_sources = new ArrayList<String>();
+        List<String> sorted_sources = new ArrayList<>();
         for (String key : sources.keySet()) {
             sorted_sources.add(key);
         }
