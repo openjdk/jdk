@@ -513,8 +513,6 @@ class VirtualSpaceList : public CHeapObj<mtClass> {
   // Unlink empty VirtualSpaceNodes and free it.
   void purge(ChunkManager* chunk_manager);
 
-  bool contains(const void *ptr);
-
   void print_on(outputStream* st) const;
 
   class VirtualSpaceListIterator : public StackObj {
@@ -558,7 +556,7 @@ class SpaceManager : public CHeapObj<mtClass> {
 
  private:
 
-  // protects allocations and contains.
+  // protects allocations
   Mutex* const _lock;
 
   // Type of metadata allocated.
@@ -595,7 +593,11 @@ class SpaceManager : public CHeapObj<mtClass> {
  private:
   // Accessors
   Metachunk* chunks_in_use(ChunkIndex index) const { return _chunks_in_use[index]; }
-  void set_chunks_in_use(ChunkIndex index, Metachunk* v) { _chunks_in_use[index] = v; }
+  void set_chunks_in_use(ChunkIndex index, Metachunk* v) {
+    // ensure lock-free iteration sees fully initialized node
+    OrderAccess::storestore();
+    _chunks_in_use[index] = v;
+  }
 
   BlockFreelist* block_freelists() const {
     return (BlockFreelist*) &_block_freelists;
@@ -707,6 +709,8 @@ class SpaceManager : public CHeapObj<mtClass> {
   void dump(outputStream* const out) const;
   void print_on(outputStream* st) const;
   void locked_print_chunks_in_use_on(outputStream* st) const;
+
+  bool contains(const void *ptr);
 
   void verify();
   void verify_chunk_size(Metachunk* chunk);
@@ -1159,8 +1163,6 @@ bool VirtualSpaceList::create_new_virtual_space(size_t vs_word_size) {
   } else {
     assert(new_entry->reserved_words() == vs_word_size,
         "Reserved memory size differs from requested memory size");
-    // ensure lock-free iteration sees fully initialized node
-    OrderAccess::storestore();
     link_vs(new_entry);
     return true;
   }
@@ -1286,19 +1288,6 @@ void VirtualSpaceList::print_on(outputStream* st) const {
     }
   }
 }
-
-bool VirtualSpaceList::contains(const void *ptr) {
-  VirtualSpaceNode* list = virtual_space_list();
-  VirtualSpaceListIterator iter(list);
-  while (iter.repeat()) {
-    VirtualSpaceNode* node = iter.get_next();
-    if (node->reserved()->contains(ptr)) {
-      return true;
-    }
-  }
-  return false;
-}
-
 
 // MetaspaceGC methods
 
@@ -2392,6 +2381,21 @@ MetaWord* SpaceManager::allocate_work(size_t word_size) {
   return result;
 }
 
+// This function looks at the chunks in the metaspace without locking.
+// The chunks are added with store ordering and not deleted except for at
+// unloading time.
+bool SpaceManager::contains(const void *ptr) {
+  for (ChunkIndex i = ZeroIndex; i < NumberOfInUseLists; i = next_chunk_index(i))
+  {
+    Metachunk* curr = chunks_in_use(i);
+    while (curr != NULL) {
+      if (curr->contains(ptr)) return true;
+      curr = curr->next();
+    }
+  }
+  return false;
+}
+
 void SpaceManager::verify() {
   // If there are blocks in the dictionary, then
   // verfication of chunks does not work since
@@ -3463,17 +3467,12 @@ void Metaspace::print_on(outputStream* out) const {
   }
 }
 
-bool Metaspace::contains(const void * ptr) {
-  if (MetaspaceShared::is_in_shared_space(ptr)) {
-    return true;
+bool Metaspace::contains(const void* ptr) {
+  if (vsm()->contains(ptr)) return true;
+  if (using_class_space()) {
+    return class_vsm()->contains(ptr);
   }
-  // This is checked while unlocked.  As long as the virtualspaces are added
-  // at the end, the pointer will be in one of them.  The virtual spaces
-  // aren't deleted presently.  When they are, some sort of locking might
-  // be needed.  Note, locking this can cause inversion problems with the
-  // caller in MetaspaceObj::is_metadata() function.
-  return space_list()->contains(ptr) ||
-         (using_class_space() && class_space_list()->contains(ptr));
+  return false;
 }
 
 void Metaspace::verify() {
