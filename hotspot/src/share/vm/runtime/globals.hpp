@@ -3342,6 +3342,10 @@ class CommandLineFlags {
           "File containing compilation replay information"                  \
           "[default: ./replay_pid%p.log] (%p replaced with pid)")           \
                                                                             \
+   product(ccstr, InlineDataFile, NULL,                                     \
+          "File containing inlining replay information"                     \
+          "[default: ./inline_pid%p.log] (%p replaced with pid)")           \
+                                                                            \
   develop(intx, ReplaySuppressInitializers, 2,                              \
           "Control handling of class initialization during replay: "        \
           "0 - don't do anything special; "                                 \
