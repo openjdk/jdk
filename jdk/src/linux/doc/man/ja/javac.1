@@ -1,1250 +1,1489 @@
-." Copyright (c) 1994, 2011, Oracle and/or its affiliates. All rights reserved.
-." DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
-."
-." This code is free software; you can redistribute it and/or modify it
-." under the terms of the GNU General Public License version 2 only, as
-." published by the Free Software Foundation.
-."
-." This code is distributed in the hope that it will be useful, but WITHOUT
-." ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
-." FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
-." version 2 for more details (a copy is included in the LICENSE file that
-." accompanied this code).
-."
-." You should have received a copy of the GNU General Public License version
-." 2 along with this work; if not, write to the Free Software Foundation,
-." Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
-."
-." Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
-." or visit www.oracle.com if you need additional information or have any
-." questions.
-."
-.TH javac 1 "07 May 2011"
-
-.LP
-.SH "名前"
-javac \- Java プログラミング言語コンパイラ
-.LP
-.RS 3
-.TP 2
-o
-形式 
-.TP 2
-o
-説明 
-.TP 2
-o
-オプション 
-.TP 2
-o
-コマンド行引数ファイル 
-.TP 2
-o
-注釈処理 
-.TP 2
-o
-型の検索 
-.TP 2
-o
-プログラマティックインタフェース 
-.TP 2
-o
-例 
-.TP 2
-o
-関連項目 
-.RE
-
-.LP
-.SH "形式"
-.LP
+'\" t
+.\" Copyright (c) 1994, 2013, Oracle and/or its affiliates. All rights reserved.
+.\" Title: javac
+.\" Language: English
+.\" Date: 2013年11月21日
+.\" SectDesc: 基本ツール
+.\" Software: JDK 8
+.\" Arch: 汎用
+.\"
+.\" DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+.\"
+.\" This code is free software; you can redistribute it and/or modify it
+.\" under the terms of the GNU General Public License version 2 only, as
+.\" published by the Free Software Foundation.
+.\"
+.\" This code is distributed in the hope that it will be useful, but WITHOUT
+.\" ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+.\" FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License
+.\" version 2 for more details (a copy is included in the LICENSE file that
+.\" accompanied this code).
+.\"
+.\" You should have received a copy of the GNU General Public License version
+.\" 2 along with this work; if not, write to the Free Software Foundation,
+.\" Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+.\"
+.\" Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+.\" or visit www.oracle.com if you need additional information or have any
+.\" questions.
+.\"
+.pl 99999
+.TH "javac" "1" "2013年11月21日" "JDK 8" "基本ツール"
+.\" -----------------------------------------------------------------
+.\" * Define some portability stuff
+.\" -----------------------------------------------------------------
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.\" http://bugs.debian.org/507673
+.\" http://lists.gnu.org/archive/html/groff/2009-02/msg00013.html
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.ie \n(.g .ds Aq \(aq
+.el       .ds Aq '
+.\" -----------------------------------------------------------------
+.\" * set default formatting
+.\" -----------------------------------------------------------------
+.\" disable hyphenation
+.nh
+.\" disable justification (adjust text to left margin only)
+.ad l
+.\" -----------------------------------------------------------------
+.\" * MAIN CONTENT STARTS HERE *
+.\" -----------------------------------------------------------------
+.SH "NAME"
+javac \- Javaクラスおよびインタフェースの定義を読み取り、バイトコードおよびクラス・ファイルにコンパイルします。
+.SH "概要"
+.sp
+.if n \{\
+.RS 4
+.\}
 .nf
-\f3
-.fl
-        \fP\f3javac\fP [ options ] [ sourcefiles ] [ classes ] [ @argfiles ]
-.fl
-
-.fl
+\fIjavac\fR [ \fIoptions\fR ] [ \fIsourcefiles\fR ] [ \fIclasses\fR] [ \fI@argfiles\fR ]
 .fi
-
-.LP
-.LP
-引数は順不同です。
-.LP
-.RS 3
-.TP 3
-options 
-コマンド行オプション。 
-.TP 3
-sourcefiles 
-コンパイルされる 1 つ以上のソースファイル (MyClass.java など) 
-.TP 3
-classes 
-注釈の処理対象となる 1 つ以上のクラス (MyPackage.MyClass など) 
-.TP 3
-@argfiles 
-オプションとソースファイルを列挙した 1 つ以上のファイル。このファイルの中では \f2\-J\fP オプションは指定できません。 
+.if n \{\
 .RE
-
-.LP
+.\}
+.PP
+引数を指定する順序は任意です。
+.PP
+\fIoptions\fR
+.RS 4
+コマンドライン・オプション。オプションを参照してください。
+.RE
+.PP
+\fIsourcefiles\fR
+.RS 4
+コンパイルされる1つ以上のソース・ファイル(\fIMyClass\&.java\fRなど)。
+.RE
+.PP
+\fIclasses\fR
+.RS 4
+注釈の処理対象となる1つ以上のクラス(\fIMyPackage\&.MyClass\fRなど)。
+.RE
+.PP
+\fI@argfiles\fR
+.RS 4
+オプションとソース・ファイルを一覧表示する1つ以上のファイル。このファイルの中では\fI\-J\fRオプションは指定できません。コマンドライン引数ファイルを参照してください。
+.RE
 .SH "説明"
-.LP
-.LP
-\f3javac\fP ツールは、Java プログラミング言語で記述されたクラスとインタフェースの定義を読み取り、バイトコードのクラスファイルにコンパイルします。また、Java ソースファイルおよびクラス内の注釈の処理も行います。
-.LP
-.LP
-ソースコードのファイル名を \f3javac\fP に渡すには、次の 2 つの方法があります。
-.LP
-.RS 3
-.TP 2
-o
-ソースファイルの数が少ない場合は、ファイル名をコマンド行で直接指定します。 
-.TP 2
-o
-ソースファイルの数が多い場合は、ファイル名を空白または改行で区切って、1 つのファイルに列挙します。次に、このリストファイル名の先頭に \f3@\fP を付けて、\f3javac\fP のコマンド行で指定します。 
+.PP
+\fIjavac\fRコマンドは、Javaプログラミング言語で記述されたクラスとインタフェースの定義を読み取り、バイトコードのクラス・ファイルにコンパイルします。\fIjavac\fRコマンドでは、Javaソース・ファイルおよびクラス内の注釈の処理もできます。
+.PP
+ソース・コードのファイル名を\fIjavac\fRに渡すには、2つの方法があります。
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+ソース・ファイルの数が少ない場合は、ファイル名をコマンドラインで指定します。
 .RE
-
-.LP
-.LP
-ソースコードのファイル名は \f2.java\fP 拡張子を、クラスのファイル名は \f2.class\fP 拡張子を持っていなければなりません。また、ソースファイルとクラスファイルのどちらも、該当するクラスに対応するルート名を持っていなければなりません。たとえば、 \f2MyClass\fP という名前のクラスは、 \f2MyClass.java\fP という名前のソースファイルに記述します。このソースファイルは、 \f2MyClass.class\fP という名前のバイトコードクラスファイルにコンパイルされます。
-.LP
-.LP
-内部クラスが定義されていると、追加のクラスファイルが生成されます。これらのクラスファイルの名前は、 \f2MyClass$MyInnerClass.class\fP のように、外部クラス名と内部クラス名を組み合わせたものになります。
-.LP
-.LP
-ソースファイルは、パッケージツリーを反映したディレクトリツリーに配置する必要があります。たとえば、すべてのソースファイルを \f3/workspace\fP に置いている場合、 \f2com.mysoft.mypack.MyClass\fP のソースコードは \f3/workspace/com/mysoft/mypack/MyClass.java\fP にある必要があります。
-.LP
-.LP
-デフォルトでは、コンパイラは、各クラスファイルを対応するソースファイルと同じディレクトリに置きます。別の出力先ディレクトリを指定するには、\f3\-d\fP を使用します (このあとのオプションを参照)。
-.LP
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+ソース・ファイルの数が多い場合は、ファイル内のファイル名を空白または改行で区切って指定します。\fIjavac\fRコマンドで、リスト・ファイル名の先頭にアットマーク(@)を使用します。
+.RE
+.PP
+ソース・コードのファイル名は\&.java拡張子を、クラスのファイル名は\&.class拡張子を持っている必要があります。また、ソース・ファイルとクラス・ファイルのどちらも、該当するクラスに対応するルート名を持っている必要があります。たとえば、\fIMyClass\fRという名前のクラスは、\fIMyClass\&.java\fRという名前のソース・ファイルに記述されます。このソース・ファイルは、\fIMyClass\&.class\fRという名前のバイトコード・クラス・ファイルにコンパイルされます。
+.PP
+内部クラスが定義されていると、追加のクラス・ファイルが生成されます。これらのクラス・ファイルの名前は、\fIMyClass$MyInnerClass\&.class\fRのように、内部クラス名と外部クラス名を組み合せたものになります。
+.PP
+ソース・ファイルは、パッケージ・ツリーを反映したディレクトリ・ツリーに配置します。たとえば、すべてのソース・ファイルが\fI/workspace\fRにある場合、\fIcom\&.mysoft\&.mypack\&.MyClass\fRのソース・コードを、\fI/workspace/com/mysoft/mypack/MyClass\&.java\fRに格納します。
+.PP
+デフォルトでは、コンパイラは、各クラス・ファイルを対応するソース・ファイルと同じディレクトリに格納します。\fI\-d\fRオプションを使用して、別の出力先ディレクトリを指定できます。
 .SH "オプション"
-.LP
-.LP
-コンパイラには、現在の開発環境でサポートされており、将来のリリースでもサポートされる標準オプションのセットがあります。これ以外の非標準オプションは、現在の仮想マシンおよびコンパイラの実装に固有のオプションで、将来に変更される可能性があります。非標準オプションは、\f3\-X\fP で始まります。
-.LP
-.SS 
-標準オプション
-.LP
-.RS 3
-.TP 3
-\-Akey[=value] 
-注釈プロセッサに渡されるオプション。これらは、javac によって直接解釈されず、個々のプロセッサによって使用されます。\f2key\fP には、1 つまたは複数の識別子を「.」で区切ったものを指定してください。 
-.TP 3
-\-cp path または \-classpath path 
-ユーザーのクラスファイルおよび (場合によっては) 注釈プロセッサやソースファイルの検索場所を指定します。このクラスパスは \f3CLASSPATH\fP 環境変数のユーザークラスパスをオーバーライドします。\f3CLASSPATH\fP、\f3\-cp\fP、\f3\-classpath\fP のいずれも指定されていない場合、ユーザークラスパスは、現在のディレクトリになります。詳細は、「クラスパスの設定」を参照してください。 
-.LP
-\f3\-sourcepath\fP オプションが指定されていない場合は、ソースファイルもユーザークラスパスから検索されます。 
-.LP
-\f3\-processorpath\fP オプションが指定されていない場合は、注釈プロセッサもユーザークラスパスから検索されます。  
-.TP 3
-\-Djava.ext.dirs=directories 
-インストール型拡張機能の位置をオーバーライドします。 
-.TP 3
-\-Djava.endorsed.dirs=directories 
-承認された標準パスの位置をオーバーライドします。 
-.TP 3
-\-d directory 
-クラスファイルの出力先ディレクトリを設定します。そのディレクトリはすでに存在している必要があります。\f3javac\fP は作成しません。クラスがパッケージの一部である場合、\f3javac\fP は、必要に応じてディレクトリを作成し、パッケージ名を反映したサブディレクトリにクラスファイルを置きます。たとえば、\f3\-d /home/myclasses\fP と指定し、クラスの名前が \f2com.mypackage.MyClass\fP である場合、クラスファイルは \f2/home/myclasses/com/mypackage/MyClass.class\fP になります。 
-.LP
-\f3\-d\fP が指定されなかった場合、\f3javac\fP は各クラスファイルを、その生成元となるソースファイルと同じディレクトリ内に格納します。 
-.LP
-\f3注:\fP \f3\-d\fP で指定したディレクトリはユーザークラスパスに自動的には追加されません。  
-.TP 3
-\-deprecation 
-推奨されないメンバーやクラスが、使用またはオーバーライドされるたびに説明を表示します。\f3\-deprecation\fP が指定されていない場合、\f3javac\fP は、推奨されないメンバーやクラスを使用またはオーバーライドしているソースファイルの要約を表示します。\f3\-deprecation\fP は \f3\-Xlint:deprecation\fP の省略表記です。 
-.TP 3
-\-encoding encoding 
-ソースファイルのエンコーディング名 ( \f2EUC\-JP や UTF\-8\fP など) を指定します。\f3\-encoding\fP が指定されていない場合は、プラットフォームのデフォルトコンバータが使われます。  
-.TP 3
-\-endorseddirs directories 
-承認された標準パスの位置をオーバーライドします。 
-.TP 3
-\-extdirs directories 
-\f2ext\fP ディレクトリの位置をオーバーライドします。\f2directories\fP 変数には、コロンで区切ったディレクトリのリストを指定します。指定したディレクトリ内の各 JAR アーカイブから、クラスファイルが検索されます。見つかったすべての JAR アーカイブは自動的にクラスパスの一部になります。 
-.LP
-クロスコンパイル (異なる Java プラットフォームに実装されたブートストラップクラスや拡張機能クラスに対してコンパイルを行う) を実行する場合、このオプションには拡張機能クラスを含むディレクトリを指定します。詳細は、「クロスコンパイルオプション」を参照してください。  
-.TP 3
-\-g 
-局所変数を含むすべてのデバッグ情報を生成します。デフォルトでは、行番号およびソースファイル情報だけが生成されます。 
-.TP 3
-\-g:none 
-デバッグ情報を生成しません。 
-.TP 3
-\-g:{keyword list} 
-コンマで区切られたキーワードリストにより指定された、特定の種類のデバッグ情報だけを生成します。次のキーワードが有効です。 
-.RS 3
-.TP 3
-source 
-ソースファイルのデバッグ情報 
-.TP 3
-lines 
-行番号のデバッグ情報 
-.TP 3
-vars 
-局所変数のデバッグ情報 
+.PP
+コンパイラには、現在の開発環境でサポートされる標準オプションのセットがあります。これ以外の非標準オプションは、現在の仮想マシンおよびコンパイラの実装に固有のオプションで、将来、変更される可能性があります。非標準オプションは、\fI\-X\fRオプションで始まります。
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+クロスコンパイル・オプションを参照してください。
 .RE
-.TP 3
-\-help 
-標準オプションの形式を表示します。 
-.TP 3
-\-implicit:{class,none} 
-暗黙的にロードされたソースファイルに対するクラスファイルの生成を制御します。クラスファイルを自動生成するには、\f3\-implicit:class\fP を使用します。クラスファイルの生成を抑制するには、\f3\-implicit:none\fP を使用します。このオプションが指定されなかった場合のデフォルト動作は、クラスファイルの自動生成になります。その場合、そのようなクラスファイルが生成された時に注釈処理も実行されると、コンパイラから警告が発行されます。このオプションが明示的に設定された場合には、警告は発行されません。「型の検索」を参照してください。  
-.TP 3
-\-Joption 
-\f3javac\fP が呼び出す \f3java\fP 起動ツールに、\f2option\fP を渡します。たとえば、\f3\-J\-Xms48m\fP と指定すると、スタートアップメモリーは 48M バイトに設定されます。\f3\-J\fP を使って、Java で記述されたアプリケーションを実行する背後の VM にオプション渡すことは、よく行われています。 
-.LP
-\f3注:\fP \f3CLASSPATH\fP、\f3\-classpath\fP、\f3\-bootclasspath\fP、および \f3\-extdirs\fP は、\f3javac\fP を実行するために使うクラスを指定するものではありません。このような方法でコンパイラの実装を操作することは、通常は無意味であり、常に危険を伴います。このような方法を使う必要がある場合は、\f3\-J\fP オプションを使って、必要なオプションを背後の \f3java\fP 起動ツールに渡してください。  
-.TP 3
-\-nowarn 
-警告メッセージを無効にします。これは \f3\-Xlint:none\fP と同じ意味です。 
-.TP 3
-\-proc: {none,only} 
-注釈処理、コンパイル、その両方、のいずれを実行するかを制御します。\f3\-proc:none\fP は、注釈処理なしでコンパイルが実行されることを意味します。\f3\-proc:only\fP は、注釈処理だけが実行され、後続のコンパイルはまったく実行されないことを意味します。 
-.TP 3
-\-processor class1[,class2,class3...] 
-実行する注釈プロセッサの名前。これを指定した場合、デフォルトの検索処理は省略されます。 
-.TP 3
-\-processorpath path 
-注釈プロセッサの検索場所を指定します。このオプションを使用しなかった場合、クラスパス内でプロセッサの検索が行われます。 
-.TP 3
-\-s dir 
-生成されたソースファイルの格納先となるディレクトリを指定します。そのディレクトリはすでに存在している必要があります。\f3javac\fP は作成しません。クラスがパッケージの一部になっていた場合、コンパイラはそのソースファイルを、パッケージ名を反映したサブディレクトリ内に格納します。その際、必要に応じてディレクトリを作成します。たとえば、ユーザーが \f3\-s /home/mysrc\fP と指定し、クラスの名前が \f2com.mypackage.MyClass\fP であった場合、そのソースファイルは \f2/home/mysrc/com/mypackage/MyClass.java\fP 内に格納されます。 
-.TP 3
-\-source release 
-受け付けるソースコードのバージョンを指定します。\f2release\fP には次の値を指定できます。 
-.RS 3
-.TP 3
-1.3 
-このコンパイラでは、JDK 1.3 以降に導入されたアサーション、総称、または他の言語機能をサポートしません。 
-.TP 3
-1.4 
-JDK 1.4 で導入された、アサーションを含むコードを受け付けます。 
-.TP 3
-1.5 
-JDK 5 で導入された総称および他の言語機能を含んだコードを受け付けます。 
-.TP 3
-5 
-1.5 と同義です。 
-.TP 3
-1.6 
-これがデフォルト値です。Java SE 6 では言語に対する変更は導入されませんでしたが、ソースファイル内のエンコーディングエラーが、以前のような「警告」ではなく、「エラー」として報告されるようになりました。 
-.TP 3
-6 
-1.6 と同義です。 
-.TP 3
-1.7 
-JDK 7 で導入された機能を含むコードを受け付けます。 
-.TP 3
-7 
-1.7 と同義です。 
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+非標準オプションを参照してください。
 .RE
-.TP 3
-\-sourcepath sourcepath 
-クラスまたはインタフェースの定義を検索するソースコードパスを指定します。ユーザークラスパスと同様に、ソースパスの複数のエントリはコロン (\f3:\fP) で区切ります。ソースパスのエントリには、ディレクトリ、JAR アーカイブ、または ZIP アーカイブを指定できます。パッケージを使っている場合は、ディレクトリまたはアーカイブ内のローカルパス名がパッケージ名を反映していなければなりません。 
-.LP
-\f3注:\fP\ クラスパスからクラスだけでなくそのソースも見つかった場合、そのクラスは自動再コンパイルの対象になることがあります。「型の検索」を参照してください。  
-.TP 3
-\-verbose 
-詳細な出力を表示します。ロードされるクラスおよびコンパイルされるソースファイルごとの情報が出力されます。 
-.TP 3
-\-version 
-バージョン情報を出力します。  
-.TP 3
-\-Werror 
-警告が発生した場合にコンパイルを終了します。 
-.TP 3
-\-X 
-非標準オプションに関する情報を表示して終了します。 
+.SS "標準オプション"
+.PP
+\-A\fIkey\fR[\fI=value\fR]
+.RS 4
+注釈プロセッサに渡すオプションを指定します。これらのオプションは、\fIjavac\fRが直接解釈するのではなく、それぞれのプロセッサで使用できるようになります。\fIkey\fRの値は、1つまたは複数の識別子をドット(\&.)で区切る必要があります。
 .RE
-
-.LP
-.SS 
-クロスコンパイルオプション
-.LP
-.LP
-デフォルトでは、クラスのコンパイルは、\f3javac\fP が添付されているプラットフォームのブートストラップクラスおよび拡張機能クラスに対して行われます。ただし、\f3javac\fP は、異なる Java プラットフォームに実装されたブートストラップクラスおよび拡張機能クラスに対してコンパイルを行う「クロスコンパイル」もサポートしています。クロスコンパイルを行う場合は、\f3\-bootclasspath\fP および \f3\-extdirs\fP を使うことが重要です。このあとの「クロスコンパイルの例」を参照してください。
-.LP
-.RS 3
-.TP 3
-\-target version 
-指定されたバージョンの VM をターゲットにしたクラスファイルを生成します。このクラスファイルは、指定されたターゲット以降のバージョンでは動作しますが、それより前のバージョンの VM では動作しません。有効なターゲットは、\f31.1\fP、\f31.2\fP、\f31.3\fP、\f31.4\fP、\f31.5\fP (\f35\fP も可)、\f31.6\fP (\f36\fP も可)、および \f31.7\fP (\f37\fP も可) です。 
-.LP
-\f3\-target\fP のデフォルトは、次のように \f3\-source\fP の値によって決まります。 
-.RS 3
-.TP 2
-o
-\-source が\f3指定されなかった\fP場合、\-target の値は \f31.7\fP になります。 
-.TP 2
-o
-\-source が\f31.2\fP の場合、\-target の値は \f31.4\fP になります。 
-.TP 2
-o
-\-source が\f31.3\fP の場合、\-target の値は \f31.4\fP になります。 
-.TP 2
-o
-\-source が\f3それ以外の値の場合はすべて\fP、\f3\\\-target\fP の値は \f3\-source\fP の値になります。 
+.PP
+\-cp \fIpath\fR or \-classpath \fIpath\fR
+.RS 4
+ユーザー・クラス・ファイル、および(オプションで)注釈プロセッサとソース・ファイルを検索する場所を指定します。このクラス・パスは\fICLASSPATH\fR環境変数のユーザー・クラス・パスをオーバーライドします。\fICLASSPATH\fR、\fI\-cp\fR、\fI\-classpath\fRのいずれも指定されていない場合、ユーザーの\fIクラス・パス\fRは、現在のディレクトリになります。Setting the Class Path を参照してください。
+.sp
+\fI\-sourcepath\fRオプションが指定されていない場合、ソース・ファイルもユーザー・クラス・パスから検索されます。
+.sp
+\fI\-processorpath\fRオプションが指定されていない場合、注釈プロセッサもクラス・パスから検索されます。
 .RE
-.TP 3
-\-bootclasspath bootclasspath 
-指定された一連のブートクラスに対してクロスコンパイルを行います。ユーザークラスパスと同様に、ブートクラスパスの複数のエントリはコロン (\f3:\fP) で区切ります。ブートクラスパスのエントリには、ディレクトリ、JAR アーカイブ、または ZIP アーカイブを指定できます。 
+.PP
+\-Djava\&.ext\&.dirs=\fIdirectories\fR
+.RS 4
+インストール済拡張機能の位置をオーバーライドします。
 .RE
-
-.LP
-.SS 
-非標準オプション
-.LP
-.RS 3
-.TP 3
-\-Xbootclasspath/p:path 
-ブートストラップクラスパスの前に追加します。 
-.TP 3
-\-Xbootclasspath/a:path 
-ブートストラップクラスパスの後ろに追加します。 
-.TP 3
-\-Xbootclasspath/:path 
-ブートストラップクラスファイルの位置をオーバーライドします。 
-.TP 3
-\-Xlint 
-推奨されるすべての警告を有効にします。このリリースでは、利用可能なすべての警告を有効にすることが推奨されています。 
-.TP 3
-\-Xlint:all 
-推奨されるすべての警告を有効にします。このリリースでは、利用可能なすべての警告を有効にすることが推奨されています。 
-.TP 3
-\-Xlint:none 
-すべての警告を無効にします。 
-.TP 3
-\-Xlint:name 
-警告 \f2name\fP を有効にします。このオプションで有効にできる警告のリストについては、「\-Xlint オプションを使って有効または無効にできる警告」を参照してください。 
-.TP 3
-\-Xlint:\-name 
-警告 \f2name\fP を無効にします。このオプションで無効にできる警告のリストについては、「\-Xlint オプションを使って有効または無効にできる警告」を参照してください。 
-.TP 3
-\-Xmaxerrs number 
-印刷するエラーの最大数を設定します。 
-.TP 3
-\-Xmaxwarns number 
-印刷する警告の最大数を設定します。 
-.TP 3
-\-Xstdout filename 
-コンパイラのメッセージを、指定されたファイルに送ります。デフォルトでは、コンパイラのメッセージは \f2System.err\fP に送られます。 
-.TP 3
-\-Xprefer:{newer,source} 
-ある型に対してソースファイルとクラスファイルの両方が見つかった場合、そのどちらのファイルを読み取るべきかを指定します (「型の検索」を参照)。\f2\-Xprefer:newer\fP を使用した場合、ある型に対するソースファイルとクラスファイルの新しい方が読み取られます (デフォルト)。\f2\-Xprefer:source\fP オプションを使用した場合、ソースファイルが読み取られます。SOURCE の保存ポリシーを使って宣言された注釈に任意の注釈プロセッサがアクセスできるようにする場合は、\f2\-Xprefer:source\fP \f2を使用してください\fP。  
-.TP 3
-\-Xpkginfo:{always,legacy,nonempty} 
-パッケージ情報ファイルの処理を指定します。 
-.TP 3
-\-Xprint 
-指定された型のテキスト表現をデバッグ目的で出力します。注釈処理、コンパイルのどちらも実行しません。出力形式は変更される可能性があります。 
-.TP 3
-\-XprintProcessorInfo 
-ある特定のプロセッサが処理を依頼されている注釈に関する情報を出力します。 
-.TP 3
-\-XprintRounds 
-初回および後続の注釈処理ラウンドに関する情報を出力します。 
+.PP
+\-Djava\&.endorsed\&.dirs=\fIdirectories\fR
+.RS 4
+承認された標準パスの位置をオーバーライドします。
 .RE
-
-.LP
-.SS 
-\-Xlint オプションを使って有効または無効にできる警告
-.LP
-.LP
-\f3\-Xlint:\fP\f2name\fP オプションを使って警告 \f2name\fP を有効にします。ただし、\f2name\fP は次の警告名のいずれかになります。同様に、\f3\-Xlint:\-\fP\f2name\fP オプションを使って警告 \f2name\fP を無効にできます。
-.LP
-.RS 3
-.TP 3
-cast 
-不要で冗長なキャストについて警告します。次に例を示します。 
+.PP
+\-d \fIdirectory\fR
+.RS 4
+クラス・ファイルの出力先ディレクトリを設定します。そのディレクトリは\fIjavac\fRでは作成されないため、すでに存在している必要があります。クラスがパッケージの一部である場合、\fIjavac\fRは、パッケージ名を反映したサブディレクトリ内にクラス・ファイルを格納し、必要に応じてディレクトリを作成します。
+.sp
+\fI\-d\fR
+\fI/home/myclasses\fRと指定し、クラスの名前が\fIcom\&.mypackage\&.MyClass\fRである場合、クラス・ファイルは\fI/home/myclasses/com/mypackage/MyClass\&.class\fRになります。
+.sp
+\fI\-d\fRオプションが指定されなかった場合、\fIjavac\fRは、各クラス・ファイルを、その生成元となるソース・ファイルと同じディレクトリ内に格納します。
+.sp
+\fB注意:\fR
+\fI\-d\fRオプションによって指定されたディレクトリは、ユーザー・クラス・パスに自動的に追加されません。
+.RE
+.PP
+\-deprecation
+.RS 4
+非推奨のメンバーまたはクラスが使用またはオーバーライドされるたびに、説明を表示します。\fI\-deprecation\fRオプションが指定されていない場合、\fIjavac\fRは、非推奨のメンバーまたはクラスを使用またはオーバーライドしているソース・ファイルのサマリーを表示します。\fI\-deprecation\fRオプションは、\fI\-Xlint:deprecation\fRの省略表記です。
+.RE
+.PP
+\-encoding \fIencoding\fR
+.RS 4
+ソース・ファイルのエンコーディング名(EUC\-JPやUTF\-8など)を設定します。\fI\-encoding\fRオプションが指定されていない場合は、プラットフォームのデフォルト・コンバータが使用されます。
+.RE
+.PP
+\-endorseddirs \fIdirectories\fR
+.RS 4
+承認された標準パスの位置をオーバーライドします。
+.RE
+.PP
+\-extdirs \fIdirectories\fR
+.RS 4
+\fIext\fRディレクトリの位置をオーバーライドします。directories変数には、コロンで区切ったディレクトリのリストを指定します。指定したディレクトリ内の各JARファイルから、クラス・ファイルが検索されます。検出されたすべてのJARファイルは、クラス・パスの一部になります。
+.sp
+クロスコンパイル(異なるJavaプラットフォームに実装されたブートストラップ・クラスや拡張機能クラスに対してコンパイルを行う)を実行する場合、このオプションには拡張機能クラスを含むディレクトリを指定します。詳細はクロスコンパイル・オプションを参照してください。
+.RE
+.PP
+\-g
+.RS 4
+ローカル変数を含むすべてのデバッグ情報を生成します。デフォルトでは、行番号およびソース・ファイル情報のみが生成されます。
+.RE
+.PP
+\-g:none
+.RS 4
+デバッグ情報を生成しません。
+.RE
+.PP
+\-g:[\fIkeyword list\fR]
+.RS 4
+カンマで区切られたキーワード・リストにより指定された、特定の種類のデバッグ情報のみを生成します。次のキーワードが有効です。
+.PP
+source
+.RS 4
+ソース・ファイルのデバッグ情報。
+.RE
+.PP
+lines
+.RS 4
+行番号のデバッグ情報。
+.RE
+.PP
+vars
+.RS 4
+ローカル変数のデバッグ情報。
+.RE
+.RE
+.PP
+\-help
+.RS 4
+標準オプションの概要を出力します。
+.RE
+.PP
+\-implicit:[\fIclass, none\fR]
+.RS 4
+暗黙的にロードされたソース・ファイルに対するクラス・ファイルの生成を制御します。クラス・ファイルを自動生成するには、\fI\-implicit:class\fRを使用します。クラス・ファイルの生成を抑制するには、\fI\-implicit:none\fRを使用します。このオプションが指定されなかった場合のデフォルト動作は、クラス・ファイルの自動生成になります。その場合、そのようなクラス・ファイルが生成された時に注釈処理も実行されると、コンパイラから警告が発行されます。\fI\-implicit\fRオプションが明示的に設定された場合、警告は発行されません。型の検索を参照してください。
+.RE
+.PP
+\-J\fIoption\fR
+.RS 4
+Java仮想マシン(JVM)に\fIoption\fRを渡します。optionには、Java起動ツールのリファレンス・ページに記載されているオプションを1つ指定します。たとえば、\fI\-J\-Xms48m\fRと指定すると、スタートアップ・メモリーは48MBに設定されます。java(1)を参照してください。
+.sp
+\fB注意:\fR
+\fICLASSPATH\fR、\fI\-classpath\fR、\fI\-bootclasspath\fRおよび\fI\-extdirs\fRオプションは、\fIjavac\fRの実行に使用されるクラスを指定しません。これらのオプションおよび変数を使用してコンパイラの実装をカスタマイズしようとすると、リスクが高く、多くの場合、必要な処理が実行されません。コンパイラの実装をカスタマイズする必要がある場合、\fI\-J\fRオプションを使用して、基礎となるJava起動ツールにオプションを渡します。
+.RE
+.PP
+\-nowarn
+.RS 4
+警告メッセージを無効にします。このオプションは、\fI\-Xlint:none\fRオプションと同じように動作します。
+.RE
+.PP
+\-parameters
+.RS 4
+リフレクションAPIのメソッド\fIjava\&.lang\&.reflect\&.Executable\&.getParameters\fRが取得できるように、生成されるクラス・ファイル内のコンストラクタとメソッドの仮パラメータ名を格納します。
+.RE
+.PP
+\-proc: [\fInone\fR, \fIonly\fR]
+.RS 4
+注釈処理およびコンパイルを実行するかを制御します。\fI\-proc:none\fRは、注釈処理なしでコンパイルが実行されることを意味します。\fI\-proc:only\fRは、注釈処理のみが実行され、後続のコンパイルはまったく実行されないことを意味します。
+.RE
+.PP
+\-processor \fIclass1\fR [,\fIclass2\fR,\fIclass3\fR\&.\&.\&.]
+.RS 4
+実行する注釈プロセッサの名前。これを指定した場合、デフォルトの検索処理は省略されます。
+.RE
+.PP
+\-processorpath \fIpath\fR
+.RS 4
+注釈プロセッサを検索する場所を指定します。このオプションが使用されない場合、クラス・パスのプロセッサが検索されます。
+.RE
+.PP
+\-s \fIdir\fR
+.RS 4
+生成されたソース・ファイルの格納先となるディレクトリを指定します。そのディレクトリは\fIjavac\fRでは作成されないため、すでに存在している必要があります。クラスがパッケージの一部である場合、コンパイラは、パッケージ名を反映したサブディレクトリ内にソース・ファイルを格納し、必要に応じてディレクトリを作成します。
+.sp
+\fI\-s /home/mysrc\fRと指定し、クラスの名前が\fIcom\&.mypackage\&.MyClass\fRである場合、ソース・ファイルは\fI/home/mysrc/com/mypackage/MyClass\&.java\fRに格納されます。
+.RE
+.PP
+\-source \fIrelease\fR
+.RS 4
+受け付けるソース・コードのバージョンを指定します。\fIrelease\fRには次の値を指定できます。
+.PP
+1\&.3
+.RS 4
+このコンパイラでは、Java SE 1\&.3以降に導入されたアサーション、総称または他の言語機能をサポートしません。
+.RE
+.PP
+1\&.4
+.RS 4
+Java SE 1\&.4で導入された、アサーションを含むコードを受け付けます。
+.RE
+.PP
+1\&.5
+.RS 4
+Java SE 5で導入された総称および他の言語機能を含んだコードを受け付けます。
+.RE
+.PP
+5
+.RS 4
+1\&.5と同義です。
+.RE
+.PP
+1\&.6
+.RS 4
+Java SE 6では言語に対する変更は導入されませんでした。しかし、ソース・ファイル内のエンコーディング・エラーが、Java Platform, Standard Editionの以前のリリースような警告ではなく、エラーとして報告されるようになりました。
+.RE
+.PP
+6
+.RS 4
+1\&.6と同義です。
+.RE
+.PP
+1\&.7
+.RS 4
+これがデフォルト値です。Java SE 7で導入された機能を含むコードを受け付けます。
+.RE
+.PP
+7
+.RS 4
+1\&.7と同義です。
+.RE
+.RE
+.PP
+\-sourcepath \fIsourcepath\fR
+.RS 4
+クラスまたはインタフェースの定義を検索するソース・コード・パスを指定します。ユーザー・クラス・パスと同様に、ソース・パスのエントリは、Oracle Solarisではコロン(:)で、Windowsではセミコロンで区切り、ここには、ディレクトリ、JARアーカイブまたはZIPアーカイブを指定できます。パッケージを使用している場合は、ディレクトリまたはアーカイブ内のローカル・パス名がパッケージ名を反映している必要があります。
+.sp
+\fB注意:\fR
+ソース・ファイルも見つかった場合、クラス・パスにより見つかったクラスは再コンパイルされる可能性があります。型の検索を参照してください。
+.RE
+.PP
+\-verbose
+.RS 4
+ロードされるクラスおよびコンパイルされるソース・ファイルごとの情報が出力される、詳細出力を使用します。
+.RE
+.PP
+\-version
+.RS 4
+リリース情報を出力します。
+.RE
+.PP
+\-werror
+.RS 4
+警告が発生した場合にコンパイルを終了します。
+.RE
+.PP
+\-X
+.RS 4
+非標準オプションに関する情報を表示して終了します。
+.RE
+.SS "クロスコンパイル・オプション"
+.PP
+デフォルトでは、クラスのコンパイルは、\fIjavac\fRが添付されているプラットフォームのブートストラップ・クラスおよび拡張機能クラスに対して行われます。ただし、\fIjavac\fRは、異なるJavaプラットフォームに実装されたブートストラップ・クラスおよび拡張機能クラスに対してコンパイルを行うクロスコンパイルもサポートしています。クロスコンパイルを行う場合は、\fI\-bootclasspath\fRおよび\fI\-extdirs\fRオプションを使用することが重要です。
+.PP
+\-target \fIversion\fR
+.RS 4
+仮想マシンの指定されたリリースを対象とするクラス・ファイルを生成します。クラス・ファイルは、指定されたターゲット以降のリリースでは動作しますが、それより前のリリースのJVMでは動作しません。有効なターゲットは、1\&.1、1\&.2、1\&.3、1\&.4、1\&.5 (5も可)、1\&.6 (6も可)および1\&.7 (7も可)です。
+.sp
+\fI\-target\fRオプションのデフォルトは、\fI\-source\fRオプションの値によって異なります。
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\fI\-source\fRオプションが指定されていない場合、\fI\-target\fRオプションの値は1\&.7です。
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\fI\-source\fRオプションが1\&.2の場合、\fI\-target\fRオプションの値は1\&.4です。
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\fI\-source\fRオプションが1\&.3の場合、\fI\-target\fRオプションの値は1\&.4です。
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\fI\-source\fRオプションが1\&.5の場合、\fI\-target\fRオプションの値は1\&.7です。
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\fI\-source\fRオプションが1\&.6の場合、\fI\-target\fRオプションの値は1\&.7です。
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\fI\-source\fRオプションの他のすべての値の場合、\fI\-target\fRオプションの値は、\fI\-source\fRオプションの値になります。
+.RE
+.RE
+.PP
+\-bootclasspath \fIbootclasspath\fR
+.RS 4
+指定された一連のブート・クラスに対してクロスコンパイルを行います。ユーザー・クラス・パスと同様に、ブート・クラス・パスのエントリはコロン(:)で区切り、ここには、ディレクトリ、JARアーカイブまたはZIPアーカイブを指定できます。
+.RE
+.SS "コンパクト・プロファイル・オプション"
+.PP
+JDK 8以降から、\fIjavac\fRコンパイラはコンパクト・プロファイルをサポートします。コンパクト・プロファイルを使用すると、Javaプラットフォーム全体を必要としないアプリケーションは、デプロイ可能で、小さいフットプリントで実行できます。コンパクト・プロファイル機能は、アプリケーション・ストアからのアプリケーションのダウンロード時間を短縮するのに使用できます。この機能は、JREをバンドルするJavaアプリケーションの、よりコンパクトなデプロイメントに役立ちます。この機能は、小さいデバイスでも役立ちます。
+.PP
+サポートされているプロファイル値は、\fIcompact1\fR、\fIcompact2\fRおよび\fIcompact3\fRです。これらは、追加のレイヤーです。大きい番号の各コンパクト・プロファイルには、小さい番号の名前のプロファイル内のすべてのAPIが含まれます。
+.PP
+\-profile
+.RS 4
+コンパクト・プロファイルを使用する場合、このオプションは、コンパイル時にプロファイル名を指定します。次に例を示します。
+.sp
+.if n \{\
+.RS 4
+.\}
 .nf
-\f3
-.fl
-String s = (String)"Hello!"
-.fl
-\fP
+javac \-profile compact1 Hello\&.java
 .fi
-.TP 3
-classfile 
-クラスファイルの内容に関連した問題について警告します。 
-.TP 3
-deprecation 
-非推奨項目の使用について警告します。次に例を示します。 
+.if n \{\
+.RE
+.\}
+javacは、指定されたプロファイルにない任意のJava SE APIを使用するソース・コードをコンパイルしません。これは、そのようなソース・コードをコンパイルしようとすることによって生じるエラー・メッセージの例です。
+.sp
+.if n \{\
+.RS 4
+.\}
 .nf
-\f3
-.fl
-    java.util.Date myDate = new java.util.Date();
-.fl
-    int currentDay = myDate.getDay();
-.fl
-\fP
+cd jdk1\&.8\&.0/bin
+\&./javac \-profile compact1 Paint\&.java
+Paint\&.java:5: error: Applet is not available in profile \*(Aqcompact1\*(Aq
+import java\&.applet\&.Applet;
 .fi
-.LP
-メソッド \f2java.util.Date.getDay\fP は JDK 1.1 以降は推奨されていません。  
-.TP 3
-dep\-ann 
-\f2@deprecated\fP Javadoc コメントでドキュメント化されているが、 \f2@Deprecated\fP 注釈が付いていない項目について警告します。次に例を示します。 
+.if n \{\
+.RE
+.\}
+この例では、\fIApplet\fRクラスを使用しないようにソースを変更することによって、エラーを修正できます。\-profileオプションを指定せずにコンパイルすることによって、エラーを修正することもできます。コンパイルは、Java SE APIの完全なセットに対して実行されます。(どのコンパクト・プロファイルにも、\fIApplet\fRクラスは含まれていません。)
+.sp
+コンパクト・プロファイルを使用してコンパイルするための別の方法として、\fI\-bootclasspath\fRオプションを使用して、プロファイルのイメージを指定する\fIrt\&.jar\fRファイルへのパスを指定します。かわりに\fI\-profile\fRオプションを使用すると、プロファイル・イメージは、コンパイル時にシステム上に存在する必要がありません。これは、クロスコンパイル時に役立ちます。
+.RE
+.SS "非標準オプション"
+.PP
+\-Xbootclasspath/p:\fIpath\fR
+.RS 4
+ブートストラップ・クラス・パスに接尾辞を追加します。
+.RE
+.PP
+\-Xbootclasspath/a:\fIpath\fR
+.RS 4
+ブートストラップ・クラス・パスに接頭辞を追加します。
+.RE
+.PP
+\-Xbootclasspath/:\fIpath\fR
+.RS 4
+ブートストラップ・クラス・ファイルの位置をオーバーライドします。
+.RE
+.PP
+\-Xdoclint:[\-]\fIgroup\fR [\fI/access\fR]
+.RS 4
+\fIgroup\fRの値が\fIaccessibility\fR、\fIsyntax\fR、\fIreference\fR、\fIhtml\fRまたは\fImissing\fRのいずれかである特定のチェック・グループを有効または無効にします。これらのチェック・グループの詳細は、\fIjavadoc\fRコマンドの\fI\-Xdoclint\fRオプションを参照してください。\fI\-Xdoclint\fRオプションは、\fIjavac\fRコマンドではデフォルトで無効になります。
+.sp
+変数\fIaccess\fRは、\fI\-Xdoclint\fRオプションがチェックするクラスとメンバーの最小の可視性レベルを指定します。\fIpublic\fR、\fIprotected\fR、\fIpackage\fRおよび\fIprivate\fRの値(可視性の高い順)の1つを持つことができます。たとえば、次のオプションは、(protected、package、publicを含む) protected以上のアクセス・レベルを持つクラスおよびメンバーを(すべてのチェック・グループで)チェックします。
+.sp
+.if n \{\
+.RS 4
+.\}
 .nf
-\f3
-.fl
-  /**
-.fl
-   * @deprecated As of Java SE 7, replaced by {@link #newMethod()}
-.fl
-   */
-.fl
-
-.fl
-  public static void deprecatedMethood() { }
-.fl
-
-.fl
-  public static void newMethod() { }
-.fl
-\fP
+\-Xdoclint:all/protected
 .fi
-.TP 3
-divzero 
-一定の整数 0 で除算されることについて警告します。次に例を示します。 
+.if n \{\
+.RE
+.\}
+次のオプションは、package以上のアクセス権(packageおよびpublicを含む)を持つクラスおよびメンバーに対するHTMLエラーをチェックしないことを除き、すべてのアクセス・レベルに対してすべてのチェック・グループを有効にします。
+.sp
+.if n \{\
+.RS 4
+.\}
 .nf
-\f3
-.fl
-    int divideByZero = 42 / 0;
-.fl
-\fP
+\-Xdoclint:all,\-html/package
 .fi
-.TP 3
-empty 
-\f2if\fP 文以降が空の文であることについて警告します。次に例を示します。 
+.if n \{\
+.RE
+.\}
+.RE
+.PP
+\-Xdoclint:none
+.RS 4
+すべてのチェック・グループを無効にします。
+.RE
+.PP
+\-Xdoclint:all[\fI/access\fR]
+.RS 4
+すべてのチェック・グループを有効にします。
+.RE
+.PP
+\-Xlint
+.RS 4
+推奨されるすべての警告を有効にします。このリリースでは、利用可能なすべての警告を有効にすることをお薦めします。
+.RE
+.PP
+\-Xlint:all
+.RS 4
+推奨されるすべての警告を有効にします。このリリースでは、利用可能なすべての警告を有効にすることをお薦めします。
+.RE
+.PP
+\-Xlint:none
+.RS 4
+すべての警告を無効にします。
+.RE
+.PP
+\-Xlint:\fIname\fR
+.RS 4
+警告名を無効にします。このオプションで無効にできる警告のリストは、\-Xlintオプションを使用した警告の有効化または無効化を参照してください。
+.RE
+.PP
+\-Xlint:\fI\-name\fR
+.RS 4
+警告名を無効にします。このオプションで無効にできる警告のリストを取得するには、\-Xlintオプションを使用した警告の有効化または無効化\-Xlint\fIオプションを使用した\fRを参照してください。
+.RE
+.PP
+\-Xmaxerrs \fInumber\fR
+.RS 4
+印刷するエラーの最大数を設定します。
+.RE
+.PP
+\-Xmaxwarns \fInumber\fR
+.RS 4
+印刷する警告の最大数を設定します。
+.RE
+.PP
+\-Xstdout \fIfilename\fR
+.RS 4
+コンパイラのメッセージを、指定されたファイルに送信します。デフォルトでは、コンパイラのメッセージは\fISystem\&.err\fRに送られます。
+.RE
+.PP
+\-Xprefer:[\fInewer,source\fR]
+.RS 4
+ある型に対してソース・ファイルとクラス・ファイルの両方が見つかった場合、そのどちらのファイルを読み取るかを指定します。(型の検索を参照してください)。\fI\-Xprefer:newer\fRオプションを使用した場合、ある型に対するソース・ファイルとクラス・ファイルのうち新しい方が読み取られます(デフォルト)。\fI\-Xprefer:source\fRオプションを使用した場合、ソース・ファイルが読み取られます。\fISOURCE\fRの保存ポリシーを使用して宣言された注釈に任意の注釈プロセッサがアクセスできるようにする場合は、\fI\-Xprefer:source\fRを使用してください。
+.RE
+.PP
+\-Xpkginfo:[\fIalways\fR,\fIlegacy\fR,\fInonempty\fR]
+.RS 4
+javacがpackage\-info\&.javaファイルから\fIpackage\-info\&.class\fRファイルを生成するかどうかを制御します。このオプションで使用可能なmode引数は次のとおりです。
+.PP
+always
+.RS 4
+すべての\fIpackage\-info\&.java\fRファイルの\fIpackage\-info\&.class\fRファイルを常に生成します。このオプションは、各\fI\&.java\fRファイルに対応する\fI\&.class\fRファイルがあることを確認するAntなどのビルド・システムを使用する場合に役立つことがあります。
+.RE
+.PP
+legacy
+.RS 4
+package\-info\&.javaに注釈が含まれる場合にのみ\fIpackage\-info\&.class\fRファイルを生成します。package\-info\&.javaにコメントのみ含まれる場合に\fIpackage\-info\&.class\fRファイルを生成しません。
+.sp
+\fB注意:\fR
+\fIpackage\-info\&.class\fRファイルは生成できますが、package\-info\&.javaファイル内のすべての注釈に\fIRetentionPolicy\&.SOURCE\fRがある場合は空になります。
+.RE
+.PP
+nonempty
+.RS 4
+package\-info\&.javaに\fIRetentionPolicy\&.CLASS\fRまたは\fIRetentionPolicy\&.RUNTIME\fRとともに注釈が含まれる場合にのみ\fIpackage\-info\&.class\fRファイルを生成します。
+.RE
+.RE
+.PP
+\-Xprint
+.RS 4
+デバッグ目的で指定した型のテキスト表示を出力します。注釈処理もコンパイルも実行されません。出力形式は変更される可能性があります。
+.RE
+.PP
+\-XprintProcessorInfo
+.RS 4
+ある特定のプロセッサが処理を依頼されている注釈に関する情報を出力します。
+.RE
+.PP
+\-XprintRounds
+.RS 4
+初回および後続の注釈処理ラウンドに関する情報を出力します。
+.RE
+.SH "-XLINTオプションを使用した警告の有効化または無効化"
+.PP
+\fI\-Xlint:name\fRオプションを使用して警告\fIname\fRを有効にします。ここで、\fIname\fRは次の警告名のいずれかになります。\fI\-Xlint:\-name:\fRオプションを使用して、警告を無効化できます。
+.PP
+cast
+.RS 4
+不要で冗長なキャストについて警告します。たとえば、次のようになります。
+.sp
+.if n \{\
+.RS 4
+.\}
 .nf
-\f3
-.fl
+String s = (String) "Hello!"
+.fi
+.if n \{\
+.RE
+.\}
+.RE
+.PP
+classfile
+.RS 4
+クラス・ファイルの内容に関連した問題について警告します。
+.RE
+.PP
+deprecation
+.RS 4
+非推奨の項目の使用について警告します。たとえば、次のようになります。
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+java\&.util\&.Date myDate = new java\&.util\&.Date();
+int currentDay = myDate\&.getDay();
+.fi
+.if n \{\
+.RE
+.\}
+メソッド\fIjava\&.util\&.Date\&.getDay\fRはJDK 1\&.1以降は非推奨になりました。
+.RE
+.PP
+dep\-ann
+.RS 4
+\fI@deprecated\fR
+Javadocコメントでドキュメント化されているが、\fI@Deprecated\fR注釈が付いていない項目について警告します。たとえば、次のようになります。
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+/**
+  * @deprecated As of Java SE 7, replaced by {@link #newMethod()}
+  */
+public static void deprecatedMethood() { }
+public static void newMethod() { }
+.fi
+.if n \{\
+.RE
+.\}
+.RE
+.PP
+divzero
+.RS 4
+定整数0で除算されることについて警告します。たとえば、次のようになります。
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+int divideByZero = 42 / 0;
+.fi
+.if n \{\
+.RE
+.\}
+.RE
+.PP
+empty
+.RS 4
+\fIif \fR文以降が空の文であることについて警告します。たとえば、次のようになります。
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
 class E {
-.fl
     void m() {
-.fl
-        if (true) ;
-.fl
+         if (true) ;
     }
-.fl
 }
-.fl
-\fP
 .fi
-.TP 3
-fallthrough 
-fall\-through ケースの \f2switch\fP ブロックをチェックし、検出されたものに対して警告メッセージを表示します。Fall\-through ケースは、\f2switch\fP ブロック内の最後のケースを除くケースです。このコードには \f2break\fP 文は含まれません。コードの実行をそのケースから次のケースへ移動します。たとえば、この \f2switch\fP ブロック内の \f2case 1\fP ラベルに続くコードは、\f2break\fP 文で終わっていません。 
+.if n \{\
+.RE
+.\}
+.RE
+.PP
+fallthrough
+.RS 4
+fall\-throughケースのswitchブロックをチェックし、検出されたものに対して警告メッセージを表示します。Fall\-throughケースは、switchブロック内の最後のケースを除くケースです。このコードにはbreak文は含まれません。コードの実行をそのケースから次のケースへ移動します。たとえば、このswitchブロック内のcase 1ラベルに続くコードは、break文で終わっていません。
+.sp
+.if n \{\
+.RS 4
+.\}
 .nf
-\f3
-.fl
 switch (x) {
-.fl
 case 1:
-.fl
-       System.out.println("1");
-.fl
-       //  No break statement here.
-.fl
+  System\&.out\&.println("1");
+  // No break statement here\&.
 case 2:
-.fl
-       System.out.println("2");
-.fl
+  System\&.out\&.println("2");
 }
-.fl
-\fP
 .fi
-.LP
-このコードのコンパイル時に \f2\-Xlint:fallthrough\fP フラグが使用されていた場合、コンパイラは 当該ケースの行番号とともに、fall\-through ケースの可能性があることを示す警告を発行します。  
-.TP 3
-finally 
-正常に完了できない \f2finally\fP 節について警告します。次に例を示します。 
+.if n \{\
+.RE
+.\}
+このコードのコンパイル時に\fI\-Xlint:fallthrough\fRオプションが使用されていた場合、コンパイラは、問題になっているケースの行番号とともに、caseにfall\-throughする可能性があることを示す警告を発行します。
+.RE
+.PP
+finally
+.RS 4
+正常に完了できない\fIfinally\fR句について警告します。たとえば、次のようになります。
+.sp
+.if n \{\
+.RS 4
+.\}
 .nf
-\f3
-.fl
-  public static int m() {
-.fl
-    try {
-.fl
-      throw new NullPointerException();
-.fl
-    } catch (NullPointerException e) {
-.fl
-      System.err.println("Caught NullPointerException.");
-.fl
-      return 1;
-.fl
-    } finally {
-.fl
-      return 0;
-.fl
-    }
-.fl
+public static int m() {
+  try {
+     throw new NullPointerException();
+  }  catch (NullPointerException(); {
+     System\&.err\&.println("Caught NullPointerException\&.");
+     return 1;
+   } finally {
+     return 0;
+   }
   }
-.fl
-\fP
 .fi
-.LP
-この例では、コンパイラは \f2finally\fP ブロックに関する警告を生成します。このメソッドが呼び出されると、値 1 ではなく \f20\fP が \f2返されます\fP。 \f2finally\fP ブロックは、 \f2try\fP ブロックが終了すると必ず実行されます。この例では、制御が \f2catch\fP に移された場合、メソッドは終了します。ただし、 \f2finally\fP ブロックは実行される必要があるため、制御がすでにこのメソッドの外部に移されていても、このブロックは実行されます。  
-.TP 3
-options 
-コマンド行オプションの使用に関する問題について警告します。この種の警告の例については、「クロスコンパイルの例」を参照してください。 
-.TP 3
-overrides 
-メソッドのオーバーライドに関する問題について警告します。たとえば、次の 2 つのクラスがあるとします。 
+.if n \{\
+.RE
+.\}
+この例では、コンパイラは\fIfinally\fRブロックに関する警告を生成します。\fIint\fRメソッドが呼び出されると、値0が返されます。\fIfinally\fRブロックは、\fItry\fRブロックが終了すると実行されます。この例では、制御が\fIcatch\fRブロックに移された場合、\fIint\fRメソッドは終了します。ただし、\fIfinally\fRブロックは実行される必要があるため、制御がメソッドの外部に移されていても、このブロックは実行されます。
+.RE
+.PP
+options
+.RS 4
+コマンドライン・オプションの使用に関する問題について警告します。クロスコンパイル・オプションを参照してください。
+.RE
+.PP
+overrides
+.RS 4
+メソッドのオーバーライドに関する問題について警告します。たとえば、次の2つのクラスがあるとします。
+.sp
+.if n \{\
+.RS 4
+.\}
 .nf
-\f3
-.fl
 public class ClassWithVarargsMethod {
-.fl
-  void varargsMethod(String... s) { }
-.fl
+  void varargsMethod(String\&.\&.\&. s) { }
 }
-.fl
-\fP
-.fi
-.nf
-\f3
-.fl
+
 public class ClassWithOverridingMethod extends ClassWithVarargsMethod {
-.fl
-  @Override
-.fl
-  void varargsMethod(String[] s) { }
-.fl
+   @Override
+   void varargsMethod(String[] s) { }
 }
-.fl
-\fP
 .fi
-.LP
-コンパイラは次のような警告を生成します。 
+.if n \{\
+.RE
+.\}
+コンパイラは、次のような警告を生成します。
+.sp
+.if n \{\
+.RS 4
+.\}
 .nf
-\f3
-.fl
-warning: [override] varargsMethod(String[]) in ClassWithOverridingMethod overrides varargsMethod(String...) in ClassWithVarargsMethod; overriding method is missing '...'
-.fl
-\fP
+warning: [override] varargsMethod(String[]) in ClassWithOverridingMethod 
+overrides varargsMethod(String\&.\&.\&.) in ClassWithVarargsMethod; overriding
+method is missing \*(Aq\&.\&.\&.\*(Aq
 .fi
-.LP
-コンパイラは、varargs メソッドを検出すると、varargs の仮パラメータを配列に変換します。メソッド \f2ClassWithVarargsMethod.varargsMethod\fP では、コンパイラは varargs の仮パラメータ \f2String... s\fP を仮パラメータ \f2String[] s\fP に変換します。String[] s は、メソッド \f2ClassWithOverridingMethod.varargsMethod\fP の仮パラメータに対応する配列です。その結果、この例ではコンパイルが行われます。  
-.TP 3
-path 
-コマンド行での無効なパス要素と存在しないパスディレクトリについて警告します (クラスパス、ソースパスなどのパス関連)。このような警告を \f2@SuppressWarnings\fP 注釈で抑制することはできません。次に例を示します。 
+.if n \{\
+.RE
+.\}
+コンパイラは、\fIvarargs\fRメソッドを検出すると、\fIvarargs\fRの仮パラメータを配列に変換します。メソッド\fIClassWithVarargsMethod\&.varargsMethod\fRでは、コンパイラは\fIvarargs\fRの仮パラメータ\fIString\&.\&.\&. s\fRを仮パラメータ\fIString[] s\fRに変換します。これは、メソッド\fIClassWithOverridingMethod\&.varargsMethod\fRの仮パラメータに対応する配列です。その結果、この例ではコンパイルが行われます。
+.RE
+.PP
+path
+.RS 4
+コマンドラインでの無効なパス要素と存在しないパス・ディレクトリについて警告します(クラス・パス、ソース・パスなどのパス関連)。このような警告を\fI@SuppressWarnings\fR注釈で抑制することはできません。たとえば、次のようになります。
+.sp
+.if n \{\
+.RS 4
+.\}
 .nf
-\f3
-.fl
-javac \-Xlint:path \-classpath /nonexistentpath Example.java
-.fl
-\fP
+javac \-Xlint:path \-classpath /nonexistentpath Example\&.java
 .fi
-.TP 3
-processing 
-注釈処理に関する問題について警告します。コンパイラがこの警告を生成するのは、注釈を含むクラスがあるときに、使用している注釈プロセッサでその型の例外を処理できない場合です。単純な注釈プロセッサの例を次に示します。 
-.LP
-\f3ソースファイル \fP\f4AnnoProc.java\fP: 
+.if n \{\
+.RE
+.\}
+.RE
+.PP
+processing
+.RS 4
+注釈処理に関する問題について警告します。コンパイラがこの警告を生成するのは、注釈を含むクラスがあるときに、使用している注釈プロセッサでそのタイプの例外を処理できない場合です。たとえば、単純な注釈プロセッサを次に示します。
+.sp
+\fBソース・ファイルAnnocProc\&.java\fR:
+.sp
+.if n \{\
+.RS 4
+.\}
 .nf
-\f3
-.fl
-import java.util.*;
-.fl
-import javax.annotation.processing.*;
-.fl
-import javax.lang.model.*;
-.fl
-import javax.lang.model.element.*;
-.fl
+import java\&.util\&.*;
+import javax\&.annotation\&.processing\&.*;
+import javax\&.lang\&.model\&.*;
+import\&.javaz\&.lang\&.model\&.element\&.*;
 
-.fl
 @SupportedAnnotationTypes("NotAnno")
-.fl
 public class AnnoProc extends AbstractProcessor {
-.fl
-    public boolean process(Set<? extends TypeElement> elems, RoundEnvironment renv) {
-.fl
-        return true;
-.fl
-    }
-.fl
-
-.fl
-    public SourceVersion getSupportedSourceVersion() {
-.fl
-        return SourceVersion.latest();
-.fl
-    }
-.fl
-}
-.fl
-\fP
-.fi
-.LP
-\f3ソースファイル \fP\f4AnnosWithoutProcessors.java\fP\f3:\fP 
-.nf
-\f3
-.fl
-@interface Anno { }
-.fl
-
-.fl
-@Anno
-.fl
-class AnnosWithoutProcessors { }
-.fl
-\fP
-.fi
-.LP
-次のコマンドは、注釈プロセッサ \f2AnnoProc\fP をコンパイルし、この注釈プロセッサをソースファイル \f2AnnosWithoutProcessors.java\fP に対して実行します。 
-.nf
-\f3
-.fl
-% javac AnnoProc.java
-.fl
-% javac \-cp . \-Xlint:processing \-processor AnnoProc \-proc:only AnnosWithoutProcessors.java
-.fl
-\fP
-.fi
-.LP
-コンパイラがソースファイル \f2AnnosWithoutProcessors.java\fP に対して注釈プロセッサを実行すると、次の警告が生成されます。 
-.nf
-\f3
-.fl
-warning: [processing] No processor claimed any of these annotations: Anno
-.fl
-\fP
-.fi
-.LP
-この問題を解決するには、クラス \f2AnnosWithoutProcessors\fP で定義および使用される注釈の名前を \f2Anno\fP から \f2NotAnno\fP に変更します。  
-.TP 3
-rawtypes 
-raw 型に対する未検査操作について警告します。次の文では、 \f2rawtypes\fP 警告が生成されます。 
-.nf
-\f3
-.fl
-void countElements(List l) { ... }
-.fl
-\fP
-.fi
-.LP
-次の文では、 \f2rawtypes\fP 警告は生成されません。 
-.nf
-\f3
-.fl
-void countElements(List<?> l) { ... }
-.fl
-\fP
-.fi
-.LP
-\f2List\fP は raw 型です。ただし、 \f2List<?>\fP はアンバウンド形式のワイルドカードのパラメータ化された型です。 \f2List\fP はパラメータ化されたインタフェースなので、必ずその型引数を指定する必要があります。この例では、 \f2List\fP の仮引数はアンバウンド形式のワイルドカード (\f2?\fP) を使ってその仮型パラメータとして指定されます。つまり、 \f2countElements\fP メソッドは \f2List\fP インタフェースのどのインスタンス化も受け付けることができます。  
-.TP 3
-serial 
-直列化可能クラスに \f2serialVersionUID\fP 定義がないことを警告します。次に例を示します。 
-.nf
-\f3
-.fl
-public class PersistentTime implements Serializable
-.fl
-{
-.fl
-  private Date time;
-.fl
-
-.fl
-   public PersistentTime() {
-.fl
-     time = Calendar.getInstance().getTime();
-.fl
-   }
-.fl
-
-.fl
-   public Date getTime() {
-.fl
-     return time;
-.fl
-   }
-.fl
-}
-.fl
-\fP
-.fi
-.LP
-コンパイラは次の警告を生成します。 
-.nf
-\f3
-.fl
-warning: [serial] serializable class PersistentTime has no definition of serialVersionUID
-.fl
-\fP
-.fi
-.LP
-直列化可能クラスが \f2serialVersionUID\fP という名前のフィールドを明示的に宣言しない場合、直列化ランタイムは「Java オブジェクト直列化仕様」で説明されているように、クラスのさまざまな側面に基づいて、クラスの \f2serialVersionUID\fP のデフォルト値を計算します。ただし、すべての直列化可能クラスが \f2serialVersionUID\fP 値を明示的に宣言することを強くお勧めします。これは、 \f2serialVersionUID\fP 値を計算するデフォルトのプロセスが、コンパイラの実装によって異なる可能性のあるクラスの詳細にきわめて影響を受けやすく、直列化復元中に予期しない \f2InvalidClassExceptions\fP が発生する可能性があるためです。したがって、Java コンパイラの実装が異なっても \f2serialVersionUID\fP 値の一貫性を確保にするには、直列化可能クラスが \f2serialVersionUID\fP 値を明示的に宣言する必要があります。  
-.TP 3
-static 
-static の使用に関する問題について警告します。次に例を示します。 
-.nf
-\f3
-.fl
-class XLintStatic {
-.fl
-    static void m1() { }
-.fl
-    void m2() { this.m1(); }
-.fl
-}
-.fl
-\fP
-.fi
-.LP
-コンパイラは次の警告を生成します。 
-.nf
-\f3
-.fl
-warning: [static] static method should be qualified by type name, XLintStatic, instead of by an expression
-.fl
-\fP
-.fi
-.LP
-この問題を解決するために、次のように static メソッド \f2m1\fP を呼び出すことができます。 
-.nf
-\f3
-.fl
-XLintStatic.m1();
-.fl
-\fP
-.fi
-.LP
-あるいは、 \f2static\fP キーワードをメソッド \f2m1\fP の宣言から削除することもできます。  
-.TP 3
-try 
-try\-with\-resources 文を含む、 \f2try\fP ブロックの使用に関する問題について警告します。たとえば、try 文で宣言されたリソース \f2ac\fP が使用されないために、 \f2次の文に対して警告が\fP 生成されます。 
-.nf
-\f3
-.fl
-try ( AutoCloseable ac = getResource() ) {
-.fl
-    // do nothing
-.fl
-}
-.fl
-\fP
-.fi
-.TP 3
-unchecked 
-Java 言語仕様で指定されている未検査変換警告の詳細を示します。次に例を示します。 
-.nf
-\f3
-.fl
-    List l = new ArrayList<Number>();
-.fl
-    List<String> ls = l;       // unchecked warning
-.fl
-\fP
-.fi
-.LP
-型の消去中に、型 \f2ArrayList<Number>\fP および \f2List<String>\fP はそれぞれ \f2ArrayList\fP および \f2List\fP になります。 
-.LP
-変数 \f2ls\fP にはパラメータ化された型 \f2List<String>\fP が指定されています。l によって参照される \f2List\fP \f2が\fP \f2ls\fP に代入されると、コンパイラは未検査警告を生成します。コンパイラは \f2l\fP が \f2List<String>\fP 型を参照するかどうかをコンパイル時に判断できません。また、JVM が実行時にそれを判断できないことも認識しています。l は List<String> 型を参照しません。その結果、ヒープ汚染が発生します。 
-.LP
-詳しく説明すると、ヒープ汚染状態が発生するのは、 \f2List\fP オブジェクト \f2l\fP (その static 型は \f2List<Number>\fP) が別の \f2List\fP オブジェクト \f2ls\fP (異なる static 型 \f2List<String>\fP を持つ) に代入される場合です。しかし、コンパイラではこの代入を未だに許可しています。総称をサポートしない Java SE のバージョンとの下位互換性を確保するために、この代入を許可する必要があります。型消去のために、 \f2List<Number>\fP と \f2List<String>\fP は \f2List\fP になります。その結果、コンパイラはオブジェクト \f2l\fP ( \f2List\fP という raw 型を持つ) をオブジェクト \f2ls\fPに代入することを許可します。  
-.TP 3
-varargs 
-可変引数 (varargs) メソッド、特に非具象化可能引数を含むものの使用が安全でないことを警告します。次に例を示します。 
-.nf
-\f3
-.fl
-public class ArrayBuilder {
-.fl
-  public static <T> void addToList (List<T> listArg, T... elements) {
-.fl
-    for (T x : elements) {
-.fl
-      listArg.add(x);
-.fl
-    }
-.fl
+  public boolean process(Set<? extends TypeElement> elems, RoundEnvironment renv){
+     return true;
   }
-.fl
+
+  public SourceVersion getSupportedSourceVersion() {
+     return SourceVersion\&.latest();
+   }
 }
-.fl
-\fP
 .fi
-.LP
-コンパイラは、メソッド \f2ArrayBuilder.addToList\fP の定義に関する次の警告を生成します。 
-.nf
-\f3
-.fl
-warning: [varargs] Possible heap pollution from parameterized vararg type T
-.fl
-\fP
-.fi
-.LP
-コンパイラは、varargs メソッドを検出すると、varargs の仮パラメータを配列に変換します。しかし、Java プログラミング言語では、パラメータ化された型の配列の作成を許可していません。メソッド \f2ArrayBuilder.addToList\fP では、コンパイラは varargs の仮パラメータ \f2T... elements\fP を仮パラメータ \f2T[] elements\fP(配列) に変換します。しかし、型消去のために、コンパイラは varargs の仮パラメータを \f2Object[] elements\fP に変換します。その結果、ヒープ汚染が発生する可能性があります。  
+.if n \{\
 .RE
-
-.LP
-.SH "コマンド行引数ファイル"
-.LP
-.LP
-javac のコマンド行を短くしたり簡潔にしたりするために、 \f2javac\fP コマンドに対する引数 ( \f2\-J\fP オプションを除く) を含む 1 つ以上のファイルを指定することができます。この方法を使うと、どのオペレーティングシステム上でも、任意の長さの javac コマンドを作成できます。
-.LP
-.LP
-引数ファイルには、javac のオプションとソースファイル名を自由に組み合わせて記述できます。ファイル内の各引数は、スペースまたは改行で区切ります。ファイル名に空白が含まれている場合は、そのファイル名全体を二重引用符で囲みます。
-.LP
-.LP
-引数ファイル内のファイル名は、現在のディレクトリから見た相対パスになります。引数ファイルの位置から見た相対パスではありません。引数ファイル内のファイル名リストでは、ワイルドカード (*) は使用できません。たとえば、 \f2*.java\fP とは指定できません。引数ファイル内の引数で \f2@\fP 文字を使用して、複数のファイルを再帰的に解釈することはサポートされていません。また、 \f2\-J\fP オプションもサポートされていません。このオプションは起動ツールに渡されますが、起動ツールでは引数ファイルをサポートしていないからです。
-.LP
-.LP
-javac を実行するときに、各引数ファイルのパスとファイル名の先頭に \f2@\fP 文字を付けて渡します。javac は、\f2@\fP 文字で始まる引数を見つけると、そのファイルの内容を展開して引数リストに挿入します。
-.LP
-.SS 
-引数ファイルを 1 つ指定する例
-.LP
-.LP
-\f2「argfile」という名前の引数ファイルに\fPすべての javac 引数を格納する場合は、次のように指定します。
-.LP
+.\}
+\fBソース・ファイルAnnosWithoutProcessors\&.java\fR:
+.sp
+.if n \{\
+.RS 4
+.\}
 .nf
-\f3
-.fl
-% \fP\f3javac @argfile\fP
-.fl
-.fi
-
-.LP
-.LP
-この引数ファイルには、次の例で示されている 2 つのファイルの内容を両方とも入れることができます。
-.LP
-.SS 
-引数ファイルを 2 つ指定する例
-.LP
-.LP
-たとえば、javac オプション用に 1 ファイル、ソースファイル名用に 1 ファイルというように、2 つの引数ファイルを作成することもできます。なお、このあとのリストでは、行の継続文字を使用していません。
-.LP
-.LP
-以下の内容を含む \f2options\fP というファイルを作成します。
-.LP
-.nf
-\f3
-.fl
-     \-d classes
-.fl
-     \-g
-.fl
-     \-sourcepath /java/pubs/ws/1.3/src/share/classes
-.fl
-
-.fl
-\fP
-.fi
-
-.LP
-.LP
-以下の内容を含む \f2classes\fP というファイルを作成します。
-.LP
-.nf
-\f3
-.fl
-     MyClass1.java
-.fl
-     MyClass2.java
-.fl
-     MyClass3.java
-.fl
-
-.fl
-\fP
-.fi
-
-.LP
-.LP
-次のコマンドを使用して \f3javac\fP を実行します。
-.LP
-.nf
-\f3
-.fl
-  % \fP\f3javac @options @classes\fP
-.fl
-
-.fl
-.fi
-
-.LP
-.SS 
-パス付きの引数ファイルの例
-.LP
-.LP
-引数ファイルには、パスを指定できます。ただし、そのファイル内に指定されたファイル名は、現在の作業ディレクトリから見た相対パスになります。つまり、下の例の場合は、 \f2path1\fP や \f2path2\fP から見た相対パスではありません。
-.LP
-.nf
-\f3
-.fl
-% \fP\f3javac @path1/options @path2/classes\fP
-.fl
-.fi
-
-.LP
-.SH "注釈処理"
-.LP
-.LP
-\f3javac\fP が注釈処理を直接サポートしているため、独立した注釈処理ツールである \f3apt\fP を使用する必要がなくなりました。
-.LP
-.LP
-注釈処理の API は、 \f2javax.annotation.processing\fP および \f2javax.lang.model\fP パッケージとそのサブパッケージ内に定義されています。
-.LP
-.SS 
-注釈処理の概要
-.LP
-.LP
-\f3\-proc:none\fP オプションによって注釈処理が無効化されないかぎり、コンパイラは使用可能なすべての注釈プロセッサを検索します。検索パスは \f3\-processorpath\fP オプションを使って指定できます。検索パスを指定しなかった場合は、ユーザークラスパスが使用されます。プロセッサの検索は、検索パス上の \f2META\-INF/services/javax.annotation.processing.Processor\fP という名前のサービスプロバイダ構成ファイルに基づいて行われます。このようなファイルには、使用するすべての注釈プロセッサの名前を、1 行に 1 つずつ含めてください。また、別の方法として、\f3\-processor\fP オプションを使ってプロセッサを明示的に指定することもできます。
-.LP
-.LP
-コンパイラは、コマンド行のソースファイルやクラスを走査することで、どのような注釈が存在しているかを確認し終わると、プロセッサに対して問い合わせを行い、それらのプロセッサがどの注釈を処理できるのかを確認します。一致するものが見つかった場合、そのプロセッサが呼び出されます。各プロセッサは、自身が処理する注釈を「要求」できます。その場合、それらの注釈に対する別のプロセッサを見つける試みは行われません。すべての注釈が要求されてしまうと、コンパイラはそれ以上プロセッサの検索を行いません。
-.LP
-.LP
-いずれかのプロセッサによって新しいソースファイルが生成されると、注釈処理の 2 回目のラウンドが開始されます。新しく生成されたすべてのソースファイルが走査され、前回と同様に注釈が処理されます。以前のラウンドで呼び出されたプロセッサはすべて、後続のどのラウンドでも呼び出されます。これが、新しいソースファイルが生成されなくなるまで続きます。
-.LP
-.LP
-あるラウンドで新しいソースファイルが生成されなかった場合、注釈プロセッサがあと 1 回だけ呼び出され、必要な処理を実行する機会が与えられます。最後に、\f3\-proc:only\fP オプションが使用されないかぎり、コンパイラは、元のソースファイルと生成されたすべてのソースファイルをコンパイルします。
-.LP
-.SS 
-暗黙的にロードされたソースファイル
-.LP
-.LP
-コンパイラは、一連のソースファイルをコンパイルする際に、別のソースファイルを暗黙的にロードすることが必要な場合があります (「型の検索」を参照)。そのようなファイルは、現時点では注釈処理の対象になりません。デフォルトでは、注釈処理が実行され、かつ暗黙的にロードされたソースファイルが 1 つでもコンパイルされた場合にコンパイラは警告を発行します。この警告を抑制する方法については、\-implicit オプションを参照してください。
-.LP
-.SH "型の検索"
-.LP
-.LP
-ソースファイルをコンパイルする場合、コマンド行で指定したソースファイルに型の定義が見つからないとき、コンパイラは通常、その型に関する情報を必要とします。コンパイラは、ソースファイルで使われているクラスまたはインタフェース、拡張されているクラスまたはインタフェース、あるいは実装されているクラスまたはインタフェースすべてについて、型の情報を必要とします。これには、ソースファイルで明示的には言及されていなくても、継承を通じて情報を提供するクラスとインタフェースも含まれます。
-.LP
-.LP
-たとえば、\f3java.applet.Applet\fP をサブクラスにした場合、\f3アプレットの\fP祖先のクラス（\f3java.awt.Panel\fP、\f3java.awt.Container\fP、\f3java.awt.Component\fP、\f3java.lang.Object\fP）を使用していることになります。
-.LP
-.LP
-コンパイラは、型の情報が必要になると、その型を定義しているソースファイルまたはクラスファイルを探します。まず、ブートストラップクラスと拡張機能クラスを検索し、続いてユーザークラスパス (デフォルトではカレントディレクトリ) を検索します。ユーザークラスパスは、\f3CLASSPATH\fP 環境変数を設定して定義するか、または \f3\-classpath\fP コマンド行オプションを使って設定します。詳細は、「クラスパスの設定」を参照してください。
-.LP
-.LP
-\-sourcepath オプションが指定されている場合、コンパイラは、指定されたパスからソースファイルを検索します。それ以外の場合は、ユーザークラスパスからクラスファイルとソースファイルの両方を検索します。
-.LP
-.LP
-\f3\-bootclasspath\fP オプションと \f3\-extdirs\fP オプションを使うと、別のブートストラップクラスや拡張機能クラスを指定できます。このあとの「クロスコンパイルオプション」を参照してください。
-.LP
-.LP
-型の検索に成功したときに得られる結果は、クラスファイル、ソースファイル、またはその両方である場合があります。両方が見つかった場合、そのどちらを使用すべきかを \-Xprefer オプションでコンパイラに指示できます。\f3newer\fP が指定された場合、コンパイラは 2 つのファイルの新しい方を使用します。\f3source\fP が指定された場合、コンパイラはソースファイルを使用します。デフォルトは \f3newer\fP です。
-.LP
-.LP
-型の検索自体によって、または \f3\-Xprefer\fP が設定された結果として必要な型のソースファイルが見つかった場合、コンパイラはそのソースファイルを読み取り、必要な情報を取得します。さらに、コンパイラはデフォルトで、そのソースファイルのコンパイルも行います。\-implicit オプションを使えばその動作を指定できます。\f3none\fP を指定した場合、そのソースファイルのクラスファイルは生成されません。\f3class\fP を指定した場合、そのソースファイルのクラスファイルが生成されます。
-.LP
-.LP
-コンパイラは、注釈処理の完了後に、ある型情報の必要性を認識しない場合があります。その型情報があるソースファイル内に見つかり、かつ \f3\-implicit\fP オプションが指定されていない場合は、そのファイルが注釈処理の対象とならずにコンパイルされることを、コンパイラがユーザーに警告します。この警告を無効にするには、(そのファイルが注釈処理の対象となるように) そのファイルをコマンド行に指定するか、あるいはそのようなソースファイルに対してクラスファイルを生成すべきかどうかを \f3\-implicit\fP オプションを使って指定します。
-.LP
-.SH "プログラマティックインタフェース"
-.LP
-.LP
-\f3javac\fP は、 \f2javax.tools\fP パッケージ内のクラスとインタフェースによって定義される新しい Java Compiler API をサポートします。
-.LP
-.SS 
-例
-.LP
-.LP
-コマンド行から指定された引数を使ってコンパイルを実行するには、次のようなコードを使用します。
-.LP
-.nf
-\f3
-.fl
-JavaCompiler javac = ToolProvider.getSystemJavaCompiler();
-.fl
-int rc = javac.run(null, null, null, args);
-.fl
-\fP
-.fi
-
-.LP
-.LP
-この場合、標準出力ストリームにすべての診断メッセージが書き出され、コマンド行から呼び出された \f3javac\fP が返すのと同じ終了コードが返されます。
-.LP
-.LP
-\f2javax.tools.JavaCompiler\fP インタフェース上のほかのメソッドを使えば、診断メッセージの処理やファイルの読み取り元/書き込み先の制御などを行えます。
-.LP
-.SS 
-旧式のインタフェース
-.LP
-.LP
-\f3注:\fP この API は、下位互換性を確保するためだけに残されています。新しいコードでは、必ず前述の Java Compiler API を使用してください。
-.LP
-.LP
-\f2com.sun.tools.javac.Main\fP クラスには、プログラム内からコンパイラを呼び出すための static メソッドが 2 つ用意されています。それらを次に示します。
-.LP
-.nf
-\f3
-.fl
-public static int compile(String[] args);
-.fl
-public static int compile(String[] args, PrintWriter out);
-.fl
-\fP
-.fi
-
-.LP
-.LP
-\f2args\fP パラメータは、javac プログラムに通常渡される任意のコマンド行引数を表しています。その概要については、前出の「形式」節を参照してください。
-.LP
-.LP
-\f2out\fP パラメータは、コンパイラの診断メッセージの出力先を示します。
-.LP
-.LP
-戻り値は、\f3javac\fP の終了値と同じです。
-.LP
-.LP
-名前が \f2com.sun.tools.javac\fP で始まるパッケージ (非公式には \f2com.sun.tools.javac\fP のサブパッケージとして知られる) に含まれるその他のクラスやメソッドは、どれも完全に内部用であり、いつでも変更される可能性があります。
-.LP
-.SH "例"
-.LP
-.SS 
-簡単なプログラムのコンパイル
-.LP
-.LP
-\f2Hello.java\fP というソースファイルで、\f3greetings.Hello\fP という名前のクラスを定義しているとします。 \f2greetings\fP ディレクトリは、ソースファイルとクラスファイルの両方があるパッケージディレクトリで、現在のディレクトリのすぐ下にあります。このため、この例では、デフォルトのユーザークラスパスを使用できます。また、\f3\-d\fP を使って別の出力先ディレクトリを指定する必要もありません。
-.LP
-.nf
-\f3
-.fl
-% \fP\f3ls\fP
-.fl
-greetings/
-.fl
-% \f3ls greetings\fP
-.fl
-Hello.java
-.fl
-% \f3cat greetings/Hello.java\fP
-.fl
-package greetings;
-.fl
-
-.fl
-public class Hello {
-.fl
-    public static void main(String[] args) {
-.fl
-        for (int i=0; i < args.length; i++) {
-.fl
-            System.out.println("Hello " + args[i]);
-.fl
-        }
-.fl
-    }
-.fl
-}
-.fl
-% \f3javac greetings/Hello.java\fP
-.fl
-% \f3ls greetings\fP
-.fl
-Hello.class   Hello.java
-.fl
-% \f3java greetings.Hello World Universe Everyone\fP
-.fl
-Hello World
-.fl
-Hello Universe
-.fl
-Hello Everyone
-.fl
-.fi
-
-.LP
-.SS 
-複数のソースファイルのコンパイル
-.LP
-.LP
-次の例では、パッケージ \f2greetings\fP 内のすべてのソースファイルをコンパイルします。
-.LP
-.nf
-\f3
-.fl
-% \fP\f3ls\fP
-.fl
-greetings/
-.fl
-% \f3ls greetings\fP
-.fl
-Aloha.java         GutenTag.java      Hello.java         Hi.java
-.fl
-% \f3javac greetings/*.java\fP
-.fl
-% \f3ls greetings\fP
-.fl
-Aloha.class         GutenTag.class      Hello.class         Hi.class
-.fl
-Aloha.java          GutenTag.java       Hello.java          Hi.java
-.fl
-.fi
-
-.LP
-.SS 
-ユーザークラスパスの指定
-.LP
-.LP
-上の例のソースファイルのうち 1 つを変更し、変更後のファイルを再コンパイルするとします。
-.LP
-.nf
-\f3
-.fl
-% \fP\f3pwd\fP
-.fl
-/examples
-.fl
-% \f3javac greetings/Hi.java\fP
-.fl
-.fi
-
-.LP
-.LP
-\f2greetings.Hi\fP は、 \f2greetings\fP パッケージ内のほかのクラスを参照しているため、コンパイラはこれらのクラスを探す必要があります。上の例では、デフォルトのユーザークラスパスが、パッケージディレクトリを含むディレクトリと同じであるため、コンパイルは正常に実行されます。ただし、現在どのディレクトリにいるかに関係なく、このファイルを再コンパイルする場合は、ユーザークラスパスに \f2/examples\fP を追加する必要があります。ユーザークラスパスにエントリを追加するには、\f3CLASSPATH\fP を設定する方法もありますが、ここでは \f3\-classpath\fP オプションを使うことにします。
-.LP
-.nf
-\f3
-.fl
-% \fP\f3javac \-classpath /examples /examples/greetings/Hi.java\fP
-.fl
-.fi
-
-.LP
-.LP
-再度 \f2greetings.Hi\fP を変更してバナーユーティリティーを使うようにした場合は、このバナーユーティリティーもユーザークラスパスを通じてアクセスできるようになっている必要があります。
-.LP
-.nf
-\f3
-.fl
-% \fP\f3javac \-classpath /examples:/lib/Banners.jar \\ 
-.fl
-            /examples/greetings/Hi.java\fP
-.fl
-.fi
-
-.LP
-.LP
-\f2greetings\fP 内のクラスを実行するには、 \f2greetings\fP と、それが使うクラスの両方にアクセスできる必要があります。
-.LP
-.nf
-\f3
-.fl
-% \fP\f3java \-classpath /examples:/lib/Banners.jar greetings.Hi\fP
-.fl
-.fi
-
-.LP
-.SS 
-ソースファイルとクラスファイルの分離
-.LP
-.LP
-特に大規模プロジェクトの場合は、ソースファイルとクラスファイルを別々のディレクトリに置くと便利なことがあります。クラスファイルの出力先を別に指定するには、\f3\-d\fP を使います。ソースファイルはユーザークラスパスにはないので、\f3\-sourcepath\fP を使って、コンパイラがソースファイルを見つけることができるようにします。
-.LP
-.nf
-\f3
-.fl
-% \fP\f3ls\fP
-.fl
-classes/  lib/      src/
-.fl
-% \f3ls src\fP
-.fl
-farewells/
-.fl
-% \f3ls src/farewells\fP
-.fl
-Base.java      GoodBye.java
-.fl
-% \f3ls lib\fP
-.fl
-Banners.jar
-.fl
-% \f3ls classes\fP
-.fl
-% \f3javac \-sourcepath src \-classpath classes:lib/Banners.jar \\ 
-.fl
-            src/farewells/GoodBye.java \-d classes\fP
-.fl
-% \f3ls classes\fP
-.fl
-farewells/
-.fl
-% \f3ls classes/farewells\fP
-.fl
-Base.class      GoodBye.class
-.fl
-.fi
-
-.LP
-.LP
-\f3注:\fP コマンド行では \f2src/farewells/Base.java\fP を指定していませんが、このファイルもコンパイラによってコンパイルされています。自動コンパイルを監視するには、\f3\-verbose\fP オプションを使います。
-.LP
-.SS 
-クロスコンパイルの例
-.LP
-.LP
-ここでは、\f3javac\fP を使って、1.6 VM 上で実行するコードをコンパイルします。
-.LP
-.nf
-\f3
-.fl
-% \fP\f3javac \-source 1.6 \-target 1.6 \-bootclasspath jdk1.6.0/lib/rt.jar \\ 
-.fl
-            \-extdirs "" OldCode.java\fP
-.fl
-.fi
-
-.LP
-.LP
-\f2\-source 1.6\fP オプションにより、 \f2OldCode.java\fP のコンパイルにはバージョン 1.6 (または 6) の Java プログラミング言語が使用されます。\f3\-target 1.6\fP オプションにより、1.6 VM と互換性のあるクラスファイルが生成されます。ほとんどの場合、\f3\-target\fP オプションの値は \f3\-source\fP オプションの値になります。この例では、\f3\-target\fP オプションを省略できます。
-.LP
-.LP
-\f3\-bootclasspath\fP オプションを使用して、適切なバージョンのブートストラップクラス ( \f2rt.jar\fP ライブラリ) を指定する必要があります。指定しない場合は、コンパイラによって次の警告が生成されます。
-.LP
-.nf
-\f3
-.fl
-% \fP\f3javac \-source 1.6 OldCode.java\fP
-.fl
-warning: [options] bootstrap class path not set in conjunction with \-source 1.6
-.fl
-.fi
-
-.LP
-.LP
-適切なバージョンのブートストラップクラスを指定しない場合、コンパイラは古い言語仕様 (この例では、バージョン 1.6 の Java プログラミング言語) を新しいブートストラップクラスと組み合わせて使用します。その結果、存在しないメソッドへの参照が含まれていることがあるため、クラスファイルが古いプラットフォーム (この場合は Java SE 6) で動作しない可能性があります。
-.LP
-.SH "関連項目"
-.LP
-.RS 3
-.TP 2
-o
-.na
-\f2「The javac Guide」\fP @
-.fi
-http://java.sun.com/javase/6/docs/technotes/guides/javac/index.html 
-.TP 2
-o
-「java(1) \- Java アプリケーション起動ツール」 
-.TP 2
-o
-「jdb(1) \- Java デバッガ」 
-.TP 2
-o
-「javah(1) \- C ヘッダーとスタブファイルジェネレータ」 
-.TP 2
-o
-「javap(1) \- クラスファイル逆アセンブラ」 
-.TP 2
-o
-「javadoc(1) \- Java API ドキュメントジェネレータ」 
-.TP 2
-o
-「jar(1) \- JAR アーカイブツール」 
-.TP 2
-o
-.na
-\f2「Java 拡張機能フレームワーク」\fP @
-.fi
-http://java.sun.com/javase/6/docs/technotes/guides/extensions/index.html 
-.RE
-
-.LP
+@interface Anno { }
  
+@Anno
+class AnnosWithoutProcessors { }
+.fi
+.if n \{\
+.RE
+.\}
+次のコマンドは、注釈プロセッサ\fIAnnoProc\fRをコンパイルし、この注釈プロセッサをソース・ファイル\fIAnnosWithoutProcessors\&.java\fRに対して実行します。
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+javac AnnoProc\&.java
+javac \-cp \&. \-Xlint:processing \-processor AnnoProc \-proc:only AnnosWithoutProcessors\&.java
+.fi
+.if n \{\
+.RE
+.\}
+コンパイラがソース・ファイル\fIAnnosWithoutProcessors\&.java\fRに対して注釈プロセッサを実行すると、次の警告が生成されます。
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+warning: [processing] No processor claimed any of these annotations: Anno
+ 
+.fi
+.if n \{\
+.RE
+.\}
+この問題を解決するために、クラス\fIAnnosWithoutProcessors\fRで定義および使用される注釈の名前を、\fIAnno\fRから\fINotAnno\fRに変更できます。
+.RE
+.PP
+rawtypes
+.RS 4
+raw型に対する未検査操作について警告します。次の文では、\fIrawtypes\fR警告が生成されます。
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+void countElements(List l) { \&.\&.\&. }
+.fi
+.if n \{\
+.RE
+.\}
+次の例では、\fIrawtypes\fR警告は生成されません。
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+void countElements(List<?> l) { \&.\&.\&. }
+.fi
+.if n \{\
+.RE
+.\}
+\fIList\fRはraw型です。ただし、\fIList<?>\fRは、アンバウンド形式のワイルドカードのパラメータ化された型です。\fIList\fRはパラメータ化されたインタフェースであるため、常にその型引数を指定します。この例では、\fIList\fRの仮引数はアンバウンド形式のワイルドカード(\fI?\fR)を使用してその仮型パラメータとして指定されます。つまり、\fIcountElements\fRメソッドは\fIList\fRインタフェースのどのインスタンス化も受け付けることができます。
+.RE
+.PP
+Serial
+.RS 4
+直列化可能クラスに\fIserialVersionUID\fR定義がないことを警告します。たとえば、次のようになります。
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+public class PersistentTime implements Serializable
+{
+  private Date time;
+ 
+   public PersistentTime() {
+     time = Calendar\&.getInstance()\&.getTime();
+   }
+ 
+   public Date getTime() {
+     return time;
+   }
+}
+.fi
+.if n \{\
+.RE
+.\}
+コンパイラは次の警告を生成します。
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+warning: [serial] serializable class PersistentTime has no definition of
+serialVersionUID
+.fi
+.if n \{\
+.RE
+.\}
+直列化可能クラスが\fIserialVersionUID\fRという名前のフィールドを明示的に宣言しない場合、直列化ランタイム環境では、「Javaオブジェクト直列化仕様」で説明されているように、クラスの様々な側面に基づいて、クラスの\fIserialVersionUID\fRのデフォルト値を計算します。ただし、すべての直列化可能クラスが\fIserialVersionUID\fR値を明示的に宣言することを強くお薦めします。 これは、\fIserialVersionUID\fR値を計算するデフォルトのプロセスが、コンパイラの実装によって異なる可能性のあるクラスの詳細にきわめて影響を受けやすく、その結果、直列化復元中に予期しない\fIInvalidClassExceptions\fRが発生する可能性があるためです。Javaコンパイラの実装が異なっても\fIserialVersionUID\fR値の一貫性を確保にするには、直列化可能クラスが\fIserialVersionUID\fR値を明示的に宣言する必要があります。
+.RE
+.PP
+static
+.RS 4
+staticの使用に関する問題について警告します。たとえば、次のようになります。
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+class XLintStatic {
+    static void m1() { }
+    void m2() { this\&.m1(); }
+}
+.fi
+.if n \{\
+.RE
+.\}
+コンパイラは次の警告を生成します。
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+warning: [static] static method should be qualified by type name, 
+XLintStatic, instead of by an expression
+.fi
+.if n \{\
+.RE
+.\}
+この問題を解決するために、次のように\fIstatic\fRメソッド\fIm1\fRを呼び出すことができます。
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+XLintStatic\&.m1();
+.fi
+.if n \{\
+.RE
+.\}
+あるいは、\fIstatic\fRキーワードをメソッド\fIm1\fRの宣言から削除することもできます。
+.RE
+.PP
+try
+.RS 4
+try\-with\-resources文を含む、\fItry\fRブロックの使用に関する問題について警告します。たとえば、\fItry\fRブロックで宣言されたリソース\fIac\fRが使用されないために、次の文に対して警告が生成されます。
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+try ( AutoCloseable ac = getResource() ) {    // do nothing}
+.fi
+.if n \{\
+.RE
+.\}
+.RE
+.PP
+unchecked
+.RS 4
+Java言語仕様で指定されている未検査変換警告の詳細を示します。たとえば、次のようになります。
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+List l = new ArrayList<Number>();
+List<String> ls = l;       // unchecked warning
+.fi
+.if n \{\
+.RE
+.\}
+型の消去中に、型\fIArrayList<Number>\fRおよび\fIList<String>\fRは、それぞれ\fIArrayList\fRおよび\fIList\fRになります。
+.sp
+\fIls\fRコマンドには、パラメータ化された型\fIList<String>\fRが指定されています。\fIl\fRによって参照される\fIList\fRが\fIls\fRに割り当てられた場合、コンパイラは未検査警告を生成します。コンパイル時に、コンパイラおよびJVMは、\fIl\fRが\fIList<String>\fR型を参照するかどうかを判別できません。この場合、\fIl\fRは、\fIList<String>\fR型を参照しません。その結果、ヒープ汚染が発生します。
+.sp
+ヒープ汚染状態が発生するのは、\fIList\fRオブジェクト\fIl\fR
+(そのstatic型は\fIList<Number>\fR)が別の\fIList\fRオブジェクト\fIls\fR
+(異なるstatic型\fIList<String>\fRを持つ)に代入される場合です。しかし、コンパイラではこの代入をいまだに許可しています。総称をサポートしないJava SEのリリースとの下位互換性を確保するために、この代入を許可する必要があります。型消去により、\fIList<Number>\fRおよび\fIList<String>\fRは、両方とも\fIList\fRになります。その結果、コンパイラはオブジェクト\fIl\fR
+(\fIList\fRというraw型を持つ)をオブジェクト\fIls\fRに代入することを許可します。
+.RE
+.PP
+varargs
+.RS 4
+可変引数(\fIvarargs\fR)メソッド、特に非具象化可能引数を含むものの使用が安全でないことを警告します。たとえば、次のようになります。
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+public class ArrayBuilder {
+  public static <T> void addToList (List<T> listArg, T\&.\&.\&. elements) {
+    for (T x : elements) {
+      listArg\&.add(x);
+    }
+  }
+}
+.fi
+.if n \{\
+.RE
+.\}
+\fB注意:\fR
+非具象化可能型は、型情報が実行時に完全に使用不可能な型です。
+.sp
+コンパイラは、メソッド\fIArrayBuilder\&.addToList\fRの定義に関する次の警告を生成します。
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+warning: [varargs] Possible heap pollution from parameterized vararg type T
+.fi
+.if n \{\
+.RE
+.\}
+コンパイラは、varargsメソッドを検出すると、\fIvarargs\fRの仮パラメータを配列に変換します。しかし、Javaプログラミング言語では、パラメータ化された型の配列の作成を許可していません。メソッド\fIArrayBuilder\&.addToList\fRでは、コンパイラは\fIvarargs\fRの仮パラメータ\fIT\&.\&.\&.\fR要素を仮パラメータ\fIT[]\fR要素(配列)に変換します。しかし、型消去により、コンパイラは\fIvarargs\fRの仮パラメータを\fIObject[]\fR要素に変換します。その結果、ヒープ汚染が発生する可能性があります。
+.RE
+.SH "コマンドライン引数ファイル"
+.PP
+\fIjavac\fRコマンドを短くしたり簡潔にしたりするために、\fIjavac\fRコマンドに対する引数(\fI\-J\fRオプションを除く)を含む1つ以上のファイルを指定することができます。これにより、どのオペレーティング・システム上でも、任意の長さの\fIjavac\fRコマンドを作成できます。
+.PP
+引数ファイルには、\fIjavac\fRのオプションとソース・ファイル名を自由に組み合せて記述できます。ファイル内の引数は、空白または改行文字で区切ることができます。ファイル名に埋め込まれた空白がある場合、ファイル名全体を二重引用符で囲みます。
+.PP
+引数ファイル内のファイル名は、引数ファイルの位置ではなく、現在のディレクトリに相対的となります。これらのリストでは、ワイルドカード(*)は使用できません(たとえば、\fI*\&.java\fRとは指定できません)。アットマーク(@)を使用したファイルの再帰的な解釈はサポートされていません。また、\fI\-J\fRオプションもサポートされていません。このオプションは起動ツールに渡されますが、起動ツールでは引数ファイルをサポートしていないからです。
+.PP
+\fIjavac\fRコマンドを実行するときに、各引数ファイルのパスと名前の先頭にアットマーク(@)文字を付けて渡します。\fIjavac\fRコマンドは、アットマーク(@)で始まる引数を見つけると、そのファイルの内容を展開して引数リストに挿入します。
+.PP
+\fBExample 1\fR, 単一の引数ファイル
+.RS 4
+\fIargfile\fRという名前の単一の引数ファイルを使用して、すべての\fIjavac\fR引数を格納する場合は、次のように指定します。
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+javac @argfile
+.fi
+.if n \{\
+.RE
+.\}
+この引数ファイルには、例2で示されている両方のファイルの内容を入れることができます。
+.RE
+.PP
+\fBExample 2\fR, 2つの引数ファイル
+.RS 4
+\fIjavac\fRオプション用とソース・ファイル名用に、2つの引数ファイルを作成できます。次のリストには、行の継続文字はありません。
+.sp
+次を含むoptionsという名前のファイルを作成します。
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+\-d classes
+\-g
+\-sourcepath /java/pubs/ws/1\&.3/src/share/classes
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+.fi
+.if n \{\
+.RE
+.\}
+次を含むclassesという名前のファイルを作成します。
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+MyClass1\&.java
+MyClass2\&.java
+MyClass3\&.java
+.fi
+.if n \{\
+.RE
+.\}
+それから、次のように\fIjavac\fRコマンドを実行します。
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+javac @options @classes
+.fi
+.if n \{\
+.RE
+.\}
+.RE
+.PP
+\fBExample 3\fR, パスを使用した引数ファイル
+.RS 4
+引数ファイルはパスを指定できますが、ファイル内のすべてのファイル名は、(\fIpath1\fRや\fIpath2\fRではなく)次のように現在の作業ディレクトリに相対的となります。
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+javac @path1/options @path2/classes
+.fi
+.if n \{\
+.RE
+.\}
+.RE
+.SH "注釈処理"
+.PP
+\fIjavac\fRコマンドが注釈処理を直接サポートしているため、独立した注釈処理コマンドである\fIapt\fRを使用する必要がなくなりました。
+.PP
+注釈プロセッサのAPIは、\fIjavax\&.annotation\&.processing\fRおよび\fIjavax\&.lang\&.model\fRパッケージとそのサブパッケージ内に定義されています。
+.SS "注釈処理を行う方法"
+.PP
+\fI\-proc:none\fRオプションによって注釈処理が無効化されない限り、コンパイラは使用可能なすべての注釈プロセッサを検索します。検索パスは、\fI\-processorpath\fRオプションを使用して指定できます。パスを指定しない場合、ユーザー・クラス・パスが使用されます。プロセッサの検索は、検索パス上の\fIMETA\-INF/services/javax\&.annotation\&.processing\fR\&.Processorという名前のサービス・プロバイダ構成ファイルに基づいて行われます。このようなファイルには、使用するすべての注釈プロセッサの名前を、1行に1つずつ含めてください。また、別の方法として、\fI\-processor\fRオプションを使用してプロセッサを明示的に指定することもできます。
+.PP
+コンパイラは、コマンドラインのソース・ファイルやクラスを走査することで、どのような注釈が存在しているかを確認し終わると、プロセッサに対して問合せを行い、それらのプロセッサがどの注釈を処理できるのかを確認します。一致するものが見つかった場合、そのプロセッサが呼び出されます。各プロセッサは、自身が処理する注釈を要求できます。その場合、それらの注釈に対する別のプロセッサを見つける試みは行われません。すべての注釈が要求されると、コンパイラはそれ以上プロセッサの検索を行いません。
+.PP
+いずれかのプロセッサによって新しいソース・ファイルが生成されると、注釈処理の2回目のラウンドが開始されます。新しく生成されたすべてのソース・ファイルがスキャンされ、前回と同様に注釈が処理されます。以前のラウンドで呼び出されたプロセッサはすべて、後続のどのラウンドでも呼び出されます。これが、新しいソース・ファイルが生成されなくなるまで続きます。
+.PP
+あるラウンドで新しいソース・ファイルが生成されなかった場合、注釈プロセッサがあと1回のみ呼び出され、残りの処理を実行する機会が与えられます。最後に、\fI\-proc:only\fRオプションが使用されないかぎり、コンパイラは、元のソース・ファイルと生成されたすべてのソース・ファイルをコンパイルします。
+.SS "暗黙的にロードされたソース・ファイル"
+.PP
+コンパイラは、一連のソース・ファイルをコンパイルする際に、別のソース・ファイルを暗黙的にロードすることが必要な場合があります。型の検索を参照してください。そのようなファイルは、現時点では注釈処理の対象になりません。デフォルトでは、注釈処理が実行され、かつ暗黙的にロードされた任意のソース・ファイルがコンパイルされた場合、コンパイラは警告を発行します。\fI\-implicit\fRオプションでは、警告を抑制する方法が提供されます。
+.SH "型の検索"
+.PP
+ソース・ファイルをコンパイルするために、コンパイラは通常、型に関する情報を必要としますが、その型の定義はコマンドラインで指定したソース・ファイルにありません。コンパイラは、ソース・ファイルで使用されているクラスまたはインタフェース、拡張されているクラスまたはインタフェース、あるいは実装されているクラスまたはインタフェースすべてについて、型の情報を必要とします。これには、ソース・ファイルで明示的には言及されていなくても、継承を通じて情報を提供するクラスとインタフェースも含まれます。
+.PP
+たとえば、サブクラス\fIjava\&.applet\&.Applet\fRを作成すると、\fIアプレット\fRの祖先のクラス(\fIjava\&.awt\&.Panel\fR、\fIjava\&.awt\&.Container\fR、\fIjava\&.awt\&.Component\fRおよび\fIjava\&.lang\&.Object\fR)を使用していることにもなります。
+.PP
+コンパイラは、型の情報が必要になると、その型を定義しているソース・ファイルまたはクラス・ファイルを検索します。まず、ブートストラップ・クラスと拡張機能クラスを検索し、続いてユーザー・クラス・パス(デフォルトでは現在のディレクトリ)を検索します。ユーザー・クラス・パスは、\fICLASSPATH\fR環境変数を設定して定義するか、または\fI\-classpath\fRオプションを使用して定義します。
+.PP
+\fI\-sourcepath\fRオプションが設定されている場合、コンパイラは、指定されたパスからソース・ファイルを検索します。それ以外の場合、コンパイラは、ユーザー・クラス・パスからクラス・ファイルとソース・ファイルの両方を検索します。
+.PP
+\fI\-bootclasspath\fRオプションおよび\fI\-extdirs\fRオプションを使用して、別のブートストラップ・クラスや拡張機能クラスを指定できます。クロスコンパイル・オプションを参照してください。
+.PP
+型の検索に成功したときに得られる結果は、クラス・ファイル、ソース・ファイル、またはその両方である場合があります。両方が見つかった場合、そのどちらを使用するかを\fI\-Xprefer\fRオプションでコンパイラに指示できます。\fInewer\fRが指定された場合、コンパイラは2つのファイルのうち新しい方を使用します。\fIsource\fRが指定された場合、コンパイラはソース・ファイルを使用します。デフォルトは\fInewer\fRです。
+.PP
+型の検索自体によって、または\fI\-Xprefer\fRオプションが設定された結果として必要な型のソース・ファイルが見つかった場合、コンパイラはそのソース・ファイルを読み取り、必要な情報を取得します。デフォルトでは、コンパイラはソース・ファイルのコンパイルも行います。\fI\-implicit\fRオプションを使用してその動作を指定できます。\fInone\fRが指定された場合、ソース・ファイルに対してクラス・ファイルは生成されません。\fIclass\fRが指定された場合、ソース・ファイルに対してクラス・ファイルが生成されます。
+.PP
+コンパイラは、注釈処理が完了するまで、ある型情報の必要性を認識しない場合があります。型情報がソース・ファイル内に見つかり、かつ\fI\-implicit\fRオプションが指定されていない場合、コンパイラによって、そのファイルが注釈処理の対象とならずにコンパイルされることが警告されます。この警告を無効にするには、(そのファイルが注釈処理の対象となるように)そのファイルをコマンドラインに指定するか、あるいはそのようなソース・ファイルに対してクラス・ファイルを生成する必要があるかどうかを\fI\-implicit\fRオプションを使用して指定します。
+.SH "プログラマティック・インタフェース"
+.PP
+\fIjavac\fRコマンドは、\fIjavax\&.tools\fRパッケージ内のクラスとインタフェースによって定義される新しいJava Compiler APIをサポートします。
+.SS "例"
+.PP
+コマンドライン引数を指定するようにコンパイルするには、次の構文を使用します。
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+JavaCompiler javac = ToolProvider\&.getSystemJavaCompiler();
+JavaCompiler javac = ToolProvider\&.getSystemJavaCompiler();
+.fi
+.if n \{\
+.RE
+.\}
+.PP
+例では、診断を標準出力ストリームに書き込み、コマンドラインからの呼出し時に\fIjavac\fRが指定する終了コードを返します。
+.PP
+\fIjavax\&.tools\&.JavaCompiler\fRインタフェースの他のメソッドを使用すると、診断の処理やファイルの読取り元/書込み先の制御などを行うことができます。
+.SS "旧式のインタフェース"
+.PP
+\fB注意:\fR
+このAPIは、下位互換性のためにのみ保持されています。すべての新しいコードは、新しいJava Compiler APIを使用する必要があります。
+.PP
+次のように、\fIcom\&.sun\&.tools\&.javac\&.Main\fRクラスには、プログラムからコンパイラを呼び出すためのstaticメソッドが2つ用意されています。
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+public static int compile(String[] args);
+public static int compile(String[] args, PrintWriter out);
+.fi
+.if n \{\
+.RE
+.\}
+.PP
+\fIargs\fRパラメータは、通常コンパイラに渡される任意のコマンドライン引数を表しています。
+.PP
+\fIout\fRパラメータは、コンパイラの診断出力の宛先を示します。
+.PP
+\fIreturn\fR値は、\fIjavac\fRの\fIexit\fR値と同じです。
+.PP
+\fB注意:\fR
+名前が\fIcom\&.sun\&.tools\&.javac\fRで始まるパッケージ(\fIcom\&.sun\&.tools\&.javac\fRのサブパッケージ)で検出される他のすべてのクラスおよびメソッドは、完全に内部用であり、いつでも変更される可能性があります。
+.SH "例"
+.PP
+\fBExample 1\fR, 簡単なプログラムのコンパイル
+.RS 4
+この例では、greetingsディレクトリで\fIHello\&.java\fRソース・ファイルをコンパイルする方法を示しています。\fIHello\&.java\fRで定義されたクラスは、\fIgreetings\&.Hello\fRと呼ばれます。greetingsディレクトリは、ソース・ファイルとクラス・ファイルの両方があるパッケージ・ディレクトリで、現在のディレクトリのすぐ下にあります。これにより、デフォルトのユーザー・クラス・パスを使用できるようになります。また、\fI\-d\fRオプションを使用して別の出力先ディレクトリを指定する必要もありません。
+.sp
+\fIHello\&.java\fR内のソース・コードは次のとおりです。
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+package greetings;
+ 
+public class Hello {
+    public static void main(String[] args) {
+        for (int i=0; i < args\&.length; i++) {
+            System\&.out\&.println("Hello " + args[i]);
+        }
+    }
+}
+.fi
+.if n \{\
+.RE
+.\}
+greetings\&.Helloのコンパイル:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+javac greetings/Hello\&.java
+.fi
+.if n \{\
+.RE
+.\}
+\fIgreetings\&.Hello\fRの実行:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+java greetings\&.Hello World Universe Everyone
+Hello World
+Hello Universe
+Hello Everyone
+.fi
+.if n \{\
+.RE
+.\}
+.RE
+.PP
+\fBExample 2\fR, 複数のソース・ファイルのコンパイル
+.RS 4
+この例では、\fIgreetings\fRパッケージのソース・ファイル\fIAloha\&.java\fR、\fIGutenTag\&.java\fR、\fIHello\&.java\fRおよび\fIHi\&.java\fRをコンパイルします。
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+% javac greetings/*\&.java
+% ls greetings
+Aloha\&.class         GutenTag\&.class      Hello\&.class         Hi\&.class
+Aloha\&.java          GutenTag\&.java       Hello\&.java          Hi\&.java
+.fi
+.if n \{\
+.RE
+.\}
+.RE
+.PP
+\fBExample 3\fR, ユーザー・クラス・パスの指定
+.RS 4
+前述の例のソース・ファイルのうち1つを変更した後に、そのファイルを再コンパイルします。
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+pwd
+/examples
+javac greetings/Hi\&.java
+.fi
+.if n \{\
+.RE
+.\}
+\fIgreetings\&.Hi\fRは\fIgreetings\fRパッケージ内の他のクラスを参照しているため、コンパイラはこれらの他のクラスを探す必要があります。デフォルトのユーザー・クラス・パスはパッケージ・ディレクトリを含むディレクトリであるため、前述の例は動作します。現在のディレクトリを気にせずにこのファイルを再コンパイルする場合、\fICLASSPATH\fRを設定して、ユーザー・クラス・パスに例のディレクトリを追加します。この例では、\fI\-classpath\fRオプションを使用しています。
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+javac \-classpath /examples /examples/greetings/Hi\&.java
+.fi
+.if n \{\
+.RE
+.\}
+\fIgreetings\&.Hi\fRを変更してバナー・ユーティリティを使用するようにした場合、 そのユーティリティもユーザー・クラス・パスを通じてアクセスできるようになっている必要があります。
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+javac \-classpath /examples:/lib/Banners\&.jar \e
+            /examples/greetings/Hi\&.java
+.fi
+.if n \{\
+.RE
+.\}
+\fIgreetings\fRパッケージでクラスを実行するには、プログラムは\fIgreetings\fRパッケージ、および\fIgreetings\fRクラスが使用するクラスにアクセスする必要があります。
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+java \-classpath /examples:/lib/Banners\&.jar greetings\&.Hi
+.fi
+.if n \{\
+.RE
+.\}
+.RE
+.PP
+\fBExample 4\fR, ソース・ファイルとクラス・ファイルの分離
+.RS 4
+次の例では、\fIjavac\fRを使用して、JVM 1\&.6上で実行するコードをコンパイルします。
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+javac \-source 1\&.6 \-target 1\&.6 \-bootclasspath jdk1\&.6\&.0/lib/rt\&.jar \e 
+\-extdirs "" OldCode\&.java
+.fi
+.if n \{\
+.RE
+.\}
+\fI\-source 1\&.6\fRオプションにより、\fIOldCode\&.java\fRのコンパイルにはリリース1\&.6(または6)のJavaプログラミング言語が使用されます。\fI\-target 1\&.6\fRオプションにより、JVM 1\&.6と互換性のあるクラス・ファイルが生成されます。ほとんどの場合、\fI\-target\fRオプションの値は\fI\-source\fRオプションの値になります。この例では、\fI\-target\fRオプションを省略できます。
+.sp
+\fI\-bootclasspath\fRオプションを使用して、適切なバージョンのブートストラップ・クラス(\fIrt\&.jar\fRライブラリ)を指定する必要があります。指定しない場合は、コンパイラによって次の警告が生成されます。
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+javac \-source 1\&.6 OldCode\&.java
+warning: [options] bootstrap class path not set in conjunction with 
+\-source 1\&.6
+.fi
+.if n \{\
+.RE
+.\}
+適切なバージョンのブートストラップ・クラスを指定しない場合、コンパイラは古い言語仕様(この例では、バージョン1\&.6のJavaプログラミング言語)を新しいブートストラップ・クラスと組み合せて使用します。その結果、存在しないメソッドへの参照が含まれていることがあるため、クラス・ファイルが古いプラットフォーム(この場合はJava SE 6)で動作しない可能性があります。
+.RE
+.PP
+\fBExample 5\fR, クロス・コンパイル
+.RS 4
+この例では、\fIjavac\fRを使用して、JVM 1\&.6上で実行するコードをコンパイルします。
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+javac \-source 1\&.6 \-target 1\&.6 \-bootclasspath jdk1\&.6\&.0/lib/rt\&.jar \e
+            \-extdirs "" OldCode\&.java
+.fi
+.if n \{\
+.RE
+.\}
+The\fI \-source 1\&.6\fRオプションにより、OldCode\&.javaのコンパイルにはリリース1\&.6(または6)のJavaプログラミング言語が使用されます。\fI\-target 1\&.6\fRオプションにより、JVM 1\&.6と互換性のあるクラス・ファイルが生成されます。ほとんどの場合、\fI\-target\fRの値は\fI\-source\fRの値になります。この例では、\fI\-target\fRオプションは省略されます。
+.sp
+\fI\-bootclasspath\fRオプションを使用して、適切なバージョンのブートストラップ・クラス(\fIrt\&.jar\fRライブラリ)を指定する必要があります。指定しない場合は、コンパイラによって次の警告が生成されます。
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+javac \-source 1\&.6 OldCode\&.java
+warning: [options] bootstrap class path not set in conjunction with \-source 1\&.6
+.fi
+.if n \{\
+.RE
+.\}
+適切なバージョンのブートストラップ・クラスを指定しない場合、コンパイラは古い言語仕様を新しいブートストラップ・クラスと組み合せて使用します。この組合せは、存在しないメソッドへの参照が含まれていることがあるため、クラス・ファイルが古いプラットフォーム(この場合はJava SE 6)で動作しない可能性があります。この例では、コンパイラはJavaプログラミング言語のリリース1\&.6を使用します。
+.RE
+.SH "関連項目"
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+java(1)
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+jdb(1)
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+javah(1)
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+javadoc(1)
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+jar(1)
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+jdb(1)
+.RE
+.br
+'pl 8.5i
+'bp

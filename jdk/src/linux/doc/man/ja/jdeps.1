@@ -1,0 +1,367 @@
+'\" t
+.\" Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+.\" Title: jdeps
+.\" Language: English
+.\" Date: 2013年11月21日
+.\" SectDesc: 基本ツール
+.\" Software: JDK 8
+.\" Arch: 汎用
+.\"
+.\" DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+.\"
+.\" This code is free software; you can redistribute it and/or modify it
+.\" under the terms of the GNU General Public License version 2 only, as
+.\" published by the Free Software Foundation.
+.\"
+.\" This code is distributed in the hope that it will be useful, but WITHOUT
+.\" ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+.\" FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License
+.\" version 2 for more details (a copy is included in the LICENSE file that
+.\" accompanied this code).
+.\"
+.\" You should have received a copy of the GNU General Public License version
+.\" 2 along with this work; if not, write to the Free Software Foundation,
+.\" Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+.\"
+.\" Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+.\" or visit www.oracle.com if you need additional information or have any
+.\" questions.
+.\"
+.pl 99999
+.TH "jdeps" "1" "2013年11月21日" "JDK 8" "基本ツール"
+.\" -----------------------------------------------------------------
+.\" * Define some portability stuff
+.\" -----------------------------------------------------------------
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.\" http://bugs.debian.org/507673
+.\" http://lists.gnu.org/archive/html/groff/2009-02/msg00013.html
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.ie \n(.g .ds Aq \(aq
+.el       .ds Aq '
+.\" -----------------------------------------------------------------
+.\" * set default formatting
+.\" -----------------------------------------------------------------
+.\" disable hyphenation
+.nh
+.\" disable justification (adjust text to left margin only)
+.ad l
+.\" -----------------------------------------------------------------
+.\" * MAIN CONTENT STARTS HERE *
+.\" -----------------------------------------------------------------
+.SH "NAME"
+jdeps \- Javaクラス依存性アナライザ。
+.SH "概要"
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+\fIjdeps\fR [\fIoptions\fR] \fIclasses\fR \&.\&.\&.
+.fi
+.if n \{\
+.RE
+.\}
+.PP
+\fIoptions\fR
+.RS 4
+コマンドライン・オプション。オプションを参照してください。
+.RE
+.PP
+\fIclasses\fR
+.RS 4
+分析するクラスの名前。クラス・パスで検出できるクラスを、ファイル名、ディレクトリまたはJARファイルで指定できます。
+.RE
+.SH "説明"
+.PP
+\fIjdeps\fRコマンドは、Javaクラス・ファイルのパッケージレベルまたはクラスレベルの依存性を示します。入力クラスには、\fI\&.class\fRファイルのパス名、ディレクトリ、JARファイル、またはすべてのクラス・ファイルを分析するための完全修飾クラス名を指定できます。オプションにより出力が決定します。デフォルトでは、\fIjdeps\fRはシステム出力に依存関係を出力します。DOT言語で依存関係を生成できます(\fI\-dotoutput\fRオプションを参照)。
+.SH "オプション"
+.PP
+\-dotoutput <\fIdir\fR>
+.RS 4
+DOTファイル出力の宛先ディレクトリ。指定した場合は\fIjdeps\fRは<\fIarchive\-file\-name\fR>\&.dotという名前の分析済みアーカイブごとに依存関係をリストする1つのdotファイルを生成し、アーカイブ間の依存関係をリストするsummary\&.dotという名前のサマリー・ファイルも生成します。
+.RE
+.PP
+\-s, \-summary
+.RS 4
+依存関係のサマリーのみを出力します。
+.RE
+.PP
+\-v, \-verbose
+.RS 4
+すべてのクラスレベルの依存関係を出力します。
+.RE
+.PP
+\-verbose:package
+.RS 4
+同じアーカイブ内の依存関係を除き、パッケージレベルの依存関係を出力します。
+.RE
+.PP
+\-verbose:class
+.RS 4
+同じアーカイブ内の依存関係を除き、クラスレベルの依存関係を出力します。
+.RE
+.PP
+\-cp <\fIpath\fR>, \-classpath <\fIpath\fR>
+.RS 4
+クラス・ファイルの検索場所を指定します。
+.sp
+Setting the Class Path も参照してください。
+.RE
+.PP
+\-p <\fIpkg name\fR>, \-package <\fIpkg name\fR>
+.RS 4
+指定したパッケージの依存関係を検出します。異なるパッケージに対してこのオプションを複数回指定できます。\fI\-p\fRオプションと\fI\-e\fRオプションを同時に指定することはできません。
+.RE
+.PP
+\-e <\fIregex\fR>, \-regex <\fIregex\fR>
+.RS 4
+指定した正規表現パターンと一致するパッケージの依存関係を検出します。\fI\-p\fRオプションと\fI\-e\fRオプションを同時に指定することはできません。
+.RE
+.PP
+\-include <\fIregex\fR>
+.RS 4
+分析をパターンに一致するクラスに制限します。このオプションは、分析するクラスのリストをフィルタします。依存関係にパターンを適用する\fI\-p\fRおよび\fI\-e\fRとともに使用できます。
+.RE
+.PP
+\-jdkinternals
+.RS 4
+JDKの内部APIのクラスレベルの依存関係を検出します。デフォルトでは、\fI\-include\fRオプションを指定しないかぎり、\fI\-classpath\fRオプションおよび入力ファイルに指定されたすべてのクラスを分析します。このオプションは、\fI\-p\fRオプション、\fI\-e\fRオプションおよび\fI\-s\fRオプションとともに使用できません。
+.sp
+\fB警告\fR: JDKの内部APIは、今後のリリースでアクセスできなくなる可能性があります。
+.RE
+.PP
+\-P, \-profile
+.RS 4
+パッケージを含むプロファイルまたはファイルを表示します。
+.RE
+.PP
+\-apionly
+.RS 4
+フィールド・タイプ、メソッド・パラメータ・タイプ、戻りタイプ、チェックされた例外タイプを含むパブリック・クラスの\fIpublic\fRおよび\fIprotected\fRメンバーの署名からの依存関係など、分析をAPIに制限します。
+.RE
+.PP
+\-R, \-recursive
+.RS 4
+すべての依存関係を再帰的に走査します。
+.RE
+.PP
+\-version
+.RS 4
+バージョン情報を出力します。
+.RE
+.PP
+\-h, \-?, \-help
+.RS 4
+\fIjdeps\fRに関するヘルプ・メッセージを出力します。
+.RE
+.SH "例"
+.PP
+Notepad\&.jarの依存関係の分析。
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+$ jdeps demo/jfc/Notepad/Notepad\&.jar
+ 
+demo/jfc/Notepad/Notepad\&.jar \-> /usr/java/jre/lib/rt\&.jar
+   <unnamed> (Notepad\&.jar)
+      \-> java\&.awt                                           
+      \-> java\&.awt\&.event                                     
+      \-> java\&.beans                                         
+      \-> java\&.io                                            
+      \-> java\&.lang                                          
+      \-> java\&.net                                           
+      \-> java\&.util                                          
+      \-> java\&.util\&.logging                                  
+      \-> javax\&.swing                                        
+      \-> javax\&.swing\&.border                                 
+      \-> javax\&.swing\&.event                                  
+      \-> javax\&.swing\&.text                                   
+      \-> javax\&.swing\&.tree                                   
+      \-> javax\&.swing\&.undo  
+.fi
+.if n \{\
+.RE
+.\}
+.PP
+\-Pまたは\-profileオプションを使用して、メモ帳が依存するプロファイルを表示します。
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+$ jdeps \-profile demo/jfc/Notepad/Notepad\&.jar 
+demo/jfc/Notepad/Notepad\&.jar \-> /usr/java/jre/lib/rt\&.jar (Full JRE)
+   <unnamed> (Notepad\&.jar)
+      \-> java\&.awt                                           Full JRE
+      \-> java\&.awt\&.event                                     Full JRE
+      \-> java\&.beans                                         Full JRE
+      \-> java\&.io                                            compact1
+      \-> java\&.lang                                          compact1
+      \-> java\&.net                                           compact1
+      \-> java\&.util                                          compact1
+      \-> java\&.util\&.logging                                  compact1
+      \-> javax\&.swing                                        Full JRE
+      \-> javax\&.swing\&.border                                 Full JRE
+      \-> javax\&.swing\&.event                                  Full JRE
+      \-> javax\&.swing\&.text                                   Full JRE
+      \-> javax\&.swing\&.tree                                   Full JRE
+      \-> javax\&.swing\&.undo                                   Full JRE
+.fi
+.if n \{\
+.RE
+.\}
+.PP
+tools\&.jarファイル内の\fIcom\&.sun\&.tools\&.jdeps\&.Main\fRクラスなど、特定のクラスパス内の特定のクラスの直接依存関係の分析。
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+$ jdeps \-cp lib/tools\&.jar com\&.sun\&.tools\&.jdeps\&.Main
+lib/tools\&.jar \-> /usr/java/jre/lib/rt\&.jar
+   com\&.sun\&.tools\&.jdeps (tools\&.jar)
+      \-> java\&.io                                            
+      \-> java\&.lang 
+.fi
+.if n \{\
+.RE
+.\}
+.PP
+\fI\-verbose:class\fRオプションを使用して、クラスレベル依存関係を検索するか\fI\-v\fRまたは\fI\-verbose\fRオプションを使用して同じJARファイルからの依存関係を含めます。
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+$ jdeps \-verbose:class \-cp lib/tools\&.jar com\&.sun\&.tools\&.jdeps\&.Main
+ 
+lib/tools\&.jar \-> /usr/java/jre/lib/rt\&.jar
+   com\&.sun\&.tools\&.jdeps\&.Main (tools\&.jar)
+      \-> java\&.io\&.PrintWriter                                
+      \-> java\&.lang\&.Exception                                
+      \-> java\&.lang\&.Object                                   
+      \-> java\&.lang\&.String                                   
+      \-> java\&.lang\&.System 
+.fi
+.if n \{\
+.RE
+.\}
+.PP
+\fI\-R\fRまたは\fI\-recursive\fRオプションを使用して、\fIcom\&.sun\&.tools\&.jdeps\&.Main\fRクラスの推移的な依存関係を分析します。
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+$ jdeps \-R \-cp lib/tools\&.jar com\&.sun\&.tools\&.jdeps\&.Main
+lib/tools\&.jar \-> /usr/java/jre/lib/rt\&.jar
+   com\&.sun\&.tools\&.classfile (tools\&.jar)
+      \-> java\&.io                                            
+      \-> java\&.lang                                          
+      \-> java\&.lang\&.reflect                                  
+      \-> java\&.nio\&.charset                                   
+      \-> java\&.nio\&.file                                      
+      \-> java\&.util                                          
+      \-> java\&.util\&.regex                                    
+   com\&.sun\&.tools\&.jdeps (tools\&.jar)
+      \-> java\&.io                                            
+      \-> java\&.lang                                          
+      \-> java\&.nio\&.file                                      
+      \-> java\&.nio\&.file\&.attribute                            
+      \-> java\&.text                                          
+      \-> java\&.util                                          
+      \-> java\&.util\&.jar                                      
+      \-> java\&.util\&.regex                                    
+      \-> java\&.util\&.zip                                      
+/usr/java/jre/lib/jce\&.jar \-> /usr/java/jre/lib/rt\&.jar
+   javax\&.crypto (jce\&.jar)
+      \-> java\&.io                                            
+      \-> java\&.lang                                          
+      \-> java\&.lang\&.reflect                                  
+      \-> java\&.net                                           
+      \-> java\&.nio                                           
+      \-> java\&.security                                      
+      \-> java\&.security\&.cert                                 
+      \-> java\&.security\&.spec                                 
+      \-> java\&.util                                          
+      \-> java\&.util\&.concurrent                               
+      \-> java\&.util\&.jar                                      
+      \-> java\&.util\&.regex                                    
+      \-> java\&.util\&.zip                                      
+      \-> javax\&.security\&.auth                                
+      \-> sun\&.security\&.jca                                   JDK internal API (rt\&.jar)
+      \-> sun\&.security\&.util                                  JDK internal API (rt\&.jar)
+   javax\&.crypto\&.spec (jce\&.jar)
+      \-> java\&.lang                                          
+      \-> java\&.security\&.spec                                 
+      \-> java\&.util                                          
+/usr/java/jre/lib/rt\&.jar \-> /usr/java/jre/lib/jce\&.jar
+   java\&.security (rt\&.jar)
+      \-> javax\&.crypto
+.fi
+.if n \{\
+.RE
+.\}
+.PP
+メモ帳デモの依存関係のdotファイルを生成します。
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+$ jdeps \-dotoutput dot demo/jfc/Notepad/Notepad\&.jar
+.fi
+.if n \{\
+.RE
+.\}
+.PP
+\fIjdeps\fRは、\fI\-dotoutput\fRオプションで指定されたdotディレクトリに<\fIfilename\fR>\&.dotという名前のdotファイルを特定のJARファイルごとに作成し、JARファイル間の依存関係をリストするsummary\&.dotという名前のサマリー・ファイルも作成します
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+$ cat dot/Notepad\&.jar\&.dot 
+digraph "Notepad\&.jar" {
+    // Path: demo/jfc/Notepad/Notepad\&.jar
+   "<unnamed>"                                        \-> "java\&.awt";
+   "<unnamed>"                                        \-> "java\&.awt\&.event";
+   "<unnamed>"                                        \-> "java\&.beans";
+   "<unnamed>"                                        \-> "java\&.io";
+   "<unnamed>"                                        \-> "java\&.lang";
+   "<unnamed>"                                        \-> "java\&.net";
+   "<unnamed>"                                        \-> "java\&.util";
+   "<unnamed>"                                        \-> "java\&.util\&.logging";
+   "<unnamed>"                                        \-> "javax\&.swing";
+   "<unnamed>"                                        \-> "javax\&.swing\&.border";
+   "<unnamed>"                                        \-> "javax\&.swing\&.event";
+   "<unnamed>"                                        \-> "javax\&.swing\&.text";
+   "<unnamed>"                                        \-> "javax\&.swing\&.tree";
+   "<unnamed>"                                        \-> "javax\&.swing\&.undo";
+}
+ 
+$ cat dot/summary\&.dot
+digraph "summary" {
+   "Notepad\&.jar"                  \-> "rt\&.jar";
+}
+.fi
+.if n \{\
+.RE
+.\}
+.SH "関連項目"
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+javap(1)
+.RE
+.br
+'pl 8.5i
+'bp

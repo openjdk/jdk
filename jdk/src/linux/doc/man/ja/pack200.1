@@ -1,362 +1,325 @@
-." Copyright (c) 2004, 2011, Oracle and/or its affiliates. All rights reserved.
-." DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
-."
-." This code is free software; you can redistribute it and/or modify it
-." under the terms of the GNU General Public License version 2 only, as
-." published by the Free Software Foundation.
-."
-." This code is distributed in the hope that it will be useful, but WITHOUT
-." ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
-." FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
-." version 2 for more details (a copy is included in the LICENSE file that
-." accompanied this code).
-."
-." You should have received a copy of the GNU General Public License version
-." 2 along with this work; if not, write to the Free Software Foundation,
-." Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
-."
-." Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
-." or visit www.oracle.com if you need additional information or have any
-." questions.
-."
-.TH pack200 1 "07 May 2011"
-
-.LP
-.SH "名前"
-pack200 \- JAR パックツール
-.LP
-.RS 3
-.TP 2
-o
-形式 
-.TP 2
-o
-説明 
-.TP 2
-o
-オプション 
-.TP 2
-o
-終了ステータス 
-.TP 2
-o
-関連項目 
-.TP 2
-o
-注意事項 
+'\" t
+.\" Copyright (c) 2004, 2013, Oracle and/or its affiliates. All rights reserved.
+.\" Title: pack200
+.\" Language: English
+.\" Date: 2013年11月21日
+.\" SectDesc: Javaデプロイメント・ツール
+.\" Software: JDK 8
+.\" Arch: 汎用
+.\"
+.\" DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+.\"
+.\" This code is free software; you can redistribute it and/or modify it
+.\" under the terms of the GNU General Public License version 2 only, as
+.\" published by the Free Software Foundation.
+.\"
+.\" This code is distributed in the hope that it will be useful, but WITHOUT
+.\" ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+.\" FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License
+.\" version 2 for more details (a copy is included in the LICENSE file that
+.\" accompanied this code).
+.\"
+.\" You should have received a copy of the GNU General Public License version
+.\" 2 along with this work; if not, write to the Free Software Foundation,
+.\" Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+.\"
+.\" Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+.\" or visit www.oracle.com if you need additional information or have any
+.\" questions.
+.\"
+.pl 99999
+.TH "pack200" "1" "2013年11月21日" "JDK 8" "Javaデプロイメント・ツール"
+.\" -----------------------------------------------------------------
+.\" * Define some portability stuff
+.\" -----------------------------------------------------------------
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.\" http://bugs.debian.org/507673
+.\" http://lists.gnu.org/archive/html/groff/2009-02/msg00013.html
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.ie \n(.g .ds Aq \(aq
+.el       .ds Aq '
+.\" -----------------------------------------------------------------
+.\" * set default formatting
+.\" -----------------------------------------------------------------
+.\" disable hyphenation
+.nh
+.\" disable justification (adjust text to left margin only)
+.ad l
+.\" -----------------------------------------------------------------
+.\" * MAIN CONTENT STARTS HERE *
+.\" -----------------------------------------------------------------
+.SH "NAME"
+pack200 \- WebデプロイメントのためにJARファイルをpack200圧縮ファイルにパッケージします。
+.SH "概要"
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+\fIpack200\fR [\fIoptions\fR] \fIoutput\-file\fR \fIJAR\-file\fR
+.fi
+.if n \{\
 .RE
-
-.LP
-.SH "形式"
-.LP
-.LP
-\f4pack200\fP\f2 [ \fP\f2options\fP ] \f2output\-file\fP \f2JAR\-file\fP
-.LP
-.LP
-オプションの指定順序に決まりはありません。コマンド行または properties ファイルに指定された最後のオプションが、それ以前に指定されたすべてのオプションより優先されます。
-.LP
-.RS 3
-.TP 3
-options 
-コマンド行オプション。 
-.TP 3
-output\-file 
-出力ファイルの名前。 
-.TP 3
-JAR\-file 
-入力ファイルの名前。 
+.\}
+.PP
+オプションは任意の順序で指定できます。コマンドラインまたはpropertiesファイルに指定された最後のオプションが、それ以前に指定されたすべてのオプションより優先されます。
+.PP
+\fIoptions\fR
+.RS 4
+コマンドライン・オプション。オプションを参照してください。
 .RE
-
-.LP
-.SH " 説明"
-.LP
-.LP
-\f2pack200\fP ツールは、Java gzip 圧縮プログラムを使用して JAR ファイルを \f2pack200\fP 圧縮ファイルに変換する \f2Java アプリケーション\fP です。 \f2pack200\fP ファイルは高圧縮のファイルで、帯域幅の節約やダウンロード時間の短縮や直接配備することができます。
-.LP
-.LP
-\f2pack200\fP ツールには、圧縮エンジンの設定や微調整を行うオプションが用意されています。
-.LP
-.SS 
-一般的な使用方法:
-.LP
-.LP
-\f2% pack200 myarchive.pack.gz myarchive.jar\fP
-.LP
-.LP
-この例では、 \f2デフォルトの pack200 設定を使用して\fP myarchive.pack.gz \f2が生成されます\fP 。
-.LP
+.PP
+\fIoutput\-file\fR
+.RS 4
+出力ファイルの名前。
+.RE
+.PP
+\fIJAR\-file\fR
+.RS 4
+入力ファイルの名前。
+.RE
+.SH "説明"
+.PP
+\fIpack200\fRコマンドは、Java gzipコンプレッサを使用してJARファイルをpack200圧縮ファイルに変換するJavaアプリケーションです。pack200ファイルは高圧縮のファイルで、直接デプロイでき、帯域幅の節約やダウンロード時間の短縮が可能です。
+.PP
+\fIpack200\fRコマンドには、圧縮エンジンの設定や微調整を行うオプションがあります。一般的な使用方法を次の例に示します。\fImyarchive\&.pack\&.gz\fRがデフォルトの\fIpack200\fRコマンド設定で作成されます。
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+pack200 myarchive\&.pack\&.gz myarchive\&.jar
+.fi
+.if n \{\
+.RE
+.\}
 .SH "オプション"
-.LP
-.LP
-\f4\-r \-\-repack\fP
-.LP
-.LP
-ファイル \f2myarchive.jar\fP をパックしたあとアンパックすることで、JAR ファイルを生成します。生成されたファイルは \f2jarsigner(1)\fP ツールの入力ファイルとして使用できます。
-.LP
-.LP
-\f2% pack200 \-\-repack myarchive\-packer.jar myarchive.jar\fP
-.LP
-.LP
-\f2% pack200 \-\-repack myarchive.jar\fP
-.LP
-.LP
-\f4\-g \-\-no\-gzip\fP
-.LP
-.LP
-\f2pack200\fP ファイルを生成します。このオプションを指定するときは、適切な圧縮ツールを使用する必要があります。また、ターゲットシステムでは、対応する圧縮解除ツールを使用する必要があります。
-.LP
-.LP
-\f2% pack200 \-\-no\-gzip myarchive.pack myarchive.jar\fP
-.LP
-.LP
-\f4\-G \-\-strip\-debug\fP
-.LP
-.LP
-出力からデバッグ用の属性を削除します。そうした属性としては、 \f2SourceFile\fP、 \f2LineNumberTable\fP、 \f2LocalVariableTable\fP 、 \f2LocalVariableTypeTable\fP などが挙げられます。これらの属性を削除すれば、ダウンロードとインストールのサイズは小さくなりますが、デバッガの機能は制限されます。
-.LP
-.LP
-\f4\-\-keep\-file\-order\fP
-.LP
-.LP
-入力ファイル内のファイルの順序を維持します。これがデフォルトの動作です。
-.LP
-.LP
-\f4\-O \-\-no\-keep\-file\-order\fP
-.LP
-.LP
-パックツールは、すべての要素を並べ替えて転送します。また、JAR ディレクトリ名を削除します。このため、ダウンロードのサイズは小さくなりますが、インデックスをはじめとする JAR ファイルの最適化機能は正常に動作しなくなることがあります。
-.LP
-.LP
-\f4\-Svalue \-\-segment\-limit=\fP\f2value\fP
-.LP
-.LP
-この値は、各アーカイブセグメントの予想ターゲットサイズ N (バイト単位) です。単一の入力ファイルの必要サイズが
-.br
-N バイトを超えると、そのファイルには独立したアーカイブセグメントが割り当てられます。特殊なケースとして、値が \f2\-1\fP の場合は、すべての入力ファイルを含む大きな単一のセグメントが生成され、値が \f20\fP の場合は、クラスごとにセグメントが 1 つずつ生成されます。アーカイブセグメントが大きくなると、断片化が少なくなり圧縮率が高くなりますが、その処理には多くのメモリーが必要です。
-.LP
-.LP
-各セグメントのサイズは、セグメントに変換されるそれぞれの入力ファイルのサイズのほか、その名前とほかの送信されるプロパティーのサイズを計算して推測されます。
-.LP
-.LP
-デフォルトは \-1 です。つまり、パックツールは常に単一のセグメント出力ファイルを作成します。極端に大きな出力ファイルが生成される場合には、入力ファイルをセグメント化 (分割) してより小さな JAR にすることを強くお勧めします。
-.LP
-.LP
-この制限が課されていない 10M バイトの JAR パックファイルは通常、元の 10% 程度のサイズにパックされます。しかし、パックツールでより大きな Java ヒープ (セグメントの制限の約 10 倍) を必要とする場合もあります。
-.LP
-.LP
-\f4\-Evalue \-\-effort=\fP\f2value\fP
-.LP
-.LP
-単一の 10 進数値を指定した場合、パックツールは、指定された圧縮率でアーカイブを圧縮します。レベル \f21\fP の場合は、比較的短い圧縮時間でやや大きめのファイルが生成されますが、レベル \f29\fP の場合は、非常に長い時間がかかるものの、より圧縮率の高いファイルが生成されます。特殊な値 \f20\fP を指定した場合は、元の JAR ファイルを圧縮なしで直接コピーします。JSR 200 標準では、すべての解凍プログラムが、この特別な場合をアーカイブ全体のパススルーと解釈するように規定しています。
-.LP
-.LP
-デフォルトは \f25\fPです。この場合、標準的な時間で適切な圧縮が行われます。
-.LP
-.LP
-\f4\-Hvalue \-\-deflate\-hint=\fP\f2value\fP
-.LP
-.LP
-デフォルト値を上書きし、入力情報を保存します。転送されるアーカイブのサイズは大きくなります。返される値は次のどれかになります。
-.LP
-.RS 3
-.TP 3
-true 
-.TP 3
-false 
-どちらの場合でも、パックツールはデフレーションヒントを出力アーカイブに設定します。アーカイブ要素の個々のデフレーションヒントは転送しません。 
+.PP
+\-r, \-\-repack
+.RS 4
+JARファイルをパックした後アンパックして、JARファイルを生成します。生成されたファイルは\fIjarsigner\fR(1)ツールの入力ファイルとして使用できます。次の例では、myarchive\&.jarファイルをパックした後、アンパックします。
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+pack200 \-\-repack myarchive\-packer\&.jar myarchive\&.jar
+pack200 \-\-repack myarchive\&.jar
+.fi
+.if n \{\
 .RE
-
-.LP
-.RS 3
-.TP 3
-keep 
-入力 JAR.内で見つかったデフレーションヒントを維持します。(これがデフォルトです。) 
+.\}
+次の例では、入力ファイル内のファイルの順序を保持します。
 .RE
-
-.LP
-.LP
-\f4\-mvalue \-\-modification\-time=\fP\f2value\fP
-.LP
-.LP
-返される値は次のどれかになります。
-.LP
-.RS 3
-.TP 3
-latest 
-パックツールは、元のアーカイブの全エントリの最終更新時刻か、そのセグメントのすべてのエントリの最終更新時刻を特定しようとします。この単一の値はセグメントの一部として転送され、各セグメントの全エントリに適用されます。この場合、すべてのインストールファイルに単一の日付が設定されるという問題はありますが、アーカイブの転送サイズを少し小さくすることができます。 
-.TP 3
-keep 
-入力 JAR. 内で見つかった変更時刻を維持します。(これがデフォルトです。) 
+.PP
+\-g, \-\-no\-gzip
+.RS 4
+\fIpack200\fRファイルを生成します。このオプションを指定するときは、適切な圧縮ツールを使用する必要があります。また、ターゲット・システムでは、対応する圧縮解除ツールを使用する必要があります。
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+pack200 \-\-no\-gzip myarchive\&.pack myarchive\&.jar
+.fi
+.if n \{\
 .RE
-
-.LP
-.LP
-\f4\-Pfile \-\-pass\-file=\fP\f2file\fP
-.LP
-.LP
-ファイルを圧縮せず、バイト単位で転送するように指定します。このオプションを繰り返し使用して、複数のファイルを指定できます。システムファイルセパレータが JAR ファイルセパレータ「\f2/\fP」に置き換えられる点を除き、パス名の変換は行われません。 結果として得られるファイル名は、文字列として正確に JAR ファイルでの出現と一致している必要があります。file にディレクトリ名を指定した場合、そのディレクトリ内のすべてのファイルが転送されます。
-.LP
-.LP
-\f4\-Uaction \-\-unknown\-attribute=\fP\f2action\fP
-.LP
-.LP
-デフォルトの動作を無効にします。たとえば、不明な属性を含むクラスファイルを指定したアクションで転送します。アクションとして指定可能な値:
-.LP
-.RS 3
-.TP 3
-error 
-\f2pack200\fP の操作に失敗し、適切な解説が表示されます。 
-.TP 3
-strip 
-属性はドロップされます。注: VM 必須属性を削除するとクラスローダーの障害が発生することがあります。 
-.TP 3
-pass 
-この属性が検出された場合、クラス全体が 1 つのリソースとして転送されます。 
+.\}
 .RE
-
-.LP
-.LP
-\f4\-Cattribute\-name=\fP\f2layout\fP \f3\-\-class\-attribute=\fP\f2attribute\-name=action\fP
-.br
-\f4\-Fattribute\-name=\fP\f2layout\fP \f3\-\-field\-attribute=\fP\f2attribute\-name=action\fP
-.br
-\f4\-Mattribute\-name=\fP\f2layout\fP \f3\-\-method\-attribute=\fP\f2attribute\-name=action\fP
-.br
-\f4\-Dattribute\-name=\fP\f2layout\fP \f3\-\-code\-attribute=\fP\f2attribute\-name=action\fP
-.LP
-.LP
-これら 4 つのオプションでは、クラスエンティティーに Class 属性、Field 属性、Method 属性、Code 属性などの属性のレイアウトを指定できます。attribute\-name には、これからレイアウトまたはアクションを定義する属性の名前を指定します。アクションとして指定可能な値:
-.LP
-.RS 3
-.TP 3
-some\-layout\-string 
-レイアウト言語は、JSR 200 仕様に定義されています。 
-.LP
-例: \f2\-\-class\-attribute=SourceFile=RUH\fP  
-.TP 3
-error 
-この属性が検出された場合、pack200 の操作に失敗し、適切な解説が表示されます。 
-.TP 3
-strip 
-この属性が検出された場合、属性は出力から削除されます。注: VM 必須属性を削除するとクラスローダーの障害が発生することがあります。 
+.PP
+\-G, \-\-strip\-debug
+.RS 4
+出力からデバッグ属性を削除します。これには、\fISourceFile\fR、\fILineNumberTable\fR、\fILocalVariableTable\fR、\fILocalVariableTypeTable\fRが含まれます。これらの属性を削除すれば、ダウンロードとインストールのサイズは小さくなりますが、デバッガの機能は制限されます。
 .RE
-
-.LP
-.LP
-例: \f2\-\-class\-attribute=CompilationID=pass\fP というこの属性を含むクラスファイルを転送します。パックツールは、その他のアクションを行いません。
-.LP
-.LP
-\f4\-f\fP\f2 \fP\f2pack.properties\fP \f3\-\-config\-file=\fP\f2pack.properties\fP
-.LP
-.LP
-コマンド行に、パックツールを初期化するための Java プロパティーが含まれている設定ファイルを指定できます。
-.LP
-.LP
-\f2% pack200 \-f pack.properties myarchive.pack.gz myarchive.jar\fP
-.br
-\f2% more pack.properties\fP
-.br
-\f2# Generic properties for the packer.\fP
-.br
-\f2modification.time=latest\fP
-.br
-\f2deflate.hint=false\fP
-.br
-\f2keep.file.order=false\fP
-.br
-\f2# This option will cause the files bearing new attributes to\fP
-.br
-\f2# be reported as an error rather than passed uncompressed.\fP
-.br
-\f2unknown.attribute=error\fP
-.br
-\f2# Change the segment limit to be unlimited.\fP
-.br
-\f2segment.limit=\-1\fP
-.LP
-.LP
-\f4\-v \-\-verbose\fP
-.LP
-.LP
-最小限のメッセージを出力します。このオプションを複数指定すると、より長いメッセージが出力されます。
-.LP
-.LP
-\f4\-q \-\-quiet\fP
-.LP
-.LP
-メッセージを表示せずに動作します。
-.LP
-.LP
-\f4\-lfilename \-\-log\-file=\fP\f2filename\fP
-.LP
-.LP
-出力メッセージのログファイルを指定します。
-.LP
-.LP
-\f4\-? \-h \-\-help\fP
-.LP
-.LP
+.PP
+\-\-keep\-file\-order
+.RS 4
+入力ファイル内のファイルの順序を保持します。これは、デフォルトの動作です。
+.RE
+.PP
+\-O, \-\-no\-keep\-file\-order
+.RS 4
+パック・ツールは、すべての要素を並べ替えて送信します。パック・ツールは、JARディレクトリ名を削除してダウンロード・サイズを削減することもできます。ただし、インデックスなど、特定のJARファイルの最適化機能が正常に動作しなくなることがあります。
+.RE
+.PP
+\-S\fIvalue\fR, \-\-segment\-limit=\fIvalue\fR
+.RS 4
+この値は、各アーカイブ・セグメントの予想ターゲット・サイズ\fIN\fR
+(バイト単位)です。単一の入力ファイルの必要サイズが\fIN\fRバイトを超えると、独立したセグメントが割り当てられます。特殊なケースとして、値が\fI\-1\fRの場合は、すべての入力ファイルを含む大きな単一のセグメントが生成され、値が0の場合は、クラスごとにセグメントが1つずつ生成されます。アーカイブ・セグメントが大きくなると、断片化が少なくなり圧縮率が高くなりますが、その処理には多くのメモリーが必要です。
+.sp
+各セグメントのサイズは、セグメントに変換されるそれぞれの入力ファイルのサイズのほか、その名前と他の送信されるプロパティのサイズを計算して推測されます。
+.sp
+デフォルトは\-1です。つまり、パック・ツールは単一のセグメント出力ファイルを作成します。極端に大きな出力ファイルが生成される場合には、入力ファイルをセグメント化(分割)してより小さなJARにすることを強くお薦めします。
+.sp
+この制限が課されていない10 MBのJARパック・ファイルは通常、約10%小さくパックされます。しかし、パック・ツールでより大きなJavaヒープ(セグメントの制限の約10倍)を必要とする場合もあります。
+.RE
+.PP
+\-E\fIvalue\fR, \-\-effort=\fIvalue\fR
+.RS 4
+単一の10進数値を指定した場合、パック・ツールは、指定された圧縮率でアーカイブを圧縮します。レベル1の場合は、比較的短い圧縮時間で多少大きめのファイルが生成されますが、レベル9の場合は、非常に長い時間がかかるものの、より圧縮率の高いファイルが生成されます。特殊な値0を指定した場合は、\fIpack200\fRコマンドは元のJARファイルを圧縮なしで直接コピーします。JSR 200標準では、すべての解凍プログラムが、この特別な場合をアーカイブ全体のパススルーと解釈するように規定しています。
+.sp
+デフォルトは5です。この場合、標準的な時間で適切な圧縮が行われます。
+.RE
+.PP
+\-H\fIvalue\fR, \-\-deflate\-hint=\fIvalue\fR
+.RS 4
+入力情報を保存するというデフォルト値をオーバーライドします。転送されるアーカイブのサイズは大きくなる場合があります。指定可能な値は、\fItrue\fR、\fIfalse\fRまたは\fIkeep\fRです。
+.sp
+\fIvalue\fRが\fItrue\fRまたはfalseの場合、\fIpacker200\fRコマンドは指定に従ってデフレーション・ヒントを出力アーカイブに設定します。アーカイブ要素の個々のデフレーション・ヒントは転送されません。
+.sp
+\fIkeep\fR値は、入力JARで確認されたデフレーション・ヒントを保持します。これがデフォルトです。
+.RE
+.PP
+\-m\fIvalue\fR, \-\-modification\-time=\fIvalue\fR
+.RS 4
+指定可能な値は\fIlatest\fRと\fIkeep\fRです。
+.sp
+値が最新の場合、パック・ツールは、元のアーカイブの使用可能なすべてのエントリのうちの最終更新時刻か、そのセグメントの使用可能なすべてのエントリの最終更新時刻を特定しようとします。この単一の値はセグメントの一部として転送され、各セグメントの全エントリに適用されます。この場合、すべてのインストール・ファイルに単一の日付が設定されるという問題はありますが、アーカイブの転送サイズを少し小さくすることができます。
+.sp
+値が\fIkeep\fRの場合、入力JARで確認された変更時間が保持されます。これがデフォルトです。
+.RE
+.PP
+\-P\fIfile\fR, \-\-pass\-file=\fIfile\fR
+.RS 4
+ファイルを圧縮せず、バイト単位で転送するように指定します。このオプションを繰返し使用して、複数のファイルを指定できます。システム・ファイル・セパレータがJARファイル・セパレータのスラッシュ(/)に置き換えられる点を除き、パス名の変換は行われません。結果として得られるファイル名は、文字列として正確にJARファイルでの出現と一致している必要があります。\fIfile\fRにディレクトリ名を指定した場合、そのディレクトリ内のすべてのファイルが転送されます。
+.RE
+.PP
+\-U\fIaction\fR, \-\-unknown\-attribute=\fIaction\fR
+.RS 4
+デフォルトの動作をオーバーライドします。つまり、不明な属性を含むクラス・ファイルが、指定した\fIaction\fRによって渡されます。アクションとして指定可能な値は、\fIerror\fR、\fIstrip\fRまたは\fIpass\fRです。
+.sp
+値が\fIerror\fRの場合、\fIpack200\fRコマンド操作全体が失敗して適切な説明が表示されます。
+.sp
+値が\fIstrip\fRの場合、属性は削除されます。Java仮想マシン(JVM)必須属性を削除すると、クラス・ローダーの障害が発生することがあります。
+.sp
+値が\fIpass\fRの場合、クラス全体が1つのリソースとして転送されます。
+.RE
+.PP
+\-C\fIattribute\-name\fR=\fIlayout\fR, \-\-class\-attribute=\fIattribute\-name\fR=\fIaction\fR
+.RS 4
+次のオプションを参照してください。
+.RE
+.PP
+\-F\fIattribute\-name\fR=\fIlayout\fR, \-\-field\-attribute=\fIattribute\-name\fR=\fIaction\fR
+.RS 4
+次のオプションを参照してください。
+.RE
+.PP
+\-M\fIattribute\-name\fR=\fIlayout\fR, \-\-method\-attribute=\fIattribute\-name\fR=\fIaction\fR
+.RS 4
+次のオプションを参照してください。
+.RE
+.PP
+\-D\fIattribute\-name\fR=\fIlayout\fR, \-\-code\-attribute=\fIattribute\-name\fR=\fIaction\fR
+.RS 4
+前述の4つのオプションでは、クラス・エンティティに\fIclass\-attribute\fR、\fIfield\-attribute\fR、\fImethod\-attribute\fRおよび\fIcode\-attribute\fRなどの属性のレイアウトを指定できます。\fIattribute\-name\fRには、これからレイアウトまたはアクションを定義する属性の名前を指定します。\fIaction\fRとして指定可能な値は、\fIsome\-layout\-string\fR、\fIerror\fR、\fIstrip\fR、\fIpass\fRです。
+.sp
+\fIsome\-layout\-string\fR: レイアウト言語はJSR 200仕様で定義されています。例:
+\fI\-\-class\-attribute=SourceFile=RUH\fR。
+.sp
+値が\fIerror\fRの場合、\fIpack200\fR操作が失敗して説明が表示されます。
+.sp
+値が\fIstrip\fRの場合、属性が出力から削除されます。VM必須属性を削除するとクラス・ローダーの障害が発生することがあります。たとえば、\fI\-\-class\-attribute=CompilationID=pass\fRというこの属性を含むクラス・ファイルを転送します。パック・ツールは、その他のアクションを行いません。
+.sp
+値が\fIpass\fRの場合、クラス全体が1つのリソースとして転送されます。
+.RE
+.PP
+\-f \fIpack\&.properties\fR, \-\-config\-file=\fIpack\&.properties\fR
+.RS 4
+コマンドラインに、パック・ツールを初期化するためのJavaプロパティが含まれている構成ファイルを指定できます。
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+pack200 \-f pack\&.properties myarchive\&.pack\&.gz myarchive\&.jar
+more pack\&.properties
+# Generic properties for the packer\&.
+modification\&.time=latest
+deflate\&.hint=false
+keep\&.file\&.order=false
+# This option will cause the files bearing new attributes to
+# be reported as an error rather than passed uncompressed\&.
+unknown\&.attribute=error
+# Change the segment limit to be unlimited\&.
+segment\&.limit=\-1
+.fi
+.if n \{\
+.RE
+.\}
+.RE
+.PP
+\-v, \-\-verbose
+.RS 4
+最小限のメッセージを出力します。このオプションを複数指定すると、より長いメッセージが作成されます。
+.RE
+.PP
+\-q, \-\-quiet
+.RS 4
+メッセージを表示せずに動作するように指定します。
+.RE
+.PP
+\-l\fIfilename\fR, \-\-log\-file=\fIfilename\fR
+.RS 4
+出力メッセージのログ・ファイルを指定します。
+.RE
+.PP
+\-?, \-h, \-\-help
+.RS 4
 このコマンドに関するヘルプ情報を出力します。
-.LP
-.LP
-\f4\-V \-\-version\fP
-.LP
-.LP
-このコマンドに関するバージョン情報を出力します。
-.LP
-.LP
-\f4\-J\fP\f2option\fP
-.LP
-.LP
-\f2option\fP を、 \f2pack200\fP から呼び出された Java 起動ツールに渡します。たとえば、 \f2\-J\-Xms48m\fP と指定すると、スタートアップメモリーが 48M バイトに設定されます。このオプションは \f2\-X\fP で始まっていませんが、 \f2pack200\fP の標準オプションではありません。 \f2\-J\fP を使って、Java で記述されたアプリケーションを実行する背後の VM にオプション渡すことは、よく行われています。
-.LP
-.SH "終了ステータス"
-.LP
-.LP
-次の終了値が返されます。
-.LP
-.LP
-\f2\ 0\fP 正常終了した場合
-.LP
-.LP
-\f2>0\fP エラーが発生した場合
-.LP
-.SH "関連項目"
-.LP
-.RS 3
-.TP 2
-o
-unpack200(1) 
-.TP 2
-o
-.na
-\f2Java SE のドキュメント\fP @
-.fi
-http://java.sun.com/javase/6/docs/index.html 
-.TP 2
-o
-.na
-\f2「Java 配備ガイド \- Pack200」\fP @
-.fi
-http://java.sun.com/javase/6/docs/technotes/guides/deployment/deployment\-guide/pack200.html 
-.TP 2
-o
-jar(1) \- Java Archive ツール」 
-.TP 2
-o
-jarsigner(1) \- JAR 署名および検証ツール」 
-.TP 2
-o
-\f2attributes(5) の\fP マニュアルページ 
 .RE
-
-.LP
-.SH "注意事項"
-.LP
-.LP
-このコマンドと \f2pack(1)\fP を混同しないでください。これらは別製品です。
-.LP
-.LP
-SDK に付属する Java SE API 仕様との相違が見つかった場合には、仕様を優先してください。
-.LP
- 
+.PP
+\-V, \-\-version
+.RS 4
+このコマンドに関するバージョン情報を出力します。
+.RE
+.PP
+\-J\fIoption\fR
+.RS 4
+指定されたオプションをJava仮想マシンに渡します。詳細は、java(1)コマンドのリファレンス・ページを参照してください。たとえば、\fI\-J\-Xms48m\fRと指定すると、スタートアップ・メモリーは48MBに設定されます。
+.RE
+.SH "終了ステータス"
+.PP
+次の終了値が返されます: 正常終了の場合は0、エラーが発生した場合は0より大きい値。
+.SH "注意"
+.PP
+このコマンドと\fIpack\fR(1)を混同しないでください。\fIpack\fRおよび\fIpack200\fRコマンドは、別々の製品です。
+.PP
+JDKに付属するJava SE API仕様との相違が見つかった場合には、仕様を優先してください。
+.SH "関連項目"
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+unpack200(1)
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+jar(1)
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+jarsigner(1)
+.RE
+.br
+'pl 8.5i
+'bp

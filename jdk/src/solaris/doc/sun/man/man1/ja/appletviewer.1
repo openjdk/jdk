@@ -1,66 +1,105 @@
-." Copyright (c) 1995, 2011, Oracle and/or its affiliates. All rights reserved.
-." DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
-."
-." This code is free software; you can redistribute it and/or modify it
-." under the terms of the GNU General Public License version 2 only, as
-." published by the Free Software Foundation.
-."
-." This code is distributed in the hope that it will be useful, but WITHOUT
-." ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
-." FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
-." version 2 for more details (a copy is included in the LICENSE file that
-." accompanied this code).
-."
-." You should have received a copy of the GNU General Public License version
-." 2 along with this work; if not, write to the Free Software Foundation,
-." Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
-."
-." Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
-." or visit www.oracle.com if you need additional information or have any
-." questions.
-."
-.TH appletviewer 1 "07 May 2011"
-
-.LP
-.SH "名前"
-appletviewer \- Java アプレットビューア
-.LP
-.LP
-\f3appletviewer\fP コマンドは Web ブラウザの外でアプレットを実行させます。
-.LP
-.SH "形式"
-.LP
-.LP
-\f4appletviewer\fP \f2[\fP \f2options\fP \f2] \fP\f2urls\fP ...
-.LP
-.SH "説明"
-.LP
-.LP
-\f3appletviewer\fP コマンドは \f2urls\fP に指定されたドキュメントあるいはリソースと接続して、そのドキュメントが参照するそれぞれのアプレットを独自のウィンドウで表示します。注: \f2urls\fP によって参照されたドキュメントが、\f2OBJECT\fP、\f2EMBED\fP、または \f2APPLET\fP タグでどのアプレットも参照していない場合、\f3appletviewer\fP は何も行いません。\f3appletviewer\fP でサポートされる HTML タグの詳細については、
-.na
-\f2「アプレットビューアのタグ」\fP @
+'\" t
+.\" Copyright (c) 1995, 2013, Oracle and/or its affiliates. All rights reserved.
+.\" Title: appletviewer
+.\" Language: English
+.\" Date: 2013年11月21日
+.\" SectDesc: 基本ツール
+.\" Software: JDK 8
+.\" Arch: 汎用
+.\"
+.\" DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+.\"
+.\" This code is free software; you can redistribute it and/or modify it
+.\" under the terms of the GNU General Public License version 2 only, as
+.\" published by the Free Software Foundation.
+.\"
+.\" This code is distributed in the hope that it will be useful, but WITHOUT
+.\" ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+.\" FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License
+.\" version 2 for more details (a copy is included in the LICENSE file that
+.\" accompanied this code).
+.\"
+.\" You should have received a copy of the GNU General Public License version
+.\" 2 along with this work; if not, write to the Free Software Foundation,
+.\" Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+.\"
+.\" Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+.\" or visit www.oracle.com if you need additional information or have any
+.\" questions.
+.\"
+.pl 99999
+.TH "appletviewer" "1" "2013年11月21日" "JDK 8" "基本ツール"
+.\" -----------------------------------------------------------------
+.\" * Define some portability stuff
+.\" -----------------------------------------------------------------
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.\" http://bugs.debian.org/507673
+.\" http://lists.gnu.org/archive/html/groff/2009-02/msg00013.html
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.ie \n(.g .ds Aq \(aq
+.el       .ds Aq '
+.\" -----------------------------------------------------------------
+.\" * set default formatting
+.\" -----------------------------------------------------------------
+.\" disable hyphenation
+.nh
+.\" disable justification (adjust text to left margin only)
+.ad l
+.\" -----------------------------------------------------------------
+.\" * MAIN CONTENT STARTS HERE *
+.\" -----------------------------------------------------------------
+.SH "NAME"
+appletviewer \- Webブラウザの外側でアプレットを実行します。
+.SH "概要"
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+\fIappletviewer\fR [\fIoptions\fR] \fIurl\fR\&.\&.\&.
 .fi
-http://java.sun.com/javase/6/docs/technotes/tools/appletviewertags.htmlを参照してください。
-.LP
-.LP
-\f3注:\fP \f3appletviewer\fP は、RFC2396 で規定されたエスケープ機構に従って符号化された URL を必要とします。サポートされるのは、符号化された URL だけです。ただし、ファイル名については、RFC2396 に指定された方法で符号化を解除しておく必要があります。
-.LP
-.SH "オプション"
-.LP
-.RS 3
-.TP 3
-\-debug 
-Java デバッガ jdb(1) でアプレットビューアを開始します。これにより、ドキュメント中のアプレットをデバッグすることができます。 
-.TP 3
-\-encoding \  \ encoding name 
-入力 HTML ファイルのエンコーディング名を指定します。 
-.TP 3
-\-Jjavaoption 
-文字列 \f2javaoption\fP は、appletviewer を実行する Java インタプリタに 1 つの引数として渡されます。引数にスペースを含めてはいけません。複数の引数は、各引数のすべてを接頭辞 \f3\-J\fP で始めることにより区分する必要があります。これは、コンパイラの実行環境、またはメモリーの利用に有効です。 
+.if n \{\
 .RE
+.\}
+.PP
+\fIoptions\fR
+.RS 4
+空白で区切られたコマンドライン・オプション。オプションを参照してください。
+.RE
+.PP
+\fIurl\fR
+.RS 4
+表示するドキュメントまたはリソースの場所。空白で区切られた複数のURLを指定できます。
+.RE
+.SH "説明"
+.PP
+\fIappletviewer\fRコマンドは\fIurls\fRに指定されたドキュメントあるいはリソースと接続して、そのドキュメントが参照するそれぞれのアプレットを独自のウィンドウで表示します。urlsによって参照されたドキュメントが、\fIOBJECT\fR、\fIEMBED\fRまたは\fIAPPLET\fRタグでどのアプレットも参照していない場合、\fIappletviewer\fRコマンドは何も行いません。\fIappletviewer\fRコマンドでサポートされるHTMLタグの詳細は、http://docs\&.oracle\&.com/javase/8/docs/technotes/tools/appletviewertags\&.htmlにある
+アプレット・ビューア・タグを参照してください。
+.PP
+\fIappletviewer\fRコマンドは、RFC2396で定義されたエスケープ・メカニズムに従ってエンコードされたURLを必要とします。サポートされるのは、エンコードされたURLのみです。ただし、ファイル名については、RFC2396の仕様に従ってエンコードを解除しておく必要があります。
+.PP
+\fB注意:\fR
+The
+\fIappletviewer\fRコマンドは開発専用です。詳細は、http://docs\&.oracle\&.com/javase/8/docs/technotes/samples/aboutCodeSamples\&.htmlにある
+サンプル/テスト・アプリケーションおよびコードについてを参照してください。
+.SH "オプション"
+.PP
+\-debug
+.RS 4
+\fIjdb\fRコマンドを使用してJavaデバッガでアプレット・ビューアを開始して、ドキュメント中のアプレットをデバッグします。
+.RE
+.PP
+\-encoding \fIencoding\-name\fR
+.RS 4
+入力HTMLファイルのエンコーディング名を指定します。
+.RE
+.PP
+\-J\fIjavaoption\fR
+.RS 4
+文字列\fIjavaoption\fRは、アプレット・ビューアを実行するJavaインタプリタに1つの引数として渡されます。引数にスペースを含めないでください。複数の引数は、すべてが接頭辞\fI\-J\fRで始まる必要があります。これは、コンパイラの実行環境またはメモリー使用の調整に有効です。
+.RE
+.PP
 
-.LP
-.LP
-
-.LP
- 
+.br
+'pl 8.5i
+'bp

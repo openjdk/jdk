@@ -1,286 +1,268 @@
-." Copyright (c) 2004, 2011, Oracle and/or its affiliates. All rights reserved.
-." DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
-."
-." This code is free software; you can redistribute it and/or modify it
-." under the terms of the GNU General Public License version 2 only, as
-." published by the Free Software Foundation.
-."
-." This code is distributed in the hope that it will be useful, but WITHOUT
-." ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
-." FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
-." version 2 for more details (a copy is included in the LICENSE file that
-." accompanied this code).
-."
-." You should have received a copy of the GNU General Public License version
-." 2 along with this work; if not, write to the Free Software Foundation,
-." Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
-."
-." Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
-." or visit www.oracle.com if you need additional information or have any
-." questions.
-."
-.TH jstatd 1 "07 May 2011"
-
-.LP
-.SH "名前"
-jstatd \- 仮想マシン jstat デーモン
-.LP
-.RS 3
-.TP 2
-o
-形式 
-.TP 2
-o
-パラメータ 
-.TP 2
-o
-説明 
-.TP 2
-o
-オプション 
-.TP 2
-o
-セキュリティー 
-.TP 2
-o
-リモートインタフェース 
-.TP 2
-o
-例 
-.TP 2
-o
-関連項目 
-.RE
-
-.LP
-.SH "形式"
-.LP
+'\" t
+.\" Copyright (c) 2004, 2013, Oracle and/or its affiliates. All rights reserved.
+.\" Title: jstatd
+.\" Language: English
+.\" Date: 2013年11月21日
+.\" SectDesc: モニタリング・ツール
+.\" Software: JDK 8
+.\" Arch: 汎用
+.\"
+.\" DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+.\"
+.\" This code is free software; you can redistribute it and/or modify it
+.\" under the terms of the GNU General Public License version 2 only, as
+.\" published by the Free Software Foundation.
+.\"
+.\" This code is distributed in the hope that it will be useful, but WITHOUT
+.\" ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+.\" FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License
+.\" version 2 for more details (a copy is included in the LICENSE file that
+.\" accompanied this code).
+.\"
+.\" You should have received a copy of the GNU General Public License version
+.\" 2 along with this work; if not, write to the Free Software Foundation,
+.\" Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+.\"
+.\" Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+.\" or visit www.oracle.com if you need additional information or have any
+.\" questions.
+.\"
+.pl 99999
+.TH "jstatd" "1" "2013年11月21日" "JDK 8" "モニタリング・ツール"
+.\" -----------------------------------------------------------------
+.\" * Define some portability stuff
+.\" -----------------------------------------------------------------
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.\" http://bugs.debian.org/507673
+.\" http://lists.gnu.org/archive/html/groff/2009-02/msg00013.html
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.ie \n(.g .ds Aq \(aq
+.el       .ds Aq '
+.\" -----------------------------------------------------------------
+.\" * set default formatting
+.\" -----------------------------------------------------------------
+.\" disable hyphenation
+.nh
+.\" disable justification (adjust text to left margin only)
+.ad l
+.\" -----------------------------------------------------------------
+.\" * MAIN CONTENT STARTS HERE *
+.\" -----------------------------------------------------------------
+.SH "NAME"
+jstatd \- Java仮想マシン(JVM)をモニターし、リモート・モニタリング・ツールがJVMに接続できるようにします。このコマンドは試験的なもので、サポートされていません。
+.SH "概要"
+.sp
+.if n \{\
+.RS 4
+.\}
 .nf
-\f3
-.fl
-jstatd [ \fP\f4options\fP\f3 ]\fP
-.br
-\f3
-.fl
-\fP
+\fIjstatd\fR [ \fIoptions\fR ]
 .fi
-
-.LP
-.SH "パラメータ"
-.LP
-.RS 3
-.TP 3
-options 
-コマンド行オプション。オプションは任意の順序で指定できます。重複または矛盾するオプションがある場合、最後に指定したオプションが優先されます。 
+.if n \{\
 .RE
-
-.LP
-.SH " 説明"
-.LP
-.LP
-\f3jstatd\fP ツールは、計測された HotSpot Java 仮想マシン (JVM) の作成と終了を監視し、ローカルシステム上で実行している Java 仮想マシンに、リモート監視ツールが接続できるようにするためのインタフェースを提供する RMI サーバーアプリケーションです。
-.LP
-.LP
-\f3jstatd\fP サーバーでは、ローカルホストに RMI レジストリが存在することが必要になります。\f3jstatd\fP サーバーは、デフォルトポートまたは \f2\-p port\fP オプションで指定されたポート上の RMI レジストリに接続しようとします。RMI レジストリが見つからない場合、\f2\-p port\fP オプションで指定されたポート、または \f2\-p port\fP が省略されている場合は、デフォルト RMI レジストリにバインドされた \f3jstatd\fP アプリケーション内に、1 つの RMI レジストリが作成されます。内部 RMI レジストリの作成は、\f2\-nr\fP オプションを指定することによって禁止することができます。
-.LP
-.LP
-\f3注:\fP このユーティリティーはサポート対象外であり、将来の JDK のバージョンでは利用できなくなる可能性があります。現在、Windows 98 および Windows Me プラットフォームでは使用できません。
-.LP
+.\}
+.PP
+\fIoptions\fR
+.RS 4
+コマンドライン・オプション。オプションを参照してください。
+.RE
+.SH "説明"
+.PP
+\fIjstatd\fRコマンドは、計測されたJava HotSpot VMの作成と終了をモニターし、ローカル・システム上で実行されているJVMに、リモート・モニタリング・ツールが接続できるようにするためのインタフェースを提供するRMIサーバー・アプリケーションです。
+.PP
+\fIjstatd\fRサーバーでは、ローカル・ホストにRMIレジストリが必要になります。\fIjstatd\fRサーバーはデフォルト・ポートで、または\fI\-p\fR
+\fIport\fRオプションで指定したポートで、RMIレジストリに接続しようとします。RMIレジストリが見つからない場合、\fI\-p\fR
+\fIport\fRオプションで指定されたポート、または\fI\-p\fR
+\fIport\fRオプションが省略されている場合は、デフォルトRMIレジストリにバインドされた\fIjstatd\fRアプリケーション内に、1つのRMIレジストリが作成されます。内部RMIレジストリの作成は、\fI\-nr\fRオプションを指定することによって中止できます。
 .SH "オプション"
-.LP
-.LP
-\f3jstatd\fP コマンドは次のオプションをサポートしています。
-.LP
-.RS 3
-.TP 3
-\-nr 
-既存の RMI レジストリが見つからない場合、\f2jstatd\fP プロセス内に内部 RMI レジストリを作成しないようにします。 
-.TP 3
-\-p\  port 
-RMI レジストリがあると予想されるポート番号です。 見つからない場合は、\f2\-nr\fP が指定されていなければ作成されます。 
-.TP 3
-\-n\  rminame 
-RMI レジストリにおいて、リモート RMI オブジェクトがバインドされる名前です。デフォルト名は \f2JStatRemoteHost\fP です。複数の \f3jstatd\fP サーバーが同じホスト上で起動している場合、各サーバーのエクスポートした RMI オブジェクトの名前は、このオプションを指定することによって、一意の名前にすることができます。ただし、このオプションを使用する場合、監視クライアントの \f2hostid\fP および \f2vmid\fP 文字列に、その一意のサーバー名を含める必要があります。 
-.TP 3
-\-Joption 
-\f3javac\fP が呼び出す \f3java\fP 起動ツールに、\f2option\fP を渡します。たとえば、\f3\-J\-Xms48m\fP と指定すると、スタートアップメモリーは 48M バイトに設定されます。\f3\-J\fP を使って、Java で記述されたアプリケーションを実行する背後の VM にオプション渡すことは、よく行われています。 
+.PP
+\-nr
+.RS 4
+既存のRMIレジストリが見つからない場合、\fIjstatd\fRプロセス内に内部RMIレジストリを作成しないようにします。
 .RE
-
-.LP
-.SH "セキュリティー"
-.LP
-.LP
-\f3jstatd\fP サーバーは、有効なネイティブアクセス権を持つ JVM だけを監視できます。したがって、\f3jstatd\fP プロセスは、ターゲット JVM と同じユーザー資格で実行している必要があります。一部のユーザー資格は、UNIX(TM) ベースのシステムにおける \f2root\fP ユーザーのように、システム上の任意の JVM によってエクスポートされたインストゥルメンテーションへのアクセス権を持っています。このような資格で実行している \f3jstatd\fP プロセスは、システム上のすべての JVM を監視できますが、セキュリティー上の別の問題が起こります。
-.LP
-.LP
-\f3jstatd\fP サーバーは、リモートクライアントの認証を一切与えません。そのため、\f3jstatd\fP サーバープロセスを実行すると、\f3jstatd\fP プロセスがアクセス権を持つすべての JVM によるインストゥルメンテーションのエクスポートを、ネットワーク上のすべてのユーザーに公開することになります。この無防備な状態は、環境的に望ましくない場合があります。 特に実稼働環境または安全でないネットワークでは、\f3jstatd\fP プロセスを起動する前に、ローカルセキュリティーポリシーを検討する必要があります。
-.LP
-.LP
-\f3jstatd\fP サーバーは、他のセキュリティーマネージャーがインストールされていない場合には、RMISecurityPolicy のインスタンスをインストールします。 そのため、セキュリティーポリシーファイルを指定する必要があります。ポリシーファイルは、デフォルトポリシー実装の
-.na
-\f2ポリシーファイルの構文\fP @
-.fi
-http://java.sun.com/javase/6/docs/technotes/guides/security/PolicyFiles.htmlに準拠する必要があります。
-.LP
-.LP
-次のポリシーファイルの場合、\f3jstatd\fP サーバーは一切のセキュリティー例外を使用せずに実行できます。このポリシーは、すべてのコードベースへのあらゆるアクセス権を認めるポリシーよりも自由度は低いですが、\f3jstatd\fP サーバーを実行するために最低限必要なアクセス権しか認めないポリシーよりも自由度は高くなっています。
-.LP
+.PP
+\-p \fIport\fR
+.RS 4
+RMIレジストリがあると予想されるポート番号です。見つからない場合は、\fI\-nr\fRオプションが指定されていなければ作成されます。
+.RE
+.PP
+\-n \fIrminame\fR
+.RS 4
+RMIレジストリにおいて、リモートRMIオブジェクトがバインドされる名前です。デフォルト名は\fIJStatRemoteHost\fRです。複数の\fIjstatd\fRサーバーが同じホスト上で起動している場合、各サーバーのエクスポートしたRMIオブジェクトの名前は、このオプションを指定することによって、一意の名前にすることができます。ただし、このオプションを使用する場合、モニタリング・クライアントの\fIhostid\fRおよび\fIvmid\fR文字列に、その一意のサーバー名を含める必要があります。
+.RE
+.PP
+\-J\fIoption\fR
+.RS 4
+JVMに\fIoption\fRを渡します。optionには、Javaアプリケーション起動ツールのリファレンス・ページに記載されている\fIオプション\fRを1つ指定します。たとえば、\fI\-J\-Xms48m\fRと指定すると、スタートアップ・メモリーは48MBに設定されます。java(1)を参照してください。
+.RE
+.SH "セキュリティ"
+.PP
+\fIjstatd\fRサーバーは、適切なネイティブ・アクセス権を持つJVMのみを監視できます。したがって、\fIjstatd\fRプロセスは、ターゲットJVMと同じユーザー資格で実行されている必要があります。UNIXベースのシステムにおけるrootユーザーなどの一部のユーザー資格は、システム上の任意のJVMによってエクスポートされたインストゥルメンテーションへのアクセス権を持っています。このような資格で実行されている\fIjstatd\fRプロセスは、システム上のすべてのJVMを監視できますが、セキュリティ上の別の問題が起こります。
+.PP
+\fIjstatd\fRサーバーには、リモート・クライアントの認証機能がありません。そのため、\fIjstatd\fRサーバー・プロセスを実行すると、\fIjstatd\fRプロセスがアクセス権を持つすべてのJVMによるインストゥルメンテーションのエクスポートを、ネットワーク上のすべてのユーザーに公開することになります。この無防備な状態は、環境によっては望ましくない場合があるので、特に実稼働環境または安全でないネットワークでは、\fIjstatd\fRプロセスを起動する前に、ローカル・セキュリティ・ポリシーを検討する必要があります。
+.PP
+\fIjstatd\fRサーバーは、他のセキュリティ・マネージャがインストールされていない場合には、\fIRMISecurityPolicy\fRのインスタンスをインストールします。そのため、セキュリティ・ポリシー・ファイルを指定する必要があります。ポリシー・ファイルは、http://docs\&.oracle\&.com/javase/8/docs/technotes/guides/security/PolicyFiles\&.htmlにある
+「デフォルトのPolicyの実装とポリシー・ファイルの構文」に準拠している必要があります
+.PP
+次のポリシー・ファイルでは、セキュリティ例外を発生せずに\fIjstatd\fRサーバーを実行できます。このポリシーは、すべてのコード・ベースへのあらゆるアクセス権を認めるポリシーよりも自由度が低いですが、\fIjstatd\fRサーバーを実行するために最低限必要なアクセス権のみを認めるポリシーよりも自由度が高くなっています。
+.sp
+.if n \{\
+.RS 4
+.\}
 .nf
-\f3
-.fl
-grant codebase "file:${java.home}/../lib/tools.jar" {\fP
-.br
-\f3
-.fl
-   permission java.security.AllPermission;\fP
-.br
-\f3
-.fl
-};\fP
-.br
-\f3
-.fl
-\fP
+grant codebase "file:${java\&.home}/\&.\&./lib/tools\&.jar" {   
+    permission java\&.security\&.AllPermission;
+};
 .fi
-
-.LP
-.LP
-このポリシーを使用するには、このテキストを \f2jstatd.all.policy\fP というファイルにコピーし、次のように \f3jstatd\fP サーバーを実行します。
-.LP
+.if n \{\
+.RE
+.\}
+.PP
+このポリシー設定を使用するには、このテキストを\fIjstatd\&.all\&.policy\fRというファイルにコピーし、次のように\fIjstatd\fRサーバーを実行します。
+.sp
+.if n \{\
+.RS 4
+.\}
 .nf
-\f3
-.fl
-jstatd \-J\-Djava.security.policy=jstatd.all.policy\fP
-.br
-\f3
-.fl
-\fP
+jstatd \-J\-Djava\&.security\&.policy=jstatd\&.all\&.policy
 .fi
-
-.LP
-.LP
-より厳しいセキュリティーを実施するサイトの場合、カスタムポリシーファイルを使用して、特定の信頼できるホストまたはネットワークにアクセスを制限することができます。 ただし、このような方法は、IP アドレスの盗聴攻撃を受けやすくなります。セキュリティーの問題について、カスタマイズしたポリシーファイルでも対処できない場合は、\f3jstatd\fP サーバーを実行せずに、\f3jstat\fP と \f3jps\fP ツールをローカルで使用することがもっとも安全な方法になります。
-.LP
-.SH "リモートインタフェース"
-.LP
-.LP
-\f3jstatd\fP プロセスがエクスポートするインタフェースは、独自に開発したものであり変更される予定です。ユーザーおよび開発者は、このインタフェースへの書き込みを行わないでください。
-.LP
+.if n \{\
+.RE
+.\}
+.PP
+より厳しいセキュリティを実施するサイトの場合、カスタム・ポリシー・ファイルを使用して、特定の信頼できるホストまたはネットワークにアクセスを制限することができます。ただし、このような方法は、IPアドレスの盗聴攻撃を受けやすくなります。セキュリティの問題について、カスタマイズしたポリシー・ファイルでも対処できない場合は、\fIjstatd\fRサーバーを実行せずに、\fIjstat\fRと\fIjps\fRツールをローカルで使用することが最も安全な方法になります。
+.SH "リモート・インタフェース"
+.PP
+\fIjstatd\fRプロセスがエクスポートするインタフェースは、独自に開発したものであり変更される予定です。ユーザーおよび開発者は、このインタフェースへの書込みを行わないでください。
 .SH "例"
-.LP
-.LP
-次に \f3jstatd\fP を起動する例を紹介します。\f3jstatd\fP スクリプトによって、サーバーはバックグラウンドで自動的に起動します。
-.LP
-.SS 
-内部 RMI レジストリの使用
-.LP
-.LP
-この例は、内部 RMI レジストリを使用した \f3jstatd\fP の起動を表しています。この例では、デフォルトの RMI レジストリポート (ポート 1099) には、他のサーバーはバインドされていないと想定しています。
-.LP
+.PP
+次に、\fIjstatd\fRコマンドの例を示します。\fIjstatd\fRスクリプトによって、サーバーはバックグラウンドで自動的に起動します。
+.SS "内部RMIレジストリ"
+.PP
+この例は、内部RMIレジストリを使用したホストによる\fIjstatd\fRセッションの起動を表しています。この例では、デフォルトのRMIレジストリ・ポート(ポート1099)には、他のサーバーはバインドされていないと想定しています。
+.sp
+.if n \{\
+.RS 4
+.\}
 .nf
-\f3
-.fl
-jstatd \-J\-Djava.security.policy=all.policy
-.fl
-\fP
+jstatd \-J\-Djava\&.security\&.policy=all\&.policy
 .fi
-
-.LP
-.SS 
-外部 RMI レジストリの使用
-.LP
-.LP
-この例は、外部 RMI レジストリを使用した \f3jstatd\fP の起動を表しています。
-.LP
-.nf
-\f3
-.fl
-rmiregistry&
-.fl
-jstatd \-J\-Djava.security.policy=all.policy
-.fl
-\fP
-.fi
-
-.LP
-.LP
-この例は、ポート 2020 の外部 RMI レジストリを使用した \f3jstatd\fP の起動を表しています。
-.LP
-.nf
-\f3
-.fl
-rmiregistry 2020&
-.fl
-jstatd \-J\-Djava.security.policy=all.policy \-p 2020
-.fl
-\fP
-.fi
-
-.LP
-.LP
-この例は、AlternateJstatdServerName の名前にバインドされた、ポート 2020 の外部 RMI レジストリを使用した \f3jstatd\fP の起動を表しています。
-.LP
-.nf
-\f3
-.fl
-rmiregistry 2020&
-.fl
-jstatd \-J\-Djava.security.policy=all.policy \-p 2020 \-n AlternateJstatdServerName
-.fl
-\fP
-.fi
-
-.LP
-.SS 
-インプロセス RMI レジストリの作成の禁止
-.LP
-.LP
-この例は、RMI レジストリが見つからない場合に RMI レジストリを作成しない \f3jstatd\fP の起動を表しています。この例では、RMI レジストリがすでに実行していると想定しています。実行していない場合は、該当するエラーメッセージが表示されます。
-.LP
-.nf
-\f3
-.fl
-jstatd \-J\-Djava.security.policy=all.policy \-nr
-.fl
-\fP
-.fi
-
-.LP
-.SS 
-RMI ログ機能の有効化
-.LP
-.LP
-この例は、RMI ログ機能を有効にした \f3jstatd\fP の起動を表しています。この方法は、トラブルシューティングまたはサーバー活動の監視に役立ちます。
-.LP
-.nf
-\f3
-.fl
-jstatd \-J\-Djava.security.policy=all.policy \-J\-Djava.rmi.server.logCalls=true
-.fl
-\fP
-.fi
-
-.LP
-.SH "関連項目"
-.LP
-.RS 3
-.TP 2
-o
-「java(1) \- Java アプリケーション起動ツール」 
-.TP 2
-o
-「jps(1) \- Java 仮想マシンプロセスステータスツール」 
-.TP 2
-o
-「jstat(1) \- Java 仮想マシン統計データ監視ツール」 
-.TP 2
-o
-「
-.na
-\f2rmiregistry\fP @
-.fi
-http://java.sun.com/javase/6/docs/technotes/tools/index.html#rmi \- Java リモートオブジェクトレジストリ」 
+.if n \{\
 .RE
-
-.LP
- 
+.\}
+.SS "外部RMIレジストリ"
+.PP
+この例は、外部RMIレジストリを使用した\fIjstatd\fRセッションの起動を表しています。
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+rmiregistry&
+jstatd \-J\-Djava\&.security\&.policy=all\&.policy
+.fi
+.if n \{\
+.RE
+.\}
+.PP
+この例では、ポート2020の外部RMIレジストリを使用して\fIjstatd\fRセッションを起動します。
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+jrmiregistry 2020&
+jstatd \-J\-Djava\&.security\&.policy=all\&.policy \-p 2020
+.fi
+.if n \{\
+.RE
+.\}
+.PP
+この例では、ポート2020の外部RMIレジストリを使用して、\fIAlternateJstatdServerName\fRにバインドされている\fIjstatd\fRセッションを起動します。
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+rmiregistry 2020&
+jstatd \-J\-Djava\&.security\&.policy=all\&.policy \-p 2020
+    \-n AlternateJstatdServerName
+.fi
+.if n \{\
+.RE
+.\}
+.SS "インプロセスRMIレジストリの作成の停止"
+.PP
+この例では、外部RMIレジストリがない場合に作成しない\fIjstatd\fRセッションを起動します。この例では、RMIレジストリがすでに実行されていると想定しています。RMIレジストリが実行されていない場合、エラー・メッセージが表示されます。
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+jstatd \-J\-Djava\&.security\&.policy=all\&.policy \-nr
+.fi
+.if n \{\
+.RE
+.\}
+.SS "RMIロギングの有効化"
+.PP
+この例では、RMIロギング機能を有効化して\fIjstatd\fRセッションを起動します。この方法は、トラブルシューティングまたはサーバー活動のモニタリングに役立ちます。
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+jstatd \-J\-Djava\&.security\&.policy=all\&.policy
+    \-J\-Djava\&.rmi\&.server\&.logCalls=true
+.fi
+.if n \{\
+.RE
+.\}
+.SH "関連項目"
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+java(1)
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+jps(1)
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+jstat(1)
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+rmiregistry(1)
+.RE
+.br
+'pl 8.5i
+'bp

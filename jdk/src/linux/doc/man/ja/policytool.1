@@ -1,105 +1,173 @@
-." Copyright (c) 2001, 2011, Oracle and/or its affiliates. All rights reserved.
-." DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
-."
-." This code is free software; you can redistribute it and/or modify it
-." under the terms of the GNU General Public License version 2 only, as
-." published by the Free Software Foundation.
-."
-." This code is distributed in the hope that it will be useful, but WITHOUT
-." ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
-." FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
-." version 2 for more details (a copy is included in the LICENSE file that
-." accompanied this code).
-."
-." You should have received a copy of the GNU General Public License version
-." 2 along with this work; if not, write to the Free Software Foundation,
-." Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
-."
-." Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
-." or visit www.oracle.com if you need additional information or have any
-." questions.
-."
-.TH policytool 1 "07 May 2011"
-
-.LP
-.SH "名前"
-policytool \- PolicyTool 管理 GUI ユーティリティー
-.LP
-\f3policytool\fP は、ユーティリティー GUI 経由で取得したユーザー入力に基づいて、プレーンテキストのポリシーファイルを読み書きします。 
-.RS 3
-.TP 2
-o
-形式 
-.TP 2
-o
-説明 
-.TP 2
-o
-オプション  
-.TP 2
-o
-関連項目 
+'\" t
+.\" Copyright (c) 2001, 2013, Oracle and/or its affiliates. All rights reserved.
+.\" Title: policytool
+.\" Language: English
+.\" Date: 2013年11月21日
+.\" SectDesc: セキュリティ・ツール
+.\" Software: JDK 8
+.\" Arch: 汎用
+.\"
+.\" DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+.\"
+.\" This code is free software; you can redistribute it and/or modify it
+.\" under the terms of the GNU General Public License version 2 only, as
+.\" published by the Free Software Foundation.
+.\"
+.\" This code is distributed in the hope that it will be useful, but WITHOUT
+.\" ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+.\" FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License
+.\" version 2 for more details (a copy is included in the LICENSE file that
+.\" accompanied this code).
+.\"
+.\" You should have received a copy of the GNU General Public License version
+.\" 2 along with this work; if not, write to the Free Software Foundation,
+.\" Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+.\"
+.\" Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+.\" or visit www.oracle.com if you need additional information or have any
+.\" questions.
+.\"
+.pl 99999
+.TH "policytool" "1" "2013年11月21日" "JDK 8" "セキュリティ・ツール"
+.\" -----------------------------------------------------------------
+.\" * Define some portability stuff
+.\" -----------------------------------------------------------------
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.\" http://bugs.debian.org/507673
+.\" http://lists.gnu.org/archive/html/groff/2009-02/msg00013.html
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.ie \n(.g .ds Aq \(aq
+.el       .ds Aq '
+.\" -----------------------------------------------------------------
+.\" * set default formatting
+.\" -----------------------------------------------------------------
+.\" disable hyphenation
+.nh
+.\" disable justification (adjust text to left margin only)
+.ad l
+.\" -----------------------------------------------------------------
+.\" * MAIN CONTENT STARTS HERE *
+.\" -----------------------------------------------------------------
+.SH "NAME"
+policytool \- ユーティリティGUI経由で取得したユーザー入力に基づいて、プレーン・テキストのポリシー・ファイルを読み書きします。
+.SH "概要"
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+\fIpolicytool\fR [ \fI\-file\fR ] [ \fIfilename\fR ] 
+.fi
+.if n \{\
 .RE
-
-.LP
-.SH "形式"
-.LP
-.RS 3
-.TP 3
-\  
-.TP 3
-policytool 管理者ユーティリティーを実行します 
-\f4policytool\fP 
-.TP 3
-policytool を実行し、指定されたポリシーファイルを読み込みます 
-\f4policytool\fP\f2[\-file\ \fP\f2filename\fP\f2]\fP 
-.TP 3
-\  
-.TP 3
-以下にそれぞれの意味を示します。 
-.RS 3
-.TP 3
-file 
-ローカルポリシーファイルを読み込むように \f2policytool\fP に指示します 
-.TP 3
-filename 
-ファイル名 
+.\}
+.PP
+\-file
+.RS 4
+ポリシー・ファイルを読み込むように\fIpolicytool\fRに指示します。
 .RE
-.SH "説明" 
-.LP
-\f3policytool\fP は、ユーザーがローカルポリシーファイルの内容を管理することを可能にする GUI です。詳細については、
-.na
-\f2「ポリシーファイル作成および管理ツール」\fP @
-.fi
-http://java.sun.com/javase/6/docs/technotes/guides/security/PolicyGuide.htmlを参照してください。 
-.SH "オプション" 
-.RS 3
-.TP 3
-file 
-\f2filename\fP を読み込みます。 
-.SH "関連項目" 
-.na
-\f2「Default Policy Implementation and Syntax」\fP @
-.fi
-http://java.sun.com/javase/6/docs/technotes/guides/security/PolicyFiles.html
-.br
-.na
-\f2「Policy Tool Users' Guide」\fP @
-.fi
-http://java.sun.com/javase/6/docs/technotes/guides/security/PolicyGuide.html
-.br
-.na
-\f2「Security Permissions」\fP @
-.fi
-http://java.sun.com/javase/6/docs/technotes/guides/security/permissions.html
-.br
-.na
-\f2「Security Overview」\fP @
-.fi
-http://java.sun.com/javase/6/docs/technotes/guides/security/overview/jsoverview.html
-.br
+.PP
+\fIfilename\fR
+.RS 4
+ロードするファイルの名前。
 .RE
+.PP
+\fB例\fR:
+.PP
+ポリシー・ツール管理ユーティリティを実行します:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+policytool
+.fi
+.if n \{\
 .RE
-
-.LP
- 
+.\}
+.PP
+\fIpolicytool\fRコマンドを実行し、指定されたファイルをロードします:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+policytool\-file mypolicyfile
+.fi
+.if n \{\
+.RE
+.\}
+.SH "説明"
+.PP
+\fIpolicytool\fRコマンドは、管理者のGUIを呼び出します。これにより、システム管理者はローカル・ポリシー・ファイルの内容を管理できるようになります。ポリシー・ファイルは\fI\&.policy\fR拡張子を持つプレーンテキスト・ファイルで、ドメイン別にリモート・リクエスタを権限オブジェクトにマップします。詳細は、http://docs\&.oracle\&.com/javase/8/docs/technotes/guides/security/PolicyFiles\&.htmlにある
+「Default Policy Implementation and Policy File Syntax」を参照してください
+.SH "オプション"
+.PP
+\-file
+.RS 4
+ポリシー・ファイルを読み込むように\fIpolicytool\fRに指示します。
+.RE
+.SH "関連項目"
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+「Default Policy Implementation and Policy File Syntax」
+(http://docs\&.oracle\&.com/javase/8/docs/technotes/guides/security/PolicyFiles\&.html)
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+「Policy File Creation and Management」
+(http://docs\&.oracle\&.com/javase/8/docs/technotes/guides/security/PolicyGuide\&.html)
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+「Permissions in Java SE Development Kit (JDK)」
+(http://docs\&.oracle\&.com/javase/8/docs/technotes/guides/security/permissions\&.html)
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+「Java Security Overview」
+(http://docs\&.oracle\&.com/javase/8/docs/technotes/guides/security/overview/jsoverview\&.html)
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+「Java Cryptography Architecture (JCA) Reference Guide」
+(http://docs\&.oracle\&.com/javase/8/docs/technotes/guides/security/crypto/CryptoSpec\&.html)
+.RE
+.br
+'pl 8.5i
+'bp
