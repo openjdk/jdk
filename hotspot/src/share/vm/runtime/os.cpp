@@ -1081,7 +1081,6 @@ void os::print_location(outputStream* st, intptr_t x, bool verbose) {
 
   }
 
-#ifndef PRODUCT
   // Check if in metaspace.
   if (ClassLoaderDataGraph::contains((address)addr)) {
     // Use addr->print() from the debugger instead (not here)
@@ -1089,7 +1088,6 @@ void os::print_location(outputStream* st, intptr_t x, bool verbose) {
                  " is pointing into metadata", addr);
     return;
   }
-#endif
 
   // Try an OS specific find
   if (os::find(addr, st)) {
