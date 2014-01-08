@@ -1,222 +1,232 @@
-." Copyright (c) 2003, 2011, Oracle and/or its affiliates. All rights reserved.
-." DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
-."
-." This code is free software; you can redistribute it and/or modify it
-." under the terms of the GNU General Public License version 2 only, as
-." published by the Free Software Foundation.
-."
-." This code is distributed in the hope that it will be useful, but WITHOUT
-." ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
-." FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
-." version 2 for more details (a copy is included in the LICENSE file that
-." accompanied this code).
-."
-." You should have received a copy of the GNU General Public License version
-." 2 along with this work; if not, write to the Free Software Foundation,
-." Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
-."
-." Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
-." or visit www.oracle.com if you need additional information or have any
-." questions.
-."
-.TH javaws 1 "07 May 2011"
-
-.LP
-.SH "名前"
-\f2javaws\fP コマンド行
-.LP
-.SH "名前"
-.LP
-.LP
-\f2javaws\fP \- Java Web Start 起動コマンド
-.LP
-.SH "形式"
-.LP
-.LP
-\f2javaws [run\-options] <jnlp>\fP
-.LP
-.LP
-\f2javaws [control\-options]\fP
-.LP
-.SH "パラメータ"
-.LP
-.LP
-\f2[run\-options]\fP
-.LP
-.LP
-コマンド行実行オプション。実行オプションは任意の順序で指定できます。各種オプションについては、下の 「実行オプション」を参照してください。
-.LP
-.LP
-\f2<jnlp>\fP
-.LP
-.LP
-JNLP (Java Network Launching Protocol) ファイルのパスまたは URL (Uniform Resource Locator) のどちらかです。
-.LP
-.LP
-\f2[control\-options]\fP
-.LP
-.LP
-コマンド行制御オプション。制御オプションは任意の順序で指定できます。各種オプションについては、下の 「制御オプション」を参照してください。
-.LP
+'\" t
+.\" Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
+.\" Title: javaws
+.\" Language: English
+.\" Date: 2013年11月21日
+.\" SectDesc: Java Web Startツール
+.\" Software: JDK 8
+.\" Arch: 汎用
+.\"
+.\" DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+.\"
+.\" This code is free software; you can redistribute it and/or modify it
+.\" under the terms of the GNU General Public License version 2 only, as
+.\" published by the Free Software Foundation.
+.\"
+.\" This code is distributed in the hope that it will be useful, but WITHOUT
+.\" ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+.\" FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License
+.\" version 2 for more details (a copy is included in the LICENSE file that
+.\" accompanied this code).
+.\"
+.\" You should have received a copy of the GNU General Public License version
+.\" 2 along with this work; if not, write to the Free Software Foundation,
+.\" Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+.\"
+.\" Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+.\" or visit www.oracle.com if you need additional information or have any
+.\" questions.
+.\"
+.pl 99999
+.TH "javaws" "1" "2013年11月21日" "JDK 8" "Java Web Startツール"
+.\" -----------------------------------------------------------------
+.\" * Define some portability stuff
+.\" -----------------------------------------------------------------
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.\" http://bugs.debian.org/507673
+.\" http://lists.gnu.org/archive/html/groff/2009-02/msg00013.html
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.ie \n(.g .ds Aq \(aq
+.el       .ds Aq '
+.\" -----------------------------------------------------------------
+.\" * set default formatting
+.\" -----------------------------------------------------------------
+.\" disable hyphenation
+.nh
+.\" disable justification (adjust text to left margin only)
+.ad l
+.\" -----------------------------------------------------------------
+.\" * MAIN CONTENT STARTS HERE *
+.\" -----------------------------------------------------------------
+.SH "NAME"
+javaws \- Java Web Startを起動します。
+.SH "概要"
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+\fIjavaws\fR [ \fIrun\-options\fR ] \fIjnlp\fR
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+\fIjavaws\fR [ \fIcontrol\-options\fR ]
+.fi
+.if n \{\
+.RE
+.\}
+.PP
+\fIrun\-options\fR
+.RS 4
+コマンドライン\fI実行オプション\fR。\fI実行オプション\fRは任意の順序で指定できます。実行オプションを参照してください。
+.RE
+.PP
+\fIjnlp\fR
+.RS 4
+JNLP (Java Network Launching Protocol)ファイルのパスまたはURL (Uniform Resource Locator)のどちらか。
+.RE
+.PP
+\fI制御オプション\fR
+.RS 4
+コマンドライン\fI制御オプション\fR。\fI制御オプション\fRは任意の順序で指定できます。制御オプションを参照してください。
+.RE
 .SH "説明"
-.LP
-.LP
-\f2javaws\fP コマンドは、JNLP (Java Network Launching Protocol) のリファレンス実装である Java Web Start を起動します。Java Web Start は、ネットワーク上で動作する Java アプリケーションまたはアプレットを起動します。
-.LP
-.LP
-JNLP ファイルが指定された場合、 \f2javaws\fP は、その JNLP ファイルで指定された Java アプリケーション/アプレットを起動します。
-.LP
-.LP
-\f2javaws\fP 起動ツールには、現在のリリースでサポートされている 1 組のオプションがあります。ただし、これらのオプションは将来のリリースでは削除される可能性があります。
-.LP
+.PP
+\fB注意:\fR
+\fIjavaws\fRコマンドは、Oracle Solarisでは使用できません。
+.PP
+\fIjavaws\fRコマンドは、JNLPのリファレンス実装であるJava Web Startを起動します。Java Web Startは、ネットワーク上で動作するJavaアプリケーションおよびアプレットを起動します。
+.PP
+JNLPファイルが指定されると、\fIjavaws\fRコマンドはJNLPファイルで指定したJavaアプリケーションまたはアプレットを起動します。
+.PP
+\fIjavaws\fR起動ツールには、現在のリリースでサポートされている1組のオプションがあります。ただし、これらのオプションは将来のリリースでは削除される可能性があります。
 .SH "実行オプション"
-.LP
-.LP
-\f2\-offline\fP
-.LP
-.LP
-Java Web Start をオフラインモードで実行します。
-.LP
-.LP
-\f2\-Xnosplash\fP
-.LP
-.LP
+.PP
+\-offline
+.RS 4
+Java Web Startをオフライン・モードで実行します。
+.RE
+.PP
+\-Xnosplash
+.RS 4
 初期スプラッシュ画面を表示しません。
-.LP
-.LP
-\f2\-open <arguments>\fP
-.LP
-.LP
-このオプションを指定すると、JNLP ファイル内の引数が \f2\-open <arguments>\fP に置き換わります。
-.LP
-.LP
-\f2\-print <arguments>\fP
-.LP
-.LP
-このオプションを指定すると、JNLP ファイル内の引数が \f2\-print <arguments>\fP に置き換わります。
-.LP
-.LP
-\f2\-online\fP
-.LP
-.LP
-オンラインモードを使用します (デフォルトの動作)。
-.LP
-.LP
-\f2\-wait\fP
-.LP
-.LP
-このオプションを指定した場合、 \f2javaws\fP プロセスは、アプリケーションが終了するまで終了しません。Windows プラットフォーム上では、このオプションは説明したとおりに機能しません。
-.LP
-.LP
-\f2\-verbose\fP
-.LP
-.LP
+.RE
+.PP
+\-open \fIarguments\fR
+.RS 4
+このオプションを指定すると、JNLPファイル内の引数が\fI\-open\fR
+\fIarguments\fRに置き換わります。
+.RE
+.PP
+\-print \fIarguments\fR
+.RS 4
+このオプションを指定すると、JNLPファイル内の引数が\fI\-print\fR
+\fIarguments\fRに置き換わります。
+.RE
+.PP
+\-online
+.RS 4
+オンライン・モードを使用します。これは、デフォルトの動作です。
+.RE
+.PP
+\-wait
+.RS 4
+\fIjavaws\fRプロセスは、アプリケーションが終了するまで終了しません。Windowsプラットフォーム上では、このオプションは説明したとおりに機能しません。
+.RE
+.PP
+\-verbose
+.RS 4
 追加の出力を表示します。
-.LP
-.LP
-\f2\-J<option>\fP
-.LP
-.LP
-vm にオプションを補います。
-.LP
-.LP
-\f2\-system\fP
-.LP
-.LP
-アプリケーションをシステムキャッシュからのみ実行します。
-.LP
+.RE
+.PP
+\-J\fIoption\fR
+.RS 4
+Java仮想マシンにoptionを渡します。\fIoption\fRには、Javaアプリケーション起動ツールのリファレンス・ページに記載されているオプションを1つ指定します。たとえば、\fI\-J\-Xms48m\fRと指定すると、スタートアップ・メモリーは48MBに設定されます。java(1)を参照してください。
+.RE
+.PP
+\-system
+.RS 4
+アプリケーションをシステム・キャッシュのみから実行します。
+.RE
 .SH "制御オプション"
-.LP
-.LP
-\f2\-viewer\fP
-.LP
-.LP
-Java コントロールパネルでキャッシュビューアを表示します。
-.LP
-.LP
-\f2\-clearcache\fP
-.LP
-.LP
+.PP
+\-viewer
+.RS 4
+Javaコントロール・パネルでキャッシュ・ビューアを表示します。
+.RE
+.PP
+\-clearcache
+.RS 4
 インストールされていないすべてのアプリケーションをキャッシュから削除します。
-.LP
-.LP
-\f2\-userConfig <property name>\fP
-.LP
-.LP
-指定された配備プロパティーをクリアします。
-.LP
-.LP
-\f2\-userConfig <property name> <property value>\fP
-.LP
-.LP
-指定された配備プロパティーを指定された値に設定します。
-.LP
-.LP
-\f2\-uninstall\fP
-.LP
-.LP
+.RE
+.PP
+\-userConfig \fIproperty\-name\fR
+.RS 4
+指定されたデプロイメント・プロパティをクリアします。
+.RE
+.PP
+\-userConfig \fIproperty\-name property\-value\fR
+.RS 4
+指定されたデプロイメント・プロパティを指定された値に設定します。
+.RE
+.PP
+\-uninstall
+.RS 4
 キャッシュからすべてのアプリケーションを削除します。
-.LP
-.LP
-\f2\-uninstall <jnlp>\fP
-.LP
-.LP
+.RE
+.PP
+\-uninstall \fIjnlp\fR
+.RS 4
 キャッシュからアプリケーションを削除します。
-.LP
-.LP
-\f2\-import [import\-options] <jnlp>\fP
-.LP
-.LP
+.RE
+.PP
+\-print \fIimport\-options \fRjnlp
+.RS 4
 キャッシュにアプリケーションをインポートします。
-.LP
-.SH "インポートオプション"
-.LP
-.LP
-\f2\-silent\fP
-.LP
-.LP
-サイレントモードでインポートします (UI は表示されません)。
-.LP
-.LP
-\f2\-system\fP
-.LP
-.LP
-システムキャッシュにアプリケーションをインポートします。
-.LP
-.LP
-\f2\-codebase <url>\fP
-.LP
-.LP
-任意の codebase からリソースを取得します。
-.LP
-.LP
-\f2\-shortcut\fP
-.LP
-.LP
-ユーザー許容プロンプトのようにショートカットをインストールします。このオプションは、 \f2\-silent\fP オプションも使用しないと効果がありません。
-.LP
-.LP
-\f2\-association\fP
-.LP
-.LP
-ユーザー許容プロンプトのように関連付けをインストールします。このオプションは、 \f2\-silent\fP オプションも使用しないと効果がありません。
-.LP
+.RE
+.SH "インポート・オプション"
+.PP
+\-silent
+.RS 4
+サイレント・モードでインポートします(ユーザー・インタフェースは表示されません)。
+.RE
+.PP
+\-system
+.RS 4
+システム・キャッシュにアプリケーションをインポートします。
+.RE
+.PP
+\-codebase \fIurl\fR
+.RS 4
+指定したコードベースからリソースを取得します。
+.RE
+.PP
+\-shortcut
+.RS 4
+ユーザーがプロンプトを受け入れればショートカットをインストールします。このオプションは、
+\fI\-silent\fRオプションも使用しないと効果がありません。
+.RE
+.PP
+\-association
+.RS 4
+ユーザーがプロンプトを受け入れればアソシエーションをインストールします。このオプションは、
+\fI\-silent\fRオプションも使用しないと効果がありません。
+.RE
+.PP
+\fB注意:\fR\fIjavaws \-shortcut \-uninstall\fR
 .SH "ファイル"
-.LP
-.LP
-ユーザーキャッシュ、システムキャッシュ、および deployment.properties ファイルについては、
-.na
-\f2システムレベルおよびユーザーレベルのプロパティー\fP @
-.fi
-http://java.sun.com/javase/6/docs/technotes/guides/deployment/deployment\-guide/properties.htmlを参照してください。
-.LP
-.SH "詳細情報"
-.LP
-.LP
-Java Web Start の詳細は、
-.na
-\f2「Java Web Start」\fP @
-.fi
-http://java.sun.com/javase/6/docs/technotes/guides/javaws/index.htmlを参照してください。
-.LP
- 
+.PP
+ユーザーおよびシステム・キャッシュならびにdeployment\&.propertiesファイルの詳細は、構成ファイルおよびプロパティのデプロイメント
+(http://docs\&.oracle\&.com/javase/8/docs/technotes/guides/deployment/deployment\-guide/properties\&.html)を参照してください
+.SH "関連項目"
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+Java Web Start
+(http://docs\&.oracle\&.com/javase/8/docs/technotes/guides/javaws/index\&.html)
+.RE
+.br
+'pl 8.5i
+'bp

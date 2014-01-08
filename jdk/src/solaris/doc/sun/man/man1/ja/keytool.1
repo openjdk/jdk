@@ -1,1845 +1,1579 @@
-." Copyright (c) 1998, 2011, Oracle and/or its affiliates. All rights reserved.
-." DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
-."
-." This code is free software; you can redistribute it and/or modify it
-." under the terms of the GNU General Public License version 2 only, as
-." published by the Free Software Foundation.
-."
-." This code is distributed in the hope that it will be useful, but WITHOUT
-." ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
-." FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
-." version 2 for more details (a copy is included in the LICENSE file that
-." accompanied this code).
-."
-." You should have received a copy of the GNU General Public License version
-." 2 along with this work; if not, write to the Free Software Foundation,
-." Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
-."
-." Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
-." or visit www.oracle.com if you need additional information or have any
-." questions.
-."
-.TH keytool 1 "07 May 2011"
-
-.LP
-.SH "名前"
-keytool \- 鍵と証明書の管理ツール
-.LP
-.LP
-暗号化鍵、X.509 証明書チェーン、および信頼できる証明書を含むキーストア (データベース) を管理します。
-.LP
-.SH "形式"
-.LP
+'\" t
+.\" Copyright (c) 1998, 2013, Oracle and/or its affiliates. All rights reserved.
+.\" Title: keytool
+.\" Language: English
+.\" Date: 2013年8月6日
+.\" SectDesc: セキュリティ・ツール
+.\" Software: JDK 8
+.\" Arch: 汎用
+.\"
+.\" DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+.\"
+.\" This code is free software; you can redistribute it and/or modify it
+.\" under the terms of the GNU General Public License version 2 only, as
+.\" published by the Free Software Foundation.
+.\"
+.\" This code is distributed in the hope that it will be useful, but WITHOUT
+.\" ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+.\" FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License
+.\" version 2 for more details (a copy is included in the LICENSE file that
+.\" accompanied this code).
+.\"
+.\" You should have received a copy of the GNU General Public License version
+.\" 2 along with this work; if not, write to the Free Software Foundation,
+.\" Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+.\"
+.\" Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+.\" or visit www.oracle.com if you need additional information or have any
+.\" questions.
+.\"
+.pl 99999
+.TH "keytool" "1" "2013年8月6日" "JDK 8" "セキュリティ・ツール"
+.\" -----------------------------------------------------------------
+.\" * Define some portability stuff
+.\" -----------------------------------------------------------------
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.\" http://bugs.debian.org/507673
+.\" http://lists.gnu.org/archive/html/groff/2009-02/msg00013.html
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.ie \n(.g .ds Aq \(aq
+.el       .ds Aq '
+.\" -----------------------------------------------------------------
+.\" * set default formatting
+.\" -----------------------------------------------------------------
+.\" disable hyphenation
+.nh
+.\" disable justification (adjust text to left margin only)
+.ad l
+.\" -----------------------------------------------------------------
+.\" * MAIN CONTENT STARTS HERE *
+.\" -----------------------------------------------------------------
+.SH "NAME"
+keytool \- 暗号化鍵、X\&.509証明書チェーンおよび信頼できる証明書を含むキーストア(データベース)を管理します。
+.SH "概要"
+.sp
+.if n \{\
+.RS 4
+.\}
 .nf
-\f3
-.fl
-\fP\f3keytool\fP [ commands ]
-.fl
+\fIkeytool\fR [\fIcommands\fR]
 .fi
-
-.LP
-.LP
-Java SE 6 で keytool のコマンドインタフェースが変更されました。詳細については「変更点」の節を参照してください。以前に定義されたコマンドも引き続きサポートされています。
-.LP
-.SH "説明"
-.LP
-\f3keytool\fP は、鍵と証明書を管理するためのユーティリティーです。keytool を使うと、自分の公開鍵と非公開鍵のペア、および関連する証明書を管理し、デジタル署名を使った自己認証 (ほかのユーザーまたはサービスに対して自分自身を認証すること) や、データの整合性と証明書に関するサービスを利用することができます。keytool では、通信相手の公開鍵を (証明書の形で) キャッシュすることもできます。 
-.LP
-「証明書」とは、あるエンティティー (人物、会社など) からのデジタル署名付きの文書のことです。証明書には、ほかのあるエンティティーの公開鍵 (およびその他の情報) が特別な値を持っていることが書かれています(「証明書」を参照)。データにデジタル署名が付いている場合は、デジタル署名を検証することで、データの整合性およびデータが本物であることをチェックできます。データの「整合性」とは、データが変更されたり、改変されたりしていないことを意味します。 また、データが「本物である」とは、そのデータが、データを作成して署名したと称する人物から実際に渡されたデータであることを意味します。
-.LP
-.LP
-また、\f3keytool\fP を使えば、DES などの対称暗号化/復号化で使用される秘密鍵を管理することもできます。
-.LP
-.LP
-\f3keytool\fP は、鍵と証明書を\f2「キーストア」\fPに格納します。
-.LP
-.SH "コマンドとオプションに関する注"
-.LP
-.LP
-以下では、コマンドとそのオプションについて説明します。注:
-.LP
-.RS 3
-.TP 2
-o
-どのコマンド名およびオプション名にも先頭にマイナス記号 (\-) が付く 
-.TP 2
-o
-各コマンドのオプションは任意の順序で指定できる 
-.TP 2
-o
-イタリック体になっていないすべての項目、または中括弧か角括弧で囲まれているすべての項目は、そのとおりに指定する必要がある 
-.TP 2
-o
-オプションを囲む中括弧は、一般に、そのオプションをコマンド行で指定しなかった場合に、デフォルト値が使われることを意味する。中括弧は、 \f2\-v\fP、 \f2\-rfc\fP、および \f2\-J\fP オプションを囲むのにも使われるが、これらのオプションはコマンド行で指定された場合にのみ意味を持つ (つまり、これらのオプションには、オプション自体を指定しないこと以外に「デフォルト値」は存在しない) 
-.TP 2
-o
-オプションを囲む角括弧は、そのオプションをコマンド行で指定しなかった場合に、値の入力を求められることを意味する。( \f2\-keypass\fP オプションの場合、オプションをコマンド行で指定しなかった場合は、\f3keytool\fP がまずキーストアのパスワードから非公開/秘密鍵の復元を試みる。 ユーザーは、この試みが失敗した場合に非公開/秘密鍵のパスワードの入力を求められる 
-.TP 2
-o
-イタリック体の項目の実際の値 (オプションの値) は、ユーザーが指定する必要があるたとえば、 \f2\-printcert\fP コマンドの形式は次のとおりである 
-.nf
-\f3
-.fl
-  keytool \-printcert {\-file \fP\f4cert_file\fP\f3} {\-v}
-.fl
-\fP
-.fi
-.LP
-\f2\-printcert\fP コマンドを指定するときは、\f2cert_file\fP の代わりに実際のファイル名を指定する。次に例を示す 
-.nf
-\f3
-.fl
-  keytool \-printcert \-file VScert.cer
-.fl
-\fP
-.fi
-.TP 2
-o
-オプションの値に空白 (スペース) が含まれている場合は、値を引用符で囲む必要がある 
-.TP 2
-o
-\f2\-help\fP コマンドはデフォルトのコマンドである。たとえば、次のようにコマンド行を指定したとする 
-.nf
-\f3
-.fl
-  keytool
-.fl
-\fP
-.fi
-.LP
-これは、次のように指定することと同じです。 
-.nf
-\f3
-.fl
-  keytool \-help
-.fl
-\fP
-.fi
+.if n \{\
 .RE
-
-.LP
-.SS 
-オプションのデフォルト値
-.LP
-.LP
-オプションのデフォルト値は、次のとおりです。
-.LP
-.nf
-\f3
-.fl
-\-alias "mykey"
-.fl
-
-.fl
-\-keyalg
-.fl
-    "DSA" (\fP\f3\-genkeypair\fP\f3 を使用している場合)
-.fl
-    "DES" (\fP\f3\-genseckey\fP\f3 を使用している場合)
-.fl
-
-.fl
-\-keysize
-.fl
-    2048 (\fP\f3\-genkeypair\fP\f3 を使用していて \-keyalg が "RSA" の場合)
-.fl
-    1024 (\fP\f3\-genkeypair\fP\f3 を使用していて \-keyalg が "DSA" の場合)
-.fl
-    256 (\fP\f3\-genkeypair\fP\f3 を使用していて \-keyalg が "EC" の場合)
-.fl
-    56 (\fP\f3\-genseckey\fP\f3 を使用していて \-keyalg が "DES" の場合)
-.fl
-    168 (\fP\f3\-genseckey\fP\f3 を使用していて \-keyalg が "DESede" の場合)
-.fl
-
-.fl
-
-.fl
-\-validity 90
-.fl
-
-.fl
-\-keystore ユーザーのホームディレクトリの  \fP\f4.keystore\fP\f3  というファイル
-.fl
-
-.fl
-\-storetype セキュリティープロパティーファイルの「keystore.type」プロパティーの値で、
-.fl
-           java.security.KeyStore の静的な getDefaultType メソッドから返される \fP\f4 \fP\f3  
-.fl
-           \fP\f4 \fP\f3
-.fl
-
-.fl
-\-file 読み込みの場合は標準入力、書き込みの場合は標準出力
-.fl
-
-.fl
-\-protected false
-.fl
-\fP
-.fi
-
-.LP
-.LP
-公開/非公開鍵ペアの生成において、署名アルゴリズム (\f2\-sigalg\fP オプション) は、基になる非公開鍵のアルゴリズムから派生します。
-.LP
-.RS 3
-.TP 2
-o
-基になる非公開鍵が DSA タイプである場合、\f2\-sigalg\fP オプションのデフォルト値は SHA1withDSA になり、 
-.TP 2
-o
-基になる非公開鍵が RSA タイプである場合は、\f2\-sigalg\fP オプションのデフォルト値は SHA256withRSA になり、 
-.TP 2
-o
-基になる非公開鍵が EC タイプである場合は、\f2\-sigalg\fP オプションのデフォルト値は SHA256withECDSA になります。 
-.RE
-
-.LP
-.LP
-選択可能な \f2\-keyalg\fP および \f2\-sigalg\fP の完全な一覧については、
-.na
-\f2「Java Cryptography Architecture API Specification & Reference」\fP @
-.fi
-http://java.sun.com/javase/6/docs/technotes/guides/security/crypto/CryptoSpec.html#AppAを参照してください。
-.LP
-.SS 
-一般オプション
-.LP
-.LP
-\f2\-v\fP オプションは、 \f2\-help\fP コマンドを除くすべてのコマンドで使用できます。このオプションを指定した場合、コマンドは「冗長」モードで実行され、詳細な証明書情報が出力されます。
-.LP
-.LP
-また、 \f2\-J\fP\f2javaoption\fP オプションも、任意のコマンドで使用できます。このオプションを指定した場合、指定された \f2javaoption\fP 文字列が Java インタプリタに直接渡されます。このオプションには、空白を含めることはできません。このオプションは、実行環境またはメモリー使用を調整する場合に便利です。指定できるインタプリタオプションを一覧表示するには、コマンド行で \f2java \-h\fP または \f2java \-X\fP と入力してください。
-.LP
-.LP
-次のオプションは、キーストアに対する操作を行うすべてのコマンドで指定できます。
-.LP
-.RS 3
-.TP 3
-\-storetype storetype 
-.LP
-この修飾子は、インスタンスを生成するキーストアのタイプを指定します。  
-.TP 3
-\-keystore keystore 
-.LP
-キーストアの場所を指定します。 
-.LP
-特定の \f3keytool\fP コマンドを実行する際に、JKS ストアタイプが使用され、かつキーストアファイルがまだ存在していなかった場合、新しいキーストアファイルが作成されます。たとえば、 \f2keytool \-genkeypair\fP の実行時に \f2\-keystore\fP オプションが指定されなかった場合、 \f2.keystore\fP という名前のデフォルトキーストアファイルがユーザーのホームディレクトリ内にまだ存在していなければ、そこに作成されます。同様に、 \f2\-keystore \fP\f2ks_file\fP というオプションが指定されてもその \f2ks_file\fP が存在しなかった場合、そのファイルが作成されます。 
-.LP
-\f2\-keystore\fP オプションからの入力ストリームは、 \f2KeyStore.load\fP メソッドに渡されます。URL として \f2NONE\fP が指定されている場合は、null のストリームが \f2KeyStore.load\fP メソッドに渡されます。 \f2NONE\fP は、 \f2KeyStore\fP がファイルベースではなく、たとえば、ハードウェアトークンデバイスに置かれている場合に指定します。  
-.TP 3
-\-storepass[:env|:file] argument 
-.LP
-キーストアの整合性を保護するために使うパスワードを指定します。 
-.LP
-修飾子 \f2env\fP または \f2file\fP を指定しない場合、パスワードの値は \f2argument\fP になります。この値は、6 文字以上にする必要があります。それ以外の場合、パスワードは次のように取得されます。 
-.RS 3
-.TP 2
-o
-\f2env\fP: \f2argument\fP という名前の環境変数からパスワードを取得する 
-.TP 2
-o
-\f2file\fP: \f2argument\fP という名前のファイルからパスワードを取得する 
-.RE
-.LP
-\f3注\fP: \f2\-keypass\fP、 \f2\-srckeypass\fP、 \f2\-destkeypass\fP \f2\-srcstorepass\fP、 \f2\-deststorepass\fP などのパスワードを必要とするその他のオプションはすべて、 \f2env\fP と \f2file\fP 修飾子を受け付けます。パスワードオプションと修飾子は、必ずコロン (\f2:\fP) で区切ってください。 
-.LP
-パスワードは、キーストアの内容にアクセスするすべてのコマンドで使われます。この種のコマンドを実行するときに、コマンド行で \f2\-storepass\fP オプションを指定しなかった場合は、パスワードの入力を求められます。 
-.LP
-キーストアから情報を取り出す場合は、パスワードを省略できます。 パスワードを省略すると、取り出す情報の整合性をチェックできないので、警告が表示されます。  
-.TP 3
-\-providerName provider_name 
-.LP
-セキュリティープロパティーファイル内に含まれる暗号化サービスプロバイダ名を特定するために使用されます。  
-.TP 3
-\-providerClass provider_class_name 
-.LP
-暗号化サービスプロバイダがセキュリティープロパティーファイルに指定されていないときは、そのマスタークラスファイルの名前を指定するときに使われます。  
-.TP 3
-\-providerArg provider_arg 
-.LP
-\f2\-providerClass\fP と組み合わせて使用します。\f2provider_class_name\fP のコンストラクタに対する省略可能な文字列入力引数を表します。  
-.TP 3
-\-protected 
-.LP
-\f2true\fP または \f2false\fP のいずれか。専用 PIN リーダーなどの保護された認証パスを介してパスワードを指定する必要がある場合には、この値に \f2true\fP を指定してください。 
-.LP
-注: \f2\-importkeystore\fP コマンドには 2 つのキーストアが関係しているため、2 つのオプション、つまり \f2\-srcprotected\fP と \f2\-destprotected\fP がソースキーストアとターゲットキーストアにそれぞれ指定されます。  
-.TP 3
-\-ext {name{:critical}{=value}} 
-.LP
-X.509 証明書エクステンションを示します。このオプションを \-genkeypair および \-gencert で使用して、生成される証明書または \f2\-certreq\fP にエクステンションを埋め込み、証明書要求で要求されるエクステンションを示すことができます。このオプションは、複数回使用できます。name には、サポートされているエクステンション名 (下記を参照) または任意の OID 番号を指定できます。value を指定した場合は、エクステンションのパラメータを示します。省略した場合は、エクステンションのデフォルト値 (定義されている場合) を示すか、またはエクステンションにパラメータは必要ありません。 \f2:critical\fP 修飾子を指定した場合は、エクステンションの isCritical 属性が true であることを示します。それ以外の場合は false であることを示します。:critical の代わりに : \f2:c\fP を使用できます。 .  
-.RE
-
-.LP
-.LP
-現在、keytool は次の名前のエクステンションをサポートしています (大文字と小文字は区別されない)。
-.LP
-.LP
-.TS
-.if \n+(b.=1 .nr d. \n(.c-\n(c.-1
-.de 35
-.ps \n(.s
-.vs \n(.vu
-.in \n(.iu
-.if \n(.u .fi
-.if \n(.j .ad
-.if \n(.j=0 .na
-..
-.nf
-.nr #~ 0
-.if n .nr #~ 0.6n
-.ds #d .d
-.if \(ts\n(.z\(ts\(ts .ds #d nl
-.fc
-.nr 33 \n(.s
-.rm 80 81
-.nr 34 \n(.lu
-.eo
-.am 80
-.br
-.di a+
-.35
-.ft \n(.f
-.ll \n(34u*1u/3u
-.if \n(.l<\n(80 .ll \n(80u
-.in 0
-BC または BasicConstraints
-.br
-.di
-.nr a| \n(dn
-.nr a- \n(dl
-..
-.ec \
-.eo
-.am 81
-.br
-.di b+
-.35
-.ft \n(.f
-.ll \n(34u*1u/3u
-.if \n(.l<\n(81 .ll \n(81u
-.in 0
-完全な形は「ca:{true|false}[,pathlen:<len>]」で、<len> は「ca:true,pathlen:<len>」の省略表記です。 省略すると、「ca:true」の意味になります
-.br
-.di
-.nr b| \n(dn
-.nr b- \n(dl
-..
-.ec \
-.eo
-.am 81
-.br
-.di c+
-.35
-.ft \n(.f
-.ll \n(34u*1u/3u
-.if \n(.l<\n(81 .ll \n(81u
-.in 0
-usage(,usage)*。usage には、digitalSignature、 nonRepudiation (contentCommitment)、keyEncipherment、dataEncipherment、keyAgreement、keyCertSign、cRLSign、encipherOnly、decipherOnly のいずれかを指定できます。Usage は、あいまいさがなければ、最初の数文字 (たとえば、digitalSignature を dig に) またはキャメルケーススタイル (たとえば、 digitalSignature を dS に、cRLSign を cRLS に) に 短縮できます。Usage の大文字と小文字は区別されません。
-.br
-.di
-.nr c| \n(dn
-.nr c- \n(dl
-..
-.ec \
-.eo
-.am 80
-.br
-.di d+
-.35
-.ft \n(.f
-.ll \n(34u*1u/3u
-.if \n(.l<\n(80 .ll \n(80u
-.in 0
-EKU または ExtendedkeyUsage
-.br
-.di
-.nr d| \n(dn
-.nr d- \n(dl
-..
-.ec \
-.eo
-.am 81
-.br
-.di e+
-.35
-.ft \n(.f
-.ll \n(34u*1u/3u
-.if \n(.l<\n(81 .ll \n(81u
-.in 0
-usage(,usage)*。usage には、anyExtendedKeyUsage、 serverAuth、clientAuth、codeSigning、emailProtection、 timeStamping、OCSPSigning、または任意の OID 文字列のいずれかを指定できます。 名前付きの usage は、あいまいさがなければ、 最初の数文字またはキャメルケーススタイルに 短縮できます。Usage の大文字と小文字は区別されません。
-.br
-.di
-.nr e| \n(dn
-.nr e- \n(dl
-..
-.ec \
-.eo
-.am 80
-.br
-.di f+
-.35
-.ft \n(.f
-.ll \n(34u*1u/3u
-.if \n(.l<\n(80 .ll \n(80u
-.in 0
-SAN または SubjectAlternativeName
-.br
-.di
-.nr f| \n(dn
-.nr f- \n(dl
-..
-.ec \
-.eo
-.am 81
-.br
-.di g+
-.35
-.ft \n(.f
-.ll \n(34u*1u/3u
-.if \n(.l<\n(81 .ll \n(81u
-.in 0
-type:value(,type:value)*。type には、EMAIL、URI、DNS、IP、または OID を指定できます。value は、type の文字列形式の値です。
-.br
-.di
-.nr g| \n(dn
-.nr g- \n(dl
-..
-.ec \
-.eo
-.am 80
-.br
-.di h+
-.35
-.ft \n(.f
-.ll \n(34u*1u/3u
-.if \n(.l<\n(80 .ll \n(80u
-.in 0
-IAN または IssuerAlternativeName
-.br
-.di
-.nr h| \n(dn
-.nr h- \n(dl
-..
-.ec \
-.eo
-.am 81
-.br
-.di i+
-.35
-.ft \n(.f
-.ll \n(34u*1u/3u
-.if \n(.l<\n(81 .ll \n(81u
-.in 0
-SubjectAlternativeName と同じです
-.br
-.di
-.nr i| \n(dn
-.nr i- \n(dl
-..
-.ec \
-.eo
-.am 80
-.br
-.di j+
-.35
-.ft \n(.f
-.ll \n(34u*1u/3u
-.if \n(.l<\n(80 .ll \n(80u
-.in 0
-SIA または SubjectInfoAccess
-.br
-.di
-.nr j| \n(dn
-.nr j- \n(dl
-..
-.ec \
-.eo
-.am 81
-.br
-.di k+
-.35
-.ft \n(.f
-.ll \n(34u*1u/3u
-.if \n(.l<\n(81 .ll \n(81u
-.in 0
-method:location\-type:location\-value (,method:location\-type:location\-value)*。 method には、「timeStamping」、「caRepository」、または任意の OID を指定できます。location\-type および location\-value には、SubjectAlternativeName エクステンションでサポートされる任意の type:value を指定できます。
-.br
-.di
-.nr k| \n(dn
-.nr k- \n(dl
-..
-.ec \
-.eo
-.am 80
-.br
-.di l+
-.35
-.ft \n(.f
-.ll \n(34u*1u/3u
-.if \n(.l<\n(80 .ll \n(80u
-.in 0
-AIA または AuthorityInfoAccess
-.br
-.di
-.nr l| \n(dn
-.nr l- \n(dl
-..
-.ec \
-.eo
-.am 81
-.br
-.di m+
-.35
-.ft \n(.f
-.ll \n(34u*1u/3u
-.if \n(.l<\n(81 .ll \n(81u
-.in 0
-SubjectInfoAccess と同じです。method には、「ocsp」、「caIssuers」、または任意の OID を指定できます。
-.br
-.di
-.nr m| \n(dn
-.nr m- \n(dl
-..
-.ec \
-.35
-.nf
-.ll \n(34u
-.nr 80 0
-.nr 38 \w\f3名前\fP
-.if \n(80<\n(38 .nr 80 \n(38
-.nr 38 \wKU または KeyUsage
-.if \n(80<\n(38 .nr 80 \n(38
-.80
-.rm 80
-.nr 38 \n(a-
-.if \n(80<\n(38 .nr 80 \n(38
-.nr 38 \n(d-
-.if \n(80<\n(38 .nr 80 \n(38
-.nr 38 \n(f-
-.if \n(80<\n(38 .nr 80 \n(38
-.nr 38 \n(h-
-.if \n(80<\n(38 .nr 80 \n(38
-.nr 38 \n(j-
-.if \n(80<\n(38 .nr 80 \n(38
-.nr 38 \n(l-
-.if \n(80<\n(38 .nr 80 \n(38
-.nr 81 0
-.nr 38 \w\f3値\fP
-.if \n(81<\n(38 .nr 81 \n(38
-.81
-.rm 81
-.nr 38 \n(b-
-.if \n(81<\n(38 .nr 81 \n(38
-.nr 38 \n(c-
-.if \n(81<\n(38 .nr 81 \n(38
-.nr 38 \n(e-
-.if \n(81<\n(38 .nr 81 \n(38
-.nr 38 \n(g-
-.if \n(81<\n(38 .nr 81 \n(38
-.nr 38 \n(i-
-.if \n(81<\n(38 .nr 81 \n(38
-.nr 38 \n(k-
-.if \n(81<\n(38 .nr 81 \n(38
-.nr 38 \n(m-
-.if \n(81<\n(38 .nr 81 \n(38
-.35
-.nf
-.ll \n(34u
-.nr 38 1n
-.nr 79 0
-.nr 40 \n(79+(0*\n(38)
-.nr 80 +\n(40
-.nr 41 \n(80+(3*\n(38)
-.nr 81 +\n(41
-.nr TW \n(81
-.if t .if \n(TW>\n(.li .tm Table at line 325 file Input is too wide - \n(TW units
-.fc  
-.nr #T 0-1
-.nr #a 0-1
-.eo
-.de T#
-.ds #d .d
-.if \(ts\n(.z\(ts\(ts .ds #d nl
-.mk ##
-.nr ## -1v
-.ls 1
-.ls
-..
-.ec
-.ta \n(80u \n(81u 
-.nr 31 \n(.f
-.nr 35 1m
-\&\h'|\n(40u'\f3名前\fP\h'|\n(41u'\f3値\fP
-.ne \n(a|u+\n(.Vu
-.ne \n(b|u+\n(.Vu
-.if (\n(a|+\n(#^-1v)>\n(#- .nr #- +(\n(a|+\n(#^-\n(#--1v)
-.if (\n(b|+\n(#^-1v)>\n(#- .nr #- +(\n(b|+\n(#^-\n(#--1v)
-.ta \n(80u \n(81u 
-.nr 31 \n(.f
-.nr 35 1m
-\&\h'|\n(40u'\h'|\n(41u'
-.mk ##
-.nr 31 \n(##
-.sp |\n(##u-1v
-.nr 37 \n(40u
-.in +\n(37u
-.a+
-.in -\n(37u
-.mk 32
-.if \n(32>\n(31 .nr 31 \n(32
-.sp |\n(##u-1v
-.nr 37 \n(41u
-.in +\n(37u
-.b+
-.in -\n(37u
-.mk 32
-.if \n(32>\n(31 .nr 31 \n(32
-.sp |\n(31u
-.ne \n(c|u+\n(.Vu
-.if (\n(c|+\n(#^-1v)>\n(#- .nr #- +(\n(c|+\n(#^-\n(#--1v)
-.ta \n(80u \n(81u 
-.nr 31 \n(.f
-.nr 35 1m
-\&\h'|\n(40u'KU または KeyUsage\h'|\n(41u'
-.mk ##
-.nr 31 \n(##
-.sp |\n(##u-1v
-.nr 37 \n(41u
-.in +\n(37u
-.c+
-.in -\n(37u
-.mk 32
-.if \n(32>\n(31 .nr 31 \n(32
-.sp |\n(31u
-.ne \n(d|u+\n(.Vu
-.ne \n(e|u+\n(.Vu
-.if (\n(d|+\n(#^-1v)>\n(#- .nr #- +(\n(d|+\n(#^-\n(#--1v)
-.if (\n(e|+\n(#^-1v)>\n(#- .nr #- +(\n(e|+\n(#^-\n(#--1v)
-.ta \n(80u \n(81u 
-.nr 31 \n(.f
-.nr 35 1m
-\&\h'|\n(40u'\h'|\n(41u'
-.mk ##
-.nr 31 \n(##
-.sp |\n(##u-1v
-.nr 37 \n(40u
-.in +\n(37u
-.d+
-.in -\n(37u
-.mk 32
-.if \n(32>\n(31 .nr 31 \n(32
-.sp |\n(##u-1v
-.nr 37 \n(41u
-.in +\n(37u
-.e+
-.in -\n(37u
-.mk 32
-.if \n(32>\n(31 .nr 31 \n(32
-.sp |\n(31u
-.ne \n(f|u+\n(.Vu
-.ne \n(g|u+\n(.Vu
-.if (\n(f|+\n(#^-1v)>\n(#- .nr #- +(\n(f|+\n(#^-\n(#--1v)
-.if (\n(g|+\n(#^-1v)>\n(#- .nr #- +(\n(g|+\n(#^-\n(#--1v)
-.ta \n(80u \n(81u 
-.nr 31 \n(.f
-.nr 35 1m
-\&\h'|\n(40u'\h'|\n(41u'
-.mk ##
-.nr 31 \n(##
-.sp |\n(##u-1v
-.nr 37 \n(40u
-.in +\n(37u
-.f+
-.in -\n(37u
-.mk 32
-.if \n(32>\n(31 .nr 31 \n(32
-.sp |\n(##u-1v
-.nr 37 \n(41u
-.in +\n(37u
-.g+
-.in -\n(37u
-.mk 32
-.if \n(32>\n(31 .nr 31 \n(32
-.sp |\n(31u
-.ne \n(h|u+\n(.Vu
-.ne \n(i|u+\n(.Vu
-.if (\n(h|+\n(#^-1v)>\n(#- .nr #- +(\n(h|+\n(#^-\n(#--1v)
-.if (\n(i|+\n(#^-1v)>\n(#- .nr #- +(\n(i|+\n(#^-\n(#--1v)
-.ta \n(80u \n(81u 
-.nr 31 \n(.f
-.nr 35 1m
-\&\h'|\n(40u'\h'|\n(41u'
-.mk ##
-.nr 31 \n(##
-.sp |\n(##u-1v
-.nr 37 \n(40u
-.in +\n(37u
-.h+
-.in -\n(37u
-.mk 32
-.if \n(32>\n(31 .nr 31 \n(32
-.sp |\n(##u-1v
-.nr 37 \n(41u
-.in +\n(37u
-.i+
-.in -\n(37u
-.mk 32
-.if \n(32>\n(31 .nr 31 \n(32
-.sp |\n(31u
-.ne \n(j|u+\n(.Vu
-.ne \n(k|u+\n(.Vu
-.if (\n(j|+\n(#^-1v)>\n(#- .nr #- +(\n(j|+\n(#^-\n(#--1v)
-.if (\n(k|+\n(#^-1v)>\n(#- .nr #- +(\n(k|+\n(#^-\n(#--1v)
-.ta \n(80u \n(81u 
-.nr 31 \n(.f
-.nr 35 1m
-\&\h'|\n(40u'\h'|\n(41u'
-.mk ##
-.nr 31 \n(##
-.sp |\n(##u-1v
-.nr 37 \n(40u
-.in +\n(37u
-.j+
-.in -\n(37u
-.mk 32
-.if \n(32>\n(31 .nr 31 \n(32
-.sp |\n(##u-1v
-.nr 37 \n(41u
-.in +\n(37u
-.k+
-.in -\n(37u
-.mk 32
-.if \n(32>\n(31 .nr 31 \n(32
-.sp |\n(31u
-.ne \n(l|u+\n(.Vu
-.ne \n(m|u+\n(.Vu
-.if (\n(l|+\n(#^-1v)>\n(#- .nr #- +(\n(l|+\n(#^-\n(#--1v)
-.if (\n(m|+\n(#^-1v)>\n(#- .nr #- +(\n(m|+\n(#^-\n(#--1v)
-.ta \n(80u \n(81u 
-.nr 31 \n(.f
-.nr 35 1m
-\&\h'|\n(40u'\h'|\n(41u'
-.mk ##
-.nr 31 \n(##
-.sp |\n(##u-1v
-.nr 37 \n(40u
-.in +\n(37u
-.l+
-.in -\n(37u
-.mk 32
-.if \n(32>\n(31 .nr 31 \n(32
-.sp |\n(##u-1v
-.nr 37 \n(41u
-.in +\n(37u
-.m+
-.in -\n(37u
-.mk 32
-.if \n(32>\n(31 .nr 31 \n(32
-.sp |\n(31u
-.fc
-.nr T. 1
-.T# 1
-.35
-.rm a+
-.rm b+
-.rm c+
-.rm d+
-.rm e+
-.rm f+
-.rm g+
-.rm h+
-.rm i+
-.rm j+
-.rm k+
-.rm l+
-.rm m+
-.TE
-.if \n-(b.=0 .nr c. \n(.c-\n(d.-44
-
-.LP
-.LP
-OID 名の場合、OCTET STRING タイプと長さのバイトを除外したエクステンションについては、値は extnValue の HEX ダンプの DER エンコーディングです。HEX 文字列では、標準の HEX 数 (0\-9、a\-f、A\-F) 以外の文字は無視されます。したがって、 \f2「01:02:03:04」\fP と \f2「01020304」の両方とも\fP 同一の値として受け付けられます。値がない場合、エクステンションの値フィールドは空になります。
-.LP
-.LP
-\f2\-gencert\fP でのみ使用する「honored」という特別な名前は、証明書要求に含まれるエクステンションを優先する方法を示します。この名前の値は、 \f2「all」\fP (要求されるすべてのエクステンションが優先される)、 \f2「name{:[critical|non\-critical]}」\fP (名前付きのエクステンションが優先されるが、別の isCritical 属性を使用する)、および \f2「\-name」\fP (「all」とともに使用し、例外を示す) のコンマ区切りリストです。デフォルトでは、要求されるエクステンションは優先されません。
-.LP
-.LP
-\-ext 優先のオプションに加え、別の名前の、または OID \-ext のオプションを指定した場合は、このエクステンションが、すでに優先されているエクステンションに追加されます。ただし、この名前 (または OID) を優先される値でも使用した場合は、その値と重要性が要求に含まれるものをオーバーライドします。
-.LP
-.LP
-subjectKeyIdentifier エクステンションは常に作成されます。自己署名でない証明書の場合は、authorityKeyIdentifier が常に作成されます。
-.LP
-.LP
-\f3注:\fP ユーザーは、エクステンション (および証明書のほかのフィールド) の組み合わせによっては、インターネットの標準に準拠しない場合があることに注意してください。詳細については、「証明書の準拠に関する注意事項」を参照してください。
-.LP
-.SH "コマンド"
-.LP
-.SS 
+.\}
+.PP
+\fIcommands\fR
+.RS 4
+コマンドを参照してください。これらのコマンドは、次のようにタスク別に分類されます。
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
 キーストアへのデータの作成または追加
-.LP
-.RS 3
-.TP 3
-\-gencert {\-rfc} {\-infile infile} {\-outfile outfile} {\-alias alias} {\-sigalg sigalg} {\-dname dname} {\-startdate startdate {\-ext ext}* {\-validity valDays} [\-keypass keypass] {\-keystore keystore} [\-storepass storepass] {\-storetype storetype} {\-providername provider_name} {\-providerClass provider_class_name {\-providerArg provider_arg}} {\-v} {\-protected} {\-Jjavaoption} 
-.LP
-証明書要求ファイル ( \f2keytool \-certreq\fP コマンドで作成できる) に応答して証明書を生成します。このコマンドは、\f2infile\fP から (省略した場合は、標準入力から) 要求を読み込み、別名の非公開鍵を使ってその要求に署名して、X.509 証明書を \f2outfile\fP に (省略した場合は、標準出力に) 出力します。 \f2\-rfc\fP を指定した場合、出力形式は BASE64 符号化の PEM になります。それ以外の場合は、バイナリ DER が作成されます。 
-.LP
-\f2sigalg\fP には、証明書に署名を付けるときに使うアルゴリズムを指定します。\f2startdate\fP は、証明書が有効になる開始時刻/日付です。\f2valDays\fP には、証明書の有効日数を指定します。 
-.LP
-\f2dname\fP を指定すると、生成される証明書の主体として使用されます。それ以外の場合は、証明書要求からの名前が使用されます。 
-.LP
-\f2ext\fP は、証明書に埋め込まれる X.509 エクステンションを示します。\-ext の文法については、「一般オプション」を参照してください。 
-.LP
-\f2\-gencert\fP コマンドを使用すると、証明書チェーンを作成できます。次の例では、 \f2e1\fP という証明書を作成します。この証明書の証明書チェーンには、3 つの証明書が含まれています。 
-.LP
-次のコマンドは、ca、ca1、ca2、および e1 の 4 つの鍵ペアを作成します。 
-.nf
-\f3
-.fl
-keytool \-alias ca \-dname CN=CA \-genkeypair
-.fl
-keytool \-alias ca1 \-dname CN=CA \-genkeypair
-.fl
-keytool \-alias ca2 \-dname CN=CA \-genkeypair
-.fl
-keytool \-alias e1 \-dname CN=E1 \-genkeypair
-.fl
-\fP
-.fi
-.LP
-次の 2 つのコマンドは、署名付き証明書のチェーンを作成します。 \f2ca\fP は ca1 に署名し、 \f2ca1 signs ca2\fP に署名します。すべて自己発行です。 
-.nf
-\f3
-.fl
-keytool \-alias ca1 \-certreq | keytool \-alias ca \-gencert \-ext san=dns:ca1 | keytool \-alias ca1 \-importcert
-.fl
-keytool \-alias ca2 \-certreq | $KT \-alias ca1 \-gencert \-ext san=dns:ca2 | $KT \-alias ca2 \-importcert
-.fl
-\fP
-.fi
-.LP
-次のコマンドは、証明書 e1 を作成してファイル e1.cert に格納します。この証明書は ca2 によって署名されます。その結果、e1 の証明書チェーンには ca、ca1、および ca2 が含まれることになります。 
-.nf
-\f3
-.fl
-keytool \-alias e1 \-certreq | keytool \-alias ca2 \-gencert > e1.cert
-.fl
-\fP
-.fi
-.TP 3
-\-genkeypair {\-alias alias} {\-keyalg keyalg} {\-keysize keysize} {\-sigalg sigalg} [\-dname dname] [\-keypass keypass] {\-startdate value} {\-ext ext}* {\-validity valDays} {\-storetype storetype} {\-keystore keystore} [\-storepass storepass] {\-providerClass provider_class_name {\-providerArg provider_arg}} {\-v} {\-protected} {\-Jjavaoption} 
-.LP
-鍵のペア (公開鍵および関連する非公開鍵) を生成します。公開鍵は X.509 v3 自己署名証明書でラップされます。証明書は、単一の要素を持つ証明書チェーンとして格納されます。この証明書チェーンと非公開鍵は、\f2alias\fP で特定される新しいキーストアエントリに格納されます。 
-.LP
-\f2keyalg\fP は鍵のペアの生成に使用するアルゴリズムを、\f2keysize\fP は生成する各鍵のサイズを、それぞれ指定します。\f2sigalg\fP には、自己署名証明書に署名を付けるときに使うアルゴリズムを指定します。このアルゴリズムは、\f2keyalg\fP と互換性のあるものでなければなりません。 
-.LP
-\f2dname\fP には、\f2alias\fP に関連付け、自己署名証明書の issuer フィールドと subject フィールドとして使う X.500 識別名を指定します。 コマンド行で識別名を指定しなかった場合は、識別名の入力を求められます。 
-.LP
-\f2keypass\fP には、生成される鍵のペアのうち、非公開鍵を保護するのに使うパスワードを指定します。パスワードを指定しなかった場合は、パスワードの入力を求められます。このとき、Return キーを押すと、キーストアのパスワードと同じパスワードが鍵のパスワードに設定されます。\f2keypass\fP は、6 文字以上にする必要があります。 
-.LP
-\f2startdate\fP には、証明書の発行時刻を指定します。これは、X.509 証明書の「Validity」フィールドの「Not Before」値とも呼ばれます。 
-.LP
-オプションの値は、次の 2 つの形式のいずれかで設定できます。 
-.RS 3
-.TP 3
-1.
-([+\-]\f2nnn\fP[ymdHMS])+ 
-.TP 3
-2.
-[yyyy/mm/dd] [HH:MM:SS] 
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\-gencert
 .RE
-.LP
-最初の形式では、発行時刻は、指定される値だけ現在の時刻から移ります。指定される値は、一連の下位の値を連結したものになります。下位の各値で、プラス記号 (「+」) は時間が進むことを、マイナス記号 (「\-」) は時間が戻ることを意味しています。移る時間は \f2nnn\fP で、単位は年、月、日、時間、分、または秒です (それぞれ、1 文字の「y」、「m」、「d」、「H」、「M」、または「S」で示されている)。下位の各値で \f2java.util.GregorianCalendar.add(int field, int amount)\fP メソッドを使うことで、発行時刻の追加の値が左から右へ計算されます。たとえば、 \f2「\-startdate \-1y+1m\-1d」\fPと指定すると、開始時刻は次のようになります。 
-.nf
-\f3
-.fl
-   Calendar c = new GregorianCalendar();
-.fl
-   c.add(Calendar.YEAR, \-1);
-.fl
-   c.add(Calendar.MONTH, 1);
-.fl
-   c.add(Calendar.DATE, \-1);
-.fl
-   return c.getTime()
-.fl
-\fP
-.fi
-.LP
-2 番目の形式では、ユーザーは、年/月/日と時間:分:秒の 2 つの部分で厳密な開始時刻を設定します (地元の時間帯を使用)。ユーザーは、1 つの部分だけを指定できます。これは、もう 1 つの部分は現在の日付 (または時刻) と同じになるということです。ユーザーは、形式の定義に示されているように、桁数を厳密に指定する必要があります (短い場合は 0 で埋める)。日付と時刻の両方が指定された状態で、2 つの部分の間に空白文字が 1 つ (1 つだけ) あります。時間は常に 24 時間形式で指定してください。 
-.LP
-オプションを指定しないと、開始日付は現在の時刻になります。オプションは、最大で 1 回指定できます。 
-.LP
-\f2valDays\fP には、証明書の有効日数を指定します ( \f2\-startdate\fP で指定された日付、または \f2\-startdate\fP が指定されていない場合は現在の日付から始まる)。 
-.LP
-このコマンドは、以前のリリースでは \f2\-genkey\fP という名前でした。この古い名前は、このリリースでも引き続きサポートされており、今後のリリースでもサポートされる予定です。ただし、今後はわかりやすいように、新しい名前 \f2\-genkeypair\fP を使用することをお勧めします。  
-.TP 3
-\-genseckey {\-alias alias} {\-keyalg keyalg} {\-keysize keysize} [\-keypass keypass] {\-storetype storetype} {\-keystore keystore} [\-storepass storepass] {\-providerClass provider_class_name {\-providerArg provider_arg}} {\-v} {\-protected} {\-Jjavaoption} 
-.LP
-秘密鍵を生成し、それを新しい \f2KeyStore.SecretKeyEntry\fP (\f2alias\fP で特定される) 内に格納します。 
-.LP
-\f2keyalg\fP は秘密鍵の生成に使用するアルゴリズムを、\f2keysize\fP は生成する鍵のサイズを、それぞれ指定します。\f2keypass\fP は秘密鍵の保護に使用するパスワードです。パスワードを指定しなかった場合は、パスワードの入力を求められます。このとき、Return キーを押すと、キーストアのパスワードと同じパスワードが鍵のパスワードに設定されます。\f2keypass\fP は、6 文字以上にする必要があります。  
-.TP 3
-\-importcert {\-alias alias} {\-file cert_file} [\-keypass keypass] {\-noprompt} {\-trustcacerts} {\-storetype storetype} {\-keystore keystore} [\-storepass storepass] {\-providerName provider_name} {\-providerClass provider_class_name {\-providerArg provider_arg}} {\-v} {\-protected} {\-Jjavaoption} 
-.LP
-ファイル \f2cert_file\fP から証明書または証明書チェーン (証明書チェーンの場合は、PKCS#7 形式の応答または一連の X.509 証明書で提供されるもの) を読み込み、\f2alias\fP によって特定されるキーストアエントリに格納します。ファイルが指定されていない場合は、標準入力から証明書または証明書チェーンを読み込みます。 
-.LP
-\f3keytool\fP では、X.509 v1、v2、v3 の証明書、および、PKCS#7 形式の証明書から構成されている PKCS#7 形式の証明書チェーンをインポートできます。インポートするデータは、バイナリ符号化方式、または出力可能符号化方式 (Base64 符号化とも呼ばれる) のどちらかで提供する必要があります。 出力可能符号化方式は、インターネット RFC 1421 証明書符号化規格で定義されています。この符号化方式の場合、証明書は「\-\-\-\-\-BEGIN」で始まる文字列で開始され、「\-\-\-\-\-END」で始まる文字列で終了しなければなりません。 
-.LP
-証明書のインポートには、次の 2 つの目的があります。 
-.RS 3
-.TP 3
-1.
-信頼できる証明書のリストに証明書を追加する 
-.TP 3
-2.
-CA に証明書署名要求 (\-certreq コマンドを参照) を送信した結果として、CA から受け取った証明応答をインポートする 
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\-genkeypair
 .RE
-.LP
-どちらの種類のインポートを行うかは、 \f2\-alias\fP オプションの値によって指定します。 
-.RS 3
-.TP 3
-1.
-\f3別名がキーエントリをポイントしない場合\fP、\f3keytool\fP はユーザーが信頼できる証明書エントリを追加しようとしているものと見なします。この場合、別名がキーストア内にすでに存在していてはいけません。別名がすでに存在している場合、その別名の信頼できる証明書がすでに存在することになるので、\f3keytool\fP はエラーを出力し、証明書のインポートを行いません。 
-.TP 3
-2.
-.LP
-\f3別名がキーエントリをポイントしない場合\fP、\f3keytool\fP はユーザーが信頼できる証明書エントリを追加しようとしているものと見なします。  
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\-genseckey
 .RE
-\f3新しい信頼できる証明書のインポート\fP 
-.LP
-\f3keytool\fP は、キーストアに証明書を追加する前に、キーストア内にすでに存在する信頼できる証明書を使って、インポートする証明書から (ルート CA の) 自己署名証明書に至るまでの信頼のチェーンの構築を試みます。 
-.LP
-\f2\-trustcacerts\fP オプションを指定した場合、追加の証明書は信頼できるすなわち cacerts という名前のファイルに含まれる証明書のチェーンと見なされます。 
-.LP
-\f3keytool\fP が、インポートする証明書から自己署名証明書 (キーストアまたは cacerts ファイルに含まれている自己署名証明書) に至るまでの信頼のパスの構築に失敗した場合は、インポートする証明書の情報を表示し、ユーザーに確認を求めます。 この場合は、表示された証明書のフィンガープリントと、ほかのなんらかの (信頼できる) 情報源 (証明書の所有者本人など) から入手したフィンガープリントとを比較します。「信頼できる証明書」として証明書をインポートするときは、証明書が有効であることを慎重に確認する必要があります。詳細は、「信頼できる証明書のインポートに関する注意事項」を参照してください。インポート操作は、証明書を確認する時点で中止できます。ただし、 \f2\-noprompt\fP オプションが指定されている場合、ユーザーとの対話は行われません。 
-\f3証明応答のインポート\fP 
-.LP
-「証明応答」をインポートするときは、キーストア内の信頼できる証明書、および (\-trustcacerts オプションが指定されている場合は) cacerts キーストアファイルで構成された証明書を使って証明応答が検査されます。 
-.LP
-証明応答が信頼できるかどうかを決定する方法は次のとおりです。 
-.RS 3
-.TP 2
-o
-\f3証明応答が単一の X.509 証明書である場合\fP、\f3keytool\fP は、証明応答から (ルート CA の) 自己署名証明書に至るまでの信頼チェーンの確立を試みます。証明応答と、証明応答の認証に使われる証明書の階層構造は、\f2alias\fP の新しい証明書チェーンを形成します。信頼チェーンが確立されない場合、証明応答はインポートされません。この場合、\f3keytool\fP は証明書を出力せず、ユーザーに検証を求めるプロンプトを表示します。ユーザーが証明応答の信頼性を判断するのは、不可能ではなくても非常に困難だからです。 
-.TP 2
-o
-\f3証明応答が PKCS#7 形式の証明書チェーンまたは一連の X.509 証明書である場合\fP、チェーンは、ユーザーの証明書が最初に、0 以上の CA 証明書がその次にくるように並べられます。チェーンが自己署名のルート CA 証明書で終わり、 \f2\-trustcacerts\fP オプションが指定されている場合、\f3keytool\fP は、その証明書と、キーストア内または「cacerts」キーストアファイル内の信頼できるすべての証明書を照合しようとします。チェーンが自己署名のルート CA 証明書で終わっておらず、 \f2\-trustcacerts\fP オプションが指定されている場合、\f3keytool\fP は、キーストア内または「cacerts」キーストアファイル内の信頼できる証明書から自己署名のルート CA 証明書を見つけてそれをチェーンの末尾に追加しようとします。その証明書が見つからず、 \f2\-noprompt\fP オプションが指定されていない場合は、チェーン内の最後の証明書の情報が出力され、ユーザーは確認を求められます。 
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\-importcert
 .RE
-.LP
-証明書応答内の公開鍵が \f2alias\fP の下にすでに格納されているユーザーの公開鍵に一致した場合、古い証明書チェーンが応答内の新しい証明書チェーンで置き換えられます。以前の証明書チェーンを新しい証明書チェーンで置き換えることができるのは、有効な \f2keypass\fP、つまり該当するエントリの非公開鍵を保護するためのパスワードを指定した場合だけです。パスワードを指定しておらず、非公開鍵のパスワードがキーストアのパスワードと異なる場合は、非公開鍵のパスワードの入力を求められます。 
-.LP
-このコマンドは、以前のリリースでは \f2\-import\fP という名前でした。この古い名前は、このリリースでも引き続きサポートされており、今後のリリースでもサポートされる予定です。ただし、今後はわかりやすいように、新しい名前 \f2\-importcert\fP を使用することをお勧めします。    
-.TP 3
-\-importkeystore \-srckeystore srckeystore \-destkeystore destkeystore {\-srcstoretype srcstoretype} {\-deststoretype deststoretype} [\-srcstorepass srcstorepass] [\-deststorepass deststorepass] {\-srcprotected} {\-destprotected} {\-srcalias srcalias {\-destalias destalias} [\-srckeypass srckeypass] [\-destkeypass destkeypass] } {\-noprompt} {\-srcProviderName src_provider_name} {\-destProviderName dest_provider_name} {\-providerClass provider_class_name {\-providerArg provider_arg}} {\-v} {\-protected} {\-Jjavaoption} 
-.LP
-ソースキーストアからターゲットキーストアへ、単一のエントリまたはすべてのエントリをインポートします。 
-.LP
-\f2srcalias\fP オプションが指定された場合、このコマンドは、その別名で特定される単一のエントリをターゲットキーストアにインポートします。\f2destalias\fP 経由でターゲット別名が指定されなかった場合、\f2srcalias\fP がターゲット別名として使用されます。ソースのエントリがパスワードで保護されていた場合、\f2srckeypass\fP を使ってそのエントリが回復されます。\f2srckeypass\fP が指定されなかった場合、\f3keytool\fP は \f2srcstorepass\fP を使ってそのエントリを回復しようとします。\f2srcstorepass\fP が指定されなかったか正しくなかった場合、ユーザーはパスワードの入力を求められます。ターゲットエントリは \f2destkeypass\fP によって保護されます。\f2destkeypass\fP が指定されなかった場合、ターゲットエントリはソースエントリのパスワードによって保護されます。 
-.LP
-\f2srcalias\fP オプションが指定されなかった場合、ソースキーストア内のすべてのエントリがターゲットキーストア内にインポートされます。各ターゲットエントリは対応するソースエントリの別名の下に格納されます。ソースのエントリがパスワードで保護されていた場合、\f2srcstorepass\fP を使ってそのエントリが回復されます。\f2srcstorepass\fP が指定されなかったか正しくなかった場合、ユーザーはパスワードの入力を求められます。ソースキーストア内のあるエントリタイプがターゲットキーストアでサポートされていない場合や、あるエントリをターゲットキーストアに格納する際にエラーが発生した場合、ユーザーはそのエントリをスキップして処理を続行するか、あるいは処理を中断するかの選択を求められます。ターゲットエントリはソースエントリのパスワードによって保護されます。 
-.LP
-ターゲット別名がターゲットキーストア内にすでに存在していた場合、ユーザーは、そのエントリを上書きするか、あるいは異なる別名の下で新しいエントリを作成するかの選択を求められます。 
-.LP
-\f2\-noprompt\fP を指定した場合、ユーザーは新しいターゲット別名の入力を求められません。既存のエントリはそのターゲット別名で自動的に上書きされます。最後に、インポートできないエントリは自動的にスキップされ、警告が出力されます。  
-.TP 3
-\-printcertreq {\-file file} 
-.LP
-PKCS #10 形式の証明書要求の内容を出力します。この要求は、keytool \-certreq コマンドで生成できます。このコマンドは、file から要求を読み込みます。file が省略されている場合は、標準入力から読み込みます。  
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\-importpassword
 .RE
-
-.LP
-.SS 
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+別のキーストアの内容のインポート
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\-importkeystore
+.RE
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+証明書リクエストの生成
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\-certreq
+.RE
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
 データのエクスポート
-.LP
-.RS 3
-.TP 3
-\-certreq {\-alias alias} {\-dname dname} {\-sigalg sigalg} {\-file certreq_file} [\-keypass keypass] {\-storetype storetype} {\-keystore keystore} [\-storepass storepass] {\-providerName provider_name} {\-providerClass provider_class_name {\-providerArg provider_arg}} {\-v} {\-protected} {\-Jjavaoption} 
-.LP
-PKCS#10 形式を使って証明書署名要求 (CSR) を生成します。 
-.LP
-CSR は、証明書発行局 (CA) に送信することを目的としたものです。CA は、証明書要求者を (通常はオフラインで) 認証し、証明書または証明書チェーンを送り返します。 この証明書または証明書チェーンは、キーストア内の既存の証明書チェーン (最初は 1 つの自己署名証明書から構成される) に置き換えて使います。 
-.LP
-\f2alias\fP に関連付けられた非公開鍵は、PKCS#10 証明書要求を作成するのに使われます。非公開鍵はキーストア内ではパスワードによって保護されているので、非公開鍵にアクセスするには、適切なパスワードを提供する必要があります。コマンド行で \f2keypass\fP を指定しておらず、非公開鍵のパスワードがキーストアのパスワードと異なる場合は、非公開鍵のパスワードの入力を求められます。dname が指定されている場合は、それが CSR で主体として使用されます。それ以外の場合は、別名に関連付けられた X.500 識別名が使用されます。 
-.LP
-\f2sigalg\fP には、CSR に署名を付けるときに使うアルゴリズムを指定します。 
-.LP
-CSR は、ファイル \f2certreq_file\fP に格納されます。ファイルが指定されていない場合は、標準出力に CSR が出力されます。 
-.LP
-CA からの応答をインポートするには、\f2importcert\fP コマンドを使います。  
-.TP 3
-\-exportcert {\-alias alias} {\-file cert_file} {\-storetype storetype} {\-keystore keystore} [\-storepass storepass] {\-providerName provider_name} {\-providerClass provider_class_name {\-providerArg provider_arg}} {\-rfc} {\-v} {\-protected} {\-Jjavaoption} 
-.LP
-\f2alias\fP に関連付けられた証明書を (キーストアから) 読み込み、ファイル \f2cert_file\fP に格納します。 
-.LP
-ファイルが指定されていない場合は、標準出力に証明書が出力されます。 
-.LP
-デフォルトでは、バイナリ符号化方式の証明書が出力されます。 ただし、\-rfc オプションを指定した場合は、出力可能符号化方式の証明書が出力されます。 出力可能符号化方式は、インターネット RFC 1421 証明書符号化規格で定義されています。 
-.LP
-\f2alias\fP が、信頼できる証明書を参照している場合は、該当する証明書が出力されます。それ以外の場合、\f2alias\fP は、関連付けられた証明書チェーンを持つ鍵エントリを参照します。この場合は、チェーン内の最初の証明書が返されます。この証明書は、\f2alias\fP によって表されるエンティティーの公開鍵を認証する証明書です。 
-.LP
-このコマンドは、以前のリリースでは \f2\-export\fP という名前でした。この古い名前は、このリリースでも引き続きサポートされており、今後のリリースでもサポートされる予定です。ただし、今後はわかりやすいように、新しい名前 \f2\-exportcert\fP を使用することをお勧めします。  
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\-exportcert
 .RE
-
-.LP
-.SS 
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
 データの表示
-.LP
-.RS 3
-.TP 3
-\-list {\-alias alias} {\-storetype storetype} {\-keystore keystore} [\-storepass storepass] {\-providerName provider_name} {\-providerClass provider_class_name {\-providerArg provider_arg}} {\-v | \-rfc} {\-protected} {\-Jjavaoption} 
-.LP
-\f2alias\fP で特定されるキーストアエントリの内容を (標準出力に) 出力します。別名が指定されていない場合は、キーストア全体の内容が表示されます。 
-.LP
-このコマンドは、デフォルトでは証明書の SHA1 フィンガープリントを表示します。 \f2\-v\fP オプションが指定されている場合は、所有者、発行者、シリアル番号、拡張機能などの付加的な情報とともに、人間が読むことのできる形式で証明書が表示されます。 \f2\-rfc\fP オプションが指定されている場合は、出力可能符号化方式で証明書の内容が表示されます。 出力可能符号化方式は、インターネット RFC 1421 証明書符号化規格で定義されています。 
-.LP
-\f2\-v\fP オプションと \f2\-rfc\fP オプションを同時に指定することはできません。  
-.TP 3
-\-printcert {\-file cert_file | \-sslserver host[:port]} {\-jarfile JAR_file {\-rfc} {\-v} {\-Jjavaoption} 
-.LP
-ファイル \f2cert_file\fP、\f2host:port\fP にある SSL サーバー、または署名付き JAR ファイル \f2JAR_file\fP ( \f2\-jarfile\fP オプションを指定) から証明書を読み込み、人間が読むことのできる形式で証明書の内容を表示します。ポートが指定されていない場合は、標準の HTTPS ポート 443 が想定されます。 \f2\-sslserver\fP および \f2\-file\fP オプションを同時に指定することはできません。同時に指定すると、エラーが報告されます。オプションが指定されていない場合は、標準入力から証明書を読み込みます。 
-.LP
-\f2\-rfc\fP が指定されている場合、keytool は、インターネット RFC 1421 標準で定義されているように、PEM モードで証明書を出力します。 
-.LP
-ファイルまたは標準入力から証明書を読み込む場合、その証明書は、インターネット RFC 1421 標準で定義されているように、バイナリ符号化方式または出力可能符号化方式で表示できます。 
-.LP
-SSL サーバーがファイアウォールの背後にある場合は、 \f2\-J\-Dhttps.proxyHost=proxyhost\fP と \f2\-J\-Dhttps.proxyPort=proxyport\fP をコマンド行で指定して、プロキシトンネリングを使用できます。詳細は、
-.na
-\f2「JSSE リファレンスガイド」\fP @
-.fi
-http://java.sun.com/javase/6/docs/technotes/guides/security/jsse/JSSERefGuide.htmlを参照してください。 
-.LP
-\f3注\fP: このオプションはキーストアとは関係なく使用できます。  
-.TP 3
-\-printcrl \-file crl_ {\-v} 
-.LP
-ファイル \f2crl_file\fP から証明書の取り消しリスト (CRL) を読み込みます。 
-.LP
-証明書の取り消しリスト (CRL) は、デジタル証明書を発行した証明書発行局 (CA) によって取り消されたデジタル証明書のリストです。CA は、\f2crl_file\fP を生成します。 
-.LP
-\f3注\fP: このオプションはキーストアとは関係なく使用できます。  
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\-list
 .RE
-
-.LP
-.SS 
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\-printcert
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\-printcertreq
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\-printcrl
+.RE
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
 キーストアの管理
-.LP
-.RS 3
-.TP 3
-\-storepasswd [\-new new_storepass] {\-storetype storetype} {\-keystore keystore} [\-storepass storepass] {\-providerName provider_name} {\-providerClass provider_class_name {\-providerArg provider_arg}} {\-v} {\-Jjavaoption} 
-.LP
-キーストアの内容の整合性を保護するために使うパスワードを変更します。\f2new_storepass\fP には、新しいパスワードを指定します。new_storepass は、6 文字以上でなければなりません。  
-.TP 3
-\-keypasswd {\-alias alias} [\-keypass old_keypass] [\-new new_keypass] {\-storetype storetype} {\-keystore keystore} [\-storepass storepass] {\-providerName provider_name} {\-providerClass provider_class_name {\-providerArg provider_arg}} {\-v} {\-Jjavaoption} 
-.LP
-\f2alias\fP によって特定される非公開/秘密鍵を保護するためのパスワードを、\f2old_keypass\fP から \f2new_keypass\fP に変更します。new_keypass は、6 文字以上でなければなりません。 
-.LP
-コマンド行で \f2\-keypass\fP オプションを指定しておらず、鍵のパスワードがキーストアのパスワードと異なる場合は、鍵のパスワードの入力を求められます。 
-.LP
-コマンド行で \f2\-new\fP オプションを指定しなかった場合は、新しいパスワードの入力を求められます。  
-.TP 3
-\-delete [\-alias alias] {\-storetype storetype} {\-keystore keystore} [\-storepass storepass] {\-providerName provider_name} {\-providerClass provider_class_name {\-providerArg provider_arg}} {\-v} {\-protected} {\-Jjavaoption} 
-.LP
-\f2alias\fP によって特定されるエントリをキーストアから削除します。コマンド行で別名を指定しなかった場合は、別名の入力を求められます。  
-.TP 3
-\-changealias {\-alias alias} [\-destalias destalias] [\-keypass keypass] {\-storetype storetype} {\-keystore keystore} [\-storepass storepass] {\-providerName provider_name} {\-providerClass provider_class_name {\-providerArg provider_arg}} {\-v} {\-protected} {\-Jjavaoption} 
-.LP
-指定された \f2alias\fP から新しい別名 \f2destalias\fP へ、既存のキーストアエントリを移動します。ターゲット別名が指定されなかった場合、このコマンドはその入力を求めます。元のエントリがエントリパスワードで保護されていた場合、「\-keypass」オプション経由でそのパスワードを指定できます。鍵パスワードが指定されなかった場合、\f2storepass\fP (指定された場合) がまず試みられます。その試みが失敗すると、ユーザーはパスワードの入力を求められます。  
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\-storepasswd
 .RE
-
-.LP
-.SS 
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\-keypasswd
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\-delete
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\-changealias
+.RE
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
 ヘルプの表示
-.LP
-.RS 3
-.TP 3
-\-help 
-.LP
-基本的なコマンドとそのオプションの一覧を表示します。 
-.LP
-特定のコマンドの詳細については、次のように入力してください。 \f2command_name\fP はコマンドの名前です。 
-.nf
-\f3
-.fl
-    keytool \-\fP\f4command_name\fP\f3 \-help
-.fl
-\fP
-.fi
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\-help
 .RE
-
-.LP
-.SH "例"
-.LP
-.LP
-ここでは、自分の鍵のペアおよび信頼できるエンティティーからの証明書を管理するためのキーストアを作成する場合を例として示します。
-.LP
-.SS 
-鍵のペアの生成
-.LP
-.LP
-まず、キーストアを作成して鍵のペアを生成する必要があります。次に示すのは、実行するコマンドの例です。
-.LP
-.nf
-\f3
-.fl
-    keytool \-genkeypair \-dname "cn=Mark Jones, ou=Java, o=Oracle, c=US"
-.fl
-      \-alias business \-keypass \fP\f4<非公開鍵の新しいパスワード>\fP\f3 \-keystore /working/mykeystore
-.fl
-      \-storepass \fP\f4<キーストアの新しいパスワード>\fP\f3 \-validity 180
-.fl
-\fP
-.fi
-
-.LP
-.LP
-注: このコマンドは 1 行に入力しなければなりません。例で複数行に入力しているのは読みやすくするためです。
-.LP
-.LP
-この例では、working ディレクトリに mykeystore という名前のキーストアを作成し (キーストアはまだ存在していないと仮定する)、作成したキーストアに、\f2<キーストアの新しいパスワード>\fP で指定したパスワード を割り当てます。生成する公開鍵と非公開鍵のペアに対応するエンティティーの「識別名」は、通称が「Mark Jones」、組織単位が「Java」、組織が「Oracle」、2 文字の国番号が「US」です。公開鍵と非公開鍵のサイズはどちらも 1024 ビットで、鍵の作成にはデフォルトの DSA 鍵生成アルゴリズムを使用します。
-.LP
-.LP
-このコマンドは、公開鍵と識別名情報を含む自己署名証明書 (デフォルトの SHA1withDSA 署名アルゴリズムを使用) を作成します。証明書の有効期間は 180 日です。 証明書は、別名「business」で特定されるキーストアエントリ内の非公開鍵に関連付けられます。非公開鍵には、\f2<非公開鍵の新しいパスワード>\fP で指定したパスワードが割り当てられます。
-.LP
-.LP
-オプションのデフォルト値を使う場合は、上に示したコマンドを大幅に短くすることができます。実際には、オプションを 1 つも指定せずにコマンドを実行することも可能です。 デフォルト値を持つオプションでは、オプションを指定しなければデフォルト値が使われ、必要な値については入力を求められます。たとえば、単に次のように入力することもできます。
-.LP
-.nf
-\f3
-.fl
-    keytool \-genkeypair
-.fl
-\fP
-.fi
-
-.LP
-.LP
-この場合は、mykey という別名でキーストアエントリが作成され、新しく生成された鍵のペア、および 90 日間有効な証明書がこのエントリに格納されます。このエントリは、ホームディレクトリ内の .keystore という名前のキーストアに置かれます。このキーストアがまだ存在していない場合は、作成されます。識別名情報、キーストアのパスワード、および非公開鍵のパスワードについては、入力を求められます。
-.LP
-.LP
-以下では、オプションを指定しないで \f2\-genkeypair\fP コマンドを実行したものとして例を示します。情報の入力を求められた場合は、最初に示した \f2\-genkeypair\fP コマンドの値を入力したものとします (たとえば、識別名には cn=Mark Jones, ou=Java, o=Oracle, c=US と指定)。
-.LP
-.SS 
-証明書発行局に対する署名付き証明書の要求
-.LP
-.LP
-現時点で手元にあるのは、1 通の自己署名証明書だけです。証明書に証明書発行局 (CA) の署名が付いていれば、ほかのユーザーから証明書が信頼できる可能性も高くなります。CA の署名を取得するには、まず、証明書署名要求 (CSR) を生成します。 たとえば、次のようにします。
-.LP
-.nf
-\f3
-.fl
-    keytool \-certreq \-file MarkJ.csr
-.fl
-\fP
-.fi
-
-.LP
-.LP
-CSR (デフォルト別名「mykey」によって特定されるエンティティーの CSR) が作成され、MarkJ.csr という名前のファイルに置かれます。このファイルは、VeriSign などの CA に提出します。 CA は要求者を (通常はオフラインで) 認証し、要求者の公開鍵を認証した署名付きの証明書を送り返します。場合によっては、CA が証明書のチェーンを返すこともあります。証明書のチェーンでは、各証明書がチェーン内のその前の署名者の公開鍵を認証します。
-.LP
-.SS 
-CA からの証明書のインポート
-.LP
-.LP
-作成した自己署名証明書は、証明書チェーンで置き換える必要があります。証明書チェーンでは、各証明書が、「ルート」CA を起点とするチェーン内の次の証明書の署名者の公開鍵を認証します。
-.LP
-.LP
-CA からの証明応答をインポートするには、キーストアか、 \f2cacerts\fP キーストアファイル (importcert コマンドで説明) 内に 1 つ以上の「信頼できる証明書」がある必要があります。
-.LP
-.RS 3
-.TP 2
-o
-証明応答が証明書チェーンの場合は、チェーンのトップの証明書 (その CA の公開鍵を認証する「ルート」CA の証明書) だけを必要とする 
-.TP 2
-o
-証明応答が単一の証明書の場合は、証明書に署名した CA の発行用の証明書が必要で、その証明書が自己署名されない場合は、さらにその証明書の署名者用の証明書を必要とする。 このようにして自己署名される「ルート」CA の証明書までそれぞれ証明書を必要とする 
 .RE
-
-.LP
-.LP
-cacerts キーストアファイルは、いくつかの VeriSign ルート CA 証明書を含んだ状態で出荷されているので、VeriSign の証明書を、信頼できる証明書としてキーストア内にインポートする必要はないかもしれません。ただし、ほかの CA に対して署名付き証明書を要求していて、この CA の公開鍵を認証する証明書が、cacerts にまだ追加されていない場合は、該当する CA からの証明書を、「信頼できる証明書」としてインポートする必要があります。
-.LP
-.LP
-通常、CA からの証明書は、自己署名証明書、またはほかの CA によって署名された証明書です (後者の場合は、該当するほかの CA の公開鍵を認証する証明書も必要)。たとえば、ABC という企業が CA だとします。このとき、この CA の公開鍵を認証する自己署名証明書と考えられる ABCCA.cer という名前のファイルを、ABC から入手したとします。
-.LP
-.LP
-「信頼できる証明書」として証明書をインポートするときは、証明書が有効であることを慎重に確認する必要があります。まず、証明書の内容を表示し (\f3keytool\fP \f2\-printcert\fP コマンドを使用するか、または \-noprompt オプションを指定しないで \f3keytool\fP \f2\-importcert\fP コマンドを使用し、 表示された証明書のフィンガープリントが、期待されるフィンガープリントと一致するかどうかを確認します。証明書を送信した人物に連絡し、この人物が提示した (または安全な公開鍵のリポジトリによって提示される) フィンガープリントと、上のコマンドで表示されたフィンガープリントとを比較します。フィンガープリントが一致すれば、送信途中でほかの何者か (攻撃者など) による証明書のすり替えが行われていないことを確認できます。送信途中でこの種の攻撃が行われていた場合、チェックを行わずに証明書をインポートすると、攻撃者によって署名されたすべてのものを信頼することになります。
-.LP
-.LP
-ABCCA.cer を有効な証明書として信頼する場合は、証明書をキーストアに追加できます。 たとえば、次のようにします。
-.LP
-.nf
-\f3
-.fl
-    keytool \-importcert \-alias abc \-file ABCCA.cer
-.fl
-\fP
-.fi
-
-.LP
-.LP
-ABCCA.cer ファイルのデータを含む「信頼できる証明書」のエントリがキーストア内に作成され、該当するエントリに abc という別名が割り当てられます。
-.LP
-.SS 
-CA からの証明応答のインポート
-.LP
-.LP
-証明書署名要求の提出先の CA の公開鍵を認証する証明書をインポートしたあとは (または同種の証明書がすでに cacerts ファイル内に存在している場合は)、証明応答をインポートし、自己署名証明書を証明書チェーンで置き換えることができます。この証明書チェーンは、CA の応答がチェーンの場合、証明書署名要求に対する応答として CA から送り返された証明書チェーンです。 また、CA の応答が単一の証明書の場合は、この証明応答と、インポート先のキーストア内または cacerts キーストアファイル内にすでに存在する信頼できる証明書とを使って構築した証明書チェーンです。
-.LP
-.LP
-たとえば、証明書署名要求を VeriSign に送信したとします。送り返された証明書の名前が VSMarkJ.cer だとすると、次のようにして応答をインポートできます。
-.LP
-.nf
-\f3
-.fl
-    keytool \-importcert \-trustcacerts \-file VSMarkJ.cer
-.fl
-\fP
-.fi
-
-.LP
-.SS 
-公開鍵を認証する証明書のエクスポート
-.LP
-.LP
-たとえば、jarsigner(1) ツールを使って Java ARchive (JAR) ファイルに署名を付けたとします。この JAR ファイルはクライアントによって使われますが、クライアント側では署名を認証したいと考えています。
-.LP
-.LP
-クライアントが署名を認証する方法の 1 つに、まず自分の公開鍵の証明書を「信頼できる」エントリとしてクライアントのキーストアにインポートする方法があります。そのためには、証明書をエクスポートして、クライアントに提供します。たとえば、次のようにして、証明書を \f2MJ.cer\fP という名前のファイルにコピーします。このエントリには「mykey」という別名が使われているとします。
-.LP
-.nf
-\f3
-.fl
-    keytool \-exportcert \-alias mykey \-file MJ.cer
-.fl
-\fP
-.fi
-
-.LP
-.LP
-証明書と署名付き JAR ファイルを入手したクライアントは、\f3jarsigner\fP ツールを使って署名を認証できます。
-.LP
-.SS 
-キーストアのインポート
-.LP
-.LP
-コマンド「importkeystore」を使えば、あるキーストアの全体を別のキーストア内にインポートできます。これは、鍵や証明書といったソースキーストア内のすべてのエントリが、単一のコマンドを使ってターゲットキーストア内にインポートされることを意味します。このコマンドを使えば、異なるタイプのキーストア内に含まれるエントリをインポートすることができます。インポート時には、ターゲットキーストア内の新しいエントリはすべて、元と同じ別名および (秘密鍵や非公開鍵の場合は) 保護用パスワードを持ちます。ソースキーストア内の非公開鍵や秘密鍵の回復時に問題が発生した場合、\f3keytool\fP はユーザーにパスワードの入力を求めます。このコマンドは、別名の重複を検出すると、ユーザーに新しい別名の入力を求めます。ユーザーは、新しい別名を指定することも、単純に既存の別名の上書きを \f3keytool\fP に許可することもできます。
-.LP
-.LP
-たとえば、通常の JKS タイプのキーストア key.jks 内のエントリを PKCS #11 タイプのハードウェアベースのキーストア内にインポートするには、次のコマンドを使用できます。
-.LP
-.nf
-\f3
-.fl
-  keytool \-importkeystore
-.fl
-    \-srckeystore key.jks \-destkeystore NONE
-.fl
-    \-srcstoretype JKS \-deststoretype PKCS11
-.fl
-    \-srcstorepass \fP\f4<ソースキーストアのパスワード>\fP\f3 \-deststorepass \fP\f4<ターゲットキーストアのパスワード>\fP\f3
-.fl
-\fP
-.fi
-
-.LP
-.LP
-また、importkeystore コマンドを使えば、あるソースキーストア内の単一のエントリをターゲットキーストアにインポートすることもできます。この場合、上記の例で示したオプションに加え、インポート対象となる別名を指定する必要があります。srcalias オプションを指定する場合には、ターゲット別名もコマンド行から指定できるほか、秘密/非公開鍵の保護用パスワードやターゲット保護用パスワードも指定できます。その方法を示すコマンドを次に示します。
-.LP
-.nf
-\f3
-.fl
-  keytool \-importkeystore
-.fl
-    \-srckeystore key.jks \-destkeystore NONE
-.fl
-    \-srcstoretype JKS \-deststoretype PKCS11
-.fl
-    \-srcstorepass \fP\f4<ソースキーストアのパスワード>\fP\f3 \-deststorepass \fP\f4<ターゲットキーストアのパスワード>\fP\f3
-.fl
-    \-srcalias myprivatekey \-destalias myoldprivatekey
-.fl
-    \-srckeypass \fP\f4<ソースエントリのパスワード>\fP\f3 \-destkeypass \fP\f4<ターゲットエントリのパスワード>\fP\f3
-.fl
-    \-noprompt
-.fl
-\fP
-.fi
-
-.LP
-.SS 
-一般的な SSL サーバー用の証明書の生成
-.LP
-.LP
-次に、3 つのエンティティー、つまりルート CA (root)、中間 CA (ca)、および SSL サーバー (server) 用の鍵ペアと証明書を生成する keytool コマンドを示します。すべての証明書を同じキーストアに格納するようにしてください。これらの例では、鍵のアルゴリズムとして RSA を指定することをお勧めします。
-.LP
-.nf
-\f3
-.fl
-keytool \-genkeypair \-keystore root.jks \-alias root \-ext bc:c
-.fl
-keytool \-genkeypair \-keystore ca.jks \-alias ca \-ext bc:c
-.fl
-keytool \-genkeypair \-keystore server.jks \-alias server
-.fl
-
-.fl
-keytool \-keystore root.jks \-alias root \-exportcert \-rfc > root.pem
-.fl
-
-.fl
-keytool \-storepass \fP\f4<storepass>\fP\f3 \-keystore ca.jks \-certreq \-alias ca | keytool \-storepass \fP\f4<storepass>\fP\f3 \-keystore root.jks \-gencert \-alias root \-ext BC=0 \-rfc > ca.pem
-.fl
-keytool \-keystore ca.jks \-importcert \-alias ca \-file ca.pem
-.fl
-
-.fl
-keytool \-storepass \fP\f4<storepass>\fP\f3 \-keystore server.jks \-certreq \-alias server | keytool \-storepass \fP\f4<storepass>\fP\f3 \-keystore ca.jks \-gencert \-alias ca \-ext ku:c=dig,kE \-rfc > server.pem
-.fl
-cat root.pem ca.pem server.pem | keytool \-keystore server.jks \-importcert \-alias server
-.fl
-\fP
-.fi
-
-.LP
-.SH "用語と警告"
-.LP
-.SS 
-KeyStore
-.LP
-.LP
-キーストアは、暗号化の鍵と証明書を格納するための機能です。
-.LP
-.RS 3
-.TP 2
-o
-\f3キーストアのエントリ\fP 
-.LP
-キーストアには異なるタイプのエントリを含めることができます。\f3keytool\fP でもっとも適用範囲の広いエントリタイプは、次の 2 つです。 
-.RS 3
-.TP 3
-1.
-\f3鍵のエントリ\fP \- 各エントリは、非常に重要な暗号化の鍵の情報を保持します。この情報は、許可していないアクセスを防ぐために、保護された形で格納されます。 一般に、この種のエントリとして格納される鍵は、秘密鍵か、対応する公開鍵の証明書チェーンを伴う非公開鍵です。\f3keytool\fP がこの両方のタイプのエントリを処理できるのに対し、\f3jarsigner\fP ツールは後者のタイプのエントリ、つまり非公開鍵とそれに関連付けられた証明書チェーンのみを処理します。 
-.TP 3
-2.
-\f3信頼できる証明書のエントリ\fP \- 各エントリは、第三者からの公開鍵証明書を 1 つ含んでいます。この証明書は、「信頼できる証明書」と呼ばれます。 それは、証明書内の公開鍵が、証明書の「Subject」(所有者) によって特定されるアイデンティティーに由来するものであることを、キーストアの所有者が信頼するからです。証明書の発行者は、証明書に署名を付けることによって、その内容を保証します。 
 .RE
-.TP 2
-o
-\f3キーストアの別名\fP 
-.LP
-キーストアのすべてのエントリ (鍵および信頼できる証明書) は、一意の「別名」を介してアクセスされます。 
-.LP
-別名を指定するのは、\-genseckey コマンドを使って秘密鍵を生成したり、\-genkeypair コマンドを使って鍵ペア (公開鍵と非公開鍵) を生成したり、\-importcert コマンドを使って証明書または証明書チェーンを信頼できる証明書のリストに追加したりするなど、特定のエンティティーをキーストアに追加する場合です。これ以後、\f3keytool\fP コマンドでエンティティーを参照する場合は、このときに指定した別名を使用する必要があります。 
-.LP
-たとえば、\f2duke\fP という別名を使って新しい公開鍵と非公開鍵のペアを生成し、公開鍵を自己署名証明書 (「証明書チェーン」を参照) でラップするとします。 この場合は、次のコマンドを実行します。 
-.nf
-\f3
-.fl
-    keytool \-genkeypair \-alias duke \-keypass dukekeypasswd
-.fl
-\fP
-.fi
-.LP
-ここでは、初期パスワードとして dukekeypasswd を指定しています。 以後、別名 duke 連付けられた非公開鍵にアクセスするコマンドを実行するときは、このパスワードが必要になります。 duke の非公開鍵のパスワードをあとから変更するには、次のコマンドを実行します。 
-.nf
-\f3
-.fl
-    keytool \-keypasswd \-alias duke \-keypass dukekeypasswd \-new newpass
-.fl
-\fP
-.fi
-.LP
-パスワードが、dukekeypasswd から newpass に変更されます。 
-.LP
-注: テストを目的とする場合、または安全であることがわかっているシステムで実行する場合以外は、コマンド行やスクリプトでパスワードを指定しないでください。必要なパスワードのオプションをコマンド行で指定しなかった場合は、パスワードの入力を求められます。   
-.TP 2
-o
-\f3キーストアの実装\fP 
-.LP
-\f2KeyStore\fP クラス ( \f2java.security\fP パッケージで提供される) には、キーストア内の情報に対するアクセスと変更を行うための明確に定義されたインタフェースが用意されています。キーストアの固定実装としては、それぞれが特定の「タイプ」のキーストアを対象とする複数の異なる実装が存在可能です。 
-.LP
-現在、\f3keytool\fP と \f3jarsigner\fP の 2 つのコマンド行ツールと、\f3Policy Tool\fP という名前の 1 つの GUI ベースのツールが、キーストアの実装を使用しています。 \f2KeyStore\fP は public として使用可能なので、JDK ユーザーは KeyStore を使ったほかのセキュリティーアプリケーションも作成できます。 
-.LP
-キーストアには、Oracle が提供する組み込みのデフォルトの実装があります。これは、JKS という名前の独自のキーストアタイプ (形式) を利用するもので、キーストアをファイルとして実装しています。この実装では、個々の非公開鍵は個別のパスワードによって保護され、キーストア全体の整合性も (非公開鍵とは別の) パスワードによって保護されます。 
-.LP
-キーストアの実装は、プロバイダベースです。具体的には、 \f2KeyStore\fP が提供するアプリケーションインタフェースは、Service Provider Interface (SPI) という形で実装されています。つまり、対応する \f2KeystoreSpi\fP 抽象クラス (これも \f2java.security\fP パッケージに含まれている) があり、このクラスが、「プロバイダ」が実装する必要のある Service Provider Interface のメソッドを定義しています。ここで、「プロバイダ」とは、Java Security API によってアクセス可能なサービスのサブセットに対し、その固定実装を提供するパッケージまたはパッケージの集合のことです。したがって、キーストアの実装を提供するには、
-.na
-\f2「Java(TM) 暗号化アーキテクチャー用プロバイダの実装方法」\fP @
-.fi
-http://java.sun.com/javase/6/docs/technotes/guides/security/crypto/HowToImplAProvider.htmlで説明しているように、クライアントが「プロバイダ」を実装し、KeystoreSpi サブクラスの実装を提供する必要があります。 
-.LP
-アプリケーションでは、KeyStore クラスが提供する getInstance ファクトリメソッドを使うことで、さまざまなプロバイダから異なる「タイプ」のキーストアの実装を選択できます。 キーストアのタイプは、キーストア情報の格納形式とデータ形式を定義するとともに、キーストア内の非公開/秘密鍵とキーストア自体の整合性を保護するために使われるアルゴリズムを定義します。異なるタイプのキーストアの実装には、互換性はありません。 
-.LP
-\f3keytool\fP は、任意のファイルベースのキーストア実装で動作します。keytool は、コマンド行から渡されたキーストアの場所をファイル名として扱い、これを FileInputStream に変換して、FileInputStream からキーストアの情報をロードします。一方、\f3jarsigner\fP ツールと \f3policytool\fP ツールは、URL で指定可能な任意の場所からキーストアを読み込むことができます。 
-.LP
-\f3keytool\fP と \f3jarsigner\fP の場合、\f2\-storetype\fP オプションを使ってコマンド行でキーストアのタイプを指定できます。\f3Policy Tool\fPの場合は、「キーストア」メニューによってキーストアのタイプを指定できます。 
-.LP
-キーストアのタイプを明示的に指定しない場合、keytool、jarsigner、および policytool の各ツールは、セキュリティープロパティーファイル内で指定された \f2keystore.type\fP プロパティーの値に基づいてキーストアの実装を選択します。セキュリティープロパティーファイルは、\f2java.security\fP という名前でセキュリティープロパティーディレクトリ \f2java.home\fP/lib/security に置かれています。\f2java.home\fP は、実行環境のディレクトリ (SDK の \f2jre\fP ディレクトリまたは Java 2 Runtime Environment の最上位ディレクトリ) です。  
-.LP
-各ツールは、 \f2keystore.type\fP の値を取得し、この値で指定されたタイプのキーストアを実装しているプロバイダが見つかるまで、現在インストールされているすべてのプロバイダを調べます。目的のプロバイダが見つかると、そのプロバイダからのキーストアの実装を使います。 
-.LP
-\f2KeyStore\fP クラスでは \f2getDefaultType\fP という名前の static メソッドが定義されており、アプリケーションとアプレットはこのメソッドを使うことで \f2keystore.type\fP プロパティーの値を取得できます。次のコードは、デフォルトのキーストアタイプ ( \f2keystore.type\fP プロパティーで指定されたタイプ) のインスタンスを生成します。 
-.nf
-\f3
-.fl
-    KeyStore keyStore = KeyStore.getInstance(KeyStore.getDefaultType());
-.fl
-\fP
-.fi
-.LP
-デフォルトのキーストアタイプは JKS (Oracle が提供する独自のタイプのキーストアの実装) です。これは、セキュリティープロパティーファイル内の次の行によって指定されています。 
-.nf
-\f3
-.fl
-    keystore.type=jks
-.fl
-\fP
-.fi
-.LP
-各ツールでデフォルト以外のキーストアの実装を使用するには、上の行を変更して別のキーストアのタイプを指定します。 
-.LP
-たとえば、pkcs12 と呼ばれるタイプのキーストアの実装を提供しているプロバイダパッケージを使用するには、上の行を次のように変更します。 
-.nf
-\f3
-.fl
-    keystore.type=pkcs12
-.fl
-\fP
-.fi
-.LP
-注: キーストアのタイプの指定では、大文字と小文字は区別されません。たとえば、JKS と jks は同じものとして扱われます。  
+.SH "説明"
+.PP
+\fIkeytool\fRコマンドは、鍵と証明書を管理するためのユーティリティです。これにより、ユーザーは自分の公開鍵と秘密鍵のペアおよび関連する証明書を管理し、デジタル署名を使用した自己認証(他のユーザーまたはサービスに対して自分自身を認証すること)や、データの整合性と証明書に関するサービスを利用することができます。\fIkeytool\fRコマンドでは、通信しているピアの公開鍵をキャッシュすることもできます(証明書のフォームで)。
+.PP
+証明書とは、あるエンティティ(人物、会社など)からのデジタル署名付きの文書のことです。証明書には、他のあるエンティティの公開鍵(およびその他の情報)が特別な値を持っていることが書かれています。(証明書を参照してください。)データにデジタル署名が付いている場合は、デジタル署名を検証することで、データの整合性およびデータが本物であることをチェックできます。データの整合性とは、データが変更されたり、改変されたりしていないことを意味します。また、データが本物であるとは、そのデータが、データを作成して署名したと称する人物から渡されたデータであることを意味します。
+.PP
+また、\fIkeytool\fRコマンドを使用すれば、対称暗号化/復号化(DES)で使用される秘密鍵およびパスフレーズを管理することもできます。
+.PP
+\fIkeytool\fRコマンドは、鍵と証明書をキーストアに格納します。キーストアの別名を参照してください。
+.SH "コマンドとオプションに関する注意"
+.PP
+様々なコマンドとその説明については、コマンドを参照してください。
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+どのコマンド名およびオプション名にも先頭にマイナス記号(\-)が付きます。
 .RE
-
-.LP
-.SS 
-証明書
-.LP
-\f3証明書\fP (\f3公開鍵証明書\fPとも呼ぶ) とは、あるエンティティー (「発行者」) からのデジタル署名付きの文書のことです。 証明書には、ほかのあるエンティティー (「署名者」) の公開鍵 (およびその他の情報) が特別な値を持っていることが書かれています。 
-.RS 3
-.TP 2
-o
-\f3証明書の用語\fP 
-.RS 3
-.TP 3
-公開鍵 
-.LP
-公開鍵は、特定のエンティティーに関連付けられた数です。公開鍵は、該当するエンティティーとの間に信頼できる関係を持つ必要があるすべての人に対して公開することを意図したものです。公開鍵は、署名を検証するのに使われます。  
-.TP 3
-デジタル署名 
-.LP
-データが「デジタル署名」されると、そのデータは、エンティティーの「アイデンティティー」と、そのエンティティーがデータの内容について知っていることを証明する署名とともに格納されます。エンティティーの非公開鍵を使ってデータに署名を付けると、データの偽造は不可能になります。  
-.TP 3
-アイデンティティー 
-.LP
-エンティティーを特定するための既知の方法です。システムによっては、公開鍵をアイデンティティーにするものがあります。公開鍵のほかにも、Unix UID や電子メールアドレス、X.509 識別名など、さまざまなものをアイデンティティーとすることができます。  
-.TP 3
-署名 
-.LP
-署名は、なんらかのデータを基にエンティティー (署名者。 証明書に関しては発行者とも呼ばれる) の非公開鍵を使って計算されます。  
-.TP 3
-非公開鍵 
-.LP
-非公開鍵は特定のエンティティーだけが知っている数のことで、この数のことを、そのエンティティーの非公開鍵といいます。非公開鍵は、ほかに知られないように秘密にしておくことが前提になっています。非公開鍵と公開鍵は、すべての公開鍵暗号化システムで対になって存在しています。DSA などの典型的な公開鍵暗号化システムの場合、1 つの非公開鍵は正確に 1 つの公開鍵に対応します。非公開鍵は、署名を計算するのに使われます。  
-.TP 3
-エンティティー 
-.LP
-エンテンティーは、人、組織、プログラム、コンピュータ、企業、銀行など、一定の度合いで信頼の対象となるさまざまなものを指します。  
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+各コマンドのオプションは任意の順序で指定できます。
 .RE
-.LP
-公開鍵暗号化では、その性質上、ユーザーの公開鍵にアクセスする必要があります。大規模なネットワーク環境では、互いに通信しているエンティティー間で以前の関係が引き続き確立されていると仮定したり、使われているすべての公開鍵を収めた信頼できるリポジトリが存在すると仮定したりすることは不可能です。このような公開鍵の配布に関する問題を解決するために証明書が考案されました。現在では、「証明書発行局 (CA)」が信頼できる第三者として機能します。CA は、ほかのエンティティーの証明書に署名する (発行する) 行為を、信頼して任されているエンティティー (企業など) です。CA は法律上の契約に拘束されるので、有効かつ信頼できる証明書だけを作成するものとして扱われます。 
-.na
-\f2VeriSign\fP @
-.fi
-http://www.verisign.com/、
-.na
-\f2Thawte\fP @
-.fi
-http://www.thawte.com/、
-.na
-\f2Entrust\fP @
-.fi
-http://www.entrust.com/ をはじめ、多くの CA が存在します。Microsoft の認証サーバー、Entrust の CA 製品などを所属組織内で利用すれば、独自の証明書発行局を運営することも可能です。 
-.LP
-\f3keytool\fP を使うと、証明書の表示、インポート、およびエクスポートを行うことができます。また、自己署名証明書を生成することもできます。 
-.LP
-現在、\f3keytool\fP は X.509 証明書を対象にしています。  
-.TP 2
-o
-\f3X.509 証明書\fP 
-.LP
-X.509 規格では、証明書に含める情報が定義されており、この情報を証明書に書き込む方法 (データ形式) についても記述されています。証明書のすべてのデータは、ASN.1/DER と呼ばれる 2 つの関連規格を使って符号化されます。\f2Abstract Syntax Notation 1\fP はデータについて記述しています。\f2Definite Encoding Rules\fP は、データの保存および転送の方法について記述しています。 
-.LP
-すべての X.509 証明書は、署名のほかに次のデータを含んでいます。 
-.RS 3
-.TP 3
-バージョン 
-.LP
-証明書に適用される X.509 規格のバージョンを特定します。証明書に指定できる情報は、バージョンによって異なります。これまでに、3 つのバージョンが定義されています。\f3keytool\fP では、v1、v2、および v3 の証明書のインポートとエクスポートが可能です。keytool が生成するのは、v3 の証明書です。 
-.LP
-「X.509 Version 1」は、1988 年から利用されて広く普及しており、もっとも一般的です。 
-.LP
-「X.509 Version 2」では、Subject や発行者の名前をあとで再利用できるようにするために、Subject と発行者の一意識別子の概念が導入されました。ほとんどの証明書プロファイル文書では、名前を再使用しないことと、証明書で一意な識別子を使わないことが、強く推奨されています。Version 2 の証明書は、広くは使われていません。 
-.LP
-「X.509 Version 3」はもっとも新しい (1996 年) 規格で、エクステンションの概念をサポートしています。エクステンションは誰でも定義することができ、証明書に含めることができます。現在使われている一般的なエクステンションとしては、KeyUsage (「署名専用」など、鍵の使用を特定の目的に制限する)、AlternativeNames (DNS 名、電子メールアドレス、IP アドレスなど、ほかのアイデンティティーを公開鍵に関連付けることができる) などがあります。エクステンションには、critical というマークを付けて、そのエクステンションのチェックと使用を義務づけることができます。たとえば、critical とマークされ、KeyCertSign が設定された KeyUsage エクステンションが証明書に含まれている場合、この証明書を SSL 通信中に提示すると、証明書が拒否されます。これは、証明書のエクステンションによって、関連する非公開鍵が証明書の署名専用として指定されており、SSL では使用できないためです。  
-.TP 3
-シリアル番号 
-.LP
-証明書を作成したエンティティーは、そのエンティティーが発行するほかの証明書と区別するために、証明書にシリアル番号を割り当てます。この情報は、さまざまな方法で使われます。たとえば、証明書が取り消されると、シリアル番号が証明書の取り消しリスト (CRL) に格納されます。  
-.TP 3
-署名アルゴリズム識別子 
-.LP
-証明書に署名を付けるときに CA が使ったアルゴリズムを特定します。  
-.TP 3
-発行者名 
-.LP
-証明書に署名を付けたエンティティーの X.500 識別名です。エンティティーは、通常は CA です。この証明書を使うことは、証明書に署名を付けたエンティティーを信頼することを意味します。「ルート」つまり「トップレベル」の CA の証明書など、場合によっては発行者が自身の証明書に署名を付けることがある点に注意してください。  
-.TP 3
-有効期間 
-.LP
-各証明書は、限られた期間だけ有効になります。この期間は開始の日時と終了の日時によって指定され、数秒の短い期間から 100 年という長期にわたることもあります。選択される有効期間は、証明書への署名に使われる非公開鍵の強度や証明書に支払う金額など、さまざまな要因で異なります。有効期間は、使用する非公開鍵が損なわれない場合に、エンティティーが公開鍵を信頼できると期待される期間です。  
-.TP 3
-Subject 名 
-.LP
-証明書で公開鍵が識別されているエンティティーの名前です。この名前は X.500 標準を使うので、インターネット全体で一意なものと想定されます。これは、エンティティーの X.500 識別名 (DN) です。次に例を示します。 
-.nf
-\f3
-.fl
-    CN=Java Duke, OU=Java Software Division, O=Oracle Corporation, C=US
-.fl
-\fP
-.fi
-.LP
-これらはそれぞれ主体の通称、組織単位、組織、国を表します。  
-.TP 3
-Subject の公開鍵情報 
-.LP
-名前を付けられたエンティティーの公開鍵とアルゴリズム識別子です。アルゴリズム識別子では、公開鍵に対して使われている公開鍵暗号化システムおよび関連する鍵パラメータが指定されています。  
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+イタリック体になっていないすべての項目、または中カッコか角カッコで囲まれているすべての項目は、そのとおりに指定する必要があります。
 .RE
-.TP 2
-o
-\f3証明書チェーン\fP 
-.LP
-\f3keytool\fP では、非公開鍵および関連する証明書「チェーン」を含むキーストアの「鍵」エントリを作成し、管理することができます。このようなエントリでは、非公開鍵に対応する公開鍵は、チェーンの最初の証明書に含まれています。 
-.LP
-鍵を初めて作成すると (\-genkeypair コマンドを参照)、「自己署名証明書」という 1 つの要素だけを含むチェーンが開始されます。自己署名証明書は、発行者 (署名者) が主体 (証明書で認証されている公開鍵の持ち主) と同じである証明書のことです。 \f2\-genkeypair\fP コマンドを呼び出して新しい公開鍵と非公開鍵のペアを作成すると、公開鍵は常に自己署名証明書でラップされます。 
-.LP
-このあと、証明書署名要求 (CSR) が生成されて (\-certreq コマンドを参照)、CSR が証明書発行局 (CA) に送信されると、CA からの応答がインポートされ (\-importcert コマンドを参照)、元の自己署名証明書は証明書チェーンによって置き換えられます。チェーンの最後にあるのは、Subject の公開鍵を認証した CA が発行した証明書 (応答) です。チェーン内のその前の証明書は、「CA」の公開鍵を認証する証明書です。 
-.LP
-CA の公開鍵を認証する証明書は、多くの場合、自己署名証明書 (つまり CA が自身の公開鍵を認証した証明書) であり、これはチェーンの最初の証明書になります。場合によっては、CA が証明書のチェーンを返すこともあります。この場合、チェーン内の最後の証明書 (CA によって署名され、鍵エントリの公開鍵を認証する証明書) に変わりはありませんが、チェーン内のその前の証明書は、CSR の送信先の CA とは「別の」CA によって署名され、CSR の送信先の CA の公開鍵を認証する証明書になります。さらに、チェーン内のその前の証明書は、次の CA の鍵を認証する証明書になります。 以下同様に、自己署名された「ルート」証明書に達するまでチェーンが続きます。したがって、チェーン内の (最初の証明書以後の) 各証明書では、チェーン内の次の証明書の署名者の公開鍵が認証されていることになります。 
-.LP
-多くの CA は、チェーンをサポートせずに発行済みの証明書だけを返します。特に、中間の CA が存在しないフラットな階層構造の場合は、その傾向が顕著です。このような場合は、キーストアにすでに格納されている信頼できる証明書情報から、証明書チェーンを確立する必要があります。 
-.LP
-別の応答形式 (PKCS#7 で定義されている形式) でも、発行済み証明書に加え、証明書チェーンのサポートが含まれています。\f3keytool\fP では、どちらの応答形式も扱うことができます。 
-.LP
-トップレベル (ルート) CA の証明書は、自己署名証明書です。ただし、ルートの公開鍵に対する信頼は、ルートの証明書自体から導き出されるものではなく (たとえば、VeriSign ルート CA のような有名な識別名を使った自己署名証明書を作成すること自体は誰でも可能)、新聞などのほかの情報源に由来するものです。ルート CA の公開鍵は広く知られています。ルート CA の公開鍵を証明書に格納する理由は、証明書という形式にすることで多くのツールから利用できるようになるからにすぎません。 つまり、証明書は、ルート CA の公開鍵を運ぶ「媒体」として利用されるだけです。ルート CA の証明書をキーストアに追加するときは、その前に証明書の内容を表示し ( \f2\-printcert\fP オプションを使用)、表示されたフィンガープリントと、新聞やルート CA の Web ページなどから入手した既知のフィンガープリントとを比較する必要があります。   
-.TP 2
-o
-\f3cacerts 証明書ファイル\fP 
-.LP
-\f3cacerts\fP という名前の証明書ファイルは、セキュリティープロパティーディレクトリ \f2java.home\fP/lib/security に置かれています。\f2java.home\fP は、実行環境のディレクトリ (SDK の \f2jre\fP ディレクトリまたは Java 2 Runtime Environment の最上位ディレクトリ) です。  
-.LP
-cacerts ファイルは、CA の証明書を含む、システム全体のキーストアです。システム管理者は、キーストアタイプに jks を指定することで、\f3keytool\fP を使ってこのファイルの構成と管理を行うことができます。cacerts キーストアファイルは、ルート CA 証明書のデフォルトセットを含んだ状態で出荷されています。それらの証明書を一覧表示するには、次のコマンドを使用します。 
-.nf
-\f3
-.fl
-keytool \-list \-keystore \fP\f4java.home\fP\f3/lib/security/cacerts
-.fl
-\fP
-.fi
-.LP
-cacerts キーストアファイルの初期パスワードは、changeit です。システム管理者は、SDK のインストール後、このファイルのパスワードとデフォルトアクセス権を変更する必要があります。 
-.LP
-\f3重要: \fP\f4cacerts\fP\f3 ファイルを確認してください\fP: \f2cacerts\fP ファイル内の CA は、署名および他のエンティティーへの証明書発行のためのエンティティーとして信頼されるため、 \f2cacerts\fP ファイルの管理は慎重に行う必要があります。 \f2cacerts\fP ファイルには、信頼する CA の証明書だけが含まれていなければなりません。ユーザーは、自身の責任において、 \f2cacerts\fP ファイルにバンドルされている信頼できるルート CA 証明書を検証し、信頼性に関する独自の決定を行います。信頼できない CA 証明書を \f2cacerts\fP ファイルから削除するには、 \f2keytool\fP コマンドの削除オプションを使用します。 \f2cacerts\fP ファイルは JRE のインストールディレクトリにあります。このファイルを編集するアクセス権がない場合は、システム管理者に連絡してください。  
-.TP 2
-o
-\f3インターネット RFC 1421 証明書符号化規格\fP 
-.LP
-多くの場合、証明書は、バイナリ符号化ではなく、インターネット RFC 1421 規格で定義されている出力可能符号化方式を使って格納されます。「Base 64 符号化」とも呼ばれるこの証明書形式では、電子メールやその他の機構を通じて、ほかのアプリケーションに証明書を容易にエクスポートできます。 
-.LP
-\f2\-importcert\fP と \f2\-printcert\fP コマンドでは、この形式の証明書とバイナリ符号化の証明書を読み込むことができます。 
-.LP
-\f2\-exportcert\fP コマンドでは、デフォルトでバイナリ符号化の証明書が出力されます。 ただし、 \f2\-rfc\fP オプションを指定した場合は、出力可能符号化方式の証明書が出力されます。 
-.LP
-\f2\-list\fP コマンドでは、デフォルトで証明書の SHA1 フィンガープリントが出力されます。 \f2\-v\fP オプションを指定すると、人間が読むことのできる形式で証明書が出力されます。一方、 \f2\-rfc\fP オプションを指定すると、出力可能符号化方式で証明書が出力されます。 
-.LP
-出力可能符号化方式で符号化された証明書は、次の行で始まります。 
-.nf
-\f3
-.fl
-\-\-\-\-\-BEGIN CERTIFICATE\-\-\-\-\-
-.fl
-\fP
-.fi
-.LP
-最後は、次の行で終わります。 
-.nf
-\f3
-.fl
-\-\-\-\-\-END CERTIFICATE\-\-\-\-\-
-.fl
-\fP
-.fi
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+オプションを囲む中カッコは、そのオプションをコマンドラインで指定しなかった場合に、デフォルト値が使用されることを意味します。オプションのデフォルト値を参照してください。中カッコは、\fI\-v\fR、\fI\-rfc\fRおよび\fI\-J\fRオプションを囲むためにも使用されますが、これらのオプションはコマンドラインで指定された場合にのみ意味を持ちます。指定されていない場合以外、デフォルト値はありません。
 .RE
-
-.LP
-.SS 
-X.500 識別名
-.LP
-.LP
-X.500 識別名は、エンティティーを特定するために使われます。たとえば、X.509 証明書の \f2subject\fP フィールドと \f2issuer\fP (署名者) フィールドで指定される名前は、X.500 識別名です。\f3keytool\fP は、次のサブパートをサポートしています。
-.LP
-.RS 3
-.TP 2
-o
-\f2commonName\fP \- 人の通称。 「Susan Jones」など 
-.TP 2
-o
-\f2organizationUnit\fP \- 小さな組織 (部、課など) の名称。 「仕入部」など 
-.TP 2
-o
-\f2organizationName\fP \- 大きな組織の名称。 「ABCSystems, Inc.」など 
-.TP 2
-o
-\f2localityName\fP \- 地域 (都市) 名。 「Palo Alto」など 
-.TP 2
-o
-\f2stateName\fP \- 州名または地方名。 「California」など 
-.TP 2
-o
-\f2country\fP \- 2 文字の国番号。 「CH」など 
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+オプションを囲む角カッコは、そのオプションをコマンドラインで指定しなかった場合に、値の入力を求められることを意味します。\fI\-keypass\fRオプションの場合、オプションをコマンドラインで指定しなかった場合は、\fIkeytool\fRコマンドがまずキーストアのパスワードを使用して非公開/秘密鍵の復元を試みます。この試みが失敗した場合、\fIkeytool\fRコマンドにより、非公開/秘密鍵のパスワードの入力を求められます。
 .RE
-
-.LP
-.LP
-\-genkeypair コマンドの \f2\-dname\fP オプションの値として識別名文字列を指定する場合は、  次の形式で指定する必要があります。
-.LP
-.nf
-\f3
-.fl
-CN=\fP\f4cName\fP\f3, OU=\fP\f4orgUnit\fP\f3, O=\fP\f4org\fP\f3, L=\fP\f4city\fP\f3, S=\fP\f4state\fP\f3, C=\fP\f4countryCode\fP\f3
-.fl
-\fP
-.fi
-
-.LP
-.LP
-イタリック体の項目は、実際に指定する値を表します。 短縮形のキーワードの意味は、次のとおりです。
-.LP
-.nf
-\f3
-.fl
-        CN=commonName
-.fl
-        OU=organizationUnit
-.fl
-        O=organizationName
-.fl
-        L=localityName
-.fl
-        S=stateName
-.fl
-        C=country
-.fl
-\fP
-.fi
-
-.LP
-.LP
-次に示すのは、識別名文字列の例です。
-.LP
-.nf
-\f3
-.fl
-CN=Mark Smith, OU=Java, O=Oracle, L=Cupertino, S=California, C=US
-.fl
-\fP
-.fi
-
-.LP
-.LP
-次は、この文字列を使ったコマンドの例です。
-.LP
-.nf
-\f3
-.fl
-keytool \-genkeypair \-dname "CN=Mark Smith, OU=Java, O=Oracle, L=Cupertino,
-.fl
-S=California, C=US" \-alias mark
-.fl
-\fP
-.fi
-
-.LP
-.LP
-キーワードの短縮形では、大文字と小文字は区別されません。たとえば、CN、cn、および Cn は、どれも同じものとして扱われます。
-.LP
-.LP
-一方、キーワードの指定順序には意味があり、各サブコンポーネントは上に示した順序で指定する必要があります。ただし、サブコンポーネントをすべて指定する必要はありません。たとえば、次のように一部のサブコンポーネントだけを指定できます。
-.LP
-.nf
-\f3
-.fl
-CN=Steve Meier, OU=Java, O=Oracle, C=US
-.fl
-\fP
-.fi
-
-.LP
-.LP
-識別名文字列の値にコンマが含まれる場合に、コマンド行で文字列を指定するときには、次のようにコンマを文字 \\ でエスケープする必要があります。
-.LP
-.nf
-\f3
-.fl
-   cn=Peter Schuster, ou=Java\\, Product Development, o=Oracle, c=US
-.fl
-\fP
-.fi
-
-.LP
-.LP
-識別名文字列をコマンド行で指定する必要はありません。識別名を必要とするコマンドを実行するときに、コマンド行で識別名を指定しなかった場合は、各サブコンポーネントの入力を求められます。この場合は、コンマを文字 \\ でエスケープする必要はありません。
-.LP
-.SS 
-信頼できる証明書のインポートに関する注意事項
-.LP
-.LP
-重要: 信頼できる証明書として証明書をインポートする前に、証明書の内容を慎重に調べてください。
-.LP
-.LP
-まず、証明書の内容を表示し (\-printcert コマンドを使用するか、または \-noprompt オプションを指定しないで \-importcert コマンドを使用)、 コマンドを使用し、 表示された証明書のフィンガープリントが、期待されるフィンガープリントと一致するかどうかを確認します。たとえば、あるユーザーから証明書が送られてきて、この証明書を /tmp/cert という名前でファイルに格納しているとします。 この場合は、信頼できる証明書のリストにこの証明書を追加する前に、 \f2\-printcert\fP コマンドを実行してフィンガープリントを表示できます。たとえば、次のようにします。
-.LP
-.nf
-\f3
-.fl
-  keytool \-printcert \-file /tmp/cert
-.fl
-    Owner: CN=ll, OU=ll, O=ll, L=ll, S=ll, C=ll
-.fl
-    Issuer: CN=ll, OU=ll, O=ll, L=ll, S=ll, C=ll
-.fl
-    Serial Number: 59092b34
-.fl
-    Valid from: Thu Sep 25 18:01:13 PDT 1997 until: Wed Dec 24 17:01:13 PST 1997
-.fl
-    Certificate Fingerprints:
-.fl
-         MD5:  11:81:AD:92:C8:E5:0E:A2:01:2E:D4:7A:D7:5F:07:6F
-.fl
-         SHA1: 20:B6:17:FA:EF:E5:55:8A:D0:71:1F:E8:D6:9D:C0:37:13:0E:5E:FE
-.fl
-         SHA256: 90:7B:70:0A:EA:DC:16:79:92:99:41:FF:8A:FE:EB:90:
-.fl
-                 17:75:E0:90:B2:24:4D:3A:2A:16:A6:E4:11:0F:67:A4
-.fl
-\fP
-.fi
-
-.LP
-.LP
-次に、証明書を送信した人物に連絡し、この人物が提示したフィンガープリントと、上のコマンドで表示されたフィンガープリントとを比較します。フィンガープリントが一致すれば、送信途中でほかの何者か (攻撃者など) による証明書のすり替えが行われていないことを確認できます。送信途中でこの種の攻撃が行われていた場合、チェックを行わずに証明書をインポートすると、攻撃者によって署名されたすべてのもの (攻撃的意図を持つクラスファイルを含んだ JAR ファイルなど) を信頼することになります。
-.LP
-.LP
-注: 証明書をインポートする前に必ず \f2\-printcert\fP コマンドを実行しなければならないわけではありません。キーストア内の信頼できる証明書のリストに証明書を追加する前に \f2\-importcert\fP コマンドを実行すると、証明書の情報が表示され、確認を求めるメッセージが表示されます。インポート操作は、この時点で中止できます。ただし、確認メッセージが表示されるのは、\-importcert コマンドを \-noprompt オプションを指定せずに実行した場合だけです。 コマンドを使用し、 \f2\-noprompt\fP オプションが指定されている場合、ユーザーとの対話は行われません。
-.LP
-.SS 
-パスワードに関する注意事項
-.LP
-.LP
-キーストアに対する操作を行うほとんどのコマンドでは、ストアのパスワードが必要です。また、一部のコマンドでは、非公開/秘密鍵のパスワードが必要になることがあります。
-.LP
-.LP
-パスワードはコマンド行で指定できます (ストアのパスワードには \f2\-storepass\fP オプション、非公開鍵のパスワードには \f2\-keypass\fP オプションを使用)。ただし、テストを目的とする場合、または安全であることがわかっているシステムで実行する場合以外は、コマンド行やスクリプトでパスワードを指定しないでください。
-.LP
-.LP
-必要なパスワードのオプションをコマンド行で指定しなかった場合は、パスワードの入力を求められます。
-.LP
-.SS 
-証明書の準拠に関する注意事項
-.LP
-.LP
-インターネット標準の 
-.na
-\f2RFC 5280\fP @
-.fi
-http://tools.ietf.org/rfc/rfc5280.txt では、X.509 証明書が準拠するプロファイルを定義しています。このプロファイルには、証明書のフィールドやエクステンションで有効な値や値の組み合わせが含まれています。\f3keytool\fP では、これらのすべての規則が適用されているわけではないので、標準に準拠しない証明書が生成される可能性があり、そのような証明書は JRE やほかのアプリケーションで拒否されることがあります。ユーザーは、 \f2\-dname\fP や \f2\-ext\fP などで適正なオプションを指定するようにしてください。
-.LP
-.SH "関連項目"
-.LP
-.RS 3
-.TP 2
-o
-jar(1) ツールのドキュメント 
-.TP 2
-o
-jarsigner(1) ツールのドキュメント 
-.TP 2
-o
-.na
-\f4keytool\fP\f2 の使用例については、\fP @
-.fi
-http://download.oracle.com/javase/tutorial/security/index.html
-.na
-\f2「Java Tutorial」\fP\f4の\fP @
-.fi
-http://download.oracle.com/javase/tutorial/「Security」\f3を参照\fP 
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+イタリック体の項目の実際の値(オプションの値)は、指定する必要があります。たとえば、\fI\-printcert\fRコマンドの形式は次のとおりです。
+.sp
+\fIkeytool \-printcert {\-file cert_file} {\-v}\fR
+.sp
+\fI\-printcert\fRコマンドを指定する場合は、\fIcert_file\fRを実際のファイル名で置き換えます。例:
+\fIkeytool \-printcert \-file VScert\&.cer\fR
 .RE
-
-.LP
-.SH "変更点"
-.LP
-.LP
-Java SE 6 で keytool のコマンドインタフェースが変更されました。
-.LP
-.LP
-\f3keytool\fP は、ユーザーがパスワードを入力する際にその入力内容を表示しなくなりました。ユーザーはパスワード入力時にその入力内容を確認できなくなったため、初期キーストアパスワードを設定したり鍵パスワードを変更したりするなど、パスワードの設定や変更を行うたびにパスワードの再入力を求められます。
-.LP
-.LP
-変更されたコマンドの中には、名前が変更されただけのものもあれば、廃止されてこのドキュメントに記載されなくなったものもあります。以前のすべてのコマンド (名前が変更されたものと廃止されたものの両方) は、このリリースでも引き続きサポートされており、今後のリリースでもサポートされる予定です。keytool のコマンドインタフェースに加えられたすべての変更点の概要を、次に示します。
-.LP
-.LP
-名前が変更されたコマンド:
-.LP
-.RS 3
-.TP 2
-o
-\f2\-export\fP の名前が \f2\-exportcert に変更\fP 
-.TP 2
-o
-\f2\-genkey\fP の名前が \f2\-genkeypair に変更\fP 
-.TP 2
-o
-\f2\-import\fP の名前が \f2\-importcert に変更\fP 
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+オプションの値に空白(スペース)が含まれている場合は、値を引用符で囲む必要があります。
 .RE
-
-.LP
-.LP
-廃止されてドキュメントに記載されなくなったコマンド:
-.LP
-.RS 3
-.TP 2
-o
-.na
-\f2\-keyclone\fP @
-.fi
-http://java.sun.com/j2se/1.5.0/docs/tooldocs/windows/keytool.html#keycloneCmd 
-.TP 2
-o
-.na
-\f2\-identitydb\fP @
-.fi
-http://java.sun.com/j2se/1.5.0/docs/tooldocs/windows/keytool.html#identitydbCmd 
-.TP 2
-o
-.na
-\f2\-selfcert\fP @
-.fi
-http://java.sun.com/j2se/1.5.0/docs/tooldocs/windows/keytool.html#selfcertCmd 
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\fI\-help\fRオプションがデフォルトです。\fIkeytool\fRコマンドは、\fIkeytool \-help\fRと同じです。
 .RE
-
-.LP
+.SH "オプションのデフォルト値"
+.PP
+次の例で、様々なオプション値のデフォルト値を示します。
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+\-alias "mykey"
  
+\-keyalg
+    "DSA" (when using \-genkeypair)
+    "DES" (when using \-genseckey)
+ 
+\-keysize
+    2048 (when using \-genkeypair and \-keyalg is "RSA")
+    1024 (when using \-genkeypair and \-keyalg is "DSA")
+    256 (when using \-genkeypair and \-keyalg is "EC")
+    56 (when using \-genseckey and \-keyalg is "DES")
+    168 (when using \-genseckey and \-keyalg is "DESede")
+ 
+\-validity 90
+ 
+\-keystore <the file named \&.keystore in the user\*(Aqs home directory>
+ 
+\-storetype <the value of the "keystore\&.type" property in the
+    security properties file, which is returned by the static
+    getDefaultType method in java\&.security\&.KeyStore>
+ 
+\-file
+    stdin (if reading)
+    stdout (if writing)
+ 
+\-protected false
+.fi
+.if n \{\
+.RE
+.\}
+.PP
+公開/秘密鍵ペアの生成において、署名アルゴリズム(\fI\-sigalg\fRオプション)は、基になる秘密鍵のアルゴリズムから派生します。
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+基になる秘密鍵がDSAタイプである場合は、\fI\-sigalg\fRオプションのデフォルト値はSHA1withDSAになります。
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+基になる秘密鍵がRSAタイプである場合は、\fI\-sigalg\fRオプションのデフォルト値はSHA256withRSAになります。
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+基になる秘密鍵がECタイプである場合は、\fI\-sigalg\fRオプションのデフォルト値はSHA256withECDSAになります。
+.RE
+.PP
+\fI\-keyalg\fRおよび\fI\-sigalg\fR引数の完全なリストについては、
+http://docs\&.oracle\&.com/javase/8/docs/technotes/guides/security/crypto/CryptoSpec\&.html#AppAの「Java Cryptography Architecture (JCA) Reference Guide」を参照してください。
+.SH "一般オプション"
+.PP
+\fI\-v\fRオプションは、\fI\-help\fRコマンドを除くすべてのコマンドで使用できます。\fI\-v\fRオプションを指定した場合、コマンドは冗長モードで実行され、詳細な情報が出力されます。
+.PP
+任意のコマンドで指定できる\fI\-Jjavaoption\fR引数もあります。\fI\-Jjavaoption\fRを指定した場合、指定された\fIjavaoption\fR文字列がJavaインタプリタに直接渡されます。このオプションには、空白を含めることはできません。このオプションは、実行環境またはメモリー使用を調整する場合に便利です。指定できるインタプリタ・オプションを一覧表示するには、コマンドラインで\fIjava \-h\fRまたは\fIjava \-X\fRと入力してください。
+.PP
+次のオプションは、キーストアに対する操作を行うすべてのコマンドで指定できます。
+.PP
+\-storetype \fIstoretype\fR
+.RS 4
+この修飾子は、インスタンスを生成するキーストアのタイプを指定します。
+.RE
+.PP
+\-keystore \fIkeystore\fR
+.RS 4
+キーストアの場所を指定します。
+.sp
+特定の\fIkeytool\fRコマンドを実行する際に、JKS
+\fIstoretype\fRが使用され、かつキーストア・ファイルがまだ存在していなかった場合、新しいキーストア・ファイルが作成されます。たとえば、\fIkeytool \-genkeypair\fRの呼出し時に\fI\-keystore\fRオプションが指定されなかった場合、\fI\&.keystore\fRという名前のデフォルト・キーストア・ファイルがユーザーのホーム・ディレクトリ内にまだ存在していなければ、そこに作成されます。同様に、\fI\-keystore ks_file\fRというオプションが指定されてもそのks_fileが存在しなかった場合、そのファイルが作成されます。JKS
+\fIstoretype\fRの詳細は、\fIの\fRKeyStoreの実装キーストアの別名に関する項を参照してください。
+.sp
+\fI\-keystore\fRオプションからの入力ストリームは、\fIKeyStore\&.load\fRメソッドに渡されます。URLとして\fINONE\fRが指定されている場合は、nullのストリームが\fIKeyStore\&.load\fRメソッドに渡されます。\fINONE\fRは、KeyStoreがファイルベースではない場合に指定してください。たとえば、ハードウェア・トークン・デバイス上に存在している場合などです。
+.RE
+.PP
+\-storepass[:\fIenv\fR| :\fIfile\fR] argument
+.RS 4
+キーストアの整合性を保護するために使用するパスワードを指定します。
+.sp
+修飾子\fIenv\fRまたは\fIfile\fRを指定しない場合、パスワードの値は\fIargument\fRになります。この値は、6文字以上にする必要があります。それ以外の場合、パスワードは次のようにして取得されます。
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\fIenv\fR:
+\fIargument\fRという名前の環境変数からパスワードを取得します。
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\fIfile\fR: argumentという名前のファイルからパスワードを取得します。
+.RE
+.sp
+\fB注意:\fR
+\fI\-keypass\fR、\fI\-srckeypass\fR、\-\fIdestkeypass\fR、\fI\-srcstorepass\fR、\fI\-deststorepass\fRなどのパスワードを必要とするその他のオプションはすべて、\fIenv\fRおよび\fIfile\fR修飾子を受け付けます。パスワード・オプションと修飾子は、必ずコロン(:)で区切ってください。
+.sp
+パスワードは、キーストアの内容にアクセスするすべてのコマンドで使用されます。この種のコマンドを実行するときに、コマンドラインで\fI\-storepass\fRオプションを指定しなかった場合は、パスワードの入力を求められます。
+.sp
+キーストアから情報を取得する場合、パスワードは省略可能です。パスワードが指定されていない場合は、取得した情報の整合性を検証できず、警告が表示されます。
+.RE
+.PP
+\-providerName \fIprovider_name\fR
+.RS 4
+セキュリティ・プロパティ・ファイル内に含まれる暗号化サービス・プロバイダ名を特定するために使用されます。
+.RE
+.PP
+\-providerClass \fIprovider_class_name\fR
+.RS 4
+暗号化サービス・プロバイダがセキュリティ・プロパティ・ファイルに指定されていないときは、そのマスター・クラス・ファイルの名前を指定するときに使用されます。
+.RE
+.PP
+\-providerArg \fIprovider_arg\fR
+.RS 4
+\fI\-providerClass\fRオプションとともに使用され、\fIprovider_class_name\fRのコンストラクタのオプションの文字列入力引数を表します。
+.RE
+.PP
+\-protected
+.RS 4
+\fItrue\fRまたは\fIfalse\fRのいずれか。パスワードを専用PINリーダーなどの保護された認証パス経由で指定する必要がある場合は、この値を\fItrue\fRに指定する必要があります。\fI\-importkeystore\fRコマンドには2つのキーストアが関連しているため、ソース・キーストアと宛先キーストアにそれぞれ次の2つのオプション、\fI\-srcprotected\fRと\-\fIdestprotected\fRが用意されています。
+.RE
+.PP
+\-ext \fI{name{:critical} {=value}}\fR
+.RS 4
+X\&.509証明書エクステンションを示します。このオプションを\fI\-genkeypair\fRおよび\fI\-gencert\fRで使用して、生成される証明書または\fI\-certreq\fRにエクステンションを埋め込み、証明書リクエストでリクエストされるエクステンションを示すことができます。このオプションは複数回指定できます。\fIname\fR引数には、サポートされているエクステンション名(名前付きエクステンションを参照)または任意のOID番号を指定できます。指定されている場合、\fIvalue\fR引数はエクステンションの引数を指します。\fIvalue\fRを省略した場合、エクステンションのデフォルト値またはエクステンションが引数を必要としないことを示します。\fI:critical\fR修飾子が指定された場合、エクステンションの\fIisCritical\fR属性は\fItrue\fRで、指定されない場合は\fIfalse\fRです。\fI:critical\fRのかわりに\fI:c\fRを使用できます。
+.RE
+.SH "名前付きエクステンション"
+.PP
+\fIkeytool\fRコマンドは、次の名前のエクステンションをサポートしています。名前の大/小文字は区別されません。
+.PP
+BCまたはBasicContraints
+.RS 4
+\fB値\fR: 完全な形式は次のとおりです:
+\fIca:{true|false}[,pathlen:<len>]\fRまたは\fI<len>\fR(これは、\fIca:true,pathlen:<len>\fRの短縮形です)。<\fIlen\fR>を省略すると、\fIca:true\fRの意味になります。
+.RE
+.PP
+KUまたはKeyUsage
+.RS 4
+\fB値\fR:
+\fIusage\fR(\fIusage\fR)*、\fIusage\fRには\fIdigitalSignature\fR、\fInonRepudiation\fR
+(contentCommitment)、\fIkeyEncipherment\fR、\fIdataEncipherment\fR、\fIkeyAgreement\fR、\fIkeyCertSign\fR、\fIcRLSign\fR、\fIencipherOnly\fR、\fIdecipherOnly\fRのいずれかを指定できます。\fIusage\fR引数は、不明確にならないかぎり、最初の数文字(\fIdigitalSignature\fRの場合は\fIdig\fR)またはキャメルケース・スタイル(\fIdigitalSignature\fRの場合は\fIdS\fR、\fIcRLSign\fRの場合は\fIcRLS\fR)で省略表記できます。\fIusage\fR値は、大文字と小文字が区別されます。
+.RE
+.PP
+EKUまたはExtendedKeyUsage
+.RS 4
+\fB値\fR:
+\fIusage\fR(\fIusage\fR)*、\fIusage\fRには\fIanyExtendedKeyUsage\fR、\fIserverAuth\fR、\fIclientAuth\fR、\fIcodeSigning\fR、\fIemailProtection\fR、\fItimeStamping\fR、\fIOCSPSigning\fRまたは任意の\fIOID文字列\fRのいずれかを指定できます。\fIusage\fR引数は、不明確にならないかぎり、最初の数文字またはキャメルケース・スタイルで省略表記できます。\fIusage\fR値は、大文字と小文字が区別されます。
+.RE
+.PP
+SANまたはSubjectAlternativeName
+.RS 4
+\fB値\fR:
+\fItype\fR:\fIvalue\fR
+(t\fIype:value\fR)*、\fItype\fRには\fIEMAIL\fR、\fIURI\fR、\fIDNS\fR、\fIIP\fRまたは\fIOID\fRを指定できます。\fIvalue\fR引数は、\fItype\fRの文字列形式の値です。
+.RE
+.PP
+IANまたはIssuerAlternativeName
+.RS 4
+\fB値\fR:
+\fISubjectAlternativeName\fRと同じです。
+.RE
+.PP
+SIAまたはSubjectInfoAccess
+.RS 4
+\fB値\fR:
+\fImethod\fR:\fIlocation\-type\fR:\fIlocation\-value\fR
+(\fImethod:location\-type\fR:\fIlocation\-value\fR)*、\fImethod\fRには\fItimeStamping\fR、\fIcaRepository\fRまたは任意のOIDを指定できます。\fIlocation\-type\fRおよび\fIlocation\-value\fR引数には、\fISubjectAlternativeName\fRエクステンションでサポートされる任意の\fItype\fR:\fIvalue\fRを指定できます。
+.RE
+.PP
+AIAまたはAuthorityInfoAccess
+.RS 4
+\fB値\fR:
+\fISubjectInfoAccess\fRと同じです。\fImethod\fR引数には、\fIocsp\fR、\fIcaIssuers\fRまたは任意のOIDを指定できます。
+.RE
+.PP
+\fIname\fRがOIDの場合、OCTET STRINGタイプと長さのバイトを除外したエクステンションについては、値は\fIextnValue\fRの16進ダンプのDERエンコーディングです。HEX文字列では、標準の16進数(0\-9、a\-f、A\-F)以外の文字は無視されます。したがって、01:02:03:04と01020304の両方とも同一の値として受け付けられます。値がない場合、エクステンションの値フィールドは空になります。
+.PP
+\fI\-gencert\fRでのみ使用する\fIhonored\fRという特別な名前は、証明書リクエストに含まれるエクステンションを優先する方法を示します。この名前の値は、\fIall\fR(リクエストされるすべてのエクステンションが優先される)、\fIname{:[critical|non\-critical]}\fR(名前付きのエクステンションが優先されるが、別の\fIisCritical\fR属性を使用する)、および\fI\-name\fR(\fIall\fRとともに使用し、例外を示す)のカンマ区切りリストです。デフォルトでは、リクエストされるエクステンションは優先されません。
+.PP
+\fI\-ext honored\fRオプションに加え、別の名前の、またはOID
+\fI\-ext\fRのオプションを指定した場合は、このエクステンションが、すでに優先されているエクステンションに追加されます。ただし、この名前(またはOID)を優先される値でも使用した場合は、その値と重要性がリクエストに含まれるものをオーバーライドします。
+.PP
+\fIsubjectKeyIdentifier\fRエクステンションは常に作成されます。自己署名でない証明書の場合は、\fIauthorityKeyIdentifier\fRが作成されます。
+.PP
+\fB注意:\fR
+ユーザーは、エクステンション(および証明書の他のフィールド)の組合せによっては、インターネットの標準に準拠しない場合があることに注意してください。証明書の準拠に関する警告を参照してください。
+.SH "コマンド"
+.PP
+\-gencert
+.RS 4
+\fI{\-rfc} {\-infile infile} {\-outfile outfile} {\-alias alias} {\-sigalg sigalg} {\-dname dname} {\-startdate startdate {\-ext ext}* {\-validity valDays} [\-keypass keypass] {\-keystore keystore} [\-storepass storepass] {\-storetype storetype} {\-providername provider_name} {\-providerClass provider_class_name {\-providerArg provider_arg}} {\-v} {\-protected} {\-Jjavaoption}\fR
+.sp
+証明書リクエスト・ファイル(\fIkeytool\fR
+\fI\-certreq\fRコマンドで作成可能)に対するレスポンスとして証明書を生成します。このコマンドは、\fIinfile\fRから(省略した場合は、標準入力から)リクエストを読み込み、別名の秘密鍵を使用してそのリクエストに署名して、X\&.509証明書を\fIoutfile\fRに(省略した場合は、標準出力に)出力します。\fI\-rfc\fRを指定した場合、出力形式はBASE64符号化のPEMになります。それ以外の場合は、バイナリDERが作成されます。
+.sp
+\fIsigalg\fR値には、証明書に署名を付けるときに使用するアルゴリズムを指定します。\fIstartdate\fR引数は、証明書の有効開始日時です。\fIvalDays\fR引数は、証明書の有効日数を示します。
+.sp
+\fIdname\fRを指定すると、生成される証明書の主体として使用されます。それ以外の場合は、証明書リクエストからの名前が使用されます。
+.sp
+\fIext\fR値は、証明書に埋め込まれるX\&.509エクステンションを示します。\fI\-ext\fRの構文については、一般オプションを参照してください。
+.sp
+\fI\-gencert\fRオプションを使用すると、証明書チェーンを作成できます。次の例では、\fIe1\fRという証明書を作成します。この証明書の証明書チェーンには、3つの証明書が含まれています。
+.sp
+次のコマンドは、\fIca\fR、\fIca1\fR、\fIca2\fRおよび\fIe1\fRの4つの鍵ペアを作成します。
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+keytool \-alias ca \-dname CN=CA \-genkeypair
+keytool \-alias ca1 \-dname CN=CA \-genkeypair
+keytool \-alias ca2 \-dname CN=CA \-genkeypair
+keytool \-alias e1 \-dname CN=E1 \-genkeypair
+.fi
+.if n \{\
+.RE
+.\}
+次の2つのコマンドは、署名付き証明書のチェーンを作成します。\fIca\fRは\fIca1\fRに署名し、\fIca1\fRは\fIca2\fRに署名します。すべて自己発行です。
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+keytool \-alias ca1 \-certreq |
+    keytool \-alias ca \-gencert \-ext san=dns:ca1 |
+    keytool \-alias ca1 \-importcert
+
+keytool \-alias ca2 \-certreq |
+    $KT \-alias ca1 \-gencert \-ext san=dns:ca2 |
+    $KT \-alias ca2 \-importcert
+.fi
+.if n \{\
+.RE
+.\}
+次のコマンドは、証明書\fIe1\fRを作成してファイル\fIe1\&.cert\fRに格納します。この証明書は\fIca2\fRによって署名されます。その結果、\fIe1\fRの証明書チェーンには\fIca\fR、\fIca1\fRおよび\fIca2\fRが含まれることになります。
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+keytool \-alias e1 \-certreq | keytool \-alias ca2 \-gencert > e1\&.cert
+.fi
+.if n \{\
+.RE
+.\}
+.RE
+.PP
+\-genkeypair
+.RS 4
+\fI{\-alias alias} {\-keyalg keyalg} {\-keysize keysize} {\-sigalg sigalg} [\-dname dname] [\-keypass keypass] {\-startdate value} {\-ext ext}* {\-validity valDays} {\-storetype storetype} {\-keystore keystore} [\-storepass storepass] {\-providerClass provider_class_name {\-providerArg provider_arg}} {\-v} {\-protected} {\-Jjavaoption}\fR
+.sp
+鍵のペア(公開鍵および関連する秘密鍵)を生成します。公開鍵はX\&.509 v3自己署名証明書でラップされます。証明書は、単一の要素を持つ証明書チェーンとして格納されます。この証明書チェーンと秘密鍵は、aliasで特定される新しいキーストア・エントリに格納されます。
+.sp
+\fIkeyalg\fR値は鍵ペアの生成に使用するアルゴリズムを、\fIkeysize\fR値は生成する各鍵のサイズを、それぞれ指定します。\fIsigalg\fR値は、自己署名証明書に署名を付けるために使用するアルゴリズムを指定します。このアルゴリズムは\fIkeyalg\fR値と互換性がある必要があります。
+.sp
+\fIdname\fR値には、\fIalias\fR値に関連付け、自己署名証明書のissuerフィールドとsubjectフィールドとして使用するX\&.500識別名を指定します。コマンドラインで識別名を指定しなかった場合は、識別名の入力を求められます。
+.sp
+\fIkeypass\fR値には、生成される鍵のペアのうち、秘密鍵を保護するのに使用するパスワードを指定します。パスワードを指定しなかった場合は、パスワードの入力を求められます。このとき、\fI[Return]キー\fRを押すと、キーストアのパスワードと同じパスワードが鍵のパスワードに設定されます。\fIkeypass\fR値は、6文字以上にする必要があります。
+.sp
+\fIstartdate\fR値には、証明書の発行時刻を指定します。これは、X\&.509証明書の「Validity」フィールドの「Not Before」値とも呼ばれます。
+.sp
+オプションの値は、次の2つの形式のいずれかで設定できます。
+.sp
+\fI([+\-]nnn[ymdHMS])+\fR
+.sp
+\fI[yyyy/mm/dd] [HH:MM:SS]\fR
+.sp
+最初の形式では、発行時刻は、指定される値の分、現在の時刻から移ります。指定される値は、一連の下位の値を連結したものになります。下位の各値で、プラス記号(「+」)は時間が進むことを、マイナス記号(「\-」)は時間が戻ることを意味しています。移る時間は\fInnn\fRで、単位は年、月、日、時間、分または秒です(それぞれ、1文字の\fIy\fR、\fIm\fR、\fId\fR、\fIH\fR、\fIM\fRまたは\fIS\fR」で示されています)。下位の各値で\fIjava\&.util\&.GregorianCalendar\&.add(int field, int amount)\fRメソッドを使用することで、発行時刻の追加の値が左から右へ計算されます。たとえば、指定すると、発行時刻は次のようになります。
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+Calendar c = new GregorianCalendar();
+c\&.add(Calendar\&.YEAR, \-1);
+c\&.add(Calendar\&.MONTH, 1);
+c\&.add(Calendar\&.DATE, \-1);
+return c\&.getTime()
+.fi
+.if n \{\
+.RE
+.\}
+2番目の形式では、ユーザーは、年/月/日と時間:分:秒の2つの部分で厳密な開始時刻を設定します(地元の時間帯を使用)。ユーザーは、1つの部分のみを指定できます。これは、もう1つの部分は現在の日付(または時刻)と同じになるということです。ユーザーは、形式の定義に示されているように、桁数を厳密に指定する必要があります(短い場合は0で埋めます)。日付と時刻の両方が指定された状態で、2つの部分の間に空白文字が1つ(1つのみ)あります。時間は常に24時間形式で指定してください。
+.sp
+オプションを指定しないと、開始日付は現在の時刻になります。オプションは、最大で1回指定できます。
+.sp
+\fIvalDays\fRの値には、証明書の有効日数を指定します(\fI\-startdate\fRで指定された日付、または\fI\-startdate\fRが指定されていない場合は現在の日付から始まります)。
+.sp
+このコマンドは、以前のリリースでは\fI\-genkey\fRという名前でした。このリリースでは、引き続き古い名前がサポートされています。今後は、新しい名前\fI\-genkeypair\fRが優先されます。
+.RE
+.PP
+\-genseckey
+.RS 4
+\fI\-genseckey {\-alias alias} {\-keyalg keyalg} {\-keysize keysize} [\-keypass keypass] {\-storetype storetype} {\-keystore keystore} [\-storepass storepass] {\-providerClass provider_class_name {\-providerArg provider_arg}} {\-v} {\-protected} {\-Jjavaoption}\fR
+.sp
+秘密鍵を生成し、それを新しい\fIKeyStore\&.SecretKeyEntry\fR(\fIalias\fRで特定される)内に格納します。
+.sp
+\fIkeyalg\fR値は鍵ペアの生成に使用するアルゴリズムを、\fIkeysize\fR値は生成する各鍵のサイズを、それぞれ指定します。\fIkeypass\fR値は、秘密鍵を保護するパスワードです。パスワードを指定しなかった場合は、パスワードの入力を求められます。このとき、[Return]キーを押すと、\fIkeystore\fRのパスワードと同じパスワードが鍵のパスワードに設定されます。\fIkeypass\fR値は、6文字以上にする必要があります。
+.RE
+.PP
+\-importcert
+.RS 4
+\fI\-importcert {\-alias alias} {\-file cert_file} [\-keypass keypass] {\-noprompt} {\-trustcacerts} {\-storetype storetype} {\-keystore keystore} [\-storepass storepass] {\-providerName provider_name} {\-providerClass provider_class_name {\-providerArg provider_arg}} {\-v} {\-protected} {\-Jjavaoption}\fR
+.sp
+ファイル\fIcert_file\fRから証明書または証明書チェーン(証明書チェーンの場合は、PKCS#7形式の応答または一連のX\&.509証明書で提供されるもの)を読み込み、\fIalias\fRによって特定される\fIkeystore\fRエントリに格納します。ファイルが指定されていない場合は、\fIstdin\fRから証明書または証明書チェーンを読み込みます。
+.sp
+\fIkeytool\fRコマンドでは、X\&.509 v1、v2、v3の証明書、およびPKCS#7形式の証明書から構成されているPKCS#7形式の証明書チェーンをインポートできます。インポートするデータは、バイナリ符号化方式、または出力可能符号化方式(Base64符号化とも呼ばれる)のどちらかで提供する必要があります。出力可能符号化方式は、インターネットRFC 1421証明書符号化規格で定義されています。この符号化方式の場合、証明書は\fI\-\fR\fI\-\-\-\-BEGIN\fRで始まる文字列で開始され、\fI\-\-\-\-\-END\fRで始まる文字列で終了する必要があります。
+.sp
+証明書は、信頼できる証明書のリストに追加するため、および認証局(CA)に証明書署名リクエストを送信した結果としてCAから受信した証明書応答をインポートするため(コマンドの\fI\-certreq\fRオプションを参照)という2つの理由でインポートします。
+.sp
+どちらのタイプのインポートを行うかは、\fI\-alias\fRオプションの値によって指定します。別名がキー・エントリをポイントしない場合、\fIkeytool\fRコマンドはユーザーが信頼できる証明書エントリを追加しようとしているものとみなします。この場合、別名がキーストア内に存在していないことが必要です。別名がすでに存在している場合、その別名の信頼できる証明書がすでに存在することになるので、\fIkeytool\fRコマンドはエラーを出力し、証明書のインポートを行いません。別名がキー・エントリをポイントする場合、\fIkeytool\fRコマンドはユーザーが証明書応答をインポートしようとしているものとみなします。
+.RE
+.PP
+\-importpassword
+.RS 4
+\fI{\-alias alias} [\-keypass keypass] {\-storetype storetype} {\-keystore keystore} [\-storepass storepass] {\-providerClass provider_class_name {\-providerArg provider_arg}} {\-v} {\-protected} {\-Jjavaoption}\fR
+.sp
+パスフレーズをインポートし、\fIalias\fRで識別される新規\fIKeyStore\&.SecretKeyEntry\fRに格納します。パスフレーズは、標準入力ストリームを介して提供できます。または、ユーザーにそのプロンプトが表示されます。\fIkeypass\fRは、インポートされるパスフレーズの保護に使用されるパスワードです。パスワードを指定しなかった場合は、パスワードの入力を求められます。このとき、[Return]キーを押すと、\fIkeystore\fRのパスワードと同じパスワードが鍵のパスワードに設定されます。\fIkeypass\fRは、6文字以上にする必要があります。
+.RE
+.PP
+\-importkeystore
+.RS 4
+\fI{\-srcstoretype srcstoretype} {\-deststoretype deststoretype} [\-srcstorepass srcstorepass] [\-deststorepass deststorepass] {\-srcprotected} {\-destprotected} {\-srcalias srcalias {\-destalias destalias} [\-srckeypass srckeypass] } [\-destkeypass destkeypass] {\-noprompt} {\-srcProviderName src_provider_name} {\-destProviderName dest_provider_name} {\-providerClass provider_class_name {\-providerArg provider_arg}} {\-v} {\-protected} {\-Jjavaoption}\fR
+.sp
+ソース・キーストアからターゲット・キーストアへ、単一のエントリまたはすべてのエントリをインポートします。
+.sp
+\fI\-srcalias\fRオプションが指定された場合、このコマンドは、その別名で特定される単一のエントリをターゲット・キーストアにインポートします。\fIdestalias\fR経由でターゲット別名が指定されなかった場合、\fIsrcalias\fRがターゲット別名として使用されます。ソースのエントリがパスワードで保護されていた場合、\fIsrckeypass\fRを使用してそのエントリが回復されます。\fIsrckeypass\fRが指定されなかった場合、\fIkeytool\fRコマンドは\fIsrcstorepass\fRを使用してそのエントリを回復しようとします。\fIsrcstorepass\fRが指定されなかったか正しくなかった場合、ユーザーはパスワードの入力を求められます。ターゲットのエントリは\fIdestkeypass\fRによって保護されます。\fIdestkeypass\fRが指定されなかった場合、ターゲット・エントリはソース・エントリのパスワードによって保護されます。たとえば、ほとんどのサード・パーティ・ツールでは、PKCS #12キーストアで\fIstorepass\fRと\fIkeypass\fRが同じである必要があります。これらのツールのPKCS #12キーストアを作成する場合は、常に\fI\-destkeypass\fRと\fI\-deststorepass\fRが同じになるように指定します。
+.sp
+\fI\-srcalias\fRオプションが指定されなかった場合、ソース・キーストア内のすべてのエントリがターゲット・キーストア内にインポートされます。各ターゲット・エントリは対応するソース・エントリの別名の下に格納されます。ソースのエントリがパスワードで保護されていた場合、\fIsrcstorepass\fRを使用してそのエントリが回復されます。\fIsrcstorepass\fRが指定されなかったか正しくなかった場合、ユーザーはパスワードの入力を求められます。ソース・キーストア内のあるエントリ・タイプがターゲット・キーストアでサポートされていない場合や、あるエントリをターゲット・キーストアに格納する際にエラーが発生した場合、ユーザーはそのエントリをスキップして処理を続行するか、あるいは処理を中断するかの選択を求められます。ターゲット・エントリはソース・エントリのパスワードによって保護されます。
+.sp
+ターゲット別名がターゲット・キーストア内にすでに存在していた場合、ユーザーは、そのエントリを上書きするか、あるいは異なる別名の下で新しいエントリを作成するかの選択を求められます。
+.sp
+
+\fI\-noprompt\fRオプションを指定した場合、ユーザーは新しいターゲット別名の入力を求められません。既存のエントリがそのターゲット別名で上書きされます。インポートできないエントリはスキップされ、警告が出力されます。
+.RE
+.PP
+\-printcertreq
+.RS 4
+\fI{\-file file}\fR
+.sp
+PKCS#10形式の証明書リクエストの内容を出力します。このリクエストは、\fIkeytool\fR
+\fI\-certreq\fRコマンドで生成できます。このコマンドは、ファイルからリクエストを読み取ります。ファイルが存在しない場合、リクエストは標準入力から読み取られます。
+.RE
+.PP
+\-certreq
+.RS 4
+\fI{\-alias alias} {\-dname dname} {\-sigalg sigalg} {\-file certreq_file} [\-keypass keypass] {\-storetype storetype} {\-keystore keystore} [\-storepass storepass] {\-providerName provider_name} {\-providerClass provider_class_name {\-providerArg provider_arg}} {\-v} {\-protected} {\-Jjavaoption}\fR
+.sp
+PKCS#10形式を使用して証明書署名リクエスト(CSR)を生成します。
+.sp
+CSRは、証明書発行局(CA)に送信することを目的としたものです。CAは、証明書要求者を(通常はオフラインで)認証し、証明書または証明書チェーンを送り返します。この証明書または証明書チェーンは、キーストア内の既存の証明書チェーン(最初は1つの自己署名証明書から構成される)に置き換えて使用します。
+.sp
+aliasに関連付けられた秘密鍵は、PKCS#10証明書リクエストを作成するのに使用されます。秘密鍵にアクセスするには、正しいパスワードを指定する必要があります。コマンドラインで\fIkeypass\fRを指定しておらず、秘密鍵のパスワードがキーストアのパスワードと異なる場合は、秘密鍵のパスワードの入力を求められます。\fIdname\fRが指定されている場合は、それがCSRで主体として使用されます。それ以外の場合は、別名に関連付けられたX\&.500識別名が使用されます。
+.sp
+\fIsigalg\fR値には、CSRに署名を付けるときに使用するアルゴリズムを指定します。
+.sp
+CSRは、ファイルcertreq_fileに格納されます。ファイルが指定されていない場合は、\fIstdout\fRにCSRが出力されます。
+.sp
+CAからのレスポンスをインポートするには、\fIimportcert\fRコマンドを使用します。
+.RE
+.PP
+\-exportcert
+.RS 4
+\fI{\-alias alias} {\-file cert_file} {\-storetype storetype} {\-keystore keystore} [\-storepass storepass] {\-providerName provider_name} {\-providerClass provider_class_name {\-providerArg provider_arg}} {\-rfc} {\-v} {\-protected} {\-Jjavaoption}\fR
+.sp
+\fIalias\fRに関連付けられた証明書をキーストアから読み込み、ファイルcert_fileに格納します。ファイルが指定されていない場合は、\fIstdout\fRに証明書が出力されます。
+.sp
+デフォルトでは、証明書はバイナリ符号化で出力されます。\fI\-rfc\fRオプションが指定されている場合、出力可能符号化方式の出力はインターネットRFC 1421証明書符号化規格で定義されます。
+.sp
+\fIalias\fRが、信頼できる証明書を参照している場合は、該当する証明書が出力されます。それ以外の場合、\fIalias\fRは、関連付けられた証明書チェーンを持つ鍵エントリを参照します。この場合は、チェーン内の最初の証明書が返されます。この証明書は、\fIalias\fRによって表されるエンティティの公開鍵を認証する証明書です。
+.sp
+このコマンドは、以前のリリースでは\fI\-export\fRという名前でした。このリリースでは、引き続き古い名前がサポートされています。今後は、新しい名前\fI\-exportcert\fRが優先されます。
+.RE
+.PP
+\-list
+.RS 4
+\fI{\-alias alias} {\-storetype storetype} {\-keystore keystore} [\-storepass storepass] {\-providerName provider_name} {\-providerClass provider_class_name {\-providerArg provider_arg}} {\-v | \-rfc} {\-protected} {\-Jjavaoption}\fR
+.sp
+\fIalias\fRで特定されるキーストア・エントリの内容を\fIstdout\fRに出力します。\fIalias\fRが指定されていない場合は、キーストア全体の内容が表示されます。
+.sp
+このコマンドは、デフォルトでは証明書のSHA1フィンガープリントを表示します。
+\fI\-v\fRオプションが指定されている場合は、所有者、発行者、シリアル番号、拡張機能などの付加的な情報とともに、人間が読むことのできる形式で証明書が表示されます。\fI\-rfc\fRオプションが指定されている場合は、出力可能符号化方式で証明書の内容が出力されます。出力可能符号化方式は、インターネットRFC 1421証明書符号化規格で定義されています。
+.sp
+\fI\-v\fRオプションと\fI\-rfc\fRオプションを同時に指定することはできません。
+.RE
+.PP
+\-printcert
+.RS 4
+\fI{\-file cert_file | \-sslserver host[:port]} {\-jarfile JAR_file {\-rfc} {\-v} {\-Jjavaoption}\fR
+.sp
+ファイルcert_file、host:portにあるSSLサーバー、または署名付きJARファイル\fIJAR_file\fR(\fI\-jarfile\fRオプションを指定)から証明書を読み込み、人間が読むことのできる形式で証明書の内容を表示します。ポートが指定されていない場合は、標準のHTTPSポート443が想定されます。\fI\-sslserver\fRおよび\-fileオプションを同時に指定することはできません。これに反する場合、エラーが報告されます。オプションが指定されていない場合は、\fIstdin\fRから証明書を読み込みます。
+.sp
+\fI\-rfc\fRが指定されている場合、\fIkeytool\fRコマンドは、インターネットRFC 1421証明書符号化標準で定義されているように、PEMモードで証明書を出力します。インターネットRFC 1421証明書符号化規格を参照してください。
+.sp
+ファイルまたは\fIstdin\fRから証明書を読み込む場合、その証明書は、インターネットRFC 1421証明書符号化標準で定義されているように、バイナリ符号化方式または出力可能符号化方式で表示できます。
+.sp
+SSLサーバーがファイアウォールの背後にある場合は、\fI\-J\-Dhttps\&.proxyHost=proxyhost\fRおよび\fI\-J\-Dhttps\&.proxyPort=proxyport\fRオプションをコマンドラインで指定して、プロキシ・トンネリングを使用できます。http://docs\&.oracle\&.com/javase/8/docs/technotes/guides/security/jsse/JSSERefGuide\&.htmlの
+「Java Secure Socket Extension (JSSE) Reference Guide」を参照してください
+.sp
+\fB注意:\fR
+このオプションはキーストアとは関係なく使用できます。
+.RE
+.PP
+\-printcrl
+.RS 4
+\fI\-file crl_ {\-v}\fR
+.sp
+ファイル\fIcrl_\fRから証明書失効リスト(CRL)を読み込みます。CRLは、発行したCAによって失効されたデジタル証明書のリストです。CAは、\fIcrl_\fRを生成します。
+.sp
+\fB注意:\fR
+このオプションはキーストアとは関係なく使用できます。
+.RE
+.PP
+\-storepasswd
+.RS 4
+\fI[\-new new_storepass] {\-storetype storetype} {\-keystore keystore} [\-storepass storepass] {\-providerName provider_name} {\-providerClass provider_class_name {\-providerArg provider_arg}} {\-v} {\-Jjavaoption}\fR
+.sp
+キーストアの内容の整合性を保護するために使用するパスワードを変更します。\fInew_storepass\fRには、新しいパスワードを指定します。new_storepassは、6文字以上である必要があります。
+.RE
+.PP
+\-keypasswd
+.RS 4
+\fI{\-alias alias} [\-keypass old_keypass] [\-new new_keypass] {\-storetype storetype} {\-keystore keystore} [\-storepass storepass] {\-providerName provider_name} {\-providerClass provider_class_name {\-providerArg provider_arg}} {\-v} {\-Jjavaoption}\fR
+.sp
+\fIalias\fRによって特定される非公開/秘密鍵を保護するためのパスワードを、\fIold_keypass\fRから\fInew_keypass\fRに変更します。new_keypassは、6文字以上である必要があります。
+.sp
+コマンドラインで\fI\-keypass\fRオプションを指定しておらず、鍵のパスワードがキーストアのパスワードと異なる場合は、鍵のパスワードの入力を求められます。
+.sp
+コマンドラインで\fI\-new\fRオプションを指定しなかった場合は、新しいパスワードの入力を求められます。
+.RE
+.PP
+\-delete
+.RS 4
+\fI[\-alias alias] {\-storetype storetype} {\-keystore keystore} [\-storepass storepass] {\-providerName provider_name} {\-providerClass provider_class_name {\-providerArg provider_arg}} {\-v} {\-protected} {\-Jjavaoption}\fR
+.sp
+\fIalias\fRによって特定されるエントリをキーストアから削除します。コマンドラインで別名を指定しなかった場合は、別名の入力を求められます。
+.RE
+.PP
+\-changealias
+.RS 4
+\fI{\-alias alias} [\-destalias destalias] [\-keypass keypass] {\-storetype storetype} {\-keystore keystore} [\-storepass storepass] {\-providerName provider_name} {\-providerClass provider_class_name {\-providerArg provider_arg}} {\-v} {\-protected} {\-Jjavaoption}\fR
+.sp
+指定された\fIalias\fRから新しい別名\fIdestalias\fRへ、既存のキーストア・エントリを移動します。ターゲット別名を指定しなかった場合、ターゲット別名の入力を求められます。元のエントリがエントリ・パスワードで保護されていた場合、\fI\-keypass\fRオプションでそのパスワードを指定できます。鍵パスワードが指定されなかった場合、\fIstorepass\fR(指定された場合)がまず試みられます。その試みが失敗すると、ユーザーはパスワードの入力を求められます。
+.RE
+.PP
+\-help
+.RS 4
+基本的なコマンドとそのオプションの一覧を表示します。
+.sp
+特定のコマンドの詳細を参照するには、次のように入力してください:
+\fIkeytool \-command_name \-help\fR。\fIcommand_name\fRはコマンドの名前です。
+.RE
+.SH "例"
+.PP
+この例では、公開/秘密鍵のペアおよび信頼できるエンティティからの証明書を管理するためのキーストアを作成する手順を示します。
+.SS "鍵のペアの生成"
+.PP
+まず、キーストアを作成して鍵のペアを生成します。単一行に入力する、次のようなコマンドを使用できます。
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+keytool \-genkeypair \-dname "cn=Mark Jones, ou=Java, o=Oracle, c=US"
+    \-alias business \-keypass <new password for private key>
+    \-keystore /working/mykeystore
+    \-storepass <new password for keystore> \-validity 180
+.fi
+.if n \{\
+.RE
+.\}
+.PP
+コマンドは、workingディレクトリに\fImykeystore\fRという名前のキーストアを作成し(キーストアはまだ存在していないと仮定)、作成したキーストアに、\fI<new password for keystore>\fRで指定したパスワードを割り当てます。生成する公開鍵と秘密鍵のペアに対応するエンティティの「識別名」は、通称がMark Jones、組織単位がJava、組織がOracle、2文字の国番号がUSです。公開鍵と秘密鍵のサイズはどちらも1024ビットで、鍵の作成にはデフォルトのDSA鍵生成アルゴリズムを使用します。
+.PP
+このコマンドは、デフォルトのSHA1withDSA署名アルゴリズムを使用して、公開鍵と識別名情報を含む自己署名証明書を作成します。証明書の有効期間は180日です。証明書は、別名\fIbusiness\fRで特定されるキーストア・エントリ内の秘密鍵に関連付けられます。秘密鍵には、\fI<new password for private key>\fRで指定したパスワードが割り当てられます。
+.PP
+オプションのデフォルト値を使用する場合、コマンドは大幅に短くなります。この場合、オプションは不要です。デフォルト値を持つオプションでは、オプションを指定しなければデフォルト値が使用されます。必須値の入力を求められます。使用可能な値は次のとおりです。
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+keytool \-genkeypair
+.fi
+.if n \{\
+.RE
+.\}
+.PP
+この場合は、\fImykey\fRという別名でキーストア・エントリが作成され、新しく生成された鍵のペア、および90日間有効な証明書がこのエントリに格納されます。このエントリは、ホーム・ディレクトリ内の\fI\&.keystore\fRという名前のキーストアに置かれます。キーストアは、まだ存在していない場合に作成されます。識別名情報、キーストアのパスワードおよび秘密鍵のパスワードの入力を求められます。
+.PP
+以降では、オプションを指定しないで\fI\-genkeypair\fRコマンドを実行したものとして例を示します。情報の入力を求められた場合は、最初に示した\fI\-genkeypair\fRコマンドの値を入力したものとします。たとえば識別名には\fIcn=Mark Jones\fR、\fIou=Java\fR、\fIo=Oracle\fR、\fIc=US\fRと指定します。
+.SS "CAからの署名付き証明書のリクエスト"
+.PP
+自己署名証明書を作成する鍵のペアの生成。証明書に証明書発行局(CA)の署名が付いていれば、他のユーザーから証明書が信頼される可能性も高くなります。CAの署名を取得するには、まず、証明書署名リクエスト(CSR)を生成します。たとえば、次のようにします。
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+keytool \-certreq \-file MarkJ\&.csr
+.fi
+.if n \{\
+.RE
+.\}
+.PP
+CSR(デフォルト別名\fImykey\fRによって特定されるエンティティのCSR)が作成され、MarkJ\&.csrという名前のファイルに置かれます。このファイルをCA (VeriSignなど)に提出します。CAは要求者を(通常はオフラインで)認証し、要求者の公開鍵を認証した署名付きの証明書を送り返します。場合によっては、CAが証明書のチェーンを返すこともあります。証明書のチェーンでは、各証明書がチェーン内のその前の署名者の公開鍵を認証します。
+.SS "CAからの証明書のインポート"
+.PP
+作成した自己署名証明書は、証明書チェーンで置き換える必要があります。証明書チェーンでは、各証明書が、「ルート」CAを起点とするチェーン内の次の証明書の署名者の公開鍵を認証します。
+.PP
+CAからの証明書応答をインポートするには、キーストアか、\fIcacerts\fRキーストア・ファイル内に1つ以上の信頼できる証明書がある必要があります。\fIの\fR\-importcertコマンドを参照してください。
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+証明応答が証明書チェーンの場合は、チェーンの最上位証明書が必要です。CAの公開鍵を認証するルートCA証明書。
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+証明書応答が単一の証明書の場合は、発行CA(署名した)の証明書が必要です。その証明書が自己署名でない場合は、その署名者の証明書が必要であり、このようにして自己署名ルート証明書が必要になります。
+.RE
+.PP
+\fIcacerts\fRキーストア・ファイルは、いくつかのVeriSignルートCA証明書を含んだ状態で出荷されているので、VeriSignの証明書を、信頼できる証明書としてキーストア内にインポートする必要がない場合があります。ただし、他のCAに対して署名付き証明書をリクエストしていて、このCAの公開鍵を認証する証明書が、\fIcacerts\fRにまだ追加されていない場合は、該当するCAからの証明書を、「信頼できる証明書」としてインポートする必要があります。
+.PP
+通常、CAからの証明書は、自己署名証明書、または他のCAによって署名された証明書です(後者の場合は、該当する他のCAの公開鍵を認証する証明書が必要)。ABC, Inc\&.,がCAで、ABCから自己署名証明書であるA\fIBCCA\&.cer\fRという名前のファイルを取得したとします(この証明書はCAの公開鍵を認証します)。信頼できる証明書として証明書をインポートするときは、証明書が有効であることを確認する必要があります。まず、\fIkeytool \-printcert\fRコマンドまたは\fI\-noprompt\fRオプションなしの\fIkeytool \-importcert\fRコマンドでそれを表示し、表示された証明書のフィンガープリントが期待されるものと一致するかどうかを確認します。証明書を送信した人物に連絡し、この人物が提示した(または安全な公開鍵のリポジトリによって提示される)フィンガープリントと、上のコマンドで表示されたフィンガープリントとを比較します。フィンガープリントが一致すれば、送信途中で他の何者か(攻撃者など)による証明書のすり替えが行われていないことを確認できます。送信途中でこの種の攻撃が行われていた場合、チェックを行わずに証明書をインポートすると、攻撃者によって署名されたすべてのものを信頼することになります。
+.PP
+証明書が有効であると信頼する場合は、次のコマンドでキーストアに追加できます。
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+keytool \-importcert \-alias abc \-file ABCCA\&.cer
+.fi
+.if n \{\
+.RE
+.\}
+.PP
+ABCCA\&.cerファイルのデータを含む信頼できる証明書のエントリがキーストア内に作成され、該当するエントリに\fIabc\fRという別名が割り当てられます。
+.SS "CAからの証明書応答のインポート"
+.PP
+証明書署名リクエストの提出先のCAの公開鍵を認証する証明書をインポートした後は(または同種の証明書がすでにcacertsファイル内に存在している場合は)、証明応答をインポートし、自己署名証明書を証明書チェーンで置き換えることができます。このチェーンは、CAの応答がチェーンの場合に、リクエストに対するレスポンスとしてCAから送り返された証明書チェーンです。また、CAの応答が単一の証明書の場合は、この証明応答と、インポート先のキーストア内または\fIcacerts\fRキーストアファイル内にすでに存在する信頼できる証明書とを使用して構築した証明書チェーンです。
+.PP
+たとえば、証明書署名リクエストをVeriSignに送信する場合、送り返された証明書の名前がVSMarkJ\&.cerだとすると、次のようにして応答をインポートできます。
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+keytool \-importcert \-trustcacerts \-file VSMarkJ\&.cer
+.fi
+.if n \{\
+.RE
+.\}
+.SS "公開鍵を認証する証明書のエクスポート"
+.PP
+\fIjarsigner\fRコマンドを使用してJava Archive (JAR)ファイルに署名する場合、このファイルを使用するクライアントは署名を認証する必要があります。クライアントが署名を認証する方法の1つに、まず自分の公開鍵の証明書を信頼できるエントリとしてクライアントのキーストアにインポートする方法があります。
+.PP
+そのためには、証明書をエクスポートして、クライアントに提供します。例として、次のコマンドを使用して、MJ\&.cerという名前のファイルに証明書をコピーできます。このコマンドでは、エントリに別名\fImykey\fRがあると仮定しています。
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+keytool \-exportcert \-alias mykey \-file MJ\&.cer
+.fi
+.if n \{\
+.RE
+.\}
+.PP
+証明書と署名付きJARファイルを入手したクライアントは、\fIjarsigner\fRコマンドを使用して署名を認証できます。
+.SS "キーストアのインポート"
+.PP
+コマンド\fIimportkeystore\fRを使用すれば、あるキーストアの全体を別のキーストア内にインポートできます。これは、鍵や証明書といったソースキーストア内のすべてのエントリが、単一のコマンドを使用してターゲットキーストア内にインポートされることを意味します。このコマンドを使用すれば、異なるタイプのキーストア内に含まれるエントリをインポートすることができます。インポート時には、ターゲット・キーストア内の新しいエントリはすべて、元と同じ別名および(秘密鍵や秘密鍵の場合は)保護用パスワードを持ちます。ソースキーストア内の非公開/秘密鍵をリカバリできない場合、\fIkeytool\fRコマンドはユーザーにパスワードの入力を求めます。このコマンドは、別名の重複を検出すると、ユーザーに新しい別名の入力を求めます。ユーザーは、新しい別名を指定することも、単純に既存の別名の上書きを\fIkeytool\fRコマンドに許可することもできます。
+.PP
+たとえば、通常のJKSタイプのキーストアkey\&.jks内のエントリをPKCS#11タイプのハードウェア・ベースのキーストア内にインポートするには、次のコマンドを使用します。
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+keytool \-importkeystore
+    \-srckeystore key\&.jks \-destkeystore NONE
+    \-srcstoretype JKS \-deststoretype PKCS11
+    \-srcstorepass <src keystore password>
+    \-deststorepass <destination keystore pwd>
+.fi
+.if n \{\
+.RE
+.\}
+.PP
+また、\fIimportkeystore\fRコマンドを使用すれば、あるソース・キーストア内の単一のエントリをターゲット・キーストアにインポートすることもできます。この場合は、前例のオプションに加えて、インポートする別名を指定する必要があります。\fI\-srcalias\fRオプションを指定する場合には、ターゲット別名もコマンドラインから指定できるほか、秘密/秘密鍵の保護用パスワードやターゲット保護用パスワードも指定できます。その方法を示すコマンドを次に示します。
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+keytool \-importkeystore
+    \-srckeystore key\&.jks \-destkeystore NONE
+    \-srcstoretype JKS \-deststoretype PKCS11
+    \-srcstorepass <src keystore password>
+    \-deststorepass <destination keystore pwd>
+    \-srcalias myprivatekey \-destalias myoldprivatekey
+    \-srckeypass <source entry password>
+    \-destkeypass <destination entry password>
+    \-noprompt
+.fi
+.if n \{\
+.RE
+.\}
+.SS "SSLサーバーの証明書の生成"
+.PP
+次に、3つのエンティティ、つまりルートCA(\fIroot\fR)、中間CA(\fIca\fR)およびSSLサーバー(\fIserver\fR)用の鍵ペアと証明書を生成する\fIkeytool\fRコマンドを示します。すべての証明書を同じキーストアに格納するようにしてください。これらの例では、RSAが推奨される鍵のアルゴリズムです。
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+keytool \-genkeypair \-keystore root\&.jks \-alias root \-ext bc:c
+keytool \-genkeypair \-keystore ca\&.jks \-alias ca \-ext bc:c
+keytool \-genkeypair \-keystore server\&.jks \-alias server
+ 
+keytool \-keystore root\&.jks \-alias root \-exportcert \-rfc > root\&.pem
+ 
+keytool \-storepass <storepass> \-keystore ca\&.jks \-certreq \-alias ca |
+    keytool \-storepass <storepass> \-keystore root\&.jks
+    \-gencert \-alias root \-ext BC=0 \-rfc > ca\&.pem
+keytool \-keystore ca\&.jks \-importcert \-alias ca \-file ca\&.pem
+ 
+keytool \-storepass <storepass> \-keystore server\&.jks \-certreq \-alias server |
+    keytool \-storepass <storepass> \-keystore ca\&.jks \-gencert \-alias ca
+    \-ext ku:c=dig,kE \-rfc > server\&.pem
+cat root\&.pem ca\&.pem server\&.pem |
+    keytool \-keystore server\&.jks \-importcert \-alias server
+.fi
+.if n \{\
+.RE
+.\}
+.SH "用語"
+.PP
+キーストア
+.RS 4
+キーストアは、暗号化の鍵と証明書を格納するための機能です。
+.RE
+.PP
+キーストアのエントリ
+.RS 4
+キーストアには異なるタイプのエントリを含めることができます。\fIkeytool\fRコマンドで最も適用範囲の広いエントリ・タイプは、次の2つです。
+.sp
+\fB鍵のエントリ\fR
+\- 各エントリは、非常に重要な暗号化の鍵の情報を保持します。この情報は、許可していないアクセスを防ぐために、保護された形で格納されます。一般に、この種のエントリとして格納される鍵は、秘密鍵か、対応する公開鍵の証明書チェーンを伴う秘密鍵です。証明書チェーンを参照してください。\fIkeytool\fRコマンドがこの両方のタイプのエントリを処理できるのに対し、\fIjarsigner\fRツールは後者のタイプのエントリ、つまり秘密鍵とそれに関連付けられた証明書チェーンのみを処理します。
+.sp
+\fB信頼できる証明書のエントリ\fR: 各エントリは、第三者からの公開鍵証明書を1つ含んでいます。このエントリは、信頼できる証明書と呼ばれます。それは、証明書内の公開鍵が、証明書のSubject(所有者)によって特定されるアイデンティティに由来するものであることを、キーストアの所有者が信頼するからです。証明書の発行者は、証明書に署名を付けることによって、その内容を保証します。
+.RE
+.PP
+キーストアの別名
+.RS 4
+キーストアのすべてのエントリ(鍵および信頼できる証明書エントリ)は、一意の別名を介してアクセスされます。
+.sp
+別名を指定するのは、\fI\-genseckey\fRコマンドを使用して秘密鍵を生成したり、\fI\-genkeypair\fRコマンドを使用して鍵ペア(公開鍵と秘密鍵)を生成したり、\fI\-importcert\fRコマンドを使用して証明書または証明書チェーンを信頼できる証明書のリストに追加するなど、特定のエンティティをキーストアに追加する場合です。これ以後、\fIkeytool\fRコマンドでエンティティを参照する場合は、このときに指定した別名を使用する必要があります。
+.sp
+たとえば、\fIduke\fRという別名を使用して新しい公開鍵と秘密鍵のペアを生成し、公開鍵を自己署名証明書でラップするとします。この場合は、次のコマンドを実行します。証明書チェーンを参照してください。
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+keytool \-genkeypair \-alias duke \-keypass dukekeypasswd
+.fi
+.if n \{\
+.RE
+.\}
+この例では、初期パスワードとして\fIdukekeypasswd\fRを指定しています。以後、別名\fIduke\fRに関連付けられた秘密鍵にアクセスするコマンドを実行するときは、このパスワードが必要になります。Dukeの秘密鍵のパスワードをあとから変更するには、次のコマンドを実行します。
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+keytool \-keypasswd \-alias duke \-keypass dukekeypasswd \-new newpass
+.fi
+.if n \{\
+.RE
+.\}
+パスワードが、\fIdukekeypasswd\fRから\fInewpass\fRに変更されます。テストを目的とする場合、または安全であることがわかっているシステムで実行する場合以外は、コマンドラインやスクリプトでパスワードを指定しないでください。必要なパスワードのオプションをコマンドラインで指定しなかった場合は、パスワードの入力を求められます。
+.RE
+.PP
+キーストアの実装
+.RS 4
+\fIjava\&.security\fRパッケージで提供されている\fIKeyStore\fRクラスは、キーストア内の情報へのアクセスおよび情報の変更を行うための、明確に定義されたインタフェースを提供します。キーストアの固定実装としては、それぞれが特定のタイプのキーストアを対象とする複数の異なる実装が存在可能です。
+.sp
+現在、\fIkeytool\fRと\fIjarsigner\fRの2つのコマンドライン・ツールと、Policy Toolという名前のGUIベースのツールが、キーストアの実装を使用しています。\fIKeyStore\fRクラスは\fIpublic\fRであるため、ユーザーはKeyStoreを使用した他のセキュリティ・アプリケーションも作成できます。
+.sp
+キーストアには、Oracleが提供する組込みのデフォルトの実装があります。これは、JKSという名前の独自のキーストア・タイプ(形式)を利用するもので、キーストアをファイルとして実装しています。この実装では、個々の秘密鍵は個別のパスワードによって保護され、キーストア全体の整合性も(秘密鍵とは別の)パスワードによって保護されます。
+.sp
+キーストアの実装は、プロバイダベースです。具体的には、\fIKeyStore\fRによって提供されるアプリケーション・インタフェースがサービス・プロバイダ・インタフェース(SPI)に基づいて実装されます。つまり、対応する\fIKeystoreSpi\fR抽象クラス(これも\fIjava\&.security\fRパッケージに含まれています)があり、このクラスが、プロバイダが実装する必要のあるService Provider Interfaceのメソッドを定義しています。ここで、\fIプロバイダ\fRとは、Java Security APIによってアクセス可能なサービスのサブセットに対し、その固定実装を提供するパッケージまたはパッケージの集合のことです。キーストアの実装を提供するには、http://docs\&.oracle\&.com/javase/8/docs/technotes/guides/security/crypto/HowToImplAProvider\&.htmlにある
+Java暗号化アーキテクチャのプロバイダの実装方法で説明しているように、クライアントはプロバイダを実装し、\fIKeystoreSpi\fRサブクラスの実装を提供する必要があります。
+.sp
+アプリケーションでは、\fIKeyStore\fRクラスが提供する\fIgetInstance\fRファクトリ・メソッドを使用することで、様々なプロバイダから異なるタイプのキーストアの実装を選択できます。キーストアのタイプは、キーストア情報の格納形式とデータ形式を定義するとともに、キーストア内の非公開/秘密鍵とキーストアの整合性を保護するために使用されるアルゴリズムを定義します。異なるタイプのキーストアの実装には、互換性はありません。
+.sp
+\fIkeytool\fRコマンドは、任意のファイルベースのキーストア実装で動作します。コマンド・ラインで渡されたキーストアの場所をファイル名として扱って、\fIFileInputStream\fRに変換し、ここからキーストア情報をロードします。\fIjarsigner\fRおよび\fIpolicytool\fRコマンドは、URLで指定できる任意の場所からキーストアを読み取ることができます。
+.sp
+\fIkeytool\fRと\fIjarsigner\fRの場合、\fI\-storetype\fRオプションを使用してコマンドラインでキーストアのタイプを指定できます。Policy Toolの場合は、「キーストア」メニューによってキーストアのタイプを指定できます。
+.sp
+ユーザーがキーストアのタイプを明示的に指定しなかった場合、セキュリティ・プロパティ・ファイルで指定された\fIkeystore\&.type\fRプロパティの値に基づいて、ツールによってキーストアの実装が選択されます。このセキュリティ・プロパティ・ファイルは\fIjava\&.security\fRと呼ばれ、Windowsではセキュリティ・プロパティ・ディレクトリ\fIjava\&.home\elib\esecurity\fR、Oracle Solarisでは\fIjava\&.home/lib/security\fRにあります。\fIjava\&.home\fRは、実行時環境のディレクトリです。\fIjre\fRディレクトリは、SDKまたはJava Runtime Environment (JRE)の最上位のディレクトリにあります。
+.sp
+各ツールは、\fIkeystore\&.type\fRの値を取得し、この値で指定されたタイプのキーストアを実装しているプロバイダが見つかるまで、現在インストールされているすべてのプロバイダを調べます。そのプロバイダからのキーストアの実装を使用します。\fIKeyStore\fRクラスに定義されているstaticメソッド\fIgetDefaultType\fRを使用すると、アプリケーションやアプレットから\fIkeystore\&.type\fRプロパティの値を取得できます。次のコードは、デフォルトのキーストア・タイプ(\fIkeystore\&.type\fRプロパティで指定されたタイプ)のインスタンスを生成します。
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+KeyStore keyStore = KeyStore\&.getInstance(KeyStore\&.getDefaultType());
+.fi
+.if n \{\
+.RE
+.\}
+デフォルトのキーストア・タイプは\fIjks\fRで、これはOracleが提供する独自のタイプのキーストアの実装です。これは、セキュリティ・プロパティ・ファイル内の次の行によって指定されています。
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+keystore\&.type=jks
+.fi
+.if n \{\
+.RE
+.\}
+各ツールでデフォルト以外のキーストアの実装を使用するには、上の行を変更して別のキーストアのタイプを指定します。たとえば、\fIpkcs12\fRと呼ばれるキーストアのタイプのキーストアの実装を提供するプロバイダ・パッケージがある場合、行を次のように変更します。
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+keystore\&.type=pkcs12
+.fi
+.if n \{\
+.RE
+.\}
+\fB注意:\fR
+キーストアのタイプの指定では、大文字と小文字は区別されません。たとえば、JKSとjksは同じものとして扱われます。
+.RE
+.PP
+証明書
+.RS 4
+証明書(公開鍵証明書)とは、あるエンティティ(発行者)からのデジタル署名付きの文書のことです。証明書には、他のあるエンティティ(署名者)の公開鍵(およびその他の情報)が特別な値を持っていることが書かれています。次の用語は、証明書に関連しています。
+.sp
+\fB公開鍵\fR: 公開鍵は、特定のエンティティに関連付けられた数です。公開鍵は、該当するエンティティとの間に信頼できる関係を持つ必要があるすべての人に対して公開することを意図したものです。公開鍵は、署名を検証するのに使用されます。
+.sp
+\fBデジタル署名\fR: データがデジタル署名されると、そのデータは、エンティティのアイデンティティと、そのエンティティがデータの内容について知っていることを証明書する署名とともに格納されます。エンティティの秘密鍵を使用してデータに署名を付けると、データの偽造は不可能になります。
+.sp
+\fBアイデンティティ\fR: エンティティをアドレス指定する既知の方法。システムによっては、公開鍵をアイデンティティにするものがあります。公開鍵の他にも、Oracle Solaris UIDや電子メール・アドレス、X\&.509識別名など、様々なものをアイデンティティとすることができます。
+.sp
+\fB署名\fR: 署名は、なんらかのデータを基にエンティティの秘密鍵を使用して計算されます。署名者、証明書の場合は発行者とも呼ばれます。
+.sp
+\fB秘密鍵\fR: 秘密鍵は特定のエンティティのみが知っている数のことで、この数のことを、そのエンティティの秘密鍵といいます。秘密鍵は、他に知られないように秘密にしておくことが前提になっています。秘密鍵と公開鍵は、すべての公開鍵暗号化システムで対になって存在しています。DSAなどの典型的な公開鍵暗号化システムの場合、1つの秘密鍵は正確に1つの公開鍵に対応します。秘密鍵は、署名を計算するのに使用されます。
+.sp
+\fBエンティティ\fR: エンティティは、人、組織、プログラム、コンピュータ、企業、銀行など、一定の度合いで信頼の対象となる様々なものを指します。
+.sp
+公開鍵暗号化では、ユーザーの公開鍵にアクセスする必要があります。大規模なネットワーク環境では、互いに通信しているエンティティ間で以前の関係が引続き確立されていると仮定したり、使用されているすべての公開鍵を収めた信頼できるリポジトリが存在すると仮定したりすることは不可能です。このような公開鍵の配布に関する問題を解決するために証明書が考案されました。現在では、証明書発行局(CA)が信頼できる第三者として機能します。CAは、他のエンティティの証明書に署名する(発行する)行為を、信頼して任されているエンティティ(企業など)です。CAは法律上の契約に拘束されるので、有効かつ信頼できる証明書のみを作成するものとして扱われます。VeriSign、Thawte、Entrustをはじめ、多くの公的な証明書発行局が存在します。
+.sp
+Microsoftの認証サーバー、EntrustのCA製品などを所属組織内で利用すれば、独自の証明書発行局を運営することも可能です。\fIkeytool\fRコマンドを使用すると、証明書の表示、インポートおよびエクスポートを行うことができます。また、自己署名証明書を生成することもできます。
+.sp
+現在、\fIkeytool\fRコマンドはX\&.509証明書を対象にしています。
+.RE
+.PP
+X\&.509証明書
+.RS 4
+X\&.509規格では、証明書に含める情報が定義されており、この情報を証明書に書き込む方法(データ形式)についても記述されています。証明書のすべてのデータは、ASN\&.1/DERと呼ばれる2つの関連規格を使用して符号化されます。Abstract Syntax Notation 1はデータについて記述しています。Definite Encoding Rulesは、データの保存および転送の方法について記述しています。
+.sp
+すべてのX\&.509証明書は、署名の他に次のデータを含んでいます。
+.sp
+\fBバージョン\fR: 証明書に適用されるX\&.509規格のバージョンを特定します。証明書に指定できる情報は、バージョンによって異なります。今のところ、3つのバージョンが定義されています。\fIkeytool\fRコマンドでは、v1、v2、v3の証明書をインポートおよびエクスポートできます。v3の証明書を生成します。
+.sp
+X\&.509 Version 1は、1988年から利用されて広く普及しており、最も一般的です。
+.sp
+X\&.509 Version 2では、Subjectや発行者の名前をあとで再利用できるようにするために、Subjectと発行者の一意識別子の概念が導入されました。ほとんどの証明書プロファイル文書では、名前を再使用しないことと、証明書で一意の識別子を使用しないことが、強く推奨されています。Version 2の証明書は、広くは使用されていません。
+.sp
+X\&.509 Version 3は最も新しい(1996年)規格で、エクステンションの概念をサポートしています。エクステンションは誰でも定義することができ、証明書に含めることができます。一般的なエクステンションとしては、KeyUsage(\fI署名専用\fRなど、鍵の使用を特定の目的に制限する)、AlternativeNames(DNS名、電子メール・アドレス、IPアドレスなど、他のアイデンティティを公開鍵に関連付けることができる)などがあります。エクステンションには、criticalというマークを付けて、そのエクステンションのチェックと使用を義務づけることができます。たとえば、criticalとマークされ、\fIkeyCertSign\fRが設定されたKeyUsageエクステンションが証明書に含まれている場合、この証明書をSSL通信中に提示すると、証明書が拒否されます。これは、証明書のエクステンションによって、関連する秘密鍵が証明書の署名専用として指定されており、SSLでは使用できないためです。
+.sp
+\fBシリアル番号\fR: 証明書を作成したエンティティは、そのエンティティが発行する他の証明書と区別するために、証明書にシリアル番号を割り当てます。この情報は、様々な方法で使用されます。たとえば、証明書が取り消されると、シリアル番号が証明書失効リスト(CRL)に格納されます。
+.sp
+\fB証明書アルゴリズム識別子\fR: 証明書に署名を付けるときにCAが使用したアルゴリズムを特定します。
+.sp
+\fB発行者名\fR: 証明書に署名を付けたエンティティのX\&.500識別名です。X\&.500識別名を参照してください。通常はCAです。この証明書を使用することは、証明書に署名を付けたエンティティを信頼することを意味します。ルートつまりトップレベルのCAの証明書など、場合によっては発行者が自身の証明書に署名を付けることがあります。
+.sp
+\fB有効期間\fR: 各証明書は限られた期間のみ有効です。この期間は開始の日時と終了の日時によって指定され、数秒の短い期間から100年という長期にわたることもあります。選択される有効期間は、証明書への署名に使用される秘密鍵の強度や証明書に支払う金額など、様々な要因で異なります。有効期間は、関連する秘密鍵が損われない場合に、エンティティが公開鍵を信頼できると期待される期間です。
+.sp
+\fB主体名\fR: 証明書で公開鍵を認証するエンティティの名前。この名前はX\&.500標準を使用するので、インターネット全体で一意なものと想定されます。これは、エンティティのX\&.500識別名(DN)です。X\&.500識別名を参照してください。次に例を示します。
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+CN=Java Duke, OU=Java Software Division, O=Oracle Corporation, C=US
+.fi
+.if n \{\
+.RE
+.\}
+これらはそれぞれ主体の通称(CN)、組織単位(OU)、組織(O)、国(C)を表します。
+.sp
+\fB主体の公開鍵情報\fR: 名前を付けられたエンティティの公開鍵とアルゴリズム識別子です。アルゴリズム識別子では、公開鍵に対して使用されている公開鍵暗号化システムおよび関連する鍵パラメータが指定されています。
+.RE
+.PP
+証明書チェーン
+.RS 4
+\fIkeytool\fRコマンドでは、秘密鍵および関連する証明書チェーンを含むキーストアの鍵エントリを作成し、管理することができます。このようなエントリでは、秘密鍵に対応する公開鍵は、チェーンの最初の証明書に含まれています。
+.sp
+鍵を初めて作成すると、自己署名証明書という1つの要素のみを含むチェーンが開始されます。\fIの\fR\-genkeypairコマンドを参照してください。自己署名証明書は発行者(署名者)が主体と同じです。主体は、その公開鍵が証明書によって認証されるエンティティです。\fI\-genkeypair\fRコマンドを呼び出して新しい公開鍵と秘密鍵のペアを作成すると、公開鍵は常に自己署名証明書でラップされます。
+.sp
+この後、証明書署名リクエスト(CSR)が\fI\-certreq\fRコマンドで生成されて、CSRが証明書発行局(CA)に送信されると、CAからのレスポンスが\fI\-importcert\fRでインポートされ、元の自己署名証明書は証明書チェーンによって置き換えられます。コマンドの\fI\-certreq\fRおよび\fI\-importcert\fRオプションを参照してください。チェーンの最後にあるのは、Subjectの公開鍵を認証したCAが発行した証明書(応答)です。チェーン内のその前の証明書は、CAの公開鍵を認証する証明書です。
+.sp
+CAの公開鍵を認証する証明書は、多くの場合、自己署名証明書(つまりCAが自身の公開鍵を認証した証明書)であり、これはチェーンの最初の証明書になります。場合によっては、CAが証明書のチェーンを返すこともあります。この場合、チェーン内の最後の証明書(CAによって署名され、鍵エントリの公開鍵を認証する証明書)に変わりはありませんが、チェーン内のその前の証明書は、CSRの送信先のCAとは別のCAによって署名され、CSRの送信先のCAの公開鍵を認証する証明書になります。チェーン内のその前の証明書は、次のCAの鍵を認証する証明書になります。以下同様に、自己署名された「ルート」証明書に達するまでチェーンが続きます。したがって、チェーン内の(最初の証明書以後の)各証明書では、チェーン内の次の証明書の署名者の公開鍵が認証されていることになります。
+.sp
+多くのCAは、チェーンをサポートせずに発行済の証明書のみを返します。特に、中間のCAが存在しないフラットな階層構造の場合は、その傾向が顕著です。このような場合は、キーストアにすでに格納されている信頼できる証明書情報から、証明書チェーンを確立する必要があります。
+.sp
+別の応答形式(PKCS#7で定義されている形式)では、発行済証明書に加え、証明書チェーンのサポートが含まれています。\fIkeytool\fRコマンドでは、どちらの応答形式も扱うことができます。
+.sp
+トップレベル(ルート)CAの証明書は、自己署名証明書です。ただし、ルートの公開鍵への信頼は、ルート証明書自体からではなく、新聞など他のソースから取得されます。これは、VeriSignルートCAなどの識別名を使用して、誰でも自己署名型証明書を生成できるためです。ルートCAの公開鍵は広く知られています。ルートCAの公開鍵を証明書に格納する理由は、証明書という形式にすることで多くのツールから利用できるようになるからにすぎません。つまり、証明書は、ルートCAの公開鍵を運ぶ「媒体」として利用されるのみです。ルートCAの証明書をキーストアに追加するときは、\fI\-printcert\fRオプションを使用して、その前に証明書の内容を表示し、表示されたフィンガープリントと、新聞やルートCAのWebページなどから入手した既知のフィンガープリントとを比較する必要があります。
+.RE
+.PP
+cacerts証明書ファイル
+.RS 4
+\fIcacerts\fRという名前の証明書ファイルは、Windowsではセキュリティ・プロパティ・ディレクトリ\fIjava\&.home\elib\esecurity\fR、Oracle Solarisでは\fIjava\&.home/lib/security\fRに置かれています。\fIjava\&.home\fRは、実行環境のディレクトリ(SDKの\fIjre\fRディレクトリまたはJREの最上位ディレクトリ)です。
+.sp
+\fIcacerts\fRファイルは、CAの証明書を含む、システム全体のキーストアです。システム管理者は、キーストア・タイプに\fIjks\fRを指定することで、\fIkeytool\fRコマンドを使用してこのファイルの構成と管理を行うことができます。\fIcacerts\fRキーストア・ファイルは、ルートCA証明書のデフォルト・セットを含んだ状態で出荷されています。デフォルトの証明書を一覧表示するには、次のコマンドを使用します。
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+keytool \-list \-keystore java\&.home/lib/security/cacerts
+.fi
+.if n \{\
+.RE
+.\}
+\fIcacerts\fRキーストア・ファイルの初期パスワードは、\fIchangeit\fRです。システム管理者は、SDKのインストール後、このファイルのパスワードとデフォルト・アクセス権を変更する必要があります。
+.sp
+\fB注意:\fR
+\fIcacerts\fRファイルを確認することが重要です。\fIcacerts\fRファイル内のCAは、署名および他のエンティティへの証明書発行のためのエンティティとして信頼されるため、\fIcacerts\fRファイルの管理は慎重に行う必要があります。\fIcacerts\fRファイルには、信頼するCAの証明書のみが含まれている必要があります。ユーザーは、自身の責任において、\fIcacerts\fRファイルにバンドルされている信頼できるルートCA証明書を検証し、信頼性に関する独自の決定を行います。
+.sp
+信頼できないCA証明書を\fIcacerts\fRファイルから削除するには、\fIkeytool\fRコマンドの\fIdelete\fRオプションを使用します。\fIcacerts\fRファイルはJREのインストール・ディレクトリにあります。このファイルを編集するアクセス権がない場合は、システム管理者に連絡してください
+.RE
+.PP
+インターネットRFC 1421証明書符号化規格
+.RS 4
+多くの場合、証明書は、バイナリ符号化ではなく、インターネットRFC 1421規格で定義されている出力可能符号化方式を使用して格納されます。Base 64符号化とも呼ばれるこの証明書形式では、電子メールやその他の機構を通じて、他のアプリケーションに証明書を容易にエクスポートできます。
+.sp
+\fI\-importcert\fRと\fI\-printcert\fRコマンドでは、この形式の証明書とバイナリ符号化の証明書を読み込むことができます。\fI\-exportcert\fRコマンドでは、デフォルトでバイナリ符号化の証明書が出力されます。ただし、\fI\-rfc\fRオプションを指定した場合は、出力可能符号化方式の証明書が出力されます。
+.sp
+\fI\-list\fRコマンドでは、デフォルトで証明書のSHA1フィンガープリントが出力されます。\fI\-v\fRオプションが指定されている場合、証明書は人が理解できる形式で出力されます。\fI\-rfc\fRオプションが指定されている場合、証明書は出力可能符号化方式で出力されます。
+.sp
+出力可能符号化方式で符号化された証明書は、次のテキストで始まり、次のテキストで終了します。
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+\-\-\-\-\-BEGIN CERTIFICATE\-\-\-\-\-
+
+encoded certificate goes here\&. 
+
+\-\-\-\-\-END CERTIFICATE\-\-\-\-\-
+.fi
+.if n \{\
+.RE
+.\}
+.RE
+.PP
+X\&.500識別名
+.RS 4
+X\&.500識別名は、エンティティを特定するために使用されます。たとえば、X\&.509証明書の\fIsubject\fRフィールドと\fIissuer\fR(署名者)フィールドで指定される名前は、X\&.500識別名です。\fIkeytool\fRコマンドは、次のサブパートをサポートしています。
+.sp
+\fBcommonName\fR: Susan Jonesなど、人の通称。
+.sp
+\fBorganizationUnit\fR: 小さな組織(部、課など)の名称。Purchasingなどです。
+.sp
+\fBlocalityName\fR: 地域(都市)名。Palo Altoなど。
+.sp
+\fBstateName\fR: 州名または地方名。Californiaなど。
+.sp
+\fBcountry\fR: 2文字の国コード。CHなど。
+.sp
+識別名文字列を\fI\-dname\fRオプションの値として指定する場合(たとえば\fI\-genkeypair\fRコマンドに)、文字列は次の形式にする必要があります。
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+CN=cName, OU=orgUnit, O=org, L=city, S=state, C=countryCode
+.fi
+.if n \{\
+.RE
+.\}
+イタリック体の項目は、実際に指定する値を表します。短縮形のキーワードの意味は、次のとおりです。
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+CN=commonName
+OU=organizationUnit
+O=organizationName
+L=localityName
+S=stateName
+C=country
+.fi
+.if n \{\
+.RE
+.\}
+次に示すのは、識別名文字列の例です。
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+CN=Mark Smith, OU=Java, O=Oracle, L=Cupertino, S=California, C=US
+.fi
+.if n \{\
+.RE
+.\}
+この文字列を使用したコマンドの例です。
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+keytool \-genkeypair \-dname "CN=Mark Smith, OU=Java, O=Oracle, L=Cupertino,
+S=California, C=US" \-alias mark
+.fi
+.if n \{\
+.RE
+.\}
+キーワードの短縮形では、大文字と小文字は区別されません。たとえば、CN、cnおよびCnは、どれも同じものとして扱われます。
+.sp
+一方、キーワードの指定順序には意味があり、各サブコンポーネントは上に示した順序で指定する必要があります。ただし、サブコンポーネントをすべて指定する必要はありません。たとえば、次のように一部のサブコンポーネントのみを指定できます。
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+CN=Steve Meier, OU=Java, O=Oracle, C=US
+.fi
+.if n \{\
+.RE
+.\}
+識別名文字列の値にカンマが含まれる場合に、コマンドラインで文字列を指定するときには、次のようにカンマをバックスラッシュ文字(\e)でエスケープする必要があります。
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+cn=Peter Schuster, ou=Java\e, Product Development, o=Oracle, c=US
+.fi
+.if n \{\
+.RE
+.\}
+識別名文字列をコマンドラインで指定する必要はありません。識別名を必要とするコマンドを実行するときに、コマンドラインで識別名を指定しなかった場合は、各サブコンポーネントの入力を求められます。この場合は、カンマをバックスラッシュ(\e)でエスケープする必要はありません。
+.RE
+.SH "警告"
+.SS "信頼できる証明書のインポート警告"
+.PP
+\fB重要\fR: 信頼できる証明書として証明書をインポートする前に、証明書の内容を慎重に調べてください。
+Windowsの例:.PP
+まず、\fI\-noprompt\fRオプションを指定せずに\fI\-printcert\fRコマンドまたは\fI\-importcert\fRコマンドを使用して、証明書を表示します。表示された証明書のフィンガープリントが、期待されるフィンガープリントと一致することを確認します。たとえば、証明書が送られてきて、この証明書を\fI\etmp\ecert\fRという名前でファイルに格納しているとします。この場合は、信頼できる証明書のリストにこの証明書を追加する前に、\fI\-printcert\fRコマンドを実行してフィンガープリントを表示できます。たとえば、次のようにします。
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+  keytool \-printcert \-file \etmp\ecert
+    Owner: CN=ll, OU=ll, O=ll, L=ll, S=ll, C=ll
+    Issuer: CN=ll, OU=ll, O=ll, L=ll, S=ll, C=ll
+    Serial Number: 59092b34
+    Valid from: Thu Sep 25 18:01:13 PDT 1997 until: Wed Dec 24 17:01:13 PST 1997
+    Certificate Fingerprints:
+         MD5:  11:81:AD:92:C8:E5:0E:A2:01:2E:D4:7A:D7:5F:07:6F
+         SHA1: 20:B6:17:FA:EF:E5:55:8A:D0:71:1F:E8:D6:9D:C0:37:13:0E:5E:FE
+         SHA256: 90:7B:70:0A:EA:DC:16:79:92:99:41:FF:8A:FE:EB:90:
+                 17:75:E0:90:B2:24:4D:3A:2A:16:A6:E4:11:0F:67:A4
+.fi
+.if n \{\
+.RE
+.\}
+Oracle Solarisの例:.PP
+まず、\fI\-noprompt\fRオプションを指定せずに\fI\-printcert\fRコマンドまたは\fI\-importcert\fRコマンドを使用して、証明書を表示します。表示された証明書のフィンガープリントが、期待されるフィンガープリントと一致することを確認します。たとえば、あるユーザーから証明書が送られてきて、この証明書を\fI/tmp/cert\fRという名前でファイルに格納しているとします。この場合は、信頼できる証明書のリストにこの証明書を追加する前に、\fI\-printcert\fRコマンドを実行してフィンガープリントを表示できます。たとえば、次のようにします。
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+  keytool \-printcert \-file /tmp/cert
+    Owner: CN=ll, OU=ll, O=ll, L=ll, S=ll, C=ll
+    Issuer: CN=ll, OU=ll, O=ll, L=ll, S=ll, C=ll
+    Serial Number: 59092b34
+    Valid from: Thu Sep 25 18:01:13 PDT 1997 until: Wed Dec 24 17:01:13 PST 1997
+    Certificate Fingerprints:
+         MD5:  11:81:AD:92:C8:E5:0E:A2:01:2E:D4:7A:D7:5F:07:6F
+         SHA1: 20:B6:17:FA:EF:E5:55:8A:D0:71:1F:E8:D6:9D:C0:37:13:0E:5E:FE
+         SHA256: 90:7B:70:0A:EA:DC:16:79:92:99:41:FF:8A:FE:EB:90:
+                 17:75:E0:90:B2:24:4D:3A:2A:16:A6:E4:11:0F:67:A4
+.fi
+.if n \{\
+.RE
+.\}
+.PP
+次に、証明書を送信した人物に連絡し、この人物が提示したフィンガープリントと、上のコマンドで表示されたフィンガープリントとを比較します。フィンガープリントが一致すれば、送信途中で他の何者か(攻撃者など)による証明書のすり替えが行われていないことを確認できます。送信途中でこの種の攻撃が行われていた場合、チェックを行わずに証明書をインポートすると、攻撃者によって署名されたすべてのもの(攻撃的意図を持つクラス・ファイルを含んだJARファイルなど)を信頼することになります。
+.PP
+\fB注意:\fR
+証明書をインポートする前に\fI\-printcert\fRコマンドを実行する必要はありません。キーストア内の信頼できる証明書のリストに証明書を追加する前に、\fI\-importcert\fRコマンドによって証明書の情報が表示され、確認を求めるメッセージが表示されるためです。ユーザーはインポート操作を停止できます。ただし、これを実行できるのは、\fI\-noprompt\fRオプションを指定せずに\fI\-importcert\fRコマンドを呼び出す場合のみです。\fI\-noprompt\fRオプションが指定されている場合、ユーザーとの対話は行われません。
+.SS "パスワード警告"
+.PP
+キーストアに対する操作を行うほとんどのコマンドでは、ストアのパスワードが必要です。また、一部のコマンドでは、非公開/秘密鍵のパスワードが必要になることがあります。パスワードはコマンドラインで指定できます(\fI\-storepass\fRオプションと\fI\-keypass\fRオプションを使用)。ただし、テストを目的とする場合、または安全であることがわかっているシステムで実行する場合以外は、コマンドラインやスクリプトでパスワードを指定しないでください。必要なパスワードのオプションをコマンドラインで指定しなかった場合は、パスワードの入力を求められます。
+.SS "証明書の準拠に関する警告"
+.PP
+インターネット標準RFC 5280では、X\&.509証明書の準拠に関するプロファイルが定義されており、証明書のフィールドおよびエクステンションに有効な値および値の組合せが記載されています。標準については、
+http://tools\&.ietf\&.org/rfc/rfc5280\&.txtを参照してください
+.PP
+\fIkeytool\fRコマンドでは、これらのルールすべてが適用されるわけではないため、標準に準拠しない証明書を生成できます。標準に準拠しない証明書は、JREや他のアプリケーションで拒否されることがあります。ユーザーは、\fI\-dname\fRや\fI\-ext\fRなどで適正なオプションを指定するようにしてください。
+.SH "注意"
+.SS "新しい信頼できる証明書のインポート"
+.PP
+\fIkeytool\fRコマンドは、キーストアに証明書を追加する前に、キーストア内にすでに存在する信頼できる証明書を使用して、インポートする証明書から(ルートCAの)自己署名証明書に至るまでの信頼のチェーンの構築を試みます。
+.PP
+\fI\-trustcacerts\fRオプションを指定した場合、追加の証明書は信頼できるすなわち\fIcacerts\fRという名前のファイルに含まれる証明書のチェーンとみなされます。
+.PP
+\fIkeytool\fRコマンドが、インポートする証明書から自己署名証明書(キーストアまたは\fIcacerts\fRファイルに含まれている自己署名証明書)に至るまでの信頼のパスの構築に失敗した場合は、インポートする証明書の情報を表示し、ユーザーに確認を求めます。この場合は、表示された証明書のフィンガープリントと、他のなんらかの(信頼できる)情報源(証明書の所有者など)から入手したフィンガープリントとを比較します。信頼できる証明書として証明書をインポートするときは、証明書が有効であることを慎重に確認する必要があります。信頼できる証明書のインポート警告を参照してください。インポート操作は、証明書を確認する時点で中止できます。\fI\-noprompt\fRオプションが指定されている場合、ユーザーとの対話は行われません。
+.SS "証明書応答のインポート"
+.PP
+証明書応答をインポートするときは、キーストア内の信頼できる証明書、および(\fI\-trustcacert\fR\fIs\fRオプションが指定されている場合は)\fIcacerts\fRキーストア・ファイルで構成された証明書を使用して証明書応答が検査されます。cacerts証明書ファイルを参照してください。
+.PP
+証明書応答が信頼できるかどうかを決定する方法は次のとおりです。
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+証明書応答が単一のX\&.509証明書である場合、\fIkeytool\fRコマンドは、証明書応答から(ルートCAの)自己署名証明書に至るまでの信頼チェーンの確立を試みます。証明書応答と、証明書応答の認証に使用される証明書の階層構造は、aliasの新しい証明書チェーンを形成します。信頼チェーンが確立されない場合、証明書応答はインポートされません。この場合、\fIkeytool\fRコマンドは証明書を出力せず、ユーザーに検証を求めるプロンプトを表示します。ユーザーが証明書応答の信頼性を判断するのは非常に難しいためです。
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+証明書応答がPKCS#7形式の証明書チェーンまたは一連のX\&.509証明書である場合、チェーンは、ユーザーの証明書が最初に、0以上のCA証明書がその次にくるように並べられます。チェーンが自己署名のルートCA証明書で終わり、\fI \-trustcacerts\fRオプションが指定されている場合、\fIkeytool\fRコマンドは、その証明書と、キーストア内または\fIcacerts\fRキーストア・ファイル内の信頼できるすべての証明書を照合しようとします。チェーンが自己署名のルートCA証明書で終わっておらず、\fI\-trustcacerts\fRオプションが指定されている場合、\fIkeytool\fRコマンドは、キーストア内または\fIcacerts\fRキーストア・ファイル内の信頼できる証明書から自己署名のルートCA証明書を見つけてそれをチェーンの末尾に追加しようとします。その証明書が見つからず、\fI\-noprompt\fRオプションが指定されていない場合は、チェーン内の最後の証明書の情報が出力され、ユーザーは確認を求められます。
+.RE
+.PP
+証明書応答内の公開鍵が\fIalias\fRですでに格納されているユーザーの公開鍵に一致した場合、古い証明書チェーンが応答内の新しい証明書チェーンで置き換えられます。以前の証明書チェーンを有効な\fIkeypass\fRで置き換えることができるのは、エントリの秘密鍵を保護するためのパスワードを指定した場合のみです。パスワードを指定しておらず、秘密鍵のパスワードがキーストアのパスワードと異なる場合は、秘密鍵のパスワードの入力を求められます。
+.PP
+このコマンドは、以前のリリースでは\fI\-import\fRという名前でした。このリリースでは、引き続き古い名前がサポートされています。今後は、新しい名前\fI\-importcert\fRが優先されます。
+.SH "関連項目"
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+jar(1)
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+jarsigner(1)
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+http://docs\&.oracle\&.com/javase/tutorial/security/index\&.htmlにある
+「コース: Java SEのセキュリティ機能」
+.RE
+.br
+'pl 8.5i
+'bp

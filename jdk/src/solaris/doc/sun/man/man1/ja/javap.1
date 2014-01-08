@@ -1,317 +1,344 @@
-." Copyright (c) 1994, 2011, Oracle and/or its affiliates. All rights reserved.
-." DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
-."
-." This code is free software; you can redistribute it and/or modify it
-." under the terms of the GNU General Public License version 2 only, as
-." published by the Free Software Foundation.
-."
-." This code is distributed in the hope that it will be useful, but WITHOUT
-." ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
-." FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
-." version 2 for more details (a copy is included in the LICENSE file that
-." accompanied this code).
-."
-." You should have received a copy of the GNU General Public License version
-." 2 along with this work; if not, write to the Free Software Foundation,
-." Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
-."
-." Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
-." or visit www.oracle.com if you need additional information or have any
-." questions.
-."
-.TH javap 1 "07 May 2011"
-
-.LP
-.SH "名前"
-javap \- Java クラスファイル逆アセンブラ
-.LP
-.LP
-クラスファイルを逆アセンブルします。
-.LP
-.SH "形式"
-.LP
+'\" t
+.\" Copyright (c) 1994, 2013, Oracle and/or its affiliates. All rights reserved.
+.\" Title: javap
+.\" Language: English
+.\" Date: 2013年11月21日
+.\" SectDesc: 基本ツール
+.\" Software: JDK 8
+.\" Arch: 汎用
+.\"
+.\" DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+.\"
+.\" This code is free software; you can redistribute it and/or modify it
+.\" under the terms of the GNU General Public License version 2 only, as
+.\" published by the Free Software Foundation.
+.\"
+.\" This code is distributed in the hope that it will be useful, but WITHOUT
+.\" ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+.\" FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License
+.\" version 2 for more details (a copy is included in the LICENSE file that
+.\" accompanied this code).
+.\"
+.\" You should have received a copy of the GNU General Public License version
+.\" 2 along with this work; if not, write to the Free Software Foundation,
+.\" Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+.\"
+.\" Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+.\" or visit www.oracle.com if you need additional information or have any
+.\" questions.
+.\"
+.pl 99999
+.TH "javap" "1" "2013年11月21日" "JDK 8" "基本ツール"
+.\" -----------------------------------------------------------------
+.\" * Define some portability stuff
+.\" -----------------------------------------------------------------
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.\" http://bugs.debian.org/507673
+.\" http://lists.gnu.org/archive/html/groff/2009-02/msg00013.html
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.ie \n(.g .ds Aq \(aq
+.el       .ds Aq '
+.\" -----------------------------------------------------------------
+.\" * set default formatting
+.\" -----------------------------------------------------------------
+.\" disable hyphenation
+.nh
+.\" disable justification (adjust text to left margin only)
+.ad l
+.\" -----------------------------------------------------------------
+.\" * MAIN CONTENT STARTS HERE *
+.\" -----------------------------------------------------------------
+.SH "NAME"
+javap \- 1つ以上のクラス・ファイルを逆アセンブルします。
+.SH "概要"
+.sp
+.if n \{\
+.RS 4
+.\}
 .nf
-\f3
-.fl
-javap [ \fP\f3options\fP\f3 ] classes
-.fl
-\fP
+\fIjavap\fR [\fIoptions\fR] \fIclassfile\fR\&.\&.\&.
 .fi
-
-.LP
+.if n \{\
+.RE
+.\}
+.PP
+\fIoptions\fR
+.RS 4
+コマンドライン・オプション。オプションを参照してください。
+.RE
+.PP
+\fIclassfile\fR
+.RS 4
+注釈の処理対象となる、空白で区切った1つ以上のクラス(DocFooter\&.classなど)。クラス・パスで検出できるクラスを、ファイル名またはURL(\fIfile:///home/user/myproject/src/DocFooter\&.class\fRなど)で指定できます。
+.RE
 .SH "説明"
-.LP
-.LP
-\f3javap\fP コマンドは、1 つまたは複数のクラスファイルを逆アセンブルします。その出力は指定するオプションにより異なります。オプションを指定しない場合、\f3javap\fP は、そのパッケージ、渡されたクラスの protected および public のフィールドとメソッドを出力します。\f3javap\fP はその出力を標準出力に表示します。
-.LP
-.RS 3
-.TP 3
-options 
-コマンド行オプション。 
-.TP 3
-classes 
-注釈の処理対象となる 1 つ以上のクラス \f2DocFooter.class\fP など) のリスト (空白区切り)。クラスパスで見つかるクラスは、ファイル名 ( \f2/home/user/myproject/src/DocFooter.class\fP など) または URL ( \f2file:///home/user/myproject/src/DocFooter.class\fP など) で指定できます。 
-.RE
-
-.LP
-.LP
-たとえば、次のクラス宣言をコンパイルするとします。
-.LP
-.nf
-\f3
-.fl
-import java.awt.*;
-.fl
-import java.applet.*;
-.fl
-
-.fl
-public class DocFooter extends Applet {
-.fl
-        String date;
-.fl
-        String email;
-.fl
-
-.fl
-        public void init() {
-.fl
-                resize(500,100);
-.fl
-                date = getParameter("LAST_UPDATED");
-.fl
-                email = getParameter("EMAIL");
-.fl
-        }
-.fl
-
-.fl
-        public void paint(Graphics g) {
-.fl
-                g.drawString(date + " by ",100, 15);
-.fl
-                g.drawString(email,290,15);
-.fl
-        }
-.fl
-}
-.fl
-\fP
-.fi
-
-.LP
-.LP
-\f3javap DocFooter.class\fP がもたらす出力は次のようになります。
-.LP
-.nf
-\f3
-.fl
-Compiled from "DocFooter.java"
-.fl
-public class DocFooter extends java.applet.Applet {
-.fl
-  java.lang.String date;
-.fl
-  java.lang.String email;
-.fl
-  public DocFooter();
-.fl
-  public void init();
-.fl
-  public void paint(java.awt.Graphics);
-.fl
-}
-.fl
-\fP
-.fi
-
-.LP
-.LP
-\f3javap \-c DocFooter.class\fP がもたらす出力は次のようになります。
-.LP
-.nf
-\f3
-.fl
-Compiled from "DocFooter.java"
-.fl
-public class DocFooter extends java.applet.Applet {
-.fl
-  java.lang.String date;
-.fl
-
-.fl
-  java.lang.String email;
-.fl
-
-.fl
-  public DocFooter();
-.fl
-    Code:
-.fl
-       0: aload_0       
-.fl
-       1: invokespecial #1                  // Method java/applet/Applet."<init>":()V
-.fl
-       4: return        
-.fl
-
-.fl
-  public void init();
-.fl
-    Code:
-.fl
-       0: aload_0       
-.fl
-       1: sipush        500
-.fl
-       4: bipush        100
-.fl
-       6: invokevirtual #2                  // Method resize:(II)V
-.fl
-       9: aload_0       
-.fl
-      10: aload_0       
-.fl
-      11: ldc           #3                  // String LAST_UPDATED
-.fl
-      13: invokevirtual #4                  // Method getParameter:(Ljava/lang/String;)Ljava/lang/String;
-.fl
-      16: putfield      #5                  // Field date:Ljava/lang/String;
-.fl
-      19: aload_0       
-.fl
-      20: aload_0       
-.fl
-      21: ldc           #6                  // String EMAIL
-.fl
-      23: invokevirtual #4                  // Method getParameter:(Ljava/lang/String;)Ljava/lang/String;
-.fl
-      26: putfield      #7                  // Field email:Ljava/lang/String;
-.fl
-      29: return        
-.fl
-
-.fl
-  public void paint(java.awt.Graphics);
-.fl
-    Code:
-.fl
-       0: aload_1       
-.fl
-       1: new           #8                  // class java/lang/StringBuilder
-.fl
-       4: dup           
-.fl
-       5: invokespecial #9                  // Method java/lang/StringBuilder."<init>":()V
-.fl
-       8: aload_0       
-.fl
-       9: getfield      #5                  // Field date:Ljava/lang/String;
-.fl
-      12: invokevirtual #10                 // Method java/lang/StringBuilder.append:(Ljava/lang/String;)Ljava/lang/StringBuilder;
-.fl
-      15: ldc           #11                 // String  by 
-.fl
-      17: invokevirtual #10                 // Method java/lang/StringBuilder.append:(Ljava/lang/String;)Ljava/lang/StringBuilder;
-.fl
-      20: invokevirtual #12                 // Method java/lang/StringBuilder.toString:()Ljava/lang/String;
-.fl
-      23: bipush        100
-.fl
-      25: bipush        15
-.fl
-      27: invokevirtual #13                 // Method java/awt/Graphics.drawString:(Ljava/lang/String;II)V
-.fl
-      30: aload_1       
-.fl
-      31: aload_0       
-.fl
-      32: getfield      #7                  // Field email:Ljava/lang/String;
-.fl
-      35: sipush        290
-.fl
-      38: bipush        15
-.fl
-      40: invokevirtual #13                 // Method java/awt/Graphics.drawString:(Ljava/lang/String;II)V
-.fl
-      43: return        
-.fl
-}
-.fl
-\fP
-.fi
-
-.LP
+.PP
+\fIjavap\fRコマンドは、1つまたは複数のクラス・ファイルを逆アセンブルします。その出力は指定するオプションにより異なります。オプションを指定しない場合、\fIjavap\fRコマンドは、そのパッケージ、渡されたクラスのprotectedおよびpublicのフィールドとメソッドを出力します。\fIjavap\fRコマンドはその出力を\fI標準出力\fRに表示します。
 .SH "オプション"
-.LP
-.RS 3
-.TP 3
-\-help \-\-help \-? 
-\f3javap\fP のヘルプメッセージを出力します。 
-.TP 3
-\-version 
-バージョン情報を表示します。 
-.TP 3
-\-l 
-行番号と局所変数テーブルを表示します。 
-.TP 3
-\-public 
-public クラスおよびメンバーだけを表示します。 
-.TP 3
-\-protected 
-protected および public のクラスとメンバーだけを表示します。 
-.TP 3
-\-package 
-package、protected、および public のクラスとメンバーだけを表示します。これはデフォルトの設定です。 
-.TP 3
-\-private \-p 
-すべてのクラスとメンバーを表示します。 
-.TP 3
-\-Jflag 
-ランタイムシステムに直接 \f2flag\fP を渡します。使用例を次に示します。 
-.nf
-\f3
-.fl
-javap \-J\-version
-.fl
-javap \-J\-Djava.security.manager \-J\-Djava.security.policy=MyPolicy MyClassName
-.fl
-\fP
-.fi
-.TP 3
-\-s 
-内部の型シグニチャーを出力します。 
-.TP 3
-\-sysinfo 
-処理中のクラスのシステム情報 (パス、サイズ、日付、MD5 ハッシュ) を表示します。 
-.TP 3
-\-constants 
-static final 定数を表示します。 
-.TP 3
-\-c 
-クラスの各メソッドのために逆アセンブルされるコード、すなわち Java バイトコードから成る命令を表示します。これらは
-.na
-\f2「Java Virtual Machine Specification」\fP @
-.fi
-http://java.sun.com/docs/books/vmspec/にドキュメント化されています。 
-.TP 3
-\-verbose 
-メソッドのスタックサイズ、および \f2locals\fP と \f2args\fP の数を出力します。 
-.TP 3
-\-classpath path 
-\f3javap\fP がクラスを探すために使用するパスを指定します。デフォルトまたは CLASSPATH 環境変数設定を上書きします。 
-.TP 3
-\-bootclasspath path 
-ブートストラップクラスをロードするパスを指定します。ブートストラップクラスは、デフォルトでは \f2jre/lib/rt.jar\fP および他のいくつかの JAR ファイル にある、コア Java 2 プラットフォームを実装するクラスです。 
-.TP 3
-\-extdirs dirs 
-インストールされた拡張機能を検索する場所をオーバーライドします。拡張機能は、デフォルトでは \f2java.ext.dirs\fP にあります。 
+.PP
+\-help, \-\-help, \-?
+.RS 4
+\fIjavap\fRコマンドについてのヘルプ・メッセージを出力します。
 .RE
-
-.LP
-.SH "関連項目"
-.LP
-.LP
-javac(1)、java(1)、jdb(1)、javah(1)、javadoc(1)
-.LP
+.PP
+\-version
+.RS 4
+リリース情報を出力します。
+.RE
+.PP
+\-l
+.RS 4
+行番号とローカル変数表を出力します。
+.RE
+.PP
+\-public
+.RS 4
+publicクラスおよびメンバーのみ表示します。
+.RE
+.PP
+\-protected
+.RS 4
+protectedおよびpublicのクラスとメンバーのみを表示します。
+.RE
+.PP
+\-private, \-p
+.RS 4
+すべてのクラスとメンバーを表示します。
+.RE
+.PP
+\-J\fIoption\fR
+.RS 4
+指定されたオプションをJVMに渡します。次に例を示します。
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+javap \-J\-version
+javap \-J\-Djava\&.security\&.manager \-J\-Djava\&.security\&.policy=MyPolicy MyClassName
+.fi
+.if n \{\
+.RE
+.\}
+JVMオプションの詳細は、コマンドのマニュアルを参照してください。
+.RE
+.PP
+\-s
+.RS 4
+内部の型シグニチャを出力します。
+.RE
+.PP
+\-sysinfo
+.RS 4
+処理中のクラスのシステム情報(パス、サイズ、日付、MD5ハッシュ)を表示します。
+.RE
+.PP
+\-constants
+.RS 4
+\fIstatic final\fR定数を表示します。
+.RE
+.PP
+\-c
+.RS 4
+クラスの各メソッドのために逆アセンブルされるコード、すなわちJavaバイトコードからなる命令を表示します。
+.RE
+.PP
+\-verbose
+.RS 4
+メソッドのスタック・サイズ、localsとargumentsの数を出力します。
+.RE
+.PP
+\-classpath \fIpath\fR
+.RS 4
+クラスを探すために\fIjavap\fRコマンドが使用するパスを指定します。デフォルトまたは\fICLASSPATH\fR環境変数の設定をオーバーライドします。
+.RE
+.PP
+\-bootclasspath \fIpath\fR
+.RS 4
+ブートストラップ・クラスをロードするパスを指定します。ブートストラップ・クラスは、デフォルトでは\fIjre/lib/rt\&.jar\fRおよび他のいくつかのJARファイルにある、コアJavaプラットフォームを実装するクラスです。
+.RE
+.PP
+\-extdir \fIdirs\fR
+.RS 4
+インストールされた拡張機能を検索する場所をオーバーライドします。拡張機能のデフォルト位置は\fIjava\&.ext\&.dirs\fRです。
+.RE
+.SH "例"
+.PP
+次の\fIDocFooter\fRクラスをコンパイルします。
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+import java\&.awt\&.*;
+import java\&.applet\&.*;
  
+public class DocFooter extends Applet {
+        String date;
+        String email;
+ 
+        public void init() {
+                resize(500,100);
+                date = getParameter("LAST_UPDATED");
+                email = getParameter("EMAIL");
+        }
+ 
+        public void paint(Graphics g) {
+                g\&.drawString(date + " by ",100, 15);
+                g\&.drawString(email,290,15);
+        }
+}
+.fi
+.if n \{\
+.RE
+.\}
+.PP
+\fIjavap DocFooter\&.class\fRコマンドからの出力は次を生成します。
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+Compiled from "DocFooter\&.java"
+public class DocFooter extends java\&.applet\&.Applet {
+  java\&.lang\&.String date;
+  java\&.lang\&.String email;
+  public DocFooter();
+  public void init();
+  public void paint(java\&.awt\&.Graphics);
+}
+.fi
+.if n \{\
+.RE
+.\}
+.PP
+\fIjavap \-c DocFooter\&.class\fRコマンドからの出力は次を生成します。
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+Compiled from "DocFooter\&.java"
+public class DocFooter extends java\&.applet\&.Applet {
+  java\&.lang\&.String date;
+  java\&.lang\&.String email;
+
+  public DocFooter();
+    Code:
+       0: aload_0       
+       1: invokespecial #1                  // Method
+java/applet/Applet\&."<init>":()V
+       4: return        
+
+  public void init();
+    Code:
+       0: aload_0       
+       1: sipush        500
+       4: bipush        100
+       6: invokevirtual #2                  // Method resize:(II)V
+       9: aload_0       
+      10: aload_0       
+      11: ldc           #3                  // String LAST_UPDATED
+      13: invokevirtual #4                  // Method
+ getParameter:(Ljava/lang/String;)Ljava/lang/String;
+      16: putfield      #5                  // Field date:Ljava/lang/String;
+      19: aload_0       
+      20: aload_0       
+      21: ldc           #6                  // String EMAIL
+      23: invokevirtual #4                  // Method
+ getParameter:(Ljava/lang/String;)Ljava/lang/String;
+      26: putfield      #7                  // Field email:Ljava/lang/String;
+      29: return        
+
+  public void paint(java\&.awt\&.Graphics);
+    Code:
+       0: aload_1       
+       1: new           #8                  // class java/lang/StringBuilder
+       4: dup           
+       5: invokespecial #9                  // Method
+ java/lang/StringBuilder\&."<init>":()V
+       8: aload_0       
+       9: getfield      #5                  // Field date:Ljava/lang/String;
+      12: invokevirtual #10                 // Method
+ java/lang/StringBuilder\&.append:(Ljava/lang/String;)Ljava/lang/StringBuilder;
+      15: ldc           #11                 // String  by 
+      17: invokevirtual #10                 // Method
+ java/lang/StringBuilder\&.append:(Ljava/lang/String;)Ljava/lang/StringBuilder;
+      20: invokevirtual #12                 // Method
+ java/lang/StringBuilder\&.toString:()Ljava/lang/String;
+      23: bipush        100
+      25: bipush        15
+      27: invokevirtual #13                 // Method
+ java/awt/Graphics\&.drawString:(Ljava/lang/String;II)V
+      30: aload_1       
+      31: aload_0       
+      32: getfield      #7                  // Field email:Ljava/lang/String;
+      35: sipush        290
+      38: bipush        15
+      40: invokevirtual #13                 // Method
+java/awt/Graphics\&.drawString:(Ljava/lang/String;II)V
+      43: return        
+}
+.fi
+.if n \{\
+.RE
+.\}
+.SH "関連項目"
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+javac(1)
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+java(1)
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+jdb(1)
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+javah(1)
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+javadoc(1)
+.RE
+.br
+'pl 8.5i
+'bp

@@ -1,159 +1,214 @@
-." Copyright (c) 2006, 2011, Oracle and/or its affiliates. All rights reserved.
-." DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
-."
-." This code is free software; you can redistribute it and/or modify it
-." under the terms of the GNU General Public License version 2 only, as
-." published by the Free Software Foundation.
-."
-." This code is distributed in the hope that it will be useful, but WITHOUT
-." ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
-." FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
-." version 2 for more details (a copy is included in the LICENSE file that
-." accompanied this code).
-."
-." You should have received a copy of the GNU General Public License version
-." 2 along with this work; if not, write to the Free Software Foundation,
-." Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
-."
-." Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
-." or visit www.oracle.com if you need additional information or have any
-." questions.
-."
-.TH jhat 1 "07 May 2011"
-
-.LP
-.SH "名前"
-jhat \- Java ヒープ解析ツール
-.LP
-.RS 3
-.TP 2
-o
-形式 
-.TP 2
-o
-パラメータ 
-.TP 2
-o
-説明 
-.TP 2
-o
-オプション 
-.TP 2
-o
-関連項目 
-.RE
-
-.LP
-.SH "形式"
-.LP
+'\" t
+.\" Copyright (c) 2006, 2013, Oracle and/or its affiliates. All rights reserved.
+.\" Title: jhat
+.\" Language: English
+.\" Date: 2013年11月21日
+.\" SectDesc: トラブルシューティング・ツール
+.\" Software: JDK 8
+.\" Arch: 汎用
+.\"
+.\" DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+.\"
+.\" This code is free software; you can redistribute it and/or modify it
+.\" under the terms of the GNU General Public License version 2 only, as
+.\" published by the Free Software Foundation.
+.\"
+.\" This code is distributed in the hope that it will be useful, but WITHOUT
+.\" ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+.\" FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License
+.\" version 2 for more details (a copy is included in the LICENSE file that
+.\" accompanied this code).
+.\"
+.\" You should have received a copy of the GNU General Public License version
+.\" 2 along with this work; if not, write to the Free Software Foundation,
+.\" Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+.\"
+.\" Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+.\" or visit www.oracle.com if you need additional information or have any
+.\" questions.
+.\"
+.pl 99999
+.TH "jhat" "1" "2013年11月21日" "JDK 8" "トラブルシューティング・ツール"
+.\" -----------------------------------------------------------------
+.\" * Define some portability stuff
+.\" -----------------------------------------------------------------
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.\" http://bugs.debian.org/507673
+.\" http://lists.gnu.org/archive/html/groff/2009-02/msg00013.html
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.ie \n(.g .ds Aq \(aq
+.el       .ds Aq '
+.\" -----------------------------------------------------------------
+.\" * set default formatting
+.\" -----------------------------------------------------------------
+.\" disable hyphenation
+.nh
+.\" disable justification (adjust text to left margin only)
+.ad l
+.\" -----------------------------------------------------------------
+.\" * MAIN CONTENT STARTS HERE *
+.\" -----------------------------------------------------------------
+.SH "NAME"
+jhat \- Javaヒープを分析します。このコマンドは試験的なもので、サポートされていません。
+.SH "概要"
+.sp
+.if n \{\
+.RS 4
+.\}
 .nf
-\f3
-.fl
-\fP\f3jhat\fP [ \f2options\fP ] <heap\-dump\-file>
-.fl
-
-.fl
+\fIjhat\fR [ \fIoptions\fR ] \fIheap\-dump\-file\fR 
 .fi
-
-.LP
-.SH "パラメータ"
-.LP
-.RS 3
-.TP 3
-options 
-オプションを使用する場合、コマンド名の直後に記述してください。 
-.TP 3
-heap\-dump\-file 
-ブラウズ対象となる Java バイナリヒープダンプファイル。複数のヒープダンプを含むダンプファイルの場合、「foo.hprof#3」のようにファイル名の後に「#<number>」を付加することで、ファイル内の特定のダンプを指定できます。 
+.if n \{\
 .RE
-
-.LP
+.\}
+.PP
+\fIoptions\fR
+.RS 4
+コマンドライン・オプション。オプションを参照してください。
+.RE
+.PP
+\fIheap\-dump\-file\fR
+.RS 4
+ブラウズ対象となるJavaバイナリ・ヒープ・ダンプ・ファイル。複数のヒープ・ダンプを含むダンプ・ファイルの場合、\fImyfile\&.hprof#3\fRのようにファイル名の後に\fI#<number>\fRを付加することで、ファイル内の特定のダンプを指定できます。
+.RE
 .SH "説明"
-.LP
-.LP
-\f3jhat\fP コマンドは、java ヒープダンプファイルを解析し、Web サーバーを起動します。jhat を使えば、お好みの Web ブラウザを使ってヒープダンプをブラウズできます。jhat は、「ある既知のクラス「Foo」のすべてのインスタンスを表示する」といった、事前に設計されたクエリのほか、\f3OQL\fP (\f3O\fPbject \f3Q\fPuery \f3L\fPanguage) もサポートします。OQL のヘルプには、jhat によって表示される OQL ヘルプページからアクセスできます。デフォルトポートを使用する場合、OQL のヘルプは http://localhost:7000/oqlhelp/ で利用可能です。
-.LP
-.LP
-Java のヒープダンプを生成するには、いくつかの方法があります。
-.LP
-.RS 3
-.TP 2
-o
-jmap(1) の \-dump オプションを使って実行時にヒープダンプを取得する。 
-.TP 2
-o
-jconsole(1) のオプションを使って 
-.na
-\f2HotSpotDiagnosticMXBean\fP @
-.fi
-http://java.sun.com/javase/6/docs/jre/api/management/extension/com/sun/management/HotSpotDiagnosticMXBean.html 経由で実行時にヒープダンプを取得する。 
-.TP 2
-o
-\-XX:+HeapDumpOnOutOfMemoryError VM オプションを指定すると、OutOfMemoryError のスロー時にヒープダンプが生成される。 
-.TP 2
-o
-.na
-\f2hprof\fP @
-.fi
-http://java.sun.com/developer/technicalArticles/Programming/HPROF.html を使用する。 
+.PP
+\fIjhat\fRコマンドはJavaヒープ・ダンプ・ファイルを解析し、Webサーバーを開始します。\fIjhat\fRコマンドを使用して、お気に入りのブラウザでヒープ・ダンプを参照できます。\fIjhat\fRコマンドは、既知のクラス\fIMyClass\fRのすべてのインスタンスを表示するなどの事前設計済の問合せやObject Query Language (OQL)をサポートします。ヒープ・ダンプの問合せを除き、OQLはSQLに似ています。OQLのヘルプには、\fIjhat\fRコマンドによって表示されるOQLヘルプ・ページからアクセスできます。デフォルト・ポートを使用する場合、OQLのヘルプはhttp://localhost:7000/oqlhelp/で利用可能です。
+.PP
+Javaのヒープ・ダンプを生成するには、次のいくつかの方法があります。
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\fIjmap \-dump\fRオプションを使用して実行時にヒープ・ダンプを取得します。jmap(1)を参照してください。
 .RE
-
-.LP
-.LP
-\f3注:\fP このツールは\f3試験的なもの\fPであり、将来の JDK のバージョンでは\f3利用できなくなる\fP可能性があります。
-.LP
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\fIjconsole\fRオプションを使用して\fIHotSpotDiagnosticMXBean\fR経由で実行時にヒープ・ダンプを取得します。jconsole(1)および\fIHotSpotDiagnosticMXBean\fRのインタフェースの説明(
+http://docs\&.oracle\&.com/javase/8/docs/jre/api/management/extension/com/sun/management/HotSpotDiagnosticMXBean\&.html)を参照してください。
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+ヒープ・ダンプは、\fI\-XX:+HeapDumpOnOutOfMemoryError\fR
+Java仮想マシン(JVM)オプションを指定することで、\fIOutOfMemoryError\fRがスローされたときに生成されます。
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\fIhprof\fRコマンドを使用します。HPROF: Heap/CPUプロファイリング・ツール
+(http://docs\&.oracle\&.com/javase/8/docs/technotes/samples/hprof\&.html)を参照してください
+.RE
 .SH "オプション"
-.LP
-.RS 3
-.TP 3
-\-stack false/true 
-オブジェクト割り当て呼び出しスタックの追跡を無効にします。ヒープダンプ内で割り当てサイト情報が使用できない場合、このフラグを false に設定する必要があります。デフォルトは true です。 
-.TP 3
-\-refs false/true 
-オブジェクトへの参照の追跡を無効にします。デフォルトは true です。デフォルトでは、ヒープ内のすべてのオブジェクトについて、バックポインタ (指定されたオブジェクトをポイントしているオブジェクト。参照者または受信参照とも呼ばれる) が計算されます。 
-.TP 3
-\-port port\-number 
-jhat の HTTP サーバーのポートを設定します。デフォルトは 7000 です。 
-.TP 3
-\-exclude exclude\-file 
-「到達可能なオブジェクト」のクエリから除外すべきデータメンバーの一覧を含むファイルを指定します。たとえば、このファイルに \f2java.lang.String.value\fP が含まれていた場合、特定のオブジェクト「o」から到達可能なオブジェクトのリストを計算する際に、\f2java.lang.String.value\fP フィールドに関連する参照パスが考慮されなくなります。 
-.TP 3
-\-baseline baseline\-dump\-file 
-ベースラインとなるヒープダンプを指定します。両方のヒープダンプ内で同じオブジェクト ID を持つオブジェクトは「新規ではない」としてマークされます。その他のオブジェクトは「新規」としてマークされます。これは、異なる 2 つのヒープダンプを比較する際に役立ちます。 
-.TP 3
-\-debug int 
-このツールのデバッグレベルを設定します。0 は「デバッグ出力なし」を意味します。より大きな値を設定すると、より冗長なモードになります。 
-.TP 3
-\-version 
-バージョン番号を報告したあと、終了します。 
-.TP 3
-\-h 
-ヘルプメッセージを出力して終了します。 
-.TP 3
-\-help 
-ヘルプメッセージを出力して終了します。 
-.TP 3
-\-J<flag> 
-jhat が実行されている Java 仮想マシンに <flag> を渡します。たとえば、512M バイトの最大ヒープサイズを使用するには、\-J\-Xmx512m とします。 
+.PP
+\-stack false|true
+.RS 4
+オブジェクト割当呼出しスタックの追跡を無効にします。ヒープ・ダンプ内で割当サイト情報が使用できない場合、このフラグを\fIfalse\fRに設定する必要があります。デフォルトは\fItrue\fRです。
 .RE
-
-.LP
+.PP
+\-refs false|true
+.RS 4
+オブジェクトへの参照の追跡を無効にします。デフォルトは\fItrue\fRです。デフォルトでは、ヒープ内のすべてのオブジェクトについて、バックポインタ(指定されたオブジェクトをポイントしているオブジェクト。参照者または受信参照とも呼ばれる)が計算されます。
+.RE
+.PP
+\-port \fIport\-number\fR
+.RS 4
+\fIjhat\fRのHTTPサーバーのポートを設定します。デフォルトは7000です。
+.RE
+.PP
+\-exclude \fIexclude\-file\fR
+.RS 4
+到達可能なオブジェクトの問合せから除外する必要があるデータ・メンバーの一覧を含むファイルを指定します。たとえば、このファイルに\fIjava\&.lang\&.String\&.value\fRが含まれていた場合、特定のオブジェクト\fIo\fRから到達可能なオブジェクトのリストを計算する際に、\fIjava\&.lang\&.String\&.value\fRフィールドに関連する参照パスが考慮されなくなります。
+.RE
+.PP
+\-baseline \fIexclude\-file\fR
+.RS 4
+ベースラインとなるヒープ・ダンプを指定します。両方のヒープ・ダンプ内で同じオブジェクトIDを持つオブジェクトは新規ではないとしてマークされます。他のオブジェクトは新規としてマークされます。これは、異なる2つのヒープ・ダンプを比較する際に役立ちます。
+.RE
+.PP
+\-debug \fIint\fR
+.RS 4
+このツールのデバッグ・レベルを設定します。レベル0はデバッグ出力がないことを意味します。より大きな値を設定すると、より冗長なモードになります。
+.RE
+.PP
+\-version
+.RS 4
+リリース番号をレポートして終了します
+.RE
+.PP
+\-h
+.RS 4
+ヘルプ・メッセージを表示して終了します。
+.RE
+.PP
+\-help
+.RS 4
+ヘルプ・メッセージを表示して終了します。
+.RE
+.PP
+\-J\fIflag\fR
+.RS 4
+\fIjhat\fRコマンドを実行しているJava仮想マシンに\fIflag\fRを渡します。たとえば、512Mバイトの最大ヒープ・サイズを使用するには、\fI\-J\-Xmx512m\fRとします。
+.RE
 .SH "関連項目"
-.LP
-.RS 3
-.TP 2
-o
-jmap(1) 
-.TP 2
-o
-jconsole(1) 
-.TP 2
-o
-.na
-\f2hprof \- ヒープおよび CPU プロファイリングツール\fP @
-.fi
-http://java.sun.com/developer/technicalArticles/Programming/HPROF.html 
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+jmap(1)
 .RE
-
-.LP
- 
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+jconsole(1)
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+HPROF: Heap/CPUプロファイリング・ツール
+(http://docs\&.oracle\&.com/javase/8/docs/technotes/samples/hprof\&.html)
+.RE
+.br
+'pl 8.5i
+'bp

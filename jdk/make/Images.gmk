@@ -426,12 +426,6 @@ ifneq ($(OPENJDK_TARGET_OS), windows)
 	$(install-file)
   endif
 
-  # Old build creates empty man page for this, mimicing behaviour.
-  $(JDK_IMAGE_DIR)/man/ja_JP.UTF-8/man1/jcmd.1 $(JDK_IMAGE_DIR)/man/ja_JP.PCK/man1/jcmd.1 $(JDK_IMAGE_DIR)/man/ja/man1/jcmd.1:
-	$(ECHO) $(LOG_INFO) Creating dummy $(patsubst $(OUTPUT_ROOT)/%,%,$@)
-	$(MKDIR) -p $(@D)
-	$(TOUCH) $@
-
   ifeq ($(OPENJDK_TARGET_OS), linux)
     $(JRE_IMAGE_DIR)/man/ja:
 	$(ECHO) $(LOG_INFO) Creating $(patsubst $(OUTPUT_ROOT)/%,%,$@)
