@@ -2134,11 +2134,20 @@ loop:
                     final String setterName = setIdent.getPropertyName();
                     final IdentNode setNameNode = new IdentNode(((Node)setIdent).getToken(), finish, NameCodec.encode("set " + setterName));
                     expect(LPAREN);
-                    final IdentNode argIdent = getIdent();
-                    verifyStrictIdent(argIdent, "setter argument");
+                    // be sloppy and allow missing setter parameter even though
+                    // spec does not permit it!
+                    final IdentNode argIdent;
+                    if (type == IDENT || isNonStrictModeIdent()) {
+                        argIdent = getIdent();
+                        verifyStrictIdent(argIdent, "setter argument");
+                    } else {
+                        argIdent = null;
+                    }
                     expect(RPAREN);
                     List<IdentNode> parameters = new ArrayList<>();
-                    parameters.add(argIdent);
+                    if (argIdent != null) {
+                        parameters.add(argIdent);
+                    }
                     functionNode = functionBody(getSetToken, setNameNode, parameters, FunctionNode.Kind.SETTER);
                     return new PropertyNode(propertyToken, finish, setIdent, null, null, functionNode);
 
