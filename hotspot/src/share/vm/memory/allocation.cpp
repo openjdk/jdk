@@ -140,7 +140,7 @@ void ResourceObj::operator delete [](void* p) {
 void ResourceObj::set_allocation_type(address res, allocation_type type) {
     // Set allocation type in the resource object
     uintptr_t allocation = (uintptr_t)res;
-    assert((allocation & allocation_mask) == 0, "address should be aligned to 4 bytes at least");
+    assert((allocation & allocation_mask) == 0, err_msg("address should be aligned to 4 bytes at least: " PTR_FORMAT, res));
     assert(type <= allocation_mask, "incorrect allocation type");
     ResourceObj* resobj = (ResourceObj *)res;
     resobj->_allocation_t[0] = ~(allocation + type);
