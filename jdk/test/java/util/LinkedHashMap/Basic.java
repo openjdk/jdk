@@ -23,28 +23,29 @@
 
 /**
  * @test
- * @bug 4245809
+ * @bug 4245809 8029795
  * @summary Basic test for LinkedHashMap.  (Based on MapBash)
  */
 
 import java.util.*;
+import java.util.function.*;
 import java.io.*;
 
 public class Basic {
-    static Random rnd = new Random(666);
-    static Object nil = new Integer(0);
+    final static Random rnd = new Random(666);
+    final static Integer nil = new Integer(0);
 
     public static void main(String[] args)  throws Exception {
         int numItr =  500;
         int mapSize = 500;
 
-        // Linked List test
+        // Linked List testk
         for (int i=0; i<numItr; i++) {
-            Map m = new LinkedHashMap();
-            Object head = nil;
+            Map<Integer,Integer> m = new LinkedHashMap();
+            Integer head = nil;
 
             for (int j=0; j<mapSize; j++) {
-                Object newHead;
+                Integer newHead;
                 do {
                     newHead = new Integer(rnd.nextInt());
                 } while (m.containsKey(newHead));
@@ -57,7 +58,7 @@ public class Basic {
             if (new HashMap(m).hashCode() != m.hashCode())
                 throw new Exception("Incorrect hashCode computation.");
 
-            Map m2 = new LinkedHashMap(); m2.putAll(m);
+            Map<Integer,Integer> m2 = new LinkedHashMap(); m2.putAll(m);
             m2.values().removeAll(m.keySet());
             if (m2.size()!= 1 || !m2.containsValue(nil))
                 throw new Exception("Collection views test failed.");
@@ -66,7 +67,7 @@ public class Basic {
             while (head != nil) {
                 if (!m.containsKey(head))
                     throw new Exception("Linked list doesn't contain a link.");
-                Object newHead = m.get(head);
+                Integer newHead = m.get(head);
                 if (newHead == null)
                     throw new Exception("Could not retrieve a link.");
                 m.remove(head);
@@ -79,7 +80,7 @@ public class Basic {
                 throw new Exception("Linked list size not as expected.");
         }
 
-        Map m = new LinkedHashMap();
+        Map<Integer,Integer> m = new LinkedHashMap();
         for (int i=0; i<mapSize; i++)
             if (m.put(new Integer(i), new Integer(2*i)) != null)
                 throw new Exception("put returns non-null value erroenously.");
@@ -88,12 +89,12 @@ public class Basic {
                 throw new Exception("contains value "+i);
         if (m.put(nil, nil) == null)
             throw new Exception("put returns a null value erroenously.");
-        Map m2 = new LinkedHashMap(); m2.putAll(m);
+        Map<Integer,Integer> m2 = new LinkedHashMap(); m2.putAll(m);
         if (!m.equals(m2))
             throw new Exception("Clone not equal to original. (1)");
         if (!m2.equals(m))
             throw new Exception("Clone not equal to original. (2)");
-        Set s = m.entrySet(), s2 = m2.entrySet();
+        Set<Map.Entry<Integer,Integer>> s = m.entrySet(), s2 = m2.entrySet();
         if (!s.equals(s2))
             throw new Exception("Clone not equal to original. (3)");
         if (!s2.equals(s))
@@ -137,7 +138,7 @@ public class Basic {
 
         // Test ordering properties with insert order
         m = new LinkedHashMap();
-        List l = new ArrayList(mapSize);
+        List<Integer> l = new ArrayList(mapSize);
         for (int i=0; i<mapSize; i++) {
             Integer x = new Integer(i);
             m.put(x, x);
@@ -164,7 +165,7 @@ public class Basic {
         if (!m.equals(m2))
             throw new Exception("Insert-order Map != clone.");
 
-        List l2 = new ArrayList(l);
+        List<Integer> l2 = new ArrayList(l);
         Collections.shuffle(l2);
         for (int i=0; i<mapSize; i++) {
             Integer x = (Integer) l2.get(i);
@@ -175,7 +176,7 @@ public class Basic {
             throw new Exception("Clone: altered by read.");
 
         // Test ordering properties with access order
-        m = new LinkedHashMap(1000, .75f, true);
+        m = new LinkedHashMap(2*mapSize, .75f, true);
         for (int i=0; i<mapSize; i++) {
             Integer x = new Integer(i);
             m.put(x, x);
@@ -190,6 +191,70 @@ public class Basic {
         }
         if (!new ArrayList(m.keySet()).equals(l2))
             throw new Exception("Insert order not properly altered by read.");
+
+        for (int i=0; i<mapSize; i++) {
+            Integer x = (Integer) l2.get(i);
+            if (!m.getOrDefault(x, new Integer(i + 1000)).equals(x))
+                throw new Exception("Wrong value: "+i+", "+m.get(x)+", "+x);
+        }
+        if (!new ArrayList(m.keySet()).equals(l2))
+            throw new Exception("Insert order not properly altered by read.");
+
+        for (int i=0; i<mapSize; i++) {
+            Integer x = (Integer) l2.get(i);
+            if (!m.replace(x, x).equals(x))
+                throw new Exception("Wrong value: "+i+", "+m.get(x)+", "+x);
+        }
+        if (!new ArrayList(m.keySet()).equals(l2))
+            throw new Exception("Insert order not properly altered by replace.");
+
+        for (int i=0; i<mapSize; i++) {
+            Integer x = (Integer) l2.get(i);
+            if (!m.replace(x, x, x))
+                throw new Exception("Wrong value: "+i+", "+m.get(x)+", "+x);
+        }
+        if (!new ArrayList(m.keySet()).equals(l2))
+            throw new Exception("Insert order not properly altered by replace.");
+
+        BiFunction<Integer,Integer,Integer> f = (Integer y, Integer z) -> {
+            if (!Objects.equals(y,z))
+                throw new RuntimeException("unequal " + y + "," + z);
+            return new Integer(z);
+        };
+
+        for (int i=0; i<mapSize; i++) {
+            Integer x = (Integer) l2.get(i);
+            if (!x.equals(m.merge(x, x, f)))
+                throw new Exception("Wrong value: "+i+", "+m.get(x)+", "+x);
+        }
+        if (!new ArrayList(m.keySet()).equals(l2))
+            throw new Exception("Insert order not properly altered by replace.");
+
+        for (int i=0; i<mapSize; i++) {
+            Integer x = (Integer) l2.get(i);
+            if (!x.equals(m.compute(x, f)))
+                throw new Exception("Wrong value: "+i+", "+m.get(x)+", "+x);
+        }
+        if (!new ArrayList(m.keySet()).equals(l2))
+            throw new Exception("Insert order not properly altered by replace.");
+
+        for (int i=0; i<mapSize; i++) {
+            Integer x = (Integer) l2.get(i);
+            if(!x.equals(m.remove(x)))
+              throw new Exception("Missing key: "+i+", "+x);
+            if (!x.equals(m.computeIfAbsent(x, Integer::valueOf)))
+                throw new Exception("Wrong value: "+i+", "+m.get(x)+", "+x);
+        }
+        if (!new ArrayList(m.keySet()).equals(l2))
+            throw new Exception("Insert order not properly altered by replace.");
+
+        for (int i=0; i<mapSize; i++) {
+            Integer x = (Integer) l2.get(i);
+            if (!x.equals(m.computeIfPresent(x, f)))
+                throw new Exception("Wrong value: "+i+", "+m.get(x)+", "+x);
+        }
+        if (!new ArrayList(m.keySet()).equals(l2))
+            throw new Exception("Insert order not properly altered by replace.");
 
         for (int i=0; i<mapSize; i++) {
             Integer x = new Integer(i);

@@ -155,7 +155,7 @@ public abstract class ExecutableMemberDocImpl
      * thrown by this method.
      */
     public ClassDoc[] thrownExceptions() {
-        ListBuffer<ClassDocImpl> l = new ListBuffer<ClassDocImpl>();
+        ListBuffer<ClassDocImpl> l = new ListBuffer<>();
         for (Type ex : sym.type.getThrownTypes()) {
             ex = env.types.erasure(ex);
             //### Will these casts succeed in the face of static semantic

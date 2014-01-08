@@ -78,4 +78,9 @@ public class TCKPeriodSerialization extends AbstractTCKTest {
         assertSerializable(Period.of(1, 2, 3));
     }
 
+    @Test
+    public void test_invalid_serialform() throws Exception {
+        assertNotSerializable(Period.class);
+    }
+
 }

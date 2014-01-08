@@ -82,8 +82,8 @@ public abstract class Trees {
             ClassLoader cl = arg.getClass().getClassLoader();
             Class<?> c = Class.forName("com.sun.tools.javac.api.JavacTrees", false, cl);
             argType = Class.forName(argType.getName(), false, cl);
-            Method m = c.getMethod("instance", new Class<?>[] { argType });
-            return (Trees) m.invoke(null, new Object[] { arg });
+            Method m = c.getMethod("instance", argType);
+            return (Trees) m.invoke(null, arg);
         } catch (Throwable e) {
             throw new AssertionError(e);
         }

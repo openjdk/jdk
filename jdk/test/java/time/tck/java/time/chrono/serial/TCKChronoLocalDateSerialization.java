@@ -161,4 +161,25 @@ public class TCKChronoLocalDateSerialization extends AbstractTCKTest {
 
         assertSerializedBySer(date, hijrahDateBytes, hijrahChronoBytes, dateBytes);
     }
+
+
+    //-----------------------------------------------------------------------
+    // Regular data factory for names and descriptions of available calendars
+    //-----------------------------------------------------------------------
+    @DataProvider(name = "invalidSerialformClasses")
+    Object[][] invalid_serial_classes() {
+        return new Object[][]{
+            {JapaneseEra.class},
+            {JapaneseDate.class},
+            {MinguoDate.class},
+            {ThaiBuddhistDate.class},
+            {HijrahDate.class},
+        };
+    }
+
+    @Test(dataProvider="invalidSerialformClasses")
+    public void test_invalid_serialform(Class<?> clazz) throws Exception {
+        assertNotSerializable(clazz);
+    }
+
 }

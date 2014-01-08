@@ -76,8 +76,8 @@ public abstract class URLStreamHandler {
      * support proxying will ignore the proxy parameter and make a
      * normal connection.
      *
-     * Calling this method preempts the system's default ProxySelector
-     * settings.
+     * Calling this method preempts the system's default
+     * {@link java.net.ProxySelector ProxySelector} settings.
      *
      * @param      u   the URL that this connects to.
      * @param      p   the proxy through which the connection will be made.

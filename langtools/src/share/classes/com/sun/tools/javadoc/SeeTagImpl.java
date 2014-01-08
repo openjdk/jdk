@@ -385,10 +385,9 @@ class SeeTagImpl extends TagImpl implements SeeTag, LayoutCharacters {
     private MemberDoc findReferencedMethod(String memName, String[] paramarr,
                                            ClassDoc referencedClass) {
         MemberDoc meth = findExecutableMember(memName, paramarr, referencedClass);
-        ClassDoc[] nestedclasses = referencedClass.innerClasses();
         if (meth == null) {
-            for (int i = 0; i < nestedclasses.length; i++) {
-                meth = findReferencedMethod(memName, paramarr, nestedclasses[i]);
+            for (ClassDoc nestedClass : referencedClass.innerClasses()) {
+                meth = findReferencedMethod(memName, paramarr, nestedClass);
                 if (meth != null) {
                     return meth;
                 }
@@ -427,7 +426,7 @@ class SeeTagImpl extends TagImpl implements SeeTag, LayoutCharacters {
 
         ParameterParseMachine(String parameters) {
             this.parameters = parameters;
-            this.paramList = new ListBuffer<String>();
+            this.paramList = new ListBuffer<>();
             typeId = new StringBuilder();
         }
 

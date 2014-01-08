@@ -27,7 +27,7 @@
  * @summary Compiler silently generates bytecode that exceeds VM limits
  * @author gafter
  *
- * @compile/fail PoolSize1.java
+ * @compile/fail/ref=PoolSize1.out -XDrawDiagnostics PoolSize1.java
  */
 
 import java.io.PrintStream;

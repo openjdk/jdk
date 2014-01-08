@@ -44,9 +44,9 @@ import java.util.Set;
 public class Module implements Comparable<Module> {
     private String name;
     private String dirname;
-    private Map<String,Package> packages = new HashMap<String,Package>();
-    private Map<String,Source> sources = new HashMap<String,Source>();
-    private Map<String,File> artifacts = new HashMap<String,File>();
+    private Map<String,Package> packages = new HashMap<>();
+    private Map<String,Source> sources = new HashMap<>();
+    private Map<String,File> artifacts = new HashMap<>();
 
     public Module(String n, String dn) {
         name = n;

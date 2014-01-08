@@ -34,6 +34,7 @@ import com.sun.tools.doclets.formats.html.markup.*;
 import com.sun.tools.doclets.internal.toolkit.*;
 import com.sun.tools.doclets.internal.toolkit.taglets.*;
 import com.sun.tools.doclets.internal.toolkit.util.*;
+import com.sun.tools.javac.util.StringUtils;
 
 /**
  * Class for the Html Format Code Generation specific to JavaDoc.
@@ -138,17 +139,17 @@ public class HtmlDocletWriter extends HtmlDocWriter {
         if (index < 0) {
             return htmlstr;
         }
-        String lowerHtml = htmlstr.toLowerCase();
+        String lowerHtml = StringUtils.toLowerCase(htmlstr);
+        final String docroot = "{@docroot}";
         // Return index of first occurrence of {@docroot}
         // Note: {@docRoot} is not case sensitive when passed in w/command line option
-        index = lowerHtml.indexOf("{@docroot}", index);
+        index = lowerHtml.indexOf(docroot, index);
         if (index < 0) {
             return htmlstr;
         }
         StringBuilder buf = new StringBuilder();
         int previndex = 0;
         while (true) {
-            final String docroot = "{@docroot}";
             // Search for lowercase version of {@docRoot}
             index = lowerHtml.indexOf(docroot, previndex);
             // If next {@docRoot} tag not found, append rest of htmlstr and exit loop
@@ -408,8 +409,8 @@ public class HtmlDocletWriter extends HtmlDocWriter {
             head.addContent(meta);
         }
         if (metakeywords != null) {
-            for (int i=0; i < metakeywords.length; i++) {
-                Content meta = HtmlTree.META("keywords", metakeywords[i]);
+            for (String metakeyword : metakeywords) {
+                Content meta = HtmlTree.META("keywords", metakeyword);
                 head.addContent(meta);
             }
         }
@@ -1012,9 +1013,8 @@ public class HtmlDocletWriter extends HtmlDocWriter {
     public Content getPackageLink(PackageDoc pkg, Content label) {
         boolean included = pkg != null && pkg.isIncluded();
         if (! included) {
-            PackageDoc[] packages = configuration.packages;
-            for (int i = 0; i < packages.length; i++) {
-                if (packages[i].equals(pkg)) {
+            for (PackageDoc p : configuration.packages) {
+                if (p.equals(pkg)) {
                     included = true;
                     break;
                 }
@@ -1363,7 +1363,7 @@ public class HtmlDocletWriter extends HtmlDocWriter {
             return new ContentBuilder();
         }
 
-        String seetext = replaceDocRootDir(see.text());
+        String seetext = replaceDocRootDir(Util.normalizeNewlines(see.text()));
 
         //Check if @see is an href or "string"
         if (seetext.startsWith("<") || seetext.startsWith("\"")) {
@@ -1689,13 +1689,13 @@ public class HtmlDocletWriter extends HtmlDocWriter {
         }
 
         //Redirect all relative links.
-        int end, begin = text.toLowerCase().indexOf("<a");
+        int end, begin = StringUtils.toLowerCase(text).indexOf("<a");
         if(begin >= 0){
             StringBuilder textBuff = new StringBuilder(text);
 
             while(begin >=0){
                 if (textBuff.length() > begin + 2 && ! Character.isWhitespace(textBuff.charAt(begin+2))) {
-                    begin = textBuff.toString().toLowerCase().indexOf("<a", begin + 1);
+                    begin = StringUtils.toLowerCase(textBuff.toString()).indexOf("<a", begin + 1);
                     continue;
                 }
 
@@ -1713,7 +1713,7 @@ public class HtmlDocletWriter extends HtmlDocWriter {
                     //might be missing '>' character because the href has an inline tag.
                     break;
                 }
-                if (textBuff.substring(begin, end).indexOf("\"") != -1){
+                if (textBuff.substring(begin, end).contains("\"")){
                     begin = textBuff.indexOf("\"", begin) + 1;
                     end = textBuff.indexOf("\"", begin +1);
                     if (begin == 0 || end == -1){
@@ -1722,22 +1722,23 @@ public class HtmlDocletWriter extends HtmlDocWriter {
                     }
                 }
                 String relativeLink = textBuff.substring(begin, end);
-                if (!(relativeLink.toLowerCase().startsWith("mailto:") ||
-                        relativeLink.toLowerCase().startsWith("http:") ||
-                        relativeLink.toLowerCase().startsWith("https:") ||
-                        relativeLink.toLowerCase().startsWith("file:"))) {
+                String relativeLinkLowerCase = StringUtils.toLowerCase(relativeLink);
+                if (!(relativeLinkLowerCase.startsWith("mailto:") ||
+                        relativeLinkLowerCase.startsWith("http:") ||
+                        relativeLinkLowerCase.startsWith("https:") ||
+                        relativeLinkLowerCase.startsWith("file:"))) {
                     relativeLink = "{@"+(new DocRootTaglet()).getName() + "}/"
                         + redirectPathFromRoot.resolve(relativeLink).getPath();
                     textBuff.replace(begin, end, relativeLink);
                 }
-                begin = textBuff.toString().toLowerCase().indexOf("<a", begin + 1);
+                begin = StringUtils.toLowerCase(textBuff.toString()).indexOf("<a", begin + 1);
             }
             return textBuff.toString();
         }
         return text;
     }
 
-    static final Set<String> blockTags = new HashSet<String>();
+    static final Set<String> blockTags = new HashSet<>();
     static {
         for (HtmlTag t: HtmlTag.values()) {
             if (t.blockType == HtmlTag.BlockType.BLOCK)
@@ -1771,7 +1772,7 @@ public class HtmlDocletWriter extends HtmlDocWriter {
                     break main;
                 ch = text.charAt(currPos);
             }
-            if (ch == '>' && blockTags.contains(text.substring(tagPos, currPos).toLowerCase())) {
+            if (ch == '>' && blockTags.contains(StringUtils.toLowerCase(text.substring(tagPos, currPos)))) {
                 result.append(text, startPos, lessThanPos);
                 startPos = currPos + 1;
             }
@@ -1943,17 +1944,17 @@ public class HtmlDocletWriter extends HtmlDocWriter {
      */
     public List<Content> getAnnotations(int indent, AnnotationDesc[] descList, boolean linkBreak,
             boolean isJava5DeclarationLocation) {
-        List<Content> results = new ArrayList<Content>();
+        List<Content> results = new ArrayList<>();
         ContentBuilder annotation;
-        for (int i = 0; i < descList.length; i++) {
-            AnnotationTypeDoc annotationDoc = descList[i].annotationType();
+        for (AnnotationDesc aDesc : descList) {
+            AnnotationTypeDoc annotationDoc = aDesc.annotationType();
             // If an annotation is not documented, do not add it to the list. If
             // the annotation is of a repeatable type, and if it is not documented
             // and also if its container annotation is not documented, do not add it
             // to the list. If an annotation of a repeatable type is not documented
             // but its container is documented, it will be added to the list.
-            if (! Util.isDocumentedAnnotation(annotationDoc) &&
-                    (!isAnnotationDocumented && !isContainerDocumented)) {
+            if (!Util.isDocumentedAnnotation(annotationDoc) &&
+                (!isAnnotationDocumented && !isContainerDocumented)) {
                 continue;
             }
             /* TODO: check logic here to correctly handle declaration
@@ -1964,13 +1965,13 @@ public class HtmlDocletWriter extends HtmlDocWriter {
             annotation = new ContentBuilder();
             isAnnotationDocumented = false;
             LinkInfoImpl linkInfo = new LinkInfoImpl(configuration,
-                LinkInfoImpl.Kind.ANNOTATION, annotationDoc);
-            AnnotationDesc.ElementValuePair[] pairs = descList[i].elementValues();
+                                                     LinkInfoImpl.Kind.ANNOTATION, annotationDoc);
+            AnnotationDesc.ElementValuePair[] pairs = aDesc.elementValues();
             // If the annotation is synthesized, do not print the container.
-            if (descList[i].isSynthesized()) {
-                for (int j = 0; j < pairs.length; j++) {
-                    AnnotationValue annotationValue = pairs[j].value();
-                    List<AnnotationValue> annotationTypeValues = new ArrayList<AnnotationValue>();
+            if (aDesc.isSynthesized()) {
+                for (AnnotationDesc.ElementValuePair pair : pairs) {
+                    AnnotationValue annotationValue = pair.value();
+                    List<AnnotationValue> annotationTypeValues = new ArrayList<>();
                     if (annotationValue.value() instanceof AnnotationValue[]) {
                         AnnotationValue[] annotationArray =
                                 (AnnotationValue[]) annotationValue.value();
@@ -1993,7 +1994,7 @@ public class HtmlDocletWriter extends HtmlDocWriter {
                 if (pairs.length == 1 && isAnnotationDocumented) {
                     AnnotationValue[] annotationArray =
                             (AnnotationValue[]) (pairs[0].value()).value();
-                    List<AnnotationValue> annotationTypeValues = new ArrayList<AnnotationValue>();
+                    List<AnnotationValue> annotationTypeValues = new ArrayList<>();
                     annotationTypeValues.addAll(Arrays.asList(annotationArray));
                     String sep = "";
                     for (AnnotationValue av : annotationTypeValues) {
@@ -2006,12 +2007,12 @@ public class HtmlDocletWriter extends HtmlDocWriter {
                 // repeatable type annotation is not documented, print the container.
                 else {
                     addAnnotations(annotationDoc, linkInfo, annotation, pairs,
-                        indent, false);
+                                   indent, false);
                 }
             }
             else {
                 addAnnotations(annotationDoc, linkInfo, annotation, pairs,
-                        indent, linkBreak);
+                               indent, linkBreak);
             }
             annotation.addContent(linkBreak ? DocletConstants.NL : "");
             results.add(annotation);
@@ -2051,7 +2052,7 @@ public class HtmlDocletWriter extends HtmlDocWriter {
                         pairs[j].element(), pairs[j].element().name(), false));
                 annotation.addContent("=");
                 AnnotationValue annotationValue = pairs[j].value();
-                List<AnnotationValue> annotationTypeValues = new ArrayList<AnnotationValue>();
+                List<AnnotationValue> annotationTypeValues = new ArrayList<>();
                 if (annotationValue.value() instanceof AnnotationValue[]) {
                     AnnotationValue[] annotationArray =
                             (AnnotationValue[]) annotationValue.value();
@@ -2083,8 +2084,8 @@ public class HtmlDocletWriter extends HtmlDocWriter {
      */
     private boolean isAnnotationArray(AnnotationDesc.ElementValuePair[] pairs) {
         AnnotationValue annotationValue;
-        for (int j = 0; j < pairs.length; j++) {
-            annotationValue = pairs[j].value();
+        for (AnnotationDesc.ElementValuePair pair : pairs) {
+            annotationValue = pair.value();
             if (annotationValue.value() instanceof AnnotationValue[]) {
                 AnnotationValue[] annotationArray =
                         (AnnotationValue[]) annotationValue.value();

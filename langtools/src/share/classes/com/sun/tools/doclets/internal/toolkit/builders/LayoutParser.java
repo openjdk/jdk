@@ -60,7 +60,7 @@ public class LayoutParser extends DefaultHandler {
     private boolean isParsing;
 
     private LayoutParser(Configuration configuration) {
-        xmlElementsMap = new HashMap<String,XMLNode>();
+        xmlElementsMap = new HashMap<>();
         this.configuration = configuration;
     }
 

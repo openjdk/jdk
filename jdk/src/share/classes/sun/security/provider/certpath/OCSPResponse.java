@@ -427,9 +427,14 @@ public final class OCSPResponse {
         if (signerCert == null) {
             // Add the Issuing CA cert and/or Trusted Responder cert to the list
             // of certs from the OCSP response
-            certs.add((X509CertImpl) issuerCert);
-            if (responderCert != null) {
-                certs.add((X509CertImpl) responderCert);
+            try {
+                certs.add(X509CertImpl.toImpl(issuerCert));
+                if (responderCert != null) {
+                    certs.add(X509CertImpl.toImpl(responderCert));
+                }
+            } catch (CertificateException ce) {
+                throw new CertPathValidatorException(
+                    "Invalid issuer or trusted responder certificate", ce);
             }
 
             if (responderName != null) {

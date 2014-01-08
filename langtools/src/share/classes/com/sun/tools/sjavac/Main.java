@@ -232,14 +232,14 @@ public class Main {
             findCopyOptions(args, suffix_rules);
 
             // All found modules are put here.
-            Map<String,Module> modules = new HashMap<String,Module>();
+            Map<String,Module> modules = new HashMap<>();
             // We start out in the legacy empty no-name module.
             // As soon as we stumble on a module-info.java file we change to that module.
             Module current_module = new Module("", "");
             modules.put("", current_module);
 
             // Find all sources, use the suffix rules to know which files are sources.
-            Map<String,Source> sources = new HashMap<String,Source>();
+            Map<String,Source> sources = new HashMap<>();
             // Find the files, this will automatically populate the found modules
             // with found packages where the sources are found!
             findFiles(args, "-src", suffix_rules.keySet(), sources, modules, current_module, false);
@@ -257,7 +257,7 @@ public class Main {
             // all concatenated. The list created here is used by the SmartFileWrapper to
             // make sure only the correct sources are actually available.
             // We might find more modules here as well.
-            Map<String,Source> sources_to_link_to = new HashMap<String,Source>();
+            Map<String,Source> sources_to_link_to = new HashMap<>();
             findFiles(args, "-src", Util.set(".java"), sources_to_link_to, modules, current_module, true);
             findFiles(args, "-sourcepath", Util.set(".java"), sources_to_link_to, modules, current_module, true);
             // Rewrite the -src option to make it through to the javac instances.
@@ -308,7 +308,7 @@ public class Main {
             javac_state.performTranslation(gensrc_dir, suffix_rules);
             // Add any potentially generated java sources to the tobe compiled list.
             // (Generated sources must always have a package.)
-            Map<String,Source> generated_sources = new HashMap<String,Source>();
+            Map<String,Source> generated_sources = new HashMap<>();
             Source.scanRoot(gensrc_dir, Util.set(".java"), null, null, null, null,
                    generated_sources, modules, current_module, false, true, false);
             javac_state.now().flattenPackagesSourcesAndArtifacts(modules);
@@ -325,7 +325,7 @@ public class Main {
             // Do the compilations, repeatedly until no tainted packages exist.
             boolean again;
             // Collect the name of all compiled packages.
-            Set<String> recently_compiled = new HashSet<String>();
+            Set<String> recently_compiled = new HashSet<>();
             boolean[] rc = new boolean[1];
             do {
                 // Clean out artifacts in tainted packages.
@@ -670,7 +670,7 @@ public class Main {
      * Add -src before source root directories if not already there.
      */
     private static String[] addSrcBeforeDirectories(String[] args) {
-        List<String> newargs = new ArrayList<String>();
+        List<String> newargs = new ArrayList<>();
         for (int i = 0; i<args.length; ++i) {
             File dir = new File(args[i]);
             if (dir.exists() && dir.isDirectory()) {
@@ -688,7 +688,7 @@ public class Main {
      */
     private static void checkSrcOption(String[] args)
         throws ProblemException {
-        Set<File> dirs = new HashSet<File>();
+        Set<File> dirs = new HashSet<>();
         for (int i = 0; i<args.length; ++i) {
             if (args[i].equals("-src")) {
                 if (i+1 >= args.length) {
@@ -749,8 +749,9 @@ public class Main {
      * Look for a specific switch, return true if found.
      */
     public static boolean findBooleanOption(String[] args, String option) {
-        for (int i = 0; i<args.length; ++i) {
-            if (args[i].equals(option)) return true;
+        for (String arg : args) {
+            if (arg.equals(option))
+                return true;
         }
         return false;
     }
@@ -869,15 +870,15 @@ public class Main {
         throws ProblemException, ProblemException
     {
         // Track which source roots, source path roots and class path roots have been added.
-        Set<File> roots = new HashSet<File>();
+        Set<File> roots = new HashSet<>();
         // Track the current set of package includes,excludes as well as excluded source files,
         // to be used in the next -src/-sourcepath/-classpath
-        List<String> includes = new LinkedList<String>();
-        List<String> excludes = new LinkedList<String>();
-        List<String> excludefiles = new LinkedList<String>();
-        List<String> includefiles = new LinkedList<String>();
+        List<String> includes = new LinkedList<>();
+        List<String> excludes = new LinkedList<>();
+        List<String> excludefiles = new LinkedList<>();
+        List<String> includefiles = new LinkedList<>();
         // This include is used to find all modules in the source.
-        List<String> moduleinfo = new LinkedList<String>();
+        List<String> moduleinfo = new LinkedList<>();
         moduleinfo.add("module-info.java");
 
         for (int i = 0; i<args.length; ++i) {
@@ -956,10 +957,10 @@ public class Main {
                 args[i].equals("-cp"))
             {
                 // Reset the includes,excludes and excludefiles after they have been used.
-                includes = new LinkedList<String>();
-                excludes = new LinkedList<String>();
-                excludefiles = new LinkedList<String>();
-                includefiles = new LinkedList<String>();
+                includes = new LinkedList<>();
+                excludes = new LinkedList<>();
+                excludefiles = new LinkedList<>();
+                includefiles = new LinkedList<>();
             }
         }
         return true;

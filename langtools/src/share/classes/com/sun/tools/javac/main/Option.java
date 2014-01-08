@@ -47,6 +47,7 @@ import com.sun.tools.javac.util.Log;
 import com.sun.tools.javac.util.Log.PrefixKind;
 import com.sun.tools.javac.util.Log.WriterKind;
 import com.sun.tools.javac.util.Options;
+import com.sun.tools.javac.util.StringUtils;
 import static com.sun.tools.javac.main.Option.ChoiceKind.*;
 import static com.sun.tools.javac.main.Option.OptionGroup.*;
 import static com.sun.tools.javac.main.Option.OptionKind.*;
@@ -563,7 +564,7 @@ public enum Option {
     }
     // where
         private static Map<String,Boolean> createChoices(String... choices) {
-            Map<String,Boolean> map = new LinkedHashMap<String,Boolean>();
+            Map<String,Boolean> map = new LinkedHashMap<>();
             for (String c: choices)
                 map.put(c, false);
             return map;
@@ -713,12 +714,12 @@ public enum Option {
             String v = options.get(XPKGINFO);
             return (v == null
                     ? PkgInfo.LEGACY
-                    : PkgInfo.valueOf(v.toUpperCase()));
+                    : PkgInfo.valueOf(StringUtils.toUpperCase(v)));
         }
     }
 
     private static Map<String,Boolean> getXLintChoices() {
-        Map<String,Boolean> choices = new LinkedHashMap<String,Boolean>();
+        Map<String,Boolean> choices = new LinkedHashMap<>();
         choices.put("all", false);
         for (Lint.LintCategory c : Lint.LintCategory.values())
             choices.put(c.option, c.hidden);

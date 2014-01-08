@@ -42,8 +42,7 @@ public class Options {
     private static final long serialVersionUID = 0;
 
     /** The context key for the options. */
-    public static final Context.Key<Options> optionsKey =
-        new Context.Key<Options>();
+    public static final Context.Key<Options> optionsKey = new Context.Key<>();
 
     private LinkedHashMap<String,String> values;
 
@@ -57,7 +56,7 @@ public class Options {
 
     protected Options(Context context) {
 // DEBUGGING -- Use LinkedHashMap for reproducability
-        values = new LinkedHashMap<String,String>();
+        values = new LinkedHashMap<>();
         context.put(optionsKey, this);
     }
 

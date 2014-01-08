@@ -23,13 +23,13 @@
 
 /*
  * @test
- * @bug     6395981 6458819 7025784
+ * @bug     6395981 6458819 7025784 8028543
  * @summary JavaCompilerTool and Tool must specify version of JLS and JVMS
  * @author  Peter von der Ah\u00e9
  * @run main/fail T6395981
  * @run main/fail T6395981 RELEASE_3 RELEASE_5 RELEASE_6
  * @run main/fail T6395981 RELEASE_0 RELEASE_1 RELEASE_2 RELEASE_3 RELEASE_4 RELEASE_5 RELEASE_6
- * @run main T6395981 RELEASE_3 RELEASE_4 RELEASE_5 RELEASE_6 RELEASE_7 RELEASE_8
+ * @run main T6395981 RELEASE_3 RELEASE_4 RELEASE_5 RELEASE_6 RELEASE_7 RELEASE_8 RELEASE_9
  */
 
 import java.util.EnumSet;

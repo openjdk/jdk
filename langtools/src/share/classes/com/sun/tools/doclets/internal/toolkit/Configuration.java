@@ -29,6 +29,7 @@ import java.io.*;
 import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import javax.tools.JavaFileManager;
 
 import com.sun.javadoc.*;
 import com.sun.tools.javac.sym.Profiles;
@@ -36,7 +37,7 @@ import com.sun.tools.javac.jvm.Profile;
 import com.sun.tools.doclets.internal.toolkit.builders.BuilderFactory;
 import com.sun.tools.doclets.internal.toolkit.taglets.*;
 import com.sun.tools.doclets.internal.toolkit.util.*;
-import javax.tools.JavaFileManager;
+import com.sun.tools.javac.util.StringUtils;
 
 /**
  * Configure the output based on the options. Doclets should sub-class
@@ -306,8 +307,8 @@ public abstract class Configuration {
         message =
             new MessageRetriever(this,
             "com.sun.tools.doclets.internal.toolkit.resources.doclets");
-        excludedDocFileDirs = new HashSet<String>();
-        excludedQualifiers = new HashSet<String>();
+        excludedDocFileDirs = new HashSet<>();
+        excludedQualifiers = new HashSet<>();
         setTabWidth(DocletConstants.DEFAULT_TAB_STOP_LENGTH);
     }
 
@@ -337,39 +338,40 @@ public abstract class Configuration {
      * Negative value means error occurred.
      */
     public int optionLength(String option) {
-        option = option.toLowerCase();
-        if (option.equals("-author") ||
-            option.equals("-docfilessubdirs") ||
-            option.equals("-javafx") ||
-            option.equals("-keywords") ||
-            option.equals("-linksource") ||
-            option.equals("-nocomment") ||
-            option.equals("-nodeprecated") ||
-            option.equals("-nosince") ||
-            option.equals("-notimestamp") ||
-            option.equals("-quiet") ||
-            option.equals("-xnodate") ||
-            option.equals("-version")) {
-            return 1;
-        } else if (option.equals("-d") ||
-                   option.equals("-docencoding") ||
-                   option.equals("-encoding") ||
-                   option.equals("-excludedocfilessubdir") ||
-                   option.equals("-link") ||
-                   option.equals("-sourcetab") ||
-                   option.equals("-noqualifier") ||
-                   option.equals("-output") ||
-                   option.equals("-sourcepath") ||
-                   option.equals("-tag") ||
-                   option.equals("-taglet") ||
-                   option.equals("-tagletpath") ||
-                   option.equals("-xprofilespath")) {
-            return 2;
-        } else if (option.equals("-group") ||
-                   option.equals("-linkoffline")) {
-            return 3;
-        } else {
-            return -1;  // indicate we don't know about it
+        option = StringUtils.toLowerCase(option);
+        switch (option) {
+            case "-author":
+            case "-docfilessubdirs":
+            case "-javafx":
+            case "-keywords":
+            case "-linksource":
+            case "-nocomment":
+            case "-nodeprecated":
+            case "-nosince":
+            case "-notimestamp":
+            case "-quiet":
+            case "-xnodate":
+            case "-version":
+                return 1;
+            case "-d":
+            case "-docencoding":
+            case "-encoding":
+            case "-excludedocfilessubdir":
+            case "-link":
+            case "-sourcetab":
+            case "-noqualifier":
+            case "-output":
+            case "-sourcepath":
+            case "-tag":
+            case "-taglet":
+            case "-tagletpath":
+            case "-xprofilespath":
+                return 2;
+            case "-group":
+            case "-linkoffline":
+                return 3;
+            default:
+                return -1;  // indicate we don't know about it
         }
     }
 
@@ -390,8 +392,7 @@ public abstract class Configuration {
 
         // Group the packages to be documented by the lowest profile (if any)
         // in which each appears
-        Map<Profile, List<PackageDoc>> interimResults =
-                new EnumMap<Profile, List<PackageDoc>>(Profile.class);
+        Map<Profile, List<PackageDoc>> interimResults = new EnumMap<>(Profile.class);
         for (Profile p: Profile.values())
             interimResults.put(p, new ArrayList<PackageDoc>());
 
@@ -410,7 +411,7 @@ public abstract class Configuration {
         }
 
         // Build the profilePackages structure used by the doclet
-        profilePackages = new HashMap<String,PackageDoc[]>();
+        profilePackages = new HashMap<>();
         List<PackageDoc> prev = Collections.<PackageDoc>emptyList();
         int size;
         for (Map.Entry<Profile,List<PackageDoc>> e: interimResults.entrySet()) {
@@ -432,12 +433,11 @@ public abstract class Configuration {
     }
 
     private void initPackageArray() {
-        Set<PackageDoc> set = new HashSet<PackageDoc>(Arrays.asList(root.specifiedPackages()));
-        ClassDoc[] classes = root.specifiedClasses();
-        for (int i = 0; i < classes.length; i++) {
-            set.add(classes[i].containingPackage());
+        Set<PackageDoc> set = new HashSet<>(Arrays.asList(root.specifiedPackages()));
+        for (ClassDoc aClass : root.specifiedClasses()) {
+            set.add(aClass.containingPackage());
         }
-        ArrayList<PackageDoc> results = new ArrayList<PackageDoc>(set);
+        ArrayList<PackageDoc> results = new ArrayList<>(set);
         Collections.sort(results);
         packages = results.toArray(new PackageDoc[] {});
     }
@@ -448,13 +448,12 @@ public abstract class Configuration {
      * @param options the two dimensional array of options.
      */
     public void setOptions(String[][] options) throws Fault {
-        LinkedHashSet<String[]> customTagStrs = new LinkedHashSet<String[]>();
+        LinkedHashSet<String[]> customTagStrs = new LinkedHashSet<>();
 
         // Some options, specifically -link and -linkoffline, require that
         // the output directory has already been created: so do that first.
-        for (int oi = 0; oi < options.length; ++oi) {
-            String[] os = options[oi];
-            String opt = os[0].toLowerCase();
+        for (String[] os : options) {
+            String opt = StringUtils.toLowerCase(os[0]);
             if (opt.equals("-d")) {
                 destDirName = addTrailingFileSep(os[1]);
                 docFileDestDirName = destDirName;
@@ -463,9 +462,8 @@ public abstract class Configuration {
             }
         }
 
-        for (int oi = 0; oi < options.length; ++oi) {
-            String[] os = options[oi];
-            String opt = os[0].toLowerCase();
+        for (String[] os : options) {
+            String opt = StringUtils.toLowerCase(os[0]);
             if (opt.equals("-docfilessubdirs")) {
                 copydocfilesubdirs = true;
             } else if (opt.equals("-docencoding")) {
@@ -587,15 +585,13 @@ public abstract class Configuration {
         tagletManager = tagletManager == null ?
             new TagletManager(nosince, showversion, showauthor, javafx, message) :
             tagletManager;
-        String[] args;
-        for (Iterator<String[]> it = customTagStrs.iterator(); it.hasNext(); ) {
-            args = it.next();
+        for (String[] args : customTagStrs) {
             if (args[0].equals("-taglet")) {
                 tagletManager.addCustomTag(args[1], getFileManager(), tagletpath);
                 continue;
             }
             String[] tokens = tokenize(args[1],
-                TagletManager.SIMPLE_TAGLET_OPT_SEPARATOR, 3);
+                                       TagletManager.SIMPLE_TAGLET_OPT_SEPARATOR, 3);
             if (tokens.length == 1) {
                 String tagName = args[1];
                 if (tagletManager.isKnownCustomTag(tagName)) {
@@ -632,7 +628,7 @@ public abstract class Configuration {
      * @return an array of tokens.
      */
     private String[] tokenize(String s, char separator, int maxTokens) {
-        List<String> tokens = new ArrayList<String>();
+        List<String> tokens = new ArrayList<>();
         StringBuilder  token = new StringBuilder ();
         boolean prevIsEscapeChar = false;
         for (int i = 0; i < s.length(); i += Character.charCount(i)) {
@@ -708,7 +704,7 @@ public abstract class Configuration {
         String encoding = "";
         for (int oi = 0; oi < options.length; oi++) {
             String[] os = options[oi];
-            String opt = os[0].toLowerCase();
+            String opt = StringUtils.toLowerCase(os[0]);
             if (opt.equals("-docencoding")) {
                 docencodingfound = true;
                 if (!checkOutputFileEncoding(os[1], reporter)) {

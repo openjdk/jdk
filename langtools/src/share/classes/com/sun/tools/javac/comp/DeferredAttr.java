@@ -63,8 +63,7 @@ import static com.sun.tools.javac.tree.JCTree.Tag.*;
  *  deletion without notice.</b>
  */
 public class DeferredAttr extends JCTree.Visitor {
-    protected static final Context.Key<DeferredAttr> deferredAttrKey =
-        new Context.Key<DeferredAttr>();
+    protected static final Context.Key<DeferredAttr> deferredAttrKey = new Context.Key<>();
 
     final Attr attr;
     final Check chk;
@@ -147,8 +146,7 @@ public class DeferredAttr extends JCTree.Visitor {
          */
         class SpeculativeCache {
 
-            private Map<Symbol, List<Entry>> cache =
-                    new WeakHashMap<Symbol, List<Entry>>();
+            private Map<Symbol, List<Entry>> cache = new WeakHashMap<>();
 
             class Entry {
                 JCTree speculativeTree;
@@ -335,7 +333,7 @@ public class DeferredAttr extends JCTree.Visitor {
         /**
          * This is the plain type-checking mode. Produces side-effects on the underlying AST node
          */
-        CHECK;
+        CHECK
     }
 
     /**
@@ -345,7 +343,7 @@ public class DeferredAttr extends JCTree.Visitor {
      * disabled during speculative type-checking.
      */
     JCTree attribSpeculative(JCTree tree, Env<AttrContext> env, ResultInfo resultInfo) {
-        final JCTree newTree = new TreeCopier<Object>(make).copy(tree);
+        final JCTree newTree = new TreeCopier<>(make).copy(tree);
         Env<AttrContext> speculativeEnv = env.dup(newTree, env.info.dup(env.info.scope.dupUnshared()));
         speculativeEnv.info.scope.owner = env.info.scope.owner;
         Log.DeferredDiagnosticHandler deferredDiagnosticHandler =
@@ -362,7 +360,7 @@ public class DeferredAttr extends JCTree.Visitor {
                         }
                         super.scan(tree);
                     }
-                };
+                }
                 PosScanner posScanner = new PosScanner();
                 posScanner.scan(newTree);
                 return posScanner.found;
@@ -425,7 +423,7 @@ public class DeferredAttr extends JCTree.Visitor {
         final Warner warn;
 
         /** list of deferred attribution nodes to be processed */
-        ArrayList<DeferredAttrNode> deferredAttrNodes = new ArrayList<DeferredAttrNode>();
+        ArrayList<DeferredAttrNode> deferredAttrNodes = new ArrayList<>();
 
         DeferredAttrContext(AttrMode mode, Symbol msym, MethodResolutionPhase phase,
                 InferenceContext inferenceContext, DeferredAttrContext parent, Warner warn) {
@@ -454,7 +452,7 @@ public class DeferredAttr extends JCTree.Visitor {
          */
         void complete() {
             while (!deferredAttrNodes.isEmpty()) {
-                Map<Type, Set<Type>> depVarsMap = new LinkedHashMap<Type, Set<Type>>();
+                Map<Type, Set<Type>> depVarsMap = new LinkedHashMap<>();
                 List<Type> stuckVars = List.nil();
                 boolean progress = false;
                 //scan a defensive copy of the node list - this is because a deferred
@@ -470,7 +468,7 @@ public class DeferredAttr extends JCTree.Visitor {
                                 .intersect(inferenceContext.restvars())) {
                             Set<Type> prevDeps = depVarsMap.get(t);
                             if (prevDeps == null) {
-                                prevDeps = new LinkedHashSet<Type>();
+                                prevDeps = new LinkedHashSet<>();
                                 depVarsMap.put(t, prevDeps);
                             }
                             prevDeps.addAll(restStuckVars);
@@ -815,8 +813,8 @@ public class DeferredAttr extends JCTree.Visitor {
 
         Type pt;
         Infer.InferenceContext inferenceContext;
-        Set<Type> stuckVars = new LinkedHashSet<Type>();
-        Set<Type> depVars = new LinkedHashSet<Type>();
+        Set<Type> stuckVars = new LinkedHashSet<>();
+        Set<Type> depVars = new LinkedHashSet<>();
 
         @Override
         public boolean isStuck() {

@@ -1450,7 +1450,7 @@ public abstract class Type extends AnnoConstruct implements TypeMirror {
             /** lower bounds */
             LOWER,
             /** equality constraints */
-            EQ;
+            EQ
         }
 
         /** inference variable bounds */
@@ -1472,7 +1472,7 @@ public abstract class Type extends AnnoConstruct implements TypeMirror {
 
         public UndetVar(TypeVar origin, Types types) {
             super(UNDETVAR, origin);
-            bounds = new EnumMap<InferenceBound, List<Type>>(InferenceBound.class);
+            bounds = new EnumMap<>(InferenceBound.class);
             List<Type> declaredBounds = types.getBounds(origin);
             declaredCount = declaredBounds.length();
             bounds.put(InferenceBound.UPPER, declaredBounds);

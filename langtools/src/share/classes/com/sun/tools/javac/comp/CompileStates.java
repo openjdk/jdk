@@ -39,8 +39,7 @@ import com.sun.tools.javac.util.Context;
  */
 public class CompileStates extends HashMap<Env<AttrContext>, CompileStates.CompileState> {
     /** The context key for the compile states. */
-    protected static final Context.Key<CompileStates> compileStatesKey =
-        new Context.Key<CompileStates>();
+    protected static final Context.Key<CompileStates> compileStatesKey = new Context.Key<>();
 
     /** Get the CompileStates instance for this context. */
     public static CompileStates instance(Context context) {
@@ -74,7 +73,7 @@ public class CompileStates extends HashMap<Env<AttrContext>, CompileStates.Compi
             return a.value > b.value ? a : b;
         }
         private final int value;
-    };
+    }
 
     private static final long serialVersionUID = 1812267524140424433L;
 
