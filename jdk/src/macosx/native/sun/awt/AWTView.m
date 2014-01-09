@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,6 +42,10 @@
 @interface AWTView()
 @property (retain) CDropTarget *_dropTarget;
 @property (retain) CDragSource *_dragSource;
+
+-(void) deliverResize: (NSRect) rect;
+-(void) resetTrackingArea;
+-(void) deliverJavaKeyEventHelper: (NSEvent*) event;
 @end
 
 // Uncomment this line to see fprintfs of each InputMethod API being called on this View

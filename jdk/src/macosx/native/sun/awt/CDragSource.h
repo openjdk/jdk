@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,9 +29,15 @@
 #import <Cocoa/Cocoa.h>
 #include <jni.h>
 
+@class CDragSource;
+
+@protocol CDragSourceHolder
+- (void) setDragSource:(CDragSource *)source;
+@end
+
 @interface CDragSource : NSObject {
 @private
-    NSView*        fView;
+    NSView<CDragSourceHolder>* fView;
     jobject            fComponent;
     jobject            fDragSourceContextPeer;
 
@@ -52,8 +58,6 @@
     jint                     fDragKeyModifiers;
     jint                     fDragMouseModifiers;
 }
-
-+ (CDragSource *) currentDragSource;
 
 // Common methods:
 - (id)        init:(jobject)jDragSourceContextPeer
@@ -83,13 +87,6 @@
 - (void)draggedImage:(NSImage *)image endedAt:(NSPoint)screenPoint operation:(NSDragOperation)operation;
 - (void)draggedImage:(NSImage *)image movedTo:(NSPoint)screenPoint;
 - (BOOL)ignoreModifierKeysWhileDragging;
-
-// Updates from the destination to the source
-- (void) postDragEnter;
-- (void) postDragExit;
-
-// Utility
-- (NSPoint) mapNSScreenPointToJavaWithOffset:(NSPoint) point;
 
 @end
 
