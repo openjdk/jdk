@@ -320,3 +320,26 @@ JNF_COCOA_ENTER(env);
 
 JNF_COCOA_EXIT(env);
 }
+
+/*
+ * Class:     sun_lwawt_macosx_CImage
+ * Method:    nativeResizeNSImageRepresentations
+ * Signature: (JDD)V
+ */
+JNIEXPORT void JNICALL Java_sun_lwawt_macosx_CImage_nativeResizeNSImageRepresentations
+(JNIEnv *env, jclass clazz, jlong image, jdouble w, jdouble h)
+{
+    if (!image) return;
+    NSImage *i = (NSImage *)jlong_to_ptr(image);
+    
+JNF_COCOA_ENTER(env);
+    
+    NSImageRep *imageRep = nil;
+    NSArray *imageRepresentations = [i representations];
+    NSEnumerator *imageEnumerator = [imageRepresentations objectEnumerator];
+    while ((imageRep = [imageEnumerator nextObject]) != nil) {
+        [imageRep setSize:NSMakeSize(w, h)];
+    }
+    
+JNF_COCOA_EXIT(env);
+}
