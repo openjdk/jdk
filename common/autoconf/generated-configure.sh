@@ -3865,7 +3865,7 @@ fi
 #CUSTOM_AUTOCONF_INCLUDE
 
 # Do not change or remove the following line, it is needed for consistency checks:
-DATE_WHEN_GENERATED=1389186094
+DATE_WHEN_GENERATED=1389267188
 
 ###############################################################################
 #
@@ -11156,6 +11156,12 @@ fi
     as_fn_error $? "Update version must have a value" "$LINENO" 5
   elif test "x$with_update_version" != x; then
     JDK_UPDATE_VERSION="$with_update_version"
+    # On macosx 10.7, it's not possible to set --with-update-version=0X due
+    # to a bug in expr (which reduces it to just X). To work around this, we
+    # always add a 0 to one digit update versions.
+    if test "${#JDK_UPDATE_VERSION}" = "1"; then
+      JDK_UPDATE_VERSION="0${JDK_UPDATE_VERSION}"
+    fi
   fi
 
 
