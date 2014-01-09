@@ -651,7 +651,7 @@ final class JavaAdapterBytecodeGenerator {
             mv.athrow();
         } else {
             // If the super method is not abstract, delegate to it.
-            emitSuperCall(mv, name, methodDesc);
+            emitSuperCall(mv, method.getDeclaringClass(), name, methodDesc);
         }
 
         final Label setupGlobal = new Label();
@@ -830,12 +830,12 @@ final class JavaAdapterBytecodeGenerator {
                 SUPER_PREFIX + name, methodDesc, null, getExceptionNames(method.getExceptionTypes())));
         mv.visitCode();
 
-        emitSuperCall(mv, name, methodDesc);
+        emitSuperCall(mv, method.getDeclaringClass(), name, methodDesc);
 
         endMethod(mv);
     }
 
-    private void emitSuperCall(final InstructionAdapter mv, final String name, final String methodDesc) {
+    private void emitSuperCall(final InstructionAdapter mv, final Class owner, final String name, final String methodDesc) {
         mv.visitVarInsn(ALOAD, 0);
         int nextParam = 1;
         final Type methodType = Type.getMethodType(methodDesc);
@@ -843,7 +843,13 @@ final class JavaAdapterBytecodeGenerator {
             mv.load(nextParam, t);
             nextParam += t.getSize();
         }
-        mv.invokespecial(superClassName, name, methodDesc, false);
+
+        // default method - non-abstract, interface method
+        if (Modifier.isInterface(owner.getModifiers())) {
+            mv.invokespecial(Type.getInternalName(owner), name, methodDesc, false);
+        } else {
+            mv.invokespecial(superClassName, name, methodDesc, false);
+        }
         mv.areturn(methodType.getReturnType());
     }
 

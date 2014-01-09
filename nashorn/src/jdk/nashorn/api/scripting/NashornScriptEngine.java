@@ -626,6 +626,11 @@ public final class NashornScriptEngine extends AbstractScriptEngine implements C
                 continue;
             }
 
+            // skip check for default methods - non-abstract, interface methods
+            if (! Modifier.isAbstract(method.getModifiers())) {
+                continue;
+            }
+
             Object obj = sobj.get(method.getName());
             if (! (obj instanceof ScriptFunction)) {
                 return false;
