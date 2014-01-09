@@ -423,6 +423,12 @@ AC_DEFUN_ONCE([JDKOPT_SETUP_JDK_VERSION_NUMBERS],
     AC_MSG_ERROR([Update version must have a value])
   elif test "x$with_update_version" != x; then
     JDK_UPDATE_VERSION="$with_update_version"
+    # On macosx 10.7, it's not possible to set --with-update-version=0X due
+    # to a bug in expr (which reduces it to just X). To work around this, we
+    # always add a 0 to one digit update versions.
+    if test "${#JDK_UPDATE_VERSION}" = "1"; then
+      JDK_UPDATE_VERSION="0${JDK_UPDATE_VERSION}"
+    fi
   fi
 
   AC_ARG_WITH(user-release-suffix, [AS_HELP_STRING([--with-user-release-suffix],
