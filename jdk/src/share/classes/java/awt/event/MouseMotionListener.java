@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -63,12 +63,14 @@ public interface MouseMotionListener extends EventListener {
      * Due to platform-dependent Drag&amp;Drop implementations,
      * <code>MOUSE_DRAGGED</code> events may not be delivered during a native
      * Drag&amp;Drop operation.
+     * @param e the event to be processed
      */
     public void mouseDragged(MouseEvent e);
 
     /**
      * Invoked when the mouse cursor has been moved onto a component
      * but no buttons have been pushed.
+     * @param e the event to be processed
      */
     public void mouseMoved(MouseEvent e);
 

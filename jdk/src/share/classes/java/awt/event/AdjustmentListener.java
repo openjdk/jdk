@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 1999, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,6 +37,7 @@ public interface AdjustmentListener extends EventListener {
 
     /**
      * Invoked when the value of the adjustable has changed.
+     * @param e the event to be processed
      */
     public void adjustmentValueChanged(AdjustmentEvent e);
 
