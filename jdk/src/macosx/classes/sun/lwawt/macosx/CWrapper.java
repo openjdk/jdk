@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,8 +24,6 @@
  */
 
 package sun.lwawt.macosx;
-
-import java.awt.geom.Rectangle2D;
 
 public final class CWrapper {
     private CWrapper() { }
@@ -61,8 +59,6 @@ public final class CWrapper {
         public static native void addChildWindow(long parent, long child, int ordered);
         public static native void removeChildWindow(long parent, long child);
 
-        public static native void setFrame(long window, int x, int y, int w, int h, boolean display);
-
         public static native void setAlphaValue(long window, float alpha);
         public static native void setOpaque(long window, boolean opaque);
         public static native void setBackgroundColor(long window, long color);
@@ -80,16 +76,11 @@ public final class CWrapper {
         public static native void removeFromSuperview(long view);
 
         public static native void setFrame(long view, int x, int y, int w, int h);
-        public static native Rectangle2D frame(long view);
         public static native long window(long view);
 
         public static native void setHidden(long view, boolean hidden);
 
         public static native void setToolTip(long view, String msg);
-    }
-
-    public static final class NSObject {
-        public static native void release(long object);
     }
 
     public static final class NSColor {

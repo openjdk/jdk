@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -75,14 +75,17 @@ JNF_CLASS_CACHE(CImageClass, "sun/lwawt/macosx/CImage");
 static NSDragOperation    sDragOperation;
 static NSPoint            sDraggingLocation;
 
-static CDragSource*        sCurrentDragSource;
 static BOOL                sNeedsEnter;
 
-@implementation CDragSource
+@interface CDragSource ()
+// Updates from the destination to the source
+- (void) postDragEnter;
+- (void) postDragExit;
+// Utility
+- (NSPoint) mapNSScreenPointToJavaWithOffset:(NSPoint) point;
+@end
 
-+ (CDragSource *) currentDragSource {
-    return sCurrentDragSource;
-}
+@implementation CDragSource
 
 - (id)        init:(jobject)jDragSourceContextPeer
          component:(jobject)jComponent
@@ -515,8 +518,6 @@ static BOOL                sNeedsEnter;
     fDragKeyModifiers = [DnDUtilities extractJavaExtKeyModifiersFromJavaExtModifiers:fModifiers];
     fDragMouseModifiers = [DnDUtilities extractJavaExtMouseModifiersFromJavaExtModifiers:fModifiers];
 
-    // Set the current DragSource
-    sCurrentDragSource = self;
     sNeedsEnter = YES;
 
     @try {
@@ -566,8 +567,6 @@ static BOOL                sNeedsEnter;
                 JNF_MEMBER_CACHE(resetHoveringMethod, CDragSourceContextPeerClass, "resetHovering", "()V");
         JNFCallVoidMethod(env, fDragSourceContextPeer, resetHoveringMethod); // Hust reset static variable
     } @finally {
-        // Clear the current DragSource
-        sCurrentDragSource = nil;
         sNeedsEnter = NO;
     }
 
