@@ -269,9 +269,6 @@
   develop(bool, PrintNotLoaded, false,                                      \
           "Prints where classes are not loaded during code generation")     \
                                                                             \
-  notproduct(bool, VerifyOopMaps, false,                                    \
-          "Adds oopmap verification code to the generated code")            \
-                                                                            \
   develop(bool, PrintLIR, false,                                            \
           "print low-level IR")                                             \
                                                                             \
