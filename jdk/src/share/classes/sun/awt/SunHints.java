@@ -172,7 +172,7 @@ public class SunHints {
         }
     }
 
-    private static final int NUM_KEYS = 9;
+    private static final int NUM_KEYS = 10;
     private static final int VALS_PER_KEY = 8;
 
     /**
@@ -252,6 +252,13 @@ public class SunHints {
     @Native public static final int INTVAL_STROKE_NORMALIZE = 1;
     @Native public static final int INTVAL_STROKE_PURE = 2;
 
+    /**
+     * Image scaling hint key and values
+     */
+    @Native public static final int INTKEY_RESOLUTION_VARIANT = 9;
+    @Native public static final int INTVAL_RESOLUTION_VARIANT_DEFAULT = 0;
+    @Native public static final int INTVAL_RESOLUTION_VARIANT_OFF = 1;
+    @Native public static final int INTVAL_RESOLUTION_VARIANT_ON = 2;
     /**
      * LCD text contrast control hint key.
      * Value is "100" to make discontiguous with the others which
@@ -450,6 +457,24 @@ public class SunHints {
                            SunHints.INTVAL_STROKE_PURE,
                            "Pure stroke conversion for accurate paths");
 
+    /**
+     * Image resolution variant hint key and value objects
+     */
+    public static final Key KEY_RESOLUTION_VARIANT =
+        new SunHints.Key(SunHints.INTKEY_RESOLUTION_VARIANT,
+                         "Global image resolution variant key");
+    public static final Object VALUE_RESOLUTION_VARIANT_DEFAULT =
+        new SunHints.Value(KEY_RESOLUTION_VARIANT,
+                           SunHints.INTVAL_RESOLUTION_VARIANT_DEFAULT,
+                           "Choose image resolutions based on a default heuristic");
+    public static final Object VALUE_RESOLUTION_VARIANT_OFF =
+        new SunHints.Value(KEY_RESOLUTION_VARIANT,
+                           SunHints.INTVAL_RESOLUTION_VARIANT_OFF,
+                           "Use only the standard resolution of an image");
+    public static final Object VALUE_RESOLUTION_VARIANT_ON =
+        new SunHints.Value(KEY_RESOLUTION_VARIANT,
+                           SunHints.INTVAL_RESOLUTION_VARIANT_ON,
+                           "Always use resolution-specific variants of images");
 
     public static class LCDContrastKey extends Key {
 
