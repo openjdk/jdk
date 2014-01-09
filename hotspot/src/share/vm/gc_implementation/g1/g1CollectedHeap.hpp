@@ -1183,15 +1183,6 @@ public:
   // end fields defining the extent of the contiguous allocation region.)
   // But G1CollectedHeap doesn't yet support this.
 
-  // Return an estimate of the maximum allocation that could be performed
-  // without triggering any collection or expansion activity.  In a
-  // generational collector, for example, this is probably the largest
-  // allocation that could be supported (without expansion) in the youngest
-  // generation.  It is "unsafe" because no locks are taken; the result
-  // should be treated as an approximation, not a guarantee, for use in
-  // heuristic resizing decisions.
-  virtual size_t unsafe_max_alloc();
-
   virtual bool is_maximal_no_gc() const {
     return _g1_storage.uncommitted_size() == 0;
   }
