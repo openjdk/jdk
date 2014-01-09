@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -132,7 +132,7 @@ import sun.awt.AWTAccessor;
  * <p>
  * WARNING: Aside from those keys that are defined by the Java language
  * (VK_ENTER, VK_BACK_SPACE, and VK_TAB), do not rely on the values of the VK_
- * constants.  Sun reserves the right to change these values as needed
+ * constants.  The platform steward reserves the right to change these values as needed
  * to accommodate a wider range of keyboards in the future.
  * <p>
  * An unspecified behavior will be caused if the {@code id} parameter
@@ -194,21 +194,52 @@ public class KeyEvent extends InputEvent {
 
     /* Virtual key codes. */
 
+    /** Constant for the ENTER virtual key. */
     public static final int VK_ENTER          = '\n';
+
+    /** Constant for the BACK_SPACE virtual key. */
     public static final int VK_BACK_SPACE     = '\b';
+
+    /** Constant for the TAB virtual key. */
     public static final int VK_TAB            = '\t';
+
+    /** Constant for the CANCEL virtual key. */
     public static final int VK_CANCEL         = 0x03;
+
+    /** Constant for the CLEAR virtual key. */
     public static final int VK_CLEAR          = 0x0C;
+
+    /** Constant for the SHIFT virtual key. */
     public static final int VK_SHIFT          = 0x10;
+
+    /** Constant for the CONTROL virtual key. */
     public static final int VK_CONTROL        = 0x11;
+
+    /** Constant for the ALT virtual key. */
     public static final int VK_ALT            = 0x12;
+
+    /** Constant for the PAUSE virtual key. */
     public static final int VK_PAUSE          = 0x13;
+
+    /** Constant for the CAPS_LOCK virtual key. */
     public static final int VK_CAPS_LOCK      = 0x14;
+
+    /** Constant for the ESCAPE virtual key. */
     public static final int VK_ESCAPE         = 0x1B;
+
+    /** Constant for the SPACE virtual key. */
     public static final int VK_SPACE          = 0x20;
+
+    /** Constant for the PAGE_UP virtual key. */
     public static final int VK_PAGE_UP        = 0x21;
+
+    /** Constant for the PAGE_DOWN virtual key. */
     public static final int VK_PAGE_DOWN      = 0x22;
+
+    /** Constant for the END virtual key. */
     public static final int VK_END            = 0x23;
+
+    /** Constant for the HOME virtual key. */
     public static final int VK_HOME           = 0x24;
 
     /**
@@ -257,15 +288,35 @@ public class KeyEvent extends InputEvent {
     public static final int VK_SLASH          = 0x2F;
 
     /** VK_0 thru VK_9 are the same as ASCII '0' thru '9' (0x30 - 0x39) */
+
+    /** Constant for the "0" key. */
     public static final int VK_0              = 0x30;
+
+    /** Constant for the "1" key. */
     public static final int VK_1              = 0x31;
+
+    /** Constant for the "2" key. */
     public static final int VK_2              = 0x32;
+
+    /** Constant for the "3" key. */
     public static final int VK_3              = 0x33;
+
+    /** Constant for the "4" key. */
     public static final int VK_4              = 0x34;
+
+    /** Constant for the "5" key. */
     public static final int VK_5              = 0x35;
+
+    /** Constant for the "6" key. */
     public static final int VK_6              = 0x36;
+
+    /** Constant for the "7" key. */
     public static final int VK_7              = 0x37;
+
+    /** Constant for the "8" key. */
     public static final int VK_8              = 0x38;
+
+    /** Constant for the "9" key. */
     public static final int VK_9              = 0x39;
 
     /**
@@ -279,31 +330,83 @@ public class KeyEvent extends InputEvent {
     public static final int VK_EQUALS         = 0x3D;
 
     /** VK_A thru VK_Z are the same as ASCII 'A' thru 'Z' (0x41 - 0x5A) */
+
+    /** Constant for the "A" key. */
     public static final int VK_A              = 0x41;
+
+    /** Constant for the "B" key. */
     public static final int VK_B              = 0x42;
+
+    /** Constant for the "C" key. */
     public static final int VK_C              = 0x43;
+
+    /** Constant for the "D" key. */
     public static final int VK_D              = 0x44;
+
+    /** Constant for the "E" key. */
     public static final int VK_E              = 0x45;
+
+    /** Constant for the "F" key. */
     public static final int VK_F              = 0x46;
+
+    /** Constant for the "G" key. */
     public static final int VK_G              = 0x47;
+
+    /** Constant for the "H" key. */
     public static final int VK_H              = 0x48;
+
+    /** Constant for the "I" key. */
     public static final int VK_I              = 0x49;
+
+    /** Constant for the "J" key. */
     public static final int VK_J              = 0x4A;
+
+    /** Constant for the "K" key. */
     public static final int VK_K              = 0x4B;
+
+    /** Constant for the "L" key. */
     public static final int VK_L              = 0x4C;
+
+    /** Constant for the "M" key. */
     public static final int VK_M              = 0x4D;
+
+    /** Constant for the "N" key. */
     public static final int VK_N              = 0x4E;
+
+    /** Constant for the "O" key. */
     public static final int VK_O              = 0x4F;
+
+    /** Constant for the "P" key. */
     public static final int VK_P              = 0x50;
+
+    /** Constant for the "Q" key. */
     public static final int VK_Q              = 0x51;
+
+    /** Constant for the "R" key. */
     public static final int VK_R              = 0x52;
+
+    /** Constant for the "S" key. */
     public static final int VK_S              = 0x53;
+
+    /** Constant for the "T" key. */
     public static final int VK_T              = 0x54;
+
+    /** Constant for the "U" key. */
     public static final int VK_U              = 0x55;
+
+    /** Constant for the "V" key. */
     public static final int VK_V              = 0x56;
+
+    /** Constant for the "W" key. */
     public static final int VK_W              = 0x57;
+
+    /** Constant for the "X" key. */
     public static final int VK_X              = 0x58;
+
+    /** Constant for the "Y" key. */
     public static final int VK_Y              = 0x59;
+
+    /** Constant for the "Z" key. */
     public static final int VK_Z              = 0x5A;
 
     /**
@@ -321,17 +424,40 @@ public class KeyEvent extends InputEvent {
      */
     public static final int VK_CLOSE_BRACKET  = 0x5D;
 
+    /** Constant for the number pad "0" key. */
     public static final int VK_NUMPAD0        = 0x60;
+
+    /** Constant for the number pad "1" key. */
     public static final int VK_NUMPAD1        = 0x61;
+
+    /** Constant for the number pad "2" key. */
     public static final int VK_NUMPAD2        = 0x62;
+
+    /** Constant for the number pad "3" key. */
     public static final int VK_NUMPAD3        = 0x63;
+
+    /** Constant for the number pad "4" key. */
     public static final int VK_NUMPAD4        = 0x64;
+
+    /** Constant for the number pad "5" key. */
     public static final int VK_NUMPAD5        = 0x65;
+
+    /** Constant for the number pad "6" key. */
     public static final int VK_NUMPAD6        = 0x66;
+
+    /** Constant for the number pad "7" key. */
     public static final int VK_NUMPAD7        = 0x67;
+
+    /** Constant for the number pad "8" key. */
     public static final int VK_NUMPAD8        = 0x68;
+
+    /** Constant for the number pad "9" key. */
     public static final int VK_NUMPAD9        = 0x69;
+
+    /** Constant for the number pad multiply key. */
     public static final int VK_MULTIPLY       = 0x6A;
+
+    /** Constant for the number pad add key. */
     public static final int VK_ADD            = 0x6B;
 
     /**
@@ -347,11 +473,22 @@ public class KeyEvent extends InputEvent {
      */
     public static final int VK_SEPARATOR      = VK_SEPARATER;
 
+    /** Constant for the number pad subtract key. */
     public static final int VK_SUBTRACT       = 0x6D;
+
+    /** Constant for the number pad decimal point key. */
     public static final int VK_DECIMAL        = 0x6E;
+
+    /** Constant for the number pad divide key. */
     public static final int VK_DIVIDE         = 0x6F;
+
+    /** Constant for the delete key. */
     public static final int VK_DELETE         = 0x7F; /* ASCII DEL */
+
+    /** Constant for the NUM_LOCK key. */
     public static final int VK_NUM_LOCK       = 0x90;
+
+    /** Constant for the SCROLL_LOCK key. */
     public static final int VK_SCROLL_LOCK    = 0x91;
 
     /** Constant for the F1 function key. */
@@ -463,12 +600,22 @@ public class KeyEvent extends InputEvent {
      */
     public static final int VK_F24            = 0xF00B;
 
+    /**  Constant for the PRINTSCREEN key. */
     public static final int VK_PRINTSCREEN    = 0x9A;
+
+    /**  Constant for the INSERT key. */
     public static final int VK_INSERT         = 0x9B;
+
+    /**  Constant for the HELP key. */
     public static final int VK_HELP           = 0x9C;
+
+    /**  Constant for the META key. */
     public static final int VK_META           = 0x9D;
 
+    /**  Constant for the BACK_QUOTE  key. */
     public static final int VK_BACK_QUOTE     = 0xC0;
+
+    /**  Constant for the QUOTE key. */
     public static final int VK_QUOTE          = 0xDE;
 
     /**
@@ -638,6 +785,7 @@ public class KeyEvent extends InputEvent {
     /* for input method support on Asian Keyboards */
 
     /* not clear what this means - listed in Microsoft Windows API */
+    /** Constant for the FINAL key. */
     public static final int VK_FINAL                    = 0x0018;
 
     /** Constant for the Convert function key. */
@@ -653,14 +801,23 @@ public class KeyEvent extends InputEvent {
     public static final int VK_ACCEPT                   = 0x001E;
 
     /* not clear what this means - listed in Microsoft Windows API */
+    /** Constant for the MODECHANGE key. */
     public static final int VK_MODECHANGE               = 0x001F;
 
     /* replaced by VK_KANA_LOCK for Microsoft Windows and Solaris;
        might still be used on other platforms */
+    /**
+     * Constant for the KANA lock key.
+     * @see #VK_KANA_LOCK
+     **/
     public static final int VK_KANA                     = 0x0015;
 
     /* replaced by VK_INPUT_METHOD_ON_OFF for Microsoft Windows and Solaris;
        might still be used for other platforms */
+    /**
+     * Constant for KANJI.
+     * @see #VK_INPUT_METHOD_ON_OFF
+     */
     public static final int VK_KANJI                    = 0x0019;
 
     /**
@@ -1085,7 +1242,25 @@ public class KeyEvent extends InputEvent {
     }
 
     /**
-     * @deprecated as of JDK1.1
+     * @deprecated as of JDK1.1; use {@link #KeyEvent(Component, int, long, int, int, char)} instead
+     * @param source    The <code>Component</code> that originated the event
+     * @param id              An integer indicating the type of event.
+     *                  For information on allowable values, see
+     *                  the class description for {@link KeyEvent}
+     * @param when      A long integer that specifies the time the event
+     *                  occurred.
+     *                     Passing negative or zero value
+     *                     is not recommended
+     * @param modifiers The modifier keys down during event (shift, ctrl,
+     *                  alt, meta).
+     *                     Passing negative value
+     *                     is not recommended.
+     *                     Zero value means that no modifiers were passed.
+     *                  Use either an extended _DOWN_MASK or old _MASK modifiers,
+     *                  however do not mix models in the one event.
+     *                  The extended modifiers are preferred for using
+     * @param keyCode   The integer code for an actual key, or VK_UNDEFINED
+     *                  (for a key-typed event)
      */
     @Deprecated
     public KeyEvent(Component source, int id, long when, int modifiers,
@@ -1184,6 +1359,7 @@ public class KeyEvent extends InputEvent {
      * Returns a String describing the keyCode, such as "HOME", "F1" or "A".
      * These strings can be localized by changing the awt.properties file.
      *
+     * @param keyCode the key whose description is to be returned
      * @return a string containing a text description for a physical key,
      *         identified by its keyCode
      */
@@ -1376,6 +1552,7 @@ public class KeyEvent extends InputEvent {
      * <code>InputEvent.BUTTON3_MASK</code> have the same value,
      * so the string "Meta" is returned for both modifiers.
      *
+     * @param modifiers the modifier mask to be processed
      * @return string a text description of the combination of modifier
      *                keys that were held down during the event
      * @see InputEvent#getModifiersExText(int)
@@ -1612,8 +1789,8 @@ public class KeyEvent extends InputEvent {
      * Pressing the same key in a regular Russian layout gives another code, unique for the
      * letter "Cyrillic I short".
      *
+     * @return an extended key code for the event
      * @since 1.7
-     *
      */
     public  int getExtendedKeyCode() {
         return (int)extendedKeyCode;
@@ -1621,6 +1798,7 @@ public class KeyEvent extends InputEvent {
     /**
      * Returns an extended key code for a unicode character.
      *
+     * @param c the unicode character to be processed
      * @return for a unicode character with a corresponding {@code VK_} constant -- this
      *   {@code VK_} constant; for a character appearing on the primary
      *   level of a known keyboard layout -- a unique integer.
@@ -1628,7 +1806,6 @@ public class KeyEvent extends InputEvent {
      *   {@code VK_UNDEFINED} is returned.
      *
      * @since 1.7
-     *
      */
     public static int getExtendedKeyCodeForChar(int c) {
         // Return a keycode (if any) associated with a character.
