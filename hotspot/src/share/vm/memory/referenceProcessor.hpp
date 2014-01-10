@@ -235,7 +235,6 @@ class ReferenceProcessor : public CHeapObj<mtGC> {
   // discovery.)
   bool        _discovered_list_needs_barrier;
 
-  BarrierSet* _bs;                      // Cached copy of BarrierSet.
   bool        _enqueuing_is_done;       // true if all weak references enqueued
   bool        _processing_is_mt;        // true during phases when
                                         // reference processing is MT.
@@ -420,25 +419,6 @@ class ReferenceProcessor : public CHeapObj<mtGC> {
   void update_soft_ref_master_clock();
 
  public:
-  // constructor
-  ReferenceProcessor():
-    _span((HeapWord*)NULL, (HeapWord*)NULL),
-    _discovered_refs(NULL),
-    _discoveredSoftRefs(NULL),  _discoveredWeakRefs(NULL),
-    _discoveredFinalRefs(NULL), _discoveredPhantomRefs(NULL),
-    _discovering_refs(false),
-    _discovery_is_atomic(true),
-    _enqueuing_is_done(false),
-    _discovery_is_mt(false),
-    _discovered_list_needs_barrier(false),
-    _bs(NULL),
-    _is_alive_non_header(NULL),
-    _num_q(0),
-    _max_num_q(0),
-    _processing_is_mt(false),
-    _next_id(0)
-  { }
-
   // Default parameters give you a vanilla reference processor.
   ReferenceProcessor(MemRegion span,
                      bool mt_processing = false, uint mt_processing_degree = 1,
