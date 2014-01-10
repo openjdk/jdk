@@ -2595,11 +2595,13 @@ bool AdapterHandlerEntry::compare_code(unsigned char* buffer, int length) {
 #endif
 
 
-// Create a native wrapper for this native method.  The wrapper converts the
-// java compiled calling convention to the native convention, handlizes
-// arguments, and transitions to native.  On return from the native we transition
-// back to java blocking if a safepoint is in progress.
-nmethod *AdapterHandlerLibrary::create_native_wrapper(methodHandle method, int compile_id) {
+/**
+ * Create a native wrapper for this native method.  The wrapper converts the
+ * Java-compiled calling convention to the native convention, handles
+ * arguments, and transitions to native.  On return from the native we transition
+ * back to java blocking if a safepoint is in progress.
+ */
+void AdapterHandlerLibrary::create_native_wrapper(methodHandle method) {
   ResourceMark rm;
   nmethod* nm = NULL;
 
@@ -2608,16 +2610,19 @@ nmethod *AdapterHandlerLibrary::create_native_wrapper(methodHandle method, int c
          method->has_native_function(), "must have something valid to call!");
 
   {
-    // perform the work while holding the lock, but perform any printing outside the lock
+    // Perform the work while holding the lock, but perform any printing outside the lock
     MutexLocker mu(AdapterHandlerLibrary_lock);
     // See if somebody beat us to it
     nm = method->code();
-    if (nm) {
-      return nm;
+    if (nm != NULL) {
+      return;
     }
 
-    ResourceMark rm;
+    const int compile_id = CompileBroker::assign_compile_id(method, CompileBroker::standard_entry_bci);
+    assert(compile_id > 0, "Must generate native wrapper");
 
+
+    ResourceMark rm;
     BufferBlob*  buf = buffer_blob(); // the temporary code buffer in CodeCache
     if (buf != NULL) {
       CodeBuffer buffer(buf);
@@ -2649,16 +2654,14 @@ nmethod *AdapterHandlerLibrary::create_native_wrapper(methodHandle method, int c
       int comp_args_on_stack = SharedRuntime::java_calling_convention(sig_bt, regs, total_args_passed, is_outgoing);
 
       // Generate the compiled-to-native wrapper code
-      nm = SharedRuntime::generate_native_wrapper(&_masm,
-                                                  method,
-                                                  compile_id,
-                                                  sig_bt,
-                                                  regs,
-                                                  ret_type);
-    }
-  }
+      nm = SharedRuntime::generate_native_wrapper(&_masm, method, compile_id, sig_bt, regs, ret_type);
 
-  // Must unlock before calling set_code
+      if (nm != NULL) {
+        method->set_code(method, nm);
+      }
+    }
+  } // Unlock AdapterHandlerLibrary_lock
+
 
   // Install the generated code.
   if (nm != NULL) {
@@ -2666,13 +2669,11 @@ nmethod *AdapterHandlerLibrary::create_native_wrapper(methodHandle method, int c
       ttyLocker ttyl;
       CompileTask::print_compilation(tty, nm, method->is_static() ? "(static)" : "");
     }
-    method->set_code(method, nm);
     nm->post_compiled_method_load_event();
   } else {
     // CodeCache is full, disable compilation
     CompileBroker::handle_full_code_cache();
   }
-  return nm;
 }
 
 JRT_ENTRY_NO_ASYNC(void, SharedRuntime::block_for_jni_critical(JavaThread* thread))

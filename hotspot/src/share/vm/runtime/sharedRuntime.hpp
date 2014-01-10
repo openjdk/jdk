@@ -666,7 +666,7 @@ class AdapterHandlerLibrary: public AllStatic {
 
   static AdapterHandlerEntry* new_entry(AdapterFingerPrint* fingerprint,
                                         address i2c_entry, address c2i_entry, address c2i_unverified_entry);
-  static nmethod* create_native_wrapper(methodHandle method, int compile_id);
+  static void create_native_wrapper(methodHandle method);
   static AdapterHandlerEntry* get_adapter(methodHandle method);
 
 #ifdef HAVE_DTRACE_H
