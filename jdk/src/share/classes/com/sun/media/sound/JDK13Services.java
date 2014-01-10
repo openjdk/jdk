@@ -25,27 +25,33 @@
 
 package com.sun.media.sound;
 
+import java.util.ArrayList;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.Properties;
 
 import javax.sound.midi.Receiver;
 import javax.sound.midi.Sequencer;
 import javax.sound.midi.Synthesizer;
 import javax.sound.midi.Transmitter;
+import javax.sound.midi.spi.MidiDeviceProvider;
+import javax.sound.midi.spi.MidiFileReader;
+import javax.sound.midi.spi.MidiFileWriter;
+import javax.sound.midi.spi.SoundbankReader;
 import javax.sound.sampled.Clip;
 import javax.sound.sampled.Port;
 import javax.sound.sampled.SourceDataLine;
 import javax.sound.sampled.TargetDataLine;
+import javax.sound.sampled.spi.AudioFileReader;
+import javax.sound.sampled.spi.AudioFileWriter;
+import javax.sound.sampled.spi.FormatConversionProvider;
+import javax.sound.sampled.spi.MixerProvider;
 
 
 /**
- * JDK13Services uses the Service class in JDK 1.3
- * to discover a list of service providers installed
- * in the system.
- *
+ * JDK13Services uses the Service class in JDK 1.3 to discover a list of service
+ * providers installed in the system.
+ * <p>
  * This class is public because it is called from javax.sound.midi.MidiSystem
  * and javax.sound.sampled.AudioSystem. The alternative would be to make
  * JSSecurityManager public, which is considered worse.
@@ -54,79 +60,54 @@ import javax.sound.sampled.TargetDataLine;
  */
 public final class JDK13Services {
 
-    /** The default for the length of the period to hold the cache.
-        This value is given in milliseconds. It is equivalent to
-        1 minute.
-    */
-    private static final long DEFAULT_CACHING_PERIOD = 60000;
-
-    /** Filename of the properties file for default provider properties.
-        This file is searched in the subdirectory "lib" of the JRE directory
-        (this behaviour is hardcoded).
-    */
+    /**
+     * Filename of the properties file for default provider properties. This
+     * file is searched in the subdirectory "lib" of the JRE directory (this
+     * behaviour is hardcoded).
+     */
     private static final String PROPERTIES_FILENAME = "sound.properties";
 
-    /** Cache for the providers.
-        Class objects of the provider type (MixerProvider, MidiDeviceProvider
-        ...) are used as keys. The values are instances of ProviderCache.
-    */
-    private static final Map providersCacheMap = new HashMap();
-
-
-    /** The length of the period to hold the cache.
-        This value is given in milliseconds.
-    */
-    private static long cachingPeriod = DEFAULT_CACHING_PERIOD;
-
-    /** Properties loaded from the properties file for default provider
-        properties.
-    */
+    /**
+     * Properties loaded from the properties file for default provider
+     * properties.
+     */
     private static Properties properties;
 
-
-    /** Private, no-args constructor to ensure against instantiation.
+    /**
+     * Private, no-args constructor to ensure against instantiation.
      */
     private JDK13Services() {
     }
 
-
-    /** Set the period provider lists are cached.
-        This method is only intended for testing.
+    /**
+     * Obtains a List containing installed instances of the providers for the
+     * requested service. The returned List is immutable.
+     *
+     * @param serviceClass The type of providers requested. This should be one
+     *                     of AudioFileReader.class, AudioFileWriter.class,
+     *                     FormatConversionProvider.class, MixerProvider.class,
+     *                     MidiDeviceProvider.class, MidiFileReader.class,
+     *                     MidiFileWriter.class or SoundbankReader.class.
+     *
+     * @return A List of providers of the requested type. This List is
+     *         immutable.
      */
-    public static void setCachingPeriod(int seconds) {
-        cachingPeriod = seconds * 1000L;
-    }
-
-
-    /** Obtains a List containing installed instances of the
-        providers for the requested service.
-        The List of providers is cached for the period of time given by
-        {@link #cachingPeriod cachingPeriod}. During this period, the same
-        List instance is returned for the same type of provider. After this
-        period, a new instance is constructed and returned. The returned
-        List is immutable.
-        @param serviceClass The type of providers requested. This should be one
-        of AudioFileReader.class, AudioFileWriter.class,
-        FormatConversionProvider.class, MixerProvider.class,
-        MidiDeviceProvider.class, MidiFileReader.class, MidiFileWriter.class or
-        SoundbankReader.class.
-        @return A List of providers of the requested type. This List is
-        immutable.
-     */
-    public static synchronized List getProviders(Class serviceClass) {
-        ProviderCache cache = (ProviderCache) providersCacheMap.get(serviceClass);
-        if (cache == null) {
-            cache = new ProviderCache();
-            providersCacheMap.put(serviceClass, cache);
+    public static List<?> getProviders(final Class<?> serviceClass) {
+        final List<?> providers;
+        if (!MixerProvider.class.equals(serviceClass)
+                && !FormatConversionProvider.class.equals(serviceClass)
+                && !AudioFileReader.class.equals(serviceClass)
+                && !AudioFileWriter.class.equals(serviceClass)
+                && !MidiDeviceProvider.class.equals(serviceClass)
+                && !SoundbankReader.class.equals(serviceClass)
+                && !MidiFileWriter.class.equals(serviceClass)
+                && !MidiFileReader.class.equals(serviceClass)) {
+            providers = new ArrayList<>(0);
+        } else {
+            providers = JSSecurityManager.getProviders(serviceClass);
         }
-        if (cache.providers == null ||
-            System.currentTimeMillis() > cache.lastUpdate + cachingPeriod) {
-            cache.providers = Collections.unmodifiableList(JSSecurityManager.getProviders(serviceClass));
-            cache.lastUpdate = System.currentTimeMillis();
-        }
-        return cache.providers;
+        return Collections.unmodifiableList(providers);
     }
-
 
     /** Obtain the provider class name part of a default provider property.
         @param typeClass The type of the default provider property. This
@@ -218,15 +199,5 @@ public final class JDK13Services {
             JSSecurityManager.loadProperties(properties, PROPERTIES_FILENAME);
         }
         return properties;
-    }
-
-    // INNER CLASSES
-
-    private static class ProviderCache {
-        // System time of the last update in milliseconds.
-        public long lastUpdate;
-
-        // The providers.
-        public List providers;
     }
 }

@@ -185,8 +185,8 @@ final class JSSecurityManager {
         return thread;
     }
 
-    static <T> List<T> getProviders(final Class<T> providerClass) {
-        List<T> p = new ArrayList<>();
+    static synchronized <T> List<T> getProviders(final Class<T> providerClass) {
+        List<T> p = new ArrayList<>(7);
         // ServiceLoader creates "lazy" iterator instance, but it ensures that
         // next/hasNext run with permissions that are restricted by whatever
         // creates the ServiceLoader instance, so it requires to be called from
