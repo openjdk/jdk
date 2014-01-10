@@ -183,6 +183,7 @@ package.access=sun.,\
                com.sun.istack.internal.,\
                com.sun.jmx.,\
                com.sun.media.sound.,\
+               com.sun.naming.internal.,\
                com.sun.proxy.,\
                com.sun.corba.se.,\
                com.sun.org.apache.bcel.internal.,\
@@ -229,6 +230,7 @@ package.definition=sun.,\
                    com.sun.istack.internal.,\
                    com.sun.jmx.,\
                    com.sun.media.sound.,\
+                   com.sun.naming.internal.,\
                    com.sun.proxy.,\
                    com.sun.corba.se.,\
                    com.sun.org.apache.bcel.internal.,\
@@ -495,4 +497,3 @@ jdk.certpath.disabledAlgorithms=MD2, RSA keySize < 1024
 #
 # Example:
 #   jdk.tls.disabledAlgorithms=MD5, SHA1, DSA, RSA keySize < 2048
-

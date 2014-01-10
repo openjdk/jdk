@@ -66,11 +66,11 @@ le_int32 MarkToBasePositioningSubtable::process(const LETableReference &base, Gl
     }
 
     LEPoint markAnchor;
-    const MarkArray *markArray = (const MarkArray *) ((char *) this + SWAPW(markArrayOffset));
-    le_int32 markClass = markArray->getMarkClass(markGlyph, markCoverage, fontInstance, markAnchor);
+    LEReferenceTo<MarkArray> markArray(base, success,  (const MarkArray *) ((char *) this + SWAPW(markArrayOffset)));
+    le_int32 markClass = markArray->getMarkClass(markArray, markGlyph, markCoverage, fontInstance, markAnchor, success);
     le_uint16 mcCount = SWAPW(classCount);
 
-    if (markClass < 0 || markClass >= mcCount) {
+    if (markClass < 0 || markClass >= mcCount || LE_FAILURE(success)) {
         // markGlyph isn't in the mark array or its
         // mark class is too big. The table is mal-formed!
         return 0;
@@ -80,7 +80,8 @@ le_int32 MarkToBasePositioningSubtable::process(const LETableReference &base, Gl
     GlyphIterator baseIterator(*glyphIterator, (le_uint16) (lfIgnoreMarks /*| lfIgnoreLigatures*/));
     LEGlyphID baseGlyph = findBaseGlyph(&baseIterator);
     le_int32 baseCoverage = getBaseCoverage(base, (LEGlyphID) baseGlyph, success);
-    const BaseArray *baseArray = (const BaseArray *) ((char *) this + SWAPW(baseArrayOffset));
+    LEReferenceTo<BaseArray> baseArray(base, success, (const BaseArray *) ((char *) this + SWAPW(baseArrayOffset)));
+    if(LE_FAILURE(success)) return 0;
     le_uint16 baseCount = SWAPW(baseArray->baseRecordCount);
 
     if (baseCoverage < 0 || baseCoverage >= baseCount) {
@@ -89,25 +90,31 @@ le_int32 MarkToBasePositioningSubtable::process(const LETableReference &base, Gl
         // table is mal-formed...
         return 0;
     }
+    LEReferenceTo<BaseRecord> baseRecord(base, success, &baseArray->baseRecordArray[baseCoverage * mcCount]);
+    if( LE_FAILURE(success) ) { return 0; }
+    LEReferenceToArrayOf<Offset> baseAnchorTableOffsetArray(base, success, &(baseRecord->baseAnchorTableOffsetArray[0]), markClass+1);
 
-    const BaseRecord *baseRecord = &baseArray->baseRecordArray[baseCoverage * mcCount];
+    if( LE_FAILURE(success) ) { return 0; }
     Offset anchorTableOffset = SWAPW(baseRecord->baseAnchorTableOffsetArray[markClass]);
-    const AnchorTable *anchorTable = (const AnchorTable *) ((char *) baseArray + anchorTableOffset);
-    LEPoint baseAnchor, markAdvance, pixels;
-
-    if (anchorTableOffset == 0) {
+    if (anchorTableOffset <= 0) {
         // this means the table is mal-formed...
         glyphIterator->setCurrGlyphBaseOffset(baseIterator.getCurrStreamPosition());
         return 0;
     }
 
-    anchorTable->getAnchor(baseGlyph, fontInstance, baseAnchor);
+    LEReferenceTo<AnchorTable> anchorTable(baseArray, success, anchorTableOffset);
+    LEPoint baseAnchor, markAdvance, pixels;
+
+
+    anchorTable->getAnchor(anchorTable, baseGlyph, fontInstance, baseAnchor, success);
 
     fontInstance->getGlyphAdvance(markGlyph, pixels);
     fontInstance->pixelsToUnits(pixels, markAdvance);
 
     float anchorDiffX = baseAnchor.fX - markAnchor.fX;
     float anchorDiffY = baseAnchor.fY - markAnchor.fY;
+
+    _LETRACE("Offset: (%.2f, %.2f) glyph 0x%X", anchorDiffX, anchorDiffY, markGlyph);
 
     glyphIterator->setCurrGlyphBaseOffset(baseIterator.getCurrStreamPosition());
 
@@ -132,7 +139,6 @@ le_int32 MarkToBasePositioningSubtable::process(const LETableReference &base, Gl
             gi.next();
         }
         // end of JK patch
-
         fontInstance->pixelsToUnits(pixels, baseAdvance);
 
         glyphIterator->setCurrGlyphPositionAdjustment(anchorDiffX - baseAdvance.fX, anchorDiffY - baseAdvance.fY, -markAdvance.fX, -markAdvance.fY);
