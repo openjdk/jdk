@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,7 +36,6 @@ import java.awt.geom.Rectangle2D;
  * are compatible.  For example, if the paper size is changed from
  * 11 x 17 to 8.5 x 11, the application might need to reduce the
  * imageable area so that whatever is printed fits on the page.
- * <p>
  * @see #setSize(double, double)
  * @see #setImageableArea(double, double, double, double)
  */

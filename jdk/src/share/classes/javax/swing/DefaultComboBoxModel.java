@@ -115,7 +115,7 @@ public class DefaultComboBoxModel<E> extends AbstractListModel<E> implements Mut
     /**
      * Returns the index-position of the specified object in the list.
      *
-     * @param anObject
+     * @param anObject the object to return the index of
      * @return an int representing the index position, where 0 is
      *         the first position
      */

@@ -57,7 +57,7 @@ public interface WindowPeer extends ContainerPeer {
      * Sets if the window should always stay
      * on top of all other windows or not.
      *
-     * @see Window#getAlwaysOnTop()
+     * @see Window#isAlwaysOnTop()
      * @see Window#setAlwaysOnTop(boolean)
      */
     void updateAlwaysOnTopState();

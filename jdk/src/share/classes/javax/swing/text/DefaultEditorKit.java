@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -43,7 +43,7 @@ import javax.swing.UIManager;
  * provides a minimal set of actions for a simple editor.
  *
  * <dl>
- * <dt><b><font size=+1>Newlines</font></b>
+ * <dt><b>Newlines</b>
  * <dd>
  * There are two properties which deal with newlines.  The
  * system property, <code>line.separator</code>, is defined to be

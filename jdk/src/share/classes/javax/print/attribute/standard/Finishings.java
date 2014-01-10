@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2004, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -178,21 +178,21 @@ import javax.print.attribute.PrintJobAttribute;
  * <LI>
  * SINGLE_DOCUMENT -- All the input docs will be bound together as one output
  * document with the specified binding.
- * <P>
+ *
  * <LI>
  * SINGLE_DOCUMENT_NEW_SHEET -- All the input docs will be bound together as one
  * output document with the specified binding, and the first impression of each
  * input doc will always start on a new media sheet.
- * <P>
+ *
  * <LI>
  * SEPARATE_DOCUMENTS_UNCOLLATED_COPIES -- Each input doc will be bound
  * separately with the specified binding.
- * <P>
+ *
  * <LI>
  * SEPARATE_DOCUMENTS_COLLATED_COPIES -- Each input doc will be bound separately
  * with the specified binding.
  * </UL>
- * <P>
+ *
  * <LI>
  * If different docs have different bindings specified, then only two values of
  * {@link MultipleDocumentHandling MultipleDocumentHandling} make sense, and the
@@ -202,7 +202,7 @@ import javax.print.attribute.PrintJobAttribute;
  * <LI>
  * SEPARATE_DOCUMENTS_UNCOLLATED_COPIES -- Each input doc will be bound
  * separately with its own specified binding.
- * <P>
+ *
  * <LI>
  * SEPARATE_DOCUMENTS_COLLATED_COPIES -- Each input doc will be bound separately
  * with its own specified binding.
