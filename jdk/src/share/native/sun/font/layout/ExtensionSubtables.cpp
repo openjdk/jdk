@@ -48,7 +48,6 @@ le_uint32 ExtensionSubtable::process(const LEReferenceTo<ExtensionSubtable> &thi
                                      const LookupProcessor *lookupProcessor, le_uint16 lookupType,
                                       GlyphIterator *glyphIterator, const LEFontInstance *fontInstance, LEErrorCode& success) const
 {
-
     if (LE_FAILURE(success)) {
         return 0;
     }

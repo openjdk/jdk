@@ -1,4 +1,5 @@
 /*
+ * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -20,47 +21,53 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
- *
  */
 
-/*
- *
- * (C) Copyright IBM Corp. 1998-2004 - All Rights Reserved
- *
- */
+package sun.net;
 
-#ifndef __MARKARRAYS_H
-#define __MARKARRAYS_H
+import java.security.AccessController;
 
 /**
- * \file
- * \internal
+ * Determines the ephemeral port range in use on this system.
+ * If this cannot be determined, then the default settings
+ * of the OS are returned.
  */
 
-#include "LETypes.h"
-#include "LEFontInstance.h"
-#include "OpenTypeTables.h"
+public final class PortConfig {
 
-U_NAMESPACE_BEGIN
+    private static int defaultUpper, defaultLower;
+    private final static int upper, lower;
 
-struct MarkRecord
-{
-    le_uint16   markClass;
-    Offset      markAnchorTableOffset;
-};
+    static {
+        AccessController.doPrivileged(
+            new java.security.PrivilegedAction<Void>() {
+                public Void run() {
+                    System.loadLibrary("net");
+                    return null;
+                }
+            });
 
-struct MarkArray
-{
-    le_uint16   markCount;
-    MarkRecord  markRecordArray[ANY_NUMBER];
+        int v = getLower0();
+        if (v == -1) {
+            v = defaultLower;
+        }
+        lower = v;
 
-    le_int32 getMarkClass(const LETableReference &base, LEGlyphID glyphID,
-                       le_int32 coverageIndex, const LEFontInstance *fontInstance,
-                       LEPoint &anchor, LEErrorCode &success) const;
-};
-LE_VAR_ARRAY(MarkArray, markRecordArray)
+        v = getUpper0();
+        if (v == -1) {
+            v = defaultUpper;
+        }
+        upper = v;
+    }
 
-U_NAMESPACE_END
-#endif
+    static native int getLower0();
+    static native int getUpper0();
 
+    public static int getLower() {
+        return lower;
+    }
 
+    public static int getUpper() {
+        return upper;
+    }
+}

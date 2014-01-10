@@ -27,17 +27,9 @@ package com.sun.jmx.snmp.agent;
 
 // java imports
 //
+import com.sun.jmx.snmp.SnmpDefinitions;
 import java.io.Serializable;
-import java.util.Hashtable;
-import java.util.Enumeration;
-
-// jmx imports
-//
-import com.sun.jmx.snmp.SnmpValue;
-import com.sun.jmx.snmp.SnmpVarBind;
 import com.sun.jmx.snmp.SnmpStatusException;
-import com.sun.jmx.snmp.agent.SnmpMibOid;
-import com.sun.jmx.snmp.agent.SnmpMibNode;
 
 /**
  * Represents a node in an SNMP MIB which corresponds to a table entry
@@ -99,7 +91,9 @@ public abstract class SnmpMibEntry extends SnmpMibNode
      */
     public void validateVarId(long arc, Object userData)
         throws SnmpStatusException {
-        if (isVariable(arc) == false) throw noSuchNameException;
+        if (isVariable(arc) == false) {
+            throw new SnmpStatusException(SnmpDefinitions.snmpRspNoSuchName);
+        }
     }
 
     /**
