@@ -37,7 +37,6 @@ public class SmallCodeCacheStartup {
 
     pb = ProcessTools.createJavaProcessBuilder("-XX:ReservedCodeCacheSize=3m", "-XX:CICompilerCount=64", "-version");
     out = new OutputAnalyzer(pb.start());
-    out.shouldContain("no space to run compiler");
     out.shouldHaveExitValue(0);
   }
 }

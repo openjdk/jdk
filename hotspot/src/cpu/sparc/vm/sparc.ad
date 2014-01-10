@@ -757,7 +757,7 @@ void verify_oops_warning(const MachNode *n, int ideal_op, int mem_op) {
 #endif
 
 
-void emit_form3_mem_reg(CodeBuffer &cbuf, const MachNode* n, int primary, int tertiary,
+void emit_form3_mem_reg(CodeBuffer &cbuf, PhaseRegAlloc* ra, const MachNode* n, int primary, int tertiary,
                         int src1_enc, int disp32, int src2_enc, int dst_enc) {
 
 #ifdef ASSERT
@@ -912,8 +912,14 @@ void emit_form3_mem_reg(CodeBuffer &cbuf, const MachNode* n, int primary, int te
   uint index = src2_enc;
   int disp = disp32;
 
-  if (src1_enc == R_SP_enc || src1_enc == R_FP_enc)
+  if (src1_enc == R_SP_enc || src1_enc == R_FP_enc) {
     disp += STACK_BIAS;
+    // Quick fix for JDK-8029668: check that stack offset fits, bailout if not
+    if (!Assembler::is_simm13(disp)) {
+      ra->C->record_method_not_compilable("unable to handle large constant offsets");
+      return;
+    }
+  }
 
   // We should have a compiler bailout here rather than a guarantee.
   // Better yet would be some mechanism to handle variable-size matches correctly.
@@ -1279,20 +1285,15 @@ static enum RC rc_class( OptoReg::Name reg ) {
   return rc_float;
 }
 
-static int impl_helper( const MachNode *mach, CodeBuffer *cbuf, PhaseRegAlloc *ra_, bool do_size, bool is_load, int offset, int reg, int opcode, const char *op_str, int size, outputStream* st ) {
-  if( cbuf ) {
-    // Better yet would be some mechanism to handle variable-size matches correctly
-    if (!Assembler::is_simm13(offset + STACK_BIAS)) {
-      ra_->C->record_method_not_compilable("unable to handle large constant offsets");
-    } else {
-      emit_form3_mem_reg(*cbuf, mach, opcode, -1, R_SP_enc, offset, 0, Matcher::_regEncode[reg]);
-    }
+static int impl_helper(const MachNode* mach, CodeBuffer* cbuf, PhaseRegAlloc* ra, bool do_size, bool is_load, int offset, int reg, int opcode, const char *op_str, int size, outputStream* st ) {
+  if (cbuf) {
+    emit_form3_mem_reg(*cbuf, ra, mach, opcode, -1, R_SP_enc, offset, 0, Matcher::_regEncode[reg]);
   }
 #ifndef PRODUCT
-  else if( !do_size ) {
-    if( size != 0 ) st->print("\n\t");
-    if( is_load ) st->print("%s   [R_SP + #%d],R_%s\t! spill",op_str,offset,OptoReg::regname(reg));
-    else          st->print("%s   R_%s,[R_SP + #%d]\t! spill",op_str,OptoReg::regname(reg),offset);
+  else if (!do_size) {
+    if (size != 0) st->print("\n\t");
+    if (is_load) st->print("%s   [R_SP + #%d],R_%s\t! spill",op_str,offset,OptoReg::regname(reg));
+    else         st->print("%s   R_%s,[R_SP + #%d]\t! spill",op_str,OptoReg::regname(reg),offset);
   }
 #endif
   return size+4;
@@ -2087,22 +2088,22 @@ encode %{
   %}
 
   enc_class form3_mem_reg( memory mem, iRegI dst ) %{
-    emit_form3_mem_reg(cbuf, this, $primary, $tertiary,
+    emit_form3_mem_reg(cbuf, ra_, this, $primary, $tertiary,
                        $mem$$base, $mem$$disp, $mem$$index, $dst$$reg);
   %}
 
   enc_class simple_form3_mem_reg( memory mem, iRegI dst ) %{
-    emit_form3_mem_reg(cbuf, this, $primary, -1,
+    emit_form3_mem_reg(cbuf, ra_, this, $primary, -1,
                        $mem$$base, $mem$$disp, $mem$$index, $dst$$reg);
   %}
 
   enc_class form3_mem_prefetch_read( memory mem ) %{
-    emit_form3_mem_reg(cbuf, this, $primary, -1,
+    emit_form3_mem_reg(cbuf, ra_, this, $primary, -1,
                        $mem$$base, $mem$$disp, $mem$$index, 0/*prefetch function many-reads*/);
   %}
 
   enc_class form3_mem_prefetch_write( memory mem ) %{
-    emit_form3_mem_reg(cbuf, this, $primary, -1,
+    emit_form3_mem_reg(cbuf, ra_, this, $primary, -1,
                        $mem$$base, $mem$$disp, $mem$$index, 2/*prefetch function many-writes*/);
   %}
 
@@ -2110,8 +2111,8 @@ encode %{
     assert(Assembler::is_simm13($mem$$disp  ), "need disp and disp+4");
     assert(Assembler::is_simm13($mem$$disp+4), "need disp and disp+4");
     guarantee($mem$$index == R_G0_enc, "double index?");
-    emit_form3_mem_reg(cbuf, this, $primary, -1, $mem$$base, $mem$$disp+4, R_G0_enc, R_O7_enc );
-    emit_form3_mem_reg(cbuf, this, $primary, -1, $mem$$base, $mem$$disp,   R_G0_enc, $reg$$reg );
+    emit_form3_mem_reg(cbuf, ra_, this, $primary, -1, $mem$$base, $mem$$disp+4, R_G0_enc, R_O7_enc );
+    emit_form3_mem_reg(cbuf, ra_, this, $primary, -1, $mem$$base, $mem$$disp,   R_G0_enc, $reg$$reg );
     emit3_simm13( cbuf, Assembler::arith_op, $reg$$reg, Assembler::sllx_op3, $reg$$reg, 0x1020 );
     emit3( cbuf, Assembler::arith_op, $reg$$reg, Assembler::or_op3, $reg$$reg, 0, R_O7_enc );
   %}
@@ -2121,14 +2122,14 @@ encode %{
     assert(Assembler::is_simm13($mem$$disp+4), "need disp and disp+4");
     guarantee($mem$$index == R_G0_enc, "double index?");
     // Load long with 2 instructions
-    emit_form3_mem_reg(cbuf, this, $primary, -1, $mem$$base, $mem$$disp,   R_G0_enc, $reg$$reg+0 );
-    emit_form3_mem_reg(cbuf, this, $primary, -1, $mem$$base, $mem$$disp+4, R_G0_enc, $reg$$reg+1 );
+    emit_form3_mem_reg(cbuf, ra_, this, $primary, -1, $mem$$base, $mem$$disp,   R_G0_enc, $reg$$reg+0 );
+    emit_form3_mem_reg(cbuf, ra_, this, $primary, -1, $mem$$base, $mem$$disp+4, R_G0_enc, $reg$$reg+1 );
   %}
 
   //%%% form3_mem_plus_4_reg is a hack--get rid of it
   enc_class form3_mem_plus_4_reg( memory mem, iRegI dst ) %{
     guarantee($mem$$disp, "cannot offset a reg-reg operand by 4");
-    emit_form3_mem_reg(cbuf, this, $primary, -1, $mem$$base, $mem$$disp + 4, $mem$$index, $dst$$reg);
+    emit_form3_mem_reg(cbuf, ra_, this, $primary, -1, $mem$$base, $mem$$disp + 4, $mem$$index, $dst$$reg);
   %}
 
   enc_class form3_g0_rs2_rd_move( iRegI rs2, iRegI rd ) %{
