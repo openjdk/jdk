@@ -305,6 +305,7 @@ $(JDK_IMAGE_DIR)/jre/lib/ext/meta-index: $(JDKJRE_LIB_TARGETS)
 ifneq ($(OPENJDK_TARGET_OS), windows)
   JRE_MAN_PAGES := \
       java.1 \
+      jjs.1 \
       keytool.1 \
       orbd.1 \
       pack200.1 \
@@ -335,6 +336,7 @@ ifneq ($(OPENJDK_TARGET_OS), windows)
       jconsole.1 \
       jcmd.1 \
       jdb.1 \
+      jdeps.1 \
       jhat.1 \
       jinfo.1 \
       jmap.1 \
@@ -353,7 +355,10 @@ ifneq ($(OPENJDK_TARGET_OS), windows)
       xjc.1
 
   ifndef OPENJDK
-    JDK_MAN_PAGES += jvisualvm.1
+    JDK_MAN_PAGES += \
+        jvisualvm.1 \
+        jmc.1 \
+        #
   endif
 
   # This variable is potentially overridden in the closed makefile.
@@ -366,14 +371,12 @@ ifneq ($(OPENJDK_TARGET_OS), windows)
   ifeq ($(OPENJDK_TARGET_OS), solaris)
     MAN_SRC_DIR := $(MAN_SRC_BASEDIR)/solaris/doc
     MAN1_SUBDIR := sun/man/man1
+    JDK_MAN_PAGES := $(filter-out jmc.1, $(JDK_MAN_PAGES))
   endif
   ifeq ($(OPENJDK_TARGET_OS), macosx)
     MAN_SRC_DIR := $(MAN_SRC_BASEDIR)/bsd/doc
     MAN1_SUBDIR := man
-    JDK_MAN_PAGES := $(filter-out jcmd.1, $(JDK_MAN_PAGES))
-    JDK_MAN_PAGES := $(filter-out jvisualvm.1, $(JDK_MAN_PAGES))
   endif
-
 
   $(JRE_IMAGE_DIR)/man/man1/%: $(MAN_SRC_DIR)/$(MAN1_SUBDIR)/%
 	$(ECHO) $(LOG_INFO) Copying $(patsubst $(OUTPUT_ROOT)/%,%,$@)
@@ -453,7 +456,7 @@ ifneq ($(OPENJDK_TARGET_OS), windows)
 
     JDK_MAN_PAGE_LIST := $(addprefix $(JDK_IMAGE_DIR)/man/man1/, $(JDK_MAN_PAGES)) \
         $(addprefix $(JDK_IMAGE_DIR)/man/ja_JP.UTF-8/man1/, $(JDK_MAN_PAGES)) \
-    $(JDK_IMAGE_DIR)/man/ja
+        $(JDK_IMAGE_DIR)/man/ja
   endif
 
   ifeq ($(OPENJDK_TARGET_OS), solaris)
