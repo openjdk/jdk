@@ -89,7 +89,7 @@ public class CDataTransferer extends DataTransferer {
 
     private static CDataTransferer fTransferer;
 
-    public static synchronized CDataTransferer getInstanceImpl() {
+    static synchronized CDataTransferer getInstanceImpl() {
         if (fTransferer == null) {
             fTransferer = new CDataTransferer();
         }
