@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -570,7 +570,7 @@ public class DataFlavor implements Externalizable, Cloneable {
         if (DataTransferer.isFlavorCharsetTextType(this) &&
             (isRepresentationClassInputStream() ||
              isRepresentationClassByteBuffer() ||
-             DataTransferer.byteArrayClass.equals(representationClass)))
+             byte[].class.equals(representationClass)))
         {
             params += ";charset=" + DataTransferer.getTextCharset(this);
         }
@@ -1015,7 +1015,7 @@ public class DataFlavor implements Externalizable, Cloneable {
                     !(isRepresentationClassReader() ||
                         String.class.equals(representationClass) ||
                         isRepresentationClassCharBuffer() ||
-                        DataTransferer.charArrayClass.equals(representationClass)))
+                        char[].class.equals(representationClass)))
                 {
                     String thisCharset =
                         DataTransferer.canonicalName(getParameter("charset"));
@@ -1100,8 +1100,7 @@ public class DataFlavor implements Externalizable, Cloneable {
                 !(isRepresentationClassReader() ||
                   String.class.equals(representationClass) ||
                   isRepresentationClassCharBuffer() ||
-                  DataTransferer.charArrayClass.equals
-                  (representationClass)))
+                  char[].class.equals(representationClass)))
             {
                 String charset =
                     DataTransferer.canonicalName(getParameter("charset"));

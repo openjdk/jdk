@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2005, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -77,11 +77,9 @@ public class XDataTransferer extends DataTransferer {
 
     private static XDataTransferer transferer;
 
-    static XDataTransferer getInstanceImpl() {
-        synchronized (XDataTransferer.class) {
-            if (transferer == null) {
-                transferer = new XDataTransferer();
-            }
+    static synchronized XDataTransferer getInstanceImpl() {
+        if (transferer == null) {
+            transferer = new XDataTransferer();
         }
         return transferer;
     }
@@ -411,7 +409,7 @@ public class XDataTransferer extends DataTransferer {
         if (df.getRepresentationClass() != null &&
             (df.isRepresentationClassInputStream() ||
              df.isRepresentationClassByteBuffer() ||
-             byteArrayClass.equals(df.getRepresentationClass()))) {
+             byte[].class.equals(df.getRepresentationClass()))) {
             natives.add(mimeType);
         }
 

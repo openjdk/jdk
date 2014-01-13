@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -159,13 +159,9 @@ public class WDataTransferer extends DataTransferer {
 
     private static WDataTransferer transferer;
 
-    public static WDataTransferer getInstanceImpl() {
+    static synchronized WDataTransferer getInstanceImpl() {
         if (transferer == null) {
-            synchronized (WDataTransferer.class) {
-                if (transferer == null) {
-                    transferer = new WDataTransferer();
-                }
-            }
+            transferer = new WDataTransferer();
         }
         return transferer;
     }

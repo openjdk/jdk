@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -47,6 +47,7 @@ import java.util.*;
 import javax.swing.LookAndFeel;
 import javax.swing.UIDefaults;
 import sun.awt.*;
+import sun.awt.datatransfer.DataTransferer;
 import sun.font.FontConfigManager;
 import sun.java2d.SunGraphicsEnvironment;
 import sun.misc.PerformanceLogger;
@@ -300,8 +301,6 @@ public final class XToolkit extends UNIXToolkit implements Runnable {
         return awtAppClassName;
     }
 
-    static final String DATA_TRANSFERER_CLASS_NAME = "sun.awt.X11.XDataTransferer";
-
     public XToolkit() {
         super();
         if (PerformanceLogger.loggingEnabled()) {
@@ -323,7 +322,6 @@ public final class XToolkit extends UNIXToolkit implements Runnable {
 
             init();
             XWM.init();
-            SunToolkit.setDataTransfererClassName(DATA_TRANSFERER_CLASS_NAME);
 
             PrivilegedAction<Thread> action = new PrivilegedAction() {
                 public Thread run() {
@@ -1123,6 +1121,11 @@ public final class XToolkit extends UNIXToolkit implements Runnable {
             return peer.isAvailable();
         }
         return false;
+    }
+
+    @Override
+    public DataTransferer getDataTransferer() {
+        return XDataTransferer.getInstanceImpl();
     }
 
     /**

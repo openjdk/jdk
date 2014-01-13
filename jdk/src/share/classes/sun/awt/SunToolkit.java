@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -46,6 +46,7 @@ import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
+import sun.awt.datatransfer.DataTransferer;
 import sun.security.util.SecurityConstants;
 import sun.util.logging.PlatformLogger;
 import sun.misc.SoftCache;
@@ -202,6 +203,8 @@ public abstract class SunToolkit extends Toolkit
     public abstract SystemTrayPeer createSystemTray(SystemTray target);
 
     public abstract boolean isTraySupported();
+
+    public abstract DataTransferer getDataTransferer();
 
     @SuppressWarnings("deprecation")
     public abstract FontPeer getFontPeer(String name, int style);
@@ -1189,19 +1192,6 @@ public abstract class SunToolkit extends Toolkit
      */
     public Locale getDefaultKeyboardLocale() {
         return getStartupLocale();
-    }
-
-    private static String dataTransfererClassName = null;
-
-    protected static void setDataTransfererClassName(String className) {
-        dataTransfererClassName = className;
-    }
-
-    public static String getDataTransfererClassName() {
-        if (dataTransfererClassName == null) {
-            Toolkit.getDefaultToolkit(); // transferer set during toolkit init
-        }
-        return dataTransfererClassName;
     }
 
     // Support for window closing event notifications
