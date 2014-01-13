@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -613,7 +613,7 @@ void AsyncGetCallTrace(ASGCT_CallTrace *trace, jint depth, void* ucontext) {
 #ifdef __APPLE__
 // XXXDARWIN: Link errors occur even when __attribute__((weak_import))
 // is added
-#define collector_func_load(x0,x1,x2,x3,x4,x5,x6) ((void)(0))
+#define collector_func_load(x0,x1,x2,x3,x4,x5,x6) ((void) 0)
 #else
 void    collector_func_load(char* name,
                             void* null_argument_1,
