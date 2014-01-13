@@ -2533,6 +2533,9 @@ class CommandLineFlags {
   develop(bool, PrintMethodFlushing, false,                                 \
           "Print the nmethods being flushed")                               \
                                                                             \
+  diagnostic(bool, PrintMethodFlushingStatistics, false,                    \
+          "print statistics about method flushing")                         \
+                                                                            \
   develop(bool, UseRelocIndex, false,                                       \
           "Use an index to speed random access to relocations")             \
                                                                             \
@@ -3308,21 +3311,21 @@ class CommandLineFlags {
   develop(intx, CIStart, 0,                                                 \
           "The id of the first compilation to permit")                      \
                                                                             \
-  develop(intx, CIStop,    -1,                                              \
+  develop(intx, CIStop, max_jint,                                           \
           "The id of the last compilation to permit")                       \
                                                                             \
-  develop(intx, CIStartOSR,     0,                                          \
+  develop(intx, CIStartOSR, 0,                                              \
           "The id of the first osr compilation to permit "                  \
           "(CICountOSR must be on)")                                        \
                                                                             \
-  develop(intx, CIStopOSR,    -1,                                           \
+  develop(intx, CIStopOSR, max_jint,                                        \
           "The id of the last osr compilation to permit "                   \
           "(CICountOSR must be on)")                                        \
                                                                             \
-  develop(intx, CIBreakAtOSR,    -1,                                        \
+  develop(intx, CIBreakAtOSR, -1,                                           \
           "The id of osr compilation to break at")                          \
                                                                             \
-  develop(intx, CIBreakAt,    -1,                                           \
+  develop(intx, CIBreakAt, -1,                                              \
           "The id of compilation to break at")                              \
                                                                             \
   product(ccstrlist, CompileOnly, "",                                       \
@@ -3340,6 +3343,10 @@ class CommandLineFlags {
   product(ccstr, ReplayDataFile, NULL,                                      \
           "File containing compilation replay information"                  \
           "[default: ./replay_pid%p.log] (%p replaced with pid)")           \
+                                                                            \
+   product(ccstr, InlineDataFile, NULL,                                     \
+          "File containing inlining replay information"                     \
+          "[default: ./inline_pid%p.log] (%p replaced with pid)")           \
                                                                             \
   develop(intx, ReplaySuppressInitializers, 2,                              \
           "Control handling of class initialization during replay: "        \
