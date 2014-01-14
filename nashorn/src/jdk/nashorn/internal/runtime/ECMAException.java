@@ -88,6 +88,7 @@ public final class ECMAException extends NashornException {
      * Get the thrown object
      * @return thrown object
      */
+    @Override
     public Object getThrown() {
         return thrown;
     }
