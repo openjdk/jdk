@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2004, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,16 +21,17 @@
  * questions.
  */
 
-/**
+/*
  * @test
  * @test 4422738
- * @compile -source 1.4 InvalidParameters.java
+ * @compile InvalidParameters.java
  * @run main InvalidParameters
  * @summary Make sure PKIXBuilderParameters(Set) detects invalid
  *          parameters and throws correct exceptions
  */
 import java.security.InvalidAlgorithmParameterException;
 import java.security.cert.PKIXBuilderParameters;
+import java.security.cert.TrustAnchor;
 import java.util.Collections;
 import java.util.Set;
 
@@ -53,8 +54,10 @@ public class InvalidParameters {
 
         // make sure Set of invalid objects throws ClassCastException
         try {
+            @SuppressWarnings("unchecked") // Knowingly do something bad
+            Set<TrustAnchor> badSet = (Set<TrustAnchor>) (Set) Collections.singleton(new String());
             PKIXBuilderParameters p =
-                new PKIXBuilderParameters(Collections.singleton(new String()), null);
+                new PKIXBuilderParameters(badSet, null);
             throw new Exception("should have thrown ClassCastException");
         } catch (ClassCastException cce) { }
     }
