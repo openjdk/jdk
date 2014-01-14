@@ -239,7 +239,7 @@
     </antcall>
   </target>
 
-  <target name="octane-regexp-octane-v8" depends="jar">
+  <target name="octane-regexp-v8" depends="jar">
     <antcall target="run-octane-v8">
       <param name="octane-tests" value="regexp"/>
     </antcall>
@@ -291,17 +291,56 @@
     </antcall>
   </target>
 
+  <!-- splay -->
+  <target name="octane-typescript" depends="jar">
+    <antcall target="run-octane">
+      <param name="octane-tests" value="typescript"/>
+    </antcall>
+  </target>
+
+  <target name="octane-typescript-v8" depends="jar">
+    <antcall target="run-octane-v8">
+      <param name="octane-typescript" value="typescript"/>
+    </antcall>
+  </target>
+
+  <target name="octane-typescript-rhino" depends="jar">
+    <antcall target="run-octane-rhino">
+      <param name="octane-tests" value="typescript"/>
+    </antcall>
+  </target>
+
+  <!-- zlib -->
+  <target name="octane-zlib" depends="jar">
+    <antcall target="run-octane">
+      <param name="octane-tests" value="zlib"/>
+    </antcall>
+  </target>
+
+  <target name="octane-zlib-v8" depends="jar">
+    <antcall target="run-octane-v8">
+      <param name="octane-typescript" value="zlib"/>
+    </antcall>
+  </target>
+
+  <target name="octane-zlib-rhino" depends="jar">
+    <antcall target="run-octane-rhino">
+      <param name="octane-tests" value="zlib"/>
+    </antcall>
+  </target>
+
   <!-- run octane benchmarks in a single process  -->
   <target name="octane-single-process" depends="octane-init">
     <antcall target="run-octane"/>
   </target>
 
-  <!-- mandreel excluded due to OOM -->
+  <!-- zlib excluded due to missing implementation of 'read' -->
   <target name="octane-separate-process" depends=
      "octane-box2d, octane-code-load, octane-crypto, 
       octane-deltablue, octane-earley-boyer, octane-gbemu,
-      octane-navier-stokes, octane-pdfjs, octane-raytrace, 
-      octane-regexp, octane-richards, octane-splay"/>
+      octane-mandreel, octane-navier-stokes, octane-pdfjs, 
+      octane-raytrace, octane-regexp, octane-richards, 
+      octane-splay, octane-typescript"/>
 
   <target name="--single-process" unless="${octane-test-sys-prop.separate.process}">
     <antcall target="octane-single-process"/>
