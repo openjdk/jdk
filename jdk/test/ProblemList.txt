@@ -150,12 +150,6 @@ sun/management/jmxremote/bootstrap/RmiSslBootstrapTest.sh	windows-all
 # 6988950
 demo/jvmti/compiledMethodLoad/CompiledMethodLoadTest.java	generic-all
 
-# 7027502
-demo/jvmti/hprof/MonitorTest.java                               generic-all
-
-# 8027973
-javax/xml/jaxp/transform/jdk8004476/XSLTExFuncTest.java		windows-all
-
 ############################################################################
 
 # jdk_net
