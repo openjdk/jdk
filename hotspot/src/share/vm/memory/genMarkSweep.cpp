@@ -210,7 +210,6 @@ void GenMarkSweep::mark_sweep_phase1(int level,
   gch->gen_process_strong_roots(level,
                                 false, // Younger gens are not roots.
                                 true,  // activate StrongRootsScope
-                                false, // not scavenging
                                 SharedHeap::SO_SystemClasses,
                                 &follow_root_closure,
                                 true,   // walk code active on stacks
@@ -296,7 +295,6 @@ void GenMarkSweep::mark_sweep_phase3(int level) {
   gch->gen_process_strong_roots(level,
                                 false, // Younger gens are not roots.
                                 true,  // activate StrongRootsScope
-                                false, // not scavenging
                                 SharedHeap::SO_AllClasses,
                                 &adjust_pointer_closure,
                                 false, // do not walk code

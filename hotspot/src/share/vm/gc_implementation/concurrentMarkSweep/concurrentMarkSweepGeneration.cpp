@@ -3033,7 +3033,6 @@ void CMSCollector::verify_after_remark_work_1() {
   gch->gen_process_strong_roots(_cmsGen->level(),
                                 true,   // younger gens are roots
                                 true,   // activate StrongRootsScope
-                                false,  // not scavenging
                                 SharedHeap::ScanningOption(roots_scanning_options()),
                                 &notOlder,
                                 true,   // walk code active on stacks
@@ -3101,7 +3100,6 @@ void CMSCollector::verify_after_remark_work_2() {
   gch->gen_process_strong_roots(_cmsGen->level(),
                                 true,   // younger gens are roots
                                 true,   // activate StrongRootsScope
-                                false,  // not scavenging
                                 SharedHeap::ScanningOption(roots_scanning_options()),
                                 &notOlder,
                                 true,   // walk code active on stacks
@@ -3303,7 +3301,7 @@ bool ConcurrentMarkSweepGeneration::is_too_full() const {
 void CMSCollector::setup_cms_unloading_and_verification_state() {
   const  bool should_verify =   VerifyBeforeGC || VerifyAfterGC || VerifyDuringGC
                              || VerifyBeforeExit;
-  const  int  rso           =   SharedHeap::SO_Strings | SharedHeap::SO_CodeCache;
+  const  int  rso           =   SharedHeap::SO_Strings | SharedHeap::SO_AllCodeCache;
 
   // We set the proper root for this CMS cycle here.
   if (should_unload_classes()) {   // Should unload classes this cycle
@@ -3738,10 +3736,9 @@ void CMSCollector::checkpointRootsInitialWork(bool asynch) {
       gch->gen_process_strong_roots(_cmsGen->level(),
                                     true,   // younger gens are roots
                                     true,   // activate StrongRootsScope
-                                    false,  // not scavenging
                                     SharedHeap::ScanningOption(roots_scanning_options()),
                                     &notOlder,
-                                    true,   // walk all of code cache if (so & SO_CodeCache)
+                                    true,   // walk all of code cache if (so & SO_AllCodeCache)
                                     NULL,
                                     &klass_closure);
     }
@@ -5238,14 +5235,13 @@ void CMSParInitialMarkTask::work(uint worker_id) {
   gch->gen_process_strong_roots(_collector->_cmsGen->level(),
                                 false,     // yg was scanned above
                                 false,     // this is parallel code
-                                false,     // not scavenging
                                 SharedHeap::ScanningOption(_collector->CMSCollector::roots_scanning_options()),
                                 &par_mri_cl,
-                                true,   // walk all of code cache if (so & SO_CodeCache)
+                                true,   // walk all of code cache if (so & SO_AllCodeCache)
                                 NULL,
                                 &klass_closure);
   assert(_collector->should_unload_classes()
-         || (_collector->CMSCollector::roots_scanning_options() & SharedHeap::SO_CodeCache),
+         || (_collector->CMSCollector::roots_scanning_options() & SharedHeap::SO_AllCodeCache),
          "if we didn't scan the code cache, we have to be ready to drop nmethods with expired weak oops");
   _timer.stop();
   if (PrintCMSStatistics != 0) {
@@ -5375,14 +5371,13 @@ void CMSParRemarkTask::work(uint worker_id) {
   gch->gen_process_strong_roots(_collector->_cmsGen->level(),
                                 false,     // yg was scanned above
                                 false,     // this is parallel code
-                                false,     // not scavenging
                                 SharedHeap::ScanningOption(_collector->CMSCollector::roots_scanning_options()),
                                 &par_mrias_cl,
-                                true,   // walk all of code cache if (so & SO_CodeCache)
+                                true,   // walk all of code cache if (so & SO_AllCodeCache)
                                 NULL,
                                 NULL);     // The dirty klasses will be handled below
   assert(_collector->should_unload_classes()
-         || (_collector->CMSCollector::roots_scanning_options() & SharedHeap::SO_CodeCache),
+         || (_collector->CMSCollector::roots_scanning_options() & SharedHeap::SO_AllCodeCache),
          "if we didn't scan the code cache, we have to be ready to drop nmethods with expired weak oops");
   _timer.stop();
   if (PrintCMSStatistics != 0) {
@@ -5966,7 +5961,6 @@ void CMSCollector::do_remark_non_parallel() {
     gch->gen_process_strong_roots(_cmsGen->level(),
                                   true,  // younger gens as roots
                                   false, // use the local StrongRootsScope
-                                  false, // not scavenging
                                   SharedHeap::ScanningOption(roots_scanning_options()),
                                   &mrias_cl,
                                   true,   // walk code active on stacks
@@ -5974,7 +5968,7 @@ void CMSCollector::do_remark_non_parallel() {
                                   NULL);  // The dirty klasses will be handled below
 
     assert(should_unload_classes()
-           || (roots_scanning_options() & SharedHeap::SO_CodeCache),
+           || (roots_scanning_options() & SharedHeap::SO_AllCodeCache),
            "if we didn't scan the code cache, we have to be ready to drop nmethods with expired weak oops");
   }
 
