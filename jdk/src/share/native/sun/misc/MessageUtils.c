@@ -25,6 +25,7 @@
 
 #include <stdlib.h>
 #include <jni.h>
+#include <jni_util.h>
 #include <jlong.h>
 #include <stdio.h>
 #include <jvm.h>
