@@ -3865,7 +3865,7 @@ fi
 #CUSTOM_AUTOCONF_INCLUDE
 
 # Do not change or remove the following line, it is needed for consistency checks:
-DATE_WHEN_GENERATED=1389267188
+DATE_WHEN_GENERATED=1389697368
 
 ###############################################################################
 #
@@ -16073,36 +16073,6 @@ fi
     fi
     # When is adding -client something that speeds up the JVM?
     # ADD_JVM_ARG_IF_OK([-client],boot_jdk_jvmargs,[$JAVA])
-
-  $ECHO "Check if jvm arg is ok: -XX:PermSize=32m" >&5
-  $ECHO "Command: $JAVA -XX:PermSize=32m -version" >&5
-  OUTPUT=`$JAVA -XX:PermSize=32m -version 2>&1`
-  FOUND_WARN=`$ECHO "$OUTPUT" | grep -i warn`
-  FOUND_VERSION=`$ECHO $OUTPUT | grep " version \""`
-  if test "x$FOUND_VERSION" != x && test "x$FOUND_WARN" = x; then
-    boot_jdk_jvmargs="$boot_jdk_jvmargs -XX:PermSize=32m"
-    JVM_ARG_OK=true
-  else
-    $ECHO "Arg failed:" >&5
-    $ECHO "$OUTPUT" >&5
-    JVM_ARG_OK=false
-  fi
-
-
-  $ECHO "Check if jvm arg is ok: -XX:MaxPermSize=160m" >&5
-  $ECHO "Command: $JAVA -XX:MaxPermSize=160m -version" >&5
-  OUTPUT=`$JAVA -XX:MaxPermSize=160m -version 2>&1`
-  FOUND_WARN=`$ECHO "$OUTPUT" | grep -i warn`
-  FOUND_VERSION=`$ECHO $OUTPUT | grep " version \""`
-  if test "x$FOUND_VERSION" != x && test "x$FOUND_WARN" = x; then
-    boot_jdk_jvmargs="$boot_jdk_jvmargs -XX:MaxPermSize=160m"
-    JVM_ARG_OK=true
-  else
-    $ECHO "Arg failed:" >&5
-    $ECHO "$OUTPUT" >&5
-    JVM_ARG_OK=false
-  fi
-
 
   $ECHO "Check if jvm arg is ok: -XX:ThreadStackSize=$STACK_SIZE" >&5
   $ECHO "Command: $JAVA -XX:ThreadStackSize=$STACK_SIZE -version" >&5
