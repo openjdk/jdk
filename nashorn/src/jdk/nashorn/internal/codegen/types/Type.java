@@ -261,7 +261,7 @@ public abstract class Type implements Comparable<Type>, BytecodeOps {
     }
 
     static void invokeStatic(final MethodVisitor method, final Call call) {
-        method.visitMethodInsn(INVOKESTATIC, call.className(), call.name(), call.descriptor());
+        method.visitMethodInsn(INVOKESTATIC, call.className(), call.name(), call.descriptor(), false);
     }
 
     /**
