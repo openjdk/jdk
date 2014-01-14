@@ -27,7 +27,6 @@
  * @summary Basic unit test of ThreadInfo.getBlockedCount()
  * @author  Alexei Guibadoulline and Mandy Chung
  * @author  Jaroslav Bachorik
- *
  * @run main ThreadBlockedCount
  */
 
@@ -35,7 +34,7 @@ import java.lang.management.*;
 import java.util.concurrent.Phaser;
 
 public class ThreadBlockedCount {
-    final static long EXPECTED_BLOCKED_COUNT = 3;
+        final static long EXPECTED_BLOCKED_COUNT = 3;
     final static int  DEPTH = 10;
     private static final ThreadMXBean mbean
         = ManagementFactory.getThreadMXBean();
@@ -48,12 +47,26 @@ public class ThreadBlockedCount {
     private static final Object blockedObj2 = new Object();
     private static final Object blockedObj3 = new Object();
     private static volatile boolean testOk = false;
+    private static volatile boolean verbose = false;
     private static BlockingThread blocking;
     private static BlockedThread blocked;
 
-
-
     public static void main(String args[]) throws Exception {
+        // warmup - ensure all classes loaded and initialized etc to
+        //          avoid unintended locking and blocking in the VM
+        runTest();
+
+        testOk = true; // reset the flag
+        verbose = true;
+        // real run
+        runTest();
+        if (!testOk) {
+            throw new RuntimeException("TEST FAILED.");
+        }
+        System.out.println("Test passed.");
+    }
+
+    private static void runTest() throws Exception {
         final Phaser p = new Phaser(2);
 
         blocking = new BlockingThread(p);
@@ -73,11 +86,6 @@ public class ThreadBlockedCount {
             e.printStackTrace(System.err);
             throw e;
         }
-
-        if (!testOk) {
-            throw new RuntimeException("TEST FAILED.");
-        }
-        System.out.println("Test passed.");
     }
 
 
@@ -90,6 +98,7 @@ public class ThreadBlockedCount {
         }
 
         public void run() {
+            int accumulator = 0;
             p.arriveAndAwaitAdvance(); // #1
 
             // Enter lock a without blocking
@@ -99,7 +108,7 @@ public class ThreadBlockedCount {
                 // Block to enter blockedObj1
                 // blockedObj1 should be owned by BlockingThread
                 synchronized (blockedObj1) {
-                    System.out.println("BlockedThread entered lock blockedObj1.");
+                    accumulator++; // filler
                 }
             }
 
@@ -111,7 +120,7 @@ public class ThreadBlockedCount {
                 // Block to enter blockedObj2
                 // blockedObj2 should be owned by BlockingThread
                 synchronized (blockedObj2) {
-                    System.out.println("BlockedThread entered lock blockedObj2.");
+                    accumulator++; // filler
                 }
             }
 
@@ -123,11 +132,12 @@ public class ThreadBlockedCount {
                 // Block to enter blockedObj3
                 // blockedObj3 should be owned by BlockingThread
                 synchronized (blockedObj3) {
-                    System.out.println("BlockedThread entered lock blockedObj3.");
+                    accumulator++; // filler
                 }
             }
 
             // wait for the main thread to check the blocked count
+            println("Acquired " + accumulator + " monitors");
             p.arriveAndAwaitAdvance(); // #5
             // ... and we can leave now
         } // run()
@@ -165,24 +175,30 @@ public class ThreadBlockedCount {
             p.arriveAndAwaitAdvance(); // #1
 
             synchronized (blockedObj1) {
-                System.out.println("BlockingThread attempts to notify a");
+                println("BlockingThread attempts to notify a");
                 waitForBlocked(); // #2
             }
 
             // block until BlockedThread is ready
             synchronized (blockedObj2) {
-                System.out.println("BlockingThread attempts to notify b");
+                println("BlockingThread attempts to notify b");
                 waitForBlocked(); // #3
             }
 
             // block until BlockedThread is ready
             synchronized (blockedObj3) {
-                System.out.println("BlockingThread attempts to notify c");
+                println("BlockingThread attempts to notify c");
                 waitForBlocked(); // #4
             }
 
         } // run()
     } // BlockingThread
+
+    private static void println(String msg) {
+        if (verbose) {
+            System.out.println(msg);
+        }
+    }
 
     private static long getBlockedCount() {
         long count;
