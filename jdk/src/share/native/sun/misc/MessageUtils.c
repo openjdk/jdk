@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,7 +35,7 @@ static void
 printToFile(JNIEnv *env, jstring s, FILE *file)
 {
     char *sConverted;
-    int length;
+    int length = 0;
     int i;
     const jchar *sAsArray;
 
@@ -45,8 +45,20 @@ printToFile(JNIEnv *env, jstring s, FILE *file)
     }
 
     sAsArray = (*env)->GetStringChars(env, s, NULL);
+    if (!sAsArray)
+        return;
     length = (*env)->GetStringLength(env, s);
+    if (length == 0) {
+        (*env)->ReleaseStringChars(env, s, sAsArray);
+        return;
+    }
     sConverted = (char *) malloc(length + 1);
+    if (!sConverted) {
+        (*env)->ReleaseStringChars(env, s, sAsArray);
+        JNU_ThrowOutOfMemoryError(env, NULL);
+        return;
+    }
+
     for(i = 0; i < length; i++) {
         sConverted[i] = (0x7f & sAsArray[i]);
     }
