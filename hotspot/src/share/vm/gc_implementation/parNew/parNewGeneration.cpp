@@ -612,14 +612,13 @@ void ParNewGenTask::work(uint worker_id) {
   KlassScanClosure klass_scan_closure(&par_scan_state.to_space_root_closure(),
                                       gch->rem_set()->klass_rem_set());
 
-  int so = SharedHeap::SO_AllClasses | SharedHeap::SO_Strings | SharedHeap::SO_CodeCache;
+  int so = SharedHeap::SO_AllClasses | SharedHeap::SO_Strings | SharedHeap::SO_ScavengeCodeCache;
 
   par_scan_state.start_strong_roots();
   gch->gen_process_strong_roots(_gen->level(),
                                 true,  // Process younger gens, if any,
                                        // as strong roots.
                                 false, // no scope; this is parallel code
-                                true,  // is scavenging
                                 SharedHeap::ScanningOption(so),
                                 &par_scan_state.to_space_root_closure(),
                                 true,   // walk *all* scavengable nmethods

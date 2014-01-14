@@ -131,7 +131,6 @@ void G1MarkSweep::mark_sweep_phase1(bool& marked_for_unloading,
   ClassLoaderDataGraph::clear_claimed_marks();
 
   sh->process_strong_roots(true,  // activate StrongRootsScope
-                           false, // not scavenging.
                            SharedHeap::SO_SystemClasses,
                            &GenMarkSweep::follow_root_closure,
                            &GenMarkSweep::follow_code_root_closure,
@@ -308,7 +307,6 @@ void G1MarkSweep::mark_sweep_phase3() {
   ClassLoaderDataGraph::clear_claimed_marks();
 
   sh->process_strong_roots(true,  // activate StrongRootsScope
-                           false, // not scavenging.
                            SharedHeap::SO_AllClasses,
                            &GenMarkSweep::adjust_pointer_closure,
                            NULL,  // do not touch code cache here

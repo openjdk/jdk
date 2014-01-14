@@ -411,7 +411,6 @@ public:
                                 // The remaining arguments are in an order
                                 // consistent with SharedHeap::process_strong_roots:
                                 bool activate_scope,
-                                bool is_scavenging,
                                 SharedHeap::ScanningOption so,
                                 OopsInGenClosure* not_older_gens,
                                 bool do_code_roots,

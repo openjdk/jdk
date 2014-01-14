@@ -3392,14 +3392,12 @@ void G1CollectedHeap::verify(bool silent, VerifyOption vo) {
 
     // We apply the relevant closures to all the oops in the
     // system dictionary, the string table and the code cache.
-    const int so = SO_AllClasses | SO_Strings | SO_CodeCache;
+    const int so = SO_AllClasses | SO_Strings | SO_AllCodeCache;
 
     // Need cleared claim bits for the strong roots processing
     ClassLoaderDataGraph::clear_claimed_marks();
 
     process_strong_roots(true,      // activate StrongRootsScope
-                         false,     // we set "is scavenging" to false,
-                                    // so we don't reset the dirty cards.
                          ScanningOption(so),  // roots scanning options
                          &rootsCl,
                          &blobsCl,
@@ -5106,13 +5104,13 @@ g1_process_strong_roots(bool is_scavenging,
 
   BufferingOopClosure buf_scan_non_heap_roots(scan_non_heap_roots);
 
-  assert(so & SO_CodeCache || scan_rs != NULL, "must scan code roots somehow");
+  assert(so & SO_AllCodeCache || scan_rs != NULL, "must scan code roots somehow");
   // Walk the code cache/strong code roots w/o buffering, because StarTask
   // cannot handle unaligned oop locations.
   CodeBlobToOopClosure eager_scan_code_roots(scan_non_heap_roots, true /* do_marking */);
 
   process_strong_roots(false, // no scoping; this is parallel code
-                       is_scavenging, so,
+                       so,
                        &buf_scan_non_heap_roots,
                        &eager_scan_code_roots,
                        scan_klasses
@@ -5160,7 +5158,7 @@ g1_process_strong_roots(bool is_scavenging,
   // the collection set.
   // Note all threads participate in this set of root tasks.
   double mark_strong_code_roots_ms = 0.0;
-  if (g1_policy()->during_initial_mark_pause() && !(so & SO_CodeCache)) {
+  if (g1_policy()->during_initial_mark_pause() && !(so & SO_AllCodeCache)) {
     double mark_strong_roots_start = os::elapsedTime();
     mark_strong_code_roots(worker_i);
     mark_strong_code_roots_ms = (os::elapsedTime() - mark_strong_roots_start) * 1000.0;
