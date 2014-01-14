@@ -202,12 +202,6 @@ class APITest {
         "pkg/package-frame.html",
         "pkg/package-summary.html",
         "pkg/package-tree.html",
-        "resources/background.gif",
-        "resources/tab.gif",
-        "resources/activetitlebar_end.gif",
-        "resources/activetitlebar.gif",
-        "resources/titlebar_end.gif",
-        "resources/titlebar.gif",
         "script.js",
         "stylesheet.css"
     ));
