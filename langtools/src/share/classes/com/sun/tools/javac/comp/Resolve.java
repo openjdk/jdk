@@ -2075,7 +2075,7 @@ public class Resolve {
             else if (sym.kind < bestSoFar.kind) bestSoFar = sym;
         }
 
-        if ((kind & PCK) != 0) return reader.enterPackage(name);
+        if ((kind & PCK) != 0) return syms.enterPackage(name);
         else return bestSoFar;
     }
 
@@ -2099,7 +2099,7 @@ public class Resolve {
         Symbol bestSoFar = typeNotFound;
         PackageSymbol pack = null;
         if ((kind & PCK) != 0) {
-            pack = reader.enterPackage(fullname);
+            pack = syms.enterPackage(fullname);
             if (pack.exists()) return pack;
         }
         if ((kind & TYP) != 0) {
