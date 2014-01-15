@@ -310,16 +310,6 @@ $(BUILD_LIBUNPACK): $(BUILD_LIBJAVA)
 
 BUILD_LIBRARIES += $(BUILD_LIBUNPACK)
 
-ifeq ($(OPENJDK_TARGET_OS), windows)
-  $(INSTALL_LIBRARIES_HERE)/$(LIBRARY_PREFIX)unpack.map: $(BUILD_LIBUNPACK)
-	$(ECHO) Copying $(@F)
-	$(CP) $(patsubst %$(SHARED_LIBRARY_SUFFIX), %.map, $<) $@
-
-  $(INSTALL_LIBRARIES_HERE)/$(LIBRARY_PREFIX)unpack.pdb: $(BUILD_LIBUNPACK)
-	$(ECHO) Copying $(@F)
-	$(CP) $(patsubst %$(SHARED_LIBRARY_SUFFIX), %.pdb, $<) $@
-endif
-
 ##########################################################################################
 
 BUILD_LIBJLI_SRC_DIRS := $(JDK_TOPDIR)/src/share/bin $(JDK_TOPDIR)/src/$(OPENJDK_TARGET_OS_API_DIR)/bin
