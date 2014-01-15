@@ -2093,12 +2093,13 @@ public abstract class ScriptObject extends PropertyListenerManager implements Pr
 
         return createEmptyGetter(desc, name);
     }
+
     /**
      * Invoke fall back if a property is not found.
      * @param name Name of property.
      * @return Result from call.
      */
-    private Object invokeNoSuchProperty(final String name) {
+    protected Object invokeNoSuchProperty(final String name) {
         final FindProperty find = findProperty(NO_SUCH_PROPERTY_NAME, true);
 
         if (find != null) {
