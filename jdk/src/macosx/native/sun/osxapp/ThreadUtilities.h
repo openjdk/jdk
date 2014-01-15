@@ -122,15 +122,13 @@ do {                                  \
 #endif /* AWT_THREAD_ASSERTS */
 // --------------------------------------------------------------------------
 
-// Set from JNI_Onload
-extern jobject appkitThreadGroup;
-
 __attribute__((visibility("default")))
 @interface ThreadUtilities { }
 
 + (JNIEnv*)getJNIEnv;
 + (JNIEnv*)getJNIEnvUncached;
 + (void)detachCurrentThread;
++ (void)setAppkitThreadGroup:(jobject)group;
 
 //Wrappers for the corresponding JNFRunLoop methods with a check for main thread
 + (void)performOnMainThreadWaiting:(BOOL)wait block:(void (^)())block;

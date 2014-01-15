@@ -433,12 +433,11 @@ JNF_COCOA_ENTER(env);
     if (isSWTInWebStart(env)) {
         forceEmbeddedMode = YES;
     }
-
     JNIEnv* env = [ThreadUtilities getJNIEnvUncached];
-    jclass jc_SunToolkit = (*env)->FindClass(env, "sun/awt/SunToolkit");
-    jmethodID sjm_getRootThreadGroup = (*env)->GetStaticMethodID(env, jc_SunToolkit, "getRootThreadGroup", "()Ljava/lang/ThreadGroup;");
-    jobject rootThreadGroup = (*env)->CallStaticObjectMethod(env, jc_SunToolkit, sjm_getRootThreadGroup);
-    appkitThreadGroup = (*env)->NewGlobalRef(env, rootThreadGroup);
+    jclass jc_ThreadGroupUtils = (*env)->FindClass(env, "sun/misc/ThreadGroupUtils");
+    jmethodID sjm_getRootThreadGroup = (*env)->GetStaticMethodID(env, jc_ThreadGroupUtils, "getRootThreadGroup", "()Ljava/lang/ThreadGroup;");
+    jobject rootThreadGroup = (*env)->CallStaticObjectMethod(env, jc_ThreadGroupUtils, sjm_getRootThreadGroup);
+    [ThreadUtilities setAppkitThreadGroup:(*env)->NewGlobalRef(env, rootThreadGroup)];
     // The current thread was attached in getJNIEnvUnchached.
     // Detach it back. It will be reattached later if needed with a proper TG
     [ThreadUtilities detachCurrentThread];
