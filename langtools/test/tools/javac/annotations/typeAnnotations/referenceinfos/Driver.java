@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,6 +30,7 @@ import java.io.PrintWriter;
 import java.lang.annotation.*;
 import java.lang.reflect.*;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -51,6 +52,11 @@ public class Driver {
         new Driver().runDriver(clazz.newInstance());
     }
 
+    String[][] extraParamsCombinations = new String[][] {
+        new String[] { },
+        new String[] { "-g" },
+    };
+
     protected void runDriver(Object object) throws Exception {
         int passed = 0, failed = 0;
         Class<?> clazz = object.getClass();
@@ -65,18 +71,20 @@ public class Driver {
                 throw new IllegalArgumentException("Test method needs to return a string: " + method);
             String testClass = testClassOf(method);
 
-            try {
-                String compact = (String)method.invoke(object);
-                String fullFile = wrap(compact);
-                ClassFile cf = compileAndReturn(fullFile, testClass);
-                List<TypeAnnotation> actual = ReferenceInfoUtil.extendedAnnotationsOf(cf);
-                ReferenceInfoUtil.compare(expected, actual, cf);
-                out.println("PASSED:  " + method.getName());
-                ++passed;
-            } catch (Throwable e) {
-                out.println("FAILED:  " + method.getName());
-                out.println("    " + e.toString());
-                ++failed;
+            for (String[] extraParams : extraParamsCombinations) {
+                try {
+                    String compact = (String)method.invoke(object);
+                    String fullFile = wrap(compact);
+                    ClassFile cf = compileAndReturn(fullFile, testClass, extraParams);
+                    List<TypeAnnotation> actual = ReferenceInfoUtil.extendedAnnotationsOf(cf);
+                    ReferenceInfoUtil.compare(expected, actual, cf);
+                    out.println("PASSED:  " + method.getName());
+                    ++passed;
+                } catch (Throwable e) {
+                    out.println("FAILED:  " + method.getName());
+                    out.println("    " + e.toString());
+                    ++failed;
+                }
             }
         }
 
@@ -156,7 +164,7 @@ public class Driver {
         }
     }
 
-    private ClassFile compileAndReturn(String fullFile, String testClass) throws Exception {
+    private ClassFile compileAndReturn(String fullFile, String testClass, String... extraParams) throws Exception {
         File source = writeTestFile(fullFile);
         File clazzFile = compileTestFile(source, testClass);
         return ClassFile.read(clazzFile);
@@ -170,8 +178,12 @@ public class Driver {
         return f;
     }
 
-    protected File compileTestFile(File f, String testClass) {
-        int rc = com.sun.tools.javac.Main.compile(new String[] { "-source", "1.8", "-g", f.getPath() });
+    protected File compileTestFile(File f, String testClass, String... extraParams) {
+        List<String> options = new ArrayList<>();
+        options.addAll(Arrays.asList("-source", "1.8"));
+        options.addAll(Arrays.asList(extraParams));
+        options.add(f.getPath());
+        int rc = com.sun.tools.javac.Main.compile(options.toArray(new String[options.size()]));
         if (rc != 0)
             throw new Error("compilation failed. rc=" + rc);
         String path;
