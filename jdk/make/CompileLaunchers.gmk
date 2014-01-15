@@ -437,6 +437,7 @@ UNPACKEXE_LANG := C
 ifeq ($(OPENJDK_TARGET_OS), solaris)
   UNPACKEXE_LANG := C++
 endif
+UNPACKEXE_DEBUG_SYMBOLS := true
 # On windows, unpack200 is linked completely differently to all other
 # executables, using the compiler with the compiler arguments.
 # It's also linked incrementally, producing a .ilk file that needs to
@@ -445,6 +446,9 @@ ifeq ($(OPENJDK_TARGET_OS), windows)
   BUILD_UNPACKEXE_LDEXE := $(CC)
   EXE_OUT_OPTION_save := $(EXE_OUT_OPTION)
   EXE_OUT_OPTION := -Fe
+  # With the current way unpack200 is built, debug symbols aren't supported
+  # anyway.
+  UNPACKEXE_DEBUG_SYMBOLS :=
 endif
 $(eval $(call SetupNativeCompilation,BUILD_UNPACKEXE, \
     SRC := $(JDK_TOPDIR)/src/share/native/com/sun/java/util/jar/pack, \
@@ -474,7 +478,7 @@ $(eval $(call SetupNativeCompilation,BUILD_UNPACKEXE, \
         -D "JDK_FNAME=unpack200.exe" \
         -D "JDK_INTERNAL_NAME=unpack200" \
         -D "JDK_FTYPE=0x1L", \
-    DEBUG_SYMBOLS := true, \
+    DEBUG_SYMBOLS := $(UNPACKEXE_DEBUG_SYMBOLS), \
     MANIFEST := $(JDK_TOPDIR)/src/windows/resource/unpack200_proto.exe.manifest))
 
 ifeq ($(OPENJDK_TARGET_OS), windows)

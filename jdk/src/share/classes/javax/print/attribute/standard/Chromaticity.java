@@ -1,6 +1,5 @@
-
 /*
- * Copyright (c) 2000, 2004, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,7 +41,7 @@ import javax.print.attribute.PrintJobAttribute;
  * The table below shows the effects of specifying a Chromaticity attribute of
  * {@link #MONOCHROME MONOCHROME} or {@link #COLOR COLOR}
  * for a monochrome or color document.
- * <P>
+ *
  * <TABLE BORDER=1 CELLPADDING=2 CELLSPACING=1 SUMMARY="Shows effects of specifying MONOCHROME or COLOR Chromaticity attributes">
  * <TR>
  * <TH>
@@ -79,9 +78,7 @@ import javax.print.attribute.PrintJobAttribute;
  * </TR>
  * </TABLE>
  * <P>
- * <P>
  * <B>IPP Compatibility:</B> Chromaticity is not an IPP attribute at present.
- * <P>
  *
  * @author  Alan Kaminsky
  */

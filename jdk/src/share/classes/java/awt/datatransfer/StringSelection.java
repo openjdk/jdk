@@ -57,6 +57,7 @@ public class StringSelection implements Transferable, ClipboardOwner {
     /**
      * Creates a <code>Transferable</code> capable of transferring
      * the specified <code>String</code>.
+     * @param data the string to be transferred
      */
     public StringSelection(String data) {
         this.data = data;

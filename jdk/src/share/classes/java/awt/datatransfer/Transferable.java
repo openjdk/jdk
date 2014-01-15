@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2003, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -62,6 +62,7 @@ public interface Transferable {
      * of the object returned is defined by the representation class of the flavor.
      *
      * @param flavor the requested flavor for the data
+     * @return an object which represents the data to be transferred
      * @see DataFlavor#getRepresentationClass
      * @exception IOException                if the data is no longer available
      *              in the requested flavor.

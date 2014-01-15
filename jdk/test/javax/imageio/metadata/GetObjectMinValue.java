@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,13 +24,11 @@
 /*
  * @test
  * @bug 4429875 7186799
- * @compile -source 1.4 GetObjectMinValue.java
+ * @compile GetObjectMinValue.java
  * @run main GetObjectMinValue
  * @summary Tests the getObject{Min,Max}Value method of
  * IIOMetadataFormatImpl for an inclusive range
  */
-
-// Compiled with -source 1.4 to work around javac bug 5041233
 
 import javax.imageio.metadata.IIOMetadataFormatImpl;
 import javax.imageio.ImageTypeSpecifier;
@@ -79,13 +77,13 @@ public class GetObjectMinValue {
         }
 
         public void addObjectValue(String elementName,
-                                   Class classType, Object defaultValue,
+                                   Class<?> classType, Integer defaultValue,
                                    Comparable minValue, Comparable maxValue,
                                    boolean minInclusive, boolean maxInclusive) {
-            super.addObjectValue(elementName,
-                                 classType, defaultValue,
-                                 minValue, maxValue,
-                                 minInclusive, maxInclusive);
+            super.<Integer>addObjectValue(elementName,
+                                          (Class<Integer>)classType, defaultValue,
+                                          (Comparable<? super Integer>) minValue, (Comparable<? super Integer>) maxValue,
+                                          minInclusive, maxInclusive);
         }
 
         public boolean canNodeAppear(String elementName,
