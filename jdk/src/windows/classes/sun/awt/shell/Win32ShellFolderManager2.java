@@ -39,6 +39,7 @@ import java.util.concurrent.*;
 
 import static sun.awt.shell.Win32ShellFolder2.*;
 import sun.awt.OSInfo;
+import sun.misc.ThreadGroupUtils;
 
 // NOTE: This class supersedes Win32ShellFolderManager, which was removed
 //       from distribution after version 1.4.2.
@@ -503,23 +504,16 @@ public class Win32ShellFolderManager2 extends ShellFolderManager {
                     }
                 }
             };
-            comThread =
-                AccessController.doPrivileged(
-                    new PrivilegedAction<Thread>() {
-                        public Thread run() {
+            comThread =  AccessController.doPrivileged((PrivilegedAction<Thread>) () -> {
                             /* The thread must be a member of a thread group
                              * which will not get GCed before VM exit.
                              * Make its parent the top-level thread group.
                              */
-                            ThreadGroup tg = Thread.currentThread().getThreadGroup();
-                            for (ThreadGroup tgn = tg;
-                                 tgn != null;
-                                 tg = tgn, tgn = tg.getParent());
-                            Thread thread = new Thread(tg, comRun, "Swing-Shell");
+                            ThreadGroup rootTG = ThreadGroupUtils.getRootThreadGroup();
+                            Thread thread = new Thread(rootTG, comRun, "Swing-Shell");
                             thread.setDaemon(true);
                             return thread;
                         }
-                    }
                 );
             return comThread;
         }

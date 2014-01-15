@@ -1186,17 +1186,6 @@ public abstract class SunToolkit extends Toolkit
         return startupLocale;
     }
 
-    protected static ThreadGroup getRootThreadGroup() {
-        return AccessController.doPrivileged((PrivilegedAction<ThreadGroup>) () -> {
-            ThreadGroup currentTG = Thread.currentThread().getThreadGroup();
-            ThreadGroup parentTG = currentTG.getParent();
-            while (parentTG != null) {
-                currentTG = parentTG;
-                parentTG = currentTG.getParent();
-            }
-            return currentTG;
-        });
-    }
     /**
      * Returns the default keyboard locale of the underlying operating system
      */

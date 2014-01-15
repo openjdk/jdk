@@ -29,13 +29,13 @@ import java.awt.AWTEvent;
 
 import java.security.AccessController;
 import java.security.PrivilegedAction;
-import java.util.Collections;
 import java.util.HashSet;
 import java.util.IdentityHashMap;
 import java.util.Map;
 import java.util.Set;
 
 import sun.util.logging.PlatformLogger;
+import sun.misc.ThreadGroupUtils;
 
 /**
  * This class is to let AWT shutdown automatically when a user is done
@@ -217,7 +217,10 @@ public final class AWTAutoShutdown implements Runnable {
         synchronized (activationLock) {
             synchronized (mainLock) {
                 if (!isReadyToShutdown() && blockerThread == null) {
-                    activateBlockerThread();
+                    AccessController.doPrivileged((PrivilegedAction<Void>) () -> {
+                        activateBlockerThread();
+                        return null;
+                    });
                 } else {
                     mainLock.notifyAll();
                     timeoutPassed = false;
@@ -333,13 +336,12 @@ public final class AWTAutoShutdown implements Runnable {
     /**
      * Creates and starts a new blocker thread. Doesn't return until
      * the new blocker thread starts.
+     *
+     * Must be called with {@link sun.security.util.SecurityConstants#MODIFY_THREADGROUP_PERMISSION}
      */
     private void activateBlockerThread() {
-        Thread thread = new Thread(SunToolkit.getRootThreadGroup(), this, "AWT-Shutdown");
-        AccessController.doPrivileged((PrivilegedAction<Void>) () -> {
-            thread.setContextClassLoader(null);
-            return null;
-        });
+        Thread thread = new Thread(ThreadGroupUtils.getRootThreadGroup(), this, "AWT-Shutdown");
+        thread.setContextClassLoader(null);
         thread.setDaemon(false);
         blockerThread = thread;
         thread.start();
