@@ -3865,7 +3865,7 @@ fi
 #CUSTOM_AUTOCONF_INCLUDE
 
 # Do not change or remove the following line, it is needed for consistency checks:
-DATE_WHEN_GENERATED=1389697368
+DATE_WHEN_GENERATED=1389815815
 
 ###############################################################################
 #
@@ -19987,8 +19987,8 @@ $as_echo "$PROPER_COMPILER_CC" >&6; }
   else
     { $as_echo "$as_me:${as_lineno-$LINENO}: result: no, keeping CC" >&5
 $as_echo "no, keeping CC" >&6; }
-    CC="$TEST_COMPILER"
   fi
+
 
   COMPILER=$CC
   COMPILER_NAME=$COMPILER_NAME
@@ -21566,8 +21566,8 @@ $as_echo "$PROPER_COMPILER_CXX" >&6; }
   else
     { $as_echo "$as_me:${as_lineno-$LINENO}: result: no, keeping CXX" >&5
 $as_echo "no, keeping CXX" >&6; }
-    CXX="$TEST_COMPILER"
   fi
+
 
   COMPILER=$CXX
   COMPILER_NAME=$COMPILER_NAME
