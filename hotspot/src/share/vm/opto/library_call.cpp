@@ -2627,8 +2627,13 @@ bool LibraryCallKit::inline_unsafe_access(bool is_native_ptr, bool is_store, Bas
     // rough approximation of type.
     need_mem_bar = true;
     // For Stores, place a memory ordering barrier now.
-    if (is_store)
+    if (is_store) {
       insert_mem_bar(Op_MemBarRelease);
+    } else {
+      if (support_IRIW_for_not_multiple_copy_atomic_cpu) {
+        insert_mem_bar(Op_MemBarVolatile);
+      }
+    }
   }
 
   // Memory barrier to prevent normal and 'unsafe' accesses from
@@ -2717,10 +2722,13 @@ bool LibraryCallKit::inline_unsafe_access(bool is_native_ptr, bool is_store, Bas
   }
 
   if (is_volatile) {
-    if (!is_store)
+    if (!is_store) {
       insert_mem_bar(Op_MemBarAcquire);
-    else
-      insert_mem_bar(Op_MemBarVolatile);
+    } else {
+      if (!support_IRIW_for_not_multiple_copy_atomic_cpu) {
+        insert_mem_bar(Op_MemBarVolatile);
+      }
+    }
   }
 
   if (need_mem_bar) insert_mem_bar(Op_MemBarCPUOrder);

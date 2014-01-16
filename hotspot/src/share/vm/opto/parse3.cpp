@@ -227,6 +227,9 @@ void Parse::do_get_xxx(Node* obj, ciField* field, bool is_field) {
   } else {
     type = Type::get_const_basic_type(bt);
   }
+  if (support_IRIW_for_not_multiple_copy_atomic_cpu && field->is_volatile()) {
+    insert_mem_bar(Op_MemBarVolatile);   // StoreLoad barrier
+  }
   // Build the load.
   //
   MemNode::MemOrd mo = is_vol ? MemNode::acquire : MemNode::unordered;
@@ -317,7 +320,16 @@ void Parse::do_put_xxx(Node* obj, ciField* field, bool is_field) {
   // If reference is volatile, prevent following volatiles ops from
   // floating up before the volatile write.
   if (is_vol) {
-    insert_mem_bar(Op_MemBarVolatile); // Use fat membar
+    // If not multiple copy atomic, we do the MemBarVolatile before the load.
+    if (!support_IRIW_for_not_multiple_copy_atomic_cpu) {
+      insert_mem_bar(Op_MemBarVolatile); // Use fat membar
+    }
+    // Remember we wrote a volatile field.
+    // For not multiple copy atomic cpu (ppc64) a barrier should be issued
+    // in constructors which have such stores. See do_exits() in parse1.cpp.
+    if (is_field) {
+      set_wrote_volatile(true);
+    }
   }
 
   // If the field is final, the rules of Java say we are in <init> or <clinit>.
