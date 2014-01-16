@@ -45,11 +45,11 @@ import jdk.nashorn.internal.runtime.ScriptObject;
 @SuppressWarnings("serial")
 public abstract class NashornException extends RuntimeException {
     // script file name
-    private final String fileName;
+    private String fileName;
     // script line number
-    private final int line;
+    private int line;
     // script column number
-    private final int column;
+    private int column;
     // underlying ECMA error object - lazily initialized
     private Object ecmaError;
 
@@ -125,6 +125,15 @@ public abstract class NashornException extends RuntimeException {
     }
 
     /**
+     * Set the source file name for this {@code NashornException}
+     *
+     * @param fileName the file name
+     */
+    public final void setFileName(final String fileName) {
+        this.fileName = fileName;
+    }
+
+    /**
      * Get the line number for this {@code NashornException}
      *
      * @return the line number
@@ -134,12 +143,30 @@ public abstract class NashornException extends RuntimeException {
     }
 
     /**
+     * Set the line number for this {@code NashornException}
+     *
+     * @param line the line number
+     */
+    public final void setLineNumber(final int line) {
+        this.line = line;
+    }
+
+    /**
      * Get the column for this {@code NashornException}
      *
-     * @return the column
+     * @return the column number
      */
     public final int getColumnNumber() {
         return column;
+    }
+
+    /**
+     * Set the column for this {@code NashornException}
+     *
+     * @param column the column number
+     */
+    public final void setColumnNumber(final int column) {
+        this.column = column;
     }
 
     /**
@@ -208,9 +235,9 @@ public abstract class NashornException extends RuntimeException {
 
         final Object thrown = getThrown();
         if (thrown instanceof ScriptObject) {
-            ecmaError = ScriptObjectMirror.wrap(thrown, global);
+            setEcmaError(ScriptObjectMirror.wrap(thrown, global));
         } else {
-            ecmaError = thrown;
+            setEcmaError(thrown);
         }
 
         return this;
@@ -224,5 +251,15 @@ public abstract class NashornException extends RuntimeException {
      */
     public Object getEcmaError() {
         return ecmaError;
+    }
+
+    /**
+     * Return the underlying ECMA error object, if available.
+     *
+     * @param ecmaError underlying ECMA Error object's mirror or whatever was thrown
+     *         from script such as a String, Number or a Boolean.
+     */
+    public void setEcmaError(final Object ecmaError) {
+        this.ecmaError = ecmaError;
     }
 }

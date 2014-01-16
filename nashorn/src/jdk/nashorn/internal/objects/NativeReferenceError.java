@@ -62,6 +62,7 @@ public final class NativeReferenceError extends ScriptObject {
         return $nasgenmap$;
     }
 
+    @SuppressWarnings("LeakingThisInConstructor")
     private NativeReferenceError(final Object msg, final ScriptObject proto, final PropertyMap map) {
         super(proto, map);
         if (msg != UNDEFINED) {
@@ -69,6 +70,7 @@ public final class NativeReferenceError extends ScriptObject {
         } else {
             this.delete(NativeError.MESSAGE, false);
         }
+        NativeError.initException(this);
     }
 
     NativeReferenceError(final Object msg, final Global global) {

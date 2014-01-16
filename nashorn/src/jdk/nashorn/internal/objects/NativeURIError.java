@@ -61,6 +61,7 @@ public final class NativeURIError extends ScriptObject {
         return $nasgenmap$;
     }
 
+    @SuppressWarnings("LeakingThisInConstructor")
     NativeURIError(final Object msg, final Global global) {
         super(global.getURIErrorPrototype(), global.getURIErrorMap());
         if (msg != UNDEFINED) {
@@ -68,6 +69,7 @@ public final class NativeURIError extends ScriptObject {
         } else {
             this.delete(NativeError.MESSAGE, false);
         }
+        NativeError.initException(this);
     }
 
     private NativeURIError(final Object msg) {
