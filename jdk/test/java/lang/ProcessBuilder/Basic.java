@@ -38,6 +38,9 @@ import static java.lang.ProcessBuilder.Redirect.*;
 
 import java.io.*;
 import java.lang.reflect.Field;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
 import java.util.*;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
@@ -524,18 +527,9 @@ public class Basic {
         }
     }
 
-    private static void copy(String src, String dst) {
-        system("/bin/cp", "-fp", src, dst);
-    }
-
-    private static void system(String... command) {
-        try {
-            ProcessBuilder pb = new ProcessBuilder(command);
-            ProcessResults r = run(pb.start());
-            equal(r.exitValue(), 0);
-            equal(r.out(), "");
-            equal(r.err(), "");
-        } catch (Throwable t) { unexpected(t); }
+    private static void copy(String src, String dst) throws IOException {
+        Files.copy(Paths.get(src), Paths.get(dst),
+                   StandardCopyOption.REPLACE_EXISTING, StandardCopyOption.COPY_ATTRIBUTES);
     }
 
     private static String javaChildOutput(ProcessBuilder pb, String...args) {
@@ -2476,7 +2470,7 @@ public class Basic {
     static void check(boolean cond, String m) {if (cond) pass(); else fail(m);}
     static void equal(Object x, Object y) {
         if (x == null ? y == null : x.equals(y)) pass();
-        else fail(x + " not equal to " + y);}
+        else fail(">'" + x + "'<" + " not equal to " + "'" + y + "'");}
 
     public static void main(String[] args) throws Throwable {
         try {realMain(args);} catch (Throwable t) {unexpected(t);}
