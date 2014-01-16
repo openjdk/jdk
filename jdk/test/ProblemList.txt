@@ -277,3 +277,10 @@ tools/launcher/FXLauncherTest.java                              linux-all
 # jdk_util
 
 ############################################################################
+
+# svc_tools
+
+# 8031482
+sun/tools/jcmd/TestJcmdSanity.java				windows-all
+
+############################################################################
