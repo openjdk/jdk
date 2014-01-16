@@ -1455,9 +1455,10 @@ void MetaspaceGC::compute_new_size() {
 
   // No expansion, now see if we want to shrink
   // We would never want to shrink more than this
+  assert(capacity_until_GC >= minimum_desired_capacity,
+         err_msg(SIZE_FORMAT " >= " SIZE_FORMAT,
+                 capacity_until_GC, minimum_desired_capacity));
   size_t max_shrink_bytes = capacity_until_GC - minimum_desired_capacity;
-  assert(max_shrink_bytes >= 0, err_msg("max_shrink_bytes " SIZE_FORMAT,
-    max_shrink_bytes));
 
   // Should shrinking be considered?
   if (MaxMetaspaceFreeRatio < 100) {
