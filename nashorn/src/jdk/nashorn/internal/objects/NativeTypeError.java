@@ -62,6 +62,7 @@ public final class NativeTypeError extends ScriptObject {
         return $nasgenmap$;
     }
 
+    @SuppressWarnings("LeakingThisInConstructor")
     NativeTypeError(final Object msg, final Global global) {
         super(global.getTypeErrorPrototype(), global.getTypeErrorMap());
         if (msg != UNDEFINED) {
@@ -69,6 +70,7 @@ public final class NativeTypeError extends ScriptObject {
         } else {
             delete(NativeError.MESSAGE, false);
         }
+        NativeError.initException(this);
     }
 
     private NativeTypeError(final Object msg) {

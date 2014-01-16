@@ -62,6 +62,7 @@ public final class NativeSyntaxError extends ScriptObject {
         return $nasgenmap$;
     }
 
+    @SuppressWarnings("LeakingThisInConstructor")
     NativeSyntaxError(final Object msg, final Global global) {
         super(global.getSyntaxErrorPrototype(), global.getSyntaxErrorMap());
         if (msg != UNDEFINED) {
@@ -69,6 +70,7 @@ public final class NativeSyntaxError extends ScriptObject {
         } else {
             this.delete(NativeError.MESSAGE, false);
         }
+        NativeError.initException(this);
     }
 
     private NativeSyntaxError(final Object msg) {
