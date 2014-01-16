@@ -74,7 +74,7 @@ public final class NativeError extends ScriptObject {
     static final String FILENAME = "__fileName__";
 
     /** Message property name */
-    @Property(name = NativeError.MESSAGE)
+    @Property(name = NativeError.MESSAGE, attributes = Attribute.NOT_ENUMERABLE)
     public Object instMessage;
 
     /** ECMA 15.11.4.2 Error.prototype.name */

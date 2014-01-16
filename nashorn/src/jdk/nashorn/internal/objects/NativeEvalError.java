@@ -44,7 +44,7 @@ import jdk.nashorn.internal.runtime.ScriptObject;
 public final class NativeEvalError extends ScriptObject {
 
     /** message property in instance */
-    @Property(name = NativeError.MESSAGE)
+    @Property(name = NativeError.MESSAGE, attributes = Attribute.NOT_ENUMERABLE)
     public Object instMessage;
 
     /** error name property */
