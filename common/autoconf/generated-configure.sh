@@ -3865,7 +3865,7 @@ fi
 #CUSTOM_AUTOCONF_INCLUDE
 
 # Do not change or remove the following line, it is needed for consistency checks:
-DATE_WHEN_GENERATED=1389697368
+DATE_WHEN_GENERATED=1389888935
 
 ###############################################################################
 #
@@ -7868,7 +7868,7 @@ $as_echo "$with_jvm_variants" >&6; }
   fi
 
   # Replace the commas with AND for use in the build directory name.
-  ANDED_JVM_VARIANTS=`$ECHO "$JVM_VARIANTS" | $SED -e 's/^,//' -e 's/,$//' -e 's/,/AND/'`
+  ANDED_JVM_VARIANTS=`$ECHO "$JVM_VARIANTS" | $SED -e 's/^,//' -e 's/,$//' -e 's/,/AND/g'`
   COUNT_VARIANTS=`$ECHO "$JVM_VARIANTS" | $SED -e 's/server,/1/' -e 's/client,/1/' -e 's/minimal1,/1/' -e 's/kernel,/1/' -e 's/zero,/1/' -e 's/zeroshark,/1/'`
   if test "x$COUNT_VARIANTS" != "x,1"; then
     BUILDING_MULTIPLE_JVM_VARIANTS=yes
@@ -19987,8 +19987,8 @@ $as_echo "$PROPER_COMPILER_CC" >&6; }
   else
     { $as_echo "$as_me:${as_lineno-$LINENO}: result: no, keeping CC" >&5
 $as_echo "no, keeping CC" >&6; }
-    CC="$TEST_COMPILER"
   fi
+
 
   COMPILER=$CC
   COMPILER_NAME=$COMPILER_NAME
@@ -21566,8 +21566,8 @@ $as_echo "$PROPER_COMPILER_CXX" >&6; }
   else
     { $as_echo "$as_me:${as_lineno-$LINENO}: result: no, keeping CXX" >&5
 $as_echo "no, keeping CXX" >&6; }
-    CXX="$TEST_COMPILER"
   fi
+
 
   COMPILER=$CXX
   COMPILER_NAME=$COMPILER_NAME
