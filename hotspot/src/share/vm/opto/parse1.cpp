@@ -390,6 +390,7 @@ Parse::Parse(JVMState* caller, ciMethod* parse_method, float expected_uses, Pars
   _expected_uses = expected_uses;
   _depth = 1 + (caller->has_method() ? caller->depth() : 0);
   _wrote_final = false;
+  _wrote_volatile = false;
   _alloc_with_final = NULL;
   _entry_bci = InvocationEntryBci;
   _tf = NULL;
@@ -907,7 +908,13 @@ void Parse::do_exits() {
   Node* iophi = _exits.i_o();
   _exits.set_i_o(gvn().transform(iophi));
 
-  if (wrote_final()) {
+  // On PPC64, also add MemBarRelease for constructors which write
+  // volatile fields. As support_IRIW_for_not_multiple_copy_atomic_cpu
+  // is set on PPC64, no sync instruction is issued after volatile
+  // stores. We want to quarantee the same behaviour as on platforms
+  // with total store order, although this is not required by the Java
+  // memory model. So as with finals, we add a barrier here.
+  if (wrote_final() PPC64_ONLY(|| (wrote_volatile() && method()->is_initializer()))) {
     // This method (which must be a constructor by the rules of Java)
     // wrote a final.  The effects of all initializations must be
     // committed to memory before any code after the constructor

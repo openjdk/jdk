@@ -2034,6 +2034,9 @@ run:
           TosState tos_type = cache->flag_state();
           int field_offset = cache->f2_as_index();
           if (cache->is_volatile()) {
+            if (support_IRIW_for_not_multiple_copy_atomic_cpu) {
+              OrderAccess::fence();
+            }
             if (tos_type == atos) {
               VERIFY_OOP(obj->obj_field_acquire(field_offset));
               SET_STACK_OBJECT(obj->obj_field_acquire(field_offset), -1);
