@@ -1705,8 +1705,25 @@ public final class Global extends ScriptObject implements GlobalObject, Scope {
             initScripting(env);
         }
 
-        if (Context.DEBUG && System.getSecurityManager() == null) {
-            initDebug();
+        if (Context.DEBUG) {
+            boolean debugOkay;
+            final SecurityManager sm = System.getSecurityManager();
+            if (sm != null) {
+                try {
+                    sm.checkPermission(new RuntimePermission(Context.NASHORN_DEBUG_MODE));
+                    debugOkay = true;
+                } catch (final SecurityException ignored) {
+                    // if no permission, don't initialize Debug object
+                    debugOkay = false;
+                }
+
+            } else {
+                debugOkay = true;
+            }
+
+            if (debugOkay) {
+                initDebug();
+            }
         }
 
         copyBuiltins();

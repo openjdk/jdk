@@ -33,7 +33,6 @@ import javax.script.ScriptException;
 import jdk.nashorn.api.scripting.NashornException;
 import jdk.nashorn.internal.codegen.CompilerConstants.Call;
 import jdk.nashorn.internal.codegen.CompilerConstants.FieldAccess;
-import jdk.nashorn.internal.objects.NativeError;
 
 /**
  * Exception used to implement ECMAScript "throw" from scripts. The actual thrown
