@@ -32,6 +32,7 @@ import java.util.concurrent.ForkJoinTask;
 import java.util.function.Consumer;
 import java.util.function.DoubleConsumer;
 import java.util.function.IntConsumer;
+import java.util.function.IntFunction;
 import java.util.function.LongConsumer;
 
 /**
@@ -471,9 +472,11 @@ final class ForEachOps {
             if (task.getPendingCount() > 0) {
                 // Cannot complete just yet so buffer elements into a Node
                 // for use when completion occurs
+                @SuppressWarnings("unchecked")
+                IntFunction<T[]> generator = size -> (T[]) new Object[size];
                 Node.Builder<T> nb = task.helper.makeNodeBuilder(
                         task.helper.exactOutputSizeIfKnown(rightSplit),
-                        size -> (T[]) new Object[size]);
+                        generator);
                 task.node = task.helper.wrapAndCopyInto(nb, rightSplit).build();
                 task.spliterator = null;
             }
