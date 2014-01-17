@@ -678,6 +678,17 @@ Metadata* Dependencies::DepStream::argument(int i) {
   return result;
 }
 
+/**
+ * Returns a unique identifier for each dependency argument.
+ */
+uintptr_t Dependencies::DepStream::get_identifier(int i) {
+  if (has_oop_argument()) {
+    return (uintptr_t)(oopDesc*)argument_oop(i);
+  } else {
+    return (uintptr_t)argument(i);
+  }
+}
+
 oop Dependencies::DepStream::argument_oop(int i) {
   oop result = recorded_oop_at(argument_index(i));
   assert(result == NULL || result->is_oop(), "must be");
@@ -712,6 +723,57 @@ Klass* Dependencies::DepStream::context_type() {
   // e.g. evol_method.
   return NULL;
 }
+
+// ----------------- DependencySignature --------------------------------------
+bool DependencySignature::equals(const DependencySignature& sig) const {
+  if (type() != sig.type()) {
+    return false;
+  }
+
+  if (args_count() != sig.args_count()) {
+    return false;
+  }
+
+  for (int i = 0; i < sig.args_count(); i++) {
+    if (arg(i) != sig.arg(i)) {
+      return false;
+    }
+  }
+  return true;
+}
+
+
+// ----------------- DependencySignatureBuffer --------------------------------------
+DependencySignatureBuffer::DependencySignatureBuffer() {
+  _signatures = NEW_RESOURCE_ARRAY(GrowableArray<DependencySignature*>*, Dependencies::TYPE_LIMIT);
+  memset(_signatures, 0, sizeof(DependencySignature*) * Dependencies::TYPE_LIMIT);
+}
+
+/* Check if arguments are identical. Two dependency signatures are considered
+ * identical, if the type as well as all argument identifiers are identical.
+ * If the dependency has not already been checked, the dependency signature is
+ * added to the checked dependencies of the same type. The function returns
+ * false, which causes the dependency to be checked in the caller.
+ */
+bool DependencySignatureBuffer::add_if_missing(const DependencySignature& sig) {
+  const int index = sig.type();
+  GrowableArray<DependencySignature*>* buffer = _signatures[index];
+  if (buffer == NULL) {
+    buffer = new GrowableArray<DependencySignature*>();
+    _signatures[index] = buffer;
+  }
+
+  // Check if we have already checked the dependency
+  for (int i = 0; i < buffer->length(); i++) {
+    DependencySignature* checked_signature = buffer->at(i);
+    if (checked_signature->equals(sig)) {
+      return true;
+    }
+  }
+  buffer->append((DependencySignature*)&sig);
+  return false;
+}
+
 
 /// Checking dependencies:
 
