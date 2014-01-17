@@ -1848,6 +1848,12 @@ const bool Matcher::misaligned_vectors_ok() {
   return false;
 }
 
+// Current (2013) SPARC platforms need to read original key
+// to construct decryption expanded key 
+const bool Matcher::pass_original_key_for_aes() {
+  return true;
+}
+
 // USII supports fxtof through the whole range of number, USIII doesn't
 const bool Matcher::convL2FSupported(void) {
   return VM_Version::has_fast_fxtof();

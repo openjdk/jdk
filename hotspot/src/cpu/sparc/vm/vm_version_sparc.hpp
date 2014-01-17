@@ -48,7 +48,8 @@ protected:
     sparc64_family       = 14,
     M_family             = 15,
     T_family             = 16,
-    T1_model             = 17
+    T1_model             = 17,
+    aes_instructions     = 18
   };
 
   enum Feature_Flag_Set {
@@ -73,6 +74,7 @@ protected:
     M_family_m              = 1 << M_family,
     T_family_m              = 1 << T_family,
     T1_model_m              = 1 << T1_model,
+    aes_instructions_m      = 1 << aes_instructions,
 
     generic_v8_m        = v8_instructions_m | hardware_mul32_m | hardware_div32_m | hardware_fsmuld_m,
     generic_v9_m        = generic_v8_m | v9_instructions_m,
@@ -123,6 +125,7 @@ public:
   static bool has_vis3()                { return (_features & vis3_instructions_m) != 0; }
   static bool has_blk_init()            { return (_features & blk_init_instructions_m) != 0; }
   static bool has_cbcond()              { return (_features & cbcond_instructions_m) != 0; }
+  static bool has_aes()                 { return (_features & aes_instructions_m) != 0; }
 
   static bool supports_compare_and_exchange()
                                         { return has_v9(); }

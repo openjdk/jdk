@@ -1315,7 +1315,7 @@ void LIR_Assembler::const2reg(LIR_Opr src, LIR_Opr dest, LIR_PatchCode patch_cod
 }
 
 Address LIR_Assembler::as_Address(LIR_Address* addr) {
-  Register reg = addr->base()->as_register();
+  Register reg = addr->base()->as_pointer_register();
   LIR_Opr index = addr->index();
   if (index->is_illegal()) {
     return Address(reg, addr->disp());
@@ -3101,7 +3101,145 @@ void LIR_Assembler::emit_profile_call(LIR_OpProfileCall* op) {
 }
 
 void LIR_Assembler::emit_profile_type(LIR_OpProfileType* op) {
-  fatal("Type profiling not implemented on this platform");
+  Register obj = op->obj()->as_register();
+  Register tmp1 = op->tmp()->as_pointer_register();
+  Register tmp2 = G1;
+  Address mdo_addr = as_Address(op->mdp()->as_address_ptr());
+  ciKlass* exact_klass = op->exact_klass();
+  intptr_t current_klass = op->current_klass();
+  bool not_null = op->not_null();
+  bool no_conflict = op->no_conflict();
+
+  Label update, next, none;
+
+  bool do_null = !not_null;
+  bool exact_klass_set = exact_klass != NULL && ciTypeEntries::valid_ciklass(current_klass) == exact_klass;
+  bool do_update = !TypeEntries::is_type_unknown(current_klass) && !exact_klass_set;
+
+  assert(do_null || do_update, "why are we here?");
+  assert(!TypeEntries::was_null_seen(current_klass) || do_update, "why are we here?");
+
+  __ verify_oop(obj);
+
+  if (tmp1 != obj) {
+    __ mov(obj, tmp1);
+  }
+  if (do_null) {
+    __ br_notnull_short(tmp1, Assembler::pt, update);
+    if (!TypeEntries::was_null_seen(current_klass)) {
+      __ ld_ptr(mdo_addr, tmp1);
+      __ or3(tmp1, TypeEntries::null_seen, tmp1);
+      __ st_ptr(tmp1, mdo_addr);
+    }
+    if (do_update) {
+      __ ba(next);
+      __ delayed()->nop();
+    }
+#ifdef ASSERT
+  } else {
+    __ br_notnull_short(tmp1, Assembler::pt, update);
+    __ stop("unexpect null obj");
+#endif
+  }
+
+  __ bind(update);
+
+  if (do_update) {
+#ifdef ASSERT
+    if (exact_klass != NULL) {
+      Label ok;
+      __ load_klass(tmp1, tmp1);
+      metadata2reg(exact_klass->constant_encoding(), tmp2);
+      __ cmp_and_br_short(tmp1, tmp2, Assembler::equal, Assembler::pt, ok);
+      __ stop("exact klass and actual klass differ");
+      __ bind(ok);
+    }
+#endif
+
+    Label do_update;
+    __ ld_ptr(mdo_addr, tmp2);
+
+    if (!no_conflict) {
+      if (exact_klass == NULL || TypeEntries::is_type_none(current_klass)) {
+        if (exact_klass != NULL) {
+          metadata2reg(exact_klass->constant_encoding(), tmp1);
+        } else {
+          __ load_klass(tmp1, tmp1);
+        }
+
+        __ xor3(tmp1, tmp2, tmp1);
+        __ btst(TypeEntries::type_klass_mask, tmp1);
+        // klass seen before, nothing to do. The unknown bit may have been
+        // set already but no need to check.
+        __ brx(Assembler::zero, false, Assembler::pt, next);
+        __ delayed()->
+
+           btst(TypeEntries::type_unknown, tmp1);
+        // already unknown. Nothing to do anymore.
+        __ brx(Assembler::notZero, false, Assembler::pt, next);
+
+        if (TypeEntries::is_type_none(current_klass)) {
+          __ delayed()->btst(TypeEntries::type_mask, tmp2);
+          __ brx(Assembler::zero, true, Assembler::pt, do_update);
+          // first time here. Set profile type.
+          __ delayed()->or3(tmp2, tmp1, tmp2);
+        } else {
+          __ delayed()->nop();
+        }
+      } else {
+        assert(ciTypeEntries::valid_ciklass(current_klass) != NULL &&
+               ciTypeEntries::valid_ciklass(current_klass) != exact_klass, "conflict only");
+
+        __ btst(TypeEntries::type_unknown, tmp2);
+        // already unknown. Nothing to do anymore.
+        __ brx(Assembler::notZero, false, Assembler::pt, next);
+        __ delayed()->nop();
+      }
+
+      // different than before. Cannot keep accurate profile.
+      __ or3(tmp2, TypeEntries::type_unknown, tmp2);
+    } else {
+      // There's a single possible klass at this profile point
+      assert(exact_klass != NULL, "should be");
+      if (TypeEntries::is_type_none(current_klass)) {
+        metadata2reg(exact_klass->constant_encoding(), tmp1);
+        __ xor3(tmp1, tmp2, tmp1);
+        __ btst(TypeEntries::type_klass_mask, tmp1);
+        __ brx(Assembler::zero, false, Assembler::pt, next);
+#ifdef ASSERT
+
+        {
+          Label ok;
+          __ delayed()->btst(TypeEntries::type_mask, tmp2);
+          __ brx(Assembler::zero, true, Assembler::pt, ok);
+          __ delayed()->nop();
+
+          __ stop("unexpected profiling mismatch");
+          __ bind(ok);
+        }
+        // first time here. Set profile type.
+        __ or3(tmp2, tmp1, tmp2);
+#else
+        // first time here. Set profile type.
+        __ delayed()->or3(tmp2, tmp1, tmp2);
+#endif
+
+      } else {
+        assert(ciTypeEntries::valid_ciklass(current_klass) != NULL &&
+               ciTypeEntries::valid_ciklass(current_klass) != exact_klass, "inconsistent");
+
+        // already unknown. Nothing to do anymore.
+        __ btst(TypeEntries::type_unknown, tmp2);
+        __ brx(Assembler::notZero, false, Assembler::pt, next);
+        __ delayed()->or3(tmp2, TypeEntries::type_unknown, tmp2);
+      }
+    }
+
+    __ bind(do_update);
+    __ st_ptr(tmp2, mdo_addr);
+
+    __ bind(next);
+  }
 }
 
 void LIR_Assembler::align_backward_branch_target() {
@@ -3321,9 +3459,14 @@ void LIR_Assembler::unpack64(LIR_Opr src, LIR_Opr dst) {
 
 void LIR_Assembler::leal(LIR_Opr addr_opr, LIR_Opr dest) {
   LIR_Address* addr = addr_opr->as_address_ptr();
-  assert(addr->index()->is_illegal() && addr->scale() == LIR_Address::times_1 && Assembler::is_simm13(addr->disp()), "can't handle complex addresses yet");
+  assert(addr->index()->is_illegal() && addr->scale() == LIR_Address::times_1, "can't handle complex addresses yet");
 
-  __ add(addr->base()->as_pointer_register(), addr->disp(), dest->as_pointer_register());
+  if (Assembler::is_simm13(addr->disp())) {
+    __ add(addr->base()->as_pointer_register(), addr->disp(), dest->as_pointer_register());
+  } else {
+    __ set(addr->disp(), G3_scratch);
+    __ add(addr->base()->as_pointer_register(), G3_scratch, dest->as_pointer_register());
+  }
 }
 
 
