@@ -62,6 +62,14 @@ ARCH_FLAGS(MATERIALIZE_DEVELOPER_FLAG, MATERIALIZE_PRODUCT_FLAG, \
 MATERIALIZE_FLAGS_EXT
 
 
+static bool is_product_build() {
+#ifdef PRODUCT
+  return true;
+#else
+  return false;
+#endif
+}
+
 void Flag::check_writable() {
   if (is_constant_in_binary()) {
     fatal(err_msg("flag is constant: %s", _name));
@@ -235,6 +243,27 @@ bool Flag::is_unlocked() const {
 // Get custom message for this locked flag, or return NULL if
 // none is available.
 void Flag::get_locked_message(char* buf, int buflen) const {
+  buf[0] = '\0';
+  if (is_diagnostic() && !is_unlocked()) {
+    jio_snprintf(buf, buflen, "Error: VM option '%s' is diagnostic and must be enabled via -XX:+UnlockDiagnosticVMOptions.\n",
+                 _name);
+    return;
+  }
+  if (is_experimental() && !is_unlocked()) {
+    jio_snprintf(buf, buflen, "Error: VM option '%s' is experimental and must be enabled via -XX:+UnlockExperimentalVMOptions.\n",
+                 _name);
+    return;
+  }
+  if (is_develop() && is_product_build()) {
+    jio_snprintf(buf, buflen, "Error: VM option '%s' is develop and is available only in debug version of VM.\n",
+                 _name);
+    return;
+  }
+  if (is_notproduct() && is_product_build()) {
+    jio_snprintf(buf, buflen, "Error: VM option '%s' is notproduct and is available only in debug version of VM.\n",
+                 _name);
+    return;
+  }
   get_locked_message_ext(buf, buflen);
 }
 
@@ -464,13 +493,13 @@ inline bool str_equal(const char* s, const char* q, size_t len) {
 }
 
 // Search the flag table for a named flag
-Flag* Flag::find_flag(const char* name, size_t length, bool allow_locked) {
+Flag* Flag::find_flag(const char* name, size_t length, bool allow_locked, bool return_flag) {
   for (Flag* current = &flagTable[0]; current->_name != NULL; current++) {
     if (str_equal(current->_name, name, length)) {
       // Found a matching entry.
       // Don't report notproduct and develop flags in product builds.
       if (current->is_constant_in_binary()) {
-        return NULL;
+        return (return_flag == true ? current : NULL);
       }
       // Report locked flags only if allowed.
       if (!(current->is_unlocked() || current->is_unlocker())) {
