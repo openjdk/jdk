@@ -25,6 +25,9 @@ package jdk.testlibrary;
 
 import static jdk.testlibrary.Asserts.assertTrue;
 
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileReader;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.ServerSocket;
@@ -55,7 +58,6 @@ public final class Utils {
      * Returns the value of 'test.java.opts'system property.
      */
     public static final String JAVA_OPTIONS = System.getProperty("test.java.opts", "").trim();
-
 
     private Utils() {
         // Private constructor to prevent class instantiation
@@ -203,7 +205,6 @@ public final class Utils {
      * @throws Exception If multiple matching jvms are found.
      */
     public static int tryFindJvmPid(String key) throws Throwable {
-        ProcessBuilder pb = null;
         OutputAnalyzer output = null;
         try {
             JDKToolLauncher jcmdLauncher = JDKToolLauncher.create("jcmd");
@@ -229,4 +230,24 @@ public final class Utils {
             throw t;
         }
     }
+
+    /**
+     * Returns file content as a list of strings
+     *
+     * @param file File to operate on
+     * @return List of strings
+     * @throws IOException
+     */
+    public static List<String> fileAsList(File file) throws IOException {
+        assertTrue(file.exists() && file.isFile(),
+                file.getAbsolutePath() + " does not exist or not a file");
+        List<String> output = new ArrayList<>();
+        try (BufferedReader reader = new BufferedReader(new FileReader(file.getAbsolutePath()))) {
+            while (reader.ready()) {
+                output.add(reader.readLine().replace(NEW_LINE, ""));
+            }
+        }
+        return output;
+    }
+
 }
