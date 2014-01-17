@@ -43,7 +43,7 @@ import jdk.nashorn.internal.runtime.ScriptObject;
 public final class NativeURIError extends ScriptObject {
 
     /** message property in instance */
-    @Property(name = NativeError.MESSAGE)
+    @Property(name = NativeError.MESSAGE, attributes = Attribute.NOT_ENUMERABLE)
     public Object instMessage;
 
     /** error name property */
@@ -61,6 +61,7 @@ public final class NativeURIError extends ScriptObject {
         return $nasgenmap$;
     }
 
+    @SuppressWarnings("LeakingThisInConstructor")
     NativeURIError(final Object msg, final Global global) {
         super(global.getURIErrorPrototype(), global.getURIErrorMap());
         if (msg != UNDEFINED) {
@@ -68,6 +69,7 @@ public final class NativeURIError extends ScriptObject {
         } else {
             this.delete(NativeError.MESSAGE, false);
         }
+        NativeError.initException(this);
     }
 
     private NativeURIError(final Object msg) {

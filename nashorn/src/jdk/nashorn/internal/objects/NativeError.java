@@ -38,7 +38,6 @@ import jdk.nashorn.internal.objects.annotations.Function;
 import jdk.nashorn.internal.objects.annotations.Property;
 import jdk.nashorn.internal.objects.annotations.ScriptClass;
 import jdk.nashorn.internal.objects.annotations.Where;
-import jdk.nashorn.internal.objects.ScriptFunctionImpl;
 import jdk.nashorn.internal.runtime.ECMAException;
 import jdk.nashorn.internal.runtime.JSType;
 import jdk.nashorn.internal.runtime.PropertyMap;
@@ -75,7 +74,7 @@ public final class NativeError extends ScriptObject {
     static final String FILENAME = "__fileName__";
 
     /** Message property name */
-    @Property(name = NativeError.MESSAGE)
+    @Property(name = NativeError.MESSAGE, attributes = Attribute.NOT_ENUMERABLE)
     public Object instMessage;
 
     /** ECMA 15.11.4.2 Error.prototype.name */
@@ -93,6 +92,7 @@ public final class NativeError extends ScriptObject {
         return $nasgenmap$;
     }
 
+    @SuppressWarnings("LeakingThisInConstructor")
     private NativeError(final Object msg, final ScriptObject proto, final PropertyMap map) {
         super(proto, map);
         if (msg != UNDEFINED) {
@@ -100,6 +100,7 @@ public final class NativeError extends ScriptObject {
         } else {
             this.delete(NativeError.MESSAGE, false);
         }
+        initException(this);
     }
 
     NativeError(final Object msg, final Global global) {
@@ -129,6 +130,14 @@ public final class NativeError extends ScriptObject {
         return new NativeError(msg);
     }
 
+    // This is called NativeError, NativeTypeError etc. to
+    // associate a ECMAException with the ECMA Error object.
+    @SuppressWarnings("unused")
+    static void initException(final ScriptObject self) {
+        // ECMAException constructor has side effects
+        new ECMAException(self, null);
+    }
+
     /**
      * Nashorn extension: Error.captureStackTrace. Capture stack trace at the point of call into the Error object provided.
      *
@@ -136,16 +145,17 @@ public final class NativeError extends ScriptObject {
      * @param errorObj the error object
      * @return undefined
      */
-    @SuppressWarnings("unused")
     @Function(attributes = Attribute.NOT_ENUMERABLE, where = Where.CONSTRUCTOR)
     public static Object captureStackTrace(final Object self, final Object errorObj) {
         Global.checkObject(errorObj);
         final ScriptObject sobj = (ScriptObject)errorObj;
-        new ECMAException(sobj, null); //constructor has side effects
-        sobj.delete("stack", false);
-        final ScriptFunction getStack = ScriptFunctionImpl.makeFunction("getStack", GET_STACK);
-        final ScriptFunction setStack = ScriptFunctionImpl.makeFunction("setStack", SET_STACK);
-        sobj.addOwnProperty("stack", Attribute.NOT_ENUMERABLE, getStack, setStack);
+        initException(sobj);
+        sobj.delete(STACK, false);
+        if (! sobj.has("stack")) {
+            final ScriptFunction getStack = ScriptFunctionImpl.makeFunction("getStack", GET_STACK);
+            final ScriptFunction setStack = ScriptFunctionImpl.makeFunction("setStack", SET_STACK);
+            sobj.addOwnProperty("stack", Attribute.NOT_ENUMERABLE, getStack, setStack);
+        }
         return UNDEFINED;
     }
 
@@ -226,7 +236,11 @@ public final class NativeError extends ScriptObject {
     public static Object setLineNumber(final Object self, final Object value) {
         Global.checkObject(self);
         final ScriptObject sobj = (ScriptObject)self;
-        sobj.set(LINENUMBER, value, false);
+        if (sobj.hasOwnProperty(LINENUMBER)) {
+            sobj.put(LINENUMBER, value, false);
+        } else {
+            sobj.addOwnProperty(LINENUMBER, Attribute.NOT_ENUMERABLE, value);
+        }
         return value;
     }
 
@@ -254,7 +268,11 @@ public final class NativeError extends ScriptObject {
     public static Object setColumnNumber(final Object self, final Object value) {
         Global.checkObject(self);
         final ScriptObject sobj = (ScriptObject)self;
-        sobj.set(COLUMNNUMBER, value, false);
+        if (sobj.hasOwnProperty(COLUMNNUMBER)) {
+            sobj.put(COLUMNNUMBER, value, false);
+        } else {
+            sobj.addOwnProperty(COLUMNNUMBER, Attribute.NOT_ENUMERABLE, value);
+        }
         return value;
     }
 
@@ -282,7 +300,11 @@ public final class NativeError extends ScriptObject {
     public static Object setFileName(final Object self, final Object value) {
         Global.checkObject(self);
         final ScriptObject sobj = (ScriptObject)self;
-        sobj.set(FILENAME, value, false);
+        if (sobj.hasOwnProperty(FILENAME)) {
+            sobj.put(FILENAME, value, false);
+        } else {
+            sobj.addOwnProperty(FILENAME, Attribute.NOT_ENUMERABLE, value);
+        }
         return value;
     }
 
@@ -304,10 +326,12 @@ public final class NativeError extends ScriptObject {
 
         final Object exception = ECMAException.getException(sobj);
         if (exception instanceof Throwable) {
-            return getScriptStackString(sobj, (Throwable)exception);
+            Object value = getScriptStackString(sobj, (Throwable)exception);
+            sobj.put(STACK, value, false);
+            return value;
         }
 
-        return "";
+        return UNDEFINED;
     }
 
     /**
