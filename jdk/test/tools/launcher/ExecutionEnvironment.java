@@ -72,7 +72,9 @@ import java.util.regex.Pattern;
 public class ExecutionEnvironment extends TestHelper {
     static final String LD_LIBRARY_PATH    = TestHelper.isMacOSX
             ? "DYLD_LIBRARY_PATH"
-            : "LD_LIBRARY_PATH";
+            : TestHelper.isAIX
+                    ? "LIBPATH"
+                    : "LD_LIBRARY_PATH";
     static final String LD_LIBRARY_PATH_32 = LD_LIBRARY_PATH + "_32";
     static final String LD_LIBRARY_PATH_64 = LD_LIBRARY_PATH + "_64";
 
@@ -144,7 +146,19 @@ public class ExecutionEnvironment extends TestHelper {
 
         for (String x : LD_PATH_STRINGS) {
             if (!tr.contains(x)) {
-                flagError(tr, "FAIL: did not get <" + x + ">");
+                if (TestHelper.isAIX && x.startsWith(LD_LIBRARY_PATH)) {
+                    // AIX does not support the '-rpath' linker options so the
+                    // launchers have to prepend the jdk library path to 'LIBPATH'.
+                    String aixLibPath = LD_LIBRARY_PATH + "=" +
+                        System.getenv(LD_LIBRARY_PATH) +
+                        System.getProperty("path.separator") + LD_LIBRARY_PATH_VALUE;
+                    if (!tr.matches(aixLibPath)) {
+                        flagError(tr, "FAIL: did not get <" + aixLibPath + ">");
+                    }
+                }
+                else {
+                    flagError(tr, "FAIL: did not get <" + x + ">");
+                }
             }
         }
     }
@@ -180,7 +194,7 @@ public class ExecutionEnvironment extends TestHelper {
 
         Map<String, String> env = new HashMap<>();
 
-        if (TestHelper.isLinux || TestHelper.isMacOSX) {
+        if (TestHelper.isLinux || TestHelper.isMacOSX || TestHelper.isAIX) {
             for (String x : LD_PATH_STRINGS) {
                 String pairs[] = x.split("=");
                 env.put(pairs[0], pairs[1]);
