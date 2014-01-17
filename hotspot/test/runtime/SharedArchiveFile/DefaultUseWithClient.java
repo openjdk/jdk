@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,28 +22,43 @@
  */
 
 /*
- * @test
- * @bug 7167142
- * @summary Warn if unused .hotspot_rc file is present
+ * @test DefaultUseWithClient
+ * @summary Test default behavior of sharing with -client
  * @library /testlibrary
+ * @run main DefaultUseWithClient
  */
 
-import java.io.PrintWriter;
 import com.oracle.java.testlibrary.*;
+import java.io.File;
 
-public class ConfigFileWarning {
+public class DefaultUseWithClient {
     public static void main(String[] args) throws Exception {
-        if (Platform.isDebugBuild()) {
-            System.out.println("Skip on debug builds since we'll always read the file there");
+        String fileName = "test.jsa";
+
+        // On 32-bit windows CDS should be on by default in "-client" config
+        // Skip this test on any other platform
+        boolean is32BitWindows = (Platform.isWindows() && Platform.is32bit());
+        if (!is32BitWindows) {
+            System.out.println("Test only applicable on 32-bit Windows. Skipping");
             return;
         }
 
-        PrintWriter pw = new PrintWriter(".hotspotrc");
-        pw.println("aa");
-        pw.close();
-
-        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder("-version");
+        // create the archive
+        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
+           "-XX:+UnlockDiagnosticVMOptions",
+           "-XX:SharedArchiveFile=./" + fileName,
+           "-Xshare:dump");
         OutputAnalyzer output = new OutputAnalyzer(pb.start());
-        output.shouldContain("warning: .hotspotrc file is present but has been ignored.  Run with -XX:Flags=.hotspotrc to load the file.");
-    }
+        output.shouldHaveExitValue(0);
+
+        pb = ProcessTools.createJavaProcessBuilder(
+           "-XX:+UnlockDiagnosticVMOptions",
+           "-XX:SharedArchiveFile=./" + fileName,
+           "-client",
+           "-version");
+
+        output = new OutputAnalyzer(pb.start());
+        output.shouldContain("sharing");
+        output.shouldHaveExitValue(0);
+   }
 }
