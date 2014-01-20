@@ -40,10 +40,6 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
  */
 
 abstract class Port extends AsynchronousChannelGroupImpl {
-    static final short POLLIN       = 0x0001;
-    static final short POLLOUT      = 0x0004;
-    static final short POLLERR      = 0x0008;
-    static final short POLLHUP      = 0x0010;
 
     /**
      * Implemented by clients registered with this port.
