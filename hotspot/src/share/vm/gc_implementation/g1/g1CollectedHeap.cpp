@@ -5193,6 +5193,99 @@ G1CollectedHeap::g1_process_weak_roots(OopClosure* root_closure) {
   SharedHeap::process_weak_roots(root_closure, &roots_in_blobs);
 }
 
+class G1StringSymbolTableUnlinkTask : public AbstractGangTask {
+private:
+  BoolObjectClosure* _is_alive;
+  int _initial_string_table_size;
+  int _initial_symbol_table_size;
+
+  bool  _process_strings;
+  int _strings_processed;
+  int _strings_removed;
+
+  bool  _process_symbols;
+  int _symbols_processed;
+  int _symbols_removed;
+public:
+  G1StringSymbolTableUnlinkTask(BoolObjectClosure* is_alive, bool process_strings, bool process_symbols) :
+    AbstractGangTask("Par String/Symbol table unlink"), _is_alive(is_alive),
+    _process_strings(process_strings), _strings_processed(0), _strings_removed(0),
+    _process_symbols(process_symbols), _symbols_processed(0), _symbols_removed(0) {
+
+    _initial_string_table_size = StringTable::the_table()->table_size();
+    _initial_symbol_table_size = SymbolTable::the_table()->table_size();
+    if (process_strings) {
+      StringTable::clear_parallel_claimed_index();
+    }
+    if (process_symbols) {
+      SymbolTable::clear_parallel_claimed_index();
+    }
+  }
+
+  ~G1StringSymbolTableUnlinkTask() {
+    guarantee(!_process_strings || StringTable::parallel_claimed_index() >= _initial_string_table_size,
+              err_msg("claim value "INT32_FORMAT" after unlink less than initial string table size "INT32_FORMAT,
+                      StringTable::parallel_claimed_index(), _initial_string_table_size));
+    guarantee(!_process_strings || SymbolTable::parallel_claimed_index() >= _initial_symbol_table_size,
+              err_msg("claim value "INT32_FORMAT" after unlink less than initial symbol table size "INT32_FORMAT,
+                      SymbolTable::parallel_claimed_index(), _initial_symbol_table_size));
+  }
+
+  void work(uint worker_id) {
+    if (G1CollectedHeap::use_parallel_gc_threads()) {
+      int strings_processed = 0;
+      int strings_removed = 0;
+      int symbols_processed = 0;
+      int symbols_removed = 0;
+      if (_process_strings) {
+        StringTable::possibly_parallel_unlink(_is_alive, &strings_processed, &strings_removed);
+        Atomic::add(strings_processed, &_strings_processed);
+        Atomic::add(strings_removed, &_strings_removed);
+      }
+      if (_process_symbols) {
+        SymbolTable::possibly_parallel_unlink(&symbols_processed, &symbols_removed);
+        Atomic::add(symbols_processed, &_symbols_processed);
+        Atomic::add(symbols_removed, &_symbols_removed);
+      }
+    } else {
+      if (_process_strings) {
+        StringTable::unlink(_is_alive, &_strings_processed, &_strings_removed);
+      }
+      if (_process_symbols) {
+        SymbolTable::unlink(&_symbols_processed, &_symbols_removed);
+      }
+    }
+  }
+
+  size_t strings_processed() const { return (size_t)_strings_processed; }
+  size_t strings_removed()   const { return (size_t)_strings_removed; }
+
+  size_t symbols_processed() const { return (size_t)_symbols_processed; }
+  size_t symbols_removed()   const { return (size_t)_symbols_removed; }
+};
+
+void G1CollectedHeap::unlink_string_and_symbol_table(BoolObjectClosure* is_alive,
+                                                     bool process_strings, bool process_symbols) {
+  uint n_workers = (G1CollectedHeap::use_parallel_gc_threads() ?
+                   _g1h->workers()->active_workers() : 1);
+
+  G1StringSymbolTableUnlinkTask g1_unlink_task(is_alive, process_strings, process_symbols);
+  if (G1CollectedHeap::use_parallel_gc_threads()) {
+    set_par_threads(n_workers);
+    workers()->run_task(&g1_unlink_task);
+    set_par_threads(0);
+  } else {
+    g1_unlink_task.work(0);
+  }
+  if (G1TraceStringSymbolTableScrubbing) {
+    gclog_or_tty->print_cr("Cleaned string and symbol table, "
+                           "strings: "SIZE_FORMAT" processed, "SIZE_FORMAT" removed, "
+                           "symbols: "SIZE_FORMAT" processed, "SIZE_FORMAT" removed",
+                           g1_unlink_task.strings_processed(), g1_unlink_task.strings_removed(),
+                           g1_unlink_task.symbols_processed(), g1_unlink_task.symbols_removed());
+  }
+}
+
 // Weak Reference Processing support
 
 // An always "is_alive" closure that is used to preserve referents.

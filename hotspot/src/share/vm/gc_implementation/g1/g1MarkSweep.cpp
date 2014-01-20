@@ -163,11 +163,8 @@ void G1MarkSweep::mark_sweep_phase1(bool& marked_for_unloading,
   // Prune dead klasses from subklass/sibling/implementor lists.
   Klass::clean_weak_klass_links(&GenMarkSweep::is_alive);
 
-  // Delete entries for dead interned strings.
-  StringTable::unlink(&GenMarkSweep::is_alive);
-
-  // Clean up unreferenced symbols in symbol table.
-  SymbolTable::unlink();
+  // Delete entries for dead interned string and clean up unreferenced symbols in symbol table.
+  G1CollectedHeap::heap()->unlink_string_and_symbol_table(&GenMarkSweep::is_alive);
 
   if (VerifyDuringGC) {
     HandleMark hm;  // handle scope
