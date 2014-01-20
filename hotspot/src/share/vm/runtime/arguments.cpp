@@ -3727,10 +3727,6 @@ jint Arguments::apply_ergo() {
     // Doing the replace in parent maps helps speculation
     FLAG_SET_DEFAULT(ReplaceInParentMaps, true);
   }
-#ifndef X86
-  // Only on x86 for now
-  FLAG_SET_DEFAULT(TypeProfileLevel, 0);
-#endif
 #endif
 
   if (PrintAssembly && FLAG_IS_DEFAULT(DebugNonSafepoints)) {
