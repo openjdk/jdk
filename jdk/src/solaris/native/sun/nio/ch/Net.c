@@ -23,6 +23,7 @@
  * questions.
  */
 
+#include <sys/poll.h>
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <string.h>
@@ -747,6 +748,42 @@ Java_sun_nio_ch_Net_poll(JNIEnv* env, jclass this, jobject fdo, jint events, jlo
         handleSocketError(env, errno);
         return IOS_THROWN;
     }
+}
+
+JNIEXPORT jshort JNICALL
+Java_sun_nio_ch_Net_pollinValue(JNIEnv *env, jclass this)
+{
+    return (jshort)POLLIN;
+}
+
+JNIEXPORT jshort JNICALL
+Java_sun_nio_ch_Net_polloutValue(JNIEnv *env, jclass this)
+{
+    return (jshort)POLLOUT;
+}
+
+JNIEXPORT jshort JNICALL
+Java_sun_nio_ch_Net_pollerrValue(JNIEnv *env, jclass this)
+{
+    return (jshort)POLLERR;
+}
+
+JNIEXPORT jshort JNICALL
+Java_sun_nio_ch_Net_pollhupValue(JNIEnv *env, jclass this)
+{
+    return (jshort)POLLHUP;
+}
+
+JNIEXPORT jshort JNICALL
+Java_sun_nio_ch_Net_pollnvalValue(JNIEnv *env, jclass this)
+{
+    return (jshort)POLLNVAL;
+}
+
+JNIEXPORT jshort JNICALL
+Java_sun_nio_ch_Net_pollconnValue(JNIEnv *env, jclass this)
+{
+    return (jshort)POLLOUT;
 }
 
 

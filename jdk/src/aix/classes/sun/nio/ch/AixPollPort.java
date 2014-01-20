@@ -148,7 +148,7 @@ final class AixPollPort
         try {
             socketpair(sv);
             // register one end with pollset
-            pollsetCtl(pollset, PS_ADD, sv[0], POLLIN);
+            pollsetCtl(pollset, PS_ADD, sv[0], Net.POLLIN);
         } catch (IOException x) {
             pollsetDestroy(pollset);
             throw x;
@@ -160,7 +160,7 @@ final class AixPollPort
         try {
             socketpair(sv);
             // register one end with pollset
-            pollsetCtl(pollset, PS_ADD, sv[0], POLLIN);
+            pollsetCtl(pollset, PS_ADD, sv[0], Net.POLLIN);
         } catch (IOException x) {
             pollsetDestroy(pollset);
             throw x;
@@ -353,7 +353,7 @@ final class AixPollPort
 
                                 // This is the only file descriptor without
                                 // one shot semantic => register it again.
-                                pollsetCtl(pollset, PS_ADD, sp[0], POLLIN);
+                                pollsetCtl(pollset, PS_ADD, sp[0], Net.POLLIN);
 
                                 // queue special event if there are more events
                                 // to handle.
@@ -370,7 +370,7 @@ final class AixPollPort
                                     drain1(ctlSp[0]);
                                     // This file descriptor does not have
                                     // one shot semantic => register it again.
-                                    pollsetCtl(pollset, PS_ADD, ctlSp[0], POLLIN);
+                                    pollsetCtl(pollset, PS_ADD, ctlSp[0], Net.POLLIN);
                                     processControlQueue();
                                 }
                                 continue;
