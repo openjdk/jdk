@@ -193,10 +193,10 @@ import static jdk.internal.org.objectweb.asm.Opcodes.*;
     CallSite buildCallSite() throws LambdaConversionException {
         final Class<?> innerClass = spinInnerClass();
         if (invokedType.parameterCount() == 0) {
-            final Constructor[] ctrs = AccessController.doPrivileged(
-                    new PrivilegedAction<Constructor[]>() {
+            final Constructor<?>[] ctrs = AccessController.doPrivileged(
+                    new PrivilegedAction<Constructor<?>[]>() {
                 @Override
-                public Constructor[] run() {
+                public Constructor<?>[] run() {
                     Constructor<?>[] ctrs = innerClass.getDeclaredConstructors();
                     if (ctrs.length == 1) {
                         // The lambda implementing inner class constructor is private, set
@@ -338,7 +338,7 @@ import static jdk.internal.org.objectweb.asm.Opcodes.*;
             m.visitVarInsn(getLoadOpcode(argType), varIndex);
             varIndex += getParameterSize(argType);
         }
-        m.visitMethodInsn(INVOKESPECIAL, lambdaClassName, NAME_CTOR, constructorType.toMethodDescriptorString());
+        m.visitMethodInsn(INVOKESPECIAL, lambdaClassName, NAME_CTOR, constructorType.toMethodDescriptorString(), false);
         m.visitInsn(ARETURN);
         m.visitMaxs(-1, -1);
         m.visitEnd();
@@ -354,7 +354,7 @@ import static jdk.internal.org.objectweb.asm.Opcodes.*;
         ctor.visitCode();
         ctor.visitVarInsn(ALOAD, 0);
         ctor.visitMethodInsn(INVOKESPECIAL, JAVA_LANG_OBJECT, NAME_CTOR,
-                             METHOD_DESCRIPTOR_VOID);
+                             METHOD_DESCRIPTOR_VOID, false);
         int parameterCount = invokedType.parameterCount();
         for (int i = 0, lvIndex = 0; i < parameterCount; i++) {
             ctor.visitVarInsn(ALOAD, 0);
@@ -402,7 +402,7 @@ import static jdk.internal.org.objectweb.asm.Opcodes.*;
             mv.visitInsn(AASTORE);
         }
         mv.visitMethodInsn(INVOKESPECIAL, NAME_SERIALIZED_LAMBDA, NAME_CTOR,
-                DESCR_CTOR_SERIALIZED_LAMBDA);
+                DESCR_CTOR_SERIALIZED_LAMBDA, false);
         mv.visitInsn(ARETURN);
         // Maxs computed by ClassWriter.COMPUTE_MAXS, these arguments ignored
         mv.visitMaxs(-1, -1);
@@ -421,7 +421,7 @@ import static jdk.internal.org.objectweb.asm.Opcodes.*;
         mv.visitInsn(DUP);
         mv.visitLdcInsn("Non-serializable lambda");
         mv.visitMethodInsn(INVOKESPECIAL, NAME_NOT_SERIALIZABLE_EXCEPTION, NAME_CTOR,
-                           DESCR_CTOR_NOT_SERIALIZABLE_EXCEPTION);
+                           DESCR_CTOR_NOT_SERIALIZABLE_EXCEPTION, false);
         mv.visitInsn(ATHROW);
         mv.visitMaxs(-1, -1);
         mv.visitEnd();
@@ -434,7 +434,7 @@ import static jdk.internal.org.objectweb.asm.Opcodes.*;
         mv.visitInsn(DUP);
         mv.visitLdcInsn("Non-serializable lambda");
         mv.visitMethodInsn(INVOKESPECIAL, NAME_NOT_SERIALIZABLE_EXCEPTION, NAME_CTOR,
-                           DESCR_CTOR_NOT_SERIALIZABLE_EXCEPTION);
+                           DESCR_CTOR_NOT_SERIALIZABLE_EXCEPTION, false);
         mv.visitInsn(ATHROW);
         mv.visitMaxs(-1, -1);
         mv.visitEnd();

@@ -158,19 +158,19 @@ class TypeConvertingMethodAdapter extends MethodVisitor {
         visitMethodInsn(Opcodes.INVOKESTATIC,
                 wrapperName(w),
                 NAME_BOX_METHOD,
-                boxingDescriptor(w));
+                boxingDescriptor(w), false);
     }
 
     /**
      * Convert types by unboxing. The source type is known to be a primitive wrapper.
-     * @param ws A primitive wrapper corresponding to wrapped reference source type
+     * @param sname A primitive wrapper corresponding to wrapped reference source type
      * @param wt A primitive wrapper being converted to
      */
     void unbox(String sname, Wrapper wt) {
         visitMethodInsn(Opcodes.INVOKEVIRTUAL,
                 sname,
                 unboxMethod(wt),
-                unboxingDescriptor(wt));
+                unboxingDescriptor(wt), false);
     }
 
     private String descriptorToName(String desc) {

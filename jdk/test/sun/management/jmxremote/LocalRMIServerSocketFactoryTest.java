@@ -44,6 +44,7 @@ public class LocalRMIServerSocketFactoryTest {
 
     private static final SynchronousQueue<Exception> queue =
             new SynchronousQueue<Exception>();
+    private static volatile boolean isRunning = true;
 
     static final class Result extends Exception {
 
@@ -91,19 +92,23 @@ public class LocalRMIServerSocketFactoryTest {
         Thread t = new Thread() {
 
             public void run() {
-                while (true) {
+                while (isRunning) {
                     Exception error = Result.SUCCESS;
                     try {
                         System.err.println("Accepting: ");
                         final Socket ss = s.accept();
                         System.err.println(ss.getInetAddress() + " accepted");
                     } catch (Exception x) {
-                        x.printStackTrace();
+                        if (isRunning) {
+                            x.printStackTrace();
+                        }
                         error = x;
                     } finally {
                         try {
-                            // wait for the client to get the exception.
-                            queue.put(error);
+                            if (isRunning) {
+                                // wait for the client to get the exception.
+                                queue.put(error);
+                            }
                         } catch (Exception x) {
                             // too bad!
                             System.err.println("Could't send result to client!");
@@ -114,32 +119,38 @@ public class LocalRMIServerSocketFactoryTest {
                 }
             }
         };
-        t.setDaemon(true);
-        t.start();
 
-        System.err.println("new Socket((String)null, port)");
-        final Socket s1 = new Socket((String) null, port);
-        checkError("new Socket((String)null, port)");
-        s1.close();
-        System.err.println("new Socket((String)null, port): PASSED");
+        try {
+            t.start();
 
-        System.err.println("new Socket(InetAddress.getByName(null), port)");
-        final Socket s2 = new Socket(InetAddress.getByName(null), port);
-        checkError("new Socket(InetAddress.getByName(null), port)");
-        s2.close();
-        System.err.println("new Socket(InetAddress.getByName(null), port): PASSED");
+            System.err.println("new Socket((String)null, port)");
+            final Socket s1 = new Socket((String) null, port);
+            checkError("new Socket((String)null, port)");
+            s1.close();
+            System.err.println("new Socket((String)null, port): PASSED");
 
-        System.err.println("new Socket(localhost, port)");
-        final Socket s3 = new Socket("localhost", port);
-        checkError("new Socket(localhost, port)");
-        s3.close();
-        System.err.println("new Socket(localhost, port): PASSED");
+            System.err.println("new Socket(InetAddress.getByName(null), port)");
+            final Socket s2 = new Socket(InetAddress.getByName(null), port);
+            checkError("new Socket(InetAddress.getByName(null), port)");
+            s2.close();
+            System.err.println("new Socket(InetAddress.getByName(null), port): PASSED");
 
-        System.err.println("new Socket(127.0.0.1, port)");
-        final Socket s4 = new Socket("127.0.0.1", port);
-        checkError("new Socket(127.0.0.1, port)");
-        s4.close();
-        System.err.println("new Socket(127.0.0.1, port): PASSED");
+            System.err.println("new Socket(localhost, port)");
+            final Socket s3 = new Socket("localhost", port);
+            checkError("new Socket(localhost, port)");
+            s3.close();
+            System.err.println("new Socket(localhost, port): PASSED");
 
+            System.err.println("new Socket(127.0.0.1, port)");
+            final Socket s4 = new Socket("127.0.0.1", port);
+            checkError("new Socket(127.0.0.1, port)");
+            s4.close();
+            System.err.println("new Socket(127.0.0.1, port): PASSED");
+        }
+        finally {
+            isRunning = false;
+            s.close();
+            t.join();
+        }
     }
 }
