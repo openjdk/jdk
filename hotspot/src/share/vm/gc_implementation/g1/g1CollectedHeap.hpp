@@ -1668,6 +1668,10 @@ public:
   // after a full GC
   void rebuild_strong_code_roots();
 
+  // Delete entries for dead interned string and clean up unreferenced symbols
+  // in symbol table, possibly in parallel.
+  void unlink_string_and_symbol_table(BoolObjectClosure* is_alive, bool unlink_strings = true, bool unlink_symbols = true);
+
   // Verification
 
   // The following is just to alert the verification code
