@@ -403,7 +403,7 @@ class InvokerBytecodeGenerator {
         String owner = "java/lang/" + wrapper.wrapperType().getSimpleName();
         String name  = "valueOf";
         String desc  = "(" + wrapper.basicTypeChar() + ")L" + owner + ";";
-        mv.visitMethodInsn(Opcodes.INVOKESTATIC, owner, name, desc);
+        mv.visitMethodInsn(Opcodes.INVOKESTATIC, owner, name, desc, false);
     }
 
     /**
@@ -417,7 +417,7 @@ class InvokerBytecodeGenerator {
         String name  = wrapper.primitiveSimpleName() + "Value";
         String desc  = "()" + wrapper.basicTypeChar();
         mv.visitTypeInsn(Opcodes.CHECKCAST, owner);
-        mv.visitMethodInsn(Opcodes.INVOKEVIRTUAL, owner, name, desc);
+        mv.visitMethodInsn(Opcodes.INVOKEVIRTUAL, owner, name, desc, false);
     }
 
     /**
@@ -437,7 +437,7 @@ class InvokerBytecodeGenerator {
                 mv.visitLdcInsn(constantPlaceholder(pclass));
                 mv.visitTypeInsn(Opcodes.CHECKCAST, CLS);
                 mv.visitInsn(Opcodes.SWAP);
-                mv.visitMethodInsn(Opcodes.INVOKEVIRTUAL, CLS, "cast", LL_SIG);
+                mv.visitMethodInsn(Opcodes.INVOKEVIRTUAL, CLS, "cast", LL_SIG, false);
                 if (pclass.isArray())
                     mv.visitTypeInsn(Opcodes.CHECKCAST, OBJARY);
             }
@@ -570,7 +570,7 @@ class InvokerBytecodeGenerator {
 
         // invocation
         MethodType type = name.function.methodType();
-        mv.visitMethodInsn(Opcodes.INVOKEVIRTUAL, MH, "invokeBasic", type.basicType().toMethodDescriptorString());
+        mv.visitMethodInsn(Opcodes.INVOKEVIRTUAL, MH, "invokeBasic", type.basicType().toMethodDescriptorString(), false);
     }
 
     static private Class<?>[] STATICALLY_INVOCABLE_PACKAGES = {
@@ -944,7 +944,7 @@ class InvokerBytecodeGenerator {
         emitAloadInsn(0);
         mv.visitFieldInsn(Opcodes.GETFIELD, MH, "form", "Ljava/lang/invoke/LambdaForm;");
         mv.visitInsn(Opcodes.SWAP);  // swap form and array; avoid local variable
-        mv.visitMethodInsn(Opcodes.INVOKEVIRTUAL, LF, "interpretWithArguments", "([Ljava/lang/Object;)Ljava/lang/Object;");
+        mv.visitMethodInsn(Opcodes.INVOKEVIRTUAL, LF, "interpretWithArguments", "([Ljava/lang/Object;)Ljava/lang/Object;", false);
 
         // maybe unbox
         Class<?> rtype = invokerType.returnType();
@@ -1007,7 +1007,7 @@ class InvokerBytecodeGenerator {
 
         // Invoke
         String targetDesc = dstType.basicType().toMethodDescriptorString();
-        mv.visitMethodInsn(Opcodes.INVOKEVIRTUAL, MH, "invokeBasic", targetDesc);
+        mv.visitMethodInsn(Opcodes.INVOKEVIRTUAL, MH, "invokeBasic", targetDesc, false);
 
         // Box primitive types
         Class<?> rtype = dstType.returnType();
