@@ -178,10 +178,7 @@ size_t CollectorPolicy::compute_heap_alignment() {
   // byte entry and the os page size is 4096, the maximum heap size should
   // be 512*4096 = 2MB aligned.
 
-  // There is only the GenRemSet in Hotspot and only the GenRemSet::CardTable
-  // is supported.
-  // Requirements of any new remembered set implementations must be added here.
-  size_t alignment = GenRemSet::max_alignment_constraint(GenRemSet::CardTable);
+  size_t alignment = GenRemSet::max_alignment_constraint();
 
   // Parallel GC does its own alignment of the generations to avoid requiring a
   // large page (256M on some platforms) for the permanent generation.  The
