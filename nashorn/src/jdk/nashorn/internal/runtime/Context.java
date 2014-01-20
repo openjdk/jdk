@@ -91,6 +91,11 @@ public final class Context {
      */
     public static final String NASHORN_JAVA_REFLECTION = "nashorn.JavaReflection";
 
+    /**
+     * Permission to enable nashorn debug mode.
+     */
+    public static final String NASHORN_DEBUG_MODE = "nashorn.debugMode";
+
     // nashorn load psuedo URL prefixes
     private static final String LOAD_CLASSPATH = "classpath:";
     private static final String LOAD_FX = "fx:";

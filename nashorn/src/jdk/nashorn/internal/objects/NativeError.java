@@ -85,6 +85,10 @@ public final class NativeError extends ScriptObject {
     @Property(attributes = Attribute.NOT_ENUMERABLE, where = Where.PROTOTYPE)
     public Object message;
 
+    /** Nashorn extension: underlying exception */
+    @Property(attributes = Attribute.NOT_ENUMERABLE)
+    public Object nashornException;
+
     // initialized by nasgen
     private static PropertyMap $nasgenmap$;
 
