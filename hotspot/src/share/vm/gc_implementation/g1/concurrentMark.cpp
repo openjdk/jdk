@@ -2528,7 +2528,9 @@ void ConcurrentMark::weakRefsWork(bool clear_all_soft_refs) {
     assert(!rp->discovery_enabled(), "Post condition");
   }
 
-  g1h->unlink_string_and_symbol_table(&g1_is_alive);
+  g1h->unlink_string_and_symbol_table(&g1_is_alive,
+                                      /* process_strings */ false, // currently strings are always roots
+                                      /* process_symbols */ true);
 }
 
 void ConcurrentMark::swapMarkBitMaps() {
