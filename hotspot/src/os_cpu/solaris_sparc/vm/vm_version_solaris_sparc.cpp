@@ -119,6 +119,11 @@ int VM_Version::platform_features(int features) {
 #endif
     if (av & AV_SPARC_CBCOND)       features |= cbcond_instructions_m;
 
+#ifndef AV_SPARC_AES
+#define AV_SPARC_AES 0x00020000  /* aes instrs supported */
+#endif
+    if (av & AV_SPARC_AES)       features |= aes_instructions_m;
+
   } else {
     // getisax(2) failed, use the old legacy code.
 #ifndef PRODUCT
