@@ -433,7 +433,16 @@ Java_sun_management_OperatingSystemImpl_getOpenFileDescriptorCount
     struct dirent* dentp;
     jlong fds = 0;
 
-    dirp = opendir("/proc/self/fd");
+#if defined(_AIX)
+/* AIX does not understand '/proc/self' - it requires the real process ID */
+#define FD_DIR aix_fd_dir
+    char aix_fd_dir[32];     /* the pid has at most 19 digits */
+    snprintf(aix_fd_dir, 32, "/proc/%d/fd", getpid());
+#else
+#define FD_DIR "/proc/self/fd"
+#endif
+
+    dirp = opendir(FD_DIR);
     if (dirp == NULL) {
         throw_internal_error(env, "Unable to open directory /proc/self/fd");
         return -1;

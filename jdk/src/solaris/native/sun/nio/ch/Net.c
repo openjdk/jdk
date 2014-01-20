@@ -104,11 +104,23 @@
 
 #endif /* IPV6_ADD_MEMBERSHIP */
 
+#if defined(_AIX)
+
+struct my_ip_mreq_source {
+        struct in_addr  imr_multiaddr;
+        struct in_addr  imr_sourceaddr;
+        struct in_addr  imr_interface;
+};
+
+#else
+
 struct my_ip_mreq_source {
         struct in_addr  imr_multiaddr;
         struct in_addr  imr_interface;
         struct in_addr  imr_sourceaddr;
 };
+
+#endif /* _AIX */
 
 struct my_group_source_req {
         uint32_t                gsr_interface;  /* interface index */
@@ -199,7 +211,7 @@ Java_sun_nio_ch_Net_isExclusiveBindAvailable(JNIEnv *env, jclass clazz) {
 JNIEXPORT jboolean JNICALL
 Java_sun_nio_ch_Net_canIPv6SocketJoinIPv4Group0(JNIEnv* env, jclass cl)
 {
-#ifdef MACOSX
+#if defined(MACOSX) || defined(_AIX)
     /* for now IPv6 sockets cannot join IPv4 multicast groups */
     return JNI_FALSE;
 #else

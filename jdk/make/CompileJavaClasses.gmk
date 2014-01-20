@@ -228,9 +228,9 @@ endif
 # Exclude another implicitly not included file.
 EXFILES += sun/util/locale/AsciiUtil.java
 
-ifeq (, $(filter $(OPENJDK_TARGET_OS), solaris macosx))
+ifeq (, $(filter $(OPENJDK_TARGET_OS), solaris macosx aix))
   #
-  # only solaris and macosx
+  # only solaris, macosx and aix
   #
   EXFILES += sun/nio/fs/PollingWatchService.java
 endif
@@ -308,6 +308,11 @@ SECURITY_PKGS := \
 AIX_SRC_DIRS :=
 ifeq ($(OPENJDK_TARGET_OS),aix)
      AIX_SRC_DIRS += $(JDK_TOPDIR)/src/aix/classes
+
+  # these files are duplicated in AIX_SRC_DIRS
+  EXFILES += $(JDK_TOPDIR)/src/solaris/classes/sun/nio/ch/sctp/SctpChannelImpl.java \
+      $(JDK_TOPDIR)/src/solaris/classes/sun/nio/ch/sctp/SctpMultiChannelImpl.java \
+      $(JDK_TOPDIR)/src/solaris/classes/sun/nio/ch/sctp/SctpServerChannelImpl.java
 endif
 
 # The exception handling of swing beaninfo
