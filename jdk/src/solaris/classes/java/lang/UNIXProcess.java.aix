@@ -338,9 +338,23 @@ final class UNIXProcess extends Process {
      * This is tricky because we do not want the user-level InputStream to be
      * closed until the user invokes close(), and we need to continue to be
      * able to read any buffered data lingering in the OS pipe buffer.
+     *
+     * On AIX this is especially tricky, because the 'close()' system call
+     * will block if another thread is at the same time blocked in a file
+     * operation (e.g. 'read()') on the same file descriptor. We therefore
+     * combine this 'ProcessPipeInputStream' with the DeferredCloseInputStream
+     * approach used on Solaris (see "UNIXProcess.java.solaris"). This means
+     * that every potentially blocking operation on the file descriptor
+     * increments a counter before it is executed and decrements it once it
+     * finishes. The 'close()' operation will only be executed if there are
+     * no pending operations. Otherwise it is deferred after the last pending
+     * operation has finished.
+     *
      */
     static class ProcessPipeInputStream extends BufferedInputStream {
         private final Object closeLock = new Object();
+        private int useCount = 0;
+        private boolean closePending = false;
 
         ProcessPipeInputStream(int fd) {
             super(new FileInputStream(newFileDescriptor(fd)));
@@ -382,12 +396,83 @@ final class UNIXProcess extends Process {
             } catch (IOException ignored) { }
         }
 
+        private void raise() {
+            synchronized (closeLock) {
+                useCount++;
+            }
+        }
+
+        private void lower() throws IOException {
+            synchronized (closeLock) {
+                useCount--;
+                if (useCount == 0 && closePending) {
+                    closePending = false;
+                    super.close();
+                }
+            }
+        }
+
+        @Override
+        public int read() throws IOException {
+            raise();
+            try {
+                return super.read();
+            } finally {
+                lower();
+            }
+        }
+
+        @Override
+        public int read(byte[] b) throws IOException {
+            raise();
+            try {
+                return super.read(b);
+            } finally {
+                lower();
+            }
+        }
+
+        @Override
+        public int read(byte[] b, int off, int len) throws IOException {
+            raise();
+            try {
+                return super.read(b, off, len);
+            } finally {
+                lower();
+            }
+        }
+
+        @Override
+        public long skip(long n) throws IOException {
+            raise();
+            try {
+                return super.skip(n);
+            } finally {
+                lower();
+            }
+        }
+
+        @Override
+        public int available() throws IOException {
+            raise();
+            try {
+                return super.available();
+            } finally {
+                lower();
+            }
+        }
+
         @Override
         public void close() throws IOException {
             // BufferedInputStream#close() is not synchronized unlike most other methods.
             // Synchronizing helps avoid racing with drainInputStream().
             synchronized (closeLock) {
-                super.close();
+                if (useCount == 0) {
+                    super.close();
+                }
+                else {
+                    closePending = true;
+                }
             }
         }
     }

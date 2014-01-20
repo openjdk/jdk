@@ -1265,12 +1265,17 @@ static netif *enumIPv6Interfaces(JNIEnv *env, int sock, netif *ifs) {
         if (ifreqP->ifr_addr.sa_family != AF_INET6)
             continue;
 
+        if (ioctl(sock, SIOCGIFSITE6, (char *)&if2) >= 0) {
+            struct sockaddr_in6 *s6= (struct sockaddr_in6 *)&(ifreqP->ifr_addr);
+            s6->sin6_scope_id = if2.ifr_site6;
+        }
+
         /*
          * Add to the list
          */
         ifs = addif(env, sock, ifreqP->ifr_name, ifs,
                     (struct sockaddr *)&(ifreqP->ifr_addr),
-                     AF_INET6, 0);
+                    AF_INET6, 0);
 
         /*
          * If an exception occurred then free the list

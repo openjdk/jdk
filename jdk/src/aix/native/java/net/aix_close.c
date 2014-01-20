@@ -234,6 +234,28 @@ static int closefd(int fd1, int fd2) {
     pthread_mutex_lock(&(fdEntry->lock));
 
     {
+        /* On fast machines we see that we enter dup2 before the
+         * accepting thread had a chance to get and process the signal.
+         * So in case we woke a thread up, give it some time to cope.
+         * Also see https://bugs.openjdk.java.net/browse/JDK-8006395 */
+        int num_woken = 0;
+
+        /*
+         * Send a wakeup signal to all threads blocked on this
+         * file descriptor.
+         */
+        threadEntry_t *curr = fdEntry->threads;
+        while (curr != NULL) {
+            curr->intr = 1;
+            pthread_kill( curr->thr, sigWakeup );
+            num_woken ++;
+            curr = curr->next;
+        }
+
+        if (num_woken > 0) {
+          usleep(num_woken * 50);
+        }
+
         /*
          * And close/dup the file descriptor
          * (restart if interrupted by signal)
@@ -245,17 +267,6 @@ static int closefd(int fd1, int fd2) {
                 rv = dup2(fd1, fd2);
             }
         } while (rv == -1 && errno == EINTR);
-
-        /*
-         * Send a wakeup signal to all threads blocked on this
-         * file descriptor.
-         */
-        threadEntry_t *curr = fdEntry->threads;
-        while (curr != NULL) {
-            curr->intr = 1;
-            pthread_kill( curr->thr, sigWakeup );
-            curr = curr->next;
-        }
     }
 
     /*
