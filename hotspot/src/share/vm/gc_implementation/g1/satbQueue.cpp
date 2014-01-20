@@ -219,58 +219,52 @@ void SATBMarkQueueSet::handle_zero_index_for_thread(JavaThread* t) {
 }
 
 #ifdef ASSERT
-void SATBMarkQueueSet::dump_active_values(JavaThread* first,
-                                          bool expected_active) {
-  gclog_or_tty->print_cr("SATB queue active values for Java Threads");
-  gclog_or_tty->print_cr(" SATB queue set: active is %s",
-                         (is_active()) ? "TRUE" : "FALSE");
-  gclog_or_tty->print_cr(" expected_active is %s",
-                         (expected_active) ? "TRUE" : "FALSE");
-  for (JavaThread* t = first; t; t = t->next()) {
-    bool active = t->satb_mark_queue().is_active();
-    gclog_or_tty->print_cr("  thread %s, active is %s",
-                           t->name(), (active) ? "TRUE" : "FALSE");
+void SATBMarkQueueSet::dump_active_states(bool expected_active) {
+  gclog_or_tty->print_cr("Expected SATB active state: %s",
+                         expected_active ? "ACTIVE" : "INACTIVE");
+  gclog_or_tty->print_cr("Actual SATB active states:");
+  gclog_or_tty->print_cr("  Queue set: %s", is_active() ? "ACTIVE" : "INACTIVE");
+  for (JavaThread* t = Threads::first(); t; t = t->next()) {
+    gclog_or_tty->print_cr("  Thread \"%s\" queue: %s", t->name(),
+                           t->satb_mark_queue().is_active() ? "ACTIVE" : "INACTIVE");
+  }
+  gclog_or_tty->print_cr("  Shared queue: %s",
+                         shared_satb_queue()->is_active() ? "ACTIVE" : "INACTIVE");
+}
+
+void SATBMarkQueueSet::verify_active_states(bool expected_active) {
+  // Verify queue set state
+  if (is_active() != expected_active) {
+    dump_active_states(expected_active);
+    guarantee(false, "SATB queue set has an unexpected active state");
+  }
+
+  // Verify thread queue states
+  for (JavaThread* t = Threads::first(); t; t = t->next()) {
+    if (t->satb_mark_queue().is_active() != expected_active) {
+      dump_active_states(expected_active);
+      guarantee(false, "Thread SATB queue has an unexpected active state");
+    }
+  }
+
+  // Verify shared queue state
+  if (shared_satb_queue()->is_active() != expected_active) {
+    dump_active_states(expected_active);
+    guarantee(false, "Shared SATB queue has an unexpected active state");
   }
 }
 #endif // ASSERT
 
-void SATBMarkQueueSet::set_active_all_threads(bool b,
-                                              bool expected_active) {
+void SATBMarkQueueSet::set_active_all_threads(bool active, bool expected_active) {
   assert(SafepointSynchronize::is_at_safepoint(), "Must be at safepoint.");
-  JavaThread* first = Threads::first();
-
 #ifdef ASSERT
-  if (_all_active != expected_active) {
-    dump_active_values(first, expected_active);
-
-    // I leave this here as a guarantee, instead of an assert, so
-    // that it will still be compiled in if we choose to uncomment
-    // the #ifdef ASSERT in a product build. The whole block is
-    // within an #ifdef ASSERT so the guarantee will not be compiled
-    // in a product build anyway.
-    guarantee(false,
-              "SATB queue set has an unexpected active value");
-  }
+  verify_active_states(expected_active);
 #endif // ASSERT
-  _all_active = b;
-
-  for (JavaThread* t = first; t; t = t->next()) {
-#ifdef ASSERT
-    bool active = t->satb_mark_queue().is_active();
-    if (active != expected_active) {
-      dump_active_values(first, expected_active);
-
-      // I leave this here as a guarantee, instead of an assert, so
-      // that it will still be compiled in if we choose to uncomment
-      // the #ifdef ASSERT in a product build. The whole block is
-      // within an #ifdef ASSERT so the guarantee will not be compiled
-      // in a product build anyway.
-      guarantee(false,
-                "thread has an unexpected active value in its SATB queue");
-    }
-#endif // ASSERT
-    t->satb_mark_queue().set_active(b);
+  _all_active = active;
+  for (JavaThread* t = Threads::first(); t; t = t->next()) {
+    t->satb_mark_queue().set_active(active);
   }
+  shared_satb_queue()->set_active(active);
 }
 
 void SATBMarkQueueSet::filter_thread_buffers() {
