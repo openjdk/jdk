@@ -62,7 +62,6 @@ final class WClipboard extends SunClipboard {
 
     @Override
     protected void setContentsNative(Transferable contents) {
-
         // Don't use delayed Clipboard rendering for the Transferable's data.
         // If we did that, we would call Transferable.getTransferData on
         // the Toolkit thread, which is a security hole.
@@ -71,7 +70,7 @@ final class WClipboard extends SunClipboard {
         // translated. Then, for each format, translate the data and post
         // it to the Clipboard.
         Map <Long, DataFlavor> formatMap = WDataTransferer.getInstance().
-            getFormatsForTransferable(contents, flavorMap);
+            getFormatsForTransferable(contents, getDefaultFlavorTable());
 
         openClipboard(this);
 
