@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -20,37 +20,43 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+import java.io.File;
+import java.io.PrintStream;
 import java.lang.management.ManagementFactory;
 import java.lang.management.ThreadInfo;
 import java.security.Permission;
 import java.security.Policy;
 import java.security.ProtectionDomain;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Random;
+import java.util.Set;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.logging.Level;
 import java.util.logging.LogManager;
 import java.util.logging.Logger;
 
 
 /**
  * @test
- * @bug 8029281 8027670
- * @summary Synchronization issues in Logger and LogManager. This test
- *       focusses more particularly on potential deadlock in
- *       drainLoggerRefQueueBounded / readConfiguration
- * @run main/othervm TestLogConfigurationDeadLock
+ * @bug 8027670 8029281
+ * @summary Deadlock in drainLoggerRefQueueBounded / readConfiguration
+ *          caused by synchronization issues in Logger and LogManager.
+ * @run main/othervm TestLogConfigurationDeadLockWithConf
  * @author danielfuchs
  */
 // This test is a best effort to try & detect issues. The test itself will run
-// for 8secs. This is usually unsufficient to detect issues.
-// To get a greater confidence it is recommended to run this test in a loop:
+// for 8secs. This is usually sufficient to detect issues.
+// However to get a greater confidence it is recommended to run this test in a loop:
 // e.g. use something like:
 // $ while jtreg -jdk:$JDK -verbose:all  \
-//      test/java/util/logging/TestLogConfigurationDeadLock.java ; \
+//      test/java/util/logging/TestLogConfigurationDeadLockWithConf.java ; \
 //      do echo Running test again ; done
 // and let it run for a few hours...
 //
-public class TestLogConfigurationDeadLock {
+public class TestLogConfigurationDeadLockWithConf {
 
     static volatile Exception thrown = null;
     static volatile boolean goOn = true;
@@ -84,8 +90,22 @@ public class TestLogConfigurationDeadLock {
      * This is a best effort test.
      *
      * @param args the command line arguments
+     * @throws java.lang.Exception if the test fails.
      */
     public static void main(String[] args) throws Exception {
+        File config =  new File(System.getProperty("test.src", "."),
+                        "deadlockconf.properties");
+        if (!config.canRead()) {
+            System.err.println("Can't read config file: test cannot execute.");
+            System.err.println("Please check your test environment: ");
+            System.err.println("\t -Dtest.src=" + System.getProperty("test.src", "."));
+            System.err.println("\t config file is: " + config.getAbsolutePath());
+            throw new RuntimeException("Can't read config file: "
+                + config.getAbsolutePath());
+        }
+
+        System.setProperty("java.util.logging.config.file",
+               config.getAbsolutePath());
 
         // test without security
         System.out.println("No security");
@@ -105,6 +125,11 @@ public class TestLogConfigurationDeadLock {
         test();
     }
 
+    static Random rand = new Random(System.currentTimeMillis());
+    private static int getBarCount() {
+        return rand.nextInt(10);
+    }
+
     /**
      * Starts all threads, wait 4secs, then stops all threads.
      * @throws Exception if a deadlock was detected or an error occurred.
@@ -122,33 +147,78 @@ public class TestLogConfigurationDeadLock {
           for (int i = 0; i<LOGGERS; i++) {
               threads.add(new AddLogger());
           }
-          threads.add(new DeadlockDetector());
+          DeadlockDetector detector = new DeadlockDetector();
+          threads.add(detector);
           threads.add(0, new Stopper(TIME));
           for (Thread t : threads) {
               t.start();
           }
+
+          // wait for the detector to finish.
+          detector.join();
+
+          final PrintStream out = thrown == null ? System.out : System.err;
+
+          // Try to wait for all threads to finish.
+          // This is a best effort: if some threads are in deadlock we can't
+          //    obviously wait for them, and other threads may have joined in
+          //    the deadlock since we last checked.
+          //    However, all threads which are succeptible of deadlocking
+          //    extend DeamonThread.
           for (Thread t : threads) {
+              if (t == detector) {
+                  continue;
+              }
+              if (detector.deadlocked.contains(t.getId())) {
+                  out.println("Skipping deadlocked thread "
+                          + t.getClass().getSimpleName() + ": " + t);
+                  continue; // don't wait for deadlocked thread: they won't terminate
+              }
               try {
-                  t.join();
+                  if (detector.deadlocked.isEmpty()) {
+                      t.join();
+                  } else {
+                      if (t instanceof DaemonThread) {
+                          // Some other threads may have join the deadlock.
+                          // don't wait forever.
+                          t.join(100);
+                      } else {
+                          // Those threads that don't extend DaemonThread
+                          // should be safe from deadlock.
+                          out.println("Waiting for "
+                                  + t.getClass().getSimpleName() + ": " + t);
+                          t.join();
+                      }
+                  }
               } catch (Exception x) {
                   fail(x);
               }
           }
-          if (thrown != null) {
-              throw thrown;
-          }
-          System.out.println("Passed: " + (nextLogger.get() - sNextLogger)
+          out.println("All threads joined.");
+
+          final String status = thrown == null ? "Passed" : "FAILED";
+
+          out.println(status + ": " + (nextLogger.get() - sNextLogger)
                   + " loggers created by " + LOGGERS + " Thread(s),");
-          System.out.println("\t LogManager.readConfiguration() called "
+          out.println("\t LogManager.readConfiguration() called "
                   + (readCount.get() - sReadCount) + " times by " + READERS
                   + " Thread(s).");
-          System.out.println("\t ThreadMXBean.findDeadlockedThreads called "
+          out.println("\t ThreadMXBean.findDeadlockedThreads called "
                   + (checkCount.get() -sCheckCount) + " times by 1 Thread.");
 
+          if (thrown != null) {
+              out.println("\t Error is: "+thrown.getMessage());
+              throw thrown;
+          }
     }
 
+    static class DaemonThread extends Thread {
+        public DaemonThread() {
+            this.setDaemon(true);
+        }
+    }
 
-    final static class ReadConf extends Thread {
+    final static class ReadConf extends DaemonThread {
         @Override
         public void run() {
             while (goOn) {
@@ -163,16 +233,15 @@ public class TestLogConfigurationDeadLock {
         }
     }
 
-    final static class AddLogger extends Thread {
+    final static class AddLogger extends DaemonThread {
         @Override
         public void run() {
             try {
                 while (goOn) {
                     Logger l;
-                    Logger foo = Logger.getLogger("foo");
-                    Logger bar = Logger.getLogger("foo.bar");
+                    int barcount = getBarCount();
                     for (int i=0; i < LCOUNT ; i++) {
-                        l = Logger.getLogger("foo.bar.l"+nextLogger.incrementAndGet());
+                        l = Logger.getLogger("foo.bar"+barcount+".l"+nextLogger.incrementAndGet());
                         l.fine("I'm fine");
                         if (!goOn) break;
                         Thread.sleep(1);
@@ -186,6 +255,16 @@ public class TestLogConfigurationDeadLock {
 
     final static class DeadlockDetector extends Thread {
 
+        final Set<Long> deadlocked = Collections.synchronizedSet(new HashSet<Long>());
+
+        static List<Long> asList(long... ids) {
+            final List<Long> list = new ArrayList<>(ids.length);
+            for (long id : ids) {
+                list.add(id);
+            }
+            return list;
+        }
+
         @Override
         public void run() {
             while(goOn) {
@@ -193,11 +272,13 @@ public class TestLogConfigurationDeadLock {
                     long[] ids = ManagementFactory.getThreadMXBean().findDeadlockedThreads();
                     checkCount.incrementAndGet();
                     ids = ids == null ? new long[0] : ids;
+                    if (ids.length > 0) {
+                        deadlocked.addAll(asList(ids));
+                    }
                     if (ids.length == 1) {
                         throw new RuntimeException("Found 1 deadlocked thread: "+ids[0]);
                     } else if (ids.length > 0) {
-                        ThreadInfo[] infos = ManagementFactory.getThreadMXBean()
-                            .getThreadInfo(ids, Integer.MAX_VALUE);
+                        ThreadInfo[] infos = ManagementFactory.getThreadMXBean().getThreadInfo(ids, Integer.MAX_VALUE);
                         System.err.println("Found "+ids.length+" deadlocked threads: ");
                         for (ThreadInfo inf : infos) {
                             System.err.println(inf.toString());
@@ -217,6 +298,8 @@ public class TestLogConfigurationDeadLock {
         long start;
         long time;
 
+        static final Logger logger = Logger.getLogger("remaining");
+
         Stopper(long time) {
             start = System.currentTimeMillis();
             this.time = time;
@@ -229,7 +312,8 @@ public class TestLogConfigurationDeadLock {
                 previous = time;
                 while (goOn && (rest = start - System.currentTimeMillis() + time) > 0) {
                     if (previous == time || previous - rest >= STEP) {
-                        Logger.getLogger("remaining").info(String.valueOf(rest)+"ms remaining...");
+                        logger.log(Level.INFO,
+                                "{0}ms remaining...", String.valueOf(rest));
                         previous = rest == time ? rest -1 : rest;
                         System.gc();
                     }
