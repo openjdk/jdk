@@ -59,6 +59,16 @@ public final class Utils {
      */
     public static final String JAVA_OPTIONS = System.getProperty("test.java.opts", "").trim();
 
+    /**
+    * Returns the value of 'test.timeout.factor' system property
+    * converted to {@code double}.
+    */
+    public static final double TIMEOUT_FACTOR;
+    static {
+        String toFactor = System.getProperty("test.timeout.factor", "1.0");
+       TIMEOUT_FACTOR = Double.parseDouble(toFactor);
+    }
+
     private Utils() {
         // Private constructor to prevent class instantiation
     }
