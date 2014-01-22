@@ -36,7 +36,7 @@ BEGIN	{
 	{ totallines++; print $0 }
 
 END	{ 
-	    if ((headerlines == 2) && (datalines == 11) && (totallines == 13) && (datalines2 == 1)) {
+	    if ((headerlines == 2) && (datalines == 11) && (datalines2 == 1)) {
 	        exit 0
 	    } else {
 	        exit 1
