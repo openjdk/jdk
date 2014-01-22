@@ -619,6 +619,32 @@ cmsBool CMSEXPORT cmsIsTag(cmsHPROFILE hProfile, cmsTagSignature sig)
        return _cmsSearchTag(Icc, sig, FALSE) >= 0;
 }
 
+/*
+ * Enforces that the profile version is per. spec.
+ * Operates on the big endian bytes from the profile.
+ * Called before converting to platform endianness.
+ * Byte 0 is BCD major version, so max 9.
+ * Byte 1 is 2 BCD digits, one per nibble.
+ * Reserved bytes 2 & 3 must be 0.
+ */
+static cmsUInt32Number _validatedVersion(cmsUInt32Number DWord)
+{
+    cmsUInt8Number* pByte = (cmsUInt8Number*)&DWord;
+    cmsUInt8Number temp1;
+    cmsUInt8Number temp2;
+
+    if (*pByte > 0x09) *pByte = (cmsUInt8Number)9;
+    temp1 = *(pByte+1) & 0xf0;
+    temp2 = *(pByte+1) & 0x0f;
+    if (temp1 > 0x90) temp1 = 0x90;
+    if (temp2 > 9) temp2 = 0x09;
+    *(pByte+1) = (cmsUInt8Number)(temp1 | temp2);
+    *(pByte+2) = (cmsUInt8Number)0;
+    *(pByte+3) = (cmsUInt8Number)0;
+
+    return DWord;
+}
+
 // Read profile header and validate it
 cmsBool _cmsReadHeader(_cmsICCPROFILE* Icc)
 {
@@ -653,7 +679,7 @@ cmsBool _cmsReadHeader(_cmsICCPROFILE* Icc)
     Icc -> creator         = _cmsAdjustEndianess32(Header.creator);
 
     _cmsAdjustEndianess64(&Icc -> attributes, &Header.attributes);
-    Icc -> Version         = _cmsAdjustEndianess32(Header.version);
+    Icc -> Version         = _cmsAdjustEndianess32(_validatedVersion(Header.version));
 
     // Get size as reported in header
     HeaderSize = _cmsAdjustEndianess32(Header.size);
