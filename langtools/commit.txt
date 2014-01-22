@@ -1,2 +1,0 @@
-8030816: javac crashes when mixing lambdas and inner classes
-Reviewed-by: jjg, jlahoda
