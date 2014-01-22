@@ -90,6 +90,13 @@ public final class XalanConstants {
      */
     public static final String JDK_XML_NAME_LIMIT =
             ORACLE_JAXP_PROPERTY_PREFIX + "maxXMLNameLimit";
+
+    /**
+     * JDK maxElementDepth limit
+     */
+    public static final String JDK_MAX_ELEMENT_DEPTH =
+            ORACLE_JAXP_PROPERTY_PREFIX + "maxElementDepth";
+
     /**
      * JDK property indicating whether the parser shall print out entity
      * count information
@@ -137,6 +144,11 @@ public final class XalanConstants {
      * JDK maximum XML name limit
      */
     public static final String SP_XML_NAME_LIMIT = "jdk.xml.maxXMLNameLimit";
+
+    /**
+     * JDK maxElementDepth limit
+     */
+    public static final String SP_MAX_ELEMENT_DEPTH = "jdk.xml.maxElementDepth";
 
     //legacy System Properties
     public final static String ENTITY_EXPANSION_LIMIT = "entityExpansionLimit";
