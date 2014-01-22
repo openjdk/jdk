@@ -273,21 +273,20 @@ public class ClassWriterImpl extends SubWriterHolderWriter
         Type[] implIntfacs = classDoc.interfaceTypes();
         if (implIntfacs != null && implIntfacs.length > 0) {
             int counter = 0;
-            for (int i = 0; i < implIntfacs.length; i++) {
-                ClassDoc classDoc = implIntfacs[i].asClassDoc();
-                if (! (classDoc.isPublic() ||
-                        Util.isLinkable(classDoc, configuration))) {
+            for (Type implType : implIntfacs) {
+                ClassDoc classDoc = implType.asClassDoc();
+                if (!(classDoc.isPublic() || Util.isLinkable(classDoc, configuration))) {
                     continue;
                 }
                 if (counter == 0) {
                     pre.addContent(DocletConstants.NL);
-                    pre.addContent(isInterface? "extends " : "implements ");
+                    pre.addContent(isInterface ? "extends " : "implements ");
                 } else {
                     pre.addContent(", ");
                 }
                 Content link = getLink(new LinkInfoImpl(configuration,
-                        LinkInfoImpl.Kind.CLASS_SIGNATURE_PARENT_NAME,
-                        implIntfacs[i]));
+                                                        LinkInfoImpl.Kind.CLASS_SIGNATURE_PARENT_NAME,
+                                                        implType));
                 pre.addContent(link);
                 counter++;
             }

@@ -78,8 +78,7 @@ import static com.sun.tools.javac.tree.JCTree.Tag.*;
  *  deletion without notice.</b>
  */
 public class Resolve {
-    protected static final Context.Key<Resolve> resolveKey =
-        new Context.Key<Resolve>();
+    protected static final Context.Key<Resolve> resolveKey = new Context.Key<>();
 
     Names names;
     Log log;
@@ -95,7 +94,7 @@ public class Resolve {
     public final boolean boxingEnabled; // = source.allowBoxing();
     public final boolean varargsEnabled; // = source.allowVarargs();
     public final boolean allowMethodHandles;
-    public final boolean allowDefaultMethods;
+    public final boolean allowDefaultMethodsResolution;
     public final boolean allowStructuralMostSpecific;
     private final boolean debugResolve;
     private final boolean compactMethodDiags;
@@ -137,7 +136,7 @@ public class Resolve {
         verboseResolutionMode = VerboseResolutionMode.getVerboseResolutionMode(options);
         Target target = Target.instance(context);
         allowMethodHandles = target.hasMethodHandles();
-        allowDefaultMethods = source.allowDefaultMethods();
+        allowDefaultMethodsResolution = source.allowDefaultMethodsResolution();
         allowStructuralMostSpecific = source.allowStructuralMostSpecific();
         polymorphicSignatureScope = new Scope(syms.noSymbol);
 
@@ -918,7 +917,7 @@ public class Resolve {
         public MethodCheck mostSpecificCheck(List<Type> actuals, boolean strict) {
             return new MostSpecificCheck(strict, actuals);
         }
-    };
+    }
 
     /**
      * Check context to be used during method applicability checks. A method check
@@ -1503,7 +1502,7 @@ public class Resolve {
             return ambiguityError(m1, m2);
         case AMBIGUOUS:
             //check if m1 is more specific than all ambiguous methods in m2
-            AmbiguityError e = (AmbiguityError)m2;
+            AmbiguityError e = (AmbiguityError)m2.baseSymbol();
             for (Symbol s : e.ambiguousSyms) {
                 if (mostSpecific(argtypes, m1, s, env, site, allowBoxing, useVarargs) != m1) {
                     return e.addAmbiguousSymbol(m1);
@@ -1616,7 +1615,7 @@ public class Resolve {
                         (flags & DEFAULT) != 0 ||
                         (flags & ABSTRACT) == 0);
             }
-        };
+        }
 
     /** Find best qualified method matching given name, type and value
      *  arguments.
@@ -1681,7 +1680,7 @@ public class Resolve {
                 bestSoFar : methodNotFound;
 
         for (InterfaceLookupPhase iphase2 : InterfaceLookupPhase.values()) {
-            if (iphase2 == InterfaceLookupPhase.DEFAULT_OK && !allowDefaultMethods) break;
+            if (iphase2 == InterfaceLookupPhase.DEFAULT_OK && !allowDefaultMethodsResolution) break;
             //keep searching for abstract methods
             for (Type itype : itypes[iphase2.ordinal()]) {
                 if (!itype.isInterface()) continue; //skip j.l.Object (included by Types.closure())
@@ -1714,7 +1713,7 @@ public class Resolve {
                 //from superinterfaces)
                 if ((s.flags() & (ABSTRACT | INTERFACE | ENUM)) != 0) {
                     return this;
-                } else if (rs.allowDefaultMethods) {
+                } else if (rs.allowDefaultMethodsResolution) {
                     return DEFAULT_OK;
                 } else {
                     return null;
@@ -3055,7 +3054,7 @@ public class Resolve {
         final Symbol lookup(Env<AttrContext> env, MethodResolutionPhase phase) {
             Symbol sym = doLookup(env, phase);
             if (sym.kind == AMBIGUOUS) {
-                AmbiguityError a_err = (AmbiguityError)sym;
+                AmbiguityError a_err = (AmbiguityError)sym.baseSymbol();
                 sym = a_err.mergeAbstracts(site);
             }
             return sym;
@@ -3125,7 +3124,7 @@ public class Resolve {
 
         Symbol access(Env<AttrContext> env, DiagnosticPosition pos, Symbol location, Symbol sym) {
             if (sym.kind == AMBIGUOUS) {
-                AmbiguityError a_err = (AmbiguityError)sym;
+                AmbiguityError a_err = (AmbiguityError)sym.baseSymbol();
                 sym = a_err.mergeAbstracts(site);
             }
             //skip error reporting
@@ -3341,7 +3340,7 @@ public class Resolve {
             if ((env1.enclClass.sym.flags() & STATIC) != 0) staticOnly = true;
             env1 = env1.outer;
         }
-        if (allowDefaultMethods && c.isInterface() &&
+        if (allowDefaultMethodsResolution && c.isInterface() &&
                 name == names._super && !isStatic(env) &&
                 types.isDirectSuperInterface(c, env.enclClass.sym)) {
             //this might be a default super call if one of the superinterfaces is 'c'
@@ -3780,7 +3779,7 @@ public class Resolve {
                 bestSoFar = c;
             }
             Assert.checkNonNull(bestSoFar);
-            return new Pair<Symbol, JCDiagnostic>(bestSoFar.sym, bestSoFar.details);
+            return new Pair<>(bestSoFar.sym, bestSoFar.details);
         }
     }
 
@@ -3827,7 +3826,7 @@ public class Resolve {
             } else if (filteredCandidates.size() == 1) {
                 Map.Entry<Symbol, JCDiagnostic> _e =
                                 filteredCandidates.entrySet().iterator().next();
-                final Pair<Symbol, JCDiagnostic> p = new Pair<Symbol, JCDiagnostic>(_e.getKey(), _e.getValue());
+                final Pair<Symbol, JCDiagnostic> p = new Pair<>(_e.getKey(), _e.getValue());
                 JCDiagnostic d = new InapplicableSymbolError(resolveContext) {
                     @Override
                     protected Pair<Symbol, JCDiagnostic> errCandidate() {
@@ -3846,7 +3845,7 @@ public class Resolve {
         }
         //where
             private Map<Symbol, JCDiagnostic> mapCandidates() {
-                Map<Symbol, JCDiagnostic> candidates = new LinkedHashMap<Symbol, JCDiagnostic>();
+                Map<Symbol, JCDiagnostic> candidates = new LinkedHashMap<>();
                 for (Candidate c : resolveContext.candidates) {
                     if (c.isApplicable()) continue;
                     candidates.put(c.sym, c.details);
@@ -3855,7 +3854,7 @@ public class Resolve {
             }
 
             Map<Symbol, JCDiagnostic> filterCandidates(Map<Symbol, JCDiagnostic> candidatesMap) {
-                Map<Symbol, JCDiagnostic> candidates = new LinkedHashMap<Symbol, JCDiagnostic>();
+                Map<Symbol, JCDiagnostic> candidates = new LinkedHashMap<>();
                 for (Map.Entry<Symbol, JCDiagnostic> _entry : candidatesMap.entrySet()) {
                     JCDiagnostic d = _entry.getValue();
                     if (!new Template(MethodCheckDiag.ARITY_MISMATCH.regex()).matches(d)) {
@@ -3992,7 +3991,7 @@ public class Resolve {
 
         private List<Symbol> flatten(Symbol sym) {
             if (sym.kind == AMBIGUOUS) {
-                return ((AmbiguityError)sym).ambiguousSyms;
+                return ((AmbiguityError)sym.baseSymbol()).ambiguousSyms;
             } else {
                 return List.of(sym);
             }
@@ -4175,8 +4174,7 @@ public class Resolve {
         };
 
         /** rewriter map used for method resolution simplification */
-        static final Map<Template, DiagnosticRewriter> rewriters =
-                new LinkedHashMap<Template, DiagnosticRewriter>();
+        static final Map<Template, DiagnosticRewriter> rewriters = new LinkedHashMap<>();
 
         static {
             String argMismatchRegex = MethodCheckDiag.ARG_MISMATCH.regex();

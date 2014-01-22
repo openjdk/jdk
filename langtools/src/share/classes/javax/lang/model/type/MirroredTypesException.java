@@ -55,7 +55,7 @@ public class MirroredTypesException extends RuntimeException {
      */
     MirroredTypesException(String message, TypeMirror type) {
         super(message);
-        List<TypeMirror> tmp = (new ArrayList<TypeMirror>());
+        List<TypeMirror> tmp = (new ArrayList<>());
         tmp.add(type);
         types = Collections.unmodifiableList(tmp);
     }
@@ -68,7 +68,7 @@ public class MirroredTypesException extends RuntimeException {
     public MirroredTypesException(List<? extends TypeMirror> types) {
         super("Attempt to access Class objects for TypeMirrors " +
               (types = // defensive copy
-               new ArrayList<TypeMirror>(types)).toString() );
+               new ArrayList<>(types)).toString() );
         this.types = Collections.unmodifiableList(types);
     }
 

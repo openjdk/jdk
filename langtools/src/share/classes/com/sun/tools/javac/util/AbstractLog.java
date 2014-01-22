@@ -45,9 +45,21 @@ import com.sun.tools.javac.util.JCDiagnostic.SimpleDiagnosticPosition;
  *  deletion without notice.</b>
  */
 public abstract class AbstractLog {
+    /** Factory for diagnostics
+     */
+    protected JCDiagnostic.Factory diags;
+
+    /** The file that's currently being translated.
+     */
+    protected DiagnosticSource source;
+
+    /** A cache of lightweight DiagnosticSource objects.
+     */
+    protected Map<JavaFileObject, DiagnosticSource> sourceMap;
+
     AbstractLog(JCDiagnostic.Factory diags) {
         this.diags = diags;
-        sourceMap = new HashMap<JavaFileObject, DiagnosticSource>();
+        sourceMap = new HashMap<>();
     }
 
     /** Re-assign source, returning previous setting.
@@ -246,16 +258,4 @@ public abstract class AbstractLog {
     private DiagnosticPosition wrap(int pos) {
         return (pos == Position.NOPOS ? null : new SimpleDiagnosticPosition(pos));
     }
-
-    /** Factory for diagnostics
-     */
-    protected JCDiagnostic.Factory diags;
-
-    /** The file that's currently being translated.
-     */
-    protected DiagnosticSource source;
-
-    /** A cache of lightweight DiagnosticSource objects.
-     */
-    protected Map<JavaFileObject, DiagnosticSource> sourceMap;
 }

@@ -148,9 +148,7 @@ public class Manifest implements Cloneable {
         // Write out the main attributes for the manifest
         attr.writeMain(dos);
         // Now write out the pre-entry attributes
-        Iterator<Map.Entry<String, Attributes>> it = entries.entrySet().iterator();
-        while (it.hasNext()) {
-            Map.Entry<String, Attributes> e = it.next();
+        for (Map.Entry<String, Attributes> e : entries.entrySet()) {
             StringBuffer buffer = new StringBuffer("Name: ");
             String value = e.getKey();
             if (value != null) {

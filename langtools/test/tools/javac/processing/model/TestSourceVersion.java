@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 7025809
+ * @bug 7025809 8028543
  * @summary Test latest and latestSupported
  * @author  Joseph D. Darcy
  */
@@ -36,8 +36,8 @@ import static javax.lang.model.SourceVersion.*;
  */
 public class TestSourceVersion {
     public static void main(String... args) {
-        if (SourceVersion.latest() != RELEASE_8 ||
-            SourceVersion.latestSupported() != RELEASE_8)
+        if (SourceVersion.latest() != RELEASE_9 ||
+            SourceVersion.latestSupported() != RELEASE_9)
             throw new RuntimeException("Unexpected release value(s) found:\n" +
                                        "latest:\t" + SourceVersion.latest() + "\n" +
                                        "latestSupported:\t" + SourceVersion.latestSupported());

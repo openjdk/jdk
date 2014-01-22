@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,29 +21,29 @@
  * questions.
  */
 
-/* @test
- * @bug 8004931
- * @compile NoBeans.java
- * @summary A compile-only test to ensure that implementations of Packer
- *   and Unpacker can be compiled without implementating the
- *   addPropertyChangeListener and removePropertyChangeListener methods.
+/*
+ * @test
+ * @bug 8029558
+ * @summary VerifyError lambda body is parenthesized generic value (originally submitted test)
+ * @author  Dmitrii Afanasyev
+ * @run main LambdaParenGenericOrig
  */
 
-import java.io.*;
-import java.util.*;
-import java.util.jar.*;
+public class LambdaParenGenericOrig {
 
-public class NoBeans {
-
-    static class MyPacker implements Pack200.Packer {
-        public SortedMap<String,String> properties() { return null; }
-        public void pack(JarFile in, OutputStream out) { }
-        public void pack(JarInputStream in, OutputStream out) { }
+    @FunctionalInterface
+    public static interface Function1<R, A> {
+        R apply(A input);
     }
 
-    static class MyUnpacker implements Pack200.Unpacker {
-        public SortedMap<String,String> properties() { return null; }
-        public void unpack(InputStream in, JarOutputStream out) { }
-        public void unpack(File in, JarOutputStream out) { }
+    @FunctionalInterface
+    public static interface Function2<R, A1, A2> {
+        R apply(A1 input1, A2 input2);
+    }
+
+    public static void main(String[] args) {
+        final Function2<Integer, Integer, Integer> add = (x, y) -> x + y;
+        final Function1<Integer, Integer> inc = x -> (add.apply(x, 1));
+        System.out.println(inc.apply(0));
     }
 }

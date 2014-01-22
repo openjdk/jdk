@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,7 +40,7 @@ import java.util.List;
  */
 public final class DiagnosticCollector<S> implements DiagnosticListener<S> {
     private List<Diagnostic<? extends S>> diagnostics =
-        Collections.synchronizedList(new ArrayList<Diagnostic<? extends S>>());
+            Collections.synchronizedList(new ArrayList<Diagnostic<? extends S>>());
 
     public void report(Diagnostic<? extends S> diagnostic) {
         diagnostic.getClass(); // null check

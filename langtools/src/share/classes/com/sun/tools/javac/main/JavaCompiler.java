@@ -81,8 +81,7 @@ import static com.sun.tools.javac.util.JCDiagnostic.DiagnosticFlag.*;
  */
 public class JavaCompiler {
     /** The context key for the compiler. */
-    protected static final Context.Key<JavaCompiler> compilerKey =
-        new Context.Key<JavaCompiler>();
+    protected static final Context.Key<JavaCompiler> compilerKey = new Context.Key<>();
 
     /** Get the JavaCompiler instance for this context. */
     public static JavaCompiler instance(Context context) {
@@ -556,7 +555,7 @@ public class JavaCompiler {
      *  we don't accidentally overwrite an input file when -s is set.
      *  initialized by `compile'.
      */
-    protected Set<JavaFileObject> inputFiles = new HashSet<JavaFileObject>();
+    protected Set<JavaFileObject> inputFiles = new HashSet<>();
 
     protected boolean shouldStop(CompileState cs) {
         CompileState shouldStopPolicy = (errorCount() > 0 || unrecoverableError())
@@ -726,13 +725,10 @@ public class JavaCompiler {
             log.error(cdef.pos(), "source.cant.overwrite.input.file", outFile);
             return null;
         } else {
-            BufferedWriter out = new BufferedWriter(outFile.openWriter());
-            try {
+            try (BufferedWriter out = new BufferedWriter(outFile.openWriter())) {
                 new Pretty(out, true).printUnit(env.toplevel, cdef);
                 if (verbose)
                     log.printVerbose("wrote.file", outFile);
-            } finally {
-                out.close();
             }
             return outFile;
         }
@@ -946,7 +942,7 @@ public class JavaCompiler {
 
         //parse all files
         ListBuffer<JCCompilationUnit> trees = new ListBuffer<>();
-        Set<JavaFileObject> filesSoFar = new HashSet<JavaFileObject>();
+        Set<JavaFileObject> filesSoFar = new HashSet<>();
         for (JavaFileObject fileObject : fileObjects) {
             if (!filesSoFar.contains(fileObject)) {
                 filesSoFar.add(fileObject);
@@ -1355,8 +1351,7 @@ public class JavaCompiler {
         return stopIfError(CompileState.FLOW, results);
     }
 
-    HashMap<Env<AttrContext>, Queue<Pair<Env<AttrContext>, JCClassDecl>>> desugaredEnvs =
-            new HashMap<Env<AttrContext>, Queue<Pair<Env<AttrContext>, JCClassDecl>>>();
+    HashMap<Env<AttrContext>, Queue<Pair<Env<AttrContext>, JCClassDecl>>> desugaredEnvs = new HashMap<>();
 
     /**
      * Prepare attributed parse trees, in conjunction with their attribution contexts,
@@ -1386,7 +1381,7 @@ public class JavaCompiler {
          * already been added to C and its superclasses.
          */
         class ScanNested extends TreeScanner {
-            Set<Env<AttrContext>> dependencies = new LinkedHashSet<Env<AttrContext>>();
+            Set<Env<AttrContext>> dependencies = new LinkedHashSet<>();
             protected boolean hasLambdas;
             @Override
             public void visitClassDef(JCClassDecl node) {
@@ -1459,7 +1454,7 @@ public class JavaCompiler {
                     List<JCTree> pdef = lower.translateTopLevelClass(env, env.tree, localMake);
                     if (pdef.head != null) {
                         Assert.check(pdef.tail.isEmpty());
-                        results.add(new Pair<Env<AttrContext>, JCClassDecl>(env, (JCClassDecl)pdef.head));
+                        results.add(new Pair<>(env, (JCClassDecl)pdef.head));
                     }
                 }
                 return;
@@ -1473,7 +1468,7 @@ public class JavaCompiler {
                     rootClasses.contains((JCClassDecl)untranslated) &&
                     ((cdef.mods.flags & (Flags.PROTECTED|Flags.PUBLIC)) != 0 ||
                      cdef.sym.packge().getQualifiedName() == names.java_lang)) {
-                    results.add(new Pair<Env<AttrContext>, JCClassDecl>(env, removeMethodBodies(cdef)));
+                    results.add(new Pair<>(env, removeMethodBodies(cdef)));
                 }
                 return;
             }
@@ -1501,7 +1496,7 @@ public class JavaCompiler {
                 JCClassDecl cdef = (JCClassDecl)env.tree;
                 if (untranslated instanceof JCClassDecl &&
                     rootClasses.contains((JCClassDecl)untranslated)) {
-                    results.add(new Pair<Env<AttrContext>, JCClassDecl>(env, cdef));
+                    results.add(new Pair<>(env, cdef));
                 }
                 return;
             }
@@ -1516,7 +1511,7 @@ public class JavaCompiler {
             //generate code for each class
             for (List<JCTree> l = cdefs; l.nonEmpty(); l = l.tail) {
                 JCClassDecl cdef = (JCClassDecl)l.head;
-                results.add(new Pair<Env<AttrContext>, JCClassDecl>(env, cdef));
+                results.add(new Pair<>(env, cdef));
             }
         }
         finally {
@@ -1589,11 +1584,11 @@ public class JavaCompiler {
         // where
         Map<JCCompilationUnit, Queue<Env<AttrContext>>> groupByFile(Queue<Env<AttrContext>> envs) {
             // use a LinkedHashMap to preserve the order of the original list as much as possible
-            Map<JCCompilationUnit, Queue<Env<AttrContext>>> map = new LinkedHashMap<JCCompilationUnit, Queue<Env<AttrContext>>>();
+            Map<JCCompilationUnit, Queue<Env<AttrContext>>> map = new LinkedHashMap<>();
             for (Env<AttrContext> env: envs) {
                 Queue<Env<AttrContext>> sublist = map.get(env.toplevel);
                 if (sublist == null) {
-                    sublist = new ListBuffer<Env<AttrContext>>();
+                    sublist = new ListBuffer<>();
                     map.put(env.toplevel, sublist);
                 }
                 sublist.add(env);

@@ -75,8 +75,7 @@ import static com.sun.tools.javac.main.Option.*;
  */
 public class ClassReader {
     /** The context key for the class reader. */
-    protected static final Context.Key<ClassReader> classReaderKey =
-        new Context.Key<ClassReader>();
+    protected static final Context.Key<ClassReader> classReaderKey = new Context.Key<>();
 
     public static final int INITIAL_BUFFER_SIZE = 0x0fff0;
 
@@ -115,10 +114,6 @@ public class ClassReader {
    /** Lint option: warn about classfile issues
      */
     boolean lintClassfile;
-
-    /** Switch: allow default methods
-     */
-    boolean allowDefaultMethods;
 
     /** Switch: preserve parameter names from the variable table.
      */
@@ -233,7 +228,7 @@ public class ClassReader {
     /**
      * The set of attribute names for which warnings have been generated for the current class
      */
-    Set<Name> warnedAttrs = new HashSet<Name>();
+    Set<Name> warnedAttrs = new HashSet<>();
 
     /**
      * Completer that delegates to the complete-method of this class.
@@ -271,8 +266,8 @@ public class ClassReader {
             Assert.check(classes == null || classes == syms.classes);
             classes = syms.classes;
         } else {
-            packages = new HashMap<Name, PackageSymbol>();
-            classes = new HashMap<Name, ClassSymbol>();
+            packages = new HashMap<>();
+            classes = new HashMap<>();
         }
 
         packages.put(names.empty, syms.rootPackage);
@@ -307,7 +302,6 @@ public class ClassReader {
         allowVarargs     = source.allowVarargs();
         allowAnnotations = source.allowAnnotations();
         allowSimplifiedVarargs = source.allowSimplifiedVarargs();
-        allowDefaultMethods = source.allowDefaultMethods();
 
         saveParameterNames = options.isSet("save-parameter-names");
         cacheCompletionFailure = options.isUnset("dev");
@@ -937,7 +931,8 @@ public class ClassReader {
  * Reading Attributes
  ***********************************************************************/
 
-    protected enum AttributeKind { CLASS, MEMBER };
+    protected enum AttributeKind { CLASS, MEMBER }
+
     protected abstract class AttributeReader {
         protected AttributeReader(Name name, ClassFile.Version version, Set<AttributeKind> kinds) {
             this.name = name;
@@ -978,7 +973,7 @@ public class ClassReader {
     protected Set<AttributeKind> CLASS_OR_MEMBER_ATTRIBUTE =
             EnumSet.of(AttributeKind.CLASS, AttributeKind.MEMBER);
 
-    protected Map<Name, AttributeReader> attributeReaders = new HashMap<Name, AttributeReader>();
+    protected Map<Name, AttributeReader> attributeReaders = new HashMap<>();
 
     private void initAttributeReaders() {
         AttributeReader[] readers = {
@@ -1131,7 +1126,7 @@ public class ClassReader {
                             Assert.check(c == currentOwner);
                             ct1.typarams_field = readTypeParams(nextChar());
                             ct1.supertype_field = sigToType();
-                            ListBuffer<Type> is = new ListBuffer<Type>();
+                            ListBuffer<Type> is = new ListBuffer<>();
                             while (sigp != siglimit) is.append(sigToType());
                             ct1.interfaces_field = is.toList();
                         } finally {
@@ -1275,7 +1270,7 @@ public class ClassReader {
         }
         enterTypevars(self);
         if (!missingTypeVariables.isEmpty()) {
-            ListBuffer<Type> typeVars =  new ListBuffer<Type>();
+            ListBuffer<Type> typeVars =  new ListBuffer<>();
             for (Type typevar : missingTypeVariables) {
                 typeVars.append(findTypeVar(typevar.tsym.name));
             }
@@ -1402,8 +1397,7 @@ public class ClassReader {
     void attachAnnotations(final Symbol sym) {
         int numAttributes = nextChar();
         if (numAttributes != 0) {
-            ListBuffer<CompoundAnnotationProxy> proxies =
-                new ListBuffer<CompoundAnnotationProxy>();
+            ListBuffer<CompoundAnnotationProxy> proxies = new ListBuffer<>();
             for (int i = 0; i<numAttributes; i++) {
                 CompoundAnnotationProxy proxy = readCompoundAnnotation();
                 if (proxy.type.tsym == syms.proprietaryType.tsym)
@@ -1489,12 +1483,11 @@ public class ClassReader {
     CompoundAnnotationProxy readCompoundAnnotation() {
         Type t = readTypeOrClassSymbol(nextChar());
         int numFields = nextChar();
-        ListBuffer<Pair<Name,Attribute>> pairs =
-            new ListBuffer<Pair<Name,Attribute>>();
+        ListBuffer<Pair<Name,Attribute>> pairs = new ListBuffer<>();
         for (int i=0; i<numFields; i++) {
             Name name = readName(nextChar());
             Attribute value = readAttributeValue();
-            pairs.append(new Pair<Name,Attribute>(name, value));
+            pairs.append(new Pair<>(name, value));
         }
         return new CompoundAnnotationProxy(t, pairs.toList());
     }
@@ -1631,7 +1624,7 @@ public class ClassReader {
             return new Attribute.Class(types, readTypeOrClassSymbol(nextChar()));
         case '[': {
             int n = nextChar();
-            ListBuffer<Attribute> l = new ListBuffer<Attribute>();
+            ListBuffer<Attribute> l = new ListBuffer<>();
             for (int i=0; i<n; i++)
                 l.append(readAttributeValue());
             return new ArrayAttributeProxy(l.toList());
@@ -1726,8 +1719,7 @@ public class ClassReader {
 
         List<Attribute.Compound> deproxyCompoundList(List<CompoundAnnotationProxy> pl) {
             // also must fill in types!!!!
-            ListBuffer<Attribute.Compound> buf =
-                new ListBuffer<Attribute.Compound>();
+            ListBuffer<Attribute.Compound> buf = new ListBuffer<>();
             for (List<CompoundAnnotationProxy> l = pl; l.nonEmpty(); l=l.tail) {
                 buf.append(deproxyCompound(l.head));
             }
@@ -1735,14 +1727,12 @@ public class ClassReader {
         }
 
         Attribute.Compound deproxyCompound(CompoundAnnotationProxy a) {
-            ListBuffer<Pair<Symbol.MethodSymbol,Attribute>> buf =
-                new ListBuffer<Pair<Symbol.MethodSymbol,Attribute>>();
+            ListBuffer<Pair<Symbol.MethodSymbol,Attribute>> buf = new ListBuffer<>();
             for (List<Pair<Name,Attribute>> l = a.values;
                  l.nonEmpty();
                  l = l.tail) {
                 MethodSymbol meth = findAccessMethod(a.type, l.head.fst);
-                buf.append(new Pair<Symbol.MethodSymbol,Attribute>
-                           (meth, deproxy(meth.type.getReturnType(), l.head.snd)));
+                buf.append(new Pair<>(meth, deproxy(meth.type.getReturnType(), l.head.snd)));
             }
             return new Attribute.Compound(a.type, buf.toList());
         }

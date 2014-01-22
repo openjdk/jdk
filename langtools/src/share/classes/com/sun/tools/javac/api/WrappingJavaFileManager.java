@@ -115,7 +115,7 @@ public class WrappingJavaFileManager<M extends JavaFileManager> extends Forwardi
      * @return the mapping
      */
     protected Iterable<JavaFileObject> wrap(Iterable<JavaFileObject> fileObjects) {
-        List<JavaFileObject> mapped = new ArrayList<JavaFileObject>();
+        List<JavaFileObject> mapped = new ArrayList<>();
         for (JavaFileObject fileObject : fileObjects)
             mapped.add(wrap(fileObject));
         return Collections.unmodifiableList(mapped);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 7073631 7159445 7156633
+ * @bug 7073631 7159445 7156633 8028235
  * @summary tests error and diagnostics positions
  * @author  Jan Lahoda
  */
@@ -35,9 +35,11 @@ import com.sun.source.tree.CompilationUnitTree;
 import com.sun.source.tree.ErroneousTree;
 import com.sun.source.tree.ExpressionStatementTree;
 import com.sun.source.tree.ExpressionTree;
+import com.sun.source.tree.LambdaExpressionTree;
 import com.sun.source.tree.MethodInvocationTree;
 import com.sun.source.tree.MethodTree;
 import com.sun.source.tree.ModifiersTree;
+import com.sun.source.tree.PrimitiveTypeTree;
 import com.sun.source.tree.StatementTree;
 import com.sun.source.tree.Tree;
 import com.sun.source.tree.Tree.Kind;
@@ -60,6 +62,7 @@ import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.regex.Pattern;
+import javax.lang.model.type.TypeKind;
 import javax.tools.Diagnostic;
 import javax.tools.DiagnosticCollector;
 import javax.tools.DiagnosticListener;
@@ -893,6 +896,43 @@ public class JavacParserTest extends TestCase {
                 enumAAA.getInitializer());
 
         assertEquals("testStartPositionEnumConstantInit", -1, start);
+    }
+
+    @Test
+    void testVoidLambdaParameter() throws IOException {
+        String code = "package t; class Test { " +
+                "Runnable r = (void v) -> { };" +
+                "}";
+        DiagnosticCollector<JavaFileObject> coll =
+                new DiagnosticCollector<>();
+        JavacTaskImpl ct = (JavacTaskImpl) tool.getTask(null, null, coll, null,
+                null, Arrays.asList(new MyFileObject(code)));
+
+        CompilationUnitTree cut = ct.parse().iterator().next();
+        ClassTree clazz = (ClassTree) cut.getTypeDecls().get(0);
+        VariableTree field = (VariableTree) clazz.getMembers().get(0);
+
+        assertEquals("actual kind: " + field.getInitializer().getKind(),
+                     field.getInitializer().getKind(),
+                     Kind.LAMBDA_EXPRESSION);
+
+        LambdaExpressionTree lambda = (LambdaExpressionTree) field.getInitializer();
+
+        assertEquals("actual parameters: " + lambda.getParameters().size(),
+                     lambda.getParameters().size(),
+                     1);
+
+        Tree paramType = lambda.getParameters().get(0).getType();
+
+        assertEquals("actual parameter type: " + paramType.getKind(),
+                     paramType.getKind(),
+                     Kind.PRIMITIVE_TYPE);
+
+        TypeKind primitiveTypeKind = ((PrimitiveTypeTree) paramType).getPrimitiveTypeKind();
+
+        assertEquals("actual parameter type: " + primitiveTypeKind,
+                     primitiveTypeKind,
+                     TypeKind.VOID);
     }
 
     void run(String[] args) throws Exception {

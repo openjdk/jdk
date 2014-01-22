@@ -135,7 +135,77 @@ import sun.reflect.annotation.AnnotationType;
  * annotations on <i>E</i> are directly present on <i>E</i> in place
  * of their container annotation, in the order in which they appear in
  * the value element of the container annotation.
-
+ *
+ * <p>There are several compatibility concerns to keep in mind if an
+ * annotation type <i>T</i> is originally <em>not</em> repeatable and
+ * later modified to be repeatable.
+ *
+ * The containing annotation type for <i>T</i> is <i>TC</i>.
+ *
+ * <ul>
+ *
+ * <li>Modifying <i>T</i> to be repeatable is source and binary
+ * compatible with existing uses of <i>T</i> and with existing uses
+ * of <i>TC</i>.
+ *
+ * That is, for source compatibility, source code with annotations of
+ * type <i>T</i> or of type <i>TC</i> will still compile. For binary
+ * compatibility, class files with annotations of type <i>T</i> or of
+ * type <i>TC</i> (or with other kinds of uses of type <i>T</i> or of
+ * type <i>TC</i>) will link against the modified version of <i>T</i>
+ * if they linked against the earlier version.
+ *
+ * (An annotation type <i>TC</i> may informally serve as an acting
+ * containing annotation type before <i>T</i> is modified to be
+ * formally repeatable. Alternatively, when <i>T</i> is made
+ * repeatable, <i>TC</i> can be introduced as a new type.)
+ *
+ * <li>If an annotation type <i>TC</i> is present on an element, and
+ * <i>T</i> is modified to be repeatable with <i>TC</i> as its
+ * containing annotation type then:
+ *
+ * <ul>
+ *
+ * <li>The change to <i>T</i> is behaviorally compatible with respect
+ * to the {@code get[Declared]Annotation(Class<T>)} (called with an
+ * argument of <i>T</i> or <i>TC</i>) and {@code
+ * get[Declared]Annotations()} methods because the results of the
+ * methods will not change due to <i>TC</i> becoming the containing
+ * annotation type for <i>T</i>.
+ *
+ * <li>The change to <i>T</i> changes the results of the {@code
+ * get[Declared]AnnotationsByType(Class<T>)} methods called with an
+ * argument of <i>T</i>, because those methods will now recognize an
+ * annotation of type <i>TC</i> as a container annotation for <i>T</i>
+ * and will "look through" it to expose annotations of type <i>T</i>.
+ *
+ * </ul>
+ *
+ * <li>If an annotation of type <i>T</i> is present on an
+ * element and <i>T</i> is made repeatable and more annotations of
+ * type <i>T</i> are added to the element:
+ *
+ * <ul>
+ *
+ * <li> The addition of the annotations of type <i>T</i> is both
+ * source compatible and binary compatible.
+ *
+ * <li>The addition of the annotations of type <i>T</i> changes the results
+ * of the {@code get[Declared]Annotation(Class<T>)} methods and {@code
+ * get[Declared]Annotations()} methods, because those methods will now
+ * only see a container annotation on the element and not see an
+ * annotation of type <i>T</i>.
+ *
+ * <li>The addition of the annotations of type <i>T</i> changes the
+ * results of the {@code get[Declared]AnnotationsByType(Class<T>)}
+ * methods, because their results will expose the additional
+ * annotations of type <i>T</i> whereas previously they exposed only a
+ * single annotation of type <i>T</i>.
+ *
+ * </ul>
+ *
+ * </ul>
+ *
  * <p>If an annotation returned by a method in this interface contains
  * (directly or indirectly) a {@link Class}-valued member referring to
  * a class that is not accessible in this VM, attempting to read the class

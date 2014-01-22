@@ -137,7 +137,7 @@ public class BasicDiagnosticFormatter extends AbstractDiagnosticFormatter {
             BasicConfiguration conf = getConfiguration();
             int indentSource = conf.getIndentation(DiagnosticPart.SOURCE);
             String sourceLine = "\n" + formatSourceLine(d, indentSource);
-            boolean singleLine = msg.indexOf("\n") == -1;
+            boolean singleLine = !msg.contains("\n");
             if (singleLine || getConfiguration().getSourcePosition() == SourcePosition.BOTTOM)
                 return msg + sourceLine;
             else
@@ -288,7 +288,7 @@ public class BasicDiagnosticFormatter extends AbstractDiagnosticFormatter {
         }
 
         private void initFormats(String pos, String nopos, String clazz) {
-            availableFormats = new EnumMap<BasicFormatKind, String>(BasicFormatKind.class);
+            availableFormats = new EnumMap<>(BasicFormatKind.class);
             setFormat(BasicFormatKind.DEFAULT_POS_FORMAT,    pos);
             setFormat(BasicFormatKind.DEFAULT_NO_POS_FORMAT, nopos);
             setFormat(BasicFormatKind.DEFAULT_CLASS_FORMAT,  clazz);
@@ -308,7 +308,7 @@ public class BasicDiagnosticFormatter extends AbstractDiagnosticFormatter {
         }
 
         private void initIndentation() {
-            indentationLevels = new HashMap<DiagnosticPart, Integer>();
+            indentationLevels = new HashMap<>();
             setIndentation(DiagnosticPart.SUMMARY, 0);
             setIndentation(DiagnosticPart.DETAILS, DetailsInc);
             setIndentation(DiagnosticPart.SUBDIAGNOSTICS, DiagInc);
@@ -368,7 +368,7 @@ public class BasicDiagnosticFormatter extends AbstractDiagnosticFormatter {
              * Source line is displayed after the first line of the diagnostic
              * message
              */
-            AFTER_SUMMARY;
+            AFTER_SUMMARY
         }
 
         /**
@@ -406,7 +406,7 @@ public class BasicDiagnosticFormatter extends AbstractDiagnosticFormatter {
             /**
             * A format string to be used for diagnostics regarding classfiles
             */
-            DEFAULT_CLASS_FORMAT;
+            DEFAULT_CLASS_FORMAT
         }
     }
 }

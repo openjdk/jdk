@@ -52,7 +52,7 @@ public abstract class AbstractMemberWriter {
     protected final ConfigurationImpl configuration;
     protected final SubWriterHolderWriter writer;
     protected final ClassDoc classdoc;
-    protected Map<String,Integer> typeMap = new LinkedHashMap<String,Integer>();
+    protected Map<String,Integer> typeMap = new LinkedHashMap<>();
     protected Set<MethodTypes> methodTypes = EnumSet.noneOf(MethodTypes.class);
     private int methodTypesOr = 0;
     public final boolean nodepr;

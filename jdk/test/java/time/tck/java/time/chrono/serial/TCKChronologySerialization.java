@@ -111,4 +111,24 @@ public class TCKChronologySerialization extends AbstractTCKTest {
         assertSerializedBySer(chrono, bytes);
     }
 
+
+    //-----------------------------------------------------------------------
+    // Regular data factory for names and descriptions of available calendars
+    //-----------------------------------------------------------------------
+    @DataProvider(name = "invalidSerialformClasses")
+    Object[][] invalid_serial_classes() {
+        return new Object[][]{
+            {IsoChronology.class},
+            {JapaneseChronology.class},
+            {MinguoChronology.class},
+            {ThaiBuddhistChronology.class},
+            {HijrahChronology.class},
+        };
+    }
+
+    @Test(dataProvider="invalidSerialformClasses")
+    public void test_invalid_serialform(Class<?> clazz) throws Exception {
+        assertNotSerializable(clazz);
+    }
+
 }

@@ -522,7 +522,7 @@ public abstract class JCTree implements Tree, Cloneable, DiagnosticPosition {
             return packageAnnotations;
         }
         public List<JCImport> getImports() {
-            ListBuffer<JCImport> imports = new ListBuffer<JCImport>();
+            ListBuffer<JCImport> imports = new ListBuffer<>();
             for (JCTree tree : defs) {
                 if (tree.hasTag(IMPORT))
                     imports.append((JCImport)tree);
@@ -624,7 +624,7 @@ public abstract class JCTree implements Tree, Cloneable, DiagnosticPosition {
             /** poly expression to be treated as a standalone expression */
             STANDALONE,
             /** true poly expression */
-            POLY;
+            POLY
         }
 
         /** is this poly expression a 'true' poly expression? */
@@ -1590,7 +1590,7 @@ public abstract class JCTree implements Tree, Cloneable, DiagnosticPosition {
 
         public enum ParameterKind {
             IMPLICIT,
-            EXPLICIT;
+            EXPLICIT
         }
 
         public List<JCVariableDecl> params;
@@ -1921,7 +1921,7 @@ public abstract class JCTree implements Tree, Cloneable, DiagnosticPosition {
 
         public enum OverloadKind {
             OVERLOADED,
-            UNOVERLOADED;
+            UNOVERLOADED
         }
 
         /**

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -187,7 +187,6 @@ public interface XMLSignature extends XMLStructure {
      * defined in the <a href="http://www.w3.org/TR/xmldsig-core/">
      * W3C Recommendation for XML-Signature Syntax and Processing</a>.
      * The XML Schema Definition is defined as:
-     * <p>
      * <pre>
      *   &lt;element name="SignatureValue" type="ds:SignatureValueType"/&gt;
      *     &lt;complexType name="SignatureValueType"&gt;

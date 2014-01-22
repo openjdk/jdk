@@ -33,9 +33,9 @@
  * @run main/othervm/policy=security.policy/timeout=120 UseCustomSocketFactory
  */
 
-import java.io.*;
+import java.io.IOException;
+import java.net.MalformedURLException;
 import java.rmi.*;
-import java.rmi.server.*;
 import java.rmi.registry.*;
 
 public class UseCustomSocketFactory {
@@ -44,7 +44,7 @@ public class UseCustomSocketFactory {
 
         int registryPort = -1;
 
-        String[] protocol = new String[] { "", "compress", "xor" };
+        String[] protocols = new String[] { "", "compress", "xor" };
 
         System.out.println("\nRegression test for bug 4127826\n");
 
@@ -53,31 +53,26 @@ public class UseCustomSocketFactory {
         try {
             Registry registry = TestLibrary.createRegistryOnUnusedPort();
             registryPort = TestLibrary.getRegistryPort(registry);
-        } catch (Exception e) {
+        } catch (RemoteException e) {
             TestLibrary.bomb("creating registry", e);
         }
-
-        for (int i = 0; i < protocol.length; i++) {
-
+        for (String protocol : protocols) {
             System.err.println("test policy: " +
-                               TestParams.defaultPolicy);
-
-            JavaVM serverVM = new JavaVM("EchoImpl",
-                                         "-Djava.security.policy=" +
-                                         TestParams.defaultPolicy +
-                                         " -Drmi.registry.port=" +
-                                         registryPort,
-                                         protocol[i]);
+                    TestParams.defaultPolicy);
+            JavaVM serverVM = new JavaVM("EchoImpl", "-Djava.security.policy=" +
+                    TestParams.defaultPolicy +
+                    " -Drmi.registry.port=" +
+                    registryPort, protocol);
             System.err.println("\nusing protocol: " +
-                               (protocol[i] == "" ? "none" : protocol[i]));
-
+                    ("".equals(protocol) ? "none" : protocol));
             try {
                 /* spawn VM for EchoServer */
                 serverVM.start();
 
                 /* lookup server */
-                int tries = 8;
                 Echo obj = null;
+                // 16 seconds timeout
+                long stopTime = System.currentTimeMillis() + 16000;
                 do {
                     try {
                         obj = (Echo) Naming.lookup("//:" + registryPort +
@@ -85,12 +80,11 @@ public class UseCustomSocketFactory {
                         break;
                     } catch (NotBoundException e) {
                         try {
-                            Thread.sleep(2000);
-                        } catch (Exception ignore) {
+                            Thread.sleep(200);
+                        } catch (InterruptedException ignore) {
                         }
-                        continue;
                     }
-                } while (--tries > 0);
+                } while (System.currentTimeMillis() < stopTime);
 
                 if (obj == null)
                     TestLibrary.bomb("server not bound in 8 tries", null);
@@ -98,21 +92,21 @@ public class UseCustomSocketFactory {
                 /* invoke remote method and print result*/
                 System.err.println("Bound to " + obj);
                 byte[] data = ("Greetings, citizen " +
-                               System.getProperty("user.name") + "!"). getBytes();
+                        System.getProperty("user.name") + "!"). getBytes();
                 byte[] result = obj.echoNot(data);
                 for (int j = 0; j < result.length; j++)
                     result[j] = (byte) ~result[j];
                 System.err.println("Result: " + new String(result));
 
-            } catch (Exception e) {
+            } catch (IOException e) {
                 TestLibrary.bomb("test failed", e);
 
             } finally {
                 serverVM.destroy();
                 try {
                     Naming.unbind("//:" + registryPort +
-                                  "/EchoServer");
-                } catch (Exception e) {
+                            "/EchoServer");
+                } catch (RemoteException | NotBoundException | MalformedURLException e) {
                     TestLibrary.bomb("unbinding EchoServer", e);
 
                 }

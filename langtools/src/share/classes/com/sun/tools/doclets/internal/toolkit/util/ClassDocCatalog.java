@@ -100,8 +100,8 @@ import com.sun.tools.doclets.internal.toolkit.Configuration;
      public ClassDocCatalog (ClassDoc[] classdocs, Configuration config) {
          init();
          this.configuration = config;
-         for (int i = 0; i < classdocs.length; i++) {
-             addClassDoc(classdocs[i]);
+         for (ClassDoc classdoc : classdocs) {
+             addClassDoc(classdoc);
          }
      }
 
@@ -114,14 +114,14 @@ import com.sun.tools.doclets.internal.toolkit.Configuration;
      }
 
      private void init() {
-         allClasses = new HashMap<String,Set<ClassDoc>>();
-         ordinaryClasses = new HashMap<String,Set<ClassDoc>>();
-         exceptions = new HashMap<String,Set<ClassDoc>>();
-         enums = new HashMap<String,Set<ClassDoc>>();
-         annotationTypes = new HashMap<String,Set<ClassDoc>>();
-         errors = new HashMap<String,Set<ClassDoc>>();
-         interfaces = new HashMap<String,Set<ClassDoc>>();
-         packageSet = new HashSet<String>();
+         allClasses = new HashMap<>();
+         ordinaryClasses = new HashMap<>();
+         exceptions = new HashMap<>();
+         enums = new HashMap<>();
+         annotationTypes = new HashMap<>();
+         errors = new HashMap<>();
+         interfaces = new HashMap<>();
+         packageSet = new HashSet<>();
      }
 
      /**
@@ -166,7 +166,7 @@ import com.sun.tools.doclets.internal.toolkit.Configuration;
           Set<ClassDoc> s = map.get(key);
           if (s == null) {
               packageSet.add(key);
-              s = new HashSet<ClassDoc>();
+              s = new HashSet<>();
           }
           s.add(classdoc);
           map.put(key, s);

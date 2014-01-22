@@ -110,4 +110,9 @@ public class TCKZoneOffsetTransitionSerialization extends AbstractTCKTest {
         assertSerializable(test);
     }
 
+    @Test
+    public void test_invalid_serialform() throws Exception {
+        assertNotSerializable(ZoneOffsetTransition.class);
+    }
+
 }

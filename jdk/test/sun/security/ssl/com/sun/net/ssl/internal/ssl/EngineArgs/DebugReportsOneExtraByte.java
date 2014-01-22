@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -159,7 +159,7 @@ public class DebugReportsOneExtraByte {
         TrustManagerFactory tmf = TrustManagerFactory.getInstance("SunX509");
         tmf.init(ts);
 
-        SSLContext sslCtx = SSLContext.getInstance("TLS");
+        SSLContext sslCtx = SSLContext.getInstance("TLSv1");
 
         sslCtx.init(kmf.getKeyManagers(), tmf.getTrustManagers(), null);
 

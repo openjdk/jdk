@@ -221,6 +221,9 @@ public class SSLSocketSSLEngineTemplate {
 
         try {
             boolean closed = false;
+            // will try to read one more time in case client message
+            // is fragmented to multiple pieces
+            boolean retry = true;
 
             InputStream is = socket.getInputStream();
             OutputStream os = socket.getOutputStream();
@@ -295,8 +298,14 @@ public class SSLSocketSSLEngineTemplate {
                     /*
                      * A sanity check to ensure we got what was sent.
                      */
-                    if (serverIn.remaining() != clientMsg.length) {
-                        throw new Exception("Client:  Data length error");
+                    if (serverIn.remaining() !=  clientMsg.length) {
+                        if (retry && serverIn.remaining() < clientMsg.length) {
+                            log("Need to read more from client");
+                            retry = false;
+                            continue;
+                        } else {
+                            throw new Exception("Client:  Data length error");
+                        }
                     }
 
                     for (int i = 0; i < clientMsg.length; i++) {
