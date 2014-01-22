@@ -1,3 +1,2 @@
-8027477: Enable repeating annotations test cases since JDK-8004912 is fixed
-Reviewed-by: jjg, jfranck
-Contributed-by: matherey.nunez@oracle.com
+8030816: javac crashes when mixing lambdas and inner classes
+Reviewed-by: jjg, jlahoda
