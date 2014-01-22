@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,7 +29,7 @@ package sun.lwawt.macosx;
 import java.awt.*;
 import java.awt.print.*;
 
-public class CPrinterPageDialog extends CPrinterDialog {
+final class CPrinterPageDialog extends CPrinterDialog {
     private PageFormat fPage;
     private Printable fPainter;
 
@@ -39,5 +39,6 @@ public class CPrinterPageDialog extends CPrinterDialog {
         fPainter = painter;
     }
 
+    @Override
     protected native boolean showDialog();
 }
