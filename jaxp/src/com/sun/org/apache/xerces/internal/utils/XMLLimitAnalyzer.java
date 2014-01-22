@@ -132,6 +132,10 @@ public final class XMLLimitAnalyzer {
             totalValue[index] += value;
             return;
         }
+        if (index == Limit.MAX_ELEMENT_DEPTH_LIMIT.ordinal()) {
+            totalValue[index] = value;
+            return;
+        }
 
         Map<String, Integer> cache;
         if (caches[index] == null) {
