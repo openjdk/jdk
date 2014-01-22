@@ -161,25 +161,14 @@ public final class LWCToolkit extends LWToolkit {
         return new AppleSpecificColor(color);
     }
 
+    // This is only called from native code.
     static void systemColorsChanged() {
-        // This is only called from native code.
-        EventQueue.invokeLater(new Runnable() {
-            public void run() {
-                AccessController.doPrivileged (new PrivilegedAction<Object>() {
-                    public Object run() {
-                        try {
-                            final Method updateColorsMethod = SystemColor.class.getDeclaredMethod("updateSystemColors", new Class[0]);
-                            updateColorsMethod.setAccessible(true);
-                            updateColorsMethod.invoke(null, new Object[0]);
-                        } catch (final Throwable e) {
-                            e.printStackTrace();
-                            // swallow this if something goes horribly wrong
-                        }
-                        return null;
-                    }
-                });
-            }
-           });
+        EventQueue.invokeLater(() -> {
+            AccessController.doPrivileged ((PrivilegedAction<Object>) () -> {
+                AWTAccessor.getSystemColorAccessor().updateSystemColors();
+                return null;
+            });
+        });
     }
 
     public static LWCToolkit getLWCToolkit() {
@@ -784,7 +773,7 @@ public final class LWCToolkit extends LWToolkit {
     /*
      * Returns true if the application (one of its windows) owns keyboard focus.
      */
-    public native boolean isApplicationActive();
+    native boolean isApplicationActive();
 
     /************************
      * Native methods section

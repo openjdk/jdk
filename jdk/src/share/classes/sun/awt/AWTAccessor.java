@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -729,6 +729,13 @@ public final class AWTAccessor {
     }
 
     /*
+     * An accessor object for the SystemColor class
+     */
+    public interface SystemColorAccessor {
+        void updateSystemColors();
+    }
+
+    /*
      * Accessor instances are initialized in the static initializers of
      * corresponding AWT classes by using setters defined below.
      */
@@ -757,6 +764,7 @@ public final class AWTAccessor {
     private static SequencedEventAccessor sequencedEventAccessor;
     private static ToolkitAccessor toolkitAccessor;
     private static InvocationEventAccessor invocationEventAccessor;
+    private static SystemColorAccessor systemColorAccessor;
 
     /*
      * Set an accessor object for the java.awt.Component class.
@@ -1182,4 +1190,22 @@ public final class AWTAccessor {
     public static InvocationEventAccessor getInvocationEventAccessor() {
         return invocationEventAccessor;
     }
+
+    /*
+     * Get the accessor object for the java.awt.SystemColor class.
+     */
+    public static SystemColorAccessor getSystemColorAccessor() {
+        if (systemColorAccessor == null) {
+            unsafe.ensureClassInitialized(SystemColor.class);
+        }
+
+        return systemColorAccessor;
+    }
+
+     /*
+     * Set the accessor object for the java.awt.SystemColor class.
+     */
+     public static void setSystemColorAccessor(SystemColorAccessor systemColorAccessor) {
+         AWTAccessor.systemColorAccessor = systemColorAccessor;
+     }
 }
