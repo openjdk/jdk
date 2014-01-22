@@ -195,9 +195,6 @@ ifndef OPENJDK
   $(JDK_OUTPUTDIR)/demo/nbproject/%: $(JDK_TOPDIR)/src/closed/share/demo/nbproject/%
 	$(call install-file)
 	$(CHMOD) -f ug+w $@
-    ifeq ($(OPENJDK_TARGET_OS), solaris)
-	  $(RM) -r $(JDK_OUTPUTDIR)/demo/nbproject/jfc/SwingApplet
-    endif
 endif
 
 ##################################################################################################
@@ -365,9 +362,16 @@ BUILD_DEMOS += $(JDK_OUTPUTDIR)/demo/management/index.html \
 ##################################################################################################
 
 # The netbeans project files are copied into the demo directory.
-BUILD_DEMOS += $(patsubst $(JDK_TOPDIR)/src/share/demo/nbproject/%, \
+ifeq ($(OPENJDK_TARGET_OS), solaris)
+  BUILD_DEMOS += $(patsubst $(JDK_TOPDIR)/src/share/demo/nbproject/%, \
+    $(JDK_OUTPUTDIR)/demo/nbproject/%, \
+    $(filter-out $(JDK_TOPDIR)/src/share/demo/nbproject/jfc/SwingApplet%, \
+    $(call CacheFind, $(JDK_TOPDIR)/src/share/demo/nbproject)))
+else
+  BUILD_DEMOS += $(patsubst $(JDK_TOPDIR)/src/share/demo/nbproject/%, \
     $(JDK_OUTPUTDIR)/demo/nbproject/%, \
     $(call CacheFind, $(JDK_TOPDIR)/src/share/demo/nbproject))
+endif
 
 $(JDK_OUTPUTDIR)/demo/nbproject/%: $(JDK_TOPDIR)/src/share/demo/nbproject/%
 	$(call install-file)

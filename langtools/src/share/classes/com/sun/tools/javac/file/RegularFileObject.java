@@ -109,8 +109,7 @@ class RegularFileObject extends BaseFileObject {
     public CharBuffer getCharContent(boolean ignoreEncodingErrors) throws IOException {
         CharBuffer cb = fileManager.getCachedContent(this);
         if (cb == null) {
-            InputStream in = new FileInputStream(file);
-            try {
+            try (InputStream in = new FileInputStream(file)) {
                 ByteBuffer bb = fileManager.makeByteBuffer(in);
                 JavaFileObject prev = fileManager.log.useSource(this);
                 try {
@@ -122,8 +121,6 @@ class RegularFileObject extends BaseFileObject {
                 if (!ignoreEncodingErrors) {
                     fileManager.cache(this, cb);
                 }
-            } finally {
-                in.close();
             }
         }
         return cb;
@@ -244,7 +241,7 @@ class RegularFileObject extends BaseFileObject {
         File absFile = (absFileRef == null ? null : absFileRef.get());
         if (absFile == null) {
             absFile = file.getAbsoluteFile();
-            absFileRef = new SoftReference<File>(absFile);
+            absFileRef = new SoftReference<>(absFile);
         }
         return absFile;
     }

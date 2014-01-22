@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1405,7 +1405,7 @@ public abstract class Provider extends Properties {
         private String[] supportedFormats;
 
         // names of the supported key (super) classes
-        private Class[] supportedClasses;
+        private Class<?>[] supportedClasses;
 
         // whether this service has been registered with the Provider
         private boolean registered;
@@ -1656,7 +1656,7 @@ public abstract class Provider extends Properties {
                 return o;
             }
             Class<?> argClass = constructorParameter.getClass();
-            Constructor[] cons = clazz.getConstructors();
+            Constructor<?>[] cons = clazz.getConstructors();
             // find first public constructor that can take the
             // argument as parameter
             for (int i = 0; i < cons.length; i++) {

@@ -81,7 +81,7 @@ public interface JavaFileObject extends FileObject {
             extension.getClass(); // null check
             this.extension = extension;
         }
-    };
+    }
 
     /**
      * Gets the kind of this file object.

@@ -32,9 +32,11 @@ package sun.security.krb5.internal.ccache;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.Hashtable;
-import java.util.Vector;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.StringTokenizer;
+
+import sun.misc.IOUtils;
 import sun.security.krb5.*;
 import sun.security.krb5.internal.*;
 import sun.security.krb5.internal.util.KrbDataInputStream;
@@ -74,7 +76,6 @@ public class CCacheInputStream extends KrbDataInputStream implements FileCCacheC
     // this needs to be public for Kinit.
     public Tag readTag() throws IOException {
         char[] buf = new char[1024];
-        byte[] bytes;
         int len;
         int tag = -1;
         int taglen;
@@ -85,7 +86,6 @@ public class CCacheInputStream extends KrbDataInputStream implements FileCCacheC
         if (len < 0) {
             throw new IOException("stop.");
         }
-        bytes = new byte[len + 2];
         if (len > buf.length) {
             throw new IOException("Invalid tag length.");
         }
@@ -101,11 +101,7 @@ public class CCacheInputStream extends KrbDataInputStream implements FileCCacheC
             }
             len = len - (4 + taglen);
         }
-        Tag result;
-        if (tag == -1) {
-        }
-        result = new Tag(len, tag, time_offset, usec_offset);
-        return result;
+        return new Tag(len, tag, time_offset, usec_offset);
     }
     /*
      * In file-based credential cache, the realm name is stored as part of
@@ -123,7 +119,7 @@ public class CCacheInputStream extends KrbDataInputStream implements FileCCacheC
             type = read(4);
         }
         length = read(4);
-        String[] result = new String[length + 1];
+        List<String> result = new ArrayList<String>();
         /*
          * DCE includes the principal's realm in the count; the new format
          * does not.
@@ -132,21 +128,26 @@ public class CCacheInputStream extends KrbDataInputStream implements FileCCacheC
             length--;
         for (int i = 0; i <= length; i++) {
             namelength = read(4);
-            if (namelength > MAXNAMELENGTH) {
-                throw new IOException("Invalid name length in principal name.");
-            }
-            byte[] bytes = new byte[namelength];
-            read(bytes, 0, namelength);
-            result[i] = new String(bytes);
+            byte[] bytes = IOUtils.readFully(this, namelength, true);
+            result.add(new String(bytes));
         }
-        if (isRealm(result[0])) {
-            realm = result[0];
-            pname = new String[length];
-            System.arraycopy(result, 1, pname, 0, length);
-            return new PrincipalName(type, pname, new Realm(realm));
+        if (result.isEmpty()) {
+            throw new IOException("No realm or principal");
+        }
+        if (isRealm(result.get(0))) {
+            realm = result.remove(0);
+            if (result.isEmpty()) {
+                throw new IOException("No principal name components");
+            }
+            return new PrincipalName(
+                    type,
+                    result.toArray(new String[result.size()]),
+                    new Realm(realm));
         }
         try {
-            return new PrincipalName(result, type);
+            return new PrincipalName(
+                    result.toArray(new String[result.size()]),
+                    type);
         } catch (RealmException re) {
             return null;
         }
@@ -184,10 +185,7 @@ public class CCacheInputStream extends KrbDataInputStream implements FileCCacheC
         if (version == KRB5_FCC_FVNO_3)
             read(2); /* keytype recorded twice in fvno 3 */
         keyLen = read(4);
-        byte[] bytes = new byte[keyLen];
-        for (int i = 0; i < keyLen; i++) {
-            bytes[i] = (byte)read();
-        }
+        byte[] bytes = IOUtils.readFully(this, keyLen, true);
         return new EncryptionKey(bytes, keyType, new Integer(version));
     }
 
@@ -211,7 +209,7 @@ public class CCacheInputStream extends KrbDataInputStream implements FileCCacheC
         int numAddrs, addrType, addrLength;
         numAddrs = read(4);
         if (numAddrs > 0) {
-            HostAddress[] addrs = new HostAddress[numAddrs];
+            List<HostAddress> addrs = new ArrayList<>();
             for (int i = 0; i < numAddrs; i++) {
                 addrType = read(2);
                 addrLength = read(4);
@@ -224,9 +222,9 @@ public class CCacheInputStream extends KrbDataInputStream implements FileCCacheC
                 byte[] result = new byte[addrLength];
                 for (int j = 0; j < addrLength; j++)
                     result[j] = (byte)read(1);
-                addrs[i] = new HostAddress(addrType, result);
+                addrs.add(new HostAddress(addrType, result));
             }
-            return addrs;
+            return addrs.toArray(new HostAddress[addrs.size()]);
         }
         return null;
     }
@@ -235,18 +233,15 @@ public class CCacheInputStream extends KrbDataInputStream implements FileCCacheC
         int num, adtype, adlength;
         num = read(4);
         if (num > 0) {
-            AuthorizationDataEntry[] auData = new AuthorizationDataEntry[num];
+            List<AuthorizationDataEntry> auData = new ArrayList<>();
             byte[] data = null;
             for (int i = 0; i < num; i++) {
                 adtype = read(2);
                 adlength = read(4);
-                data = new byte[adlength];
-                for (int j = 0; j < adlength; j++) {
-                    data[j] = (byte)read();
-                }
-                auData[i] = new AuthorizationDataEntry(adtype, data);
+                data = IOUtils.readFully(this, adlength, true);
+                auData.add(new AuthorizationDataEntry(adtype, data));
             }
-            return auData;
+            return auData.toArray(new AuthorizationDataEntry[auData.size()]);
         }
         else return null;
     }
@@ -257,9 +252,7 @@ public class CCacheInputStream extends KrbDataInputStream implements FileCCacheC
         if (length == 0) {
             return null;
         } else {
-            byte[] bytes = new byte[length];
-            read(bytes, 0, length);
-            return bytes;
+            return IOUtils.readFully(this, length, true);
         }
     }
 

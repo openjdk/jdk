@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,12 +23,12 @@
 
 /**
  * @test
- * @bug     6330997 7025789
+ * @bug     6330997 7025789 8000961
  * @summary javac should accept class files with major version of the next release
  * @author  Wei Tao
  * @clean T1 T2
- * @compile -target 8 T1.java
- * @compile -target 8 T2.java
+ * @compile -source 8 -target 8 T1.java
+ * @compile -source 8 -target 8 T2.java
  * @run main/othervm T6330997
  */
 
@@ -67,19 +67,16 @@ public class T6330997 {
 
     // Increase class file cfile's major version by delta
     static void increaseMajor(String cfile, int delta) {
-        try {
-            RandomAccessFile cls = new RandomAccessFile(
-                    new File(System.getProperty("test.classes", "."), cfile), "rw");
-            FileChannel fc = cls.getChannel();
+        try (RandomAccessFile cls =
+             new RandomAccessFile(new File(System.getProperty("test.classes", "."), cfile), "rw");
+             FileChannel fc = cls.getChannel()) {
             ByteBuffer rbuf = ByteBuffer.allocate(2);
             fc.read(rbuf, 6);
             ByteBuffer wbuf = ByteBuffer.allocate(2);
             wbuf.putShort(0, (short)(rbuf.getShort(0) + delta));
             fc.write(wbuf, 6);
             fc.force(false);
-            cls.close();
-         } catch (Exception e){
-            e.printStackTrace();
+        } catch (Exception e){
             throw new RuntimeException("Failed: unexpected exception");
          }
      }

@@ -59,8 +59,7 @@ import static com.sun.tools.javac.tree.JCTree.Tag.*;
  *  deletion without notice.</b>
  */
 public class Gen extends JCTree.Visitor {
-    protected static final Context.Key<Gen> genKey =
-        new Context.Key<Gen>();
+    protected static final Context.Key<Gen> genKey = new Context.Key<>();
 
     private final Log log;
     private final Symtab syms;
@@ -122,7 +121,7 @@ public class Gen extends JCTree.Visitor {
         stringBufferType = target.useStringBuilder()
             ? syms.stringBuilderType
             : syms.stringBufferType;
-        stringBufferAppend = new HashMap<Type,Symbol>();
+        stringBufferAppend = new HashMap<>();
         accessDollar = names.
             fromString("access" + target.syntheticNameChar());
         lower = Lower.instance(context);
@@ -475,11 +474,11 @@ public class Gen extends JCTree.Visitor {
      *  @param c            The enclosing class.
      */
     List<JCTree> normalizeDefs(List<JCTree> defs, ClassSymbol c) {
-        ListBuffer<JCStatement> initCode = new ListBuffer<JCStatement>();
-        ListBuffer<Attribute.TypeCompound> initTAs = new ListBuffer<Attribute.TypeCompound>();
-        ListBuffer<JCStatement> clinitCode = new ListBuffer<JCStatement>();
-        ListBuffer<Attribute.TypeCompound> clinitTAs = new ListBuffer<Attribute.TypeCompound>();
-        ListBuffer<JCTree> methodDefs = new ListBuffer<JCTree>();
+        ListBuffer<JCStatement> initCode = new ListBuffer<>();
+        ListBuffer<Attribute.TypeCompound> initTAs = new ListBuffer<>();
+        ListBuffer<JCStatement> clinitCode = new ListBuffer<>();
+        ListBuffer<Attribute.TypeCompound> clinitTAs = new ListBuffer<>();
+        ListBuffer<JCTree> methodDefs = new ListBuffer<>();
         // Sort definitions into three listbuffers:
         //  - initCode for instance initializers
         //  - clinitCode for class initializers
@@ -562,8 +561,8 @@ public class Gen extends JCTree.Visitor {
 
     private List<Attribute.TypeCompound> getAndRemoveNonFieldTAs(VarSymbol sym) {
         List<TypeCompound> tas = sym.getRawTypeAttributes();
-        ListBuffer<Attribute.TypeCompound> fieldTAs = new ListBuffer<Attribute.TypeCompound>();
-        ListBuffer<Attribute.TypeCompound> nonfieldTAs = new ListBuffer<Attribute.TypeCompound>();
+        ListBuffer<Attribute.TypeCompound> fieldTAs = new ListBuffer<>();
+        ListBuffer<Attribute.TypeCompound> nonfieldTAs = new ListBuffer<>();
         for (TypeCompound ta : tas) {
             if (ta.getPosition().type == TargetType.FIELD) {
                 fieldTAs.add(ta);
@@ -603,7 +602,7 @@ public class Gen extends JCTree.Visitor {
             // We are seeing a constructor that does not call another
             // constructor of the same class.
             List<JCStatement> stats = md.body.stats;
-            ListBuffer<JCStatement> newstats = new ListBuffer<JCStatement>();
+            ListBuffer<JCStatement> newstats = new ListBuffer<>();
 
             if (stats.nonEmpty()) {
                 // Copy initializers of synthetic variables generated in
@@ -1485,7 +1484,7 @@ public class Gen extends JCTree.Visitor {
                 }
             }
         };
-        syncEnv.info.gaps = new ListBuffer<Integer>();
+        syncEnv.info.gaps = new ListBuffer<>();
         genTry(tree.body, List.<JCCatch>nil(), syncEnv);
         code.endScopes(limit);
     }
@@ -1529,7 +1528,7 @@ public class Gen extends JCTree.Visitor {
                 return tree.finalizer != null;
             }
         };
-        tryEnv.info.gaps = new ListBuffer<Integer>();
+        tryEnv.info.gaps = new ListBuffer<>();
         genTry(tree.body, tree.catchers, tryEnv);
     }
     //where
@@ -2505,8 +2504,7 @@ public class Gen extends JCTree.Visitor {
             c.pool = pool;
             pool.reset();
             generateReferencesToPrunedTree(c, pool);
-            Env<GenContext> localEnv =
-                new Env<GenContext>(cdef, new GenContext());
+            Env<GenContext> localEnv = new Env<>(cdef, new GenContext());
             localEnv.toplevel = env.toplevel;
             localEnv.enclClass = cdef;
 

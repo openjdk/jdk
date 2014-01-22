@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,6 +36,7 @@ import javax.lang.model.util.*;
 import java.io.PrintWriter;
 import java.io.Writer;
 import java.util.*;
+import com.sun.tools.javac.util.StringUtils;
 
 /**
  * A processor which prints out elements.  Used to implement the
@@ -48,7 +49,7 @@ import java.util.*;
  * deletion without notice.</b>
  */
 @SupportedAnnotationTypes("*")
-@SupportedSourceVersion(SourceVersion.RELEASE_8)
+@SupportedSourceVersion(SourceVersion.RELEASE_9)
 public class PrintingProcessor extends AbstractProcessor {
     PrintWriter writer;
 
@@ -202,7 +203,7 @@ public class PrintingProcessor extends AbstractProcessor {
                     writer.print("@interface");
                     break;
                 default:
-                    writer.print(kind.toString().toLowerCase());
+                    writer.print(StringUtils.toLowerCase(kind.toString()));
                 }
                 writer.print(" ");
                 writer.print(e.getSimpleName());
@@ -226,10 +227,9 @@ public class PrintingProcessor extends AbstractProcessor {
             indentation++;
 
             if (kind == ENUM) {
-                List<Element> enclosedElements =
-                    new ArrayList<Element>(e.getEnclosedElements());
+                List<Element> enclosedElements = new ArrayList<>(e.getEnclosedElements());
                 // Handle any enum constants specially before other entities.
-                List<Element> enumConstants = new ArrayList<Element>();
+                List<Element> enumConstants = new ArrayList<>();
                 for(Element element : enclosedElements) {
                     if (element.getKind() == ENUM_CONSTANT)
                         enumConstants.add(element);
@@ -332,7 +332,7 @@ public class PrintingProcessor extends AbstractProcessor {
             if (kind == ENUM_CONSTANT)
                 return;
 
-            Set<Modifier> modifiers = new LinkedHashSet<Modifier>();
+            Set<Modifier> modifiers = new LinkedHashSet<>();
             modifiers.addAll(e.getModifiers());
 
             switch (kind) {

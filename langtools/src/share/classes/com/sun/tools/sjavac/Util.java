@@ -121,7 +121,7 @@ public class Util {
      * Convenience method to create a set with strings.
      */
     public static Set<String> set(String... ss) {
-        Set<String> set = new HashSet<String>();
+        Set<String> set = new HashSet<>();
         set.addAll(Arrays.asList(ss));
         return set;
     }

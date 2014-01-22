@@ -102,4 +102,9 @@ public class TCKLocalDateSerialization extends AbstractTCKTest {
         assertSerializedBySer(LocalDate.of(2012, 9, 16), bytes);
     }
 
+    @Test
+    public void test_invalid_serialform() throws Exception {
+        assertNotSerializable(LocalDate.class);
+    }
+
 }

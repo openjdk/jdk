@@ -61,24 +61,24 @@ public class Group {
     /**
      * Map of regular expressions with the corresponding group name.
      */
-    private Map<String,String> regExpGroupMap = new HashMap<String,String>();
+    private Map<String,String> regExpGroupMap = new HashMap<>();
 
     /**
      * List of regular expressions sorted according to the length. Regular
      * expression with longest length will be first in the sorted order.
      */
-    private List<String> sortedRegExpList = new ArrayList<String>();
+    private List<String> sortedRegExpList = new ArrayList<>();
 
     /**
      * List of group names in the same order as given on the command line.
      */
-    private List<String> groupList = new ArrayList<String>();
+    private List<String> groupList = new ArrayList<>();
 
     /**
      * Map of non-regular expressions(possible package names) with the
      * corresponding group name.
      */
-    private Map<String,String> pkgNameGroupMap = new HashMap<String,String>();
+    private Map<String,String> pkgNameGroupMap = new HashMap<>();
 
     /**
      * The global configuration information for this run.
@@ -176,7 +176,7 @@ public class Group {
      * @param packages Packages specified on the command line.
      */
     public Map<String,List<PackageDoc>> groupPackages(PackageDoc[] packages) {
-        Map<String,List<PackageDoc>> groupPackageMap = new HashMap<String,List<PackageDoc>>();
+        Map<String,List<PackageDoc>> groupPackageMap = new HashMap<>();
         String defaultGroupName =
             (pkgNameGroupMap.isEmpty() && regExpGroupMap.isEmpty())?
                 configuration.message.getText("doclet.Packages") :
@@ -185,8 +185,7 @@ public class Group {
         if (!groupList.contains(defaultGroupName)) {
             groupList.add(defaultGroupName);
         }
-        for (int i = 0; i < packages.length; i++) {
-            PackageDoc pkg = packages[i];
+        for (PackageDoc pkg : packages) {
             String pkgName = pkg.name();
             String groupName = pkgNameGroupMap.get(pkgName);
             // if this package is not explicitly assigned to a group,
@@ -212,8 +211,7 @@ public class Group {
      * expression list.
      */
     String regExpGroupName(String pkgName) {
-        for (int j = 0; j < sortedRegExpList.size(); j++) {
-            String regexp = sortedRegExpList.get(j);
+        for (String regexp : sortedRegExpList) {
             if (pkgName.startsWith(regexp)) {
                 return regExpGroupMap.get(regexp);
             }
@@ -231,7 +229,7 @@ public class Group {
     List<PackageDoc> getPkgList(Map<String,List<PackageDoc>> map, String groupname) {
         List<PackageDoc> list = map.get(groupname);
         if (list == null) {
-            list = new ArrayList<PackageDoc>();
+            list = new ArrayList<>();
             map.put(groupname, list);
         }
         return list;

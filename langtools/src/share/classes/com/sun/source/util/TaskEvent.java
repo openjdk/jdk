@@ -69,7 +69,7 @@ public final class TaskEvent
          * For events relating to an individual annotation processing round.
          **/
         ANNOTATION_PROCESSING_ROUND
-    };
+    }
 
     public TaskEvent(Kind kind) {
         this(kind, null, null, null);

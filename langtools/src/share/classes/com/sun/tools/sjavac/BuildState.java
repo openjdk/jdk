@@ -42,12 +42,12 @@ import java.util.Set;
  * or deletion without notice.</b></p>
  */
 public class BuildState {
-    private Map<String,Module> modules = new HashMap<String,Module>();
-    private Map<String,Package> packages = new HashMap<String,Package>();
-    private Map<String,Source> sources = new HashMap<String,Source>();
-    private Map<String,File> artifacts = new HashMap<String,File>();
+    private Map<String,Module> modules = new HashMap<>();
+    private Map<String,Package> packages = new HashMap<>();
+    private Map<String,Source> sources = new HashMap<>();
+    private Map<String,File> artifacts = new HashMap<>();
     // Map from package to a set of packages that depend on said package.
-    private Map<String,Set<String>> dependents = new HashMap<String,Set<String>>();
+    private Map<String,Set<String>> dependents = new HashMap<>();
 
     public  Map<String,Module> modules() { return modules; }
     public  Map<String,Package> packages() { return packages; }
@@ -151,13 +151,13 @@ public class BuildState {
      * Calculate the package dependents (ie the reverse of the dependencies).
      */
     public void calculateDependents() {
-        dependents = new HashMap<String,Set<String>>();
+        dependents = new HashMap<>();
         for (String s : packages.keySet()) {
             Package p = packages.get(s);
             for (String d : p.dependencies()) {
                 Set<String> ss = dependents.get(d);
                 if (ss == null) {
-                    ss = new HashSet<String>();
+                    ss = new HashSet<>();
                     dependents.put(d, ss);
                 }
                 // Add the dependent information to the global dependent map.
@@ -181,8 +181,8 @@ public class BuildState {
      */
     public void checkInternalState(String msg, boolean linkedOnly, Map<String,Source> srcs) {
         boolean baad = false;
-        Map<String,Source> original = new HashMap<String,Source>();
-        Map<String,Source> calculated = new HashMap<String,Source>();
+        Map<String,Source> original = new HashMap<>();
+        Map<String,Source> calculated = new HashMap<>();
 
         for (String s : sources.keySet()) {
             Source ss = sources.get(s);

@@ -37,6 +37,7 @@ import com.sun.tools.doclets.internal.toolkit.util.*;
 import com.sun.tools.doclint.DocLint;
 import com.sun.tools.javac.file.JavacFileManager;
 import com.sun.tools.javac.util.Context;
+import com.sun.tools.javac.util.StringUtils;
 import com.sun.tools.javadoc.RootDocImpl;
 
 /**
@@ -177,7 +178,7 @@ public class ConfigurationImpl extends Configuration {
     /**
      * Collected set of doclint options
      */
-    public Set<String> doclintOpts = new LinkedHashSet<String>();
+    public Set<String> doclintOpts = new LinkedHashSet<>();
 
     /**
      * Unique Resource Handler for this package.
@@ -237,7 +238,7 @@ public class ConfigurationImpl extends Configuration {
     public void setSpecificDocletOptions(String[][] options) {
         for (int oi = 0; oi < options.length; ++oi) {
             String[] os = options[oi];
-            String opt = os[0].toLowerCase();
+            String opt = StringUtils.toLowerCase(os[0]);
             if (opt.equals("-footer")) {
                 footer = os[1];
             } else if (opt.equals("-header")) {
@@ -285,12 +286,12 @@ public class ConfigurationImpl extends Configuration {
             }
         }
         if (root.specifiedClasses().length > 0) {
-            Map<String,PackageDoc> map = new HashMap<String,PackageDoc>();
+            Map<String,PackageDoc> map = new HashMap<>();
             PackageDoc pd;
             ClassDoc[] classes = root.classes();
-            for (int i = 0; i < classes.length; i++) {
-                pd = classes[i].containingPackage();
-                if(! map.containsKey(pd.name())) {
+            for (ClassDoc aClass : classes) {
+                pd = aClass.containingPackage();
+                if (!map.containsKey(pd.name())) {
                     map.put(pd.name(), pd);
                 }
             }
@@ -325,7 +326,7 @@ public class ConfigurationImpl extends Configuration {
             return result;
         }
         // otherwise look for the options we have added
-        option = option.toLowerCase();
+        option = StringUtils.toLowerCase(option);
         if (option.equals("-nodeprecatedlist") ||
             option.equals("-noindex") ||
             option.equals("-notree") ||
@@ -389,7 +390,7 @@ public class ConfigurationImpl extends Configuration {
         // otherwise look at our options
         for (int oi = 0; oi < options.length; ++oi) {
             String[] os = options[oi];
-            String opt = os[0].toLowerCase();
+            String opt = StringUtils.toLowerCase(os[0]);
             if (opt.equals("-helpfile")) {
                 if (nohelp == true) {
                     reporter.printError(getText("doclet.Option_conflict",
@@ -511,18 +512,17 @@ public class ConfigurationImpl extends Configuration {
         if (!nodeprecated) {
             return classarr[0];
         }
-        for (int i = 0; i < classarr.length; i++) {
-            if (classarr[i].tags("deprecated").length == 0) {
-                return classarr[i];
+        for (ClassDoc cd : classarr) {
+            if (cd.tags("deprecated").length == 0) {
+                return cd;
             }
         }
         return null;
     }
 
     protected boolean checkForDeprecation(RootDoc root) {
-        ClassDoc[] classarr = root.classes();
-        for (int i = 0; i < classarr.length; i++) {
-            if (isGeneratedDoc(classarr[i])) {
+        for (ClassDoc cd : root.classes()) {
+            if (isGeneratedDoc(cd)) {
                 return true;
             }
         }

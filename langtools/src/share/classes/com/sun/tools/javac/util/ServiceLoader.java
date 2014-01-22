@@ -169,7 +169,6 @@ public final class ServiceLoader<S>
         throws ServiceConfigurationError
     {
         InputStream in = null;
-        BufferedReader r = null;
         ArrayList<String> names = new ArrayList<>();
         try {
             // The problem is that by default, streams opened with
@@ -186,14 +185,14 @@ public final class ServiceLoader<S>
             uc.setUseCaches(false);
             in = uc.getInputStream();
             // ... end of workaround.
-            r = new BufferedReader(new InputStreamReader(in, "utf-8"));
-            int lc = 1;
-            while ((lc = parseLine(service, u, r, lc, names)) >= 0);
+            try (BufferedReader r = new BufferedReader(new InputStreamReader(in, "utf-8"))) {
+                int lc = 1;
+                while ((lc = parseLine(service, u, r, lc, names)) >= 0);
+            }
         } catch (IOException x) {
             fail(service, "Error reading configuration file", x);
         } finally {
             try {
-                if (r != null) r.close();
                 if (in != null) in.close();
             } catch (IOException y) {
                 fail(service, "Error closing configuration file", y);

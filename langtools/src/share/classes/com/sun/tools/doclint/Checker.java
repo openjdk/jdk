@@ -80,6 +80,7 @@ import com.sun.source.util.DocTreePathScanner;
 import com.sun.source.util.TreePath;
 import com.sun.tools.doclint.HtmlTag.AttrKind;
 import com.sun.tools.javac.tree.DocPretty;
+import com.sun.tools.javac.util.StringUtils;
 import static com.sun.tools.doclint.Messages.Group.*;
 
 
@@ -243,7 +244,7 @@ public class Checker extends DocTreePathScanner<Void, Void> {
         markEnclosingTag(Flag.HAS_TEXT);
         String name = tree.getName().toString();
         if (name.startsWith("#")) {
-            int v = name.toLowerCase().startsWith("#x")
+            int v = StringUtils.toLowerCase(name).startsWith("#x")
                     ? Integer.parseInt(name.substring(2), 16)
                     : Integer.parseInt(name.substring(1), 10);
             if (!Entity.isValid(v)) {

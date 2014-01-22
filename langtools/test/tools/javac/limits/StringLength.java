@@ -27,7 +27,7 @@
  * @summary Compiler silently generates bytecode that exceeds VM limits
  * @author gafter
  *
- * @compile/fail StringLength.java
+ * @compile/fail/ref=StringLength.out -XDrawDiagnostics StringLength.java
  */
 
 class StringLength {

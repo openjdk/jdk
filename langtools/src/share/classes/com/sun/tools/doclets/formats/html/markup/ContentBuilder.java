@@ -90,6 +90,6 @@ public class ContentBuilder extends Content {
 
     private void ensureMutableContents() {
         if (contents.isEmpty())
-            contents = new ArrayList<Content>();
+            contents = new ArrayList<>();
     }
 }

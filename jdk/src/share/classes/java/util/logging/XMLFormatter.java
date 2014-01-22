@@ -173,12 +173,12 @@ public class XMLFormatter extends Formatter {
         Object parameters[] = record.getParameters();
         //  Check to see if the parameter was not a messagetext format
         //  or was not null or empty
-        if ( parameters != null && parameters.length != 0
+        if (parameters != null && parameters.length != 0
                 && record.getMessage().indexOf("{") == -1 ) {
-            for (int i = 0; i < parameters.length; i++) {
+            for (Object parameter : parameters) {
                 sb.append("  <param>");
                 try {
-                    escape(sb, parameters[i].toString());
+                    escape(sb, parameter.toString());
                 } catch (Exception ex) {
                     sb.append("???");
                 }
@@ -194,8 +194,7 @@ public class XMLFormatter extends Formatter {
             escape(sb, th.toString());
             sb.append("</message>\n");
             StackTraceElement trace[] = th.getStackTrace();
-            for (int i = 0; i < trace.length; i++) {
-                StackTraceElement frame = trace[i];
+            for (StackTraceElement frame : trace) {
                 sb.append("    <frame>\n");
                 sb.append("      <class>");
                 escape(sb, frame.getClassName());

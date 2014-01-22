@@ -46,7 +46,7 @@ import com.sun.tools.javac.util.Options;
 public class ParserFactory {
 
     /** The context key for the parser factory. */
-    protected static final Context.Key<ParserFactory> parserFactoryKey = new Context.Key<ParserFactory>();
+    protected static final Context.Key<ParserFactory> parserFactoryKey = new Context.Key<>();
 
     public static ParserFactory instance(Context context) {
         ParserFactory instance = context.get(parserFactoryKey);

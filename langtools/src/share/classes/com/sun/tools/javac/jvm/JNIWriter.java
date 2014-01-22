@@ -78,8 +78,7 @@ import static com.sun.tools.javac.main.Option.*;
  *  deletion without notice.</b>
  */
 public class JNIWriter {
-    protected static final Context.Key<JNIWriter> jniWriterKey =
-        new Context.Key<JNIWriter>();
+    protected static final Context.Key<JNIWriter> jniWriterKey = new Context.Key<>();
 
     /** Access to files. */
     private final JavaFileManager fileManager;
@@ -240,9 +239,9 @@ public class JNIWriter {
      * Including super class fields.
      */
     List<VariableElement> getAllFields(TypeElement subclazz) {
-        List<VariableElement> fields = new ArrayList<VariableElement>();
+        List<VariableElement> fields = new ArrayList<>();
         TypeElement cd = null;
-        Stack<TypeElement> s = new Stack<TypeElement>();
+        Stack<TypeElement> s = new Stack<>();
 
         cd = subclazz;
         while (true) {
@@ -355,7 +354,7 @@ public class JNIWriter {
                                                Mangle.Type.METHOD_JNI_SHORT));
                 print(out, "  (JNIEnv *, ");
                 List<? extends VariableElement> paramargs = md.getParameters();
-                List<TypeMirror> args = new ArrayList<TypeMirror>();
+                List<TypeMirror> args = new ArrayList<>();
                 for (VariableElement p: paramargs) {
                     args.add(types.erasure(p.asType()));
                 }
@@ -493,7 +492,7 @@ public class JNIWriter {
             public static final int METHOD_JDK_1     = 6;
             public static final int METHOD_JNI_SHORT = 7;
             public static final int METHOD_JNI_LONG  = 8;
-        };
+        }
 
         private Elements elems;
         private Types types;
@@ -671,7 +670,7 @@ public class JNIWriter {
                 throws SignatureException {
             String signature = null; //Java type signature.
             String typeSignature = null; //Internal type signature.
-            List<String> params = new ArrayList<String>(); //List of parameters.
+            List<String> params = new ArrayList<>(); //List of parameters.
             String paramsig = null; //Java parameter signature.
             String paramJVMSig = null; //Internal parameter signature.
             String returnSig = null; //Java return type signature.
@@ -697,7 +696,7 @@ public class JNIWriter {
 
             // Separates parameters.
             if (signature != null) {
-                if (signature.indexOf(",") != -1) {
+                if (signature.contains(",")) {
                     st = new StringTokenizer(signature, ",");
                     if (st != null) {
                         while (st.hasMoreTokens()) {
@@ -755,13 +754,13 @@ public class JNIWriter {
 
             if(paramsig != null){
 
-                if(paramsig.indexOf("[]") != -1) {
+                if(paramsig.contains("[]")) {
                     // Gets array dimension.
                     int endindex = paramsig.indexOf("[]");
                     componentType = paramsig.substring(0, endindex);
                     String dimensionString =  paramsig.substring(endindex);
                     if(dimensionString != null){
-                        while(dimensionString.indexOf("[]") != -1){
+                        while(dimensionString.contains("[]")){
                             paramJVMSig += "[";
                             int beginindex = dimensionString.indexOf("]") + 1;
                             if(beginindex < dimensionString.length()){
@@ -785,29 +784,32 @@ public class JNIWriter {
             String JVMSig = "";
 
             if(componentType != null){
-                if(componentType.equals("void")) JVMSig += SIG_VOID ;
-                else if(componentType.equals("boolean"))  JVMSig += SIG_BOOLEAN ;
-                else if(componentType.equals("byte")) JVMSig += SIG_BYTE ;
-                else if(componentType.equals("char"))  JVMSig += SIG_CHAR ;
-                else if(componentType.equals("short"))  JVMSig += SIG_SHORT ;
-                else if(componentType.equals("int"))  JVMSig += SIG_INT ;
-                else if(componentType.equals("long"))  JVMSig += SIG_LONG ;
-                else if(componentType.equals("float")) JVMSig += SIG_FLOAT ;
-                else if(componentType.equals("double"))  JVMSig += SIG_DOUBLE ;
-                else {
-                    if(!componentType.equals("")){
-                        TypeElement classNameDoc = elems.getTypeElement(componentType);
+                switch (componentType) {
+                    case "void":    JVMSig += SIG_VOID;    break;
+                    case "boolean": JVMSig += SIG_BOOLEAN; break;
+                    case "byte":    JVMSig += SIG_BYTE;    break;
+                    case "char":    JVMSig += SIG_CHAR;    break;
+                    case "short":   JVMSig += SIG_SHORT;   break;
+                    case "int":     JVMSig += SIG_INT;     break;
+                    case "long":    JVMSig += SIG_LONG;    break;
+                    case "float":   JVMSig += SIG_FLOAT;   break;
+                    case "double":  JVMSig += SIG_DOUBLE;  break;
+                    default:
+                        if (!componentType.equals("")) {
+                            TypeElement classNameDoc = elems.getTypeElement(componentType);
 
-                        if(classNameDoc == null){
-                            throw new SignatureException(componentType);
-                        }else {
-                            String classname = classNameDoc.getQualifiedName().toString();
-                            String newclassname = classname.replace('.', '/');
-                            JVMSig += "L";
-                            JVMSig += newclassname;
-                            JVMSig += ";";
+                            if (classNameDoc == null) {
+                                throw new SignatureException(componentType);
+                            }
+                            else {
+                                String classname = classNameDoc.getQualifiedName().toString();
+                                String newclassname = classname.replace('.', '/');
+                                JVMSig += "L";
+                                JVMSig += newclassname;
+                                JVMSig += ";";
+                            }
                         }
-                    }
+                        break;
                 }
             }
             return JVMSig;

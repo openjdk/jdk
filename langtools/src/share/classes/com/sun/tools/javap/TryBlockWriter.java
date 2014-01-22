@@ -64,7 +64,7 @@ public class TryBlockWriter extends InstructionDetailWriter {
         }
         public abstract boolean match(Exception_data entry, int pc);
         public final String text;
-    };
+    }
 
     static TryBlockWriter instance(Context context) {
         TryBlockWriter instance = context.get(TryBlockWriter.class);
@@ -80,8 +80,8 @@ public class TryBlockWriter extends InstructionDetailWriter {
     }
 
     public void reset(Code_attribute attr) {
-        indexMap = new HashMap<Exception_data, Integer>();
-        pcMap = new HashMap<Integer, List<Exception_data>>();
+        indexMap = new HashMap<>();
+        pcMap = new HashMap<>();
         for (int i = 0; i < attr.exception_table.length; i++) {
             Exception_data entry = attr.exception_table[i];
             indexMap.put(entry, i);
@@ -129,7 +129,7 @@ public class TryBlockWriter extends InstructionDetailWriter {
     private void put(int pc, Exception_data entry) {
         List<Exception_data> list = pcMap.get(pc);
         if (list == null) {
-            list = new ArrayList<Exception_data>();
+            list = new ArrayList<>();
             pcMap.put(pc, list);
         }
         if (!list.contains(entry))

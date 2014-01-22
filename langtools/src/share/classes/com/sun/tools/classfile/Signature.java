@@ -96,7 +96,7 @@ public class Signature extends Descriptor {
             while (sigp < sig.length() && sig.charAt(sigp) == '^') {
                 sigp++;
                 if (throwsTypes == null)
-                    throwsTypes = new ArrayList<Type>();
+                    throwsTypes = new ArrayList<>();
                 throwsTypes.add(parseTypeSignature());
             }
             return new MethodType(typeParamTypes, paramTypes, returnType, throwsTypes);
@@ -108,7 +108,7 @@ public class Signature extends Descriptor {
             List<Type> superinterfaces = null;
             while (sigp < sig.length()) {
                 if (superinterfaces == null)
-                    superinterfaces = new ArrayList<Type>();
+                    superinterfaces = new ArrayList<>();
                 superinterfaces.add(parseTypeSignature());
             }
             return new ClassSigType(typeParamTypes, superclass, superinterfaces);
@@ -183,7 +183,7 @@ public class Signature extends Descriptor {
 
     private List<Type> parseTypeSignatures(char term) {
         sigp++;
-        List<Type> types = new ArrayList<Type>();
+        List<Type> types = new ArrayList<>();
         while (sig.charAt(sigp) != term)
             types.add(parseTypeSignature());
         sigp++;
@@ -229,7 +229,7 @@ public class Signature extends Descriptor {
     private List<TypeParamType> parseTypeParamTypes() {
         assert sig.charAt(sigp) == '<';
         sigp++;
-        List<TypeParamType> types = new ArrayList<TypeParamType>();
+        List<TypeParamType> types = new ArrayList<>();
         while (sig.charAt(sigp) != '>')
             types.add(parseTypeParamType());
         sigp++;
@@ -247,7 +247,7 @@ public class Signature extends Descriptor {
         while (sig.charAt(sigp) == ':') {
             sigp++;
             if (interfaceBounds == null)
-                interfaceBounds = new ArrayList<Type>();
+                interfaceBounds = new ArrayList<>();
             interfaceBounds.add(parseTypeSignature());
         }
         return new TypeParamType(name, classBound, interfaceBounds);

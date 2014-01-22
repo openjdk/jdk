@@ -28,6 +28,7 @@ package com.sun.tools.doclets.internal.toolkit.taglets;
 import com.sun.javadoc.*;
 import com.sun.tools.doclets.internal.toolkit.Content;
 import com.sun.tools.doclets.internal.toolkit.util.DocFinder;
+import com.sun.tools.javac.util.StringUtils;
 
 /**
  * A simple single argument custom tag.
@@ -110,8 +111,8 @@ public class SimpleTaglet extends BaseTaglet implements InheritableTaglet {
     public SimpleTaglet(String tagName, String header, String locations) {
         this.tagName = tagName;
         this.header = header;
-        locations = locations.toLowerCase();
-        if (locations.indexOf(ALL) != -1 && locations.indexOf(EXCLUDED) == -1) {
+        locations = StringUtils.toLowerCase(locations);
+        if (locations.contains(ALL) && !locations.contains(EXCLUDED)) {
             this.locations = PACKAGE + TYPE + FIELD + METHOD + CONSTRUCTOR + OVERVIEW;
         } else {
             this.locations = locations;
@@ -133,7 +134,7 @@ public class SimpleTaglet extends BaseTaglet implements InheritableTaglet {
      * otherwise.
      */
     public boolean inConstructor() {
-        return locations.indexOf(CONSTRUCTOR) != -1 && locations.indexOf(EXCLUDED) == -1;
+        return locations.contains(CONSTRUCTOR) && !locations.contains(EXCLUDED);
     }
 
     /**
@@ -144,7 +145,7 @@ public class SimpleTaglet extends BaseTaglet implements InheritableTaglet {
      * otherwise.
      */
     public boolean inField() {
-        return locations.indexOf(FIELD) != -1 && locations.indexOf(EXCLUDED) == -1;
+        return locations.contains(FIELD) && !locations.contains(EXCLUDED);
     }
 
     /**
@@ -155,7 +156,7 @@ public class SimpleTaglet extends BaseTaglet implements InheritableTaglet {
      * otherwise.
      */
     public boolean inMethod() {
-        return locations.indexOf(METHOD) != -1 && locations.indexOf(EXCLUDED) == -1;
+        return locations.contains(METHOD) && !locations.contains(EXCLUDED);
     }
 
     /**
@@ -166,7 +167,7 @@ public class SimpleTaglet extends BaseTaglet implements InheritableTaglet {
      * otherwise.
      */
     public boolean inOverview() {
-        return locations.indexOf(OVERVIEW) != -1 && locations.indexOf(EXCLUDED) == -1;
+        return locations.contains(OVERVIEW) && !locations.contains(EXCLUDED);
     }
 
     /**
@@ -177,7 +178,7 @@ public class SimpleTaglet extends BaseTaglet implements InheritableTaglet {
      * otherwise.
      */
     public boolean inPackage() {
-        return locations.indexOf(PACKAGE) != -1 && locations.indexOf(EXCLUDED) == -1;
+        return locations.contains(PACKAGE) && !locations.contains(EXCLUDED);
     }
 
     /**
@@ -188,7 +189,7 @@ public class SimpleTaglet extends BaseTaglet implements InheritableTaglet {
      * otherwise.
      */
     public boolean inType() {
-        return locations.indexOf(TYPE) != -1&& locations.indexOf(EXCLUDED) == -1;
+        return locations.contains(TYPE) && !locations.contains(EXCLUDED);
     }
 
     /**

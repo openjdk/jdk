@@ -49,7 +49,6 @@ public interface FileCCacheConstants {
     public final int KRB5_FCC_FVNO_4 = 0x504;
     public final int FCC_TAG_DELTATIME = 1;
     public final int KRB5_NT_UNKNOWN = 0;
-    public final int MAXNAMELENGTH = 1024;
     public final int TKT_FLG_FORWARDABLE = 0x40000000;
     public final int TKT_FLG_FORWARDED  =  0x20000000;
     public final int TKT_FLG_PROXIABLE   = 0x10000000;

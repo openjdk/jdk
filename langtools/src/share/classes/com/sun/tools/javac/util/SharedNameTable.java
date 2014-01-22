@@ -53,7 +53,7 @@ public class SharedNameTable extends Name.Table {
     }
 
     static private synchronized void dispose(SharedNameTable t) {
-        freelist = freelist.prepend(new SoftReference<SharedNameTable>(t));
+        freelist = freelist.prepend(new SoftReference<>(t));
     }
 
     /** The hash table for names.

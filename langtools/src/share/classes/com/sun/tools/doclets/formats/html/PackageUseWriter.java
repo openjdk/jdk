@@ -47,7 +47,7 @@ import com.sun.tools.doclets.internal.toolkit.util.*;
 public class PackageUseWriter extends SubWriterHolderWriter {
 
     final PackageDoc pkgdoc;
-    final SortedMap<String,Set<ClassDoc>> usingPackageToUsedClasses = new TreeMap<String,Set<ClassDoc>>();
+    final SortedMap<String,Set<ClassDoc>> usingPackageToUsedClasses = new TreeMap<>();
 
     /**
      * Constructor.
@@ -65,18 +65,15 @@ public class PackageUseWriter extends SubWriterHolderWriter {
         // by examining all classes in this package, find what packages
         // use these classes - produce a map between using package and
         // used classes.
-        ClassDoc[] content = pkgdoc.allClasses();
-        for (int i = 0; i < content.length; ++i) {
-            ClassDoc usedClass = content[i];
+        for (ClassDoc usedClass : pkgdoc.allClasses()) {
             Set<ClassDoc> usingClasses = mapper.classToClass.get(usedClass.qualifiedName());
             if (usingClasses != null) {
-                for (Iterator<ClassDoc> it = usingClasses.iterator(); it.hasNext(); ) {
-                    ClassDoc usingClass = it.next();
+                for (ClassDoc usingClass : usingClasses) {
                     PackageDoc usingPackage = usingClass.containingPackage();
                     Set<ClassDoc> usedClasses = usingPackageToUsedClasses
-                        .get(usingPackage.name());
+                            .get(usingPackage.name());
                     if (usedClasses == null) {
-                        usedClasses = new TreeSet<ClassDoc>();
+                        usedClasses = new TreeSet<>();
                         usingPackageToUsedClasses.put(Util.getPackageName(usingPackage),
                                                       usedClasses);
                     }
@@ -185,9 +182,7 @@ public class PackageUseWriter extends SubWriterHolderWriter {
                     configuration.getText("doclet.Class"),
                     configuration.getText("doclet.Description"))
         };
-        Iterator<String> itp = usingPackageToUsedClasses.keySet().iterator();
-        while (itp.hasNext()) {
-            String packageName = itp.next();
+        for (String packageName : usingPackageToUsedClasses.keySet()) {
             PackageDoc usingPackage = configuration.root.packageNamed(packageName);
             HtmlTree li = new HtmlTree(HtmlTag.LI);
             li.addStyle(HtmlStyle.blockList);
@@ -195,12 +190,12 @@ public class PackageUseWriter extends SubWriterHolderWriter {
                 li.addContent(getMarkerAnchor(usingPackage.name()));
             }
             String tableSummary = configuration.getText("doclet.Use_Table_Summary",
-                    configuration.getText("doclet.classes"));
+                                                        configuration.getText("doclet.classes"));
             Content table = HtmlTree.TABLE(HtmlStyle.useSummary, 0, 3, 0, tableSummary,
-                    getTableCaption(configuration.getResource(
-                    "doclet.ClassUse_Classes.in.0.used.by.1",
-                    getPackageLink(pkgdoc, Util.getPackageName(pkgdoc)),
-                    getPackageLink(usingPackage, Util.getPackageName(usingPackage)))));
+                                           getTableCaption(configuration.getResource(
+                                                   "doclet.ClassUse_Classes.in.0.used.by.1",
+                                                   getPackageLink(pkgdoc, Util.getPackageName(pkgdoc)),
+                                                   getPackageLink(usingPackage, Util.getPackageName(usingPackage)))));
             table.addContent(getSummaryTableHeader(classTableHeader, "col"));
             Content tbody = new HtmlTree(HtmlTag.TBODY);
             Iterator<ClassDoc> itc =

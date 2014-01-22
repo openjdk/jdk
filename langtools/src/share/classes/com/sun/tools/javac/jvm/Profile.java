@@ -39,9 +39,9 @@ import static com.sun.tools.javac.main.Option.PROFILE;
  *  deletion without notice.</b>
  */
 public enum Profile {
-    COMPACT1("compact1", 1, Target.JDK1_8),
-    COMPACT2("compact2", 2, Target.JDK1_8),
-    COMPACT3("compact3", 3, Target.JDK1_8),
+    COMPACT1("compact1", 1, Target.JDK1_8, Target.JDK1_9),
+    COMPACT2("compact2", 2, Target.JDK1_8, Target.JDK1_9),
+    COMPACT3("compact3", 3, Target.JDK1_8, Target.JDK1_9),
 
     DEFAULT {
         @Override
@@ -50,8 +50,7 @@ public enum Profile {
         }
     };
 
-    private static final Context.Key<Profile> profileKey =
-        new Context.Key<Profile>();
+    private static final Context.Key<Profile> profileKey = new Context.Key<>();
 
     public static Profile instance(Context context) {
         Profile instance = context.get(profileKey);

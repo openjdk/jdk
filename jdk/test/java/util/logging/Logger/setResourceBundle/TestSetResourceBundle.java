@@ -57,8 +57,8 @@ public class TestSetResourceBundle {
      * that was present in the last LogRecord instance published.
      */
     static final class TestHandler extends Handler {
-        ResourceBundle lastBundle = null;
-        String lastBundleName = null;
+        volatile ResourceBundle lastBundle = null;
+        volatile String lastBundleName = null;
         @Override
         public void publish(LogRecord record) {
             lastBundle = record.getResourceBundle();
@@ -186,6 +186,8 @@ public class TestSetResourceBundle {
 
     public static void test(String loggerName) throws Exception {
 
+        System.out.println("Starting test for " + loggerName);
+
         final ResourceBundle bundle = ResourceBundle.getBundle(LIST_BUNDLE_NAME);
         Logger foobar = Logger.getLogger(loggerName);
 
@@ -235,16 +237,21 @@ public class TestSetResourceBundle {
         }
 
         // Create a child logger
-        Logger foobaz = Logger.getLogger(loggerName + ".baz");
+        final Logger foobaz = Logger.getLogger(loggerName + ".baz");
+
+        if (foobar != foobaz.getParent()) {
+            throw new RuntimeException("Unexpected parent: " +
+                    foobaz.getParent() + " != " + foobar);
+        }
 
         // Check that the child logger does not have a bundle set locally
         if (foobaz.getResourceBundle() != null) {
             throw new RuntimeException("Unexpected bundle: "
-                    + foobar.getResourceBundle());
+                    + foobaz.getResourceBundle());
         }
         if (foobaz.getResourceBundleName() != null) {
             throw new RuntimeException("Unexpected bundle: "
-                    + foobar.getResourceBundleName());
+                    + foobaz.getResourceBundleName());
         }
 
 
@@ -258,39 +265,65 @@ public class TestSetResourceBundle {
         // checks that the message has been logged with the bundle
         // inherited from the parent logger
         if (!LIST_BUNDLE_NAME.equals(handler.lastBundleName)) {
+            debugLogger(foobaz, foobar, handler);
             throw new RuntimeException("Unexpected bundle name: "
                     + handler.lastBundleName);
         }
         if (!bundle_fr.equals(handler.lastBundle)) {
+            debugLogger(foobaz, foobar, handler);
             throw new RuntimeException("Unexpected bundle: "
                     + handler.lastBundle);
         }
 
         // Check that we can get set a bundle on the child logger
         // using Logger.getLogger.
-        foobaz = Logger.getLogger(loggerName + ".baz", PROPERTY_BUNDLE_NAME);
+        final Logger foobaz2 = Logger.getLogger(loggerName + ".baz", PROPERTY_BUNDLE_NAME);
+        if (foobaz2 != foobaz) {
+            throw new RuntimeException("Unexpected logger: " + foobaz2 + " != " + foobaz);
+        }
+        if (foobar != foobaz.getParent()) {
+            throw new RuntimeException("Unexpected parent: " +
+                    foobaz.getParent() + " != " + foobar);
+        }
 
         // check that the child logger has the correct bundle.
         // it should no longer inherit it from its parent.
-        if (!PROPERTY_BUNDLE_NAME.equals(foobaz.getResourceBundleName())) {
+        if (!PROPERTY_BUNDLE_NAME.equals(foobaz2.getResourceBundleName())) {
             throw new RuntimeException("Unexpected bundle name: "
-                    + foobaz.getResourceBundleName());
+                    + foobaz2.getResourceBundleName());
         }
-        if (!PROPERTY_BUNDLE_NAME.equals(foobaz.getResourceBundle().getBaseBundleName())) {
+
+        if (!PROPERTY_BUNDLE_NAME.equals(foobaz2.getResourceBundle().getBaseBundleName())) {
             throw new RuntimeException("Unexpected bundle name: "
-                    + foobaz.getResourceBundle().getBaseBundleName());
+                    + foobaz2.getResourceBundle().getBaseBundleName());
+        }
+
+        boolean found = false;
+        for (Handler h : foobaz2.getHandlers()) {
+            if (h == handler) {
+                found = true;
+                break;
+            }
+        }
+
+        if (!found) {
+            throw new RuntimeException("Expected handler not found in: " +
+                    foobaz2.getName() + "(" + foobaz2.getClass().getName()+")" );
         }
 
         // log a message on the child logger
-        foobaz.severe("dummy");
+        foobaz2.severe("dummy");
+
 
         // check that the last published log record has the appropriate
         // bundle.
         if (!PROPERTY_BUNDLE_NAME.equals(handler.lastBundleName)) {
+            debugLogger(foobaz2, foobar, handler);
             throw new RuntimeException("Unexpected bundle name: "
                     + handler.lastBundleName);
         }
-        if (foobaz.getResourceBundle() != handler.lastBundle) {
+        if (foobaz2.getResourceBundle() != handler.lastBundle) {
+            debugLogger(foobaz2, foobar, handler);
             throw new RuntimeException("Unexpected bundle: "
                     + handler.lastBundle);
         }
@@ -298,7 +331,7 @@ public class TestSetResourceBundle {
         // try to set a bundle that has a different name, and checks that
         // it fails in IAE.
         try {
-            foobaz.setResourceBundle(bundle_fr);
+            foobaz2.setResourceBundle(bundle_fr);
             throw new RuntimeException("Expected exception not raised!");
         } catch (IllegalArgumentException x) {
             System.out.println("Got expected exception: " + x);
@@ -333,10 +366,12 @@ public class TestSetResourceBundle {
 
         // check that the log record had the correct bundle.
         if (! PROPERTY_BUNDLE_NAME.equals(handler2.lastBundleName)) {
+            debugLogger(customLogger, foobar, handler2);
             throw new RuntimeException("Unexpected bundle name: "
                     + handler2.lastBundleName);
         }
         if (! PROPERTY_BUNDLE_NAME.equals(customLogger.getResourceBundleName())) {
+            debugLogger(customLogger, foobar, handler2);
             throw new RuntimeException("Unexpected bundle name: "
                     + customLogger.getResourceBundleName());
         }
@@ -356,6 +391,7 @@ public class TestSetResourceBundle {
         // because getResourceBundleName() is called on parent logger
         //         we will have handler2.lastBundleName = PROPERTY_BUNDLE_NAME
         if (!PROPERTY_BUNDLE_NAME.equals(handler2.lastBundleName)) {
+            debugLogger(biebar, customLogger, handler2);
             throw new RuntimeException("Unexpected bundle name: "
                     + handler2.lastBundleName);
         }
@@ -363,13 +399,70 @@ public class TestSetResourceBundle {
         //         we will have getBaseName(handler2.lastBundle) = PROPERTY_BUNDLE_NAME
         //         and not handler2.lastBundle = bundle_fr
         if (handler2.lastBundle == null) {
+            debugLogger(biebar, customLogger, handler2);
             throw new RuntimeException("Unexpected bundle: "
                     + handler2.lastBundle);
         }
         if (!PROPERTY_BUNDLE_NAME.equals(getBaseName(handler2.lastBundle))) {
+            debugLogger(biebar, customLogger, handler2);
             throw new RuntimeException("Unexpected bundle name: "
                     + getBaseName(handler2.lastBundle));
         }
+
+        // Just make sure that these loggers won't be eagerly GCed...
+        if (foobar == null || !loggerName.equals(foobar.getName())) {
+            throw new RuntimeException("foobar is null "
+                    + "- or doesn't have the expected  name: " + foobar);
+        }
+        if (foobaz == null || !foobaz.getName().startsWith(loggerName)) {
+            throw new RuntimeException("foobaz is null "
+                    + "- or doesn't have the expected  name: " + foobaz);
+        }
+        if (foobaz2 == null || !foobaz2.getName().startsWith(loggerName)) {
+            throw new RuntimeException("foobaz2 is null "
+                    + "- or doesn't have the expected  name: " + foobaz2);
+        }
+        if (!customLogger.getName().startsWith(loggerName)) {
+            throw new RuntimeException("customLogger "
+                    + "doesn't have the expected name: " + customLogger);
+        }
+        if (!biebar.getName().startsWith(loggerName)) {
+            throw new RuntimeException("biebar "
+                    + "doesn't have the expected  name: " + biebar.getName());
+        }
+        System.out.println("Test passed for " + loggerName);
+    }
+
+    static void debugLogger(Logger logger, Logger expectedParent, TestHandler handler) {
+        final String logName = logger.getName();
+        final String prefix = "    " + logName;
+        System.err.println("Logger " + logName
+                + " logged with bundle name " + handler.lastBundleName
+                + " (" + handler.lastBundle + ")");
+        System.err.println(prefix + ".getResourceBundleName() is "
+                + logger.getResourceBundleName());
+        System.err.println(prefix + ".getResourceBundle() is "
+                + logger.getResourceBundle());
+        final Logger parent = logger.getParent();
+        final String pname = parent == null ? null : parent.getName();
+        final String pclass = parent == null ? ""
+                : ("(" + parent.getClass().getName() + ")");
+        final String presn = parent == null ? null
+                : parent.getResourceBundleName();
+        final ResourceBundle pres = parent == null ? null
+                : parent.getResourceBundle();
+        System.err.println(prefix + ".getParent() is "
+                + pname + (pname == null ? ""
+                        : (" " + pclass + ": " + parent)));
+        System.err.println("    expected parent is :" + expectedParent);
+        System.err.println(prefix + ".parent.getResourceBundleName() is "
+                + presn);
+        System.err.println(prefix + ".parent.getResourceBundle() is "
+                + pres);
+        System.err.println("    expected parent getResourceBundleName() is "
+                + expectedParent.getResourceBundleName());
+        System.err.println("    expected parent.getResourceBundle() is "
+                + expectedParent.getResourceBundle());
     }
 
     public static class SimplePolicy extends Policy {

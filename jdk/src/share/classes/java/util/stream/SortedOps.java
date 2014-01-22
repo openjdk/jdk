@@ -329,7 +329,7 @@ final class SortedOps {
         public void begin(long size) {
             if (size >= Nodes.MAX_ARRAY_SIZE)
                 throw new IllegalArgumentException(Nodes.BAD_SIZE);
-            list = (size >= 0) ? new ArrayList<T>((int) size) : new ArrayList<T>();
+            list = (size >= 0) ? new ArrayList<>((int) size) : new ArrayList<>();
         }
 
         @Override

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,6 +24,8 @@
  */
 
 package com.sun.tools.doclets.formats.html.markup;
+
+import com.sun.tools.javac.util.StringUtils;
 
 /**
  * Enum representing HTML tag attributes.
@@ -64,7 +66,7 @@ public enum HtmlAttr {
     private final String value;
 
     HtmlAttr() {
-        this.value = name().toLowerCase();
+        this.value = StringUtils.toLowerCase(name());
     }
 
     HtmlAttr(String name) {

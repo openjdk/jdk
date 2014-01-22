@@ -27,7 +27,7 @@
  * @summary Compiler silently generates bytecode that exceeds VM limits
  * @author gafter
  *
- * @compile/fail CodeSize.java
+ * @compile/fail/ref=CodeSize.out -XDrawDiagnostics CodeSize.java
  */
 
 class CodeSize {

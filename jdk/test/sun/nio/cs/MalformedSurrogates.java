@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,64 +22,132 @@
  */
 
 /* @test
-   @bug 4153987
-   @summary Malformed surrogates should be handled by the converter in
-   substitution mode.
+ * @bug 4153987
+ * @summary Malformed surrogates should be handled by the converter in
+ * substitution mode.
  */
-
 import java.io.*;
+import java.nio.charset.Charset;
+import java.nio.charset.CharsetDecoder;
+import java.nio.charset.CharsetEncoder;
+import java.nio.CharBuffer;
+import java.nio.ByteBuffer;
+import java.nio.charset.CodingErrorAction;
+import java.nio.charset.MalformedInputException;
+import java.nio.charset.UnmappableCharacterException;
+import java.util.SortedMap;
 
 public class MalformedSurrogates {
 
-    public static void main(String[] args) throws Exception {
+    private static final String PREFIX = "abc";
+    private static final String SUFFIX = "efgh";
+    private static final String MALFORMED_SURROGATE = PREFIX + "\uD800\uDB00" + SUFFIX;
+    private static final String NORMAL_SURROGATE = PREFIX + "\uD800\uDC00" + SUFFIX;
+    private static final String REVERSED_SURROGATE = PREFIX + "\uDC00\uD800" + SUFFIX;
+    private static final String SOLITARY_HIGH_SURROGATE = PREFIX + "\uD800" + SUFFIX;
+    private static final String SOLITARY_LOW_SURROGATE = PREFIX + "\uDC00" + SUFFIX;
 
-        String fe = System.getProperty("file.encoding");
-        if (  fe.equalsIgnoreCase("UTF8")
-              || fe.equalsIgnoreCase("UTF-8")
-              || fe.equalsIgnoreCase("UTF_8"))
-            // This test is meaningless if the default charset
-            // does handle surrogates
+    public static void main(String[] args) throws IOException {
+        SortedMap<String, Charset> map = Charset.availableCharsets();
+        for (String name : map.keySet()) {
+            Charset charset = map.get(name);
+            if (charset.canEncode() && !charset.name().equals("x-COMPOUND_TEXT")) {
+                testNormalSurrogate(charset, NORMAL_SURROGATE);
+                testMalformedSurrogate(charset, MALFORMED_SURROGATE);
+                testMalformedSurrogate(charset, REVERSED_SURROGATE);
+                testMalformedSurrogate(charset, SOLITARY_HIGH_SURROGATE);
+                testMalformedSurrogate(charset, SOLITARY_LOW_SURROGATE);
+                testSurrogateWithReplacement(charset, NORMAL_SURROGATE);
+                testSurrogateWithReplacement(charset, MALFORMED_SURROGATE);
+                testSurrogateWithReplacement(charset, REVERSED_SURROGATE);
+                testSurrogateWithReplacement(charset, SOLITARY_HIGH_SURROGATE);
+                testSurrogateWithReplacement(charset, SOLITARY_LOW_SURROGATE);
+            }
+        }
+    }
+
+    public static void testMalformedSurrogate(Charset cs, String surrogate) throws IOException {
+        CharsetEncoder en = cs.newEncoder();
+        if (en.canEncode(surrogate)) {
+            throw new RuntimeException("testMalformedSurrogate failed with charset " + cs.name());
+        }
+
+        try {
+            en.encode(CharBuffer.wrap(surrogate));
+            throw new RuntimeException("Should throw MalformedInputException or UnmappableCharacterException");
+        } catch (MalformedInputException | UnmappableCharacterException ex) {
+        } finally {
+            en.reset();
+        }
+
+        try (OutputStreamWriter osw = new OutputStreamWriter(new ByteArrayOutputStream(), en)) {
+            osw.write(surrogate);
+            throw new RuntimeException("Should throw MalformedInputException or UnmappableCharacterException");
+        } catch (MalformedInputException | UnmappableCharacterException ex) {
+        }
+    }
+
+    public static void testNormalSurrogate(Charset cs, String surrogate) throws IOException {
+        CharsetEncoder en = cs.newEncoder();
+        try {
+            en.encode(CharBuffer.wrap(surrogate));
+        } catch (UnmappableCharacterException ex) {
+        } finally {
+            en.reset();
+        }
+
+        try (OutputStreamWriter osw = new OutputStreamWriter(new ByteArrayOutputStream(), en)) {
+            osw.write(surrogate);
+        } catch (UnmappableCharacterException ex) {
+        }
+    }
+
+    public static void testSurrogateWithReplacement(Charset cs, String surrogate) throws IOException {
+        CharsetEncoder en = cs.newEncoder();
+        CharsetDecoder de = cs.newDecoder();
+        if (!en.canEncode(NORMAL_SURROGATE)) {
             return;
-
-        System.out.println("Testing string conversion...");
-        /* Example with malformed surrogate, and an offset */
-        String t = "abc\uD800\uDB00efgh";
-        String t2 = t.substring(2);
-        byte[] b = t2.getBytes();
-        System.err.println(b.length);
-        for (int i = 0; i < b.length; i++)
-            System.err.println("[" + i + "]" + "=" + (char) b[i]
-                               + "=" + (int) b[i]);
-        if (b.length != 7) {
-            throw new Exception("Bad string conversion for bad surrogate");
+        }
+        String expected = null;
+        String replace = new String(en.replacement(), cs);
+        switch (surrogate) {
+            case MALFORMED_SURROGATE:
+            case REVERSED_SURROGATE:
+                expected = PREFIX + replace + replace + SUFFIX;
+                break;
+            case SOLITARY_HIGH_SURROGATE:
+            case SOLITARY_LOW_SURROGATE:
+                expected = PREFIX + replace + SUFFIX;
+                break;
+            default:
+                expected = NORMAL_SURROGATE;
         }
 
-        /* Example with a proper surrogate, no offset. Always worked */
-        String t3 = "abc\uD800\uDC00efgh";
-        byte[] b2 = t3.getBytes();
-        System.out.println(b2.length);
-        for(int i = 0; i < b2.length; i++)
-            System.err.println("[" + i + "]" + "=" + (char) b2[i]);
-        if (b2.length != 8) {
-            throw new Exception("Bad string conversion for good surrogate");
+        try {
+            en.onMalformedInput(CodingErrorAction.REPLACE);
+            en.onUnmappableCharacter(CodingErrorAction.REPLACE);
+            ByteBuffer bbuf = en.encode(CharBuffer.wrap(surrogate));
+            CharBuffer cbuf = de.decode(bbuf);
+            if (!cbuf.toString().equals(expected)) {
+                throw new RuntimeException("charset " + cs.name() + " (en)decoded the surrogate " + surrogate + " to " + cbuf.toString() + " which is not same as the expected " + expected);
+            }
+        } finally {
+            en.reset();
+            de.reset();
         }
 
-        OutputStream os = new ByteArrayOutputStream();
-        OutputStreamWriter osw = new OutputStreamWriter(os);
-        System.out.println("Testing flush....");
-        /* Check for the case where the converter has a left over
-           high surrogate when flush is called on the converter */
-        osw.flush();
-        String s = "abc\uD800"; // High surrogate
-        char[] c = s.toCharArray();
-        osw.write(s, 0, 4);
-        osw.flush();
-
-        System.out.println("Testing convert...");
-        /* Verify that all other characters go through */
-        for (int k = 1; k < 65535 ; k++) {
-            osw.write("Char[" + k + "]=\"" + ((char) k) + "\"");
+        try (ByteArrayOutputStream bos = new ByteArrayOutputStream();
+                OutputStreamWriter osw = new OutputStreamWriter(bos, en);) {
+            osw.write(surrogate);
+            osw.flush();
+            try (InputStreamReader isr = new InputStreamReader(new ByteArrayInputStream(bos.toByteArray()), de)) {
+                CharBuffer cbuf = CharBuffer.allocate(expected.length());
+                isr.read(cbuf);
+                cbuf.rewind();
+                if (!cbuf.toString().equals(expected)) {
+                    throw new RuntimeException("charset " + cs.name() + " (en)decoded the surrogate " + surrogate + " to " + cbuf.toString() + " which is not same as the expected " + expected);
+                }
+            }
         }
-
     }
 }

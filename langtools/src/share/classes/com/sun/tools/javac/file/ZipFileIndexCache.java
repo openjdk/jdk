@@ -39,8 +39,7 @@ import java.util.Map;
 /** A cache for ZipFileIndex objects. */
 public class ZipFileIndexCache {
 
-    private final Map<File, ZipFileIndex> map =
-            new HashMap<File, ZipFileIndex>();
+    private final Map<File, ZipFileIndex> map = new HashMap<>();
 
     /** Get a shared instance of the cache. */
     private static ZipFileIndexCache sharedInstance;
@@ -75,7 +74,7 @@ public class ZipFileIndexCache {
      * @return A list of ZipFileIndex entries, or an empty list
      */
     public synchronized List<ZipFileIndex> getZipFileIndexes(boolean openedOnly) {
-        List<ZipFileIndex> zipFileIndexes = new ArrayList<ZipFileIndex>();
+        List<ZipFileIndex> zipFileIndexes = new ArrayList<>();
 
         zipFileIndexes.addAll(map.values());
 
@@ -113,14 +112,12 @@ public class ZipFileIndexCache {
     }
 
     public synchronized void clearCache(long timeNotUsed) {
-        Iterator<File> cachedFileIterator = map.keySet().iterator();
-        while (cachedFileIterator.hasNext()) {
-            File cachedFile = cachedFileIterator.next();
+        for (File cachedFile : map.keySet()) {
             ZipFileIndex cachedZipIndex = map.get(cachedFile);
             if (cachedZipIndex != null) {
                 long timeToTest = cachedZipIndex.lastReferenceTimeStamp + timeNotUsed;
                 if (timeToTest < cachedZipIndex.lastReferenceTimeStamp || // Overflow...
-                        System.currentTimeMillis() > timeToTest) {
+                    System.currentTimeMillis() > timeToTest) {
                     map.remove(cachedFile);
                 }
             }

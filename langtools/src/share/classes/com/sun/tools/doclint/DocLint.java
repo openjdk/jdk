@@ -257,8 +257,7 @@ public class DocLint implements Plugin {
 
     public void init(JavacTask task, String[] args, boolean addTaskListener) {
         env = new Env();
-        for (int i = 0; i < args.length; i++) {
-            String arg = args[i];
+        for (String arg : args) {
             if (arg.equals(XMSGS_OPTION)) {
                 env.messages.setOptions(null);
             } else if (arg.startsWith(XMSGS_CUSTOM_PREFIX)) {
@@ -307,7 +306,7 @@ public class DocLint implements Plugin {
                     }
                 }
 
-                Queue<CompilationUnitTree> todo = new LinkedList<CompilationUnitTree>();
+                Queue<CompilationUnitTree> todo = new LinkedList<>();
             };
 
             task.addTaskListener(tl);
