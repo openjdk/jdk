@@ -30,7 +30,7 @@
 //---------------------------------------------------------------------------------
 //
 //  Little Color Management System
-//  Copyright (c) 1998-2010 Marti Maria Saguer
+//  Copyright (c) 1998-2012 Marti Maria Saguer
 //
 // Permission is hereby granted, free of charge, to any person obtaining
 // a copy of this software and associated documentation files (the "Software"),
@@ -76,48 +76,48 @@ const cmsCIExyY* CMSEXPORT cmsD50_xyY(void)
 // Obtains WhitePoint from Temperature
 cmsBool  CMSEXPORT cmsWhitePointFromTemp(cmsCIExyY* WhitePoint, cmsFloat64Number TempK)
 {
-       cmsFloat64Number x, y;
-       cmsFloat64Number T, T2, T3;
-       // cmsFloat64Number M1, M2;
+    cmsFloat64Number x, y;
+    cmsFloat64Number T, T2, T3;
+    // cmsFloat64Number M1, M2;
 
-       _cmsAssert(WhitePoint != NULL);
+    _cmsAssert(WhitePoint != NULL);
 
-       T = TempK;
-       T2 = T*T;            // Square
-       T3 = T2*T;           // Cube
+    T = TempK;
+    T2 = T*T;            // Square
+    T3 = T2*T;           // Cube
 
-       // For correlated color temperature (T) between 4000K and 7000K:
+    // For correlated color temperature (T) between 4000K and 7000K:
 
-       if (T >= 4000. && T <= 7000.)
-       {
-              x = -4.6070*(1E9/T3) + 2.9678*(1E6/T2) + 0.09911*(1E3/T) + 0.244063;
-       }
-       else
-              // or for correlated color temperature (T) between 7000K and 25000K:
+    if (T >= 4000. && T <= 7000.)
+    {
+        x = -4.6070*(1E9/T3) + 2.9678*(1E6/T2) + 0.09911*(1E3/T) + 0.244063;
+    }
+    else
+        // or for correlated color temperature (T) between 7000K and 25000K:
 
-       if (T > 7000.0 && T <= 25000.0)
-       {
-              x = -2.0064*(1E9/T3) + 1.9018*(1E6/T2) + 0.24748*(1E3/T) + 0.237040;
-       }
-       else {
-              cmsSignalError(0, cmsERROR_RANGE, "cmsWhitePointFromTemp: invalid temp");
-              return FALSE;
-              }
+        if (T > 7000.0 && T <= 25000.0)
+        {
+            x = -2.0064*(1E9/T3) + 1.9018*(1E6/T2) + 0.24748*(1E3/T) + 0.237040;
+        }
+        else {
+            cmsSignalError(0, cmsERROR_RANGE, "cmsWhitePointFromTemp: invalid temp");
+            return FALSE;
+        }
 
-       // Obtain y(x)
+        // Obtain y(x)
 
-       y = -3.000*(x*x) + 2.870*x - 0.275;
+        y = -3.000*(x*x) + 2.870*x - 0.275;
 
-       // wave factors (not used, but here for futures extensions)
+        // wave factors (not used, but here for futures extensions)
 
-       // M1 = (-1.3515 - 1.7703*x + 5.9114 *y)/(0.0241 + 0.2562*x - 0.7341*y);
-       // M2 = (0.0300 - 31.4424*x + 30.0717*y)/(0.0241 + 0.2562*x - 0.7341*y);
+        // M1 = (-1.3515 - 1.7703*x + 5.9114 *y)/(0.0241 + 0.2562*x - 0.7341*y);
+        // M2 = (0.0300 - 31.4424*x + 30.0717*y)/(0.0241 + 0.2562*x - 0.7341*y);
 
-       WhitePoint -> x = x;
-       WhitePoint -> y = y;
-       WhitePoint -> Y = 1.0;
+        WhitePoint -> x = x;
+        WhitePoint -> y = y;
+        WhitePoint -> Y = 1.0;
 
-       return TRUE;
+        return TRUE;
 }
 
 
@@ -266,7 +266,7 @@ cmsBool  _cmsAdaptationMatrix(cmsMAT3* r, const cmsMAT3* ConeMatrix, const cmsCI
         {{  0.8951,  0.2664, -0.1614 }},
         {{ -0.7502,  1.7135,  0.0367 }},
         {{  0.0389, -0.0685,  1.0296 }}
-      }};
+    }};
 
     if (ConeMatrix == NULL)
         ConeMatrix = &LamRigg;
