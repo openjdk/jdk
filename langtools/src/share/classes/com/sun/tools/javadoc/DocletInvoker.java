@@ -210,7 +210,7 @@ public class DocletInvoker {
         Class<?>[] paramTypes = { String.class };
         Object[] params = { option };
         try {
-            retVal = invoke(methodName, new Integer(0), paramTypes, params);
+            retVal = invoke(methodName, 0, paramTypes, params);
         } catch (DocletInvokeException exc) {
             return -1;
         }
@@ -308,7 +308,7 @@ public class DocletInvoker {
                 if (appClassLoader != null) // will be null if doclet class provided via API
                     Thread.currentThread().setContextClassLoader(appClassLoader);
                 return meth.invoke(null , params);
-            } catch (IllegalArgumentException exc) {
+            } catch (IllegalArgumentException | NullPointerException exc) {
                 messager.error(Messager.NOPOS, "main.internal_error_exception_thrown",
                                docletClassName, methodName, exc.toString());
                 throw new DocletInvokeException();
@@ -316,11 +316,8 @@ public class DocletInvoker {
                 messager.error(Messager.NOPOS, "main.doclet_method_not_accessible",
                                docletClassName, methodName);
                 throw new DocletInvokeException();
-            } catch (NullPointerException exc) {
-                messager.error(Messager.NOPOS, "main.internal_error_exception_thrown",
-                               docletClassName, methodName, exc.toString());
-                throw new DocletInvokeException();
-            } catch (InvocationTargetException exc) {
+            }
+            catch (InvocationTargetException exc) {
                 Throwable err = exc.getTargetException();
                 if (apiMode)
                     throw new ClientCodeException(err);

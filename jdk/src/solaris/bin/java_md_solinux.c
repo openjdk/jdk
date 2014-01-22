@@ -51,23 +51,10 @@
 #ifndef SETENV_REQUIRED
 #define SETENV_REQUIRED
 #endif
-/*
- * If a processor / os combination has the ability to run binaries of
- * two data models and cohabitation of jre/jdk bits with both data
- * models is supported, then DUAL_MODE is defined.  When DUAL_MODE is
- * defined, the architecture names for the narrow and wide version of
- * the architecture are defined in LIBARCH64NAME and LIBARCH32NAME.
- * Currently  only Solaris on sparc/sparcv9 and i586/amd64 is DUAL_MODE;
- * linux i586/amd64 could be defined as DUAL_MODE but that is not the
- * current policy.
- */
 
 #ifdef __solaris__
-#  ifndef LIBARCH32NAME
-#    error "The macro LIBARCH32NAME was not defined on the compile line"
-#  endif
-#  ifndef LIBARCH64NAME
-#    error "The macro LIBARCH64NAME was not defined on the compile line"
+#  ifndef LIBARCHNAME
+#    error "The macro LIBARCHNAME was not defined on the compile line"
 #  endif
 #  include <sys/systeminfo.h>
 #  include <sys/elf.h>
@@ -122,24 +109,15 @@
  *  |
  *  |
  * \|/
- *  Have Desired Model ? --> NO --> Is Dual-Mode ? --> NO --> Exit(with error)
- *  |                                          |
- *  |                                          |
- *  |                                         \|/
- *  |                                         YES
- *  |                                          |
- *  |                                          |
- *  |                                         \|/
- *  |                                CheckJvmType
- *  |                               (removes -client, -server etc.)
- *  |                                          |
- *  |                                          |
- * \|/                                        \|/
- * YES                             Find the desired executable/library
- *  |                                          |
- *  |                                          |
- * \|/                                        \|/
- * CheckJvmType                          RequiresSetenv
+ *  Have Desired Model ? --> NO --> Exit(with error)
+ *  |
+ *  |
+ * \|/
+ * YES
+ *  |
+ *  |
+ * \|/
+ * CheckJvmType
  * (removes -client, -server, etc.)
  *  |
  *  |
@@ -159,24 +137,24 @@
  *  \|/
  * RequiresSetenv
  * Is LD_LIBRARY_PATH
- * and friends set ? --> NO --> Have Desired Model ? NO --> Re-exec --> Main
+ * and friends set ? --> NO --> Have Desired Model ? NO --> Error/Exit
  *  YES                              YES --> Continue
  *   |
  *   |
  *  \|/
- * Path is desired JRE ? YES --> Have Desired Model ? NO --> Re-exec --> Main
+ * Path is desired JRE ? YES --> Have Desired Model ? NO --> Error/Exit
  *  NO                               YES --> Continue
  *   |
  *   |
  *  \|/
  * Paths have well known
- * jvm paths ?       --> NO --> Have Desired Model ? NO --> Re-exec --> Main
+ * jvm paths ?       --> NO --> Have Desired Model ? NO --> Error/Exit
  *  YES                              YES --> Continue
  *   |
  *   |
  *  \|/
  *  Does libjvm.so exit
- *  in any of them ? --> NO --> Have Desired Model ? NO --> Re-exec --> Main
+ *  in any of them ? --> NO --> Have Desired Model ? NO --> Error/Exit
  *   YES                             YES --> Continue
  *   |
  *   |
@@ -192,8 +170,6 @@
  * Main
  */
 
-#define GetArch() GetArchPath(CURRENT_DATA_MODEL)
-
 /* Store the name of the executable once computed */
 static char *execname = NULL;
 
@@ -203,21 +179,6 @@ static char *execname = NULL;
 const char *
 GetExecName() {
     return execname;
-}
-
-const char *
-GetArchPath(int nbits)
-{
-    switch(nbits) {
-#ifdef DUAL_MODE
-        case 32:
-            return LIBARCH32NAME;
-        case 64:
-            return LIBARCH64NAME;
-#endif /* DUAL_MODE */
-        default:
-            return LIBARCHNAME;
-    }
 }
 
 #ifdef SETENV_REQUIRED
@@ -232,10 +193,10 @@ JvmExists(const char *path) {
     return JNI_FALSE;
 }
 /*
- * contains a lib/$LIBARCH/{server,client}/libjvm.so ?
+ * contains a lib/$LIBARCHNAME/{server,client}/libjvm.so ?
  */
 static jboolean
-ContainsLibJVM(int wanted, const char *env) {
+ContainsLibJVM(const char *env) {
     char clientPattern[PATH_MAX + 1];
     char serverPattern[PATH_MAX + 1];
     char *envpath;
@@ -249,8 +210,8 @@ ContainsLibJVM(int wanted, const char *env) {
     }
 
     /* the usual suspects */
-    JLI_Snprintf(clientPattern, PATH_MAX, "lib/%s/client", GetArchPath(wanted));
-    JLI_Snprintf(serverPattern, PATH_MAX, "lib/%s/server", GetArchPath(wanted));
+    JLI_Snprintf(clientPattern, PATH_MAX, "lib/%s/client", LIBARCHNAME);
+    JLI_Snprintf(serverPattern, PATH_MAX, "lib/%s/server", LIBARCHNAME);
 
     /* to optimize for time, test if any of our usual suspects are present. */
     clientPatternFound = JLI_StrStr(env, clientPattern) != NULL;
@@ -285,7 +246,7 @@ ContainsLibJVM(int wanted, const char *env) {
  * Test whether the environment variable needs to be set, see flowchart.
  */
 static jboolean
-RequiresSetenv(int wanted, const char *jvmpath) {
+RequiresSetenv(const char *jvmpath) {
     char jpath[PATH_MAX + 1];
     char *llp;
     char *dmllp = NULL;
@@ -298,9 +259,7 @@ RequiresSetenv(int wanted, const char *jvmpath) {
 
     llp = getenv("LD_LIBRARY_PATH");
 #ifdef __solaris__
-    dmllp = (CURRENT_DATA_MODEL == 32)
-            ? getenv("LD_LIBRARY_PATH_32")
-            : getenv("LD_LIBRARY_PATH_64");
+    dmllp = getenv("LD_LIBRARY_PATH_64");
 #endif /* __solaris__ */
     /* no environment variable is a good environment variable */
     if (llp == NULL && dmllp == NULL) {
@@ -339,10 +298,10 @@ RequiresSetenv(int wanted, const char *jvmpath) {
     }
 
     /* scrutinize all the paths further */
-    if (llp != NULL &&  ContainsLibJVM(wanted, llp)) {
+    if (llp != NULL &&  ContainsLibJVM(llp)) {
         return JNI_TRUE;
     }
-    if (dmllp != NULL && ContainsLibJVM(wanted, dmllp)) {
+    if (dmllp != NULL && ContainsLibJVM(dmllp)) {
         return JNI_TRUE;
     }
     return JNI_FALSE;
@@ -358,10 +317,8 @@ CreateExecutionEnvironment(int *pargc, char ***pargv,
    * First, determine if we are running the desired data model.  If we
    * are running the desired data model, all the error messages
    * associated with calling GetJREPath, ReadKnownVMs, etc. should be
-   * output.  However, if we are not running the desired data model,
-   * some of the errors should be suppressed since it is more
-   * informative to issue an error message based on whether or not the
-   * os/processor combination has dual mode capabilities.
+   * output, otherwise we simply exit with an error, as we no longer
+   * support dual data models.
    */
     jboolean jvmpathExists;
 
@@ -370,16 +327,17 @@ CreateExecutionEnvironment(int *pargc, char ***pargv,
 
     /* Check data model flags, and exec process, if needed */
     {
-      char *arch        = (char *)GetArch(); /* like sparc or sparcv9 */
+      char *arch        = LIBARCHNAME; /* like sparc or sparcv9 */
       char * jvmtype    = NULL;
       int  argc         = *pargc;
       char **argv       = *pargv;
       int running       = CURRENT_DATA_MODEL;
-
-      int wanted        = running;      /* What data mode is being
-                                           asked for? Current model is
-                                           fine unless another model
-                                           is asked for */
+      /*
+       * As of jdk9, there is no support for dual mode operations, however
+       * for legacy error reporting purposes and until -d options are supported
+       * we need this.
+       */
+      int wanted        = running;
 #ifdef SETENV_REQUIRED
       jboolean mustsetenv = JNI_FALSE;
       char *runpath     = NULL; /* existing effective LD_LIBRARY_PATH setting */
@@ -482,7 +440,7 @@ CreateExecutionEnvironment(int *pargc, char ***pargv,
          * we return back, otherwise proceed to set the environment.
          */
 #ifdef SETENV_REQUIRED
-        mustsetenv = RequiresSetenv(wanted, jvmpath);
+        mustsetenv = RequiresSetenv(jvmpath);
         JLI_TraceLauncher("mustsetenv: %s\n", mustsetenv ? "TRUE" : "FALSE");
 
         if (mustsetenv == JNI_FALSE) {
@@ -490,47 +448,13 @@ CreateExecutionEnvironment(int *pargc, char ***pargv,
             return;
         }
 #else
-        JLI_MemFree(newargv);
-        return;
+            JLI_MemFree(newargv);
+            return;
 #endif /* SETENV_REQUIRED */
-      } else {  /* do the same speculatively or exit */
-#ifdef DUAL_MODE
-        if (running != wanted) {
-          /* Find out where the JRE is that we will be using. */
-          if (!GetJREPath(jrepath, so_jrepath, GetArchPath(wanted), JNI_TRUE)) {
-            /* give up and let other code report error message */
-            JLI_ReportErrorMessage(JRE_ERROR2, wanted);
-            exit(1);
-          }
-          JLI_Snprintf(jvmcfg, so_jvmcfg, "%s%slib%s%s%sjvm.cfg",
-                       jrepath, FILESEP, FILESEP, GetArchPath(wanted), FILESEP);
-          /*
-           * Read in jvm.cfg for target data model and process vm
-           * selection options.
-           */
-          if (ReadKnownVMs(jvmcfg, JNI_TRUE) < 1) {
-            /* give up and let other code report error message */
-            JLI_ReportErrorMessage(JRE_ERROR2, wanted);
-            exit(1);
-          }
-          jvmpath[0] = '\0';
-          jvmtype = CheckJvmType(pargc, pargv, JNI_TRUE);
-          if (JLI_StrCmp(jvmtype, "ERROR") == 0) {
-            JLI_ReportErrorMessage(CFG_ERROR9);
-            exit(4);
-          }
-
-          /* exec child can do error checking on the existence of the path */
-          jvmpathExists = GetJVMPath(jrepath, jvmtype, jvmpath, so_jvmpath, GetArchPath(wanted), 0);
-#ifdef SETENV_REQUIRED
-          mustsetenv = RequiresSetenv(wanted, jvmpath);
-#endif /* SETENV_REQUIRED */
-        }
-#else /* ! DUALMODE */
+    } else {  /* do the same speculatively or exit */
         JLI_ReportErrorMessage(JRE_ERROR2, wanted);
         exit(1);
-#endif /* DUAL_MODE */
-        }
+    }
 #ifdef SETENV_REQUIRED
         if (mustsetenv) {
             /*
@@ -554,10 +478,6 @@ CreateExecutionEnvironment(int *pargc, char ***pargv,
              *
              * 2. LD_LIBRARY_PATH_64 -- overrides and replaces LD_LIBRARY_PATH
              * for 64-bit binaries.
-             *
-             * 3. LD_LIBRARY_PATH_32 -- overrides and replaces LD_LIBRARY_PATH
-             * for 32-bit binaries.
-             *
              * The vm uses LD_LIBRARY_PATH to set the java.library.path system
              * property.  To shield the vm from the complication of multiple
              * LD_LIBRARY_PATH variables, if the appropriate data model
@@ -570,21 +490,9 @@ CreateExecutionEnvironment(int *pargc, char ***pargv,
 
             switch (wanted) {
                 case 0:
-                    if (running == 32) {
-                        dmpath = getenv("LD_LIBRARY_PATH_32");
-                        wanted = 32;
-                    } else {
-                        dmpath = getenv("LD_LIBRARY_PATH_64");
-                        wanted = 64;
-                    }
-                    break;
-
-                case 32:
-                    dmpath = getenv("LD_LIBRARY_PATH_32");
-                    break;
-
                 case 64:
                     dmpath = getenv("LD_LIBRARY_PATH_64");
+                    wanted = 64;
                     break;
 
                 default:
@@ -640,16 +548,11 @@ CreateExecutionEnvironment(int *pargc, char ***pargv,
 #endif
                         "%s/../lib/%s",
                         jvmpath,
-#ifdef DUAL_MODE
-                        jrepath, GetArchPath(wanted),
-                        jrepath, GetArchPath(wanted)
-#else /* !DUAL_MODE */
                         jrepath, arch,
 #ifdef AIX
                         jrepath, arch,
 #endif
                         jrepath, arch
-#endif /* DUAL_MODE */
                         );
 
 
@@ -700,7 +603,7 @@ CreateExecutionEnvironment(int *pargc, char ***pargv,
              * in the environment for the exec'ed child.
              */
             if (dmpath != NULL)
-                (void)UnsetEnv((wanted == 32) ? "LD_LIBRARY_PATH_32" : "LD_LIBRARY_PATH_64");
+                (void)UnsetEnv("LD_LIBRARY_PATH_64");
 #endif /* __solaris */
 
             newenvp = environ;
@@ -708,34 +611,6 @@ CreateExecutionEnvironment(int *pargc, char ***pargv,
 #endif /* SETENV_REQUIRED */
         {
             char *newexec = execname;
-#ifdef DUAL_MODE
-            /*
-             * If the data model is being changed, the path to the
-             * executable must be updated accordingly; the executable name
-             * and directory the executable resides in are separate.  In the
-             * case of 32 => 64, the new bits are assumed to reside in, e.g.
-             * "olddir/LIBARCH64NAME/execname"; in the case of 64 => 32,
-             * the bits are assumed to be in "olddir/../execname".  For example,
-             *
-             * olddir/sparcv9/execname
-             * olddir/amd64/execname
-             *
-             * for Solaris SPARC and Linux amd64, respectively.
-             */
-
-            if (running != wanted) {
-                char *oldexec = JLI_StrCpy(JLI_MemAlloc(JLI_StrLen(execname) + 1), execname);
-                char *olddir = oldexec;
-                char *oldbase = JLI_StrRChr(oldexec, '/');
-
-
-                newexec = JLI_MemAlloc(JLI_StrLen(execname) + 20);
-                *oldbase++ = 0;
-                sprintf(newexec, "%s/%s/%s", olddir,
-                        ((wanted == 64) ? LIBARCH64NAME : ".."), oldbase);
-                argv[0] = newexec;
-            }
-#endif /* DUAL_MODE */
             JLI_TraceLauncher("TRACER_MARKER:About to EXEC\n");
             (void) fflush(stdout);
             (void) fflush(stderr);
@@ -749,20 +624,6 @@ CreateExecutionEnvironment(int *pargc, char ***pargv,
             execv(newexec, argv);
 #endif /* SETENV_REQUIRED */
             JLI_ReportErrorMessageSys(JRE_ERROR4, newexec);
-
-#ifdef DUAL_MODE
-            if (running != wanted) {
-                JLI_ReportErrorMessage(JRE_ERROR5, wanted, running);
-#ifdef __solaris__
-#ifdef __sparc
-                JLI_ReportErrorMessage(JRE_ERROR6);
-#else  /* ! __sparc__ */
-                JLI_ReportErrorMessage(JRE_ERROR7);
-#endif  /* __sparc */
-#endif /* __solaris__ */
-            }
-#endif /* DUAL_MODE */
-
         }
         exit(1);
     }
@@ -980,12 +841,12 @@ void* SplashProcAddress(const char* name) {
         char jrePath[MAXPATHLEN];
         char splashPath[MAXPATHLEN];
 
-        if (!GetJREPath(jrePath, sizeof(jrePath), GetArch(), JNI_FALSE)) {
+        if (!GetJREPath(jrePath, sizeof(jrePath), LIBARCHNAME, JNI_FALSE)) {
             JLI_ReportErrorMessage(JRE_ERROR1);
             return NULL;
         }
         ret = JLI_Snprintf(splashPath, sizeof(splashPath), "%s/lib/%s/%s",
-                     jrePath, GetArch(), SPLASHSCREEN_SO);
+                     jrePath, LIBARCHNAME, SPLASHSCREEN_SO);
 
         if (ret >= (int) sizeof(splashPath)) {
             JLI_ReportErrorMessage(JRE_ERROR11);

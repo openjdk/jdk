@@ -123,6 +123,11 @@
 # 8029415
 java/lang/reflect/Method/invoke/TestPrivateInterfaceMethodReflect.java generic-all
 
+# 8030656
+java/lang/reflect/Parameter/GetAnnotatedTypeTest.java generic-all
+java/lang/reflect/Parameter/WithParameters.java generic-all
+java/lang/reflect/Parameter/BadClassFiles.java generic-all
+
 ############################################################################
 
 # jdk_management
@@ -162,10 +167,6 @@ javax/xml/jaxp/transform/jdk8004476/XSLTExFuncTest.java		windows-all
 
 # Filed 7052625
 com/sun/net/httpserver/bugs/6725892/Test.java                   generic-all
-
-# failing on vista 32/64 on nightly
-# 7102702
-java/net/PortUnreachableException/OneExceptionOnly.java         windows-all
 
 # 7148829
 sun/net/InetAddress/nameservice/simple/CacheTest.java		generic-all
@@ -268,9 +269,6 @@ sun/security/krb5/auto/BadKdc4.java                             solaris-sparcv9
 
 # jdk_tools
 
-# 7132203
-sun/jvmstat/monitor/MonitoredVm/CR6672135.java                  generic-all
-
 # 8028474
 sun/jvmstat/monitor/MonitoredVm/MonitorVmStartTerminate.sh      generic-all
 
@@ -285,17 +283,8 @@ tools/launcher/FXLauncherTest.java                              linux-all
 
 # jdk_jdi
 
-# Filed 6952105
-com/sun/jdi/SuspendThreadTest.java                              generic-all
-
-# Filed 6653793
-com/sun/jdi/RedefineCrossEvent.java                             generic-all
-
 ############################################################################
 
 # jdk_util
-
-# Filed 6772009
-java/util/concurrent/locks/ReentrantLock/CancelledLockLoops.java generic-all
 
 ############################################################################

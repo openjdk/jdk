@@ -91,4 +91,9 @@ public class TCKYearSerialization extends AbstractTCKTest {
         assertSerializedBySer(Year.of(2012), bytes);
     }
 
+    @Test
+    public void test_invalid_serialform() throws Exception {
+        assertNotSerializable(Year.class);
+    }
+
 }

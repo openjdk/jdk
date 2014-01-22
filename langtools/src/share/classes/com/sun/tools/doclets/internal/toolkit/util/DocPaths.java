@@ -68,7 +68,7 @@ public class DocPaths {
     public static final DocPath INDEX_FILES = DocPath.create("index-files");
 
     /** Generate the name of one of the files in the split index. */
-    public static final DocPath indexN(int n) {
+    public static DocPath indexN(int n) {
         return DocPath.create("index-" + n + ".html");
     }
 
@@ -88,22 +88,22 @@ public class DocPaths {
     public static final DocPath PACKAGE_FRAME = DocPath.create("package-frame.html");
 
     /** The name of the file for the profile frame. */
-     public static final DocPath profileFrame(String profileName) {
+     public static DocPath profileFrame(String profileName) {
         return DocPath.create(profileName + "-frame.html");
     }
 
     /** The name of the file for the profile package frame. */
-     public static final DocPath profilePackageFrame(String profileName) {
+     public static DocPath profilePackageFrame(String profileName) {
         return DocPath.create(profileName + "-package-frame.html");
     }
 
     /** The name of the file for the profile package summary. */
-     public static final DocPath profilePackageSummary(String profileName) {
+     public static DocPath profilePackageSummary(String profileName) {
         return DocPath.create(profileName + "-package-summary.html");
     }
 
     /** The name of the file for the profile summary. */
-     public static final DocPath profileSummary(String profileName) {
+     public static DocPath profileSummary(String profileName) {
         return DocPath.create(profileName + "-summary.html");
     }
 

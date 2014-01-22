@@ -132,26 +132,26 @@ public class List<A> extends AbstractCollection<A> implements java.util.List<A> 
     /** Construct a list consisting of given element.
      */
     public static <A> List<A> of(A x1) {
-        return new List<A>(x1, List.<A>nil());
+        return new List<>(x1, List.<A>nil());
     }
 
     /** Construct a list consisting of given elements.
      */
     public static <A> List<A> of(A x1, A x2) {
-        return new List<A>(x1, of(x2));
+        return new List<>(x1, of(x2));
     }
 
     /** Construct a list consisting of given elements.
      */
     public static <A> List<A> of(A x1, A x2, A x3) {
-        return new List<A>(x1, of(x2, x3));
+        return new List<>(x1, of(x2, x3));
     }
 
     /** Construct a list consisting of given elements.
      */
     @SuppressWarnings({"varargs", "unchecked"})
     public static <A> List<A> of(A x1, A x2, A x3, A... rest) {
-        return new List<A>(x1, new List<A>(x2, new List<A>(x3, from(rest))));
+        return new List<>(x1, new List<>(x2, new List<>(x3, from(rest))));
     }
 
     /**
@@ -162,7 +162,7 @@ public class List<A> extends AbstractCollection<A> implements java.util.List<A> 
         List<A> xs = nil();
         if (array != null)
             for (int i = array.length - 1; i >= 0; i--)
-                xs = new List<A>(array[i], xs);
+                xs = new List<>(array[i], xs);
         return xs;
     }
 
@@ -181,7 +181,7 @@ public class List<A> extends AbstractCollection<A> implements java.util.List<A> 
     @Deprecated
     public static <A> List<A> fill(int len, A init) {
         List<A> l = nil();
-        for (int i = 0; i < len; i++) l = new List<A>(init, l);
+        for (int i = 0; i < len; i++) l = new List<>(init, l);
         return l;
     }
 
@@ -225,7 +225,7 @@ public class List<A> extends AbstractCollection<A> implements java.util.List<A> 
      *  a new list.
      */
     public List<A> prepend(A x) {
-        return new List<A>(x, this);
+        return new List<>(x, this);
     }
 
     /** Prepend given list of elements to front of list, forming and returning
@@ -261,7 +261,7 @@ public class List<A> extends AbstractCollection<A> implements java.util.List<A> 
 
         List<A> rev = nil();
         for (List<A> l = this; l.nonEmpty(); l = l.tail)
-            rev = new List<A>(l.head, rev);
+            rev = new List<>(l.head, rev);
         return rev;
     }
 
@@ -526,7 +526,7 @@ public class List<A> extends AbstractCollection<A> implements java.util.List<A> 
         if  (fromIndex < 0 || toIndex > size() || fromIndex > toIndex)
             throw new IllegalArgumentException();
 
-        ArrayList<A> a = new ArrayList<A>(toIndex - fromIndex);
+        ArrayList<A> a = new ArrayList<>(toIndex - fromIndex);
         int i = 0;
         for (List<A> l = this; l.tail != null; l = l.tail, i++) {
             if (i == toIndex)

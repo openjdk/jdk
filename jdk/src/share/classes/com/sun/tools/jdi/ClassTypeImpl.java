@@ -382,7 +382,8 @@ public class ClassTypeImpl extends ReferenceTypeImpl
         }
     }
 
-    void addVisibleMethods(Map<String, Method> methodMap) {
+    @Override
+    void addVisibleMethods(Map<String, Method> methodMap, Set<InterfaceType> seenInterfaces) {
         /*
          * Add methods from
          * parent types first, so that the methods in this class will
@@ -392,12 +393,15 @@ public class ClassTypeImpl extends ReferenceTypeImpl
         Iterator<InterfaceType> iter = interfaces().iterator();
         while (iter.hasNext()) {
             InterfaceTypeImpl interfaze = (InterfaceTypeImpl)iter.next();
-            interfaze.addVisibleMethods(methodMap);
+            if (!seenInterfaces.contains(interfaze)) {
+                interfaze.addVisibleMethods(methodMap, seenInterfaces);
+                seenInterfaces.add(interfaze);
+            }
         }
 
         ClassTypeImpl clazz = (ClassTypeImpl)superclass();
         if (clazz != null) {
-            clazz.addVisibleMethods(methodMap);
+            clazz.addVisibleMethods(methodMap, seenInterfaces);
         }
 
         addToMethodMap(methodMap, methods());

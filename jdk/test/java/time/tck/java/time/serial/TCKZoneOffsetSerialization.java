@@ -114,5 +114,9 @@ public class TCKZoneOffsetSerialization extends AbstractTCKTest {
         assertSerializedBySer(ZoneOffset.ofTotalSeconds(53265), bytes);
     }
 
+    @Test
+    public void test_invalid_serialform() throws Exception {
+        assertNotSerializable(ZoneOffset.class);
+    }
 
 }

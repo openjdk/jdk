@@ -150,10 +150,9 @@ public class ValueTaglet extends BaseInlineTaglet {
         if (cd == null) {
             return null;
         }
-        FieldDoc[] fields = cd.fields();
-        for (int i = 0; i < fields.length; i++) {
-            if (fields[i].name().equals(memberName)) {
-                return fields[i];
+        for (FieldDoc field : cd.fields()) {
+            if (field.name().equals(memberName)) {
+                return field;
             }
         }
         return null;

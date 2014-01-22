@@ -92,7 +92,7 @@ public class Env<A> implements Iterable<Env<A>> {
      *  and copying all other fields.
      */
     public Env<A> dup(JCTree tree, A info) {
-        return dupto(new Env<A>(tree, info));
+        return dupto(new Env<>(tree, info));
     }
 
     /** Duplicate this environment into a given Environment,

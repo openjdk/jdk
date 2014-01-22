@@ -74,7 +74,7 @@ import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
 import java.io.InvalidObjectException;
-import java.io.InvalidObjectException;
+import java.io.ObjectInputStream;
 import java.io.Serializable;
 import java.math.BigDecimal;
 import java.math.BigInteger;
@@ -117,6 +117,13 @@ import java.util.regex.Pattern;
  * This difference only impacts durations measured near a leap-second and should not affect
  * most applications.
  * See {@link Instant} for a discussion as to the meaning of the second and time-scales.
+ *
+ * <p>
+ * This is a <a href="{@docRoot}/java/lang/doc-files/ValueBased.html">value-based</a>
+ * class; use of identity-sensitive operations (including reference equality
+ * ({@code ==}), identity hash code, or synchronization) on instances of
+ * {@code Duration} may have unpredictable results and should be avoided.
+ * The {@code equals} method should be used for comparisons.
  *
  * @implSpec
  * This class is immutable and thread-safe.
@@ -1105,29 +1112,29 @@ public final class Duration
 
     //-----------------------------------------------------------------------
     /**
-     * Gets the number of minutes in this duration.
+     * Gets the number of days in this duration.
      * <p>
-     * This returns the total number of minutes in the duration by dividing the
+     * This returns the total number of days in the duration by dividing the
      * number of seconds by 86400.
      * This is based on the standard definition of a day as 24 hours.
      * <p>
      * This instance is immutable and unaffected by this method call.
      *
-     * @return the number of minutes in the duration, may be negative
+     * @return the number of days in the duration, may be negative
      */
     public long toDays() {
         return seconds / SECONDS_PER_DAY;
     }
 
     /**
-     * Gets the number of minutes in this duration.
+     * Gets the number of hours in this duration.
      * <p>
-     * This returns the total number of minutes in the duration by dividing the
+     * This returns the total number of hours in the duration by dividing the
      * number of seconds by 3600.
      * <p>
      * This instance is immutable and unaffected by this method call.
      *
-     * @return the number of minutes in the duration, may be negative
+     * @return the number of hours in the duration, may be negative
      */
     public long toHours() {
         return seconds / SECONDS_PER_HOUR;
@@ -1318,10 +1325,10 @@ public final class Duration
 
     /**
      * Defend against malicious streams.
-     * @return never
+     *
      * @throws InvalidObjectException always
      */
-    private Object readResolve() throws InvalidObjectException {
+    private void readObject(ObjectInputStream s) throws InvalidObjectException {
         throw new InvalidObjectException("Deserialization via serialization delegate");
     }
 

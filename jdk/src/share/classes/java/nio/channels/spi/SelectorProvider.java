@@ -71,6 +71,14 @@ public abstract class SelectorProvider {
     private static final Object lock = new Object();
     private static SelectorProvider provider = null;
 
+    private static Void checkPermission() {
+        SecurityManager sm = System.getSecurityManager();
+        if (sm != null)
+            sm.checkPermission(new RuntimePermission("selectorProvider"));
+        return null;
+    }
+    private SelectorProvider(Void ignore) { }
+
     /**
      * Initializes a new instance of this class.
      *
@@ -79,9 +87,7 @@ public abstract class SelectorProvider {
      *          {@link RuntimePermission}<tt>("selectorProvider")</tt>
      */
     protected SelectorProvider() {
-        SecurityManager sm = System.getSecurityManager();
-        if (sm != null)
-            sm.checkPermission(new RuntimePermission("selectorProvider"));
+        this(checkPermission());
     }
 
     private static boolean loadProviderFromProperty() {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -60,7 +60,8 @@ public abstract class SunJSSE extends java.security.Provider {
     private static final long serialVersionUID = 3231825739635378733L;
 
     private static String info = "Sun JSSE provider" +
-        "(PKCS12, SunX509 key/trust factories, SSLv3, TLSv1)";
+        "(PKCS12, SunX509/PKIX key/trust factories, " +
+        "SSLv3/TLSv1/TLSv1.1/TLSv1.2)";
 
     private static String fipsInfo =
         "Sun JSSE provider (FIPS mode, crypto provider ";
@@ -103,7 +104,7 @@ public abstract class SunJSSE extends java.security.Provider {
 
     // standard constructor
     protected SunJSSE() {
-        super("SunJSSE", 1.8d, info);
+        super("SunJSSE", 1.9d, info);
         subclassCheck();
         if (Boolean.TRUE.equals(fips)) {
             throw new ProviderException
@@ -131,7 +132,7 @@ public abstract class SunJSSE extends java.security.Provider {
 
     private SunJSSE(java.security.Provider cryptoProvider,
             String providerName) {
-        super("SunJSSE", 1.8d, fipsInfo + providerName + ")");
+        super("SunJSSE", 1.9d, fipsInfo + providerName + ")");
         subclassCheck();
         if (cryptoProvider == null) {
             // Calling Security.getProvider() will cause other providers to be
@@ -208,16 +209,17 @@ public abstract class SunJSSE extends java.security.Provider {
 
         put("SSLContext.TLSv1",
             "sun.security.ssl.SSLContextImpl$TLS10Context");
-        put("Alg.Alias.SSLContext.TLS", "TLSv1");
-        if (isfips == false) {
-            put("Alg.Alias.SSLContext.SSL", "TLSv1");
-            put("Alg.Alias.SSLContext.SSLv3", "TLSv1");
-        }
-
         put("SSLContext.TLSv1.1",
             "sun.security.ssl.SSLContextImpl$TLS11Context");
         put("SSLContext.TLSv1.2",
             "sun.security.ssl.SSLContextImpl$TLS12Context");
+        put("SSLContext.TLS",
+            "sun.security.ssl.SSLContextImpl$TLSContext");
+        if (isfips == false) {
+            put("Alg.Alias.SSLContext.SSL", "TLS");
+            put("Alg.Alias.SSLContext.SSLv3", "TLSv1");
+        }
+
         put("SSLContext.Default",
             "sun.security.ssl.SSLContextImpl$DefaultSSLContext");
 

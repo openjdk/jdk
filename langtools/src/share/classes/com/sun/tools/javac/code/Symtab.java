@@ -51,8 +51,7 @@ import static com.sun.tools.javac.code.TypeTag.*;
  */
 public class Symtab {
     /** The context key for the symbol table. */
-    protected static final Context.Key<Symtab> symtabKey =
-        new Context.Key<Symtab>();
+    protected static final Context.Key<Symtab> symtabKey = new Context.Key<>();
 
     /** Get the symbol table instance. */
     public static Symtab instance(Context context) {
@@ -190,20 +189,20 @@ public class Symtab {
 
     /** A set containing all operator names.
      */
-    public final Set<Name> operatorNames = new HashSet<Name>();
+    public final Set<Name> operatorNames = new HashSet<>();
 
     /** A hashtable containing the encountered top-level and member classes,
      *  indexed by flat names. The table does not contain local classes.
      *  It should be updated from the outside to reflect classes defined
      *  by compiled source files.
      */
-    public final Map<Name, ClassSymbol> classes = new HashMap<Name, ClassSymbol>();
+    public final Map<Name, ClassSymbol> classes = new HashMap<>();
 
     /** A hashtable containing the encountered packages.
      *  the table should be updated from outside to reflect packages defined
      *  by compiled source files.
      */
-    public final Map<Name, PackageSymbol> packages = new HashMap<Name, PackageSymbol>();
+    public final Map<Name, PackageSymbol> packages = new HashMap<>();
 
     public void initType(Type type, ClassSymbol c) {
         type.tsym = c;

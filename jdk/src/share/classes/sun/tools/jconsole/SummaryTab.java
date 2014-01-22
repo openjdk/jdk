@@ -213,8 +213,8 @@ class SummaryTab extends Tab {
                 String[] strings2 = formatKByteStrings(u.getCommitted());
                 append(Messages.COMMITTED_MEMORY,  strings2[0]);
                 append(Messages.SUMMARY_TAB_PENDING_FINALIZATION_LABEL,
-                       Messages.SUMMARY_TAB_PENDING_FINALIZATION_VALUE,
-                       memoryBean.getObjectPendingFinalizationCount());
+                       Resources.format(Messages.SUMMARY_TAB_PENDING_FINALIZATION_VALUE,
+                                        memoryBean.getObjectPendingFinalizationCount()));
                 append(endTable);
 
                 append(newTable);

@@ -27,7 +27,7 @@
  * @summary javac fails to diagnose too many array dimensions
  * @author gafter
  *
- * @compile/fail ArrayDims5.java
+ * @compile/fail/ref=ArrayDims5.out -XDrawDiagnostics ArrayDims5.java
  */
 
 public abstract class ArrayDims5 {

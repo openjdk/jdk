@@ -978,8 +978,8 @@ public final class URL implements java.io.Serializable {
      * support proxing will ignore the proxy parameter and make a
      * normal connection.
      *
-     * Invoking this method preempts the system's default ProxySelector
-     * settings.
+     * Invoking this method preempts the system's default
+     * {@link java.net.ProxySelector ProxySelector} settings.
      *
      * @param      proxy the Proxy through which this connection
      *             will be made. If direct connection is desired,
@@ -1055,7 +1055,7 @@ public final class URL implements java.io.Serializable {
     /**
      * Gets the contents of this URL. This method is a shorthand for:
      * <blockquote><pre>
-     *     openConnection().getContent(Class[])
+     *     openConnection().getContent(classes)
      * </pre></blockquote>
      *
      * @param classes an array of Java types
@@ -1066,7 +1066,7 @@ public final class URL implements java.io.Serializable {
      * @see        java.net.URLConnection#getContent(Class[])
      * @since 1.3
      */
-    public final Object getContent(Class[] classes)
+    public final Object getContent(Class<?>[] classes)
     throws java.io.IOException {
         return openConnection().getContent(classes);
     }

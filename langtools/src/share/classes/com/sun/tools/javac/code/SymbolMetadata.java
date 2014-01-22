@@ -180,7 +180,7 @@ public class SymbolMetadata {
                 // are introduced, because PlaceHolder is a subtype of TypeCompound.
                 T res;
                 @SuppressWarnings("unchecked")
-                T ph = (T) new Placeholder<T>(ctx, lb.toList(), sym);
+                T ph = (T) new Placeholder<>(ctx, lb.toList(), sym);
                 res = ph;
                 buf = buf.prepend(res);
                 atLeastOneRepeated = true;
@@ -244,7 +244,7 @@ public class SymbolMetadata {
         attributes = filterDeclSentinels(attributes);
 
         if (l.isEmpty()) {
-            ; // no-op
+            // no-op
         } else if (attributes.isEmpty()) {
             attributes = l;
         } else {
@@ -255,7 +255,7 @@ public class SymbolMetadata {
 
     public SymbolMetadata appendUniqueTypes(List<Attribute.TypeCompound> l) {
         if (l.isEmpty()) {
-            ; // no-op
+            // no-op
         } else if (type_attributes.isEmpty()) {
             type_attributes = l;
         } else {
@@ -271,7 +271,7 @@ public class SymbolMetadata {
 
     public SymbolMetadata appendInitTypeAttributes(List<Attribute.TypeCompound> l) {
         if (l.isEmpty()) {
-            ; // no-op
+            // no-op
         } else if (init_type_attributes.isEmpty()) {
             init_type_attributes = l;
         } else {
@@ -282,7 +282,7 @@ public class SymbolMetadata {
 
     public SymbolMetadata appendClassInitTypeAttributes(List<Attribute.TypeCompound> l) {
         if (l.isEmpty()) {
-            ; // no-op
+            // no-op
         } else if (clinit_type_attributes.isEmpty()) {
             clinit_type_attributes = l;
         } else {
@@ -295,7 +295,7 @@ public class SymbolMetadata {
         attributes = filterDeclSentinels(attributes);
 
         if (l.isEmpty()) {
-            ; // no-op
+            // no-op
         } else if (attributes.isEmpty()) {
             attributes = l;
         } else {

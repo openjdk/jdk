@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -179,7 +179,7 @@ CreateExecutionEnvironment(int *pargc, char ***pargv,
     int wanted = running;
 
     char** argv = *pargv;
-    for (i = 0; i < *pargc ; i++) {
+    for (i = 1; i < *pargc ; i++) {
         if (JLI_StrCmp(argv[i], "-J-d64") == 0 || JLI_StrCmp(argv[i], "-d64") == 0) {
             wanted = 64;
             continue;
@@ -188,6 +188,11 @@ CreateExecutionEnvironment(int *pargc, char ***pargv,
             wanted = 32;
             continue;
         }
+
+        if (IsJavaArgs() && argv[i][0] != '-')
+            continue;
+        if (argv[i][0] != '-')
+            break;
     }
     if (running != wanted) {
         JLI_ReportErrorMessage(JRE_ERROR2, wanted);

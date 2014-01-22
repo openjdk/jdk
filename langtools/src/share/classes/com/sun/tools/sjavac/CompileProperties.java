@@ -111,7 +111,7 @@ public class CompileProperties implements Transformer
         String classname = src.getName().substring(0,dp);
 
         // Sort the properties in increasing key order.
-        List<String> sortedKeys = new ArrayList<String>();
+        List<String> sortedKeys = new ArrayList<>();
         for (Object key : p.keySet()) {
             sortedKeys.add((String)key);
         }
@@ -140,7 +140,7 @@ public class CompileProperties implements Transformer
 
         Set<URI> as = packageArtifacts.get(pkgName);
         if (as == null) {
-            as = new HashSet<URI>();
+            as = new HashSet<>();
             packageArtifacts.put(pkgName, as);
         }
         as.add(dest.toURI());

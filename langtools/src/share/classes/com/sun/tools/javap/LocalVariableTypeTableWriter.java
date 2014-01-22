@@ -65,7 +65,7 @@ public class LocalVariableTypeTableWriter extends  InstructionDetailWriter {
         }
         public abstract boolean match(LocalVariableTypeTable_attribute.Entry entry, int pc);
         public final String text;
-    };
+    }
 
     static LocalVariableTypeTableWriter instance(Context context) {
         LocalVariableTypeTableWriter instance = context.get(LocalVariableTypeTableWriter.class);
@@ -82,7 +82,7 @@ public class LocalVariableTypeTableWriter extends  InstructionDetailWriter {
 
     public void reset(Code_attribute attr) {
         codeAttr = attr;
-        pcMap = new HashMap<Integer, List<LocalVariableTypeTable_attribute.Entry>>();
+        pcMap = new HashMap<>();
         LocalVariableTypeTable_attribute lvt =
                 (LocalVariableTypeTable_attribute) (attr.attributes.get(Attribute.LocalVariableTypeTable));
         if (lvt == null)
@@ -146,7 +146,7 @@ public class LocalVariableTypeTableWriter extends  InstructionDetailWriter {
     private void put(int pc, LocalVariableTypeTable_attribute.Entry entry) {
         List<LocalVariableTypeTable_attribute.Entry> list = pcMap.get(pc);
         if (list == null) {
-            list = new ArrayList<LocalVariableTypeTable_attribute.Entry>();
+            list = new ArrayList<>();
             pcMap.put(pc, list);
         }
         if (!list.contains(entry))

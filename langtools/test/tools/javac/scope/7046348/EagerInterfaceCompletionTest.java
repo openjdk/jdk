@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -181,7 +181,7 @@ public class EagerInterfaceCompletionTest {
                 case FIELD:
                 case SUPER: return true;
                 case METHOD: return hk != HierarchyKind.INTERFACE || ak == ActionKind.REMOVE_B ||
-                        (hk == HierarchyKind.INTERFACE && ak == ActionKind.REMOVE_A && vk == VersionKind.LAMBDA);
+                        (hk == HierarchyKind.INTERFACE && ak == ActionKind.REMOVE_A);
                 default: throw new AssertionError("Unexpected test kind " + this);
             }
         }

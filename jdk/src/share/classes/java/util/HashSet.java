@@ -324,8 +324,8 @@ public class HashSet<E>
 
         // Create backing HashMap
         map = (((HashSet<?>)this) instanceof LinkedHashSet ?
-               new LinkedHashMap<E,Object>(capacity, loadFactor) :
-               new HashMap<E,Object>(capacity, loadFactor));
+               new LinkedHashMap<>(capacity, loadFactor) :
+               new HashMap<>(capacity, loadFactor));
 
         // Read in all elements in the proper order.
         for (int i=0; i<size; i++) {
@@ -348,6 +348,6 @@ public class HashSet<E>
      * @since 1.8
      */
     public Spliterator<E> spliterator() {
-        return new HashMap.KeySpliterator<E,Object>(map, 0, -1, 0, 0);
+        return new HashMap.KeySpliterator<>(map, 0, -1, 0, 0);
     }
 }
