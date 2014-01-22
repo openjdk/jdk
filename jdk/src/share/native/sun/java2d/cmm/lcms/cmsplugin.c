@@ -125,10 +125,14 @@ void CMSEXPORT  _cmsAdjustEndianess64(cmsUInt64Number* Result, cmsUInt64Number* 
     pOut[0] = pIn[7];
 
 #else
-
     _cmsAssert(Result != NULL);
 
+#  ifdef CMS_DONT_USE_INT64
+    (*Result)[0] = QWord[0];
+    (*Result)[1] = QWord[1];
+#  else
     *Result = *QWord;
+#  endif
 #endif
 }
 
@@ -543,10 +547,10 @@ cmsBool CMSEXPORT _cmsIOPrintf(cmsIOHANDLER* io, const char* frm, ...)
 static _cmsSubAllocator* PluginPool = NULL;
 
 // Specialized malloc for plug-ins, that is freed upon exit.
-void* _cmsPluginMalloc(cmsUInt32Number size)
+void* _cmsPluginMalloc(cmsContext id, cmsUInt32Number size)
 {
     if (PluginPool == NULL)
-        PluginPool = _cmsCreateSubAlloc(0, 4*1024);
+        PluginPool = _cmsCreateSubAlloc(id, 4*1024);
 
     return _cmsSubAlloc(PluginPool, size);
 }
@@ -554,6 +558,11 @@ void* _cmsPluginMalloc(cmsUInt32Number size)
 
 // Main plug-in dispatcher
 cmsBool CMSEXPORT cmsPlugin(void* Plug_in)
+{
+  return cmsPluginTHR(NULL, Plug_in);
+}
+
+cmsBool CMSEXPORT cmsPluginTHR(cmsContext id, void* Plug_in)
 {
     cmsPluginBase* Plugin;
 
@@ -583,35 +592,35 @@ cmsBool CMSEXPORT cmsPlugin(void* Plug_in)
                     break;
 
                 case cmsPluginTagTypeSig:
-                    if (!_cmsRegisterTagTypePlugin(Plugin)) return FALSE;
+                    if (!_cmsRegisterTagTypePlugin(id, Plugin)) return FALSE;
                     break;
 
                 case cmsPluginTagSig:
-                    if (!_cmsRegisterTagPlugin(Plugin)) return FALSE;
+                    if (!_cmsRegisterTagPlugin(id, Plugin)) return FALSE;
                     break;
 
                 case cmsPluginFormattersSig:
-                    if (!_cmsRegisterFormattersPlugin(Plugin)) return FALSE;
+                    if (!_cmsRegisterFormattersPlugin(id, Plugin)) return FALSE;
                     break;
 
                 case cmsPluginRenderingIntentSig:
-                    if (!_cmsRegisterRenderingIntentPlugin(Plugin)) return FALSE;
+                    if (!_cmsRegisterRenderingIntentPlugin(id, Plugin)) return FALSE;
                     break;
 
                 case cmsPluginParametricCurveSig:
-                    if (!_cmsRegisterParametricCurvesPlugin(Plugin)) return FALSE;
+                    if (!_cmsRegisterParametricCurvesPlugin(id, Plugin)) return FALSE;
                     break;
 
                 case cmsPluginMultiProcessElementSig:
-                    if (!_cmsRegisterMultiProcessElementPlugin(Plugin)) return FALSE;
+                    if (!_cmsRegisterMultiProcessElementPlugin(id, Plugin)) return FALSE;
                     break;
 
                 case cmsPluginOptimizationSig:
-                    if (!_cmsRegisterOptimizationPlugin(Plugin)) return FALSE;
+                    if (!_cmsRegisterOptimizationPlugin(id, Plugin)) return FALSE;
                     break;
 
                 case cmsPluginTransformSig:
-                    if (!_cmsRegisterTransformPlugin(Plugin)) return FALSE;
+                    if (!_cmsRegisterTransformPlugin(id, Plugin)) return FALSE;
                     break;
 
                 default:
@@ -630,14 +639,14 @@ void CMSEXPORT cmsUnregisterPlugins(void)
 {
     _cmsRegisterMemHandlerPlugin(NULL);
     _cmsRegisterInterpPlugin(NULL);
-    _cmsRegisterTagTypePlugin(NULL);
-    _cmsRegisterTagPlugin(NULL);
-    _cmsRegisterFormattersPlugin(NULL);
-    _cmsRegisterRenderingIntentPlugin(NULL);
-    _cmsRegisterParametricCurvesPlugin(NULL);
-    _cmsRegisterMultiProcessElementPlugin(NULL);
-    _cmsRegisterOptimizationPlugin(NULL);
-    _cmsRegisterTransformPlugin(NULL);
+    _cmsRegisterTagTypePlugin(NULL, NULL);
+    _cmsRegisterTagPlugin(NULL, NULL);
+    _cmsRegisterFormattersPlugin(NULL, NULL);
+    _cmsRegisterRenderingIntentPlugin(NULL, NULL);
+    _cmsRegisterParametricCurvesPlugin(NULL, NULL);
+    _cmsRegisterMultiProcessElementPlugin(NULL, NULL);
+    _cmsRegisterOptimizationPlugin(NULL, NULL);
+    _cmsRegisterTransformPlugin(NULL, NULL);
 
     if (PluginPool != NULL)
         _cmsSubAllocDestroy(PluginPool);

@@ -59,8 +59,8 @@
 // IT8.7 / CGATS.17-200x handling -----------------------------------------------------------------------------
 
 
-#define MAXID        128     // Max lenght of identifier
-#define MAXSTR      1024     // Max lenght of string
+#define MAXID        128     // Max length of identifier
+#define MAXSTR      1024     // Max length of string
 #define MAXTABLES    255     // Max Number of tables in a single stream
 #define MAXINCLUDE    20     // Max number of nested includes
 
@@ -383,28 +383,28 @@ static const char* PredefinedSampleID[] = {
 //Forward declaration of some internal functions
 static void* AllocChunk(cmsIT8* it8, cmsUInt32Number size);
 
-// Checks if c is a separator
+// Checks whatever c is a separator
 static
 cmsBool isseparator(int c)
 {
-        return (c == ' ') || (c == '\t') || (c == '\r');
+    return (c == ' ') || (c == '\t') ;
 }
 
-// Checks whatever if c is a valid identifier char
+// Checks whatever c is a valid identifier char
 static
 cmsBool ismiddle(int c)
 {
    return (!isseparator(c) && (c != '#') && (c !='\"') && (c != '\'') && (c > 32) && (c < 127));
 }
 
-// Checks whatsever if c is a valid identifier middle char.
+// Checks whatsever c is a valid identifier middle char.
 static
 cmsBool isidchar(int c)
 {
    return isalnum(c) || ismiddle(c);
 }
 
-// Checks whatsever if c is a valid identifier first char.
+// Checks whatsever c is a valid identifier first char.
 static
 cmsBool isfirstidchar(int c)
 {
@@ -434,7 +434,6 @@ cmsBool isabsolutepath(const char *path)
 #endif
     return FALSE;
 }
-
 
 
 // Makes a file path based on a given reference path
@@ -634,6 +633,7 @@ cmsFloat64Number ParseFloatNumber(const char *Buffer)
     cmsFloat64Number dnum = 0.0;
     int sign = 1;
 
+    // keep safe
     if (Buffer == NULL) return 0.0;
 
     if (*Buffer == '-' || *Buffer == '+') {
@@ -869,6 +869,14 @@ void InSymbol(cmsIT8* it8)
 
 
         // Next line
+        case '\r':
+            NextCh(it8);
+            if (it8 ->ch == '\n')
+                NextCh(it8);
+            it8->sy = SEOLN;
+            it8->lineno++;
+            break;
+
         case '\n':
             NextCh(it8);
             it8->sy = SEOLN;
@@ -878,7 +886,7 @@ void InSymbol(cmsIT8* it8)
         // Comment
         case '#':
             NextCh(it8);
-            while (it8->ch && it8->ch != '\n')
+            while (it8->ch && it8->ch != '\n' && it8->ch != '\r')
                 NextCh(it8);
 
             it8->sy = SCOMMENT;
@@ -996,6 +1004,9 @@ cmsBool GetVal(cmsIT8* it8, char* Buffer, cmsUInt32Number max, const char* Error
 {
     switch (it8->sy) {
 
+    case SEOLN:   // Empty value
+                  Buffer[0]=0;
+                  break;
     case SIDENT:  strncpy(Buffer, it8->id, max);
                   Buffer[max-1]=0;
                   break;
@@ -1145,9 +1156,9 @@ cmsBool IsAvailableOnList(KEYVALUE* p, const char* Key, const char* Subkey, KEYV
         if (*Key != '#') { // Comments are ignored
 
             if (cmsstrcasecmp(Key, p->Keyword) == 0)
-                    break;
+                break;
         }
-        }
+    }
 
     if (p == NULL)
         return FALSE;
@@ -1157,11 +1168,13 @@ cmsBool IsAvailableOnList(KEYVALUE* p, const char* Key, const char* Subkey, KEYV
 
     for (; p != NULL; p = p->NextSubkey) {
 
+        if (p ->Subkey == NULL) continue;
+
         if (LastPtr) *LastPtr = p;
 
         if (cmsstrcasecmp(Subkey, p->Subkey) == 0)
-                    return TRUE;
-        }
+            return TRUE;
+    }
 
     return FALSE;
 }
@@ -1284,7 +1297,7 @@ cmsInt32Number CMSEXPORT cmsIT8SetTable(cmsHANDLE  IT8, cmsUInt32Number nTable)
 
      it8 ->nTable = nTable;
 
-     return nTable;
+     return (cmsInt32Number) nTable;
 }
 
 
@@ -1389,7 +1402,7 @@ cmsBool CMSEXPORT cmsIT8SetPropertyHex(cmsHANDLE hIT8, const char* cProp, cmsUIn
     cmsIT8* it8 = (cmsIT8*) hIT8;
     char Buffer[1024];
 
-    sprintf(Buffer, "%d", Val);
+    sprintf(Buffer, "%u", Val);
 
     return AddToList(it8, &GetTable(it8)->HeaderList, cProp, NULL, Buffer, WRITE_HEXADECIMAL) != NULL;
 }
@@ -1426,6 +1439,8 @@ cmsFloat64Number CMSEXPORT cmsIT8GetPropertyDbl(cmsHANDLE hIT8, const char* cPro
 {
     const char *v = cmsIT8GetProperty(hIT8, cProp);
 
+    if (v == NULL) return 0.0;
+
     return ParseFloatNumber(v);
 }
 
@@ -1458,7 +1473,7 @@ void AllocateDataFormat(cmsIT8* it8)
         t -> nSamples = 10;
         }
 
-    t -> DataFormat = (char**) AllocChunk (it8, (t->nSamples + 1) * sizeof(char *));
+    t -> DataFormat = (char**) AllocChunk (it8, ((cmsUInt32Number) t->nSamples + 1) * sizeof(char *));
     if (t->DataFormat == NULL) {
 
         SynError(it8, "AllocateDataFormat: Unable to allocate dataFormat array");
@@ -1514,7 +1529,7 @@ void AllocateDataSet(cmsIT8* it8)
     t-> nSamples   = atoi(cmsIT8GetProperty(it8, "NUMBER_OF_FIELDS"));
     t-> nPatches   = atoi(cmsIT8GetProperty(it8, "NUMBER_OF_SETS"));
 
-    t-> Data = (char**)AllocChunk (it8, (t->nSamples + 1) * (t->nPatches + 1) *sizeof (char*));
+    t-> Data = (char**)AllocChunk (it8, ((cmsUInt32Number) t->nSamples + 1) * ((cmsUInt32Number) t->nPatches + 1) *sizeof (char*));
     if (t->Data == NULL) {
 
         SynError(it8, "AllocateDataSet: Unable to allocate data array");
@@ -1573,7 +1588,7 @@ void WriteStr(SAVESTREAM* f, const char *str)
     if (str == NULL)
         str = " ";
 
-    // Lenghth to write
+    // Length to write
     len = (cmsUInt32Number) strlen(str);
     f ->Used += len;
 
@@ -2097,7 +2112,7 @@ cmsBool ParseIT8(cmsIT8* it8, cmsBool nosheet)
                                          NextCh(it8);
 
                                      // If a newline is found, then this is a type string
-                                    if (it8 ->ch == '\n') {
+                                    if (it8 ->ch == '\n' || it8->ch == '\r') {
 
                                          cmsIT8SetSheetType(it8, it8 ->id);
                                          InSymbol(it8);
@@ -2212,7 +2227,7 @@ void CookPointers(cmsIT8* it8)
                                         char Buffer[256];
 
                                         char *Type  = p ->Value;
-                                        int  nTable = k;
+                                        int  nTable = (int) k;
 
                                         snprintf(Buffer, 255, "%s %d %s", Label, nTable, Type );
 
@@ -2566,6 +2581,8 @@ cmsFloat64Number CMSEXPORT cmsIT8GetDataRowColDbl(cmsHANDLE hIT8, int row, int c
 
     Buffer = cmsIT8GetDataRowCol(hIT8, row, col);
 
+    if (Buffer == NULL) return 0.0;
+
     return ParseFloatNumber(Buffer);
 }
 
@@ -2778,7 +2795,7 @@ void CMSEXPORT cmsIT8DefineDblFormat(cmsHANDLE hIT8, const char* Formatter)
     if (Formatter == NULL)
         strcpy(it8->DoubleFormatter, DEFAULT_DBL_FORMAT);
     else
-        strcpy(it8->DoubleFormatter, Formatter);
+        strncpy(it8->DoubleFormatter, Formatter, sizeof(it8->DoubleFormatter));
 
     it8 ->DoubleFormatter[sizeof(it8 ->DoubleFormatter)-1] = 0;
 }

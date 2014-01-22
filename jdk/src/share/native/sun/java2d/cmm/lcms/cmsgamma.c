@@ -30,7 +30,7 @@
 //---------------------------------------------------------------------------------
 //
 //  Little Color Management System
-//  Copyright (c) 1998-2012 Marti Maria Saguer
+//  Copyright (c) 1998-2013 Marti Maria Saguer
 //
 // Permission is hereby granted, free of charge, to any person obtaining
 // a copy of this software and associated documentation files (the "Software"),
@@ -99,7 +99,7 @@ static _cmsParametricCurvesCollection DefaultCurves = {
 static _cmsParametricCurvesCollection* ParametricCurves = &DefaultCurves;
 
 // As a way to install new parametric curves
-cmsBool _cmsRegisterParametricCurvesPlugin(cmsPluginBase* Data)
+cmsBool _cmsRegisterParametricCurvesPlugin(cmsContext id, cmsPluginBase* Data)
 {
     cmsPluginParametricCurves* Plugin = (cmsPluginParametricCurves*) Data;
     _cmsParametricCurvesCollection* fl;
@@ -110,7 +110,7 @@ cmsBool _cmsRegisterParametricCurvesPlugin(cmsPluginBase* Data)
           return TRUE;
     }
 
-    fl = (_cmsParametricCurvesCollection*) _cmsPluginMalloc(sizeof(_cmsParametricCurvesCollection));
+    fl = (_cmsParametricCurvesCollection*) _cmsPluginMalloc(id, sizeof(_cmsParametricCurvesCollection));
     if (fl == NULL) return FALSE;
 
     // Copy the parameters
@@ -258,7 +258,8 @@ cmsToneCurve* AllocateToneCurveStruct(cmsContext ContextID, cmsInt32Number nEntr
     }
 
     p ->InterpParams = _cmsComputeInterpParams(ContextID, p ->nEntries, 1, 1, p->Table16, CMS_LERP_FLAGS_16BITS);
-    return p;
+    if (p->InterpParams != NULL)
+        return p;
 
 Error:
     if (p -> Segments) _cmsFree(ContextID, p ->Segments);
@@ -423,7 +424,7 @@ cmsFloat64Number DefaultEvalParametricFn(cmsInt32Number Type, const cmsFloat64Nu
             if (e > 0)
                 Val = pow(e, Params[0]) + Params[5];
             else
-                Val = 0;
+                Val = Params[5];
         }
         else
             Val = R*Params[3] + Params[6];
@@ -458,7 +459,7 @@ cmsFloat64Number DefaultEvalParametricFn(cmsInt32Number Type, const cmsFloat64Nu
         e = Params[1]*R + Params[2];
 
         if (e < 0)
-            Val = 0;
+            Val = Params[3];
         else
             Val = pow(e, Params[0]) + Params[3];
         break;
@@ -478,7 +479,7 @@ cmsFloat64Number DefaultEvalParametricFn(cmsInt32Number Type, const cmsFloat64Nu
 
        e = Params[2] * pow(R, Params[0]) + Params[3];
        if (e <= 0)
-           Val = 0;
+           Val = Params[4];
        else
            Val = Params[1]*log10(e) + Params[4];
        break;
@@ -544,7 +545,7 @@ cmsFloat64Number EvalSegmentedFn(const cmsToneCurve *g, cmsFloat64Number R)
             // Type == 0 means segment is sampled
             if (g ->Segments[i].Type == 0) {
 
-                cmsFloat32Number R1 = (cmsFloat32Number) (R - g ->Segments[i].x0);
+                cmsFloat32Number R1 = (cmsFloat32Number) (R - g ->Segments[i].x0) / (g ->Segments[i].x1 - g ->Segments[i].x0);
                 cmsFloat32Number Out;
 
                 // Setup the table (TODO: clean that)
@@ -629,20 +630,21 @@ cmsToneCurve* CMSEXPORT cmsBuildSegmentedToneCurve(cmsContext ContextID,
 // Use a segmented curve to store the floating point table
 cmsToneCurve* CMSEXPORT cmsBuildTabulatedToneCurveFloat(cmsContext ContextID, cmsUInt32Number nEntries, const cmsFloat32Number values[])
 {
-    cmsCurveSegment Seg[2];
+    cmsCurveSegment Seg[3];
 
-    // Initialize segmented curve part up to 0
-    Seg[0].x0 = -1;
+    // A segmented tone curve should have function segments in the first and last positions
+    // Initialize segmented curve part up to 0 to constant value = samples[0]
+    Seg[0].x0 = MINUS_INF;
     Seg[0].x1 = 0;
     Seg[0].Type = 6;
 
     Seg[0].Params[0] = 1;
     Seg[0].Params[1] = 0;
     Seg[0].Params[2] = 0;
-    Seg[0].Params[3] = 0;
+    Seg[0].Params[3] = values[0];
     Seg[0].Params[4] = 0;
 
-    // From zero to any
+    // From zero to 1
     Seg[1].x0 = 0;
     Seg[1].x1 = 1.0;
     Seg[1].Type = 0;
@@ -650,7 +652,19 @@ cmsToneCurve* CMSEXPORT cmsBuildTabulatedToneCurveFloat(cmsContext ContextID, cm
     Seg[1].nGridPoints = nEntries;
     Seg[1].SampledPoints = (cmsFloat32Number*) values;
 
-    return cmsBuildSegmentedToneCurve(ContextID, 2, Seg);
+    // Final segment is constant = lastsample
+    Seg[2].x0 = 1.0;
+    Seg[2].x1 = PLUS_INF;
+    Seg[2].Type = 6;
+
+    Seg[2].Params[0] = 1;
+    Seg[2].Params[1] = 0;
+    Seg[2].Params[2] = 0;
+    Seg[2].Params[3] = values[nEntries-1];
+    Seg[2].Params[4] = 0;
+
+
+    return cmsBuildSegmentedToneCurve(ContextID, 3, Seg);
 }
 
 // Parametric curves
@@ -993,7 +1007,7 @@ cmsBool  CMSEXPORT cmsSmoothToneCurve(cmsToneCurve* Tab, cmsFloat64Number lambda
 
     if (Tab == NULL) return FALSE;
 
-    if (cmsIsToneCurveLinear(Tab)) return FALSE; // Nothing to do
+    if (cmsIsToneCurveLinear(Tab)) return TRUE; // Nothing to do
 
     nItems = Tab -> nEntries;
 
@@ -1020,11 +1034,20 @@ cmsBool  CMSEXPORT cmsSmoothToneCurve(cmsToneCurve* Tab, cmsFloat64Number lambda
 
         if (z[i] == 0.) Zeros++;
         if (z[i] >= 65535.) Poles++;
-        if (z[i] < z[i-1]) return FALSE; // Non-Monotonic
+        if (z[i] < z[i-1]) {
+            cmsSignalError(Tab ->InterpParams->ContextID, cmsERROR_RANGE, "cmsSmoothToneCurve: Non-Monotonic.");
+            return FALSE;
+        }
     }
 
-    if (Zeros > (nItems / 3)) return FALSE;  // Degenerated, mostly zeros
-    if (Poles > (nItems / 3)) return FALSE;  // Degenerated, mostly poles
+    if (Zeros > (nItems / 3)) {
+        cmsSignalError(Tab ->InterpParams->ContextID, cmsERROR_RANGE, "cmsSmoothToneCurve: Degenerated, mostly zeros.");
+        return FALSE;
+    }
+    if (Poles > (nItems / 3)) {
+        cmsSignalError(Tab ->InterpParams->ContextID, cmsERROR_RANGE, "cmsSmoothToneCurve: Degenerated, mostly poles.");
+        return FALSE;
+    }
 
     // Seems ok
     for (i=0; i < nItems; i++) {
