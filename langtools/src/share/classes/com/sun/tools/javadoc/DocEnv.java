@@ -62,8 +62,7 @@ import com.sun.tools.javac.util.Names;
  * @author Scott Seligman (generics)
  */
 public class DocEnv {
-    protected static final Context.Key<DocEnv> docEnvKey =
-        new Context.Key<DocEnv>();
+    protected static final Context.Key<DocEnv> docEnvKey = new Context.Key<>();
 
     public static DocEnv instance(Context context) {
         DocEnv instance = context.get(docEnvKey);
@@ -110,7 +109,7 @@ public class DocEnv {
     Context context;
     DocLint doclint;
 
-    WeakHashMap<JCTree, TreePath> treePaths = new WeakHashMap<JCTree, TreePath>();
+    WeakHashMap<JCTree, TreePath> treePaths = new WeakHashMap<>();
 
     /** Allow documenting from class files? */
     boolean docClasses = false;
@@ -544,8 +543,7 @@ public class DocEnv {
         messager.exit();
     }
 
-    protected Map<PackageSymbol, PackageDocImpl> packageMap =
-            new HashMap<PackageSymbol, PackageDocImpl>();
+    protected Map<PackageSymbol, PackageDocImpl> packageMap = new HashMap<>();
     /**
      * Return the PackageDoc of this package symbol.
      */
@@ -571,8 +569,7 @@ public class DocEnv {
     }
 
 
-    protected Map<ClassSymbol, ClassDocImpl> classMap =
-            new HashMap<ClassSymbol, ClassDocImpl>();
+    protected Map<ClassSymbol, ClassDocImpl> classMap = new HashMap<>();
     /**
      * Return the ClassDoc (or a subtype) of this class symbol.
      */
@@ -613,8 +610,7 @@ public class DocEnv {
         return (tree.mods.flags & Flags.ANNOTATION) != 0;
     }
 
-    protected Map<VarSymbol, FieldDocImpl> fieldMap =
-            new HashMap<VarSymbol, FieldDocImpl>();
+    protected Map<VarSymbol, FieldDocImpl> fieldMap = new HashMap<>();
     /**
      * Return the FieldDoc of this var symbol.
      */
@@ -638,8 +634,7 @@ public class DocEnv {
         }
     }
 
-    protected Map<MethodSymbol, ExecutableMemberDocImpl> methodMap =
-            new HashMap<MethodSymbol, ExecutableMemberDocImpl>();
+    protected Map<MethodSymbol, ExecutableMemberDocImpl> methodMap = new HashMap<>();
     /**
      * Create a MethodDoc for this MethodSymbol.
      * Should be called only on symbols representing methods.
@@ -805,7 +800,7 @@ public class DocEnv {
     }
 
     void initDoclint(Collection<String> opts, Collection<String> customTagNames) {
-        ArrayList<String> doclintOpts = new ArrayList<String>();
+        ArrayList<String> doclintOpts = new ArrayList<>();
 
         for (String opt: opts) {
             doclintOpts.add(opt == null ? DocLint.XMSGS_OPTION : DocLint.XMSGS_CUSTOM_PREFIX + opt);

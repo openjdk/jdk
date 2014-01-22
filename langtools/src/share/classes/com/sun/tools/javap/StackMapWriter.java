@@ -82,9 +82,7 @@ public class StackMapWriter extends InstructionDetailWriter {
             ConstantPool cp = classWriter.getClassFile().constant_pool;
             String argString = d.getParameterTypes(cp);
             args = argString.substring(1, argString.length() - 1).split("[, ]+");
-        } catch (ConstantPoolException e) {
-            return;
-        } catch (InvalidDescriptor e) {
+        } catch (ConstantPoolException | InvalidDescriptor e) {
             return;
         }
         boolean isStatic = m.access_flags.is(AccessFlags.ACC_STATIC);
@@ -97,7 +95,7 @@ public class StackMapWriter extends InstructionDetailWriter {
                     new CustomVerificationTypeInfo(args[i].replace(".", "/"));
         }
 
-        map = new HashMap<Integer, StackMap>();
+        map = new HashMap<>();
         StackMapBuilder builder = new StackMapBuilder();
 
         // using -1 as the pc for the initial frame effectively compensates for

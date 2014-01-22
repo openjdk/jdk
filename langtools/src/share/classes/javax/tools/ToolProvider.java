@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -145,7 +145,7 @@ public class ToolProvider {
 
     // Cache for tool classes.
     // Use weak references to avoid keeping classes around unnecessarily
-    private Map<String, Reference<Class<?>>> toolClasses = new HashMap<String, Reference<Class<?>>>();
+    private Map<String, Reference<Class<?>>> toolClasses = new HashMap<>();
 
     // Cache for tool classloader.
     // Use a weak reference to avoid keeping it around unnecessarily
@@ -207,7 +207,7 @@ public class ToolProvider {
                 trace(FINE, urls[0].toString());
 
                 cl = URLClassLoader.newInstance(urls);
-                refToolClassLoader = new WeakReference<ClassLoader>(cl);
+                refToolClassLoader = new WeakReference<>(cl);
             }
 
             return Class.forName(toolClassName, false, cl);

@@ -344,13 +344,13 @@ public class HashMap<K,V> extends AbstractMap<K,V>
      */
     static Class<?> comparableClassFor(Object x) {
         if (x instanceof Comparable) {
-            Class<?> c; Type[] ts, as; Type t; ParameterizedType p;
+            Class<?> c; Type[] ts, as; ParameterizedType p;
             if ((c = x.getClass()) == String.class) // bypass checks
                 return c;
             if ((ts = c.getGenericInterfaces()) != null) {
-                for (int i = 0; i < ts.length; ++i) {
-                    if (((t = ts[i]) instanceof ParameterizedType) &&
-                        ((p = (ParameterizedType)t).getRawType() ==
+                for (Type t : ts) {
+                    if ((t instanceof ParameterizedType) &&
+                        ((p = (ParameterizedType) t).getRawType() ==
                          Comparable.class) &&
                         (as = p.getActualTypeArguments()) != null &&
                         as.length == 1 && as[0] == c) // type arg is c
@@ -875,8 +875,8 @@ public class HashMap<K,V> extends AbstractMap<K,V>
     public boolean containsValue(Object value) {
         Node<K,V>[] tab; V v;
         if ((tab = table) != null && size > 0) {
-            for (int i = 0; i < tab.length; ++i) {
-                for (Node<K,V> e = tab[i]; e != null; e = e.next) {
+            for (Node<K, V> e : tab) {
+                for (; e != null; e = e.next) {
                     if ((v = e.value) == value ||
                         (value != null && value.equals(v)))
                         return true;
@@ -923,8 +923,8 @@ public class HashMap<K,V> extends AbstractMap<K,V>
                 throw new NullPointerException();
             if (size > 0 && (tab = table) != null) {
                 int mc = modCount;
-                for (int i = 0; i < tab.length; ++i) {
-                    for (Node<K,V> e = tab[i]; e != null; e = e.next)
+                for (Node<K, V> e : tab) {
+                    for (; e != null; e = e.next)
                         action.accept(e.key);
                 }
                 if (modCount != mc)
@@ -967,8 +967,8 @@ public class HashMap<K,V> extends AbstractMap<K,V>
                 throw new NullPointerException();
             if (size > 0 && (tab = table) != null) {
                 int mc = modCount;
-                for (int i = 0; i < tab.length; ++i) {
-                    for (Node<K,V> e = tab[i]; e != null; e = e.next)
+                for (Node<K, V> e : tab) {
+                    for (; e != null; e = e.next)
                         action.accept(e.value);
                 }
                 if (modCount != mc)
@@ -1030,8 +1030,8 @@ public class HashMap<K,V> extends AbstractMap<K,V>
                 throw new NullPointerException();
             if (size > 0 && (tab = table) != null) {
                 int mc = modCount;
-                for (int i = 0; i < tab.length; ++i) {
-                    for (Node<K,V> e = tab[i]; e != null; e = e.next)
+                for (Node<K, V> e : tab) {
+                    for (; e != null; e = e.next)
                         action.accept(e);
                 }
                 if (modCount != mc)
@@ -1116,13 +1116,13 @@ public class HashMap<K,V> extends AbstractMap<K,V>
             }
         }
         V v = mappingFunction.apply(key);
-        if (old != null) {
+        if (v == null) {
+            return null;
+        } else if (old != null) {
             old.value = v;
             afterNodeAccess(old);
             return v;
         }
-        else if (v == null)
-            return null;
         else if (t != null)
             t.putTreeVal(this, tab, hash, key, v);
         else {
@@ -1212,6 +1212,8 @@ public class HashMap<K,V> extends AbstractMap<K,V>
     @Override
     public V merge(K key, V value,
                    BiFunction<? super V, ? super V, ? extends V> remappingFunction) {
+        if (value == null)
+            throw new NullPointerException();
         if (remappingFunction == null)
             throw new NullPointerException();
         int hash = hash(key);
@@ -1273,8 +1275,8 @@ public class HashMap<K,V> extends AbstractMap<K,V>
             throw new NullPointerException();
         if (size > 0 && (tab = table) != null) {
             int mc = modCount;
-            for (int i = 0; i < tab.length; ++i) {
-                for (Node<K,V> e = tab[i]; e != null; e = e.next)
+            for (Node<K, V> e : tab) {
+                for (; e != null; e = e.next)
                     action.accept(e.key, e.value);
             }
             if (modCount != mc)
@@ -1289,8 +1291,8 @@ public class HashMap<K,V> extends AbstractMap<K,V>
             throw new NullPointerException();
         if (size > 0 && (tab = table) != null) {
             int mc = modCount;
-            for (int i = 0; i < tab.length; ++i) {
-                for (Node<K,V> e = tab[i]; e != null; e = e.next) {
+            for (Node<K, V> e : tab) {
+                for (; e != null; e = e.next) {
                     e.value = function.apply(e.key, e.value);
                 }
             }
@@ -1769,8 +1771,8 @@ public class HashMap<K,V> extends AbstractMap<K,V>
     void internalWriteEntries(java.io.ObjectOutputStream s) throws IOException {
         Node<K,V>[] tab;
         if (size > 0 && (tab = table) != null) {
-            for (int i = 0; i < tab.length; ++i) {
-                for (Node<K,V> e = tab[i]; e != null; e = e.next) {
+            for (Node<K, V> e : tab) {
+                for (; e != null; e = e.next) {
                     s.writeObject(e.key);
                     s.writeObject(e.value);
                 }

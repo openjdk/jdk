@@ -44,8 +44,7 @@ import java.util.Map;
  */
 public class JavacMessages implements Messages {
     /** The context key for the JavacMessages object. */
-    public static final Context.Key<JavacMessages> messagesKey =
-        new Context.Key<JavacMessages>();
+    public static final Context.Key<JavacMessages> messagesKey = new Context.Key<>();
 
     /** Get the JavacMessages instance for this context. */
     public static JavacMessages instance(Context context) {
@@ -93,7 +92,7 @@ public class JavacMessages implements Messages {
      */
     public JavacMessages(String bundleName, Locale locale) throws MissingResourceException {
         bundleNames = List.nil();
-        bundleCache = new HashMap<Locale, SoftReference<List<ResourceBundle>>>();
+        bundleCache = new HashMap<>();
         add(bundleName);
         setCurrentLocale(locale);
     }
@@ -124,7 +123,7 @@ public class JavacMessages implements Messages {
                     throw new InternalError("Cannot find javac resource bundle for locale " + locale);
                 }
             }
-            bundleCache.put(locale, new SoftReference<List<ResourceBundle>>(bundleList));
+            bundleCache.put(locale, new SoftReference<>(bundleList));
         }
         return bundleList;
     }

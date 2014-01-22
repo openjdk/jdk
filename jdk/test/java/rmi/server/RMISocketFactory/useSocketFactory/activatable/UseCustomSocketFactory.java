@@ -33,9 +33,8 @@
  */
 
 import java.io.*;
+import java.net.MalformedURLException;
 import java.rmi.*;
-import java.rmi.activation.*;
-import java.rmi.server.*;
 import java.rmi.registry.*;
 
 public class UseCustomSocketFactory {
@@ -51,7 +50,7 @@ public class UseCustomSocketFactory {
 
         try {
             LocateRegistry.createRegistry(REGISTRY_PORT);
-        } catch (Exception e) {
+        } catch (RemoteException e) {
             TestLibrary.bomb("creating registry", e);
         }
 
@@ -92,15 +91,16 @@ public class UseCustomSocketFactory {
                                          protocol[i]);
 
             System.err.println("\nusing protocol: " +
-                               (protocol[i] == "" ? "none" : protocol[i]));
+                    ("".equals(protocol[i]) ? "none" : protocol[i]));
 
             try {
                 /* spawn VM for EchoServer */
                 serverVM.start();
 
                 /* lookup server */
-                int tries = 12;        // need enough tries for slow machine.
                 echo[i] = null;
+                // 24 seconds timeout
+                long stopTime = System.currentTimeMillis() + 24000;
                 do {
                     try {
                         echo[i] = (Echo) Naming.lookup("//:" + REGISTRY_PORT +
@@ -108,15 +108,14 @@ public class UseCustomSocketFactory {
                         break;
                     } catch (NotBoundException e) {
                         try {
-                            Thread.sleep(2000);
-                        } catch (Exception ignore) {
+                            Thread.sleep(200);
+                        } catch (InterruptedException ignore) {
                         }
-                        continue;
                     }
-                } while (--tries > 0);
+                } while (System.currentTimeMillis() < stopTime);
 
                 if (echo[i] == null)
-                    TestLibrary.bomb("server not bound in 12 tries", null);
+                    TestLibrary.bomb("server not bound in 120 tries", null);
 
                 /* invoke remote method and print result*/
                 System.err.println("Bound to " + echo[i]);
@@ -135,9 +134,8 @@ public class UseCustomSocketFactory {
                 serverVM.destroy();
                 try {
                     Naming.unbind("//:" + REGISTRY_PORT + "/EchoServer");
-                } catch (Exception e) {
+                } catch (RemoteException | NotBoundException | MalformedURLException e) {
                     TestLibrary.bomb("unbinding EchoServer", e);
-
                 }
             }
         }
@@ -152,7 +150,7 @@ public class UseCustomSocketFactory {
         for (int i = 0; i < echo.length; i++) {
             try {
                 System.err.println("\nusing protocol: " +
-                                   (protocol[i] == "" ? "none" : protocol[i]));
+                           ("".equals(protocol[i]) ? "none" : protocol[i]));
                 byte[] data = ("Greetings, citizen " +
                                System.getProperty("user.name") + "!").getBytes();
                 byte[] result = echo[i].echoNot(data);

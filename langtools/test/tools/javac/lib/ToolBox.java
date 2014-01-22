@@ -69,27 +69,17 @@ public class ToolBox {
     public static final Path javaBinary = Paths.get(jdkUnderTest, "bin", "java");
     public static final Path javacBinary = Paths.get(jdkUnderTest, "bin", "javac");
 
-    public static final List<String> testToolVMOpts;
-    public static final List<String> testVMOpts;
+    public static final List<String> testVMOpts = readOptions("test.vm.opts");
+    public static final List<String> testToolVMOpts = readOptions("test.tool.vm.opts");
+    public static final List<String> testJavaOpts = readOptions("test.java.opts");
 
     private static final Charset defaultCharset = Charset.defaultCharset();
 
     static final JavaCompiler comp = ToolProvider.getSystemJavaCompiler();
 
-    static {
-        String sysProp = System.getProperty("test.tool.vm.opts");
-        if (sysProp != null && sysProp.length() > 0) {
-            testToolVMOpts = Arrays.asList(sysProp.split("\\s+"));
-        } else {
-            testToolVMOpts = Collections.<String>emptyList();
-        }
-
-        sysProp = System.getProperty("test.vm.opts");
-        if (sysProp != null && sysProp.length() > 0) {
-            testVMOpts = Arrays.asList(sysProp.split("\\s+"));
-        } else {
-            testVMOpts = Collections.<String>emptyList();
-        }
+    private static List<String> readOptions(String property) {
+        String options = System.getProperty(property, "");
+        return options.length() > 0 ? Arrays.asList(options.split("\\s+")) : Collections.<String>emptyList();
     }
 
     /**

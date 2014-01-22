@@ -91,5 +91,10 @@ public class TCKInstantSerialization extends AbstractTCKTest {
         assertSerializedBySer(Instant.ofEpochSecond(654321, 123456789), bytes);
     }
 
+    @Test
+    public void test_invalid_serialform() throws Exception {
+        assertNotSerializable(Instant.class);
+    }
+
 
 }

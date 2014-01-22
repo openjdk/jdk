@@ -176,7 +176,7 @@ public interface DiagnosticFormatter<D extends Diagnostic<?>> {
             /**
              * JLS paragraph this diagnostic might refer to (if applicable).
              */
-            JLS;
+            JLS
         }
 
         /**
@@ -212,7 +212,7 @@ public interface DiagnosticFormatter<D extends Diagnostic<?>> {
              * Controls the maximum amount of subdiagnostics that are part of a
              * given multiline diagnostic.
              */
-            LENGTH;
+            LENGTH
         }
     }
 }

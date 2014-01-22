@@ -36,6 +36,7 @@ import java.util.Map;
 import javax.lang.model.element.Name;
 
 import static com.sun.tools.doclint.HtmlTag.Attr.*;
+import com.sun.tools.javac.util.StringUtils;
 
 /**
  * Enum representing HTML tags.
@@ -290,7 +291,7 @@ public enum HtmlTag {
         INLINE,
         LIST_ITEM,
         TABLE_ITEM,
-        OTHER;
+        OTHER
     }
 
     /**
@@ -299,7 +300,7 @@ public enum HtmlTag {
     public static enum EndKind {
         NONE,
         OPTIONAL,
-        REQUIRED;
+        REQUIRED
     }
 
     public static enum Flag {
@@ -352,10 +353,10 @@ public enum HtmlTag {
         WIDTH;
 
         public String getText() {
-            return toLowerCase(name());
+            return StringUtils.toLowerCase(name());
         }
 
-        static final Map<String,Attr> index = new HashMap<String,Attr>();
+        static final Map<String,Attr> index = new HashMap<>();
         static {
             for (Attr t: values()) {
                 index.put(t.getText(), t);
@@ -393,7 +394,7 @@ public enum HtmlTag {
         this.blockType = blockType;
         this.endKind = endKind;
         this.flags = flags;
-        this.attrs = new EnumMap<Attr,AttrKind>(Attr.class);
+        this.attrs = new EnumMap<>(Attr.class);
         for (Map<Attr,AttrKind> m: attrMaps)
             this.attrs.putAll(m);
         attrs.put(Attr.CLASS, AttrKind.OK);
@@ -431,11 +432,11 @@ public enum HtmlTag {
     }
 
     public String getText() {
-        return toLowerCase(name());
+        return StringUtils.toLowerCase(name());
     }
 
     public Attr getAttr(Name attrName) {
-        return Attr.index.get(toLowerCase(attrName.toString()));
+        return Attr.index.get(StringUtils.toLowerCase(attrName.toString()));
     }
 
     public AttrKind getAttrKind(Name attrName) {
@@ -449,7 +450,7 @@ public enum HtmlTag {
         return map;
     }
 
-    private static final Map<String,HtmlTag> index = new HashMap<String,HtmlTag>();
+    private static final Map<String,HtmlTag> index = new HashMap<>();
     static {
         for (HtmlTag t: values()) {
             index.put(t.getText(), t);
@@ -457,10 +458,7 @@ public enum HtmlTag {
     }
 
     static HtmlTag get(Name tagName) {
-        return index.get(toLowerCase(tagName.toString()));
+        return index.get(StringUtils.toLowerCase(tagName.toString()));
     }
 
-    private static String toLowerCase(String s) {
-        return s.toLowerCase(Locale.US);
-    }
 }

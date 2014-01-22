@@ -65,7 +65,7 @@ public class ZipArchive implements Archive {
     protected ZipArchive(JavacFileManager fm, ZipFile zfile, boolean initMap) throws IOException {
         this.fileManager = fm;
         this.zfile = zfile;
-        this.map = new HashMap<RelativeDirectory,List<String>>();
+        this.map = new HashMap<>();
         if (initMap)
             initMap();
     }
@@ -133,7 +133,7 @@ public class ZipArchive implements Archive {
         File absFile = (absFileRef == null ? null : absFileRef.get());
         if (absFile == null) {
             absFile = new File(zfile.getName()).getAbsoluteFile();
-            absFileRef = new SoftReference<File>(absFile);
+            absFileRef = new SoftReference<>(absFile);
         }
         return absFile;
     }
@@ -205,8 +205,7 @@ public class ZipArchive implements Archive {
         public CharBuffer getCharContent(boolean ignoreEncodingErrors) throws IOException {
             CharBuffer cb = fileManager.getCachedContent(this);
             if (cb == null) {
-                InputStream in = zarch.zfile.getInputStream(entry);
-                try {
+                try (InputStream in = zarch.zfile.getInputStream(entry)) {
                     ByteBuffer bb = fileManager.makeByteBuffer(in);
                     JavaFileObject prev = fileManager.log.useSource(this);
                     try {
@@ -218,8 +217,6 @@ public class ZipArchive implements Archive {
                     if (!ignoreEncodingErrors) {
                         fileManager.cache(this, cb);
                     }
-                } finally {
-                    in.close();
                 }
             }
             return cb;

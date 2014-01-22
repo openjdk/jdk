@@ -87,14 +87,13 @@ public abstract class AbstractTreeWriter extends HtmlDocletWriter {
         int size = list.size();
         if (size > 0) {
             Content ul = new HtmlTree(HtmlTag.UL);
-            for (int i = 0; i < size; i++) {
-                ClassDoc local = list.get(i);
+            for (ClassDoc local : list) {
                 HtmlTree li = new HtmlTree(HtmlTag.LI);
                 li.addAttr(HtmlAttr.TYPE, LI_CIRCLE);
                 addPartialInfo(local, li);
                 addExtendsImplements(parent, local, li);
                 addLevelInfo(local, classtree.subs(local, isEnum),
-                        isEnum, li);   // Recurse
+                             isEnum, li);   // Recurse
                 ul.addContent(li);
             }
             contentTree.addContent(ul);
@@ -135,10 +134,10 @@ public abstract class AbstractTreeWriter extends HtmlDocletWriter {
         if (interfaces.length > (cd.isInterface()? 1 : 0)) {
             Arrays.sort(interfaces);
             int counter = 0;
-            for (int i = 0; i < interfaces.length; i++) {
-                if (parent != interfaces[i]) {
-                    if (! (interfaces[i].isPublic() ||
-                            Util.isLinkable(interfaces[i], configuration))) {
+            for (ClassDoc intf : interfaces) {
+                if (parent != intf) {
+                    if (!(intf.isPublic() ||
+                          Util.isLinkable(intf, configuration))) {
                         continue;
                     }
                     if (counter == 0) {
@@ -153,7 +152,7 @@ public abstract class AbstractTreeWriter extends HtmlDocletWriter {
                         contentTree.addContent(", ");
                     }
                     addPreQualifiedClassLink(LinkInfoImpl.Kind.TREE,
-                            interfaces[i], contentTree);
+                                             intf, contentTree);
                     counter++;
                 }
             }

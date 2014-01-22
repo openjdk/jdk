@@ -75,11 +75,14 @@ public class Log {
         throws ProblemException {
         out = o;
         err = e;
-        if (l.equals("warn")) level = WARN;
-        else if (l.equals("info")) level = INFO;
-        else if (l.equals("debug")) level = DEBUG;
-        else if (l.equals("trace")) level = TRACE;
-        else throw new ProblemException("No such log level \""+l+"\"");
+        switch (l) {
+            case "warn": level = WARN; break;
+            case "info": level = INFO; break;
+            case "debug": level = DEBUG; break;
+            case "trace": level = TRACE; break;
+            default:
+                throw new ProblemException("No such log level \"" + l + "\"");
+        }
     }
 
     static public boolean isTracing() {

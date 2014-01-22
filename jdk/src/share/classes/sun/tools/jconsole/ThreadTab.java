@@ -66,9 +66,6 @@ class ThreadTab extends Tab implements ActionListener, DocumentListener, ListSel
 
     private static final Border thinEmptyBorder  = new EmptyBorder(2, 2, 2, 2);
 
-    private static final String infoLabelFormat = "ThreadTab.infoLabelFormat";
-
-
     /*
       Hierarchy of panels and layouts for this tab:
 
@@ -692,7 +689,7 @@ class ThreadTab extends Tab implements ActionListener, DocumentListener, ListSel
 
         private void updateThreadsInfo(long tlCount, long tpCount, long ttCount, long timeStamp) {
             getPlotter().addValues(timeStamp, tlCount);
-            getInfoLabel().setText(Resources.format(infoLabelFormat, tlCount, tpCount, ttCount));
+            getInfoLabel().setText(Resources.format(Messages.THREAD_TAB_INFO_LABEL_FORMAT, tlCount, tpCount, ttCount));
         }
     }
 }

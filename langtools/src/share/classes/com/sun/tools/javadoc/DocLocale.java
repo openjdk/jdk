@@ -159,12 +159,11 @@ class DocLocale {
      */
     private Locale searchLocale(String language, String country,
                                 String variant) {
-        Locale[] locales = Locale.getAvailableLocales();
-        for (int i = 0; i < locales.length; i++) {
-            if (locales[i].getLanguage().equals(language) &&
-               (country == null || locales[i].getCountry().equals(country)) &&
-               (variant == null || locales[i].getVariant().equals(variant))) {
-                return locales[i];
+        for (Locale loc : Locale.getAvailableLocales()) {
+            if (loc.getLanguage().equals(language) &&
+                (country == null || loc.getCountry().equals(country)) &&
+                (variant == null || loc.getVariant().equals(variant))) {
+                return loc;
             }
         }
         return null;
@@ -231,11 +230,10 @@ class DocLocale {
      * return true else return false.
      */
     private boolean htmlSentenceTerminatorFound(String str, int index) {
-        for (int i = 0; i < sentenceTerminators.length; i++) {
-            String terminator = sentenceTerminators[i];
+        for (String terminator : sentenceTerminators) {
             if (str.regionMatches(true, index, terminator,
                                   0, terminator.length())) {
-                    return true;
+                return true;
             }
         }
         return false;

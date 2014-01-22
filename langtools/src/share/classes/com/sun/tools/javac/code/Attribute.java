@@ -64,7 +64,7 @@ public abstract class Attribute implements AnnotationValue {
         return false;
     }
 
-    public TypeAnnotationPosition getPosition() { return null; };
+    public TypeAnnotationPosition getPosition() { return null; }
 
     /** The value for an annotation element of primitive type or String. */
     public static class Constant extends Attribute {
@@ -226,8 +226,7 @@ public abstract class Attribute implements AnnotationValue {
         }
 
         public Map<MethodSymbol, Attribute> getElementValues() {
-            Map<MethodSymbol, Attribute> valmap =
-                new LinkedHashMap<MethodSymbol, Attribute>();
+            Map<MethodSymbol, Attribute> valmap = new LinkedHashMap<>();
             for (Pair<MethodSymbol, Attribute> value : values)
                 valmap.put(value.fst, value.snd);
             return valmap;

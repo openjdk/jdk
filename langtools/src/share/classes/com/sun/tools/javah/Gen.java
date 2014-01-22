@@ -347,9 +347,9 @@ public abstract class Gen {
      */
 
     List<VariableElement> getAllFields(TypeElement subclazz) {
-        List<VariableElement> fields = new ArrayList<VariableElement>();
+        List<VariableElement> fields = new ArrayList<>();
         TypeElement cd = null;
-        Stack<TypeElement> s = new Stack<TypeElement>();
+        Stack<TypeElement> s = new Stack<>();
 
         cd = subclazz;
         while (true) {

@@ -96,7 +96,7 @@ public class CreateSymbols extends AbstractProcessor {
     static Set<String> getLegacyPackages() {
         ResourceBundle legacyBundle
             = ResourceBundle.getBundle("com.sun.tools.javac.resources.legacy");
-        Set<String> keys = new HashSet<String>();
+        Set<String> keys = new HashSet<>();
         for (Enumeration<String> e = legacyBundle.getKeys(); e.hasMoreElements(); )
             keys.add(e.nextElement());
         return keys;
@@ -129,7 +129,7 @@ public class CreateSymbols extends AbstractProcessor {
     void createSymbols() throws IOException {
         Set<String> legacy = getLegacyPackages();
         Set<String> legacyProprietary = getLegacyPackages();
-        Set<String> documented = new HashSet<String>();
+        Set<String> documented = new HashSet<>();
         Set<PackageSymbol> packages =
             ((JavacProcessingEnvironment)processingEnv).getSpecifiedPackages();
         Map<String,String> pOptions = processingEnv.getOptions();
@@ -158,7 +158,7 @@ public class CreateSymbols extends AbstractProcessor {
         fm.setLocation(StandardLocation.CLASS_PATH, List.<File>nil());
         fm.setLocation(StandardLocation.SOURCE_PATH, List.<File>nil());
         {
-            ArrayList<File> bootClassPath = new ArrayList<File>();
+            ArrayList<File> bootClassPath = new ArrayList<>();
             bootClassPath.add(jarFile);
             for (File path : fm.getLocation(StandardLocation.PLATFORM_CLASS_PATH)) {
                 if (!new File(path.getName()).equals(new File("rt.jar")))
@@ -173,8 +173,8 @@ public class CreateSymbols extends AbstractProcessor {
             if (!destDir.mkdirs())
                 throw new RuntimeException("Could not create " + destDir);
         fm.setLocation(StandardLocation.CLASS_OUTPUT, List.of(destDir));
-        Set<String> hiddenPackages = new HashSet<String>();
-        Set<String> crisp = new HashSet<String>();
+        Set<String> hiddenPackages = new HashSet<>();
+        Set<String> crisp = new HashSet<>();
         List<String> options = List.of("-XDdev");
         // options = options.prepend("-doe");
         // options = options.prepend("-verbose");
@@ -193,7 +193,8 @@ public class CreateSymbols extends AbstractProcessor {
         for (int i = 1; i < profileAnnos.length; i++) {
             profileAnnos[i] = new Attribute.Compound(syms.profileType,
                     List.<Pair<Symbol.MethodSymbol, Attribute>>of(
-                    new Pair<Symbol.MethodSymbol, Attribute>(profileValue, new Attribute.Constant(syms.intType, i))));
+                        new Pair<Symbol.MethodSymbol, Attribute>(profileValue,
+                        new Attribute.Constant(syms.intType, i))));
         }
 
         Type.moreInfo = true;
@@ -265,9 +266,7 @@ public class CreateSymbols extends AbstractProcessor {
                     writeClass(pool, nestedClass, writer);
                 }
             }
-        } catch (ClassWriter.StringOverflow ex) {
-            throw new RuntimeException(ex);
-        } catch (ClassWriter.PoolOverflow ex) {
+        } catch (ClassWriter.StringOverflow | ClassWriter.PoolOverflow ex) {
             throw new RuntimeException(ex);
         }
     }

@@ -27,7 +27,7 @@
  * @summary Compiler silently generates bytecode that exceeds VM limits
  * @author gafter
  *
- * @compile/fail LongName.java
+ * @compile/fail/ref=LongName.out -XDrawDiagnostics LongName.java
  */
 
 class LongName {

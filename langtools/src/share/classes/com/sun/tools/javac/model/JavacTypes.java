@@ -246,7 +246,7 @@ public class JavacTypes implements javax.lang.model.util.Types {
                 throw new IllegalArgumentException(
                 "Incorrect number of type arguments");
 
-            ListBuffer<Type> targs = new ListBuffer<Type>();
+            ListBuffer<Type> targs = new ListBuffer<>();
             for (TypeMirror t : typeArgs) {
                 if (!(t instanceof ReferenceType || t instanceof WildcardType))
                     throw new IllegalArgumentException(t.toString());
@@ -314,7 +314,7 @@ public class JavacTypes implements javax.lang.model.util.Types {
         MethodSymbol m = (MethodSymbol) elem;
         ClassSymbol origin = (ClassSymbol) m.owner;
 
-        Set<MethodSymbol> results = new LinkedHashSet<MethodSymbol>();
+        Set<MethodSymbol> results = new LinkedHashSet<>();
         for (Type t : types.closure(origin.type)) {
             if (t != origin.type) {
                 ClassSymbol c = (ClassSymbol) t.tsym;

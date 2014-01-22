@@ -27,6 +27,9 @@
 package java.util.logging;
 
 import java.io.UnsupportedEncodingException;
+import java.security.AccessController;
+import java.security.PrivilegedAction;
+
 /**
  * A <tt>Handler</tt> object takes log messages from a <tt>Logger</tt> and
  * exports them.  It might for example, write them to a console
@@ -62,10 +65,6 @@ public abstract class Handler {
     private volatile ErrorManager errorManager = new ErrorManager();
     private volatile String encoding;
 
-    // Package private support for security checking.  When sealed
-    // is true, we access check updates to the class.
-    boolean sealed = true;
-
     /**
      * Default constructor.  The resulting <tt>Handler</tt> has a log
      * level of <tt>Level.ALL</tt>, no <tt>Formatter</tt>, and no
@@ -73,6 +72,52 @@ public abstract class Handler {
      * as the <tt>ErrorManager</tt>.
      */
     protected Handler() {
+    }
+
+    /**
+     * Package-private constructor for chaining from subclass constructors
+     * that wish to configure the handler with specific default and/or
+     * specified values.
+     *
+     * @param defaultLevel       a default {@link Level} to configure if one is
+     *                           not found in LogManager configuration properties
+     * @param defaultFormatter   a default {@link Formatter} to configure if one is
+     *                           not specified by {@code specifiedFormatter} parameter
+     *                           nor found in LogManager configuration properties
+     * @param specifiedFormatter if not null, this is the formatter to configure
+     */
+    Handler(Level defaultLevel, Formatter defaultFormatter,
+            Formatter specifiedFormatter) {
+
+        LogManager manager = LogManager.getLogManager();
+        String cname = getClass().getName();
+
+        final Level level = manager.getLevelProperty(cname + ".level", defaultLevel);
+        final Filter filter = manager.getFilterProperty(cname + ".filter", null);
+        final Formatter formatter = specifiedFormatter == null
+                                    ? manager.getFormatterProperty(cname + ".formatter", defaultFormatter)
+                                    : specifiedFormatter;
+        final String encoding = manager.getStringProperty(cname + ".encoding", null);
+
+        AccessController.doPrivileged(new PrivilegedAction<Void>() {
+            @Override
+            public Void run() {
+                setLevel(level);
+                setFilter(filter);
+                setFormatter(formatter);
+                try {
+                    setEncoding(encoding);
+                } catch (Exception ex) {
+                    try {
+                        setEncoding(null);
+                    } catch (Exception ex2) {
+                        // doing a setEncoding with null should always work.
+                        // assert false;
+                    }
+                }
+                return null;
+            }
+        }, null, LogManager.controlPermission);
     }
 
     /**
@@ -302,12 +347,9 @@ public abstract class Handler {
     }
 
     // Package-private support method for security checks.
-    // If "sealed" is true, we check that the caller has
-    // appropriate security privileges to update Handler
-    // state and if not throw a SecurityException.
+    // We check that the caller has appropriate security privileges
+    // to update Handler state and if not throw a SecurityException.
     void checkPermission() throws SecurityException {
-        if (sealed) {
-            manager.checkPermission();
-        }
+        manager.checkPermission();
     }
 }

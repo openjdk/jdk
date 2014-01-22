@@ -76,6 +76,25 @@ public class DistributionPointFetcher {
                                               Date validity)
         throws CertStoreException
     {
+        return getCRLs(selector, signFlag, prevKey, null, provider, certStores,
+                       reasonsMask, trustAnchors, validity);
+    }
+
+    /**
+     * Return the X509CRLs matching this selector. The selector must be
+     * an X509CRLSelector with certificateChecking set.
+     */
+    public static Collection<X509CRL> getCRLs(X509CRLSelector selector,
+                                              boolean signFlag,
+                                              PublicKey prevKey,
+                                              X509Certificate prevCert,
+                                              String provider,
+                                              List<CertStore> certStores,
+                                              boolean[] reasonsMask,
+                                              Set<TrustAnchor> trustAnchors,
+                                              Date validity)
+        throws CertStoreException
+    {
         X509Certificate cert = selector.getCertificateChecking();
         if (cert == null) {
             return Collections.emptySet();
@@ -101,7 +120,7 @@ public class DistributionPointFetcher {
                  t.hasNext() && !Arrays.equals(reasonsMask, ALL_REASONS); ) {
                 DistributionPoint point = t.next();
                 Collection<X509CRL> crls = getCRLs(selector, certImpl,
-                    point, reasonsMask, signFlag, prevKey, provider,
+                    point, reasonsMask, signFlag, prevKey, prevCert, provider,
                     certStores, trustAnchors, validity);
                 results.addAll(crls);
             }
@@ -125,9 +144,10 @@ public class DistributionPointFetcher {
      */
     private static Collection<X509CRL> getCRLs(X509CRLSelector selector,
         X509CertImpl certImpl, DistributionPoint point, boolean[] reasonsMask,
-        boolean signFlag, PublicKey prevKey, String provider,
-        List<CertStore> certStores, Set<TrustAnchor> trustAnchors,
-        Date validity) throws CertStoreException {
+        boolean signFlag, PublicKey prevKey, X509Certificate prevCert,
+        String provider, List<CertStore> certStores,
+        Set<TrustAnchor> trustAnchors, Date validity)
+            throws CertStoreException {
 
         // check for full name
         GeneralNames fullName = point.getFullName();
@@ -188,8 +208,8 @@ public class DistributionPointFetcher {
                 // we check the issuer in verifyCRLs method
                 selector.setIssuerNames(null);
                 if (selector.match(crl) && verifyCRL(certImpl, point, crl,
-                        reasonsMask, signFlag, prevKey, provider, trustAnchors,
-                        certStores, validity)) {
+                        reasonsMask, signFlag, prevKey, prevCert, provider,
+                        trustAnchors, certStores, validity)) {
                     crls.add(crl);
                 }
             } catch (IOException | CRLException e) {
@@ -284,6 +304,8 @@ public class DistributionPointFetcher {
      * @param reasonsMask the interim reasons mask
      * @param signFlag true if prevKey can be used to verify the CRL
      * @param prevKey the public key that verifies the certificate's signature
+     * @param prevCert the certificate whose public key verifies
+     *        {@code certImpl}'s signature
      * @param provider the Signature provider to use
      * @param trustAnchors a {@code Set} of {@code TrustAnchor}s
      * @param certStores a {@code List} of {@code CertStore}s to be used in
@@ -294,7 +316,7 @@ public class DistributionPointFetcher {
      */
     static boolean verifyCRL(X509CertImpl certImpl, DistributionPoint point,
         X509CRL crl, boolean[] reasonsMask, boolean signFlag,
-        PublicKey prevKey, String provider,
+        PublicKey prevKey, X509Certificate prevCert, String provider,
         Set<TrustAnchor> trustAnchors, List<CertStore> certStores,
         Date validity) throws CRLException, IOException {
 
@@ -591,18 +613,26 @@ public class DistributionPointFetcher {
                 // the subject criterion will be set by builder automatically.
             }
 
-            // by far, we have validated the previous certificate, we can
-            // trust it during validating the CRL issuer.
-            // Except the performance improvement, another benefit is to break
-            // the dead loop while looking for the issuer back and forth
+            // By now, we have validated the previous certificate, so we can
+            // trust it during the validation of the CRL issuer.
+            // In addition to the performance improvement, another benefit is to
+            // break the dead loop while looking for the issuer back and forth
             // between the delegated self-issued certificate and its issuer.
             Set<TrustAnchor> newTrustAnchors = new HashSet<>(trustAnchors);
 
             if (prevKey != null) {
                 // Add the previous certificate as a trust anchor.
-                X500Principal principal = certImpl.getIssuerX500Principal();
-                TrustAnchor temporary =
-                        new TrustAnchor(principal, prevKey, null);
+                // If prevCert is not null, we want to construct a TrustAnchor
+                // using the cert object because when the certpath for the CRL
+                // is built later, the CertSelector will make comparisons with
+                // the TrustAnchor's trustedCert member rather than its pubKey.
+                TrustAnchor temporary;
+                if (prevCert != null) {
+                    temporary = new TrustAnchor(prevCert, null);
+                } else {
+                    X500Principal principal = certImpl.getIssuerX500Principal();
+                    temporary = new TrustAnchor(principal, prevKey, null);
+                }
                 newTrustAnchors.add(temporary);
             }
 

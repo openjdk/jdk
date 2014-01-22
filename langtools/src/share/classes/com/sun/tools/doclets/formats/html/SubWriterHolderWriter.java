@@ -95,8 +95,8 @@ public abstract class SubWriterHolderWriter extends HtmlDocletWriter {
         Content table = HtmlTree.TABLE(HtmlStyle.memberSummary, 0, 3, 0,
                 mw.getTableSummary(), caption);
         table.addContent(getSummaryTableHeader(mw.getSummaryTableHeader(cd), "col"));
-        for (int i = 0; i < tableContents.size(); i++) {
-            table.addContent(tableContents.get(i));
+        for (Content tableContent : tableContents) {
+            table.addContent(tableContent);
         }
         return table;
     }

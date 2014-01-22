@@ -332,7 +332,7 @@ static jboolean purgeOutstandingICMP(JNIEnv *env, jobject this, jint fd)
     char buf[1];
     fd_set tbl;
     struct timeval t = { 0, 0 };
-    struct sockaddr_in rmtaddr;
+    SOCKETADDRESS rmtaddr;
     int addrlen = sizeof(rmtaddr);
 
     /*

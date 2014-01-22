@@ -107,7 +107,7 @@ public class ClientCodeWrapper {
     Map<Class<?>, Boolean> trustedClasses;
 
     protected ClientCodeWrapper(Context context) {
-        trustedClasses = new HashMap<Class<?>, Boolean>();
+        trustedClasses = new HashMap<>();
     }
 
     public JavaFileManager wrap(JavaFileManager fm) {
@@ -136,7 +136,7 @@ public class ClientCodeWrapper {
     }
 
     public Iterable<JavaFileObject> wrapJavaFileObjects(Iterable<? extends JavaFileObject> list) {
-        List<JavaFileObject> wrapped = new ArrayList<JavaFileObject>();
+        List<JavaFileObject> wrapped = new ArrayList<>();
         for (JavaFileObject fo : list)
             wrapped.add(wrap(fo));
         return Collections.unmodifiableList(wrapped);
@@ -152,7 +152,7 @@ public class ClientCodeWrapper {
     public <T /*super JavaFileOject*/> DiagnosticListener<T> wrap(DiagnosticListener<T> dl) {
         if (isTrusted(dl))
             return dl;
-        return new WrappedDiagnosticListener<T>(dl);
+        return new WrappedDiagnosticListener<>(dl);
     }
 
     TaskListener wrap(TaskListener tl) {
@@ -169,7 +169,7 @@ public class ClientCodeWrapper {
     }
 
     Collection<TaskListener> unwrap(Collection<? extends TaskListener> listeners) {
-        Collection<TaskListener> c = new ArrayList<TaskListener>(listeners.size());
+        Collection<TaskListener> c = new ArrayList<>(listeners.size());
         for (TaskListener l: listeners)
             c.add(unwrap(l));
         return c;
@@ -218,9 +218,7 @@ public class ClientCodeWrapper {
                 return clientJavaFileManager.getClassLoader(location);
             } catch (ClientCodeException e) {
                 throw e;
-            } catch (RuntimeException e) {
-                throw new ClientCodeException(e);
-            } catch (Error e) {
+            } catch (RuntimeException | Error e) {
                 throw new ClientCodeException(e);
             }
         }
@@ -231,9 +229,7 @@ public class ClientCodeWrapper {
                 return wrapJavaFileObjects(clientJavaFileManager.list(location, packageName, kinds, recurse));
             } catch (ClientCodeException e) {
                 throw e;
-            } catch (RuntimeException e) {
-                throw new ClientCodeException(e);
-            } catch (Error e) {
+            } catch (RuntimeException | Error e) {
                 throw new ClientCodeException(e);
             }
         }
@@ -244,9 +240,7 @@ public class ClientCodeWrapper {
                 return clientJavaFileManager.inferBinaryName(location, unwrap(file));
             } catch (ClientCodeException e) {
                 throw e;
-            } catch (RuntimeException e) {
-                throw new ClientCodeException(e);
-            } catch (Error e) {
+            } catch (RuntimeException | Error e) {
                 throw new ClientCodeException(e);
             }
         }
@@ -257,9 +251,7 @@ public class ClientCodeWrapper {
                 return clientJavaFileManager.isSameFile(unwrap(a), unwrap(b));
             } catch (ClientCodeException e) {
                 throw e;
-            } catch (RuntimeException e) {
-                throw new ClientCodeException(e);
-            } catch (Error e) {
+            } catch (RuntimeException | Error e) {
                 throw new ClientCodeException(e);
             }
         }
@@ -270,9 +262,7 @@ public class ClientCodeWrapper {
                 return clientJavaFileManager.handleOption(current, remaining);
             } catch (ClientCodeException e) {
                 throw e;
-            } catch (RuntimeException e) {
-                throw new ClientCodeException(e);
-            } catch (Error e) {
+            } catch (RuntimeException | Error e) {
                 throw new ClientCodeException(e);
             }
         }
@@ -283,9 +273,7 @@ public class ClientCodeWrapper {
                 return clientJavaFileManager.hasLocation(location);
             } catch (ClientCodeException e) {
                 throw e;
-            } catch (RuntimeException e) {
-                throw new ClientCodeException(e);
-            } catch (Error e) {
+            } catch (RuntimeException | Error e) {
                 throw new ClientCodeException(e);
             }
         }
@@ -296,9 +284,7 @@ public class ClientCodeWrapper {
                 return wrap(clientJavaFileManager.getJavaFileForInput(location, className, kind));
             } catch (ClientCodeException e) {
                 throw e;
-            } catch (RuntimeException e) {
-                throw new ClientCodeException(e);
-            } catch (Error e) {
+            } catch (RuntimeException | Error e) {
                 throw new ClientCodeException(e);
             }
         }
@@ -309,9 +295,7 @@ public class ClientCodeWrapper {
                 return wrap(clientJavaFileManager.getJavaFileForOutput(location, className, kind, unwrap(sibling)));
             } catch (ClientCodeException e) {
                 throw e;
-            } catch (RuntimeException e) {
-                throw new ClientCodeException(e);
-            } catch (Error e) {
+            } catch (RuntimeException | Error e) {
                 throw new ClientCodeException(e);
             }
         }
@@ -322,9 +306,7 @@ public class ClientCodeWrapper {
                 return wrap(clientJavaFileManager.getFileForInput(location, packageName, relativeName));
             } catch (ClientCodeException e) {
                 throw e;
-            } catch (RuntimeException e) {
-                throw new ClientCodeException(e);
-            } catch (Error e) {
+            } catch (RuntimeException | Error e) {
                 throw new ClientCodeException(e);
             }
         }
@@ -335,9 +317,7 @@ public class ClientCodeWrapper {
                 return wrap(clientJavaFileManager.getFileForOutput(location, packageName, relativeName, unwrap(sibling)));
             } catch (ClientCodeException e) {
                 throw e;
-            } catch (RuntimeException e) {
-                throw new ClientCodeException(e);
-            } catch (Error e) {
+            } catch (RuntimeException | Error e) {
                 throw new ClientCodeException(e);
             }
         }
@@ -348,9 +328,7 @@ public class ClientCodeWrapper {
                 clientJavaFileManager.flush();
             } catch (ClientCodeException e) {
                 throw e;
-            } catch (RuntimeException e) {
-                throw new ClientCodeException(e);
-            } catch (Error e) {
+            } catch (RuntimeException | Error e) {
                 throw new ClientCodeException(e);
             }
         }
@@ -361,9 +339,7 @@ public class ClientCodeWrapper {
                 clientJavaFileManager.close();
             } catch (ClientCodeException e) {
                 throw e;
-            } catch (RuntimeException e) {
-                throw new ClientCodeException(e);
-            } catch (Error e) {
+            } catch (RuntimeException | Error e) {
                 throw new ClientCodeException(e);
             }
         }
@@ -374,9 +350,7 @@ public class ClientCodeWrapper {
                 return clientJavaFileManager.isSupportedOption(option);
             } catch (ClientCodeException e) {
                 throw e;
-            } catch (RuntimeException e) {
-                throw new ClientCodeException(e);
-            } catch (Error e) {
+            } catch (RuntimeException | Error e) {
                 throw new ClientCodeException(e);
             }
         }
@@ -400,9 +374,7 @@ public class ClientCodeWrapper {
                 return clientFileObject.toUri();
             } catch (ClientCodeException e) {
                 throw e;
-            } catch (RuntimeException e) {
-                throw new ClientCodeException(e);
-            } catch (Error e) {
+            } catch (RuntimeException | Error e) {
                 throw new ClientCodeException(e);
             }
         }
@@ -413,9 +385,7 @@ public class ClientCodeWrapper {
                 return clientFileObject.getName();
             } catch (ClientCodeException e) {
                 throw e;
-            } catch (RuntimeException e) {
-                throw new ClientCodeException(e);
-            } catch (Error e) {
+            } catch (RuntimeException | Error e) {
                 throw new ClientCodeException(e);
             }
         }
@@ -426,9 +396,7 @@ public class ClientCodeWrapper {
                 return clientFileObject.openInputStream();
             } catch (ClientCodeException e) {
                 throw e;
-            } catch (RuntimeException e) {
-                throw new ClientCodeException(e);
-            } catch (Error e) {
+            } catch (RuntimeException | Error e) {
                 throw new ClientCodeException(e);
             }
         }
@@ -439,9 +407,7 @@ public class ClientCodeWrapper {
                 return clientFileObject.openOutputStream();
             } catch (ClientCodeException e) {
                 throw e;
-            } catch (RuntimeException e) {
-                throw new ClientCodeException(e);
-            } catch (Error e) {
+            } catch (RuntimeException | Error e) {
                 throw new ClientCodeException(e);
             }
         }
@@ -452,9 +418,7 @@ public class ClientCodeWrapper {
                 return clientFileObject.openReader(ignoreEncodingErrors);
             } catch (ClientCodeException e) {
                 throw e;
-            } catch (RuntimeException e) {
-                throw new ClientCodeException(e);
-            } catch (Error e) {
+            } catch (RuntimeException | Error e) {
                 throw new ClientCodeException(e);
             }
         }
@@ -465,9 +429,7 @@ public class ClientCodeWrapper {
                 return clientFileObject.getCharContent(ignoreEncodingErrors);
             } catch (ClientCodeException e) {
                 throw e;
-            } catch (RuntimeException e) {
-                throw new ClientCodeException(e);
-            } catch (Error e) {
+            } catch (RuntimeException | Error e) {
                 throw new ClientCodeException(e);
             }
         }
@@ -478,9 +440,7 @@ public class ClientCodeWrapper {
                 return clientFileObject.openWriter();
             } catch (ClientCodeException e) {
                 throw e;
-            } catch (RuntimeException e) {
-                throw new ClientCodeException(e);
-            } catch (Error e) {
+            } catch (RuntimeException | Error e) {
                 throw new ClientCodeException(e);
             }
         }
@@ -491,9 +451,7 @@ public class ClientCodeWrapper {
                 return clientFileObject.getLastModified();
             } catch (ClientCodeException e) {
                 throw e;
-            } catch (RuntimeException e) {
-                throw new ClientCodeException(e);
-            } catch (Error e) {
+            } catch (RuntimeException | Error e) {
                 throw new ClientCodeException(e);
             }
         }
@@ -504,9 +462,7 @@ public class ClientCodeWrapper {
                 return clientFileObject.delete();
             } catch (ClientCodeException e) {
                 throw e;
-            } catch (RuntimeException e) {
-                throw new ClientCodeException(e);
-            } catch (Error e) {
+            } catch (RuntimeException | Error e) {
                 throw new ClientCodeException(e);
             }
         }
@@ -528,9 +484,7 @@ public class ClientCodeWrapper {
                 return ((JavaFileObject)clientFileObject).getKind();
             } catch (ClientCodeException e) {
                 throw e;
-            } catch (RuntimeException e) {
-                throw new ClientCodeException(e);
-            } catch (Error e) {
+            } catch (RuntimeException | Error e) {
                 throw new ClientCodeException(e);
             }
         }
@@ -541,9 +495,7 @@ public class ClientCodeWrapper {
                 return ((JavaFileObject)clientFileObject).isNameCompatible(simpleName, kind);
             } catch (ClientCodeException e) {
                 throw e;
-            } catch (RuntimeException e) {
-                throw new ClientCodeException(e);
-            } catch (Error e) {
+            } catch (RuntimeException | Error e) {
                 throw new ClientCodeException(e);
             }
         }
@@ -554,9 +506,7 @@ public class ClientCodeWrapper {
                 return ((JavaFileObject)clientFileObject).getNestingKind();
             } catch (ClientCodeException e) {
                 throw e;
-            } catch (RuntimeException e) {
-                throw new ClientCodeException(e);
-            } catch (Error e) {
+            } catch (RuntimeException | Error e) {
                 throw new ClientCodeException(e);
             }
         }
@@ -567,9 +517,7 @@ public class ClientCodeWrapper {
                 return ((JavaFileObject)clientFileObject).getAccessLevel();
             } catch (ClientCodeException e) {
                 throw e;
-            } catch (RuntimeException e) {
-                throw new ClientCodeException(e);
-            } catch (Error e) {
+            } catch (RuntimeException | Error e) {
                 throw new ClientCodeException(e);
             }
         }
@@ -593,9 +541,7 @@ public class ClientCodeWrapper {
                 clientDiagnosticListener.report(unwrap(diagnostic));
             } catch (ClientCodeException e) {
                 throw e;
-            } catch (RuntimeException e) {
-                throw new ClientCodeException(e);
-            } catch (Error e) {
+            } catch (RuntimeException | Error e) {
                 throw new ClientCodeException(e);
             }
         }
@@ -668,9 +614,7 @@ public class ClientCodeWrapper {
                 clientTaskListener.started(ev);
             } catch (ClientCodeException e) {
                 throw e;
-            } catch (RuntimeException e) {
-                throw new ClientCodeException(e);
-            } catch (Error e) {
+            } catch (RuntimeException | Error e) {
                 throw new ClientCodeException(e);
             }
         }
@@ -681,9 +625,7 @@ public class ClientCodeWrapper {
                 clientTaskListener.finished(ev);
             } catch (ClientCodeException e) {
                 throw e;
-            } catch (RuntimeException e) {
-                throw new ClientCodeException(e);
-            } catch (Error e) {
+            } catch (RuntimeException | Error e) {
                 throw new ClientCodeException(e);
             }
         }

@@ -82,8 +82,7 @@ import com.sun.tools.javac.util.Options;
  * and determine the TypeAnnotationPositions for all type annotations.
  */
 public class TypeAnnotations {
-    protected static final Context.Key<TypeAnnotations> typeAnnosKey =
-        new Context.Key<TypeAnnotations>();
+    protected static final Context.Key<TypeAnnotations> typeAnnosKey = new Context.Key<>();
 
     public static TypeAnnotations instance(Context context) {
         TypeAnnotations instance = context.get(typeAnnosKey);
@@ -155,7 +154,7 @@ public class TypeAnnotations {
         new TypeAnnotationPositions(false).scan(tree);
     }
 
-    public enum AnnotationType { DECLARATION, TYPE, BOTH };
+    public enum AnnotationType { DECLARATION, TYPE, BOTH }
 
     /**
      * Determine whether an annotation is a declaration annotation,
@@ -286,9 +285,9 @@ public class TypeAnnotations {
         private void separateAnnotationsKinds(JCTree typetree, Type type, Symbol sym,
                 TypeAnnotationPosition pos) {
             List<Attribute.Compound> annotations = sym.getRawAttributes();
-            ListBuffer<Attribute.Compound> declAnnos = new ListBuffer<Attribute.Compound>();
-            ListBuffer<Attribute.TypeCompound> typeAnnos = new ListBuffer<Attribute.TypeCompound>();
-            ListBuffer<Attribute.TypeCompound> onlyTypeAnnos = new ListBuffer<Attribute.TypeCompound>();
+            ListBuffer<Attribute.Compound> declAnnos = new ListBuffer<>();
+            ListBuffer<Attribute.TypeCompound> typeAnnos = new ListBuffer<>();
+            ListBuffer<Attribute.TypeCompound> onlyTypeAnnos = new ListBuffer<>();
 
             for (Attribute.Compound a : annotations) {
                 switch (annotationType(a, sym)) {
@@ -351,7 +350,7 @@ public class TypeAnnotations {
                     MethodType methType = sym.owner.type.asMethodType();
                     List<VarSymbol> params = ((MethodSymbol)sym.owner).params;
                     List<Type> oldArgs = methType.argtypes;
-                    ListBuffer<Type> newArgs = new ListBuffer<Type>();
+                    ListBuffer<Type> newArgs = new ListBuffer<>();
                     while (params.nonEmpty()) {
                         if (params.head == sym) {
                             newArgs.add(type);
@@ -1224,8 +1223,7 @@ public class TypeAnnotations {
         private void copyNewClassAnnotationsToOwner(JCNewClass tree) {
             Symbol sym = tree.def.sym;
             TypeAnnotationPosition pos = new TypeAnnotationPosition();
-            ListBuffer<Attribute.TypeCompound> newattrs =
-                new ListBuffer<Attribute.TypeCompound>();
+            ListBuffer<Attribute.TypeCompound> newattrs = new ListBuffer<>();
 
             for (Attribute.TypeCompound old : sym.getRawTypeAttributes()) {
                 newattrs.append(new Attribute.TypeCompound(old.type, old.values,

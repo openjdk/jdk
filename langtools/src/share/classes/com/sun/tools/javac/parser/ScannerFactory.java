@@ -43,8 +43,7 @@ import com.sun.tools.javac.util.Names;
  */
 public class ScannerFactory {
     /** The context key for the scanner factory. */
-    public static final Context.Key<ScannerFactory> scannerFactoryKey =
-        new Context.Key<ScannerFactory>();
+    public static final Context.Key<ScannerFactory> scannerFactoryKey = new Context.Key<>();
 
     /** Get the Factory instance for this context. */
     public static ScannerFactory instance(Context context) {

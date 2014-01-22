@@ -468,5 +468,5 @@ public enum Opcode {
         /** Standard opcodes. */
         STANDARD,
         /** Legacy support for PicoJava opcodes. */
-        PICOJAVA  };
+        PICOJAVA  }
 }

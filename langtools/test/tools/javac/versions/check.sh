@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2004, 2012, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2004, 2013, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,7 @@
 #
 
 # @test
-# @bug 4981566 5028634 5094412 6304984 7025786 7025789 8001112
+# @bug 4981566 5028634 5094412 6304984 7025786 7025789 8001112 8028545 8000961
 # @summary Check interpretation of -target and -source options
 # @build CheckClassFileVersion
 # @run shell check.sh 
@@ -44,7 +44,7 @@ echo 'public enum Y { }' > $TC/Y.java
 check() {
   V=$1; shift
   echo "+ javac $* [$V]"
-  "$JC" ${TESTTOOLVMOPTS} -d $TC $* $TC/X.java && "$J" $CFV $TC/X.class $V || exit 2
+  "$JC" ${TESTTOOLVMOPTS} -Xlint:-options -d $TC $* $TC/X.java && "$J" $CFV $TC/X.class $V || exit 2
 }
 
 # check for all combinations of target values
@@ -78,6 +78,10 @@ check_source_target 52.0 6   8
 check_source_target 52.0 7   8
 check_source_target 52.0 8   8
 
+check_target        52.0 1.5 9
+check_source_target 52.0 8   9
+check_source_target 52.0 9   9
+
 # and finally the default with no options
 check 52.0
 
@@ -85,7 +89,7 @@ check 52.0
 
 fail() {
   echo "+ javac $*"
-  if "$JC" ${TESTTOOLVMOPTS} -d $TC $*; then
+  if "$JC" ${TESTTOOLVMOPTS} -Xlint:-options -d $TC $*; then
     echo "-- did not fail as expected"
     exit 3
   else
@@ -95,7 +99,7 @@ fail() {
 
 pass() {
   echo "+ javac $*"
-  if "$JC" ${TESTTOOLVMOPTS} -d $TC $*; then
+  if "$JC" ${TESTTOOLVMOPTS} -Xlint:options -d $TC $*; then
     echo "-- passed"
   else
     echo "-- failed"
@@ -109,6 +113,7 @@ checksrc15() { pass $* $TC/X.java; pass $* $TC/Y.java; }
 checksrc16() { checksrc15 $* ; }
 checksrc17() { checksrc15 $* ; }
 checksrc18() { checksrc15 $* ; }
+checksrc19() { checksrc15 $* ; }
 
 checksrc14 -source 1.4
 checksrc14 -source 1.4 -target 1.5
@@ -126,13 +131,18 @@ checksrc17 -source 7
 checksrc17 -source 1.7 -target 1.7
 checksrc17 -source 7 -target 7
 
-checksrc18
-checksrc18 -target 1.8
-checksrc18 -target 8
 checksrc18 -source 1.8
 checksrc18 -source 8
 checksrc18 -source 1.8 -target 1.8
 checksrc18 -source 8 -target 8
+
+checksrc19
+checksrc19 -source 1.9
+checksrc19 -source 9
+checksrc19 -source 1.9 -target 1.9
+checksrc19 -source 9 -target 9
+checksrc19 -target 1.9
+checksrc19 -target 9
 
 fail -source 1.5 -target 1.4 $TC/X.java
 fail -source 1.6 -target 1.4 $TC/X.java
@@ -142,3 +152,5 @@ fail -source 6   -target 1.5 $TC/X.java
 fail -source 7   -target 1.6 $TC/X.java
 fail -source 8   -target 1.6 $TC/X.java
 fail -source 8   -target 1.7 $TC/X.java
+fail -source 9   -target 1.7 $TC/X.java
+fail -source 9   -target 1.8 $TC/X.java

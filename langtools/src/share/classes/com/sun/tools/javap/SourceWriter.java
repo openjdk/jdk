@@ -106,9 +106,8 @@ public class SourceWriter extends InstructionDetailWriter {
     }
 
     private void setLineMap(Code_attribute attr) {
-        SortedMap<Integer, SortedSet<Integer>> map =
-                new TreeMap<Integer, SortedSet<Integer>>();
-        SortedSet<Integer> allLines = new TreeSet<Integer>();
+        SortedMap<Integer, SortedSet<Integer>> map = new TreeMap<>();
+        SortedSet<Integer> allLines = new TreeSet<>();
         for (Attribute a: attr.attributes) {
             if (a instanceof LineNumberTable_attribute) {
                 LineNumberTable_attribute t = (LineNumberTable_attribute) a;
@@ -117,7 +116,7 @@ public class SourceWriter extends InstructionDetailWriter {
                     int line = e.line_number;
                     SortedSet<Integer> pcLines = map.get(start_pc);
                     if (pcLines == null) {
-                        pcLines = new TreeSet<Integer>();
+                        pcLines = new TreeSet<>();
                         map.put(start_pc, pcLines);
                     }
                     pcLines.add(line);
@@ -126,7 +125,7 @@ public class SourceWriter extends InstructionDetailWriter {
             }
         }
         lineMap = map;
-        lineList = new ArrayList<Integer>(allLines);
+        lineList = new ArrayList<>(allLines);
     }
 
     private void setSource(ClassFile cf) {
@@ -186,7 +185,7 @@ public class SourceWriter extends InstructionDetailWriter {
         if (text == null)
             return new String[0];
 
-        List<String> lines = new ArrayList<String>();
+        List<String> lines = new ArrayList<>();
         lines.add(""); // dummy line 0
         try {
             BufferedReader r = new BufferedReader(new StringReader(text));
