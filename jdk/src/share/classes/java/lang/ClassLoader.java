@@ -851,9 +851,6 @@ public abstract class ClassLoader {
         return c;
     }
 
-    private native Class<?> defineClass0(String name, byte[] b, int off, int len,
-                                         ProtectionDomain pd);
-
     private native Class<?> defineClass1(String name, byte[] b, int off, int len,
                                          ProtectionDomain pd, String source);
 
