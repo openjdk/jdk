@@ -306,6 +306,7 @@ void Type::Initialize_shared(Compile* current) {
   TypeInt::POS1    = TypeInt::make(1,max_jint,   WidenMin); // Positive values
   TypeInt::INT     = TypeInt::make(min_jint,max_jint, WidenMax); // 32-bit integers
   TypeInt::SYMINT  = TypeInt::make(-max_jint,max_jint,WidenMin); // symmetric range
+  TypeInt::TYPE_DOMAIN  = TypeInt::INT;
   // CmpL is overloaded both as the bytecode computation returning
   // a trinary (-1,0,+1) integer result AND as an efficient long
   // compare returning optimizer ideal-type flags.
@@ -322,6 +323,7 @@ void Type::Initialize_shared(Compile* current) {
   TypeLong::LONG    = TypeLong::make(min_jlong,max_jlong,WidenMax); // 64-bit integers
   TypeLong::INT     = TypeLong::make((jlong)min_jint,(jlong)max_jint,WidenMin);
   TypeLong::UINT    = TypeLong::make(0,(jlong)max_juint,WidenMin);
+  TypeLong::TYPE_DOMAIN  = TypeLong::LONG;
 
   const Type **fboth =(const Type**)shared_type_arena->Amalloc_4(2*sizeof(Type*));
   fboth[0] = Type::CONTROL;
@@ -1161,6 +1163,7 @@ const TypeInt *TypeInt::POS;    // Positive 32-bit integers or zero
 const TypeInt *TypeInt::POS1;   // Positive 32-bit integers
 const TypeInt *TypeInt::INT;    // 32-bit integers
 const TypeInt *TypeInt::SYMINT; // symmetric range [-max_jint..max_jint]
+const TypeInt *TypeInt::TYPE_DOMAIN; // alias for TypeInt::INT
 
 //------------------------------TypeInt----------------------------------------
 TypeInt::TypeInt( jint lo, jint hi, int w ) : Type(Int), _lo(lo), _hi(hi), _widen(w) {
@@ -1418,6 +1421,7 @@ const TypeLong *TypeLong::POS;  // >=0
 const TypeLong *TypeLong::LONG; // 64-bit integers
 const TypeLong *TypeLong::INT;  // 32-bit subrange
 const TypeLong *TypeLong::UINT; // 32-bit unsigned subrange
+const TypeLong *TypeLong::TYPE_DOMAIN; // alias for TypeLong::LONG
 
 //------------------------------TypeLong---------------------------------------
 TypeLong::TypeLong( jlong lo, jlong hi, int w ) : Type(Long), _lo(lo), _hi(hi), _widen(w) {

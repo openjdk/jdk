@@ -54,11 +54,6 @@ ProjNode* MultiNode::proj_out(uint which_proj) const {
         assert(Opcode() != Op_If || proj->Opcode() == (which_proj?Op_IfTrue:Op_IfFalse), "bad if #2");
         return proj;
       }
-    } else if (p->is_FlagsProj()) {
-      FlagsProjNode *proj = p->as_FlagsProj();
-      if (proj->_con == which_proj) {
-        return proj;
-      }
     } else {
       assert(p == this && this->is_Start(), "else must be proj");
       continue;

@@ -644,7 +644,7 @@
   diagnostic(bool, OptimizeExpensiveOps, true,                              \
           "Find best control for expensive operations")                     \
                                                                             \
-  experimental(bool, UseMathExactIntrinsics, false,                         \
+  product(bool, UseMathExactIntrinsics, true,                               \
           "Enables intrinsification of various java.lang.Math functions")   \
                                                                             \
   experimental(bool, ReplaceInParentMaps, false,                            \

@@ -1126,10 +1126,14 @@ Node *BoolNode::Ideal(PhaseGVN *phase, bool can_reshape) {
   Node *cmp = in(1);
   if( !cmp->is_Sub() ) return NULL;
   int cop = cmp->Opcode();
-  if( cop == Op_FastLock || cop == Op_FastUnlock || cop == Op_FlagsProj) return NULL;
+  if( cop == Op_FastLock || cop == Op_FastUnlock) return NULL;
   Node *cmp1 = cmp->in(1);
   Node *cmp2 = cmp->in(2);
   if( !cmp1 ) return NULL;
+
+  if (_test._test == BoolTest::overflow || _test._test == BoolTest::no_overflow) {
+    return NULL;
+  }
 
   // Constant on left?
   Node *con = cmp1;

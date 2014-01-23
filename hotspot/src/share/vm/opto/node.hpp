@@ -69,7 +69,6 @@ class EncodePNode;
 class EncodePKlassNode;
 class FastLockNode;
 class FastUnlockNode;
-class FlagsProjNode;
 class IfNode;
 class IfFalseNode;
 class IfTrueNode;
@@ -100,7 +99,6 @@ class MachSafePointNode;
 class MachSpillCopyNode;
 class MachTempNode;
 class Matcher;
-class MathExactNode;
 class MemBarNode;
 class MemBarStoreStoreNode;
 class MemNode;
@@ -575,7 +573,6 @@ public:
       DEFINE_CLASS_ID(MemBar,      Multi, 3)
         DEFINE_CLASS_ID(Initialize,       MemBar, 0)
         DEFINE_CLASS_ID(MemBarStoreStore, MemBar, 1)
-      DEFINE_CLASS_ID(MathExact,   Multi, 4)
 
     DEFINE_CLASS_ID(Mach,  Node, 1)
       DEFINE_CLASS_ID(MachReturn, Mach, 0)
@@ -632,7 +629,6 @@ public:
       DEFINE_CLASS_ID(Cmp,   Sub, 0)
         DEFINE_CLASS_ID(FastLock,   Cmp, 0)
         DEFINE_CLASS_ID(FastUnlock, Cmp, 1)
-        DEFINE_CLASS_ID(FlagsProj, Cmp, 2)
 
     DEFINE_CLASS_ID(MergeMem, Node, 7)
     DEFINE_CLASS_ID(Bool,     Node, 8)
@@ -736,7 +732,6 @@ public:
   DEFINE_CLASS_QUERY(EncodePKlass)
   DEFINE_CLASS_QUERY(FastLock)
   DEFINE_CLASS_QUERY(FastUnlock)
-  DEFINE_CLASS_QUERY(FlagsProj)
   DEFINE_CLASS_QUERY(If)
   DEFINE_CLASS_QUERY(IfFalse)
   DEFINE_CLASS_QUERY(IfTrue)
@@ -765,7 +760,6 @@ public:
   DEFINE_CLASS_QUERY(MachSafePoint)
   DEFINE_CLASS_QUERY(MachSpillCopy)
   DEFINE_CLASS_QUERY(MachTemp)
-  DEFINE_CLASS_QUERY(MathExact)
   DEFINE_CLASS_QUERY(Mem)
   DEFINE_CLASS_QUERY(MemBar)
   DEFINE_CLASS_QUERY(MemBarStoreStore)

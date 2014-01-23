@@ -27,128 +27,111 @@
 
 #include "opto/multnode.hpp"
 #include "opto/node.hpp"
+#include "opto/addnode.hpp"
 #include "opto/subnode.hpp"
 #include "opto/type.hpp"
-
-class BoolNode;
-class IfNode;
-class Node;
 
 class PhaseGVN;
 class PhaseTransform;
 
-class MathExactNode : public MultiNode {
+class OverflowNode : public CmpNode {
 public:
-  MathExactNode(Node* ctrl, Node* in1);
-  MathExactNode(Node* ctrl, Node* in1, Node* in2);
-  enum {
-    result_proj_node = 0,
-    flags_proj_node = 1
-  };
-  virtual int Opcode() const;
-  virtual Node* Identity(PhaseTransform* phase) { return this; }
-  virtual Node* Ideal(PhaseGVN* phase, bool can_reshape) { return NULL; }
-  virtual const Type* Value(PhaseTransform* phase) const { return bottom_type(); }
-  virtual uint hash() const { return NO_HASH; }
-  virtual bool is_CFG() const { return false; }
-  virtual uint ideal_reg() const { return NotAMachineReg; }
+  OverflowNode(Node* in1, Node* in2) : CmpNode(in1, in2) {}
 
-  ProjNode* result_node() const { return proj_out(result_proj_node); }
-  ProjNode* flags_node() const { return proj_out(flags_proj_node); }
-  Node* control_node() const;
-  Node* non_throwing_branch() const;
-protected:
-  IfNode* if_node() const;
-  BoolNode* bool_node() const;
-  Node* no_overflow(PhaseGVN *phase, Node* new_result);
-};
-
-class MathExactINode : public MathExactNode {
- public:
-  MathExactINode(Node* ctrl, Node* in1) : MathExactNode(ctrl, in1) {}
-  MathExactINode(Node* ctrl, Node* in1, Node* in2) : MathExactNode(ctrl, in1, in2) {}
-  virtual int Opcode() const;
-  virtual Node* match(const ProjNode* proj, const Matcher* m);
-  virtual const Type* bottom_type() const { return TypeTuple::INT_CC_PAIR; }
-};
-
-class MathExactLNode : public MathExactNode {
-public:
-  MathExactLNode(Node* ctrl, Node* in1) : MathExactNode(ctrl, in1) {}
-  MathExactLNode(Node* ctrl, Node* in1, Node* in2) : MathExactNode(ctrl, in1, in2) {}
-  virtual int Opcode() const;
-  virtual Node* match(const ProjNode* proj, const Matcher* m);
-  virtual const Type* bottom_type() const { return TypeTuple::LONG_CC_PAIR; }
-};
-
-class AddExactINode : public MathExactINode {
-public:
-  AddExactINode(Node* ctrl, Node* in1, Node* in2) : MathExactINode(ctrl, in1, in2) {}
-  virtual int Opcode() const;
-  virtual Node *Ideal(PhaseGVN *phase, bool can_reshape);
-};
-
-class AddExactLNode : public MathExactLNode {
-public:
-  AddExactLNode(Node* ctrl, Node* in1, Node* in2) : MathExactLNode(ctrl, in1, in2) {}
-  virtual int Opcode() const;
-  virtual Node* Ideal(PhaseGVN* phase, bool can_reshape);
-};
-
-class SubExactINode : public MathExactINode {
-public:
-  SubExactINode(Node* ctrl, Node* in1, Node* in2) : MathExactINode(ctrl, in1, in2) {}
-  virtual int Opcode() const;
-  virtual Node* Ideal(PhaseGVN* phase, bool can_reshape);
-};
-
-class SubExactLNode : public MathExactLNode {
-public:
-  SubExactLNode(Node* ctrl, Node* in1, Node* in2) : MathExactLNode(ctrl, in1, in2) {}
-  virtual int Opcode() const;
-  virtual Node* Ideal(PhaseGVN* phase, bool can_reshape);
-};
-
-class NegExactINode : public MathExactINode {
-public:
-  NegExactINode(Node* ctrl, Node* in1) : MathExactINode(ctrl, in1) {}
-  virtual int Opcode() const;
-  virtual Node* Ideal(PhaseGVN* phase, bool can_reshape);
-};
-
-class NegExactLNode : public MathExactLNode {
-public:
-  NegExactLNode(Node* ctrl, Node* in1) : MathExactLNode(ctrl, in1) {}
-  virtual int Opcode() const;
-  virtual Node* Ideal(PhaseGVN* phase, bool can_reshape);
-};
-
-class MulExactINode : public MathExactINode {
-public:
-  MulExactINode(Node* ctrl, Node* in1, Node* in2) : MathExactINode(ctrl, in1, in2) {}
-  virtual int Opcode() const;
-  virtual Node* Ideal(PhaseGVN* phase, bool can_reshape);
-};
-
-class MulExactLNode : public MathExactLNode {
-public:
-  MulExactLNode(Node* ctrl, Node* in1, Node* in2) : MathExactLNode(ctrl, in1, in2) {}
-  virtual int Opcode() const;
-  virtual Node* Ideal(PhaseGVN* phase, bool can_reshape);
-};
-
-class FlagsProjNode : public ProjNode {
-public:
-  FlagsProjNode(Node* src, uint con) : ProjNode(src, con) {
-    init_class_id(Class_FlagsProj);
-  }
-
-  virtual int Opcode() const;
-  virtual bool is_CFG() const { return false; }
-  virtual const Type* bottom_type() const { return TypeInt::CC; }
   virtual uint ideal_reg() const { return Op_RegFlags; }
+  virtual const Type* sub(const Type* t1, const Type* t2) const;
 };
 
+class OverflowINode : public OverflowNode {
+public:
+  typedef TypeInt TypeClass;
+
+  OverflowINode(Node* in1, Node* in2) : OverflowNode(in1, in2) {}
+  virtual Node* Ideal(PhaseGVN* phase, bool can_reshape);
+  virtual const Type* Value(PhaseTransform* phase) const;
+
+  virtual bool will_overflow(jint v1, jint v2) const = 0;
+  virtual bool can_overflow(const Type* t1, const Type* t2) const = 0;
+};
+
+
+class OverflowLNode : public OverflowNode {
+public:
+  typedef TypeLong TypeClass;
+
+  OverflowLNode(Node* in1, Node* in2) : OverflowNode(in1, in2) {}
+  virtual Node* Ideal(PhaseGVN* phase, bool can_reshape);
+  virtual const Type* Value(PhaseTransform* phase) const;
+
+  virtual bool will_overflow(jlong v1, jlong v2) const = 0;
+  virtual bool can_overflow(const Type* t1, const Type* t2) const = 0;
+};
+
+class OverflowAddINode : public OverflowINode {
+public:
+  typedef AddINode MathOp;
+
+  OverflowAddINode(Node* in1, Node* in2) : OverflowINode(in1, in2) {}
+  virtual int Opcode() const;
+
+  virtual bool will_overflow(jint v1, jint v2) const;
+  virtual bool can_overflow(const Type* t1, const Type* t2) const;
+};
+
+class OverflowSubINode : public OverflowINode {
+public:
+  typedef SubINode MathOp;
+
+  OverflowSubINode(Node* in1, Node* in2) : OverflowINode(in1, in2) {}
+  virtual int Opcode() const;
+
+  virtual bool will_overflow(jint v1, jint v2) const;
+  virtual bool can_overflow(const Type* t1, const Type* t2) const;
+};
+
+class OverflowMulINode : public OverflowINode {
+public:
+  typedef MulINode MathOp;
+
+  OverflowMulINode(Node* in1, Node* in2) : OverflowINode(in1, in2) {}
+  virtual int Opcode() const;
+
+  virtual bool will_overflow(jint v1, jint v2) const;
+  virtual bool can_overflow(const Type* t1, const Type* t2) const;
+};
+
+class OverflowAddLNode : public OverflowLNode {
+public:
+  typedef AddLNode MathOp;
+
+  OverflowAddLNode(Node* in1, Node* in2) : OverflowLNode(in1, in2) {}
+  virtual int Opcode() const;
+
+  virtual bool will_overflow(jlong v1, jlong v2) const;
+  virtual bool can_overflow(const Type* t1, const Type* t2) const;
+};
+
+class OverflowSubLNode : public OverflowLNode {
+public:
+  typedef SubLNode MathOp;
+
+  OverflowSubLNode(Node* in1, Node* in2) : OverflowLNode(in1, in2) {}
+  virtual int Opcode() const;
+
+  virtual bool will_overflow(jlong v1, jlong v2) const;
+  virtual bool can_overflow(const Type* t1, const Type* t2) const;
+};
+
+class OverflowMulLNode : public OverflowLNode {
+public:
+  typedef MulLNode MathOp;
+
+  OverflowMulLNode(Node* in1, Node* in2) : OverflowLNode(in1, in2) {}
+  virtual int Opcode() const;
+
+  virtual bool will_overflow(jlong v1, jlong v2) const;
+  virtual bool can_overflow(const Type* t1, const Type* t2) const;
+};
 
 #endif
 
