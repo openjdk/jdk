@@ -568,8 +568,7 @@ const TypeFunc *OptoRuntime::g1_wb_post_Type() {
 const TypeFunc *OptoRuntime::uncommon_trap_Type() {
   // create input type (domain)
   const Type **fields = TypeTuple::fields(1);
-  // Symbol* name of class to be loaded
-  fields[TypeFunc::Parms+0] = TypeInt::INT;
+  fields[TypeFunc::Parms+0] = TypeInt::INT; // trap_reason (deopt reason and action)
   const TypeTuple *domain = TypeTuple::make(TypeFunc::Parms+1, fields);
 
   // create result type (range)

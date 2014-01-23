@@ -37,7 +37,7 @@
 //
 // It also computes an optimal tenuring threshold between the young
 // and old generations, so as to equalize the cost of collections
-// of those generations, as well as optimial survivor space sizes
+// of those generations, as well as optimal survivor space sizes
 // for the young generation.
 //
 // While this class is specifically intended for a generational system
@@ -113,7 +113,7 @@ class PSAdaptiveSizePolicy : public AdaptiveSizePolicy {
   // Changing the generation sizing depends on the data that is
   // gathered about the effects of changes on the pause times and
   // throughput.  These variable count the number of data points
-  // gathered.  The policy may use these counters as a threshhold
+  // gathered.  The policy may use these counters as a threshold
   // for reliable data.
   julong _young_gen_change_for_major_pause_count;
 

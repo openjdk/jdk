@@ -27,7 +27,7 @@
 
 #include "oops/oop.hpp"
 
-// A GenRemSet provides ways of iterating over pointers accross generations.
+// A GenRemSet provides ways of iterating over pointers across generations.
 // (This is especially useful for older-to-younger.)
 
 class Generation;
@@ -58,7 +58,7 @@ public:
 
   // These are for dynamic downcasts.  Unfortunately that it names the
   // possible subtypes (but not that they are subtypes!)  Return NULL if
-  // the cast is invalide.
+  // the cast is invalid.
   virtual CardTableRS* as_CardTableRS() { return NULL; }
 
   // Return the barrier set associated with "this."

@@ -176,7 +176,7 @@ void G1MarkSweep::mark_sweep_phase1(bool& marked_for_unloading,
     // any hash values from the mark word. These hash values are
     // used when verifying the dictionaries and so removing them
     // from the mark word can make verification of the dictionaries
-    // fail. At the end of the GC, the orginal mark word values
+    // fail. At the end of the GC, the original mark word values
     // (including hash values) are restored to the appropriate
     // objects.
     if (!VerifySilently) {

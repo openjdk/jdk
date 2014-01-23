@@ -126,7 +126,7 @@ jint GenCollectedHeap::initialize() {
                         (HeapWord*)(heap_rs.base() + heap_rs.size()));
 
   // It is important to do this in a way such that concurrent readers can't
-  // temporarily think somethings in the heap.  (Seen this happen in asserts.)
+  // temporarily think something is in the heap.  (Seen this happen in asserts.)
   _reserved.set_word_size(0);
   _reserved.set_start((HeapWord*)heap_rs.base());
   size_t actual_heap_size = heap_rs.size();
@@ -1262,7 +1262,7 @@ class GenTimeOfLastGCClosure: public GenCollectedHeap::GenClosure {
 };
 
 jlong GenCollectedHeap::millis_since_last_gc() {
-  // We need a monotonically non-deccreasing time in ms but
+  // We need a monotonically non-decreasing time in ms but
   // os::javaTimeMillis() does not guarantee monotonicity.
   jlong now = os::javaTimeNanos() / NANOSECS_PER_MILLISEC;
   GenTimeOfLastGCClosure tolgc_cl(now);

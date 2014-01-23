@@ -395,7 +395,7 @@ class os: AllStatic {
     // was equal.  However, some platforms mask off faulting addresses
     // to the page size, so now we just check that the address is
     // within the page.  This makes the thread argument unnecessary,
-    // but we retain the NULL check to preserve existing behaviour.
+    // but we retain the NULL check to preserve existing behavior.
     if (thread == NULL) return false;
     address page = (address) _mem_serialize_page;
     return addr >= page && addr < (page + os::vm_page_size());
@@ -540,7 +540,7 @@ class os: AllStatic {
 
   // Loads .dll/.so and
   // in case of error it checks if .dll/.so was built for the
-  // same architecture as Hotspot is running on
+  // same architecture as HotSpot is running on
   static void* dll_load(const char *name, char *ebuf, int ebuflen);
 
   // lookup symbol in a shared library

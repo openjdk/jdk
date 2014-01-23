@@ -1070,7 +1070,7 @@ void ParNewGeneration::collect(bool   full,
     size_policy->avg_survived()->sample(from()->used());
   }
 
-  // We need to use a monotonically non-deccreasing time in ms
+  // We need to use a monotonically non-decreasing time in ms
   // or we will see time-warp warnings and os::javaTimeMillis()
   // does not guarantee monotonicity.
   jlong now = os::javaTimeNanos() / NANOSECS_PER_MILLISEC;
@@ -1402,7 +1402,7 @@ oop ParNewGeneration::copy_to_survivor_space_with_undo(
 #ifndef PRODUCT
 // It's OK to call this multi-threaded;  the worst thing
 // that can happen is that we'll get a bunch of closely
-// spaced simulated oveflows, but that's OK, in fact
+// spaced simulated overflows, but that's OK, in fact
 // probably good as it would exercise the overflow code
 // under contention.
 bool ParNewGeneration::should_simulate_overflow() {

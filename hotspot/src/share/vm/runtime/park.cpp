@@ -152,7 +152,7 @@ void ParkEvent::operator delete (void * a) {
 
 // 6399321 As a temporary measure we copied & modified the ParkEvent::
 // allocate() and release() code for use by Parkers.  The Parker:: forms
-// will eventually be removed as we consolide and shift over to ParkEvents
+// will eventually be removed as we consolidate and shift over to ParkEvents
 // for both builtin synchronization and JSR166 operations.
 
 volatile int Parker::ListLock = 0 ;

@@ -135,7 +135,7 @@ bool TenuredGeneration::should_collect(bool  full,
                     free());
     }
   }
-  // If we had to expand to accomodate promotions from younger generations
+  // If we had to expand to accommodate promotions from younger generations
   if (!result && _capacity_at_prologue < capacity()) {
     result = true;
     if (PrintGC && Verbose) {

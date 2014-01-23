@@ -45,7 +45,7 @@ void referenceProcessor_init() {
 }
 
 void ReferenceProcessor::init_statics() {
-  // We need a monotonically non-deccreasing time in ms but
+  // We need a monotonically non-decreasing time in ms but
   // os::javaTimeMillis() does not guarantee monotonicity.
   jlong now = os::javaTimeNanos() / NANOSECS_PER_MILLISEC;
 
@@ -152,7 +152,7 @@ void ReferenceProcessor::update_soft_ref_master_clock() {
   // Update (advance) the soft ref master clock field. This must be done
   // after processing the soft ref list.
 
-  // We need a monotonically non-deccreasing time in ms but
+  // We need a monotonically non-decreasing time in ms but
   // os::javaTimeMillis() does not guarantee monotonicity.
   jlong now = os::javaTimeNanos() / NANOSECS_PER_MILLISEC;
   jlong soft_ref_clock = java_lang_ref_SoftReference::clock();
@@ -168,7 +168,7 @@ void ReferenceProcessor::update_soft_ref_master_clock() {
   // javaTimeNanos(), which is guaranteed to be monotonically
   // non-decreasing provided the underlying platform provides such
   // a time source (and it is bug free).
-  // In product mode, however, protect ourselves from non-monotonicty.
+  // In product mode, however, protect ourselves from non-monotonicity.
   if (now > _soft_ref_timestamp_clock) {
     _soft_ref_timestamp_clock = now;
     java_lang_ref_SoftReference::set_clock(now);
@@ -349,7 +349,7 @@ void ReferenceProcessor::enqueue_discovered_reflist(DiscoveredList& refs_list,
 
   oop obj = NULL;
   oop next_d = refs_list.head();
-  if (pending_list_uses_discovered_field()) { // New behaviour
+  if (pending_list_uses_discovered_field()) { // New behavior
     // Walk down the list, self-looping the next field
     // so that the References are not considered active.
     while (obj != next_d) {
@@ -366,7 +366,7 @@ void ReferenceProcessor::enqueue_discovered_reflist(DiscoveredList& refs_list,
       // Post-barrier not needed when looping to self.
       java_lang_ref_Reference::set_next_raw(obj, obj);
       if (next_d == obj) {  // obj is last
-        // Swap refs_list into pendling_list_addr and
+        // Swap refs_list into pending_list_addr and
         // set obj's discovered to what we read from pending_list_addr.
         oop old = oopDesc::atomic_exchange_oop(refs_list.head(), pending_list_addr);
         // Need post-barrier on pending_list_addr above;
@@ -376,7 +376,7 @@ void ReferenceProcessor::enqueue_discovered_reflist(DiscoveredList& refs_list,
         oopDesc::bs()->write_ref_field(java_lang_ref_Reference::discovered_addr(obj), old);
       }
     }
-  } else { // Old behaviour
+  } else { // Old behavior
     // Walk down the list, copying the discovered field into
     // the next field and clearing the discovered field.
     while (obj != next_d) {
@@ -390,7 +390,7 @@ void ReferenceProcessor::enqueue_discovered_reflist(DiscoveredList& refs_list,
       assert(java_lang_ref_Reference::next(obj) == NULL,
              "The reference should not be enqueued");
       if (next_d == obj) {  // obj is last
-        // Swap refs_list into pendling_list_addr and
+        // Swap refs_list into pending_list_addr and
         // set obj's next to what we read from pending_list_addr.
         oop old = oopDesc::atomic_exchange_oop(refs_list.head(), pending_list_addr);
         // Need oop_check on pending_list_addr above;
@@ -1341,7 +1341,7 @@ void ReferenceProcessor::preclean_discovered_references(
 // whose referents are still alive, whose referents are NULL or which
 // are not active (have a non-NULL next field). NOTE: When we are
 // thus precleaning the ref lists (which happens single-threaded today),
-// we do not disable refs discovery to honour the correct semantics of
+// we do not disable refs discovery to honor the correct semantics of
 // java.lang.Reference. As a result, we need to be careful below
 // that ref removal steps interleave safely with ref discovery steps
 // (in this thread).

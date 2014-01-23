@@ -461,7 +461,7 @@ jobject JNIHandleBlock::allocate_handle(oop obj) {
     // Append new block
     Thread* thread = Thread::current();
     Handle obj_handle(thread, obj);
-    // This can block, so we need to preserve obj accross call.
+    // This can block, so we need to preserve obj across call.
     _last->_next = JNIHandleBlock::allocate_block(thread);
     _last = _last->_next;
     _allocate_before_rebuild--;
@@ -528,7 +528,7 @@ int JNIHandleBlock::length() const {
   return result;
 }
 
-// This method is not thread-safe, i.e., must be called whule holding a lock on the
+// This method is not thread-safe, i.e., must be called while holding a lock on the
 // structure.
 long JNIHandleBlock::memory_usage() const {
   return length() * sizeof(JNIHandleBlock);

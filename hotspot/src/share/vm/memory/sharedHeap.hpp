@@ -92,7 +92,7 @@ class KlassClosure;
 //  0 is a "special" value in set_n_threads() which translates to
 //  setting _n_threads to 1.
 //
-//  Some code uses _n_terminiation to decide if work should be done in
+//  Some code uses _n_termination to decide if work should be done in
 //  parallel.  The notorious possibly_parallel_oops_do() in threads.cpp
 //  is an example of such code.  Look for variable "is_par" for other
 //  examples.

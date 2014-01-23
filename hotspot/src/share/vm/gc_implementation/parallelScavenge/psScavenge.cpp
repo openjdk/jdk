@@ -558,7 +558,7 @@ bool PSScavenge::invoke_no_policy() {
             ((gc_cause != GCCause::_java_lang_system_gc) ||
               UseAdaptiveSizePolicyWithSystemGC)) {
 
-          // Calculate optimial free space amounts
+          // Calculate optimal free space amounts
           assert(young_gen->max_size() >
             young_gen->from_space()->capacity_in_bytes() +
             young_gen->to_space()->capacity_in_bytes(),

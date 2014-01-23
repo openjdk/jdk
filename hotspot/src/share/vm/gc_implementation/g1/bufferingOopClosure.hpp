@@ -39,7 +39,7 @@
 // up, the wrapped closure is applied to all elements, keeping track of
 // this elapsed time of this process, and leaving the array empty.
 // The caller must be sure to call "done" to process any unprocessed
-// buffered entriess.
+// buffered entries.
 
 class Generation;
 class HeapRegion;

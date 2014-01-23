@@ -2176,7 +2176,7 @@ bool PSParallelCompact::invoke_no_policy(bool maximum_heap_compaction) {
 
     heap->resize_all_tlabs();
 
-    // Resize the metaspace capactiy after a collection
+    // Resize the metaspace capacity after a collection
     MetaspaceGC::compute_new_size();
 
     if (TraceGen1Time) accumulated_time()->stop();
@@ -3285,7 +3285,7 @@ PSParallelCompact::move_and_update(ParCompactionManager* cm, SpaceId space_id) {
 }
 
 jlong PSParallelCompact::millis_since_last_gc() {
-  // We need a monotonically non-deccreasing time in ms but
+  // We need a monotonically non-decreasing time in ms but
   // os::javaTimeMillis() does not guarantee monotonicity.
   jlong now = os::javaTimeNanos() / NANOSECS_PER_MILLISEC;
   jlong ret_val = now - _time_of_last_gc;
@@ -3298,7 +3298,7 @@ jlong PSParallelCompact::millis_since_last_gc() {
 }
 
 void PSParallelCompact::reset_millis_since_last_gc() {
-  // We need a monotonically non-deccreasing time in ms but
+  // We need a monotonically non-decreasing time in ms but
   // os::javaTimeMillis() does not guarantee monotonicity.
   _time_of_last_gc = os::javaTimeNanos() / NANOSECS_PER_MILLISEC;
 }
