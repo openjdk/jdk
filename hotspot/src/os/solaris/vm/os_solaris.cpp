@@ -2146,6 +2146,10 @@ void* os::dll_lookup(void* handle, const char* name) {
   return dlsym(handle, name);
 }
 
+void* os::get_default_process_handle() {
+  return (void*)::dlopen(NULL, RTLD_LAZY);
+}
+
 int os::stat(const char *path, struct stat *sbuf) {
   char pathbuf[MAX_PATH];
   if (strlen(path) > MAX_PATH - 1) {

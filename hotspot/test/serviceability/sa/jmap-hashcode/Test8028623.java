@@ -26,6 +26,8 @@
  * @bug 8028623
  * @summary Test hashing of extended characters in Serviceability Agent.
  * @library /testlibrary
+ * @compile -encoding utf8 Test8028623.java
+ * @run main Test8028623
  */
 
 import com.oracle.java.testlibrary.JDKToolLauncher;
