@@ -2104,6 +2104,9 @@ void* os::dll_lookup(void* handle, const char* name) {
   return res;
 }
 
+void* os::get_default_process_handle() {
+  return (void*)::dlopen(NULL, RTLD_LAZY);
+}
 
 static bool _print_ascii_file(const char* filename, outputStream* st) {
   int fd = ::open(filename, O_RDONLY);
