@@ -122,6 +122,46 @@ Declares a structure type that can be used in other events.
       <value type="CLASS" field="definingClassLoader" label="Defining Class Loader"/>
     </event>
 
+    <event id="LongFlagChanged" path="vm/flag/long_changed" label="Long Flag Changed"
+          is_instant="true">
+      <value type="UTF8" field="name" label="Name" />
+      <value type="LONG" field="old_value" label="Old Value" />
+      <value type="LONG" field="new_value" label="New Value" />
+      <value type="FLAGVALUEORIGIN" field="origin" label="Origin" />
+    </event>
+
+    <event id="UnsignedLongFlagChanged" path="vm/flag/ulong_changed" label="Unsigned Long Flag Changed"
+          is_instant="true">
+      <value type="UTF8" field="name" label="Name" />
+      <value type="ULONG" field="old_value" label="Old Value" />
+      <value type="ULONG" field="new_value" label="New Value" />
+      <value type="FLAGVALUEORIGIN" field="origin" label="Origin" />
+    </event>
+
+    <event id="DoubleFlagChanged" path="vm/flag/double_changed" label="Double Flag Changed"
+         is_instant="true">
+      <value type="UTF8" field="name" label="Name" />
+      <value type="DOUBLE" field="old_value" label="Old Value" />
+      <value type="DOUBLE" field="new_value" label="New Value" />
+      <value type="FLAGVALUEORIGIN" field="origin" label="Origin" />
+    </event>
+
+    <event id="BooleanFlagChanged" path="vm/flag/boolean_changed" label="Boolean Flag Changed"
+         is_instant="true">
+      <value type="UTF8" field="name" label="Name" />
+      <value type="BOOLEAN" field="old_value" label="Old Value" />
+      <value type="BOOLEAN" field="new_value" label="New Value" />
+      <value type="FLAGVALUEORIGIN" field="origin" label="Origin" />
+    </event>
+
+    <event id="StringFlagChanged" path="vm/flag/string_changed" label="String Flag Changed"
+         is_instant="true">
+      <value type="UTF8" field="name" label="Name" />
+      <value type="UTF8" field="old_value" label="Old Value" />
+      <value type="UTF8" field="new_value" label="New Value" />
+      <value type="FLAGVALUEORIGIN" field="origin" label="Origin" />
+    </event>
+
     <struct id="VirtualSpace">
       <value type="ADDRESS" field="start" label="Start Address" description="Start address of the virtual space" />
       <value type="ADDRESS" field="committedEnd" label="Committed End Address" description="End address of the committed memory for the virtual space" />
