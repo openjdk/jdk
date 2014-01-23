@@ -172,6 +172,10 @@ import sun.security.util.SecurityConstants;
  *   "java.net.URLClassLoader$3$1"
  * </pre></blockquote>
  *
+ * {@code Class} objects for array classes are not created by {@code ClassLoader};
+ * use the {@link Class#forName} method instead.
+ *
+ * @jls 13.1 The Form of a Binary
  * @see      #resolveClass(Class)
  * @since 1.0
  */
@@ -862,8 +866,7 @@ public abstract class ClassLoader {
     private boolean checkName(String name) {
         if ((name == null) || (name.length() == 0))
             return true;
-        if ((name.indexOf('/') != -1)
-            || (!VM.allowArraySyntax() && (name.charAt(0) == '[')))
+        if ((name.indexOf('/') != -1) || (name.charAt(0) == '['))
             return false;
         return true;
     }
