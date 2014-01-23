@@ -1355,6 +1355,10 @@ static void jni_invoke_nonstatic(JNIEnv *env, JavaValue* result, jobject receive
 
 static instanceOop alloc_object(jclass clazz, TRAPS) {
   KlassHandle k(THREAD, java_lang_Class::as_Klass(JNIHandles::resolve_non_null(clazz)));
+  if (k == NULL) {
+    ResourceMark rm(THREAD);
+    THROW_(vmSymbols::java_lang_InstantiationException(), NULL);
+  }
   k()->check_valid_for_instantiation(false, CHECK_NULL);
   InstanceKlass::cast(k())->initialize(CHECK_NULL);
   instanceOop ih = InstanceKlass::cast(k())->allocate_instance(THREAD);
