@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -647,7 +647,7 @@ public class XEmbedServerTester implements XEventDispatcher {
     public void dispatchEvent(XEvent ev) {
         if (ev.get_type() == ClientMessage) {
             XClientMessageEvent msg = ev.get_xclient();
-            if (msg.get_message_type() == xembed.XEmbed.getAtom()) {
+            if (msg.get_message_type() == XEmbedHelper.XEmbed.getAtom()) {
                 if (xembedLog.isLoggable(PlatformLogger.Level.FINE)) {
                     xembedLog.fine("Embedded message: " + XEmbedHelper.msgidToString((int)msg.get_data(1)));
                 }

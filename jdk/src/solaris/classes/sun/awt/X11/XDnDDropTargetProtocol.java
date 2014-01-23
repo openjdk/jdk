@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1005,6 +1005,7 @@ class XDnDDropTargetProtocol extends XDropTargetProtocol {
         }
     }
 
+    @SuppressWarnings("static")
     private void notifyProtocolListener(XWindow xwindow, int x, int y,
                                         int dropAction,
                                         XClientMessageEvent xclient,
@@ -1147,7 +1148,7 @@ class XDnDDropTargetProtocol extends XDropTargetProtocol {
                event while it still can be referenced from other Java events. */
             {
                 XClientMessageEvent copy = new XClientMessageEvent();
-                unsafe.copyMemory(xclient.pData, copy.pData, copy.getSize());
+                unsafe.copyMemory(xclient.pData, copy.pData, XClientMessageEvent.getSize());
 
                 copy.set_data(0, xclient.get_window());
 
