@@ -117,10 +117,10 @@ GCCause::Cause CMSCollector::_full_gc_cause = GCCause::_no_gc;
 // hide the naked CGC_lock manipulation in the baton-passing code
 // further below. That's something we should try to do. Also, the proof
 // of correctness of this 2-level locking scheme is far from obvious,
-// and potentially quite slippery. We have an uneasy supsicion, for instance,
+// and potentially quite slippery. We have an uneasy suspicion, for instance,
 // that there may be a theoretical possibility of delay/starvation in the
 // low-level lock/wait/notify scheme used for the baton-passing because of
-// potential intereference with the priority scheme embodied in the
+// potential interference with the priority scheme embodied in the
 // CMS-token-passing protocol. See related comments at a CGC_lock->wait()
 // invocation further below and marked with "XXX 20011219YSR".
 // Indeed, as we note elsewhere, this may become yet more slippery
@@ -259,7 +259,7 @@ ConcurrentMarkSweepGeneration::ConcurrentMarkSweepGeneration(
   // Ideally, in the calculation below, we'd compute the dilatation
   // factor as: MinChunkSize/(promoting_gen's min object size)
   // Since we do not have such a general query interface for the
-  // promoting generation, we'll instead just use the mimimum
+  // promoting generation, we'll instead just use the minimum
   // object size (which today is a header's worth of space);
   // note that all arithmetic is in units of HeapWords.
   assert(MinChunkSize >= CollectedHeap::min_fill_size(), "just checking");
@@ -274,7 +274,7 @@ ConcurrentMarkSweepGeneration::ConcurrentMarkSweepGeneration(
 //
 //   Let "f" be MinHeapFreeRatio in
 //
-//    _intiating_occupancy = 100-f +
+//    _initiating_occupancy = 100-f +
 //                           f * (CMSTriggerRatio/100)
 //   where CMSTriggerRatio is the argument "tr" below.
 //
@@ -2671,7 +2671,7 @@ bool CMSCollector::waitForForegroundGC() {
 // that it's responsible for collecting, while itself doing any
 // work common to all generations it's responsible for. A similar
 // comment applies to the  gc_epilogue()'s.
-// The role of the varaible _between_prologue_and_epilogue is to
+// The role of the variable _between_prologue_and_epilogue is to
 // enforce the invocation protocol.
 void CMSCollector::gc_prologue(bool full) {
   // Call gc_prologue_work() for the CMSGen
@@ -2878,10 +2878,10 @@ bool CMSCollector::have_cms_token() {
 // Check reachability of the given heap address in CMS generation,
 // treating all other generations as roots.
 bool CMSCollector::is_cms_reachable(HeapWord* addr) {
-  // We could "guarantee" below, rather than assert, but i'll
+  // We could "guarantee" below, rather than assert, but I'll
   // leave these as "asserts" so that an adventurous debugger
   // could try this in the product build provided some subset of
-  // the conditions were met, provided they were intersted in the
+  // the conditions were met, provided they were interested in the
   // results and knew that the computation below wouldn't interfere
   // with other concurrent computations mutating the structures
   // being read or written.
@@ -2982,7 +2982,7 @@ bool CMSCollector::verify_after_remark(bool silent) {
   // This is as intended, because by this time
   // GC must already have cleared any refs that need to be cleared,
   // and traced those that need to be marked; moreover,
-  // the marking done here is not going to intefere in any
+  // the marking done here is not going to interfere in any
   // way with the marking information used by GC.
   NoRefDiscovery no_discovery(ref_processor());
 
@@ -3000,7 +3000,7 @@ bool CMSCollector::verify_after_remark(bool silent) {
 
   if (CMSRemarkVerifyVariant == 1) {
     // In this first variant of verification, we complete
-    // all marking, then check if the new marks-verctor is
+    // all marking, then check if the new marks-vector is
     // a subset of the CMS marks-vector.
     verify_after_remark_work_1();
   } else if (CMSRemarkVerifyVariant == 2) {
@@ -3399,7 +3399,7 @@ HeapWord* ConcurrentMarkSweepGeneration::expand_and_par_lab_allocate(CMSParGCThr
       CMSExpansionCause::_allocate_par_lab);
     // Now go around the loop and try alloc again;
     // A competing par_promote might beat us to the expansion space,
-    // so we may go around the loop again if promotion fails agaion.
+    // so we may go around the loop again if promotion fails again.
     if (GCExpandToAllocateDelayMillis > 0) {
       os::sleep(Thread::current(), GCExpandToAllocateDelayMillis, false);
     }
@@ -4370,7 +4370,7 @@ void CMSConcMarkingTask::coordinator_yield() {
   // should really use wait/notify, which is the recommended
   // way of doing this type of interaction. Additionally, we should
   // consolidate the eight methods that do the yield operation and they
-  // are almost identical into one for better maintenability and
+  // are almost identical into one for better maintainability and
   // readability. See 6445193.
   //
   // Tony 2006.06.29
@@ -4538,7 +4538,7 @@ void CMSCollector::abortable_preclean() {
   // If Eden's current occupancy is below this threshold,
   // immediately schedule the remark; else preclean
   // past the next scavenge in an effort to
-  // schedule the pause as described avove. By choosing
+  // schedule the pause as described above. By choosing
   // CMSScheduleRemarkEdenSizeThreshold >= max eden size
   // we will never do an actual abortable preclean cycle.
   if (get_eden_used() > CMSScheduleRemarkEdenSizeThreshold) {
@@ -5532,8 +5532,8 @@ CMSParRemarkTask::do_dirty_card_rescan_tasks(
   // CAUTION! CAUTION! CAUTION! CAUTION! CAUTION! CAUTION! CAUTION!
   // CAUTION: This closure has state that persists across calls to
   // the work method dirty_range_iterate_clear() in that it has
-  // imbedded in it a (subtype of) UpwardsObjectClosure. The
-  // use of that state in the imbedded UpwardsObjectClosure instance
+  // embedded in it a (subtype of) UpwardsObjectClosure. The
+  // use of that state in the embedded UpwardsObjectClosure instance
   // assumes that the cards are always iterated (even if in parallel
   // by several threads) in monotonically increasing order per each
   // thread. This is true of the implementation below which picks
@@ -5548,7 +5548,7 @@ CMSParRemarkTask::do_dirty_card_rescan_tasks(
   // sure that the changes there do not run counter to the
   // assumptions made here and necessary for correctness and
   // efficiency. Note also that this code might yield inefficient
-  // behaviour in the case of very large objects that span one or
+  // behavior in the case of very large objects that span one or
   // more work chunks. Such objects would potentially be scanned
   // several times redundantly. Work on 4756801 should try and
   // address that performance anomaly if at all possible. XXX
@@ -5574,7 +5574,7 @@ CMSParRemarkTask::do_dirty_card_rescan_tasks(
 
   while (!pst->is_task_claimed(/* reference */ nth_task)) {
     // Having claimed the nth_task, compute corresponding mem-region,
-    // which is a-fortiori aligned correctly (i.e. at a MUT bopundary).
+    // which is a-fortiori aligned correctly (i.e. at a MUT boundary).
     // The alignment restriction ensures that we do not need any
     // synchronization with other gang-workers while setting or
     // clearing bits in thus chunk of the MUT.
@@ -6365,7 +6365,7 @@ void CMSCollector::sweep(bool asynch) {
   _inter_sweep_timer.reset();
   _inter_sweep_timer.start();
 
-  // We need to use a monotonically non-deccreasing time in ms
+  // We need to use a monotonically non-decreasing time in ms
   // or we will see time-warp warnings and os::javaTimeMillis()
   // does not guarantee monotonicity.
   jlong now = os::javaTimeNanos() / NANOSECS_PER_MILLISEC;
@@ -6726,7 +6726,7 @@ bool CMSBitMap::allocate(MemRegion mr) {
     warning("CMS bit map allocation failure");
     return false;
   }
-  // For now we'll just commit all of the bit map up fromt.
+  // For now we'll just commit all of the bit map up front.
   // Later on we'll try to be more parsimonious with swap.
   if (!_virtual_space.initialize(brs, brs.size())) {
     warning("CMS bit map backing store failure");
@@ -6833,8 +6833,8 @@ bool CMSMarkStack::allocate(size_t size) {
 
 // XXX FIX ME !!! In the MT case we come in here holding a
 // leaf lock. For printing we need to take a further lock
-// which has lower rank. We need to recallibrate the two
-// lock-ranks involved in order to be able to rpint the
+// which has lower rank. We need to recalibrate the two
+// lock-ranks involved in order to be able to print the
 // messages below. (Or defer the printing to the caller.
 // For now we take the expedient path of just disabling the
 // messages for the problematic case.)
@@ -7174,7 +7174,7 @@ size_t ScanMarkedObjectsAgainCarefullyClosure::do_object_careful_m(
           }
         #endif // ASSERT
     } else {
-      // an unitialized object
+      // An uninitialized object.
       assert(_bitMap->isMarked(addr+1), "missing Printezis mark?");
       HeapWord* nextOneAddr = _bitMap->getNextMarkedWordAddress(addr + 2);
       size = pointer_delta(nextOneAddr + 1, addr);
@@ -7182,7 +7182,7 @@ size_t ScanMarkedObjectsAgainCarefullyClosure::do_object_careful_m(
              "alignment problem");
       // Note that pre-cleaning needn't redirty the card. OopDesc::set_klass()
       // will dirty the card when the klass pointer is installed in the
-      // object (signalling the completion of initialization).
+      // object (signaling the completion of initialization).
     }
   } else {
     // Either a not yet marked object or an uninitialized object
@@ -7993,7 +7993,7 @@ void PushAndMarkClosure::do_oop(oop obj) {
          // we need to dirty all of the cards that the object spans,
          // since the rescan of object arrays will be limited to the
          // dirty cards.
-         // Note that no one can be intefering with us in this action
+         // Note that no one can be interfering with us in this action
          // of dirtying the mod union table, so no locking or atomics
          // are required.
          if (obj->is_objArray()) {
@@ -9019,7 +9019,7 @@ void CMSParDrainMarkingStackClosure::trim_queue(uint max) {
 
 // It's OK to call this multi-threaded;  the worst thing
 // that can happen is that we'll get a bunch of closely
-// spaced simulated oveflows, but that's OK, in fact
+// spaced simulated overflows, but that's OK, in fact
 // probably good as it would exercise the overflow code
 // under contention.
 bool CMSCollector::simulate_overflow() {
@@ -9139,7 +9139,7 @@ bool CMSCollector::par_take_from_overflow_list(size_t num,
       (void) Atomic::cmpxchg_ptr(NULL, &_overflow_list, BUSY);
     }
   } else {
-    // Chop off the suffix and rerturn it to the global list.
+    // Chop off the suffix and return it to the global list.
     assert(cur->mark() != BUSY, "Error");
     oop suffix_head = cur->mark(); // suffix will be put back on global list
     cur->set_mark(NULL);           // break off suffix

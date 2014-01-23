@@ -482,7 +482,7 @@ void PSAdaptiveSizePolicy::compute_old_gen_free_space(
   //   adjust down the total heap size.  Adjust down the larger of the
   //   generations.
 
-  // Add some checks for a threshhold for a change.  For example,
+  // Add some checks for a threshold for a change.  For example,
   // a change less than the necessary alignment is probably not worth
   // attempting.
 
@@ -1161,7 +1161,7 @@ uint PSAdaptiveSizePolicy::compute_survivor_space_size_and_threshold(
     // We use the tenuring threshold to equalize the cost of major
     // and minor collections.
     // ThresholdTolerance is used to indicate how sensitive the
-    // tenuring threshold is to differences in cost betweent the
+    // tenuring threshold is to differences in cost between the
     // collection types.
 
     // Get the times of interest. This involves a little work, so

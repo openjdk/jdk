@@ -444,7 +444,7 @@ class Arguments : AllStatic {
   static bool check_gc_consistency();
   static void check_deprecated_gcs();
   static void check_deprecated_gc_flags();
-  // Check consistecy or otherwise of VM argument settings
+  // Check consistency or otherwise of VM argument settings
   static bool check_vm_args_consistency();
   // Check stack pages settings
   static bool check_stack_pages();
@@ -494,7 +494,7 @@ class Arguments : AllStatic {
   // -Xprof
   static bool has_profile()                 { return _has_profile; }
 
-  // -Xms, -Xmx
+  // -Xms
   static uintx min_heap_size()              { return _min_heap_size; }
   static void  set_min_heap_size(uintx v)   { _min_heap_size = v;  }
 

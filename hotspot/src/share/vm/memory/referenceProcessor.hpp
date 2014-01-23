@@ -474,7 +474,7 @@ class ReferenceProcessor : public CHeapObj<mtGC> {
   bool processing_is_mt() const { return _processing_is_mt; }
   void set_mt_processing(bool mt) { _processing_is_mt = mt; }
 
-  // whether all enqueuing of weak references is complete
+  // whether all enqueueing of weak references is complete
   bool enqueuing_is_done()  { return _enqueuing_is_done; }
   void set_enqueuing_is_done(bool v) { _enqueuing_is_done = v; }
 

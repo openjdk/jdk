@@ -3639,7 +3639,7 @@ class CommandLineFlags {
   product(uintx, MaxDirectMemorySize, 0,                                    \
           "Maximum total size of NIO direct-buffer allocations")            \
                                                                             \
-  /* temporary developer defined flags  */                                  \
+  /* Flags used for temporary code during development  */                   \
                                                                             \
   diagnostic(bool, UseNewCode, false,                                       \
           "Testing Only: Use the new version while testing")                \

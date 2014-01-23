@@ -1231,7 +1231,7 @@ class JavaThread: public Thread {
   void set_vframe_array_head(vframeArray* value) { _vframe_array_head = value; }
   vframeArray* vframe_array_head() const         { return _vframe_array_head;  }
 
-  // Side structure for defering update of java frame locals until deopt occurs
+  // Side structure for deferring update of java frame locals until deopt occurs
   GrowableArray<jvmtiDeferredLocalVariableSet*>* deferred_locals() const { return _deferred_locals_updates; }
   void set_deferred_locals(GrowableArray<jvmtiDeferredLocalVariableSet *>* vf) { _deferred_locals_updates = vf; }
 

@@ -82,7 +82,7 @@ void VM_GC_Operation::release_and_notify_pending_list_lock() {
 
 // Allocations may fail in several threads at about the same time,
 // resulting in multiple gc requests.  We only want to do one of them.
-// In case a GC locker is active and the need for a GC is already signalled,
+// In case a GC locker is active and the need for a GC is already signaled,
 // we want to skip this GC attempt altogether, without doing a futile
 // safepoint operation.
 bool VM_GC_Operation::skip_operation() const {

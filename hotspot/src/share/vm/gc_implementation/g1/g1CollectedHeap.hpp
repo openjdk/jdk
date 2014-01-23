@@ -1373,7 +1373,7 @@ public:
   // Divide the heap region sequence into "chunks" of some size (the number
   // of regions divided by the number of parallel threads times some
   // overpartition factor, currently 4).  Assumes that this will be called
-  // in parallel by ParallelGCThreads worker threads with discinct worker
+  // in parallel by ParallelGCThreads worker threads with distinct worker
   // ids in the range [0..max(ParallelGCThreads-1, 1)], that all parallel
   // calls will use the same "claim_value", and that that claim value is
   // different from the claim_value of any heap region before the start of
@@ -1518,7 +1518,7 @@ public:
   // Returns "true" iff the given word_size is "very large".
   static bool isHumongous(size_t word_size) {
     // Note this has to be strictly greater-than as the TLABs
-    // are capped at the humongous thresold and we want to
+    // are capped at the humongous threshold and we want to
     // ensure that we don't try to allocate a TLAB as
     // humongous and that we don't allocate a humongous
     // object in a TLAB.
@@ -1648,24 +1648,24 @@ public:
 
   // Optimized nmethod scanning support routines
 
-  // Register the given nmethod with the G1 heap
+  // Register the given nmethod with the G1 heap.
   virtual void register_nmethod(nmethod* nm);
 
-  // Unregister the given nmethod from the G1 heap
+  // Unregister the given nmethod from the G1 heap.
   virtual void unregister_nmethod(nmethod* nm);
 
   // Migrate the nmethods in the code root lists of the regions
   // in the collection set to regions in to-space. In the event
   // of an evacuation failure, nmethods that reference objects
-  // that were not successfullly evacuated are not migrated.
+  // that were not successfully evacuated are not migrated.
   void migrate_strong_code_roots();
 
   // During an initial mark pause, mark all the code roots that
   // point into regions *not* in the collection set.
   void mark_strong_code_roots(uint worker_id);
 
-  // Rebuild the stong code root lists for each region
-  // after a full GC
+  // Rebuild the strong code root lists for each region
+  // after a full GC.
   void rebuild_strong_code_roots();
 
   // Delete entries for dead interned string and clean up unreferenced symbols

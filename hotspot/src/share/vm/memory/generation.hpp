@@ -289,7 +289,7 @@ class Generation: public CHeapObj<mtGC> {
 
   // These functions return the addresses of the fields that define the
   // boundaries of the contiguous allocation area.  (These fields should be
-  // physicall near to one another.)
+  // physically near to one another.)
   virtual HeapWord** top_addr() const { return NULL; }
   virtual HeapWord** end_addr() const { return NULL; }
 
@@ -485,7 +485,7 @@ class Generation: public CHeapObj<mtGC> {
   // General signature...
   virtual void oop_since_save_marks_iterate_v(OopsInGenClosure* cl) = 0;
   // ...and specializations for de-virtualization.  (The general
-  // implemention of the _nv versions call the virtual version.
+  // implementation of the _nv versions call the virtual version.
   // Note that the _nv suffix is not really semantically necessary,
   // but it avoids some not-so-useful warnings on Solaris.)
 #define Generation_SINCE_SAVE_MARKS_DECL(OopClosureType, nv_suffix)             \

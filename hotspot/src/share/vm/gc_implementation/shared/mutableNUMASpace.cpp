@@ -72,7 +72,7 @@ void MutableNUMASpace::check_mangled_unused_area_complete() {
 #endif  // NOT_PRODUCT
 
 // There may be unallocated holes in the middle chunks
-// that should be filled with dead objects to ensure parseability.
+// that should be filled with dead objects to ensure parsability.
 void MutableNUMASpace::ensure_parsability() {
   for (int i = 0; i < lgrp_spaces()->length(); i++) {
     LGRPSpace *ls = lgrp_spaces()->at(i);
@@ -880,8 +880,8 @@ void MutableNUMASpace::print_on(outputStream* st) const {
 }
 
 void MutableNUMASpace::verify() {
-  // This can be called after setting an arbitary value to the space's top,
-  // so an object can cross the chunk boundary. We ensure the parsablity
+  // This can be called after setting an arbitrary value to the space's top,
+  // so an object can cross the chunk boundary. We ensure the parsability
   // of the space and just walk the objects in linear fashion.
   ensure_parsability();
   MutableSpace::verify();

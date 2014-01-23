@@ -178,7 +178,7 @@ void Arguments::init_system_properties() {
   PropertyList_add(&_system_properties, new SystemProperty("java.vm.name", VM_Version::vm_name(),  false));
   PropertyList_add(&_system_properties, new SystemProperty("java.vm.info", VM_Version::vm_info_string(),  true));
 
-  // following are JVMTI agent writeable properties.
+  // Following are JVMTI agent writable properties.
   // Properties values are set to NULL and they are
   // os specific they are initialized in os::init_system_properties_values().
   _java_ext_dirs = new SystemProperty("java.ext.dirs", NULL,  true);
@@ -1306,7 +1306,7 @@ void Arguments::set_cms_and_parnew_gc_flags() {
   if (!FLAG_IS_DEFAULT(OldPLABSize)) {
     if (FLAG_IS_DEFAULT(CMSParPromoteBlocksToClaim)) {
       // OldPLABSize is not the default value but CMSParPromoteBlocksToClaim
-      // is.  In this situtation let CMSParPromoteBlocksToClaim follow
+      // is.  In this situation let CMSParPromoteBlocksToClaim follow
       // the value (either from the command line or ergonomics) of
       // OldPLABSize.  Following OldPLABSize is an ergonomics decision.
       FLAG_SET_ERGO(uintx, CMSParPromoteBlocksToClaim, OldPLABSize);
@@ -3666,18 +3666,18 @@ jint Arguments::apply_ergo() {
   assert(verify_serial_gc_flags(), "SerialGC unset");
 #endif // INCLUDE_ALL_GCS
 
-  // Initialize Metaspace flags and alignments.
+  // Initialize Metaspace flags and alignments
   Metaspace::ergo_initialize();
 
   // Set bytecode rewriting flags
   set_bytecode_flags();
 
-  // Set flags if Aggressive optimization flags (-XX:+AggressiveOpts) enabled.
+  // Set flags if Aggressive optimization flags (-XX:+AggressiveOpts) enabled
   set_aggressive_opts_flags();
 
   // Turn off biased locking for locking debug mode flags,
-  // which are subtlely different from each other but neither works with
-  // biased locking.
+  // which are subtly different from each other but neither works with
+  // biased locking
   if (UseHeavyMonitors
 #ifdef COMPILER1
       || !UseFastLocking

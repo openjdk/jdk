@@ -152,7 +152,7 @@ ParGCAllocBufferWithBOT::ParGCAllocBufferWithBOT(size_t word_sz,
 
 // The buffer comes with its own BOT, with a shared (obviously) underlying
 // BlockOffsetSharedArray. We manipulate this BOT in the normal way
-// as we would for any contiguous space. However, on accasion we
+// as we would for any contiguous space. However, on occasion we
 // need to do some buffer surgery at the extremities before we
 // start using the body of the buffer for allocations. Such surgery
 // (as explained elsewhere) is to prevent allocation on a card that

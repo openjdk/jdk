@@ -315,7 +315,7 @@ public:
   }
 
   // Update the gc statistics for each generation.
-  // "level" is the level of the lastest collection
+  // "level" is the level of the latest collection.
   void update_gc_stats(int current_level, bool full) {
     for (int i = 0; i < _n_gens; i++) {
       _gens[i]->update_gc_stats(current_level, full);
