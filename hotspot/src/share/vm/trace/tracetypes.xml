@@ -150,6 +150,11 @@ Now we can use the content + data type in declaring event fields.
       <value type="UTF8" field="phase" label="phase" />
     </content_type>
 
+    <content_type id="FlagValueOrigin" hr_name="Flag Value Origin"
+                  type="U1" jvm_type="FLAGVALUEORIGIN">
+      <value type="UTF8" field="origin" label="origin" />
+    </content_type>
+
   </content_types>
 
 
@@ -334,6 +339,10 @@ Now we can use the content + data type in declaring event fields.
     <!-- VMOPERATIONTYPE -->
     <primary_type symbol="VMOPERATIONTYPE" datatype="U2" contenttype="VMOPERATIONTYPE"
                   type="u2" sizeop="sizeof(u2)" />
+                  
+    <!-- FLAGVALUEORIGIN -->
+    <primary_type symbol="FLAGVALUEORIGIN" datatype="U1"
+                  contenttype="FLAGVALUEORIGIN" type="u1" sizeop="sizeof(u1)" />
 
   </primary_types>
 </types>
