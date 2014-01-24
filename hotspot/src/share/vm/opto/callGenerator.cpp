@@ -722,7 +722,7 @@ JVMState* PredictedCallGenerator::generate(JVMState* jvms, Parse* parent_parser)
     Node* m = kit.map()->in(i);
     Node* n = slow_map->in(i);
     if (m != n) {
-      const Type* t = gvn.type(m)->meet(gvn.type(n));
+      const Type* t = gvn.type(m)->meet_speculative(gvn.type(n));
       Node* phi = PhiNode::make(region, m, t);
       phi->set_req(2, n);
       kit.map()->set_req(i, gvn.transform(phi));
@@ -975,7 +975,7 @@ JVMState* PredictedIntrinsicGenerator::generate(JVMState* jvms, Parse* parent_pa
     Node* m = kit.map()->in(i);
     Node* n = slow_map->in(i);
     if (m != n) {
-      const Type* t = gvn.type(m)->meet(gvn.type(n));
+      const Type* t = gvn.type(m)->meet_speculative(gvn.type(n));
       Node* phi = PhiNode::make(region, m, t);
       phi->set_req(2, n);
       kit.map()->set_req(i, gvn.transform(phi));

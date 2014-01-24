@@ -1649,7 +1649,7 @@ void Parse::merge_common(Parse::Block* target, int pnum) {
           assert(bt1 != Type::BOTTOM, "should not be building conflict phis");
           map()->set_req(j, _gvn.transform_no_reclaim(phi));
           debug_only(const Type* bt2 = phi->bottom_type());
-          assert(bt2->higher_equal(bt1), "must be consistent with type-flow");
+          assert(bt2->higher_equal_speculative(bt1), "must be consistent with type-flow");
           record_for_igvn(phi);
         }
       }
@@ -2022,7 +2022,7 @@ void Parse::return_current(Node* value) {
           !tp->klass()->is_interface()) {
         // sharpen the type eagerly; this eases certain assert checking
         if (tp->higher_equal(TypeInstPtr::NOTNULL))
-          tr = tr->join(TypeInstPtr::NOTNULL)->is_instptr();
+          tr = tr->join_speculative(TypeInstPtr::NOTNULL)->is_instptr();
         value = _gvn.transform(new (C) CheckCastPPNode(0,value,tr));
       }
     }

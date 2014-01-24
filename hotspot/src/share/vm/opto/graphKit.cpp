@@ -420,7 +420,7 @@ void GraphKit::combine_exception_states(SafePointNode* ex_map, SafePointNode* ph
       }
       const Type* srctype = _gvn.type(src);
       if (phi->type() != srctype) {
-        const Type* dsttype = phi->type()->meet(srctype);
+        const Type* dsttype = phi->type()->meet_speculative(srctype);
         if (phi->type() != dsttype) {
           phi->set_type(dsttype);
           _gvn.set_type(phi, dsttype);
@@ -1223,7 +1223,7 @@ Node* GraphKit::null_check_common(Node* value, BasicType type,
         // See if mixing in the NULL pointer changes type.
         // If so, then the NULL pointer was not allowed in the original
         // type.  In other words, "value" was not-null.
-        if (t->meet(TypePtr::NULL_PTR) != t) {
+        if (t->meet(TypePtr::NULL_PTR) != t->remove_speculative()) {
           // same as: if (!TypePtr::NULL_PTR->higher_equal(t)) ...
           explicit_null_checks_elided++;
           return value;           // Elided null check quickly!
@@ -1356,7 +1356,7 @@ Node* GraphKit::null_check_common(Node* value, BasicType type,
 // Cast obj to not-null on this path
 Node* GraphKit::cast_not_null(Node* obj, bool do_replace_in_map) {
   const Type *t = _gvn.type(obj);
-  const Type *t_not_null = t->join(TypePtr::NOTNULL);
+  const Type *t_not_null = t->join_speculative(TypePtr::NOTNULL);
   // Object is already not-null?
   if( t == t_not_null ) return obj;
 
@@ -3009,7 +3009,7 @@ Node* GraphKit::gen_checkcast(Node *obj, Node* superklass,
       if (failure_control != NULL) // failure is now impossible
         (*failure_control) = top();
       // adjust the type of the phi to the exact klass:
-      phi->raise_bottom_type(_gvn.type(cast_obj)->meet(TypePtr::NULL_PTR));
+      phi->raise_bottom_type(_gvn.type(cast_obj)->meet_speculative(TypePtr::NULL_PTR));
     }
   }
 
