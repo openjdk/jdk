@@ -350,7 +350,7 @@ sun_jpeg_fill_suspended_buffer(j_decompress_ptr cinfo)
     }
     ret = (*env)->CallIntMethod(env, src->hInputStream, InputStream_readID,
                                 src->hInputBuffer, offset, buflen);
-    if (ret > buflen) ret = buflen;
+    if ((ret > 0) && ((unsigned int)ret > buflen)) ret = buflen;
     if ((*env)->ExceptionOccurred(env) || !GET_ARRAYS(env, src)) {
         cinfo->err->error_exit((struct jpeg_common_struct *) cinfo);
     }
