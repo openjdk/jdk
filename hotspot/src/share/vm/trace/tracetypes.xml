@@ -85,12 +85,6 @@ Now we can use the content + data type in declaring event fields.
       <value type="UTF8" field="name" label="Name"/>
     </content_type>
 
-    <content_type id="StackTrace" hr_name="Stacktrace"
-                  type="U8" builtin_type="STACKTRACE">
-      <value type="BOOLEAN" field="truncated" label="Truncated"/>
-      <structarray type="StackFrame" field="frames" label="Stack frames"/>
-    </content_type>
-
     <content_type id="Class" hr_name="Java class"
                   type="U8" builtin_type="CLASS">
       <value type="CLASS" field="loaderClass" label="ClassLoader"/>
@@ -115,17 +109,6 @@ Now we can use the content + data type in declaring event fields.
                   type="U2" jvm_type="THREADSTATE">
       <value type="UTF8" field="name" label="Name"/>
     </content_type>
-
-    <content_type id="FrameType" hr_name="Frame type"
-                  type="U1" jvm_type="FRAMETYPE">
-      <value type="UTF8" field="desc" label="Description"/>
-    </content_type>
-
-    <struct_type id="StackFrame">
-      <value type="METHOD" field="method" label="Java Method"/>
-      <value type="INTEGER" field="line" label="Line number"/>
-      <value type="FRAMETYPE" field="type" label="Frame type"/>
-    </struct_type>
 
     <content_type id="GCName" hr_name="GC Name"
                   type="U1" jvm_type="GCNAME">
