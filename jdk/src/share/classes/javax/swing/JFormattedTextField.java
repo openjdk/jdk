@@ -177,6 +177,7 @@ import javax.swing.text.*;
  *
  * @since 1.4
  */
+@SuppressWarnings("serial") // Same-version serialization only
 public class JFormattedTextField extends JTextField {
     private static final String uiClassID = "FormattedTextFieldUI";
     private static final Action[] defaultActions =
