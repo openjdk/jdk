@@ -4446,9 +4446,7 @@ void Thread::SpinAcquire (volatile int * adr, const char * LockName) {
         ++ctr ;
         if ((ctr & 0xFFF) == 0 || !os::is_MP()) {
            if (Yields > 5) {
-             // Consider using a simple NakedSleep() instead.
-             // Then SpinAcquire could be called by non-JVM threads
-             Thread::current()->_ParkEvent->park(1) ;
+             os::naked_short_sleep(1);
            } else {
              os::NakedYield() ;
              ++Yields ;
