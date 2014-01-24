@@ -46,6 +46,7 @@ import javax.swing.plaf.basic.*;
  * @author Steve Wilson
  * @author Ralph kar
  */
+@SuppressWarnings("serial") // Same-version serialization only
 class MetalSplitPaneDivider extends BasicSplitPaneDivider
 {
     private MetalBumps bumps = new MetalBumps(10, 10,

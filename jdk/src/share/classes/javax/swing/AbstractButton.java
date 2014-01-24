@@ -72,6 +72,7 @@ import java.util.*;
  *
  * @author Jeff Dinkins
  */
+@SuppressWarnings("serial") // Same-version serialization only
 public abstract class AbstractButton extends JComponent implements ItemSelectable, SwingConstants {
 
     // *********************************
@@ -2384,6 +2385,7 @@ public abstract class AbstractButton extends JComponent implements ItemSelectabl
      * Please see {@link java.beans.XMLEncoder}.
      * @since 1.4
      */
+    @SuppressWarnings("serial") // Same-version serialization only
     protected abstract class AccessibleAbstractButton
         extends AccessibleJComponent implements AccessibleAction,
         AccessibleValue, AccessibleText, AccessibleExtendedComponent {
