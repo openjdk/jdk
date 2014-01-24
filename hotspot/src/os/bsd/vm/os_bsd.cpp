@@ -2636,9 +2636,21 @@ int os::sleep(Thread* thread, jlong millis, bool interruptible) {
   }
 }
 
-int os::naked_sleep() {
-  // %% make the sleep time an integer flag. for now use 1 millisec.
-  return os::sleep(Thread::current(), 1, false);
+void os::naked_short_sleep(jlong ms) {
+  struct timespec req;
+
+  assert(ms < 1000, "Un-interruptable sleep, short time use only");
+  req.tv_sec = 0;
+  if (ms > 0) {
+    req.tv_nsec = (ms % 1000) * 1000000;
+  }
+  else {
+    req.tv_nsec = 1;
+  }
+
+  nanosleep(&req, NULL);
+
+  return;
 }
 
 // Sleep forever; naked call to OS-specific sleep; use with CAUTION

@@ -3871,9 +3871,33 @@ int os::sleep(Thread* thread, jlong millis, bool interruptible) {
   }
 }
 
-int os::naked_sleep() {
-  // %% make the sleep time an integer flag. for now use 1 millisec.
-  return os::sleep(Thread::current(), 1, false);
+//
+// Short sleep, direct OS call.
+//
+// Note: certain versions of Linux CFS scheduler (since 2.6.23) do not guarantee
+// sched_yield(2) will actually give up the CPU:
+//
+//   * Alone on this pariticular CPU, keeps running.
+//   * Before the introduction of "skip_buddy" with "compat_yield" disabled
+//     (pre 2.6.39).
+//
+// So calling this with 0 is an alternative.
+//
+void os::naked_short_sleep(jlong ms) {
+  struct timespec req;
+
+  assert(ms < 1000, "Un-interruptable sleep, short time use only");
+  req.tv_sec = 0;
+  if (ms > 0) {
+    req.tv_nsec = (ms % 1000) * 1000000;
+  }
+  else {
+    req.tv_nsec = 1;
+  }
+
+  nanosleep(&req, NULL);
+
+  return;
 }
 
 // Sleep forever; naked call to OS-specific sleep; use with CAUTION
