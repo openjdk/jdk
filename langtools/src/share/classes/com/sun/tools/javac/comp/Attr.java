@@ -4093,18 +4093,8 @@ public class Attr extends JCTree.Visitor {
 
         ListBuffer<Attribute.TypeCompound> buf = new ListBuffer<>();
         for (JCAnnotation anno : annotations) {
-            if (anno.attribute != null) {
-                // TODO: this null-check is only needed for an obscure
-                // ordering issue, where annotate.flush is called when
-                // the attribute is not set yet. For an example failure
-                // try the referenceinfos/NestedTypes.java test.
-                // Any better solutions?
-                buf.append((Attribute.TypeCompound) anno.attribute);
-            }
-            // Eventually we will want to throw an exception here, but
-            // we can't do that just yet, because it gets triggered
-            // when attempting to attach an annotation that isn't
-            // defined.
+            Assert.checkNonNull(anno.attribute);
+            buf.append((Attribute.TypeCompound) anno.attribute);
         }
         return buf.toList();
     }
