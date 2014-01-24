@@ -701,10 +701,7 @@ Compile::Compile( ciEnv* ci_env, C2Compiler* compiler, ciMethod* target, int osr
 
   print_compile_messages();
 
-  if (UseOldInlining || PrintCompilation NOT_PRODUCT( || PrintOpto) )
-    _ilt = InlineTree::build_inline_tree_root();
-  else
-    _ilt = NULL;
+  _ilt = InlineTree::build_inline_tree_root();
 
   // Even if NO memory addresses are used, MergeMem nodes must have at least 1 slice
   assert(num_alias_types() >= AliasIdxRaw, "");
