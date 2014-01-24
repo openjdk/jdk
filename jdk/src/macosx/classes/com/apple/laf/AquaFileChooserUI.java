@@ -1266,64 +1266,70 @@ public class AquaFileChooserUI extends FileChooserUI {
     /**
      * Data model for a type-face selection combo-box.
      */
-    protected class FilterComboBoxModel extends DefaultListModel implements ComboBoxModel, PropertyChangeListener {
-        int selectedIndex = -1;
-
+    protected class FilterComboBoxModel extends AbstractListModel<FileFilter> implements ComboBoxModel<FileFilter>,
+            PropertyChangeListener {
+        protected FileFilter[] filters;
         protected FilterComboBoxModel() {
             super();
-            final FileFilter filters[] = getFileChooser().getChoosableFileFilters();
-            for (int i = 0; i < filters.length; i++) {
-                this.add(i, filters[i]);
-            }
+            filters = getFileChooser().getChoosableFileFilters();
         }
 
-        public void propertyChange(final PropertyChangeEvent e) {
-            final String prop = e.getPropertyName();
-            if (prop == JFileChooser.CHOOSABLE_FILE_FILTER_CHANGED_PROPERTY) {
-                this.clear();
-                final FileFilter filters[] = (FileFilter[])e.getNewValue();
-
-                for (int i = 0; i < filters.length; i++) {
-                    this.add(i, filters[i]);
-                }
-
+        public void propertyChange(PropertyChangeEvent e) {
+            String prop = e.getPropertyName();
+            if(prop == JFileChooser.CHOOSABLE_FILE_FILTER_CHANGED_PROPERTY) {
+                filters = (FileFilter[]) e.getNewValue();
                 fireContentsChanged(this, -1, -1);
             } else if (prop == JFileChooser.FILE_FILTER_CHANGED_PROPERTY) {
-                final FileFilter currentFilter = (FileFilter)e.getNewValue();
-                FileFilter filters[] = getFileChooser().getChoosableFileFilters();
-
-                boolean found = false;
-                if (currentFilter != null) {
-                    for (final FileFilter element : filters) {
-                        if (element == currentFilter) {
-                            found = true;
-                        }
-                    }
-                    if (found == false) {
-                        getFileChooser().addChoosableFileFilter(currentFilter);
-                    }
-                }
-
-                filters = getFileChooser().getChoosableFileFilters();
-                setSelectedItem(e.getNewValue());
+                fireContentsChanged(this, -1, -1);
             }
         }
 
-        public void setSelectedItem(final Object filter) {
-            if (filter != null) {
-                selectedIndex = this.indexOf(filter);
+        public void setSelectedItem(Object filter) {
+            if(filter != null) {
+                getFileChooser().setFileFilter((FileFilter) filter);
                 fireContentsChanged(this, -1, -1);
             }
         }
 
         public Object getSelectedItem() {
-            final Object returnValue = null;
-
-            if (this.size() > 0) {
-                if ((selectedIndex != -1) && (selectedIndex < size())) { return this.get(selectedIndex); }
+            // Ensure that the current filter is in the list.
+            // NOTE: we shouldnt' have to do this, since JFileChooser adds
+            // the filter to the choosable filters list when the filter
+            // is set. Lets be paranoid just in case someone overrides
+            // setFileFilter in JFileChooser.
+            FileFilter currentFilter = getFileChooser().getFileFilter();
+            boolean found = false;
+            if(currentFilter != null) {
+                for (FileFilter filter : filters) {
+                    if (filter == currentFilter) {
+                        found = true;
+                    }
+                }
+                if(found == false) {
+                    getFileChooser().addChoosableFileFilter(currentFilter);
+                }
             }
+            return getFileChooser().getFileFilter();
+        }
 
-            return returnValue;
+        public int getSize() {
+            if(filters != null) {
+                return filters.length;
+            } else {
+                return 0;
+            }
+        }
+
+        public FileFilter getElementAt(int index) {
+            if(index > getSize() - 1) {
+                // This shouldn't happen. Try to recover gracefully.
+                return getFileChooser().getFileFilter();
+            }
+            if(filters != null) {
+                return filters[index];
+            } else {
+                return null;
+            }
         }
     }
 
