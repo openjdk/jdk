@@ -1033,17 +1033,21 @@ class JavaThread: public Thread {
 
   // Last frame anchor routines
 
-  JavaFrameAnchor* frame_anchor(void)                { return &_anchor; }
+  JavaFrameAnchor* frame_anchor(void)            { return &_anchor; }
 
   // last_Java_sp
-  bool has_last_Java_frame() const                   { return _anchor.has_last_Java_frame(); }
-  intptr_t* last_Java_sp() const                     { return _anchor.last_Java_sp(); }
+  bool has_last_Java_frame() const               { return _anchor.has_last_Java_frame(); }
+  intptr_t* last_Java_sp() const                 { return _anchor.last_Java_sp(); }
 
   // last_Java_pc
 
-  address last_Java_pc(void)                         { return _anchor.last_Java_pc(); }
+  address last_Java_pc(void)                     { return _anchor.last_Java_pc(); }
 
   // Safepoint support
+#ifndef PPC64
+  JavaThreadState thread_state() const           { return _thread_state; }
+  void set_thread_state(JavaThreadState s)       { _thread_state = s;    }
+#else
   // Use membars when accessing volatile _thread_state. See
   // Threads::create_vm() for size checks.
   JavaThreadState thread_state() const           {
@@ -1052,7 +1056,8 @@ class JavaThread: public Thread {
   void set_thread_state(JavaThreadState s)       {
     OrderAccess::release_store((volatile jint*)&_thread_state, (jint)s);
   }
-  ThreadSafepointState *safepoint_state() const  { return _safepoint_state;  }
+#endif
+  ThreadSafepointState *safepoint_state() const  { return _safepoint_state; }
   void set_safepoint_state(ThreadSafepointState *state) { _safepoint_state = state; }
   bool is_at_poll_safepoint()                    { return _safepoint_state->is_at_poll_safepoint(); }
 
