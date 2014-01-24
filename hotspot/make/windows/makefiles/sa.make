@@ -94,7 +94,7 @@ SA_CFLAGS = -nologo $(MS_RUNTIME_OPTION) -W3 $(GX_OPTION) -Od -D "WIN32" -D "WIN
 SA_LD_FLAGS = bufferoverflowU.lib
 !endif
 !else
-SA_CFLAGS = -nologo $(MS_RUNTIME_OPTION) -W3 -Gm $(GX_OPTION) -Od -D "WIN32" -D "_WINDOWS" -D "_DEBUG" -D "_CONSOLE" -D "_MBCS" -YX -FD -GZ -c
+SA_CFLAGS = -nologo $(MS_RUNTIME_OPTION) -W3 $(GX_OPTION) -Od -D "WIN32" -D "_WINDOWS" -D "_DEBUG" -D "_CONSOLE" -D "_MBCS" -FD -RTC1 -c 
 !if "$(ENABLE_FULL_DEBUG_SYMBOLS)" == "1"
 SA_CFLAGS = $(SA_CFLAGS) -ZI
 !endif
