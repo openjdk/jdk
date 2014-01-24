@@ -337,7 +337,7 @@ bool Parse::push_constant(ciConstant constant, bool require_constant, bool is_au
     //   should_be_constant = (oop not scavengable || ScavengeRootsInCode >= 2)
     // An oop is not scavengable if it is in the perm gen.
     if (stable_type != NULL && con_type != NULL && con_type->isa_oopptr())
-      con_type = con_type->join(stable_type);
+      con_type = con_type->join_speculative(stable_type);
     break;
 
   case T_ILLEGAL:

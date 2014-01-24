@@ -657,7 +657,7 @@ const TypePtr* MemNode::calculate_adr_type(const Type* t, const TypePtr* cross_c
       // disregarding "null"-ness.
       // (We make an exception for TypeRawPtr::BOTTOM, which is a bit bucket.)
       const TypePtr* tp_notnull = tp->join(TypePtr::NOTNULL)->is_ptr();
-      assert(cross_check->meet(tp_notnull) == cross_check,
+      assert(cross_check->meet(tp_notnull) == cross_check->remove_speculative(),
              "real address must not escape from expected memory type");
     }
     #endif
@@ -1681,7 +1681,7 @@ const Type *LoadNode::Value( PhaseTransform *phase ) const {
       // t might actually be lower than _type, if _type is a unique
       // concrete subclass of abstract class t.
       if (off_beyond_header) {  // is the offset beyond the header?
-        const Type* jt = t->join(_type);
+        const Type* jt = t->join_speculative(_type);
         // In any case, do not allow the join, per se, to empty out the type.
         if (jt->empty() && !t->empty()) {
           // This can happen if a interface-typed array narrows to a class type.

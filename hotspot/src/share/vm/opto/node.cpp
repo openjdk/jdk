@@ -995,13 +995,13 @@ void Node::raise_bottom_type(const Type* new_type) {
   if (is_Type()) {
     TypeNode *n = this->as_Type();
     if (VerifyAliases) {
-      assert(new_type->higher_equal(n->type()), "new type must refine old type");
+      assert(new_type->higher_equal_speculative(n->type()), "new type must refine old type");
     }
     n->set_type(new_type);
   } else if (is_Load()) {
     LoadNode *n = this->as_Load();
     if (VerifyAliases) {
-      assert(new_type->higher_equal(n->type()), "new type must refine old type");
+      assert(new_type->higher_equal_speculative(n->type()), "new type must refine old type");
     }
     n->set_type(new_type);
   }
