@@ -71,9 +71,8 @@ bool MetaspaceObj::is_shared() const {
   return MetaspaceShared::is_in_shared_space(this);
 }
 
-
 bool MetaspaceObj::is_metaspace_object() const {
-  return Metaspace::contains((void*)this);
+  return ClassLoaderDataGraph::contains((void*)this);
 }
 
 void MetaspaceObj::print_address_on(outputStream* st) const {

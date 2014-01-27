@@ -451,15 +451,39 @@ static void attach_listener_thread_entry(JavaThread* thread, TRAPS) {
   }
 }
 
+bool AttachListener::has_init_error(TRAPS) {
+  if (HAS_PENDING_EXCEPTION) {
+    tty->print_cr("Exception in VM (AttachListener::init) : ");
+    java_lang_Throwable::print(PENDING_EXCEPTION, tty);
+    tty->cr();
+
+    CLEAR_PENDING_EXCEPTION;
+
+    return true;
+  } else {
+    return false;
+  }
+}
+
 // Starts the Attach Listener thread
 void AttachListener::init() {
   EXCEPTION_MARK;
-  Klass* k = SystemDictionary::resolve_or_fail(vmSymbols::java_lang_Thread(), true, CHECK);
+  Klass* k = SystemDictionary::resolve_or_fail(vmSymbols::java_lang_Thread(), true, THREAD);
+  if (has_init_error(THREAD)) {
+    return;
+  }
+
   instanceKlassHandle klass (THREAD, k);
-  instanceHandle thread_oop = klass->allocate_instance_handle(CHECK);
+  instanceHandle thread_oop = klass->allocate_instance_handle(THREAD);
+  if (has_init_error(THREAD)) {
+    return;
+  }
 
   const char thread_name[] = "Attach Listener";
-  Handle string = java_lang_String::create_from_str(thread_name, CHECK);
+  Handle string = java_lang_String::create_from_str(thread_name, THREAD);
+  if (has_init_error(THREAD)) {
+    return;
+  }
 
   // Initialize thread_oop to put it into the system threadGroup
   Handle thread_group (THREAD, Universe::system_thread_group());
@@ -472,13 +496,7 @@ void AttachListener::init() {
                        string,
                        THREAD);
 
-  if (HAS_PENDING_EXCEPTION) {
-    tty->print_cr("Exception in VM (AttachListener::init) : ");
-    java_lang_Throwable::print(PENDING_EXCEPTION, tty);
-    tty->cr();
-
-    CLEAR_PENDING_EXCEPTION;
-
+  if (has_init_error(THREAD)) {
     return;
   }
 
@@ -490,14 +508,7 @@ void AttachListener::init() {
                         vmSymbols::thread_void_signature(),
                         thread_oop,             // ARG 1
                         THREAD);
-
-  if (HAS_PENDING_EXCEPTION) {
-    tty->print_cr("Exception in VM (AttachListener::init) : ");
-    java_lang_Throwable::print(PENDING_EXCEPTION, tty);
-    tty->cr();
-
-    CLEAR_PENDING_EXCEPTION;
-
+  if (has_init_error(THREAD)) {
     return;
   }
 
