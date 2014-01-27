@@ -166,12 +166,10 @@ void os::run_periodic_checks() {
   return;
 }
 
-#ifndef _WIN64
 // previous UnhandledExceptionFilter, if there is one
 static LPTOP_LEVEL_EXCEPTION_FILTER prev_uef_handler = NULL;
 
 LONG WINAPI Handle_FLT_Exception(struct _EXCEPTION_POINTERS* exceptionInfo);
-#endif
 void os::init_system_properties_values() {
   /* sysclasspath, java_home, dll_dir */
   {
@@ -2240,11 +2238,11 @@ LONG Handle_IDiv_Exception(struct _EXCEPTION_POINTERS* exceptionInfo) {
   return EXCEPTION_CONTINUE_EXECUTION;
 }
 
-#ifndef  _WIN64
 //-----------------------------------------------------------------------------
 LONG WINAPI Handle_FLT_Exception(struct _EXCEPTION_POINTERS* exceptionInfo) {
-  // handle exception caused by native method modifying control word
   PCONTEXT ctx = exceptionInfo->ContextRecord;
+#ifndef  _WIN64
+  // handle exception caused by native method modifying control word
   DWORD exception_code = exceptionInfo->ExceptionRecord->ExceptionCode;
 
   switch (exception_code) {
@@ -2270,17 +2268,11 @@ LONG WINAPI Handle_FLT_Exception(struct _EXCEPTION_POINTERS* exceptionInfo) {
     // UnhandledExceptionFilter.
     return (prev_uef_handler)(exceptionInfo);
   }
-
-  return EXCEPTION_CONTINUE_SEARCH;
-}
-#else //_WIN64
+#else // !_WIN64
 /*
   On Windows, the mxcsr control bits are non-volatile across calls
   See also CR 6192333
-  If EXCEPTION_FLT_* happened after some native method modified
-  mxcsr - it is not a jvm fault.
-  However should we decide to restore of mxcsr after a faulty
-  native method we can uncomment following code
+  */
       jint MxCsr = INITIAL_MXCSR;
         // we can't use StubRoutines::addr_mxcsr_std()
         // because in Win64 mxcsr is not saved there
@@ -2288,10 +2280,10 @@ LONG WINAPI Handle_FLT_Exception(struct _EXCEPTION_POINTERS* exceptionInfo) {
         ctx->MxCsr = MxCsr;
         return EXCEPTION_CONTINUE_EXECUTION;
       }
+#endif // !_WIN64
 
-*/
-#endif //_WIN64
-
+  return EXCEPTION_CONTINUE_SEARCH;
+}
 
 // Fatal error reporting is single threaded so we can make this a
 // static and preallocated.  If it's more than MAX_PATH silently ignore
@@ -2640,7 +2632,6 @@ LONG WINAPI topLevelExceptionFilter(struct _EXCEPTION_POINTERS* exceptionInfo) {
 
       } // switch
     }
-#ifndef _WIN64
     if (((thread->thread_state() == _thread_in_Java) ||
         (thread->thread_state() == _thread_in_native)) &&
         exception_code != EXCEPTION_UNCAUGHT_CXX_EXCEPTION)
@@ -2648,7 +2639,6 @@ LONG WINAPI topLevelExceptionFilter(struct _EXCEPTION_POINTERS* exceptionInfo) {
       LONG result=Handle_FLT_Exception(exceptionInfo);
       if (result==EXCEPTION_CONTINUE_EXECUTION) return result;
     }
-#endif //_WIN64
   }
 
   if (exception_code != EXCEPTION_BREAKPOINT) {

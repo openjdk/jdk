@@ -63,32 +63,12 @@ InlineTree::InlineTree(Compile* c,
   assert(_caller_jvms->same_calls_as(caller_jvms), "consistent JVMS");
   assert((caller_tree == NULL ? 0 : caller_tree->stack_depth() + 1) == stack_depth(), "correct (redundant) depth parameter");
   assert(caller_bci == this->caller_bci(), "correct (redundant) bci parameter");
-  if (UseOldInlining) {
-    // Update hierarchical counts, count_inline_bcs() and count_inlines()
-    InlineTree *caller = (InlineTree *)caller_tree;
-    for( ; caller != NULL; caller = ((InlineTree *)(caller->caller_tree())) ) {
-      caller->_count_inline_bcs += count_inline_bcs();
-      NOT_PRODUCT(caller->_count_inlines++;)
-    }
+  // Update hierarchical counts, count_inline_bcs() and count_inlines()
+  InlineTree *caller = (InlineTree *)caller_tree;
+  for( ; caller != NULL; caller = ((InlineTree *)(caller->caller_tree())) ) {
+    caller->_count_inline_bcs += count_inline_bcs();
+    NOT_PRODUCT(caller->_count_inlines++;)
   }
-}
-
-InlineTree::InlineTree(Compile* c, ciMethod* callee_method, JVMState* caller_jvms,
-                       float site_invoke_ratio, int max_inline_level) :
-  C(c),
-  _caller_jvms(caller_jvms),
-  _caller_tree(NULL),
-  _method(callee_method),
-  _site_invoke_ratio(site_invoke_ratio),
-  _max_inline_level(max_inline_level),
-  _count_inline_bcs(method()->code_size()),
-  _msg(NULL)
-{
-#ifndef PRODUCT
-  _count_inlines = 0;
-  _forced_inline = false;
-#endif
-  assert(!UseOldInlining, "do not use for old stuff");
 }
 
 /**
@@ -161,11 +141,6 @@ bool InlineTree::should_inline(ciMethod* callee_method, ciMethod* caller_method,
     return true;
   }
 
-  if (!UseOldInlining) {
-    set_msg("!UseOldInlining");
-    return true;  // size and frequency are represented in a new way
-  }
-
   int default_max_inline_size = C->max_inline_size();
   int inline_small_code_size  = InlineSmallCode / 4;
   int max_inline_size         = default_max_inline_size;
@@ -227,35 +202,6 @@ bool InlineTree::should_not_inline(ciMethod *callee_method,
     fail_msg = "native method";
   } else if ( callee_method->dont_inline()) {
     fail_msg = "don't inline by annotation";
-  }
-
-  if (!UseOldInlining) {
-    if (fail_msg != NULL) {
-      *wci_result = *(WarmCallInfo::always_cold());
-      set_msg(fail_msg);
-      return true;
-    }
-
-    if (callee_method->has_unloaded_classes_in_signature()) {
-      wci_result->set_profit(wci_result->profit() * 0.1);
-    }
-
-    // don't inline exception code unless the top method belongs to an
-    // exception class
-    if (callee_method->holder()->is_subclass_of(C->env()->Throwable_klass())) {
-      ciMethod* top_method = jvms->caller() != NULL ? jvms->caller()->of_depth(1)->method() : method();
-      if (!top_method->holder()->is_subclass_of(C->env()->Throwable_klass())) {
-        wci_result->set_profit(wci_result->profit() * 0.1);
-      }
-    }
-
-    if (callee_method->has_compiled_code() &&
-        callee_method->instructions_size() > InlineSmallCode) {
-      wci_result->set_profit(wci_result->profit() * 0.1);
-      // %%% adjust wci_result->size()?
-    }
-
-    return false;
   }
 
   // one more inlining restriction
@@ -360,9 +306,7 @@ bool InlineTree::try_to_inline(ciMethod* callee_method, ciMethod* caller_method,
                                int caller_bci, JVMState* jvms, ciCallProfile& profile,
                                WarmCallInfo* wci_result, bool& should_delay) {
 
-   // Old algorithm had funny accumulating BC-size counters
-  if (UseOldInlining && ClipInlining
-      && (int)count_inline_bcs() >= DesiredMethodLimit) {
+  if (ClipInlining && (int)count_inline_bcs() >= DesiredMethodLimit) {
     if (!callee_method->force_inline() || !IncrementalInline) {
       set_msg("size > DesiredMethodLimit");
       return false;
@@ -465,8 +409,7 @@ bool InlineTree::try_to_inline(ciMethod* callee_method, ciMethod* caller_method,
 
   int size = callee_method->code_size_for_inlining();
 
-  if (UseOldInlining && ClipInlining
-      && (int)count_inline_bcs() + size >= DesiredMethodLimit) {
+  if (ClipInlining && (int)count_inline_bcs() + size >= DesiredMethodLimit) {
     if (!callee_method->force_inline() || !IncrementalInline) {
       set_msg("size > DesiredMethodLimit");
       return false;
@@ -584,8 +527,7 @@ WarmCallInfo* InlineTree::ok_to_inline(ciMethod* callee_method, JVMState* jvms, 
                                jvms, profile, &wci, should_delay);
 
 #ifndef PRODUCT
-  if (UseOldInlining && InlineWarmCalls
-      && (PrintOpto || C->print_inlining())) {
+  if (InlineWarmCalls && (PrintOpto || C->print_inlining())) {
     bool cold = wci.is_cold();
     bool hot  = !cold && wci.is_hot();
     bool old_cold = !success;
@@ -599,13 +541,12 @@ WarmCallInfo* InlineTree::ok_to_inline(ciMethod* callee_method, JVMState* jvms, 
     }
   }
 #endif
-  if (UseOldInlining) {
-    if (success) {
-      wci = *(WarmCallInfo::always_hot());
-    } else {
-      wci = *(WarmCallInfo::always_cold());
-    }
+  if (success) {
+    wci = *(WarmCallInfo::always_hot());
+  } else {
+    wci = *(WarmCallInfo::always_cold());
   }
+
   if (!InlineWarmCalls) {
     if (!wci.is_cold() && !wci.is_hot()) {
       // Do not inline the warm calls.
@@ -619,8 +560,7 @@ WarmCallInfo* InlineTree::ok_to_inline(ciMethod* callee_method, JVMState* jvms, 
       set_msg("inline (hot)");
     }
     print_inlining(callee_method, caller_bci, true /* success */);
-    if (UseOldInlining)
-      build_inline_tree_for_callee(callee_method, jvms, caller_bci);
+    build_inline_tree_for_callee(callee_method, jvms, caller_bci);
     if (InlineWarmCalls && !wci.is_hot())
       return new (C) WarmCallInfo(wci);  // copy to heap
     return WarmCallInfo::always_hot();

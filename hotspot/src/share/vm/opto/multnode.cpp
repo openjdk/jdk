@@ -94,7 +94,7 @@ const Type* ProjNode::proj_type(const Type* t) const {
   if ((_con == TypeFunc::Parms) &&
       n->is_CallStaticJava() && n->as_CallStaticJava()->is_boxing_method()) {
     // The result of autoboxing is always non-null on normal path.
-    t = t->join(TypePtr::NOTNULL);
+    t = t->join_speculative(TypePtr::NOTNULL);
   }
   return t;
 }

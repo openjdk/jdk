@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,24 +21,22 @@
  * questions.
  */
 
- /*
+/*
  * @test
- * @key nmt
- * @summary Running with NMT detail should not result in an error
+ * @bug 8030955
+ * @summary Allow multiple calls to PerfMemory::destroy() without asserting.
  * @library /testlibrary
+ * @run main PerfMemDestroy
  */
 
+import java.io.File;
+import java.util.Map;
 import com.oracle.java.testlibrary.*;
 
-public class CommandLineDetail {
-
-  public static void main(String args[]) throws Exception {
-
-    ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
-      "-XX:NativeMemoryTracking=detail",
-      "-version");
-    OutputAnalyzer output = new OutputAnalyzer(pb.start());
-    output.shouldNotContain("error");
-    output.shouldHaveExitValue(0);
-  }
+public class PerfMemDestroy {
+    public static void main(String args[]) throws Throwable {
+        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder("-XX:+PerfAllowAtExitRegistration", "-version");
+        OutputAnalyzer output = new OutputAnalyzer(pb.start());
+        output.shouldHaveExitValue(0);
+    }
 }

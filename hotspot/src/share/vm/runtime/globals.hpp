@@ -376,6 +376,8 @@ class CommandLineFlags {
 
   static bool ccstrAt(char* name, size_t len, ccstr* value);
   static bool ccstrAt(char* name, ccstr* value)    { return ccstrAt(name, strlen(name), value); }
+  // Contract:  Flag will make private copy of the incoming value.
+  // Outgoing value is always malloc-ed, and caller MUST call free.
   static bool ccstrAtPut(char* name, size_t len, ccstr* value, Flag::Flags origin);
   static bool ccstrAtPut(char* name, ccstr* value, Flag::Flags origin) { return ccstrAtPut(name, strlen(name), value, origin); }
 
