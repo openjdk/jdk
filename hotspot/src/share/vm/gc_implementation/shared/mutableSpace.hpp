@@ -124,6 +124,7 @@ class MutableSpace: public ImmutableSpace {
   virtual size_t used_in_words() const                    { return pointer_delta(top(), bottom()); }
   virtual size_t free_in_words() const                    { return pointer_delta(end(),    top()); }
   virtual size_t tlab_capacity(Thread* thr) const         { return capacity_in_bytes();            }
+  virtual size_t tlab_used(Thread* thr) const             { return used_in_bytes();                }
   virtual size_t unsafe_max_tlab_alloc(Thread* thr) const { return free_in_bytes();                }
 
   // Allocation (return NULL if full)

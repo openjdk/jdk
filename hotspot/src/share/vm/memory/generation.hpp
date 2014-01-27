@@ -299,6 +299,10 @@ class Generation: public CHeapObj<mtGC> {
     guarantee(false, "Generation doesn't support thread local allocation buffers");
     return 0;
   }
+  virtual size_t tlab_used() const {
+    guarantee(false, "Generation doesn't support thread local allocation buffers");
+    return 0;
+  }
   virtual size_t unsafe_max_tlab_alloc() const {
     guarantee(false, "Generation doesn't support thread local allocation buffers");
     return 0;

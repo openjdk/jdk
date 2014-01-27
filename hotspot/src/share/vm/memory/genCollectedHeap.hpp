@@ -248,6 +248,7 @@ public:
   // Section on TLAB's.
   virtual bool supports_tlab_allocation() const;
   virtual size_t tlab_capacity(Thread* thr) const;
+  virtual size_t tlab_used(Thread* thr) const;
   virtual size_t unsafe_max_tlab_alloc(Thread* thr) const;
   virtual HeapWord* allocate_new_tlab(size_t size);
 

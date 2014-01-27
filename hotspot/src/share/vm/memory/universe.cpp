@@ -816,6 +816,8 @@ jint Universe::initialize_heap() {
     Universe::_collectedHeap = new GenCollectedHeap(gc_policy);
   }
 
+  ThreadLocalAllocBuffer::set_max_size(Universe::heap()->max_tlab_size());
+
   jint status = Universe::heap()->initialize();
   if (status != JNI_OK) {
     return status;
