@@ -199,8 +199,7 @@ public abstract class ClassLoader {
 
         // the set of parallel capable loader types
         private static final Set<Class<? extends ClassLoader>> loaderTypes =
-            Collections.newSetFromMap(
-                new WeakHashMap<Class<? extends ClassLoader>, Boolean>());
+            Collections.newSetFromMap(new WeakHashMap<>());
         static {
             synchronized (loaderTypes) { loaderTypes.add(ClassLoader.class); }
         }
@@ -285,8 +284,7 @@ public abstract class ClassLoader {
         if (ParallelLoaders.isRegistered(this.getClass())) {
             parallelLockMap = new ConcurrentHashMap<>();
             package2certs = new ConcurrentHashMap<>();
-            domains =
-                Collections.synchronizedSet(new HashSet<ProtectionDomain>());
+            domains = Collections.synchronizedSet(new HashSet<>());
             assertionLock = new Object();
         } else {
             // no finer-grained lock; lock on the classloader instance
@@ -916,10 +914,10 @@ public abstract class ClassLoader {
         // go through and make sure all the certs in one array
         // are in the other and vice-versa.
         boolean match;
-        for (int i = 0; i < certs.length; i++) {
+        for (Certificate cert : certs) {
             match = false;
-            for (int j = 0; j < pcerts.length; j++) {
-                if (certs[i].equals(pcerts[j])) {
+            for (Certificate pcert : pcerts) {
+                if (cert.equals(pcert)) {
                     match = true;
                     break;
                 }
@@ -928,10 +926,10 @@ public abstract class ClassLoader {
         }
 
         // now do the same for pcerts
-        for (int i = 0; i < pcerts.length; i++) {
+        for (Certificate pcert : pcerts) {
             match = false;
-            for (int j = 0; j < certs.length; j++) {
-                if (pcerts[i].equals(certs[j])) {
+            for (Certificate cert : certs) {
+                if (pcert.equals(cert)) {
                     match = true;
                     break;
                 }
@@ -1648,10 +1646,10 @@ public abstract class ClassLoader {
             pkgs = Package.getSystemPackages();
         }
         if (pkgs != null) {
-            for (int i = 0; i < pkgs.length; i++) {
-                String pkgName = pkgs[i].getName();
+            for (Package pkg : pkgs) {
+                String pkgName = pkg.getName();
                 if (map.get(pkgName) == null) {
-                    map.put(pkgName, pkgs[i]);
+                    map.put(pkgName, pkg);
                 }
             }
         }
@@ -1830,8 +1828,8 @@ public abstract class ClassLoader {
                 throw new UnsatisfiedLinkError("Can't load " + libfilename);
             }
         }
-        for (int i = 0 ; i < sys_paths.length ; i++) {
-            File libfile = new File(sys_paths[i], System.mapLibraryName(name));
+        for (String sys_path : sys_paths) {
+            File libfile = new File(sys_path, System.mapLibraryName(name));
             if (loadLibrary0(fromClass, libfile)) {
                 return;
             }
@@ -1841,9 +1839,8 @@ public abstract class ClassLoader {
             }
         }
         if (loader != null) {
-            for (int i = 0 ; i < usr_paths.length ; i++) {
-                File libfile = new File(usr_paths[i],
-                                        System.mapLibraryName(name));
+            for (String usr_path : usr_paths) {
+                File libfile = new File(usr_path, System.mapLibraryName(name));
                 if (loadLibrary0(fromClass, libfile)) {
                     return;
                 }
