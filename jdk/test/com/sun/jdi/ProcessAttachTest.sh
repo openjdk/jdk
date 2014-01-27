@@ -87,7 +87,7 @@ startDebuggee()
   # "java" process.
   if [ "$OS" = "Windows" ]; then
     sleep 2
-    pid=`ps -o pid,ppid,comm|grep ${startpid}|grep "java"|cut -c1-6`
+    pid=`ps -o pid,ppid,comm | awk '/${startpid}.+java/{ print $1 }'`
   fi
                                                                                                      
   echo "Waiting for Debuggee to initialize..."
