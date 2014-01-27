@@ -89,6 +89,10 @@ void ParGCAllocBuffer::flush_stats(PLABStats* stats) {
 // scavenge; it clears the sensor accumulators.
 void PLABStats::adjust_desired_plab_sz(uint no_of_gc_workers) {
   assert(ResizePLAB, "Not set");
+
+  assert(is_object_aligned(max_size()) && min_size() <= max_size(),
+         "PLAB clipping computation may be incorrect");
+
   if (_allocated == 0) {
     assert(_unused == 0,
            err_msg("Inconsistency in PLAB stats: "

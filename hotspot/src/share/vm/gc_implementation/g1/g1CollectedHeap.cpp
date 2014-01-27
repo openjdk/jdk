@@ -2996,7 +2996,17 @@ bool G1CollectedHeap::supports_tlab_allocation() const {
 }
 
 size_t G1CollectedHeap::tlab_capacity(Thread* ignored) const {
-  return HeapRegion::GrainBytes;
+  return (_g1_policy->young_list_target_length() - young_list()->survivor_length()) * HeapRegion::GrainBytes;
+}
+
+size_t G1CollectedHeap::tlab_used(Thread* ignored) const {
+  return young_list()->eden_used_bytes();
+}
+
+// For G1 TLABs should not contain humongous objects, so the maximum TLAB size
+// must be smaller than the humongous object limit.
+size_t G1CollectedHeap::max_tlab_size() const {
+  return align_size_down(_humongous_object_threshold_in_words - 1, MinObjAlignment);
 }
 
 size_t G1CollectedHeap::unsafe_max_tlab_alloc(Thread* ignored) const {
@@ -3008,11 +3018,11 @@ size_t G1CollectedHeap::unsafe_max_tlab_alloc(Thread* ignored) const {
   // humongous objects.
 
   HeapRegion* hr = _mutator_alloc_region.get();
-  size_t max_tlab_size = _humongous_object_threshold_in_words * wordSize;
+  size_t max_tlab = max_tlab_size() * wordSize;
   if (hr == NULL) {
-    return max_tlab_size;
+    return max_tlab;
   } else {
-    return MIN2(MAX2(hr->free(), (size_t) MinTLABSize), max_tlab_size);
+    return MIN2(MAX2(hr->free(), (size_t) MinTLABSize), max_tlab);
   }
 }
 
@@ -3649,6 +3659,7 @@ void G1CollectedHeap::gc_prologue(bool full /* Ignored */) {
   // always_do_update_barrier = false;
   assert(InlineCacheBuffer::is_empty(), "should have cleaned up ICBuffer");
   // Fill TLAB's and such
+  accumulate_statistics_all_tlabs();
   ensure_parsability(true);
 
   if (G1SummarizeRSetStats && (G1SummarizeRSetStatsPeriod > 0) &&
@@ -3672,6 +3683,8 @@ void G1CollectedHeap::gc_epilogue(bool full /* Ignored */) {
   COMPILER2_PRESENT(assert(DerivedPointerTable::is_empty(),
                         "derived pointer present"));
   // always_do_update_barrier = true;
+
+  resize_all_tlabs();
 
   // We have just completed a GC. Update the soft reference
   // policy with the new heap occupancy

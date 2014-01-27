@@ -488,6 +488,10 @@ size_t ParallelScavengeHeap::tlab_capacity(Thread* thr) const {
   return young_gen()->eden_space()->tlab_capacity(thr);
 }
 
+size_t ParallelScavengeHeap::tlab_used(Thread* thr) const {
+  return young_gen()->eden_space()->tlab_used(thr);
+}
+
 size_t ParallelScavengeHeap::unsafe_max_tlab_alloc(Thread* thr) const {
   return young_gen()->eden_space()->unsafe_max_tlab_alloc(thr);
 }

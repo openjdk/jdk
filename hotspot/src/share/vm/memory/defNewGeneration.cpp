@@ -1084,6 +1084,10 @@ size_t DefNewGeneration::tlab_capacity() const {
   return eden()->capacity();
 }
 
+size_t DefNewGeneration::tlab_used() const {
+  return eden()->used();
+}
+
 size_t DefNewGeneration::unsafe_max_tlab_alloc() const {
   return unsafe_max_alloc_nogc();
 }

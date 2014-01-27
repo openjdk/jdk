@@ -932,6 +932,16 @@ size_t GenCollectedHeap::tlab_capacity(Thread* thr) const {
   return result;
 }
 
+size_t GenCollectedHeap::tlab_used(Thread* thr) const {
+  size_t result = 0;
+  for (int i = 0; i < _n_gens; i += 1) {
+    if (_gens[i]->supports_tlab_allocation()) {
+      result += _gens[i]->tlab_used();
+    }
+  }
+  return result;
+}
+
 size_t GenCollectedHeap::unsafe_max_tlab_alloc(Thread* thr) const {
   size_t result = 0;
   for (int i = 0; i < _n_gens; i += 1) {

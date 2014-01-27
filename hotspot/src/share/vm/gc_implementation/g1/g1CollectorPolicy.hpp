@@ -820,6 +820,8 @@ public:
     // do that for any other surv rate groups
   }
 
+  size_t young_list_target_length() const { return _young_list_target_length; }
+
   bool is_young_list_full() {
     uint young_list_length = _g1->young_list()->length();
     uint young_list_target_length = _young_list_target_length;
