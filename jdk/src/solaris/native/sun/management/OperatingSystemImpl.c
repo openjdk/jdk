@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,7 +41,7 @@
 #include <sys/proc_info.h>
 #include <libproc.h>
 #endif
-#else
+#elif !defined(_AIX)
 #include <sys/swap.h>
 #endif
 #include <sys/resource.h>
@@ -57,9 +57,13 @@
 #include <stdlib.h>
 #include <unistd.h>
 
+#if defined(_AIX)
+#include <libperfstat.h>
+#endif
+
 static jlong page_size = 0;
 
-#if defined(_ALLBSD_SOURCE)
+#if defined(_ALLBSD_SOURCE) || defined(_AIX)
 #define MB      (1024UL * 1024UL)
 #else
 
@@ -326,6 +330,12 @@ Java_sun_management_OperatingSystemImpl_getFreePhysicalMemorySize0
      */
     // throw_internal_error(env, "unimplemented in FreeBSD")
     return (128 * MB);
+#elif defined(_AIX)
+    perfstat_memory_total_t memory_info;
+    if (-1 != perfstat_memory_total(NULL, &memory_info, sizeof(perfstat_memory_total_t), 1)) {
+        return (jlong)(memory_info.real_free * 4L * 1024L);
+    }
+    return -1;
 #else // solaris / linux
     jlong num_avail_physical_pages = sysconf(_SC_AVPHYS_PAGES);
     return (num_avail_physical_pages * page_size);
@@ -349,6 +359,12 @@ Java_sun_management_OperatingSystemImpl_getTotalPhysicalMemorySize0
         return -1;
     }
     return result;
+#elif defined(_AIX)
+    perfstat_memory_total_t memory_info;
+    if (-1 != perfstat_memory_total(NULL, &memory_info, sizeof(perfstat_memory_total_t), 1)) {
+        return (jlong)(memory_info.real_total * 4L * 1024L);
+    }
+    return -1;
 #else // solaris / linux
     jlong num_physical_pages = sysconf(_SC_PHYS_PAGES);
     return (num_physical_pages * page_size);
@@ -417,7 +433,16 @@ Java_sun_management_OperatingSystemImpl_getOpenFileDescriptorCount0
     struct dirent* dentp;
     jlong fds = 0;
 
-    dirp = opendir("/proc/self/fd");
+#if defined(_AIX)
+/* AIX does not understand '/proc/self' - it requires the real process ID */
+#define FD_DIR aix_fd_dir
+    char aix_fd_dir[32];     /* the pid has at most 19 digits */
+    snprintf(aix_fd_dir, 32, "/proc/%d/fd", getpid());
+#else
+#define FD_DIR "/proc/self/fd"
+#endif
+
+    dirp = opendir(FD_DIR);
     if (dirp == NULL) {
         throw_internal_error(env, "Unable to open directory /proc/self/fd");
         return -1;

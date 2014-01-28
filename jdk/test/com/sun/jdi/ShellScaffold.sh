@@ -199,6 +199,8 @@ findPid()
         if [ "$osname" = SunOS ] ; then
             # Solaris and OpenSolaris use pgrep and not ps in psCmd
             findPidCmd="$psCmd"
+        elif [ "$osname" = AIX ] ; then
+            findPidCmd="$psCmd"
         else
             #   Never use plain 'ps', which requires a "controlling terminal"
             #     and will fail  with a "ps: no controlling terminal" error.
@@ -293,7 +295,7 @@ EOF
          psCmd=ps
          jstack=jstack.exe
          ;;
-       SunOS | Linux | Darwin)
+       SunOS | Linux | Darwin | AIX)
          transport=dt_socket
          address=
          devnull=/dev/null
