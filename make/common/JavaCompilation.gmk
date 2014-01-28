@@ -163,11 +163,12 @@ define SetupArchive
 
   # The capture contents macro finds all files (matching the patterns, typically
   # .class and .prp) that are newer than the jar-file, ie the new content to be put into the jar.
+  # NOTICE: please leave the parentheses space separated otherwise the AIX build will break!
   $1_CAPTURE_CONTENTS=$$(foreach src,$$($1_SRCS), \
-      (($(FIND) $$(src) -type f -a \( $$($1_FIND_PATTERNS) \) -a -newer $$@ $$($1_GREP_INCLUDES) \
+      ( ( $(FIND) $$(src) -type f -a \( $$($1_FIND_PATTERNS) \) -a -newer $$@ $$($1_GREP_INCLUDES) \
           $$($1_GREP_EXCLUDES) | $(SED) 's|$$(src)/||g' && \
-      $(ECHO) $$(subst $$(src)/,,$$($1_EXTRA_FILES))) > \
-      $$(src)/_the.$$($1_JARNAME)_contents) $$(NEWLINE))
+      $(ECHO) $$(subst $$(src)/,,$$($1_EXTRA_FILES) ) ) > \
+      $$(src)/_the.$$($1_JARNAME)_contents) $$(NEWLINE) )
   # The capture metainf macro finds all files below the META-INF directory that are newer than the jar-file.
   ifeq (,$$($1_SKIP_METAINF))
     $1_CAPTURE_METAINF =$$(foreach src,$$($1_SRCS),($(FIND) $$(src)/META-INF -type f -a -newer $$@ 2> /dev/null | $(SED) 's|$$(src)/||g' >> $$(src)/_the.$$($1_JARNAME)_contents ) $$(NEWLINE))
@@ -176,19 +177,20 @@ define SetupArchive
   # tells us what to remove from the jar-file.
   $1_CAPTURE_DELETES=$$(foreach src,$$($1_SRCS),($(FIND) $$(src) -name _the.package.deleted -newer $$@ -exec $(SED) 's|$$(src)||g' \{\} >> $$($1_DELETES_FILE) \;) $$(NEWLINE))
   # The update contents macro updates the jar file with the previously capture contents.
-  # xargs is used to trim the whitespace from the contents file, to see if it is empty.
+  # Use 'wc -w' to see if the contents file is empty.
   $1_UPDATE_CONTENTS=$$(foreach src,$$($1_SRCS), \
       (cd $$(src) && \
-       if [ -n "`$(CAT) _the.$$($1_JARNAME)_contents | $(XARGS)`" ]; then \
+       if [ "`$(WC) -w _the.$$($1_JARNAME)_contents | $(AWK) '{ print $$$$1 }'`" -gt "0" ]; then \
          $(ECHO) "  updating" `$(WC) -l _the.$$($1_JARNAME)_contents | $(AWK) '{ print $$$$1 }'` files && \
          $(JAR) $$($1_JAR_UPDATE_OPTIONS) $$@ @_the.$$($1_JARNAME)_contents; \
        fi) $$(NEWLINE))
   # The s-variants of the above macros are used when the jar is created from scratch.
+  # NOTICE: please leave the parentheses space separated otherwise the AIX build will break!
   $1_SCAPTURE_CONTENTS=$$(foreach src,$$($1_SRCS), \
-      (($(FIND) $$(src) -type f -a \( $$($1_FIND_PATTERNS) \) $$($1_GREP_INCLUDES) \
+      ( ( $(FIND) $$(src) -type f -a \( $$($1_FIND_PATTERNS) \) $$($1_GREP_INCLUDES) \
           $$($1_GREP_EXCLUDES) | $(SED) 's|$$(src)/||g' && \
-      $$(subst $$(src)/,,$(ECHO) $$($1_EXTRA_FILES))) > \
-      $$(src)/_the.$$($1_JARNAME)_contents) $$(NEWLINE))
+      $$(subst $$(src)/,,$(ECHO) $$($1_EXTRA_FILES) ) ) > \
+      $$(src)/_the.$$($1_JARNAME)_contents) $$(NEWLINE) )
 
   ifeq (,$$($1_SKIP_METAINF))
     $1_SCAPTURE_METAINF=$$(foreach src,$$($1_SRCS), \

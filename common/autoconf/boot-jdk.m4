@@ -316,7 +316,7 @@ AC_DEFUN_ONCE([BOOTJDK_SETUP_BOOT_JDK_ARGUMENTS],
 
     # Minimum amount of heap memory.
     ADD_JVM_ARG_IF_OK([-Xms64M],boot_jdk_jvmargs,[$JAVA])
-    if test "x$OPENJDK_TARGET_OS" = "xmacosx"; then
+    if test "x$OPENJDK_TARGET_OS" = "xmacosx" || test "x$OPENJDK_TARGET_CPU" = "xppc64" ; then
       # Why does macosx need more heap? Its the huge JDK batch.
       ADD_JVM_ARG_IF_OK([-Xmx1600M],boot_jdk_jvmargs,[$JAVA])
     else
