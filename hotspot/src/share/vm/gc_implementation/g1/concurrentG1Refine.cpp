@@ -27,6 +27,7 @@
 #include "gc_implementation/g1/concurrentG1RefineThread.hpp"
 #include "gc_implementation/g1/g1CollectedHeap.inline.hpp"
 #include "gc_implementation/g1/g1HotCardCache.hpp"
+#include "runtime/java.hpp"
 
 ConcurrentG1Refine::ConcurrentG1Refine(G1CollectedHeap* g1h) :
   _threads(NULL), _n_threads(0),
@@ -62,6 +63,10 @@ ConcurrentG1Refine::ConcurrentG1Refine(G1CollectedHeap* g1h) :
   for (int i = _n_threads - 1; i >= 0; i--) {
     ConcurrentG1RefineThread* t = new ConcurrentG1RefineThread(this, next, worker_id_offset, i);
     assert(t != NULL, "Conc refine should have been created");
+    if (t->osthread() == NULL) {
+        vm_shutdown_during_initialization("Could not create ConcurrentG1RefineThread");
+    }
+
     assert(t->cg1r() == this, "Conc refine thread should refer to this");
     _threads[i] = t;
     next = t;

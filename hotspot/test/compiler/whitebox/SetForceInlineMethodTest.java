@@ -27,19 +27,17 @@
  * @library /testlibrary /testlibrary/whitebox
  * @build SetForceInlineMethodTest
  * @run main ClassFileInstaller sun.hotspot.WhiteBox
- * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -XX:CompileCommand=compileonly,TestCase$Helper::* SetForceInlineMethodTest
+ * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -XX:CompileCommand=compileonly,SimpleTestCase$Helper::* SetForceInlineMethodTest
  * @summary testing of WB::testSetForceInlineMethod()
  * @author igor.ignatyev@oracle.com
  */
 public class SetForceInlineMethodTest extends CompilerWhiteBoxTest {
 
     public static void main(String[] args) throws Exception {
-        for (TestCase test : TestCase.values()) {
-            new SetForceInlineMethodTest(test).runTest();
-        }
+        CompilerWhiteBoxTest.main(SetForceInlineMethodTest::new, args);
     }
 
-    public SetForceInlineMethodTest(TestCase testCase) {
+    private SetForceInlineMethodTest(TestCase testCase) {
         super(testCase);
     }
 

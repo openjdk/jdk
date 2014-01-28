@@ -29,7 +29,6 @@
 
 package org.openjdk.tests.java.util.stream;
 
-import java.util.concurrent.atomic.AtomicLong;
 import java.util.stream.DoubleStream;
 import java.util.stream.DoubleStreamTestDataProvider;
 import java.util.stream.IntStream;
@@ -47,45 +46,41 @@ public class CountTest extends OpTestCase {
 
     @Test(dataProvider = "StreamTestData<Integer>", dataProviderClass = StreamTestDataProvider.class)
     public void testOps(String name, TestData.OfRef<Integer> data) {
-        AtomicLong expectedCount = new AtomicLong();
-        data.stream().forEach(e -> expectedCount.incrementAndGet());
+        long expectedCount = data.size();
 
         withData(data).
                 terminal(Stream::count).
-                expectedResult(expectedCount.get()).
+                expectedResult(expectedCount).
                 exercise();
     }
 
     @Test(dataProvider = "IntStreamTestData", dataProviderClass = IntStreamTestDataProvider.class)
     public void testOps(String name, TestData.OfInt data) {
-        AtomicLong expectedCount = new AtomicLong();
-        data.stream().forEach(e -> expectedCount.incrementAndGet());
+        long expectedCount = data.size();
 
         withData(data).
                 terminal(IntStream::count).
-                expectedResult(expectedCount.get()).
+                expectedResult(expectedCount).
                 exercise();
     }
 
     @Test(dataProvider = "LongStreamTestData", dataProviderClass = LongStreamTestDataProvider.class)
     public void testOps(String name, TestData.OfLong data) {
-        AtomicLong expectedCount = new AtomicLong();
-        data.stream().forEach(e -> expectedCount.incrementAndGet());
+        long expectedCount = data.size();
 
         withData(data).
                 terminal(LongStream::count).
-                expectedResult(expectedCount.get()).
+                expectedResult(expectedCount).
                 exercise();
     }
 
     @Test(dataProvider = "DoubleStreamTestData", dataProviderClass = DoubleStreamTestDataProvider.class)
     public void testOps(String name, TestData.OfDouble data) {
-        AtomicLong expectedCount = new AtomicLong();
-        data.stream().forEach(e -> expectedCount.incrementAndGet());
+        long expectedCount = data.size();
 
         withData(data).
                 terminal(DoubleStream::count).
-                expectedResult(expectedCount.get()).
+                expectedResult(expectedCount).
                 exercise();
     }
 }

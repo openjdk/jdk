@@ -81,6 +81,9 @@ extern int NET_Poll(struct pollfd *ufds, unsigned int nfds, int timeout);
 int getDefaultIPv6Interface(struct in6_addr *target_addr);
 #endif
 
+#ifdef __solaris__
+extern int net_getParam(char *driver, char *param);
+#endif
 
 /* needed from libsocket on Solaris 8 */
 

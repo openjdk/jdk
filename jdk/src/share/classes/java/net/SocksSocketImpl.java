@@ -118,7 +118,7 @@ class SocksSocketImpl extends PlainSocketImpl implements SocksConsts {
     private int readSocksReply(InputStream in, byte[] data, long deadlineMillis) throws IOException {
         int len = data.length;
         int received = 0;
-        for (int attempts = 0; received < len && attempts < 3; attempts++) {
+        while (received < len) {
             int count;
             try {
                 count = ((SocketInputStream)in).read(data, received, len - received, remainingMillis(deadlineMillis));
@@ -521,7 +521,11 @@ class SocksSocketImpl extends PlainSocketImpl implements SocksConsts {
                     throw new SocketException("Reply from SOCKS server badly formatted");
                 break;
             case DOMAIN_NAME:
-                len = data[1];
+                byte[] lenByte = new byte[1];
+                i = readSocksReply(in, lenByte, deadlineMillis);
+                if (i != 1)
+                    throw new SocketException("Reply from SOCKS server badly formatted");
+                len = lenByte[0] & 0xFF;
                 byte[] host = new byte[len];
                 i = readSocksReply(in, host, deadlineMillis);
                 if (i != len)
@@ -532,7 +536,7 @@ class SocksSocketImpl extends PlainSocketImpl implements SocksConsts {
                     throw new SocketException("Reply from SOCKS server badly formatted");
                 break;
             case IPV6:
-                len = data[1];
+                len = 16;
                 addr = new byte[len];
                 i = readSocksReply(in, addr, deadlineMillis);
                 if (i != len)

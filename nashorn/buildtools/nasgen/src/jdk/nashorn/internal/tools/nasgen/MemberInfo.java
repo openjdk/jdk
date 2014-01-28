@@ -279,10 +279,6 @@ public final class MemberInfo implements Cloneable {
                 }
             }
         } else if (kind == Kind.FUNCTION) {
-            final Type returnType = Type.getReturnType(javaDesc);
-            if (! returnType.toString().equals(OBJECT_DESC)) {
-                error("return value should be of Object type, found" + returnType);
-            }
             final Type[] argTypes = Type.getArgumentTypes(javaDesc);
             if (argTypes.length < 1) {
                 error("function methods should have at least 1 arg");
