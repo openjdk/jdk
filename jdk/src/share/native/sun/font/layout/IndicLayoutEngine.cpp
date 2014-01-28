@@ -44,7 +44,7 @@
 #include "LEGlyphStorage.h"
 
 #include "IndicReordering.h"
-#include <stdio.h>
+
 U_NAMESPACE_BEGIN
 
 UOBJECT_DEFINE_RTTI_IMPLEMENTATION(IndicOpenTypeLayoutEngine)
@@ -53,14 +53,14 @@ IndicOpenTypeLayoutEngine::IndicOpenTypeLayoutEngine(const LEFontInstance *fontI
                                                      le_int32 typoFlags, le_bool version2, const LEReferenceTo<GlyphSubstitutionTableHeader> &gsubTable, LEErrorCode &success)
     : OpenTypeLayoutEngine(fontInstance, scriptCode, languageCode, typoFlags, gsubTable, success), fMPreFixups(NULL)
 {
-        if ( version2 ) {
-                fFeatureMap = IndicReordering::getv2FeatureMap(fFeatureMapCount);
-        } else {
+  if ( version2 ) {
+    fFeatureMap = IndicReordering::getv2FeatureMap(fFeatureMapCount);
+  } else {
     fFeatureMap = IndicReordering::getFeatureMap(fFeatureMapCount);
-        }
-    fFeatureOrder = TRUE;
-    fVersion2 = version2;
-    fFilterZeroWidth = IndicReordering::getFilterZeroWidth(fScriptCode);
+  }
+  fFeatureOrder = TRUE;
+  fVersion2 = version2;
+  fFilterZeroWidth = IndicReordering::getFilterZeroWidth(fScriptCode);
 }
 
 IndicOpenTypeLayoutEngine::IndicOpenTypeLayoutEngine(const LEFontInstance *fontInstance, le_int32 scriptCode, le_int32 languageCode, le_int32 typoFlags, LEErrorCode &success)
@@ -68,7 +68,7 @@ IndicOpenTypeLayoutEngine::IndicOpenTypeLayoutEngine(const LEFontInstance *fontI
 {
     fFeatureMap = IndicReordering::getFeatureMap(fFeatureMapCount);
     fFeatureOrder = TRUE;
-        fVersion2 =  FALSE;
+    fVersion2 =  FALSE;
 }
 
 IndicOpenTypeLayoutEngine::~IndicOpenTypeLayoutEngine()
@@ -90,6 +90,7 @@ le_int32 IndicOpenTypeLayoutEngine::glyphProcessing(const LEUnicode chars[], le_
         return 0;
     }
 
+    _LETRACE("IOTLE::gp, calling parent");
     le_int32 retCount = OpenTypeLayoutEngine::glyphProcessing(chars, offset, count, max, rightToLeft, glyphStorage, success);
 
     if (LE_FAILURE(success)) {
@@ -97,11 +98,15 @@ le_int32 IndicOpenTypeLayoutEngine::glyphProcessing(const LEUnicode chars[], le_
     }
 
     if (fVersion2) {
-        IndicReordering::finalReordering(glyphStorage,retCount);
-        IndicReordering::applyPresentationForms(glyphStorage,retCount);
-        OpenTypeLayoutEngine::glyphSubstitution(count,max, rightToLeft, glyphStorage, success);
+      _LETRACE("IOTLE::gp, v2 final,");
+      IndicReordering::finalReordering(glyphStorage,retCount);
+      _LETRACE("IOTLE::gp, v2 pres");
+      IndicReordering::applyPresentationForms(glyphStorage,retCount);
+      _LETRACE("IOTLE::gp, parent gsub");
+      OpenTypeLayoutEngine::glyphSubstitution(count,max, rightToLeft, glyphStorage, success);
     } else {
-        IndicReordering::adjustMPres(fMPreFixups, glyphStorage, success);
+      _LETRACE("IOTLE::gp, adjust mpres");
+      IndicReordering::adjustMPres(fMPreFixups, glyphStorage, success);
     }
     return retCount;
 }
@@ -115,6 +120,8 @@ le_int32 IndicOpenTypeLayoutEngine::characterProcessing(const LEUnicode chars[],
     if (LE_FAILURE(success)) {
         return 0;
     }
+
+    _LETRACE("IOTLE: charProc");
 
     if (chars == NULL || offset < 0 || count < 0 || max < 0 || offset >= max || offset + count > max) {
         success = LE_ILLEGAL_ARGUMENT_ERROR;
@@ -143,8 +150,10 @@ le_int32 IndicOpenTypeLayoutEngine::characterProcessing(const LEUnicode chars[],
 
     le_int32 outCharCount;
     if (fVersion2) {
+        _LETRACE("v2process");
         outCharCount = IndicReordering::v2process(&chars[offset], count, fScriptCode, outChars, glyphStorage);
     } else {
+        _LETRACE("reorder");
         outCharCount = IndicReordering::reorder(&chars[offset], count, fScriptCode, outChars, glyphStorage, &fMPreFixups, success);
     }
 

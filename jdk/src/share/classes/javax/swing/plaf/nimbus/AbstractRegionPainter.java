@@ -356,12 +356,12 @@ public abstract class AbstractRegionPainter implements Painter<JComponent> {
      * end points are equal. In such a case, the end y point is slightly
      * increased to avoid the overlap.
      *
-     * @param x1
-     * @param y1
-     * @param x2
-     * @param y2
-     * @param midpoints
-     * @param colors
+     * @param x1 x1
+     * @param y1 y1
+     * @param x2 x2
+     * @param y2 y2
+     * @param midpoints the midpoints
+     * @param colors the colors
      * @return a valid LinearGradientPaint. This method never returns null.
      * @throws NullPointerException
      *      if {@code midpoints} array is null,
@@ -387,11 +387,11 @@ public abstract class AbstractRegionPainter implements Painter<JComponent> {
      * is non-positive. In such a case, the radius is just slightly
      * increased to avoid 0.
      *
-     * @param x
-     * @param y
-     * @param r
-     * @param midpoints
-     * @param colors
+     * @param x x-coordinate
+     * @param y y-coordinate
+     * @param r radius
+     * @param midpoints the midpoints
+     * @param colors the colors
      * @return a valid RadialGradientPaint. This method never returns null.
      * @throws NullPointerException
      *      if {@code midpoints} array is null,

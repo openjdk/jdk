@@ -493,6 +493,14 @@ public class WindowsFileSystemProvider
         try {
             CreateDirectory(dir.getPathForWin32Calls(), sd.address());
         } catch (WindowsException x) {
+            // convert ERROR_ACCESS_DENIED to FileAlreadyExistsException if we can
+            // verify that the directory exists
+            if (x.lastError() == ERROR_ACCESS_DENIED) {
+                try {
+                    if (WindowsFileAttributes.get(dir, false).isDirectory())
+                        throw new FileAlreadyExistsException(dir.toString());
+                } catch (WindowsException ignore) { }
+            }
             x.rethrowAsIOException(dir);
         } finally {
             sd.release();

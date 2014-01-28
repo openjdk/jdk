@@ -133,6 +133,11 @@ public final class NativeJavaImporter extends ScriptObject {
         return createAndSetProperty(desc) ? super.lookup(desc, request) : super.noSuchMethod(desc, request);
     }
 
+    @Override
+    protected Object invokeNoSuchProperty(final String name) {
+        return createProperty(name);
+    }
+
     private boolean createAndSetProperty(final CallSiteDescriptor desc) {
         final String name = desc.getNameToken(CallSiteDescriptor.NAME_OPERAND);
         final Object value = createProperty(name);

@@ -119,7 +119,7 @@ HS_DTRACE_PROBE_DECL4(hotspot, monitor__waited,
     }                                                                      \
   }
 
-#define HOTSPOT_MONITOR_PROBE_waited HOTSPOT_MONITOR_PROBE_WAITED
+#define HOTSPOT_MONITOR_PROBE_waited HOTSPOT_MONITOR_WAITED
 
 #define DTRACE_MONITOR_PROBE(probe, monitor, obj, thread)                  \
   {                                                                        \

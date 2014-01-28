@@ -1,0 +1,2 @@
+package-info.java:11:20: compiler.err.prob.found.req: (compiler.misc.inconvertible.types: compiler.misc.anonymous.class: java.lang.Object, java.lang.String)
+1 error

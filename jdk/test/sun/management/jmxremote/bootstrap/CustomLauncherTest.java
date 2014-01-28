@@ -91,6 +91,12 @@ public class CustomLauncherTest {
             return;
         }
 
+        if (getPlatform() == null) {
+            System.out.println("Test not designed to run on this operating " +
+                                "system (" + OSNAME + "), skipping...");
+            return;
+        }
+
         final FileSystem FS = FileSystems.getDefault();
 
         Path libjvmPath = findLibjvm(FS);
@@ -223,8 +229,7 @@ public class CustomLauncherTest {
                 break;
             }
             default: {
-                System.out.println("Test not designed to run on this operating " +
-                                   "system (" + OSNAME + "), skipping...");
+                platform = null;
             }
         }
 

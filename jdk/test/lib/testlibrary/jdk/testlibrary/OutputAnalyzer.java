@@ -23,7 +23,11 @@
 
 package jdk.testlibrary;
 
+import static jdk.testlibrary.Asserts.*;
+
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -394,4 +398,99 @@ public final class OutputAnalyzer {
     public int getExitValue() {
         return exitValue;
     }
+
+    /**
+     * Get the contents of the output buffer (stdout and stderr) as list of strings.
+     * Output will be split by system property 'line.separator'.
+     *
+     * @return Contents of the output buffer as list of strings
+     */
+    public List<String> asLines() {
+        List<String> l = new ArrayList<>();
+        String[] a = getOutput().split(Utils.NEW_LINE);
+        for (String string : a) {
+            l.add(string);
+        }
+        return l;
+    }
+
+    /**
+     * Check if there is a line matching {@code pattern} and return its index
+     *
+     * @param pattern Matching pattern
+     * @return Index of first matching line
+     */
+    private int indexOf(List<String> lines, String pattern) {
+        for (int i = 0; i < lines.size(); i++) {
+            if (lines.get(i).matches(pattern)) {
+                return i;
+            }
+        }
+        return -1;
+    }
+
+    /**
+     * @see #shouldMatchByLine(String, String, String)
+     */
+    public int shouldMatchByLine(String pattern) {
+        return shouldMatchByLine(null, null, pattern);
+    }
+
+    /**
+     * @see #shouldMatchByLine(String, String, String)
+     */
+    public int shouldMatchByLineFrom(String from, String pattern) {
+        return shouldMatchByLine(from, null, pattern);
+    }
+
+    /**
+     * @see #shouldMatchByLine(String, String, String)
+     */
+    public int shouldMatchByLineTo(String to, String pattern) {
+        return shouldMatchByLine(null, to, pattern);
+    }
+
+    /**
+     * Verify that the stdout and stderr contents of output buffer match the
+     * {@code pattern} line by line. The whole output could be matched or
+     * just a subset of it.
+     *
+     * @param from
+     *            The line from where output will be matched.
+     *            Set {@code from} to null for matching from the first line.
+     * @param to
+     *            The line until where output will be matched.
+     *            Set {@code to} to null for matching until the last line.
+     * @param pattern
+     *            Matching pattern
+     * @return Count of lines which match the {@code pattern}
+     */
+    public int shouldMatchByLine(String from, String to, String pattern) {
+        List<String> lines = asLines();
+
+        int fromIndex = 0;
+        if (from != null) {
+            fromIndex = indexOf(lines, from);
+            assertGreaterThan(fromIndex, -1,
+                    "The line/pattern '" + from + "' from where the output should match can not be found");
+        }
+
+        int toIndex = lines.size();
+        if (to != null) {
+            toIndex = indexOf(lines, to);
+            assertGreaterThan(toIndex, -1,
+                    "The line/pattern '" + to + "' until where the output should match can not be found");
+        }
+
+        List<String> subList = lines.subList(fromIndex, toIndex);
+        int matchedCount = 0;
+        for (String line : subList) {
+            assertTrue(line.matches(pattern),
+                    "The line '" + line + "' does not match pattern '" + pattern + "'");
+            matchedCount++;
+        }
+
+        return matchedCount;
+    }
+
 }

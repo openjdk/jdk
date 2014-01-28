@@ -25,6 +25,7 @@
 package sun.jvm.hotspot.opto;
 
 import java.util.*;
+import java.io.PrintStream;
 import sun.jvm.hotspot.ci.*;
 import sun.jvm.hotspot.debugger.*;
 import sun.jvm.hotspot.runtime.*;
@@ -92,4 +93,13 @@ public class Compile extends VMObject {
     }
     return null;
   }
+
+  public void dumpInlineData(PrintStream out) {
+    InlineTree inlTree = ilt();
+    if (inlTree != null) {
+      out.print(" inline " + inlTree.count());
+      inlTree.dumpReplayData(out);
+    }
+  }
+
 }
