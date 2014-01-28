@@ -59,7 +59,8 @@ const ArabicShaping::ShapeType ArabicShaping::shapeTypes[] =
 ArabicShaping::ShapeType ArabicShaping::getShapeType(LEUnicode c)
 {
   LEErrorCode success = LE_NO_ERROR;
-  const LEReferenceTo<ClassDefinitionTable> joiningTypes((const ClassDefinitionTable *) ArabicShaping::shapingTypeTable,
+  const LEReferenceTo<ClassDefinitionTable> joiningTypes(LETableReference::kStaticData,
+                                                         (const ClassDefinitionTable *) ArabicShaping::shapingTypeTable,
                                                          ArabicShaping::shapingTypeTableLen);
   le_int32 joiningType = joiningTypes->getGlyphClass(joiningTypes, c, success);
 

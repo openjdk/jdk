@@ -139,7 +139,6 @@ LINES=`$JARSIGNER -verify a.jar -verbose:summary -certs | grep "more)" | wc -l`
 # 16 and 32 already covered in the first part
 # ==========================================================
 
-$KT -genkeypair -alias expiring -dname CN=expiring -startdate -1m
 $KT -genkeypair -alias expired -dname CN=expired -startdate -10m
 $KT -genkeypair -alias notyetvalid -dname CN=notyetvalid -startdate +1m
 $KT -genkeypair -alias badku -dname CN=badku -ext KU=cRLSign -validity 365
@@ -153,9 +152,6 @@ $KT -genkeypair -alias ca -dname CN=ca -ext bc -validity 365
 $KT -certreq -alias badchain | $KT -gencert -alias ca -validity 365 | \
         $KT -importcert -alias badchain
 $KT -delete -alias ca
-
-$JARSIGNER -strict -keystore js.jks -storepass changeit a.jar expiring
-[ $? = 2 ] || exit $LINENO
 
 $JARSIGNER -strict -keystore js.jks -storepass changeit a.jar expired
 [ $? = 4 ] || exit $LINENO

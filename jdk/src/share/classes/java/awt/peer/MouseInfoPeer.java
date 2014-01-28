@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,8 +29,8 @@ import java.awt.Window;
 import java.awt.Point;
 
 /**
- * Peer interface for {@link MouseInfo}. This is used to get some additional
- * information about the mouse.
+ * Peer interface for {@link java.awt.MouseInfo}. This is used to get
+ * some additional information about the mouse.
  *
  * The peer interfaces are intended only for use in porting
  * the AWT. They are not intended for use by application

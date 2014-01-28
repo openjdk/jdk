@@ -138,8 +138,7 @@ static int useExclBind = 0;
  * of the parameter is assumed to be an 'int'. If the parameter
  * cannot be obtained return -1
  */
-static int
-getParam(char *driver, char *param)
+int net_getParam(char *driver, char *param)
 {
     struct strioctl stri;
     char buf [64];
@@ -166,7 +165,7 @@ getParam(char *driver, char *param)
 
 /*
  * Iterative way to find the max value that SO_SNDBUF or SO_RCVBUF
- * for Solaris versions that do not support the ioctl() in getParam().
+ * for Solaris versions that do not support the ioctl() in net_getParam().
  * Ugly, but only called once (for each sotype).
  *
  * As an optimization, we make a guess using the default values for Solaris
@@ -1359,7 +1358,7 @@ NET_SetSockOpt(int fd, int level, int  opt, const void *arg,
              * If that fails, we use the search algorithm in findMaxBuf()
              */
             if (!init_tcp_max_buf && sotype == SOCK_STREAM) {
-                tcp_max_buf = getParam("/dev/tcp", "tcp_max_buf");
+                tcp_max_buf = net_getParam("/dev/tcp", "tcp_max_buf");
                 if (tcp_max_buf == -1) {
                     tcp_max_buf = findMaxBuf(fd, opt, SOCK_STREAM);
                     if (tcp_max_buf == -1) {
@@ -1368,7 +1367,7 @@ NET_SetSockOpt(int fd, int level, int  opt, const void *arg,
                 }
                 init_tcp_max_buf = 1;
             } else if (!init_udp_max_buf && sotype == SOCK_DGRAM) {
-                udp_max_buf = getParam("/dev/udp", "udp_max_buf");
+                udp_max_buf = net_getParam("/dev/udp", "udp_max_buf");
                 if (udp_max_buf == -1) {
                     udp_max_buf = findMaxBuf(fd, opt, SOCK_DGRAM);
                     if (udp_max_buf == -1) {

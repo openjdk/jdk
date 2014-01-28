@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -233,7 +233,8 @@ public abstract class InputEvent extends ComponentEvent {
      * This limit is defined by the relevant number
      * of buttons that may hypothetically exist on the mouse but it is greater than the
      * {@link java.awt.MouseInfo#getNumberOfButtons() MouseInfo.getNumberOfButtons()}.
-     * <p>
+     *
+     * @return a mask for an existing mouse button.
      * @throws IllegalArgumentException if {@code button} is less than zero or greater than the number
      *         of button masks reserved for buttons
      * @since 7.0
@@ -368,6 +369,7 @@ public abstract class InputEvent extends ComponentEvent {
 
     /**
      * Returns whether or not the Shift modifier is down on this event.
+     * @return whether or not the Shift modifier is down on this event
      */
     public boolean isShiftDown() {
         return (modifiers & SHIFT_MASK) != 0;
@@ -375,6 +377,7 @@ public abstract class InputEvent extends ComponentEvent {
 
     /**
      * Returns whether or not the Control modifier is down on this event.
+     * @return whether or not the Control modifier is down on this event
      */
     public boolean isControlDown() {
         return (modifiers & CTRL_MASK) != 0;
@@ -382,6 +385,7 @@ public abstract class InputEvent extends ComponentEvent {
 
     /**
      * Returns whether or not the Meta modifier is down on this event.
+     * @return whether or not the Meta modifier is down on this event
      */
     public boolean isMetaDown() {
         return (modifiers & META_MASK) != 0;
@@ -389,6 +393,7 @@ public abstract class InputEvent extends ComponentEvent {
 
     /**
      * Returns whether or not the Alt modifier is down on this event.
+     * @return whether or not the Alt modifier is down on this event
      */
     public boolean isAltDown() {
         return (modifiers & ALT_MASK) != 0;
@@ -396,6 +401,7 @@ public abstract class InputEvent extends ComponentEvent {
 
     /**
      * Returns whether or not the AltGraph modifier is down on this event.
+     * @return whether or not the AltGraph modifier is down on this event
      */
     public boolean isAltGraphDown() {
         return (modifiers & ALT_GRAPH_MASK) != 0;
@@ -404,6 +410,7 @@ public abstract class InputEvent extends ComponentEvent {
     /**
      * Returns the difference in milliseconds between the timestamp of when this event occurred and
      * midnight, January 1, 1970 UTC.
+     * @return the difference in milliseconds between the timestamp and midnight, January 1, 1970 UTC
      */
     public long getWhen() {
         return when;
@@ -411,6 +418,7 @@ public abstract class InputEvent extends ComponentEvent {
 
     /**
      * Returns the modifier mask for this event.
+     * @return the modifier mask for this event
      */
     public int getModifiers() {
         return modifiers & (JDK_1_3_MODIFIERS | HIGH_MODIFIERS);
@@ -451,6 +459,7 @@ public abstract class InputEvent extends ComponentEvent {
      * </PRE>
      * The above code will work even if new modifiers are added.
      *
+     * @return the extended modifier mask for this event
      * @since 1.4
      */
     public int getModifiersEx() {
@@ -467,6 +476,7 @@ public abstract class InputEvent extends ComponentEvent {
 
     /**
      * Returns whether or not this event has been consumed.
+     * @return whether or not this event has been consumed
      * @see #consume
      */
     public boolean isConsumed() {
@@ -486,6 +496,9 @@ public abstract class InputEvent extends ComponentEvent {
      * and will cause the returning an unspecified string.
      * Zero parameter means that no modifiers were passed and will
      * cause the returning an empty string.
+     *
+     * @return a String describing the extended modifier keys and
+     * mouse buttons
      *
      * @param modifiers a modifier mask describing the extended
      *                modifier keys and mouse buttons for the event

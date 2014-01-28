@@ -46,157 +46,233 @@ public final class TimeZoneNames_pt_BR extends TimeZoneNamesBundle {
 
     protected final Object[][] getContents() {
         String ACT[] = new String[] {"Fuso hor\u00e1rio do Acre", "ACT",
-                                     "Fuso hor\u00e1rio de ver\u00e3o do Acre", "ACST"};
+                                     "Fuso hor\u00e1rio de ver\u00e3o do Acre", "ACST",
+                                     "Fuso hor\u00e1rio do Acre", "ACT"};
         String ADELAIDE[] = new String[] {"Hor\u00E1rio-Padr\u00E3o Central (Austr\u00E1lia do Sul)", "CST",
-                                          "Fuso Hor\u00E1rio de Ver\u00E3o Central (Austr\u00E1lia do Sul)", "CST"};
+                                          "Fuso Hor\u00E1rio de Ver\u00E3o Central (Austr\u00E1lia do Sul)", "CST",
+                                          "Hor\u00E1rio Central (Austr\u00E1lia do Sul)", "CT"};
         String AGT[] = new String[] {"Fuso hor\u00e1rio da Argentina", "ART",
-                                     "Fuso hor\u00e1rio de ver\u00e3o da Argentina", "ARST"};
+                                     "Fuso hor\u00e1rio de ver\u00e3o da Argentina", "ARST",
+                                     "Hor\u00E1rio da Argentina", "ART"};
         String AKST[] = new String[] {"Fuso hor\u00e1rio padr\u00e3o do Alaska", "AKST",
-                                      "Hor\u00e1rio de luz natural do Alaska", "AKDT"};
+                                      "Hor\u00e1rio de luz natural do Alaska", "AKDT",
+                                      "Hor\u00E1rio do Alasca", "AKT"};
         String AMT[] = new String[] {"Fuso hor\u00e1rio do Amazonas", "AMT",
-                                     "Fuso hor\u00e1rio de ver\u00e3o do Amazonas", "AMST"};
+                                     "Fuso hor\u00e1rio de ver\u00e3o do Amazonas", "AMST",
+                                     "Hor\u00E1rio do Amazonas", "AMT"};
         String ARAST[] = new String[] {"Fuso hor\u00e1rio padr\u00e3o da Ar\u00e1bia", "AST",
-                                       "Hor\u00e1rio de luz natural da Ar\u00e1bia", "ADT"};
+                                       "Hor\u00e1rio de luz natural da Ar\u00e1bia", "ADT",
+                                       "Hor\u00E1rio da Ar\u00E1bia", "AT"};
         String ARMT[] = new String[] {"Fuso hor\u00e1rio da Arm\u00eania", "AMT",
-                                      "Fuso hor\u00e1rio de ver\u00e3o da Arm\u00eania", "AMST"};
+                                      "Fuso hor\u00e1rio de ver\u00e3o da Arm\u00eania", "AMST",
+                                      "Hor\u00E1rio da Arm\u00EAnia", "AMT"};
         String AST[] = new String[] {"Fuso hor\u00e1rio padr\u00e3o do Atl\u00e2ntico", "AST",
-                                     "Hor\u00e1rio de luz natural do Atl\u00e2ntico", "ADT"};
+                                     "Hor\u00e1rio de luz natural do Atl\u00e2ntico", "ADT",
+                                     "Hor\u00E1rio do Atl\u00E2ntico", "AT"};
         String BDT[] = new String[] {"Fuso hor\u00e1rio de Bangladesh", "BDT",
-                                     "Fuso hor\u00e1rio de ver\u00e3o de Bangladesh", "BDST"};
+                                     "Fuso hor\u00e1rio de ver\u00e3o de Bangladesh", "BDST",
+                                     "Hor\u00E1rio de Bangladesh", "BDT"};
         String BRISBANE[] = new String[] {"Hor\u00E1rio-Padr\u00E3o do Leste (Queensland)", "EST",
-                                          "Fuso Hor\u00E1rio de Ver\u00E3o Oriental (Queensland)", "EST"};
+                                          "Fuso Hor\u00E1rio de Ver\u00E3o Oriental (Queensland)", "EST",
+                                          "Hor\u00E1rio do Leste (Queensland)", "ET"};
         String BROKEN_HILL[] = new String[] {"Hor\u00E1rio-Padr\u00E3o Central (Austr\u00E1lia do Sul/Nova Gales do Sul)", "CST",
-                                             "Fuso Hor\u00E1rio de Ver\u00E3o Central (Austr\u00E1lia do Sul/Nova Gales do Sul)", "CST"};
+                                             "Fuso Hor\u00E1rio de Ver\u00E3o Central (Austr\u00E1lia do Sul/Nova Gales do Sul)", "CST",
+                                             "Hor\u00E1rio Central (Austr\u00E1lia do Sul/Nova Gales do Sul)", "CT"};
         String BRT[] = new String[] {"Fuso hor\u00e1rio de Bras\u00edlia", "BRT",
-                                     "Fuso hor\u00e1rio de ver\u00e3o de Bras\u00edlia", "BRST"};
+                                     "Fuso hor\u00e1rio de ver\u00e3o de Bras\u00edlia", "BRST",
+                                     "Hor\u00E1rio de Bras\u00EDlia", "BRT"};
         String BTT[] = new String[] {"Fuso hor\u00e1rio de But\u00e3o", "BTT",
-                                     "Fuso hor\u00e1rio de ver\u00e3o de But\u00e3o", "BTST"};
+                                     "Fuso hor\u00e1rio de ver\u00e3o de But\u00e3o", "BTST",
+                                     "Hor\u00E1rio do But\u00E3o", "BTT"};
         String CAT[] = new String[] {"Fuso hor\u00e1rio da \u00c1frica Central", "CAT",
-                                     "Fuso hor\u00e1rio de ver\u00e3o da \u00c1frica Central", "CAST"};
+                                     "Fuso hor\u00e1rio de ver\u00e3o da \u00c1frica Central", "CAST",
+                                     "Hor\u00E1rio da \u00C1frica Central", "CAT"};
         String CET[] = new String[] {"Fuso hor\u00e1rio da Europa Central", "CET",
-                                     "Fuso hor\u00e1rio de ver\u00e3o da Europa Central", "CEST"};
+                                     "Fuso hor\u00e1rio de ver\u00e3o da Europa Central", "CEST",
+                                     "Hor\u00E1rio da Europa Central", "CET"};
         String CHAST[] = new String[] {"Fuso hor\u00e1rio padr\u00e3o de Chatham", "CHAST",
-                                       "Hor\u00e1rio de luz natural de Chatham", "CHADT"};
+                                       "Hor\u00e1rio de luz natural de Chatham", "CHADT",
+                                       "Hor\u00E1rio de Chatham", "CHAT"};
         String CIT[] = new String[] {"Fuso hor\u00e1rio da Indon\u00e9sia Central", "WITA",
-                                     "Fuso hor\u00e1rio de ver\u00e3o da Indon\u00e9sia Central", "CIST"};
+                                     "Fuso hor\u00e1rio de ver\u00e3o da Indon\u00e9sia Central", "CIST",
+                                     "Hor\u00E1rio da Indon\u00E9sia Central", "WITA"};
         String CLT[] = new String[] {"Fuso hor\u00e1rio do Chile", "CLT",
-                                     "Fuso hor\u00e1rio de ver\u00e3o do Chile", "CLST"};
+                                     "Fuso hor\u00e1rio de ver\u00e3o do Chile", "CLST",
+                                     "Hor\u00E1rio do Chile", "CLT"};
         String CST[] = new String[] {"Fuso hor\u00e1rio padr\u00e3o central", "CST",
-                                     "Hor\u00e1rio de luz natural central", "CDT"};
+                                     "Hor\u00e1rio de luz natural central", "CDT",
+                                     "Hor\u00E1rio Central", "CT"};
         String CTT[] = new String[] {"Fuso hor\u00e1rio padr\u00e3o da China", "CST",
-                                     "Hor\u00e1rio de luz natural da China", "CDT"};
+                                     "Hor\u00e1rio de luz natural da China", "CDT",
+                                     "Hor\u00E1rio da China", "CT"};
         String CUBA[] = new String[] {"Fuso hor\u00e1rio padr\u00e3o de Cuba", "CST",
-                                      "Hor\u00e1rio de luz natural de Cuba", "CDT"};
+                                      "Hor\u00e1rio de luz natural de Cuba", "CDT",
+                                      "Hor\u00E1rio de Cuba", "CT"};
         String DARWIN[] = new String[] {"Hor\u00E1rio-Padr\u00E3o Central (Territ\u00F3rio do Norte)", "CST",
-                                        "Fuso Hor\u00E1rio de Ver\u00E3o Central (Territ\u00F3rio do Norte)", "CST"};
+                                        "Fuso Hor\u00E1rio de Ver\u00E3o Central (Territ\u00F3rio do Norte)", "CST",
+                                        "Hor\u00E1rio Central (Territ\u00F3rio do Norte)", "CT"};
         String DUBLIN[] = new String[] {"Fuso hor\u00e1rio do meridiano de Greenwich", "GMT",
-                                        "Fuso hor\u00e1rio de ver\u00e3o da Irlanda", "IST"};
+                                        "Fuso hor\u00e1rio de ver\u00e3o da Irlanda", "IST",
+                                        "Hor\u00E1rio da Rep\u00FAblica da Irlanda", "IT"};
         String EAT[] = new String[] {"Fuso hor\u00e1rio da \u00c1frica Oriental", "EAT",
-                                     "Fuso hor\u00e1rio padr\u00e3o da \u00c1frica Oriental", "EAST"};
+                                     "Fuso hor\u00e1rio padr\u00e3o da \u00c1frica Oriental", "EAST",
+                                     "Hor\u00E1rio do Leste da \u00C1frica", "EAT"};
         String EASTER[] = new String[] {"Fuso hor\u00e1rio da Ilha de P\u00e1scoa", "EAST",
-                                        "Fuso hor\u00e1rio de ver\u00e3o da Ilha de P\u00e1scoa", "EASST"};
+                                        "Fuso hor\u00e1rio de ver\u00e3o da Ilha de P\u00e1scoa", "EASST",
+                                        "Hor\u00E1rio da Ilha de P\u00E1scoa", "EAST"};
         String EET[] = new String[] {"Fuso hor\u00e1rio da Europa Oriental", "EET",
-                                     "Fuso hor\u00e1rio de ver\u00e3o da Europa Oriental", "EEST"};
+                                     "Fuso hor\u00e1rio de ver\u00e3o da Europa Oriental", "EEST",
+                                     "Hor\u00e1rio da Europa Oriental", "EET"};
         String EGT[] = new String[] {"Fuso hor\u00e1rio da Groenl\u00e2ndia Oriental", "EGT",
-                                     "Fuso hor\u00e1rio de ver\u00e3o da Groenl\u00e2ndia Oriental", "EGST"};
+                                     "Fuso hor\u00e1rio de ver\u00e3o da Groenl\u00e2ndia Oriental", "EGST",
+                                     "Hor\u00E1rio da Groenl\u00E2ndia Oriental", "EGT"};
         String EST[] = new String[] {"Fuso hor\u00e1rio padr\u00e3o oriental", "EST",
-                                     "Hor\u00e1rio de luz natural oriental", "EDT"};
+                                     "Hor\u00e1rio de luz natural oriental", "EDT",
+                                     "Hor\u00E1rio do Leste", "ET"};
         String EST_NSW[] = new String[] {"Hor\u00E1rio-Padr\u00E3o Oriental (Nova Gales do Sul)", "EST",
-                                         "Fuso Hor\u00E1rio de Ver\u00E3o Oriental (Nova Gales do Sul)", "EST"};
+                                         "Fuso Hor\u00E1rio de Ver\u00E3o Oriental (Nova Gales do Sul)", "EST",
+                                         "Hor\u00E1rio Oriental (Nova Gales do Sul)", "ET"};
         String FET[] = new String[] {"Hor\u00E1rio do Extremo Leste Europeu (FET)", "FET",
-                                     "Fuso Hor\u00E1rio de Ver\u00E3o do Extremo Leste Europeu", "FEST"};
+                                     "Fuso Hor\u00E1rio de Ver\u00E3o do Extremo Leste Europeu", "FEST",
+                                     "Hor\u00E1rio do Extremo Leste Europeu (FET)", "FET"};
         String GHMT[] = new String[] {"Fuso hor\u00e1rio do meridiano de Gana", "GMT",
-                                      "Fuso hor\u00e1rio de ver\u00e3o de Gana", "GHST"};
+                                      "Fuso hor\u00e1rio de ver\u00e3o de Gana", "GHST",
+                                      "Fuso Hor\u00E1rio do Meridiano de Gana", "GMT"};
         String GAMBIER[] =  new String[] {"Fuso hor\u00e1rio de Gambier", "GAMT",
-                                          "Fuso hor\u00e1rio de ver\u00e3o de Gambier", "GAMST"};
+                                          "Fuso hor\u00e1rio de ver\u00e3o de Gambier", "GAMST",
+                                          "Hor\u00E1rio de Gambier", "GAMT"};
         String GMT[] = new String[] {"Fuso hor\u00e1rio do meridiano de Greenwich", "GMT",
-                                     "Fuso hor\u00e1rio do meridiano de Greenwich", "GMT"};
+                                     "Fuso hor\u00e1rio do meridiano de Greenwich", "GMT",
+                                     "Hor\u00E1rio M\u00E9dio de Greenwich", "GMT"};
         String GMTBST[] = new String[] {"Fuso hor\u00e1rio do meridiano de Greenwich", "GMT",
-                                        "Fuso hor\u00e1rio de ver\u00e3o da Gr\u00e3-Bretanha", "BST"};
+                                        "Fuso hor\u00e1rio de ver\u00e3o da Gr\u00e3-Bretanha", "BST",
+                                        "Hor\u00E1rio do Reino Unido", "BT"};
         String GST[] = new String[] {"Fuso hor\u00e1rio padr\u00e3o do golfo", "GST",
-                                     "Hor\u00e1rio de luz natural do golfo", "GDT"};
+                                     "Hor\u00e1rio de luz natural do golfo", "GDT",
+                                     "Hor\u00E1rio do Golfo", "GT"};
         String HAST[] = new String[] {"Fuso hor\u00e1rio padr\u00e3o do Hava\u00ed-Aleutian", "HAST",
-                                      "Hor\u00e1rio de luz natural do Hava\u00ed-Aleutian", "HADT"};
+                                      "Hor\u00e1rio de luz natural do Hava\u00ed-Aleutian", "HADT",
+                                      "Hor\u00E1rio do Hava\u00ED-Aleutas", "HAT"};
         String HKT[] =  new String[] {"Fuso hor\u00e1rio de Hong Kong", "HKT",
-                                      "Fuso hor\u00e1rio de ver\u00e3o de Hong Kong", "HKST"};
+                                      "Fuso hor\u00e1rio de ver\u00e3o de Hong Kong", "HKST",
+                                      "Hor\u00E1rio de Hong Kong", "HKT"};
         String HST[] = new String[] {"Fuso hor\u00e1rio padr\u00e3o do Hava\u00ed", "HST",
-                                     "Hor\u00e1rio de luz natural do Hava\u00ed", "HDT"};
+                                     "Hor\u00e1rio de luz natural do Hava\u00ed", "HDT",
+                                     "Hor\u00E1rio do Hava\u00ED", "HT"};
         String ICT[] = new String[] {"Fuso hor\u00e1rio da Indochina", "ICT",
-                                     "Fuso hor\u00e1rio de ver\u00e3o da Indochina", "ICST"};
+                                     "Fuso hor\u00e1rio de ver\u00e3o da Indochina", "ICST",
+                                     "Hor\u00E1rio da Indochina", "ICT"};
         String IRT[] = new String[] {"Fuso hor\u00e1rio do Ir\u00e3", "IRST",
-                                     "Hor\u00e1rio de luz natural do Ir\u00e3", "IRDT"};
+                                     "Hor\u00e1rio de luz natural do Ir\u00e3", "IRDT",
+                                     "Hor\u00E1rio do Ir\u00E3", "IRT"};
         String ISRAEL[] = new String[] {"Fuso hor\u00e1rio padr\u00e3o de Israel", "IST",
-                                        "Hor\u00e1rio de luz natural de Israel", "IDT"};
+                                        "Hor\u00e1rio de luz natural de Israel", "IDT",
+                                        "Hor\u00E1rio de Israel", "IT"};
         String IST[] = new String[] {"Fuso hor\u00e1rio padr\u00e3o da \u00cdndia", "IST",
-                                     "Hor\u00e1rio de luz natural da \u00cdndia", "IDT"};
+                                     "Hor\u00e1rio de luz natural da \u00cdndia", "IDT",
+                                     "Hor\u00E1rio da \u00CDndia", "IT"};
         String JST[] = new String[] {"Fuso hor\u00e1rio padr\u00e3o do Jap\u00e3o", "JST",
-                                     "Hor\u00e1rio de luz natural do Jap\u00e3o", "JDT"};
+                                     "Hor\u00e1rio de luz natural do Jap\u00e3o", "JDT",
+                                     "Hor\u00E1rio do Jap\u00E3o", "JT"};
         String KST[] = new String[] {"Fuso hor\u00e1rio padr\u00e3o da Coreia", "KST",
-                                     "Hor\u00e1rio de luz natural da Coreia", "KDT"};
+                                     "Hor\u00e1rio de luz natural da Coreia", "KDT",
+                                     "Hor\u00E1rio da Coreia", "KT"};
         String LORD_HOWE[] = new String[] {"Fuso hor\u00e1rio padr\u00e3o de Lord Howe", "LHST",
-                                           "Fuso hor\u00e1rio de ver\u00e3o de Lord Howe", "LHST"};
+                                           "Fuso hor\u00e1rio de ver\u00e3o de Lord Howe", "LHST",
+                                           "Hor\u00E1rio de Lord Howe", "LHT"};
         String MHT[] = new String[] {"Fuso hor\u00e1rio das Ilhas Marshall", "MHT",
-                                     "Fuso hor\u00e1rio de ver\u00e3o das Ilhas Marshall", "MHST"};
+                                     "Fuso hor\u00e1rio de ver\u00e3o das Ilhas Marshall", "MHST",
+                                     "Hor\u00E1rio das Ilhas Marshall", "MHT"};
         String MSK[] = new String[] {"Fuso hor\u00e1rio padr\u00e3o de Moscou", "MSK",
-                                     "Hor\u00e1rio de luz natural de Moscou", "MSD"};
+                                     "Hor\u00e1rio de luz natural de Moscou", "MSD",
+                                     "Hor\u00E1rio de Moscou", "MT"};
         String MST[] = new String[] {"Fuso hor\u00e1rio padr\u00e3o das montanhas", "MST",
-                                     "Hor\u00e1rio de luz natural das montanhas", "MDT"};
+                                     "Hor\u00e1rio de luz natural das montanhas", "MDT",
+                                     "Hor\u00E1rio das Montanhas Rochosas", "MT"};
         String MYT[] = new String[] {"Fuso hor\u00e1rio da Mal\u00e1sia", "MYT",
-                                     "Fuso hor\u00e1rio de ver\u00e3o da Mal\u00e1sia", "MYST"};
+                                     "Fuso hor\u00e1rio de ver\u00e3o da Mal\u00e1sia", "MYST",
+                                     "Hor\u00E1rio da Mal\u00E1sia", "MYT"};
         String NORONHA[] = new String[] {"Fuso hor\u00e1rio de Fernando de Noronha", "FNT",
-                                         "Fuso hor\u00e1rio de ver\u00e3o de Fernando de Noronha", "FNST"};
+                                         "Fuso hor\u00e1rio de ver\u00e3o de Fernando de Noronha", "FNST",
+                                         "Hor\u00E1rio de Fernando de Noronha", "FNT"};
         String NOVT[] = new String[] {"Fuso hor\u00e1rio de Novosibirsk", "NOVT",
-                                      "Fuso hor\u00e1rio de ver\u00e3o de Novosibirsk", "NOVST"};
+                                      "Fuso hor\u00e1rio de ver\u00e3o de Novosibirsk", "NOVST",
+                                      "Hor\u00E1rio de Novosibirsk", "NOVT"};
         String NPT[] = new String[] {"Fuso hor\u00e1rio do Nepal", "NPT",
-                                     "Fuso hor\u00e1rio de ver\u00e3o do Nepal", "NPST"};
+                                     "Fuso hor\u00e1rio de ver\u00e3o do Nepal", "NPST",
+                                     "Hor\u00E1rio do Nepal", "NPT"};
         String NST[] = new String[] {"Fuso hor\u00e1rio padr\u00e3o de Terra Nova", "NST",
-                                     "Hor\u00e1rio de luz natural de Terra Nova", "NDT"};
+                                     "Hor\u00e1rio de luz natural de Terra Nova", "NDT",
+                                     "Hor\u00E1rio de Terra Nova", "NT"};
         String NZST[] = new String[] {"Fuso hor\u00e1rio padr\u00e3o da Nova Zel\u00e2ndia", "NZST",
-                                      "Hor\u00e1rio de luz natural da Nova Zel\u00e2ndia", "NZDT"};
+                                      "Hor\u00e1rio de luz natural da Nova Zel\u00e2ndia", "NZDT",
+                                      "Hor\u00E1rio da Nova Zel\u00E2ndia", "NZT"};
         String PITCAIRN[] = new String[] {"Fuso hor\u00e1rio padr\u00e3o de Pitcairn", "PST",
-                                          "Hor\u00e1rio de luz natural de Pitcairn", "PDT"};
+                                          "Hor\u00e1rio de luz natural de Pitcairn", "PDT",
+                                          "Hor\u00E1rio de Pitcairn", "PT"};
         String PKT[] = new String[] {"Fuso hor\u00e1rio do Paquist\u00e3o", "PKT",
-                                     "Fuso hor\u00e1rio de ver\u00e3o do Paquist\u00e3o", "PKST"};
+                                     "Fuso hor\u00e1rio de ver\u00e3o do Paquist\u00e3o", "PKST",
+                                     "Hor\u00E1rio do Paquist\u00E3o", "PKT"};
         String PONT[] = new String[] {"Fuso Hor\u00E1rio de Pohnpei", "PONT",
-                                      "Fuso Hor\u00E1rio de Ver\u00E3o de Pohnpei", "PONST"};
+                                      "Fuso Hor\u00E1rio de Ver\u00E3o de Pohnpei", "PONST",
+                                      "Hor\u00E1rio de Ponape", "PONT"};
         String PST[] = new String[] {"Fuso hor\u00e1rio padr\u00e3o do Pac\u00edfico", "PST",
-                                     "Hor\u00e1rio de luz natural do Pac\u00edfico", "PDT"};
+                                     "Hor\u00e1rio de luz natural do Pac\u00edfico", "PDT",
+                                     "Hor\u00E1rio do Pac\u00EDfico", "PT"};
         String SAST[] = new String[] {"Fuso hor\u00e1rio padr\u00e3o da \u00c1frica do Sul", "SAST",
-                                      "Fuso hor\u00e1rio de ver\u00e3o da \u00c1frica do Sul", "SAST"};
+                                      "Fuso hor\u00e1rio de ver\u00e3o da \u00c1frica do Sul", "SAST",
+                                      "Hor\u00E1rio da \u00C1frica do Sul", "SAT"};
         String SBT[] = new String[] {"Fuso hor\u00e1rio das Ilhas Salom\u00e3o", "SBT",
-                                     "Fuso hor\u00e1rio de ver\u00e3o das Ilhas Salom\u00e3o", "SBST"};
+                                     "Fuso hor\u00e1rio de ver\u00e3o das Ilhas Salom\u00e3o", "SBST",
+                                     "Hor\u00E1rio das Ilhas Salom\u00E3o", "SBT"};
         String SGT[] = new String[] {"Fuso hor\u00e1rio de Cingapura", "SGT",
-                                     "Fuso hor\u00e1rio de ver\u00e1 de Cingapura", "SGST"};
+                                     "Fuso hor\u00e1rio de ver\u00e1 de Cingapura", "SGST",
+                                     "Hor\u00E1rio de Cingapura", "SGT"};
         String SLST[] = new String[] {"Fuso hor\u00e1rio do meridiano de Greenwich", "GMT",
-                                      "Fuso hor\u00e1rio de ver\u00e3o de Serra Leoa", "SLST"};
+                                      "Fuso hor\u00e1rio de ver\u00e3o de Serra Leoa", "SLST",
+                                      "Hor\u00E1rio de Serra Leoa", "SLT"};
         String TASMANIA[] = new String[] {"Hor\u00E1rio-Padr\u00E3o do Leste (Tasm\u00E2nia)", "EST",
-                                          "Fuso Hor\u00E1rio de Ver\u00E3o Oriental (Tasm\u00E2nia)", "EST"};
+                                          "Fuso Hor\u00E1rio de Ver\u00E3o Oriental (Tasm\u00E2nia)", "EST",
+                                          "Hor\u00E1rio do Leste (Tasm\u00E2nia)", "ET"};
         String TMT[] = new String[] {"Fuso hor\u00e1rio do Turcomenist\u00e3o", "TMT",
-                                     "Fuso hor\u00e1rio de ver\u00e3o do Turcomenist\u00e3o", "TMST"};
+                                     "Fuso hor\u00e1rio de ver\u00e3o do Turcomenist\u00e3o", "TMST",
+                                     "Hor\u00E1rio do Turcomenist\u00E3o", "TMT"};
         String TRUT[] = new String[] {"Fuso Hor\u00E1rio de Chuuk", "CHUT",
-                                      "Fuso Hor\u00E1rio de Ver\u00E3o de Chuuk", "CHUST"};
+                                      "Fuso Hor\u00E1rio de Ver\u00E3o de Chuuk", "CHUST",
+                                      "Fuso Hor\u00E1rio de Chuuk", "CHUT"};
         String ULAT[]= new String[] {"Fuso hor\u00e1rio de Ulan Bator", "ULAT",
-                                     "Fuso hor\u00e1rio de ver\u00e3o de Ulan Bator", "ULAST"};
+                                     "Fuso hor\u00e1rio de ver\u00e3o de Ulan Bator", "ULAST",
+                                     "Hor\u00E1rio de Ulaanbaatar", "ULAT"};
         String WAT[] = new String[] {"Fuso hor\u00e1rio da \u00c1frica Ocidental", "WAT",
-                                     "Fuso hor\u00e1rio de ver\u00e3o da \u00c1frica Ocidental", "WAST"};
+                                     "Fuso hor\u00e1rio de ver\u00e3o da \u00c1frica Ocidental", "WAST",
+                                     "Hor\u00E1rio da \u00C1frica Ocidental", "WAT"};
         String WET[] = new String[] {"Fuso hor\u00e1rio da Europa Ocidental", "WET",
-                                     "Fuso hor\u00e1rio de ver\u00e3o da Europa Ocidental", "WEST"};
+                                     "Fuso hor\u00e1rio de ver\u00e3o da Europa Ocidental", "WEST",
+                                     "Hor\u00E1rio da Europa Ocidental", "WET"};
         String WIT[] = new String[] {"Fuso hor\u00e1rio da Indon\u00e9sia Ocidental", "WIB",
-                                     "Fuso hor\u00e1rio de ver\u00e3o da Indon\u00e9sia Ocidental", "WIST"};
+                                     "Fuso hor\u00e1rio de ver\u00e3o da Indon\u00e9sia Ocidental", "WIST",
+                                     "Hor\u00E1rio da Indon\u00E9sia Ocidental", "WIB"};
         String WST_AUS[] = new String[] {"Hor\u00E1rio-Padr\u00E3o Ocidental (Austr\u00E1lia)", "WST",
-                                         "Fuso Hor\u00E1rio de Ver\u00E3o Ocidental (Austr\u00E1lia)", "WST"};
+                                         "Fuso Hor\u00E1rio de Ver\u00E3o Ocidental (Austr\u00E1lia)", "WST",
+                                         "Hor\u00E1rio Ocidental (Austr\u00E1lia)", "WT"};
         String SAMOA[] = new String[] {"Fuso hor\u00e1rio padr\u00e3o de Samoa", "SST",
-                                       "Hor\u00e1rio de luz natural de Samoa", "SDT"};
+                                       "Hor\u00e1rio de luz natural de Samoa", "SDT",
+                                       "Hor\u00E1rio da Samoa", "ST"};
         String WST_SAMOA[] = new String[] {"Fuso hor\u00e1rio de Samoa Ocidental", "WST",
-                                           "Fuso hor\u00e1rio de ver\u00e3o de Samoa Ocidental", "WSDT"};
+                                           "Fuso hor\u00e1rio de ver\u00e3o de Samoa Ocidental", "WSDT",
+                                           "Fuso Hor\u00E1rio de Samoa Ocidental", "WST"};
         String ChST[] = new String[] {"Fuso hor\u00e1rio padr\u00e3o de Chamorro", "ChST",
-                                      "Hor\u00e1rio de luz natural de Chamorro", "ChDT"};
+                                      "Hor\u00e1rio de luz natural de Chamorro", "ChDT",
+                                      "Hor\u00E1rio de Chamorro", "ChT"};
         String VICTORIA[] = new String[] {"Hor\u00E1rio-Padr\u00E3o do Leste (Victoria)", "EST",
-                                          "Fuso Hor\u00E1rio de Ver\u00E3o Oriental (Victoria)", "EST"};
+                                          "Fuso Hor\u00E1rio de Ver\u00E3o Oriental (Victoria)", "EST",
+                                          "Hor\u00E1rio do Leste (Victoria)", "ET"};
         String UTC[] = new String[] {"Tempo universal coordenado", "UTC",
-                                     "Tempo universal coordenado", "UTC"};
+                                     "Tempo universal coordenado", "UTC",
+                                     "Hor\u00E1rio Universal Coordenado", "UTC"};
         String UZT[] = new String[] {"Fuso hor\u00e1rio do Uzbequist\u00e3o", "UZT",
-                                     "Fuso hor\u00e1rio de ver\u00e3o do Uzbequist\u00e3o", "UZST"};
+                                     "Fuso hor\u00e1rio de ver\u00e3o do Uzbequist\u00e3o", "UZST",
+                                     "Hor\u00E1rio do Uzbequist\u00E3o", "UZT"};
         String WART[] = new String[] {"Fuso hor\u00e1rio da Argentina Ocidental", "WART",
                                       "Fuso hor\u00e1rio de ver\u00e3o da Argentina Ocidental", "WARST"};
 
@@ -311,7 +387,8 @@ public final class TimeZoneNames_pt_BR extends TimeZoneNamesBundle {
             {"America/Argentina/Ushuaia", AGT},
             {"America/Aruba", AST},
             {"America/Asuncion", new String[] {"Fuso hor\u00e1rio do Paraguai", "PYT",
-                                               "Fuso hor\u00e1rio de ver\u00e3o do Paraguai", "PYST"}},
+                                               "Fuso hor\u00e1rio de ver\u00e3o do Paraguai", "PYST",
+                                               "Hor\u00E1rio do Paraguai", "PYT"}},
             {"America/Atikokan", EST},
             {"America/Atka", HAST},
             {"America/Bahia", BRT},
@@ -322,17 +399,20 @@ public final class TimeZoneNames_pt_BR extends TimeZoneNamesBundle {
             {"America/Blanc-Sablon", AST},
             {"America/Boa_Vista", AMT},
             {"America/Bogota", new String[] {"Fuso hor\u00e1rio da Col\u00f4mbia", "COT",
-                                             "Fuso hor\u00e1rio de ver\u00e3o da Col\u00f4mbia", "COST"}},
+                                             "Fuso hor\u00e1rio de ver\u00e3o da Col\u00f4mbia", "COST",
+                                             "Hor\u00E1rio da Col\u00F4mbia", "COT"}},
             {"America/Boise", MST},
             {"America/Buenos_Aires", AGT},
             {"America/Cambridge_Bay", MST},
             {"America/Campo_Grande", AMT},
             {"America/Cancun", CST},
             {"America/Caracas", new String[] {"Fuso hor\u00e1rio da Venezuela", "VET",
-                                              "Fuso hor\u00e1rio de ver\u00e3o da Venezuela", "VEST"}},
+                                              "Fuso hor\u00e1rio de ver\u00e3o da Venezuela", "VEST",
+                                              "Hor\u00E1rio da Venezuela", "VET"}},
             {"America/Catamarca", AGT},
             {"America/Cayenne", new String[] {"Fuso hor\u00e1rio da Guiana Francesa", "GFT",
-                                              "Fuso hor\u00e1rio de ver\u00e3o da Guiana Francesa", "GFST"}},
+                                              "Fuso hor\u00e1rio de ver\u00e3o da Guiana Francesa", "GFST",
+                                              "Hor\u00E1rio da Guiana Francesa", "GFT"}},
             {"America/Cayman", EST},
             {"America/Chihuahua", MST},
             {"America/Creston", MST},
@@ -354,16 +434,19 @@ public final class TimeZoneNames_pt_BR extends TimeZoneNamesBundle {
             {"America/Fortaleza", BRT},
             {"America/Glace_Bay", AST},
             {"America/Godthab", new String[] {"Fuso hor\u00e1rio da Groenl\u00e2ndia Ocidental", "WGT",
-                                              "Fuso hor\u00e1rio de ver\u00e3o da Groenl\u00e2ndia Ocidental", "WGST"}},
+                                              "Fuso hor\u00e1rio de ver\u00e3o da Groenl\u00e2ndia Ocidental", "WGST",
+                                              "Hor\u00E1rio da Groenl\u00E2ndia Ocidental", "WGT"}},
             {"America/Goose_Bay", AST},
             {"America/Grand_Turk", EST},
             {"America/Grenada", AST},
             {"America/Guadeloupe", AST},
             {"America/Guatemala", CST},
             {"America/Guayaquil", new String[] {"Fuso hor\u00e1rio do Equador", "ECT",
-                                                "Fuso hor\u00e1rio de ver\u00e3o do Equador", "ECST"}},
+                                                "Fuso hor\u00e1rio de ver\u00e3o do Equador", "ECST",
+                                                "Hor\u00E1rio do Equador", "ECT"}},
             {"America/Guyana", new String[] {"Fuso hor\u00e1rio da Guiana", "GYT",
-                                             "Fuso hor\u00e1rio de ver\u00e3o da Guiana", "GYST"}},
+                                             "Fuso hor\u00e1rio de ver\u00e3o da Guiana", "GYST",
+                                             "Hor\u00E1rios da Guiana", "GYT"}},
             {"America/Havana", CUBA},
             {"America/Hermosillo", MST},
             {"America/Indiana/Indianapolis", EST},
@@ -384,9 +467,11 @@ public final class TimeZoneNames_pt_BR extends TimeZoneNamesBundle {
             {"America/Knox_IN", CST},
             {"America/Kralendijk", AST},
             {"America/La_Paz", new String[] {"Fuso hor\u00e1rio da Bol\u00edvia", "BOT",
-                                             "Fuso hor\u00e1rio de ver\u00e3o da Bol\u00edvia", "BOST"}},
+                                             "Fuso hor\u00e1rio de ver\u00e3o da Bol\u00edvia", "BOST",
+                                             "Hor\u00E1rio da Bol\u00EDvia", "BOT"}},
             {"America/Lima", new String[] {"Fuso hor\u00e1rio do Peru", "PET",
-                                           "Fuso hor\u00e1rio de ver\u00e3o do Peru", "PEST"}},
+                                           "Fuso hor\u00e1rio de ver\u00e3o do Peru", "PEST",
+                                           "Hor\u00E1rio do Peru", "PET"}},
             {"America/Louisville", EST},
             {"America/Lower_Princes", AST},
             {"America/Maceio", BRT},
@@ -400,13 +485,16 @@ public final class TimeZoneNames_pt_BR extends TimeZoneNamesBundle {
             {"America/Menominee", CST},
             {"America/Merida", CST},
             {"America/Metlakatla", new String[] {"Hor\u00E1rio Padr\u00E3o de Metlakatla", "MeST",
-                                                 "Hor\u00E1rio de Luz Natural de Metlakatla", "MeDT"}},
+                                                 "Hor\u00E1rio de Luz Natural de Metlakatla", "MeDT",
+                                                 "Hor\u00E1rio de Metlakatla", "MeT"}},
             {"America/Mexico_City", CST},
             {"America/Miquelon", new String[] {"Fuso hor\u00e1rio padr\u00e3o de S\u00e3o Pedro e Miquelon", "PMST",
-                                               "Hor\u00e1rio de luz natural de S\u00e3o Pedro e Miquelon", "PMDT"}},
+                                               "Hor\u00e1rio de luz natural de S\u00e3o Pedro e Miquelon", "PMDT",
+                                               "Hor\u00E1rio de Saint Pierre e Miquelon", "PMT"}},
             {"America/Moncton", AST},
             {"America/Montevideo", new String[] {"Fuso hor\u00e1rio do Uruguai", "UYT",
-                                                 "Fuso hor\u00e1rio de ver\u00e3o do Uruguai", "UYST"}},
+                                                 "Fuso hor\u00e1rio de ver\u00e3o do Uruguai", "UYST",
+                                                 "Hor\u00E1rio do Uruguai", "UYT"}},
             {"America/Monterrey", CST},
             {"America/Montreal", EST},
             {"America/Montserrat", AST},
@@ -421,7 +509,8 @@ public final class TimeZoneNames_pt_BR extends TimeZoneNamesBundle {
             {"America/Panama", EST},
             {"America/Pangnirtung", EST},
             {"America/Paramaribo", new String[] {"Fuso hor\u00e1rio do Suriname", "SRT",
-                                                 "Fuso hor\u00e1rio de ver\u00e3o do Suriname", "SRST"}},
+                                                 "Fuso hor\u00e1rio de ver\u00e3o do Suriname", "SRST",
+                                                 "Hor\u00E1rio do Suriname", "SRT"}},
             {"America/Port-au-Prince", EST},
             {"America/Port_of_Spain", AST},
             {"America/Porto_Acre", ACT},
@@ -461,115 +550,146 @@ public final class TimeZoneNames_pt_BR extends TimeZoneNamesBundle {
             {"America/Yellowknife", MST},
             {"Antarctica/Casey", WST_AUS},
             {"Antarctica/Davis", new String[] {"Fuso hor\u00e1rio de Davis", "DAVT",
-                                               "Fuso hor\u00e1rio de ver\u00e3o de Davis", "DAVST"}},
+                                               "Fuso hor\u00e1rio de ver\u00e3o de Davis", "DAVST",
+                                               "Hor\u00E1rio de Davis", "DAVT"}},
             {"Antarctica/DumontDUrville", new String[] {"Fuso hor\u00e1rio de Dumont-d'Urville", "DDUT",
-                                                        "Fuso hor\u00e1rio de ver\u00e3o de Dumont-d'Urville", "DDUST"}},
+                                                        "Fuso hor\u00e1rio de ver\u00e3o de Dumont-d'Urville", "DDUST",
+                                                        "Fuso Hor\u00E1rio de Dumont-d'Urville", "DDUT"}},
             {"Antarctica/Macquarie", new String[] {"Fuso Hor\u00E1rio da Ilha de Macquarie", "MIST",
-                                                   "Fuso Hor\u00E1rio de Ver\u00E3o da Ilha de Macquarie", "MIST"}},
+                                                   "Fuso Hor\u00E1rio de Ver\u00E3o da Ilha de Macquarie", "MIST",
+                                                   "Fuso Hor\u00E1rio da Ilha de Macquarie", "MIST"}},
             {"Antarctica/Mawson", new String[] {"Fuso hor\u00e1rio de Mawson", "MAWT",
-                                                "Fuso hor\u00e1rio de ver\u00e3o de Mawson", "MAWST"}},
+                                                "Fuso hor\u00e1rio de ver\u00e3o de Mawson", "MAWST",
+                                                "Hor\u00E1rio de Mawson", "MAWT"}},
             {"Antarctica/McMurdo", NZST},
             {"Antarctica/Palmer", CLT},
             {"Antarctica/Rothera", new String[] {"Fuso hor\u00e1rio de Rothera", "ROTT",
-                                                 "Fuso hor\u00e1rio de ver\u00e3o de Rothera", "ROTST"}},
+                                                 "Fuso hor\u00e1rio de ver\u00e3o de Rothera", "ROTST",
+                                                 "Hor\u00E1rio de Rothera", "ROTT"}},
             {"Antarctica/South_Pole", NZST},
             {"Antarctica/Syowa", new String[] {"Fuso hor\u00e1rio de Syowa", "SYOT",
-                                               "Fuso hor\u00e1rio de ver\u00e3o de Syowa", "SYOST"}},
+                                               "Fuso hor\u00e1rio de ver\u00e3o de Syowa", "SYOST",
+                                               "Hor\u00E1rio de Syowa", "SYOT"}},
             {"Antarctica/Vostok", new String[] {"Fuso hor\u00e1rio de Vostok", "VOST",
-                                                "Fuso hor\u00e1rio de ver\u00e3o de Vostok", "VOSST"}},
+                                                "Fuso hor\u00e1rio de ver\u00e3o de Vostok", "VOSST",
+                                                "Hor\u00E1rio de Vostok", "VOST"}},
             {"Arctic/Longyearbyen", CET},
             {"Asia/Aden", ARAST},
             {"Asia/Almaty", new String[] {"Fuso hor\u00e1rio de Alma-Ata", "ALMT",
-                                          "Fuso hor\u00e1rio de ver\u00e3o de Alma-Ata", "ALMST"}},
+                                          "Fuso hor\u00e1rio de ver\u00e3o de Alma-Ata", "ALMST",
+                                          "Hor\u00E1rio de Alma-Ata", "ALMT"}},
             {"Asia/Amman", ARAST},
             {"Asia/Anadyr", new String[] {"Fuso hor\u00e1rio de Anadyr", "ANAT",
-                                          "Fuso hor\u00e1rio de ver\u00e3o de Anadyr", "ANAST"}},
+                                          "Fuso hor\u00e1rio de ver\u00e3o de Anadyr", "ANAST",
+                                          "Hor\u00E1rio de Anadyr", "ANAT"}},
             {"Asia/Aqtau", new String[] {"Fuso hor\u00e1rio de Aqtau", "AQTT",
-                                         "Fuso hor\u00e1rio de ver\u00e3o de Aqtau", "AQTST"}},
+                                         "Fuso hor\u00e1rio de ver\u00e3o de Aqtau", "AQTST",
+                                         "Hor\u00E1rio de Aqtau", "AQTT"}},
             {"Asia/Aqtobe", new String[] {"Fuso hor\u00e1rio de Aqtobe", "AQTT",
-                                          "Fuso hor\u00e1rio de ver\u00e3o de Aqtobe", "AQTST"}},
+                                          "Fuso hor\u00e1rio de ver\u00e3o de Aqtobe", "AQTST",
+                                          "Hor\u00E1rio de Aqtobe", "AQTT"}},
             {"Asia/Ashgabat", TMT},
             {"Asia/Ashkhabad", TMT},
             {"Asia/Baghdad", ARAST},
             {"Asia/Bahrain", ARAST},
             {"Asia/Baku", new String[] {"Fuso hor\u00e1rio do Azerbaij\u00e3o", "AZT",
-                                        "Fuso hor\u00e1rio de ver\u00e3o do Azerbaij\u00e3o", "AZST"}},
+                                        "Fuso hor\u00e1rio de ver\u00e3o do Azerbaij\u00e3o", "AZST",
+                                        "Hor\u00E1rio do Azerbaij\u00E3o", "AZT"}},
             {"Asia/Bangkok", ICT},
             {"Asia/Beirut", EET},
             {"Asia/Bishkek", new String[] {"Fuso hor\u00e1rio do Quirguist\u00e3o", "KGT",
-                                           "Fuso hor\u00e1rio de ver\u00e3o do Quirguist\u00e3o", "KGST"}},
+                                           "Fuso hor\u00e1rio de ver\u00e3o do Quirguist\u00e3o", "KGST",
+                                           "Hor\u00E1rio do Quirguist\u00E3o", "KGT"}},
             {"Asia/Brunei", new String[] {"Fuso hor\u00e1rio de Brunei", "BNT",
-                                          "Fuso hor\u00e1rio de ver\u00e3o de Brunei", "BNST"}},
+                                          "Fuso hor\u00e1rio de ver\u00e3o de Brunei", "BNST",
+                                          "Hor\u00E1rio de Brunei", "BNT"}},
             {"Asia/Calcutta", IST},
             {"Asia/Choibalsan", new String[] {"Fuso hor\u00e1rio de Choibalsan", "CHOT",
-                                              "Fuso hor\u00e1rio de ver\u00e3o de Choibalsan", "CHOST"}},
+                                              "Fuso hor\u00e1rio de ver\u00e3o de Choibalsan", "CHOST",
+                                              "Hor\u00E1rio de Choibalsan", "CHOT"}},
             {"Asia/Chongqing", CTT},
             {"Asia/Chungking", CTT},
             {"Asia/Colombo", IST},
             {"Asia/Dacca", BDT},
             {"Asia/Dhaka", BDT},
             {"Asia/Dili", new String[] {"Fuso hor\u00e1rio do Timor-Leste", "TLT",
-                                        "Fuso hor\u00e1rio de ver\u00e3o do Timor-Leste", "TLST"}},
+                                        "Fuso hor\u00e1rio de ver\u00e3o do Timor-Leste", "TLST",
+                                        "Hor\u00E1rio do Timor-Leste", "TLT"}},
             {"Asia/Damascus", EET},
             {"Asia/Dubai", GST},
             {"Asia/Dushanbe", new String[] {"Fuso hor\u00e1rio do Tadjiquist\u00e3o", "TJT",
-                                            "Fuso hor\u00e1rio de ver\u00e3o do Tadjiquist\u00e3o", "TJST"}},
+                                            "Fuso hor\u00e1rio de ver\u00e3o do Tadjiquist\u00e3o", "TJST",
+                                            "Hor\u00E1rio do Tadjiquist\u00E3o", "TJT"}},
             {"Asia/Gaza", EET},
             {"Asia/Harbin", CTT},
             {"Asia/Hebron", EET},
             {"Asia/Ho_Chi_Minh", ICT},
             {"Asia/Hong_Kong", HKT},
             {"Asia/Hovd", new String[] {"Fuso hor\u00e1rio de Hovd", "HOVT",
-                                        "Fuso hor\u00e1rio de ver\u00e3o de Hovd", "HOVST"}},
+                                        "Fuso hor\u00e1rio de ver\u00e3o de Hovd", "HOVST",
+                                        "Hor\u00E1rio de Hovd", "HOVT"}},
             {"Asia/Irkutsk", new String[] {"Fuso hor\u00e1rio de Irkutsk", "IRKT",
-                                           "Fuso hor\u00e1rio de ver\u00e3o de Irkutsk", "IRKST"}},
+                                           "Fuso hor\u00e1rio de ver\u00e3o de Irkutsk", "IRKST",
+                                           "Hor\u00E1rio de Irkutsk", "IRKT"}},
             {"Asia/Istanbul", EET},
             {"Asia/Jakarta", WIT},
             {"Asia/Jayapura", new String[] {"Fuso hor\u00e1rio da Indon\u00e9sia Oriental", "WIT",
-                                            "Fuso hor\u00e1rio de ver\u00e3o da Indon\u00e9sia Oriental", "EIST"}},
+                                            "Fuso hor\u00e1rio de ver\u00e3o da Indon\u00e9sia Oriental", "EIST",
+                                            "Hor\u00E1rio da Indon\u00E9sia Oriental", "WIT"}},
             {"Asia/Kabul", new String[] {"Fuso hor\u00e1rio do Afeganist\u00e3o", "AFT",
-                                         "Fuso hor\u00e1rio de ver\u00e3o do Afeganist\u00e3o", "AFST"}},
+                                         "Fuso hor\u00e1rio de ver\u00e3o do Afeganist\u00e3o", "AFST",
+                                         "Hor\u00E1rio do Afeganist\u00E3o", "AFT"}},
             {"Asia/Kamchatka", new String[] {"Fuso hor\u00e1rio de Petropavlovsk-Kamchatski", "PETT",
-                                             "Fuso hor\u00e1rio de ver\u00e3o de Petropavlovsk-Kamchatski", "PETST"}},
+                                             "Fuso hor\u00e1rio de ver\u00e3o de Petropavlovsk-Kamchatski", "PETST",
+                                             "Hor\u00E1rio de Petropavlovsk-Kamchatski", "PETT"}},
             {"Asia/Karachi", PKT},
             {"Asia/Kashgar", CTT},
             {"Asia/Kathmandu", NPT},
             {"Asia/Katmandu", NPT},
             {"Asia/Khandyga", new String[] {"Hor\u00E1rio de Khandyga", "YAKT",
-                                            "Hor\u00E1rio de Ver\u00E3o de Khandyga", "YAKST"}},
+                                            "Hor\u00E1rio de Ver\u00E3o de Khandyga", "YAKST",
+                                            "Hor\u00E1rio de Khandyga", "YAKT"}},
             {"Asia/Kolkata", IST},
             {"Asia/Krasnoyarsk", new String[] {"Fuso hor\u00e1rio de Krasnoyarsk", "KRAT",
-                                               "Fuso hor\u00e1rio de ver\u00e3o de Krasnoyarsk", "KRAST"}},
+                                               "Fuso hor\u00e1rio de ver\u00e3o de Krasnoyarsk", "KRAST",
+                                               "Hor\u00E1rio de Krasnoyarsk", "KRAT"}},
             {"Asia/Kuala_Lumpur", MYT},
             {"Asia/Kuching", MYT},
             {"Asia/Kuwait", ARAST},
             {"Asia/Macao", CTT},
             {"Asia/Macau", CTT},
             {"Asia/Magadan", new String[] {"Fuso hor\u00e1rio de Magadan", "MAGT",
-                                           "Fuso hor\u00e1rio de ver\u00e3o de Magadan", "MAGST"}},
+                                           "Fuso hor\u00e1rio de ver\u00e3o de Magadan", "MAGST",
+                                           "Hor\u00E1rio de Magadan", "MAGT"}},
             {"Asia/Makassar", CIT},
             {"Asia/Manila", new String[] {"Fuso hor\u00e1rio das Filipinas", "PHT",
-                                          "Fuso hor\u00e1rio de ver\u00e3o das Filipinas", "PHST"}},
+                                          "Fuso hor\u00e1rio de ver\u00e3o das Filipinas", "PHST",
+                                          "Hor\u00E1rio das Filipinas", "PHT"}},
             {"Asia/Muscat", GST},
             {"Asia/Nicosia", EET},
             {"Asia/Novokuznetsk", NOVT},
             {"Asia/Novosibirsk", NOVT},
             {"Asia/Oral", new String[] {"Fuso hor\u00e1rio de Uralsk", "ORAT",
-                                        "Fuso hor\u00e1rio de ver\u00e3o de Uralsk", "ORAST"}},
+                                        "Fuso hor\u00e1rio de ver\u00e3o de Uralsk", "ORAST",
+                                        "Hor\u00E1rio de Uralsk", "ORAT"}},
             {"Asia/Omsk", new String[] {"Fuso hor\u00e1rio de Omsk", "OMST",
-                                        "Fuso hor\u00e1rio de ver\u00e3o de Omsk", "OMSST"}},
+                                        "Fuso hor\u00e1rio de ver\u00e3o de Omsk", "OMSST",
+                                        "Hor\u00E1rio de Omsk", "OMST"}},
             {"Asia/Phnom_Penh", ICT},
             {"Asia/Pontianak", WIT},
             {"Asia/Pyongyang", KST},
             {"Asia/Qatar", ARAST},
             {"Asia/Qyzylorda", new String[] {"Fuso hor\u00e1rio de Kizil-Orda", "QYZT",
-                                             "Fuso hor\u00e1rio de ver\u00e3o de Kizil-Orda", "QYZST"}},
+                                             "Fuso hor\u00e1rio de ver\u00e3o de Kizil-Orda", "QYZST",
+                                             "Hor\u00E1rio de Qyzylorda", "QYZT"}},
             {"Asia/Rangoon", new String[] {"Fuso hor\u00e1rio de Mianmar", "MMT",
-                                           "Fuso hor\u00e1rio de ver\u00e3o de Mianmar", "MMST"}},
+                                           "Fuso hor\u00e1rio de ver\u00e3o de Mianmar", "MMST",
+                                           "Hor\u00E1rio de Mianmar", "MMT"}},
             {"Asia/Riyadh", ARAST},
             {"Asia/Saigon", ICT},
             {"Asia/Sakhalin", new String[] {"Fuso hor\u00e1rio de Sakhalina", "SAKT",
-                                            "Fuso hor\u00e1rio de ver\u00e3o de Sakhalina", "SAKST"}},
+                                            "Fuso hor\u00e1rio de ver\u00e3o de Sakhalina", "SAKST",
+                                            "Hor\u00E1rio de Sakhalin", "SAKT"}},
             {"Asia/Samarkand", UZT},
             {"Asia/Seoul", KST},
             {"Asia/Singapore", SGT},
@@ -577,7 +697,8 @@ public final class TimeZoneNames_pt_BR extends TimeZoneNamesBundle {
             {"Asia/Tel_Aviv", ISRAEL},
             {"Asia/Tashkent", UZT},
             {"Asia/Tbilisi", new String[] {"Fuso hor\u00e1rio da Ge\u00f3rgia", "GET",
-                                           "Fuso hor\u00e1rio de ver\u00e3o da Ge\u00f3rgia", "GEST"}},
+                                           "Fuso hor\u00e1rio de ver\u00e3o da Ge\u00f3rgia", "GEST",
+                                           "Hor\u00E1rio da Ge\u00F3rgia", "GET"}},
             {"Asia/Tehran", IRT},
             {"Asia/Thimbu", BTT},
             {"Asia/Thimphu", BTT},
@@ -586,31 +707,39 @@ public final class TimeZoneNames_pt_BR extends TimeZoneNamesBundle {
             {"Asia/Ulan_Bator", ULAT},
             {"Asia/Urumqi", CTT},
             {"Asia/Ust-Nera", new String[] {"Hor\u00E1rio de Ust-Nera", "VLAT",
-                                            "Hor\u00E1rio de Ver\u00E3o de Ust-Nera", "VLAST"}},
+                                            "Hor\u00E1rio de Ver\u00E3o de Ust-Nera", "VLAST",
+                                            "Hor\u00E1rio de Ust-Nera", "VLAT"}},
             {"Asia/Vientiane", ICT},
             {"Asia/Vladivostok", new String[] {"Fuso hor\u00e1rio de Vladivostok", "VLAT",
-                                               "Fuso hor\u00e1rio de ver\u00e3o de Vladivostok", "VLAST"}},
+                                               "Fuso hor\u00e1rio de ver\u00e3o de Vladivostok", "VLAST",
+                                               "Hor\u00E1rio de Vladivostok", "VLAT"}},
             {"Asia/Yakutsk", new String[] {"Fuso hor\u00e1rio de Yakutsk", "YAKT",
-                                           "Fuso hor\u00e1rio de ver\u00e3o de Yakutsk", "YAKST"}},
+                                           "Fuso hor\u00e1rio de ver\u00e3o de Yakutsk", "YAKST",
+                                           "Hor\u00E1rio de Yakutsk", "YAKT"}},
             {"Asia/Yekaterinburg", new String[] {"Fuso hor\u00e1rio de Yekaterinburgo", "YEKT",
-                                                 "Fuso hor\u00e1rio de ver\u00e3o de Yekaterinburgo", "YEKST"}},
+                                                 "Fuso hor\u00e1rio de ver\u00e3o de Yekaterinburgo", "YEKST",
+                                                 "Hor\u00E1rio de Yekaterinburg", "YEKT"}},
             {"Asia/Yerevan", ARMT},
             {"Atlantic/Azores", new String[] {"Fuso hor\u00e1rio das A\u00e7ores", "AZOT",
-                                              "Fuso hor\u00e1rio de ver\u00e3o das A\u00e7ores", "AZOST"}},
+                                              "Fuso hor\u00e1rio de ver\u00e3o das A\u00e7ores", "AZOST",
+                                              "Hor\u00E1rio de A\u00E7ores", "AZOT"}},
             {"Atlantic/Bermuda", AST},
             {"Atlantic/Canary", WET},
             {"Atlantic/Cape_Verde", new String[] {"Fuso hor\u00e1rio de Cabo Verde", "CVT",
-                                                  "Fuso hor\u00e1rio de ver\u00e3o de Cabo Verde", "CVST"}},
+                                                  "Fuso hor\u00e1rio de ver\u00e3o de Cabo Verde", "CVST",
+                                                  "Hor\u00E1rio de Cabo Verde", "CVT"}},
             {"Atlantic/Faeroe", WET},
             {"Atlantic/Faroe", WET},
             {"Atlantic/Jan_Mayen", CET},
             {"Atlantic/Madeira", WET},
             {"Atlantic/Reykjavik", GMT},
             {"Atlantic/South_Georgia", new String[] {"Fuso hor\u00e1rio padr\u00e3o da Ge\u00f3rgia do Sul", "GST",
-                                                     "Hor\u00e1rio de luz natural da Ge\u00f3rgia do Sul", "GDT"}},
+                                                     "Hor\u00e1rio de luz natural da Ge\u00f3rgia do Sul", "GDT",
+                                                     "Hor\u00E1rio da Ge\u00F3rgia do Sul", "GT"}},
             {"Atlantic/St_Helena", GMT},
             {"Atlantic/Stanley", new String[] {"Fuso hor\u00e1rio das Ilhas Falkland", "FKT",
-                                               "Fuso hor\u00e1rio de ver\u00e3o das Ilhas Falkland", "FKST"}},
+                                               "Fuso hor\u00e1rio de ver\u00e3o das Ilhas Falkland", "FKST",
+                                               "Hor\u00E1rio das Ilhas Malvinas", "FKT"}},
             {"Australia/ACT", EST_NSW},
             {"Australia/Adelaide", ADELAIDE},
             {"Australia/Brisbane", BRISBANE},
@@ -619,7 +748,8 @@ public final class TimeZoneNames_pt_BR extends TimeZoneNamesBundle {
             {"Australia/Currie", EST_NSW},
             {"Australia/Darwin", DARWIN},
             {"Australia/Eucla", new String[] {"Fuso Hor\u00E1rio Ocidental Central (Austr\u00E1lia)", "CWST",
-                                              "Fuso Hor\u00E1rio de Ver\u00E3o Ocidental Central (Austr\u00E1lia)", "CWST"}},
+                                              "Fuso Hor\u00E1rio de Ver\u00E3o Ocidental Central (Austr\u00E1lia)", "CWST",
+                                              "Hor\u00E1rio Ocidental Central (Austr\u00E1lia)", "CWT"}},
             {"Australia/Hobart", TASMANIA},
             {"Australia/LHI", LORD_HOWE},
             {"Australia/Lindeman", BRISBANE},
@@ -704,7 +834,8 @@ public final class TimeZoneNames_pt_BR extends TimeZoneNamesBundle {
             {"Europe/Riga", EET},
             {"Europe/Rome", CET},
             {"Europe/Samara", new String[] {"Fuso hor\u00e1rio de Samara", "SAMT",
-                                            "Fuso hor\u00e1rio de ver\u00e3o de Samara", "SAMST"}},
+                                            "Fuso hor\u00e1rio de ver\u00e3o de Samara", "SAMST",
+                                            "Hor\u00E1rio de Samara", "SAMT"}},
             {"Europe/San_Marino", CET},
             {"Europe/Sarajevo", CET},
             {"Europe/Simferopol", EET},
@@ -720,7 +851,8 @@ public final class TimeZoneNames_pt_BR extends TimeZoneNamesBundle {
             {"Europe/Vienna", CET},
             {"Europe/Vilnius", EET},
             {"Europe/Volgograd", new String[] {"Fuso hor\u00e1rio de Volgogrado", "VOLT",
-                                               "Fuso hor\u00e1rio de ver\u00e3o de Volgogrado", "VOLST"}},
+                                               "Fuso hor\u00e1rio de ver\u00e3o de Volgogrado", "VOLST",
+                                               "Hor\u00E1rio de Volgogrado", "VOLT"}},
             {"Europe/Warsaw", CET},
             {"Europe/Zagreb", CET},
             {"Europe/Zaporozhye", EET},
@@ -734,30 +866,39 @@ public final class TimeZoneNames_pt_BR extends TimeZoneNamesBundle {
             {"IST", IST},
             {"Indian/Antananarivo", EAT},
             {"Indian/Chagos", new String[] {"Fuso hor\u00e1rio dos territ\u00f3rios do Oceano \u00cdndico", "IOT",
-                                            "Fuso hor\u00e1rio de ver\u00e3o dos territ\u00f3rios do Oceano \u00cdndico", "IOST"}},
+                                            "Fuso hor\u00e1rio de ver\u00e3o dos territ\u00f3rios do Oceano \u00cdndico", "IOST",
+                                            "Hor\u00E1rio do Territ\u00F3rio do Oceano \u00CDndico", "IOT"}},
             {"Indian/Christmas", new String[] {"Fuso hor\u00e1rio das Ilhas Christmas", "CXT",
-                                               "Fuso hor\u00e1rio de ver\u00e3o das Ilhas Christmas", "CXST"}},
+                                               "Fuso hor\u00e1rio de ver\u00e3o das Ilhas Christmas", "CXST",
+                                               "Hor\u00E1rio da Ilha Christmas", "CIT"}},
             {"Indian/Cocos", new String[] {"Fuso hor\u00e1rio das Ilhas Cocos", "CCT",
-                                           "Fuso hor\u00e1rio de ver\u00e3o das Ilhas Cocos", "CCST"}},
+                                           "Fuso hor\u00e1rio de ver\u00e3o das Ilhas Cocos", "CCST",
+                                           "Hor\u00E1rio das Ilhas Cocos", "CCT"}},
             {"Indian/Comoro", EAT},
             {"Indian/Kerguelen", new String[] {"Fuso hor\u00e1rio das Terras Austrais e Ant\u00e1rticas Francesas", "TFT",
-                                               "Fuso hor\u00e1rio de ver\u00e3o das Terras Austrais e Ant\u00e1rticas Francesas", "TFST"}},
+                                               "Fuso hor\u00e1rio de ver\u00e3o das Terras Austrais e Ant\u00e1rticas Francesas", "TFST",
+                                               "Hor\u00E1rio do Territ\u00F3rio Franc\u00EAs no Sul da Ant\u00E1rtica", "TFT"}},
             {"Indian/Mahe", new String[] {"Fuso hor\u00e1rio das Seychelles", "SCT",
-                                          "Fuso hor\u00e1rio de ver\u00e3o das Seychelles", "SCST"}},
+                                          "Fuso hor\u00e1rio de ver\u00e3o das Seychelles", "SCST",
+                                          "Hor\u00E1rio de Seychelles", "SCT"}},
             {"Indian/Maldives", new String[] {"Fuso hor\u00e1rio das Maldivas", "MVT",
-                                              "Fuso hor\u00e1rio de ver\u00e3o das Maldivas", "MVST"}},
+                                              "Fuso hor\u00e1rio de ver\u00e3o das Maldivas", "MVST",
+                                              "Hor\u00E1rio das Maldivas", "MVT"}},
             {"Indian/Mauritius", new String[] {"Fuso hor\u00e1rio das Ilhas Maur\u00edcio", "MUT",
-                                               "Fuso hor\u00e1rio de ver\u00e3o das Ilhas Maur\u00edcio", "MUST"}},
+                                               "Fuso hor\u00e1rio de ver\u00e3o das Ilhas Maur\u00edcio", "MUST",
+                                               "Hor\u00E1rio de Maur\u00EDcio", "MUT"}},
             {"Indian/Mayotte", EAT},
             {"Indian/Reunion", new String[] {"Fuso hor\u00e1rio de Reuni\u00e3o", "RET",
-                                             "Fuso hor\u00e1rio de ver\u00e3o de Reuni\u00e3o", "REST"}},
+                                             "Fuso hor\u00e1rio de ver\u00e3o de Reuni\u00e3o", "REST",
+                                             "Hor\u00E1rio das Ilhas Reuni\u00E3o", "RET"}},
             {"Israel", ISRAEL},
             {"Jamaica", EST},
             {"Japan", JST},
             {"Kwajalein", MHT},
             {"Libya", EET},
             {"MET", new String[] {"Fuso hor\u00e1rio da Europa M\u00e9dia", "MET",
-                                  "Fuso hor\u00e1rio de ver\u00e3o da Europa M\u00e9dia", "MEST"}},
+                                  "Fuso hor\u00e1rio de ver\u00e3o da Europa M\u00e9dia", "MEST",
+                                  "MET", "MET"}},
             {"Mexico/BajaNorte", PST},
             {"Mexico/BajaSur", MST},
             {"Mexico/General", CST},
@@ -777,61 +918,82 @@ public final class TimeZoneNames_pt_BR extends TimeZoneNamesBundle {
             {"Pacific/Chuuk", TRUT},
             {"Pacific/Easter", EASTER},
             {"Pacific/Efate", new String[] {"Fuso hor\u00e1rio de Vanuatu", "VUT",
-                                            "Fuso hor\u00e1rio de ver\u00e3o de Vanuatu", "VUST"}},
+                                            "Fuso hor\u00e1rio de ver\u00e3o de Vanuatu", "VUST",
+                                            "Hor\u00E1rio de Vanuatu", "VUT"}},
             {"Pacific/Enderbury", new String[] {"Fuso hor\u00e1rio das Ilhas F\u00e9nix", "PHOT",
-                                                "Fuso hor\u00e1rio de ver\u00e3o das Ilhas F\u00e9nix", "PHOST"}},
+                                                "Fuso hor\u00e1rio de ver\u00e3o das Ilhas F\u00e9nix", "PHOST",
+                                                "Hor\u00E1rio da Ilha Phoenix", "PHOT"}},
             {"Pacific/Fakaofo", new String[] {"Fuso hor\u00e1rio de Tokelau", "TKT",
-                                              "Fuso hor\u00e1rio de ver\u00e3o de Tokelau", "TKST"}},
+                                              "Fuso hor\u00e1rio de ver\u00e3o de Tokelau", "TKST",
+                                              "Hor\u00E1rio de Toquelau", "TKT"}},
             {"Pacific/Fiji", new String[] {"Fuso hor\u00e1rio de Fiji", "FJT",
-                                           "Fuso hor\u00e1rio de ver\u00e3o de Fiji", "FJST"}},
+                                           "Fuso hor\u00e1rio de ver\u00e3o de Fiji", "FJST",
+                                           "Hor\u00E1rio de Fiji", "FJT"}},
             {"Pacific/Funafuti", new String[] {"Fuso hor\u00e1rio de Tuvalu", "TVT",
-                                               "Fuso hor\u00e1rio de ver\u00e3o de Tuvalu", "TVST"}},
+                                               "Fuso hor\u00e1rio de ver\u00e3o de Tuvalu", "TVST",
+                                               "Hor\u00E1rio de Tuvalu", "TVT"}},
             {"Pacific/Galapagos", new String[] {"Fuso hor\u00e1rio das Ilhas Gal\u00e1pagos", "GALT",
-                                                "Fuso hor\u00e1rio de ver\u00e3o das Ilhas Gal\u00e1pagos", "GALST"}},
+                                                "Fuso hor\u00e1rio de ver\u00e3o das Ilhas Gal\u00e1pagos", "GALST",
+                                                "Hor\u00E1rio de Gal\u00E1pagos", "GALT"}},
             {"Pacific/Gambier", GAMBIER},
             {"Pacific/Guadalcanal", SBT},
             {"Pacific/Guam", ChST},
             {"Pacific/Johnston", HST},
             {"Pacific/Kiritimati", new String[] {"Fuso hor\u00e1rio das Esp\u00f3rades Equatoriais", "LINT",
-                                                 "Fuso hor\u00e1rio de ver\u00e3o das Esp\u00f3rades Equatoriais", "LINST"}},
+                                                 "Fuso hor\u00e1rio de ver\u00e3o das Esp\u00f3rades Equatoriais", "LINST",
+                                                 "Hor\u00E1rio das Ilhas Line", "LINT"}},
             {"Pacific/Kosrae", new String[] {"Fuso hor\u00e1rio de Kosrae", "KOST",
-                                             "Fuso hor\u00e1rio de ver\u00e3o de Kosrae", "KOSST"}},
+                                             "Fuso hor\u00e1rio de ver\u00e3o de Kosrae", "KOSST",
+                                             "Hor\u00E1rio de Kosrae", "KOST"}},
             {"Pacific/Kwajalein", MHT},
             {"Pacific/Majuro", MHT},
             {"Pacific/Marquesas", new String[] {"Fuso hor\u00e1rio das Ilhas Marquesas", "MART",
-                                                "Fuso hor\u00e1rio de ver\u00e3o das Ilhas Marquesas", "MARST"}},
+                                                "Fuso hor\u00e1rio de ver\u00e3o das Ilhas Marquesas", "MARST",
+                                                "Hor\u00E1rio das Ilhas Marquesas", "MART"}},
             {"Pacific/Midway", SAMOA},
             {"Pacific/Nauru", new String[] {"Fuso hor\u00e1rio de Nauru", "NRT",
-                                            "Fuso hor\u00e1rio de ver\u00e3o de Nauru", "NRST"}},
+                                            "Fuso hor\u00e1rio de ver\u00e3o de Nauru", "NRST",
+                                            "Hor\u00E1rio de Nauru", "NRT"}},
             {"Pacific/Niue", new String[] {"Fuso hor\u00e1rio de Niue", "NUT",
-                                           "Fuso hor\u00e1rio de ver\u00e3o de Niue", "NUST"}},
+                                           "Fuso hor\u00e1rio de ver\u00e3o de Niue", "NUST",
+                                           "Hor\u00E1rio de Niue", "NUT"}},
             {"Pacific/Norfolk", new String[] {"Fuso hor\u00e1rio da Ilha de Norfolk", "NFT",
-                                              "Fuso hor\u00e1rio de ver\u00e3o da Ilha de Norfolk", "NFST"}},
+                                              "Fuso hor\u00e1rio de ver\u00e3o da Ilha de Norfolk", "NFST",
+                                              "Hor\u00E1rio de Norfolk", "NFT"}},
             {"Pacific/Noumea", new String[] {"Fuso hor\u00e1rio da Nova Caled\u00f4nia", "NCT",
-                                             "Fuso hor\u00e1rio de ver\u00e3o da Nova Caled\u00f4nia", "NCST"}},
+                                             "Fuso hor\u00e1rio de ver\u00e3o da Nova Caled\u00f4nia", "NCST",
+                                             "Hor\u00E1rio da Nova Caled\u00F4nia", "NCT"}},
             {"Pacific/Pago_Pago", SAMOA},
             {"Pacific/Palau", new String[] {"Fuso hor\u00e1rio de Palau", "PWT",
-                                            "Fuso hor\u00e1rio de ver\u00e3o de Palau", "PWST"}},
+                                            "Fuso hor\u00e1rio de ver\u00e3o de Palau", "PWST",
+                                            "Hor\u00E1rio de Palau", "PWT"}},
             {"Pacific/Pitcairn", PITCAIRN},
             {"Pacific/Pohnpei", PONT},
             {"Pacific/Ponape", PONT},
             {"Pacific/Port_Moresby", new String[] {"Fuso hor\u00e1rio de Papua-Nova Guin\u00e9", "PGT",
-                                                   "Fuso hor\u00e1rio de ver\u00e3o de Papua-Nova Guin\u00e9", "PGST"}},
+                                                   "Fuso hor\u00e1rio de ver\u00e3o de Papua-Nova Guin\u00e9", "PGST",
+                                                   "Hor\u00E1rio de Papua-Nova Guin\u00E9", "PGT"}},
             {"Pacific/Rarotonga", new String[] {"Fuso hor\u00e1rio das Ilhas Cook", "CKT",
-                                                "Fuso hor\u00e1rio de ver\u00e3o das Ilhas Cook", "CKHST"}},
+                                                "Fuso hor\u00e1rio de ver\u00e3o das Ilhas Cook", "CKHST",
+                                                "Hor\u00E1rio das Ilhas Cook", "CKT"}},
             {"Pacific/Saipan", ChST},
             {"Pacific/Samoa", SAMOA},
             {"Pacific/Tahiti", new String[] {"Fuso hor\u00e1rio do Taiti", "TAHT",
-                                             "Fuso hor\u00e1rio de ver\u00e3o do Taiti", "TAHST"}},
+                                             "Fuso hor\u00e1rio de ver\u00e3o do Taiti", "TAHST",
+                                             "Hor\u00E1rio do Tahiti", "TAHT"}},
             {"Pacific/Tarawa", new String[] {"Fuso hor\u00e1rio das Ilhas Gilbert", "GILT",
-                                             "Fuso hor\u00e1rio de ver\u00e3o das Ilhas Gilbert", "GILST"}},
+                                             "Fuso hor\u00e1rio de ver\u00e3o das Ilhas Gilbert", "GILST",
+                                             "Hor\u00E1rio das Ilhas Gilbert", "GILT"}},
             {"Pacific/Tongatapu", new String[] {"Fuso hor\u00e1rio de Tonga", "TOT",
-                                                "Fuso hor\u00e1rio de ver\u00e3o de Tonga", "TOST"}},
+                                                "Fuso hor\u00e1rio de ver\u00e3o de Tonga", "TOST",
+                                                "Hor\u00E1rio de Tonga", "TOT"}},
             {"Pacific/Truk", TRUT},
             {"Pacific/Wake", new String[] {"Fuso hor\u00e1rio de Wake", "WAKT",
-                                           "Fuso hor\u00e1rio de ver\u00e3o de Wake", "WAKST"}},
+                                           "Fuso hor\u00e1rio de ver\u00e3o de Wake", "WAKST",
+                                           "Hor\u00E1rio de Wake", "WAKT"}},
             {"Pacific/Wallis", new String[] {"Fuso hor\u00e1rio de Wallis e Futuna", "WFT",
-                                             "Fuso hor\u00e1rio de ver\u00e3o de Wallis e Futuna", "WFST"}},
+                                             "Fuso hor\u00e1rio de ver\u00e3o de Wallis e Futuna", "WFST",
+                                             "Hor\u00E1rio das Ilhas Wallis e Futuna", "WFT"}},
             {"Pacific/Yap", TRUT},
             {"Poland", CET},
             {"PRC", CTT},

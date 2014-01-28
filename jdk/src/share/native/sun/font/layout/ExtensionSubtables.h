@@ -52,8 +52,7 @@ struct ExtensionSubtable //: GlyphSubstitutionSubtable
     le_uint16 extensionLookupType;
     le_uint32 extensionOffset;
 
-    le_uint32 process(const LEReferenceTo<ExtensionSubtable> &extRef,
-                      const LookupProcessor *lookupProcessor, le_uint16 lookupType,
+    le_uint32 process(const LEReferenceTo<ExtensionSubtable> &base, const LookupProcessor *lookupProcessor, le_uint16 lookupType,
                       GlyphIterator *glyphIterator, const LEFontInstance *fontInstance, LEErrorCode& success) const;
 };
 

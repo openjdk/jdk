@@ -337,6 +337,20 @@ struct LEPoint
 typedef struct LEPoint LEPoint;
 #endif
 
+/**
+ * \def LE_TRACE
+ * @internal
+ */
+#ifndef LE_TRACE
+# define LE_TRACE 0
+#endif
+
+#if LE_TRACE
+# include <stdio.h>
+# define _LETRACE printf("\n%s:%d: LE: ", __FILE__, __LINE__),printf
+#else
+# define _LETRACE 0&&
+#endif
 
 #ifndef U_HIDE_INTERNAL_API
 
@@ -553,7 +567,7 @@ enum LEFeatureTags {
     LE_CALT_FEATURE_TAG = 0x63616C74UL, /**< 'calt' */
     LE_CASE_FEATURE_TAG = 0x63617365UL, /**< 'case' */
     LE_CCMP_FEATURE_TAG = 0x63636D70UL, /**< 'ccmp' */
-        LE_CJCT_FEATURE_TAG = 0x636A6374UL, /**< 'cjct' */
+    LE_CJCT_FEATURE_TAG = 0x636A6374UL, /**< 'cjct' */
     LE_CLIG_FEATURE_TAG = 0x636C6967UL, /**< 'clig' */
     LE_CPSP_FEATURE_TAG = 0x63707370UL, /**< 'cpsp' */
     LE_CSWH_FEATURE_TAG = 0x63737768UL, /**< 'cswh' */
@@ -701,6 +715,12 @@ enum LEFeatureENUMs {
   LE_FEATURE_ENUM_MAX = LE_CHAR_FILTER_FEATURE_ENUM
 };
 
+
+/**
+ * Flags for typographic features.
+ * @internal
+ * @{
+ */
 #define LE_Kerning_FEATURE_FLAG   (1 << LE_Kerning_FEATURE_ENUM)
 #define LE_Ligatures_FEATURE_FLAG (1 << LE_Ligatures_FEATURE_ENUM)
 #define LE_NoCanon_FEATURE_FLAG (1 << LE_NoCanon_FEATURE_ENUM)
@@ -727,6 +747,9 @@ enum LEFeatureENUMs {
 #define LE_SS07_FEATURE_FLAG (1 << LE_SS07_FEATURE_ENUM)
 
 #define LE_CHAR_FILTER_FEATURE_FLAG (1 << LE_CHAR_FILTER_FEATURE_ENUM)
+/**
+ * @}
+ */
 
 #define LE_DEFAULT_FEATURE_FLAG (LE_Kerning_FEATURE_FLAG | LE_Ligatures_FEATURE_FLAG) /**< default features */
 
@@ -768,7 +791,7 @@ typedef enum LEErrorCode LEErrorCode;
  *
  * @stable ICU 2.4
  */
-#ifndef LE_FAILURE
+#ifndef LE_SUCCESS
 #define LE_SUCCESS(code) (U_SUCCESS((UErrorCode)code))
 #endif
 
@@ -781,4 +804,4 @@ typedef enum LEErrorCode LEErrorCode;
 #define LE_FAILURE(code) (U_FAILURE((UErrorCode)code))
 #endif
 
-#endif /* __LETYPES_H */
+#endif

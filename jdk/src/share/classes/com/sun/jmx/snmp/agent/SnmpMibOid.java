@@ -160,12 +160,10 @@ public class SnmpMibOid extends SnmpMibNode implements Serializable {
 
         if (depth > length) {
             // Nothing is left... the oid is not valid
-            throw noSuchObjectException;
-
+            throw new SnmpStatusException(SnmpStatusException.noSuchObject);
         } else if (depth == length) {
             // The oid is not complete...
-            throw noSuchInstanceException;
-
+            throw new SnmpStatusException(SnmpStatusException.noSuchInstance);
         } else {
             // Some children variable or subobject is being querried
             // getChild() will raise an exception if no child is found.
@@ -205,12 +203,13 @@ public class SnmpMibOid extends SnmpMibNode implements Serializable {
         final int length = oid.length;
         SnmpMibNode node = null;
         long[] result = null;
-        if (handlers == null)
+        if (handlers == null) {
             // This should be considered as a genErr, but we do not want to
             // abort the whole request, so we're going to throw
             // a noSuchObject...
             //
-            throw noSuchObjectException;
+            throw new SnmpStatusException(SnmpStatusException.noSuchObject);
+        }
 
         final Object data = handlers.getUserData();
         final int pduVersion = handlers.getRequestPduVersion();
@@ -235,7 +234,7 @@ public class SnmpMibOid extends SnmpMibNode implements Serializable {
                 // SnmpOid result = null;
                 if (child == null) {
                     // shouldn't happen
-                    throw noSuchObjectException;
+                    throw new SnmpStatusException(SnmpStatusException.noSuchObject);
                     // validateVarId(index);
                     // handlers.add(this,varbind,depth);
                     // result = new SnmpOid(0);
@@ -444,11 +443,13 @@ public class SnmpMibOid extends SnmpMibNode implements Serializable {
         // first we need to retrieve the identifier in the list of children
         //
         final int pos= getInsertAt(id);
-        if (pos >= nbChildren)
-            throw noSuchObjectException;
+        if (pos >= nbChildren) {
+            throw new SnmpStatusException(SnmpStatusException.noSuchObject);
+        }
 
-        if (varList[pos] != (int) id)
-            throw noSuchObjectException;
+        if (varList[pos] != (int) id) {
+            throw new SnmpStatusException(SnmpStatusException.noSuchObject);
+        }
 
         // Access the node
         //
@@ -456,10 +457,11 @@ public class SnmpMibOid extends SnmpMibNode implements Serializable {
         try {
             child = children.elementAtNonSync(pos);
         } catch(ArrayIndexOutOfBoundsException e) {
-            throw noSuchObjectException;
+            throw new SnmpStatusException(SnmpStatusException.noSuchObject);
         }
-        if (child == null)
-            throw noSuchInstanceException;
+        if (child == null) {
+            throw new SnmpStatusException(SnmpStatusException.noSuchInstance);
+        }
         return child;
     }
 

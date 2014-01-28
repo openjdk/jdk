@@ -41,6 +41,7 @@ import jdk.nashorn.internal.runtime.Source;
  */
 
 public enum CompilerConstants {
+
     /** the __FILE__ variable */
     __FILE__,
 
@@ -75,7 +76,7 @@ public enum CompilerConstants {
     DEFAULT_SCRIPT_NAME("Script"),
 
     /** function prefix for anonymous functions */
-    FUNCTION_PREFIX("function$"),
+    ANON_FUNCTION_PREFIX("L:"),
 
     /** method name for Java method that is script entry point */
     RUN_SCRIPT("runScript"),
@@ -149,25 +150,30 @@ public enum CompilerConstants {
     ALLOCATE("allocate"),
 
     /** prefix for split methods, @see Splitter */
-    SPLIT_PREFIX("$split"),
+    SPLIT_PREFIX(":split"),
 
     /** prefix for split array method and slot */
-    SPLIT_ARRAY_ARG("split_array", 3),
+    SPLIT_ARRAY_ARG(":split_array", 3),
 
     /** get string from constant pool */
-    GET_STRING("$getString"),
+    GET_STRING(":getString"),
 
     /** get map */
-    GET_MAP("$getMap"),
+    GET_MAP(":getMap"),
 
     /** get map */
-    SET_MAP("$setMap"),
+    SET_MAP(":setMap"),
 
     /** get array prefix */
-    GET_ARRAY_PREFIX("$get"),
+    GET_ARRAY_PREFIX(":get"),
 
     /** get array suffix */
     GET_ARRAY_SUFFIX("$array");
+
+    /**
+     * Prefix used for internal methods generated in script clases.
+     */
+    public static final String INTERNAL_METHOD_PREFIX = ":";
 
     private final String symbolName;
     private final Class<?> type;

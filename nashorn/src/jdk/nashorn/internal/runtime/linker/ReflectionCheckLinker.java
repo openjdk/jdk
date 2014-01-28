@@ -75,7 +75,8 @@ final class ReflectionCheckLinker implements TypeBasedGuardingDynamicLinker{
             if ((self instanceof Class) && Modifier.isPublic(((Class<?>)self).getModifiers())) {
                 final CallSiteDescriptor desc = requestWithoutContext.getCallSiteDescriptor();
                 if(CallSiteDescriptorFactory.tokenizeOperators(desc).contains("getProp")) {
-                    if ("static".equals(desc.getNameToken(CallSiteDescriptor.NAME_OPERAND))) {
+                    if (desc.getNameTokenCount() > CallSiteDescriptor.NAME_OPERAND &&
+                        "static".equals(desc.getNameToken(CallSiteDescriptor.NAME_OPERAND))) {
                         if (Context.isAccessibleClass((Class<?>)self) && !isReflectionClass((Class<?>)self)) {
                             // If "getProp:static" passes access checks, allow access.
                             return;

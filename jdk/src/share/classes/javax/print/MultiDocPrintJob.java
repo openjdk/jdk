@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,7 +32,6 @@ import javax.print.attribute.PrintRequestAttributeSet;
  * Obtained from a MultiDocPrintService, a MultiDocPrintJob can print a
  * specified collection of documents as a single print job with a set of
  * job attributes.
- * <P>
  */
 
 public interface MultiDocPrintJob extends DocPrintJob {

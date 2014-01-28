@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,7 +37,6 @@ import com.sun.tools.javac.tree.JCTree.*;
 import static com.sun.tools.javac.code.TypeTag.ARRAY;
 import static com.sun.tools.javac.code.TypeTag.CLASS;
 import static com.sun.tools.javac.tree.JCTree.Tag.*;
-import javax.lang.model.type.ErrorType;
 
 /** Enter annotations on symbols.  Annotations accumulate in a queue,
  *  which is processed at the top level of any set of recursive calls
@@ -253,29 +252,11 @@ public class Annotate {
         Type at = (a.annotationType.type != null ? a.annotationType.type
                   : attr.attribType(a.annotationType, env));
         a.type = chk.checkType(a.annotationType.pos(), at, expected);
-        if (a.type.isErroneous()) {
-            // Need to make sure nested (anno)trees does not have null as .type
-            attr.postAttr(a);
-
-            if (typeAnnotation) {
-                return new Attribute.TypeCompound(a.type, List.<Pair<MethodSymbol,Attribute>>nil(),
-                        new TypeAnnotationPosition());
-            } else {
-                return new Attribute.Compound(a.type, List.<Pair<MethodSymbol,Attribute>>nil());
-            }
-        }
-        if ((a.type.tsym.flags() & Flags.ANNOTATION) == 0) {
+        boolean isError = a.type.isErroneous();
+        if ((a.type.tsym.flags() & Flags.ANNOTATION) == 0 && !isError) {
             log.error(a.annotationType.pos(),
                       "not.annotation.type", a.type.toString());
-
-            // Need to make sure nested (anno)trees does not have null as .type
-            attr.postAttr(a);
-
-            if (typeAnnotation) {
-                return new Attribute.TypeCompound(a.type, List.<Pair<MethodSymbol,Attribute>>nil(), null);
-            } else {
-                return new Attribute.Compound(a.type, List.<Pair<MethodSymbol,Attribute>>nil());
-            }
+            isError = true;
         }
         List<JCExpression> args = a.args;
         if (args.length() == 1 && !args.head.hasTag(ASSIGN)) {
@@ -289,11 +270,13 @@ public class Annotate {
             JCExpression t = tl.head;
             if (!t.hasTag(ASSIGN)) {
                 log.error(t.pos(), "annotation.value.must.be.name.value");
+                enterAttributeValue(t.type = syms.errType, t, env);
                 continue;
             }
             JCAssign assign = (JCAssign)t;
             if (!assign.lhs.hasTag(IDENT)) {
                 log.error(t.pos(), "annotation.value.must.be.name.value");
+                enterAttributeValue(t.type = syms.errType, t, env);
                 continue;
             }
             JCIdent left = (JCIdent)assign.lhs;
@@ -305,7 +288,7 @@ public class Annotate {
                                                           null);
             left.sym = method;
             left.type = method.type;
-            if (method.owner != a.type.tsym)
+            if (method.owner != a.type.tsym && !isError)
                 log.error(left.pos(), "no.annotation.member", left.name, a.type);
             Type result = method.type.getReturnType();
             Attribute value = enterAttributeValue(result, assign.rhs, env);
@@ -389,7 +372,8 @@ public class Annotate {
             enterAnnotation((JCAnnotation)tree, syms.errType, env);
             return new Attribute.Error(((JCAnnotation)tree).annotationType.type);
         }
-        if (expected.isPrimitive() || types.isSameType(expected, syms.stringType)) {
+        if (expected.isPrimitive() ||
+            (types.isSameType(expected, syms.stringType) && !expected.hasTag(TypeTag.ERROR))) {
             Type result = attr.attribExpr(tree, env, expected);
             if (result.isErroneous())
                 return new Attribute.Error(result.getOriginalType());
