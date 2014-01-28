@@ -145,7 +145,6 @@ Java_sun_nio_ch_IOUtil_iovMax(JNIEnv *env, jclass this)
     return (jint)iov_max;
 }
 
-
 /* Declared in nio_util.h for use elsewhere in NIO */
 
 jint

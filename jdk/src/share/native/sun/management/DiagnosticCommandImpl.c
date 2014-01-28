@@ -23,6 +23,7 @@
  * questions.
  */
 
+#include <stdlib.h>
 #include <jni.h>
 #include "management.h"
 #include "sun_management_DiagnosticCommandImpl.h"
@@ -56,7 +57,8 @@ jobject getDiagnosticCommandArgumentInfoArray(JNIEnv *env, jstring command,
   jobject resultList;
 
   dcmd_arg_info_array = (dcmdArgInfo*) malloc(num_arg * sizeof(dcmdArgInfo));
-  if (dcmd_arg_info_array == NULL) {
+  /* According to ISO C it is perfectly legal for malloc to return zero if called with a zero argument */
+  if (dcmd_arg_info_array == NULL && num_arg != 0) {
     return NULL;
   }
   jmm_interface->GetDiagnosticCommandArgumentsInfo(env, command,
@@ -117,19 +119,22 @@ Java_sun_management_DiagnosticCommandImpl_getDiagnosticCommandInfo
       return NULL;
   }
   num_commands = (*env)->GetArrayLength(env, commands);
-  dcmd_info_array = (dcmdInfo*) malloc(num_commands *
-                                       sizeof(dcmdInfo));
-  if (dcmd_info_array == NULL) {
-      JNU_ThrowOutOfMemoryError(env, NULL);
-  }
-  jmm_interface->GetDiagnosticCommandInfo(env, commands, dcmd_info_array);
   dcmdInfoCls = (*env)->FindClass(env,
                                   "sun/management/DiagnosticCommandInfo");
   result = (*env)->NewObjectArray(env, num_commands, dcmdInfoCls, NULL);
   if (result == NULL) {
-      free(dcmd_info_array);
       JNU_ThrowOutOfMemoryError(env, 0);
   }
+  if (num_commands == 0) {
+      /* Handle the 'zero commands' case specially to avoid calling 'malloc()' */
+      /* with a zero argument because that may legally return a NULL pointer.  */
+      return result;
+  }
+  dcmd_info_array = (dcmdInfo*) malloc(num_commands * sizeof(dcmdInfo));
+  if (dcmd_info_array == NULL) {
+      JNU_ThrowOutOfMemoryError(env, NULL);
+  }
+  jmm_interface->GetDiagnosticCommandInfo(env, commands, dcmd_info_array);
   for (i=0; i<num_commands; i++) {
       args = getDiagnosticCommandArgumentInfoArray(env,
                                                    (*env)->GetObjectArrayElement(env,commands,i),

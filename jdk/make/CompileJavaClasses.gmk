@@ -146,6 +146,17 @@ ifneq ($(OPENJDK_TARGET_OS), macosx)
       sun/tools/attach/BsdVirtualMachine.java
 endif
 
+ifneq ($(OPENJDK_TARGET_OS),aix)
+    EXFILES+=sun/nio/ch/AixAsynchronousChannelProvider.java \
+             sun/nio/ch/AixPollPort.java \
+             sun/nio/fs/AixFileStore.java \
+             sun/nio/fs/AixFileSystem.java \
+             sun/nio/fs/AixFileSystemProvider.java \
+             sun/nio/fs/AixNativeDispatcher.java \
+             sun/tools/attach/AixAttachProvider.java \
+             sun/tools/attach/AixVirtualMachine.java
+endif
+
 # Exclude BreakIterator classes that are just used in compile process to generate
 # data files and shouldn't go in the product
 EXFILES += sun/text/resources/BreakIteratorRules.java \
@@ -217,9 +228,9 @@ endif
 # Exclude another implicitly not included file.
 EXFILES += sun/util/locale/AsciiUtil.java
 
-ifeq (, $(filter $(OPENJDK_TARGET_OS), solaris macosx))
+ifeq (, $(filter $(OPENJDK_TARGET_OS), solaris macosx aix))
   #
-  # only solaris and macosx
+  # only solaris, macosx and aix
   #
   EXFILES += sun/nio/fs/PollingWatchService.java
 endif
@@ -289,6 +300,16 @@ SECURITY_PKGS := \
     sun/security/pkcs11 \
     #
 
+AIX_SRC_DIRS :=
+ifeq ($(OPENJDK_TARGET_OS),aix)
+     AIX_SRC_DIRS += $(JDK_TOPDIR)/src/aix/classes
+
+  # these files are duplicated in AIX_SRC_DIRS
+  EXFILES += $(JDK_TOPDIR)/src/solaris/classes/sun/nio/ch/sctp/SctpChannelImpl.java \
+      $(JDK_TOPDIR)/src/solaris/classes/sun/nio/ch/sctp/SctpMultiChannelImpl.java \
+      $(JDK_TOPDIR)/src/solaris/classes/sun/nio/ch/sctp/SctpServerChannelImpl.java
+endif
+
 # The exception handling of swing beaninfo
 # These resources violates the convention of having code and resources together under
 # $(JDK_TOPDIR)/src/.../classes directories
@@ -313,6 +334,7 @@ $(eval $(call SetupJavaCompilation,BUILD_JDK,\
     SRC:=$(JDK_TOPDIR)/src/share/classes \
         $(JDK_TOPDIR)/src/$(OPENJDK_TARGET_OS_API_DIR)/classes \
         $(MACOSX_SRC_DIRS) \
+        $(AIX_SRC_DIRS) \
         $(JDK_OUTPUTDIR)/gensrc \
         $(JDK_OUTPUTDIR)/gensrc_no_srczip \
         $(CLOSED_SRC_DIRS),\
