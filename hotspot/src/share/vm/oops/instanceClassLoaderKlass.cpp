@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -150,10 +150,6 @@ void InstanceClassLoaderKlass::oop_push_contents(PSPromotionManager* pm, oop obj
 
 int InstanceClassLoaderKlass::oop_update_pointers(ParCompactionManager* cm, oop obj) {
   InstanceKlass::oop_update_pointers(cm, obj);
-  ClassLoaderData * const loader_data = java_lang_ClassLoader::loader_data(obj);
-  if (loader_data != NULL) {
-    PSParallelCompact::adjust_class_loader(cm, loader_data);
-  }
   return size_helper();
 }
 #endif // INCLUDE_ALL_GCS

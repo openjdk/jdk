@@ -65,7 +65,6 @@ import javax.xml.transform.Result;
 import javax.xml.transform.Transformer;
 import javax.xml.transform.TransformerConfigurationException;
 import javax.xml.transform.TransformerFactory;
-import javax.xml.transform.sax.SAXResult;
 import javax.xml.transform.sax.SAXTransformerFactory;
 import javax.xml.transform.sax.TransformerHandler;
 
@@ -90,7 +89,6 @@ import com.sun.xml.internal.bind.v2.model.core.Ref;
 import com.sun.xml.internal.bind.v2.model.impl.RuntimeBuiltinLeafInfoImpl;
 import com.sun.xml.internal.bind.v2.model.impl.RuntimeModelBuilder;
 import com.sun.xml.internal.bind.v2.model.nav.Navigator;
-import com.sun.xml.internal.bind.v2.model.nav.ReflectionNavigator;
 import com.sun.xml.internal.bind.v2.model.runtime.RuntimeArrayInfo;
 import com.sun.xml.internal.bind.v2.model.runtime.RuntimeBuiltinLeafInfo;
 import com.sun.xml.internal.bind.v2.model.runtime.RuntimeClassInfo;
@@ -118,7 +116,6 @@ import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 import org.xml.sax.SAXException;
 import org.xml.sax.SAXParseException;
-import org.xml.sax.helpers.DefaultHandler;
 
 /**
  * This class provides the implementation of JAXBContext.
@@ -363,7 +360,7 @@ public final class JAXBContextImpl extends JAXBRIContext {
             beanInfoMap.put( e.getKey(), beanInfoMap.get(e.getValue()) );
 
         // build bridges
-        ReflectionNavigator nav = typeSet.getNavigator();
+        Navigator<Type, Class, Field, Method> nav = typeSet.getNavigator();
 
         for (TypeReference tr : typeRefs) {
             XmlJavaTypeAdapter xjta = tr.get(XmlJavaTypeAdapter.class);
@@ -371,7 +368,7 @@ public final class JAXBContextImpl extends JAXBRIContext {
             XmlList xl = tr.get(XmlList.class);
 
             // eventually compute the in-memory type
-            Class erasedType = nav.erasure(tr.type);
+            Class erasedType = (Class) nav.erasure(tr.type);
 
             if(xjta!=null) {
                 a = new Adapter<Type,Class>(xjta.value(),nav);
@@ -382,7 +379,7 @@ public final class JAXBContextImpl extends JAXBRIContext {
             }
 
             if(a!=null) {
-                erasedType = nav.erasure(a.defaultType);
+                erasedType = (Class) nav.erasure(a.defaultType);
             }
 
             Name name = nameBuilder.createElementName(tr.tagName);
@@ -877,7 +874,7 @@ public final class JAXBContextImpl extends JAXBRIContext {
                 // this is a special class we introduced for JAX-WS that we *don't* want in the schema
             } else {
                 NonElement<Type,Class> typeInfo = getXmlType(tis,tr);
-                xsdgen.add(tr.tagName, !Navigator.REFLECTION.isPrimitive(tr.type),typeInfo);
+                xsdgen.add(tr.tagName, !tis.getNavigator().isPrimitive(tr.type),typeInfo);
             }
         }
         return xsdgen;

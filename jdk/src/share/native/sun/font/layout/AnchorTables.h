@@ -49,20 +49,23 @@ struct AnchorTable
     le_int16   xCoordinate;
     le_int16   yCoordinate;
 
-    void    getAnchor(LEGlyphID glyphID, const LEFontInstance *fontInstance,
-                      LEPoint &anchor) const;
+  void    getAnchor(const LETableReference &base, LEGlyphID glyphID, const LEFontInstance *fontInstance,
+                      LEPoint &anchor, LEErrorCode &success) const;
 };
 
 struct Format1AnchorTable : AnchorTable
 {
-    void getAnchor(const LEFontInstance *fontInstance, LEPoint &anchor) const;
+  void getAnchor(const LEReferenceTo<Format1AnchorTable>& base,
+                 const LEFontInstance *fontInstance, LEPoint &anchor, LEErrorCode &success) const;
 };
 
 struct Format2AnchorTable : AnchorTable
 {
     le_uint16  anchorPoint;
 
-    void getAnchor(LEGlyphID glyphID, const LEFontInstance *fontInstance, LEPoint &anchor) const;
+    void getAnchor(const LEReferenceTo<Format2AnchorTable>& base,
+                   LEGlyphID glyphID, const LEFontInstance *fontInstance,
+                   LEPoint &anchor, LEErrorCode &success) const;
 };
 
 struct Format3AnchorTable : AnchorTable
@@ -70,7 +73,9 @@ struct Format3AnchorTable : AnchorTable
     Offset  xDeviceTableOffset;
     Offset  yDeviceTableOffset;
 
-    void getAnchor(const LEFontInstance *fontInstance, LEPoint &anchor) const;
+    void getAnchor(const LEReferenceTo<Format3AnchorTable>& base,
+                   const LEFontInstance *fontInstance, LEPoint &anchor,
+                   LEErrorCode &success) const;
 };
 
 U_NAMESPACE_END

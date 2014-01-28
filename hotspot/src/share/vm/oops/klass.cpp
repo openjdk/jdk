@@ -376,8 +376,6 @@ void Klass::append_to_sibling_list() {
 }
 
 bool Klass::is_loader_alive(BoolObjectClosure* is_alive) {
-  assert(ClassLoaderDataGraph::contains((address)this), "is in the metaspace");
-
 #ifdef ASSERT
   // The class is alive iff the class loader is alive.
   oop loader = class_loader();

@@ -94,7 +94,6 @@ import java.awt.Graphics;
  * <code>Pageable</code> then the client may provide different PageFormats
  * for each page index. Calculations of page breaks must account for this.
  * </ul>
- * <p>
  * @see java.awt.print.Pageable
  * @see java.awt.print.PageFormat
  * @see java.awt.print.PrinterJob

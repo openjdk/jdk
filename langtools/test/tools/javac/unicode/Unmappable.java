@@ -27,8 +27,6 @@
  * @summary diagnose encoding errors in Java source files
  * @author gafter
  *
- * @compile              -encoding ascii -source 1.5 Unmappable.java
- * @compile/fail -Werror -encoding ascii -source 1.5 Unmappable.java
  * @compile/fail         -encoding ascii             Unmappable.java
  */
 

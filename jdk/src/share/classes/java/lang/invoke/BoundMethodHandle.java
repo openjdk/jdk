@@ -611,7 +611,7 @@ import jdk.internal.org.objectweb.asm.Type;
             mv.visitVarInsn(ALOAD, 1);
             mv.visitVarInsn(ALOAD, 2);
 
-            mv.visitMethodInsn(INVOKESPECIAL, BMH, "<init>", makeSignature("", true));
+            mv.visitMethodInsn(INVOKESPECIAL, BMH, "<init>", makeSignature("", true), false);
 
             for (int i = 0, j = 0; i < types.length(); ++i, ++j) {
                 // i counts the arguments, j counts corresponding argument slots
@@ -662,7 +662,7 @@ import jdk.internal.org.objectweb.asm.Type;
             // put fields on the stack
             emitPushFields(types, className, mv);
             // finally, invoke the constructor and return
-            mv.visitMethodInsn(INVOKEVIRTUAL, MH, "invokeBasic", makeSignature(types, false));
+            mv.visitMethodInsn(INVOKEVIRTUAL, MH, "invokeBasic", makeSignature(types, false), false);
             mv.visitInsn(ARETURN);
             mv.visitMaxs(0, 0);
             mv.visitEnd();
@@ -678,7 +678,7 @@ import jdk.internal.org.objectweb.asm.Type;
                 int iconstInsn = ICONST_0 + extensionIndex(t);
                 assert(iconstInsn <= ICONST_5);
                 mv.visitInsn(iconstInsn);
-                mv.visitMethodInsn(INVOKEVIRTUAL, SPECIES_DATA, "extendWithIndex", BMHSPECIES_DATA_EWI_SIG);
+                mv.visitMethodInsn(INVOKEVIRTUAL, SPECIES_DATA, "extendWithIndex", BMHSPECIES_DATA_EWI_SIG, false);
                 mv.visitFieldInsn(GETFIELD, SPECIES_DATA, "constructor", "[" + MH_SIG);
                 mv.visitInsn(ICONST_0);
                 mv.visitInsn(AALOAD);
@@ -690,7 +690,7 @@ import jdk.internal.org.objectweb.asm.Type;
                 // put narg on stack
                 mv.visitVarInsn(typeLoadOp(t), 3);
                 // finally, invoke the constructor and return
-                mv.visitMethodInsn(INVOKEVIRTUAL, MH, "invokeBasic", makeSignature(types + t, false));
+                mv.visitMethodInsn(INVOKEVIRTUAL, MH, "invokeBasic", makeSignature(types + t, false), false);
                 mv.visitInsn(ARETURN);
                 mv.visitMaxs(0, 0);
                 mv.visitEnd();
@@ -701,7 +701,7 @@ import jdk.internal.org.objectweb.asm.Type;
             mv.visitCode();
             mv.visitLdcInsn(types);
             mv.visitLdcInsn(Type.getObjectType(className));
-            mv.visitMethodInsn(INVOKESTATIC, SPECIES_DATA, "getForClass", BMHSPECIES_DATA_GFC_SIG);
+            mv.visitMethodInsn(INVOKESTATIC, SPECIES_DATA, "getForClass", BMHSPECIES_DATA_GFC_SIG, false);
             mv.visitFieldInsn(PUTSTATIC, className, "SPECIES_DATA", SPECIES_DATA_SIG);
             mv.visitInsn(RETURN);
             mv.visitMaxs(0, 0);

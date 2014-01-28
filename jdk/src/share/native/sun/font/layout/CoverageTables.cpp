@@ -37,8 +37,10 @@
 
 U_NAMESPACE_BEGIN
 
-le_int32 CoverageTable::getGlyphCoverage(LEGlyphID glyphID) const
+le_int32 CoverageTable::getGlyphCoverage(const LETableReference &base, LEGlyphID glyphID, LEErrorCode &success) const
 {
+  if(LE_FAILURE(success)) return -1;
+
     switch(SWAPW(coverageFormat))
     {
     case 0:
@@ -46,16 +48,16 @@ le_int32 CoverageTable::getGlyphCoverage(LEGlyphID glyphID) const
 
     case 1:
     {
-        const CoverageFormat1Table *f1Table = (const CoverageFormat1Table *) this;
+      LEReferenceTo<CoverageFormat1Table> f1Table(base, success);
 
-        return f1Table->getGlyphCoverage(glyphID);
+      return f1Table->getGlyphCoverage(f1Table, glyphID, success);
     }
 
     case 2:
     {
-        const CoverageFormat2Table *f2Table = (const CoverageFormat2Table *) this;
+      LEReferenceTo<CoverageFormat2Table> f2Table(base, success);
 
-        return f2Table->getGlyphCoverage(glyphID);
+      return f2Table->getGlyphCoverage(f2Table, glyphID, success);
     }
 
     default:
@@ -63,8 +65,10 @@ le_int32 CoverageTable::getGlyphCoverage(LEGlyphID glyphID) const
     }
 }
 
-le_int32 CoverageFormat1Table::getGlyphCoverage(LEGlyphID glyphID) const
+le_int32 CoverageFormat1Table::getGlyphCoverage(LEReferenceTo<CoverageFormat1Table> &base, LEGlyphID glyphID, LEErrorCode &success) const
 {
+  if(LE_FAILURE(success)) return -1;
+
     TTGlyphID ttGlyphID = (TTGlyphID) LE_GET_GLYPH(glyphID);
     le_uint16 count = SWAPW(glyphCount);
     le_uint8 bit = OpenTypeUtilities::highBit(count);
@@ -73,37 +77,45 @@ le_int32 CoverageFormat1Table::getGlyphCoverage(LEGlyphID glyphID) const
     le_uint16 probe = power;
     le_uint16 index = 0;
 
-        if (count == 0) {
-                return -1;
-        }
+    if (count == 0) {
+      return -1;
+    }
+
+    LEReferenceToArrayOf<TTGlyphID>(base, success, glyphArray, count);
+    if(LE_FAILURE(success)) return -1;  // range checks array
+
 
     if (SWAPW(glyphArray[extra]) <= ttGlyphID) {
-        index = extra;
+      index = extra;
     }
 
     while (probe > (1 << 0)) {
-        probe >>= 1;
+      probe >>= 1;
 
-        if (SWAPW(glyphArray[index + probe]) <= ttGlyphID) {
-            index += probe;
-        }
+      if (SWAPW(glyphArray[index + probe]) <= ttGlyphID) {
+        index += probe;
+      }
     }
 
     if (SWAPW(glyphArray[index]) == ttGlyphID) {
-        return index;
+      return index;
     }
 
     return -1;
 }
 
-le_int32 CoverageFormat2Table::getGlyphCoverage(LEGlyphID glyphID) const
+le_int32 CoverageFormat2Table::getGlyphCoverage(LEReferenceTo<CoverageFormat2Table> &base, LEGlyphID glyphID, LEErrorCode &success) const
 {
+  if(LE_FAILURE(success)) return -1;
+
     TTGlyphID ttGlyphID = (TTGlyphID) LE_GET_GLYPH(glyphID);
     le_uint16 count = SWAPW(rangeCount);
-    le_int32 rangeIndex =
-        OpenTypeUtilities::getGlyphRangeIndex(ttGlyphID, rangeRecordArray, count);
 
-    if (rangeIndex < 0) {
+    LEReferenceToArrayOf<GlyphRangeRecord> rangeRecordArrayRef(base, success, rangeRecordArray, count);
+    le_int32 rangeIndex =
+        OpenTypeUtilities::getGlyphRangeIndex(ttGlyphID, rangeRecordArrayRef, success);
+
+    if (rangeIndex < 0 || LE_FAILURE(success)) { // could fail if array out of bounds
         return -1;
     }
 

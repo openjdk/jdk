@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1427,12 +1427,14 @@ public class Arrays {
      *         found to violate the {@link Comparator} contract
      */
     public static <T> void sort(T[] a, Comparator<? super T> c) {
-        if (c == null)
-            c = NaturalOrder.INSTANCE;
-        if (LegacyMergeSort.userRequested)
-            legacyMergeSort(a, c);
-        else
-            TimSort.sort(a, 0, a.length, c, null, 0, 0);
+        if (c == null) {
+            sort(a);
+        } else {
+            if (LegacyMergeSort.userRequested)
+                legacyMergeSort(a, c);
+            else
+                TimSort.sort(a, 0, a.length, c, null, 0, 0);
+        }
     }
 
     /** To be removed in a future release. */
@@ -1498,13 +1500,15 @@ public class Arrays {
      */
     public static <T> void sort(T[] a, int fromIndex, int toIndex,
                                 Comparator<? super T> c) {
-        if (c == null)
-            c = NaturalOrder.INSTANCE;
-        rangeCheck(a.length, fromIndex, toIndex);
-        if (LegacyMergeSort.userRequested)
-            legacyMergeSort(a, fromIndex, toIndex, c);
-        else
-            TimSort.sort(a, fromIndex, toIndex, c, null, 0, 0);
+        if (c == null) {
+            sort(a, fromIndex, toIndex);
+        } else {
+            rangeCheck(a.length, fromIndex, toIndex);
+            if (LegacyMergeSort.userRequested)
+                legacyMergeSort(a, fromIndex, toIndex, c);
+            else
+                TimSort.sort(a, fromIndex, toIndex, c, null, 0, 0);
+        }
     }
 
     /** To be removed in a future release. */
