@@ -244,11 +244,6 @@ SUNWprivate_1.1 {
                 JVM_Yield;
                 JVM_handle_linux_signal;
 
-                # debug JVM
-                JVM_AccessVMBooleanFlag;
-                JVM_AccessVMIntFlag;
-                JVM_VMBreakPoint;
-
                 # miscellaneous functions
                 jio_fprintf;
                 jio_printf;

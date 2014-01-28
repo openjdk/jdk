@@ -26,6 +26,7 @@
 package jdk.nashorn.api.scripting;
 
 import java.util.Objects;
+import java.util.function.Function;
 import javax.script.Invocable;
 import javax.script.ScriptContext;
 import javax.script.ScriptEngine;
@@ -521,5 +522,17 @@ public class InvocableTest {
         final VariableArityTestInterface itf = ((Invocable) e).getInterface(VariableArityTestInterface.class);
         Assert.assertEquals(itf.test1(42, "a", "b"), "i == 42, strings instanceof java.lang.String[] == true, strings == [a, b]");
         Assert.assertEquals(itf.test2(44, "c", "d", "e"), "arguments[0] == 44, arguments[1] instanceof java.lang.String[] == true, arguments[1] == [c, d, e]");
+    }
+
+    @Test
+    @SuppressWarnings("unchecked")
+    public void defaultMethodTest() throws ScriptException {
+        final ScriptEngineManager m = new ScriptEngineManager();
+        final ScriptEngine e = m.getEngineByName("nashorn");
+        final Invocable inv = (Invocable) e;
+
+        Object obj = e.eval("({ apply: function(arg) { return arg.toUpperCase(); }})");
+        Function<String, String> func = inv.getInterface(obj, Function.class);
+        assertEquals(func.apply("hello"), "HELLO");
     }
 }

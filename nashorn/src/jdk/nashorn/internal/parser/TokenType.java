@@ -41,10 +41,14 @@ import static jdk.nashorn.internal.parser.TokenKind.UNARY;
  */
 @SuppressWarnings("javadoc")
 public enum TokenType {
-    ERROR          (SPECIAL,  null),
-    EOF            (SPECIAL,  null),
-    EOL            (SPECIAL,  null),
-    COMMENT        (SPECIAL,  null),
+    ERROR                (SPECIAL,  null),
+    EOF                  (SPECIAL,  null),
+    EOL                  (SPECIAL,  null),
+    COMMENT              (SPECIAL,  null),
+    // comments of the form //@ foo=bar or //# foo=bar
+    // These comments are treated as special instructions
+    // to the lexer, parser or codegenerator.
+    DIRECTIVE_COMMENT    (SPECIAL,  null),
 
     NOT            (UNARY,   "!",    14, false),
     NE             (BINARY,  "!=",    9, true),

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,21 +23,20 @@
 
 /*
  * @test
- * @bug 6402506
+ * @bug 6402506 8028545 8028543
  * @summary Test that getSourceVersion works properly
  * @author  Joseph D. Darcy
  * @library /tools/javac/lib
  * @build   JavacTestingAbstractProcessor
  * @compile TestSourceVersion.java
- * @compile -processor TestSourceVersion -proc:only -source 1.2 -AExpectedVersion=RELEASE_2 HelloWorld.java
- * @compile -processor TestSourceVersion -proc:only -source 1.3 -AExpectedVersion=RELEASE_3 HelloWorld.java
- * @compile -processor TestSourceVersion -proc:only -source 1.4 -AExpectedVersion=RELEASE_4 HelloWorld.java
- * @compile -processor TestSourceVersion -proc:only -source 1.5 -AExpectedVersion=RELEASE_5 HelloWorld.java
- * @compile -processor TestSourceVersion -proc:only -source   5 -AExpectedVersion=RELEASE_5 HelloWorld.java
  * @compile -processor TestSourceVersion -proc:only -source 1.6 -AExpectedVersion=RELEASE_6 HelloWorld.java
  * @compile -processor TestSourceVersion -proc:only -source   6 -AExpectedVersion=RELEASE_6 HelloWorld.java
  * @compile -processor TestSourceVersion -proc:only -source 1.7 -AExpectedVersion=RELEASE_7 HelloWorld.java
  * @compile -processor TestSourceVersion -proc:only -source   7 -AExpectedVersion=RELEASE_7 HelloWorld.java
+ * @compile -processor TestSourceVersion -proc:only -source 1.8 -AExpectedVersion=RELEASE_8 HelloWorld.java
+ * @compile -processor TestSourceVersion -proc:only -source   8 -AExpectedVersion=RELEASE_8 HelloWorld.java
+ * @compile -processor TestSourceVersion -proc:only -source 1.9 -AExpectedVersion=RELEASE_9 HelloWorld.java
+ * @compile -processor TestSourceVersion -proc:only -source   9 -AExpectedVersion=RELEASE_9 HelloWorld.java
  */
 
 import java.util.Set;

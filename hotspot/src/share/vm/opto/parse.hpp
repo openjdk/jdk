@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -141,6 +141,13 @@ public:
   GrowableArray<InlineTree*> subtrees() { return _subtrees; }
 
   void print_value_on(outputStream* st) const PRODUCT_RETURN;
+
+  bool        _forced_inline;     // Inlining was forced by CompilerOracle or ciReplay
+  bool        forced_inline()     const { return _forced_inline; }
+  // Count number of nodes in this subtree
+  int         count() const;
+  // Dump inlining replay data to the stream.
+  void dump_replay_data(outputStream* out);
 };
 
 

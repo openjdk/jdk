@@ -87,6 +87,11 @@ public class InlineTree extends VMObject {
     return GrowableArray.create(addr, inlineTreeConstructor);
   }
 
+  public int inlineLevel() {
+    JVMState jvms = callerJvms();
+    return (jvms != null) ? jvms.depth() : 0;
+  }
+
   public void printImpl(PrintStream st, int indent) {
     for (int i = 0; i < indent; i++) st.print(" ");
     st.printf(" @ %d ", callerBci());
@@ -100,5 +105,29 @@ public class InlineTree extends VMObject {
   }
   public void print(PrintStream st) {
     printImpl(st, 2);
+  }
+
+  // Count number of nodes in this subtree
+  public int count() {
+    int result = 1;
+    GrowableArray<InlineTree> subt = subtrees();
+    for (int i = 0 ; i < subt.length(); i++) {
+      result += subt.at(i).count();
+    }
+    return result;
+  }
+
+  public void dumpReplayData(PrintStream out) {
+    out.printf(" %d %d ", inlineLevel(), callerBci());
+    Method method = (Method)method().getMetadata();
+    Klass holder = method.getMethodHolder();
+    out.print(holder.getName().asString() + " " +
+              OopUtilities.escapeString(method.getName().asString()) + " " +
+              method.getSignature().asString());
+
+    GrowableArray<InlineTree> subt = subtrees();
+    for (int i = 0 ; i < subt.length(); i++) {
+      subt.at(i).dumpReplayData(out);
+    }
   }
 }

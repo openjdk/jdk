@@ -278,6 +278,15 @@ JNU_NotifyAll(JNIEnv *env, jobject object);
 #define IS_NULL(obj) ((obj) == NULL)
 #define JNU_IsNull(env,obj) ((obj) == NULL)
 
+/************************************************************************
+ * Miscellaneous utilities used by the class libraries to check for exceptions
+ */
+
+#define CHECK_NULL(x) if ((x) == NULL) return;
+#define CHECK_NULL_RETURN(x, y) if ((x) == NULL) return (y);
+
+#define CHECK_EXCEPTION(env) if ((*env)->ExceptionCheck(env)) return;
+#define CHECK_EXCEPTION_RETURN(env, y) if ((*env)->ExceptionCheck(env)) return (y);
 
 /************************************************************************
  * Debugging utilities

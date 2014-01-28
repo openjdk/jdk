@@ -166,14 +166,6 @@ public:
   HeapWord** top_addr() const;
   HeapWord** end_addr() const;
 
-  // Return an estimate of the maximum allocation that could be performed
-  // without triggering any collection activity.  In a generational
-  // collector, for example, this is probably the largest allocation that
-  // could be supported in the youngest generation.  It is "unsafe" because
-  // no locks are taken; the result should be treated as an approximation,
-  // not a guarantee.
-  size_t unsafe_max_alloc();
-
   // Does this heap support heap inspection? (+PrintClassHistogram)
   virtual bool supports_heap_inspection() const { return true; }
 
