@@ -87,6 +87,7 @@ endif
 # Typical C1/C2 targets made available with this Makefile
 C1_VM_TARGETS=product1 fastdebug1 optimized1 debug1
 C2_VM_TARGETS=product  fastdebug  optimized  debug
+CORE_VM_TARGETS=productcore fastdebugcore optimizedcore debugcore
 ZERO_VM_TARGETS=productzero fastdebugzero optimizedzero debugzero
 SHARK_VM_TARGETS=productshark fastdebugshark optimizedshark debugshark
 MINIMAL1_VM_TARGETS=productminimal1 fastdebugminimal1 debugminimal1
@@ -136,6 +137,12 @@ all_fastdebugshark: fastdebugshark docs export_fastdebug
 all_debugshark:     debugshark docs export_debug
 all_optimizedshark: optimizedshark docs export_optimized
 
+allcore:           all_productcore all_fastdebugcore
+all_productcore:   productcore docs export_product
+all_fastdebugcore: fastdebugcore docs export_fastdebug
+all_debugcore:     debugcore docs export_debug
+all_optimizedcore: optimizedcore docs export_optimized
+
 # Do everything
 world:         all create_jdk
 
@@ -154,6 +161,7 @@ endif
 # Output directories
 C1_DIR      =$(OUTPUTDIR)/$(VM_PLATFORM)_compiler1
 C2_DIR      =$(OUTPUTDIR)/$(VM_PLATFORM)_compiler2
+CORE_DIR    =$(OUTPUTDIR)/$(VM_PLATFORM)_core
 MINIMAL1_DIR=$(OUTPUTDIR)/$(VM_PLATFORM)_minimal1
 ZERO_DIR    =$(OUTPUTDIR)/$(VM_PLATFORM)_zero
 SHARK_DIR   =$(OUTPUTDIR)/$(VM_PLATFORM)_shark
@@ -166,6 +174,10 @@ $(C1_VM_TARGETS):
 $(C2_VM_TARGETS):
 	$(CD) $(GAMMADIR)/make; \
 	$(MAKE) BUILD_DIR=$(C2_DIR) BUILD_FLAVOR=$@ VM_TARGET=$@ generic_build2 $(ALT_OUT)
+
+$(CORE_VM_TARGETS):
+	$(CD) $(GAMMADIR)/make; \
+	$(MAKE) BUILD_DIR=$(CORE_DIR) BUILD_FLAVOR=$(@:%core=%) VM_TARGET=$@ generic_buildcore $(ALT_OUT)
 
 $(ZERO_VM_TARGETS):
 	$(CD) $(GAMMADIR)/make; \
@@ -228,6 +240,20 @@ else
 		      $(MAKE_ARGS) $(VM_TARGET)
 endif
 
+generic_buildcore: $(HOTSPOT_SCRIPT)
+ifeq ($(HS_ARCH),ppc)
+  ifeq ($(ARCH_DATA_MODEL),64)
+	$(MKDIR) -p $(OUTPUTDIR)
+	$(CD) $(OUTPUTDIR); \
+		$(MAKE) -f $(ABS_OS_MAKEFILE) \
+			$(MAKE_ARGS) $(VM_TARGET)
+  else
+	@$(ECHO) "No ($(VM_TARGET)) for ppc ARCH_DATA_MODEL=$(ARCH_DATA_MODEL)"
+  endif
+else
+	@$(ECHO) "No ($(VM_TARGET)) for $(HS_ARCH)"
+endif
+
 generic_buildzero: $(HOTSPOT_SCRIPT)
 	$(MKDIR) -p $(OUTPUTDIR)
 	$(CD) $(OUTPUTDIR); \
@@ -287,6 +313,7 @@ XUSAGE=$(HS_SRC_DIR)/share/vm/Xusage.txt
 DOCS_DIR=$(OUTPUTDIR)/$(VM_PLATFORM)_docs
 C1_BUILD_DIR      =$(C1_DIR)/$(BUILD_FLAVOR)
 C2_BUILD_DIR      =$(C2_DIR)/$(BUILD_FLAVOR)
+CORE_BUILD_DIR    =$(CORE_DIR)/$(BUILD_FLAVOR)
 MINIMAL1_BUILD_DIR=$(MINIMAL1_DIR)/$(BUILD_FLAVOR)
 ZERO_BUILD_DIR    =$(ZERO_DIR)/$(BUILD_FLAVOR)
 SHARK_BUILD_DIR   =$(SHARK_DIR)/$(BUILD_FLAVOR)
@@ -464,6 +491,28 @@ $(EXPORT_SERVER_DIR)/%.dSYM:			$(ZERO_BUILD_DIR)/%.dSYM
 	$(install-dir)
 endif
 
+# Core
+ifeq ($(JVM_VARIANT_CORE), true)
+# Common
+$(EXPORT_LIB_DIR)/%.jar:			$(CORE_BUILD_DIR)/../generated/%.jar
+	$(install-file)
+$(EXPORT_INCLUDE_DIR)/%:			$(CORE_BUILD_DIR)/../generated/jvmtifiles/%
+	$(install-file)
+# Unix
+$(EXPORT_JRE_LIB_ARCH_DIR)/%.$(LIBRARY_SUFFIX):	$(CORE_BUILD_DIR)/%.$(LIBRARY_SUFFIX)
+	$(install-file)
+$(EXPORT_JRE_LIB_ARCH_DIR)/%.debuginfo:		$(CORE_BUILD_DIR)/%.debuginfo
+	$(install-file)
+$(EXPORT_JRE_LIB_ARCH_DIR)/%.diz:		$(CORE_BUILD_DIR)/%.diz
+	$(install-file)
+$(EXPORT_SERVER_DIR)/%.$(LIBRARY_SUFFIX):	$(CORE_BUILD_DIR)/%.$(LIBRARY_SUFFIX)
+	$(install-file)
+$(EXPORT_SERVER_DIR)/%.debuginfo:		$(CORE_BUILD_DIR)/%.debuginfo
+	$(install-file)
+$(EXPORT_SERVER_DIR)/%.diz:			$(CORE_BUILD_DIR)/%.diz
+	$(install-file)
+endif
+
 # Shark
 ifeq ($(JVM_VARIANT_ZEROSHARK), true)
 # Common
@@ -531,6 +580,7 @@ clobber clean: clean_build clean_export clean_jdk
 clean_build:
 	$(RM) -r $(C1_DIR)
 	$(RM) -r $(C2_DIR)
+	$(RM) -r $(CORE_DIR)
 	$(RM) -r $(ZERO_DIR)
 	$(RM) -r $(SHARK_DIR)
 	$(RM) -r $(MINIMAL1_DIR)

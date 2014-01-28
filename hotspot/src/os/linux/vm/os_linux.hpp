@@ -30,6 +30,9 @@
 /* pthread_getattr_np comes with LinuxThreads-0.9-7 on RedHat 7.1 */
 typedef int (*pthread_getattr_func_type) (pthread_t, pthread_attr_t *);
 
+// Information about the protection of the page at address '0' on this os.
+static bool zero_page_read_protected() { return true; }
+
 class Linux {
   friend class os;
   friend class TestReserveMemorySpecial;

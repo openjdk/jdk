@@ -408,7 +408,7 @@ double SharedRuntime::dabs(double f)  {
 
 #endif
 
-#if defined(__SOFTFP__) || defined(PPC)
+#if defined(__SOFTFP__) || defined(PPC32)
 double SharedRuntime::dsqrt(double f) {
   return sqrt(f);
 }
@@ -2750,6 +2750,71 @@ void SharedRuntime::get_utf(oopDesc* src, address dst) {
   (void) UNICODE::as_utf8(jlsPos, jlsLen, (char *)dst, max_dtrace_string_size);
 }
 #endif // ndef HAVE_DTRACE_H
+
+int SharedRuntime::convert_ints_to_longints_argcnt(int in_args_count, BasicType* in_sig_bt) {
+  int argcnt = in_args_count;
+  if (CCallingConventionRequiresIntsAsLongs) {
+    for (int in = 0; in < in_args_count; in++) {
+      BasicType bt = in_sig_bt[in];
+      switch (bt) {
+        case T_BOOLEAN:
+        case T_CHAR:
+        case T_BYTE:
+        case T_SHORT:
+        case T_INT:
+          argcnt++;
+          break;
+        default:
+          break;
+      }
+    }
+  } else {
+    assert(0, "This should not be needed on this platform");
+  }
+
+  return argcnt;
+}
+
+void SharedRuntime::convert_ints_to_longints(int i2l_argcnt, int& in_args_count,
+                                             BasicType*& in_sig_bt, VMRegPair*& in_regs) {
+  if (CCallingConventionRequiresIntsAsLongs) {
+    VMRegPair *new_in_regs   = NEW_RESOURCE_ARRAY(VMRegPair, i2l_argcnt);
+    BasicType *new_in_sig_bt = NEW_RESOURCE_ARRAY(BasicType, i2l_argcnt);
+
+    int argcnt = 0;
+    for (int in = 0; in < in_args_count; in++, argcnt++) {
+      BasicType bt  = in_sig_bt[in];
+      VMRegPair reg = in_regs[in];
+      switch (bt) {
+        case T_BOOLEAN:
+        case T_CHAR:
+        case T_BYTE:
+        case T_SHORT:
+        case T_INT:
+          // Convert (bt) to (T_LONG,bt).
+          new_in_sig_bt[argcnt  ] = T_LONG;
+          new_in_sig_bt[argcnt+1] = bt;
+          assert(reg.first()->is_valid() && !reg.second()->is_valid(), "");
+          new_in_regs[argcnt  ].set2(reg.first());
+          new_in_regs[argcnt+1].set_bad();
+          argcnt++;
+          break;
+        default:
+          // No conversion needed.
+          new_in_sig_bt[argcnt] = bt;
+          new_in_regs[argcnt]   = reg;
+          break;
+      }
+    }
+    assert(argcnt == i2l_argcnt, "must match");
+
+    in_regs = new_in_regs;
+    in_sig_bt = new_in_sig_bt;
+    in_args_count = i2l_argcnt;
+  } else {
+    assert(0, "This should not be needed on this platform");
+  }
+}
 
 // -------------------------------------------------------------------------
 // Java-Java calling convention

@@ -688,6 +688,11 @@ int Compile::ConstantTable::calculate_table_base_offset() const {
   return 0;  // absolute addressing, no offset
 }
 
+bool MachConstantBaseNode::requires_postalloc_expand() const { return false; }
+void MachConstantBaseNode::postalloc_expand(GrowableArray <Node *> *nodes, PhaseRegAlloc *ra_) {
+  ShouldNotReachHere();
+}
+
 void MachConstantBaseNode::emit(CodeBuffer& cbuf, PhaseRegAlloc* ra_) const {
   // Empty encoding
 }
@@ -1541,6 +1546,9 @@ const int Matcher::long_cmove_cost() { return 0; }
 
 // No CMOVF/CMOVD with SSE2
 const int Matcher::float_cmove_cost() { return ConditionalMoveLimit; }
+
+// Does the CPU require late expand (see block.cpp for description of late expand)?
+const bool Matcher::require_postalloc_expand = false;
 
 // Should the Matcher clone shifts on addressing modes, expecting them
 // to be subsumed into complex addressing expressions or compute them
@@ -2953,7 +2961,7 @@ frame
   c_calling_convention
   %{
     // This is obviously always outgoing
-    (void) SharedRuntime::c_calling_convention(sig_bt, regs, length);
+    (void) SharedRuntime::c_calling_convention(sig_bt, regs, /*regs2=*/NULL, length);
   %}
 
   // Location of compiled Java return values.  Same as C for now.
@@ -6337,6 +6345,7 @@ instruct popCountL_mem(rRegI dst, memory mem, rFlagsReg cr) %{
 instruct membar_acquire()
 %{
   match(MemBarAcquire);
+  match(LoadFence);
   ins_cost(0);
 
   size(0);
@@ -6359,6 +6368,7 @@ instruct membar_acquire_lock()
 instruct membar_release()
 %{
   match(MemBarRelease);
+  match(StoreFence);
   ins_cost(0);
 
   size(0);

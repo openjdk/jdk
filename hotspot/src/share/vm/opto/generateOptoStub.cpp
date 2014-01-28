@@ -104,13 +104,12 @@ void GraphKit::gen_stub(address C_function,
   //
   Node *adr_sp = basic_plus_adr(top(), thread, in_bytes(JavaThread::last_Java_sp_offset()));
   Node *last_sp = basic_plus_adr(top(), frameptr(), (intptr_t) STACK_BIAS);
-  store_to_memory(NULL, adr_sp, last_sp, T_ADDRESS, NoAlias);
+  store_to_memory(NULL, adr_sp, last_sp, T_ADDRESS, NoAlias, MemNode::unordered);
 
   // Set _thread_in_native
   // The order of stores into TLS is critical!  Setting _thread_in_native MUST
   // be last, because a GC is allowed at any time after setting it and the GC
   // will require last_Java_pc and last_Java_sp.
-  Node* adr_state = basic_plus_adr(top(), thread, in_bytes(JavaThread::thread_state_offset()));
 
   //-----------------------------
   // Compute signature for C call.  Varies from the Java signature!
@@ -118,8 +117,16 @@ void GraphKit::gen_stub(address C_function,
   uint cnt = TypeFunc::Parms;
   // The C routines gets the base of thread-local storage passed in as an
   // extra argument.  Not all calls need it, but its cheap to add here.
-  for( ; cnt<parm_cnt; cnt++ )
-    fields[cnt] = jdomain->field_at(cnt);
+  for (uint pcnt = cnt; pcnt < parm_cnt; pcnt++, cnt++) {
+    // Convert ints to longs if required.
+    if (CCallingConventionRequiresIntsAsLongs && jdomain->field_at(pcnt)->isa_int()) {
+      fields[cnt++] = TypeLong::LONG;
+      fields[cnt]   = Type::HALF; // must add an additional half for a long
+    } else {
+      fields[cnt] = jdomain->field_at(pcnt);
+    }
+  }
+
   fields[cnt++] = TypeRawPtr::BOTTOM; // Thread-local storage
   // Also pass in the caller's PC, if asked for.
   if( return_pc )
@@ -170,12 +177,20 @@ void GraphKit::gen_stub(address C_function,
 
   // Set fixed predefined input arguments
   cnt = 0;
-  for( i=0; i<TypeFunc::Parms; i++ )
-    call->init_req( cnt++, map()->in(i) );
+  for (i = 0; i < TypeFunc::Parms; i++)
+    call->init_req(cnt++, map()->in(i));
   // A little too aggressive on the parm copy; return address is not an input
   call->set_req(TypeFunc::ReturnAdr, top());
-  for( ; i<parm_cnt; i++ )    // Regular input arguments
-    call->init_req( cnt++, map()->in(i) );
+  for (; i < parm_cnt; i++) { // Regular input arguments
+    // Convert ints to longs if required.
+    if (CCallingConventionRequiresIntsAsLongs && jdomain->field_at(i)->isa_int()) {
+      Node* int_as_long = _gvn.transform(new (C) ConvI2LNode(map()->in(i)));
+      call->init_req(cnt++, int_as_long); // long
+      call->init_req(cnt++, top());       // half
+    } else {
+      call->init_req(cnt++, map()->in(i));
+    }
+  }
 
   call->init_req( cnt++, thread );
   if( return_pc )             // Return PC, if asked for
@@ -209,16 +224,15 @@ void GraphKit::gen_stub(address C_function,
   //-----------------------------
 
   // Clear last_Java_sp
-  store_to_memory(NULL, adr_sp, null(), T_ADDRESS, NoAlias);
+  store_to_memory(NULL, adr_sp, null(), T_ADDRESS, NoAlias, MemNode::unordered);
   // Clear last_Java_pc and (optionally)_flags
-  store_to_memory(NULL, adr_last_Java_pc, null(), T_ADDRESS, NoAlias);
+  store_to_memory(NULL, adr_last_Java_pc, null(), T_ADDRESS, NoAlias, MemNode::unordered);
 #if defined(SPARC)
-  store_to_memory(NULL, adr_flags, intcon(0), T_INT, NoAlias);
+  store_to_memory(NULL, adr_flags, intcon(0), T_INT, NoAlias, MemNode::unordered);
 #endif /* defined(SPARC) */
-#ifdef IA64
+#if (defined(IA64) && !defined(AIX))
   Node* adr_last_Java_fp = basic_plus_adr(top(), thread, in_bytes(JavaThread::last_Java_fp_offset()));
-  if( os::is_MP() ) insert_mem_bar(Op_MemBarRelease);
-  store_to_memory(NULL, adr_last_Java_fp,    null(),    T_ADDRESS, NoAlias);
+  store_to_memory(NULL, adr_last_Java_fp, null(), T_ADDRESS, NoAlias, MemNode::unordered);
 #endif
 
   // For is-fancy-jump, the C-return value is also the branch target
@@ -226,16 +240,16 @@ void GraphKit::gen_stub(address C_function,
   // Runtime call returning oop in TLS?  Fetch it out
   if( pass_tls ) {
     Node* adr = basic_plus_adr(top(), thread, in_bytes(JavaThread::vm_result_offset()));
-    Node* vm_result = make_load(NULL, adr, TypeOopPtr::BOTTOM, T_OBJECT, NoAlias, false);
+    Node* vm_result = make_load(NULL, adr, TypeOopPtr::BOTTOM, T_OBJECT, NoAlias, MemNode::unordered);
     map()->set_req(TypeFunc::Parms, vm_result); // vm_result passed as result
     // clear thread-local-storage(tls)
-    store_to_memory(NULL, adr, null(), T_ADDRESS, NoAlias);
+    store_to_memory(NULL, adr, null(), T_ADDRESS, NoAlias, MemNode::unordered);
   }
 
   //-----------------------------
   // check exception
   Node* adr = basic_plus_adr(top(), thread, in_bytes(Thread::pending_exception_offset()));
-  Node* pending = make_load(NULL, adr, TypeOopPtr::BOTTOM, T_OBJECT, NoAlias, false);
+  Node* pending = make_load(NULL, adr, TypeOopPtr::BOTTOM, T_OBJECT, NoAlias, MemNode::unordered);
 
   Node* exit_memory = reset_memory();
 
