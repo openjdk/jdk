@@ -113,29 +113,53 @@ AC_DEFUN_ONCE([TOOLCHAIN_SETUP_SYSROOT_AND_OUT_OPTIONS],
 AC_DEFUN([TOOLCHAIN_FIND_COMPILER],
 [
   COMPILER_NAME=$2
+  SEARCH_LIST="$3"
 
-  $1=
-  # If TOOLS_DIR is set, check for all compiler names in there first
-  # before checking the rest of the PATH.
-  if test -n "$TOOLS_DIR"; then
-    PATH_save="$PATH"
-    PATH="$TOOLS_DIR"
-    AC_PATH_PROGS(TOOLS_DIR_$1, $3)
-    $1=$TOOLS_DIR_$1
-    PATH="$PATH_save"
+  if test "x[$]$1" != x; then
+    # User has supplied compiler name already, always let that override.
+    AC_MSG_NOTICE([Will use user supplied compiler $1=[$]$1])
+    if test "x`basename [$]$1`" = "x[$]$1"; then
+      # A command without a complete path is provided, search $PATH.
+      
+      AC_PATH_PROGS(POTENTIAL_$1, [$]$1)
+      if test "x$POTENTIAL_$1" != x; then
+        $1=$POTENTIAL_$1
+      else
+        AC_MSG_ERROR([User supplied compiler $1=[$]$1 could not be found])
+      fi
+    else
+      # Otherwise it might already be a complete path
+      if test ! -x "[$]$1"; then
+        AC_MSG_ERROR([User supplied compiler $1=[$]$1 does not exist])
+      fi
+    fi
+  else
+    # No user supplied value. Locate compiler ourselves
+    $1=
+    # If TOOLS_DIR is set, check for all compiler names in there first
+    # before checking the rest of the PATH.
+    if test -n "$TOOLS_DIR"; then
+      PATH_save="$PATH"
+      PATH="$TOOLS_DIR"
+      AC_PATH_PROGS(TOOLS_DIR_$1, $SEARCH_LIST)
+      $1=$TOOLS_DIR_$1
+      PATH="$PATH_save"
+    fi
+
+    # AC_PATH_PROGS can't be run multiple times with the same variable,
+    # so create a new name for this run.
+    if test "x[$]$1" = x; then
+      AC_PATH_PROGS(POTENTIAL_$1, $SEARCH_LIST)
+      $1=$POTENTIAL_$1
+    fi
+
+    if test "x[$]$1" = x; then
+      HELP_MSG_MISSING_DEPENDENCY([devkit])
+      AC_MSG_ERROR([Could not find a $COMPILER_NAME compiler. $HELP_MSG])
+    fi
   fi
 
-  # AC_PATH_PROGS can't be run multiple times with the same variable,
-  # so create a new name for this run.
-  if test "x[$]$1" = x; then
-    AC_PATH_PROGS(POTENTIAL_$1, $3)
-    $1=$POTENTIAL_$1
-  fi
-
-  if test "x[$]$1" = x; then
-    HELP_MSG_MISSING_DEPENDENCY([devkit])
-    AC_MSG_ERROR([Could not find a $COMPILER_NAME compiler. $HELP_MSG])
-  fi
+  # Now we have a compiler binary in $1. Make sure it's okay.
   BASIC_FIXUP_EXECUTABLE($1)
   AC_MSG_CHECKING([resolved symbolic links for $1])
   TEST_COMPILER="[$]$1"
@@ -248,9 +272,7 @@ AC_DEFUN([TOOLCHAIN_SETUP_PATHS],
   # On Solaris, cc is preferred to gcc.
   # Elsewhere, gcc is preferred to cc.
 
-  if test "x$CC" != x; then
-    COMPILER_CHECK_LIST="$CC"
-  elif test "x$OPENJDK_TARGET_OS" = "xwindows"; then
+  if test "x$OPENJDK_TARGET_OS" = "xwindows"; then
     COMPILER_CHECK_LIST="cl"
   elif test "x$OPENJDK_TARGET_OS" = "xsolaris"; then
     COMPILER_CHECK_LIST="cc gcc"
@@ -264,9 +286,7 @@ AC_DEFUN([TOOLCHAIN_SETUP_PATHS],
 
   ### Locate C++ compiler (CXX)
 
-  if test "x$CXX" != x; then
-    COMPILER_CHECK_LIST="$CXX"
-  elif test "x$OPENJDK_TARGET_OS" = "xwindows"; then
+  if test "x$OPENJDK_TARGET_OS" = "xwindows"; then
     COMPILER_CHECK_LIST="cl"
   elif test "x$OPENJDK_TARGET_OS" = "xsolaris"; then
     COMPILER_CHECK_LIST="CC g++"
