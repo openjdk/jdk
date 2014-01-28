@@ -385,6 +385,8 @@ public class ClassWriter extends BasicWriter {
 
         indent(+1);
 
+        boolean showBlank = false;
+
         if (options.showDescriptors)
             println("descriptor: " + getValue(f.descriptor));
 
@@ -394,12 +396,12 @@ public class ClassWriter extends BasicWriter {
         if (options.showAllAttrs) {
             for (Attribute attr: f.attributes)
                 attrWriter.write(f, attr, constant_pool);
-            println();
+            showBlank = true;
         }
 
         indent(-1);
 
-        if (options.showDisassembled || options.showLineAndLocalVariableTables)
+        if (showBlank || options.showDisassembled || options.showLineAndLocalVariableTables)
             println();
     }
 
