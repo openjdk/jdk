@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2012 Red Hat, Inc.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -5053,6 +5053,7 @@ _JNI_IMPORT_OR_EXPORT_ jint JNICALL JNI_CreateJavaVM(JavaVM **vm, void **penv, v
   result = Threads::create_vm((JavaVMInitArgs*) args, &can_try_again);
   if (result == JNI_OK) {
     JavaThread *thread = JavaThread::current();
+    assert(!thread->has_pending_exception(), "should have returned not OK");
     /* thread is thread_in_vm here */
     *vm = (JavaVM *)(&main_vm);
     *(JNIEnv**)penv = thread->jni_environment();
@@ -5089,6 +5090,19 @@ _JNI_IMPORT_OR_EXPORT_ jint JNICALL JNI_CreateJavaVM(JavaVM **vm, void **penv, v
     // Since this is not a JVM_ENTRY we have to set the thread state manually before leaving.
     ThreadStateTransition::transition_and_fence(thread, _thread_in_vm, _thread_in_native);
   } else {
+    // If create_vm exits because of a pending exception, exit with that
+    // exception.  In the future when we figure out how to reclaim memory,
+    // we may be able to exit with JNI_ERR and allow the calling application
+    // to continue.
+    if (Universe::is_fully_initialized()) {
+      // otherwise no pending exception possible - VM will already have aborted
+      JavaThread* THREAD = JavaThread::current();
+      if (HAS_PENDING_EXCEPTION) {
+        HandleMark hm;
+        vm_exit_during_initialization(Handle(THREAD, PENDING_EXCEPTION));
+      }
+    }
+
     if (can_try_again) {
       // reset safe_to_recreate_vm to 1 so that retrial would be possible
       safe_to_recreate_vm = 1;
