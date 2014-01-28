@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -51,6 +51,7 @@ public interface HierarchyListener extends EventListener {
      * Called when the hierarchy has been changed. To discern the actual
      * type of change, call <code>HierarchyEvent.getChangeFlags()</code>.
      *
+     * @param e the event to be processed
      * @see HierarchyEvent#getChangeFlags()
      */
     public void hierarchyChanged(HierarchyEvent e);

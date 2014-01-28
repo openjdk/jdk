@@ -25,7 +25,7 @@
  * @test
  * @bug 8024070
  * @summary Test that type speculation doesn't cause incorrect execution
- * @run main/othervm -XX:-UseOnStackReplacement -XX:-BackgroundCompilation -XX:TypeProfileLevel=222 TypeSpeculation
+ * @run main/othervm -XX:+IgnoreUnrecognizedVMOptions -XX:-UseOnStackReplacement -XX:-BackgroundCompilation -XX:TypeProfileLevel=222 -XX:+UnlockExperimentalVMOptions -XX:+UseTypeSpeculation TypeSpeculation
  *
  */
 
@@ -398,6 +398,133 @@ public class TypeSpeculation {
         return true;
     }
 
+    // java/lang/Object:AnyNull:exact *,iid=top
+    // meets
+    // stable:bottom[int:max..0]:NotNull *
+    static void test10_4(Object o) {
+    }
+
+    static void test10_3(Object o, boolean b) {
+        if (b) {
+            test10_4(o);
+        }
+    }
+
+    static void test10_2(Object o, boolean b1, boolean b2) {
+        if (b1) {
+            test10_3(o, b2);
+        }
+    }
+
+    static void test10_1(B[] b, boolean b1, boolean b2) {
+        test10_2(b, b1, b2);
+    }
+
+    static boolean test10() {
+        Object o = new Object();
+        A[] a = new A[10];
+        B[] b = new B[10];
+        B[] c = new C[10];
+        for (int i = 0; i < 20000; i++) {
+            test10_1(b, false, false);
+            test10_1(c, false, false);
+            test10_2(a, true, false);
+            test10_3(o, true);
+        }
+        return true;
+    }
+
+    // stable:TypeSpeculation$B:TopPTR *,iid=top[int:max..0]:TopPTR *,iid=top
+    // meets
+    // java/lang/Object:AnyNull:exact *,iid=top
+    static void test11_3(Object o) {
+    }
+
+    static void test11_2(Object o, boolean b) {
+        if (b) {
+            test11_3(o);
+        }
+    }
+
+    static void test11_1(B[] b, boolean bb) {
+        test11_2(b, bb);
+    }
+
+    static boolean test11() {
+        Object o = new Object();
+        B[] b = new B[10];
+        B[] c = new C[10];
+        for (int i = 0; i < 20000; i++) {
+            test11_1(b, false);
+            test11_1(c, false);
+            test11_2(o, true);
+        }
+        return true;
+    }
+
+    // TypeSpeculation$I *
+    // meets
+    // java/lang/Object:AnyNull *,iid=top
+    static void test12_3(Object o) {
+    }
+
+    static void test12_2(Object o, boolean b) {
+        if (b) {
+            test12_3(o);
+        }
+    }
+
+    static void test12_1(I i, boolean b) {
+        test12_2(i, b);
+    }
+
+    static boolean test12() {
+        Object o = new Object();
+        B b = new B();
+        C c = new C();
+        for (int i = 0; i < 20000; i++) {
+            test12_1(b, false);
+            test12_1(c, false);
+            test12_2(o, true);
+        }
+        return true;
+    }
+
+    // stable:bottom[int:max..0]:NotNull *
+    // meets
+    // stable:TypeSpeculation$A:TopPTR *,iid=top[int:max..0]:AnyNull:exact *,iid=top
+    static Object test13_3(Object o, boolean b) {
+        Object oo;
+        if (b) {
+            oo = o;
+        } else {
+            oo = new A[10];
+        }
+        return oo;
+    }
+
+    static void test13_2(Object o, boolean b1, boolean b2) {
+        if (b1) {
+            test13_3(o, b2);
+        }
+    }
+
+    static void test13_1(B[] b, boolean b1, boolean b2) {
+        test13_2(b, b1, b2);
+    }
+
+    static boolean test13() {
+        A[] a = new A[10];
+        B[] b = new B[10];
+        B[] c = new C[10];
+        for (int i = 0; i < 20000; i++) {
+            test13_1(b, false, false);
+            test13_1(c, false, false);
+            test13_2(a, true, (i%2) == 0);
+        }
+        return true;
+    }
+
     static public void main(String[] args) {
         boolean success = true;
 
@@ -418,6 +545,14 @@ public class TypeSpeculation {
         success = test8() && success;
 
         success = test9() && success;
+
+        success = test10() && success;
+
+        success = test11() && success;
+
+        success = test12() && success;
+
+        success = test13() && success;
 
         if (success) {
             System.out.println("TEST PASSED");

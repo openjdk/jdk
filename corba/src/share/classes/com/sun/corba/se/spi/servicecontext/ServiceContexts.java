@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2004, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -57,6 +57,9 @@ import com.sun.corba.se.impl.encoding.EncapsInputStream ;
 import com.sun.corba.se.impl.orbutil.ORBUtility ;
 import com.sun.corba.se.impl.util.Utility ;
 import com.sun.corba.se.impl.logging.ORBUtilSystemException ;
+
+import sun.corba.EncapsInputStreamFactory;
+
 
 public class ServiceContexts {
     private static boolean isDebugging( OutputStream os )
@@ -198,11 +201,11 @@ public class ServiceContexts {
             // Note:  As of Jan 2001, no standard OMG or Sun service contexts
             // ship wchar data or are defined as using anything but GIOP 1.0 CDR.
             EncapsInputStream eis
-                = new EncapsInputStream(orb,
-                                        data,
-                                        data.length,
-                                        giopVersion,
-                                        codeBase);
+                = EncapsInputStreamFactory.newEncapsInputStream(orb,
+                                    data,
+                                    data.length,
+                                    giopVersion,
+                                    codeBase);
             eis.consumeEndian();
 
             // Now the input stream passed to a ServiceContext

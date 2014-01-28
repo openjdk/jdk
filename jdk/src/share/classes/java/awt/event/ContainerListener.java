@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -55,11 +55,13 @@ import java.util.EventListener;
 public interface ContainerListener extends EventListener {
     /**
      * Invoked when a component has been added to the container.
+     * @param e the event to be processed
      */
     public void componentAdded(ContainerEvent e);
 
     /**
      * Invoked when a component has been removed from the container.
+     * @param e the event to be processed
      */
     public void componentRemoved(ContainerEvent e);
 

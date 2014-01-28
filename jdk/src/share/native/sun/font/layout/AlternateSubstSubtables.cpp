@@ -55,7 +55,7 @@ le_uint32 AlternateSubstitutionSubtable::process(const LEReferenceTo<AlternateSu
                                   (const AlternateSetTable *) ((char *) this + alternateSetTableOffset));
             TTGlyphID alternate = SWAPW(alternateSetTable->alternateArray[0]);
 
-            if (filter == NULL || filter->accept(LE_SET_GLYPH(glyph, alternate))) {
+            if (filter == NULL || filter->accept(LE_SET_GLYPH(glyph, alternate), success)) {
                 glyphIterator->setCurrGlyphID(SWAPW(alternateSetTable->alternateArray[0]));
             }
 

@@ -431,6 +431,8 @@ class Compile : public Phase {
   // Are we within a PreserveJVMState block?
   int _preserve_jvm_state;
 
+  void* _replay_inline_data; // Pointer to data loaded from file
+
  public:
 
   outputStream* print_inlining_stream() const {
@@ -464,6 +466,11 @@ class Compile : public Phase {
     CompileTask::print_inlining(&ss, method, inline_level, bci, msg);
     print_inlining_stream()->print(ss.as_string());
   }
+
+  void* replay_inline_data() const { return _replay_inline_data; }
+
+  // Dump inlining replay data to the stream.
+  void dump_inline_data(outputStream* out);
 
  private:
   // Matching, CFG layout, allocation, code generation

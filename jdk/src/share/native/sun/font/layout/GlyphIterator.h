@@ -49,7 +49,7 @@ class GlyphPositionAdjustments;
 class GlyphIterator : public UMemory {
 public:
     GlyphIterator(LEGlyphStorage &theGlyphStorage, GlyphPositionAdjustments *theGlyphPositionAdjustments, le_bool rightToLeft, le_uint16 theLookupFlags,
-                  FeatureMask theFeatureMask, const LEReferenceTo<GlyphDefinitionTableHeader> &theGlyphDefinitionTableHeader);
+                  FeatureMask theFeatureMask, const LEReferenceTo<GlyphDefinitionTableHeader> &theGlyphDefinitionTableHeader, LEErrorCode &success);
 
     GlyphIterator(GlyphIterator &that);
 

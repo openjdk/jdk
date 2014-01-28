@@ -90,9 +90,9 @@ class ClassLoaderDataGraph : public AllStatic {
   static void dump() { dump_on(tty); }
   static void verify();
 
-#ifndef PRODUCT
   // expensive test for pointer in metaspace for debugging
-  static bool contains(address x);
+  static bool contains(const void* x);
+#ifndef PRODUCT
   static bool contains_loader_data(ClassLoaderData* loader_data);
 #endif
 

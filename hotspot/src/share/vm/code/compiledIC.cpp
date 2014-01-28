@@ -418,7 +418,7 @@ void CompiledIC::compute_monomorphic_entry(methodHandle method,
                                            TRAPS) {
   nmethod* method_code = method->code();
   address entry = NULL;
-  if (method_code != NULL) {
+  if (method_code != NULL && method_code->is_in_use()) {
     // Call to compiled code
     if (static_bound || is_optimized) {
       entry      = method_code->verified_entry_point();
@@ -545,7 +545,7 @@ void CompiledStaticCall::set(const StaticCallInfo& info) {
 void CompiledStaticCall::compute_entry(methodHandle m, StaticCallInfo& info) {
   nmethod* m_code = m->code();
   info._callee = m;
-  if (m_code != NULL) {
+  if (m_code != NULL && m_code->is_in_use()) {
     info._to_interpreter = false;
     info._entry  = m_code->verified_entry_point();
   } else {

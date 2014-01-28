@@ -1090,6 +1090,8 @@ public class XMLDocumentScannerImpl
 
                     ((XMLDTDScannerImpl)fDTDScanner).reset(fPropertyManager);
                 }
+
+                fDTDScanner.setLimitAnalyzer(fLimitAnalyzer);
                 do {
                     again = false;
                     switch (fScannerState) {
