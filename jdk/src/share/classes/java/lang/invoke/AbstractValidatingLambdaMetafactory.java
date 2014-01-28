@@ -114,6 +114,11 @@ import static sun.invoke.util.Wrapper.isWrapperType;
                                        Class<?>[] markerInterfaces,
                                        MethodType[] additionalBridges)
             throws LambdaConversionException {
+        if ((caller.lookupModes() & MethodHandles.Lookup.PRIVATE) == 0) {
+            throw new LambdaConversionException(String.format(
+                    "Invalid caller: %s",
+                    caller.lookupClass().getName()));
+        }
         this.targetClass = caller.lookupClass();
         this.invokedType = invokedType;
 
@@ -256,10 +261,16 @@ import static sun.invoke.util.Wrapper.isWrapperType;
                 (implKind == MethodHandleInfo.REF_newInvokeSpecial)
                   ? implDefiningClass
                   : implMethodType.returnType();
+        Class<?> samReturnType = samMethodType.returnType();
         if (!isAdaptableToAsReturn(actualReturnType, expectedType)) {
             throw new LambdaConversionException(
                     String.format("Type mismatch for lambda return: %s is not convertible to %s",
                                   actualReturnType, expectedType));
+        }
+        if (!isAdaptableToAsReturn(expectedType, samReturnType)) {
+            throw new LambdaConversionException(
+                    String.format("Type mismatch for lambda expected return: %s is not convertible to %s",
+                                  expectedType, samReturnType));
         }
      }
 
