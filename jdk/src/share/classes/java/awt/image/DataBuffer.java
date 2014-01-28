@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -279,7 +279,7 @@ public abstract class DataBuffer {
         this.banks = numBanks;
         this.size = size;
         this.offset = offsets[0];
-        this.offsets = (int[])offsets.clone();
+        this.offsets = offsets.clone();
     }
 
     /**  Returns the data type of this DataBuffer.
@@ -307,7 +307,7 @@ public abstract class DataBuffer {
      *  @return the offsets of all banks.
      */
     public int[] getOffsets() {
-        return (int[])offsets.clone();
+        return offsets.clone();
     }
 
     /** Returns the number of banks in this DataBuffer.

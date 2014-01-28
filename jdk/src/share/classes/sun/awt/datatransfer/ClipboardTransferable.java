@@ -144,7 +144,7 @@ public class ClipboardTransferable implements Transferable {
     }
 
     public DataFlavor[] getTransferDataFlavors() {
-        return (DataFlavor[])flavors.clone();
+        return flavors.clone();
     }
 
     public boolean isDataFlavorSupported(DataFlavor flavor) {

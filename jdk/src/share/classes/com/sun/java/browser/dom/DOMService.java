@@ -43,7 +43,7 @@ public abstract class DOMService
     {
         try
         {
-            String provider = (String) java.security.AccessController.doPrivileged(
+            String provider = java.security.AccessController.doPrivileged(
                    new sun.security.action.GetPropertyAction("com.sun.java.browser.dom.DOMServiceProvider"));
 
             Class clazz = Class.forName("sun.plugin.dom.DOMService");
