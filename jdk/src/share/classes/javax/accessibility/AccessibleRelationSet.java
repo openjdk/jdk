@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -195,8 +195,7 @@ public class AccessibleRelationSet {
         } else {
             int len = relations.size();
             for (int i = 0; i < len; i++) {
-                AccessibleRelation relation =
-                    (AccessibleRelation)relations.elementAt(i);
+                AccessibleRelation relation = relations.elementAt(i);
                 if (relation != null && relation.getKey().equals(key)) {
                     return relation;
                 }
@@ -216,7 +215,7 @@ public class AccessibleRelationSet {
             AccessibleRelation[] relationArray
                 = new AccessibleRelation[relations.size()];
             for (int i = 0; i < relationArray.length; i++) {
-                relationArray[i] = (AccessibleRelation) relations.elementAt(i);
+                relationArray[i] = relations.elementAt(i);
             }
             return relationArray;
         }
@@ -232,11 +231,10 @@ public class AccessibleRelationSet {
     public String toString() {
         String ret = "";
         if ((relations != null) && (relations.size() > 0)) {
-            ret = ((AccessibleRelation) (relations.elementAt(0))).toDisplayString();
+            ret = (relations.elementAt(0)).toDisplayString();
             for (int i = 1; i < relations.size(); i++) {
                 ret = ret + ","
-                        + ((AccessibleRelation) (relations.elementAt(i))).
-                                              toDisplayString();
+                        + (relations.elementAt(i)).toDisplayString();
             }
         }
         return ret;

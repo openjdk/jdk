@@ -1008,7 +1008,7 @@ class ExtendedTextSourceLabel extends ExtendedTextLabel implements Decoration.La
     // when we justify, we need to adjust the charinfo since spaces
     // change their advances.  preserve the existing charinfo.
 
-    float[] newCharinfo = (float[])getCharinfo().clone();
+    float[] newCharinfo = getCharinfo().clone();
 
     // we only push spaces, so never need to rejustify
     flags[0] = false;

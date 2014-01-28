@@ -689,7 +689,7 @@ public class XEmbedServerTester implements XEventDispatcher {
             }
         } else {
             synchronized(EVENT_LOCK) {
-                int eventID = (int)ev.get_type() | SYSTEM_EVENT_MASK;
+                int eventID = ev.get_type() | SYSTEM_EVENT_MASK;
                 events.add(eventID);
 
                 if (xembedLog.isLoggable(PlatformLogger.Level.FINER)) {

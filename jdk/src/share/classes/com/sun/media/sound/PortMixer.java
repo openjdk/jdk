@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -212,7 +212,7 @@ final class PortMixer extends AbstractMixer {
             ports = new PortMixerPort[portInfos.length];
         }
         if (ports[index] == null) {
-            ports[index] = new PortMixerPort((Port.Info)portInfos[index], this, index);
+            ports[index] = new PortMixerPort(portInfos[index], this, index);
             return ports[index];
         }
         // $$fb TODO: return (Port) (ports[index].clone());

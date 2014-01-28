@@ -655,8 +655,8 @@ public final class XToolkit extends UNIXToolkit implements Runnable {
                 XWindowAttributes pattr = new XWindowAttributes();
                 try {
                     XlibWrapper.XGetWindowAttributes(XToolkit.getDisplay(), XToolkit.getDefaultRootWindow(), pattr.pData);
-                    screenWidth  = (int) pattr.get_width();
-                    screenHeight = (int) pattr.get_height();
+                    screenWidth  = pattr.get_width();
+                    screenHeight = pattr.get_height();
                 } finally {
                     pattr.dispose();
                 }
@@ -2074,7 +2074,7 @@ public final class XToolkit extends UNIXToolkit implements Runnable {
     }
 
     private static void setBackingStoreType() {
-        String prop = (String)AccessController.doPrivileged(
+        String prop = AccessController.doPrivileged(
                 new sun.security.action.GetPropertyAction("sun.awt.backingStore"));
 
         if (prop == null) {

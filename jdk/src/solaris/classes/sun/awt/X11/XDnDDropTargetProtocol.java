@@ -742,7 +742,7 @@ class XDnDDropTargetProtocol extends XDropTargetProtocol {
                                                 long data3, long data4) {
         XClientMessageEvent enter = new XClientMessageEvent();
         try {
-            enter.set_type((int)XConstants.ClientMessage);
+            enter.set_type(XConstants.ClientMessage);
             enter.set_window(toplevel);
             enter.set_format(32);
             enter.set_message_type(XDnDConstants.XA_XdndEnter.getAtom());
@@ -768,7 +768,7 @@ class XDnDDropTargetProtocol extends XDropTargetProtocol {
                                                   long sourceWindow) {
         XClientMessageEvent leave = new XClientMessageEvent();
         try {
-            leave.set_type((int)XConstants.ClientMessage);
+            leave.set_type(XConstants.ClientMessage);
             leave.set_window(toplevel);
             leave.set_format(32);
             leave.set_message_type(XDnDConstants.XA_XdndLeave.getAtom());
@@ -798,7 +798,7 @@ class XDnDDropTargetProtocol extends XDropTargetProtocol {
 
         XClientMessageEvent msg = new XClientMessageEvent();
         try {
-            msg.set_type((int)XConstants.ClientMessage);
+            msg.set_type(XConstants.ClientMessage);
             msg.set_window(xclient.get_data(0));
             msg.set_format(32);
             msg.set_message_type(XDnDConstants.XA_XdndStatus.getAtom());
@@ -886,7 +886,7 @@ class XDnDDropTargetProtocol extends XDropTargetProtocol {
 
         XClientMessageEvent msg = new XClientMessageEvent();
         try {
-            msg.set_type((int)XConstants.ClientMessage);
+            msg.set_type(XConstants.ClientMessage);
             msg.set_window(xclient.get_data(0));
             msg.set_format(32);
             msg.set_message_type(XDnDConstants.XA_XdndFinished.getAtom());

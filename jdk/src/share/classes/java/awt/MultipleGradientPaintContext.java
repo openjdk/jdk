@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -665,7 +665,7 @@ abstract class MultipleGradientPaintContext implements PaintContext {
     {
         if (cm == cachedModel) {
             if (cached != null) {
-                Raster ras = (Raster) cached.get();
+                Raster ras = cached.get();
                 if (ras != null &&
                     ras.getWidth() >= w &&
                     ras.getHeight() >= h)
@@ -687,7 +687,7 @@ abstract class MultipleGradientPaintContext implements PaintContext {
                                                      Raster ras)
     {
         if (cached != null) {
-            Raster cras = (Raster) cached.get();
+            Raster cras = cached.get();
             if (cras != null) {
                 int cw = cras.getWidth();
                 int ch = cras.getHeight();

@@ -270,7 +270,7 @@ public abstract class PlatformFont implements FontPeer {
             currentDefaultChar = data[stringIndex];
 
             // Note that cache sizes must be a power of two!
-            cacheIndex = (int)(currentDefaultChar & PlatformFont.FONTCACHEMASK);
+            cacheIndex = (currentDefaultChar & PlatformFont.FONTCACHEMASK);
 
             theChar = (PlatformFontCache)getFontCache()[cacheIndex];
 
@@ -280,7 +280,7 @@ public abstract class PlatformFont implements FontPeer {
                 /* find a converter that can convert the current character */
                 currentFontDescriptor = defaultFont;
                 currentDefaultChar = defaultChar;
-                char ch = (char)data[stringIndex];
+                char ch = data[stringIndex];
                 int componentCount = componentFonts.length;
 
                 for (int j = 0; j < componentCount; j++) {

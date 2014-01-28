@@ -335,7 +335,7 @@ public class XComponentPeer extends XWindow implements ComponentPeer, DropTarget
                   return rejectFocusRequestHelper("Waiting for asynchronous processing of the request");
               }
               return XKeyboardFocusManagerPeer.deliverFocus(lightweightChild,
-                                                            (Component)target,
+                                                            target,
                                                             temporary,
                                                             focusedWindowChangeAllowed,
                                                             time, cause);

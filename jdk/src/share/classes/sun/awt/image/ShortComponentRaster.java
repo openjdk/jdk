@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -207,7 +207,7 @@ public class ShortComponentRaster extends SunWritableRaster {
      * band.
      */
     public int[] getDataOffsets() {
-        return (int[]) dataOffsets.clone();
+        return dataOffsets.clone();
     }
 
     /**
@@ -470,7 +470,7 @@ public class ShortComponentRaster extends SunWritableRaster {
         int off = (y-minY)*scanlineStride +
                   (x-minX)*pixelStride;
         for (int i = 0; i < numDataElements; i++) {
-            data[dataOffsets[i] + off] = (short) inData[i];
+            data[dataOffsets[i] + off] = inData[i];
         }
 
         markDirty();
@@ -576,7 +576,7 @@ public class ShortComponentRaster extends SunWritableRaster {
             xoff = yoff;
             for (xstart=0; xstart < w; xstart++, xoff += pixelStride) {
                 for (int c = 0; c < numDataElements; c++) {
-                    data[dataOffsets[c] + xoff] = (short) inData[off++];
+                    data[dataOffsets[c] + xoff] = inData[off++];
                 }
             }
         }

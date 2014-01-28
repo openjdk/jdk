@@ -351,7 +351,7 @@ public final class StrikeCache {
                         if (gids == null) {
                             gids = new ArrayList<Long>();
                         }
-                        gids.add((long) glyphPtrs[i]);
+                        gids.add(glyphPtrs[i]);
                     }
                 }
 
