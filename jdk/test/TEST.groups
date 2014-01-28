@@ -379,7 +379,6 @@ needs_jre = \
   java/util/ResourceBundle/Control/Bug6530694.java \
   java/text/Bidi/BidiConformance.java \
   java/text/Bidi/BidiEmbeddingTest.java \
-  java/text/Bidi/Bug6665028.java \
   java/text/Bidi/Bug7042148.java \
   java/text/Bidi/Bug7051769.java \
   javax/crypto/Cipher/CipherStreamClose.java \

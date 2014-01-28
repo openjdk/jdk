@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 6397298 6400986 6425592 6449798 6453386 6508401 6498938 6911854
+ * @bug 6397298 6400986 6425592 6449798 6453386 6508401 6498938 6911854 8030049
  * @summary Tests that getElementsAnnotatedWith works properly.
  * @author  Joseph D. Darcy
  * @library /tools/javac/lib
@@ -37,23 +37,18 @@
  * @compile -processor TestElementsAnnotatedWith -proc:only C2.java
  * @compile -processor TestElementsAnnotatedWith -proc:only Foo.java
  * @compile -processor TestElementsAnnotatedWith -proc:only TypeParameterAnnotations.java
+ * @compile/fail/ref=ErroneousAnnotations.out -processor TestElementsAnnotatedWith -proc:only -XDrawDiagnostics ErroneousAnnotations.java
  * @compile Foo.java
  * @compile/process -processor TestElementsAnnotatedWith -proc:only Foo
  */
 
 import java.lang.annotation.Annotation;
-import java.io.*;
 import java.util.Collections;
 import java.util.Set;
 import java.util.HashSet;
-import java.util.List;
-import java.util.ArrayList;
 import java.util.Arrays;
 import javax.annotation.processing.*;
-import javax.tools.*;
-import javax.lang.model.SourceVersion;
 import javax.lang.model.element.*;
-import javax.lang.model.util.*;
 import static javax.lang.model.util.ElementFilter.*;
 
 /**

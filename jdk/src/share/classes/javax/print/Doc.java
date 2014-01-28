@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2001, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,12 +44,12 @@ import javax.print.attribute.DocAttributeSet;
  * in which the print data is available. A doc flavor designates the print
  * data format (a MIME type) and the representation class of the object
  * from which the print data comes.
- * <P>
+ *
  * <LI>
  * Obtain the print data representation object, which is an instance of the
  * doc flavor's representation class. The Print Job can then obtain the actual
  * print data from the representation object.
- * <P>
+ *
  * <LI>
  * Obtain the printing attributes that specify additional characteristics of
  * the doc or that specify processing instructions to be applied to the doc.
@@ -104,7 +104,6 @@ import javax.print.attribute.DocAttributeSet;
  * a stream does not mean that it will, with the implications that Doc
  * implementors which rely on the service to close them should create such
  * streams only in response to a request from the service.
- * <P>
  * <HR>
  */
 public interface Doc {

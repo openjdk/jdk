@@ -45,7 +45,6 @@ import com.sun.xml.internal.ws.model.soap.SOAPBindingImpl;
 import com.sun.xml.internal.ws.resources.ModelerMessages;
 import com.sun.xml.internal.ws.resources.ServerMessages;
 import com.sun.xml.internal.ws.spi.db.BindingContext;
-import com.sun.xml.internal.ws.spi.db.BindingHelper;
 import com.sun.xml.internal.ws.spi.db.TypeInfo;
 import com.sun.xml.internal.ws.spi.db.WrapperComposite;
 
@@ -886,7 +885,7 @@ public class RuntimeModeler {
             //set the actual type argument of Holder in the TypeReference
             if (isHolder) {
                 if(clazzType==Holder.class){
-                    clazzType = BindingHelper.erasure(((ParameterizedType)genericParameterTypes[pos]).getActualTypeArguments()[0]);
+                    clazzType = (Class) Utils.REFLECTION_NAVIGATOR.erasure(((ParameterizedType)genericParameterTypes[pos]).getActualTypeArguments()[0]);
                 }
             }
             Mode paramMode = isHolder ? Mode.INOUT : Mode.IN;
@@ -1101,7 +1100,7 @@ public class RuntimeModeler {
             //set the actual type argument of Holder in the TypeReference
             if (isHolder) {
                 if (clazzType==Holder.class)
-                    clazzType = BindingHelper.erasure(((ParameterizedType)genericParameterTypes[pos]).getActualTypeArguments()[0]);
+                    clazzType = (Class) Utils.REFLECTION_NAVIGATOR.erasure(((ParameterizedType)genericParameterTypes[pos]).getActualTypeArguments()[0]);
             }
             Mode paramMode = isHolder ? Mode.INOUT : Mode.IN;
             for (Annotation annotation : pannotations[pos]) {
@@ -1347,7 +1346,7 @@ public class RuntimeModeler {
             //set the actual type argument of Holder in the TypeReference
             if (isHolder) {
                 if (clazzType==Holder.class)
-                    clazzType = BindingHelper.erasure(((ParameterizedType)genericParameterTypes[pos]).getActualTypeArguments()[0]);
+                    clazzType = (Class) Utils.REFLECTION_NAVIGATOR.erasure(((ParameterizedType)genericParameterTypes[pos]).getActualTypeArguments()[0]);
             }
 
             Mode paramMode = isHolder ? Mode.INOUT : Mode.IN;
@@ -1435,14 +1434,14 @@ public class RuntimeModeler {
     private Class getAsyncReturnType(Method method, Class returnType) {
         if(Response.class.isAssignableFrom(returnType)){
             Type ret = method.getGenericReturnType();
-            return BindingHelper.erasure(((ParameterizedType)ret).getActualTypeArguments()[0]);
+            return (Class) Utils.REFLECTION_NAVIGATOR.erasure(((ParameterizedType)ret).getActualTypeArguments()[0]);
         }else{
             Type[] types = method.getGenericParameterTypes();
             Class[] params = method.getParameterTypes();
             int i = 0;
             for(Class cls : params){
                 if(AsyncHandler.class.isAssignableFrom(cls)){
-                    return BindingHelper.erasure(((ParameterizedType)types[i]).getActualTypeArguments()[0]);
+                    return (Class) Utils.REFLECTION_NAVIGATOR.erasure(((ParameterizedType)types[i]).getActualTypeArguments()[0]);
                 }
                 i++;
             }

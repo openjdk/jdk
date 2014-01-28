@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2002, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,7 +40,7 @@ import java.security.BasicPermission;
  * The following table lists the possible <code>AudioPermission</code> target names.
  * For each name, the table provides a description of exactly what that permission
  * allows, as well as a discussion of the risks of granting code the permission.
- * <p>
+ *
  *
  * <table border=1 cellpadding=5 summary="permission target name, what the permission allows, and associated risks">
  * <tr>

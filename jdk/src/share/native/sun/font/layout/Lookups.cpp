@@ -65,7 +65,7 @@ le_int32 LookupSubtable::getGlyphCoverage(const LEReferenceTo<LookupSubtable> &b
 
   if(LE_FAILURE(success)) return 0;
 
-  return coverageTable->getGlyphCoverage(glyphID);
+  return coverageTable->getGlyphCoverage(coverageTable, glyphID, success);
 }
 
 U_NAMESPACE_END
