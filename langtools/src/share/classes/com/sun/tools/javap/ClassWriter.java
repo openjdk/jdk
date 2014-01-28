@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -498,25 +498,21 @@ public class ClassWriter extends BasicWriter {
                 report("Unexpected or invalid value for Code attribute");
         }
 
-        if (options.showDisassembled && !options.showAllAttrs) {
-            if (code != null) {
-                println("Code:");
-                codeWriter.writeInstrs(code);
-                codeWriter.writeExceptionTable(code);
-            }
-        }
-
-        if (options.showLineAndLocalVariableTables) {
-            if (code != null) {
-                attrWriter.write(code, code.attributes.get(Attribute.LineNumberTable), constant_pool);
-                attrWriter.write(code, code.attributes.get(Attribute.LocalVariableTable), constant_pool);
-            }
-        }
-
         if (options.showAllAttrs) {
             Attribute[] attrs = m.attributes.attrs;
             for (Attribute attr: attrs)
                 attrWriter.write(m, attr, constant_pool);
+        } else if (code != null) {
+            if (options.showDisassembled) {
+                println("Code:");
+                codeWriter.writeInstrs(code);
+                codeWriter.writeExceptionTable(code);
+            }
+
+            if (options.showLineAndLocalVariableTables) {
+                attrWriter.write(code, code.attributes.get(Attribute.LineNumberTable), constant_pool);
+                attrWriter.write(code, code.attributes.get(Attribute.LocalVariableTable), constant_pool);
+            }
         }
 
         indent(-1);
