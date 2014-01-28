@@ -4078,11 +4078,9 @@ public class Attr extends JCTree.Visitor {
             @Override
             public void run() {
                 List<Attribute.TypeCompound> compounds = fromAnnotations(annotations);
-                if (annotations.size() == compounds.size()) {
-                    // All annotations were successfully converted into compounds
+                Assert.check(annotations.size() == compounds.size());
                     tree.type = tree.type.unannotatedType().annotatedType(compounds);
                 }
-            }
         });
     }
 
