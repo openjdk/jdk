@@ -705,10 +705,7 @@ Compile::Compile( ciEnv* ci_env, C2Compiler* compiler, ciMethod* target, int osr
 
   print_compile_messages();
 
-  if (UseOldInlining || PrintCompilation NOT_PRODUCT( || PrintOpto) )
-    _ilt = InlineTree::build_inline_tree_root();
-  else
-    _ilt = NULL;
+  _ilt = InlineTree::build_inline_tree_root();
 
   // Even if NO memory addresses are used, MergeMem nodes must have at least 1 slice
   assert(num_alias_types() >= AliasIdxRaw, "");
@@ -3948,16 +3945,18 @@ void Compile::remove_speculative_types(PhaseIterGVN &igvn) {
     // which may optimize it out.
     for (uint next = 0; next < worklist.size(); ++next) {
       Node *n  = worklist.at(next);
-      if (n->is_Type() && n->as_Type()->type()->isa_oopptr() != NULL &&
-          n->as_Type()->type()->is_oopptr()->speculative() != NULL) {
+      if (n->is_Type()) {
         TypeNode* tn = n->as_Type();
-        const TypeOopPtr* t = tn->type()->is_oopptr();
-        bool in_hash = igvn.hash_delete(n);
-        assert(in_hash, "node should be in igvn hash table");
-        tn->set_type(t->remove_speculative());
-        igvn.hash_insert(n);
-        igvn._worklist.push(n); // give it a chance to go away
-        modified++;
+        const Type* t = tn->type();
+        const Type* t_no_spec = t->remove_speculative();
+        if (t_no_spec != t) {
+          bool in_hash = igvn.hash_delete(n);
+          assert(in_hash, "node should be in igvn hash table");
+          tn->set_type(t_no_spec);
+          igvn.hash_insert(n);
+          igvn._worklist.push(n); // give it a chance to go away
+          modified++;
+        }
       }
       uint max = n->len();
       for( uint i = 0; i < max; ++i ) {
@@ -3971,6 +3970,27 @@ void Compile::remove_speculative_types(PhaseIterGVN &igvn) {
     if (modified > 0) {
       igvn.optimize();
     }
+#ifdef ASSERT
+    // Verify that after the IGVN is over no speculative type has resurfaced
+    worklist.clear();
+    worklist.push(root());
+    for (uint next = 0; next < worklist.size(); ++next) {
+      Node *n  = worklist.at(next);
+      const Type* t = igvn.type(n);
+      assert(t == t->remove_speculative(), "no more speculative types");
+      if (n->is_Type()) {
+        t = n->as_Type()->type();
+        assert(t == t->remove_speculative(), "no more speculative types");
+      }
+      uint max = n->len();
+      for( uint i = 0; i < max; ++i ) {
+        Node *m = n->in(i);
+        if (not_a_node(m))  continue;
+        worklist.push(m);
+      }
+    }
+    igvn.check_no_speculative_types();
+#endif
   }
 }
 
