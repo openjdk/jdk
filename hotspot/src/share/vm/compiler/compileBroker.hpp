@@ -246,6 +246,8 @@ class CompileBroker: AllStatic {
 
   // Compile type Information for print_last_compile() and CompilerCounters
   enum { no_compile, normal_compile, osr_compile, native_compile };
+  static int assign_compile_id (methodHandle method, int osr_bci);
+
 
  private:
   static bool _initialized;
@@ -258,9 +260,8 @@ class CompileBroker: AllStatic {
   static AbstractCompiler* _compilers[2];
 
   // These counters are used for assigning id's to each compilation
-  static uint _compilation_id;
-  static uint _osr_compilation_id;
-  static uint _native_compilation_id;
+  static volatile jint _compilation_id;
+  static volatile jint _osr_compilation_id;
 
   static int  _last_compile_type;
   static int  _last_compile_level;
@@ -321,7 +322,6 @@ class CompileBroker: AllStatic {
   static void init_compiler_threads(int c1_compiler_count, int c2_compiler_count);
   static bool compilation_is_complete  (methodHandle method, int osr_bci, int comp_level);
   static bool compilation_is_prohibited(methodHandle method, int osr_bci, int comp_level);
-  static uint assign_compile_id        (methodHandle method, int osr_bci);
   static bool is_compile_blocking      (methodHandle method, int osr_bci);
   static void preload_classes          (methodHandle method, TRAPS);
 
