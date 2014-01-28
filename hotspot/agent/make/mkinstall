@@ -27,7 +27,9 @@ jar -cvf $SA_NAME/sa.jar -C ../build/classes .
 
 cp ../src/os/solaris/proc/amd64/libsaproc.so $SA_NAME/solaris/amd64
 cp ../src/os/solaris/proc/sparc/libsaproc.so $SA_NAME/solaris/sparc
+cp ../src/os/solaris/proc/sparc/libsaproc_audit.so $SA_NAME/solaris/sparc
 cp ../src/os/solaris/proc/sparcv9/libsaproc.so $SA_NAME/solaris/sparcv9
+cp ../src/os/solaris/proc/sparcv9/libsaproc_audit.so $SA_NAME/solaris/sparcv9
 cp ../src/os/solaris/proc/i386/libsaproc.so $SA_NAME/solaris/i386
 cp ../src/os/linux/i386/libsaproc.so $SA_NAME/linux/i386
 cp ../src/os/linux/ia64/libsaproc.so $SA_NAME/linux/ia64
