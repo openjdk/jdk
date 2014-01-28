@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,6 +34,7 @@ import com.sun.tools.javac.code.Flags;
 import com.sun.tools.javac.code.Kinds;
 import com.sun.tools.javac.code.Scope;
 import com.sun.tools.javac.code.Symbol.*;
+import com.sun.tools.javac.code.Symtab;
 import com.sun.tools.javac.code.Type;
 import com.sun.tools.javac.code.Type.ClassType;
 import com.sun.tools.javac.code.TypeTag;
@@ -363,6 +364,7 @@ public class T6889255 {
         Context ctx = new Context();
         JavacFileManager fm = new JavacFileManager(ctx, true, null);
         fm.setLocation(StandardLocation.CLASS_PATH, Arrays.asList(outDir));
+        Symtab syms = Symtab.instance(ctx);
         ClassReader cr = ClassReader.instance(ctx);
         cr.saveParameterNames = true;
         Names names = Names.instance(ctx);
@@ -372,7 +374,7 @@ public class T6889255 {
         String classname;
         while ((classname = work.poll()) != null) {
             System.err.println("Checking class " + classname);
-            ClassSymbol sym = cr.enterClass(names.table.fromString(classname));
+            ClassSymbol sym = syms.enterClass(names.table.fromString(classname));
             sym.complete();
 
             if ((sym.flags() & Flags.INTERFACE) != 0 && !testInterfaces)

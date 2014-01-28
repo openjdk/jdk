@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -78,10 +78,6 @@ inline oop oopDesc::forward_to_atomic(oop p) {
     oldMark = curMark;
   }
   return forwardee();
-}
-
-inline void oopDesc::update_header(ParCompactionManager* cm) {
-  PSParallelCompact::adjust_klass(cm, klass());
 }
 
 #endif // SHARE_VM_OOPS_OOP_PCGC_INLINE_HPP

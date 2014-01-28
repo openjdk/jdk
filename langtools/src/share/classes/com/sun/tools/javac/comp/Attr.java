@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -850,9 +850,18 @@ public class Attr extends JCTree.Visitor {
     }
 
     public void visitClassDef(JCClassDecl tree) {
-        // Local classes have not been entered yet, so we need to do it now:
-        if ((env.info.scope.owner.kind & (VAR | MTH)) != 0)
+        // Local and anonymous classes have not been entered yet, so we need to
+        // do it now.
+        if ((env.info.scope.owner.kind & (VAR | MTH)) != 0) {
             enter.classEnter(tree, env);
+        } else {
+            // If this class declaration is part of a class level annotation,
+            // as in @MyAnno(new Object() {}) class MyClass {}, enter it in
+            // order to simplify later steps and allow for sensible error
+            // messages.
+            if (env.tree.hasTag(NEWCLASS) && TreeInfo.isInAnnotation(env, tree))
+                enter.classEnter(tree, env);
+        }
 
         ClassSymbol c = tree.sym;
         if (c == null) {

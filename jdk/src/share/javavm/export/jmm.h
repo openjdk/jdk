@@ -153,6 +153,7 @@ typedef enum {
   JMM_VMGLOBAL_ORIGIN_ENVIRON_VAR  = 4,   /* Set via environment variables */
   JMM_VMGLOBAL_ORIGIN_CONFIG_FILE  = 5,   /* Set via config file (such as .hotspotrc) */
   JMM_VMGLOBAL_ORIGIN_ERGONOMIC    = 6,   /* Set via ergonomic */
+  JMM_VMGLOBAL_ORIGIN_ATTACH_ON_DEMAND = 7,   /* Set via attach */
   JMM_VMGLOBAL_ORIGIN_OTHER        = 99   /* Set via some other mechanism */
 } jmmVMGlobalOrigin;
 

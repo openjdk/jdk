@@ -3286,7 +3286,7 @@ void JavaClasses::compute_offsets() {
     sun_reflect_ConstantPool::compute_offsets();
     sun_reflect_UnsafeStaticFieldAccessorImpl::compute_offsets();
   }
-  if (JDK_Version::is_jdk18x_version())
+  if (JDK_Version::is_gte_jdk18x_version())
     java_lang_reflect_Parameter::compute_offsets();
 
   // generated interpreter code wants to know about the offsets we just computed:

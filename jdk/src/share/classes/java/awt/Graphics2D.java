@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2005, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,7 +44,7 @@ import java.util.Map;
  * control over geometry, coordinate transformations, color management,
  * and text layout.  This is the fundamental class for rendering
  * 2-dimensional shapes, text and images on the  Java(tm) platform.
- * <p>
+ *
  * <h2>Coordinate Spaces</h2>
  * All coordinates passed to a <code>Graphics2D</code> object are specified
  * in a device-independent coordinate system called User Space, which is
@@ -229,7 +229,7 @@ import java.util.Map;
  *
  * <h2>Default Rendering Attributes</h2>
  * The default values for the <code>Graphics2D</code> rendering attributes are:
- * <dl compact>
+ * <dl>
  * <dt><i><code>Paint</code></i>
  * <dd>The color of the <code>Component</code>.
  * <dt><i><code>Font</code></i>
@@ -351,7 +351,7 @@ import java.util.Map;
  * fill(new Rectangle(x, y, w, h));
  * </pre>
  * is called.
- * <p>
+ *
  * <li>
  * Similarly, for draw operations, including <code>drawLine</code>,
  * <code>drawRect</code>, <code>drawRoundRect</code>,
@@ -363,7 +363,7 @@ import java.util.Map;
  * draw(new Rectangle(x, y, w, h));
  * </pre>
  * is called.
- * <p>
+ *
  * <li>
  * The <code>draw3DRect</code> and <code>fill3DRect</code> methods were
  * implemented in terms of the <code>drawLine</code> and

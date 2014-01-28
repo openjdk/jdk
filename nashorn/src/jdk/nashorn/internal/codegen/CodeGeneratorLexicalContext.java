@@ -158,7 +158,7 @@ final class CodeGeneratorLexicalContext extends LexicalContext {
         if (scopeCalls.containsKey(scopeCall)) {
             return scopeCalls.get(scopeCall);
         }
-        scopeCall.setClassAndName(unit, getCurrentFunction().uniqueName("scopeCall"));
+        scopeCall.setClassAndName(unit, getCurrentFunction().uniqueName(":scopeCall"));
         scopeCalls.put(scopeCall, scopeCall);
         return scopeCall;
     }
@@ -177,7 +177,7 @@ final class CodeGeneratorLexicalContext extends LexicalContext {
         if (scopeCalls.containsKey(scopeCall)) {
             return scopeCalls.get(scopeCall);
         }
-        scopeCall.setClassAndName(unit, getCurrentFunction().uniqueName("scopeCall"));
+        scopeCall.setClassAndName(unit, getCurrentFunction().uniqueName(":scopeCall"));
         scopeCalls.put(scopeCall, scopeCall);
         return scopeCall;
     }

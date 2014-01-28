@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug      4494033 7028815 7052425 8007338 8023608 8008164
+ * @bug      4494033 7028815 7052425 8007338 8023608 8008164 8016549
  * @summary  Run tests on doclet stylesheet.
  * @author   jamieh
  * @library  ../lib/
@@ -54,8 +54,8 @@ public class TestStylesheet extends JavadocTester {
         {BUG_ID + FS + "stylesheet.css",
             "body {" + NL + "    background-color:#ffffff;" + NL +
             "    color:#353833;" + NL +
-            "    font-family:Arial, Helvetica, sans-serif;" + NL +
-            "    font-size:76%;" + NL + "    margin:0;" + NL + "}"},
+            "    font-family:'DejaVu Sans', Arial, Helvetica, sans-serif;" + NL +
+            "    font-size:14px;" + NL + "    margin:0;" + NL + "}"},
         {BUG_ID + FS + "stylesheet.css",
             "ul {" + NL + "    list-style-type:disc;" + NL + "}"},
         {BUG_ID + FS + "stylesheet.css",
@@ -64,49 +64,65 @@ public class TestStylesheet extends JavadocTester {
             "    position:relative;" + NL +
             "    text-align:left;" + NL +
             "    background-repeat:no-repeat;" + NL +
-            "    color:#FFFFFF;" + NL +
+            "    color:#253441;" + NL +
             "    font-weight:bold;" + NL +
             "    clear:none;" + NL +
             "    overflow:hidden;" + NL +
             "    padding:0px;" + NL +
+            "    padding-top:10px;" + NL +
+            "    padding-left:1px;" + NL +
             "    margin:0px;" + NL +
+            "    white-space:pre;" + NL +
             "}"},
         {BUG_ID + FS + "stylesheet.css",
             ".overviewSummary caption span, .memberSummary caption span, .typeSummary caption span," + NL +
             ".useSummary caption span, .constantsSummary caption span, .deprecatedSummary caption span {" + NL +
             "    white-space:nowrap;" + NL +
-            "    padding-top:8px;" + NL +
-            "    padding-left:8px;" + NL +
+            "    padding-top:5px;" + NL +
+            "    padding-left:12px;" + NL +
+            "    padding-right:12px;" + NL +
+            "    padding-bottom:7px;" + NL +
             "    display:inline-block;" + NL +
             "    float:left;" + NL +
-            "    background-image:url(resources/titlebar.gif);" + NL +
+            "    background-color:#F8981D;" + NL +
+            "    border: none;" + NL +
+            "    height:16px;" + NL +
             "}"},
         {BUG_ID + FS + "stylesheet.css",
             ".memberSummary caption span.activeTableTab span {" + NL +
             "    white-space:nowrap;" + NL +
-            "    padding-top:8px;" + NL +
-            "    padding-left:8px;" + NL +
+            "    padding-top:5px;" + NL +
+            "    padding-left:12px;" + NL +
+            "    padding-right:12px;" + NL +
+            "    margin-right:3px;" + NL +
             "    display:inline-block;" + NL +
             "    float:left;" + NL +
-            "    background-image:url(resources/activetitlebar.gif);" + NL +
+            "    background-color:#F8981D;" + NL +
+            "    height:16px;" + NL +
             "}"},
         {BUG_ID + FS + "stylesheet.css",
             ".memberSummary caption span.tableTab span {" + NL +
             "    white-space:nowrap;" + NL +
-            "    padding-top:8px;" + NL +
-            "    padding-left:8px;" + NL +
+            "    padding-top:5px;" + NL +
+            "    padding-left:12px;" + NL +
+            "    padding-right:12px;" + NL +
+            "    margin-right:3px;" + NL +
             "    display:inline-block;" + NL +
             "    float:left;" + NL +
-            "    background-image:url(resources/titlebar.gif);" + NL +
+            "    background-color:#4D7A97;" + NL +
+            "    height:16px;" + NL +
             "}"},
         {BUG_ID + FS + "stylesheet.css",
             ".memberSummary caption span.tableTab, .memberSummary caption span.activeTableTab {" + NL +
             "    padding-top:0px;" + NL +
             "    padding-left:0px;" + NL +
+            "    padding-right:0px;" + NL +
             "    background-image:none;" + NL +
             "    float:none;" + NL +
-            "    display:inline-block;" + NL +
+            "    display:inline;" + NL +
             "}"},
+        {BUG_ID + FS + "stylesheet.css",
+            "@import url('resources/fonts/dejavu.css');"},
         // Test whether a link to the stylesheet file is inserted properly
         // in the class documentation.
         {BUG_ID + FS + "pkg" + FS + "A.html",

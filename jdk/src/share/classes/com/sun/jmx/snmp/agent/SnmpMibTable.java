@@ -280,7 +280,7 @@ public abstract class SnmpMibTable extends SnmpMibNode
             SnmpVarBind var;
             for (Enumeration<SnmpVarBind> e= r.getElements(); e.hasMoreElements();) {
                 var = e.nextElement();
-                r.registerGetException(var,noSuchInstanceException);
+                r.registerGetException(var,new SnmpStatusException(SnmpStatusException.noSuchInstance));
             }
         }
 
@@ -1607,8 +1607,9 @@ public abstract class SnmpMibTable extends SnmpMibNode
     protected SnmpOid getNextOid(SnmpOid oid, Object userData)
         throws SnmpStatusException {
 
-        if (size == 0)
-            throw noSuchInstanceException;
+        if (size == 0) {
+            throw new SnmpStatusException(SnmpStatusException.noSuchInstance);
+        }
 
         final SnmpOid resOid = oid;
 
@@ -1619,7 +1620,7 @@ public abstract class SnmpMibTable extends SnmpMibNode
         if (last.equals(resOid)) {
             // Last element of the table ...
             //
-            throw noSuchInstanceException;
+            throw new SnmpStatusException(SnmpStatusException.noSuchInstance);
         }
 
         // First find the oid. This will allow to speed up retrieval process
@@ -1641,12 +1642,12 @@ public abstract class SnmpMibTable extends SnmpMibNode
                 // XX last = (SnmpOid) oids.elementAt(newPos);
                 last = tableoids[newPos];
             } catch(ArrayIndexOutOfBoundsException e) {
-                throw noSuchInstanceException;
+                throw new SnmpStatusException(SnmpStatusException.noSuchInstance);
             }
         } else {
             // We are dealing with the last element of the table ..
             //
-            throw noSuchInstanceException;
+            throw new SnmpStatusException(SnmpStatusException.noSuchInstance);
         }
 
 
@@ -1668,8 +1669,9 @@ public abstract class SnmpMibTable extends SnmpMibNode
      */
     protected SnmpOid getNextOid(Object userData)
         throws SnmpStatusException {
-        if (size == 0)
-            throw noSuchInstanceException;
+        if (size == 0) {
+            throw new SnmpStatusException(SnmpStatusException.noSuchInstance);
+        }
         // XX return (SnmpOid) oids.firstElement();
         return tableoids[0];
     }
@@ -1875,10 +1877,10 @@ public abstract class SnmpMibTable extends SnmpMibNode
         // not support creation.
         // We know that the entry does not exists if (isentry == false).
         if (!hasEntry) {
-            if (!handlers.isCreationAllowed())
+            if (!handlers.isCreationAllowed()) {
                 // we're not doing a set
-                throw noSuchInstanceException;
-            else if (!isCreationEnabled())
+                throw new SnmpStatusException(SnmpStatusException.noSuchInstance);
+            } else if (!isCreationEnabled())
                 // we're doing a set but creation is disabled.
                 throw new
                     SnmpStatusException(SnmpStatusException.snmpRspNoAccess);
@@ -1922,12 +1924,13 @@ public abstract class SnmpMibTable extends SnmpMibNode
 
             int length = oid.length;
 
-            if (handlers == null)
-            // This should be considered as a genErr, but we do not want to
-            // abort the whole request, so we're going to throw
-            // a noSuchObject...
-            //
-            throw noSuchObjectException;
+            if (handlers == null) {
+                // This should be considered as a genErr, but we do not want to
+                // abort the whole request, so we're going to throw
+                // a noSuchObject...
+                //
+                throw new SnmpStatusException(SnmpStatusException.noSuchObject);
+            }
 
             final Object data = handlers.getUserData();
             final int pduVersion = handlers.getRequestPduVersion();
@@ -1961,7 +1964,7 @@ public abstract class SnmpMibTable extends SnmpMibNode
                 // so we won't find the next element in this table... (any
                 // element in this table will have a smaller OID)
                 //
-                throw noSuchObjectException;
+                throw new SnmpStatusException(SnmpStatusException.noSuchObject);
             } else if (oid[pos] < nodeId) {
                 // we must return the first leaf under the first columnar
                 // object, so we are back to our first case where pos was
@@ -2051,8 +2054,9 @@ public abstract class SnmpMibTable extends SnmpMibNode
                     //     in tables can't be properly supported (all rows
                     //     must have the same holes)
                     //
-                    if (skipEntryVariable(entryoid,var,data,pduVersion))
-                        throw noSuchObjectException;
+                    if (skipEntryVariable(entryoid,var,data,pduVersion)) {
+                        throw new SnmpStatusException(SnmpStatusException.noSuchObject);
+                    }
                 } catch(SnmpStatusException se) {
                     entryoid = getNextOid(data);
                     var = getNextVarEntryId(entryoid,var,data,pduVersion);
@@ -2085,8 +2089,9 @@ public abstract class SnmpMibTable extends SnmpMibNode
             // So we throw the exception.
             // => will skip to next node in the MIB tree.
             //
-            if (entryoid == null || var == -1 ) throw noSuchObjectException;
-
+            if (entryoid == null || var == -1 ) {
+                throw new SnmpStatusException(SnmpStatusException.noSuchObject);
+            }
 
             // So here we know both the row (entryoid) and the column (var)
             //
@@ -2097,8 +2102,9 @@ public abstract class SnmpMibTable extends SnmpMibNode
                 // for this specific entry, it is not readable for any
                 // other entry => skip to next column.
                 //
-                if (!isReadableEntryId(entryoid,var,data))
-                    throw noSuchObjectException;
+                if (!isReadableEntryId(entryoid,var,data)) {
+                    throw new SnmpStatusException(SnmpStatusException.noSuchObject);
+                }
 
                 // Prepare the result and the ACM checker.
                 //
@@ -2161,8 +2167,9 @@ public abstract class SnmpMibTable extends SnmpMibNode
             // No need to continue, we throw an exception.
             // => will skip to next node in the MIB tree.
             //
-            if (entryoid == null || var == -1 )
-                throw noSuchObjectException;
+            if (entryoid == null || var == -1 ) {
+                throw new SnmpStatusException(SnmpStatusException.noSuchObject);
+            }
         }
     }
 
@@ -2182,14 +2189,15 @@ public abstract class SnmpMibTable extends SnmpMibNode
 
         // Control the length of the oid
         //
-        if (pos +2 >= length)
-            throw noSuchInstanceException;
+        if (pos +2 >= length) {
+            throw new SnmpStatusException(SnmpStatusException.noSuchInstance);
+        }
 
         // Check that the entry identifier is specified
         //
-        if (oid[pos] != nodeId)
-            throw noSuchObjectException;
-
+        if (oid[pos] != nodeId) {
+            throw new SnmpStatusException(SnmpStatusException.noSuchObject);
+        }
     }
 
     // ----------------------------------------------------------------------

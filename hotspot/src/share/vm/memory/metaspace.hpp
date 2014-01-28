@@ -225,7 +225,7 @@ class Metaspace : public CHeapObj<mtClass> {
   MetaWord* expand_and_allocate(size_t size,
                                 MetadataType mdtype);
 
-  static bool contains(const void *ptr);
+  bool contains(const void* ptr);
   void dump(outputStream* const out) const;
 
   // Free empty virtualspaces

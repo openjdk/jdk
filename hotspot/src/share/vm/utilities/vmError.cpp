@@ -1040,7 +1040,7 @@ void VMError::report_and_die() {
     OnError = NULL;
   }
 
-  static bool skip_replay = false;
+  static bool skip_replay = ReplayCompiles; // Do not overwrite file during replay
   if (DumpReplayDataOnError && _thread && _thread->is_Compiler_thread() && !skip_replay) {
     skip_replay = true;
     ciEnv* env = ciEnv::current();
