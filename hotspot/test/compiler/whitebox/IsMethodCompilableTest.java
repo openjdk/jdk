@@ -24,13 +24,17 @@
 /*
  * @test IsMethodCompilableTest
  * @bug 8007270 8006683 8007288 8022832
- * @library /testlibrary /testlibrary/whitebox
+ * @library /testlibrary /testlibrary/whitebox /testlibrary/com/oracle/java/testlibrary
  * @build IsMethodCompilableTest
  * @run main ClassFileInstaller sun.hotspot.WhiteBox
- * @run main/othervm/timeout=2400 -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -XX:CompileCommand=compileonly,SimpleTestCase$Helper::* IsMethodCompilableTest
+ * @run main ClassFileInstaller com.oracle.java.testlibrary.Platform
+ * @run main/othervm/timeout=2400 -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -XX:PerMethodRecompilationCutoff=3 -XX:CompileCommand=compileonly,SimpleTestCase$Helper::* IsMethodCompilableTest
  * @summary testing of WB::isMethodCompilable()
  * @author igor.ignatyev@oracle.com
  */
+
+import com.oracle.java.testlibrary.Platform;
+
 public class IsMethodCompilableTest extends CompilerWhiteBoxTest {
     /**
      * Value of {@code -XX:PerMethodRecompilationCutoff}
@@ -43,7 +47,7 @@ public class IsMethodCompilableTest extends CompilerWhiteBoxTest {
         if (tmp == -1) {
             PER_METHOD_RECOMPILATION_CUTOFF = -1 /* Inf */;
         } else {
-            PER_METHOD_RECOMPILATION_CUTOFF = 1 + (0xFFFFFFFFL & tmp);
+            PER_METHOD_RECOMPILATION_CUTOFF = (0xFFFFFFFFL & tmp);
         }
     }
 
@@ -60,19 +64,26 @@ public class IsMethodCompilableTest extends CompilerWhiteBoxTest {
     /**
      * Tests {@code WB::isMethodCompilable()} by recompilation of tested method
      * 'PerMethodRecompilationCutoff' times and checks compilation status. Also
-     * checks that WB::clearMethodState() clears no-compilable flags.
+     * checks that WB::clearMethodState() clears no-compilable flags. Only
+     * applicable to c2 compiled methods.
      *
      * @throws Exception if one of the checks fails.
      */
     @Override
     protected void test() throws Exception {
+
+        // Only c2 compilations can be disabled through PerMethodRecompilationCutoff
+        if (!Platform.isServer()) {
+            return;
+        }
+
         if (testCase.isOsr() && CompilerWhiteBoxTest.MODE.startsWith(
                 "compiled ")) {
-          System.err.printf("Warning: %s is not applicable in %s%n",
-                testCase.name(), CompilerWhiteBoxTest.MODE);
-          return;
+            System.err.printf("Warning: %s is not applicable in %s%n",
+                  testCase.name(), CompilerWhiteBoxTest.MODE);
+            return;
         }
-        if (!isCompilable()) {
+        if (!isCompilable(COMP_LEVEL_FULL_OPTIMIZATION)) {
             throw new RuntimeException(method + " must be compilable");
         }
         System.out.println("PerMethodRecompilationCutoff = "
@@ -83,39 +94,37 @@ public class IsMethodCompilableTest extends CompilerWhiteBoxTest {
             return;
         }
 
-        // deoptimize 'PerMethodRecompilationCutoff' times and clear state
-        for (long i = 0L, n = PER_METHOD_RECOMPILATION_CUTOFF - 1; i < n; ++i) {
-            compileAndDeoptimize();
+        // deoptimize 'PerMethodRecompilationCutoff' times
+        for (long attempts = 0, successes = 0;
+               (successes < PER_METHOD_RECOMPILATION_CUTOFF)  &&
+               (attempts < PER_METHOD_RECOMPILATION_CUTOFF*2) &&
+               isCompilable(COMP_LEVEL_FULL_OPTIMIZATION); attempts++) {
+            if (compileAndDeoptimize() == COMP_LEVEL_FULL_OPTIMIZATION) {
+                successes++;
+            }
         }
-        if (!testCase.isOsr() && !isCompilable()) {
-            // in osr test case count of deopt maybe more than iterations
-            throw new RuntimeException(method + " is not compilable after "
-                    + (PER_METHOD_RECOMPILATION_CUTOFF - 1) + " iterations");
-        }
-        WHITE_BOX.clearMethodState(method);
 
-        // deoptimize 'PerMethodRecompilationCutoff' + 1 times
-        long i;
-        for (i = 0L; i < PER_METHOD_RECOMPILATION_CUTOFF
-                && isCompilable(); ++i) {
-            compileAndDeoptimize();
-        }
-        if (!testCase.isOsr() && i != PER_METHOD_RECOMPILATION_CUTOFF) {
+        if (!testCase.isOsr() && !isCompilable(COMP_LEVEL_FULL_OPTIMIZATION)) {
             // in osr test case count of deopt maybe more than iterations
             throw new RuntimeException(method + " is not compilable after "
-                    + i + " iterations, but must only after "
-                    + PER_METHOD_RECOMPILATION_CUTOFF);
+                    + PER_METHOD_RECOMPILATION_CUTOFF + " iterations");
         }
-        if (isCompilable()) {
+
+        // Now compile once more
+        compileAndDeoptimize();
+
+        if (isCompilable(COMP_LEVEL_FULL_OPTIMIZATION)) {
             throw new RuntimeException(method + " is still compilable after "
                     + PER_METHOD_RECOMPILATION_CUTOFF + " iterations");
         }
-        compile();
         checkNotCompiled();
+        compile();
+        waitBackgroundCompilation();
+        checkNotCompiled(COMP_LEVEL_FULL_OPTIMIZATION);
 
         // WB.clearMethodState() must reset no-compilable flags
         WHITE_BOX.clearMethodState(method);
-        if (!isCompilable()) {
+        if (!isCompilable(COMP_LEVEL_FULL_OPTIMIZATION)) {
             throw new RuntimeException(method
                     + " is not compilable after clearMethodState()");
         }
@@ -123,9 +132,11 @@ public class IsMethodCompilableTest extends CompilerWhiteBoxTest {
         checkCompiled();
     }
 
-    private void compileAndDeoptimize() throws Exception {
+    private int compileAndDeoptimize() throws Exception {
         compile();
         waitBackgroundCompilation();
+        int compLevel = getCompLevel();
         deoptimize();
+        return compLevel;
     }
 }
