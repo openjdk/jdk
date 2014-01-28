@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -635,7 +635,7 @@ public class Lower extends TreeTranslator {
     JCClassDecl makeEmptyClass(long flags, ClassSymbol owner, Name flatname,
             boolean addToDefs) {
         // Create class symbol.
-        ClassSymbol c = reader.defineClass(names.empty, owner);
+        ClassSymbol c = syms.defineClass(names.empty, owner);
         if (flatname != null) {
             c.flatname = flatname;
         } else {

@@ -272,7 +272,9 @@ class Socket implements java.io.Closeable {
      *        {@code zero} for a system selected free port.
      * @exception  IOException  if an I/O error occurs when creating the socket.
      * @exception  SecurityException  if a security manager exists and its
-     *             {@code checkConnect} method doesn't allow the operation.
+     *             {@code checkConnect} method doesn't allow the connection
+     *             to the destination, or if its {@code checkListen} method
+     *             doesn't allow the bind to the local port.
      * @exception  IllegalArgumentException if the port parameter or localPort
      *             parameter is outside the specified range of valid port values,
      *             which is between 0 and 65535, inclusive.
@@ -311,7 +313,9 @@ class Socket implements java.io.Closeable {
      *        {@code zero} for a system selected free port.
      * @exception  IOException  if an I/O error occurs when creating the socket.
      * @exception  SecurityException  if a security manager exists and its
-     *             {@code checkConnect} method doesn't allow the operation.
+     *             {@code checkConnect} method doesn't allow the connection
+     *             to the destination, or if its {@code checkListen} method
+     *             doesn't allow the bind to the local port.
      * @exception  IllegalArgumentException if the port parameter or localPort
      *             parameter is outside the specified range of valid port values,
      *             which is between 0 and 65535, inclusive.
@@ -609,6 +613,9 @@ class Socket implements java.io.Closeable {
      *                     is already bound.
      * @throws  IllegalArgumentException if bindpoint is a
      *          SocketAddress subclass not supported by this socket
+     * @throws  SecurityException  if a security manager exists and its
+     *          {@code checkListen} method doesn't allow the bind
+     *          to the local port.
      *
      * @since   1.4
      * @see #isBound
@@ -630,6 +637,10 @@ class Socket implements java.io.Closeable {
         InetAddress addr = epoint.getAddress();
         int port = epoint.getPort();
         checkAddress (addr, "bind");
+        SecurityManager security = System.getSecurityManager();
+        if (security != null) {
+            security.checkListen(port);
+        }
         getImpl().bind (addr, port);
         bound = true;
     }

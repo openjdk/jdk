@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1199,7 +1199,7 @@ public abstract class BasicTextUI extends TextUI implements ViewFactory {
      * can be traversed to determine how the model is being
      * represented spatially.
      * <p>
-     * <font color=red><b>NOTE:</b>The View hierarchy can
+     * <font style="color: red;"><b>NOTE:</b>The View hierarchy can
      * be traversed from the root view, and other things
      * can be done as well.  Things done in this way cannot
      * be protected like simple method calls through the TextUI.

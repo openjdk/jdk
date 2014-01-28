@@ -388,7 +388,7 @@ JNIEXPORT jobject JNICALL Java_sun_security_krb5_Credentials_acquireDefaultNativ
     jobject ticketFlags, startTime, endTime, krbCreds = NULL;
     jobject authTime, renewTillTime, hostAddresses = NULL;
     KERB_EXTERNAL_TICKET *msticket;
-    int found_in_cache = 0;
+    int found = 0;
     FILETIME Now, EndTime, LocalEndTime;
 
     int i, netypes;
@@ -476,7 +476,7 @@ JNIEXPORT jobject JNICALL Java_sun_security_krb5_Credentials_acquireDefaultNativ
             if (CompareFileTime(&Now, &LocalEndTime) < 0) {
                 for (i=0; i<netypes; i++) {
                     if (etypes[i] == msticket->SessionKey.KeyType) {
-                        found_in_cache = 1;
+                        found = 1;
                         if (native_debug) {
                             printf("LSA: Valid etype found: %d\n", etypes[i]);
                         }
@@ -486,7 +486,7 @@ JNIEXPORT jobject JNICALL Java_sun_security_krb5_Credentials_acquireDefaultNativ
             }
         }
 
-        if (!found_in_cache) {
+        if (!found) {
             if (native_debug) {
                 printf("LSA: MS TGT in cache is invalid/not supported; request new ticket\n");
             }
@@ -529,6 +529,14 @@ JNIEXPORT jobject JNICALL Java_sun_security_krb5_Credentials_acquireDefaultNativ
 
                 // got the native MS Kerberos TGT
                 msticket = &(pTicketResponse->Ticket);
+
+                if (msticket->SessionKey.KeyType != etypes[i]) {
+                    if (native_debug) {
+                        printf("LSA: Response etype is %d for %d. Retry.\n", msticket->SessionKey.KeyType, etypes[i]);
+                    }
+                    continue;
+                }
+                found = 1;
                 break;
             }
         }
@@ -583,6 +591,10 @@ JNIEXPORT jobject JNICALL Java_sun_security_krb5_Credentials_acquireDefaultNativ
         } KERB_CRYPTO_KEY, *PKERB_CRYPTO_KEY;
 
         */
+        if (!found) {
+            break;
+        }
+
         // Build a com.sun.security.krb5.Ticket
         ticket = BuildTicket(env, msticket->EncodedTicket,
                                 msticket->EncodedTicketSize);

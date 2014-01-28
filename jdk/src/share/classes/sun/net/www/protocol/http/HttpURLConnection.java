@@ -541,9 +541,11 @@ public class HttpURLConnection extends java.net.HttpURLConnection {
              * to last and last, respectively, in the case of a POST
              * request.
              */
-            if (!failedOnce)
+            if (!failedOnce) {
+                checkURLFile();
                 requests.prepend(method + " " + getRequestURI()+" "  +
                                  httpVersion, null);
+            }
             if (!getUseCaches()) {
                 requests.setIfNotSet ("Cache-Control", "no-cache");
                 requests.setIfNotSet ("Pragma", "no-cache");
@@ -554,7 +556,12 @@ public class HttpURLConnection extends java.net.HttpURLConnection {
             if (port != -1 && port != url.getDefaultPort()) {
                 host += ":" + String.valueOf(port);
             }
-            requests.setIfNotSet("Host", host);
+            String reqHost = requests.findValue("Host");
+            if (reqHost == null ||
+                (!reqHost.equalsIgnoreCase(host) && !checkSetHost()))
+            {
+                requests.set("Host", host);
+            }
             requests.setIfNotSet("Accept", acceptString);
 
             /*
@@ -671,6 +678,44 @@ public class HttpURLConnection extends java.net.HttpURLConnection {
         }
     }
 
+    private boolean checkSetHost() {
+        SecurityManager s = System.getSecurityManager();
+        if (s != null) {
+            String name = s.getClass().getName();
+            if (name.equals("sun.plugin2.applet.AWTAppletSecurityManager") ||
+                name.equals("sun.plugin2.applet.FXAppletSecurityManager") ||
+                name.equals("com.sun.javaws.security.JavaWebStartSecurity") ||
+                name.equals("sun.plugin.security.ActivatorSecurityManager"))
+            {
+                int CHECK_SET_HOST = -2;
+                try {
+                    s.checkConnect(url.toExternalForm(), CHECK_SET_HOST);
+                } catch (SecurityException ex) {
+                    return false;
+                }
+            }
+        }
+        return true;
+    }
+
+    private void checkURLFile() {
+        SecurityManager s = System.getSecurityManager();
+        if (s != null) {
+            String name = s.getClass().getName();
+            if (name.equals("sun.plugin2.applet.AWTAppletSecurityManager") ||
+                name.equals("sun.plugin2.applet.FXAppletSecurityManager") ||
+                name.equals("com.sun.javaws.security.JavaWebStartSecurity") ||
+                name.equals("sun.plugin.security.ActivatorSecurityManager"))
+            {
+                int CHECK_SUBPATH = -3;
+                try {
+                    s.checkConnect(url.toExternalForm(), CHECK_SUBPATH);
+                } catch (SecurityException ex) {
+                    throw new SecurityException("denied access outside a permitted URL subpath", ex);
+                }
+            }
+        }
+    }
 
     /**
      * Create a new HttpClient object, bypassing the cache of
