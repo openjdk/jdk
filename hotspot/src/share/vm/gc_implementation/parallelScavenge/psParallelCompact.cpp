@@ -2433,33 +2433,12 @@ void PSParallelCompact::marking_phase(ParCompactionManager* cm,
   _gc_tracer.report_object_count_after_gc(is_alive_closure());
 }
 
-void PSParallelCompact::follow_klass(ParCompactionManager* cm, Klass* klass) {
-  ClassLoaderData* cld = klass->class_loader_data();
-  // The actual processing of the klass is done when we
-  // traverse the list of Klasses in the class loader data.
-  PSParallelCompact::follow_class_loader(cm, cld);
-}
-
-void PSParallelCompact::adjust_klass(ParCompactionManager* cm, Klass* klass) {
-  ClassLoaderData* cld = klass->class_loader_data();
-  // The actual processing of the klass is done when we
-  // traverse the list of Klasses in the class loader data.
-  PSParallelCompact::adjust_class_loader(cm, cld);
-}
-
 void PSParallelCompact::follow_class_loader(ParCompactionManager* cm,
                                             ClassLoaderData* cld) {
   PSParallelCompact::MarkAndPushClosure mark_and_push_closure(cm);
   PSParallelCompact::FollowKlassClosure follow_klass_closure(&mark_and_push_closure);
 
   cld->oops_do(&mark_and_push_closure, &follow_klass_closure, true);
-}
-
-void PSParallelCompact::adjust_class_loader(ParCompactionManager* cm,
-                                            ClassLoaderData* cld) {
-  cld->oops_do(PSParallelCompact::adjust_pointer_closure(),
-               PSParallelCompact::adjust_klass_closure(),
-               true);
 }
 
 // This should be moved to the shared markSweep code!

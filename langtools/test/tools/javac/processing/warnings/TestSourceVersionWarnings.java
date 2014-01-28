@@ -27,11 +27,7 @@
  * @summary Test that warnings about source versions are output as expected.
  * @author  Joseph D. Darcy
  * @compile TestSourceVersionWarnings.java
- * @compile/ref=gold_0.out             -XDrawDiagnostics -processor TestSourceVersionWarnings -proc:only                           -source 1.5 -Xlint:-options HelloWorld.java
- * @compile/ref=gold_sv_warn_0_2.out   -XDrawDiagnostics -processor TestSourceVersionWarnings -proc:only -ASourceVersion=RELEASE_0 -source 1.2 -Xlint:-options HelloWorld.java
- * @compile/ref=gold_sv_none.out       -XDrawDiagnostics -processor TestSourceVersionWarnings -proc:only -ASourceVersion=RELEASE_2 -source 1.2 -Xlint:-options HelloWorld.java
- * @compile/ref=gold_sv_warn_2_3.out   -XDrawDiagnostics -processor TestSourceVersionWarnings -proc:only -ASourceVersion=RELEASE_2 -source 1.3 -Xlint:-options HelloWorld.java
- * @compile/ref=gold_sv_none.out       -XDrawDiagnostics -processor TestSourceVersionWarnings -proc:only -ASourceVersion=RELEASE_5 -source 1.5 -Xlint:-options HelloWorld.java
+ * @compile/ref=gold_0.out             -XDrawDiagnostics -processor TestSourceVersionWarnings -proc:only                           -source 1.6 -Xlint:-options HelloWorld.java
  * @compile/ref=gold_sv_warn_5_6.out   -XDrawDiagnostics -processor TestSourceVersionWarnings -proc:only -ASourceVersion=RELEASE_5 -source 1.6 -Xlint:-options HelloWorld.java
  * @compile/ref=gold_sv_none.out       -XDrawDiagnostics -processor TestSourceVersionWarnings -proc:only -ASourceVersion=RELEASE_6 -source 1.6 -Xlint:-options HelloWorld.java
  * @compile/ref=gold_unsp_warn.out     -XDrawDiagnostics -processor TestSourceVersionWarnings -proc:only -ASourceVersion=RELEASE_6 -source 1.6 -Xlint:-options -Aunsupported HelloWorld.java

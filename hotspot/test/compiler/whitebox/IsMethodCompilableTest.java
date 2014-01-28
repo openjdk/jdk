@@ -27,7 +27,7 @@
  * @library /testlibrary /testlibrary/whitebox
  * @build IsMethodCompilableTest
  * @run main ClassFileInstaller sun.hotspot.WhiteBox
- * @run main/othervm/timeout=2400 -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -XX:CompileCommand=compileonly,TestCase$Helper::* IsMethodCompilableTest
+ * @run main/othervm/timeout=2400 -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -XX:CompileCommand=compileonly,SimpleTestCase$Helper::* IsMethodCompilableTest
  * @summary testing of WB::isMethodCompilable()
  * @author igor.ignatyev@oracle.com
  */
@@ -48,12 +48,10 @@ public class IsMethodCompilableTest extends CompilerWhiteBoxTest {
     }
 
     public static void main(String[] args) throws Exception {
-        for (TestCase test : TestCase.values()) {
-            new IsMethodCompilableTest(test).runTest();
-        }
+        CompilerWhiteBoxTest.main(IsMethodCompilableTest::new, args);
     }
 
-    public IsMethodCompilableTest(TestCase testCase) {
+    private IsMethodCompilableTest(TestCase testCase) {
         super(testCase);
         // to prevent inlining of #method
         WHITE_BOX.testSetDontInlineMethod(method, true);
@@ -68,7 +66,7 @@ public class IsMethodCompilableTest extends CompilerWhiteBoxTest {
      */
     @Override
     protected void test() throws Exception {
-        if (testCase.isOsr && CompilerWhiteBoxTest.MODE.startsWith(
+        if (testCase.isOsr() && CompilerWhiteBoxTest.MODE.startsWith(
                 "compiled ")) {
           System.err.printf("Warning: %s is not applicable in %s%n",
                 testCase.name(), CompilerWhiteBoxTest.MODE);
@@ -89,7 +87,7 @@ public class IsMethodCompilableTest extends CompilerWhiteBoxTest {
         for (long i = 0L, n = PER_METHOD_RECOMPILATION_CUTOFF - 1; i < n; ++i) {
             compileAndDeoptimize();
         }
-        if (!testCase.isOsr && !isCompilable()) {
+        if (!testCase.isOsr() && !isCompilable()) {
             // in osr test case count of deopt maybe more than iterations
             throw new RuntimeException(method + " is not compilable after "
                     + (PER_METHOD_RECOMPILATION_CUTOFF - 1) + " iterations");
@@ -102,7 +100,7 @@ public class IsMethodCompilableTest extends CompilerWhiteBoxTest {
                 && isCompilable(); ++i) {
             compileAndDeoptimize();
         }
-        if (!testCase.isOsr && i != PER_METHOD_RECOMPILATION_CUTOFF) {
+        if (!testCase.isOsr() && i != PER_METHOD_RECOMPILATION_CUTOFF) {
             // in osr test case count of deopt maybe more than iterations
             throw new RuntimeException(method + " is not compilable after "
                     + i + " iterations, but must only after "

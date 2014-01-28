@@ -525,7 +525,8 @@ class InstanceKlass: public Klass {
 
   // lookup a method in all the interfaces that this class implements
   // (returns NULL if not found)
-  Method* lookup_method_in_all_interfaces(Symbol* name, Symbol* signature) const;
+  Method* lookup_method_in_all_interfaces(Symbol* name, Symbol* signature, bool skip_default_methods) const;
+
   // lookup a method in local defaults then in all interfaces
   // (returns NULL if not found)
   Method* lookup_method_in_ordered_interfaces(Symbol* name, Symbol* signature) const;

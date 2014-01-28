@@ -1863,11 +1863,8 @@ void GenerateOopMap::do_ldc(int bci) {
   constantTag tag = cp->tag_at(ldc.pool_index()); // idx is index in resolved_references
   BasicType       bt  = ldc.result_type();
   CellTypeState   cts;
-  if (tag.is_klass() ||
-      tag.is_unresolved_klass() ||
-      tag.is_string() ||
-      tag.is_method_handle() ||
-      tag.is_method_type()) {
+  if (tag.basic_type() == T_OBJECT) {
+    assert(!tag.is_string_index() && !tag.is_klass_index(), "Unexpected index tag");
     assert(bt == T_OBJECT, "Guard is incorrect");
     cts = CellTypeState::make_line_ref(bci);
   } else {

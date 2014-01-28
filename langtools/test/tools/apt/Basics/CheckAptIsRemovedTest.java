@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -87,7 +87,7 @@ public class CheckAptIsRemovedTest {
         Path classpath = Paths.get(testJDK, "lib", "tools.jar");
         ToolBox.JavaToolArgs javacArgs =
                 new ToolBox.JavaToolArgs(ToolBox.Expect.FAIL)
-                .setOptions("-source", "1.5", "-sourcepath", ".",
+                .setOptions("-sourcepath", ".",
                     "-classpath", classpath.toString())
                 .setSources(NullAPFSrc);
         ToolBox.javac(javacArgs);
