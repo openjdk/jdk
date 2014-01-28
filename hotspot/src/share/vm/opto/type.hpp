@@ -524,6 +524,9 @@ public:
   bool is_con(int i) const { return is_con() && _lo == i; }
   jlong get_con() const { assert( is_con(), "" ); return _lo; }
 
+  // Check for positive 32-bit value.
+  int is_positive_int() const { return _lo >= 0 && _hi <= (jlong)max_jint; }
+
   virtual bool        is_finite() const;  // Has a finite value
 
   virtual const Type *xmeet( const Type *t ) const;

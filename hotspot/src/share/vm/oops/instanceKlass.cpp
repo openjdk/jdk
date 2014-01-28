@@ -1203,7 +1203,11 @@ void InstanceKlass::mask_for(methodHandle method, int bci,
     MutexLocker x(OopMapCacheAlloc_lock);
     // First time use. Allocate a cache in C heap
     if (_oop_map_cache == NULL) {
-      _oop_map_cache = new OopMapCache();
+      // Release stores from OopMapCache constructor before assignment
+      // to _oop_map_cache. C++ compilers on ppc do not emit the
+      // required memory barrier only because of the volatile
+      // qualifier of _oop_map_cache.
+      OrderAccess::release_store_ptr(&_oop_map_cache, new OopMapCache());
     }
   }
   // _oop_map_cache is constant after init; lookup below does is own locking.

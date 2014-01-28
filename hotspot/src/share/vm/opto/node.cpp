@@ -1523,7 +1523,6 @@ Node* Node::find_ctrl(int idx) const {
 
 
 #ifndef PRODUCT
-int Node::_in_dump_cnt = 0;
 
 // -----------------------------Name-------------------------------------------
 extern const char *NodeClassNames[];
@@ -1595,7 +1594,7 @@ void Node::set_debug_orig(Node* orig) {
 void Node::dump(const char* suffix, outputStream *st) const {
   Compile* C = Compile::current();
   bool is_new = C->node_arena()->contains(this);
-  _in_dump_cnt++;
+  C->_in_dump_cnt++;
   st->print("%c%d\t%s\t=== ", is_new ? ' ' : 'o', _idx, Name());
 
   // Dump the required and precedence inputs
@@ -1610,7 +1609,7 @@ void Node::dump(const char* suffix, outputStream *st) const {
     dump_orig(debug_orig(), st);
 #endif
     st->cr();
-    _in_dump_cnt--;
+    C->_in_dump_cnt--;
     return;                     // don't process dead nodes
   }
 
@@ -1662,7 +1661,7 @@ void Node::dump(const char* suffix, outputStream *st) const {
     }
   }
   if (suffix) st->print(suffix);
-  _in_dump_cnt--;
+  C->_in_dump_cnt--;
 }
 
 //------------------------------dump_req--------------------------------------

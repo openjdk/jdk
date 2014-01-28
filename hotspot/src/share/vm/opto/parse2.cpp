@@ -50,7 +50,7 @@ void Parse::array_load(BasicType elem_type) {
   if (stopped())  return;     // guaranteed null or range check
   dec_sp(2);                  // Pop array and index
   const TypeAryPtr* adr_type = TypeAryPtr::get_array_body_type(elem_type);
-  Node* ld = make_load(control(), adr, elem, elem_type, adr_type);
+  Node* ld = make_load(control(), adr, elem, elem_type, adr_type, MemNode::unordered);
   push(ld);
 }
 
@@ -62,7 +62,7 @@ void Parse::array_store(BasicType elem_type) {
   Node* val = pop();
   dec_sp(2);                  // Pop array and index
   const TypeAryPtr* adr_type = TypeAryPtr::get_array_body_type(elem_type);
-  store_to_memory(control(), adr, val, elem_type, adr_type);
+  store_to_memory(control(), adr, val, elem_type, adr_type, StoreNode::release_if_reference(elem_type));
 }
 
 
@@ -1720,14 +1720,14 @@ void Parse::do_one_bytecode() {
     a = array_addressing(T_LONG, 0);
     if (stopped())  return;     // guaranteed null or range check
     dec_sp(2);                  // Pop array and index
-    push_pair(make_load(control(), a, TypeLong::LONG, T_LONG, TypeAryPtr::LONGS));
+    push_pair(make_load(control(), a, TypeLong::LONG, T_LONG, TypeAryPtr::LONGS, MemNode::unordered));
     break;
   }
   case Bytecodes::_daload: {
     a = array_addressing(T_DOUBLE, 0);
     if (stopped())  return;     // guaranteed null or range check
     dec_sp(2);                  // Pop array and index
-    push_pair(make_load(control(), a, Type::DOUBLE, T_DOUBLE, TypeAryPtr::DOUBLES));
+    push_pair(make_load(control(), a, Type::DOUBLE, T_DOUBLE, TypeAryPtr::DOUBLES, MemNode::unordered));
     break;
   }
   case Bytecodes::_bastore: array_store(T_BYTE);  break;
@@ -1744,7 +1744,7 @@ void Parse::do_one_bytecode() {
     a = pop();                  // the array itself
     const TypeOopPtr* elemtype  = _gvn.type(a)->is_aryptr()->elem()->make_oopptr();
     const TypeAryPtr* adr_type = TypeAryPtr::OOPS;
-    Node* store = store_oop_to_array(control(), a, d, adr_type, c, elemtype, T_OBJECT);
+    Node* store = store_oop_to_array(control(), a, d, adr_type, c, elemtype, T_OBJECT, MemNode::release);
     break;
   }
   case Bytecodes::_lastore: {
@@ -1752,7 +1752,7 @@ void Parse::do_one_bytecode() {
     if (stopped())  return;     // guaranteed null or range check
     c = pop_pair();
     dec_sp(2);                  // Pop array and index
-    store_to_memory(control(), a, c, T_LONG, TypeAryPtr::LONGS);
+    store_to_memory(control(), a, c, T_LONG, TypeAryPtr::LONGS, MemNode::unordered);
     break;
   }
   case Bytecodes::_dastore: {
@@ -1761,7 +1761,7 @@ void Parse::do_one_bytecode() {
     c = pop_pair();
     dec_sp(2);                  // Pop array and index
     c = dstore_rounding(c);
-    store_to_memory(control(), a, c, T_DOUBLE, TypeAryPtr::DOUBLES);
+    store_to_memory(control(), a, c, T_DOUBLE, TypeAryPtr::DOUBLES, MemNode::unordered);
     break;
   }
   case Bytecodes::_getfield:

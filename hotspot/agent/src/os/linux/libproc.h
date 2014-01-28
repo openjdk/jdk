@@ -80,7 +80,7 @@ combination of ptrace and /proc calls.
 *************************************************************************************/
 
 
-#if defined(sparc)  || defined(sparcv9)
+#if defined(sparc) || defined(sparcv9) || defined(ppc64)
 #define user_regs_struct  pt_regs
 #endif
 

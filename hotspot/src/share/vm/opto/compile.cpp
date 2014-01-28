@@ -82,8 +82,11 @@
 #ifdef TARGET_ARCH_MODEL_arm
 # include "adfiles/ad_arm.hpp"
 #endif
-#ifdef TARGET_ARCH_MODEL_ppc
-# include "adfiles/ad_ppc.hpp"
+#ifdef TARGET_ARCH_MODEL_ppc_32
+# include "adfiles/ad_ppc_32.hpp"
+#endif
+#ifdef TARGET_ARCH_MODEL_ppc_64
+# include "adfiles/ad_ppc_64.hpp"
 #endif
 
 
@@ -645,6 +648,7 @@ Compile::Compile( ciEnv* ci_env, C2Compiler* compiler, ciMethod* target, int osr
                   _dead_node_count(0),
 #ifndef PRODUCT
                   _trace_opto_output(TraceOptoOutput || method()->has_option("TraceOptoOutput")),
+                  _in_dump_cnt(0),
                   _printer(IdealGraphPrinter::printer()),
 #endif
                   _congraph(NULL),
@@ -871,6 +875,10 @@ Compile::Compile( ciEnv* ci_env, C2Compiler* compiler, ciMethod* target, int osr
   int next_slot = _orig_pc_slot + (sizeof(address) / VMRegImpl::stack_slot_size);
   set_fixed_slots(next_slot);
 
+  // Compute when to use implicit null checks. Used by matching trap based
+  // nodes and NullCheck optimization.
+  set_allowed_deopt_reasons();
+
   // Now generate code
   Code_Gen();
   if (failing())  return;
@@ -948,6 +956,7 @@ Compile::Compile( ciEnv* ci_env,
     _inner_loops(0),
 #ifndef PRODUCT
     _trace_opto_output(TraceOptoOutput),
+    _in_dump_cnt(0),
     _printer(NULL),
 #endif
     _dead_node_list(comp_arena()),
@@ -959,7 +968,8 @@ Compile::Compile( ciEnv* ci_env,
     _inlining_incrementally(false),
     _print_inlining_list(NULL),
     _print_inlining_idx(0),
-    _preserve_jvm_state(0) {
+    _preserve_jvm_state(0),
+    _allowed_reasons(0) {
   C = this;
 
 #ifndef PRODUCT
@@ -2264,6 +2274,12 @@ void Compile::Code_Gen() {
     peep.do_transform();
   }
 
+  // Do late expand if CPU requires this.
+  if (Matcher::require_postalloc_expand) {
+    NOT_PRODUCT(TracePhase t2c("postalloc_expand", &_t_postalloc_expand, true));
+    cfg.postalloc_expand(_regalloc);
+  }
+
   // Convert Nodes to instruction bits in a buffer
   {
     // %%%% workspace merge brought two timers together for one job
@@ -3355,6 +3371,19 @@ bool Compile::too_many_recompiles(ciMethod* method,
   }
 }
 
+// Compute when not to trap. Used by matching trap based nodes and
+// NullCheck optimization.
+void Compile::set_allowed_deopt_reasons() {
+  _allowed_reasons = 0;
+  if (is_method_compilation()) {
+    for (int rs = (int)Deoptimization::Reason_none+1; rs < Compile::trapHistLength; rs++) {
+      assert(rs < BitsPerInt, "recode bit map");
+      if (!too_many_traps((Deoptimization::DeoptReason) rs)) {
+        _allowed_reasons |= nth_bit(rs);
+      }
+    }
+  }
+}
 
 #ifndef PRODUCT
 //------------------------------verify_graph_edges---------------------------
