@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,8 +41,6 @@ class Compiler: public AbstractCompiler {
 
   // Name of this compiler
   virtual const char* name()                     { return "C1"; }
-
-  virtual bool is_c1()                           { return true; };
 
   // Missing feature tests
   virtual bool supports_native()                 { return true; }

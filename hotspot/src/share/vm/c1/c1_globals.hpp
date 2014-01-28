@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -268,9 +268,6 @@
                                                                             \
   develop(bool, PrintNotLoaded, false,                                      \
           "Prints where classes are not loaded during code generation")     \
-                                                                            \
-  notproduct(bool, VerifyOopMaps, false,                                    \
-          "Adds oopmap verification code to the generated code")            \
                                                                             \
   develop(bool, PrintLIR, false,                                            \
           "print low-level IR")                                             \

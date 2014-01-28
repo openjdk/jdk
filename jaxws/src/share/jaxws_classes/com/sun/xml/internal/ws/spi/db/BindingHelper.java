@@ -136,10 +136,10 @@ public class BindingHelper {
      * @since 2.0 FCS
      */
     public static @Nullable Type getBaseType(@NotNull Type type, @NotNull Class baseType) {
-        return Navigator.REFLECTION.getBaseClass(type,baseType);
+        return Utils.REFLECTION_NAVIGATOR.getBaseClass(type,baseType);
     }
 
     public static <T> Class<T> erasure(Type t) {
-        return Navigator.REFLECTION.erasure(t);
+        return (Class<T>) Utils.REFLECTION_NAVIGATOR.erasure(t);
     }
 }

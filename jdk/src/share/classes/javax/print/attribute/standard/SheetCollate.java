@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2004, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -77,7 +77,7 @@ import javax.print.attribute.PrintJobAttribute;
  * combined into one output document. Multiple copies of the output document
  * will be produced with pages in collated order, i.e. pages 1, 2, 3, . . .,
  * 1, 2, 3, . . .
- * <P>
+ *
  * <LI>
  * SheetCollate = COLLATED, {@link MultipleDocumentHandling
  * MultipleDocumentHandling} = SINGLE_DOCUMENT_NEW_SHEET -- All the input docs
@@ -85,7 +85,7 @@ import javax.print.attribute.PrintJobAttribute;
  * input doc will always start on a new media sheet. Multiple copies of the
  * output document will be produced with pages in collated order, i.e. pages
  * 1, 2, 3, . . ., 1, 2, 3, . . .
- * <P>
+ *
  * <LI>
  * SheetCollate = COLLATED, {@link MultipleDocumentHandling
  * MultipleDocumentHandling} = SEPARATE_DOCUMENTS_UNCOLLATED_COPIES -- Each
@@ -94,7 +94,7 @@ import javax.print.attribute.PrintJobAttribute;
  * pages in collated order, but the documents themselves in uncollated order,
  * i.e. pages A1, A2, A3, . . ., A1, A2, A3, . . ., B1, B2, B3, . . ., B1, B2,
  * B3, . . .
- * <P>
+ *
  * <LI>
  * SheetCollate = COLLATED, {@link MultipleDocumentHandling
  * MultipleDocumentHandling} = SEPARATE_DOCUMENTS_COLLATED_COPIES -- Each input
@@ -103,14 +103,14 @@ import javax.print.attribute.PrintJobAttribute;
  * in collated order, with the documents themselves also in collated order, i.e.
  * pages A1, A2, A3, . . ., B1, B2, B3, . . ., A1, A2, A3, . . ., B1, B2, B3,
  * . . .
- * <P>
+ *
  * <LI>
  * SheetCollate = UNCOLLATED, {@link MultipleDocumentHandling
  * MultipleDocumentHandling} = SINGLE_DOCUMENT -- All the input docs will be
  * combined into one output document. Multiple copies of the output document
  * will be produced with pages in uncollated order, i.e. pages 1, 1, . . .,
  * 2, 2, . . ., 3, 3, . . .
- * <P>
+ *
  * <LI>
  * SheetCollate = UNCOLLATED, {@link MultipleDocumentHandling
  * MultipleDocumentHandling} = SINGLE_DOCUMENT_NEW_SHEET -- All the input docs
@@ -118,7 +118,7 @@ import javax.print.attribute.PrintJobAttribute;
  * input doc will always start on a new media sheet. Multiple copies of the
  * output document will be produced with pages in uncollated order, i.e. pages
  * 1, 1, . . ., 2, 2, . . ., 3, 3, . . .
- * <P>
+ *
  * <LI>
  * SheetCollate = UNCOLLATED, {@link MultipleDocumentHandling
  * MultipleDocumentHandling} = SEPARATE_DOCUMENTS_UNCOLLATED_COPIES -- Each
@@ -128,7 +128,7 @@ import javax.print.attribute.PrintJobAttribute;
  * order, i.e. pages A1, A1, . . ., A2, A2, . . ., A3, A3, . . ., B1, B1, . . .,
  * B2, B2, . . ., B3, B3, . . .
  * </UL>
- * <P>
+ *
  * <LI>
  * If different docs have different sheet collations specified, then only one
  * value of {@link MultipleDocumentHandling MultipleDocumentHandling} is

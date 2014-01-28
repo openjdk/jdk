@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -519,7 +519,7 @@ public class MemberEnter extends JCTree.Visitor implements Completer {
 
         try {
             // Import-on-demand java.lang.
-            importAll(tree.pos, reader.enterPackage(names.java_lang), env);
+            importAll(tree.pos, syms.enterPackage(names.java_lang), env);
 
             // Process all import clauses.
             memberEnter(tree.defs, env);
@@ -1173,7 +1173,7 @@ public class MemberEnter extends JCTree.Visitor implements Completer {
             // name as a top-level package.
             if (checkClash &&
                 c.owner.kind == PCK && c.owner != syms.unnamedPackage &&
-                reader.packageExists(c.fullname)) {
+                syms.packageExists(c.fullname)) {
                 log.error(tree.pos, "clash.with.pkg.of.same.name", Kinds.kindName(sym), c);
             }
             if (c.owner.kind == PCK && (c.flags_field & PUBLIC) == 0 &&

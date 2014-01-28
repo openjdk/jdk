@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -117,10 +117,10 @@ import javax.swing.text.*;
  * support are pseudo selectors, such as <code>A:link { color: red }</code>,
  * and the <code>important</code> modifier.
  * <p>
- * <font color="red">Note: This implementation is currently
+ * @implNote This implementation is currently
  * incomplete.  It can be replaced with alternative implementations
  * that are complete.  Future versions of this class will provide
- * better CSS support.</font>
+ * better CSS support.
  *
  * @author  Timothy Prinzing
  * @author  Sunita Mani

@@ -227,6 +227,10 @@ public abstract class SocketChannel
      * @throws  UnsupportedAddressTypeException     {@inheritDoc}
      * @throws  ClosedChannelException              {@inheritDoc}
      * @throws  IOException                         {@inheritDoc}
+     * @throws  SecurityException
+     *          If a security manager has been installed and its
+     *          {@link SecurityManager#checkListen checkListen} method denies
+     *          the operation
      *
      * @since 1.7
      */

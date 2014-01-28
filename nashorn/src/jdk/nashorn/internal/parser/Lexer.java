@@ -27,6 +27,7 @@ package jdk.nashorn.internal.parser;
 
 import static jdk.nashorn.internal.parser.TokenType.ADD;
 import static jdk.nashorn.internal.parser.TokenType.COMMENT;
+import static jdk.nashorn.internal.parser.TokenType.DIRECTIVE_COMMENT;
 import static jdk.nashorn.internal.parser.TokenType.DECIMAL;
 import static jdk.nashorn.internal.parser.TokenType.EOF;
 import static jdk.nashorn.internal.parser.TokenType.EOL;
@@ -434,12 +435,18 @@ public class Lexer extends Scanner {
             if (ch1 == '/') {
                 // Skip over //.
                 skip(2);
+
+                boolean directiveComment = false;
+                if ((ch0 == '#' || ch0 == '@') && (ch1 == ' ')) {
+                    directiveComment = true;
+                }
+
                 // Scan for EOL.
                 while (!atEOF() && !isEOL(ch0)) {
                     skip(1);
                 }
                 // Did detect a comment.
-                add(COMMENT, start);
+                add(directiveComment? DIRECTIVE_COMMENT : COMMENT, start);
                 return true;
             } else if (ch1 == '*') {
                 // Skip over /*.
@@ -1623,6 +1630,8 @@ public class Lexer extends Scanner {
             return valueOfPattern(start, len); // RegexToken::LexerToken
         case XML:
             return valueOfXML(start, len); // XMLToken::LexerToken
+        case DIRECTIVE_COMMENT:
+            return source.getString(start, len);
         default:
             break;
         }

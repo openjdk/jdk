@@ -375,11 +375,12 @@ public abstract class UnixFileSystemProvider
         UnixPath dir = UnixPath.toUnixPath(obj);
         dir.checkWrite();
 
-        int mode = UnixFileModeAttribute
-            .toUnixMode(UnixFileModeAttribute.ALL_PERMISSIONS, attrs);
+        int mode = UnixFileModeAttribute.toUnixMode(UnixFileModeAttribute.ALL_PERMISSIONS, attrs);
         try {
             mkdir(dir, mode);
         } catch (UnixException x) {
+            if (x.errno() == EISDIR)
+                throw new FileAlreadyExistsException(dir.toString());
             x.rethrowAsIOException(dir);
         }
     }

@@ -1200,12 +1200,9 @@ class PSParallelCompact : AllStatic {
                                                       T* p);
   template <class T> static inline void adjust_pointer(T* p);
 
-  static void follow_klass(ParCompactionManager* cm, Klass* klass);
-  static void adjust_klass(ParCompactionManager* cm, Klass* klass);
+  static inline void follow_klass(ParCompactionManager* cm, Klass* klass);
 
   static void follow_class_loader(ParCompactionManager* cm,
-                                  ClassLoaderData* klass);
-  static void adjust_class_loader(ParCompactionManager* cm,
                                   ClassLoaderData* klass);
 
   // Compaction support.
@@ -1378,6 +1375,11 @@ inline void PSParallelCompact::adjust_pointer(T* p) {
       oopDesc::encode_store_heap_oop_not_null(p, new_obj);
     }
   }
+}
+
+inline void PSParallelCompact::follow_klass(ParCompactionManager* cm, Klass* klass) {
+  oop holder = klass->klass_holder();
+  PSParallelCompact::mark_and_push(cm, &holder);
 }
 
 template <class T>
