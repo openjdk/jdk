@@ -3094,6 +3094,17 @@ operand immI16()
   interface(CONST_INTER);
 %}
 
+// Int Immediate non-negative
+operand immU31()
+%{
+  predicate(n->get_int() >= 0);
+  match(ConI);
+
+  op_cost(0);
+  format %{ %}
+  interface(CONST_INTER);
+%}
+
 // Constant for long shifts
 operand immI_32()
 %{
@@ -5050,12 +5061,12 @@ instruct loadI2L_immI_65535(rRegL dst, memory mem, immI_65535 mask) %{
   ins_pipe(ialu_reg_mem);
 %}
 
-// Load Integer with a 32-bit mask into Long Register
-instruct loadI2L_immI(rRegL dst, memory mem, immI mask, rFlagsReg cr) %{
+// Load Integer with a 31-bit mask into Long Register
+instruct loadI2L_immU31(rRegL dst, memory mem, immU31 mask, rFlagsReg cr) %{
   match(Set dst (ConvI2L (AndI (LoadI mem) mask)));
   effect(KILL cr);
 
-  format %{ "movl    $dst, $mem\t# int & 32-bit mask -> long\n\t"
+  format %{ "movl    $dst, $mem\t# int & 31-bit mask -> long\n\t"
             "andl    $dst, $mask" %}
   ins_encode %{
     Register Rdst = $dst$$Register;

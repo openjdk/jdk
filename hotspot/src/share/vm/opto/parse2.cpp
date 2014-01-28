@@ -88,7 +88,7 @@ Node* Parse::array_addressing(BasicType type, int vals, const Type* *result2) {
       if (toop->klass()->as_instance_klass()->unique_concrete_subklass()) {
         // If we load from "AbstractClass[]" we must see "ConcreteSubClass".
         const Type* subklass = Type::get_const_type(toop->klass());
-        elemtype = subklass->join(el);
+        elemtype = subklass->join_speculative(el);
       }
     }
   }
@@ -1278,7 +1278,7 @@ void Parse::sharpen_type_after_if(BoolTest::mask btest,
        //   Bool(CmpP(LoadKlass(obj._klass), ConP(Foo.klass)), [eq])
        // or the narrowOop equivalent.
        const Type* obj_type = _gvn.type(obj);
-       const TypeOopPtr* tboth = obj_type->join(con_type)->isa_oopptr();
+       const TypeOopPtr* tboth = obj_type->join_speculative(con_type)->isa_oopptr();
        if (tboth != NULL && tboth->klass_is_exact() && tboth != obj_type &&
            tboth->higher_equal(obj_type)) {
           // obj has to be of the exact type Foo if the CmpP succeeds.
@@ -1288,7 +1288,7 @@ void Parse::sharpen_type_after_if(BoolTest::mask btest,
               (jvms->is_loc(obj_in_map) || jvms->is_stk(obj_in_map))) {
             TypeNode* ccast = new (C) CheckCastPPNode(control(), obj, tboth);
             const Type* tcc = ccast->as_Type()->type();
-            assert(tcc != obj_type && tcc->higher_equal(obj_type), "must improve");
+            assert(tcc != obj_type && tcc->higher_equal_speculative(obj_type), "must improve");
             // Delay transform() call to allow recovery of pre-cast value
             // at the control merge.
             _gvn.set_type_bottom(ccast);
@@ -1318,7 +1318,7 @@ void Parse::sharpen_type_after_if(BoolTest::mask btest,
   switch (btest) {
   case BoolTest::eq:                    // Constant test?
     {
-      const Type* tboth = tcon->join(tval);
+      const Type* tboth = tcon->join_speculative(tval);
       if (tboth == tval)  break;        // Nothing to gain.
       if (tcon->isa_int()) {
         ccast = new (C) CastIINode(val, tboth);
@@ -1352,7 +1352,7 @@ void Parse::sharpen_type_after_if(BoolTest::mask btest,
 
   if (ccast != NULL) {
     const Type* tcc = ccast->as_Type()->type();
-    assert(tcc != tval && tcc->higher_equal(tval), "must improve");
+    assert(tcc != tval && tcc->higher_equal_speculative(tval), "must improve");
     // Delay transform() call to allow recovery of pre-cast value
     // at the control merge.
     ccast->set_req(0, control());

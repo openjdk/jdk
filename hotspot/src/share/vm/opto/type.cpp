@@ -241,6 +241,13 @@ int Type::cmp( const Type *const t1, const Type *const t2 ) {
   return !t1->eq(t2);           // Return ZERO if equal
 }
 
+const Type* Type::maybe_remove_speculative(bool include_speculative) const {
+  if (!include_speculative) {
+    return remove_speculative();
+  }
+  return this;
+}
+
 //------------------------------hash-------------------------------------------
 int Type::uhash( const Type *const t ) {
   return t->hash();
@@ -633,41 +640,44 @@ bool Type::interface_vs_oop(const Type *t) const {
 //------------------------------meet-------------------------------------------
 // Compute the MEET of two types.  NOT virtual.  It enforces that meet is
 // commutative and the lattice is symmetric.
-const Type *Type::meet( const Type *t ) const {
+const Type *Type::meet_helper(const Type *t, bool include_speculative) const {
   if (isa_narrowoop() && t->isa_narrowoop()) {
-    const Type* result = make_ptr()->meet(t->make_ptr());
+    const Type* result = make_ptr()->meet_helper(t->make_ptr(), include_speculative);
     return result->make_narrowoop();
   }
   if (isa_narrowklass() && t->isa_narrowklass()) {
-    const Type* result = make_ptr()->meet(t->make_ptr());
+    const Type* result = make_ptr()->meet_helper(t->make_ptr(), include_speculative);
     return result->make_narrowklass();
   }
 
-  const Type *mt = xmeet(t);
+  const Type *this_t = maybe_remove_speculative(include_speculative);
+  t = t->maybe_remove_speculative(include_speculative);
+
+  const Type *mt = this_t->xmeet(t);
   if (isa_narrowoop() || t->isa_narrowoop()) return mt;
   if (isa_narrowklass() || t->isa_narrowklass()) return mt;
 #ifdef ASSERT
-  assert( mt == t->xmeet(this), "meet not commutative" );
+  assert(mt == t->xmeet(this_t), "meet not commutative");
   const Type* dual_join = mt->_dual;
   const Type *t2t    = dual_join->xmeet(t->_dual);
-  const Type *t2this = dual_join->xmeet(   _dual);
+  const Type *t2this = dual_join->xmeet(this_t->_dual);
 
   // Interface meet Oop is Not Symmetric:
   // Interface:AnyNull meet Oop:AnyNull == Interface:AnyNull
   // Interface:NotNull meet Oop:NotNull == java/lang/Object:NotNull
 
-  if( !interface_vs_oop(t) && (t2t != t->_dual || t2this != _dual) ) {
+  if( !interface_vs_oop(t) && (t2t != t->_dual || t2this != this_t->_dual) ) {
     tty->print_cr("=== Meet Not Symmetric ===");
-    tty->print("t   =                   ");         t->dump(); tty->cr();
-    tty->print("this=                   ");            dump(); tty->cr();
-    tty->print("mt=(t meet this)=       ");        mt->dump(); tty->cr();
+    tty->print("t   =                   ");              t->dump(); tty->cr();
+    tty->print("this=                   ");         this_t->dump(); tty->cr();
+    tty->print("mt=(t meet this)=       ");             mt->dump(); tty->cr();
 
-    tty->print("t_dual=                 ");  t->_dual->dump(); tty->cr();
-    tty->print("this_dual=              ");     _dual->dump(); tty->cr();
-    tty->print("mt_dual=                "); mt->_dual->dump(); tty->cr();
+    tty->print("t_dual=                 ");       t->_dual->dump(); tty->cr();
+    tty->print("this_dual=              ");  this_t->_dual->dump(); tty->cr();
+    tty->print("mt_dual=                ");      mt->_dual->dump(); tty->cr();
 
-    tty->print("mt_dual meet t_dual=    "); t2t      ->dump(); tty->cr();
-    tty->print("mt_dual meet this_dual= "); t2this   ->dump(); tty->cr();
+    tty->print("mt_dual meet t_dual=    "); t2t           ->dump(); tty->cr();
+    tty->print("mt_dual meet this_dual= "); t2this        ->dump(); tty->cr();
 
     fatal("meet not symmetric" );
   }
@@ -759,8 +769,8 @@ const Type *Type::xmeet( const Type *t ) const {
 }
 
 //-----------------------------filter------------------------------------------
-const Type *Type::filter( const Type *kills ) const {
-  const Type* ft = join(kills);
+const Type *Type::filter_helper(const Type *kills, bool include_speculative) const {
+  const Type* ft = join_helper(kills, include_speculative);
   if (ft->empty())
     return Type::TOP;           // Canonical empty value
   return ft;
@@ -1314,8 +1324,8 @@ const Type *TypeInt::narrow( const Type *old ) const {
 }
 
 //-----------------------------filter------------------------------------------
-const Type *TypeInt::filter( const Type *kills ) const {
-  const TypeInt* ft = join(kills)->isa_int();
+const Type *TypeInt::filter_helper(const Type *kills, bool include_speculative) const {
+  const TypeInt* ft = join_helper(kills, include_speculative)->isa_int();
   if (ft == NULL || ft->empty())
     return Type::TOP;           // Canonical empty value
   if (ft->_widen < this->_widen) {
@@ -1575,8 +1585,8 @@ const Type *TypeLong::narrow( const Type *old ) const {
 }
 
 //-----------------------------filter------------------------------------------
-const Type *TypeLong::filter( const Type *kills ) const {
-  const TypeLong* ft = join(kills)->isa_long();
+const Type *TypeLong::filter_helper(const Type *kills, bool include_speculative) const {
+  const TypeLong* ft = join_helper(kills, include_speculative)->isa_long();
   if (ft == NULL || ft->empty())
     return Type::TOP;           // Canonical empty value
   if (ft->_widen < this->_widen) {
@@ -1731,7 +1741,7 @@ const TypeTuple *TypeTuple::make_domain(ciInstanceKlass* recv, ciSignature* sig)
     total_fields++;
     field_array = fields(total_fields);
     // Use get_const_type here because it respects UseUniqueSubclasses:
-    field_array[pos++] = get_const_type(recv)->join(TypePtr::NOTNULL);
+    field_array[pos++] = get_const_type(recv)->join_speculative(TypePtr::NOTNULL);
   } else {
     field_array = fields(total_fields);
   }
@@ -1921,7 +1931,7 @@ const Type *TypeAry::xmeet( const Type *t ) const {
 
   case Array: {                 // Meeting 2 arrays?
     const TypeAry *a = t->is_ary();
-    return TypeAry::make(_elem->meet(a->_elem),
+    return TypeAry::make(_elem->meet_speculative(a->_elem),
                          _size->xmeet(a->_size)->is_int(),
                          _stable & a->_stable);
   }
@@ -1952,6 +1962,13 @@ bool TypeAry::eq( const Type *t ) const {
 // Type-specific hashing function.
 int TypeAry::hash(void) const {
   return (intptr_t)_elem + (intptr_t)_size + (_stable ? 43 : 0);
+}
+
+/**
+ * Return same type without a speculative part in the element
+ */
+const Type* TypeAry::remove_speculative() const {
+  return make(_elem->remove_speculative(), _size, _stable);
 }
 
 //----------------------interface_vs_oop---------------------------------------
@@ -2566,14 +2583,14 @@ const Type *TypeOopPtr::xmeet(const Type *t) const {
     return res;
   }
 
-  if (res->isa_oopptr() != NULL) {
+  const TypeOopPtr* res_oopptr = res->is_oopptr();
+  if (res_oopptr->speculative() != NULL) {
     // type->speculative() == NULL means that speculation is no better
     // than type, i.e. type->speculative() == type. So there are 2
     // ways to represent the fact that we have no useful speculative
     // data and we should use a single one to be able to test for
     // equality between types. Check whether type->speculative() ==
     // type and set speculative to NULL if it is the case.
-    const TypeOopPtr* res_oopptr = res->is_oopptr();
     if (res_oopptr->remove_speculative() == res_oopptr->speculative()) {
       return res_oopptr->remove_speculative();
     }
@@ -2639,7 +2656,7 @@ const Type *TypeOopPtr::xmeet_helper(const Type *t) const {
   case OopPtr: {                 // Meeting to other OopPtrs
     const TypeOopPtr *tp = t->is_oopptr();
     int instance_id = meet_instance_id(tp->instance_id());
-    const TypeOopPtr* speculative = meet_speculative(tp);
+    const TypeOopPtr* speculative = xmeet_speculative(tp);
     return make(meet_ptr(tp->ptr()), meet_offset(tp->offset()), instance_id, speculative);
   }
 
@@ -2793,9 +2810,9 @@ intptr_t TypeOopPtr::get_con() const {
 
 //-----------------------------filter------------------------------------------
 // Do not allow interface-vs.-noninterface joins to collapse to top.
-const Type *TypeOopPtr::filter(const Type *kills) const {
+const Type *TypeOopPtr::filter_helper(const Type *kills, bool include_speculative) const {
 
-  const Type* ft = join(kills);
+  const Type* ft = join_helper(kills, include_speculative);
   const TypeInstPtr* ftip = ft->isa_instptr();
   const TypeInstPtr* ktip = kills->isa_instptr();
 
@@ -2907,7 +2924,10 @@ const TypePtr *TypeOopPtr::add_offset(intptr_t offset) const {
 /**
  * Return same type without a speculative part
  */
-const TypeOopPtr* TypeOopPtr::remove_speculative() const {
+const Type* TypeOopPtr::remove_speculative() const {
+  if (_speculative == NULL) {
+    return this;
+  }
   return make(_ptr, _offset, _instance_id, NULL);
 }
 
@@ -2933,7 +2953,7 @@ int TypeOopPtr::dual_instance_id( ) const {
  *
  * @param other  type to meet with
  */
-const TypeOopPtr* TypeOopPtr::meet_speculative(const TypeOopPtr* other) const {
+const TypeOopPtr* TypeOopPtr::xmeet_speculative(const TypeOopPtr* other) const {
   bool this_has_spec = (_speculative != NULL);
   bool other_has_spec = (other->speculative() != NULL);
 
@@ -2958,7 +2978,7 @@ const TypeOopPtr* TypeOopPtr::meet_speculative(const TypeOopPtr* other) const {
     other_spec = other;
   }
 
-  return this_spec->meet(other_spec)->is_oopptr();
+  return this_spec->meet_speculative(other_spec)->is_oopptr();
 }
 
 /**
@@ -3117,7 +3137,7 @@ const TypeInstPtr *TypeInstPtr::xmeet_unloaded(const TypeInstPtr *tinst) const {
     int off = meet_offset(tinst->offset());
     PTR ptr = meet_ptr(tinst->ptr());
     int instance_id = meet_instance_id(tinst->instance_id());
-    const TypeOopPtr* speculative = meet_speculative(tinst);
+    const TypeOopPtr* speculative = xmeet_speculative(tinst);
 
     const TypeInstPtr *loaded    = is_loaded() ? this  : tinst;
     const TypeInstPtr *unloaded  = is_loaded() ? tinst : this;
@@ -3194,7 +3214,7 @@ const Type *TypeInstPtr::xmeet_helper(const Type *t) const {
     int offset = meet_offset(tp->offset());
     PTR ptr = meet_ptr(tp->ptr());
     int instance_id = meet_instance_id(tp->instance_id());
-    const TypeOopPtr* speculative = meet_speculative(tp);
+    const TypeOopPtr* speculative = xmeet_speculative(tp);
     switch (ptr) {
     case TopPTR:
     case AnyNull:                // Fall 'down' to dual of object klass
@@ -3244,14 +3264,14 @@ const Type *TypeInstPtr::xmeet_helper(const Type *t) const {
     case TopPTR:
     case AnyNull: {
       int instance_id = meet_instance_id(InstanceTop);
-      const TypeOopPtr* speculative = meet_speculative(tp);
+      const TypeOopPtr* speculative = xmeet_speculative(tp);
       return make(ptr, klass(), klass_is_exact(),
                   (ptr == Constant ? const_oop() : NULL), offset, instance_id, speculative);
     }
     case NotNull:
     case BotPTR: {
       int instance_id = meet_instance_id(tp->instance_id());
-      const TypeOopPtr* speculative = meet_speculative(tp);
+      const TypeOopPtr* speculative = xmeet_speculative(tp);
       return TypeOopPtr::make(ptr, offset, instance_id, speculative);
     }
     default: typerr(t);
@@ -3303,7 +3323,7 @@ const Type *TypeInstPtr::xmeet_helper(const Type *t) const {
     int off = meet_offset( tinst->offset() );
     PTR ptr = meet_ptr( tinst->ptr() );
     int instance_id = meet_instance_id(tinst->instance_id());
-    const TypeOopPtr* speculative = meet_speculative(tinst);
+    const TypeOopPtr* speculative = xmeet_speculative(tinst);
 
     // Check for easy case; klasses are equal (and perhaps not loaded!)
     // If we have constants, then we created oops so classes are loaded
@@ -3552,7 +3572,10 @@ const TypePtr *TypeInstPtr::add_offset(intptr_t offset) const {
   return make(_ptr, klass(), klass_is_exact(), const_oop(), xadd_offset(offset), _instance_id, add_offset_speculative(offset));
 }
 
-const TypeOopPtr *TypeInstPtr::remove_speculative() const {
+const Type *TypeInstPtr::remove_speculative() const {
+  if (_speculative == NULL) {
+    return this;
+  }
   return make(_ptr, klass(), klass_is_exact(), const_oop(), _offset, _instance_id, NULL);
 }
 
@@ -3754,14 +3777,14 @@ const Type *TypeAryPtr::xmeet_helper(const Type *t) const {
     case TopPTR:
     case AnyNull: {
       int instance_id = meet_instance_id(InstanceTop);
-      const TypeOopPtr* speculative = meet_speculative(tp);
+      const TypeOopPtr* speculative = xmeet_speculative(tp);
       return make(ptr, (ptr == Constant ? const_oop() : NULL),
                   _ary, _klass, _klass_is_exact, offset, instance_id, speculative);
     }
     case BotPTR:
     case NotNull: {
       int instance_id = meet_instance_id(tp->instance_id());
-      const TypeOopPtr* speculative = meet_speculative(tp);
+      const TypeOopPtr* speculative = xmeet_speculative(tp);
       return TypeOopPtr::make(ptr, offset, instance_id, speculative);
     }
     default: ShouldNotReachHere();
@@ -3799,10 +3822,10 @@ const Type *TypeAryPtr::xmeet_helper(const Type *t) const {
   case AryPtr: {                // Meeting 2 references?
     const TypeAryPtr *tap = t->is_aryptr();
     int off = meet_offset(tap->offset());
-    const TypeAry *tary = _ary->meet(tap->_ary)->is_ary();
+    const TypeAry *tary = _ary->meet_speculative(tap->_ary)->is_ary();
     PTR ptr = meet_ptr(tap->ptr());
     int instance_id = meet_instance_id(tap->instance_id());
-    const TypeOopPtr* speculative = meet_speculative(tap);
+    const TypeOopPtr* speculative = xmeet_speculative(tap);
     ciKlass* lazy_klass = NULL;
     if (tary->_elem->isa_int()) {
       // Integral array element types have irrelevant lattice relations.
@@ -3882,7 +3905,7 @@ const Type *TypeAryPtr::xmeet_helper(const Type *t) const {
     int offset = meet_offset(tp->offset());
     PTR ptr = meet_ptr(tp->ptr());
     int instance_id = meet_instance_id(tp->instance_id());
-    const TypeOopPtr* speculative = meet_speculative(tp);
+    const TypeOopPtr* speculative = xmeet_speculative(tp);
     switch (ptr) {
     case TopPTR:
     case AnyNull:                // Fall 'down' to dual of object klass
@@ -3996,8 +4019,8 @@ const TypePtr *TypeAryPtr::add_offset(intptr_t offset) const {
   return make(_ptr, _const_oop, _ary, _klass, _klass_is_exact, xadd_offset(offset), _instance_id, add_offset_speculative(offset));
 }
 
-const TypeOopPtr *TypeAryPtr::remove_speculative() const {
-  return make(_ptr, _const_oop, _ary, _klass, _klass_is_exact, _offset, _instance_id, NULL);
+const Type *TypeAryPtr::remove_speculative() const {
+  return make(_ptr, _const_oop, _ary->remove_speculative()->is_ary(), _klass, _klass_is_exact, _offset, _instance_id, NULL);
 }
 
 //=============================================================================
@@ -4037,9 +4060,9 @@ const Type *TypeNarrowPtr::xdual() const {    // Compute dual right now.
 }
 
 
-const Type *TypeNarrowPtr::filter( const Type *kills ) const {
+const Type *TypeNarrowPtr::filter_helper(const Type *kills, bool include_speculative) const {
   if (isa_same_narrowptr(kills)) {
-    const Type* ft =_ptrtype->filter(is_same_narrowptr(kills)->_ptrtype);
+    const Type* ft =_ptrtype->filter_helper(is_same_narrowptr(kills)->_ptrtype, include_speculative);
     if (ft->empty())
       return Type::TOP;           // Canonical empty value
     if (ft->isa_ptr()) {
@@ -4047,7 +4070,7 @@ const Type *TypeNarrowPtr::filter( const Type *kills ) const {
     }
     return ft;
   } else if (kills->isa_ptr()) {
-    const Type* ft = _ptrtype->join(kills);
+    const Type* ft = _ptrtype->join_helper(kills, include_speculative);
     if (ft->empty())
       return Type::TOP;           // Canonical empty value
     return ft;
@@ -4177,8 +4200,8 @@ const TypePtr *TypeMetadataPtr::add_offset( intptr_t offset ) const {
 
 //-----------------------------filter------------------------------------------
 // Do not allow interface-vs.-noninterface joins to collapse to top.
-const Type *TypeMetadataPtr::filter( const Type *kills ) const {
-  const TypeMetadataPtr* ft = join(kills)->isa_metadataptr();
+const Type *TypeMetadataPtr::filter_helper(const Type *kills, bool include_speculative) const {
+  const TypeMetadataPtr* ft = join_helper(kills, include_speculative)->isa_metadataptr();
   if (ft == NULL || ft->empty())
     return Type::TOP;           // Canonical empty value
   return ft;
@@ -4380,10 +4403,10 @@ bool TypeKlassPtr::singleton(void) const {
 }
 
 // Do not allow interface-vs.-noninterface joins to collapse to top.
-const Type *TypeKlassPtr::filter(const Type *kills) const {
+const Type *TypeKlassPtr::filter_helper(const Type *kills, bool include_speculative) const {
   // logic here mirrors the one from TypeOopPtr::filter. See comments
   // there.
-  const Type* ft = join(kills);
+  const Type* ft = join_helper(kills, include_speculative);
   const TypeKlassPtr* ftkp = ft->isa_klassptr();
   const TypeKlassPtr* ktkp = kills->isa_klassptr();
 
