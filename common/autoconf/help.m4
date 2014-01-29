@@ -155,22 +155,6 @@ AC_DEFUN_ONCE([HELP_PRINT_SUMMARY_AND_WARNINGS],
 [
   # Finally output some useful information to the user
 
-  if test "x$CCACHE_FOUND" != x; then
-    if  test "x$HAS_GOOD_CCACHE" = x; then
-      CCACHE_STATUS="installed, but disabled (version older than 3.1.4)"
-      CCACHE_HELP_MSG="You have ccache installed, but it is a version prior to 3.1.4. Try upgrading."
-    else
-      CCACHE_STATUS="installed and in use"
-    fi
-  else
-    if test "x$GCC" = xyes; then
-      CCACHE_STATUS="not installed (consider installing)"
-      CCACHE_HELP_MSG="You do not have ccache installed. Try installing it."
-    else
-      CCACHE_STATUS="not available for your system"
-    fi
-  fi
-
   printf "\n"
   printf "====================================================\n"
   printf "A new configuration has been successfully created in\n"
@@ -201,16 +185,10 @@ AC_DEFUN_ONCE([HELP_PRINT_SUMMARY_AND_WARNINGS],
   printf "Build performance summary:\n"
   printf "* Cores to use:   $JOBS\n"
   printf "* Memory limit:   $MEMORY_SIZE MB\n"
-  printf "* ccache status:  $CCACHE_STATUS\n"
-  printf "\n"
-
-  if test "x$CCACHE_HELP_MSG" != x && test "x$HIDE_PERFORMANCE_HINTS" = "xno"; then
-    printf "Build performance tip: ccache gives a tremendous speedup for C++ recompilations.\n"
-    printf "$CCACHE_HELP_MSG\n"
-    HELP_MSG_MISSING_DEPENDENCY([ccache])
-    printf "$HELP_MSG\n"
-    printf "\n"
+  if test "x$CCACHE_STATUS" != "x"; then
+    printf "* ccache status:  $CCACHE_STATUS\n"
   fi
+  printf "\n"
 
   if test "x$BUILDING_MULTIPLE_JVM_VARIANTS" = "xyes"; then
     printf "NOTE: You have requested to build more than one version of the JVM, which\n"
