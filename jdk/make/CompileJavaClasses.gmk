@@ -409,7 +409,7 @@ endif
 
 ##########################################################################################
 
-all: $(BUILD_JDK) $(BUILD_SECURITY) $(BUILD_JOBJC) $(BUILD_JOBJC_HEADERS) $(COPY_EXTRA) \
+all: $(BUILD_JDK) $(BUILD_SECURITY) $(COPY_EXTRA) \
     $(JDK_OUTPUTDIR)/classes/META-INF/services/com.sun.tools.xjc.Plugin \
     $(BUILD_ACCESSBRIDGE_32) $(BUILD_ACCESSBRIDGE_64) \
     $(BUILD_ACCESSBRIDGE_LEGACY)
