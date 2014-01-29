@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2013, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2014, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -438,22 +438,20 @@ POST_MCS_CMD:=@POST_MCS_CMD@
 
 JAVA_FLAGS:=@BOOT_JDK_JVMARGS@
 
-JAVA=@FIXPATH@ $(BOOT_JDK)/bin/java $(JAVA_FLAGS)
+JAVA=@FIXPATH@ @JAVA@ $(JAVA_FLAGS)
 
-JAVAC=@FIXPATH@ $(BOOT_JDK)/bin/javac
+JAVAC:=@FIXPATH@ @JAVAC@
 # Hotspot sets this variable before reading the SPEC when compiling sa-jdi.jar. Avoid
 # overriding that value by using ?=.
 JAVAC_FLAGS?=@JAVAC_FLAGS@
 
-JAVAH=@FIXPATH@ $(BOOT_JDK)/bin/javah
+JAVAH:=@FIXPATH@ @JAVAH@
 
-JAR=@FIXPATH@ $(BOOT_JDK)/bin/jar
+JAR:=@FIXPATH@ @JAR@
 
-RMIC=@FIXPATH@ $(BOOT_JDK)/bin/rmic
+NATIVE2ASCII:=@FIXPATH@ @NATIVE2ASCII@
 
-NATIVE2ASCII=@FIXPATH@ $(BOOT_JDK)/bin/native2ascii
-
-JARSIGNER=@FIXPATH@ $(BOOT_JDK)/bin/jarsigner
+JARSIGNER:=@FIXPATH@ @JARSIGNER@
 
 # You run the new javac using the boot jdk with $(BOOT_JDK)/bin/java $(NEW_JAVAC) ...
 BOOTSTRAP_JAVAC_JAR:=$(LANGTOOLS_OUTPUTDIR)/dist/bootstrap/lib/javac.jar
