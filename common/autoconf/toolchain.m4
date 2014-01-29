@@ -238,11 +238,11 @@ AC_DEFUN([TOOLCHAIN_SETUP_PATHS],
     # otherwise we might pick up cross-compilers which don't use standard naming.
     # Otherwise, we'll set the BUILD_tools to the native tools, but that'll have
     # to wait until they are properly discovered.
-    AC_PATH_PROGS(BUILD_CC, [cl cc gcc])
+    BASIC_PATH_PROGS(BUILD_CC, [cl cc gcc])
     BASIC_FIXUP_EXECUTABLE(BUILD_CC)
-    AC_PATH_PROGS(BUILD_CXX, [cl CC g++])
+    BASIC_PATH_PROGS(BUILD_CXX, [cl CC g++])
     BASIC_FIXUP_EXECUTABLE(BUILD_CXX)
-    AC_PATH_PROG(BUILD_LD, ld)
+    BASIC_PATH_PROGS(BUILD_LD, ld)
     BASIC_FIXUP_EXECUTABLE(BUILD_LD)
   fi
   AC_SUBST(BUILD_CC)
@@ -353,7 +353,7 @@ AC_DEFUN([TOOLCHAIN_SETUP_PATHS],
   AC_SUBST(LDEXECXX)
 
   if test "x$OPENJDK_TARGET_OS" != xwindows; then
-    AC_CHECK_TOOL(AR, ar)
+    BASIC_CHECK_TOOLS(AR, ar)
     BASIC_FIXUP_EXECUTABLE(AR)
   fi
   if test "x$OPENJDK_TARGET_OS" = xmacosx; then
@@ -480,7 +480,7 @@ AC_DEFUN([TOOLCHAIN_SETUP_PATHS],
 
   # Find the right assembler.
   if test "x$OPENJDK_TARGET_OS" = xsolaris; then
-    AC_PATH_PROG(AS, as)
+    BASIC_PATH_PROGS(AS, as)
     BASIC_FIXUP_EXECUTABLE(AS)
   else
     AS="$CC -c"
@@ -488,41 +488,41 @@ AC_DEFUN([TOOLCHAIN_SETUP_PATHS],
   AC_SUBST(AS)
 
   if test "x$OPENJDK_TARGET_OS" = xsolaris; then
-    AC_PATH_PROG(NM, nm)
+    BASIC_PATH_PROGS(NM, nm)
     BASIC_FIXUP_EXECUTABLE(NM)
-    AC_PATH_PROG(GNM, gnm)
+    BASIC_PATH_PROGS(GNM, gnm)
     BASIC_FIXUP_EXECUTABLE(GNM)
-    AC_PATH_PROG(STRIP, strip)
+    BASIC_PATH_PROGS(STRIP, strip)
     BASIC_FIXUP_EXECUTABLE(STRIP)
-    AC_PATH_PROG(MCS, mcs)
+    BASIC_PATH_PROGS(MCS, mcs)
     BASIC_FIXUP_EXECUTABLE(MCS)
   elif test "x$OPENJDK_TARGET_OS" != xwindows; then
-    AC_CHECK_TOOL(NM, nm)
+    BASIC_CHECK_TOOLS(NM, nm)
     BASIC_FIXUP_EXECUTABLE(NM)
     GNM="$NM"
     AC_SUBST(GNM)
-    AC_CHECK_TOOL(STRIP, strip)
+    BASIC_CHECK_TOOLS(STRIP, strip)
     BASIC_FIXUP_EXECUTABLE(STRIP)
   fi
 
   # objcopy is used for moving debug symbols to separate files when
   # full debug symbols are enabled.
   if test "x$OPENJDK_TARGET_OS" = xsolaris || test "x$OPENJDK_TARGET_OS" = xlinux; then
-    AC_CHECK_TOOLS(OBJCOPY, [gobjcopy objcopy])
+    BASIC_CHECK_TOOLS(OBJCOPY, [gobjcopy objcopy])
     # Only call fixup if objcopy was found.
     if test -n "$OBJCOPY"; then
       BASIC_FIXUP_EXECUTABLE(OBJCOPY)
     fi
   fi
 
-  AC_CHECK_TOOLS(OBJDUMP, [gobjdump objdump])
+  BASIC_CHECK_TOOLS(OBJDUMP, [gobjdump objdump])
   if test "x$OBJDUMP" != x; then
     # Only used for compare.sh; we can live without it. BASIC_FIXUP_EXECUTABLE bails if argument is missing.
     BASIC_FIXUP_EXECUTABLE(OBJDUMP)
   fi
 
   if test "x$OPENJDK_TARGET_OS" = "xmacosx"; then
-    AC_PATH_PROG(LIPO, lipo)
+    BASIC_PATH_PROGS(LIPO, lipo)
     BASIC_FIXUP_EXECUTABLE(LIPO)
   fi
 
@@ -1244,7 +1244,7 @@ AC_DEFUN_ONCE([TOOLCHAIN_SETUP_JTREG],
       AC_MSG_RESULT($JTREGEXE)
     else
       # try to find jtreg on path
-      BASIC_REQUIRE_PROG(JTREGEXE, jtreg)
+      BASIC_REQUIRE_PROGS(JTREGEXE, jtreg)
       JT_HOME="`$DIRNAME $JTREGEXE`"
     fi
   fi
