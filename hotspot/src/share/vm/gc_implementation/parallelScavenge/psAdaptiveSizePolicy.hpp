@@ -240,7 +240,6 @@ class PSAdaptiveSizePolicy : public AdaptiveSizePolicy {
   void major_collection_begin();
   void major_collection_end(size_t amount_live, GCCause::Cause gc_cause);
 
-  //
   void tenured_allocation(size_t size) {
     _avg_pretenured->sample(size);
   }
@@ -248,9 +247,9 @@ class PSAdaptiveSizePolicy : public AdaptiveSizePolicy {
   // Accessors
   // NEEDS_CLEANUP   should use sizes.hpp
 
-  size_t calculated_old_free_size_in_bytes() const {
-    return (size_t)(_promo_size + avg_promoted()->padded_average());
-  }
+  static size_t calculate_free_based_on_live(size_t live, uintx ratio_as_percentage);
+
+  size_t calculated_old_free_size_in_bytes() const;
 
   size_t average_old_live_in_bytes() const {
     return (size_t) avg_old_live()->average();

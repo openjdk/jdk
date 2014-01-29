@@ -1575,8 +1575,6 @@ void G1CollectedHeap::do_full_collection(bool clear_all_soft_refs) {
 void
 G1CollectedHeap::
 resize_if_necessary_after_full_collection(size_t word_size) {
-  assert(MinHeapFreeRatio <= MaxHeapFreeRatio, "sanity check");
-
   // Include the current allocation, if any, and bytes that will be
   // pre-allocated to support collections, as "used".
   const size_t used_after_gc = used();
