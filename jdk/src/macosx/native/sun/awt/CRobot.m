@@ -187,9 +187,8 @@ Java_sun_lwawt_macosx_CRobot_mouseEvent
     // volatile, otherwise it warns that it might be clobbered by 'longjmp'
     volatile CGPoint point;
 
-    // Translate the device relative point into a valid global CGPoint.
-    point.x = mouseLastX + globalDeviceBounds.origin.x;
-    point.y = mouseLastY + globalDeviceBounds.origin.y;
+    point.x = mouseLastX;
+    point.y = mouseLastY;
 
     __block CGMouseButton button = kCGMouseButtonLeft;
     __block CGEventType type = kCGEventMouseMoved;
