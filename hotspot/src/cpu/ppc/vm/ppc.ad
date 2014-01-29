@@ -2143,6 +2143,11 @@ const bool Matcher::misaligned_vectors_ok() {
   return false;
 }
 
+// PPC AES support not yet implemented
+const bool Matcher::pass_original_key_for_aes() {
+  return false;
+}
+
 // RETURNS: whether this branch offset is short enough that a short
 // branch can be used.
 //
