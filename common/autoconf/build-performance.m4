@@ -160,20 +160,28 @@ AC_DEFUN_ONCE([BPERF_SETUP_BUILD_JOBS],
 AC_DEFUN([BPERF_SETUP_CCACHE],
 [
   AC_ARG_ENABLE([ccache],
-      [AS_HELP_STRING([--disable-ccache],
-      [disable using ccache to speed up recompilations @<:@enabled@:>@])],
-      [ENABLE_CCACHE=${enable_ccache}], [ENABLE_CCACHE=yes])
-  if test "x$ENABLE_CCACHE" = xyes; then
+      [AS_HELP_STRING([--enable-ccache],
+      [enable using ccache to speed up recompilations @<:@disabled@:>@])])
+
+  CCACHE=
+  AC_MSG_CHECKING([is ccache enabled])
+  ENABLE_CCACHE=$enable_ccache
+  if test "x$enable_ccache" = xyes; then
+    AC_MSG_RESULT([yes])
     OLD_PATH="$PATH"
     if test "x$TOOLS_DIR" != x; then
       PATH=$TOOLS_DIR:$PATH
     fi
-    AC_PATH_PROG(CCACHE, ccache)
+    BASIC_REQUIRE_PROG(CCACHE, ccache)
+    CCACHE_STATUS="enabled"
     PATH="$OLD_PATH"
+  elif test "x$enable_ccache" = xno; then
+    AC_MSG_RESULT([no, explicitly disabled])
+  elif test "x$enable_ccache" = x; then
+    AC_MSG_RESULT([no])
   else
-    AC_MSG_CHECKING([for ccache])
-    AC_MSG_RESULT([explicitly disabled])
-    CCACHE=
+    AC_MSG_RESULT([unknown])
+    AC_MSG_ERROR([--enable-ccache does not accept any parameters])
   fi
   AC_SUBST(CCACHE)
 
@@ -185,8 +193,11 @@ AC_DEFUN([BPERF_SETUP_CCACHE],
     # When using a non home ccache directory, assume the use is to share ccache files
     # with other users. Thus change the umask.
     SET_CCACHE_DIR="CCACHE_DIR=$with_ccache_dir CCACHE_UMASK=002"
+    if test "x$CCACHE" = x; then
+      AC_MSG_WARN([--with-ccache-dir has no meaning when ccache is not enabled])
+    fi
   fi
-  CCACHE_FOUND=""
+
   if test "x$CCACHE" != x; then
     BPERF_SETUP_CCACHE_USAGE
   fi
@@ -195,7 +206,6 @@ AC_DEFUN([BPERF_SETUP_CCACHE],
 AC_DEFUN([BPERF_SETUP_CCACHE_USAGE],
 [
   if test "x$CCACHE" != x; then
-    CCACHE_FOUND="true"
     # Only use ccache if it is 3.1.4 or later, which supports
     # precompiled headers.
     AC_MSG_CHECKING([if ccache supports precompiled headers])
@@ -203,6 +213,7 @@ AC_DEFUN([BPERF_SETUP_CCACHE_USAGE],
     if test "x$HAS_GOOD_CCACHE" = x; then
       AC_MSG_RESULT([no, disabling ccache])
       CCACHE=
+      CCACHE_STATUS="disabled"
     else
       AC_MSG_RESULT([yes])
       AC_MSG_CHECKING([if C-compiler supports ccache precompiled headers])
@@ -215,6 +226,7 @@ AC_DEFUN([BPERF_SETUP_CCACHE_USAGE],
       else
         AC_MSG_RESULT([no, disabling ccaching of precompiled headers])
         CCACHE=
+        CCACHE_STATUS="disabled"
       fi
     fi
   fi

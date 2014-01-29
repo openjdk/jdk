@@ -1736,8 +1736,8 @@ Optional Features:
   --disable-precompiled-headers
                           disable using precompiled headers when compiling C++
                           [enabled]
-  --disable-ccache        disable using ccache to speed up recompilations
-                          [enabled]
+  --enable-ccache         enable using ccache to speed up recompilations
+                          [disabled]
 
 Optional Packages:
   --with-PACKAGE[=ARG]    use PACKAGE [ARG=yes]
@@ -3868,7 +3868,7 @@ fi
 #CUSTOM_AUTOCONF_INCLUDE
 
 # Do not change or remove the following line, it is needed for consistency checks:
-DATE_WHEN_GENERATED=1390947033
+DATE_WHEN_GENERATED=1390989605
 
 ###############################################################################
 #
@@ -36165,18 +36165,26 @@ $as_echo "yes" >&6; }
 
   # Check whether --enable-ccache was given.
 if test "${enable_ccache+set}" = set; then :
-  enableval=$enable_ccache; ENABLE_CCACHE=${enable_ccache}
-else
-  ENABLE_CCACHE=yes
+  enableval=$enable_ccache;
 fi
 
-  if test "x$ENABLE_CCACHE" = xyes; then
+
+  CCACHE=
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking is ccache enabled" >&5
+$as_echo_n "checking is ccache enabled... " >&6; }
+  ENABLE_CCACHE=$enable_ccache
+  if test "x$enable_ccache" = xyes; then
+    { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+$as_echo "yes" >&6; }
     OLD_PATH="$PATH"
     if test "x$TOOLS_DIR" != x; then
       PATH=$TOOLS_DIR:$PATH
     fi
-    # Extract the first word of "ccache", so it can be a program name with args.
-set dummy ccache; ac_word=$2
+
+  for ac_prog in ccache
+do
+  # Extract the first word of "$ac_prog", so it can be a program name with args.
+set dummy $ac_prog; ac_word=$2
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
 $as_echo_n "checking for $ac_word... " >&6; }
 if ${ac_cv_path_CCACHE+:} false; then :
@@ -36215,13 +36223,34 @@ $as_echo "no" >&6; }
 fi
 
 
+  test -n "$CCACHE" && break
+done
+
+
+  if test "x$CCACHE" = x; then
+    if test "xccache" = x; then
+      PROG_NAME=ccache
+    else
+      PROG_NAME=ccache
+    fi
+    { $as_echo "$as_me:${as_lineno-$LINENO}: Could not find $PROG_NAME!" >&5
+$as_echo "$as_me: Could not find $PROG_NAME!" >&6;}
+    as_fn_error $? "Cannot continue" "$LINENO" 5
+  fi
+
+
+    CCACHE_STATUS="enabled"
     PATH="$OLD_PATH"
+  elif test "x$enable_ccache" = xno; then
+    { $as_echo "$as_me:${as_lineno-$LINENO}: result: no, explicitly disabled" >&5
+$as_echo "no, explicitly disabled" >&6; }
+  elif test "x$enable_ccache" = x; then
+    { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
   else
-    { $as_echo "$as_me:${as_lineno-$LINENO}: checking for ccache" >&5
-$as_echo_n "checking for ccache... " >&6; }
-    { $as_echo "$as_me:${as_lineno-$LINENO}: result: explicitly disabled" >&5
-$as_echo "explicitly disabled" >&6; }
-    CCACHE=
+    { $as_echo "$as_me:${as_lineno-$LINENO}: result: unknown" >&5
+$as_echo "unknown" >&6; }
+    as_fn_error $? "--enable-ccache does not accept any parameters" "$LINENO" 5
   fi
 
 
@@ -36236,12 +36265,15 @@ fi
     # When using a non home ccache directory, assume the use is to share ccache files
     # with other users. Thus change the umask.
     SET_CCACHE_DIR="CCACHE_DIR=$with_ccache_dir CCACHE_UMASK=002"
+    if test "x$CCACHE" = x; then
+      { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: --with-ccache-dir has no meaning when ccache is not enabled" >&5
+$as_echo "$as_me: WARNING: --with-ccache-dir has no meaning when ccache is not enabled" >&2;}
+    fi
   fi
-  CCACHE_FOUND=""
+
   if test "x$CCACHE" != x; then
 
   if test "x$CCACHE" != x; then
-    CCACHE_FOUND="true"
     # Only use ccache if it is 3.1.4 or later, which supports
     # precompiled headers.
     { $as_echo "$as_me:${as_lineno-$LINENO}: checking if ccache supports precompiled headers" >&5
@@ -36251,6 +36283,7 @@ $as_echo_n "checking if ccache supports precompiled headers... " >&6; }
       { $as_echo "$as_me:${as_lineno-$LINENO}: result: no, disabling ccache" >&5
 $as_echo "no, disabling ccache" >&6; }
       CCACHE=
+      CCACHE_STATUS="disabled"
     else
       { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
 $as_echo "yes" >&6; }
@@ -36283,6 +36316,7 @@ $as_echo "yes" >&6; }
         { $as_echo "$as_me:${as_lineno-$LINENO}: result: no, disabling ccaching of precompiled headers" >&5
 $as_echo "no, disabling ccaching of precompiled headers" >&6; }
         CCACHE=
+        CCACHE_STATUS="disabled"
       fi
     fi
   fi
@@ -36357,14 +36391,6 @@ $as_echo "$OUTPUT_DIR_IS_LOCAL" >&6; }
     IS_RECONFIGURE=yes
   else
     IS_RECONFIGURE=no
-  fi
-
-  if test -e $SRC_ROOT/build/.hide-configure-performance-hints; then
-    HIDE_PERFORMANCE_HINTS=yes
-  else
-    HIDE_PERFORMANCE_HINTS=no
-    # Hide it the next time around...
-    $TOUCH $SRC_ROOT/build/.hide-configure-performance-hints > /dev/null 2>&1
   fi
 
 
@@ -37668,22 +37694,6 @@ $CHMOD +x $OUTPUT_ROOT/compare.sh
 
   # Finally output some useful information to the user
 
-  if test "x$CCACHE_FOUND" != x; then
-    if  test "x$HAS_GOOD_CCACHE" = x; then
-      CCACHE_STATUS="installed, but disabled (version older than 3.1.4)"
-      CCACHE_HELP_MSG="You have ccache installed, but it is a version prior to 3.1.4. Try upgrading."
-    else
-      CCACHE_STATUS="installed and in use"
-    fi
-  else
-    if test "x$GCC" = xyes; then
-      CCACHE_STATUS="not installed (consider installing)"
-      CCACHE_HELP_MSG="You do not have ccache installed. Try installing it."
-    else
-      CCACHE_STATUS="not available for your system"
-    fi
-  fi
-
   printf "\n"
   printf "====================================================\n"
   printf "A new configuration has been successfully created in\n"
@@ -37714,45 +37724,10 @@ $CHMOD +x $OUTPUT_ROOT/compare.sh
   printf "Build performance summary:\n"
   printf "* Cores to use:   $JOBS\n"
   printf "* Memory limit:   $MEMORY_SIZE MB\n"
-  printf "* ccache status:  $CCACHE_STATUS\n"
+  if test "x$CCACHE_STATUS" != "x"; then
+    printf "* ccache status:  $CCACHE_STATUS\n"
+  fi
   printf "\n"
-
-  if test "x$CCACHE_HELP_MSG" != x && test "x$HIDE_PERFORMANCE_HINTS" = "xno"; then
-    printf "Build performance tip: ccache gives a tremendous speedup for C++ recompilations.\n"
-    printf "$CCACHE_HELP_MSG\n"
-
-  # Print a helpful message on how to acquire the necessary build dependency.
-  # ccache is the help tag: freetype, cups, pulse, alsa etc
-  MISSING_DEPENDENCY=ccache
-
-  if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
-    cygwin_help $MISSING_DEPENDENCY
-  elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
-    msys_help $MISSING_DEPENDENCY
-  else
-    PKGHANDLER_COMMAND=
-
-    case $PKGHANDLER in
-      apt-get)
-        apt_help     $MISSING_DEPENDENCY ;;
-      yum)
-        yum_help     $MISSING_DEPENDENCY ;;
-      port)
-        port_help    $MISSING_DEPENDENCY ;;
-      pkgutil)
-        pkgutil_help $MISSING_DEPENDENCY ;;
-      pkgadd)
-        pkgadd_help  $MISSING_DEPENDENCY ;;
-    esac
-
-    if test "x$PKGHANDLER_COMMAND" != x; then
-      HELP_MSG="You might be able to fix this by running '$PKGHANDLER_COMMAND'."
-    fi
-  fi
-
-    printf "$HELP_MSG\n"
-    printf "\n"
-  fi
 
   if test "x$BUILDING_MULTIPLE_JVM_VARIANTS" = "xyes"; then
     printf "NOTE: You have requested to build more than one version of the JVM, which\n"

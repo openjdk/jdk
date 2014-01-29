@@ -738,12 +738,4 @@ AC_DEFUN_ONCE([BASIC_TEST_USABILITY_ISSUES],
   else
     IS_RECONFIGURE=no
   fi
-
-  if test -e $SRC_ROOT/build/.hide-configure-performance-hints; then
-    HIDE_PERFORMANCE_HINTS=yes
-  else
-    HIDE_PERFORMANCE_HINTS=no
-    # Hide it the next time around...
-    $TOUCH $SRC_ROOT/build/.hide-configure-performance-hints > /dev/null 2>&1
-  fi
 ])
