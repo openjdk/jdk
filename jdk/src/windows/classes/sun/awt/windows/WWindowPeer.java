@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -90,6 +90,7 @@ public class WWindowPeer extends WPanelPeer implements WindowPeer,
     }
 
     // WComponentPeer overrides
+    @Override
     @SuppressWarnings("unchecked")
     protected void disposeImpl() {
         AppContext appContext = SunToolkit.targetToAppContext(target);
@@ -118,24 +119,30 @@ public class WWindowPeer extends WPanelPeer implements WindowPeer,
 
     // WindowPeer implementation
 
+    @Override
     public void toFront() {
         updateFocusableWindowState();
         _toFront();
     }
-    native void _toFront();
+    private native void _toFront();
+
+    @Override
     public native void toBack();
 
-    public native void setAlwaysOnTopNative(boolean value);
+    private native void setAlwaysOnTopNative(boolean value);
+
     public void setAlwaysOnTop(boolean value) {
         if ((value && ((Window)target).isVisible()) || !value) {
             setAlwaysOnTopNative(value);
         }
     }
 
+    @Override
     public void updateAlwaysOnTopState() {
         setAlwaysOnTop(((Window)target).isAlwaysOnTop());
     }
 
+    @Override
     public void updateFocusableWindowState() {
         setFocusableWindow(((Window)target).isFocusableWindow());
     }
@@ -150,12 +157,13 @@ public class WWindowPeer extends WPanelPeer implements WindowPeer,
         }
         _setTitle(title);
     }
-    native void _setTitle(String title);
+    private native void _setTitle(String title);
 
     public void setResizable(boolean resizable) {
         _setResizable(resizable);
     }
-    public native void _setResizable(boolean resizable);
+
+    private native void _setResizable(boolean resizable);
 
     // Toolkit & peer internals
 
@@ -163,6 +171,7 @@ public class WWindowPeer extends WPanelPeer implements WindowPeer,
         super(target);
     }
 
+    @Override
     void initialize() {
         super.initialize();
 
@@ -210,6 +219,7 @@ public class WWindowPeer extends WPanelPeer implements WindowPeer,
         windowType = ((Window)target).getType();
     }
 
+    @Override
     void create(WComponentPeer parent) {
         preCreate(parent);
         createAwtWindow(parent);
@@ -226,6 +236,7 @@ public class WWindowPeer extends WPanelPeer implements WindowPeer,
         super.show();
     }
 
+    @Override
     public void show() {
         updateFocusableWindowState();
 
@@ -289,7 +300,7 @@ public class WWindowPeer extends WPanelPeer implements WindowPeer,
         }
         return requestWindowFocus(cause == CausedFocusEvent.Cause.MOUSE_EVENT);
     }
-    public native boolean requestWindowFocus(boolean isMouseEventCause);
+    private native boolean requestWindowFocus(boolean isMouseEventCause);
 
     public boolean focusAllowedFor() {
         Window window = (Window)this.target;
@@ -305,7 +316,8 @@ public class WWindowPeer extends WPanelPeer implements WindowPeer,
         return true;
     }
 
-    public void hide() {
+    @Override
+    void hide() {
         WindowListener listener = windowListener;
         if (listener != null) {
             // We're not getting WINDOW_CLOSING from the native code when hiding
@@ -316,6 +328,7 @@ public class WWindowPeer extends WPanelPeer implements WindowPeer,
     }
 
     // WARNING: it's called on the Toolkit thread!
+    @Override
     void preprocessPostEvent(AWTEvent event) {
         if (event instanceof WindowEvent) {
             WindowListener listener = windowListener;
@@ -340,6 +353,7 @@ public class WWindowPeer extends WPanelPeer implements WindowPeer,
         windowListener = AWTEventMulticaster.remove(windowListener, l);
     }
 
+    @Override
     public void updateMinimumSize() {
         Dimension minimumSize = null;
         if (((Component)target).isMinimumSizeSet()) {
@@ -356,6 +370,7 @@ public class WWindowPeer extends WPanelPeer implements WindowPeer,
         }
     }
 
+    @Override
     public void updateIconImages() {
         java.util.List<Image> imageList = ((Window)target).getIconImages();
         if (imageList == null || imageList.size() == 0) {
@@ -393,6 +408,7 @@ public class WWindowPeer extends WPanelPeer implements WindowPeer,
         return modalBlocker != null;
     }
 
+     @Override
      @SuppressWarnings("deprecation")
     public void setModalBlocked(Dialog dialog, boolean blocked) {
         synchronized (((Component)getTarget()).getTreeLock()) // State lock should always be after awtLock
@@ -459,6 +475,7 @@ public class WWindowPeer extends WPanelPeer implements WindowPeer,
     void draggedToNewScreen() {
         SunToolkit.executeOnEventHandlerThread((Component)target,new Runnable()
         {
+            @Override
             public void run() {
                 displayChanged();
             }
@@ -519,6 +536,7 @@ public class WWindowPeer extends WPanelPeer implements WindowPeer,
      * reflects the current display depth information, which has
      * just changed).
      */
+    @Override
     public void displayChanged() {
         updateGC();
     }
@@ -527,6 +545,7 @@ public class WWindowPeer extends WPanelPeer implements WindowPeer,
      * Part of the DisplayChangedListener interface: components
      * do not need to react to this event
      */
+    @Override
     public void paletteChanged() {
     }
 
@@ -565,6 +584,7 @@ public class WWindowPeer extends WPanelPeer implements WindowPeer,
      private volatile int sysW = 0;
      private volatile int sysH = 0;
 
+     @Override
      public native void repositionSecurityWarning();
 
      @Override
@@ -620,6 +640,7 @@ public class WWindowPeer extends WPanelPeer implements WindowPeer,
     private native void setOpacity(int iOpacity);
     private float opacity = 1.0f;
 
+    @Override
     public void setOpacity(float opacity) {
         if (!((SunToolkit)((Window)target).getToolkit()).
             isWindowOpacitySupported())
@@ -663,6 +684,7 @@ public class WWindowPeer extends WPanelPeer implements WindowPeer,
 
     private native void setOpaqueImpl(boolean isOpaque);
 
+    @Override
     public void setOpaque(boolean isOpaque) {
         synchronized (getStateLock()) {
             if (this.isOpaque == isOpaque) {
@@ -720,8 +742,9 @@ public class WWindowPeer extends WPanelPeer implements WindowPeer,
         }
     }
 
-    public native void updateWindowImpl(int[] data, int width, int height);
+    native void updateWindowImpl(int[] data, int width, int height);
 
+    @Override
     public void updateWindow() {
         updateWindow(false);
     }
@@ -770,6 +793,7 @@ public class WWindowPeer extends WPanelPeer implements WindowPeer,
      * unregisters ActiveWindowListener listener.
      */
     private static class GuiDisposedListener implements PropertyChangeListener {
+        @Override
         public void propertyChange(PropertyChangeEvent e) {
             boolean isDisposed = (Boolean)e.getNewValue();
             if (isDisposed != true) {
@@ -795,6 +819,7 @@ public class WWindowPeer extends WPanelPeer implements WindowPeer,
      */
     @SuppressWarnings( value = {"deprecation", "unchecked"})
     private static class ActiveWindowListener implements PropertyChangeListener {
+        @Override
         public void propertyChange(PropertyChangeEvent e) {
             Window w = (Window)e.getNewValue();
             if (w == null) {

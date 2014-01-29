@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,7 +29,7 @@ import java.awt.Color;
 /*
  * This helper class maps Windows system colors to AWT Color objects.
  */
-class WColor {
+final class WColor {
 
     static final int WINDOW_BKGND = 1;  // COLOR_WINDOW
     static final int WINDOW_TEXT  = 2;  // COLOR_WINDOWTEXT
