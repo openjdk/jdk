@@ -3135,15 +3135,15 @@ class CommandLineFlags {
           "Maximum size of class area in Metaspace when compressed "        \
           "class pointers are used")                                        \
                                                                             \
-  product(uintx, MinHeapFreeRatio,    40,                                   \
+  manageable(uintx, MinHeapFreeRatio, 40,                                   \
           "The minimum percentage of heap free after GC to avoid expansion."\
-          " For most GCs this applies to the old generation. In G1 it"      \
-          " applies to the whole heap. Not supported by ParallelGC.")       \
+          " For most GCs this applies to the old generation. In G1 and"     \
+          " ParallelGC it applies to the whole heap.")                      \
                                                                             \
-  product(uintx, MaxHeapFreeRatio,    70,                                   \
+  manageable(uintx, MaxHeapFreeRatio, 70,                                   \
           "The maximum percentage of heap free after GC to avoid shrinking."\
-          " For most GCs this applies to the old generation. In G1 it"      \
-          " applies to the whole heap. Not supported by ParallelGC.")       \
+          " For most GCs this applies to the old generation. In G1 and"     \
+          " ParallelGC it applies to the whole heap.")                      \
                                                                             \
   product(intx, SoftRefLRUPolicyMSPerMB, 1000,                              \
           "Number of milliseconds per MB of free space in the heap")        \
