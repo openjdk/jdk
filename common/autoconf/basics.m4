@@ -236,35 +236,119 @@ AC_DEFUN_ONCE([BASIC_INIT],
 
 # Test that variable $1 denoting a program is not empty. If empty, exit with an error.
 # $1: variable to check
-# $2: executable name to print in warning (optional)
 AC_DEFUN([BASIC_CHECK_NONEMPTY],
 [
   if test "x[$]$1" = x; then
-    if test "x$2" = x; then
-      PROG_NAME=translit($1,A-Z,a-z)
-    else
-      PROG_NAME=$2
-    fi
-    AC_MSG_NOTICE([Could not find $PROG_NAME!])
-    AC_MSG_ERROR([Cannot continue])
+    AC_MSG_ERROR([Could not find required tool for $1])
   fi
 ])
 
-# Does AC_PATH_PROG followed by BASIC_CHECK_NONEMPTY.
-# Arguments as AC_PATH_PROG:
-# $1: variable to set
-# $2: executable name to look for
-AC_DEFUN([BASIC_REQUIRE_PROG],
+# Check that there are no unprocessed overridden variables left.
+# If so, they are an incorrect argument and we will exit with an error.
+AC_DEFUN([BASIC_CHECK_LEFTOVER_OVERRIDDEN],
 [
-  AC_PATH_PROGS($1, $2)
-  BASIC_CHECK_NONEMPTY($1, $2)
+  if test "x$CONFIGURE_OVERRIDDEN_VARIABLES" != x; then
+    # Replace the separating ! with spaces before presenting for end user.
+    unknown_variables=${CONFIGURE_OVERRIDDEN_VARIABLES//!/ }
+    AC_MSG_ERROR([The following variables are unknown to configure: $unknown_variables])
+  fi
+])
+
+# Setup a tool for the given variable. If correctly specified by the user, 
+# use that value, otherwise search for the tool using the supplied code snippet.
+# $1: variable to set
+# $2: code snippet to call to look for the tool
+AC_DEFUN([BASIC_SETUP_TOOL],
+[
+  # Publish this variable in the help.
+  AC_ARG_VAR($1, [Override default value for $1])
+
+  if test "x[$]$1" = x; then
+    # The variable is not set by user, try to locate tool using the code snippet
+    $2
+  else
+    # The variable is set, but is it from the command line or the environment?
+
+    # Try to remove the string !$1! from our list.
+    try_remove_var=${CONFIGURE_OVERRIDDEN_VARIABLES//!$1!/}
+    if test "x$try_remove_var" = "x$CONFIGURE_OVERRIDDEN_VARIABLES"; then
+      # If it failed, the variable was not from the command line. Ignore it,
+      # but warn the user (except for BASH, which is always set by the calling BASH).
+      if test "x$1" != xBASH; then
+        AC_MSG_WARN([Ignoring value of $1 from the environment. Use command line variables instead.])
+      fi
+      # Try to locate tool using the code snippet
+      $2
+    else
+      # If it succeeded, then it was overridden by the user. We will use it
+      # for the tool.
+
+      # First remove it from the list of overridden variables, so we can test
+      # for unknown variables in the end.
+      CONFIGURE_OVERRIDDEN_VARIABLES="$try_remove_var"
+
+      # Check if the provided tool contains a complete path.
+      tool_specified="[$]$1"
+      tool_basename="${tool_specified##*/}"
+      if test "x$tool_basename" = "x$tool_specified"; then
+        # A command without a complete path is provided, search $PATH.
+        AC_MSG_NOTICE([Will search for user supplied tool $1=$tool_basename])
+        AC_PATH_PROG($1, $tool_basename)
+        if test "x[$]$1" = x; then
+          AC_MSG_ERROR([User supplied tool $tool_basename could not be found])
+        fi
+      else
+        # Otherwise we believe it is a complete path. Use it as it is.
+        AC_MSG_NOTICE([Will use user supplied tool $1=$tool_specified])
+        AC_MSG_CHECKING([for $1])
+        if test ! -x "$tool_specified"; then
+          AC_MSG_RESULT([not found])
+          AC_MSG_ERROR([User supplied tool $1=$tool_specified does not exist or is not executable])
+        fi
+        AC_MSG_RESULT([$tool_specified])
+      fi
+    fi
+  fi
+])
+
+# Call BASIC_SETUP_TOOL with AC_PATH_PROGS to locate the tool
+# $1: variable to set
+# $2: executable name (or list of names) to look for
+AC_DEFUN([BASIC_PATH_PROGS],
+[
+  BASIC_SETUP_TOOL($1, [AC_PATH_PROGS($1, $2)])
+])
+
+# Call BASIC_SETUP_TOOL with AC_CHECK_TOOLS to locate the tool
+# $1: variable to set
+# $2: executable name (or list of names) to look for
+AC_DEFUN([BASIC_CHECK_TOOLS],
+[
+  BASIC_SETUP_TOOL($1, [AC_CHECK_TOOLS($1, $2)])
+])
+
+# Like BASIC_PATH_PROGS but fails if no tool was found.
+# $1: variable to set
+# $2: executable name (or list of names) to look for
+AC_DEFUN([BASIC_REQUIRE_PROGS],
+[
+  BASIC_PATH_PROGS($1, $2)
+  BASIC_CHECK_NONEMPTY($1)
+])
+
+# Like BASIC_SETUP_TOOL but fails if no tool was found.
+# $1: variable to set
+# $2: autoconf macro to call to look for the special tool
+AC_DEFUN([BASIC_REQUIRE_SPECIAL],
+[
+  BASIC_SETUP_TOOL($1, [$2])
+  BASIC_CHECK_NONEMPTY($1)
 ])
 
 # Setup the most fundamental tools that relies on not much else to set up,
 # but is used by much of the early bootstrap code.
 AC_DEFUN_ONCE([BASIC_SETUP_FUNDAMENTAL_TOOLS],
 [
-
   # Start with tools that do not need have cross compilation support
   # and can be expected to be found in the default PATH. These tools are
   # used by configure. Nor are these tools expected to be found in the
@@ -272,57 +356,50 @@ AC_DEFUN_ONCE([BASIC_SETUP_FUNDAMENTAL_TOOLS],
   # needed to download the devkit.
 
   # First are all the simple required tools.
-  BASIC_REQUIRE_PROG(BASENAME, basename)
-  BASIC_REQUIRE_PROG(BASH, bash)
-  BASIC_REQUIRE_PROG(CAT, cat)
-  BASIC_REQUIRE_PROG(CHMOD, chmod)
-  BASIC_REQUIRE_PROG(CMP, cmp)
-  BASIC_REQUIRE_PROG(COMM, comm)
-  BASIC_REQUIRE_PROG(CP, cp)
-  BASIC_REQUIRE_PROG(CPIO, cpio)
-  BASIC_REQUIRE_PROG(CUT, cut)
-  BASIC_REQUIRE_PROG(DATE, date)
-  BASIC_REQUIRE_PROG(DIFF, [gdiff diff])
-  BASIC_REQUIRE_PROG(DIRNAME, dirname)
-  BASIC_REQUIRE_PROG(ECHO, echo)
-  BASIC_REQUIRE_PROG(EXPR, expr)
-  BASIC_REQUIRE_PROG(FILE, file)
-  BASIC_REQUIRE_PROG(FIND, find)
-  BASIC_REQUIRE_PROG(HEAD, head)
-  BASIC_REQUIRE_PROG(LN, ln)
-  BASIC_REQUIRE_PROG(LS, ls)
-  BASIC_REQUIRE_PROG(MKDIR, mkdir)
-  BASIC_REQUIRE_PROG(MKTEMP, mktemp)
-  BASIC_REQUIRE_PROG(MV, mv)
-  BASIC_REQUIRE_PROG(PRINTF, printf)
-  BASIC_REQUIRE_PROG(RM, rm)
-  BASIC_REQUIRE_PROG(SH, sh)
-  BASIC_REQUIRE_PROG(SORT, sort)
-  BASIC_REQUIRE_PROG(TAIL, tail)
-  BASIC_REQUIRE_PROG(TAR, tar)
-  BASIC_REQUIRE_PROG(TEE, tee)
-  BASIC_REQUIRE_PROG(TOUCH, touch)
-  BASIC_REQUIRE_PROG(TR, tr)
-  BASIC_REQUIRE_PROG(UNAME, uname)
-  BASIC_REQUIRE_PROG(UNIQ, uniq)
-  BASIC_REQUIRE_PROG(WC, wc)
-  BASIC_REQUIRE_PROG(WHICH, which)
-  BASIC_REQUIRE_PROG(XARGS, xargs)
+  BASIC_REQUIRE_PROGS(BASENAME, basename)
+  BASIC_REQUIRE_PROGS(BASH, bash)
+  BASIC_REQUIRE_PROGS(CAT, cat)
+  BASIC_REQUIRE_PROGS(CHMOD, chmod)
+  BASIC_REQUIRE_PROGS(CMP, cmp)
+  BASIC_REQUIRE_PROGS(COMM, comm)
+  BASIC_REQUIRE_PROGS(CP, cp)
+  BASIC_REQUIRE_PROGS(CPIO, cpio)
+  BASIC_REQUIRE_PROGS(CUT, cut)
+  BASIC_REQUIRE_PROGS(DATE, date)
+  BASIC_REQUIRE_PROGS(DIFF, [gdiff diff])
+  BASIC_REQUIRE_PROGS(DIRNAME, dirname)
+  BASIC_REQUIRE_PROGS(ECHO, echo)
+  BASIC_REQUIRE_PROGS(EXPR, expr)
+  BASIC_REQUIRE_PROGS(FILE, file)
+  BASIC_REQUIRE_PROGS(FIND, find)
+  BASIC_REQUIRE_PROGS(HEAD, head)
+  BASIC_REQUIRE_PROGS(LN, ln)
+  BASIC_REQUIRE_PROGS(LS, ls)
+  BASIC_REQUIRE_PROGS(MKDIR, mkdir)
+  BASIC_REQUIRE_PROGS(MKTEMP, mktemp)
+  BASIC_REQUIRE_PROGS(MV, mv)
+  BASIC_REQUIRE_PROGS(NAWK, [nawk gawk awk])
+  BASIC_REQUIRE_PROGS(PRINTF, printf)
+  BASIC_REQUIRE_PROGS(RM, rm)
+  BASIC_REQUIRE_PROGS(SH, sh)
+  BASIC_REQUIRE_PROGS(SORT, sort)
+  BASIC_REQUIRE_PROGS(TAIL, tail)
+  BASIC_REQUIRE_PROGS(TAR, tar)
+  BASIC_REQUIRE_PROGS(TEE, tee)
+  BASIC_REQUIRE_PROGS(TOUCH, touch)
+  BASIC_REQUIRE_PROGS(TR, tr)
+  BASIC_REQUIRE_PROGS(UNAME, uname)
+  BASIC_REQUIRE_PROGS(UNIQ, uniq)
+  BASIC_REQUIRE_PROGS(WC, wc)
+  BASIC_REQUIRE_PROGS(WHICH, which)
+  BASIC_REQUIRE_PROGS(XARGS, xargs)
 
   # Then required tools that require some special treatment.
-  AC_PROG_AWK
-  BASIC_CHECK_NONEMPTY(AWK)
-  AC_PROG_GREP
-  BASIC_CHECK_NONEMPTY(GREP)
-  AC_PROG_EGREP
-  BASIC_CHECK_NONEMPTY(EGREP)
-  AC_PROG_FGREP
-  BASIC_CHECK_NONEMPTY(FGREP)
-  AC_PROG_SED
-  BASIC_CHECK_NONEMPTY(SED)
-
-  AC_PATH_PROGS(NAWK, [nawk gawk awk])
-  BASIC_CHECK_NONEMPTY(NAWK)
+  BASIC_REQUIRE_SPECIAL(AWK, [AC_PROG_AWK])
+  BASIC_REQUIRE_SPECIAL(GREP, [AC_PROG_GREP])
+  BASIC_REQUIRE_SPECIAL(EGREP, [AC_PROG_EGREP])
+  BASIC_REQUIRE_SPECIAL(FGREP, [AC_PROG_FGREP])
+  BASIC_REQUIRE_SPECIAL(SED, [AC_PROG_SED])
 
   # Always force rm.
   RM="$RM -f"
@@ -332,10 +409,10 @@ AC_DEFUN_ONCE([BASIC_SETUP_FUNDAMENTAL_TOOLS],
   THEPWDCMD=pwd
 
   # These are not required on all platforms
-  AC_PATH_PROG(CYGPATH, cygpath)
-  AC_PATH_PROG(READLINK, readlink)
-  AC_PATH_PROG(DF, df)
-  AC_PATH_PROG(SETFILE, SetFile)
+  BASIC_PATH_PROGS(CYGPATH, cygpath)
+  BASIC_PATH_PROGS(READLINK, [greadlink readlink])
+  BASIC_PATH_PROGS(DF, df)
+  BASIC_PATH_PROGS(SETFILE, SetFile)
 ])
 
 # Setup basic configuration paths, and platform-specific stuff related to PATHs.
@@ -622,26 +699,26 @@ AC_DEFUN_ONCE([BASIC_SETUP_COMPLEX_TOOLS],
 
   # These tools might not be installed by default,
   # need hint on how to install them.
-  BASIC_REQUIRE_PROG(UNZIP, unzip)
-  BASIC_REQUIRE_PROG(ZIP, zip)
+  BASIC_REQUIRE_PROGS(UNZIP, unzip)
+  BASIC_REQUIRE_PROGS(ZIP, zip)
 
   # Non-required basic tools
 
-  AC_PATH_PROG(LDD, ldd)
+  BASIC_PATH_PROGS(LDD, ldd)
   if test "x$LDD" = "x"; then
     # List shared lib dependencies is used for
     # debug output and checking for forbidden dependencies.
     # We can build without it.
     LDD="true"
   fi
-  AC_PATH_PROG(OTOOL, otool)
+  BASIC_PATH_PROGS(OTOOL, otool)
   if test "x$OTOOL" = "x"; then
     OTOOL="true"
   fi
-  AC_PATH_PROGS(READELF, [readelf greadelf])
-  AC_PATH_PROG(HG, hg)
-  AC_PATH_PROG(STAT, stat)
-  AC_PATH_PROG(TIME, time)
+  BASIC_PATH_PROGS(READELF, [greadelf readelf])
+  BASIC_PATH_PROGS(HG, hg)
+  BASIC_PATH_PROGS(STAT, stat)
+  BASIC_PATH_PROGS(TIME, time)
   # Check if it's GNU time
   IS_GNU_TIME=`$TIME --version 2>&1 | $GREP 'GNU time'`
   if test "x$IS_GNU_TIME" != x; then
@@ -652,13 +729,13 @@ AC_DEFUN_ONCE([BASIC_SETUP_COMPLEX_TOOLS],
   AC_SUBST(IS_GNU_TIME)
 
   if test "x$OPENJDK_TARGET_OS" = "xwindows"; then
-    BASIC_REQUIRE_PROG(COMM, comm)
+    BASIC_REQUIRE_PROGS(COMM, comm)
   fi
 
   if test "x$OPENJDK_TARGET_OS" = "xmacosx"; then
-    BASIC_REQUIRE_PROG(DSYMUTIL, dsymutil)
-    BASIC_REQUIRE_PROG(XATTR, xattr)
-    AC_PATH_PROG(CODESIGN, codesign)
+    BASIC_REQUIRE_PROGS(DSYMUTIL, dsymutil)
+    BASIC_REQUIRE_PROGS(XATTR, xattr)
+    BASIC_PATH_PROGS(CODESIGN, codesign)
     if test "x$CODESIGN" != "x"; then
       # Verify that the openjdk_codesign certificate is present
       AC_MSG_CHECKING([if openjdk_codesign certificate is present])
@@ -720,6 +797,9 @@ AC_DEFUN_ONCE([BASIC_CHECK_SRC_PERMS],
 
 AC_DEFUN_ONCE([BASIC_TEST_USABILITY_ISSUES],
 [
+  # Did user specify any unknown variables?
+  BASIC_CHECK_LEFTOVER_OVERRIDDEN
+
   AC_MSG_CHECKING([if build directory is on local disk])
   BASIC_CHECK_DIR_ON_LOCAL_DISK($OUTPUT_ROOT,
       [OUTPUT_DIR_IS_LOCAL="yes"],
