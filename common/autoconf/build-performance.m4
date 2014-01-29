@@ -172,7 +172,7 @@ AC_DEFUN([BPERF_SETUP_CCACHE],
     if test "x$TOOLS_DIR" != x; then
       PATH=$TOOLS_DIR:$PATH
     fi
-    BASIC_REQUIRE_PROG(CCACHE, ccache)
+    BASIC_REQUIRE_PROGS(CCACHE, ccache)
     CCACHE_STATUS="enabled"
     PATH="$OLD_PATH"
   elif test "x$enable_ccache" = xno; then
