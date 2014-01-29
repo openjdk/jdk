@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,11 +40,12 @@ import java.util.Locale;
  * @since JDK1.3
  */
 
-class WInputMethodDescriptor implements InputMethodDescriptor {
+final class WInputMethodDescriptor implements InputMethodDescriptor {
 
     /**
      * @see java.awt.im.spi.InputMethodDescriptor#getAvailableLocales
      */
+    @Override
     public Locale[] getAvailableLocales() {
         // returns a copy of internal list for public API
         Locale[] locales = getAvailableLocalesInternal();
@@ -60,6 +61,7 @@ class WInputMethodDescriptor implements InputMethodDescriptor {
     /**
      * @see java.awt.im.spi.InputMethodDescriptor#hasDynamicLocaleList
      */
+    @Override
     public boolean hasDynamicLocaleList() {
         return true;
     }
@@ -67,6 +69,7 @@ class WInputMethodDescriptor implements InputMethodDescriptor {
     /**
      * @see java.awt.im.spi.InputMethodDescriptor#getInputMethodDisplayName
      */
+    @Override
     public synchronized String getInputMethodDisplayName(Locale inputLocale, Locale displayLanguage) {
         // We ignore the input locale.
         // When displaying for the default locale, rely on the localized AWT properties;
@@ -81,6 +84,7 @@ class WInputMethodDescriptor implements InputMethodDescriptor {
     /**
      * @see java.awt.im.spi.InputMethodDescriptor#getInputMethodIcon
      */
+    @Override
     public Image getInputMethodIcon(Locale inputLocale) {
         return null;
     }
@@ -88,6 +92,7 @@ class WInputMethodDescriptor implements InputMethodDescriptor {
     /**
      * @see java.awt.im.spi.InputMethodDescriptor#createInputMethod
      */
+    @Override
     public InputMethod createInputMethod() throws Exception {
         return new WInputMethod();
     }

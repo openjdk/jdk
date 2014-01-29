@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,14 +27,13 @@ package sun.awt.windows;
 import java.awt.*;
 import java.awt.peer.*;
 
-import java.util.Vector;
-
 import sun.awt.SunGraphicsCallback;
 
 class WPanelPeer extends WCanvasPeer implements PanelPeer {
 
     // ComponentPeer overrides
 
+    @Override
     public void paint(Graphics g) {
         super.paint(g);
         SunGraphicsCallback.PaintHeavyweightComponentsCallback.getInstance().
@@ -42,6 +41,7 @@ class WPanelPeer extends WCanvasPeer implements PanelPeer {
                           SunGraphicsCallback.LIGHTWEIGHTS |
                           SunGraphicsCallback.HEAVYWEIGHTS);
     }
+    @Override
     public void print(Graphics g) {
         super.print(g);
         SunGraphicsCallback.PrintHeavyweightComponentsCallback.getInstance().
@@ -52,6 +52,7 @@ class WPanelPeer extends WCanvasPeer implements PanelPeer {
 
     // ContainerPeer (via PanelPeer) implementation
 
+    @Override
     public Insets getInsets() {
         return insets_;
     }
@@ -73,6 +74,7 @@ class WPanelPeer extends WCanvasPeer implements PanelPeer {
         super(target);
     }
 
+    @Override
     void initialize() {
         super.initialize();
         insets_ = new Insets(0,0,0,0);

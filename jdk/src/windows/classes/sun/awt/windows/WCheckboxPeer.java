@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,12 +32,16 @@ final class WCheckboxPeer extends WComponentPeer implements CheckboxPeer {
 
     // CheckboxPeer implementation
 
+    @Override
     public native void setState(boolean state);
+    @Override
     public native void setCheckboxGroup(CheckboxGroup g);
+    @Override
     public native void setLabel(String label);
 
     private static native int getCheckMarkSize();
 
+    @Override
     public Dimension getMinimumSize() {
         String lbl = ((Checkbox)target).getLabel();
         int marksize = getCheckMarkSize();
@@ -54,6 +58,7 @@ final class WCheckboxPeer extends WComponentPeer implements CheckboxPeer {
                              Math.max(fm.getHeight() + 8,  marksize));
     }
 
+    @Override
     public boolean isFocusable() {
         return true;
     }
@@ -64,8 +69,10 @@ final class WCheckboxPeer extends WComponentPeer implements CheckboxPeer {
         super(target);
     }
 
+    @Override
     native void create(WComponentPeer parent);
 
+    @Override
     void initialize() {
         Checkbox t = (Checkbox)target;
         setState(t.getState());
@@ -79,6 +86,7 @@ final class WCheckboxPeer extends WComponentPeer implements CheckboxPeer {
         super.initialize();
     }
 
+    @Override
     public boolean shouldClearRectBeforePaint() {
         return false;
     }
@@ -88,6 +96,7 @@ final class WCheckboxPeer extends WComponentPeer implements CheckboxPeer {
     void handleAction(final boolean state) {
         final Checkbox cb = (Checkbox)this.target;
         WToolkit.executeOnEventHandlerThread(cb, new Runnable() {
+            @Override
             public void run() {
                 CheckboxGroup chg = cb.getCheckboxGroup();
                 if ((chg != null) && (cb == chg.getSelectedCheckbox()) && cb.getState()) {
