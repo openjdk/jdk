@@ -120,7 +120,7 @@ public class ClassWriter extends BasicWriter {
     public void write(ClassFile cf) {
         setClassFile(cf);
 
-        if ((options.sysInfo || options.verbose) && !options.compat) {
+        if (options.sysInfo || options.verbose) {
             if (uri != null) {
                 if (uri.getScheme().equals("file"))
                     println("Classfile " + uri.getPath());
@@ -152,7 +152,7 @@ public class ClassWriter extends BasicWriter {
             println("Compiled from \"" + getSourceFile((SourceFile_attribute) sfa) + "\"");
         }
 
-        if ((options.sysInfo || options.verbose) && !options.compat) {
+        if (options.sysInfo || options.verbose) {
             indent(-1);
         }
 
@@ -205,8 +205,7 @@ public class ClassWriter extends BasicWriter {
             attrWriter.write(cf, cf.attributes, constant_pool);
             println("minor version: " + cf.minor_version);
             println("major version: " + cf.major_version);
-            if (!options.compat)
-              writeList("flags: ", flags.getClassFlags(), "\n");
+            writeList("flags: ", flags.getClassFlags(), "\n");
             indent(-1);
             constantWriter.writeConstantPool();
         } else {
@@ -372,7 +371,7 @@ public class ClassWriter extends BasicWriter {
         }
         print(" ");
         print(getFieldName(f));
-        if (options.showConstants && !options.compat) { // BUG 4111861 print static final field contents
+        if (options.showConstants) {
             Attribute a = f.attributes.get(Attribute.ConstantValue);
             if (a instanceof ConstantValue_attribute) {
                 print(" = ");
@@ -390,7 +389,7 @@ public class ClassWriter extends BasicWriter {
         if (options.showDescriptors)
             println("descriptor: " + getValue(f.descriptor));
 
-        if (options.verbose && !options.compat)
+        if (options.verbose)
             writeList("flags: ", flags.getFieldFlags(), "\n");
 
         if (options.showAllAttrs) {
@@ -487,7 +486,7 @@ public class ClassWriter extends BasicWriter {
             println("descriptor: " + getValue(m.descriptor));
         }
 
-        if (options.verbose && !options.compat) {
+        if (options.verbose) {
             writeList("flags: ", flags.getMethodFlags(), "\n");
         }
 
@@ -553,13 +552,11 @@ public class ClassWriter extends BasicWriter {
     }
 
     Signature_attribute getSignature(Attributes attributes) {
-        if (options.compat) // javap does not recognize recent attributes
-            return null;
         return (Signature_attribute) attributes.get(Attribute.Signature);
     }
 
     String adjustVarargs(AccessFlags flags, String params) {
-        if (flags.is(ACC_VARARGS) && !options.compat) {
+        if (flags.is(ACC_VARARGS)) {
             int i = params.lastIndexOf("[]");
             if (i > 0)
                 return params.substring(0, i) + "..." + params.substring(i+2);
