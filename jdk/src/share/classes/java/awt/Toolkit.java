@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -57,7 +57,7 @@ import sun.awt.NullComponentPeer;
 import sun.awt.PeerEvent;
 import sun.awt.SunToolkit;
 import sun.awt.AWTAccessor;
-import sun.security.util.SecurityConstants;
+import sun.awt.AWTPermissions;
 
 import sun.util.CoreResourceBundleControl;
 
@@ -1731,7 +1731,7 @@ public abstract class Toolkit {
     public final EventQueue getSystemEventQueue() {
         SecurityManager security = System.getSecurityManager();
         if (security != null) {
-            security.checkPermission(SecurityConstants.AWT.CHECK_AWT_EVENTQUEUE_PERMISSION);
+            security.checkPermission(AWTPermissions.CHECK_AWT_EVENTQUEUE_PERMISSION);
         }
         return getSystemEventQueueImpl();
     }
@@ -2063,7 +2063,7 @@ public abstract class Toolkit {
         }
         SecurityManager security = System.getSecurityManager();
         if (security != null) {
-          security.checkPermission(SecurityConstants.AWT.ALL_AWT_EVENTS_PERMISSION);
+          security.checkPermission(AWTPermissions.ALL_AWT_EVENTS_PERMISSION);
         }
         synchronized (this) {
             SelectiveAWTEventListener selectiveListener =
@@ -2132,7 +2132,7 @@ public abstract class Toolkit {
         }
         SecurityManager security = System.getSecurityManager();
         if (security != null) {
-            security.checkPermission(SecurityConstants.AWT.ALL_AWT_EVENTS_PERMISSION);
+            security.checkPermission(AWTPermissions.ALL_AWT_EVENTS_PERMISSION);
         }
 
         synchronized (this) {
@@ -2197,7 +2197,7 @@ public abstract class Toolkit {
     public AWTEventListener[] getAWTEventListeners() {
         SecurityManager security = System.getSecurityManager();
         if (security != null) {
-            security.checkPermission(SecurityConstants.AWT.ALL_AWT_EVENTS_PERMISSION);
+            security.checkPermission(AWTPermissions.ALL_AWT_EVENTS_PERMISSION);
         }
         synchronized (this) {
             EventListener[] la = ToolkitEventMulticaster.getListeners(eventListener,AWTEventListener.class);
@@ -2249,7 +2249,7 @@ public abstract class Toolkit {
     public AWTEventListener[] getAWTEventListeners(long eventMask) {
         SecurityManager security = System.getSecurityManager();
         if (security != null) {
-            security.checkPermission(SecurityConstants.AWT.ALL_AWT_EVENTS_PERMISSION);
+            security.checkPermission(AWTPermissions.ALL_AWT_EVENTS_PERMISSION);
         }
         synchronized (this) {
             EventListener[] la = ToolkitEventMulticaster.getListeners(eventListener,AWTEventListener.class);
@@ -2299,6 +2299,7 @@ public abstract class Toolkit {
             super(a, b);
         }
 
+        @SuppressWarnings("overloads")
         static AWTEventListener add(AWTEventListener a,
                                     AWTEventListener b) {
             if (a == null)  return b;
@@ -2306,6 +2307,7 @@ public abstract class Toolkit {
             return new ToolkitEventMulticaster(a, b);
         }
 
+        @SuppressWarnings("overloads")
         static AWTEventListener remove(AWTEventListener l,
                                        AWTEventListener oldl) {
             return (AWTEventListener) removeInternal(l, oldl);

@@ -94,13 +94,6 @@ bool frame::safe_for_sender(JavaThread *thread) {
     // other generic buffer blobs are more problematic so we just assume they are
     // ok. adapter blobs never have a frame complete and are never ok.
 
-    // check for a valid frame_size, otherwise we are unlikely to get a valid sender_pc
-
-    if (!Interpreter::contains(_pc) && _cb->frame_size() <= 0) {
-      //assert(0, "Invalid frame_size");
-      return false;
-    }
-
     if (!_cb->is_frame_complete_at(_pc)) {
       if (_cb->is_nmethod() || _cb->is_adapter_blob() || _cb->is_runtime_stub()) {
         return false;
@@ -143,6 +136,11 @@ bool frame::safe_for_sender(JavaThread *thread) {
     } else {
       // must be some sort of compiled/runtime frame
       // fp does not have to be safe (although it could be check for c1?)
+
+      // check for a valid frame_size, otherwise we are unlikely to get a valid sender_pc
+      if (_cb->frame_size() <= 0) {
+        return false;
+      }
 
       sender_sp = _unextended_sp + _cb->frame_size();
       // On Intel the return_address is always the word on the stack

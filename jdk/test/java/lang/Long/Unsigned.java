@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 4504839 4215269 6322074
+ * @bug 4504839 4215269 6322074 8030814
  * @summary Basic tests for unsigned operations
  * @author Joseph D. Darcy
  */
@@ -310,6 +310,55 @@ public class Unsigned {
             }
         }
 
+        // test case known at one time to fail
+        errors += testUnsignedOverflow("1234567890abcdef1", 16, true);
+
+        // largest value with guard = 91 = 13*7; radix = 13
+        errors += testUnsignedOverflow("196a78a44c3bba320c", 13, false);
+
+        // smallest value with guard = 92 = 23*2*2; radix = 23
+        errors += testUnsignedOverflow("137060c6g1c1dg0", 23, false);
+
+        // guard in [92,98]: no overflow
+
+        // one less than smallest guard value to overflow: guard = 99 = 11*3*3, radix = 33
+        errors += testUnsignedOverflow("b1w8p7j5q9r6f", 33, false);
+
+        // smallest guard value to overflow: guard = 99 = 11*3*3, radix = 33
+        errors += testUnsignedOverflow("b1w8p7j5q9r6g", 33, true);
+
+        // test overflow of overflow
+        BigInteger maxUnsignedLong =
+                BigInteger.ONE.shiftLeft(64).subtract(BigInteger.ONE);
+        for (int radix = Character.MIN_RADIX; radix <= Character.MAX_RADIX; radix++) {
+            BigInteger quotient = maxUnsignedLong.divide(BigInteger.valueOf(radix));
+            for (int addend = 2; addend <= radix; addend++) {
+                BigInteger b = quotient.multiply(BigInteger.valueOf(radix + addend));
+                errors += testUnsignedOverflow(b.toString(radix), radix, b.compareTo(maxUnsignedLong) > 0);
+            }
+        }
+
+        return errors;
+    }
+
+    // test for missing or unexpected unsigned overflow exception
+    private static int testUnsignedOverflow(String s, int radix, boolean exception) {
+        int errors = 0;
+        long result;
+        try {
+            result = Long.parseUnsignedLong(s, radix);
+            if (exception) {
+                System.err.printf("Unexpected result %d for Long.parseUnsignedLong(%s,%d)\n",
+                        result, s, radix);
+                errors++;
+            }
+        } catch (NumberFormatException nfe) {
+            if (!exception) {
+                System.err.printf("Unexpected exception %s for Long.parseUnsignedLong(%s,%d)\n",
+                        nfe.toString(), s, radix);
+                errors++;
+            }
+        }
         return errors;
     }
 

@@ -166,8 +166,8 @@ public class ProfileSummaryBuilder extends AbstractBuilder {
      */
     public void buildPackageSummary(XMLNode node, Content summaryContentTree) {
         PackageDoc[] packages = configuration.profilePackages.get(profile.name);
-        for (int i = 0; i < packages.length; i++) {
-            this.pkg = packages[i];
+        for (PackageDoc aPackage : packages) {
+            this.pkg = aPackage;
             Content packageSummaryContentTree = profileWriter.getPackageSummaryHeader(this.pkg);
             buildChildren(node, packageSummaryContentTree);
             summaryContentTree.addContent(profileWriter.getPackageSummaryTree(

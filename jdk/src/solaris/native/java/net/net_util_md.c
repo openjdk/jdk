@@ -138,8 +138,7 @@ static int useExclBind = 0;
  * of the parameter is assumed to be an 'int'. If the parameter
  * cannot be obtained return -1
  */
-static int
-getParam(char *driver, char *param)
+int net_getParam(char *driver, char *param)
 {
     struct strioctl stri;
     char buf [64];
@@ -166,7 +165,7 @@ getParam(char *driver, char *param)
 
 /*
  * Iterative way to find the max value that SO_SNDBUF or SO_RCVBUF
- * for Solaris versions that do not support the ioctl() in getParam().
+ * for Solaris versions that do not support the ioctl() in net_getParam().
  * Ugly, but only called once (for each sotype).
  *
  * As an optimization, we make a guess using the default values for Solaris
@@ -738,14 +737,23 @@ static int getLocalScopeID (char *addr) {
     return 0;
 }
 
-void initLocalAddrTable () {
+void platformInit () {
     initLoopbackRoutes();
     initLocalIfs();
 }
 
+#elif defined(_AIX)
+
+/* Initialize stubs for blocking I/O workarounds (see src/solaris/native/java/net/linux_close.c) */
+extern void aix_close_init();
+
+void platformInit () {
+    aix_close_init();
+}
+
 #else
 
-void initLocalAddrTable () {}
+void platformInit () {}
 
 #endif
 
@@ -1272,6 +1280,7 @@ int
 NET_SetSockOpt(int fd, int level, int  opt, const void *arg,
                int len)
 {
+
 #ifndef IPTOS_TOS_MASK
 #define IPTOS_TOS_MASK 0x1e
 #endif
@@ -1292,9 +1301,6 @@ NET_SetSockOpt(int fd, int level, int  opt, const void *arg,
 #else
     static long maxsockbuf = -1;
 #endif
-
-    int addopt;
-    struct linger *ling;
 #endif
 
     /*
@@ -1359,7 +1365,7 @@ NET_SetSockOpt(int fd, int level, int  opt, const void *arg,
              * If that fails, we use the search algorithm in findMaxBuf()
              */
             if (!init_tcp_max_buf && sotype == SOCK_STREAM) {
-                tcp_max_buf = getParam("/dev/tcp", "tcp_max_buf");
+                tcp_max_buf = net_getParam("/dev/tcp", "tcp_max_buf");
                 if (tcp_max_buf == -1) {
                     tcp_max_buf = findMaxBuf(fd, opt, SOCK_STREAM);
                     if (tcp_max_buf == -1) {
@@ -1368,7 +1374,7 @@ NET_SetSockOpt(int fd, int level, int  opt, const void *arg,
                 }
                 init_tcp_max_buf = 1;
             } else if (!init_udp_max_buf && sotype == SOCK_DGRAM) {
-                udp_max_buf = getParam("/dev/udp", "udp_max_buf");
+                udp_max_buf = net_getParam("/dev/udp", "udp_max_buf");
                 if (udp_max_buf == -1) {
                     udp_max_buf = findMaxBuf(fd, opt, SOCK_DGRAM);
                     if (udp_max_buf == -1) {
@@ -1382,6 +1388,29 @@ NET_SetSockOpt(int fd, int level, int  opt, const void *arg,
             bufsize = (int *)arg;
             if (*bufsize > maxbuf) {
                 *bufsize = maxbuf;
+            }
+        }
+    }
+#endif
+
+#ifdef _AIX
+    if (level == SOL_SOCKET) {
+        if (opt == SO_SNDBUF || opt == SO_RCVBUF) {
+            /*
+             * Just try to set the requested size. If it fails we will leave the
+             * socket option as is. Setting the buffer size means only a hint in
+             * the jse2/java software layer, see javadoc. In the previous
+             * solution the buffer has always been truncated to a length of
+             * 0x100000 Byte, even if the technical limit has not been reached.
+             * This kind of absolute truncation was unexpected in the jck tests.
+             */
+            int ret = setsockopt(fd, level, opt, arg, len);
+            if ((ret == 0) || (ret == -1 && errno == ENOBUFS)) {
+                // Accept failure because of insufficient buffer memory resources.
+                return 0;
+            } else {
+                // Deliver all other kinds of errors.
+                return ret;
             }
         }
     }
@@ -1443,10 +1472,12 @@ NET_SetSockOpt(int fd, int level, int  opt, const void *arg,
 
         }
     }
+#endif
 
+#if defined(_ALLBSD_SOURCE) || defined(_AIX)
     /*
      * On Solaris, SO_REUSEADDR will allow multiple datagram
-     * sockets to bind to the same port.  The network jck tests
+     * sockets to bind to the same port. The network jck tests check
      * for this "feature", so we need to emulate it by turning on
      * SO_REUSEPORT as well for that combination.
      */
@@ -1460,11 +1491,9 @@ NET_SetSockOpt(int fd, int level, int  opt, const void *arg,
         }
 
         if (sotype == SOCK_DGRAM) {
-            addopt = SO_REUSEPORT;
-            setsockopt(fd, level, addopt, arg, len);
+            setsockopt(fd, level, SO_REUSEPORT, arg, len);
         }
     }
-
 #endif
 
     return setsockopt(fd, level, opt, arg, len);
@@ -1634,7 +1663,7 @@ NET_Wait(JNIEnv *env, jint fd, jint flags, jint timeout)
         if (timeout <= 0) {
           return read_rv > 0 ? 0 : -1;
         }
-        newTime = prevTime;
+        prevTime = newTime;
 
         if (read_rv > 0) {
           break;

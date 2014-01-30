@@ -964,6 +964,10 @@ public final class Subject implements java.io.Serializable {
 
         s.defaultReadObject();
 
+        // Rewrap the principals into a SecureSet
+        principals = Collections.synchronizedSet(new SecureSet<Principal>
+                                (this, PRINCIPAL_SET, principals));
+
         // The Credential {@code Set} is not serialized, but we do not
         // want the default deserialization routine to set it to null.
         this.pubCredentials = Collections.synchronizedSet

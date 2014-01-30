@@ -53,12 +53,10 @@ import static com.sun.tools.javac.main.Option.*;
  */
 public class Log extends AbstractLog {
     /** The context key for the log. */
-    public static final Context.Key<Log> logKey
-        = new Context.Key<Log>();
+    public static final Context.Key<Log> logKey = new Context.Key<>();
 
     /** The context key for the output PrintWriter. */
-    public static final Context.Key<PrintWriter> outKey =
-        new Context.Key<PrintWriter>();
+    public static final Context.Key<PrintWriter> outKey = new Context.Key<>();
 
     /* TODO: Should unify this with prefix handling in JCDiagnostic.Factory. */
     public enum PrefixKind {
@@ -164,7 +162,7 @@ public class Log extends AbstractLog {
         }
     }
 
-    public enum WriterKind { NOTICE, WARNING, ERROR };
+    public enum WriterKind { NOTICE, WARNING, ERROR }
 
     protected PrintWriter errWriter;
 
@@ -270,7 +268,7 @@ public class Log extends AbstractLog {
 
             String ek = options.get("expectKeys");
             if (ek != null)
-                expectDiagKeys = new HashSet<String>(Arrays.asList(ek.split(", *")));
+                expectDiagKeys = new HashSet<>(Arrays.asList(ek.split(", *")));
         }
 
         private int getIntOption(Options options, Option option, int defaultValue) {
@@ -339,7 +337,7 @@ public class Log extends AbstractLog {
      *  error message more than once. For each error, a pair consisting of the
      *  source file name and source code position of the error is added to the set.
      */
-    private Set<Pair<JavaFileObject, Integer>> recorded = new HashSet<Pair<JavaFileObject,Integer>>();
+    private Set<Pair<JavaFileObject, Integer>> recorded = new HashSet<>();
 
     public boolean hasDiagnosticListener() {
         return diagListener != null;
@@ -435,7 +433,7 @@ public class Log extends AbstractLog {
         if (multipleErrors || file == null)
             return true;
 
-        Pair<JavaFileObject,Integer> coords = new Pair<JavaFileObject,Integer>(file, pos);
+        Pair<JavaFileObject,Integer> coords = new Pair<>(file, pos);
         boolean shouldReport = !recorded.contains(coords);
         if (shouldReport)
             recorded.add(coords);

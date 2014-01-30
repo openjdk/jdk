@@ -36,7 +36,7 @@ final public class Messages {
         Resources.initializeMessages(Messages.class, BUNDLE_NAME);
     }
     // TODO:
-    // The names of some of the constants below looks strange.
+    // The names of some of the constants below look strange.
     // That's because they  were generated programmatically
     // from the messages. They should be cleaned up,
     // ___ should be removed etc.
@@ -269,6 +269,7 @@ final public class Messages {
     public static String SUMMARY_TAB_TAB_NAME;
     public static String SUMMARY_TAB_VM_VERSION;
     public static String THREADS;
+    public static String THREAD_TAB_INFO_LABEL_FORMAT;
     public static String THREAD_TAB_THREAD_INFO_ACCESSIBLE_NAME;
     public static String THREAD_TAB_THREAD_PLOTTER_ACCESSIBLE_NAME;
     public static String THREAD_TAB_INITIAL_STACK_TRACE_MESSAGE;

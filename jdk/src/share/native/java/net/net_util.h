@@ -42,9 +42,6 @@
 #define NET_ERROR(env, ex, msg) \
 { if (!(*env)->ExceptionOccurred(env)) JNU_ThrowByName(env, ex, msg) }
 
-#define CHECK_NULL(x) if ((x) == NULL) return;
-#define CHECK_NULL_RETURN(x, y) if ((x) == NULL) return y;
-
 /************************************************************************
  * Cached field IDs
  *
@@ -140,7 +137,7 @@ NET_InetAddressToSockaddr(JNIEnv *env, jobject iaObj, int port, struct sockaddr 
 JNIEXPORT jobject JNICALL
 NET_SockaddrToInetAddress(JNIEnv *env, struct sockaddr *him, int *port);
 
-void initLocalAddrTable ();
+void platformInit();
 void parseExclusiveBindProperty(JNIEnv *env);
 
 void

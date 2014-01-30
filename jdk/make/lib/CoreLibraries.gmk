@@ -43,6 +43,7 @@ ifneq ($(OPENJDK_TARGET_OS), macosx)
       CFLAGS := $(CFLAGS_JDKLIB) \
           -I$(JDK_TOPDIR)/src/share/native/java/lang/fdlibm/include, \
       CFLAGS_windows_debug := -DLOGGING, \
+      CFLAGS_aix := -qfloat=nomaf, \
       ARFLAGS := $(ARFLAGS), \
       OBJECT_DIR := $(JDK_OUTPUTDIR)/objs/libfdlibm, \
       DEBUG_SYMBOLS := $(DEBUG_ALL_BINARIES)))
@@ -198,6 +199,7 @@ $(eval $(call SetupNativeCompilation,BUILD_LIBJAVA, \
     LDFLAGS_SUFFIX_posix := -ljvm -lverify, \
     LDFLAGS_SUFFIX_solaris := -lsocket -lnsl -lscf $(LIBDL) $(BUILD_LIBFDLIBM) -lc, \
     LDFLAGS_SUFFIX_linux := $(LIBDL) $(BUILD_LIBFDLIBM), \
+    LDFLAGS_SUFFIX_aix := $(LIBDL) $(BUILD_LIBFDLIBM) -lm,\
     LDFLAGS_SUFFIX_macosx := -L$(JDK_OUTPUTDIR)/objs/ -lfdlibm \
         -framework CoreFoundation \
         -framework Foundation \
@@ -266,6 +268,7 @@ $(eval $(call SetupNativeCompilation,BUILD_LIBZIP, \
         $(WIN_JAVA_LIB), \
     LDFLAGS_SUFFIX_linux := -ljvm -ljava $(LIBZ), \
     LDFLAGS_SUFFIX_solaris := -ljvm -ljava $(LIBZ) -lc, \
+    LDFLAGS_SUFFIX_aix := -ljvm -ljava $(LIBZ),\
     LDFLAGS_SUFFIX_macosx := $(LIBZ) -ljava -ljvm, \
     VERSIONINFO_RESOURCE := $(JDK_TOPDIR)/src/windows/resource/version.rc, \
     RC_FLAGS := $(RC_FLAGS) \
@@ -309,16 +312,6 @@ $(eval $(call SetupNativeCompilation,BUILD_LIBUNPACK, \
 $(BUILD_LIBUNPACK): $(BUILD_LIBJAVA)
 
 BUILD_LIBRARIES += $(BUILD_LIBUNPACK)
-
-ifeq ($(OPENJDK_TARGET_OS), windows)
-  $(INSTALL_LIBRARIES_HERE)/$(LIBRARY_PREFIX)unpack.map: $(BUILD_LIBUNPACK)
-	$(ECHO) Copying $(@F)
-	$(CP) $(patsubst %$(SHARED_LIBRARY_SUFFIX), %.map, $<) $@
-
-  $(INSTALL_LIBRARIES_HERE)/$(LIBRARY_PREFIX)unpack.pdb: $(BUILD_LIBUNPACK)
-	$(ECHO) Copying $(@F)
-	$(CP) $(patsubst %$(SHARED_LIBRARY_SUFFIX), %.pdb, $<) $@
-endif
 
 ##########################################################################################
 
@@ -414,6 +407,7 @@ $(eval $(call SetupNativeCompilation,BUILD_LIBJLI, \
     LDFLAGS_macosx := -framework Cocoa -framework Security -framework ApplicationServices, \
     LDFLAGS_SUFFIX_solaris := $(LIBZ) $(LIBDL) -lc, \
     LDFLAGS_SUFFIX_linux := $(LIBZ) $(LIBDL) -lc -lpthread, \
+    LDFLAGS_SUFFIX_aix := $(LIBZ) $(LIBDL),\
     LDFLAGS_SUFFIX_macosx := $(LIBZ), \
     LDFLAGS_SUFFIX_windows := \
         -export:JLI_Launch \
@@ -479,6 +473,22 @@ else ifeq ($(OPENJDK_TARGET_OS), macosx)
 	$(call install-file)
 
   BUILD_LIBRARIES += $(JDK_OUTPUTDIR)/objs/libjli_static.a
+
+else ifeq ($(OPENJDK_TARGET_OS), aix)
+  # AIX also requires a static libjli because the compiler doesn't support '-rpath'
+  $(eval $(call SetupNativeCompilation,BUILD_LIBJLI_STATIC,\
+      STATIC_LIBRARY:=jli_static,\
+      OUTPUT_DIR:=$(JDK_OUTPUTDIR)/objs,\
+      SRC:=$(BUILD_LIBJLI_SRC_DIRS),\
+      INCLUDE_FILES:=$(BUILD_LIBJLI_FILES),\
+      LANG:=C,\
+      OPTIMIZATION:=HIGH, \
+      CFLAGS:=$(STATIC_LIBRARY_FLAGS) $(LIBJLI_CFLAGS),\
+      ARFLAGS:=$(ARFLAGS),\
+      OBJECT_DIR:=$(JDK_OUTPUTDIR)/objs/libjli_static))
+
+  BUILD_LIBRARIES += $(JDK_OUTPUTDIR)/objs/libjli_static.a
+
 endif
 
 ##########################################################################################

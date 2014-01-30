@@ -376,9 +376,6 @@ public final class Integer extends Number implements Comparable<Integer> {
         // JIT case the dispatch overhead doesn't exist and the
         // "trick" is considerably faster than the classic code.
         //
-        // TODO-FIXME: convert (x * 52429) into the equiv shift-add
-        // sequence.
-        //
         // RE:  Division by Invariant Integers using Multiplication
         //      T Gralund, P Montgomery
         //      ACM PLDI 1994

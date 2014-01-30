@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -156,7 +156,7 @@ public abstract class AbstractDiagnosticFormatter implements DiagnosticFormatter
      * @return a Collection whose elements are the formatted arguments of the diagnostic
      */
     protected Collection<String> formatArguments(JCDiagnostic d, Locale l) {
-        ListBuffer<String> buf = new ListBuffer<String>();
+        ListBuffer<String> buf = new ListBuffer<>();
         for (Object o : d.getArgs()) {
            buf.append(formatArgument(d, o, l));
         }
@@ -389,7 +389,7 @@ public abstract class AbstractDiagnosticFormatter implements DiagnosticFormatter
         protected boolean caretEnabled;
 
         public SimpleConfiguration(Set<DiagnosticPart> parts) {
-            multilineLimits = new HashMap<MultilineLimit, Integer>();
+            multilineLimits = new HashMap<>();
             setVisible(parts);
             setMultilineLimit(MultilineLimit.DEPTH, -1);
             setMultilineLimit(MultilineLimit.LENGTH, -1);

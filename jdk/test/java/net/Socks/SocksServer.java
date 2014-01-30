@@ -89,6 +89,7 @@ public class SocksServer extends Thread {
                             return;
                         }
                         tout.write(b);
+                        tout.flush();
                     } catch (IOException e) {
                         // actually exit from the thread
                         return;
@@ -99,8 +100,8 @@ public class SocksServer extends Thread {
 
         ClientHandler(Socket s) throws IOException {
             client = s;
-            in = client.getInputStream();
-            out = client.getOutputStream();
+            in = new BufferedInputStream(client.getInputStream());
+            out = new BufferedOutputStream(client.getOutputStream());
         }
 
         private void readBuf(InputStream is, byte[] buf) throws IOException {
@@ -230,8 +231,8 @@ public class SocksServer extends Thread {
                 out.write(port & 0xff);
                 out.write(buf);
                 out.flush();
-                InputStream in2 = dest.getInputStream();
-                OutputStream out2 = dest.getOutputStream();
+                InputStream in2 = new BufferedInputStream(dest.getInputStream());
+                OutputStream out2 = new BufferedOutputStream(dest.getOutputStream());
 
                 Tunnel tunnel = new Tunnel(in2, out);
                 tunnel.start();
@@ -246,6 +247,7 @@ public class SocksServer extends Thread {
                             return;
                         }
                         out2.write(b);
+                        out2.flush();
                     } catch (IOException ex) {
                     }
                 } while (!client.isClosed());
@@ -323,8 +325,8 @@ public class SocksServer extends Thread {
             out.write((addr.getPort() >> 0) & 0xff);
             out.flush();
 
-            InputStream in2 = dest.getInputStream();
-            OutputStream out2 = dest.getOutputStream();
+            InputStream in2 = new BufferedInputStream(dest.getInputStream());
+            OutputStream out2 = new BufferedOutputStream(dest.getOutputStream());
 
             Tunnel tunnel = new Tunnel(in2, out);
             tunnel.start();
@@ -340,6 +342,7 @@ public class SocksServer extends Thread {
                         return;
                     }
                     out2.write(b);
+                    out2.flush();
                 } catch(IOException ioe) {
                 }
             } while (!client.isClosed());
@@ -384,6 +387,7 @@ public class SocksServer extends Thread {
                         return;
                     }
                     out2.write(b);
+                    out2.flush();
                 } catch(IOException ioe) {
                 }
             } while (!client.isClosed());
@@ -410,14 +414,7 @@ public class SocksServer extends Thread {
                 {
                 byte[] buf = new byte[4];
                 readBuf(in, buf);
-                int i = 0;
-                StringBuffer sb = new StringBuffer();
-                for (i = 0; i < 4; i++) {
-                    sb.append(buf[i]&0xff);
-                    if (i < 3)
-                        sb.append('.');
-                }
-                addr = sb.toString();
+                addr = InetAddress.getByAddress(buf).getHostAddress();
                 }
                 break;
             case DOMAIN_NAME:
@@ -432,14 +429,7 @@ public class SocksServer extends Thread {
                 {
                 byte[] buf = new byte[16];
                 readBuf(in, buf);
-                int i = 0;
-                StringBuffer sb = new StringBuffer();
-                for (i = 0; i<16; i++) {
-                    sb.append(Integer.toHexString(buf[i]&0xff));
-                    if (i < 15)
-                        sb.append(':');
-                }
-                addr = sb.toString();
+                addr = InetAddress.getByAddress(buf).getHostAddress();
                 }
                 break;
             }

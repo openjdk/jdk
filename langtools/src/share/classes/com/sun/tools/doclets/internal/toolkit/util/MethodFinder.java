@@ -62,9 +62,9 @@ public abstract class MethodFinder {
 
     public MethodDoc searchInterfaces(ClassDoc cd, MethodDoc method) {
         MethodDoc[] implementedMethods = (new ImplementedMethods(method, null)).build();
-        for (int i = 0; i < implementedMethods.length; i++) {
-            if (isCorrectMethod(implementedMethods[i])) {
-                return implementedMethods[i];
+        for (MethodDoc implementedMethod : implementedMethods) {
+            if (isCorrectMethod(implementedMethod)) {
+                return implementedMethod;
             }
         }
         return null;

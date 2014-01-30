@@ -110,8 +110,7 @@ public class ZipFileIndex {
 
     private boolean writeIndex = false;
 
-    private Map<String, SoftReference<RelativeDirectory>> relativeDirectoryCache =
-            new HashMap<String, SoftReference<RelativeDirectory>>();
+    private Map<String, SoftReference<RelativeDirectory>> relativeDirectoryCache = new HashMap<>();
 
 
     public synchronized boolean isOpen() {
@@ -284,7 +283,7 @@ public class ZipFileIndex {
         try {
             checkIndex();
             if (allDirs == Collections.EMPTY_SET) {
-                allDirs = new java.util.LinkedHashSet<RelativeDirectory>(directories.keySet());
+                allDirs = new java.util.LinkedHashSet<>(directories.keySet());
             }
 
             return allDirs;
@@ -449,7 +448,7 @@ public class ZipFileIndex {
 
         // construct the inflater object or reuse an existing one
         if (inflater == null)
-            inflaterRef = new SoftReference<Inflater>(inflater = new Inflater(true));
+            inflaterRef = new SoftReference<>(inflater = new Inflater(true));
 
         inflater.reset();
         inflater.setInput(src);
@@ -570,8 +569,8 @@ public class ZipFileIndex {
 
             // Add each of the files
             if (len > 0) {
-                directories = new LinkedHashMap<RelativeDirectory, DirectoryEntry>();
-                ArrayList<Entry> entryList = new ArrayList<Entry>();
+                directories = new LinkedHashMap<>();
+                ArrayList<Entry> entryList = new ArrayList<>();
                 for (int pos = 0; pos < len; ) {
                     pos = readEntry(pos, entryList, directories);
                 }
@@ -708,7 +707,7 @@ public class ZipFileIndex {
         private com.sun.tools.javac.util.List<String> zipFileEntriesDirectories = com.sun.tools.javac.util.List.<String>nil();
         private com.sun.tools.javac.util.List<Entry>  zipFileEntries = com.sun.tools.javac.util.List.<Entry>nil();
 
-        private List<Entry> entries = new ArrayList<Entry>();
+        private List<Entry> entries = new ArrayList<>();
 
         private ZipFileIndex zipFileIndex;
 
@@ -864,7 +863,7 @@ public class ZipFileIndex {
                 if (zipFile.lastModified() != fileStamp) {
                     ret = false;
                 } else {
-                    directories = new LinkedHashMap<RelativeDirectory, DirectoryEntry>();
+                    directories = new LinkedHashMap<>();
                     int numDirs = raf.readInt();
                     for (int nDirs = 0; nDirs < numDirs; nDirs++) {
                         int dirNameBytesLen = raf.readInt();
@@ -922,8 +921,8 @@ public class ZipFileIndex {
             raf.writeLong(zipFileLastModified);
             writtenSoFar += 8;
 
-            List<DirectoryEntry> directoriesToWrite = new ArrayList<DirectoryEntry>();
-            Map<RelativeDirectory, Long> offsets = new HashMap<RelativeDirectory, Long>();
+            List<DirectoryEntry> directoriesToWrite = new ArrayList<>();
+            Map<RelativeDirectory, Long> offsets = new HashMap<>();
             raf.writeInt(directories.keySet().size());
             writtenSoFar += 4;
 
@@ -1038,7 +1037,7 @@ public class ZipFileIndex {
         File absFile = (absFileRef == null ? null : absFileRef.get());
         if (absFile == null) {
             absFile = zipFile.getAbsoluteFile();
-            absFileRef = new SoftReference<File>(absFile);
+            absFileRef = new SoftReference<>(absFile);
         }
         return absFile;
     }
@@ -1052,7 +1051,7 @@ public class ZipFileIndex {
                 return rd;
         }
         rd = new RelativeDirectory(path);
-        relativeDirectoryCache.put(path, new SoftReference<RelativeDirectory>(rd));
+        relativeDirectoryCache.put(path, new SoftReference<>(rd));
         return rd;
     }
 

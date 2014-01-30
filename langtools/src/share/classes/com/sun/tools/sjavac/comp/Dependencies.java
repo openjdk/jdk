@@ -47,8 +47,7 @@ import com.sun.tools.javac.util.Name;
  * or deletion without notice.</b></p>
  */
 public class Dependencies {
-    protected static final Context.Key<Dependencies> dependenciesKey =
-        new Context.Key<Dependencies>();
+    protected static final Context.Key<Dependencies> dependenciesKey = new Context.Key<>();
 
     // The log to be used for error reporting.
     protected Log log;
@@ -77,9 +76,9 @@ public class Dependencies {
 
     public void reset()
     {
-        deps = new HashMap<Name, Set<Name>>();
-        explicitPackages = new HashSet<Name>();
-        publicApiPerClass = new HashMap<Name,StringBuffer>();
+        deps = new HashMap<>();
+        explicitPackages = new HashSet<>();
+        publicApiPerClass = new HashMap<>();
     }
 
     /**
@@ -89,14 +88,14 @@ public class Dependencies {
      * @return
      */
     public Map<String,Set<String>> getDependencies() {
-        Map<String,Set<String>> new_deps = new HashMap<String,Set<String>>();
+        Map<String,Set<String>> new_deps = new HashMap<>();
         if (explicitPackages == null) return new_deps;
         for (Name pkg : explicitPackages) {
             Set<Name> set = deps.get(pkg);
             if (set != null) {
                 Set<String> new_set = new_deps.get(pkg.toString());
                 if (new_set == null) {
-                    new_set = new HashSet<String>();
+                    new_set = new HashSet<>();
                     // Modules beware....
                     new_deps.put(":"+pkg.toString(), new_set);
                 }
@@ -121,7 +120,7 @@ public class Dependencies {
      * of all the class pubapis)
      */
     public Map<String,String> getPubapis() {
-        Map<String,String> publicApiPerPackage = new HashMap<String,String>();
+        Map<String,String> publicApiPerPackage = new HashMap<>();
         if (publicApiPerClass == null) return publicApiPerPackage;
         Name[] keys = publicApiPerClass.keySet().toArray(new Name[0]);
         Arrays.sort(keys, new CompareNames());
@@ -176,7 +175,7 @@ public class Dependencies {
         if (!currPkg.equals(depPkg)) {
             Set<Name> theset = deps.get(currPkg);
             if (theset==null) {
-                theset = new HashSet<Name>();
+                theset = new HashSet<>();
                 deps.put(currPkg, theset);
             }
             theset.add(depPkg);

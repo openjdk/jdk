@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -52,8 +52,6 @@ import javax.imageio.spi.ImageWriterSpi;
  * provider classes are registered with the <code>IIORegistry</code>,
  * which uses them for format recognition and presentation of
  * available format readers and writers.
- *
- * <p>
  *
  * @see ImageReader
  * @see ImageWriteParam
@@ -259,7 +257,7 @@ public abstract class ImageWriter implements ImageTranscoder {
      */
     public Locale[] getAvailableLocales() {
         return (availableLocales == null) ?
-            null : (Locale[])availableLocales.clone();
+            null : availableLocales.clone();
     }
 
     /**
@@ -1756,7 +1754,7 @@ public abstract class ImageWriter implements ImageTranscoder {
         int numListeners = progressListeners.size();
         for (int i = 0; i < numListeners; i++) {
             IIOWriteProgressListener listener =
-                (IIOWriteProgressListener)progressListeners.get(i);
+                progressListeners.get(i);
             listener.imageStarted(this, imageIndex);
         }
     }
@@ -1777,7 +1775,7 @@ public abstract class ImageWriter implements ImageTranscoder {
         int numListeners = progressListeners.size();
         for (int i = 0; i < numListeners; i++) {
             IIOWriteProgressListener listener =
-                (IIOWriteProgressListener)progressListeners.get(i);
+                progressListeners.get(i);
             listener.imageProgress(this, percentageDone);
         }
     }
@@ -1795,7 +1793,7 @@ public abstract class ImageWriter implements ImageTranscoder {
         int numListeners = progressListeners.size();
         for (int i = 0; i < numListeners; i++) {
             IIOWriteProgressListener listener =
-                (IIOWriteProgressListener)progressListeners.get(i);
+                progressListeners.get(i);
             listener.imageComplete(this);
         }
     }
@@ -1818,7 +1816,7 @@ public abstract class ImageWriter implements ImageTranscoder {
         int numListeners = progressListeners.size();
         for (int i = 0; i < numListeners; i++) {
             IIOWriteProgressListener listener =
-                (IIOWriteProgressListener)progressListeners.get(i);
+                progressListeners.get(i);
             listener.thumbnailStarted(this, imageIndex, thumbnailIndex);
         }
     }
@@ -1839,7 +1837,7 @@ public abstract class ImageWriter implements ImageTranscoder {
         int numListeners = progressListeners.size();
         for (int i = 0; i < numListeners; i++) {
             IIOWriteProgressListener listener =
-                (IIOWriteProgressListener)progressListeners.get(i);
+                progressListeners.get(i);
             listener.thumbnailProgress(this, percentageDone);
         }
     }
@@ -1857,7 +1855,7 @@ public abstract class ImageWriter implements ImageTranscoder {
         int numListeners = progressListeners.size();
         for (int i = 0; i < numListeners; i++) {
             IIOWriteProgressListener listener =
-                (IIOWriteProgressListener)progressListeners.get(i);
+                progressListeners.get(i);
             listener.thumbnailComplete(this);
         }
     }
@@ -1875,7 +1873,7 @@ public abstract class ImageWriter implements ImageTranscoder {
         int numListeners = progressListeners.size();
         for (int i = 0; i < numListeners; i++) {
             IIOWriteProgressListener listener =
-                (IIOWriteProgressListener)progressListeners.get(i);
+                progressListeners.get(i);
             listener.writeAborted(this);
         }
     }
@@ -1904,7 +1902,7 @@ public abstract class ImageWriter implements ImageTranscoder {
         int numListeners = warningListeners.size();
         for (int i = 0; i < numListeners; i++) {
             IIOWriteWarningListener listener =
-                (IIOWriteWarningListener)warningListeners.get(i);
+                warningListeners.get(i);
 
             listener.warningOccurred(this, imageIndex, warning);
         }
@@ -1952,8 +1950,8 @@ public abstract class ImageWriter implements ImageTranscoder {
         int numListeners = warningListeners.size();
         for (int i = 0; i < numListeners; i++) {
             IIOWriteWarningListener listener =
-                (IIOWriteWarningListener)warningListeners.get(i);
-            Locale locale = (Locale)warningLocales.get(i);
+                warningListeners.get(i);
+            Locale locale = warningLocales.get(i);
             if (locale == null) {
                 locale = Locale.getDefault();
             }

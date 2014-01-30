@@ -70,84 +70,6 @@ public final class SecurityConstants {
     // sun.security.provider.PolicyFile
     public static final AllPermission ALL_PERMISSION = new AllPermission();
 
-    /**
-     * AWT Permissions used in the JDK.
-     */
-    public static class AWT {
-        private AWT() { }
-
-        /**
-         * The class name of the factory to create java.awt.AWTPermission objects.
-         */
-        private static final String AWTFactory = "sun.awt.AWTPermissionFactory";
-
-        /**
-         * The PermissionFactory to create AWT permissions (or null if AWT is
-         * not present)
-         */
-        private static final PermissionFactory<?> factory = permissionFactory();
-
-        private static PermissionFactory<?> permissionFactory() {
-            Class<?> c;
-            try {
-                c = Class.forName(AWTFactory, false, AWT.class.getClassLoader());
-            } catch (ClassNotFoundException e) {
-                // not available
-                return null;
-            }
-            // AWT present
-            try {
-                return (PermissionFactory<?>)c.newInstance();
-            } catch (ReflectiveOperationException x) {
-                throw new InternalError(x);
-            }
-        }
-
-        private static Permission newAWTPermission(String name) {
-            return (factory == null) ? null : factory.newPermission(name);
-        }
-
-        // java.lang.SecurityManager
-        public static final Permission TOPLEVEL_WINDOW_PERMISSION =
-            newAWTPermission("showWindowWithoutWarningBanner");
-
-        // java.lang.SecurityManager
-        public static final Permission ACCESS_CLIPBOARD_PERMISSION =
-            newAWTPermission("accessClipboard");
-
-        // java.lang.SecurityManager
-        public static final Permission CHECK_AWT_EVENTQUEUE_PERMISSION =
-            newAWTPermission("accessEventQueue");
-
-        // java.awt.Dialog
-        public static final Permission TOOLKIT_MODALITY_PERMISSION =
-            newAWTPermission("toolkitModality");
-
-        // java.awt.Robot
-        public static final Permission READ_DISPLAY_PIXELS_PERMISSION =
-            newAWTPermission("readDisplayPixels");
-
-        // java.awt.Robot
-        public static final Permission CREATE_ROBOT_PERMISSION =
-            newAWTPermission("createRobot");
-
-        // java.awt.MouseInfo
-        public static final Permission WATCH_MOUSE_PERMISSION =
-            newAWTPermission("watchMousePointer");
-
-        // java.awt.Window
-        public static final Permission SET_WINDOW_ALWAYS_ON_TOP_PERMISSION =
-            newAWTPermission("setWindowAlwaysOnTop");
-
-        // java.awt.Toolkit
-        public static final Permission ALL_AWT_EVENTS_PERMISSION =
-            newAWTPermission("listenToAllAWTEvents");
-
-        // java.awt.SystemTray
-        public static final Permission ACCESS_SYSTEM_TRAY_PERMISSION =
-            newAWTPermission("accessSystemTray");
-    }
-
     // java.net.URL
     public static final NetPermission SPECIFY_HANDLER_PERMISSION =
        new NetPermission("specifyStreamHandler");
@@ -222,5 +144,5 @@ public final class SecurityConstants {
 
     // java.lang.SecurityManager
     public static final SocketPermission LOCAL_LISTEN_PERMISSION =
-        new SocketPermission("localhost:1024-", SOCKET_LISTEN_ACTION);
+        new SocketPermission("localhost:0", SOCKET_LISTEN_ACTION);
 }

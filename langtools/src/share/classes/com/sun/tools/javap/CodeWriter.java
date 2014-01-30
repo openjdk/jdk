@@ -235,8 +235,7 @@ public class CodeWriter extends BasicWriter {
     }
 
     private List<InstructionDetailWriter> getDetailWriters(Code_attribute attr) {
-        List<InstructionDetailWriter> detailWriters =
-                new ArrayList<InstructionDetailWriter>();
+        List<InstructionDetailWriter> detailWriters = new ArrayList<>();
         if (options.details.contains(InstructionDetailWriter.Kind.SOURCE)) {
             sourceWriter.reset(classWriter.getClassFile(), attr);
             if (sourceWriter.hasSource())

@@ -3380,8 +3380,7 @@ public abstract class Calendar implements Serializable, Cloneable, Comparable<Ca
 
         for (;;) {
             int min = Integer.MAX_VALUE;
-            for (int i = 0; i < stamp.length; i++) {
-                int v = stamp[i];
+            for (int v : stamp) {
                 if (v >= newStamp && min > v) {
                     min = v;
                 }

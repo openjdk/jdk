@@ -312,8 +312,8 @@ public enum Entity {
         return codes.containsKey(code) || ( 32 <= code && code < 2127);
     }
 
-    private static final Map<String,Entity> names = new HashMap<String,Entity>();
-    private static final Map<Integer,Entity> codes = new HashMap<Integer,Entity>();
+    private static final Map<String,Entity> names = new HashMap<>();
+    private static final Map<Integer,Entity> codes = new HashMap<>();
     static {
         for (Entity e: values()) {
             String name = e.name();

@@ -108,7 +108,7 @@ public class JNI extends Gen {
                                                    Mangle.Type.METHOD_JNI_SHORT));
                     pw.print("  (JNIEnv *, ");
                     List<? extends VariableElement> paramargs = md.getParameters();
-                    List<TypeMirror> args = new ArrayList<TypeMirror>();
+                    List<TypeMirror> args = new ArrayList<>();
                     for (VariableElement p: paramargs) {
                         args.add(types.erasure(p.asType()));
                     }

@@ -34,7 +34,6 @@
 /*
  * @test
  * @bug 4486658
- * @compile -source 1.5 CancelledLockLoops.java
  * @run main/timeout=2800 CancelledLockLoops
  * @summary tests lockInterruptibly.
  * Checks for responsiveness of locks to interrupts. Runs under that
@@ -49,14 +48,11 @@ import java.util.*;
 public final class CancelledLockLoops {
     static final Random rng = new Random();
     static boolean print = false;
-    static final int ITERS = 1000000;
+    static final int ITERS = 5000000;
     static final long TIMEOUT = 100;
 
     public static void main(String[] args) throws Exception {
-        int maxThreads = 5;
-        if (args.length > 0)
-            maxThreads = Integer.parseInt(args[0]);
-
+        int maxThreads = (args.length > 0) ? Integer.parseInt(args[0]) : 5;
         print = true;
 
         for (int i = 2; i <= maxThreads; i += (i+1) >>> 1) {
@@ -90,7 +86,7 @@ public final class CancelledLockLoops {
                 threads[i] = new Thread(this);
             for (int i = 0; i < threads.length; ++i)
                 threads[i].start();
-            Thread[] cancels = (Thread[]) (threads.clone());
+            Thread[] cancels = threads.clone();
             Collections.shuffle(Arrays.asList(cancels), rng);
             barrier.await();
             Thread.sleep(TIMEOUT);

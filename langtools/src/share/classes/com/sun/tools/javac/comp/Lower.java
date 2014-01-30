@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -59,8 +59,7 @@ import static com.sun.tools.javac.tree.JCTree.Tag.*;
  *  deletion without notice.</b>
  */
 public class Lower extends TreeTranslator {
-    protected static final Context.Key<Lower> lowerKey =
-        new Context.Key<Lower>();
+    protected static final Context.Key<Lower> lowerKey = new Context.Key<>();
 
     public static Lower instance(Context context) {
         Lower instance = context.get(lowerKey);
@@ -141,7 +140,7 @@ public class Lower extends TreeTranslator {
 
     /** A hash table mapping local classes to a list of pruned trees.
      */
-    public Map<ClassSymbol, List<JCTree>> prunedTree = new WeakHashMap<ClassSymbol, List<JCTree>>();
+    public Map<ClassSymbol, List<JCTree>> prunedTree = new WeakHashMap<>();
 
     /** A hash table mapping virtual accessed symbols in outer subclasses
      *  to the actually referred symbol in superclasses.
@@ -396,7 +395,7 @@ public class Lower extends TreeTranslator {
         }
     }
 
-    Map<TypeSymbol,EnumMapping> enumSwitchMap = new LinkedHashMap<TypeSymbol,EnumMapping>();
+    Map<TypeSymbol,EnumMapping> enumSwitchMap = new LinkedHashMap<>();
 
     EnumMapping mapForEnum(DiagnosticPosition pos, TypeSymbol enumClass) {
         EnumMapping map = enumSwitchMap.get(enumClass);
@@ -441,7 +440,7 @@ public class Lower extends TreeTranslator {
     class EnumMapping {
         EnumMapping(DiagnosticPosition pos, TypeSymbol forEnum) {
             this.forEnum = forEnum;
-            this.values = new LinkedHashMap<VarSymbol,Integer>();
+            this.values = new LinkedHashMap<>();
             this.pos = pos;
             Name varName = names
                 .fromString(target.syntheticNameChar() +
@@ -497,7 +496,7 @@ public class Lower extends TreeTranslator {
                 .setType(new ArrayType(syms.intType, syms.arrayClass));
 
             // try { $SwitchMap$Color[red.ordinal()] = 1; } catch (java.lang.NoSuchFieldError ex) {}
-            ListBuffer<JCStatement> stmts = new ListBuffer<JCStatement>();
+            ListBuffer<JCStatement> stmts = new ListBuffer<>();
             Symbol ordinalMethod = lookupMethod(pos,
                                                 names.ordinal,
                                                 forEnum.type,
@@ -636,7 +635,7 @@ public class Lower extends TreeTranslator {
     JCClassDecl makeEmptyClass(long flags, ClassSymbol owner, Name flatname,
             boolean addToDefs) {
         // Create class symbol.
-        ClassSymbol c = reader.defineClass(names.empty, owner);
+        ClassSymbol c = syms.defineClass(names.empty, owner);
         if (flatname != null) {
             c.flatname = flatname;
         } else {
@@ -1654,7 +1653,7 @@ public class Lower extends TreeTranslator {
             return block;
 
         // Add resource declaration or expression to block statements
-        ListBuffer<JCStatement> stats = new ListBuffer<JCStatement>();
+        ListBuffer<JCStatement> stats = new ListBuffer<>();
         JCTree resource = resources.head;
         JCExpression expr = null;
         if (resource instanceof JCVariableDecl) {
@@ -2548,9 +2547,9 @@ public class Lower extends TreeTranslator {
 
         // process each enumeration constant, adding implicit constructor parameters
         int nextOrdinal = 0;
-        ListBuffer<JCExpression> values = new ListBuffer<JCExpression>();
-        ListBuffer<JCTree> enumDefs = new ListBuffer<JCTree>();
-        ListBuffer<JCTree> otherDefs = new ListBuffer<JCTree>();
+        ListBuffer<JCExpression> values = new ListBuffer<>();
+        ListBuffer<JCTree> enumDefs = new ListBuffer<>();
+        ListBuffer<JCTree> otherDefs = new ListBuffer<>();
         for (List<JCTree> defs = tree.defs;
              defs.nonEmpty();
              defs=defs.tail) {
@@ -2824,7 +2823,7 @@ public class Lower extends TreeTranslator {
     }
     //where
         private Map<Symbol, Symbol> makeTranslationMap(JCMethodDecl tree) {
-            Map<Symbol, Symbol> translationMap = new HashMap<Symbol,Symbol>();
+            Map<Symbol, Symbol> translationMap = new HashMap<>();
             for (JCVariableDecl vd : tree.params) {
                 Symbol p = vd.sym;
                 if (p != p.baseSymbol()) {
@@ -3075,7 +3074,7 @@ public class Lower extends TreeTranslator {
         List<JCExpression> args = _args;
         if (parameters.isEmpty()) return args;
         boolean anyChanges = false;
-        ListBuffer<JCExpression> result = new ListBuffer<JCExpression>();
+        ListBuffer<JCExpression> result = new ListBuffer<>();
         while (parameters.tail.nonEmpty()) {
             JCExpression arg = translate(args.head, parameters.head);
             anyChanges |= (arg != args.head);
@@ -3086,7 +3085,7 @@ public class Lower extends TreeTranslator {
         Type parameter = parameters.head;
         if (varargsElement != null) {
             anyChanges = true;
-            ListBuffer<JCExpression> elems = new ListBuffer<JCExpression>();
+            ListBuffer<JCExpression> elems = new ListBuffer<>();
             while (args.nonEmpty()) {
                 JCExpression arg = translate(args.head, varargsElement);
                 elems.append(arg);
@@ -3611,7 +3610,7 @@ public class Lower extends TreeTranslator {
         JCArrayAccess selector = make.Indexed(map.mapVar,
                                         make.App(make.Select(tree.selector,
                                                              ordinalMethod)));
-        ListBuffer<JCCase> cases = new ListBuffer<JCCase>();
+        ListBuffer<JCCase> cases = new ListBuffer<>();
         for (JCCase c : tree.cases) {
             if (c.pat != null) {
                 VarSymbol label = (VarSymbol)TreeInfo.symbol(c.pat);
@@ -3674,16 +3673,14 @@ public class Lower extends TreeTranslator {
              * used instead of String.hashCode.
              */
 
-            ListBuffer<JCStatement> stmtList = new ListBuffer<JCStatement>();
+            ListBuffer<JCStatement> stmtList = new ListBuffer<>();
 
             // Map from String case labels to their original position in
             // the list of case labels.
-            Map<String, Integer> caseLabelToPosition =
-                new LinkedHashMap<String, Integer>(alternatives + 1, 1.0f);
+            Map<String, Integer> caseLabelToPosition = new LinkedHashMap<>(alternatives + 1, 1.0f);
 
             // Map of hash codes to the string case labels having that hashCode.
-            Map<Integer, Set<String>> hashToString =
-                new LinkedHashMap<Integer, Set<String>>(alternatives + 1, 1.0f);
+            Map<Integer, Set<String>> hashToString = new LinkedHashMap<>(alternatives + 1, 1.0f);
 
             int casePosition = 0;
             for(JCCase oneCase : caseList) {
@@ -3697,7 +3694,7 @@ public class Lower extends TreeTranslator {
 
                     Set<String> stringSet = hashToString.get(hashCode);
                     if (stringSet == null) {
-                        stringSet = new LinkedHashSet<String>(1, 1.0f);
+                        stringSet = new LinkedHashSet<>(1, 1.0f);
                         stringSet.add(labelExpr);
                         hashToString.put(hashCode, stringSet);
                     } else {
@@ -3907,18 +3904,18 @@ public class Lower extends TreeTranslator {
             currentMethodDef = null;
             outermostClassDef = (cdef.hasTag(CLASSDEF)) ? (JCClassDecl)cdef : null;
             outermostMemberDef = null;
-            this.translated = new ListBuffer<JCTree>();
-            classdefs = new HashMap<ClassSymbol,JCClassDecl>();
-            actualSymbols = new HashMap<Symbol,Symbol>();
-            freevarCache = new HashMap<ClassSymbol,List<VarSymbol>>();
+            this.translated = new ListBuffer<>();
+            classdefs = new HashMap<>();
+            actualSymbols = new HashMap<>();
+            freevarCache = new HashMap<>();
             proxies = new Scope(syms.noSymbol);
             twrVars = new Scope(syms.noSymbol);
             outerThisStack = List.nil();
-            accessNums = new HashMap<Symbol,Integer>();
-            accessSyms = new HashMap<Symbol,MethodSymbol[]>();
-            accessConstrs = new HashMap<Symbol,MethodSymbol>();
+            accessNums = new HashMap<>();
+            accessSyms = new HashMap<>();
+            accessConstrs = new HashMap<>();
             accessConstrTags = List.nil();
-            accessed = new ListBuffer<Symbol>();
+            accessed = new ListBuffer<>();
             translate(cdef, (JCExpression)null);
             for (List<Symbol> l = accessed.toList(); l.nonEmpty(); l = l.tail)
                 makeAccessible(l.head);

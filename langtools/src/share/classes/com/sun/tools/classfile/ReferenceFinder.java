@@ -94,7 +94,7 @@ public final class ReferenceFinder {
      * @throws ConstantPoolException if an error of the constant pool
      */
     public boolean parse(ClassFile cf) throws ConstantPoolException {
-        List<Integer> cprefs = new ArrayList<Integer>();
+        List<Integer> cprefs = new ArrayList<>();
         int index = 1;
         for (ConstantPool.CPInfo cpInfo : cf.constant_pool.entries()) {
             if (cpInfo.accept(cpVisitor, cf.constant_pool)) {
@@ -108,7 +108,7 @@ public final class ReferenceFinder {
         }
 
         for (Method m : cf.methods) {
-            Set<Integer> ids = new HashSet<Integer>();
+            Set<Integer> ids = new HashSet<>();
             Code_attribute c_attr = (Code_attribute) m.attributes.get(Attribute.Code);
             if (c_attr != null) {
                 for (Instruction instr : c_attr.getInstructions()) {
@@ -119,7 +119,7 @@ public final class ReferenceFinder {
                 }
             }
             if (ids.size() > 0) {
-                List<CPRefInfo> refInfos = new ArrayList<CPRefInfo>(ids.size());
+                List<CPRefInfo> refInfos = new ArrayList<>(ids.size());
                 for (int id : ids) {
                     refInfos.add(CPRefInfo.class.cast(cf.constant_pool.get(id)));
                 }

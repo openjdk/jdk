@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -51,6 +51,7 @@ import com.sun.tools.javac.main.Option;
 import com.sun.tools.javac.util.ListBuffer;
 import com.sun.tools.javac.util.Log;
 import com.sun.tools.javac.util.Options;
+import com.sun.tools.javac.util.StringUtils;
 
 import javax.tools.JavaFileManager;
 import javax.tools.StandardJavaFileManager;
@@ -143,7 +144,7 @@ public class Locations {
      * @return The elements of the path
      */
     private static Iterable<File> getPathEntries(String path, File emptyPathDefault) {
-        ListBuffer<File> entries = new ListBuffer<File>();
+        ListBuffer<File> entries = new ListBuffer<>();
         int start = 0;
         while (start <= path.length()) {
             int sep = path.indexOf(File.pathSeparatorChar, start);
@@ -166,7 +167,7 @@ public class Locations {
         private static final long serialVersionUID = 0;
 
         private boolean expandJarClassPaths = false;
-        private Set<File> canonicalValues = new HashSet<File>();
+        private Set<File> canonicalValues = new HashSet<>();
 
         public Path expandJarClassPaths(boolean x) {
             expandJarClassPaths = x;
@@ -509,7 +510,7 @@ public class Locations {
      */
     private class BootClassPathLocationHandler extends LocationHandler {
         private Collection<File> searchPath;
-        final Map<Option, String> optionValues = new EnumMap<Option,String>(Option.class);
+        final Map<Option, String> optionValues = new EnumMap<>(Option.class);
 
         /**
          * rt.jar as found on the default bootclasspath.
@@ -647,8 +648,8 @@ public class Locations {
     Map<Option, LocationHandler> handlersForOption;
 
     void initHandlers() {
-        handlersForLocation = new HashMap<Location, LocationHandler>();
-        handlersForOption = new EnumMap<Option, LocationHandler>(Option.class);
+        handlersForLocation = new HashMap<>();
+        handlersForOption = new EnumMap<>(Option.class);
 
         LocationHandler[] handlers = {
             new BootClassPathLocationHandler(),
@@ -717,7 +718,7 @@ public class Locations {
 
     /** Is this the name of an archive file? */
     private boolean isArchive(File file) {
-        String n = file.getName().toLowerCase();
+        String n = StringUtils.toLowerCase(file.getName());
         return fsInfo.isFile(file)
             && (n.endsWith(".jar") || n.endsWith(".zip"));
     }

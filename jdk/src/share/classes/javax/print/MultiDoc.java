@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -67,7 +67,7 @@ import java.io.IOException;
  * data from the print data representation object. Get the next multidoc from
  * the current multidoc, and repeat until there are no more. (The code example
  * above uses the interleaved pattern.)
- * <P>
+ *
  * <LI>
  * The <B>all-at-once</B> pattern: Get the doc from the current multidoc, and
  * save the doc in a list. Get the next multidoc from the current multidoc, and

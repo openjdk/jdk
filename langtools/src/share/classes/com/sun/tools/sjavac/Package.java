@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -71,15 +71,15 @@ public class Package implements Comparable<Package> {
     // then that module's file system name is part of the path.
     private String dirname;
     // This package depends on these packages.
-    private Set<String> dependencies = new HashSet<String>();
+    private Set<String> dependencies = new HashSet<>();
     // This package has the following dependents, that depend on this package.
-    private Set<String> dependents = new HashSet<String>();
+    private Set<String> dependents = new HashSet<>();
     // This is the public api of this package.
-    private List<String> pubapi = new ArrayList<String>();
+    private List<String> pubapi = new ArrayList<>();
     // Map from source file name to Source info object.
-    private Map<String,Source> sources = new HashMap<String,Source>();
+    private Map<String,Source> sources = new HashMap<>();
     // This package generated these artifacts.
-    private Map<String,File> artifacts = new HashMap<String,File>();
+    private Map<String,File> artifacts = new HashMap<>();
 
     public Package(Module m, String n) {
         int c = n.indexOf(":");
@@ -146,7 +146,7 @@ public class Package implements Comparable<Package> {
     public static List<String> pubapiToList(String ps)
     {
         String[] lines = ps.split("\n");
-        List<String> r = new ArrayList<String>();
+        List<String> r = new ArrayList<>();
         for (String l : lines) {
             r.add(l);
         }
@@ -213,7 +213,7 @@ public class Package implements Comparable<Package> {
     }
 
     public void saveDependencies(StringBuilder b) {
-        List<String> sorted_dependencies = new ArrayList<String>();
+        List<String> sorted_dependencies = new ArrayList<>();
         for (String key : dependencies) {
             sorted_dependencies.add(key);
         }
@@ -230,7 +230,7 @@ public class Package implements Comparable<Package> {
     }
 
     public static void savePackages(Map<String,Package> packages, StringBuilder b) {
-        List<String> sorted_packages = new ArrayList<String>();
+        List<String> sorted_packages = new ArrayList<>();
         for (String key : packages.keySet() ) {
             sorted_packages.add(key);
         }
@@ -257,7 +257,7 @@ public class Package implements Comparable<Package> {
 
     public void setArtifacts(Set<URI> as) {
         assert(!artifacts.isEmpty());
-        artifacts = new HashMap<String,File>();
+        artifacts = new HashMap<>();
         addArtifacts(as);
     }
 
@@ -279,7 +279,7 @@ public class Package implements Comparable<Package> {
     }
 
     public void saveArtifacts(StringBuilder b) {
-        List<File> sorted_artifacts = new ArrayList<File>();
+        List<File> sorted_artifacts = new ArrayList<>();
         for (File f : artifacts.values()) {
             sorted_artifacts.add(f);
         }

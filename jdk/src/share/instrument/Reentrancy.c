@@ -130,6 +130,7 @@ tryToAcquireReentrancyToken(    jvmtiEnv *  jvmtienv,
             error = confirmingTLSSet (  jvmtienv,
                                         thread,
                                         JPLIS_CURRENTLY_INSIDE_TOKEN);
+            check_phase_ret_false(error);
             jplis_assert(error == JVMTI_ERROR_NONE);
             if ( error != JVMTI_ERROR_NONE ) {
                 result = JNI_FALSE;
@@ -158,6 +159,7 @@ releaseReentrancyToken(         jvmtiEnv *  jvmtienv,
     error = confirmingTLSSet(   jvmtienv,
                                 thread,
                                 JPLIS_CURRENTLY_OUTSIDE_TOKEN);
+    check_phase_ret(error);
     jplis_assert(error == JVMTI_ERROR_NONE);
 
 }

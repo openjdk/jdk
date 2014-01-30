@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -160,9 +160,9 @@ import javax.accessibility.*;
  * the character set specified in the <code>ChangedCharSetException</code>
  * (which is an <code>IOException</code>).
  * </ol>
- * <p>
+ *
  * <dl>
- * <dt><b><font size=+1>Newlines</font></b>
+ * <dt><b>Newlines</b>
  * <dd>
  * For a discussion on how newlines are handled, see
  * <a href="text/DefaultEditorKit.html">DefaultEditorKit</a>.
@@ -189,6 +189,7 @@ import javax.accessibility.*;
  *
  * @author  Timothy Prinzing
  */
+@SuppressWarnings("serial") // Same-version serialization only
 public class JEditorPane extends JTextComponent {
 
     /**
@@ -1640,6 +1641,7 @@ public class JEditorPane extends JTextComponent {
      * has been added to the <code>java.beans</code> package.
      * Please see {@link java.beans.XMLEncoder}.
      */
+    @SuppressWarnings("serial") // Same-version serialization only
     protected class AccessibleJEditorPane extends AccessibleJTextComponent {
 
         /**
@@ -1694,6 +1696,7 @@ public class JEditorPane extends JTextComponent {
      * has been added to the <code>java.beans</code> package.
      * Please see {@link java.beans.XMLEncoder}.
      */
+    @SuppressWarnings("serial") // Same-version serialization only
     protected class AccessibleJEditorPaneHTML extends AccessibleJEditorPane {
 
         private AccessibleContext accessibleContext;

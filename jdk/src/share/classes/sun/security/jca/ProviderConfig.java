@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -58,7 +58,7 @@ final class ProviderConfig {
 
     // parameters for the Provider(String) constructor,
     // use by doLoadProvider()
-    private final static Class[] CL_STRING = { String.class };
+    private final static Class<?>[] CL_STRING = { String.class };
 
     // name of the provider class
     private final String className;

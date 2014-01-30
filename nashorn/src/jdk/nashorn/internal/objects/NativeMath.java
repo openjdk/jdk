@@ -92,7 +92,7 @@ public final class NativeMath extends ScriptObject {
      * @return abs of value
      */
     @Function(attributes = Attribute.NOT_ENUMERABLE, where = Where.CONSTRUCTOR)
-    public static Object abs(final Object self, final Object x) {
+    public static double abs(final Object self, final Object x) {
         return Math.abs(JSType.toNumber(x));
     }
 
@@ -144,7 +144,7 @@ public final class NativeMath extends ScriptObject {
      * @return acos of argument
      */
     @Function(attributes = Attribute.NOT_ENUMERABLE, where = Where.CONSTRUCTOR)
-    public static Object acos(final Object self, final Object x) {
+    public static double acos(final Object self, final Object x) {
         return Math.acos(JSType.toNumber(x));
     }
 
@@ -170,7 +170,7 @@ public final class NativeMath extends ScriptObject {
      * @return asin of argument
      */
     @Function(attributes = Attribute.NOT_ENUMERABLE, where = Where.CONSTRUCTOR)
-    public static Object asin(final Object self, final Object x) {
+    public static double asin(final Object self, final Object x) {
         return Math.asin(JSType.toNumber(x));
     }
 
@@ -196,7 +196,7 @@ public final class NativeMath extends ScriptObject {
      * @return atan of argument
      */
     @Function(attributes = Attribute.NOT_ENUMERABLE, where = Where.CONSTRUCTOR)
-    public static Object atan(final Object self, final Object x) {
+    public static double atan(final Object self, final Object x) {
         return Math.atan(JSType.toNumber(x));
     }
 
@@ -223,7 +223,7 @@ public final class NativeMath extends ScriptObject {
      * @return atan2 of x and y
      */
     @Function(attributes = Attribute.NOT_ENUMERABLE, where = Where.CONSTRUCTOR)
-    public static Object atan2(final Object self, final Object y, final Object x) {
+    public static double atan2(final Object self, final Object y, final Object x) {
         return Math.atan2(JSType.toNumber(y), JSType.toNumber(x));
     }
 
@@ -250,7 +250,7 @@ public final class NativeMath extends ScriptObject {
      * @return ceil of argument
      */
     @Function(attributes = Attribute.NOT_ENUMERABLE, where = Where.CONSTRUCTOR)
-    public static Object ceil(final Object self, final Object x) {
+    public static double ceil(final Object self, final Object x) {
         return Math.ceil(JSType.toNumber(x));
     }
 
@@ -302,7 +302,7 @@ public final class NativeMath extends ScriptObject {
      * @return cos of argument
      */
     @Function(attributes = Attribute.NOT_ENUMERABLE, where = Where.CONSTRUCTOR)
-    public static Object cos(final Object self, final Object x) {
+    public static double cos(final Object self, final Object x) {
         return Math.cos(JSType.toNumber(x));
     }
 
@@ -328,7 +328,7 @@ public final class NativeMath extends ScriptObject {
      * @return exp of argument
      */
     @Function(attributes = Attribute.NOT_ENUMERABLE, where = Where.CONSTRUCTOR)
-    public static Object exp(final Object self, final Object x) {
+    public static double exp(final Object self, final Object x) {
         return Math.exp(JSType.toNumber(x));
     }
 
@@ -341,7 +341,7 @@ public final class NativeMath extends ScriptObject {
      * @return floor of argument
      */
     @Function(attributes = Attribute.NOT_ENUMERABLE, where = Where.CONSTRUCTOR)
-    public static Object floor(final Object self, final Object x) {
+    public static double floor(final Object self, final Object x) {
         return Math.floor(JSType.toNumber(x));
     }
 
@@ -393,7 +393,7 @@ public final class NativeMath extends ScriptObject {
      * @return log of argument
      */
     @Function(attributes = Attribute.NOT_ENUMERABLE, where = Where.CONSTRUCTOR)
-    public static Object log(final Object self, final Object x) {
+    public static double log(final Object self, final Object x) {
         return Math.log(JSType.toNumber(x));
     }
 
@@ -419,7 +419,7 @@ public final class NativeMath extends ScriptObject {
      * @return the largest of the arguments, {@link Double#NEGATIVE_INFINITY} if no args given, or identity if one arg is given
      */
     @Function(arity = 2, attributes = Attribute.NOT_ENUMERABLE, where = Where.CONSTRUCTOR)
-    public static Object max(final Object self, final Object... args) {
+    public static double max(final Object self, final Object... args) {
         switch (args.length) {
         case 0:
             return Double.NEGATIVE_INFINITY;
@@ -497,7 +497,7 @@ public final class NativeMath extends ScriptObject {
      * @return the smallest of the arguments, {@link Double#NEGATIVE_INFINITY} if no args given, or identity if one arg is given
      */
     @Function(arity = 2, attributes = Attribute.NOT_ENUMERABLE, where = Where.CONSTRUCTOR)
-    public static Object min(final Object self, final Object... args) {
+    public static double min(final Object self, final Object... args) {
         switch (args.length) {
         case 0:
             return Double.POSITIVE_INFINITY;
@@ -576,7 +576,7 @@ public final class NativeMath extends ScriptObject {
      * @return x raised to the power of y
      */
     @Function(attributes = Attribute.NOT_ENUMERABLE, where = Where.CONSTRUCTOR)
-    public static Object pow(final Object self, final Object x, final Object y) {
+    public static double pow(final Object self, final Object x, final Object y) {
         return Math.pow(JSType.toNumber(x), JSType.toNumber(y));
     }
 
@@ -602,7 +602,7 @@ public final class NativeMath extends ScriptObject {
      * @return random number in the range [0..1)
      */
     @Function(attributes = Attribute.NOT_ENUMERABLE, where = Where.CONSTRUCTOR)
-    public static Object random(final Object self) {
+    public static double random(final Object self) {
         return Math.random();
     }
 
@@ -615,7 +615,7 @@ public final class NativeMath extends ScriptObject {
      * @return x rounded
      */
     @Function(attributes = Attribute.NOT_ENUMERABLE, where = Where.CONSTRUCTOR)
-    public static Object round(final Object self, final Object x) {
+    public static double round(final Object self, final Object x) {
         final double d = JSType.toNumber(x);
         if (Math.getExponent(d) >= 52) {
             return d;
@@ -632,7 +632,7 @@ public final class NativeMath extends ScriptObject {
      * @return sin of x
      */
     @Function(attributes = Attribute.NOT_ENUMERABLE, where = Where.CONSTRUCTOR)
-    public static Object sin(final Object self, final Object x) {
+    public static double sin(final Object self, final Object x) {
         return Math.sin(JSType.toNumber(x));
     }
 
@@ -658,7 +658,7 @@ public final class NativeMath extends ScriptObject {
      * @return sqrt of x
      */
     @Function(attributes = Attribute.NOT_ENUMERABLE, where = Where.CONSTRUCTOR)
-    public static Object sqrt(final Object self, final Object x) {
+    public static double sqrt(final Object self, final Object x) {
         return Math.sqrt(JSType.toNumber(x));
     }
 
@@ -684,7 +684,7 @@ public final class NativeMath extends ScriptObject {
      * @return tan of x
      */
     @Function(attributes = Attribute.NOT_ENUMERABLE, where=Where.CONSTRUCTOR)
-    public static Object tan(final Object self, final Object x) {
+    public static double tan(final Object self, final Object x) {
         return Math.tan(JSType.toNumber(x));
     }
 

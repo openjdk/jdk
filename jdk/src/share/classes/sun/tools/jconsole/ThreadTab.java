@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -65,9 +65,6 @@ class ThreadTab extends Tab implements ActionListener, DocumentListener, ListSel
     private static final Color  peakColor        = Color.red;
 
     private static final Border thinEmptyBorder  = new EmptyBorder(2, 2, 2, 2);
-
-    private static final String infoLabelFormat = "ThreadTab.infoLabelFormat";
-
 
     /*
       Hierarchy of panels and layouts for this tab:
@@ -314,7 +311,7 @@ class ThreadTab extends Tab implements ActionListener, DocumentListener, ListSel
         ThreadJList list = (ThreadJList)ev.getSource();
         final JTextArea textArea = list.textArea;
 
-        Long selected = (Long)list.getSelectedValue();
+        Long selected = list.getSelectedValue();
         if (selected == null) {
             if (lastSelected != -1) {
                 selected = lastSelected;
@@ -692,7 +689,7 @@ class ThreadTab extends Tab implements ActionListener, DocumentListener, ListSel
 
         private void updateThreadsInfo(long tlCount, long tpCount, long ttCount, long timeStamp) {
             getPlotter().addValues(timeStamp, tlCount);
-            getInfoLabel().setText(Resources.format(infoLabelFormat, tlCount, tpCount, ttCount));
+            getInfoLabel().setText(Resources.format(Messages.THREAD_TAB_INFO_LABEL_FORMAT, tlCount, tpCount, ttCount));
         }
     }
 }

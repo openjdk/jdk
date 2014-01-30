@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -109,8 +109,7 @@ class RegularFileObject extends BaseFileObject {
     public CharBuffer getCharContent(boolean ignoreEncodingErrors) throws IOException {
         CharBuffer cb = fileManager.getCachedContent(this);
         if (cb == null) {
-            InputStream in = new FileInputStream(file);
-            try {
+            try (InputStream in = new FileInputStream(file)) {
                 ByteBuffer bb = fileManager.makeByteBuffer(in);
                 JavaFileObject prev = fileManager.log.useSource(this);
                 try {
@@ -122,8 +121,6 @@ class RegularFileObject extends BaseFileObject {
                 if (!ignoreEncodingErrors) {
                     fileManager.cache(this, cb);
                 }
-            } finally {
-                in.close();
             }
         }
         return cb;
@@ -244,7 +241,7 @@ class RegularFileObject extends BaseFileObject {
         File absFile = (absFileRef == null ? null : absFileRef.get());
         if (absFile == null) {
             absFile = file.getAbsoluteFile();
-            absFileRef = new SoftReference<File>(absFile);
+            absFileRef = new SoftReference<>(absFile);
         }
         return absFile;
     }

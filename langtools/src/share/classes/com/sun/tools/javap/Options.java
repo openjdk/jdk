@@ -78,7 +78,7 @@ public class Options {
     public boolean showFlags;
     public boolean showLineAndLocalVariableTables;
     public int showAccess;
-    public Set<String> accessOptions = new HashSet<String>();
+    public Set<String> accessOptions = new HashSet<>();
     public Set<InstructionDetailWriter.Kind> details = EnumSet.noneOf(InstructionDetailWriter.Kind.class);
     public boolean showDisassembled;
     public boolean showDescriptors;

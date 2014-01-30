@@ -101,14 +101,13 @@ public class AbstractIndexWriter extends HtmlDocletWriter {
         // Display the list only if there are elements to be displayed.
         if (memberListSize > 0) {
             Content dl = new HtmlTree(HtmlTag.DL);
-            for (int i = 0; i < memberListSize; i++) {
-                Doc element = memberlist.get(i);
+            for (Doc element : memberlist) {
                 if (element instanceof MemberDoc) {
-                    addDescription((MemberDoc)element, dl);
+                    addDescription((MemberDoc) element, dl);
                 } else if (element instanceof ClassDoc) {
-                    addDescription((ClassDoc)element, dl);
+                    addDescription((ClassDoc) element, dl);
                 } else if (element instanceof PackageDoc) {
-                    addDescription((PackageDoc)element, dl);
+                    addDescription((PackageDoc) element, dl);
                 }
             }
             contentTree.addContent(dl);

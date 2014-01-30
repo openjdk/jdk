@@ -729,7 +729,7 @@ public class JavaTokenizer {
                                + new String(reader.getRawCharacters(pos, endPos))
                                + "|");
         char[] buf = reader.getRawCharacters(pos, endPos);
-        return new BasicComment<UnicodeReader>(new UnicodeReader(fac, buf, buf.length), style);
+        return new BasicComment<>(new UnicodeReader(fac, buf, buf.length), style);
     }
 
     /**

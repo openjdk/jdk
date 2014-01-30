@@ -43,8 +43,7 @@ import javax.tools.JavaFileObject;
  */
 public class Todo extends AbstractQueue<Env<AttrContext>> {
     /** The context key for the todo list. */
-    protected static final Context.Key<Todo> todoKey =
-        new Context.Key<Todo>();
+    protected static final Context.Key<Todo> todoKey = new Context.Key<>();
 
     /** Get the Todo instance for this context. */
     public static Todo instance(Context context) {
@@ -98,7 +97,7 @@ public class Todo extends AbstractQueue<Env<AttrContext>> {
 
     public Queue<Queue<Env<AttrContext>>> groupByFile() {
         if (contentsByFile == null) {
-            contentsByFile = new LinkedList<Queue<Env<AttrContext>>>();
+            contentsByFile = new LinkedList<>();
             for (Env<AttrContext> env: contents) {
                 addByFile(env);
             }
@@ -109,7 +108,7 @@ public class Todo extends AbstractQueue<Env<AttrContext>> {
     private void addByFile(Env<AttrContext> env) {
         JavaFileObject file = env.toplevel.sourcefile;
         if (fileMap == null)
-            fileMap = new HashMap<JavaFileObject, FileQueue>();
+            fileMap = new HashMap<>();
         FileQueue fq = fileMap.get(file);
         if (fq == null) {
             fq = new FileQueue();
@@ -132,7 +131,7 @@ public class Todo extends AbstractQueue<Env<AttrContext>> {
         }
     }
 
-    LinkedList<Env<AttrContext>> contents = new LinkedList<Env<AttrContext>>();
+    LinkedList<Env<AttrContext>> contents = new LinkedList<>();
     LinkedList<Queue<Env<AttrContext>>> contentsByFile;
     Map<JavaFileObject, FileQueue> fileMap;
 
@@ -167,6 +166,6 @@ public class Todo extends AbstractQueue<Env<AttrContext>> {
             return (fileContents.size() == 0 ? null : fileContents.get(0));
         }
 
-        LinkedList<Env<AttrContext>> fileContents = new LinkedList<Env<AttrContext>>();
+        LinkedList<Env<AttrContext>> fileContents = new LinkedList<>();
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -58,7 +58,7 @@ public class AccessFlags {
     public static final int ACC_ENUM          = 0x4000; // class, inner, field
     public static final int ACC_MANDATED      = 0x8000; // class, inner, field, method
 
-    public static enum Kind { Class, InnerClass, Field, Method};
+    public static enum Kind { Class, InnerClass, Field, Method}
 
     AccessFlags(ClassReader cr) throws IOException {
         this(cr.readUnsignedShort());
@@ -159,7 +159,7 @@ public class AccessFlags {
     }
 
     private static Set<String> getModifiers(int flags, int[] modifierFlags, Kind t) {
-        Set<String> s = new LinkedHashSet<String>();
+        Set<String> s = new LinkedHashSet<>();
         for (int m: modifierFlags) {
             if ((flags & m) != 0)
                 s.add(flagToModifier(m, t));
@@ -168,7 +168,7 @@ public class AccessFlags {
     }
 
     private Set<String> getFlags(int[] expectedFlags, Kind t) {
-        Set<String> s = new LinkedHashSet<String>();
+        Set<String> s = new LinkedHashSet<>();
         int f = flags;
         for (int e: expectedFlags) {
             if ((f & e) != 0) {

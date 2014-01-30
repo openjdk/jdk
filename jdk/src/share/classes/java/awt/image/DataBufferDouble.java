@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -154,7 +154,7 @@ public final class DataBufferDouble extends DataBuffer {
      */
     public DataBufferDouble(double dataArray[][], int size) {
         super(UNTRACKABLE, TYPE_DOUBLE, size, dataArray.length);
-        bankdata = (double[][]) dataArray.clone();
+        bankdata = dataArray.clone();
         data = bankdata[0];
     }
 
@@ -178,7 +178,7 @@ public final class DataBufferDouble extends DataBuffer {
      */
     public DataBufferDouble(double dataArray[][], int size, int offsets[]) {
         super(UNTRACKABLE, TYPE_DOUBLE, size, dataArray.length, offsets);
-        bankdata = (double[][]) dataArray.clone();
+        bankdata = dataArray.clone();
         data = bankdata[0];
     }
 
@@ -225,7 +225,7 @@ public final class DataBufferDouble extends DataBuffer {
      */
     public double[][] getBankData() {
         theTrackable.setUntrackable();
-        return (double[][]) bankdata.clone();
+        return bankdata.clone();
     }
 
     /**

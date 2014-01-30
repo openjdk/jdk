@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -660,7 +660,7 @@ public class XmlReaderContentHandler extends DefaultHandler {
                      //Added the handling for Class tags to take care of maps
                      //Makes an entry into the map upon end of class tag
                      try{
-                          typeMap.put(Key_map,Class.forName(Value_map));
+                          typeMap.put(Key_map,sun.reflect.misc.ReflectUtil.forName(Value_map));
 
                         }catch(ClassNotFoundException ex) {
                           throw new SAXException(MessageFormat.format(resBundle.handleGetObject("xmlrch.errmap").toString(), ex.getMessage()));

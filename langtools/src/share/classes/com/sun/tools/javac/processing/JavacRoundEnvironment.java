@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,11 +26,8 @@
 package com.sun.tools.javac.processing;
 
 import java.lang.annotation.Annotation;
-import com.sun.tools.javac.tree.JCTree.*;
 import javax.annotation.processing.*;
 import javax.lang.model.element.*;
-import javax.lang.model.type.DeclaredType;
-import javax.lang.model.type.TypeMirror;
 import javax.lang.model.util.*;
 import java.util.*;
 
@@ -114,58 +111,48 @@ public class JavacRoundEnvironment implements RoundEnvironment {
      */
     public Set<? extends Element> getElementsAnnotatedWith(TypeElement a) {
         Set<Element> result = Collections.emptySet();
-        Types typeUtil = processingEnv.getTypeUtils();
         if (a.getKind() != ElementKind.ANNOTATION_TYPE)
             throw new IllegalArgumentException(NOT_AN_ANNOTATION_TYPE + a);
 
-        DeclaredType annotationTypeElement;
-        TypeMirror tm = a.asType();
-        if ( tm instanceof DeclaredType )
-            annotationTypeElement = (DeclaredType) a.asType();
-        else
-            throw new AssertionError("Bad implementation type for " + tm);
-
-        ElementScanner8<Set<Element>, DeclaredType> scanner =
-            new AnnotationSetScanner(result, typeUtil);
+        ElementScanner8<Set<Element>, TypeElement> scanner =
+            new AnnotationSetScanner(result);
 
         for (Element element : rootElements)
-            result = scanner.scan(element, annotationTypeElement);
+            result = scanner.scan(element, a);
 
         return result;
     }
 
     // Could be written as a local class inside getElementsAnnotatedWith
     private class AnnotationSetScanner extends
-        ElementScanner8<Set<Element>, DeclaredType> {
+        ElementScanner8<Set<Element>, TypeElement> {
         // Insertion-order preserving set
-        Set<Element> annotatedElements = new LinkedHashSet<Element>();
-        Types typeUtil;
+        Set<Element> annotatedElements = new LinkedHashSet<>();
 
-        AnnotationSetScanner(Set<Element> defaultSet, Types typeUtil) {
+        AnnotationSetScanner(Set<Element> defaultSet) {
             super(defaultSet);
-            this.typeUtil = typeUtil;
         }
 
         @Override
-        public Set<Element> visitType(TypeElement e, DeclaredType p) {
+        public Set<Element> visitType(TypeElement e, TypeElement p) {
             // Type parameters are not considered to be enclosed by a type
             scan(e.getTypeParameters(), p);
             return scan(e.getEnclosedElements(), p);
         }
 
         @Override
-        public Set<Element> visitExecutable(ExecutableElement e, DeclaredType p) {
+        public Set<Element> visitExecutable(ExecutableElement e, TypeElement p) {
             // Type parameters are not considered to be enclosed by an executable
             scan(e.getTypeParameters(), p);
             return scan(e.getEnclosedElements(), p);
         }
 
         @Override
-        public Set<Element> scan(Element e, DeclaredType p) {
+        public Set<Element> scan(Element e, TypeElement p) {
             java.util.List<? extends AnnotationMirror> annotationMirrors =
                 processingEnv.getElementUtils().getAllAnnotationMirrors(e);
             for (AnnotationMirror annotationMirror : annotationMirrors) {
-                if (typeUtil.isSameType(annotationMirror.getAnnotationType(), p))
+                if (p.equals(annotationMirror.getAnnotationType().asElement()))
                     annotatedElements.add(e);
             }
             e.accept(this, p);

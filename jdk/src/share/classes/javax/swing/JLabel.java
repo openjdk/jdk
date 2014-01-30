@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -855,7 +855,6 @@ public class JLabel extends JComponent implements SwingConstants, Accessible
      *           <code>RIGHT</code>,
      *           <code>LEADING</code>, or
      *           <code>TRAILING</code> (the default).
-     * @exception IllegalArgumentException
      *
      * @see SwingConstants
      * @beaninfo

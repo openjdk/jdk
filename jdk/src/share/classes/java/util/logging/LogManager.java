@@ -31,10 +31,6 @@ import java.util.*;
 import java.security.*;
 import java.lang.ref.ReferenceQueue;
 import java.lang.ref.WeakReference;
-import java.lang.reflect.Constructor;
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
-import java.beans.PropertyChangeListener;
 import sun.misc.JavaAWTAccess;
 import sun.misc.SharedSecrets;
 
@@ -156,10 +152,6 @@ public class LogManager {
     private volatile Properties props = new Properties();
     private final static Level defaultLevel = Level.INFO;
 
-    // The map of the registered listeners. The map value is the registration
-    // count to allow for cases where the same listener is registered many times.
-    private final Map<Object,Integer> listenerMap = new HashMap<>();
-
     // LoggerContext for system loggers and user loggers
     private final LoggerContext systemContext = new SystemLoggerContext();
     private final LoggerContext userContext = new LoggerContext();
@@ -248,6 +240,11 @@ public class LogManager {
      * retrieved by calling LogManager.getLogManager.
      */
     protected LogManager() {
+        this(checkSubclassPermissions());
+    }
+
+    private LogManager(Void checked) {
+
         // Add a shutdown hook to close the global handlers.
         try {
             Runtime.getRuntime().addShutdownHook(new Cleaner());
@@ -255,6 +252,19 @@ public class LogManager {
             // If the VM is already shutting down,
             // We do not need to register shutdownHook.
         }
+    }
+
+    private static Void checkSubclassPermissions() {
+        final SecurityManager sm = System.getSecurityManager();
+        if (sm != null) {
+            // These permission will be checked in the LogManager constructor,
+            // in order to register the Cleaner() thread as a shutdown hook.
+            // Check them here to avoid the penalty of constructing the object
+            // etc...
+            sm.checkPermission(new RuntimePermission("shutdownHooks"));
+            sm.checkPermission(new RuntimePermission("setContextClassLoader"));
+        }
+        return null;
     }
 
     /**
@@ -329,6 +339,9 @@ public class LogManager {
                         // Create and retain Logger for the root of the namespace.
                         owner.rootLogger = owner.new RootLogger();
                         owner.addLogger(owner.rootLogger);
+                        if (!owner.rootLogger.isLevelInitialized()) {
+                            owner.rootLogger.setLevel(defaultLevel);
+                        }
 
                         // Adding the global Logger.
                         // Do not call Logger.getGlobal() here as this might trigger
@@ -384,85 +397,6 @@ public class LogManager {
                             });
                     } catch (Exception ex) {
                         assert false : "Exception raised while reading logging configuration: " + ex;
-                    }
-                }
-            }
-        }
-    }
-
-    /**
-     * Adds an event listener to be invoked when the logging
-     * properties are re-read. Adding multiple instances of
-     * the same event Listener results in multiple entries
-     * in the property event listener table.
-     *
-     * <p><b>WARNING:</b> This method is omitted from this class in all subset
-     * Profiles of Java SE that do not include the {@code java.beans} package.
-     * </p>
-     *
-     * @param l  event listener
-     * @exception  SecurityException  if a security manager exists and if
-     *             the caller does not have LoggingPermission("control").
-     * @exception NullPointerException if the PropertyChangeListener is null.
-     * @deprecated The dependency on {@code PropertyChangeListener} creates a
-     *             significant impediment to future modularization of the Java
-     *             platform. This method will be removed in a future release.
-     *             The global {@code LogManager} can detect changes to the
-     *             logging configuration by overridding the {@link
-     *             #readConfiguration readConfiguration} method.
-     */
-    @Deprecated
-    public void addPropertyChangeListener(PropertyChangeListener l) throws SecurityException {
-        PropertyChangeListener listener = Objects.requireNonNull(l);
-        checkPermission();
-        synchronized (listenerMap) {
-            // increment the registration count if already registered
-            Integer value = listenerMap.get(listener);
-            value = (value == null) ? 1 : (value + 1);
-            listenerMap.put(listener, value);
-        }
-    }
-
-    /**
-     * Removes an event listener for property change events.
-     * If the same listener instance has been added to the listener table
-     * through multiple invocations of <CODE>addPropertyChangeListener</CODE>,
-     * then an equivalent number of
-     * <CODE>removePropertyChangeListener</CODE> invocations are required to remove
-     * all instances of that listener from the listener table.
-     * <P>
-     * Returns silently if the given listener is not found.
-     *
-     * <p><b>WARNING:</b> This method is omitted from this class in all subset
-     * Profiles of Java SE that do not include the {@code java.beans} package.
-     * </p>
-     *
-     * @param l  event listener (can be null)
-     * @exception  SecurityException  if a security manager exists and if
-     *             the caller does not have LoggingPermission("control").
-     * @deprecated The dependency on {@code PropertyChangeListener} creates a
-     *             significant impediment to future modularization of the Java
-     *             platform. This method will be removed in a future release.
-     *             The global {@code LogManager} can detect changes to the
-     *             logging configuration by overridding the {@link
-     *             #readConfiguration readConfiguration} method.
-     */
-    @Deprecated
-    public void removePropertyChangeListener(PropertyChangeListener l) throws SecurityException {
-        checkPermission();
-        if (l != null) {
-            PropertyChangeListener listener = l;
-            synchronized (listenerMap) {
-                Integer value = listenerMap.get(listener);
-                if (value != null) {
-                    // remove from map if registration count is 1, otherwise
-                    // just decrement its count
-                    int i = value.intValue();
-                    if (i == 1) {
-                        listenerMap.remove(listener);
-                    } else {
-                        assert i > 1;
-                        listenerMap.put(listener, i - 1);
                     }
                 }
             }
@@ -938,8 +872,7 @@ public class LogManager {
             @Override
             public Object run() {
                 String names[] = parseClassNames(handlersPropertyName);
-                for (int i = 0; i < names.length; i++) {
-                    String word = names[i];
+                for (String word : names) {
                     try {
                         Class<?> clz = ClassLoader.getSystemClassLoader().loadClass(word);
                         Handler hdl = (Handler) clz.newInstance();
@@ -1318,8 +1251,7 @@ public class LogManager {
     private void resetLogger(Logger logger) {
         // Close all the Logger's handlers.
         Handler[] targets = logger.getHandlers();
-        for (int i = 0; i < targets.length; i++) {
-            Handler h = targets[i];
+        for (Handler h : targets) {
             logger.removeHandler(h);
             try {
                 h.close();
@@ -1389,8 +1321,7 @@ public class LogManager {
         // Instantiate new configuration objects.
         String names[] = parseClassNames("config");
 
-        for (int i = 0; i < names.length; i++) {
-            String word = names[i];
+        for (String word : names) {
             try {
                 Class<?> clz = ClassLoader.getSystemClassLoader().loadClass(word);
                 clz.newInstance();
@@ -1403,27 +1334,6 @@ public class LogManager {
 
         // Set levels on any pre-existing loggers, based on the new properties.
         setLevelsOnExistingLoggers();
-
-        // Notify any interested parties that our properties have changed.
-        // We first take a copy of the listener map so that we aren't holding any
-        // locks when calling the listeners.
-        Map<Object,Integer> listeners = null;
-        synchronized (listenerMap) {
-            if (!listenerMap.isEmpty())
-                listeners = new HashMap<>(listenerMap);
-        }
-        if (listeners != null) {
-            assert Beans.isBeansPresent();
-            Object ev = Beans.newPropertyChangeEvent(LogManager.class, null, null, null);
-            for (Map.Entry<Object,Integer> entry : listeners.entrySet()) {
-                Object listener = entry.getKey();
-                int count = entry.getValue().intValue();
-                for (int i = 0; i < count; i++) {
-                    Beans.invokePropertyChange(listener, ev);
-                }
-            }
-        }
-
 
         // Note that we need to reinitialize global handles when
         // they are first referenced.
@@ -1557,7 +1467,7 @@ public class LogManager {
         loadLoggerHandlers(rootLogger, null, "handlers");
     }
 
-    private final Permission controlPermission = new LoggingPermission("control", null);
+    static final Permission controlPermission = new LoggingPermission("control", null);
 
     void checkPermission() {
         SecurityManager sm = System.getSecurityManager();
@@ -1597,9 +1507,7 @@ public class LogManager {
             if (children == null) {
                 return;
             }
-            Iterator<LogNode> values = children.values().iterator();
-            while (values.hasNext()) {
-                LogNode node = values.next();
+            for (LogNode node : children.values()) {
                 LoggerWeakRef ref = node.loggerRef;
                 Logger logger = (ref == null) ? null : ref.get();
                 if (logger == null) {
@@ -1620,7 +1528,6 @@ public class LogManager {
             // to avoid calling LogManager.getLogManager() from within the
             // RootLogger constructor.
             super("", null, null, LogManager.this);
-            setLevel(defaultLevel);
         }
 
         @Override
@@ -1712,102 +1619,5 @@ public class LogManager {
             loggingMXBean =  new Logging();
         }
         return loggingMXBean;
-    }
-
-    /**
-     * A class that provides access to the java.beans.PropertyChangeListener
-     * and java.beans.PropertyChangeEvent without creating a static dependency
-     * on java.beans. This class can be removed once the addPropertyChangeListener
-     * and removePropertyChangeListener methods are removed.
-     */
-    private static class Beans {
-        private static final Class<?> propertyChangeListenerClass =
-            getClass("java.beans.PropertyChangeListener");
-
-        private static final Class<?> propertyChangeEventClass =
-            getClass("java.beans.PropertyChangeEvent");
-
-        private static final Method propertyChangeMethod =
-            getMethod(propertyChangeListenerClass,
-                      "propertyChange",
-                      propertyChangeEventClass);
-
-        private static final Constructor<?> propertyEventCtor =
-            getConstructor(propertyChangeEventClass,
-                           Object.class,
-                           String.class,
-                           Object.class,
-                           Object.class);
-
-        private static Class<?> getClass(String name) {
-            try {
-                return Class.forName(name, true, Beans.class.getClassLoader());
-            } catch (ClassNotFoundException e) {
-                return null;
-            }
-        }
-        private static Constructor<?> getConstructor(Class<?> c, Class<?>... types) {
-            try {
-                return (c == null) ? null : c.getDeclaredConstructor(types);
-            } catch (NoSuchMethodException x) {
-                throw new AssertionError(x);
-            }
-        }
-
-        private static Method getMethod(Class<?> c, String name, Class<?>... types) {
-            try {
-                return (c == null) ? null : c.getMethod(name, types);
-            } catch (NoSuchMethodException e) {
-                throw new AssertionError(e);
-            }
-        }
-
-        /**
-         * Returns {@code true} if java.beans is present.
-         */
-        static boolean isBeansPresent() {
-            return propertyChangeListenerClass != null &&
-                   propertyChangeEventClass != null;
-        }
-
-        /**
-         * Returns a new PropertyChangeEvent with the given source, property
-         * name, old and new values.
-         */
-        static Object newPropertyChangeEvent(Object source, String prop,
-                                             Object oldValue, Object newValue)
-        {
-            try {
-                return propertyEventCtor.newInstance(source, prop, oldValue, newValue);
-            } catch (InstantiationException | IllegalAccessException x) {
-                throw new AssertionError(x);
-            } catch (InvocationTargetException x) {
-                Throwable cause = x.getCause();
-                if (cause instanceof Error)
-                    throw (Error)cause;
-                if (cause instanceof RuntimeException)
-                    throw (RuntimeException)cause;
-                throw new AssertionError(x);
-            }
-        }
-
-        /**
-         * Invokes the given PropertyChangeListener's propertyChange method
-         * with the given event.
-         */
-        static void invokePropertyChange(Object listener, Object ev) {
-            try {
-                propertyChangeMethod.invoke(listener, ev);
-            } catch (IllegalAccessException x) {
-                throw new AssertionError(x);
-            } catch (InvocationTargetException x) {
-                Throwable cause = x.getCause();
-                if (cause instanceof Error)
-                    throw (Error)cause;
-                if (cause instanceof RuntimeException)
-                    throw (RuntimeException)cause;
-                throw new AssertionError(x);
-            }
-        }
     }
 }

@@ -165,7 +165,7 @@ public class TypeAnnotation {
 
         { // Write type path
             int len = cr.readUnsignedByte();
-            List<Integer> loc = new ArrayList<Integer>(len);
+            List<Integer> loc = new ArrayList<>(len);
             for (int i = 0; i < len * TypePathEntry.bytesPerEntry; ++i)
                 loc.add(cr.readUnsignedByte());
             position.location = Position.getTypePathFromBinary(loc);
@@ -342,7 +342,7 @@ public class TypeAnnotation {
 
         // For generic/array types.
         // TODO: or should we use null? Noone will use this object.
-        public List<TypePathEntry> location = new ArrayList<TypePathEntry>(0);
+        public List<TypePathEntry> location = new ArrayList<>(0);
 
         // Tree position.
         public int pos = -1;
@@ -498,7 +498,7 @@ public class TypeAnnotation {
          * @param list The bytecode representation of the type path.
          */
         public static List<TypePathEntry> getTypePathFromBinary(List<Integer> list) {
-            List<TypePathEntry> loc = new ArrayList<TypePathEntry>(list.size() / TypePathEntry.bytesPerEntry);
+            List<TypePathEntry> loc = new ArrayList<>(list.size() / TypePathEntry.bytesPerEntry);
             int idx = 0;
             while (idx < list.size()) {
                 if (idx + 1 == list.size()) {
@@ -511,7 +511,7 @@ public class TypeAnnotation {
         }
 
         public static List<Integer> getBinaryFromTypePath(List<TypePathEntry> locs) {
-            List<Integer> loc = new ArrayList<Integer>(locs.size() * TypePathEntry.bytesPerEntry);
+            List<Integer> loc = new ArrayList<>(locs.size() * TypePathEntry.bytesPerEntry);
             for (TypePathEntry tpe : locs) {
                 loc.add(tpe.tag.tag);
                 loc.add(tpe.arg);

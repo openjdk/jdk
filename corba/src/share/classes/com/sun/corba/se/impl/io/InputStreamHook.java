@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2004, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -201,7 +201,7 @@ public abstract class InputStreamHook extends ObjectInputStream
         readObjectState.endDefaultReadObject(this);
     }
 
-    public abstract void defaultReadObjectDelegate();
+    abstract void defaultReadObjectDelegate();
 
     abstract void readFields(java.util.Map fieldToValueMap)
         throws java.io.InvalidClassException, java.io.StreamCorruptedException,

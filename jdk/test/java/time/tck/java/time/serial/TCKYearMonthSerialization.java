@@ -100,4 +100,9 @@ public class TCKYearMonthSerialization extends AbstractTCKTest {
         assertSerializedBySer(YearMonth.of(2012, 9), bytes);
     }
 
+    @Test
+    public void test_invalid_serialform() throws Exception {
+        assertNotSerializable(YearMonth.class);
+    }
+
 }

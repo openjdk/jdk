@@ -98,5 +98,5 @@ public enum HtmlStyle {
     typeNameLabel,
     typeNameLink,
     typeSummary,
-    useSummary;
+    useSummary
 }

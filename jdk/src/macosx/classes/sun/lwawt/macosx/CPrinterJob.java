@@ -659,7 +659,7 @@ final class CPrinterJob extends RasterPrinterJob {
         if (onEventThread) {
             try { EventQueue.invokeAndWait(r);
             } catch (java.lang.reflect.InvocationTargetException ite) {
-                Throwable te = (Throwable)ite.getTargetException();
+                Throwable te = ite.getTargetException();
                 if (te instanceof PrinterException) throw (PrinterException)te;
                 else te.printStackTrace();
             } catch (Exception e) { e.printStackTrace(); }

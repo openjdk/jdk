@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -43,7 +43,7 @@ import javax.swing.UIManager;
  * provides a minimal set of actions for a simple editor.
  *
  * <dl>
- * <dt><b><font size=+1>Newlines</font></b>
+ * <dt><b>Newlines</b>
  * <dd>
  * There are two properties which deal with newlines.  The
  * system property, <code>line.separator</code>, is defined to be
@@ -849,6 +849,7 @@ public class DefaultEditorKit extends EditorKit {
      * @see Keymap#setDefaultAction
      * @see Keymap#getDefaultAction
      */
+    @SuppressWarnings("serial") // Same-version serialization only
     public static class DefaultKeyTypedAction extends TextAction {
 
         /**
@@ -906,6 +907,7 @@ public class DefaultEditorKit extends EditorKit {
      * @see DefaultEditorKit#insertContentAction
      * @see DefaultEditorKit#getActions
      */
+    @SuppressWarnings("serial") // Same-version serialization only
     public static class InsertContentAction extends TextAction {
 
         /**
@@ -954,6 +956,7 @@ public class DefaultEditorKit extends EditorKit {
      * @see DefaultEditorKit#insertBreakAction
      * @see DefaultEditorKit#getActions
      */
+    @SuppressWarnings("serial") // Same-version serialization only
     public static class InsertBreakAction extends TextAction {
 
         /**
@@ -996,6 +999,7 @@ public class DefaultEditorKit extends EditorKit {
      * @see DefaultEditorKit#insertTabAction
      * @see DefaultEditorKit#getActions
      */
+    @SuppressWarnings("serial") // Same-version serialization only
     public static class InsertTabAction extends TextAction {
 
         /**
@@ -1272,6 +1276,7 @@ public class DefaultEditorKit extends EditorKit {
      * @see DefaultEditorKit#cutAction
      * @see DefaultEditorKit#getActions
      */
+    @SuppressWarnings("serial") // Same-version serialization only
     public static class CutAction extends TextAction {
 
         /** Create this object with the appropriate identifier. */
@@ -1308,6 +1313,7 @@ public class DefaultEditorKit extends EditorKit {
      * @see DefaultEditorKit#copyAction
      * @see DefaultEditorKit#getActions
      */
+    @SuppressWarnings("serial") // Same-version serialization only
     public static class CopyAction extends TextAction {
 
         /** Create this object with the appropriate identifier. */
@@ -1345,6 +1351,7 @@ public class DefaultEditorKit extends EditorKit {
      * @see DefaultEditorKit#pasteAction
      * @see DefaultEditorKit#getActions
      */
+    @SuppressWarnings("serial") // Same-version serialization only
     public static class PasteAction extends TextAction {
 
         /** Create this object with the appropriate identifier. */
@@ -1380,6 +1387,7 @@ public class DefaultEditorKit extends EditorKit {
      * @see DefaultEditorKit#beepAction
      * @see DefaultEditorKit#getActions
      */
+    @SuppressWarnings("serial") // Same-version serialization only
     public static class BeepAction extends TextAction {
 
         /** Create this object with the appropriate identifier. */

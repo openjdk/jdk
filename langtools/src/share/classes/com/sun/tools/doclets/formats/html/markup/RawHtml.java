@@ -95,7 +95,7 @@ public class RawHtml extends Content {
         return rawHtmlContent;
     }
 
-    private enum State { TEXT, ENTITY, TAG, STRING };
+    private enum State { TEXT, ENTITY, TAG, STRING }
 
     @Override
     public int charCount() {

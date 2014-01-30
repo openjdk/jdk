@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
  */
 
 /*
@@ -1090,6 +1090,8 @@ public class XMLDocumentScannerImpl
 
                     ((XMLDTDScannerImpl)fDTDScanner).reset(fPropertyManager);
                 }
+
+                fDTDScanner.setLimitAnalyzer(fLimitAnalyzer);
                 do {
                     again = false;
                     switch (fScannerState) {

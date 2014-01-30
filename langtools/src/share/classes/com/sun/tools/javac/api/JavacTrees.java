@@ -398,7 +398,7 @@ public class JavacTrees extends DocTrees {
             if (ref.paramTypes == null)
                 paramTypes = null;
             else {
-                ListBuffer<Type> lb = new ListBuffer<Type>();
+                ListBuffer<Type> lb = new ListBuffer<>();
                 for (List<JCTree> l = ref.paramTypes; l.nonEmpty(); l = l.tail) {
                     JCTree tree = l.head;
                     Type t = attr.attribType(tree, env);

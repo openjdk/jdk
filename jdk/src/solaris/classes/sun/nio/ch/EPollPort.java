@@ -93,7 +93,7 @@ final class EPollPort
         try {
             socketpair(sv);
             // register one end with epoll
-            epollCtl(epfd, EPOLL_CTL_ADD, sv[0], POLLIN);
+            epollCtl(epfd, EPOLL_CTL_ADD, sv[0], Net.POLLIN);
         } catch (IOException x) {
             close0(epfd);
             throw x;

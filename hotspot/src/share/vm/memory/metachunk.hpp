@@ -143,6 +143,8 @@ class Metachunk : public Metabase<Metachunk> {
   void set_is_tagged_free(bool v) { _is_tagged_free = v; }
 #endif
 
+  bool contains(const void* ptr) { return bottom() <= ptr && ptr < _top; }
+
   NOT_PRODUCT(void mangle();)
 
   void print_on(outputStream* st) const;

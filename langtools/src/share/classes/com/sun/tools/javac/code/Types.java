@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -75,8 +75,7 @@ import static com.sun.tools.javac.jvm.ClassFile.externalize;
  * deletion without notice.</b>
  */
 public class Types {
-    protected static final Context.Key<Types> typesKey =
-        new Context.Key<Types>();
+    protected static final Context.Key<Types> typesKey = new Context.Key<>();
 
     final Symtab syms;
     final JavacMessages messages;
@@ -84,7 +83,6 @@ public class Types {
     final boolean allowBoxing;
     final boolean allowCovariantReturns;
     final boolean allowObjectToPrimitiveCast;
-    final boolean allowDefaultMethods;
     final ClassReader reader;
     final Check chk;
     final Enter enter;
@@ -111,7 +109,6 @@ public class Types {
         allowBoxing = source.allowBoxing();
         allowCovariantReturns = source.allowCovariantReturns();
         allowObjectToPrimitiveCast = source.allowObjectToPrimitiveCast();
-        allowDefaultMethods = source.allowDefaultMethods();
         reader = ClassReader.instance(context);
         chk = Check.instance(context);
         enter = Enter.instance(context);
@@ -247,8 +244,8 @@ public class Types {
                 Type base = asSuper(sym.type, t.tsym);
                 if (base == null)
                     return null;
-                ListBuffer<Type> from = new ListBuffer<Type>();
-                ListBuffer<Type> to = new ListBuffer<Type>();
+                ListBuffer<Type> from = new ListBuffer<>();
+                ListBuffer<Type> to = new ListBuffer<>();
                 try {
                     adapt(base, t, from, to);
                 } catch (AdaptFailure ex) {
@@ -257,7 +254,7 @@ public class Types {
                 Type res = subst(sym.type, from.toList(), to.toList());
                 if (!isSubtype(res, t))
                     return null;
-                ListBuffer<Type> openVars = new ListBuffer<Type>();
+                ListBuffer<Type> openVars = new ListBuffer<>();
                 for (List<Type> l = sym.type.allparams();
                      l.nonEmpty(); l = l.tail)
                     if (res.contains(l.head) && !t.contains(l.head))
@@ -269,7 +266,7 @@ public class Types {
                     } else {
                         // Unbound type arguments default to ?
                         List<Type> opens = openVars.toList();
-                        ListBuffer<Type> qs = new ListBuffer<Type>();
+                        ListBuffer<Type> qs = new ListBuffer<>();
                         for (List<Type> iter = opens; iter.nonEmpty(); iter = iter.tail) {
                             qs.append(new WildcardType(syms.objectType, BoundKind.UNBOUND, syms.boundClass, (TypeVar) iter.head.unannotatedType()));
                         }
@@ -347,7 +344,7 @@ public class Types {
      */
     class DescriptorCache {
 
-        private WeakHashMap<TypeSymbol, Entry> _map = new WeakHashMap<TypeSymbol, Entry>();
+        private WeakHashMap<TypeSymbol, Entry> _map = new WeakHashMap<>();
 
         class FunctionDescriptor {
             Symbol descSym;
@@ -727,7 +724,7 @@ public class Types {
                    !overridesObjectMethod(origin, sym) &&
                    (interfaceCandidates(origin.type, (MethodSymbol)sym).head.flags() & DEFAULT) == 0;
        }
-    };
+    }
 
     // <editor-fold defaultstate="collapsed" desc="isSubtype">
     /**
@@ -864,7 +861,7 @@ public class Types {
                  }
             }
 
-            private Set<TypePair> cache = new HashSet<TypePair>();
+            private Set<TypePair> cache = new HashSet<>();
 
             private boolean containsTypeRecursive(Type t, Type s) {
                 TypePair pair = new TypePair(t, s);
@@ -1144,7 +1141,7 @@ public class Types {
                     if (!visit(supertype(t), supertype(s)))
                         return false;
 
-                    HashSet<UniqueType> set = new HashSet<UniqueType>();
+                    HashSet<UniqueType> set = new HashSet<>();
                     for (Type x : interfaces(t))
                         set.add(new UniqueType(x.unannotatedType(), Types.this));
                     for (Type x : interfaces(s)) {
@@ -1232,9 +1229,9 @@ public class Types {
             protected boolean containsTypes(List<Type> ts1, List<Type> ts2) {
                 return containsTypeEquivalent(ts1, ts2);
             }
-        };
+        }
 
-        /**
+    /**
          * Strict type-equality relation - type variables are considered
          * equals if they share the same object identity.
          */
@@ -1707,7 +1704,7 @@ public class Types {
     // where
         private TypeRelation disjointType = new TypeRelation() {
 
-            private Set<TypePair> cache = new HashSet<TypePair>();
+            private Set<TypePair> cache = new HashSet<>();
 
             @Override
             public Boolean visitType(Type t, Type s) {
@@ -2446,7 +2443,7 @@ public class Types {
     // </editor-fold>
 
     // <editor-fold defaultstate="collapsed" desc="isDerivedRaw">
-    Map<Type,Boolean> isDerivedRawCache = new HashMap<Type,Boolean>();
+    Map<Type,Boolean> isDerivedRawCache = new HashMap<>();
 
     public boolean isDerivedRaw(Type t) {
         Boolean result = isDerivedRawCache.get(t);
@@ -2608,8 +2605,7 @@ public class Types {
     // <editor-fold defaultstate="collapsed" desc="Determining method implementation in given site">
     class ImplementationCache {
 
-        private WeakHashMap<MethodSymbol, SoftReference<Map<TypeSymbol, Entry>>> _map =
-                new WeakHashMap<MethodSymbol, SoftReference<Map<TypeSymbol, Entry>>>();
+        private WeakHashMap<MethodSymbol, SoftReference<Map<TypeSymbol, Entry>>> _map = new WeakHashMap<>();
 
         class Entry {
             final MethodSymbol cachedImpl;
@@ -2638,8 +2634,8 @@ public class Types {
             SoftReference<Map<TypeSymbol, Entry>> ref_cache = _map.get(ms);
             Map<TypeSymbol, Entry> cache = ref_cache != null ? ref_cache.get() : null;
             if (cache == null) {
-                cache = new HashMap<TypeSymbol, Entry>();
-                _map.put(ms, new SoftReference<Map<TypeSymbol, Entry>>(cache));
+                cache = new HashMap<>();
+                _map.put(ms, new SoftReference<>(cache));
             }
             Entry e = cache.get(origin);
             CompoundScope members = membersClosure(origin.type, true);
@@ -2681,8 +2677,7 @@ public class Types {
     // <editor-fold defaultstate="collapsed" desc="compute transitive closure of all members in given site">
     class MembersClosureCache extends SimpleVisitor<CompoundScope, Boolean> {
 
-        private WeakHashMap<TypeSymbol, Entry> _map =
-                new WeakHashMap<TypeSymbol, Entry>();
+        private WeakHashMap<TypeSymbol, Entry> _map = new WeakHashMap<>();
 
         class Entry {
             final boolean skipInterfaces;
@@ -2800,7 +2795,7 @@ public class Types {
                             s.isInheritedIn(site.tsym, Types.this) &&
                             overrideEquivalent(memberType(site, s), memberType(site, msym));
                 }
-            };
+            }
     // </editor-fold>
 
     /**
@@ -2856,9 +2851,9 @@ public class Types {
             public Boolean visitErrorType(ErrorType t, Type s) {
                 return false;
             }
-        };
+        }
 
-        TypeRelation hasSameArgs_strict = new HasSameArgs(true);
+    TypeRelation hasSameArgs_strict = new HasSameArgs(true);
         TypeRelation hasSameArgs_nonstrict = new HasSameArgs(false);
 
     // </editor-fold>
@@ -3301,7 +3296,7 @@ public class Types {
      * (that is, subclasses come first, arbitrary but fixed
      * otherwise).
      */
-    private Map<Type,List<Type>> closureCache = new HashMap<Type,List<Type>>();
+    private Map<Type,List<Type>> closureCache = new HashMap<>();
 
     /**
      * Returns the closure of a class or interface type.
@@ -3404,13 +3399,13 @@ public class Types {
                     && isSameType(t2, typePair.t2);
             }
         }
-        Set<TypePair> mergeCache = new HashSet<TypePair>();
+        Set<TypePair> mergeCache = new HashSet<>();
         private Type merge(Type c1, Type c2) {
             ClassType class1 = (ClassType) c1;
             List<Type> act1 = class1.getTypeArguments();
             ClassType class2 = (ClassType) c2;
             List<Type> act2 = class2.getTypeArguments();
-            ListBuffer<Type> merged = new ListBuffer<Type>();
+            ListBuffer<Type> merged = new ListBuffer<>();
             List<Type> typarams = class1.tsym.type.getTypeArguments();
 
             while (act1.nonEmpty() && act2.nonEmpty() && typarams.nonEmpty()) {
@@ -3790,7 +3785,7 @@ public class Types {
      * Return the class that boxes the given primitive.
      */
     public ClassSymbol boxedClass(Type t) {
-        return reader.enterClass(syms.boxedName[t.getTag().ordinal()]);
+        return syms.enterClass(syms.boxedName[t.getTag().ordinal()]);
     }
 
     /**
@@ -3810,7 +3805,7 @@ public class Types {
             for (int i=0; i<syms.boxedName.length; i++) {
                 Name box = syms.boxedName[i];
                 if (box != null &&
-                    asSuper(t, reader.enterClass(box)) != null)
+                    asSuper(t, syms.enterClass(box)) != null)
                     return syms.typeOfTag[i];
             }
         }
@@ -4090,7 +4085,7 @@ public class Types {
         Adapter(ListBuffer<Type> from, ListBuffer<Type> to) {
             this.from = from;
             this.to = to;
-            mapping = new HashMap<Symbol,Type>();
+            mapping = new HashMap<>();
         }
 
         public void adapt(Type source, Type target) throws AdaptFailure {
@@ -4159,7 +4154,7 @@ public class Types {
             return null;
         }
 
-        private Set<TypePair> cache = new HashSet<TypePair>();
+        private Set<TypePair> cache = new HashSet<>();
 
         private void adaptRecursive(Type source, Type target) {
             TypePair pair = new TypePair(source, target);
@@ -4233,7 +4228,7 @@ public class Types {
 
         @Override
         public Type visitClassType(ClassType t, Void s) {
-            ListBuffer<Type> rewritten = new ListBuffer<Type>();
+            ListBuffer<Type> rewritten = new ListBuffer<>();
             boolean changed = false;
             for (Type arg : t.allparams()) {
                 Type bound = visit(arg);

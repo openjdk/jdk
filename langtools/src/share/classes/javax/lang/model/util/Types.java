@@ -60,13 +60,6 @@ public interface Types {
     /**
      * Tests whether two {@code TypeMirror} objects represent the same type.
      *
-     * <p>Since annotations are only meta-data associated with a type,
-     * the set of annotations on either argument is <em>not</em> taken
-     * into account when computing whether or not two {@code
-     * TypeMirror} objects are the same type. In particular, two
-     * {@code TypeMirror} objects can have different annotations and
-     * still be considered the same.
-     *
      * <p>Caveat: if either of the arguments to this method represents a
      * wildcard, this method will return false.  As a consequence, a wildcard
      * is not the same type as itself.  This might be surprising at first,
@@ -76,6 +69,13 @@ public interface Types {
      *   {@code List<?> list = new ArrayList<Object>();}
      *   {@code list.add(list.get(0));}
      * </pre>
+     *
+     * <p>Since annotations are only meta-data associated with a type,
+     * the set of annotations on either argument is <em>not</em> taken
+     * into account when computing whether or not two {@code
+     * TypeMirror} objects are the same type. In particular, two
+     * {@code TypeMirror} objects can have different annotations and
+     * still be considered the same.
      *
      * @param t1  the first type
      * @param t2  the second type

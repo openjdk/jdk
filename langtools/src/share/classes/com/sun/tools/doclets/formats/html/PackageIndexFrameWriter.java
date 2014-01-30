@@ -85,12 +85,12 @@ public class PackageIndexFrameWriter extends AbstractPackageIndexWriter {
         Content div = HtmlTree.DIV(HtmlStyle.indexContainer, heading);
         HtmlTree ul = new HtmlTree(HtmlTag.UL);
         ul.setTitle(packagesLabel);
-        for(int i = 0; i < packages.length; i++) {
+        for (PackageDoc aPackage : packages) {
             // Do not list the package if -nodeprecated option is set and the
             // package is marked as deprecated.
-            if (packages[i] != null &&
-                    (!(configuration.nodeprecated && Util.isDeprecated(packages[i])))) {
-                ul.addContent(getPackage(packages[i]));
+            if (aPackage != null &&
+                (!(configuration.nodeprecated && Util.isDeprecated(aPackage)))) {
+                ul.addContent(getPackage(aPackage));
             }
         }
         div.addContent(ul);

@@ -65,7 +65,7 @@ import javax.print.attribute.PrintJobAttribute;
  * The size of a doc is computed based on the print data representation class as
  * specified by the doc's {@link javax.print.DocFlavor DocFlavor}, as
  * shown in the table below.
- * <P>
+ *
  * <TABLE BORDER=1 CELLPADDING=2 CELLSPACING=1 SUMMARY="Table showing computation of doc sizes">
  * <TR>
  * <TH>Representation Class</TH>

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -79,7 +79,7 @@ public final class XalanConstants {
     /**
      * JDK maximum general entity size limit
      */
-    public static final String JDK_GENEAL_ENTITY_SIZE_LIMIT =
+    public static final String JDK_GENERAL_ENTITY_SIZE_LIMIT =
             ORACLE_JAXP_PROPERTY_PREFIX + "maxGeneralEntitySizeLimit";
     /**
      * JDK maximum parameter entity size limit
@@ -129,7 +129,7 @@ public final class XalanConstants {
     /**
      * JDK maximum general entity size limit
      */
-    public static final String SP_GENEAL_ENTITY_SIZE_LIMIT = "jdk.xml.maxGeneralEntitySizeLimit";
+    public static final String SP_GENERAL_ENTITY_SIZE_LIMIT = "jdk.xml.maxGeneralEntitySizeLimit";
     /**
      * JDK maximum parameter entity size limit
      */

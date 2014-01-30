@@ -87,8 +87,7 @@ public class AnnotationTypeRequiredMemberBuilder extends AbstractMemberBuilder {
         this.writer = writer;
         this.visibleMemberMap = new VisibleMemberMap(classDoc, memberType,
             configuration);
-        this.members = new ArrayList<ProgramElementDoc>(
-            this.visibleMemberMap.getMembersFor(classDoc));
+        this.members = new ArrayList<>(this.visibleMemberMap.getMembersFor(classDoc));
         if (configuration.getMemberComparator() != null) {
             Collections.sort(this.members, configuration.getMemberComparator());
         }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1504,10 +1504,10 @@ public abstract class FontConfiguration {
         printTable(table_elcIDs, 0);
         System.out.println("\n----sequences-------------");
         for (int ii = 0; ii< table_elcIDs.length; ii++) {
-            System.out.println("  " + ii + "/" + getString((short)table_elcIDs[ii]));
+            System.out.println("  " + ii + "/" + getString(table_elcIDs[ii]));
             short[] ss = getShortArray(table_sequences[ii * NUM_FONTS + 0]);
             for (int jj = 0; jj < ss.length; jj++) {
-                System.out.println("     " + getString((short)table_scriptIDs[ss[jj]]));
+                System.out.println("     " + getString(table_scriptIDs[ss[jj]]));
             }
         }
         System.out.println("\n----fontfileNameIDs-------");
@@ -1533,9 +1533,9 @@ public abstract class FontConfiguration {
         System.out.println("\n----proportionals--------");
         for (int ii = 0; ii < table_proportionals.length; ii++) {
             System.out.println("  "
-                   + getString((short)table_componentFontNameIDs[table_proportionals[ii++]])
+                   + getString(table_componentFontNameIDs[table_proportionals[ii++]])
                    + " -> "
-                   + getString((short)table_componentFontNameIDs[table_proportionals[ii]]));
+                   + getString(table_componentFontNameIDs[table_proportionals[ii]]));
         }
         int i = 0;
         System.out.println("\n----alphabeticSuffix----");

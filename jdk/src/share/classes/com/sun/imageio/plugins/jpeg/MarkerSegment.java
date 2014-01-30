@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -119,7 +119,7 @@ class MarkerSegment implements Cloneable {
             newGuy = (MarkerSegment) super.clone();
         } catch (CloneNotSupportedException e) {} // won't happen
         if (this.data != null) {
-            newGuy.data = (byte[]) data.clone();
+            newGuy.data = data.clone();
         }
         return newGuy;
     }

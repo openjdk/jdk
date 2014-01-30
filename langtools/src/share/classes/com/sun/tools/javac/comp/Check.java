@@ -64,8 +64,7 @@ import static com.sun.tools.javac.tree.JCTree.Tag.*;
  *  deletion without notice.</b>
  */
 public class Check {
-    protected static final Context.Key<Check> checkKey =
-        new Context.Key<Check>();
+    protected static final Context.Key<Check> checkKey = new Context.Key<>();
 
     private final Names names;
     private final Log log;
@@ -191,7 +190,7 @@ public class Check {
     /** A table mapping flat names of all compiled classes in this run to their
      *  symbols; maintained from outside.
      */
-    public Map<Name,ClassSymbol> compiled = new HashMap<Name, ClassSymbol>();
+    public Map<Name,ClassSymbol> compiled = new HashMap<>();
 
     /** A handler for messages about deprecated usage.
      */
@@ -937,7 +936,7 @@ public class Check {
             List<Type> actuals = type.allparams();
             List<Type> args = type.getTypeArguments();
             List<Type> forms = type.tsym.type.getTypeArguments();
-            ListBuffer<Type> bounds_buf = new ListBuffer<Type>();
+            ListBuffer<Type> bounds_buf = new ListBuffer<>();
 
             // For matching pairs of actual argument types `a' and
             // formal type parameters with declared bound `b' ...
@@ -1169,7 +1168,7 @@ public class Check {
             boolean specialized;
             SpecialTreeVisitor() {
                 this.specialized = false;
-            };
+            }
 
             @Override
             public void visitTree(JCTree tree) { /* no-op */ }
@@ -1818,13 +1817,13 @@ public class Check {
      *  @returns symbol from t2 that conflicts with one in t1.
      */
     private Symbol firstIncompatibility(DiagnosticPosition pos, Type t1, Type t2, Type site) {
-        Map<TypeSymbol,Type> interfaces1 = new HashMap<TypeSymbol,Type>();
+        Map<TypeSymbol,Type> interfaces1 = new HashMap<>();
         closure(t1, interfaces1);
         Map<TypeSymbol,Type> interfaces2;
         if (t1 == t2)
             interfaces2 = interfaces1;
         else
-            closure(t2, interfaces1, interfaces2 = new HashMap<TypeSymbol,Type>());
+            closure(t2, interfaces1, interfaces2 = new HashMap<>());
 
         for (Type t3 : interfaces1.values()) {
             for (Type t4 : interfaces2.values()) {
@@ -1904,7 +1903,7 @@ public class Check {
     }
     //WHERE
     boolean checkCommonOverriderIn(Symbol s1, Symbol s2, Type site) {
-        Map<TypeSymbol,Type> supertypes = new HashMap<TypeSymbol,Type>();
+        Map<TypeSymbol,Type> supertypes = new HashMap<>();
         Type st1 = types.memberType(site, s1);
         Type st2 = types.memberType(site, s2);
         closure(site, supertypes);
@@ -2846,14 +2845,14 @@ public class Check {
         if (containerTarget == null) {
             containerTargets = getDefaultTargetSet();
         } else {
-            containerTargets = new HashSet<Name>();
-        for (Attribute app : containerTarget.values) {
-            if (!(app instanceof Attribute.Enum)) {
-                continue; // recovery
+            containerTargets = new HashSet<>();
+            for (Attribute app : containerTarget.values) {
+                if (!(app instanceof Attribute.Enum)) {
+                    continue; // recovery
+                }
+                Attribute.Enum e = (Attribute.Enum)app;
+                containerTargets.add(e.value.name);
             }
-            Attribute.Enum e = (Attribute.Enum)app;
-            containerTargets.add(e.value.name);
-        }
         }
 
         Set<Name> containedTargets;
@@ -2861,14 +2860,14 @@ public class Check {
         if (containedTarget == null) {
             containedTargets = getDefaultTargetSet();
         } else {
-            containedTargets = new HashSet<Name>();
-        for (Attribute app : containedTarget.values) {
-            if (!(app instanceof Attribute.Enum)) {
-                continue; // recovery
+            containedTargets = new HashSet<>();
+            for (Attribute app : containedTarget.values) {
+                if (!(app instanceof Attribute.Enum)) {
+                    continue; // recovery
+                }
+                Attribute.Enum e = (Attribute.Enum)app;
+                containedTargets.add(e.value.name);
             }
-            Attribute.Enum e = (Attribute.Enum)app;
-            containedTargets.add(e.value.name);
-        }
         }
 
         if (!isTargetSubsetOf(containerTargets, containedTargets)) {
@@ -2879,7 +2878,7 @@ public class Check {
     /* get a set of names for the default target */
     private Set<Name> getDefaultTargetSet() {
         if (defaultTargets == null) {
-            Set<Name> targets = new HashSet<Name>();
+            Set<Name> targets = new HashSet<>();
             targets.add(names.ANNOTATION_TYPE);
             targets.add(names.CONSTRUCTOR);
             targets.add(names.FIELD);
@@ -3078,7 +3077,7 @@ public class Check {
     private boolean validateAnnotation(JCAnnotation a) {
         boolean isValid = true;
         // collect an inventory of the annotation elements
-        Set<MethodSymbol> members = new LinkedHashSet<MethodSymbol>();
+        Set<MethodSymbol> members = new LinkedHashSet<>();
         for (Scope.Entry e = a.annotationType.type.tsym.members().elems;
                 e != null;
                 e = e.sibling)
@@ -3128,7 +3127,7 @@ public class Check {
         JCTree rhs = assign.rhs;
         if (!rhs.hasTag(NEWARRAY)) return false;
         JCNewArray na = (JCNewArray) rhs;
-        Set<Symbol> targets = new HashSet<Symbol>();
+        Set<Symbol> targets = new HashSet<>();
         for (JCTree elem : na.elems) {
             if (!targets.add(TreeInfo.symbol(elem))) {
                 isValid = false;
@@ -3246,7 +3245,7 @@ public class Check {
      *  constructors.
      */
     void checkCyclicConstructors(JCClassDecl tree) {
-        Map<Symbol,Symbol> callMap = new HashMap<Symbol, Symbol>();
+        Map<Symbol,Symbol> callMap = new HashMap<>();
 
         // enter each constructor this-call into the map
         for (List<JCTree> l = tree.defs; l.nonEmpty(); l = l.tail) {

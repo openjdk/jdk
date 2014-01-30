@@ -190,26 +190,6 @@ $(foreach f,$(filter $(OVERLAY_FILTER),$(JDK_BIN_LIST)), \
 $(foreach f,$(filter $(OVERLAY_FILTER),$(JDKJRE_BIN_LIST)), \
     $(eval $(call AddFileToCopy,$(JDK_OUTPUTDIR),$(JDK_OVERLAY_IMAGE_DIR)/jre,$f,JDKJRE_BIN_TARGETS)))
 
-ifeq ($(OPENJDK_TARGET_OS)-$(OPENJDK_TARGET_CPU_BITS),solaris-64)
-  define AddIsadirLink
-    # Param 1 - src file
-    # Param 2 - variable to add targets to
-
-    $1_LINK := $$(dir $1)$(OPENJDK_TARGET_CPU_ISADIR)/$$(notdir $1)
-
-    $$($1_LINK):
-	$(ECHO) $(LOG_INFO) Creating link $$(patsubst $(OUTPUT_ROOT)/%,%,$$@)
-	$(MKDIR) -p $$(@D)
-	$(LN) -s ../$$(@F) $$@
-
-    $2 += $$($1_LINK)
-  endef
-
-  $(foreach f,$(JRE_BIN_TARGETS),$(eval $(call AddIsadirLink,$f,JRE_BIN_ISADIR_LINK_TARGETS)))
-  $(foreach f,$(JDK_BIN_TARGETS),$(eval $(call AddIsadirLink,$f,JDK_BIN_ISADIR_LINK_TARGETS)))
-  $(foreach f,$(JDKJRE_BIN_TARGETS),$(eval $(call AddIsadirLink,$f,JDKJRE_BIN_ISADIR_LINK_TARGETS)))
-endif
-
 ################################################################################
 # /lib dir
 ifneq ($(OPENJDK_TARGET_OS), macosx)
@@ -303,14 +283,13 @@ $(JDK_IMAGE_DIR)/jre/lib/applet:
 	$(ECHO) $(LOG_INFO) Creating $(patsubst $(OUTPUT_ROOT)/%,%,$@)
 	$(MKDIR) -p $@
 
-# In the old build, JObjC.jar is not part of the meta-index
 $(JRE_IMAGE_DIR)/lib/meta-index: $(JRE_LIB_TARGETS)
 	$(ECHO) $(LOG_INFO) Generating $(patsubst $(OUTPUT_ROOT)/%,%,$@)
-	$(CD) $(@D) && $(TOOL_BUILDMETAINDEX) -o meta-index `$(LS) *.jar | $(SED) 's/JObjC\.jar//g'`
+	$(CD) $(@D) && $(TOOL_BUILDMETAINDEX) -o meta-index *.jar
 
 $(JDK_IMAGE_DIR)/jre/lib/meta-index: $(JDKJRE_LIB_TARGETS)
 	$(ECHO) $(LOG_INFO) Generating $(patsubst $(OUTPUT_ROOT)/%,%,$@)
-	$(CD) $(@D) && $(TOOL_BUILDMETAINDEX) -o meta-index `$(LS) *.jar | $(SED) 's/JObjC\.jar//g'`
+	$(CD) $(@D) && $(TOOL_BUILDMETAINDEX) -o meta-index *.jar
 
 $(JRE_IMAGE_DIR)/lib/ext/meta-index: $(JRE_LIB_TARGETS)
 	$(ECHO) $(LOG_INFO) Generating $(patsubst $(OUTPUT_ROOT)/%,%,$@)

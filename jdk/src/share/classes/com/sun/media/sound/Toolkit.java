@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -74,7 +74,7 @@ public final class Toolkit {
      */
     static float linearToDB(float linear) {
 
-        float dB = (float) (Math.log((double)((linear==0.0)?0.0001:linear))/Math.log(10.0) * 20.0);
+        float dB = (float) (Math.log(((linear==0.0)?0.0001:linear))/Math.log(10.0) * 20.0);
         return dB;
     }
 

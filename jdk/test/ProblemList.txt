@@ -41,11 +41,11 @@
 #
 # List items  are testnames followed by labels, all MUST BE commented
 #   as to why they are here and use a label:
-#     generic-all       Problems on all platforms
-#     generic-ARCH      Where ARCH is one of: sparc, sparcv9, x64, i586, etc.
-#     OSNAME-all        Where OSNAME is one of: solaris, linux, windows, macosx
-#     OSNAME-ARCH       Specific on to one OSNAME and ARCH, e.g. solaris-amd64
-#     OSNAME-REV        Specific on to one OSNAME and REV, e.g. solaris-5.8
+#     generic-all   Problems on all platforms
+#     generic-ARCH  Where ARCH is one of: sparc, sparcv9, x64, i586, etc.
+#     OSNAME-all    Where OSNAME is one of: solaris, linux, windows, macosx, aix
+#     OSNAME-ARCH   Specific on to one OSNAME and ARCH, e.g. solaris-amd64
+#     OSNAME-REV    Specific on to one OSNAME and REV, e.g. solaris-5.8
 #
 # More than one label is allowed but must be on the same line.
 #
@@ -134,6 +134,11 @@ sun/management/jmxremote/bootstrap/RmiSslBootstrapTest.sh	windows-all
 
 # jdk_jmx
 
+# 8030957
+com/sun/management/OperatingSystemMXBean/GetProcessCpuLoad.java aix-all
+com/sun/management/OperatingSystemMXBean/GetSystemCpuLoad.java  aix-all
+javax/management/MBeanServer/OldMBeanServerTest.java            aix-all
+
 ############################################################################
 
 # jdk_math
@@ -145,22 +150,12 @@ sun/management/jmxremote/bootstrap/RmiSslBootstrapTest.sh	windows-all
 # 6988950
 demo/jvmti/compiledMethodLoad/CompiledMethodLoadTest.java	generic-all
 
-# 7027502
-demo/jvmti/hprof/MonitorTest.java                               generic-all
-
-# 8027973
-javax/xml/jaxp/transform/jdk8004476/XSLTExFuncTest.java		windows-all
-
 ############################################################################
 
 # jdk_net
 
 # Filed 7052625
 com/sun/net/httpserver/bugs/6725892/Test.java                   generic-all
-
-# failing on vista 32/64 on nightly
-# 7102702
-java/net/PortUnreachableException/OneExceptionOnly.java         windows-all
 
 # 7148829
 sun/net/InetAddress/nameservice/simple/CacheTest.java		generic-all
@@ -182,11 +177,6 @@ java/net/DatagramSocket/SendDatagramToBadAddress.java            macosx-all
 
 # 6963118
 java/nio/channels/Selector/Wakeup.java                          windows-all
-
-# 7133499, 7133497
-java/nio/channels/AsyncCloseAndInterrupt.java                   macosx-all
-java/nio/channels/AsynchronousFileChannel/Lock.java             macosx-all
-java/nio/channels/FileChannel/Transfer.java                     macosx-all
 
 # 7141822
 java/nio/channels/DatagramChannel/ChangingAddress.java          macosx-all
@@ -263,9 +253,6 @@ sun/security/krb5/auto/BadKdc4.java                             solaris-sparcv9
 
 # jdk_tools
 
-# 7132203
-sun/jvmstat/monitor/MonitoredVm/CR6672135.java                  generic-all
-
 # 8028474
 sun/jvmstat/monitor/MonitoredVm/MonitorVmStartTerminate.sh      generic-all
 
@@ -280,17 +267,15 @@ tools/launcher/FXLauncherTest.java                              linux-all
 
 # jdk_jdi
 
-# Filed 6952105
-com/sun/jdi/SuspendThreadTest.java                              generic-all
-
-# Filed 6653793
-com/sun/jdi/RedefineCrossEvent.java                             generic-all
-
 ############################################################################
 
 # jdk_util
 
-# Filed 6772009
-java/util/concurrent/locks/ReentrantLock/CancelledLockLoops.java generic-all
+############################################################################
+
+# svc_tools
+
+# 8031482
+sun/tools/jcmd/TestJcmdSanity.java				windows-all
 
 ############################################################################

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -49,7 +49,7 @@ import java.io.Serializable;
  * See <a href="../../java/lang/package-summary.html#charenc">
  * character encodings</a> for more information on the character encodings
  * supported on the Java platform.
- * <P>
+ *
  * <LI>
  * <B>Representation class name.</B> This specifies the fully-qualified name of
  * the class of the object from which the actual print data comes, as returned
@@ -64,7 +64,7 @@ import java.io.Serializable;
  * also lets the <code>DocPrintJob</code> obtain an instance of the doc flavor's
  * representation class, from which the <code>DocPrintJob</code> then obtains
  * the actual print data.
- * <P>
+ *
  * <HR>
  * <H3>Client Formatted Print Data</H3>
  * There are two broad categories of print data, client formatted print data
@@ -96,22 +96,22 @@ import java.io.Serializable;
  * <LI>
  * Character array (<CODE>char[]</CODE>) -- The print data consists of the
  * Unicode characters in the array.
- * <P>
+ *
  * <LI>
  * <code>String</code>  --
  * The print data consists of the Unicode characters in the string.
- * <P>
+ *
  * <LI>
  * Character stream ({@link java.io.Reader java.io.Reader})
  * -- The print data consists of the Unicode characters read from the stream
  * up to the end-of-stream.
- * <P>
+ *
  * <LI>
  * Byte array (<CODE>byte[]</CODE>) -- The print data consists of the bytes in
  * the array. The bytes are encoded in the character set specified by the doc
  * flavor's MIME type. If the MIME type does not specify a character set, the
  * default character set is US-ASCII.
- * <P>
+ *
  * <LI>
  * Byte stream ({@link java.io.InputStream java.io.InputStream}) --
  * The print data consists of the bytes read from the stream up to the
@@ -139,7 +139,7 @@ import java.io.Serializable;
  * To print such documents, let the client open an input stream on the URL
  * or file and use an input stream data flavor.
  * </UL>
- * <p>
+ *
  * <HR>
  * <h3>Default and Platform Encodings</h3>
  * <P>
@@ -179,11 +179,9 @@ import java.io.Serializable;
  * understood by this VM.
  * For common flavors, the pre-defined *HOST DocFlavors may be used.
  * <p>
- * <p>
  * See <a href="../../java/lang/package-summary.html#charenc">
  * character encodings</a> for more information on the character encodings
  * supported on the Java platform.
- * <p>
  * <HR>
  * <h3>Recommended DocFlavors</h3>
  * <P>
@@ -196,7 +194,6 @@ import java.io.Serializable;
  * constructor can be used to create an arbitrary doc flavor.
  * <UL>
  * <LI>Preformatted text
- * <P>
  * <TABLE BORDER=1 CELLPADDING=0 CELLSPACING=0 SUMMARY="MIME-Types and their descriptions">
  * <TR>
  *  <TH>MIME-Type</TH><TH>Description</TH>
@@ -222,9 +219,9 @@ import java.io.Serializable;
  * In general, preformatted text print data is provided either in a character
  * oriented representation class (character array, String, Reader) or in a
  * byte oriented representation class (byte array, InputStream, URL).
- * <P>
+ *
  *  <LI>Preformatted page description language (PDL) documents
- *<P>
+ *
  * <TABLE BORDER=1 CELLPADDING=0 CELLSPACING=0 SUMMARY="MIME-Types and their descriptions">
  * <TR>
  *  <TH>MIME-Type</TH><TH>Description</TH>
@@ -245,9 +242,9 @@ import java.io.Serializable;
  * <P>
  * In general, preformatted PDL print data is provided in a byte oriented
  * representation class (byte array, InputStream, URL).
- * <P>
+ *
  *  <LI>Preformatted images
- *<P>
+ *
  * <TABLE BORDER=1 CELLPADDING=0 CELLSPACING=0 SUMMARY="MIME-Types and their descriptions">
  * <TR>
  *  <TH>MIME-Type</TH><TH>Description</TH>
@@ -269,9 +266,9 @@ import java.io.Serializable;
  * <P>
  * In general, preformatted image print data is provided in a byte oriented
  * representation class (byte array, InputStream, URL).
- * <P>
+ *
  *  <LI>Preformatted autosense print data
- *   <P>
+ *
  * <TABLE BORDER=1 CELLPADDING=0 CELLSPACING=0 SUMMARY="MIME-Types and their descriptions">
  * <TR>
  *  <TH>MIME-Type</TH><TH>Description</TH>
@@ -287,7 +284,7 @@ import java.io.Serializable;
  * autosense print data is provided in a byte oriented representation class
  * (byte array, InputStream, URL).
  * </UL>
- * <P>
+ *
  * <HR>
  * <H3>Service Formatted Print Data</H3>
  * <P>
@@ -315,7 +312,7 @@ import java.io.Serializable;
  * {@link java.awt.image.renderable.RenderableImage RenderableImage}. The
  * printer calls methods
  * in that interface to obtain the image to be printed.
- * <P>
+ *
  * <LI>
  * Printable object -- The client supplies an object that implements interface
  * {@link java.awt.print.Printable Printable}.
@@ -323,7 +320,7 @@ import java.io.Serializable;
  * printed, one by one.
  * For each page, the printer supplies a graphics context, and whatever the
  * client draws in that graphics context gets printed.
- * <P>
+ *
  * <LI>
  * Pageable object -- The client supplies an object that implements interface
  * {@link java.awt.print.Pageable Pageable}. The printer calls
@@ -331,9 +328,9 @@ import java.io.Serializable;
  * For each page, the printer supplies a graphics context, and whatever
  * the client draws in that graphics context gets printed.
  * </UL>
- * <P>
+ *
  * <HR>
- * <P>
+ *
  * <HR>
  * <H3>Pre-defined Doc Flavors</H3>
  * A Java Print Service instance is not <B><I>required</I></B> to support the
@@ -354,7 +351,7 @@ import java.io.Serializable;
  * <CODE>("text/plain; charset=us-ascii", "java.io.InputStream")</CODE>
  * <BR>&#183;&nbsp;&nbsp;
  * <CODE>("text/plain; charset=utf-8", "java.io.InputStream")</CODE>
- * <P>
+ *
  * <LI>
  * Renderable image objects. Specifically, the following doc flavor is
  * recommended to be supported:
@@ -389,7 +386,7 @@ import java.io.Serializable;
  * <P>
  * The client must itself perform all plain text print data formatting not
  * addressed by the above requirements.
- * <P>
+ *
  * <H3>Design Rationale</H3>
  * <P>
  * Class DocFlavor in package javax.print.data is similar to class
@@ -403,13 +400,13 @@ import java.io.Serializable;
  * <LI>
  * The JPS API is designed to be used in Java profiles which do not support
  * AWT.
- * <P>
+ *
  * <LI>
  * The implementation of class <code>java.awt.datatransfer.DataFlavor</code>
  * does not guarantee that equivalent data flavors will have the same
  * serialized representation. DocFlavor does, and can be used in services
  * which need this.
- * <P>
+ *
  * <LI>
  * The implementation of class <code>java.awt.datatransfer.DataFlavor</code>
  * includes a human presentable name as part of the serialized representation.
@@ -463,7 +460,7 @@ public class DocFlavor implements Serializable, Cloneable {
 
     static {
         hostEncoding =
-            (String)java.security.AccessController.doPrivileged(
+            java.security.AccessController.doPrivileged(
                   new sun.security.action.GetPropertyAction("file.encoding"));
     }
 

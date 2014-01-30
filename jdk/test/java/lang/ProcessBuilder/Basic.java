@@ -38,6 +38,9 @@ import static java.lang.ProcessBuilder.Redirect.*;
 
 import java.io.*;
 import java.lang.reflect.Field;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
 import java.util.*;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
@@ -58,6 +61,18 @@ public class Basic {
     /* used for Mac OS X only */
     static final String cfUserTextEncoding = System.getenv("__CF_USER_TEXT_ENCODING");
 
+    /* used for AIX only */
+    static final String libpath = System.getenv("LIBPATH");
+
+    /**
+     * Returns the number of milliseconds since time given by
+     * startNanoTime, which must have been previously returned from a
+     * call to {@link System.nanoTime()}.
+     */
+    private static long millisElapsedSince(long startNanoTime) {
+        return TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - startNanoTime);
+    }
+
     private static String commandOutput(Reader r) throws Throwable {
         StringBuilder sb = new StringBuilder();
         int c;
@@ -75,7 +90,11 @@ public class Basic {
         String output = commandOutput(r);
         equal(p.waitFor(), 0);
         equal(p.exitValue(), 0);
-        return output;
+        // The debug/fastdebug versions of the VM may write some warnings to stdout
+        // (i.e. "Warning:  Cannot open log file: hotspot.log" if the VM is started
+        // in a directory without write permissions). These warnings will confuse tests
+        // which match the entire output of the child process so better filter them out.
+        return output.replaceAll("Warning:.*\\n", "");
     }
 
     private static String commandOutput(ProcessBuilder pb) {
@@ -515,18 +534,9 @@ public class Basic {
         }
     }
 
-    private static void copy(String src, String dst) {
-        system("/bin/cp", "-fp", src, dst);
-    }
-
-    private static void system(String... command) {
-        try {
-            ProcessBuilder pb = new ProcessBuilder(command);
-            ProcessResults r = run(pb.start());
-            equal(r.exitValue(), 0);
-            equal(r.out(), "");
-            equal(r.err(), "");
-        } catch (Throwable t) { unexpected(t); }
+    private static void copy(String src, String dst) throws IOException {
+        Files.copy(Paths.get(src), Paths.get(dst),
+                   StandardCopyOption.REPLACE_EXISTING, StandardCopyOption.COPY_ATTRIBUTES);
     }
 
     private static String javaChildOutput(ProcessBuilder pb, String...args) {
@@ -585,6 +595,12 @@ public class Basic {
             System.getProperty("os.name").startsWith("Windows");
     }
 
+    static class AIX {
+        public static boolean is() { return is; }
+        private static final boolean is =
+            System.getProperty("os.name").equals("AIX");
+    }
+
     static class Unix {
         public static boolean is() { return is; }
         private static final boolean is =
@@ -638,7 +654,7 @@ public class Basic {
 
         private static boolean isEnglish(String envvar) {
             String val = getenv(envvar);
-            return (val == null) || val.matches("en.*");
+            return (val == null) || val.matches("en.*") || val.matches("C");
         }
 
         /** Returns true if we can expect English OS error strings */
@@ -711,6 +727,14 @@ public class Basic {
                 = matchAndExtract(cleanedVars,
                                     "JAVA_MAIN_CLASS_\\d+=Basic.JavaChild,");
         return cleanedVars.replace(javaMainClassStr,"");
+    }
+
+    /* Only used for AIX --
+     * AIX adds the variable AIXTHREAD_GUARDPAGES=0 to the environment.
+     * Remove it from the list of env variables
+     */
+    private static String removeAixExpectedVars(String vars) {
+        return vars.replace("AIXTHREAD_GUARDPAGES=0,","");
     }
 
     private static String sortByLinesWindowsly(String text) {
@@ -1161,12 +1185,19 @@ public class Basic {
             ProcessBuilder pb = new ProcessBuilder();
             pb.environment().clear();
             String expected = Windows.is() ? "SystemRoot="+systemRoot+",": "";
+            expected = AIX.is() ? "LIBPATH="+libpath+",": expected;
             if (Windows.is()) {
                 pb.environment().put("SystemRoot", systemRoot);
+            }
+            if (AIX.is()) {
+                pb.environment().put("LIBPATH", libpath);
             }
             String result = getenvInChild(pb);
             if (MacOSX.is()) {
                 result = removeMacExpectedVars(result);
+            }
+            if (AIX.is()) {
+                result = removeAixExpectedVars(result);
             }
             equal(result, expected);
         } catch (Throwable t) { unexpected(t); }
@@ -1682,9 +1713,13 @@ public class Basic {
             }
             Process p = Runtime.getRuntime().exec(cmdp, envp);
             String expected = Windows.is() ? "=C:=\\,=ExitValue=3,SystemRoot="+systemRoot+"," : "=C:=\\,";
+            expected = AIX.is() ? expected + "LIBPATH="+libpath+",": expected;
             String commandOutput = commandOutput(p);
             if (MacOSX.is()) {
                 commandOutput = removeMacExpectedVars(commandOutput);
+            }
+            if (AIX.is()) {
+                commandOutput = removeAixExpectedVars(commandOutput);
             }
             equal(commandOutput, expected);
             if (Windows.is()) {
@@ -1737,9 +1772,14 @@ public class Basic {
             if (MacOSX.is()) {
                 commandOutput = removeMacExpectedVars(commandOutput);
             }
+            if (AIX.is()) {
+                commandOutput = removeAixExpectedVars(commandOutput);
+            }
             check(commandOutput.equals(Windows.is()
                     ? "LC_ALL=C,SystemRoot="+systemRoot+","
-                    : "LC_ALL=C,"),
+                    : AIX.is()
+                            ? "LC_ALL=C,LIBPATH="+libpath+","
+                            : "LC_ALL=C,"),
                   "Incorrect handling of envstrings containing NULs");
         } catch (Throwable t) { unexpected(t); }
 
@@ -2016,8 +2056,13 @@ public class Basic {
             if (Unix.is()
                 && new File("/bin/bash").exists()
                 && new File("/bin/sleep").exists()) {
-                final String[] cmd = { "/bin/bash", "-c", "(/bin/sleep 6666)" };
-                final String[] cmdkill = { "/bin/bash", "-c", "(/usr/bin/pkill -f \"sleep 6666\")" };
+                // Notice that we only destroy the process created by us (i.e.
+                // our child) but not our grandchild (i.e. '/bin/sleep'). So
+                // pay attention that the grandchild doesn't run too long to
+                // avoid polluting the process space with useless processes.
+                // Running the grandchild for 60s should be more than enough.
+                final String[] cmd = { "/bin/bash", "-c", "(/bin/sleep 60)" };
+                final String[] cmdkill = { "/bin/bash", "-c", "(/usr/bin/pkill -f \"sleep 60\")" };
                 final ProcessBuilder pb = new ProcessBuilder(cmd);
                 final Process p = pb.start();
                 final InputStream stdout = p.getInputStream();
@@ -2039,13 +2084,27 @@ public class Basic {
                 reader.start();
                 Thread.sleep(100);
                 p.destroy();
-                // Subprocess is now dead, but file descriptors remain open.
                 check(p.waitFor() != 0);
                 check(p.exitValue() != 0);
+                // Subprocess is now dead, but file descriptors remain open.
+                // Make sure the test will fail if we don't manage to close
+                // the open streams within 30 seconds. Notice that this time
+                // must be shorter than the sleep time of the grandchild.
+                Timer t = new Timer("test/java/lang/ProcessBuilder/Basic.java process reaper", true);
+                t.schedule(new TimerTask() {
+                      public void run() {
+                          fail("Subprocesses which create subprocesses of " +
+                               "their own caused the parent to hang while " +
+                               "waiting for file descriptors to be closed.");
+                          System.exit(-1);
+                      }
+                  }, 30000);
                 stdout.close();
                 stderr.close();
                 stdin.close();
                 new ProcessBuilder(cmdkill).start();
+                // All streams successfully closed so we can cancel the timer.
+                t.cancel();
                 //----------------------------------------------------------
                 // There remain unsolved issues with asynchronous close.
                 // Here's a highly non-portable experiment to demonstrate:
@@ -2191,8 +2250,9 @@ public class Basic {
             }
             long end = System.nanoTime();
             // give waitFor(timeout) a wide berth (100ms)
-            if ((end - start) > 100000000)
-                fail("Test failed: waitFor took too long");
+            // Old AIX machines my need a little longer.
+            if ((end - start) > 100000000L * (AIX.is() ? 4 : 1))
+                fail("Test failed: waitFor took too long (" + (end - start) + "ns)");
 
             p.destroy();
             p.waitFor();
@@ -2219,7 +2279,7 @@ public class Basic {
 
             long end = System.nanoTime();
             if ((end - start) < 500000000)
-                fail("Test failed: waitFor didn't take long enough");
+                fail("Test failed: waitFor didn't take long enough (" + (end - start) + "ns)");
 
             p.destroy();
 
@@ -2227,45 +2287,71 @@ public class Basic {
             p.waitFor(1000, TimeUnit.MILLISECONDS);
             end = System.nanoTime();
             if ((end - start) > 900000000)
-                fail("Test failed: waitFor took too long on a dead process.");
+                fail("Test failed: waitFor took too long on a dead process. (" + (end - start) + "ns)");
         } catch (Throwable t) { unexpected(t); }
 
         //----------------------------------------------------------------
         // Check that Process.waitFor(timeout, TimeUnit.MILLISECONDS)
-        // interrupt works as expected.
+        // interrupt works as expected, if interrupted while waiting.
         //----------------------------------------------------------------
         try {
             List<String> childArgs = new ArrayList<String>(javaChildArgs);
             childArgs.add("sleep");
             final Process p = new ProcessBuilder(childArgs).start();
             final long start = System.nanoTime();
-            final CountDownLatch ready = new CountDownLatch(1);
-            final CountDownLatch done = new CountDownLatch(1);
+            final CountDownLatch aboutToWaitFor = new CountDownLatch(1);
 
             final Thread thread = new Thread() {
                 public void run() {
                     try {
-                        final boolean result;
-                        try {
-                            ready.countDown();
-                            result = p.waitFor(30000, TimeUnit.MILLISECONDS);
-                        } catch (InterruptedException e) {
-                            return;
-                        }
+                        aboutToWaitFor.countDown();
+                        boolean result = p.waitFor(30L * 1000L, TimeUnit.MILLISECONDS);
                         fail("waitFor() wasn't interrupted, its return value was: " + result);
-                    } catch (Throwable t) {
-                        unexpected(t);
-                    } finally {
-                        done.countDown();
-                    }
+                    } catch (InterruptedException success) {
+                    } catch (Throwable t) { unexpected(t); }
                 }
             };
 
             thread.start();
-            ready.await();
+            aboutToWaitFor.await();
             Thread.sleep(1000);
             thread.interrupt();
-            done.await();
+            thread.join(10L * 1000L);
+            check(millisElapsedSince(start) < 10L * 1000L);
+            check(!thread.isAlive());
+            p.destroy();
+        } catch (Throwable t) { unexpected(t); }
+
+        //----------------------------------------------------------------
+        // Check that Process.waitFor(timeout, TimeUnit.MILLISECONDS)
+        // interrupt works as expected, if interrupted before waiting.
+        //----------------------------------------------------------------
+        try {
+            List<String> childArgs = new ArrayList<String>(javaChildArgs);
+            childArgs.add("sleep");
+            final Process p = new ProcessBuilder(childArgs).start();
+            final long start = System.nanoTime();
+            final CountDownLatch threadStarted = new CountDownLatch(1);
+
+            final Thread thread = new Thread() {
+                public void run() {
+                    try {
+                        threadStarted.countDown();
+                        do { Thread.yield(); }
+                        while (!Thread.currentThread().isInterrupted());
+                        boolean result = p.waitFor(30L * 1000L, TimeUnit.MILLISECONDS);
+                        fail("waitFor() wasn't interrupted, its return value was: " + result);
+                    } catch (InterruptedException success) {
+                    } catch (Throwable t) { unexpected(t); }
+                }
+            };
+
+            thread.start();
+            threadStarted.await();
+            thread.interrupt();
+            thread.join(10L * 1000L);
+            check(millisElapsedSince(start) < 10L * 1000L);
+            check(!thread.isAlive());
             p.destroy();
         } catch (Throwable t) { unexpected(t); }
 
@@ -2441,7 +2527,7 @@ public class Basic {
     static void check(boolean cond, String m) {if (cond) pass(); else fail(m);}
     static void equal(Object x, Object y) {
         if (x == null ? y == null : x.equals(y)) pass();
-        else fail(x + " not equal to " + y);}
+        else fail(">'" + x + "'<" + " not equal to " + "'" + y + "'");}
 
     public static void main(String[] args) throws Throwable {
         try {realMain(args);} catch (Throwable t) {unexpected(t);}

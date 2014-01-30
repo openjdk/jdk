@@ -50,6 +50,7 @@ import sun.security.provider.certpath.X509CertificatePair;
 import sun.security.util.Cache;
 import sun.security.util.Debug;
 import sun.security.x509.X500Name;
+import sun.security.action.GetBooleanAction;
 import sun.security.action.GetPropertyAction;
 
 /**
@@ -134,6 +135,14 @@ public final class LDAPCertStore extends CertStoreSpi {
 
     private final static String PROP_LIFETIME =
                             "sun.security.certpath.ldap.cache.lifetime";
+
+    /*
+     * Internal system property, that when set to "true", disables the
+     * JNDI application resource files lookup to prevent recursion issues
+     * when validating signed JARs with LDAP URLs in certificates.
+     */
+    private final static String PROP_DISABLE_APP_RESOURCE_FILES =
+        "sun.security.certpath.ldap.disable.app.resource.files";
 
     static {
         String s = AccessController.doPrivileged(
@@ -237,6 +246,17 @@ public final class LDAPCertStore extends CertStoreSpi {
         env.put(Context.INITIAL_CONTEXT_FACTORY,
                 "com.sun.jndi.ldap.LdapCtxFactory");
         env.put(Context.PROVIDER_URL, url);
+
+        // If property is set to true, disable application resource file lookup.
+        boolean disableAppResourceFiles = AccessController.doPrivileged(
+            new GetBooleanAction(PROP_DISABLE_APP_RESOURCE_FILES));
+        if (disableAppResourceFiles) {
+            if (debug != null) {
+                debug.println("LDAPCertStore disabling app resource files");
+            }
+            env.put("com.sun.naming.disable.app.resource.files", "true");
+        }
+
         try {
             ctx = new InitialDirContext(env);
             /*

@@ -298,29 +298,6 @@ $(PROFILE_VERSION_CLASS_TARGETS): $(PROFILE_VERSION_JAVA_TARGETS)
 	@$(JAVAC) -d $(@D)/../../ $(@D)/$(VERSION_JAVA_FILE)
 
 
-# Support for removing the addPropertyChangeListener and removePropertyChangeListener
-# methods from classes that only go into the profile builds.
-BEANLESS_CLASSES = $(IMAGES_OUTPUTDIR)/beanless
-
-# When there are $ characters in filenames we have some very subtle interactions between
-# make expansion and shell expansion. In this particular case $< will contain a single $ while
-# $@ will contain \$. So we have to pass $< in single-quotes to avoid shell expansion
-$(BEANLESS_CLASSES)/%: $(JDK_OUTPUTDIR)/classes/%
-	$(MKDIR) -p $(@D)
-	$(TOOL_REMOVEMETHODS) '$<' $@ addPropertyChangeListener removePropertyChangeListener
-
-CLASSES_TO_DEBEAN = \
-    java/util/logging/LogManager.class \
-    java/util/jar/Pack200\$$Packer.class \
-    java/util/jar/Pack200\$$Unpacker.class \
-    com/sun/java/util/jar/pack/PackerImpl.class \
-    com/sun/java/util/jar/pack/UnpackerImpl.class
-
-ifneq ($(PROFILE), )
-  BEANLESS_CLASSES_TARGETS := $(addprefix $(BEANLESS_CLASSES)/, $(CLASSES_TO_DEBEAN))
-endif
-
-
 RT_JAR_CREATE_OPTIONS := c0fm
 RT_JAR_UPDATE_OPTIONS := u0f
 ifeq ($(COMPRESS_JARS), true)
@@ -333,7 +310,7 @@ endif
 $(IMAGES_OUTPUTDIR)/lib$(PROFILE)/rt.jar: \
     CLASS_FILE = $(if $(PROFILE), $(strip $(foreach class, $(PROFILE_VERSION_CLASS_TARGETS), $(if $(findstring $(PROFILE), $(class)), $(class)))), NO_SUCH_FILE)
 # This is the real target
-$(IMAGES_OUTPUTDIR)/lib$(PROFILE)/rt.jar: $(IMAGES_OUTPUTDIR)/lib$(PROFILE)/_the.rt.jar.contents $(RT_JAR_MANIFEST_FILE) $(PROFILE_VERSION_CLASS_TARGETS) $(BEANLESS_CLASSES_TARGETS)
+$(IMAGES_OUTPUTDIR)/lib$(PROFILE)/rt.jar: $(IMAGES_OUTPUTDIR)/lib$(PROFILE)/_the.rt.jar.contents $(RT_JAR_MANIFEST_FILE) $(PROFILE_VERSION_CLASS_TARGETS)
 	$(ECHO) Creating rt.jar $(PROFILE) Compressed=$(COMPRESS_JARS)
 	$(MKDIR) -p $(@D)
 	$(RM) $@ $@.tmp
@@ -344,8 +321,6 @@ $(IMAGES_OUTPUTDIR)/lib$(PROFILE)/rt.jar: $(IMAGES_OUTPUTDIR)/lib$(PROFILE)/_the
 	  $(ECHO) Updating rt.jar $(PROFILE) && \
 	  $(CD) $(patsubst %$(VERSION_CLASS_PATH), %, $(CLASS_FILE)) && \
 	  $(JAR) $(RT_JAR_UPDATE_OPTIONS) $@.tmp $(VERSION_CLASS_PATH); \
-	  $(CD) $(BEANLESS_CLASSES) && \
-	  $(JAR) $(RT_JAR_UPDATE_OPTIONS) $@.tmp $(CLASSES_TO_DEBEAN); \
 	fi
 	$(MV) $@.tmp $@
 
@@ -692,13 +667,6 @@ $(IMAGES_OUTPUTDIR)/lib/ext/zipfs.jar: $(JDK_OUTPUTDIR)/demo/nio/zipfs/zipfs.jar
 	$(install-file)
 
 ##########################################################################################
-
-ifeq ($(OPENJDK_TARGET_OS), macosx)
-  $(eval $(call SetupArchive,BUILD_JOBJC_JAR, , \
-      SRCS := $(JDK_OUTPUTDIR)/jobjc_classes, \
-      JAR := $(IMAGES_OUTPUTDIR)/lib/JObjC.jar, \
-      JARINDEX := true))
-endif
 
 # This file is imported from hotspot in Import.gmk. Copying it into images/lib so that
 # all jars can be found in one place when creating images in Images.gmk. It needs to be

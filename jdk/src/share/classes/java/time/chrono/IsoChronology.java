@@ -62,7 +62,6 @@
 package java.time.chrono;
 
 import java.io.InvalidObjectException;
-import java.io.ObjectStreamException;
 import static java.time.temporal.ChronoField.DAY_OF_MONTH;
 import static java.time.temporal.ChronoField.ERA;
 import static java.time.temporal.ChronoField.MONTH_OF_YEAR;
@@ -70,6 +69,7 @@ import static java.time.temporal.ChronoField.PROLEPTIC_MONTH;
 import static java.time.temporal.ChronoField.YEAR;
 import static java.time.temporal.ChronoField.YEAR_OF_ERA;
 
+import java.io.ObjectInputStream;
 import java.io.Serializable;
 import java.time.Clock;
 import java.time.DateTimeException;
@@ -603,10 +603,11 @@ public final class IsoChronology extends AbstractChronology implements Serializa
 
     /**
      * Defend against malicious streams.
-     * @return never
+     *
+     * @param s the stream to read
      * @throws InvalidObjectException always
      */
-    private Object readResolve() throws InvalidObjectException {
+    private void readObject(ObjectInputStream s) throws InvalidObjectException {
         throw new InvalidObjectException("Deserialization via serialization delegate");
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 1996, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,7 @@
 
 package sun.misc;
 
+import java.lang.ref.SoftReference;
 import java.util.Dictionary;
 import java.util.Enumeration;
 import java.util.NoSuchElementException;
@@ -32,12 +33,26 @@ import java.util.NoSuchElementException;
 /**
  * Caches the collision list.
  */
-class CacheEntry extends Ref {
+class CacheEntry {
     int hash;
     Object key;
     CacheEntry next;
-    public Object reconstitute() {
-        return null;
+    SoftReference<Object> value;
+
+    public CacheEntry() {
+        value = null;
+    }
+
+    public CacheEntry(Object o) {
+        value = new SoftReference<>(o);
+    }
+
+    public Object get() {
+        return value.get();
+    }
+
+    public void setThing(Object thing) {
+        value = new SoftReference<>(thing);
     }
 }
 
@@ -72,10 +87,11 @@ class CacheEntry extends Ref {
  *
  * @see java.lang.Object#hashCode
  * @see java.lang.Object#equals
- * @see sun.misc.Ref
+ * @deprecated Consider {@link java.util.LinkedHashMap} for LRU caches.
  */
+@Deprecated
 public
-class Cache extends Dictionary {
+    class Cache extends Dictionary<Object, Object> {
     /**
      * The hash table data.
      */
@@ -163,7 +179,7 @@ class Cache extends Dictionary {
      * @see Cache#elements
      * @see Enumeration
      */
-    public synchronized Enumeration keys() {
+    public synchronized Enumeration<Object> keys() {
         return new CacheEnumerator(table, true);
     }
 
@@ -173,7 +189,7 @@ class Cache extends Dictionary {
      * @see Cache#keys
      * @see Enumeration
      */
-    public synchronized Enumeration elements() {
+    public synchronized Enumeration<Object> elements() {
         return new CacheEnumerator(table, false);
     }
 
@@ -190,7 +206,7 @@ class Cache extends Dictionary {
         int index = (hash & 0x7FFFFFFF) % tab.length;
         for (CacheEntry e = tab[index]; e != null; e = e.next) {
             if ((e.hash == hash) && e.key.equals(key)) {
-                return e.check();
+                return e.get();
             }
         }
         return null;
@@ -218,7 +234,7 @@ class Cache extends Dictionary {
             for (CacheEntry old = oldTable[i]; old != null;) {
                 CacheEntry e = old;
                 old = old.next;
-                if (e.check() != null) {
+                if (e.get() != null) {
                     int index = (e.hash & 0x7FFFFFFF) % newCapacity;
                     e.next = newTable[index];
                     newTable[index] = e;
@@ -251,10 +267,10 @@ class Cache extends Dictionary {
         CacheEntry ne = null;
         for (CacheEntry e = tab[index]; e != null; e = e.next) {
             if ((e.hash == hash) && e.key.equals(key)) {
-                Object old = e.check();
+                Object old = e.get();
                 e.setThing(value);
                 return old;
-            } else if (e.check() == null)
+            } else if (e.get() == null)
                 ne = e;         /* reuse old flushed value */
         }
 
@@ -294,7 +310,7 @@ class Cache extends Dictionary {
                     tab[index] = e.next;
                 }
                 count--;
-                return e.check();
+                return e.get();
             }
         }
         return null;
@@ -305,7 +321,7 @@ class Cache extends Dictionary {
  * A Cache enumerator class.  This class should remain opaque
  * to the client. It will use the Enumeration interface.
  */
-class CacheEnumerator implements Enumeration {
+class CacheEnumerator implements Enumeration<Object> {
     boolean keys;
     int index;
     CacheEntry table[];
@@ -320,7 +336,7 @@ class CacheEnumerator implements Enumeration {
     public boolean hasMoreElements() {
         while (index >= 0) {
             while (entry != null)
-                if (entry.check() != null)
+                if (entry.get() != null)
                     return true;
                 else
                     entry = entry.next;
@@ -336,8 +352,8 @@ class CacheEnumerator implements Enumeration {
             if (entry != null) {
                 CacheEntry e = entry;
                 entry = e.next;
-                if (e.check() != null)
-                    return keys ? e.key : e.check();
+                if (e.get() != null)
+                    return keys ? e.key : e.get();
             }
         }
         throw new NoSuchElementException("CacheEnumerator");

@@ -22,11 +22,13 @@
  */
 
 import java.io.File;
+import java.io.IOException;
 import java.nio.file.FileSystem;
 import java.nio.file.FileSystems;
 import java.nio.file.Files;
 import java.nio.file.LinkOption;
 import java.nio.file.Path;
+import java.nio.file.StandardCopyOption;
 import java.nio.file.attribute.PosixFilePermission;
 import java.util.HashSet;
 import java.util.Set;
@@ -47,6 +49,7 @@ import jdk.testlibrary.ProcessTools;
 public class CustomLauncherTest {
     private static final  String TEST_CLASSPATH = System.getProperty("test.class.path");
     private static final  String TEST_JDK = System.getProperty("test.jdk");
+    private static final  String WORK_DIR = System.getProperty("user.dir");
 
     private static final  String TEST_SRC = System.getProperty("test.src");
     private static final  String OSNAME = System.getProperty("os.name");
@@ -88,35 +91,13 @@ public class CustomLauncherTest {
             return;
         }
 
-        String PLATFORM = "";
-        switch (OSNAME.toLowerCase()) {
-            case "linux": {
-                PLATFORM = "linux";
-                break;
-            }
-            case "sunos": {
-                PLATFORM = "solaris";
-                break;
-            }
-            default: {
-                System.out.println("Test not designed to run on this operating " +
-                                   "system (" + OSNAME + "), skipping...");
-                return;
-            }
-        }
-
-        String LAUNCHER = TEST_SRC + File.separator + PLATFORM + "-" + ARCH +
-                          File.separator + "launcher";
-
-        final FileSystem FS = FileSystems.getDefault();
-        Path launcherPath = FS.getPath(LAUNCHER);
-
-        final boolean hasLauncher = Files.isRegularFile(launcherPath, LinkOption.NOFOLLOW_LINKS)&&
-                                    Files.isReadable(launcherPath);
-        if (!hasLauncher) {
-            System.out.println("Launcher [" + LAUNCHER + "] does not exist. Skipping the test.");
+        if (getPlatform() == null) {
+            System.out.println("Test not designed to run on this operating " +
+                                "system (" + OSNAME + "), skipping...");
             return;
         }
+
+        final FileSystem FS = FileSystems.getDefault();
 
         Path libjvmPath = findLibjvm(FS);
         if (libjvmPath == null) {
@@ -125,23 +106,20 @@ public class CustomLauncherTest {
 
         Process serverPrc = null, clientPrc = null;
 
-        final Set<PosixFilePermission> launcherOrigPerms =
-            Files.getPosixFilePermissions(launcherPath, LinkOption.NOFOLLOW_LINKS);
         try {
-            // It is impossible to store an executable file in the source control
-            // We need to set the executable flag here
-            if (!Files.isExecutable(launcherPath)) {
-                Set<PosixFilePermission> perms = new HashSet<>(launcherOrigPerms);
-                perms.add(PosixFilePermission.OWNER_EXECUTE);
-                Files.setPosixFilePermissions(launcherPath, perms);
-            }
+            String[] launcher = getLauncher();
 
             System.out.println("Starting custom launcher:");
             System.out.println("=========================");
-            System.out.println("  launcher  : " + LAUNCHER);
+            System.out.println("  launcher  : " + launcher[0]);
             System.out.println("  libjvm    : " + libjvmPath.toString());
             System.out.println("  classpath : " + TEST_CLASSPATH);
-            ProcessBuilder server = new ProcessBuilder(LAUNCHER, libjvmPath.toString(), TEST_CLASSPATH, "TestApplication");
+            ProcessBuilder server = new ProcessBuilder(
+                launcher[1],
+                libjvmPath.toString(),
+                TEST_CLASSPATH,
+                "TestApplication"
+            );
 
             final AtomicReference<String> port = new AtomicReference<>();
             final AtomicReference<String> pid = new AtomicReference<>();
@@ -198,8 +176,6 @@ public class CustomLauncherTest {
                 throw new Error("Test failed");
             }
         } finally {
-            // Let's restore the original launcher permissions
-            Files.setPosixFilePermissions(launcherPath, launcherOrigPerms);
             if (clientPrc != null) {
                 clientPrc.destroy();
                 clientPrc.waitFor();
@@ -239,5 +215,63 @@ public class CustomLauncherTest {
 
     private static boolean isFileOk(Path path) {
         return Files.isRegularFile(path) && Files.isReadable(path);
+    }
+
+    private static String getPlatform() {
+        String platform = null;
+        switch (OSNAME.toLowerCase()) {
+            case "linux": {
+                platform = "linux";
+                break;
+            }
+            case "sunos": {
+                platform = "solaris";
+                break;
+            }
+            default: {
+                platform = null;
+            }
+        }
+
+        return platform;
+    }
+
+    private static String[] getLauncher() throws IOException {
+        String platform = getPlatform();
+        if (platform == null) {
+            return null;
+        }
+
+        String launcher = TEST_SRC + File.separator + platform + "-" + ARCH +
+                          File.separator + "launcher";
+
+        final FileSystem FS = FileSystems.getDefault();
+        Path launcherPath = FS.getPath(launcher);
+
+        final boolean hasLauncher = Files.isRegularFile(launcherPath, LinkOption.NOFOLLOW_LINKS)&&
+                                    Files.isReadable(launcherPath);
+        if (!hasLauncher) {
+            System.out.println("Launcher [" + launcher + "] does not exist. Skipping the test.");
+            return null;
+        }
+
+        // It is impossible to store an executable file in the source control
+        // We need to copy the launcher to the working directory
+        // and set the executable flag
+        Path localLauncherPath = FS.getPath(WORK_DIR, "launcher");
+        Files.copy(launcherPath, localLauncherPath,
+                   StandardCopyOption.REPLACE_EXISTING,
+                   StandardCopyOption.COPY_ATTRIBUTES);
+        if (!Files.isExecutable(localLauncherPath)) {
+            Set<PosixFilePermission> perms = new HashSet<>(
+                Files.getPosixFilePermissions(
+                    localLauncherPath,
+                    LinkOption.NOFOLLOW_LINKS
+                )
+            );
+            perms.add(PosixFilePermission.OWNER_EXECUTE);
+            Files.setPosixFilePermissions(localLauncherPath, perms);
+        }
+        return new String[] {launcher, localLauncherPath.toAbsolutePath().toString()};
     }
 }

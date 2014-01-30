@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -131,7 +131,7 @@ import static javax.swing.ClientPropertyKey.PopupFactory_FORCE_HEAVYWEIGHT_POPUP
  * <b>Parameters:</b><br>
  * The parameters to these methods follow consistent patterns:
  * <blockquote>
- * <dl compact>
+ * <dl>
  * <dt>parentComponent<dd>
  * Defines the <code>Component</code> that is to be the parent of this
  * dialog box.
@@ -149,7 +149,7 @@ import static javax.swing.ClientPropertyKey.PopupFactory_FORCE_HEAVYWEIGHT_POPUP
  * <code>String</code> constant.
  * However, the type of this parameter is actually <code>Object</code>. Its
  * interpretation depends on its type:
- * <dl compact>
+ * <dl>
  * <dt>Object[]<dd>An array of objects is interpreted as a series of
  *                 messages (one per object) arranged in a vertical stack.
  *                 The interpretation is recursive -- each object in the
@@ -187,7 +187,7 @@ import static javax.swing.ClientPropertyKey.PopupFactory_FORCE_HEAVYWEIGHT_POPUP
  * <code>String</code>s. But
  * the parameter type is an array of <code>Objects</code>.
  * A button is created for each object depending on its type:
- * <dl compact>
+ * <dl>
  * <dt>Component<dd>The component is added to the button row directly.
  * <dt>Icon<dd>A <code>JButton</code> is created with this as its label.
  * <dt>other<dd>The <code>Object</code> is converted to a string using its
@@ -310,6 +310,7 @@ import static javax.swing.ClientPropertyKey.PopupFactory_FORCE_HEAVYWEIGHT_POPUP
  * @author James Gosling
  * @author Scott Violet
  */
+@SuppressWarnings("serial") // Same-version serialization only
 public class JOptionPane extends JComponent implements Accessible
 {
     /**
@@ -2576,6 +2577,7 @@ public class JOptionPane extends JComponent implements Accessible
      * has been added to the <code>java.beans</code> package.
      * Please see {@link java.beans.XMLEncoder}.
      */
+    @SuppressWarnings("serial") // Same-version serialization only
     protected class AccessibleJOptionPane extends AccessibleJComponent {
 
         /**

@@ -86,5 +86,5 @@ public class CharacterRangeTable_attribute  extends Attribute {
         public final int character_range_start;
         public final int character_range_end;
         public final int flags;
-    };
+    }
 }

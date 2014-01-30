@@ -55,7 +55,6 @@ import sun.print.PrintJob2D;
 import sun.security.action.GetPropertyAction;
 import sun.security.action.GetBooleanAction;
 import sun.util.logging.PlatformLogger;
-import sun.security.util.SecurityConstants;
 
 public final class XToolkit extends UNIXToolkit implements Runnable {
     private static final PlatformLogger log = PlatformLogger.getLogger("sun.awt.X11.XToolkit");
@@ -654,8 +653,8 @@ public final class XToolkit extends UNIXToolkit implements Runnable {
                 XWindowAttributes pattr = new XWindowAttributes();
                 try {
                     XlibWrapper.XGetWindowAttributes(XToolkit.getDisplay(), XToolkit.getDefaultRootWindow(), pattr.pData);
-                    screenWidth  = (int) pattr.get_width();
-                    screenHeight = (int) pattr.get_height();
+                    screenWidth  = pattr.get_width();
+                    screenHeight = pattr.get_height();
                 } finally {
                     pattr.dispose();
                 }
@@ -1161,7 +1160,7 @@ public final class XToolkit extends UNIXToolkit implements Runnable {
     public  Clipboard getSystemClipboard() {
         SecurityManager security = System.getSecurityManager();
         if (security != null) {
-            security.checkPermission(SecurityConstants.AWT.ACCESS_CLIPBOARD_PERMISSION);
+            security.checkPermission(AWTPermissions.ACCESS_CLIPBOARD_PERMISSION);
         }
         synchronized (this) {
             if (clipboard == null) {
@@ -1174,7 +1173,7 @@ public final class XToolkit extends UNIXToolkit implements Runnable {
     public Clipboard getSystemSelection() {
         SecurityManager security = System.getSecurityManager();
         if (security != null) {
-            security.checkPermission(SecurityConstants.AWT.ACCESS_CLIPBOARD_PERMISSION);
+            security.checkPermission(AWTPermissions.ACCESS_CLIPBOARD_PERMISSION);
         }
         synchronized (this) {
             if (selection == null) {
@@ -1546,7 +1545,7 @@ public final class XToolkit extends UNIXToolkit implements Runnable {
                  */
                 if (desktopProperties.get(SunToolkit.DESKTOPFONTHINTS) == null) {
                     if (XWM.isKDE2()) {
-                        Object hint = fcManager.getFontConfigAAHint();
+                        Object hint = FontConfigManager.getFontConfigAAHint();
                         if (hint != null) {
                             /* set the fontconfig/KDE property so that
                              * getDesktopHints() below will see it
@@ -2078,7 +2077,7 @@ public final class XToolkit extends UNIXToolkit implements Runnable {
     }
 
     private static void setBackingStoreType() {
-        String prop = (String)AccessController.doPrivileged(
+        String prop = AccessController.doPrivileged(
                 new sun.security.action.GetPropertyAction("sun.awt.backingStore"));
 
         if (prop == null) {

@@ -61,7 +61,9 @@
  */
 package java.time.temporal;
 
+import java.io.IOException;
 import java.io.InvalidObjectException;
+import java.io.ObjectInputStream;
 import java.io.Serializable;
 import java.time.DateTimeException;
 
@@ -338,18 +340,30 @@ public final class ValueRange implements Serializable {
         }
     }
 
+    //-----------------------------------------------------------------------
     /**
-     * Return the ValueRange for the serialized values.
-     * The values are validated according to the constraints of the {@link #of}
-     * factory method.
-     * @return the ValueRange for the serialized fields
-     * @throws InvalidObjectException if the serialized object has invalid values
+     * Restore the state of an ValueRange from the stream.
+     * Check that the values are valid.
+     *
+     * @param s the stream to read
+     * @throws InvalidObjectException if
+     *     the smallest minimum is greater than the smallest maximum,
+     *  or the smallest maximum is greater than the largest maximum
+     *  or the largest minimum is greater than the largest maximum
+     * @throws ClassNotFoundException if a class cannot be resolved
      */
-    private Object readResolve() throws InvalidObjectException {
-        try {
-            return of(minSmallest, minLargest, maxSmallest, maxLargest);
-        } catch (IllegalArgumentException iae) {
-            throw new InvalidObjectException("Invalid serialized ValueRange: " + iae.getMessage());
+    private void readObject(ObjectInputStream s)
+         throws IOException, ClassNotFoundException, InvalidObjectException
+    {
+        s.defaultReadObject();
+        if (minSmallest > minLargest) {
+            throw new InvalidObjectException("Smallest minimum value must be less than largest minimum value");
+        }
+        if (maxSmallest > maxLargest) {
+            throw new InvalidObjectException("Smallest maximum value must be less than largest maximum value");
+        }
+        if (minLargest > maxLargest) {
+            throw new InvalidObjectException("Minimum value must be less than maximum value");
         }
     }
 

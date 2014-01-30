@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -49,6 +49,8 @@ public interface TextListener extends EventListener {
      * Invoked when the value of the text has changed.
      * The code written for this method performs the operations
      * that need to occur when text changes.
+     *
+     * @param e the event to be processed
      */
     public void textValueChanged(TextEvent e);
 

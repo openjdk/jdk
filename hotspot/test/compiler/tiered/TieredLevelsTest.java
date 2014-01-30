@@ -28,7 +28,7 @@
  * @run main ClassFileInstaller sun.hotspot.WhiteBox
  * @run main/othervm -Xbootclasspath/a:. -XX:+TieredCompilation
  *                   -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
- *                   -XX:CompileCommand=compileonly,TestCase$Helper::*
+ *                   -XX:CompileCommand=compileonly,SimpleTestCase$Helper::*
  *                   TieredLevelsTest
  * @summary Verify that all levels &lt; 'TieredStopAtLevel' can be used
  * @author igor.ignatyev@oracle.com
@@ -40,9 +40,7 @@ public class TieredLevelsTest extends CompLevelsTest {
                     + "TieredCompilation. Skip test.");
             return;
         }
-        for (TestCase test : TestCase.values()) {
-            new TieredLevelsTest(test).runTest();
-        }
+        CompilerWhiteBoxTest.main(TieredLevelsTest::new, args);
     }
 
     private TieredLevelsTest(TestCase testCase) {
