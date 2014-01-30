@@ -111,7 +111,7 @@ public abstract class Reference<T> {
      * therefore critical that any code holding this lock complete as quickly
      * as possible, allocate no new objects, and avoid calling user code.
      */
-    static private class Lock { };
+    static private class Lock { }
     private static Lock lock = new Lock();
 
 
@@ -126,6 +126,22 @@ public abstract class Reference<T> {
      */
     private static class ReferenceHandler extends Thread {
 
+        private static void ensureClassInitialized(Class<?> clazz) {
+            try {
+                Class.forName(clazz.getName(), true, clazz.getClassLoader());
+            } catch (ClassNotFoundException e) {
+                throw (Error) new NoClassDefFoundError(e.getMessage()).initCause(e);
+            }
+        }
+
+        static {
+            // pre-load and initialize InterruptedException and Cleaner classes
+            // so that we don't get into trouble later in the run loop if there's
+            // memory shortage while loading/initializing them lazily.
+            ensureClassInitialized(InterruptedException.class);
+            ensureClassInitialized(Cleaner.class);
+        }
+
         ReferenceHandler(ThreadGroup g, String name) {
             super(g, name);
         }
@@ -133,37 +149,40 @@ public abstract class Reference<T> {
         public void run() {
             for (;;) {
                 Reference<Object> r;
-                synchronized (lock) {
-                    if (pending != null) {
-                        r = pending;
-                        pending = r.discovered;
-                        r.discovered = null;
-                    } else {
-                        // The waiting on the lock may cause an OOME because it may try to allocate
-                        // exception objects, so also catch OOME here to avoid silent exit of the
-                        // reference handler thread.
-                        //
-                        // Explicitly define the order of the two exceptions we catch here
-                        // when waiting for the lock.
-                        //
-                        // We do not want to try to potentially load the InterruptedException class
-                        // (which would be done if this was its first use, and InterruptedException
-                        // were checked first) in this situation.
-                        //
-                        // This may lead to the VM not ever trying to load the InterruptedException
-                        // class again.
-                        try {
-                            try {
-                                lock.wait();
-                            } catch (OutOfMemoryError x) { }
-                        } catch (InterruptedException x) { }
-                        continue;
+                Cleaner c;
+                try {
+                    synchronized (lock) {
+                        if (pending != null) {
+                            r = pending;
+                            // 'instanceof' might throw OutOfMemoryError sometimes
+                            // so do this before un-linking 'r' from the 'pending' chain...
+                            c = r instanceof Cleaner ? (Cleaner) r : null;
+                            // unlink 'r' from 'pending' chain
+                            pending = r.discovered;
+                            r.discovered = null;
+                        } else {
+                            // The waiting on the lock may cause an OutOfMemoryError
+                            // because it may try to allocate exception objects.
+                            lock.wait();
+                            continue;
+                        }
                     }
+                } catch (OutOfMemoryError x) {
+                    // Give other threads CPU time so they hopefully drop some live references
+                    // and GC reclaims some space.
+                    // Also prevent CPU intensive spinning in case 'r instanceof Cleaner' above
+                    // persistently throws OOME for some time...
+                    Thread.yield();
+                    // retry
+                    continue;
+                } catch (InterruptedException x) {
+                    // retry
+                    continue;
                 }
 
                 // Fast path for cleaners
-                if (r instanceof Cleaner) {
-                    ((Cleaner)r).clean();
+                if (c != null) {
+                    c.clean();
                     continue;
                 }
 
