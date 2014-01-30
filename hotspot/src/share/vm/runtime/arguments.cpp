@@ -178,7 +178,7 @@ void Arguments::init_system_properties() {
   PropertyList_add(&_system_properties, new SystemProperty("java.vm.name", VM_Version::vm_name(),  false));
   PropertyList_add(&_system_properties, new SystemProperty("java.vm.info", VM_Version::vm_info_string(),  true));
 
-  // following are JVMTI agent writeable properties.
+  // Following are JVMTI agent writable properties.
   // Properties values are set to NULL and they are
   // os specific they are initialized in os::init_system_properties_values().
   _java_ext_dirs = new SystemProperty("java.ext.dirs", NULL,  true);
@@ -1306,7 +1306,7 @@ void Arguments::set_cms_and_parnew_gc_flags() {
   if (!FLAG_IS_DEFAULT(OldPLABSize)) {
     if (FLAG_IS_DEFAULT(CMSParPromoteBlocksToClaim)) {
       // OldPLABSize is not the default value but CMSParPromoteBlocksToClaim
-      // is.  In this situtation let CMSParPromoteBlocksToClaim follow
+      // is.  In this situation let CMSParPromoteBlocksToClaim follow
       // the value (either from the command line or ergonomics) of
       // OldPLABSize.  Following OldPLABSize is an ergonomics decision.
       FLAG_SET_ERGO(uintx, CMSParPromoteBlocksToClaim, OldPLABSize);
@@ -1569,6 +1569,16 @@ void Arguments::set_parallel_gc_flags() {
     vm_exit(1);
   }
 
+  if (UseAdaptiveSizePolicy) {
+    // We don't want to limit adaptive heap sizing's freedom to adjust the heap
+    // unless the user actually sets these flags.
+    if (FLAG_IS_DEFAULT(MinHeapFreeRatio)) {
+      FLAG_SET_DEFAULT(MinHeapFreeRatio, 0);
+    }
+    if (FLAG_IS_DEFAULT(MaxHeapFreeRatio)) {
+      FLAG_SET_DEFAULT(MaxHeapFreeRatio, 100);
+    }
+  }
 
   // If InitialSurvivorRatio or MinSurvivorRatio were not specified, but the
   // SurvivorRatio has been set, reset their default values to SurvivorRatio +
@@ -1844,7 +1854,7 @@ bool Arguments::verify_min_value(intx val, intx min, const char* name) {
 }
 
 bool Arguments::verify_percentage(uintx value, const char* name) {
-  if (value <= 100) {
+  if (is_percentage(value)) {
     return true;
   }
   jio_fprintf(defaultStream::error_stream(),
@@ -1930,6 +1940,34 @@ bool is_filename_valid(const char *file_name) {
     return false;
   }
   return count_p < 2 && count_t < 2;
+}
+
+bool Arguments::verify_MinHeapFreeRatio(FormatBuffer<80>& err_msg, uintx min_heap_free_ratio) {
+  if (!is_percentage(min_heap_free_ratio)) {
+    err_msg.print("MinHeapFreeRatio must have a value between 0 and 100");
+    return false;
+  }
+  if (min_heap_free_ratio > MaxHeapFreeRatio) {
+    err_msg.print("MinHeapFreeRatio (" UINTX_FORMAT ") must be less than or "
+                  "equal to MaxHeapFreeRatio (" UINTX_FORMAT ")", min_heap_free_ratio,
+                  MaxHeapFreeRatio);
+    return false;
+  }
+  return true;
+}
+
+bool Arguments::verify_MaxHeapFreeRatio(FormatBuffer<80>& err_msg, uintx max_heap_free_ratio) {
+  if (!is_percentage(max_heap_free_ratio)) {
+    err_msg.print("MaxHeapFreeRatio must have a value between 0 and 100");
+    return false;
+  }
+  if (max_heap_free_ratio < MinHeapFreeRatio) {
+    err_msg.print("MaxHeapFreeRatio (" UINTX_FORMAT ") must be greater than or "
+                  "equal to MinHeapFreeRatio (" UINTX_FORMAT ")", max_heap_free_ratio,
+                  MinHeapFreeRatio);
+    return false;
+  }
+  return true;
 }
 
 // Check consistency of GC selection
@@ -2037,8 +2075,6 @@ bool Arguments::check_vm_args_consistency() {
   status = status && verify_interval(AdaptiveSizePolicyWeight, 0, 100,
                               "AdaptiveSizePolicyWeight");
   status = status && verify_percentage(ThresholdTolerance, "ThresholdTolerance");
-  status = status && verify_percentage(MinHeapFreeRatio, "MinHeapFreeRatio");
-  status = status && verify_percentage(MaxHeapFreeRatio, "MaxHeapFreeRatio");
 
   // Divide by bucket size to prevent a large size from causing rollover when
   // calculating amount of memory needed to be allocated for the String table.
@@ -2048,15 +2084,19 @@ bool Arguments::check_vm_args_consistency() {
   status = status && verify_interval(SymbolTableSize, minimumSymbolTableSize,
     (max_uintx / SymbolTable::bucket_size()), "SymbolTable size");
 
-  if (MinHeapFreeRatio > MaxHeapFreeRatio) {
-    jio_fprintf(defaultStream::error_stream(),
-                "MinHeapFreeRatio (" UINTX_FORMAT ") must be less than or "
-                "equal to MaxHeapFreeRatio (" UINTX_FORMAT ")\n",
-                MinHeapFreeRatio, MaxHeapFreeRatio);
-    status = false;
+  {
+    // Using "else if" below to avoid printing two error messages if min > max.
+    // This will also prevent us from reporting both min>100 and max>100 at the
+    // same time, but that is less annoying than printing two identical errors IMHO.
+    FormatBuffer<80> err_msg("");
+    if (!verify_MinHeapFreeRatio(err_msg, MinHeapFreeRatio)) {
+      jio_fprintf(defaultStream::error_stream(), "%s\n", err_msg.buffer());
+      status = false;
+    } else if (!verify_MaxHeapFreeRatio(err_msg, MaxHeapFreeRatio)) {
+      jio_fprintf(defaultStream::error_stream(), "%s\n", err_msg.buffer());
+      status = false;
+    }
   }
-  // Keeping the heap 100% free is hard ;-) so limit it to 99%.
-  MinHeapFreeRatio = MIN2(MinHeapFreeRatio, (uintx) 99);
 
   // Min/MaxMetaspaceFreeRatio
   status = status && verify_percentage(MinMetaspaceFreeRatio, "MinMetaspaceFreeRatio");
@@ -2689,7 +2729,7 @@ jint Arguments::parse_each_vm_init_arg(const JavaVMInitArgs* args,
     } else if (match_option(option, "-Xmaxf", &tail)) {
       char* err;
       int maxf = (int)(strtod(tail, &err) * 100);
-      if (*err != '\0' || maxf < 0 || maxf > 100) {
+      if (*err != '\0' || *tail == '\0' || maxf < 0 || maxf > 100) {
         jio_fprintf(defaultStream::error_stream(),
                     "Bad max heap free percentage size: %s\n",
                     option->optionString);
@@ -2701,7 +2741,7 @@ jint Arguments::parse_each_vm_init_arg(const JavaVMInitArgs* args,
     } else if (match_option(option, "-Xminf", &tail)) {
       char* err;
       int minf = (int)(strtod(tail, &err) * 100);
-      if (*err != '\0' || minf < 0 || minf > 100) {
+      if (*err != '\0' || *tail == '\0' || minf < 0 || minf > 100) {
         jio_fprintf(defaultStream::error_stream(),
                     "Bad min heap free percentage size: %s\n",
                     option->optionString);
@@ -3646,9 +3686,9 @@ jint Arguments::apply_ergo() {
   // Set per-collector flags
   if (UseParallelGC || UseParallelOldGC) {
     set_parallel_gc_flags();
-  } else if (UseConcMarkSweepGC) { // should be done before ParNew check below
+  } else if (UseConcMarkSweepGC) { // Should be done before ParNew check below
     set_cms_and_parnew_gc_flags();
-  } else if (UseParNewGC) {  // skipped if CMS is set above
+  } else if (UseParNewGC) {  // Skipped if CMS is set above
     set_parnew_gc_flags();
   } else if (UseG1GC) {
     set_g1_gc_flags();
@@ -3662,22 +3702,26 @@ jint Arguments::apply_ergo() {
               " using -XX:ParallelGCThreads=N");
     }
   }
+  if (MinHeapFreeRatio == 100) {
+    // Keeping the heap 100% free is hard ;-) so limit it to 99%.
+    FLAG_SET_ERGO(uintx, MinHeapFreeRatio, 99);
+  }
 #else // INCLUDE_ALL_GCS
   assert(verify_serial_gc_flags(), "SerialGC unset");
 #endif // INCLUDE_ALL_GCS
 
-  // Initialize Metaspace flags and alignments.
+  // Initialize Metaspace flags and alignments
   Metaspace::ergo_initialize();
 
   // Set bytecode rewriting flags
   set_bytecode_flags();
 
-  // Set flags if Aggressive optimization flags (-XX:+AggressiveOpts) enabled.
+  // Set flags if Aggressive optimization flags (-XX:+AggressiveOpts) enabled
   set_aggressive_opts_flags();
 
   // Turn off biased locking for locking debug mode flags,
-  // which are subtlely different from each other but neither works with
-  // biased locking.
+  // which are subtly different from each other but neither works with
+  // biased locking
   if (UseHeavyMonitors
 #ifdef COMPILER1
       || !UseFastLocking

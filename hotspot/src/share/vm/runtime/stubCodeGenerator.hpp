@@ -111,7 +111,7 @@ class StubCodeGenerator: public StackObj {
 };
 
 
-// Stack-allocated helper class used to assciate a stub code with a name.
+// Stack-allocated helper class used to associate a stub code with a name.
 // All stub code generating functions that use a StubCodeMark will be registered
 // in the global StubCodeDesc list and the generated stub code can be identified
 // later via an address pointing into it.

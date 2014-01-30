@@ -90,7 +90,7 @@ class Monitor : public CHeapObj<mtInternal> {
   // A special lock: Is a lock where you are guaranteed not to block while you are
   // holding it, i.e., no vm operation can happen, taking other locks, etc.
   // NOTE: It is critical that the rank 'special' be the lowest (earliest)
-  // (except for "event"?) for the deadlock dection to work correctly.
+  // (except for "event"?) for the deadlock detection to work correctly.
   // The rank native is only for use in Mutex's created by JVM_RawMonitorCreate,
   // which being external to the VM are not subject to deadlock detection.
   // The rank safepoint is used only for synchronization in reaching a
@@ -241,7 +241,7 @@ class Monitor : public CHeapObj<mtInternal> {
 //
 // Currently, however, the base object is a monitor.  Monitor contains all the
 // logic for wait(), notify(), etc.   Mutex extends monitor and restricts the
-// visiblity of wait(), notify(), and notify_all().
+// visibility of wait(), notify(), and notify_all().
 //
 // Another viable alternative would have been to have Monitor extend Mutex and
 // implement all the normal mutex and wait()-notify() logic in Mutex base class.

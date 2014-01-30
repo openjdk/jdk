@@ -61,7 +61,6 @@ bool DefNewGeneration::IsAliveClosure::do_object_b(oop p) {
 DefNewGeneration::KeepAliveClosure::
 KeepAliveClosure(ScanWeakRefClosure* cl) : _cl(cl) {
   GenRemSet* rs = GenCollectedHeap::heap()->rem_set();
-  assert(rs->rs_kind() == GenRemSet::CardTable, "Wrong rem set kind.");
   _rs = (CardTableRS*)rs;
 }
 
@@ -619,13 +618,12 @@ void DefNewGeneration::collect(bool   full,
   assert(gch->no_allocs_since_save_marks(0),
          "save marks have not been newly set.");
 
-  int so = SharedHeap::SO_AllClasses | SharedHeap::SO_Strings | SharedHeap::SO_CodeCache;
+  int so = SharedHeap::SO_AllClasses | SharedHeap::SO_Strings | SharedHeap::SO_ScavengeCodeCache;
 
   gch->gen_process_strong_roots(_level,
                                 true,  // Process younger gens, if any,
                                        // as strong roots.
                                 true,  // activate StrongRootsScope
-                                true,  // is scavenging
                                 SharedHeap::ScanningOption(so),
                                 &fsc_with_no_gc_barrier,
                                 true,   // walk *all* scavengable nmethods
@@ -1084,6 +1082,10 @@ void DefNewGeneration::gc_prologue(bool full) {
 
 size_t DefNewGeneration::tlab_capacity() const {
   return eden()->capacity();
+}
+
+size_t DefNewGeneration::tlab_used() const {
+  return eden()->used();
 }
 
 size_t DefNewGeneration::unsafe_max_tlab_alloc() const {

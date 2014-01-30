@@ -378,19 +378,19 @@ class ConcurrentMark: public CHeapObj<mtGC> {
   friend class G1CMDrainMarkingStackClosure;
 
 protected:
-  ConcurrentMarkThread* _cmThread;   // the thread doing the work
-  G1CollectedHeap*      _g1h;        // the heap.
-  uint                  _parallel_marking_threads; // the number of marking
-                                                   // threads we're use
-  uint                  _max_parallel_marking_threads; // max number of marking
-                                                   // threads we'll ever use
-  double                _sleep_factor; // how much we have to sleep, with
+  ConcurrentMarkThread* _cmThread;   // The thread doing the work
+  G1CollectedHeap*      _g1h;        // The heap
+  uint                  _parallel_marking_threads; // The number of marking
+                                                   // threads we're using
+  uint                  _max_parallel_marking_threads; // Max number of marking
+                                                       // threads we'll ever use
+  double                _sleep_factor; // How much we have to sleep, with
                                        // respect to the work we just did, to
                                        // meet the marking overhead goal
-  double                _marking_task_overhead; // marking target overhead for
+  double                _marking_task_overhead; // Marking target overhead for
                                                 // a single task
 
-  // same as the two above, but for the cleanup task
+  // Same as the two above, but for the cleanup task
   double                _cleanup_sleep_factor;
   double                _cleanup_task_overhead;
 
@@ -399,8 +399,8 @@ protected:
   // Concurrent marking support structures
   CMBitMap                _markBitMap1;
   CMBitMap                _markBitMap2;
-  CMBitMapRO*             _prevMarkBitMap; // completed mark bitmap
-  CMBitMap*               _nextMarkBitMap; // under-construction mark bitmap
+  CMBitMapRO*             _prevMarkBitMap; // Completed mark bitmap
+  CMBitMap*               _nextMarkBitMap; // Under-construction mark bitmap
 
   BitMap                  _region_bm;
   BitMap                  _card_bm;
@@ -409,43 +409,43 @@ protected:
   HeapWord*               _heap_start;
   HeapWord*               _heap_end;
 
-  // Root region tracking and claiming.
+  // Root region tracking and claiming
   CMRootRegions           _root_regions;
 
   // For gray objects
-  CMMarkStack             _markStack; // Grey objects behind global finger.
-  HeapWord* volatile      _finger;  // the global finger, region aligned,
+  CMMarkStack             _markStack; // Grey objects behind global finger
+  HeapWord* volatile      _finger;  // The global finger, region aligned,
                                     // always points to the end of the
                                     // last claimed region
 
-  // marking tasks
-  uint                    _max_worker_id;// maximum worker id
-  uint                    _active_tasks; // task num currently active
-  CMTask**                _tasks;        // task queue array (max_worker_id len)
-  CMTaskQueueSet*         _task_queues;  // task queue set
-  ParallelTaskTerminator  _terminator;   // for termination
+  // Marking tasks
+  uint                    _max_worker_id;// Maximum worker id
+  uint                    _active_tasks; // Task num currently active
+  CMTask**                _tasks;        // Task queue array (max_worker_id len)
+  CMTaskQueueSet*         _task_queues;  // Task queue set
+  ParallelTaskTerminator  _terminator;   // For termination
 
-  // Two sync barriers that are used to synchronise tasks when an
+  // Two sync barriers that are used to synchronize tasks when an
   // overflow occurs. The algorithm is the following. All tasks enter
   // the first one to ensure that they have all stopped manipulating
-  // the global data structures. After they exit it, they re-initialise
-  // their data structures and task 0 re-initialises the global data
+  // the global data structures. After they exit it, they re-initialize
+  // their data structures and task 0 re-initializes the global data
   // structures. Then, they enter the second sync barrier. This
   // ensure, that no task starts doing work before all data
-  // structures (local and global) have been re-initialised. When they
+  // structures (local and global) have been re-initialized. When they
   // exit it, they are free to start working again.
   WorkGangBarrierSync     _first_overflow_barrier_sync;
   WorkGangBarrierSync     _second_overflow_barrier_sync;
 
-  // this is set by any task, when an overflow on the global data
-  // structures is detected.
+  // This is set by any task, when an overflow on the global data
+  // structures is detected
   volatile bool           _has_overflown;
-  // true: marking is concurrent, false: we're in remark
+  // True: marking is concurrent, false: we're in remark
   volatile bool           _concurrent;
-  // set at the end of a Full GC so that marking aborts
+  // Set at the end of a Full GC so that marking aborts
   volatile bool           _has_aborted;
 
-  // used when remark aborts due to an overflow to indicate that
+  // Used when remark aborts due to an overflow to indicate that
   // another concurrent marking phase should start
   volatile bool           _restart_for_overflow;
 
@@ -455,10 +455,10 @@ protected:
   // time of remark.
   volatile bool           _concurrent_marking_in_progress;
 
-  // verbose level
+  // Verbose level
   CMVerboseLevel          _verbose_level;
 
-  // All of these times are in ms.
+  // All of these times are in ms
   NumberSeq _init_times;
   NumberSeq _remark_times;
   NumberSeq   _remark_mark_times;
@@ -467,7 +467,7 @@ protected:
   double    _total_counting_time;
   double    _total_rs_scrub_time;
 
-  double*   _accum_task_vtime;   // accumulated task vtime
+  double*   _accum_task_vtime;   // Accumulated task vtime
 
   FlexibleWorkGang* _parallel_workers;
 
@@ -487,7 +487,7 @@ protected:
   void reset_marking_state(bool clear_overflow = true);
 
   // We do this after we're done with marking so that the marking data
-  // structures are initialised to a sensible and predictable state.
+  // structures are initialized to a sensible and predictable state.
   void set_non_marking_state();
 
   // Called to indicate how many threads are currently active.
@@ -497,14 +497,14 @@ protected:
   // mark or remark) and how many threads are currently active.
   void set_concurrency_and_phase(uint active_tasks, bool concurrent);
 
-  // prints all gathered CM-related statistics
+  // Prints all gathered CM-related statistics
   void print_stats();
 
   bool cleanup_list_is_empty() {
     return _cleanup_list.is_empty();
   }
 
-  // accessor methods
+  // Accessor methods
   uint parallel_marking_threads() const     { return _parallel_marking_threads; }
   uint max_parallel_marking_threads() const { return _max_parallel_marking_threads;}
   double sleep_factor()                     { return _sleep_factor; }
@@ -542,7 +542,7 @@ protected:
   // frequently.
   HeapRegion* claim_region(uint worker_id);
 
-  // It determines whether we've run out of regions to scan.
+  // It determines whether we've run out of regions to scan
   bool        out_of_regions() { return _finger == _heap_end; }
 
   // Returns the task with the given id
@@ -816,7 +816,7 @@ public:
   inline bool do_yield_check(uint worker_i = 0);
   inline bool should_yield();
 
-  // Called to abort the marking cycle after a Full GC takes palce.
+  // Called to abort the marking cycle after a Full GC takes place.
   void abort();
 
   bool has_aborted()      { return _has_aborted; }
@@ -933,11 +933,11 @@ public:
 
   // Similar to the above routine but there are times when we cannot
   // safely calculate the size of obj due to races and we, therefore,
-  // pass the size in as a parameter. It is the caller's reponsibility
+  // pass the size in as a parameter. It is the caller's responsibility
   // to ensure that the size passed in for obj is valid.
   inline bool par_mark_and_count(oop obj, size_t word_size, uint worker_id);
 
-  // Unconditionally mark the given object, and unconditinally count
+  // Unconditionally mark the given object, and unconditionally count
   // the object in the counting structures for worker id 0.
   // Should *not* be called from parallel code.
   inline bool mark_and_count(oop obj, HeapRegion* hr);

@@ -124,7 +124,7 @@ public:
   virtual bool has_read_region_opt() = 0;
   virtual bool has_write_region_opt() = 0;
 
-  // These operations should assert false unless the correponding operation
+  // These operations should assert false unless the corresponding operation
   // above returns true.  Otherwise, they should perform an appropriate
   // barrier for an array whose elements are all in the given memory region.
   virtual void read_ref_array(MemRegion mr) = 0;
@@ -165,7 +165,7 @@ public:
   // normally reserve space for such tables, and commit parts of the table
   // "covering" parts of the heap that are committed.  The constructor is
   // passed the maximum number of independently committable subregions to
-  // be covered, and the "resize_covoered_region" function allows the
+  // be covered, and the "resize_covered_region" function allows the
   // sub-parts of the heap to inform the barrier set of changes of their
   // sizes.
   BarrierSet(int max_covered_regions) :

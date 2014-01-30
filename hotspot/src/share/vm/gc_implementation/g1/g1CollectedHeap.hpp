@@ -209,7 +209,7 @@ class G1CollectedHeap : public SharedHeap {
   friend class OldGCAllocRegion;
 
   // Closures used in implementation.
-  template <bool do_gen_barrier, G1Barrier barrier, bool do_mark_object>
+  template <G1Barrier barrier, bool do_mark_object>
   friend class G1ParCopyClosure;
   friend class G1IsAliveClosure;
   friend class G1EvacuateFollowersClosure;
@@ -1373,7 +1373,7 @@ public:
   // Divide the heap region sequence into "chunks" of some size (the number
   // of regions divided by the number of parallel threads times some
   // overpartition factor, currently 4).  Assumes that this will be called
-  // in parallel by ParallelGCThreads worker threads with discinct worker
+  // in parallel by ParallelGCThreads worker threads with distinct worker
   // ids in the range [0..max(ParallelGCThreads-1, 1)], that all parallel
   // calls will use the same "claim_value", and that that claim value is
   // different from the claim_value of any heap region before the start of
@@ -1470,9 +1470,11 @@ public:
   // Section on thread-local allocation buffers (TLABs)
   // See CollectedHeap for semantics.
 
-  virtual bool supports_tlab_allocation() const;
-  virtual size_t tlab_capacity(Thread* thr) const;
-  virtual size_t unsafe_max_tlab_alloc(Thread* thr) const;
+  bool supports_tlab_allocation() const;
+  size_t tlab_capacity(Thread* ignored) const;
+  size_t tlab_used(Thread* ignored) const;
+  size_t max_tlab_size() const;
+  size_t unsafe_max_tlab_alloc(Thread* ignored) const;
 
   // Can a compiler initialize a new object without store barriers?
   // This permission only extends from the creation of a new object
@@ -1518,7 +1520,7 @@ public:
   // Returns "true" iff the given word_size is "very large".
   static bool isHumongous(size_t word_size) {
     // Note this has to be strictly greater-than as the TLABs
-    // are capped at the humongous thresold and we want to
+    // are capped at the humongous threshold and we want to
     // ensure that we don't try to allocate a TLAB as
     // humongous and that we don't allocate a humongous
     // object in a TLAB.
@@ -1557,7 +1559,7 @@ public:
   void set_region_short_lived_locked(HeapRegion* hr);
   // add appropriate methods for any other surv rate groups
 
-  YoungList* young_list() { return _young_list; }
+  YoungList* young_list() const { return _young_list; }
 
   // debugging
   bool check_young_list_well_formed() {
@@ -1648,25 +1650,29 @@ public:
 
   // Optimized nmethod scanning support routines
 
-  // Register the given nmethod with the G1 heap
+  // Register the given nmethod with the G1 heap.
   virtual void register_nmethod(nmethod* nm);
 
-  // Unregister the given nmethod from the G1 heap
+  // Unregister the given nmethod from the G1 heap.
   virtual void unregister_nmethod(nmethod* nm);
 
   // Migrate the nmethods in the code root lists of the regions
   // in the collection set to regions in to-space. In the event
   // of an evacuation failure, nmethods that reference objects
-  // that were not successfullly evacuated are not migrated.
+  // that were not successfully evacuated are not migrated.
   void migrate_strong_code_roots();
 
   // During an initial mark pause, mark all the code roots that
   // point into regions *not* in the collection set.
   void mark_strong_code_roots(uint worker_id);
 
-  // Rebuild the stong code root lists for each region
-  // after a full GC
+  // Rebuild the strong code root lists for each region
+  // after a full GC.
   void rebuild_strong_code_roots();
+
+  // Delete entries for dead interned string and clean up unreferenced symbols
+  // in symbol table, possibly in parallel.
+  void unlink_string_and_symbol_table(BoolObjectClosure* is_alive, bool unlink_strings = true, bool unlink_symbols = true);
 
   // Verification
 

@@ -113,7 +113,7 @@ double scalbn (double x, int n) {
 }
 
 /* __ieee754_log(x)
- * Return the logrithm of x
+ * Return the logarithm of x
  *
  * Method :
  *   1. Argument Reduction: find k and f such that

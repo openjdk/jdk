@@ -33,7 +33,7 @@ ConcurrentG1Refine::ConcurrentG1Refine(G1CollectedHeap* g1h) :
   _threads(NULL), _n_threads(0),
   _hot_card_cache(g1h)
 {
-  // Ergomonically select initial concurrent refinement parameters
+  // Ergonomically select initial concurrent refinement parameters
   if (FLAG_IS_DEFAULT(G1ConcRefinementGreenZone)) {
     FLAG_SET_DEFAULT(G1ConcRefinementGreenZone, MAX2<int>(ParallelGCThreads, 1));
   }

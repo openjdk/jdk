@@ -152,7 +152,7 @@ void SignatureIterator::iterate_parameters() {
   _parameter_index = 0;
 }
 
-// Optimized version of iterat_parameters when fingerprint is known
+// Optimized version of iterate_parameters when fingerprint is known
 void SignatureIterator::iterate_parameters( uint64_t fingerprint ) {
   uint64_t saved_fingerprint = fingerprint;
 
