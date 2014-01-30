@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -58,6 +58,7 @@ import sun.awt.shell.*;
  *
  * @author Leif Samuelsson
  */
+@SuppressWarnings("serial") // JDK-implementation class
 public class FilePane extends JPanel implements PropertyChangeListener {
     // Constants for actions. These are used for the actions' ACTION_COMMAND_KEY
     // and as keys in the action maps for FilePane and the corresponding UI classes
@@ -391,6 +392,7 @@ public class FilePane extends JPanel implements PropertyChangeListener {
         firePropertyChange("viewType", oldValue, viewType);
     }
 
+    @SuppressWarnings("serial") // JDK-implementation class
     class ViewTypeAction extends AbstractAction {
         private int viewType;
 
@@ -470,6 +472,7 @@ public class FilePane extends JPanel implements PropertyChangeListener {
      */
     public Action[] getActions() {
         if (actions == null) {
+            @SuppressWarnings("serial") // JDK-implementation class
             class FilePaneAction extends AbstractAction {
                 FilePaneAction(String name) {
                     this(name, name);
@@ -577,6 +580,8 @@ public class FilePane extends JPanel implements PropertyChangeListener {
     public JPanel createList() {
         JPanel p = new JPanel(new BorderLayout());
         final JFileChooser fileChooser = getFileChooser();
+
+        @SuppressWarnings("serial") // anonymous class
         final JList<Object> list = new JList<Object>() {
             public int getNextMatch(String prefix, int startIndex, Position.Bias bias) {
                 ListModel model = getModel();
@@ -651,6 +656,7 @@ public class FilePane extends JPanel implements PropertyChangeListener {
     /**
      * This model allows for sorting JList
      */
+    @SuppressWarnings("serial") // JDK-implementation class
     private class SortableListModel extends AbstractListModel<Object>
             implements TableModelListener, RowSorterListener {
 
@@ -684,6 +690,7 @@ public class FilePane extends JPanel implements PropertyChangeListener {
         return detailsTableModel;
     }
 
+    @SuppressWarnings("serial") // JDK-implementation class
     class DetailsTableModel extends AbstractTableModel implements ListDataListener {
         JFileChooser chooser;
         BasicDirectoryModel directoryModel;
@@ -1003,6 +1010,7 @@ public class FilePane extends JPanel implements PropertyChangeListener {
         return tableCellEditor;
     }
 
+    @SuppressWarnings("serial") // JDK-implementation class
     private class DetailsTableCellEditor extends DefaultCellEditor {
         private final JTextField tf;
 
@@ -1025,7 +1033,7 @@ public class FilePane extends JPanel implements PropertyChangeListener {
         }
     }
 
-
+    @SuppressWarnings("serial") // JDK-implementation class
     class DetailsTableCellRenderer extends DefaultTableCellRenderer {
         JFileChooser chooser;
         DateFormat df;
@@ -1129,6 +1137,7 @@ public class FilePane extends JPanel implements PropertyChangeListener {
 
         JPanel p = new JPanel(new BorderLayout());
 
+        @SuppressWarnings("serial") // anonymous class
         final JTable detailsTable = new JTable(getDetailsTableModel()) {
             // Handle Escape key events here
             protected boolean processKeyBinding(KeyStroke ks, KeyEvent e, int condition, boolean pressed) {
@@ -1447,6 +1456,7 @@ public class FilePane extends JPanel implements PropertyChangeListener {
 
     protected Action newFolderAction;
 
+    @SuppressWarnings("serial") // anonymous class inside
     public Action getNewFolderAction() {
         if (!readOnly && newFolderAction == null) {
             newFolderAction = new AbstractAction(newFolderActionLabelText) {
@@ -1479,6 +1489,7 @@ public class FilePane extends JPanel implements PropertyChangeListener {
         return newFolderAction;
     }
 
+    @SuppressWarnings("serial") // JDK-implementation class
     protected class FileRenderer extends DefaultListCellRenderer  {
 
         public Component getListCellRendererComponent(JList list, Object value,
