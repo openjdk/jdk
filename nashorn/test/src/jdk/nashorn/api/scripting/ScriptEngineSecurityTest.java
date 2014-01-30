@@ -33,8 +33,8 @@ import java.lang.reflect.Proxy;
 import java.util.Objects;
 import javax.script.Invocable;
 import javax.script.ScriptEngine;
-import javax.script.ScriptException;
 import javax.script.ScriptEngineManager;
+import javax.script.ScriptException;
 import org.testng.annotations.Test;
 
 /**
@@ -128,6 +128,23 @@ public class ScriptEngineSecurityTest {
                 fail(exp.getMessage());
             }
         }
+    }
+
+
+    @Test
+    public void securitySystemExitFromFinalizerThread() throws ScriptException {
+        if (System.getSecurityManager() == null) {
+            // pass vacuously
+            return;
+        }
+
+        final ScriptEngineManager m = new ScriptEngineManager();
+        final ScriptEngine e = m.getEngineByName("nashorn");
+        e.eval("var o = Java.extend(Java.type('javax.imageio.spi.ServiceRegistry'), { deregisterAll: this.exit.bind(null, 1234)});\n" +
+                "new o(new java.util.ArrayList().iterator())");
+        System.gc();
+        System.runFinalization();
+        // NOTE: this test just exits the VM if it fails.
     }
 
     @Test
