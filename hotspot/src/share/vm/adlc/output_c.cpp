@@ -2502,7 +2502,7 @@ void ArchDesc::defineSize(FILE *fp, InstructForm &inst) {
   fprintf(fp,"}\n\n");
 }
 
-// Emit late expand function.
+// Emit postalloc expand function.
 void ArchDesc::define_postalloc_expand(FILE *fp, InstructForm &inst) {
   InsEncode *ins_encode = inst._insencode;
 
@@ -2519,7 +2519,7 @@ void ArchDesc::define_postalloc_expand(FILE *fp, InstructForm &inst) {
   // for each parameter <par_name> specified in the encoding.
   ins_encode->reset();
   const char *ec_name = ins_encode->encode_class_iter();
-  assert(ec_name != NULL, "late expand must specify an encoding");
+  assert(ec_name != NULL, "Postalloc expand must specify an encoding.");
 
   EncClass *encoding = _encode->encClass(ec_name);
   if (encoding == NULL) {
@@ -2532,11 +2532,11 @@ void ArchDesc::define_postalloc_expand(FILE *fp, InstructForm &inst) {
                          ec_name, encoding->num_args());
   }
 
-  fprintf(fp, "  // Access to ins and operands for late expand.\n");
+  fprintf(fp, "  // Access to ins and operands for postalloc expand.\n");
   const int buflen = 2000;
-  char idxbuf[buflen]; char *ib = idxbuf; sprintf(ib, "");
-  char nbuf  [buflen]; char *nb = nbuf;   sprintf(nb, "");
-  char opbuf [buflen]; char *ob = opbuf;  sprintf(ob, "");
+  char idxbuf[buflen]; char *ib = idxbuf; idxbuf[0] = '\0';
+  char nbuf  [buflen]; char *nb = nbuf;   nbuf[0]   = '\0';
+  char opbuf [buflen]; char *ob = opbuf;  opbuf[0]  = '\0';
 
   encoding->_parameter_type.reset();
   encoding->_parameter_name.reset();
@@ -2554,7 +2554,7 @@ void ArchDesc::define_postalloc_expand(FILE *fp, InstructForm &inst) {
       // There is no operand for the constanttablebase.
     } else if (inst.is_noninput_operand(idx)) {
       globalAD->syntax_err(inst._linenum,
-                           "In %s: you can not pass the non-input %s to a late expand encoding.\n",
+                           "In %s: you can not pass the non-input %s to a postalloc expand encoding.\n",
                            inst._ident, arg_name);
     } else {
       ib += sprintf(ib, "  unsigned idx_%-5s = idx%d; \t// %s, \t%s\n",
@@ -2605,7 +2605,7 @@ void ArchDesc::define_postalloc_expand(FILE *fp, InstructForm &inst) {
   fprintf(fp, "}\n\n");
 
   ec_name = ins_encode->encode_class_iter();
-  assert(ec_name == NULL, "Late expand may only have one encoding.");
+  assert(ec_name == NULL, "Postalloc expand may only have one encoding.");
 }
 
 // defineEmit -----------------------------------------------------------------
