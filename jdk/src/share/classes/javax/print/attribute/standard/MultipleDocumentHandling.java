@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2004, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -51,7 +51,7 @@ import javax.print.attribute.PrintJobAttribute;
  * single output document to produce. The MultipleDocumentHandling values
  * SINGLE_DOCUMENT and SINGLE_DOCUMENT_NEW_SHEET specify two variations of
  * this  possibility.
- * <P>
+ *
  * <LI>
  * The multiple input documents remain separate output documents. Finishing
  * operations ({@link Finishings Finishings}),
@@ -83,7 +83,7 @@ import javax.print.attribute.PrintJobAttribute;
  * sheets resulting from processing the document data must be
  * <CODE>a(*),b(*),a(*),b(*),...</CODE>, and the printer object must force
  * each copy (<CODE>a(*),b(*)</CODE>) to start on a new media sheet.
- * <P>
+ *
  * <LI>
  * <A NAME="sducfi">{@link #SEPARATE_DOCUMENTS_UNCOLLATED_COPIES
  * <B>SEPARATE_DOCUMENTS_UNCOLLATED_COPIES</B>}</A>. If a print job
@@ -96,7 +96,7 @@ import javax.print.attribute.PrintJobAttribute;
  * If more than one copy is made, the ordering of the sets of media sheets
  * resulting from processing the document data must be
  * <CODE>a(*),a(*),...,b(*),b(*)...</CODE>.
- * <P>
+ *
  * <LI>
  * <A NAME="sdccfi">{@link #SEPARATE_DOCUMENTS_COLLATED_COPIES
  * <B>SEPARATE_DOCUMENTS_COLLATED_COPIES</B>}</A>. If a print job
@@ -109,7 +109,7 @@ import javax.print.attribute.PrintJobAttribute;
  * If more than one copy is made, the ordering of the sets of media sheets
  * resulting from processing the document data must be
  * <CODE>a(*),b(*),a(*),b(*),...</CODE>.
- * <P>
+ *
  * <LI>
  * <A NAME="sdnsfi">{@link #SINGLE_DOCUMENT_NEW_SHEET
  * <B>SINGLE_DOCUMENT_NEW_SHEET</B>}</A>. Same as SINGLE_DOCUMENT,
@@ -132,12 +132,12 @@ import javax.print.attribute.PrintJobAttribute;
  * <LI>
  * With SINGLE_DOCUMENT, documents <CODE>a</CODE> and <CODE>b</CODE> are
  * stapled together as a single document with no regard to new sheets.
- * <P>
+ *
  * <LI>
  * With SINGLE_DOCUMENT_NEW_SHEET, documents <CODE>a</CODE> and <CODE>b</CODE>
  * are stapled together as a single document, but document <CODE>b</CODE>
  * starts on a new sheet.
- * <P>
+ *
  * <LI>
  * With SEPARATE_DOCUMENTS_UNCOLLATED_COPIES and
  * SEPARATE_DOCUMENTS_COLLATED_COPIES, documents <CODE>a</CODE> and
@@ -228,7 +228,7 @@ public class MultipleDocumentHandling extends EnumSyntax
      * Returns the string table for class MultipleDocumentHandling.
      */
     protected String[] getStringTable() {
-        return (String[])myStringTable.clone();
+        return myStringTable.clone();
     }
 
     /**

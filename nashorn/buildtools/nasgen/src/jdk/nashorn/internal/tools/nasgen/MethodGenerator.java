@@ -349,19 +349,19 @@ public class MethodGenerator extends MethodVisitor {
 
     // invokes, field get/sets
     void invokeInterface(final String owner, final String method, final String desc) {
-        super.visitMethodInsn(INVOKEINTERFACE, owner, method, desc);
+        super.visitMethodInsn(INVOKEINTERFACE, owner, method, desc, true);
     }
 
     void invokeVirtual(final String owner, final String method, final String desc) {
-        super.visitMethodInsn(INVOKEVIRTUAL, owner, method, desc);
+        super.visitMethodInsn(INVOKEVIRTUAL, owner, method, desc, false);
     }
 
     void invokeSpecial(final String owner, final String method, final String desc) {
-        super.visitMethodInsn(INVOKESPECIAL, owner, method, desc);
+        super.visitMethodInsn(INVOKESPECIAL, owner, method, desc, false);
     }
 
     void invokeStatic(final String owner, final String method, final String desc) {
-        super.visitMethodInsn(INVOKESTATIC, owner, method, desc);
+        super.visitMethodInsn(INVOKESTATIC, owner, method, desc, false);
     }
 
     void putStatic(final String owner, final String field, final String desc) {
@@ -413,7 +413,7 @@ public class MethodGenerator extends MethodVisitor {
         super.visitMethodInsn(INVOKEVIRTUAL,
                     "java/io/PrintStream",
                     "println",
-                    "(Ljava/lang/String;)V");
+                    "(Ljava/lang/String;)V", false);
     }
 
     // print the object on the top of the stack
@@ -426,6 +426,6 @@ public class MethodGenerator extends MethodVisitor {
         super.visitMethodInsn(INVOKEVIRTUAL,
                     "java/io/PrintStream",
                     "println",
-                    "(Ljava/lang/Object;)V");
+                    "(Ljava/lang/Object;)V", false);
     }
 }

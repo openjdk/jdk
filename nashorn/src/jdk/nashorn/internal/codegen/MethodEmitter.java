@@ -1130,7 +1130,11 @@ public class MethodEmitter implements Emitter {
             popType(Type.OBJECT);
         }
 
-        method.visitMethodInsn(opcode, className, methodName, methodDescriptor);
+        if (opcode == INVOKEINTERFACE) {
+            method.visitMethodInsn(opcode, className, methodName, methodDescriptor, true);
+        } else {
+            method.visitMethodInsn(opcode, className, methodName, methodDescriptor, false);
+        }
 
         if (returnType != null) {
             pushType(returnType);

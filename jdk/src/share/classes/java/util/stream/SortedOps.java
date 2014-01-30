@@ -29,7 +29,6 @@ import java.util.Arrays;
 import java.util.Comparator;
 import java.util.Objects;
 import java.util.Spliterator;
-import java.util.concurrent.ForkJoinTask;
 import java.util.function.IntFunction;
 
 
@@ -113,7 +112,9 @@ final class SortedOps {
                   StreamOpFlag.IS_ORDERED | StreamOpFlag.IS_SORTED);
             this.isNaturalSort = true;
             // Will throw CCE when we try to sort if T is not Comparable
-            this.comparator = (Comparator<? super T>) Comparator.naturalOrder();
+            @SuppressWarnings("unchecked")
+            Comparator<? super T> comp = (Comparator<? super T>) Comparator.naturalOrder();
+            this.comparator = comp;
         }
 
         /**
@@ -170,7 +171,7 @@ final class SortedOps {
         }
 
         @Override
-        public Sink<Integer> opWrapSink(int flags, Sink sink) {
+        public Sink<Integer> opWrapSink(int flags, Sink<Integer> sink) {
             Objects.requireNonNull(sink);
 
             if (StreamOpFlag.SORTED.isKnown(flags))
@@ -291,6 +292,7 @@ final class SortedOps {
         }
 
         @Override
+        @SuppressWarnings("unchecked")
         public void begin(long size) {
             if (size >= Nodes.MAX_ARRAY_SIZE)
                 throw new IllegalArgumentException(Nodes.BAD_SIZE);
@@ -329,7 +331,7 @@ final class SortedOps {
         public void begin(long size) {
             if (size >= Nodes.MAX_ARRAY_SIZE)
                 throw new IllegalArgumentException(Nodes.BAD_SIZE);
-            list = (size >= 0) ? new ArrayList<T>((int) size) : new ArrayList<T>();
+            list = (size >= 0) ? new ArrayList<>((int) size) : new ArrayList<>();
         }
 
         @Override

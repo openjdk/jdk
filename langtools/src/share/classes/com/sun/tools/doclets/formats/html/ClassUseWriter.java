@@ -103,9 +103,9 @@ public class ClassUseWriter extends SubWriterHolderWriter {
         super(configuration, filename);
         this.classdoc = classdoc;
         if (mapper.classToPackageAnnotations.containsKey(classdoc.qualifiedName()))
-                pkgToPackageAnnotations = new TreeSet<PackageDoc>(mapper.classToPackageAnnotations.get(classdoc.qualifiedName()));
+                pkgToPackageAnnotations = new TreeSet<>(mapper.classToPackageAnnotations.get(classdoc.qualifiedName()));
         configuration.currentcd = classdoc;
-        this.pkgSet = new TreeSet<PackageDoc>();
+        this.pkgSet = new TreeSet<>();
         this.pkgToClassTypeParameter = pkgDivide(mapper.classToClassTypeParam);
         this.pkgToClassAnnotations = pkgDivide(mapper.classToClassAnnotations);
         this.pkgToMethodTypeParameter = pkgDivide(mapper.classToExecMemberDocTypeParam);
@@ -159,38 +159,34 @@ public class ClassUseWriter extends SubWriterHolderWriter {
     public static void generate(ConfigurationImpl configuration,
                                 ClassTree classtree)  {
         ClassUseMapper mapper = new ClassUseMapper(configuration.root, classtree);
-        ClassDoc[] classes = configuration.root.classes();
-        for (int i = 0; i < classes.length; i++) {
+        for (ClassDoc aClass : configuration.root.classes()) {
             // If -nodeprecated option is set and the containing package is marked
             // as deprecated, do not generate the class-use page. We will still generate
             // the class-use page if the class is marked as deprecated but the containing
             // package is not since it could still be linked from that package-use page.
             if (!(configuration.nodeprecated &&
-                    Util.isDeprecated(classes[i].containingPackage())))
-                ClassUseWriter.generate(configuration, mapper, classes[i]);
+                  Util.isDeprecated(aClass.containingPackage())))
+                ClassUseWriter.generate(configuration, mapper, aClass);
         }
-        PackageDoc[] pkgs = configuration.packages;
-        for (int i = 0; i < pkgs.length; i++) {
+        for (PackageDoc pkg : configuration.packages) {
             // If -nodeprecated option is set and the package is marked
             // as deprecated, do not generate the package-use page.
-            if (!(configuration.nodeprecated && Util.isDeprecated(pkgs[i])))
-                PackageUseWriter.generate(configuration, mapper, pkgs[i]);
+            if (!(configuration.nodeprecated && Util.isDeprecated(pkg)))
+                PackageUseWriter.generate(configuration, mapper, pkg);
         }
     }
 
     private Map<String,List<ProgramElementDoc>> pkgDivide(Map<String,? extends List<? extends ProgramElementDoc>> classMap) {
-        Map<String,List<ProgramElementDoc>> map = new HashMap<String,List<ProgramElementDoc>>();
+        Map<String,List<ProgramElementDoc>> map = new HashMap<>();
         List<? extends ProgramElementDoc> list= classMap.get(classdoc.qualifiedName());
         if (list != null) {
             Collections.sort(list);
-            Iterator<? extends ProgramElementDoc> it = list.iterator();
-            while (it.hasNext()) {
-                ProgramElementDoc doc = it.next();
+            for (ProgramElementDoc doc : list) {
                 PackageDoc pkg = doc.containingPackage();
                 pkgSet.add(pkg);
                 List<ProgramElementDoc> inPkg = map.get(pkg.name());
                 if (inPkg == null) {
-                    inPkg = new ArrayList<ProgramElementDoc>();
+                    inPkg = new ArrayList<>();
                     map.put(pkg.name(), inPkg);
                 }
                 inPkg.add(doc);
@@ -336,13 +332,12 @@ public class ClassUseWriter extends SubWriterHolderWriter {
     protected void addClassList(Content contentTree) throws IOException {
         HtmlTree ul = new HtmlTree(HtmlTag.UL);
         ul.addStyle(HtmlStyle.blockList);
-        for (Iterator<PackageDoc> it = pkgSet.iterator(); it.hasNext();) {
-            PackageDoc pkg = it.next();
+        for (PackageDoc pkg : pkgSet) {
             Content li = HtmlTree.LI(HtmlStyle.blockList, getMarkerAnchor(pkg.name()));
             Content link = getResource("doclet.ClassUse_Uses.of.0.in.1",
-                    getLink(new LinkInfoImpl(configuration, LinkInfoImpl.Kind.CLASS_USE_HEADER,
-                    classdoc)),
-                    getPackageLink(pkg, Util.getPackageName(pkg)));
+                                       getLink(new LinkInfoImpl(configuration, LinkInfoImpl.Kind.CLASS_USE_HEADER,
+                                                                classdoc)),
+                                       getPackageLink(pkg, Util.getPackageName(pkg)));
             Content heading = HtmlTree.HEADING(HtmlConstants.SUMMARY_HEADING, link);
             li.addContent(heading);
             addClassUse(pkg, li);

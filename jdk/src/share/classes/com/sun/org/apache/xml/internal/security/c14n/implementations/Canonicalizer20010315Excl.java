@@ -292,7 +292,7 @@ public abstract class Canonicalizer20010315Excl extends CanonicalizerBase {
             if (xmlns != null && !isVisible(xmlns)) {
                 // There is a definition but the xmlns is not selected by the
                 // xpath. then xmlns=""
-                ns.addMapping(XMLNS, "", nullNode);
+                ns.addMapping(XMLNS, "", getNullNode(xmlns.getOwnerDocument()));
             }
 
             String prefix = null;

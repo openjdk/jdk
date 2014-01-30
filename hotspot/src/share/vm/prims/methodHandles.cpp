@@ -175,8 +175,8 @@ oop MethodHandles::init_MemberName(Handle mname, Handle target) {
 
 oop MethodHandles::init_method_MemberName(Handle mname, CallInfo& info) {
   assert(info.resolved_appendix().is_null(), "only normal methods here");
-  KlassHandle receiver_limit = info.resolved_klass();
   methodHandle m = info.resolved_method();
+  KlassHandle m_klass = m->method_holder();
   int flags = (jushort)( m->access_flags().as_short() & JVM_RECOGNIZED_METHOD_MODIFIERS );
   int vmindex = Method::invalid_vtable_index;
 
@@ -184,14 +184,13 @@ oop MethodHandles::init_method_MemberName(Handle mname, CallInfo& info) {
   case CallInfo::itable_call:
     vmindex = info.itable_index();
     // More importantly, the itable index only works with the method holder.
-    receiver_limit = m->method_holder();
-    assert(receiver_limit->verify_itable_index(vmindex), "");
+    assert(m_klass->verify_itable_index(vmindex), "");
     flags |= IS_METHOD | (JVM_REF_invokeInterface << REFERENCE_KIND_SHIFT);
     if (TraceInvokeDynamic) {
       ResourceMark rm;
-      tty->print_cr("memberName: invokeinterface method_holder::method: %s, receiver: %s, itableindex: %d, access_flags:",
-            Method::name_and_sig_as_C_string(receiver_limit(), m->name(), m->signature()),
-            receiver_limit()->internal_name(), vmindex);
+      tty->print_cr("memberName: invokeinterface method_holder::method: %s, itableindex: %d, access_flags:",
+            Method::name_and_sig_as_C_string(m->method_holder(), m->name(), m->signature()),
+            vmindex);
        m->access_flags().print_on(tty);
        if (!m->is_abstract()) {
          tty->print("default");
@@ -203,12 +202,35 @@ oop MethodHandles::init_method_MemberName(Handle mname, CallInfo& info) {
   case CallInfo::vtable_call:
     vmindex = info.vtable_index();
     flags |= IS_METHOD | (JVM_REF_invokeVirtual << REFERENCE_KIND_SHIFT);
-    assert(receiver_limit->is_subtype_of(m->method_holder()), "virtual call must be type-safe");
+    assert(info.resolved_klass()->is_subtype_of(m_klass()), "virtual call must be type-safe");
+    if (m_klass->is_interface()) {
+      // This is a vtable call to an interface method (abstract "miranda method" or default method).
+      // The vtable index is meaningless without a class (not interface) receiver type, so get one.
+      // (LinkResolver should help us figure this out.)
+      KlassHandle m_klass_non_interface = info.resolved_klass();
+      if (m_klass_non_interface->is_interface()) {
+        m_klass_non_interface = SystemDictionary::Object_klass();
+#ifdef ASSERT
+        { ResourceMark rm;
+          Method* m2 = m_klass_non_interface->vtable()->method_at(vmindex);
+          assert(m->name() == m2->name() && m->signature() == m2->signature(),
+                 err_msg("at %d, %s != %s", vmindex,
+                         m->name_and_sig_as_C_string(), m2->name_and_sig_as_C_string()));
+        }
+#endif //ASSERT
+      }
+      if (!m->is_public()) {
+        assert(m->is_public(), "virtual call must be to public interface method");
+        return NULL;  // elicit an error later in product build
+      }
+      assert(info.resolved_klass()->is_subtype_of(m_klass_non_interface()), "virtual call must be type-safe");
+      m_klass = m_klass_non_interface;
+    }
     if (TraceInvokeDynamic) {
       ResourceMark rm;
       tty->print_cr("memberName: invokevirtual method_holder::method: %s, receiver: %s, vtableindex: %d, access_flags:",
-            Method::name_and_sig_as_C_string(receiver_limit(), m->name(), m->signature()),
-            receiver_limit()->internal_name(), vmindex);
+            Method::name_and_sig_as_C_string(m->method_holder(), m->name(), m->signature()),
+            m_klass->internal_name(), vmindex);
        m->access_flags().print_on(tty);
        if (m->is_default_method()) {
          tty->print("default");
@@ -223,10 +245,8 @@ oop MethodHandles::init_method_MemberName(Handle mname, CallInfo& info) {
       flags |= IS_METHOD      | (JVM_REF_invokeStatic  << REFERENCE_KIND_SHIFT);
     } else if (m->is_initializer()) {
       flags |= IS_CONSTRUCTOR | (JVM_REF_invokeSpecial << REFERENCE_KIND_SHIFT);
-      assert(receiver_limit == m->method_holder(), "constructor call must be exactly typed");
     } else {
       flags |= IS_METHOD      | (JVM_REF_invokeSpecial << REFERENCE_KIND_SHIFT);
-      assert(receiver_limit->is_subtype_of(m->method_holder()), "special call must be type-safe");
     }
     break;
 
@@ -242,7 +262,7 @@ oop MethodHandles::init_method_MemberName(Handle mname, CallInfo& info) {
   java_lang_invoke_MemberName::set_flags(   mname_oop, flags);
   java_lang_invoke_MemberName::set_vmtarget(mname_oop, m());
   java_lang_invoke_MemberName::set_vmindex( mname_oop, vmindex);   // vtable/itable index
-  java_lang_invoke_MemberName::set_clazz(   mname_oop, receiver_limit->java_mirror());
+  java_lang_invoke_MemberName::set_clazz(   mname_oop, m_klass->java_mirror());
   // Note:  name and type can be lazily computed by resolve_MemberName,
   // if Java code needs them as resolved String and MethodType objects.
   // The clazz must be eagerly stored, because it provides a GC
@@ -569,7 +589,7 @@ oop MethodHandles::field_signature_type_or_null(Symbol* s) {
 // An unresolved member name is a mere symbolic reference.
 // Resolving it plants a vmtarget/vmindex in it,
 // which refers directly to JVM internals.
-Handle MethodHandles::resolve_MemberName(Handle mname, TRAPS) {
+Handle MethodHandles::resolve_MemberName(Handle mname, KlassHandle caller, TRAPS) {
   Handle empty;
   assert(java_lang_invoke_MemberName::is_instance(mname()), "");
 
@@ -646,20 +666,20 @@ Handle MethodHandles::resolve_MemberName(Handle mname, TRAPS) {
         assert(!HAS_PENDING_EXCEPTION, "");
         if (ref_kind == JVM_REF_invokeStatic) {
           LinkResolver::resolve_static_call(result,
-                        defc, name, type, KlassHandle(), false, false, THREAD);
+                        defc, name, type, caller, caller.not_null(), false, THREAD);
         } else if (ref_kind == JVM_REF_invokeInterface) {
           LinkResolver::resolve_interface_call(result, Handle(), defc,
-                        defc, name, type, KlassHandle(), false, false, THREAD);
+                        defc, name, type, caller, caller.not_null(), false, THREAD);
         } else if (mh_invoke_id != vmIntrinsics::_none) {
           assert(!is_signature_polymorphic_static(mh_invoke_id), "");
           LinkResolver::resolve_handle_call(result,
-                        defc, name, type, KlassHandle(), THREAD);
+                        defc, name, type, caller, THREAD);
         } else if (ref_kind == JVM_REF_invokeSpecial) {
           LinkResolver::resolve_special_call(result,
-                        defc, name, type, KlassHandle(), false, THREAD);
+                        defc, name, type, caller, caller.not_null(), THREAD);
         } else if (ref_kind == JVM_REF_invokeVirtual) {
           LinkResolver::resolve_virtual_call(result, Handle(), defc,
-                        defc, name, type, KlassHandle(), false, false, THREAD);
+                        defc, name, type, caller, caller.not_null(), false, THREAD);
         } else {
           assert(false, err_msg("ref_kind=%d", ref_kind));
         }
@@ -683,7 +703,7 @@ Handle MethodHandles::resolve_MemberName(Handle mname, TRAPS) {
         assert(!HAS_PENDING_EXCEPTION, "");
         if (name == vmSymbols::object_initializer_name()) {
           LinkResolver::resolve_special_call(result,
-                        defc, name, type, KlassHandle(), false, THREAD);
+                        defc, name, type, caller, caller.not_null(), THREAD);
         } else {
           break;                // will throw after end of switch
         }
@@ -700,7 +720,7 @@ Handle MethodHandles::resolve_MemberName(Handle mname, TRAPS) {
       fieldDescriptor result; // find_field initializes fd if found
       {
         assert(!HAS_PENDING_EXCEPTION, "");
-        LinkResolver::resolve_field(result, defc, name, type, KlassHandle(), Bytecodes::_nop, false, false, THREAD);
+        LinkResolver::resolve_field(result, defc, name, type, caller, Bytecodes::_nop, false, false, THREAD);
         if (HAS_PENDING_EXCEPTION) {
           return empty;
         }
@@ -1121,7 +1141,11 @@ JVM_ENTRY(jobject, MHN_resolve_Mem(JNIEnv *env, jobject igcls, jobject mname_jh,
     }
   }
 
-  Handle resolved = MethodHandles::resolve_MemberName(mname, CHECK_NULL);
+  KlassHandle caller(THREAD,
+                     caller_jh == NULL ? (Klass*) NULL :
+                     java_lang_Class::as_Klass(JNIHandles::resolve_non_null(caller_jh)));
+  Handle resolved = MethodHandles::resolve_MemberName(mname, caller, CHECK_NULL);
+
   if (resolved.is_null()) {
     int flags = java_lang_invoke_MemberName::flags(mname());
     int ref_kind = (flags >> REFERENCE_KIND_SHIFT) & REFERENCE_KIND_MASK;

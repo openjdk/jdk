@@ -83,31 +83,6 @@ public class SocketHandler extends StreamHandler {
     private String host;
     private int port;
 
-    // Private method to configure a SocketHandler from LogManager
-    // properties and/or default values as specified in the class
-    // javadoc.
-    private void configure() {
-        LogManager manager = LogManager.getLogManager();
-        String cname = getClass().getName();
-
-        setLevel(manager.getLevelProperty(cname +".level", Level.ALL));
-        setFilter(manager.getFilterProperty(cname +".filter", null));
-        setFormatter(manager.getFormatterProperty(cname +".formatter", new XMLFormatter()));
-        try {
-            setEncoding(manager.getStringProperty(cname +".encoding", null));
-        } catch (Exception ex) {
-            try {
-                setEncoding(null);
-            } catch (Exception ex2) {
-                // doing a setEncoding with null should always work.
-                // assert false;
-            }
-        }
-        port = manager.getIntProperty(cname + ".port", 0);
-        host = manager.getStringProperty(cname + ".host", null);
-    }
-
-
     /**
      * Create a <tt>SocketHandler</tt>, using only <tt>LogManager</tt> properties
      * (or their defaults).
@@ -117,9 +92,13 @@ public class SocketHandler extends StreamHandler {
      *         host and port.
      */
     public SocketHandler() throws IOException {
-        // We are going to use the logging defaults.
-        sealed = false;
-        configure();
+        // configure with specific defaults for SocketHandler
+        super(Level.ALL, new XMLFormatter(), null);
+
+        LogManager manager = LogManager.getLogManager();
+        String cname = getClass().getName();
+        port = manager.getIntProperty(cname + ".port", 0);
+        host = manager.getStringProperty(cname + ".host", null);
 
         try {
             connect();
@@ -127,7 +106,6 @@ public class SocketHandler extends StreamHandler {
             System.err.println("SocketHandler: connect failed to " + host + ":" + port);
             throw ix;
         }
-        sealed = true;
     }
 
     /**
@@ -146,11 +124,12 @@ public class SocketHandler extends StreamHandler {
      *         host and port.
      */
     public SocketHandler(String host, int port) throws IOException {
-        sealed = false;
-        configure();
-        sealed = true;
+        // configure with specific defaults for SocketHandler
+        super(Level.ALL, new XMLFormatter(), null);
+
         this.port = port;
         this.host = host;
+
         connect();
     }
 
@@ -167,7 +146,7 @@ public class SocketHandler extends StreamHandler {
         sock = new Socket(host, port);
         OutputStream out = sock.getOutputStream();
         BufferedOutputStream bout = new BufferedOutputStream(out);
-        setOutputStream(bout);
+        setOutputStreamPrivileged(bout);
     }
 
     /**

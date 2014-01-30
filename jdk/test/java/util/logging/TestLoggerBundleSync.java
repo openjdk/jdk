@@ -190,8 +190,10 @@ public class TestLoggerBundleSync {
         final static class MyHandler extends Handler {
             volatile ResourceBundle rb;
             volatile String rbName;
+            volatile int count = 0;
             @Override
             public synchronized void publish(LogRecord record) {
+                count++;
                 rb = record.getResourceBundle();
                 rbName = record.getResourceBundleName();
             }
@@ -227,21 +229,49 @@ public class TestLoggerBundleSync {
                         Logger ll = Logger.getLogger(l.getName()+".bie.bye");
                         ResourceBundle hrb;
                         String hrbName;
+                        if (handler.getLevel() != Level.FINEST) {
+                            throw new RuntimeException("Handler level is not finest: "
+                                    + handler.getLevel());
+                        }
+                        final int countBefore = handler.count;
                         ll.setLevel(Level.FINEST);
                         ll.addHandler(handler);
                         ll.fine("dummy");
                         ll.removeHandler(handler);
+                        final int countAfter = handler.count;
+                        if (countBefore == countAfter) {
+                            throw new RuntimeException("Handler not called for "
+                                    + ll.getName() + "("+ countAfter +")");
+                        }
                         hrb = handler.rb;
                         hrbName = handler.rbName;
                         if (name != null) {
+                            // if name is not null, then it implies that it
+                            // won't change, since setResourceBundle() cannot
+                            // replace a non null name.
+                            // Since we never set the resource bundle on 'll',
+                            // then ll must inherit its resource bundle [name]
+                            // from l - and therefor we should find it in
+                            // handler.rb/handler.rbName
                             if (!name.equals(hrbName)) {
                                 throw new RuntimeException("Unexpected bundle name: "
-                                        +hrb.getBaseBundleName());
+                                        +hrbName);
                             }
+                            // here we know that hrbName is not null so hrb
+                            // should not be null either.
                             if (!name.equals(hrb.getBaseBundleName())) {
                                 throw new RuntimeException("Unexpected bundle name: "
                                         +hrb.getBaseBundleName());
                             }
+                        }
+
+                        // Make sure to refer to 'l' explicitly in order to
+                        // prevent eager garbage collecting before the end of
+                        // the test (JDK-8030192)
+                        if (!ll.getName().startsWith(l.getName())) {
+                            throw new RuntimeException("Logger " + ll.getName()
+                                    + "does not start with expected prefix "
+                                    + l.getName());
                         }
 
                         getRBcount.incrementAndGet();

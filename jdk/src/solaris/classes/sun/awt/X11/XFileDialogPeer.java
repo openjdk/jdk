@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -775,7 +775,7 @@ class XFileDialogPeer extends XDialogPeer implements FileDialogPeer, ActionListe
     // 03/02/2005 b5097243 Pressing 'ESC' on a file dlg does not dispose the dlg on Xtoolkit
     public void setVisible(boolean b){
         if (fileDialog == null) {
-            init((FileDialog)target);
+            init(target);
         }
 
         if (savedDir != null || userDir != null) {

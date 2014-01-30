@@ -730,9 +730,8 @@ public class DataFlavor implements Externalizable, Cloneable {
             textFlavorComparator = new TextFlavorComparator();
         }
 
-        DataFlavor bestFlavor =
-            (DataFlavor)Collections.max(Arrays.asList(availableFlavors),
-                                        textFlavorComparator);
+        DataFlavor bestFlavor = Collections.max(Arrays.asList(availableFlavors),
+                                                textFlavorComparator);
 
         if (!bestFlavor.isFlavorTextType()) {
             return null;
@@ -1183,16 +1182,24 @@ public class DataFlavor implements Externalizable, Cloneable {
 
    /**
     * Does the <code>DataFlavor</code> represent a serialized object?
+    * @return whether or not a serialized object is represented
     */
-
     public boolean isMimeTypeSerializedObject() {
         return isMimeTypeEqual(javaSerializedObjectMimeType);
     }
 
+    /**
+     * Returns the default representation class.
+     * @return the default representation class
+     */
     public final Class<?> getDefaultRepresentationClass() {
         return ioInputStreamClass;
     }
 
+    /**
+     * Returns the name of the default representation class.
+     * @return the name of the default representation class
+     */
     public final String getDefaultRepresentationClassAsString() {
         return getDefaultRepresentationClass().getName();
     }
@@ -1200,8 +1207,9 @@ public class DataFlavor implements Externalizable, Cloneable {
    /**
     * Does the <code>DataFlavor</code> represent a
     * <code>java.io.InputStream</code>?
+    * @return whether or not this {@code DataFlavor} represent a
+    * {@code java.io.InputStream}
     */
-
     public boolean isRepresentationClassInputStream() {
         return ioInputStreamClass.isAssignableFrom(representationClass);
     }
@@ -1210,6 +1218,9 @@ public class DataFlavor implements Externalizable, Cloneable {
      * Returns whether the representation class for this
      * <code>DataFlavor</code> is <code>java.io.Reader</code> or a subclass
      * thereof.
+     * @return whether or not the representation class for this
+     * {@code DataFlavor} is {@code java.io.Reader} or a subclass
+     * thereof
      *
      * @since 1.4
      */
@@ -1221,6 +1232,9 @@ public class DataFlavor implements Externalizable, Cloneable {
      * Returns whether the representation class for this
      * <code>DataFlavor</code> is <code>java.nio.CharBuffer</code> or a
      * subclass thereof.
+     * @return whether or not the representation class for this
+     * {@code DataFlavor} is {@code java.nio.CharBuffer} or a subclass
+     * thereof
      *
      * @since 1.4
      */
@@ -1232,6 +1246,9 @@ public class DataFlavor implements Externalizable, Cloneable {
      * Returns whether the representation class for this
      * <code>DataFlavor</code> is <code>java.nio.ByteBuffer</code> or a
      * subclass thereof.
+     * @return whether or not the representation class for this
+     * {@code DataFlavor} is {@code java.nio.ByteBuffer} or a subclass
+     * thereof
      *
      * @since 1.4
      */
@@ -1407,6 +1424,9 @@ public class DataFlavor implements Externalizable, Cloneable {
     *
     * This method is never invoked by this implementation from 1.1 onwards.
     *
+    * @param parameterName the parameter name
+    * @param parameterValue the parameter value
+    * @return the parameter value
     * @deprecated
     */
     @Deprecated
@@ -1423,6 +1443,8 @@ public class DataFlavor implements Externalizable, Cloneable {
     *
     * This method is never invoked by this implementation from 1.1 onwards.
     *
+    * @param mimeType the mime type
+    * @return the mime type
     * @deprecated
     */
     @Deprecated

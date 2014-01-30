@@ -27,6 +27,8 @@ package com.sun.tools.javac.code;
 
 import java.util.EnumSet;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+
 import com.sun.tools.javac.code.Symbol.*;
 import com.sun.tools.javac.util.Context;
 import com.sun.tools.javac.util.List;
@@ -44,7 +46,7 @@ import com.sun.tools.javac.util.Pair;
 public class Lint
 {
     /** The context key for the root Lint object. */
-    protected static final Context.Key<Lint> lintKey = new Context.Key<Lint>();
+    protected static final Context.Key<Lint> lintKey = new Context.Key<>();
 
     /** Get the root Lint instance. */
     public static Lint instance(Context context) {
@@ -83,8 +85,7 @@ public class Lint
     private final EnumSet<LintCategory> values;
     private final EnumSet<LintCategory> suppressedValues;
 
-    private static final Map<String, LintCategory> map =
-            new java.util.concurrent.ConcurrentHashMap<String, LintCategory>(20);
+    private static final Map<String, LintCategory> map = new ConcurrentHashMap<>(20);
 
     protected Lint(Context context) {
         // initialize values according to the lint options
@@ -242,7 +243,7 @@ public class Lint
 
         public final String option;
         public final boolean hidden;
-    };
+    }
 
     /**
      * Checks if a warning category is enabled. A warning category may be enabled
@@ -341,5 +342,5 @@ public class Lint
 
         public void visitError(Attribute.Error e) {
         }
-    };
+    }
 }

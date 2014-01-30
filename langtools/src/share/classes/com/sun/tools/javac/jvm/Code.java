@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -112,7 +112,7 @@ public class Code {
     /** A buffer for expression catch data. Each enter is a vector
      *  of four unsigned shorts.
      */
-    ListBuffer<char[]> catchInfo = new ListBuffer<char[]>();
+    ListBuffer<char[]> catchInfo = new ListBuffer<>();
 
     /** A buffer for line number information. Each entry is a vector
      *  of two unsigned shorts.
@@ -1988,7 +1988,7 @@ public class Code {
             }
          }
 
-    };
+    }
 
     /** Local variables, indexed by register. */
     LocalVar[] lvar;
@@ -2189,9 +2189,9 @@ public class Code {
         // Keep local variables if
         // 1) we need them for debug information
         // 2) it is an exception type and it contains type annotations
-        if (!varDebugInfo &&
-                (!var.sym.isExceptionParameter() ||
-                var.sym.hasTypeAnnotations())) return;
+        boolean keepLocalVariables = varDebugInfo ||
+            (var.sym.isExceptionParameter() && var.sym.hasTypeAnnotations());
+        if (!keepLocalVariables) return;
         if ((var.sym.flags() & Flags.SYNTHETIC) != 0) return;
         if (varBuffer == null)
             varBuffer = new LocalVar[20];

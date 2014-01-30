@@ -34,15 +34,16 @@
 OS=`uname -s`
 UMASK=`umask`
 
-if [[ $OS == CYGWIN_NT* ]] ; then
+case $OS in
+CYGWIN_NT*)
     OS="Windows_NT"
     if [ -z "$SystemRoot" ] ;  then
-	SystemRoot=$SYSTEMROOT
+        SystemRoot=$SYSTEMROOT
     fi
-fi
+esac
 
 case $OS in
-SunOS | Linux | Darwin)
+SunOS | Linux | Darwin | AIX )
     PATHSEP=":"
     FILESEP="/"
     DFILESEP=$FILESEP

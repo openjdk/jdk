@@ -132,6 +132,9 @@ enum LEErrorCode {
 #define uprv_memcpy memcpy
 #define uprv_realloc realloc
 
+#define U_EXPORT2
+#define U_CAPI extern "C"
+
 #if !defined(U_IS_BIG_ENDIAN)
     #ifdef _LITTLE_ENDIAN
         #define U_IS_BIG_ENDIAN 0

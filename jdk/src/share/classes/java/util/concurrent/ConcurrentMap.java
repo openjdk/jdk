@@ -463,17 +463,15 @@ public interface ConcurrentMap<K, V> extends Map<K, V> {
      * {@inheritDoc}
      *
      * @implSpec
-     * The default implementation is equivalent to performing the
-     * following steps for this {@code map}, then returning the
-     * current value or {@code null} if absent:
+     * The default implementation is equivalent to performing the following
+     * steps for this {@code map}, then returning the current value or
+     * {@code null} if absent:
      *
      * <pre> {@code
      * V oldValue = map.get(key);
      * V newValue = (oldValue == null) ? value :
      *              remappingFunction.apply(oldValue, value);
      * if (newValue == null)
-     *     map.remove(key);
-     * else if (oldValue == null)
      *     map.remove(key);
      * else
      *     map.put(key, newValue);

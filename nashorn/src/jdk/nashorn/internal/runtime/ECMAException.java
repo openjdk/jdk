@@ -25,7 +25,7 @@
 
 package jdk.nashorn.internal.runtime;
 
-import static jdk.nashorn.internal.codegen.CompilerConstants.constructorNoLookup;
+import static jdk.nashorn.internal.codegen.CompilerConstants.staticCallNoLookup;
 import static jdk.nashorn.internal.codegen.CompilerConstants.virtualField;
 import static jdk.nashorn.internal.runtime.ScriptRuntime.UNDEFINED;
 
@@ -44,9 +44,9 @@ import jdk.nashorn.internal.codegen.CompilerConstants.FieldAccess;
 @SuppressWarnings("serial")
 public final class ECMAException extends NashornException {
     /**
-     * Method handle pointing to the constructor {@link ECMAException#ECMAException(Object, String, int, int)},
+     * Method handle pointing to the constructor {@link ECMAException#create(Object, String, int, int)},
      */
-    public static final Call THROW_INIT = constructorNoLookup(ECMAException.class, Object.class, String.class, int.class, int.class);
+    public static final Call CREATE = staticCallNoLookup(ECMAException.class, "create", ECMAException.class, Object.class, String.class, int.class, int.class);
 
     /** Field handle to the{@link ECMAException#thrown} field, so that it can be accessed from generated code */
     public static final FieldAccess THROWN = virtualField(ECMAException.class, "thrown", Object.class);
@@ -57,23 +57,21 @@ public final class ECMAException extends NashornException {
     public final Object thrown;
 
     /**
-     * Constructor. This is called from generated code to implement the {@code throw}
-     * instruction from generated script code
+     * Constructor. Called from the factory method 'create'.
      *
      * @param thrown    object to be thrown
      * @param fileName  script file name
      * @param line      line number of throw
      * @param column    column number of throw
      */
-    public ECMAException(final Object thrown, final String fileName, final int line, final int column) {
+    private ECMAException(final Object thrown, final String fileName, final int line, final int column) {
         super(ScriptRuntime.safeToString(thrown), asThrowable(thrown), fileName, line, column);
         this.thrown = thrown;
         setExceptionToThrown();
     }
 
     /**
-     * Constructor. This is called from runtime code in Nashorn to throw things like
-     * type errors.
+     * Constructor. This is called from the runtime code.
      *
      * @param thrown   object to be thrown
      * @param cause    Java exception that triggered this throw
@@ -85,9 +83,39 @@ public final class ECMAException extends NashornException {
     }
 
     /**
+     * Factory method to retrieve the underlying exception or create an exception.
+     * This method is called from the generated code.
+     *
+     * @param thrown    object to be thrown
+     * @param fileName  script file name
+     * @param line      line number of throw
+     * @param column    column number of throw
+     * @return ECMAException object
+     */
+    public static ECMAException create(final Object thrown, final String fileName, final int line, final int column) {
+        // If thrown object is an Error or sub-object like TypeError, then
+        // an ECMAException object has been already initialized at constructor.
+        if (thrown instanceof ScriptObject) {
+            ScriptObject sobj = (ScriptObject)thrown;
+            Object exception = getException(sobj);
+            if (exception instanceof ECMAException) {
+                // copy over file name, line number and column number.
+                final ECMAException ee = (ECMAException)exception;
+                ee.setFileName(fileName);
+                ee.setLineNumber(line);
+                ee.setColumnNumber(column);
+                return ee;
+            }
+        }
+
+        return new ECMAException(thrown, fileName, line, column);
+    }
+
+    /**
      * Get the thrown object
      * @return thrown object
      */
+    @Override
     public Object getThrown() {
         return thrown;
     }
@@ -256,6 +284,8 @@ public final class ECMAException extends NashornException {
             final ScriptObject sobj = (ScriptObject)thrown;
             if (!sobj.has(EXCEPTION_PROPERTY)) {
                 sobj.addOwnProperty(EXCEPTION_PROPERTY, Property.NOT_ENUMERABLE, this);
+            } else {
+                sobj.set(EXCEPTION_PROPERTY, this, false);
             }
         }
     }

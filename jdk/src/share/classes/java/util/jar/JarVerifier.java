@@ -179,7 +179,9 @@ class JarVerifier {
             name = name.substring(1);
 
         // only set the jev object for entries that have a signature
-        if (sigFileSigners.get(name) != null) {
+        // (either verified or not)
+        if (sigFileSigners.get(name) != null ||
+                verifiedSigners.get(name) != null) {
             mev.setEntry(name, je);
             return;
         }
@@ -258,9 +260,7 @@ class JarVerifier {
                     sigFileData.put(key, bytes);
                     // check pending blocks, we can now process
                     // anyone waiting for this .SF file
-                    Iterator<SignatureFileVerifier> it = pendingBlocks.iterator();
-                    while (it.hasNext()) {
-                        SignatureFileVerifier sfv = it.next();
+                    for (SignatureFileVerifier sfv : pendingBlocks) {
                         if (sfv.needSignatureFile(key)) {
                             if (debug != null) {
                                 debug.println(
@@ -313,18 +313,9 @@ class JarVerifier {
                 }
                 sfv.process(sigFileSigners, manifestDigests);
 
-            } catch (IOException ioe) {
-                // e.g. sun.security.pkcs.ParsingException
-                if (debug != null) debug.println("processEntry caught: "+ioe);
-                // ignore and treat as unsigned
-            } catch (SignatureException se) {
-                if (debug != null) debug.println("processEntry caught: "+se);
-                // ignore and treat as unsigned
-            } catch (NoSuchAlgorithmException nsae) {
-                if (debug != null) debug.println("processEntry caught: "+nsae);
-                // ignore and treat as unsigned
-            } catch (CertificateException ce) {
-                if (debug != null) debug.println("processEntry caught: "+ce);
+            } catch (IOException | CertificateException |
+                    NoSuchAlgorithmException | SignatureException e) {
+                if (debug != null) debug.println("processEntry caught: "+e);
                 // ignore and treat as unsigned
             }
         }
@@ -387,9 +378,9 @@ class JarVerifier {
 
         if (signers != null) {
             ArrayList<java.security.cert.Certificate> certChains = new ArrayList<>();
-            for (int i = 0; i < signers.length; i++) {
+            for (CodeSigner signer : signers) {
                 certChains.addAll(
-                    signers[i].getSignerCertPath().getCertificates());
+                    signer.getSignerCertPath().getCertificates());
             }
 
             // Convert into a Certificate[]
@@ -536,8 +527,8 @@ class JarVerifier {
     private CodeSource[] mapSignersToCodeSources(URL url, List<CodeSigner[]> signers, boolean unsigned) {
         List<CodeSource> sources = new ArrayList<>();
 
-        for (int i = 0; i < signers.size(); i++) {
-            sources.add(mapSignersToCodeSource(url, signers.get(i)));
+        for (CodeSigner[] signer : signers) {
+            sources.add(mapSignersToCodeSource(url, signer));
         }
         if (unsigned) {
             sources.add(mapSignersToCodeSource(url, null));
@@ -563,8 +554,8 @@ class JarVerifier {
          */
         CodeSource[] sources = mapSignersToCodeSources(cs.getLocation(), getJarCodeSigners(), true);
         List<CodeSource> sourceList = new ArrayList<>();
-        for (int i = 0; i < sources.length; i++) {
-            sourceList.add(sources[i]);
+        for (CodeSource source : sources) {
+            sourceList.add(source);
         }
         int j = sourceList.indexOf(cs);
         if (j != -1) {
@@ -677,8 +668,8 @@ class JarVerifier {
          * to see if we can optimize CodeSigner equality test.
          */
         List<CodeSigner[]> req = new ArrayList<>(cs.length);
-        for (int i = 0; i < cs.length; i++) {
-            CodeSigner[] match = findMatchingSigners(cs[i]);
+        for (CodeSource c : cs) {
+            CodeSigner[] match = findMatchingSigners(c);
             if (match != null) {
                 if (match.length > 0) {
                     req.add(match);

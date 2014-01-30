@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,7 +36,7 @@ package com.sun.tools.javac.util;
  */
 public class Names {
 
-    public static final Context.Key<Names> namesKey = new Context.Key<Names>();
+    public static final Context.Key<Names> namesKey = new Context.Key<>();
 
     public static Names instance(Context context) {
         Names instance = context.get(namesKey);

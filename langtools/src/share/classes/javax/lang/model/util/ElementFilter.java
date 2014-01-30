@@ -187,7 +187,7 @@ public class ElementFilter {
     private static <E extends Element> List<E> listFilter(Iterable<? extends Element> elements,
                                                           Set<ElementKind> targetKinds,
                                                           Class<E> clazz) {
-        List<E> list = new ArrayList<E>();
+        List<E> list = new ArrayList<>();
         for (Element e : elements) {
             if (targetKinds.contains(e.getKind()))
                 list.add(clazz.cast(e));
@@ -200,7 +200,7 @@ public class ElementFilter {
                                                         Set<ElementKind> targetKinds,
                                                         Class<E> clazz) {
         // Return set preserving iteration order of input set.
-        Set<E> set = new LinkedHashSet<E>();
+        Set<E> set = new LinkedHashSet<>();
         for (Element e : elements) {
             if (targetKinds.contains(e.getKind()))
                 set.add(clazz.cast(e));

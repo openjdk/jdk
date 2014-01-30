@@ -219,8 +219,7 @@ abstract class PathFileObject implements JavaFileObject {
     public CharSequence getCharContent(boolean ignoreEncodingErrors) throws IOException {
         CharBuffer cb = fileManager.getCachedContent(this);
         if (cb == null) {
-            InputStream in = openInputStream();
-            try {
+            try (InputStream in = openInputStream()) {
                 ByteBuffer bb = fileManager.makeByteBuffer(in);
                 JavaFileObject prev = fileManager.log.useSource(this);
                 try {
@@ -232,8 +231,6 @@ abstract class PathFileObject implements JavaFileObject {
                 if (!ignoreEncodingErrors) {
                     fileManager.cache(this, cb);
                 }
-            } finally {
-                in.close();
             }
         }
         return cb;

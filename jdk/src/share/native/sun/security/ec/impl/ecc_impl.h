@@ -65,6 +65,13 @@ typedef unsigned long ulong_t;
 typedef enum boolean { B_FALSE, B_TRUE } boolean_t;
 #endif /* _ALLBSD_SOURCE */
 
+#ifdef AIX
+#define B_FALSE FALSE
+#define B_TRUE TRUE
+typedef unsigned char uint8_t;
+typedef unsigned long ulong_t;
+#endif /* AIX */
+
 #ifdef _WIN32
 typedef unsigned char uint8_t;
 typedef unsigned long ulong_t;

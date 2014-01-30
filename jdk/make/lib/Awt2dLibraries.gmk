@@ -231,6 +231,10 @@ else ifneq ($(OPENJDK_TARGET_OS), macosx)
       $(JDK_TOPDIR)/src/$(OPENJDK_TARGET_OS_API_DIR)/native/sun/java2d/x11
 endif
 
+ifeq ($(OPENJDK_TARGET_OS), aix)
+  LIBAWT_DIRS += $(JDK_TOPDIR)/src/aix/porting
+endif
+
 LIBAWT_CFLAGS += -D__MEDIALIB_OLD_NAMES -D__USE_J2D_NAMES \
     $(X_CFLAGS) \
     $(foreach dir, $(LIBAWT_DIRS), -I$(dir))
@@ -305,8 +309,12 @@ LIBAWT_FILES := \
     debug_trace.c \
     debug_util.c
 
-ifneq (, $(filter $(OPENJDK_TARGET_OS), solaris linux))
+ifneq (, $(filter $(OPENJDK_TARGET_OS), solaris linux aix))
   LIBAWT_FILES += awt_LoadLibrary.c initIDs.c img_colors.c
+endif
+
+ifeq ($(OPENJDK_TARGET_OS), aix)
+  LIBAWT_FILES += porting_aix.c
 endif
 
 ifeq ($(OPENJDK_TARGET_OS), macosx)
@@ -473,6 +481,7 @@ $(eval $(call SetupNativeCompilation,BUILD_LIBAWT, \
     LDFLAGS_solaris := -R/usr/dt/lib$(OPENJDK_TARGET_CPU_ISADIR) -R$(OPENWIN_LIB)$(OPENJDK_TARGET_CPU_ISADIR), \
     LDFLAGS_SUFFIX_linux := -ljvm $(LIBM) $(LIBDL) -ljava, \
     LDFLAGS_SUFFIX_solaris := -ljvm $(LIBM) $(LIBDL) -ljava -lc, \
+    LDFLAGS_SUFFIX_aix :=-ljvm $(LIBM) $(LIBDL) -ljava -lm,\
     LDFLAGS_SUFFIX_macosx := -lmlib_image -ljvm $(LIBM) \
         -framework Cocoa \
         -framework OpenGL \
@@ -681,6 +690,7 @@ $(eval $(call SetupNativeCompilation,BUILD_LIBLCMS, \
     LDFLAGS_SUFFIX_solaris := -lawt -ljava -ljvm -lc, \
     LDFLAGS_SUFFIX_macosx := $(LIBM) -lawt -ljava -ljvm, \
     LDFLAGS_SUFFIX_linux := -lm -lawt -ljava -ljvm, \
+    LDFLAGS_SUFFIX_aix := -lm -lawt -ljava -ljvm,\
     VERSIONINFO_RESOURCE := $(JDK_TOPDIR)/src/windows/resource/version.rc, \
     RC_FLAGS := $(RC_FLAGS) \
         -D "JDK_FNAME=lcms.dll" \
@@ -819,6 +829,7 @@ $(eval $(call SetupNativeCompilation,BUILD_LIBFONTMANAGER, \
     LDFLAGS_SUFFIX := $(BUILD_LIBFONTMANAGER_FONTLIB), \
     LDFLAGS_SUFFIX_linux := -lawt $(LIBM) $(LIBCXX) -ljava -ljvm -lc, \
     LDFLAGS_SUFFIX_solaris := -lawt -lawt_xawt -lc $(LIBM) $(LIBCXX) -ljava -ljvm, \
+    LDFLAGS_SUFFIX_aix := -lawt -lawt_xawt $(LIBM) $(LIBCXX) -ljava -ljvm,\
     LDFLAGS_SUFFIX_macosx := -lawt $(LIBM) $(LIBCXX) -undefined dynamic_lookup \
         -ljava -ljvm, \
     LDFLAGS_SUFFIX_windows := $(WIN_JAVA_LIB) advapi32.lib user32.lib gdi32.lib \
@@ -833,7 +844,7 @@ $(eval $(call SetupNativeCompilation,BUILD_LIBFONTMANAGER, \
 
 $(BUILD_LIBFONTMANAGER): $(BUILD_LIBAWT)
 
-ifeq ($(OPENJDK_TARGET_OS), solaris)
+ifneq (, $(findstring $(OPENJDK_TARGET_OS), solaris aix))
   $(BUILD_LIBFONTMANAGER): $(BUILD_LIBAWT_XAWT)
 endif
 
@@ -968,6 +979,7 @@ else # OPENJDK_TARGET_OS not windows
           $(call SET_SHARED_LIBRARY_ORIGIN), \
       LDFLAGS_solaris := -L$(OPENWIN_HOME)/sfw/lib$(OPENJDK_TARGET_CPU_ISADIR) -L$(OPENWIN_LIB)$(OPENJDK_TARGET_CPU_ISADIR), \
       LDFLAGS_SUFFIX_linux := $(JAWT_LIBS) $(LDFLAGS_JDKLIB_SUFFIX), \
+      LDFLAGS_SUFFIX_aix := $(JAWT_LIBS) $(LDFLAGS_JDKLIB_SUFFIX),\
       LDFLAGS_SUFFIX_solaris := $(JAWT_LIBS) $(LDFLAGS_JDKLIB_SUFFIX) -lXrender, \
       LDFLAGS_SUFFIX_macosx := -Xlinker -rpath -Xlinker @loader_path $(JAWT_LIBS) \
           -framework Cocoa $(LDFLAGS_JDKLIB_SUFFIX), \
@@ -1168,6 +1180,7 @@ ifeq ($(BUILD_HEADLESS), true)
         LDFLAGS_macosx := $(call SET_SHARED_LIBRARY_ORIGIN)., \
         REORDER := $(LIBAWT_HEADLESS_REORDER), \
         LDFLAGS_SUFFIX_linux := -ljvm -lawt -lm $(LIBDL) -ljava, \
+        LDFLAGS_SUFFIX_aix := -ljvm -lawt -ljava,\
         LDFLAGS_SUFFIX_solaris := $(LIBDL) -ljvm -lawt -lm -ljava $(LIBCXX) -lc, \
         OBJECT_DIR := $(JDK_OUTPUTDIR)/objs/libawt_headless, \
         DEBUG_SYMBOLS := $(DEBUG_ALL_BINARIES)))

@@ -147,6 +147,7 @@ public class UdpTest extends Tests {
         final InetAddress ia6 = ia6addr;
         final int port = s1.getLocalPort();
 
+        s1.setSoTimeout(10000);
         runAfter (2000, new Runnable () {
             public void run () {
                 try {
@@ -157,7 +158,7 @@ public class UdpTest extends Tests {
         });
         t1 = System.currentTimeMillis();
         s1.receive (new DatagramPacket (new byte [128], 128));
-        checkTime (System.currentTimeMillis() - t1, 2000);
+        checkTime (System.currentTimeMillis() - t1, 4000);
         s1.close ();
         s2.close ();
         System.out.println ("Test2: OK");

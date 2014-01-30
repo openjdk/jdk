@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,16 +25,45 @@
 
 package com.sun.tools.javac.code;
 
-import java.util.*;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
 
 import javax.lang.model.element.ElementVisitor;
+import javax.tools.JavaFileObject;
 
-import com.sun.tools.javac.code.Symbol.*;
-import com.sun.tools.javac.code.Type.*;
-import com.sun.tools.javac.jvm.*;
-import com.sun.tools.javac.util.*;
+
+import com.sun.tools.javac.code.Symbol.ClassSymbol;
+import com.sun.tools.javac.code.Symbol.Completer;
+import com.sun.tools.javac.code.Symbol.CompletionFailure;
+import com.sun.tools.javac.code.Symbol.MethodSymbol;
+import com.sun.tools.javac.code.Symbol.OperatorSymbol;
+import com.sun.tools.javac.code.Symbol.PackageSymbol;
+import com.sun.tools.javac.code.Symbol.TypeSymbol;
+import com.sun.tools.javac.code.Symbol.VarSymbol;
+import com.sun.tools.javac.code.Type.BottomType;
+import com.sun.tools.javac.code.Type.ClassType;
+import com.sun.tools.javac.code.Type.ErrorType;
+import com.sun.tools.javac.code.Type.JCPrimitiveType;
+import com.sun.tools.javac.code.Type.JCVoidType;
+import com.sun.tools.javac.code.Type.MethodType;
+import com.sun.tools.javac.code.Type.UnknownType;
+import com.sun.tools.javac.jvm.ByteCodes;
+import com.sun.tools.javac.jvm.ClassReader;
+import com.sun.tools.javac.jvm.Target;
+import com.sun.tools.javac.util.Assert;
+import com.sun.tools.javac.util.Context;
+import com.sun.tools.javac.util.Convert;
+import com.sun.tools.javac.util.JavacMessages;
 import com.sun.tools.javac.util.List;
+import com.sun.tools.javac.util.Log;
+import com.sun.tools.javac.util.Name;
+import com.sun.tools.javac.util.Names;
+
 import static com.sun.tools.javac.code.Flags.*;
+import static com.sun.tools.javac.code.Kinds.PCK;
+import static com.sun.tools.javac.code.Kinds.TYP;
 import static com.sun.tools.javac.jvm.ByteCodes.*;
 import static com.sun.tools.javac.code.TypeTag.*;
 
@@ -51,8 +80,7 @@ import static com.sun.tools.javac.code.TypeTag.*;
  */
 public class Symtab {
     /** The context key for the symbol table. */
-    protected static final Context.Key<Symtab> symtabKey =
-        new Context.Key<Symtab>();
+    protected static final Context.Key<Symtab> symtabKey = new Context.Key<>();
 
     /** Get the symbol table instance. */
     public static Symtab instance(Context context) {
@@ -76,7 +104,7 @@ public class Symtab {
     public final JCVoidType voidType = new JCVoidType();
 
     private final Names names;
-    private final ClassReader reader;
+    private final Completer initialCompleter;
     private final Target target;
 
     /** A symbol for the root package.
@@ -190,20 +218,20 @@ public class Symtab {
 
     /** A set containing all operator names.
      */
-    public final Set<Name> operatorNames = new HashSet<Name>();
+    public final Set<Name> operatorNames = new HashSet<>();
 
     /** A hashtable containing the encountered top-level and member classes,
      *  indexed by flat names. The table does not contain local classes.
      *  It should be updated from the outside to reflect classes defined
      *  by compiled source files.
      */
-    public final Map<Name, ClassSymbol> classes = new HashMap<Name, ClassSymbol>();
+    public final Map<Name, ClassSymbol> classes = new HashMap<>();
 
     /** A hashtable containing the encountered packages.
      *  the table should be updated from outside to reflect packages defined
      *  by compiled source files.
      */
-    public final Map<Name, PackageSymbol> packages = new HashMap<Name, PackageSymbol>();
+    public final Map<Name, PackageSymbol> packages = new HashMap<>();
 
     public void initType(Type type, ClassSymbol c) {
         type.tsym = c;
@@ -309,7 +337,7 @@ public class Symtab {
      *  @param s The name of the class.
      */
     private Type enterClass(String s) {
-        return reader.enterClass(names.fromString(s)).type;
+        return enterClass(names.fromString(s)).type;
     }
 
     public void synthesizeEmptyInterfaceIfMissing(final Type type) {
@@ -329,7 +357,7 @@ public class Symtab {
     }
 
     public void synthesizeBoxTypeIfMissing(final Type type) {
-        ClassSymbol sym = reader.enterClass(boxedName[type.getTag().ordinal()]);
+        ClassSymbol sym = enterClass(boxedName[type.getTag().ordinal()]);
         final Completer completer = sym.completer;
         if (completer != null) {
             sym.completer = new Completer() {
@@ -391,6 +419,7 @@ public class Symtab {
 
         // create the basic builtin symbols
         rootPackage = new PackageSymbol(names.empty, null);
+        packages.put(names.empty, rootPackage);
         final JavacMessages messages = JavacMessages.instance(context);
         unnamedPackage = new PackageSymbol(names.empty, rootPackage) {
                 public String toString() {
@@ -441,6 +470,11 @@ public class Symtab {
         Scope scope = new Scope(predefClass);
         predefClass.members_field = scope;
 
+        // Get the initial completer for Symbols from the ClassReader
+        initialCompleter = ClassReader.instance(context).getCompleter();
+        rootPackage.completer = initialCompleter;
+        unnamedPackage.completer = initialCompleter;
+
         // Enter symbols for basic types.
         scope.enter(byteType.tsym);
         scope.enter(shortType.tsym);
@@ -456,9 +490,6 @@ public class Symtab {
         scope.enter(errSymbol);
 
         classes.put(predefClass.fullname, predefClass);
-
-        reader = ClassReader.instance(context);
-        reader.init(this);
 
         // Enter predefined classes.
         objectType = enterClass("java.lang.Object");
@@ -485,7 +516,7 @@ public class Symtab {
         cloneNotSupportedExceptionType = enterClass("java.lang.CloneNotSupportedException");
         annotationType = enterClass("java.lang.annotation.Annotation");
         classLoaderType = enterClass("java.lang.ClassLoader");
-        enumSym = reader.enterClass(names.java_lang_Enum);
+        enumSym = enterClass(names.java_lang_Enum);
         enumFinalFinalize =
             new MethodSymbol(PROTECTED|FINAL|HYPOTHETICAL,
                              names.finalize,
@@ -719,5 +750,103 @@ public class Symtab {
 
         enterBinop("&&", booleanType, booleanType, booleanType, bool_and);
         enterBinop("||", booleanType, booleanType, booleanType, bool_or);
+    }
+
+    /** Define a new class given its name and owner.
+     */
+    public ClassSymbol defineClass(Name name, Symbol owner) {
+        ClassSymbol c = new ClassSymbol(0, name, owner);
+        if (owner.kind == PCK)
+            Assert.checkNull(classes.get(c.flatname), c);
+        c.completer = initialCompleter;
+        return c;
+    }
+
+    /** Create a new toplevel or member class symbol with given name
+     *  and owner and enter in `classes' unless already there.
+     */
+    public ClassSymbol enterClass(Name name, TypeSymbol owner) {
+        Name flatname = TypeSymbol.formFlatName(name, owner);
+        ClassSymbol c = classes.get(flatname);
+        if (c == null) {
+            c = defineClass(name, owner);
+            classes.put(flatname, c);
+        } else if ((c.name != name || c.owner != owner) && owner.kind == TYP && c.owner.kind == PCK) {
+            // reassign fields of classes that might have been loaded with
+            // their flat names.
+            c.owner.members().remove(c);
+            c.name = name;
+            c.owner = owner;
+            c.fullname = ClassSymbol.formFullName(name, owner);
+        }
+        return c;
+    }
+
+    /**
+     * Creates a new toplevel class symbol with given flat name and
+     * given class (or source) file.
+     *
+     * @param flatName a fully qualified binary class name
+     * @param classFile the class file or compilation unit defining
+     * the class (may be {@code null})
+     * @return a newly created class symbol
+     * @throws AssertionError if the class symbol already exists
+     */
+    public ClassSymbol enterClass(Name flatName, JavaFileObject classFile) {
+        ClassSymbol cs = classes.get(flatName);
+        if (cs != null) {
+            String msg = Log.format("%s: completer = %s; class file = %s; source file = %s",
+                                    cs.fullname,
+                                    cs.completer,
+                                    cs.classfile,
+                                    cs.sourcefile);
+            throw new AssertionError(msg);
+        }
+        Name packageName = Convert.packagePart(flatName);
+        PackageSymbol owner = packageName.isEmpty()
+                                ? unnamedPackage
+                                : enterPackage(packageName);
+        cs = defineClass(Convert.shortName(flatName), owner);
+        cs.classfile = classFile;
+        classes.put(flatName, cs);
+        return cs;
+    }
+
+    /** Create a new member or toplevel class symbol with given flat name
+     *  and enter in `classes' unless already there.
+     */
+    public ClassSymbol enterClass(Name flatname) {
+        ClassSymbol c = classes.get(flatname);
+        if (c == null)
+            return enterClass(flatname, (JavaFileObject)null);
+        else
+            return c;
+    }
+
+    /** Check to see if a package exists, given its fully qualified name.
+     */
+    public boolean packageExists(Name fullname) {
+        return enterPackage(fullname).exists();
+    }
+
+    /** Make a package, given its fully qualified name.
+     */
+    public PackageSymbol enterPackage(Name fullname) {
+        PackageSymbol p = packages.get(fullname);
+        if (p == null) {
+            Assert.check(!fullname.isEmpty(), "rootPackage missing!");
+            p = new PackageSymbol(
+                Convert.shortName(fullname),
+                enterPackage(Convert.packagePart(fullname)));
+            p.completer = initialCompleter;
+            packages.put(fullname, p);
+        }
+        return p;
+    }
+
+    /** Make a package, given its unqualified name and enclosing package.
+     */
+    public PackageSymbol enterPackage(Name name, PackageSymbol owner) {
+        return enterPackage(TypeSymbol.formFullName(name, owner));
     }
 }

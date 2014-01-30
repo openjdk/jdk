@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -110,6 +110,7 @@ import sun.swing.SwingUtilities2;
  *      description: A frame container which is contained within
  *                   another window.
  */
+@SuppressWarnings("serial") // Same-version serialization only
 public class JInternalFrame extends JComponent implements
         Accessible, WindowConstants,
         RootPaneContainer
@@ -2034,6 +2035,7 @@ public class JInternalFrame extends JComponent implements
      * has been added to the <code>java.beans</code> package.
      * Please see {@link java.beans.XMLEncoder}.
      */
+    @SuppressWarnings("serial") // Same-version serialization only
     protected class AccessibleJInternalFrame extends AccessibleJComponent
         implements AccessibleValue {
 
@@ -2151,6 +2153,7 @@ public class JInternalFrame extends JComponent implements
      *
      * @author David Kloba
      */
+    @SuppressWarnings("serial") // Same-version serialization only
     static public class JDesktopIcon extends JComponent implements Accessible
     {
         JInternalFrame internalFrame;
@@ -2323,6 +2326,7 @@ public class JInternalFrame extends JComponent implements
          * has been added to the <code>java.beans</code> package.
          * Please see {@link java.beans.XMLEncoder}.
          */
+        @SuppressWarnings("serial") // Same-version serialization only
         protected class AccessibleJDesktopIcon extends AccessibleJComponent
             implements AccessibleValue {
 

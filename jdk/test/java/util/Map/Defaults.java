@@ -80,18 +80,22 @@ public class Defaults {
 
     @Test(dataProvider = "Map<IntegerEnum,String> rw=true keys=withNull values=withNull")
     public void testPutIfAbsentNulls(String description, Map<IntegerEnum, String> map) {
+        // null -> null
         assertTrue(map.containsKey(null), "null key absent");
         assertNull(map.get(null), "value not null");
         assertNull(map.putIfAbsent(null, EXTRA_VALUE), "previous not null");
+        // null -> EXTRA_VALUE
         assertTrue(map.containsKey(null), "null key absent");
         assertSame(map.get(null), EXTRA_VALUE, "unexpected value");
         assertSame(map.putIfAbsent(null, null), EXTRA_VALUE, "previous not expected value");
         assertTrue(map.containsKey(null), "null key absent");
         assertSame(map.get(null), EXTRA_VALUE, "unexpected value");
         assertSame(map.remove(null), EXTRA_VALUE, "removed unexpected value");
+        // null -> <absent>
 
         assertFalse(map.containsKey(null), description + ": key present after remove");
         assertNull(map.putIfAbsent(null, null), "previous not null");
+        // null -> null
         assertTrue(map.containsKey(null), "null key absent");
         assertNull(map.get(null), "value not null");
         assertNull(map.putIfAbsent(null, EXTRA_VALUE), "previous not null");
@@ -100,14 +104,18 @@ public class Defaults {
 
     @Test(dataProvider = "Map<IntegerEnum,String> rw=true keys=all values=all")
     public void testPutIfAbsent(String description, Map<IntegerEnum, String> map) {
+        // 1 -> 1
         assertTrue(map.containsKey(KEYS[1]));
         Object expected = map.get(KEYS[1]);
         assertTrue(null == expected || expected == VALUES[1]);
         assertSame(map.putIfAbsent(KEYS[1], EXTRA_VALUE), expected);
         assertSame(map.get(KEYS[1]), expected);
 
+        // EXTRA_KEY -> <absent>
         assertFalse(map.containsKey(EXTRA_KEY));
         assertSame(map.putIfAbsent(EXTRA_KEY, EXTRA_VALUE), null);
+        assertSame(map.get(EXTRA_KEY), EXTRA_VALUE);
+        assertSame(map.putIfAbsent(EXTRA_KEY, VALUES[2]), EXTRA_VALUE);
         assertSame(map.get(EXTRA_KEY), EXTRA_VALUE);
     }
 
@@ -268,14 +276,28 @@ public class Defaults {
 
     @Test(dataProvider = "Map<IntegerEnum,String> rw=true keys=withNull values=withNull")
     public void testComputeIfAbsentNulls(String description, Map<IntegerEnum, String> map) {
+        // null -> null
         assertTrue(map.containsKey(null), "null key absent");
         assertNull(map.get(null), "value not null");
-        assertSame(map.computeIfAbsent(null, (k) -> EXTRA_VALUE), EXTRA_VALUE, description);
-        assertSame(map.get(null), EXTRA_VALUE, description);
+        assertSame(map.computeIfAbsent(null, (k) -> null), null,  "not expected result");
+        assertTrue(map.containsKey(null), "null key absent");
+        assertNull(map.get(null), "value not null");
+        assertSame(map.computeIfAbsent(null, (k) -> EXTRA_VALUE), EXTRA_VALUE, "not mapped to result");
+        // null -> EXTRA_VALUE
+        assertTrue(map.containsKey(null), "null key absent");
+        assertSame(map.get(null), EXTRA_VALUE,  "not expected value");
+        assertSame(map.remove(null), EXTRA_VALUE, "removed unexpected value");
+        // null -> <absent>
+        assertFalse(map.containsKey(null), "null key present");
+        assertSame(map.computeIfAbsent(null, (k) -> EXTRA_VALUE), EXTRA_VALUE, "not mapped to result");
+        // null -> EXTRA_VALUE
+        assertTrue(map.containsKey(null), "null key absent");
+        assertSame(map.get(null), EXTRA_VALUE,  "not expected value");
     }
 
     @Test(dataProvider = "Map<IntegerEnum,String> rw=true keys=all values=all")
     public void testComputeIfAbsent(String description, Map<IntegerEnum, String> map) {
+        // 1 -> 1
         assertTrue(map.containsKey(KEYS[1]));
         Object expected = map.get(KEYS[1]);
         assertTrue(null == expected || expected == VALUES[1], description + String.valueOf(expected));
@@ -283,8 +305,12 @@ public class Defaults {
         assertSame(map.computeIfAbsent(KEYS[1], (k) -> EXTRA_VALUE), expected, description);
         assertSame(map.get(KEYS[1]), expected, description);
 
+        // EXTRA_KEY -> <absent>
+        assertFalse(map.containsKey(EXTRA_KEY));
+        assertNull(map.computeIfAbsent(EXTRA_KEY, (k) -> null));
         assertFalse(map.containsKey(EXTRA_KEY));
         assertSame(map.computeIfAbsent(EXTRA_KEY, (k) -> EXTRA_VALUE), EXTRA_VALUE);
+        // EXTRA_KEY -> EXTRA_VALUE
         assertSame(map.get(EXTRA_KEY), EXTRA_VALUE);
     }
 
@@ -741,7 +767,6 @@ public class Defaults {
         Collection<Object[]> cases = new ArrayList<>();
 
         cases.addAll(makeMergeTestCases());
-        cases.addAll(makeMergeNullValueTestCases());
 
         return cases.iterator();
     }
@@ -759,32 +784,6 @@ public class Defaults {
 
         for( Object[] mapParams : makeAllRWMaps() ) {
             cases.add(new Object[] { mapParams[0], mapParams[1], Merging.Value.OLDVALUE, Merging.Value.NEWVALUE, Merging.Merger.RESULT, Merging.Value.RESULT, Merging.Value.RESULT });
-        }
-
-        return cases;
-    }
-
-    static Collection<Object[]> makeMergeNullValueTestCases() {
-        Collection<Object[]> cases = new ArrayList<>();
-
-        for( Object[] mapParams : makeAllRWMapsWithNulls() ) {
-            cases.add(new Object[] { mapParams[0], mapParams[1], Merging.Value.OLDVALUE, Merging.Value.NULL, Merging.Merger.NULL, Merging.Value.ABSENT, Merging.Value.NULL });
-        }
-
-        for( Object[] mapParams : makeAllRWMapsWithNulls() ) {
-            cases.add(new Object[] { mapParams[0], mapParams[1], Merging.Value.OLDVALUE, Merging.Value.NULL, Merging.Merger.RESULT, Merging.Value.RESULT, Merging.Value.RESULT });
-        }
-
-        for( Object[] mapParams : makeAllRWMapsWithNulls() ) {
-            cases.add(new Object[] { mapParams[0], mapParams[1], Merging.Value.ABSENT, Merging.Value.NULL, Merging.Merger.UNUSED, Merging.Value.ABSENT, Merging.Value.NULL });
-        }
-
-        for( Object[] mapParams : makeAllRWMapsWithNulls() ) {
-            cases.add(new Object[] { mapParams[0], mapParams[1], Merging.Value.NULL, Merging.Value.NULL, Merging.Merger.UNUSED, Merging.Value.ABSENT, Merging.Value.NULL });
-        }
-
-        for( Object[] mapParams : makeAllRWMapsWithNulls() ) {
-            cases.add(new Object[] { mapParams[0], mapParams[1], Merging.Value.NULL, Merging.Value.NEWVALUE, Merging.Merger.UNUSED, Merging.Value.NEWVALUE, Merging.Value.NEWVALUE });
         }
 
         return cases;

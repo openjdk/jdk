@@ -328,11 +328,6 @@ class oopDesc {
   // return the size of this oop.  This is used by the MarkSweep collector.
   int adjust_pointers();
 
-#if INCLUDE_ALL_GCS
-  // Parallel old
-  void update_header(ParCompactionManager* cm);
-#endif // INCLUDE_ALL_GCS
-
   // mark-sweep support
   void follow_body(int begin, int end);
 

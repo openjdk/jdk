@@ -3865,7 +3865,7 @@ fi
 #CUSTOM_AUTOCONF_INCLUDE
 
 # Do not change or remove the following line, it is needed for consistency checks:
-DATE_WHEN_GENERATED=1384422786
+DATE_WHEN_GENERATED=1389815815
 
 ###############################################################################
 #
@@ -11156,6 +11156,12 @@ fi
     as_fn_error $? "Update version must have a value" "$LINENO" 5
   elif test "x$with_update_version" != x; then
     JDK_UPDATE_VERSION="$with_update_version"
+    # On macosx 10.7, it's not possible to set --with-update-version=0X due
+    # to a bug in expr (which reduces it to just X). To work around this, we
+    # always add a 0 to one digit update versions.
+    if test "${#JDK_UPDATE_VERSION}" = "1"; then
+      JDK_UPDATE_VERSION="0${JDK_UPDATE_VERSION}"
+    fi
   fi
 
 
@@ -16068,36 +16074,6 @@ fi
     # When is adding -client something that speeds up the JVM?
     # ADD_JVM_ARG_IF_OK([-client],boot_jdk_jvmargs,[$JAVA])
 
-  $ECHO "Check if jvm arg is ok: -XX:PermSize=32m" >&5
-  $ECHO "Command: $JAVA -XX:PermSize=32m -version" >&5
-  OUTPUT=`$JAVA -XX:PermSize=32m -version 2>&1`
-  FOUND_WARN=`$ECHO "$OUTPUT" | grep -i warn`
-  FOUND_VERSION=`$ECHO $OUTPUT | grep " version \""`
-  if test "x$FOUND_VERSION" != x && test "x$FOUND_WARN" = x; then
-    boot_jdk_jvmargs="$boot_jdk_jvmargs -XX:PermSize=32m"
-    JVM_ARG_OK=true
-  else
-    $ECHO "Arg failed:" >&5
-    $ECHO "$OUTPUT" >&5
-    JVM_ARG_OK=false
-  fi
-
-
-  $ECHO "Check if jvm arg is ok: -XX:MaxPermSize=160m" >&5
-  $ECHO "Command: $JAVA -XX:MaxPermSize=160m -version" >&5
-  OUTPUT=`$JAVA -XX:MaxPermSize=160m -version 2>&1`
-  FOUND_WARN=`$ECHO "$OUTPUT" | grep -i warn`
-  FOUND_VERSION=`$ECHO $OUTPUT | grep " version \""`
-  if test "x$FOUND_VERSION" != x && test "x$FOUND_WARN" = x; then
-    boot_jdk_jvmargs="$boot_jdk_jvmargs -XX:MaxPermSize=160m"
-    JVM_ARG_OK=true
-  else
-    $ECHO "Arg failed:" >&5
-    $ECHO "$OUTPUT" >&5
-    JVM_ARG_OK=false
-  fi
-
-
   $ECHO "Check if jvm arg is ok: -XX:ThreadStackSize=$STACK_SIZE" >&5
   $ECHO "Command: $JAVA -XX:ThreadStackSize=$STACK_SIZE -version" >&5
   OUTPUT=`$JAVA -XX:ThreadStackSize=$STACK_SIZE -version 2>&1`
@@ -20011,8 +19987,8 @@ $as_echo "$PROPER_COMPILER_CC" >&6; }
   else
     { $as_echo "$as_me:${as_lineno-$LINENO}: result: no, keeping CC" >&5
 $as_echo "no, keeping CC" >&6; }
-    CC="$TEST_COMPILER"
   fi
+
 
   COMPILER=$CC
   COMPILER_NAME=$COMPILER_NAME
@@ -21590,8 +21566,8 @@ $as_echo "$PROPER_COMPILER_CXX" >&6; }
   else
     { $as_echo "$as_me:${as_lineno-$LINENO}: result: no, keeping CXX" >&5
 $as_echo "no, keeping CXX" >&6; }
-    CXX="$TEST_COMPILER"
   fi
+
 
   COMPILER=$CXX
   COMPILER_NAME=$COMPILER_NAME
@@ -29625,7 +29601,7 @@ fi
   fi
 
   CCXXFLAGS_JDK="$CCXXFLAGS_JDK -DARCH='\"$OPENJDK_TARGET_CPU_LEGACY\"' -D$OPENJDK_TARGET_CPU_LEGACY"
-  CCXXFLAGS_JDK="$CCXXFLAGS_JDK -DRELEASE='\"$RELEASE\"'"
+  CCXXFLAGS_JDK="$CCXXFLAGS_JDK -DRELEASE='\"\$(RELEASE)\"'"
 
   CCXXFLAGS_JDK="$CCXXFLAGS_JDK \
       -I${JDK_OUTPUTDIR}/include \

@@ -130,15 +130,15 @@ import java.util.concurrent.CountedCompleter;
                 int b = this.base, n = this.size, wb = this.wbase, g = this.gran;
                 while (n > g) {
                     int h = n >>> 1, q = h >>> 1, u = h + q; // quartiles
-                    Relay fc = new Relay(new Merger<T>(s, w, a, wb, h,
-                                                       wb+h, n-h, b, g, c));
-                    Relay rc = new Relay(new Merger<T>(fc, a, w, b+h, q,
-                                                       b+u, n-u, wb+h, g, c));
-                    new Sorter<T>(rc, a, w, b+u, n-u, wb+u, g, c).fork();
-                    new Sorter<T>(rc, a, w, b+h, q, wb+h, g, c).fork();;
-                    Relay bc = new Relay(new Merger<T>(fc, a, w, b, q,
-                                                       b+q, h-q, wb, g, c));
-                    new Sorter<T>(bc, a, w, b+q, h-q, wb+q, g, c).fork();
+                    Relay fc = new Relay(new Merger<>(s, w, a, wb, h,
+                                                      wb+h, n-h, b, g, c));
+                    Relay rc = new Relay(new Merger<>(fc, a, w, b+h, q,
+                                                      b+u, n-u, wb+h, g, c));
+                    new Sorter<>(rc, a, w, b+u, n-u, wb+u, g, c).fork();
+                    new Sorter<>(rc, a, w, b+h, q, wb+h, g, c).fork();;
+                    Relay bc = new Relay(new Merger<>(fc, a, w, b, q,
+                                                      b+q, h-q, wb, g, c));
+                    new Sorter<>(bc, a, w, b+q, h-q, wb+q, g, c).fork();
                     s = new EmptyCompleter(bc);
                     n = q;
                 }
@@ -199,9 +199,9 @@ import java.util.concurrent.CountedCompleter;
                                 lo = lm + 1;
                         }
                     }
-                    Merger<T> m = new Merger<T>(this, a, w, lb + lh, ln - lh,
-                                                rb + rh, rn - rh,
-                                                k + lh + rh, g, c);
+                    Merger<T> m = new Merger<>(this, a, w, lb + lh, ln - lh,
+                                               rb + rh, rn - rh,
+                                               k + lh + rh, g, c);
                     rn = rh;
                     ln = lh;
                     addToPendingCount(1);

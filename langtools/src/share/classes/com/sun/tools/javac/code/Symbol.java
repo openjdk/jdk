@@ -1541,7 +1541,7 @@ public abstract class Symbol extends AnnoConstruct implements Element {
                 if (paramNames == null || paramNames.size() != type.getParameterTypes().size()) {
                     paramNames = List.nil();
                 }
-                ListBuffer<VarSymbol> buf = new ListBuffer<VarSymbol>();
+                ListBuffer<VarSymbol> buf = new ListBuffer<>();
                 List<Name> remaining = paramNames;
                 // assert: remaining and paramNames are both empty or both
                 // have same cardinality as type.getParameterTypes()

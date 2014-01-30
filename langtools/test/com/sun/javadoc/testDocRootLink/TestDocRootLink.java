@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 6553182 8025416
+ * @bug 6553182 8025416 8029504
  * @summary This test verifies the -Xdocrootparent option.
  * @author Bhavesh Patel
  * @library ../lib/

@@ -159,24 +159,25 @@ public class ProfilePackageFrameWriter extends HtmlDocletWriter {
             boolean printedHeader = false;
             HtmlTree ul = new HtmlTree(HtmlTag.UL);
             ul.setTitle(labelContent);
-            for (int i = 0; i < arr.length; i++) {
-                if (!isTypeInProfile(arr[i], profileValue)) {
+            for (ClassDoc classDoc : arr) {
+                if (!isTypeInProfile(classDoc, profileValue)) {
                     continue;
                 }
-                if (!Util.isCoreClass(arr[i]) || !
-                        configuration.isGeneratedDoc(arr[i])) {
+                if (!Util.isCoreClass(classDoc) || !
+                        configuration.isGeneratedDoc(classDoc)) {
                     continue;
                 }
                 if (!printedHeader) {
                     Content heading = HtmlTree.HEADING(HtmlConstants.CONTENT_HEADING,
-                            true, labelContent);
+                                                       true, labelContent);
                     contentTree.addContent(heading);
                     printedHeader = true;
                 }
-                Content arr_i_name = new StringContent(arr[i].name());
-                if (arr[i].isInterface()) arr_i_name = HtmlTree.SPAN(HtmlStyle.interfaceName, arr_i_name);
+                Content arr_i_name = new StringContent(classDoc.name());
+                if (classDoc.isInterface())
+                    arr_i_name = HtmlTree.SPAN(HtmlStyle.interfaceName, arr_i_name);
                 Content link = getLink(new LinkInfoImpl(configuration,
-                        LinkInfoImpl.Kind.PACKAGE_FRAME, arr[i]).label(arr_i_name).target("classFrame"));
+                                                        LinkInfoImpl.Kind.PACKAGE_FRAME, classDoc).label(arr_i_name).target("classFrame"));
                 Content li = HtmlTree.LI(link);
                 ul.addContent(li);
             }

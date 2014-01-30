@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2012, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2013, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -104,6 +104,10 @@ define SetupLauncher
         $1_LDFLAGS_SUFFIX += -pthread
   endif
 
+  ifeq ($(OPENJDK_TARGET_OS), aix)
+    $1_LDFLAGS_SUFFIX += -L$(JDK_OUTPUTDIR)/objs -ljli_static
+  endif
+
   ifeq ($(USE_EXTERNAL_LIBZ), true)
     $1_LDFLAGS_SUFFIX += -lz
   endif
@@ -126,10 +130,21 @@ define SetupLauncher
     $1_CFLAGS := $(filter-out -MD, $(CFLAGS_JDKEXE))
   endif
 
-  ifneq ($(wildcard $(JDK_TOPDIR)/make/mapfiles/launchers/mapfile-$(OPENJDK_TARGET_CPU)), )
-    $1_MAPFILE := $(JDK_TOPDIR)/make/mapfiles/launchers/mapfile-$(OPENJDK_TARGET_CPU)
+  # The linker on older SuSE distros (e.g. on SLES 10) complains with:
+  # "Invalid version tag `SUNWprivate_1.1'. Only anonymous version tag is allowed in executable."
+  # if feeded with a version script which contains named tags.
+  ifeq ($(USING_BROKEN_SUSE_LD),yes)
+    ifneq ($(wildcard $(JDK_TOPDIR)/make/mapfiles/launchers/mapfile-$(OPENJDK_TARGET_CPU).anonymous), )
+      $1_MAPFILE := $(JDK_TOPDIR)/make/mapfiles/launchers/mapfile-$(OPENJDK_TARGET_CPU).anonymous
+    else
+      $1_MAPFILE :=
+    endif
   else
-    $1_MAPFILE :=
+    ifneq ($(wildcard $(JDK_TOPDIR)/make/mapfiles/launchers/mapfile-$(OPENJDK_TARGET_CPU)), )
+      $1_MAPFILE := $(JDK_TOPDIR)/make/mapfiles/launchers/mapfile-$(OPENJDK_TARGET_CPU)
+    else
+      $1_MAPFILE :=
+    endif
   endif
 
   $(call SetupNativeCompilation,BUILD_LAUNCHER_$1, \
@@ -180,7 +195,7 @@ define SetupLauncher
 
   BUILD_LAUNCHERS += $$(BUILD_LAUNCHER_$1)
 
-  ifeq ($(OPENJDK_TARGET_OS), macosx)
+  ifneq (,$(filter $(OPENJDK_TARGET_OS), macosx aix))
     $$(BUILD_LAUNCHER_$1): $(JDK_OUTPUTDIR)/objs/libjli_static.a
   endif
 
@@ -437,6 +452,7 @@ UNPACKEXE_LANG := C
 ifeq ($(OPENJDK_TARGET_OS), solaris)
   UNPACKEXE_LANG := C++
 endif
+UNPACKEXE_DEBUG_SYMBOLS := true
 # On windows, unpack200 is linked completely differently to all other
 # executables, using the compiler with the compiler arguments.
 # It's also linked incrementally, producing a .ilk file that needs to
@@ -445,7 +461,20 @@ ifeq ($(OPENJDK_TARGET_OS), windows)
   BUILD_UNPACKEXE_LDEXE := $(CC)
   EXE_OUT_OPTION_save := $(EXE_OUT_OPTION)
   EXE_OUT_OPTION := -Fe
+  # With the current way unpack200 is built, debug symbols aren't supported
+  # anyway.
+  UNPACKEXE_DEBUG_SYMBOLS :=
 endif
+
+# The linker on older SuSE distros (e.g. on SLES 10) complains with:
+# "Invalid version tag `SUNWprivate_1.1'. Only anonymous version tag is allowed in executable."
+# if feeded with a version script which contains named tags.
+ifeq ($(USING_BROKEN_SUSE_LD), yes)
+  UNPACK_MAPFILE = $(JDK_TOPDIR)/make/mapfiles/libunpack/mapfile-vers-unpack200.anonymous
+else
+  UNPACK_MAPFILE = $(JDK_TOPDIR)/make/mapfiles/libunpack/mapfile-vers-unpack200
+endif
+
 $(eval $(call SetupNativeCompilation,BUILD_UNPACKEXE, \
     SRC := $(JDK_TOPDIR)/src/share/native/com/sun/java/util/jar/pack, \
     EXCLUDE_FILES := jni.cpp, \
@@ -457,7 +486,7 @@ $(eval $(call SetupNativeCompilation,BUILD_UNPACKEXE, \
     CFLAGS_linux := -fPIC, \
     CFLAGS_solaris := -KPIC, \
     CFLAGS_macosx := -fPIC, \
-    MAPFILE := $(JDK_TOPDIR)/make/mapfiles/libunpack/mapfile-vers-unpack200, \
+    MAPFILE := $(UNPACK_MAPFILE),\
     LDFLAGS := $(UNPACKEXE_ZIPOBJS), \
     LDFLAGS_windows := $(CXXFLAGS_JDKEXE), \
     LDFLAGS_posix := $(LDFLAGS_JDKEXE) $(LDFLAGS_CXX_JDK) \
@@ -474,7 +503,7 @@ $(eval $(call SetupNativeCompilation,BUILD_UNPACKEXE, \
         -D "JDK_FNAME=unpack200.exe" \
         -D "JDK_INTERNAL_NAME=unpack200" \
         -D "JDK_FTYPE=0x1L", \
-    DEBUG_SYMBOLS := true, \
+    DEBUG_SYMBOLS := $(UNPACKEXE_DEBUG_SYMBOLS), \
     MANIFEST := $(JDK_TOPDIR)/src/windows/resource/unpack200_proto.exe.manifest))
 
 ifeq ($(OPENJDK_TARGET_OS), windows)
@@ -601,7 +630,7 @@ BUILD_JSPAWNHELPER_DST_DIR := $(JDK_OUTPUTDIR)/lib$(OPENJDK_TARGET_CPU_LIBDIR)
 LINK_JSPAWNHELPER_OBJECTS := $(JDK_OUTPUTDIR)/objs/libjava/childproc.o
 LINK_JSPAWNHELPER_FLAGS :=
 
-ifneq ($(findstring $(OPENJDK_TARGET_OS), macosx solaris), )
+ifneq ($(findstring $(OPENJDK_TARGET_OS), macosx solaris aix), )
   BUILD_JSPAWNHELPER := 1
 endif
 
@@ -610,7 +639,7 @@ ifeq ($(OPENJDK_TARGET_OS), macosx)
 endif
 
 ifeq ($(OPENJDK_TARGET_CPU_BITS), 64)
-  LINK_JSPAWNHELPER_FLAGS += -m64
+  LINK_JSPAWNHELPER_FLAGS += $(COMPILER_TARGET_BITS_FLAG)64
 endif
 
 ifeq ($(BUILD_JSPAWNHELPER), 1)

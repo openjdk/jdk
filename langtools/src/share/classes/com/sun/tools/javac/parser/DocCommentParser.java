@@ -57,6 +57,7 @@ import com.sun.tools.javac.util.Name;
 import com.sun.tools.javac.util.Names;
 import com.sun.tools.javac.util.Options;
 import com.sun.tools.javac.util.Position;
+import com.sun.tools.javac.util.StringUtils;
 import static com.sun.tools.javac.util.LayoutCharacters.*;
 
 /**
@@ -129,7 +130,7 @@ public class DocCommentParser {
         List<DCTree> tags = blockTags();
 
         // split body into first sentence and body
-        ListBuffer<DCTree> fs = new ListBuffer<DCTree>();
+        ListBuffer<DCTree> fs = new ListBuffer<>();
         loop:
         for (; body.nonEmpty(); body = body.tail) {
             DCTree t = body.head;
@@ -193,7 +194,7 @@ public class DocCommentParser {
      */
     @SuppressWarnings("fallthrough")
     protected List<DCTree> blockContent() {
-        ListBuffer<DCTree> trees = new ListBuffer<DCTree>();
+        ListBuffer<DCTree> trees = new ListBuffer<>();
         textStart = -1;
 
         loop:
@@ -264,7 +265,7 @@ public class DocCommentParser {
      * Non-standard tags are represented by {@link UnknownBlockTag}.
      */
     protected List<DCTree> blockTags() {
-        ListBuffer<DCTree> tags = new ListBuffer<DCTree>();
+        ListBuffer<DCTree> tags = new ListBuffer<>();
         while (ch == '@')
             tags.add(blockTag());
         return tags.toList();
@@ -534,7 +535,7 @@ public class DocCommentParser {
             return List.nil();
 
         JavacParser p = fac.newParser(s.replace("...", "[]"), false, false, false);
-        ListBuffer<JCTree> paramTypes = new ListBuffer<JCTree>();
+        ListBuffer<JCTree> paramTypes = new ListBuffer<>();
         paramTypes.add(p.parseType());
 
         if (p.token().kind == TokenKind.IDENTIFIER)
@@ -613,7 +614,7 @@ public class DocCommentParser {
      */
     @SuppressWarnings("fallthrough")
     protected List<DCTree> inlineContent() {
-        ListBuffer<DCTree> trees = new ListBuffer<DCTree>();
+        ListBuffer<DCTree> trees = new ListBuffer<>();
 
         skipWhitespace();
         int pos = bp;
@@ -791,7 +792,7 @@ public class DocCommentParser {
      * "value" may be unquoted, single-quoted, or double-quoted.
      */
     protected List<DCTree> htmlAttrs() {
-        ListBuffer<DCTree> attrs = new ListBuffer<DCTree>();
+        ListBuffer<DCTree> attrs = new ListBuffer<>();
         skipWhitespace();
 
         loop:
@@ -802,7 +803,7 @@ public class DocCommentParser {
             List<DCTree> value = null;
             ValueKind vkind = ValueKind.EMPTY;
             if (ch == '=') {
-                ListBuffer<DCTree> v = new ListBuffer<DCTree>();
+                ListBuffer<DCTree> v = new ListBuffer<>();
                 nextChar();
                 skipWhitespace();
                 if (ch == '\'' || ch == '"') {
@@ -989,11 +990,11 @@ public class DocCommentParser {
     }
 
 
-    Set<String> htmlBlockTags = new HashSet<String>(Arrays.asList(
+    Set<String> htmlBlockTags = new HashSet<>(Arrays.asList(
                     "h1", "h2", "h3", "h4", "h5", "h6", "p", "pre"));
 
     protected boolean isSentenceBreak(Name n) {
-        return htmlBlockTags.contains(n.toString().toLowerCase());
+        return htmlBlockTags.contains(StringUtils.toLowerCase(n.toString()));
     }
 
     protected boolean isSentenceBreak(DCTree t) {
@@ -1277,7 +1278,7 @@ public class DocCommentParser {
             },
         };
 
-        tagParsers = new HashMap<Name,TagParser>();
+        tagParsers = new HashMap<>();
         for (TagParser p: parsers)
             tagParsers.put(names.fromString(p.getTreeKind().tagName), p);
 

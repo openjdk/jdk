@@ -67,9 +67,9 @@ import static java.time.temporal.ChronoField.OFFSET_SECONDS;
 
 import java.io.DataOutput;
 import java.io.IOException;
-import java.io.InvalidObjectException;
 import java.io.ObjectInput;
 import java.io.InvalidObjectException;
+import java.io.ObjectInputStream;
 import java.io.Serializable;
 import java.time.chrono.ChronoZonedDateTime;
 import java.time.format.DateTimeFormatter;
@@ -141,6 +141,13 @@ import java.util.Objects;
  * of a {@code LocalDateTime} and a {@code ZoneId}. The {@code ZoneOffset} is
  * a vital, but secondary, piece of information, used to ensure that the class
  * represents an instant, especially during a daylight savings overlap.
+ *
+ * <p>
+ * This is a <a href="{@docRoot}/java/lang/doc-files/ValueBased.html">value-based</a>
+ * class; use of identity-sensitive operations (including reference equality
+ * ({@code ==}), identity hash code, or synchronization) on instances of
+ * {@code ZonedDateTime} may have unpredictable results and should be avoided.
+ * The {@code equals} method should be used for comparisons.
  *
  * @implSpec
  * A {@code ZonedDateTime} holds state equivalent to three separate objects,
@@ -2217,10 +2224,11 @@ public final class ZonedDateTime
 
     /**
      * Defend against malicious streams.
-     * @return never
+     *
+     * @param s the stream to read
      * @throws InvalidObjectException always
      */
-    private Object readResolve() throws InvalidObjectException {
+    private void readObject(ObjectInputStream s) throws InvalidObjectException {
         throw new InvalidObjectException("Deserialization via serialization delegate");
     }
 

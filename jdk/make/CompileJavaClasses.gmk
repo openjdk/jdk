@@ -146,6 +146,17 @@ ifneq ($(OPENJDK_TARGET_OS), macosx)
       sun/tools/attach/BsdVirtualMachine.java
 endif
 
+ifneq ($(OPENJDK_TARGET_OS),aix)
+    EXFILES+=sun/nio/ch/AixAsynchronousChannelProvider.java \
+             sun/nio/ch/AixPollPort.java \
+             sun/nio/fs/AixFileStore.java \
+             sun/nio/fs/AixFileSystem.java \
+             sun/nio/fs/AixFileSystemProvider.java \
+             sun/nio/fs/AixNativeDispatcher.java \
+             sun/tools/attach/AixAttachProvider.java \
+             sun/tools/attach/AixVirtualMachine.java
+endif
+
 # Exclude BreakIterator classes that are just used in compile process to generate
 # data files and shouldn't go in the product
 EXFILES += sun/text/resources/BreakIteratorRules.java \
@@ -217,9 +228,9 @@ endif
 # Exclude another implicitly not included file.
 EXFILES += sun/util/locale/AsciiUtil.java
 
-ifeq (, $(filter $(OPENJDK_TARGET_OS), solaris macosx))
+ifeq (, $(filter $(OPENJDK_TARGET_OS), solaris macosx aix))
   #
-  # only solaris and macosx
+  # only solaris, macosx and aix
   #
   EXFILES += sun/nio/fs/PollingWatchService.java
 endif
@@ -274,11 +285,6 @@ ifeq ($(OPENJDK_TARGET_OS), macosx)
       $(JDK_TOPDIR)/src/solaris/classes/sun/nio/ch/sctp/SctpMultiChannelImpl.java \
       $(JDK_TOPDIR)/src/solaris/classes/sun/nio/ch/sctp/SctpServerChannelImpl.java
 
-  # JObjC.jar contains 1.5 byte-code...so skip it here :-(
-  # MACOSX_SRC_DIRS += $(JDK_TOPDIR)/src/macosx/native/jobjc/src
-  # EXCLUDES += tests/java/com/apple/jobjc
-
-  EXCLUDES += com/apple/jobjc
 endif
 
 # The security classes should not end up in the classes directory as that will prevent them
@@ -293,6 +299,16 @@ SECURITY_PKGS := \
     sun/security/mscapi \
     sun/security/pkcs11 \
     #
+
+AIX_SRC_DIRS :=
+ifeq ($(OPENJDK_TARGET_OS),aix)
+     AIX_SRC_DIRS += $(JDK_TOPDIR)/src/aix/classes
+
+  # these files are duplicated in AIX_SRC_DIRS
+  EXFILES += $(JDK_TOPDIR)/src/solaris/classes/sun/nio/ch/sctp/SctpChannelImpl.java \
+      $(JDK_TOPDIR)/src/solaris/classes/sun/nio/ch/sctp/SctpMultiChannelImpl.java \
+      $(JDK_TOPDIR)/src/solaris/classes/sun/nio/ch/sctp/SctpServerChannelImpl.java
+endif
 
 # The exception handling of swing beaninfo
 # These resources violates the convention of having code and resources together under
@@ -318,6 +334,7 @@ $(eval $(call SetupJavaCompilation,BUILD_JDK,\
     SRC:=$(JDK_TOPDIR)/src/share/classes \
         $(JDK_TOPDIR)/src/$(OPENJDK_TARGET_OS_API_DIR)/classes \
         $(MACOSX_SRC_DIRS) \
+        $(AIX_SRC_DIRS) \
         $(JDK_OUTPUTDIR)/gensrc \
         $(JDK_OUTPUTDIR)/gensrc_no_srczip \
         $(CLOSED_SRC_DIRS),\
@@ -354,44 +371,6 @@ $(JDK_OUTPUTDIR)/classes/META-INF/services/com.sun.tools.xjc.Plugin:
 
 ##########################################################################################
 
-ifeq ($(OPENJDK_TARGET_OS), macosx)
-  #
-  # JObjC.jar is compiled with BOOT_JAVAC which (may) not support the "-h" flag.
-  # so we first compile classes with BOOT_JAVAC and then with JDK_JAVAC :-(
-  #
-  $(eval $(call SetupJavaCompiler,GENERATE_15BYTECODE, \
-      JAVAC := $(JAVAC), \
-      FLAGS := -source 1.5 -target 1.5 -g -bootclasspath $(BOOT_RTJAR) -cp $(JDK_OUTPUTDIR)/../langtools/dist/lib/classes.jar $(DISABLE_WARNINGS), \
-      SERVER_DIR := $(SJAVAC_SERVER_DIR), \
-      SERVER_JVM := $(SJAVAC_SERVER_JAVA)))
-
-  $(eval $(call SetupJavaCompilation,BUILD_JOBJC, \
-      SETUP := GENERATE_15BYTECODE, \
-      DISABLE_SJAVAC := true, \
-      SRC := $(JDK_TOPDIR)/src/macosx/native/jobjc/src/core/java \
-          $(JDK_TOPDIR)/src/macosx/native/jobjc/src/runtime-additions/java \
-          $(JDK_OUTPUTDIR)/gensrc_jobjc/src, \
-      INCLUDES := com/apple/jobjc, \
-      EXCLUDES := tests/java/com/apple/jobjc, \
-      BIN := $(JDK_OUTPUTDIR)/jobjc_classes, \
-      JAR := $(JDK_OUTPUTDIR)/lib/JObjC.jar, \
-      JARINDEX := true))
-
-  $(BUILD_JOBJC): $(BUILD_JDK)
-
-  $(eval $(call SetupJavaCompilation,BUILD_JOBJC_HEADERS, \
-      SETUP := GENERATE_JDKBYTECODE, \
-      SRC := $(JDK_TOPDIR)/src/macosx/native/jobjc/src/core/java \
-          $(JDK_TOPDIR)/src/macosx/native/jobjc/src/runtime-additions/java \
-          $(JDK_OUTPUTDIR)/gensrc_jobjc/src, \
-      INCLUDES := com/apple/jobjc, \
-      EXCLUDES := tests/java/com/apple/jobjc, \
-      BIN := $(JDK_OUTPUTDIR)/jobjc_classes_headers, \
-      HEADERS := $(JDK_OUTPUTDIR)/gensrc_headers_jobjc))
-
-$(BUILD_JOBJC_HEADERS): $(BUILD_JDK)
-
-endif
 
 ##########################################################################################
 
@@ -433,7 +412,7 @@ endif
 
 ##########################################################################################
 
-all: $(BUILD_JDK) $(BUILD_SECURITY) $(BUILD_JOBJC) $(BUILD_JOBJC_HEADERS) $(COPY_EXTRA) \
+all: $(BUILD_JDK) $(BUILD_SECURITY) $(COPY_EXTRA) \
     $(JDK_OUTPUTDIR)/classes/META-INF/services/com.sun.tools.xjc.Plugin \
     $(BUILD_ACCESSBRIDGE_32) $(BUILD_ACCESSBRIDGE_64) \
     $(BUILD_ACCESSBRIDGE_LEGACY)

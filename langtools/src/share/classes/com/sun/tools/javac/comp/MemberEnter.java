@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -62,8 +62,7 @@ import com.sun.tools.javac.util.JCDiagnostic.DiagnosticPosition;
  *  deletion without notice.</b>
  */
 public class MemberEnter extends JCTree.Visitor implements Completer {
-    protected static final Context.Key<MemberEnter> memberEnterKey =
-        new Context.Key<MemberEnter>();
+    protected static final Context.Key<MemberEnter> memberEnterKey = new Context.Key<>();
 
     /** A switch to determine whether we check for package/class conflicts
      */
@@ -126,7 +125,7 @@ public class MemberEnter extends JCTree.Visitor implements Completer {
     /** A queue for classes whose members still need to be entered into the
      *  symbol table.
      */
-    ListBuffer<Env<AttrContext>> halfcompleted = new ListBuffer<Env<AttrContext>>();
+    ListBuffer<Env<AttrContext>> halfcompleted = new ListBuffer<>();
 
     /** Set to true only when the first of a set of classes is
      *  processed from the half completed queue.
@@ -178,7 +177,7 @@ public class MemberEnter extends JCTree.Visitor implements Completer {
 
         // enter imported types immediately
         new Object() {
-            Set<Symbol> processed = new HashSet<Symbol>();
+            Set<Symbol> processed = new HashSet<>();
             void importFrom(TypeSymbol tsym) {
                 if (tsym == null || !processed.add(tsym))
                     return;
@@ -203,7 +202,7 @@ public class MemberEnter extends JCTree.Visitor implements Completer {
 
         // enter non-types before annotations that might use them
         annotate.earlier(new Annotate.Worker() {
-            Set<Symbol> processed = new HashSet<Symbol>();
+            Set<Symbol> processed = new HashSet<>();
 
             public String toString() {
                 return "import static " + tsym + ".*" + " in " + sourcefile;
@@ -271,7 +270,7 @@ public class MemberEnter extends JCTree.Visitor implements Completer {
 
         // enter imported types immediately
         new Object() {
-            Set<Symbol> processed = new HashSet<Symbol>();
+            Set<Symbol> processed = new HashSet<>();
             void importFrom(TypeSymbol tsym) {
                 if (tsym == null || !processed.add(tsym))
                     return;
@@ -297,7 +296,7 @@ public class MemberEnter extends JCTree.Visitor implements Completer {
 
         // enter non-types before annotations that might use them
         annotate.earlier(new Annotate.Worker() {
-            Set<Symbol> processed = new HashSet<Symbol>();
+            Set<Symbol> processed = new HashSet<>();
             boolean found = false;
 
             public String toString() {
@@ -378,7 +377,7 @@ public class MemberEnter extends JCTree.Visitor implements Completer {
         attr.attribTypeVariables(typarams, env);
 
         // Enter and attribute value parameters.
-        ListBuffer<Type> argbuf = new ListBuffer<Type>();
+        ListBuffer<Type> argbuf = new ListBuffer<>();
         for (List<JCVariableDecl> l = params; l.nonEmpty(); l = l.tail) {
             memberEnter(l.head, env);
             argbuf.append(l.head.vartype.type);
@@ -397,7 +396,7 @@ public class MemberEnter extends JCTree.Visitor implements Completer {
         }
 
         // Attribute thrown exceptions.
-        ListBuffer<Type> thrownbuf = new ListBuffer<Type>();
+        ListBuffer<Type> thrownbuf = new ListBuffer<>();
         for (List<JCExpression> l = thrown; l.nonEmpty(); l = l.tail) {
             Type exc = attr.attribType(l.head, env);
             if (!exc.hasTag(TYPEVAR)) {
@@ -520,7 +519,7 @@ public class MemberEnter extends JCTree.Visitor implements Completer {
 
         try {
             // Import-on-demand java.lang.
-            importAll(tree.pos, reader.enterPackage(names.java_lang), env);
+            importAll(tree.pos, syms.enterPackage(names.java_lang), env);
 
             // Process all import clauses.
             memberEnter(tree.defs, env);
@@ -591,7 +590,7 @@ public class MemberEnter extends JCTree.Visitor implements Completer {
             }
 
             // Set m.params
-            ListBuffer<VarSymbol> params = new ListBuffer<VarSymbol>();
+            ListBuffer<VarSymbol> params = new ListBuffer<>();
             JCVariableDecl lastParam = null;
             for (List<JCVariableDecl> l = tree.params; l.nonEmpty(); l = l.tail) {
                 JCVariableDecl param = lastParam = l.head;
@@ -915,10 +914,8 @@ public class MemberEnter extends JCTree.Visitor implements Completer {
     private void actualEnterAnnotations(List<JCAnnotation> annotations,
                           Env<AttrContext> env,
                           Symbol s) {
-        Map<TypeSymbol, ListBuffer<Attribute.Compound>> annotated =
-                new LinkedHashMap<TypeSymbol, ListBuffer<Attribute.Compound>>();
-        Map<Attribute.Compound, DiagnosticPosition> pos =
-                new HashMap<Attribute.Compound, DiagnosticPosition>();
+        Map<TypeSymbol, ListBuffer<Attribute.Compound>> annotated = new LinkedHashMap<>();
+        Map<Attribute.Compound, DiagnosticPosition> pos = new HashMap<>();
 
         for (List<JCAnnotation> al = annotations; !al.isEmpty(); al = al.tail) {
             JCAnnotation a = al.head;
@@ -952,7 +949,7 @@ public class MemberEnter extends JCTree.Visitor implements Completer {
         }
 
         s.setDeclarationAttributesWithCompletion(
-                annotate.new AnnotateRepeatedContext<Attribute.Compound>(env, annotated, pos, log, false));
+                annotate.new AnnotateRepeatedContext<>(env, annotated, pos, log, false));
     }
 
     /** Queue processing of an attribute default value. */
@@ -1064,9 +1061,9 @@ public class MemberEnter extends JCTree.Visitor implements Completer {
             ct.supertype_field = modelMissingTypes(supertype, tree.extending, false);
 
             // Determine interfaces.
-            ListBuffer<Type> interfaces = new ListBuffer<Type>();
+            ListBuffer<Type> interfaces = new ListBuffer<>();
             ListBuffer<Type> all_interfaces = null; // lazy init
-            Set<Type> interfaceSet = new HashSet<Type>();
+            Set<Type> interfaceSet = new HashSet<>();
             List<JCExpression> interfaceTrees = tree.implementing;
             for (JCExpression iface : interfaceTrees) {
                 Type i = attr.attribBase(iface, baseEnv, false, true, true);
@@ -1176,7 +1173,7 @@ public class MemberEnter extends JCTree.Visitor implements Completer {
             // name as a top-level package.
             if (checkClash &&
                 c.owner.kind == PCK && c.owner != syms.unnamedPackage &&
-                reader.packageExists(c.fullname)) {
+                syms.packageExists(c.fullname)) {
                 log.error(tree.pos, "clash.with.pkg.of.same.name", Kinds.kindName(sym), c);
             }
             if (c.owner.kind == PCK && (c.flags_field & PUBLIC) == 0 &&
@@ -1214,10 +1211,8 @@ public class MemberEnter extends JCTree.Visitor implements Completer {
     private void actualEnterTypeAnnotations(final List<JCAnnotation> annotations,
             final Env<AttrContext> env,
             final Symbol s) {
-        Map<TypeSymbol, ListBuffer<Attribute.TypeCompound>> annotated =
-                new LinkedHashMap<TypeSymbol, ListBuffer<Attribute.TypeCompound>>();
-        Map<Attribute.TypeCompound, DiagnosticPosition> pos =
-                new HashMap<Attribute.TypeCompound, DiagnosticPosition>();
+        Map<TypeSymbol, ListBuffer<Attribute.TypeCompound>> annotated = new LinkedHashMap<>();
+        Map<Attribute.TypeCompound, DiagnosticPosition> pos = new HashMap<>();
 
         for (List<JCAnnotation> al = annotations; !al.isEmpty(); al = al.tail) {
             JCAnnotation a = al.head;
@@ -1245,7 +1240,7 @@ public class MemberEnter extends JCTree.Visitor implements Completer {
 
         if (s != null) {
             s.appendTypeAttributesWithCompletion(
-                    annotate.new AnnotateRepeatedContext<Attribute.TypeCompound>(env, annotated, pos, log, true));
+                    annotate.new AnnotateRepeatedContext<>(env, annotated, pos, log, true));
         }
     }
 
@@ -1448,7 +1443,7 @@ public class MemberEnter extends JCTree.Visitor implements Completer {
         }
 
         List<Type> visit(List<? extends JCTree> trees) {
-            ListBuffer<Type> lb = new ListBuffer<Type>();
+            ListBuffer<Type> lb = new ListBuffer<>();
             for (JCTree t: trees)
                 lb.append(visit(t));
             return lb.toList();

@@ -29,10 +29,12 @@ import java.util.Collections;
 import java.util.EnumSet;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 
 import javax.lang.model.element.Modifier;
 
 import com.sun.tools.javac.util.Assert;
+import com.sun.tools.javac.util.StringUtils;
 
 /** Access flags and other modifiers for Java classes and members.
  *
@@ -321,8 +323,7 @@ public class Flags {
     }
 
     // Cache of modifier sets.
-    private static final Map<Long, Set<Modifier>> modifierSets =
-        new java.util.concurrent.ConcurrentHashMap<Long, Set<Modifier>>(64);
+    private static final Map<Long, Set<Modifier>> modifierSets = new ConcurrentHashMap<>(64);
 
     public static boolean isStatic(Symbol symbol) {
         return (symbol.flags() & STATIC) != 0;
@@ -388,7 +389,7 @@ public class Flags {
 
         Flag(long flag) {
             this.value = flag;
-            this.lowercaseName = name().toLowerCase();
+            this.lowercaseName = StringUtils.toLowerCase(name());
         }
 
         @Override

@@ -35,7 +35,6 @@ import java.util.*;
 
 import sun.awt.*;
 import sun.print.*;
-import sun.security.util.SecurityConstants;
 
 import static sun.lwawt.LWWindowPeer.PeerType;
 
@@ -424,7 +423,7 @@ public abstract class LWToolkit extends SunToolkit implements Runnable {
     public final Clipboard getSystemClipboard() {
         SecurityManager security = System.getSecurityManager();
         if (security != null) {
-            security.checkPermission(SecurityConstants.AWT.ACCESS_CLIPBOARD_PERMISSION);
+            security.checkPermission(AWTPermissions.ACCESS_CLIPBOARD_PERMISSION);
         }
 
         synchronized (this) {

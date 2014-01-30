@@ -37,6 +37,10 @@
 
 #include "awt_Plugin.h"
 
+#ifdef AIX
+#include "porting_aix.h" /* For the 'dladdr' function. */
+#endif
+
 #ifdef DEBUG
 #define VERBOSE_AWT_DEBUG
 #endif

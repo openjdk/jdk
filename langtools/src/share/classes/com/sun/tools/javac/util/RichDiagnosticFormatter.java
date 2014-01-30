@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -97,7 +97,7 @@ public class RichDiagnosticFormatter extends
         this.diags = JCDiagnostic.Factory.instance(context);
         this.types = Types.instance(context);
         this.messages = JavacMessages.instance(context);
-        whereClauses = new EnumMap<WhereClauseKind, Map<Type, JCDiagnostic>>(WhereClauseKind.class);
+        whereClauses = new EnumMap<>(WhereClauseKind.class);
         configuration = new RichConfiguration(Options.instance(context), formatter);
         for (WhereClauseKind kind : WhereClauseKind.values())
             whereClauses.put(kind, new LinkedHashMap<Type, JCDiagnostic>());
@@ -279,7 +279,7 @@ public class RichDiagnosticFormatter extends
     protected class ClassNameSimplifier {
 
         /* table for keeping track of all short name usages */
-        Map<Name, List<Symbol>> nameClashes = new HashMap<Name, List<Symbol>>();
+        Map<Name, List<Symbol>> nameClashes = new HashMap<>();
 
         /**
          * Add a name usage to the simplifier's internal cache
@@ -322,7 +322,7 @@ public class RichDiagnosticFormatter extends
             }
             return name;
         }
-    };
+    }
     // </editor-fold>
 
     // <editor-fold defaultstate="collapsed" desc="rich printer">
@@ -437,7 +437,7 @@ public class RichDiagnosticFormatter extends
                 return ms;
             }
         }
-    };
+    }
     // </editor-fold>
 
     // <editor-fold defaultstate="collapsed" desc="type scanner">
@@ -704,7 +704,7 @@ public class RichDiagnosticFormatter extends
             /** full class names simplification (where possible) */
             SIMPLE_NAMES,
             /** type-variable names disambiguation */
-            UNIQUE_TYPEVAR_NAMES;
+            UNIQUE_TYPEVAR_NAMES
         }
     }
 }

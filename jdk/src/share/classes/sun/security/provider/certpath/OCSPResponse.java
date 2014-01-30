@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -427,9 +427,14 @@ public final class OCSPResponse {
         if (signerCert == null) {
             // Add the Issuing CA cert and/or Trusted Responder cert to the list
             // of certs from the OCSP response
-            certs.add((X509CertImpl) issuerCert);
-            if (responderCert != null) {
-                certs.add((X509CertImpl) responderCert);
+            try {
+                certs.add(X509CertImpl.toImpl(issuerCert));
+                if (responderCert != null) {
+                    certs.add(X509CertImpl.toImpl(responderCert));
+                }
+            } catch (CertificateException ce) {
+                throw new CertPathValidatorException(
+                    "Invalid issuer or trusted responder certificate", ce);
             }
 
             if (responderName != null) {
@@ -441,10 +446,28 @@ public final class OCSPResponse {
                 }
             } else if (responderKeyId != null) {
                 for (X509CertImpl cert : certs) {
+                    // Match responder's key identifier against the cert's SKID
+                    // This will match if the SKID is encoded using the 160-bit
+                    // SHA-1 hash method as defined in RFC 5280.
                     KeyIdentifier certKeyId = cert.getSubjectKeyId();
                     if (certKeyId != null && responderKeyId.equals(certKeyId)) {
                         signerCert = cert;
                         break;
+                    } else {
+                        // The certificate does not have a SKID or may have
+                        // been using a different algorithm (ex: see RFC 7093).
+                        // Check if the responder's key identifier matches
+                        // against a newly generated key identifier of the
+                        // cert's public key using the 160-bit SHA-1 method.
+                        try {
+                            certKeyId = new KeyIdentifier(cert.getPublicKey());
+                        } catch (IOException e) {
+                            // ignore
+                        }
+                        if (responderKeyId.equals(certKeyId)) {
+                            signerCert = cert;
+                            break;
+                        }
                     }
                 }
             }

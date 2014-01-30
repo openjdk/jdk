@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -291,7 +291,7 @@ class XWindowPeer extends XPanelPeer implements WindowPeer,
 
     public void updateIconImages() {
         Window target = (Window)this.target;
-        java.util.List<Image> iconImages = ((Window)target).getIconImages();
+        java.util.List<Image> iconImages = target.getIconImages();
         XWindowPeer ownerPeer = getOwnerPeer();
         winAttr.icons = new ArrayList<IconInfo>();
         if (iconImages.size() != 0) {
@@ -463,8 +463,8 @@ class XWindowPeer extends XPanelPeer implements WindowPeer,
     public void updateMinimumSize() {
         //This function only saves minimumSize value in XWindowPeer
         //Setting WMSizeHints is implemented in XDecoratedPeer
-        targetMinimumSize = (((Component)target).isMinimumSizeSet()) ?
-            ((Component)target).getMinimumSize() : null;
+        targetMinimumSize = (target.isMinimumSizeSet()) ?
+            target.getMinimumSize() : null;
     }
 
     public Dimension getTargetMinimumSize() {
@@ -719,10 +719,10 @@ class XWindowPeer extends XPanelPeer implements WindowPeer,
         Runnable dc = new Runnable() {
             public void run() {
                 AWTAccessor.getComponentAccessor().
-                    setGraphicsConfiguration((Component)target, gc);
+                    setGraphicsConfiguration(target, gc);
             }
         };
-        SunToolkit.executeOnEventHandlerThread((Component)target, dc);
+        SunToolkit.executeOnEventHandlerThread(target, dc);
     }
 
     /**
@@ -750,7 +750,7 @@ class XWindowPeer extends XPanelPeer implements WindowPeer,
 
     protected Point getNewLocation(XConfigureEvent xe, int leftInset, int topInset) {
         // Bounds of the window
-        Rectangle targetBounds = AWTAccessor.getComponentAccessor().getBounds((Component)target);
+        Rectangle targetBounds = AWTAccessor.getComponentAccessor().getBounds(target);
 
         int runningWM = XWM.getWMID();
         Point newLocation = targetBounds.getLocation();
@@ -1108,7 +1108,7 @@ class XWindowPeer extends XPanelPeer implements WindowPeer,
                 XUnmapEvent unmap = new XUnmapEvent();
                 unmap.set_window(window);
                 unmap.set_event(XToolkit.getDefaultRootWindow());
-                unmap.set_type((int)XConstants.UnmapNotify);
+                unmap.set_type(XConstants.UnmapNotify);
                 unmap.set_from_configure(false);
                 XlibWrapper.XSendEvent(XToolkit.getDisplay(), XToolkit.getDefaultRootWindow(),
                         false, XConstants.SubstructureNotifyMask | XConstants.SubstructureRedirectMask,

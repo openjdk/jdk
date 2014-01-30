@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -446,7 +446,7 @@ public interface ImageInputStream extends DataInput, Closeable {
      * <code>UTFDataFormatException</code> is thrown. Otherwise, the
      * group is converted to the character:
      *
-     * <p> <pre><code>
+     * <pre><code>
      * (char)(((a&amp; 0x1F) &lt;&lt; 6) | (b &amp; 0x3F))
      * </code></pre>
      *
@@ -460,7 +460,7 @@ public interface ImageInputStream extends DataInput, Closeable {
      * <code>UTFDataFormatException</code> is thrown. Otherwise, the
      * group is converted to the character:
      *
-     * <p> <pre><code>
+     * <pre><code>
      * (char)(((a &amp; 0x0F) &lt;&lt; 12) | ((b &amp; 0x3F) &lt;&lt; 6) | (c &amp; 0x3F))
      * </code></pre>
      *

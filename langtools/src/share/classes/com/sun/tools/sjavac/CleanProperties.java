@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -97,18 +97,19 @@ public class CleanProperties implements Transformer
         }
 
         // Sort the properties in increasing key order.
-        List<String> sortedKeys = new ArrayList<String>();
+        List<String> sortedKeys = new ArrayList<>();
         for (Object key : p.keySet()) {
             sortedKeys.add((String)key);
         }
         Collections.sort(sortedKeys);
-        Iterator<String> keys = sortedKeys.iterator();
 
         // Collect the properties into a string buffer.
         StringBuilder data = new StringBuilder();
-        while (keys.hasNext()) {
-            String key = keys.next();
-            data.append(CompileProperties.escape(key)+":"+CompileProperties.escape((String)p.get(key))+"\n");
+        for (String key : sortedKeys) {
+            data.append(CompileProperties.escape(key))
+                .append(":")
+                .append(CompileProperties.escape((String) p.get(key)))
+                .append("\n");
         }
 
         String destFilename = destRoot.getPath()+File.separator+pkgNameF+File.separator+src.getName();
@@ -124,7 +125,7 @@ public class CleanProperties implements Transformer
 
         Set<URI> as = packageArtifacts.get(pkgName);
         if (as == null) {
-            as = new HashSet<URI>();
+            as = new HashSet<>();
             packageArtifacts.put(pkgName, as);
         }
         as.add(dest.toURI());

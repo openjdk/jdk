@@ -23,41 +23,43 @@
 
 /**
  * @test
- * @bug 4894330 4810347 6277269
+ * @bug 4894330 4810347 6277269 8029388
  * @compile -XDignore.symbol.file ChangeDataModel.java
  * @run main ChangeDataModel
  * @summary Verify -d32 and -d64 options are accepted(rejected) on all platforms
  * @author Joseph D. Darcy, ksrini
  */
 import java.io.File;
+import java.util.ArrayList;
+import java.util.List;
 
 public class ChangeDataModel extends TestHelper {
     private static final File TestJar      = new File("test" + JAR_FILE_EXT);
+    private static final String OptionName = "Args";
+    private static final File TestOptionJar  = new File(OptionName + JAR_FILE_EXT);
     private static final String OPT_PREFIX = "ARCH_OPT:";
 
-    public static void main(String... args) throws Exception {
+    static void createTestJar() throws Exception {
         String[] code = {
             "   public static void main(String argv[]) {",
             "      System.out.println(\"" + OPT_PREFIX + "-d\" + System.getProperty(\"sun.arch.data.model\", \"none\"));",
-            "   }",
-        };
+            "   }",};
         createJar(TestJar, code);
+    }
+    public static void main(String... args) throws Exception {
+        createTestJar();
+        createOptionsJar();
 
-        // verify if data model flag for default data model is accepted
+        // verify if data model flag for default data model is accepted, also
+        // verify if the complimentary data model is rejected.
         if (is32Bit) {
             checkAcceptance(javaCmd, "-d32");
+            checkRejection(javaCmd, "-d64");
+            checkOption(javaCmd, "-d64");
         } else if (is64Bit) {
             checkAcceptance(javaCmd, "-d64");
-        } else {
-            throw new Error("unsupported data model");
-        }
-
-        // Negative tests: ensure that non-dual mode systems reject the
-        // complementary (other) data model
-        if (is32Bit) {
-            checkRejection(javaCmd, "-d64");
-        } else if (is64Bit) {
             checkRejection(javaCmd, "-d32");
+            checkOption(javaCmd, "-d32");
         } else {
             throw new Error("unsupported data model");
         }
@@ -80,5 +82,45 @@ public class ChangeDataModel extends TestHelper {
             String message = "Data model flag " + dmodel + " was accepted.";
             throw new RuntimeException(message);
         }
+    }
+
+    static void checkOption(String cmd, String dmodel) throws Exception {
+        TestResult tr = doExec(cmd, "-jar", TestOptionJar.getAbsolutePath(), dmodel);
+        verifyOption(tr, dmodel);
+
+        tr = doExec(cmd, "-cp", ".", OptionName, dmodel);
+        verifyOption(tr, dmodel);
+    }
+
+    static void verifyOption(TestResult tr, String dmodel) {
+        if (!tr.contains(OPT_PREFIX + dmodel)) {
+            System.out.println(tr);
+            String message = "app argument: " + dmodel + " not found.";
+            throw new RuntimeException(message);
+        }
+        if (!tr.isOK()) {
+            System.out.println(tr);
+            String message = "app argument: " + dmodel + " interpreted ?";
+            throw new RuntimeException(message);
+        }
+    }
+
+    static void createOptionsJar() throws Exception {
+        List<String> code = new ArrayList<>();
+        code.add("public class Args {");
+        code.add("   public static void main(String argv[]) {");
+        code.add("       for (String x : argv)");
+        code.add("           System.out.println(\"" + OPT_PREFIX + "\" + x);");
+        code.add("   }");
+        code.add("}");
+        File optionsJava  = new File(OptionName + JAVA_FILE_EXT);
+        createFile(optionsJava, code);
+        File optionsClass = new File(OptionName + CLASS_FILE_EXT);
+
+        compile(optionsJava.getName());
+        createJar("cvfe",
+                  TestOptionJar.getName(),
+                  OptionName,
+                  optionsClass.getName());
     }
 }

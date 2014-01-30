@@ -105,7 +105,7 @@ le_uint16 LigatureSubstitutionProcessor2::processStateEntry(LEGlyphStorage &glyp
         LEReferenceToArrayOf<le_uint16> componentTable(stHeader, success, componentOffset, LE_UNBOUNDED_ARRAY);
         if(LE_FAILURE(success)) {
           currGlyph+= dir;
-            return nextStateIndex; // get out! bad font
+          return nextStateIndex; // get out! bad font
         }
 
         do {

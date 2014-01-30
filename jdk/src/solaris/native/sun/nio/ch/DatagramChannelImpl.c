@@ -81,7 +81,7 @@ Java_sun_nio_ch_DatagramChannelImpl_disconnect0(JNIEnv *env, jobject this,
     rv = connect(fd, 0, 0);
 #endif
 
-#if defined(__linux__) || defined(_ALLBSD_SOURCE)
+#if defined(__linux__) || defined(_ALLBSD_SOURCE) || defined(_AIX)
     {
         int len;
         SOCKADDR sa;
@@ -113,6 +113,14 @@ Java_sun_nio_ch_DatagramChannelImpl_disconnect0(JNIEnv *env, jobject this,
 
 #if defined(_ALLBSD_SOURCE)
         if (rv < 0 && errno == EADDRNOTAVAIL)
+                rv = errno = 0;
+#endif
+#if defined(_AIX)
+        /* See W. Richard Stevens, "UNIX Network Programming, Volume 1", p. 254:
+         * 'Setting the address family to AF_UNSPEC might return EAFNOSUPPORT
+         * but that is acceptable.
+         */
+        if (rv < 0 && errno == EAFNOSUPPORT)
                 rv = errno = 0;
 #endif
     }

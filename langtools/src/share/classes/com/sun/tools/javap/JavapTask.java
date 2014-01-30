@@ -356,7 +356,7 @@ public class JavapTask implements DisassemblerTool.DisassemblerTask, Messages {
             Iterable<String> classes) {
         this(out, fileManager, diagnosticListener);
 
-        this.classes = new ArrayList<String>();
+        this.classes = new ArrayList<>();
         for (String classname: classes) {
             classname.getClass(); // null-check
             this.classes.add(classname);
@@ -512,7 +512,7 @@ public class JavapTask implements DisassemblerTool.DisassemblerTask, Messages {
                 handleOption(arg, iter);
             else if (allowClasses) {
                 if (classes == null)
-                    classes = new ArrayList<String>();
+                    classes = new ArrayList<>();
                 classes.add(arg);
                 while (iter.hasNext())
                     classes.add(iter.next());
@@ -758,8 +758,7 @@ public class JavapTask implements DisassemblerTool.DisassemblerTask, Messages {
                     }
 
                 };
-            } catch (URISyntaxException ignore) {
-            } catch (IOException ignore) {
+            } catch (URISyntaxException | IOException ignore) {
             }
         }
 
@@ -989,7 +988,7 @@ public class JavapTask implements DisassemblerTool.DisassemblerTask, Messages {
             // could make this a HashMap<Locale,SoftReference<ResourceBundle>>
             // and for efficiency, keep a hard reference to the bundle for the task
             // locale
-            bundles = new HashMap<Locale, ResourceBundle>();
+            bundles = new HashMap<>();
         }
 
         if (locale == null)
