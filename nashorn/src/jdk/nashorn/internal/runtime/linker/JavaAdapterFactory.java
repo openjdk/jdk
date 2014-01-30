@@ -111,7 +111,7 @@ public final class JavaAdapterFactory {
                 // check for restricted package access
                 Context.checkPackageAccess(type);
                 // check for classes, interfaces in reflection
-                ReflectionCheckLinker.checkReflectionAccess(type);
+                ReflectionCheckLinker.checkReflectionAccess(type, true);
             }
         }
         return getAdapterInfo(types).getAdapterClassFor(classOverrides);

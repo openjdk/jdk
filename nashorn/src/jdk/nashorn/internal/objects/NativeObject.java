@@ -645,12 +645,12 @@ public final class NativeObject {
             targetObj.addBoundProperties(source, props);
         } else if (source instanceof StaticClass) {
             final Class<?> clazz = ((StaticClass)source).getRepresentedClass();
-            Bootstrap.checkReflectionAccess(clazz);
+            Bootstrap.checkReflectionAccess(clazz, true);
             bindBeanProperties(targetObj, source, BeansLinker.getReadableStaticPropertyNames(clazz),
                     BeansLinker.getWritableStaticPropertyNames(clazz), BeansLinker.getStaticMethodNames(clazz));
         } else {
             final Class<?> clazz = source.getClass();
-            Bootstrap.checkReflectionAccess(clazz);
+            Bootstrap.checkReflectionAccess(clazz, false);
             bindBeanProperties(targetObj, source, BeansLinker.getReadableInstancePropertyNames(clazz),
                     BeansLinker.getWritableInstancePropertyNames(clazz), BeansLinker.getInstanceMethodNames(clazz));
         }
