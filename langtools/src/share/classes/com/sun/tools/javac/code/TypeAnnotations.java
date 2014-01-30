@@ -912,11 +912,7 @@ public class TypeAnnotations {
                         // not care about inner types.
                         JCAnnotatedType atypetree = (JCAnnotatedType) frame;
                         final Type utype = atypetree.underlyingType.type;
-                        if (utype == null) {
-                            // This might happen during DeferredAttr;
-                            // we will be back later.
-                            return;
-                        }
+                        Assert.checkNonNull(utype);
                         Symbol tsym = utype.tsym;
                         if (tsym.getKind().equals(ElementKind.TYPE_PARAMETER) ||
                                 utype.getKind().equals(TypeKind.WILDCARD) ||
