@@ -154,7 +154,7 @@ class VM_Operation: public CHeapObj<mtInternal> {
   void set_next(VM_Operation *next)              { _next = next; }
   void set_prev(VM_Operation *prev)              { _prev = prev; }
 
-  // Configuration. Override these appropriatly in subclasses.
+  // Configuration. Override these appropriately in subclasses.
   virtual VMOp_Type type() const = 0;
   virtual Mode evaluation_mode() const            { return _safepoint; }
   virtual bool allow_nested_vm_operations() const { return false; }
