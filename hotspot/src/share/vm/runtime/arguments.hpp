@@ -268,14 +268,14 @@ class Arguments : AllStatic {
   static const char* _java_vendor_url_bug;
 
   // sun.java.launcher, private property to provide information about
-  // java/gamma launcher
+  // java launcher
   static const char* _sun_java_launcher;
 
   // sun.java.launcher.pid, private property
   static int    _sun_java_launcher_pid;
 
-  // was this VM created by the gamma launcher
-  static bool   _created_by_gamma_launcher;
+  // was this VM created via the -XXaltjvm=<path> option
+  static bool   _sun_java_launcher_is_altjvm;
 
   // Option flags
   static bool   _has_profile;
@@ -483,8 +483,8 @@ class Arguments : AllStatic {
   static const char* sun_java_launcher()    { return _sun_java_launcher; }
   // Was VM created by a Java launcher?
   static bool created_by_java_launcher();
-  // Was VM created by the gamma Java launcher?
-  static bool created_by_gamma_launcher();
+  // -Dsun.java.launcher.is_altjvm
+  static bool sun_java_launcher_is_altjvm();
   // -Dsun.java.launcher.pid
   static int sun_java_launcher_pid()        { return _sun_java_launcher_pid; }
 
