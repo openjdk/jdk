@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,6 +36,7 @@ import java.awt.Graphics2D;
 import java.awt.MouseInfo;
 import java.awt.Point;
 import java.awt.Rectangle;
+import java.awt.Window;
 import java.awt.event.ContainerEvent;
 import java.awt.event.ContainerListener;
 import java.awt.image.BufferedImage;
@@ -43,16 +44,19 @@ import java.awt.image.DataBufferInt;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 import java.security.AccessController;
+import javax.swing.JComponent;
 
 import javax.swing.JLayeredPane;
 import javax.swing.JPanel;
 import javax.swing.JRootPane;
 import javax.swing.LayoutFocusTraversalPolicy;
+import javax.swing.RepaintManager;
 import javax.swing.RootPaneContainer;
 import javax.swing.SwingUtilities;
 
 import sun.awt.LightweightFrame;
 import sun.security.action.GetPropertyAction;
+import sun.swing.SwingUtilities2.RepaintListener;
 
 /**
  * The frame serves as a lightweight container which paints its content
@@ -89,6 +93,7 @@ public final class JLightweightFrame extends LightweightFrame implements RootPan
     private int[] copyBuffer;
 
     private PropertyChangeListener layoutSizeListener;
+    private RepaintListener repaintListener;
 
     static {
         SwingAccessor.setJLightweightFrameAccessor(new SwingAccessor.JLightweightFrameAccessor() {
@@ -130,6 +135,30 @@ public final class JLightweightFrame extends LightweightFrame implements RootPan
                 }
             }
         };
+
+        repaintListener = (JComponent c, int x, int y, int w, int h) -> {
+            Window jlf = SwingUtilities.getWindowAncestor(c);
+            if (jlf != JLightweightFrame.this) {
+                return;
+            }
+            Point p = SwingUtilities.convertPoint(c, x, y, jlf);
+            Rectangle r = new Rectangle(p.x, p.y, w, h).intersection(
+                    new Rectangle(0, 0, bbImage.getWidth(), bbImage.getHeight()));
+
+            if (!r.isEmpty()) {
+                notifyImageUpdated(r.x, r.y, r.width, r.height);
+            }
+        };
+
+        SwingAccessor.getRepaintManagerAccessor().addRepaintListener(
+            RepaintManager.currentManager(this), repaintListener);
+    }
+
+    @Override
+    public void dispose() {
+        SwingAccessor.getRepaintManagerAccessor().removeRepaintListener(
+            RepaintManager.currentManager(this), repaintListener);
+        super.dispose();
     }
 
     /**
@@ -209,6 +238,13 @@ public final class JLightweightFrame extends LightweightFrame implements RootPan
         }
     }
 
+    private void notifyImageUpdated(int x, int y, int width, int height) {
+        if (copyBufferEnabled) {
+            syncCopyBuffer(false, x, y, width, height);
+        }
+        content.imageUpdated(x, y, width, height);
+    }
+
     private void initInterior() {
         contentPane = new JPanel() {
             @Override
@@ -231,10 +267,7 @@ public final class JLightweightFrame extends LightweightFrame implements RootPan
                     EventQueue.invokeLater(new Runnable() {
                         @Override
                         public void run() {
-                            if (copyBufferEnabled) {
-                                syncCopyBuffer(false, clip.x, clip.y, clip.width, clip.height);
-                            }
-                            content.imageUpdated(clip.x, clip.y, clip.width, clip.height);
+                            notifyImageUpdated(clip.x, clip.y, clip.width, clip.height);
                         }
                     });
                 } finally {
