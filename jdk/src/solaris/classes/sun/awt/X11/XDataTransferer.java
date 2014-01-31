@@ -56,6 +56,7 @@ import sun.awt.datatransfer.DataTransferer;
 import sun.awt.datatransfer.ToolkitThreadBlockedHandler;
 
 import java.io.ByteArrayOutputStream;
+import java.util.stream.Stream;
 
 /**
  * Platform-specific support for the data transfer subsystem.
@@ -280,7 +281,7 @@ public class XDataTransferer extends DataTransferer {
         try {
             reader = new BufferedReader(new InputStreamReader(stream, charset));
             String line;
-            ArrayList<URI> uriList = new ArrayList<URI>();
+            ArrayList<URI> uriList = new ArrayList<>();
             URI uri;
             while ((line = reader.readLine()) != null) {
                 try {
@@ -328,8 +329,9 @@ public class XDataTransferer extends DataTransferer {
      * a valid MIME and return a list of flavors to which the data in this MIME
      * type can be translated by the Data Transfer subsystem.
      */
-    public List <DataFlavor> getPlatformMappingsForNative(String nat) {
-        List <DataFlavor> flavors = new ArrayList();
+    @Override
+    public List<DataFlavor> getPlatformMappingsForNative(String nat) {
+        List<DataFlavor> flavors = new ArrayList<>();
 
         if (nat == null) {
             return flavors;
@@ -389,8 +391,9 @@ public class XDataTransferer extends DataTransferer {
      * MIME types to which the data in this flavor can be translated by the Data
      * Transfer subsystem.
      */
-    public List getPlatformMappingsForFlavor(DataFlavor df) {
-        List natives = new ArrayList(1);
+    @Override
+    public List<String> getPlatformMappingsForFlavor(DataFlavor df) {
+        List<String> natives = new ArrayList<>(1);
 
         if (df == null) {
             return natives;
@@ -416,18 +419,15 @@ public class XDataTransferer extends DataTransferer {
         if (DataFlavor.imageFlavor.equals(df)) {
             String[] mimeTypes = ImageIO.getWriterMIMETypes();
             if (mimeTypes != null) {
-                for (int i = 0; i < mimeTypes.length; i++) {
-                    Iterator writers =
-                        ImageIO.getImageWritersByMIMEType(mimeTypes[i]);
-
+                for (String mime : mimeTypes) {
+                    Iterator<ImageWriter> writers = ImageIO.getImageWritersByMIMEType(mime);
                     while (writers.hasNext()) {
-                        ImageWriter imageWriter = (ImageWriter)writers.next();
-                        ImageWriterSpi writerSpi =
-                            imageWriter.getOriginatingProvider();
+                        ImageWriter imageWriter = writers.next();
+                        ImageWriterSpi writerSpi = imageWriter.getOriginatingProvider();
 
                         if (writerSpi != null &&
-                            writerSpi.canEncodeImage(getDefaultImageTypeSpecifier())) {
-                            natives.add(mimeTypes[i]);
+                                writerSpi.canEncodeImage(getDefaultImageTypeSpecifier())) {
+                            natives.add(mime);
                             break;
                         }
                     }
