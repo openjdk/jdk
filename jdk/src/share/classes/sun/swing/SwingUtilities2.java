@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1965,5 +1965,12 @@ public class SwingUtilities2 {
             }
         }
         return path;
+    }
+
+    /**
+     * Used to listen to "blit" repaints in RepaintManager.
+     */
+    public interface RepaintListener {
+        void repaintPerformed(JComponent c, int x, int y, int w, int h);
     }
 }
