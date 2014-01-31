@@ -250,7 +250,7 @@ AC_DEFUN([BASIC_CHECK_LEFTOVER_OVERRIDDEN],
   if test "x$CONFIGURE_OVERRIDDEN_VARIABLES" != x; then
     # Replace the separating ! with spaces before presenting for end user.
     unknown_variables=${CONFIGURE_OVERRIDDEN_VARIABLES//!/ }
-    AC_MSG_ERROR([The following variables are unknown to configure: $unknown_variables])
+    AC_MSG_WARN([The following variables might be unknown to configure: $unknown_variables])
   fi
 ])
 
