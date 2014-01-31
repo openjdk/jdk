@@ -430,7 +430,7 @@ public class JavapTask implements DisassemblerTool.DisassemblerTask, Messages {
         } catch (BadArgs e) {
             reportError(e.key, e.args);
             if (e.showUsage) {
-                log.println(getMessage("main.usage.summary", progname));
+                printLines(getMessage("main.usage.summary", progname));
             }
             return EXIT_CMDERR;
         } catch (InternalError e) {
@@ -839,26 +839,32 @@ public class JavapTask implements DisassemblerTool.DisassemblerTask, Messages {
     }
 
     private void showHelp() {
-        log.println(getMessage("main.usage", progname));
+        printLines(getMessage("main.usage", progname));
         for (Option o: recognizedOptions) {
             String name = o.aliases[0].substring(1); // there must always be at least one name
             if (name.startsWith("X") || name.equals("fullversion") || name.equals("h") || name.equals("verify"))
                 continue;
-            log.println(getMessage("main.opt." + name));
+            printLines(getMessage("main.opt." + name));
         }
         String[] fmOptions = { "-classpath", "-cp", "-bootclasspath" };
         for (String o: fmOptions) {
             if (fileManager.isSupportedOption(o) == -1)
                 continue;
             String name = o.substring(1);
-            log.println(getMessage("main.opt." + name));
+            printLines(getMessage("main.opt." + name));
         }
 
     }
 
     private void showVersion(boolean full) {
-        log.println(version(full ? "full" : "release"));
+        printLines(version(full ? "full" : "release"));
     }
+
+    private void printLines(String msg) {
+        log.println(msg.replace("\n", nl));
+    }
+
+    private static final String nl = System.getProperty("line.separator");
 
     private static final String versionRBName = "com.sun.tools.javap.resources.version";
     private static ResourceBundle versionRB;
