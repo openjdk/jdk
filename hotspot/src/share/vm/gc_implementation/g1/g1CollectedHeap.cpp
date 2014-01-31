@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -5222,7 +5222,7 @@ public:
     guarantee(!_process_strings || StringTable::parallel_claimed_index() >= _initial_string_table_size,
               err_msg("claim value "INT32_FORMAT" after unlink less than initial string table size "INT32_FORMAT,
                       StringTable::parallel_claimed_index(), _initial_string_table_size));
-    guarantee(!_process_strings || SymbolTable::parallel_claimed_index() >= _initial_symbol_table_size,
+    guarantee(!_process_symbols || SymbolTable::parallel_claimed_index() >= _initial_symbol_table_size,
               err_msg("claim value "INT32_FORMAT" after unlink less than initial symbol table size "INT32_FORMAT,
                       SymbolTable::parallel_claimed_index(), _initial_symbol_table_size));
   }
