@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -86,13 +86,26 @@ public:
 
 #define G1_PARTIAL_ARRAY_MASK 0x2
 
-template <class T> inline bool has_partial_array_mask(T* ref) {
+inline bool has_partial_array_mask(oop* ref) {
   return ((uintptr_t)ref & G1_PARTIAL_ARRAY_MASK) == G1_PARTIAL_ARRAY_MASK;
 }
 
-template <class T> inline T* set_partial_array_mask(T obj) {
+// We never encode partial array oops as narrowOop*, so return false immediately.
+// This allows the compiler to create optimized code when popping references from
+// the work queue.
+inline bool has_partial_array_mask(narrowOop* ref) {
+  assert(((uintptr_t)ref & G1_PARTIAL_ARRAY_MASK) != G1_PARTIAL_ARRAY_MASK, "Partial array oop reference encoded as narrowOop*");
+  return false;
+}
+
+// Only implement set_partial_array_mask() for regular oops, not for narrowOops.
+// We always encode partial arrays as regular oop, to allow the
+// specialization for has_partial_array_mask() for narrowOops above.
+// This means that unintentional use of this method with narrowOops are caught
+// by the compiler.
+inline oop* set_partial_array_mask(oop obj) {
   assert(((uintptr_t)(void *)obj & G1_PARTIAL_ARRAY_MASK) == 0, "Information loss!");
-  return (T*) ((uintptr_t)(void *)obj | G1_PARTIAL_ARRAY_MASK);
+  return (oop*) ((uintptr_t)(void *)obj | G1_PARTIAL_ARRAY_MASK);
 }
 
 template <class T> inline oop clear_partial_array_mask(T* ref) {
