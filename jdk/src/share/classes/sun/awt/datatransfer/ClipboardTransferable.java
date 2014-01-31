@@ -32,7 +32,6 @@ import java.awt.datatransfer.UnsupportedFlavorException;
 import java.io.IOException;
 
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.Map;
 
 
@@ -55,7 +54,7 @@ import java.util.Map;
  * @since 1.4 (appeared in modified form as FullyRenderedTransferable in 1.3.1)
  */
 public class ClipboardTransferable implements Transferable {
-    private final HashMap flavorsToData = new HashMap();
+    private final Map<DataFlavor, Object> flavorsToData = new HashMap<>();
     private DataFlavor[] flavors = new DataFlavor[0];
 
     private final class DataFactory {
@@ -84,20 +83,13 @@ public class ClipboardTransferable implements Transferable {
                 // Since the SystemFlavorMap will specify many DataFlavors
                 // which map to the same format, we should cache data as we
                 // read it.
-                HashMap cached_data = new HashMap(formats.length, 1.0f);
-
-                Map flavorsForFormats = DataTransferer.getInstance().
-                    getFlavorsForFormats(formats, SunClipboard.flavorMap);
-                for (Iterator iter = flavorsForFormats.keySet().iterator();
-                     iter.hasNext(); )
-                {
-                    DataFlavor flavor = (DataFlavor)iter.next();
-                    Long lFormat = (Long)flavorsForFormats.get(flavor);
-
-                    fetchOneFlavor(clipboard, flavor, lFormat, cached_data);
-                }
-
+                Map<Long, Object> cached_data = new HashMap<>(formats.length, 1.0f);
+                DataTransferer.getInstance()
+                        .getFlavorsForFormats(formats, SunClipboard.flavorMap)
+                        .entrySet()
+                        .forEach(entry -> fetchOneFlavor(clipboard, entry.getKey(), entry.getValue(), cached_data));
                 flavors = DataTransferer.setToSortedDataFlavorArray(flavorsToData.keySet());
+
             }
         } finally {
             clipboard.closeClipboard();
@@ -105,13 +97,12 @@ public class ClipboardTransferable implements Transferable {
     }
 
     private boolean fetchOneFlavor(SunClipboard clipboard, DataFlavor flavor,
-                                   Long lFormat, HashMap cached_data)
+                                   long format, Map<Long, Object> cached_data)
     {
         if (!flavorsToData.containsKey(flavor)) {
-            long format = lFormat.longValue();
             Object data = null;
 
-            if (!cached_data.containsKey(lFormat)) {
+            if (!cached_data.containsKey(format)) {
                 try {
                     data = clipboard.getClipboardData(format);
                 } catch (IOException e) {
@@ -122,9 +113,9 @@ public class ClipboardTransferable implements Transferable {
 
                 // Cache this data, even if it's null, so we don't have to go
                 // to native code again for this format.
-                cached_data.put(lFormat, data);
+                cached_data.put(format, data);
             } else {
-                data = cached_data.get(lFormat);
+                data = cached_data.get(format);
             }
 
             // Casting IOException to byte array causes ClassCastException.
@@ -134,8 +125,7 @@ public class ClipboardTransferable implements Transferable {
                 flavorsToData.put(flavor, data);
                 return false;
             } else if (data != null) {
-                flavorsToData.put(flavor, new DataFactory(format,
-                                                          (byte[])data));
+                flavorsToData.put(flavor, new DataFactory(format, (byte[])data));
                 return true;
             }
         }
@@ -143,14 +133,17 @@ public class ClipboardTransferable implements Transferable {
         return false;
     }
 
+    @Override
     public DataFlavor[] getTransferDataFlavors() {
         return flavors.clone();
     }
 
+    @Override
     public boolean isDataFlavorSupported(DataFlavor flavor) {
         return flavorsToData.containsKey(flavor);
     }
 
+    @Override
     public Object getTransferData(DataFlavor flavor)
         throws UnsupportedFlavorException, IOException
     {
