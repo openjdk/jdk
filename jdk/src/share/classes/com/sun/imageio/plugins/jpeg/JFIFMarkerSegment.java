@@ -558,6 +558,7 @@ class JFIFMarkerSegment extends MarkerSegment {
 
     // Could put reason codes in here to be parsed in writeJFXXSegment
     // in order to provide more meaningful warnings.
+    @SuppressWarnings("serial") // JDK-implementation class
     private class IllegalThumbException extends Exception {}
 
     /**
