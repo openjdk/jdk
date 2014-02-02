@@ -65,7 +65,7 @@ class CheckForUnmarkedOops : public OopClosure {
   }
 };
 
-// Checks all objects for the existance of some type of mark,
+// Checks all objects for the existence of some type of mark,
 // precise or imprecise, dirty or newgen.
 class CheckForUnmarkedObjects : public ObjectClosure {
  private:
@@ -84,7 +84,7 @@ class CheckForUnmarkedObjects : public ObjectClosure {
   }
 
   // Card marks are not precise. The current system can leave us with
-  // a mismash of precise marks and beginning of object marks. This means
+  // a mismatch of precise marks and beginning of object marks. This means
   // we test for missing precise marks first. If any are found, we don't
   // fail unless the object head is also unmarked.
   virtual void do_object(oop obj) {

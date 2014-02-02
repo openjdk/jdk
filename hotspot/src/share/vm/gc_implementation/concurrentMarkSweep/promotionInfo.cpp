@@ -279,7 +279,7 @@ void PromotionInfo::print_statistics(uint worker_id) const {
 // When _spoolTail is NULL, then the set of slots with displaced headers
 // is all those starting at the slot <_spoolHead, _firstIndex> and
 // going up to the last slot of last block in the linked list.
-// In this lartter case, _splice_point points to the tail block of
+// In this latter case, _splice_point points to the tail block of
 // this linked list of blocks holding displaced headers.
 void PromotionInfo::verify() const {
   // Verify the following:
