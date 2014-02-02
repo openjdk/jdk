@@ -767,7 +767,7 @@ bool JavaThread::wait_for_ext_suspend_completion(int retries, int delay,
 void JavaThread::record_jump(address target, address instr, const char* file, int line) {
 
   // This should not need to be atomic as the only way for simultaneous
-  // updates is via interrupts. Even then this should be rare or non-existant
+  // updates is via interrupts. Even then this should be rare or non-existent
   // and we don't care that much anyway.
 
   int index = _jmp_ring_index;
@@ -925,10 +925,10 @@ void Thread::check_for_valid_safepoint_state(bool potential_vm_operation) {
         // Threads_lock is special, since the safepoint synchronization will not start before this is
         // acquired. Hence, a JavaThread cannot be holding it at a safepoint. So is VMOperationRequest_lock,
         // since it is used to transfer control between JavaThreads and the VMThread
-        // Do not *exclude* any locks unless you are absolutly sure it is correct. Ask someone else first!
+        // Do not *exclude* any locks unless you are absolutely sure it is correct. Ask someone else first!
         if ( (cur->allow_vm_block() &&
               cur != Threads_lock &&
-              cur != Compile_lock &&               // Temporary: should not be necessary when we get spearate compilation
+              cur != Compile_lock &&               // Temporary: should not be necessary when we get separate compilation
               cur != VMOperationRequest_lock &&
               cur != VMOperationQueue_lock) ||
               cur->rank() == Mutex::special) {
@@ -1271,7 +1271,7 @@ int WatcherThread::sleep() const {
         time_slept = 0;
         time_before_loop = now;
     } else {
-        // need to recalulate since we might have new tasks in _tasks
+        // need to recalculate since we might have new tasks in _tasks
         time_slept = (int) ((now - time_before_loop) / 1000000);
     }
 
@@ -1638,7 +1638,7 @@ void JavaThread::run() {
   // initialize thread-local alloc buffer related fields
   this->initialize_tlab();
 
-  // used to test validitity of stack trace backs
+  // used to test validity of stack trace backs
   this->record_base_of_stack_pointer();
 
   // Record real stack base and size.
@@ -3372,7 +3372,7 @@ jint Threads::create_vm(JavaVMInitArgs* args, bool* canTryAgain) {
   // Initialize system properties.
   Arguments::init_system_properties();
 
-  // So that JDK version can be used as a discrimintor when parsing arguments
+  // So that JDK version can be used as a discriminator when parsing arguments
   JDK_Version_init();
 
   // Update/Initialize System properties after JDK version number is known
@@ -3411,7 +3411,7 @@ jint Threads::create_vm(JavaVMInitArgs* args, bool* canTryAgain) {
   jint adjust_after_os_result = Arguments::adjust_after_os();
   if (adjust_after_os_result != JNI_OK) return adjust_after_os_result;
 
-  // intialize TLS
+  // initialize TLS
   ThreadLocalStorage::init();
 
   // Bootstrap native memory tracking, so it can start recording memory
@@ -4138,7 +4138,7 @@ bool Threads::includes(JavaThread* p) {
 // but the garbage collector must provide a safe context for them to run.
 // In particular, these things should never be called when the Threads_lock
 // is held by some other thread. (Note: the Safepoint abstraction also
-// uses the Threads_lock to gurantee this property. It also makes sure that
+// uses the Threads_lock to guarantee this property. It also makes sure that
 // all threads gets blocked when exiting or starting).
 
 void Threads::oops_do(OopClosure* f, CLDToOopClosure* cld_f, CodeBlobClosure* cf) {

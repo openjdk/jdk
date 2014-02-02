@@ -488,6 +488,10 @@ size_t ParallelScavengeHeap::tlab_capacity(Thread* thr) const {
   return young_gen()->eden_space()->tlab_capacity(thr);
 }
 
+size_t ParallelScavengeHeap::tlab_used(Thread* thr) const {
+  return young_gen()->eden_space()->tlab_used(thr);
+}
+
 size_t ParallelScavengeHeap::unsafe_max_tlab_alloc(Thread* thr) const {
   return young_gen()->eden_space()->unsafe_max_tlab_alloc(thr);
 }
@@ -673,7 +677,7 @@ ParallelScavengeHeap* ParallelScavengeHeap::heap() {
 
 // Before delegating the resize to the young generation,
 // the reserved space for the young and old generations
-// may be changed to accomodate the desired resize.
+// may be changed to accommodate the desired resize.
 void ParallelScavengeHeap::resize_young_gen(size_t eden_size,
     size_t survivor_size) {
   if (UseAdaptiveGCBoundary) {
@@ -690,7 +694,7 @@ void ParallelScavengeHeap::resize_young_gen(size_t eden_size,
 
 // Before delegating the resize to the old generation,
 // the reserved space for the young and old generations
-// may be changed to accomodate the desired resize.
+// may be changed to accommodate the desired resize.
 void ParallelScavengeHeap::resize_old_gen(size_t desired_free_space) {
   if (UseAdaptiveGCBoundary) {
     if (size_policy()->bytes_absorbed_from_eden() != 0) {

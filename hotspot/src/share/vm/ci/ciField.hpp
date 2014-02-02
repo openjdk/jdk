@@ -130,9 +130,7 @@ public:
   //   1. The field is both static and final
   //   2. The canonical holder of the field has undergone
   //      static initialization.
-  //   3. If the field is an object or array, then the oop
-  //      in question is allocated in perm space.
-  //   4. The field is not one of the special static/final
+  //   3. The field is not one of the special static/final
   //      non-constant fields.  These are java.lang.System.in
   //      and java.lang.System.out.  Abomination.
   //

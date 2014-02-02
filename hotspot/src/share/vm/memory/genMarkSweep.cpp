@@ -148,8 +148,8 @@ void GenMarkSweep::invoke_at_safepoint(int level, ReferenceProcessor* rp, bool c
   Universe::update_heap_info_at_gc();
 
   // Update time of last gc for all generations we collected
-  // (which curently is all the generations in the heap).
-  // We need to use a monotonically non-deccreasing time in ms
+  // (which currently is all the generations in the heap).
+  // We need to use a monotonically non-decreasing time in ms
   // or we will see time-warp warnings and os::javaTimeMillis()
   // does not guarantee monotonicity.
   jlong now = os::javaTimeNanos() / NANOSECS_PER_MILLISEC;
@@ -210,7 +210,6 @@ void GenMarkSweep::mark_sweep_phase1(int level,
   gch->gen_process_strong_roots(level,
                                 false, // Younger gens are not roots.
                                 true,  // activate StrongRootsScope
-                                false, // not scavenging
                                 SharedHeap::SO_SystemClasses,
                                 &follow_root_closure,
                                 true,   // walk code active on stacks
@@ -296,7 +295,6 @@ void GenMarkSweep::mark_sweep_phase3(int level) {
   gch->gen_process_strong_roots(level,
                                 false, // Younger gens are not roots.
                                 true,  // activate StrongRootsScope
-                                false, // not scavenging
                                 SharedHeap::SO_AllClasses,
                                 &adjust_pointer_closure,
                                 false, // do not walk code
