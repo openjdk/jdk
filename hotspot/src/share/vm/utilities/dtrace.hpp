@@ -38,23 +38,19 @@
 #define HS_DTRACE_WORKAROUND_TAIL_CALL_BUG() \
   do { volatile size_t dtrace_workaround_tail_call_bug = 1; } while (0)
 
-#define USDT2 1
-#include "dtracefiles/hotspot.h"
-#include "dtracefiles/hotspot_jni.h"
-#include "dtracefiles/hs_private.h"
 #elif defined(LINUX)
 #define HS_DTRACE_WORKAROUND_TAIL_CALL_BUG()
-#define USDT1 1
 #elif defined(__APPLE__)
 #define HS_DTRACE_WORKAROUND_TAIL_CALL_BUG()
-#define USDT2 1
 #include <sys/types.h>
-#include "dtracefiles/hotspot.h"
-#include "dtracefiles/hotspot_jni.h"
-#include "dtracefiles/hs_private.h"
 #else
 #error "dtrace enabled for unknown os"
 #endif /* defined(SOLARIS) */
+
+#define USDT2 1
+#include "dtracefiles/hotspot.h"
+#include "dtracefiles/hotspot_jni.h"
+#include "dtracefiles/hs_private.h"
 
 #else /* defined(DTRACE_ENABLED) */
 
