@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -56,6 +56,45 @@ static char* dbg = null;
 
 #define THROW_IOE(x) JNU_ThrowIOException(env,x)
 
+#define CHECK_EXCEPTION_RETURN_VOID_THROW_IOE(CERVTI_exception, CERVTI_message) \
+    do { \
+        if ((env)->ExceptionOccurred()) { \
+            THROW_IOE(CERVTI_message); \
+            return; \
+        } \
+        if ((CERVTI_exception) == NULL) { \
+                THROW_IOE(CERVTI_message); \
+                return; \
+        } \
+    } while (JNI_FALSE)
+
+
+#define CHECK_EXCEPTION_RETURN_VALUE(CERL_exception, CERL_return_value) \
+    do { \
+        if ((env)->ExceptionOccurred()) { \
+            return CERL_return_value; \
+        } \
+        if ((CERL_exception) == NULL) { \
+            return CERL_return_value; \
+        } \
+    } while (JNI_FALSE)
+
+
+// If these useful macros aren't defined in jni_util.h then define them here
+#ifndef CHECK_NULL_RETURN
+#define CHECK_NULL_RETURN(x, y) \
+    do { \
+        if ((x) == NULL) return (y); \
+    } while (JNI_FALSE)
+#endif
+
+#ifndef CHECK_EXCEPTION_RETURN
+#define CHECK_EXCEPTION_RETURN(env, y) \
+    do { \
+        if ((*env)->ExceptionCheck(env)) return (y); \
+    } while (JNI_FALSE)
+#endif
+
 static jlong read_input_via_jni(unpacker* self,
                                 void* buf, jlong minlen, jlong maxlen);
 
@@ -92,9 +131,11 @@ static unpacker* get_unpacker() {
   vm->GetEnv(&envRaw, JNI_VERSION_1_1);
   JNIEnv* env = (JNIEnv*) envRaw;
   //fprintf(stderr, "get_unpacker() env=%p\n", env);
-  if (env == null)
-    return null;
+  CHECK_NULL_RETURN(env, NULL);
   jobject pObj = env->CallStaticObjectMethod(NIclazz, currentInstMID);
+  // We should check upon the known non-null variable because here we want to check
+  // only for pending exceptions. If pObj is null we'll deal with it later.
+  CHECK_EXCEPTION_RETURN_VALUE(env, NULL);
   //fprintf(stderr, "get_unpacker0() pObj=%p\n", pObj);
   if (pObj != null) {
     // Got pObj and env; now do it the easy way.
@@ -137,20 +178,20 @@ Java_com_sun_java_util_jar_pack_NativeUnpack_initIDs(JNIEnv *env, jclass clazz) 
   while( dbg != null) { sleep(10); }
 #endif
   NIclazz = (jclass) env->NewGlobalRef(clazz);
+
   unpackerPtrFID = env->GetFieldID(clazz, "unpackerPtr", "J");
+  CHECK_EXCEPTION_RETURN_VOID_THROW_IOE(unpackerPtrFID, ERROR_INIT);
+
   currentInstMID = env->GetStaticMethodID(clazz, "currentInstance",
                                           "()Ljava/lang/Object;");
+  CHECK_EXCEPTION_RETURN_VOID_THROW_IOE(currentInstMID, ERROR_INIT);
+
   readInputMID = env->GetMethodID(clazz, "readInputFn",
                                   "(Ljava/nio/ByteBuffer;J)J");
-  getUnpackerPtrMID = env->GetMethodID(clazz, "getUnpackerPtr", "()J");
+  CHECK_EXCEPTION_RETURN_VOID_THROW_IOE(readInputMID, ERROR_INIT);
 
-  if (unpackerPtrFID == null ||
-      currentInstMID == null ||
-      readInputMID == null ||
-      NIclazz == null ||
-      getUnpackerPtrMID == null) {
-    THROW_IOE("cannot init class members");
-  }
+  getUnpackerPtrMID = env->GetMethodID(clazz, "getUnpackerPtr", "()J");
+  CHECK_EXCEPTION_RETURN_VOID_THROW_IOE(getUnpackerPtrMID, ERROR_INIT);
 }
 
 JNIEXPORT jlong JNICALL
@@ -160,9 +201,7 @@ Java_com_sun_java_util_jar_pack_NativeUnpack_start(JNIEnv *env, jobject pObj,
   // valid object pointers and env is intact, if not now is good time to bail.
   unpacker* uPtr = get_unpacker();
   //fprintf(stderr, "start(%p) uPtr=%p initializing\n", pObj, uPtr);
-  if (uPtr == null) {
-      return -1;
-  }
+  CHECK_EXCEPTION_RETURN_VALUE(uPtr, -1);
   // redirect our io to the default log file or whatever.
   uPtr->redirect_stdio();
 
@@ -200,6 +239,7 @@ Java_com_sun_java_util_jar_pack_NativeUnpack_getNextFile(JNIEnv *env, jobject pO
                                          jobjectArray pParts) {
 
   unpacker* uPtr = get_unpacker(env, pObj);
+  CHECK_EXCEPTION_RETURN_VALUE(uPtr, false);
   unpacker::file* filep = uPtr->get_next_file();
 
   if (uPtr->aborting()) {
@@ -207,32 +247,38 @@ Java_com_sun_java_util_jar_pack_NativeUnpack_getNextFile(JNIEnv *env, jobject pO
     return false;
   }
 
-  if (filep == null) {
-    return false;   // end of the sequence
-  }
+  CHECK_NULL_RETURN(filep, false);
   assert(filep == &uPtr->cur_file);
 
   int pidx = 0, iidx = 0;
   jintArray pIntParts = (jintArray) env->GetObjectArrayElement(pParts, pidx++);
+  CHECK_EXCEPTION_RETURN_VALUE(pIntParts, false);
   jint*     intParts  = env->GetIntArrayElements(pIntParts, null);
   intParts[iidx++] = (jint)( (julong)filep->size >> 32 );
   intParts[iidx++] = (jint)( (julong)filep->size >>  0 );
   intParts[iidx++] = filep->modtime;
   intParts[iidx++] = filep->deflate_hint() ? 1 : 0;
   env->ReleaseIntArrayElements(pIntParts, intParts, JNI_COMMIT);
-
-  env->SetObjectArrayElement(pParts, pidx++, env->NewStringUTF(filep->name));
-
+  jstring filename = env->NewStringUTF(filep->name);
+  CHECK_EXCEPTION_RETURN_VALUE(filename, false);
+  env->SetObjectArrayElement(pParts, pidx++, filename);
+  CHECK_EXCEPTION_RETURN_VALUE(uPtr, false);
   jobject pDataBuf = null;
-  if (filep->data[0].len > 0)
+  if (filep->data[0].len > 0) {
     pDataBuf = env->NewDirectByteBuffer(filep->data[0].ptr,
                                         filep->data[0].len);
+    CHECK_EXCEPTION_RETURN_VALUE(pDataBuf, false);
+  }
   env->SetObjectArrayElement(pParts, pidx++, pDataBuf);
+  CHECK_EXCEPTION_RETURN_VALUE(uPtr, false);
   pDataBuf = null;
-  if (filep->data[1].len > 0)
+  if (filep->data[1].len > 0) {
     pDataBuf = env->NewDirectByteBuffer(filep->data[1].ptr,
                                         filep->data[1].len);
+    CHECK_EXCEPTION_RETURN_VALUE(pDataBuf, false);
+  }
   env->SetObjectArrayElement(pParts, pidx++, pDataBuf);
+  CHECK_EXCEPTION_RETURN_VALUE(uPtr, false);
 
   return true;
 }
@@ -241,6 +287,7 @@ Java_com_sun_java_util_jar_pack_NativeUnpack_getNextFile(JNIEnv *env, jobject pO
 JNIEXPORT jobject JNICALL
 Java_com_sun_java_util_jar_pack_NativeUnpack_getUnusedInput(JNIEnv *env, jobject pObj) {
   unpacker* uPtr = get_unpacker(env, pObj);
+  CHECK_EXCEPTION_RETURN_VALUE(uPtr, NULL);
   unpacker::file* filep = &uPtr->cur_file;
 
   if (uPtr->aborting()) {
@@ -263,7 +310,7 @@ Java_com_sun_java_util_jar_pack_NativeUnpack_getUnusedInput(JNIEnv *env, jobject
 JNIEXPORT jlong JNICALL
 Java_com_sun_java_util_jar_pack_NativeUnpack_finish(JNIEnv *env, jobject pObj) {
   unpacker* uPtr = get_unpacker(env, pObj, false);
-  if (uPtr == null)  return 0;
+  CHECK_EXCEPTION_RETURN_VALUE(uPtr, NULL);
   size_t consumed = uPtr->input_consumed();
   free_unpacker(env, pObj, uPtr);
   return consumed;
@@ -274,7 +321,9 @@ Java_com_sun_java_util_jar_pack_NativeUnpack_setOption(JNIEnv *env, jobject pObj
                                        jstring pProp, jstring pValue) {
   unpacker*   uPtr  = get_unpacker(env, pObj);
   const char* prop  = env->GetStringUTFChars(pProp, JNI_FALSE);
+  CHECK_EXCEPTION_RETURN_VALUE(prop, false);
   const char* value = env->GetStringUTFChars(pValue, JNI_FALSE);
+  CHECK_EXCEPTION_RETURN_VALUE(value, false);
   jboolean   retval = uPtr->set_option(prop, value);
   env->ReleaseStringUTFChars(pProp,  prop);
   env->ReleaseStringUTFChars(pValue, value);
@@ -286,9 +335,11 @@ Java_com_sun_java_util_jar_pack_NativeUnpack_getOption(JNIEnv *env, jobject pObj
                                        jstring pProp) {
 
   unpacker*   uPtr  = get_unpacker(env, pObj);
+  CHECK_EXCEPTION_RETURN_VALUE(uPtr, NULL);
   const char* prop  = env->GetStringUTFChars(pProp, JNI_FALSE);
+  CHECK_EXCEPTION_RETURN_VALUE(prop, NULL);
   const char* value = uPtr->get_option(prop);
+  CHECK_EXCEPTION_RETURN_VALUE(value, NULL);
   env->ReleaseStringUTFChars(pProp, prop);
-  if (value == null)  return null;
   return env->NewStringUTF(value);
 }
