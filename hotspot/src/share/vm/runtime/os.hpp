@@ -430,7 +430,10 @@ class os: AllStatic {
   static intx current_thread_id();
   static int current_process_id();
   static int sleep(Thread* thread, jlong ms, bool interruptable);
-  static int naked_sleep();
+  // Short standalone OS sleep suitable for slow path spin loop.
+  // Ignores Thread.interrupt() (so keep it short).
+  // ms = 0, will sleep for the least amount of time allowed by the OS.
+  static void naked_short_sleep(jlong ms);
   static void infinite_sleep(); // never returns, use with CAUTION
   static void yield();        // Yields to all threads with same priority
   enum YieldResult {

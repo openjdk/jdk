@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -19,31 +19,42 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
+ *
  */
 
 /*
  * @test
- * @bug 7167142
- * @summary Warn if unused .hotspot_rc file is present
- * @library /testlibrary
+ * @bug 8032024
+ * @bug 8025937
+ * @summary [JDK 8] Test invokespecial and invokeinterface with the same JVM_CONSTANT_InterfaceMethodref
+ * @run main InvokespecialInterface
  */
+import java.util.function.*;
+import java.util.*;
 
-import java.io.PrintWriter;
-import com.oracle.java.testlibrary.*;
-
-public class ConfigFileWarning {
-    public static void main(String[] args) throws Exception {
-        if (Platform.isDebugBuild()) {
-            System.out.println("Skip on debug builds since we'll always read the file there");
-            return;
-        }
-
-        PrintWriter pw = new PrintWriter(".hotspotrc");
-        pw.println("aa");
-        pw.close();
-
-        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder("-version");
-        OutputAnalyzer output = new OutputAnalyzer(pb.start());
-        output.shouldContain("warning: .hotspotrc file is present but has been ignored.  Run with -XX:Flags=.hotspotrc to load the file.");
-    }
+interface I {
+  default void imethod() { System.out.println("I::imethod"); }
 }
+
+class C implements I {
+  public void foo() { I.super.imethod(); }  // invokespecial InterfaceMethod
+  public void bar() { I i = this; i.imethod(); } // invokeinterface same
+  public void doSomeInvokedynamic() {
+      String str = "world";
+      Supplier<String> foo = ()->"hello, "+str;
+      String res = foo.get();
+      System.out.println(res);
+  }
+}
+
+public class InvokespecialInterface {
+  public static void main(java.lang.String[] unused) {
+     // need to create C and call I::foo()
+     C c = new C();
+     c.foo();
+     c.bar();
+     c.doSomeInvokedynamic();
+  }
+};
+
+

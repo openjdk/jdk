@@ -3486,6 +3486,16 @@ int os::sleep(Thread* thread, jlong ms, bool interruptable) {
   return result;
 }
 
+//
+// Short sleep, direct OS call.
+//
+// ms = 0, means allow others (if any) to run.
+//
+void os::naked_short_sleep(jlong ms) {
+  assert(ms < 1000, "Un-interruptable sleep, short time use only");
+  Sleep(ms);
+}
+
 // Sleep forever; naked call to OS-specific sleep; use with CAUTION
 void os::infinite_sleep() {
   while (true) {    // sleep forever ...

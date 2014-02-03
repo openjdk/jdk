@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,27 +23,33 @@
 
 /*
  * @test
- * @bug 7167142
- * @summary Warn if unused .hotspot_rc file is present
- * @library /testlibrary
+ * @bug 8031743
+ * @summary loadI2L_immI broken for negative memory values
+ * @run main/othervm -server -Xbatch -XX:-TieredCompilation -XX:CompileCommand=compileonly,*.foo* LoadWithMask2
+ *
  */
+public class LoadWithMask2 {
+  static int x;
+  static long foo1() {
+    return x & 0xfffffffe;
+  }
+  static long foo2() {
+    return x & 0xff000000;
+  }
+  static long foo3() {
+    return x & 0x8abcdef1;
+  }
 
-import java.io.PrintWriter;
-import com.oracle.java.testlibrary.*;
-
-public class ConfigFileWarning {
-    public static void main(String[] args) throws Exception {
-        if (Platform.isDebugBuild()) {
-            System.out.println("Skip on debug builds since we'll always read the file there");
-            return;
-        }
-
-        PrintWriter pw = new PrintWriter(".hotspotrc");
-        pw.println("aa");
-        pw.close();
-
-        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder("-version");
-        OutputAnalyzer output = new OutputAnalyzer(pb.start());
-        output.shouldContain("warning: .hotspotrc file is present but has been ignored.  Run with -XX:Flags=.hotspotrc to load the file.");
+  public static void main(String[] args) {
+    x = -1;
+    long l = 0;
+    for (int i = 0; i < 100000; ++i) {
+      l = foo1() & foo2() & foo3();
     }
+    if (l > 0) {
+      System.out.println("FAILED");
+      System.exit(97);
+    }
+    System.out.println("PASSED");
+  }
 }
