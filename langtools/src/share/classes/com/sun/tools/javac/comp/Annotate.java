@@ -299,7 +299,13 @@ public class Annotate {
         if (typeAnnotation) {
             if (a.attribute == null || !(a.attribute instanceof Attribute.TypeCompound)) {
                 // Create a new TypeCompound
-                Attribute.TypeCompound tc = new Attribute.TypeCompound(a.type, buf.toList(), new TypeAnnotationPosition());
+
+                Attribute.TypeCompound tc =
+                    new Attribute.TypeCompound(a.type, buf.toList(),
+                // TODO: Eventually, we will get rid of this use of
+                // unknown, because we'll get a position from
+                // MemberEnter (task 8027262).
+                                               TypeAnnotationPosition.unknown);
                 a.attribute = tc;
                 return tc;
             } else {
