@@ -56,18 +56,28 @@ JNIEXPORT void JNICALL
 Java_sun_nio_ch_DatagramChannelImpl_initIDs(JNIEnv *env, jclass clazz)
 {
     clazz = (*env)->FindClass(env, "java/net/InetSocketAddress");
+    CHECK_NULL(clazz);
     isa_class = (*env)->NewGlobalRef(env, clazz);
+    if (isa_class == NULL) {
+        JNU_ThrowOutOfMemoryError(env, NULL);
+        return;
+    }
     isa_ctorID = (*env)->GetMethodID(env, clazz, "<init>",
                                      "(Ljava/net/InetAddress;I)V");
+    CHECK_NULL(isa_ctorID);
 
     clazz = (*env)->FindClass(env, "sun/nio/ch/DatagramChannelImpl");
+    CHECK_NULL(clazz);
     dci_senderID = (*env)->GetFieldID(env, clazz, "sender",
                                       "Ljava/net/SocketAddress;");
+    CHECK_NULL(dci_senderID);
     dci_senderAddrID = (*env)->GetFieldID(env, clazz,
                                           "cachedSenderInetAddress",
                                           "Ljava/net/InetAddress;");
+    CHECK_NULL(dci_senderAddrID);
     dci_senderPortID = (*env)->GetFieldID(env, clazz,
                                           "cachedSenderPort", "I");
+    CHECK_NULL(dci_senderPortID);
 }
 
 JNIEXPORT void JNICALL
@@ -121,7 +131,7 @@ Java_sun_nio_ch_DatagramChannelImpl_disconnect0(JNIEnv *env, jobject this,
          * but that is acceptable.
          */
         if (rv < 0 && errno == EAFNOSUPPORT)
-                rv = errno = 0;
+            rv = errno = 0;
 #endif
     }
 #endif
@@ -192,17 +202,11 @@ Java_sun_nio_ch_DatagramChannelImpl_receive0(JNIEnv *env, jobject this,
     if (senderAddr == NULL) {
         jobject isa = NULL;
         int port;
-        jobject ia = NET_SockaddrToInetAddress(env, (struct sockaddr *)&sa,
-                                               &port);
-
+        jobject ia = NET_SockaddrToInetAddress(env, (struct sockaddr *)&sa, &port);
         if (ia != NULL) {
             isa = (*env)->NewObject(env, isa_class, isa_ctorID, ia, port);
         }
-
-        if (isa == NULL) {
-            JNU_ThrowOutOfMemoryError(env, "heap allocation failed");
-            return IOS_THROWN;
-        }
+        CHECK_NULL_RETURN(isa, IOS_THROWN);
 
         (*env)->SetObjectField(env, this, dci_senderAddrID, ia);
         (*env)->SetIntField(env, this, dci_senderPortID,

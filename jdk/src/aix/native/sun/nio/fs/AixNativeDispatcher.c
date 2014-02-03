@@ -56,23 +56,26 @@ static void throwUnixException(JNIEnv* env, int errnum) {
 /**
  * Initialization
  */
-JNIEXPORT jint JNICALL
+JNIEXPORT void JNICALL
 Java_sun_nio_fs_AixNativeDispatcher_init(JNIEnv* env, jclass this)
 {
-    jint flags = 0;
     jclass clazz;
 
     clazz = (*env)->FindClass(env, "sun/nio/fs/UnixMountEntry");
-    if (clazz == NULL) {
-        return 0;
-    }
+    CHECK_NULL(clazz);
     entry_name = (*env)->GetFieldID(env, clazz, "name", "[B");
+    CHECK_NULL(entry_name);
     entry_dir = (*env)->GetFieldID(env, clazz, "dir", "[B");
+    CHECK_NULL(entry_dir);
     entry_fstype = (*env)->GetFieldID(env, clazz, "fstype", "[B");
+    CHECK_NULL(entry_fstype);
     entry_options = (*env)->GetFieldID(env, clazz, "opts", "[B");
+    CHECK_NULL(entry_options);
     entry_cls = (*env)->NewGlobalRef(env, clazz);
-
-    return 0;
+    if (entry_cls == NULL) {
+        JNU_ThrowOutOfMemoryError(env, NULL);
+        return;
+    }
 }
 
 /**
