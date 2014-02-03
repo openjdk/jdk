@@ -3361,8 +3361,8 @@ operand immI16() %{
   interface(CONST_INTER);
 %}
 
-// Unsigned (positive) Integer Immediate: 13-bit
-operand immU13() %{
+// Unsigned Integer Immediate: 12-bit (non-negative that fits in simm13)
+operand immU12() %{
   predicate((0 <= n->get_int()) && Assembler::is_simm13(n->get_int()));
   match(ConI);
   op_cost(0);
@@ -3393,6 +3393,17 @@ operand immI11() %{
 operand immI5() %{
   predicate(Assembler::is_simm5(n->get_int()));
   match(ConI);
+  op_cost(0);
+  format %{ %}
+  interface(CONST_INTER);
+%}
+
+// Int Immediate non-negative
+operand immU31()
+%{
+  predicate(n->get_int() >= 0);
+  match(ConI);
+
   op_cost(0);
   format %{ %}
   interface(CONST_INTER);
@@ -5726,7 +5737,6 @@ instruct loadUS2L_immI16(iRegL dst, memory mem, immI16 mask, iRegL tmp) %{
   effect(TEMP dst, TEMP tmp);
   ins_cost(MEMORY_REF_COST + 2*DEFAULT_COST);
 
-  size((3+1)*4);  // set may use two instructions.
   format %{ "LDUH   $mem,$dst\t! ushort/char & 16-bit mask -> long\n\t"
             "SET    $mask,$tmp\n\t"
             "AND    $dst,$tmp,$dst" %}
@@ -5848,13 +5858,13 @@ instruct loadI2L_immI_65535(iRegL dst, indOffset13m7 mem, immI_65535 mask) %{
   ins_pipe(iload_mem);
 %}
 
-// Load Integer with a 13-bit mask into a Long Register
-instruct loadI2L_immI13(iRegL dst, memory mem, immI13 mask) %{
+// Load Integer with a 12-bit mask into a Long Register
+instruct loadI2L_immU12(iRegL dst, memory mem, immU12 mask) %{
   match(Set dst (ConvI2L (AndI (LoadI mem) mask)));
   ins_cost(MEMORY_REF_COST + DEFAULT_COST);
 
   size(2*4);
-  format %{ "LDUW   $mem,$dst\t! int & 13-bit mask -> long\n\t"
+  format %{ "LDUW   $mem,$dst\t! int & 12-bit mask -> long\n\t"
             "AND    $dst,$mask,$dst" %}
   ins_encode %{
     Register Rdst = $dst$$Register;
@@ -5864,14 +5874,13 @@ instruct loadI2L_immI13(iRegL dst, memory mem, immI13 mask) %{
   ins_pipe(iload_mem);
 %}
 
-// Load Integer with a 32-bit mask into a Long Register
-instruct loadI2L_immI(iRegL dst, memory mem, immI mask, iRegL tmp) %{
+// Load Integer with a 31-bit mask into a Long Register
+instruct loadI2L_immU31(iRegL dst, memory mem, immU31 mask, iRegL tmp) %{
   match(Set dst (ConvI2L (AndI (LoadI mem) mask)));
   effect(TEMP dst, TEMP tmp);
   ins_cost(MEMORY_REF_COST + 2*DEFAULT_COST);
 
-  size((3+1)*4);  // set may use two instructions.
-  format %{ "LDUW   $mem,$dst\t! int & 32-bit mask -> long\n\t"
+  format %{ "LDUW   $mem,$dst\t! int & 31-bit mask -> long\n\t"
             "SET    $mask,$tmp\n\t"
             "AND    $dst,$tmp,$dst" %}
   ins_encode %{
@@ -8966,7 +8975,7 @@ instruct testL_reg_con(flagsRegL xcc, iRegL op1, immL13 con, immL0 zero) %{
   ins_pipe(ialu_cconly_reg_reg);
 %}
 
-instruct compU_iReg_imm13(flagsRegU icc, iRegI op1, immU13 op2 ) %{
+instruct compU_iReg_imm13(flagsRegU icc, iRegI op1, immU12 op2 ) %{
   match(Set icc (CmpU op1 op2));
 
   size(4);

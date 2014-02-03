@@ -878,7 +878,7 @@ bool Arguments::process_argument(const char* arg,
     arg_len = equal_sign - argname;
   }
 
-  Flag* found_flag = Flag::find_flag((const char*)argname, arg_len, true);
+  Flag* found_flag = Flag::find_flag((const char*)argname, arg_len, true, true);
   if (found_flag != NULL) {
     char locked_message_buf[BUFLEN];
     found_flag->get_locked_message(locked_message_buf, BUFLEN);

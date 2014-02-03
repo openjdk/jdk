@@ -56,6 +56,7 @@ void VM_GC_Operation::notify_gc_begin(bool full) {
 #else /* USDT2 */
   HOTSPOT_GC_BEGIN(
                    full);
+  HS_DTRACE_WORKAROUND_TAIL_CALL_BUG();
 #endif /* USDT2 */
 }
 
@@ -64,8 +65,8 @@ void VM_GC_Operation::notify_gc_end() {
   HS_DTRACE_PROBE(hotspot, gc__end);
   HS_DTRACE_WORKAROUND_TAIL_CALL_BUG();
 #else /* USDT2 */
-  HOTSPOT_GC_END(
-);
+  HOTSPOT_GC_END();
+  HS_DTRACE_WORKAROUND_TAIL_CALL_BUG();
 #endif /* USDT2 */
 }
 
