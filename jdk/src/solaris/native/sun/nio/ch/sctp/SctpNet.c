@@ -157,6 +157,7 @@ Java_sun_nio_ch_sctp_SctpNet_init
     }
     preCloseFD = sp[0];
     close(sp[1]);
+    initInetAddressIDs(env);
 }
 
 /*
