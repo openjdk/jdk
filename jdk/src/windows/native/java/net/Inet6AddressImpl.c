@@ -347,6 +347,7 @@ Java_java_net_Inet6AddressImpl_getHostByAddr(JNIEnv *env, jobject this,
 
     if (!error) {
         ret = (*env)->NewStringUTF(env, host);
+        CHECK_NULL(ret);
     }
 
     if (ret == NULL) {

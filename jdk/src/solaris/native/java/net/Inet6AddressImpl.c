@@ -196,6 +196,7 @@ lookupIfLocalhost(JNIEnv *env, const char *hostname, jboolean includeV6)
     }
 
     name = (*env)->NewStringUTF(env, hostname);
+    CHECK_NULL(name);
 
     /* Iterate over the interfaces, and total up the number of IPv4 and IPv6
      * addresses we have. Also keep a count of loopback addresses. We need to
@@ -548,6 +549,7 @@ Java_java_net_Inet6AddressImpl_getHostByAddr(JNIEnv *env, jobject this,
 
     if (!error) {
         ret = (*env)->NewStringUTF(env, host);
+        CHECK_NULL(ret);
     }
 #endif /* AF_INET6 */
 
