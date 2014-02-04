@@ -240,7 +240,7 @@ public class FilePane extends JPanel implements PropertyChangeListener {
             }
         }
 
-        private void repaintListSelection(JList list) {
+        private void repaintListSelection(JList<?> list) {
             int[] indices = list.getSelectedIndices();
             for (int i : indices) {
                 Rectangle bounds = list.getCellBounds(i, i);
@@ -272,7 +272,7 @@ public class FilePane extends JPanel implements PropertyChangeListener {
     private boolean fullRowSelection = false;
 
     private ListSelectionModel listSelectionModel;
-    private JList list;
+    private JList<?> list;
     private JTable detailsTable;
 
     private static final int COLUMN_FILENAME = 0;
@@ -332,7 +332,7 @@ public class FilePane extends JPanel implements PropertyChangeListener {
                     createdViewPanel = createList();
                 }
 
-                list = (JList) findChildComponent(createdViewPanel, JList.class);
+                list = findChildComponent(createdViewPanel, JList.class);
                 if (listSelectionModel == null) {
                     listSelectionModel = list.getSelectionModel();
                     if (detailsTable != null) {
@@ -353,7 +353,7 @@ public class FilePane extends JPanel implements PropertyChangeListener {
                     createdViewPanel = createDetailsView();
                 }
 
-                detailsTable = (JTable) findChildComponent(createdViewPanel, JTable.class);
+                detailsTable = findChildComponent(createdViewPanel, JTable.class);
                 detailsTable.setRowHeight(Math.max(detailsTable.getFont().getSize() + 4, 16 + 1));
                 if (listSelectionModel != null) {
                     detailsTable.setSelectionModel(listSelectionModel);
@@ -569,7 +569,7 @@ public class FilePane extends JPanel implements PropertyChangeListener {
     }
 
 
-    private void updateListRowCount(JList list) {
+    private void updateListRowCount(JList<?> list) {
         if (smallIconsView) {
             list.setVisibleRowCount(getModel().getSize() / 3);
         } else {
@@ -584,7 +584,7 @@ public class FilePane extends JPanel implements PropertyChangeListener {
         @SuppressWarnings("serial") // anonymous class
         final JList<Object> list = new JList<Object>() {
             public int getNextMatch(String prefix, int startIndex, Position.Bias bias) {
-                ListModel model = getModel();
+                ListModel<?> model = getModel();
                 int max = model.getSize();
                 if (prefix == null || startIndex < 0 || startIndex >= max) {
                     throw new IllegalArgumentException();
@@ -918,7 +918,7 @@ public class FilePane extends JPanel implements PropertyChangeListener {
 
         public void updateComparators(ShellFolderColumnInfo [] columns) {
             for (int i = 0; i < columns.length; i++) {
-                Comparator c = columns[i].getComparator();
+                Comparator<?> c = columns[i].getComparator();
                 if (c != null) {
                     c = new DirectoriesFirstComparatorWrapper(i, c);
                 }
@@ -969,12 +969,13 @@ public class FilePane extends JPanel implements PropertyChangeListener {
      * directory and file to file using the wrapped comparator.
      */
     private class DirectoriesFirstComparatorWrapper implements Comparator<File> {
-        private Comparator comparator;
+        private Comparator<Object> comparator;
         private int column;
 
-        public DirectoriesFirstComparatorWrapper(int column, Comparator comparator) {
+        @SuppressWarnings("unchecked")
+        public DirectoriesFirstComparatorWrapper(int column, Comparator<?> comparator) {
             this.column = column;
-            this.comparator = comparator;
+            this.comparator = (Comparator<Object>)comparator;
         }
 
         public int compare(File f1, File f2) {
@@ -1492,7 +1493,7 @@ public class FilePane extends JPanel implements PropertyChangeListener {
     @SuppressWarnings("serial") // JDK-implementation class
     protected class FileRenderer extends DefaultListCellRenderer  {
 
-        public Component getListCellRendererComponent(JList list, Object value,
+        public Component getListCellRendererComponent(JList<?> list, Object value,
                                                       int index, boolean isSelected,
                                                       boolean cellHasFocus) {
 
@@ -1968,14 +1969,14 @@ public class FilePane extends JPanel implements PropertyChangeListener {
         return fileChooserUIAccessor.getDirectory();
     }
 
-    private Component findChildComponent(Container container, Class cls) {
+    private <T> T findChildComponent(Container container, Class<T> cls) {
         int n = container.getComponentCount();
         for (int i = 0; i < n; i++) {
             Component comp = container.getComponent(i);
             if (cls.isInstance(comp)) {
-                return comp;
+                return cls.cast(comp);
             } else if (comp instanceof Container) {
-                Component c = findChildComponent((Container)comp, cls);
+                T c = findChildComponent((Container)comp, cls);
                 if (c != null) {
                     return c;
                 }
@@ -2029,7 +2030,7 @@ public class FilePane extends JPanel implements PropertyChangeListener {
         public Action getApproveSelectionAction();
         public Action getChangeToParentDirectoryAction();
         public Action getNewFolderAction();
-        public MouseListener createDoubleClickListener(JList list);
+        public MouseListener createDoubleClickListener(JList<?> list);
         public ListSelectionListener createListSelectionListener();
     }
 }

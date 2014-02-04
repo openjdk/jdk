@@ -175,7 +175,7 @@ public class SynthFileChooserUIImpl extends SynthFileChooserUI {
             return SynthFileChooserUIImpl.this.getNewFolderAction();
         }
 
-        public MouseListener createDoubleClickListener(JList list) {
+        public MouseListener createDoubleClickListener(JList<?> list) {
             return SynthFileChooserUIImpl.this.createDoubleClickListener(getFileChooser(),
                                                                      list);
         }
@@ -563,7 +563,7 @@ public class SynthFileChooserUIImpl extends SynthFileChooserUI {
         if (currentDirectory != null) {
             JComponent cb = getDirectoryComboBox();
             if (cb instanceof JComboBox) {
-                ComboBoxModel model = ((JComboBox)cb).getModel();
+                ComboBoxModel<?> model = ((JComboBox)cb).getModel();
                 if (model instanceof DirectoryComboBoxModel) {
                     ((DirectoryComboBoxModel)model).addItem(currentDirectory);
                 }
