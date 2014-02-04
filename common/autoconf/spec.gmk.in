@@ -37,6 +37,8 @@ X:=
 SPACE:=$(X) $(X)
 COMMA:=,
 HASH:=\#
+LEFT_PAREN:=(
+RIGHT_PAREN:=)
 SQUOTE:='
 #'
 DQUOTE:="
