@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2013, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -23,25 +23,13 @@
 # questions.
 #
 
-# This must be the first rule
-default: all
+# The BOOT_JAVAC setup uses the boot jdk compiler to compile the tools
+# and the interim javac, to be run by the boot jdk.
+$(eval $(call SetupJavaCompiler,BOOT_JAVAC, \
+    JAVAC := $(JAVAC), \
+    SERVER_DIR := $(SJAVAC_SERVER_DIR), \
+    SERVER_JVM := $(SJAVAC_SERVER_JAVA), \
+    FLAGS := -XDignore.symbol.file=true -g -Xlint:all$(COMMA)-deprecation -Werror))
 
-include $(SPEC)
-
-gensrc-langtools:
-	+$(MAKE) -f $(LANGTOOLS_TOPDIR)/make/GensrcLangtools.gmk
-
-interim-langtools: gensrc-langtools
-	+$(MAKE) -f $(LANGTOOLS_TOPDIR)/make/CompileInterim.gmk
-
-genstubs-langtools: interim-langtools
-	+$(MAKE) -f $(LANGTOOLS_TOPDIR)/make/GenstubsLangtools.gmk
-
-compile-langtools: gensrc-langtools interim-langtools genstubs-langtools
-	+$(MAKE) -f $(LANGTOOLS_TOPDIR)/make/CompileLangtools.gmk
-
-all: compile-langtools
-
-.PHONY: default all
-.PHONY: gensrc-langtools interim-langtools genstubs-langtools compile-langtools
-
+# javax.tools.JavaCompilerTool isn't really a suffix but this gets the file copied.
+RESOURCE_SUFFIXES := .gif .xml .css .js javax.tools.JavaCompilerTool
