@@ -122,12 +122,12 @@ TOOL_OSX_TOBIN = $(JAVA) -Djava.awt.headless=true -cp $(JDK_OUTPUTDIR)/btclasses
 TOOL_CLDRCONVERTER = $(JAVA) -cp $(JDK_OUTPUTDIR)/btclasses \
     build.tools.cldrconverter.CLDRConverter
 
-TOOL_CHECKDEPS = $(JAVA) -Xbootclasspath/p:$(LANGTOOLS_OUTPUTDIR)/dist/bootstrap/lib/javac.jar \
+TOOL_CHECKDEPS = $(JAVA) -Xbootclasspath/p:$(INTERIM_LANGTOOLS_JAR) \
     -cp $(JDK_OUTPUTDIR)/btclasses:$(JDK_OUTPUTDIR) \
     build.tools.deps.CheckDeps
 
 TOOL_ADDTORESTRICTEDPKGS=$(JAVA) -cp $(JDK_OUTPUTDIR)/btclasses \
- 	build.tools.addtorestrictedpkgs.AddToRestrictedPkgs
+    build.tools.addtorestrictedpkgs.AddToRestrictedPkgs
 
 ##########################################################################################
 
