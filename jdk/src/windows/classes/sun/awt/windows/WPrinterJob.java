@@ -701,7 +701,9 @@ public final class WPrinterJob extends RasterPrinterJob
                     setColorAttrib(attr);
                 }
                 else if (attr.getCategory() == PrinterResolution.class) {
-                    setResolutionAttrib(attr);
+                    if (myService.isAttributeValueSupported(attr, null, null)) {
+                        setResolutionAttrib(attr);
+                    }
                 }
                 else if (attr.getCategory() == PrintQuality.class) {
                     setQualityAttrib(attr);
