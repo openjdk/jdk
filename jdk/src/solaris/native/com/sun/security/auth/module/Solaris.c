@@ -75,11 +75,12 @@ Java_com_sun_security_auth_module_SolarisSystem_getSolarisInfo
         if (fid == 0) {
             (*env)->ExceptionClear(env);
             throwIllegalArgumentException(env, "invalid field: username");
-            return;
+            goto cleanupAndReturn;
         }
         jstr = (*env)->NewStringUTF(env, pwd.pw_name);
-        if (jstr == NULL)
-            return;
+        if (jstr == NULL) {
+            goto cleanupAndReturn;
+        }
         (*env)->SetObjectField(env, obj, fid, jstr);
 
         /*
@@ -89,7 +90,7 @@ Java_com_sun_security_auth_module_SolarisSystem_getSolarisInfo
         if (fid == 0) {
             (*env)->ExceptionClear(env);
             throwIllegalArgumentException(env, "invalid field: uid");
-            return;
+            goto cleanupAndReturn;
         }
         (*env)->SetLongField(env, obj, fid, pwd.pw_uid);
 
@@ -100,7 +101,7 @@ Java_com_sun_security_auth_module_SolarisSystem_getSolarisInfo
         if (fid == 0) {
             (*env)->ExceptionClear(env);
             throwIllegalArgumentException(env, "invalid field: gid");
-            return;
+            goto cleanupAndReturn;
         }
         (*env)->SetLongField(env, obj, fid, pwd.pw_gid);
 
@@ -111,19 +112,24 @@ Java_com_sun_security_auth_module_SolarisSystem_getSolarisInfo
         if (fid == 0) {
             (*env)->ExceptionClear(env);
             throwIllegalArgumentException(env, "invalid field: groups");
-            return;
+            goto cleanupAndReturn;
         }
 
         jgroups = (*env)->NewLongArray(env, numSuppGroups);
-        if (jgroups == NULL)
-            return;
+        if (jgroups == NULL) {
+            goto cleanupAndReturn;
+        }
         jgroupsAsArray = (*env)->GetLongArrayElements(env, jgroups, 0);
-        if (jgroupsAsArray == NULL)
-            return;
+        if (jgroupsAsArray == NULL) {
+            goto cleanupAndReturn;
+        }
         for (i = 0; i < numSuppGroups; i++)
             jgroupsAsArray[i] = groups[i];
         (*env)->ReleaseLongArrayElements(env, jgroups, jgroupsAsArray, 0);
         (*env)->SetObjectField(env, obj, fid, jgroups);
     }
+cleanupAndReturn:
+    free(groups);
+
     return;
 }
