@@ -247,6 +247,8 @@ define SetupArchive
 	  $$($1_SUPDATE_CONTENTS) \
 	  $$($1_JARINDEX) && true )
 
+  # Add jar to target list
+  $1 += $$($1_JAR)
 endef
 
 define SetupZipArchive
@@ -307,6 +309,9 @@ define SetupZipArchive
 	$(ECHO) Updating $$($1_NAME)
 	$$(foreach i,$$($1_SRC),(cd $$i && $(ZIP) -qru $$@ . $$($1_ZIP_INCLUDES) $$($1_ZIP_EXCLUDES) -x \*_the.\* $$(addprefix -x$(SPACE),$$(patsubst $$i/%,%,$$($1_EXCLUDE_FILES))) || test "$$$$?" = "12" )$$(NEWLINE)) true
 	$(TOUCH) $$@
+
+  # Add zip to target list
+  $1 += $$($1_ZIP)
 endef
 
 define add_file_to_copy
@@ -579,6 +584,9 @@ define SetupJavaCompilation
         JARINDEX:=$$($1_JARINDEX), \
         HEADERS:=$$($1_HEADERS), \
         SETUP:=$$($1_SETUP)))
+
+    # Add jar to target list
+    $1 += $$($1_JAR)
   endif
 
   # Check if a srczip was specified, then setup the rules for the srczip.
@@ -589,6 +597,8 @@ define SetupJavaCompilation
         INCLUDES:=$$($1_INCLUDES), \
         EXCLUDES:=$$($1_EXCLUDES), \
         EXCLUDE_FILES:=$$($1_EXCLUDE_FILES)))
-  endif
 
+    # Add zip to target list
+    $1 += $$($1_SRCZIP)
+  endif
 endef

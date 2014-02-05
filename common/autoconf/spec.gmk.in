@@ -456,10 +456,13 @@ NATIVE2ASCII:=@FIXPATH@ @NATIVE2ASCII@
 JARSIGNER:=@FIXPATH@ @JARSIGNER@
 
 # You run the new javac using the boot jdk with $(BOOT_JDK)/bin/java $(NEW_JAVAC) ...
-BOOTSTRAP_JAVAC_JAR:=$(LANGTOOLS_OUTPUTDIR)/dist/bootstrap/lib/javac.jar
-BOOTSTRAP_JAVAC_ARGS:="-Xbootclasspath/p:$(BOOTSTRAP_JAVAC_JAR)" -cp $(BOOTSTRAP_JAVAC_JAR)
-NEW_JAVAC   = $(BOOTSTRAP_JAVAC_ARGS) com.sun.tools.javac.Main
-NEW_JAVADOC = $(BOOTSTRAP_JAVAC_ARGS) com.sun.tools.javadoc.Main
+INTERIM_LANGTOOLS_JAR := $(LANGTOOLS_OUTPUTDIR)/dist/interim_langtools.jar
+INTERIM_LANGTOOLS_ARGS := "-Xbootclasspath/p:$(INTERIM_LANGTOOLS_JAR)" -cp $(INTERIM_LANGTOOLS_JAR)
+NEW_JAVAC   = $(INTERIM_LANGTOOLS_ARGS) com.sun.tools.javac.Main
+NEW_JAVADOC = $(INTERIM_LANGTOOLS_ARGS) com.sun.tools.javadoc.Main
+
+# The interim corba jar is needed for running rmic
+INTERIM_CORBA_JAR := $(CORBA_OUTPUTDIR)/dist/interim_corba.jar
 
 # Base flags for RC
 # Guarding this against resetting value. Legacy make files include spec multiple
