@@ -4954,6 +4954,7 @@ void TestMetaspaceAux_test();
 void TestMetachunk_test();
 void TestVirtualSpaceNode_test();
 void TestOldFreeSpaceCalculation_test();
+void TestNewSize_test();
 #if INCLUDE_ALL_GCS
 void TestG1BiasedArray_test();
 void TestBufferingOopClosure_test();
@@ -4976,6 +4977,7 @@ void execute_internal_vm_tests() {
     run_unit_test(AltHashing::test_alt_hash());
     run_unit_test(test_loggc_filename());
     run_unit_test(TestOldFreeSpaceCalculation_test());
+    run_unit_test(TestNewSize_test());
 #if INCLUDE_VM_STRUCTS
     run_unit_test(VMStructs::test());
 #endif
