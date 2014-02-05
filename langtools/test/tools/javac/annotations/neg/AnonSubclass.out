@@ -1,0 +1,2 @@
+AnonSubclass.java:10:15: compiler.err.prob.found.req: (compiler.misc.inconvertible.types: compiler.misc.anonymous.class: java.lang.Object, java.lang.String)
+1 error

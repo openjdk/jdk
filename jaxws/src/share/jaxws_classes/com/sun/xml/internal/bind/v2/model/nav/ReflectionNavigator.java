@@ -44,15 +44,18 @@ import com.sun.xml.internal.bind.v2.runtime.Location;
  * {@link Navigator} implementation for {@code java.lang.reflect}.
  *
  */
-public final class ReflectionNavigator implements Navigator<Type, Class, Field, Method> {
+/*package*/final class ReflectionNavigator implements Navigator<Type, Class, Field, Method> {
 
-    /**
-     * Singleton.
-     *
-     * Use {@link Navigator#REFLECTION}
-     */
-    ReflectionNavigator() {
+//  ----------  Singleton -----------------
+    private static final ReflectionNavigator INSTANCE = new ReflectionNavigator();
+
+    /*package*/static ReflectionNavigator getInstance() {
+        return INSTANCE;
     }
+
+    private ReflectionNavigator() {
+    }
+//  ---------------------------------------
 
     public Class getSuperClass(Class clazz) {
         if (clazz == Object.class) {
@@ -64,6 +67,7 @@ public final class ReflectionNavigator implements Navigator<Type, Class, Field, 
         }
         return sc;
     }
+
     private static final TypeVisitor<Type, Class> baseClassFinder = new TypeVisitor<Type, Class>() {
 
         public Type onClass(Class c, Class sup) {
@@ -496,7 +500,7 @@ public final class ReflectionNavigator implements Navigator<Type, Class, Field, 
             c.getDeclaredConstructor();
             return true;
         } catch (NoSuchMethodException e) {
-            return false;
+            return false; // todo: do this WITHOUT exception throw
         }
     }
 
@@ -544,13 +548,14 @@ public final class ReflectionNavigator implements Navigator<Type, Class, Field, 
         }
     }
 
-    public Class findClass(String className, Class referencePoint) {
+    @Override
+    public Class loadObjectFactory(Class referencePoint, String pkg) {
+        ClassLoader cl= SecureLoader.getClassClassLoader(referencePoint);
+        if (cl == null)
+            cl = SecureLoader.getSystemClassLoader();
+
         try {
-            ClassLoader cl = SecureLoader.getClassClassLoader(referencePoint);
-            if (cl == null) {
-                cl = SecureLoader.getSystemClassLoader();
-            }
-            return cl.loadClass(className);
+            return cl.loadClass(pkg + ".ObjectFactory");
         } catch (ClassNotFoundException e) {
             return null;
         }

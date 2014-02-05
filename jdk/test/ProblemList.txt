@@ -123,11 +123,6 @@
 # 8029415
 java/lang/reflect/Method/invoke/TestPrivateInterfaceMethodReflect.java generic-all
 
-# 8030656
-java/lang/reflect/Parameter/GetAnnotatedTypeTest.java generic-all
-java/lang/reflect/Parameter/WithParameters.java generic-all
-java/lang/reflect/Parameter/BadClassFiles.java generic-all
-
 ############################################################################
 
 # jdk_management
@@ -149,12 +144,6 @@ sun/management/jmxremote/bootstrap/RmiSslBootstrapTest.sh	windows-all
 
 # 6988950
 demo/jvmti/compiledMethodLoad/CompiledMethodLoadTest.java	generic-all
-
-# 7027502
-demo/jvmti/hprof/MonitorTest.java                               generic-all
-
-# 8027973
-javax/xml/jaxp/transform/jdk8004476/XSLTExFuncTest.java		windows-all
 
 ############################################################################
 
@@ -281,5 +270,12 @@ tools/launcher/FXLauncherTest.java                              linux-all
 ############################################################################
 
 # jdk_util
+
+############################################################################
+
+# svc_tools
+
+# 8031482
+sun/tools/jcmd/TestJcmdSanity.java				windows-all
 
 ############################################################################
