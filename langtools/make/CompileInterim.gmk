@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2013, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -27,21 +27,24 @@
 default: all
 
 include $(SPEC)
+include MakeBase.gmk
+include JavaCompilation.gmk
 
-gensrc-langtools:
-	+$(MAKE) -f $(LANGTOOLS_TOPDIR)/make/GensrcLangtools.gmk
+include CommonLangtools.gmk
 
-interim-langtools: gensrc-langtools
-	+$(MAKE) -f $(LANGTOOLS_TOPDIR)/make/CompileInterim.gmk
+# Setup the rules to build the interim langtools jar, which is compiled by
+# the boot javac and can be run on the boot jdk. This will be used to compile
+# the rest of the product. Include the Genstubs build tool in this compilation
+# as it will be used together with the interim javac.
+$(eval $(call SetupJavaCompilation,BUILD_INTERIM_LANGTOOLS, \
+    SETUP := BOOT_JAVAC, \
+    DISABLE_SJAVAC := true, \
+    SRC := $(LANGTOOLS_TOPDIR)/src/share/classes \
+        $(LANGTOOLS_OUTPUTDIR)/gensrc \
+        $(LANGTOOLS_TOPDIR)/make/tools, \
+    EXCLUDES := com/sun/tools/javac/nio compileproperties anttasks crules, \
+    COPY := $(RESOURCE_SUFFIXES), \
+    BIN := $(LANGTOOLS_OUTPUTDIR)/interim_classes, \
+    JAR := $(INTERIM_LANGTOOLS_JAR)))
 
-genstubs-langtools: interim-langtools
-	+$(MAKE) -f $(LANGTOOLS_TOPDIR)/make/GenstubsLangtools.gmk
-
-compile-langtools: gensrc-langtools interim-langtools genstubs-langtools
-	+$(MAKE) -f $(LANGTOOLS_TOPDIR)/make/CompileLangtools.gmk
-
-all: compile-langtools
-
-.PHONY: default all
-.PHONY: gensrc-langtools interim-langtools genstubs-langtools compile-langtools
-
+all: $(BUILD_INTERIM_LANGTOOLS)
