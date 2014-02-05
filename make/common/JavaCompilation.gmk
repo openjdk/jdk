@@ -534,16 +534,16 @@ define SetupJavaCompilation
     # When building in batch, put headers in a temp dir to filter out those that actually
     # changed before copying them to the real header dir.
     ifneq (,$$($1_HEADERS))
-      $1_HEADERS_ARG := -h $$($1_HEADERS).tmp
+      $1_HEADERS_ARG := -h $$($1_HEADERS).$1.tmp
 
       $$($1_HEADERS)/_the.$1_headers: $$($1_BIN)/_the.$1_batch
 		$(MKDIR) -p $$(@D)
-		for f in `ls $$($1_HEADERS).tmp`; do \
-		  if [ ! -f "$$($1_HEADERS)/$$$$f" ] || [ "`$(DIFF) $$($1_HEADERS)/$$$$f $$($1_HEADERS).tmp/$$$$f`" != "" ]; then \
-		    $(CP) -f $$($1_HEADERS).tmp/$$$$f $$($1_HEADERS)/$$$$f; \
+		for f in `ls $$($1_HEADERS).$1.tmp`; do \
+		  if [ ! -f "$$($1_HEADERS)/$$$$f" ] || [ "`$(DIFF) $$($1_HEADERS)/$$$$f $$($1_HEADERS).$1.tmp/$$$$f`" != "" ]; then \
+		    $(CP) -f $$($1_HEADERS).$1.tmp/$$$$f $$($1_HEADERS)/$$$$f; \
 		  fi; \
 		done
-		$(RM) -r $$($1_HEADERS).tmp
+		$(RM) -r $$($1_HEADERS).$1.tmp
 		$(TOUCH) $$@
 
       $1 += $$($1_HEADERS)/_the.$1_headers
