@@ -5202,9 +5202,12 @@ private:
   bool  _process_symbols;
   int _symbols_processed;
   int _symbols_removed;
+
+  bool _do_in_parallel;
 public:
   G1StringSymbolTableUnlinkTask(BoolObjectClosure* is_alive, bool process_strings, bool process_symbols) :
     AbstractGangTask("Par String/Symbol table unlink"), _is_alive(is_alive),
+    _do_in_parallel(G1CollectedHeap::use_parallel_gc_threads()),
     _process_strings(process_strings), _strings_processed(0), _strings_removed(0),
     _process_symbols(process_symbols), _symbols_processed(0), _symbols_removed(0) {
 
@@ -5219,16 +5222,16 @@ public:
   }
 
   ~G1StringSymbolTableUnlinkTask() {
-    guarantee(!_process_strings || StringTable::parallel_claimed_index() >= _initial_string_table_size,
+    guarantee(!_process_strings || !_do_in_parallel || StringTable::parallel_claimed_index() >= _initial_string_table_size,
               err_msg("claim value "INT32_FORMAT" after unlink less than initial string table size "INT32_FORMAT,
                       StringTable::parallel_claimed_index(), _initial_string_table_size));
-    guarantee(!_process_symbols || SymbolTable::parallel_claimed_index() >= _initial_symbol_table_size,
+    guarantee(!_process_symbols || !_do_in_parallel || SymbolTable::parallel_claimed_index() >= _initial_symbol_table_size,
               err_msg("claim value "INT32_FORMAT" after unlink less than initial symbol table size "INT32_FORMAT,
                       SymbolTable::parallel_claimed_index(), _initial_symbol_table_size));
   }
 
   void work(uint worker_id) {
-    if (G1CollectedHeap::use_parallel_gc_threads()) {
+    if (_do_in_parallel) {
       int strings_processed = 0;
       int strings_removed = 0;
       int symbols_processed = 0;
