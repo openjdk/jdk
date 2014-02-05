@@ -216,6 +216,7 @@ throwFileNotFoundException(JNIEnv *env, jstring path)
 #else
         why = JNU_NewStringPlatform(env, buf);
 #endif
+        CHECK_NULL(why);
     }
     x = JNU_NewObjectByName(env,
                             "java/io/FileNotFoundException",

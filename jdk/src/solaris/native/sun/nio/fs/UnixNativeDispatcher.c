@@ -179,46 +179,64 @@ Java_sun_nio_fs_UnixNativeDispatcher_init(JNIEnv* env, jclass this)
     jclass clazz;
 
     clazz = (*env)->FindClass(env, "sun/nio/fs/UnixFileAttributes");
-    if (clazz == NULL) {
-        return 0;
-    }
+    CHECK_NULL_RETURN(clazz, 0);
     attrs_st_mode = (*env)->GetFieldID(env, clazz, "st_mode", "I");
+    CHECK_NULL_RETURN(attrs_st_mode, 0);
     attrs_st_ino = (*env)->GetFieldID(env, clazz, "st_ino", "J");
+    CHECK_NULL_RETURN(attrs_st_ino, 0);
     attrs_st_dev = (*env)->GetFieldID(env, clazz, "st_dev", "J");
+    CHECK_NULL_RETURN(attrs_st_dev, 0);
     attrs_st_rdev = (*env)->GetFieldID(env, clazz, "st_rdev", "J");
+    CHECK_NULL_RETURN(attrs_st_rdev, 0);
     attrs_st_nlink = (*env)->GetFieldID(env, clazz, "st_nlink", "I");
+    CHECK_NULL_RETURN(attrs_st_nlink, 0);
     attrs_st_uid = (*env)->GetFieldID(env, clazz, "st_uid", "I");
+    CHECK_NULL_RETURN(attrs_st_uid, 0);
     attrs_st_gid = (*env)->GetFieldID(env, clazz, "st_gid", "I");
+    CHECK_NULL_RETURN(attrs_st_gid, 0);
     attrs_st_size = (*env)->GetFieldID(env, clazz, "st_size", "J");
+    CHECK_NULL_RETURN(attrs_st_size, 0);
     attrs_st_atime_sec = (*env)->GetFieldID(env, clazz, "st_atime_sec", "J");
+    CHECK_NULL_RETURN(attrs_st_atime_sec, 0);
     attrs_st_atime_nsec = (*env)->GetFieldID(env, clazz, "st_atime_nsec", "J");
+    CHECK_NULL_RETURN(attrs_st_atime_nsec, 0);
     attrs_st_mtime_sec = (*env)->GetFieldID(env, clazz, "st_mtime_sec", "J");
+    CHECK_NULL_RETURN(attrs_st_mtime_sec, 0);
     attrs_st_mtime_nsec = (*env)->GetFieldID(env, clazz, "st_mtime_nsec", "J");
+    CHECK_NULL_RETURN(attrs_st_mtime_nsec, 0);
     attrs_st_ctime_sec = (*env)->GetFieldID(env, clazz, "st_ctime_sec", "J");
+    CHECK_NULL_RETURN(attrs_st_ctime_sec, 0);
     attrs_st_ctime_nsec = (*env)->GetFieldID(env, clazz, "st_ctime_nsec", "J");
+    CHECK_NULL_RETURN(attrs_st_ctime_nsec, 0);
 
 #ifdef _DARWIN_FEATURE_64_BIT_INODE
     attrs_st_birthtime_sec = (*env)->GetFieldID(env, clazz, "st_birthtime_sec", "J");
+    CHECK_NULL_RETURN(attrs_st_birthtime_sec, 0);
 #endif
 
     clazz = (*env)->FindClass(env, "sun/nio/fs/UnixFileStoreAttributes");
-    if (clazz == NULL) {
-        return 0;
-    }
+    CHECK_NULL_RETURN(clazz, 0);
     attrs_f_frsize = (*env)->GetFieldID(env, clazz, "f_frsize", "J");
+    CHECK_NULL_RETURN(attrs_f_frsize, 0);
     attrs_f_blocks = (*env)->GetFieldID(env, clazz, "f_blocks", "J");
+    CHECK_NULL_RETURN(attrs_f_blocks, 0);
     attrs_f_bfree = (*env)->GetFieldID(env, clazz, "f_bfree", "J");
+    CHECK_NULL_RETURN(attrs_f_bfree, 0);
     attrs_f_bavail = (*env)->GetFieldID(env, clazz, "f_bavail", "J");
+    CHECK_NULL_RETURN(attrs_f_bavail, 0);
 
     clazz = (*env)->FindClass(env, "sun/nio/fs/UnixMountEntry");
-    if (clazz == NULL) {
-        return 0;
-    }
+    CHECK_NULL_RETURN(clazz, 0);
     entry_name = (*env)->GetFieldID(env, clazz, "name", "[B");
+    CHECK_NULL_RETURN(entry_name, 0);
     entry_dir = (*env)->GetFieldID(env, clazz, "dir", "[B");
+    CHECK_NULL_RETURN(entry_dir, 0);
     entry_fstype = (*env)->GetFieldID(env, clazz, "fstype", "[B");
+    CHECK_NULL_RETURN(entry_fstype, 0);
     entry_options = (*env)->GetFieldID(env, clazz, "opts", "[B");
+    CHECK_NULL_RETURN(entry_options, 0);
     entry_dev = (*env)->GetFieldID(env, clazz, "dev", "J");
+    CHECK_NULL_RETURN(entry_dev, 0);
 
     /* system calls that might not be available at run time */
 

@@ -127,7 +127,7 @@ public class SwingUtilities2 {
      */
     public static class AATextInfo {
 
-        private static AATextInfo getAATextInfoFromMap(Map hints) {
+        private static AATextInfo getAATextInfoFromMap(Map<java.awt.RenderingHints.Key, Object> hints) {
 
             Object aaHint   = hints.get(KEY_TEXT_ANTIALIASING);
             Object contHint = hints.get(KEY_TEXT_LCD_CONTRAST);
@@ -141,12 +141,13 @@ public class SwingUtilities2 {
             }
         }
 
+        @SuppressWarnings("unchecked")
         public static AATextInfo getAATextInfo(boolean lafCondition) {
             SunToolkit.setAAFontSettingsCondition(lafCondition);
             Toolkit tk = Toolkit.getDefaultToolkit();
             Object map = tk.getDesktopProperty(SunToolkit.DESKTOPFONTHINTS);
             if (map instanceof Map) {
-                return getAATextInfoFromMap((Map)map);
+                return getAATextInfoFromMap((Map<java.awt.RenderingHints.Key, Object>)map);
             } else {
                 return null;
             }
@@ -663,7 +664,7 @@ public class SwingUtilities2 {
      * Otherwise, this method returns -1.
      * This is used to make WindowsL&F JFileChooser act like native dialogs.
      */
-    public static int loc2IndexFileList(JList list, Point point) {
+    public static int loc2IndexFileList(JList<?> list, Point point) {
         int index = list.locationToIndex(point);
         if (index != -1) {
             Object bySize = list.getClientProperty("List.isFileList");
@@ -680,11 +681,10 @@ public class SwingUtilities2 {
      * Returns true if the given point is within the actual bounds of the
      * JList item at index (not just inside the cell).
      */
-    private static boolean pointIsInActualBounds(JList list, int index,
+    private static <T> boolean pointIsInActualBounds(JList<T> list, int index,
                                                 Point point) {
-        ListCellRenderer renderer = list.getCellRenderer();
-        ListModel dataModel = list.getModel();
-        Object value = dataModel.getElementAt(index);
+        ListCellRenderer<? super T> renderer = list.getCellRenderer();
+        T value = list.getModel().getElementAt(index);
         Component item = renderer.getListCellRendererComponent(list,
                           value, index, false, false);
         Dimension itemSize = item.getPreferredSize();

@@ -206,6 +206,7 @@ JNIEXPORT void JNICALL
 Java_java_lang_UNIXProcess_init(JNIEnv *env, jclass clazz)
 {
     parentPathv = effectivePathv(env);
+    CHECK_NULL(parentPathv);
     setSIGCHLDHandler(env);
 }
 

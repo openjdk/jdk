@@ -166,9 +166,8 @@ Java_java_net_PlainDatagramSocketImpl_init(JNIEnv *env, jclass cls) {
     IO_fd_fdID = NET_GetFileDescriptorID(env);
     CHECK_NULL(IO_fd_fdID);
 
-    Java_java_net_InetAddress_init(env, 0);
-    Java_java_net_Inet4Address_init(env, 0);
-    Java_java_net_Inet6Address_init(env, 0);
+    initInetAddressIDs(env);
+    JNU_CHECK_EXCEPTION(env);
     Java_java_net_NetworkInterface_init(env, 0);
 
 }

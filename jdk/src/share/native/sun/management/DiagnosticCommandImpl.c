@@ -30,12 +30,12 @@
 
 JNIEXPORT void JNICALL Java_sun_management_DiagnosticCommandImpl_setNotificationEnabled
 (JNIEnv *env, jobject dummy, jboolean enabled) {
-    if(jmm_version > JMM_VERSION_1_2_2) {
-        jmm_interface->SetDiagnosticFrameworkNotificationEnabled(env, enabled);
-    } else {
+    if (jmm_version <= JMM_VERSION_1_2_2) {
         JNU_ThrowByName(env, "java/lang/UnsupportedOperationException",
                         "JMX interface to diagnostic framework notifications is not supported by this VM");
+        return;
     }
+    jmm_interface->SetDiagnosticFrameworkNotificationEnabled(env, enabled);
 }
 
 JNIEXPORT jobjectArray JNICALL
@@ -124,6 +124,7 @@ Java_sun_management_DiagnosticCommandImpl_getDiagnosticCommandInfo
   result = (*env)->NewObjectArray(env, num_commands, dcmdInfoCls, NULL);
   if (result == NULL) {
       JNU_ThrowOutOfMemoryError(env, 0);
+      return NULL;
   }
   if (num_commands == 0) {
       /* Handle the 'zero commands' case specially to avoid calling 'malloc()' */
@@ -133,6 +134,7 @@ Java_sun_management_DiagnosticCommandImpl_getDiagnosticCommandInfo
   dcmd_info_array = (dcmdInfo*) malloc(num_commands * sizeof(dcmdInfo));
   if (dcmd_info_array == NULL) {
       JNU_ThrowOutOfMemoryError(env, NULL);
+      return NULL;
   }
   jmm_interface->GetDiagnosticCommandInfo(env, commands, dcmd_info_array);
   for (i=0; i<num_commands; i++) {
@@ -142,6 +144,7 @@ Java_sun_management_DiagnosticCommandImpl_getDiagnosticCommandInfo
       if (args == NULL) {
           free(dcmd_info_array);
           JNU_ThrowOutOfMemoryError(env, 0);
+          return NULL;
       }
       obj = JNU_NewObjectByName(env,
                                 "sun/management/DiagnosticCommandInfo",
@@ -157,6 +160,7 @@ Java_sun_management_DiagnosticCommandImpl_getDiagnosticCommandInfo
       if (obj == NULL) {
           free(dcmd_info_array);
           JNU_ThrowOutOfMemoryError(env, 0);
+          return NULL;
       }
       (*env)->SetObjectArrayElement(env, result, i, obj);
   }

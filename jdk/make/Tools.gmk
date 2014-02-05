@@ -102,7 +102,7 @@ TOOL_JDWPGEN = $(JAVA) -cp $(JDK_OUTPUTDIR)/btclasses build.tools.jdwpgen.Main
 
 # TODO: Lots of files in jdk/make/tools/CharsetMapping dir
 TOOL_CHARSETMAPPING = $(JAVA) -cp $(JDK_OUTPUTDIR)/btclasses \
-    build.tools.charsetmapping.Main
+    build.tools.charsetmapping.Main $(LOG_INFO)
 
 TOOL_SPP = $(JAVA) -cp $(JDK_OUTPUTDIR)/btclasses build.tools.spp.Spp
 

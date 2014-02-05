@@ -25,7 +25,8 @@
  * @summary Ensure that java.rmi.Naming.lookup can handle URLs containing
  *          IPv6 addresses.
  * @bug 4402708
- *
+ * @library ../testlibrary
+ * @build TestLibrary
  * @run main/othervm -Djava.net.preferIPv6Addresses=true LookupIPv6
  */
 
@@ -62,17 +63,19 @@ public class LookupIPv6 {
          * an Inet6Address since this test is run with
          * -Djava.net.preferIPv6Addresses=true.
          */
+        int port = TestLibrary.getUnusedRandomPort();
         InetAddress localAddr = InetAddress.getAllByName(null)[0];
         if (localAddr instanceof Inet6Address) {
             System.out.println("IPv6 detected");
             Registry reg;
             try {
-                reg = LocateRegistry.createRegistry(Registry.REGISTRY_PORT);
+                reg = LocateRegistry.createRegistry(port);
             } catch (Exception ex) {
                 reg = LocateRegistry.getRegistry();
             }
             reg.rebind("foo", reg);
-            Naming.lookup("rmi://[" + localAddr.getHostAddress() + "]/foo");
+            Naming.lookup(String.format("rmi://[%s]:%d/foo",
+                          localAddr.getHostAddress(), port));
         }
     }
 }
