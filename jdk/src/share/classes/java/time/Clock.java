@@ -104,7 +104,7 @@ import java.util.TimeZone;
  * resolution clock if one is available.
  *
  * @implSpec
- * This abstract class must be implemented with care to ensure other operate correctly.
+ * This abstract class must be implemented with care to ensure other classes operate correctly.
  * All implementations that can be instantiated must be final, immutable and thread-safe.
  * <p>
  * The principal methods are defined to allow the throwing of an exception.
