@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2003, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,7 +41,6 @@ import javax.print.attribute.Attribute;
  * values of the IPP "media" attribute which names media sizes.
  * The names of the media sizes correspond to those in the IPP 1.1 RFC
  * <a HREF="http://www.ietf.org/rfc/rfc2911.txt">RFC 2911</a>
- * <P>
  *
  */
 public class MediaSizeName extends Media {

@@ -44,7 +44,7 @@ import jdk.nashorn.internal.runtime.ScriptObject;
 public final class NativeTypeError extends ScriptObject {
 
     /** message property in instance */
-    @Property(name = NativeError.MESSAGE)
+    @Property(name = NativeError.MESSAGE, attributes = Attribute.NOT_ENUMERABLE)
     public Object instMessage;
 
     /** error name property */
@@ -55,6 +55,10 @@ public final class NativeTypeError extends ScriptObject {
     @Property(attributes = Attribute.NOT_ENUMERABLE, where = Where.PROTOTYPE)
     public Object message;
 
+    /** Nashorn extension: underlying exception */
+    @Property(attributes = Attribute.NOT_ENUMERABLE)
+    public Object nashornException;
+
     // initialized by nasgen
     private static PropertyMap $nasgenmap$;
 
@@ -62,6 +66,7 @@ public final class NativeTypeError extends ScriptObject {
         return $nasgenmap$;
     }
 
+    @SuppressWarnings("LeakingThisInConstructor")
     NativeTypeError(final Object msg, final Global global) {
         super(global.getTypeErrorPrototype(), global.getTypeErrorMap());
         if (msg != UNDEFINED) {
@@ -69,6 +74,7 @@ public final class NativeTypeError extends ScriptObject {
         } else {
             delete(NativeError.MESSAGE, false);
         }
+        NativeError.initException(this);
     }
 
     private NativeTypeError(final Object msg) {

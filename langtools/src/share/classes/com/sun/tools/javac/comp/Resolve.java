@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -269,7 +269,7 @@ public class Resolve {
      *  the one of its outer environment
      */
     protected static boolean isStatic(Env<AttrContext> env) {
-        return env.info.staticLevel > env.outer.info.staticLevel;
+        return env.outer != null && env.info.staticLevel > env.outer.info.staticLevel;
     }
 
     /** An environment is an "initializer" if it is a constructor or
@@ -2075,7 +2075,7 @@ public class Resolve {
             else if (sym.kind < bestSoFar.kind) bestSoFar = sym;
         }
 
-        if ((kind & PCK) != 0) return reader.enterPackage(name);
+        if ((kind & PCK) != 0) return syms.enterPackage(name);
         else return bestSoFar;
     }
 
@@ -2099,7 +2099,7 @@ public class Resolve {
         Symbol bestSoFar = typeNotFound;
         PackageSymbol pack = null;
         if ((kind & PCK) != 0) {
-            pack = reader.enterPackage(fullname);
+            pack = syms.enterPackage(fullname);
             if (pack.exists()) return pack;
         }
         if ((kind & TYP) != 0) {

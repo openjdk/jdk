@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -45,7 +45,7 @@ import java.util.ServiceConfigurationError;
  * <p>
  * This class is implemented by a service and located by the
  * implementation using the
- * <a href="../../../technotes/guides/jar/jar.html#Service Provider">
+ * <a href="../../../technotes/guides/jar/jar.html#Service%20Provider">
  * SPI JAR File specification</a>.
  * <p>
  * Applications locate instances of this class by calling the

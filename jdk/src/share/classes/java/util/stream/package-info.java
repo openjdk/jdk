@@ -206,7 +206,7 @@
  * as {@link java.util.function.Function}, and are often lambda expressions or
  * method references.
  *
- * <h3><a name="Non-Interference">Non-interference</a></h3>
+ * <h3><a name="NonInterference">Non-interference</a></h3>
  *
  * Streams enable you to execute possibly-parallel aggregate operations over a
  * variety of data sources, including even non-thread-safe collections such as
@@ -729,7 +729,7 @@
  * modifications of the data source prior to commencement of the terminal
  * operation (provided the behavioral parameters to the stream operations meet
  * the required criteria for non-interference and statelessness).  See
- * <a href="package-summary.html#Non-Interference">Non-Interference</a>
+ * <a href="package-summary.html#NonInterference">Non-Interference</a>
  * for more details.
  *
  * @since 1.8

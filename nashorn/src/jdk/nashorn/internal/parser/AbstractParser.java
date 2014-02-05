@@ -26,6 +26,7 @@
 package jdk.nashorn.internal.parser;
 
 import static jdk.nashorn.internal.parser.TokenType.COMMENT;
+import static jdk.nashorn.internal.parser.TokenType.DIRECTIVE_COMMENT;
 import static jdk.nashorn.internal.parser.TokenType.EOF;
 import static jdk.nashorn.internal.parser.TokenType.EOL;
 import static jdk.nashorn.internal.parser.TokenType.IDENT;
@@ -83,6 +84,9 @@ public abstract class AbstractParser {
 
     /** Is this parser running under strict mode? */
     protected boolean isStrictMode;
+
+    /** //@ sourceURL or //# sourceURL */
+    protected String sourceURL;
 
     /**
      * Construct a parser.
@@ -156,9 +160,30 @@ public abstract class AbstractParser {
     protected final TokenType nextOrEOL() {
         do {
             nextToken();
-        } while (type == COMMENT);
+            if (type == DIRECTIVE_COMMENT) {
+                checkDirectiveComment();
+            }
+        } while (type == COMMENT || type == DIRECTIVE_COMMENT);
 
         return type;
+    }
+
+    // sourceURL= after directive comment
+    private static final String SOURCE_URL_PREFIX = "sourceURL=";
+
+    // currently only @sourceURL=foo supported
+    private void checkDirectiveComment() {
+        // if already set, ignore this one
+        if (sourceURL != null) {
+            return;
+        }
+
+        final String comment = (String) lexer.getValueOf(token, isStrictMode);
+        final int len = comment.length();
+        // 4 characters for directive comment marker //@\s or //#\s
+        if (len > 4 && comment.substring(4).startsWith(SOURCE_URL_PREFIX)) {
+            sourceURL = comment.substring(4 + SOURCE_URL_PREFIX.length());
+        }
     }
 
     /**
@@ -166,7 +191,7 @@ public abstract class AbstractParser {
      *
      * @return tokenType of next token.
      */
-    private final TokenType nextToken() {
+    private TokenType nextToken() {
         // Capture last token tokenType.
         last = type;
         if (type != EOF) {

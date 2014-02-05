@@ -61,7 +61,7 @@ public class WrapperBeanGenerator {
 
     private static final AbstractWrapperBeanGenerator RUNTIME_GENERATOR =
             new RuntimeWrapperBeanGenerator(new RuntimeInlineAnnotationReader(),
-                    Navigator.REFLECTION, FIELD_FACTORY);
+                    (Navigator<java.lang.reflect.Type, Class, ?, Method>) Utils.REFLECTION_NAVIGATOR, FIELD_FACTORY);
 
     private static final class RuntimeWrapperBeanGenerator extends AbstractWrapperBeanGenerator<java.lang.reflect.Type, Class, java.lang.reflect.Method, Field> {
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2003, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -49,6 +49,8 @@ import com.sun.corba.se.impl.ior.ObjectKeyImpl ;
 import com.sun.corba.se.impl.logging.IORSystemException ;
 
 import com.sun.corba.se.impl.encoding.EncapsInputStream ;
+import sun.corba.EncapsInputStreamFactory;
+
 
 /** Based on the magic and scid, return the appropriate
 * ObjectKeyTemplate.  Expects to be called with a valid
@@ -217,7 +219,7 @@ public class ObjectKeyFactoryImpl implements ObjectKeyFactory
     public ObjectKey create( byte[] key )
     {
         OctetSeqHolder osh = new OctetSeqHolder() ;
-        EncapsInputStream is = new EncapsInputStream( orb, key, key.length ) ;
+        EncapsInputStream is = EncapsInputStreamFactory.newEncapsInputStream( orb, key, key.length );
 
         ObjectKeyTemplate oktemp = create( is, fullKey, osh ) ;
         if (oktemp == null)

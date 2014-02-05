@@ -36,6 +36,7 @@ static jobject mgmt_origin = NULL;
 static jobject envvar_origin = NULL;
 static jobject config_file_origin = NULL;
 static jobject ergo_origin = NULL;
+static jobject attach_origin = NULL;
 static jobject other_origin = NULL;
 
 JNIEXPORT jint JNICALL
@@ -74,6 +75,7 @@ Java_sun_management_Flag_initialize
     envvar_origin = find_origin_constant(env, "ENVIRON_VAR");
     config_file_origin = find_origin_constant(env, "CONFIG_FILE");
     ergo_origin = find_origin_constant(env, "ERGONOMIC");
+    attach_origin = find_origin_constant(env, "ATTACH_ON_DEMAND");
     other_origin = find_origin_constant(env, "OTHER");
 }
 
@@ -153,6 +155,9 @@ Java_sun_management_Flag_getFlags
             break;
         case JMM_VMGLOBAL_ORIGIN_ERGONOMIC:
             origin = ergo_origin;
+            break;
+        case JMM_VMGLOBAL_ORIGIN_ATTACH_ON_DEMAND:
+            origin = attach_origin;
             break;
         case JMM_VMGLOBAL_ORIGIN_OTHER:
             origin = other_origin;

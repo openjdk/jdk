@@ -95,6 +95,8 @@ le_uint32 GlyphPositioningLookupProcessor::applySubtable(const LEReferenceTo<Loo
 
     le_uint32 delta = 0;
 
+    //_LETRACE("attempting lookupType #%d", lookupType);
+
     switch(lookupType)
     {
     case 0:
@@ -152,21 +154,21 @@ le_uint32 GlyphPositioningLookupProcessor::applySubtable(const LEReferenceTo<Loo
     {
         LEReferenceTo<ContextualPositioningSubtable> subtable(lookupSubtable, success);
 
-        delta = subtable->process(this, glyphIterator, fontInstance, success);
+        delta = subtable->process(subtable, this , glyphIterator, fontInstance, success);
         break;
     }
 
     case gpstChainedContext:
     {
-        LEReferenceTo<ChainingContextualPositioningSubtable> subtable(lookupSubtable, success);
+        const LEReferenceTo<ChainingContextualPositioningSubtable> subtable(lookupSubtable, success);
 
-        delta = subtable->process(this, glyphIterator, fontInstance, success);
+        delta = subtable->process(subtable, this, glyphIterator, fontInstance, success);
         break;
     }
 
     case gpstExtension:
     {
-        LEReferenceTo<ExtensionSubtable> subtable(lookupSubtable, success);
+        const LEReferenceTo<ExtensionSubtable> subtable(lookupSubtable, success);
 
         delta = subtable->process(subtable, this, lookupType, glyphIterator, fontInstance, success);
         break;
@@ -175,6 +177,12 @@ le_uint32 GlyphPositioningLookupProcessor::applySubtable(const LEReferenceTo<Loo
     default:
         break;
     }
+
+#if LE_TRACE
+    if(delta != 0) {
+      _LETRACE("GlyphPositioningLookupProcessor applied #%d -> delta %d @ %d", lookupType, delta, glyphIterator->getCurrStreamPosition());
+    }
+#endif
 
     return delta;
 }
