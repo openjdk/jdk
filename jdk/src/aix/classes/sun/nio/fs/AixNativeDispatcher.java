@@ -43,7 +43,7 @@ class AixNativeDispatcher extends UnixNativeDispatcher {
     static native UnixMountEntry[] getmntctl() throws UnixException;
 
     // initialize
-    private static native int init();
+    private static native void init();
 
     static {
         AccessController.doPrivileged(new PrivilegedAction<Void>() {

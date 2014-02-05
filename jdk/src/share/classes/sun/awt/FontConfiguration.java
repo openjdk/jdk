@@ -2109,6 +2109,7 @@ public abstract class FontConfiguration {
             return ret;
         }
 
+        @SuppressWarnings("serial") // JDK-implementation class
         class FontProperties extends Properties {
             public synchronized Object put(Object k, Object v) {
                 parseProperty((String)k, (String)v);

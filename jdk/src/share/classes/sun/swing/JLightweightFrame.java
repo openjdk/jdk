@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -68,6 +68,7 @@ import sun.swing.SwingUtilities2.RepaintListener;
  * @author Artem Ananiev
  * @author Anton Tarasov
  */
+@SuppressWarnings("serial") // JDK-implementation class
 public final class JLightweightFrame extends LightweightFrame implements RootPaneContainer {
 
     private final JRootPane rootPane = new JRootPane();
@@ -245,6 +246,7 @@ public final class JLightweightFrame extends LightweightFrame implements RootPan
         content.imageUpdated(x, y, width, height);
     }
 
+    @SuppressWarnings("serial") // anonymous class inside
     private void initInterior() {
         contentPane = new JPanel() {
             @Override
