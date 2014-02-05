@@ -33,6 +33,7 @@ import java.io.IOException;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -173,8 +174,16 @@ public class FcFontConfiguration extends FontConfiguration {
     }
 
     @Override
-    public FontDescriptor[] getFontDescriptors(String fontName, int style) {
-        return new FontDescriptor[0];
+    protected FontDescriptor[] buildFontDescriptors(int fontIndex, int styleIndex) {
+        CompositeFontDescriptor[] cfi = get2DCompositeFontInfo();
+        int idx = fontIndex * NUM_STYLES + styleIndex;
+        String[] componentFaceNames = cfi[idx].getComponentFaceNames();
+        FontDescriptor[] ret = new FontDescriptor[componentFaceNames.length];
+        for (int i = 0; i < componentFaceNames.length; i++) {
+            ret[i] = new FontDescriptor(componentFaceNames[i], StandardCharsets.UTF_8.newEncoder(), new int[0]);
+        }
+
+        return ret;
     }
 
     @Override
@@ -250,10 +259,12 @@ public class FcFontConfiguration extends FontConfiguration {
                 }
 
                 String[] fileNames = new String[numFonts];
+                String[] faceNames = new String[numFonts];
 
                 int index;
                 for (index = 0; index < fcFonts.length; index++) {
                     fileNames[index] = fcFonts[index].fontFile;
+                    faceNames[index] = fcFonts[index].familyName;
                 }
 
                 if (installedFallbackFontFiles != null) {
@@ -266,7 +277,7 @@ public class FcFontConfiguration extends FontConfiguration {
                         = new CompositeFontDescriptor(
                             faceName,
                             1,
-                            null,
+                            faceNames,
                             fileNames,
                             null, null);
             }
