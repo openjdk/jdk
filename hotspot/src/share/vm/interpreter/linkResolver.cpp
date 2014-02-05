@@ -564,16 +564,7 @@ void LinkResolver::resolve_method(methodHandle& resolved_method, KlassHandle res
     }
   }
 
-  // 5. check if method is concrete
-  if (resolved_method->is_abstract() && !resolved_klass->is_abstract()) {
-    ResourceMark rm(THREAD);
-    THROW_MSG(vmSymbols::java_lang_AbstractMethodError(),
-              Method::name_and_sig_as_C_string(resolved_klass(),
-                                                      method_name,
-                                                      method_signature));
-  }
-
-  // 6. access checks, access checking may be turned off when calling from within the VM.
+  // 5. access checks, access checking may be turned off when calling from within the VM.
   if (check_access) {
     assert(current_klass.not_null() , "current_klass should not be null");
 
