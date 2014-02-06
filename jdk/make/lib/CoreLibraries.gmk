@@ -129,9 +129,9 @@ LIBJAVA_SRC_DIRS := $(JDK_TOPDIR)/src/$(OPENJDK_TARGET_OS_API_DIR)/native/java/l
     $(JDK_TOPDIR)/src/$(OPENJDK_TARGET_OS_API_DIR)/native/common \
     $(JDK_TOPDIR)/src/$(OPENJDK_TARGET_OS_API_DIR)/native/java/util
 
-ifneq ($(OPENJDK_TARGET_OS), macosx)
+ifeq ($(OPENJDK_TARGET_OS), windows)
   LIBJAVA_SRC_DIRS += $(JDK_TOPDIR)/src/$(OPENJDK_TARGET_OS_API_DIR)/native/sun/util/locale/provider
-else
+else ifeq ($(OPENJDK_TARGET_OS), macosx)
   LIBJAVA_SRC_DIRS += $(JDK_TOPDIR)/src/macosx/native/sun/util/locale/provider
 endif
 
