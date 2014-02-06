@@ -529,8 +529,12 @@ public class JavapTask implements DisassemblerTool.DisassemblerTask, Messages {
             }
         }
 
-        if (fileManager.handleOption(name, rest))
-            return;
+        try {
+            if (fileManager.handleOption(name, rest))
+                return;
+        } catch (IllegalArgumentException e) {
+            throw new BadArgs("err.invalid.use.of.option", name).showUsage(true);
+        }
 
         throw new BadArgs("err.unknown.option", name).showUsage(true);
     }
