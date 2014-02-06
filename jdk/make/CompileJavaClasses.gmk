@@ -44,6 +44,10 @@ EXCLUDES += com/sun/pept \
     com/sun/tools/example/debug/event \
     com/sun/tools/example/debug/gui
 
+ifeq ($(RMICONNECTOR_IIOP), false)
+  EXCLUDES += com/sun/jmx/remote/protocol/iiop
+endif
+
 ifdef OPENJDK
   EXCLUDES += sun/dc \
       com/sun/jmx/snmp \
