@@ -107,10 +107,6 @@ static inline Address at_tos_p2() {
   return Address(rsp,  Interpreter::expr_offset_in_bytes(2));
 }
 
-static inline Address at_tos_p3() {
-  return Address(rsp,  Interpreter::expr_offset_in_bytes(3));
-}
-
 // Condition conversion
 static Assembler::Condition j_not(TemplateTable::Condition cc) {
   switch (cc) {
