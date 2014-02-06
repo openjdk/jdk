@@ -190,7 +190,7 @@ JNIEXPORT jobject JNICALL Java_sun_management_GcInfoBuilder_getLastGcInfo0
 
     if (ext_att_count <= 0) {
         JNU_ThrowIllegalArgumentException(env, "Invalid ext_att_count");
-        return;
+        return 0;
     }
 
     gc_stat.usage_before_gc = usageBeforeGC;
