@@ -1472,41 +1472,54 @@ public class ObjectStreamClass implements Serializable {
     }
 
     /**
+     * Returns JVM type signature for given primitive.
+     */
+    private static String getPrimitiveSignature(Class<?> cl) {
+        if (cl == Integer.TYPE)
+            return "I";
+        else if (cl == Byte.TYPE)
+            return "B";
+        else if (cl == Long.TYPE)
+            return "J";
+        else if (cl == Float.TYPE)
+            return "F";
+        else if (cl == Double.TYPE)
+            return "D";
+        else if (cl == Short.TYPE)
+            return "S";
+        else if (cl == Character.TYPE)
+            return "C";
+        else if (cl == Boolean.TYPE)
+            return "Z";
+        else if (cl == Void.TYPE)
+            return "V";
+        else
+            throw new InternalError();
+    }
+
+    /**
      * Returns JVM type signature for given class.
      */
-    private static String getClassSignature(Class<?> cl) {
-        StringBuilder sbuf = new StringBuilder();
-        while (cl.isArray()) {
-            sbuf.append('[');
-            cl = cl.getComponentType();
-        }
-        if (cl.isPrimitive()) {
-            if (cl == Integer.TYPE) {
-                sbuf.append('I');
-            } else if (cl == Byte.TYPE) {
-                sbuf.append('B');
-            } else if (cl == Long.TYPE) {
-                sbuf.append('J');
-            } else if (cl == Float.TYPE) {
-                sbuf.append('F');
-            } else if (cl == Double.TYPE) {
-                sbuf.append('D');
-            } else if (cl == Short.TYPE) {
-                sbuf.append('S');
-            } else if (cl == Character.TYPE) {
-                sbuf.append('C');
-            } else if (cl == Boolean.TYPE) {
-                sbuf.append('Z');
-            } else if (cl == Void.TYPE) {
-                sbuf.append('V');
-            } else {
-                throw new InternalError();
-            }
-        } else {
-            sbuf.append('L' + cl.getName().replace('.', '/') + ';');
-        }
-        return sbuf.toString();
+    static String getClassSignature(Class<?> cl) {
+        if (cl.isPrimitive())
+            return getPrimitiveSignature(cl);
+        else
+            return appendClassSignature(new StringBuilder(), cl).toString();
     }
+
+    private static StringBuilder appendClassSignature(StringBuilder sbuf, Class<?> cl) {
+       while (cl.isArray()) {
+           sbuf.append('[');
+           cl = cl.getComponentType();
+       }
+
+       if (cl.isPrimitive())
+           sbuf.append(getPrimitiveSignature(cl));
+       else
+           sbuf.append('L').append(cl.getName().replace('.', '/')).append(';');
+
+       return sbuf;
+   }
 
     /**
      * Returns JVM type signature for given list of parameters and return type.
@@ -1517,10 +1530,10 @@ public class ObjectStreamClass implements Serializable {
         StringBuilder sbuf = new StringBuilder();
         sbuf.append('(');
         for (int i = 0; i < paramTypes.length; i++) {
-            sbuf.append(getClassSignature(paramTypes[i]));
+            appendClassSignature(sbuf, paramTypes[i]);
         }
         sbuf.append(')');
-        sbuf.append(getClassSignature(retType));
+        appendClassSignature(sbuf, retType);
         return sbuf.toString();
     }
 
