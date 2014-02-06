@@ -273,7 +273,9 @@ public class JavapTask implements DisassemblerTool.DisassemblerTask, Messages {
             void process(JavapTask task, String opt, String arg) throws BadArgs {
                 int sep = opt.indexOf(":");
                 try {
-                    task.options.indentWidth = Integer.valueOf(opt.substring(sep + 1));
+                    int i = Integer.valueOf(opt.substring(sep + 1));
+                    if (i > 0) // silently ignore invalid values
+                        task.options.indentWidth = i;
                 } catch (NumberFormatException e) {
                 }
             }
@@ -289,7 +291,9 @@ public class JavapTask implements DisassemblerTool.DisassemblerTask, Messages {
             void process(JavapTask task, String opt, String arg) throws BadArgs {
                 int sep = opt.indexOf(":");
                 try {
-                    task.options.tabColumn = Integer.valueOf(opt.substring(sep + 1));
+                    int i = Integer.valueOf(opt.substring(sep + 1));
+                    if (i > 0) // silently ignore invalid values
+                        task.options.tabColumn = i;
                 } catch (NumberFormatException e) {
                 }
             }
