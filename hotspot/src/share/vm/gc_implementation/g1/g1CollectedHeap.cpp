@@ -2266,7 +2266,7 @@ void G1CollectedHeap::ref_processing_init() {
                                 // (for efficiency/performance)
                            false);
                                 // Setting next fields of discovered
-                                // lists requires a barrier.
+                                // lists does not require a barrier.
 }
 
 size_t G1CollectedHeap::capacity() const {
