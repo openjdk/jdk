@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,6 +24,7 @@
 /**
  * @test
  * @summary Comparator API narrowing type test
+ * @bug 8009736 8033590
  * @run testng TypeTest
  */
 
@@ -32,6 +33,8 @@ import java.util.Map;
 import java.util.TreeMap;
 import java.util.Comparator;
 import org.testng.annotations.Test;
+
+import static org.testng.Assert.assertTrue;
 
 @Test(groups = "unit")
 public class TypeTest {
@@ -66,6 +69,24 @@ public class TypeTest {
         }
     }
 
+    static class Department {
+        Manager mgr;
+        String hr_code;
+
+        Department(Manager mgr, String hr) {
+            this.mgr = mgr;
+            this.hr_code = hr;
+        }
+
+        Manager getManager() {
+            return mgr;
+        }
+
+        String getHR() {
+            return hr_code;
+        }
+    }
+
     static <T> void assertOrder(T o1, T o2, Comparator<? super T> cmp) {
         if (cmp.compare(o1, o2) > 0) {
             System.out.println("Fail!!");
@@ -75,6 +96,8 @@ public class TypeTest {
         }
     }
 
+    // Type tests just to make sure the code can compile and build
+    // Not necessarily need a meaningful result
     public void testOrder() {
         Manager m1 = new Manager("Manager", 2, 2000);
         Manager m2 = new Manager("Manager", 4, 1300);
@@ -92,5 +115,24 @@ public class TypeTest {
 
         Map<String, Integer> map = new TreeMap<>();
         map.entrySet().stream().sorted(Map.Entry.comparingByKey(String.CASE_INSENSITIVE_ORDER));
+    }
+
+    public void testJDK8033590() {
+        Manager a = new Manager("John Doe", 1234, 16);
+        Manager b = new Manager("Jane Roe", 2468, 16);
+        Department da = new Department(a, "X");
+        Department db = new Department(b, "X");
+
+        Comparator<Department> cmp = Comparator.comparing(Department::getHR)
+                .thenComparing(Department::getManager, Employee.C);
+        assertTrue(cmp.compare(da, db) < 0);
+
+        cmp = Comparator.comparing(Department::getHR)
+                .thenComparing(Department::getManager, Manager.C);
+        assertTrue(cmp.compare(da, db) == 0);
+
+        cmp = Comparator.comparing(Department::getHR)
+                .thenComparing(Department::getManager, Person.C);
+        assertTrue(cmp.compare(da, db) > 0);
     }
 }
