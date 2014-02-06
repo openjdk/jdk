@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -3000,7 +3000,9 @@ address get_stack_commited_bottom(address bottom, size_t size) {
 
   unsigned char vec[1];
   unsigned imin = 1, imax = pages + 1, imid;
-  int mincore_return_value;
+  int mincore_return_value = 0;
+
+  assert(imin < imax, "Unexpected page size");
 
   while (imin < imax) {
     imid = (imax + imin) / 2;
