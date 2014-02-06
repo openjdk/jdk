@@ -426,6 +426,19 @@ AC_DEFUN_ONCE([JDKOPT_SETUP_JDK_OPTIONS],
 
   ###############################################################################
   #
+  # --enable-rmiconnector-iiop
+  #
+  AC_ARG_ENABLE(rmiconnector-iiop, [AS_HELP_STRING([--enable-rmiconnector-iiop],
+      [enable the JMX RMIConnector iiop transport  @<:@disabled@:>@])])
+  if test "x$enable_rmiconnector_iiop" = "xyes"; then
+    RMICONNECTOR_IIOP=true
+  else
+    RMICONNECTOR_IIOP=false
+  fi
+  AC_SUBST(RMICONNECTOR_IIOP)
+
+  ###############################################################################
+  #
   # Compress jars
   #
   COMPRESS_JARS=false
