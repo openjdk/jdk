@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,20 +23,21 @@
 
 /*
  * @test
- * @bug 8029240
+ * @bug 8029240 8030855
  * @summary Default methods not always visible under -source 7
+ * Default methods should be visible under source previous to 8
  * @library /tools/javac/lib
  * @build ToolBox
- * @run main DefaultMethodsNotVisibileForSource7Test
+ * @run main DefaultMethodsNotVisibleForSourceLessThan8Test
  */
 
 import java.nio.file.Files;
 import java.nio.file.Paths;
 
-public class DefaultMethodsNotVisibileForSource7Test {
+public class DefaultMethodsNotVisibleForSourceLessThan8Test {
     // common definitions
 
-    // this one should be compiled with source 8, the rest with source 7
+    // this one should be compiled with source 8, the rest with source < 8
     static final String ISrc =
         "interface I {\n" +
         "    default void m() {}\n" +
@@ -54,22 +55,22 @@ public class DefaultMethodsNotVisibileForSource7Test {
     // test legacy implementations
     static final String C1Src =
         "class C1 implements I {\n" +
-        "    @Override public void m() {}\n" +
+        "    public void m() {}\n" +
         "}";
 
     static final String C2Src =
         "class C2 implements J {\n" +
-        "    @Override public void m() {}\n" +
+        "    public void m() {}\n" +
         "}";
 
     static final String C3Src =
         "class C3 extends A {\n" +
-        "    @Override public void m() {}\n" +
+        "    public void m() {}\n" +
         "}";
 
     static final String C4Src =
         "class C4 extends B {\n" +
-        "    @Override public void m() {}\n" +
+        "    public void m() {}\n" +
         "}";
 
     //test legacy invocations
@@ -99,10 +100,25 @@ public class DefaultMethodsNotVisibileForSource7Test {
         "}";
 
     public static void main(String[] args) throws Exception {
-        new DefaultMethodsNotVisibileForSource7Test().run();
+        String[] sources = new String[] {
+            "1.2",
+            "1.3",
+            "1.4",
+            "1.5",
+            "1.6",
+            "1.7",
+        };
+        for (String source : sources) {
+            new DefaultMethodsNotVisibleForSourceLessThan8Test().run(source);
+        }
     }
 
-    void run() throws Exception {
+    String outDir;
+    String source;
+
+    void run(String source) throws Exception {
+        this.source = source;
+        outDir = "out" + source.replace('.', '_');
         testsPreparation();
         testLegacyImplementations();
         testLegacyInvocations();
@@ -110,27 +126,27 @@ public class DefaultMethodsNotVisibileForSource7Test {
     }
 
     void testsPreparation() throws Exception {
-        Files.createDirectory(Paths.get("out"));
+        Files.createDirectory(Paths.get(outDir));
 
         /* as an extra check let's make sure that interface 'I' can't be compiled
-         * with source 7
+         * with source < 8
          */
         ToolBox.JavaToolArgs javacArgs =
                 new ToolBox.JavaToolArgs(ToolBox.Expect.FAIL)
-                .setOptions("-d", "out", "-source", "7")
+                .setOptions("-d", outDir, "-source", source)
                 .setSources(ISrc);
         ToolBox.javac(javacArgs);
 
         //but it should compile with source >= 8
         javacArgs =
                 new ToolBox.JavaToolArgs()
-                .setOptions("-d", "out")
+                .setOptions("-d", outDir)
                 .setSources(ISrc);
         ToolBox.javac(javacArgs);
 
         javacArgs =
                 new ToolBox.JavaToolArgs()
-                .setOptions("-cp", "out", "-d", "out", "-source", "7")
+                .setOptions("-cp", outDir, "-d", outDir, "-source", source)
                 .setSources(JSrc, ASrc, BSrc);
         ToolBox.javac(javacArgs);
     }
@@ -139,7 +155,7 @@ public class DefaultMethodsNotVisibileForSource7Test {
         //compile C1-4
         ToolBox.JavaToolArgs javacArgs =
                 new ToolBox.JavaToolArgs()
-                .setOptions("-cp", "out", "-d", "out", "-source", "7")
+                .setOptions("-cp", outDir, "-d", outDir, "-source", source)
                 .setSources(C1Src, C2Src, C3Src, C4Src);
         ToolBox.javac(javacArgs);
     }
@@ -148,7 +164,7 @@ public class DefaultMethodsNotVisibileForSource7Test {
         //compile LegacyInvocation
         ToolBox.JavaToolArgs javacArgs =
                 new ToolBox.JavaToolArgs()
-                .setOptions("-cp", "out", "-d", "out", "-source", "7")
+                .setOptions("-cp", outDir, "-d", outDir, "-source", source)
                 .setSources(LegacyInvocationSrc);
         ToolBox.javac(javacArgs);
     }
@@ -157,7 +173,7 @@ public class DefaultMethodsNotVisibileForSource7Test {
         //compile SubA, SubB
         ToolBox.JavaToolArgs javacArgs =
                 new ToolBox.JavaToolArgs()
-                .setOptions("-cp", "out", "-d", "out", "-source", "7")
+                .setOptions("-cp", outDir, "-d", outDir, "-source", source)
                 .setSources(SubASrc, SubBSrc);
         ToolBox.javac(javacArgs);
     }
