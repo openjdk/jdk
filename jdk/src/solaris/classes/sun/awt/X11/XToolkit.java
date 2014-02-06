@@ -821,10 +821,32 @@ public final class XToolkit extends UNIXToolkit implements Runnable {
                     // managers don't set this hint correctly, so we just get intersection with windowBounds
                     if (windowBounds != null && windowBounds.intersects(screenBounds))
                     {
-                        insets.left = Math.max((int)Native.getLong(native_ptr, 0), insets.left);
-                        insets.right = Math.max((int)Native.getLong(native_ptr, 1), insets.right);
-                        insets.top = Math.max((int)Native.getLong(native_ptr, 2), insets.top);
-                        insets.bottom = Math.max((int)Native.getLong(native_ptr, 3), insets.bottom);
+                        int left = (int)Native.getLong(native_ptr, 0);
+                        int right = (int)Native.getLong(native_ptr, 1);
+                        int top = (int)Native.getLong(native_ptr, 2);
+                        int bottom = (int)Native.getLong(native_ptr, 3);
+
+                        /*
+                         * struts could be relative to root window bounds, so
+                         * make them relative to the screen bounds in this case
+                         */
+                        left = rootBounds.x + left > screenBounds.x ?
+                                rootBounds.x + left - screenBounds.x : 0;
+                        right = rootBounds.x + rootBounds.width - right <
+                                screenBounds.x + screenBounds.width ?
+                                screenBounds.x + screenBounds.width -
+                                (rootBounds.x + rootBounds.width - right) : 0;
+                        top = rootBounds.y + top > screenBounds.y ?
+                                rootBounds.y + top - screenBounds.y : 0;
+                        bottom = rootBounds.y + rootBounds.height - bottom <
+                                screenBounds.y + screenBounds.height ?
+                                screenBounds.y + screenBounds.height -
+                                (rootBounds.y + rootBounds.height - bottom) : 0;
+
+                        insets.left = Math.max(left, insets.left);
+                        insets.right = Math.max(right, insets.right);
+                        insets.top = Math.max(top, insets.top);
+                        insets.bottom = Math.max(bottom, insets.bottom);
                     }
                 }
             }
