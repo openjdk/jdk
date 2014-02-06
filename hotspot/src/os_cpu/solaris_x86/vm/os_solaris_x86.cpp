@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -475,9 +475,11 @@ JVM_handle_solaris_signal(int sig, siginfo_t* info, void* ucVoid,
         // here if the underlying file has been truncated.
         // Do not crash the VM in such a case.
         CodeBlob* cb = CodeCache::find_blob_unsafe(pc);
-        nmethod* nm = cb->is_nmethod() ? (nmethod*)cb : NULL;
-        if (nm != NULL && nm->has_unsafe_access()) {
-          stub = StubRoutines::handler_for_unsafe_access();
+        if (cb != NULL) {
+          nmethod* nm = cb->is_nmethod() ? (nmethod*)cb : NULL;
+          if (nm != NULL && nm->has_unsafe_access()) {
+            stub = StubRoutines::handler_for_unsafe_access();
+          }
         }
       }
       else
@@ -724,6 +726,7 @@ JVM_handle_solaris_signal(int sig, siginfo_t* info, void* ucVoid,
   err.report_and_die();
 
   ShouldNotReachHere();
+  return false;
 }
 
 void os::print_context(outputStream *st, void *context) {

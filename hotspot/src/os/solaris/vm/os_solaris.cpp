@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -2232,8 +2232,8 @@ static bool check_addr0(outputStream* st) {
         st->cr();
         status = true;
       }
-      ::close(fd);
     }
+    ::close(fd);
   }
   return status;
 }
@@ -2257,13 +2257,18 @@ const char *ill_names[] = { "ILL0", "ILL_ILLOPC", "ILL_ILLOPN", "ILL_ILLADR",
                           "ILL_ILLTRP", "ILL_PRVOPC", "ILL_PRVREG",
                           "ILL_COPROC", "ILL_BADSTK" };
 
+const size_t ill_names_length = (sizeof(ill_names)/sizeof(char *));
+
 const char *fpe_names[] = { "FPE0", "FPE_INTDIV", "FPE_INTOVF", "FPE_FLTDIV",
                           "FPE_FLTOVF", "FPE_FLTUND", "FPE_FLTRES",
                           "FPE_FLTINV", "FPE_FLTSUB" };
+const size_t fpe_names_length = (sizeof(fpe_names)/sizeof(char *));
 
 const char *segv_names[] = { "SEGV0", "SEGV_MAPERR", "SEGV_ACCERR" };
+const size_t segv_names_length = (sizeof(segv_names)/sizeof(char *));
 
 const char *bus_names[] = { "BUS0", "BUS_ADRALN", "BUS_ADRERR", "BUS_OBJERR" };
+const size_t bus_names_length = (sizeof(bus_names)/sizeof(char *));
 
 void os::print_siginfo(outputStream* st, void* siginfo) {
   st->print("siginfo:");
@@ -2282,19 +2287,23 @@ void os::print_siginfo(outputStream* st, void* siginfo) {
   assert(c > 0, "unexpected si_code");
   switch (si->si_signo) {
   case SIGILL:
-    st->print(", si_code=%d (%s)", c, c > 8 ? "" : ill_names[c]);
+    st->print(", si_code=%d (%s)", c,
+      c >= ill_names_length ? "" : ill_names[c]);
     st->print(", si_addr=" PTR_FORMAT, si->si_addr);
     break;
   case SIGFPE:
-    st->print(", si_code=%d (%s)", c, c > 9 ? "" : fpe_names[c]);
+    st->print(", si_code=%d (%s)", c,
+      c >= fpe_names_length ? "" : fpe_names[c]);
     st->print(", si_addr=" PTR_FORMAT, si->si_addr);
     break;
   case SIGSEGV:
-    st->print(", si_code=%d (%s)", c, c > 2 ? "" : segv_names[c]);
+    st->print(", si_code=%d (%s)", c,
+      c >= segv_names_length ? "" : segv_names[c]);
     st->print(", si_addr=" PTR_FORMAT, si->si_addr);
     break;
   case SIGBUS:
-    st->print(", si_code=%d (%s)", c, c > 3 ? "" : bus_names[c]);
+    st->print(", si_code=%d (%s)", c,
+      c >= bus_names_length ? "" : bus_names[c]);
     st->print(", si_addr=" PTR_FORMAT, si->si_addr);
     break;
   default:
@@ -3012,7 +3021,7 @@ bool os::get_page_info(char *start, page_info* info) {
 char *os::scan_pages(char *start, char* end, page_info* page_expected, page_info* page_found) {
   const uint_t info_types[] = { MEMINFO_VLGRP, MEMINFO_VPAGESIZE };
   const size_t types = sizeof(info_types) / sizeof(info_types[0]);
-  uint64_t addrs[MAX_MEMINFO_CNT], outdata[types * MAX_MEMINFO_CNT];
+  uint64_t addrs[MAX_MEMINFO_CNT], outdata[types * MAX_MEMINFO_CNT + 1];
   uint_t validity[MAX_MEMINFO_CNT];
 
   size_t page_size = MAX2((size_t)os::vm_page_size(), page_expected->size);
@@ -3051,7 +3060,7 @@ char *os::scan_pages(char *start, char* end, page_info* page_expected, page_info
       }
     }
 
-    if (i != addrs_count) {
+    if (i < addrs_count) {
       if ((validity[i] & 2) != 0) {
         page_found->lgrp_id = outdata[types * i];
       } else {
