@@ -285,8 +285,6 @@ SUNWprivate_1.1 {
 #		Java_sun_misc_VM_unsuspendSomeThreads;		threads.c
 #		Java_sun_misc_VM_unsuspendThreads;		threads.c
 
-		Java_sun_util_locale_provider_HostLocaleProviderAdapterImpl_getPattern;
-
 	# Outcalls from libjvm done using dlsym().
 
 		VerifyClassCodes;
