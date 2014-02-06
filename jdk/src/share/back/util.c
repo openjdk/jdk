@@ -2122,7 +2122,7 @@ jvmti2EventIndex(jvmtiEvent kind)
 jdwpError
 map2jdwpError(jvmtiError error)
 {
-    switch ( error ) {
+    switch ( (int)error ) {
         case JVMTI_ERROR_NONE:
             return JDWP_ERROR(NONE);
         case AGENT_ERROR_INVALID_THREAD:
