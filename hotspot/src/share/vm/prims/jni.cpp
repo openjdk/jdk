@@ -1320,9 +1320,13 @@ static void jni_invoke_nonstatic(JNIEnv *env, JavaValue* result, jobject receive
       // interface call
       KlassHandle h_holder(THREAD, holder);
 
-      int itbl_index = m->itable_index();
-      Klass* k = h_recv->klass();
-      selected_method = InstanceKlass::cast(k)->method_at_itable(h_holder(), itbl_index, CHECK);
+      if (call_type == JNI_VIRTUAL) {
+        int itbl_index = m->itable_index();
+        Klass* k = h_recv->klass();
+        selected_method = InstanceKlass::cast(k)->method_at_itable(h_holder(), itbl_index, CHECK);
+      } else {
+        selected_method = m;
+      }
     }
   }
 

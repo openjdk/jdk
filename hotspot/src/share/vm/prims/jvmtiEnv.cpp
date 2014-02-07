@@ -1360,8 +1360,10 @@ JvmtiEnv::GetFrameCount(JavaThread* java_thread, jint* count_ptr) {
   if (state == NULL) {
     return JVMTI_ERROR_THREAD_NOT_ALIVE;
   }
-  uint32_t debug_bits = 0;
-  if (is_thread_fully_suspended(java_thread, true, &debug_bits)) {
+
+  // It is only safe to perform the direct operation on the current
+  // thread. All other usage needs to use a vm-safepoint-op for safety.
+  if (java_thread == JavaThread::current()) {
     err = get_frame_count(state, count_ptr);
   } else {
     // get java stack frame count at safepoint.
@@ -1476,9 +1478,10 @@ JvmtiEnv::PopFrame(JavaThread* java_thread) {
 jvmtiError
 JvmtiEnv::GetFrameLocation(JavaThread* java_thread, jint depth, jmethodID* method_ptr, jlocation* location_ptr) {
   jvmtiError err = JVMTI_ERROR_NONE;
-  uint32_t debug_bits = 0;
 
-  if (is_thread_fully_suspended(java_thread, true, &debug_bits)) {
+  // It is only safe to perform the direct operation on the current
+  // thread. All other usage needs to use a vm-safepoint-op for safety.
+  if (java_thread == JavaThread::current()) {
     err = get_frame_location(java_thread, depth, method_ptr, location_ptr);
   } else {
     // JVMTI get java stack frame location at safepoint.
