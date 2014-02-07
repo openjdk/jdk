@@ -91,32 +91,32 @@ classes:
 <pre>
 import com.sun.javadoc.*;
 
-public class ListParams extends <font color=red title="Doclet API">Doclet</font> {
+public class ListParams extends <font style="color:red;">Doclet</font> {
 
-    public static boolean start(<font color=red title="Doclet API">RootDoc</font> root) {
-        <font color=red title="Doclet API">ClassDoc</font>[] classes = root.<font color=red title="Doclet API">classes</font>();
-        for (int i = 0; i < classes.length; ++i) {
-            <font color=red title="Doclet API">ClassDoc</font> cd = classes[i];
-            printMembers(cd.<font color=red title="Doclet API">constructors</font>());
-            printMembers(cd.<font color=red title="Doclet API">methods</font>());
+    public static boolean start(<font style="color:red;">RootDoc</font> root) {
+        <font style="color:red;">ClassDoc</font>[] classes = root.<font style="color:red;">classes</font>();
+        for (int i = 0; i &lt; classes.length; ++i) {
+            <font style="color:red;">ClassDoc</font> cd = classes[i];
+            printMembers(cd.<font style="color:red;">constructors</font>());
+            printMembers(cd.<font style="color:red;">methods</font>());
         }
         return true;
     }
 
-    static void printMembers(<font color=red title="Doclet API">ExecutableMemberDoc</font>[] mems) {
-        for (int i = 0; i < mems.length; ++i) {
-            <font color=red title="Doclet API">ParamTag</font>[] params = mems[i].<font color=red title="Doclet API">paramTags</font>();
-            System.out.println(mems[i].<font color=red title="Doclet API">qualifiedName</font>());
-            for (int j = 0; j < params.length; ++j) {
-                System.out.println("   " + params[j].<font color=red title="Doclet API">parameterName</font>()
-                    + " - " + params[j].<font color=red title="Doclet API">parameterComment</font>());
+    static void printMembers(<font style="color:red;">ExecutableMemberDoc</font>[] mems) {
+        for (int i = 0; i &lt; mems.length; ++i) {
+            <font style="color:red;">ParamTag</font>[] params = mems[i].<font style="color:red;">paramTags</font>();
+            System.out.println(mems[i].<font style="color:red;">qualifiedName</font>());
+            for (int j = 0; j &lt; params.length; ++j) {
+                System.out.println("   " + params[j].<font style="color:red;">parameterName</font>()
+                    + " - " + params[j].<font style="color:red;">parameterComment</font>());
             }
         }
     }
 }
 </pre>
 Interfaces and methods from the Javadoc API are marked in
-<font color=red title="Doclet API">red</font>.
+<font style="color:red;">red</font>.
 {@link com.sun.javadoc.Doclet Doclet} is an abstract class that specifies
 the invocation interface for doclets,
 {@link com.sun.javadoc.Doclet Doclet} holds class or interface information,
