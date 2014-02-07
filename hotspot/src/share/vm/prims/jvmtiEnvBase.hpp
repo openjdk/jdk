@@ -533,7 +533,11 @@ public:
   VMOp_Type type() const { return VMOp_GetFrameCount; }
   jvmtiError result()    { return _result; }
   void doit() {
-    _result = ((JvmtiEnvBase*)_env)->get_frame_count(_state, _count_ptr);
+    _result = JVMTI_ERROR_THREAD_NOT_ALIVE;
+    JavaThread* jt = _state->get_thread();
+    if (Threads::includes(jt) && !jt->is_exiting() && jt->threadObj() != NULL) {
+      _result = ((JvmtiEnvBase*)_env)->get_frame_count(_state, _count_ptr);
+    }
   }
 };
 
@@ -559,8 +563,12 @@ public:
   VMOp_Type type() const { return VMOp_GetFrameLocation; }
   jvmtiError result()    { return _result; }
   void doit() {
-    _result = ((JvmtiEnvBase*)_env)->get_frame_location(_java_thread, _depth,
-                                                        _method_ptr, _location_ptr);
+    _result = JVMTI_ERROR_THREAD_NOT_ALIVE;
+    if (Threads::includes(_java_thread) && !_java_thread->is_exiting() &&
+        _java_thread->threadObj() != NULL) {
+      _result = ((JvmtiEnvBase*)_env)->get_frame_location(_java_thread, _depth,
+                                                          _method_ptr, _location_ptr);
+    }
   }
 };
 
