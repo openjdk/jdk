@@ -26,6 +26,7 @@
 #include "code/codeBlob.hpp"
 #include "code/codeCache.hpp"
 #include "code/scopeDesc.hpp"
+#include "code/vtableStubs.hpp"
 #include "memory/resourceArea.hpp"
 #include "oops/oop.inline.hpp"
 #include "prims/jvmtiCodeBlobEvents.hpp"
@@ -63,6 +64,7 @@ class CodeBlobCollector : StackObj {
   // used during a collection
   static GrowableArray<JvmtiCodeBlobDesc*>* _global_code_blobs;
   static void do_blob(CodeBlob* cb);
+  static void do_vtable_stub(VtableStub* vs);
  public:
   CodeBlobCollector() {
     _code_blobs = NULL;
@@ -119,6 +121,10 @@ void CodeBlobCollector::do_blob(CodeBlob* cb) {
   if (cb->is_nmethod()) {
     return;
   }
+  // exclude VtableStubs, which are processed separately
+  if (cb->is_buffer_blob() && strcmp(cb->name(), "vtable chunks") == 0) {
+    return;
+  }
 
   // check if this starting address has been seen already - the
   // assumption is that stubs are inserted into the list before the
@@ -136,6 +142,13 @@ void CodeBlobCollector::do_blob(CodeBlob* cb) {
   _global_code_blobs->append(scb);
 }
 
+// called for each VtableStub in VtableStubs
+
+void CodeBlobCollector::do_vtable_stub(VtableStub* vs) {
+    JvmtiCodeBlobDesc* scb = new JvmtiCodeBlobDesc(vs->is_vtable_stub() ? "vtable stub" : "itable stub",
+                                                   vs->code_begin(), vs->code_end());
+    _global_code_blobs->append(scb);
+}
 
 // collects a list of CodeBlobs in the CodeCache.
 //
@@ -165,6 +178,10 @@ void CodeBlobCollector::collect() {
   while ((desc = StubCodeDesc::desc_for_index(++index)) != NULL) {
     _global_code_blobs->append(new JvmtiCodeBlobDesc(desc->name(), desc->begin(), desc->end()));
   }
+
+  // Vtable stubs are not described with StubCodeDesc,
+  // process them separately
+  VtableStubs::vtable_stub_do(do_vtable_stub);
 
   // next iterate over all the non-nmethod code blobs and add them to
   // the list - as noted above this will filter out duplicates and
