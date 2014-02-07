@@ -252,6 +252,7 @@ public class CUPSPrinter  {
                             try {
                                 return urlConnection.getOutputStream();
                             } catch (Exception e) {
+                               IPPPrintService.debug_println(debugPrefix+e);
                             }
                             return null;
                         }
@@ -282,6 +283,9 @@ public class CUPSPrinter  {
 
                     if (responseMap != null && responseMap.length > 0) {
                         defaultMap = responseMap[0];
+                    } else {
+                       IPPPrintService.debug_println(debugPrefix+
+                           " empty response map for GET_DEFAULT.");
                     }
 
                     if (defaultMap == null) {
@@ -310,7 +314,10 @@ public class CUPSPrinter  {
 
                     if (attribClass != null) {
                         printerInfo[0] = attribClass.getStringValue();
-                        attribClass = (AttributeClass)defaultMap.get("device-uri");
+                        attribClass = (AttributeClass)
+                            defaultMap.get("printer-uri-supported");
+                        IPPPrintService.debug_println(debugPrefix+
+                          "printer-uri-supported="+attribClass);
                         if (attribClass != null) {
                             printerInfo[1] = attribClass.getStringValue();
                         } else {
