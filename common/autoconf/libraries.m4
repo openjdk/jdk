@@ -562,7 +562,7 @@ AC_DEFUN_ONCE([LIB_SETUP_ALSA],
     fi
 
     if test "x${with_alsa}" != x; then
-      ALSA_LIBS="-L${with_alsa}/lib -lalsa"
+      ALSA_LIBS="-L${with_alsa}/lib -lasound"
       ALSA_CFLAGS="-I${with_alsa}/include"
       ALSA_FOUND=yes
     fi
@@ -571,7 +571,7 @@ AC_DEFUN_ONCE([LIB_SETUP_ALSA],
       ALSA_FOUND=yes
     fi
     if test "x${with_alsa_lib}" != x; then
-      ALSA_LIBS="-L${with_alsa_lib} -lalsa"
+      ALSA_LIBS="-L${with_alsa_lib} -lasound"
       ALSA_FOUND=yes
     fi
     if test "x$ALSA_FOUND" = xno; then
