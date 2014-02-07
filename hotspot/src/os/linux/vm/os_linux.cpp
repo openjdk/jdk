@@ -3002,7 +3002,7 @@ address get_stack_commited_bottom(address bottom, size_t size) {
   unsigned imin = 1, imax = pages + 1, imid;
   int mincore_return_value = 0;
 
-  assert(imin < imax, "Unexpected page size");
+  assert(imin <= imax, "Unexpected page size");
 
   while (imin < imax) {
     imid = (imax + imin) / 2;
