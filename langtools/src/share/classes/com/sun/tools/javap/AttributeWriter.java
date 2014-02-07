@@ -603,6 +603,7 @@ public class AttributeWriter extends BasicWriter
             indent(+1);
             println("offset_delta = " + frame.offset_delta);
             printMap("locals", frame.locals);
+            indent(-1);
             return null;
         }
 
