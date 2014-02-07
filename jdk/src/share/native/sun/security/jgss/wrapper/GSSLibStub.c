@@ -37,7 +37,6 @@ void throwByName(JNIEnv *env, const char *name, const char *msg) {
 
     if (cls != 0) /* Otherwise an exception has already been thrown */
         (*env)->ThrowNew(env, cls, msg);
-    JNU_Equals(env, NULL, NULL);
 }
 
 void throwOutOfMemoryError(JNIEnv *env, const char *message) {
