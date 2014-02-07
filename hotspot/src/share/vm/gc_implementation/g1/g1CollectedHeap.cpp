@@ -4764,9 +4764,9 @@ oop G1ParCopyClosure<barrier, do_mark_object>
 
     if (obj->is_objArray() && arrayOop(obj)->length() >= ParGCArrayScanChunk) {
       // We keep track of the next start index in the length field of
-      // the from-space object. The actual length can be found in the
-      // length field of the to-space object.
-      arrayOop(old)->set_length(0);
+      // the to-space object. The actual length can be found in the
+      // length field of the from-space object.
+      arrayOop(obj)->set_length(0);
       oop* old_p = set_partial_array_mask(old);
       _par_scan_state->push_on_queue(old_p);
     } else {
@@ -4840,16 +4840,16 @@ template <class T> void G1ParScanPartialArrayClosure::do_oop_nv(T* p) {
   assert(Universe::heap()->is_in_reserved(from_obj), "must be in heap.");
   assert(from_obj->is_objArray(), "must be obj array");
   objArrayOop from_obj_array = objArrayOop(from_obj);
-  // We keep track of the next start index in the length field of the
-  // from-space object.
-  int next_index             = from_obj_array->length();
+  // The from-space object contains the real length.
+  int length                 = from_obj_array->length();
 
   assert(from_obj->is_forwarded(), "must be forwarded");
   oop to_obj                 = from_obj->forwardee();
   assert(from_obj != to_obj, "should not be chunking self-forwarded objects");
   objArrayOop to_obj_array   = objArrayOop(to_obj);
-   // The to-space object contains the real length.
-  int length                 = to_obj_array->length();
+  // We keep track of the next start index in the length field of the
+  // to-space object.
+  int next_index             = to_obj_array->length();
   assert(0 <= next_index && next_index < length,
          err_msg("invariant, next index: %d, length: %d", next_index, length));
 
@@ -4859,7 +4859,7 @@ template <class T> void G1ParScanPartialArrayClosure::do_oop_nv(T* p) {
   // We'll try not to push a range that's smaller than ParGCArrayScanChunk.
   if (remainder > 2 * ParGCArrayScanChunk) {
     end = start + ParGCArrayScanChunk;
-    from_obj_array->set_length(end);
+    to_obj_array->set_length(end);
     // Push the remainder before we process the range in case another
     // worker has run out of things to do and can steal it.
     oop* from_obj_p = set_partial_array_mask(from_obj);
@@ -4868,7 +4868,7 @@ template <class T> void G1ParScanPartialArrayClosure::do_oop_nv(T* p) {
     assert(length == end, "sanity");
     // We'll process the final range for this object. Restore the length
     // so that the heap remains parsable in case of evacuation failure.
-    from_obj_array->set_length(end);
+    to_obj_array->set_length(end);
   }
   _scanner.set_region(_g1->heap_region_containing_raw(to_obj));
   // Process indexes [start,end). It will also process the header
