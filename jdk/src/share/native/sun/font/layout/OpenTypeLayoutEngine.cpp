@@ -470,6 +470,7 @@ le_int32 OpenTypeLayoutEngine::computeGlyphs(const LEUnicode chars[], le_int32 o
 void OpenTypeLayoutEngine::adjustGlyphPositions(const LEUnicode chars[], le_int32 offset, le_int32 count, le_bool reverse,
                                                 LEGlyphStorage &glyphStorage, LEErrorCode &success)
 {
+    _LETRACE("OTLE::adjustGPOS");
     if (LE_FAILURE(success)) {
         return;
     }
@@ -510,14 +511,17 @@ void OpenTypeLayoutEngine::adjustGlyphPositions(const LEUnicode chars[], le_int3
         if (!fGPOSTable.isEmpty()) {
             if (fScriptTagV2 != nullScriptTag &&
                 fGPOSTable->coversScriptAndLanguage(fGPOSTable, fScriptTagV2,fLangSysTag,success)) {
+              _LETRACE("OTLE::process [0]");
               fGPOSTable->process(fGPOSTable, glyphStorage, adjustments, reverse, fScriptTagV2, fLangSysTag,
                                   fGDEFTable, success, fFontInstance, fFeatureMap, fFeatureMapCount, fFeatureOrder);
 
             } else {
+              _LETRACE("OTLE::process [1]");
               fGPOSTable->process(fGPOSTable, glyphStorage, adjustments, reverse, fScriptTag, fLangSysTag,
                                   fGDEFTable, success, fFontInstance, fFeatureMap, fFeatureMapCount, fFeatureOrder);
             }
         } else if (fTypoFlags & LE_Kerning_FEATURE_FLAG) { /* kerning enabled */
+          _LETRACE("OTLE::kerning");
           LETableReference kernTable(fFontInstance, LE_KERN_TABLE_TAG, success);
           KernTable kt(kernTable, success);
           kt.process(glyphStorage, success);
@@ -546,6 +550,7 @@ void OpenTypeLayoutEngine::adjustGlyphPositions(const LEUnicode chars[], le_int3
 
             xPlacement = fFontInstance->xUnitsToPoints(xPlacement);
             yPlacement = fFontInstance->yUnitsToPoints(yPlacement);
+            _LETRACE("OTLE GPOS: #%d, (%.2f,%.2f)", i, xPlacement, yPlacement);
             glyphStorage.adjustPosition(i, xAdjust + xPlacement, -(yAdjust + yPlacement), success);
 
             xAdjust += fFontInstance->xUnitsToPoints(xAdvance);

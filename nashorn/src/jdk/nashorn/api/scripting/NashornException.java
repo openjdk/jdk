@@ -29,6 +29,7 @@ import java.util.ArrayList;
 import java.util.List;
 import jdk.nashorn.internal.codegen.CompilerConstants;
 import jdk.nashorn.internal.runtime.ECMAErrors;
+import jdk.nashorn.internal.runtime.ScriptObject;
 
 /**
  * This is base exception for all Nashorn exceptions. These originate from
@@ -44,11 +45,13 @@ import jdk.nashorn.internal.runtime.ECMAErrors;
 @SuppressWarnings("serial")
 public abstract class NashornException extends RuntimeException {
     // script file name
-    private final String fileName;
+    private String fileName;
     // script line number
-    private final int line;
+    private int line;
     // script column number
-    private final int column;
+    private int column;
+    // underlying ECMA error object - lazily initialized
+    private Object ecmaError;
 
     /** script source name used for "engine.js" */
     public static final String ENGINE_SCRIPT_SOURCE_NAME = "nashorn:engine/resources/engine.js";
@@ -122,6 +125,15 @@ public abstract class NashornException extends RuntimeException {
     }
 
     /**
+     * Set the source file name for this {@code NashornException}
+     *
+     * @param fileName the file name
+     */
+    public final void setFileName(final String fileName) {
+        this.fileName = fileName;
+    }
+
+    /**
      * Get the line number for this {@code NashornException}
      *
      * @return the line number
@@ -131,12 +143,30 @@ public abstract class NashornException extends RuntimeException {
     }
 
     /**
+     * Set the line number for this {@code NashornException}
+     *
+     * @param line the line number
+     */
+    public final void setLineNumber(final int line) {
+        this.line = line;
+    }
+
+    /**
      * Get the column for this {@code NashornException}
      *
-     * @return the column
+     * @return the column number
      */
     public final int getColumnNumber() {
         return column;
+    }
+
+    /**
+     * Set the column for this {@code NashornException}
+     *
+     * @param column the column number
+     */
+    public final void setColumnNumber(final int column) {
+        this.column = column;
     }
 
     /**
@@ -155,6 +185,11 @@ public abstract class NashornException extends RuntimeException {
                 if (methodName.equals(CompilerConstants.RUN_SCRIPT.symbolName())) {
                     methodName = "<program>";
                 }
+
+                if (methodName.contains(CompilerConstants.ANON_FUNCTION_PREFIX.symbolName())) {
+                    methodName = "<anonymous>";
+                }
+
                 filtered.add(new StackTraceElement(className, methodName,
                         st.getFileName(), st.getLineNumber()));
             }
@@ -187,5 +222,44 @@ public abstract class NashornException extends RuntimeException {
             buf.deleteCharAt(len - 1);
         }
         return buf.toString();
+    }
+
+    protected Object getThrown() {
+        return null;
+    }
+
+    protected NashornException initEcmaError(final ScriptObject global) {
+        if (ecmaError != null) {
+            return this; // initialized already!
+        }
+
+        final Object thrown = getThrown();
+        if (thrown instanceof ScriptObject) {
+            setEcmaError(ScriptObjectMirror.wrap(thrown, global));
+        } else {
+            setEcmaError(thrown);
+        }
+
+        return this;
+    }
+
+    /**
+     * Return the underlying ECMA error object, if available.
+     *
+     * @return underlying ECMA Error object's mirror or whatever was thrown
+     *         from script such as a String, Number or a Boolean.
+     */
+    public Object getEcmaError() {
+        return ecmaError;
+    }
+
+    /**
+     * Return the underlying ECMA error object, if available.
+     *
+     * @param ecmaError underlying ECMA Error object's mirror or whatever was thrown
+     *         from script such as a String, Number or a Boolean.
+     */
+    public void setEcmaError(final Object ecmaError) {
+        this.ecmaError = ecmaError;
     }
 }

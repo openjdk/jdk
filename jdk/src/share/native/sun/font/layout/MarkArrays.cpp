@@ -38,20 +38,28 @@
 
 U_NAMESPACE_BEGIN
 
-le_int32 MarkArray::getMarkClass(LEGlyphID glyphID, le_int32 coverageIndex, const LEFontInstance *fontInstance,
-                              LEPoint &anchor) const
+le_int32 MarkArray::getMarkClass(const LETableReference &base, LEGlyphID glyphID,
+                                 le_int32 coverageIndex, const LEFontInstance *fontInstance,
+                              LEPoint &anchor, LEErrorCode &success) const
 {
     le_int32 markClass = -1;
 
-    if (coverageIndex >= 0) {
+    if ( coverageIndex >= 0 && LE_SUCCESS(success) ) {
         le_uint16 mCount = SWAPW(markCount);
-
         if (coverageIndex < mCount) {
+          LEReferenceToArrayOf<MarkRecord> markRecordArrayRef(base, success, markRecordArray, mCount);
+            if(LE_FAILURE(success)) {
+              return markClass;
+            }
             const MarkRecord *markRecord = &markRecordArray[coverageIndex];
             Offset anchorTableOffset = SWAPW(markRecord->markAnchorTableOffset);
-            const AnchorTable *anchorTable = (AnchorTable *) ((char *) this + anchorTableOffset);
+            LEReferenceTo<AnchorTable> anchorTable(base, success, anchorTableOffset);
 
-            anchorTable->getAnchor(glyphID, fontInstance, anchor);
+            if(LE_FAILURE(success)) {
+              return markClass;
+            }
+
+            anchorTable->getAnchor(anchorTable, glyphID, fontInstance, anchor, success);
             markClass = SWAPW(markRecord->markClass);
         }
 

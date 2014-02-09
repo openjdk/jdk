@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2004, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -76,12 +76,12 @@ public class JobState extends EnumSyntax implements PrintJobAttribute {
      * <LI>
      * The job is using, or is attempting to use, one or more purely software
      * processes that are analyzing, creating, or interpreting a PDL, etc.
-     * <P>
+     *
      * <LI>
      * The job is using, or is attempting to use, one or more hardware
      * devices that are interpreting a PDL, making marks on a medium, and/or
      * performing finishing, such as stapling, etc.
-     * <P>
+     *
      * <LI>
      * The printer has made the job ready for printing, but the output
      * device is not yet printing it, either because the job hasn't reached the

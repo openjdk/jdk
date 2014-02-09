@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -88,7 +88,7 @@ import sun.swing.SwingAccessor;
  * a section in <em>The Java Tutorial.</em>
  *
  * <dl>
- * <dt><b><font size=+1>Caret Changes</font></b>
+ * <dt><b>Caret Changes</b>
  * <dd>
  * The caret is a pluggable object in swing text components.
  * Notification of changes to the caret position and the selection
@@ -107,7 +107,7 @@ import sun.swing.SwingAccessor;
  * <b>Note</b>: Non-editable text components also have a caret though
  * it may not be painted.
  *
- * <dt><b><font size=+1>Commands</font></b>
+ * <dt><b>Commands</b>
  * <dd>
  * Text components provide a number of commands that can be used
  * to manipulate the component.  This is essentially the way that
@@ -118,7 +118,7 @@ import sun.swing.SwingAccessor;
  * found with the {@link #getActions} method.  These actions
  * can be bound to key events, fired from buttons, etc.
  *
- * <dt><b><font size=+1>Text Input</font></b>
+ * <dt><b>Text Input</b>
  * <dd>
  * The text components support flexible and internationalized text input, using
  * keymaps and the input method framework, while maintaining compatibility with
@@ -203,7 +203,7 @@ import sun.swing.SwingAccessor;
  * <li>caret movement forward and backward
  * </ul>
  *
- * <dt><b><font size=+1>Model/View Split</font></b>
+ * <dt><b>Model/View Split</b>
  * <dd>
  * The text components have a model-view split.  A text component pulls
  * together the objects used to represent the model, view, and controller.
@@ -227,13 +227,13 @@ import sun.swing.SwingAccessor;
  * {@link DocumentListener}
  * interface and registered interest with the model being observed.
  *
- * <dt><b><font size=+1>Location Information</font></b>
+ * <dt><b>Location Information</b>
  * <dd>
  * The capability of determining the location of text in
  * the view is provided.  There are two methods, {@link #modelToView}
  * and {@link #viewToModel} for determining this information.
  *
- * <dt><b><font size=+1>Undo/Redo support</font></b>
+ * <dt><b>Undo/Redo support</b>
  * <dd>
  * Support for an edit history mechanism is provided to allow
  * undo/redo operations.  The text component does not itself
@@ -243,7 +243,7 @@ import sun.swing.SwingAccessor;
  * The support is provided by the Document model, which allows
  * one to attach UndoableEditListener implementations.
  *
- * <dt><b><font size=+1>Thread Safety</font></b>
+ * <dt><b>Thread Safety</b>
  * <dd>
  * The swing text components provide some support of thread
  * safe operations.  Because of the high level of configurability
@@ -254,13 +254,13 @@ import sun.swing.SwingAccessor;
  * The methods that are safe to call asynchronously are marked
  * with comments.
  *
- * <dt><b><font size=+1>Newlines</font></b>
+ * <dt><b>Newlines</b>
  * <dd>
  * For a discussion on how newlines are handled, see
  * <a href="DefaultEditorKit.html">DefaultEditorKit</a>.
  *
  *
- * <dt><b><font size=+1>Printing support</font></b>
+ * <dt><b>Printing support</b>
  * <dd>
  * Several {@link #print print} methods are provided for basic
  * document printing.  If more advanced printing is needed, use the
