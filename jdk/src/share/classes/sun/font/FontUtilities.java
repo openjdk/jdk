@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -71,7 +71,7 @@ public final class FontUtilities {
     // This static initializer block figures out the OS constants.
     static {
 
-        AccessController.doPrivileged(new PrivilegedAction () {
+        AccessController.doPrivileged(new PrivilegedAction<Object>() {
             public Object run() {
                 String osName = System.getProperty("os.name", "unknownOS");
                 isSolaris = osName.startsWith("SunOS");
@@ -391,7 +391,7 @@ public final class FontUtilities {
      */
     private static volatile
         SoftReference<ConcurrentHashMap<PhysicalFont, CompositeFont>>
-        compMapRef = new SoftReference(null);
+        compMapRef = new SoftReference<>(null);
 
     public static FontUIResource getCompositeFontUIResource(Font font) {
 
@@ -421,7 +421,7 @@ public final class FontUtilities {
         ConcurrentHashMap<PhysicalFont, CompositeFont> compMap = compMapRef.get();
         if (compMap == null) { // Its been collected.
             compMap = new ConcurrentHashMap<PhysicalFont, CompositeFont>();
-            compMapRef = new SoftReference(compMap);
+            compMapRef = new SoftReference<>(compMap);
         }
         CompositeFont compFont = compMap.get(physicalFont);
         if (compFont == null) {

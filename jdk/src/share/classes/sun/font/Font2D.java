@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -91,8 +91,8 @@ public abstract class Font2D {
      * the map will have fewer entries, and there's no need to try to
      * make the Font2D part of the key.
      */
-    protected ConcurrentHashMap<FontStrikeDesc, Reference>
-        strikeCache = new ConcurrentHashMap<FontStrikeDesc, Reference>();
+    protected ConcurrentHashMap<FontStrikeDesc, Reference<FontStrike>>
+        strikeCache = new ConcurrentHashMap<>();
 
     /* Store the last Strike in a Reference object.
      * Similarly to the strike that was stored on a C++ font object,
@@ -105,7 +105,7 @@ public abstract class Font2D {
      * This pre-supposes that a FontStrike is a shareable object, which
      * it should.
      */
-    protected Reference lastFontStrike = new SoftReference(null);
+    protected Reference<FontStrike> lastFontStrike = new SoftReference<>(null);
 
     /*
      * POSSIBLE OPTIMISATION:
@@ -195,7 +195,7 @@ public abstract class Font2D {
      * strike.
      */
     public FontStrike getStrike(Font font) {
-        FontStrike strike = (FontStrike)lastFontStrike.get();
+        FontStrike strike = lastFontStrike.get();
         if (strike != null) {
             return strike;
         } else {
@@ -307,17 +307,17 @@ public abstract class Font2D {
          * collected, then we create a new strike, put it in the map and
          * set it to be the last strike.
          */
-        FontStrike strike = (FontStrike)lastFontStrike.get();
+        FontStrike strike = lastFontStrike.get();
         if (strike != null && desc.equals(strike.desc)) {
             //strike.lastlookupTime = System.currentTimeMillis();
             return strike;
         } else {
-            Reference strikeRef = strikeCache.get(desc);
+            Reference<FontStrike> strikeRef = strikeCache.get(desc);
             if (strikeRef != null) {
-                strike = (FontStrike)strikeRef.get();
+                strike = strikeRef.get();
                 if (strike != null) {
                     //strike.lastlookupTime = System.currentTimeMillis();
-                    lastFontStrike = new SoftReference(strike);
+                    lastFontStrike = new SoftReference<>(strike);
                     StrikeCache.refStrike(strike);
                     return strike;
                 }
@@ -360,14 +360,14 @@ public abstract class Font2D {
             }
             strikeCache.put(desc, strikeRef);
             //strike.lastlookupTime = System.currentTimeMillis();
-            lastFontStrike = new SoftReference(strike);
+            lastFontStrike = new SoftReference<>(strike);
             StrikeCache.refStrike(strike);
             return strike;
         }
     }
 
     void removeFromCache(FontStrikeDesc desc) {
-        Reference ref = strikeCache.get(desc);
+        Reference<FontStrike> ref = strikeCache.get(desc);
         if (ref != null) {
             Object o = ref.get();
             if (o == null) {

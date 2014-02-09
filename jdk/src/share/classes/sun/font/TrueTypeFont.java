@@ -290,7 +290,7 @@ public class TrueTypeFont extends FileFont {
             try {
                 RandomAccessFile raf = (RandomAccessFile)
                 java.security.AccessController.doPrivileged(
-                    new java.security.PrivilegedAction() {
+                    new java.security.PrivilegedAction<Object>() {
                         public Object run() {
                             try {
                                 return new RandomAccessFile(platName, "r");
@@ -1546,7 +1546,7 @@ public class TrueTypeFont extends FileFont {
      * during typical start-up and the information here is likely never
      * needed.
      */
-    protected void initAllNames(int requestedID, HashSet names) {
+    protected void initAllNames(int requestedID, HashSet<String> names) {
 
         byte[] name = new byte[256];
         ByteBuffer buffer = getTableBuffer(nameTag);
@@ -1584,23 +1584,23 @@ public class TrueTypeFont extends FileFont {
     }
 
     String[] getAllFamilyNames() {
-        HashSet aSet = new HashSet();
+        HashSet<String> aSet = new HashSet<>();
         try {
             initAllNames(FAMILY_NAME_ID, aSet);
         } catch (Exception e) {
             /* In case of malformed font */
         }
-        return (String[])aSet.toArray(new String[0]);
+        return aSet.toArray(new String[0]);
     }
 
     String[] getAllFullNames() {
-        HashSet aSet = new HashSet();
+        HashSet<String> aSet = new HashSet<>();
         try {
             initAllNames(FULL_NAME_ID, aSet);
         } catch (Exception e) {
             /* In case of malformed font */
         }
-        return (String[])aSet.toArray(new String[0]);
+        return aSet.toArray(new String[0]);
     }
 
     /*  Used by the OpenType engine for mark positioning.

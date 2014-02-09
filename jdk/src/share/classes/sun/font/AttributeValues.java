@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -410,7 +410,7 @@ public final class AttributeValues implements Cloneable {
     }
 
     public Hashtable<Object, Object> toSerializableHashtable() {
-        Hashtable ht = new Hashtable();
+        Hashtable<Object, Object> ht = new Hashtable<>();
         int hashkey = defined;
         for (int m = defined, i = 0; m != 0; ++i) {
             EAttribute ea = EAttribute.atts[i];
@@ -798,7 +798,7 @@ public final class AttributeValues implements Cloneable {
                 hl = (InputMethodHighlight)((Annotation)imHighlight).getValue();
             }
 
-            Map imStyles = hl.getStyle();
+            Map<TextAttribute, ?> imStyles = hl.getStyle();
             if (imStyles == null) {
                 Toolkit tk = Toolkit.getDefaultToolkit();
                 imStyles = tk.mapInputMethodHighlight(hl);
@@ -812,6 +812,7 @@ public final class AttributeValues implements Cloneable {
         return this;
     }
 
+    @SuppressWarnings("unchecked")
     public static AffineTransform getBaselineTransform(Map<?, ?> map) {
         if (map != null) {
             AttributeValues av = null;
@@ -828,6 +829,7 @@ public final class AttributeValues implements Cloneable {
         return null;
     }
 
+    @SuppressWarnings("unchecked")
     public static AffineTransform getCharTransform(Map<?, ?> map) {
         if (map != null) {
             AttributeValues av = null;
