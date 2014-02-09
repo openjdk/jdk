@@ -52,7 +52,7 @@ public class TestGetElementReference {
         File source = new File(System.getProperty("test.src", "."), "TestGetElementReferenceData.java").getAbsoluteFile();
         StandardJavaFileManager fm = ToolProvider.getSystemJavaCompiler().getStandardFileManager(null, null, null);
         DiagnosticCollector<JavaFileObject> diagnostics = new DiagnosticCollector<>();
-        JavacTask ct = (JavacTask) ToolProvider.getSystemJavaCompiler().getTask(null, null, diagnostics, Arrays.asList("-Xjcov", "-source", "1.8"), null, fm.getJavaFileObjects(source));
+        JavacTask ct = (JavacTask) ToolProvider.getSystemJavaCompiler().getTask(null, null, diagnostics, Arrays.asList("-Xjcov"), null, fm.getJavaFileObjects(source));
         Trees trees = Trees.instance(ct);
         CompilationUnitTree cut = ct.parse().iterator().next();
 

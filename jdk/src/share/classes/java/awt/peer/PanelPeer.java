@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,7 @@
 package java.awt.peer;
 
 /**
- * The peer interface for {@link Panel}. This is a subinterface of
+ * The peer interface for {@link java.awt.Panel}. This is a subinterface of
  * ContainerPeer and does not declare any additional methods because a Panel
  * is just that, a concrete Container.
  *

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2004, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -68,17 +68,17 @@ import javax.print.attribute.PrintJobAttribute;
  * SINGLE_DOCUMENT -- All the input docs will be combined together into one
  * output document. The specified page ranges of that output document will be
  * printed.
- * <P>
+ *
  * <LI>
  * SINGLE_DOCUMENT_NEW_SHEET -- All the input docs will be combined together
  * into one output document, and the first impression of each input doc will
  * always start on a new media sheet. The specified page ranges of that output
  * document will be printed.
- * <P>
+ *
  * <LI>
  * SEPARATE_DOCUMENTS_UNCOLLATED_COPIES -- For each separate input doc, the
  * specified page ranges will be printed.
- * <P>
+ *
  * <LI>
  * SEPARATE_DOCUMENTS_COLLATED_COPIES -- For each separate input doc, the
  * specified page ranges will be printed.
@@ -87,7 +87,7 @@ import javax.print.attribute.PrintJobAttribute;
  * <LI>
  * SEPARATE_DOCUMENTS_UNCOLLATED_COPIES -- For each separate input doc, its own
  * specified page ranges will be printed..
- * <P>
+ *
  * <LI>
  * SEPARATE_DOCUMENTS_COLLATED_COPIES -- For each separate input doc, its own
  * specified page ranges will be printed..
@@ -100,7 +100,6 @@ import javax.print.attribute.PrintJobAttribute;
  * javax.print.attribute.SetOfIntegerSyntax SetOfIntegerSyntax} for an
  * explanation of canonical array form. The category name returned by
  * <CODE>getName()</CODE> gives the IPP attribute name.
- * <P>
  *
  * @author  David Mendenhall
  * @author  Alan Kaminsky

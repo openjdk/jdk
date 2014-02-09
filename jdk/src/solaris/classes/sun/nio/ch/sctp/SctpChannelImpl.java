@@ -187,6 +187,10 @@ public class SctpChannelImpl extends SctpChannel
                         SctpNet.throwAlreadyBoundException();
                     InetSocketAddress isa = (local == null) ?
                         new InetSocketAddress(0) : Net.checkAddress(local);
+                    SecurityManager sm = System.getSecurityManager();
+                    if (sm != null) {
+                        sm.checkListen(isa.getPort());
+                    }
                     Net.bind(fd, isa.getAddress(), isa.getPort());
                     InetSocketAddress boundIsa = Net.localAddress(fd);
                     port = boundIsa.getPort();

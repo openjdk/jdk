@@ -741,14 +741,10 @@ public final class Float extends Number implements Comparable<Float> {
      * @return the bits that represent the floating-point number.
      */
     public static int floatToIntBits(float value) {
-        int result = floatToRawIntBits(value);
-        // Check for NaN based on values of bit fields, maximum
-        // exponent and nonzero significand.
-        if ( ((result & FloatConsts.EXP_BIT_MASK) ==
-              FloatConsts.EXP_BIT_MASK) &&
-             (result & FloatConsts.SIGNIF_BIT_MASK) != 0)
-            result = 0x7fc00000;
-        return result;
+        if (!isNaN(value)) {
+            return floatToRawIntBits(value);
+        }
+        return 0x7fc00000;
     }
 
     /**
