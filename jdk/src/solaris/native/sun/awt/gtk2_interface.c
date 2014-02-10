@@ -32,6 +32,7 @@
 #include "java_awt_Transparency.h"
 #include "jvm_md.h"
 #include "sizecalc.h"
+#include <jni_util.h>
 
 #define GTK2_LIB_VERSIONED VERSIONED_JNI_LIB_NAME("gtk-x11-2.0", "0")
 #define GTK2_LIB JNI_LIB_NAME("gtk-x11-2.0")
@@ -456,13 +457,19 @@ void update_supported_actions(JNIEnv *env) {
     const gchar * const * schemes = NULL;
 
     jclass cls_action = (*env)->FindClass(env, "java/awt/Desktop$Action");
+    CHECK_NULL(cls_action);
     jclass cls_xDesktopPeer = (*env)->FindClass(env, "sun/awt/X11/XDesktopPeer");
+    CHECK_NULL(cls_xDesktopPeer);
     jfieldID fld_supportedActions = (*env)->GetStaticFieldID(env, cls_xDesktopPeer, "supportedActions", "Ljava/util/List;");
+    CHECK_NULL(fld_supportedActions);
     jobject supportedActions = (*env)->GetStaticObjectField(env, cls_xDesktopPeer, fld_supportedActions);
 
     jclass cls_arrayList = (*env)->FindClass(env, "java/util/ArrayList");
+    CHECK_NULL(cls_arrayList);
     jmethodID mid_arrayListAdd = (*env)->GetMethodID(env, cls_arrayList, "add", "(Ljava/lang/Object;)Z");
+    CHECK_NULL(mid_arrayListAdd);
     jmethodID mid_arrayListClear = (*env)->GetMethodID(env, cls_arrayList, "clear", "()V");
+    CHECK_NULL(mid_arrayListClear);
 
     (*env)->CallVoidMethod(env, supportedActions, mid_arrayListClear);
 
