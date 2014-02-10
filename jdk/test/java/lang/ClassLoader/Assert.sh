@@ -23,6 +23,21 @@
 
 #
 
+OS=`uname -s`
+case "$OS" in
+  SunOS | Linux | Darwin )
+    FS="/"
+    CHMOD="${FS}bin${FS}chmod"
+    ;;
+  Windows* | CYGWIN* )
+    CHMOD="chmod"
+    ;;
+  * )
+    echo "Unrecognized system!"
+    exit 1;
+    ;;
+esac
+
 if [ "${TESTSRC}" = "" ]
 then
   echo "TESTSRC not set.  Test cannot execute.  Failed."
@@ -50,6 +65,7 @@ echo "CLASSPATH=${CLASSPATH}"
 cp ${TESTSRC}/Assert.java .
 cp -R ${TESTSRC}/package1 .
 cp -R ${TESTSRC}/package2 .
+${CHMOD} -R u+w *
 
 ${COMPILEJAVA}/bin/javac ${TESTJAVACOPTS} ${TESTTOOLVMOPTS} Assert.java 
 
