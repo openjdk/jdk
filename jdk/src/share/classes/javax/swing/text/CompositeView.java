@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -713,7 +713,7 @@ public abstract class CompositeView extends View {
      * @param biasRet an array containing the bias that was checked
      * @return the location within the model that best represents the next
      *  north or south location
-     * @exception BadLocationException
+     * @exception BadLocationException for a bad location within a document model
      * @exception IllegalArgumentException if <code>direction</code> is invalid
      * @see #getNextVisualPositionFrom
      *
@@ -745,7 +745,7 @@ public abstract class CompositeView extends View {
      * @param biasRet an array containing the bias that was checked
      * @return the location within the model that best represents the next
      *  west or east location
-     * @exception BadLocationException
+     * @exception BadLocationException for a bad location within a document model
      * @exception IllegalArgumentException if <code>direction</code> is invalid
      * @see #getNextVisualPositionFrom
      */

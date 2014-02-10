@@ -44,14 +44,10 @@ T8022765.java:89:14: compiler.err.annotation.value.must.be.annotation
 T8022765.java:90:20: compiler.err.prob.found.req: (compiler.misc.inconvertible.types: java.lang.String, int)
 T8022765.java:92:13: compiler.err.prob.found.req: (compiler.misc.inconvertible.types: java.lang.String, E)
 T8022765.java:97:6: compiler.err.annotation.value.not.allowable.type
-T8022765.java:97:8: compiler.err.attribute.value.must.be.constant
 T8022765.java:98:12: compiler.err.annotation.value.not.allowable.type
-T8022765.java:98:14: compiler.err.attribute.value.must.be.constant
 T8022765.java:99:6: compiler.err.annotation.value.not.allowable.type
-T8022765.java:99:8: compiler.err.attribute.value.must.be.constant
 T8022765.java:100:5: compiler.err.annotation.value.not.allowable.type
-T8022765.java:100:7: compiler.err.attribute.value.must.be.constant
 T8022765.java:101:11: compiler.err.annotation.value.must.be.annotation
 T8022765.java:102:17: compiler.err.prob.found.req: (compiler.misc.inconvertible.types: E, int)
 T8022765.java:103:11: compiler.err.prob.found.req: (compiler.misc.inconvertible.types: E, java.lang.String)
-56 errors
+52 errors

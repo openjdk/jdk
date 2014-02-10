@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2004, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,7 +44,6 @@ import javax.print.attribute.PrintServiceAttribute;
  * In contrast, the {@link PrinterMoreInfo PrinterMoreInfo} attribute is used
  * to find out more information about this specific printer rather than this
  * general kind of printer.
- * <P>
  * <P>
  * <B>IPP Compatibility:</B> The string form returned by
  * <CODE>toString()</CODE> gives the IPP uri value.

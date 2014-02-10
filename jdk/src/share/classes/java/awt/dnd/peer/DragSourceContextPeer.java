@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -47,18 +47,24 @@ public interface DragSourceContextPeer {
 
     /**
      * start a drag
+     * @param dsc the DragSourceContext
+     * @param c the cursor
+     * @param dragImage the image to be dragged
+     * @param imageOffset the offset
      */
 
     void startDrag(DragSourceContext dsc, Cursor c, Image dragImage, Point imageOffset) throws InvalidDnDOperationException;
 
     /**
      * return the current drag cursor
+     * @return the current drag cursor
      */
 
     Cursor getCursor();
 
     /**
      * set the current drag cursor
+     * @param c the cursor
      */
 
     void setCursor(Cursor c) throws InvalidDnDOperationException;

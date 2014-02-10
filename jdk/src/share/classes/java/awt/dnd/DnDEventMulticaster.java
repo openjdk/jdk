@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -141,6 +141,7 @@ class DnDEventMulticaster extends AWTEventMulticaster
      * @param a drag-source-motion-listener-a
      * @param b drag-source-motion-listener-b
      */
+    @SuppressWarnings("overloads")
     public static DragSourceMotionListener add(DragSourceMotionListener a,
                                                DragSourceMotionListener b) {
         return (DragSourceMotionListener)addInternal(a, b);
@@ -166,6 +167,7 @@ class DnDEventMulticaster extends AWTEventMulticaster
      * @param l drag-source-motion-listener-l
      * @param ol the drag-source-motion-listener being removed
      */
+    @SuppressWarnings("overloads")
     public static DragSourceMotionListener remove(DragSourceMotionListener l,
                                                   DragSourceMotionListener ol) {
         return (DragSourceMotionListener)removeInternal(l, ol);
