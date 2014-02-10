@@ -1,7 +1,7 @@
 #!/bin/sh
 
 #
-# Copyright (c) 2009, 2013, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2009, 2014, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -88,7 +88,7 @@ if [ "${command}" = "clone" -o "${command}" = "fclone" ] ; then
     fi
   done
   if [ "${pull_extra_base}" != "" ] ; then
-    subrepos_extra="jdk/src/closed jdk/make/closed jdk/test/closed hotspot/make/closed hotspot/src/closed hotspot/test/closed deploy install sponsors pubs"
+    subrepos_extra="closed jdk/src/closed jdk/make/closed jdk/test/closed hotspot/make/closed hotspot/src/closed hotspot/test/closed deploy install sponsors pubs"
     pull_default_tail=`echo ${pull_default} | sed -e 's@^.*://[^/]*/\(.*\)@\1@'`
     pull_extra="${pull_extra_base}/${pull_default_tail}"
     for i in ${subrepos_extra} ; do
