@@ -124,7 +124,7 @@ SUBMAKE_DIRS = $(addprefix $(PLATFORM_DIR)/,$(TARGETS))
 # For dependencies and recursive makes.
 BUILDTREE_MAKE	= $(GAMMADIR)/make/$(OS_FAMILY)/makefiles/buildtree.make
 
-BUILDTREE_TARGETS = Makefile flags.make flags_vm.make vm.make adlc.make jvmti.make trace.make sa.make
+BUILDTREE_TARGETS = Makefile flags.make flags_vm.make vm.make adlc.make jvmti.make trace.make sa.make dtrace.make
 
 BUILDTREE_VARS	= GAMMADIR=$(GAMMADIR) OS_FAMILY=$(OS_FAMILY) \
 	SRCARCH=$(SRCARCH) BUILDARCH=$(BUILDARCH) LIBARCH=$(LIBARCH) VARIANT=$(VARIANT)
@@ -352,6 +352,16 @@ trace.make: $(BUILDTREE_MAKE)
 	) > $@
 
 sa.make: $(BUILDTREE_MAKE)
+	@echo Creating $@ ...
+	$(QUIETLY) ( \
+	$(BUILDTREE_COMMENT); \
+	echo; \
+	echo include flags.make; \
+	echo; \
+	echo "include \$$(GAMMADIR)/make/$(OS_FAMILY)/makefiles/$(@F)"; \
+	) > $@
+
+dtrace.make: $(BUILDTREE_MAKE)
 	@echo Creating $@ ...
 	$(QUIETLY) ( \
 	$(BUILDTREE_COMMENT); \

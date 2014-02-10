@@ -1788,12 +1788,14 @@ void os::jvm_path(char *buf, jint buflen) {
   if (rp == NULL)
     return;
 
-  if (Arguments::created_by_gamma_launcher()) {
-    // Support for the gamma launcher.  Typical value for buf is
-    // "<JAVA_HOME>/jre/lib/<arch>/<vmtype>/libjvm".  If "/jre/lib/" appears at
-    // the right place in the string, then assume we are installed in a JDK and
-    // we're done.  Otherwise, check for a JAVA_HOME environment variable and
-    // construct a path to the JVM being overridden.
+  if (Arguments::sun_java_launcher_is_altjvm()) {
+    // Support for the java launcher's '-XXaltjvm=<path>' option. Typical
+    // value for buf is "<JAVA_HOME>/jre/lib/<arch>/<vmtype>/libjvm.so"
+    // or "<JAVA_HOME>/jre/lib/<vmtype>/libjvm.dylib". If "/jre/lib/"
+    // appears at the right place in the string, then assume we are
+    // installed in a JDK and we're done. Otherwise, check for a
+    // JAVA_HOME environment variable and construct a path to the JVM
+    // being overridden.
 
     const char *p = buf + strlen(buf) - 1;
     for (int count = 0; p > buf && count < 5; ++count) {

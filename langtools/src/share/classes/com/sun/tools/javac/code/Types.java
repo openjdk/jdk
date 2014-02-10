@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -3785,7 +3785,7 @@ public class Types {
      * Return the class that boxes the given primitive.
      */
     public ClassSymbol boxedClass(Type t) {
-        return reader.enterClass(syms.boxedName[t.getTag().ordinal()]);
+        return syms.enterClass(syms.boxedName[t.getTag().ordinal()]);
     }
 
     /**
@@ -3805,7 +3805,7 @@ public class Types {
             for (int i=0; i<syms.boxedName.length; i++) {
                 Name box = syms.boxedName[i];
                 if (box != null &&
-                    asSuper(t, reader.enterClass(box)) != null)
+                    asSuper(t, syms.enterClass(box)) != null)
                     return syms.typeOfTag[i];
             }
         }

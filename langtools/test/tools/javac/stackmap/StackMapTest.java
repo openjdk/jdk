@@ -27,7 +27,7 @@
  * @summary The "method0" StackMap attribute should have two entries instead of three
  * @library /tools/javac/lib
  * @build ToolBox
- * @run compile -source 6 -target 6 StackMapTest.java
+ * @run compile StackMapTest.java
  * @run main StackMapTest
  */
 
@@ -48,7 +48,7 @@ public class StackMapTest {
     }
 
     public static void main(String args[]) throws Exception {
-//    "${TESTJAVA}${FS}bin${FS}javac" ${TESTTOOLVMOPTS} -source 6 -target 6 T4955930.java
+//    "${TESTJAVA}${FS}bin${FS}javac" ${TESTTOOLVMOPTS} T4955930.java
 
 //    "${TESTJAVA}${FS}bin${FS}javap" ${TESTTOOLVMOPTS} -verbose T4955930 > ${TMP1}
         Path pathToClass = Paths.get(System.getProperty("test.classes"),
