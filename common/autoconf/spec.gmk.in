@@ -172,7 +172,7 @@ RUNTIME_NAME=$(PRODUCT_NAME) $(PRODUCT_SUFFIX)
 COOKED_BUILD_NUMBER:=@COOKED_BUILD_NUMBER@
 # These variables need to be generated here so that MILESTONE and
 # JDK_BUILD_NUMBER can be overridden on the make command line.
-ifeq ($(MILESTONE),)
+ifeq ($(MILESTONE), fcs)
   RELEASE=$(JDK_VERSION)$(BUILD_VARIANT_RELEASE)
 else
   RELEASE=$(JDK_VERSION)-$(MILESTONE)$(BUILD_VARIANT_RELEASE)
