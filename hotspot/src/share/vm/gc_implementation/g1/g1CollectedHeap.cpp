@@ -5115,15 +5115,12 @@ g1_process_strong_roots(bool is_scavenging,
 
   BufferingOopClosure buf_scan_non_heap_roots(scan_non_heap_roots);
 
-  assert(so & SO_AllCodeCache || scan_rs != NULL, "must scan code roots somehow");
-  // Walk the code cache/strong code roots w/o buffering, because StarTask
-  // cannot handle unaligned oop locations.
-  CodeBlobToOopClosure eager_scan_code_roots(scan_non_heap_roots, true /* do_marking */);
+  CodeBlobToOopClosure scan_code_roots(&buf_scan_non_heap_roots, true /* do_marking */);
 
   process_strong_roots(false, // no scoping; this is parallel code
                        so,
                        &buf_scan_non_heap_roots,
-                       &eager_scan_code_roots,
+                       &scan_code_roots,
                        scan_klasses
                        );
 
@@ -5177,9 +5174,9 @@ g1_process_strong_roots(bool is_scavenging,
   g1_policy()->phase_times()->record_strong_code_root_mark_time(worker_i, mark_strong_code_roots_ms);
 
   // Now scan the complement of the collection set.
-  if (scan_rs != NULL) {
-    g1_rem_set()->oops_into_collection_set_do(scan_rs, &eager_scan_code_roots, worker_i);
-  }
+  CodeBlobToOopClosure eager_scan_code_roots(scan_non_heap_roots, true /* do_marking */);
+  g1_rem_set()->oops_into_collection_set_do(scan_rs, &eager_scan_code_roots, worker_i);
+
   _process_strong_tasks->all_tasks_completed();
 }
 
