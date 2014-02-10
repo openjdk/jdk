@@ -30,13 +30,23 @@
 
 // Make sure synthetic names of anonymous functions have correct line numbers
 
+function getFirstScriptFrame(stack) {
+    for (frameNum in stack) {
+        var frame = stack[frameNum];
+        if (frame.className.startsWith("jdk.nashorn.internal.scripts.Script$")) {
+            return frame;
+        }
+    }
+}
+
 function testMethodName(f, expected) {
     try {
         f();
         fail("expected error");
     } catch (e) {
-        var stack = e.getStackTrace();
-        if (stack[0].methodName !== expected) {
+        var stack = e.nashornException.getStackTrace();
+        var name = getFirstScriptFrame(stack).methodName;
+        if (name !== expected) {
             fail("got " + stack[0].methodName + ", expected " + expected);
         }
     }
@@ -44,15 +54,15 @@ function testMethodName(f, expected) {
 
 testMethodName(function() {
     return a.b.c;
-}, "_L45");
+}, "L:55");
 
-testMethodName(function() { throw new Error() }, "_L49");
+testMethodName(function() { throw new Error() }, "L:59");
 
 var f = (function() {
     return function() { a.b.c; };
 })();
-testMethodName(f, "_L51$_L52");
+testMethodName(f, "L:61$L:62");
 
 testMethodName((function() {
     return function() { return a.b.c; };
-})(), "_L56$_L57");
+})(), "L:66$L:67");

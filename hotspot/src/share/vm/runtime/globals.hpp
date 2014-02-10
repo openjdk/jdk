@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1259,6 +1259,9 @@ class CommandLineFlags {
                                                                             \
   develop(bool, TraceJNICalls, false,                                       \
           "Trace JNI calls")                                                \
+                                                                            \
+  develop(bool, StressRewriter, false,                                      \
+          "Stress linktime bytecode rewriting")                             \
                                                                             \
   notproduct(bool, TraceJVMCalls, false,                                    \
           "Trace JVM calls")                                                \

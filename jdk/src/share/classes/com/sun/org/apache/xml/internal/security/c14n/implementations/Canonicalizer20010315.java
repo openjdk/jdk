@@ -327,7 +327,8 @@ public abstract class Canonicalizer20010315 extends CanonicalizerBase {
             } else if (!isVisible(xmlns)) {
                 //There is a definition but the xmlns is not selected by the xpath.
                 //then xmlns=""
-                n = ns.addMappingAndRender(XMLNS, "", nullNode);
+                n = ns.addMappingAndRender(
+                        XMLNS, "", getNullNode(xmlns.getOwnerDocument()));
             }
             //output the xmlns def if needed.
             if (n != null) {

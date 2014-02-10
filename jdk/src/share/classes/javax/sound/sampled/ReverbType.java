@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2003, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -77,7 +77,7 @@ package javax.sound.sampled;
  * <p>
  *
  * <b>Reverberation Types and Parameters</b>
- * <p>
+ *
  * <table border=1 cellpadding=5 summary="reverb types and params: decay time, late intensity, late delay, early intensity, and early delay">
  *
  * <tr>

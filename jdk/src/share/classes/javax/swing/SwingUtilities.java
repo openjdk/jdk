@@ -24,6 +24,7 @@
  */
 package javax.swing;
 
+import sun.reflect.misc.ReflectUtil;
 import sun.swing.SwingUtilities2;
 import sun.swing.UIAction;
 
@@ -32,9 +33,6 @@ import java.applet.*;
 import java.awt.*;
 import java.awt.event.*;
 import java.awt.dnd.DropTarget;
-
-import java.util.Vector;
-import java.util.Hashtable;
 
 import java.lang.reflect.*;
 
@@ -1872,6 +1870,7 @@ public class SwingUtilities implements SwingConstants
 
 
     static Class<?> loadSystemClass(String className) throws ClassNotFoundException {
+        ReflectUtil.checkPackageAccess(className);
         return Class.forName(className, true, Thread.currentThread().
                              getContextClassLoader());
     }

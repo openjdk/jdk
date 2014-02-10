@@ -24,20 +24,17 @@
 package com.sun.org.apache.xml.internal.resolver;
 
 import com.sun.org.apache.xerces.internal.utils.SecuritySupport;
+import com.sun.org.apache.xml.internal.resolver.helpers.BootstrapResolver;
+import com.sun.org.apache.xml.internal.resolver.helpers.Debug;
 import java.io.InputStream;
-
-import java.net.URL;
 import java.net.MalformedURLException;
-
+import java.net.URL;
 import java.util.MissingResourceException;
 import java.util.PropertyResourceBundle;
 import java.util.ResourceBundle;
 import java.util.StringTokenizer;
 import java.util.Vector;
-
-import com.sun.org.apache.xml.internal.resolver.helpers.Debug;
-import com.sun.org.apache.xml.internal.resolver.helpers.BootstrapResolver;
-import com.sun.org.apache.xml.internal.resolver.Catalog;
+import sun.reflect.misc.ReflectUtil;
 
 /**
  * CatalogManager provides an interface to the catalog properties.
@@ -687,7 +684,7 @@ public class CatalogManager {
           catalog = new Catalog();
         } else {
           try {
-            catalog = (Catalog) Class.forName(catalogClassName).newInstance();
+            catalog = (Catalog) ReflectUtil.forName(catalogClassName).newInstance();
           } catch (ClassNotFoundException cnfe) {
             debug.message(1,"Catalog class named '"
                           + catalogClassName

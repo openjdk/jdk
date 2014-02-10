@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2004, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -69,17 +69,17 @@ package javax.print.attribute;
  * A {@link DocAttributeSet DocAttributeSet}, containing {@link DocAttribute
  * DocAttribute}s, specifies the characteristics of an individual doc and the
  * print job settings to be applied to an individual doc.
- * <P>
+ *
  * <LI>
  * A {@link PrintRequestAttributeSet PrintRequestAttributeSet}, containing
  * {@link PrintRequestAttribute PrintRequestAttribute}s, specifies the
  * settings
  * to be applied to a whole print job and to all the docs in the print job.
- * <P>
+ *
  * <LI>
  * A {@link PrintJobAttributeSet PrintJobAttributeSet}, containing {@link
  * PrintJobAttribute PrintJobAttribute}s, reports the status of a print job.
- * <P>
+ *
  * <LI>
  * A {@link PrintServiceAttributeSet PrintServiceAttributeSet}, containing
  * {@link PrintServiceAttribute PrintServiceAttribute}s, reports the status of
@@ -103,7 +103,6 @@ package javax.print.attribute;
  * HashPrintRequestAttributeSet}, {@link HashPrintJobAttributeSet
  * HashPrintJobAttributeSet}, and {@link HashPrintServiceAttributeSet
  * HashPrintServiceAttributeSet}.
- * <P>
  *
  * @author  Alan Kaminsky
  */

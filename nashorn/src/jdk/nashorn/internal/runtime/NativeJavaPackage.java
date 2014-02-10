@@ -196,24 +196,13 @@ public final class NativeJavaPackage extends ScriptObject {
     @Override
     public GuardedInvocation noSuchProperty(final CallSiteDescriptor desc, final LinkRequest request) {
         final String propertyName = desc.getNameToken(2);
-        final String fullName     = name.isEmpty() ? propertyName : name + "." + propertyName;
-
-        final Context context = Context.getContextTrusted();
-
-        Class<?> javaClass = null;
-        try {
-            javaClass = context.findClass(fullName);
-        } catch (final NoClassDefFoundError | ClassNotFoundException e) {
-            //ignored
-        }
-
-        if (javaClass == null) {
-            set(propertyName, new NativeJavaPackage(fullName, getProto()), false);
-        } else {
-            set(propertyName, StaticClass.forClass(javaClass), false);
-        }
-
+        createProperty(propertyName);
         return super.lookup(desc, request);
+    }
+
+    @Override
+    protected Object invokeNoSuchProperty(final String name) {
+        return createProperty(name);
     }
 
     @Override
@@ -223,5 +212,27 @@ public final class NativeJavaPackage extends ScriptObject {
 
     private static MethodHandle findOwnMH(final String name, final Class<?> rtype, final Class<?>... types) {
         return MH.findStatic(MethodHandles.lookup(), NativeJavaPackage.class, name, MH.type(rtype, types));
+    }
+
+    private Object createProperty(final String propertyName) {
+        final String fullName     = name.isEmpty() ? propertyName : name + "." + propertyName;
+        final Context context = Context.getContextTrusted();
+
+        Class<?> javaClass = null;
+        try {
+            javaClass = context.findClass(fullName);
+        } catch (final NoClassDefFoundError | ClassNotFoundException e) {
+            //ignored
+        }
+
+        final Object propertyValue;
+        if (javaClass == null) {
+            propertyValue = new NativeJavaPackage(fullName, getProto());
+        } else {
+            propertyValue = StaticClass.forClass(javaClass);
+        }
+
+        set(propertyName, propertyValue, false);
+        return propertyValue;
     }
 }
