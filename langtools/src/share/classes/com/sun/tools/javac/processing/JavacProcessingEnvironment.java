@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -984,7 +984,7 @@ public class JavacProcessingEnvironment implements ProcessingEnvironment, Closea
 
         /** Enter a set of generated class files. */
         private List<ClassSymbol> enterClassFiles(Map<String, JavaFileObject> classFiles) {
-            ClassReader reader = ClassReader.instance(context);
+            Symtab symtab = Symtab.instance(context);
             Names names = Names.instance(context);
             List<ClassSymbol> list = List.nil();
 
@@ -996,14 +996,14 @@ public class JavacProcessingEnvironment implements ProcessingEnvironment, Closea
                 ClassSymbol cs;
                 if (isPkgInfo(file, JavaFileObject.Kind.CLASS)) {
                     Name packageName = Convert.packagePart(name);
-                    PackageSymbol p = reader.enterPackage(packageName);
+                    PackageSymbol p = symtab.enterPackage(packageName);
                     if (p.package_info == null)
-                        p.package_info = reader.enterClass(Convert.shortName(name), p);
+                        p.package_info = symtab.enterClass(Convert.shortName(name), p);
                     cs = p.package_info;
                     if (cs.classfile == null)
                         cs.classfile = file;
                 } else
-                    cs = reader.enterClass(name, file);
+                    cs = symtab.enterClass(name, file);
                 list = list.prepend(cs);
             }
             return list.reverse();

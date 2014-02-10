@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -54,7 +54,7 @@ import com.sun.imageio.plugins.bmp.BMPCompressionTypes;
  * listed in the following
  * table:
  *
- * <p><table border=1>
+ * <table border=1>
  * <caption><b>Compression Types</b></caption>
  * <tr><th>Type String</th> <th>Description</th>  <th>Image Types</th></tr>
  * <tr><td>BI_RGB</td>  <td>Uncompressed RLE</td> <td>{@literal <= } 8-bits/sample</td></tr>

@@ -34,7 +34,6 @@
 /*
  * @test
  * @bug 4486658
- * @compile -source 1.5 ExchangeLoops.java
  * @run main/timeout=720 ExchangeLoops
  * @summary checks to make sure a pipeline of exchangers passes data.
  */

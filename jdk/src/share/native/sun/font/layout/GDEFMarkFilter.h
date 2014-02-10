@@ -55,7 +55,7 @@ public:
     GDEFMarkFilter(const LEReferenceTo<GlyphDefinitionTableHeader> &gdefTable, LEErrorCode &success);
     virtual ~GDEFMarkFilter();
 
-    virtual le_bool accept(LEGlyphID glyph) const;
+    virtual le_bool accept(LEGlyphID glyph, LEErrorCode &success) const;
 };
 
 U_NAMESPACE_END

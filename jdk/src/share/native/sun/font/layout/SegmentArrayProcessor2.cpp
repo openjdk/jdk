@@ -65,17 +65,18 @@ void SegmentArrayProcessor2::process(LEGlyphStorage &glyphStorage, LEErrorCode &
 
     for (glyph = 0; glyph < glyphCount; glyph += 1) {
         LEGlyphID thisGlyph = glyphStorage[glyph];
+        // lookupSegment already range checked by lookupSegment() function.
         const LookupSegment *lookupSegment = segmentArrayLookupTable->lookupSegment(segmentArrayLookupTable, segments, thisGlyph, success);
 
-        if (lookupSegment != NULL)  {
+        if (lookupSegment != NULL&& LE_SUCCESS(success))  {
             TTGlyphID firstGlyph = SWAPW(lookupSegment->firstGlyph);
+            TTGlyphID lastGlyph = SWAPW(lookupSegment->lastGlyph);
             le_int16  offset = SWAPW(lookupSegment->value);
-
-            if (offset != 0) {
-              TTGlyphID  *glyphArray = (TTGlyphID *) ((char *) subtableHeader.getAliasTODO() + offset);
-                TTGlyphID   newGlyph   = SWAPW(glyphArray[LE_GET_GLYPH(thisGlyph) - firstGlyph]);
-
-                glyphStorage[glyph] = LE_SET_GLYPH(thisGlyph, newGlyph);
+            TTGlyphID thisGlyphId=  LE_GET_GLYPH(thisGlyph);
+            LEReferenceToArrayOf<TTGlyphID> glyphArray(subtableHeader, success, offset, lastGlyph - firstGlyph + 1);
+            if (offset != 0 && thisGlyphId <= lastGlyph && thisGlyphId >= firstGlyph && LE_SUCCESS(success) ) {
+              TTGlyphID   newGlyph   = SWAPW(glyphArray[thisGlyphId]);
+              glyphStorage[glyph] = LE_SET_GLYPH(thisGlyph, newGlyph);
             }
         }
     }
