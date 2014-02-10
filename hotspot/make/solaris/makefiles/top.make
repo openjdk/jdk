@@ -114,7 +114,7 @@ $(adjust-mflags): $(GAMMADIR)/make/$(Platform_os_family)/makefiles/adjust-mflags
 the_vm: vm_build_preliminaries $(adjust-mflags)
 	@$(MAKE) -f vm.make $(MFLAGS-adjusted)
 
-install gamma: the_vm
+install: the_vm
 	@$(MAKE) -f vm.make $@
 
 # next rules support "make foo.[oi]"
