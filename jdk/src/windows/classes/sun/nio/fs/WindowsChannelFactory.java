@@ -25,19 +25,22 @@
 
 package sun.nio.fs;
 
-import java.nio.file.*;
-import java.nio.channels.*;
 import java.io.FileDescriptor;
 import java.io.IOException;
-import java.util.*;
+import java.nio.channels.AsynchronousFileChannel;
+import java.nio.channels.FileChannel;
+import java.nio.file.LinkOption;
+import java.nio.file.OpenOption;
+import java.nio.file.StandardOpenOption;
+import java.util.Set;
 
 import com.sun.nio.file.ExtendedOpenOption;
 
+import sun.misc.JavaIOFileDescriptorAccess;
+import sun.misc.SharedSecrets;
 import sun.nio.ch.FileChannelImpl;
 import sun.nio.ch.ThreadPool;
 import sun.nio.ch.WindowsAsynchronousFileChannelImpl;
-import sun.misc.SharedSecrets;
-import sun.misc.JavaIOFileDescriptorAccess;
 
 import static sun.nio.fs.WindowsNativeDispatcher.*;
 import static sun.nio.fs.WindowsConstants.*;
@@ -157,7 +160,7 @@ class WindowsChannelFactory {
             throw new IllegalArgumentException("APPEND + TRUNCATE_EXISTING not allowed");
 
         FileDescriptor fdObj = open(pathForWindows, pathToCheck, flags, pSecurityDescriptor);
-        return FileChannelImpl.open(fdObj, flags.read, flags.write, flags.append, null);
+        return FileChannelImpl.open(fdObj, pathForWindows, flags.read, flags.write, flags.append, null);
     }
 
     /**

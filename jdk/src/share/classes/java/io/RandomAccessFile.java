@@ -62,6 +62,12 @@ public class RandomAccessFile implements DataOutput, DataInput, Closeable {
     private FileChannel channel = null;
     private boolean rw;
 
+    /**
+     * The path of the referenced file
+     * (null if the stream is created with a file descriptor)
+     */
+    private final String path;
+
     private Object closeLock = new Object();
     private volatile boolean closed = false;
 
@@ -233,6 +239,7 @@ public class RandomAccessFile implements DataOutput, DataInput, Closeable {
         }
         fd = new FileDescriptor();
         fd.attach(this);
+        path = name;
         open(name, imode);
     }
 
@@ -272,7 +279,7 @@ public class RandomAccessFile implements DataOutput, DataInput, Closeable {
     public final FileChannel getChannel() {
         synchronized (this) {
             if (channel == null) {
-                channel = FileChannelImpl.open(fd, true, rw, this);
+                channel = FileChannelImpl.open(fd, path, true, rw, this);
             }
             return channel;
         }
