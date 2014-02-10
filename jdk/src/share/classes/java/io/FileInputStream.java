@@ -194,7 +194,11 @@ class FileInputStream extends InputStream
      *             file is reached.
      * @exception  IOException  if an I/O error occurs.
      */
-    public native int read() throws IOException;
+    public int read() throws IOException {
+        return read0();
+    }
+
+    private native int read0() throws IOException;
 
     /**
      * Reads a subarray as a sequence of bytes.
