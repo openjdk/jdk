@@ -2875,10 +2875,10 @@ JVM_ENTRY(void, JVM_StartThread(JNIEnv* env, jobject jthread))
     if (JvmtiExport::should_post_resource_exhausted()) {
       JvmtiExport::post_resource_exhausted(
         JVMTI_RESOURCE_EXHAUSTED_OOM_ERROR | JVMTI_RESOURCE_EXHAUSTED_THREADS,
-        "unable to create new native thread");
+        os::native_thread_creation_failed_msg());
     }
     THROW_MSG(vmSymbols::java_lang_OutOfMemoryError(),
-              "unable to create new native thread");
+              os::native_thread_creation_failed_msg());
   }
 
   Thread::start(native_thread);
