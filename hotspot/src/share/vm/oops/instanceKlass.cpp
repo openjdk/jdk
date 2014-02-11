@@ -2711,7 +2711,7 @@ void InstanceKlass::remove_osr_nmethod(nmethod* n) {
   Method* m = n->method();
   // Search for match
   while(cur != NULL && cur != n) {
-    if (TieredCompilation) {
+    if (TieredCompilation && m == cur->method()) {
       // Find max level before n
       max_level = MAX2(max_level, cur->comp_level());
     }
@@ -2733,7 +2733,9 @@ void InstanceKlass::remove_osr_nmethod(nmethod* n) {
     cur = next;
     while (cur != NULL) {
       // Find max level after n
-      max_level = MAX2(max_level, cur->comp_level());
+      if (m == cur->method()) {
+        max_level = MAX2(max_level, cur->comp_level());
+      }
       cur = cur->osr_link();
     }
     m->set_highest_osr_comp_level(max_level);
