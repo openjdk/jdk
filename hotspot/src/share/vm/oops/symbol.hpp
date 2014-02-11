@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -154,7 +154,7 @@ class Symbol : private SymbolBase {
   int identity_hash()       { return _identity_hash; }
 
   // For symbol table alternate hashing
-  unsigned int new_hash(jint seed);
+  unsigned int new_hash(juint seed);
 
   // Reference counting.  See comments above this class for when to use.
   int refcount() const      { return _refcount; }

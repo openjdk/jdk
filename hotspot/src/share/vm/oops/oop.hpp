@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -362,7 +362,7 @@ class oopDesc {
   intptr_t slow_identity_hash();
 
   // Alternate hashing code if string table is rehashed
-  unsigned int new_hash(jint seed);
+  unsigned int new_hash(juint seed);
 
   // marks are forwarded to stack when object is locked
   bool     has_displaced_mark() const;
