@@ -25,6 +25,7 @@
 
 package sun.font;
 
+import java.io.File;
 import java.awt.Font;
 import java.util.HashMap;
 import java.util.concurrent.ConcurrentHashMap;
@@ -105,8 +106,39 @@ public class FontFamily {
         return familyRank;
     }
 
+    private boolean isFromSameSource(Font2D font) {
+        if (!(font instanceof FileFont)) {
+            return false;
+        }
+
+        FileFont existingFont = null;
+        if (plain instanceof FileFont) {
+            existingFont = (FileFont)plain;
+        } else if (bold instanceof FileFont) {
+            existingFont = (FileFont)bold;
+        } else if (italic instanceof FileFont) {
+             existingFont = (FileFont)italic;
+        } else if (bolditalic instanceof FileFont) {
+             existingFont = (FileFont)bolditalic;
+        }
+        // A family isn't created until there's a font.
+        // So if we didn't find a file font it means this
+        // isn't a file-based family.
+        if (existingFont == null) {
+            return false;
+        }
+        File existDir = (new File(existingFont.platName)).getParentFile();
+
+        FileFont newFont = (FileFont)font;
+        File newDir = (new File(newFont.platName)).getParentFile();
+        return java.util.Objects.equals(newDir, existDir);
+    }
+
     public void setFont(Font2D font, int style) {
-        if (font.getRank() > familyRank) {
+        /* Allow a lower-rank font only if its a file font
+         * from the exact same source as any previous font.
+         */
+        if ((font.getRank() > familyRank) && !isFromSameSource(font)) {
             if (FontUtilities.isLogging()) {
                 FontUtilities.getLogger()
                                   .warning("Rejecting adding " + font +
