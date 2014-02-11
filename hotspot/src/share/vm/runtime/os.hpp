@@ -807,6 +807,10 @@ class os: AllStatic {
 # include "os_bsd_zero.hpp"
 #endif
 
+#ifndef OS_NATIVE_THREAD_CREATION_FAILED_MSG
+#define OS_NATIVE_THREAD_CREATION_FAILED_MSG "unable to create native thread: possibly out of memory or process/resource limits reached"
+#endif
+
  public:
 #ifndef PLATFORM_PRINT_NATIVE_STACK
   // No platform-specific code for printing the native stack.
@@ -829,6 +833,9 @@ class os: AllStatic {
   // Hint to the underlying OS that a task switch would not be good.
   // Void return because it's a hint and can fail.
   static void hint_no_preempt();
+  static const char* native_thread_creation_failed_msg() {
+    return OS_NATIVE_THREAD_CREATION_FAILED_MSG;
+  }
 
   // Used at creation if requested by the diagnostic flag PauseAtStartup.
   // Causes the VM to wait until an external stimulus has been applied
