@@ -28,6 +28,7 @@
 #include "NativeFunc.h"
 #include "jlong.h"
 #include <jni.h>
+#include "jni_util.h"
 
 /* Throws a Java Exception by name */
 
@@ -65,6 +66,12 @@ Java_sun_security_jgss_wrapper_GSSLibStub_init(JNIEnv *env,
     }
 
     libName = (*env)->GetStringUTFChars(env, jlibName, NULL);
+    if (libName == NULL) {
+        if (!(*env)->ExceptionCheck(env)) {
+            throwOutOfMemoryError(env, NULL);
+        }
+        return JNI_FALSE;
+    }
     sprintf(debugBuf, "[GSSLibStub_init] libName=%s", libName);
     debug(env, debugBuf);
 
@@ -110,6 +117,8 @@ Java_sun_security_jgss_wrapper_GSSLibStub_getMechPtr(JNIEnv *env,
         }
       }
       (*env)->ReleaseByteArrayElements(env, jbytes, bytes, 0);
+    } else {
+      JNU_CHECK_EXCEPTION_RETURN(env, jlong_zero);
     }
     if (found != JNI_TRUE) {
       checkStatus(env, NULL, GSS_S_BAD_MECH, 0, "[GSSLibStub_getMechPtr]");
@@ -147,7 +156,9 @@ gss_channel_bindings_t getGSSCB(JNIEnv *env, jobject jcb) {
     cb->initiator_addrtype = GSS_C_AF_INET;
     value = (*env)->CallObjectMethod(env, jinetAddr,
                                      MID_InetAddress_getAddr);
-    initGSSBuffer(env, value, &(cb->initiator_address));
+    if (!initGSSBuffer(env, value, &(cb->initiator_address))) {
+        return NULL;
+    }
   } else {
     cb->initiator_addrtype = GSS_C_AF_NULLADDR;
     cb->initiator_address.length = 0;
@@ -161,7 +172,9 @@ gss_channel_bindings_t getGSSCB(JNIEnv *env, jobject jcb) {
     cb->acceptor_addrtype = GSS_C_AF_INET;
     value = (*env)->CallObjectMethod(env, jinetAddr,
                                      MID_InetAddress_getAddr);
-    initGSSBuffer(env, value, &(cb->acceptor_address));
+    if (!initGSSBuffer(env, value, &(cb->acceptor_address))) {
+        return NULL;
+    }
   } else {
     cb->acceptor_addrtype = GSS_C_AF_NULLADDR;
     cb->acceptor_address.length = 0;
@@ -171,7 +184,9 @@ gss_channel_bindings_t getGSSCB(JNIEnv *env, jobject jcb) {
   value = (*env)->CallObjectMethod(env, jcb,
                                    MID_ChannelBinding_getAppData);
   if (value != NULL) {
-    initGSSBuffer(env, value, &(cb->application_data));
+    if (!initGSSBuffer(env, value, &(cb->application_data))) {
+        return NULL;
+    }
   } else {
     cb->application_data.length = 0;
     cb->application_data.value = NULL;
@@ -230,6 +245,7 @@ void setSupplementaryInfo(JNIEnv *env, jobject jstub, jobject jprop,
     isUnseq = ((suppInfo & GSS_S_UNSEQ_TOKEN) != 0);
     hasGap = ((suppInfo & GSS_S_GAP_TOKEN) != 0);
     minorMsg = getMinorMessage(env, jstub, minor);
+    CHECK_NULL(minorMsg);
     (*env)->CallVoidMethod(env, jprop, MID_MessageProp_setSupplementaryStates,
                            isDuplicate, isOld, isUnseq, hasGap, minor,
                            minorMsg);
@@ -277,6 +293,7 @@ Java_sun_security_jgss_wrapper_GSSLibStub_inquireNamesForMech(JNIEnv *env,
   /* release intermediate buffers */
   deleteGSSOIDSet(nameTypes);
 
+  CHECK_NULL_RETURN(result, NULL);
   checkStatus(env, jobj, major, minor, "[GSSLibStub_inquireNamesForMech]");
   return result;
   } else return NULL;
@@ -326,7 +343,9 @@ Java_sun_security_jgss_wrapper_GSSLibStub_importName(JNIEnv *env,
 
   debug(env, "[GSSLibStub_importName]");
 
-  initGSSBuffer(env, jnameVal, &nameVal);
+  if (!initGSSBuffer(env, jnameVal, &nameVal)) {
+    return jlong_zero;
+  }
   nameType = newGSSOID(env, jnameType);
   if ((*env)->ExceptionCheck(env)) {
     deleteGSSOID(nameType);
@@ -501,9 +520,14 @@ Java_sun_security_jgss_wrapper_GSSLibStub_displayName(JNIEnv *env,
 
   /* release intermediate buffers */
   jname = getJavaString(env, &outNameBuf);
+  if (jname == NULL && !(*env)->ExceptionCheck(env)) {
+    throwOutOfMemoryError(env, NULL);
+    return NULL;
+  }
 
   jtype = getJavaOID(env, outNameType);
   jresult = (*env)->NewObjectArray(env, 2, CLS_Object, NULL);
+  CHECK_NULL_RETURN(jresult, NULL);
 
   /* return immediately if an exception has occurred */
   if ((*env)->ExceptionCheck(env)) {
@@ -738,7 +762,9 @@ Java_sun_security_jgss_wrapper_GSSLibStub_importContext(JNIEnv *env,
   debug(env, "[GSSLibStub_importContext]");
 
   contextHdl = GSS_C_NO_CONTEXT;
-  initGSSBuffer(env, jctxtToken, &ctxtToken);
+  if (!initGSSBuffer(env, jctxtToken, &ctxtToken)) {
+    return NULL;
+  }
 
   /* gss_import_sec_context(...) => GSS_S_NO_CONTEXT, GSS_S_DEFECTIVE_TOKEN,
      GSS_S_UNAVAILABLE, GSS_S_UNAUTHORIZED */
@@ -829,7 +855,9 @@ Java_sun_security_jgss_wrapper_GSSLibStub_initContext(JNIEnv *env,
     return NULL;
   }
 
-  initGSSBuffer(env, jinToken, &inToken);
+  if (!initGSSBuffer(env, jinToken, &inToken)) {
+    return NULL;
+  }
 
   sprintf(debugBuf,
           "[GSSLibStub_initContext] before: pCred=%ld, pContext=%ld",
@@ -927,7 +955,9 @@ Java_sun_security_jgss_wrapper_GSSLibStub_acceptContext(JNIEnv *env,
   contextHdl = (gss_ctx_id_t)jlong_to_ptr(
     (*env)->GetLongField(env, jcontextSpi, FID_NativeGSSContext_pContext));
   credHdl = (gss_cred_id_t) jlong_to_ptr(pCred);
-  initGSSBuffer(env, jinToken, &inToken);
+  if (!initGSSBuffer(env, jinToken, &inToken)) {
+    return NULL;
+  }
   cb = getGSSCB(env, jcb);
   if ((*env)->ExceptionCheck(env)) {
     free(cb);
@@ -1102,6 +1132,7 @@ Java_sun_security_jgss_wrapper_GSSLibStub_inquireContext(JNIEnv *env,
   result[5] = (jlong) getJavaTime(time);
 
   jresult = (*env)->NewLongArray(env, 6);
+  CHECK_NULL_RETURN(jresult, NULL);
   (*env)->SetLongArrayRegion(env, jresult, 0, 6, result);
 
   /* release intermediate buffers */
@@ -1335,7 +1366,9 @@ Java_sun_security_jgss_wrapper_GSSLibStub_getMic(JNIEnv *env, jobject jobj,
   }
   contextHdl = (gss_ctx_id_t) jlong_to_ptr(pContext);
   qop = (gss_qop_t) jqop;
-  initGSSBuffer(env, jmsg, &msg);
+  if (!initGSSBuffer(env, jmsg, &msg)) {
+    return NULL;
+  }
 
   /* gss_get_mic(...) => GSS_S_CONTEXT_EXPIRED, GSS_S_NO_CONTEXT(!),
      GSS_S_BAD_QOP */
@@ -1379,8 +1412,12 @@ Java_sun_security_jgss_wrapper_GSSLibStub_verifyMic(JNIEnv *env,
         "[GSSLibStub_verifyMic]");
     return;
   }
-  initGSSBuffer(env, jmsg, &msg);
-  initGSSBuffer(env, jmsgToken, &msgToken);
+
+  if (!initGSSBuffer(env, jmsg, &msg) ||
+      !initGSSBuffer(env, jmsgToken, &msgToken)) {
+    return;
+  }
+
   qop = (gss_qop_t) (*env)->CallIntMethod(env, jprop, MID_MessageProp_getQOP);
   /* gss_verify_mic(...) => GSS_S_DEFECTIVE_TOKEN, GSS_S_BAD_MIC,
      GSS_S_CONTEXT_EXPIRED, GSS_S_DUPLICATE_TOKEN(!), GSS_S_OLD_TOKEN(!),
@@ -1433,7 +1470,9 @@ Java_sun_security_jgss_wrapper_GSSLibStub_wrap(JNIEnv *env,
     (*env)->CallBooleanMethod(env, jprop, MID_MessageProp_getPrivacy);
   qop = (gss_qop_t)
     (*env)->CallIntMethod(env, jprop, MID_MessageProp_getQOP);
-  initGSSBuffer(env, jmsg, &msg);
+  if (!initGSSBuffer(env, jmsg, &msg)) {
+    return NULL;
+  }
   /* gss_wrap(...) => GSS_S_CONTEXT_EXPIRED, GSS_S_NO_CONTEXT(!),
      GSS_S_BAD_QOP */
   major = (*ftab->wrap)(&minor, contextHdl, confFlag, qop, &msg, &confState,
@@ -1479,7 +1518,9 @@ Java_sun_security_jgss_wrapper_GSSLibStub_unwrap(JNIEnv *env,
     checkStatus(env, jobj, GSS_S_CONTEXT_EXPIRED, 0, "[GSSLibStub_unwrap]");
     return NULL;
   }
-  initGSSBuffer(env, jmsgToken, &msgToken);
+  if (!initGSSBuffer(env, jmsgToken, &msgToken)) {
+    return NULL;
+  }
   confState = 0;
   qop = GSS_C_QOP_DEFAULT;
   /* gss_unwrap(...) => GSS_S_DEFECTIVE_TOKEN, GSS_S_BAD_MIC,

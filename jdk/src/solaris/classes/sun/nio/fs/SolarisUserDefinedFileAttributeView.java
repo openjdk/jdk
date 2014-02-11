@@ -149,7 +149,7 @@ class SolarisUserDefinedFileAttributeView
                 int afd = openat(fd, nameAsBytes(file,name), (O_RDONLY|O_XATTR), 0);
 
                 // wrap with channel
-                FileChannel fc = UnixChannelFactory.newFileChannel(afd, true, false);
+                FileChannel fc = UnixChannelFactory.newFileChannel(afd, file.toString(), true, false);
 
                 // read to EOF (nothing we can do if I/O error occurs)
                 try {
@@ -190,7 +190,7 @@ class SolarisUserDefinedFileAttributeView
                                  UnixFileModeAttribute.ALL_PERMISSIONS);
 
                 // wrap with channel
-                FileChannel fc = UnixChannelFactory.newFileChannel(afd, false, true);
+                FileChannel fc = UnixChannelFactory.newFileChannel(afd, file.toString(), false, true);
 
                 // write value (nothing we can do if I/O error occurs)
                 try {

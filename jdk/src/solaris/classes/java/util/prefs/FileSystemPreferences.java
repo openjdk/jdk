@@ -48,6 +48,15 @@ import sun.util.logging.PlatformLogger;
  * @since   1.4
  */
 class FileSystemPreferences extends AbstractPreferences {
+
+    static {
+        PrivilegedAction<Void> load = () -> {
+            System.loadLibrary("prefs");
+            return null;
+        };
+        AccessController.doPrivileged(load);
+    }
+
     /**
      * Sync interval in seconds.
      */
@@ -868,7 +877,7 @@ class FileSystemPreferences extends AbstractPreferences {
 
     /**
      * Returns the node name corresponding to the specified directory name.
- * (Inverts the transformation of dirName(String).
+     * (Inverts the transformation of dirName(String).
      */
     private static String nodeName(String dirName) {
         if (dirName.charAt(0) != '_')
