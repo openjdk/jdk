@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -554,6 +554,7 @@ class InstanceKlass: public Klass {
     if (hk == NULL) {
       return NULL;
     } else {
+      assert(*hk != NULL, "host klass should always be set if the address is not null");
       return *hk;
     }
   }
