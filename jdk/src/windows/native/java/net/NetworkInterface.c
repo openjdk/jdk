@@ -614,7 +614,7 @@ jobject createNetworkInterface
             int scope;
             iaObj = (*env)->NewObject(env, ia6_class, ia6_ctrID);
             if (iaObj) {
-                int ret = setInet6Address_ipaddress(env, iaObj,  (jbyte *)&(addrs->addr.him6.sin6_addr.s6_addr));
+                jboolean ret = setInet6Address_ipaddress(env, iaObj,  (jbyte *)&(addrs->addr.him6.sin6_addr.s6_addr));
                 if (ret == JNI_FALSE) {
                     return NULL;
                 }
