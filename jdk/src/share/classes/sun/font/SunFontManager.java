@@ -762,7 +762,7 @@ public abstract class SunFontManager implements FontSupport, FontManagerForSGE {
             if (family == null) {
                 family = new FontFamily(familyName, false, rank);
                 family.setFont(f, f.style);
-            } else if (family.getRank() >= rank) {
+            } else {
                 family.setFont(f, f.style);
             }
             fullNameToFont.put(fontName.toLowerCase(Locale.ENGLISH), f);
@@ -853,7 +853,7 @@ public abstract class SunFontManager implements FontSupport, FontManagerForSGE {
                 if (family == null) {
                     family = new FontFamily(familyName, false, rank);
                     family.setFont(newFont, newFont.style);
-                } else if (family.getRank() >= rank) {
+                } else {
                     family.setFont(newFont, newFont.style);
                 }
                 return newFont;
