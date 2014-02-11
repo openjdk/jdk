@@ -242,7 +242,7 @@ typedef TwoOopHashtable<Klass*, mtClass>      KlassTwoOopHashtable;
 typedef Hashtable<Klass*, mtClass>            KlassHashtable;
 typedef HashtableEntry<Klass*, mtClass>       KlassHashtableEntry;
 typedef TwoOopHashtable<Symbol*, mtClass>     SymbolTwoOopHashtable;
-typedef BinaryTreeDictionary<Metablock, FreeList> MetablockTreeDictionary;
+typedef BinaryTreeDictionary<Metablock, FreeList<Metablock> > MetablockTreeDictionary;
 
 //--------------------------------------------------------------------------------
 // VM_STRUCTS
