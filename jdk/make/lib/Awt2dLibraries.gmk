@@ -1316,6 +1316,7 @@ ifndef OPENJDK
       LDFLAGS := $(LDFLAGS_JDKLIB) \
           $(call SET_SHARED_LIBRARY_ORIGIN), \
       LDFLAGS_SUFFIX := $(LIBM) $(LDFLAGS_JDKLIB_SUFFIX), \
+      LDFLAGS_SUFFIX_windows := $(WIN_JAVA_LIB), \
       LDFLAGS_SUFFIX_posix := -lm, \
       VERSIONINFO_RESOURCE := $(JDK_TOPDIR)/src/windows/resource/version.rc, \
       RC_FLAGS := $(RC_FLAGS) \
