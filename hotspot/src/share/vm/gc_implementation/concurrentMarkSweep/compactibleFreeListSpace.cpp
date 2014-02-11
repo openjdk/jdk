@@ -1704,8 +1704,8 @@ CompactibleFreeListSpace::returnChunkToDictionary(FreeChunk* chunk) {
   _dictionary->return_chunk(chunk);
 #ifndef PRODUCT
   if (CMSCollector::abstract_state() != CMSCollector::Sweeping) {
-    TreeChunk<FreeChunk, AdaptiveFreeList>* tc = TreeChunk<FreeChunk, AdaptiveFreeList>::as_TreeChunk(chunk);
-    TreeList<FreeChunk, AdaptiveFreeList>* tl = tc->list();
+    TreeChunk<FreeChunk, AdaptiveFreeList<FreeChunk> >* tc = TreeChunk<FreeChunk, AdaptiveFreeList<FreeChunk> >::as_TreeChunk(chunk);
+    TreeList<FreeChunk, AdaptiveFreeList<FreeChunk> >* tl = tc->list();
     tl->verify_stats();
   }
 #endif // PRODUCT
@@ -2515,10 +2515,10 @@ void CompactibleFreeListSpace::verifyIndexedFreeList(size_t size) const {
 
 #ifndef PRODUCT
 void CompactibleFreeListSpace::check_free_list_consistency() const {
-  assert((TreeChunk<FreeChunk, AdaptiveFreeList>::min_size() <= IndexSetSize),
+  assert((TreeChunk<FreeChunk, AdaptiveFreeList<FreeChunk> >::min_size() <= IndexSetSize),
     "Some sizes can't be allocated without recourse to"
     " linear allocation buffers");
-  assert((TreeChunk<FreeChunk, AdaptiveFreeList>::min_size()*HeapWordSize == sizeof(TreeChunk<FreeChunk, AdaptiveFreeList>)),
+  assert((TreeChunk<FreeChunk, AdaptiveFreeList<FreeChunk> >::min_size()*HeapWordSize == sizeof(TreeChunk<FreeChunk, AdaptiveFreeList<FreeChunk> >)),
     "else MIN_TREE_CHUNK_SIZE is wrong");
   assert(IndexSetStart != 0, "IndexSetStart not initialized");
   assert(IndexSetStride != 0, "IndexSetStride not initialized");
