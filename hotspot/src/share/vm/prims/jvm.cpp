@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -518,6 +518,12 @@ JVM_ENTRY(void, JVM_MonitorWait(JNIEnv* env, jobject handle, jlong ms))
   JavaThreadInObjectWaitState jtiows(thread, ms != 0);
   if (JvmtiExport::should_post_monitor_wait()) {
     JvmtiExport::post_monitor_wait((JavaThread *)THREAD, (oop)obj(), ms);
+
+    // The current thread already owns the monitor and it has not yet
+    // been added to the wait queue so the current thread cannot be
+    // made the successor. This means that the JVMTI_EVENT_MONITOR_WAIT
+    // event handler cannot accidentally consume an unpark() meant for
+    // the ParkEvent associated with this ObjectMonitor.
   }
   ObjectSynchronizer::wait(obj, ms, CHECK);
 JVM_END
