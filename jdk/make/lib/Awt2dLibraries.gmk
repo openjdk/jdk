@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2013, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2014, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -792,9 +792,9 @@ else
 endif
 
 BUILD_LIBFONTMANAGER_CFLAGS_COMMON := \
+    $(FONT_HEADERS) \
     $(X_CFLAGS) \
     -DLE_STANDALONE -DHEADLESS \
-    $(FONT_HEADERS) \
     -I$(JDK_TOPDIR)/src/share/native/sun/font \
     -I$(JDK_TOPDIR)/src/share/native/sun/font/layout \
     -I$(JDK_TOPDIR)/src/share/native/sun/awt/image/cvutils \

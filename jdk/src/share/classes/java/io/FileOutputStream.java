@@ -67,6 +67,12 @@ class FileOutputStream extends OutputStream
      */
     private FileChannel channel;
 
+    /**
+     * The path of the referenced file
+     * (null if the stream is created with a file descriptor)
+     */
+    private final String path;
+
     private final Object closeLock = new Object();
     private volatile boolean closed = false;
 
@@ -202,6 +208,7 @@ class FileOutputStream extends OutputStream
         this.fd = new FileDescriptor();
         fd.attach(this);
         this.append = append;
+        this.path = name;
 
         open(name, append);
     }
@@ -239,6 +246,7 @@ class FileOutputStream extends OutputStream
         }
         this.fd = fdObj;
         this.append = false;
+        this.path = null;
 
         fd.attach(this);
     }
@@ -376,7 +384,7 @@ class FileOutputStream extends OutputStream
     public FileChannel getChannel() {
         synchronized (this) {
             if (channel == null) {
-                channel = FileChannelImpl.open(fd, false, true, append, this);
+                channel = FileChannelImpl.open(fd, path, false, true, append, this);
             }
             return channel;
         }

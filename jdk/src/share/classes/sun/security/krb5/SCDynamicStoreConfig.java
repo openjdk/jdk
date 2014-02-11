@@ -42,7 +42,7 @@ public class SCDynamicStoreConfig {
                 public Boolean run() {
                     String osname = System.getProperty("os.name");
                     if (osname.contains("OS X")) {
-                        System.loadLibrary("osx");
+                        System.loadLibrary("osxkrb5");
                         return true;
                     }
                     return false;
