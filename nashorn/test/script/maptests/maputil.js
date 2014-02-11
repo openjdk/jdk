@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014 Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  * 
  * This code is free software; you can redistribute it and/or modify it
@@ -22,11 +22,17 @@
  */
 
 /**
- * JDK-8026161: Don't narrow floating-point literals in the lexer
- *
- * @test
- * @run
+ * @subtest
  */
 
-print(Java.type("jdk.nashorn.test.models.IntFloatOverloadSelection").overloadedMethod(1))
-print(Java.type("jdk.nashorn.test.models.IntFloatOverloadSelection").overloadedMethod(1.0))
+function assertSameMap(obj1, obj2, msg) {
+    if (! Debug.identical(Debug.map(obj1), Debug.map(obj2))) {
+        fail(obj1.constructor + " instances don't share map");
+    }
+}
+
+function assertNotSameMap(obj1, obj2, msg) {
+    if (Debug.identical(Debug.map(obj1), Debug.map(obj2))) {
+        fail(obj1.constructor + " and " + obj2.constructor + " instances share map");
+    }
+}

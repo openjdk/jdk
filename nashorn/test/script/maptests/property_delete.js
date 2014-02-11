@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014 Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  * 
  * This code is free software; you can redistribute it and/or modify it
@@ -22,11 +22,27 @@
  */
 
 /**
- * JDK-8026161: Don't narrow floating-point literals in the lexer
- *
  * @test
- * @run
+ * @option -Dnashorn.debug=true
+ * @fork
  */
 
-print(Java.type("jdk.nashorn.test.models.IntFloatOverloadSelection").overloadedMethod(1))
-print(Java.type("jdk.nashorn.test.models.IntFloatOverloadSelection").overloadedMethod(1.0))
+load(__DIR__ + "maputil.js");
+
+function Foo() {
+    this.x = 33;
+}
+
+var obj1 = new Foo();
+var obj2 = new Foo();
+
+assertSameMap(obj1, obj2);
+
+// property deletion at same callsite
+function deleteX(obj) {
+   delete obj.x;
+}
+deleteX(obj1);
+deleteX(obj2);
+
+assertSameMap(obj1, obj2);
