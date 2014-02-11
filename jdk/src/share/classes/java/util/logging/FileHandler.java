@@ -535,7 +535,7 @@ public class FileHandler extends StreamHandler {
                     continue;
                 } else if (ch2 == 'h') {
                     file = new File(System.getProperty("user.home"));
-                    if (isSetUID()) {
+                    if (sun.misc.VM.isSetUID()) {
                         // Ok, we are in a set UID program.  For safety's sake
                         // we disallow attempts to open files relative to %h.
                         throw new IOException("can't use %h in set UID program");
@@ -669,9 +669,4 @@ public class FileHandler extends StreamHandler {
             lastException = ex;
         }
     }
-
-    /**
-     * check if we are in a set UID program.
-     */
-    private static native boolean isSetUID();
 }
