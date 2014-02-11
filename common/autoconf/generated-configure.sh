@@ -4092,7 +4092,7 @@ fi
 #CUSTOM_AUTOCONF_INCLUDE
 
 # Do not change or remove the following line, it is needed for consistency checks:
-DATE_WHEN_GENERATED=1391775920
+DATE_WHEN_GENERATED=1392111785
 
 ###############################################################################
 #
@@ -42275,7 +42275,7 @@ $as_echo "no" >&6; }
 $as_echo "yes" >&6; }
       USING_BROKEN_SUSE_LD=yes
     fi
-    rm -rf version-script.map main.c
+    rm -rf version-script.map main.c a.out
   fi
 
 

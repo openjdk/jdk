@@ -1205,7 +1205,7 @@ AC_DEFUN_ONCE([TOOLCHAIN_SETUP_COMPILER_FLAGS_MISC],
       AC_MSG_RESULT(yes)
       USING_BROKEN_SUSE_LD=yes
     fi
-    rm -rf version-script.map main.c
+    rm -rf version-script.map main.c a.out
   fi
   AC_SUBST(USING_BROKEN_SUSE_LD)
 ])
