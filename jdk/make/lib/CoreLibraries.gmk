@@ -123,6 +123,7 @@ LIBJAVA_SRC_DIRS := $(JDK_TOPDIR)/src/$(OPENJDK_TARGET_OS_API_DIR)/native/java/l
     $(JDK_TOPDIR)/src/share/native/java/security \
     $(JDK_TOPDIR)/src/share/native/common \
     $(JDK_TOPDIR)/src/share/native/sun/misc \
+    $(JDK_TOPDIR)/src/$(OPENJDK_TARGET_OS_API_DIR)/native/sun/misc \
     $(JDK_TOPDIR)/src/share/native/sun/reflect \
     $(JDK_TOPDIR)/src/share/native/java/util \
     $(JDK_TOPDIR)/src/share/native/java/util/concurrent/atomic \
@@ -187,7 +188,7 @@ $(eval $(call SetupNativeCompilation,BUILD_LIBJAVA, \
     LIBRARY := java, \
     OUTPUT_DIR := $(INSTALL_LIBRARIES_HERE), \
     SRC := $(LIBJAVA_SRC_DIRS), \
-    EXCLUDES := fdlibm/src zip, \
+    EXCLUDES := fdlibm/src zip prefs, \
     EXCLUDE_FILES := $(LIBJAVA_EXCLUDE_FILES), \
     LANG := C, \
     OPTIMIZATION := HIGH, \
@@ -282,6 +283,41 @@ $(eval $(call SetupNativeCompilation,BUILD_LIBZIP, \
 $(BUILD_LIBZIP): $(BUILD_LIBJAVA)
 
 BUILD_LIBRARIES += $(BUILD_LIBZIP)
+
+##########################################################################################
+
+ifeq ($(OPENJDK_TARGET_OS), macosx)
+  LIBPREF_SRC_DIRS := $(JDK_TOPDIR)/src/macosx/native/java/util/prefs
+else
+  LIBPREF_SRC_DIRS := $(JDK_TOPDIR)/src/$(OPENJDK_TARGET_OS_API_DIR)/native/java/util/prefs
+endif
+
+$(eval $(call SetupNativeCompilation,BUILD_LIBPREFS, \
+    LIBRARY := prefs, \
+    OUTPUT_DIR := $(INSTALL_LIBRARIES_HERE), \
+    SRC := $(LIBPREF_SRC_DIRS), \
+    LANG := C, \
+    OPTIMIZATION := HIGH, \
+    CFLAGS := $(CFLAGS_JDKLIB), \
+    MAPFILE := $(JDK_TOPDIR)/make/mapfiles/libprefs/mapfile-vers, \
+    LDFLAGS := $(LDFLAGS_JDKLIB) \
+        $(call SET_SHARED_LIBRARY_ORIGIN), \
+    LDFLAGS_SUFFIX_linux := -ljvm -ljava, \
+    LDFLAGS_SUFFIX_solaris := -ljvm -ljava -lc, \
+    LDFLAGS_SUFFIX_aix := -ljvm -ljava, \
+    LDFLAGS_SUFFIX_windows := advapi32.lib, \
+    LDFLAGS_SUFFIX_macosx := -ljvm -framework CoreFoundation, \
+    VERSIONINFO_RESOURCE := $(JDK_TOPDIR)/src/windows/resource/version.rc, \
+    RC_FLAGS := $(RC_FLAGS) \
+        -D "JDK_FNAME=prefs.dll" \
+        -D "JDK_INTERNAL_NAME=prefs" \
+        -D "JDK_FTYPE=0x2L", \
+    OBJECT_DIR := $(JDK_OUTPUTDIR)/objs/libprefs, \
+    DEBUG_SYMBOLS := $(DEBUG_ALL_BINARIES)))
+
+$(BUILD_LIBPREFS): $(BUILD_LIBJAVA)
+    
+BUILD_LIBRARIES += $(BUILD_LIBPREFS)
 
 ##########################################################################################
 

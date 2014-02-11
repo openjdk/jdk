@@ -82,7 +82,7 @@ class MacOSXPreferencesFile {
         java.security.AccessController.doPrivileged(
             new java.security.PrivilegedAction<Void>() {
                 public Void run() {
-                    System.loadLibrary("osx");
+                    System.loadLibrary("prefs");
                     return null;
                 }
             });

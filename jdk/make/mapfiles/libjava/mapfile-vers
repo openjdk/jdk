@@ -236,10 +236,6 @@ SUNWprivate_1.1 {
 		Java_java_util_TimeZone_getSystemTimeZoneID;
 		Java_java_util_TimeZone_getSystemGMTOffsetID;
 		Java_java_util_concurrent_atomic_AtomicLong_VMSupportsCS8;
-		Java_java_util_prefs_FileSystemPreferences_chmod;
-		Java_java_util_prefs_FileSystemPreferences_lockFile0;
-		Java_java_util_prefs_FileSystemPreferences_unlockFile0;
-		Java_java_util_logging_FileHandler_isSetUID;
 		Java_sun_misc_MessageUtils_toStderr;
 		Java_sun_misc_MessageUtils_toStdout;
 		Java_sun_misc_NativeSignalHandler_handle0;
@@ -274,16 +270,12 @@ SUNWprivate_1.1 {
                 Java_sun_misc_Version_getJvmVersionInfo;
                 Java_sun_misc_Version_getJvmSpecialVersion;
 		Java_sun_misc_VM_latestUserDefinedLoader;
+                Java_sun_misc_VM_isSetUID;
                 Java_sun_misc_VM_initialize;
 		Java_sun_misc_VMSupport_initAgentProperties;
 
                 # ZipFile.c needs this one
 		throwFileNotFoundException;
-
-#		Java_sun_misc_VM_getState;			threads.c
-#		Java_sun_misc_VM_threadsSuspended;		threads.c
-#		Java_sun_misc_VM_unsuspendSomeThreads;		threads.c
-#		Java_sun_misc_VM_unsuspendThreads;		threads.c
 
 	# Outcalls from libjvm done using dlsym().
 
