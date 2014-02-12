@@ -371,19 +371,23 @@ function sym2addr(dso, sym) {
    return sa.dbg.lookup(dso, sym);
 }
 
-// returns the ClosestSymbol or null
-function closestSymbolFor(addr) {
-   if (sa.cdbg == null) {
+function loadObjectContainingPC(addr) {
+    if (sa.cdbg == null) {
       // no CDebugger support, return null
       return null;
-   } else {
-      var dso = sa.cdbg.loadObjectContainingPC(addr);
-      if (dso != null) {
-         return dso.closestSymbolToPC(addr);
-      } else {
-         return null;
-      }
-   }
+    }
+
+    return  sa.cdbg.loadObjectContainingPC(addr);
+}
+
+// returns the ClosestSymbol or null
+function closestSymbolFor(addr) {
+    var dso = loadObjectContainingPC(addr);
+    if (dso != null) {
+      return dso.closestSymbolToPC(addr);
+    }
+
+    return null;
 }
 
 // Address-to-symbol
@@ -884,21 +888,29 @@ function isOop(addr) {
 
 // returns description of given pointer as a String
 function whatis(addr) {
-   addr = any2addr(addr);
-   var ptrLoc = findPtr(addr);
-   if (ptrLoc.isUnknown()) {
-      var vmType = vmTypeof(addr);
-      if (vmType != null) {
-         return "pointer to " + vmType.name;
-      } else {
-         var sym = closestSymbolFor(addr);
-         if (sym != null) {
-            return sym.name + '+' + sym.offset;
-         } else {
-            return ptrLoc.toString();
-         }
-      }
-   } else {
-      return ptrLoc.toString();
-   }
+  addr = any2addr(addr);
+  var ptrLoc = findPtr(addr);
+  if (!ptrLoc.isUnknown()) {
+    return ptrLoc.toString();
+  }
+
+  var vmType = vmTypeof(addr);
+  if (vmType != null) {
+    return "pointer to " + vmType.name;
+  }
+
+  var dso = loadObjectContainingPC(addr);
+  if (dso == null) {
+    return ptrLoc.toString();
+  }
+
+  var sym = dso.closestSymbolToPC(addr);
+  if (sym != null) {
+    return sym.name + '+' + sym.offset;
+  }
+
+  var s = dso.getName();
+  var p = s.lastIndexOf("/");
+  var base = dso.getBase();
+  return s.substring(p+1, s.length) + '+' + addr.minus(base);
 }
