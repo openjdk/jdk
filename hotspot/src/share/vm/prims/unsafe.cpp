@@ -858,6 +858,11 @@ static inline void throw_new(JNIEnv *env, const char *ename) {
   strcpy(buf, "java/lang/");
   strcat(buf, ename);
   jclass cls = env->FindClass(buf);
+  if (env->ExceptionCheck()) {
+    env->ExceptionClear();
+    tty->print_cr("Unsafe: cannot throw %s because FindClass has failed", buf);
+    return;
+  }
   char* msg = NULL;
   env->ThrowNew(cls, msg);
 }

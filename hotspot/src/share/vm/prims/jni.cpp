@@ -4348,8 +4348,23 @@ static bool initializeDirectBufferSupport(JNIEnv* env, JavaThread* thread) {
 
     // Get needed field and method IDs
     directByteBufferConstructor = env->GetMethodID(directByteBufferClass, "<init>", "(JI)V");
+    if (env->ExceptionCheck()) {
+      env->ExceptionClear();
+      directBufferSupportInitializeFailed = 1;
+      return false;
+    }
     directBufferAddressField    = env->GetFieldID(bufferClass, "address", "J");
+    if (env->ExceptionCheck()) {
+      env->ExceptionClear();
+      directBufferSupportInitializeFailed = 1;
+      return false;
+    }
     bufferCapacityField         = env->GetFieldID(bufferClass, "capacity", "I");
+    if (env->ExceptionCheck()) {
+      env->ExceptionClear();
+      directBufferSupportInitializeFailed = 1;
+      return false;
+    }
 
     if ((directByteBufferConstructor == NULL) ||
         (directBufferAddressField    == NULL) ||

@@ -36,6 +36,22 @@
 #define WB_END JNI_END
 #define WB_METHOD_DECLARE(result_type) extern "C" result_type JNICALL
 
+#define CHECK_JNI_EXCEPTION_(env, value) \
+  do {                                   \
+    if (env->ExceptionCheck()) {         \
+      env->ExceptionClear();             \
+      return(value);                     \
+    }                                    \
+  } while (0)
+
+#define CHECK_JNI_EXCEPTION(env) \
+  do {                           \
+    if (env->ExceptionCheck()) { \
+      env->ExceptionClear();     \
+      return;                    \
+    }                            \
+  } while (0)
+
 class WhiteBox : public AllStatic {
  private:
   static bool _used;
