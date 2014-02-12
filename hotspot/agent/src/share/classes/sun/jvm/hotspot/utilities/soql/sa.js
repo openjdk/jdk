@@ -804,6 +804,16 @@ delete tmp;
 // VM type to SA class map
 var  vmType2Class = new Object();
 
+// C2 only classes
+try{
+  vmType2Class["ExceptionBlob"] = sapkg.code.ExceptionBlob;
+  vmType2Class["UncommonTrapBlob"] = sapkg.code.UncommonTrapBlob;
+} catch(e) {
+  // Ignore exception. C2 specific objects might be not 
+  // available in client VM
+}
+
+
 // This is *not* exhaustive. Add more if needed.
 // code blobs
 vmType2Class["BufferBlob"] = sapkg.code.BufferBlob;
@@ -812,10 +822,8 @@ vmType2Class["RuntimeStub"] = sapkg.code.RuntimeStub;
 vmType2Class["SafepointBlob"] = sapkg.code.SafepointBlob;
 vmType2Class["C2IAdapter"] = sapkg.code.C2IAdapter;
 vmType2Class["DeoptimizationBlob"] = sapkg.code.DeoptimizationBlob;
-vmType2Class["ExceptionBlob"] = sapkg.code.ExceptionBlob;
 vmType2Class["I2CAdapter"] = sapkg.code.I2CAdapter;
 vmType2Class["OSRAdapter"] = sapkg.code.OSRAdapter;
-vmType2Class["UncommonTrapBlob"] = sapkg.code.UncommonTrapBlob;
 vmType2Class["PCDesc"] = sapkg.code.PCDesc;
 
 // interpreter
