@@ -1,6 +1,6 @@
 #!/bin/bash
 #
-# Copyright (c) 2012, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2012, 2014, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -32,7 +32,7 @@ CONFIGURE_COMMAND_LINE="$@"
 conf_script_dir=`dirname $0`
 
 if [ "$CUSTOM_CONFIG_DIR" = "" ]; then
-  conf_custom_script_dir="$conf_script_dir/../../jdk/make/closed/autoconf"
+  conf_custom_script_dir="$conf_script_dir/../../closed/autoconf"
 else
   conf_custom_script_dir=$CUSTOM_CONFIG_DIR
 fi

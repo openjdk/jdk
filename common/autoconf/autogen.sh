@@ -1,6 +1,6 @@
 #!/bin/bash
 #
-# Copyright (c) 2011, 2012, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2014, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -36,7 +36,7 @@ else
 fi
 
 if test "x$CUSTOM_CONFIG_DIR" = "x"; then
-  custom_script_dir="$script_dir/../../jdk/make/closed/autoconf"
+  custom_script_dir="$script_dir/../../closed/autoconf"
 else
   custom_script_dir=$CUSTOM_CONFIG_DIR
 fi
