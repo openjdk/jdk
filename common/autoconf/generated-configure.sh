@@ -968,7 +968,6 @@ BASH
 BASENAME
 DATE_WHEN_CONFIGURED
 CONFIGURE_COMMAND_LINE
-CUSTOM_MAKE_DIR
 target_alias
 host_alias
 build_alias
@@ -1010,12 +1009,12 @@ SHELL'
 ac_subst_files=''
 ac_user_opts='
 enable_option_checking
-with_custom_make_dir
 with_target_bits
 with_sys_root
 with_tools_dir
 with_devkit
 enable_openjdk_only
+with_custom_make_dir
 with_jdk_variant
 with_jvm_interpreter
 with_jvm_variants
@@ -1833,7 +1832,6 @@ Optional Features:
 Optional Packages:
   --with-PACKAGE[=ARG]    use PACKAGE [ARG=yes]
   --without-PACKAGE       do not use PACKAGE (same as --with-PACKAGE=no)
-  --with-custom-make-dir  use this directory for custom build/make files
   --with-target-bits      build 32-bit or 64-bit binaries (for platforms that
                           support it), e.g. --with-target-bits=32 [guessed]
   --with-sys-root         pass this sys-root to the compilers and tools (for
@@ -1842,6 +1840,8 @@ Optional Packages:
                           cross-compiling)
   --with-devkit           use this directory as base for tools-dir and
                           sys-root (for cross-compiling)
+  --with-custom-make-dir  Deprecated. Option is kept for backwards
+                          compatibility and is ignored
   --with-jdk-variant      JDK variant to build (normal) [normal]
   --with-jvm-interpreter  JVM interpreter to build (template, cpp) [template]
   --with-jvm-variants     JVM variants (separated by commas) to build (server,
@@ -1863,7 +1863,7 @@ Optional Packages:
   --with-update-version   Set update version value for build [b00]
   --with-user-release-suffix
                           Add a custom string to the version string if build
-                          number isn't set.[username_builddateb00]
+                          number is not set.[username_builddateb00]
   --with-build-number     Set build number value for build [b00]
   --with-boot-jdk         path to Boot JDK (used to bootstrap build) [probed]
   --with-boot-jdk-jvmargs specify JVM arguments to be passed to all
@@ -3780,7 +3780,7 @@ pkgadd_help() {
 
 
 #
-# Copyright (c) 2011, 2013, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2014, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -3828,18 +3828,6 @@ pkgadd_help() {
 
 
 
-
-
-
-# Support for customization of the build process. Some build files
-# will include counterparts from this location, if they exist. This allows
-# for a degree of customization of the build targets and the rules/recipes
-# to create them
-
-# Check whether --with-custom-make-dir was given.
-if test "${with_custom_make_dir+set}" = set; then :
-  withval=$with_custom_make_dir; CUSTOM_MAKE_DIR=$with_custom_make_dir
-fi
 
 
 
@@ -4092,7 +4080,7 @@ fi
 #CUSTOM_AUTOCONF_INCLUDE
 
 # Do not change or remove the following line, it is needed for consistency checks:
-DATE_WHEN_GENERATED=1392111785
+DATE_WHEN_GENERATED=1392245654
 
 ###############################################################################
 #
@@ -14304,6 +14292,18 @@ $as_echo "$as_me: WARNING: No closed source present, --enable-openjdk-only makes
   if test "x$OPENJDK" = "xtrue"; then
     SET_OPENJDK="OPENJDK=true"
   fi
+
+
+
+  # custom-make-dir is deprecated. Please use your custom-hook.m4 to override
+  # the IncludeCustomExtension macro.
+
+
+# Check whether --with-custom-make-dir was given.
+if test "${with_custom_make_dir+set}" = set; then :
+  withval=$with_custom_make_dir; { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: Option --with-custom-make-dir is deprecated and will be ignored." >&5
+$as_echo "$as_me: WARNING: Option --with-custom-make-dir is deprecated and will be ignored." >&2;}
+fi
 
 
 
