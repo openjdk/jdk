@@ -285,6 +285,10 @@ void DUIterator_Last::verify_step(uint num_edges) {
 #ifdef _MSC_VER // the IDX_INIT hack falls foul of warning C4355
 #pragma warning( disable:4355 ) // 'this' : used in base member initializer list
 #endif
+#ifdef __clang__
+#pragma clang diagnostic push
+#pragma GCC diagnostic ignored "-Wuninitialized"
+#endif
 
 // Out-of-line code from node constructors.
 // Executed only when extra debug info. is being passed around.
@@ -467,6 +471,10 @@ Node::Node(Node *n0, Node *n1, Node *n2, Node *n3,
   _in[5] = n5; if (n5 != NULL) n5->add_out((Node *)this);
   _in[6] = n6; if (n6 != NULL) n6->add_out((Node *)this);
 }
+
+#ifdef __clang__
+#pragma clang diagnostic pop
+#endif
 
 
 //------------------------------clone------------------------------------------
