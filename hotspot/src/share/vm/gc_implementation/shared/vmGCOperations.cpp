@@ -89,6 +89,15 @@ bool VM_GC_Operation::doit_prologue() {
   assert(((_gc_cause != GCCause::_no_gc) &&
           (_gc_cause != GCCause::_no_cause_specified)), "Illegal GCCause");
 
+  // To be able to handle a GC the VM initialization needs to be completed.
+  if (!is_init_completed()) {
+    vm_exit_during_initialization(
+      err_msg("GC triggered before VM initialization completed. Try increasing "
+              "NewSize, current value " UINTX_FORMAT "%s.",
+              byte_size_in_proper_unit(NewSize),
+              proper_unit_for_byte_size(NewSize)));
+  }
+
   acquire_pending_list_lock();
   // If the GC count has changed someone beat us to the collection
   // Get the Heap_lock after the pending_list_lock.
