@@ -958,7 +958,7 @@ void ConcurrentMarkSweepGeneration::compute_new_size_free_list() {
         desired_free_percentage);
       gclog_or_tty->print_cr("  Maximum free fraction %f",
         maximum_free_percentage);
-      gclog_or_tty->print_cr("  Capactiy "SIZE_FORMAT, capacity()/1000);
+      gclog_or_tty->print_cr("  Capacity "SIZE_FORMAT, capacity()/1000);
       gclog_or_tty->print_cr("  Desired capacity "SIZE_FORMAT,
         desired_capacity/1000);
       int prev_level = level() - 1;
@@ -3313,7 +3313,7 @@ void CMSCollector::setup_cms_unloading_and_verification_state() {
   }
 
   // Not unloading classes this cycle
-  assert(!should_unload_classes(), "Inconsitency!");
+  assert(!should_unload_classes(), "Inconsistency!");
   remove_root_scanning_option(SharedHeap::SO_SystemClasses);
   add_root_scanning_option(SharedHeap::SO_AllClasses);
 
@@ -7243,7 +7243,7 @@ size_t SurvivorSpacePrecleanClosure::do_object_careful(oop p) {
   HeapWord* addr = (HeapWord*)p;
   DEBUG_ONLY(_collector->verify_work_stacks_empty();)
   assert(!_span.contains(addr), "we are scanning the survivor spaces");
-  assert(p->klass_or_null() != NULL, "object should be initializd");
+  assert(p->klass_or_null() != NULL, "object should be initialized");
   // an initialized object; ignore mark word in verification below
   // since we are running concurrent with mutators
   assert(p->is_oop(true), "should be an oop");

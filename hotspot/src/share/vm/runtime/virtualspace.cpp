@@ -215,9 +215,9 @@ void ReservedSpace::initialize(size_t size, size_t alignment, bool large,
          noaccess_prefix == _alignment, "noaccess prefix wrong");
 
   assert(markOopDesc::encode_pointer_as_mark(_base)->decode_pointer() == _base,
-         "area must be distinguisable from marks for mark-sweep");
+         "area must be distinguishable from marks for mark-sweep");
   assert(markOopDesc::encode_pointer_as_mark(&_base[size])->decode_pointer() == &_base[size],
-         "area must be distinguisable from marks for mark-sweep");
+         "area must be distinguishable from marks for mark-sweep");
 }
 
 
