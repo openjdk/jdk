@@ -107,7 +107,7 @@ void BitMap::par_put_range_within_word(idx_t beg, idx_t end, bool value) {
     while (true) {
       intptr_t res = Atomic::cmpxchg_ptr(nw, pw, w);
       if (res == w) break;
-      w  = *pw;
+      w  = res;
       nw = value ? (w | ~mr) : (w & mr);
     }
   }
