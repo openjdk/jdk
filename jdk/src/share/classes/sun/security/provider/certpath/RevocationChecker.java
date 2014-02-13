@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1035,6 +1035,9 @@ class RevocationChecker extends PKIXRevocationChecker {
                 boolean signFlag = true;
                 List<? extends Certificate> cpList =
                     cpbr.getCertPath().getCertificates();
+                if (cpList.isEmpty()) {
+                    return;
+                }
                 try {
                     for (int i = cpList.size()-1; i >= 0; i-- ) {
                         X509Certificate cert = (X509Certificate)cpList.get(i);
