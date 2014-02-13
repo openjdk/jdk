@@ -25,6 +25,8 @@
  * @test
  * @bug 4932837 6582235
  * @summary Test SslRMI[Client|Server]SocketFactory equals() and hashCode().
+ *          This test does not affect VM global state, so othervm is
+ *          not required.
  * @author Daniel Fuchs
  *
  * @run main SocketFactoryTest
