@@ -23,7 +23,7 @@
  * questions.
  */
 
-package com.sun.tools.corba.se.logutil;
+package build.tools.logutil;
 
 public abstract class StringUtil {
     /** Take a string containing underscores, and return a string
