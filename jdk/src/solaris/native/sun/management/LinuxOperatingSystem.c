@@ -35,6 +35,7 @@
 #include <stdlib.h>
 #include <dlfcn.h>
 #include <pthread.h>
+#include <inttypes.h>
 #include "sun_management_OperatingSystemImpl.h"
 
 struct ticks {
@@ -57,7 +58,7 @@ static struct perfbuf {
     ticks *cpus;
 } counters;
 
-#define DEC_64 "%lld"
+#define DEC_64 "%"SCNd64
 
 static void next_line(FILE *f) {
     while (fgetc(f) != '\n');
