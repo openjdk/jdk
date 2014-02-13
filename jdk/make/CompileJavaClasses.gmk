@@ -239,11 +239,6 @@ ifeq (, $(filter $(OPENJDK_TARGET_OS), solaris macosx aix))
   EXFILES += sun/nio/fs/PollingWatchService.java
 endif
 
-# TODO: Fix when converting NIO
-# Exclude *-linux-arm.java and *-linux-ppc.java from closed.
-EXFILES += -linux-arm.java \
-    -linux-ppc.java
-
 ifeq ($(OPENJDK_TARGET_OS), windows)
   EXFILES += sun/nio/ch/AbstractPollSelectorImpl.java \
       sun/nio/ch/PollSelectorProvider.java \
