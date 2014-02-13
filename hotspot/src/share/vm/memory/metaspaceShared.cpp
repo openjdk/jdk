@@ -645,9 +645,6 @@ void MetaspaceShared::preload_and_dump(TRAPS) {
   TraceTime timer("Dump Shared Spaces", TraceStartupTime);
   ResourceMark rm;
 
-  // Lock out GC - is it necessary? I don't think we care.
-  No_GC_Verifier no_gc;
-
   // Preload classes to be shared.
   // Should use some os:: method rather than fopen() here. aB.
   // Construct the path to the class list (in jre/lib)

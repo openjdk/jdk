@@ -249,9 +249,6 @@ class Thread: public ThreadShadow {
   // Used by SkipGCALot class.
   NOT_PRODUCT(bool _skip_gcalot;)               // Should we elide gc-a-lot?
 
-  // Record when GC is locked out via the GC_locker mechanism
-  CHECK_UNHANDLED_OOPS_ONLY(int _gc_locked_out_count;)
-
   friend class No_Alloc_Verifier;
   friend class No_Safepoint_Verifier;
   friend class Pause_No_Safepoint_Verifier;
@@ -397,7 +394,6 @@ class Thread: public ThreadShadow {
   void clear_unhandled_oops() {
     if (CheckUnhandledOops) unhandled_oops()->clear_unhandled_oops();
   }
-  bool is_gc_locked_out() { return _gc_locked_out_count > 0; }
 #endif // CHECK_UNHANDLED_OOPS
 
 #ifndef PRODUCT

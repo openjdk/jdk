@@ -54,8 +54,6 @@ class GC_locker: public AllStatic {
   // safepointing and decremented during the slow path of GC_locker
   // unlocking.
   static volatile jint _jni_lock_count;  // number of jni active instances.
-
-  static volatile jint _lock_count;      // number of other active instances
   static volatile bool _needs_gc;        // heap is filling, we need a GC
                                          // note: bool is typedef'd as jint
   static volatile bool _doing_gc;        // unlock_critical() is doing a GC
@@ -65,12 +63,6 @@ class GC_locker: public AllStatic {
   // validate the jni_lock_count that is computed during safepoints.
   static volatile jint _debug_jni_lock_count;
 #endif
-
-  // Accessors
-  static bool is_jni_active() {
-    assert(_needs_gc, "only valid when _needs_gc is set");
-    return _jni_lock_count > 0;
-  }
 
   // At a safepoint, visit all threads and count the number of active
   // critical sections.  This is used to ensure that all active
@@ -82,7 +74,7 @@ class GC_locker: public AllStatic {
 
   static bool is_active_internal() {
     verify_critical_count();
-    return _lock_count > 0 || _jni_lock_count > 0;
+    return _jni_lock_count > 0;
   }
 
  public:
@@ -131,10 +123,6 @@ class GC_locker: public AllStatic {
   // return from this method that "!needs_gc()" since that is
   // not a stable predicate.
   static void stall_until_clear();
-
-  // Non-structured GC locking: currently needed for JNI. Use with care!
-  static void lock();
-  static void unlock();
 
   // The following two methods are used for JNI critical regions.
   // If we find that we failed to perform a GC because the GC_locker
