@@ -28,7 +28,6 @@ if test "x$BASH_VERSION" = x; then
   exit 1
 fi
 
-CONFIGURE_COMMAND_LINE="$@"
 conf_script_dir=`dirname $0`
 
 if [ "$CUSTOM_CONFIG_DIR" = "" ]; then
@@ -110,14 +109,40 @@ fi
 if test "x$conf_debug_configure" = xtrue; then
   conf_debug_configure=recursive
 fi
+
 ###
 ### Process command-line arguments
 ###
+
+# Returns a shell-escaped version of the argument given.
+function shell_quote() {
+  if [[ -n "$1" ]]; then
+    # Uses only shell-safe characters?  No quoting needed.
+    # '=' is a zsh meta-character, but only in word-initial position.
+    if [[ "$1" =~ ^[ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789.:,%/+=_-]+$ && ! "$1" =~ ^= ]]; then
+      quoted="$1"
+    else
+      if [[ "$1" =~ [\'!] ]]; then
+        # csh does history expansion within single quotes, but not
+        # when backslash-escaped!
+        local quoted_quote="'\\''" quoted_exclam="'\\!'"
+        word="${1//\'/${quoted_quote}}"
+        word="${1//\!/${quoted_exclam}}"
+      fi
+      quoted="'$1'"
+    fi
+    echo "$quoted"
+  fi
+}
+
 conf_processed_arguments=()
+conf_quoted_arguments=()
 conf_openjdk_target=
 
 for conf_option
 do
+
+  # Process (and remove) our own extensions that will not be passed to autoconf
   case $conf_option in
     --openjdk-target=*)
       conf_openjdk_target=`expr "X$conf_option" : '[^=]*=\(.*\)'`
@@ -128,18 +153,35 @@ do
         export conf_debug_configure
       fi
       ;;
-    [^-]*=*)
-      # Add name of variable to CONFIGURE_OVERRIDDEN_VARIABLES list inside !...!.
-      conf_env_var=`expr "x$conf_option" : 'x\([^=]*\)='`
-      CONFIGURE_OVERRIDDEN_VARIABLES="$CONFIGURE_OVERRIDDEN_VARIABLES!$conf_env_var!"
-      # ... and then process argument as usual
-      conf_processed_arguments=("${conf_processed_arguments[@]}" "$conf_option")
-      ;;
     *)
       conf_processed_arguments=("${conf_processed_arguments[@]}" "$conf_option")
       ;;
   esac
 
+  # Store all variables overridden on the command line
+  case $conf_option in
+    [^-]*=*)
+      # Add name of variable to CONFIGURE_OVERRIDDEN_VARIABLES list inside !...!.
+      conf_env_var=`expr "x$conf_option" : 'x\([^=]*\)='`
+      CONFIGURE_OVERRIDDEN_VARIABLES="$CONFIGURE_OVERRIDDEN_VARIABLES!$conf_env_var!"
+      ;;
+  esac
+
+  # Save the arguments, intelligently quoted for CONFIGURE_COMMAND_LINE.
+  case $conf_option in
+    *=*)
+      conf_option_name=`expr "x$conf_option" : 'x\([^=]*\)='`
+      conf_option_name=$(shell_quote "$conf_option_name")
+      conf_option_value=`expr "x$conf_option" : 'x[^=]*=\(.*\)'`
+      conf_option_value=$(shell_quote "$conf_option_value")
+      conf_quoted_arguments=("${conf_quoted_arguments[@]}" "$conf_option_name=$conf_option_value")
+      ;;
+    *)
+      conf_quoted_arguments=("${conf_quoted_arguments[@]}" "$(shell_quote "$conf_option")")
+      ;;
+  esac
+
+  # Check for certain autoconf options that require extra action
   case $conf_option in
     -build | --build | --buil | --bui | --bu |-build=* | --build=* | --buil=* | --bui=* | --bu=*)
       conf_legacy_crosscompile="$conf_legacy_crosscompile $conf_option" ;;
@@ -151,6 +193,9 @@ do
       conf_print_help=true ;;
   esac
 done
+
+# Save the quoted command line
+CONFIGURE_COMMAND_LINE="${conf_quoted_arguments[@]}"
 
 if test "x$conf_legacy_crosscompile" != "x"; then
   if test "x$conf_openjdk_target" != "x"; then
