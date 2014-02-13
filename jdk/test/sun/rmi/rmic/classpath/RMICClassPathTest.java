@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,7 @@
  */
 
 /* @test
- * @bug 6610897
+ * @bug 6610897 8030844
  * @summary New constructor in sun.tools.java.ClassPath builds a path using
  *          File.separator instead of File.pathSeparator. This test does
  *          not affect VM global state, so othervm is not required.
@@ -38,12 +38,13 @@ import java.io.File;
 import sun.rmi.rmic.BatchEnvironment;
 
 public class RMICClassPathTest {
+    private final static String SRC_PATH = System.getProperty("test.src", ".");
     public static void main(String[] args) throws Exception {
-        String sysPath = "/home/~user/jdk/jre/lib/rt.jar";
+        String sysPath = SRC_PATH + "/jdk/jre/lib/rt.jar";
         String extDir = "";
-        String clPath = "/home/~user/user.jar" + File.pathSeparator +
-            "/home/~user/user2.jar" + File.pathSeparator +
-            "/home/~user/user3.jar";
+        String clPath = SRC_PATH + "/user.jar" + File.pathSeparator +
+            SRC_PATH + "/user2.jar" + File.pathSeparator +
+            SRC_PATH + "/user3.jar";
 
         String cpStr = BatchEnvironment.createClassPath(clPath, sysPath, extDir).toString();
 
