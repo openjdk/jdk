@@ -306,7 +306,7 @@ void G1MarkSweep::mark_sweep_phase3() {
   ClassLoaderDataGraph::clear_claimed_marks();
 
   sh->process_strong_roots(true,  // activate StrongRootsScope
-                           SharedHeap::SO_AllClasses | SharedHeap::SO_AllCodeCache,
+                           SharedHeap::SO_AllClasses | SharedHeap::SO_Strings | SharedHeap::SO_AllCodeCache,
                            &GenMarkSweep::adjust_pointer_closure,
                            &GenMarkSweep::adjust_klass_closure);
 
