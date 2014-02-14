@@ -240,8 +240,7 @@ public:
                             OopClosure* roots,
                             KlassClosure* klass_closure);
 
-  // Apply "root_closure" to all the weak roots of the system.
-  // These include JNI weak roots and string table.
+  // Apply "root_closure" to the JNI weak roots..
   void process_weak_roots(OopClosure* root_closure);
 
   // The functions below are helper functions that a subclass of
