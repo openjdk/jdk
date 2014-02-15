@@ -700,7 +700,7 @@ void CMSAdaptiveSizePolicy::ms_collection_end(GCCause::Cause gc_cause) {
     double latest_cms_sum_concurrent_phases_time_secs =
       concurrent_collection_time();
     if (PrintAdaptiveSizePolicy && Verbose) {
-      gclog_or_tty->print_cr("\nCMSAdaptiveSizePolicy::ms_collecton_end "
+      gclog_or_tty->print_cr("\nCMSAdaptiveSizePolicy::ms_collection_end "
         "STW_in_foreground_in_seconds %f "
         "_latest_cms_initial_mark_start_to_end_time_secs %f "
         "_latest_cms_remark_start_to_end_time_secs %f "

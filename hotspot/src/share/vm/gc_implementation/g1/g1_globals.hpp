@@ -183,7 +183,7 @@
           "When true, record recent calls to rem set operations.")          \
                                                                             \
   develop(intx, G1MaxVerifyFailures, -1,                                    \
-          "The maximum number of verification failrues to print.  "         \
+          "The maximum number of verification failures to print.  "         \
           "-1 means print all.")                                            \
                                                                             \
   develop(bool, G1ScrubRemSets, true,                                       \
