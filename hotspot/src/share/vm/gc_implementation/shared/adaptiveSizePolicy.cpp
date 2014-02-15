@@ -168,7 +168,7 @@ int AdaptiveSizePolicy::calc_default_active_workers(uintx total_workers,
 
   if (TraceDynamicGCThreads) {
      gclog_or_tty->print_cr("GCTaskManager::calc_default_active_workers() : "
-       "active_workers(): %d  new_acitve_workers: %d  "
+       "active_workers(): %d  new_active_workers: %d  "
        "prev_active_workers: %d\n"
        " active_workers_by_JT: %d  active_workers_by_heap_size: %d",
        active_workers, new_active_workers, prev_active_workers,

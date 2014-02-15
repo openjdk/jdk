@@ -254,7 +254,7 @@ bool VM_GenCollectFullConcurrent::evaluate_at_safepoint() const {
       // No need to do a young gc, we'll just nudge the CMS thread
       // in the doit() method above, to be executed soon.
       assert(_gc_count_before < gch->total_collections(),
-             "total_collections() should be monotnically increasing");
+             "total_collections() should be monotonically increasing");
       return false;  // no need for foreground young gc
     }
   }
