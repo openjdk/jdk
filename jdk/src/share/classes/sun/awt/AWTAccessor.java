@@ -34,6 +34,7 @@ import java.awt.event.InputEvent;
 import java.awt.event.InvocationEvent;
 import java.awt.event.KeyEvent;
 import java.awt.geom.Point2D;
+import java.awt.image.BufferStrategy;
 import java.awt.peer.ComponentPeer;
 
 import java.lang.reflect.InvocationTargetException;
@@ -243,6 +244,16 @@ public final class AWTAccessor {
          */
         void revalidateSynchronously(Component comp);
 
+        /**
+         * Creates a new strategy for multi-buffering on this component.
+         */
+        void createBufferStrategy(Component comp, int numBuffers,
+                BufferCapabilities caps) throws AWTException;
+
+        /**
+         * returns the buffer strategy used by this component.
+         */
+        BufferStrategy getBufferStrategy(Component comp);
     }
 
     /*
@@ -375,6 +386,11 @@ public final class AWTAccessor {
          * Accessor for InputEvent.getButtonDownMasks()
          */
         int[] getButtonDownMasks();
+
+        /*
+         * Accessor for InputEvent.canAccessSystemClipboard field
+         */
+        boolean canAccessSystemClipboard(InputEvent event);
     }
 
     /*

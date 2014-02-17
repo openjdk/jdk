@@ -189,7 +189,6 @@ public class SwingUtilities2 {
         new StringUIClientPropertyKey ("maxTextOffset");
 
     // security stuff
-    private static Field inputEvent_CanAccessSystemClipboard_Field = null;
     private static final String UntrustedClipboardAccess =
         "UNTRUSTED_CLIPBOARD_ACCESS_KEY";
 
@@ -1263,41 +1262,6 @@ public class SwingUtilities2 {
     }
 
     /**
-     * returns canAccessSystemClipboard field from InputEvent
-     *
-     * @param ie InputEvent to get the field from
-     */
-    private static synchronized boolean inputEvent_canAccessSystemClipboard(InputEvent ie) {
-        if (inputEvent_CanAccessSystemClipboard_Field == null) {
-            inputEvent_CanAccessSystemClipboard_Field =
-                AccessController.doPrivileged(
-                    new java.security.PrivilegedAction<Field>() {
-                        public Field run() {
-                            try {
-                                Field field = InputEvent.class.
-                                    getDeclaredField("canAccessSystemClipboard");
-                                field.setAccessible(true);
-                                return field;
-                            } catch (SecurityException e) {
-                            } catch (NoSuchFieldException e) {
-                            }
-                            return null;
-                        }
-                    });
-        }
-        if (inputEvent_CanAccessSystemClipboard_Field == null) {
-            return false;
-        }
-        boolean ret = false;
-        try {
-            ret = inputEvent_CanAccessSystemClipboard_Field.
-                getBoolean(ie);
-        } catch(IllegalAccessException e) {
-        }
-        return ret;
-    }
-
-    /**
      * Returns true if the given event is corrent gesture for
      * accessing clipboard
      *
@@ -1350,7 +1314,8 @@ public class SwingUtilities2 {
              */
             if (e instanceof InputEvent
                 && (! checkGesture || isAccessClipboardGesture((InputEvent)e))) {
-                return inputEvent_canAccessSystemClipboard((InputEvent)e);
+                return AWTAccessor.getInputEventAccessor().
+                        canAccessSystemClipboard((InputEvent) e);
             } else {
                 return false;
             }

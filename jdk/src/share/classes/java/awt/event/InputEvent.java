@@ -298,6 +298,10 @@ public abstract class InputEvent extends ComponentEvent {
                 public int[] getButtonDownMasks() {
                     return InputEvent.getButtonDownMasks();
                 }
+
+                public boolean canAccessSystemClipboard(InputEvent event) {
+                    return event.canAccessSystemClipboard;
+                }
             });
     }
 
