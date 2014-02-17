@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -975,6 +975,17 @@ public abstract class Component implements ImageObserver, MenuContainer,
 
             public void revalidateSynchronously(Component comp) {
                 comp.revalidateSynchronously();
+            }
+
+            @Override
+            public void createBufferStrategy(Component comp, int numBuffers,
+                    BufferCapabilities caps) throws AWTException {
+                comp.createBufferStrategy(numBuffers, caps);
+            }
+
+            @Override
+            public BufferStrategy getBufferStrategy(Component comp) {
+                return comp.getBufferStrategy();
             }
         });
     }
