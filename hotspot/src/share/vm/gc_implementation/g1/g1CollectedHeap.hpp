@@ -833,11 +833,6 @@ protected:
                                G1KlassScanClosure* scan_klasses,
                                int worker_i);
 
-  // Apply "blk" to all the weak roots of the system.  These include
-  // JNI weak roots, the code cache, system dictionary, symbol table,
-  // string table, and referents of reachable weak refs.
-  void g1_process_weak_roots(OopClosure* root_closure);
-
   // Frees a non-humongous region by initializing its contents and
   // adding it to the free list that's passed as a parameter (this is
   // usually a local list which will be appended to the master free
