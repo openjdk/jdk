@@ -30,6 +30,7 @@ import java.awt.event.*;
 import javax.swing.event.*;
 
 import sun.awt.AppContext;
+import sun.swing.SwingUtilities2;
 
 /**
  * A MenuSelectionManager owns the selection in menu hierarchy.
@@ -60,6 +61,12 @@ public class MenuSelectionManager {
             if (msm == null) {
                 msm = new MenuSelectionManager();
                 context.put(MENU_SELECTION_MANAGER_KEY, msm);
+
+                // installing additional listener if found in the AppContext
+                Object o = context.get(SwingUtilities2.MENU_SELECTION_MANAGER_LISTENER_KEY);
+                if (o != null && o instanceof ChangeListener) {
+                    msm.addChangeListener((ChangeListener) o);
+                }
             }
 
             return msm;
