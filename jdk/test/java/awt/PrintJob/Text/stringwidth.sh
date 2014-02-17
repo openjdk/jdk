@@ -58,7 +58,7 @@ else
    JAVA_HOME=$TESTJAVA
 fi
 
-    $JAVA_HOME/bin/java -cp "${CP}" StringWidth
+    $JAVA_HOME/bin/java ${TESTVMOPTS} -cp "${CP}" StringWidth
     checkstatus
 
 exit 0

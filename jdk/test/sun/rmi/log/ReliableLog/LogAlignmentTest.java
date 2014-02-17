@@ -25,7 +25,7 @@
  * @bug 4094889
  * @summary rmid can have a corrupted log
  *
- * @run main LogAlignmentTest
+ * @run main/othervm LogAlignmentTest
  */
 
 /* Fault: ReliableLog used RandomAccessFile.skipBytes() to seek past the end

@@ -67,7 +67,7 @@ public class AuthenticationNotSupportedException extends NamingSecurityException
 
     /**
       * Constructs a new instance of AuthenticationNotSupportedException
-      * all name resolution fields and explanation initialized to null.
+      * with all name resolution fields and explanation initialized to null.
       */
     public AuthenticationNotSupportedException() {
         super();

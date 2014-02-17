@@ -123,15 +123,6 @@ public class ServiceRegistry {
         }
     }
 
-    // The following two methods expose functionality from
-    // sun.misc.Service.  If that class is made public, they may be
-    // removed.
-    //
-    // The sun.misc.ServiceConfigurationError class may also be
-    // exposed, in which case the references to 'an
-    // <code>Error</code>' below should be changed to 'a
-    // <code>ServiceConfigurationError</code>'.
-
     /**
      * Searches for implementations of a particular service class
      * using the given class loader.
