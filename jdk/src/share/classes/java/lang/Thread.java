@@ -973,7 +973,7 @@ class Thread implements Runnable {
      * @deprecated This method was originally designed to destroy this
      *     thread without any cleanup. Any monitors it held would have
      *     remained locked. However, the method was never implemented.
-     *     If if were to be implemented, it would be deadlock-prone in
+     *     If it were to be implemented, it would be deadlock-prone in
      *     much the manner of {@link #suspend}. If the target thread held
      *     a lock protecting a critical system resource when it was
      *     destroyed, no thread could ever access this resource again.
