@@ -26,10 +26,10 @@ package java.awt;
 
 import java.io.PrintStream;
 import java.io.PrintWriter;
+import java.util.Objects;
 import java.util.Vector;
 import java.util.Locale;
 import java.util.EventListener;
-import java.util.Iterator;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
@@ -50,8 +50,6 @@ import java.io.IOException;
 import java.beans.PropertyChangeListener;
 import java.beans.PropertyChangeSupport;
 import java.beans.Transient;
-import java.awt.event.InputMethodListener;
-import java.awt.event.InputMethodEvent;
 import java.awt.im.InputContext;
 import java.awt.im.InputMethodRequests;
 import java.awt.dnd.DropTarget;
@@ -8131,18 +8129,12 @@ public abstract class Component implements ImageObserver, MenuContainer,
      * @since     JDK1.0
      */
     protected String paramString() {
-        String thisName = getName();
-        String str = (thisName != null? thisName : "") + "," + x + "," + y + "," + width + "x" + height;
-        if (!isValid()) {
-            str += ",invalid";
-        }
-        if (!visible) {
-            str += ",hidden";
-        }
-        if (!enabled) {
-            str += ",disabled";
-        }
-        return str;
+        final String thisName = Objects.toString(getName(), "");
+        final String invalid = isValid() ? "" : ",invalid";
+        final String hidden = visible ? "" : ",hidden";
+        final String disabled = enabled ? "" : ",disabled";
+        return thisName + ',' + x + ',' + y + ',' + width + 'x' + height
+                + invalid + hidden + disabled;
     }
 
     /**
@@ -8151,7 +8143,7 @@ public abstract class Component implements ImageObserver, MenuContainer,
      * @since     JDK1.0
      */
     public String toString() {
-        return getClass().getName() + "[" + paramString() + "]";
+        return getClass().getName() + '[' + paramString() + ']';
     }
 
     /**
