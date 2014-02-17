@@ -157,8 +157,19 @@ AC_DEFUN_ONCE([HELP_PRINT_SUMMARY_AND_WARNINGS],
 
   printf "\n"
   printf "====================================================\n"
-  printf "A new configuration has been successfully created in\n"
-  printf "$OUTPUT_ROOT\n"
+  if test "x$no_create" != "xyes"; then
+    if test "x$IS_RECONFIGURE" != "xyes"; then
+      printf "A new configuration has been successfully created in\n %s\n" "$OUTPUT_ROOT"
+    else
+      printf "The existing configuration has been successfully updated in\n %s\n" "$OUTPUT_ROOT"
+    fi
+  else
+    if test "x$IS_RECONFIGURE" != "xyes"; then
+      printf "A configuration has been successfully checked but not created\n"
+    else
+      printf "The existing configuration has been successfully checked in\n %s\n" "$OUTPUT_ROOT"
+    fi
+  fi
   if test "x$CONFIGURE_COMMAND_LINE" != x; then
     printf "using configure arguments '$CONFIGURE_COMMAND_LINE'.\n"
   else
@@ -212,10 +223,16 @@ AC_DEFUN_ONCE([HELP_PRINT_SUMMARY_AND_WARNINGS],
     printf "\n"
   fi
 
-  if test "x$IS_RECONFIGURE" = "xyes"; then
+  if test "x$IS_RECONFIGURE" = "xyes" && test "x$no_create" != "xyes"; then
     printf "WARNING: The result of this configuration has overridden an older\n"
     printf "configuration. You *should* run 'make clean' to make sure you get a\n"
     printf "proper build. Failure to do so might result in strange build problems.\n"
+    printf "\n"
+  fi
+
+  if test "x$IS_RECONFIGURE" != "xyes" && test "x$no_create" = "xyes"; then
+    printf "WARNING: The result of this configuration was not saved.\n"
+    printf "You should run without '--no-create | -n' to create the configuration.\n"
     printf "\n"
   fi
 ])
