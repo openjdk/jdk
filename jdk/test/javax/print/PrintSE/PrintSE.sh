@@ -46,6 +46,9 @@ EOF
 
 createJavaPolicyFile
 
-${TESTJAVA}/bin/java -Djava.security.manager -Djava.security.policy=${TESTCLASSES}/print.policy -cp ${TESTCLASSES} PrintSE
+${TESTJAVA}/bin/java ${TESTVMOPTS} \
+    -Djava.security.manager \
+    -Djava.security.policy=${TESTCLASSES}/print.policy \
+    -cp ${TESTCLASSES} PrintSE
 
 exit $?

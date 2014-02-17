@@ -24,7 +24,8 @@
 /* @test
  * @bug 4442373
  * @summary Verify that RMI can successfully unmarshal Class objects for
- *          primitive types.
+ *          primitive types. This test does not affect VM global state,
+ *          so othervm is not required.
  * @run main PrimitiveClasses
  */
 

@@ -25,6 +25,7 @@ import java.io.File;
 import java.io.IOException;
 import java.lang.reflect.Method;
 import java.net.ConnectException;
+import java.net.ServerSocket;
 import java.rmi.NoSuchObjectException;
 import java.rmi.registry.LocateRegistry;
 import java.rmi.registry.Registry;
@@ -255,26 +256,23 @@ public class JMXStartStopTest {
     private static List<Failure> failures = new ArrayList<>();
 
     public static void main(String args[]) throws Exception {
-        for (int i=0;i<3;i++) {
-            System.out.println("=== PASS " + i + " ===");
-            for (Method m : JMXStartStopTest.class.getDeclaredMethods()) {
-                if (m.getName().startsWith("test_")) {
-                    try {
-                        m.invoke(null);
-                        System.out.println("=== PASSED\n");
-                    } catch (Throwable e) {
-                        failures.add(new Failure(e, m.getName() + " failed"));
-                    }
+        for (Method m : JMXStartStopTest.class.getDeclaredMethods()) {
+            if (m.getName().startsWith("test_")) {
+                try {
+                    m.invoke(null);
+                    System.out.println("=== PASSED\n");
+                } catch (Throwable e) {
+                    failures.add(new Failure(e, m.getName() + " failed"));
                 }
             }
+        }
 
-            if (!failures.isEmpty()) {
-                for(Failure f : failures) {
-                    System.err.println(f.getMsg());
-                    f.getCause().printStackTrace(System.err);
-                }
-                throw new Error();
+        if (!failures.isEmpty()) {
+            for(Failure f : failures) {
+                System.err.println(f.getMsg());
+                f.getCause().printStackTrace(System.err);
             }
+            throw new Error();
         }
     }
 
@@ -371,6 +369,7 @@ public class JMXStartStopTest {
         ));
         pbArgs.addAll(Arrays.asList(args));
         pbArgs.add("JMXStartStopDoSomething");
+
         ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
             pbArgs.toArray(new String[pbArgs.size()])
         );
@@ -596,14 +595,16 @@ public class JMXStartStopTest {
             jcmd(CMD_STOP);
             jcmd(CMD_STOP);
 
+            ServerSocket ss = new ServerSocket(0);
+
             jcmd(
                 line -> {
-                    if (line.contains("Port already in use: 22")) {
+                    if (line.contains("Port already in use: " + ss.getLocalPort())) {
                         checks[2] = true;
                     }
                 },
                 CMD_START,
-                "jmxremote.port=22",
+                "jmxremote.port=" + ss.getLocalPort(),
                 "jmxremote.rmi.port=" + port2,
                 "jmxremote.authenticate=false",
                 "jmxremote.ssl=false");
@@ -616,7 +617,7 @@ public class JMXStartStopTest {
                                     "report an invalid agent state");
             }
             if (!checks[2]) {
-                throw new Exception("Starting agent on port 22 should " +
+                throw new Exception("Starting agent on port " + ss.getLocalPort() + " should " +
                                     "report port in use");
             }
         } finally {
@@ -627,7 +628,7 @@ public class JMXStartStopTest {
     private static void test_07() throws Exception {
         // Run an app without JMX enabled, but with some properties set
         // in command line.
-        // make sure these properties overriden corectly
+        // make sure these properties overridden corectly
 
         System.out.println("**** Test seven ****");
 
@@ -654,7 +655,7 @@ public class JMXStartStopTest {
         // Run an app with JMX enabled and with some properties set
         // in command line.
         // stop JMX agent and then start it again with different property values
-        // make sure these properties overriden corectly
+        // make sure these properties overridden corectly
 
         System.out.println("**** Test eight ****");
 
@@ -690,7 +691,7 @@ public class JMXStartStopTest {
         // stop JMX agent and then start it again with different property values
         // specifing some property in management config file and some of them
         // in command line
-        // make sure these properties overriden corectly
+        // make sure these properties overridden corectly
 
         System.out.println("**** Test nine ****");
 
@@ -725,7 +726,7 @@ public class JMXStartStopTest {
         // in command line.
         // stop JMX agent and then start it again with different property values
         // stop JMX agent again and then start it without property value
-        // make sure these properties overriden corectly
+        // make sure these properties overridden corectly
 
         System.out.println("**** Test ten ****");
 
@@ -800,7 +801,7 @@ public class JMXStartStopTest {
         // Run an app with -javaagent make sure it works as expected -
         // system properties are ignored
 
-        System.out.println("**** Test fourteen ****");
+        System.out.println("**** Test thirteen ****");
 
         String agent = TEST_JDK + "/jre/lib/management-agent.jar";
         if (!new File(agent).exists()) {

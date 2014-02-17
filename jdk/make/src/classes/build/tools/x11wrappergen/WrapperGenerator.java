@@ -23,6 +23,8 @@
  * questions.
  */
 
+package build.tools.x11wrappergen;
+
 import java.util.*;
 import java.io.*;
 import java.nio.charset.*;
