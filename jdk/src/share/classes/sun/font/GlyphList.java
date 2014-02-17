@@ -148,7 +148,7 @@ public final class GlyphList {
      * throughput on a MP system. If for some reason the reusable
      * GlyphList is checked out for a long time (or never returned?) then
      * we would end up always creating new ones. That situation should not
-     * occur and if if did, it would just lead to some extra garbage being
+     * occur and if it did, it would just lead to some extra garbage being
      * created.
      */
     private static GlyphList reusableGL = new GlyphList();
