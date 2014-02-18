@@ -97,7 +97,7 @@ static BOOL                sNeedsEnter;
          modifiers:(jint)extModifiers
         clickCount:(jint)clickCount
          timeStamp:(jlong)timeStamp
-         dragImage:(jobject)jDragImage
+         dragImage:(jlong)nsDragImagePtr
   dragImageOffsetX:(jint)jDragImageOffsetX
   dragImageOffsetY:(jint)jDragImageOffsetY
      sourceActions:(jint)jSourceActions
@@ -112,26 +112,21 @@ static BOOL                sNeedsEnter;
 
     // Construct the object if we have a valid model for it:
     if (control != nil) {
-        JNIEnv *env = [ThreadUtilities getJNIEnv];
-        fComponent = JNFNewGlobalRef(env, jComponent);
-        fDragSourceContextPeer = JNFNewGlobalRef(env, jDragSourceContextPeer);
+        fComponent = jComponent;
+        fDragSourceContextPeer = jDragSourceContextPeer;
+        fTransferable = jTransferable;
+        fTriggerEvent = jTrigger;
 
-        fTransferable = JNFNewGlobalRef(env, jTransferable);
-        fTriggerEvent = JNFNewGlobalRef(env, jTrigger);
-
-        if (jDragImage) {
-            JNF_MEMBER_CACHE(nsImagePtr, CImageClass, "ptr", "J");
-            jlong imgPtr = JNFGetLongField(env, jDragImage, nsImagePtr);
-            fDragImage = (NSImage*) jlong_to_ptr(imgPtr); // Double-casting prevents compiler 'd$|//
-
+        if (nsDragImagePtr) {
+            fDragImage = (NSImage*) jlong_to_ptr(nsDragImagePtr);
             [fDragImage retain];
         }
 
         fDragImageOffset = NSMakePoint(jDragImageOffsetX, jDragImageOffsetY);
 
         fSourceActions = jSourceActions;
-        fFormats = JNFNewGlobalRef(env, jFormats);
-        fFormatMap = JNFNewGlobalRef(env, jFormatMap);
+        fFormats = jFormats;
+        fFormatMap = jFormatMap;
 
         fTriggerEventTimeStamp = timeStamp;
         fDragPos = NSMakePoint(dragPosX, dragPosY);

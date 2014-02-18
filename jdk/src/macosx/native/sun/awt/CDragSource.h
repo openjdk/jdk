@@ -70,7 +70,7 @@
          modifiers:(jint)extModifiers
         clickCount:(jint)clickCount
          timeStamp:(jlong)timeStamp
-         dragImage:(jobject)jDragImage
+         dragImage:(jlong)nsDragImagePtr
   dragImageOffsetX:(jint)jDragImageOffsetX
   dragImageOffsetY:(jint)jDragImageOffsetY
      sourceActions:(jint)jSourceActions
